@@ -75,4 +75,4 @@ scripts/
 
 ## License
 
-Non-commercial use only. The Clear Quran translation is licensed under CC BY-NC-ND 4.0.
+Translation: Bridges' Translation by Fadel Soliman (bridgesislam.com). Verify license terms before any commercial use.

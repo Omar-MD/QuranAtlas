@@ -1,6 +1,6 @@
 # QuranAtlas
 
-Distraction-free Quran reader. Online-first browser PWA with offline reading after explicit download. Non-commercial (CC BY-NC-ND 4.0 translation constraint).
+Distraction-free Quran reader. Online-first browser PWA with offline reading after explicit download. Translation: Bridges' Translation by Fadel Soliman (bridgesislam.com) — verify license before any commercial use.
 
 ## Tech Stack
 
@@ -156,12 +156,12 @@ All implementation work is tracked using Claude's Task system (TaskCreate/TaskUp
 
 UI/visual work follows a design-before-code loop:
 
-1. **Mockup round** — Present 2-4 ASCII layout mockups via `AskUserQuestion` showing the candidate designs
+1. **Mockup round** — Create 2-4 browser-renderable HTML mockup files in `mockups/` showing the candidate designs, then present them to the user via `AskUserQuestion` so they can open and visually inspect each in the browser
 2. **User selects** — User picks a design or requests changes
-3. **Iterate** — Refine and re-present until the design is approved
-4. **Implement** — Only write HTML/CSS/JS after explicit design approval
+3. **Iterate** — Refine mockup files and re-present until the design is approved
+4. **Implement** — Only write HTML/CSS/JS in `src/` after explicit design approval
 
-This applies to: verse card layout, navigation surface, mark editor, review hub, settings, about page, and any new surface. Do NOT implement UI speculatively — always get design sign-off first.
+This applies to: verse card layout, navigation surface, mark editor, review hub, settings, about page, and any new surface. Do NOT implement UI speculatively — always get design sign-off first. Never use ASCII art as a substitute for browser mockups.
 
 ### Dataset Build Source
 

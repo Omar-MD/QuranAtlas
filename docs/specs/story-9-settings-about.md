@@ -15,7 +15,7 @@ Settings surface for themes, storage management, and about page with provenance 
 ### FR-024: About page
 
 - Displays: app version, dataset version (from `datasetMeta`), provenance info (from `provenance.json`)
-- Attribution for The Clear Quran (CC BY-NC-ND 4.0)
+- Attribution for Bridges' Translation by Fadel Soliman (bridgesislam.com)
 - Attribution for KFGQPC font
 - Entry point for PWA install (if not installed) and dataset update check
 
@@ -45,7 +45,7 @@ Settings surface for themes, storage management, and about page with provenance 
 ## Acceptance Criteria
 
 - [ ] About page shows correct app version and dataset version
-- [ ] Provenance text includes CC BY-NC-ND 4.0 attribution
+- [ ] Provenance text includes attribution for Bridges' Translation by Fadel Soliman
 - [ ] All three themes apply correctly and persist across reload
 - [ ] Contrast ratio >= 4.5:1 for Arabic diacritics in all themes
 - [ ] Storage warning appears when persistence is not granted

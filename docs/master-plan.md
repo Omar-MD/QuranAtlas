@@ -3,7 +3,7 @@
 **Project:** QuranAtlas (formerly ayahMap)
 **Version:** 1.0 (Research Phase)
 **Date:** 2026-03-28
-**Status:** Draft — pre-implementation
+**Status:** Active — Phase 0 complete, Phase 1 in progress
 
 ---
 
@@ -45,14 +45,14 @@ QuranAtlas is a distraction-free Quran reader for personal daily use. It is an *
 
 ### 3.1 Source Data
 
-| Asset                       | Source                                                                                     | License                                                                | Notes                                                   |
-| --------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------- |
-| Arabic corpus (Uthmani)     | Quran Foundation / quran.com API (`text_uthmani` PUA field) or github.com/quran/quran-json | Redistribution confirmed                                               | PUA-encoded; requires KFGQPC font; ~680 KB uncompressed |
-| English translation         | The Clear Quran — Dr. Mustafa Khattab (theclearquran.org / quran.com API)                  | CC BY-NC-ND 4.0 — non-commercial, no derivatives, attribution required | QuranAtlas MUST remain non-commercial                   |
-| Surah metadata              | Quran Foundation / quran.com API or risan/quran-json (GitHub)                              | MIT (risan)                                                            | 114 records                                             |
-| Juz boundaries              | Quran Foundation / quran.com API or risan/quran-json (GitHub)                              | MIT (risan)                                                            | 30 records                                              |
-| Sajda / basmala annotations | Derived from quran.com annotated data                                                      | Same as corpus — confirmed                                             | 15 sajda positions, basmala rules                       |
-| Navigation font             | KFGQPC Uthman Taha Naskh                                                                   | Proprietary — redistribution confirmed                                 | Bundled in app shell, not dataset package               |
+| Asset                       | Source                                                                                      | License                                | Notes                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------- |
+| Arabic corpus (Uthmani)     | Quran Foundation / quran.com API (`text_uthmani` PUA field) or github.com/quran/quran-json  | Redistribution confirmed               | PUA-encoded; requires KFGQPC font; ~680 KB uncompressed |
+| English translation         | Bridges' Translation — Fadel Soliman (bridgesislam.com / quran.com API, translation ID 149) | Non-commercial public use approved     | Public non-commercial app; attribution required         |
+| Surah metadata              | Quran Foundation / quran.com API or risan/quran-json (GitHub)                               | MIT (risan)                            | 114 records                                             |
+| Juz boundaries              | Quran Foundation / quran.com API or risan/quran-json (GitHub)                               | MIT (risan)                            | 30 records                                              |
+| Sajda / basmala annotations | Derived from quran.com annotated data                                                       | Same as corpus — confirmed             | 15 sajda positions, basmala rules                       |
+| Navigation font             | KFGQPC Uthman Taha Naskh                                                                    | Proprietary — redistribution confirmed | Bundled in app shell, not dataset package               |
 
 ### 3.2 Package File Structure
 
@@ -81,15 +81,15 @@ quran-atlas-data-v{N}/
 
 **Estimated sizes:**
 
-| Component                                          | Uncompressed | Gzip (on-device) |
-| -------------------------------------------------- | ------------ | ---------------- |
-| 114 surah files (PUA Arabic + Clear Quran English) | ~2.0 MB      | ~480–520 KB      |
-| surahs.json                                        | ~10 KB       | ~3 KB            |
-| juz.json                                           | ~1 KB        | <1 KB            |
-| annotations.json                                   | ~2 KB        | <1 KB            |
-| provenance.json                                    | ~2 KB        | <1 KB            |
-| manifest.json                                      | ~3 KB        | <1 KB            |
-| **Total**                                          | **~2.0 MB**  | **~490–530 KB**  |
+| Component                                                   | Uncompressed | Gzip (on-device) |
+| ----------------------------------------------------------- | ------------ | ---------------- |
+| 114 surah files (PUA Arabic + Bridges' Translation English) | ~2.0 MB      | ~480–520 KB      |
+| surahs.json                                                 | ~10 KB       | ~3 KB            |
+| juz.json                                                    | ~1 KB        | <1 KB            |
+| annotations.json                                            | ~2 KB        | <1 KB            |
+| provenance.json                                             | ~2 KB        | <1 KB            |
+| manifest.json                                               | ~3 KB        | <1 KB            |
+| **Total**                                                   | **~2.0 MB**  | **~490–530 KB**  |
 
 > Cache Storage stores gzip-compressed responses, so the on-device footprint is the gzip figure (~500 KB). PUA-encoded Arabic is ~25% larger per character than standard Unicode; the combined parallel-array format offsets this.
 
@@ -98,7 +98,7 @@ quran-atlas-data-v{N}/
 | Decision                 | Ruling                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | Corpus source            | quran.com PUA-encoded Uthmani text (requires KFGQPC font); redistribution confirmed                                 |
-| Translation              | The Clear Quran — Dr. Mustafa Khattab (CC BY-NC-ND 4.0); QuranAtlas must remain non-commercial                      |
+| Translation              | Bridges' Translation — Fadel Soliman (quran.com ID 149); public non-commercial use approved; attribution required   |
 | Per-surah file schema    | Parallel arrays `{"ar":[...],"en":[...]}` — no per-verse field name overhead; ayah N = index N-1                    |
 | Combined per-surah files | Arabic + translation in one file per surah → gzip compresses them together; ~10–15% smaller than separate files     |
 | Single blob vs per-surah | Per-surah retained for natural download checkpointing; each file 3–80 KB; Web Worker parse <5 ms                    |
@@ -125,9 +125,8 @@ The dataset is pre-built by a maintainer (not fetched at app runtime). A Node.js
    → GET https://api.quran.com/api/v4/quran/verses/uthmani?chapter_number={1..114}
    → Or use github.com/quran/quran-json (Uthmani PUA text field)
 
-2. Fetch The Clear Quran translation
-   → GET https://api.quran.com/api/v4/quran/translations/{clear_quran_id}?chapter_number={1..114}
-   → Or alquran.cloud/v1/quran/en.khattab
+2. Fetch Bridges' Translation (Fadel Soliman)
+   → GET https://api.quran.com/api/v4/quran/translations/149?chapter_number={1..114}
 
 3. For each surah 1–114:
    → Build {"ar": [...N verses...], "en": [...N verses...]}
@@ -142,7 +141,7 @@ The dataset is pre-built by a maintainer (not fetched at app runtime). A Node.js
 
 The build output is committed to `public/dataset/` or published to a CDN. The app downloads on demand and never calls quran.com at runtime.
 
-**License constraint to record in `provenance.json`:** The CC BY-NC-ND 4.0 license on The Clear Quran is a permanent non-commercial constraint — no ads, no paid tiers, no commercial redistribution for any version of QuranAtlas that bundles this translation.
+**Attribution to record in `provenance.json`:** Bridges' Translation by Fadel Soliman. Public non-commercial use approved. Attribution required in provenance and about page.
 
 ---
 
@@ -530,7 +529,6 @@ jobs:
 | Risk                                                                                    | Likelihood                      | Impact | Mitigation                                                                                                                                                              |
 | --------------------------------------------------------------------------------------- | ------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | KFGQPC font or quran.com corpus license is later revised or revoked                     | Very Low                        | High   | Redistribution currently confirmed; if revoked in future: corpus fallback is Tanzil Uthmani (CC BY 3.0); font fallback is Scheherazade New (OFL, full Uthmani coverage) |
-| Clear Quran CC BY-NC-ND 4.0 — non-commercial only                                       | Low                             | High   | QuranAtlas must have no ads, no paid tiers, no commercial redistribution while bundling this translation; document in `provenance.json` and project README              |
 | PUA corpus is unrenderable without KFGQPC font                                          | High (if font unavailable)      | High   | Mitigated by bundling KFGQPC in app shell (offline-ready, precached); font is the first precached asset                                                                 |
 | PUA text is garbled when pasted outside the app                                         | Known                           | Low    | Ayah copy is out-of-scope (X-05); no copy affordance exposed                                                                                                            |
 | Background Fetch API unavailable (Firefox, iOS, old Android Chrome)                     | High (for non-Chromium targets) | Low    | Already a progressive enhancement; `fetch + ReadableStream` is the primary path; no functionality lost                                                                  |
@@ -581,5 +579,5 @@ jobs:
 | Cross-tab sync                              | BroadcastChannel + `visibilitychange`                                   | BroadcastChannel for live updates; visibilitychange as fallback catchall for suspended tabs                            |
 | Corpus encoding                             | quran.com PUA (not standard Unicode)                                    | User requirement: pixel-perfect Mushaf fidelity matching KFGQPC rendering                                              |
 | Arabic font                                 | KFGQPC Uthman Taha Naskh (not Amiri Quran)                              | PUA encoding requires KFGQPC; only this font has the PUA glyph mapping for the quran.com corpus                        |
-| Translation                                 | The Clear Quran — Dr. Mustafa Khattab (not Pickthall)                   | User requirement; modern clear English; CC BY-NC-ND 4.0 non-commercial constraint acceptable for personal-use app      |
+| Translation                                 | Bridges' Translation — Fadel Soliman (not Khattab/Pickthall)            | User requirement; public non-commercial use approved; quran.com translation ID 149                                     |
 | Dataset package format                      | Combined parallel-array per-surah files `{"ar":[...],"en":[...]}`       | Minimum size: no per-verse key overhead; Arabic + English gzipped together; natural checkpointing preserved            |
