@@ -80,6 +80,8 @@ Agents ARE permitted to:
 - Create and modify test files in `tests/unit/` and `tests/e2e/`
 - Modify configuration files (`vite.config.js`, `eslint.config.js`, `vitest.config.js`, `playwright.config.js`, `lefthook.yml`)
 - Run `npm run lint`, `npm run test`, `npm run build`, `npx playwright test`
+- Use `/commit` and `/ship` skills for git operations (staging, committing, pushing)
+- Check CI status with `/ci` skill
 - Create new modules within existing domains when the spec requires it
 
 Agents are NOT permitted to:
@@ -145,6 +147,23 @@ npm run test       # Vitest unit tests
 npm run test:e2e   # Playwright E2E tests
 npm run ci:local   # lint + test + build + e2e + lighthouse
 ```
+
+## Claude Code Skills
+
+Available slash commands for streamlined workflows:
+
+- **`/ci`** — Show CI status of the current branch using GitHub CLI (lists recent runs, job status, error logs)
+- **`/commit`** — Stage files, compose a conventional commit message, and commit (enforces style, runs pre-commit hooks)
+- **`/ship`** — Run full CI validation locally, commit staged changes with `[full-ci]` flag, and push to origin (use for releases/full testing)
+
+### CI Flag: `[full-ci]`
+
+By default, CI runs lint + format check + unit tests + build + chunk size gate. To also run e2e tests, Lighthouse CI, and deploy:
+
+- **For commits:** include `[full-ci]` in the commit message
+- **For PRs:** include `[full-ci]` in the PR title
+
+The workflow detects the flag and conditionally enables expensive jobs. Use `/ship` to automate this for releases.
 
 ## Implementation Workflow
 
