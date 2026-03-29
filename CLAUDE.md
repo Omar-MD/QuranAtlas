@@ -89,51 +89,13 @@ Agents are NOT permitted to:
 - Add new npm dependencies without explicit approval
 - Create new top-level directories outside the defined module map
 - Modify `docs/master-plan.md` or `docs/tech-stack-decision-record.md`
-- Use any forbidden pattern listed above
 - Add analytics, telemetry, or external network calls
 - Modify the dataset files in `public/dataset/` (build pipeline output only)
 - Skip or weaken ESLint rules
-- Use `localStorage` or `sessionStorage` for any purpose
-- Add TypeScript or any framework
 
-## Testing Strategy
+## Testing & Definition of Done
 
-### Unit Tests (Vitest)
-
-- Location: `tests/unit/{domain}/{module}.test.js`
-- Environment: jsdom + fake-indexeddb
-- Coverage: v8 provider, thresholds: lines 80%, functions 80%
-- Every IDB operation must be tested with fake-indexeddb
-- Every pub/sub event must be tested (emit + subscribe)
-- Every input validation function must have boundary-value tests
-
-### E2E Tests (Playwright)
-
-- Location: `tests/e2e/{story}.spec.js`
-- Browser: Chromium only
-- Must test: offline reading (via `context.setOffline()`), IDB state persistence, dataset download + SHA-256 verification, navigation + deep links
-- Must NOT test: actual OS-level PWA install dialog
-
-### Performance
-
-- Lighthouse CI thresholds: PWA >= 80, Performance >= 80, A11y >= 90, Best Practices >= 85
-- Chunk size gate: no chunk > 150 KB gzip
-- Custom metric: `performance.mark('first-verse-render')` asserted in Playwright (< 800 ms at 4x CPU throttle)
-
-## Definition of Done
-
-A task is done when:
-
-1. All acceptance criteria from the spec are met
-2. `npm run lint` passes (zero errors, zero warnings)
-3. `npm run test` passes (all unit tests, coverage thresholds met)
-4. No forbidden patterns introduced
-5. No direct cross-module imports outside `core/` (except `safety/`, `a11y/`)
-6. Quran text rendered verbatim — `textContent` only, no string transforms
-7. Touch targets >= 44x44 CSS px for interactive elements
-8. `prefers-reduced-motion` honoured for any new animation/transition
-9. Arabic font >= 20 CSS px, line-height >= 1.8x
-10. Works offline if the feature touches the reading path (after dataset download)
+Detailed rules are in `.claude/rules/testing.md` and `.claude/rules/definition-of-done.md` (loaded automatically when editing `src/` or `tests/`). Run `/verify` before committing to check all criteria.
 
 ## Key Commands
 
@@ -152,9 +114,15 @@ npm run ci:local   # lint + test + build + e2e + lighthouse
 
 Available slash commands for streamlined workflows:
 
-- **`/ci`** — Show CI status of the current branch using GitHub CLI (lists recent runs, job status, error logs)
-- **`/commit`** — Stage files, compose a conventional commit message, and commit (enforces style, runs pre-commit hooks)
-- **`/ship`** — Run full CI validation locally, commit staged changes with `[full-ci]` flag, and push to origin (use for releases/full testing)
+- **`/spec <N>`** — Load story N spec, extract acceptance criteria, create tasks (start here)
+- **`/verify`** — Run full DoD checklist: lint, tests, coverage, build, chunks, forbidden patterns, module boundaries
+- **`/commit`** — Stage files, compose a conventional commit message, and commit
+- **`/ci`** — Show CI status of the current branch using GitHub CLI
+- **`/ship`** — Run full CI validation locally, commit with `[full-ci]` flag, and push to origin
+
+The spec-driven development loop: `/spec` → implement → `/verify` → `/commit` → `/ship`
+
+All work happens on `main` unless the user creates a feature branch. Use `/commit` for incremental progress. Use `/ship` only when a story or phase is complete and ready for full validation.
 
 ### CI Flag: `[full-ci]`
 
@@ -175,7 +143,7 @@ All implementation work is tracked using Claude's Task system (TaskCreate/TaskUp
 
 UI/visual work follows a design-before-code loop:
 
-1. **Mockup round** — Create 2-4 browser-renderable HTML mockup files in `mockups/` showing the candidate designs, then present them to the user via `AskUserQuestion` so they can open and visually inspect each in the browser
+1. **Mockup round** — Create 2-4 browser-renderable HTML files in `mockups/` and ask the user to review them
 2. **User selects** — User picks a design or requests changes
 3. **Iterate** — Refine mockup files and re-present until the design is approved
 4. **Implement** — Only write HTML/CSS/JS in `src/` after explicit design approval
@@ -185,6 +153,25 @@ This applies to: verse card layout, navigation surface, mark editor, review hub,
 ### Dataset Build Source
 
 `scripts/build-dataset.js` uses quran.com API as primary source with quran-json GitHub repo as fallback (if API is unavailable or rate-limited).
+
+### Keeping Documentation Current
+
+**CLAUDE.md** — When a decision during implementation changes any of the following, ask the user before the conversation ends whether CLAUDE.md should be updated:
+
+- Tech stack (new dependency, version bump, tool swap)
+- Architecture (new module, changed boundaries, new communication pattern)
+- Coding conventions or forbidden patterns
+- Workflow or process (new skill, changed CI pipeline, updated DoD)
+- Agent permissions
+
+Do NOT silently update CLAUDE.md. State what changed, quote the specific section(s) that are now stale, and propose the edit. Only apply it after explicit approval.
+
+**Master Plan / Tech Decision Record** — When implementation reality diverges from what these documents describe (e.g., a planned API doesn't exist, a boundary shifted, a phase assumption proved wrong):
+
+1. Flag the discrepancy — state what the document says vs. what is actually true
+2. Do NOT propose edits or modify these files unprompted
+3. Let the user decide whether to update the document, adjust the implementation, or leave it as-is
+4. Only draft changes to these files if the user explicitly asks
 
 ## References
 
