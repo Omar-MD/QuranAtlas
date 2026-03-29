@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QuranAtlas — Reading View Mockups</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+        background: #0f0f13;
+        color: #e8e6e3;
+        padding: 2rem 1rem;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #888;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 2.5rem;
+      }
+
+      .designs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .design {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .design-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #666;
+        padding-left: 0.25rem;
+      }
+
+      /* Phone frame */
+      .phone {
+        width: 100%;
+        max-width: 360px;
+        margin: 0 auto;
+        border-radius: 2rem;
+        overflow: hidden;
+        border: 2px solid #2a2a35;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+        background: #12121a;
+        min-height: 640px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Shared top-bar ─────────────────────────────────────── */
+      .top-bar {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #12121a;
+        border-bottom: 1px solid #1e1e28;
+        flex-shrink: 0;
+        gap: 0.5rem;
+      }
+
+      .top-bar .menu-btn {
+        font-size: 1.1rem;
+        cursor: pointer;
+        color: #9a9aaa;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .top-bar .title {
+        flex: 1;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #c8c6d0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .top-bar .meta {
+        font-size: 0.7rem;
+        color: #55556a;
+        flex-shrink: 0;
+      }
+
+      .top-bar .icon-btn {
+        font-size: 1rem;
+        color: #9a9aaa;
+        cursor: pointer;
+        flex-shrink: 0;
+        line-height: 1;
+      }
+
+      /* Arabic font stack */
+      .ar {
+        font-family: 'Scheherazade New', 'Amiri', 'Noto Naskh Arabic', serif;
+        direction: rtl;
+        unicode-bidi: embed;
+      }
+
+      /* ── Design A — Stacked verse cards ──────────────────────── */
+      .design-a .scroll-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.25rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .design-a .surah-header {
+        text-align: center;
+        padding: 0.5rem 0 1.5rem;
+      }
+
+      .design-a .surah-header .name-ar {
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.6rem;
+        color: #d4af6e;
+        direction: rtl;
+      }
+
+      .design-a .surah-header .name-en {
+        font-size: 0.7rem;
+        color: #55556a;
+        margin-top: 0.2rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .design-a .basmala {
+        text-align: center;
+        padding: 0.75rem 0 1.25rem;
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.5rem;
+        color: #9a8aaa;
+        direction: rtl;
+      }
+
+      .design-a .verse {
+        padding: 1.1rem 0;
+        border-bottom: 1px solid #1e1e28;
+      }
+
+      .design-a .verse:last-child {
+        border-bottom: none;
+      }
+
+      .design-a .verse .ar-text {
+        font-size: 1.4rem;
+        line-height: 2;
+        color: #e8e4d8;
+        text-align: right;
+      }
+
+      .design-a .verse .en-text {
+        font-size: 0.82rem;
+        line-height: 1.6;
+        color: #7a7a90;
+        margin-top: 0.5rem;
+        text-align: left;
+      }
+
+      .design-a .verse-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.4rem;
+        height: 1.4rem;
+        border-radius: 50%;
+        border: 1px solid #2a2a40;
+        font-size: 0.62rem;
+        color: #55556a;
+        float: left;
+        margin-top: 0.25rem;
+      }
+
+      /* ── Design B — Arabic-primary, translation toggled ──────── */
+      .design-b .scroll-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.75rem 0;
+        direction: rtl;
+      }
+
+      .design-b .surah-header {
+        text-align: center;
+        padding: 0.75rem 1rem 1rem;
+        direction: ltr;
+      }
+
+      .design-b .surah-header .name-ar {
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.5rem;
+        color: #d4af6e;
+        direction: rtl;
+        display: block;
+      }
+
+      .design-b .surah-header .name-en {
+        font-size: 0.65rem;
+        color: #44445a;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .design-b .prose {
+        padding: 0.25rem 1.25rem 1rem;
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.55rem;
+        line-height: 2.2;
+        color: #dedad0;
+        text-align: justify;
+        direction: rtl;
+      }
+
+      .design-b .prose .num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: 50%;
+        background: #1e1e2a;
+        border: 1px solid #2e2e40;
+        font-size: 0.65rem;
+        font-family: system-ui, sans-serif;
+        color: #d4af6e;
+        vertical-align: middle;
+        margin: 0 0.15rem;
+        direction: ltr;
+      }
+
+      .design-b .translation-peek {
+        margin: 0 1rem 1rem;
+        padding: 0.75rem 0.875rem;
+        background: #1a1a24;
+        border-radius: 0.625rem;
+        border-left: 2px solid #d4af6e44;
+        direction: ltr;
+      }
+
+      .design-b .translation-peek .peek-label {
+        font-size: 0.6rem;
+        color: #44445a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.3rem;
+      }
+
+      .design-b .translation-peek .peek-text {
+        font-size: 0.8rem;
+        line-height: 1.55;
+        color: #7a7a90;
+      }
+
+      /* ── Design C — Side by side, two-column ────────────────── */
+      .design-c .scroll-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+      }
+
+      .design-c .surah-header {
+        padding: 0.75rem 1rem 0.5rem;
+        text-align: center;
+        border-bottom: 1px solid #1e1e28;
+      }
+
+      .design-c .surah-header .name-ar {
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.3rem;
+        color: #d4af6e;
+        direction: rtl;
+        display: block;
+      }
+
+      .design-c .surah-header .name-en {
+        font-size: 0.62rem;
+        color: #44445a;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .design-c .verse-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-bottom: 1px solid #1a1a24;
+      }
+
+      .design-c .verse-row .en-col {
+        padding: 0.875rem 0.75rem 0.875rem 1rem;
+        border-right: 1px solid #1a1a24;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      .design-c .verse-row .ar-col {
+        padding: 0.875rem 1rem 0.875rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+
+      .design-c .en-col .en-text {
+        font-size: 0.75rem;
+        line-height: 1.55;
+        color: #7a7a90;
+        flex: 1;
+      }
+
+      .design-c .ar-col .ar-text {
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.15rem;
+        line-height: 1.9;
+        color: #dedad0;
+        text-align: right;
+        direction: rtl;
+        flex: 1;
+        width: 100%;
+      }
+
+      .design-c .verse-num-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.4rem;
+      }
+
+      .design-c .vnum {
+        font-size: 0.6rem;
+        color: #44445a;
+      }
+
+      /* ── Design D — Cards with pull-up detail ────────────────── */
+      .design-d .scroll-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem 0.875rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+      }
+
+      .design-d .surah-header {
+        text-align: center;
+        padding: 0.25rem 0 0.875rem;
+      }
+
+      .design-d .surah-header .name-ar {
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.4rem;
+        color: #d4af6e;
+        direction: rtl;
+        display: block;
+      }
+
+      .design-d .surah-header .name-en {
+        font-size: 0.62rem;
+        color: #44445a;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .design-d .card {
+        background: #18181f;
+        border-radius: 0.75rem;
+        border: 1px solid #1e1e28;
+        padding: 1rem 1rem 0.75rem;
+        position: relative;
+      }
+
+      .design-d .card .ar-text {
+        font-family: 'Scheherazade New', 'Amiri', serif;
+        font-size: 1.35rem;
+        line-height: 2;
+        color: #dedad0;
+        text-align: right;
+        direction: rtl;
+        width: 100%;
+        display: block;
+      }
+
+      .design-d .card .en-text {
+        font-size: 0.78rem;
+        line-height: 1.55;
+        color: #7a7a90;
+        margin-top: 0.6rem;
+        padding-top: 0.6rem;
+        border-top: 1px solid #1e1e28;
+      }
+
+      .design-d .card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+      }
+
+      .design-d .card-actions {
+        display: flex;
+        gap: 0.75rem;
+      }
+
+      .design-d .card-action {
+        font-size: 0.7rem;
+        color: #3a3a50;
+        cursor: pointer;
+      }
+
+      .design-d .card-action:hover {
+        color: #d4af6e;
+      }
+
+      .design-d .vnum {
+        font-size: 0.62rem;
+        color: #3a3a50;
+        background: #12121a;
+        border: 1px solid #1e1e28;
+        border-radius: 50%;
+        width: 1.4rem;
+        height: 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Select button */
+      .select-btn {
+        display: block;
+        width: 100%;
+        max-width: 360px;
+        margin: 0.875rem auto 0;
+        padding: 0.625rem;
+        background: #1a1a24;
+        border: 1px solid #2a2a38;
+        border-radius: 0.5rem;
+        color: #666;
+        font-size: 0.72rem;
+        font-family: system-ui, sans-serif;
+        cursor: pointer;
+        letter-spacing: 0.04em;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+      }
+
+      .select-btn:hover {
+        background: #22222e;
+        color: #d4af6e;
+        border-color: #d4af6e66;
+      }
+
+      /* Font loading note */
+      .note {
+        text-align: center;
+        font-size: 0.68rem;
+        color: #333340;
+        margin-bottom: 1.5rem;
+      }
+    </style>
+    <!-- Load a free Arabic web font for preview purposes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <h1>QuranAtlas — Reading View</h1>
+    <p class="note">
+      Preview font: Scheherazade New (Google Fonts). Production will use KFGQPC Uthman Taha Naskh.
+    </p>
+
+    <div class="designs">
+      <!-- ══════════════════════════════════════════════════════
+           Design A — Stacked verses, Arabic + translation always visible
+           ══════════════════════════════════════════════════════ -->
+      <div class="design design-a">
+        <div class="design-label">A — Stacked · Always bilingual</div>
+        <div class="phone">
+          <div class="top-bar">
+            <span class="menu-btn">☰</span>
+            <span class="title">Al-Fatihah · الفاتحة</span>
+            <span class="icon-btn">⚙</span>
+          </div>
+          <div class="scroll-area">
+            <div class="surah-header">
+              <div class="name-ar">الفاتحة</div>
+              <div class="name-en">The Opening · 7 verses · Meccan</div>
+            </div>
+            <div class="basmala">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>
+            <div class="verse">
+              <span class="verse-num">1</span>
+              <div class="ar-text ar">ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ</div>
+              <div class="en-text">All praise be to Allah, Lord of all realms,</div>
+            </div>
+            <div class="verse">
+              <span class="verse-num">2</span>
+              <div class="ar-text ar">ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>
+              <div class="en-text">the All-Merciful, the Bestower of mercy,</div>
+            </div>
+            <div class="verse">
+              <span class="verse-num">3</span>
+              <div class="ar-text ar">مَـٰلِكِ يَوْمِ ٱلدِّينِ</div>
+              <div class="en-text">Master of the Day of Recompense.</div>
+            </div>
+            <div class="verse">
+              <span class="verse-num">4</span>
+              <div class="ar-text ar">إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ</div>
+              <div class="en-text">You alone we worship, and You alone we turn to for help.</div>
+            </div>
+            <div class="verse">
+              <span class="verse-num">5</span>
+              <div class="ar-text ar">ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ</div>
+              <div class="en-text">Guide us along the straight path:</div>
+            </div>
+            <div class="verse">
+              <span class="verse-num">6</span>
+              <div class="ar-text ar">
+                صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا
+                ٱلضَّآلِّينَ
+              </div>
+              <div class="en-text">
+                the path of those You have blessed—not those who have earned Your wrath, nor those
+                who have gone astray.
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="select-btn">Select Design A</button>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           Design B — Arabic prose flow, translation on demand
+           ══════════════════════════════════════════════════════ -->
+      <div class="design design-b">
+        <div class="design-label">B — Arabic prose · Translation on tap</div>
+        <div class="phone">
+          <div class="top-bar">
+            <span class="menu-btn">☰</span>
+            <span class="title">Al-Baqarah · البقرة</span>
+            <span class="meta">1 / 286</span>
+          </div>
+          <div class="scroll-area">
+            <div class="surah-header">
+              <span class="name-ar">البقرة</span>
+              <span class="name-en">The Cow · 286 verses · Medinan</span>
+            </div>
+            <div class="prose ar">
+              الٓمٓ
+              <span class="num">1</span>
+              ذَٰلِكَ ٱلْكِتَـٰبُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ
+              <span class="num">2</span>
+              ٱلَّذِينَ يُؤْمِنُونَ بِٱلْغَيْبِ وَيُقِيمُونَ ٱلصَّلَوٰةَ وَمِمَّا رَزَقْنَـٰهُمْ
+              يُنفِقُونَ
+              <span class="num">3</span>
+              وَٱلَّذِينَ يُؤْمِنُونَ بِمَآ أُنزِلَ إِلَيْكَ وَمَآ أُنزِلَ مِن قَبْلِكَ
+              وَبِٱلْـَٔاخِرَةِ هُمْ يُوقِنُونَ
+              <span class="num">4</span>
+            </div>
+            <!-- Translation panel shown after tapping a verse number -->
+            <div class="translation-peek">
+              <div class="peek-label">Verse 2 · Bridges' translation</div>
+              <div class="peek-text">
+                That is the Scripture; there is no doubt about it — a guidance for the mindful of
+                God.
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="select-btn">Select Design B</button>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           Design C — Two-column, Arabic right / English left
+           ══════════════════════════════════════════════════════ -->
+      <div class="design design-c">
+        <div class="design-label">C — Two-column · Always bilingual</div>
+        <div class="phone">
+          <div class="top-bar">
+            <span class="menu-btn">☰</span>
+            <span class="title">Al-Baqarah · البقرة</span>
+            <span class="icon-btn">⋮</span>
+          </div>
+          <div class="scroll-area">
+            <div class="surah-header">
+              <span class="name-ar">البقرة</span>
+              <span class="name-en">The Cow · Medinan</span>
+            </div>
+            <div class="verse-row">
+              <div class="en-col">
+                <div class="en-text">Alif Lām Mīm.</div>
+                <div class="verse-num-row">
+                  <span class="vnum">EN</span><span class="vnum">1</span>
+                </div>
+              </div>
+              <div class="ar-col">
+                <div class="ar-text">الٓمٓ</div>
+                <div class="verse-num-row">
+                  <span class="vnum">٢</span><span class="vnum">AR</span>
+                </div>
+              </div>
+            </div>
+            <div class="verse-row">
+              <div class="en-col">
+                <div class="en-text">
+                  That is the Scripture; there is no doubt about it — a guidance for the mindful.
+                </div>
+                <div class="verse-num-row">
+                  <span class="vnum">EN</span><span class="vnum">2</span>
+                </div>
+              </div>
+              <div class="ar-col">
+                <div class="ar-text">
+                  ذَٰلِكَ ٱلْكِتَـٰبُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ
+                </div>
+                <div class="verse-num-row">
+                  <span class="vnum">٢</span><span class="vnum">AR</span>
+                </div>
+              </div>
+            </div>
+            <div class="verse-row">
+              <div class="en-col">
+                <div class="en-text">
+                  who believe in the hidden realms and establish the prayers and spend out of what
+                  We have provided them,
+                </div>
+                <div class="verse-num-row">
+                  <span class="vnum">EN</span><span class="vnum">3</span>
+                </div>
+              </div>
+              <div class="ar-col">
+                <div class="ar-text">
+                  ٱلَّذِينَ يُؤْمِنُونَ بِٱلْغَيْبِ وَيُقِيمُونَ ٱلصَّلَوٰةَ وَمِمَّا رَزَقْنَـٰهُمْ
+                  يُنفِقُونَ
+                </div>
+                <div class="verse-num-row">
+                  <span class="vnum">٣</span><span class="vnum">AR</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="select-btn">Select Design C</button>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           Design D — Cards with actions (bookmark, note, share)
+           ══════════════════════════════════════════════════════ -->
+      <div class="design design-d">
+        <div class="design-label">D — Cards · Inline actions</div>
+        <div class="phone">
+          <div class="top-bar">
+            <span class="menu-btn">☰</span>
+            <span class="title">Al-Baqarah · البقرة</span>
+            <span class="icon-btn">⚙</span>
+          </div>
+          <div class="scroll-area">
+            <div class="surah-header">
+              <span class="name-ar">البقرة</span>
+              <span class="name-en">The Cow · 286 verses</span>
+            </div>
+            <div class="card">
+              <span class="ar-text ar">الٓمٓ</span>
+              <div class="en-text">Alif Lām Mīm.</div>
+              <div class="card-footer">
+                <div class="card-actions">
+                  <span class="card-action">🔖 Mark</span>
+                  <span class="card-action">📋 Copy</span>
+                </div>
+                <div class="vnum">1</div>
+              </div>
+            </div>
+            <div class="card">
+              <span class="ar-text ar"
+                >ذَٰلِكَ ٱلْكِتَـٰبُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ</span
+              >
+              <div class="en-text">
+                That is the Scripture; there is no doubt about it — a guidance for the mindful of
+                God.
+              </div>
+              <div class="card-footer">
+                <div class="card-actions">
+                  <span class="card-action">🔖 Mark</span>
+                  <span class="card-action">📋 Copy</span>
+                </div>
+                <div class="vnum">2</div>
+              </div>
+            </div>
+            <div class="card">
+              <span class="ar-text ar"
+                >ٱلَّذِينَ يُؤْمِنُونَ بِٱلْغَيْبِ وَيُقِيمُونَ ٱلصَّلَوٰةَ وَمِمَّا رَزَقْنَـٰهُمْ
+                يُنفِقُونَ</span
+              >
+              <div class="en-text">
+                who believe in the hidden realms and establish the prayers and spend out of what We
+                have provided them,
+              </div>
+              <div class="card-footer">
+                <div class="card-actions">
+                  <span class="card-action">🔖 Mark</span>
+                  <span class="card-action">📋 Copy</span>
+                </div>
+                <div class="vnum">3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="select-btn">Select Design D</button>
+      </div>
+    </div>
+  </body>
+</html>

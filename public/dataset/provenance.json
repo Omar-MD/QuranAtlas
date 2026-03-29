@@ -1,0 +1,25 @@
+{
+  "packageVersion": "1.0.0",
+  "builtAt": "2026-03-29T16:05:03.771Z",
+  "corpus": {
+    "name": "Uthmani Quran Text (PUA-encoded)",
+    "source": "quran.com / Quran Foundation",
+    "license": "Redistribution confirmed",
+    "notes": "PUA-encoded codepoints require KFGQPC Uthman Taha Naskh font for correct rendering."
+  },
+  "translation": {
+    "name": "Bridges' Translation",
+    "author": "Fadel Soliman",
+    "source": "quran.com (translation ID 149)",
+    "license": "Unknown — verify with bridgesislam.com before commercial use"
+  },
+  "font": {
+    "name": "KFGQPC Uthman Taha Naskh",
+    "license": "Proprietary — redistribution confirmed",
+    "notes": "Required for PUA-encoded quran.com corpus."
+  },
+  "surahMetadata": {
+    "source": "quran.com API / risan/quran-json",
+    "license": "MIT (risan/quran-json)"
+  }
+}
