@@ -29,12 +29,26 @@ For any new surface: create 2–4 browser-renderable mockups in `mockups/`, get 
 ## Documentation
 Don't silently update CLAUDE.md. State what changed + quote stale section → apply only after explicit approval. Never propose edits to master plan or tech decision record unprompted.
 
+## Context Management
+- Estimate context usage continuously. Never interrupt a task to report it.
+- After each completed task, if usage >50%: report `~[X]%` and offer `1` Save & hand off (`/handoff`) | `2` Continue. Report once per 10% threshold.
+- If usage >85%, proactively suggest `/handoff` without waiting.
+- **New session:** If `progress.md` exists → read it, delete it, confirm: *"Loaded. Continuing: [objective]. Up next: [Y]. Proceed?"* Never ask for context already in the file.
+
 ## Workflow
-`/spec <N>` → implement → `/verify` → `/commit` → `/ship`
-- `/spec <N>` — load story spec, create tasks
-- `/verify` — lint + tests + coverage + build + forbidden patterns + module boundaries (rules in `.claude/rules/`)
-- `/commit` — stage + conventional commit
-- `/ship` — full CI + push (`[full-ci]` flag enables e2e + Lighthouse + deploy)
+
+**Delivery tail (shared):** `/verify` → `/commit` → `/ship` | `/ci` (check status only)
+- `/verify` — lint + tests + coverage + build + forbidden patterns + module boundaries
+- `/ship` — full CI + push (`[full-ci]` triggers e2e + Lighthouse + deploy)
+
+**Feature:** `/write-a-prd` → `/grill-me` → `/prd-to-plan` | `/prd-to-issues` → `/design-an-interface` → `/spec <N>` → `/tdd` → delivery tail
+
+**Bug:** `/qa` (conversational → GH issues) | `/triage-issue` (root cause → TDD fix plan → GH issue) → `/tdd` → delivery tail
+
+**Refactor:** `/improve-codebase-architecture` | `/request-refactor-plan` → delivery tail
+
+**Utility:** `/ubiquitous-language` (DDD glossary) · `/write-a-skill` (new skill)
+**Setup (one-time):** `/git-guardrails-claude-code` · `/setup-pre-commit`
 
 `scripts/build-dataset.js`: quran.com API primary, quran-json GitHub fallback.
 
