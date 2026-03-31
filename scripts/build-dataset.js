@@ -30,6 +30,13 @@ const BRIDGES_TRANSLATION_ID = 149; // Bridges' translation — Fadel Soliman
 const OUTPUT_DIR = join(process.cwd(), 'public', 'dataset');
 const PACKAGE_VERSION = '1.0.0';
 
+// Fetch resilience
+const FETCH_TIMEOUT_MS = 15_000;
+const MAX_RETRIES = 4;
+const INITIAL_BACKOFF_MS = 500;
+const MAX_BACKOFF_MS = 30_000;
+const CONCURRENCY = Number(process.env.QURAN_CONCURRENCY ?? 6);
+
 // Fallback: raw quran-json GitHub files
 const QURAN_JSON_BASE =
   'https://raw.githubusercontent.com/quran/quran-json/master/data/editions/quran-uthmani.json';
@@ -48,11 +55,60 @@ const TOTAL_AYAHS = SURAH_VERSE_COUNTS.reduce((a, b) => a + b, 0); // 6236
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function fetchJson(url, description) {
-  const res = await fetch(url, {
-    headers: { Accept: 'application/json' },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${description}: ${url}`);
-  return res.json();
+  let lastError;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const backoff = Math.min(INITIAL_BACKOFF_MS * 2 ** (attempt - 1), MAX_BACKOFF_MS);
+      const jittered = Math.round(backoff * (0.5 + Math.random() * 0.5));
+      console.log(`    Retry ${attempt}/${MAX_RETRIES} for ${description} in ${jittered}ms...`);
+      await sleep(jittered);
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
+
+      if (res.status === 429) {
+        const retryAfter = res.headers.get('Retry-After');
+        const waitMs = retryAfter && Number(retryAfter) > 0
+          ? Number(retryAfter) * 1000
+          : Math.min(INITIAL_BACKOFF_MS * 2 ** attempt, MAX_BACKOFF_MS);
+        lastError = new Error(`HTTP 429 rate-limited fetching ${description}`);
+        console.warn(`    Rate-limited on ${description}, waiting ${Math.round(waitMs)}ms...`);
+        await sleep(waitMs);
+        continue;
+      }
+
+      if (res.status >= 500) {
+        lastError = new Error(`HTTP ${res.status} fetching ${description}: ${url}`);
+        continue;
+      }
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} fetching ${description}: ${url}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        lastError = new Error(`Timeout (${FETCH_TIMEOUT_MS}ms) fetching ${description}: ${url}`);
+      } else if (err.message?.startsWith('HTTP')) {
+        throw err;
+      } else {
+        lastError = err;
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw lastError;
 }
 
 async function sha256File(filePath) {
@@ -66,6 +122,29 @@ function sleep(ms) {
 
 function surahNumber(n) {
   return String(n).padStart(3, '0');
+}
+
+async function runWithConcurrency(taskFns, concurrency, label) {
+  const results = new Array(taskFns.length);
+  let nextIndex = 0;
+  let completed = 0;
+
+  async function worker() {
+    while (nextIndex < taskFns.length) {
+      const i = nextIndex++;
+      results[i] = await taskFns[i]();
+      completed++;
+      process.stdout.write(`\r  ${label}: ${completed}/${taskFns.length}`);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(concurrency, taskFns.length) },
+    () => worker(),
+  );
+  await Promise.all(workers);
+  console.log();
+  return results;
 }
 
 // ─── quran.com API Fetchers ───────────────────────────────────────────────────
@@ -103,11 +182,18 @@ async function fetchSurahMetaFromApi() {
 
 async function fetchJuzFromApi() {
   const data = await fetchJson(`${API_BASE}/juzs`, 'juz data');
-  return data.juzs.map((j) => {
-    const firstSurah = Object.keys(j.verse_mapping)[0];
-    const ayah = parseInt(j.verse_mapping[firstSurah].split('-')[0], 10);
-    return { j: j.juz_number, s: parseInt(firstSurah, 10), a: ayah };
-  });
+  const seen = new Set();
+  return data.juzs
+    .map((j) => {
+      const firstSurah = Object.keys(j.verse_mapping)[0];
+      const ayah = parseInt(j.verse_mapping[firstSurah].split('-')[0], 10);
+      return { j: j.juz_number, s: parseInt(firstSurah, 10), a: ayah };
+    })
+    .filter(({ j }) => {
+      if (seen.has(j)) return false;
+      seen.add(j);
+      return true;
+    });
 }
 
 // ─── quran-json GitHub Fallback ───────────────────────────────────────────────
@@ -160,13 +246,24 @@ async function buildSurahFiles(arabicBySurah, translationBySurah) {
 }
 
 async function buildMetadataFiles(surahMeta, juzData) {
+  // Populate the juz field: surah S belongs to the highest-numbered juz that starts at or before S:1.
+  // juzData is sorted by j ascending; iterate in reverse to find the last juz entry whose start ≤ S.
+  const sortedJuz = [...juzData].sort((a, b) => a.j - b.j);
+  for (const surah of surahMeta) {
+    let juzNum = 1;
+    for (const { j, s, a } of sortedJuz) {
+      if (s < surah.n || (s === surah.n && a === 1)) juzNum = j;
+    }
+    surah.juz = juzNum;
+  }
+
   await writeFile(join(OUTPUT_DIR, 'surahs.json'), JSON.stringify(surahMeta), 'utf8');
   await writeFile(join(OUTPUT_DIR, 'juz.json'), JSON.stringify(juzData), 'utf8');
 
   const annotations = {
     basmala: {
       counted: [1], // Surah 1: basmala is verse 1:1
-      prefix: Array.from({ length: 112 }, (_, i) => i + 2).filter((n) => n !== 9), // surahs 2-114 except 9
+      prefix: Array.from({ length: 113 }, (_, i) => i + 2).filter((n) => n !== 9), // surahs 2-114 except 9
       none: [9], // Surah 9: no basmala
       inline: [{ surah: 27, ayah: 30 }], // 27:30 contains bismillah as regular verse text
     },
@@ -254,6 +351,75 @@ async function buildManifest() {
   console.log(`  ✓ manifest.json written with SHA-256 hashes for ${files.length} files`);
 }
 
+async function validateDataset() {
+  const errors = [];
+
+  // Verify manifest hashes match actual file content
+  const manifest = JSON.parse(await readFile(join(OUTPUT_DIR, 'manifest.json'), 'utf8'));
+
+  for (const [file, expectedHash] of Object.entries(manifest.files)) {
+    const actualHash = await sha256File(join(OUTPUT_DIR, file));
+    if (actualHash !== expectedHash) {
+      errors.push(`Hash mismatch: ${file}`);
+    }
+  }
+
+  // Verify all expected files are in manifest
+  for (let n = 1; n <= 114; n++) {
+    const key = `surah/${surahNumber(n)}.json`;
+    if (!manifest.files[key]) errors.push(`Missing from manifest: ${key}`);
+  }
+  for (const f of ['surahs.json', 'juz.json', 'annotations.json', 'provenance.json']) {
+    if (!manifest.files[f]) errors.push(`Missing from manifest: ${f}`);
+  }
+
+  // Verify surahs.json
+  const surahs = JSON.parse(await readFile(join(OUTPUT_DIR, 'surahs.json'), 'utf8'));
+  if (surahs.length !== 114) errors.push(`surahs.json: ${surahs.length} entries, expected 114`);
+  for (const s of surahs) {
+    if (s.juz == null) errors.push(`surahs.json: surah ${s.n} has null juz`);
+    if (s.count !== SURAH_VERSE_COUNTS[s.n - 1]) {
+      errors.push(`surahs.json: surah ${s.n} count=${s.count}, expected ${SURAH_VERSE_COUNTS[s.n - 1]}`);
+    }
+  }
+
+  // Verify juz.json
+  const juz = JSON.parse(await readFile(join(OUTPUT_DIR, 'juz.json'), 'utf8'));
+  if (juz.length !== 30) errors.push(`juz.json: ${juz.length} entries, expected 30`);
+  if (new Set(juz.map((j) => j.j)).size !== juz.length) errors.push(`juz.json: duplicate juz numbers`);
+
+  // Verify annotations.json
+  const ann = JSON.parse(await readFile(join(OUTPUT_DIR, 'annotations.json'), 'utf8'));
+  if (ann.basmala.prefix.length !== 112) {
+    errors.push(`annotations.json: basmala.prefix has ${ann.basmala.prefix.length}, expected 112`);
+  }
+  if (ann.sajda.length !== 15) {
+    errors.push(`annotations.json: sajda has ${ann.sajda.length}, expected 15`);
+  }
+
+  // Verify surah file content
+  let totalAyahs = 0;
+  for (let n = 1; n <= 114; n++) {
+    const data = JSON.parse(
+      await readFile(join(OUTPUT_DIR, 'surah', `${surahNumber(n)}.json`), 'utf8'),
+    );
+    if (data.ar.some((v) => v === '')) errors.push(`surah/${surahNumber(n)}.json: empty Arabic verse`);
+    if (data.en.some((v) => v === '')) errors.push(`surah/${surahNumber(n)}.json: empty English verse`);
+    totalAyahs += data.ar.length;
+  }
+  if (totalAyahs !== TOTAL_AYAHS) {
+    errors.push(`Total ayahs from files: ${totalAyahs}, expected ${TOTAL_AYAHS}`);
+  }
+
+  if (errors.length > 0) {
+    console.error('\n  Validation errors:');
+    for (const e of errors) console.error(`    - ${e}`);
+    throw new Error(`Post-build validation failed with ${errors.length} error(s)`);
+  }
+
+  console.log(`  ✓ All ${Object.keys(manifest.files).length} files verified`);
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -264,57 +430,60 @@ async function main() {
 
   // ── Fetch Arabic corpus ──────────────────────────────────────────────────
 
-  console.log('Step 1/5: Fetching Arabic corpus...');
-  const arabicBySurah = [];
+  console.log('Step 1/6: Fetching Arabic corpus...');
+  let arabicBySurah;
 
   try {
-    for (let n = 1; n <= 114; n++) {
-      process.stdout.write(`\r  Surah ${n}/114`);
-      arabicBySurah.push(await fetchUthmaniArabicFromApi(n));
-      if (n < 114) await sleep(150); // polite rate limiting
-    }
-    console.log('\n  ✓ Arabic corpus fetched from quran.com API');
+    const tasks = Array.from({ length: 114 }, (_, i) => () => fetchUthmaniArabicFromApi(i + 1));
+    arabicBySurah = await runWithConcurrency(tasks, CONCURRENCY, 'Arabic');
+    console.log('  ✓ Arabic corpus fetched from quran.com API');
   } catch (apiErr) {
-    console.warn(`\n  API failed (${apiErr.message}), trying GitHub fallback...`);
-    const fallback = await fetchFromGitHubFallback();
-    arabicBySurah.length = 0;
-    arabicBySurah.push(...fallback);
+    console.warn(`  API failed (${apiErr.message}), trying GitHub fallback...`);
+    arabicBySurah = await fetchFromGitHubFallback();
     console.log('  ✓ Arabic corpus fetched from quran-json GitHub fallback');
   }
 
   // ── Fetch Translation ────────────────────────────────────────────────────
 
-  console.log("\nStep 2/5: Fetching Bridges' translation (Fadel Soliman)...");
-  const translationBySurah = [];
+  console.log("\nStep 2/6: Fetching Bridges' translation (Fadel Soliman)...");
+  let translationBySurah;
 
-  for (let n = 1; n <= 114; n++) {
-    process.stdout.write(`\r  Surah ${n}/114`);
-    try {
-      translationBySurah.push(await fetchTranslationFromApi(n));
-    } catch (err) {
-      console.error(`\n  Failed to fetch translation for surah ${n}:`, err.message);
-      process.exit(1);
-    }
-    if (n < 114) await sleep(150);
+  try {
+    const tasks = Array.from({ length: 114 }, (_, i) => () => fetchTranslationFromApi(i + 1));
+    translationBySurah = await runWithConcurrency(tasks, CONCURRENCY, 'Translation');
+    console.log("  ✓ Bridges' translation fetched");
+  } catch (err) {
+    console.error(`\n  Failed to fetch translation after retries: ${err.message}`);
+    process.exit(1);
   }
-  console.log("\n  ✓ Bridges' translation fetched");
 
   // ── Fetch Metadata ───────────────────────────────────────────────────────
 
-  console.log('\nStep 3/5: Fetching surah and juz metadata...');
-  const [surahMeta, juzData] = await Promise.all([fetchSurahMetaFromApi(), fetchJuzFromApi()]);
+  console.log('\nStep 3/6: Fetching surah and juz metadata...');
+  let surahMeta, juzData;
+  try {
+    [surahMeta, juzData] = await Promise.all([fetchSurahMetaFromApi(), fetchJuzFromApi()]);
+  } catch (err) {
+    console.error(`  Metadata fetch failed after retries: ${err.message}`);
+    process.exit(1);
+  }
   console.log('  ✓ Metadata fetched');
 
   // ── Write Surah Files ────────────────────────────────────────────────────
 
-  console.log('\nStep 4/5: Writing per-surah JSON files...');
+  console.log('\nStep 4/6: Writing per-surah JSON files...');
   await buildSurahFiles(arabicBySurah, translationBySurah);
 
   // ── Write Metadata + Manifest ────────────────────────────────────────────
 
-  console.log('\nStep 5/5: Writing metadata files and manifest...');
+  console.log('\nStep 5/6: Writing metadata files and manifest...');
   await buildMetadataFiles(surahMeta, juzData);
   await buildManifest();
+
+  // ── Validate ─────────────────────────────────────────────────────────────
+
+  console.log('\nStep 6/6: Validating dataset...');
+  await validateDataset();
 
   console.log('\n✓ Dataset build complete.\n');
 }

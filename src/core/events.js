@@ -29,7 +29,10 @@ export function on(event, handler) {
  * @param {Function} handler
  */
 export function off(event, handler) {
-  handlers.get(event)?.delete(handler);
+  const set = handlers.get(event);
+  if (!set) return;
+  set.delete(handler);
+  if (set.size === 0) handlers.delete(event);
 }
 
 /**

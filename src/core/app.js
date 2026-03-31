@@ -29,9 +29,6 @@ getDb().catch((err) => {
 
 // ─── 3. Routes ───────────────────────────────────────────────────────────────
 
-// Routes are registered here and resolved lazily via dynamic import.
-// Phase 0: placeholders — modules will be implemented in Phase 1+.
-
 registerRoute('/', () => import('../reader/index.js'));
 registerRoute('s/', () => import('../reader/index.js'));
 registerRoute('t/', () => import('../review/index.js'));
@@ -49,7 +46,7 @@ if ('serviceWorker' in navigator) {
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         newWorker?.addEventListener('statechange', () => {
-          if (newWorker.statechange === 'installed' && navigator.serviceWorker.controller) {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             emit('sw:update-available', { registration });
           }
         });

@@ -16,6 +16,9 @@ import { CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
+const FONT_CACHE = 'quran-fonts-v1';
+const DATASET_CACHE = 'quran-dataset-v1';
+
 // Precache and serve all app shell assets (injected at build time)
 precacheAndRoute(self.__WB_MANIFEST);
 
@@ -26,7 +29,7 @@ cleanupOutdatedCaches();
 registerRoute(
   ({ url }) => url.pathname.startsWith('/fonts/'),
   new CacheFirst({
-    cacheName: 'quran-fonts-v1',
+    cacheName: FONT_CACHE,
     plugins: [
       new ExpirationPlugin({ maxAgeSeconds: 365 * 24 * 60 * 60 }),
       new CacheableResponsePlugin({ statuses: [0, 200] }),
@@ -39,7 +42,7 @@ registerRoute(
 registerRoute(
   ({ url }) => url.pathname.startsWith('/dataset/'),
   new CacheFirst({
-    cacheName: 'quran-dataset-v1',
+    cacheName: DATASET_CACHE,
     plugins: [new CacheableResponsePlugin({ statuses: [0, 200] })],
   }),
 );
@@ -60,7 +63,7 @@ self.addEventListener('message', (event) => {
       break;
 
     case 'PURGE_DATASET_CACHE':
-      caches.delete('quran-dataset-v1').then(() => {
+      caches.delete(DATASET_CACHE).then(() => {
         event.source?.postMessage({ type: 'DATASET_CACHE_PURGED' });
       });
       break;
@@ -78,24 +81,19 @@ async function handleCacheDataset(event) {
   const { urls } = event.data;
   if (!Array.isArray(urls) || urls.length === 0) return;
 
-  const cache = await caches.open('quran-dataset-v1');
+  const cache = await caches.open(DATASET_CACHE);
   const total = urls.length;
   let cached = 0;
 
   for (const url of urls) {
     try {
-      // Skip if already cached (resumable download)
       const existing = await cache.match(url);
-      if (existing) {
-        cached++;
-        event.source?.postMessage({ type: 'DATASET_PROGRESS', cached, total });
-        continue;
+      if (!existing) {
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${url}`);
+        await cache.put(url, response);
       }
 
-      const response = await fetch(url, { credentials: 'same-origin' });
-      if (!response.ok) throw new Error(`Fetch failed: ${response.status} ${url}`);
-
-      await cache.put(url, response);
       cached++;
       event.source?.postMessage({ type: 'DATASET_PROGRESS', cached, total });
     } catch (err) {
