@@ -1,60 +1,7 @@
-# Story 9: About page + reading settings
+# Story 9: Settings + about | P3 | Requires: Story 1, Story 2
 
-**Phase:** 3 (P3)
-**Priority:** P3
-**Depends on:** Story 1 (PWA), Story 2 (reader)
-
----
-
-## Summary
-
-Settings surface for themes, storage management, and about page with provenance and version info.
-
-## Functional Requirements
-
-### FR-024: About page
-
-- Displays: app version, dataset version (from `datasetMeta`), provenance info (from `provenance.json`)
-- Attribution for Bridges' Translation by Fadel Soliman (bridgesislam.com)
-- Attribution for KFGQPC font
-- Entry point for PWA install (if not installed) and dataset update check
-
-### FR-026: Themes
-
-- Three themes: light, sepia, dark
-- Implemented via CSS custom properties + class toggle on `<html>` (`qa-theme-light`, `qa-theme-sepia`, `qa-theme-dark`)
-- All themes must pass WCAG 2.2 AA contrast requirements
-- Arabic diacritics contrast >= 4.5:1 in all themes
-- Theme preference persisted in IDB `settings` store
-- Default: light (or `prefers-color-scheme: dark` media query for initial load)
-
-### FR-018: Storage durability
-
-- Show non-blocking warning if `navigator.storage.persisted()` returns false
-- "Clear all data" button with explicit confirmation (type "DELETE" to confirm)
-- Clear all data: delete IDB database, delete all caches, unregister SW, reload
-- Show storage usage via `navigator.storage.estimate()`
-
-### FR-021: Accessibility audit
-
-- Full WCAG 2.2 AA compliance verified across all three themes
-- Focus indicators on all interactive elements (`:focus-visible`)
-- Screen reader announcements via `src/a11y/announcer.js`
-- `prefers-reduced-motion` honoured for all transitions
-
-## Acceptance Criteria
-
-- [ ] About page shows correct app version and dataset version
-- [ ] Provenance text includes attribution for Bridges' Translation by Fadel Soliman
-- [ ] All three themes apply correctly and persist across reload
-- [ ] Contrast ratio >= 4.5:1 for Arabic diacritics in all themes
-- [ ] Storage warning appears when persistence is not granted
-- [ ] "Clear all data" requires typing "DELETE" before executing
-- [ ] After clear: app returns to fresh state (no marks, no position, no settings)
-- [ ] Lighthouse A11y score >= 90 across all themes
-
-## Data Dependencies
-
-- IDB: `settings` (theme), `datasetMeta` (version display)
-- Cache: `provenance.json`
-- Events: `settings:theme-changed`
+- About: app version, datasetMeta version, provenance.json content, attribution for Bridges' Translation (Fadel Soliman, bridgesislam.com) + KFGQPC font; entry point for PWA install (if not standalone) and dataset update check
+- Themes: light/sepia/dark via CSS custom properties + class on `<html>` (`qa-theme-light/sepia/dark`); all WCAG 2.2 AA; Arabic diacritics ≥4.5:1; default light or `prefers-color-scheme:dark`; persisted in IDB settings
+- Storage: non-blocking warning if `navigator.storage.persisted()=false`; show `navigator.storage.estimate()`; "Clear all data" requires typing "DELETE" → delete IDB DB + all caches + unregister SW + reload
+- Full WCAG 2.2 AA audit across all three themes; `:focus-visible` on all interactive elements; a11y/announcer.js live region; `prefers-reduced-motion` on all transitions; Lighthouse A11y ≥90 all themes
+- IDB: settings (theme); events: settings:theme-changed
