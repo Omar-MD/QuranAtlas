@@ -50,6 +50,12 @@ Don't silently update CLAUDE.md. State what changed + quote stale section → ap
 **Utility:** `/ubiquitous-language` (DDD glossary) · `/write-a-skill` (new skill)
 **Setup (one-time):** `/git-guardrails-claude-code` · `/setup-pre-commit`
 
+**GitHub Issues (token-efficient fetching):**
+- **List issues:** `gh issue list --json number,title,state --limit N` (no body)
+- **Full body:** `gh issue view N --json body --jq '.body'` (JSON + pipe-friendly)
+- **Extract section:** `gh issue view N --json body --jq '.body | split("\n### ") | .[] | select(startswith("SECTION"))'`
+- Never use bare `gh issue view N` (returns decorated TTY output with extra formatting). Always use `--json` with specific fields.
+
 `scripts/build-dataset.js`: quran.com API primary, quran-json GitHub fallback.
 
 ```bash
