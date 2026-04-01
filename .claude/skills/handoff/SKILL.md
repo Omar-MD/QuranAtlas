@@ -3,30 +3,33 @@ name: handoff
 description: Save session state to progress.md so a fresh agent can continue seamlessly
 ---
 
-Write `progress.md` in the working directory:
+Before writing, run `git status` and `git diff --stat` to see what's uncommitted.
+
+Write `progress.md` in the working directory. Keep it under 40 lines.
 
 ```markdown
-# Session Progress — [DATE]
+# Handoff — [DATE]
 
 ## Objective
-[What the user is trying to accomplish. Be specific.]
+[One sentence: what the user is trying to accomplish.]
 
-## Completed
-[Bullet list: everything done, decided, or built. Include file names and key outputs.]
+## In-flight
+[Uncommitted or partial work that git won't show. If nothing, write "Clean — all work committed."]
 
-## Current State
-[Exact state right now — last touched, in progress, any partial work.]
+## Next
+[Ordered list. Specific enough that a new agent can start the first item without asking questions.]
 
-## Next Steps
-[Ordered list, explicit enough that a new agent can proceed without asking clarifying questions.]
-
-## Constraints & Decisions
-[Decisions made, user preferences, things to avoid, tools/libraries, hard constraints.]
-
-## Relevant Files
-[All files created, modified, or relevant to the work.]
+## Decisions not in git or CLAUDE.md
+[Session-specific choices or context that would otherwise be lost. Omit this section if empty.]
 ```
 
+Rules — do NOT include:
+- Completed work — the new agent runs `git log` / `gh issue list`
+- CLAUDE.md constraints — the new agent reads them on startup
+- File lists — `git diff --stat` and `git status` show them
+- Codebase or architecture summaries
+Every line must be information that cannot be recovered from git, CLAUDE.md, GitHub issues, or the codebase.
+
 After writing, reply:
-> ✅ Saved to `progress.md`. New session prompt:
-> *"Read `progress.md`, load context, delete it, confirm objective, ask what to do next."*
+> Saved to `progress.md`. New session prompt:
+> *"Read `progress.md` and delete it, then confirm objective and next step."*
