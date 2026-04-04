@@ -1,6 +1,6 @@
 # Story 2: Continuous Reader & Session Restore Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add session restore, continuous position tracking via IntersectionObserver, chunked rendering (50 verses at a time), and a resume indicator — so returning users continue exactly where they left off.
 
@@ -32,7 +32,7 @@
 
 This module uses IntersectionObserver to detect which verse is at the center of the viewport, debouncing position updates to once per 1s of scrolling silence.
 
-- [ ] **Step 1: Write failing test for scroll tracker**
+- [x] **Step 1: Write failing test for scroll tracker**
 
 Create `tests/unit/reader/scroll-tracker.test.js`:
 
@@ -131,12 +131,12 @@ describe('reader/scroll-tracker.js', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test:run tests/unit/reader/scroll-tracker.test.js`
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Implement `scroll-tracker.js`**
+- [x] **Step 3: Implement `scroll-tracker.js`**
 
 Create `src/reader/scroll-tracker.js`:
 
@@ -239,12 +239,12 @@ function scheduleDebounce() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm test:run tests/unit/reader/scroll-tracker.test.js`
 Expected: All 4 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/reader/scroll-tracker.js tests/unit/reader/scroll-tracker.test.js
@@ -262,7 +262,7 @@ git commit -m "feat: add scroll tracker with IntersectionObserver and debouncing
 
 This task adds: (1) chunked rendering (50 verses at a time, append-on-scroll), (2) resume indicator, (3) scroll tracker integration, (4) position save/restore.
 
-- [ ] **Step 1: Write failing test for chunked rendering**
+- [x] **Step 1: Write failing test for chunked rendering**
 
 Create `tests/unit/reader/reader-story2.test.js`:
 
@@ -348,12 +348,12 @@ describe('reader/index.js — Story 2', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test:run tests/unit/reader/reader-story2.test.js`
 Expected: FAIL — chunked rendering not implemented.
 
-- [ ] **Step 3: Add CSS for resume indicator and content-visibility**
+- [x] **Step 3: Add CSS for resume indicator and content-visibility**
 
 Append to `src/core/theme.css`:
 
@@ -418,7 +418,7 @@ Append to `src/core/theme.css`:
 }
 ```
 
-- [ ] **Step 4: Implement chunked rendering and resume indicator**
+- [x] **Step 4: Implement chunked rendering and resume indicator**
 
 Replace the entire `src/reader/index.js`:
 
@@ -793,17 +793,17 @@ function renderTopBar(topBar, translationVisible, surahNum) {
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pnpm test:run tests/unit/reader/reader-story2.test.js`
 Expected: All 4 tests pass.
 
-- [ ] **Step 6: Run full test suite**
+- [x] **Step 6: Run full test suite**
 
 Run: `pnpm test:run`
 Expected: All tests pass (previous 27 + new 4 scroll-tracker + 4 reader-story2 = 35).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/reader/index.js src/core/theme.css tests/unit/reader/reader-story2.test.js
@@ -820,7 +820,7 @@ git commit -m "feat: add chunked rendering, resume indicator, position tracking"
 
 This task adds launch restore: when the app opens with an empty hash, check the `positions` IDB store for the most recently used surah and navigate there.
 
-- [ ] **Step 1: Write failing test for launch restore**
+- [x] **Step 1: Write failing test for launch restore**
 
 Append to `tests/unit/core/db.test.js`:
 
@@ -844,12 +844,12 @@ Append to `tests/unit/core/db.test.js`:
   })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test:run tests/unit/core/db.test.js`
 Expected: FAIL — `getMostRecentPosition` not defined.
 
-- [ ] **Step 3: Implement launch restore in router**
+- [x] **Step 3: Implement launch restore in router**
 
 Add to the end of `src/core/router.js`:
 
@@ -887,7 +887,7 @@ export async function getMostRecentPosition() {
 }
 ```
 
-- [ ] **Step 4: Wire launch restore in `app.js`**
+- [x] **Step 4: Wire launch restore in `app.js`**
 
 Replace the `restoreActivationState` function in `src/core/app.js` and add a listener for `router:launch-restore`:
 
@@ -926,12 +926,12 @@ Also update the import at the top of `app.js` to include `on`:
 import { emit, on } from './events.js'
 ```
 
-- [ ] **Step 5: Run all tests to verify nothing broke**
+- [x] **Step 5: Run all tests to verify nothing broke**
 
 Run: `pnpm test:run`
 Expected: All tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/core/router.js src/core/app.js
@@ -942,17 +942,17 @@ git commit -m "feat: add launch restore from positions IDB store"
 
 ### Task 3: Manual Verification & Lint
 
-- [ ] **Step 1: Run lint**
+- [x] **Step 1: Run lint**
 
 Run: `pnpm lint`
 Expected: 0 errors (pre-existing warnings OK).
 
-- [ ] **Step 2: Run full test suite**
+- [x] **Step 2: Run full test suite**
 
 Run: `pnpm test:run`
 Expected: All tests pass.
 
-- [ ] **Step 3: Final commit**
+- [x] **Step 3: Final commit**
 
 ```bash
 git add -A

@@ -1,6 +1,6 @@
 # Story 1: Online Reading & Offline Setup Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build the core reading experience — surah rendering with Arabic + translation, PWA install flow, offline corpus download, and translation toggle — all with tests.
 
@@ -37,7 +37,7 @@
 - Modify: `tests/setup.js`
 - Run: `node scripts/build-dataset.js`
 
-- [ ] **Step 1: Add vitest config to `vite.config.js`**
+- [x] **Step 1: Add vitest config to `vite.config.js`**
 
 Append to the existing config object:
 
@@ -49,7 +49,7 @@ Append to the existing config object:
   }
 ```
 
-- [ ] **Step 2: Add global mocks to `tests/setup.js`**
+- [x] **Step 2: Add global mocks to `tests/setup.js`**
 
 ```js
 import 'fake-indexeddb/auto'
@@ -77,17 +77,17 @@ globalThis.navigator.serviceWorker = {
 }
 ```
 
-- [ ] **Step 3: Build the dataset**
+- [x] **Step 3: Build the dataset**
 
 Run: `node scripts/build-dataset.js`
 Expected: All 114 surahs + metadata files written to `public/dataset/`, validation passes.
 
-- [ ] **Step 4: Verify vitest runs**
+- [x] **Step 4: Verify vitest runs**
 
 Run: `pnpm test:run`
 Expected: Existing `db.test.js` and `input-validator.test.js` pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add vite.config.js tests/setup.js public/dataset/
@@ -104,7 +104,7 @@ git commit -m "chore: configure vitest and build dataset"
 
 This module is the single source of truth for fetching surah data. It tries the service worker cache first, falls back to network.
 
-- [ ] **Step 1: Write failing test for `getManifestUrls()`**
+- [x] **Step 1: Write failing test for `getManifestUrls()`**
 
 Create `tests/unit/data/dataset.test.js`:
 
@@ -137,12 +137,12 @@ describe('data/dataset.js', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test:run tests/unit/data/dataset.test.js`
 Expected: FAIL — `getManifestUrls` not implemented.
 
-- [ ] **Step 3: Implement `getManifestUrls()`**
+- [x] **Step 3: Implement `getManifestUrls()`**
 
 Replace the entire `src/data/dataset.js`:
 
@@ -232,12 +232,12 @@ export async function getSurahs() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm test:run tests/unit/data/dataset.test.js`
 Expected: All 3 tests pass.
 
-- [ ] **Step 5: Add `getSurah()` tests**
+- [x] **Step 5: Add `getSurah()` tests**
 
 Append to `tests/unit/data/dataset.test.js`:
 
@@ -270,12 +270,12 @@ Append to `tests/unit/data/dataset.test.js`:
   })
 ```
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `pnpm test:run tests/unit/data/dataset.test.js`
 Expected: All 7 tests pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/data/dataset.js tests/unit/data/dataset.test.js
@@ -292,7 +292,7 @@ git commit -m "feat: implement corpus access layer (dataset.js)"
 
 This module owns: (1) PWA install prompt lifecycle, (2) corpus download via SW messaging, (3) activationState persistence.
 
-- [ ] **Step 1: Write failing test for state machine**
+- [x] **Step 1: Write failing test for state machine**
 
 Create `tests/unit/data/offline.test.js`:
 
@@ -436,12 +436,12 @@ describe('data/offline.js', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test:run tests/unit/data/offline.test.js`
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Implement `data/offline.js`**
+- [x] **Step 3: Implement `data/offline.js`**
 
 Create `src/data/offline.js`:
 
@@ -594,12 +594,12 @@ export function isStandalone() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm test:run tests/unit/data/offline.test.js`
 Expected: All 7 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/data/offline.js tests/unit/data/offline.test.js
@@ -617,7 +617,7 @@ git commit -m "feat: implement PWA install + download orchestration (offline.js)
 
 This module renders surah content with basmala rules, translation toggle, and skeleton loader.
 
-- [ ] **Step 1: Write failing test for reader rendering**
+- [x] **Step 1: Write failing test for reader rendering**
 
 Create `tests/unit/reader/reader.test.js`:
 
@@ -706,12 +706,12 @@ describe('reader/index.js', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm test:run tests/unit/reader/reader.test.js`
 Expected: FAIL — reader not implemented.
 
-- [ ] **Step 3: Add reader CSS to `src/core/theme.css`**
+- [x] **Step 3: Add reader CSS to `src/core/theme.css`**
 
 Append to the end of `src/core/theme.css`:
 
@@ -797,7 +797,7 @@ Append to the end of `src/core/theme.css`:
 }
 ```
 
-- [ ] **Step 4: Implement `reader/index.js`**
+- [x] **Step 4: Implement `reader/index.js`**
 
 Replace the entire `src/reader/index.js`:
 
@@ -1002,12 +1002,12 @@ function renderTopBar(topBar, translationVisible, surahNum) {
 }
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pnpm test:run tests/unit/reader/reader.test.js`
 Expected: All 5 tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/reader/index.js src/core/theme.css tests/unit/reader/reader.test.js
@@ -1023,7 +1023,7 @@ git commit -m "feat: implement surah rendering with basmala rules and translatio
 - Modify: `src/sw.js`
 - Modify: `index.html`
 
-- [ ] **Step 1: Add Workbox precache to `src/sw.js`**
+- [x] **Step 1: Add Workbox precache to `src/sw.js`**
 
 Prepend to the top of `src/sw.js` (after the comment block):
 
@@ -1034,7 +1034,7 @@ import { precacheAndRoute } from 'workbox-precaching'
 precacheAndRoute(self.__WB_MANIFEST || [])
 ```
 
-- [ ] **Step 2: Wire offline module in `src/core/app.js`**
+- [x] **Step 2: Wire offline module in `src/core/app.js`**
 
 Replace the entire `src/core/app.js`:
 
@@ -1134,7 +1134,7 @@ async function restoreActivationState() {
 init()
 ```
 
-- [ ] **Step 3: Add PWA meta tags to `index.html`**
+- [x] **Step 3: Add PWA meta tags to `index.html`**
 
 Modify the `<head>` section of `index.html`:
 
@@ -1148,12 +1148,12 @@ Modify the `<head>` section of `index.html`:
   <title>QuranAtlas</title>
 ```
 
-- [ ] **Step 4: Run all tests to verify nothing broke**
+- [x] **Step 4: Run all tests to verify nothing broke**
 
 Run: `pnpm test:run`
 Expected: All tests pass (db, input-validator, dataset, offline, reader).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/core/app.js src/sw.js index.html
@@ -1164,22 +1164,22 @@ git commit -m "feat: wire offline module, add Workbox precache, PWA meta tags"
 
 ### Task 5: Manual Verification & Lint
 
-- [ ] **Step 1: Run lint**
+- [x] **Step 1: Run lint**
 
 Run: `pnpm lint`
 Expected: No errors.
 
-- [ ] **Step 2: Run build**
+- [x] **Step 2: Run build**
 
 Run: `pnpm build`
 Expected: Successful build, chunks within budget.
 
-- [ ] **Step 3: Run full test suite**
+- [x] **Step 3: Run full test suite**
 
 Run: `pnpm test:run`
 Expected: All tests pass.
 
-- [ ] **Step 4: Final commit**
+- [x] **Step 4: Final commit**
 
 ```bash
 git add -A

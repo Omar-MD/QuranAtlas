@@ -1,6 +1,6 @@
 # Storybook + UxNote Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Set up Storybook with UxNote annotations for UI/UX iteration on QuranAtlas components and pages.
 
@@ -39,7 +39,7 @@ package.json                   ← Add storybook scripts + 6 devDependencies
 - Create: `.storybook/main.js`
 - Modify: `package.json` (add scripts + devDependencies)
 
-- [ ] **Step 1: Install Storybook dev dependencies**
+- [x] **Step 1: Install Storybook dev dependencies**
 
 Run:
 ```bash
@@ -48,7 +48,7 @@ pnpm add -D storybook @storybook/html-vite @storybook/addon-essentials @storyboo
 
 Expected: All packages installed under devDependencies.
 
-- [ ] **Step 2: Add npm scripts to package.json**
+- [x] **Step 2: Add npm scripts to package.json**
 
 Read `package.json`, then add these scripts:
 ```json
@@ -68,7 +68,7 @@ Read `package.json`, then add these scripts:
 }
 ```
 
-- [ ] **Step 3: Create `.storybook/main.js`**
+- [x] **Step 3: Create `.storybook/main.js`**
 
 ```js
 /** @type { import('@storybook/html-vite').StorybookConfig } */
@@ -88,7 +88,7 @@ const config = {
 export default config
 ```
 
-- [ ] **Step 4: Verify Storybook starts**
+- [x] **Step 4: Verify Storybook starts**
 
 Run:
 ```bash
@@ -97,7 +97,7 @@ timeout 15 pnpm storybook 2>&1 || true
 
 Expected: Storybook starts on port 6006, no fatal errors. It will warn about no stories found (we haven't created them yet) — that's fine.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .storybook/main.js package.json pnpm-lock.yaml
@@ -112,7 +112,7 @@ git commit -m "chore: add Storybook base config with html-vite framework"
 - Create: `stories/mock-data.js`
 - Test: `tests/unit/storybook/mock-data.test.js`
 
-- [ ] **Step 1: Write tests for mock data**
+- [x] **Step 1: Write tests for mock data**
 
 Create `tests/unit/storybook/mock-data.test.js`:
 
@@ -227,7 +227,7 @@ describe('stories/mock-data.js', () => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 ```bash
@@ -236,7 +236,7 @@ pnpm vitest run tests/unit/storybook/mock-data.test.js 2>&1
 
 Expected: FAIL — module not found (file doesn't exist yet).
 
-- [ ] **Step 3: Create mock data module**
+- [x] **Step 3: Create mock data module**
 
 Create `stories/mock-data.js`:
 
@@ -429,7 +429,7 @@ export function setupMockFetch(surahNum) {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run:
 ```bash
@@ -438,7 +438,7 @@ pnpm vitest run tests/unit/storybook/mock-data.test.js 2>&1
 
 Expected: All 9 tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add stories/mock-data.js tests/unit/storybook/mock-data.test.js
@@ -453,7 +453,7 @@ git commit -m "feat(storybook): add mock data module with tests"
 - Create: `.storybook/preview.js`
 - Create: `stories/reader.stories.js`
 
-- [ ] **Step 1: Create `.storybook/preview.js`**
+- [x] **Step 1: Create `.storybook/preview.js`**
 
 ```js
 /** @type { import('@storybook/html').Preview } */
@@ -497,7 +497,7 @@ const preview = {
 export default preview
 ```
 
-- [ ] **Step 2: Create `stories/reader.stories.js`**
+- [x] **Step 2: Create `stories/reader.stories.js`**
 
 ```js
 import { SURAHS_CONTENT, SURAHS, setupMockData, setupMockFetch } from './mock-data.js'
@@ -611,7 +611,7 @@ export const TranslationHidden = {
 }
 ```
 
-- [ ] **Step 3: Verify Storybook builds without errors**
+- [x] **Step 3: Verify Storybook builds without errors**
 
 Run:
 ```bash
@@ -620,7 +620,7 @@ pnpm build-storybook 2>&1
 
 Expected: Build succeeds, outputs to `storybook-static/`. No errors about missing modules or syntax issues.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .storybook/preview.js stories/reader.stories.js
@@ -637,7 +637,7 @@ git commit -m "feat(storybook): add Reader stories with resume and translation v
 - Create: `stories/review.stories.js`
 - Create: `stories/settings.stories.js`
 
-- [ ] **Step 1: Create `stories/nav.stories.js`**
+- [x] **Step 1: Create `stories/nav.stories.js`**
 
 ```js
 import { SURAHS } from './mock-data.js'
@@ -697,7 +697,7 @@ export const WithoutSearch = {
 }
 ```
 
-- [ ] **Step 2: Create `stories/marks.stories.js`**
+- [x] **Step 2: Create `stories/marks.stories.js`**
 
 ```js
 /** @type {import('@storybook/html').Meta} */
@@ -772,7 +772,7 @@ export const ExistingMark = {
 }
 ```
 
-- [ ] **Step 3: Create `stories/review.stories.js`**
+- [x] **Step 3: Create `stories/review.stories.js`**
 
 ```js
 /** @type {import('@storybook/html').Meta} */
@@ -885,7 +885,7 @@ export const StudyOnly = {
 }
 ```
 
-- [ ] **Step 4: Create `stories/settings.stories.js`**
+- [x] **Step 4: Create `stories/settings.stories.js`**
 
 ```js
 /** @type {import('@storybook/html').Meta} */
@@ -988,7 +988,7 @@ export const Default = {
 }
 ```
 
-- [ ] **Step 5: Verify Storybook builds with all stories**
+- [x] **Step 5: Verify Storybook builds with all stories**
 
 Run:
 ```bash
@@ -997,7 +997,7 @@ pnpm build-storybook 2>&1
 
 Expected: Build succeeds with all 5 story groups (Reader, Nav, Marks, Review, Settings). No errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add stories/nav.stories.js stories/marks.stories.js stories/review.stories.js stories/settings.stories.js
@@ -1013,7 +1013,7 @@ git commit -m "feat(storybook): add Nav, Marks, Review, Settings stories"
 - Modify: `.storybook/main.js` (add staticDirs)
 - Modify: `.storybook/preview.js` (add UxNote decorator)
 
-- [ ] **Step 1: Create `storybook/` directory and download UxNote**
+- [x] **Step 1: Create `storybook/` directory and download UxNote**
 
 Run:
 ```bash
@@ -1022,7 +1022,7 @@ mkdir -p storybook && curl -L -o storybook/uxnote.min.js https://github.com/nine
 
 Expected: File downloaded, ~20-50KB.
 
-- [ ] **Step 2: Update `.storybook/main.js` to serve the `storybook/` directory**
+- [x] **Step 2: Update `.storybook/main.js` to serve the `storybook/` directory**
 
 Read the current `.storybook/main.js`, then update `staticDirs`:
 
@@ -1044,7 +1044,7 @@ const config = {
 export default config
 ```
 
-- [ ] **Step 3: Update `.storybook/preview.js` to inject UxNote**
+- [x] **Step 3: Update `.storybook/preview.js` to inject UxNote**
 
 Read the current `.storybook/preview.js`, then replace it with:
 
@@ -1112,7 +1112,7 @@ const preview = {
 export default preview
 ```
 
-- [ ] **Step 4: Verify Storybook builds**
+- [x] **Step 4: Verify Storybook builds**
 
 Run:
 ```bash
@@ -1121,7 +1121,7 @@ pnpm build-storybook 2>&1
 
 Expected: Build succeeds. UxNote script accessible at `/uxnote.min.js`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add storybook/uxnote.min.js .storybook/preview.js .storybook/main.js
@@ -1135,7 +1135,7 @@ git commit -m "feat(storybook): integrate UxNote annotation tool"
 **Files:**
 - No new files — verification only
 
-- [ ] **Step 1: Run all product tests to ensure nothing broke**
+- [x] **Step 1: Run all product tests to ensure nothing broke**
 
 Run:
 ```bash
@@ -1144,7 +1144,7 @@ pnpm test:run 2>&1
 
 Expected: 37/37 tests pass (same as before).
 
-- [ ] **Step 2: Run product lint**
+- [x] **Step 2: Run product lint**
 
 Run:
 ```bash
@@ -1153,7 +1153,7 @@ pnpm lint 2>&1
 
 Expected: 0 errors, 1 warning (pre-existing from app.js console.log).
 
-- [ ] **Step 3: Run product build**
+- [x] **Step 3: Run product build**
 
 Run:
 ```bash
@@ -1162,7 +1162,7 @@ pnpm build 2>&1
 
 Expected: Build succeeds, no errors.
 
-- [ ] **Step 4: Run Storybook build**
+- [x] **Step 4: Run Storybook build**
 
 Run:
 ```bash
@@ -1171,7 +1171,7 @@ pnpm build-storybook 2>&1
 
 Expected: Build succeeds, outputs to `storybook-static/`.
 
-- [ ] **Step 5: Add .gitignore entries**
+- [x] **Step 5: Add .gitignore entries**
 
 Read `.gitignore`, add if not present:
 
@@ -1179,7 +1179,7 @@ Read `.gitignore`, add if not present:
 storybook-static/
 ```
 
-- [ ] **Step 6: Final commit**
+- [x] **Step 6: Final commit**
 
 ```bash
 git add .gitignore
