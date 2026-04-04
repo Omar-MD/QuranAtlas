@@ -17,11 +17,15 @@ const SKELETON_TIMEOUT_MS = 5000
  */
 export async function init(params) {
   const surahNum = parseInt(params.surah, 10)
-  if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) return
+  if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
+    return
+  }
 
   const mainContent = document.getElementById('main-content')
   const topBar = document.getElementById('top-bar')
-  if (!mainContent) return
+  if (!mainContent) {
+    return
+  }
 
   // Show skeleton
   showSkeleton(mainContent)
@@ -74,7 +78,7 @@ function showSkeleton(container) {
 /**
  * Show error state.
  */
-function showError(container, surahNum, message) {
+function showError(container, surahNum, _message) {
   container.innerHTML = ''
   const errorDiv = document.createElement('div')
   errorDiv.style.textAlign = 'center'
@@ -119,7 +123,9 @@ function renderSurahHeader(container, meta) {
  * - All other surahs (2-114 except 9): basmala as decorative prefix
  */
 function renderBasmala(container, surahNum) {
-  if (surahNum === 1 || surahNum === 9) return
+  if (surahNum === 1 || surahNum === 9) {
+    return
+  }
 
   const basmala = document.createElement('div')
   basmala.className = 'qa-basmala'
@@ -169,7 +175,9 @@ function renderVerses(container, surah, translationVisible) {
  * Render top bar with translation toggle.
  */
 function renderTopBar(topBar, translationVisible, surahNum) {
-  if (!topBar) return
+  if (!topBar) {
+    return
+  }
 
   topBar.innerHTML = ''
 

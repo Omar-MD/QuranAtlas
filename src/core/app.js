@@ -5,7 +5,7 @@
 
 import { openDB } from './db.js'
 import * as router from './router.js'
-import { initInstallPrompt, getActivationState, startDownload } from '../data/offline.js'
+import { initInstallPrompt, getActivationState } from '../data/offline.js'
 import { emit } from './events.js'
 
 /**

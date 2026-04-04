@@ -11,7 +11,9 @@ const DATASET_BASE = '/dataset'
  */
 export async function getManifestUrls() {
   const res = await fetch(`${DATASET_BASE}/manifest.json`)
-  if (!res.ok) throw new Error(`Failed to fetch manifest: ${res.status}`)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch manifest: ${res.status}`)
+  }
   const manifest = await res.json()
   return Object.keys(manifest.files).map(f => `${DATASET_BASE}/${f}`)
 }
@@ -45,7 +47,9 @@ export async function getSurah(n) {
   const timeout = setTimeout(() => controller.abort(), 3000)
   try {
     const res = await fetch(url, { signal: controller.signal })
-    if (!res.ok) throw new Error(`Failed to fetch surah ${n}: ${res.status}`)
+    if (!res.ok) {
+      throw new Error(`Failed to fetch surah ${n}: ${res.status}`)
+    }
     return res.json()
   } finally {
     clearTimeout(timeout)
@@ -75,7 +79,9 @@ export async function getSurahs() {
   const timeout = setTimeout(() => controller.abort(), 3000)
   try {
     const res = await fetch(url, { signal: controller.signal })
-    if (!res.ok) throw new Error(`Failed to fetch surahs: ${res.status}`)
+    if (!res.ok) {
+      throw new Error(`Failed to fetch surahs: ${res.status}`)
+    }
     return res.json()
   } finally {
     clearTimeout(timeout)

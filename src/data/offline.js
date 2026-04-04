@@ -4,7 +4,7 @@
  */
 
 import { put, get } from '../core/db.js'
-import { emit, on } from '../core/events.js'
+import { emit } from '../core/events.js'
 import { getManifestUrls } from './dataset.js'
 
 const ACTIVATION_KEY = 'current'
@@ -37,7 +37,9 @@ async function setActivationState(status) {
  */
 export async function startDownload() {
   const current = await getActivationState()
-  if (current === 'downloading' || current === 'cached') return
+  if (current === 'downloading' || current === 'cached') {
+    return
+  }
 
   await setActivationState('downloading')
 
@@ -47,7 +49,7 @@ export async function startDownload() {
     if (estimate.quota && estimate.usage) {
       const available = estimate.quota - estimate.usage
       // Corpus is ~5-10 MB; require at least 20 MB free
-      if (available < 20_000_000) {
+      if (available < 20000000) {
         emit('offline:download-error', { error: 'Insufficient storage' })
         await setActivationState('none')
         return
@@ -135,7 +137,9 @@ export function initInstallPrompt() {
  * @returns {Promise<boolean>}
  */
 export async function triggerInstall() {
-  if (!deferredPrompt) return false
+  if (!deferredPrompt) {
+    return false
+  }
   deferredPrompt.prompt()
   const { outcome } = await deferredPrompt.userChoice
   deferredPrompt = null
