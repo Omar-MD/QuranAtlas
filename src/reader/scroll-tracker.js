@@ -76,7 +76,9 @@ export function observeScroll(container, { onPositionChange }) {
  * Uses scroll events and center-band calculation.
  */
 function setupScrollFallback() {
-  if (!containerRef) return
+  if (!containerRef) {
+    return
+  }
 
   scrollHandler = () => {
     const containerRect = containerRef.getBoundingClientRect()

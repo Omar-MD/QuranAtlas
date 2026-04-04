@@ -6,16 +6,16 @@
 
 import { getSurah, getSurahs } from '../data/dataset.js'
 import { get, put } from '../core/db.js'
-import { emit, on } from '../core/events.js'
+import { emit } from '../core/events.js'
 import { observeScroll, unobserve } from './scroll-tracker.js'
 
 const SKELETON_TIMEOUT_MS = 5000
 const CHUNK_SIZE = 50
 
 let currentSurah = null
-let currentSurahNum = null
 let renderedCount = 0
 let isRendering = false
+let scrollAppendBound = null
 
 /**
  * Initialize the reader for a surah.
@@ -39,8 +39,6 @@ export async function init(params, { savePosition = true } = {}) {
   if (!mainContent) {
     return
   }
-
-  currentSurahNum = surahNum
 
   // Show skeleton
   showSkeleton(mainContent)
@@ -110,8 +108,12 @@ export async function init(params, { savePosition = true } = {}) {
  */
 function cleanup() {
   unobserve()
+  const mainContent = document.getElementById('main-content')
+  if (mainContent && scrollAppendBound) {
+    mainContent.removeEventListener('scroll', scrollAppendBound)
+    scrollAppendBound = null
+  }
   currentSurah = null
-  currentSurahNum = null
   renderedCount = 0
 }
 
@@ -158,7 +160,9 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
  */
 function setupScrollTracking(container, surahNum) {
   const mainContent = document.getElementById('main-content')
-  if (!mainContent) return
+  if (!mainContent) {
+    return
+  }
 
   observeScroll(mainContent, {
     onPositionChange: ({ verse }) => {
@@ -167,17 +171,22 @@ function setupScrollTracking(container, surahNum) {
   })
 
   // Append more verses on scroll near bottom
-  mainContent.addEventListener('scroll', handleScrollAppend, { passive: true })
+  scrollAppendBound = handleScrollAppend
+  mainContent.addEventListener('scroll', scrollAppendBound, { passive: true })
 }
 
 /**
  * Handle scroll events to append more verse chunks.
  */
 function handleScrollAppend() {
-  if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) return
+  if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) {
+    return
+  }
 
   const mainContent = document.getElementById('main-content')
-  if (!mainContent) return
+  if (!mainContent) {
+    return
+  }
 
   const scrollBottom = mainContent.scrollTop + mainContent.clientHeight
   const scrollHeight = mainContent.scrollHeight
