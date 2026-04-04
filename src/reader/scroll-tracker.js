@@ -13,6 +13,7 @@ let debounceTimer = null
 let onPositionChangeCallback = null
 let scrollHandler = null
 let containerRef = null
+let sentinelEl = null
 
 /**
  * Start observing scroll position changes.
@@ -43,6 +44,7 @@ export function observeScroll(container, { onPositionChange }) {
   `
   container.style.position = 'relative'
   container.appendChild(sentinel)
+  sentinelEl = sentinel
 
   const verseSentinels = container.querySelectorAll('[data-verse]')
   const centerObserver = new IntersectionObserver(
@@ -110,6 +112,10 @@ export function unobserve() {
   if (scrollHandler && containerRef) {
     containerRef.removeEventListener('scroll', scrollHandler)
     scrollHandler = null
+  }
+  if (sentinelEl && sentinelEl.parentNode) {
+    sentinelEl.parentNode.removeChild(sentinelEl)
+    sentinelEl = null
   }
   if (debounceTimer) {
     clearTimeout(debounceTimer)
