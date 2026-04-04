@@ -1,9 +1,0 @@
-pre-commit:
-  parallel: false
-  commands:
-    lint:
-      glob: '*.{js,mjs}'
-      run: npx eslint {staged_files} --no-warn-ignored --max-warnings 0
-    format-check:
-      glob: '*.{js,mjs,json,css,html,md,yml,yaml}'
-      run: npx prettier --check {staged_files}
