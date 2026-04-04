@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>QuranAtlas — Design Mocks</title>
+  <link rel="stylesheet" href="mocks.css">
+</head>
+<body>
+  <header class="mock-header">
+    <h1>QuranAtlas Design Mocks</h1>
+    <p>Interactive previews for all screens. Tap components to explore states.</p>
+    <div class="mock-controls">
+      <button class="theme-toggle" onclick="toggleTheme()">🌗 Toggle Theme</button>
+      <button class="font-toggle" onclick="cycleFontSize()">Aa Font Size</button>
+    </div>
+  </header>
+
+  <nav class="mock-nav">
+    <a href="#reader" class="mock-nav-link active" data-screen="reader">Reader</a>
+    <a href="#nav-panel" class="mock-nav-link" data-screen="nav-panel">Navigation</a>
+    <a href="#marks-modal" class="mock-nav-link" data-screen="marks-modal">Marks Modal</a>
+    <a href="#review-hub" class="mock-nav-link" data-screen="review-hub">Review Hub</a>
+    <a href="#settings" class="mock-nav-link" data-screen="settings">Settings</a>
+  </nav>
+
+  <main id="mocks">
+    <!-- READER SCREEN -->
+    <section id="reader" class="mock-screen active">
+      <div class="mock-device">
+        <div class="mock-status-bar">
+          <span>9:41</span>
+          <span>●●● WiFi 🔋</span>
+        </div>
+        <div class="mock-top-bar">
+          <button class="hamburger" onclick="showScreen('nav-panel')">☰</button>
+          <span class="top-bar-title">Al-Fatiha</span>
+          <button class="translation-toggle">EN ▾</button>
+        </div>
+        <div class="mock-reader-content">
+          <!-- Resume Indicator -->
+          <div class="resume-indicator">
+            <span class="resume-text">Resume reading: Al-Baqarah 100</span>
+            <div class="resume-actions">
+              <button class="resume-jump">Jump</button>
+              <button class="resume-dismiss">×</button>
+            </div>
+          </div>
+
+          <div class="surah-header">
+            <div class="surah-name">الفاتحة</div>
+            <div class="surah-meta">Al-Fatiha · Surah 1 · 7 verses · Meccan</div>
+          </div>
+
+          <div class="verse" data-verse="1">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">1</span>
+              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+            </div>
+            <div class="verse-translation">
+              In the name of God, the Gracious, the Merciful.
+            </div>
+            <!-- Mark indicator dots -->
+            <div class="mark-indicator">
+              <span class="mark-dot amber"></span>
+              <span class="mark-dot blue"></span>
+            </div>
+          </div>
+
+          <div class="verse" data-verse="2">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">2</span>
+              ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ
+            </div>
+            <div class="verse-translation">
+              All praise is due to God, Lord of all worlds.
+            </div>
+          </div>
+
+          <div class="verse" data-verse="3">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">3</span>
+              ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+            </div>
+            <div class="verse-translation">
+              The Gracious, the Merciful.
+            </div>
+          </div>
+
+          <div class="verse" data-verse="4">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">4</span>
+              مَـٰلِكِ يَوْمِ ٱلدِّينِ
+            </div>
+            <div class="verse-translation">
+              Master of the Day of Judgment.
+            </div>
+          </div>
+
+          <div class="verse" data-verse="5">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">5</span>
+              إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ
+            </div>
+            <div class="verse-translation">
+              You alone we worship, and You alone we ask for help.
+            </div>
+            <div class="mark-indicator">
+              <span class="mark-dot green"></span>
+            </div>
+          </div>
+
+          <div class="verse" data-verse="6">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">6</span>
+              ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ
+            </div>
+            <div class="verse-translation">
+              Guide us along the Straight Path.
+            </div>
+          </div>
+
+          <div class="verse" data-verse="7">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">7</span>
+              صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ
+            </div>
+            <div class="verse-translation">
+              The path of those You have blessed—not those who incurred Your wrath, nor those who have gone astray.
+            </div>
+          </div>
+
+          <div class="surah-end">End of Al-Fatiha</div>
+        </div>
+        <div class="mock-bottom-nav">
+          <button class="nav-btn active">📖 Read</button>
+          <button class="nav-btn">⭐ Marks</button>
+          <button class="nav-btn">⚙️ Settings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- NAVIGATION PANEL SCREEN -->
+    <section id="nav-panel" class="mock-screen">
+      <div class="mock-device">
+        <div class="mock-status-bar">
+          <span>9:41</span>
+          <span>●●● WiFi 🔋</span>
+        </div>
+        <div class="mock-top-bar">
+          <button class="hamburger">☰</button>
+          <span class="top-bar-title">Al-Fatiha</span>
+          <span></span>
+        </div>
+        <!-- Nav Panel Overlay -->
+        <div class="nav-overlay active"></div>
+        <div class="nav-panel active">
+          <div class="nav-header">
+            <h2>Surahs</h2>
+            <button class="nav-close" onclick="showScreen('reader')">×</button>
+          </div>
+          <div class="nav-search">
+            <input type="text" placeholder="Search surah or verse (e.g., 2:255)" value="ba">
+            <button class="nav-search-go">→</button>
+          </div>
+          <div class="nav-list">
+            <div class="nav-item current">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">1</span>
+                <span class="nav-item-name">Al-Fatiha</span>
+                <span class="nav-item-arabic">الفاتحة</span>
+              </div>
+              <span class="nav-item-count">7</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">2</span>
+                <span class="nav-item-name">Al-Baqarah</span>
+                <span class="nav-item-arabic">البقرة</span>
+              </div>
+              <span class="nav-item-count">286</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">3</span>
+                <span class="nav-item-name">Ali 'Imran</span>
+                <span class="nav-item-arabic">آل عمران</span>
+              </div>
+              <span class="nav-item-count">200</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">4</span>
+                <span class="nav-item-name">An-Nisa</span>
+                <span class="nav-item-arabic">النساء</span>
+              </div>
+              <span class="nav-item-count">176</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">5</span>
+                <span class="nav-item-name">Al-Ma'idah</span>
+                <span class="nav-item-arabic">المائدة</span>
+              </div>
+              <span class="nav-item-count">120</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">36</span>
+                <span class="nav-item-name">Ya-Sin</span>
+                <span class="nav-item-arabic">يس</span>
+              </div>
+              <span class="nav-item-count">83</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">55</span>
+                <span class="nav-item-name">Ar-Rahman</span>
+                <span class="nav-item-arabic">الرحمن</span>
+              </div>
+              <span class="nav-item-count">78</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">67</span>
+                <span class="nav-item-name">Al-Mulk</span>
+                <span class="nav-item-arabic">الملك</span>
+              </div>
+              <span class="nav-item-count">30</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">112</span>
+                <span class="nav-item-name">Al-Ikhlas</span>
+                <span class="nav-item-arabic">الإخلاص</span>
+              </div>
+              <span class="nav-item-count">4</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">113</span>
+                <span class="nav-item-name">Al-Falaq</span>
+                <span class="nav-item-arabic">الفلق</span>
+              </div>
+              <span class="nav-item-count">5</span>
+            </div>
+            <div class="nav-item">
+              <span class="nav-accent"></span>
+              <div class="nav-item-main">
+                <span class="nav-item-number">114</span>
+                <span class="nav-item-name">An-Nas</span>
+                <span class="nav-item-arabic">الناس</span>
+              </div>
+              <span class="nav-item-count">6</span>
+            </div>
+          </div>
+        </div>
+        <div class="mock-bottom-nav">
+          <button class="nav-btn active">📖 Read</button>
+          <button class="nav-btn">⭐ Marks</button>
+          <button class="nav-btn">⚙️ Settings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARKS MODAL SCREEN -->
+    <section id="marks-modal" class="mock-screen">
+      <div class="mock-device">
+        <div class="mock-status-bar">
+          <span>9:41</span>
+          <span>●●● WiFi 🔋</span>
+        </div>
+        <div class="mock-top-bar">
+          <button class="hamburger">☰</button>
+          <span class="top-bar-title">Al-Fatiha</span>
+          <button class="translation-toggle">EN ▾</button>
+        </div>
+        <div class="mock-reader-content">
+          <div class="verse" data-verse="1">
+            <div class="verse-arabic" dir="rtl">
+              <span class="verse-number">1</span>
+              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+            </div>
+            <div class="verse-translation">
+              In the name of God, the Gracious, the Merciful.
+            </div>
+          </div>
+
+          <!-- Mark Editor Modal -->
+          <div class="modal-overlay active">
+            <div class="mark-modal">
+              <div class="modal-header">
+                <h3>Mark Verse 1:1</h3>
+                <button class="modal-close">×</button>
+              </div>
+              <div class="modal-body">
+                <p class="modal-verse-preview">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</p>
+                <p class="modal-verse-preview-en">In the name of God, the Gracious, the Merciful.</p>
+
+                <div class="tag-section">
+                  <label class="tag-label">Tags</label>
+                  <div class="tag-grid">
+                    <label class="tag-option selected">
+                      <input type="checkbox" checked>
+                      <span class="tag-swatch amber"></span>
+                      <span class="tag-name">Favourite</span>
+                    </label>
+                    <label class="tag-option">
+                      <input type="checkbox">
+                      <span class="tag-swatch blue"></span>
+                      <span class="tag-name">Study</span>
+                    </label>
+                    <label class="tag-option selected">
+                      <input type="checkbox" checked>
+                      <span class="tag-swatch green"></span>
+                      <span class="tag-name">Reflection</span>
+                    </label>
+                    <label class="tag-option">
+                      <input type="checkbox">
+                      <span class="tag-swatch purple"></span>
+                      <span class="tag-name">Question</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn-delete">Delete Mark</button>
+                <button class="btn-save">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-bottom-nav">
+          <button class="nav-btn active">📖 Read</button>
+          <button class="nav-btn">⭐ Marks</button>
+          <button class="nav-btn">⚙️ Settings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- REVIEW HUB SCREEN -->
+    <section id="review-hub" class="mock-screen">
+      <div class="mock-device">
+        <div class="mock-status-bar">
+          <span>9:41</span>
+          <span>●●● WiFi 🔋</span>
+        </div>
+        <div class="mock-top-bar">
+          <button class="back-btn">←</button>
+          <span class="top-bar-title">Marks</span>
+          <span></span>
+        </div>
+        <div class="review-hub">
+          <div class="review-filters">
+            <button class="filter-chip active">All</button>
+            <button class="filter-chip"><span class="chip-dot amber"></span> Favourite</button>
+            <button class="filter-chip"><span class="chip-dot blue"></span> Study</button>
+            <button class="filter-chip"><span class="chip-dot green"></span> Reflection</button>
+            <button class="filter-chip"><span class="chip-dot purple"></span> Question</button>
+          </div>
+          <div class="review-sort">
+            <span>Sort by:</span>
+            <select>
+              <option>Surah order</option>
+              <option>Date added</option>
+            </select>
+          </div>
+
+          <div class="review-group">
+            <h3 class="group-header">
+              <span>Al-Fatiha</span>
+              <span class="group-count">2 marks</span>
+            </h3>
+            <div class="review-item">
+              <div class="review-item-content">
+                <div class="review-verse-key">1:1</div>
+                <div class="review-verse-text">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>
+                <div class="review-verse-en">In the name of God, the Gracious, the Merciful.</div>
+                <div class="review-tags">
+                  <span class="review-tag amber">Favourite</span>
+                  <span class="review-tag blue">Study</span>
+                </div>
+              </div>
+              <button class="review-item-action">→</button>
+            </div>
+            <div class="review-item">
+              <div class="review-item-content">
+                <div class="review-verse-key">1:5</div>
+                <div class="review-verse-text">إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ</div>
+                <div class="review-verse-en">You alone we worship, and You alone we ask for help.</div>
+                <div class="review-tags">
+                  <span class="review-tag green">Reflection</span>
+                </div>
+              </div>
+              <button class="review-item-action">→</button>
+            </div>
+          </div>
+
+          <div class="review-group">
+            <h3 class="group-header">
+              <span>Al-Baqarah</span>
+              <span class="group-count">1 mark</span>
+            </h3>
+            <div class="review-item">
+              <div class="review-item-content">
+                <div class="review-verse-key">2:255</div>
+                <div class="review-verse-text">ٱللَّهُ لَآ إِلَـٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ</div>
+                <div class="review-verse-en">God! There is no god except Him, the Ever-Living, the Self-Sustaining.</div>
+                <div class="review-tags">
+                  <span class="review-tag amber">Favourite</span>
+                  <span class="review-tag green">Reflection</span>
+                </div>
+              </div>
+              <button class="review-item-action">→</button>
+            </div>
+          </div>
+        </div>
+        <div class="mock-bottom-nav">
+          <button class="nav-btn">📖 Read</button>
+          <button class="nav-btn active">⭐ Marks</button>
+          <button class="nav-btn">⚙️ Settings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS SCREEN -->
+    <section id="settings" class="mock-screen">
+      <div class="mock-device">
+        <div class="mock-status-bar">
+          <span>9:41</span>
+          <span>●●● WiFi 🔋</span>
+        </div>
+        <div class="mock-top-bar">
+          <button class="back-btn">←</button>
+          <span class="top-bar-title">Settings</span>
+          <span></span>
+        </div>
+        <div class="settings-screen">
+          <div class="settings-group">
+            <h3 class="settings-group-title">Appearance</h3>
+            <div class="setting-item">
+              <label>Theme</label>
+              <div class="theme-picker">
+                <button class="theme-option active" data-theme="light">
+                  <span class="theme-preview light-preview"></span>
+                  <span>Light</span>
+                </button>
+                <button class="theme-option" data-theme="sepia">
+                  <span class="theme-preview sepia-preview"></span>
+                  <span>Sepia</span>
+                </button>
+                <button class="theme-option" data-theme="dark">
+                  <span class="theme-preview dark-preview"></span>
+                  <span>Dark</span>
+                </button>
+              </div>
+            </div>
+            <div class="setting-item">
+              <label>Font Size</label>
+              <div class="font-size-control">
+                <span class="font-label">A</span>
+                <input type="range" min="0.8" max="1.4" step="0.1" value="1.0" class="font-slider">
+                <span class="font-label font-large">A</span>
+              </div>
+            </div>
+            <div class="setting-item">
+              <label>Translation</label>
+              <label class="toggle-switch">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3 class="settings-group-title">Reading</h3>
+            <div class="setting-item">
+              <label>Mark Indicators</label>
+              <label class="toggle-switch">
+                <input type="checkbox">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <label>Auto-save Position</label>
+              <label class="toggle-switch">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3 class="settings-group-title">Data</h3>
+            <div class="setting-item">
+              <label>Dataset Version</label>
+              <span class="setting-value">1.0.0</span>
+            </div>
+            <div class="setting-item">
+              <label>Storage Used</label>
+              <span class="setting-value">8.2 MB</span>
+            </div>
+            <div class="setting-item">
+              <label>Marks</label>
+              <span class="setting-value">3 verses</span>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <h3 class="settings-group-title">About</h3>
+            <div class="setting-item">
+              <label>QuranAtlas</label>
+              <span class="setting-value">v1.0.0</span>
+            </div>
+            <div class="setting-item">
+              <label>License</label>
+              <span class="setting-value">MIT</span>
+            </div>
+          </div>
+        </div>
+        <div class="mock-bottom-nav">
+          <button class="nav-btn">📖 Read</button>
+          <button class="nav-btn">⭐ Marks</button>
+          <button class="nav-btn active">⚙️ Settings</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="mocks.js"></script>
+</body>
+</html>
