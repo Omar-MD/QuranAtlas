@@ -1,0 +1,116 @@
+:root {
+  /* Light theme */
+  --qa-bg-primary: #ffffff;
+  --qa-bg-secondary: #f5f5f5;
+  --qa-text-primary: #1a1a1a;
+  --qa-text-secondary: #666666;
+  --qa-accent: #2563eb;
+  --qa-border: #e5e5e5;
+  --qa-skeleton: #e0e0e0;
+}
+
+html[data-theme="sepia"] {
+  --qa-bg-primary: #f5e6d3;
+  --qa-bg-secondary: #e8d5c0;
+  --qa-text-primary: #2c2416;
+  --qa-text-secondary: #5c4a3a;
+  --qa-accent: #8b6914;
+  --qa-border: #d4c4a8;
+  --qa-skeleton: #d4c4a8;
+}
+
+html[data-theme="dark"] {
+  --qa-bg-primary: #0f0f13;
+  --qa-bg-secondary: #1a1a24;
+  --qa-text-primary: #e8e6e3;
+  --qa-text-secondary: #999999;
+  --qa-accent: #60a5fa;
+  --qa-border: #2a2a3a;
+  --qa-skeleton: #2a2a3a;
+}
+
+/* Font size var — controlled by settings (Phase 3) */
+html {
+  --qa-font-size-base: 1;
+}
+
+/* Base reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--qa-bg-primary);
+  color: var(--qa-text-primary);
+  font-size: calc(1rem * var(--qa-font-size-base));
+  line-height: 1.6;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* App shell layout */
+#app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+#top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--qa-bg-primary);
+  border-bottom: 1px solid var(--qa-border);
+  padding: 0.5rem 1rem;
+}
+
+#main-content {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+#nav-surface {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  height: 100dvh;
+  background-color: var(--qa-bg-primary);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+#bottom-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background-color: var(--qa-bg-primary);
+  border-top: 1px solid var(--qa-border);
+  display: flex;
+  justify-content: space-around;
+  padding: 0.5rem 0;
+}
+
+/* Skeleton loader */
+.qa-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--qa-skeleton) 25%,
+    var(--qa-bg-secondary) 50%,
+    var(--qa-skeleton) 75%
+  );
+  background-size: 200% 100%;
+  animation: qa-skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes qa-skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Utility */
+.qa-hidden {
+  display: none !important;
+}

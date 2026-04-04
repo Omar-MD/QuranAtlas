@@ -10,24 +10,24 @@ Users have no way to personalize the reading experience (dark mode support is cr
 
 ## Solution
 
-Create a Settings page accessible via `#/settings` in the bottom nav bar, with a theme switcher (3 color swatches: light, sepia, dark), font size picker (4 presets: small, normal, large, xl), and a destructive "Clear All Data" button at the bottom (requires typing "DELETE" to confirm). Theme changes apply instantly and persist to IDB. Create an About page at `#/about` showing the app name and mission ("Read, reflect, remember"), QuranAtlas version (from `package.json`), dataset version (from `datasetMeta.version` in IDB), attribution block (Bridges' Translation, KFGQPC font), storage quota usage with a warning if >80%, and a "Install App" button that appears only when the PWA install prompt is available.
+Create a Settings page accessible via `#/settings` in the bottom nav bar, with a theme switcher (3 color swatches: light, sepia, dark) and a destructive "Clear All Data" button at the bottom (requires typing "DELETE" to confirm). Theme changes apply instantly and persist to IDB. Create an About page at `#/about` showing the app name and mission ("Read, reflect, remember"), QuranAtlas version (from `package.json`), dataset version (from `datasetMeta.version` in IDB), attribution block (Bridges' Translation, KFGQPC font), storage quota usage with a warning if >80%, and a "Install App" button that appears only when the PWA install prompt is available.
 
-Both pages are top-level routes and accessible from the nav bar. All theme changes are applied via CSS variables scoped to `:root`, ensuring consistent application across the entire UI. Font size is implemented as a CSS variable controlling the base font size; presets are 85%, 100% (default), 120%, 150%.
+Both pages are top-level routes and accessible from the nav bar. All theme changes are applied via CSS variables scoped to `:root`, ensuring consistent application across the entire UI.
+
+**Font size controls are DEFERRED to Phase 3.** Browser zoom works perfectly in a PWA and covers the same need. Dark mode is far more critical for night reading.
 
 ## User Stories
 
 1. As a reader, I want to switch to dark mode for night reading so that my eyes don't strain when reading in low light.
 2. As a reader, I want to switch to sepia mode for a warm, book-like appearance so that I can read for extended periods without fatigue.
 3. As a reader, I want my theme choice to persist across sessions so that I don't have to re-select it every time I open the app.
-4. As a reader, I want to increase the font size so that I can read more comfortably without squinting.
-5. As a reader, I want to decrease the font size to fit more verses on screen at once.
-6. As a reader, I want instant visual feedback when I change the theme or font size so that I can see the effect immediately.
-7. As a reader, I want a single button to clear all my reading history, bookmarks, and cached data so that I can reset the app if I'm having issues or passing the device to someone else.
-8. As a reader, I want to be warned before clearing all data so that I don't accidentally delete years of reading progress.
-9. As a reader, I want to know how much storage the app is using so that I can decide if I need to clear cache or uninstall.
-10. As a reader, I want an easy way to install the app to my home screen so that I can access it more quickly.
-11. As a reader, I want to know what version of the dataset I'm reading so that I can report bugs or request updates based on a specific version.
-12. As a new user, I want to read about the app's mission and learn who built it so that I can trust the app and understand its values.
+4. As a reader, I want instant visual feedback when I change the theme so that I can see the effect immediately.
+5. As a reader, I want a single button to clear all my reading history, bookmarks, and cached data so that I can reset the app if I'm having issues or passing the device to someone else.
+6. As a reader, I want to be warned before clearing all data so that I don't accidentally delete years of reading progress.
+7. As a reader, I want to know how much storage the app is using so that I can decide if I need to clear cache or uninstall.
+8. As a reader, I want an easy way to install the app to my home screen so that I can access it more quickly.
+9. As a reader, I want to know what version of the dataset I'm reading so that I can report bugs or request updates based on a specific version.
+10. As a new user, I want to read about the app's mission and learn who built it so that I can trust the app and understand its values.
 
 ## Implementation Decisions
 
@@ -35,35 +35,27 @@ Both pages are top-level routes and accessible from the nav bar. All theme chang
 
 **`src/core/router.js`**
 
-- Add routes: `#/settings` → `settings:index.js`, `#/about` → `about:index.js`
+- Add routes: `#/settings` → `settings/index.js`, `#/about` → `about/index.js`
 - Both are top-level page routes (not nested under reader)
 
 **`src/settings/index.js`** (new)
 
-- Default export: `<div>` or `<main>` page structure with three sections:
+- Default export: `<div>` or `<main>` page structure with two sections:
   - Theme section: `<fieldset>` with 3 color swatch thumbnails + labels (Light, Sepia, Dark)
-  - Font size section: `<fieldset>` with 4 radio buttons (Small, Normal, Large, XL) or a segmented button group
   - Clear data section: red `<button>` at bottom with `aria-label="Clear all data"` + danger styling
 - Event listeners: on swatch click, emit `settings:theme-changed` + save to IDB + apply CSS class
 
 **`src/settings/theme.js`** (new)
 
 - `loadTheme()` — read IDB `settings["theme"]` or default to 'light'
-- `setTheme(themeName)` — write to IDB, emit `settings:theme-changed`, update `:root` CSS vars or add class to `<html>`
-- Initialize on app load
-
-**`src/settings/font-size.js`** (new)
-
-- `loadFontSize()` — read IDB `settings["fontSize"]` or default to 'normal'
-- `setFontSize(preset)` — write to IDB, emit `settings:font-size-changed`, set `--qa-font-size-base` CSS var
-- Presets: `{ small: '0.85', normal: '1', large: '1.2', xl: '1.5' }` (relative units)
+- `setTheme(themeName)` — write to IDB, emit `settings:theme-changed`, update `html[data-theme]`
 - Initialize on app load
 
 **`src/settings/clear-data.js`** (new)
 
 - `openClearDataModal()` — show modal with input field + warning text + "CANCEL" / "CLEAR" buttons
-- Input must equal "DELETE" (case-insensitive?) to enable "CLEAR" button
-- On confirm: `caches.delete('quran-dataset-v1')` + `caches.delete('quran-dataset-staging')` + `caches.delete('quran-fonts-v1')` + IDB `deleteDatabase()` + emit `settings:data-cleared` + navigate to `#/reader`
+- Input must equal "DELETE" (case-insensitive) to enable "CLEAR" button
+- On confirm: `caches.delete('quran-dataset-v1')` + `caches.delete('quran-dataset-staging')` + `caches.delete('quran-fonts-v1')` + IDB `deleteDatabase()` + emit `settings:data-cleared` + navigate to reader
 - Handle async errors gracefully (log to console, show error toast)
 
 **`src/about/index.js`** (new)
@@ -71,7 +63,7 @@ Both pages are top-level routes and accessible from the nav bar. All theme chang
 - Default export: `<main>` with sections:
   - App name + mission: `<h1>QuranAtlas</h1><p>Read, reflect, remember</p>`
   - Versions: `<dl>` showing App version + Dataset version
-  - Attribution: credits for Bridges' Translation, KFGQPC font, open-source libs
+  - Attribution: credits for Bridges' Translation, KFGQPC font
   - Storage: `<meter>` or progress bar + quota text
   - PWA install: button shown only if `beforeinstallprompt` event fired
 
@@ -102,14 +94,14 @@ Both pages are top-level routes and accessible from the nav bar. All theme chang
 
 **`src/core/events.js`**
 
-- Add: `settings:theme-changed`, `settings:font-size-changed`, `settings:data-cleared` events
+- Add: `settings:theme-changed`, `settings:data-cleared` events
 
 **`src/index.html`**
 
 - Add Settings to bottom nav bar; update nav structure to include 4 links (Reader, Review, Marks, Settings)
 - Add About link (e.g., in a hamburger menu or as a separate nav item if space allows)
 
-**CSS (new file `src/core/theme.css` or inline in `index.html`)**
+**CSS (new file `src/core/theme.css`)**
 
 - Define theme variables:
 
@@ -138,17 +130,12 @@ Both pages are top-level routes and accessible from the nav bar. All theme chang
     --qa-bg-primary: var(--qa-dark-bg-primary);
     /* ... etc */
   }
-
-  /* Font size var */
-  html {
-    --qa-font-size-base: 1; /* default */
-  }
   ```
 
 ### IDB
 
-- `settings` store (keyPath: `key`): read/write `{ key, value }` — one record per setting. Known keys: `"theme"` (value: `"light"|"sepia"|"dark"`), `"fontSize"` (value: `"small"|"normal"|"large"|"xl"`)
-  - Initialized on first app load with defaults: `{ key: 'theme', value: 'light' }` and `{ key: 'fontSize', value: 'normal' }`
+- `settings` store (keyPath: `key`): read/write `{ key, value }` — one record per setting. Known keys: `"theme"` (value: `"light"|"sepia"|"dark"`).
+  - Initialized on first app load with default: `{ key: 'theme', value: 'light' }`
 
 ### Events
 
@@ -157,13 +144,11 @@ All emitted via `src/core/events.js` pub/sub.
 | Event                        | Payload        | Emitter         |
 | ---------------------------- | -------------- | --------------- |
 | `settings:theme-changed`     | `{ from, to }` | `theme.js`      |
-| `settings:font-size-changed` | `{ from, to }` | `font-size.js`  |
 | `settings:data-cleared`      | `{}`           | `clear-data.js` |
 
 ### Performance
 
 - Theme switch: instant (CSS update only)
-- Font size change: instant (CSS var update)
 - Storage estimate fetch: ≤100 ms (native API)
 - IDB read/write: ≤50 ms
 - Page load: Settings and About pages ≤500 ms (minimal async operations)
@@ -175,9 +160,7 @@ Tests exercise only observable behaviour: IDB state, CSS applied, navigation, ev
 **`src/settings/` — integration tests (Vitest + fake-indexeddb + jsdom)**
 
 - Theme save to IDB: click swatch → IDB `settings["theme"]` updated with new record + event emitted
-- Font size save to IDB: select preset → IDB `settings["fontSize"]` updated with new record + event emitted
 - Theme persistence: load page → saved theme applied automatically
-- Font size persistence: load page → saved font size applied automatically
 - Clear data flow: button click → modal appears → input validation works → confirm clears IDB + caches + redirects to reader
 - Storage estimate: About page shows correct quota/usage and warning if >80%
 - PWA install: button hidden if `beforeinstallprompt` never fires; visible if it does; click calls `event.prompt()`
@@ -194,6 +177,7 @@ Prior art: Story 3 (IDB read/write patterns), Story 4 (event emission + IDB save
 - Changing theme color palette (fixed dark/light/sepia palettes)
 - Keyboard shortcuts for theme switching
 - High contrast mode or other a11y themes (beyond dark/sepia/light)
+- Font size controls — **DEFERRED** to Phase 3
 - Custom font selection (embedded font only: Scheherazade New)
 - Storage quota increase or cloud sync
 - Device storage quota management (browser-level setting)
@@ -204,27 +188,26 @@ Prior art: Story 3 (IDB read/write patterns), Story 4 (event emission + IDB save
 
 - **Nav bar structure:** Bottom nav currently has Reader, Review, Marks (3 items). Story 9 adds Settings as 4th item. About may be in a hamburger or separate. Determine in mockup design.
 - **Theme persistence:** Store theme as `data-theme` attribute on `<html>` (not a class) for cleaner CSS targeting. Sync IDB on load via `loadTheme()`.
-- **Font size CSS var:** `--qa-font-size-base` is a unitless multiplier (1 = 100%). All component font sizes should use `calc(1rem * var(--qa-font-size-base))` or similar. Ensures all text scales uniformly.
 - **Clear data destructiveness:** After clearing, user sees an empty reader. Ideally, there's no "Undo" — data is gone. Message: "All data cleared. Start fresh?"
 - **Storage quota:** Some browsers don't support `navigator.storage.estimate()`. Gracefully degrade to "Storage info not available" if not supported.
 - **PWA install:** `beforeinstallprompt` only fires on Chromium browsers and only if PWA criteria are met (manifest, SW, etc.). On iOS Safari, PWA install is different (user manually adds to home screen); we can detect iOS and show alternate CTA.
 - **App version injection:** Vite's `define` plugin injects `__APP_VERSION__` at build time. Set in `vite.config.js`: `define: { __APP_VERSION__: JSON.stringify(pkg.version) }`
-- **A11y:** All theme swatches and font size presets need `aria-label` and focus indicators. Clear data button needs `aria-label="Clear all data and reset to defaults"`. Modal needs `role="dialog"` and focus trap.
-- **Mockups:** Required before implementation (Story 9 constraint). Must include Settings page layout (theme swatches, font size options, clear data button) and About page layout (versions, attribution block, storage meter, PWA install button). 2–4 mockups per surface, all browser-renderable HTML in `mockups/`.
+- **A11y:** All theme swatches need `aria-label` and focus indicators. Clear data button needs `aria-label="Clear all data and reset to defaults"`. Modal needs `role="dialog"` and focus trap.
+- **Mockups:** Required before implementation (Story 9 constraint). Must include Settings page layout (theme swatches, clear data button) and About page layout (versions, attribution block, storage meter, PWA install button). 2–4 mockups per surface, all browser-renderable HTML in `mockups/`.
 
 ## Grill-Me Decisions (12 locked)
 
 | Q                       | Decision                                                 | Choice               |
-| ----------------------- | -------------------------------------------------------- | -------------------- |
+| ---                     | ---                                                      | ---                  |
 | Settings route          | `#/settings` navigation link                             | Nav link             |
 | Nav bar placement       | Bottom nav bar (like Marks, Review)                      | Bottom nav           |
 | Theme switcher UI       | 3 thumbnail color swatches; click to preview             | Thumbnail swatches   |
 | Theme change behavior   | Instant save on click (no confirmation)                  | Instant save         |
 | Theme impl approach     | Full CSS vars at :root per theme                         | CSS vars system      |
-| Font size feature       | 3-4 presets (small/normal/large/xl)                      | Presets included     |
-| Font size default       | Normal (100%)                                            | Normal               |
-| Font size persistence   | IDB KV `settings` store (keyPath: `key`)                 | IDB KV store         |
+| Font size feature       | **DEFERRED** to Phase 3                                  | Deferred             |
 | Clear data action       | Bottom of Settings, red button + "DELETE" text entry     | Red button + confirm |
 | About page sections     | Versions, attribution, PWA install CTA, storage, mission | All included         |
 | App mission/slogan      | "Read, reflect, remember"                                | Mission set          |
 | Storage quota threshold | Warn if usage >80% of quota                              | 80% threshold        |
+| Font size default       | N/A (deferred)                                           | Deferred             |
+| Font size persistence   | N/A (deferred)                                           | Deferred             |

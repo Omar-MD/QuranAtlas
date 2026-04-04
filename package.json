@@ -1,0 +1,31 @@
+{
+  "name": "quran-atlas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Distraction-free Quran reading PWA",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "check-chunks": "node scripts/check-chunks.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.31.0",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^10.2.0",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.0.1",
+    "vite": "^8.0.3",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.1.2",
+    "workbox-build": "^7.4.0"
+  }
+}

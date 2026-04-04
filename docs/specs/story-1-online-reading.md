@@ -10,7 +10,9 @@ A user opens QuranAtlas for the first time on their phone. They want to read Qur
 
 ## Solution
 
-The app loads and renders Quran text immediately from the network — no download gate. The `offline/` module captures the browser's install prompt and surfaces it as a visible, dismissible call-to-action in the top bar. A separate "Download for offline" flow orchestrates the corpus transfer through the service worker, showing per-file progress and completing silently. Once downloaded, every read request is served from cache with no observable difference in experience. The `dataset/` module abstracts whether data comes from cache or network — the reader never knows.
+The app loads and renders Quran text immediately from the network — no download gate. The `data/offline.js` module captures the browser's install prompt and surfaces it as a visible, dismissible call-to-action in the top bar. A separate "Download for offline" flow orchestrates the corpus transfer through the service worker, showing per-file progress and completing silently. Once downloaded, every read request is served from cache with no observable difference in experience. The `data/dataset.js` module abstracts whether data comes from cache or network — the reader never knows.
+
+**Tech stack:** pnpm (package manager), Vite 8 with Rolldown (build tool), Vitest (testing), `vite-plugin-pwa` (PWA support with Workbox `injectManifest`).
 
 ## User Stories
 
@@ -54,21 +56,21 @@ The app loads and renders Quran text immediately from the network — no downloa
 
 **Modules to build:**
 
-- **`offline/`** — Owns two responsibilities: (1) PWA install prompt lifecycle — captures `beforeinstallprompt`, exposes a method to trigger it, emits `offline:install-available` and `offline:install-complete`; (2) corpus download orchestration — builds the URL list from `manifest.json`, sends `CACHE_DATASET` to the SW via `navigator.serviceWorker.controller.postMessage()`, listens for `DATASET_PROGRESS` / `DATASET_COMPLETE` / `DATASET_ERROR` messages, updates `activationState` in IDB, emits `offline:download-progress`, `offline:download-complete`, `offline:download-error`. Deep module: callers request "start download" or "cancel download" and react to events — they never touch the SW or IDB directly.
+- **`data/offline.js`** — Owns two responsibilities: (1) PWA install prompt lifecycle — captures `beforeinstallprompt`, exposes a method to trigger it, emits `offline:install-available` and `offline:install-complete`; (2) corpus download orchestration — builds the URL list from `manifest.json`, sends `CACHE_DATASET` to the SW via `navigator.serviceWorker.controller.postMessage()`, listens for `DATASET_PROGRESS` / `DATASET_COMPLETE` / `DATASET_ERROR` messages, updates `activationState` in IDB, emits `offline:download-progress`, `offline:download-complete`, `offline:download-error`. Deep module: callers request "start download" or "cancel download" and react to events — they never touch the SW or IDB directly.
 
-- **`dataset/`** — Corpus access layer. Exports `getSurah(n)`, `getSurahs()`, `getJuz()`. Internally decides whether to fetch from `quran-dataset-v1` cache (via `cache.match()`) or the network — the caller never knows which path was taken. Also exports `getManifestUrls()` which reads `manifest.json` and returns the full URL list needed by `offline/` for the CACHE_DATASET call. Deep module: simple interface, complex internal fetch/cache logic.
+- **`data/dataset.js`** — Corpus access layer. Exports `getSurah(n)`, `getSurahs()`. Internally decides whether to fetch from `quran-dataset-v1` cache (via `cache.match()`) or the network — the caller never knows which path was taken. Also exports `getManifestUrls()` which reads `manifest.json` and returns the full URL list needed by `data/offline.js` for the CACHE_DATASET call. Deep module: simple interface, complex internal fetch/cache logic.
 
-- **`reader/`** — Route handler for `#/s/:surah` (and later `#/s/:surah/:ayah`). Exports `async init(params)` per router contract. Fetches the surah via `dataset/getSurah()`, renders Arabic text and translation into `#main-content`, handles translation toggle state (reads/writes `settings` IDB store via `getDb()`), emits `reader:surah-loaded`. Does not track scroll position in this story — that is Story 2.
+- **`reader/index.js`** — Route handler for `#/s/:surah` (and later `#/s/:surah/:ayah`). Exports `async init(params)` per router contract. Fetches the surah via `data/dataset.js`, renders Arabic text and translation into `#main-content`, handles translation toggle state (reads/writes `settings` IDB store via `core/db.js`), emits `reader:surah-loaded`. Does not track scroll position in this story — that is Story 2.
 
 **Architectural decisions:**
 
-- `offline/` and `dataset/` are sibling modules under `src/`. Cross-module communication goes through `events.js` only — `reader/` listens for `offline:download-complete` to re-render if the corpus becomes available mid-session.
-- `activationState` IDB store (key `"current"`) holds `{ id: "current", status: "none" | "downloading" | "cached" }`. The `offline/` module is the sole writer; any module may read it via `getDb()`.
+- `data/offline.js` and `data/dataset.js` are sibling modules under `src/data/`. Cross-module communication goes through `core/events.js` only — `reader/index.js` listens for `offline:download-complete` to re-render if the corpus becomes available mid-session.
+- `activationState` IDB store (key `"current"`) holds `{ id: "current", status: "none" | "downloading" | "cached" }`. The `data/offline.js` module is the sole writer; any module may read it via `core/db.js`.
 - The SW's `CACHE_DATASET` handler is already resumable (skips cached URLs). The client only needs to send the full manifest URL list; the SW handles deduplication.
-- Basmala rule: surah 1 (Al-Fatiha) includes basmala as verse 1 per the quran.com PUA encoding. Surahs 2–113 display basmala as a decorative prefix (not a numbered verse). Surah 9 (At-Tawbah) has no basmala. This logic lives in `reader/` — never in `dataset/`.
+- Basmala rule: surah 1 (Al-Fatiha) includes basmala as verse 1 per the quran.com PUA encoding. Surahs 2–113 display basmala as a decorative prefix (not a numbered verse). Surah 9 (At-Tawbah) has no basmala. This logic lives in `reader/index.js` — never in `data/dataset.js`.
 - Arabic text must be set via `textContent` or `createTextNode` only — never `innerHTML` with corpus data (hard constraint from CLAUDE.md).
 - Translation toggle: stored as `{ key: 'translationVisible', value: true }` in the `settings` IDB store. Default is `true`. The toggle button lives in `#top-bar`.
-- `manifest.json` in `public/dataset/` contains the canonical list of dataset URLs. `dataset/getManifestUrls()` fetches and parses this file.
+- `manifest.json` in `public/dataset/` contains the canonical list of dataset URLs. `data/dataset.js::getManifestUrls()` fetches and parses this file.
 
 **IDB interactions:**
 
@@ -79,16 +81,16 @@ The app loads and renders Quran text immediately from the network — no downloa
 
 A good test exercises only the public interface of a module — never the internals. Tests should survive a full rewrite of a module's implementation as long as the interface contract is preserved.
 
-**`dataset/` module** — highest priority, most testable in isolation. Test that `getSurah(2)` returns an object with the expected verse count, that `getSurahs()` returns 114 entries, that `getManifestUrls()` returns a non-empty array of strings. Use `fake-indexeddb` for any IDB interactions. Mock `fetch` and `caches` to test both cache-hit and network-fallback paths. Prior art: `src/core/db.test.js` for IDB setup patterns.
+**`data/dataset.js`** — highest priority, most testable in isolation. Test that `getSurah(2)` returns an object with the expected verse count, that `getSurahs()` returns 114 entries, that `getManifestUrls()` returns a non-empty array of strings. Use `fake-indexeddb` for any IDB interactions. Mock `fetch` and `caches` to test both cache-hit and network-fallback paths. Prior art: `tests/unit/core/db.test.js` for IDB setup patterns.
 
-**`offline/` module** — test the state machine: given `activationState = "none"`, after `startDownload()` is called, verify `activationState` transitions to `"downloading"`, then to `"cached"` after simulated `DATASET_COMPLETE` from a mock SW. Test that `offline:download-progress` events fire with the correct `{ cached, total }` shape. Test that a cancelled download leaves `activationState` as `"none"`. Mock `navigator.serviceWorker` and `postMessage`.
+**`data/offline.js`** — test the state machine: given `activationState = "none"`, after `startDownload()` is called, verify `activationState` transitions to `"downloading"`, then to `"cached"` after simulated `DATASET_COMPLETE` from a mock SW. Test that `offline:download-progress` events fire with the correct `{ cached, total }` shape. Test that a cancelled download leaves `activationState` as `"none"`. Mock `navigator.serviceWorker` and `postMessage`.
 
-**`reader/` module** — DOM integration test. Mount the module against a real (jsdom) DOM with a `#main-content` element. Provide a mock `dataset/getSurah()` returning a two-verse surah. Verify that (a) two verse elements are rendered, (b) each has a text node with Arabic content (not set via innerHTML), (c) translation elements are present when `translationVisible = true` and absent when `false`. Prior art: none yet — this establishes the pattern for all route handler tests.
+**`reader/index.js`** — DOM integration test. Mount the module against a real (jsdom) DOM with a `#main-content` element. Provide a mock `data/dataset.js::getSurah()` returning a two-verse surah. Verify that (a) two verse elements are rendered, (b) each has a text node with Arabic content (not set via innerHTML), (c) translation elements are present when `translationVisible = true` and absent when `false`. Prior art: none yet — this establishes the pattern for all route handler tests.
 
 ## Out of Scope
 
 - Scroll position tracking and session restore (Story 2)
-- Surah and Juz navigation UI / browsing index (Story 3)
+- Surah navigation UI / browsing index (Story 3)
 - Verse marks and tagging (Story 4)
 - Review hub (Story 5)
 - Cross-tab safety (Story 6)
@@ -101,7 +103,7 @@ A good test exercises only the public interface of a module — never the intern
 
 - The Bridges' Translation license must be verified before any public release. The dataset is in `public/dataset/` — no string manipulation of Arabic corpus text is permitted at any layer.
 - The `manifest.json` in `public/dataset/` is the single source of truth for which URLs constitute the full corpus. If the dataset is rebuilt, the manifest is regenerated automatically by `scripts/build-dataset.js`.
-- Performance budget: first verse render ≤ 800 ms on Chrome Android with 4× CPU throttle and a warm cache. The `dataset/getSurah()` path should be the only blocking call in `reader/init()`.
+- Performance budget: first verse render ≤ 800 ms on Chrome Android with 4× CPU throttle and a warm cache. The `data/dataset.js::getSurah()` path should be the only blocking call in `reader/index.js::init()`.
 - The service worker `CACHE_DATASET` handler already exists in `src/sw.js` from Phase 0 — do not modify it in this story.
 
 ## Grill-Me Decisions (13 locked)
