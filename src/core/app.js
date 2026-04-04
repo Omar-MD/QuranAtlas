@@ -6,7 +6,7 @@
 import { openDB } from './db.js'
 import * as router from './router.js'
 import { initInstallPrompt, getActivationState } from '../data/offline.js'
-import { emit } from './events.js'
+import { emit, on } from './events.js'
 
 /**
  * Initialize the application.
@@ -18,6 +18,9 @@ export async function init() {
 
     // Initialize router
     router.init()
+
+    // Listen for launch restore
+    on('router:launch-restore', handleLaunchRestore)
 
     // Register Phase 1 routes
     router.register('#/s/:surah', () => import('../reader/index.js'))
@@ -51,6 +54,22 @@ async function applyThemeFromSettings() {
   } catch {
     // Default to light
     document.documentElement.setAttribute('data-theme', 'light')
+  }
+}
+
+/**
+ * Handle launch restore: navigate to last-read position or default surah.
+ */
+async function handleLaunchRestore() {
+  const { navigate } = await import('./router.js')
+  const { getMostRecentPosition } = await import('./router.js')
+
+  const position = await getMostRecentPosition()
+  if (position) {
+    navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
+  } else {
+    // Default to Al-Fatiha
+    navigate('#/s/1', { replace: true })
   }
 }
 

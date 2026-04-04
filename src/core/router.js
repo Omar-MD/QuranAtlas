@@ -108,3 +108,35 @@ function extractParams(pattern, hash) {
 
   return params
 }
+
+/**
+ * Get the most recently saved reading position.
+ * @returns {Promise<{surah: number, verse: number} | null>}
+ */
+export async function getMostRecentPosition() {
+  try {
+    const { getDb } = await import('./db.js')
+    const db = await getDb()
+    const tx = db.transaction('positions', 'readonly')
+    const store = tx.objectStore('positions')
+    const request = store.getAll()
+
+    return new Promise((resolve) => {
+      request.onsuccess = () => {
+        const positions = request.result || []
+        if (positions.length === 0) {
+          resolve(null)
+          return
+        }
+        // Find the most recent by savedAt
+        const mostRecent = positions.reduce((latest, pos) => {
+          return pos.savedAt > latest.savedAt ? pos : latest
+        }, positions[0])
+        resolve(mostRecent)
+      }
+      request.onerror = () => resolve(null)
+    })
+  } catch {
+    return null
+  }
+}

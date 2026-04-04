@@ -25,4 +25,33 @@ describe('core/db.js', () => {
     const result = await get('settings', 'nonexistent')
     expect(result).toBeUndefined()
   })
+
+  describe('getMostRecentPosition()', () => {
+    it('returns the most recently saved position', async () => {
+      const { getMostRecentPosition } = await import('../../../src/core/router.js')
+      const { put } = await import('../../../src/core/db.js')
+      await put('positions', { id: 's1', surah: 1, verse: 5, savedAt: 1000 })
+      await put('positions', { id: 's2', surah: 2, verse: 100, savedAt: 2000 })
+      await put('positions', { id: 's3', surah: 3, verse: 10, savedAt: 1500 })
+
+      const result = await getMostRecentPosition()
+      expect(result).toEqual({ id: 's2', surah: 2, verse: 100, savedAt: 2000 })
+    })
+
+    it('returns null when no positions saved', async () => {
+      // Delete all positions first
+      const { getDb } = await import('../../../src/core/db.js')
+      const db = await getDb()
+      const tx = db.transaction('positions', 'readwrite')
+      const store = tx.objectStore('positions')
+      await new Promise((resolve) => {
+        const req = store.clear()
+        req.onsuccess = resolve
+      })
+
+      const { getMostRecentPosition } = await import('../../../src/core/router.js')
+      const result = await getMostRecentPosition()
+      expect(result).toBeNull()
+    })
+  })
 })
