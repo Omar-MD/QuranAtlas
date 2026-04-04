@@ -9,6 +9,11 @@
  * - PURGE_DATASET_CACHE: Clear corpus cache
  */
 
+import { precacheAndRoute } from 'workbox-precaching'
+
+// Workbox injectManifest will populate this array
+precacheAndRoute(self.__WB_MANIFEST || [])
+
 const CACHE_NAME = 'quran-dataset-v1'
 
 self.addEventListener('install', (_event) => {

@@ -5,6 +5,8 @@
 
 import { openDB } from './db.js'
 import * as router from './router.js'
+import { initInstallPrompt, getActivationState, startDownload } from '../data/offline.js'
+import { emit } from './events.js'
 
 /**
  * Initialize the application.
@@ -26,6 +28,12 @@ export async function init() {
 
     // Register service worker
     await registerServiceWorker()
+
+    // Initialize PWA install prompt capture
+    initInstallPrompt()
+
+    // Restore activation state
+    await restoreActivationState()
   } catch (error) {
     console.error('Failed to initialize app:', error)
   }
@@ -60,6 +68,24 @@ async function registerServiceWorker() {
     } catch (error) {
       console.error('SW registration failed:', error)
     }
+  }
+}
+
+/**
+ * Restore activation state and re-download if interrupted.
+ */
+async function restoreActivationState() {
+  const state = await getActivationState()
+
+  if (state === 'downloading') {
+    // Interrupted download — reset to none, user must re-tap
+    const { cancelDownload } = await import('../data/offline.js')
+    await cancelDownload()
+  }
+
+  // If no cached corpus and online, show download UI
+  if (state === 'none' && navigator.onLine) {
+    emit('app:ready-for-download')
   }
 }
 
