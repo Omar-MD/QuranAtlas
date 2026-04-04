@@ -3,14 +3,53 @@
  * Deep module: callers never know whether data comes from cache or network.
  */
 
+const DATASET_BASE = '/dataset'
+
+/**
+ * Get the full list of dataset URLs from manifest.json.
+ * @returns {Promise<string[]>}
+ */
+export async function getManifestUrls() {
+  const res = await fetch(`${DATASET_BASE}/manifest.json`)
+  if (!res.ok) throw new Error(`Failed to fetch manifest: ${res.status}`)
+  const manifest = await res.json()
+  return Object.keys(manifest.files).map(f => `${DATASET_BASE}/${f}`)
+}
+
 /**
  * Get a single surah by number.
  * @param {number} n - Surah number (1-114)
- * @returns {Promise<object>}
+ * @returns {Promise<{ar: string[], en: string[]}>}
  */
-export async function getSurah(_n) {
-  // Phase 1: implement cache/network logic
-  throw new Error('getSurah not yet implemented')
+export async function getSurah(n) {
+  if (n < 1 || n > 114 || !Number.isInteger(n)) {
+    throw new Error(`Invalid surah number: ${n}`)
+  }
+
+  const padded = String(n).padStart(3, '0')
+  const url = `${DATASET_BASE}/surah/${padded}.json`
+
+  // Try cache first (service worker)
+  try {
+    const cache = await caches.open('quran-dataset-v1')
+    const cached = await cache.match(url)
+    if (cached) {
+      return cached.json()
+    }
+  } catch {
+    // Cache not available, fall through to network
+  }
+
+  // Network with 3s timeout
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 3000)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) throw new Error(`Failed to fetch surah ${n}: ${res.status}`)
+    return res.json()
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 /**
@@ -18,6 +57,27 @@ export async function getSurah(_n) {
  * @returns {Promise<Array>}
  */
 export async function getSurahs() {
-  // Phase 1: implement
-  throw new Error('getSurahs not yet implemented')
+  const url = `${DATASET_BASE}/surahs.json`
+
+  // Try cache first
+  try {
+    const cache = await caches.open('quran-dataset-v1')
+    const cached = await cache.match(url)
+    if (cached) {
+      return cached.json()
+    }
+  } catch {
+    // Cache not available, fall through to network
+  }
+
+  // Network with 3s timeout
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 3000)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) throw new Error(`Failed to fetch surahs: ${res.status}`)
+    return res.json()
+  } finally {
+    clearTimeout(timeout)
+  }
 }
