@@ -114,3 +114,80 @@ body {
 .qa-hidden {
   display: none !important;
 }
+
+/* Surah reader */
+.qa-surah-header {
+  text-align: center;
+  padding: 1.5rem 0 1rem;
+  border-bottom: 1px solid var(--qa-border);
+  margin-bottom: 1.5rem;
+}
+
+.qa-surah-name {
+  font-family: 'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
+  font-size: 2rem;
+  color: var(--qa-text-primary);
+  direction: rtl;
+}
+
+.qa-surah-meta {
+  font-size: 0.875rem;
+  color: var(--qa-text-secondary);
+  margin-top: 0.25rem;
+}
+
+.qa-basmala {
+  font-family: 'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
+  font-size: 1.5rem;
+  text-align: center;
+  padding: 1rem 0;
+  color: var(--qa-text-primary);
+  direction: rtl;
+}
+
+.qa-verse {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--qa-border);
+}
+
+.qa-verse:last-child {
+  border-bottom: none;
+}
+
+.qa-verse-arabic {
+  font-family: 'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
+  font-size: 1.75rem;
+  line-height: 2;
+  direction: rtl;
+  text-align: right;
+  color: var(--qa-text-primary);
+  word-spacing: 0.15em;
+}
+
+.qa-verse-number {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--qa-text-secondary);
+  margin-right: 0.5rem;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.qa-verse-translation {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--qa-text-secondary);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--qa-border);
+}
+
+.qa-skeleton-line {
+  height: 1.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.qa-skeleton-line:last-child {
+  margin-bottom: 0;
+}
