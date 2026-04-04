@@ -32,6 +32,9 @@ importers:
       workbox-build:
         specifier: ^7.4.0
         version: 7.4.0
+      workbox-precaching:
+        specifier: ^7.4.0
+        version: 7.4.0
 
 packages:
 

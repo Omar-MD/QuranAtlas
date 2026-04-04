@@ -59,13 +59,13 @@ export default defineConfig({
     target: 'es2020',
     rollupOptions: {
       output: {
-        manualChunks: {
-          reader: ['./src/reader/index.js'],
-          nav: ['./src/nav/index.js'],
-          marks: ['./src/marks/store.js', './src/marks/editor.js', './src/marks/indicator.js'],
-          review: ['./src/review/hub.js'],
-          settings: ['./src/settings/index.js'],
-          about: ['./src/about/index.js']
+        manualChunks(id) {
+          if (id.includes('src/reader/index.js')) return 'reader'
+          if (id.includes('src/nav/index.js')) return 'nav'
+          if (id.includes('src/marks/')) return 'marks'
+          if (id.includes('src/review/hub.js')) return 'review'
+          if (id.includes('src/settings/index.js')) return 'settings'
+          if (id.includes('src/about/index.js')) return 'about'
         }
       }
     }

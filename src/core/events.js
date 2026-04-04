@@ -37,7 +37,11 @@ export function emit(type, payload) {
   const subs = listeners.get(type)
   if (subs) {
     for (const callback of subs) {
-      callback(payload)
+      try {
+        callback(payload)
+      } catch (error) {
+        console.error(`Event handler error for "${type}":`, error)
+      }
     }
   }
 }

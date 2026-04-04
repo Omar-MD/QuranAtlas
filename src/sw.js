@@ -10,11 +10,10 @@
  */
 
 import { precacheAndRoute } from 'workbox-precaching'
+import { CACHE_DATASET } from './core/constants.js'
 
 // Workbox injectManifest will populate this array
 precacheAndRoute(self.__WB_MANIFEST || [])
-
-const CACHE_NAME = 'quran-dataset-v1'
 
 self.addEventListener('install', (_event) => {
   self.skipWaiting()
@@ -55,7 +54,7 @@ self.addEventListener('message', (event) => {
  * Resumable: skips already-cached URLs.
  */
 async function handleCacheDataset(event, urls) {
-  const cache = await caches.open(CACHE_NAME)
+  const cache = await caches.open(CACHE_DATASET)
   const clients = await self.clients.matchAll()
 
   for (let i = 0; i < urls.length; i++) {
@@ -97,7 +96,7 @@ async function handleApplyUpdate(_event) {
  * Purge the dataset cache.
  */
 async function handlePurgeCache(_event) {
-  await caches.delete(CACHE_NAME)
+  await caches.delete(CACHE_DATASET)
   const clients = await self.clients.matchAll()
   postToAll(clients, 'DATASET_PURGED')
 }

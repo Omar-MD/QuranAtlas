@@ -3,9 +3,9 @@
  * Wires all modules together and initializes the app lifecycle.
  */
 
-import { openDB } from './db.js'
+import { openDB, getMostRecentPosition } from './db.js'
 import * as router from './router.js'
-import { initInstallPrompt, getActivationState } from '../data/offline.js'
+import { initInstallPrompt, getActivationState, cancelDownload } from '../data/offline.js'
 import { emit, on } from './events.js'
 
 /**
@@ -61,15 +61,12 @@ async function applyThemeFromSettings() {
  * Handle launch restore: navigate to last-read position or default surah.
  */
 async function handleLaunchRestore() {
-  const { navigate } = await import('./router.js')
-  const { getMostRecentPosition } = await import('./router.js')
-
   const position = await getMostRecentPosition()
   if (position) {
-    navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
+    router.navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
   } else {
     // Default to Al-Fatiha
-    navigate('#/s/1', { replace: true })
+    router.navigate('#/s/1', { replace: true })
   }
 }
 
@@ -98,7 +95,6 @@ async function restoreActivationState() {
 
   if (state === 'downloading') {
     // Interrupted download — reset to none, user must re-tap
-    const { cancelDownload } = await import('../data/offline.js')
     await cancelDownload()
   }
 

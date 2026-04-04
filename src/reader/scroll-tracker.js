@@ -40,7 +40,7 @@ export function observeScroll(container, { onPositionChange }) {
     height: ${CENTER_BAND_PX * 2}px;
     transform: translateY(-50%);
     pointer-events: none;
-    z-index: -1;
+    visibility: hidden;
   `
   container.style.position = 'relative'
   container.appendChild(sentinel)

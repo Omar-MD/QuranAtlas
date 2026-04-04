@@ -250,3 +250,25 @@ body {
   border-top: 1px solid var(--qa-border);
   margin-top: 1.5rem;
 }
+
+/* Error state */
+.qa-error-state {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.qa-retry-btn {
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+/* Translation toggle button */
+.qa-toggle-btn {
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--qa-border);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  color: var(--qa-text-secondary);
+}

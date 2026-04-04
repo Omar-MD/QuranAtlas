@@ -16,6 +16,7 @@ let currentSurah = null
 let renderedCount = 0
 let isRendering = false
 let scrollAppendBound = null
+let currentTranslationVisible = true
 
 /**
  * Initialize the reader for a surah.
@@ -60,6 +61,7 @@ export async function init(params, { savePosition = true } = {}) {
 
     currentSurah = surah
     const surahMeta = surahs.find(s => s.n === surahNum)
+    currentTranslationVisible = translationVisible
 
     // Render
     mainContent.innerHTML = ''
@@ -115,6 +117,7 @@ function cleanup() {
   }
   currentSurah = null
   renderedCount = 0
+  currentTranslationVisible = true
 }
 
 /**
@@ -194,7 +197,7 @@ function handleScrollAppend() {
   // Append next chunk when within one viewport height of bottom
   if (scrollHeight - scrollBottom < mainContent.clientHeight) {
     isRendering = true
-    renderVerseChunk(mainContent, currentSurah, true, renderedCount, renderedCount + CHUNK_SIZE)
+    renderVerseChunk(mainContent, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
     isRendering = false
   }
 }
@@ -245,14 +248,12 @@ function showSkeleton(container) {
 function showError(container, surahNum, _message) {
   container.innerHTML = ''
   const errorDiv = document.createElement('div')
-  errorDiv.style.textAlign = 'center'
-  errorDiv.style.padding = '2rem 1rem'
+  errorDiv.className = 'qa-error-state'
   errorDiv.textContent = `Failed to load Surah ${surahNum}.`
 
   const retryBtn = document.createElement('button')
+  retryBtn.className = 'qa-retry-btn'
   retryBtn.textContent = 'Retry'
-  retryBtn.style.marginTop = '0.5rem'
-  retryBtn.style.cursor = 'pointer'
   retryBtn.addEventListener('click', () => init({ surah: String(surahNum) }))
   errorDiv.appendChild(document.createElement('br'))
   errorDiv.appendChild(retryBtn)
@@ -354,14 +355,8 @@ function renderTopBar(topBar, translationVisible, surahNum) {
 
   const toggleBtn = document.createElement('button')
   toggleBtn.textContent = translationVisible ? 'EN ▾' : 'EN ▸'
+  toggleBtn.className = 'qa-toggle-btn'
   toggleBtn.setAttribute('aria-label', translationVisible ? 'Hide translation' : 'Show translation')
-  toggleBtn.style.cursor = 'pointer'
-  toggleBtn.style.background = 'none'
-  toggleBtn.style.border = '1px solid var(--qa-border)'
-  toggleBtn.style.borderRadius = '4px'
-  toggleBtn.style.padding = '0.25rem 0.5rem'
-  toggleBtn.style.fontSize = '0.875rem'
-  toggleBtn.style.color = 'var(--qa-text-secondary)'
 
   toggleBtn.addEventListener('click', async () => {
     const newValue = !translationVisible
