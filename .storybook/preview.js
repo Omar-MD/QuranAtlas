@@ -34,6 +34,28 @@ const preview = {
     },
     layout: 'fullscreen',
   },
+  decorators: [
+    /**
+     * Inject UxNote annotation tool into Storybook preview.
+     * Loads the vendored script after each story renders.
+     */
+    (storyFn, context) => {
+      const html = storyFn()
+
+      // Inject UxNote after DOM update
+      requestAnimationFrame(() => {
+        if (!document.getElementById('uxnote-script')) {
+          const script = document.createElement('script')
+          script.id = 'uxnote-script'
+          script.src = '/uxnote.min.js'
+          script.defer = true
+          document.body.appendChild(script)
+        }
+      })
+
+      return html
+    },
+  ],
 }
 
 export default preview

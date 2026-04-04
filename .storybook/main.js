@@ -9,7 +9,7 @@ const config = {
     name: '@storybook/html-vite',
     options: {},
   },
-  staticDirs: ['../public'],
+  staticDirs: ['../public', '../storybook'],
   async viteFinal(config) {
     // Keep only Storybook plugins, remove all project plugins (including PWA)
     const storybookPlugins = (config.plugins || []).filter(
