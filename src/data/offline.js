@@ -8,6 +8,7 @@ import { emit, on } from '../core/events.js'
 import { getManifestUrls } from './dataset.js'
 
 const ACTIVATION_KEY = 'current'
+let currentMessageHandler = null
 
 /**
  * Get the current activation state.
@@ -67,26 +68,28 @@ export async function startDownload() {
   }
 
   // Listen for SW messages
-  const messageHandler = async (event) => {
+  currentMessageHandler = async (event) => {
     const { type, cached, total, error } = event.data || {}
     switch (type) {
       case 'DATASET_PROGRESS':
         emit('offline:download-progress', { cached, total })
         break
       case 'DATASET_COMPLETE':
-        navigator.serviceWorker.removeEventListener('message', messageHandler)
+        navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
+        currentMessageHandler = null
         await setActivationState('cached')
         emit('offline:download-complete')
         break
       case 'DATASET_ERROR':
-        navigator.serviceWorker.removeEventListener('message', messageHandler)
+        navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
+        currentMessageHandler = null
         await setActivationState('none')
         emit('offline:download-error', { error })
         break
     }
   }
 
-  navigator.serviceWorker.addEventListener('message', messageHandler)
+  navigator.serviceWorker.addEventListener('message', currentMessageHandler)
 
   // Send CACHE_DATASET to SW
   if (navigator.serviceWorker.controller) {
@@ -98,6 +101,11 @@ export async function startDownload() {
  * Cancel the current download.
  */
 export async function cancelDownload() {
+  // Remove the SW message listener if one is active
+  if (currentMessageHandler) {
+    navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
+    currentMessageHandler = null
+  }
   await setActivationState('none')
 }
 
