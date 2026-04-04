@@ -10,6 +10,14 @@ const config = {
     options: {},
   },
   staticDirs: ['../public'],
+  async viteFinal(config) {
+    // Keep only Storybook plugins, remove all project plugins (including PWA)
+    const storybookPlugins = (config.plugins || []).filter(
+      (plugin) => plugin && plugin.name && plugin.name.startsWith('storybook:')
+    )
+    config.plugins = storybookPlugins
+    return config
+  },
 }
 
 export default config
