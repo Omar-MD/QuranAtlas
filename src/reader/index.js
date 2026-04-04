@@ -116,7 +116,7 @@ function renderSurahHeader(container, meta) {
  * Render basmala according to rules:
  * - Surah 1 (Al-Fatiha): basmala is verse 1:1, don't render separately
  * - Surah 9 (At-Tawbah): no basmala
- * - Surahs 2-113 (except 9): basmala as decorative prefix
+ * - All other surahs (2-114 except 9): basmala as decorative prefix
  */
 function renderBasmala(container, surahNum) {
   if (surahNum === 1 || surahNum === 9) return
