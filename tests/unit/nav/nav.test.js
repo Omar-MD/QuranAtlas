@@ -1,0 +1,138 @@
+import { beforeEach, describe, it, expect, vi } from 'vitest'
+import * as events from '../../../src/core/events.js'
+
+const MOCK_SURAHS = [
+  { n: 1, name: 'Al-Fatihah', arabic: 'الفاتحة', type: 'Meccan', count: 7, juz: 1 },
+  { n: 2, name: 'Al-Baqarah', arabic: 'البقرة', type: 'Medinan', count: 286, juz: 1 },
+  { n: 36, name: 'Ya-Sin', arabic: 'يس', type: 'Meccan', count: 83, juz: 22 },
+  { n: 114, name: 'An-Nas', arabic: 'الناس', type: 'Meccan', count: 6, juz: 30 },
+]
+
+vi.mock('../../../src/data/dataset.js', () => ({
+  getSurah: vi.fn().mockResolvedValue({ ar: ['test'], en: ['test'] }),
+  getSurahs: vi.fn().mockResolvedValue(MOCK_SURAHS),
+}))
+
+vi.mock('../../../src/core/db.js', () => ({
+  get: vi.fn().mockResolvedValue(null),
+  put: vi.fn().mockResolvedValue(),
+  openDB: vi.fn().mockResolvedValue({}),
+}))
+
+describe('nav/index.js', () => {
+  beforeEach(() => {
+    document.body.innerHTML = [
+      '<div id="app-shell">',
+      '<header id="top-bar"></header>',
+      '<main id="main-content"></main>',
+      '<nav id="nav-surface" hidden></nav>',
+      '<footer id="bottom-nav"></footer>',
+      '</div>',
+    ].join('')
+    events.clear()
+
+    // Mock matchMedia for jsdom
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+  })
+
+  it('renders surah list into #nav-surface', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const navSurface = document.getElementById('nav-surface')
+    const items = navSurface.querySelectorAll('.qa-nav-item')
+    expect(items.length).toBe(4)
+    expect(items[0].textContent).toContain('Al-Fatihah')
+    expect(items[1].textContent).toContain('Al-Baqarah')
+  })
+
+  it('renders search input', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const search = document.querySelector('.qa-nav-search')
+    expect(search).toBeTruthy()
+    expect(search.type).toBe('search')
+  })
+
+  it('filters surah list on search input', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const search = document.querySelector('.qa-nav-search')
+    search.value = 'ba'
+    search.dispatchEvent(new Event('input'))
+
+    const visibleItems = document.querySelectorAll('.qa-nav-item:not([hidden])')
+    expect(visibleItems.length).toBe(1)
+    expect(visibleItems[0].textContent).toContain('Al-Baqarah')
+  })
+
+  it('highlights current surah on reader:position-changed', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    events.emit('reader:position-changed', { surah: 2, verse: 1 })
+
+    const current = document.querySelector('.qa-nav-current')
+    expect(current).toBeTruthy()
+    expect(current.getAttribute('data-surah')).toBe('2')
+  })
+
+  it('emits navigation:navigate on surah click', async () => {
+    const navFn = vi.fn()
+    events.on('navigation:navigate', navFn)
+
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const firstItem = document.querySelector('.qa-nav-item')
+    firstItem.click()
+
+    expect(navFn).toHaveBeenCalledWith({ surah: 1 })
+  })
+
+  it('adds hamburger toggle to top-bar', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const toggle = document.querySelector('.qa-nav-toggle')
+    expect(toggle).toBeTruthy()
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('opens nav panel on hamburger click', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const toggle = document.querySelector('.qa-nav-toggle')
+    toggle.click()
+
+    const navSurface = document.getElementById('nav-surface')
+    expect(navSurface.classList.contains('qa-nav-open')).toBe(true)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('closes nav on Escape key', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    // Open nav first
+    const toggle = document.querySelector('.qa-nav-toggle')
+    toggle.click()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+
+    const navSurface = document.getElementById('nav-surface')
+    expect(navSurface.classList.contains('qa-nav-open')).toBe(false)
+  })
+})
