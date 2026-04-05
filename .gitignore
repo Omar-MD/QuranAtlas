@@ -39,7 +39,7 @@ storybook-static/
 
 # AI agent skills
 .opencode/skills/
-.claude/skills/
+.claude/
 .agents/skills/
 
 # AI agent state
