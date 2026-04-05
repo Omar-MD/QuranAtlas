@@ -8,6 +8,8 @@ import * as router from './router.js'
 import { initInstallPrompt, getActivationState, cancelDownload } from '../data/offline.js'
 import { emit, on } from './events.js'
 
+let unsubLaunchRestore = null
+
 /**
  * Initialize the application.
  */
@@ -19,12 +21,28 @@ export async function init() {
     // Initialize router
     router.init()
 
-    // Listen for launch restore
-    on('router:launch-restore', handleLaunchRestore)
+    // Listen for launch restore (clean up previous if re-init)
+    if (unsubLaunchRestore) {
+      unsubLaunchRestore()
+    }
+    unsubLaunchRestore = on('router:launch-restore', handleLaunchRestore)
 
     // Register Phase 1 routes
     router.register('#/s/:surah', () => import('../reader/index.js'))
     router.register('#/s/:surah/:ayah', () => import('../reader/index.js'))
+
+    // Initialize nav panel
+    const { init: initNav } = await import('../nav/index.js')
+    await initNav()
+
+    // Handle navigation events from nav panel
+    on('navigation:navigate', ({ surah, verse }) => {
+      if (verse) {
+        router.navigate(`#/s/${surah}/${verse}`)
+      } else {
+        router.navigate(`#/s/${surah}`)
+      }
+    })
 
     // Set initial theme
     applyThemeFromSettings()
