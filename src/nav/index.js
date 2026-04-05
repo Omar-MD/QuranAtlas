@@ -13,8 +13,13 @@ let isOpen = false
 let shouldAutoClose = false
 let backdrop = null
 let unsubPosition = null
-let unsubEscape = null
 let hamburgerToggle = null
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && isOpen) {
+    closeNav()
+  }
+})
 
 /**
  * Initialize the nav panel.
@@ -47,7 +52,7 @@ function renderNavPanel() {
 
   // Search section
   const searchWrap = document.createElement('div')
-  searchWrap.style.cssText = 'padding:1rem;border-bottom:1px solid var(--qa-border);'
+  searchWrap.className = 'qa-nav-search-section'
 
   const searchInput = document.createElement('input')
   searchInput.type = 'search'
@@ -62,7 +67,7 @@ function renderNavPanel() {
 
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      handleSearchSubmit(searchInput.value)
+      handleSearchSubmit(searchInput)
     }
   })
 
@@ -152,8 +157,9 @@ function filterSurahList(query) {
 
     const surahNum = item.getAttribute('data-surah')
     const name = item.querySelector('.qa-nav-item-name')?.textContent?.toLowerCase() || ''
+    const arabic = item.querySelector('.qa-nav-item-arabic')?.textContent || ''
 
-    if (surahNum.startsWith(q) || name.includes(q)) {
+    if (surahNum.startsWith(q) || name.includes(q) || arabic.includes(q)) {
       item.removeAttribute('hidden')
     } else {
       item.setAttribute('hidden', '')
@@ -161,9 +167,8 @@ function filterSurahList(query) {
   })
 }
 
-function handleSearchSubmit(value) {
-  const searchInput = document.querySelector('.qa-nav-search')
-  const result = parseNavigationInput(value, surahs)
+function handleSearchSubmit(searchInput) {
+  const result = parseNavigationInput(searchInput.value, surahs)
 
   if (result.valid) {
     searchInput.removeAttribute('aria-invalid')
@@ -268,16 +273,4 @@ function setupEventListeners() {
   on('reader:surah-loaded', ({ surah }) => {
     updateHighlight(surah)
   })
-
-  if (unsubEscape) { unsubEscape() }
-  unsubEscape = () => {
-    document.removeEventListener('keydown', handleEscapeKey)
-  }
-  document.addEventListener('keydown', handleEscapeKey)
-}
-
-function handleEscapeKey(e) {
-  if (e.key === 'Escape' && isOpen) {
-    closeNav()
-  }
 }

@@ -29,7 +29,7 @@ export function parseNavigationInput(input, surahs) {
     if (surah < 1 || surah > 114) {
       return { valid: false, error: `Surah ${surah} does not exist` }
     }
-    if (verse !== undefined && (verse < 1 || !Number.isInteger(verse))) {
+    if (verse !== undefined && verse < 1) {
       return { valid: false, error: `Invalid verse number: ${verse}` }
     }
 
@@ -59,7 +59,7 @@ export function parseNavigationInput(input, surahs) {
     }
 
     if (verse !== undefined) {
-      if (verse < 1 || !Number.isInteger(verse)) {
+      if (verse < 1) {
         return { valid: false, error: `Invalid verse number: ${verse}` }
       }
       if (verse > match.count) {

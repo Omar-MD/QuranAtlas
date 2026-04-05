@@ -135,4 +135,44 @@ describe('nav/index.js', () => {
     const navSurface = document.getElementById('nav-surface')
     expect(navSurface.classList.contains('qa-nav-open')).toBe(false)
   })
+
+  it('emits navigation:navigate on Enter key on surah item', async () => {
+    const navFn = vi.fn()
+    events.on('navigation:navigate', navFn)
+
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const firstItem = document.querySelector('.qa-nav-item')
+    firstItem.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+
+    expect(navFn).toHaveBeenCalledWith({ surah: 1 })
+  })
+
+  it('sets aria-invalid on invalid search submit', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const search = document.querySelector('.qa-nav-search')
+    search.value = 'xyz'
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+
+    expect(search.getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('closes nav on backdrop click', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const toggle = document.querySelector('.qa-nav-toggle')
+    toggle.click()
+
+    const navSurface = document.getElementById('nav-surface')
+    expect(navSurface.classList.contains('qa-nav-open')).toBe(true)
+
+    const backdrop = document.querySelector('.qa-nav-backdrop')
+    backdrop.click()
+
+    expect(navSurface.classList.contains('qa-nav-open')).toBe(false)
+  })
 })

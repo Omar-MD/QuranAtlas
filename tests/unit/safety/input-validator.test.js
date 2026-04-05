@@ -34,6 +34,36 @@ describe('safety/input-validator.js', () => {
       const result = parseNavigationInput('2:25a')
       expect(result.valid).toBe(false)
     })
+
+    it('rejects null input', () => {
+      const result = parseNavigationInput(null)
+      expect(result.valid).toBe(false)
+    })
+
+    it('rejects undefined input', () => {
+      const result = parseNavigationInput(undefined)
+      expect(result.valid).toBe(false)
+    })
+
+    it('rejects whitespace-only input', () => {
+      const result = parseNavigationInput('   ')
+      expect(result.valid).toBe(false)
+    })
+
+    it('rejects out-of-range surah with verse', () => {
+      const result = parseNavigationInput('115:5')
+      expect(result.valid).toBe(false)
+    })
+
+    it('rejects verse zero', () => {
+      const result = parseNavigationInput('2:0')
+      expect(result.valid).toBe(false)
+    })
+
+    it('rejects surah zero', () => {
+      const result = parseNavigationInput('0')
+      expect(result.valid).toBe(false)
+    })
   })
 
   describe('parseNavigationInput with surahs list', () => {
