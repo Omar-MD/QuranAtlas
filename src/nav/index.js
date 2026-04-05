@@ -16,6 +16,8 @@ let unsubPosition = null
 let unsubLoaded = null
 let hamburgerToggle = null
 let escapeHandler = null
+let mediaQuery = null
+let mediaQueryHandler = null
 
 /**
  * Initialize the nav panel.
@@ -29,9 +31,38 @@ export async function init() {
   setupEventListeners()
   setupEscapeListener()
 
-  window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
+  mediaQuery = window.matchMedia('(max-width: 768px)')
+  mediaQueryHandler = (e) => {
     shouldAutoClose = e.matches
-  })
+  }
+  mediaQuery.addEventListener('change', mediaQueryHandler)
+}
+
+/**
+ * Tear down the nav panel, removing all listeners and resetting state.
+ */
+export function destroy() {
+  if (mediaQuery && mediaQueryHandler) {
+    mediaQuery.removeEventListener('change', mediaQueryHandler)
+  }
+  if (escapeHandler) {
+    document.removeEventListener('keydown', escapeHandler)
+  }
+  if (unsubPosition) { unsubPosition() }
+  if (unsubLoaded) { unsubLoaded() }
+  if (backdrop && backdrop.parentNode) { backdrop.remove() }
+
+  surahs = []
+  currentSurah = null
+  isOpen = false
+  shouldAutoClose = false
+  backdrop = null
+  unsubPosition = null
+  unsubLoaded = null
+  hamburgerToggle = null
+  escapeHandler = null
+  mediaQuery = null
+  mediaQueryHandler = null
 }
 
 /**

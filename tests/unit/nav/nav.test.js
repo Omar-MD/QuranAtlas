@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect, vi } from 'vitest'
+import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest'
 import * as events from '../../../src/core/events.js'
 
 const MOCK_SURAHS = [
@@ -20,7 +20,7 @@ vi.mock('../../../src/core/db.js', () => ({
 }))
 
 describe('nav/index.js', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     document.body.innerHTML = [
       '<div id="app-shell">',
       '<header id="top-bar"></header>',
@@ -42,6 +42,10 @@ describe('nav/index.js', () => {
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
     }))
+
+    // Destroy any previous instance
+    const { destroy } = await import('../../../src/nav/index.js')
+    destroy()
   })
 
   it('renders surah list into #nav-surface', async () => {
@@ -174,5 +178,43 @@ describe('nav/index.js', () => {
     backdrop.click()
 
     expect(navSurface.classList.contains('qa-nav-open')).toBe(false)
+  })
+
+  it('emits navigation:navigate on Space key on surah item', async () => {
+    const navFn = vi.fn()
+    events.on('navigation:navigate', navFn)
+
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const firstItem = document.querySelector('.qa-nav-item')
+    firstItem.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' }))
+
+    expect(navFn).toHaveBeenCalledWith({ surah: 1 })
+  })
+
+  it('highlights current surah on reader:surah-loaded', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    events.emit('reader:surah-loaded', { surah: 36 })
+
+    const current = document.querySelector('.qa-nav-current')
+    expect(current).toBeTruthy()
+    expect(current.getAttribute('data-surah')).toBe('36')
+  })
+
+  it('does not emit navigation:navigate on invalid search submit', async () => {
+    const navFn = vi.fn()
+    events.on('navigation:navigate', navFn)
+
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const search = document.querySelector('.qa-nav-search')
+    search.value = 'xyz'
+    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+
+    expect(navFn).not.toHaveBeenCalled()
   })
 })
