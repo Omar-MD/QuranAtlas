@@ -162,7 +162,7 @@ body {
   border-radius: 4px;
   font-size: 0.75rem;
   color: var(--qa-text-secondary);
-  margin-right: 0.75rem;
+  margin-inline-end: 0.75rem;
   flex-shrink: 0;
 }
 
@@ -292,7 +292,7 @@ body {
   display: inline-block;
   font-size: 0.75rem;
   color: var(--qa-text-secondary);
-  margin-right: 0.5rem;
+  margin-inline-end: 0.5rem;
   direction: ltr;
   unicode-bidi: isolate;
 }
@@ -384,6 +384,22 @@ body {
 .qa-retry-btn {
   margin-top: 0.5rem;
   cursor: pointer;
+}
+
+/* Focus indicators for keyboard navigation */
+.qa-nav-item:focus-visible,
+.qa-nav-toggle:focus-visible,
+.qa-resume-jump:focus-visible,
+.qa-resume-dismiss:focus-visible,
+.qa-toggle-btn:focus-visible,
+.qa-retry-btn:focus-visible {
+  outline: 2px solid var(--qa-accent);
+  outline-offset: 2px;
+}
+
+.qa-nav-search:focus-visible {
+  outline: 2px solid var(--qa-accent);
+  outline-offset: -1px;
 }
 
 /* Translation toggle button */

@@ -9,33 +9,35 @@ const DATASET_BASE = '/dataset'
 const FETCH_TIMEOUT_MS = 3000
 
 /**
- * Try to get a response from the dataset cache, falling back to network.
+ * Network-first fetch with cache fallback.
+ * Tries network with 3s timeout, then falls back to cache.
  * @param {string} url - Relative URL (e.g., '/dataset/surah/001.json')
  * @returns {Promise<object>}
  */
-async function fetchWithCacheFallback(url) {
-  // Try cache first (service worker)
-  try {
-    const cache = await caches.open(CACHE_DATASET)
-    const cached = await cache.match(url)
-    if (cached) {
-      return cached.json()
-    }
-  } catch {
-    // Cache not available, fall through to network
-  }
-
-  // Network with timeout
+async function fetchNetworkFirst(url) {
+  // Try network first with timeout
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
     const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
     if (!res.ok) {
       throw new Error(`Failed to fetch ${url}: ${res.status}`)
     }
     return res.json()
-  } finally {
+  } catch (networkError) {
     clearTimeout(timeout)
+    // Network failed — fall back to cache
+    try {
+      const cache = await caches.open(CACHE_DATASET)
+      const cached = await cache.match(url)
+      if (cached) {
+        return cached.json()
+      }
+    } catch {
+      // Cache not available either
+    }
+    throw networkError
   }
 }
 
@@ -64,7 +66,7 @@ export async function getSurah(n) {
 
   const padded = String(n).padStart(3, '0')
   const url = `${DATASET_BASE}/surah/${padded}.json`
-  return fetchWithCacheFallback(url)
+  return fetchNetworkFirst(url)
 }
 
 /**
@@ -73,5 +75,5 @@ export async function getSurah(n) {
  */
 export async function getSurahs() {
   const url = `${DATASET_BASE}/surahs.json`
-  return fetchWithCacheFallback(url)
+  return fetchNetworkFirst(url)
 }

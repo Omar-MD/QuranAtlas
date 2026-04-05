@@ -1,4 +1,4 @@
-import { SURAHS_CONTENT, SURAHS, setupMockData, setupMockFetch } from '../../stories/mock-data.js'
+import { setupMockData, setupMockFetch } from '../../stories/mock-data.js'
 
 /** @type {import('@storybook/html').Meta} */
 export default {

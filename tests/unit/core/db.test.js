@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { openDB, get, put } from '../../../src/core/db.js'
+import { openDB, get, put, del, deleteDB, getDb } from '../../../src/core/db.js'
 
 describe('core/db.js', () => {
   beforeEach(async () => {
@@ -25,6 +25,20 @@ describe('core/db.js', () => {
     const result = await get('settings', 'nonexistent')
     expect(result).toBeUndefined()
   })
+
+  it('getDb returns the open database', async () => {
+    const db = await getDb()
+    expect(db).toBeTruthy()
+    expect(db.objectStoreNames.contains('settings')).toBe(true)
+  })
+
+  it('deletes a value from a store', async () => {
+    await put('settings', { key: 'theme', value: 'dark' })
+    await del('settings', 'theme')
+    const result = await get('settings', 'theme')
+    expect(result).toBeUndefined()
+  })
+
 
   describe('getMostRecentPosition()', () => {
     it('returns the most recently saved position', async () => {

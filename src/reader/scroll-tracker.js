@@ -72,6 +72,19 @@ export function observeScroll(container, { onPositionChange }) {
 }
 
 /**
+ * Observe newly added verse elements (e.g., from chunked rendering).
+ * @param {HTMLElement[]} elements - New verse elements with data-verse attributes
+ */
+export function observeNewVerses(elements) {
+  if (!observer) {
+    return
+  }
+  for (const el of elements) {
+    observer.observe(el)
+  }
+}
+
+/**
  * Fallback for environments without IntersectionObserver (e.g., jsdom).
  * Uses scroll events and center-band calculation.
  */

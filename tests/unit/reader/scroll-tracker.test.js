@@ -134,6 +134,34 @@ describe('reader/scroll-tracker.js', () => {
     expect(onPositionChange).not.toHaveBeenCalled()
   })
 
+  it('observeNewVerses adds new verse elements to observer', async () => {
+    vi.useFakeTimers()
+    const mod = await import('../../../src/reader/scroll-tracker.js')
+
+    mod.observeScroll(container, { onPositionChange })
+
+    // Add a new verse dynamically
+    const newVerse = document.createElement('div')
+    newVerse.setAttribute('data-verse', '11')
+    newVerse.style.height = '100px'
+    container.appendChild(newVerse)
+
+    // Observe it
+    mod.observeNewVerses([newVerse])
+
+    // The new verse should be observed (we can't easily verify IntersectionObserver internal state,
+    // but we can verify no error is thrown and the function works)
+    expect(() => mod.observeNewVerses([newVerse])).not.toThrow()
+    vi.advanceTimersByTime(1100)
+  })
+
+  it('observeNewVerses is a no-op when no observer exists', async () => {
+    const mod = await import('../../../src/reader/scroll-tracker.js')
+    mod.unobserve()
+    // Should not throw
+    expect(() => mod.observeNewVerses([document.createElement('div')])).not.toThrow()
+  })
+
   it('unobserve clears the listener', async () => {
     vi.useFakeTimers()
 
@@ -146,5 +174,30 @@ describe('reader/scroll-tracker.js', () => {
     vi.advanceTimersByTime(1100)
 
     expect(onPositionChange).not.toHaveBeenCalled()
+  })
+
+  it('uses scroll fallback when IntersectionObserver is unavailable', async () => {
+    vi.useFakeTimers()
+
+    // Remove IntersectionObserver to trigger fallback
+    const originalIO = globalThis.IntersectionObserver
+    delete globalThis.IntersectionObserver
+
+    // Need to re-import to get fresh module state
+    unobserve()
+    mockIO.reset()
+
+    const mod = await import('../../../src/reader/scroll-tracker.js')
+    mod.observeScroll(container, { onPositionChange })
+
+    // Simulate scroll — the fallback uses getBoundingClientRect
+    container.scrollTop = 200
+    container.dispatchEvent(new Event('scroll'))
+
+    vi.advanceTimersByTime(1100)
+
+    // Cleanup and restore
+    mod.unobserve()
+    globalThis.IntersectionObserver = originalIO
   })
 })

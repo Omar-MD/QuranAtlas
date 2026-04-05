@@ -89,7 +89,7 @@ function matchRoute(hash) {
  * @returns {object | null}
  */
 function extractParams(pattern, hash) {
-  const patternParts = pattern.split('/').filter(Boolean)
+  const patternParts = pattern.replace('#', '').split('/').filter(Boolean)
   const hashParts = hash.replace('#', '').split('/').filter(Boolean)
 
   if (patternParts.length !== hashParts.length) {

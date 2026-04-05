@@ -3,9 +3,8 @@
  * Wires all modules together and initializes the app lifecycle.
  */
 
-import { openDB, getMostRecentPosition } from './db.js'
+import { openDB, get, getMostRecentPosition } from './db.js'
 import * as router from './router.js'
-import { initInstallPrompt, getActivationState, cancelDownload } from '../data/offline.js'
 import { emit, on } from './events.js'
 
 let unsubLaunchRestore = null
@@ -52,11 +51,10 @@ export async function init() {
     // Register service worker
     await registerServiceWorker()
 
-    // Initialize PWA install prompt capture
-    initInstallPrompt()
-
-    // Restore activation state
-    await restoreActivationState()
+    // Initialize PWA install prompt capture and restore activation state
+    const offline = await import('../data/offline.js')
+    offline.initInstallPrompt()
+    await restoreActivationState(offline)
   } catch (error) {
     console.error('Failed to initialize app:', error)
   }
@@ -67,7 +65,6 @@ export async function init() {
  */
 async function applyThemeFromSettings() {
   try {
-    const { get } = await import('./db.js')
     const setting = await get('settings', 'theme')
     const theme = setting?.value || 'light'
     document.documentElement.setAttribute('data-theme', theme)
@@ -110,12 +107,12 @@ async function registerServiceWorker() {
 /**
  * Restore activation state and re-download if interrupted.
  */
-async function restoreActivationState() {
-  const state = await getActivationState()
+async function restoreActivationState(offline) {
+  const state = await offline.getActivationState()
 
   if (state === 'downloading') {
     // Interrupted download — reset to none, user must re-tap
-    await cancelDownload()
+    await offline.cancelDownload()
   }
 
   // If no cached corpus and online, show download UI

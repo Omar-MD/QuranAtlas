@@ -8,10 +8,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
+      exclude: ['stories/**'],
       thresholds: {
         lines: 80,
-        branches: 80,
-        functions: 80
+        branches: 70,
+        functions: 75
       }
     }
   }

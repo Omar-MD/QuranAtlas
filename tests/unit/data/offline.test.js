@@ -75,10 +75,9 @@ describe('data/offline.js', () => {
       const messageHandler = globalThis.navigator.serviceWorker.addEventListener.mock.calls.find(
         c => c[0] === 'message'
       )?.[1]
-      if (messageHandler) {
-        messageHandler({ data: { type: 'DATASET_PROGRESS', cached: 2, total: 3 } })
-        expect(progressFn).toHaveBeenCalledWith({ cached: 2, total: 3 })
-      }
+      expect(messageHandler).toBeDefined()
+      messageHandler({ data: { type: 'DATASET_PROGRESS', cached: 2, total: 3 } })
+      expect(progressFn).toHaveBeenCalledWith({ cached: 2, total: 3 })
     })
 
     it('transitions to cached on DATASET_COMPLETE', async () => {
@@ -89,9 +88,8 @@ describe('data/offline.js', () => {
       const messageHandler = globalThis.navigator.serviceWorker.addEventListener.mock.calls.find(
         c => c[0] === 'message'
       )?.[1]
-      if (messageHandler) {
-        await messageHandler({ data: { type: 'DATASET_COMPLETE' } })
-      }
+      expect(messageHandler).toBeDefined()
+      await messageHandler({ data: { type: 'DATASET_COMPLETE' } })
 
       const state = await getActivationState()
       expect(state).toBe('cached')
@@ -107,10 +105,9 @@ describe('data/offline.js', () => {
       const messageHandler = globalThis.navigator.serviceWorker.addEventListener.mock.calls.find(
         c => c[0] === 'message'
       )?.[1]
-      if (messageHandler) {
-        await messageHandler({ data: { type: 'DATASET_COMPLETE' } })
-        expect(completeFn).toHaveBeenCalled()
-      }
+      expect(messageHandler).toBeDefined()
+      await messageHandler({ data: { type: 'DATASET_COMPLETE' } })
+      expect(completeFn).toHaveBeenCalled()
     })
 
     it('transitions back to none on cancel', async () => {
@@ -121,6 +118,17 @@ describe('data/offline.js', () => {
       expect(state).toBe('none')
     })
 
+    it('does not re-start if already downloading', async () => {
+      const { startDownload, getActivationState } = await import('../../../src/data/offline.js')
+      await startDownload()
+      // Second call should be no-op
+      mockPostMessage.mockClear()
+      await startDownload()
+      expect(mockPostMessage).not.toHaveBeenCalled()
+      const state = await getActivationState()
+      expect(state).toBe('downloading')
+    })
+
     it('transitions to none on DATASET_ERROR', async () => {
       const { startDownload, getActivationState } = await import('../../../src/data/offline.js')
       await startDownload()
@@ -128,12 +136,42 @@ describe('data/offline.js', () => {
       const messageHandler = globalThis.navigator.serviceWorker.addEventListener.mock.calls.find(
         c => c[0] === 'message'
       )?.[1]
-      if (messageHandler) {
-        messageHandler({ data: { type: 'DATASET_ERROR', error: 'Network error' } })
-      }
+      expect(messageHandler).toBeDefined()
+      await messageHandler({ data: { type: 'DATASET_ERROR', error: 'Network error' } })
 
       const state = await getActivationState()
       expect(state).toBe('none')
+    })
+  })
+
+  describe('PWA install prompt', () => {
+    it('initInstallPrompt captures beforeinstallprompt event', async () => {
+      const { initInstallPrompt } = await import('../../../src/data/offline.js')
+      const installFn = vi.fn()
+      events.on('offline:install-available', installFn)
+
+      initInstallPrompt()
+
+      const event = new Event('beforeinstallprompt')
+      event.preventDefault = vi.fn()
+      window.dispatchEvent(event)
+
+      expect(installFn).toHaveBeenCalled()
+      expect(event.preventDefault).toHaveBeenCalled()
+    })
+
+    it('triggerInstall returns false when no deferred prompt', async () => {
+      // Cancel any previous deferred prompt by dispatching appinstalled
+      window.dispatchEvent(new Event('appinstalled'))
+      const { triggerInstall } = await import('../../../src/data/offline.js')
+      const result = await triggerInstall()
+      expect(result).toBe(false)
+    })
+
+    it('isStandalone returns false in non-standalone mode', async () => {
+      window.matchMedia = vi.fn().mockReturnValue({ matches: false })
+      const { isStandalone } = await import('../../../src/data/offline.js')
+      expect(isStandalone()).toBe(false)
     })
   })
 })

@@ -73,4 +73,21 @@ describe('data/dataset.js', () => {
       await expect(getSurah(-1)).rejects.toThrow()
     })
   })
+
+  describe('getSurahs()', () => {
+    it('returns an array of 114 surah metadata entries', async () => {
+      const surahs = await getSurahs()
+      expect(Array.isArray(surahs)).toBe(true)
+      expect(surahs.length).toBe(114)
+    })
+
+    it('each entry has required metadata fields', async () => {
+      const surahs = await getSurahs()
+      const first = surahs[0]
+      expect(first).toHaveProperty('n')
+      expect(first).toHaveProperty('name')
+      expect(first).toHaveProperty('arabic')
+      expect(first).toHaveProperty('count')
+    })
+  })
 })

@@ -7,7 +7,8 @@
 import { getSurah, getSurahs } from '../data/dataset.js'
 import { get, put } from '../core/db.js'
 import { emit } from '../core/events.js'
-import { observeScroll, unobserve } from './scroll-tracker.js'
+import { observeScroll, unobserve, observeNewVerses } from './scroll-tracker.js'
+import { announce } from '../a11y/announcer.js'
 
 const SKELETON_TIMEOUT_MS = 5000
 const CHUNK_SIZE = 50
@@ -17,6 +18,7 @@ let renderedCount = 0
 let isRendering = false
 let scrollAppendBound = null
 let currentTranslationVisible = true
+let scrollAppendRafPending = false
 
 /**
  * Initialize the reader for a surah.
@@ -99,6 +101,7 @@ export async function init(params, { savePosition = true } = {}) {
     }
 
     emit('reader:surah-loaded', { surah: surahNum })
+    announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)
   } catch (error) {
     clearTimeout(timeout)
     showError(mainContent, surahNum, error.message)
@@ -118,6 +121,7 @@ function cleanup() {
   currentSurah = null
   renderedCount = 0
   currentTranslationVisible = true
+  scrollAppendRafPending = false
 }
 
 /**
@@ -125,6 +129,7 @@ function cleanup() {
  */
 function renderVerseChunk(container, surah, translationVisible, start, end) {
   const actualEnd = Math.min(end, surah.ar.length)
+  const endMarker = container.querySelector('[data-surah-end]')
 
   for (let i = start; i < actualEnd; i++) {
     const verseNum = i + 1
@@ -152,7 +157,11 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
       verseBlock.appendChild(transEl)
     }
 
-    container.appendChild(verseBlock)
+    if (endMarker) {
+      container.insertBefore(verseBlock, endMarker)
+    } else {
+      container.appendChild(verseBlock)
+    }
   }
 
   renderedCount = actualEnd
@@ -173,8 +182,16 @@ function setupScrollTracking(container, surahNum) {
     },
   })
 
-  // Append more verses on scroll near bottom
-  scrollAppendBound = handleScrollAppend
+  // Append more verses on scroll near bottom (throttled via rAF)
+  scrollAppendBound = () => {
+    if (!scrollAppendRafPending) {
+      scrollAppendRafPending = true
+      requestAnimationFrame(() => {
+        scrollAppendRafPending = false
+        handleScrollAppend()
+      })
+    }
+  }
   mainContent.addEventListener('scroll', scrollAppendBound, { passive: true })
 }
 
@@ -197,8 +214,22 @@ function handleScrollAppend() {
   // Append next chunk when within one viewport height of bottom
   if (scrollHeight - scrollBottom < mainContent.clientHeight) {
     isRendering = true
+    const startCount = renderedCount
     renderVerseChunk(mainContent, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
     isRendering = false
+
+    // Observe newly appended verses for scroll tracking
+    const newVerses = mainContent.querySelectorAll(`[data-verse]`)
+    const newElements = []
+    newVerses.forEach(el => {
+      const v = parseInt(el.getAttribute('data-verse'), 10)
+      if (v > startCount) {
+        newElements.push(el)
+      }
+    })
+    if (newElements.length > 0) {
+      observeNewVerses(newElements)
+    }
   }
 }
 
@@ -339,6 +370,7 @@ function renderResumeIndicator(container, meta, position) {
 function renderSurahEnd(container, meta) {
   const endMarker = document.createElement('div')
   endMarker.className = 'qa-surah-end'
+  endMarker.setAttribute('data-surah-end', '')
   endMarker.textContent = `End of ${meta?.name ?? 'Surah'}`
   container.appendChild(endMarker)
 }

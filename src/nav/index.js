@@ -6,6 +6,7 @@
 import { getSurahs } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
 import { parseNavigationInput } from '../safety/input-validator.js'
+import { announce } from '../a11y/announcer.js'
 
 let surahs = []
 let currentSurah = null
@@ -91,6 +92,10 @@ function renderNavPanel() {
   searchInput.addEventListener('input', () => {
     filterSurahList(searchInput.value)
     searchInput.removeAttribute('aria-invalid')
+    const visible = document.querySelectorAll('.qa-nav-item:not([hidden])')
+    if (searchInput.value.trim()) {
+      announce(`${visible.length} surahs found`)
+    }
   })
 
   searchInput.addEventListener('keydown', (e) => {
@@ -105,7 +110,7 @@ function renderNavPanel() {
   // Surah list
   const list = document.createElement('ul')
   list.className = 'qa-nav-list'
-  list.setAttribute('role', 'navigation')
+  list.setAttribute('role', 'list')
   list.setAttribute('aria-label', 'Surah list')
 
   surahs.forEach(s => {
@@ -165,6 +170,12 @@ function createSurahItem(s) {
       e.preventDefault()
       emit('navigation:navigate', { surah: s.n })
       if (shouldAutoClose) { closeNav() }
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const items = [...document.querySelectorAll('.qa-nav-item:not([hidden])')]
+      const idx = items.indexOf(li)
+      const next = e.key === 'ArrowDown' ? items[idx + 1] : items[idx - 1]
+      if (next) { next.focus() }
     }
   })
 
@@ -209,6 +220,7 @@ function handleSearchSubmit(searchInput) {
     if (shouldAutoClose) { closeNav() }
   } else {
     searchInput.setAttribute('aria-invalid', 'true')
+    announce('Invalid search input')
   }
 }
 

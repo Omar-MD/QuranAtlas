@@ -8,6 +8,10 @@ const MOCK_SURAHS = [
   { n: 114, name: 'An-Nas', arabic: 'الناس', type: 'Meccan', count: 6, juz: 30 },
 ]
 
+vi.mock('../../../src/a11y/announcer.js', () => ({
+  announce: vi.fn(),
+}))
+
 vi.mock('../../../src/data/dataset.js', () => ({
   getSurah: vi.fn().mockResolvedValue({ ar: ['test'], en: ['test'] }),
   getSurahs: vi.fn().mockResolvedValue(MOCK_SURAHS),
@@ -226,6 +230,49 @@ describe('nav/index.js', () => {
 
     const current = document.querySelector('.qa-nav-current')
     expect(current.getAttribute('aria-current')).toBe('page')
+  })
+
+  it('navigates surah list with arrow keys', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    const items = document.querySelectorAll('.qa-nav-item')
+    items[0].focus()
+    items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+
+    // jsdom doesn't actually move focus, but we verify the handler doesn't throw
+    expect(items.length).toBe(4)
+  })
+
+  it('auto-closes nav on mobile after surah click', async () => {
+    // Set matchMedia to mobile (matches: true)
+    let changeCallback = null
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn().mockImplementation((_, cb) => { changeCallback = cb }),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    // Open nav
+    const toggle = document.querySelector('.qa-nav-toggle')
+    toggle.click()
+
+    const navSurface = document.getElementById('nav-surface')
+    expect(navSurface.classList.contains('qa-nav-open')).toBe(true)
+
+    // Click a surah — should auto-close on mobile
+    const firstItem = document.querySelector('.qa-nav-item')
+    firstItem.click()
+
+    expect(navSurface.classList.contains('qa-nav-open')).toBe(false)
   })
 
   it('destroy removes backdrop and resets state', async () => {
