@@ -9,6 +9,7 @@ import { initInstallPrompt, getActivationState, cancelDownload } from '../data/o
 import { emit, on } from './events.js'
 
 let unsubLaunchRestore = null
+let unsubNavNavigate = null
 
 /**
  * Initialize the application.
@@ -36,7 +37,8 @@ export async function init() {
     await initNav()
 
     // Handle navigation events from nav panel
-    on('navigation:navigate', ({ surah, verse }) => {
+    if (unsubNavNavigate) { unsubNavNavigate() }
+    unsubNavNavigate = on('navigation:navigate', ({ surah, verse }) => {
       if (verse) {
         router.navigate(`#/s/${surah}/${verse}`)
       } else {

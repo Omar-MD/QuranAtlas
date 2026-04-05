@@ -13,13 +13,9 @@ let isOpen = false
 let shouldAutoClose = false
 let backdrop = null
 let unsubPosition = null
+let unsubLoaded = null
 let hamburgerToggle = null
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && isOpen) {
-    closeNav()
-  }
-})
+let escapeHandler = null
 
 /**
  * Initialize the nav panel.
@@ -31,6 +27,7 @@ export async function init() {
   renderNavPanel()
   renderHamburgerToggle()
   setupEventListeners()
+  setupEscapeListener()
 
   window.matchMedia('(max-width: 768px)').addEventListener('change', (e) => {
     shouldAutoClose = e.matches
@@ -87,6 +84,7 @@ function renderNavPanel() {
   navSurface.appendChild(list)
 
   // Backdrop
+  if (backdrop && backdrop.parentNode) { backdrop.remove() }
   backdrop = document.createElement('div')
   backdrop.className = 'qa-nav-backdrop'
   backdrop.addEventListener('click', closeNav)
@@ -132,7 +130,8 @@ function createSurahItem(s) {
   })
 
   li.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
       emit('navigation:navigate', { surah: s.n })
       if (shouldAutoClose) { closeNav() }
     }
@@ -173,11 +172,9 @@ function handleSearchSubmit(searchInput) {
   if (result.valid) {
     searchInput.removeAttribute('aria-invalid')
     emit('navigation:navigate', { surah: result.surah, verse: result.verse })
+    searchInput.value = ''
+    filterSurahList('')
     if (shouldAutoClose) { closeNav() }
-    if (!shouldAutoClose) {
-      searchInput.value = ''
-      filterSurahList('')
-    }
   } else {
     searchInput.setAttribute('aria-invalid', 'true')
   }
@@ -186,6 +183,9 @@ function handleSearchSubmit(searchInput) {
 function renderHamburgerToggle() {
   const topBar = document.getElementById('top-bar')
   if (!topBar) { return }
+
+  const existing = topBar.querySelector('.qa-nav-toggle')
+  if (existing) { existing.remove() }
 
   const toggle = document.createElement('button')
   toggle.className = 'qa-nav-toggle'
@@ -220,7 +220,7 @@ function openNav() {
   isOpen = true
 
   const searchInput = document.querySelector('.qa-nav-search')
-  if (searchInput && typeof searchInput.focus === 'function') {
+  if (searchInput) {
     searchInput.focus()
   }
 
@@ -243,7 +243,7 @@ function closeNav() {
 
   isOpen = false
 
-  if (hamburgerToggle && typeof hamburgerToggle.focus === 'function') {
+  if (hamburgerToggle) {
     hamburgerToggle.focus()
   }
 }
@@ -258,7 +258,7 @@ function updateHighlight(surahNum) {
   const item = document.querySelector(`.qa-nav-item[data-surah="${surahNum}"]`)
   if (item) {
     item.classList.add('qa-nav-current')
-    if (isOpen && typeof item.scrollIntoView === 'function') {
+    if (isOpen && item.scrollIntoView) {
       item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }
@@ -270,7 +270,20 @@ function setupEventListeners() {
     updateHighlight(surah)
   })
 
-  on('reader:surah-loaded', ({ surah }) => {
+  if (unsubLoaded) { unsubLoaded() }
+  unsubLoaded = on('reader:surah-loaded', ({ surah }) => {
     updateHighlight(surah)
   })
+}
+
+function setupEscapeListener() {
+  if (escapeHandler) {
+    document.removeEventListener('keydown', escapeHandler)
+  }
+  escapeHandler = (e) => {
+    if (e.key === 'Escape' && isOpen) {
+      closeNav()
+    }
+  }
+  document.addEventListener('keydown', escapeHandler)
 }

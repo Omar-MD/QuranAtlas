@@ -7,6 +7,7 @@
   --qa-accent: #2563eb;
   --qa-border: #e5e5e5;
   --qa-skeleton: #e0e0e0;
+  --qa-color-error: #ef4444;
 }
 
 html[data-theme="sepia"] {
@@ -124,8 +125,8 @@ body {
 }
 
 .qa-nav-search[aria-invalid="true"] {
-  border-color: #ef4444;
-  outline-color: #ef4444;
+  border-color: var(--qa-color-error);
+  outline-color: var(--qa-color-error);
 }
 
 .qa-nav-list {
