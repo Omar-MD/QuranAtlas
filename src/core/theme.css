@@ -82,6 +82,123 @@ body {
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Nav panel */
+#nav-surface {
+  width: 85%;
+  max-width: 320px;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+
+#nav-surface.qa-nav-open {
+  transform: translateX(0);
+}
+
+.qa-nav-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 199;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.qa-nav-backdrop.qa-nav-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.qa-nav-search {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--qa-border);
+  border-radius: 4px;
+  background: var(--qa-bg-secondary);
+  color: var(--qa-text-primary);
+  font-size: 0.875rem;
+}
+
+.qa-nav-search[aria-invalid="true"] {
+  border-color: #ef4444;
+  outline-color: #ef4444;
+}
+
+.qa-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.qa-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--qa-border);
+  cursor: pointer;
+}
+
+.qa-nav-item:hover {
+  background: var(--qa-bg-secondary);
+}
+
+.qa-nav-current {
+  border-left: 3px solid var(--qa-accent);
+  background: var(--qa-bg-secondary);
+}
+
+.qa-nav-number {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--qa-bg-secondary);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--qa-text-secondary);
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.qa-nav-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.qa-nav-item-name {
+  font-size: 0.875rem;
+  color: var(--qa-text-primary);
+}
+
+.qa-nav-item-meta {
+  font-size: 0.75rem;
+  color: var(--qa-text-secondary);
+}
+
+.qa-nav-item-arabic {
+  font-family: 'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
+  font-size: 1.1rem;
+  color: var(--qa-text-secondary);
+  direction: rtl;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Hamburger toggle button */
+.qa-nav-toggle {
+  background: none;
+  border: none;
+  color: var(--qa-text-primary);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
 #bottom-nav {
   position: sticky;
   bottom: 0;
@@ -108,6 +225,11 @@ body {
 @keyframes qa-skeleton-loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Translation toggle: CSS-driven visibility */
+.qa-hide-translation [data-translation] {
+  display: none;
 }
 
 /* Utility */
