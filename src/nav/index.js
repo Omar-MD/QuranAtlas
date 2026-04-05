@@ -13,6 +13,8 @@ let isOpen = false
 let shouldAutoClose = false
 let backdrop = null
 let unsubPosition = null
+let unsubEscape = null
+let hamburgerToggle = null
 
 /**
  * Initialize the nav panel.
@@ -91,7 +93,7 @@ function createSurahItem(s) {
   li.className = 'qa-nav-item'
   li.setAttribute('data-surah', String(s.n))
   li.setAttribute('tabindex', '0')
-  li.setAttribute('role', 'link')
+  li.setAttribute('role', 'button')
 
   const num = document.createElement('span')
   num.className = 'qa-nav-number'
@@ -184,7 +186,9 @@ function renderHamburgerToggle() {
   toggle.className = 'qa-nav-toggle'
   toggle.setAttribute('aria-label', 'Open navigation')
   toggle.setAttribute('aria-expanded', 'false')
+  toggle.setAttribute('aria-controls', 'nav-surface')
   toggle.textContent = '\u2630'
+  hamburgerToggle = toggle
 
   toggle.addEventListener('click', () => {
     if (isOpen) {
@@ -210,6 +214,11 @@ function openNav() {
 
   isOpen = true
 
+  const searchInput = document.querySelector('.qa-nav-search')
+  if (searchInput && typeof searchInput.focus === 'function') {
+    searchInput.focus()
+  }
+
   const current = document.querySelector('.qa-nav-current')
   if (current && typeof current.scrollIntoView === 'function') {
     current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -228,6 +237,10 @@ function closeNav() {
   }
 
   isOpen = false
+
+  if (hamburgerToggle && typeof hamburgerToggle.focus === 'function') {
+    hamburgerToggle.focus()
+  }
 }
 
 function updateHighlight(surahNum) {
@@ -256,9 +269,15 @@ function setupEventListeners() {
     updateHighlight(surah)
   })
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isOpen) {
-      closeNav()
-    }
-  })
+  if (unsubEscape) { unsubEscape() }
+  unsubEscape = () => {
+    document.removeEventListener('keydown', handleEscapeKey)
+  }
+  document.addEventListener('keydown', handleEscapeKey)
+}
+
+function handleEscapeKey(e) {
+  if (e.key === 'Escape' && isOpen) {
+    closeNav()
+  }
 }
