@@ -24,18 +24,18 @@ let mediaQueryHandler = null
  */
 export async function init() {
   surahs = await getSurahs()
-  shouldAutoClose = window.matchMedia('(max-width: 768px)').matches
+
+  mediaQuery = window.matchMedia('(max-width: 768px)')
+  shouldAutoClose = mediaQuery.matches
+  mediaQueryHandler = (e) => {
+    shouldAutoClose = e.matches
+  }
+  mediaQuery.addEventListener('change', mediaQueryHandler)
 
   renderNavPanel()
   renderHamburgerToggle()
   setupEventListeners()
   setupEscapeListener()
-
-  mediaQuery = window.matchMedia('(max-width: 768px)')
-  mediaQueryHandler = (e) => {
-    shouldAutoClose = e.matches
-  }
-  mediaQuery.addEventListener('change', mediaQueryHandler)
 }
 
 /**
@@ -170,6 +170,7 @@ function createSurahItem(s) {
 
   if (currentSurah === s.n) {
     li.classList.add('qa-nav-current')
+    li.setAttribute('aria-current', 'page')
   }
 
   return li
@@ -289,6 +290,7 @@ function updateHighlight(surahNum) {
   const item = document.querySelector(`.qa-nav-item[data-surah="${surahNum}"]`)
   if (item) {
     item.classList.add('qa-nav-current')
+    item.setAttribute('aria-current', 'page')
     if (isOpen && item.scrollIntoView) {
       item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }

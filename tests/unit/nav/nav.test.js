@@ -217,4 +217,37 @@ describe('nav/index.js', () => {
 
     expect(navFn).not.toHaveBeenCalled()
   })
+
+  it('sets aria-current on highlighted surah', async () => {
+    const { init } = await import('../../../src/nav/index.js')
+    await init()
+
+    events.emit('reader:position-changed', { surah: 2, verse: 1 })
+
+    const current = document.querySelector('.qa-nav-current')
+    expect(current.getAttribute('aria-current')).toBe('page')
+  })
+
+  it('destroy removes backdrop and resets state', async () => {
+    const { init, destroy } = await import('../../../src/nav/index.js')
+    await init()
+
+    expect(document.querySelector('.qa-nav-backdrop')).toBeTruthy()
+
+    destroy()
+
+    expect(document.querySelector('.qa-nav-backdrop')).toBeFalsy()
+  })
+
+  it('destroy prevents events from triggering handlers after cleanup', async () => {
+    const { init, destroy } = await import('../../../src/nav/index.js')
+    await init()
+
+    destroy()
+
+    events.emit('reader:position-changed', { surah: 2, verse: 1 })
+
+    const current = document.querySelector('.qa-nav-current')
+    expect(current).toBeFalsy()
+  })
 })
