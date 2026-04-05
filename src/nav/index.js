@@ -285,6 +285,7 @@ function updateHighlight(surahNum) {
 
   document.querySelectorAll('.qa-nav-current').forEach(el => {
     el.classList.remove('qa-nav-current')
+    el.removeAttribute('aria-current')
   })
 
   const item = document.querySelector(`.qa-nav-item[data-surah="${surahNum}"]`)
