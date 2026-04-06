@@ -56,6 +56,9 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     const surah = await getSurah(surahNum)
     performance.mark('reader:fetch-end')
 
+    // Guard: bail if navigation moved on while we were fetching
+    if (currentSurahNum !== surahNum) return
+
     // Background fetch: position and settings while rendering
     const [surahs, translationVisible, savedPosition] = await Promise.all([
       getSurahs(),
@@ -64,6 +67,9 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     ])
 
     clearTimeout(timeout)
+
+    // Guard: bail if navigation moved on while we were fetching settings
+    if (currentSurahNum !== surahNum) return
 
     currentSurah = surah
     const surahMeta = surahs.find(s => s.n === surahNum)

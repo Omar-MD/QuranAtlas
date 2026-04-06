@@ -231,6 +231,44 @@ describe('reader/index.js', () => {
     expect(db.put).toHaveBeenCalled()
   })
 
+  it('aborts stale surah render when navigation changes during fetch', async () => {
+    const dataset = await import('../../../src/data/dataset.js')
+
+    let resolveSurah2
+    dataset.getSurah.mockImplementation((num) => {
+      if (num === 2) {
+        return new Promise(resolve => {
+          resolveSurah2 = () => resolve({
+            ar: ['آية واحدة'],
+            en: ['one verse'],
+          })
+        })
+      }
+      // Surah 1: resolve immediately with 2 verses
+      return Promise.resolve({
+        ar: ['بسم', 'الحمد'],
+        en: ['In the name', 'Praise'],
+      })
+    })
+
+    const { init } = await import('../../../src/reader/index.js')
+
+    // Start loading surah 2 (will hang until we call resolveSurah2)
+    const p2 = init({ surah: '2' })
+
+    // Navigate to surah 1 — completes immediately
+    await init({ surah: '1' })
+
+    // Now resolve the stale surah 2 fetch
+    resolveSurah2()
+    await p2
+
+    // Main content should show surah 1 (2 verses), not surah 2 (1 verse)
+    const mainContent = document.getElementById('main-content')
+    const verses = mainContent.querySelectorAll('[data-verse]')
+    expect(verses.length).toBe(2)
+  })
+
   it('removes visibilitychange listener on cleanup', async () => {
     const addSpy = vi.spyOn(document, 'addEventListener')
     const removeSpy = vi.spyOn(document, 'removeEventListener')
