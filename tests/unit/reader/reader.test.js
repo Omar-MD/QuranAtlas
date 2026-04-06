@@ -218,7 +218,7 @@ describe('reader/index.js', () => {
     expect(toggle).toBeTruthy()
   })
 
-  it.skip('saves position when document becomes hidden', async () => {
+  it('saves position when document becomes hidden', async () => {
     db.put.mockClear()
     const { init } = await import('../../../src/reader/index.js')
     await init({ surah: '1' })
@@ -229,5 +229,26 @@ describe('reader/index.js', () => {
     document.dispatchEvent(event)
 
     expect(db.put).toHaveBeenCalled()
+  })
+
+  it('removes visibilitychange listener on cleanup', async () => {
+    const addSpy = vi.spyOn(document, 'addEventListener')
+    const removeSpy = vi.spyOn(document, 'removeEventListener')
+
+    const { init, cleanup } = await import('../../../src/reader/index.js')
+    await init({ surah: '1' })
+
+    const addCalls = addSpy.mock.calls.filter(c => c[0] === 'visibilitychange')
+    expect(addCalls.length).toBeGreaterThan(0)
+    const handler = addCalls[addCalls.length - 1][1]
+
+    cleanup()
+
+    const removeCalls = removeSpy.mock.calls.filter(c => c[0] === 'visibilitychange')
+    expect(removeCalls.length).toBeGreaterThan(0)
+    expect(removeCalls[removeCalls.length - 1][1]).toBe(handler)
+
+    addSpy.mockRestore()
+    removeSpy.mockRestore()
   })
 })

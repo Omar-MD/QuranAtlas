@@ -22,6 +22,7 @@ let scrollAppendBound = null
 let currentTranslationVisible = true
 let scrollAppendRafPending = false
 let unsubVisibility = null
+let visibilityHandler = null
 
 export async function init(params, { savePosition: shouldSavePosition = true } = {}) {
   const surahNum = parseInt(params.surah, 10)
@@ -94,7 +95,7 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     // Set up scroll tracking if savePosition is enabled
     if (shouldSavePosition) {
       setupScrollTracking(mainContent, surahNum)
-      document.addEventListener('visibilitychange', () => {
+      visibilityHandler = () => {
         if (document.hidden && currentSurahNum && renderedCount > 0) {
           try {
             put('positions', {
@@ -107,7 +108,8 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
             // Position save failed, continue anyway
           }
         }
-      })
+      }
+      document.addEventListener('visibilitychange', visibilityHandler)
     }
 
     // Re-read position when tab becomes visible
@@ -145,6 +147,10 @@ function cleanup() {
   if (mainContent && scrollAppendBound) {
     mainContent.removeEventListener('scroll', scrollAppendBound)
     scrollAppendBound = null
+  }
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler)
+    visibilityHandler = null
   }
   if (unsubVisibility) {
     unsubVisibility()
