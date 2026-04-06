@@ -22,10 +22,6 @@ export async function init() {
     await openDB()
     performance.mark('db:open')
 
-    // Initialize router
-    router.init()
-    performance.mark('router:resolve')
-
     // Listen for launch restore (clean up previous if re-init)
     if (unsubLaunchRestore) {
       unsubLaunchRestore()
@@ -43,6 +39,10 @@ export async function init() {
     router.register('#/settings', () => import('../settings/index.js'))
     router.register('#/about', () => import('../about/index.js'))
     router.register('#/t/:tag', () => import('../review/hub.js'))
+
+    // Initialize router AFTER routes are registered so first dispatch finds them
+    router.init()
+    performance.mark('router:resolve')
 
     // Initialize nav panel
     const { init: initNav } = await import('../nav/index.js')
