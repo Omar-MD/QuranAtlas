@@ -174,6 +174,50 @@ describe('reader/index.js', () => {
     expect(verses.length).toBe(2)
   })
 
+  it('translation toggle does not throw and toggles visibility', async () => {
+    // Reset mock to default (translationVisible: true) in case a prior test changed it
+    db.get.mockImplementation((store, key) => {
+      if (store === 'settings' && key === 'translationVisible') {
+        return Promise.resolve({ key: 'translationVisible', value: true })
+      }
+      return Promise.resolve(null)
+    })
+
+    const { init } = await import('../../../src/reader/index.js')
+    await init({ surah: '1' })
+
+    const toggle = document.querySelector('.qa-toggle-btn')
+    expect(toggle).toBeTruthy()
+
+    // Click should NOT throw
+    expect(() => toggle.click()).not.toThrow()
+
+    await new Promise(r => setTimeout(r, 10))
+    const translations = document.querySelectorAll('[data-translation]')
+    translations.forEach(el => {
+      expect(el.classList.contains('qa-hide-translation')).toBe(true)
+    })
+    expect(toggle.textContent).toBe('EN ▸')
+  })
+
+  it('renderTopBar preserves hamburger toggle in top-bar', async () => {
+    const topBar = document.getElementById('top-bar')
+    const hamburger = document.createElement('button')
+    hamburger.className = 'qa-nav-toggle'
+    hamburger.textContent = '☰'
+    topBar.appendChild(hamburger)
+
+    const { init } = await import('../../../src/reader/index.js')
+    await init({ surah: '1' })
+
+    const preserved = topBar.querySelector('.qa-nav-toggle')
+    expect(preserved).toBeTruthy()
+    expect(preserved.textContent).toBe('☰')
+
+    const toggle = topBar.querySelector('.qa-toggle-btn')
+    expect(toggle).toBeTruthy()
+  })
+
   it.skip('saves position when document becomes hidden', async () => {
     db.put.mockClear()
     const { init } = await import('../../../src/reader/index.js')

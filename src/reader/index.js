@@ -89,7 +89,7 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     renderSurahEnd(mainContent, surahMeta)
 
     // Render top bar controls
-    renderTopBar(topBar, translationVisible, surahNum)
+    renderTopBar(topBar, translationVisible, surahNum, mainContent)
 
     // Set up scroll tracking if savePosition is enabled
     if (shouldSavePosition) {
@@ -431,12 +431,13 @@ function renderSurahEnd(container, meta) {
 /**
  * Render top bar with translation toggle.
  */
-function renderTopBar(topBar, translationVisible, _surahNum) {
+function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
   if (!topBar) {
     return
   }
 
-  topBar.innerHTML = ''
+  const existingToggle = topBar.querySelector('.qa-toggle-btn')
+  if (existingToggle) { existingToggle.remove() }
 
   const toggleBtn = document.createElement('button')
   toggleBtn.textContent = translationVisible ? 'EN ▾' : 'EN ▸'
@@ -444,7 +445,7 @@ function renderTopBar(topBar, translationVisible, _surahNum) {
   toggleBtn.setAttribute('aria-label', translationVisible ? 'Hide translation' : 'Show translation')
 
   toggleBtn.addEventListener('click', async () => {
-    const newValue = !translationVisible
+    const newValue = !currentTranslationVisible
     currentTranslationVisible = newValue
     try {
       await put('settings', { key: 'translationVisible', value: newValue })
