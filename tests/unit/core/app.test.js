@@ -75,3 +75,41 @@ describe('core/app.js init order', () => {
     expect(firstInitIndex).toBeGreaterThan(lastRegisterIndex)
   })
 })
+
+describe('core/app.js error recovery', () => {
+  it('renders error recovery UI when openDB fails', async () => {
+    vi.resetModules()
+
+    vi.doMock('../../../src/core/db.js', () => ({
+      openDB: vi.fn().mockRejectedValue(new Error('IDB unavailable')),
+      get: vi.fn().mockResolvedValue(null),
+      put: vi.fn().mockResolvedValue(),
+      getMostRecentPosition: vi.fn().mockResolvedValue(null),
+    }))
+    vi.doMock('../../../src/nav/index.js', () => ({ init: vi.fn().mockResolvedValue() }))
+    vi.doMock('../../../src/data/offline.js', () => ({
+      initInstallPrompt: vi.fn(),
+      getActivationState: vi.fn().mockResolvedValue('none'),
+      cancelDownload: vi.fn().mockResolvedValue(),
+    }))
+    vi.doMock('../../../src/a11y/announcer.js', () => ({ announce: vi.fn() }))
+
+    // Clear the body and add a fresh #main-content element
+    while (document.body.firstChild) {
+      document.body.removeChild(document.body.firstChild)
+    }
+    const main = document.createElement('main')
+    main.id = 'main-content'
+    document.body.appendChild(main)
+
+    await import('../../../src/core/app.js')
+    await new Promise(r => setTimeout(r, 100))
+
+    const errorDiv = main.querySelector('.qa-error-state')
+    expect(errorDiv).toBeTruthy()
+    expect(errorDiv.textContent).toContain('Failed')
+
+    const retryBtn = main.querySelector('.qa-retry-btn')
+    expect(retryBtn).toBeTruthy()
+  })
+})

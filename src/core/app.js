@@ -71,6 +71,21 @@ export async function init() {
   } catch (error) {
     console.error('Failed to initialize app:', error)
     emit(Events.APP_INIT_ERROR, { error })
+    const mainContent = document.getElementById('main-content')
+    if (mainContent) {
+      while (mainContent.firstChild) { mainContent.removeChild(mainContent.firstChild) }
+      const errorDiv = document.createElement('div')
+      errorDiv.className = 'qa-error-state'
+      errorDiv.textContent = 'Failed to load QuranAtlas.'
+      const br = document.createElement('br')
+      const retryBtn = document.createElement('button')
+      retryBtn.className = 'qa-retry-btn'
+      retryBtn.textContent = 'Retry'
+      retryBtn.addEventListener('click', () => init())
+      errorDiv.appendChild(br)
+      errorDiv.appendChild(retryBtn)
+      mainContent.appendChild(errorDiv)
+    }
   }
 }
 
