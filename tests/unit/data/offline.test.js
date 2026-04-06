@@ -156,8 +156,11 @@ describe('data/offline.js', () => {
 
       const state = await getActivationState()
       expect(state).toBe('none')
+      // Verify startDownload() ran fully (not early-returned). The error event is only
+      // emitted in the else branch after the state transitions through 'downloading' → 'none',
+      // so errorFn being called proves both state changes occurred.
       expect(errorFn).toHaveBeenCalledWith(
-        expect.objectContaining({ error: expect.any(String) })
+        expect.objectContaining({ error: 'Service worker not ready' })
       )
 
       // Restore

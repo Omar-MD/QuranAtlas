@@ -146,13 +146,19 @@ describe('reader/scroll-tracker.js', () => {
     newVerse.style.height = '100px'
     container.appendChild(newVerse)
 
-    // Observe it
+    // Observe it — this calls observer.observe(newVerse) internally
     mod.observeNewVerses([newVerse])
 
-    // The new verse should be observed (we can't easily verify IntersectionObserver internal state,
-    // but we can verify no error is thrown and the function works)
-    expect(() => mod.observeNewVerses([newVerse])).not.toThrow()
+    // Trigger the IntersectionObserver callback for the new verse by simulating it
+    // intersecting (simulates the element scrolling into the center band)
+    container.scrollTop = 1000
+    container.dispatchEvent(new Event('scroll'))
+    mockIO.triggerScroll()
+
     vi.advanceTimersByTime(1100)
+
+    // The new verse (11) should have been reported via onPositionChange
+    expect(onPositionChange).toHaveBeenCalledWith({ verse: 11 })
   })
 
   it('observeNewVerses is a no-op when no observer exists', async () => {
@@ -190,11 +196,16 @@ describe('reader/scroll-tracker.js', () => {
     const mod = await import('../../../src/reader/scroll-tracker.js')
     mod.observeScroll(container, { onPositionChange })
 
-    // Simulate scroll — the fallback uses getBoundingClientRect
-    container.scrollTop = 200
+    // Simulate scroll — the fallback uses scroll events and offsetTop/offsetHeight.
+    // In jsdom, layout values are 0, so scrollTop=0 puts centerTop=0 which matches
+    // the first verse (offsetTop=0, offsetHeight=0 → range [0,0]).
+    container.scrollTop = 0
     container.dispatchEvent(new Event('scroll'))
 
     vi.advanceTimersByTime(1100)
+
+    // Fallback mode must have called onPositionChange after the debounce window
+    expect(onPositionChange).toHaveBeenCalled()
 
     // Cleanup and restore
     mod.unobserve()

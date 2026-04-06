@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as events from '../../../src/core/events.js'
 
 describe('core/router.js', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     events.clear()
     window.location.hash = ''
+    const { clearRoutes } = await import('../../../src/core/router.js')
+    clearRoutes()
   })
 
   it('register and navigate calls module init with params', async () => {

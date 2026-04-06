@@ -40,12 +40,26 @@ vi.mock('../../../src/core/db.js', () => ({
 }))
 
 describe('reader/index.js', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     document.body.innerHTML = `
       <header id="top-bar"></header>
       <main id="main-content"></main>
     `
     events.clear()
+    vi.clearAllMocks()
+
+    // Reset dataset.getSurah to original mock value so inline overrides in one test
+    // don't leak into subsequent tests (vi.clearAllMocks() only clears call history,
+    // not implementations set via mockImplementation/mockResolvedValue).
+    const dataset = await import('../../../src/data/dataset.js')
+    dataset.getSurah.mockResolvedValue({
+      ar: ['بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ'],
+      en: ['In the name of God, the Gracious, the Merciful', 'All praise is due to God, Lord of all worlds'],
+    })
+
+    // Reset module-level state between tests (clears listeners, abort tokens, etc.)
+    const { cleanup } = await import('../../../src/reader/index.js')
+    cleanup()
   })
 
   it('renders Arabic verses as text nodes', async () => {
@@ -228,7 +242,11 @@ describe('reader/index.js', () => {
     Object.defineProperty(event, 'target', { value: document, configurable: true })
     document.dispatchEvent(event)
 
-    expect(db.put).toHaveBeenCalled()
+    // Verify exact data saved — surah number and verse id must be present
+    expect(db.put).toHaveBeenCalledWith('positions', expect.objectContaining({
+      surah: 1,
+      id: 's1',
+    }))
   })
 
   it('aborts stale surah render when navigation changes during fetch', async () => {

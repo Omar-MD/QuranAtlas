@@ -133,3 +133,10 @@ function extractParams(pattern, hash) {
  * @deprecated Import directly from './db.js' instead.
  */
 export { getMostRecentPosition } from './db.js'
+
+/**
+ * Clear all registered routes. Test use only.
+ */
+export function clearRoutes() {
+  routes.clear()
+}
