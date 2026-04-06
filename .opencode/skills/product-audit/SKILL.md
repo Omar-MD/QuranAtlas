@@ -1,14 +1,14 @@
 ---
 name: product-audit
-description: Use when running a product audit on QuranAtlas, performing a health check, assessing code quality across multiple dimensions, evaluating readiness for a new phase or release, or when the user mentions auditing, health report, product review, codebase assessment, or wants a structured multi-dimensional analysis with weighted scores and a prioritized recovery plan.
+description: Use when running a product audit on QuranAtlas, performing a health check, assessing code quality across multiple dimensions, evaluating readiness for a new phase or release, or when the user mentions auditing, health report, product review, or codebase assessment.
 ---
 # Product Audit — QuranAtlas
 
 ## Overview
 
-A structured, multi-dimensional audit that spawns 7 parallel specialist subagents, each scoring their dimension 0-10 against a core checklist plus supplementary checks. An orchestrator cross-analyzes all reports, calculates a weighted health score, and generates a prioritized markdown recovery plan.
+A structured, multi-dimensional audit that spawns 7 parallel specialist subagents, each scoring their dimension 0-10 against a core checklist with code-level evidence. An orchestrator cross-analyzes all reports, verifies findings, calculates a weighted health score, and generates a prioritized recovery plan with a gate decision.
 
-**Core principle:** Every audit must be systematic, evidence-based, and actionable. No dimension is skipped. No score is given without code-level evidence.
+**Core principle:** Accuracy over completeness. A correct audit with 12 verified findings is worth more than 22 findings with 5 fabricated. No score without code-level evidence.
 
 ## When to Use
 
@@ -17,103 +17,34 @@ A structured, multi-dimensional audit that spawns 7 parallel specialist subagent
 - User wants a structured multi-dimensional analysis
 - User asks "how healthy is this codebase?" or "what needs fixing?"
 
-**Do NOT use for:** Single-file reviews, PR reviews, or quick "is this OK?" questions. This skill is for full codebase audits.
+**Do NOT use for:** Single-file reviews, PR reviews, or quick "is this OK?" questions. Use Full Audit for first-time or periodic assessment. Use Follow-Up Audit to verify fixes after a full audit.
 
 ## The Iron Law
 
-**NO audit without all 7 dimensions.** Even if the user says "just check X", you MUST run all 7 dimensions. The user may not know that a security issue is also a reliability issue. Your job is to give the complete picture.
+**Full Audit: NO audit without all 7 dimensions.** A security issue may also be a reliability issue. Your job is the complete picture.
 
-**No exceptions:**
-- Not for "quick passes" — quick passes miss critical cross-dimensional issues
+**Follow-Up Audit:** Re-audit only dimensions that had P0/P1 findings in a previous full audit. Produces a delta report. See "Follow-Up Audit Mode" section below.
+
+**No exceptions to full audit:**
+- Not for "quick passes" — quick passes miss cross-dimensional issues
 - Not for "just one dimension" — isolated audits create blind spots
 - Not for "everything else is fine" — that's exactly what you need to verify
 - Not for "we're in a hurry" — a partial audit is worse than no audit (false confidence)
 
-## Core Flow
+## Full Audit Flow
 
-```dot
-digraph audit_flow {
-    "User triggers audit" [shape=box];
-    "Spawn 7 subagents in parallel" [shape=box];
-    "Wait for all to complete" [shape=box];
-    "Read all 7 reports" [shape=box];
-    "Cross-analyze findings" [shape=box];
-    "Calculate weighted scores" [shape=box];
-    "Generate recovery plan" [shape=box];
-    "Write markdown report" [shape=doublecircle];
+### Step 0: Pre-Audit Setup
 
-    "User triggers audit" -> "Spawn 7 subagents in parallel";
-    "Spawn 7 subagents in parallel" -> "Wait for all to complete";
-    "Wait for all to complete" -> "Read all 7 reports";
-    "Read all 7 reports" -> "Cross-analyze findings";
-    "Cross-analyze findings" -> "Calculate weighted scores";
-    "Calculate weighted scores" -> "Generate recovery plan";
-    "Generate recovery plan" -> "Write markdown report";
-}
-```
+Before spawning subagents:
 
-## Step 1: Spawn 7 Subagents in Parallel
+1. Run `mkdir -p .tmp/audit-results` to create the output directory
+2. Capture `git rev-parse --short HEAD` — this is the commit being audited
+3. Read `docs/product-info.md` and `docs/tech-stack.md` — the orchestrator needs product context to validate subagent reports later
+4. Check `docs/audit/` for previous audit reports — if one exists, note it for the delta section
 
-Each subagent receives the same base instructions below. Spawn all 7 simultaneously — do NOT wait for one to finish before starting the next.
+### Step 1: Spawn 7 Subagents in Parallel
 
-**Subagent prompt template:**
-
-```
-You are the [DIMENSION] auditor for QuranAtlas.
-
-## Project Context
-QuranAtlas is a vanilla JS PWA for reading the Quran on mobile devices.
-- Source: /Users/omarduadu/Desktop/Dev/QuranAtlas/src/
-- Tech: Vanilla JS, Vite, PWA with service worker, IndexedDB
-- Architecture: Pub/sub event bus, hash-based routing, strict module boundaries
-- Feature modules: reader/, nav/, marks/, review/, settings/, about/
-- Cross-cutting: core/, data/, safety/, a11y/
-- 12 unit test files, Storybook stories, no E2E tests yet
-
-## Your Task
-
-1. Read the core checklist for your dimension (see below)
-2. Analyze the relevant source files in the codebase
-3. Evaluate each checklist item: Pass / Fail / Partial with code-level evidence
-4. Add supplementary checks based on what you find in the code
-5. Score 0-10 with detailed justification
-6. Report all findings with P0/P1/P2/P3 severity (NO EXCEPTIONS - use ONLY these labels)
-
-## Core Checklist for [DIMENSION]
-
-[Insert dimension-specific checklist from checklists/ directory]
-
-## Output Format (save as JSON)
-
-Save your report to: .tmp/audit-results/[dimension-slug].json
-
-{
-  "dimension": "[Dimension Name]",
-  "score": 0-10,
-  "score_justification": "detailed paragraph explaining why this score",
-  "core_checklist": [
-    {"item": "checklist item text", "status": "pass|fail|partial", "evidence": "file:line + description"}
-  ],
-  "supplementary_findings": [
-    {"description": "what you found", "severity": "P0|P1|P2|P3", "location": "file:line or N/A", "evidence": "code snippet or explanation"}
-  ],
-  "top_3_risks": ["risk 1", "risk 2", "risk 3"],
-  "top_3_recommendations": ["rec 1", "rec 2", "rec 3"]
-}
-
-## Severity Definitions (MUST USE EXACTLY THESE)
-- P0 (Blocker): Data loss, wrong verse text, XSS vector, broken navigation. Blocks release.
-- P1 (Critical): Broken feature, offline failure, security gap. Fix before next release.
-- P2 (Warning): Degrades experience, tech debt, maintainability issue. Plan for sprint.
-- P3 (Info): Improvement opportunity, nice-to-have. Backlog candidate.
-
-## Scoring Guide
-- 0-2: Non-existent or fundamentally broken
-- 3-4: Major gaps, unreliable
-- 5-6: Functional but significant issues
-- 7-8: Solid with minor improvements needed
-- 9-10: Excellent, best-practice level
-```
+Spawn all 7 simultaneously — do NOT wait for one to finish before starting the next. Each subagent gets the prompt template from `references/subagent-prompt-template.md` with the dimension-specific checklist inserted and the correct spec list from the dimension-to-spec mapping table in that template.
 
 **Dimension-to-slug mapping:**
 
@@ -127,119 +58,164 @@ Save your report to: .tmp/audit-results/[dimension-slug].json
 | Testability | testability | checklists/testability.md |
 | Observability | observability | checklists/observability.md |
 
-## Step 2: Wait and Collect All Reports
+**Timeout:** Allow up to 120 seconds per subagent (checklists have 18-22 items each).
 
-Wait for all 7 subagents to complete. If any subagent fails or times out, re-spawn it with a simplified prompt focusing only on core checklist items — do NOT proceed with missing dimensions.
+### Step 2: Handle Failures
 
-## Step 3: Cross-Analyze Findings
+```dot
+digraph failure_recovery {
+    rankdir=LR;
+    "Subagent completes?" [shape=diamond];
+    "Collect report" [shape=box];
+    "Timed out or failed?" [shape=diamond];
+    "Respawn with core-only prompt" [shape=box];
+    "Second attempt succeeds?" [shape=diamond];
+    "Flag dimension as incomplete" [shape=box];
+    "3+ dimensions incomplete?" [shape=diamond];
+    "ABORT audit — tell user" [shape=box, style=bold];
+    "Proceed with available reports" [shape=box];
 
-Read all 7 JSON reports and look for:
-
-1. **Overlapping issues** — same finding appearing in multiple dimensions (e.g., a reliability issue that's also security). Note these as cross-cutting risks.
-2. **Contradictions** — one dimension scores high while another finds critical issues in the same area. Investigate and reconcile.
-3. **Systemic patterns** — e.g., if multiple dimensions flag `reader/index.js` as too large, that's an architecture-level concern.
-4. **Gaps** — dimensions that found nothing significant may have been too shallow. Verify by spot-checking their evidence.
-5. **Severity consistency** — verify ALL findings use ONLY P0/P1/P2/P3 labels. Convert any other severity labels (HIGH/MEDIUM/LOW, etc.) to equivalent P0-P3 based on definitions.
-
-## Step 4: Calculate Weighted Scores
-
-Use the scoring model from `references/scoring-model.md`.
-
-**Weights:**
-
-| Dimension | Weight |
-|-----------|--------|
-| Functional correctness | 5 |
-| Security | 5 |
-| Reliability | 5 |
-| Performance | 4 |
-| Architecture | 4 |
-| Testability | 3 |
-| Observability | 1 |
-| **Total** | **27** |
-
-**Formula:**
-```
-weighted_score = sum(dimension_score × weight) / 27
+    "Subagent completes?" -> "Collect report" [label="yes"];
+    "Subagent completes?" -> "Timed out or failed?" [label="no"];
+    "Timed out or failed?" -> "Respawn with core-only prompt" [label="yes"];
+    "Respawn with core-only prompt" -> "Second attempt succeeds?";
+    "Second attempt succeeds?" -> "Collect report" [label="yes"];
+    "Second attempt succeeds?" -> "Flag dimension as incomplete" [label="no"];
+    "Flag dimension as incomplete" -> "3+ dimensions incomplete?";
+    "3+ dimensions incomplete?" -> "ABORT audit — tell user" [label="yes"];
+    "3+ dimensions incomplete?" -> "Proceed with available reports" [label="no"];
+}
 ```
 
-**Health status bands:**
-- 8.0-10.0: Healthy — ship with confidence
-- 6.0-7.9: Caution — fix P0s before shipping
-- 4.0-5.9: At risk — significant work needed
-- 0.0-3.9: Critical — do not ship
+**Rules:**
+- If a subagent fails or times out, respawn it with a simplified prompt focusing only on core checklist items
+- If a subagent fails twice, flag that dimension as incomplete in the report
+- If 3+ dimensions are incomplete, ABORT the audit and tell the user — partial results are misleading
+- If 1-2 dimensions are incomplete, proceed but prominently flag the gaps
 
-## Step 5: Generate Recovery Plan
+### Step 3: Cross-Analyze Findings
 
-Prioritize by severity, then by weight:
+Read all completed reports and perform:
 
-1. **Phase 1: Stop the bleeding** — All P0 findings, ordered by dimension weight (highest first)
-2. **Phase 2: Stabilize** — All P1 findings, ordered by dimension weight
-3. **Phase 3: Strengthen** — All P2 findings, ordered by dimension weight
-4. **Phase 4: Optimize** — All P3 findings, ordered by dimension weight
+1. **Deduplication** — If the same finding (same file, same issue) appears in multiple dimensions, merge into a single entry. Tag it as "cross-dimensional" and note which dimensions flagged it. Use the highest severity assigned by any dimension.
 
-Each finding in the recovery plan must include:
-- What to fix
-- Where (file:line)
-- Why it matters (impact)
-- How to fix (specific recommendation)
+2. **Overlapping issues** — Same root cause manifesting differently across dimensions. Group these under a systemic pattern.
 
-## Step 6: Write the Report
+3. **Contradictions** — One dimension scores high while another finds critical issues in the same area. The lower score wins — evidence of problems overrides absence of evidence.
 
-Use the report template from `references/report-template.md`.
+4. **Systemic patterns** — 3+ dimensions flag the same module or pattern → architecture-level concern for cross-cutting observations.
 
-Save to: `docs/audit/YYYY-MM-DD-product-health-report.md`
+5. **Shallow report detection** — If a subagent marked 0 items as `fail`, has 0 supplementary findings, AND reported confidence as "medium" or "low" — flag this report as potentially shallow. Note it in the report.
 
-The report must include:
-- Executive summary with overall weighted score and health status
-- Dimension scores table (score, weight, weighted, status)
-- All P0 and P1 findings with full detail
-- Prioritized recovery plan (4 phases)
-- Cross-cutting observations
-- Summary of strengths
+6. **Severity consistency** — ALL findings must use ONLY P0/P1/P2/P3 labels. Convert any other labels.
 
-## Orchestrator Improvements (Addressing Timeout Issues)
+### Step 4: Orchestrator Verification (MANDATORY)
 
-To prevent orchestrator timeouts:
-1. Set individual timeouts for each subagent (60 seconds)
-2. If a subagent times out, respawn it with a focused prompt on core checklist only
-3. If a subagent fails twice, proceed with available reports but flag missing dimension in report
-4. Generate report incrementally as reports arrive rather than waiting for all
-5. Use lightweight JSON parsing to minimize processing overhead
+Before calculating scores, the orchestrator MUST verify:
+
+1. **Evidence spot-check** — For ALL P0 and P1 findings: read the actual file:line referenced. Confirm the code exists and says what the subagent claims. If a finding cites code that doesn't exist or doesn't demonstrate the claimed issue, **downgrade or remove** the finding.
+
+2. **Score-finding consistency** — If a subagent gave a score of 8+ but reported a P1 finding, flag the inconsistency. An 8+ score with a P1 finding is suspicious — either the score is inflated or the P1 is overstated.
+
+3. **Math verification** — Recalculate all weighted scores. Do not trust subagent arithmetic.
+
+4. **Open questions aggregation** — Collect all `open_questions` from subagent reports. These go in the report's Open Questions section.
+
+5. **Not-assessable audit** — If any dimension has >50% items as `not-assessable`, note this prominently. The dimension score is based on a small sample and may not be representative.
+
+### Step 5: Calculate Weighted Scores
+
+Use `references/scoring-model.md` for weights, formula, health bands, severity definitions, and not-assessable scoring rules.
+
+### Step 6: Generate Recovery Plan
+
+Prioritize by severity, then by dimension weight (highest first):
+
+1. **Phase 1: Stop the bleeding** — All P0 findings (with effort estimate: S/M/L)
+2. **Phase 2: Stabilize** — All P1 findings (with effort estimate: S/M/L)
+3. **Phase 3: Strengthen** — All P2 findings (grouped by theme)
+4. **Phase 4: Optimize** — All P3 findings (grouped by theme)
+
+**Effort estimates:** S = under 1 hour, M = 1 hour to 1 day, L = more than 1 day.
+
+Each Phase 1 and Phase 2 finding must include: what to fix, where (file:line), why it matters, how to fix, and effort estimate.
+
+### Step 7: Write the Report
+
+Use `references/report-template.md`. Save to: `docs/audit/YYYY-MM-DD-product-health-report.md`
+
+### Step 8: Gate Decision
+
+Based on the audit results, declare one of:
+
+- **PASS** — No P0 findings. P1 findings are acceptable for current phase. Ship with confidence.
+- **CONDITIONAL** — P0 findings exist but are fixable. List conditions that must be met before shipping.
+- **FAIL** — Systemic P0 issues, multiple critical dimensions below 4.0, or 3+ dimensions with P1 findings. Do not ship.
+
+---
+
+## Follow-Up Audit Mode
+
+Use when the user wants to verify fixes after a previous full audit.
+
+**Prerequisites:**
+- A previous full audit report must exist in `docs/audit/`
+- The user specifies which report to compare against (or use the most recent)
+
+**Process:**
+1. Read the previous audit report
+2. Identify dimensions that had P0 or P1 findings
+3. Re-audit ONLY those dimensions using the same checklists and subagent prompt
+4. For each previously-reported P0/P1 finding: verify whether it is now resolved, still present, or partially addressed
+5. Produce a delta report (not a full report) with:
+   - Previous score → current score per re-audited dimension
+   - Findings resolved (with evidence of the fix)
+   - Findings still open
+   - New findings discovered during re-audit
+   - Updated gate decision
+
+**Follow-up audit does NOT:**
+- Produce a new overall weighted health score (only the full audit does)
+- Re-audit dimensions that had no P0/P1 findings
+- Replace the need for periodic full audits
+
+---
 
 ## Rationalization Table
 
-Agents under pressure will try to skip dimensions or go shallow. Here's what they say and why it's wrong:
-
 | Excuse | Reality |
 |--------|---------|
-| "Just a quick pass" | Quick passes miss cross-dimensional issues. A security flaw might also be a reliability risk. You need the full picture. |
-| "Everything else is fine" | That's exactly what you need to verify, not assume. Unverified assumptions cause production incidents. |
-| "Not enough time for all 7" | A partial audit gives false confidence. Better to have no audit than a misleading one. |
-| "This dimension looks clean" | "Looks clean" without code-level evidence is not an audit. Score with justification or re-examine. |
-| "The user only asked about X" | The user may not know about hidden risks. Your job is the complete picture, not just what was requested. |
-| "I'll do the others later" | Later never comes under pressure. Do all 7 now or don't call it an audit. |
-| "Severity labels don't matter" | Inconsistent severity labels break the recovery plan prioritization. ONLY use P0/P1/P2/P3. |
+| "Just a quick pass" | Quick passes miss cross-dimensional issues. You need the full picture. |
+| "Everything else is fine" | That's exactly what you need to verify, not assume. |
+| "Not enough time for all 7" | A partial audit gives false confidence. All 7 or don't call it an audit. |
+| "This dimension looks clean" | "Looks clean" without code-level evidence is not an audit. |
+| "The user only asked about X" | The user may not know about hidden risks. Complete picture is your job. |
+| "I'll do the others later" | Later never comes. Do all 7 now. |
+| "Severity labels don't matter" | Inconsistent labels break recovery plan prioritization. ONLY P0-P3. |
+| "I verified the findings mentally" | Mental verification is not verification. Read the actual file:line. Step 4 is mandatory. |
+| "The subagent seems thorough" | Trust but verify. Subagents hallucinate. Spot-check ALL P0/P1 evidence. |
 
 ## Red Flags — STOP and Restart
 
-- Skipping any of the 7 dimensions
+- Skipping any of the 7 dimensions (full audit)
 - Giving a score without code-level evidence (file:line references)
-- Using P0-P3 inconsistently (e.g., calling something P0 that's actually P3)
 - Using ANY severity labels other than P0/P1/P2/P3
 - Not calculating the weighted overall score
 - Not including cross-dimensional analysis
 - Writing a narrative report instead of structured findings
-- Proceeding with missing subagent reports without flagging the issue
-
-**All of these mean: Restart the audit with all 7 dimensions.**
+- Proceeding with 3+ missing dimension reports
+- Skipping the orchestrator verification step (Step 4)
+- Not reading file:line references for P0/P1 findings
+- Publishing a gate decision without completing all prior steps
 
 ## Common Mistakes
 
-1. **Shallow analysis** — Reading file names without reading file contents. Fix: Actually read the source code for each dimension's relevant files.
-2. **Inventing dimensions** — Adding dimensions not in the core 7 (e.g., "Accessibility", "Code Quality"). Fix: Stick to the 7 defined dimensions. Supplementary observations go under the closest matching dimension.
-3. **No evidence** — "Security looks good" without citing specific files, patterns, or gaps. Fix: Every score needs a paragraph of justification with file references.
-4. **Wrong severity** — Calling a P3 (nice-to-have) a P1 (critical). Fix: Use the severity definitions exactly. P0 = blocks release, P1 = fix before next release, P2 = plan for sprint, P3 = backlog.
-5. **No cross-analysis** — Just concatenating 7 reports without synthesizing. Fix: Look for overlaps, contradictions, and systemic patterns across dimensions.
-6. **Severity inconsistency** — Using labels like HIGH/MEDIUM/LOW instead of P0/P1/P2/P3. Fix: ONLY use P0/P1/P2/P3 labels as defined.
-7. **Orchestrator timeout** — Waiting too long for slow subagents. Fix: Implement timeouts and respawn with simplified prompts.
+1. **Shallow analysis** — Reading file names without reading file contents. Fix: Actually read source code.
+2. **Inventing findings** — Fabricating issues to appear thorough. Fix: Zero supplementary findings is acceptable. Accuracy > completeness.
+3. **No evidence** — "Security looks good" without citing files. Fix: Every score needs file references.
+4. **Wrong severity** — Calling a P3 a P1. Fix: Use severity definitions from scoring-model.md exactly.
+5. **No cross-analysis** — Concatenating 7 reports without synthesizing. Fix: Look for overlaps, contradictions, systemic patterns.
+6. **Stale context** — Auditing against assumptions instead of reading current code and docs. Fix: Read `docs/product-info.md` and `docs/tech-stack.md` first.
+7. **Marking stubs as failures** — Phase 2/3 modules that don't exist yet are `not-assessable`, not `fail`.
+8. **Skipping verification** — Trusting subagent findings without reading the cited code. Fix: Step 4 is mandatory for all P0/P1.
+9. **No deduplication** — Same finding counted multiple times across dimensions. Fix: Merge duplicates in Step 3.

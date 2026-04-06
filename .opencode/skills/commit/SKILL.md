@@ -5,7 +5,6 @@ description: Use when about to create a git commit
 
 ## Red Flags — STOP
 
-- About to run `git commit` without the `-v` flag
 - About to skip the diff review step
 - About to use `--no-verify` to bypass a hook
 - About to commit without reading the staged diff first
@@ -28,7 +27,9 @@ description: Use when about to create a git commit
    - Body: add a blank line followed by explanation if the change is non-trivial
    - Footer: reference issues/PRs with `Refs: #123` or `Closes: #123`
 
-4. Run `git commit -v` to open the editor with a verbose diff for review. Do NOT use `--no-verify`.
+4. Commit using one of these methods:
+   - **Interactive mode (recommended)**: Run `git commit -v` to open the editor with verbose diff for review. Do NOT use `--no-verify`.
+   - **Automated mode**: If running in a non-interactive context, use `git commit -m "<message>"` with the composed message. Show the diff first with `git diff --staged` so the user can review.
 
 5. On hook failure: read the error, fix the issue, then re-run step 4.
 

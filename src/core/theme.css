@@ -306,6 +306,10 @@ body {
   border-top: 1px dashed var(--qa-border);
 }
 
+.qa-hide-translation {
+  display: none;
+}
+
 .qa-skeleton-line {
   height: 1.5rem;
   border-radius: 4px;
