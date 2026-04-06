@@ -20,6 +20,10 @@ export function parseNavigationInput(input, surahs) {
     return { valid: false, error: 'Input is empty' }
   }
 
+  if (trimmed.length > 50) {
+    return { valid: false, error: 'Input too long' }
+  }
+
   // Numeric surah: "2" or "2:255"
   const numericMatch = trimmed.match(/^(\d+)(?::(\d+))?$/)
   if (numericMatch) {

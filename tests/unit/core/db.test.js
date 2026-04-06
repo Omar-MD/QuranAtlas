@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { openDB, get, put, del, deleteDB, getDb } from '../../../src/core/db.js'
+import { openDB, get, put, del, deleteDB, getDb, validateWrite } from '../../../src/core/db.js'
 
 describe('core/db.js', () => {
   beforeEach(async () => {
@@ -66,6 +66,49 @@ describe('core/db.js', () => {
       const { getMostRecentPosition } = await import('../../../src/core/router.js')
       const result = await getMostRecentPosition()
       expect(result).toBeNull()
+    })
+  })
+
+  describe('validateWrite()', () => {
+    it('validates settings store: requires key and value', async () => {
+      await expect(validateWrite('settings', { key: 'theme', value: 'dark' })).resolves.toBe(true)
+      await expect(validateWrite('settings', { key: 'theme' })).rejects.toThrow('missing required field: value')
+      await expect(validateWrite('settings', { value: 'dark' })).rejects.toThrow('missing required field: key')
+    })
+
+    it('validates positions store: requires id, surah, verse, savedAt', async () => {
+      await expect(validateWrite('positions', { id: 's1', surah: 1, verse: 5, savedAt: 1000 })).resolves.toBe(true)
+      await expect(validateWrite('positions', { id: 's1', surah: 1, verse: 5 })).rejects.toThrow('missing required field: savedAt')
+      await expect(validateWrite('positions', { surah: 1, verse: 5, savedAt: 1000 })).rejects.toThrow('missing required field: id')
+    })
+
+    it('validates marks store: requires verseKey', async () => {
+      await expect(validateWrite('marks', { verseKey: '1:1', tags: ['important'] })).resolves.toBe(true)
+      await expect(validateWrite('marks', { tags: ['important'] })).rejects.toThrow('missing required field: verseKey')
+    })
+
+    it('validates activationState store: requires id and status', async () => {
+      await expect(validateWrite('activationState', { id: 'current', status: 'cached' })).resolves.toBe(true)
+      await expect(validateWrite('activationState', { id: 'current' })).rejects.toThrow('missing required field: status')
+      await expect(validateWrite('activationState', { status: 'none' })).rejects.toThrow('missing required field: id')
+    })
+
+    it('throws on unknown store', async () => {
+      await expect(validateWrite('unknownStore', { foo: 'bar' })).rejects.toThrow('Unknown store: unknownStore')
+    })
+  })
+
+  describe('deleteDB()', () => {
+    it('clears dbPromise and dbRef after deletion', async () => {
+      await openDB()
+      const { getDb } = await import('../../../src/core/db.js')
+      const dbBefore = await getDb()
+      const promiseBefore = dbBefore
+
+      await deleteDB()
+
+      const dbAfter = await getDb()
+      expect(dbAfter).not.toBe(promiseBefore)
     })
   })
 })

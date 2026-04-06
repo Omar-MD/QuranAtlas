@@ -16,7 +16,8 @@ import { CACHE_DATASET } from './core/constants.js'
 precacheAndRoute(self.__WB_MANIFEST || [])
 
 self.addEventListener('install', (_event) => {
-  self.skipWaiting()
+  // Don't call skipWaiting() unconditionally - wait for user prompt
+  // The SKIP_WAITING message case handles user-initiated activation
 })
 
 self.addEventListener('activate', (event) => {
@@ -29,6 +30,10 @@ self.addEventListener('fetch', (_event) => {
 })
 
 self.addEventListener('message', (event) => {
+  if (!event.source || !event.source.url.startsWith(self.location.origin)) {
+    return
+  }
+
   const { type, urls } = event.data || {}
 
   switch (type) {
@@ -49,6 +54,26 @@ self.addEventListener('message', (event) => {
   }
 })
 
+const RETRY_DELAYS = [1000, 2000, 5000]
+const MAX_RETRIES = 3
+
+async function fetchWithRetry(url, attempt = 0) {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+    return response
+  } catch (error) {
+    if (attempt >= MAX_RETRIES) {
+      throw error
+    }
+    const delay = RETRY_DELAYS[attempt] || RETRY_DELAYS[RETRY_DELAYS.length - 1]
+    await new Promise(resolve => setTimeout(resolve, delay))
+    return fetchWithRetry(url, attempt + 1)
+  }
+}
+
 /**
  * Download the full corpus to the cache.
  * Resumable: skips already-cached URLs.
@@ -60,7 +85,6 @@ async function handleCacheDataset(event, urls) {
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i]
 
-    // Skip if already cached
     const cached = await cache.match(url)
     if (cached) {
       postToAll(clients, 'DATASET_PROGRESS', { cached: i + 1, total: urls.length })
@@ -68,7 +92,7 @@ async function handleCacheDataset(event, urls) {
     }
 
     try {
-      const response = await fetch(url)
+      const response = await fetchWithRetry(url)
       if (response.ok) {
         await cache.put(url, response)
       }

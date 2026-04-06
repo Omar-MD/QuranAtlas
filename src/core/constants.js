@@ -3,3 +3,25 @@
  */
 
 export const CACHE_DATASET = 'quran-dataset-v1'
+
+export const Events = {
+  DB_VERSION_CHANGE: 'db:version-change',
+  DB_VISIBILITY_VISIBLE: 'db:visibility-visible',
+  DB_DELETE_BLOCKED: 'db:delete-blocked',
+  ROUTER_LAUNCH_RESTORE: 'router:launch-restore',
+  ROUTER_ROUTE_ERROR: 'router:route-error',
+  READER_SURAH_LOADED: 'reader:surah-loaded',
+  READER_POSITION_CHANGED: 'reader:position-changed',
+  NAVIGATION_NAVIGATE: 'navigation:navigate',
+  OFFLINE_DOWNLOAD_PROGRESS: 'offline:download-progress',
+  OFFLINE_DOWNLOAD_COMPLETE: 'offline:download-complete',
+  OFFLINE_DOWNLOAD_ERROR: 'offline:download-error',
+  OFFLINE_INSTALL_AVAILABLE: 'offline:install-available',
+  OFFLINE_INSTALL_COMPLETE: 'offline:install-complete',
+  APP_INIT_ERROR: 'app:init-error',
+  APP_READY_FOR_DOWNLOAD: 'app:ready-for-download',
+}
+
+export const Errors = {
+  INSUFFICIENT_STORAGE: 'Insufficient storage',
+}

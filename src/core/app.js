@@ -6,6 +6,7 @@
 import { openDB, get, getMostRecentPosition } from './db.js'
 import * as router from './router.js'
 import { emit, on } from './events.js'
+import { Events } from './constants.js'
 
 let unsubLaunchRestore = null
 let unsubNavNavigate = null
@@ -14,22 +15,34 @@ let unsubNavNavigate = null
  * Initialize the application.
  */
 export async function init() {
+  performance.mark('app:start')
+
   try {
     // Open database (creates stores if first run)
     await openDB()
+    performance.mark('db:open')
 
     // Initialize router
     router.init()
+    performance.mark('router:resolve')
 
     // Listen for launch restore (clean up previous if re-init)
     if (unsubLaunchRestore) {
       unsubLaunchRestore()
     }
-    unsubLaunchRestore = on('router:launch-restore', handleLaunchRestore)
+    unsubLaunchRestore = on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore)
 
     // Register Phase 1 routes
     router.register('#/s/:surah', () => import('../reader/index.js'))
     router.register('#/s/:surah/:ayah', () => import('../reader/index.js'))
+
+    // Register Phase 2 routes
+    router.register('#/review', () => import('../review/hub.js'))
+
+    // Register Phase 3 routes
+    router.register('#/settings', () => import('../settings/index.js'))
+    router.register('#/about', () => import('../about/index.js'))
+    router.register('#/t/:tag', () => import('../review/hub.js'))
 
     // Initialize nav panel
     const { init: initNav } = await import('../nav/index.js')
@@ -37,7 +50,7 @@ export async function init() {
 
     // Handle navigation events from nav panel
     if (unsubNavNavigate) { unsubNavNavigate() }
-    unsubNavNavigate = on('navigation:navigate', ({ surah, verse }) => {
+    unsubNavNavigate = on(Events.NAVIGATION_NAVIGATE, ({ surah, verse }) => {
       if (verse) {
         router.navigate(`#/s/${surah}/${verse}`)
       } else {
@@ -57,6 +70,7 @@ export async function init() {
     await restoreActivationState(offline)
   } catch (error) {
     console.error('Failed to initialize app:', error)
+    emit(Events.APP_INIT_ERROR, { error })
   }
 }
 
@@ -78,11 +92,15 @@ async function applyThemeFromSettings() {
  * Handle launch restore: navigate to last-read position or default surah.
  */
 async function handleLaunchRestore() {
+  const lastSurface = await get('settings', 'lastSurface')
+  if (lastSurface?.value) {
+    router.navigate(lastSurface.value, { replace: true })
+    return
+  }
   const position = await getMostRecentPosition()
   if (position) {
     router.navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
   } else {
-    // Default to Al-Fatiha
     router.navigate('#/s/1', { replace: true })
   }
 }
@@ -117,7 +135,7 @@ async function restoreActivationState(offline) {
 
   // If no cached corpus and online, show download UI
   if (state === 'none' && navigator.onLine) {
-    emit('app:ready-for-download')
+    emit(Events.APP_READY_FOR_DOWNLOAD)
   }
 }
 

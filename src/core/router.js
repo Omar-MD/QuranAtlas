@@ -7,8 +7,11 @@
  */
 
 import { emit } from './events.js'
+import { put } from './db.js'
+import { Events } from './constants.js'
 
 const routes = new Map()
+let currentModule = null
 
 /**
  * Register a route handler.
@@ -52,16 +55,32 @@ async function handleRoute(hash) {
   if (!hash || hash === '#' || hash === '#/') {
     // Launch restore: check positions/settings for last surface
     // Phase 0: default to reader
-    emit('router:launch-restore')
+    emit(Events.ROUTER_LAUNCH_RESTORE)
     return
   }
 
   const match = matchRoute(hash)
   if (match) {
     const { loader, params } = match
+
+    // Clean up previous module before loading new one
+    if (currentModule && currentModule.cleanup) {
+      currentModule.cleanup()
+      currentModule = null
+    }
+
     const module = await loader()
+    currentModule = module
+
+    await put('settings', { key: 'lastSurface', value: hash })
+
     if (module.init) {
-      await module.init(params)
+      try {
+        await module.init(params)
+      } catch (error) {
+        console.error(`Route ${hash} failed:`, error)
+        emit(Events.ROUTER_ROUTE_ERROR, { route: hash, error })
+      }
     }
   }
 }

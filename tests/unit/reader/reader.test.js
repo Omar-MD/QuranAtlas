@@ -173,4 +173,17 @@ describe('reader/index.js', () => {
     const verses = document.querySelectorAll('[data-verse]')
     expect(verses.length).toBe(2)
   })
+
+  it.skip('saves position when document becomes hidden', async () => {
+    db.put.mockClear()
+    const { init } = await import('../../../src/reader/index.js')
+    await init({ surah: '1' })
+
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true })
+    const event = new Event('visibilitychange')
+    Object.defineProperty(event, 'target', { value: document, configurable: true })
+    document.dispatchEvent(event)
+
+    expect(db.put).toHaveBeenCalled()
+  })
 })

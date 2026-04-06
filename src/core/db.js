@@ -4,10 +4,14 @@
  * All IDB access flows through this module.
  */
 
+import { emit } from './events.js'
+import { Events } from './constants.js'
+
 const DB_NAME = 'quran-atlas'
 const DB_VERSION = 1
 
 let dbPromise = null
+let dbRef = null
 
 /**
  * Open or return the existing database connection.
@@ -31,7 +35,8 @@ export function openDB() {
 
       // Positions store: keyPath = 'id'
       if (!db.objectStoreNames.contains('positions')) {
-        db.createObjectStore('positions', { keyPath: 'id' })
+        const positionsStore = db.createObjectStore('positions', { keyPath: 'id' })
+        positionsStore.createIndex('by-savedAt', 'savedAt')
       }
 
       // Marks store: keyPath = 'verseKey'
@@ -52,8 +57,23 @@ export function openDB() {
       }
     }
 
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = (event) => {
+      dbRef = event.target.result
+      dbRef.onversionchange = () => {
+        dbRef.close()
+        dbPromise = null
+        dbRef = null
+        emit(Events.DB_VERSION_CHANGE, {})
+      }
+      resolve(dbRef)
+    }
     request.onerror = () => reject(request.error)
+  })
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      emit(Events.DB_VISIBILITY_VISIBLE, {})
+    }
   })
 
   return dbPromise
@@ -76,14 +96,16 @@ export function deleteDB() {
     const request = indexedDB.deleteDatabase(DB_NAME)
     request.onsuccess = () => {
       dbPromise = null
+      dbRef = null
       resolve()
     }
     request.onerror = () => reject(request.error)
     request.onblocked = () => {
-      // If blocked, the versionchange handler should have closed the connection
-      // Force resolve after a short delay
+      dbRef?.close()
+      dbPromise = null
+      dbRef = null
+      emit(Events.DB_DELETE_BLOCKED, { message: 'Database deletion was blocked. Please close other tabs using this site.' })
       setTimeout(() => {
-        dbPromise = null
         resolve()
       }, 1000)
     }
@@ -114,6 +136,7 @@ export async function get(storeName, key) {
  * @returns {Promise<void>}
  */
 export async function put(storeName, value) {
+  await validateWrite(storeName, value)
   const db = await getDb()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite')
@@ -122,6 +145,35 @@ export async function put(storeName, value) {
     request.onsuccess = () => resolve()
     request.onerror = () => reject(request.error)
   })
+}
+
+/**
+ * Validate a write to a store.
+ * @param {string} storeName
+ * @param {*} value
+ * @returns {Promise<boolean>}
+ */
+export async function validateWrite(storeName, value) {
+  const schemas = {
+    settings: ['key', 'value'],
+    positions: ['id', 'surah', 'verse', 'savedAt'],
+    marks: ['verseKey'],
+    activationState: ['id', 'status'],
+    datasetMeta: ['id'],
+  }
+
+  const required = schemas[storeName]
+  if (!required) {
+    throw new Error(`Unknown store: ${storeName}`)
+  }
+
+  for (const field of required) {
+    if (!(field in value) || value[field] === undefined) {
+      throw new Error(`missing required field: ${field}`)
+    }
+  }
+
+  return true
 }
 
 /**
@@ -150,19 +202,17 @@ export async function getMostRecentPosition() {
     const db = await getDb()
     const tx = db.transaction('positions', 'readonly')
     const store = tx.objectStore('positions')
-    const request = store.getAll()
+    const index = store.index('by-savedAt')
+    const request = index.openCursor(null, 'prev')
 
     return new Promise((resolve) => {
-      request.onsuccess = () => {
-        const positions = request.result || []
-        if (positions.length === 0) {
+      request.onsuccess = (event) => {
+        const cursor = event.target.result
+        if (cursor) {
+          resolve(cursor.value)
+        } else {
           resolve(null)
-          return
         }
-        const mostRecent = positions.reduce((latest, pos) => {
-          return pos.savedAt > latest.savedAt ? pos : latest
-        }, positions[0])
-        resolve(mostRecent)
       }
       request.onerror = () => resolve(null)
     })

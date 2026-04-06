@@ -5,6 +5,7 @@
 
 import { getSurahs } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
+import { Events } from '../core/constants.js'
 import { parseNavigationInput } from '../safety/input-validator.js'
 import { announce } from '../a11y/announcer.js'
 
@@ -88,6 +89,7 @@ function renderNavPanel() {
   searchInput.className = 'qa-nav-search'
   searchInput.placeholder = 'Search surah or verse'
   searchInput.setAttribute('aria-label', 'Search surah or verse')
+  searchInput.maxLength = 50
 
   searchInput.addEventListener('input', () => {
     filterSurahList(searchInput.value)
@@ -161,14 +163,14 @@ function createSurahItem(s) {
   li.appendChild(arabic)
 
   li.addEventListener('click', () => {
-    emit('navigation:navigate', { surah: s.n })
+    emit(Events.NAVIGATION_NAVIGATE, { surah: s.n })
     if (shouldAutoClose) { closeNav() }
   })
 
   li.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      emit('navigation:navigate', { surah: s.n })
+      emit(Events.NAVIGATION_NAVIGATE, { surah: s.n })
       if (shouldAutoClose) { closeNav() }
     } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
@@ -214,7 +216,7 @@ function handleSearchSubmit(searchInput) {
 
   if (result.valid) {
     searchInput.removeAttribute('aria-invalid')
-    emit('navigation:navigate', { surah: result.surah, verse: result.verse })
+    emit(Events.NAVIGATION_NAVIGATE, { surah: result.surah, verse: result.verse })
     searchInput.value = ''
     filterSurahList('')
     if (shouldAutoClose) { closeNav() }

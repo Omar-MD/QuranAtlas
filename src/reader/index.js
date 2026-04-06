@@ -6,7 +6,8 @@
 
 import { getSurah, getSurahs } from '../data/dataset.js'
 import { get, put } from '../core/db.js'
-import { emit } from '../core/events.js'
+import { emit, on } from '../core/events.js'
+import { Events } from '../core/constants.js'
 import { observeScroll, unobserve, observeNewVerses } from './scroll-tracker.js'
 import { announce } from '../a11y/announcer.js'
 
@@ -14,28 +15,24 @@ const SKELETON_TIMEOUT_MS = 5000
 const CHUNK_SIZE = 50
 
 let currentSurah = null
+let currentSurahNum = null
 let renderedCount = 0
 let isRendering = false
 let scrollAppendBound = null
 let currentTranslationVisible = true
 let scrollAppendRafPending = false
+let unsubVisibility = null
 
-/**
- * Initialize the reader for a surah.
- * @param {object} params
- * @param {string} params.surah - Surah number
- * @param {string} [params.ayah] - Specific verse (deep link)
- * @param {object} [options]
- * @param {boolean} [options.savePosition=true] - Whether to auto-save position
- */
-export async function init(params, { savePosition = true } = {}) {
+export async function init(params, { savePosition: shouldSavePosition = true } = {}) {
   const surahNum = parseInt(params.surah, 10)
   if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
     return
   }
 
-  // Clean up previous session
-  cleanup()
+  if (currentSurahNum !== null && currentSurahNum !== surahNum) {
+    cleanup()
+  }
+  currentSurahNum = surahNum
 
   const mainContent = document.getElementById('main-content')
   const topBar = document.getElementById('top-bar')
@@ -48,12 +45,18 @@ export async function init(params, { savePosition = true } = {}) {
 
   // Set 5s hard timeout
   const timeout = setTimeout(() => {
+    cleanup()
     showError(mainContent, surahNum)
   }, SKELETON_TIMEOUT_MS)
 
   try {
-    const [surah, surahs, translationVisible, savedPosition] = await Promise.all([
-      getSurah(surahNum),
+    // Primary fetch: getSurah() is blocking for first render
+    performance.mark('reader:fetch-start')
+    const surah = await getSurah(surahNum)
+    performance.mark('reader:fetch-end')
+
+    // Background fetch: position and settings while rendering
+    const [surahs, translationVisible, savedPosition] = await Promise.all([
       getSurahs(),
       get('settings', 'translationVisible').then(r => r?.value ?? true),
       get('positions', `s${surahNum}`),
@@ -89,9 +92,33 @@ export async function init(params, { savePosition = true } = {}) {
     renderTopBar(topBar, translationVisible, surahNum)
 
     // Set up scroll tracking if savePosition is enabled
-    if (savePosition) {
+    if (shouldSavePosition) {
       setupScrollTracking(mainContent, surahNum)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && currentSurahNum && renderedCount > 0) {
+          try {
+            put('positions', {
+              id: `s${currentSurahNum}`,
+              surah: currentSurahNum,
+              verse: renderedCount,
+              savedAt: Date.now(),
+            })
+          } catch {
+            // Position save failed, continue anyway
+          }
+        }
+      })
     }
+
+    // Re-read position when tab becomes visible
+    unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
+      if (currentSurah && mainContent) {
+        const position = await get('positions', `s${currentSurah.n}`)
+        if (position) {
+          scrollToVerse(mainContent, position.verse)
+        }
+      }
+    })
 
     // Scroll to saved position or deep link verse
     if (savedPosition && !targetVerse) {
@@ -100,7 +127,8 @@ export async function init(params, { savePosition = true } = {}) {
       scrollToVerse(mainContent, targetVerse)
     }
 
-    emit('reader:surah-loaded', { surah: surahNum })
+    emit(Events.READER_SURAH_LOADED, { surah: surahNum })
+    performance.mark('reader:first-verse')
     announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)
   } catch (error) {
     clearTimeout(timeout)
@@ -118,11 +146,18 @@ function cleanup() {
     mainContent.removeEventListener('scroll', scrollAppendBound)
     scrollAppendBound = null
   }
+  if (unsubVisibility) {
+    unsubVisibility()
+    unsubVisibility = null
+  }
   currentSurah = null
+  currentSurahNum = null
   renderedCount = 0
   currentTranslationVisible = true
   scrollAppendRafPending = false
 }
+
+export { cleanup }
 
 /**
  * Render a chunk of verses.
@@ -130,6 +165,8 @@ function cleanup() {
 function renderVerseChunk(container, surah, translationVisible, start, end) {
   const actualEnd = Math.min(end, surah.ar.length)
   const endMarker = container.querySelector('[data-surah-end]')
+
+  const fragment = document.createDocumentFragment()
 
   for (let i = start; i < actualEnd; i++) {
     const verseNum = i + 1
@@ -157,11 +194,13 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
       verseBlock.appendChild(transEl)
     }
 
-    if (endMarker) {
-      container.insertBefore(verseBlock, endMarker)
-    } else {
-      container.appendChild(verseBlock)
-    }
+    fragment.appendChild(verseBlock)
+  }
+
+  if (endMarker) {
+    container.insertBefore(fragment, endMarker)
+  } else {
+    container.appendChild(fragment)
   }
 
   renderedCount = actualEnd
@@ -219,14 +258,14 @@ function handleScrollAppend() {
     isRendering = false
 
     // Observe newly appended verses for scroll tracking
-    const newVerses = mainContent.querySelectorAll(`[data-verse]`)
+    const startVerse = startCount + 1
     const newElements = []
-    newVerses.forEach(el => {
-      const v = parseInt(el.getAttribute('data-verse'), 10)
-      if (v > startCount) {
+    for (let v = startVerse; v <= renderedCount; v++) {
+      const el = mainContent.querySelector(`[data-verse="${v}"]`)
+      if (el) {
         newElements.push(el)
       }
-    })
+    }
     if (newElements.length > 0) {
       observeNewVerses(newElements)
     }
@@ -244,7 +283,7 @@ async function savePosition(surahNum, verse) {
       verse,
       savedAt: Date.now(),
     })
-    emit('reader:position-changed', { surah: surahNum, verse })
+    emit(Events.READER_POSITION_CHANGED, { surah: surahNum, verse })
   } catch {
     // Position save failed, continue anyway
   }
@@ -258,6 +297,20 @@ function scrollToVerse(container, verseNum) {
   if (verseEl && typeof verseEl.scrollIntoView === 'function') {
     verseEl.scrollIntoView({ block: 'start' })
   }
+}
+
+/**
+ * Toggle translation visibility via CSS class.
+ */
+function toggleTranslationVisibility(container, visible) {
+  const translations = container.querySelectorAll('[data-translation]')
+  translations.forEach(el => {
+    if (visible) {
+      el.classList.remove('qa-hide-translation')
+    } else {
+      el.classList.add('qa-hide-translation')
+    }
+  })
 }
 
 /**
@@ -378,7 +431,7 @@ function renderSurahEnd(container, meta) {
 /**
  * Render top bar with translation toggle.
  */
-function renderTopBar(topBar, translationVisible, surahNum) {
+function renderTopBar(topBar, translationVisible, _surahNum) {
   if (!topBar) {
     return
   }
@@ -392,12 +445,15 @@ function renderTopBar(topBar, translationVisible, surahNum) {
 
   toggleBtn.addEventListener('click', async () => {
     const newValue = !translationVisible
+    currentTranslationVisible = newValue
     try {
       await put('settings', { key: 'translationVisible', value: newValue })
     } catch {
       // Settings save failed, continue anyway
     }
-    init({ surah: String(surahNum) })
+    toggleTranslationVisibility(mainContent, newValue)
+    toggleBtn.textContent = newValue ? 'EN ▾' : 'EN ▸'
+    toggleBtn.setAttribute('aria-label', newValue ? 'Hide translation' : 'Show translation')
   })
 
   topBar.appendChild(toggleBtn)

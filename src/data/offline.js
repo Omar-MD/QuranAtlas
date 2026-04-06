@@ -5,6 +5,7 @@
 
 import { put, get } from '../core/db.js'
 import { emit } from '../core/events.js'
+import { Events, Errors } from '../core/constants.js'
 import { getManifestUrls } from './dataset.js'
 
 const ACTIVATION_KEY = 'current'
@@ -50,7 +51,7 @@ export async function startDownload() {
       const available = estimate.quota - estimate.usage
       // Corpus is ~5-10 MB; require at least 20 MB free
       if (available < 20000000) {
-        emit('offline:download-error', { error: 'Insufficient storage' })
+        emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: Errors.INSUFFICIENT_STORAGE })
         await setActivationState('none')
         return
       }
@@ -64,7 +65,7 @@ export async function startDownload() {
   try {
     urls = await getManifestUrls()
   } catch (error) {
-    emit('offline:download-error', { error: error.message })
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: error.message })
     await setActivationState('none')
     return
   }
@@ -74,19 +75,19 @@ export async function startDownload() {
     const { type, cached, total, error } = event.data || {}
     switch (type) {
       case 'DATASET_PROGRESS':
-        emit('offline:download-progress', { cached, total })
+        emit(Events.OFFLINE_DOWNLOAD_PROGRESS, { cached, total })
         break
       case 'DATASET_COMPLETE':
         navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
         currentMessageHandler = null
         await setActivationState('cached')
-        emit('offline:download-complete')
+        emit(Events.OFFLINE_DOWNLOAD_COMPLETE)
         break
       case 'DATASET_ERROR':
         navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
         currentMessageHandler = null
         await setActivationState('none')
-        emit('offline:download-error', { error })
+        emit(Events.OFFLINE_DOWNLOAD_ERROR, { error })
         break
     }
   }
@@ -123,12 +124,12 @@ export function initInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
     deferredPrompt = e
-    emit('offline:install-available')
+    emit(Events.OFFLINE_INSTALL_AVAILABLE)
   })
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null
-    emit('offline:install-complete')
+    emit(Events.OFFLINE_INSTALL_COMPLETE)
   })
 }
 
