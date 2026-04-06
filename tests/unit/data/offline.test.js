@@ -142,6 +142,27 @@ describe('data/offline.js', () => {
       const state = await getActivationState()
       expect(state).toBe('none')
     })
+
+    it('resets to none and emits error when SW controller is null', async () => {
+      // Override controller to null for this test
+      const savedController = globalThis.navigator.serviceWorker.controller
+      globalThis.navigator.serviceWorker.controller = null
+
+      const { startDownload, getActivationState } = await import('../../../src/data/offline.js')
+      const errorFn = vi.fn()
+      events.on('offline:download-error', errorFn)
+
+      await startDownload()
+
+      const state = await getActivationState()
+      expect(state).toBe('none')
+      expect(errorFn).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.any(String) })
+      )
+
+      // Restore
+      globalThis.navigator.serviceWorker.controller = savedController
+    })
   })
 
   describe('PWA install prompt', () => {

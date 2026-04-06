@@ -97,6 +97,12 @@ export async function startDownload() {
   // Send CACHE_DATASET to SW
   if (navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({ type: 'CACHE_DATASET', urls })
+  } else {
+    // SW not yet controlling this page — clean up and surface error
+    navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
+    currentMessageHandler = null
+    await setActivationState('none')
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: 'Service worker not ready' })
   }
 }
 
