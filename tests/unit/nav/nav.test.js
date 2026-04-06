@@ -240,8 +240,7 @@ describe('nav/index.js', () => {
     items[0].focus()
     items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
 
-    // jsdom doesn't actually move focus, but we verify the handler doesn't throw
-    expect(items.length).toBe(4)
+    expect(document.activeElement).toBe(items[1])
   })
 
   it('auto-closes nav on mobile after surah click', async () => {

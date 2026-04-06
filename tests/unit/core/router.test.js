@@ -30,7 +30,7 @@ describe('core/router.js', () => {
     init()
 
     await new Promise(r => setTimeout(r, 10))
-    expect(restoreFn).toHaveBeenCalled()
+    expect(restoreFn).toHaveBeenCalledWith(undefined)
   })
 
   it('navigate with replace uses replaceState', async () => {

@@ -106,7 +106,7 @@ describe('reader/index.js', () => {
     const header = document.querySelector('[data-surah-header]')
     expect(header).toBeTruthy()
     expect(header.textContent).toContain('Al-Fatiha')
-    expect(header.textContent).toContain('1')
+    expect(header.querySelector('.qa-surah-meta').textContent).toContain('Surah 1')
   })
 
   it('renders basmala for surah 2 but not surah 1', async () => {
@@ -176,16 +176,21 @@ describe('reader/index.js', () => {
     await init({ surah: '1', ayah: '2' })
 
     const verses = document.querySelectorAll('[data-verse]')
+    // Resume indicator must be absent when ayah is provided
+    expect(document.querySelector('[data-resume-indicator]')).toBeFalsy()
+    // Verse count still works
     expect(verses.length).toBeGreaterThan(0)
   })
 
   it('cleanup removes scroll listener on re-init', async () => {
+    const scrollTracker = await import('../../../src/reader/scroll-tracker.js')
     const { init } = await import('../../../src/reader/index.js')
     await init({ surah: '1' })
     // Re-init should cleanup previous session
     await init({ surah: '1' })
     const verses = document.querySelectorAll('[data-verse]')
     expect(verses.length).toBe(2)
+    expect(scrollTracker.unobserve).toHaveBeenCalled()
   })
 
   it('translation toggle does not throw and toggles visibility', async () => {

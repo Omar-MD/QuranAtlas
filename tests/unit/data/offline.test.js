@@ -107,7 +107,7 @@ describe('data/offline.js', () => {
       )?.[1]
       expect(messageHandler).toBeDefined()
       await messageHandler({ data: { type: 'DATASET_COMPLETE' } })
-      expect(completeFn).toHaveBeenCalled()
+      expect(completeFn).toHaveBeenCalledWith(undefined)
     })
 
     it('transitions back to none on cancel', async () => {

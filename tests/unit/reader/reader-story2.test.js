@@ -92,7 +92,8 @@ describe('reader/index.js — Story 2', () => {
 
     // End marker should be after all rendered verses
     const lastVerse = document.querySelector('[data-verse="50"]')
-    expect(endMarker.compareDocumentPosition(lastVerse) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
+    expect(endMarker.compareDocumentPosition(lastVerse) & Node.DOCUMENT_POSITION_PRECEDING)
+      .toBe(Node.DOCUMENT_POSITION_PRECEDING)
   })
 
   it('does not show resume indicator with deep link ayah param', async () => {
