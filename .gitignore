@@ -34,9 +34,6 @@ Thumbs.db
 # Logs
 npm-debug.log*
 
-# Storybook
-storybook-static/
-
 # AI agent skills
 .opencode/skills/
 .claude/
