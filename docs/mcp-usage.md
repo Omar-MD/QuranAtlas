@@ -34,6 +34,49 @@ QuranAtlas has 5 Playwright MCP profiles for different testing scenarios:
 - **Use for:** PWA offline testing, service worker verification
 - **Best when:** Testing IndexedDB persistence, cache behavior
 
+## Switching Between Profiles
+
+In OpenCode, you can switch between MCP profiles in two ways:
+
+### Method 1: Via MCP UI
+
+1. Look for the **MCP** icon in the OpenCode toolbar/interface
+2. Click to see available MCP servers
+3. Select the profile you want (e.g., `playwright-mobile`)
+4. The profile will be active for your next browser automation request
+
+### Method 2: Via Prompt
+
+Mention the profile name in your request:
+
+```
+Using playwright-mobile, navigate to /#/s/112 and take a screenshot
+```
+
+Or switch profiles mid-conversation:
+
+```
+Switch to playwright-desktop and check the settings page layout
+```
+
+### Profile Indicators
+
+Each profile has distinct characteristics:
+
+- **Headed profiles** (mobile, tablet, desktop, offline): Browser window visible
+- **Headless profile** (ci): No visible window, runs in background
+- **Offline profile**: Can toggle network state via MCP tools
+
+### Quick Reference
+
+| To test... | Use this profile |
+|------------|------------------|
+| Mobile UI bugs | `playwright-mobile` |
+| Tablet layout | `playwright-tablet` |
+| Keyboard shortcuts | `playwright-desktop` |
+| Consistent screenshots | `playwright-ci` |
+| Offline PWA mode | `playwright-offline` |
+
 ## Common Workflows
 
 ### Debug a Failing E2E Test
