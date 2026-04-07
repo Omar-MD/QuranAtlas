@@ -64,6 +64,7 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
 
     // Guard: bail if navigation moved on while we were fetching
     if (currentSurahNum !== surahNum) {
+      clearTimeout(timeout)
       return
     }
 
@@ -123,18 +124,17 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
         if (document.hidden && currentSurahNum && lastTrackedVerse !== null) {
           // Flush any pending debounced position update before saving
           flushDebounce()
-          try {
-            put('positions', {
-              id: `s${currentSurahNum}`,
-              surah: currentSurahNum,
-              verse: lastTrackedVerse,
-              savedAt: Date.now(),
-            })
-          } catch (error) {
+          // Fire-and-forget with proper error handling via catch
+          put('positions', {
+            id: `s${currentSurahNum}`,
+            surah: currentSurahNum,
+            verse: lastTrackedVerse,
+            savedAt: Date.now(),
+          }).catch((error) => {
             // Position save failed, emit event for UI warning
             console.error('Failed to save position:', error)
             emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
-          }
+          })
         }
       }
       document.addEventListener('visibilitychange', visibilityHandler)
@@ -296,11 +296,6 @@ function setupScrollTracking(container, surahNum) {
  * one render cycle is active at a time.
  */
 function handleScrollAppend() {
-  // Double-check: if somehow we got here while another render is pending, skip
-  if (scrollAppendRafPending) {
-    return
-  }
-  
   if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) {
     return
   }

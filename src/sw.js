@@ -37,7 +37,7 @@ self.addEventListener('message', (event) => {
   const { type, urls } = event.data || {}
 
   switch (type) {
-    case 'CACHE_DATASET':
+    case CACHE_DATASET:
       handleCacheDataset(event, urls)
       break
     case 'APPLY_DATASET_UPDATE':
@@ -95,6 +95,9 @@ async function handleCacheDataset(event, urls) {
       const response = await fetchWithRetry(url)
       if (response.ok) {
         await cache.put(url, response)
+      } else {
+        postToAll(clients, 'DATASET_ERROR', { url, error: `HTTP ${response.status}` })
+        return
       }
     } catch (error) {
       postToAll(clients, 'DATASET_ERROR', { url, error: error.message })
@@ -112,8 +115,8 @@ async function handleCacheDataset(event, urls) {
  */
 async function handleApplyUpdate(_event) {
   // Phase 3: implement update application
-  const clients = await self.clients.matchAll()
-  postToAll(clients, 'DATASET_APPLIED')
+  // Currently not implemented - throw explicit error
+  throw new Error('APPLY_DATASET_UPDATE not implemented - Phase 3 feature')
 }
 
 /**

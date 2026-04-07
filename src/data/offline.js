@@ -8,8 +8,14 @@ import { emit } from '../core/events.js'
 import { Events, Errors } from '../core/constants.js'
 import { getManifestUrls } from './dataset.js'
 
+// Minimum free space required for download (20 MB)
+// Corpus is ~5-10 MB; this provides buffer for growth
+const MIN_FREE_SPACE_BYTES = 20 * 1024 * 1024
+
 const ACTIVATION_KEY = 'current'
 let currentMessageHandler = null
+let pendingUrls = null
+let controllerChangeHandler = null
 
 /**
  * Get the current activation state.
@@ -57,18 +63,17 @@ export async function startDownload() {
     if (estimate.quota && estimate.usage) {
       const available = estimate.quota - estimate.usage
       // Corpus is ~5-10 MB; require at least 20 MB free
-      if (available < 20000000) {
+      if (available < MIN_FREE_SPACE_BYTES) {
         emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: Errors.INSUFFICIENT_STORAGE })
         await setActivationState('none')
         return
       }
     }
   } catch (error) {
-    // Storage estimate not available - fail hard to prevent mid-download failures
-    console.error('Storage estimate failed:', error)
-    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: 'Cannot verify storage availability' })
-    await setActivationState('none')
-    return
+    // Storage estimate not available - log warning but proceed with download
+    // This is a "nice to have" check, not a hard requirement
+    console.warn('Storage estimate unavailable, proceeding with download:', error)
+    // Don't block the download - we'll handle any actual storage errors from the SW
   }
 
   // Get manifest URLs
@@ -90,13 +95,19 @@ export async function startDownload() {
         break
       case 'DATASET_COMPLETE':
         navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
+        navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
         currentMessageHandler = null
+        controllerChangeHandler = null
+        pendingUrls = null
         await setActivationState('cached')
         emit(Events.OFFLINE_DOWNLOAD_COMPLETE)
         break
       case 'DATASET_ERROR':
         navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
+        navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
         currentMessageHandler = null
+        controllerChangeHandler = null
+        pendingUrls = null
         await setActivationState('none')
         emit(Events.OFFLINE_DOWNLOAD_ERROR, { error })
         break
@@ -107,8 +118,20 @@ export async function startDownload() {
 
   // Send CACHE_DATASET to SW
   if (navigator.serviceWorker.controller) {
+    pendingUrls = urls // Store for potential re-send on controller change
     navigator.serviceWorker.controller.postMessage({ type: 'CACHE_DATASET', urls })
+
+    // Listen for controller changes (SW updates) during download
+    controllerChangeHandler = () => {
+      // New SW is now controlling - re-send the cache request
+      if (navigator.serviceWorker.controller && pendingUrls) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CACHE_DATASET', urls: pendingUrls })
+      }
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler)
   } else {
+    // Clear pendingUrls since SW isn't ready - we won't be re-sending
+    pendingUrls = null
     // SW not yet controlling this page — clean up and surface error
     navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
     currentMessageHandler = null
@@ -126,6 +149,12 @@ export async function cancelDownload() {
     navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
     currentMessageHandler = null
   }
+  // Clean up controller change listener
+  if (controllerChangeHandler) {
+    navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
+    controllerChangeHandler = null
+  }
+  pendingUrls = null
   await setActivationState('none')
 }
 

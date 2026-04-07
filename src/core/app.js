@@ -7,9 +7,11 @@ import { openDB, get, getMostRecentPosition } from './db.js'
 import * as router from './router.js'
 import { emit, on } from './events.js'
 import { Events } from './constants.js'
+import { init as initSafetySync } from '../safety/sync.js'
 
 let unsubLaunchRestore = null
 let unsubNavNavigate = null
+let unsubSafetySync = null
 
 /**
  * Initialize the application.
@@ -61,6 +63,10 @@ export async function init() {
     // Set initial theme
     applyThemeFromSettings()
 
+    // Initialize safety sync (handles IDB versionchange reload banner)
+    if (unsubSafetySync) { unsubSafetySync() }
+    unsubSafetySync = initSafetySync()
+
     // Register service worker
     await registerServiceWorker()
 
@@ -97,8 +103,9 @@ async function applyThemeFromSettings() {
     const setting = await get('settings', 'theme')
     const theme = setting?.value || 'light'
     document.documentElement.setAttribute('data-theme', theme)
-  } catch {
-    // Default to light
+  } catch (error) {
+    // Theme application failed, use default
+    console.error('Failed to apply theme:', error)
     document.documentElement.setAttribute('data-theme', 'light')
   }
 }
@@ -127,10 +134,9 @@ async function handleLaunchRestore() {
 async function registerServiceWorker() {
   if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
+      await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
       })
-      console.log('SW registered:', registration.scope)
     } catch (error) {
       console.error('SW registration failed:', error)
     }
