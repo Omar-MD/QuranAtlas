@@ -188,4 +188,87 @@ describe('review/hub.js', () => {
       expect(cards.length).toBe(30)
     })
   })
+
+  describe('tag deep link (#/t/:tag)', () => {
+    beforeEach(async () => {
+      const { getDb } = await import('../../../src/core/db.js')
+      const db = await getDb()
+      const tx = db.transaction('marks', 'readwrite')
+      tx.objectStore('marks').clear()
+      await new Promise(r => { tx.oncomplete = r })
+    })
+
+    it('renders FVR for a valid tag with marks', async () => {
+      const store = await import('../../../src/marks/store.js')
+
+      await store.save('2:255', ['study'])
+      await store.save('3:1', ['study'])
+
+      await hub.init({ tag: 'study' })
+
+      const cards = document.querySelectorAll('[data-mark]')
+      expect(cards.length).toBe(2)
+    })
+
+    it('renders FVR case-insensitively (uppercase input)', async () => {
+      const store = await import('../../../src/marks/store.js')
+
+      await store.save('2:255', ['study'])
+
+      await hub.init({ tag: 'STUDY' })
+
+      const cards = document.querySelectorAll('[data-mark]')
+      expect(cards.length).toBe(1)
+    })
+
+    it('renders not-found state for tag with no marks', async () => {
+      await hub.init({ tag: 'nonexistent' })
+
+      const notFound = document.querySelector('.qa-review-tag-not-found')
+      expect(notFound).toBeTruthy()
+      expect(notFound.textContent).toContain('nonexistent')
+
+      const hubLink = notFound.querySelector('a[href="#/review"]')
+      expect(hubLink).toBeTruthy()
+    })
+
+    it('renders not-found state for empty tag', async () => {
+      await hub.init({ tag: '' })
+
+      const notFound = document.querySelector('.qa-review-tag-not-found')
+      expect(notFound).toBeTruthy()
+    })
+
+    it('renders not-found state for oversized tag', async () => {
+      await hub.init({ tag: 'x'.repeat(51) })
+
+      const notFound = document.querySelector('.qa-review-tag-not-found')
+      expect(notFound).toBeTruthy()
+    })
+
+    it('writes lastSurface and positions["review"] on successful FVR entry', async () => {
+      const store = await import('../../../src/marks/store.js')
+      const { get } = await import('../../../src/core/db.js')
+
+      await store.save('2:255', ['study'])
+      await hub.init({ tag: 'study' })
+
+      const lastSurface = await get('settings', 'lastSurface')
+      expect(lastSurface.value).toContain('/t/')
+
+      const reviewState = await get('positions', 'review')
+      expect(reviewState.view).toBe('fvr')
+      expect(reviewState.activeTag).toBe('study')
+    })
+
+    it('announces not-found state for screen readers', async () => {
+      const announcer = await import('../../../src/a11y/announcer.js')
+      const spy = vi.spyOn(announcer, 'announce')
+
+      await hub.init({ tag: 'missing' })
+
+      expect(spy).toHaveBeenCalledWith(expect.stringContaining('missing'))
+      spy.mockRestore()
+    })
+  })
 })

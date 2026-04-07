@@ -3,14 +3,17 @@
  * Surah-grouped and flat views, tag/surah filtering, sort, pagination.
  */
 
-import { getAll, del as deleteMark, save as saveMark } from '../marks/store.js'
+import { getAll, getByTag, del as deleteMark, save as saveMark } from '../marks/store.js'
 import { getColorForTag } from '../marks/tags.js'
 import { getSurahs, getSurah } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
+import { put } from '../core/db.js'
 import { save as saveState, load as loadState, getDefaultState } from './state.js'
 import { openEditor } from '../marks/editor.js'
 import { showUndoToast, clearUndoToast } from '../core/ui.js'
+import { validateTagParam } from '../safety/input-validator.js'
+import { announce } from '../a11y/announcer.js'
 
 const PAGE_SIZE = 30
 
@@ -24,9 +27,15 @@ let surahs = []
 /**
  * Initialize the Review Hub.
  */
-export async function init() {
+export async function init(params = {}) {
   const mainContent = document.getElementById('main-content')
   if (!mainContent) {
+    return
+  }
+
+  // Tag deep link: #/t/:tag -> render FVR directly
+  if (params.tag !== undefined) {
+    await initTagDeepLink(params.tag, mainContent)
     return
   }
 
@@ -61,6 +70,86 @@ export async function init() {
       render(mc)
     }
   })
+}
+
+/**
+ * Handle tag deep link entry.
+ * Validates tag, queries marks, renders FVR or not-found state.
+ * @param {string} rawTag - URL-decoded tag parameter
+ * @param {HTMLElement} container
+ */
+async function initTagDeepLink(rawTag, container) {
+  const validation = validateTagParam(rawTag)
+
+  if (!validation.valid) {
+    renderTagNotFound(container, rawTag)
+    return
+  }
+
+  const tag = validation.label
+  const marks = await getByTag(tag)
+
+  if (marks.length === 0) {
+    renderTagNotFound(container, rawTag)
+    return
+  }
+
+  const reviewState = {
+    view: 'fvr',
+    activeTag: tag,
+    surahFilter: null,
+    sortBy: 'updatedAt',
+    groupBy: 'surah',
+  }
+  await saveState(reviewState)
+  await put('settings', { key: 'lastSurface', value: `#/t/${encodeURIComponent(tag)}` })
+
+  try {
+    surahs = await getSurahs()
+  } catch (error) {
+    console.error('Failed to load surahs for tag deep link:', error)
+    surahs = []
+  }
+
+  currentState = reviewState
+  allMarks = marks
+  filteredMarks = prepareMarks(marks, currentState)
+  displayedCount = 0
+
+  render(container)
+  setInitialFocus()
+  emit('review:open')
+}
+
+/**
+ * Render tag not-found state.
+ * @param {HTMLElement} container
+ * @param {string} rawTag - original tag from URL
+ */
+function renderTagNotFound(container, rawTag) {
+  container.textContent = ''
+
+  const wrapper = document.createElement('div')
+  wrapper.className = 'qa-review-tag-not-found'
+
+  const heading = document.createElement('h2')
+  heading.textContent = 'Tag not found'
+  wrapper.appendChild(heading)
+
+  const message = document.createElement('p')
+  const tagName = String(rawTag || '').slice(0, 50)
+  message.textContent = `No marks found for "${tagName}".`
+  wrapper.appendChild(message)
+
+  const link = document.createElement('a')
+  link.href = '#/review'
+  link.className = 'qa-review-hub-link'
+  link.textContent = 'Go to Review Hub'
+  wrapper.appendChild(link)
+
+  container.appendChild(wrapper)
+
+  announce(`No marks found for "${tagName}". Visit Review Hub to browse your marks.`)
 }
 
 /**
