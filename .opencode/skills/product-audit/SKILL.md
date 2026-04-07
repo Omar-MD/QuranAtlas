@@ -1,12 +1,12 @@
 ---
 name: product-audit
-description: Use when running a product audit on QuranAtlas, performing a health check, assessing code quality across multiple dimensions, evaluating readiness for a new phase or release, or when the user mentions auditing, health report, product review, or codebase assessment.
+description: "EXPLICIT TRIGGER ONLY — invoke this skill only when the user explicitly says /product-audit or literally asks to 'run a product audit'. Do NOT auto-trigger for general questions about code quality, health, readiness, or assessments. This skill spawns 8 parallel subagents and is very expensive; never invoke speculatively."
 ---
 # Product Audit — QuranAtlas
 
 ## Overview
 
-A structured, multi-dimensional audit that spawns 7 parallel specialist subagents, each scoring their dimension 0-10 against a core checklist with code-level evidence. An orchestrator cross-analyzes all reports, verifies findings, calculates a weighted health score, and generates a prioritized recovery plan with a gate decision.
+A structured, multi-dimensional audit that spawns 8 parallel specialist subagents, each scoring their dimension 0-10 against a core checklist with code-level evidence. An orchestrator cross-analyzes all reports, verifies findings, calculates a weighted health score, and generates a prioritized recovery plan with a gate decision.
 
 **Core principle:** Accuracy over completeness. A correct audit with 12 verified findings is worth more than 22 findings with 5 fabricated. No score without code-level evidence.
 
@@ -21,7 +21,7 @@ A structured, multi-dimensional audit that spawns 7 parallel specialist subagent
 
 ## The Iron Law
 
-**Full Audit: NO audit without all 7 dimensions.** A security issue may also be a reliability issue. Your job is the complete picture.
+**Full Audit: NO audit without all 8 dimensions.** A security issue may also be a reliability issue. Your job is the complete picture.
 
 **Follow-Up Audit:** Re-audit only dimensions that had P0/P1 findings in a previous full audit. Produces a delta report. See "Follow-Up Audit Mode" section below.
 
@@ -39,12 +39,19 @@ Before spawning subagents:
 
 1. Run `mkdir -p .tmp/audit-results` to create the output directory
 2. Capture `git rev-parse --short HEAD` — this is the commit being audited
-3. Read `docs/product-info.md` and `docs/tech-stack.md` — the orchestrator needs product context to validate subagent reports later
-4. Check `docs/audit/` for previous audit reports — if one exists, note it for the delta section
+3. Read prerequisite documentation (handle gracefully if files don't exist):
+   - `docs/product-info.md` — product context for validation. If missing, infer from README.md or ask user for product overview.
+   - `docs/tech-stack.md` — technical context for validation. If missing, explore the codebase structure to understand tech stack.
+4. Check `docs/audit/` for previous audit reports:
+   - If user specified a previous report path, use that
+   - If no path specified, use the most recent `docs/audit/YYYY-MM-DD-product-health-report.md` (sorted by date)
+   - If no previous reports exist, note "First audit — no delta available"
 
-### Step 1: Spawn 7 Subagents in Parallel
+**Prerequisites Check:** If neither docs/product-info.md nor README.md exist, ask the user for basic product context before proceeding.
 
-Spawn all 7 simultaneously — do NOT wait for one to finish before starting the next. Each subagent gets the prompt template from `references/subagent-prompt-template.md` with the dimension-specific checklist inserted and the correct spec list from the dimension-to-spec mapping table in that template.
+### Step 1: Spawn 8 Subagents in Parallel
+
+Spawn all 8 simultaneously — do NOT wait for one to finish before starting the next. Each subagent gets the prompt template from `references/subagent-prompt-template.md` with the dimension-specific checklist inserted and the correct spec list from the dimension-to-spec mapping table in that template.
 
 **Dimension-to-slug mapping:**
 
@@ -57,8 +64,9 @@ Spawn all 7 simultaneously — do NOT wait for one to finish before starting the
 | Architecture | architecture | checklists/architecture.md |
 | Testability | testability | checklists/testability.md |
 | Observability | observability | checklists/observability.md |
+| UI Quality | ui-quality | checklists/ui-quality.md |
 
-**Timeout:** Allow up to 120 seconds per subagent (checklists have 18-22 items each).
+**Timeout:** Allow up to 120 seconds per subagent (checklists have 17-26 items each).
 
 ### Step 2: Handle Failures
 
@@ -93,6 +101,18 @@ digraph failure_recovery {
 - If 3+ dimensions are incomplete, ABORT the audit and tell the user — partial results are misleading
 - If 1-2 dimensions are incomplete, proceed but prominently flag the gaps
 
+### Step 2.5: Validate Subagent Outputs
+
+Before cross-analysis, validate each subagent's JSON report:
+
+1. **File existence**: Check `.tmp/audit-results/[DIMENSION_SLUG].json` exists for each dimension
+2. **JSON validity**: Parse and validate the JSON structure matches the expected format from `references/subagent-prompt-template.md`
+3. **Required fields**: Ensure each report has: `dimension`, `score`, `confidence`, `score_justification`, `core_checklist` array
+4. **Score range**: Verify score is 0-10 (inclusive)
+5. **Severity labels**: Check that all findings use ONLY P0/P1/P2/P3 labels
+
+**If validation fails**: Flag the dimension as incomplete with the specific validation error. Do not attempt to use malformed reports in cross-analysis.
+
 ### Step 3: Cross-Analyze Findings
 
 Read all completed reports and perform:
@@ -109,19 +129,31 @@ Read all completed reports and perform:
 
 6. **Severity consistency** — ALL findings must use ONLY P0/P1/P2/P3 labels. Convert any other labels.
 
+7. **Absence-vs-defect triage** — Classify each P0/P1 as either a *defect* (something wrong in existing code) or an *absence* (something that doesn't exist). Apply the Absence Test from `references/scoring-model.md`: absences are capped at P2 unless the missing thing directly enables data loss, XSS, wrong text, or broken navigation. "No Sentry" is an absence → P2. "No input validation on verse rendering" is an absence that enables wrong text → P0.
+
+8. **Weight-severity coherence** — If a weight-1 dimension (e.g., Observability) produces P0 findings, this is a red flag. The dimension's own weight signals its urgency ceiling — a dimension the team explicitly deprioritized should not produce release-blocking findings unless the finding meets P0 hard requirements from `references/scoring-model.md`.
+
 ### Step 4: Orchestrator Verification (MANDATORY)
 
-Before calculating scores, the orchestrator MUST verify:
+Before calculating scores, the orchestrator MUST verify every P0 and P1 finding. This step produces visible artifacts — if the report has no "Orchestrator verified" fields, verification was skipped.
 
-1. **Evidence spot-check** — For ALL P0 and P1 findings: read the actual file:line referenced. Confirm the code exists and says what the subagent claims. If a finding cites code that doesn't exist or doesn't demonstrate the claimed issue, **downgrade or remove** the finding.
+**For each P0 and P1 finding**, read the actual file:line referenced and produce one of three outcomes:
 
-2. **Score-finding consistency** — If a subagent gave a score of 8+ but reported a P1 finding, flag the inconsistency. An 8+ score with a P1 finding is suspicious — either the score is inflated or the P1 is overstated.
+- **Confirmed** — Code exists at the cited location, matches the claim, and severity is justified. Add to the finding: `Orchestrator verified: Yes — [brief note on what was confirmed by reading the file]`
+- **Downgraded** — Code exists but severity is overstated (e.g., an absence classified as P0 that doesn't meet P0 hard requirements). Change severity, note the original: `Orchestrator verified: Downgraded from P0 to P2 — [reason]`
+- **Rejected** — Code doesn't exist at the cited location, doesn't say what was claimed, or the finding is an absence that doesn't meet severity requirements. Remove from Critical Findings. Add to a "Rejected Findings" note in the methodology section.
 
-3. **Math verification** — Recalculate all weighted scores. Do not trust subagent arithmetic.
+**Reliability check**: If >30% of a subagent's P0/P1 findings are rejected, flag that dimension's report as unreliable in the methodology section. The dimension score should be treated with skepticism.
 
-4. **Open questions aggregation** — Collect all `open_questions` from subagent reports. These go in the report's Open Questions section.
+**Additional verification checks:**
 
-5. **Not-assessable audit** — If any dimension has >50% items as `not-assessable`, note this prominently. The dimension score is based on a small sample and may not be representative.
+1. **Score-finding consistency** — If a subagent gave a score of 8+ but reported a P1 finding, flag the inconsistency. An 8+ score with a P1 finding is suspicious — either the score is inflated or the P1 is overstated.
+
+2. **Math verification** — Recalculate all weighted scores. Do not trust subagent arithmetic.
+
+3. **Open questions aggregation** — Collect all `open_questions` from subagent reports. These go in the report's Open Questions section.
+
+4. **Not-assessable audit** — If any dimension has >50% items as `not-assessable`, note this prominently. The dimension score is based on a small sample and may not be representative.
 
 ### Step 5: Calculate Weighted Scores
 
@@ -142,7 +174,23 @@ Each Phase 1 and Phase 2 finding must include: what to fix, where (file:line), w
 
 ### Step 7: Write the Report
 
-Use `references/report-template.md`. Save to: `docs/audit/YYYY-MM-DD-product-health-report.md`
+Use `references/report-template.md` as the structure. Before saving, verify every required section is present:
+
+- [ ] Executive Summary (score + gate decision + P0/P1/P2/P3 counts)
+- [ ] Methodology table (items, assessable, not-assessable, confidence per dimension)
+- [ ] Dimension Scores table (score, weight, weighted, status per dimension)
+- [ ] Delta from Previous Audit (or "First audit — no delta available")
+- [ ] Critical Findings — each with `Orchestrator verified` field
+- [ ] All Findings Summary table
+- [ ] Not Assessed table (modules/features that couldn't be evaluated)
+- [ ] Open Questions (aggregated from all subagents)
+- [ ] Recovery Plan (Phase 1-4 with effort estimates S/M/L on each P0/P1)
+- [ ] Cross-Cutting Observations (patterns, architecture risks, strengths, phase readiness)
+- [ ] Gate Decision with rationale
+
+Missing section = incomplete audit. Do not save until all sections are present.
+
+**Output path:** Run `mkdir -p docs/audit` then save to: `docs/audit/YYYY-MM-DD-product-health-report.md`
 
 ### Step 8: Gate Decision
 
@@ -162,15 +210,23 @@ Use when the user wants to verify fixes after a previous full audit.
 - A previous full audit report must exist in `docs/audit/`
 - The user specifies which report to compare against (or use the most recent)
 
+**Finding the Previous Report:**
+1. If user explicitly provides a path: use that file
+2. If user mentions "previous report" or "last audit" without a path:
+   - List all `docs/audit/*-product-health-report.md` files
+   - Sort by date in filename (YYYY-MM-DD format)
+   - Use the most recent one
+3. If no reports exist: tell user "No previous audit found — run a full audit first"
+
 **Process:**
-1. Read the previous audit report
-2. Identify dimensions that had P0 or P1 findings
+1. Read the identified previous audit report
+2. Extract dimensions that had P0 or P1 findings (check Critical Findings section)
 3. Re-audit ONLY those dimensions using the same checklists and subagent prompt
-4. For each previously-reported P0/P1 finding: verify whether it is now resolved, still present, or partially addressed
+4. For each previously-reported P0/P1 finding: read the file:line referenced and verify if the issue is resolved
 5. Produce a delta report (not a full report) with:
    - Previous score → current score per re-audited dimension
-   - Findings resolved (with evidence of the fix)
-   - Findings still open
+   - Findings resolved (with evidence showing the fix)
+   - Findings still open (with explanation if issue persists)
    - New findings discovered during re-audit
    - Updated gate decision
 
@@ -187,17 +243,17 @@ Use when the user wants to verify fixes after a previous full audit.
 |--------|---------|
 | "Just a quick pass" | Quick passes miss cross-dimensional issues. You need the full picture. |
 | "Everything else is fine" | That's exactly what you need to verify, not assume. |
-| "Not enough time for all 7" | A partial audit gives false confidence. All 7 or don't call it an audit. |
+| "Not enough time for all 8" | A partial audit gives false confidence. All 8 or don't call it an audit. |
 | "This dimension looks clean" | "Looks clean" without code-level evidence is not an audit. |
 | "The user only asked about X" | The user may not know about hidden risks. Complete picture is your job. |
-| "I'll do the others later" | Later never comes. Do all 7 now. |
+| "I'll do the others later" | Later never comes. Do all 8 now. |
 | "Severity labels don't matter" | Inconsistent labels break recovery plan prioritization. ONLY P0-P3. |
 | "I verified the findings mentally" | Mental verification is not verification. Read the actual file:line. Step 4 is mandatory. |
 | "The subagent seems thorough" | Trust but verify. Subagents hallucinate. Spot-check ALL P0/P1 evidence. |
 
 ## Red Flags — STOP and Restart
 
-- Skipping any of the 7 dimensions (full audit)
+- Skipping any of the 8 dimensions (full audit)
 - Giving a score without code-level evidence (file:line references)
 - Using ANY severity labels other than P0/P1/P2/P3
 - Not calculating the weighted overall score
@@ -219,3 +275,31 @@ Use when the user wants to verify fixes after a previous full audit.
 7. **Marking stubs as failures** — Phase 2/3 modules that don't exist yet are `not-assessable`, not `fail`.
 8. **Skipping verification** — Trusting subagent findings without reading the cited code. Fix: Step 4 is mandatory for all P0/P1.
 9. **No deduplication** — Same finding counted multiple times across dimensions. Fix: Merge duplicates in Step 3.
+
+---
+
+## Final Verification Checklist
+
+Before declaring the audit complete, verify:
+
+**Structure:**
+- [ ] Report file exists at `docs/audit/YYYY-MM-DD-product-health-report.md`
+- [ ] All 11 required sections are present (per Step 7)
+- [ ] Markdown formatting is valid (tables render correctly)
+
+**Content:**
+- [ ] Weighted overall score is calculated and documented
+- [ ] Gate decision (PASS/CONDITIONAL/FAIL) is declared with rationale
+- [ ] Every P0 and P1 finding has an `Orchestrator verified:` field
+- [ ] File paths in findings include line numbers (file:line format)
+- [ ] Code excerpts are actual code, not descriptions
+- [ ] Recovery Plan has effort estimates (S/M/L) for every P0/P1
+
+**Quality Gates:**
+- [ ] No finding uses severity labels other than P0/P1/P2/P3
+- [ ] Observability dimension (weight=1) has no P0 findings unless absolutely critical
+- [ ] Not-assessable items are clearly marked, not marked as fail
+- [ ] Cross-dimensional issues are tagged as "cross-dimensional"
+- [ ] 3+ incomplete dimensions would have aborted the audit (check this didn't happen)
+
+**If any checkbox is unchecked**: The audit is incomplete. Return to the relevant step.

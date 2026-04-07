@@ -2,14 +2,12 @@
  * IDB CRUD for marks.
  */
 
-/* eslint-disable no-console */
-export async function save(verseKey, tags) {
+export async function save(_verseKey, _tags) {
   // Phase 2: implement
-  console.log('Mark save:', verseKey, tags)
+  // Stub - will be implemented in Story 4
 }
 
-export async function del(verseKey) {
+export async function del(_verseKey) {
   // Phase 2: implement
-  console.log('Mark delete:', verseKey)
+  // Stub - will be implemented in Story 4
 }
-/* eslint-enable no-console */

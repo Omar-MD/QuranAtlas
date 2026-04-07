@@ -97,7 +97,55 @@ describe('reader/index.js', () => {
     await init({ surah: '1' })
 
     const translations = document.querySelectorAll('[data-translation]')
-    expect(translations.length).toBe(0)
+    // BUG FIX REGRESSION: Translations should ALWAYS be rendered but with CSS class hidden
+    // Previously this test expected translations.length === 0 (conditional rendering)
+    // Now we expect translations to exist but be hidden via CSS class
+    expect(translations.length).toBeGreaterThan(0)
+    // All translation elements should have the hidden class
+    translations.forEach(el => {
+      expect(el.classList.contains('qa-hide-translation')).toBe(true)
+    })
+  })
+
+  it('translation elements exist with correct class for toggle state - regression test', async () => {
+    // This test ensures translations are always in DOM and visibility is CSS-controlled
+    // This prevents the bug where toggling translation ON after loading new chunks
+    // wouldn't show translations for those new chunks (because elements didn't exist)
+    
+    // First test: translationVisible = true (default)
+    db.get.mockImplementation((store, key) => {
+      if (store === 'settings' && key === 'translationVisible') {
+        return Promise.resolve({ key: 'translationVisible', value: true })
+      }
+      return Promise.resolve(null)
+    })
+
+    const { init, cleanup } = await import('../../../src/reader/index.js')
+    await init({ surah: '1' })
+
+    const translationsWhenOn = document.querySelectorAll('[data-translation]')
+    expect(translationsWhenOn.length).toBe(2)
+    translationsWhenOn.forEach(el => {
+      expect(el.classList.contains('qa-hide-translation')).toBe(false)
+    })
+
+    // Cleanup and re-init with translationVisible = false
+    cleanup()
+    db.get.mockImplementation((store, key) => {
+      if (store === 'settings' && key === 'translationVisible') {
+        return Promise.resolve({ key: 'translationVisible', value: false })
+      }
+      return Promise.resolve(null)
+    })
+    
+    await init({ surah: '1' })
+
+    const translationsWhenOff = document.querySelectorAll('[data-translation]')
+    // CRITICAL: Same count (elements always rendered) but with hidden class
+    expect(translationsWhenOff.length).toBe(2)
+    translationsWhenOff.forEach(el => {
+      expect(el.classList.contains('qa-hide-translation')).toBe(true)
+    })
   })
 
   it('renders surah header with name and number', async () => {
@@ -197,6 +245,50 @@ describe('reader/index.js', () => {
     expect(document.querySelector('[data-resume-indicator]')).toBeFalsy()
     // Verse count still works
     expect(verses.length).toBeGreaterThan(0)
+  })
+
+  it('shows error for invalid verse and loads surah at verse 1 - regression test', async () => {
+    // This test catches the bug where invalid verse numbers didn't show error feedback
+    const dataset = await import('../../../src/data/dataset.js')
+    // Mock surah with only 2 verses
+    dataset.getSurah.mockResolvedValueOnce({
+      ar: ['verse1', 'verse2'],
+      en: ['translation1', 'translation2'],
+    })
+
+    const { init } = await import('../../../src/reader/index.js')
+    
+    // Try to load verse 10 when surah only has 2 verses
+    await init({ surah: '1', ayah: '10' })
+
+    // Error message should be displayed
+    const errorEl = document.querySelector('[data-invalid-verse-error]')
+    expect(errorEl).toBeTruthy()
+    expect(errorEl.textContent).toContain('Verse 10 does not exist')
+
+    // Surah should still load at verse 1 (graceful fallback)
+    const verse1 = document.querySelector('[data-verse="1"]')
+    expect(verse1).toBeTruthy()
+  })
+
+  it('dismiss button removes invalid verse error', async () => {
+    const dataset = await import('../../../src/data/dataset.js')
+    dataset.getSurah.mockResolvedValueOnce({
+      ar: ['verse1', 'verse2'],
+      en: ['translation1', 'translation2'],
+    })
+
+    const { init } = await import('../../../src/reader/index.js')
+    await init({ surah: '1', ayah: '10' })
+
+    const errorEl = document.querySelector('[data-invalid-verse-error]')
+    expect(errorEl).toBeTruthy()
+
+    const dismissBtn = errorEl.querySelector('.qa-error-dismiss')
+    expect(dismissBtn).toBeTruthy()
+
+    dismissBtn.click()
+    expect(document.querySelector('[data-invalid-verse-error]')).toBeFalsy()
   })
 
   it('cleanup removes scroll listener on re-init', async () => {

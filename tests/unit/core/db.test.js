@@ -42,7 +42,7 @@ describe('core/db.js', () => {
 
   describe('getMostRecentPosition()', () => {
     it('returns the most recently saved position', async () => {
-      const { getMostRecentPosition } = await import('../../../src/core/router.js')
+      const { getMostRecentPosition } = await import('../../../src/core/db.js')
       const { put } = await import('../../../src/core/db.js')
       await put('positions', { id: 's1', surah: 1, verse: 5, savedAt: 1000 })
       await put('positions', { id: 's2', surah: 2, verse: 100, savedAt: 2000 })
@@ -63,7 +63,7 @@ describe('core/db.js', () => {
         req.onsuccess = resolve
       })
 
-      const { getMostRecentPosition } = await import('../../../src/core/router.js')
+      const { getMostRecentPosition } = await import('../../../src/core/db.js')
       const result = await getMostRecentPosition()
       expect(result).toBeNull()
     })

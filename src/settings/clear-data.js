@@ -30,6 +30,17 @@ export async function showClearDataConfirmation() {
   const message = document.createElement('p')
   message.textContent = 'This will permanently delete all saved reading positions, marks, and settings. This action cannot be undone.'
 
+  const warning = document.createElement('p')
+  warning.id = 'clear-warning'
+  warning.className = 'qa-warning-text'
+  warning.textContent = 'Type DELETE to confirm:'
+
+  const confirmInput = document.createElement('input')
+  confirmInput.type = 'text'
+  confirmInput.className = 'qa-input qa-input-confirm'
+  confirmInput.setAttribute('aria-labelledby', 'clear-warning')
+  confirmInput.placeholder = 'DELETE'
+
   const actions = document.createElement('div')
   actions.className = 'qa-modal-actions'
 
@@ -40,6 +51,7 @@ export async function showClearDataConfirmation() {
   const confirmBtn = document.createElement('button')
   confirmBtn.className = 'qa-btn qa-btn-danger'
   confirmBtn.textContent = 'Clear All Data'
+  confirmBtn.disabled = true
   confirmBtn.setAttribute('aria-describedby', 'clear-warning')
 
   actions.appendChild(cancelBtn)
@@ -47,6 +59,8 @@ export async function showClearDataConfirmation() {
 
   modal.appendChild(title)
   modal.appendChild(message)
+  modal.appendChild(warning)
+  modal.appendChild(confirmInput)
   modal.appendChild(actions)
   backdrop.appendChild(modal)
 
@@ -70,13 +84,17 @@ export async function showClearDataConfirmation() {
       resolve(false)
     })
 
-    confirmBtn.addEventListener('click', async () => {
-      cleanup()
-      const success = await clearAllData()
-      resolve(success)
+    // Enable confirm button only when user types DELETE (case-insensitive)
+    confirmInput.addEventListener('input', () => {
+      const isDelete = confirmInput.value.trim().toLowerCase() === 'delete'
+      confirmBtn.disabled = !isDelete
     })
 
     confirmBtn.addEventListener('click', async () => {
+      // Double-check DELETE was typed before proceeding
+      if (confirmInput.value.trim().toLowerCase() !== 'delete') {
+        return
+      }
       cleanup()
       const success = await clearAllData()
       resolve(success)
@@ -91,8 +109,8 @@ export async function showClearDataConfirmation() {
 
     document.addEventListener('keydown', handleEscape)
     document.body.appendChild(backdrop)
-    cancelBtn.focus()
-    announce('Clear data confirmation dialog opened')
+    confirmInput.focus()
+    announce('Clear data confirmation dialog opened. Type DELETE to confirm clearing all data.')
   })
 }
 
@@ -111,8 +129,8 @@ export async function clearAllData() {
     // Clear IndexedDB
     await deleteDB()
 
-    // Clear localStorage (if any)
-    localStorage.clear()
+    // Note: localStorage is intentionally NOT cleared per tech-stack.md
+    // (No localStorage is used anywhere in the application)
 
     emit(Events.SETTINGS_DATA_CLEARED, {})
     announce('All data has been cleared. Reloading...')
