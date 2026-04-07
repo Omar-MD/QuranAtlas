@@ -8,6 +8,7 @@ export const Events = {
   DB_VERSION_CHANGE: 'db:version-change',
   DB_VISIBILITY_VISIBLE: 'db:visibility-visible',
   DB_DELETE_BLOCKED: 'db:delete-blocked',
+  DB_QUOTA_EXCEEDED: 'db:quota-exceeded',
   ROUTER_LAUNCH_RESTORE: 'router:launch-restore',
   ROUTER_ROUTE_ERROR: 'router:route-error',
   READER_SURAH_LOADED: 'reader:surah-loaded',
@@ -20,6 +21,8 @@ export const Events = {
   OFFLINE_INSTALL_COMPLETE: 'offline:install-complete',
   APP_INIT_ERROR: 'app:init-error',
   APP_READY_FOR_DOWNLOAD: 'app:ready-for-download',
+  SETTINGS_THEME_CHANGED: 'settings:theme-changed',
+  SETTINGS_DATA_CLEARED: 'settings:data-cleared',
 }
 
 export const Errors = {

@@ -86,16 +86,18 @@ export function parseNavigationInput(input, surahs) {
 
 /**
  * Find a surah by name (case-insensitive, with/without "Al-" prefix).
+ * Uses strict matching - must match the full name or stripped name exactly.
  * @param {string} query
  * @param {Array<{n: number, name: string}>} surahs
  * @returns {{n: number, name: string, count: number} | null}
  */
 function findSurahByName(query, surahs) {
-  const q = query.toLowerCase().replace(/^al[- ]/, '')
+  const q = query.toLowerCase().replace(/^al[- ]/, '').trim()
 
   for (const s of surahs) {
     const name = s.name.toLowerCase()
     const nameStripped = name.replace(/^al[- ]/, '')
+    // Strict matching: exact match or exact stripped match
     if (name === query.toLowerCase() || nameStripped === q) {
       return s
     }

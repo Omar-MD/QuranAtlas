@@ -118,6 +118,7 @@ function setupScrollFallback() {
 
 /**
  * Stop observing and clean up.
+ * @returns {number | null} The last pending position if any
  */
 export function unobserve() {
   if (observer) {
@@ -136,9 +137,11 @@ export function unobserve() {
     clearTimeout(debounceTimer)
     debounceTimer = null
   }
+  const lastPending = pendingPosition
   pendingPosition = null
   onPositionChangeCallback = null
   containerRef = null
+  return lastPending
 }
 
 /**
@@ -155,4 +158,22 @@ function scheduleDebounce() {
     pendingPosition = null
     debounceTimer = null
   }, DEBOUNCE_MS)
+}
+
+/**
+ * Flush any pending debounced position update immediately.
+ * @returns {number | null} The flushed position if any
+ */
+export function flushDebounce() {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+    const position = pendingPosition
+    if (position !== null && onPositionChangeCallback) {
+      onPositionChangeCallback({ verse: position })
+    }
+    pendingPosition = null
+    return position
+  }
+  return null
 }

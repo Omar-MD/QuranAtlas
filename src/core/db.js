@@ -143,7 +143,13 @@ export async function put(storeName, value) {
     const store = tx.objectStore(storeName)
     const request = store.put(value)
     request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
+    request.onerror = () => {
+      const error = request.error
+      if (error?.name === 'QuotaExceededError') {
+        emit(Events.DB_QUOTA_EXCEEDED, { storeName, message: 'Storage is full. Please clear some data.' })
+      }
+      reject(error)
+    }
   })
 }
 
@@ -216,7 +222,8 @@ export async function getMostRecentPosition() {
       }
       request.onerror = () => resolve(null)
     })
-  } catch {
+  } catch (error) {
+    console.error('Failed to get most recent position:', error)
     return null
   }
 }

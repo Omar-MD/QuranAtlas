@@ -23,6 +23,7 @@ vi.mock('../../../src/reader/scroll-tracker.js', () => ({
   observeScroll: vi.fn(),
   unobserve: vi.fn(),
   observeNewVerses: vi.fn(),
+  flushDebounce: vi.fn(),
 }))
 
 // Mock db — return appropriate values per store

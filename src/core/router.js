@@ -48,6 +48,44 @@ export function init() {
 }
 
 /**
+ * Sanitize route parameters to prevent XSS injection.
+ * @param {object} params
+ * @returns {object | null} Sanitized params or null if invalid
+ */
+function sanitizeParams(params) {
+  const sanitized = {}
+  for (const [key, value] of Object.entries(params)) {
+    // Reject if value contains HTML/script tags or dangerous characters
+    if (typeof value !== 'string') {
+      sanitized[key] = value
+      continue
+    }
+
+    // Check for XSS payloads: <script>, javascript:, data:, etc.
+    const dangerous = /<script|javascript:|data:text\/html|on\w+=/i
+    if (dangerous.test(value)) {
+      console.warn('Router: rejected param with XSS pattern:', key)
+      return null
+    }
+
+    // Basic HTML tag detection
+    if (/<[^>]+>/i.test(value)) {
+      console.warn('Router: rejected param with HTML tags:', key)
+      return null
+    }
+
+    // Length limit to prevent DoS
+    if (value.length > 100) {
+      console.warn('Router: rejected oversized param:', key)
+      return null
+    }
+
+    sanitized[key] = value
+  }
+  return sanitized
+}
+
+/**
  * Handle a route change.
  * @param {string} hash
  */
@@ -76,7 +114,14 @@ async function handleRoute(hash) {
 
     if (module.init) {
       try {
-        await module.init(params)
+        // Sanitize params before passing to module
+        const sanitizedParams = sanitizeParams(params)
+        if (sanitizedParams === null) {
+          console.error(`Route ${hash} rejected: invalid parameters`)
+          emit(Events.ROUTER_ROUTE_ERROR, { route: hash, error: new Error('Invalid parameters') })
+          return
+        }
+        await module.init(sanitizedParams)
       } catch (error) {
         console.error(`Route ${hash} failed:`, error)
         emit(Events.ROUTER_ROUTE_ERROR, { route: hash, error })
@@ -127,12 +172,6 @@ function extractParams(pattern, hash) {
 
   return params
 }
-
-/**
- * Re-export getMostRecentPosition for backward compatibility.
- * @deprecated Import directly from './db.js' instead.
- */
-export { getMostRecentPosition } from './db.js'
 
 /**
  * Clear all registered routes. Test use only.

@@ -16,6 +16,7 @@ let shouldAutoClose = false
 let backdrop = null
 let unsubPosition = null
 let unsubLoaded = null
+let unsubVisibility = null
 let hamburgerToggle = null
 let escapeHandler = null
 let mediaQuery = null
@@ -38,6 +39,7 @@ export async function init() {
   renderHamburgerToggle()
   setupEventListeners()
   setupEscapeListener()
+  setupVisibilityReRead()
 }
 
 /**
@@ -52,6 +54,7 @@ export function destroy() {
   }
   if (unsubPosition) { unsubPosition() }
   if (unsubLoaded) { unsubLoaded() }
+  if (unsubVisibility) { unsubVisibility() }
   if (backdrop && backdrop.parentNode) { backdrop.remove() }
 
   surahs = []
@@ -61,6 +64,7 @@ export function destroy() {
   backdrop = null
   unsubPosition = null
   unsubLoaded = null
+  unsubVisibility = null
   hamburgerToggle = null
   escapeHandler = null
   mediaQuery = null
@@ -334,4 +338,23 @@ function setupEscapeListener() {
     }
   }
   document.addEventListener('keydown', escapeHandler)
+}
+
+/**
+ * Re-read surah list when tab becomes visible (may have been updated in another tab).
+ */
+function setupVisibilityReRead() {
+  if (unsubVisibility) { unsubVisibility() }
+  unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
+    // Re-fetch surah list to catch any updates from other tabs
+    const freshSurahs = await getSurahs()
+    if (freshSurahs && freshSurahs.length > 0) {
+      surahs = freshSurahs
+      // Re-render to show any updates
+      const navSurface = document.getElementById('nav-surface')
+      if (navSurface && isOpen) {
+        renderNavPanel()
+      }
+    }
+  })
 }

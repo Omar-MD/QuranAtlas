@@ -8,7 +8,7 @@ import { getSurah, getSurahs } from '../data/dataset.js'
 import { get, put } from '../core/db.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
-import { observeScroll, unobserve, observeNewVerses } from './scroll-tracker.js'
+import { observeScroll, unobserve, observeNewVerses, flushDebounce } from './scroll-tracker.js'
 import { announce } from '../a11y/announcer.js'
 
 const SKELETON_TIMEOUT_MS = 5000
@@ -58,7 +58,9 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     performance.mark('reader:fetch-end')
 
     // Guard: bail if navigation moved on while we were fetching
-    if (currentSurahNum !== surahNum) return
+    if (currentSurahNum !== surahNum) {
+      return
+    }
 
     // Background fetch: position and settings while rendering
     const [surahs, translationVisible, savedPosition] = await Promise.all([
@@ -70,7 +72,9 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     clearTimeout(timeout)
 
     // Guard: bail if navigation moved on while we were fetching settings
-    if (currentSurahNum !== surahNum) return
+    if (currentSurahNum !== surahNum) {
+      return
+    }
 
     currentSurah = surah
     const surahMeta = surahs.find(s => s.n === surahNum)
@@ -104,6 +108,8 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
       setupScrollTracking(mainContent, surahNum)
       visibilityHandler = () => {
         if (document.hidden && currentSurahNum && lastTrackedVerse !== null) {
+          // Flush any pending debounced position update before saving
+          flushDebounce()
           try {
             put('positions', {
               id: `s${currentSurahNum}`,
