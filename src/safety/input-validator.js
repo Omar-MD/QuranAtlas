@@ -132,3 +132,34 @@ export function validateTagLabel(raw) {
 
   return { valid: true, label: trimmed.toLowerCase() }
 }
+
+/**
+ * Validate and normalize a tag parameter from a URL deep link.
+ * Lowercases, trims, collapses internal whitespace, rejects control chars.
+ * @param {string} raw - URL-decoded tag string
+ * @returns {{ valid: boolean, label?: string, error?: string }}
+ */
+export function validateTagParam(raw) {
+  if (!raw || typeof raw !== 'string') {
+    return { valid: false, error: 'Tag parameter is required' }
+  }
+
+  // Check for control characters (U+0000-001F, U+007F-009F)
+  if (/[\x00-\x1f\x7f-\x9f]/.test(raw)) {
+    return { valid: false, error: 'Tag contains invalid characters' }
+  }
+
+  const trimmed = raw.trim()
+  if (!trimmed) {
+    return { valid: false, error: 'Tag parameter is required' }
+  }
+
+  // Collapse internal whitespace
+  const collapsed = trimmed.replace(/\s+/g, ' ')
+
+  if (collapsed.length > 50) {
+    return { valid: false, error: 'Tag must be 50 characters or less' }
+  }
+
+  return { valid: true, label: collapsed.toLowerCase() }
+}

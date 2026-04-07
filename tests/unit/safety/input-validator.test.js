@@ -1,4 +1,4 @@
-import { parseNavigationInput, validateTagLabel } from '../../../src/safety/input-validator.js'
+import { parseNavigationInput, validateTagLabel, validateTagParam } from '../../../src/safety/input-validator.js'
 
 const SURAHS = [
   { n: 1, name: 'Al-Fatihah', count: 7 },
@@ -150,6 +150,54 @@ describe('safety/input-validator.js', () => {
     it('accepts labels at exactly 50 chars', () => {
       const exact = 'a'.repeat(50)
       expect(validateTagLabel(exact)).toEqual({ valid: true, label: exact })
+    })
+  })
+
+  describe('validateTagParam()', () => {
+    it('returns valid + lowercased label for normal input', () => {
+      const result = validateTagParam('Study')
+      expect(result).toEqual({ valid: true, label: 'study' })
+    })
+
+    it('trims whitespace', () => {
+      const result = validateTagParam('  study  ')
+      expect(result).toEqual({ valid: true, label: 'study' })
+    })
+
+    it('collapses internal whitespace', () => {
+      const result = validateTagParam('my   tag')
+      expect(result).toEqual({ valid: true, label: 'my tag' })
+    })
+
+    it('rejects empty string', () => {
+      const result = validateTagParam('')
+      expect(result.valid).toBe(false)
+    })
+
+    it('rejects string over 50 chars', () => {
+      const result = validateTagParam('x'.repeat(51))
+      expect(result.valid).toBe(false)
+    })
+
+    it('accepts string of exactly 50 chars', () => {
+      const result = validateTagParam('x'.repeat(50))
+      expect(result.valid).toBe(true)
+    })
+
+    it('rejects control characters', () => {
+      const result = validateTagParam('study\x00')
+      expect(result.valid).toBe(false)
+    })
+
+    it('rejects U+007F-U+009F control chars', () => {
+      const result = validateTagParam('study\x7f')
+      expect(result.valid).toBe(false)
+    })
+
+    it('handles URL-decoded unicode', () => {
+      const result = validateTagParam('qur\u00e2n')
+      expect(result.valid).toBe(true)
+      expect(result.label).toBe('qur\u00e2n')
     })
   })
 })
