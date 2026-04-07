@@ -649,3 +649,107 @@ body {
 .qa-mark-hover-icon:hover {
   opacity: 1;
 }
+
+/* Review Hub */
+.qa-review-controls {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--qa-border);
+  margin-bottom: 0.75rem;
+}
+
+.qa-review-group-toggle,
+.qa-review-sort-toggle {
+  background: var(--qa-bg-secondary);
+  color: var(--qa-text-primary);
+  border: 1px solid var(--qa-border);
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+}
+
+.qa-review-surah-header {
+  font-weight: 600;
+  padding: 0.5rem 0;
+  margin-top: 0.75rem;
+  color: var(--qa-text-secondary);
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--qa-border);
+}
+
+.qa-review-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--qa-border);
+  cursor: pointer;
+}
+
+.qa-review-mark:hover {
+  background: var(--qa-bg-secondary);
+}
+
+.qa-review-verse-label {
+  font-weight: 500;
+  min-width: 4rem;
+  color: var(--qa-text-primary);
+}
+
+.qa-review-tag-dots {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.qa-review-mark-actions {
+  margin-left: auto;
+}
+
+.qa-review-delete-btn {
+  background: none;
+  border: none;
+  color: var(--qa-color-error);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.qa-review-empty,
+.qa-review-no-results {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--qa-text-secondary);
+}
+
+.qa-review-clear-filter {
+  background: var(--qa-accent);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.qa-review-load-more {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  background: var(--qa-bg-secondary);
+  color: var(--qa-text-primary);
+  border: 1px solid var(--qa-border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.qa-review-icon {
+  color: var(--qa-text-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+}
