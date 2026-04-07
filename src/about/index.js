@@ -8,7 +8,6 @@ import { announce } from '../a11y/announcer.js'
 import { getInstallPrompt, promptInstall } from './pwa-install.js'
 
 let _initSeq = 0
-
 /**
  * Initialize the about page.
  */
@@ -60,7 +59,7 @@ export async function init() {
   let dsVersion = 'Not yet installed'
   try {
     const meta = await get('datasetMeta', 'current')
-    if (meta?.version) { dsVersion = meta.version }
+    if (meta?.version) dsVersion = meta.version
   } catch { /* IDB unavailable, show fallback */ }
 
   if (seq !== _initSeq) { return }
