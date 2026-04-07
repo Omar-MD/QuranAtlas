@@ -24,6 +24,10 @@ export const Events = {
   APP_READY_FOR_DOWNLOAD: 'app:ready-for-download',
   SETTINGS_THEME_CHANGED: 'settings:theme-changed',
   SETTINGS_DATA_CLEARED: 'settings:data-cleared',
+  MARKS_SAVED: 'marks:saved',
+  MARKS_DELETED: 'marks:deleted',
+  MARKS_UNDO: 'marks:undo',
+  READER_VERSE_RENDERED: 'reader:verse-rendered',
 }
 
 export const Errors = {
