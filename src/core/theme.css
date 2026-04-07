@@ -502,3 +502,150 @@ body {
   outline: 2px solid var(--qa-accent);
   outline-offset: 2px;
 }
+
+/* Mark indicators */
+.qa-mark-dots {
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.qa-mark-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.qa-verse {
+  position: relative;
+}
+
+/* Mark editor modal */
+.qa-mark-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.qa-mark-modal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--qa-bg-primary);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  padding: 1.5rem;
+  z-index: 101;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.qa-mark-title {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--qa-text-primary);
+}
+
+.qa-mark-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.qa-mark-tag-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--qa-text-primary);
+}
+
+.qa-mark-tag-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.qa-mark-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.qa-mark-save-btn {
+  background: var(--qa-accent);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.qa-mark-cancel-btn {
+  background: var(--qa-bg-secondary);
+  color: var(--qa-text-primary);
+  border: 1px solid var(--qa-border);
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.qa-mark-delete-btn {
+  background: var(--qa-color-error);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+/* Undo toast */
+.qa-undo-toast {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--qa-text-primary);
+  color: var(--qa-bg-primary);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 200;
+  font-size: 0.875rem;
+}
+
+.qa-undo-toast button {
+  background: none;
+  border: none;
+  color: var(--qa-accent);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Desktop hover icon */
+.qa-mark-hover-icon {
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--qa-text-secondary);
+  padding: 2px;
+  opacity: 0.6;
+}
+
+.qa-mark-hover-icon:hover {
+  opacity: 1;
+}
