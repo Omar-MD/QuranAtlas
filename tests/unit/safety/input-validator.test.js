@@ -1,4 +1,4 @@
-import { parseNavigationInput } from '../../../src/safety/input-validator.js'
+import { parseNavigationInput, validateTagLabel } from '../../../src/safety/input-validator.js'
 
 const SURAHS = [
   { n: 1, name: 'Al-Fatihah', count: 7 },
@@ -108,6 +108,48 @@ describe('safety/input-validator.js', () => {
     it('works without surahs param (backward compatible)', () => {
       const result = parseNavigationInput('2')
       expect(result).toEqual({ surah: 2, valid: true })
+    })
+  })
+
+  describe('validateTagLabel()', () => {
+    it('accepts a valid lowercase label', () => {
+      expect(validateTagLabel('study')).toEqual({ valid: true, label: 'study' })
+    })
+
+    it('lowercases the label', () => {
+      expect(validateTagLabel('Study')).toEqual({ valid: true, label: 'study' })
+    })
+
+    it('trims whitespace', () => {
+      expect(validateTagLabel('  study  ')).toEqual({ valid: true, label: 'study' })
+    })
+
+    it('rejects empty string', () => {
+      expect(validateTagLabel('')).toEqual({ valid: false, error: 'Tag label is required' })
+    })
+
+    it('rejects whitespace-only', () => {
+      expect(validateTagLabel('   ')).toEqual({ valid: false, error: 'Tag label is required' })
+    })
+
+    it('rejects null/undefined', () => {
+      expect(validateTagLabel(null)).toEqual({ valid: false, error: 'Tag label is required' })
+      expect(validateTagLabel(undefined)).toEqual({ valid: false, error: 'Tag label is required' })
+    })
+
+    it('rejects labels over 50 chars', () => {
+      const long = 'a'.repeat(51)
+      expect(validateTagLabel(long)).toEqual({ valid: false, error: 'Tag label must be 50 characters or less' })
+    })
+
+    it('rejects labels with control characters', () => {
+      expect(validateTagLabel('study' + String.fromCharCode(0))).toEqual({ valid: false, error: 'Tag label contains invalid characters' })
+      expect(validateTagLabel('study' + String.fromCharCode(10))).toEqual({ valid: false, error: 'Tag label contains invalid characters' })
+    })
+
+    it('accepts labels at exactly 50 chars', () => {
+      const exact = 'a'.repeat(50)
+      expect(validateTagLabel(exact)).toEqual({ valid: true, label: exact })
     })
   })
 })

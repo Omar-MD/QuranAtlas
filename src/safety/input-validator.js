@@ -105,3 +105,31 @@ function findSurahByName(query, surahs) {
 
   return null
 }
+
+/**
+ * Validate and normalize a tag label.
+ * @param {string} raw
+ * @returns {{ valid: boolean, label?: string, error?: string }}
+ */
+export function validateTagLabel(raw) {
+  if (!raw || typeof raw !== 'string') {
+    return { valid: false, error: 'Tag label is required' }
+  }
+
+  // Check for control characters before trimming (trim removes whitespace)
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1f\x7f]/.test(raw)) {
+    return { valid: false, error: 'Tag label contains invalid characters' }
+  }
+
+  const trimmed = raw.trim()
+  if (!trimmed) {
+    return { valid: false, error: 'Tag label is required' }
+  }
+
+  if (trimmed.length > 50) {
+    return { valid: false, error: 'Tag label must be 50 characters or less' }
+  }
+
+  return { valid: true, label: trimmed.toLowerCase() }
+}
