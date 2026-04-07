@@ -13,6 +13,7 @@ export const Events = {
   ROUTER_ROUTE_ERROR: 'router:route-error',
   READER_SURAH_LOADED: 'reader:surah-loaded',
   READER_POSITION_CHANGED: 'reader:position-changed',
+  READER_POSITION_SAVE_FAILED: 'reader:position-save-failed',
   NAVIGATION_NAVIGATE: 'navigation:navigate',
   OFFLINE_DOWNLOAD_PROGRESS: 'offline:download-progress',
   OFFLINE_DOWNLOAD_COMPLETE: 'offline:download-complete',
@@ -26,5 +27,5 @@ export const Events = {
 }
 
 export const Errors = {
-  INSUFFICIENT_STORAGE: 'Insufficient storage',
+  INSUFFICIENT_STORAGE: 'insufficient storage',
 }

@@ -19,7 +19,8 @@ export async function getActivationState() {
   try {
     const record = await get('activationState', ACTIVATION_KEY)
     return record?.status || 'none'
-  } catch {
+  } catch (error) {
+    console.error('Failed to get activation state:', error)
     return 'none'
   }
 }
@@ -42,9 +43,15 @@ export async function startDownload() {
     return
   }
 
+  // Clean up any existing listener first to prevent leaks
+  if (currentMessageHandler) {
+    navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
+    currentMessageHandler = null
+  }
+
   await setActivationState('downloading')
 
-  // Check storage quota
+  // Check storage quota - fail hard if we can't estimate, to avoid mid-download failures
   try {
     const estimate = await navigator.storage.estimate()
     if (estimate.quota && estimate.usage) {
@@ -56,8 +63,12 @@ export async function startDownload() {
         return
       }
     }
-  } catch {
-    // Storage estimate not available, proceed anyway
+  } catch (error) {
+    // Storage estimate not available - fail hard to prevent mid-download failures
+    console.error('Storage estimate failed:', error)
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: 'Cannot verify storage availability' })
+    await setActivationState('none')
+    return
   }
 
   // Get manifest URLs

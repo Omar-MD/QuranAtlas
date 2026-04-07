@@ -11,7 +11,12 @@ import { Events } from '../core/constants.js'
 import { observeScroll, unobserve, observeNewVerses, flushDebounce } from './scroll-tracker.js'
 import { announce } from '../a11y/announcer.js'
 
+// Maximum time to wait for surah data fetch before showing error
+// 5 seconds balances responsiveness with slow network tolerance
 const SKELETON_TIMEOUT_MS = 5000
+
+// Number of verses to render per chunk for performance
+// 50 verses provides good initial render time while keeping DOM size manageable
 const CHUNK_SIZE = 50
 
 let currentSurah = null
@@ -91,6 +96,14 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
       renderResumeIndicator(mainContent, surahMeta, savedPosition)
     }
 
+    // Validate target verse if provided
+    let invalidVerseError = null
+    if (targetVerse !== null) {
+      if (targetVerse < 1 || targetVerse > surah.ar.length) {
+        invalidVerseError = `Verse ${targetVerse} does not exist in ${surahMeta?.name ?? 'this Surah'} (${surah.ar.length} verses)`
+      }
+    }
+
     // Chunked rendering: render first chunk
     renderedCount = 0
     isRendering = true
@@ -118,8 +131,9 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
               savedAt: Date.now(),
             })
           } catch (error) {
-            // Position save failed, continue anyway
+            // Position save failed, emit event for UI warning
             console.error('Failed to save position:', error)
+            emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
           }
         }
       }
@@ -140,7 +154,14 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     if (savedPosition && !targetVerse) {
       scrollToVerse(mainContent, savedPosition.verse)
     } else if (targetVerse) {
-      scrollToVerse(mainContent, targetVerse)
+      // If verse is invalid, show error but still load surah at verse 1
+      const validTargetVerse = (invalidVerseError) ? 1 : targetVerse
+      scrollToVerse(mainContent, validTargetVerse)
+    }
+
+    // Show invalid verse error if applicable
+    if (invalidVerseError) {
+      renderInvalidVerseError(mainContent, invalidVerseError)
     }
 
     emit(Events.READER_SURAH_LOADED, { surah: surahNum })
@@ -182,8 +203,19 @@ export { cleanup }
 
 /**
  * Render a chunk of verses.
+ * Validates that Arabic and English arrays have matching lengths before rendering.
  */
 function renderVerseChunk(container, surah, translationVisible, start, end) {
+  // Validate verse data integrity - ar and en arrays must match
+  if (!surah?.ar || !surah?.en || surah.ar.length !== surah.en.length) {
+    console.error('Verse data validation failed: Arabic and English arrays mismatch or missing', {
+      arLength: surah?.ar?.length,
+      enLength: surah?.en?.length,
+      surah: surah?.n,
+    })
+    return
+  }
+  
   const actualEnd = Math.min(end, surah.ar.length)
   const endMarker = container.querySelector('[data-surah-end]')
 
@@ -207,13 +239,14 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
     arabicEl.insertBefore(numberEl, arabicEl.firstChild)
     verseBlock.appendChild(arabicEl)
 
-    if (translationVisible) {
-      const transEl = document.createElement('div')
-      transEl.className = 'qa-verse-translation'
-      transEl.setAttribute('data-translation', '')
-      transEl.textContent = surah.en[i]
-      verseBlock.appendChild(transEl)
+    const transEl = document.createElement('div')
+    transEl.className = 'qa-verse-translation'
+    if (!translationVisible) {
+      transEl.classList.add('qa-hide-translation')
     }
+    transEl.setAttribute('data-translation', '')
+    transEl.textContent = surah.en[i]
+    verseBlock.appendChild(transEl)
 
     fragment.appendChild(verseBlock)
   }
@@ -258,8 +291,16 @@ function setupScrollTracking(container, surahNum) {
 
 /**
  * Handle scroll events to append more verse chunks.
+ * Uses rAF throttling to prevent multiple rapid scroll events from queuing
+ * multiple render operations. The scrollAppendRafPending flag ensures only
+ * one render cycle is active at a time.
  */
 function handleScrollAppend() {
+  // Double-check: if somehow we got here while another render is pending, skip
+  if (scrollAppendRafPending) {
+    return
+  }
+  
   if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) {
     return
   }
@@ -274,23 +315,43 @@ function handleScrollAppend() {
 
   // Append next chunk when within one viewport height of bottom
   if (scrollHeight - scrollBottom < mainContent.clientHeight) {
-    isRendering = true
-    const startCount = renderedCount
-    renderVerseChunk(mainContent, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
-    isRendering = false
-
-    // Observe newly appended verses for scroll tracking
-    const startVerse = startCount + 1
-    const newElements = []
-    for (let v = startVerse; v <= renderedCount; v++) {
-      const el = mainContent.querySelector(`[data-verse="${v}"]`)
-      if (el) {
-        newElements.push(el)
+    // Set pending BEFORE the rAF to prevent race conditions
+    scrollAppendRafPending = true
+    
+    requestAnimationFrame(() => {
+      // Reset pending flag immediately to allow next scroll to queue
+      scrollAppendRafPending = false
+      
+      // Re-validate conditions in case they changed during the frame
+      if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) {
+        return
       }
-    }
-    if (newElements.length > 0) {
-      observeNewVerses(newElements)
-    }
+      
+      // Re-check scroll position - still near bottom?
+      const currentScrollBottom = mainContent.scrollTop + mainContent.clientHeight
+      const currentScrollHeight = mainContent.scrollHeight
+      if (currentScrollHeight - currentScrollBottom >= mainContent.clientHeight) {
+        return
+      }
+      
+      isRendering = true
+      const startCount = renderedCount
+      renderVerseChunk(mainContent, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
+      isRendering = false
+
+      // Observe newly appended verses for scroll tracking
+      const startVerse = startCount + 1
+      const newElements = []
+      for (let v = startVerse; v <= renderedCount; v++) {
+        const el = mainContent.querySelector(`[data-verse="${v}"]`)
+        if (el) {
+          newElements.push(el)
+        }
+      }
+      if (newElements.length > 0) {
+        observeNewVerses(newElements)
+      }
+    })
   }
 }
 
@@ -307,19 +368,43 @@ async function savePosition(surahNum, verse) {
     })
     emit(Events.READER_POSITION_CHANGED, { surah: surahNum, verse })
   } catch (error) {
-    // Position save failed, continue anyway
+    // Position save failed, emit event for UI warning
     console.error('Failed to save position on visibility change:', error)
+    emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: surahNum, verse })
   }
 }
 
 /**
  * Scroll to a specific verse.
+ * If verse is in a future chunk, renders chunks until verse is available.
  */
 function scrollToVerse(container, verseNum) {
+  // If verse is beyond currently rendered, load chunks until we reach it
+  while (verseNum > renderedCount && currentSurah && renderedCount < currentSurah.ar.length) {
+    isRendering = true
+    renderVerseChunk(container, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
+    isRendering = false
+
+    // Observe newly appended verses for scroll tracking
+    const startVerse = renderedCount - (renderedCount % CHUNK_SIZE) + 1
+    const newElements = []
+    for (let v = startVerse; v <= renderedCount; v++) {
+      const el = container.querySelector(`[data-verse="${v}"]`)
+      if (el) {
+        newElements.push(el)
+      }
+    }
+    if (newElements.length > 0) {
+      observeNewVerses(newElements)
+    }
+  }
+
   const verseEl = container.querySelector(`[data-verse="${verseNum}"]`)
   if (verseEl && typeof verseEl.scrollIntoView === 'function') {
     verseEl.scrollIntoView({ block: 'start' })
+    return true
   }
+  return false
 }
 
 /**
@@ -361,7 +446,17 @@ function showError(container, surahNum, _message) {
   const retryBtn = document.createElement('button')
   retryBtn.className = 'qa-retry-btn'
   retryBtn.textContent = 'Retry'
-  retryBtn.addEventListener('click', () => init({ surah: String(surahNum) }))
+  let isRetrying = false
+  retryBtn.addEventListener('click', async () => {
+    if (isRetrying) {
+      return
+    }
+    isRetrying = true
+    retryBtn.disabled = true
+    retryBtn.textContent = 'Loading...'
+    await init({ surah: String(surahNum) })
+    // Button will be destroyed on success anyway
+  })
   errorDiv.appendChild(document.createElement('br'))
   errorDiv.appendChild(retryBtn)
 
@@ -445,6 +540,27 @@ function renderResumeIndicator(container, meta, position) {
 }
 
 /**
+ * Render invalid verse error notification.
+ */
+function renderInvalidVerseError(container, errorMessage) {
+  const errorDiv = document.createElement('div')
+  errorDiv.className = 'qa-invalid-verse-error'
+  errorDiv.setAttribute('data-invalid-verse-error', '')
+  errorDiv.textContent = errorMessage
+
+  const dismissBtn = document.createElement('button')
+  dismissBtn.className = 'qa-error-dismiss'
+  dismissBtn.textContent = '×'
+  dismissBtn.setAttribute('aria-label', 'Dismiss')
+  dismissBtn.addEventListener('click', () => {
+    errorDiv.remove()
+  })
+
+  errorDiv.appendChild(dismissBtn)
+  container.insertBefore(errorDiv, container.firstChild)
+}
+
+/**
  * Render surah end marker.
  */
 function renderSurahEnd(container, meta) {
@@ -472,17 +588,31 @@ function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
   toggleBtn.setAttribute('aria-label', translationVisible ? 'Hide translation' : 'Show translation')
 
   toggleBtn.addEventListener('click', async () => {
-    const newValue = !currentTranslationVisible
+    const previousValue = currentTranslationVisible
+    const newValue = !previousValue
+    
+    // Optimistically update UI first for responsiveness
     currentTranslationVisible = newValue
-    try {
-      await put('settings', { key: 'translationVisible', value: newValue })
-    } catch (error) {
-      // Settings save failed, continue anyway
-      console.error('Failed to save translation visibility setting:', error)
-    }
     toggleTranslationVisibility(mainContent, newValue)
     toggleBtn.textContent = newValue ? 'EN ▾' : 'EN ▸'
     toggleBtn.setAttribute('aria-label', newValue ? 'Hide translation' : 'Show translation')
+    
+    try {
+      await put('settings', { key: 'translationVisible', value: newValue })
+    } catch (error) {
+      // Settings save failed - revert UI to previous state
+      console.error('Failed to save translation visibility setting:', error)
+      currentTranslationVisible = previousValue
+      toggleTranslationVisibility(mainContent, previousValue)
+      toggleBtn.textContent = previousValue ? 'EN ▾' : 'EN ▸'
+      toggleBtn.setAttribute('aria-label', previousValue ? 'Hide translation' : 'Show translation')
+      // Emit event for UI warning
+      emit(Events.READER_POSITION_SAVE_FAILED, { 
+        error: error.message, 
+        setting: 'translationVisible',
+        attemptedValue: newValue 
+      })
+    }
   })
 
   topBar.appendChild(toggleBtn)
