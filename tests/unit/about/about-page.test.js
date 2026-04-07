@@ -55,7 +55,11 @@ describe('about/index.js', () => {
     })
 
     it('renders dataset version when datasetMeta exists in IDB', async () => {
+<<<<<<< HEAD
       await put('datasetMeta', { id: 'current', version: '2.1.0' })
+=======
+      await put('datasetMeta', { id: 'version', version: '2.1.0' })
+>>>>>>> 1bd130c (test: add failing about page tests (Story 9))
       await aboutPage.init()
       const dsVersionEl = document.querySelector('.qa-about-dataset-version')
       expect(dsVersionEl.textContent).toContain('2.1.0')
@@ -124,6 +128,7 @@ describe('about/index.js', () => {
       const backLink = document.querySelector('a[href="#/settings"]')
       expect(backLink).not.toBeNull()
     })
+<<<<<<< HEAD
 
     it('concurrent init() calls do not produce duplicate content', async () => {
       // Run two init() in parallel — second should win, DOM should have only one copy of each section
@@ -133,5 +138,7 @@ describe('about/index.js', () => {
       const versionSections = document.querySelectorAll('.qa-about-versions')
       expect(versionSections).toHaveLength(1)
     })
+=======
+>>>>>>> 1bd130c (test: add failing about page tests (Story 9))
   })
 })
