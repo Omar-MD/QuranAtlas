@@ -12,6 +12,8 @@ coverage/
 
 # Test Artifacts
 test-output/
+.playwright-mcp/
+final-verification-summary.png
 
 # Lighthouse
 .lighthouseci/
