@@ -185,6 +185,27 @@ pnpm test
 
 Tests use Vitest with jsdom environment and fake-indexeddb. The pattern established in `tests/unit/core/db.test.js` serves as prior art for all IDB-related tests.
 
+### MCP (Model Context Protocol)
+
+QuranAtlas includes 5 specialized Playwright MCP profiles for interactive testing:
+
+```bash
+# Cleanup old screenshots
+pnpm mcp:cleanup
+
+# Remove all screenshots
+pnpm mcp:clean-all
+```
+
+**Profiles:**
+- `playwright-mobile` - Mobile debugging (393x851, headed)
+- `playwright-tablet` - Tablet testing (768x1024, headed)
+- `playwright-desktop` - Desktop debugging (1280x720, headed)
+- `playwright-ci` - Automated testing (393x851, headless)
+- `playwright-offline` - PWA offline testing (393x851, headed)
+
+See [docs/mcp-usage.md](docs/mcp-usage.md) for detailed usage guide.
+
 ## License
 
 ISC
