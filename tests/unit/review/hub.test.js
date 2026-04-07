@@ -129,4 +129,63 @@ describe('review/hub.js', () => {
       expect(toast).not.toBeNull()
     })
   })
+
+  describe('cross-tab sync', () => {
+    it('re-renders when sync:update-received fires', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+      const store = await import('../../../src/marks/store.js')
+      const { save: saveState, getDefaultState } = await import('../../../src/review/state.js')
+
+      // Reset hub state so no filter is active from prior tests
+      await saveState(getDefaultState())
+
+      // Seed an extra mark
+      await store.save('2:255', ['favourite'])
+
+      await hub.init()
+
+      // 60 seeded + 1 extra = 61 total → page 1 shows 30
+      let cards = document.querySelectorAll('[data-mark]')
+      expect(cards.length).toBe(30)
+
+      // Simulate: another tab deleted a mark (already in IDB)
+      await store.del('2:255')
+
+      // Fire the cross-tab event
+      emit('sync:update-received', { verseKeys: ['2:255'] })
+
+      // Wait for async re-render
+      await new Promise(r => setTimeout(r, 50))
+
+      cards = document.querySelectorAll('[data-mark]')
+      // Back to 60 marks → page 1 still shows 30
+      expect(cards.length).toBe(30)
+    })
+  })
+
+  describe('visibilitychange catch-all', () => {
+    it('re-reads marks when tab becomes visible', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+      const store = await import('../../../src/marks/store.js')
+      const { save: saveState, getDefaultState } = await import('../../../src/review/state.js')
+
+      // Reset hub state so no filter is active from prior tests
+      await saveState(getDefaultState())
+
+      await store.save('2:255', ['favourite'])
+      await hub.init()
+
+      // Delete a mark "behind the scenes" (simulating missed broadcast)
+      await store.del('2:255')
+
+      // Simulate tab becoming visible
+      emit('db:visibility-visible', {})
+
+      await new Promise(r => setTimeout(r, 50))
+
+      // 60 seeded marks remain → page 1 shows 30
+      const cards = document.querySelectorAll('[data-mark]')
+      expect(cards.length).toBe(30)
+    })
+  })
 })

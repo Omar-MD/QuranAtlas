@@ -71,5 +71,22 @@ export function init() {
     }
   })
 
-  return () => { unsub1(); unsub2(); unsub3(); unsub4() }
+  const unsub5 = on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
+    for (const verseKey of verseKeys) {
+      const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
+      if (el) {
+        decorateVerse(verseKey, el)
+      }
+    }
+  })
+
+  const unsub6 = on(Events.DB_VISIBILITY_VISIBLE, () => {
+    const visibleVerses = document.querySelectorAll('[data-verse-key]')
+    for (const el of visibleVerses) {
+      const verseKey = el.getAttribute('data-verse-key')
+      decorateVerse(verseKey, el)
+    }
+  })
+
+  return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6() }
 }

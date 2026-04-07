@@ -6,7 +6,8 @@
 import { getAll, del as deleteMark, save as saveMark } from '../marks/store.js'
 import { getColorForTag } from '../marks/tags.js'
 import { getSurahs, getSurah } from '../data/dataset.js'
-import { emit } from '../core/events.js'
+import { emit, on } from '../core/events.js'
+import { Events } from '../core/constants.js'
 import { save as saveState, load as loadState, getDefaultState } from './state.js'
 import { openEditor } from '../marks/editor.js'
 import { showUndoToast, clearUndoToast } from '../core/ui.js'
@@ -44,6 +45,22 @@ export async function init() {
   setInitialFocus()
 
   emit('review:open')
+
+  on(Events.SYNC_UPDATE_RECEIVED, async () => {
+    await reloadMarks()
+    const mc = document.getElementById('main-content')
+    if (mc) {
+      render(mc)
+    }
+  })
+
+  on(Events.DB_VISIBILITY_VISIBLE, async () => {
+    await reloadMarks()
+    const mc = document.getElementById('main-content')
+    if (mc) {
+      render(mc)
+    }
+  })
 }
 
 /**
