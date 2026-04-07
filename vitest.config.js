@@ -5,11 +5,12 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['tests/setup.js'],
     globals: true,
-    exclude: ['tests/e2e/**', 'node_modules/**', '.opencode/**', '.cache/**'],
+    include: ['tests/unit/**/*.test.js'],
+    exclude: ['tests/e2e/**', 'node_modules/**', '.opencode/**', '.cache/**', 'dist/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      exclude: ['stories/**', 'tests/e2e/**', '.opencode/**', '.cache/**'],
+      exclude: ['stories/**', 'tests/e2e/**', '.opencode/**', '.cache/**', 'dist/**'],
       thresholds: {
         lines: 80,
         branches: 70,
