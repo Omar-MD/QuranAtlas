@@ -18,9 +18,9 @@ const SWATCH_LABELS = {
  */
 export async function init() {
   const mainContent = document.getElementById('main-content')
-  if (!mainContent) return
+  if (!mainContent) { return }
 
-  while (mainContent.firstChild) mainContent.removeChild(mainContent.firstChild)
+  while (mainContent.firstChild) { mainContent.removeChild(mainContent.firstChild) }
 
   const currentTheme = await loadTheme()
 

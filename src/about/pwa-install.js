@@ -37,7 +37,7 @@ export function setInstallPrompt(prompt) {
  * @returns {Promise<string>} The user's choice outcome ('accepted' | 'dismissed')
  */
 export async function promptInstall() {
-  if (!deferredPrompt) return 'dismissed'
+  if (!deferredPrompt) { return 'dismissed' }
   deferredPrompt.prompt()
   const { outcome } = await deferredPrompt.userChoice
   deferredPrompt = null

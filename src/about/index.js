@@ -12,9 +12,9 @@ import { getInstallPrompt, promptInstall } from './pwa-install.js'
  */
 export async function init() {
   const mainContent = document.getElementById('main-content')
-  if (!mainContent) return
+  if (!mainContent) { return }
 
-  while (mainContent.firstChild) mainContent.removeChild(mainContent.firstChild)
+  while (mainContent.firstChild) { mainContent.removeChild(mainContent.firstChild) }
 
   // Heading + mission
   const heading = document.createElement('h1')
@@ -56,7 +56,7 @@ export async function init() {
   let dsVersion = 'Not yet installed'
   try {
     const meta = await get('datasetMeta', 'version')
-    if (meta?.version) dsVersion = meta.version
+    if (meta?.version) { dsVersion = meta.version }
   } catch { /* IDB unavailable, show fallback */ }
   dsDd.textContent = dsVersion
   dl.appendChild(dsDt)
@@ -169,7 +169,7 @@ async function renderStorage(container) {
  */
 function renderInstallButton(container) {
   const prompt = getInstallPrompt()
-  if (!prompt) return
+  if (!prompt) { return }
 
   const section = document.createElement('section')
   section.className = 'qa-about-install'
