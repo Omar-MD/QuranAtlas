@@ -60,6 +60,17 @@ export async function init() {
       }
     })
 
+    // Add Review Hub icon to top bar
+    const topBar = document.getElementById('top-bar')
+    if (topBar && !topBar.querySelector('.qa-review-icon')) {
+      const reviewLink = document.createElement('a')
+      reviewLink.className = 'qa-review-icon'
+      reviewLink.href = '#/review'
+      reviewLink.setAttribute('aria-label', 'Review Hub')
+      reviewLink.textContent = 'Review'
+      topBar.insertBefore(reviewLink, topBar.firstChild)
+    }
+
     // Set initial theme
     applyThemeFromSettings()
 
