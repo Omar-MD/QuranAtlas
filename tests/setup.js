@@ -1,5 +1,16 @@
 import 'fake-indexeddb/auto'
 
+// Mock BroadcastChannel for jsdom
+if (typeof globalThis.BroadcastChannel === 'undefined') {
+  globalThis.BroadcastChannel = class {
+    constructor() {
+      this.onmessage = null
+      this.postMessage = () => {}
+      this.close = () => {}
+    }
+  }
+}
+
 // Mock caches API for jsdom
 globalThis.caches = {
   open: async (name) => ({
