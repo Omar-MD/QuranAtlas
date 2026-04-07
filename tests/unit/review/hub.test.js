@@ -76,7 +76,7 @@ describe('review/hub.js', () => {
     it('filters by tag', async () => {
       await hub.init()
       hub.applyFilter({ activeTag: 'favourite', surahFilter: null })
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise(r => setTimeout(r, 100))
 
       const markCards = document.querySelectorAll('[data-mark]')
       // Surahs 1 (20 favs) + 3 (20 favs) = 40 total, page 1 = 30
@@ -86,7 +86,7 @@ describe('review/hub.js', () => {
     it('filters by surah', async () => {
       await hub.init()
       hub.applyFilter({ activeTag: null, surahFilter: 1 })
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise(r => setTimeout(r, 100))
 
       const markCards = document.querySelectorAll('[data-mark]')
       expect(markCards.length).toBe(20)
@@ -95,7 +95,7 @@ describe('review/hub.js', () => {
     it('combines tag and surah filters (AND)', async () => {
       await hub.init()
       hub.applyFilter({ activeTag: 'study', surahFilter: 3 })
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise(r => setTimeout(r, 100))
 
       const markCards = document.querySelectorAll('[data-mark]')
       expect(markCards.length).toBe(20)

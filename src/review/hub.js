@@ -9,17 +9,15 @@ import { getSurahs } from '../data/dataset.js'
 import { emit } from '../core/events.js'
 import { save as saveState, load as loadState, getDefaultState } from './state.js'
 import { openEditor } from '../marks/editor.js'
-import { UI } from '../core/constants.js'
+import { showUndoToast, clearUndoToast } from '../core/ui.js'
 
 const PAGE_SIZE = 30
-const UNDO_TIMEOUT_MS = UI.UNDO_TIMEOUT_MS
 
 let currentState = null
 let allMarks = []
 let filteredMarks = []
 let displayedCount = 0
-let undoTimer = null
-let undoRecord = null
+let currentUndoRecord = null
 let surahs = []
 
 /**
@@ -41,6 +39,7 @@ export async function init() {
 
   await reloadMarks()
   render(mainContent)
+  setInitialFocus()
 
   emit('review:open')
 }
@@ -50,6 +49,10 @@ export async function init() {
  */
 export function cleanup() {
   clearUndoToast()
+  if (filterDebounceTimer) {
+    clearTimeout(filterDebounceTimer)
+    filterDebounceTimer = null
+  }
   const mainContent = document.getElementById('main-content')
   if (mainContent) mainContent.textContent = ''
   currentState = null
@@ -59,19 +62,27 @@ export function cleanup() {
 }
 
 /**
- * Apply a filter and re-render.
+ * Apply a filter and re-render with debouncing.
  * @param {{ activeTag?: string|null, surahFilter?: number|null }} filter
  */
 export async function applyFilter(filter) {
-  if (filter.activeTag !== undefined) currentState.activeTag = filter.activeTag
-  if (filter.surahFilter !== undefined) currentState.surahFilter = filter.surahFilter
-  await saveState(currentState)
-  emit('review:filter', { tags: currentState.activeTag, surah: currentState.surahFilter })
+  if (filterDebounceTimer) {
+    clearTimeout(filterDebounceTimer)
+  }
+  
+  filterDebounceTimer = setTimeout(async () => {
+    if (filter.activeTag !== undefined) currentState.activeTag = filter.activeTag
+    if (filter.surahFilter !== undefined) currentState.surahFilter = filter.surahFilter
+    await saveState(currentState)
+    emit('review:filter', { tags: currentState.activeTag, surah: currentState.surahFilter })
 
-  await reloadMarks()
-  displayedCount = 0
-  const mainContent = document.getElementById('main-content')
-  if (mainContent) render(mainContent)
+    await reloadMarks()
+    displayedCount = 0
+    const mainContent = document.getElementById('main-content')
+    if (mainContent) render(mainContent)
+    
+    filterDebounceTimer = null
+  }, FILTER_DEBOUNCE_MS)
 }
 
 /**
@@ -81,25 +92,39 @@ async function reloadMarks() {
   allMarks = await getAll()
 }
 
+let filterDebounceTimer = null
+const FILTER_DEBOUNCE_MS = 50
+
+/**
+ * Prepare marks by applying filters and sorting.
+ * Pure function - returns new array without mutating inputs.
+ * @returns {Array} filtered and sorted marks
+ */
+function prepareMarks(marks, state) {
+  let result = [...marks]
+  
+  if (state.activeTag) {
+    result = result.filter(m => m.tags.includes(state.activeTag))
+  }
+  if (state.surahFilter) {
+    const surahPrefix = `${state.surahFilter}:`
+    result = result.filter(m => m.verseKey.startsWith(surahPrefix))
+  }
+  
+  const sortKey = state.sortBy || 'updatedAt'
+  result.sort((a, b) => b[sortKey] - a[sortKey])
+  
+  return result
+}
+
 /**
  * Render the hub view.
  */
 function render(container) {
   container.textContent = ''
 
-  // Apply filters
-  filteredMarks = [...allMarks]
-  if (currentState.activeTag) {
-    filteredMarks = filteredMarks.filter(m => m.tags.includes(currentState.activeTag))
-  }
-  if (currentState.surahFilter) {
-    const surahPrefix = `${currentState.surahFilter}:`
-    filteredMarks = filteredMarks.filter(m => m.verseKey.startsWith(surahPrefix))
-  }
-
-  // Sort
-  const sortKey = currentState.sortBy || 'updatedAt'
-  filteredMarks.sort((a, b) => b[sortKey] - a[sortKey])
+  // Prepare marks (pure function, no side effects)
+  filteredMarks = prepareMarks(allMarks, currentState)
 
   if (filteredMarks.length === 0 && allMarks.length === 0) {
     renderEmptyState(container)
@@ -124,6 +149,16 @@ function render(container) {
 
   if (displayedCount < filteredMarks.length) {
     renderLoadMore(container)
+  }
+}
+
+/**
+ * Set initial focus for accessibility.
+ */
+function setInitialFocus() {
+  const firstFocusable = document.querySelector('.qa-review-controls button')
+  if (firstFocusable) {
+    firstFocusable.focus()
   }
 }
 
@@ -217,10 +252,22 @@ function renderMarkCard(mark) {
   deleteBtn.textContent = 'Delete'
   deleteBtn.addEventListener('click', async (e) => {
     e.stopPropagation()
-    undoRecord = mark
+    currentUndoRecord = mark
     await deleteMark(mark.verseKey)
     card.remove()
-    showUndoToast(mark.verseKey)
+    showUndoToast({
+      verseKey: mark.verseKey,
+      record: currentUndoRecord,
+      onUndo: async (record) => {
+        await saveMark(record.verseKey, record.tags)
+      },
+      onComplete: async () => {
+        currentUndoRecord = null
+        await reloadMarks()
+        const mainContent = document.getElementById('main-content')
+        if (mainContent) render(mainContent)
+      }
+    })
   })
   actions.appendChild(deleteBtn)
 
@@ -275,50 +322,4 @@ function renderLoadMore(container) {
     }
   })
   container.appendChild(btn)
-}
-
-function showUndoToast(verseKey) {
-  clearUndoToast()
-
-  const toast = document.createElement('div')
-  toast.className = 'qa-undo-toast'
-  toast.setAttribute('role', 'status')
-  toast.setAttribute('aria-live', 'polite')
-
-  const text = document.createElement('span')
-  text.textContent = `Mark ${verseKey} deleted.`
-
-  const undoBtn = document.createElement('button')
-  undoBtn.textContent = 'Undo'
-  undoBtn.addEventListener('click', async () => {
-    if (undoRecord) {
-      await saveMark(undoRecord.verseKey, undoRecord.tags)
-      emit('marks:undo', { verseKey: undoRecord.verseKey })
-      undoRecord = null
-    }
-    clearUndoToast()
-    await reloadMarks()
-    const mainContent = document.getElementById('main-content')
-    if (mainContent) render(mainContent)
-  })
-
-  toast.appendChild(text)
-  toast.appendChild(undoBtn)
-
-  const shell = document.getElementById('app-shell') || document.body
-  shell.appendChild(toast)
-
-  undoTimer = setTimeout(() => {
-    clearUndoToast()
-    undoRecord = null
-  }, UNDO_TIMEOUT_MS)
-}
-
-function clearUndoToast() {
-  if (undoTimer) {
-    clearTimeout(undoTimer)
-    undoTimer = null
-  }
-  const toast = document.querySelector('.qa-undo-toast')
-  if (toast) toast.remove()
 }

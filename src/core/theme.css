@@ -682,6 +682,8 @@ body {
     background: var(--qa-skeleton);
   }
 }
+
+.qa-review-controls {
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem 0;

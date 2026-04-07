@@ -7,15 +7,14 @@
 import { save, del, getByVerseKey } from './store.js'
 import { getActiveTags } from './tags.js'
 import { emit, on } from '../core/events.js'
-import { UI, Events } from '../core/constants.js'
+import { Events } from '../core/constants.js'
+import { showUndoToast, clearUndoToast, clearUndoRecord } from '../core/ui.js'
 
 const LONG_PRESS_MS = 500
-const UNDO_TIMEOUT_MS = UI.UNDO_TIMEOUT_MS
 
 let activeModal = null
-let undoTimer = null
-let undoRecord = null
 let unsubNavNavigate = null
+let currentUndoRecord = null
 
 /**
  * Open the mark editor modal for a verse.
@@ -100,10 +99,19 @@ export async function openEditor(verseKey) {
     deleteBtn.setAttribute('data-action', 'delete')
     deleteBtn.textContent = 'Delete'
     deleteBtn.addEventListener('click', async () => {
-      undoRecord = existing
+      currentUndoRecord = existing
       await del(verseKey)
       closeEditor()
-      showUndoToast(verseKey)
+      showUndoToast({
+        verseKey,
+        record: currentUndoRecord,
+        onUndo: async (record) => {
+          await save(record.verseKey, record.tags)
+        },
+        onComplete: () => {
+          currentUndoRecord = null
+        }
+      })
     })
     actions.appendChild(deleteBtn)
   }
@@ -161,56 +169,6 @@ export function closeEditor() {
 }
 
 /**
- * Show undo toast after delete.
- * @param {string} verseKey
- */
-function showUndoToast(verseKey) {
-  clearUndoToast()
-
-  const toast = document.createElement('div')
-  toast.className = 'qa-undo-toast'
-  toast.setAttribute('role', 'status')
-  toast.setAttribute('aria-live', 'polite')
-
-  const text = document.createElement('span')
-  text.textContent = `Mark ${verseKey} deleted.`
-
-  const undoBtn = document.createElement('button')
-  undoBtn.textContent = 'Undo'
-  undoBtn.addEventListener('click', async () => {
-    if (undoRecord) {
-      await save(undoRecord.verseKey, undoRecord.tags)
-      undoRecord = null
-      emit('marks:undo', { verseKey })
-    }
-    clearUndoToast()
-  })
-
-  toast.appendChild(text)
-  toast.appendChild(undoBtn)
-
-  const shell = document.getElementById('app-shell') || document.body
-  shell.appendChild(toast)
-
-  undoTimer = setTimeout(() => {
-    clearUndoToast()
-    undoRecord = null
-  }, UNDO_TIMEOUT_MS)
-}
-
-/**
- * Remove the undo toast.
- */
-function clearUndoToast() {
-  if (undoTimer) {
-    clearTimeout(undoTimer)
-    undoTimer = null
-  }
-  const toast = document.querySelector('.qa-undo-toast')
-  if (toast) toast.remove()
-}
-
-/**
  * Create a bookmark SVG icon element (no innerHTML — safe DOM construction).
  * @returns {SVGElement}
  */
@@ -240,7 +198,8 @@ export function setupLongPress(container) {
   // Clear undo toast on navigation
   unsubNavNavigate = on(Events.NAVIGATION_NAVIGATE, () => {
     clearUndoToast()
-    undoRecord = null
+    clearUndoRecord()
+    currentUndoRecord = null
   })
 
   function getVerseKey(element) {
