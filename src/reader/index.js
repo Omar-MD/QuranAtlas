@@ -10,6 +10,8 @@ import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { observeScroll, unobserve, observeNewVerses, flushDebounce } from './scroll-tracker.js'
 import { announce } from '../a11y/announcer.js'
+import { init as initIndicators } from '../marks/indicator.js'
+import { setupLongPress } from '../marks/editor.js'
 
 // Maximum time to wait for surah data fetch before showing error
 // 5 seconds balances responsiveness with slow network tolerance
@@ -29,6 +31,8 @@ let scrollAppendRafPending = false
 let unsubVisibility = null
 let visibilityHandler = null
 let lastTrackedVerse = null
+let cleanupIndicatorsFn = null
+let cleanupLongPressFn = null
 
 export async function init(params, { savePosition: shouldSavePosition = true } = {}) {
   const surahNum = parseInt(params.surah, 10)
@@ -165,6 +169,8 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     }
 
     emit(Events.READER_SURAH_LOADED, { surah: surahNum })
+    cleanupIndicatorsFn = initIndicators()
+    cleanupLongPressFn = setupLongPress(mainContent)
     performance.mark('reader:first-verse')
     announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)
   } catch (error) {
@@ -191,6 +197,8 @@ function cleanup() {
     unsubVisibility()
     unsubVisibility = null
   }
+  if (cleanupIndicatorsFn) { cleanupIndicatorsFn(); cleanupIndicatorsFn = null }
+  if (cleanupLongPressFn) { cleanupLongPressFn(); cleanupLongPressFn = null }
   currentSurah = null
   currentSurahNum = null
   renderedCount = 0

@@ -24,6 +24,16 @@ vi.mock('../../../src/data/dataset.js', () => ({
 vi.mock('../../../src/core/db.js', () => ({
   get: mockGet,
   put: mockPut,
+  getDb: vi.fn().mockResolvedValue({}),
+}))
+
+// Mock marks modules
+vi.mock('../../../src/marks/indicator.js', () => ({
+  init: vi.fn().mockReturnValue(vi.fn()),
+}))
+
+vi.mock('../../../src/marks/editor.js', () => ({
+  setupLongPress: vi.fn().mockReturnValue(vi.fn()),
 }))
 
 vi.mock('../../../src/reader/scroll-tracker.js', () => ({

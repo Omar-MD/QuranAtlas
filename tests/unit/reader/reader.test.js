@@ -50,6 +50,16 @@ vi.mock('../../../src/core/db.js', () => ({
     return Promise.resolve(null)
   }),
   put: vi.fn().mockResolvedValue(),
+  getDb: vi.fn().mockResolvedValue({}),
+}))
+
+// Mock marks modules
+vi.mock('../../../src/marks/indicator.js', () => ({
+  init: vi.fn().mockReturnValue(vi.fn()),
+}))
+
+vi.mock('../../../src/marks/editor.js', () => ({
+  setupLongPress: vi.fn().mockReturnValue(vi.fn()),
 }))
 
 describe('reader/index.js', () => {
