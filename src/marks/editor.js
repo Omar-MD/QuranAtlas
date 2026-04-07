@@ -6,7 +6,7 @@
 
 import { save, del, getByVerseKey } from './store.js'
 import { getActiveTags } from './tags.js'
-import { emit, on } from '../core/events.js'
+import { on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { showUndoToast, clearUndoToast, clearUndoRecord } from '../core/ui.js'
 
@@ -130,7 +130,9 @@ export async function openEditor(verseKey) {
   const firstFocusable = focusableElements[0]
   const lastFocusable = focusableElements[focusableElements.length - 1]
 
-  if (firstFocusable) firstFocusable.focus()
+  if (firstFocusable) {
+    firstFocusable.focus()
+  }
 
   // Focus trap: cycle within modal
   modal.addEventListener('keydown', (e) => {
@@ -139,7 +141,9 @@ export async function openEditor(verseKey) {
       return
     }
 
-    if (e.key !== 'Tab') return
+    if (e.key !== 'Tab') {
+      return
+    }
 
     if (e.shiftKey) {
       // Shift+Tab on first element → go to last
@@ -204,17 +208,23 @@ export function setupLongPress(container) {
 
   function getVerseKey(element) {
     const verseEl = element.closest('[data-verse]')
-    if (!verseEl) return null
+    if (!verseEl) {
+      return null
+    }
     const verseNum = verseEl.getAttribute('data-verse')
     const match = location.hash.match(/#\/s\/(\d+)/)
     const surahNum = match ? match[1] : null
-    if (!surahNum || !verseNum) return null
+    if (!surahNum || !verseNum) {
+      return null
+    }
     return `${surahNum}:${verseNum}`
   }
 
   function onTouchStart(e) {
     const verseKey = getVerseKey(e.target)
-    if (!verseKey) return
+    if (!verseKey) {
+      return
+    }
     const touch = e.touches[0]
     touchStartX = touch.clientX
     touchStartY = touch.clientY
@@ -249,8 +259,12 @@ export function setupLongPress(container) {
 
   function onMouseOver(e) {
     const verseEl = e.target.closest('[data-verse]')
-    if (!verseEl) return
-    if (verseEl.querySelector('.qa-mark-hover-icon')) return
+    if (!verseEl) {
+      return
+    }
+    if (verseEl.querySelector('.qa-mark-hover-icon')) {
+      return
+    }
 
     const icon = document.createElement('button')
     icon.className = 'qa-mark-hover-icon'
@@ -259,7 +273,9 @@ export function setupLongPress(container) {
     icon.addEventListener('click', (ev) => {
       ev.stopPropagation()
       const vKey = getVerseKey(verseEl)
-      if (vKey) openEditor(vKey)
+      if (vKey) {
+        openEditor(vKey)
+      }
     })
     verseEl.insertBefore(icon, verseEl.firstChild)
   }
@@ -268,7 +284,9 @@ export function setupLongPress(container) {
     const verseEl = e.target.closest('[data-verse]')
     if (verseEl) {
       const icon = verseEl.querySelector('.qa-mark-hover-icon')
-      if (icon) icon.remove()
+      if (icon) {
+        icon.remove()
+      }
     }
   }
 

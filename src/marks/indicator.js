@@ -16,10 +16,14 @@ import { Events } from '../core/constants.js'
  */
 export async function decorateVerse(verseKey, element) {
   const existing = element.querySelector('.qa-mark-dots')
-  if (existing) existing.remove()
+  if (existing) {
+    existing.remove()
+  }
 
   const mark = await getByVerseKey(verseKey)
-  if (!mark || mark.tags.length === 0) return
+  if (!mark || mark.tags.length === 0) {
+    return
+  }
 
   const dots = document.createElement('div')
   dots.className = 'qa-mark-dots'
@@ -45,20 +49,26 @@ export function init() {
 
   const unsub2 = on(Events.MARKS_SAVED, ({ verseKey }) => {
     const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
-    if (el) decorateVerse(verseKey, el)
+    if (el) {
+      decorateVerse(verseKey, el)
+    }
   })
 
   const unsub3 = on(Events.MARKS_DELETED, ({ verseKey }) => {
     const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
     if (el) {
       const dots = el.querySelector('.qa-mark-dots')
-      if (dots) dots.remove()
+      if (dots) {
+        dots.remove()
+      }
     }
   })
 
   const unsub4 = on(Events.MARKS_UNDO, ({ verseKey }) => {
     const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
-    if (el) decorateVerse(verseKey, el)
+    if (el) {
+      decorateVerse(verseKey, el)
+    }
   })
 
   return () => { unsub1(); unsub2(); unsub3(); unsub4() }

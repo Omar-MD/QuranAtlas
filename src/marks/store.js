@@ -128,7 +128,10 @@ export async function removeTagFromAll(tag) {
     const store = tx.objectStore('marks')
 
     let remaining = marks.length
-    if (remaining === 0) { resolve(); return }
+    if (remaining === 0) {
+      resolve()
+      return
+    }
 
     for (const mark of marks) {
       mark.tags = mark.tags.filter(t => t !== tag)
@@ -136,7 +139,9 @@ export async function removeTagFromAll(tag) {
       const request = store.put(mark)
       request.onsuccess = () => {
         remaining--
-        if (remaining === 0) resolve()
+        if (remaining === 0) {
+          resolve()
+        }
       }
       request.onerror = () => reject(request.error)
     }

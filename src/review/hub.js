@@ -25,7 +25,9 @@ let surahs = []
  */
 export async function init() {
   const mainContent = document.getElementById('main-content')
-  if (!mainContent) return
+  if (!mainContent) {
+    return
+  }
 
   try {
     surahs = await getSurahs()
@@ -54,7 +56,9 @@ export function cleanup() {
     filterDebounceTimer = null
   }
   const mainContent = document.getElementById('main-content')
-  if (mainContent) mainContent.textContent = ''
+  if (mainContent) {
+    mainContent.textContent = ''
+  }
   currentState = null
   allMarks = []
   filteredMarks = []
@@ -71,15 +75,21 @@ export async function applyFilter(filter) {
   }
   
   filterDebounceTimer = setTimeout(async () => {
-    if (filter.activeTag !== undefined) currentState.activeTag = filter.activeTag
-    if (filter.surahFilter !== undefined) currentState.surahFilter = filter.surahFilter
+    if (filter.activeTag !== undefined) {
+      currentState.activeTag = filter.activeTag
+    }
+    if (filter.surahFilter !== undefined) {
+      currentState.surahFilter = filter.surahFilter
+    }
     await saveState(currentState)
     emit('review:filter', { tags: currentState.activeTag, surah: currentState.surahFilter })
 
     await reloadMarks()
     displayedCount = 0
     const mainContent = document.getElementById('main-content')
-    if (mainContent) render(mainContent)
+    if (mainContent) {
+      render(mainContent)
+    }
     
     filterDebounceTimer = null
   }, FILTER_DEBOUNCE_MS)
@@ -194,7 +204,9 @@ function renderGrouped(container, marks) {
   const groups = new Map()
   for (const mark of marks) {
     const surahNum = parseInt(mark.verseKey.split(':')[0], 10)
-    if (!groups.has(surahNum)) groups.set(surahNum, [])
+    if (!groups.has(surahNum)) {
+      groups.set(surahNum, [])
+    }
     groups.get(surahNum).push(mark)
   }
 
@@ -242,7 +254,9 @@ function renderMarkCard(mark) {
   actions.className = 'qa-review-mark-actions'
 
   card.addEventListener('click', (e) => {
-    if (e.target.closest('button')) return
+    if (e.target.closest('button')) {
+      return
+    }
     openEditor(mark.verseKey)
   })
 
@@ -265,7 +279,9 @@ function renderMarkCard(mark) {
         currentUndoRecord = null
         await reloadMarks()
         const mainContent = document.getElementById('main-content')
-        if (mainContent) render(mainContent)
+        if (mainContent) {
+          render(mainContent)
+        }
       }
     })
   })

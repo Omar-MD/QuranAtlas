@@ -117,7 +117,6 @@ export function validateTagLabel(raw) {
   }
 
   // Check for control characters before trimming (trim removes whitespace)
-  // eslint-disable-next-line no-control-regex
   if (/[\x00-\x1f\x7f]/.test(raw)) {
     return { valid: false, error: 'Tag label contains invalid characters' }
   }

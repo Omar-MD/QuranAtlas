@@ -41,7 +41,9 @@ export function showUndoToast({ verseKey, record, onUndo, onComplete }) {
       undoRecord = null
     }
     clearUndoToast()
-    if (onComplete) onComplete()
+    if (onComplete) {
+      onComplete()
+    }
   })
 
   toast.appendChild(text)
@@ -53,7 +55,9 @@ export function showUndoToast({ verseKey, record, onUndo, onComplete }) {
   undoTimer = setTimeout(() => {
     clearUndoToast()
     undoRecord = null
-    if (onComplete) onComplete()
+    if (onComplete) {
+      onComplete()
+    }
   }, UNDO_TIMEOUT_MS)
 }
 
@@ -66,7 +70,9 @@ export function clearUndoToast() {
     undoTimer = null
   }
   const toast = document.querySelector('.qa-undo-toast')
-  if (toast) toast.remove()
+  if (toast) {
+    toast.remove()
+  }
 }
 
 /**

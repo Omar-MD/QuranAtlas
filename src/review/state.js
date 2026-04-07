@@ -52,6 +52,8 @@ export async function save(reviewState) {
  */
 export async function load() {
   const record = await get('positions', POSITION_ID)
-  if (!record) return null
+  if (!record) {
+    return null
+  }
   return record
 }
