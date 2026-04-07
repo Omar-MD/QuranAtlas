@@ -22,6 +22,8 @@ let unsubNavNavigate = null
  * @param {string} verseKey - e.g. '2:255'
  */
 export async function openEditor(verseKey) {
+  // Clear any existing undo toast when opening a new editor
+  clearUndoToast()
   closeEditor()
 
   const existing = await getByVerseKey(verseKey)

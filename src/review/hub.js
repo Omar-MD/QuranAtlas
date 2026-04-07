@@ -143,7 +143,8 @@ function renderControls(container) {
 
   const sortToggle = document.createElement('button')
   sortToggle.className = 'qa-review-sort-toggle'
-  sortToggle.textContent = currentState.sortBy === 'updatedAt' ? 'Sort: Updated' : 'Sort: Created'
+  // Show what will happen when clicked (not current state)
+  sortToggle.textContent = currentState.sortBy === 'updatedAt' ? 'Sort: Created' : 'Sort: Updated'
   sortToggle.addEventListener('click', async () => {
     currentState.sortBy = currentState.sortBy === 'updatedAt' ? 'createdAt' : 'updatedAt'
     await saveState(currentState)
