@@ -11,55 +11,9 @@
       "type": "local",
       "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9222", "--no-category-performance", "--no-category-emulation", "--no-performance-crux", "--no-usage-statistics"]
     },
-    "playwright-mobile": {
+    "playwright": {
       "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest",
-        "--browser=chromium",
-        "--viewport-size=393x851"
-      ],
-      "enabled": true
-    },
-    "playwright-tablet": {
-      "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest",
-        "--browser=chromium",
-        "--viewport-size=768x1024"
-      ],
-      "enabled": true
-    },
-    "playwright-desktop": {
-      "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest",
-        "--browser=chromium",
-        "--viewport-size=1280x720"
-      ],
-      "enabled": true
-    },
-    "playwright-ci": {
-      "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest",
-        "--headless",
-        "--browser=chromium",
-        "--viewport-size=393x851"
-      ],
-      "enabled": true
-    },
-    "playwright-offline": {
-      "type": "local",
-      "command": [
-        "npx",
-        "@playwright/mcp@latest",
-        "--browser=chromium",
-        "--viewport-size=393x851"
-      ],
+      "command": ["npx", "@playwright/mcp@latest"],
       "enabled": true
     }
   }

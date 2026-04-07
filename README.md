@@ -187,24 +187,31 @@ Tests use Vitest with jsdom environment and fake-indexeddb. The pattern establis
 
 ### MCP (Model Context Protocol)
 
-QuranAtlas includes 5 specialized Playwright MCP profiles for interactive testing:
+QuranAtlas uses a single unified Playwright MCP that can dynamically adapt to different testing needs:
 
 ```bash
-# Cleanup old screenshots
+# Clean up test output
 pnpm mcp:cleanup
-
-# Remove all screenshots
-pnpm mcp:clean-all
 ```
 
-**Profiles:**
-- `playwright-mobile` - Mobile debugging (393x851, headed)
-- `playwright-tablet` - Tablet testing (768x1024, headed)
-- `playwright-desktop` - Desktop debugging (1280x720, headed)
-- `playwright-ci` - Automated testing (393x851, headless)
-- `playwright-offline` - PWA offline testing (393x851, headed)
+**Single MCP, Multiple Modes:**
+- `playwright` - One MCP that handles all device viewports and modes
+  - Use `browser_resize` tool to switch between mobile (393x851), tablet (768x1024), desktop (1280x720)
+  - Set `OPENCODE_PLAYWRIGHT_HEADLESS=true` env var for headless mode
+  - Supports offline testing, PWA verification, and visual regression
 
-See [docs/mcp-usage.md](docs/mcp-usage.md) for detailed usage guide.
+**Test Artifacts:**
+All test output goes to `test-output/` (visible, browsable):
+- `test-output/screenshots/` - MCP and manual screenshots
+- `test-output/traces/` - Playwright traces for debugging
+- `test-output/logs/` - Browser console logs
+- `test-output/report/` - HTML test reports
+
+See [docs/mcp-usage.md](docs/mcp-usage.md) for detailed usage guide including:
+- How to resize viewport dynamically
+- How to enable headless mode
+- Screenshot and artifact management
+- Common testing workflows
 
 ## License
 

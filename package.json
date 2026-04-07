@@ -13,8 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src/",
     "check-chunks": "node scripts/check-chunks.js",
-    "mcp:cleanup": "./scripts/mcp-cleanup.sh",
-    "mcp:clean-all": "./scripts/mcp-clean-all.sh"
+    "mcp:cleanup": "rm -rf test-output"
   },
   "keywords": [],
   "author": "",

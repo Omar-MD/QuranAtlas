@@ -10,9 +10,8 @@ dist/
 # Coverage
 coverage/
 
-# Playwright
-test-results/
-playwright-report/
+# Test Artifacts
+test-output/
 
 # Lighthouse
 .lighthouseci/
@@ -41,10 +40,3 @@ npm-debug.log*
 
 # AI agent state
 .superpowers/
-
-# MCP Screenshots
-.opencode/mcp/screenshots/
-.opencode/mcp/*.log
-
-# Manual test verification screenshots
-test-screenshots/
