@@ -5,11 +5,12 @@
  */
 
 import { save, del, getByVerseKey } from './store.js'
-import { getActiveTags, getColorForTag } from './tags.js'
+import { getActiveTags } from './tags.js'
 import { emit } from '../core/events.js'
+import { UI } from '../core/constants.js'
 
 const LONG_PRESS_MS = 500
-const UNDO_TIMEOUT_MS = 5000
+const UNDO_TIMEOUT_MS = UI.UNDO_TIMEOUT_MS
 
 let activeModal = null
 let undoTimer = null
@@ -73,9 +74,10 @@ export async function openEditor(verseKey) {
   saveBtn.setAttribute('data-action', 'save')
   saveBtn.textContent = 'Save'
   saveBtn.addEventListener('click', async () => {
+    const validTags = activeTags.map(t => t.label)
     const selected = Array.from(
       modal.querySelectorAll('input[type="checkbox"]:checked')
-    ).map(cb => cb.value)
+    ).map(cb => cb.value).filter(tag => validTags.includes(tag))
     await save(verseKey, selected)
     closeEditor()
   })
@@ -204,6 +206,9 @@ function createBookmarkIcon() {
  */
 export function setupLongPress(container) {
   let pressTimer = null
+  let touchStartY = null
+  let touchStartX = null
+  const TOUCH_MOVE_THRESHOLD = 10
 
   function getVerseKey(element) {
     const verseEl = element.closest('[data-verse]')
@@ -218,6 +223,9 @@ export function setupLongPress(container) {
   function onTouchStart(e) {
     const verseKey = getVerseKey(e.target)
     if (!verseKey) return
+    const touch = e.touches[0]
+    touchStartX = touch.clientX
+    touchStartY = touch.clientY
     pressTimer = setTimeout(() => {
       openEditor(verseKey)
       pressTimer = null
@@ -229,12 +237,21 @@ export function setupLongPress(container) {
       clearTimeout(pressTimer)
       pressTimer = null
     }
+    touchStartX = null
+    touchStartY = null
   }
 
-  function onTouchMove() {
-    if (pressTimer) {
-      clearTimeout(pressTimer)
-      pressTimer = null
+  function onTouchMove(e) {
+    if (pressTimer && touchStartX !== null && touchStartY !== null) {
+      const touch = e.touches[0]
+      const dx = Math.abs(touch.clientX - touchStartX)
+      const dy = Math.abs(touch.clientY - touchStartY)
+      if (dx > TOUCH_MOVE_THRESHOLD || dy > TOUCH_MOVE_THRESHOLD) {
+        clearTimeout(pressTimer)
+        pressTimer = null
+        touchStartX = null
+        touchStartY = null
+      }
     }
   }
 

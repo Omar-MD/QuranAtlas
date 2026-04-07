@@ -55,5 +55,10 @@ export function init() {
     }
   })
 
-  return () => { unsub1(); unsub2(); unsub3() }
+  const unsub4 = on('marks:undo', ({ verseKey }) => {
+    const el = document.querySelector(`[data-verse="${verseKey.split(':')[1]}"]`)
+    if (el) decorateVerse(verseKey, el)
+  })
+
+  return () => { unsub1(); unsub2(); unsub3(); unsub4() }
 }

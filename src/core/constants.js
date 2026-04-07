@@ -35,3 +35,7 @@ export const Events = {
 export const Errors = {
   INSUFFICIENT_STORAGE: 'insufficient storage',
 }
+
+export const UI = {
+  UNDO_TIMEOUT_MS: 5000,
+}

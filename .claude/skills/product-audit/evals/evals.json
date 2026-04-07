@@ -1,0 +1,23 @@
+{
+  "skill_name": "product-audit",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run a full product audit on QuranAtlas",
+      "expected_output": "A complete product health report saved to docs/audit/ with all 7 dimensions audited, weighted score, gate decision, and recovery plan. All P0/P1 findings should have file:line references with code excerpts and Orchestrator verified fields. No bogus P0s from observability dimension for missing tools.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "How healthy is the codebase? Quick check before we start Phase 4",
+      "expected_output": "Despite the casual phrasing, should trigger a full 7-dimension audit (not a shortcut). Report should include phase readiness assessment in Cross-Cutting Observations. All findings should pass the Absence Test — no missing tools classified as P0.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Run a follow-up audit comparing to the previous report at PRODUCT_HEALTH_REPORT.md",
+      "expected_output": "A delta report re-auditing only dimensions that had P0/P1 findings in the previous report. Should show which findings are resolved, still open, or new. Should not produce a full 7-dimension report. Previous report's bogus observability P0s should be noted as misclassified.",
+      "files": []
+    }
+  ]
+}

@@ -3,15 +3,16 @@
  * Surah-grouped and flat views, tag/surah filtering, sort, pagination.
  */
 
-import { getAll, getByTag, del as deleteMark, save as saveMark } from '../marks/store.js'
+import { getAll, del as deleteMark, save as saveMark } from '../marks/store.js'
 import { getColorForTag } from '../marks/tags.js'
 import { getSurahs } from '../data/dataset.js'
 import { emit } from '../core/events.js'
 import { save as saveState, load as loadState, getDefaultState } from './state.js'
 import { openEditor } from '../marks/editor.js'
+import { UI } from '../core/constants.js'
 
 const PAGE_SIZE = 30
-const UNDO_TIMEOUT_MS = 5000
+const UNDO_TIMEOUT_MS = UI.UNDO_TIMEOUT_MS
 
 let currentState = null
 let allMarks = []
@@ -288,6 +289,7 @@ function showUndoToast(verseKey) {
   undoBtn.addEventListener('click', async () => {
     if (undoRecord) {
       await saveMark(undoRecord.verseKey, undoRecord.tags)
+      emit('marks:undo', { verseKey: undoRecord.verseKey })
       undoRecord = null
     }
     clearUndoToast()
