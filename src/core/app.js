@@ -8,6 +8,7 @@ import * as router from './router.js'
 import { emit, on } from './events.js'
 import { Events } from './constants.js'
 import { init as initSafetySync } from '../safety/sync.js'
+import { initInstallListener } from '../about/pwa-install.js'
 
 let unsubLaunchRestore = null
 let unsubNavNavigate = null
@@ -73,6 +74,9 @@ export async function init() {
 
     // Set initial theme
     applyThemeFromSettings()
+
+    // Capture PWA install prompt if available
+    initInstallListener()
 
     // Initialize safety sync (handles IDB versionchange reload banner)
     if (unsubSafetySync) { unsubSafetySync() }
