@@ -1,29 +1,102 @@
 /**
- * Safety sync module.
- * Handles IDB versionchange events by showing a non-dismissible reload banner.
- * Prevents data corruption when schema upgrades occur in other tabs.
+ * Cross-tab safety and synchronization module.
+ * Handles BroadcastChannel mark sync and IDB versionchange reload banner.
+ * Permitted cross-module import (safety exception).
+ *
+ * Public API:
+ * - init() — set up channel + versionchange listener
+ * - broadcastMarkChange(verseKeys) — notify other tabs of mark changes
+ * - onMarkChange(callback) — register handler for incoming mark changes
+ * - destroy() — close channel + clean up
+ * - reset() — full reset for testing
  */
 
-import { on } from '../core/events.js'
+import { on, emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 
+const CHANNEL_NAME = 'quran-atlas:sync'
+
+let channel = null
+let markChangeHandlers = []
 let bannerElement = null
-let unsubHandler = null
+let unsubVersionChange = null
 
 /**
  * Initialize the safety sync module.
- * Sets up listener for DB_VERSION_CHANGE events.
+ * Sets up BroadcastChannel (if available) and versionchange listener.
  * @returns {Function} cleanup function
  */
 export function init() {
-  // Prevent duplicate listeners if re-initialized
-  if (unsubHandler) {
-    return unsubHandler
+  // Prevent duplicate init
+  if (unsubVersionChange) {
+    return unsubVersionChange
   }
-  
-  const unsub = on(Events.DB_VERSION_CHANGE, handleVersionChange)
-  unsubHandler = unsub
-  return unsub
+
+  // Set up BroadcastChannel if supported
+  if (typeof BroadcastChannel !== 'undefined') {
+    channel = new BroadcastChannel(CHANNEL_NAME)
+    channel.onmessage = handleChannelMessage
+  }
+
+  // Set up versionchange listener
+  unsubVersionChange = on(Events.DB_VERSION_CHANGE, handleVersionChange)
+
+  return unsubVersionChange
+}
+
+/**
+ * Broadcast a mark change to other tabs.
+ * Only call after IDB transaction oncomplete.
+ * @param {string[]} verseKeys - verse keys that changed
+ */
+export function broadcastMarkChange(verseKeys) {
+  if (!channel) {
+    return
+  }
+  channel.postMessage({ type: 'marks:changed', verseKeys })
+}
+
+/**
+ * Register a handler for incoming mark changes from other tabs.
+ * @param {Function} callback - receives { verseKeys: string[] }
+ * @returns {Function} unsubscribe function
+ */
+export function onMarkChange(callback) {
+  markChangeHandlers.push(callback)
+  return () => {
+    markChangeHandlers = markChangeHandlers.filter(h => h !== callback)
+  }
+}
+
+/**
+ * Close the channel and clean up all listeners.
+ */
+export function destroy() {
+  if (channel) {
+    channel.close()
+    channel = null
+  }
+  if (unsubVersionChange) {
+    unsubVersionChange()
+    unsubVersionChange = null
+  }
+}
+
+/**
+ * Handle incoming BroadcastChannel messages.
+ */
+function handleChannelMessage(event) {
+  const { type, verseKeys } = event.data || {}
+  if (type === 'marks:changed' && Array.isArray(verseKeys)) {
+    for (const handler of markChangeHandlers) {
+      try {
+        handler({ verseKeys })
+      } catch (error) {
+        console.error('Sync handler error:', error)
+      }
+    }
+    emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys })
+  }
 }
 
 /**
@@ -32,7 +105,7 @@ export function init() {
  */
 function handleVersionChange() {
   if (bannerElement) {
-    return // Already showing
+    return
   }
 
   const appShell = document.getElementById('app-shell') || document.body
@@ -80,7 +153,7 @@ function handleVersionChange() {
 }
 
 /**
- * Remove the reload banner (for testing purposes).
+ * Remove the reload banner (for testing).
  */
 export function removeBanner() {
   if (bannerElement) {
@@ -98,10 +171,14 @@ export function removeBanner() {
 }
 
 /**
- * Reset the module state (for testing purposes).
- * Clears the unsubscribe handler so init() can be called again.
+ * Reset the module state (for testing).
  */
 export function reset() {
   removeBanner()
-  unsubHandler = null
+  markChangeHandlers = []
+  if (channel) {
+    channel.close()
+    channel = null
+  }
+  unsubVersionChange = null
 }
