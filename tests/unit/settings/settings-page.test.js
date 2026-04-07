@@ -1,6 +1,6 @@
 // tests/unit/settings/settings-page.test.js
 import { beforeEach, describe, it, expect, vi } from 'vitest'
-import { openDB, get, put } from '../../../src/core/db.js'
+import { openDB } from '../../../src/core/db.js'
 
 // Mock theme module — spy on real behavior
 vi.mock('../../../src/settings/theme.js', () => ({
@@ -22,6 +22,7 @@ vi.mock('../../../src/a11y/announcer.js', () => ({
 let settingsPage
 
 beforeEach(async () => {
+  vi.clearAllMocks()
   await openDB()
   document.body.textContent = ''
   const shell = document.createElement('div')
@@ -31,7 +32,6 @@ beforeEach(async () => {
   shell.appendChild(main)
   document.body.appendChild(shell)
 
-  // Fresh import each test
   settingsPage = await import('../../../src/settings/index.js')
 })
 
