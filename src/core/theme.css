@@ -642,7 +642,12 @@ body {
   border: none;
   cursor: pointer;
   color: var(--qa-text-secondary);
-  padding: 2px;
+  padding: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0.6;
 }
 
@@ -650,8 +655,33 @@ body {
   opacity: 1;
 }
 
-/* Review Hub */
-.qa-review-controls {
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  body {
+    transition: none;
+  }
+  
+  #nav-surface {
+    transition: none;
+  }
+  
+  .qa-nav-backdrop {
+    transition: none;
+  }
+  
+  .qa-skeleton {
+    animation: none;
+    background: var(--qa-skeleton);
+  }
+}
   display: flex;
   gap: 0.5rem;
   padding: 0.75rem 0;

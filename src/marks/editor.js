@@ -6,8 +6,8 @@
 
 import { save, del, getByVerseKey } from './store.js'
 import { getActiveTags } from './tags.js'
-import { emit } from '../core/events.js'
-import { UI } from '../core/constants.js'
+import { emit, on } from '../core/events.js'
+import { UI, Events } from '../core/constants.js'
 
 const LONG_PRESS_MS = 500
 const UNDO_TIMEOUT_MS = UI.UNDO_TIMEOUT_MS
@@ -15,6 +15,7 @@ const UNDO_TIMEOUT_MS = UI.UNDO_TIMEOUT_MS
 let activeModal = null
 let undoTimer = null
 let undoRecord = null
+let unsubNavNavigate = null
 
 /**
  * Open the mark editor modal for a verse.
@@ -112,13 +113,37 @@ export async function openEditor(verseKey) {
   shell.appendChild(modal)
   activeModal = { backdrop, modal }
 
-  // Focus trap: focus the first checkbox
-  const firstCheckbox = modal.querySelector('input[type="checkbox"]')
-  if (firstCheckbox) firstCheckbox.focus()
+  // Focus trap implementation
+  const focusableElements = modal.querySelectorAll(
+    'input[type="checkbox"], button:not([disabled])'
+  )
+  const firstFocusable = focusableElements[0]
+  const lastFocusable = focusableElements[focusableElements.length - 1]
 
-  // Escape key closes modal
+  if (firstFocusable) firstFocusable.focus()
+
+  // Focus trap: cycle within modal
   modal.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeEditor()
+    if (e.key === 'Escape') {
+      closeEditor()
+      return
+    }
+
+    if (e.key !== 'Tab') return
+
+    if (e.shiftKey) {
+      // Shift+Tab on first element → go to last
+      if (document.activeElement === firstFocusable) {
+        e.preventDefault()
+        lastFocusable.focus()
+      }
+    } else {
+      // Tab on last element → go to first
+      if (document.activeElement === lastFocusable) {
+        e.preventDefault()
+        firstFocusable.focus()
+      }
+    }
   })
 }
 
@@ -210,6 +235,12 @@ export function setupLongPress(container) {
   let touchStartX = null
   const TOUCH_MOVE_THRESHOLD = 10
 
+  // Clear undo toast on navigation
+  unsubNavNavigate = on(Events.NAVIGATION_NAVIGATE, () => {
+    clearUndoToast()
+    undoRecord = null
+  })
+
   function getVerseKey(element) {
     const verseEl = element.closest('[data-verse]')
     if (!verseEl) return null
@@ -287,6 +318,10 @@ export function setupLongPress(container) {
   container.addEventListener('mouseout', onMouseOut)
 
   return () => {
+    if (unsubNavNavigate) {
+      unsubNavNavigate()
+      unsubNavNavigate = null
+    }
     container.removeEventListener('touchstart', onTouchStart)
     container.removeEventListener('touchend', onTouchEnd)
     container.removeEventListener('touchmove', onTouchMove)

@@ -234,6 +234,7 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
     const verseBlock = document.createElement('div')
     verseBlock.className = 'qa-verse'
     verseBlock.setAttribute('data-verse', `${verseNum}`)
+    verseBlock.setAttribute('data-verse-key', `${surah.n}:${verseNum}`)
 
     const arabicEl = document.createElement('div')
     arabicEl.className = 'qa-verse-arabic'

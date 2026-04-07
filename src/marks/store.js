@@ -6,50 +6,64 @@
 
 import { getDb } from '../core/db.js'
 import { emit } from '../core/events.js'
+import { Events } from '../core/constants.js'
 
 /**
  * Save (create or update) a mark.
  * @param {string} verseKey - e.g. '2:255'
  * @param {string[]} tags - lowercased tag labels
+ * @throws {Error} If IDB operation fails
  */
 export async function save(verseKey, tags) {
-  const db = await getDb()
-  const existing = await getByVerseKey(verseKey)
-  const now = Date.now()
+  try {
+    const db = await getDb()
+    const existing = await getByVerseKey(verseKey)
+    const now = Date.now()
 
-  const record = {
-    verseKey,
-    tags,
-    createdAt: existing ? existing.createdAt : now,
-    updatedAt: now,
+    const record = {
+      verseKey,
+      tags,
+      createdAt: existing ? existing.createdAt : now,
+      updatedAt: now,
+    }
+
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('marks', 'readwrite')
+      const store = tx.objectStore('marks')
+      const request = store.put(record)
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
+
+    emit(Events.MARKS_SAVED, { verseKey, tags })
+  } catch (error) {
+    console.error('Failed to save mark:', { verseKey, error: error.message })
+    emit(Events.MARKS_SAVE_FAILED, { verseKey, error: error.message })
+    throw error
   }
-
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction('marks', 'readwrite')
-    const store = tx.objectStore('marks')
-    const request = store.put(record)
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-  })
-
-  emit('marks:saved', { verseKey, tags })
 }
 
 /**
  * Delete a mark by verseKey.
  * @param {string} verseKey
+ * @throws {Error} If IDB operation fails
  */
 export async function del(verseKey) {
-  const db = await getDb()
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction('marks', 'readwrite')
-    const store = tx.objectStore('marks')
-    const request = store.delete(verseKey)
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-  })
+  try {
+    const db = await getDb()
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('marks', 'readwrite')
+      const store = tx.objectStore('marks')
+      const request = store.delete(verseKey)
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
 
-  emit('marks:deleted', { verseKey })
+    emit(Events.MARKS_DELETED, { verseKey })
+  } catch (error) {
+    console.error('Failed to delete mark:', { verseKey, error: error.message })
+    throw error
+  }
 }
 
 /**

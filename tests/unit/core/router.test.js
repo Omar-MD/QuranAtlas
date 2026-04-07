@@ -16,9 +16,10 @@ describe('core/router.js', () => {
 
     navigate('#/s/2')
 
-    // Wait for async handleRoute
-    await new Promise(r => setTimeout(r, 10))
-    expect(mockInit).toHaveBeenCalledWith({ surah: '2' })
+    // Wait for async handleRoute to complete
+    await vi.waitFor(() => {
+      expect(mockInit).toHaveBeenCalledWith({ surah: '2' })
+    }, { timeout: 100 })
   })
 
   it('emits router:launch-restore on empty hash', async () => {
@@ -29,8 +30,10 @@ describe('core/router.js', () => {
     window.location.hash = ''
     init()
 
-    await new Promise(r => setTimeout(r, 10))
-    expect(restoreFn).toHaveBeenCalledWith(undefined)
+    // Wait for async handleRoute to complete
+    await vi.waitFor(() => {
+      expect(restoreFn).toHaveBeenCalledWith(undefined)
+    }, { timeout: 100 })
   })
 
   it('navigate with replace uses replaceState', async () => {
@@ -49,7 +52,9 @@ describe('core/router.js', () => {
 
     navigate('#/s/2/255')
 
-    await new Promise(r => setTimeout(r, 10))
-    expect(mockInit).toHaveBeenCalledWith({ surah: '2', ayah: '255' })
+    // Wait for async handleRoute to complete
+    await vi.waitFor(() => {
+      expect(mockInit).toHaveBeenCalledWith({ surah: '2', ayah: '255' })
+    }, { timeout: 100 })
   })
 })

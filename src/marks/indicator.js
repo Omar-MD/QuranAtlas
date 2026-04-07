@@ -7,6 +7,7 @@
 import { getByVerseKey } from './store.js'
 import { getColorForTag } from './tags.js'
 import { on } from '../core/events.js'
+import { Events } from '../core/constants.js'
 
 /**
  * Decorate a verse element with colored tag dots.
@@ -38,25 +39,25 @@ export async function decorateVerse(verseKey, element) {
  * @returns {Function} cleanup function
  */
 export function init() {
-  const unsub1 = on('reader:verse-rendered', ({ verseKey, element }) => {
+  const unsub1 = on(Events.READER_VERSE_RENDERED, ({ verseKey, element }) => {
     decorateVerse(verseKey, element)
   })
 
-  const unsub2 = on('marks:saved', ({ verseKey }) => {
-    const el = document.querySelector(`[data-verse="${verseKey.split(':')[1]}"]`)
+  const unsub2 = on(Events.MARKS_SAVED, ({ verseKey }) => {
+    const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
     if (el) decorateVerse(verseKey, el)
   })
 
-  const unsub3 = on('marks:deleted', ({ verseKey }) => {
-    const el = document.querySelector(`[data-verse="${verseKey.split(':')[1]}"]`)
+  const unsub3 = on(Events.MARKS_DELETED, ({ verseKey }) => {
+    const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
     if (el) {
       const dots = el.querySelector('.qa-mark-dots')
       if (dots) dots.remove()
     }
   })
 
-  const unsub4 = on('marks:undo', ({ verseKey }) => {
-    const el = document.querySelector(`[data-verse="${verseKey.split(':')[1]}"]`)
+  const unsub4 = on(Events.MARKS_UNDO, ({ verseKey }) => {
+    const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
     if (el) decorateVerse(verseKey, el)
   })
 

@@ -31,7 +31,8 @@ export async function init() {
 
   try {
     surahs = await getSurahs()
-  } catch {
+  } catch (error) {
+    console.error('Failed to load surahs for Review Hub:', error)
     surahs = []
   }
 
@@ -49,6 +50,8 @@ export async function init() {
  */
 export function cleanup() {
   clearUndoToast()
+  const mainContent = document.getElementById('main-content')
+  if (mainContent) mainContent.textContent = ''
   currentState = null
   allMarks = []
   filteredMarks = []

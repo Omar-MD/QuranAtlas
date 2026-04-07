@@ -29,6 +29,7 @@ export const Events = {
   MARKS_SAVED: 'marks:saved',
   MARKS_DELETED: 'marks:deleted',
   MARKS_UNDO: 'marks:undo',
+  MARKS_SAVE_FAILED: 'marks:save-failed',
   READER_VERSE_RENDERED: 'reader:verse-rendered',
 }
 
