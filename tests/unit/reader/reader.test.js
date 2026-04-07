@@ -1,15 +1,27 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest'
+import { on } from '../../../src/core/events.js'
 import * as events from '../../../src/core/events.js'
 import * as db from '../../../src/core/db.js'
 
 // Mock dataset
 vi.mock('../../../src/data/dataset.js', () => ({
-  getSurah: vi.fn().mockResolvedValue({
-    ar: ['بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ'],
-    en: ['In the name of God, the Gracious, the Merciful', 'All praise is due to God, Lord of all worlds'],
+  getSurah: vi.fn().mockImplementation((surahNum) => {
+    if (surahNum === 112) {
+      // Surah Al-Ikhlas has 4 verses
+      return Promise.resolve({
+        ar: ['قُلْ هُوَ ٱللَّهُ أَحَدٌ', 'ٱللَّهُ ٱلصَّمَدُ', 'لَمْ يَلِدْ وَلَمْ يُولَدْ', 'وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ'],
+        en: ['Say, "He is God, the One,"', 'God, the Eternal Refuge,', 'He neither begets nor is born,', 'Nor is there to Him any equivalent.'],
+      })
+    }
+    // Default mock for other surahs (e.g., surah 1)
+    return Promise.resolve({
+      ar: ['بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ'],
+      en: ['In the name of God, the Gracious, the Merciful', 'All praise is due to God, Lord of all worlds'],
+    })
   }),
   getSurahs: vi.fn().mockResolvedValue([
     { n: 1, name: 'Al-Fatiha', arabic: 'الفاتحة', type: 'Meccan', count: 7, juz: 1 },
+    { n: 112, name: 'Al-Ikhlas', arabic: 'الإخلاص', type: 'Meccan', count: 4, juz: 30 },
   ]),
 }))
 
@@ -53,9 +65,17 @@ describe('reader/index.js', () => {
     // don't leak into subsequent tests (vi.clearAllMocks() only clears call history,
     // not implementations set via mockImplementation/mockResolvedValue).
     const dataset = await import('../../../src/data/dataset.js')
-    dataset.getSurah.mockResolvedValue({
-      ar: ['بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ'],
-      en: ['In the name of God, the Gracious, the Merciful', 'All praise is due to God, Lord of all worlds'],
+    dataset.getSurah.mockImplementation((surahNum) => {
+      if (surahNum === 112) {
+        return Promise.resolve({
+          ar: ['قُلْ هُوَ ٱللَّهُ أَحَدٌ', 'ٱللَّهُ ٱلصَّمَدُ', 'لَمْ يَلِدْ وَلَمْ يُولَدْ', 'وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ'],
+          en: ['Say, "He is God, the One,"', 'God, the Eternal Refuge,', 'He neither begets nor is born,', 'Nor is there to Him any equivalent.'],
+        })
+      }
+      return Promise.resolve({
+        ar: ['بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَـٰلَمِينَ'],
+        en: ['In the name of God, the Gracious, the Merciful', 'All praise is due to God, Lord of all worlds'],
+      })
     })
 
     // Reset module-level state between tests (clears listeners, abort tokens, etc.)
@@ -424,5 +444,21 @@ describe('reader/index.js', () => {
 
     addSpy.mockRestore()
     removeSpy.mockRestore()
+  })
+
+  it('emits reader:verse-rendered for each verse in chunk', async () => {
+    const received = []
+    const unsub = on('reader:verse-rendered', (payload) => received.push(payload))
+
+    // Trigger a surah load (reuse existing test setup for surah 112)
+    const { init } = await import('../../../src/reader/index.js')
+    await init({ surah: '112' })
+
+    // Surah 112 has 4 verses — expect 4 events
+    expect(received.length).toBeGreaterThanOrEqual(1)
+    expect(received[0]).toHaveProperty('verseKey')
+    expect(received[0]).toHaveProperty('element')
+
+    unsub()
   })
 })

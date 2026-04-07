@@ -249,6 +249,11 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
     verseBlock.appendChild(transEl)
 
     fragment.appendChild(verseBlock)
+
+    emit(Events.READER_VERSE_RENDERED, {
+      verseKey: `${currentSurahNum}:${verseNum}`,
+      element: verseBlock,
+    })
   }
 
   if (endMarker) {
