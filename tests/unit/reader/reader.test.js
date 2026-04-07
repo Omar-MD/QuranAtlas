@@ -109,13 +109,29 @@ describe('reader/index.js', () => {
     expect(header.querySelector('.qa-surah-meta').textContent).toContain('Surah 1')
   })
 
-  it('renders basmala for surah 2 but not surah 1', async () => {
+  it('renders basmala correctly for surah 1, 2, and 9', async () => {
     const { init } = await import('../../../src/reader/index.js')
 
-    // Surah 1 — no basmala (Al-Fatiha, verse 1 IS the basmala)
-    await init({ surah: '1' })
+    // Surah 9 (At-Tawbah) — no basmala (Quranic convention)
+    await init({ surah: '9' })
     let basmala = document.querySelector('.qa-basmala')
     expect(basmala).toBeFalsy()
+
+    // Surah 1 (Al-Fatiha) — no separate basmala element (basmala IS verse 1 in dataset)
+    document.getElementById('main-content').innerHTML = ''
+    await init({ surah: '1' })
+    basmala = document.querySelector('.qa-basmala')
+    expect(basmala).toBeFalsy()
+    // Verify verse 1 contains the basmala text
+    const verse1Arabic = document.querySelector('[data-verse="1"] .qa-verse-arabic')
+    expect(verse1Arabic).toBeTruthy()
+    expect(verse1Arabic.textContent).toContain('بِسْمِ')
+
+    // Surah 2 — has separate basmala element before verse 1
+    document.getElementById('main-content').innerHTML = ''
+    await init({ surah: '2' })
+    basmala = document.querySelector('.qa-basmala')
+    expect(basmala).toBeTruthy()
   })
 
   it('shows skeleton and then content', async () => {
@@ -238,19 +254,23 @@ describe('reader/index.js', () => {
   })
 
   it('saves position when document becomes hidden', async () => {
+    const scrollTracker = await import('../../../src/reader/scroll-tracker.js')
     db.put.mockClear()
     const { init } = await import('../../../src/reader/index.js')
     await init({ surah: '1' })
 
-    Object.defineProperty(document, 'hidden', { value: true, configurable: true })
-    const event = new Event('visibilitychange')
-    Object.defineProperty(event, 'target', { value: document, configurable: true })
-    document.dispatchEvent(event)
+    // Simulate scroll tracker firing a position update so lastTrackedVerse is set
+    const { onPositionChange } = scrollTracker.observeScroll.mock.calls.at(-1)[1]
+    onPositionChange({ verse: 3 })
 
-    // Verify exact data saved — surah number and verse id must be present
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true })
+    document.dispatchEvent(new Event('visibilitychange'))
+
+    // Verify exact data saved — surah number, verse, and id must be present
     expect(db.put).toHaveBeenCalledWith('positions', expect.objectContaining({
       surah: 1,
       id: 's1',
+      verse: 3,
     }))
   })
 

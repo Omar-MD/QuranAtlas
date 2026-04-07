@@ -23,6 +23,7 @@ let currentTranslationVisible = true
 let scrollAppendRafPending = false
 let unsubVisibility = null
 let visibilityHandler = null
+let lastTrackedVerse = null
 
 export async function init(params, { savePosition: shouldSavePosition = true } = {}) {
   const surahNum = parseInt(params.surah, 10)
@@ -102,16 +103,17 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     if (shouldSavePosition) {
       setupScrollTracking(mainContent, surahNum)
       visibilityHandler = () => {
-        if (document.hidden && currentSurahNum && renderedCount > 0) {
+        if (document.hidden && currentSurahNum && lastTrackedVerse !== null) {
           try {
             put('positions', {
               id: `s${currentSurahNum}`,
               surah: currentSurahNum,
-              verse: renderedCount,
+              verse: lastTrackedVerse,
               savedAt: Date.now(),
             })
-          } catch {
+          } catch (error) {
             // Position save failed, continue anyway
+            console.error('Failed to save position:', error)
           }
         }
       }
@@ -165,6 +167,7 @@ function cleanup() {
   currentSurah = null
   currentSurahNum = null
   renderedCount = 0
+  lastTrackedVerse = null
   currentTranslationVisible = true
   scrollAppendRafPending = false
 }
@@ -229,6 +232,7 @@ function setupScrollTracking(container, surahNum) {
 
   observeScroll(mainContent, {
     onPositionChange: ({ verse }) => {
+      lastTrackedVerse = verse
       savePosition(surahNum, verse)
     },
   })
@@ -296,8 +300,9 @@ async function savePosition(surahNum, verse) {
       savedAt: Date.now(),
     })
     emit(Events.READER_POSITION_CHANGED, { surah: surahNum, verse })
-  } catch {
+  } catch (error) {
     // Position save failed, continue anyway
+    console.error('Failed to save position on visibility change:', error)
   }
 }
 
@@ -378,9 +383,13 @@ function renderSurahHeader(container, meta) {
 }
 
 /**
- * Render basmala according to rules.
+ * Render basmala according to Quranic conventions.
+ * Surah 1 (Al-Fatiha): basmala IS verse 1 from dataset - DO NOT render separately
+ * Surah 9 (At-Tawbah): no basmala (Quranic convention)
+ * All other surahs: show basmala before verse 1
  */
 function renderBasmala(container, surahNum) {
+  // Skip basmala for Surah 1 (already verse 1 in dataset) and Surah 9 (no basmala)
   if (surahNum === 1 || surahNum === 9) {
     return
   }
@@ -461,8 +470,9 @@ function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
     currentTranslationVisible = newValue
     try {
       await put('settings', { key: 'translationVisible', value: newValue })
-    } catch {
+    } catch (error) {
       // Settings save failed, continue anyway
+      console.error('Failed to save translation visibility setting:', error)
     }
     toggleTranslationVisibility(mainContent, newValue)
     toggleBtn.textContent = newValue ? 'EN ▾' : 'EN ▸'
