@@ -11,6 +11,7 @@
 
 import { precacheAndRoute } from 'workbox-precaching'
 import { CACHE_DATASET } from './core/constants.js'
+import { checkForUpdate, applyUpdate } from './offline/dataset-updater.js'
 
 // Workbox injectManifest will populate this array
 precacheAndRoute(self.__WB_MANIFEST || [])
@@ -21,8 +22,12 @@ self.addEventListener('install', (_event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
-  // Phase 3: checkForUpdate() will be added here
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      checkForUpdate(),
+    ])
+  )
 })
 
 self.addEventListener('fetch', (_event) => {
@@ -114,9 +119,7 @@ async function handleCacheDataset(event, urls) {
  * Apply a dataset update (user-confirmed major semver bump).
  */
 async function handleApplyUpdate(_event) {
-  // Phase 3: implement update application
-  // Currently not implemented - throw explicit error
-  throw new Error('APPLY_DATASET_UPDATE not implemented - Phase 3 feature')
+  await applyUpdate()
 }
 
 /**
