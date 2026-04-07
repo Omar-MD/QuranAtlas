@@ -44,3 +44,7 @@ storybook-static/
 
 # AI agent state
 .superpowers/
+
+# MCP Screenshots
+.opencode/mcp/screenshots/
+.opencode/mcp/*.log
