@@ -5,7 +5,7 @@
 
 import { getAll, del as deleteMark, save as saveMark } from '../marks/store.js'
 import { getColorForTag } from '../marks/tags.js'
-import { getSurahs } from '../data/dataset.js'
+import { getSurahs, getSurah } from '../data/dataset.js'
 import { emit } from '../core/events.js'
 import { save as saveState, load as loadState, getDefaultState } from './state.js'
 import { openEditor } from '../marks/editor.js'
@@ -151,14 +151,75 @@ function render(container) {
   const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
   displayedCount = pageMarks.length
 
+  // Render synchronously first
   if (currentState.groupBy === 'surah') {
     renderGrouped(container, pageMarks)
   } else {
     renderFlat(container, pageMarks)
   }
 
+  // Try to load content - this won't block render
+  loadVerseContentBackground(pageMarks).catch(() => {
+    // Silently fail - content just won't show
+  })
+
   if (displayedCount < filteredMarks.length) {
     renderLoadMore(container)
+  }
+}
+
+/**
+ * Load verse content in background without blocking render.
+ */
+async function loadVerseContentBackground(marks) {
+  const neededSurahs = new Set()
+  for (const mark of marks) {
+    neededSurahs.add(parseInt(mark.verseKey.split(':')[0], 10))
+  }
+  
+  const surahDataMap = new Map()
+  await Promise.all([...neededSurahs].map(async num => {
+    try {
+      const data = await getSurah(num)
+      surahDataMap.set(num, data)
+    } catch {
+      // Silently fail - content won't show
+    }
+  }))
+
+  // Update cards with content
+  for (const mark of marks) {
+    const surahNum = parseInt(mark.verseKey.split(':')[0], 10)
+    const surahData = surahDataMap.get(surahNum)
+    if (!surahData) {
+      continue
+    }
+    
+    const card = document.querySelector(`[data-mark="${mark.verseKey}"]`)
+    if (!card) {
+      continue
+    }
+    
+    const verseNum = parseInt(mark.verseKey.split(':')[1], 10)
+    const verseIdx = verseNum - 1
+    const contentArea = card.querySelector('.qa-review-mark-content')
+    if (!contentArea || contentArea.querySelector('.qa-review-mark-arabic')) {
+      continue
+    }
+    
+    if (surahData.ar && surahData.ar[verseIdx]) {
+      const arabic = document.createElement('div')
+      arabic.className = 'qa-review-mark-arabic'
+      arabic.setAttribute('dir', 'rtl')
+      arabic.textContent = surahData.ar[verseIdx]
+      contentArea.appendChild(arabic)
+    }
+    if (surahData.en && surahData.en[verseIdx]) {
+      const english = document.createElement('div')
+      english.className = 'qa-review-mark-english'
+      english.textContent = surahData.en[verseIdx]
+      contentArea.appendChild(english)
+    }
   }
 }
 
@@ -183,6 +244,9 @@ function renderControls(container) {
     currentState.groupBy = currentState.groupBy === 'surah' ? 'flat' : 'surah'
     await saveState(currentState)
     render(container)
+    // Reload content after render
+    const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
+    loadVerseContentBackground(pageMarks).catch(() => {})
   })
   controls.appendChild(groupToggle)
 
@@ -194,13 +258,16 @@ function renderControls(container) {
     currentState.sortBy = currentState.sortBy === 'updatedAt' ? 'createdAt' : 'updatedAt'
     await saveState(currentState)
     render(container)
+    // Reload content after render
+    const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
+    loadVerseContentBackground(pageMarks).catch(() => {})
   })
   controls.appendChild(sortToggle)
 
   container.appendChild(controls)
 }
 
-function renderGrouped(container, marks) {
+async function renderGrouped(container, marks) {
   const groups = new Map()
   for (const mark of marks) {
     const surahNum = parseInt(mark.verseKey.split(':')[0], 10)
@@ -211,6 +278,7 @@ function renderGrouped(container, marks) {
   }
 
   const sortedKeys = [...groups.keys()].sort((a, b) => a - b)
+  
   for (const surahNum of sortedKeys) {
     const header = document.createElement('div')
     header.className = 'qa-review-surah-header'
@@ -220,21 +288,24 @@ function renderGrouped(container, marks) {
     container.appendChild(header)
 
     for (const mark of groups.get(surahNum)) {
-      container.appendChild(renderMarkCard(mark))
+      container.appendChild(renderMarkCard(mark, null))
     }
   }
 }
 
-function renderFlat(container, marks) {
+async function renderFlat(container, marks) {
   for (const mark of marks) {
-    container.appendChild(renderMarkCard(mark))
+    container.appendChild(renderMarkCard(mark, null))
   }
 }
 
-function renderMarkCard(mark) {
+function renderMarkCard(mark, surahData) {
   const card = document.createElement('div')
   card.className = 'qa-review-mark'
   card.setAttribute('data-mark', mark.verseKey)
+
+  const header = document.createElement('div')
+  header.className = 'qa-review-mark-header'
 
   const verseLabel = document.createElement('span')
   verseLabel.className = 'qa-review-verse-label'
@@ -248,6 +319,30 @@ function renderMarkCard(mark) {
     dot.style.backgroundColor = getColorForTag(tag)
     dot.title = tag
     tagDots.appendChild(dot)
+  }
+  
+  header.appendChild(verseLabel)
+  header.appendChild(tagDots)
+
+  const content = document.createElement('div')
+  content.className = 'qa-review-mark-content'
+  
+  if (surahData) {
+    const verseNum = parseInt(mark.verseKey.split(':')[1], 10)
+    const verseIdx = verseNum - 1
+    if (surahData.ar && surahData.ar[verseIdx]) {
+      const arabic = document.createElement('div')
+      arabic.className = 'qa-review-mark-arabic'
+      arabic.setAttribute('dir', 'rtl')
+      arabic.textContent = surahData.ar[verseIdx]
+      content.appendChild(arabic)
+    }
+    if (surahData.en && surahData.en[verseIdx]) {
+      const english = document.createElement('div')
+      english.className = 'qa-review-mark-english'
+      english.textContent = surahData.en[verseIdx]
+      content.appendChild(english)
+    }
   }
 
   const actions = document.createElement('div')
@@ -287,8 +382,8 @@ function renderMarkCard(mark) {
   })
   actions.appendChild(deleteBtn)
 
-  card.appendChild(verseLabel)
-  card.appendChild(tagDots)
+  card.appendChild(header)
+  card.appendChild(content)
   card.appendChild(actions)
   return card
 }

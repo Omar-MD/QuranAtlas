@@ -262,6 +262,12 @@ export function setupLongPress(container) {
     if (!verseEl) {
       return
     }
+    
+    // Ignore if moving within the same verse
+    if (e.relatedTarget && verseEl.contains(e.relatedTarget)) {
+      return
+    }
+
     if (verseEl.querySelector('.qa-mark-hover-icon')) {
       return
     }
@@ -271,22 +277,30 @@ export function setupLongPress(container) {
     icon.setAttribute('aria-label', 'Mark this verse')
     icon.appendChild(createBookmarkIcon())
     icon.addEventListener('click', (ev) => {
+      ev.preventDefault()
       ev.stopPropagation()
       const vKey = getVerseKey(verseEl)
       if (vKey) {
         openEditor(vKey)
       }
     })
-    verseEl.insertBefore(icon, verseEl.firstChild)
+    verseEl.appendChild(icon)
   }
 
   function onMouseOut(e) {
     const verseEl = e.target.closest('[data-verse]')
-    if (verseEl) {
-      const icon = verseEl.querySelector('.qa-mark-hover-icon')
-      if (icon) {
-        icon.remove()
-      }
+    if (!verseEl) {
+      return
+    }
+
+    // Ignore if moving within the same verse
+    if (e.relatedTarget && verseEl.contains(e.relatedTarget)) {
+      return
+    }
+
+    const icon = verseEl.querySelector('.qa-mark-hover-icon')
+    if (icon) {
+      icon.remove()
     }
   }
 

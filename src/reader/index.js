@@ -245,7 +245,7 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
     numberEl.className = 'qa-verse-number'
     numberEl.textContent = String(verseNum)
 
-    arabicEl.insertBefore(numberEl, arabicEl.firstChild)
+    arabicEl.appendChild(numberEl)
     verseBlock.appendChild(arabicEl)
 
     const transEl = document.createElement('div')
