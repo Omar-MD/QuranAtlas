@@ -8,7 +8,6 @@ import { showClearDataConfirmation } from './clear-data.js'
 import { announce } from '../a11y/announcer.js'
 
 let _initSeq = 0
-
 const SWATCH_LABELS = {
   light: 'Light',
   dark: 'Dark',
@@ -29,7 +28,6 @@ export async function init() {
   const currentTheme = await loadTheme()
 
   if (seq !== _initSeq) { return }
-
   // Page heading
   const heading = document.createElement('h1')
   heading.className = 'qa-settings-heading'
