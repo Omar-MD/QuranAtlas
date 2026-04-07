@@ -31,6 +31,7 @@ export const Events = {
   MARKS_UNDO: 'marks:undo',
   MARKS_SAVE_FAILED: 'marks:save-failed',
   READER_VERSE_RENDERED: 'reader:verse-rendered',
+  SYNC_UPDATE_RECEIVED: 'sync:update-received',
 }
 
 export const Errors = {
