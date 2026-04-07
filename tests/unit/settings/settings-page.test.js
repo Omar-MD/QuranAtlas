@@ -32,7 +32,6 @@ beforeEach(async () => {
   shell.appendChild(main)
   document.body.appendChild(shell)
 
-  // Fresh import each test
   settingsPage = await import('../../../src/settings/index.js')
 })
 
