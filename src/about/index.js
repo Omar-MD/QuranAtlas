@@ -104,6 +104,8 @@ export async function init() {
 
   if (seq !== _initSeq) { return }
 
+  if (seq !== _initSeq) { return }
+
   // PWA Install
   renderInstallButton(mainContent)
 
@@ -115,6 +117,10 @@ export async function init() {
   mainContent.appendChild(backLink)
 
   announce('About page')
+}
+
+export function cleanup() {
+  ++_initSeq
 }
 
 /**
