@@ -9,18 +9,18 @@ Use the `Manual Story Verifier` agent to manually verify a completed story throu
 Use Playwright MCP directly for all manual browser verification.
 
 Use these repository documents as the default source of truth:
-- Product overview: [README.md](../../README.md)
-- Product context: [docs/product-info.md](../../docs/product-info.md)
+- Product overview: [README.md](README.md)
+- Product context: [docs/product-info.md](docs/product-info.md)
 - Story specs:
-	- [docs/specs/story-1-online-reading.md](../../docs/specs/story-1-online-reading.md)
-	- [docs/specs/story-2-continuous-reader.md](../../docs/specs/story-2-continuous-reader.md)
-	- [docs/specs/story-3-navigation.md](../../docs/specs/story-3-navigation.md)
-	- [docs/specs/story-4-verse-marks.md](../../docs/specs/story-4-verse-marks.md)
-	- [docs/specs/story-5-review-hub.md](../../docs/specs/story-5-review-hub.md)
-	- [docs/specs/story-6-cross-tab-safety.md](../../docs/specs/story-6-cross-tab-safety.md)
-	- [docs/specs/story-7-deep-links.md](../../docs/specs/story-7-deep-links.md)
-	- [docs/specs/story-8-dataset-updates.md](../../docs/specs/story-8-dataset-updates.md)
-	- [docs/specs/story-9-settings-about.md](../../docs/specs/story-9-settings-about.md)
+	- [docs/specs/story-1-online-reading.md](docs/specs/story-1-online-reading.md)
+	- [docs/specs/story-2-continuous-reader.md](docs/specs/story-2-continuous-reader.md)
+	- [docs/specs/story-3-navigation.md](docs/specs/story-3-navigation.md)
+	- [docs/specs/story-4-verse-marks.md](docs/specs/story-4-verse-marks.md)
+	- [docs/specs/story-5-review-hub.md](docs/specs/story-5-review-hub.md)
+	- [docs/specs/story-6-cross-tab-safety.md](docs/specs/story-6-cross-tab-safety.md)
+	- [docs/specs/story-7-deep-links.md](docs/specs/story-7-deep-links.md)
+	- [docs/specs/story-8-dataset-updates.md](docs/specs/story-8-dataset-updates.md)
+	- [docs/specs/story-9-settings-about.md](docs/specs/story-9-settings-about.md)
 
 If the user identifies a story by number or name, resolve it from the story spec files above before testing.
 
