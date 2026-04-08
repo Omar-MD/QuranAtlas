@@ -2,14 +2,20 @@
    Design Tokens & Theming
    ========================================================================== */
 
-@font-face {
-  font-family: 'KFGQPC Uthman Taha Naskh';
-  src: url('/fonts/KFGQPC_Uthman_Taha_Naskh_Regular.ttf') format('truetype');
-  /* Update the src path to point to your actual font file location */
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+/*
+ * Arabic font: KFGQPC Uthman Taha Naskh (optional)
+ * To use this font, obtain KFGQPC_Uthman_Taha_Naskh_Regular.ttf (freely available from
+ * the King Fahd Glorious Quran Printing Complex), place it in public/fonts/, and
+ * add the following @font-face declaration:
+ *
+ * @font-face {
+ *   font-family: 'KFGQPC Uthman Taha Naskh';
+ *   src: url('/fonts/KFGQPC_Uthman_Taha_Naskh_Regular.ttf') format('truetype');
+ *   font-weight: normal;
+ *   font-style: normal;
+ *   font-display: swap;
+ * }
+ */
 
 :root {
   /* --- Typography Scales --- */
