@@ -187,7 +187,7 @@ Status thresholds: 8+ = Healthy, 6-7.9 = Caution, 4-5.9 = At risk, <4 = Critical
 
 ## Incomplete Dimensions
 
-[If any dimensions failed to complete, list them here with the reason. If all 7 completed, omit this section.]
+[If any dimensions failed to complete, list them here with the reason. If all 8 completed, omit this section.]
 
 ---
 

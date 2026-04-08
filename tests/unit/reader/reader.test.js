@@ -277,6 +277,82 @@ describe('reader/index.js', () => {
     expect(verses.length).toBeGreaterThan(0)
   })
 
+  describe('verse deep link (#/s/:surah/:ayah)', () => {
+    it('renders at the specified verse, ignoring saved position', async () => {
+      db.get.mockImplementation((store, key) => {
+        if (store === 'settings' && key === 'translationVisible') {
+          return Promise.resolve({ key: 'translationVisible', value: true })
+        }
+        if (store === 'positions' && key === 's112') {
+          return Promise.resolve({ id: 's112', surah: 112, verse: 1, savedAt: Date.now() })
+        }
+        return Promise.resolve(null)
+      })
+
+      let scrolledVerse = null
+      const originalScrollIntoView = Element.prototype.scrollIntoView
+      Element.prototype.scrollIntoView = function () {
+        scrolledVerse = this.getAttribute('data-verse')
+      }
+
+      const { init } = await import('../../../src/reader/index.js')
+      await init({ surah: '112', ayah: '4' })
+
+      const verse4 = document.querySelector('[data-verse="4"]')
+      expect(verse4).toBeTruthy()
+      expect(scrolledVerse).toBe('4')
+
+      Element.prototype.scrollIntoView = originalScrollIntoView
+    })
+
+    it('does not overwrite saved position on deep link load', async () => {
+      db.get.mockImplementation((store, key) => {
+        if (store === 'settings' && key === 'translationVisible') {
+          return Promise.resolve({ key: 'translationVisible', value: true })
+        }
+        if (store === 'positions' && key === 's112') {
+          return Promise.resolve({ id: 's112', surah: 112, verse: 1, savedAt: Date.now() })
+        }
+        return Promise.resolve(null)
+      })
+
+      const { init } = await import('../../../src/reader/index.js')
+      await init({ surah: '112', ayah: '4' }, { savePosition: false })
+
+      expect(db.put).not.toHaveBeenCalledWith(
+        'positions',
+        expect.objectContaining({ id: 's112' })
+      )
+    })
+
+    it('falls back to session restore when no ayah provided', async () => {
+      db.get.mockImplementation((store, key) => {
+        if (store === 'settings' && key === 'translationVisible') {
+          return Promise.resolve({ key: 'translationVisible', value: true })
+        }
+        if (store === 'positions' && key === 's112') {
+          return Promise.resolve({ id: 's112', surah: 112, verse: 2, savedAt: Date.now() })
+        }
+        return Promise.resolve(null)
+      })
+
+      let scrolledVerse = null
+      const originalScrollIntoView = Element.prototype.scrollIntoView
+      Element.prototype.scrollIntoView = function () {
+        scrolledVerse = this.getAttribute('data-verse')
+      }
+
+      const { init } = await import('../../../src/reader/index.js')
+      await init({ surah: '112' })
+
+      const loaded = document.querySelector('[data-verse]')
+      expect(loaded).toBeTruthy()
+      expect(scrolledVerse).toBe('2')
+
+      Element.prototype.scrollIntoView = originalScrollIntoView
+    })
+  })
+
   it('shows error for invalid verse and loads surah at verse 1 - regression test', async () => {
     // This test catches the bug where invalid verse numbers didn't show error feedback
     const dataset = await import('../../../src/data/dataset.js')

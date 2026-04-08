@@ -15,6 +15,15 @@ const LONG_PRESS_MS = 500
 let activeModal = null
 let unsubNavNavigate = null
 let currentUndoRecord = null
+let currentEditingVerseKey = null
+
+// Subscribe at module level so the editor reacts to cross-tab deletions
+// regardless of whether setupLongPress has been called
+on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
+  if (currentEditingVerseKey && verseKeys.includes(currentEditingVerseKey)) {
+    closeEditor()
+  }
+})
 
 /**
  * Open the mark editor modal for a verse.
@@ -122,6 +131,7 @@ export async function openEditor(verseKey) {
   shell.appendChild(backdrop)
   shell.appendChild(modal)
   activeModal = { backdrop, modal }
+  currentEditingVerseKey = verseKey
 
   // Focus trap implementation
   const focusableElements = modal.querySelectorAll(
@@ -170,6 +180,7 @@ export function closeEditor() {
     activeModal.modal.remove()
     activeModal = null
   }
+  currentEditingVerseKey = null
 }
 
 /**

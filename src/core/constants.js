@@ -31,6 +31,12 @@ export const Events = {
   MARKS_UNDO: 'marks:undo',
   MARKS_SAVE_FAILED: 'marks:save-failed',
   READER_VERSE_RENDERED: 'reader:verse-rendered',
+  SYNC_UPDATE_RECEIVED: 'sync:update-received',
+  DATASET_UPDATE_AVAILABLE: 'dataset:update-available',
+  DATASET_DOWNLOAD_PROGRESS: 'dataset:download-progress',
+  DATASET_PENDING_CONFIRMATION: 'dataset:pending-confirmation',
+  DATASET_APPLIED: 'dataset:applied',
+  DATASET_UPDATE_FAILED: 'dataset:update-failed',
 }
 
 export const Errors = {

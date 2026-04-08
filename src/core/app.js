@@ -8,6 +8,8 @@ import * as router from './router.js'
 import { emit, on } from './events.js'
 import { Events } from './constants.js'
 import { init as initSafetySync } from '../safety/sync.js'
+import { initInstallListener } from '../about/pwa-install.js'
+import { initTheme } from '../settings/theme.js'
 
 let unsubLaunchRestore = null
 let unsubNavNavigate = null
@@ -23,6 +25,9 @@ export async function init() {
     // Open database (creates stores if first run)
     await openDB()
     performance.mark('db:open')
+
+    // Apply saved theme before router dispatches first route
+    await initTheme()
 
     // Listen for launch restore (clean up previous if re-init)
     if (unsubLaunchRestore) {
@@ -71,8 +76,8 @@ export async function init() {
       topBar.insertBefore(reviewLink, topBar.firstChild)
     }
 
-    // Set initial theme
-    applyThemeFromSettings()
+    // Capture PWA install prompt if available
+    initInstallListener()
 
     // Initialize safety sync (handles IDB versionchange reload banner)
     if (unsubSafetySync) { unsubSafetySync() }
@@ -103,21 +108,6 @@ export async function init() {
       errorDiv.appendChild(retryBtn)
       mainContent.appendChild(errorDiv)
     }
-  }
-}
-
-/**
- * Apply saved theme or default to light.
- */
-async function applyThemeFromSettings() {
-  try {
-    const setting = await get('settings', 'theme')
-    const theme = setting?.value || 'light'
-    document.documentElement.setAttribute('data-theme', theme)
-  } catch (error) {
-    // Theme application failed, use default
-    console.error('Failed to apply theme:', error)
-    document.documentElement.setAttribute('data-theme', 'light')
   }
 }
 

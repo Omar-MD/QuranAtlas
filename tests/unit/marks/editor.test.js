@@ -90,4 +90,37 @@ describe('marks/editor.js', () => {
       cleanup()
     })
   })
+
+  describe('cross-tab conflict', () => {
+    it('closes editor with toast when mark is deleted in another tab', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+      const store = await import('../../../src/marks/store.js')
+
+      // Create a mark and open the editor
+      await store.save('2:255', ['favourite'])
+      await editor.openEditor('2:255')
+
+      // Verify editor is open
+      expect(document.querySelector('.qa-mark-modal')).toBeTruthy()
+
+      // Simulate cross-tab deletion via sync:update-received
+      emit('sync:update-received', { verseKeys: ['2:255'] })
+
+      // Editor should be closed
+      expect(document.querySelector('.qa-mark-modal')).toBeFalsy()
+    })
+
+    it('does not close editor when different mark is deleted in another tab', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+      const store = await import('../../../src/marks/store.js')
+
+      await store.save('2:255', ['favourite'])
+      await editor.openEditor('2:255')
+
+      emit('sync:update-received', { verseKeys: ['3:1'] })
+
+      // Editor should still be open
+      expect(document.querySelector('.qa-mark-modal')).toBeTruthy()
+    })
+  })
 })

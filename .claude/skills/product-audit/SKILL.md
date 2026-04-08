@@ -37,10 +37,10 @@ A structured, multi-dimensional audit that spawns 8 parallel specialist subagent
 
 Before spawning subagents:
 
-1. Run `mkdir -p .tmp/audit-results` to create the output directory
-2. Capture `git rev-parse --short HEAD` — this is the commit being audited
-3. Read `docs/product-info.md` and `docs/tech-stack.md` — the orchestrator needs product context to validate subagent reports later
-4. Check `docs/audit/` for previous audit reports — if one exists, note it for the delta section
+1. Capture `git rev-parse --short HEAD` — this is the commit being audited
+2. Read `docs/product-info.md` and `docs/tech-stack.md` — the orchestrator needs product context to validate subagent reports later
+3. Check `docs/audit/` for previous audit reports — if one exists, note it for the delta section
+4. Read `references/subagent-prompt-template.md` and all 8 checklist files — you need these to construct subagent prompts in Step 1
 
 ### Step 1: Spawn 8 Subagents in Parallel
 
@@ -59,40 +59,24 @@ Spawn all 8 simultaneously — do NOT wait for one to finish before starting the
 | Observability | observability | checklists/observability.md |
 | UI Quality | ui-quality | checklists/ui-quality.md |
 
-**Timeout:** Allow up to 120 seconds per subagent (checklists have 17-26 items each).
+**How to spawn subagents:**
 
-### Step 2: Handle Failures
+1. For each of the 8 dimensions:
+   a. Read the corresponding checklist file from the table above
+   b. Look up the spec list from the dimension-to-spec mapping in `references/subagent-prompt-template.md`
+   c. Fill the template placeholders: `[DIMENSION]`, `[DIMENSION_SLUG]`, `[CHECKLIST_CONTENT]`, `[SPEC_LIST]`
+   d. Use the filled template as the `prompt` parameter in an Agent tool call
+2. Make all 8 Agent tool calls in a **single message** (parallel execution)
+3. Each Agent tool call returns the subagent's JSON report directly as its return value — no file I/O needed
 
-```dot
-digraph failure_recovery {
-    rankdir=LR;
-    "Subagent completes?" [shape=diamond];
-    "Collect report" [shape=box];
-    "Timed out or failed?" [shape=diamond];
-    "Respawn with core-only prompt" [shape=box];
-    "Second attempt succeeds?" [shape=diamond];
-    "Flag dimension as incomplete" [shape=box];
-    "3+ dimensions incomplete?" [shape=diamond];
-    "ABORT audit — tell user" [shape=box, style=bold];
-    "Proceed with available reports" [shape=box];
+### Step 2: Collect Results and Handle Failures
 
-    "Subagent completes?" -> "Collect report" [label="yes"];
-    "Subagent completes?" -> "Timed out or failed?" [label="no"];
-    "Timed out or failed?" -> "Respawn with core-only prompt" [label="yes"];
-    "Respawn with core-only prompt" -> "Second attempt succeeds?";
-    "Second attempt succeeds?" -> "Collect report" [label="yes"];
-    "Second attempt succeeds?" -> "Flag dimension as incomplete" [label="no"];
-    "Flag dimension as incomplete" -> "3+ dimensions incomplete?";
-    "3+ dimensions incomplete?" -> "ABORT audit — tell user" [label="yes"];
-    "3+ dimensions incomplete?" -> "Proceed with available reports" [label="no"];
-}
-```
+Each Agent tool call returns the subagent's report directly. Check each result:
 
-**Rules:**
-- If a subagent fails or times out, respawn it with a simplified prompt focusing only on core checklist items
-- If a subagent fails twice, flag that dimension as incomplete in the report
-- If 3+ dimensions are incomplete, ABORT the audit and tell the user — partial results are misleading
-- If 1-2 dimensions are incomplete, proceed but prominently flag the gaps
+- **Success** — The return value contains valid JSON with `dimension`, `score`, `core_checklist`, and `assessability_summary` fields. Collect it.
+- **Failure** — The return value is empty, an error message, or missing required fields. Respawn that single dimension with the same prompt. If it fails a second time, flag that dimension as incomplete.
+- **3+ incomplete dimensions** — ABORT the audit and tell the user. Partial results are misleading.
+- **1-2 incomplete dimensions** — Proceed but prominently flag the gaps in the report.
 
 ### Step 3: Cross-Analyze Findings
 
@@ -187,6 +171,14 @@ Based on the audit results, declare one of:
 
 Use when the user wants to verify fixes after a previous full audit.
 
+**Trigger detection:** Use follow-up mode (not full audit) when the user's request contains any of:
+- "follow-up audit", "follow up", "re-audit", "delta audit"
+- "verify fixes", "check if fixed", "did the fixes work"
+- "compare to previous", "compare to last audit"
+- Reference to a specific previous audit report file
+
+If ambiguous, ask the user: "Would you like a full audit or a follow-up comparing to [most recent report]?"
+
 **Prerequisites:**
 - A previous full audit report must exist in `docs/audit/`
 - The user specifies which report to compare against (or use the most recent)
@@ -207,6 +199,14 @@ Use when the user wants to verify fixes after a previous full audit.
 - Produce a new overall weighted health score (only the full audit does)
 - Re-audit dimensions that had no P0/P1 findings
 - Replace the need for periodic full audits
+
+---
+
+## Report Management
+
+- Reports accumulate in `docs/audit/`. Keep the most recent full audit and most recent follow-up audit. Older reports can be deleted at the user's discretion.
+- If a same-day full audit report already exists, append `-v2`, `-v3`, etc. to the filename (e.g., `2026-04-07-product-health-report-v2.md`).
+- Follow-up reports use the suffix `-followup` (e.g., `2026-04-07-product-health-followup.md`).
 
 ---
 
@@ -243,7 +243,7 @@ Use when the user wants to verify fixes after a previous full audit.
 2. **Inventing findings** — Fabricating issues to appear thorough. Fix: Zero supplementary findings is acceptable. Accuracy > completeness.
 3. **No evidence** — "Security looks good" without citing files. Fix: Every score needs file references.
 4. **Wrong severity** — Calling a P3 a P1. Fix: Use severity definitions from scoring-model.md exactly.
-5. **No cross-analysis** — Concatenating 7 reports without synthesizing. Fix: Look for overlaps, contradictions, systemic patterns.
+5. **No cross-analysis** — Concatenating 8 reports without synthesizing. Fix: Look for overlaps, contradictions, systemic patterns.
 6. **Stale context** — Auditing against assumptions instead of reading current code and docs. Fix: Read `docs/product-info.md` and `docs/tech-stack.md` first.
 7. **Marking stubs as failures** — Phase 2/3 modules that don't exist yet are `not-assessable`, not `fail`.
 8. **Skipping verification** — Trusting subagent findings without reading the cited code. Fix: Step 4 is mandatory for all P0/P1.

@@ -55,4 +55,36 @@ describe('marks/indicator.js', () => {
       unsub()
     })
   })
+
+  describe('cross-tab sync', () => {
+    it('re-decorates verse when sync:update-received fires', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+      const store = await import('../../../src/marks/store.js')
+
+      await store.save('2:255', ['favourite'])
+
+      // Create a verse element
+      const verse = document.createElement('div')
+      verse.setAttribute('data-verse-key', '2:255')
+      document.body.appendChild(verse)
+
+      // Decorate it initially
+      await indicator.decorateVerse('2:255', verse)
+      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
+
+      // Register sync listener
+      indicator.init()
+
+      // Delete the mark (simulating another tab)
+      await store.del('2:255')
+
+      // Fire sync event
+      emit('sync:update-received', { verseKeys: ['2:255'] })
+
+      // Wait for async re-decoration
+      await new Promise(r => setTimeout(r, 50))
+
+      expect(verse.querySelector('.qa-mark-dots')).toBeFalsy()
+    })
+  })
 })

@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto'
+import { vi } from 'vitest'
 import { openDB } from '../../../src/core/db.js'
 import { on } from '../../../src/core/events.js'
 
@@ -111,6 +112,31 @@ describe('marks/store.js', () => {
 
       const m3 = await store.getByVerseKey('3:1')
       expect(m3.tags).toEqual(['study'])
+    })
+  })
+
+  describe('cross-tab broadcast', () => {
+    it('calls broadcastMarkChange after save', async () => {
+      const sync = await import('../../../src/safety/sync.js')
+      const spy = vi.spyOn(sync, 'broadcastMarkChange')
+
+      await store.save('2:255', ['favourite'])
+
+      expect(spy).toHaveBeenCalledWith(['2:255'])
+      spy.mockRestore()
+    })
+
+    it('calls broadcastMarkChange after delete', async () => {
+      const sync = await import('../../../src/safety/sync.js')
+      const spy = vi.spyOn(sync, 'broadcastMarkChange')
+
+      await store.save('2:255', ['favourite'])
+      spy.mockClear()
+
+      await store.del('2:255')
+
+      expect(spy).toHaveBeenCalledWith(['2:255'])
+      spy.mockRestore()
     })
   })
 })

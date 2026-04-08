@@ -7,6 +7,7 @@
 import { getDb } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
+import { broadcastMarkChange } from '../safety/sync.js'
 
 /**
  * Save (create or update) a mark.
@@ -36,6 +37,7 @@ export async function save(verseKey, tags) {
     })
 
     emit(Events.MARKS_SAVED, { verseKey, tags })
+    broadcastMarkChange([verseKey])
   } catch (error) {
     console.error('Failed to save mark:', { verseKey, error: error.message })
     emit(Events.MARKS_SAVE_FAILED, { verseKey, error: error.message })
@@ -60,6 +62,7 @@ export async function del(verseKey) {
     })
 
     emit(Events.MARKS_DELETED, { verseKey })
+    broadcastMarkChange([verseKey])
   } catch (error) {
     console.error('Failed to delete mark:', { verseKey, error: error.message })
     throw error
@@ -146,4 +149,9 @@ export async function removeTagFromAll(tag) {
       request.onerror = () => reject(request.error)
     }
   })
+
+  const verseKeys = marks.map(m => m.verseKey)
+  if (verseKeys.length > 0) {
+    broadcastMarkChange(verseKeys)
+  }
 }
