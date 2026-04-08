@@ -1,47 +1,41 @@
 /**
- * Global pub/sub event bus.
+ * Global pub/sub event bus — backed by mitt.
  * The only mechanism for cross-module communication (except safety/ and a11y/).
  */
 
-const listeners = new Map()
+import mitt from 'mitt'
+
+export const emitter = mitt()
 
 /**
  * Subscribe to an event type.
- * @param {string} type - Event type (e.g., 'reader:surah-loaded')
+ * @param {string} type - Event type (use Events constants from constants.js)
  * @param {Function} callback - Handler function
  * @returns {Function} Unsubscribe function
  */
 export function on(type, callback) {
-  if (!listeners.has(type)) {
-    listeners.set(type, new Set())
-  }
-  listeners.get(type).add(callback)
-
-  return () => {
-    const subs = listeners.get(type)
-    if (subs) {
-      subs.delete(callback)
-      if (subs.size === 0) {
-        listeners.delete(type)
-      }
-    }
-  }
+  emitter.on(type, callback)
+  return () => emitter.off(type, callback)
 }
 
 /**
  * Emit an event with optional payload.
- * @param {string} type - Event type
+ * Errors thrown by individual handlers are caught and isolated so one
+ * broken subscriber never prevents other subscribers from receiving the event.
+ * @param {string} type - Event type (use Events constants from constants.js)
  * @param {*} [payload] - Event payload
  */
 export function emit(type, payload) {
-  const subs = listeners.get(type)
-  if (subs) {
-    for (const callback of subs) {
-      try {
-        callback(payload)
-      } catch (error) {
-        console.error(`Event handler error for "${type}":`, error)
-      }
+  const handlers = emitter.all.get(type)
+  if (handlers) {
+    for (const h of handlers.slice()) {
+      try { h(payload) } catch { /* isolate */ }
+    }
+  }
+  const wildcards = emitter.all.get('*')
+  if (wildcards) {
+    for (const h of wildcards.slice()) {
+      try { h(type, payload) } catch { /* isolate */ }
     }
   }
 }
@@ -52,8 +46,8 @@ export function emit(type, payload) {
  */
 export function clear(type) {
   if (type) {
-    listeners.delete(type)
+    emitter.all.delete(type)
   } else {
-    listeners.clear()
+    emitter.all.clear()
   }
 }

@@ -6,6 +6,7 @@
 import { getSurahs } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
+
 import { parseNavigationInput } from '../safety/input-validator.js'
 import { announce } from '../a11y/announcer.js'
 
@@ -317,12 +318,12 @@ function updateHighlight(surahNum) {
 
 function setupEventListeners() {
   if (unsubPosition) { unsubPosition() }
-  unsubPosition = on('reader:position-changed', ({ surah }) => {
+  unsubPosition = on(Events.READER_POSITION_CHANGED, ({ surah }) => {
     updateHighlight(surah)
   })
 
   if (unsubLoaded) { unsubLoaded() }
-  unsubLoaded = on('reader:surah-loaded', ({ surah }) => {
+  unsubLoaded = on(Events.READER_SURAH_LOADED, ({ surah }) => {
     updateHighlight(surah)
   })
 }

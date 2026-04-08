@@ -12,7 +12,7 @@ A student receives a shared verse link. When opened, `#/s/{surah}/{ayah}` is ove
 
 **Verse deep links (`#/s/{surah}/{ayah}`)** — when both surah and ayah are present in the URL, the reader opens at that exact verse, overriding Story 2's session restore. After load, normal scroll-based position tracking resumes — the user's old IDB position is not overwritten by the deep link itself, but will be overwritten once they scroll.
 
-**Tag deep links (`#/t/{tag_label}`) are CUT.** They only work if the recipient has the same marks locally — which they won't, because marks are per-device IDB data. This produces a dead-end experience 99% of the time. The verse deep link (`#/s/{surah}/{ayah}`) is sufficient for sharing.
+**Tag deep links (`#/t/{tag_label}`)** — implemented with a graceful fallback. When a valid tag is present in the URL and the user has marks for that tag in their local IDB, the Review Hub opens with marks filtered to that tag (FVR view). When no marks exist or the tag is invalid, a not-found state is rendered with a link to `#/review`. This is intentional: recipients who do not have the same marks locally see the not-found fallback; recipients who do (e.g., same user on same device) see their marks.
 
 ## User Stories
 
@@ -20,7 +20,7 @@ A student receives a shared verse link. When opened, `#/s/{surah}/{ayah}` is ove
 2. As a student with a saved reading position, I want my saved IDB position to remain intact when I open a verse deep link, so that I can return to my reading after viewing the shared verse.
 3. As a student who scrolls after following a verse deep link, I want my position to be saved normally, so that the app tracks where I actually am.
 4. As a student navigating to `#/s/2` (surah only, no ayah), I want my saved reading position within that surah restored as normal, so that internal navigation is unaffected by deep link logic.
-5. As a student opening `#/t/Qur%C3%A2n`, I want to see a not-found state with a link to the Review Hub. *(Tag deep links are CUT — this route will render a simple not-found redirecting to `#/review`.)*
+5. As a student opening `#/t/Qur%C3%A2n`, I want to see a not-found state with a link to the Review Hub if no local marks exist for that tag. *(If marks exist for that tag in local IDB, the Review Hub opens filtered to that tag.)*
 
 ## Implementation Decisions
 
@@ -32,9 +32,11 @@ A student receives a shared verse link. When opened, `#/s/{surah}/{ayah}` is ove
 - If `params.ayah` is absent, Story 2 session restore applies unchanged.
 - Out-of-range surah/ayah values: reader owns graceful handling (Story 1/2 concern). Story 7 does not add route-level validation.
 
-**`src/core/router.js`**
+**`src/review/hub.js`**
 
-- `#/t/` route: render simple not-found state with link to `#/review`. No FVR, no tag lookup.
+- `#/t/:tag` route entry point: validates tag via `validateTagParam()`, queries IDB for marks with that tag.
+- If marks exist: opens Review Hub with `view: 'fvr'` and `activeTag` set, rendering the marks filtered to that tag.
+- If no marks exist or tag is invalid: renders not-found state with a link to `#/review` and an a11y announcement.
 
 ### IDB
 
@@ -62,7 +64,7 @@ Prior art: `tests/unit/core/db.test.js` for IDB setup patterns.
 
 ## Out of Scope
 
-- Tag deep links `#/t/{tag}` — **CUT** (only works with local marks, dead-end UX)
+- Tag deep links `#/t/{tag}` — graceful fallback (not-found when no local marks; FVR when marks exist)
 - Sharing / copy-URL affordance — no UI for generating links
 - Cross-device mark sync — deep links only work if the user has those marks locally
 - PWA share target registration (`share_target` in manifest)
@@ -77,10 +79,10 @@ Prior art: `tests/unit/core/db.test.js` for IDB setup patterns.
 
 | Q   | Decision                           | Choice                                                                                                         |
 | --- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| 1   | Tag deep links                     | **CUT** — only works with local marks, produces dead-end UX 99% of the time                                    |
-| 2   | `#/t/` route behavior              | Simple not-found state with link to `#/review`                                                                 |
+| 1   | Tag deep links                     | **Graceful fallback** — FVR when local marks exist for the tag; not-found state otherwise                      |
+| 2   | `#/t/` route behavior              | FVR if marks found for tag; simple not-found with link to `#/review` if none                             |
 | 3   | Invalid verse params               | Reader owns graceful handling — Story 7 passes through without route-level validation                          |
 | 4   | Position tracking after deep link  | Normal — scrolling saves position; old position overwritten on first scroll                                    |
 | 5   | Verse deep links                   | **KEPT** — `#/s/{surah}/{ayah}` opens at exact verse, overrides session restore                                |
 | 6   | A11y announcement                  | Not needed for verse deep links (content renders normally)                                                     |
-| 7   | Hub mount on tag deep link         | **N/A** — tag deep links cut                                                                                   |
+| 7   | Hub mount on tag deep link         | **Implemented** — `hub.js::initTagDeepLink()` handles the route, renders FVR or not-found |

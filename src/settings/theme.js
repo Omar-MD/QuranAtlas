@@ -52,15 +52,16 @@ export async function setTheme(theme) {
     return false
   }
 
-  try {
-    await put('settings', { key: 'theme', value: theme })
-    applyTheme(theme)
-    emit(Events.SETTINGS_THEME_CHANGED, { theme })
-    return true
-  } catch (error) {
+  // Apply theme synchronously for instant visual response
+  applyTheme(theme)
+  emit(Events.SETTINGS_THEME_CHANGED, { theme })
+
+  // Persist asynchronously — fire-and-forget, UI is already updated
+  put('settings', { key: 'theme', value: theme }).catch((error) => {
     console.error('Failed to save theme:', error)
-    return false
-  }
+  })
+
+  return true
 }
 
 /**

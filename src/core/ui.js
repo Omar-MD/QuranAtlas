@@ -4,7 +4,7 @@
  */
 
 import { emit } from './events.js'
-import { UI } from './constants.js'
+import { UI, Events } from './constants.js'
 
 let undoTimer = null
 let undoRecord = null
@@ -37,7 +37,7 @@ export function showUndoToast({ verseKey, record, onUndo, onComplete }) {
   undoBtn.addEventListener('click', async () => {
     if (undoRecord) {
       await onUndo(undoRecord)
-      emit('marks:undo', { verseKey: undoRecord.verseKey })
+      emit(Events.MARKS_UNDO, { verseKey: undoRecord.verseKey })
       undoRecord = null
     }
     clearUndoToast()

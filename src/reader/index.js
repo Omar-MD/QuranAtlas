@@ -14,8 +14,8 @@ import { init as initIndicators } from '../marks/indicator.js'
 import { setupLongPress } from '../marks/editor.js'
 
 // Maximum time to wait for surah data fetch before showing error
-// 5 seconds balances responsiveness with slow network tolerance
-const SKELETON_TIMEOUT_MS = 5000
+// 800ms per spec (Story 1 Q1, performance checklist item 1)
+const SKELETON_TIMEOUT_MS = 800
 
 // Number of verses to render per chunk for performance
 // 50 verses provides good initial render time while keeping DOM size manageable
@@ -129,16 +129,20 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
         if (document.hidden && currentSurahNum && lastTrackedVerse !== null) {
           // Flush any pending debounced position update before saving
           flushDebounce()
-          // Fire-and-forget with proper error handling via catch
-          put('positions', {
+          const positionData = {
             id: `s${currentSurahNum}`,
             surah: currentSurahNum,
             verse: lastTrackedVerse,
             savedAt: Date.now(),
-          }).catch((error) => {
-            // Position save failed, emit event for UI warning
-            console.error('Failed to save position:', error)
-            emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
+          }
+          // Fire-and-forget with single retry on transient error
+          put('positions', positionData).catch(() => {
+            setTimeout(() => {
+              put('positions', positionData).catch((error) => {
+                console.error('Failed to save position after retry:', error)
+                emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
+              })
+            }, 100)
           })
         }
       }

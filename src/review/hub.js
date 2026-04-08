@@ -53,7 +53,7 @@ export async function init(params = {}) {
   render(mainContent)
   setInitialFocus()
 
-  emit('review:open')
+  emit(Events.REVIEW_OPEN)
 
   on(Events.SYNC_UPDATE_RECEIVED, async () => {
     await reloadMarks()
@@ -118,7 +118,7 @@ async function initTagDeepLink(rawTag, container) {
 
   render(container)
   setInitialFocus()
-  emit('review:open')
+  emit(Events.REVIEW_OPEN)
 }
 
 /**
@@ -188,7 +188,7 @@ export async function applyFilter(filter) {
       currentState.surahFilter = filter.surahFilter
     }
     await saveState(currentState)
-    emit('review:filter', { tags: currentState.activeTag, surah: currentState.surahFilter })
+    emit(Events.REVIEW_FILTER, { tags: currentState.activeTag, surah: currentState.surahFilter })
 
     await reloadMarks()
     displayedCount = 0

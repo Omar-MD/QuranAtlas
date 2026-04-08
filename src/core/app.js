@@ -7,6 +7,7 @@ import { openDB, get, getMostRecentPosition } from './db.js'
 import * as router from './router.js'
 import { emit, on } from './events.js'
 import { Events } from './constants.js'
+import { logger } from './logger.js'
 import { init as initSafetySync } from '../safety/sync.js'
 import { initInstallListener } from '../about/pwa-install.js'
 import { initTheme } from '../settings/theme.js'
@@ -119,13 +120,16 @@ export async function init() {
 async function handleLaunchRestore() {
   const lastSurface = await get('settings', 'lastSurface')
   if (lastSurface?.value) {
+    logger.info('Session restore: lastSurface', { surface: lastSurface.value })
     router.navigate(lastSurface.value, { replace: true })
     return
   }
   const position = await getMostRecentPosition()
   if (position) {
+    logger.info('Session restore: most recent position', { surah: position.surah, verse: position.verse })
     router.navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
   } else {
+    logger.info('Session restore: default surah 1')
     router.navigate('#/s/1', { replace: true })
   }
 }
@@ -142,8 +146,32 @@ async function registerServiceWorker() {
       })
     } catch (error) {
       console.error('SW registration failed:', error)
+      emit(Events.APP_INIT_ERROR, { error, context: 'service-worker' })
+      showOfflineBanner()
     }
   }
+}
+
+/**
+ * Show a non-dismissible banner when SW registration fails.
+ * Offline mode will be unavailable.
+ */
+function showOfflineBanner() {
+  const existing = document.getElementById('qa-offline-banner')
+  if (existing) { return }
+
+  const banner = document.createElement('div')
+  banner.id = 'qa-offline-banner'
+  banner.setAttribute('role', 'alert')
+  banner.setAttribute('aria-live', 'assertive')
+  banner.style.cssText = [
+    'position:fixed', 'bottom:0', 'left:0', 'right:0',
+    'background:var(--qa-color-error,#dc2626)', 'color:#fff',
+    'text-align:center', 'padding:0.75rem 1rem',
+    'font-size:0.875rem', 'z-index:9999',
+  ].join(';')
+  banner.textContent = 'Offline mode unavailable. The app will not work without an internet connection.'
+  document.body.appendChild(banner)
 }
 
 /**

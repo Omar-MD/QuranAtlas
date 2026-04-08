@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'))
 
 export default defineConfig({
   plugins: [
@@ -71,7 +74,7 @@ export default defineConfig({
     }
   },
   define: {
-    __APP_VERSION__: JSON.stringify('1.0.0')
+    __APP_VERSION__: JSON.stringify(pkg.version)
   },
   test: {
     environment: 'jsdom',

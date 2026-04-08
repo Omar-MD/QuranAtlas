@@ -62,7 +62,7 @@ function sanitizeParams(params) {
     }
 
     // Check for XSS payloads: <script>, javascript:, data:, etc.
-    const dangerous = /<script|javascript:|data:text\/html|on\w+=/i
+    const dangerous = /<script|javascript:|vbscript:|data:|expression\(|url\(|import\(|on\w+=/i
     if (dangerous.test(value)) {
       console.warn('Router: rejected param with XSS pattern:', key)
       return null
@@ -77,6 +77,12 @@ function sanitizeParams(params) {
     // Length limit to prevent DoS
     if (value.length > 100) {
       console.warn('Router: rejected oversized param:', key)
+      return null
+    }
+
+    // Reject params containing protocol schemes (e.g. https://, ftp://)
+    if (value.includes('://')) {
+      console.warn('Router: rejected param with protocol scheme:', key)
       return null
     }
 
@@ -110,8 +116,6 @@ async function handleRoute(hash) {
     const module = await loader()
     currentModule = module
 
-    await put('settings', { key: 'lastSurface', value: hash })
-
     if (module.init) {
       try {
         // Sanitize params before passing to module
@@ -119,15 +123,44 @@ async function handleRoute(hash) {
         if (sanitizedParams === null) {
           console.error(`Route ${hash} rejected: invalid parameters`)
           emit(Events.ROUTER_ROUTE_ERROR, { route: hash, error: new Error('Invalid parameters') })
+          showNotFound()
           return
         }
         await module.init(sanitizedParams)
+        await put('settings', { key: 'lastSurface', value: hash })
       } catch (error) {
         console.error(`Route ${hash} failed:`, error)
         emit(Events.ROUTER_ROUTE_ERROR, { route: hash, error })
       }
     }
+  } else {
+    showNotFound(hash)
   }
+}
+
+/**
+ * Render a user-visible not-found message.
+ * @param {string} [hash] - The unmatched hash for diagnostic display
+ */
+function showNotFound(_hash) {
+  const mainContent = document.getElementById('main-content')
+  if (!mainContent) { return }
+
+  while (mainContent.firstChild) { mainContent.removeChild(mainContent.firstChild) }
+
+  const wrapper = document.createElement('div')
+  wrapper.className = 'qa-error-state'
+
+  const msg = document.createElement('p')
+  msg.textContent = `Page not found.`
+  wrapper.appendChild(msg)
+
+  const link = document.createElement('a')
+  link.href = '#/s/1'
+  link.textContent = 'Go to Al-Fatihah (Surah 1)'
+  wrapper.appendChild(link)
+
+  mainContent.appendChild(wrapper)
 }
 
 /**

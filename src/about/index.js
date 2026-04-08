@@ -60,7 +60,7 @@ export async function init() {
   let dsVersion = 'Not yet installed'
   try {
     const meta = await get('datasetMeta', 'current')
-    if (meta?.version) dsVersion = meta.version
+    if (meta?.version) { dsVersion = meta.version }
   } catch { /* IDB unavailable, show fallback */ }
 
   if (seq !== _initSeq) { return }

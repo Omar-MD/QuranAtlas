@@ -64,6 +64,11 @@
   
   --qa-skeleton: #e4e4e7;
   --qa-color-error: #dc2626;
+
+  /* --- Error State Colors --- */
+  --qa-bg-error: #fef2f2;
+  --qa-border-error: #f87171;
+  --qa-text-error: #991b1b;
 }
 
 html[data-theme="sepia"] {
@@ -82,6 +87,11 @@ html[data-theme="sepia"] {
   --qa-border-subtle: #efe1c8;
   
   --qa-skeleton: #e2d1b3;
+
+  /* --- Error State Colors (sepia-warm tones) --- */
+  --qa-bg-error: #fdf3e7;
+  --qa-border-error: #c07842;
+  --qa-text-error: #7a3520;
 }
 
 html[data-theme="dark"] {
@@ -100,6 +110,11 @@ html[data-theme="dark"] {
   --qa-border-subtle: #262626;
   
   --qa-skeleton: #2e2e2e;
+
+  /* --- Error State Colors (dark mode) --- */
+  --qa-bg-error: #450a0a;
+  --qa-border-error: #7f1d1d;
+  --qa-text-error: #fca5a5;
 }
 
 /* ==========================================================================
@@ -440,8 +455,9 @@ a:hover, a:focus {
   /* Styled to look like the traditional verse end marker */
   border: 1px solid var(--qa-accent);
   border-radius: 50%;
-  width: 2.25rem;
-  height: 2.25rem;
+  /* WCAG 2.5.5: minimum 44×44px touch target (2.75rem × 2.75rem) */
+  width: 2.75rem;
+  height: 2.75rem;
   vertical-align: middle;
   flex-shrink: 0;
 }
@@ -599,17 +615,11 @@ a:hover, a:focus {
   justify-content: space-between;
   padding: 1rem;
   margin-bottom: 1.5rem;
-  background-color: #fef2f2;
-  border: 1px solid #f87171;
-  color: #991b1b;
+  background-color: var(--qa-bg-error);
+  border: 1px solid var(--qa-border-error);
+  color: var(--qa-text-error);
   border-radius: 8px;
   font-size: var(--qa-text-size-ui);
-}
-
-html[data-theme="dark"] .qa-invalid-verse-error {
-  background-color: #450a0a;
-  border-color: #7f1d1d;
-  color: #fca5a5;
 }
 
 /* Accessibility Focus States */
@@ -645,6 +655,18 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   border-radius: 50%;
   display: inline-block;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  /* WCAG 2.5.5: invisible hit-zone expands touch target to 44×44px */
+  position: relative;
+}
+
+.qa-mark-dot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .qa-mark-hover-icon {
@@ -1388,4 +1410,105 @@ html[data-theme="dark"] .qa-invalid-verse-error {
 .qa-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Responsive Layout — Tablet (768px+) and Desktop (1280px+)
+   ========================================================================== */
+
+@media (min-width: 768px) {
+  /* App shell: switch from flex-column to two-column grid */
+  #app-shell {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "topbar topbar"
+      "nav    main"
+      "nav    footer";
+  }
+
+  #top-bar {
+    grid-area: topbar;
+  }
+
+  /* Nav becomes a persistent sidebar — leave the fixed-overlay behind */
+  #nav-surface {
+    grid-area: nav;
+    position: relative;   /* back into document flow */
+    height: 100%;
+    max-height: none;
+    width: 100%;
+    max-width: none;
+    transform: none;      /* always visible */
+    transition: none;
+    box-shadow: none;
+    border-right: 1px solid var(--qa-border);
+    overflow-y: auto;
+  }
+
+  /* Keep open class a no-op so JS toggle doesn't re-hide the nav */
+  #nav-surface.qa-nav-open {
+    transform: none;
+  }
+
+  /* Backdrop and hamburger are not needed when nav is always visible */
+  .qa-nav-backdrop {
+    display: none;
+  }
+
+  .qa-nav-toggle {
+    display: none;
+  }
+
+  #main-content {
+    grid-area: main;
+    padding: 2rem 1.5rem;
+  }
+
+  #bottom-nav {
+    grid-area: footer;
+  }
+
+  /* Mark editor: centered dialog instead of bottom sheet */
+  .qa-mark-modal {
+    top: 50%;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    border-radius: 16px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    width: min(600px, 90vw);
+    max-height: 80vh;
+    animation: qa-modal-center 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Remove the bottom-sheet drag handle when displayed as a dialog */
+  .qa-mark-title::before {
+    display: none;
+  }
+}
+
+@keyframes qa-modal-center {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 1.5rem));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@media (min-width: 1280px) {
+  #app-shell {
+    grid-template-columns: 320px 1fr;
+  }
+
+  #main-content {
+    padding: 2rem 3rem;
+    max-width: 900px;
+  }
 }

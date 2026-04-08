@@ -57,10 +57,14 @@ async function postToClients(type, payload = {}) {
   try {
     const allClients = await self.clients.matchAll()
     for (const client of allClients) {
-      client.postMessage({ type, ...payload })
+      try {
+        client.postMessage({ type, ...payload })
+      } catch (error) {
+        console.warn('postToClients: failed to notify client', client.id, error.message)
+      }
     }
-  } catch {
-    // Ignore client posting errors in SW context.
+  } catch (error) {
+    console.warn('postToClients: clients.matchAll() failed:', error.message)
   }
 }
 

@@ -8,6 +8,8 @@
 | Build Tool | **Vite** | 8+ | Dev server, HMR, production bundling (Rolldown-powered) |
 | CSS | **Lightning CSS** | — | Vendor prefixing, minification, CSS transforms |
 | PWA | **vite-plugin-pwa** | 1.2+ | Workbox integration, manifest generation, `injectManifest` mode |
+| Events | **mitt** | 3+ | Tiny (~200B) typed pub/sub event emitter |
+| Logger | **loglevel** | 1.9+ | Lightweight structured logger with level filtering |
 | Test Runner | **Vitest** | 3+ | Unit + integration tests, Vite-native |
 | E2E | **Playwright** | — | Cross-browser end-to-end tests |
 | Coverage | **@vitest/coverage-v8** | 3+ | V8-based code coverage |
@@ -59,10 +61,15 @@ src/
 │   ├── db.js                # IndexedDB connection, schema v1
 │   └── theme.css            # CSS vars for themes, tokens
 │
-├── data/                    # Data access & offline (deep modules)
+├── data/                    # Data access (deep modules)
 │   ├── dataset.js           # Facade: getSurah(), getSurahs()
-│   ├── offline.js           # PWA install + corpus download
-│   └── dataset-updater.js   # Version check, cache invalidation, re-download
+│   └── offline.js           # PWA install + corpus download
+│
+├── offline/                 # Offline dataset management
+│   ├── dataset-updater.js   # Version check, cache invalidation, re-download
+│   ├── manifest-fetcher.js  # Fetch remote dataset manifest
+│   ├── sha256-verifier.js   # Verify downloaded file integrity
+│   └── staging-cache.js     # Stage new dataset before activation
 │
 ├── reader/                  # Reading experience (#/s/:surah/:ayah)
 │   ├── index.js             # Route handler
@@ -129,7 +136,7 @@ src/
 | `#/review` | `review/hub.js` | 2 |
 | `#/settings` | `settings/index.js` | 3 |
 | `#/about` | `about/index.js` | 3 |
-| `#/t/:tag` | Simple not-found → `#/review` | 3 |
+| `#/t/:tag` | `review/hub.js` — FVR fallback when marks exist for tag, not-found otherwise | 3 |
 
 ## Testing Strategy
 
@@ -148,7 +155,8 @@ src/
 - `settings/theme.js` — load/set, CSS application
 - `about/versions.js` — app version, dataset version
 - `reader/scroll-tracker.js` — position calculation, debounce
-- `data/dataset-updater.js` — version check, state transitions
+- `data/offline.js` — corpus download, activation
+- `offline/dataset-updater.js` — version check, state transitions
 - `core/db.js` — IDB connection, versionchange
 
 ### Integration Tests (Vitest + jsdom + fake-indexeddb)

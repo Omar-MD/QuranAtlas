@@ -24,7 +24,18 @@ async function fetchNetworkFirst(url) {
     if (!res.ok) {
       throw new Error(`Failed to fetch ${url}: ${res.status}`)
     }
-    return res.json()
+    try {
+      return await res.json()
+    } catch {
+      // Corrupted network response — delete any stale cache entry and re-throw
+      try {
+        const cache = await caches.open(CACHE_DATASET)
+        await cache.delete(url)
+      } catch {
+        // Cache delete failed; ignore
+      }
+      throw new Error(`Invalid JSON in network response for ${url}`)
+    }
   } catch (networkError) {
     clearTimeout(timeout)
     // Network failed — fall back to cache
@@ -32,10 +43,17 @@ async function fetchNetworkFirst(url) {
       const cache = await caches.open(CACHE_DATASET)
       const cached = await cache.match(url)
       if (cached) {
-        return cached.json()
+        try {
+          return await cached.json()
+        } catch {
+          // Corrupted cache entry — delete it so next load re-fetches
+          await cache.delete(url)
+          throw new Error(`Invalid JSON in cached response for ${url}`)
+        }
       }
-    } catch {
-      // Cache not available either
+    } catch (cacheError) {
+      if (cacheError.message.startsWith('Invalid JSON')) { throw cacheError }
+      // Cache not available
     }
     throw networkError
   }

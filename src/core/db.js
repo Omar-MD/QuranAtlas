@@ -12,6 +12,7 @@ const DB_VERSION = 1
 
 let dbPromise = null
 let dbRef = null
+let visibilityListenerAttached = false
 
 /**
  * Open or return the existing database connection.
@@ -70,11 +71,14 @@ export function openDB() {
     request.onerror = () => reject(request.error)
   })
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      emit(Events.DB_VISIBILITY_VISIBLE, {})
-    }
-  })
+  if (!visibilityListenerAttached) {
+    visibilityListenerAttached = true
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        emit(Events.DB_VISIBILITY_VISIBLE, {})
+      }
+    })
+  }
 
   return dbPromise
 }
@@ -106,7 +110,10 @@ export function deleteDB() {
       dbRef = null
       emit(Events.DB_DELETE_BLOCKED, { message: 'Database deletion was blocked. Please close other tabs using this site.' })
       setTimeout(() => {
-        resolve()
+        const retry = indexedDB.deleteDatabase(DB_NAME)
+        retry.onsuccess = () => resolve()
+        retry.onerror = () => reject(retry.error)
+        retry.onblocked = () => reject(new Error('Database deletion still blocked after retry'))
       }, 1000)
     }
   })

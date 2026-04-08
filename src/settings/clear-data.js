@@ -119,31 +119,42 @@ export async function showClearDataConfirmation() {
  * @returns {Promise<boolean>} Success status
  */
 export async function clearAllData() {
-  try {
-    // Clear caches
-    if ('caches' in window) {
+  const errors = []
+
+  // Clear caches
+  if ('caches' in window) {
+    try {
       const cacheNames = await caches.keys()
       await Promise.all(cacheNames.map(name => caches.delete(name)))
+    } catch (error) {
+      console.error('Failed to clear caches:', error)
+      errors.push('Service worker cache')
     }
+  }
 
-    // Clear IndexedDB
+  // Clear IndexedDB
+  try {
     await deleteDB()
-
-    // Note: localStorage is intentionally NOT cleared per tech-stack.md
-    // (No localStorage is used anywhere in the application)
-
-    emit(Events.SETTINGS_DATA_CLEARED, {})
-    announce('All data has been cleared. Reloading...')
-
-    // Reload after brief delay
-    setTimeout(() => {
-      window.location.reload()
-    }, 1500)
-
-    return true
   } catch (error) {
-    console.error('Failed to clear data:', error)
-    announce('Error clearing data. Please try again.')
+    console.error('Failed to delete IndexedDB:', error)
+    errors.push('IndexedDB')
+  }
+
+  // Note: localStorage is intentionally NOT cleared per tech-stack.md
+  // (No localStorage is used anywhere in the application)
+
+  if (errors.length > 0) {
+    announce(`Some data could not be cleared: ${errors.join(', ')}. Please try again.`)
     return false
   }
+
+  emit(Events.SETTINGS_DATA_CLEARED, {})
+  announce('All data has been cleared. Reloading...')
+
+  // Reload after brief delay
+  setTimeout(() => {
+    window.location.reload()
+  }, 1500)
+
+  return true
 }

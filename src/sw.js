@@ -26,10 +26,26 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
+      cleanupStaleCaches(),
       checkForUpdate(),
     ])
   )
 })
+
+/**
+ * Delete caches that are no longer expected (stale versions).
+ * Workbox manages its own precache; we only clean the dataset cache.
+ */
+async function cleanupStaleCaches() {
+  const expectedCaches = new Set([CACHE_DATASET])
+  // Workbox precache names start with workbox-precache
+  const allCacheNames = await caches.keys()
+  await Promise.all(
+    allCacheNames
+      .filter(name => !name.startsWith('workbox-precache') && !expectedCaches.has(name))
+      .map(name => caches.delete(name))
+  )
+}
 
 self.addEventListener('fetch', (_event) => {
   // Workbox handles caching; this is for custom fetch logic if needed
@@ -91,7 +107,7 @@ async function handleCacheDataset(event, urls) {
 
   // Fetch manifest to obtain expected SHA-256 hashes for each file.
   // If the manifest is unreachable, we proceed without verification (graceful degradation).
-  let hashMap = {}
+  const hashMap = {}
   try {
     const manifestResponse = await fetch('/dataset/manifest.json', { cache: 'no-store' })
     if (manifestResponse.ok) {
@@ -173,6 +189,10 @@ async function handlePurgeCache(_event) {
  */
 function postToAll(clients, type, payload) {
   for (const client of clients) {
-    client.postMessage({ type, ...payload })
+    try {
+      client.postMessage({ type, ...payload })
+    } catch (error) {
+      console.warn('postToAll: failed to notify client', client.id, error.message)
+    }
   }
 }
