@@ -124,5 +124,14 @@ describe('about/index.js', () => {
       const backLink = document.querySelector('a[href="#/settings"]')
       expect(backLink).not.toBeNull()
     })
+
+    it('concurrent init() calls do not produce duplicate content', async () => {
+      // Run two init() in parallel — second should win, DOM should have only one copy of each section
+      await Promise.all([aboutPage.init(), aboutPage.init()])
+      const headings = document.querySelectorAll('h1.qa-about-heading')
+      expect(headings).toHaveLength(1)
+      const versionSections = document.querySelectorAll('.qa-about-versions')
+      expect(versionSections).toHaveLength(1)
+    })
   })
 })

@@ -124,5 +124,13 @@ describe('settings/index.js', () => {
       expect(aboutLink).not.toBeNull()
       expect(aboutLink.textContent).toContain('About')
     })
+
+    it('concurrent init() calls do not produce duplicate content', async () => {
+      await Promise.all([settingsPage.init(), settingsPage.init()])
+      const headings = document.querySelectorAll('h1.qa-settings-heading')
+      expect(headings).toHaveLength(1)
+      const themeSections = document.querySelectorAll('.qa-settings-theme')
+      expect(themeSections).toHaveLength(1)
+    })
   })
 })

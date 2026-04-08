@@ -101,7 +101,7 @@ export async function init() {
   mainContent.appendChild(attrSection)
 
   // Storage
-  await renderStorage(mainContent)
+  await renderStorage(mainContent, () => seq !== _initSeq)
 
   if (seq !== _initSeq) { return }
 
@@ -118,6 +118,10 @@ export async function init() {
   announce('About page')
 }
 
+/**
+ * Invalidates any in-flight init() call.
+ * Called by the router before navigating away from this page.
+ */
 export function cleanup() {
   ++_initSeq
 }
@@ -125,8 +129,9 @@ export function cleanup() {
 /**
  * Render storage meter section.
  * @param {HTMLElement} container
+ * @param {() => boolean} isCancelled
  */
-async function renderStorage(container) {
+async function renderStorage(container, isCancelled) {
   const section = document.createElement('section')
   section.className = 'qa-about-storage'
 
@@ -145,6 +150,7 @@ async function renderStorage(container) {
 
   try {
     const { usage, quota } = await navigator.storage.estimate()
+    if (isCancelled()) { return }
     const percent = quota ? (usage / quota) * 100 : 0
 
     const meter = document.createElement('meter')

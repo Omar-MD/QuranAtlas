@@ -121,6 +121,10 @@ export async function init() {
   announce('Settings page')
 }
 
+/**
+ * Invalidates any in-flight init() call.
+ * Called by the router before navigating away from this page.
+ */
 export function cleanup() {
   ++_initSeq
 }
