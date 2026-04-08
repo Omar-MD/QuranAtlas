@@ -37,6 +37,8 @@ export const Events = {
   DATASET_PENDING_CONFIRMATION: 'dataset:pending-confirmation',
   DATASET_APPLIED: 'dataset:applied',
   DATASET_UPDATE_FAILED: 'dataset:update-failed',
+  STORAGE_QUOTA_WARNING: 'storage:quota-warning',
+  OFFLINE_SW_TIMEOUT: 'offline:sw-timeout',
 }
 
 export const Errors = {

@@ -15,6 +15,7 @@
  */
 
 import log from 'loglevel'
+import { getActionTrail } from './events.js'
 
 const RING_SIZE = 50
 
@@ -62,11 +63,15 @@ export const logger = {
   error: (msg, ctx) => _logger.error(msg, ctx),
 
   /**
-   * Return the last `n` log entries from the ring buffer.
+   * Return the last `n` log entries merged with the action trail for unified
+   * bug report export.
    * @param {number} [n] - number of entries to return (default: all buffered)
-   * @returns {Array<{ts:number, level:string, msg:string, ctx?:unknown}>}
+   * @returns {{ logs: Array<{ts:number, level:string, msg:string, ctx?:unknown}>, trail: Array<{type:string, ts:number, _cid?:string}> }}
    */
-  getLogs: (n = RING_SIZE) => ringBuffer.slice(-n),
+  getLogs: (n = RING_SIZE) => ({
+    logs: ringBuffer.slice(-n),
+    trail: getActionTrail(n),
+  }),
 
   /**
    * Set the minimum log level.

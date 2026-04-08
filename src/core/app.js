@@ -11,6 +11,7 @@ import { logger } from './logger.js'
 import { init as initSafetySync } from '../safety/sync.js'
 import { initInstallListener } from '../about/pwa-install.js'
 import { initTheme } from '../settings/theme.js'
+import { init as initQuotaBanner } from './quota-banner.js'
 
 let unsubLaunchRestore = null
 let unsubNavNavigate = null
@@ -86,12 +87,16 @@ export async function init() {
     if (unsubSafetySync) { unsubSafetySync() }
     unsubSafetySync = initSafetySync()
 
+    // Initialize quota warning / exceeded banners
+    initQuotaBanner()
+
     // Register service worker
     await registerServiceWorker()
 
     // Initialize PWA install prompt capture and restore activation state
     const offline = await import('../data/offline.js')
     offline.initInstallPrompt()
+    await offline.checkStorageQuota()
     await restoreActivationState(offline)
   } catch (error) {
     console.error('Failed to initialize app:', error)

@@ -69,6 +69,13 @@
   --qa-bg-error: #fef2f2;
   --qa-border-error: #f87171;
   --qa-text-error: #991b1b;
+
+  /* --- Tag Colors (WCAG AA ≥ 4.5:1 on #ffffff) --- */
+  --qa-tag-favourite:   #b45309;
+  --qa-tag-study:       #1d4ed8;
+  --qa-tag-reflection:  #15803d;
+  --qa-tag-question:    #6d28d9;
+  --qa-tag-default:     #4b5563;
 }
 
 html[data-theme="sepia"] {
@@ -92,6 +99,13 @@ html[data-theme="sepia"] {
   --qa-bg-error: #fdf3e7;
   --qa-border-error: #c07842;
   --qa-text-error: #7a3520;
+
+  /* --- Tag Colors (WCAG AA ≥ 4.5:1 on #fbf0d9) --- */
+  --qa-tag-favourite:   #a16207;
+  --qa-tag-study:       #1e40af;
+  --qa-tag-reflection:  #166534;
+  --qa-tag-question:    #6b21a8;
+  --qa-tag-default:     #4b5563;
 }
 
 html[data-theme="dark"] {
@@ -115,6 +129,13 @@ html[data-theme="dark"] {
   --qa-bg-error: #450a0a;
   --qa-border-error: #7f1d1d;
   --qa-text-error: #fca5a5;
+
+  /* --- Tag Colors (WCAG AA ≥ 4.5:1 on #121212) --- */
+  --qa-tag-favourite:   #fbbf24;
+  --qa-tag-study:       #93c5fd;
+  --qa-tag-reflection:  #86efac;
+  --qa-tag-question:    #d8b4fe;
+  --qa-tag-default:     #9ca3af;
 }
 
 /* ==========================================================================
@@ -654,10 +675,23 @@ a:hover, a:focus {
   height: 6px;
   border-radius: 50%;
   display: inline-block;
+  background-color: var(--qa-tag-default);
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
   /* WCAG 2.5.5: invisible hit-zone expands touch target to 44×44px */
   position: relative;
 }
+
+/* Tag-specific dot colors — driven by data-tag attribute */
+.qa-mark-dot[data-tag="favourite"]  { background-color: var(--qa-tag-favourite); }
+.qa-mark-dot[data-tag="study"]      { background-color: var(--qa-tag-study); }
+.qa-mark-dot[data-tag="reflection"] { background-color: var(--qa-tag-reflection); }
+.qa-mark-dot[data-tag="question"]   { background-color: var(--qa-tag-question); }
+
+/* Tag swatches in mark editor — same data-tag pattern */
+.qa-mark-tag-swatch[data-tag="favourite"]  { background-color: var(--qa-tag-favourite); }
+.qa-mark-tag-swatch[data-tag="study"]      { background-color: var(--qa-tag-study); }
+.qa-mark-tag-swatch[data-tag="reflection"] { background-color: var(--qa-tag-reflection); }
+.qa-mark-tag-swatch[data-tag="question"]   { background-color: var(--qa-tag-question); }
 
 .qa-mark-dot::before {
   content: '';

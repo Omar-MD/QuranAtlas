@@ -17,6 +17,11 @@ let unsubNavNavigate = null
 let currentUndoRecord = null
 let currentEditingVerseKey = null
 
+/** Whether we pushed a history entry for the current open modal. */
+let _historyPushed = false
+/** Popstate handler for closing the modal on browser back. */
+let _popstateHandler = null
+
 // Subscribe at module level so the editor reacts to cross-tab deletions
 // regardless of whether setupLongPress has been called
 on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
@@ -66,7 +71,7 @@ export async function openEditor(verseKey) {
 
     const swatch = document.createElement('span')
     swatch.className = 'qa-mark-tag-swatch'
-    swatch.style.backgroundColor = tag.color
+    swatch.dataset.tag = tag.label // CSS [data-tag="..."] drives color via theme.css
 
     const text = document.createTextNode(` ${tag.label}`)
 
@@ -169,18 +174,40 @@ export async function openEditor(verseKey) {
       }
     }
   })
+
+  // Push history entry so the browser back button closes the modal
+  // instead of navigating away from the page.
+  _popstateHandler = () => {
+    if (activeModal) {
+      closeEditor()
+    }
+  }
+  window.addEventListener('popstate', _popstateHandler)
+  history.pushState({ modal: 'mark-editor' }, '')
+  _historyPushed = true
 }
 
 /**
  * Close the active editor modal.
  */
 export function closeEditor() {
-  if (activeModal) {
-    activeModal.backdrop.remove()
-    activeModal.modal.remove()
-    activeModal = null
-  }
+  if (!activeModal) return // Guard against double-close
+
+  activeModal.backdrop.remove()
+  activeModal.modal.remove()
+  activeModal = null
   currentEditingVerseKey = null
+
+  // Remove popstate listener before calling history.back() to avoid re-entry
+  if (_popstateHandler) {
+    window.removeEventListener('popstate', _popstateHandler)
+    _popstateHandler = null
+  }
+
+  if (_historyPushed) {
+    _historyPushed = false
+    history.back() // Return to the pre-modal history entry
+  }
 }
 
 /**

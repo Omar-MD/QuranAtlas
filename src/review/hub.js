@@ -4,7 +4,6 @@
  */
 
 import { getAll, getByTag, del as deleteMark, save as saveMark } from '../marks/store.js'
-import { getColorForTag } from '../marks/tags.js'
 import { getSurahs, getSurah } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
@@ -19,6 +18,7 @@ const PAGE_SIZE = 30
 
 let currentState = null
 let allMarks = []
+let sortedMarks = []  // Pre-sorted cache; rebuilt on load or sort change
 let filteredMarks = []
 let displayedCount = 0
 let currentUndoRecord = null
@@ -113,7 +113,8 @@ async function initTagDeepLink(rawTag, container) {
 
   currentState = reviewState
   allMarks = marks
-  filteredMarks = prepareMarks(marks, currentState)
+  sortedMarks = sortMarks(marks, currentState.sortBy)
+  filteredMarks = filterMarks(sortedMarks, currentState)
   displayedCount = 0
 
   render(container)
@@ -167,12 +168,14 @@ export function cleanup() {
   }
   currentState = null
   allMarks = []
+  sortedMarks = []
   filteredMarks = []
   displayedCount = 0
 }
 
 /**
  * Apply a filter and re-render with debouncing.
+ * Does NOT reload from IDB — just re-filters the pre-sorted cache (O(n)).
  * @param {{ activeTag?: string|null, surahFilter?: number|null }} filter
  */
 export async function applyFilter(filter) {
@@ -190,7 +193,6 @@ export async function applyFilter(filter) {
     await saveState(currentState)
     emit(Events.REVIEW_FILTER, { tags: currentState.activeTag, surah: currentState.surahFilter })
 
-    await reloadMarks()
     displayedCount = 0
     const mainContent = document.getElementById('main-content')
     if (mainContent) {
@@ -202,23 +204,36 @@ export async function applyFilter(filter) {
 }
 
 /**
- * Reload marks from IDB.
+ * Reload marks from IDB and rebuild the sorted cache.
  */
 async function reloadMarks() {
   allMarks = await getAll()
+  sortedMarks = sortMarks(allMarks, currentState?.sortBy)
 }
 
 let filterDebounceTimer = null
 const FILTER_DEBOUNCE_MS = 50
 
 /**
- * Prepare marks by applying filters and sorting.
- * Pure function - returns new array without mutating inputs.
- * @returns {Array} filtered and sorted marks
+ * Sort marks by a given key. Pure function — returns a new array.
+ * O(n log n) — called only on load or sort-key change.
+ * @param {Array} marks
+ * @param {string} [sortKey='updatedAt']
+ * @returns {Array}
  */
-function prepareMarks(marks, state) {
-  let result = [...marks]
-  
+function sortMarks(marks, sortKey = 'updatedAt') {
+  return [...marks].sort((a, b) => b[sortKey] - a[sortKey])
+}
+
+/**
+ * Filter the pre-sorted marks by active tag and surah.
+ * Pure function — O(n), no sort.
+ * @param {Array} sorted - already-sorted marks array
+ * @param {{ activeTag?: string|null, surahFilter?: number|null }} state
+ * @returns {Array}
+ */
+function filterMarks(sorted, state) {
+  let result = sorted
   if (state.activeTag) {
     result = result.filter(m => m.tags.includes(state.activeTag))
   }
@@ -226,10 +241,6 @@ function prepareMarks(marks, state) {
     const surahPrefix = `${state.surahFilter}:`
     result = result.filter(m => m.verseKey.startsWith(surahPrefix))
   }
-  
-  const sortKey = state.sortBy || 'updatedAt'
-  result.sort((a, b) => b[sortKey] - a[sortKey])
-  
   return result
 }
 
@@ -239,8 +250,8 @@ function prepareMarks(marks, state) {
 function render(container) {
   container.textContent = ''
 
-  // Prepare marks (pure function, no side effects)
-  filteredMarks = prepareMarks(allMarks, currentState)
+  // Filter from pre-sorted cache — O(n) with no sort overhead
+  filteredMarks = filterMarks(sortedMarks, currentState)
 
   if (filteredMarks.length === 0 && allMarks.length === 0) {
     renderEmptyState(container)
@@ -362,6 +373,7 @@ function renderControls(container) {
   sortToggle.textContent = currentState.sortBy === 'updatedAt' ? 'Sort: Created' : 'Sort: Updated'
   sortToggle.addEventListener('click', async () => {
     currentState.sortBy = currentState.sortBy === 'updatedAt' ? 'createdAt' : 'updatedAt'
+    sortedMarks = sortMarks(allMarks, currentState.sortBy) // Rebuild sorted cache on sort change
     await saveState(currentState)
     render(container)
     // Reload content after render
@@ -422,7 +434,7 @@ function renderMarkCard(mark, surahData) {
   for (const tag of mark.tags) {
     const dot = document.createElement('span')
     dot.className = 'qa-mark-dot'
-    dot.style.backgroundColor = getColorForTag(tag)
+    dot.dataset.tag = tag // CSS [data-tag="..."] drives color via theme.css
     dot.title = tag
     tagDots.appendChild(dot)
   }

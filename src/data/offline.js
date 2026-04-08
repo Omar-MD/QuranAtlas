@@ -4,18 +4,20 @@
  */
 
 import { put, get } from '../core/db.js'
-import { emit } from '../core/events.js'
+import { emit, on } from '../core/events.js'
 import { Events, Errors } from '../core/constants.js'
 import { getManifestUrls } from './dataset.js'
 
 // Minimum free space required for download (20 MB)
 // Corpus is ~5-10 MB; this provides buffer for growth
 const MIN_FREE_SPACE_BYTES = 20 * 1024 * 1024
+const QUOTA_WARN_THRESHOLD = 0.8
 
 const ACTIVATION_KEY = 'current'
 let currentMessageHandler = null
 let pendingUrls = null
 let controllerChangeHandler = null
+let _swTimeoutId = null
 
 /**
  * Get the current activation state.
@@ -37,6 +39,64 @@ export async function getActivationState() {
  */
 async function setActivationState(status) {
   await put('activationState', { id: ACTIVATION_KEY, status })
+}
+
+/**
+ * Check storage quota and emit STORAGE_QUOTA_WARNING if usage >= 80%.
+ * Safe to call repeatedly — a no-op when storage API is unavailable.
+ */
+export async function checkStorageQuota() {
+  if (!navigator.storage?.estimate) {
+    return
+  }
+  try {
+    const { usage, quota } = await navigator.storage.estimate()
+    if (quota && usage / quota >= QUOTA_WARN_THRESHOLD) {
+      emit(Events.STORAGE_QUOTA_WARNING, {
+        usage,
+        quota,
+        percent: Math.round((usage / quota) * 100),
+      })
+    }
+  } catch (error) {
+    console.warn('Storage quota check failed:', error)
+  }
+}
+
+/**
+ * Send a message to the service worker controller, scheduling a single retry
+ * after `timeoutMs` if no SW response arrives. Emits OFFLINE_SW_TIMEOUT if
+ * both attempts time out.
+ * @param {{ type: string }} msg
+ * @param {number} [timeoutMs=10000]
+ */
+function postMessageWithTimeout(msg, timeoutMs = 10000) {
+  if (!navigator.serviceWorker.controller) return
+
+  let retried = false
+
+  const scheduleTimeout = () => {
+    clearTimeout(_swTimeoutId)
+    _swTimeoutId = setTimeout(() => {
+      _swTimeoutId = null
+      if (!retried && navigator.serviceWorker.controller && pendingUrls) {
+        retried = true
+        navigator.serviceWorker.controller.postMessage(msg)
+        scheduleTimeout()
+      } else if (pendingUrls) {
+        // Both attempts timed out with no SW response
+        emit(Events.OFFLINE_SW_TIMEOUT)
+      }
+    }, timeoutMs)
+  }
+
+  navigator.serviceWorker.controller.postMessage(msg)
+  scheduleTimeout()
+}
+
+function cancelSwTimeout() {
+  clearTimeout(_swTimeoutId)
+  _swTimeoutId = null
 }
 
 /**
@@ -91,9 +151,11 @@ export async function startDownload() {
     const { type, cached, total, error } = event.data || {}
     switch (type) {
       case 'DATASET_PROGRESS':
+        cancelSwTimeout() // SW responded — cancel retry timer
         emit(Events.OFFLINE_DOWNLOAD_PROGRESS, { cached, total })
         break
       case 'DATASET_COMPLETE':
+        cancelSwTimeout()
         navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
         navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
         currentMessageHandler = null
@@ -103,6 +165,7 @@ export async function startDownload() {
         emit(Events.OFFLINE_DOWNLOAD_COMPLETE)
         break
       case 'DATASET_ERROR':
+        cancelSwTimeout()
         navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
         navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
         currentMessageHandler = null
@@ -116,16 +179,17 @@ export async function startDownload() {
 
   navigator.serviceWorker.addEventListener('message', currentMessageHandler)
 
-  // Send CACHE_DATASET to SW
+  // Send CACHE_DATASET to SW with timeout + single retry
   if (navigator.serviceWorker.controller) {
-    pendingUrls = urls // Store for potential re-send on controller change
-    navigator.serviceWorker.controller.postMessage({ type: 'CACHE_DATASET', urls })
+    pendingUrls = urls // Store for potential re-send on controller change or retry
+    postMessageWithTimeout({ type: 'CACHE_DATASET', urls })
 
     // Listen for controller changes (SW updates) during download
     controllerChangeHandler = () => {
       // New SW is now controlling - re-send the cache request
       if (navigator.serviceWorker.controller && pendingUrls) {
-        navigator.serviceWorker.controller.postMessage({ type: 'CACHE_DATASET', urls: pendingUrls })
+        cancelSwTimeout()
+        postMessageWithTimeout({ type: 'CACHE_DATASET', urls: pendingUrls })
       }
     }
     navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler)
@@ -154,9 +218,13 @@ export async function cancelDownload() {
     navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
     controllerChangeHandler = null
   }
+  cancelSwTimeout()
   pendingUrls = null
   await setActivationState('none')
 }
+
+// Re-check quota after each download progress event
+on(Events.OFFLINE_DOWNLOAD_PROGRESS, () => { checkStorageQuota() })
 
 // ── PWA Install Prompt ─────────────────────────────────────────────────
 

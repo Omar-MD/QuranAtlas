@@ -24,6 +24,7 @@ vi.mock('../../../src/data/offline.js', () => ({
   initInstallPrompt: vi.fn(),
   getActivationState: vi.fn(() => Promise.resolve('none')),
   cancelDownload: vi.fn(),
+  checkStorageQuota: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('../../../src/reader/index.js', () => ({
