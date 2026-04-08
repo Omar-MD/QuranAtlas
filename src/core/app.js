@@ -25,6 +25,7 @@ export async function init() {
     // Open database (creates stores if first run)
     await openDB()
     performance.mark('db:open')
+    performance.measure('app:db-open', 'app:start', 'db:open')
 
     // Apply saved theme before router dispatches first route
     await initTheme()
@@ -50,6 +51,7 @@ export async function init() {
     // Initialize router AFTER routes are registered so first dispatch finds them
     router.init()
     performance.mark('router:resolve')
+    performance.measure('app:router-init', 'db:open', 'router:resolve')
 
     // Initialize nav panel
     const { init: initNav } = await import('../nav/index.js')

@@ -5,9 +5,16 @@
 			"command": "npx",
 			"args": [
 				"@playwright/mcp@latest"
+			]
+		},
+		"stitch": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"-y",
+				"stitch-mcp-server"
 			],
-			"gallery": "https://api.mcp.github.com",
-			"version": "0.0.1-seed"
+			"envFile": "${workspaceFolder}/.vscode/mcp.env"
 		}
 	},
 	"inputs": []

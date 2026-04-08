@@ -14,13 +14,13 @@ test.describe('Translation visibility persistence', () => {
     // Click "Hide translation" toggle
     const toggleBtn = page.locator('.qa-toggle-btn')
     await expect(toggleBtn).toBeVisible()
-    // Aria-label should be "Hide translation" when translations are visible
-    await expect(toggleBtn).toHaveAttribute('aria-label', 'Hide translation')
+    // Aria-label should be "EN: Hide translation" when translations are visible
+    await expect(toggleBtn).toHaveAttribute('aria-label', 'EN: Hide translation')
     await toggleBtn.click()
     await page.waitForTimeout(300)
 
     // Now translations should be hidden (have qa-hide-translation class)
-    await expect(toggleBtn).toHaveAttribute('aria-label', 'Show translation')
+    await expect(toggleBtn).toHaveAttribute('aria-label', 'EN: Show translation')
     const hiddenEls = page.locator('.qa-verse-translation.qa-hide-translation')
     await expect(hiddenEls.first()).toBeAttached()
 
@@ -31,7 +31,7 @@ test.describe('Translation visibility persistence', () => {
 
     // Toggle button should still say "Show translation" (translations are hidden)
     const toggleBtn2 = page.locator('.qa-toggle-btn')
-    await expect(toggleBtn2).toHaveAttribute('aria-label', 'Show translation')
+    await expect(toggleBtn2).toHaveAttribute('aria-label', 'EN: Show translation')
 
     // Translation elements should still be hidden
     const hiddenEls2 = page.locator('.qa-verse-translation.qa-hide-translation')
@@ -48,13 +48,13 @@ test.describe('Translation visibility persistence', () => {
 
     // If translations are hidden from a previous test, show them first
     const label = await toggleBtn.getAttribute('aria-label')
-    if (label === 'Show translation') {
+    if (label === 'EN: Show translation') {
       await toggleBtn.click()
       await page.waitForTimeout(300)
     }
 
     // Now translations should be visible
-    await expect(toggleBtn).toHaveAttribute('aria-label', 'Hide translation')
+    await expect(toggleBtn).toHaveAttribute('aria-label', 'EN: Hide translation')
     const visibleEls = page.locator('.qa-verse-translation:not(.qa-hide-translation)')
     await expect(visibleEls.first()).toBeVisible()
 
@@ -65,7 +65,7 @@ test.describe('Translation visibility persistence', () => {
 
     // Toggle button should still say "Hide translation" (translations are visible)
     const toggleBtn2 = page.locator('.qa-toggle-btn')
-    await expect(toggleBtn2).toHaveAttribute('aria-label', 'Hide translation')
+    await expect(toggleBtn2).toHaveAttribute('aria-label', 'EN: Hide translation')
 
     // Translation elements should be visible
     const visibleEls2 = page.locator('.qa-verse-translation:not(.qa-hide-translation)')

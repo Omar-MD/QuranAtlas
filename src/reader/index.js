@@ -65,6 +65,7 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     performance.mark('reader:fetch-start')
     const surah = await getSurah(surahNum)
     performance.mark('reader:fetch-end')
+    performance.measure('reader:surah-fetch', 'reader:fetch-start', 'reader:fetch-end')
 
     // Guard: bail if navigation moved on while we were fetching
     if (currentSurahNum !== surahNum) {
@@ -172,6 +173,7 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
     cleanupIndicatorsFn = initIndicators()
     cleanupLongPressFn = setupLongPress(mainContent)
     performance.mark('reader:first-verse')
+    performance.measure('reader:total-load', 'reader:fetch-start', 'reader:first-verse')
     announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)
   } catch (error) {
     clearTimeout(timeout)
@@ -594,7 +596,8 @@ function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
   const toggleBtn = document.createElement('button')
   toggleBtn.textContent = translationVisible ? 'EN ▾' : 'EN ▸'
   toggleBtn.className = 'qa-toggle-btn'
-  toggleBtn.setAttribute('aria-label', translationVisible ? 'Hide translation' : 'Show translation')
+  toggleBtn.setAttribute('aria-label', translationVisible ? 'EN: Hide translation' : 'EN: Show translation')
+  toggleBtn.setAttribute('aria-expanded', String(translationVisible))
 
   toggleBtn.addEventListener('click', async () => {
     const previousValue = currentTranslationVisible
@@ -604,7 +607,8 @@ function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
     currentTranslationVisible = newValue
     toggleTranslationVisibility(mainContent, newValue)
     toggleBtn.textContent = newValue ? 'EN ▾' : 'EN ▸'
-    toggleBtn.setAttribute('aria-label', newValue ? 'Hide translation' : 'Show translation')
+    toggleBtn.setAttribute('aria-label', newValue ? 'EN: Hide translation' : 'EN: Show translation')
+    toggleBtn.setAttribute('aria-expanded', String(newValue))
     
     try {
       await put('settings', { key: 'translationVisible', value: newValue })
@@ -614,7 +618,8 @@ function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
       currentTranslationVisible = previousValue
       toggleTranslationVisibility(mainContent, previousValue)
       toggleBtn.textContent = previousValue ? 'EN ▾' : 'EN ▸'
-      toggleBtn.setAttribute('aria-label', previousValue ? 'Hide translation' : 'Show translation')
+      toggleBtn.setAttribute('aria-label', previousValue ? 'EN: Hide translation' : 'EN: Show translation')
+      toggleBtn.setAttribute('aria-expanded', String(previousValue))
       // Emit event for UI warning
       emit(Events.READER_POSITION_SAVE_FAILED, { 
         error: error.message, 

@@ -14,6 +14,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="QuranAtlas">
+  <meta name="description" content="Distraction-free Quran reading PWA — read, reflect, remember.">
   <title>QuranAtlas</title>
   <link rel="preload" href="/src/core/theme.css" as="style">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -21,11 +22,12 @@
   <link rel="stylesheet" href="/src/core/theme.css">
 </head>
 <body>
+  <a href="#main-content" class="qa-skip-link">Skip to content</a>
   <div id="app-shell">
-    <header id="top-bar"></header>
-    <main id="main-content"></main>
-    <nav id="nav-surface" hidden></nav>
-    <footer id="bottom-nav"></footer>
+    <header id="top-bar" role="banner"></header>
+    <main id="main-content" role="main"></main>
+    <nav id="nav-surface" role="navigation" aria-label="Surah navigation" hidden></nav>
+    <footer id="bottom-nav" role="contentinfo"></footer>
   </div>
   <script type="module" src="/src/core/app.js"></script>
 </body>

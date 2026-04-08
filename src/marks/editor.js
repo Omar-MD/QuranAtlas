@@ -316,8 +316,8 @@ export function setupLongPress(container) {
   }
 
   container.addEventListener('touchstart', onTouchStart, { passive: true })
-  container.addEventListener('touchend', onTouchEnd)
-  container.addEventListener('touchmove', onTouchMove)
+  container.addEventListener('touchend', onTouchEnd, { passive: true })
+  container.addEventListener('touchmove', onTouchMove, { passive: true })
   container.addEventListener('mouseover', onMouseOver)
   container.addEventListener('mouseout', onMouseOut)
 

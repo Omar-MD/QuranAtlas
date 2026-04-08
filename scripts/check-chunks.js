@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * CI chunk size gate: fails if any JS chunk in dist/assets/ exceeds 150 KB gzip.
+ * CI chunk size gate: fails if any JS chunk in dist/assets/ exceeds 150 KB gzip,
+ * or if the total JS bundle exceeds the overall budget (500 KB gzip).
  *
  * Reads Vite's build manifest to get JS asset filenames, then measures
  * their gzip-compressed size. This mirrors what a browser would receive
@@ -14,7 +15,8 @@ import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Writable } from 'node:stream';
 
-const MAX_GZIP_BYTES = 150 * 1024; // 150 KB
+const MAX_GZIP_BYTES = 150 * 1024;   // 150 KB per chunk
+const MAX_TOTAL_BYTES = 500 * 1024;  // 500 KB total bundle budget
 const ASSETS_DIR = join(process.cwd(), 'dist', 'assets');
 
 async function gzipSize(filePath) {
@@ -48,6 +50,7 @@ async function main() {
   console.log(`\nChunk size check (max ${MAX_GZIP_BYTES / 1024} KB gzip):\n`);
 
   let failed = false;
+  let totalBytes = 0;
 
   for (const file of jsFiles.sort()) {
     const filePath = join(ASSETS_DIR, file);
@@ -56,14 +59,24 @@ async function main() {
     const status = bytes > MAX_GZIP_BYTES ? '✗ OVER LIMIT' : '✓';
     console.log(`  ${status}  ${file.padEnd(50)} ${kb} KB gzip`);
     if (bytes > MAX_GZIP_BYTES) failed = true;
+    totalBytes += bytes;
+  }
+
+  const totalKb = (totalBytes / 1024).toFixed(1);
+  const totalStatus = totalBytes > MAX_TOTAL_BYTES ? '✗ OVER BUDGET' : '✓';
+  console.log(`\n  ${totalStatus}  Total JS bundle: ${totalKb} KB gzip (budget: ${MAX_TOTAL_BYTES / 1024} KB)`);
+
+  if (totalBytes > MAX_TOTAL_BYTES) {
+    console.error(`\n✗ Total JS bundle (${totalKb} KB) exceeds ${MAX_TOTAL_BYTES / 1024} KB gzip budget.\n`);
+    failed = true;
   }
 
   if (failed) {
-    console.error(`\n✗ One or more chunks exceed ${MAX_GZIP_BYTES / 1024} KB gzip limit.\n`);
+    console.error(`\n✗ Bundle budget check failed.\n`);
     process.exit(1);
   }
 
-  console.log(`\n✓ All chunks within ${MAX_GZIP_BYTES / 1024} KB gzip limit.\n`);
+  console.log(`\n✓ All chunks within ${MAX_GZIP_BYTES / 1024} KB per-chunk limit and ${MAX_TOTAL_BYTES / 1024} KB total budget.\n`);
 }
 
 main().catch((err) => {

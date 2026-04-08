@@ -82,7 +82,8 @@ export async function checkForUpdate() {
   let manifest
   try {
     manifest = await fetchManifest()
-  } catch {
+  } catch (error) {
+    console.warn('Dataset update check failed:', error.message)
     return
   }
 

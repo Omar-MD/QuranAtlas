@@ -34,6 +34,19 @@
   /* Base scaling */
   --qa-font-size-base: 1;
 
+  /* --- Spacing Scale ---
+   * Consistent 4px-based scale for padding, margin, and gap.
+   * Usage: padding: var(--qa-space-3) var(--qa-space-4);
+   */
+  --qa-space-1: 0.25rem;   /*  4px */
+  --qa-space-2: 0.5rem;    /*  8px */
+  --qa-space-3: 0.75rem;   /* 12px */
+  --qa-space-4: 1rem;      /* 16px */
+  --qa-space-5: 1.5rem;    /* 24px */
+  --qa-space-6: 2rem;      /* 32px */
+  --qa-space-7: 2.5rem;    /* 40px */
+  --qa-space-8: 3rem;      /* 48px */
+
   /* --- LIGHT THEME (Default) --- */
   --qa-bg-primary: #ffffff;
   --qa-bg-secondary: #f4f4f5;
@@ -125,6 +138,29 @@ a {
 a:hover, a:focus {
   color: var(--qa-accent-hover);
   text-decoration: underline;
+}
+
+/* ==========================================================================
+   Skip Navigation Link (Accessibility)
+   ========================================================================== */
+
+.qa-skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 10000;
+  padding: 0.75rem 1.5rem;
+  background: var(--qa-accent);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+  transition: top 0.1s;
+}
+
+.qa-skip-link:focus {
+  top: 0;
 }
 
 /* ==========================================================================
@@ -246,6 +282,8 @@ a:hover, a:focus {
   border-bottom: 1px solid var(--qa-border-subtle);
   cursor: pointer;
   transition: background-color 0.15s;
+  /* WCAG 2.5.5: minimum 44px touch target height */
+  min-height: 44px;
 }
 
 .qa-nav-item:hover {
@@ -308,6 +346,12 @@ a:hover, a:focus {
   line-height: 1;
   border-radius: 4px;
   transition: background-color 0.2s ease, color 0.2s ease;
+  /* WCAG 2.5.5: minimum 44×44px touch target */
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .qa-nav-toggle:hover {
@@ -500,6 +544,18 @@ a:hover, a:focus {
   background: var(--qa-bg-secondary);
 }
 
+/* Review Hub link */
+.qa-review-icon {
+  color: var(--qa-text-primary);
+  text-decoration: none;
+  font-size: var(--qa-text-size-ui);
+  font-weight: 500;
+}
+
+.qa-review-icon:hover {
+  color: var(--qa-accent);
+}
+
 /* Controls / Toggles */
 .qa-toggle-btn {
   cursor: pointer;
@@ -510,7 +566,7 @@ a:hover, a:focus {
   font-size: var(--qa-text-size-ui);
   color: var(--qa-text-primary);
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
   margin-inline-start: auto;
 }
 
@@ -707,7 +763,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   border-radius: 12px;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
   font-weight: 500;
   color: var(--qa-text-primary);
 }
@@ -731,7 +787,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   margin-inline-end: 1rem;
   display: grid;
   place-content: center;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
   cursor: pointer;
 }
 
@@ -784,7 +840,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
   border: none;
   text-align: center;
 }
@@ -835,7 +891,9 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  /* WCAG 2.5.5: minimum 44px touch target height */
+  min-height: 44px;
 }
 
 .qa-review-controls button:hover, .qa-review-controls button:focus-visible {
@@ -860,7 +918,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -951,7 +1009,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   font-weight: 600;
   color: var(--qa-text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .qa-review-load-more:hover {
@@ -1000,7 +1058,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   border: 2px solid var(--qa-border);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .qa-settings-swatch:hover {
@@ -1062,7 +1120,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   background-color: rgba(220, 38, 38, 0.1);
   color: var(--qa-color-error);
   border: 1px solid rgba(220, 38, 38, 0.2);
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .qa-settings-clear-btn:hover {
@@ -1203,7 +1261,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   background-color: var(--qa-accent);
   color: #ffffff;
   border: none;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .qa-about-install-btn:hover {
@@ -1295,7 +1353,7 @@ html[data-theme="dark"] .qa-invalid-verse-error {
   font-weight: 600;
   font-size: var(--qa-text-size-ui);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
   border: none;
 }
 

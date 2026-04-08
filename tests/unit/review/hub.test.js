@@ -3,6 +3,16 @@ import { openDB } from '../../../src/core/db.js'
 import { save as saveMark } from '../../../src/marks/store.js'
 import { on } from '../../../src/core/events.js'
 
+// Mock dataset module to prevent fetch('/dataset/surahs.json') errors in jsdom
+vi.mock('../../../src/data/dataset.js', () => ({
+  getSurahs: vi.fn().mockResolvedValue([
+    { n: 1, name: 'Al-Fatiha', arabic: 'الفاتحة', count: 7, type: 'Meccan' },
+    { n: 2, name: 'Al-Baqarah', arabic: 'البقرة', count: 286, type: 'Medinan' },
+    { n: 3, name: "Ali 'Imran", arabic: 'آل عمران', count: 200, type: 'Medinan' },
+  ]),
+  getSurah: vi.fn().mockResolvedValue(null),
+}))
+
 let hub
 
 beforeEach(async () => {

@@ -138,7 +138,6 @@ function createSurahItem(s) {
   li.className = 'qa-nav-item'
   li.setAttribute('data-surah', String(s.n))
   li.setAttribute('tabindex', '0')
-  li.setAttribute('role', 'button')
 
   const num = document.createElement('span')
   num.className = 'qa-nav-number'
