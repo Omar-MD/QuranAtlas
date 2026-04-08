@@ -80,7 +80,7 @@ Re-check every finding before submitting:
 
 ## Output Format
 
-Save your report as JSON to: `.tmp/audit-results/[DIMENSION_SLUG].json`
+Return your report as the following JSON structure (the orchestrator receives it directly via the Agent tool return value):
 
 {
   "dimension": "[DIMENSION]",
