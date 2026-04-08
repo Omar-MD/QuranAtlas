@@ -92,7 +92,13 @@ export async function checkForUpdate() {
 
   const isMajor = parseMajor(manifest.packageVersion) > parseMajor(meta.version)
   const targetVersion = manifest.packageVersion
-  const filesToDownload = Array.isArray(manifest.files) ? manifest.files : []
+  // manifest.files is { "surah/001.json": "sha256hex", ... } (build-dataset.js format)
+  const filesToDownload = manifest.files && typeof manifest.files === 'object' && !Array.isArray(manifest.files)
+    ? Object.entries(manifest.files).map(([filename, sha256]) => ({
+        url: `/dataset/${filename}`,
+        sha256,
+      }))
+    : []
 
   await setState({ state: 'downloading', version: targetVersion, progress: 0 })
 

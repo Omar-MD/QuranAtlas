@@ -55,7 +55,7 @@ describe('about/index.js', () => {
     })
 
     it('renders dataset version when datasetMeta exists in IDB', async () => {
-      await put('datasetMeta', { id: 'version', version: '2.1.0' })
+      await put('datasetMeta', { id: 'current', version: '2.1.0' })
       await aboutPage.init()
       const dsVersionEl = document.querySelector('.qa-about-dataset-version')
       expect(dsVersionEl.textContent).toContain('2.1.0')

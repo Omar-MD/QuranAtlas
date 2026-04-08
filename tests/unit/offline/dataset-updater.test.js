@@ -77,7 +77,7 @@ describe('dataset-updater.js', () => {
           ok: true,
           json: () => Promise.resolve({
             packageVersion: '1.0.1',
-            files: [{ url: '/dataset/surah-1.json', sha256 }],
+            files: { 'surah/001.json': sha256 },
           }),
         })
         .mockResolvedValueOnce({
@@ -114,7 +114,7 @@ describe('dataset-updater.js', () => {
           ok: true,
           json: () => Promise.resolve({
             packageVersion: '2.0.0',
-            files: [{ url: '/dataset/surah-1.json', sha256 }],
+            files: { 'surah/001.json': sha256 },
           }),
         })
         .mockResolvedValueOnce({
@@ -178,7 +178,7 @@ describe('dataset-updater.js', () => {
           ok: true,
           json: () => Promise.resolve({
             packageVersion: '1.0.1',
-            files: [{ url: '/dataset/surah-1.json', sha256: 'badhash' }],
+            files: { 'surah/001.json': 'badhash' },
           }),
         })
         .mockResolvedValueOnce({

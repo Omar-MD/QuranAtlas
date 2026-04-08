@@ -59,7 +59,7 @@ export async function init() {
   dsDd.className = 'qa-about-dataset-version'
   let dsVersion = 'Not yet installed'
   try {
-    const meta = await get('datasetMeta', 'version')
+    const meta = await get('datasetMeta', 'current')
     if (meta?.version) { dsVersion = meta.version }
   } catch { /* IDB unavailable, show fallback */ }
 
