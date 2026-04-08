@@ -129,6 +129,9 @@ describe('about/index.js', () => {
       expect(backLink).not.toBeNull()
     })
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> a2e96db (fix: make renderStorage cancellation-aware and add race condition regression tests)
 
     it('concurrent init() calls do not produce duplicate content', async () => {
       // Run two init() in parallel — second should win, DOM should have only one copy of each section
@@ -138,7 +141,10 @@ describe('about/index.js', () => {
       const versionSections = document.querySelectorAll('.qa-about-versions')
       expect(versionSections).toHaveLength(1)
     })
+<<<<<<< HEAD
 =======
 >>>>>>> 1bd130c (test: add failing about page tests (Story 9))
+=======
+>>>>>>> a2e96db (fix: make renderStorage cancellation-aware and add race condition regression tests)
   })
 })

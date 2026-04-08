@@ -8,6 +8,7 @@ import { announce } from '../a11y/announcer.js'
 import { getInstallPrompt, promptInstall } from './pwa-install.js'
 
 let _initSeq = 0
+
 /**
  * Initialize the about page.
  */
@@ -104,8 +105,6 @@ export async function init() {
 
   if (seq !== _initSeq) { return }
 
-  if (seq !== _initSeq) { return }
-
   // PWA Install
   renderInstallButton(mainContent)
 
@@ -117,10 +116,6 @@ export async function init() {
   mainContent.appendChild(backLink)
 
   announce('About page')
-}
-
-export function cleanup() {
-  ++_initSeq
 }
 
 /**
