@@ -7,6 +7,8 @@ import { loadTheme, setTheme, getThemeOptions } from './theme.js'
 import { showClearDataConfirmation } from './clear-data.js'
 import { announce } from '../a11y/announcer.js'
 
+let _initSeq = 0
+
 const SWATCH_LABELS = {
   light: 'Light',
   dark: 'Dark',
@@ -17,12 +19,16 @@ const SWATCH_LABELS = {
  * Initialize the settings page.
  */
 export async function init() {
+  const seq = ++_initSeq
+
   const mainContent = document.getElementById('main-content')
   if (!mainContent) { return }
 
   while (mainContent.firstChild) { mainContent.removeChild(mainContent.firstChild) }
 
   const currentTheme = await loadTheme()
+
+  if (seq !== _initSeq) { return }
 
   // Page heading
   const heading = document.createElement('h1')
@@ -113,4 +119,8 @@ export async function init() {
   mainContent.appendChild(aboutLink)
 
   announce('Settings page')
+}
+
+export function cleanup() {
+  ++_initSeq
 }

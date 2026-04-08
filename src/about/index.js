@@ -7,10 +7,14 @@ import { get } from '../core/db.js'
 import { announce } from '../a11y/announcer.js'
 import { getInstallPrompt, promptInstall } from './pwa-install.js'
 
+let _initSeq = 0
+
 /**
  * Initialize the about page.
  */
 export async function init() {
+  const seq = ++_initSeq
+
   const mainContent = document.getElementById('main-content')
   if (!mainContent) { return }
 
@@ -58,6 +62,9 @@ export async function init() {
     const meta = await get('datasetMeta', 'version')
     if (meta?.version) { dsVersion = meta.version }
   } catch { /* IDB unavailable, show fallback */ }
+
+  if (seq !== _initSeq) { return }
+
   dsDd.textContent = dsVersion
   dl.appendChild(dsDt)
   dl.appendChild(dsDd)
@@ -96,6 +103,8 @@ export async function init() {
   // Storage
   await renderStorage(mainContent)
 
+  if (seq !== _initSeq) { return }
+
   // PWA Install
   renderInstallButton(mainContent)
 
@@ -107,6 +116,10 @@ export async function init() {
   mainContent.appendChild(backLink)
 
   announce('About page')
+}
+
+export function cleanup() {
+  ++_initSeq
 }
 
 /**
