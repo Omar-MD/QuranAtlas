@@ -2,13 +2,14 @@
  * Hash-based router.
  * Handles route registration, navigation, and launch restore logic.
  *
- * Route contract: modules export `async init(params)` called by router.
+ * Route contract: modules export `async init(params, hooks)` called by router.
  * params shape: { surah?, ayah?, tag? }
  */
 
 import { emit } from './events.js'
 import { put } from './db.js'
 import { Events } from './constants.js'
+import { logger } from './logger.js'
 
 const routes = new Map()
 let currentModule = null
@@ -17,9 +18,10 @@ let currentModule = null
  * Register a route handler.
  * @param {string} pattern - Route pattern (e.g., '#/s/:surah')
  * @param {Function} loader - Async function that returns the module's init()
+ * @param {object} [hooks] - Dependencies injected by the app wiring layer
  */
-export function register(pattern, loader) {
-  routes.set(pattern, loader)
+export function register(pattern, loader, hooks = {}) {
+  routes.set(pattern, { loader, hooks })
 }
 
 /**
@@ -64,25 +66,25 @@ function sanitizeParams(params) {
     // Check for XSS payloads: <script>, javascript:, data:, etc.
     const dangerous = /<script|javascript:|vbscript:|data:|expression\(|url\(|import\(|on\w+=/i
     if (dangerous.test(value)) {
-      console.warn('Router: rejected param with XSS pattern:', key)
+      logger.warn('Router: rejected param with XSS pattern:', { key })
       return null
     }
 
     // Basic HTML tag detection
     if (/<[^>]+>/i.test(value)) {
-      console.warn('Router: rejected param with HTML tags:', key)
+      logger.warn('Router: rejected param with HTML tags:', { key })
       return null
     }
 
     // Length limit to prevent DoS
     if (value.length > 100) {
-      console.warn('Router: rejected oversized param:', key)
+      logger.warn('Router: rejected oversized param:', { key })
       return null
     }
 
     // Reject params containing protocol schemes (e.g. https://, ftp://)
     if (value.includes('://')) {
-      console.warn('Router: rejected param with protocol scheme:', key)
+      logger.warn('Router: rejected param with protocol scheme:', { key })
       return null
     }
 
@@ -105,7 +107,7 @@ async function handleRoute(hash) {
 
   const match = matchRoute(hash)
   if (match) {
-    const { loader, params } = match
+    const { loader, params, hooks } = match
 
     // Clean up previous module before loading new one
     if (currentModule && currentModule.cleanup) {
@@ -121,15 +123,18 @@ async function handleRoute(hash) {
         // Sanitize params before passing to module
         const sanitizedParams = sanitizeParams(params)
         if (sanitizedParams === null) {
-          console.error(`Route ${hash} rejected: invalid parameters`)
+          logger.error('Route rejected: invalid parameters', { route: hash })
           emit(Events.ROUTER_ROUTE_ERROR, { route: hash, error: new Error('Invalid parameters') })
           showNotFound()
           return
         }
-        await module.init(sanitizedParams)
+        await module.init(sanitizedParams, hooks)
         await put('settings', { key: 'lastSurface', value: hash })
       } catch (error) {
-        console.error(`Route ${hash} failed:`, error)
+        logger.error('Route failed:', {
+          route: hash,
+          error,
+        })
         emit(Events.ROUTER_ROUTE_ERROR, { route: hash, error })
       }
     }
@@ -166,13 +171,13 @@ function showNotFound(_hash) {
 /**
  * Match a hash against registered routes.
  * @param {string} hash
- * @returns {{ loader: Function, params: object } | null}
+ * @returns {{ loader: Function, params: object, hooks: object } | null}
  */
 function matchRoute(hash) {
-  for (const [pattern, loader] of routes) {
+  for (const [pattern, { loader, hooks }] of routes) {
     const params = extractParams(pattern, hash)
     if (params) {
-      return { loader, params }
+      return { loader, params, hooks }
     }
   }
   return null

@@ -15,7 +15,9 @@ const DATASET_META_ID = 'current'
 let _db = null
 
 async function getDb() {
-  if (_db) return _db
+  if (_db) {
+    return _db
+  }
   _db = await new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onsuccess = () => resolve(request.result)
@@ -72,9 +74,35 @@ async function postToClients(type, payload = {}) {
   }
 }
 
+function getClientMessageType(status) {
+  switch (status) {
+    case 'downloading':
+      return 'DATASET_DOWNLOADING'
+    case 'pending-confirmation':
+      return 'DATASET_PENDING_CONFIRMATION'
+    case 'failed':
+      return 'DATASET_UPDATE_FAILED'
+    default:
+      return `DATASET_${status.toUpperCase().replace(/-/g, '_')}`
+  }
+}
+
 async function setState(stateObj) {
-  await idbPut('activationState', { id: 'current', status: 'cached', ...stateObj })
-  await postToClients(`DATASET_${stateObj.state.toUpperCase().replace(/-/g, '_')}`, stateObj)
+  const record = { id: 'current', status: stateObj.status }
+  if (stateObj.version !== undefined) {
+    record.version = stateObj.version
+  }
+  if (stateObj.progress !== undefined) {
+    record.progress = stateObj.progress
+  }
+  if (stateObj.error !== undefined) {
+    record.error = stateObj.error
+  }
+  if (stateObj.stagedAt !== undefined) {
+    record.stagedAt = stateObj.stagedAt
+  }
+  await idbPut('activationState', record)
+  await postToClients(getClientMessageType(stateObj.status), stateObj)
 }
 
 function parseMajor(version) {
@@ -110,7 +138,12 @@ export async function checkForUpdate() {
         }))
       : []
 
-    await setState({ state: 'downloading', version: targetVersion, progress: 0 })
+    await postToClients('DATASET_UPDATE_AVAILABLE', {
+      from: meta.version,
+      to: targetVersion,
+    })
+
+    await setState({ status: 'downloading', version: targetVersion, progress: 0 })
 
     const liveCache = await caches.open('quran-dataset-v1')
 
@@ -129,7 +162,7 @@ export async function checkForUpdate() {
         if (liveMatches) {
           downloaded++
           await setState({
-            state: 'downloading',
+            status: 'downloading',
             version: targetVersion,
             progress: filesToDownload.length ? downloaded / filesToDownload.length : 1,
           })
@@ -144,7 +177,7 @@ export async function checkForUpdate() {
           throw new Error(`HTTP ${response.status}`)
         }
       } catch (error) {
-        await setState({ state: 'failed', version: targetVersion, error: error.message })
+        await setState({ status: 'failed', version: targetVersion, error: error.message })
         await deleteStaging()
         return
       }
@@ -153,7 +186,7 @@ export async function checkForUpdate() {
       const valid = await verify(buffer, file.sha256)
       if (!valid) {
         await setState({
-          state: 'failed',
+          status: 'failed',
           version: targetVersion,
           error: `SHA-256 mismatch for ${file.url}`,
         })
@@ -164,21 +197,19 @@ export async function checkForUpdate() {
       await stageFile(file.url, response)
       downloaded++
       await setState({
-        state: 'downloading',
+        status: 'downloading',
         version: targetVersion,
         progress: filesToDownload.length ? downloaded / filesToDownload.length : 1,
       })
     }
 
-    await setState({ state: 'verifying', version: targetVersion })
+    await setState({ status: 'verifying', version: targetVersion })
 
     if (isMajor) {
       await setState({
-        state: 'pending-confirmation',
+        status: 'pending-confirmation',
         version: targetVersion,
         stagedAt: Date.now(),
-      })
-      await postToClients('DATASET_PENDING_CONFIRMATION', {
         from: meta.version,
         to: targetVersion,
       })
@@ -196,13 +227,13 @@ export async function applyUpdate() {
     const state = await idbGet('activationState', 'current')
     const version = state?.version
 
-    await setState({ state: 'applying', version })
+    await setState({ status: 'applying', version })
 
     await copyToLive()
     await idbPut('datasetMeta', { id: DATASET_META_ID, version })
     await deleteStaging()
 
-    await setState({ state: 'idle', version })
+    await setState({ status: 'idle', version })
     await postToClients('DATASET_APPLIED', { version })
   } finally {
     closeDb()

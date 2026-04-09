@@ -6,6 +6,7 @@
 
 import { emit } from './events.js'
 import { Events } from './constants.js'
+import { logger } from './logger.js'
 
 const DB_NAME = 'quran-atlas'
 const DB_VERSION = 1
@@ -230,7 +231,9 @@ export async function getMostRecentPosition() {
       request.onerror = () => resolve(null)
     })
   } catch (error) {
-    console.error('Failed to get most recent position:', error)
+    logger.error('Failed to get most recent position:', {
+      error,
+    })
     return null
   }
 }

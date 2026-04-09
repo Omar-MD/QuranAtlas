@@ -8,8 +8,8 @@ import { getSurahs, getSurah } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { put } from '../core/db.js'
+import { logger } from '../core/logger.js'
 import { save as saveState, load as loadState, getDefaultState } from './state.js'
-import { openEditor } from '../marks/editor.js'
 import { showUndoToast, clearUndoToast } from '../core/ui.js'
 import { validateTagParam } from '../safety/input-validator.js'
 import { announce } from '../a11y/announcer.js'
@@ -23,15 +23,20 @@ let filteredMarks = []
 let displayedCount = 0
 let currentUndoRecord = null
 let surahs = []
+let _openEditor = null
+let unsubSyncUpdate = null
+let unsubVisibilityVisible = null
 
 /**
  * Initialize the Review Hub.
  */
-export async function init(params = {}) {
+export async function init(params = {}, { openEditor } = {}) {
   const mainContent = document.getElementById('main-content')
   if (!mainContent) {
     return
   }
+
+  _openEditor = openEditor || null
 
   // Tag deep link: #/t/:tag -> render FVR directly
   if (params.tag !== undefined) {
@@ -42,7 +47,9 @@ export async function init(params = {}) {
   try {
     surahs = await getSurahs()
   } catch (error) {
-    console.error('Failed to load surahs for Review Hub:', error)
+    logger.error('Failed to load surahs for Review Hub:', {
+      error,
+    })
     surahs = []
   }
 
@@ -55,7 +62,16 @@ export async function init(params = {}) {
 
   emit(Events.REVIEW_OPEN)
 
-  on(Events.SYNC_UPDATE_RECEIVED, async () => {
+  if (unsubSyncUpdate) {
+    unsubSyncUpdate()
+    unsubSyncUpdate = null
+  }
+  if (unsubVisibilityVisible) {
+    unsubVisibilityVisible()
+    unsubVisibilityVisible = null
+  }
+
+  unsubSyncUpdate = on(Events.SYNC_UPDATE_RECEIVED, async () => {
     await reloadMarks()
     const mc = document.getElementById('main-content')
     if (mc) {
@@ -63,7 +79,7 @@ export async function init(params = {}) {
     }
   })
 
-  on(Events.DB_VISIBILITY_VISIBLE, async () => {
+  unsubVisibilityVisible = on(Events.DB_VISIBILITY_VISIBLE, async () => {
     await reloadMarks()
     const mc = document.getElementById('main-content')
     if (mc) {
@@ -107,7 +123,10 @@ async function initTagDeepLink(rawTag, container) {
   try {
     surahs = await getSurahs()
   } catch (error) {
-    console.error('Failed to load surahs for tag deep link:', error)
+    logger.error('Failed to load surahs for tag deep link:', {
+      tag,
+      error,
+    })
     surahs = []
   }
 
@@ -157,6 +176,15 @@ function renderTagNotFound(container, rawTag) {
  * Clean up hub state.
  */
 export function cleanup() {
+  if (unsubSyncUpdate) {
+    unsubSyncUpdate()
+    unsubSyncUpdate = null
+  }
+  if (unsubVisibilityVisible) {
+    unsubVisibilityVisible()
+    unsubVisibilityVisible = null
+  }
+  _openEditor = null
   clearUndoToast()
   if (filterDebounceTimer) {
     clearTimeout(filterDebounceTimer)
@@ -470,7 +498,9 @@ function renderMarkCard(mark, surahData) {
     if (e.target.closest('button')) {
       return
     }
-    openEditor(mark.verseKey)
+    if (_openEditor) {
+      _openEditor(mark.verseKey)
+    }
   })
 
   const deleteBtn = document.createElement('button')

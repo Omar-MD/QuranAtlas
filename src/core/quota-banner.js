@@ -29,7 +29,9 @@ function removeBanner() {
  * @param {{ dismissible: boolean }} options
  */
 function showBanner({ dismissible }) {
-  if (bannerEl) return // Already visible
+  if (bannerEl) {
+    return
+  }
 
   const banner = document.createElement('div')
   banner.className = 'qa-quota-banner'
@@ -74,10 +76,14 @@ export function init() {
   })
 
   on(Events.STORAGE_QUOTA_WARNING, async () => {
-    if (bannerEl) return // Already shown
+    if (bannerEl) {
+      return
+    }
     try {
       const suppressed = await get('settings', SUPPRESS_KEY)
-      if (suppressed?.value) return
+      if (suppressed?.value) {
+        return
+      }
     } catch {
       // IDB read failure — still show the warning
     }

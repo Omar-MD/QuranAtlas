@@ -16,6 +16,10 @@ vi.mock('../../../src/data/dataset.js', () => ({
 let hub
 
 beforeEach(async () => {
+  if (hub?.cleanup) {
+    hub.cleanup()
+  }
+
   await openDB()
   document.body.textContent = ''
   const shell = document.createElement('div')
@@ -170,6 +174,35 @@ describe('review/hub.js', () => {
       cards = document.querySelectorAll('[data-mark]')
       // Back to 60 marks → page 1 still shows 30
       expect(cards.length).toBe(30)
+    })
+
+    it('cleanup() unsubscribes event listeners so they do not fire after teardown', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+
+      await hub.init({}, { openEditor: vi.fn() })
+      hub.cleanup()
+
+      const mainContent = document.getElementById('main-content')
+      mainContent.textContent = 'sentinel'
+      emit('sync:update-received', { verseKeys: [] })
+
+      await new Promise(r => setTimeout(r, 50))
+      expect(mainContent.textContent).toBe('sentinel')
+    })
+
+    it('double init() does not register duplicate listeners', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+
+      await hub.init({}, { openEditor: vi.fn() })
+      await hub.init({}, { openEditor: vi.fn() })
+      hub.cleanup()
+
+      const mainContent = document.getElementById('main-content')
+      mainContent.textContent = 'sentinel'
+      emit('sync:update-received', { verseKeys: [] })
+
+      await new Promise(r => setTimeout(r, 50))
+      expect(mainContent.textContent).toBe('sentinel')
     })
   })
 

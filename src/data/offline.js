@@ -6,6 +6,7 @@
 import { put, get } from '../core/db.js'
 import { emit, on } from '../core/events.js'
 import { Events, Errors } from '../core/constants.js'
+import { logger } from '../core/logger.js'
 import { getManifestUrls } from './dataset.js'
 
 // Minimum free space required for download (20 MB)
@@ -28,7 +29,9 @@ export async function getActivationState() {
     const record = await get('activationState', ACTIVATION_KEY)
     return record?.status || 'none'
   } catch (error) {
-    console.error('Failed to get activation state:', error)
+    logger.error('Failed to get activation state:', {
+      error,
+    })
     return 'none'
   }
 }
@@ -59,7 +62,9 @@ export async function checkStorageQuota() {
       })
     }
   } catch (error) {
-    console.warn('Storage quota check failed:', error)
+    logger.warn('Storage quota check failed:', {
+      error,
+    })
   }
 }
 
@@ -71,7 +76,9 @@ export async function checkStorageQuota() {
  * @param {number} [timeoutMs=10000]
  */
 function postMessageWithTimeout(msg, timeoutMs = 10000) {
-  if (!navigator.serviceWorker.controller) return
+  if (!navigator.serviceWorker.controller) {
+    return
+  }
 
   let retried = false
 
@@ -132,7 +139,9 @@ export async function startDownload() {
   } catch (error) {
     // Storage estimate not available - log warning but proceed with download
     // This is a "nice to have" check, not a hard requirement
-    console.warn('Storage estimate unavailable, proceeding with download:', error)
+    logger.warn('Storage estimate unavailable, proceeding with download:', {
+      error,
+    })
     // Don't block the download - we'll handle any actual storage errors from the SW
   }
 
@@ -173,6 +182,35 @@ export async function startDownload() {
         pendingUrls = null
         await setActivationState('none')
         emit(Events.OFFLINE_DOWNLOAD_ERROR, { error })
+        break
+      case 'DATASET_PENDING_CONFIRMATION':
+        cancelSwTimeout()
+        emit(Events.DATASET_PENDING_CONFIRMATION, {
+          from: event.data.from,
+          to: event.data.to,
+        })
+        break
+      case 'DATASET_APPLIED':
+        cancelSwTimeout()
+        emit(Events.DATASET_APPLIED, { version: event.data.version })
+        break
+      case 'DATASET_UPDATE_FAILED':
+      case 'DATASET_FAILED':
+        cancelSwTimeout()
+        emit(Events.DATASET_UPDATE_FAILED, { error: event.data.error })
+        break
+      case 'DATASET_UPDATE_AVAILABLE':
+        emit(Events.DATASET_UPDATE_AVAILABLE, {
+          from: event.data.from,
+          to: event.data.to,
+        })
+        break
+      case 'DATASET_DOWNLOADING':
+        cancelSwTimeout()
+        emit(Events.DATASET_DOWNLOAD_PROGRESS, {
+          progress: event.data.progress,
+          version: event.data.version,
+        })
         break
     }
   }

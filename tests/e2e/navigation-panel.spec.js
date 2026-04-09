@@ -5,25 +5,38 @@
 
 import { test, expect } from '@playwright/test'
 
+async function usesCollapsedNav(page) {
+  return page.locator('.qa-nav-toggle').isVisible()
+}
+
+async function expectPersistentNavLayout(page) {
+  await expect(page.locator('.qa-nav-toggle')).toBeHidden()
+  await expect(page.locator('.qa-nav-backdrop')).toBeHidden()
+  await expect(page.locator('#nav-surface')).toBeVisible()
+}
+
+async function openNavForCurrentLayout(page) {
+  const navPanel = page.locator('#nav-surface')
+  const navList = page.locator('.qa-nav-list')
+
+  if (await usesCollapsedNav(page)) {
+    await page.locator('.qa-nav-toggle').click()
+    await expect(navPanel).toHaveClass(/qa-nav-open/)
+  } else {
+    await expectPersistentNavLayout(page)
+  }
+
+  await expect(navList).toBeVisible()
+}
+
 test.describe('Navigation Panel', () => {
-  test('nav panel opens via hamburger toggle', async ({ page }) => {
+  test('navigation surface is accessible in the current layout @tablet', async ({ page }) => {
     await page.goto('/#/s/1')
 
     // Wait for app to load
     await expect(page.locator('#app-shell')).toBeVisible({ timeout: 10000 })
 
-    // Find and click hamburger toggle
-    const toggleBtn = page.locator('.qa-nav-toggle')
-    await expect(toggleBtn).toBeVisible()
-    await toggleBtn.click()
-
-    // Verify nav panel is open
-    const navPanel = page.locator('#nav-surface')
-    await expect(navPanel).toHaveClass(/qa-nav-open/)
-
-    // Verify nav list is visible
-    const navList = page.locator('.qa-nav-list')
-    await expect(navList).toBeVisible()
+    await openNavForCurrentLayout(page)
   })
 
   test('nav panel closes via backdrop click', async ({ page }) => {
@@ -31,6 +44,11 @@ test.describe('Navigation Panel', () => {
 
     // Wait for app to load
     await expect(page.locator('#app-shell')).toBeVisible({ timeout: 10000 })
+
+    if (!(await usesCollapsedNav(page))) {
+      await expectPersistentNavLayout(page)
+      return
+    }
 
     // Open nav panel
     await page.locator('.qa-nav-toggle').click()
@@ -45,12 +63,11 @@ test.describe('Navigation Panel', () => {
     await expect(page.locator('#nav-surface')).not.toHaveClass(/qa-nav-open/)
   })
 
-  test('search filters surah list', async ({ page }) => {
+  test('search filters surah list @tablet', async ({ page }) => {
     await page.goto('/#/s/1')
 
-    // Open nav panel
-    await page.locator('.qa-nav-toggle').click()
-    await expect(page.locator('#nav-surface')).toHaveClass(/qa-nav-open/)
+    await expect(page.locator('#app-shell')).toBeVisible({ timeout: 10000 })
+    await openNavForCurrentLayout(page)
 
     // Find search input
     const searchInput = page.locator('.qa-nav-search')
@@ -60,56 +77,45 @@ test.describe('Navigation Panel', () => {
     await searchInput.fill('Ikh')
 
     // Wait for filter to apply - expect fewer items than full list
-    await expect(page.locator('.qa-nav-item')).toHaveCount(1)
+    await expect(page.locator('.qa-nav-item:not([hidden])')).toHaveCount(1)
 
     // Verify Al-Ikhlas is in the results
     const ikhlasItem = page.locator('.qa-nav-item').filter({ hasText: /Ikhlas/i })
     await expect(ikhlasItem).toBeVisible()
   })
 
-  test('clicking surah in nav navigates to that surah', async ({ page }) => {
+  test('clicking surah in nav navigates to that surah @tablet', async ({ page }) => {
     await page.goto('/#/s/1')
 
     // Wait for app to load
     await expect(page.locator('[data-surah-header]')).toContainText('Al-Fatiha', { timeout: 10000 })
 
-    // Open nav panel
-    await page.locator('.qa-nav-toggle').click()
-    await expect(page.locator('#nav-surface')).toHaveClass(/qa-nav-open/)
+    const isCollapsed = await usesCollapsedNav(page)
+    await openNavForCurrentLayout(page)
 
     // Find and click a surah (e.g., Al-Ikhlas / surah 112)
     const surah112 = page.locator('.qa-nav-item').filter({ hasText: 'Al-Ikhlas' }).first()
     await expect(surah112).toBeVisible()
     await surah112.click()
 
-    // Wait for navigation
-    await page.waitForTimeout(1000)
-
     // Verify we're on surah 112
     await expect(page.locator('[data-surah-header]')).toContainText('Al-Ikhlas', { timeout: 10000 })
 
-    // Note: Nav panel auto-closes on mobile only. On desktop/tablet it stays open.
-    // Close nav manually to clean up (works on all viewport sizes)
-    const isMobile = await page.evaluate(() => window.matchMedia('(max-width: 768px)').matches)
-    if (!isMobile) {
-      // On desktop, close nav via backdrop
-      await page.locator('.qa-nav-backdrop').click()
+    if (isCollapsed) {
+      // Overlay layouts auto-close after a selection.
       await expect(page.locator('#nav-surface')).not.toHaveClass(/qa-nav-open/)
     } else {
-      // On mobile, nav should auto-close after navigation
-      await expect(page.locator('#nav-surface')).not.toHaveClass(/qa-nav-open/)
+      await expectPersistentNavLayout(page)
     }
   })
 
-  test('current surah is highlighted in nav', async ({ page }) => {
+  test('current surah is highlighted in nav @tablet', async ({ page }) => {
     await page.goto('/#/s/2')
 
     // Wait for surah to load
     await expect(page.locator('[data-surah-header]')).toContainText('Al-Baqarah', { timeout: 10000 })
 
-    // Open nav panel
-    await page.locator('.qa-nav-toggle').click()
-    await expect(page.locator('#nav-surface')).toHaveClass(/qa-nav-open/)
+    await openNavForCurrentLayout(page)
 
     // Find current surah in nav
     const currentItem = page.locator('.qa-nav-current')
@@ -119,12 +125,11 @@ test.describe('Navigation Panel', () => {
     await expect(currentItem).toContainText('Al-Baqarah')
   })
 
-  test('nav shows all 114 surahs', async ({ page }) => {
+  test('nav shows all 114 surahs @tablet', async ({ page }) => {
     await page.goto('/#/s/1')
 
-    // Open nav panel
-    await page.locator('.qa-nav-toggle').click()
-    await expect(page.locator('#nav-surface')).toHaveClass(/qa-nav-open/)
+    await expect(page.locator('#app-shell')).toBeVisible({ timeout: 10000 })
+    await openNavForCurrentLayout(page)
 
     // Clear search to show all surahs
     const searchInput = page.locator('.qa-nav-search')

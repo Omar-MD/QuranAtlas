@@ -408,6 +408,24 @@ describe('reader/index.js', () => {
     expect(scrollTracker.unobserve).toHaveBeenCalled()
   })
 
+  it('cleanup clears any active undo toast', async () => {
+    const { showUndoToast } = await import('../../../src/core/ui.js')
+    const { init, cleanup } = await import('../../../src/reader/index.js')
+
+    await init({ surah: '1' })
+
+    showUndoToast({
+      verseKey: '1:1',
+      record: { verseKey: '1:1', tags: ['favourite'] },
+      onUndo: vi.fn(),
+      onComplete: vi.fn(),
+    })
+    expect(document.querySelector('.qa-undo-toast')).not.toBeNull()
+
+    cleanup()
+    expect(document.querySelector('.qa-undo-toast')).toBeNull()
+  })
+
   it('translation toggle does not throw and toggles visibility', async () => {
     // Reset mock to default (translationVisible: true) in case a prior test changed it
     db.get.mockImplementation((store, key) => {

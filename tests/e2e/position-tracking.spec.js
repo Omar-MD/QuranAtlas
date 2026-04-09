@@ -5,6 +5,33 @@
 
 import { test, expect } from '@playwright/test'
 
+async function getCenteredVerse(page) {
+  return page.evaluate(() => {
+    const container = document.getElementById('main-content')
+    if (!container) {
+      return null
+    }
+
+    const verses = [...container.querySelectorAll('[data-verse]')]
+    const containerRect = container.getBoundingClientRect()
+    const centerY = containerRect.top + containerRect.height / 2
+    let closestVerse = null
+
+    for (const verse of verses) {
+      const verseRect = verse.getBoundingClientRect()
+      const middle = verseRect.top + verseRect.height / 2
+      const distance = Math.abs(middle - centerY)
+      const verseNum = Number(verse.getAttribute('data-verse'))
+
+      if (!closestVerse || distance < closestVerse.distance) {
+        closestVerse = { verse: verseNum, distance }
+      }
+    }
+
+    return closestVerse?.verse ?? null
+  })
+}
+
 test.describe('Position Tracking', () => {
   test('position is saved when scrolling', async ({ page }) => {
     await page.goto('/#/s/2')
@@ -21,6 +48,8 @@ test.describe('Position Tracking', () => {
 
     // Wait a bit for scroll tracking
     await page.waitForTimeout(1000)
+
+    const centeredVerse = await getCenteredVerse(page)
 
     // Trigger visibility change event to save position
     await page.evaluate(() => {
@@ -49,9 +78,10 @@ test.describe('Position Tracking', () => {
     // Position should be around verse 50 (give or take a few verses)
     expect(position).not.toBeNull()
     expect(position.surah).toBe(2)
-    // Position should be within reasonable range of verse 50
-    expect(position.verse).toBeGreaterThanOrEqual(40)
-    expect(position.verse).toBeLessThanOrEqual(60)
+    // Story 2 tracks the verse at the center of the viewport, not the verse
+    // that was initially scrolled to the top edge.
+    expect(centeredVerse).not.toBeNull()
+    expect(Math.abs(position.verse - centeredVerse)).toBeLessThanOrEqual(1)
   })
 
   test('position is restored on reload', async ({ page }) => {

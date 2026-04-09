@@ -5,6 +5,7 @@
 import { deleteDB } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
+import { logger } from '../core/logger.js'
 import { announce } from '../a11y/announcer.js'
 
 /**
@@ -127,7 +128,9 @@ export async function clearAllData() {
       const cacheNames = await caches.keys()
       await Promise.all(cacheNames.map(name => caches.delete(name)))
     } catch (error) {
-      console.error('Failed to clear caches:', error)
+      logger.error('Failed to clear caches:', {
+        error,
+      })
       errors.push('Service worker cache')
     }
   }
@@ -136,7 +139,9 @@ export async function clearAllData() {
   try {
     await deleteDB()
   } catch (error) {
-    console.error('Failed to delete IndexedDB:', error)
+    logger.error('Failed to delete IndexedDB:', {
+      error,
+    })
     errors.push('IndexedDB')
   }
 

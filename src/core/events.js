@@ -54,8 +54,12 @@ export function emit(type, payload) {
 
   // Record in action trail
   const entry = { type, ts: Date.now() }
-  if (payload?._cid) entry._cid = payload._cid
-  if (actionTrail.length >= TRAIL_SIZE) actionTrail.shift()
+  if (payload?._cid) {
+    entry._cid = payload._cid
+  }
+  if (actionTrail.length >= TRAIL_SIZE) {
+    actionTrail.shift()
+  }
   actionTrail.push(entry)
 
   const handlers = emitter.all.get(type)

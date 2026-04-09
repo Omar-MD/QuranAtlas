@@ -3,11 +3,20 @@ import { openDB } from '../../../src/core/db.js'
 import { save } from '../../../src/marks/store.js'
 
 let indicator
+let events
+let store
+
+function waitForIndicatorWork() {
+  return new Promise((resolve) => setTimeout(resolve, 50))
+}
 
 beforeEach(async () => {
+  vi.resetModules()
   await openDB()
   document.body.innerHTML = '<div id="main-content"></div>'
   indicator = await import('../../../src/marks/indicator.js')
+  events = await import('../../../src/core/events.js')
+  store = await import('../../../src/marks/store.js')
 })
 
 describe('marks/indicator.js', () => {
@@ -58,9 +67,6 @@ describe('marks/indicator.js', () => {
 
   describe('cross-tab sync', () => {
     it('re-decorates verse when sync:update-received fires', async () => {
-      const { emit } = await import('../../../src/core/events.js')
-      const store = await import('../../../src/marks/store.js')
-
       await store.save('2:255', ['favourite'])
 
       // Create a verse element
@@ -79,12 +85,94 @@ describe('marks/indicator.js', () => {
       await store.del('2:255')
 
       // Fire sync event
-      emit('sync:update-received', { verseKeys: ['2:255'] })
+      events.emit('sync:update-received', { verseKeys: ['2:255'] })
 
       // Wait for async re-decoration
-      await new Promise(r => setTimeout(r, 50))
+      await waitForIndicatorWork()
 
       expect(verse.querySelector('.qa-mark-dots')).toBeFalsy()
+    })
+
+    it('removes dots when marks:deleted fires for a rendered verse', async () => {
+      await save('1:1', ['favourite'])
+
+      const verse = document.createElement('div')
+      verse.setAttribute('data-verse-key', '1:1')
+      document.body.appendChild(verse)
+
+      await indicator.decorateVerse('1:1', verse)
+      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
+
+      indicator.init()
+      events.emit('marks:deleted', { verseKey: '1:1' })
+
+      expect(verse.querySelector('.qa-mark-dots')).toBeFalsy()
+    })
+
+    it('re-decorates a rendered verse when marks:undo restores it', async () => {
+      await save('1:2', ['study'])
+
+      const verse = document.createElement('div')
+      verse.setAttribute('data-verse-key', '1:2')
+      document.body.appendChild(verse)
+
+      indicator.init()
+      events.emit('reader:surah-loaded')
+      await waitForIndicatorWork()
+
+      events.emit('marks:undo', { verseKey: '1:2' })
+      await waitForIndicatorWork()
+
+      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
+    })
+
+    it('reconciles changed and removed marks on db:visibility:visible', async () => {
+      await save('1:3', ['study'])
+      await save('1:4', ['reflection'])
+
+      const verse3 = document.createElement('div')
+      verse3.setAttribute('data-verse-key', '1:3')
+      const verse4 = document.createElement('div')
+      verse4.setAttribute('data-verse-key', '1:4')
+      document.body.appendChild(verse3)
+      document.body.appendChild(verse4)
+
+      indicator.init()
+      events.emit('reader:surah-loaded')
+      await waitForIndicatorWork()
+
+      await indicator.decorateVerse('1:3', verse3)
+      await indicator.decorateVerse('1:4', verse4)
+      expect(verse3.querySelectorAll('.qa-mark-dot')).toHaveLength(1)
+      expect(verse4.querySelectorAll('.qa-mark-dot')).toHaveLength(1)
+
+      await store.save('1:3', ['study', 'reflection'])
+      await store.del('1:4')
+
+      events.emit('db:visibility:visible')
+      await waitForIndicatorWork()
+
+      expect(verse3.querySelectorAll('.qa-mark-dot')).toHaveLength(2)
+      expect(verse4.querySelector('.qa-mark-dots')).toBeFalsy()
+    })
+
+    it('decorates newly rendered verses from the in-memory cache after surah load', async () => {
+      await save('1:5', ['favourite'])
+
+      const verse = document.createElement('div')
+      verse.setAttribute('data-verse-key', '1:5')
+
+      indicator.init()
+      events.emit('reader:surah-loaded')
+      await waitForIndicatorWork()
+
+      events.emit('reader:verse-rendered', {
+        verseKey: '1:5',
+        element: verse,
+      })
+      await waitForIndicatorWork()
+
+      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
     })
   })
 })

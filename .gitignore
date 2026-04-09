@@ -43,6 +43,11 @@ final-verification-summary.png
 # Logs
 logs/
 *.log
+.*.exit
+.*.status
+.*-coverage-status.txt
+.*-debug.json
+.*-debug.err
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

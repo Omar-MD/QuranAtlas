@@ -45,24 +45,25 @@ describe('dataset-updater.js', () => {
   describe('checkForUpdate() — same version', () => {
     it('stays idle when manifest version matches IDB version', async () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
-      await put('activationState', { id: 'current', status: 'cached', state: 'idle' })
+      await put('activationState', { id: 'current', status: 'idle' })
 
       fetchMock.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ packageVersion: '1.0.0', files: [] }),
+        json: () => Promise.resolve({ packageVersion: '1.0.0', files: {} }),
       })
 
       await updater.checkForUpdate()
 
       const state = await get('activationState', 'current')
-      expect(state.state).toBe('idle')
+      expect(state.status).toBe('idle')
+      expect(state).not.toHaveProperty('state')
     })
   })
 
   describe('checkForUpdate() — patch bump (auto-apply)', () => {
     it('transitions through downloading → verifying → applying → idle', async () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
-      await put('activationState', { id: 'current', status: 'cached' })
+      await put('activationState', { id: 'current', status: 'idle' })
 
       const fileContent = 'updated surah data'
       const encoder = new TextEncoder()
@@ -92,14 +93,15 @@ describe('dataset-updater.js', () => {
       expect(meta.version).toBe('1.0.1')
 
       const state = await get('activationState', 'current')
-      expect(state.state).toBe('idle')
+      expect(state.status).toBe('idle')
+      expect(state).not.toHaveProperty('state')
     })
   })
 
   describe('checkForUpdate() — major bump (pending-confirmation)', () => {
     it('stops at pending-confirmation for major version change', async () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
-      await put('activationState', { id: 'current', status: 'cached' })
+      await put('activationState', { id: 'current', status: 'idle' })
 
       const fileContent = 'new schema data'
       const encoder = new TextEncoder()
@@ -126,8 +128,9 @@ describe('dataset-updater.js', () => {
       await updater.checkForUpdate()
 
       const state = await get('activationState', 'current')
-      expect(state.state).toBe('pending-confirmation')
+      expect(state.status).toBe('pending-confirmation')
       expect(state.version).toBe('2.0.0')
+      expect(state).not.toHaveProperty('state')
 
       const meta = await get('datasetMeta', 'current')
       expect(meta.version).toBe('1.0.0')
@@ -136,12 +139,11 @@ describe('dataset-updater.js', () => {
 
   describe('checkForUpdate() — no baseline version', () => {
     it('bails out silently if datasetMeta.version is absent', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ packageVersion: '1.0.0', files: [] }),
-      })
+      await put('datasetMeta', { id: 'current' })
 
       await updater.checkForUpdate()
+
+      expect(fetchMock).not.toHaveBeenCalled()
     })
   })
 
@@ -150,8 +152,7 @@ describe('dataset-updater.js', () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
       await put('activationState', {
         id: 'current',
-        status: 'cached',
-        state: 'pending-confirmation',
+        status: 'pending-confirmation',
         version: '2.0.0',
       })
 
@@ -164,14 +165,15 @@ describe('dataset-updater.js', () => {
       expect(meta.version).toBe('2.0.0')
 
       const state = await get('activationState', 'current')
-      expect(state.state).toBe('idle')
+      expect(state.status).toBe('idle')
+      expect(state).not.toHaveProperty('state')
     })
   })
 
   describe('SHA-256 verification failure', () => {
     it('transitions to failed state on hash mismatch', async () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
-      await put('activationState', { id: 'current', status: 'cached' })
+      await put('activationState', { id: 'current', status: 'idle' })
 
       fetchMock
         .mockResolvedValueOnce({
@@ -190,7 +192,34 @@ describe('dataset-updater.js', () => {
       await updater.checkForUpdate()
 
       const state = await get('activationState', 'current')
-      expect(state.state).toBe('failed')
+      expect(state.status).toBe('failed')
+      expect(state.error).toContain('SHA-256 mismatch')
+      expect(state).not.toHaveProperty('state')
+    })
+  })
+
+  describe('activationState shape', () => {
+    it('writes activationState with status as canonical FSM field, no separate state field', async () => {
+      await put('datasetMeta', { id: 'current', version: '1.0.0' })
+      await put('activationState', { id: 'current', status: 'idle' })
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          packageVersion: '1.0.1',
+          files: {},
+        }),
+        clone() { return this },
+        arrayBuffer: async () => new ArrayBuffer(0),
+      })
+
+      await updater.checkForUpdate()
+
+      const record = await get('activationState', 'current')
+      expect(record).not.toHaveProperty('state')
+      expect(record.status).not.toBe('cached')
+      expect(['idle', 'downloading', 'verifying', 'pending-confirmation', 'applying', 'failed'])
+        .toContain(record.status)
     })
   })
 })

@@ -10,17 +10,16 @@ When a new dataset version is published—correcting a translation error, fixing
 
 ## Solution
 
-On each service worker `activate` event, the SW fetches `/dataset/manifest.json` and compares `packageVersion` against the version stored in the `datasetMeta` IDB store. If newer, the old `quran-dataset-v1` cache is deleted and the full dataset is re-downloaded through the existing `CACHE_DATASET` flow (same as Story 1's initial download). A **major semver bump** signals a schema change requiring user confirmation; a minor or patch bump auto-applies without user interaction.
+On each service worker `activate` event, the SW fetches `/dataset/manifest.json` with a 10-second timeout and compares `packageVersion` against the version stored in the `datasetMeta` IDB store. If newer, files are downloaded into a staging cache, each file is verified against the manifest SHA-256, and then the staged dataset is promoted to the live `quran-dataset-v1` cache. A **major semver bump** signals a schema change requiring user confirmation; a minor or patch bump auto-applies without user interaction.
 
-**Simplified from original spec:** No staging cache, no SHA-256 per-file verification, no hash-diff, no 6-state machine. The dataset changes rarely (maybe once or twice a year). The cost of a full re-download is acceptable when updates are infrequent. The existing `CACHE_DATASET` handler is already resumable (skips cached URLs), so interrupted downloads are handled.
-
-**activationState machine (simplified):**
+**activationState machine:**
 
 ```
-idle → downloading → idle                                    (minor/patch — auto)
-idle → downloading → pending-confirmation                     (major — awaits user)
-                                 pending-confirmation → downloading → idle
-                                 → idle (user dismisses, retry later)
+idle → downloading → verifying → idle                         (minor/patch — auto)
+idle → downloading → verifying → pending-confirmation         (major — awaits user)
+                         pending-confirmation → applying → idle
+                         → idle (user dismisses)
+Any state → failed
 ```
 
 ## User Stories
@@ -43,15 +42,23 @@ idle → downloading → pending-confirmation                     (major — awa
 - Add `APPLY_DATASET_UPDATE` message handler (user-confirmed risky apply)
 - Keep existing `CACHE_DATASET`, `SKIP_WAITING`, `PURGE_DATASET_CACHE` handlers unchanged
 
-**`src/data/dataset-updater.js`** (new, simplified)
+**`src/offline/dataset-updater.js`**
 
-- `checkForUpdate()` — fetch manifest → read `datasetMeta.version` from IDB → if same, return; if newer, delete `quran-dataset-v1` cache, send `CACHE_DATASET` to SW (same flow as Story 1 initial download), then transition state
-- Every state transition writes to `activationState` IDB store and postMessages all clients
-- No staging cache, no SHA-256, no hash-diff. Full cache invalidation + re-download.
+- `checkForUpdate()` — fetch manifest → read `datasetMeta.version` from IDB → if same, return; if newer, stage updated files, verify them, then either auto-apply or wait for confirmation
+- Every state transition writes to `activationState` IDB store using a single canonical `status` field and postMessages all clients
+- Minor/patch updates auto-apply; major updates stop at `pending-confirmation`
 
-**`src/data/manifest-fetcher.js`** (new)
+**`src/offline/manifest-fetcher.js`**
 
-- `fetchManifest()` — `fetch('/dataset/manifest.json', { cache: 'no-store' })` → returns `{ packageVersion, files }` or throws
+- `fetchManifest()` — `fetch('/dataset/manifest.json', { cache: 'no-store', signal })` with a 10-second `AbortController` timeout → returns `{ packageVersion, files }` or throws
+
+**`src/offline/staging-cache.js`**
+
+- Stages verified dataset files before promotion to the live cache
+
+**`src/offline/sha256-verifier.js`**
+
+- Verifies every staged or reused live-cache response against the manifest SHA-256 before activation
 
 ### IDB
 
@@ -60,10 +67,11 @@ idle → downloading → pending-confirmation                     (major — awa
   ```js
   {
     id: "current",
-    state: 'idle' | 'downloading' | 'pending-confirmation' | 'failed',
+    status: 'idle' | 'downloading' | 'verifying' | 'pending-confirmation' | 'applying' | 'failed',
     version: target packageVersion string | null,
     progress: 0.0–1.0 | null,
-    error: string | null
+    error: string | null,
+    stagedAt: timestamp | null
   }
   ```
 
@@ -73,11 +81,11 @@ All emitted via `src/core/events.js` pub/sub; SW also postMessages to all client
 
 | Event                          | postMessage type               | Payload        | Emitter               |
 | ------------------------------ | ------------------------------ | -------------- | --------------------- |
-| `dataset:update-available`     | `DATASET_UPDATE_AVAILABLE`     | `{ from, to }` | `data/dataset-updater`|
-| `dataset:download-progress`    | `DATASET_DOWNLOAD_PROGRESS`    | `{ progress }` | `data/dataset-updater`|
-| `dataset:pending-confirmation` | `DATASET_PENDING_CONFIRMATION` | `{ from, to }` | `data/dataset-updater`|
-| `dataset:applied`              | `DATASET_APPLIED`              | `{ version }`  | `data/dataset-updater`|
-| `dataset:update-failed`        | `DATASET_UPDATE_FAILED`        | `{ error }`    | `data/dataset-updater`|
+| `dataset:update-available`     | `DATASET_UPDATE_AVAILABLE`     | `{ from, to }` | `offline/dataset-updater` |
+| `dataset:download-progress`    | `DATASET_DOWNLOADING`          | `{ progress }` | `offline/dataset-updater` |
+| `dataset:pending-confirmation` | `DATASET_PENDING_CONFIRMATION` | `{ from, to }` | `offline/dataset-updater` |
+| `dataset:applied`              | `DATASET_APPLIED`              | `{ version }`  | `offline/dataset-updater` |
+| `dataset:update-failed`        | `DATASET_UPDATE_FAILED`        | `{ error }`    | `offline/dataset-updater` |
 
 ### Performance
 
@@ -88,14 +96,14 @@ All emitted via `src/core/events.js` pub/sub; SW also postMessages to all client
 
 Tests exercise only observable behaviour: IDB state transitions, postMessage emissions, and cache contents — not internal function calls.
 
-**`src/data/` — integration tests (Vitest + fake-indexeddb + Cache API mock)**
+**`src/offline/` — integration tests (Vitest + fake-indexeddb + Cache API mock)**
 
 - Same version in IDB and manifest: `activationState` remains `idle`, no postMessage emitted
-- Patch bump available: state sequence `idle → downloading → idle`; `datasetMeta.version` updated; old cache deleted, new cache populated
+- Patch bump available: state sequence `idle → downloading → verifying → applying → idle`; `datasetMeta.version` updated; staged cache promoted into live cache
 - Major bump available: state sequence ends at `pending-confirmation`; `DATASET_PENDING_CONFIRMATION` postMessage emitted
-- `APPLY_DATASET_UPDATE` message with `pending-confirmation` active: sequence `pending-confirmation → downloading → idle`; `datasetMeta.version` updated
+- `APPLY_DATASET_UPDATE` message with `pending-confirmation` active: sequence `pending-confirmation → applying → idle`; `datasetMeta.version` updated
 - Failed download: transitions to `failed`; `DATASET_UPDATE_FAILED` postMessage emitted; on next `checkForUpdate()` call, `activationState` resets to `idle` and process restarts
-- Interrupted download (partial cache from prior run): `CACHE_DATASET` handler skips already-cached URLs; resumes from where it stopped
+- Interrupted download (partial stage/live cache from prior run): already-verified files are reused; remaining files resume from where they stopped
 - `marks` IDB store unchanged after update (no cross-store contamination)
 
 Prior art: Story 1 (initial dataset download, same `quran-dataset-v1` cache and `DATASET_PROGRESS` postMessage pattern), Story 3 (IDB state write patterns)
@@ -107,17 +115,14 @@ Prior art: Story 1 (initial dataset download, same `quran-dataset-v1` cache and 
 - Background Sync or periodic update checks (activate-only trigger)
 - UI components for the confirmation dialog and progress toast (addressed in Story 9)
 - Modifications to `scripts/build-dataset.js` (SHA-256 hashes already in manifest output)
-- Staging cache — **CUT** (simplified to full cache invalidation)
-- SHA-256 per-file verification — **CUT** (dataset changes rarely, full re-download is safe)
-- Hash-diff — **CUT** (full cache invalidation is simpler and correct)
 
 ## Further Notes
 
 - `self.clients.claim()` in the activate handler ensures the SW can postMessage open tabs immediately without waiting for a navigation
 - The activate handler must `event.waitUntil(...)` the full `checkForUpdate()` promise to prevent the SW from being terminated before the check completes
-- On next SW activate, if `activationState.state === 'pending-confirmation'` in IDB and a newer manifest version has since been published, reset to `idle` and restart
+- On next SW activate, if `activationState.status === 'pending-confirmation'` in IDB and a newer manifest version has since been published, reset to `idle` and restart
 - If `datasetMeta.version` is absent in IDB on activate (Story 1 initial download not yet complete), `checkForUpdate()` bails out silently and returns. Story 1 writes the baseline version; Story 8 only handles updates from a known baseline
-- If manifest fetch fails (network error or non-200), `checkForUpdate()` swallows the error silently, leaves `activationState` as `idle`, and does not postMessage. The next SW activate will retry
+- If manifest fetch fails (network error, timeout, or non-200), `checkForUpdate()` swallows the error silently, leaves `activationState` as `idle`, and does not postMessage. The next SW activate will retry
 - The `APPLY_DATASET_UPDATE` message handler is defined in Story 8 but the UI that sends it (confirmation banner/modal) is out of scope for this story — deferred to Story 9
 - No string manipulation of Arabic corpus text at any point (constraint from CLAUDE.md)
 
@@ -130,9 +135,9 @@ Prior art: Story 1 (initial dataset download, same `quran-dataset-v1` cache and 
 | Schema change detection            | Parse `packageVersion`, compare major component                              | Semver major                    |
 | `pending-confirmation` persistence | Formal IDB state, survives page reload                                       | Formal IDB state                |
 | Failed state behavior              | Auto-reset to idle on next activate                                          | Auto-reset                      |
-| SHA-256 verification               | **CUT** — full cache invalidation + re-download is sufficient                | CUT                             |
-| Staging cache                      | **CUT** — delete old cache, re-download via existing Story 1 flow            | CUT                             |
-| Hash-diff                          | **CUT** — full cache invalidation is simpler and correct                     | CUT                             |
+| SHA-256 verification               | Verify every file before activation using manifest hashes                     | Required                        |
+| Staging cache                      | Stage verified files, then promote to live cache                             | Required                        |
+| Hash-diff                          | Full-file replacement, but only after staged verification                    | No hash-diff                    |
 | Progress communication             | Write to `activationState` IDB + postMessage all clients                     | IDB + postMessage               |
 | `packageVersion` comparison        | Semver; major component increase = risky; minor/patch = safe                 | Semver major                    |
 | Empty `datasetMeta` on activate    | Bail out silently (stay idle); Story 1 establishes baseline version          | Bail out silently               |

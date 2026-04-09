@@ -8,12 +8,11 @@ import { save, del, getByVerseKey } from './store.js'
 import { getActiveTags } from './tags.js'
 import { on } from '../core/events.js'
 import { Events } from '../core/constants.js'
-import { showUndoToast, clearUndoToast, clearUndoRecord } from '../core/ui.js'
+import { showUndoToast, clearUndoToast } from '../core/ui.js'
 
 const LONG_PRESS_MS = 500
 
 let activeModal = null
-let unsubNavNavigate = null
 let currentUndoRecord = null
 let currentEditingVerseKey = null
 
@@ -191,7 +190,9 @@ export async function openEditor(verseKey) {
  * Close the active editor modal.
  */
 export function closeEditor() {
-  if (!activeModal) return // Guard against double-close
+  if (!activeModal) {
+    return
+  }
 
   activeModal.backdrop.remove()
   activeModal.modal.remove()
@@ -236,13 +237,6 @@ export function setupLongPress(container) {
   let touchStartY = null
   let touchStartX = null
   const TOUCH_MOVE_THRESHOLD = 10
-
-  // Clear undo toast on navigation
-  unsubNavNavigate = on(Events.NAVIGATION_NAVIGATE, () => {
-    clearUndoToast()
-    clearUndoRecord()
-    currentUndoRecord = null
-  })
 
   function getVerseKey(element) {
     const verseEl = element.closest('[data-verse]')
@@ -349,10 +343,6 @@ export function setupLongPress(container) {
   container.addEventListener('mouseout', onMouseOut)
 
   return () => {
-    if (unsubNavNavigate) {
-      unsubNavNavigate()
-      unsubNavNavigate = null
-    }
     container.removeEventListener('touchstart', onTouchStart)
     container.removeEventListener('touchend', onTouchEnd)
     container.removeEventListener('touchmove', onTouchMove)

@@ -198,4 +198,58 @@ describe('data/offline.js', () => {
       expect(isStandalone()).toBe(false)
     })
   })
+
+  describe('Story 8 SW message bridge', () => {
+    it('bridges DATASET_PENDING_CONFIRMATION to event bus', async () => {
+      const offline = await import('../../../src/data/offline.js')
+      const received = []
+      const unsub = events.on('dataset:pending-confirmation', (payload) => received.push(payload))
+
+      await offline.startDownload()
+
+      const addEventListenerCalls = globalThis.navigator.serviceWorker.addEventListener.mock.calls
+      const messageHandler = addEventListenerCalls.find(c => c[0] === 'message')?.[1]
+      expect(messageHandler).toBeDefined()
+
+      messageHandler({ data: { type: 'DATASET_PENDING_CONFIRMATION', from: '1.0.0', to: '2.0.0' } })
+
+      expect(received).toHaveLength(1)
+      expect(received[0]).toMatchObject({ from: '1.0.0', to: '2.0.0' })
+      unsub()
+    })
+
+    it('bridges DATASET_APPLIED to event bus', async () => {
+      const offline = await import('../../../src/data/offline.js')
+      const received = []
+      const unsub = events.on('dataset:applied', (payload) => received.push(payload))
+
+      await offline.startDownload()
+
+      const addEventListenerCalls = globalThis.navigator.serviceWorker.addEventListener.mock.calls
+      const messageHandler = addEventListenerCalls.find(c => c[0] === 'message')?.[1]
+
+      await messageHandler({ data: { type: 'DATASET_APPLIED', version: '2.0.0' } })
+
+      expect(received).toHaveLength(1)
+      expect(received[0]).toMatchObject({ version: '2.0.0' })
+      unsub()
+    })
+
+    it('bridges DATASET_UPDATE_FAILED to event bus', async () => {
+      const offline = await import('../../../src/data/offline.js')
+      const received = []
+      const unsub = events.on('dataset:update-failed', (payload) => received.push(payload))
+
+      await offline.startDownload()
+
+      const addEventListenerCalls = globalThis.navigator.serviceWorker.addEventListener.mock.calls
+      const messageHandler = addEventListenerCalls.find(c => c[0] === 'message')?.[1]
+
+      await messageHandler({ data: { type: 'DATASET_UPDATE_FAILED', error: 'network timeout' } })
+
+      expect(received).toHaveLength(1)
+      expect(received[0]).toMatchObject({ error: 'network timeout' })
+      unsub()
+    })
+  })
 })

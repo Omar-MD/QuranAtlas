@@ -5,6 +5,25 @@
 
 import { test, expect } from '@playwright/test'
 
+async function appendNextVerseChunk(page) {
+  const mainContent = page.locator('#main-content')
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await mainContent.evaluate((el) => {
+      el.scrollTo(0, el.scrollHeight)
+      el.dispatchEvent(new Event('scroll'))
+    })
+    await page.waitForTimeout(500)
+
+    const verseCount = await page.locator('[data-verse]').count()
+    if (verseCount > 50) {
+      return verseCount
+    }
+  }
+
+  return page.locator('[data-verse]').count()
+}
+
 test.describe('Reader Experience', () => {
   test('surah header displays correctly', async ({ page }) => {
     await page.goto('/#/s/1')
@@ -92,19 +111,11 @@ test.describe('Reader Experience', () => {
       await expect(translationsBefore.nth(i)).not.toBeVisible()
     }
 
-    // Scroll to load more chunks
-    const mainContent = page.locator('#main-content')
-    await mainContent.evaluate(el => el.scrollTo(0, el.scrollHeight))
-    
-    // Wait for new verses to be loaded (count should increase)
-    await expect(async () => {
-      const newCount = await page.locator('.qa-verse-translation').count()
-      expect(newCount).toBeGreaterThan(countBefore)
-    }).toPass({ timeout: 5000 })
+    // Scroll to load more chunks. In browser E2E this can take more than one
+    // bottom-scroll because content-visibility settles container height lazily.
+    const countAfterScroll = await appendNextVerseChunk(page)
 
-    // Get count after scrolling - should have loaded more verses
     const translationsAfterScroll = page.locator('.qa-verse-translation')
-    const countAfterScroll = await translationsAfterScroll.count()
     expect(countAfterScroll).toBeGreaterThan(countBefore)
 
     // CRITICAL: All translations (including newly loaded chunks) should be hidden
@@ -168,14 +179,7 @@ test.describe('Reader Experience', () => {
     expect(initialCount).toBeGreaterThan(0)
     expect(initialCount).toBeLessThanOrEqual(50)
 
-    // Scroll down to trigger more rendering
-    const mainContent = page.locator('#main-content')
-    await mainContent.evaluate(el => el.scrollTo(0, el.scrollHeight))
-
-    // Wait for new verses to be loaded (count should increase or stay same if all loaded)
-    await expect(async () => {
-      const currentCount = await page.locator('[data-verse]').count()
-      expect(currentCount).toBeGreaterThanOrEqual(initialCount)
-    }).toPass({ timeout: 5000 })
+    const countAfterScroll = await appendNextVerseChunk(page)
+    expect(countAfterScroll).toBeGreaterThan(initialCount)
   })
 })

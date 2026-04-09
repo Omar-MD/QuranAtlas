@@ -1,5 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as events from '../../../src/core/events.js'
+import { logger } from '../../../src/core/logger.js'
+
+function findLogContext(spy, message) {
+  const call = spy.mock.calls.find(([msg]) => msg === message)
+  expect(call).toBeTruthy()
+  return call?.[1]
+}
 
 describe('core/router.js', () => {
   beforeEach(async () => {
@@ -7,6 +14,10 @@ describe('core/router.js', () => {
     window.location.hash = ''
     const { clearRoutes } = await import('../../../src/core/router.js')
     clearRoutes()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('register and navigate calls module init with params', async () => {
@@ -18,7 +29,20 @@ describe('core/router.js', () => {
 
     // Wait for async handleRoute to complete
     await vi.waitFor(() => {
-      expect(mockInit).toHaveBeenCalledWith({ surah: '2' })
+      expect(mockInit).toHaveBeenCalledWith({ surah: '2' }, {})
+    }, { timeout: 100 })
+  })
+
+  it('forwards registered hooks to module init', async () => {
+    const { register, navigate } = await import('../../../src/core/router.js')
+    const mockInit = vi.fn()
+    const hooks = { openEditor: vi.fn() }
+    register('#/review', () => Promise.resolve({ init: mockInit }), hooks)
+
+    navigate('#/review')
+
+    await vi.waitFor(() => {
+      expect(mockInit).toHaveBeenCalledWith({}, hooks)
     }, { timeout: 100 })
   })
 
@@ -54,7 +78,38 @@ describe('core/router.js', () => {
 
     // Wait for async handleRoute to complete
     await vi.waitFor(() => {
-      expect(mockInit).toHaveBeenCalledWith({ surah: '2', ayah: '255' })
+      expect(mockInit).toHaveBeenCalledWith({ surah: '2', ayah: '255' }, {})
+    }, { timeout: 100 })
+  })
+
+  it('logs structured context when rejecting invalid route params', async () => {
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    const { register, navigate } = await import('../../../src/core/router.js')
+
+    register('#/s/:surah', () => Promise.resolve({ init: vi.fn() }))
+
+    navigate('#/s/javascript:alert(1)')
+
+    await vi.waitFor(() => {
+      expect(findLogContext(warnSpy, 'Router: rejected param with XSS pattern:')).toEqual({ key: 'surah' })
+      expect(findLogContext(errorSpy, 'Route rejected: invalid parameters')).toEqual({ route: '#/s/javascript:alert(1)' })
+    }, { timeout: 100 })
+  })
+
+  it('logs structured context when route init fails', async () => {
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
+    const { register, navigate } = await import('../../../src/core/router.js')
+
+    register('#/review', () => Promise.resolve({ init: vi.fn().mockRejectedValue(new Error('boom')) }))
+
+    navigate('#/review')
+
+    await vi.waitFor(() => {
+      const context = findLogContext(errorSpy, 'Route failed:')
+      expect(context).toMatchObject({ route: '#/review' })
+      expect(context.error).toBeInstanceOf(Error)
+      expect(context.error.message).toBe('boom')
     }, { timeout: 100 })
   })
 })

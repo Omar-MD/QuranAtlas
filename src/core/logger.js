@@ -10,7 +10,7 @@
  * Usage:
  *   import { logger } from './logger.js'
  *   logger.info('Router resolved', { route: '#/s/1' })
- *   logger.error('IDB open failed', { error: err.message })
+ *   logger.error('IDB open failed', { error: err })
  *   const recent = logger.getLogs()  // for bug reports
  */
 

@@ -8,10 +8,10 @@ import { getSurah, getSurahs } from '../data/dataset.js'
 import { get, put } from '../core/db.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
+import { logger } from '../core/logger.js'
+import { clearUndoToast, clearUndoRecord } from '../core/ui.js'
 import { observeScroll, unobserve, observeNewVerses, flushDebounce } from './scroll-tracker.js'
 import { announce } from '../a11y/announcer.js'
-import { init as initIndicators } from '../marks/indicator.js'
-import { setupLongPress } from '../marks/editor.js'
 
 // Maximum time to wait for surah data fetch before showing error
 // 800ms per spec (Story 1 Q1, performance checklist item 1)
@@ -34,7 +34,14 @@ let lastTrackedVerse = null
 let cleanupIndicatorsFn = null
 let cleanupLongPressFn = null
 
-export async function init(params, { savePosition: shouldSavePosition = true } = {}) {
+export async function init(
+  params,
+  {
+    initIndicators = () => () => {},
+    setupLongPress = () => () => {},
+    savePosition: shouldSavePosition = true,
+  } = {}
+) {
   const surahNum = parseInt(params.surah, 10)
   if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
     return
@@ -139,7 +146,11 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
           put('positions', positionData).catch(() => {
             setTimeout(() => {
               put('positions', positionData).catch((error) => {
-                console.error('Failed to save position after retry:', error)
+                logger.error('Failed to save position after retry:', {
+                  surah: currentSurahNum,
+                  verse: lastTrackedVerse,
+                  error,
+                })
                 emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
               })
             }, 100)
@@ -189,6 +200,8 @@ export async function init(params, { savePosition: shouldSavePosition = true } =
  * Clean up the current reader session.
  */
 function cleanup() {
+  clearUndoToast()
+  clearUndoRecord()
   unobserve()
   const mainContent = document.getElementById('main-content')
   if (mainContent && scrollAppendBound) {
@@ -222,7 +235,7 @@ export { cleanup }
 function renderVerseChunk(container, surah, translationVisible, start, end) {
   // Validate verse data integrity - ar and en arrays must match
   if (!surah?.ar || !surah?.en || surah.ar.length !== surah.en.length) {
-    console.error('Verse data validation failed: Arabic and English arrays mismatch or missing', {
+    logger.error('Verse data validation failed: Arabic and English arrays mismatch or missing', {
       arLength: surah?.ar?.length,
       enLength: surah?.en?.length,
       surah: surah?.n,
@@ -341,14 +354,7 @@ function handleScrollAppend() {
       if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) {
         return
       }
-      
-      // Re-check scroll position - still near bottom?
-      const currentScrollBottom = mainContent.scrollTop + mainContent.clientHeight
-      const currentScrollHeight = mainContent.scrollHeight
-      if (currentScrollHeight - currentScrollBottom >= mainContent.clientHeight) {
-        return
-      }
-      
+
       isRendering = true
       const startCount = renderedCount
       renderVerseChunk(mainContent, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
@@ -370,6 +376,37 @@ function handleScrollAppend() {
   }
 }
 
+function scrollVerseIntoView(container, verseEl) {
+  const renderedVerses = [...container.querySelectorAll('.qa-verse')]
+
+  for (const verse of renderedVerses) {
+    verse.style.contentVisibility = 'visible'
+  }
+
+  const alignInContainer = () => {
+    if (!container.isConnected || !verseEl.isConnected) {
+      return
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const verseRect = verseEl.getBoundingClientRect()
+    const targetTop = container.scrollTop + (verseRect.top - containerRect.top)
+
+    container.scrollTop = Math.max(0, targetTop)
+  }
+
+  if (typeof verseEl.scrollIntoView === 'function') {
+    verseEl.scrollIntoView({ block: 'start' })
+  }
+  alignInContainer()
+  requestAnimationFrame(() => {
+    alignInContainer()
+    requestAnimationFrame(() => {
+      alignInContainer()
+    })
+  })
+}
+
 /**
  * Save reading position to IDB.
  */
@@ -384,7 +421,11 @@ async function savePosition(surahNum, verse) {
     emit(Events.READER_POSITION_CHANGED, { surah: surahNum, verse })
   } catch (error) {
     // Position save failed, emit event for UI warning
-    console.error('Failed to save position on visibility change:', error)
+    logger.error('Failed to save position on visibility change:', {
+      surah: surahNum,
+      verse,
+      error,
+    })
     emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: surahNum, verse })
   }
 }
@@ -415,8 +456,8 @@ function scrollToVerse(container, verseNum) {
   }
 
   const verseEl = container.querySelector(`[data-verse="${verseNum}"]`)
-  if (verseEl && typeof verseEl.scrollIntoView === 'function') {
-    verseEl.scrollIntoView({ block: 'start' })
+  if (verseEl) {
+    scrollVerseIntoView(container, verseEl)
     return true
   }
   return false
@@ -618,7 +659,10 @@ function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
       await put('settings', { key: 'translationVisible', value: newValue })
     } catch (error) {
       // Settings save failed - revert UI to previous state
-      console.error('Failed to save translation visibility setting:', error)
+      logger.error('Failed to save translation visibility setting:', {
+        attemptedValue: newValue,
+        error,
+      })
       currentTranslationVisible = previousValue
       toggleTranslationVisibility(mainContent, previousValue)
       toggleBtn.textContent = previousValue ? 'EN ▾' : 'EN ▸'

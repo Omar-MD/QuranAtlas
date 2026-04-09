@@ -112,10 +112,12 @@ src/
 
 ## Module Communication Rules
 
-1. **Default:** All cross-module communication goes through `core/events.js` (pub/sub bus)
-2. **Exceptions:** `safety/` and `a11y/` modules may be imported directly by any feature module
-3. **No sibling imports:** Feature modules must not import from other feature modules (except `review/` → `marks/store.js` for data access)
-4. **Dependency direction:** `core/` ← `data/` ← features (one-way, no cycles)
+1. **Default:** Cross-feature communication goes through `core/events.js` or through dependencies wired in `core/app.js`
+2. **Wiring layer:** `core/app.js` is the composition root; route modules receive cross-feature hooks as the second argument to `init(params, hooks)`
+3. **Permitted direct imports:** `safety/` and `a11y/` modules may be imported directly by any feature module
+4. **Feature boundaries:** Feature modules must not import sibling feature modules directly; `reader/` and `review/` receive marks UI hooks via `core/app.js`
+5. **Narrow data access exception:** `review/` may import `marks/store.js` for persisted mark queries and mutations
+6. **Dependency direction:** `core/` ← `data/` ← features (one-way, no cycles)
 
 ## IDB Schema (v1)
 
@@ -124,7 +126,7 @@ src/
 | `settings` | `key` | `{ key: 'translationVisible', value: boolean }`, `{ key: 'theme', value: 'light' \| 'sepia' \| 'dark' }`, `{ key: 'deleted-default-tags', value: string[] }` |
 | `positions` | `id` | `{ id: 's{surah}', surah, verse, savedAt }`, `{ id: 'review', view, activeTag, surahFilter, sortBy, groupBy }` |
 | `marks` | `verseKey` | `{ verseKey, tags[], createdAt, updatedAt }` (indexes: `by-tag` multiEntry, `by-updated`) |
-| `activationState` | `id` | `{ id: 'current', state, version, progress, error }` |
+| `activationState` | `id` | `{ id: 'current', status, version, progress, error, stagedAt }` |
 | `datasetMeta` | `id` | `{ id: 'current', version }` |
 
 ## Routing

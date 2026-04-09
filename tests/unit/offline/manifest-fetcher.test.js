@@ -21,7 +21,13 @@ describe('manifest-fetcher.js', () => {
 
     const result = await fetchManifest()
     expect(result).toEqual(manifest)
-    expect(fetch).toHaveBeenCalledWith('/dataset/manifest.json', { cache: 'no-store' })
+    expect(fetch).toHaveBeenCalledWith(
+      '/dataset/manifest.json',
+      expect.objectContaining({
+        cache: 'no-store',
+        signal: expect.any(AbortSignal),
+      })
+    )
   })
 
   it('throws on non-200 response', async () => {
@@ -37,5 +43,23 @@ describe('manifest-fetcher.js', () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
     await expect(fetchManifest()).rejects.toThrow('Network error')
+  })
+
+  it('aborts fetch after 10 seconds', async () => {
+    vi.useFakeTimers()
+
+    globalThis.fetch = vi.fn().mockImplementation((_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => {
+        reject(new Error('aborted'))
+      })
+    }))
+
+    const promise = fetchManifest()
+    const rejection = expect(promise).rejects.toThrow('aborted')
+
+    await vi.advanceTimersByTimeAsync(10_001)
+    await rejection
+
+    vi.useRealTimers()
   })
 })

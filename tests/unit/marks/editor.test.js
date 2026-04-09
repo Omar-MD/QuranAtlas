@@ -89,6 +89,27 @@ describe('marks/editor.js', () => {
       expect(typeof cleanup).toBe('function')
       cleanup()
     })
+
+    it('does not clear undo toast on navigation events', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+      const { showUndoToast, clearUndoToast } = await import('../../../src/core/ui.js')
+      const container = document.getElementById('main-content')
+
+      const cleanup = editor.setupLongPress(container)
+      showUndoToast({
+        verseKey: '2:255',
+        record: { verseKey: '2:255', tags: ['favourite'] },
+        onUndo: vi.fn(),
+        onComplete: vi.fn(),
+      })
+
+      emit('navigation:navigate', { surah: 3 })
+
+      expect(document.querySelector('.qa-undo-toast')).not.toBeNull()
+
+      clearUndoToast()
+      cleanup()
+    })
   })
 
   describe('cross-tab conflict', () => {

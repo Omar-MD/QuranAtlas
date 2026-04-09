@@ -5,6 +5,7 @@
 import { get, put } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
+import { logger } from '../core/logger.js'
 
 const DEFAULT_THEME = 'light'
 const THEME_OPTIONS = ['light', 'dark', 'sepia']
@@ -18,7 +19,9 @@ export async function loadTheme() {
     const saved = await get('settings', 'theme')
     return saved?.value || DEFAULT_THEME
   } catch (error) {
-    console.error('Failed to load theme:', error)
+    logger.error('Failed to load theme:', {
+      error,
+    })
     return DEFAULT_THEME
   }
 }
@@ -29,7 +32,7 @@ export async function loadTheme() {
  */
 export function applyTheme(theme) {
   if (!THEME_OPTIONS.includes(theme)) {
-    console.warn('Invalid theme:', theme)
+    logger.warn('Invalid theme:', { theme })
     return
   }
 
@@ -41,6 +44,19 @@ export function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme)
 }
 
+function getCurrentTheme() {
+  const dataTheme = document.documentElement.getAttribute('data-theme')
+  if (THEME_OPTIONS.includes(dataTheme)) {
+    return dataTheme
+  }
+
+  const classTheme = THEME_OPTIONS.find((option) =>
+    document.documentElement.classList.contains(`theme-${option}`)
+  )
+
+  return classTheme || DEFAULT_THEME
+}
+
 /**
  * Save and apply a theme.
  * @param {string} theme - Theme name to save and apply
@@ -48,17 +64,22 @@ export function applyTheme(theme) {
  */
 export async function setTheme(theme) {
   if (!THEME_OPTIONS.includes(theme)) {
-    console.warn('Invalid theme:', theme)
+    logger.warn('Invalid theme:', { theme })
     return false
   }
 
+  const from = getCurrentTheme()
+
   // Apply theme synchronously for instant visual response
   applyTheme(theme)
-  emit(Events.SETTINGS_THEME_CHANGED, { theme })
+  emit(Events.SETTINGS_THEME_CHANGED, { from, to: theme })
 
   // Persist asynchronously — fire-and-forget, UI is already updated
   put('settings', { key: 'theme', value: theme }).catch((error) => {
-    console.error('Failed to save theme:', error)
+    logger.error('Failed to save theme:', {
+      theme,
+      error,
+    })
   })
 
   return true

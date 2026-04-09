@@ -13,6 +13,7 @@
 
 import { on, emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
+import { logger } from '../core/logger.js'
 
 const CHANNEL_NAME = 'quran-atlas:sync'
 
@@ -92,7 +93,9 @@ function handleChannelMessage(event) {
       try {
         handler({ verseKeys })
       } catch (error) {
-        console.error('Sync handler error:', error)
+        logger.error('Sync handler error:', {
+          error,
+        })
       }
     }
     emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys })
@@ -110,7 +113,7 @@ function handleVersionChange() {
 
   const appShell = document.getElementById('app-shell') || document.body
   if (!appShell) {
-    console.error('Safety sync: no valid container found')
+    logger.error('Safety sync: no valid container found')
     return
   }
 

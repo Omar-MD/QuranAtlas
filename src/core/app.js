@@ -12,6 +12,8 @@ import { init as initSafetySync } from '../safety/sync.js'
 import { initInstallListener } from '../about/pwa-install.js'
 import { initTheme } from '../settings/theme.js'
 import { init as initQuotaBanner } from './quota-banner.js'
+import { init as initIndicators } from '../marks/indicator.js'
+import { setupLongPress, openEditor } from '../marks/editor.js'
 
 let unsubLaunchRestore = null
 let unsubNavNavigate = null
@@ -39,16 +41,26 @@ export async function init() {
     unsubLaunchRestore = on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore)
 
     // Register Phase 1 routes
-    router.register('#/s/:surah', () => import('../reader/index.js'))
-    router.register('#/s/:surah/:ayah', () => import('../reader/index.js'))
+    router.register('#/s/:surah', () => import('../reader/index.js'), {
+      initIndicators,
+      setupLongPress,
+    })
+    router.register('#/s/:surah/:ayah', () => import('../reader/index.js'), {
+      initIndicators,
+      setupLongPress,
+    })
 
     // Register Phase 2 routes
-    router.register('#/review', () => import('../review/hub.js'))
+    router.register('#/review', () => import('../review/hub.js'), {
+      openEditor,
+    })
 
     // Register Phase 3 routes
     router.register('#/settings', () => import('../settings/index.js'))
     router.register('#/about', () => import('../about/index.js'))
-    router.register('#/t/:tag', () => import('../review/hub.js'))
+    router.register('#/t/:tag', () => import('../review/hub.js'), {
+      openEditor,
+    })
 
     // Initialize router AFTER routes are registered so first dispatch finds them
     router.init()
@@ -99,7 +111,9 @@ export async function init() {
     await offline.checkStorageQuota()
     await restoreActivationState(offline)
   } catch (error) {
-    console.error('Failed to initialize app:', error)
+    logger.error('Failed to initialize app:', {
+      error,
+    })
     emit(Events.APP_INIT_ERROR, { error })
     const mainContent = document.getElementById('main-content')
     if (mainContent) {
@@ -150,7 +164,9 @@ async function registerServiceWorker() {
         scope: '/'
       })
     } catch (error) {
-      console.error('SW registration failed:', error)
+      logger.error('SW registration failed:', {
+        error,
+      })
       emit(Events.APP_INIT_ERROR, { error, context: 'service-worker' })
       showOfflineBanner()
     }

@@ -65,12 +65,29 @@ test.describe('Launch and Navigation', () => {
     expect(textContent).toContain('255')
     expect(textContent?.length).toBeGreaterThan(50) // Ayat al-Kursi is a long verse
 
-    // Verify we're scrolled near verse 255 (scroll position should be significant)
-    const scrollTop = await page.evaluate(() => {
-      const mainContent = document.getElementById('main-content')
-      return mainContent ? mainContent.scrollTop : 0
-    })
-    expect(scrollTop).toBeGreaterThan(1000)
+    // Verify the deep link actually scrolls verse 255 into the reader viewport.
+    await expect(async () => {
+      const placement = await page.evaluate(() => {
+        const mainContent = document.getElementById('main-content')
+        const verse = mainContent?.querySelector('[data-verse="255"]')
+        if (!mainContent || !verse) {
+          return null
+        }
+
+        const containerRect = mainContent.getBoundingClientRect()
+        const verseRect = verse.getBoundingClientRect()
+
+        return {
+          scrollTop: mainContent.scrollTop,
+          offsetFromTop: verseRect.top - containerRect.top,
+        }
+      })
+
+      expect(placement).not.toBeNull()
+      expect(placement.scrollTop).toBeGreaterThan(0)
+      expect(placement.offsetFromTop).toBeGreaterThanOrEqual(-1)
+      expect(placement.offsetFromTop).toBeLessThan(120)
+    }).toPass({ timeout: 5000 })
   })
 
   test('navigate to invalid verse shows error and loads surah at verse 1 - regression test', async ({ page }) => {

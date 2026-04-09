@@ -24,7 +24,9 @@ import { Events } from '../core/constants.js'
 let marksCache = null
 
 function setCachedMark(verseKey, mark) {
-  if (!marksCache) marksCache = new Map()
+  if (!marksCache) {
+    marksCache = new Map()
+  }
   if (mark) {
     marksCache.set(verseKey, mark)
   } else {
@@ -97,7 +99,9 @@ export function init() {
       }
     }
     const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
-    if (el) decorateVerse(verseKey, el)
+    if (el) {
+      decorateVerse(verseKey, el)
+    }
   })
 
   const unsub4 = on(Events.MARKS_DELETED, ({ verseKey }) => {
@@ -107,7 +111,9 @@ export function init() {
     const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
     if (el) {
       const dots = el.querySelector('.qa-mark-dots')
-      if (dots) dots.remove()
+      if (dots) {
+        dots.remove()
+      }
     }
   })
 
@@ -121,7 +127,9 @@ export function init() {
       }
     }
     const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
-    if (el) decorateVerse(verseKey, el)
+    if (el) {
+      decorateVerse(verseKey, el)
+    }
   })
 
   const unsub6 = on(Events.SYNC_UPDATE_RECEIVED, async ({ verseKeys }) => {
@@ -137,7 +145,9 @@ export function init() {
     }
     for (const verseKey of verseKeys) {
       const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
-      if (el) decorateVerse(verseKey, el)
+      if (el) {
+        decorateVerse(verseKey, el)
+      }
     }
   })
 
@@ -150,11 +160,15 @@ export function init() {
       const changedKeys = new Set()
       for (const [vk, mark] of newCache) {
         const old = marksCache?.get(vk)
-        if (!old || old.tags.join() !== mark.tags.join()) changedKeys.add(vk)
+        if (!old || old.tags.join() !== mark.tags.join()) {
+          changedKeys.add(vk)
+        }
       }
       if (marksCache) {
         for (const vk of marksCache.keys()) {
-          if (!newCache.has(vk)) changedKeys.add(vk)
+          if (!newCache.has(vk)) {
+            changedKeys.add(vk)
+          }
         }
       }
 
@@ -162,7 +176,9 @@ export function init() {
 
       for (const vk of changedKeys) {
         const el = document.querySelector(`[data-verse-key="${vk}"]`)
-        if (el) decorateVerse(vk, el)
+        if (el) {
+          decorateVerse(vk, el)
+        }
       }
     } catch {
       // Fallback: invalidate cache and re-decorate all visible verses via IDB
