@@ -8,7 +8,7 @@ Use this exact structure for all audit reports.
 **Date:** YYYY-MM-DD
 **Commit:** [short hash from `git rev-parse --short HEAD`]
 **Auditor:** Product Audit Skill v2
-**Checklist version:** [total checklist items across all 8 dimensions, e.g., "165 items (v3)"]
+**Checklist version:** [total checklist items across all 6 dimensions]
 **Previous audit:** [date and file path of previous audit, or "None — first audit"]
 
 ---
@@ -36,15 +36,13 @@ One paragraph: overall assessment, what's working, what's concerning.
 |-----------|----------------|------------|----------------|------------|
 | Functional correctness | N | N | N | high/medium/low |
 | Security | N | N | N | high/medium/low |
+| UI Quality | N | N | N | high/medium/low |
+| Architecture | N | N | N | high/medium/low |
 | Reliability | N | N | N | high/medium/low |
 | Performance | N | N | N | high/medium/low |
-| Architecture | N | N | N | high/medium/low |
-| Testability | N | N | N | high/medium/low |
-| UI Quality | N | N | N | high/medium/low |
-| Observability | N | N | N | high/medium/low |
 | **Total** | **N** | **N** | **N** | |
 
-**Audit scope:** Full codebase audit against v3 checklists. [Note any incomplete dimensions here.]
+**Audit scope:** Full codebase audit against v4 checklists. [Note any incomplete dimensions here.]
 
 ---
 
@@ -54,13 +52,11 @@ One paragraph: overall assessment, what's working, what's concerning.
 |-----------|-------|--------|----------|--------|
 | Functional correctness | X/10 | 5 | X.X | [Healthy/Caution/At risk/Critical] |
 | Security | X/10 | 5 | X.X | [status] |
-| Reliability | X/10 | 5 | X.X | [status] |
-| Performance | X/10 | 4 | X.X | [status] |
+| UI Quality | X/10 | 5 | X.X | [status] |
 | Architecture | X/10 | 4 | X.X | [status] |
-| Testability | X/10 | 3 | X.X | [status] |
-| UI Quality | X/10 | 3 | X.X | [status] |
-| Observability | X/10 | 1 | X.X | [status] |
-| **Total** | | **30** | **XX.X / 300** | |
+| Reliability | X/10 | 4 | X.X | [status] |
+| Performance | X/10 | 3 | X.X | [status] |
+| **Total** | | **26** | **XX.X / 260** | |
 
 **Overall: X.X / 10**
 
@@ -112,6 +108,18 @@ Status thresholds: 8+ = Healthy, 6-7.9 = Caution, 4-5.9 = At risk, <4 = Critical
 | P1 | N | Brief description |
 | P2 | N | Brief description |
 | P3 | N | Brief description |
+
+---
+
+## Enhancement Suggestions
+
+> The following are improvement suggestions that do not affect dimension scores or the gate decision.
+
+| # | Description | Dimension | Recommendation |
+|---|-------------|-----------|----------------|
+| 1 | [description] | [dimension] | [recommendation] |
+
+**Note:** Enhancements are new capabilities not required by any current spec. They are tracked separately and do not count toward severity tallies or scoring.
 
 ---
 
@@ -187,7 +195,7 @@ Status thresholds: 8+ = Healthy, 6-7.9 = Caution, 4-5.9 = At risk, <4 = Critical
 
 ## Incomplete Dimensions
 
-[If any dimensions failed to complete, list them here with the reason. If all 8 completed, omit this section.]
+[If any dimensions failed to complete, list them here with the reason. If all 6 completed, omit this section.]
 
 ---
 

@@ -14,8 +14,8 @@ import { observeScroll, unobserve, observeNewVerses, flushDebounce } from './scr
 import { announce } from '../a11y/announcer.js'
 
 // Maximum time to wait for surah data fetch before showing error
-// 800ms per spec (Story 1 Q1, performance checklist item 1)
-const SKELETON_TIMEOUT_MS = 800
+// 5000ms hard cutoff; 800ms is the performance *goal*, not the error threshold
+const SKELETON_TIMEOUT_MS = 5000
 
 // Number of verses to render per chunk for performance
 // 50 verses provides good initial render time while keeping DOM size manageable
@@ -34,172 +34,150 @@ let lastTrackedVerse = null
 let cleanupIndicatorsFn = null
 let cleanupLongPressFn = null
 
-export async function init(
-  params,
-  {
-    initIndicators = () => () => {},
-    setupLongPress = () => () => {},
-    savePosition: shouldSavePosition = true,
-  } = {}
-) {
-  const surahNum = parseInt(params.surah, 10)
-  if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
-    return
-  }
+/**
+ * Fetch surah data with navigation guard.
+ * Returns { surah, surahs, surahMeta, translationVisible, savedPosition } or null if navigated away.
+ */
+async function fetchSurahData({ surahNum }) {
+  performance.mark('reader:fetch-start')
+  const surah = await getSurah(surahNum)
+  performance.mark('reader:fetch-end')
+  performance.measure('reader:surah-fetch', 'reader:fetch-start', 'reader:fetch-end')
 
-  if (currentSurahNum !== null && currentSurahNum !== surahNum) {
-    cleanup()
-  }
-  currentSurahNum = surahNum
+  if (currentSurahNum !== surahNum) { return null }
 
-  const mainContent = document.getElementById('main-content')
-  const topBar = document.getElementById('top-bar')
-  if (!mainContent) {
-    return
-  }
+  const [surahs, translationVisible, savedPosition] = await Promise.all([
+    getSurahs(),
+    get('settings', 'translationVisible').then(r => r?.value ?? true),
+    get('positions', `s${surahNum}`),
+  ])
 
-  // Show skeleton
-  showSkeleton(mainContent)
+  if (currentSurahNum !== surahNum) { return null }
 
-  // Set 5s hard timeout
-  const timeout = setTimeout(() => {
-    cleanup()
-    showError(mainContent, surahNum)
-  }, SKELETON_TIMEOUT_MS)
+  currentSurah = surah
+  const surahMeta = surahs.find(s => s.n === surahNum)
+  currentTranslationVisible = translationVisible
 
-  try {
-    // Primary fetch: getSurah() is blocking for first render
-    performance.mark('reader:fetch-start')
-    const surah = await getSurah(surahNum)
-    performance.mark('reader:fetch-end')
-    performance.measure('reader:surah-fetch', 'reader:fetch-start', 'reader:fetch-end')
-
-    // Guard: bail if navigation moved on while we were fetching
-    if (currentSurahNum !== surahNum) {
-      clearTimeout(timeout)
-      return
-    }
-
-    // Background fetch: position and settings while rendering
-    const [surahs, translationVisible, savedPosition] = await Promise.all([
-      getSurahs(),
-      get('settings', 'translationVisible').then(r => r?.value ?? true),
-      get('positions', `s${surahNum}`),
-    ])
-
-    clearTimeout(timeout)
-
-    // Guard: bail if navigation moved on while we were fetching settings
-    if (currentSurahNum !== surahNum) {
-      return
-    }
-
-    currentSurah = surah
-    const surahMeta = surahs.find(s => s.n === surahNum)
-    currentTranslationVisible = translationVisible
-
-    // Render
-    mainContent.innerHTML = ''
-    renderSurahHeader(mainContent, surahMeta)
-    renderBasmala(mainContent, surahNum)
-
-    // Render resume indicator if position saved and not already there
-    const targetVerse = params.ayah ? parseInt(params.ayah, 10) : null
-    if (savedPosition && !targetVerse) {
-      renderResumeIndicator(mainContent, surahMeta, savedPosition)
-    }
-
-    // Validate target verse if provided
-    let invalidVerseError = null
-    if (targetVerse !== null) {
-      if (targetVerse < 1 || targetVerse > surah.ar.length) {
-        invalidVerseError = `Verse ${targetVerse} does not exist in ${surahMeta?.name ?? 'this Surah'} (${surah.ar.length} verses)`
-      }
-    }
-
-    // Chunked rendering: render first chunk
-    renderedCount = 0
-    isRendering = true
-    renderVerseChunk(mainContent, surah, translationVisible, 0, CHUNK_SIZE)
-    isRendering = false
-
-    // Render surah end marker
-    renderSurahEnd(mainContent, surahMeta)
-
-    // Render top bar controls
-    renderTopBar(topBar, translationVisible, surahNum, mainContent)
-
-    // Set up scroll tracking if savePosition is enabled
-    if (shouldSavePosition) {
-      setupScrollTracking(mainContent, surahNum)
-      visibilityHandler = () => {
-        if (document.hidden && currentSurahNum && lastTrackedVerse !== null) {
-          // Flush any pending debounced position update before saving
-          flushDebounce()
-          const positionData = {
-            id: `s${currentSurahNum}`,
-            surah: currentSurahNum,
-            verse: lastTrackedVerse,
-            savedAt: Date.now(),
-          }
-          // Fire-and-forget with single retry on transient error
-          put('positions', positionData).catch(() => {
-            setTimeout(() => {
-              put('positions', positionData).catch((error) => {
-                logger.error('Failed to save position after retry:', {
-                  surah: currentSurahNum,
-                  verse: lastTrackedVerse,
-                  error,
-                })
-                emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
-              })
-            }, 100)
-          })
-        }
-      }
-      document.addEventListener('visibilitychange', visibilityHandler)
-    }
-
-    // Re-read position when tab becomes visible
-    unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
-      if (currentSurah && mainContent) {
-        const position = await get('positions', `s${currentSurah.n}`)
-        if (position) {
-          scrollToVerse(mainContent, position.verse)
-        }
-      }
-    })
-
-    // Scroll to saved position or deep link verse
-    if (savedPosition && !targetVerse) {
-      scrollToVerse(mainContent, savedPosition.verse)
-    } else if (targetVerse) {
-      // If verse is invalid, show error but still load surah at verse 1
-      const validTargetVerse = (invalidVerseError) ? 1 : targetVerse
-      scrollToVerse(mainContent, validTargetVerse)
-    }
-
-    // Show invalid verse error if applicable
-    if (invalidVerseError) {
-      renderInvalidVerseError(mainContent, invalidVerseError)
-    }
-
-    emit(Events.READER_SURAH_LOADED, { surah: surahNum })
-    cleanupIndicatorsFn = initIndicators()
-    cleanupLongPressFn = setupLongPress(mainContent)
-    performance.mark('reader:first-verse')
-    performance.measure('reader:total-load', 'reader:fetch-start', 'reader:first-verse')
-    announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)
-  } catch (error) {
-    clearTimeout(timeout)
-    showError(mainContent, surahNum, error.message)
-  }
+  return { surah, surahs, surahMeta, translationVisible, savedPosition }
 }
 
 /**
- * Clean up the current reader session.
+ * Render surah content: header, basmala, resume indicator, verse chunks, end marker, top bar.
  */
-function cleanup() {
+function renderSurahContent({ mainContent, topBar, surah, surahMeta, translationVisible, savedPosition, targetVerse, surahNum }) {
+  mainContent.innerHTML = ''
+  renderSurahHeader(mainContent, surahMeta)
+  renderBasmala(mainContent, surahNum)
+
+  if (savedPosition && !targetVerse) {
+    renderResumeIndicator(mainContent, surahMeta, savedPosition)
+  }
+
+  renderedCount = 0
+  isRendering = true
+  renderVerseChunk(mainContent, surah, translationVisible, 0, CHUNK_SIZE)
+  isRendering = false
+
+  renderSurahEnd(mainContent, surahMeta)
+  renderTopBar(topBar, translationVisible, surahNum, mainContent)
+}
+
+/**
+ * Set up scroll/position tracking and scroll to initial position.
+ * Returns array of cleanup functions.
+ */
+function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah, surahMeta, savedPosition, targetVerse }) {
+  const cleanups = []
+
+  if (shouldSavePosition) {
+    setupScrollTracking(mainContent, surahNum)
+    visibilityHandler = () => {
+      if (document.hidden && currentSurahNum && lastTrackedVerse !== null) {
+        flushDebounce()
+        const positionData = {
+          id: `s${currentSurahNum}`,
+          surah: currentSurahNum,
+          verse: lastTrackedVerse,
+          savedAt: Date.now(),
+        }
+        put('positions', positionData).catch(() => {
+          setTimeout(() => {
+            put('positions', positionData).catch((error) => {
+              logger.error('Failed to save position after retry:', {
+                surah: currentSurahNum,
+                verse: lastTrackedVerse,
+                error,
+              })
+              emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
+            })
+          }, 100)
+        })
+      }
+    }
+    document.addEventListener('visibilitychange', visibilityHandler)
+    cleanups.push(() => {
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      visibilityHandler = null
+    })
+  }
+
+  unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
+    if (currentSurah && mainContent) {
+      const position = await get('positions', `s${currentSurah.n}`)
+      if (position) {
+        scrollToVerse(mainContent, position.verse)
+      }
+    }
+  })
+  cleanups.push(() => {
+    if (unsubVisibility) { unsubVisibility(); unsubVisibility = null }
+  })
+
+  // Validate target verse
+  let invalidVerseError = null
+  if (targetVerse !== null) {
+    if (targetVerse < 1 || targetVerse > surah.ar.length) {
+      invalidVerseError = `Verse ${targetVerse} does not exist in ${surahMeta?.name ?? 'this Surah'} (${surah.ar.length} verses)`
+    }
+  }
+
+  // Scroll to saved position or deep link verse
+  if (savedPosition && !targetVerse) {
+    scrollToVerse(mainContent, savedPosition.verse)
+  } else if (targetVerse) {
+    const validTargetVerse = invalidVerseError ? 1 : targetVerse
+    scrollToVerse(mainContent, validTargetVerse)
+  }
+
+  if (invalidVerseError) {
+    renderInvalidVerseError(mainContent, invalidVerseError)
+  }
+
+  return cleanups
+}
+
+/**
+ * Emit load event, set up indicators and long press, perf marks, announce.
+ * Returns array of cleanup functions.
+ */
+function finalizeSurah({ surahNum, surahMeta, surah, initIndicators, setupLongPress, mainContent }) {
+  emit(Events.READER_SURAH_LOADED, { surah: surahNum })
+  cleanupIndicatorsFn = initIndicators()
+  cleanupLongPressFn = setupLongPress(mainContent)
+  performance.mark('reader:first-verse')
+  performance.measure('reader:total-load', 'reader:fetch-start', 'reader:first-verse')
+  announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)
+
+  return [
+    () => { if (cleanupIndicatorsFn) { cleanupIndicatorsFn(); cleanupIndicatorsFn = null } },
+    () => { if (cleanupLongPressFn) { cleanupLongPressFn(); cleanupLongPressFn = null } },
+  ]
+}
+
+/**
+ * Internal cleanup — resets all module state and removes listeners.
+ */
+export function cleanup() {
   clearUndoToast()
   clearUndoRecord()
   unobserve()
@@ -226,7 +204,78 @@ function cleanup() {
   scrollAppendRafPending = false
 }
 
-export { cleanup }
+export async function init(
+  params,
+  {
+    initIndicators = () => () => {},
+    setupLongPress = () => () => {},
+    savePosition: shouldSavePosition = true,
+  } = {}
+) {
+  const surahNum = parseInt(params.surah, 10)
+  if (isNaN(surahNum) || surahNum < 1 || surahNum > 114) {
+    return
+  }
+
+  if (currentSurahNum !== null && currentSurahNum !== surahNum) {
+    cleanup()
+  }
+  currentSurahNum = surahNum
+
+  const mainContent = document.getElementById('main-content')
+  const topBar = document.getElementById('top-bar')
+  if (!mainContent) {
+    return
+  }
+
+  showSkeleton(mainContent)
+
+  const timeout = setTimeout(() => {
+    currentSurahNum = null
+    currentSurah = null
+    showError(mainContent, surahNum)
+  }, SKELETON_TIMEOUT_MS)
+
+  try {
+    const data = await fetchSurahData({ surahNum })
+    if (!data) {
+      clearTimeout(timeout)
+      return
+    }
+
+    clearTimeout(timeout)
+
+    const targetVerse = params.ayah ? parseInt(params.ayah, 10) : null
+
+    renderSurahContent({
+      mainContent, topBar,
+      surah: data.surah, surahMeta: data.surahMeta,
+      translationVisible: data.translationVisible,
+      savedPosition: data.savedPosition, targetVerse,
+      surahNum,
+    })
+
+    const trackingCleanups = initPositionTracking({
+      mainContent, surahNum, shouldSavePosition,
+      surah: data.surah, surahMeta: data.surahMeta,
+      savedPosition: data.savedPosition, targetVerse,
+    })
+
+    const finalCleanups = finalizeSurah({
+      surahNum, surahMeta: data.surahMeta, surah: data.surah,
+      initIndicators, setupLongPress, mainContent,
+    })
+
+    return () => {
+      cleanup()
+      trackingCleanups.forEach(fn => fn())
+      finalCleanups.forEach(fn => fn())
+    }
+  } catch (error) {
+    clearTimeout(timeout)
+    showError(mainContent, surahNum, error.message)
+  }
+}
 
 /**
  * Render a chunk of verses.

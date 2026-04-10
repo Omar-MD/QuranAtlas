@@ -113,13 +113,13 @@ Tags are stored lowercased at creation time. `validateTagParam()` (Story 7) is t
 
 ## Out of Scope
 
-- Custom tag creation — **DEFERRED** to Phase 3
-- Tag rename — **DEFERRED** to Phase 3 (no custom tags to rename)
-- Manage Tags screen — **DEFERRED** to Phase 3
+- Custom tag creation — **DEFERRED**
+- Tag rename — **DEFERRED** (no custom tags to rename)
+- Manage Tags screen — **DEFERRED**
 - Verse notes / free-text annotations (tags-only)
 - Export / sharing (future stories)
 - Cross-tab sync (Story 6)
-- Bulk delete — **DEFERRED** to Phase 3
-- Filtered Verse Review (FVR) — owned by Story 5, **DEFERRED** to Phase 3
+- Bulk delete — **DEFERRED**
+- Filtered Verse Review (FVR) — owned by Story 5, **DEFERRED**
 
 See full plan at .opencode/plans/

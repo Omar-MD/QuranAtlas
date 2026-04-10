@@ -87,9 +87,9 @@ Prior art: `tests/unit/core/db.test.js` for IDB setup patterns; Story 2 scroll-t
 
 ## Out of Scope
 
-- Filtered Verse Review (FVR) — **IMPLEMENTED** via tag deep links (`#/t/:tag`); accessible through `hub.js::initTagDeepLink()`. FVR is not reachable from the hub UI directly (Phase 3).
+- Filtered Verse Review (FVR) — **IMPLEMENTED** via tag deep links (`#/t/:tag`); accessible through `hub.js::initTagDeepLink()`. FVR is not reachable from the hub UI directly.
 - Tag-grouped view — **CUT** (surah + flat are sufficient)
-- Bulk select/delete — **DEFERRED** to Phase 3
+- Bulk select/delete — **DEFERRED**
 - Flashcard / study mode — permanently out of scope
 - Spaced repetition
 - Export or sharing of marks
@@ -97,7 +97,7 @@ Prior art: `tests/unit/core/db.test.js` for IDB setup patterns; Story 2 scroll-t
 - Tag-based deep link routes like `#/t/favorites` (Story 7) — **IMPLEMENTED** with graceful fallback; see story-7 spec.
 - Tag usage statistics / intelligence features (future addition to `#/review/tags`)
 - Verse notes / free-text in Review Hub
-- Manage Tags screen — **DEFERRED** to Phase 3
+- Manage Tags screen — **DEFERRED**
 
 ## Further Notes
 

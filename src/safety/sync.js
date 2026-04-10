@@ -4,10 +4,9 @@
  * Permitted cross-module import (safety exception).
  *
  * Public API:
- * - init() — set up channel + versionchange listener
+ * - init() — set up channel + versionchange listener; returns cleanup function
  * - broadcastMarkChange(verseKeys) — notify other tabs of mark changes
  * - onMarkChange(callback) — register handler for incoming mark changes
- * - destroy() — close channel + clean up
  * - reset() — full reset for testing
  */
 
@@ -30,7 +29,7 @@ let unsubVersionChange = null
 export function init() {
   // Prevent duplicate init
   if (unsubVersionChange) {
-    return unsubVersionChange
+    destroy()
   }
 
   // Set up BroadcastChannel if supported
@@ -42,7 +41,7 @@ export function init() {
   // Set up versionchange listener
   unsubVersionChange = on(Events.DB_VERSION_CHANGE, handleVersionChange)
 
-  return unsubVersionChange
+  return () => { destroy() }
 }
 
 /**
@@ -72,7 +71,7 @@ export function onMarkChange(callback) {
 /**
  * Close the channel and clean up all listeners.
  */
-export function destroy() {
+function destroy() {
   if (channel) {
     channel.close()
     channel = null

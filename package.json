@@ -40,7 +40,6 @@
     "workbox-precaching": "^7.4.0"
   },
   "dependencies": {
-    "loglevel": "^1.9.2",
     "mitt": "^3.0.1"
   }
 }

@@ -1,6 +1,6 @@
 # UI Quality — Core Checklist
 
-**Weight: 3** | **Version: 3** | **Items: 18**
+**Weight: 5** | **Version: 4** | **Items: 20**
 
 ## Must-Check Items
 
@@ -85,3 +85,11 @@
 18. **Visual alignment consistency** — Content areas, headers, and verse blocks are aligned to a consistent grid across views. Left/right padding is consistent across route views (reader, review, settings, about). No visual "jumps" or layout shifts when navigating between views.
     - Check: Layout containers and padding values across all route view modules
     - Verify: `#main-content` has consistent padding. Navigation between reader and review hub does not shift the header or content area horizontally. All views share the same content width constraints
+
+19. **Accessibility flows validated in E2E** — Focus traps, keyboard navigation (Tab/Enter/Escape/Arrow), aria-expanded toggling, and screen reader announcements are tested in E2E.
+    - Check: `tests/e2e/` — accessibility-specific assertions in navigation, reader, and mark editor tests
+    - Verify: Focus trap in nav overlay is tested. Keyboard navigation (ArrowUp/Down in surah list) is tested. `aria-expanded` state changes are asserted
+
+20. **Responsive viewport coverage in E2E** — E2E tests exercise critical views at mobile (375px), tablet (768px), and desktop (1280px) widths.
+    - Check: `tests/e2e/` — viewport size configuration in test setup or individual tests
+    - Verify: At least one critical view (reader or nav) is tested at each viewport width. No horizontal overflow at 375px

@@ -1,6 +1,6 @@
 # Subagent Prompt Template
 
-Use this template for each of the 8 dimension subagents. Replace `[DIMENSION]`, `[DIMENSION_SLUG]`, `[CHECKLIST_CONTENT]`, and `[SPEC_LIST]` with the appropriate values.
+Use this template for each of the 6 dimension subagents. Replace `[DIMENSION]`, `[DIMENSION_SLUG]`, `[CHECKLIST_CONTENT]`, and `[SPEC_LIST]` with the appropriate values.
 
 **Dimension-to-spec mapping** (use for `[SPEC_LIST]`):
 
@@ -11,8 +11,6 @@ Use this template for each of the 8 dimension subagents. Replace `[DIMENSION]`, 
 | Reliability | story-1, story-2, story-6, story-8, story-9 |
 | Performance | story-1, story-2, story-3, story-4, story-5, story-6 |
 | Architecture | All 9 stories (structural concern) |
-| Testability | All 9 stories (focus on "Testing Decisions" sections) |
-| Observability | story-6, story-8, story-9 |
 | UI Quality | story-1, story-3, story-4, story-5, story-9 |
 
 ---
@@ -98,6 +96,7 @@ Return your report as the following JSON structure (the orchestrator receives it
   "supplementary_findings": [
     {
       "description": "what you found beyond the checklist",
+      "type": "defect|degradation|absence|enhancement",
       "severity": "P0|P1|P2|P3",
       "location": "file:line",
       "code_excerpt": "exact code snippet that demonstrates the issue",
@@ -137,6 +136,16 @@ Before assigning P0 or P1, your finding must pass these hard requirements from `
 - **P0 requires** demonstrating one of: data loss, wrong verse text, XSS vector, or broken navigation — with a code excerpt showing the defect. If the finding doesn't show one of these, it cannot be P0.
 - **P1 requires** demonstrating a broken feature, offline failure, or exploitable security gap — with a code path showing the failure.
 - **The Absence Test**: If your finding describes something that *doesn't exist* ("No error tracking", "No logging mechanism", "No performance monitoring"), it is an absence, not a defect. Absences are capped at P2 unless the missing thing directly enables data loss, XSS, wrong text, or broken navigation in existing code. "No Sentry" = P2. "No input sanitization on the verse render path" = P0 (enables XSS).
+
+## Self-Verification Requirements
+
+Before including ANY finding, you MUST read the actual file:line you are citing. If you cannot verify the issue exists in the current code, do not report it. Describing code without reading it is a critical failure.
+
+**Stale finding detection:** Verify that the issue has not already been fixed. Check for existing `.catch()`, `try/catch`, validation, or other mitigations before reporting.
+
+**Finding type requirement:** Every finding MUST include a `type` field with one of: `defect`, `degradation`, `absence`, or `enhancement`. Findings typed as `enhancement` are excluded from scoring.
+
+**Scope creep rule:** Your job is to flag incorrect or poor work, not to suggest new features. If a recommendation would introduce new functionality not required by any current spec or story, type it as `enhancement`.
 
 ## Scoring Guide
 

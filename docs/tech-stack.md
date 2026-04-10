@@ -9,10 +9,9 @@
 | CSS | **Lightning CSS** | — | Vendor prefixing, minification, CSS transforms |
 | PWA | **vite-plugin-pwa** | 1.2+ | Workbox integration, manifest generation, `injectManifest` mode |
 | Events | **mitt** | 3+ | Tiny (~200B) typed pub/sub event emitter |
-| Logger | **loglevel** | 1.9+ | Lightweight structured logger with level filtering |
+| Logger | **Custom** | — | Dev-only console wrapper, zero-cost in production |
 | Test Runner | **Vitest** | 3+ | Unit + integration tests, Vite-native |
 | E2E | **Playwright** | — | Cross-browser end-to-end tests |
-| Coverage | **@vitest/coverage-v8** | 3+ | V8-based code coverage |
 | DOM Env | **jsdom** | 26+ | Browser-like environment for tests |
 | IDB Mock | **fake-indexeddb** | 6+ | IndexedDB polyfill for tests |
 | Linter | **ESLint** | 9+ | Code quality, strict mode |
@@ -131,69 +130,40 @@ src/
 
 ## Routing
 
-| Route | Module | Phase |
-|---|---|---|
-| `#/s/:surah` | `reader/index.js` | 1 |
-| `#/s/:surah/:ayah` | `reader/index.js` | 2 |
-| `#/review` | `review/hub.js` | 2 |
-| `#/settings` | `settings/index.js` | 3 |
-| `#/about` | `about/index.js` | 3 |
-| `#/t/:tag` | `review/hub.js` — FVR fallback when marks exist for tag, not-found otherwise | 3 |
+| Route | Module |
+|---|---|
+| `#/s/:surah` | `reader/index.js` |
+| `#/s/:surah/:ayah` | `reader/index.js` |
+| `#/review` | `review/hub.js` |
+| `#/settings` | `settings/index.js` |
+| `#/about` | `about/index.js` |
+| `#/t/:tag` | `review/hub.js` — FVR fallback when marks exist for tag, not-found otherwise |
 
 ## Testing Strategy
+
+### Boundary Unit Tests (Vitest)
+5 unit test files guard security and data integrity boundaries that E2E cannot reach:
+- `safety/input-validator.test.js` — XSS rejection, surah/verse parsing boundaries
+- `safety/sync.test.js` — cross-tab sync, IDB versionchange
+- `offline/dataset-updater.test.js` — SHA-256 verification, update state machine
+- `core/router.test.js` — param sanitization, route matching
+- `core/db.test.js` — IDB schema validation, store operations
+
+### E2E Tests (Playwright)
+9 specs cover critical user journeys against the production build.
+See product-info.md “Critical User Journeys” for the canonical list.
 
 ### Static Checks
 - ESLint + strict mode
 - `pnpm audit` (dependency security)
 - `scripts/check-chunks.js` (max 150KB gzip per chunk)
-- PWA manifest validation (lighthouse-ci)
 
-### Unit Tests (Vitest)
-- `data/dataset.js` — getSurah, getSurahs, getManifestUrls
-- `safety/input-validator.js` — parseNavigationInput, validateTagParam
-- `marks/store.js` — CRUD, event emission
-- `marks/tags.js` — defaults, cascade deletion
-- `review/state.js` — IDB persist/restore
-- `settings/theme.js` — load/set, CSS application
-- `about/versions.js` — app version, dataset version
-- `reader/scroll-tracker.js` — position calculation, debounce
-- `data/offline.js` — corpus download, activation
-- `offline/dataset-updater.js` — version check, state transitions
-- `core/db.js` — IDB connection, versionchange
+## Module Lifecycle Contract
 
-### Integration Tests (Vitest + jsdom + fake-indexeddb)
-- Reader rendering, translation toggle, basmala rules
-- Session restore, launch restore
-- Navigation: search, filtering, current surah highlight
-- Marking flow: long-press → modal → save → indicator → delete → undo
-- Review hub: pagination, grouping, filtering, delete + undo
-- visibilitychange re-read: hide → modify IDB → show → verify update
-- Dataset updates: state machine, cache invalidation
-- Settings persistence: theme survives reload
+Every `init()` function returns a cleanup function. The caller stores it and calls it when the module’s lifetime ends.
 
-### E2E Tests (Playwright)
-- First-time user: load → read → install PWA → download corpus → verify offline
-- Session restore: read → close → reopen → resume
-- Navigation: hamburger → search → navigate → verify
-- Verse marks: long-press → tag → verify indicator → review hub
-- Offline mode: disconnect → reload → verify cached content
-- Deep links: `#/s/2/255` → exact verse
-- Settings: dark mode → reload → persists → clear data → reset
-- Cross-tab: visibilitychange re-read
+- **Route modules** (`reader`, `review/hub`, `settings`, `about`): Router calls cleanup on route change
+- **Boot services** (`nav`, `safety/sync`, `quota-banner`): `app.js` collects cleanups in `bootCleanups[]`, drains on re-init
+- **Router itself**: Returns cleanup from `init()`, collected by `app.js`
 
-### Performance Targets
-| Metric | Target |
-|---|---|
-| First verse render | ≤ 800ms (4x CPU throttle, warm cache) |
-| Al-Baqarah initial render (50 verses) | ≤ 500ms |
-| Search filter response | ≤ 50ms |
-| Mark persist | < 200ms |
-| visibilitychange re-read (30 marks) | ≤ 300ms |
-| Dataset update check | ≤ 200ms |
-
-## Phases
-
-**Phase 1** — Stories 1-3: Online reading, PWA install, continuous reader, session restore, surah navigation
-**Phase 2** — Stories 4-5: Verse marks with default tags, review hub (All Marks view)
-**Phase 3** — Stories 6-9: visibilitychange safety, verse deep links, dataset updates, settings/about
-**Phase 4** (future): BroadcastChannel sync, custom tags, FVR, bulk delete, font size controls
+This replaces the previous mixed pattern of `cleanup()` exports, `destroy()` exports, and return values.

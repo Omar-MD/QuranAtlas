@@ -12,7 +12,7 @@ A user has QuranAtlas open in two browser tabs. They mark a verse in Tab A — b
 
 A `visibilitychange` re-read on every module provides eventual consistency for tabs that were frozen or backgrounded. IDB `versionchange` events (schema upgrades) are handled by closing the DB and showing a non-dismissible reload banner.
 
-**BroadcastChannel sync is DEFERRED to Phase 4.** The `visibilitychange` re-read alone is sufficient for Phase 1-3. It is a one-liner per module and handles the common case of a user returning to a backgrounded tab. Real-time sync between simultaneously-open tabs is an edge case for a reading app.
+**BroadcastChannel sync is DEFERRED.** The `visibilitychange` re-read alone is sufficient. It is a one-liner per module and handles the common case of a user returning to a backgrounded tab. Real-time sync between simultaneously-open tabs is an edge case for a reading app.
 
 **Supersedes Story 2 user stories 17–19:** The primary/secondary tab model and "Switch to main tab" hint are dropped. Tabs are peers — each saves reading position independently per-surah (last-write-wins). No `localStorage` is used anywhere. See Issue #2 for the supersession note.
 
@@ -21,8 +21,8 @@ A `visibilitychange` re-read on every module provides eventual consistency for t
 1. As a reader who switched to another app and came back to QuranAtlas, I want the tab to silently refresh its displayed mark data, so that I see up-to-date information even if I missed real-time broadcasts.
 2. As a user with a tab open when a new app version is deployed, I want to see a clear "App updated. Reload to continue." message, so that I know why the app stopped responding and what to do.
 3. As a user seeing the reload prompt after an app update, I want no way to dismiss it without reloading, so that I don't continue using a broken tab with a stale database schema.
-4. As a reader, I want all cross-tab coordination to use BroadcastChannel only — no `localStorage`, no polling — so that the architecture stays consistent with the project's data layer rules. *(Deferred to Phase 4)*
-5. As a developer, I want the sync module to be a deep module with a simple interface (`broadcastMarkChange`, `onMarkChange`, `destroy`), so that consumers never need to know about BroadcastChannel internals. *(Deferred to Phase 4)*
+4. As a reader, I want all cross-tab coordination to use BroadcastChannel only — no `localStorage`, no polling — so that the architecture stays consistent with the project's data layer rules. *(Deferred)*
+5. As a developer, I want the sync module to be a deep module with a simple interface (`broadcastMarkChange`, `onMarkChange`, `destroy`), so that consumers never need to know about BroadcastChannel internals. *(Deferred)*
 6. As a reader on an older browser without BroadcastChannel, I want the `visibilitychange` re-read to keep my tab eventually consistent, so that I don't see permanently stale marks even without real-time sync.
 
 ## Implementation Decisions
@@ -79,7 +79,7 @@ Prior art: `tests/unit/core/db.test.js` for IDB setup patterns; Story 2 `scroll-
 
 ## Out of Scope
 
-- BroadcastChannel real-time sync — **DEFERRED** to Phase 4
+- BroadcastChannel real-time sync — **DEFERRED**
 - Position sync between tabs (per-surah last-write-wins is sufficient)
 - `settings["lastSurface"]` sync (last-write-wins is fine — only affects next launch)
 - SharedWorker or ServiceWorker-based messaging fallback

@@ -14,7 +14,7 @@ Create a Settings page accessible via `#/settings` in the bottom nav bar, with a
 
 Both pages are top-level routes and accessible from the nav bar. All theme changes are applied via CSS variables scoped to `:root`, ensuring consistent application across the entire UI.
 
-**Font size controls are DEFERRED to Phase 3.** Browser zoom works perfectly in a PWA and covers the same need. Dark mode is far more critical for night reading.
+**Font size controls are DEFERRED.** Browser zoom works perfectly in a PWA and covers the same need. Dark mode is far more critical for night reading.
 
 ## User Stories
 
@@ -177,7 +177,7 @@ Prior art: Story 3 (IDB read/write patterns), Story 4 (event emission + IDB save
 - Changing theme color palette (fixed dark/light/sepia palettes)
 - Keyboard shortcuts for theme switching
 - High contrast mode or other a11y themes (beyond dark/sepia/light)
-- Font size controls — **DEFERRED** to Phase 3
+- Font size controls — **DEFERRED**
 - Custom font selection (embedded font only: Scheherazade New)
 - Storage quota increase or cloud sync
 - Device storage quota management (browser-level setting)

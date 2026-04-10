@@ -15,15 +15,19 @@ import { init as initQuotaBanner } from './quota-banner.js'
 import { init as initIndicators } from '../marks/indicator.js'
 import { setupLongPress, openEditor } from '../marks/editor.js'
 
-let unsubLaunchRestore = null
-let unsubNavNavigate = null
-let unsubSafetySync = null
+const bootCleanups = []
 
 /**
  * Initialize the application.
  */
 export async function init() {
   performance.mark('app:start')
+
+  // Drain previous cleanups for safe re-init
+  for (const fn of bootCleanups) {
+    if (typeof fn === 'function') { fn() }
+  }
+  bootCleanups.length = 0
 
   try {
     // Open database (creates stores if first run)
@@ -34,11 +38,8 @@ export async function init() {
     // Apply saved theme before router dispatches first route
     await initTheme()
 
-    // Listen for launch restore (clean up previous if re-init)
-    if (unsubLaunchRestore) {
-      unsubLaunchRestore()
-    }
-    unsubLaunchRestore = on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore)
+    // Listen for launch restore
+    bootCleanups.push(on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
 
     // Register Phase 1 routes
     router.register('#/s/:surah', () => import('../reader/index.js'), {
@@ -63,23 +64,22 @@ export async function init() {
     })
 
     // Initialize router AFTER routes are registered so first dispatch finds them
-    router.init()
+    bootCleanups.push(router.init())
     performance.mark('router:resolve')
     performance.measure('app:router-init', 'db:open', 'router:resolve')
 
     // Initialize nav panel
     const { init: initNav } = await import('../nav/index.js')
-    await initNav()
+    bootCleanups.push(await initNav())
 
     // Handle navigation events from nav panel
-    if (unsubNavNavigate) { unsubNavNavigate() }
-    unsubNavNavigate = on(Events.NAVIGATION_NAVIGATE, ({ surah, verse }) => {
+    bootCleanups.push(on(Events.NAVIGATION_NAVIGATE, ({ surah, verse }) => {
       if (verse) {
         router.navigate(`#/s/${surah}/${verse}`)
       } else {
         router.navigate(`#/s/${surah}`)
       }
-    })
+    }))
 
     // Add Review Hub icon to top bar
     const topBar = document.getElementById('top-bar')
@@ -96,11 +96,10 @@ export async function init() {
     initInstallListener()
 
     // Initialize safety sync (handles IDB versionchange reload banner)
-    if (unsubSafetySync) { unsubSafetySync() }
-    unsubSafetySync = initSafetySync()
+    bootCleanups.push(initSafetySync())
 
     // Initialize quota warning / exceeded banners
-    initQuotaBanner()
+    bootCleanups.push(initQuotaBanner())
 
     // Register service worker
     await registerServiceWorker()

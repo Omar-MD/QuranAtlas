@@ -12,7 +12,7 @@ import { Events } from './constants.js'
 import { logger } from './logger.js'
 
 const routes = new Map()
-let currentModule = null
+let currentCleanup = null
 
 /**
  * Register a route handler.
@@ -42,11 +42,20 @@ export function navigate(hash, { replace = false } = {}) {
 
 /**
  * Initialize the router. Call once on app start.
+ * @returns {Function} cleanup function that removes listeners and cleans up current route
  */
 export function init() {
-  window.addEventListener('hashchange', () => handleRoute(location.hash))
-  window.addEventListener('popstate', () => handleRoute(location.hash))
+  const onHashChange = () => handleRoute(location.hash)
+  const onPopState = () => handleRoute(location.hash)
+  window.addEventListener('hashchange', onHashChange)
+  window.addEventListener('popstate', onPopState)
   handleRoute(location.hash)
+
+  return () => {
+    window.removeEventListener('hashchange', onHashChange)
+    window.removeEventListener('popstate', onPopState)
+    if (currentCleanup) { currentCleanup(); currentCleanup = null }
+  }
 }
 
 /**
@@ -109,14 +118,13 @@ async function handleRoute(hash) {
   if (match) {
     const { loader, params, hooks } = match
 
-    // Clean up previous module before loading new one
-    if (currentModule && currentModule.cleanup) {
-      currentModule.cleanup()
-      currentModule = null
+    // Clean up previous route module
+    if (currentCleanup) {
+      currentCleanup()
+      currentCleanup = null
     }
 
     const module = await loader()
-    currentModule = module
 
     if (module.init) {
       try {
@@ -128,7 +136,7 @@ async function handleRoute(hash) {
           showNotFound()
           return
         }
-        await module.init(sanitizedParams, hooks)
+        currentCleanup = await module.init(sanitizedParams, hooks) ?? null
         await put('settings', { key: 'lastSurface', value: hash })
       } catch (error) {
         logger.error('Route failed:', {

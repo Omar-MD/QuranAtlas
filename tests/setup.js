@@ -1,6 +1,5 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, vi } from 'vitest'
-import { logger } from '../src/core/logger.js'
 
 function formatConsoleArg(value) {
   if (value instanceof Error) {
@@ -40,15 +39,12 @@ const originalRestoreAllMocks = vi.restoreAllMocks.bind(vi)
 
 vi.restoreAllMocks = () => {
   originalRestoreAllMocks()
-  logger.setLevel('silent')
   installConsoleGuards()
 }
 
-logger.setLevel('silent')
 installConsoleGuards()
 
 beforeEach(() => {
-  logger.setLevel('silent')
 })
 
 afterEach(() => {

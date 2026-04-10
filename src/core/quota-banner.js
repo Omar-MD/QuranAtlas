@@ -68,14 +68,15 @@ function showBanner({ dismissible }) {
 
 /**
  * Subscribe to quota events. Call once on app init.
+ * @returns {Function} cleanup function
  */
 export function init() {
-  on(Events.DB_QUOTA_EXCEEDED, () => {
+  const unsub1 = on(Events.DB_QUOTA_EXCEEDED, () => {
     removeBanner()
     showBanner({ dismissible: false })
   })
 
-  on(Events.STORAGE_QUOTA_WARNING, async () => {
+  const unsub2 = on(Events.STORAGE_QUOTA_WARNING, async () => {
     if (bannerEl) {
       return
     }
@@ -89,4 +90,6 @@ export function init() {
     }
     showBanner({ dismissible: true })
   })
+
+  return () => { unsub1(); unsub2(); removeBanner() }
 }

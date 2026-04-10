@@ -10,7 +10,13 @@ import { Events } from '../core/constants.js'
 import { parseNavigationInput } from '../safety/input-validator.js'
 import { announce } from '../a11y/announcer.js'
 
+function debounce(fn, ms) {
+  let id
+  return (...args) => { clearTimeout(id); id = setTimeout(() => fn(...args), ms) }
+}
+
 let surahs = []
+let cachedItems = [] // [{ el, surahNum, name, arabic }]
 let currentSurah = null
 let isOpen = false
 let shouldAutoClose = false
@@ -41,11 +47,10 @@ export async function init() {
   setupEventListeners()
   setupEscapeListener()
   setupVisibilityReRead()
+
+  return destroy
 }
 
-/**
- * Tear down the nav panel, removing all listeners and resetting state.
- */
 export function destroy() {
   if (mediaQuery && mediaQueryHandler) {
     mediaQuery.removeEventListener('change', mediaQueryHandler)
@@ -59,6 +64,7 @@ export function destroy() {
   if (backdrop && backdrop.parentNode) { backdrop.remove() }
 
   surahs = []
+  cachedItems = []
   currentSurah = null
   isOpen = false
   shouldAutoClose = false
@@ -96,13 +102,10 @@ function renderNavPanel() {
   searchInput.setAttribute('aria-label', 'Search surah or verse')
   searchInput.maxLength = 50
 
+  const debouncedFilter = debounce(filterSurahList, 150)
   searchInput.addEventListener('input', () => {
-    filterSurahList(searchInput.value)
+    debouncedFilter(searchInput.value)
     searchInput.removeAttribute('aria-invalid')
-    const visible = document.querySelectorAll('.qa-nav-item:not([hidden])')
-    if (searchInput.value.trim()) {
-      announce(`${visible.length} surahs found`)
-    }
   })
 
   searchInput.addEventListener('keydown', (e) => {
@@ -125,6 +128,14 @@ function renderNavPanel() {
   })
 
   navSurface.appendChild(list)
+
+  // Build cachedItems for fast filtering
+  cachedItems = [...list.querySelectorAll('.qa-nav-item')].map(el => ({
+    el,
+    surahNum: el.getAttribute('data-surah') || '',
+    name: (el.querySelector('.qa-nav-item-name')?.textContent || '').toLowerCase(),
+    arabic: el.querySelector('.qa-nav-item-arabic')?.textContent || '',
+  }))
 
   // Backdrop
   if (backdrop && backdrop.parentNode) { backdrop.remove() }
@@ -178,10 +189,18 @@ function createSurahItem(s) {
       if (shouldAutoClose) { closeNav() }
     } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
-      const items = [...document.querySelectorAll('.qa-nav-item:not([hidden])')]
+      const items = cachedItems.filter(i => !i.el.hasAttribute('hidden')).map(i => i.el)
       const idx = items.indexOf(li)
       const next = e.key === 'ArrowDown' ? items[idx + 1] : items[idx - 1]
       if (next) { next.focus() }
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      const items = cachedItems.filter(i => !i.el.hasAttribute('hidden'))
+      if (items.length) items[0].el.focus()
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      const items = cachedItems.filter(i => !i.el.hasAttribute('hidden'))
+      if (items.length) items[items.length - 1].el.focus()
     }
   })
 
@@ -194,25 +213,17 @@ function createSurahItem(s) {
 }
 
 function filterSurahList(query) {
-  const items = document.querySelectorAll('.qa-nav-item')
   const q = query.toLowerCase().trim()
-
-  items.forEach(item => {
-    if (!q) {
-      item.removeAttribute('hidden')
-      return
-    }
-
-    const surahNum = item.getAttribute('data-surah')
-    const name = item.querySelector('.qa-nav-item-name')?.textContent?.toLowerCase() || ''
-    const arabic = item.querySelector('.qa-nav-item-arabic')?.textContent || ''
-
-    if (surahNum.startsWith(q) || name.includes(q) || arabic.includes(q)) {
-      item.removeAttribute('hidden')
+  let shown = 0
+  for (const { el, surahNum, name, arabic } of cachedItems) {
+    if (!q || surahNum.startsWith(q) || name.includes(q) || arabic.includes(q)) {
+      el.removeAttribute('hidden')
+      shown++
     } else {
-      item.setAttribute('hidden', '')
+      el.setAttribute('hidden', '')
     }
-  })
+  }
+  announce(`${shown} surahs found`)
 }
 
 function handleSearchSubmit(searchInput) {

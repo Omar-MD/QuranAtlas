@@ -86,6 +86,21 @@ export async function init(params = {}, { openEditor } = {}) {
       render(mc)
     }
   })
+
+  return () => {
+    if (unsubSyncUpdate) { unsubSyncUpdate(); unsubSyncUpdate = null }
+    if (unsubVisibilityVisible) { unsubVisibilityVisible(); unsubVisibilityVisible = null }
+    _openEditor = null
+    clearUndoToast()
+    if (filterDebounceTimer) { clearTimeout(filterDebounceTimer); filterDebounceTimer = null }
+    const mc = document.getElementById('main-content')
+    if (mc) { mc.textContent = '' }
+    currentState = null
+    allMarks = []
+    sortedMarks = []
+    filteredMarks = []
+    displayedCount = 0
+  }
 }
 
 /**
@@ -172,34 +187,7 @@ function renderTagNotFound(container, rawTag) {
   announce(`No marks found for "${tagName}". Visit Review Hub to browse your marks.`)
 }
 
-/**
- * Clean up hub state.
- */
-export function cleanup() {
-  if (unsubSyncUpdate) {
-    unsubSyncUpdate()
-    unsubSyncUpdate = null
-  }
-  if (unsubVisibilityVisible) {
-    unsubVisibilityVisible()
-    unsubVisibilityVisible = null
-  }
-  _openEditor = null
-  clearUndoToast()
-  if (filterDebounceTimer) {
-    clearTimeout(filterDebounceTimer)
-    filterDebounceTimer = null
-  }
-  const mainContent = document.getElementById('main-content')
-  if (mainContent) {
-    mainContent.textContent = ''
-  }
-  currentState = null
-  allMarks = []
-  sortedMarks = []
-  filteredMarks = []
-  displayedCount = 0
-}
+
 
 /**
  * Apply a filter and re-render with debouncing.
@@ -424,25 +412,30 @@ async function renderGrouped(container, marks) {
   }
 
   const sortedKeys = [...groups.keys()].sort((a, b) => a - b)
-  
+  const fragment = document.createDocumentFragment()
+
   for (const surahNum of sortedKeys) {
     const header = document.createElement('div')
     header.className = 'qa-review-surah-header'
     header.setAttribute('data-surah-group', String(surahNum))
     const meta = surahs.find(s => s.n === surahNum)
     header.textContent = meta ? `${meta.name} (${meta.n})` : `Surah ${surahNum}`
-    container.appendChild(header)
+    fragment.appendChild(header)
 
     for (const mark of groups.get(surahNum)) {
-      container.appendChild(renderMarkCard(mark, null))
+      fragment.appendChild(renderMarkCard(mark, null))
     }
   }
+
+  container.appendChild(fragment)
 }
 
 async function renderFlat(container, marks) {
+  const fragment = document.createDocumentFragment()
   for (const mark of marks) {
-    container.appendChild(renderMarkCard(mark, null))
+    fragment.appendChild(renderMarkCard(mark, null))
   }
+  container.appendChild(fragment)
 }
 
 function renderMarkCard(mark, surahData) {

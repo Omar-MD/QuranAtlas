@@ -1,6 +1,6 @@
 # Functional Correctness — Core Checklist
 
-**Weight: 5** | **Version: 2** | **Items: 22**
+**Weight: 5** | **Version: 3** | **Items: 25**
 
 ## Must-Check Items
 
@@ -93,3 +93,15 @@
 22. **Race condition prevention** — Rapid sequential operations (fast navigation between surahs, rapid mark/unmark, double-tap on buttons) do not produce inconsistent state.
     - Check: `reader/index.js` — navigation guard prevents rendering surah B while surah A is still loading. `marks/editor.js` — save button debounced or disabled after first tap
     - Verify: Navigating `#/s/1` → `#/s/2` → `#/s/3` quickly renders only surah 3. No remnants of surah 1 or 2 in DOM. No stale fetch results applied after navigation
+
+23. **Critical user journeys have passing E2E tests** — All documented journeys in product-info.md have corresponding Playwright E2E specs that pass on the current commit.
+    - Check: `tests/e2e/` — each journey in the "Critical User Journeys" section of product-info.md has a test
+    - Verify: `pnpm test:e2e` passes. No critical journey is untested
+
+24. **E2E tests run in CI and block merge on failure** — CI pipeline runs E2E suite against production build. PRs cannot merge with failing E2E tests.
+    - Check: CI configuration — E2E step exists, runs against `pnpm build` output, and is a required check
+    - Verify: A failing E2E test actually blocks merge. CI does not skip E2E on timeout
+
+25. **Critical path edge cases exercised in E2E** — Error states (network failure, invalid route, invalid deep link), offline recovery, and empty-state scenarios are covered by E2E tests.
+    - Check: `tests/e2e/` — tests for error states, not just happy paths
+    - Verify: At least one E2E test simulates network failure. Invalid deep links are tested. Empty mark list state is tested

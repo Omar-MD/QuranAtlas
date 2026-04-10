@@ -28,7 +28,6 @@ beforeEach(() => {
 
 afterEach(async () => {
   if (sync) {
-    sync.destroy()
     sync.reset()
   }
 })
@@ -145,19 +144,21 @@ describe('safety/sync.js', () => {
   })
 
   describe('init()', () => {
-    it('returns the same cleanup function on duplicate init calls', () => {
+    it('returns a fresh cleanup function for each init call', () => {
       const firstCleanup = sync.init()
       const secondCleanup = sync.init()
 
-      expect(secondCleanup).toBe(firstCleanup)
-      expect(MockBroadcastChannel.instances).toHaveLength(1)
+      expect(typeof firstCleanup).toBe('function')
+      expect(typeof secondCleanup).toBe('function')
+      expect(secondCleanup).not.toBe(firstCleanup)
     })
   })
 
-  describe('destroy()', () => {
-    it('closes the BroadcastChannel', () => {
-      const channel = MockBroadcastChannel.instances[0]
-      sync.destroy()
+  describe('cleanup from init()', () => {
+    it('closes the BroadcastChannel when cleanup is called', () => {
+      const cleanup = sync.init()
+      const channel = MockBroadcastChannel.instances[MockBroadcastChannel.instances.length - 1]
+      cleanup()
 
       expect(channel.close).toHaveBeenCalled()
     })
@@ -165,7 +166,6 @@ describe('safety/sync.js', () => {
 
   describe('no BroadcastChannel support', () => {
     it('broadcastMarkChange is a no-op when BroadcastChannel unavailable', async () => {
-      sync.destroy()
       sync.reset()
 
       const original = globalThis.BroadcastChannel

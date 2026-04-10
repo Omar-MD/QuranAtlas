@@ -117,12 +117,6 @@ export async function init() {
   mainContent.appendChild(aboutLink)
 
   announce('Settings page')
-}
 
-/**
- * Invalidates any in-flight init() call.
- * Called by the router before navigating away from this page.
- */
-export function cleanup() {
-  ++_initSeq
+  return () => { ++_initSeq }
 }

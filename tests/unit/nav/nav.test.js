@@ -73,12 +73,15 @@ describe('nav/index.js', () => {
   })
 
   it('filters surah list on search input', async () => {
+    vi.useFakeTimers()
     const { init } = await import('../../../src/nav/index.js')
     await init()
 
     const search = document.querySelector('.qa-nav-search')
     search.value = 'ba'
     search.dispatchEvent(new Event('input'))
+    vi.advanceTimersByTime(150)
+    vi.useRealTimers()
 
     const visibleItems = document.querySelectorAll('.qa-nav-item:not([hidden])')
     expect(visibleItems.length).toBe(1)

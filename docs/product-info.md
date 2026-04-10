@@ -59,7 +59,7 @@ QuranAtlas is a Progressive Web App designed for reading the Quran on mobile dev
 
 ## What's NOT Included
 
-QuranAtlas stays focused on core reading. These features are not planned:
+### Not Planned
 
 - Audio recitation
 - Transliteration
@@ -74,17 +74,37 @@ QuranAtlas stays focused on core reading. These features are not planned:
 - Footnotes or tafsir
 - Export data
 - Hizb or ruku navigation
-- Custom tag creation (deferred to future phase)
 - Font size controls (use browser zoom)
 
-## Roadmap
+For items planned in future, see Future Stories.
 
-QuranAtlas is being built in phases:
+## Implemented Stories
 
-**Phase 1** — Online reading, PWA install, continuous reader with session restore, surah navigation with search
+- **Story 1: Online reading** — Arabic + English, surah rendering, skeleton/error states
+- **Story 2: Continuous reader** — chunked rendering, session restore, scroll tracking
+- **Story 3: Navigation** — surah list, search/filter, keyboard nav, mobile overlay
+- **Story 4: Verse marks** — long-press, tag assignment, indicators, undo
+- **Story 5: Review hub** — All Marks view, grouping, filtering, sort, pagination
+- **Story 6: Cross-tab safety** — BroadcastChannel sync, IDB versionchange banner
+- **Story 7: Deep links** — verse-level URLs, invalid verse handling
+- **Story 8: Dataset updates** — version check, download, staging, SHA-256 verify, apply
+- **Story 9: Settings & About** — theme switcher, clear data, versions, attribution, PWA install
 
-**Phase 2** — Verse marks with 4 default tags, review hub (All Marks view with surah grouping, filtering, pagination)
+## Future Stories
 
-**Phase 3** — visibilitychange safety, verse deep links, simplified dataset updates, settings (theme, clear data), about page
+- Custom tag creation
+- Filtered Verse Review (FVR)
+- BroadcastChannel cross-tab sync enhancements
+- Bulk mark operations
 
-**Phase 4** (future) — BroadcastChannel cross-tab sync, custom tag creation, Filtered Verse Review, bulk delete, font size controls
+## Critical User Journeys
+
+1. Launch → default surah → read
+2. Navigate → search surah → select → read
+3. Read → scroll → close → reopen → resume position
+4. Read → Arabic + English text renders correctly
+5. Long-press verse → tag → indicator → review hub
+6. Toggle translation → navigate → persists
+7. Switch theme → reload → persists
+8. Deep link `#/s/2/255` → correct verse
+9. SW registration → cache → offline ready

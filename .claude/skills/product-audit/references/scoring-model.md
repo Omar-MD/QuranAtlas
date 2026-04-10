@@ -8,31 +8,27 @@ This is the single source of truth for weights, scoring, severity, and cross-dim
 |-----------|--------|-----------|
 | Functional correctness | 5 | Wrong verse or broken navigation is unacceptable for a religious text app |
 | Security | 5 | XSS or data corruption destroys user trust |
-| Reliability | 5 | Offline-first PWA — data loss or broken offline is the #1 failure mode |
-| Performance | 4 | Mobile-first on 4x CPU throttle — jank kills the reading experience |
-| Architecture | 4 | Must scale cleanly to Phase 4 features without restructuring |
-| Testability | 3 | Quality foundation — without tests, regressions are invisible |
-| UI Quality | 3 | Accessibility barriers prevent users from accessing content; responsive failures break mobile-first PWA; inconsistency erodes trust |
-| Observability | 1 | Acceptable to fly blind short-term, but limits debugging long-term |
-| **Total** | **30** | |
+| UI Quality | 5 | Reading UX is core value — accessibility barriers, responsive failures, and inconsistency erode trust |
+| Architecture | 4 | Must scale cleanly to future stories without restructuring |
+| Reliability | 4 | Offline-first PWA — data loss or broken offline breaks trust |
+| Performance | 3 | Reading app, not real-time — but mobile-first on 4x CPU throttle still matters |
+| **Total** | **26** | |
 
 ## Scoring Formula
 
 ```
-weighted_score = sum(dimension_score * weight) / 30
+weighted_score = sum(dimension_score * weight) / 26
 ```
 
 Example:
 ```
 Functional:   7 * 5 = 35
 Security:     6 * 5 = 30
-Reliability:  5 * 5 = 25
-Performance:  7 * 4 = 28
+UI Quality:   8 * 5 = 40
 Architecture: 8 * 4 = 32
-Testability:  7 * 3 = 21
-UI Quality:   6 * 3 = 18
-Observability:3 * 1 = 3
-Total: 192 / 30 = 6.4
+Reliability:  5 * 4 = 20
+Performance:  7 * 3 = 21
+Total: 178 / 26 = 6.8
 ```
 
 ## Health Status Bands
@@ -52,6 +48,19 @@ Total: 192 / 30 = 6.4
 | P1 | Critical | Broken feature, offline failure, security gap. Core functionality impaired. | Fix before next release. |
 | P2 | Warning | Degrades user experience, tech debt, maintainability issue. Works but poorly. | Plan for upcoming sprint. |
 | P3 | Info | Improvement opportunity, nice-to-have, future-proofing. | Backlog candidate. |
+
+## Finding Types
+
+Every finding MUST include a `type` field classifying it as one of:
+
+| Type | Definition |
+|------|----------|
+| `defect` | Code does something wrong |
+| `degradation` | Code works but quality is measurably poor |
+| `absence` | Something doesn't exist that a current spec requires |
+| `enhancement` | New capability not required by any current spec |
+
+**Enhancement rule:** Findings typed as `enhancement` are reported in a separate "Enhancement Suggestions" section and are excluded from dimension scores, severity counts, and gate decisions. Enhancements provide useful recommendations but do not penalize the codebase for not having features that were never specified.
 
 ## Severity Calibration Rules
 
@@ -90,7 +99,7 @@ The key question: *Does existing code have a bug, or does missing code leave a g
 
 ### Weight-Severity Coherence
 
-A dimension's weight signals its urgency ceiling. If a weight-1 dimension (e.g., Observability) produces P0 findings, this is a red flag. The orchestrator must review and justify or downgrade. A dimension the team has explicitly deprioritized ("acceptable to fly blind short-term") should not produce findings that block a release.
+A dimension's weight signals its urgency ceiling. If a low-weight dimension (e.g., Performance) produces P0 findings, this is a red flag. The orchestrator must review and justify or downgrade. A dimension the team has explicitly deprioritized should not produce findings that block a release.
 
 ## Scoring Guide
 

@@ -33,8 +33,7 @@ function applyDefaultRuntimeMocks() {
 }
 
 async function silenceLogger() {
-  const { logger } = await import('../../../src/core/logger.js')
-  logger.setLevel('silent')
+  // logger is now a noop wrapper in test env; no silencing needed
 }
 
 vi.mock('../../../src/core/router.js', () => ({

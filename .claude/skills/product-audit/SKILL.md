@@ -1,12 +1,12 @@
 ---
 name: product-audit
-description: "EXPLICIT TRIGGER ONLY — invoke this skill only when the user explicitly says /product-audit or literally asks to 'run a product audit'. Do NOT auto-trigger for general questions about code quality, health, readiness, or assessments. This skill spawns 8 parallel subagents and is very expensive; never invoke speculatively."
+description: "EXPLICIT TRIGGER ONLY — invoke this skill only when the user explicitly says /product-audit or literally asks to 'run a product audit'. Do NOT auto-trigger for general questions about code quality, health, readiness, or assessments. This skill spawns 6 parallel specialist subagents and is very expensive; never invoke speculatively."
 ---
 # Product Audit — QuranAtlas
 
 ## Overview
 
-A structured, multi-dimensional audit that spawns 8 parallel specialist subagents, each scoring their dimension 0-10 against a core checklist with code-level evidence. An orchestrator cross-analyzes all reports, verifies findings, calculates a weighted health score, and generates a prioritized recovery plan with a gate decision.
+A structured, multi-dimensional audit that spawns 6 parallel specialist subagents, each scoring their dimension 0-10 against a core checklist with code-level evidence. An orchestrator cross-analyzes all reports, verifies findings, calculates a weighted health score, and generates a prioritized recovery plan with a gate decision.
 
 **Core principle:** Accuracy over completeness. A correct audit with 12 verified findings is worth more than 22 findings with 5 fabricated. No score without code-level evidence.
 
@@ -21,7 +21,7 @@ A structured, multi-dimensional audit that spawns 8 parallel specialist subagent
 
 ## The Iron Law
 
-**Full Audit: NO audit without all 8 dimensions.** A security issue may also be a reliability issue. Your job is the complete picture.
+**Full Audit: NO audit without all 6 dimensions.** A security issue may also be a reliability issue. Your job is the complete picture.
 
 **Follow-Up Audit:** Re-audit only dimensions that had P0/P1 findings in a previous full audit. Produces a delta report. See "Follow-Up Audit Mode" section below.
 
@@ -40,11 +40,11 @@ Before spawning subagents:
 1. Capture `git rev-parse --short HEAD` — this is the commit being audited
 2. Read `docs/product-info.md` and `docs/tech-stack.md` — the orchestrator needs product context to validate subagent reports later
 3. Check `docs/audit/` for previous audit reports — if one exists, note it for the delta section
-4. Read `references/subagent-prompt-template.md` and all 8 checklist files — you need these to construct subagent prompts in Step 1
+4. Read `references/subagent-prompt-template.md` and all 6 checklist files — you need these to construct subagent prompts in Step 1
 
-### Step 1: Spawn 8 Subagents in Parallel
+### Step 1: Spawn 6 Subagents in Parallel
 
-Spawn all 8 simultaneously — do NOT wait for one to finish before starting the next. Each subagent gets the prompt template from `references/subagent-prompt-template.md` with the dimension-specific checklist inserted and the correct spec list from the dimension-to-spec mapping table in that template.
+Spawn all 6 simultaneously — do NOT wait for one to finish before starting the next. Each subagent gets the prompt template from `references/subagent-prompt-template.md` with the dimension-specific checklist inserted and the correct spec list from the dimension-to-spec mapping table in that template.
 
 **Dimension-to-slug mapping:**
 
@@ -52,21 +52,19 @@ Spawn all 8 simultaneously — do NOT wait for one to finish before starting the
 |-----------|------|----------------|
 | Functional correctness | functional-correctness | checklists/functional-correctness.md |
 | Security | security | checklists/security.md |
+| UI Quality | ui-quality | checklists/ui-quality.md |
+| Architecture | architecture | checklists/architecture.md |
 | Reliability | reliability | checklists/reliability.md |
 | Performance | performance | checklists/performance.md |
-| Architecture | architecture | checklists/architecture.md |
-| Testability | testability | checklists/testability.md |
-| Observability | observability | checklists/observability.md |
-| UI Quality | ui-quality | checklists/ui-quality.md |
 
 **How to spawn subagents:**
 
-1. For each of the 8 dimensions:
+1. For each of the 6 dimensions:
    a. Read the corresponding checklist file from the table above
    b. Look up the spec list from the dimension-to-spec mapping in `references/subagent-prompt-template.md`
    c. Fill the template placeholders: `[DIMENSION]`, `[DIMENSION_SLUG]`, `[CHECKLIST_CONTENT]`, `[SPEC_LIST]`
    d. Use the filled template as the `prompt` parameter in an Agent tool call
-2. Make all 8 Agent tool calls in a **single message** (parallel execution)
+2. Make all 6 Agent tool calls in a **single message** (parallel execution)
 3. Each Agent tool call returns the subagent's JSON report directly as its return value — no file I/O needed
 
 ### Step 2: Collect Results and Handle Failures
@@ -75,8 +73,8 @@ Each Agent tool call returns the subagent's report directly. Check each result:
 
 - **Success** — The return value contains valid JSON with `dimension`, `score`, `core_checklist`, and `assessability_summary` fields. Collect it.
 - **Failure** — The return value is empty, an error message, or missing required fields. Respawn that single dimension with the same prompt. If it fails a second time, flag that dimension as incomplete.
-- **3+ incomplete dimensions** — ABORT the audit and tell the user. Partial results are misleading.
-- **1-2 incomplete dimensions** — Proceed but prominently flag the gaps in the report.
+- **2+ incomplete dimensions** — ABORT the audit and tell the user. Partial results are misleading.
+- **1 incomplete dimension** — Proceed but prominently flag the gaps in the report.
 
 ### Step 3: Cross-Analyze Findings
 
@@ -96,11 +94,13 @@ Read all completed reports and perform:
 
 7. **Absence-vs-defect triage** — Classify each P0/P1 as either a *defect* (something wrong in existing code) or an *absence* (something that doesn't exist). Apply the Absence Test from `references/scoring-model.md`: absences are capped at P2 unless the missing thing directly enables data loss, XSS, wrong text, or broken navigation. "No Sentry" is an absence → P2. "No input validation on verse rendering" is an absence that enables wrong text → P0.
 
-8. **Weight-severity coherence** — If a weight-1 dimension (e.g., Observability) produces P0 findings, this is a red flag. The dimension's own weight signals its urgency ceiling — a dimension the team explicitly deprioritized should not produce release-blocking findings unless the finding meets P0 hard requirements from `references/scoring-model.md`.
+8. **Weight-severity coherence** — If a low-weight dimension (e.g., Performance) produces P0 findings, this is a red flag. The dimension's own weight signals its urgency ceiling — a dimension the team explicitly deprioritized should not produce release-blocking findings unless the finding meets P0 hard requirements from `references/scoring-model.md`.
+
+9. **Enhancement classification** — Verify finding types. Any recommendation that introduces new functionality not in the current spec must be typed as `enhancement` and excluded from scoring. Enhancements go in the separate "Enhancement Suggestions" section.
 
 ### Step 4: Orchestrator Verification (MANDATORY)
 
-Before calculating scores, the orchestrator MUST verify every P0 and P1 finding. This step produces visible artifacts — if the report has no "Orchestrator verified" fields, verification was skipped.
+Before calculating scores, the orchestrator MUST verify every P0 and P1 finding. Spot-check at least 30% of P2 and P3 findings by reading the cited file:line. If >30% of spot-checked findings are false, re-verify ALL findings for that dimension. This step produces visible artifacts — if the report has no "Orchestrator verified" fields, verification was skipped.
 
 **For each P0 and P1 finding**, read the actual file:line referenced and produce one of three outcomes:
 
@@ -210,23 +210,36 @@ If ambiguous, ask the user: "Would you like a full audit or a follow-up comparin
 
 ---
 
+## Decision Log
+
+1. **Observability removed** — Runtime observability deprioritized. Dev-mode logging via noop logger suffices for the current product stage. No remote monitoring or error reporting is planned.
+
+2. **Testability merged** — Testing strategy is critical E2E journeys only, not line/function coverage. The testability items that survived were redistributed:
+   - E2E journey coverage → Functional Correctness (items 23-25)
+   - Accessibility + responsive viewport testing → UI Quality (items 19-20)
+   - No test-only code in production → Architecture (item 27)
+
+3. **Weights rebalanced** — UI Quality elevated from 3 to 5 (reading UX is core value). Reliability reduced from 5 to 4 (data persistence is trust, but app is online-first with offline as enhancement). Performance reduced from 4 to 3 (reading app, not real-time).
+
+---
+
 ## Rationalization Table
 
 | Excuse | Reality |
 |--------|---------|
 | "Just a quick pass" | Quick passes miss cross-dimensional issues. You need the full picture. |
 | "Everything else is fine" | That's exactly what you need to verify, not assume. |
-| "Not enough time for all 8" | A partial audit gives false confidence. All 8 or don't call it an audit. |
+| "Not enough time for all 6" | A partial audit gives false confidence. All 6 or don't call it an audit. |
 | "This dimension looks clean" | "Looks clean" without code-level evidence is not an audit. |
 | "The user only asked about X" | The user may not know about hidden risks. Complete picture is your job. |
-| "I'll do the others later" | Later never comes. Do all 8 now. |
+| "I'll do the others later" | Later never comes. Do all 6 now. |
 | "Severity labels don't matter" | Inconsistent labels break recovery plan prioritization. ONLY P0-P3. |
 | "I verified the findings mentally" | Mental verification is not verification. Read the actual file:line. Step 4 is mandatory. |
 | "The subagent seems thorough" | Trust but verify. Subagents hallucinate. Spot-check ALL P0/P1 evidence. |
 
 ## Red Flags — STOP and Restart
 
-- Skipping any of the 8 dimensions (full audit)
+- Skipping any of the 6 dimensions (full audit)
 - Giving a score without code-level evidence (file:line references)
 - Using ANY severity labels other than P0/P1/P2/P3
 - Not calculating the weighted overall score
@@ -243,7 +256,7 @@ If ambiguous, ask the user: "Would you like a full audit or a follow-up comparin
 2. **Inventing findings** — Fabricating issues to appear thorough. Fix: Zero supplementary findings is acceptable. Accuracy > completeness.
 3. **No evidence** — "Security looks good" without citing files. Fix: Every score needs file references.
 4. **Wrong severity** — Calling a P3 a P1. Fix: Use severity definitions from scoring-model.md exactly.
-5. **No cross-analysis** — Concatenating 8 reports without synthesizing. Fix: Look for overlaps, contradictions, systemic patterns.
+5. **No cross-analysis** — Concatenating 6 reports without synthesizing. Fix: Look for overlaps, contradictions, systemic patterns.
 6. **Stale context** — Auditing against assumptions instead of reading current code and docs. Fix: Read `docs/product-info.md` and `docs/tech-stack.md` first.
 7. **Marking stubs as failures** — Phase 2/3 modules that don't exist yet are `not-assessable`, not `fail`.
 8. **Skipping verification** — Trusting subagent findings without reading the cited code. Fix: Step 4 is mandatory for all P0/P1.

@@ -14,11 +14,11 @@ vi.mock('../../../src/data/dataset.js', () => ({
 }))
 
 let hub
+let cleanup
 
 beforeEach(async () => {
-  if (hub?.cleanup) {
-    hub.cleanup()
-  }
+  cleanup?.()
+  cleanup = undefined
 
   await openDB()
   document.body.textContent = ''
@@ -179,8 +179,9 @@ describe('review/hub.js', () => {
     it('cleanup() unsubscribes event listeners so they do not fire after teardown', async () => {
       const { emit } = await import('../../../src/core/events.js')
 
-      await hub.init({}, { openEditor: vi.fn() })
-      hub.cleanup()
+      cleanup = await hub.init({}, { openEditor: vi.fn() })
+      cleanup()
+      cleanup = undefined
 
       const mainContent = document.getElementById('main-content')
       mainContent.textContent = 'sentinel'
@@ -194,8 +195,9 @@ describe('review/hub.js', () => {
       const { emit } = await import('../../../src/core/events.js')
 
       await hub.init({}, { openEditor: vi.fn() })
-      await hub.init({}, { openEditor: vi.fn() })
-      hub.cleanup()
+      cleanup = await hub.init({}, { openEditor: vi.fn() })
+      cleanup()
+      cleanup = undefined
 
       const mainContent = document.getElementById('main-content')
       mainContent.textContent = 'sentinel'

@@ -1,6 +1,6 @@
 # Architecture — Core Checklist
 
-**Weight: 4** | **Version: 3** | **Items: 26**
+**Weight: 4** | **Version: 4** | **Items: 27**
 
 ## Must-Check Items
 
@@ -113,3 +113,7 @@
 26. **Anti-pattern detection** — No global variables attached to `window` (except documented build-time constants like `__APP_VERSION__`). DOM writes (createElement, appendChild, innerHTML, textContent assignments) happen only in render functions and setup code, not in event handlers or data callbacks directly. No re-renders triggered without a preceding state change.
     - Check: All `window.` property assignments, all DOM manipulation calls outside render functions, all render function invocations without a state-change guard
     - Verify: Event handlers update state and then call a render function, not manipulate DOM directly. No `window.currentSurah` or similar ad-hoc globals. No `renderTopBar()` calls that aren't preceded by a state change that necessitates the re-render
+
+27. **No test-only code in production source** — No `if (process.env.NODE_ENV === 'test')`, `window.__test_hook__`, or conditional test branches exist in `src/`. All test infrastructure lives in `tests/`.
+    - Check: Source files in `src/` for test-only branches, mock stubs, or debug flags
+    - Verify: `grep -r "NODE_ENV.*test\|__test_hook__\|__TEST__\|__mock__" src/` returns no results. Feature detection (`typeof IntersectionObserver`) is acceptable
