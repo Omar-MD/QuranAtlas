@@ -97,6 +97,26 @@ describe('core/router.js', () => {
     }, { timeout: 100 })
   })
 
+  it('popstate with unchanged hash does not re-run the route', async () => {
+    const { register, navigate, init } = await import('../../../src/core/router.js')
+    const mockInit = vi.fn()
+    register('#/s/:surah', () => Promise.resolve({ init: mockInit }))
+
+    // init() adds popstate listener; navigate() sets lastHashHandled = '#/s/2'
+    init()
+    navigate('#/s/2')
+
+    // Let all spurious calls (from jsdom hashchange + lingering listeners) settle
+    await new Promise(r => setTimeout(r, 50))
+    mockInit.mockClear()
+
+    // Simulate modal popping its history entry — hash is still '#/s/2'
+    window.dispatchEvent(new PopStateEvent('popstate'))
+
+    await new Promise(r => setTimeout(r, 50))
+    expect(mockInit).toHaveBeenCalledTimes(0) // guard skipped all popstate handlers
+  })
+
   it('logs structured context when route init fails', async () => {
     const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
     const { register, navigate } = await import('../../../src/core/router.js')

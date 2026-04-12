@@ -13,6 +13,7 @@ import { logger } from './logger.js'
 
 const routes = new Map()
 let currentCleanup = null
+let lastHashHandled = null
 
 /**
  * Register a route handler.
@@ -46,7 +47,12 @@ export function navigate(hash, { replace = false } = {}) {
  */
 export function init() {
   const onHashChange = () => handleRoute(location.hash)
-  const onPopState = () => handleRoute(location.hash)
+  const onPopState = () => {
+    // Skip re-render if the hash is unchanged (e.g. a modal popped its own history entry)
+    if (location.hash !== lastHashHandled) {
+      handleRoute(location.hash)
+    }
+  }
   window.addEventListener('hashchange', onHashChange)
   window.addEventListener('popstate', onPopState)
   handleRoute(location.hash)
@@ -107,6 +113,7 @@ function sanitizeParams(params) {
  * @param {string} hash
  */
 async function handleRoute(hash) {
+  lastHashHandled = hash
   if (!hash || hash === '#' || hash === '#/') {
     // Launch restore: check positions/settings for last surface
     // Phase 0: default to reader
@@ -224,4 +231,5 @@ function extractParams(pattern, hash) {
  */
 export function clearRoutes() {
   routes.clear()
+  lastHashHandled = null
 }
