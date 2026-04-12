@@ -1,11 +1,16 @@
 /**
  * Mark editor modal.
  * Opens on long-press (touch) or hover-icon click (mouse).
- * Allows assigning/removing tags and deleting marks.
+ * Chip-based tag selection with search/create input.
+ *
+ * Mobile (< 640px): bottom sheet.
+ * Tablet (640–1024px): centered modal, max-width 480px.
+ * Desktop (> 1024px): centered dialog, max-width 400px.
  */
 
-import { save, del, getByVerseKey } from './store.js'
-import { getActiveTags } from './tags.js'
+import { save, del, getByVerseKey, getAll } from './store.js'
+import { getSeedTags, getAllUsedTags, getColorForTag } from './tags.js'
+import { validateTagLabel } from '../safety/input-validator.js'
 import { on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { showUndoToast, clearUndoToast } from '../core/ui.js'
@@ -15,14 +20,9 @@ const LONG_PRESS_MS = 500
 let activeModal = null
 let currentUndoRecord = null
 let currentEditingVerseKey = null
-
-/** Whether we pushed a history entry for the current open modal. */
 let _historyPushed = false
-/** Popstate handler for closing the modal on browser back. */
 let _popstateHandler = null
 
-// Subscribe at module level so the editor reacts to cross-tab deletions
-// regardless of whether setupLongPress has been called
 on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
   if (currentEditingVerseKey && verseKeys.includes(currentEditingVerseKey)) {
     closeEditor()
@@ -34,53 +34,144 @@ on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
  * @param {string} verseKey - e.g. '2:255'
  */
 export async function openEditor(verseKey) {
-  // Clear any existing undo toast when opening a new editor
   clearUndoToast()
   closeEditor()
 
   const existing = await getByVerseKey(verseKey)
-  const activeTags = await getActiveTags()
   const currentTags = existing ? existing.tags : []
 
+  // Determine which tags to show as chips
+  const allMarks = await getAll()
+  const hasSomeMarks = allMarks.length > 0
+  let availableTags
+  if (hasSomeMarks) {
+    availableTags = await getAllUsedTags()
+  } else {
+    availableTags = getSeedTags().map(s => s.label)
+  }
+
+  // Track selected tags
+  const selectedTags = new Set(currentTags)
+
+  // --- Backdrop ---
   const backdrop = document.createElement('div')
   backdrop.className = 'qa-mark-backdrop'
   backdrop.addEventListener('click', closeEditor)
 
+  // --- Modal ---
   const modal = document.createElement('div')
   modal.className = 'qa-mark-modal'
   modal.setAttribute('role', 'dialog')
   modal.setAttribute('aria-label', `Mark verse ${verseKey}`)
 
+  // Title
   const title = document.createElement('h2')
   title.className = 'qa-mark-title'
-  title.textContent = `Verse ${verseKey}`
+  title.textContent = `Mark ${verseKey}`
   modal.appendChild(title)
 
-  const tagList = document.createElement('div')
-  tagList.className = 'qa-mark-tags'
-
-  for (const tag of activeTags) {
-    const label = document.createElement('label')
-    label.className = 'qa-mark-tag-label'
-
-    const checkbox = document.createElement('input')
-    checkbox.type = 'checkbox'
-    checkbox.value = tag.label
-    checkbox.checked = currentTags.includes(tag.label)
-
-    const swatch = document.createElement('span')
-    swatch.className = 'qa-mark-tag-swatch'
-    swatch.dataset.tag = tag.label // CSS [data-tag="..."] drives color via theme.css
-
-    const text = document.createTextNode(` ${tag.label}`)
-
-    label.appendChild(checkbox)
-    label.appendChild(swatch)
-    label.appendChild(text)
-    tagList.appendChild(label)
+  // Hint (only when zero marks)
+  if (!hasSomeMarks) {
+    const hint = document.createElement('p')
+    hint.className = 'qa-mark-hint'
+    hint.textContent = 'Tags help you organise verses — pick one or create your own.'
+    modal.appendChild(hint)
   }
-  modal.appendChild(tagList)
 
+  // Search input
+  const searchWrap = document.createElement('div')
+  searchWrap.className = 'qa-tag-search-wrap'
+  const searchInput = document.createElement('input')
+  searchInput.type = 'text'
+  searchInput.className = 'qa-tag-search'
+  searchInput.placeholder = 'Search or create tag...'
+  searchInput.setAttribute('autocomplete', 'off')
+  searchWrap.appendChild(searchInput)
+  modal.appendChild(searchWrap)
+
+  // Chip container
+  const chipContainer = document.createElement('div')
+  chipContainer.className = 'qa-tag-chips'
+  modal.appendChild(chipContainer)
+
+  // Render chips
+  function renderChips(filterText) {
+    chipContainer.textContent = ''
+    const lower = (filterText || '').trim().toLowerCase()
+
+    // Remove the create button if it exists (we'll re-add below if needed)
+    const oldCreate = modal.querySelector('.qa-tag-create-btn')
+    if (oldCreate) oldCreate.remove()
+
+    let hasExactMatch = false
+    const allTags = [...availableTags]
+
+    for (const tag of allTags) {
+      if (lower && !tag.includes(lower)) {
+        continue
+      }
+      if (tag === lower) hasExactMatch = true
+
+      const chip = document.createElement('button')
+      chip.type = 'button'
+      chip.className = 'qa-tag-chip'
+      chip.dataset.tag = tag
+      chip.setAttribute('aria-pressed', selectedTags.has(tag) ? 'true' : 'false')
+
+      const dot = document.createElement('span')
+      dot.className = 'qa-tag-chip-dot'
+      dot.style.backgroundColor = getColorForTag(tag)
+      chip.appendChild(dot)
+
+      chip.appendChild(document.createTextNode(tag))
+
+      chip.addEventListener('click', () => {
+        const pressed = chip.getAttribute('aria-pressed') === 'true'
+        if (pressed) {
+          selectedTags.delete(tag)
+          chip.setAttribute('aria-pressed', 'false')
+        } else {
+          selectedTags.add(tag)
+          chip.setAttribute('aria-pressed', 'true')
+        }
+        updateSaveButton()
+      })
+
+      chipContainer.appendChild(chip)
+    }
+
+    // "Create" button — only when filter text is non-empty, passes validation, and has no exact match
+    if (lower && !hasExactMatch) {
+      const validation = validateTagLabel(lower)
+      if (validation.valid) {
+        const createBtn = document.createElement('button')
+        createBtn.type = 'button'
+        createBtn.className = 'qa-tag-create-btn'
+        createBtn.textContent = `Create "${validation.label}"`
+        createBtn.addEventListener('click', () => {
+          const label = validation.label
+          if (!availableTags.includes(label)) {
+            availableTags.push(label)
+          }
+          selectedTags.add(label)
+          searchInput.value = ''
+          renderChips('')
+          updateSaveButton()
+        })
+        // Insert after chip container
+        chipContainer.after(createBtn)
+      }
+    }
+  }
+
+  renderChips('')
+
+  // Search input handler
+  searchInput.addEventListener('input', () => {
+    renderChips(searchInput.value)
+  })
+
+  // --- Actions ---
   const actions = document.createElement('div')
   actions.className = 'qa-mark-actions'
 
@@ -88,12 +179,10 @@ export async function openEditor(verseKey) {
   saveBtn.className = 'qa-mark-save-btn'
   saveBtn.setAttribute('data-action', 'save')
   saveBtn.textContent = 'Save'
+  saveBtn.disabled = selectedTags.size === 0
   saveBtn.addEventListener('click', async () => {
-    const validTags = activeTags.map(t => t.label)
-    const selected = Array.from(
-      modal.querySelectorAll('input[type="checkbox"]:checked')
-    ).map(cb => cb.value).filter(tag => validTags.includes(tag))
-    await save(verseKey, selected)
+    if (selectedTags.size === 0) return
+    await save(verseKey, [...selectedTags])
     closeEditor()
   })
 
@@ -102,6 +191,10 @@ export async function openEditor(verseKey) {
   cancelBtn.setAttribute('data-action', 'cancel')
   cancelBtn.textContent = 'Cancel'
   cancelBtn.addEventListener('click', closeEditor)
+
+  function updateSaveButton() {
+    saveBtn.disabled = selectedTags.size === 0
+  }
 
   actions.appendChild(saveBtn)
   actions.appendChild(cancelBtn)
@@ -131,55 +224,60 @@ export async function openEditor(verseKey) {
 
   modal.appendChild(actions)
 
+  // --- Mount ---
   const shell = document.getElementById('app-shell') || document.body
   shell.appendChild(backdrop)
   shell.appendChild(modal)
   activeModal = { backdrop, modal }
   currentEditingVerseKey = verseKey
 
-  // Focus trap implementation
-  const focusableElements = modal.querySelectorAll(
-    'input[type="checkbox"], button:not([disabled])'
-  )
-  const firstFocusable = focusableElements[0]
-  const lastFocusable = focusableElements[focusableElements.length - 1]
-
-  if (firstFocusable) {
-    firstFocusable.focus()
+  // Focus trap
+  function getFocusableElements() {
+    return modal.querySelectorAll(
+      'input, button:not([disabled])'
+    )
   }
 
-  // Focus trap: cycle within modal
+  // Auto-focus input on desktop only
+  const isDesktop = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(min-width: 640px)').matches
+    : false
+  if (isDesktop) {
+    searchInput.focus()
+  } else {
+    // Focus first chip on mobile so keyboard stays hidden
+    const firstChip = chipContainer.querySelector('.qa-tag-chip')
+    if (firstChip) firstChip.focus()
+  }
+
   modal.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeEditor()
       return
     }
+    if (e.key !== 'Tab') return
 
-    if (e.key !== 'Tab') {
-      return
-    }
+    const focusable = getFocusableElements()
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
 
     if (e.shiftKey) {
-      // Shift+Tab on first element → go to last
-      if (document.activeElement === firstFocusable) {
+      if (document.activeElement === first) {
         e.preventDefault()
-        lastFocusable.focus()
+        last.focus()
       }
     } else {
-      // Tab on last element → go to first
-      if (document.activeElement === lastFocusable) {
+      if (document.activeElement === last) {
         e.preventDefault()
-        firstFocusable.focus()
+        first.focus()
       }
     }
   })
 
-  // Push history entry so the browser back button closes the modal
-  // instead of navigating away from the page.
+  // History entry for browser back
   _popstateHandler = () => {
-    if (activeModal) {
-      closeEditor()
-    }
+    if (activeModal) closeEditor()
   }
   window.addEventListener('popstate', _popstateHandler)
   history.pushState({ modal: 'mark-editor' }, '')
