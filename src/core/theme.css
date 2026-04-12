@@ -70,12 +70,20 @@
   --qa-border-error: #f87171;
   --qa-text-error: #991b1b;
 
-  /* --- Tag Colors (WCAG AA ≥ 4.5:1 on #ffffff) --- */
-  --qa-tag-favourite:   #b45309;
-  --qa-tag-study:       #1d4ed8;
-  --qa-tag-reflection:  #15803d;
-  --qa-tag-question:    #6d28d9;
-  --qa-tag-default:     #4b5563;
+  /* --- Tag Palette (12 slots, WCAG AA ≥ 4.5:1 on light bg) --- */
+  --qa-tag-0:  #b45309;  /* Amber */
+  --qa-tag-1:  #92400e;  /* Gold */
+  --qa-tag-2:  #b91c1c;  /* Red */
+  --qa-tag-3:  #1d4ed8;  /* Blue */
+  --qa-tag-4:  #6d28d9;  /* Purple */
+  --qa-tag-5:  #15803d;  /* Green */
+  --qa-tag-6:  #0f766e;  /* Teal */
+  --qa-tag-7:  #be123c;  /* Rose */
+  --qa-tag-8:  #3730a3;  /* Indigo */
+  --qa-tag-9:  #c2410c;  /* Orange */
+  --qa-tag-10: #0e7490;  /* Cyan */
+  --qa-tag-11: #475569;  /* Slate */
+  --qa-tag-default: #4b5563;
 }
 
 html[data-theme="sepia"] {
@@ -100,12 +108,20 @@ html[data-theme="sepia"] {
   --qa-border-error: #c07842;
   --qa-text-error: #7a3520;
 
-  /* --- Tag Colors (WCAG AA ≥ 4.5:1 on #fbf0d9) --- */
-  --qa-tag-favourite:   #a16207;
-  --qa-tag-study:       #1e40af;
-  --qa-tag-reflection:  #166534;
-  --qa-tag-question:    #6b21a8;
-  --qa-tag-default:     #4b5563;
+  /* --- Tag Palette (12 slots, WCAG AA ≥ 4.5:1 on sepia bg) --- */
+  --qa-tag-0:  #b45309;
+  --qa-tag-1:  #92400e;
+  --qa-tag-2:  #b91c1c;
+  --qa-tag-3:  #1d4ed8;
+  --qa-tag-4:  #6d28d9;
+  --qa-tag-5:  #15803d;
+  --qa-tag-6:  #0f766e;
+  --qa-tag-7:  #be123c;
+  --qa-tag-8:  #3730a3;
+  --qa-tag-9:  #c2410c;
+  --qa-tag-10: #0e7490;
+  --qa-tag-11: #475569;
+  --qa-tag-default: #4b5563;
 }
 
 html[data-theme="dark"] {
@@ -130,12 +146,20 @@ html[data-theme="dark"] {
   --qa-border-error: #7f1d1d;
   --qa-text-error: #fca5a5;
 
-  /* --- Tag Colors (WCAG AA ≥ 4.5:1 on #121212) --- */
-  --qa-tag-favourite:   #fbbf24;
-  --qa-tag-study:       #93c5fd;
-  --qa-tag-reflection:  #86efac;
-  --qa-tag-question:    #d8b4fe;
-  --qa-tag-default:     #9ca3af;
+  /* --- Tag Palette (12 slots, WCAG AA ≥ 4.5:1 on dark bg) --- */
+  --qa-tag-0:  #fbbf24;
+  --qa-tag-1:  #fcd34d;
+  --qa-tag-2:  #fca5a5;
+  --qa-tag-3:  #93c5fd;
+  --qa-tag-4:  #d8b4fe;
+  --qa-tag-5:  #86efac;
+  --qa-tag-6:  #5eead4;
+  --qa-tag-7:  #fda4af;
+  --qa-tag-8:  #a5b4fc;
+  --qa-tag-9:  #fdba74;
+  --qa-tag-10: #67e8f9;
+  --qa-tag-11: #94a3b8;
+  --qa-tag-default: #9ca3af;
 }
 
 /* ==========================================================================
@@ -681,17 +705,6 @@ a:hover, a:focus {
   position: relative;
 }
 
-/* Tag-specific dot colors — driven by data-tag attribute */
-.qa-mark-dot[data-tag="favourite"]  { background-color: var(--qa-tag-favourite); }
-.qa-mark-dot[data-tag="study"]      { background-color: var(--qa-tag-study); }
-.qa-mark-dot[data-tag="reflection"] { background-color: var(--qa-tag-reflection); }
-.qa-mark-dot[data-tag="question"]   { background-color: var(--qa-tag-question); }
-
-/* Tag swatches in mark editor — same data-tag pattern */
-.qa-mark-tag-swatch[data-tag="favourite"]  { background-color: var(--qa-tag-favourite); }
-.qa-mark-tag-swatch[data-tag="study"]      { background-color: var(--qa-tag-study); }
-.qa-mark-tag-swatch[data-tag="reflection"] { background-color: var(--qa-tag-reflection); }
-.qa-mark-tag-swatch[data-tag="question"]   { background-color: var(--qa-tag-question); }
 
 .qa-mark-dot::before {
   content: '';
@@ -762,6 +775,266 @@ a:hover, a:focus {
 .qa-hidden {
   display: none !important;
 }
+/* ==========================================================================
+   Tag Chips (Mark Editor)
+   ========================================================================== */
+
+.qa-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.qa-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 999px;
+  font-size: var(--qa-text-size-meta);
+  font-weight: 500;
+  cursor: pointer;
+  border: 2px solid var(--qa-border);
+  background-color: var(--qa-bg-secondary);
+  color: var(--qa-text-primary);
+  transition: border-color 0.15s, background-color 0.15s;
+  min-height: 44px;
+}
+
+.qa-tag-chip:hover {
+  border-color: var(--qa-text-secondary);
+}
+
+.qa-tag-chip[aria-pressed="true"] {
+  border-color: var(--qa-accent);
+  background-color: var(--qa-bg-surface);
+}
+
+.qa-tag-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Mark Editor — Search/Create Input
+   ========================================================================== */
+
+.qa-tag-search-wrap {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.qa-tag-search {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--qa-border);
+  border-radius: 12px;
+  background: var(--qa-bg-secondary);
+  color: var(--qa-text-primary);
+  font-size: var(--qa-text-size-ui);
+  transition: border-color 0.2s;
+}
+
+.qa-tag-search:focus-visible {
+  outline: 2px solid var(--qa-accent);
+  outline-offset: -1px;
+  border-color: var(--qa-accent);
+}
+
+.qa-tag-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  border: 1px dashed var(--qa-border);
+  border-radius: 12px;
+  background: var(--qa-bg-secondary);
+  color: var(--qa-accent);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  min-height: 44px;
+}
+
+.qa-tag-create-btn:hover {
+  border-color: var(--qa-accent);
+  background-color: var(--qa-bg-surface);
+}
+
+/* ==========================================================================
+   Mark Editor — First-time Hint
+   ========================================================================== */
+
+.qa-mark-hint {
+  font-size: var(--qa-text-size-meta);
+  color: var(--qa-text-secondary);
+  margin-bottom: 1rem;
+  line-height: var(--qa-line-height-ui);
+}
+
+/* ==========================================================================
+   Mark Editor — Disabled Save Button
+   ========================================================================== */
+
+.qa-mark-save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   Mark Editor — Bottom Sheet (Mobile)
+   ========================================================================== */
+
+@media (min-width: 640px) {
+  .qa-mark-modal {
+    bottom: auto;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    max-width: 480px;
+    width: 90%;
+    border-radius: 24px;
+    animation: qa-fade-in 0.2s ease;
+  }
+
+  .qa-mark-title::before {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .qa-mark-modal {
+    max-width: 400px;
+  }
+}
+
+@keyframes qa-fade-in {
+  from { opacity: 0; transform: translate(-50%, -48%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* ==========================================================================
+   Review Hub — Filter Dropdowns & Chips
+   ========================================================================== */
+
+.qa-review-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: var(--qa-bg-secondary);
+  border-radius: 12px;
+}
+
+.qa-review-select {
+  padding: 0.5rem 0.75rem;
+  background-color: var(--qa-bg-primary);
+  border: 1px solid var(--qa-border);
+  border-radius: 8px;
+  font-size: var(--qa-text-size-meta);
+  font-weight: 500;
+  color: var(--qa-text-primary);
+  min-height: 44px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.qa-review-select:focus-visible {
+  outline: 2px solid var(--qa-accent);
+  border-color: var(--qa-accent);
+}
+
+.qa-review-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.qa-review-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  font-size: var(--qa-text-size-meta);
+  background-color: var(--qa-bg-secondary);
+  border: 1px solid var(--qa-border);
+  color: var(--qa-text-primary);
+  min-height: 32px;
+}
+
+.qa-review-filter-chip button {
+  background: none;
+  border: none;
+  color: var(--qa-text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.qa-review-filter-chip button:hover {
+  color: var(--qa-color-error);
+}
+
+.qa-review-clear-all-btn {
+  background: none;
+  border: none;
+  color: var(--qa-accent);
+  font-weight: 500;
+  font-size: var(--qa-text-size-meta);
+  cursor: pointer;
+  padding: 0.375rem 0.5rem;
+}
+
+.qa-review-clear-all-btn:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Review Hub — Tag Group Headers
+   ========================================================================== */
+
+.qa-review-tag-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--qa-border-subtle);
+}
+
+.qa-review-tag-header-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.qa-review-tag-header-label {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--qa-text-primary);
+  text-transform: capitalize;
+}
+
+.qa-review-tag-header-count {
+  font-size: var(--qa-text-size-meta);
+  color: var(--qa-text-secondary);
+  margin-left: auto;
+}
+
 /* Mark Modal Polish */
 .qa-mark-modal {
   position: fixed;
