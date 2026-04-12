@@ -271,9 +271,6 @@ describe('reader/index.js', () => {
     await init({ surah: '1', ayah: '2' })
 
     const verses = document.querySelectorAll('[data-verse]')
-    // Resume indicator must be absent when ayah is provided
-    expect(document.querySelector('[data-resume-indicator]')).toBeFalsy()
-    // Verse count still works
     expect(verses.length).toBeGreaterThan(0)
   })
 

@@ -69,10 +69,6 @@ function renderSurahContent({ mainContent, topBar, surah, surahMeta, translation
   renderSurahHeader(mainContent, surahMeta)
   renderBasmala(mainContent, surahNum)
 
-  if (savedPosition && !targetVerse) {
-    renderResumeIndicator(mainContent, surahMeta, savedPosition)
-  }
-
   renderedCount = 0
   isRendering = true
   renderVerseChunk(mainContent, surah, translationVisible, 0, CHUNK_SIZE)
@@ -142,7 +138,7 @@ function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah
   }
 
   // Scroll to saved position or deep link verse
-  if (savedPosition && !targetVerse) {
+  if (savedPosition && !targetVerse && savedPosition.verse > 1) {
     scrollToVerse(mainContent, savedPosition.verse)
   } else if (targetVerse) {
     const validTargetVerse = invalidVerseError ? 1 : targetVerse
@@ -604,44 +600,6 @@ function renderBasmala(container, surahNum) {
   basmala.className = 'qa-basmala'
   basmala.textContent = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ'
   container.appendChild(basmala)
-}
-
-/**
- * Render resume indicator.
- */
-function renderResumeIndicator(container, meta, position) {
-  const indicator = document.createElement('div')
-  indicator.className = 'qa-resume-indicator'
-  indicator.setAttribute('data-resume-indicator', '')
-
-  const text = document.createElement('span')
-  text.className = 'qa-resume-text'
-  text.textContent = `Resume reading: ${meta?.name ?? ''} ${position.verse}`
-
-  const actions = document.createElement('div')
-  actions.className = 'qa-resume-actions'
-
-  const jumpBtn = document.createElement('button')
-  jumpBtn.className = 'qa-resume-jump'
-  jumpBtn.textContent = 'Jump'
-  jumpBtn.addEventListener('click', () => {
-    scrollToVerse(container, position.verse)
-    indicator.remove()
-  })
-
-  const dismissBtn = document.createElement('button')
-  dismissBtn.className = 'qa-resume-dismiss'
-  dismissBtn.textContent = '×'
-  dismissBtn.setAttribute('aria-label', 'Dismiss')
-  dismissBtn.addEventListener('click', () => {
-    indicator.remove()
-  })
-
-  actions.appendChild(jumpBtn)
-  actions.appendChild(dismissBtn)
-  indicator.appendChild(text)
-  indicator.appendChild(actions)
-  container.appendChild(indicator)
 }
 
 /**

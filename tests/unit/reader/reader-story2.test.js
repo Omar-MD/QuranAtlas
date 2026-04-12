@@ -62,7 +62,10 @@ describe('reader/index.js — Story 2', () => {
     expect(verses.length).toBe(50)
   })
 
-  it('shows resume indicator when saved position exists', async () => {
+  it('auto-scrolls to saved position when verse > 1', async () => {
+    const scrollSpy = vi.fn()
+    Element.prototype.scrollIntoView = scrollSpy
+
     mockGet.mockImplementation(async (storeName, key) => {
       if (storeName === 'positions' && key === 's2') {
         return { id: 's2', surah: 2, verse: 25, savedAt: Date.now() }
@@ -73,14 +76,16 @@ describe('reader/index.js — Story 2', () => {
     const { init } = await import('../../../src/reader/index.js')
     await init({ surah: '2' })
 
-    const indicator = document.querySelector('[data-resume-indicator]')
-    expect(indicator).toBeTruthy()
+    expect(scrollSpy).toHaveBeenCalled()
   })
 
-  it('does not show resume indicator when no saved position', async () => {
+  it('does not auto-scroll when saved position is verse 1', async () => {
+    const scrollSpy = vi.fn()
+    Element.prototype.scrollIntoView = scrollSpy
+
     mockGet.mockImplementation(async (storeName, key) => {
       if (storeName === 'positions' && key === 's2') {
-        return undefined
+        return { id: 's2', surah: 2, verse: 1, savedAt: Date.now() }
       }
       return { key: 'translationVisible', value: true }
     })
@@ -88,8 +93,7 @@ describe('reader/index.js — Story 2', () => {
     const { init } = await import('../../../src/reader/index.js')
     await init({ surah: '2' })
 
-    const indicator = document.querySelector('[data-resume-indicator]')
-    expect(indicator).toBeFalsy()
+    expect(scrollSpy).not.toHaveBeenCalled()
   })
 
   it('renders end marker after all verses', async () => {
@@ -104,21 +108,6 @@ describe('reader/index.js — Story 2', () => {
     const lastVerse = document.querySelector('[data-verse="50"]')
     expect(endMarker.compareDocumentPosition(lastVerse) & Node.DOCUMENT_POSITION_PRECEDING)
       .toBe(Node.DOCUMENT_POSITION_PRECEDING)
-  })
-
-  it('does not show resume indicator with deep link ayah param', async () => {
-    mockGet.mockImplementation(async (storeName, key) => {
-      if (storeName === 'positions' && key === 's2') {
-        return { id: 's2', surah: 2, verse: 25, savedAt: Date.now() }
-      }
-      return { key: 'translationVisible', value: true }
-    })
-
-    const { init } = await import('../../../src/reader/index.js')
-    await init({ surah: '2', ayah: '10' })
-
-    const indicator = document.querySelector('[data-resume-indicator]')
-    expect(indicator).toBeFalsy()
   })
 
   it('emits reader:surah-loaded event', async () => {
