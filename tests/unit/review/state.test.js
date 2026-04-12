@@ -58,7 +58,7 @@ describe('review/state.js', () => {
         activeTag: null,
         surahFilter: null,
         sortBy: 'updatedAt',
-        groupBy: 'surah',
+        groupBy: 'tag',
       })
     })
   })

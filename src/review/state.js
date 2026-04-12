@@ -18,7 +18,7 @@ const DEFAULT_STATE = {
   activeTag: null,
   surahFilter: null,
   sortBy: 'updatedAt',
-  groupBy: 'surah',
+  groupBy: 'tag',
 }
 
 /**
