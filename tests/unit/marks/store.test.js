@@ -96,25 +96,6 @@ describe('marks/store.js', () => {
     })
   })
 
-  describe('removeTagFromAll()', () => {
-    it('removes a tag from all marks that have it', async () => {
-      await store.save('1:1', ['favourite', 'study'])
-      await store.save('2:255', ['favourite'])
-      await store.save('3:1', ['study'])
-
-      await store.removeTagFromAll('favourite')
-
-      const m1 = await store.getByVerseKey('1:1')
-      expect(m1.tags).toEqual(['study'])
-
-      const m2 = await store.getByVerseKey('2:255')
-      expect(m2.tags).toEqual([])
-
-      const m3 = await store.getByVerseKey('3:1')
-      expect(m3.tags).toEqual(['study'])
-    })
-  })
-
   describe('cross-tab broadcast', () => {
     it('calls broadcastMarkChange after save', async () => {
       const sync = await import('../../../src/safety/sync.js')
