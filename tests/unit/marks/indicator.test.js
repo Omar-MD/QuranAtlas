@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { openDB } from '../../../src/core/db.js'
 import { save } from '../../../src/marks/store.js'
+import { getColorForTag } from '../../../src/marks/tags.js'
 
 let indicator
 let events
@@ -32,6 +33,8 @@ describe('marks/indicator.js', () => {
       const dots = verseEl.querySelector('.qa-mark-dots')
       expect(dots).not.toBeNull()
       expect(dots.children).toHaveLength(2)
+      const firstDot = dots.children[0]
+      expect(firstDot.style.backgroundColor).toBeTruthy()
     })
 
     it('does not add dots to an unmarked verse', async () => {
@@ -54,6 +57,8 @@ describe('marks/indicator.js', () => {
       await save('2:255', ['favourite', 'study', 'reflection'])
       await indicator.decorateVerse('2:255', verseEl)
       expect(verseEl.querySelector('.qa-mark-dots').children).toHaveLength(3)
+      const dot = verseEl.querySelector('.qa-mark-dots').children[0]
+      expect(dot.style.backgroundColor).toBeTruthy()
     })
   })
 

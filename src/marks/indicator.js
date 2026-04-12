@@ -14,6 +14,7 @@
  */
 
 import { getAll, getByVerseKey } from './store.js'
+import { getColorForTag } from './tags.js'
 import { on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 
@@ -63,7 +64,7 @@ export async function decorateVerse(verseKey, element) {
   for (const tag of mark.tags) {
     const dot = document.createElement('span')
     dot.className = 'qa-mark-dot'
-    dot.dataset.tag = tag // CSS [data-tag="..."] drives color via theme.css
+    dot.style.backgroundColor = getColorForTag(tag)
     dots.appendChild(dot)
   }
 
