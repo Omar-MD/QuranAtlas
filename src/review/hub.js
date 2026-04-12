@@ -4,6 +4,7 @@
  */
 
 import { getAll, getByTag, del as deleteMark, save as saveMark } from '../marks/store.js'
+import { getColorForTag } from '../marks/tags.js'
 import { getSurahs, getSurah } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
@@ -92,7 +93,6 @@ export async function init(params = {}, { openEditor } = {}) {
     if (unsubVisibilityVisible) { unsubVisibilityVisible(); unsubVisibilityVisible = null }
     _openEditor = null
     clearUndoToast()
-    if (filterDebounceTimer) { clearTimeout(filterDebounceTimer); filterDebounceTimer = null }
     const mc = document.getElementById('main-content')
     if (mc) { mc.textContent = '' }
     currentState = null
@@ -195,28 +195,20 @@ function renderTagNotFound(container, rawTag) {
  * @param {{ activeTag?: string|null, surahFilter?: number|null }} filter
  */
 export async function applyFilter(filter) {
-  if (filterDebounceTimer) {
-    clearTimeout(filterDebounceTimer)
+  if (filter.activeTag !== undefined) {
+    currentState.activeTag = filter.activeTag
   }
-  
-  filterDebounceTimer = setTimeout(async () => {
-    if (filter.activeTag !== undefined) {
-      currentState.activeTag = filter.activeTag
-    }
-    if (filter.surahFilter !== undefined) {
-      currentState.surahFilter = filter.surahFilter
-    }
-    await saveState(currentState)
-    emit(Events.REVIEW_FILTER, { tags: currentState.activeTag, surah: currentState.surahFilter })
+  if (filter.surahFilter !== undefined) {
+    currentState.surahFilter = filter.surahFilter
+  }
+  await saveState(currentState)
+  emit(Events.REVIEW_FILTER, { tags: currentState.activeTag, surah: currentState.surahFilter })
 
-    displayedCount = 0
-    const mainContent = document.getElementById('main-content')
-    if (mainContent) {
-      render(mainContent)
-    }
-    
-    filterDebounceTimer = null
-  }, FILTER_DEBOUNCE_MS)
+  displayedCount = 0
+  const mainContent = document.getElementById('main-content')
+  if (mainContent) {
+    render(mainContent)
+  }
 }
 
 /**
@@ -226,9 +218,6 @@ async function reloadMarks() {
   allMarks = await getAll()
   sortedMarks = sortMarks(allMarks, currentState?.sortBy)
 }
-
-let filterDebounceTimer = null
-const FILTER_DEBOUNCE_MS = 50
 
 /**
  * Sort marks by a given key. Pure function — returns a new array.
@@ -285,7 +274,9 @@ function render(container) {
   displayedCount = pageMarks.length
 
   // Render synchronously first
-  if (currentState.groupBy === 'surah') {
+  if (currentState.groupBy === 'tag') {
+    renderTagGrouped(container, pageMarks)
+  } else if (currentState.groupBy === 'surah') {
     renderGrouped(container, pageMarks)
   } else {
     renderFlat(container, pageMarks)
@@ -360,7 +351,7 @@ async function loadVerseContentBackground(marks) {
  * Set initial focus for accessibility.
  */
 function setInitialFocus() {
-  const firstFocusable = document.querySelector('.qa-review-controls button')
+  const firstFocusable = document.querySelector('.qa-review-controls select')
   if (firstFocusable) {
     firstFocusable.focus()
   }
@@ -370,35 +361,232 @@ function renderControls(container) {
   const controls = document.createElement('div')
   controls.className = 'qa-review-controls'
 
-  const groupToggle = document.createElement('button')
-  groupToggle.className = 'qa-review-group-toggle'
-  groupToggle.textContent = currentState.groupBy === 'surah' ? 'Flat view' : 'Surah view'
-  groupToggle.addEventListener('click', async () => {
-    currentState.groupBy = currentState.groupBy === 'surah' ? 'flat' : 'surah'
+  // Group dropdown
+  const groupSelect = document.createElement('select')
+  groupSelect.className = 'qa-review-select'
+  groupSelect.setAttribute('data-control', 'group')
+  groupSelect.setAttribute('aria-label', 'Group by')
+  for (const [value, label] of [['tag', 'Group: Tag'], ['surah', 'Group: Surah'], ['flat', 'Group: Date']]) {
+    const opt = document.createElement('option')
+    opt.value = value
+    opt.textContent = label
+    if (value === currentState.groupBy) opt.selected = true
+    groupSelect.appendChild(opt)
+  }
+  groupSelect.addEventListener('change', async () => {
+    currentState.groupBy = groupSelect.value
     await saveState(currentState)
+    displayedCount = 0
     render(container)
-    // Reload content after render
-    const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
-    loadVerseContentBackground(pageMarks).catch(() => {})
   })
-  controls.appendChild(groupToggle)
+  controls.appendChild(groupSelect)
 
-  const sortToggle = document.createElement('button')
-  sortToggle.className = 'qa-review-sort-toggle'
-  // Show what will happen when clicked (not current state)
-  sortToggle.textContent = currentState.sortBy === 'updatedAt' ? 'Sort: Created' : 'Sort: Updated'
-  sortToggle.addEventListener('click', async () => {
-    currentState.sortBy = currentState.sortBy === 'updatedAt' ? 'createdAt' : 'updatedAt'
-    sortedMarks = sortMarks(allMarks, currentState.sortBy) // Rebuild sorted cache on sort change
+  // Sort dropdown
+  const sortSelect = document.createElement('select')
+  sortSelect.className = 'qa-review-select'
+  sortSelect.setAttribute('data-control', 'sort')
+  sortSelect.setAttribute('aria-label', 'Sort by')
+  for (const [value, label] of [['updatedAt', 'Sort: Recent'], ['createdAt', 'Sort: Created']]) {
+    const opt = document.createElement('option')
+    opt.value = value
+    opt.textContent = label
+    if (value === currentState.sortBy) opt.selected = true
+    sortSelect.appendChild(opt)
+  }
+  sortSelect.addEventListener('change', async () => {
+    currentState.sortBy = sortSelect.value
+    sortedMarks = sortMarks(allMarks, currentState.sortBy)
     await saveState(currentState)
+    displayedCount = 0
     render(container)
-    // Reload content after render
-    const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
-    loadVerseContentBackground(pageMarks).catch(() => {})
   })
-  controls.appendChild(sortToggle)
+  controls.appendChild(sortSelect)
+
+  // Tag filter dropdown
+  const uniqueTags = [...new Set(allMarks.flatMap(m => m.tags))].sort()
+  const tagSelect = document.createElement('select')
+  tagSelect.className = 'qa-review-select'
+  tagSelect.setAttribute('data-control', 'tag')
+  tagSelect.setAttribute('aria-label', 'Filter by tag')
+  const tagAllOpt = document.createElement('option')
+  tagAllOpt.value = ''
+  tagAllOpt.textContent = 'Tag: All'
+  tagSelect.appendChild(tagAllOpt)
+  for (const tag of uniqueTags) {
+    const opt = document.createElement('option')
+    opt.value = tag
+    opt.textContent = tag
+    if (tag === currentState.activeTag) opt.selected = true
+    tagSelect.appendChild(opt)
+  }
+  tagSelect.addEventListener('change', async () => {
+    currentState.activeTag = tagSelect.value || null
+    await saveState(currentState)
+    displayedCount = 0
+    render(container)
+  })
+  controls.appendChild(tagSelect)
+
+  // Surah filter dropdown — only surahs that have marks
+  const surahsWithMarks = [...new Set(allMarks.map(m => parseInt(m.verseKey.split(':')[0], 10)))].sort((a, b) => a - b)
+  const surahSelect = document.createElement('select')
+  surahSelect.className = 'qa-review-select'
+  surahSelect.setAttribute('data-control', 'surah')
+  surahSelect.setAttribute('aria-label', 'Filter by surah')
+  const surahAllOpt = document.createElement('option')
+  surahAllOpt.value = ''
+  surahAllOpt.textContent = 'Surah: All'
+  surahSelect.appendChild(surahAllOpt)
+  for (const num of surahsWithMarks) {
+    const opt = document.createElement('option')
+    opt.value = String(num)
+    const meta = surahs.find(s => s.n === num)
+    opt.textContent = meta ? `${meta.name} (${num})` : `Surah ${num}`
+    if (num === currentState.surahFilter) opt.selected = true
+    surahSelect.appendChild(opt)
+  }
+  surahSelect.addEventListener('change', async () => {
+    currentState.surahFilter = surahSelect.value ? parseInt(surahSelect.value, 10) : null
+    await saveState(currentState)
+    displayedCount = 0
+    render(container)
+  })
+  controls.appendChild(surahSelect)
 
   container.appendChild(controls)
+
+  // Active filter chips
+  if (currentState.activeTag || currentState.surahFilter) {
+    const chipBar = document.createElement('div')
+    chipBar.className = 'qa-review-active-filters'
+
+    if (currentState.activeTag) {
+      const chip = document.createElement('span')
+      chip.className = 'qa-review-filter-chip'
+      chip.textContent = currentState.activeTag
+      const dismiss = document.createElement('button')
+      dismiss.textContent = '✕'
+      dismiss.setAttribute('aria-label', `Clear ${currentState.activeTag} filter`)
+      dismiss.addEventListener('click', async () => {
+        currentState.activeTag = null
+        await saveState(currentState)
+        displayedCount = 0
+        render(container)
+      })
+      chip.appendChild(dismiss)
+      chipBar.appendChild(chip)
+    }
+
+    if (currentState.surahFilter) {
+      const chip = document.createElement('span')
+      chip.className = 'qa-review-filter-chip'
+      const meta = surahs.find(s => s.n === currentState.surahFilter)
+      chip.textContent = meta ? meta.name : `Surah ${currentState.surahFilter}`
+      const dismiss = document.createElement('button')
+      dismiss.textContent = '✕'
+      dismiss.setAttribute('aria-label', `Clear surah filter`)
+      dismiss.addEventListener('click', async () => {
+        currentState.surahFilter = null
+        await saveState(currentState)
+        displayedCount = 0
+        render(container)
+      })
+      chip.appendChild(dismiss)
+      chipBar.appendChild(chip)
+    }
+
+    const clearAll = document.createElement('button')
+    clearAll.className = 'qa-review-clear-all-btn'
+    clearAll.textContent = 'Clear all'
+    clearAll.addEventListener('click', async () => {
+      currentState.activeTag = null
+      currentState.surahFilter = null
+      await saveState(currentState)
+      displayedCount = 0
+      render(container)
+    })
+    chipBar.appendChild(clearAll)
+
+    container.appendChild(chipBar)
+  }
+}
+
+/**
+ * Render marks grouped by tag → surah (two-level hierarchy).
+ * Multi-tagged marks appear under each relevant tag group.
+ * @param {HTMLElement} container
+ * @param {Array} marks
+ */
+function renderTagGrouped(container, marks) {
+  // Build tag → marks map. Multi-tagged marks appear under each tag.
+  const tagMap = new Map()
+  for (const mark of marks) {
+    for (const tag of mark.tags) {
+      if (!tagMap.has(tag)) tagMap.set(tag, [])
+      tagMap.get(tag).push(mark)
+    }
+  }
+
+  // Sort tags alphabetically
+  const sortedTags = [...tagMap.keys()].sort()
+  const fragment = document.createDocumentFragment()
+
+  for (const tag of sortedTags) {
+    const tagMarks = tagMap.get(tag)
+
+    // Tag header
+    const header = document.createElement('div')
+    header.className = 'qa-review-tag-header'
+
+    const dot = document.createElement('span')
+    dot.className = 'qa-review-tag-header-dot'
+    dot.style.backgroundColor = getColorForTag(tag)
+    header.appendChild(dot)
+
+    const label = document.createElement('span')
+    label.className = 'qa-review-tag-header-label'
+    label.textContent = tag
+    header.appendChild(label)
+
+    const count = document.createElement('span')
+    count.className = 'qa-review-tag-header-count'
+    count.textContent = `(${tagMarks.length})`
+    header.appendChild(count)
+
+    fragment.appendChild(header)
+
+    // Group marks within this tag by surah
+    const surahMap = new Map()
+    for (const mark of tagMarks) {
+      const surahNum = parseInt(mark.verseKey.split(':')[0], 10)
+      if (!surahMap.has(surahNum)) surahMap.set(surahNum, [])
+      surahMap.get(surahNum).push(mark)
+    }
+
+    const sortedSurahs = [...surahMap.keys()].sort((a, b) => a - b)
+    for (const surahNum of sortedSurahs) {
+      const surahHeader = document.createElement('div')
+      surahHeader.className = 'qa-review-surah-header'
+      surahHeader.setAttribute('data-surah-group', String(surahNum))
+      const meta = surahs.find(s => s.n === surahNum)
+      surahHeader.textContent = meta ? `${meta.name} (${meta.n})` : `Surah ${surahNum}`
+      fragment.appendChild(surahHeader)
+
+      // Sort marks by verse number (canonical order)
+      const surahMarks = surahMap.get(surahNum)
+        .sort((a, b) => {
+          const aVerse = parseInt(a.verseKey.split(':')[1], 10)
+          const bVerse = parseInt(b.verseKey.split(':')[1], 10)
+          return aVerse - bVerse
+        })
+
+      for (const mark of surahMarks) {
+        fragment.appendChild(renderMarkCard(mark, null))
+      }
+    }
+  }
+
+  container.appendChild(fragment)
 }
 
 async function renderGrouped(container, marks) {
@@ -455,7 +643,7 @@ function renderMarkCard(mark, surahData) {
   for (const tag of mark.tags) {
     const dot = document.createElement('span')
     dot.className = 'qa-mark-dot'
-    dot.dataset.tag = tag // CSS [data-tag="..."] drives color via theme.css
+    dot.style.backgroundColor = getColorForTag(tag)
     dot.title = tag
     tagDots.appendChild(dot)
   }
@@ -563,7 +751,9 @@ function renderLoadMore(container) {
     const nextPage = filteredMarks.slice(displayedCount, displayedCount + PAGE_SIZE)
     displayedCount += nextPage.length
 
-    if (currentState.groupBy === 'surah') {
+    if (currentState.groupBy === 'tag') {
+      renderTagGrouped(container, nextPage)
+    } else if (currentState.groupBy === 'surah') {
       renderGrouped(container, nextPage)
     } else {
       renderFlat(container, nextPage)
