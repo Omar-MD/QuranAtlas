@@ -8,9 +8,8 @@
  *   re-decorates only changed verses — guaranteeing cross-tab consistency.
  *
  * Theming:
- * - Dots use data-tag="<label>" attributes instead of inline backgroundColor.
- *   CSS [data-tag="..."] rules in theme.css drive per-theme colors, giving
- *   WCAG AA 4.5:1 contrast across light, sepia, and dark themes.
+ * - Dots use inline backgroundColor from getColorForTag() which maps each tag
+ *   to one of 12 WCAG AA palette slots across light, sepia, and dark themes.
  */
 
 import { getAll, getByVerseKey } from './store.js'
