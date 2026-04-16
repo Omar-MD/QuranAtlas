@@ -314,7 +314,6 @@ a:hover, a:focus {
   font-style: italic;
 }
 
-#top-bar .qa-nav-toggle { grid-area: ham; justify-self: start; }
 #top-bar .qa-settings-gear { grid-area: gear; justify-self: end; margin-inline-start: 0; }
 
 #main-content {
@@ -565,177 +564,6 @@ a:hover, a:focus {
 .qa-settings-switch-on .qa-settings-switch-handle {
   transform: translateX(18px);
   background: #fff;
-}
-
-/* ==========================================================================
-   Navigation Surface (Sidebar/Drawer)
-   ========================================================================== */
-
-#nav-surface {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 200;
-  height: 100dvh;
-  width: 85%;
-  max-width: 320px;
-  background-color: var(--qa-bg-surface);
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-#nav-surface.qa-nav-open {
-  transform: translateX(0);
-}
-
-.qa-nav-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 199;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  backdrop-filter: blur(2px);
-}
-
-.qa-nav-backdrop.qa-nav-open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.qa-nav-search-section {
-  padding: 1rem;
-  border-bottom: 1px solid var(--qa-border);
-  background-color: var(--qa-bg-primary);
-}
-
-.qa-nav-search {
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid var(--qa-border);
-  border-radius: 6px;
-  background: var(--qa-bg-secondary);
-  color: var(--qa-text-primary);
-  font-size: var(--qa-text-size-ui);
-  transition: border-color 0.2s, outline 0.2s;
-}
-
-.qa-nav-search:focus-visible {
-  outline: 2px solid var(--qa-accent);
-  outline-offset: -1px;
-  border-color: var(--qa-accent);
-}
-
-.qa-nav-list {
-  list-style: none;
-}
-
-.qa-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  margin: 0.5rem 0.75rem;
-  border-radius: 10px;
-  background: var(--qa-bg-surface);
-  border: 1px solid var(--qa-border-subtle);
-  cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
-  min-height: 64px;
-}
-
-.qa-nav-item[hidden] { display: none !important; }
-
-.qa-nav-item:hover {
-  background: var(--qa-bg-secondary);
-  border-color: var(--qa-border);
-}
-
-.qa-nav-current {
-  border-color: var(--qa-accent);
-  background: var(--qa-bg-secondary);
-}
-
-.qa-nav-number {
-  min-width: 1.75rem;
-  font-size: var(--qa-text-size-ui);
-  font-weight: 600;
-  color: var(--qa-text-primary);
-  flex-shrink: 0;
-}
-
-.qa-nav-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.qa-nav-item-name {
-  font-size: 1.0625rem;
-  font-weight: 600;
-  color: var(--qa-text-primary);
-}
-
-.qa-nav-item-meaning {
-  font-size: var(--qa-text-size-meta);
-  color: var(--qa-text-secondary);
-}
-
-.qa-nav-item-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.125rem;
-  flex-shrink: 0;
-  min-width: 0;
-}
-
-.qa-nav-item-meta {
-  font-size: var(--qa-text-size-meta);
-  color: var(--qa-text-secondary);
-  white-space: nowrap;
-}
-
-.qa-nav-item-arabic {
-  font-family: var(--qa-font-arabic);
-  font-size: 1.5rem;
-  color: var(--qa-text-primary);
-  direction: rtl;
-  line-height: 1.4;
-}
-
-.qa-nav-toggle {
-  background: none;
-  border: none;
-  color: var(--qa-text-primary);
-  cursor: pointer;
-  font-size: 1.5rem;
-  padding: 0.375rem;
-  line-height: 1;
-  border-radius: 4px;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  /* WCAG 2.5.5: minimum 44×44px touch target */
-  min-height: 44px;
-  min-width: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.qa-nav-toggle:hover {
-  background-color: var(--qa-bg-secondary);
-  color: var(--qa-accent);
-}
-
-.qa-nav-toggle:focus-visible {
-  outline: 2px solid var(--qa-accent);
-  background: var(--qa-bg-secondary);
 }
 
 /* ==========================================================================
@@ -1984,48 +1812,19 @@ a:hover, a:focus {
    ========================================================================== */
 
 @media (min-width: 768px) {
-  /* App shell: switch from flex-column to two-column grid */
+  /* App shell: single-column grid; dock + pill + command sheet carry all nav */
   #app-shell {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
     grid-template-areas:
-      "topbar topbar"
-      "nav    main"
-      "nav    footer";
+      "topbar"
+      "main"
+      "footer";
   }
 
   #top-bar {
     grid-area: topbar;
-  }
-
-  /* Nav becomes a persistent sidebar — leave the fixed-overlay behind */
-  #nav-surface {
-    grid-area: nav;
-    position: relative;   /* back into document flow */
-    height: 100%;
-    max-height: none;
-    width: 100%;
-    max-width: none;
-    transform: none;      /* always visible */
-    transition: none;
-    box-shadow: none;
-    border-right: 1px solid var(--qa-border);
-    overflow-y: auto;
-  }
-
-  /* Keep open class a no-op so JS toggle doesn't re-hide the nav */
-  #nav-surface.qa-nav-open {
-    transform: none;
-  }
-
-  /* Backdrop and hamburger are not needed when nav is always visible */
-  .qa-nav-backdrop {
-    display: none;
-  }
-
-  .qa-nav-toggle {
-    display: none;
   }
 
   #main-content {
@@ -2070,12 +1869,172 @@ a:hover, a:focus {
 }
 
 @media (min-width: 1280px) {
-  #app-shell {
-    grid-template-columns: 320px 1fr;
-  }
-
   #main-content {
     padding: 2rem 3rem;
     max-width: 900px;
   }
+}
+
+/* ==========================================================================
+   Command sheet — ⌘K overlay
+   ========================================================================== */
+
+.qa-cmd-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 299;
+  background: rgba(14, 14, 12, 0.62);
+  backdrop-filter: blur(6px);
+  opacity: 1;
+  transition: opacity 0.18s ease;
+}
+
+.qa-cmd-sheet {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--qa-ambient-accent-soft);
+  border-radius: 16px;
+  background-color: var(--qa-ambient-surface);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.qa-cmd--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.qa-cmd-sheet.qa-cmd--hidden {
+  transform: translateX(-50%) translateY(-6px);
+}
+
+.qa-cmd-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--qa-ambient-border);
+}
+
+.qa-cmd-input-glyph {
+  font-size: 1.125rem;
+  color: var(--qa-ambient-dim);
+  line-height: 1;
+}
+
+.qa-cmd-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--qa-ambient-parchment);
+  font-size: 1rem;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.qa-cmd-input::placeholder {
+  color: var(--qa-ambient-dim);
+}
+
+.qa-cmd-input-hint {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem;
+  color: var(--qa-ambient-dim);
+  border: 1px solid var(--qa-ambient-accent-soft);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.qa-cmd-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.qa-cmd-group {
+  padding: 0.375rem 0 0.5rem;
+}
+
+.qa-cmd-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 1rem 0.375rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--qa-ambient-dim);
+}
+
+.qa-cmd-group-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--qa-ambient-dim);
+}
+
+.qa-cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--qa-ambient-parchment);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: background-color 0.12s ease;
+}
+
+.qa-cmd-item:hover,
+.qa-cmd-item.qa-cmd--active {
+  background-color: var(--qa-ambient-accent-soft);
+}
+
+.qa-cmd-item-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background-color: var(--qa-ambient-accent-soft);
+  color: var(--qa-ambient-accent);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.qa-cmd-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.qa-cmd-item-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--qa-ambient-parchment);
+}
+
+.qa-cmd-item-meta {
+  font-size: 0.75rem;
+  color: var(--qa-ambient-dim);
+}
+
+.qa-cmd-empty {
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: var(--qa-ambient-dim);
+  font-size: 0.875rem;
 }
