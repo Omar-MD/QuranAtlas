@@ -1,7 +1,6 @@
 import 'fake-indexeddb/auto'
 import { openDB } from '../../../src/core/db.js'
 import { save } from '../../../src/marks/store.js'
-import { getColorForTag } from '../../../src/marks/tags.js'
 
 let indicator
 let events
@@ -14,7 +13,10 @@ function waitForIndicatorWork() {
 beforeEach(async () => {
   vi.resetModules()
   await openDB()
-  document.body.innerHTML = '<div id="main-content"></div>'
+  while (document.body.firstChild) { document.body.removeChild(document.body.firstChild) }
+  const main = document.createElement('div')
+  main.id = 'main-content'
+  document.body.appendChild(main)
   indicator = await import('../../../src/marks/indicator.js')
   events = await import('../../../src/core/events.js')
   store = await import('../../../src/marks/store.js')
@@ -22,7 +24,7 @@ beforeEach(async () => {
 
 describe('marks/indicator.js', () => {
   describe('decorateVerse()', () => {
-    it('adds colored dots to a verse element that has marks', async () => {
+    it('adds qa-verse--bookmarked class to a verse element that has marks', async () => {
       await save('2:255', ['favourite', 'study'])
 
       const verseEl = document.createElement('div')
@@ -30,35 +32,28 @@ describe('marks/indicator.js', () => {
 
       await indicator.decorateVerse('2:255', verseEl)
 
-      const dots = verseEl.querySelector('.qa-mark-dots')
-      expect(dots).not.toBeNull()
-      expect(dots.children).toHaveLength(2)
-      const firstDot = dots.children[0]
-      expect(firstDot.style.backgroundColor).toBeTruthy()
+      expect(verseEl.classList.contains('qa-verse--bookmarked')).toBe(true)
     })
 
-    it('does not add dots to an unmarked verse', async () => {
+    it('does not add qa-verse--bookmarked to an unmarked verse', async () => {
       const verseEl = document.createElement('div')
       verseEl.setAttribute('data-verse', '1')
 
       await indicator.decorateVerse('1:1', verseEl)
 
-      const dots = verseEl.querySelector('.qa-mark-dots')
-      expect(dots).toBeNull()
+      expect(verseEl.classList.contains('qa-verse--bookmarked')).toBe(false)
     })
 
-    it('removes old dots before adding new ones (re-decoration)', async () => {
+    it('removes stale bookmark class before re-decorating (no mark → no class)', async () => {
       await save('2:255', ['favourite'])
       const verseEl = document.createElement('div')
 
       await indicator.decorateVerse('2:255', verseEl)
-      expect(verseEl.querySelector('.qa-mark-dots').children).toHaveLength(1)
+      expect(verseEl.classList.contains('qa-verse--bookmarked')).toBe(true)
 
-      await save('2:255', ['favourite', 'study', 'reflection'])
+      await store.del('2:255')
       await indicator.decorateVerse('2:255', verseEl)
-      expect(verseEl.querySelector('.qa-mark-dots').children).toHaveLength(3)
-      const dot = verseEl.querySelector('.qa-mark-dots').children[0]
-      expect(dot.style.backgroundColor).toBeTruthy()
+      expect(verseEl.classList.contains('qa-verse--bookmarked')).toBe(false)
     })
   })
 
@@ -74,31 +69,23 @@ describe('marks/indicator.js', () => {
     it('re-decorates verse when sync:update-received fires', async () => {
       await store.save('2:255', ['favourite'])
 
-      // Create a verse element
       const verse = document.createElement('div')
       verse.setAttribute('data-verse-key', '2:255')
       document.body.appendChild(verse)
 
-      // Decorate it initially
       await indicator.decorateVerse('2:255', verse)
-      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
+      expect(verse.classList.contains('qa-verse--bookmarked')).toBe(true)
 
-      // Register sync listener
       indicator.init()
 
-      // Delete the mark (simulating another tab)
       await store.del('2:255')
-
-      // Fire sync event
       events.emit('sync:update-received', { verseKeys: ['2:255'] })
-
-      // Wait for async re-decoration
       await waitForIndicatorWork()
 
-      expect(verse.querySelector('.qa-mark-dots')).toBeFalsy()
+      expect(verse.classList.contains('qa-verse--bookmarked')).toBe(false)
     })
 
-    it('removes dots when marks:deleted fires for a rendered verse', async () => {
+    it('removes bookmark class when marks:deleted fires for a rendered verse', async () => {
       await save('1:1', ['favourite'])
 
       const verse = document.createElement('div')
@@ -106,12 +93,12 @@ describe('marks/indicator.js', () => {
       document.body.appendChild(verse)
 
       await indicator.decorateVerse('1:1', verse)
-      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
+      expect(verse.classList.contains('qa-verse--bookmarked')).toBe(true)
 
       indicator.init()
       events.emit('marks:deleted', { verseKey: '1:1' })
 
-      expect(verse.querySelector('.qa-mark-dots')).toBeFalsy()
+      expect(verse.classList.contains('qa-verse--bookmarked')).toBe(false)
     })
 
     it('re-decorates a rendered verse when marks:undo restores it', async () => {
@@ -128,7 +115,7 @@ describe('marks/indicator.js', () => {
       events.emit('marks:undo', { verseKey: '1:2' })
       await waitForIndicatorWork()
 
-      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
+      expect(verse.classList.contains('qa-verse--bookmarked')).toBe(true)
     })
 
     it('reconciles changed and removed marks on db:visibility:visible', async () => {
@@ -148,8 +135,8 @@ describe('marks/indicator.js', () => {
 
       await indicator.decorateVerse('1:3', verse3)
       await indicator.decorateVerse('1:4', verse4)
-      expect(verse3.querySelectorAll('.qa-mark-dot')).toHaveLength(1)
-      expect(verse4.querySelectorAll('.qa-mark-dot')).toHaveLength(1)
+      expect(verse3.classList.contains('qa-verse--bookmarked')).toBe(true)
+      expect(verse4.classList.contains('qa-verse--bookmarked')).toBe(true)
 
       await store.save('1:3', ['study', 'reflection'])
       await store.del('1:4')
@@ -157,8 +144,8 @@ describe('marks/indicator.js', () => {
       events.emit('db:visibility:visible')
       await waitForIndicatorWork()
 
-      expect(verse3.querySelectorAll('.qa-mark-dot')).toHaveLength(2)
-      expect(verse4.querySelector('.qa-mark-dots')).toBeFalsy()
+      expect(verse3.classList.contains('qa-verse--bookmarked')).toBe(true)
+      expect(verse4.classList.contains('qa-verse--bookmarked')).toBe(false)
     })
 
     it('decorates newly rendered verses from the in-memory cache after surah load', async () => {
@@ -177,7 +164,7 @@ describe('marks/indicator.js', () => {
       })
       await waitForIndicatorWork()
 
-      expect(verse.querySelector('.qa-mark-dots')).toBeTruthy()
+      expect(verse.classList.contains('qa-verse--bookmarked')).toBe(true)
     })
   })
 })

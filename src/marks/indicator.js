@@ -13,7 +13,6 @@
  */
 
 import { getAll, getByVerseKey } from './store.js'
-import { getColorForTag } from './tags.js'
 import { on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 
@@ -41,10 +40,9 @@ function setCachedMark(verseKey, mark) {
  * @param {HTMLElement} element - the verse DOM element
  */
 export async function decorateVerse(verseKey, element) {
-  const existing = element.querySelector('.qa-mark-dots')
-  if (existing) {
-    existing.remove()
-  }
+  const existingDots = element.querySelector('.qa-mark-dots')
+  if (existingDots) { existingDots.remove() }
+  element.classList.remove('qa-verse--bookmarked')
 
   let mark
   if (marksCache !== null) {
@@ -53,21 +51,9 @@ export async function decorateVerse(verseKey, element) {
     mark = await getByVerseKey(verseKey)
   }
 
-  if (!mark || mark.tags.length === 0) {
-    return
-  }
+  if (!mark || mark.tags.length === 0) { return }
 
-  const dots = document.createElement('div')
-  dots.className = 'qa-mark-dots'
-
-  for (const tag of mark.tags) {
-    const dot = document.createElement('span')
-    dot.className = 'qa-mark-dot'
-    dot.style.backgroundColor = getColorForTag(tag)
-    dots.appendChild(dot)
-  }
-
-  element.insertBefore(dots, element.firstChild)
+  element.classList.add('qa-verse--bookmarked')
 }
 
 /**
@@ -110,10 +96,7 @@ export function init() {
     }
     const el = document.querySelector(`[data-verse-key="${verseKey}"]`)
     if (el) {
-      const dots = el.querySelector('.qa-mark-dots')
-      if (dots) {
-        dots.remove()
-      }
+      el.classList.remove('qa-verse--bookmarked')
     }
   })
 
