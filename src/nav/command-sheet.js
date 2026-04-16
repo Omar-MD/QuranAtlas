@@ -18,6 +18,9 @@ let isOpen = false
 let escapeHandler = null
 let inputHandler = null
 let surahCache = null
+let activeIndex = 0
+let flatItems = []
+let keyHandler = null
 
 export async function initCommandSheet() {
   destroyCommandSheet()
@@ -74,6 +77,9 @@ export async function initCommandSheet() {
   }
   document.addEventListener('keydown', escapeHandler)
 
+  keyHandler = onKeydown
+  document.addEventListener('keydown', keyHandler)
+
   inputHandler = () => { render() }
   input.addEventListener('input', inputHandler)
 
@@ -104,6 +110,10 @@ export function destroyCommandSheet() {
     document.removeEventListener('keydown', escapeHandler)
     escapeHandler = null
   }
+  if (keyHandler) {
+    document.removeEventListener('keydown', keyHandler)
+    keyHandler = null
+  }
   if (input && inputHandler) {
     input.removeEventListener('input', inputHandler)
     inputHandler = null
@@ -116,6 +126,8 @@ export function destroyCommandSheet() {
   results = null
   isOpen = false
   surahCache = null
+  activeIndex = 0
+  flatItems = []
 }
 
 function render() {
@@ -124,18 +136,32 @@ function render() {
   const groups = resolve(query, surahCache || [])
 
   while (results.firstChild) { results.removeChild(results.firstChild) }
+  flatItems = []
 
   if (groups.length === 0 || groups.every(g => g.items.length === 0)) {
     const empty = document.createElement('div')
     empty.className = 'qa-cmd-empty'
     empty.textContent = 'No matches'
     results.appendChild(empty)
+    activeIndex = 0
     return
   }
 
   for (const group of groups) {
     if (group.items.length === 0) { continue }
     results.appendChild(renderGroup(group))
+  }
+
+  activeIndex = 0
+  applyActive()
+}
+
+function applyActive() {
+  for (let i = 0; i < flatItems.length; i++) {
+    const el = flatItems[i].el
+    const on = i === activeIndex
+    el.classList.toggle('qa-cmd--active', on)
+    el.setAttribute('aria-selected', on ? 'true' : 'false')
   }
 }
 
@@ -199,6 +225,8 @@ function renderItem(item) {
 
   el.addEventListener('click', () => { activate(item) })
 
+  flatItems.push({ el, item })
+
   return el
 }
 
@@ -210,6 +238,31 @@ function activate(item) {
     emit(Events.NAVIGATION_NAVIGATE, { surah: item.surah, verse: item.verse })
   } else if (item.kind === 'action') {
     if (item.href) { window.location.hash = item.href }
+  }
+}
+
+function onKeydown(e) {
+  const isK = e.key === 'k' || e.key === 'K'
+  if (isK && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault()
+    if (isOpen) { closeCommandSheet() } else { openCommandSheet() }
+    return
+  }
+  if (!isOpen) { return }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    if (flatItems.length === 0) { return }
+    activeIndex = (activeIndex + 1) % flatItems.length
+    applyActive()
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    if (flatItems.length === 0) { return }
+    activeIndex = (activeIndex - 1 + flatItems.length) % flatItems.length
+    applyActive()
+  } else if (e.key === 'Enter') {
+    if (flatItems.length === 0) { return }
+    e.preventDefault()
+    activate(flatItems[activeIndex].item)
   }
 }
 

@@ -267,3 +267,111 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
     expect(document.querySelector('.qa-cmd-sheet').classList.contains('qa-cmd--hidden')).toBe(true)
   })
 })
+
+describe('nav/command-sheet.js — keyboard', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    setupShell()
+    events.clear()
+    window.location.hash = ''
+  })
+
+  afterEach(async () => {
+    const mod = await import('../../../src/nav/command-sheet.js')
+    mod.destroyCommandSheet()
+  })
+
+  async function typeQuery(q) {
+    const input = document.querySelector('.qa-cmd-input')
+    input.value = q
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise(r => setTimeout(r, 0))
+  }
+
+  it('first item is active on render', async () => {
+    const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
+    await initCommandSheet()
+    openCommandSheet()
+    await typeQuery('al')
+
+    const items = document.querySelectorAll('.qa-cmd-item')
+    expect(items[0].classList.contains('qa-cmd--active')).toBe(true)
+    expect(items[0].getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('ArrowDown moves selection to the next item', async () => {
+    const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
+    await initCommandSheet()
+    openCommandSheet()
+    await typeQuery('al')
+
+    const input = document.querySelector('.qa-cmd-input')
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+
+    const items = document.querySelectorAll('.qa-cmd-item')
+    expect(items[0].classList.contains('qa-cmd--active')).toBe(false)
+    expect(items[1].classList.contains('qa-cmd--active')).toBe(true)
+  })
+
+  it('ArrowUp on the first item wraps to the last', async () => {
+    const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
+    await initCommandSheet()
+    openCommandSheet()
+    await typeQuery('al')
+
+    const input = document.querySelector('.qa-cmd-input')
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }))
+
+    const items = document.querySelectorAll('.qa-cmd-item')
+    expect(items[items.length - 1].classList.contains('qa-cmd--active')).toBe(true)
+  })
+
+  it('Enter activates the currently selected item', async () => {
+    const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
+    const evts = await import('../../../src/core/events.js')
+    const { Events } = await import('../../../src/core/constants.js')
+    await initCommandSheet()
+    openCommandSheet()
+    await typeQuery('67')
+
+    const navFn = vi.fn()
+    evts.on(Events.NAVIGATION_NAVIGATE, navFn)
+
+    const input = document.querySelector('.qa-cmd-input')
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+
+    expect(navFn).toHaveBeenCalledWith({ surah: 67 })
+    expect(document.querySelector('.qa-cmd-sheet').classList.contains('qa-cmd--hidden')).toBe(true)
+  })
+
+  it('global Cmd+K opens the sheet', async () => {
+    const { initCommandSheet } = await import('../../../src/nav/command-sheet.js')
+    await initCommandSheet()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))
+
+    const sheet = document.querySelector('.qa-cmd-sheet')
+    expect(sheet.classList.contains('qa-cmd--hidden')).toBe(false)
+  })
+
+  it('global Ctrl+K opens the sheet', async () => {
+    const { initCommandSheet } = await import('../../../src/nav/command-sheet.js')
+    await initCommandSheet()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))
+
+    const sheet = document.querySelector('.qa-cmd-sheet')
+    expect(sheet.classList.contains('qa-cmd--hidden')).toBe(false)
+  })
+
+  it('Cmd+K while open closes the sheet', async () => {
+    const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
+    await initCommandSheet()
+    openCommandSheet()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))
+
+    const sheet = document.querySelector('.qa-cmd-sheet')
+    expect(sheet.classList.contains('qa-cmd--hidden')).toBe(true)
+  })
+})
