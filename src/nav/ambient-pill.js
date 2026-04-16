@@ -75,6 +75,7 @@ export function destroyAmbientPill() {
   refTextEl = null
   currentSurah = null
   currentVerse = 1
+  surahsById = null
 }
 
 async function ensureSurahCache() {
