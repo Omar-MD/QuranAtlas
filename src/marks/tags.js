@@ -41,9 +41,6 @@ export const SEED_TAGS = SEMANTIC_TAG_LABELS.map((label, i) => ({
   paletteSlot: i % 12,
 }))
 
-/** Map of seed label → fixed palette slot for O(1) lookup (hash fallback only). */
-const SEED_SLOT_MAP = new Map(SEED_TAGS.map(s => [s.label, s.paletteSlot]))
-
 /**
  * Simple string hash: sum of (charCode × position-prime) mod 12.
  * @param {string} label - lowercased tag label
@@ -69,7 +66,7 @@ function getThemeVariant() {
 
 /**
  * Get the color hex string for a tag label.
- * Seed tags use their fixed palette slot; custom tags use a deterministic hash.
+ * Semantic tags use curated hex pairs; all others use a deterministic hash.
  * Returns the correct variant (light or dark) based on current theme.
  * @param {string} label - lowercased tag label
  * @returns {string} hex color e.g. '#b45309'
@@ -81,10 +78,6 @@ export function getColorForTag(label) {
 
   // Fallback: hash the label into the generic 12-slot palette
   const variant = getThemeVariant()
-  const fixedSlot = SEED_SLOT_MAP.get(label)
-  if (fixedSlot !== undefined) {
-    return TAG_PALETTE[fixedSlot][variant]
-  }
   const slot = hashLabel(label)
   return TAG_PALETTE[slot][variant]
 }
