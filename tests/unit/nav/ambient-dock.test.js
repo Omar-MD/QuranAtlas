@@ -10,11 +10,6 @@ function setupShell() {
   while (document.body.firstChild) { document.body.removeChild(document.body.firstChild) }
   const topBar = document.createElement('header')
   topBar.id = 'top-bar'
-  const toggle = document.createElement('button')
-  toggle.className = 'qa-nav-toggle'
-  toggle.setAttribute('aria-label', 'Open navigation')
-  toggle.textContent = '\u2630'
-  topBar.appendChild(toggle)
 
   const main = document.createElement('main')
   main.id = 'main-content'
@@ -83,17 +78,23 @@ describe('nav/ambient-dock.js', () => {
     expect(read.classList.contains('qa-dock-item--active')).toBe(false)
   })
 
-  it('search glyph triggers a click on the existing hamburger toggle (stopgap)', async () => {
+  it('search glyph opens the command sheet', async () => {
+    const openSpy = vi.fn()
+    vi.doMock('../../../src/nav/command-sheet.js', () => ({
+      initCommandSheet: vi.fn().mockResolvedValue(() => {}),
+      openCommandSheet: openSpy,
+      closeCommandSheet: vi.fn(),
+      destroyCommandSheet: vi.fn(),
+    }))
+    vi.resetModules()
+    setupShell()
     const { initAmbientDock } = await import('../../../src/nav/ambient-dock.js')
     await initAmbientDock()
 
-    const toggle = document.querySelector('.qa-nav-toggle')
-    const clickSpy = vi.fn()
-    toggle.addEventListener('click', clickSpy)
-
     const search = document.querySelector('#bottom-nav [data-tab="search"]')
     search.click()
-    expect(clickSpy).toHaveBeenCalledTimes(1)
+
+    expect(openSpy).toHaveBeenCalledTimes(1)
   })
 
   it('read glyph navigates to the last-read surah stored in settings', async () => {

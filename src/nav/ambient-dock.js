@@ -5,6 +5,7 @@
  */
 
 import { get } from '../core/db.js'
+import { openCommandSheet } from './command-sheet.js'
 
 const HIDE_DELTA = 40
 const SHOW_NEAR_TOP = 20
@@ -42,8 +43,7 @@ export async function initAmbientDock() {
       a.href = '#'
       a.addEventListener('click', (e) => {
         e.preventDefault()
-        const toggle = document.querySelector('.qa-nav-toggle')
-        if (toggle) { toggle.click() }
+        openCommandSheet()
       })
     }
 
