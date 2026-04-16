@@ -26,7 +26,7 @@ describe('marks/editor.js', () => {
       expect(modal).not.toBeNull()
       expect(modal.getAttribute('role')).toBe('dialog')
       const chips = modal.querySelectorAll('.qa-tag-chip')
-      expect(chips.length).toBe(5)
+      expect(chips.length).toBe(16)
     })
 
     it('shows hint text when zero marks exist', async () => {

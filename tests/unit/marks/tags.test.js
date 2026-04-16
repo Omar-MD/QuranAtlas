@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { openDB } from '../../../src/core/db.js'
 import { save } from '../../../src/marks/store.js'
+import { SEMANTIC_TAG_LABELS, SEMANTIC_TAG_COLORS } from '../../../src/core/tag-colors.js'
 
 let tags
 
@@ -10,10 +11,18 @@ beforeEach(async () => {
   tags = await import('../../../src/marks/tags.js')
 })
 
+// Re-export convenient aliases that the new describe block uses directly
+let SEED_TAGS, getSeedTags, getColorForTag
+beforeEach(async () => {
+  SEED_TAGS = tags.SEED_TAGS
+  getSeedTags = tags.getSeedTags
+  getColorForTag = tags.getColorForTag
+})
+
 describe('marks/tags.js', () => {
   describe('SEED_TAGS', () => {
-    it('exports 5 seed tags', () => {
-      expect(tags.SEED_TAGS).toHaveLength(5)
+    it('exports 16 seed tags', () => {
+      expect(tags.SEED_TAGS).toHaveLength(16)
     })
 
     it('each seed has label and paletteSlot', () => {
@@ -48,8 +57,8 @@ describe('marks/tags.js', () => {
   })
 
   describe('getColorForTag()', () => {
-    it('returns the fixed palette color for seed tag "favourite"', () => {
-      const color = tags.getColorForTag('favourite')
+    it('returns a valid hex color for a semantic seed tag "mercy"', () => {
+      const color = tags.getColorForTag('mercy')
       expect(color).toMatch(/^#[0-9a-fA-F]{6}$/)
     })
 
@@ -68,17 +77,18 @@ describe('marks/tags.js', () => {
       expect(b).toMatch(/^#[0-9a-fA-F]{6}$/)
     })
 
-    it('seed tags get their fixed slot color, not hash-based', () => {
-      const favouriteColor = tags.getColorForTag('favourite')
-      expect(favouriteColor).toBe(tags.TAG_PALETTE[0].light)
+    it('semantic tags resolve via semantic map, not hash palette', () => {
+      // "mercy" light value comes from SEMANTIC_TAG_COLORS, not TAG_PALETTE slot 0
+      const mercyColor = tags.getColorForTag('mercy')
+      expect(mercyColor).toBe(SEMANTIC_TAG_COLORS.mercy.light)
     })
   })
 
   describe('getSeedTags()', () => {
-    it('returns the 5 seed tag objects', () => {
+    it('returns the 16 seed tag objects', () => {
       const seeds = tags.getSeedTags()
-      expect(seeds).toHaveLength(5)
-      expect(seeds[0].label).toBe('favourite')
+      expect(seeds).toHaveLength(16)
+      expect(seeds[0].label).toBe('mercy')
     })
   })
 
@@ -89,17 +99,57 @@ describe('marks/tags.js', () => {
     })
 
     it('returns unique tags from marks', async () => {
-      await save('1:1', ['favourite', 'study'])
-      await save('2:1', ['favourite', 'custom-tag'])
+      await save('1:1', ['mercy', 'study'])
+      await save('2:1', ['mercy', 'custom-tag'])
       const used = await tags.getAllUsedTags()
-      expect(used.sort()).toEqual(['custom-tag', 'favourite', 'study'])
+      expect(used.sort()).toEqual(['custom-tag', 'mercy', 'study'])
     })
 
     it('does not return duplicate tag names', async () => {
-      await save('1:1', ['favourite'])
-      await save('2:1', ['favourite'])
+      await save('1:1', ['mercy'])
+      await save('2:1', ['mercy'])
       const used = await tags.getAllUsedTags()
-      expect(used).toEqual(['favourite'])
+      expect(used).toEqual(['mercy'])
     })
+  })
+})
+
+describe('marks/tags.js — semantic seed set', () => {
+  afterEach(() => {
+    if (typeof document !== 'undefined') {
+      delete document.documentElement.dataset.theme
+    }
+  })
+
+  it('SEED_TAGS contains the 16 semantic labels in spec order', () => {
+    expect(SEED_TAGS.map(s => s.label)).toEqual(SEMANTIC_TAG_LABELS)
+  })
+
+  it('getSeedTags returns a fresh copy (no shared references)', () => {
+    const a = getSeedTags()
+    const b = getSeedTags()
+    expect(a).not.toBe(b)
+    expect(a[0]).not.toBe(b[0])
+    expect(a).toEqual(b)
+  })
+
+  it('getColorForTag uses semantic map for a named tag (dark theme)', () => {
+    document.documentElement.dataset.theme = 'dark'
+    expect(getColorForTag('mercy')).toBe(SEMANTIC_TAG_COLORS.mercy.dark)
+    expect(getColorForTag('tawakkul')).toBe(SEMANTIC_TAG_COLORS.tawakkul.dark)
+  })
+
+  it('getColorForTag uses semantic map for a named tag (light theme)', () => {
+    expect(getColorForTag('gratitude')).toBe(SEMANTIC_TAG_COLORS.gratitude.light)
+  })
+
+  it('getColorForTag falls back to hash palette for unknown labels', () => {
+    const color = getColorForTag('some-custom-user-tag')
+    expect(color).toMatch(/^#[0-9a-f]{6}$/i)
+    expect(SEMANTIC_TAG_LABELS.includes('some-custom-user-tag')).toBe(false)
+  })
+
+  it('getColorForTag returns the same hash color for the same custom label (deterministic)', () => {
+    expect(getColorForTag('my-tag')).toBe(getColorForTag('my-tag'))
   })
 })

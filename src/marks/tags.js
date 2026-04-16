@@ -10,6 +10,7 @@
  */
 
 import { getDb } from '../core/db.js'
+import { SEMANTIC_TAG_LABELS, getSemanticTagColor } from '../core/tag-colors.js'
 
 /**
  * 12-slot WCAG AA-safe palette.
@@ -32,18 +33,15 @@ export const TAG_PALETTE = [
 ]
 
 /**
- * 5 seed tags offered when user has zero marks.
- * Fixed palette slots bypass the hash function.
+ * Seed tags offered when user has zero marks.
+ * The 16 curated semantic tags from the ambient-redesign spec.
  */
-export const SEED_TAGS = [
-  { label: 'favourite', paletteSlot: 0 },
-  { label: 'divine', paletteSlot: 1 },
-  { label: 'disbelievers', paletteSlot: 2 },
-  { label: 'ahl al-kitāb', paletteSlot: 3 },
-  { label: 'hypocrites', paletteSlot: 4 },
-]
+export const SEED_TAGS = SEMANTIC_TAG_LABELS.map((label, i) => ({
+  label,
+  paletteSlot: i % 12,
+}))
 
-/** Map of seed label → fixed palette slot for O(1) lookup. */
+/** Map of seed label → fixed palette slot for O(1) lookup (hash fallback only). */
 const SEED_SLOT_MAP = new Map(SEED_TAGS.map(s => [s.label, s.paletteSlot]))
 
 /**
@@ -77,6 +75,11 @@ function getThemeVariant() {
  * @returns {string} hex color e.g. '#b45309'
  */
 export function getColorForTag(label) {
+  // Named semantic tags win — curated hex pairs per spec
+  const semantic = getSemanticTagColor(label)
+  if (semantic) return semantic
+
+  // Fallback: hash the label into the generic 12-slot palette
   const variant = getThemeVariant()
   const fixedSlot = SEED_SLOT_MAP.get(label)
   if (fixedSlot !== undefined) {
