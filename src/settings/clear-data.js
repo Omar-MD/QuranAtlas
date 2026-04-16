@@ -7,6 +7,7 @@ import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
 import { announce } from '../a11y/announcer.js'
+import { suppressNextVersionChange } from '../safety/sync.js'
 
 /**
  * Show clear data confirmation and handle the deletion flow.
@@ -85,15 +86,15 @@ export async function showClearDataConfirmation() {
       resolve(false)
     })
 
-    // Enable confirm button only when user types DELETE (case-insensitive)
+    // Enable confirm button only when user types DELETE (case-sensitive)
     confirmInput.addEventListener('input', () => {
-      const isDelete = confirmInput.value.trim().toLowerCase() === 'delete'
+      const isDelete = confirmInput.value.trim() === 'DELETE'
       confirmBtn.disabled = !isDelete
     })
 
     confirmBtn.addEventListener('click', async () => {
       // Double-check DELETE was typed before proceeding
-      if (confirmInput.value.trim().toLowerCase() !== 'delete') {
+      if (confirmInput.value.trim() !== 'DELETE') {
         return
       }
       cleanup()
@@ -135,7 +136,8 @@ export async function clearAllData() {
     }
   }
 
-  // Clear IndexedDB
+  // Clear IndexedDB — suppress the versionchange banner since this tab initiated the deletion
+  suppressNextVersionChange()
   try {
     await deleteDB()
   } catch (error) {

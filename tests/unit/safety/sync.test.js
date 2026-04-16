@@ -123,6 +123,25 @@ describe('safety/sync.js', () => {
       expect(document.getElementById('app-shell').style.pointerEvents).toBe('none')
     })
 
+    it('does not render banner when suppressNextVersionChange was called first', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+
+      sync.suppressNextVersionChange()
+      emit('db:version-change')
+
+      expect(document.querySelector('.qa-sync-backdrop')).toBeNull()
+    })
+
+    it('renders banner again after suppression is consumed', async () => {
+      const { emit } = await import('../../../src/core/events.js')
+
+      sync.suppressNextVersionChange()
+      emit('db:version-change') // suppressed
+      emit('db:version-change') // should show
+
+      expect(document.querySelector('.qa-sync-backdrop')).not.toBeNull()
+    })
+
     it('does not render duplicate banners for repeated version change events', async () => {
       const { emit } = await import('../../../src/core/events.js')
 

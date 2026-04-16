@@ -20,6 +20,7 @@ let channel = null
 let markChangeHandlers = []
 let bannerElement = null
 let unsubVersionChange = null
+let suppressVersionChangeBanner = false
 
 /**
  * Initialize the safety sync module.
@@ -102,10 +103,23 @@ function handleChannelMessage(event) {
 }
 
 /**
+ * Suppress the next versionchange banner.
+ * Call before triggering a self-initiated deleteDB (e.g. clear all data).
+ */
+export function suppressNextVersionChange() {
+  suppressVersionChangeBanner = true
+}
+
+/**
  * Handle database version change event.
  * Renders a non-dismissible reload banner.
  */
 function handleVersionChange() {
+  if (suppressVersionChangeBanner) {
+    suppressVersionChangeBanner = false
+    return
+  }
+
   if (bannerElement) {
     return
   }
@@ -178,6 +192,7 @@ export function removeBanner() {
 export function reset() {
   removeBanner()
   markChangeHandlers = []
+  suppressVersionChangeBanner = false
   if (channel) {
     channel.close()
     channel = null
