@@ -84,6 +84,21 @@
   --qa-tag-10: #0e7490;  /* Cyan */
   --qa-tag-11: #475569;  /* Slate */
   --qa-tag-default: #4b5563;
+
+  /* --- Ambient palette (redesign) ---
+   * Used by reader pill/dock, command sheet, bottom sheets, surah list edges.
+   * These supplement --qa-accent without replacing it. */
+  --qa-ambient-accent: #8b6b3a;
+  --qa-ambient-accent-soft: rgba(139, 107, 58, 0.22);
+  --qa-ambient-parchment: #3d2e14;
+  --qa-ambient-muted: #4a3a1e;
+  --qa-ambient-dim: #8b6b3a;
+  --qa-ambient-surface: #faf1d8;
+  --qa-ambient-border: #e6d5a6;
+  --qa-ambient-scrim: rgba(61, 46, 20, 0.28);
+  --qa-ambient-sheet-radius: 16px;
+  --qa-ambient-pill-radius: 999px;
+  --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.18);
 }
 
 html[data-theme="sepia"] {
@@ -122,6 +137,19 @@ html[data-theme="sepia"] {
   --qa-tag-10: #0e7490;
   --qa-tag-11: #475569;
   --qa-tag-default: #4b5563;
+
+  /* --- Ambient palette (redesign) --- */
+  --qa-ambient-accent: #8b6b3a;
+  --qa-ambient-accent-soft: rgba(139, 107, 58, 0.22);
+  --qa-ambient-parchment: #3d2e14;
+  --qa-ambient-muted: #4a3a1e;
+  --qa-ambient-dim: #8b6b3a;
+  --qa-ambient-surface: #faf1d8;
+  --qa-ambient-border: #e6d5a6;
+  --qa-ambient-scrim: rgba(61, 46, 20, 0.28);
+  --qa-ambient-sheet-radius: 16px;
+  --qa-ambient-pill-radius: 999px;
+  --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.22);
 }
 
 html[data-theme="dark"] {
@@ -160,6 +188,19 @@ html[data-theme="dark"] {
   --qa-tag-10: #67e8f9;
   --qa-tag-11: #94a3b8;
   --qa-tag-default: #9ca3af;
+
+  /* --- Ambient palette (redesign) --- */
+  --qa-ambient-accent: #a89968;
+  --qa-ambient-accent-soft: rgba(168, 153, 104, 0.22);
+  --qa-ambient-parchment: #e8e3c9;
+  --qa-ambient-muted: #b8b3a0;
+  --qa-ambient-dim: #6b6656;
+  --qa-ambient-surface: #1a1814;
+  --qa-ambient-border: #24201a;
+  --qa-ambient-scrim: rgba(5, 5, 4, 0.62);
+  --qa-ambient-sheet-radius: 16px;
+  --qa-ambient-pill-radius: 999px;
+  --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================================================
@@ -240,11 +281,41 @@ a:hover, a:focus {
   z-index: 100;
   background-color: var(--qa-bg-primary);
   border-bottom: 1px solid var(--qa-border);
-  padding: 0.75rem 1rem;
-  display: flex;
+  padding: 0.5rem 0.75rem 0.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "brand brand brand"
+    "ham   .     gear";
   align-items: center;
-  gap: 1rem;
+  row-gap: 0.25rem;
+  column-gap: 0.5rem;
 }
+
+.qa-brand {
+  grid-area: brand;
+  text-align: center;
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  padding-top: 0.25rem;
+  user-select: none;
+  pointer-events: none;
+}
+
+.qa-brand-quran {
+  font-weight: 700;
+  color: var(--qa-text-primary);
+}
+
+.qa-brand-atlas {
+  font-weight: 400;
+  color: var(--qa-accent);
+  margin-inline-start: 0.125rem;
+  font-style: italic;
+}
+
+#top-bar .qa-nav-toggle { grid-area: ham; justify-self: start; }
+#top-bar .qa-settings-gear { grid-area: gear; justify-self: end; margin-inline-start: 0; }
 
 #main-content {
   flex: 1;
@@ -265,7 +336,186 @@ a:hover, a:focus {
   border-top: 1px solid var(--qa-border);
   display: flex;
   justify-content: space-around;
-  padding: 0.75rem 0;
+  padding: 0.5rem 0 max(0.5rem, env(safe-area-inset-bottom));
+  transition: transform 0.25s ease;
+}
+
+#bottom-nav:empty { display: none; }
+
+#bottom-nav.qa-bnav-hidden {
+  transform: translateY(110%);
+}
+
+.qa-bnav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0.375rem 0.25rem;
+  color: var(--qa-text-secondary);
+  text-decoration: none;
+  font-size: 0.75rem;
+  min-height: 44px;
+  transition: color 0.15s;
+}
+
+.qa-bnav-item:hover { color: var(--qa-accent); text-decoration: none; }
+
+.qa-bnav-icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.qa-bnav-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+}
+
+.qa-bnav-active {
+  color: var(--qa-text-primary);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Settings gear + popover
+   ========================================================================== */
+
+.qa-settings-gear {
+  background: none;
+  border: none;
+  color: var(--qa-text-primary);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 6px;
+  line-height: 1;
+  min-height: 40px;
+  min-width: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: 0.5rem;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.qa-settings-gear:hover {
+  background: var(--qa-bg-secondary);
+  color: var(--qa-accent);
+}
+
+.qa-settings-gear:focus-visible {
+  outline: 2px solid var(--qa-accent);
+  outline-offset: 2px;
+}
+
+.qa-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 399;
+}
+
+.qa-settings-panel {
+  position: fixed;
+  top: 5rem;
+  right: 0.75rem;
+  z-index: 400;
+  width: min(320px, calc(100vw - 1.5rem));
+  background: var(--qa-bg-surface);
+  border: 1px solid var(--qa-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: qa-settings-pop 0.15s ease;
+}
+
+@keyframes qa-settings-pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.qa-settings-section { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.qa-settings-heading {
+  font-size: var(--qa-text-size-meta);
+  font-weight: 600;
+  color: var(--qa-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.qa-settings-options {
+  display: flex;
+  gap: 0.375rem;
+  background: var(--qa-bg-secondary);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.qa-settings-option {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: var(--qa-text-size-meta);
+  color: var(--qa-text-secondary);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.qa-settings-option:hover { color: var(--qa-text-primary); }
+
+.qa-settings-option-active {
+  background: var(--qa-bg-primary);
+  color: var(--qa-text-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.qa-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.qa-settings-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--qa-bg-secondary);
+  border: 1px solid var(--qa-border);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  padding: 0;
+}
+
+.qa-settings-switch-handle {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--qa-text-secondary);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.qa-settings-switch-on {
+  background: var(--qa-accent);
+  border-color: var(--qa-accent);
+}
+
+.qa-settings-switch-on .qa-settings-switch-handle {
+  transform: translateX(18px);
+  background: #fff;
 }
 
 /* ==========================================================================
@@ -338,62 +588,77 @@ a:hover, a:focus {
 .qa-nav-item {
   display: flex;
   align-items: center;
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid var(--qa-border-subtle);
+  gap: 0.75rem;
+  padding: 1rem;
+  margin: 0.5rem 0.75rem;
+  border-radius: 10px;
+  background: var(--qa-bg-surface);
+  border: 1px solid var(--qa-border-subtle);
   cursor: pointer;
-  transition: background-color 0.15s;
-  /* WCAG 2.5.5: minimum 44px touch target height */
-  min-height: 44px;
+  transition: background-color 0.15s, border-color 0.15s;
+  min-height: 64px;
 }
+
+.qa-nav-item[hidden] { display: none !important; }
 
 .qa-nav-item:hover {
   background: var(--qa-bg-secondary);
+  border-color: var(--qa-border);
 }
 
 .qa-nav-current {
-  border-left: 4px solid var(--qa-accent);
+  border-color: var(--qa-accent);
   background: var(--qa-bg-secondary);
 }
 
 .qa-nav-number {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--qa-bg-secondary);
-  border-radius: 6px;
-  font-size: var(--qa-text-size-meta);
-  font-weight: 500;
-  color: var(--qa-text-secondary);
-  margin-inline-end: 1rem;
+  min-width: 1.75rem;
+  font-size: var(--qa-text-size-ui);
+  font-weight: 600;
+  color: var(--qa-text-primary);
   flex-shrink: 0;
 }
 
 .qa-nav-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
 .qa-nav-item-name {
-  font-size: var(--qa-text-size-ui);
-  font-weight: 500;
+  font-size: 1.0625rem;
+  font-weight: 600;
   color: var(--qa-text-primary);
-  margin-bottom: 0.125rem;
+}
+
+.qa-nav-item-meaning {
+  font-size: var(--qa-text-size-meta);
+  color: var(--qa-text-secondary);
+}
+
+.qa-nav-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .qa-nav-item-meta {
   font-size: var(--qa-text-size-meta);
   color: var(--qa-text-secondary);
+  white-space: nowrap;
 }
 
 .qa-nav-item-arabic {
   font-family: var(--qa-font-arabic);
-  font-size: 1.25rem;
-  color: var(--qa-text-secondary);
+  font-size: 1.5rem;
+  color: var(--qa-text-primary);
   direction: rtl;
-  margin-left: 0.75rem;
-  flex-shrink: 0;
+  line-height: 1.4;
 }
 
 .qa-nav-toggle {
@@ -435,20 +700,34 @@ a:hover, a:focus {
   margin-bottom: 2rem;
 }
 
+.qa-surah-header-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--qa-border);
+  border-radius: 12px;
+  background: var(--qa-bg-surface);
+  text-align: center;
+}
+
 .qa-surah-name {
   font-family: var(--qa-font-arabic);
-  font-size: 2.5rem;
+  font-size: 2.75rem;
   color: var(--qa-text-arabic);
   direction: rtl;
   line-height: var(--qa-line-height-arabic);
 }
 
 .qa-surah-meta {
-  font-size: var(--qa-text-size-ui);
+  font-size: 0.75rem;
   color: var(--qa-text-secondary);
-  margin-top: 0.5rem;
-  letter-spacing: 0.025em;
+  margin-top: 0.25rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 .qa-basmala {
@@ -547,18 +826,6 @@ a:hover, a:focus {
 @keyframes qa-skeleton-loading {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-
-/* Review Hub link */
-.qa-review-icon {
-  color: var(--qa-text-primary);
-  text-decoration: none;
-  font-size: var(--qa-text-size-ui);
-  font-weight: 500;
-}
-
-.qa-review-icon:hover {
-  color: var(--qa-accent);
 }
 
 /* Controls / Toggles */
