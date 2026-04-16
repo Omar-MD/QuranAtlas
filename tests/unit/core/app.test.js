@@ -101,6 +101,19 @@ vi.mock('../../../src/about/index.js', () => ({
   init: vi.fn(),
 }))
 
+vi.mock('../../../src/settings/font-size.js', () => ({
+  initFontSize: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/settings/panel.js', () => ({
+  initSettingsPanel: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/nav/ambient-dock.js', () => ({
+  initAmbientDock: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/nav/ambient-pill.js', () => ({
+  initAmbientPill: vi.fn(() => Promise.resolve()),
+}))
+
 describe('core/app.js init order', () => {
   beforeEach(() => {
     callOrder.length = 0
@@ -186,6 +199,8 @@ describe('core/app.js error recovery', () => {
   it('renders error recovery UI when openDB fails', async () => {
     vi.resetModules()
     await silenceLogger()
+    // Expected: boot failure path invokes logger.error once
+    vi.spyOn(console, 'error').mockImplementation(() => {})
 
     vi.doMock('../../../src/core/db.js', () => ({
       openDB: vi.fn().mockRejectedValue(new Error('IDB unavailable')),
@@ -315,7 +330,7 @@ describe('core/app.js error recovery', () => {
     expect(router.navigate).toHaveBeenCalledWith('#/s/4')
   })
 
-  it('adds the review shortcut only once across re-initialization', async () => {
+  it('adds the brand wordmark only once across re-initialization', async () => {
     vi.resetModules()
     applyDefaultRuntimeMocks()
     await silenceLogger()
@@ -327,7 +342,7 @@ describe('core/app.js error recovery', () => {
     await app.init()
     await waitForAppWork()
 
-    expect(document.querySelectorAll('.qa-review-icon')).toHaveLength(1)
+    expect(document.querySelectorAll('.qa-brand')).toHaveLength(1)
   })
 
   it('cancels interrupted downloads and emits ready-for-download when online', async () => {
