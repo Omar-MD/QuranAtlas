@@ -42,7 +42,7 @@ describe('nav/ambient-pill.js', () => {
     const pill = document.querySelector('#top-bar .qa-pill-ref')
     expect(pill).toBeTruthy()
     expect(pill.getAttribute('role')).toBe('button')
-    expect(pill.getAttribute('aria-label')).toBe('Current reading position')
+    expect(pill.getAttribute('aria-label')).toBe('Current reading position — press Cmd+K to open command sheet')
   })
 
   it('renders the verse reference and surah name from READER_SURAH_LOADED + READER_POSITION_CHANGED', async () => {
@@ -88,7 +88,7 @@ describe('nav/ambient-pill.js', () => {
     expect(pill.classList.contains('qa-pill-ref--hidden')).toBe(true)
   })
 
-  it('shows the pill again when navigating back into a reader route', async () => {
+  it('pill stays hidden on reader route entry until AMBIENT_SURFACE event', async () => {
     const { initAmbientPill } = await import('../../../src/nav/ambient-pill.js')
     await initAmbientPill()
 
@@ -98,6 +98,11 @@ describe('nav/ambient-pill.js', () => {
     window.dispatchEvent(new HashChangeEvent('hashchange'))
 
     const pill = document.querySelector('.qa-pill-ref')
+    // Pill stays hidden until tap-to-surface
+    expect(pill.classList.contains('qa-pill-ref--hidden')).toBe(true)
+
+    // AMBIENT_SURFACE reveals the pill
+    events.emit(Events.AMBIENT_SURFACE, { reason: 'tap' })
     expect(pill.classList.contains('qa-pill-ref--hidden')).toBe(false)
   })
 

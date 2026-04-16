@@ -336,7 +336,7 @@ describe('core/app.js error recovery', () => {
     expect(router.navigate).toHaveBeenCalledWith('#/s/4')
   })
 
-  it('adds the brand wordmark only once across re-initialization', async () => {
+  it('top-bar has no brand wordmark (ambient chrome handles navigation)', async () => {
     vi.resetModules()
     applyDefaultRuntimeMocks()
     await silenceLogger()
@@ -348,7 +348,7 @@ describe('core/app.js error recovery', () => {
     await app.init()
     await waitForAppWork()
 
-    expect(document.querySelectorAll('.qa-brand')).toHaveLength(1)
+    expect(document.querySelectorAll('.qa-brand')).toHaveLength(0)
   })
 
   it('cancels interrupted downloads and emits ready-for-download when online', async () => {

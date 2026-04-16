@@ -1,26 +1,37 @@
 /**
- * Ambient 4-glyph dock — replaces the old Read/Review/About bottom nav.
- * Reuses the <footer id="bottom-nav"> mount point from index.html.
- * Auto-hides on scroll-down in #main-content, reveals on scroll-up / near top.
+ * Ambient 4-glyph dock — floats above the reader.
+ * - Surfaces on AMBIENT_SURFACE event (tap on reader body, verse-number tap, etc.).
+ * - Auto-fades 2.8s after last surface signal on reader routes.
+ * - Persistent on non-reader routes (it's the only nav affordance there).
  */
 
 import { get } from '../core/db.js'
+import { emit, on } from '../core/events.js'
+import { Events } from '../core/constants.js'
 import { openCommandSheet } from './command-sheet.js'
 
+const AUTO_FADE_MS = 2800
 const HIDE_DELTA = 40
 const SHOW_NEAR_TOP = 20
 
 let scrollTarget = null
 let scrollHandler = null
 let hashHandler = null
+let surfaceUnsub = null
+let hideUnsub = null
 let lastTop = 0
+let fadeTimer = null
 
 const TABS = [
-  { id: 'read',   label: 'Read',   icon: '\uD83D\uDCD6', matches: (h) => h.startsWith('#/s/') || h === '' || h === '#' },
+  { id: 'read',   label: 'Read',   icon: '\uD83D\uDCD6', matches: (h) => h.startsWith('#/s/') },
   { id: 'search', label: 'Search', icon: '\u2315',       matches: () => false },
   { id: 'review', label: 'Review', icon: '\u2726',       matches: (h) => h.startsWith('#/review') || h.startsWith('#/t/') },
   { id: 'more',   label: 'More',   icon: '\u22EF',       matches: (h) => h.startsWith('#/settings') || h.startsWith('#/about') },
 ]
+
+function isReaderRoute(hash) {
+  return (hash || '').startsWith('#/s/')
+}
 
 export async function initAmbientDock() {
   const footer = document.getElementById('bottom-nav')
@@ -38,14 +49,24 @@ export async function initAmbientDock() {
 
     if (t.id === 'read')   { a.href = `#/s/${lastSurah}` }
     else if (t.id === 'review') { a.href = '#/review' }
-    else if (t.id === 'more')   { a.href = '#/settings' }
-    else if (t.id === 'search') {
-      a.href = '#'
-      a.addEventListener('click', (e) => {
+    else { a.href = '#' }
+
+    a.addEventListener('click', (e) => {
+      if (t.id === 'search') {
         e.preventDefault()
         openCommandSheet()
-      })
-    }
+      } else if (t.id === 'more') {
+        e.preventDefault()
+        emit(Events.AMBIENT_SURFACE, { reason: 'dock' })
+        if (window.__qaOpenMoreSheet) {
+          window.__qaOpenMoreSheet()
+        } else {
+          window.location.hash = '#/settings'
+        }
+      } else {
+        emit(Events.AMBIENT_SURFACE, { reason: 'dock' })
+      }
+    })
 
     const icon = document.createElement('span')
     icon.className = 'qa-dock-icon'
@@ -60,8 +81,12 @@ export async function initAmbientDock() {
     footer.appendChild(a)
   }
 
-  hashHandler = () => updateActive(footer)
+  hashHandler = () => {
+    updateActive(footer)
+    applyRoutePersistence(footer)
+  }
   updateActive(footer)
+  applyRoutePersistence(footer)
   window.addEventListener('hashchange', hashHandler)
 
   scrollTarget = document.getElementById('main-content')
@@ -69,29 +94,67 @@ export async function initAmbientDock() {
     scrollHandler = () => {
       const top = scrollTarget.scrollTop
       const delta = top - lastTop
+      if (!isReaderRoute(window.location.hash)) { return }
       if (top < SHOW_NEAR_TOP) {
-        footer.classList.remove('qa-dock--hidden')
+        reveal(footer)
       } else if (delta > HIDE_DELTA) {
         footer.classList.add('qa-dock--hidden')
         lastTop = top
       } else if (delta < -HIDE_DELTA) {
-        footer.classList.remove('qa-dock--hidden')
+        reveal(footer)
         lastTop = top
       }
     }
     scrollTarget.addEventListener('scroll', scrollHandler, { passive: true })
   }
 
+  surfaceUnsub = on(Events.AMBIENT_SURFACE, () => {
+    if (isReaderRoute(window.location.hash)) {
+      reveal(footer)
+      scheduleFade(footer)
+    }
+  })
+
+  hideUnsub = on(Events.AMBIENT_HIDE, () => {
+    if (isReaderRoute(window.location.hash)) {
+      footer.classList.add('qa-dock--hidden')
+    }
+  })
+
   return destroyAmbientDock
 }
 
+function reveal(footer) {
+  footer.classList.remove('qa-dock--hidden')
+}
+
+function scheduleFade(footer) {
+  if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+  fadeTimer = setTimeout(() => {
+    if (isReaderRoute(window.location.hash)) {
+      footer.classList.add('qa-dock--hidden')
+    }
+    fadeTimer = null
+  }, AUTO_FADE_MS)
+}
+
+function applyRoutePersistence(footer) {
+  if (isReaderRoute(window.location.hash)) {
+    footer.classList.add('qa-dock--hidden')
+  } else {
+    footer.classList.remove('qa-dock--hidden')
+    if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+  }
+}
+
 export function destroyAmbientDock() {
+  if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
   if (scrollTarget && scrollHandler) {
     scrollTarget.removeEventListener('scroll', scrollHandler)
   }
-  if (hashHandler) {
-    window.removeEventListener('hashchange', hashHandler)
-  }
+  if (hashHandler) { window.removeEventListener('hashchange', hashHandler) }
+  if (surfaceUnsub) { surfaceUnsub(); surfaceUnsub = null }
+  if (hideUnsub) { hideUnsub(); hideUnsub = null }
   scrollTarget = null
   scrollHandler = null
   hashHandler = null

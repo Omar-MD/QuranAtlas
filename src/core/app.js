@@ -89,22 +89,7 @@ export async function init() {
       }
     }))
 
-    // Insert stylised brand wordmark + actions row into the top bar
-    const topBar = document.getElementById('top-bar')
-    if (topBar && !topBar.querySelector('.qa-brand')) {
-      const brand = document.createElement('div')
-      brand.className = 'qa-brand'
-      brand.setAttribute('aria-label', 'QuranAtlas')
-      const brandQ = document.createElement('span')
-      brandQ.className = 'qa-brand-quran'
-      brandQ.textContent = 'Quran'
-      const brandA = document.createElement('span')
-      brandA.className = 'qa-brand-atlas'
-      brandA.textContent = 'Atlas'
-      brand.appendChild(brandQ)
-      brand.appendChild(brandA)
-      topBar.insertBefore(brand, topBar.firstChild)
-    }
+    // Top bar intentionally empty — ambient pill + dock are the nav surfaces.
 
     // Capture PWA install prompt if available
     initInstallListener()
