@@ -114,6 +114,7 @@ describe('nav/ambient-dock.js', () => {
 
     const read = document.querySelector('#bottom-nav [data-tab="read"]')
     expect(read.getAttribute('href')).toBe('#/s/67')
+    vi.doUnmock('../../../src/core/db.js')
   })
 
   it('defaults read href to surah 1 when no last-read exists', async () => {
