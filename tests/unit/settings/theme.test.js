@@ -27,6 +27,7 @@ describe('settings/theme.js', () => {
     clear()
     document.documentElement.className = ''
     document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('data-theme-pref')
     await resetThemeSetting()
     vi.restoreAllMocks()
   })
@@ -70,12 +71,13 @@ describe('settings/theme.js', () => {
     unsub()
   })
 
-  it('derives the previous theme from CSS classes when data-theme is absent', async () => {
+  it('derives the previous theme from CSS classes when data-theme-pref and data-theme are absent', async () => {
     const received = []
     const unsub = on(Events.SETTINGS_THEME_CHANGED, (payload) => received.push(payload))
 
     document.documentElement.classList.add('theme-dark')
     document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('data-theme-pref')
 
     await setTheme('sepia')
 
@@ -88,7 +90,7 @@ describe('settings/theme.js', () => {
   it('returns the supported theme options as a new array', () => {
     const options = getThemeOptions()
 
-    expect(options).toEqual(['light', 'dark', 'sepia'])
+    expect(options).toEqual(['light', 'sepia', 'dark', 'auto'])
     expect(options).not.toBe(getThemeOptions())
   })
 

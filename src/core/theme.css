@@ -56,8 +56,8 @@
   --qa-text-primary: #18181b;     /* High contrast for readability */
   --qa-text-secondary: #52525b;   /* Subordinate text, still AAA where possible */
   
-  --qa-accent: #0284c7;           /* WCAG AAA on white */
-  --qa-accent-hover: #0369a1;
+  --qa-accent: #8b6b3a;           /* Bronze — shared with Sepia, WCAG AA on white */
+  --qa-accent-hover: #6b4a16;
   
   --qa-border: #e4e4e7;
   --qa-border-subtle: #f4f4f5;
@@ -1580,25 +1580,68 @@ a:hover, a:focus {
   margin-bottom: 0.75rem;
 }
 
-.qa-about-versions {
-  margin-bottom: 2rem;
+.qa-about-blessing-wrap {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--qa-ambient-border);
+  border-radius: 12px;
+  background-color: var(--qa-ambient-surface);
+  text-align: center;
 }
 
-.qa-about-dl {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.5rem 1.5rem;
-  font-size: var(--qa-text-size-ui);
+.qa-about-blessing {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 1.25rem;
+  line-height: 2;
+  color: var(--qa-ambient-parchment);
+  margin: 0 0 0.75rem;
 }
 
-.qa-about-dl dt {
-  font-weight: 600;
-  color: var(--qa-text-primary);
-}
-
-.qa-about-dl dd {
-  color: var(--qa-text-secondary);
+.qa-about-blessing-translation {
+  font-size: var(--qa-text-size-meta);
+  color: var(--qa-ambient-muted);
+  font-style: italic;
   margin: 0;
+  line-height: 1.6;
+}
+
+.qa-about-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.qa-about-stat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  background-color: var(--qa-ambient-surface);
+  border: 1px solid var(--qa-ambient-border);
+  border-radius: 12px;
+  gap: 0.25rem;
+}
+
+.qa-about-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--qa-ambient-accent);
+  line-height: 1;
+}
+
+.qa-about-stat-label {
+  font-size: var(--qa-text-size-meta);
+  color: var(--qa-ambient-muted);
+  text-align: center;
+}
+
+.qa-about-version-line {
+  font-size: var(--qa-text-size-meta);
+  color: var(--qa-ambient-dim);
+  text-align: center;
+  margin: 1rem 0 0.5rem;
 }
 
 .qa-about-attribution {
@@ -1625,43 +1668,6 @@ a:hover, a:focus {
   left: 0;
   color: var(--qa-accent);
   font-weight: 700;
-}
-
-.qa-about-storage {
-  margin-bottom: 2rem;
-}
-
-.qa-about-storage-meter {
-  width: 100%;
-  height: 8px;
-  border-radius: 4px;
-  appearance: none;
-  -webkit-appearance: none;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.qa-about-storage-meter::-webkit-meter-bar {
-  background: var(--qa-bg-secondary);
-  border-radius: 4px;
-  border: none;
-}
-
-.qa-about-storage-meter::-webkit-meter-optimum-value {
-  background: var(--qa-accent);
-  border-radius: 4px;
-}
-
-.qa-about-storage-text {
-  font-size: var(--qa-text-size-meta);
-  color: var(--qa-text-secondary);
-}
-
-.qa-about-storage-warning {
-  margin-top: 0.5rem;
-  font-size: var(--qa-text-size-meta);
-  color: var(--qa-color-error);
-  font-weight: 500;
 }
 
 .qa-about-install {

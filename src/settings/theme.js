@@ -1,5 +1,6 @@
 /**
  * Theme management: load and apply user theme preferences.
+ * 'auto' follows prefers-color-scheme; flips between light and dark at runtime.
  */
 
 import { get, put } from '../core/db.js'
@@ -8,94 +9,97 @@ import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
 
 const DEFAULT_THEME = 'light'
-const THEME_OPTIONS = ['light', 'dark', 'sepia']
+const THEME_OPTIONS = ['light', 'sepia', 'dark', 'auto']
+const APPLIED_VARIANTS = ['light', 'sepia', 'dark']
 
-/**
- * Load the saved theme or default.
- * @returns {Promise<string>} The current theme name
- */
+let mediaQuery = null
+let mediaListener = null
+
 export async function loadTheme() {
   try {
     const saved = await get('settings', 'theme')
     return saved?.value || DEFAULT_THEME
   } catch (error) {
-    logger.error('Failed to load theme:', {
-      error,
-    })
+    logger.error('Failed to load theme:', { error })
     return DEFAULT_THEME
   }
 }
 
-/**
- * Apply a theme to the document.
- * @param {string} theme - Theme name (light, dark, sepia)
- */
+function resolveAuto() {
+  if (typeof window === 'undefined' || !window.matchMedia) { return 'light' }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 export function applyTheme(theme) {
   if (!THEME_OPTIONS.includes(theme)) {
     logger.warn('Invalid theme:', { theme })
     return
   }
 
-  // Remove existing theme classes
+  const variant = theme === 'auto' ? resolveAuto() : theme
+
   document.documentElement.classList.remove('theme-light', 'theme-dark', 'theme-sepia')
-  // Add new theme class
-  document.documentElement.classList.add(`theme-${theme}`)
-  // Store for CSS reference
-  document.documentElement.setAttribute('data-theme', theme)
+  document.documentElement.classList.add(`theme-${variant}`)
+  document.documentElement.setAttribute('data-theme', variant)
+  document.documentElement.setAttribute('data-theme-pref', theme)
+
+  if (theme === 'auto') {
+    if (!mediaQuery && typeof window !== 'undefined' && window.matchMedia) {
+      mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      mediaListener = () => { applyTheme('auto') }
+      if (typeof mediaQuery.addEventListener === 'function') {
+        mediaQuery.addEventListener('change', mediaListener)
+      } else if (typeof mediaQuery.addListener === 'function') {
+        mediaQuery.addListener(mediaListener)
+      }
+    }
+  } else if (mediaQuery && mediaListener) {
+    if (typeof mediaQuery.removeEventListener === 'function') {
+      mediaQuery.removeEventListener('change', mediaListener)
+    } else if (typeof mediaQuery.removeListener === 'function') {
+      mediaQuery.removeListener(mediaListener)
+    }
+    mediaQuery = null
+    mediaListener = null
+  }
 }
 
-function getCurrentTheme() {
+function getCurrentThemePref() {
+  const pref = document.documentElement.getAttribute('data-theme-pref')
+  if (THEME_OPTIONS.includes(pref)) { return pref }
   const dataTheme = document.documentElement.getAttribute('data-theme')
-  if (THEME_OPTIONS.includes(dataTheme)) {
-    return dataTheme
-  }
-
-  const classTheme = THEME_OPTIONS.find((option) =>
-    document.documentElement.classList.contains(`theme-${option}`)
+  if (APPLIED_VARIANTS.includes(dataTheme)) { return dataTheme }
+  const classTheme = APPLIED_VARIANTS.find((t) =>
+    document.documentElement.classList.contains(`theme-${t}`)
   )
-
   return classTheme || DEFAULT_THEME
 }
 
-/**
- * Save and apply a theme.
- * @param {string} theme - Theme name to save and apply
- * @returns {Promise<boolean>} Success status
- */
 export async function setTheme(theme) {
   if (!THEME_OPTIONS.includes(theme)) {
     logger.warn('Invalid theme:', { theme })
     return false
   }
 
-  const from = getCurrentTheme()
-
-  // Apply theme synchronously for instant visual response
+  const from = getCurrentThemePref()
   applyTheme(theme)
   emit(Events.SETTINGS_THEME_CHANGED, { from, to: theme })
 
-  // Persist asynchronously — fire-and-forget, UI is already updated
   put('settings', { key: 'theme', value: theme }).catch((error) => {
-    logger.error('Failed to save theme:', {
-      theme,
-      error,
-    })
+    logger.error('Failed to save theme:', { theme, error })
   })
 
   return true
 }
 
-/**
- * Get available theme options.
- * @returns {Array<string>} Theme option names
- */
 export function getThemeOptions() {
   return [...THEME_OPTIONS]
 }
 
-/**
- * Initialize theme on app start.
- */
+export function getAppliedVariants() {
+  return [...APPLIED_VARIANTS]
+}
+
 export async function initTheme() {
   const theme = await loadTheme()
   applyTheme(theme)
