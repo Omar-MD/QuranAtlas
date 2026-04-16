@@ -78,7 +78,6 @@ export async function initAmbientDock() {
         footer.classList.remove('qa-dock--hidden')
         lastTop = top
       }
-      if (Math.abs(delta) > HIDE_DELTA) { lastTop = top }
     }
     scrollTarget.addEventListener('scroll', scrollHandler, { passive: true })
   }
