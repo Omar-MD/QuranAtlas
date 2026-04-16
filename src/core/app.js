@@ -15,6 +15,7 @@ import { initFontSize } from '../settings/font-size.js'
 import { initSettingsPanel } from '../settings/panel.js'
 import { initAmbientDock } from '../nav/ambient-dock.js'
 import { initAmbientPill } from '../nav/ambient-pill.js'
+import { initCommandSheet } from '../nav/command-sheet.js'
 import { init as initQuotaBanner } from './quota-banner.js'
 import { init as initIndicators } from '../marks/indicator.js'
 import { setupLongPress, openEditor } from '../marks/editor.js'
@@ -73,16 +74,13 @@ export async function init() {
     performance.mark('router:resolve')
     performance.measure('app:router-init', 'db:open', 'router:resolve')
 
-    // Initialize nav panel
-    const { init: initNav } = await import('../nav/index.js')
-    bootCleanups.push(await initNav())
-
-    // Initialize settings gear panel and ambient nav chrome (pill + dock)
+    // Initialize settings gear panel, command sheet, and ambient nav chrome (pill + dock)
     bootCleanups.push(await initSettingsPanel())
+    bootCleanups.push(await initCommandSheet())
     bootCleanups.push(await initAmbientDock())
     bootCleanups.push(await initAmbientPill())
 
-    // Handle navigation events from nav panel
+    // Handle navigation events from command sheet
     bootCleanups.push(on(Events.NAVIGATION_NAVIGATE, ({ surah, verse }) => {
       if (verse) {
         router.navigate(`#/s/${surah}/${verse}`)

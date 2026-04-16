@@ -18,8 +18,11 @@ function applyDefaultRuntimeMocks() {
     getMostRecentPosition: vi.fn(() => Promise.resolve(null)),
     put: vi.fn(() => Promise.resolve()),
   }))
-  vi.doMock('../../../src/nav/index.js', () => ({
-    init: vi.fn(() => Promise.resolve()),
+  vi.doMock('../../../src/nav/command-sheet.js', () => ({
+    initCommandSheet: vi.fn(() => Promise.resolve()),
+    openCommandSheet: vi.fn(),
+    closeCommandSheet: vi.fn(),
+    destroyCommandSheet: vi.fn(),
   }))
   vi.doMock('../../../src/data/offline.js', () => ({
     initInstallPrompt: vi.fn(),
@@ -49,8 +52,11 @@ vi.mock('../../../src/core/db.js', () => ({
   put: vi.fn(() => Promise.resolve()),
 }))
 
-vi.mock('../../../src/nav/index.js', () => ({
-  init: vi.fn(() => Promise.resolve()),
+vi.mock('../../../src/nav/command-sheet.js', () => ({
+  initCommandSheet: vi.fn(() => Promise.resolve()),
+  openCommandSheet: vi.fn(),
+  closeCommandSheet: vi.fn(),
+  destroyCommandSheet: vi.fn(),
 }))
 
 vi.mock('../../../src/settings/theme.js', () => ({
@@ -208,7 +214,7 @@ describe('core/app.js error recovery', () => {
       put: vi.fn().mockResolvedValue(),
       getMostRecentPosition: vi.fn().mockResolvedValue(null),
     }))
-    vi.doMock('../../../src/nav/index.js', () => ({ init: vi.fn().mockResolvedValue() }))
+    vi.doMock('../../../src/nav/command-sheet.js', () => ({ initCommandSheet: vi.fn().mockResolvedValue(), openCommandSheet: vi.fn(), closeCommandSheet: vi.fn(), destroyCommandSheet: vi.fn() }))
     vi.doMock('../../../src/data/offline.js', () => ({
       initInstallPrompt: vi.fn(),
       getActivationState: vi.fn().mockResolvedValue('none'),
