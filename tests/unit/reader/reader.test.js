@@ -184,8 +184,8 @@ describe('reader/index.js', () => {
 
     const header = document.querySelector('[data-surah-header]')
     expect(header).toBeTruthy()
-    expect(header.textContent).toContain('Al-Fatiha')
-    expect(header.querySelector('.qa-surah-meta').textContent).toContain('Surah 1')
+    expect(header.textContent.toLowerCase()).toContain('al-fatiha')
+    expect(header.querySelector('.qa-surah-meta').textContent).toContain('SURAH 1')
   })
 
   it('renders basmala correctly for surah 1, 2, and 9', async () => {
@@ -223,13 +223,12 @@ describe('reader/index.js', () => {
     expect(verses.length).toBeGreaterThan(0)
   })
 
-  it('renders top bar with translation toggle', async () => {
+  it('does not render the legacy EN toggle button (moved to settings panel)', async () => {
     const { init } = await import('../../../src/reader/index.js')
     await init({ surah: '1' })
 
     const toggle = document.querySelector('.qa-toggle-btn')
-    expect(toggle).toBeTruthy()
-    expect(toggle.textContent).toContain('EN')
+    expect(toggle).toBeFalsy()
   })
 
   it('rejects invalid surah numbers', async () => {
@@ -423,38 +422,17 @@ describe('reader/index.js', () => {
     expect(document.querySelector('.qa-undo-toast')).toBeNull()
   })
 
-  it('translation toggle does not throw and toggles visibility', async () => {
-    // Reset mock to default (translationVisible: true) in case a prior test changed it
-    db.get.mockImplementation((store, key) => {
-      if (store === 'settings' && key === 'translationVisible') {
-        return Promise.resolve({ key: 'translationVisible', value: true })
-      }
-      return Promise.resolve(null)
-    })
-
-    const { init } = await import('../../../src/reader/index.js')
-    await init({ surah: '1' })
-
-    const toggle = document.querySelector('.qa-toggle-btn')
-    expect(toggle).toBeTruthy()
-
-    // Click should NOT throw
-    expect(() => toggle.click()).not.toThrow()
-
-    await new Promise(r => setTimeout(r, 10))
-    const translations = document.querySelectorAll('[data-translation]')
-    translations.forEach(el => {
-      expect(el.classList.contains('qa-hide-translation')).toBe(true)
-    })
-    expect(toggle.textContent).toBe('EN ▸')
-  })
-
-  it('renderTopBar preserves hamburger toggle in top-bar', async () => {
+  it('preserves hamburger toggle in top-bar and removes any stale EN toggle', async () => {
     const topBar = document.getElementById('top-bar')
     const hamburger = document.createElement('button')
     hamburger.className = 'qa-nav-toggle'
     hamburger.textContent = '☰'
     topBar.appendChild(hamburger)
+
+    const staleToggle = document.createElement('button')
+    staleToggle.className = 'qa-toggle-btn'
+    staleToggle.textContent = 'EN ▾'
+    topBar.appendChild(staleToggle)
 
     const { init } = await import('../../../src/reader/index.js')
     await init({ surah: '1' })
@@ -463,8 +441,7 @@ describe('reader/index.js', () => {
     expect(preserved).toBeTruthy()
     expect(preserved.textContent).toBe('☰')
 
-    const toggle = topBar.querySelector('.qa-toggle-btn')
-    expect(toggle).toBeTruthy()
+    expect(topBar.querySelector('.qa-toggle-btn')).toBeFalsy()
   })
 
   it('saves position when document becomes hidden', async () => {

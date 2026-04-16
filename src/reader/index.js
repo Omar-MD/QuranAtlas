@@ -75,7 +75,11 @@ function renderSurahContent({ mainContent, topBar, surah, surahMeta, translation
   isRendering = false
 
   renderSurahEnd(mainContent, surahMeta)
-  renderTopBar(topBar, translationVisible, surahNum, mainContent)
+  // Remove stale EN toggle button from previous renders; translation toggle lives in the settings panel.
+  if (topBar) {
+    const stale = topBar.querySelector('.qa-toggle-btn')
+    if (stale) { stale.remove() }
+  }
 }
 
 /**
@@ -116,6 +120,11 @@ function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah
       visibilityHandler = null
     })
   }
+
+  const unsubTranslation = on(Events.SETTINGS_TRANSLATION_CHANGED, ({ visible }) => {
+    currentTranslationVisible = !!visible
+  })
+  cleanups.push(() => { unsubTranslation() })
 
   unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
     if (currentSurah && mainContent) {
@@ -569,15 +578,19 @@ function showError(container, surahNum, _message) {
  */
 function renderSurahHeader(container, meta) {
   const header = document.createElement('div')
+  header.className = 'qa-surah-header-card'
   header.setAttribute('data-surah-header', '')
 
   const nameEl = document.createElement('div')
   nameEl.className = 'qa-surah-name'
-  nameEl.textContent = meta?.arabic ?? ''
+  nameEl.setAttribute('dir', 'rtl')
+  nameEl.textContent = `سُورَةُ ${meta?.arabic ?? ''}`
 
   const metaEl = document.createElement('div')
   metaEl.className = 'qa-surah-meta'
-  metaEl.textContent = `${meta?.name ?? ''} · Surah ${meta?.n ?? ''} · ${meta?.count ?? ''} verses · ${meta?.type ?? ''}`
+  const nameUpper = (meta?.name ?? '').toUpperCase()
+  const typeUpper = (meta?.type ?? '').toUpperCase()
+  metaEl.textContent = `${nameUpper} · SURAH ${meta?.n ?? ''} · ${meta?.count ?? ''} VERSES · ${typeUpper}`
 
   header.appendChild(nameEl)
   header.appendChild(metaEl)
@@ -634,55 +647,3 @@ function renderSurahEnd(container, meta) {
   container.appendChild(endMarker)
 }
 
-/**
- * Render top bar with translation toggle.
- */
-function renderTopBar(topBar, translationVisible, _surahNum, mainContent) {
-  if (!topBar) {
-    return
-  }
-
-  const existingToggle = topBar.querySelector('.qa-toggle-btn')
-  if (existingToggle) { existingToggle.remove() }
-
-  const toggleBtn = document.createElement('button')
-  toggleBtn.textContent = translationVisible ? 'EN ▾' : 'EN ▸'
-  toggleBtn.className = 'qa-toggle-btn'
-  toggleBtn.setAttribute('aria-label', translationVisible ? 'EN: Hide translation' : 'EN: Show translation')
-  toggleBtn.setAttribute('aria-expanded', String(translationVisible))
-
-  toggleBtn.addEventListener('click', async () => {
-    const previousValue = currentTranslationVisible
-    const newValue = !previousValue
-    
-    // Optimistically update UI first for responsiveness
-    currentTranslationVisible = newValue
-    toggleTranslationVisibility(mainContent, newValue)
-    toggleBtn.textContent = newValue ? 'EN ▾' : 'EN ▸'
-    toggleBtn.setAttribute('aria-label', newValue ? 'EN: Hide translation' : 'EN: Show translation')
-    toggleBtn.setAttribute('aria-expanded', String(newValue))
-    
-    try {
-      await put('settings', { key: 'translationVisible', value: newValue })
-    } catch (error) {
-      // Settings save failed - revert UI to previous state
-      logger.error('Failed to save translation visibility setting:', {
-        attemptedValue: newValue,
-        error,
-      })
-      currentTranslationVisible = previousValue
-      toggleTranslationVisibility(mainContent, previousValue)
-      toggleBtn.textContent = previousValue ? 'EN ▾' : 'EN ▸'
-      toggleBtn.setAttribute('aria-label', previousValue ? 'EN: Hide translation' : 'EN: Show translation')
-      toggleBtn.setAttribute('aria-expanded', String(previousValue))
-      // Emit event for UI warning
-      emit(Events.READER_POSITION_SAVE_FAILED, { 
-        error: error.message, 
-        setting: 'translationVisible',
-        attemptedValue: newValue 
-      })
-    }
-  })
-
-  topBar.appendChild(toggleBtn)
-}

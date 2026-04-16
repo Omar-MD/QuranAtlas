@@ -24,6 +24,8 @@ export const Events = {
   APP_READY_FOR_DOWNLOAD: 'app:ready-for-download',
   SETTINGS_THEME_CHANGED: 'settings:theme-changed',
   SETTINGS_DATA_CLEARED: 'settings:data-cleared',
+  SETTINGS_FONT_SIZE_CHANGED: 'settings:font-size-changed',
+  SETTINGS_TRANSLATION_CHANGED: 'settings:translation-changed',
   REVIEW_OPEN: 'review:open',
   REVIEW_FILTER: 'review:filter',
   MARKS_SAVED: 'marks:saved',
