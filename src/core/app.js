@@ -11,6 +11,10 @@ import { logger } from './logger.js'
 import { init as initSafetySync } from '../safety/sync.js'
 import { initInstallListener } from '../about/pwa-install.js'
 import { initTheme } from '../settings/theme.js'
+import { initFontSize } from '../settings/font-size.js'
+import { initSettingsPanel } from '../settings/panel.js'
+import { initAmbientDock } from '../nav/ambient-dock.js'
+import { initAmbientPill } from '../nav/ambient-pill.js'
 import { init as initQuotaBanner } from './quota-banner.js'
 import { init as initIndicators } from '../marks/indicator.js'
 import { setupLongPress, openEditor } from '../marks/editor.js'
@@ -35,8 +39,9 @@ export async function init() {
     performance.mark('db:open')
     performance.measure('app:db-open', 'app:start', 'db:open')
 
-    // Apply saved theme before router dispatches first route
+    // Apply saved theme + font size before router dispatches first route
     await initTheme()
+    await initFontSize()
 
     // Listen for launch restore
     bootCleanups.push(on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
@@ -72,6 +77,11 @@ export async function init() {
     const { init: initNav } = await import('../nav/index.js')
     bootCleanups.push(await initNav())
 
+    // Initialize settings gear panel and ambient nav chrome (pill + dock)
+    bootCleanups.push(await initSettingsPanel())
+    bootCleanups.push(await initAmbientDock())
+    bootCleanups.push(await initAmbientPill())
+
     // Handle navigation events from nav panel
     bootCleanups.push(on(Events.NAVIGATION_NAVIGATE, ({ surah, verse }) => {
       if (verse) {
@@ -81,15 +91,21 @@ export async function init() {
       }
     }))
 
-    // Add Review Hub icon to top bar
+    // Insert stylised brand wordmark + actions row into the top bar
     const topBar = document.getElementById('top-bar')
-    if (topBar && !topBar.querySelector('.qa-review-icon')) {
-      const reviewLink = document.createElement('a')
-      reviewLink.className = 'qa-review-icon'
-      reviewLink.href = '#/review'
-      reviewLink.setAttribute('aria-label', 'Review Hub')
-      reviewLink.textContent = 'Review'
-      topBar.insertBefore(reviewLink, topBar.firstChild)
+    if (topBar && !topBar.querySelector('.qa-brand')) {
+      const brand = document.createElement('div')
+      brand.className = 'qa-brand'
+      brand.setAttribute('aria-label', 'QuranAtlas')
+      const brandQ = document.createElement('span')
+      brandQ.className = 'qa-brand-quran'
+      brandQ.textContent = 'Quran'
+      const brandA = document.createElement('span')
+      brandA.className = 'qa-brand-atlas'
+      brandA.textContent = 'Atlas'
+      brand.appendChild(brandQ)
+      brand.appendChild(brandA)
+      topBar.insertBefore(brand, topBar.firstChild)
     }
 
     // Capture PWA install prompt if available
