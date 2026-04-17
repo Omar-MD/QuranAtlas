@@ -31,7 +31,7 @@ export async function surfaceDock(page) {
 export async function openMoreSheet(page) {
   await surfaceDock(page)
   await page.locator('[data-tab="more"]').click()
-  await expect(page.locator('[aria-label="More"]')).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
 }
 
 /**
