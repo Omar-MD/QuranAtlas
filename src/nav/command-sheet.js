@@ -351,8 +351,8 @@ function renderItem(item) {
   el.className = 'qa-cmd-item'
   el.setAttribute('role', 'option')
   el.setAttribute('data-kind', item.kind)
-  if (item.surah != null) { el.setAttribute('data-surah', String(item.surah)) }
-  if (item.verse != null) { el.setAttribute('data-verse', String(item.verse)) }
+  if (item.surah !== null && item.surah !== undefined) { el.setAttribute('data-surah', String(item.surah)) }
+  if (item.verse !== null && item.verse !== undefined) { el.setAttribute('data-verse', String(item.verse)) }
 
   const glyph = document.createElement('span')
   glyph.className = 'qa-cmd-item-glyph'

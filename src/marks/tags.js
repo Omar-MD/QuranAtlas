@@ -59,7 +59,9 @@ function hashLabel(label) {
  * @returns {'light' | 'dark'}
  */
 function getThemeVariant() {
-  if (typeof document === 'undefined') return 'light'
+  if (typeof document === 'undefined') {
+    return 'light'
+  }
   const theme = document.documentElement?.dataset?.theme
   return theme === 'dark' ? 'dark' : 'light'
 }
@@ -74,7 +76,9 @@ function getThemeVariant() {
 export function getColorForTag(label) {
   // Named semantic tags win — curated hex pairs per spec
   const semantic = getSemanticTagColor(label)
-  if (semantic) return semantic
+  if (semantic) {
+    return semantic
+  }
 
   // Fallback: hash the label into the generic 12-slot palette
   const variant = getThemeVariant()

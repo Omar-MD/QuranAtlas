@@ -35,7 +35,9 @@ export const SEMANTIC_TAG_LABELS = Object.keys(SEMANTIC_TAG_COLORS)
  * @returns {'light' | 'dark'}
  */
 function getThemeVariant() {
-  if (typeof document === 'undefined') return 'light'
+  if (typeof document === 'undefined') {
+    return 'light'
+  }
   const theme = document.documentElement?.dataset?.theme
   return theme === 'dark' ? 'dark' : 'light'
 }
@@ -50,6 +52,8 @@ function getThemeVariant() {
  */
 export function getSemanticTagColor(label) {
   const entry = SEMANTIC_TAG_COLORS[label]
-  if (!entry) return null
+  if (!entry) {
+    return null
+  }
   return entry[getThemeVariant()]
 }

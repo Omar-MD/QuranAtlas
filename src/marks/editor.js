@@ -16,7 +16,7 @@ import { save, del, getByVerseKey, getAll } from './store.js'
 import { getSeedTags, getAllUsedTags, getColorForTag } from './tags.js'
 import { getSurah, getSurahs } from '../data/dataset.js'
 import { validateTagLabel } from '../safety/input-validator.js'
-import { emit, on } from '../core/events.js'
+import { on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { showUndoToast, clearUndoToast } from '../core/ui.js'
 
