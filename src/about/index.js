@@ -1,9 +1,9 @@
 /**
  * About page.
- * Shows app info, versions, attribution, storage, and PWA install.
+ * Shows wordmark, blessing 54:17, 2×2 stat grid, attribution, PWA install, version.
  */
 
-import { get } from '../core/db.js'
+import { getAll } from '../marks/store.js'
 import { announce } from '../a11y/announcer.js'
 import { getInstallPrompt, promptInstall } from './pwa-install.js'
 
@@ -20,7 +20,7 @@ export async function init() {
 
   while (mainContent.firstChild) { mainContent.removeChild(mainContent.firstChild) }
 
-  // Heading + mission
+  // Wordmark + mission
   const heading = document.createElement('h1')
   heading.className = 'qa-about-heading'
   heading.textContent = 'QuranAtlas'
@@ -31,46 +31,67 @@ export async function init() {
   mission.textContent = 'Read, reflect, remember.'
   mainContent.appendChild(mission)
 
-  // Versions section
-  const versionsSection = document.createElement('section')
-  versionsSection.className = 'qa-about-versions'
+  // Blessing — 54:17
+  const blessingWrap = document.createElement('div')
+  blessingWrap.className = 'qa-about-blessing-wrap'
 
-  const versionsTitle = document.createElement('h2')
-  versionsTitle.className = 'qa-about-section-title'
-  versionsTitle.textContent = 'Versions'
-  versionsSection.appendChild(versionsTitle)
+  const blessing = document.createElement('p')
+  blessing.className = 'qa-about-blessing'
+  blessing.setAttribute('dir', 'rtl')
+  blessing.setAttribute('lang', 'ar')
+  blessing.textContent = 'وَلَقَدۡ يَسَّرۡنَا ٱلۡقُرۡءَانَ لِلذِّكۡرِ فَهَلۡ مِن مُّدَّكِرٍ'
+  blessingWrap.appendChild(blessing)
 
-  const dl = document.createElement('dl')
-  dl.className = 'qa-about-dl'
+  const blessingTrans = document.createElement('p')
+  blessingTrans.className = 'qa-about-blessing-translation'
+  blessingTrans.textContent = '"And We have certainly made the Qur\'an easy for remembrance, so is there any who will remember?" — 54:17'
+  blessingWrap.appendChild(blessingTrans)
 
-  // App version
-  const appDt = document.createElement('dt')
-  appDt.textContent = 'App'
-  const appDd = document.createElement('dd')
-  appDd.className = 'qa-about-app-version'
-  appDd.textContent = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'unknown'
-  dl.appendChild(appDt)
-  dl.appendChild(appDd)
+  mainContent.appendChild(blessingWrap)
 
-  // Dataset version
-  const dsDt = document.createElement('dt')
-  dsDt.textContent = 'Dataset'
-  const dsDd = document.createElement('dd')
-  dsDd.className = 'qa-about-dataset-version'
-  let dsVersion = 'Not yet installed'
+  // Stat grid — render placeholder cells immediately
+  const grid = document.createElement('div')
+  grid.className = 'qa-about-stat-grid'
+  mainContent.appendChild(grid)
+
+  const statDefs = [
+    { label: 'Marks',     value: '—' },
+    { label: 'Tags',      value: '—' },
+    { label: 'Surahs',    value: '—' },
+    { label: '% Qur\'an', value: '—' },
+  ]
+  for (const def of statDefs) {
+    const cell = document.createElement('div')
+    cell.className = 'qa-about-stat-cell'
+    const val = document.createElement('span')
+    val.className = 'qa-about-stat-value'
+    val.textContent = def.value
+    const label = document.createElement('span')
+    label.className = 'qa-about-stat-label'
+    label.textContent = def.label
+    cell.appendChild(val)
+    cell.appendChild(label)
+    grid.appendChild(cell)
+  }
+
+  // Load marks and populate stats
   try {
-    const meta = await get('datasetMeta', 'current')
-    if (meta?.version) { dsVersion = meta.version }
-  } catch { /* IDB unavailable, show fallback */ }
+    const marks = await getAll()
+    if (seq !== _initSeq) { return }
 
-  if (seq !== _initSeq) { return }
+    const totalMarks = marks.length
+    const uniqueTags = new Set(marks.flatMap(m => m.tags)).size
+    const uniqueSurahs = new Set(marks.map(m => parseInt(m.verseKey.split(':')[0], 10))).size
+    const pctTagged = ((totalMarks / 6236) * 100).toFixed(2)
 
-  dsDd.textContent = dsVersion
-  dl.appendChild(dsDt)
-  dl.appendChild(dsDd)
-
-  versionsSection.appendChild(dl)
-  mainContent.appendChild(versionsSection)
+    const cells = grid.querySelectorAll('.qa-about-stat-cell')
+    const values = [String(totalMarks), String(uniqueTags), String(uniqueSurahs), `${pctTagged}%`]
+    cells.forEach((cell, i) => {
+      cell.querySelector('.qa-about-stat-value').textContent = values[i]
+    })
+  } catch {
+    // Stats unavailable — leave as '—'
+  }
 
   // Attribution
   const attrSection = document.createElement('section')
@@ -100,15 +121,16 @@ export async function init() {
   attrSection.appendChild(attrList)
   mainContent.appendChild(attrSection)
 
-  // Storage
-  await renderStorage(mainContent, () => seq !== _initSeq)
-
-  if (seq !== _initSeq) { return }
-
   // PWA Install
   renderInstallButton(mainContent)
 
-  // Back to Settings link
+  // Version (simplified)
+  const versionLine = document.createElement('p')
+  versionLine.className = 'qa-about-version-line'
+  versionLine.textContent = `v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'unknown'}`
+  mainContent.appendChild(versionLine)
+
+  // Back link
   const backLink = document.createElement('a')
   backLink.className = 'qa-about-back-link'
   backLink.href = '#/settings'
@@ -118,62 +140,6 @@ export async function init() {
   announce('About page')
 
   return () => { ++_initSeq }
-}
-
-/**
- * Render storage meter section.
- * @param {HTMLElement} container
- * @param {() => boolean} isCancelled
- */
-async function renderStorage(container, isCancelled) {
-  const section = document.createElement('section')
-  section.className = 'qa-about-storage'
-
-  const title = document.createElement('h2')
-  title.className = 'qa-about-section-title'
-  title.textContent = 'Storage'
-  section.appendChild(title)
-
-  if (!navigator.storage?.estimate) {
-    const fallback = document.createElement('p')
-    fallback.textContent = 'Storage info not available in this browser.'
-    section.appendChild(fallback)
-    container.appendChild(section)
-    return
-  }
-
-  try {
-    const { usage, quota } = await navigator.storage.estimate()
-    if (isCancelled()) { return }
-    const percent = quota ? (usage / quota) * 100 : 0
-
-    const meter = document.createElement('meter')
-    meter.className = 'qa-about-storage-meter'
-    meter.value = usage
-    meter.max = quota
-    meter.setAttribute('aria-label', 'Storage usage')
-    section.appendChild(meter)
-
-    const text = document.createElement('p')
-    text.className = 'qa-about-storage-text'
-    const usageMB = (usage / (1024 * 1024)).toFixed(1)
-    const quotaMB = (quota / (1024 * 1024)).toFixed(0)
-    text.textContent = `${usageMB} MB of ${quotaMB} MB used (${percent.toFixed(0)}%)`
-    section.appendChild(text)
-
-    if (percent > 80) {
-      const warning = document.createElement('p')
-      warning.className = 'qa-about-storage-warning'
-      warning.textContent = 'Storage is running low. Consider clearing data in Settings.'
-      section.appendChild(warning)
-    }
-  } catch {
-    const fallback = document.createElement('p')
-    fallback.textContent = 'Could not read storage estimate.'
-    section.appendChild(fallback)
-  }
-
-  container.appendChild(section)
 }
 
 /**
@@ -203,4 +169,3 @@ function renderInstallButton(container) {
   section.appendChild(btn)
   container.appendChild(section)
 }
-

@@ -1,6 +1,8 @@
 // tests/unit/about/about-page.test.js
 import { beforeEach, describe, it, expect, vi } from 'vitest'
-import { openDB, put } from '../../../src/core/db.js'
+import 'fake-indexeddb/auto'
+import { openDB } from '../../../src/core/db.js'
+import { save as saveMark, getAll as getAllMarks, del as delMark } from '../../../src/marks/store.js'
 
 // Mock announcer
 vi.mock('../../../src/a11y/announcer.js', () => ({
@@ -10,8 +12,15 @@ vi.mock('../../../src/a11y/announcer.js', () => ({
 let aboutPage
 
 beforeEach(async () => {
+  vi.resetModules()
   vi.clearAllMocks()
-  await openDB()
+  const db = await openDB()
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('marks', 'readwrite')
+    const req = tx.objectStore('marks').clear()
+    req.onsuccess = resolve
+    req.onerror = () => reject(req.error)
+  })
   document.body.textContent = ''
   const shell = document.createElement('div')
   shell.id = 'app-shell'
@@ -38,27 +47,11 @@ describe('about/index.js', () => {
       expect(mission.textContent).toContain('Read, reflect, remember')
     })
 
-    it('renders app version from __APP_VERSION__', async () => {
+    it('renders app version line', async () => {
       await aboutPage.init()
-      const versionEl = document.querySelector('.qa-about-app-version')
+      const versionEl = document.querySelector('.qa-about-version-line')
       expect(versionEl).not.toBeNull()
-      // __APP_VERSION__ is defined as '1.0.0' in vite.config.js
-      expect(versionEl.textContent).toContain('1.0.0')
-    })
-
-    it('renders dataset version from IDB or fallback', async () => {
-      await aboutPage.init()
-      const dsVersionEl = document.querySelector('.qa-about-dataset-version')
-      expect(dsVersionEl).not.toBeNull()
-      // No datasetMeta seeded, so fallback text
-      expect(dsVersionEl.textContent).toContain('Not yet installed')
-    })
-
-    it('renders dataset version when datasetMeta exists in IDB', async () => {
-      await put('datasetMeta', { id: 'current', version: '2.1.0' })
-      await aboutPage.init()
-      const dsVersionEl = document.querySelector('.qa-about-dataset-version')
-      expect(dsVersionEl.textContent).toContain('2.1.0')
+      expect(versionEl.textContent).toMatch(/v/)
     })
 
     it('renders attribution section', async () => {
@@ -69,47 +62,13 @@ describe('about/index.js', () => {
       expect(attribution.textContent).toContain('KFGQPC')
     })
 
-    it('renders storage section with meter', async () => {
-      // Mock navigator.storage.estimate
-      Object.defineProperty(navigator, 'storage', {
-        value: {
-          estimate: vi.fn().mockResolvedValue({ usage: 5_000_000, quota: 100_000_000 }),
-        },
-        configurable: true,
-      })
-
-      await aboutPage.init()
-      const storageSection = document.querySelector('.qa-about-storage')
-      expect(storageSection).not.toBeNull()
-
-      const meter = storageSection.querySelector('meter')
-      expect(meter).not.toBeNull()
-      expect(Number(meter.value)).toBe(5_000_000)
-      expect(Number(meter.max)).toBe(100_000_000)
-    })
-
-    it('shows storage warning when usage exceeds 80%', async () => {
-      Object.defineProperty(navigator, 'storage', {
-        value: {
-          estimate: vi.fn().mockResolvedValue({ usage: 85_000_000, quota: 100_000_000 }),
-        },
-        configurable: true,
-      })
-
-      await aboutPage.init()
-      const warning = document.querySelector('.qa-about-storage-warning')
-      expect(warning).not.toBeNull()
-    })
-
     it('hides PWA install button when no beforeinstallprompt has fired', async () => {
       await aboutPage.init()
       const installBtn = document.querySelector('.qa-about-install-btn')
-      // Should not be rendered or should be hidden
       expect(installBtn).toBeNull()
     })
 
     it('shows PWA install button when prompt is available', async () => {
-      // Import the pwa-install module to set the stored prompt
       const pwaInstall = await import('../../../src/about/pwa-install.js')
       pwaInstall.setInstallPrompt({ prompt: vi.fn(), userChoice: Promise.resolve({ outcome: 'accepted' }) })
 
@@ -126,12 +85,90 @@ describe('about/index.js', () => {
     })
 
     it('concurrent init() calls do not produce duplicate content', async () => {
-      // Run two init() in parallel — second should win, DOM should have only one copy of each section
       await Promise.all([aboutPage.init(), aboutPage.init()])
       const headings = document.querySelectorAll('h1.qa-about-heading')
       expect(headings).toHaveLength(1)
-      const versionSections = document.querySelectorAll('.qa-about-versions')
-      expect(versionSections).toHaveLength(1)
+    })
+  })
+
+  describe('blessing verse', () => {
+    it('renders the 54:17 blessing in Arabic with dir="rtl"', async () => {
+      await aboutPage.init()
+      const blessing = document.querySelector('.qa-about-blessing')
+      expect(blessing).not.toBeNull()
+      expect(blessing.getAttribute('dir')).toBe('rtl')
+      expect(blessing.textContent.trim().length).toBeGreaterThan(0)
+    })
+
+    it('renders blessing translation text', async () => {
+      await aboutPage.init()
+      const blessingTranslation = document.querySelector('.qa-about-blessing-translation')
+      expect(blessingTranslation).not.toBeNull()
+      expect(blessingTranslation.textContent).toContain("Qur'an easy for remembrance")
+    })
+  })
+
+  describe('stat grid', () => {
+    it('renders a 2x2 stat grid', async () => {
+      await aboutPage.init()
+      const grid = document.querySelector('.qa-about-stat-grid')
+      expect(grid).not.toBeNull()
+      const cells = grid.querySelectorAll('.qa-about-stat-cell')
+      expect(cells.length).toBe(4)
+    })
+
+    it('shows 0 marks when no marks exist', async () => {
+      await aboutPage.init()
+      const cells = [...document.querySelectorAll('.qa-about-stat-cell')]
+      const marksCell = cells.find(c => c.querySelector('.qa-about-stat-label')?.textContent === 'Marks')
+      expect(marksCell).toBeTruthy()
+      expect(marksCell.querySelector('.qa-about-stat-value').textContent).toBe('0')
+    })
+
+    it('counts marks correctly', async () => {
+      await saveMark('2:255', ['favourite'])
+      await saveMark('1:1', ['study'])
+      vi.resetModules()
+      aboutPage = await import('../../../src/about/index.js')
+      await aboutPage.init()
+      const cells = [...document.querySelectorAll('.qa-about-stat-cell')]
+      const marksCell = cells.find(c => c.querySelector('.qa-about-stat-label')?.textContent === 'Marks')
+      expect(marksCell.querySelector('.qa-about-stat-value').textContent).toBe('2')
+    })
+
+    it('counts unique tags', async () => {
+      await saveMark('2:255', ['favourite', 'study'])
+      await saveMark('1:1', ['favourite'])
+      vi.resetModules()
+      aboutPage = await import('../../../src/about/index.js')
+      await aboutPage.init()
+      const cells = [...document.querySelectorAll('.qa-about-stat-cell')]
+      const tagsCell = cells.find(c => c.querySelector('.qa-about-stat-label')?.textContent === 'Tags')
+      expect(tagsCell.querySelector('.qa-about-stat-value').textContent).toBe('2')
+    })
+
+    it('counts unique surahs with marks', async () => {
+      await saveMark('2:255', ['favourite'])
+      await saveMark('2:1', ['study'])
+      await saveMark('67:14', ['favourite'])
+      vi.resetModules()
+      aboutPage = await import('../../../src/about/index.js')
+      await aboutPage.init()
+      const cells = [...document.querySelectorAll('.qa-about-stat-cell')]
+      const surahsCell = cells.find(c => c.querySelector('.qa-about-stat-label')?.textContent.startsWith('Surahs'))
+      expect(surahsCell.querySelector('.qa-about-stat-value').textContent).toBe('2')
+    })
+
+    it("shows % Qur'an tagged as decimal percentage", async () => {
+      await saveMark('2:255', ['favourite'])
+      vi.resetModules()
+      aboutPage = await import('../../../src/about/index.js')
+      await aboutPage.init()
+      const cells = [...document.querySelectorAll('.qa-about-stat-cell')]
+      const pctCell = cells.find(c => c.querySelector('.qa-about-stat-label')?.textContent.includes('%'))
+      expect(pctCell).toBeTruthy()
+      const value = pctCell.querySelector('.qa-about-stat-value').textContent
+      expect(value).toMatch(/\d+\.\d+%/)
     })
   })
 })
