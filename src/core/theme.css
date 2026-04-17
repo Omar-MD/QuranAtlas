@@ -1227,7 +1227,7 @@ html[data-theme="light"] .qa-dock-item--active {
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1180px) {
   #main-content {
     padding: 2rem 3rem;
     max-width: 900px;
