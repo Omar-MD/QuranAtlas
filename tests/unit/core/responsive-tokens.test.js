@@ -26,4 +26,16 @@ describe('theme.css — responsive breakpoint tokens', () => {
       /--qa-text-size-translation:\s*clamp\(\s*1\.125rem\s*,\s*1rem\s*\+\s*0\.6vw\s*,\s*1\.5rem\s*\)/
     )
   })
+
+  it('overrides --qa-text-size-ui to 1.0625rem at min-width: 768px', () => {
+    const block = THEME_CSS.match(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{\s*:root\s*\{[^}]*\}\s*\}/)
+    expect(block, 'tablet :root override block must exist').not.toBeNull()
+    expect(block[0]).toMatch(/--qa-text-size-ui:\s*1\.0625rem/)
+  })
+
+  it('overrides --qa-text-size-meta to 0.9375rem at min-width: 768px', () => {
+    const block = THEME_CSS.match(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{\s*:root\s*\{[^}]*\}\s*\}/)
+    expect(block, 'tablet :root override block must exist').not.toBeNull()
+    expect(block[0]).toMatch(/--qa-text-size-meta:\s*0\.9375rem/)
+  })
 })
