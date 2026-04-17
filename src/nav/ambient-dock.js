@@ -139,7 +139,13 @@ function scheduleFade(footer) {
 }
 
 function applyRoutePersistence(footer) {
-  if (isReaderRoute(window.location.hash)) {
+  const hash = window.location.hash || ''
+  if (hash.startsWith('#/onboarding')) {
+    footer.classList.add('qa-dock--hidden')
+    if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+    return
+  }
+  if (isReaderRoute(hash)) {
     footer.classList.add('qa-dock--hidden')
   } else {
     footer.classList.remove('qa-dock--hidden')

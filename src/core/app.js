@@ -80,6 +80,7 @@ export async function init() {
       openEditor,
     })
     router.register('#/surahs', () => import('../surahs/list.js'))
+    router.register('#/onboarding', () => import('../onboarding/index.js'))
 
     // Initialize router AFTER routes are registered so first dispatch finds them
     bootCleanups.push(router.init())
@@ -158,8 +159,15 @@ export async function init() {
  * Handle launch restore: navigate to last-read position or default surah.
  */
 async function handleLaunchRestore() {
+  const { isComplete } = await import('../onboarding/index.js')
+  const done = await isComplete()
+  if (!done) {
+    logger.info('First-run: onboarding')
+    router.navigate('#/onboarding', { replace: true })
+    return
+  }
   const lastSurface = await get('settings', 'lastSurface')
-  if (lastSurface?.value) {
+  if (lastSurface?.value && lastSurface.value !== '#/onboarding') {
     logger.info('Session restore: lastSurface', { surface: lastSurface.value })
     router.navigate(lastSurface.value, { replace: true })
     return
