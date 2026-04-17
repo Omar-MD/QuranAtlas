@@ -681,6 +681,19 @@ html[data-theme="light"] .qa-dock-item--active {
   }
 }
 
+/* Desktop: verse breathing room +50% vs mobile. */
+@media (min-width: 1180px) {
+  .qa-verse {
+    padding: 2.25rem 0;
+  }
+  .qa-verse-arabic {
+    margin-bottom: 1.5rem;
+  }
+  .qa-verse-translation {
+    padding-top: 1.125rem;
+  }
+}
+
 /* ==========================================================================
    UI Components
    ========================================================================== */
@@ -1243,7 +1256,7 @@ html[data-theme="light"] .qa-dock-item--active {
 @media (min-width: 1180px) {
   #main-content {
     padding: 2rem 3rem;
-    max-width: 900px;
+    max-width: 1180px;
   }
 }
 
