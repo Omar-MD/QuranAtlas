@@ -38,4 +38,16 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(block, 'tablet :root override block must exist').not.toBeNull()
     expect(block[0]).toMatch(/--qa-text-size-meta:\s*0\.9375rem/)
   })
+
+  it('overrides --qa-text-size-ui to 1.125rem at min-width: 1180px', () => {
+    const block = THEME_CSS.match(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{\s*:root\s*\{[^}]*\}\s*\}/)
+    expect(block, 'desktop :root override block must exist').not.toBeNull()
+    expect(block[0]).toMatch(/--qa-text-size-ui:\s*1\.125rem/)
+  })
+
+  it('overrides --qa-text-size-meta to 1rem at min-width: 1180px', () => {
+    const block = THEME_CSS.match(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{\s*:root\s*\{[^}]*\}\s*\}/)
+    expect(block, 'desktop :root override block must exist').not.toBeNull()
+    expect(block[0]).toMatch(/--qa-text-size-meta:\s*1rem/)
+  })
 })
