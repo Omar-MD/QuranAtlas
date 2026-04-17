@@ -70,7 +70,7 @@ async function fetchSurahData({ surahNum }) {
 /**
  * Render surah content: header, basmala, resume indicator, verse chunks, end marker, top bar.
  */
-function renderSurahContent({ mainContent, topBar, surah, surahMeta, translationVisible, savedPosition, targetVerse, surahNum }) {
+function renderSurahContent({ mainContent, topBar, surah, surahMeta, translationVisible, _savedPosition, _targetVerse, surahNum }) {
   mainContent.innerHTML = ''
   renderSurahHeader(mainContent, surahMeta)
   renderBasmala(mainContent, surahNum)
@@ -523,20 +523,6 @@ function scrollToVerse(container, verseNum) {
     return true
   }
   return false
-}
-
-/**
- * Toggle translation visibility via CSS class.
- */
-function toggleTranslationVisibility(container, visible) {
-  const translations = container.querySelectorAll('[data-translation]')
-  translations.forEach(el => {
-    if (visible) {
-      el.classList.remove('qa-hide-translation')
-    } else {
-      el.classList.add('qa-hide-translation')
-    }
-  })
 }
 
 /**

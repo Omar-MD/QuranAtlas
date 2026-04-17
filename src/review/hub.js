@@ -3,7 +3,7 @@
  * Surah-grouped and flat views, tag/surah filtering, sort, pagination.
  */
 
-import { getAll, getByTag, del as deleteMark, save as saveMark } from '../marks/store.js'
+import { getAll, getByTag } from '../marks/store.js'
 import { getColorForTag } from '../marks/tags.js'
 import { getSurahs, getSurah } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
@@ -11,7 +11,7 @@ import { Events } from '../core/constants.js'
 import { put } from '../core/db.js'
 import { logger } from '../core/logger.js'
 import { save as saveState, load as loadState, getDefaultState } from './state.js'
-import { showUndoToast, clearUndoToast } from '../core/ui.js'
+import { clearUndoToast } from '../core/ui.js'
 import { validateTagParam } from '../safety/input-validator.js'
 import { announce } from '../a11y/announcer.js'
 
@@ -22,7 +22,6 @@ let allMarks = []
 let sortedMarks = []  // Pre-sorted cache; rebuilt on load or sort change
 let filteredMarks = []
 let displayedCount = 0
-let currentUndoRecord = null
 let surahs = []
 let _openEditor = null
 let unsubSyncUpdate = null
@@ -456,7 +455,9 @@ function renderControls(container) {
     const opt = document.createElement('option')
     opt.value = value
     opt.textContent = label
-    if (value === currentState.sortBy) opt.selected = true
+    if (value === currentState.sortBy) {
+      opt.selected = true
+    }
     sortSelect.appendChild(opt)
   }
   sortSelect.addEventListener('change', async () => {
@@ -482,7 +483,9 @@ function renderControls(container) {
     const opt = document.createElement('option')
     opt.value = tag
     opt.textContent = tag
-    if (tag === currentState.activeTag) opt.selected = true
+    if (tag === currentState.activeTag) {
+      opt.selected = true
+    }
     tagSelect.appendChild(opt)
   }
   tagSelect.addEventListener('change', async () => {
@@ -508,7 +511,9 @@ function renderControls(container) {
     opt.value = String(num)
     const meta = surahs.find(s => s.n === num)
     opt.textContent = meta ? `${meta.name} (${num})` : `Surah ${num}`
-    if (num === currentState.surahFilter) opt.selected = true
+    if (num === currentState.surahFilter) {
+      opt.selected = true
+    }
     surahSelect.appendChild(opt)
   }
   surahSelect.addEventListener('change', async () => {
@@ -588,7 +593,9 @@ function renderTagGrouped(container, marks) {
   const tagMap = new Map()
   for (const mark of marks) {
     for (const tag of mark.tags) {
-      if (!tagMap.has(tag)) tagMap.set(tag, [])
+      if (!tagMap.has(tag)) {
+        tagMap.set(tag, [])
+      }
       tagMap.get(tag).push(mark)
     }
   }
@@ -625,7 +632,9 @@ function renderTagGrouped(container, marks) {
     const surahMap = new Map()
     for (const mark of tagMarks) {
       const surahNum = parseInt(mark.verseKey.split(':')[0], 10)
-      if (!surahMap.has(surahNum)) surahMap.set(surahNum, [])
+      if (!surahMap.has(surahNum)) {
+        surahMap.set(surahNum, [])
+      }
       surahMap.get(surahNum).push(mark)
     }
 
@@ -739,7 +748,9 @@ function renderMarkCard(mark, _surahData) {
   }
 
   card.addEventListener('click', (e) => {
-    if (e.target.closest('a, button')) { return }
+    if (e.target.closest('a, button')) {
+      return
+    }
     if (_openEditor) { _openEditor(mark.verseKey) }
   })
 

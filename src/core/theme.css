@@ -22,8 +22,8 @@
   --qa-font-arabic: 'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
   --qa-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   
-  --qa-text-size-arabic: 2.25rem;
-  --qa-text-size-translation: 1.125rem;
+  --qa-text-size-arabic: clamp(2.25rem, 1.8rem + 2.2vw, 3.5rem);
+  --qa-text-size-translation: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
   --qa-text-size-ui: 1rem;
   --qa-text-size-meta: 0.875rem;
 
@@ -99,6 +99,31 @@
   --qa-ambient-sheet-radius: 16px;
   --qa-ambient-pill-radius: 999px;
   --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.18);
+
+  /* --- Responsive breakpoints ---
+   * Three tiers: mobile (<768px), tablet (768–1179px), desktop (≥1180px).
+   * Values are duplicated as literals in @media queries below — CSS cannot
+   * read custom properties in @media conditions. Keep the tokens and the
+   * @media values in sync. */
+  --qa-bp-tablet: 768px;
+  --qa-bp-desktop: 1180px;
+}
+
+/* Tablet: stepped chrome tokens step up. Reading tokens (Arabic, translation)
+ * remain fluid via clamp() above. Matches --qa-bp-tablet. */
+@media (min-width: 768px) {
+  :root {
+    --qa-text-size-ui: 1.0625rem;
+    --qa-text-size-meta: 0.9375rem;
+  }
+}
+
+/* Desktop: final step. Matches --qa-bp-desktop. */
+@media (min-width: 1180px) {
+  :root {
+    --qa-text-size-ui: 1.125rem;
+    --qa-text-size-meta: 1rem;
+  }
 }
 
 html[data-theme="sepia"] {
@@ -643,6 +668,19 @@ html[data-theme="light"] .qa-dock-item--active {
   display: none;
 }
 
+/* Tablet: bump verse breathing room ~25%. */
+@media (min-width: 768px) {
+  .qa-verse {
+    padding: 1.875rem 0;
+  }
+  .qa-verse-arabic {
+    margin-bottom: 1.25rem;
+  }
+  .qa-verse-translation {
+    padding-top: 0.9375rem;
+  }
+}
+
 /* ==========================================================================
    UI Components
    ========================================================================== */
@@ -1173,7 +1211,7 @@ html[data-theme="light"] .qa-dock-item--active {
 }
 
 /* ==========================================================================
-   Responsive Layout — Tablet (768px+) and Desktop (1280px+)
+   Responsive Layout — Tablet (768px+) and Desktop (1180px+)
    ========================================================================== */
 
 @media (min-width: 768px) {
@@ -1202,10 +1240,65 @@ html[data-theme="light"] .qa-dock-item--active {
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1180px) {
   #main-content {
     padding: 2rem 3rem;
+    max-width: 1180px;
+  }
+}
+
+/* Desktop: two-column Arabic | translation grid. */
+@media (min-width: 1180px) {
+  #main-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 2rem;
+    align-items: start;
+  }
+
+  /* Non-verse children of #main-content span both columns */
+  .qa-surah-header,
+  .qa-basmala,
+  .qa-surah-end,
+  .qa-invalid-verse-error {
+    grid-column: 1 / -1;
+  }
+
+  .qa-verse {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    padding: 2.25rem 0;
+  }
+
+  .qa-verse-arabic {
+    grid-column: 1;
+    margin-bottom: 0;
+    text-align: start;
+  }
+
+  .qa-verse-translation {
+    grid-column: 2;
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+/* Desktop: translation hidden → single centered column. :has() detects the
+ * state without any JS change — Settings toggles qa-hide-translation per
+ * .qa-verse-translation (see src/settings/panel.js:275), and we react here. */
+@media (min-width: 1180px) {
+  #main-content:has(.qa-verse-translation.qa-hide-translation) {
+    grid-template-columns: minmax(0, 1fr);
     max-width: 900px;
+  }
+
+  #main-content:has(.qa-verse-translation.qa-hide-translation) .qa-verse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #main-content:has(.qa-verse-translation.qa-hide-translation) .qa-verse-arabic {
+    grid-column: 1;
   }
 }
 

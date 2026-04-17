@@ -539,4 +539,17 @@ describe('reader/index.js', () => {
 
     unsub()
   })
+
+  it('each rendered verse has both Arabic + translation children with data-verse-key', async () => {
+    const { init } = await import('../../../src/reader/index.js')
+    await init({ surah: '112' })
+
+    const verses = document.querySelectorAll('#main-content .qa-verse')
+    expect(verses.length).toBeGreaterThan(0)
+    for (const v of verses) {
+      expect(v.querySelectorAll('.qa-verse-arabic').length).toBe(1)
+      expect(v.querySelectorAll('.qa-verse-translation').length).toBe(1)
+      expect(v.dataset.verseKey).toMatch(/^\d+:\d+$/)
+    }
+  })
 })

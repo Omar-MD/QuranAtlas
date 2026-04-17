@@ -7,7 +7,7 @@
 import { get, put } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
-import { getThemeOptions, setTheme, loadTheme, getAppliedVariants } from './theme.js'
+import { getThemeOptions, setTheme, loadTheme } from './theme.js'
 import { getFontSizeOptions, setFontSize, loadFontSize } from './font-size.js'
 import { logger } from '../core/logger.js'
 
@@ -21,7 +21,6 @@ const TRANSLATION_OPTIONS = [
 let scrim = null
 let sheet = null
 let escHandler = null
-let currentView = 'main'
 
 export async function initSettingsPanel() {
   // No gear button — Settings opens from the "More" sheet or #/settings route.
