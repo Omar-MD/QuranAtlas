@@ -50,4 +50,12 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(block, 'desktop :root override block must exist').not.toBeNull()
     expect(block[0]).toMatch(/--qa-text-size-meta:\s*1rem/)
   })
+
+  it('bumps .qa-verse padding + border gap at tablet', () => {
+    // Extract any min-width: 768px block that contains .qa-verse
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => b[1].includes('.qa-verse'))
+    expect(hit, 'expected a min-width: 768px block containing .qa-verse').toBeDefined()
+    expect(hit[1]).toMatch(/\.qa-verse\s*\{[^}]*padding:\s*1\.875rem\s+0/)
+  })
 })

@@ -668,6 +668,19 @@ html[data-theme="light"] .qa-dock-item--active {
   display: none;
 }
 
+/* Tablet: bump verse breathing room ~25%. */
+@media (min-width: 768px) {
+  .qa-verse {
+    padding: 1.875rem 0;
+  }
+  .qa-verse-arabic {
+    margin-bottom: 1.25rem;
+  }
+  .qa-verse-translation {
+    padding-top: 0.9375rem;
+  }
+}
+
 /* ==========================================================================
    UI Components
    ========================================================================== */
