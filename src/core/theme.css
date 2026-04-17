@@ -99,6 +99,14 @@
   --qa-ambient-sheet-radius: 16px;
   --qa-ambient-pill-radius: 999px;
   --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.18);
+
+  /* --- Responsive breakpoints ---
+   * Three tiers: mobile (<768px), tablet (768–1179px), desktop (≥1180px).
+   * Values are duplicated as literals in @media queries below — CSS cannot
+   * read custom properties in @media conditions. Keep the tokens and the
+   * @media values in sync. */
+  --qa-bp-tablet: 768px;
+  --qa-bp-desktop: 1180px;
 }
 
 html[data-theme="sepia"] {
