@@ -2,109 +2,95 @@
 
 **Read, reflect, remember.**
 
-QuranAtlas is a distraction-free Quran reading app that works seamlessly online and offline.
+QuranAtlas is a distraction-free, offline-first Qur'an reading app. It offers continuous verse-interleaved reading with Arabic (Uthmani) and English translation, personal verse marks with custom tags, and ambient navigation that gets out of the way while you read.
 
-## What is QuranAtlas?
-
-QuranAtlas is a Progressive Web App designed for reading the Quran on mobile devices. It offers a focused, no-distractions reading experience with Arabic text and English translation, works without internet after you download it, and feels like a native app on your phone.
+This is the product overview. For implementation detail, see `docs/context/` (architecture, feature-map, module-graph, events, data-model, user-journeys).
 
 ## Who is it for?
 
-- Muslims who want a simple, beautiful way to read the Quran on their phone
-- Readers who need offline access during commutes, prayers, or travel
-- Those who want to track their reading progress and mark verses for reflection
+- Muslims who want a focused, uncluttered way to read the Qur'an on their phone or laptop.
+- Readers who need reliable offline access — commutes, travel, prayer times with no signal.
+- Students who mark verses by theme (mercy, patience, tawakkul, etc.) and revisit them grouped by tag.
 
-## What You Get
+## What you get
 
-### Reading Experience
-- Clean, elegant Arabic text (Uthmani script) with proper styling
-- English translation (Bridges' by Fadel Soliman) shown below each verse
-- Toggle translation on or off with one tap
-- Choose from 3 themes: Light, Sepia, or Dark
+### Reading experience
+
+- Continuous verse-interleaved layout. Arabic (Uthmani script via KFGQPC) on top of each verse, English translation (Bridges' by Fadel Soliman) underneath.
+- Translation toggle (on/off) — per-session preference, persists across reloads.
+- Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — automatically.
+- Adjustable font size (slider in Settings, live preview).
+- Chunked rendering so long surahs like Al-Baqarah stay responsive.
+- Session restore: close the app and return later — lands back on the last-read verse.
 
 ### Navigation
-- Browse all 114 surahs with search
-- Jump directly to any verse via deep links
-- Resume where you left off — your reading position is saved automatically
-- Quick navigation between surahs
 
-### Marks & Review
-- Mark any verse with a long-press
-- Tag marks with 4 default categories: Favourite, Study, Reflection, Question
-- Review all your marks in one place, grouped by surah
-- Filter marks by tag or surah
+- **Ambient dock** (floating bottom pill, 4 glyphs: Read · Search · Review · More). On the reader it fades away; tap the page to surface it. On other pages it stays pinned.
+- **Ambient pill** (floating top pill) on the reader, showing the current `{surah}:{verse} · Name` and a ⌘K hint.
+- **Command sheet** (⌘K or the Search glyph) — unified search across surahs, verses, tags, marks, and commands. Type a ref like `2:255` to jump straight to the verse; type `mer` to deep-link to all verses tagged `mercy`.
+- **Surah directory** (`#/surahs`) — all 114 surahs with name, meaning, type, verse count; search by name/number/ref; filter by All / Bookmarked / Recent; continue-reading card at top.
+- **Deep links** — every verse is addressable via `#/s/{surah}/{ayah}`; every tag via `#/t/{tag}`.
 
-### Offline Access
-- Download the full Quran corpus once
-- Read offline after download — no internet required
-- Automatic updates when you reconnect
+### Marks, tags, and review
 
-### PWA Install
-- Add to home screen for a native app experience
-- Opens without browser chrome for focused reading
+- Long-press any verse to open the **mark editor** (bottom sheet). No contextual menu, no alternative gesture — one path, always.
+- Multi-tag selection with a visible "Selected" strip (count + clear-all + × chips) above the tag library.
+- **16 seed tags** plus **create-your-own** tags inline (type a new label → `+ create "taqwa"` chip → confirm). Each tag gets a deterministic color.
+- Free-text **note** per mark.
+- Delete with inline confirm + **undo toast** — miss-taps are recoverable for a few seconds.
+- **Review hub** (`#/review`) — every mark with a three-segment grouping pill (Tag / Surah / Date), tag + surah filters, sort, and pagination. Multi-tagged marks appear under each tag.
+- **FVR — Filtered-Verse Review** (`#/t/{tag}`) — open all verses carrying a single tag with a compact centered header (color dot, tag name, verse/surah counts). Shareable as a link.
+- **Cross-tab coherence** — mark writes broadcast to other open tabs via BroadcastChannel; everything stays consistent across browser windows.
 
-## What's Included
+### First-run onboarding
 
-- All 114 surahs with 6,236 verses
-- Complete Bridges' English translation
-- Surah metadata
-- Dark, Sepia, and Light themes
-- Session restore (remembers where you left off)
-- Verse marking with 4 default tags
-- Review hub for all your marks
-- Deep linking to any verse
-- Offline download and automatic updates
-- Settings page (theme, clear data)
-- About page (versions, attribution, storage info)
+- **Four-screen walkthrough** on first launch: Welcome · Theme pick · Translation pick · Tags intro.
+- Progress dots; Skip available from screen 2 onward.
+- Completes to Al-Fatihah or the surah directory.
 
-## What's NOT Included
+### Settings
 
-### Not Planned
+- Bottom sheet (opened from the dock's ⋯ More menu → Settings).
+- Theme swatches, font slider with live preview, translation toggle and picker, Clear-all-data link.
+- Clear data wipes IDB and restarts onboarding — nothing leaves the device.
 
-- Audio recitation
-- Transliteration
-- Page-based Mushaf layout
-- Full-text search
-- Copy ayahs to clipboard
-- Multi-device sync
-- Community or shared annotations
-- Social sharing
-- Multiple translation editions
-- Analytics or usage tracking
-- Footnotes or tafsir
-- Export data
-- Hizb or ruku navigation
-- Font size controls (use browser zoom)
+### About
 
-For items planned in future, see Future Stories.
+- Wordmark + mission ("Read, reflect, remember.")
+- Qur'an 54:17 blessing in Arabic + translation.
+- 2×2 stat grid: Marks · Tags · Surahs · % Qur'an tagged.
+- Attribution (Bridges' translation, KFGQPC Arabic, Scheherazade New font, Vite/Lightning CSS/Workbox).
+- Install-app CTA (when the browser's install prompt is available) and the app version.
 
-## Implemented Stories
+### Offline
 
-- **Story 1: Online reading** — Arabic + English, surah rendering, skeleton/error states
-- **Story 2: Continuous reader** — chunked rendering, session restore, scroll tracking
-- **Story 3: Navigation** — surah list, search/filter, keyboard nav, mobile overlay
-- **Story 4: Verse marks** — long-press, tag assignment, indicators, undo
-- **Story 5: Review hub** — All Marks view, grouping, filtering, sort, pagination
-- **Story 6: Cross-tab safety** — BroadcastChannel sync, IDB versionchange banner
-- **Story 7: Deep links** — verse-level URLs, invalid verse handling
-- **Story 8: Dataset updates** — version check, download, staging, SHA-256 verify, apply
-- **Story 9: Settings & About** — theme switcher, clear data, versions, attribution, PWA install
+- Service worker caches the full Qur'an corpus (all 114 surahs, 6,236 verses) on first online use.
+- Subsequent launches work fully offline — reader, command sheet, marks, review hub, everything.
+- Dataset updates are fetched in the background, verified by SHA-256, and promoted atomically.
+- PWA install: add to home screen for a full-screen, native-feeling experience.
 
-## Future Stories
+### Privacy
 
-- Custom tag creation
-- Filtered Verse Review (FVR)
-- BroadcastChannel cross-tab sync enhancements
-- Bulk mark operations
+- Everything lives in IndexedDB on the user's device.
+- No sync, no tracking, no analytics, no backend. Clearing data is one tap and wipes everything.
 
-## Critical User Journeys
+## What's NOT included
 
-1. Launch → default surah → read
-2. Navigate → search surah → select → read
-3. Read → scroll → close → reopen → resume position
-4. Read → Arabic + English text renders correctly
-5. Long-press verse → tag → indicator → review hub
-6. Toggle translation → navigate → persists
-7. Switch theme → reload → persists
-8. Deep link `#/s/2/255` → correct verse
-9. SW registration → cache → offline ready
+Deliberately out of scope — not on the roadmap unless that changes:
+
+- Audio recitation.
+- Transliteration (Latin-letter Arabic).
+- Page-based Mushaf layout (juz/hizb/ruku navigation).
+- Full-text search across all 6,236 verses.
+- Copy-verse-to-clipboard or social sharing.
+- Multi-device sync or accounts.
+- Community features, shared annotations, public libraries.
+- Multiple active translation *editions* — the picker exposes four options (Saheeh, Pickthall, Yusuf, Khattab) and persists the selection, but only Bridges' translation currently ships in the dataset. Additional translations are future work.
+- Footnotes or tafsir.
+- Export / import of marks.
+
+## Learn more
+
+- User-facing end-to-end flows: [`docs/context/user-journeys.md`](context/user-journeys.md)
+- Codebase orientation: [`docs/context/architecture.md`](context/architecture.md)
+- All context docs: [`docs/context/`](context/)
