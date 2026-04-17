@@ -2674,3 +2674,258 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
   font-size: 0.875rem;
 }
 .qa-settings-trans-choice--on .qa-settings-trans-check { opacity: 1; }
+
+/* ==========================================================================
+   Mark editor — bottom sheet with multi-tag pattern
+   ========================================================================== */
+
+.qa-sheet--mark { max-height: 86%; }
+
+.qa-mark-hdr {
+  text-align: left;
+  padding-bottom: 10px;
+}
+.qa-mark-ref {
+  margin-left: auto;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--qa-ambient-accent);
+}
+
+.qa-mark-body { padding: 10px 14px 14px; }
+
+.qa-mark-quote {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-left: 2px solid var(--qa-ambient-accent);
+  background-color: color-mix(in srgb, var(--qa-ambient-accent) 6%, transparent);
+  margin-bottom: 12px;
+}
+.qa-mark-quote-ref {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--qa-ambient-accent);
+  margin-bottom: 6px;
+}
+.qa-mark-quote-ar {
+  font-family: var(--qa-font-arabic);
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--qa-ambient-parchment);
+  margin-bottom: 4px;
+}
+.qa-mark-quote-en {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--qa-ambient-muted);
+}
+
+.qa-mark-label {
+  display: block;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--qa-ambient-accent);
+  margin: 12px 0 6px;
+}
+.qa-mark-note {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--qa-ambient-border);
+  border-radius: 8px;
+  background-color: var(--qa-bg-primary);
+  color: var(--qa-ambient-parchment);
+  font: inherit;
+  font-size: 0.8125rem;
+  resize: vertical;
+  min-height: 44px;
+}
+.qa-mark-note:focus {
+  outline: none;
+  border-color: var(--qa-ambient-accent);
+}
+
+.qa-mark-selected {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--qa-ambient-border);
+  background-color: color-mix(in srgb, var(--qa-ambient-accent) 4%, transparent);
+  margin-top: 12px;
+  margin-bottom: 10px;
+}
+.qa-mark-selected-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--qa-ambient-accent);
+  margin-bottom: 6px;
+}
+.qa-mark-selected-count {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background-color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-surface);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+html[data-theme="dark"] .qa-mark-selected-count { color: #0e0e0c; }
+html[data-theme="sepia"] .qa-mark-selected-count { color: #3d2e14; }
+
+.qa-mark-clear-all {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #b35a3a;
+  font-size: 0.6875rem;
+  cursor: pointer;
+  padding: 0;
+}
+.qa-mark-selected-empty {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--qa-ambient-muted);
+  padding: 4px 2px;
+}
+
+.qa-mark-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--qa-ambient-border);
+  border-radius: 8px;
+  margin: 10px 0 8px;
+}
+.qa-mark-search-icon { color: var(--qa-ambient-accent); font-size: 0.875rem; }
+.qa-mark-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--qa-ambient-parchment);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+.qa-mark-search-count {
+  font-size: 0.6875rem;
+  color: var(--qa-ambient-muted);
+}
+
+.qa-mark-all-head {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+}
+.qa-mark-all-label {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--qa-ambient-accent);
+}
+.qa-mark-all-count {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  color: var(--qa-ambient-muted);
+}
+
+.qa-mark-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 2px;
+}
+
+.qa-mark-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--qa-ambient-border);
+  background-color: var(--qa-ambient-surface);
+  color: var(--qa-ambient-parchment);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.qa-mark-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.qa-mark-chip-x {
+  margin-left: 2px;
+  opacity: 0.7;
+  font-size: 0.75rem;
+}
+.qa-mark-chip--on {
+  background-color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-surface);
+  border-color: var(--qa-ambient-accent);
+  font-weight: 600;
+}
+html[data-theme="dark"] .qa-mark-chip--on { color: #0e0e0c; }
+html[data-theme="sepia"] .qa-mark-chip--on { color: #3d2e14; }
+
+.qa-mark-chip--dim { opacity: 0.38; }
+.qa-mark-chip--create {
+  border-style: dashed;
+  background-color: transparent;
+  color: var(--qa-ambient-accent);
+  font-style: italic;
+}
+
+.qa-sheet-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--qa-ambient-border);
+  background-color: var(--qa-ambient-surface);
+  flex-shrink: 0;
+}
+.qa-mark-footer-spacer { flex: 1; }
+.qa-mark-btn {
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--qa-ambient-parchment);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qa-mark-btn--ghost {
+  border-color: var(--qa-ambient-border);
+  color: var(--qa-ambient-parchment);
+}
+.qa-mark-btn--primary {
+  background-color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-surface);
+  border-color: var(--qa-ambient-accent);
+}
+html[data-theme="dark"] .qa-mark-btn--primary { color: #0e0e0c; }
+html[data-theme="sepia"] .qa-mark-btn--primary { color: #3d2e14; }
+.qa-mark-btn--primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.qa-mark-btn--danger {
+  color: #b35a3a;
+}
+.qa-mark-btn--danger-primary {
+  background-color: #b35a3a;
+  color: #fff;
+  border-color: #b35a3a;
+}
+.qa-mark-btn--hidden { display: none; }
+
+.qa-mark-confirm-text {
+  font-size: 0.8125rem;
+  color: var(--qa-ambient-parchment);
+  flex: 1;
+}

@@ -14,9 +14,10 @@ import { broadcastMarkChange } from '../safety/sync.js'
  * Save (create or update) a mark.
  * @param {string} verseKey - e.g. '2:255'
  * @param {string[]} tags - lowercased tag labels
+ * @param {string} [note] - optional free-text note
  * @throws {Error} If IDB operation fails
  */
-export async function save(verseKey, tags) {
+export async function save(verseKey, tags, note = '') {
   try {
     const db = await getDb()
     const existing = await getByVerseKey(verseKey)
@@ -25,6 +26,7 @@ export async function save(verseKey, tags) {
     const record = {
       verseKey,
       tags,
+      note,
       createdAt: existing ? existing.createdAt : now,
       updatedAt: now,
     }

@@ -1,21 +1,27 @@
 /**
- * Mark editor modal.
- * Opens on long-press (touch) or hover-icon click (mouse).
- * Chip-based tag selection with search/create input.
+ * Mark editor bottom sheet.
+ * - Verse-preview header (shared verse-block grammar)
+ * - Note textarea
+ * - Pinned Selected strip with count badge, Clear all, × on each chip
+ * - Unselected "All tags" region, dim when 7+ selected
+ * - Live search count + "+ create" chip
+ * - Pinned footer: Delete · Cancel · Save
+ * - Delete → inline confirm → undo toast
  *
- * Mobile (< 640px): bottom sheet.
- * Tablet (640–1024px): centered modal, max-width 480px.
- * Desktop (> 1024px): centered dialog, max-width 400px.
+ * Long-press is the ONLY entry point (per feedback memory: verse long-press
+ * opens the mark editor; no contextual menu, no multi-action sheet).
  */
 
 import { save, del, getByVerseKey, getAll } from './store.js'
 import { getSeedTags, getAllUsedTags, getColorForTag } from './tags.js'
+import { getSurah, getSurahs } from '../data/dataset.js'
 import { validateTagLabel } from '../safety/input-validator.js'
-import { on } from '../core/events.js'
+import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { showUndoToast, clearUndoToast } from '../core/ui.js'
 
 const LONG_PRESS_MS = 500
+const DIM_THRESHOLD = 7
 
 let activeModal = null
 let currentUndoRecord = null
@@ -29,306 +35,378 @@ on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
   }
 })
 
-/**
- * Open the mark editor modal for a verse.
- * @param {string} verseKey - e.g. '2:255'
- */
 export async function openEditor(verseKey) {
   clearUndoToast()
   closeEditor()
 
-  const existing = await getByVerseKey(verseKey)
-  const currentTags = existing ? existing.tags : []
+  const [s, v] = verseKey.split(':').map(n => parseInt(n, 10))
+  const [existing, allMarks, surahs] = await Promise.all([
+    getByVerseKey(verseKey),
+    getAll().catch(() => []),
+    getSurahs().catch(() => []),
+  ])
 
-  // Determine which tags to show as chips
-  const allMarks = await getAll()
-  const hasSomeMarks = allMarks.length > 0
-  let availableTags
-  if (hasSomeMarks) {
-    availableTags = await getAllUsedTags()
+  const selectedTags = new Set(existing?.tags || [])
+  const noteValue = existing?.note || ''
+
+  // Tag universe
+  let allTags
+  if (allMarks.length > 0) {
+    allTags = await getAllUsedTags()
   } else {
-    availableTags = getSeedTags().map(s => s.label)
+    allTags = getSeedTags().map(st => st.label)
   }
+  // Include any seed tags not yet used so the user always sees the vocabulary
+  const seedLabels = getSeedTags().map(st => st.label)
+  for (const sl of seedLabels) { if (!allTags.includes(sl)) { allTags.push(sl) } }
 
-  // Track selected tags
-  const selectedTags = new Set(currentTags)
+  const surahMeta = surahs.find(x => x.n === s)
+  const surahName = surahMeta?.name || ''
 
-  // --- Backdrop ---
-  const backdrop = document.createElement('div')
-  backdrop.className = 'qa-mark-backdrop'
-  backdrop.addEventListener('click', closeEditor)
+  // Build sheet
+  const scrim = document.createElement('div')
+  scrim.className = 'qa-sheet-backdrop'
+  scrim.addEventListener('click', closeEditor)
 
-  // --- Modal ---
-  const modal = document.createElement('div')
-  modal.className = 'qa-mark-modal'
-  modal.setAttribute('role', 'dialog')
-  modal.setAttribute('aria-label', `Mark verse ${verseKey}`)
+  const sheet = document.createElement('div')
+  sheet.className = 'qa-sheet qa-sheet--bottom qa-sheet--mark'
+  sheet.setAttribute('role', 'dialog')
+  sheet.setAttribute('aria-modal', 'true')
+  sheet.setAttribute('aria-label', `Mark verse ${verseKey}`)
 
-  // Title
-  const title = document.createElement('h2')
-  title.className = 'qa-mark-title'
-  title.textContent = `Mark ${verseKey}`
-  modal.appendChild(title)
+  const grip = document.createElement('div')
+  grip.className = 'qa-sheet-grip'
+  grip.setAttribute('aria-hidden', 'true')
 
-  // Hint (only when zero marks)
-  if (!hasSomeMarks) {
-    const hint = document.createElement('p')
-    hint.className = 'qa-mark-hint'
-    hint.textContent = 'Tags help you organise verses — pick one or create your own.'
-    modal.appendChild(hint)
-  }
+  const hdr = document.createElement('div')
+  hdr.className = 'qa-sheet-hdr qa-mark-hdr'
+  const title = document.createElement('div')
+  title.className = 'qa-sheet-title'
+  title.textContent = existing ? 'Edit mark' : 'New mark'
+  const ref = document.createElement('div')
+  ref.className = 'qa-mark-ref'
+  ref.textContent = `${s}\u00A0:\u00A0${v}`
+  hdr.appendChild(title)
+  hdr.appendChild(ref)
 
-  // Search input
-  const searchWrap = document.createElement('div')
-  searchWrap.className = 'qa-tag-search-wrap'
-  const searchInput = document.createElement('input')
-  searchInput.type = 'text'
-  searchInput.className = 'qa-tag-search'
-  searchInput.placeholder = 'Search or create tag...'
-  searchInput.setAttribute('autocomplete', 'off')
-  searchWrap.appendChild(searchInput)
-  modal.appendChild(searchWrap)
+  const body = document.createElement('div')
+  body.className = 'qa-sheet-body qa-mark-body'
 
-  // Chip container
-  const chipContainer = document.createElement('div')
-  chipContainer.className = 'qa-tag-chips'
-  modal.appendChild(chipContainer)
+  // Verse preview (shared grammar)
+  const quote = document.createElement('div')
+  quote.className = 'qa-mark-quote'
+  const eyebrow = document.createElement('div')
+  eyebrow.className = 'qa-mark-quote-ref'
+  eyebrow.textContent = `${verseKey} \u00B7 ${surahName}`
+  const arLine = document.createElement('div')
+  arLine.className = 'qa-mark-quote-ar'
+  arLine.setAttribute('dir', 'rtl')
+  arLine.textContent = '…'
+  const enLine = document.createElement('div')
+  enLine.className = 'qa-mark-quote-en'
+  enLine.textContent = '…'
+  quote.appendChild(eyebrow)
+  quote.appendChild(arLine)
+  quote.appendChild(enLine)
+  body.appendChild(quote)
 
-  // Render chips
-  function renderChips(filterText) {
-    chipContainer.textContent = ''
-    const lower = (filterText || '').trim().toLowerCase()
+  getSurah(s).then(data => {
+    arLine.textContent = data?.ar?.[v - 1] || ''
+    enLine.textContent = data?.en?.[v - 1] || ''
+  }).catch(() => { /* keep ellipses */ })
 
-    // Remove the create button if it exists (we'll re-add below if needed)
-    const oldCreate = modal.querySelector('.qa-tag-create-btn')
-    if (oldCreate) oldCreate.remove()
+  // Note textarea
+  const noteLabel = document.createElement('label')
+  noteLabel.className = 'qa-mark-label'
+  noteLabel.textContent = 'Note (optional)'
+  const note = document.createElement('textarea')
+  note.className = 'qa-mark-note'
+  note.rows = 2
+  note.maxLength = 500
+  note.value = noteValue
+  note.setAttribute('placeholder', 'A thought to revisit…')
+  body.appendChild(noteLabel)
+  body.appendChild(note)
 
-    let hasExactMatch = false
-    const allTags = [...availableTags]
-
-    for (const tag of allTags) {
-      if (lower && !tag.includes(lower)) {
-        continue
-      }
-      if (tag === lower) hasExactMatch = true
-
-      const chip = document.createElement('button')
-      chip.type = 'button'
-      chip.className = 'qa-tag-chip'
-      chip.dataset.tag = tag
-      chip.setAttribute('aria-pressed', selectedTags.has(tag) ? 'true' : 'false')
-
-      const dot = document.createElement('span')
-      dot.className = 'qa-tag-chip-dot'
-      dot.style.backgroundColor = getColorForTag(tag)
-      chip.appendChild(dot)
-
-      chip.appendChild(document.createTextNode(tag))
-
-      chip.addEventListener('click', () => {
-        const pressed = chip.getAttribute('aria-pressed') === 'true'
-        if (pressed) {
-          selectedTags.delete(tag)
-          chip.setAttribute('aria-pressed', 'false')
-        } else {
-          selectedTags.add(tag)
-          chip.setAttribute('aria-pressed', 'true')
-        }
-        updateSaveButton()
-      })
-
-      chipContainer.appendChild(chip)
-    }
-
-    // "Create" button — only when filter text is non-empty, passes validation, and has no exact match
-    if (lower && !hasExactMatch) {
-      const validation = validateTagLabel(lower)
-      if (validation.valid) {
-        const createBtn = document.createElement('button')
-        createBtn.type = 'button'
-        createBtn.className = 'qa-tag-create-btn'
-        createBtn.textContent = `Create "${validation.label}"`
-        createBtn.addEventListener('click', () => {
-          const label = validation.label
-          if (!availableTags.includes(label)) {
-            availableTags.push(label)
-          }
-          selectedTags.add(label)
-          searchInput.value = ''
-          renderChips('')
-          updateSaveButton()
-        })
-        // Insert after chip container
-        chipContainer.after(createBtn)
-      }
-    }
-  }
-
-  renderChips('')
-
-  // Search input handler
-  searchInput.addEventListener('input', () => {
-    renderChips(searchInput.value)
+  // Selected strip
+  const selStrip = document.createElement('div')
+  selStrip.className = 'qa-mark-selected'
+  const selHead = document.createElement('div')
+  selHead.className = 'qa-mark-selected-head'
+  const selTitle = document.createElement('span')
+  selTitle.textContent = 'Selected'
+  const selCount = document.createElement('span')
+  selCount.className = 'qa-mark-selected-count'
+  const clearAll = document.createElement('button')
+  clearAll.type = 'button'
+  clearAll.className = 'qa-mark-clear-all'
+  clearAll.textContent = 'Clear all'
+  clearAll.addEventListener('click', () => {
+    selectedTags.clear()
+    renderChips()
   })
+  selHead.appendChild(selTitle)
+  selHead.appendChild(selCount)
+  selHead.appendChild(clearAll)
+  const selChips = document.createElement('div')
+  selChips.className = 'qa-mark-chips qa-mark-chips--selected'
+  const selEmpty = document.createElement('div')
+  selEmpty.className = 'qa-mark-selected-empty'
+  selEmpty.textContent = 'No tags yet — pick one below or search.'
+  selStrip.appendChild(selHead)
+  selStrip.appendChild(selChips)
+  selStrip.appendChild(selEmpty)
+  body.appendChild(selStrip)
 
-  // --- Actions ---
-  const actions = document.createElement('div')
-  actions.className = 'qa-mark-actions'
+  // Tag search
+  const searchWrap = document.createElement('div')
+  searchWrap.className = 'qa-mark-search'
+  const searchIcon = document.createElement('span')
+  searchIcon.className = 'qa-mark-search-icon'
+  searchIcon.setAttribute('aria-hidden', 'true')
+  searchIcon.textContent = '\u2315'
+  const searchInput = document.createElement('input')
+  searchInput.type = 'search'
+  searchInput.className = 'qa-mark-search-input'
+  searchInput.setAttribute('placeholder', 'Search or create a tag')
+  searchInput.setAttribute('aria-label', 'Search or create a tag')
+  searchInput.setAttribute('autocomplete', 'off')
+  searchInput.maxLength = 40
+  const searchCount = document.createElement('span')
+  searchCount.className = 'qa-mark-search-count'
+  searchWrap.appendChild(searchIcon)
+  searchWrap.appendChild(searchInput)
+  searchWrap.appendChild(searchCount)
+  body.appendChild(searchWrap)
 
+  // All tags region
+  const allHead = document.createElement('div')
+  allHead.className = 'qa-mark-all-head'
+  const allLabel = document.createElement('span')
+  allLabel.className = 'qa-mark-all-label'
+  allLabel.textContent = 'All tags'
+  const allCount = document.createElement('span')
+  allCount.className = 'qa-mark-all-count'
+  allHead.appendChild(allLabel)
+  allHead.appendChild(allCount)
+  const allChips = document.createElement('div')
+  allChips.className = 'qa-mark-chips qa-mark-chips--all'
+  body.appendChild(allHead)
+  body.appendChild(allChips)
+
+  // Footer
+  const footer = document.createElement('div')
+  footer.className = 'qa-sheet-footer qa-mark-footer'
+  const delBtn = document.createElement('button')
+  delBtn.type = 'button'
+  delBtn.className = 'qa-mark-btn qa-mark-btn--danger'
+  delBtn.textContent = '\u232B Delete'
+  delBtn.setAttribute('data-action', 'delete')
+  const spacer = document.createElement('div')
+  spacer.className = 'qa-mark-footer-spacer'
+  const cancelBtn = document.createElement('button')
+  cancelBtn.type = 'button'
+  cancelBtn.className = 'qa-mark-btn qa-mark-btn--ghost'
+  cancelBtn.textContent = 'Cancel'
+  cancelBtn.setAttribute('data-action', 'cancel')
+  cancelBtn.addEventListener('click', closeEditor)
   const saveBtn = document.createElement('button')
-  saveBtn.className = 'qa-mark-save-btn'
-  saveBtn.setAttribute('data-action', 'save')
+  saveBtn.type = 'button'
+  saveBtn.className = 'qa-mark-btn qa-mark-btn--primary'
   saveBtn.textContent = 'Save'
-  saveBtn.disabled = selectedTags.size === 0
+  saveBtn.setAttribute('data-action', 'save')
+
+  if (!existing) {
+    // New mark — hide delete
+    delBtn.classList.add('qa-mark-btn--hidden')
+  }
+  footer.appendChild(delBtn)
+  footer.appendChild(spacer)
+  footer.appendChild(cancelBtn)
+  footer.appendChild(saveBtn)
+
+  sheet.appendChild(grip)
+  sheet.appendChild(hdr)
+  sheet.appendChild(body)
+  sheet.appendChild(footer)
+
+  const shell = document.getElementById('app-shell') || document.body
+  shell.appendChild(scrim)
+  shell.appendChild(sheet)
+
+  activeModal = { backdrop: scrim, modal: sheet }
+  currentEditingVerseKey = verseKey
+
+  // History entry for browser back
+  _popstateHandler = () => { if (activeModal) { closeEditor() } }
+  window.addEventListener('popstate', _popstateHandler)
+  history.pushState({ modal: 'mark-editor' }, '')
+  _historyPushed = true
+
+  // Focus management
+  const isDesktop = typeof window.matchMedia === 'function'
+    ? window.matchMedia('(min-width: 640px)').matches
+    : false
+  if (isDesktop) { searchInput.focus() }
+
+  function renderChips() {
+    // Selected strip
+    while (selChips.firstChild) { selChips.removeChild(selChips.firstChild) }
+    const selArr = [...selectedTags]
+    selCount.textContent = String(selArr.length)
+    if (selArr.length === 0) {
+      selEmpty.style.display = ''
+      clearAll.style.display = 'none'
+    } else {
+      selEmpty.style.display = 'none'
+      clearAll.style.display = ''
+      for (const tag of selArr) {
+        selChips.appendChild(makeChip(tag, { selected: true, onToggle: () => { selectedTags.delete(tag); renderChips() } }))
+      }
+    }
+
+    // All tags (unselected only), filtered by search
+    const q = (searchInput.value || '').trim().toLowerCase()
+    while (allChips.firstChild) { allChips.removeChild(allChips.firstChild) }
+    const unselected = allTags.filter(t => !selectedTags.has(t))
+    const filtered = q ? unselected.filter(t => t.toLowerCase().includes(q)) : unselected
+    const dim = selArr.length >= DIM_THRESHOLD
+    allCount.textContent = filtered.length === 1 ? '1 unselected' : `${filtered.length} unselected`
+    if (q) {
+      searchCount.textContent = filtered.length === 1 ? '1 match' : `${filtered.length} matches`
+    } else {
+      searchCount.textContent = `${allTags.length} tags`
+    }
+
+    for (const tag of filtered) {
+      const chip = makeChip(tag, {
+        selected: false,
+        dim,
+        onToggle: () => { selectedTags.add(tag); renderChips() },
+      })
+      allChips.appendChild(chip)
+    }
+
+    // Create chip — only when search term has no exact match
+    if (q && !allTags.some(t => t.toLowerCase() === q)) {
+      const validation = validateTagLabel(q)
+      if (validation.valid) {
+        const create = document.createElement('button')
+        create.type = 'button'
+        create.className = 'qa-mark-chip qa-mark-chip--create'
+        create.textContent = `+ create "${validation.label}"`
+        create.addEventListener('click', () => {
+          const lbl = validation.label
+          if (!allTags.includes(lbl)) { allTags.push(lbl) }
+          selectedTags.add(lbl)
+          searchInput.value = ''
+          renderChips()
+        })
+        allChips.appendChild(create)
+      }
+    }
+
+    saveBtn.disabled = selectedTags.size === 0 && !note.value.trim()
+  }
+
+  function makeChip(tag, { selected, dim, onToggle }) {
+    const chip = document.createElement('button')
+    chip.type = 'button'
+    chip.className = 'qa-mark-chip'
+    if (selected) { chip.classList.add('qa-mark-chip--on') }
+    if (dim) { chip.classList.add('qa-mark-chip--dim') }
+    const dot = document.createElement('span')
+    dot.className = 'qa-mark-chip-dot'
+    dot.style.backgroundColor = getColorForTag(tag)
+    chip.appendChild(dot)
+    chip.appendChild(document.createTextNode(tag))
+    if (selected) {
+      const x = document.createElement('span')
+      x.className = 'qa-mark-chip-x'
+      x.textContent = '\u00D7'
+      x.setAttribute('aria-hidden', 'true')
+      chip.appendChild(x)
+    }
+    chip.addEventListener('click', onToggle)
+    return chip
+  }
+
+  searchInput.addEventListener('input', renderChips)
+  note.addEventListener('input', () => { saveBtn.disabled = selectedTags.size === 0 && !note.value.trim() })
+
   saveBtn.addEventListener('click', async () => {
-    if (selectedTags.size === 0) return
-    await save(verseKey, [...selectedTags])
+    if (selectedTags.size === 0 && !note.value.trim()) { return }
+    await save(verseKey, [...selectedTags], note.value.trim())
     closeEditor()
   })
 
-  const cancelBtn = document.createElement('button')
-  cancelBtn.className = 'qa-mark-cancel-btn'
-  cancelBtn.setAttribute('data-action', 'cancel')
-  cancelBtn.textContent = 'Cancel'
-  cancelBtn.addEventListener('click', closeEditor)
-
-  function updateSaveButton() {
-    saveBtn.disabled = selectedTags.size === 0
-  }
-
-  actions.appendChild(saveBtn)
-  actions.appendChild(cancelBtn)
-
-  if (existing) {
-    const deleteBtn = document.createElement('button')
-    deleteBtn.className = 'qa-mark-delete-btn'
-    deleteBtn.setAttribute('data-action', 'delete')
-    deleteBtn.textContent = 'Delete'
-    deleteBtn.addEventListener('click', async () => {
+  delBtn.addEventListener('click', async () => {
+    // Inline confirm: replace footer contents with confirm/cancel
+    while (footer.firstChild) { footer.removeChild(footer.firstChild) }
+    const warn = document.createElement('div')
+    warn.className = 'qa-mark-confirm-text'
+    warn.textContent = 'Delete this mark?'
+    const back = document.createElement('button')
+    back.type = 'button'
+    back.className = 'qa-mark-btn qa-mark-btn--ghost'
+    back.textContent = 'Keep'
+    back.addEventListener('click', () => { renderFooter() })
+    const go = document.createElement('button')
+    go.type = 'button'
+    go.className = 'qa-mark-btn qa-mark-btn--danger-primary'
+    go.textContent = 'Delete'
+    go.addEventListener('click', async () => {
       currentUndoRecord = existing
       await del(verseKey)
       closeEditor()
       showUndoToast({
         verseKey,
         record: currentUndoRecord,
-        onUndo: async (record) => {
-          await save(record.verseKey, record.tags)
-        },
-        onComplete: () => {
-          currentUndoRecord = null
-        }
+        onUndo: async (record) => { await save(record.verseKey, record.tags, record.note || '') },
+        onComplete: () => { currentUndoRecord = null },
       })
     })
-    actions.appendChild(deleteBtn)
-  }
-
-  modal.appendChild(actions)
-
-  // --- Mount ---
-  const shell = document.getElementById('app-shell') || document.body
-  shell.appendChild(backdrop)
-  shell.appendChild(modal)
-  activeModal = { backdrop, modal }
-  currentEditingVerseKey = verseKey
-
-  // Focus trap
-  function getFocusableElements() {
-    return modal.querySelectorAll(
-      'input, button:not([disabled])'
-    )
-  }
-
-  // Auto-focus input on desktop only
-  const isDesktop = typeof window.matchMedia === 'function'
-    ? window.matchMedia('(min-width: 640px)').matches
-    : false
-  if (isDesktop) {
-    searchInput.focus()
-  } else {
-    // Focus first chip on mobile so keyboard stays hidden
-    const firstChip = chipContainer.querySelector('.qa-tag-chip')
-    if (firstChip) firstChip.focus()
-  }
-
-  modal.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeEditor()
-      return
-    }
-    if (e.key !== 'Tab') return
-
-    const focusable = getFocusableElements()
-    if (focusable.length === 0) return
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
-
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault()
-        last.focus()
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault()
-        first.focus()
-      }
-    }
+    footer.appendChild(warn)
+    footer.appendChild(back)
+    footer.appendChild(go)
   })
 
-  // History entry for browser back
-  _popstateHandler = () => {
-    if (activeModal) closeEditor()
+  function renderFooter() {
+    while (footer.firstChild) { footer.removeChild(footer.firstChild) }
+    footer.appendChild(delBtn)
+    footer.appendChild(spacer)
+    footer.appendChild(cancelBtn)
+    footer.appendChild(saveBtn)
   }
-  window.addEventListener('popstate', _popstateHandler)
-  history.pushState({ modal: 'mark-editor' }, '')
-  _historyPushed = true
+
+  // Esc closes
+  sheet.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeEditor() }
+  })
+
+  renderChips()
 }
 
-/**
- * Close the active editor modal.
- */
 export function closeEditor() {
-  if (!activeModal) {
-    return
-  }
+  if (!activeModal) { return }
 
   activeModal.backdrop.remove()
   activeModal.modal.remove()
   activeModal = null
   currentEditingVerseKey = null
 
-  // Remove popstate listener before calling history.back() to avoid re-entry
   if (_popstateHandler) {
     window.removeEventListener('popstate', _popstateHandler)
     _popstateHandler = null
   }
-
   if (_historyPushed) {
     _historyPushed = false
-    history.back() // Return to the pre-modal history entry
+    history.back()
   }
 }
 
 /**
- * Create a bookmark SVG icon element (no innerHTML — safe DOM construction).
- * @returns {SVGElement}
- */
-function createBookmarkIcon() {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('width', '16')
-  svg.setAttribute('height', '16')
-  svg.setAttribute('viewBox', '0 0 16 16')
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-  path.setAttribute('d', 'M3 1h10v14l-5-3-5 3V1z')
-  path.setAttribute('fill', 'currentColor')
-  svg.appendChild(path)
-  return svg
-}
-
-/**
- * Set up long-press detection on a container (event delegation).
- * @param {HTMLElement} container
- * @returns {Function} cleanup function
+ * Long-press detection on a container.
  */
 export function setupLongPress(container) {
   let pressTimer = null
@@ -338,23 +416,17 @@ export function setupLongPress(container) {
 
   function getVerseKey(element) {
     const verseEl = element.closest('[data-verse]')
-    if (!verseEl) {
-      return null
-    }
+    if (!verseEl) { return null }
     const verseNum = verseEl.getAttribute('data-verse')
     const match = location.hash.match(/#\/s\/(\d+)/)
     const surahNum = match ? match[1] : null
-    if (!surahNum || !verseNum) {
-      return null
-    }
+    if (!surahNum || !verseNum) { return null }
     return `${surahNum}:${verseNum}`
   }
 
   function onTouchStart(e) {
     const verseKey = getVerseKey(e.target)
-    if (!verseKey) {
-      return
-    }
+    if (!verseKey) { return }
     const touch = e.touches[0]
     touchStartX = touch.clientX
     touchStartY = touch.clientY
@@ -365,10 +437,7 @@ export function setupLongPress(container) {
   }
 
   function onTouchEnd() {
-    if (pressTimer) {
-      clearTimeout(pressTimer)
-      pressTimer = null
-    }
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null }
     touchStartX = null
     touchStartY = null
   }
@@ -387,64 +456,24 @@ export function setupLongPress(container) {
     }
   }
 
-  function onMouseOver(e) {
-    const verseEl = e.target.closest('[data-verse]')
-    if (!verseEl) {
-      return
-    }
-    
-    // Ignore if moving within the same verse
-    if (e.relatedTarget && verseEl.contains(e.relatedTarget)) {
-      return
-    }
-
-    if (verseEl.querySelector('.qa-mark-hover-icon')) {
-      return
-    }
-
-    const icon = document.createElement('button')
-    icon.className = 'qa-mark-hover-icon'
-    icon.setAttribute('aria-label', 'Mark this verse')
-    icon.appendChild(createBookmarkIcon())
-    icon.addEventListener('click', (ev) => {
-      ev.preventDefault()
-      ev.stopPropagation()
-      const vKey = getVerseKey(verseEl)
-      if (vKey) {
-        openEditor(vKey)
-      }
-    })
-    verseEl.appendChild(icon)
-  }
-
-  function onMouseOut(e) {
-    const verseEl = e.target.closest('[data-verse]')
-    if (!verseEl) {
-      return
-    }
-
-    // Ignore if moving within the same verse
-    if (e.relatedTarget && verseEl.contains(e.relatedTarget)) {
-      return
-    }
-
-    const icon = verseEl.querySelector('.qa-mark-hover-icon')
-    if (icon) {
-      icon.remove()
-    }
+  // Desktop: right-click opens editor directly
+  // (per feedback memory: long-press = mark editor only; no context menu)
+  function onContextMenu(e) {
+    const verseKey = getVerseKey(e.target)
+    if (!verseKey) { return }
+    e.preventDefault()
+    openEditor(verseKey)
   }
 
   container.addEventListener('touchstart', onTouchStart, { passive: true })
   container.addEventListener('touchend', onTouchEnd, { passive: true })
   container.addEventListener('touchmove', onTouchMove, { passive: true })
-  container.addEventListener('mouseover', onMouseOver)
-  container.addEventListener('mouseout', onMouseOut)
+  container.addEventListener('contextmenu', onContextMenu)
 
   return () => {
     container.removeEventListener('touchstart', onTouchStart)
     container.removeEventListener('touchend', onTouchEnd)
     container.removeEventListener('touchmove', onTouchMove)
-    container.removeEventListener('mouseover', onMouseOver)
-    container.removeEventListener('mouseout', onMouseOut)
+    container.removeEventListener('contextmenu', onContextMenu)
   }
 }
