@@ -130,13 +130,6 @@ export async function init() {
   versionLine.textContent = `v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'unknown'}`
   mainContent.appendChild(versionLine)
 
-  // Back link
-  const backLink = document.createElement('a')
-  backLink.className = 'qa-about-back-link'
-  backLink.href = '#/settings'
-  backLink.textContent = '\u2190 Settings'
-  mainContent.appendChild(backLink)
-
   announce('About page')
 
   return () => { ++_initSeq }

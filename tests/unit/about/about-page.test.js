@@ -78,12 +78,6 @@ describe('about/index.js', () => {
       expect(installBtn.textContent).toContain('Install')
     })
 
-    it('renders back link to settings', async () => {
-      await aboutPage.init()
-      const backLink = document.querySelector('a[href="#/settings"]')
-      expect(backLink).not.toBeNull()
-    })
-
     it('concurrent init() calls do not produce duplicate content', async () => {
       await Promise.all([aboutPage.init(), aboutPage.init()])
       const headings = document.querySelectorAll('h1.qa-about-heading')
