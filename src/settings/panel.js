@@ -1,186 +1,271 @@
 /**
- * Settings popover panel: theme, translation toggle, font size.
- * Injects a gear button into #top-bar; panel opens anchored to the gear.
+ * Settings bottom sheet — opened from the "More" sheet or #/settings route.
+ * Sections: Theme (4 swatches incl. Auto) · Font size slider + live preview ·
+ * Reading toggles (translation on/off + translation picker link).
  */
 
 import { get, put } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
-import { getThemeOptions, setTheme, loadTheme } from './theme.js'
+import { getThemeOptions, setTheme, loadTheme, getAppliedVariants } from './theme.js'
 import { getFontSizeOptions, setFontSize, loadFontSize } from './font-size.js'
 import { logger } from '../core/logger.js'
 
-let gearBtn = null
-let panel = null
-let backdrop = null
-let isOpen = false
-let outsideHandler = null
-let escapeHandler = null
+const TRANSLATION_OPTIONS = [
+  { id: 'saheeh',    name: 'Saheeh International', sub: 'English · clear, modern' },
+  { id: 'pickthall', name: 'Pickthall',            sub: 'English · classical prose' },
+  { id: 'yusuf',     name: 'Yusuf Ali',            sub: 'English · with commentary' },
+  { id: 'khattab',   name: 'Clear Qur\u2019an (Khattab)', sub: 'English · contemporary' },
+]
+
+let scrim = null
+let sheet = null
+let escHandler = null
+let currentView = 'main'
 
 export async function initSettingsPanel() {
-  renderGearButton()
-  return destroy
+  // No gear button — Settings opens from the "More" sheet or #/settings route.
+  return () => { closeSettingsSheet() }
 }
 
-export function destroy() {
-  if (gearBtn && gearBtn.parentNode) { gearBtn.remove() }
-  closePanel()
-  gearBtn = null
+export function openSettingsSheet() {
+  if (sheet) { return }
+  currentView = 'main'
+
+  scrim = document.createElement('div')
+  scrim.className = 'qa-sheet-backdrop'
+  scrim.addEventListener('click', closeSettingsSheet)
+
+  sheet = document.createElement('div')
+  sheet.className = 'qa-sheet qa-sheet--bottom qa-sheet--settings'
+  sheet.setAttribute('role', 'dialog')
+  sheet.setAttribute('aria-modal', 'true')
+  sheet.setAttribute('aria-label', 'Settings')
+
+  document.body.appendChild(scrim)
+  document.body.appendChild(sheet)
+
+  escHandler = (e) => { if (e.key === 'Escape') { closeSettingsSheet() } }
+  document.addEventListener('keydown', escHandler)
+
+  renderMain()
+  emit(Events.SHEET_OPENED, { name: 'settings' })
 }
 
-function renderGearButton() {
-  const topBar = document.getElementById('top-bar')
-  if (!topBar) { return }
-  const existing = topBar.querySelector('.qa-settings-gear')
-  if (existing) { existing.remove() }
-
-  const btn = document.createElement('button')
-  btn.className = 'qa-settings-gear'
-  btn.type = 'button'
-  btn.setAttribute('aria-label', 'Settings')
-  btn.setAttribute('aria-expanded', 'false')
-  btn.setAttribute('aria-controls', 'qa-settings-panel')
-  btn.textContent = '\u2699' // gear unicode
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation()
-    if (isOpen) { closePanel() } else { openPanel() }
-  })
-  topBar.appendChild(btn)
-  gearBtn = btn
+export function closeSettingsSheet() {
+  if (escHandler) { document.removeEventListener('keydown', escHandler); escHandler = null }
+  if (sheet?.parentNode) { sheet.parentNode.removeChild(sheet) }
+  if (scrim?.parentNode) { scrim.parentNode.removeChild(scrim) }
+  sheet = null
+  scrim = null
+  emit(Events.SHEET_CLOSED, { name: 'settings' })
 }
 
-async function openPanel() {
-  if (isOpen) { return }
-  isOpen = true
-  gearBtn?.setAttribute('aria-expanded', 'true')
+async function renderMain() {
+  if (!sheet) { return }
+  while (sheet.firstChild) { sheet.removeChild(sheet.firstChild) }
+  currentView = 'main'
 
-  const [currentTheme, currentFont, translationVisibleSetting] = await Promise.all([
+  const grip = document.createElement('div')
+  grip.className = 'qa-sheet-grip'
+  grip.setAttribute('aria-hidden', 'true')
+
+  const hdr = document.createElement('div')
+  hdr.className = 'qa-sheet-hdr'
+  const title = document.createElement('div')
+  title.className = 'qa-sheet-title'
+  title.textContent = 'Settings'
+  const close = document.createElement('button')
+  close.type = 'button'
+  close.className = 'qa-sheet-close'
+  close.setAttribute('aria-label', 'Close')
+  close.textContent = '\u2715'
+  close.addEventListener('click', closeSettingsSheet)
+  hdr.appendChild(title)
+  hdr.appendChild(close)
+
+  const body = document.createElement('div')
+  body.className = 'qa-sheet-body qa-settings-body'
+
+  const [currentTheme, currentFont, translationVisible, translationId] = await Promise.all([
     loadTheme(),
     loadFontSize(),
     get('settings', 'translationVisible').then(r => r?.value ?? true),
+    get('settings', 'translationId').then(r => r?.value ?? 'saheeh'),
   ])
 
-  backdrop = document.createElement('div')
-  backdrop.className = 'qa-settings-backdrop'
-  document.body.appendChild(backdrop)
+  body.appendChild(buildThemeSection(currentTheme))
+  body.appendChild(buildFontSection(currentFont))
+  body.appendChild(buildReadingSection(translationVisible, translationId))
 
-  panel = document.createElement('div')
-  panel.id = 'qa-settings-panel'
-  panel.className = 'qa-settings-panel'
-  panel.setAttribute('role', 'dialog')
-  panel.setAttribute('aria-label', 'Settings')
-
-  panel.appendChild(buildThemeSection(currentTheme))
-  panel.appendChild(buildTranslationSection(translationVisibleSetting))
-  panel.appendChild(buildFontSection(currentFont))
-
-  document.body.appendChild(panel)
-
-  outsideHandler = (e) => {
-    if (!panel) { return }
-    if (panel.contains(e.target) || gearBtn?.contains(e.target)) { return }
-    closePanel()
-  }
-  escapeHandler = (e) => { if (e.key === 'Escape') { closePanel() } }
-  setTimeout(() => {
-    document.addEventListener('mousedown', outsideHandler)
-    document.addEventListener('touchstart', outsideHandler, { passive: true })
-  }, 0)
-  document.addEventListener('keydown', escapeHandler)
+  sheet.appendChild(grip)
+  sheet.appendChild(hdr)
+  sheet.appendChild(body)
 }
 
-function closePanel() {
-  if (!isOpen) { return }
-  isOpen = false
-  gearBtn?.setAttribute('aria-expanded', 'false')
-  if (panel && panel.parentNode) { panel.remove() }
-  if (backdrop && backdrop.parentNode) { backdrop.remove() }
-  panel = null
-  backdrop = null
-  if (outsideHandler) {
-    document.removeEventListener('mousedown', outsideHandler)
-    document.removeEventListener('touchstart', outsideHandler)
-    outsideHandler = null
-  }
-  if (escapeHandler) {
-    document.removeEventListener('keydown', escapeHandler)
-    escapeHandler = null
-  }
-}
-
-function buildThemeSection(current) {
-  const section = document.createElement('div')
+function buildThemeSection(currentTheme) {
+  const section = document.createElement('section')
   section.className = 'qa-settings-section'
-  const h = document.createElement('div')
-  h.className = 'qa-settings-heading'
-  h.textContent = 'Theme'
-  section.appendChild(h)
+  const label = document.createElement('div')
+  label.className = 'qa-settings-label'
+  label.textContent = 'Theme'
+  section.appendChild(label)
 
-  const group = document.createElement('div')
-  group.className = 'qa-settings-options'
-  group.setAttribute('role', 'radiogroup')
-  group.setAttribute('aria-label', 'Theme')
+  const row = document.createElement('div')
+  row.className = 'qa-theme-row'
+  row.setAttribute('role', 'radiogroup')
+  row.setAttribute('aria-label', 'Theme')
 
   for (const opt of getThemeOptions()) {
     const btn = document.createElement('button')
     btn.type = 'button'
-    btn.className = 'qa-settings-option'
+    btn.className = `qa-theme-swatch qa-theme-swatch--${opt}`
     btn.setAttribute('role', 'radio')
-    btn.setAttribute('aria-checked', String(opt === current))
-    if (opt === current) { btn.classList.add('qa-settings-option-active') }
-    btn.textContent = opt.charAt(0).toUpperCase() + opt.slice(1)
+    btn.setAttribute('aria-checked', String(opt === currentTheme))
+    if (opt === currentTheme) { btn.classList.add('qa-theme-swatch--active') }
+    const preview = document.createElement('span')
+    preview.className = 'qa-theme-swatch-preview'
+    preview.setAttribute('aria-hidden', 'true')
+    const inner = document.createElement('span')
+    inner.className = 'qa-theme-swatch-inner'
+    inner.textContent = '\u0627\u0644\u0644\u0647' // الله
+    preview.appendChild(inner)
+    const txt = document.createElement('span')
+    txt.className = 'qa-theme-swatch-label'
+    txt.textContent = opt.charAt(0).toUpperCase() + opt.slice(1)
+    btn.appendChild(preview)
+    btn.appendChild(txt)
     btn.addEventListener('click', async () => {
       await setTheme(opt)
-      for (const b of group.querySelectorAll('.qa-settings-option')) {
-        const isActive = b === btn
-        b.classList.toggle('qa-settings-option-active', isActive)
-        b.setAttribute('aria-checked', String(isActive))
+      for (const b of row.querySelectorAll('.qa-theme-swatch')) {
+        const on = b === btn
+        b.classList.toggle('qa-theme-swatch--active', on)
+        b.setAttribute('aria-checked', String(on))
       }
     })
-    group.appendChild(btn)
+    row.appendChild(btn)
   }
-  section.appendChild(group)
+  section.appendChild(row)
   return section
 }
 
-function buildTranslationSection(current) {
-  const section = document.createElement('div')
+function buildFontSection(currentFont) {
+  const section = document.createElement('section')
   section.className = 'qa-settings-section'
-  const row = document.createElement('div')
-  row.className = 'qa-settings-row'
+  const label = document.createElement('div')
+  label.className = 'qa-settings-label'
+  label.textContent = 'Font size'
+  section.appendChild(label)
 
-  const text = document.createElement('span')
-  text.className = 'qa-settings-heading'
-  text.textContent = 'Show translation'
+  const order = getFontSizeOptions()
+
+  const slider = document.createElement('input')
+  slider.type = 'range'
+  slider.className = 'qa-font-slider'
+  slider.min = '0'
+  slider.max = String(order.length - 1)
+  slider.step = '1'
+  slider.value = String(order.indexOf(currentFont))
+  slider.setAttribute('aria-label', 'Font size')
+
+  const preview = document.createElement('div')
+  preview.className = 'qa-font-preview'
+  const arSpan = document.createElement('span')
+  arSpan.className = 'qa-font-preview-ar'
+  arSpan.setAttribute('dir', 'rtl')
+  arSpan.textContent = '\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650' // ٱلرَّحْمَـٰنِ
+  const enSpan = document.createElement('span')
+  enSpan.className = 'qa-font-preview-en'
+  enSpan.textContent = ' \u00B7 The Most Gracious'
+  preview.appendChild(arSpan)
+  preview.appendChild(enSpan)
+
+  slider.addEventListener('input', async () => {
+    const idx = parseInt(slider.value, 10)
+    const size = order[Math.max(0, Math.min(order.length - 1, idx))]
+    await setFontSize(size)
+  })
+
+  const wrap = document.createElement('div')
+  wrap.className = 'qa-font-wrap'
+  const minL = document.createElement('span')
+  minL.className = 'qa-font-min'
+  minL.textContent = 'Aa'
+  const maxL = document.createElement('span')
+  maxL.className = 'qa-font-max'
+  maxL.textContent = 'Aa'
+  wrap.appendChild(minL)
+  wrap.appendChild(slider)
+  wrap.appendChild(maxL)
+
+  section.appendChild(wrap)
+  section.appendChild(preview)
+  return section
+}
+
+function buildReadingSection(visible, translationId) {
+  const section = document.createElement('section')
+  section.className = 'qa-settings-section'
+  const label = document.createElement('div')
+  label.className = 'qa-settings-label'
+  label.textContent = 'Reading'
+  section.appendChild(label)
+
+  section.appendChild(buildToggleRow({
+    main: 'Show translation',
+    sub: TRANSLATION_OPTIONS.find(o => o.id === translationId)?.name || 'English',
+    on: visible,
+    onToggle: async (next) => {
+      try {
+        await put('settings', { key: 'translationVisible', value: next })
+        emit(Events.SETTINGS_TRANSLATION_CHANGED, { visible: next })
+        applyTranslationToDOM(next)
+      } catch (error) {
+        logger.error('Failed to save translation setting', { error })
+      }
+    },
+    onTapSub: () => { renderTranslationPicker() },
+  }))
+
+  return section
+}
+
+function buildToggleRow({ main, sub, on, onToggle, onTapSub }) {
+  const row = document.createElement('div')
+  row.className = 'qa-settings-toggle-row'
+
+  const body = document.createElement('button')
+  body.type = 'button'
+  body.className = 'qa-settings-toggle-body'
+  body.addEventListener('click', onTapSub || (() => {}))
+  const m = document.createElement('div')
+  m.className = 'qa-settings-toggle-main'
+  m.textContent = main
+  const s = document.createElement('div')
+  s.className = 'qa-settings-toggle-sub'
+  s.textContent = sub
+  body.appendChild(m)
+  body.appendChild(s)
 
   const sw = document.createElement('button')
   sw.type = 'button'
   sw.className = 'qa-settings-switch'
   sw.setAttribute('role', 'switch')
-  sw.setAttribute('aria-checked', String(!!current))
-  sw.setAttribute('aria-label', 'Toggle translation')
-  sw.classList.toggle('qa-settings-switch-on', !!current)
-  const handle = document.createElement('span')
-  handle.className = 'qa-settings-switch-handle'
-  sw.appendChild(handle)
-
+  sw.setAttribute('aria-checked', String(!!on))
+  sw.classList.toggle('qa-settings-switch--on', !!on)
+  const knob = document.createElement('span')
+  knob.className = 'qa-settings-switch-knob'
+  sw.appendChild(knob)
   sw.addEventListener('click', async () => {
     const next = sw.getAttribute('aria-checked') !== 'true'
     sw.setAttribute('aria-checked', String(next))
-    sw.classList.toggle('qa-settings-switch-on', next)
-    try {
-      await put('settings', { key: 'translationVisible', value: next })
-      emit(Events.SETTINGS_TRANSLATION_CHANGED, { visible: next })
-      applyTranslationToDOM(next)
-    } catch (error) {
-      logger.error('Failed to save translation setting', { error })
-    }
+    sw.classList.toggle('qa-settings-switch--on', next)
+    await onToggle(next)
   })
 
-  row.appendChild(text)
+  row.appendChild(body)
   row.appendChild(sw)
-  section.appendChild(row)
-  return section
+  return row
 }
 
 function applyTranslationToDOM(visible) {
@@ -191,37 +276,70 @@ function applyTranslationToDOM(visible) {
   })
 }
 
-function buildFontSection(current) {
-  const section = document.createElement('div')
-  section.className = 'qa-settings-section'
-  const h = document.createElement('div')
-  h.className = 'qa-settings-heading'
-  h.textContent = 'Font size'
-  section.appendChild(h)
+async function renderTranslationPicker() {
+  if (!sheet) { return }
+  while (sheet.firstChild) { sheet.removeChild(sheet.firstChild) }
+  currentView = 'translation'
 
-  const group = document.createElement('div')
-  group.className = 'qa-settings-options'
-  group.setAttribute('role', 'radiogroup')
-  group.setAttribute('aria-label', 'Font size')
+  const grip = document.createElement('div')
+  grip.className = 'qa-sheet-grip'
+  grip.setAttribute('aria-hidden', 'true')
 
-  for (const opt of getFontSizeOptions()) {
-    const btn = document.createElement('button')
-    btn.type = 'button'
-    btn.className = 'qa-settings-option'
-    btn.setAttribute('role', 'radio')
-    btn.setAttribute('aria-checked', String(opt === current))
-    if (opt === current) { btn.classList.add('qa-settings-option-active') }
-    btn.textContent = opt.charAt(0).toUpperCase() + opt.slice(1)
-    btn.addEventListener('click', async () => {
-      await setFontSize(opt)
-      for (const b of group.querySelectorAll('.qa-settings-option')) {
-        const isActive = b === btn
-        b.classList.toggle('qa-settings-option-active', isActive)
-        b.setAttribute('aria-checked', String(isActive))
+  const hdr = document.createElement('div')
+  hdr.className = 'qa-sheet-hdr'
+  const back = document.createElement('button')
+  back.type = 'button'
+  back.className = 'qa-sheet-back'
+  back.setAttribute('aria-label', 'Back')
+  back.textContent = '\u2190 Translation'
+  back.addEventListener('click', renderMain)
+  const close = document.createElement('button')
+  close.type = 'button'
+  close.className = 'qa-sheet-close'
+  close.setAttribute('aria-label', 'Close')
+  close.textContent = '\u2715'
+  close.addEventListener('click', closeSettingsSheet)
+  hdr.appendChild(back)
+  hdr.appendChild(close)
+
+  const body = document.createElement('div')
+  body.className = 'qa-sheet-body'
+
+  const current = (await get('settings', 'translationId'))?.value || 'saheeh'
+
+  for (const opt of TRANSLATION_OPTIONS) {
+    const row = document.createElement('button')
+    row.type = 'button'
+    row.className = 'qa-settings-trans-choice'
+    if (opt.id === current) { row.classList.add('qa-settings-trans-choice--on') }
+    const col = document.createElement('span')
+    col.className = 'qa-settings-trans-body'
+    const name = document.createElement('span')
+    name.className = 'qa-settings-trans-name'
+    name.textContent = opt.name
+    const sub = document.createElement('span')
+    sub.className = 'qa-settings-trans-sub'
+    sub.textContent = opt.sub
+    col.appendChild(name)
+    col.appendChild(sub)
+    const check = document.createElement('span')
+    check.className = 'qa-settings-trans-check'
+    check.setAttribute('aria-hidden', 'true')
+    check.textContent = '\u2713'
+    row.appendChild(col)
+    row.appendChild(check)
+    row.addEventListener('click', async () => {
+      try {
+        await put('settings', { key: 'translationId', value: opt.id })
+      } catch (error) {
+        logger.error('Failed to save translation choice', { error })
       }
+      renderMain()
     })
-    group.appendChild(btn)
+    body.appendChild(row)
   }
-  section.appendChild(group)
-  return section
+
+  sheet.appendChild(grip)
+  sheet.appendChild(hdr)
+  sheet.appendChild(body)
 }

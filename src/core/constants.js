@@ -44,6 +44,8 @@ export const Events = {
   DATASET_UPDATE_FAILED: 'dataset:update-failed',
   STORAGE_QUOTA_WARNING: 'storage:quota-warning',
   OFFLINE_SW_TIMEOUT: 'offline:sw-timeout',
+  SHEET_OPENED: 'sheet:opened',
+  SHEET_CLOSED: 'sheet:closed',
 }
 
 export const Errors = {

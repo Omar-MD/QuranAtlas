@@ -12,7 +12,8 @@ import { init as initSafetySync } from '../safety/sync.js'
 import { initInstallListener } from '../about/pwa-install.js'
 import { initTheme } from '../settings/theme.js'
 import { initFontSize } from '../settings/font-size.js'
-import { initSettingsPanel } from '../settings/panel.js'
+import { initSettingsPanel, openSettingsSheet } from '../settings/panel.js'
+import { openMoreSheet } from '../nav/more-sheet.js'
 import { initAmbientDock } from '../nav/ambient-dock.js'
 import { initAmbientPill } from '../nav/ambient-pill.js'
 import { initCommandSheet } from '../nav/command-sheet.js'
@@ -44,6 +45,9 @@ export async function init() {
     await initTheme()
     await initFontSize()
 
+    // Expose More sheet globally so the dock can open it without a circular import
+    window.__qaOpenMoreSheet = openMoreSheet
+
     // Listen for launch restore
     bootCleanups.push(on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
 
@@ -63,7 +67,14 @@ export async function init() {
     })
 
     // Register Phase 3 routes
-    router.register('#/settings', () => import('../settings/index.js'))
+    router.register('#/settings', () => Promise.resolve({
+      async init() {
+        openSettingsSheet()
+        const last = await get('settings', 'lastSurface')
+        const prev = last?.value && last.value !== '#/settings' ? last.value : '#/s/1'
+        router.navigate(prev, { replace: true })
+      },
+    }))
     router.register('#/about', () => import('../about/index.js'))
     router.register('#/t/:tag', () => import('../review/hub.js'), {
       openEditor,
