@@ -681,19 +681,6 @@ html[data-theme="light"] .qa-dock-item--active {
   }
 }
 
-/* Desktop: verse breathing room +50% vs mobile. */
-@media (min-width: 1180px) {
-  .qa-verse {
-    padding: 2.25rem 0;
-  }
-  .qa-verse-arabic {
-    margin-bottom: 1.5rem;
-  }
-  .qa-verse-translation {
-    padding-top: 1.125rem;
-  }
-}
-
 /* ==========================================================================
    UI Components
    ========================================================================== */
@@ -1257,6 +1244,42 @@ html[data-theme="light"] .qa-dock-item--active {
   #main-content {
     padding: 2rem 3rem;
     max-width: 1180px;
+  }
+}
+
+/* Desktop: two-column Arabic | translation grid. */
+@media (min-width: 1180px) {
+  #main-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 2rem;
+    align-items: start;
+  }
+
+  /* Non-verse children of #main-content span both columns */
+  .qa-surah-header,
+  .qa-basmala,
+  .qa-surah-end,
+  .qa-invalid-verse-error {
+    grid-column: 1 / -1;
+  }
+
+  .qa-verse {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    padding: 2.25rem 0;
+  }
+
+  .qa-verse-arabic {
+    grid-column: 1;
+    margin-bottom: 0;
+  }
+
+  .qa-verse-translation {
+    grid-column: 2;
+    border-top: none;
+    padding-top: 0;
   }
 }
 

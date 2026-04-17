@@ -72,4 +72,29 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(hit, 'expected a min-width: 1180px block containing .qa-verse').toBeDefined()
     expect(hit[1]).toMatch(/\.qa-verse\s*\{[^}]*padding:\s*2\.25rem\s+0/)
   })
+
+  it('at desktop, #main-content becomes a 2-column grid', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /#main-content\s*\{[^}]*display:\s*grid/.test(b[1]) &&
+      /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/.test(b[1])
+    )
+    expect(hit, 'expected a min-width: 1180px block making #main-content a 2-col grid').toBeDefined()
+  })
+
+  it('at desktop, .qa-verse uses subgrid for row alignment', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-verse\s*\{[^}]*grid-template-columns:\s*subgrid/.test(b[1]))
+    expect(hit, 'expected .qa-verse to use subgrid at desktop').toBeDefined()
+  })
+
+  it('at desktop, non-verse children of #main-content span both columns', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-surah-header[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(b[1]) &&
+      /\.qa-basmala[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(b[1]) &&
+      /\.qa-surah-end[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(b[1])
+    )
+    expect(hit, 'expected header/basmala/end-marker to span both columns').toBeDefined()
+  })
 })
