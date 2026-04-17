@@ -2187,3 +2187,214 @@ html[data-theme="light"] .qa-dock-item--active {
   line-height: 1.5;
   color: var(--qa-ambient-muted);
 }
+
+/* ==========================================================================
+   Surah list — #/surahs
+   ========================================================================== */
+
+.qa-surah-list-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 18px 18px 120px;
+}
+
+.qa-sl-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.qa-sl-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--qa-ambient-parchment);
+  margin: 0;
+}
+.qa-sl-count {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--qa-ambient-dim);
+}
+
+.qa-sl-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background-color: var(--qa-ambient-surface);
+  border: 1px solid var(--qa-ambient-border);
+  margin-bottom: 10px;
+}
+.qa-sl-search-icon {
+  color: var(--qa-ambient-dim);
+  font-size: 0.9rem;
+}
+.qa-sl-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--qa-ambient-parchment);
+  font-size: 0.875rem;
+}
+.qa-sl-search-input::placeholder {
+  color: var(--qa-ambient-dim);
+}
+.qa-sl-search-kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.625rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--qa-ambient-accent-soft);
+  color: var(--qa-ambient-accent);
+}
+@media (max-width: 640px) {
+  .qa-sl-search-kbd { display: none; }
+}
+
+.qa-sl-seg {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+  background-color: var(--qa-ambient-surface);
+  border: 1px solid var(--qa-ambient-border);
+}
+.qa-sl-seg-item {
+  flex: 1;
+  text-align: center;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--qa-ambient-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.qa-sl-seg-item--on {
+  background-color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-surface);
+}
+html[data-theme="dark"] .qa-sl-seg-item--on { color: #0e0e0c; }
+html[data-theme="sepia"] .qa-sl-seg-item--on { color: #3d2e14; }
+
+.qa-sl-hint {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--qa-ambient-border);
+  color: var(--qa-ambient-muted);
+  font-size: 0.75rem;
+  margin-bottom: 10px;
+}
+.qa-sl-hint--hidden { display: none; }
+
+.qa-sl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.qa-sl-continue {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--qa-ambient-accent-soft);
+  background-color: color-mix(in srgb, var(--qa-ambient-accent) 8%, transparent);
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.qa-sl-continue-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-surface);
+  font-size: 0.875rem;
+}
+html[data-theme="dark"] .qa-sl-continue-icon { color: #0e0e0c; }
+html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
+.qa-sl-continue-body { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.qa-sl-continue-eyebrow {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--qa-ambient-accent);
+}
+.qa-sl-continue-ref {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--qa-ambient-parchment);
+}
+.qa-sl-continue-chev {
+  color: var(--qa-ambient-accent);
+  font-size: 1rem;
+}
+
+.qa-sl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 6px;
+  border-bottom: 1px dotted var(--qa-ambient-border);
+  cursor: pointer;
+  outline: none;
+  position: relative;
+}
+.qa-sl-row:focus-visible {
+  background-color: var(--qa-ambient-accent-soft);
+}
+.qa-sl-row--bm::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background-color: var(--qa-ambient-accent);
+}
+.qa-sl-row-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--qa-ambient-border);
+  background-color: var(--qa-ambient-surface);
+  color: var(--qa-ambient-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.qa-sl-row-mid { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.qa-sl-row-en { font-size: 0.875rem; font-weight: 600; color: var(--qa-ambient-parchment); line-height: 1.2; }
+.qa-sl-row-meaning { font-size: 0.75rem; font-style: italic; color: var(--qa-ambient-muted); }
+.qa-sl-row-ar {
+  font-family: var(--qa-font-arabic);
+  font-size: 1rem;
+  color: var(--qa-ambient-accent);
+  flex-shrink: 0;
+}
+.qa-sl-row-meta {
+  text-align: right;
+  min-width: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.qa-sl-row-vcount { font-size: 0.75rem; color: var(--qa-ambient-muted); font-variant-numeric: tabular-nums; }
+.qa-sl-row-type { font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--qa-ambient-dim); }

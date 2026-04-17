@@ -68,6 +68,7 @@ export async function init() {
     router.register('#/t/:tag', () => import('../review/hub.js'), {
       openEditor,
     })
+    router.register('#/surahs', () => import('../surahs/list.js'))
 
     // Initialize router AFTER routes are registered so first dispatch finds them
     bootCleanups.push(router.init())
@@ -87,6 +88,17 @@ export async function init() {
       } else {
         router.navigate(`#/s/${surah}`)
       }
+    }))
+
+    // Track recent surahs for the surah list's Recent filter
+    bootCleanups.push(on(Events.READER_SURAH_LOADED, async ({ surah }) => {
+      try {
+        const rec = await get('settings', 'recentSurahs')
+        const prev = Array.isArray(rec?.value) ? rec.value : []
+        const next = [surah, ...prev.filter(n => n !== surah)].slice(0, 5)
+        const { put } = await import('./db.js')
+        await put('settings', { key: 'recentSurahs', value: next })
+      } catch { /* ignore */ }
     }))
 
     // Top bar intentionally empty — ambient pill + dock are the nav surfaces.
