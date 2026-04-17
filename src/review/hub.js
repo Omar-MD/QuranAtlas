@@ -151,9 +151,66 @@ async function initTagDeepLink(rawTag, container) {
   filteredMarks = filterMarks(sortedMarks, currentState)
   displayedCount = 0
 
+  renderFvrHeader(container, tag, marks)
   render(container)
   setInitialFocus()
   emit(Events.REVIEW_OPEN)
+}
+
+function renderFvrHeader(container, tag, marks) {
+  container.textContent = ''
+
+  const wrap = document.createElement('div')
+  wrap.className = 'qa-fvr-header'
+
+  const back = document.createElement('a')
+  back.className = 'qa-fvr-back'
+  back.href = '#/review'
+  back.textContent = '\u2190 Marks'
+
+  const hdr = document.createElement('header')
+  hdr.className = 'qa-fvr-title-block'
+  const label = document.createElement('div')
+  label.className = 'qa-fvr-label'
+  label.textContent = 'Tag'
+  const title = document.createElement('h1')
+  title.className = 'qa-fvr-title'
+  const dot = document.createElement('span')
+  dot.className = 'qa-fvr-dot'
+  dot.style.backgroundColor = getColorForTag(tag)
+  const name = document.createElement('span')
+  name.className = 'qa-fvr-name'
+  name.textContent = tag
+  title.appendChild(dot)
+  title.appendChild(name)
+
+  const stats = document.createElement('div')
+  stats.className = 'qa-fvr-stats'
+  const surahsCount = new Set(marks.map(m => parseInt(m.verseKey.split(':')[0], 10))).size
+  const vSpan = document.createElement('span')
+  const vStrong = document.createElement('strong')
+  vStrong.textContent = String(marks.length)
+  vSpan.appendChild(vStrong)
+  vSpan.appendChild(document.createTextNode(` verse${marks.length === 1 ? '' : 's'}`))
+  const sep = document.createElement('span')
+  sep.className = 'qa-fvr-sep'
+  sep.textContent = '\u00B7'
+  const sSpan = document.createElement('span')
+  const sStrong = document.createElement('strong')
+  sStrong.textContent = String(surahsCount)
+  sSpan.appendChild(sStrong)
+  sSpan.appendChild(document.createTextNode(` surah${surahsCount === 1 ? '' : 's'}`))
+  stats.appendChild(vSpan)
+  stats.appendChild(sep)
+  stats.appendChild(sSpan)
+
+  hdr.appendChild(label)
+  hdr.appendChild(title)
+  hdr.appendChild(stats)
+
+  wrap.appendChild(back)
+  wrap.appendChild(hdr)
+  container.appendChild(wrap)
 }
 
 /**
@@ -253,7 +310,10 @@ function filterMarks(sorted, state) {
  * Render the hub view.
  */
 function render(container) {
-  container.textContent = ''
+  // Don't clear if we're on FVR — the header was rendered separately.
+  if (currentState?.view !== 'fvr') {
+    container.textContent = ''
+  }
 
   // Filter from pre-sorted cache — O(n) with no sort overhead
   filteredMarks = filterMarks(sortedMarks, currentState)
@@ -268,7 +328,9 @@ function render(container) {
     return
   }
 
-  renderControls(container)
+  if (currentState.view !== 'fvr') {
+    renderControls(container)
+  }
 
   const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
   displayedCount = pageMarks.length
@@ -326,21 +388,21 @@ async function loadVerseContentBackground(marks) {
     
     const verseNum = parseInt(mark.verseKey.split(':')[1], 10)
     const verseIdx = verseNum - 1
-    const contentArea = card.querySelector('.qa-review-mark-content')
-    if (!contentArea || contentArea.querySelector('.qa-review-mark-arabic')) {
+    const contentArea = card.querySelector('.qa-review-card-content')
+    if (!contentArea || contentArea.querySelector('.qa-review-card-ar')) {
       continue
     }
-    
+
     if (surahData.ar && surahData.ar[verseIdx]) {
       const arabic = document.createElement('div')
-      arabic.className = 'qa-review-mark-arabic'
+      arabic.className = 'qa-review-card-ar'
       arabic.setAttribute('dir', 'rtl')
       arabic.textContent = surahData.ar[verseIdx]
       contentArea.appendChild(arabic)
     }
     if (surahData.en && surahData.en[verseIdx]) {
       const english = document.createElement('div')
-      english.className = 'qa-review-mark-english'
+      english.className = 'qa-review-card-en'
       english.textContent = surahData.en[verseIdx]
       contentArea.appendChild(english)
     }
@@ -361,25 +423,29 @@ function renderControls(container) {
   const controls = document.createElement('div')
   controls.className = 'qa-review-controls'
 
-  // Group dropdown
-  const groupSelect = document.createElement('select')
-  groupSelect.className = 'qa-review-select'
-  groupSelect.setAttribute('data-control', 'group')
-  groupSelect.setAttribute('aria-label', 'Group by')
-  for (const [value, label] of [['tag', 'Group: Tag'], ['surah', 'Group: Surah'], ['flat', 'Group: Date']]) {
-    const opt = document.createElement('option')
-    opt.value = value
-    opt.textContent = label
-    if (value === currentState.groupBy) opt.selected = true
-    groupSelect.appendChild(opt)
+  // Group segment pill
+  const groupSeg = document.createElement('div')
+  groupSeg.className = 'qa-review-seg'
+  groupSeg.setAttribute('role', 'tablist')
+  groupSeg.setAttribute('aria-label', 'Group by')
+  for (const [value, label] of [['tag', 'Tag'], ['surah', 'Surah'], ['flat', 'Date']]) {
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.className = 'qa-review-seg-item'
+    b.setAttribute('role', 'tab')
+    b.setAttribute('data-group', value)
+    b.setAttribute('aria-selected', String(value === currentState.groupBy))
+    if (value === currentState.groupBy) { b.classList.add('qa-review-seg-item--on') }
+    b.textContent = label
+    b.addEventListener('click', async () => {
+      currentState.groupBy = value
+      await saveState(currentState)
+      displayedCount = 0
+      render(container)
+    })
+    groupSeg.appendChild(b)
   }
-  groupSelect.addEventListener('change', async () => {
-    currentState.groupBy = groupSelect.value
-    await saveState(currentState)
-    displayedCount = 0
-    render(container)
-  })
-  controls.appendChild(groupSelect)
+  controls.appendChild(groupSeg)
 
   // Sort dropdown
   const sortSelect = document.createElement('select')
@@ -626,94 +692,57 @@ async function renderFlat(container, marks) {
   container.appendChild(fragment)
 }
 
-function renderMarkCard(mark, surahData) {
-  const card = document.createElement('div')
-  card.className = 'qa-review-mark'
+function renderMarkCard(mark, _surahData) {
+  const card = document.createElement('article')
+  card.className = 'qa-review-card'
   card.setAttribute('data-mark', mark.verseKey)
 
-  const header = document.createElement('div')
-  header.className = 'qa-review-mark-header'
-
-  const verseLabel = document.createElement('span')
-  verseLabel.className = 'qa-review-verse-label'
-  verseLabel.textContent = mark.verseKey
-
-  const tagDots = document.createElement('span')
-  tagDots.className = 'qa-review-tag-dots'
-  for (const tag of mark.tags) {
-    const dot = document.createElement('span')
-    dot.className = 'qa-mark-dot'
-    dot.style.backgroundColor = getColorForTag(tag)
-    dot.title = tag
-    tagDots.appendChild(dot)
-  }
-  
-  header.appendChild(verseLabel)
-  header.appendChild(tagDots)
+  const [sStr, vStr] = mark.verseKey.split(':')
+  const meta = surahs.find(x => x.n === parseInt(sStr, 10))
+  const refEyebrow = document.createElement('div')
+  refEyebrow.className = 'qa-review-card-ref'
+  refEyebrow.textContent = `${sStr} : ${vStr}${meta ? ` \u00B7 ${meta.name}` : ''}`
+  const jump = document.createElement('a')
+  jump.className = 'qa-review-card-jump'
+  jump.href = `#/s/${sStr}/${vStr}`
+  jump.setAttribute('aria-label', `Jump to ${mark.verseKey} in reader`)
+  jump.textContent = '\u2197'
+  refEyebrow.appendChild(jump)
+  card.appendChild(refEyebrow)
 
   const content = document.createElement('div')
-  content.className = 'qa-review-mark-content'
-  
-  if (surahData) {
-    const verseNum = parseInt(mark.verseKey.split(':')[1], 10)
-    const verseIdx = verseNum - 1
-    if (surahData.ar && surahData.ar[verseIdx]) {
-      const arabic = document.createElement('div')
-      arabic.className = 'qa-review-mark-arabic'
-      arabic.setAttribute('dir', 'rtl')
-      arabic.textContent = surahData.ar[verseIdx]
-      content.appendChild(arabic)
-    }
-    if (surahData.en && surahData.en[verseIdx]) {
-      const english = document.createElement('div')
-      english.className = 'qa-review-mark-english'
-      english.textContent = surahData.en[verseIdx]
-      content.appendChild(english)
-    }
+  content.className = 'qa-review-card-content'
+  card.appendChild(content)
+
+  if (mark.note) {
+    const noteEl = document.createElement('div')
+    noteEl.className = 'qa-review-card-note'
+    noteEl.textContent = mark.note
+    card.appendChild(noteEl)
   }
 
-  const actions = document.createElement('div')
-  actions.className = 'qa-review-mark-actions'
+  if (mark.tags.length > 0) {
+    const chips = document.createElement('div')
+    chips.className = 'qa-review-card-chips'
+    for (const tag of mark.tags) {
+      const chip = document.createElement('a')
+      chip.className = 'qa-review-card-chip'
+      chip.href = `#/t/${encodeURIComponent(tag)}`
+      const dot = document.createElement('span')
+      dot.className = 'qa-review-card-chip-dot'
+      dot.style.backgroundColor = getColorForTag(tag)
+      chip.appendChild(dot)
+      chip.appendChild(document.createTextNode(tag))
+      chips.appendChild(chip)
+    }
+    card.appendChild(chips)
+  }
 
   card.addEventListener('click', (e) => {
-    if (e.target.closest('button')) {
-      return
-    }
-    if (_openEditor) {
-      _openEditor(mark.verseKey)
-    }
+    if (e.target.closest('a, button')) { return }
+    if (_openEditor) { _openEditor(mark.verseKey) }
   })
 
-  const deleteBtn = document.createElement('button')
-  deleteBtn.className = 'qa-review-delete-btn'
-  deleteBtn.setAttribute('data-action', 'delete-mark')
-  deleteBtn.textContent = 'Delete'
-  deleteBtn.addEventListener('click', async (e) => {
-    e.stopPropagation()
-    currentUndoRecord = mark
-    await deleteMark(mark.verseKey)
-    card.remove()
-    showUndoToast({
-      verseKey: mark.verseKey,
-      record: currentUndoRecord,
-      onUndo: async (record) => {
-        await saveMark(record.verseKey, record.tags)
-      },
-      onComplete: async () => {
-        currentUndoRecord = null
-        await reloadMarks()
-        const mainContent = document.getElementById('main-content')
-        if (mainContent) {
-          render(mainContent)
-        }
-      }
-    })
-  })
-  actions.appendChild(deleteBtn)
-
-  card.appendChild(header)
-  card.appendChild(content)
-  card.appendChild(actions)
   return card
 }
 
