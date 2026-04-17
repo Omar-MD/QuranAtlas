@@ -1284,6 +1284,24 @@ html[data-theme="light"] .qa-dock-item--active {
   }
 }
 
+/* Desktop: translation hidden → single centered column. :has() detects the
+ * state without any JS change — Settings toggles qa-hide-translation per
+ * .qa-verse-translation (see src/settings/panel.js:275), and we react here. */
+@media (min-width: 1180px) {
+  #main-content:has(.qa-verse-translation.qa-hide-translation) {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 900px;
+  }
+
+  #main-content:has(.qa-verse-translation.qa-hide-translation) .qa-verse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #main-content:has(.qa-verse-translation.qa-hide-translation) .qa-verse-arabic {
+    grid-column: 1;
+  }
+}
+
 /* ==========================================================================
    Command sheet — ⌘K overlay
    ========================================================================== */

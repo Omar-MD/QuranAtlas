@@ -103,4 +103,12 @@ describe('theme.css — responsive breakpoint tokens', () => {
     const hit = blocks.find(b => /\.qa-verse-arabic\s*\{[^}]*text-align:\s*start/.test(b[1]))
     expect(hit, 'expected .qa-verse-arabic text-align: start at desktop').toBeDefined()
   })
+
+  it('at desktop, container collapses to single column when translation hidden (uses :has)', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /:has\(\s*\.qa-verse-translation\.qa-hide-translation\s*\)/.test(b[1]))
+    expect(hit, 'expected a desktop :has() rule for translation-off collapse').toBeDefined()
+    // container max-width shrinks to 900px in the translation-hidden state
+    expect(hit[1]).toMatch(/max-width:\s*900px/)
+  })
 })
