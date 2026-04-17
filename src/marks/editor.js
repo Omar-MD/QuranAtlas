@@ -28,6 +28,7 @@ let currentUndoRecord = null
 let currentEditingVerseKey = null
 let _historyPushed = false
 let _popstateHandler = null
+let _openCallId = 0
 
 on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
   if (currentEditingVerseKey && verseKeys.includes(currentEditingVerseKey)) {
@@ -39,12 +40,17 @@ export async function openEditor(verseKey) {
   clearUndoToast()
   closeEditor()
 
+  const callId = ++_openCallId
+
   const [s, v] = verseKey.split(':').map(n => parseInt(n, 10))
   const [existing, allMarks, surahs] = await Promise.all([
     getByVerseKey(verseKey),
     getAll().catch(() => []),
     getSurahs().catch(() => []),
   ])
+
+  // Another openEditor call arrived while we were awaiting IDB — bail out.
+  if (callId !== _openCallId) { return }
 
   const selectedTags = new Set(existing?.tags || [])
   const noteValue = existing?.note || ''
