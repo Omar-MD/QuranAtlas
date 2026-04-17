@@ -94,6 +94,9 @@ From Settings sheet with Auto swatch selected.
 
 **Surfaces:** Settings sheet, all surfaces (theme applies globally).
 
+**Desktop variant (viewport ≥1180px):**
+The reader renders Arabic and translation in parallel two-column layout. Each verse occupies one row; Arabic on one side, translation on the other, top-aligned. Toggling translation off in Settings collapses the reader to a single centered column (max ~900px). Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
+
 ---
 
 ## C. Marking a verse
