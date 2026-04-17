@@ -97,4 +97,10 @@ describe('theme.css — responsive breakpoint tokens', () => {
     )
     expect(hit, 'expected header/basmala/end-marker to span both columns').toBeDefined()
   })
+
+  it('at desktop, .qa-verse-arabic uses text-align: start (right under RTL)', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-verse-arabic\s*\{[^}]*text-align:\s*start/.test(b[1]))
+    expect(hit, 'expected .qa-verse-arabic text-align: start at desktop').toBeDefined()
+  })
 })

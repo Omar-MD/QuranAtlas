@@ -1274,6 +1274,7 @@ html[data-theme="light"] .qa-dock-item--active {
   .qa-verse-arabic {
     grid-column: 1;
     margin-bottom: 0;
+    text-align: start;
   }
 
   .qa-verse-translation {
