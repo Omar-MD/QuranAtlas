@@ -22,8 +22,8 @@
   --qa-font-arabic: 'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
   --qa-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   
-  --qa-text-size-arabic: 2.25rem;
-  --qa-text-size-translation: 1.125rem;
+  --qa-text-size-arabic: clamp(2.25rem, 1.8rem + 2.2vw, 3.5rem);
+  --qa-text-size-translation: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
   --qa-text-size-ui: 1rem;
   --qa-text-size-meta: 0.875rem;
 
