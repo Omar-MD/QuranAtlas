@@ -252,6 +252,7 @@ function buildToggleRow({ main, sub, on, onToggle, onTapSub }) {
   sw.className = 'qa-settings-switch'
   sw.setAttribute('role', 'switch')
   sw.setAttribute('aria-checked', String(!!on))
+  sw.setAttribute('aria-label', main)
   sw.classList.toggle('qa-settings-switch--on', !!on)
   const knob = document.createElement('span')
   knob.className = 'qa-settings-switch-knob'

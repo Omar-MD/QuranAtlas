@@ -76,6 +76,7 @@ export async function initCommandSheet() {
   results = document.createElement('div')
   results.className = 'qa-cmd-results'
   results.setAttribute('role', 'listbox')
+  results.setAttribute('aria-label', 'Search results')
 
   footerEl = document.createElement('div')
   footerEl.className = 'qa-cmd-foot'
