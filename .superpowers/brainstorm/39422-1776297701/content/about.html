@@ -1,0 +1,266 @@
+<h2>About — a quiet colophon</h2>
+<p class="subtitle">Not a utility page. A moment to name what this is, who made it possible, and where you are in it.</p>
+
+<style>
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 22px 0 14px; }
+  .col-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+  .col-sub { font-size: 11px; margin-bottom: 14px; color: #8a8270; }
+  .col.dark .col-title { color: #d6cfa8; }
+  .col.sepia .col-title { color: #8b6b3a; }
+
+  .phone { border-radius: 30px; padding: 7px; position: relative; box-shadow: 0 16px 40px rgba(0,0,0,0.22); max-width: 360px; margin: 0 auto; }
+  .phone.dk { background: #000; }
+  .phone.sp { background: #2d2418; }
+  .phone .screen { border-radius: 24px; height: 640px; position: relative; overflow: hidden; font-family: -apple-system, "SF Pro", sans-serif; }
+  .phone .notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 70px; height: 18px; background: #000; border-radius: 999px; z-index: 50; }
+  .state-label { text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600; color: #8a8270; }
+
+  .apage { padding: 44px 22px 80px; height: 100%; box-sizing: border-box; overflow: hidden; text-align: center; }
+
+  /* Wordmark */
+  .wordmark { display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 8px 0 4px; }
+  .wm-glyph { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: "Amiri", serif; font-size: 22px; font-weight: 700; }
+  .wm-name { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+  .mission { font-size: 11.5px; font-style: italic; letter-spacing: 0.3px; margin-top: 4px; margin-bottom: 20px; }
+
+  /* Arabic blessing */
+  .blessing { direction: rtl; font-size: 14px; font-family: "Amiri", serif; letter-spacing: 0.3px; margin: 18px auto 22px; padding: 14px 16px; border-radius: 12px; line-height: 1.8; max-width: 85%; }
+  .blessing-attr { display: block; font-size: 9px; font-style: italic; font-family: -apple-system, sans-serif; direction: ltr; margin-top: 6px; }
+
+  /* Personal stats row */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 12px 0 22px; padding: 14px 8px; border-radius: 12px; }
+  .stat { text-align: center; }
+  .stat .v { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .stat .l { font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
+
+  /* Section */
+  .sect { text-align: left; margin-bottom: 22px; }
+  .sect-label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid; }
+  .kv { display: flex; justify-content: space-between; font-size: 11px; padding: 5px 0; }
+  .kv .k { }
+  .kv .v { font-family: ui-monospace, "SF Mono", monospace; font-size: 10px; }
+
+  /* Attribution cards */
+  .attr-card { padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 10.5px; line-height: 1.5; text-align: left; }
+  .attr-card .a-name { font-weight: 600; margin-bottom: 2px; }
+  .attr-card .a-desc { font-size: 9.5px; }
+
+  /* Install CTA */
+  .install { padding: 14px; border-radius: 12px; margin-bottom: 20px; text-align: center; position: relative; }
+  .install .i-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .install .i-sub { font-size: 9.5px; margin-bottom: 10px; line-height: 1.5; }
+  .install .i-btn { font-size: 10px; padding: 7px 16px; border-radius: 999px; font-weight: 600; display: inline-block; }
+
+  /* Footer */
+  .footer { font-size: 9px; padding-top: 12px; margin-top: 16px; border-top: 1px dotted; }
+  .footer a { font-weight: 600; }
+
+  /* Dock */
+  .dock { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); backdrop-filter: blur(14px); border-radius: 999px; padding: 5px; display: flex; gap: 2px; z-index: 40; }
+  .dock .d { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+  /* DARK */
+  .dk .screen { background: #0e0e0c; color: #e8e3c9; }
+  .dk .wm-glyph { background: linear-gradient(135deg, #a89968 0%, #8b7a48 100%); color: #0e0e0c; }
+  .dk .wm-name { color: #e8e3c9; }
+  .dk .mission { color: #a89968; }
+  .dk .blessing { background: #15120f; color: #e8e3c9; border: 1px solid #24201a; }
+  .dk .blessing-attr { color: #a89968; }
+  .dk .stats { background: #15120f; border: 1px solid #24201a; }
+  .dk .stat .v { color: #e8e3c9; }
+  .dk .stat .l { color: #8a8270; }
+  .dk .sect-label { color: #a89968; border-color: #24201a; }
+  .dk .kv .k { color: #b8b3a0; }
+  .dk .kv .v { color: #e8e3c9; }
+  .dk .attr-card { background: #15120f; border: 1px solid #24201a; }
+  .dk .attr-card .a-name { color: #e8e3c9; }
+  .dk .attr-card .a-desc { color: #8a8270; }
+  .dk .install { background: linear-gradient(180deg, #1f1a12 0%, #15120f 100%); border: 1px solid rgba(168,153,104,0.25); }
+  .dk .install .i-title { color: #e8e3c9; }
+  .dk .install .i-sub { color: #a89968; }
+  .dk .install .i-btn { background: #a89968; color: #0e0e0c; }
+  .dk .footer { color: #6b6656; border-color: #24201a; }
+  .dk .footer a { color: #a89968; }
+  .dk .dock { background: rgba(20,18,12,0.95); border: 1px solid rgba(168,153,104,0.22); }
+  .dk .dock .d { color: #6b6656; }
+  .dk .dock .d.active { background: #a89968; color: #0e0e0c; }
+
+  /* SEPIA */
+  .sp .screen { background: #f3e8cf; color: #3d2e14; }
+  .sp .wm-glyph { background: linear-gradient(135deg, #8b6b3a 0%, #6b4a16 100%); color: #faf1d8; }
+  .sp .wm-name { color: #3d2e14; }
+  .sp .mission { color: #8b6b3a; }
+  .sp .blessing { background: #faf1d8; color: #3d2e14; border: 1px solid #e6d5a6; }
+  .sp .blessing-attr { color: #8b6b3a; }
+  .sp .stats { background: #faf1d8; border: 1px solid #e6d5a6; }
+  .sp .stat .v { color: #3d2e14; }
+  .sp .stat .l { color: #8b6b3a; }
+  .sp .sect-label { color: #8b6b3a; border-color: #e6d5a6; }
+  .sp .kv .k { color: #4a3a1e; }
+  .sp .kv .v { color: #3d2e14; }
+  .sp .attr-card { background: #faf1d8; border: 1px solid #e6d5a6; }
+  .sp .attr-card .a-name { color: #3d2e14; }
+  .sp .attr-card .a-desc { color: #8b6b3a; }
+  .sp .install { background: linear-gradient(180deg, #faf1d8 0%, #f3e8cf 100%); border: 1px solid #d9c697; }
+  .sp .install .i-title { color: #3d2e14; }
+  .sp .install .i-sub { color: #8b6b3a; }
+  .sp .install .i-btn { background: #8b6b3a; color: #faf1d8; }
+  .sp .footer { color: #8b6b3a; border-color: #d9c697; }
+  .sp .footer a { color: #6b4a16; }
+  .sp .dock { background: rgba(61,46,20,0.95); }
+  .sp .dock .d { color: #c9b687; }
+  .sp .dock .d.active { background: #f5ecd3; color: #3d2e14; }
+
+  .callout { background: #f6f3e7; border-radius: 10px; padding: 12px 16px; margin-top: 18px; font-size: 11.5px; line-height: 1.7; color: #3d3d30; }
+  .callout b { color: #1c1c18; }
+</style>
+
+<div class="pair">
+
+  <!-- DARK -->
+  <div class="col dark">
+    <div class="col-title">● Dark</div>
+    <div class="col-sub">Full About page</div>
+    <div class="phone dk">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="apage">
+          <div class="wordmark">
+            <div class="wm-glyph">ﷺ</div>
+            <div class="wm-name">QuranAtlas</div>
+          </div>
+          <div class="mission">Read. Reflect. Remember.</div>
+
+          <div class="blessing">
+            وَلَقَدْ يَسَّرْنَا ٱلْقُرْءَانَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ
+            <span class="blessing-attr">"And We have certainly made the Qur'an easy for remembrance, so is there any who will remember?" — 54 : 17</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><div class="v">1,247</div><div class="l">verses read</div></div>
+            <div class="stat"><div class="v">47</div><div class="l">marks</div></div>
+            <div class="stat"><div class="v">12</div><div class="l">day streak</div></div>
+          </div>
+
+          <div class="install">
+            <div class="i-title">Install QuranAtlas</div>
+            <div class="i-sub">Add to your home screen. Works offline, no ads, no accounts.</div>
+            <div class="i-btn">⤓ &nbsp;Install app</div>
+          </div>
+
+          <div class="sect">
+            <div class="sect-label">Versions</div>
+            <div class="kv"><span class="k">App</span><span class="v">0.8.3</span></div>
+            <div class="kv"><span class="k">Dataset</span><span class="v">quran-uthmani-1.2</span></div>
+            <div class="kv"><span class="k">Storage</span><span class="v">12.4 MB</span></div>
+          </div>
+
+          <div class="sect">
+            <div class="sect-label">With thanks to</div>
+            <div class="attr-card">
+              <div class="a-name">Tanzil Project</div>
+              <div class="a-desc">Verified Qur'anic text · Uthmani script</div>
+            </div>
+            <div class="attr-card">
+              <div class="a-name">Saheeh International</div>
+              <div class="a-desc">English translation</div>
+            </div>
+            <div class="attr-card">
+              <div class="a-name">KFGQPC · Amiri</div>
+              <div class="a-desc">Arabic typefaces</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            Open source · <a>GitHub</a> · <a>Send feedback</a><br>
+            Made with care. Not a replacement for a teacher.
+          </div>
+        </div>
+        <div class="dock"><div class="d">📖</div><div class="d">⌕</div><div class="d">✦</div><div class="d active">⋯</div></div>
+      </div>
+    </div>
+    <div class="state-label">About · dark</div>
+  </div>
+
+  <!-- SEPIA -->
+  <div class="col sepia">
+    <div class="col-title">● Sepia</div>
+    <div class="col-sub">Full About page</div>
+    <div class="phone sp">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="apage">
+          <div class="wordmark">
+            <div class="wm-glyph">ﷺ</div>
+            <div class="wm-name">QuranAtlas</div>
+          </div>
+          <div class="mission">Read. Reflect. Remember.</div>
+
+          <div class="blessing">
+            وَلَقَدْ يَسَّرْنَا ٱلْقُرْءَانَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ
+            <span class="blessing-attr">"And We have certainly made the Qur'an easy for remembrance, so is there any who will remember?" — 54 : 17</span>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><div class="v">1,247</div><div class="l">verses read</div></div>
+            <div class="stat"><div class="v">47</div><div class="l">marks</div></div>
+            <div class="stat"><div class="v">12</div><div class="l">day streak</div></div>
+          </div>
+
+          <div class="install">
+            <div class="i-title">Install QuranAtlas</div>
+            <div class="i-sub">Add to your home screen. Works offline, no ads, no accounts.</div>
+            <div class="i-btn">⤓ &nbsp;Install app</div>
+          </div>
+
+          <div class="sect">
+            <div class="sect-label">Versions</div>
+            <div class="kv"><span class="k">App</span><span class="v">0.8.3</span></div>
+            <div class="kv"><span class="k">Dataset</span><span class="v">quran-uthmani-1.2</span></div>
+            <div class="kv"><span class="k">Storage</span><span class="v">12.4 MB</span></div>
+          </div>
+
+          <div class="sect">
+            <div class="sect-label">With thanks to</div>
+            <div class="attr-card">
+              <div class="a-name">Tanzil Project</div>
+              <div class="a-desc">Verified Qur'anic text · Uthmani script</div>
+            </div>
+            <div class="attr-card">
+              <div class="a-name">Saheeh International</div>
+              <div class="a-desc">English translation</div>
+            </div>
+            <div class="attr-card">
+              <div class="a-name">KFGQPC · Amiri</div>
+              <div class="a-desc">Arabic typefaces</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            Open source · <a>GitHub</a> · <a>Send feedback</a><br>
+            Made with care. Not a replacement for a teacher.
+          </div>
+        </div>
+        <div class="dock"><div class="d">📖</div><div class="d">⌕</div><div class="d">✦</div><div class="d active">⋯</div></div>
+      </div>
+    </div>
+    <div class="state-label">About · sepia</div>
+  </div>
+
+</div>
+
+<div class="callout">
+  <b>Moves unique to About:</b><br>
+  1. <b>Wordmark + mission</b> is the hero — not a dry heading. One calligraphic glyph in a warm gradient tile, the name, "Read. Reflect. Remember." as a quiet italic.<br>
+  2. <b>A blessing verse</b> (54:17) in Arabic + translation sits near the top as the emotional anchor — About is where the app can briefly feel reverent.<br>
+  3. <b>Your stats</b> — verses read, marks, streak — gives the page a personalized feel. Makes returning to About less of a dead end.<br>
+  4. <b>Install CTA</b> comes early (above versions), since it's the one action a user might actually take here.<br>
+  5. <b>"With thanks to"</b> framing for attribution — not "Credits" or "Licenses." Tone matters for this kind of app.<br>
+  6. <b>Honest footer</b>: <i>"Made with care. Not a replacement for a teacher."</i> — appropriate humility for a scripture tool.
+</div>
+
+<div class="options" style="margin-top:18px">
+  <div class="option" data-choice="ship" onclick="toggleSelect(this)"><div class="letter">A</div><div class="content"><h3>Ship everything — write the full spec</h3><p>Reader + Review + FVR + Settings + About are coherent. Design doc time.</p></div></div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)"><div class="letter">B</div><div class="content"><h3>Tweak About</h3><p>Cut something, add something, change the tone.</p></div></div>
+  <div class="option" data-choice="more" onclick="toggleSelect(this)"><div class="letter">C</div><div class="content"><h3>One more surface</h3><p>Long-press verse menu, command sheet on Review, onboarding, etc.</p></div></div>
+</div>

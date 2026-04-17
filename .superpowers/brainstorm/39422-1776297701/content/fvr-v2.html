@@ -1,0 +1,296 @@
+<h2>FVR v2 — compact centred header</h2>
+<p class="subtitle">Header is now a small centred title block. More room for the anthology itself.</p>
+
+<style>
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 22px 0 14px; }
+  .col-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+  .col-sub { font-size: 11px; margin-bottom: 14px; color: #8a8270; }
+  .col.dark .col-title { color: #d6cfa8; }
+  .col.sepia .col-title { color: #8b6b3a; }
+
+  .row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .phone { border-radius: 30px; padding: 7px; position: relative; box-shadow: 0 16px 40px rgba(0,0,0,0.22); }
+  .phone.dk { background: #000; }
+  .phone.sp { background: #2d2418; }
+  .phone .screen { border-radius: 24px; height: 560px; position: relative; overflow: hidden; font-family: -apple-system, "SF Pro", sans-serif; }
+  .phone .notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 70px; height: 18px; background: #000; border-radius: 999px; z-index: 50; }
+  .state-label { text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600; color: #8a8270; }
+
+  .fpage { padding: 38px 16px 70px; height: 100%; box-sizing: border-box; overflow: hidden; }
+
+  /* Back link (top-left, small) */
+  .back { font-size: 10px; position: absolute; top: 40px; left: 14px; }
+
+  /* Compact centred header */
+  .chdr { text-align: center; margin: 10px auto 18px; padding-bottom: 14px; border-bottom: 1px solid; max-width: 90%; }
+  .chdr .label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-bottom: 5px; }
+  .chdr h1 { font-size: 17px; font-weight: 700; margin: 0 0 5px; letter-spacing: -0.2px; display: inline-flex; align-items: center; gap: 7px; }
+  .chdr h1 .tdot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .chdr .stats { font-size: 9.5px; display: inline-flex; gap: 10px; align-items: center; }
+  .chdr .stats .sep { opacity: 0.4; }
+  .chdr .stats b { font-weight: 700; }
+
+  /* Verse card */
+  .verse { padding: 13px; border-radius: 11px; margin-bottom: 10px; }
+  .verse .v-ref { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .verse .v-ref .jump { margin-left: auto; font-size: 10px; opacity: 0.5; }
+  .verse .v-ar { direction: rtl; text-align: right; font-size: 14px; line-height: 1.95; font-family: "Amiri", serif; margin-bottom: 6px; letter-spacing: 0.3px; }
+  .verse .v-en { font-size: 10.5px; line-height: 1.7; margin-bottom: 8px; }
+  .verse .v-note { font-size: 10px; line-height: 1.55; font-style: italic; padding: 6px 9px; border-radius: 6px; margin-bottom: 8px; }
+  .verse .v-meta { display: flex; align-items: center; gap: 6px; font-size: 9px; }
+  .verse .v-meta .othertags { display: flex; gap: 3px; margin-left: auto; }
+  .verse .v-meta .othertag { font-size: 8px; padding: 2px 6px; border-radius: 999px; display: inline-flex; align-items: center; gap: 3px; }
+  .verse .v-meta .othertag .td { width: 4px; height: 4px; border-radius: 50%; }
+
+  /* Dock */
+  .dock { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); backdrop-filter: blur(14px); border-radius: 999px; padding: 5px; display: flex; gap: 2px; z-index: 40; }
+  .dock .d { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+  /* DARK */
+  .dk .screen { background: #0e0e0c; }
+  .dk .back { color: #8a8270; }
+  .dk .chdr { border-color: #2a2620; }
+  .dk .chdr .label { color: #a89968; }
+  .dk .chdr h1 { color: #e8e3c9; }
+  .dk .chdr .stats { color: #8a8270; }
+  .dk .chdr .stats b { color: #e8e3c9; }
+  .dk .chdr .stats .sep { color: #6b6656; }
+  .dk .verse { background: #15120f; border: 1px solid #24201a; }
+  .dk .verse .v-ref { color: #a89968; }
+  .dk .verse .v-ref .jump { color: #6b6656; }
+  .dk .verse .v-ar { color: #e8e3c9; }
+  .dk .verse .v-en { color: #b8b3a0; }
+  .dk .verse .v-note { background: #24201a; color: #d6d1bc; border-left: 2px solid #a89968; }
+  .dk .verse .v-meta { color: #6b6656; }
+  .dk .verse .v-meta .othertag { background: #24201a; color: #d6d1bc; }
+  .dk .dock { background: rgba(20,18,12,0.95); border: 1px solid rgba(168,153,104,0.22); }
+  .dk .dock .d { color: #6b6656; }
+  .dk .dock .d.active { background: #a89968; color: #0e0e0c; }
+
+  /* SEPIA */
+  .sp .screen { background: #f3e8cf; }
+  .sp .back { color: #8b6b3a; }
+  .sp .chdr { border-color: #d9c697; }
+  .sp .chdr .label { color: #8b6b3a; }
+  .sp .chdr h1 { color: #3d2e14; }
+  .sp .chdr .stats { color: #8b6b3a; }
+  .sp .chdr .stats b { color: #3d2e14; }
+  .sp .chdr .stats .sep { color: #c9b687; }
+  .sp .verse { background: #faf1d8; border: 1px solid #e6d5a6; }
+  .sp .verse .v-ref { color: #8b6b3a; }
+  .sp .verse .v-ref .jump { color: #a89968; }
+  .sp .verse .v-ar { color: #3d2e14; }
+  .sp .verse .v-en { color: #4a3a1e; }
+  .sp .verse .v-note { background: #f0e2b8; color: #3d2e14; border-left: 2px solid #8b6b3a; }
+  .sp .verse .v-meta { color: #8b6b3a; }
+  .sp .verse .v-meta .othertag { background: #f0e2b8; color: #3d2e14; }
+  .sp .dock { background: rgba(61,46,20,0.95); }
+  .sp .dock .d { color: #c9b687; }
+  .sp .dock .d.active { background: #f5ecd3; color: #3d2e14; }
+
+  .callout { background: #f6f3e7; border-radius: 10px; padding: 12px 16px; margin-top: 18px; font-size: 11.5px; line-height: 1.7; color: #3d3d30; }
+  .callout b { color: #1c1c18; }
+</style>
+
+<div class="pair">
+
+  <!-- DARK -->
+  <div class="col dark">
+    <div class="col-title">● Dark</div>
+    <div class="col-sub">#mercy</div>
+    <div class="row2">
+
+      <div>
+        <div class="phone dk">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="fpage">
+              <div class="back">← Marks</div>
+              <div class="chdr">
+                <div class="label">Tag</div>
+                <h1><span class="tdot" style="background:#d9826e"></span>mercy</h1>
+                <div class="stats"><span><b>12</b> verses</span><span class="sep">·</span><span><b>7</b> surahs</span></div>
+              </div>
+
+              <div class="verse">
+                <div class="v-ref">2 : 255 · Al-Baqarah<span class="jump">↗</span></div>
+                <div class="v-ar">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ</div>
+                <div class="v-en">Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence.</div>
+                <div class="v-note">Revisit during Fajr.</div>
+                <div class="v-meta">
+                  <span>Apr 2</span>
+                  <span class="othertags"><span class="othertag"><span class="td" style="background:#a07fb8"></span>reflection</span></span>
+                </div>
+              </div>
+
+              <div class="verse">
+                <div class="v-ref">39 : 53 · Az-Zumar<span class="jump">↗</span></div>
+                <div class="v-ar">قُلْ يَٰعِبَادِىَ ٱلَّذِينَ أَسْرَفُوا۟</div>
+                <div class="v-en">"O My servants who have transgressed against themselves, do not despair…"</div>
+                <div class="v-meta"><span>Mar 28</span></div>
+              </div>
+
+              <div class="verse">
+                <div class="v-ref">18 : 10 · Al-Kahf<span class="jump">↗</span></div>
+                <div class="v-ar">رَبَّنَآ ءَاتِنَا مِن لَّدُنكَ رَحْمَةً</div>
+                <div class="v-en">"Our Lord, grant us from Yourself mercy and prepare for us…"</div>
+                <div class="v-meta">
+                  <span>Mar 15</span>
+                  <span class="othertags"><span class="othertag"><span class="td" style="background:#7fa87c"></span>prayer</span></span>
+                </div>
+              </div>
+            </div>
+            <div class="dock"><div class="d">📖</div><div class="d">⌕</div><div class="d active">✦</div><div class="d">⋯</div></div>
+          </div>
+        </div>
+        <div class="state-label">v2 · centred</div>
+      </div>
+
+      <div>
+        <div class="phone dk">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="fpage">
+              <div class="back">← Marks</div>
+              <div class="chdr">
+                <div class="label">Tag</div>
+                <h1><span class="tdot" style="background:#a07fb8"></span>reflection</h1>
+                <div class="stats"><span><b>21</b> verses</span><span class="sep">·</span><span><b>14</b> surahs</span></div>
+              </div>
+
+              <div class="verse">
+                <div class="v-ref">59 : 21 · Al-Hashr<span class="jump">↗</span></div>
+                <div class="v-ar">لَوْ أَنزَلْنَا هَٰذَا ٱلْقُرْءَانَ عَلَىٰ جَبَلٍ</div>
+                <div class="v-en">If We had sent down this Qur'an upon a mountain, you would have seen it…</div>
+                <div class="v-meta"><span>Apr 11</span></div>
+              </div>
+              <div class="verse">
+                <div class="v-ref">3 : 190 · Āl ʿImrān<span class="jump">↗</span></div>
+                <div class="v-ar">إِنَّ فِى خَلْقِ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضِ</div>
+                <div class="v-en">Indeed, in the creation of the heavens and the earth…</div>
+                <div class="v-note">Signs for "those of understanding."</div>
+                <div class="v-meta"><span>Apr 5</span></div>
+              </div>
+              <div class="verse">
+                <div class="v-ref">50 : 6 · Qāf<span class="jump">↗</span></div>
+                <div class="v-ar">أَفَلَمْ يَنظُرُوٓا۟ إِلَى ٱلسَّمَآءِ فَوْقَهُمْ</div>
+                <div class="v-en">Have they not looked at the heaven above them — how We structured it?</div>
+                <div class="v-meta"><span>Mar 30</span></div>
+              </div>
+            </div>
+            <div class="dock"><div class="d">📖</div><div class="d">⌕</div><div class="d active">✦</div><div class="d">⋯</div></div>
+          </div>
+        </div>
+        <div class="state-label">#reflection</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SEPIA -->
+  <div class="col sepia">
+    <div class="col-title">● Sepia</div>
+    <div class="col-sub">#gratitude · #patience</div>
+    <div class="row2">
+
+      <div>
+        <div class="phone sp">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="fpage">
+              <div class="back">← Marks</div>
+              <div class="chdr">
+                <div class="label">Tag</div>
+                <h1><span class="tdot" style="background:#e8b44c"></span>gratitude</h1>
+                <div class="stats"><span><b>9</b> verses</span><span class="sep">·</span><span><b>5</b> surahs</span></div>
+              </div>
+
+              <div class="verse">
+                <div class="v-ref">14 : 7 · Ibrahim<span class="jump">↗</span></div>
+                <div class="v-ar">لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ</div>
+                <div class="v-en">"If you are grateful, I will surely increase you in favor…"</div>
+                <div class="v-note">The formula: gratitude → increase.</div>
+                <div class="v-meta"><span>Apr 10</span></div>
+              </div>
+              <div class="verse">
+                <div class="v-ref">2 : 152 · Al-Baqarah<span class="jump">↗</span></div>
+                <div class="v-ar">فَٱذْكُرُونِىٓ أَذْكُرْكُمْ</div>
+                <div class="v-en">So remember Me; I will remember you. And be grateful to Me…</div>
+                <div class="v-meta"><span>Apr 1</span></div>
+              </div>
+              <div class="verse">
+                <div class="v-ref">55 : 13 · Ar-Rahman<span class="jump">↗</span></div>
+                <div class="v-ar">فَبِأَىِّ ءَالَآءِ رَبِّكُمَا تُكَذِّبَانِ</div>
+                <div class="v-en">So which of the favors of your Lord would you deny?</div>
+                <div class="v-meta">
+                  <span>Mar 20</span>
+                  <span class="othertags"><span class="othertag"><span class="td" style="background:#a07fb8"></span>reflection</span></span>
+                </div>
+              </div>
+            </div>
+            <div class="dock"><div class="d">📖</div><div class="d">⌕</div><div class="d active">✦</div><div class="d">⋯</div></div>
+          </div>
+        </div>
+        <div class="state-label">v2 · centred</div>
+      </div>
+
+      <div>
+        <div class="phone sp">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="fpage">
+              <div class="back">← Marks</div>
+              <div class="chdr">
+                <div class="label">Tag</div>
+                <h1><span class="tdot" style="background:#6a9aa8"></span>patience</h1>
+                <div class="stats"><span><b>6</b> verses</span><span class="sep">·</span><span><b>4</b> surahs</span></div>
+              </div>
+
+              <div class="verse">
+                <div class="v-ref">94 : 5 · Ash-Sharh<span class="jump">↗</span></div>
+                <div class="v-ar">فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</div>
+                <div class="v-en">For indeed, with hardship will be ease.</div>
+                <div class="v-meta"><span>Apr 9</span></div>
+              </div>
+              <div class="verse">
+                <div class="v-ref">2 : 153 · Al-Baqarah<span class="jump">↗</span></div>
+                <div class="v-ar">يَٰٓأَيُّهَا ٱلَّذِينَ ءَامَنُوا۟ ٱسْتَعِينُوا۟</div>
+                <div class="v-en">O you who have believed, seek help through patience and prayer.</div>
+                <div class="v-note">Pair with gratitude verses.</div>
+                <div class="v-meta">
+                  <span>Mar 22</span>
+                  <span class="othertags"><span class="othertag"><span class="td" style="background:#7fa87c"></span>prayer</span></span>
+                </div>
+              </div>
+              <div class="verse">
+                <div class="v-ref">3 : 200 · Āl ʿImrān<span class="jump">↗</span></div>
+                <div class="v-ar">يَٰٓأَيُّهَا ٱلَّذِينَ ءَامَنُوا۟ ٱصْبِرُوا۟</div>
+                <div class="v-en">O you who have believed, persevere and endure and remain stationed…</div>
+                <div class="v-meta"><span>Mar 14</span></div>
+              </div>
+            </div>
+            <div class="dock"><div class="d">📖</div><div class="d">⌕</div><div class="d active">✦</div><div class="d">⋯</div></div>
+          </div>
+        </div>
+        <div class="state-label">#patience</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="callout">
+  <b>What changed from v1:</b><br>
+  • Hero card → <b>compact centred header</b>. Label ("Tag") · title with color dot · stats on one line.<br>
+  • Separated by a <b>hairline</b> instead of a filled card — breathes with the sepia/dark paper.<br>
+  • <b>Back link</b> floats top-left (absolute), doesn't fight the centred title.<br>
+  • "First added" stat removed — two stats are enough; three felt busy.<br>
+  • Verse cards unchanged. More of them fit above the fold now.
+</div>
+
+<div class="options" style="margin-top:18px">
+  <div class="option" data-choice="ship" onclick="toggleSelect(this)"><div class="letter">A</div><div class="content"><h3>Ship — write the spec</h3><p>This is the look.</p></div></div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)"><div class="letter">B</div><div class="content"><h3>One more tweak</h3><p>Still something off with the header.</p></div></div>
+  <div class="option" data-choice="more" onclick="toggleSelect(this)"><div class="letter">C</div><div class="content"><h3>Show another state</h3><p>Edit mode, command sheet on Review, etc.</p></div></div>
+</div>

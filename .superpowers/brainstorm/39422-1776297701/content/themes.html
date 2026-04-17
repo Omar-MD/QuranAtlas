@@ -1,0 +1,296 @@
+<h2>Dark mode · Sepia mode</h2>
+<p class="subtitle">Same three states, re-skinned. Dark for night reading; sepia for long daytime sessions (warmer than pure light, easier on the eyes than dark).</p>
+
+<style>
+  .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 22px 0 12px; }
+  .col { }
+  .col-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+  .col-sub { font-size: 11px; margin-bottom: 16px; }
+  .col.dark .col-title { color: #d6cfa8; }
+  .col.sepia .col-title { color: #8b6b3a; }
+  .col-sub { color: #8a8270; }
+
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  .phone { border-radius: 26px; padding: 6px; box-shadow: 0 14px 36px rgba(0,0,0,0.22); position: relative; }
+  .phone.dk { background: #000; }
+  .phone.sp { background: #2d2418; }
+  .phone .screen { border-radius: 22px; height: 420px; position: relative; overflow: hidden; font-family: -apple-system, "SF Pro", sans-serif; }
+  .phone .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 60px; height: 16px; background: #000; border-radius: 999px; z-index: 50; }
+
+  .state-label { text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600; }
+  .col.dark .state-label { color: #8a8270; }
+  .col.sepia .state-label { color: #8a7a5a; }
+
+  .page { padding: 32px 18px 60px; height: 100%; box-sizing: border-box; overflow: hidden; }
+  .arabic { direction: rtl; text-align: right; font-size: 13px; line-height: 2.1; letter-spacing: 0.4px; margin-bottom: 12px; font-family: "Amiri", serif; }
+  .arabic .num { display: inline-block; width: 14px; height: 14px; border-radius: 50%; font-size: 8px; text-align: center; line-height: 14px; margin: 0 2px; font-family: sans-serif; vertical-align: middle; }
+  .translit { font-size: 9px; font-style: italic; margin-bottom: 10px; letter-spacing: 0.3px; }
+  .trans { font-size: 10px; line-height: 1.7; margin-bottom: 7px; }
+  .trans b { font-weight: 600; margin-right: 3px; }
+
+  /* DARK palette */
+  .dk .screen { background: #0e0e0c; }
+  .dk .arabic { color: #e8e3c9; }
+  .dk .arabic .num { background: #2a2620; color: #a89968; }
+  .dk .translit { color: #6b6656; }
+  .dk .trans { color: #b8b3a0; }
+  .dk .trans b { color: #a89968; }
+  .dk .edge { background: #a89968; opacity: 0.18; }
+
+  .dk .pill-top { background: rgba(20,18,12,0.92); color: #e8e3c9; border: 1px solid rgba(168,153,104,0.22); }
+  .dk .pill-top .dot { background: #a89968; }
+  .dk .pill-top .kbd { background: rgba(168,153,104,0.18); color: #a89968; }
+  .dk .dock { background: rgba(20,18,12,0.95); border: 1px solid rgba(168,153,104,0.22); }
+  .dk .dock .d { color: #6b6656; }
+  .dk .dock .d.active { background: #a89968; color: #0e0e0c; }
+  .dk .scrim { background: rgba(0,0,0,0.6); }
+  .dk .sheet { background: #1a1814; border: 1px solid rgba(168,153,104,0.15); box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+  .dk .sheet .search { border-bottom: 1px solid #2a2620; color: #e8e3c9; }
+  .dk .sheet .search .icon { color: #a89968; }
+  .dk .sheet .search .cursor { background: #a89968; }
+  .dk .sheet .cat { color: #a89968; }
+  .dk .sheet .row { color: #d6d1bc; }
+  .dk .sheet .row.active { background: #24201a; }
+  .dk .sheet .row .gly { background: #2a2620; color: #a89968; }
+  .dk .sheet .row span[style*="color:#8a8270"] { color: #6b6656 !important; }
+  .dk .sheet .row b { color: #e8e3c9 !important; }
+  .dk .sheet .row .meta { color: #a89968; }
+  .dk .sheet .footer { border-top: 1px solid #2a2620; color: #6b6656; }
+  .dk .sheet .footer b { background: #2a2620; color: #e8e3c9; }
+
+  /* SEPIA palette */
+  .sp .screen { background: #f3e8cf; }
+  .sp .arabic { color: #3d2e14; }
+  .sp .arabic .num { background: #d9c697; color: #6b4a16; }
+  .sp .translit { color: #8b6b3a; }
+  .sp .trans { color: #4a3a1e; }
+  .sp .trans b { color: #8b6b3a; }
+  .sp .edge { background: #8b6b3a; opacity: 0.25; }
+
+  .sp .pill-top { background: rgba(61,46,20,0.92); color: #f5ecd3; }
+  .sp .pill-top .dot { background: #d9c697; }
+  .sp .pill-top .kbd { background: rgba(245,236,211,0.18); color: #f5ecd3; }
+  .sp .dock { background: rgba(61,46,20,0.95); }
+  .sp .dock .d { color: #c9b687; }
+  .sp .dock .d.active { background: #f5ecd3; color: #3d2e14; }
+  .sp .scrim { background: rgba(45,32,12,0.4); }
+  .sp .sheet { background: #faf1d8; border: 1px solid #d9c697; box-shadow: 0 20px 60px rgba(61,46,20,0.25); }
+  .sp .sheet .search { border-bottom: 1px solid #e6d5a6; color: #3d2e14; }
+  .sp .sheet .search .icon { color: #8b6b3a; }
+  .sp .sheet .search .cursor { background: #3d2e14; }
+  .sp .sheet .cat { color: #8b6b3a; }
+  .sp .sheet .row { color: #3d2e14; }
+  .sp .sheet .row.active { background: #f0e2b8; }
+  .sp .sheet .row .gly { background: #e6d5a6; color: #6b4a16; }
+  .sp .sheet .row span[style*="color:#8a8270"] { color: #8b6b3a !important; }
+  .sp .sheet .row b { color: #3d2e14 !important; }
+  .sp .sheet .row .meta { color: #8b6b3a; }
+  .sp .sheet .footer { border-top: 1px solid #e6d5a6; color: #8b6b3a; }
+  .sp .sheet .footer b { background: #e6d5a6; color: #3d2e14; }
+
+  /* Shared overlays */
+  .pill-top { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); backdrop-filter: blur(14px); font-size: 9px; padding: 5px 11px; border-radius: 999px; display: flex; align-items: center; gap: 7px; z-index: 40; }
+  .pill-top .dot { width: 3px; height: 3px; border-radius: 50%; }
+  .pill-top .kbd { font-size: 7px; padding: 1px 4px; border-radius: 3px; margin-left: 3px; }
+  .dock { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); backdrop-filter: blur(14px); border-radius: 999px; padding: 4px; display: flex; gap: 2px; z-index: 40; }
+  .dock .d { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .edge { position: absolute; top: 50%; transform: translateY(-50%); width: 2px; height: 36px; border-radius: 2px; }
+  .edge.l { left: 0; border-radius: 0 2px 2px 0; }
+  .edge.r { right: 0; border-radius: 2px 0 0 2px; }
+
+  .scrim { position: absolute; inset: 0; backdrop-filter: blur(3px); z-index: 30; }
+  .sheet { position: absolute; top: 28px; left: 8px; right: 8px; border-radius: 14px; z-index: 35; overflow: hidden; font-size: 10px; }
+  .sheet .search { padding: 10px 12px 8px; display: flex; align-items: center; gap: 7px; }
+  .sheet .search .icon { font-size: 11px; }
+  .sheet .search .cursor { width: 1.2px; height: 11px; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .sheet .cat { padding: 8px 12px 3px; font-size: 7.5px; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
+  .sheet .row { padding: 6px 12px; display: flex; align-items: center; gap: 8px; }
+  .sheet .row .gly { width: 16px; height: 16px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0; }
+  .sheet .row .meta { margin-left: auto; font-size: 8px; font-weight: 600; }
+  .sheet .footer { padding: 7px 12px; font-size: 7.5px; display: flex; justify-content: space-between; }
+  .sheet .footer b { padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+
+  .palette { display: flex; gap: 8px; margin-top: 6px; align-items: center; font-size: 10px; }
+  .sw { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.08); }
+</style>
+
+<div class="themes">
+
+  <!-- DARK COLUMN -->
+  <div class="col dark">
+    <div class="col-title">● Dark</div>
+    <div class="col-sub">Night reading. Ink #0e0e0c · Parchment text #e8e3c9 · Gold accent #a89968.</div>
+
+    <div class="row3">
+      <div>
+        <div class="phone dk">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="edge l"></div>
+            <div class="edge r"></div>
+            <div class="page">
+              <div class="arabic">
+                بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">١</span>
+                ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ<span class="num">٢</span>
+                ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">٣</span>
+              </div>
+              <div class="translit">Al-Fatihah · The Opening</div>
+              <div class="trans"><b>1</b>In the name of Allah, the Most Gracious…</div>
+              <div class="trans"><b>2</b>All praise is due to Allah, Lord of the worlds.</div>
+              <div class="trans"><b>3</b>The Most Gracious, the Most Merciful.</div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Reading</div>
+      </div>
+      <div>
+        <div class="phone dk">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page">
+              <div class="arabic">
+                بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">١</span>
+                ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ<span class="num">٢</span>
+                ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">٣</span>
+              </div>
+              <div class="trans"><b>1</b>In the name of Allah, the Most Gracious…</div>
+              <div class="trans"><b>2</b>All praise is due to Allah, Lord of the worlds.</div>
+            </div>
+            <div class="pill-top"><span>Al-Fatihah</span><span class="dot"></span><span>v2 of 7</span><span class="kbd">⌘K</span></div>
+            <div class="dock"><div class="d active">📖</div><div class="d">⌕</div><div class="d">✦</div><div class="d">⋯</div></div>
+          </div>
+        </div>
+        <div class="state-label">Surfaced</div>
+      </div>
+      <div>
+        <div class="phone dk">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page" style="opacity:0.5">
+              <div class="arabic">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ</div>
+              <div class="trans"><b>1</b>In the name of Allah…</div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="search"><span class="icon">⌕</span><span>fat</span><span class="cursor"></span></div>
+              <div class="cat">Surahs</div>
+              <div class="row active"><div class="gly">1</div><span>Al-<b>Fat</b>ihah</span><span style="color:#8a8270;margin-left:3px">The Opening</span><span class="meta">↵</span></div>
+              <div class="row"><div class="gly">35</div><span>Al-<b>Fat</b>ir</span></div>
+              <div class="row"><div class="gly">48</div><span>Al-<b>Fat</b>h</span></div>
+              <div class="cat">Actions</div>
+              <div class="row"><div class="gly">Aa</div><span>Font size…</span></div>
+              <div class="row"><div class="gly">✦</div><span>Review</span></div>
+              <div class="footer"><span>Type <b>2:255</b> or <b>#mercy</b></span><span><b>esc</b></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Command</div>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="sw" style="background:#0e0e0c"></div>
+      <div class="sw" style="background:#1a1814"></div>
+      <div class="sw" style="background:#a89968"></div>
+      <div class="sw" style="background:#e8e3c9"></div>
+      <span style="color:#8a8270">Ink · Card · Gold · Parchment</span>
+    </div>
+  </div>
+
+  <!-- SEPIA COLUMN -->
+  <div class="col sepia">
+    <div class="col-title">● Sepia</div>
+    <div class="col-sub">Long daytime reading. Warm paper #f3e8cf · Cocoa ink #3d2e14 · Bronze accent #8b6b3a.</div>
+
+    <div class="row3">
+      <div>
+        <div class="phone sp">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="edge l"></div>
+            <div class="edge r"></div>
+            <div class="page">
+              <div class="arabic">
+                بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">١</span>
+                ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ<span class="num">٢</span>
+                ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">٣</span>
+              </div>
+              <div class="translit">Al-Fatihah · The Opening</div>
+              <div class="trans"><b>1</b>In the name of Allah, the Most Gracious…</div>
+              <div class="trans"><b>2</b>All praise is due to Allah, Lord of the worlds.</div>
+              <div class="trans"><b>3</b>The Most Gracious, the Most Merciful.</div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Reading</div>
+      </div>
+      <div>
+        <div class="phone sp">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page">
+              <div class="arabic">
+                بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">١</span>
+                ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ<span class="num">٢</span>
+                ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">٣</span>
+              </div>
+              <div class="trans"><b>1</b>In the name of Allah, the Most Gracious…</div>
+              <div class="trans"><b>2</b>All praise is due to Allah, Lord of the worlds.</div>
+            </div>
+            <div class="pill-top"><span>Al-Fatihah</span><span class="dot"></span><span>v2 of 7</span><span class="kbd">⌘K</span></div>
+            <div class="dock"><div class="d active">📖</div><div class="d">⌕</div><div class="d">✦</div><div class="d">⋯</div></div>
+          </div>
+        </div>
+        <div class="state-label">Surfaced</div>
+      </div>
+      <div>
+        <div class="phone sp">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page" style="opacity:0.5">
+              <div class="arabic">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ</div>
+              <div class="trans"><b>1</b>In the name of Allah…</div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="search"><span class="icon">⌕</span><span>fat</span><span class="cursor"></span></div>
+              <div class="cat">Surahs</div>
+              <div class="row active"><div class="gly">1</div><span>Al-<b>Fat</b>ihah</span><span style="color:#8a8270;margin-left:3px">The Opening</span><span class="meta">↵</span></div>
+              <div class="row"><div class="gly">35</div><span>Al-<b>Fat</b>ir</span></div>
+              <div class="row"><div class="gly">48</div><span>Al-<b>Fat</b>h</span></div>
+              <div class="cat">Actions</div>
+              <div class="row"><div class="gly">Aa</div><span>Font size…</span></div>
+              <div class="row"><div class="gly">✦</div><span>Review</span></div>
+              <div class="footer"><span>Type <b>2:255</b> or <b>#mercy</b></span><span><b>esc</b></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Command</div>
+      </div>
+    </div>
+
+    <div class="palette">
+      <div class="sw" style="background:#f3e8cf"></div>
+      <div class="sw" style="background:#faf1d8"></div>
+      <div class="sw" style="background:#8b6b3a"></div>
+      <div class="sw" style="background:#3d2e14"></div>
+      <span style="color:#8a7a5a">Paper · Card · Bronze · Cocoa</span>
+    </div>
+  </div>
+
+</div>
+
+<div style="background:#f6f3e7;border-radius:10px;padding:12px 16px;margin-top:18px;font-size:11.5px;line-height:1.7;color:#3d3d30">
+  <b>Notes on the palettes:</b><br>
+  • <b>Dark</b> uses warm off-black (#0e0e0c) rather than pure black — softer on OLED, less clinical. Gold accent (#a89968) reads as "illuminated manuscript" rather than "app UI".<br>
+  • <b>Sepia</b> is intentionally warmer than most reader apps — inspired by aged Qur'an parchment. Bronze accent keeps it cohesive with the gold from dark mode (same hue family).<br>
+  • All three themes (light from earlier, dark, sepia) share the <b>same gold/bronze accent family</b> → theme switching feels like changing paper, not changing apps.
+</div>
+
+<div class="options" style="margin-top:18px">
+  <div class="option" data-choice="ship" onclick="toggleSelect(this)"><div class="letter">A</div><div class="content"><h3>Ship this — move to spec</h3><p>Themes look right.</p></div></div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)"><div class="letter">B</div><div class="content"><h3>Tweak palette</h3><p>Colors feel off — tell me where.</p></div></div>
+  <div class="option" data-choice="more" onclick="toggleSelect(this)"><div class="letter">C</div><div class="content"><h3>Show another state</h3><p>E.g., edge-swipe surah picker, or the dock expanded.</p></div></div>
+</div>

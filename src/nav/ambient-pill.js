@@ -79,7 +79,7 @@ export async function initAmbientPill() {
 
   readerTapHandler = (e) => {
     if (!isReaderRoute()) { return }
-    if (e.target.closest('.qa-pill-ref, #bottom-nav, .qa-cmd-sheet, .qa-cmd-scrim, .qa-mark-modal, .qa-mark-backdrop, .qa-sheet-backdrop, .qa-sheet')) {
+    if (e.target.closest('.qa-pill-ref, #bottom-nav, .qa-cmd-sheet, .qa-cmd-scrim, .qa-sheet-backdrop, .qa-sheet')) {
       return
     }
     emit(Events.AMBIENT_SURFACE, { reason: 'tap' })

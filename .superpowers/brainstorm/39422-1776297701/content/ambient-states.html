@@ -1,0 +1,191 @@
+<h2>Ambient + Command — three states</h2>
+<p class="subtitle">Phone frames. Left: reading (chrome hidden). Middle: tap-to-surface. Right: command sheet (⌘K / swipe-down).</p>
+
+<style>
+  .stage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: 24px 0 18px; }
+  .phone { background: #111; border-radius: 34px; padding: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.18); position: relative; }
+  .phone .screen { background: #faf8f1; border-radius: 28px; height: 560px; position: relative; overflow: hidden; font-family: -apple-system, "SF Pro", sans-serif; }
+  .phone .notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 90px; height: 22px; background: #111; border-radius: 999px; z-index: 50; }
+
+  .state-label { text-align: center; font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #8a8270; margin-top: 10px; font-weight: 600; }
+  .state-sub { text-align: center; font-size: 11px; color: #6b6b5a; margin-top: 2px; margin-bottom: 4px; }
+
+  .page { padding: 44px 26px 80px; color: #2a2a26; height: 100%; box-sizing: border-box; overflow: hidden; }
+  .arabic { direction: rtl; text-align: right; font-size: 17px; line-height: 2.1; color: #1a1a17; font-family: "Amiri", "Scheherazade", serif; letter-spacing: 0.5px; margin-bottom: 18px; }
+  .arabic .num { display: inline-block; width: 18px; height: 18px; border-radius: 50%; background: #e6dfc4; color: #6b5a2a; font-size: 9px; text-align: center; line-height: 18px; margin: 0 3px; font-family: sans-serif; vertical-align: middle; }
+  .translit { font-size: 11px; color: #8a8270; font-style: italic; margin-bottom: 14px; letter-spacing: 0.3px; }
+  .trans { font-size: 12.5px; line-height: 1.7; color: #44443c; margin-bottom: 10px; }
+  .trans b { color: #a89968; font-weight: 600; margin-right: 4px; }
+
+  /* State 2 — surfaced */
+  .pill-top { position: absolute; top: 42px; left: 50%; transform: translateX(-50%); background: rgba(28,28,24,0.88); color: #f6f3e7; backdrop-filter: blur(14px); font-size: 10.5px; padding: 7px 16px; border-radius: 999px; display: flex; align-items: center; gap: 10px; z-index: 40; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .pill-top .dot { width: 4px; height: 4px; border-radius: 50%; background: #a89968; }
+  .pill-top .kbd { font-size: 8px; background: rgba(255,255,255,0.12); padding: 2px 5px; border-radius: 3px; margin-left: 4px; }
+
+  .dock { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); background: rgba(28,28,24,0.92); backdrop-filter: blur(14px); border-radius: 999px; padding: 6px; display: flex; gap: 2px; z-index: 40; box-shadow: 0 10px 28px rgba(0,0,0,0.22); }
+  .dock .d { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #d6d1bc; font-size: 15px; }
+  .dock .d.active { background: #f6f3e7; color: #1c1c18; }
+
+  .tap-hint { position: absolute; top: 280px; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; border: 2px solid rgba(168,153,104,0.5); border-radius: 50%; animation: pulse 1.8s ease-out infinite; }
+  .tap-hint::after { content: ""; position: absolute; inset: 14px; border: 2px solid rgba(168,153,104,0.8); border-radius: 50%; }
+  @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(0.9); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; } }
+
+  /* State 3 — command sheet */
+  .scrim { position: absolute; inset: 0; background: rgba(20,18,12,0.42); backdrop-filter: blur(3px); z-index: 30; }
+  .sheet { position: absolute; top: 40px; left: 12px; right: 12px; background: #fffefa; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); z-index: 35; overflow: hidden; }
+  .sheet .search { padding: 14px 16px 12px; border-bottom: 1px solid #efece0; display: flex; align-items: center; gap: 10px; font-size: 13px; color: #2a2a24; }
+  .sheet .search .icon { font-size: 15px; color: #a89968; }
+  .sheet .search .cursor { width: 1.5px; height: 15px; background: #1c1c18; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .sheet .cat { padding: 10px 16px 4px; font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: #a89968; font-weight: 700; }
+  .sheet .row { padding: 9px 16px; display: flex; align-items: center; gap: 11px; font-size: 12.5px; color: #2a2a24; }
+  .sheet .row.active { background: #f6f3e7; }
+  .sheet .row .gly { width: 22px; height: 22px; border-radius: 5px; background: #f0ebd5; color: #a89968; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .sheet .row .meta { margin-left: auto; font-size: 10px; color: #a89968; font-weight: 600; }
+  .sheet .footer { padding: 9px 16px; border-top: 1px solid #efece0; font-size: 9.5px; color: #8a8270; display: flex; justify-content: space-between; }
+  .sheet .footer b { color: #2a2a24; background: #f0ebd5; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+
+  /* Edge hints on state 1 */
+  .edge { position: absolute; top: 50%; transform: translateY(-50%); width: 3px; height: 46px; background: #d6cfa8; opacity: 0.35; border-radius: 2px; }
+  .edge.l { left: 0; border-radius: 0 2px 2px 0; }
+  .edge.r { right: 0; border-radius: 2px 0 0 2px; }
+
+  .gesture-cheat { background: #f6f3e7; border-radius: 10px; padding: 14px 16px; margin-top: 10px; font-size: 11.5px; line-height: 1.7; color: #3d3d30; }
+  .gesture-cheat b { color: #1c1c18; }
+  .gesture-cheat .row { display: flex; gap: 8px; padding: 3px 0; }
+  .gesture-cheat .gk { flex: 0 0 130px; font-weight: 600; color: #6b5a2a; }
+</style>
+
+<div class="stage">
+
+  <!-- STATE 1: READING -->
+  <div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="edge l"></div>
+        <div class="edge r"></div>
+        <div class="page">
+          <div class="arabic">
+            بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">١</span>
+            ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ<span class="num">٢</span>
+            ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">٣</span>
+            مَٰلِكِ يَوْمِ ٱلدِّينِ<span class="num">٤</span>
+          </div>
+          <div class="translit">Al-Fatihah · The Opening</div>
+          <div class="trans"><b>1</b>In the name of Allah, the Most Gracious, the Most Merciful.</div>
+          <div class="trans"><b>2</b>All praise is due to Allah, Lord of the worlds.</div>
+          <div class="trans"><b>3</b>The Most Gracious, the Most Merciful.</div>
+          <div class="trans"><b>4</b>Master of the Day of Judgment.</div>
+        </div>
+      </div>
+    </div>
+    <div class="state-label">1 · Reading</div>
+    <div class="state-sub">Zero chrome. Text is the UI.<br>Edge rails hint at swipe.</div>
+  </div>
+
+  <!-- STATE 2: SURFACED -->
+  <div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="page">
+          <div class="arabic">
+            بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">١</span>
+            ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ<span class="num">٢</span>
+            ٱلرَّحْمَٰنِ ٱلرَّحِيمِ<span class="num">٣</span>
+            مَٰلِكِ يَوْمِ ٱلدِّينِ<span class="num">٤</span>
+          </div>
+          <div class="translit">Al-Fatihah · The Opening</div>
+          <div class="trans"><b>1</b>In the name of Allah, the Most Gracious, the Most Merciful.</div>
+          <div class="trans"><b>2</b>All praise is due to Allah, Lord of the worlds.</div>
+          <div class="trans"><b>3</b>The Most Gracious, the Most Merciful.</div>
+        </div>
+        <div class="pill-top">
+          <span>Al-Fatihah</span><span class="dot"></span><span>verse 2 of 7</span><span class="kbd">⌘K</span>
+        </div>
+        <div class="tap-hint"></div>
+        <div class="dock">
+          <div class="d active">📖</div>
+          <div class="d">⌕</div>
+          <div class="d">✦</div>
+          <div class="d">⋯</div>
+        </div>
+      </div>
+    </div>
+    <div class="state-label">2 · Surfaced (tap)</div>
+    <div class="state-sub">Pill (where you are) + dock (Read · Search · Review · More).<br>Auto-fades after 3s.</div>
+  </div>
+
+  <!-- STATE 3: COMMAND SHEET -->
+  <div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="page">
+          <div class="arabic" style="opacity:0.4">
+            بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+            ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ
+          </div>
+          <div class="trans" style="opacity:0.4"><b>1</b>In the name of Allah…</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="search">
+            <span class="icon">⌕</span><span>fat</span><span class="cursor"></span>
+          </div>
+          <div class="cat">Surahs</div>
+          <div class="row active">
+            <div class="gly">1</div><span>Al-<b>Fat</b>ihah</span><span style="color:#8a8270;margin-left:4px">The Opening</span><span class="meta">↵</span>
+          </div>
+          <div class="row">
+            <div class="gly">35</div><span>Al-<b>Fat</b>ir</span><span style="color:#8a8270;margin-left:4px">The Originator</span>
+          </div>
+          <div class="row">
+            <div class="gly">48</div><span>Al-<b>Fat</b>h</span><span style="color:#8a8270;margin-left:4px">The Victory</span>
+          </div>
+          <div class="cat">Actions</div>
+          <div class="row">
+            <div class="gly">Aa</div><span>Font size…</span><span class="meta">⌘+</span>
+          </div>
+          <div class="row">
+            <div class="gly">✦</div><span>Go to Review</span>
+          </div>
+          <div class="row">
+            <div class="gly">⚙</div><span>Settings</span>
+          </div>
+          <div class="footer">
+            <span>Type <b>2:255</b> for a verse · <b>#mercy</b> for a tag</span>
+            <span><b>esc</b></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="state-label">3 · Command sheet</div>
+    <div class="state-sub">⌘K / swipe-down / tap pill.<br>One surface replaces the hamburger drawer.</div>
+  </div>
+
+</div>
+
+<div class="gesture-cheat">
+  <div class="row"><div class="gk">Tap text</div><div>Surface pill + dock (state 2). Auto-fades after 3s.</div></div>
+  <div class="row"><div class="gk">⌘K / swipe-down</div><div>Open command sheet (state 3).</div></div>
+  <div class="row"><div class="gk">Edge-swipe ← right</div><div>Quick surah picker (slides from left).</div></div>
+  <div class="row"><div class="gk">Edge-swipe → left</div><div>Review queue.</div></div>
+  <div class="row"><div class="gk">Scroll</div><div>All overlays fade immediately — pure reading resumes.</div></div>
+</div>
+
+<div class="options" style="margin-top:18px">
+  <div class="option" data-choice="ship" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>Ship this direction</h3><p>Looks right — move to the spec.</p></div>
+  </div>
+  <div class="option" data-choice="iterate" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>Iterate</h3><p>Close but needs tweaks — tell me what to change.</p></div>
+  </div>
+  <div class="option" data-choice="dark" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Show dark mode first</h3><p>Most reading happens at night.</p></div>
+  </div>
+</div>

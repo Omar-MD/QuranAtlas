@@ -64,7 +64,7 @@ Thumbs.db
 *~
 
 # AI agent state
-.superpowers/
+superpowers/
 
 # Git worktrees
 .worktrees/

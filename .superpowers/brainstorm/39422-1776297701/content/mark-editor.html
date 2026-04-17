@@ -1,0 +1,415 @@
+<h2>Mark editor — create · edit · delete · undo</h2>
+<p class="subtitle">Same bottom-sheet surface as Settings. Consistent language across all modals.</p>
+
+<style>
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 22px 0 14px; }
+  .col-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+  .col-sub { font-size: 11px; margin-bottom: 14px; color: #8a8270; }
+  .col.dark .col-title { color: #d6cfa8; }
+  .col.sepia .col-title { color: #8b6b3a; }
+
+  .row2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .phone { border-radius: 30px; padding: 7px; position: relative; box-shadow: 0 16px 40px rgba(0,0,0,0.22); }
+  .phone.dk { background: #000; }
+  .phone.sp { background: #2d2418; }
+  .phone .screen { border-radius: 24px; height: 580px; position: relative; overflow: hidden; font-family: -apple-system, "SF Pro", sans-serif; }
+  .phone .notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 70px; height: 18px; background: #000; border-radius: 999px; z-index: 50; }
+  .state-label { text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600; color: #8a8270; }
+
+  /* Reader page behind sheet */
+  .page { padding: 38px 18px 0; height: 100%; box-sizing: border-box; overflow: hidden; }
+  .surah-hdr { text-align: center; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 1px solid; }
+  .surah-hdr .name { font-size: 12px; font-weight: 700; }
+  .surah-hdr .meaning { font-size: 9px; font-style: italic; margin-top: 1px; }
+  .bismillah { text-align: center; direction: rtl; font-size: 13px; margin-bottom: 16px; font-family: "Amiri", serif; }
+  .vblock { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dotted; }
+  .vblock.focused { padding: 10px 12px; border-radius: 10px; border: 1px solid; border-bottom: 1px solid; }
+  .vnum { display: inline-block; width: 16px; height: 16px; border-radius: 50%; font-size: 8px; text-align: center; line-height: 16px; margin-right: 6px; font-weight: 600; vertical-align: 2px; }
+  .varabic { direction: rtl; text-align: right; font-size: 14px; line-height: 1.9; margin-bottom: 6px; font-family: "Amiri", serif; }
+  .vtrans { font-size: 10.5px; line-height: 1.65; }
+
+  /* Scrim */
+  .scrim { position: absolute; inset: 0; z-index: 25; backdrop-filter: blur(3px); }
+  .dk .scrim { background: rgba(0,0,0,0.5); }
+  .sp .scrim { background: rgba(45,32,12,0.35); }
+
+  /* Sheet */
+  .sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 20px 20px 18px 18px; z-index: 35; overflow: hidden; box-shadow: 0 -10px 40px rgba(0,0,0,0.25); max-height: 82%; }
+  .sheet .grip { width: 32px; height: 4px; border-radius: 2px; margin: 8px auto 4px; }
+  .sheet .s-hdr { padding: 4px 16px 10px; border-bottom: 1px solid; display: flex; align-items: baseline; gap: 8px; }
+  .sheet .s-hdr .s-title { font-size: 12px; font-weight: 700; }
+  .sheet .s-hdr .s-ref { font-size: 9.5px; margin-left: auto; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600; }
+  .sheet .s-body { padding: 12px 14px 10px; }
+
+  /* Verse quote */
+  .vquote { padding: 10px 12px; border-radius: 9px; margin-bottom: 14px; }
+  .vquote .vq-ar { direction: rtl; text-align: right; font-size: 13px; line-height: 1.85; font-family: "Amiri", serif; margin-bottom: 4px; }
+  .vquote .vq-en { font-size: 10px; line-height: 1.6; }
+
+  /* Section */
+  .s-section { margin-bottom: 12px; }
+  .s-label { font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 7px; }
+
+  /* Tag search input */
+  .tag-input { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 8px; font-size: 11px; border: 1px solid; margin-bottom: 8px; }
+  .tag-input .ti-icon { font-size: 12px; }
+  .tag-input .ti-cursor { width: 1.5px; height: 12px; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Tag chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { font-size: 10px; padding: 4px 9px 4px 7px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; border: 1px solid transparent; cursor: pointer; }
+  .chip .cd { width: 6px; height: 6px; border-radius: 50%; }
+  .chip .chk { font-size: 10px; opacity: 0; margin-left: 2px; }
+  .chip.on { font-weight: 600; }
+  .chip.on .chk { opacity: 1; }
+  .chip.create { font-style: italic; border-style: dashed; }
+  .chip.create .plus { font-weight: 700; }
+
+  /* Note textarea */
+  .note-area { padding: 9px 11px; border-radius: 8px; font-size: 10.5px; line-height: 1.5; min-height: 50px; border: 1px solid; }
+  .note-area.empty { font-style: italic; }
+
+  /* Action row */
+  .actions { display: flex; gap: 6px; margin-top: 14px; align-items: center; }
+  .act-btn { padding: 9px 14px; border-radius: 10px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+  .act-btn.ghost { background: transparent; border: 1px solid; }
+  .act-btn.danger { background: transparent; }
+  .act-btn.primary { flex: 1; justify-content: center; }
+
+  /* Delete confirm variant */
+  .delete-confirm { text-align: center; padding: 6px 6px 0; }
+  .delete-confirm .dc-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.7; }
+  .delete-confirm .dc-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .delete-confirm .dc-body { font-size: 10.5px; line-height: 1.6; margin-bottom: 14px; }
+  .delete-confirm .dc-body .dcq { padding: 7px 10px; border-radius: 7px; margin: 8px 0; }
+  .delete-confirm .dc-body .dcq .vq-ar { direction: rtl; text-align: right; font-size: 12px; font-family: "Amiri", serif; margin-bottom: 3px; }
+  .delete-confirm .dc-body .dcq .vq-en { font-size: 9.5px; }
+
+  /* Undo toast */
+  .undo-toast { position: absolute; bottom: 78px; left: 12px; right: 12px; padding: 10px 13px; border-radius: 999px; display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 500; z-index: 38; box-shadow: 0 8px 24px rgba(0,0,0,0.22); backdrop-filter: blur(14px); }
+  .undo-toast .ut-check { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+  .undo-toast .ut-btn { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Dock */
+  .dock { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); backdrop-filter: blur(14px); border-radius: 999px; padding: 5px; display: flex; gap: 2px; z-index: 40; }
+  .dock .d { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+  /* Tag colors (semantic family) */
+  .t-mercy { background: #d9826e; }
+  .t-gratitude { background: #e8b44c; }
+  .t-patience { background: #6a9aa8; }
+  .t-reflection { background: #a07fb8; }
+  .t-prayer { background: #7fa87c; }
+  .t-forgive { background: #c9836a; }
+  .t-justice { background: #7a8fb8; }
+
+  /* DARK palette */
+  .dk .screen { background: #0e0e0c; }
+  .dk .surah-hdr { border-color: #2a2620; }
+  .dk .surah-hdr .name { color: #e8e3c9; }
+  .dk .surah-hdr .meaning { color: #a89968; }
+  .dk .bismillah { color: #a89968; }
+  .dk .vblock { border-bottom-color: #24201a; }
+  .dk .vblock.focused { background: rgba(168,153,104,0.08); border-color: #a89968; }
+  .dk .varabic { color: #e8e3c9; }
+  .dk .vtrans { color: #b8b3a0; }
+  .dk .vnum { background: #2a2620; color: #a89968; }
+
+  .dk .sheet { background: #1a1814; border: 1px solid rgba(168,153,104,0.15); }
+  .dk .sheet .grip { background: #3a342a; }
+  .dk .sheet .s-hdr { border-color: #2a2620; color: #e8e3c9; }
+  .dk .sheet .s-hdr .s-ref { color: #a89968; }
+  .dk .vquote { background: #24201a; border-left: 2px solid #a89968; }
+  .dk .vquote .vq-ar { color: #e8e3c9; }
+  .dk .vquote .vq-en { color: #b8b3a0; }
+  .dk .s-label { color: #a89968; }
+  .dk .tag-input { background: #0e0e0c; border-color: #2a2620; color: #e8e3c9; }
+  .dk .tag-input .ti-icon { color: #a89968; }
+  .dk .tag-input .ti-cursor { background: #a89968; }
+  .dk .chip { background: #24201a; color: #d6d1bc; border-color: #24201a; }
+  .dk .chip.on { background: #a89968; color: #0e0e0c; border-color: #a89968; }
+  .dk .chip.on .cd { box-shadow: 0 0 0 2px rgba(14,14,12,0.2); }
+  .dk .chip.create { background: transparent; color: #a89968; border-color: #3a342a; }
+  .dk .note-area { background: #0e0e0c; border-color: #2a2620; color: #e8e3c9; }
+  .dk .note-area.empty { color: #6b6656; }
+  .dk .act-btn.primary { background: #a89968; color: #0e0e0c; }
+  .dk .act-btn.ghost { color: #d6d1bc; border-color: #3a342a; }
+  .dk .act-btn.danger { color: #d9826e; }
+
+  .dk .delete-confirm .dc-icon { color: #d9826e; }
+  .dk .delete-confirm .dc-title { color: #e8e3c9; }
+  .dk .delete-confirm .dc-body { color: #b8b3a0; }
+  .dk .delete-confirm .dc-body .dcq { background: #24201a; }
+  .dk .delete-confirm .dc-body .dcq .vq-ar { color: #e8e3c9; }
+  .dk .delete-confirm .dc-body .dcq .vq-en { color: #8a8270; }
+  .dk .act-btn.destructive { background: #d9826e; color: #0e0e0c; }
+
+  .dk .undo-toast { background: rgba(20,18,12,0.95); color: #e8e3c9; border: 1px solid rgba(168,153,104,0.22); }
+  .dk .undo-toast .ut-check { background: #d9826e; color: #0e0e0c; }
+  .dk .undo-toast .ut-btn { background: #a89968; color: #0e0e0c; }
+  .dk .dock { background: rgba(20,18,12,0.95); border: 1px solid rgba(168,153,104,0.22); }
+  .dk .dock .d { color: #6b6656; }
+  .dk .dock .d.active { background: #a89968; color: #0e0e0c; }
+
+  /* SEPIA palette */
+  .sp .screen { background: #f3e8cf; }
+  .sp .surah-hdr { border-color: #d9c697; }
+  .sp .surah-hdr .name { color: #3d2e14; }
+  .sp .surah-hdr .meaning { color: #8b6b3a; }
+  .sp .bismillah { color: #6b4a16; }
+  .sp .vblock { border-bottom-color: #e6d5a6; }
+  .sp .vblock.focused { background: rgba(139,107,58,0.08); border-color: #8b6b3a; }
+  .sp .varabic { color: #3d2e14; }
+  .sp .vtrans { color: #4a3a1e; }
+  .sp .vnum { background: #e6d5a6; color: #6b4a16; }
+
+  .sp .sheet { background: #faf1d8; border: 1px solid #d9c697; }
+  .sp .sheet .grip { background: #d9c697; }
+  .sp .sheet .s-hdr { border-color: #e6d5a6; color: #3d2e14; }
+  .sp .sheet .s-hdr .s-ref { color: #8b6b3a; }
+  .sp .vquote { background: #f0e2b8; border-left: 2px solid #8b6b3a; }
+  .sp .vquote .vq-ar { color: #3d2e14; }
+  .sp .vquote .vq-en { color: #4a3a1e; }
+  .sp .s-label { color: #8b6b3a; }
+  .sp .tag-input { background: #fff; border-color: #e6d5a6; color: #3d2e14; }
+  .sp .tag-input .ti-icon { color: #8b6b3a; }
+  .sp .tag-input .ti-cursor { background: #3d2e14; }
+  .sp .chip { background: #f0e2b8; color: #3d2e14; border-color: #e6d5a6; }
+  .sp .chip.on { background: #8b6b3a; color: #faf1d8; border-color: #8b6b3a; }
+  .sp .chip.on .cd { box-shadow: 0 0 0 2px rgba(250,241,216,0.3); }
+  .sp .chip.create { background: transparent; color: #6b4a16; border-color: #c9b687; }
+  .sp .note-area { background: #fff; border-color: #e6d5a6; color: #3d2e14; }
+  .sp .note-area.empty { color: #8b6b3a; }
+  .sp .act-btn.primary { background: #8b6b3a; color: #faf1d8; }
+  .sp .act-btn.ghost { color: #3d2e14; border-color: #d9c697; }
+  .sp .act-btn.danger { color: #b35a3a; }
+
+  .sp .delete-confirm .dc-icon { color: #b35a3a; }
+  .sp .delete-confirm .dc-title { color: #3d2e14; }
+  .sp .delete-confirm .dc-body { color: #4a3a1e; }
+  .sp .delete-confirm .dc-body .dcq { background: #f0e2b8; }
+  .sp .delete-confirm .dc-body .dcq .vq-ar { color: #3d2e14; }
+  .sp .delete-confirm .dc-body .dcq .vq-en { color: #8b6b3a; }
+  .sp .act-btn.destructive { background: #b35a3a; color: #faf1d8; }
+
+  .sp .undo-toast { background: rgba(61,46,20,0.96); color: #faf1d8; }
+  .sp .undo-toast .ut-check { background: #d9826e; color: #3d2e14; }
+  .sp .undo-toast .ut-btn { background: #d9c697; color: #3d2e14; }
+  .sp .dock { background: rgba(61,46,20,0.95); }
+  .sp .dock .d { color: #c9b687; }
+  .sp .dock .d.active { background: #f5ecd3; color: #3d2e14; }
+
+  .callout { background: #f6f3e7; border-radius: 10px; padding: 12px 16px; margin-top: 18px; font-size: 11.5px; line-height: 1.7; color: #3d3d30; }
+  .callout b { color: #1c1c18; }
+</style>
+
+<div class="pair">
+
+  <!-- DARK -->
+  <div class="col dark">
+    <div class="col-title">● Dark</div>
+    <div class="col-sub">Create · Edit</div>
+    <div class="row2">
+
+      <!-- CREATE -->
+      <div>
+        <div class="phone dk">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page">
+              <div class="surah-hdr"><div class="name">Al-Baqarah</div><div class="meaning">The Cow</div></div>
+              <div class="vblock focused">
+                <div class="varabic">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ</div>
+                <div class="vtrans"><span class="vnum">255</span>Allah — there is no deity except Him…</div>
+              </div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grip"></div>
+              <div class="s-hdr"><div class="s-title">New mark</div><div class="s-ref">2 : 255</div></div>
+              <div class="s-body">
+                <div class="vquote">
+                  <div class="vq-ar">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ</div>
+                  <div class="vq-en">Allah — there is no deity except Him, the Ever-Living…</div>
+                </div>
+                <div class="s-section">
+                  <div class="s-label">Tags</div>
+                  <div class="tag-input"><span class="ti-icon">⌕</span><span style="color:#6b6656">Search or create a tag</span><span class="ti-cursor"></span></div>
+                  <div class="chips">
+                    <div class="chip"><span class="cd t-mercy"></span>mercy<span class="chk">✓</span></div>
+                    <div class="chip"><span class="cd t-gratitude"></span>gratitude<span class="chk">✓</span></div>
+                    <div class="chip"><span class="cd t-patience"></span>patience<span class="chk">✓</span></div>
+                    <div class="chip"><span class="cd t-reflection"></span>reflection<span class="chk">✓</span></div>
+                    <div class="chip"><span class="cd t-prayer"></span>prayer<span class="chk">✓</span></div>
+                    <div class="chip"><span class="cd t-forgive"></span>forgiveness<span class="chk">✓</span></div>
+                  </div>
+                </div>
+                <div class="s-section">
+                  <div class="s-label">Note (optional)</div>
+                  <div class="note-area empty">Why this verse? What stood out?</div>
+                </div>
+                <div class="actions">
+                  <div class="act-btn ghost">Cancel</div>
+                  <div class="act-btn primary">Save mark</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Create</div>
+      </div>
+
+      <!-- EDIT -->
+      <div>
+        <div class="phone dk">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page">
+              <div class="surah-hdr"><div class="name">Al-Baqarah</div><div class="meaning">The Cow</div></div>
+              <div class="vblock focused">
+                <div class="varabic">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ</div>
+                <div class="vtrans"><span class="vnum">255</span>Allah — there is no deity except Him…</div>
+              </div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grip"></div>
+              <div class="s-hdr"><div class="s-title">Edit mark</div><div class="s-ref">2 : 255</div></div>
+              <div class="s-body">
+                <div class="vquote">
+                  <div class="vq-ar">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ</div>
+                  <div class="vq-en">Allah — there is no deity except Him, the Ever-Living…</div>
+                </div>
+                <div class="s-section">
+                  <div class="s-label">Tags · 2 selected</div>
+                  <div class="tag-input"><span class="ti-icon">⌕</span><span style="color:#e8e3c9">justi</span><span class="ti-cursor"></span></div>
+                  <div class="chips">
+                    <div class="chip on"><span class="cd t-mercy"></span>mercy<span class="chk">✓</span></div>
+                    <div class="chip on"><span class="cd t-reflection"></span>reflection<span class="chk">✓</span></div>
+                    <div class="chip"><span class="cd t-prayer"></span>prayer</div>
+                    <div class="chip create"><span class="plus">+</span> create "justice"</div>
+                  </div>
+                </div>
+                <div class="s-section">
+                  <div class="s-label">Note</div>
+                  <div class="note-area">Revisit during Fajr. The attributes listed here — Living, Sustainer — anchor tawhid.</div>
+                </div>
+                <div class="actions">
+                  <div class="act-btn danger">⌫ Delete</div>
+                  <div style="flex:1"></div>
+                  <div class="act-btn ghost">Cancel</div>
+                  <div class="act-btn primary" style="flex:none">Save</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Edit (existing mark)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SEPIA -->
+  <div class="col sepia">
+    <div class="col-title">● Sepia</div>
+    <div class="col-sub">Delete confirm · Undo after delete</div>
+    <div class="row2">
+
+      <!-- DELETE CONFIRM -->
+      <div>
+        <div class="phone sp">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page">
+              <div class="surah-hdr"><div class="name">Al-Baqarah</div><div class="meaning">The Cow</div></div>
+              <div class="vblock focused">
+                <div class="varabic">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ</div>
+                <div class="vtrans"><span class="vnum">255</span>Allah — there is no deity except Him…</div>
+              </div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grip"></div>
+              <div class="s-hdr"><div class="s-title">Delete mark?</div><div class="s-ref">2 : 255</div></div>
+              <div class="s-body">
+                <div class="delete-confirm">
+                  <div class="dc-icon">⌫</div>
+                  <div class="dc-title">Delete this mark?</div>
+                  <div class="dc-body">
+                    You'll lose the tags and note below. You can undo for 8 seconds afterward.
+                    <div class="dcq">
+                      <div class="vq-ar">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ</div>
+                      <div class="vq-en">Allah — there is no deity except Him…</div>
+                      <div style="margin-top:6px;display:flex;gap:4px;justify-content:center">
+                        <span class="chip on" style="font-size:9px;padding:2px 7px 2px 5px"><span class="cd t-mercy"></span>mercy</span>
+                        <span class="chip on" style="font-size:9px;padding:2px 7px 2px 5px"><span class="cd t-reflection"></span>reflection</span>
+                      </div>
+                      <div style="margin-top:6px;font-size:9px;font-style:italic;color:#8b6b3a">"Revisit during Fajr."</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="actions">
+                  <div class="act-btn ghost" style="flex:1;justify-content:center">Cancel</div>
+                  <div class="act-btn destructive" style="flex:1;justify-content:center;font-weight:700;padding:9px 14px;border-radius:10px">Delete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Delete · confirm</div>
+      </div>
+
+      <!-- UNDO TOAST -->
+      <div>
+        <div class="phone sp">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="page">
+              <div class="surah-hdr"><div class="name">Al-Baqarah</div><div class="meaning">The Cow</div></div>
+              <div class="bismillah">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+              <div class="vblock">
+                <div class="varabic">ٱلْحَمْدُ لِلَّٰهِ رَبِّ ٱلْعَٰلَمِينَ</div>
+                <div class="vtrans"><span class="vnum">2</span>All praise is due to Allah, Lord of the worlds.</div>
+              </div>
+              <div class="vblock">
+                <div class="varabic">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ</div>
+                <div class="vtrans"><span class="vnum">255</span>Allah — there is no deity except Him…</div>
+              </div>
+              <div class="vblock">
+                <div class="varabic">فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</div>
+                <div class="vtrans"><span class="vnum">5</span>For indeed, with hardship will be ease.</div>
+              </div>
+            </div>
+            <div class="undo-toast">
+              <div class="ut-check">✓</div>
+              <span>Mark deleted · <span style="opacity:0.6">2:255</span></span>
+              <div class="ut-btn">Undo</div>
+            </div>
+            <div class="dock"><div class="d active">📖</div><div class="d">⌕</div><div class="d">✦</div><div class="d">⋯</div></div>
+          </div>
+        </div>
+        <div class="state-label">Undo toast (8s)</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="callout">
+  <b>Design moves unique to the mark editor:</b><br>
+  1. <b>Focused verse shows through the scrim</b> — the verse you're marking stays visible behind the sheet with a soft accent outline. You never lose context.<br>
+  2. <b>Verse quote at top of the sheet</b> as a warm-accent blockquote — same language as notes (gold/bronze left bar). Confirms <i>what you're marking</i> before you act.<br>
+  3. <b>Tag chips with color dots</b> match the semantic palette used in Review / FVR. Selected chips flip to filled accent; unselected are muted. Count in the label ("Tags · 2 selected").<br>
+  4. <b>Inline "create" chip</b> with dashed border + plus — appears when your search text doesn't match an existing tag. One tap to mint a new tag.<br>
+  5. <b>Destructive action is quiet</b> — "⌫ Delete" sits in the left gutter in muted coral. Not a red button. Real destruction happens in the <b>confirm sheet</b>, which requotes the mark + its tags + note so you see exactly what's leaving.<br>
+  6. <b>Undo toast replaces the dock</b> for 8s after deletion — pill-shaped, same language as the dock, with a clear affordance back.
+</div>
+
+<div class="options" style="margin-top:18px">
+  <div class="option" data-choice="ship" onclick="toggleSelect(this)"><div class="letter">A</div><div class="content"><h3>Ship everything — spec time</h3><p>All surfaces coherent. Write the design doc.</p></div></div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)"><div class="letter">B</div><div class="content"><h3>Tweak the editor</h3><p>Sheet structure, chip style, delete flow, etc.</p></div></div>
+  <div class="option" data-choice="more" onclick="toggleSelect(this)"><div class="letter">C</div><div class="content"><h3>Another surface</h3><p>Long-press menu, command on Review, onboarding, etc.</p></div></div>
+</div>

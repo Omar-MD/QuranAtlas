@@ -40,8 +40,6 @@ function setCachedMark(verseKey, mark) {
  * @param {HTMLElement} element - the verse DOM element
  */
 export async function decorateVerse(verseKey, element) {
-  const existingDots = element.querySelector('.qa-mark-dots')
-  if (existingDots) { existingDots.remove() }
   element.classList.remove('qa-verse--bookmarked')
 
   let mark

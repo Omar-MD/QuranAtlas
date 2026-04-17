@@ -104,10 +104,6 @@ vi.mock('../../../src/review/hub.js', () => ({
   init: vi.fn(),
 }))
 
-vi.mock('../../../src/settings/index.js', () => ({
-  init: vi.fn(),
-}))
-
 vi.mock('../../../src/about/index.js', () => ({
   init: vi.fn(),
 }))

@@ -1,0 +1,107 @@
+<h2>Three navigation philosophies</h2>
+<p class="subtitle">Each one collapses the current top bar + hamburger + bottom nav into a single, calmer surface. Click the one that resonates — we'll iterate from there.</p>
+
+<style>
+  .nav-mock { background: #fafaf7; border-radius: 14px; padding: 0; overflow: hidden; font-family: -apple-system, sans-serif; height: 420px; position: relative; border: 1px solid #e5e5dc; }
+  .nav-mock .page { padding: 18px 16px; color: #2a2a28; }
+  .nav-mock .verse { font-size: 11px; line-height: 1.7; color: #555; margin-bottom: 10px; }
+  .nav-mock .verse b { color: #1a1a1a; }
+  .nav-mock .arabic { text-align: right; font-size: 14px; color: #222; margin-bottom: 6px; direction: rtl; }
+  .nav-mock .surah-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .nav-mock .surah-sub { font-size: 10px; color: #888; margin-bottom: 14px; }
+
+  /* Option A — Command palette */
+  .cmdk { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 85%; background: #fff; border: 1px solid #d8d8cf; border-radius: 10px; padding: 7px 11px; font-size: 11px; color: #999; display: flex; align-items: center; gap: 7px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+  .cmdk .kbd { margin-left: auto; font-size: 9px; background: #f0f0ea; padding: 2px 6px; border-radius: 4px; color: #666; }
+  .cmdk-panel { position: absolute; top: 46px; left: 50%; transform: translateX(-50%); width: 85%; background: #fff; border: 1px solid #d8d8cf; border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); padding: 6px; font-size: 10.5px; }
+  .cmdk-panel .row { padding: 7px 9px; border-radius: 6px; display: flex; justify-content: space-between; color: #333; }
+  .cmdk-panel .row.active { background: #eef1ec; }
+  .cmdk-panel .hint { color: #aaa; font-size: 9px; }
+
+  /* Option B — Ambient / gestures */
+  .ambient-page { padding: 40px 22px; }
+  .ambient-page .verse { font-size: 12px; }
+  .edge-hint { position: absolute; top: 50%; transform: translateY(-50%); width: 3px; height: 60px; background: #c9c4a8; border-radius: 3px; opacity: 0.5; }
+  .edge-hint.left { left: 0; border-radius: 0 3px 3px 0; }
+  .edge-hint.right { right: 0; border-radius: 3px 0 0 3px; }
+  .pill-chip { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: rgba(30,30,28,0.85); color: #fff; backdrop-filter: blur(10px); font-size: 10px; padding: 6px 14px; border-radius: 999px; }
+
+  /* Option C — Floating dock */
+  .dock { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: #1e1e1c; border-radius: 999px; padding: 7px 10px; display: flex; gap: 4px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+  .dock .d { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 13px; }
+  .dock .d.active { background: #fff; color: #1e1e1c; }
+  .dock-label { position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #999; letter-spacing: 0.5px; text-transform: uppercase; }
+</style>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="nav-mock">
+        <div class="cmdk"><span>⌕</span><span>Jump to surah, verse, tag…</span><span class="kbd">⌘K</span></div>
+        <div class="cmdk-panel">
+          <div class="row active"><span>Al-Fatihah · 1</span><span class="hint">surah</span></div>
+          <div class="row"><span>2:255 Ayat al-Kursi</span><span class="hint">verse</span></div>
+          <div class="row"><span>#mercy</span><span class="hint">tag</span></div>
+          <div class="row"><span>Review queue</span><span class="hint">page</span></div>
+          <div class="row"><span>Settings → Font size</span><span class="hint">action</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · Command-first</h3>
+      <p>A single <b>⌘K / tap-to-search</b> bar replaces the hamburger, top bar, and bottom nav. Everything — surahs, verses, tags, settings, review — is one keystroke away. Chrome nearly disappears. <i>Linear / Raycast school.</i></p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="nav-mock">
+        <div class="edge-hint left"></div>
+        <div class="edge-hint right"></div>
+        <div class="ambient-page">
+          <div class="arabic">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+          <div class="surah-title">Al-Fatihah</div>
+          <div class="surah-sub">The Opening · 7 verses</div>
+          <div class="verse"><b>1.</b> In the name of Allah, the Most Gracious, the Most Merciful.</div>
+          <div class="verse"><b>2.</b> All praise is due to Allah, Lord of the worlds.</div>
+          <div class="verse"><b>3.</b> The Most Gracious, the Most Merciful.</div>
+        </div>
+        <div class="pill-chip">Al-Fatihah · 1 of 7</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · Ambient reader</h3>
+      <p>Chrome is <b>invisible while reading</b>. Edge-swipe left → surah picker, right → review. Tap the page → a small pill surfaces (surah · verse · menu). Nav fades back out. <i>Apple Books / Readwise school — the text is the UI.</i></p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="nav-mock">
+        <div class="page">
+          <div class="arabic">بِسْمِ ٱللَّٰهِ</div>
+          <div class="surah-title">Al-Fatihah</div>
+          <div class="surah-sub">The Opening · 7 verses</div>
+          <div class="verse"><b>1.</b> In the name of Allah, the Most Gracious, the Most Merciful.</div>
+          <div class="verse"><b>2.</b> All praise is due to Allah, Lord of the worlds.</div>
+          <div class="verse"><b>3.</b> The Most Gracious…</div>
+        </div>
+        <div class="dock-label">Read</div>
+        <div class="dock">
+          <div class="d active">📖</div>
+          <div class="d">⌕</div>
+          <div class="d">✦</div>
+          <div class="d">⋯</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · Floating dock</h3>
+      <p>One <b>pill-shaped dock</b> at the bottom: Read · Search · Review · More. No top bar, no hamburger. Tapping Search expands it to a full picker; More opens a bottom sheet for settings. <i>iOS 17 / Arc / Vercel school.</i></p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px">Click the one that feels right — or say "mix A+C", "show me B in dark mode", etc.</p>

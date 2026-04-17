@@ -1,0 +1,218 @@
+<h2>Onboarding — first run</h2>
+<p class="subtitle">Four screens, skippable after screen 1. Establishes the ambient pattern and the tag vocabulary before the user lands in Al-Fatihah.</p>
+
+<style>
+  .wrap { margin: 22px 0 12px; }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .phone { border-radius: 26px; padding: 6px; background: #000; box-shadow: 0 14px 36px rgba(0,0,0,0.22); position: relative; }
+  .phone .screen { border-radius: 22px; height: 600px; position: relative; overflow: hidden; font-family: -apple-system, "SF Pro", sans-serif; background: #0e0e0c; color: #e8e3c9; }
+  .phone .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 60px; height: 16px; background: #000; border-radius: 999px; z-index: 50; }
+  .state-label { text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600; color: #8a8270; }
+
+  .page { padding: 40px 22px 28px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+
+  /* Progress dots */
+  .dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 22px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #2a2620; }
+  .dot.on { background: #a89968; width: 18px; border-radius: 3px; }
+
+  .skip { position: absolute; top: 40px; right: 22px; font-size: 10px; color: #6b6656; letter-spacing: 0.5px; }
+
+  .headline { font-family: "Amiri", serif; font-size: 26px; line-height: 1.25; color: #e8e3c9; margin-bottom: 10px; letter-spacing: 0.2px; }
+  .headline .gold { color: #a89968; }
+  .lede { font-size: 12px; line-height: 1.6; color: #b8b3a0; margin-bottom: 18px; }
+
+  .cta-row { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .cta { padding: 12px 16px; border-radius: 999px; text-align: center; font-size: 12px; font-weight: 600; letter-spacing: 0.3px; }
+  .cta.primary { background: #a89968; color: #0e0e0c; }
+  .cta.ghost { background: transparent; color: #a89968; border: 1px solid rgba(168,153,104,0.28); }
+
+  /* Screen 1: wordmark hero */
+  .hero { flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+  .mark { font-family: "Amiri", serif; direction: rtl; font-size: 36px; color: #a89968; letter-spacing: 1px; margin-bottom: 8px; }
+  .tag { font-size: 10px; text-transform: uppercase; letter-spacing: 2.5px; color: #8a8270; margin-bottom: 28px; }
+  .blessing { font-size: 11px; font-style: italic; color: #8a8270; line-height: 1.6; max-width: 220px; margin: 0 auto; }
+
+  /* Screen 2: theme pick */
+  .swatch-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 14px 0 10px; }
+  .sw { border-radius: 12px; padding: 14px 8px 10px; text-align: center; border: 1.5px solid #24201a; cursor: pointer; }
+  .sw.on { border-color: #a89968; box-shadow: 0 0 0 3px rgba(168,153,104,0.18); }
+  .sw .chip { height: 54px; border-radius: 8px; margin-bottom: 8px; position: relative; overflow: hidden; }
+  .sw .chip.light { background: #fbf8f0; }
+  .sw .chip.sepia { background: #f3e8cf; }
+  .sw .chip.dark { background: #0e0e0c; border: 1px solid #24201a; }
+  .sw .chip .ar { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: "Amiri", serif; font-size: 18px; direction: rtl; }
+  .sw .chip.light .ar { color: #3d2e14; }
+  .sw .chip.sepia .ar { color: #6b4a16; }
+  .sw .chip.dark .ar { color: #a89968; }
+  .sw .label { font-size: 10px; font-weight: 600; color: #e8e3c9; }
+  .sw .sub { font-size: 8.5px; color: #6b6656; margin-top: 1px; letter-spacing: 0.4px; }
+  .auto-note { font-size: 10px; color: #8a8270; text-align: center; margin-top: 4px; }
+  .auto-note b { color: #a89968; }
+
+  /* Screen 3: translation */
+  .tlist { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .t { padding: 10px 12px; border-radius: 10px; border: 1px solid #24201a; display: flex; align-items: center; gap: 10px; }
+  .t.on { border-color: #a89968; background: rgba(168,153,104,0.06); }
+  .t .radio { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #6b6656; flex-shrink: 0; position: relative; }
+  .t.on .radio { border-color: #a89968; }
+  .t.on .radio::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; background: #a89968; }
+  .t .body { flex: 1; }
+  .t .name { font-size: 11px; font-weight: 600; color: #e8e3c9; }
+  .t .sub { font-size: 9px; color: #8a8270; margin-top: 1px; }
+  .t .meta { font-size: 8.5px; color: #6b6656; text-transform: uppercase; letter-spacing: 0.8px; }
+
+  /* Screen 4: tags intro */
+  .vpreview { padding: 12px 0; border-top: 1px dotted #24201a; border-bottom: 1px dotted #24201a; margin: 14px 0 12px; }
+  .vref { font-size: 9px; color: #8a8270; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
+  .varabic { direction: rtl; text-align: right; font-family: "Amiri", serif; font-size: 15px; color: #e8e3c9; line-height: 1.9; margin-bottom: 6px; }
+  .vtrans { font-size: 10.5px; color: #b8b3a0; line-height: 1.55; }
+
+  .tag-demo { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-size: 10px; padding: 4px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; background: #1a1814; border: 1px solid #24201a; color: #b8b3a0; }
+  .chip .d { width: 6px; height: 6px; border-radius: 50%; }
+  .chip.mercy { border-color: rgba(100,160,120,0.4); color: #9ccfb0; } .chip.mercy .d { background: #64a078; }
+  .chip.reflection { border-color: rgba(140,130,200,0.4); color: #c4bce2; } .chip.reflection .d { background: #8c82c8; }
+  .chip.gratitude { border-color: rgba(200,160,80,0.4); color: #e0c890; } .chip.gratitude .d { background: #c8a050; }
+  .chip.patience { border-color: rgba(110,150,180,0.4); color: #a8c4d8; } .chip.patience .d { background: #6e96b4; }
+  .chip.tawakkul { border-color: rgba(180,130,110,0.4); color: #d8b49c; } .chip.tawakkul .d { background: #b4826e; }
+  .chip.hope { border-color: rgba(200,180,110,0.4); color: #e4d89c; } .chip.hope .d { background: #c8b46e; }
+</style>
+
+<div class="wrap">
+  <div class="row">
+
+    <!-- Screen 1: Welcome -->
+    <div>
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="page">
+            <div class="hero">
+              <div class="mark">القرآن أطلس</div>
+              <div class="tag">Qur'an Atlas</div>
+              <div class="blessing">
+                Read, reflect, remember.
+                <div style="margin-top: 14px; font-size: 13px; color: #a89968; direction: rtl; font-family: 'Amiri', serif;">كِتَٰبٌ أَنزَلْنَـٰهُ إِلَيْكَ مُبَـٰرَكٌ</div>
+                <div style="margin-top: 6px; font-size: 10px; color: #8a8270;">"A Book We have sent down to you, blessed."<br/>— 38:29</div>
+              </div>
+            </div>
+            <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <div class="cta-row">
+              <div class="cta primary">Begin</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="state-label">1 · Welcome</div>
+    </div>
+
+    <!-- Screen 2: Theme -->
+    <div>
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="page">
+            <div class="skip">Skip</div>
+            <div class="headline">Pick how it <span class="gold">feels</span>.</div>
+            <div class="lede">You can change this anytime in Settings. Auto follows your device at sunset.</div>
+
+            <div class="swatch-row">
+              <div class="sw"><div class="chip light"><div class="ar">ﷲ</div></div><div class="label">Light</div><div class="sub">Daylight</div></div>
+              <div class="sw on"><div class="chip sepia"><div class="ar">ﷲ</div></div><div class="label">Sepia</div><div class="sub">Paper</div></div>
+              <div class="sw"><div class="chip dark"><div class="ar">ﷲ</div></div><div class="label">Dark</div><div class="sub">Evening</div></div>
+            </div>
+            <div class="auto-note">Or let it follow your device — <b>Auto</b></div>
+
+            <div class="dots"><div class="dot"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+            <div class="cta-row">
+              <div class="cta primary">Continue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="state-label">2 · Theme</div>
+    </div>
+
+    <!-- Screen 3: Translation -->
+    <div>
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="page">
+            <div class="skip">Skip</div>
+            <div class="headline">Which <span class="gold">translation</span>?</div>
+            <div class="lede">All translations ship offline. Switch between them per verse later.</div>
+
+            <div class="tlist">
+              <div class="t on">
+                <div class="radio"></div>
+                <div class="body"><div class="name">Saheeh International</div><div class="sub">Plain modern English · widely used</div></div>
+                <div class="meta">Default</div>
+              </div>
+              <div class="t">
+                <div class="radio"></div>
+                <div class="body"><div class="name">Pickthall</div><div class="sub">Classical, reverent phrasing · 1930</div></div>
+              </div>
+              <div class="t">
+                <div class="radio"></div>
+                <div class="body"><div class="name">Yusuf Ali</div><div class="sub">Literary, with commentary voice</div></div>
+              </div>
+              <div class="t">
+                <div class="radio"></div>
+                <div class="body"><div class="name">Clear Qur'an — Dr. Mustafa Khattab</div><div class="sub">Contemporary, accessible</div></div>
+              </div>
+            </div>
+
+            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot on"></div><div class="dot"></div></div>
+            <div class="cta-row">
+              <div class="cta primary">Continue</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="state-label">3 · Translation</div>
+    </div>
+
+    <!-- Screen 4: Tags intro -->
+    <div>
+      <div class="phone">
+        <div class="screen">
+          <div class="notch"></div>
+          <div class="page">
+            <div class="skip">Skip</div>
+            <div class="headline">Mark what <span class="gold">speaks</span> to you.</div>
+            <div class="lede">Long-press any verse to save it with a tag — mercy, patience, reflection — and revisit it later grouped by theme.</div>
+
+            <div class="vpreview">
+              <div class="vref">2:286 · Al-Baqarah</div>
+              <div class="varabic">لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا</div>
+              <div class="vtrans">"Allah does not burden a soul beyond what it can bear."</div>
+              <div class="tag-demo">
+                <span class="chip mercy"><span class="d"></span>mercy</span>
+                <span class="chip patience"><span class="d"></span>patience</span>
+                <span class="chip tawakkul"><span class="d"></span>tawakkul</span>
+              </div>
+            </div>
+
+            <div style="font-size: 9.5px; color: #8a8270; line-height: 1.55; text-align: center;">
+              Your marks live on this device.<br/>Private by default — nothing synced, nothing tracked.
+            </div>
+
+            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot on"></div></div>
+            <div class="cta-row">
+              <div class="cta primary">Open Al-Fatihah</div>
+              <div class="cta ghost">Browse all surahs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="state-label">4 · Tags intro</div>
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top: 24px; padding: 14px 18px; background: #faf6ec; border: 1px solid #e6d5a6; border-radius: 10px; font-size: 13px; line-height: 1.55; color: #3d2e14;">
+  <b style="letter-spacing: 0.3px;">Shape.</b> Four screens, progress dots, Skip appears from screen 2 onward (screen 1 has no skip — it's the brand moment). <b>Screen 1</b> wordmark + 38:29 blessing ("A Book We have sent down to you, blessed"). <b>Screen 2</b> theme with three swatches (Light / Sepia / Dark) showing the Arabic لفظ الجلالة in each palette + Auto note. <b>Screen 3</b> translation picker — Saheeh default, offline badge implicit. <b>Screen 4</b> introduces the core verb: long-press → mark → tag, shown with a real verse (2:286) and sample chips in the semantic palette; ends with privacy line and two CTAs (Fatihah or surah list). Total time < 30 seconds for a user who reads everything.
+</div>

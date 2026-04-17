@@ -1,0 +1,279 @@
+<h2>Surah list — the index</h2>
+<p class="subtitle">Opens from the dock (⌕) or command sheet "Browse all surahs". Same verse-block grammar, book-feel rows.</p>
+
+<style>
+  .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 22px 0 12px; }
+  .col-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 4px; }
+  .col-sub { font-size: 11px; margin-bottom: 14px; color: #8a8270; }
+  .col.dark .col-title { color: #d6cfa8; }
+  .col.sepia .col-title { color: #8b6b3a; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .phone { border-radius: 26px; padding: 6px; box-shadow: 0 14px 36px rgba(0,0,0,0.22); position: relative; }
+  .phone.dk { background: #000; }
+  .phone.sp { background: #2d2418; }
+  .phone .screen { border-radius: 22px; height: 560px; position: relative; overflow: hidden; font-family: -apple-system, "SF Pro", sans-serif; }
+  .phone .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 60px; height: 16px; background: #000; border-radius: 999px; z-index: 50; }
+  .state-label { text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; font-weight: 600; color: #8a8270; }
+
+  .page { padding: 34px 14px 60px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+
+  /* Header */
+  .hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .hdr .title { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+  .hdr .count { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; }
+
+  /* Search */
+  .search { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 10px; margin-bottom: 10px; font-size: 10px; }
+  .search .ico { font-size: 11px; opacity: 0.6; }
+  .search .ph { opacity: 0.5; }
+  .search .kbd { margin-left: auto; font-size: 7px; padding: 1px 4px; border-radius: 3px; }
+
+  /* Segment: All / Bookmarked / Recent */
+  .seg { display: flex; gap: 4px; padding: 3px; border-radius: 999px; margin-bottom: 10px; font-size: 9px; }
+  .seg .s { flex: 1; text-align: center; padding: 5px 0; border-radius: 999px; font-weight: 600; letter-spacing: 0.4px; }
+
+  /* Continue-reading card */
+  .cont { padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .cont .c-ico { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .cont .c-body { flex: 1; min-width: 0; }
+  .cont .c-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.65; }
+  .cont .c-ref { font-size: 11px; font-weight: 600; margin-top: 1px; }
+  .cont .c-arr { font-size: 11px; opacity: 0.6; }
+
+  /* List */
+  .list { flex: 1; overflow: hidden; }
+  .srow { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px dotted; }
+  .srow:last-child { border-bottom: none; }
+  .srow .num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .srow .mid { flex: 1; min-width: 0; }
+  .srow .en { font-size: 11px; font-weight: 600; line-height: 1.2; }
+  .srow .meaning { font-size: 8.5px; font-style: italic; opacity: 0.7; margin-top: 1px; }
+  .srow .ar { font-size: 13px; font-family: "Amiri", serif; direction: rtl; flex-shrink: 0; }
+  .srow .meta { text-align: right; flex-shrink: 0; min-width: 44px; }
+  .srow .vcount { font-size: 8.5px; font-variant-numeric: tabular-nums; }
+  .srow .type { font-size: 7px; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 1px; opacity: 0.6; }
+
+  .srow.bm { position: relative; }
+  .srow.bm::before { content: ''; position: absolute; left: -14px; top: 50%; transform: translateY(-50%); width: 2px; height: 18px; border-radius: 2px; }
+
+  /* Dock */
+  .dock { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); backdrop-filter: blur(14px); border-radius: 999px; padding: 4px; display: flex; gap: 2px; z-index: 40; }
+  .dock .d { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+
+  /* DARK */
+  .dk .screen { background: #0e0e0c; color: #e8e3c9; }
+  .dk .hdr .title { color: #e8e3c9; }
+  .dk .hdr .count { color: #6b6656; }
+  .dk .search { background: #1a1814; border: 1px solid #24201a; color: #b8b3a0; }
+  .dk .search .kbd { background: rgba(168,153,104,0.18); color: #a89968; }
+  .dk .seg { background: #1a1814; border: 1px solid #24201a; color: #6b6656; }
+  .dk .seg .s.on { background: #a89968; color: #0e0e0c; }
+  .dk .cont { background: linear-gradient(135deg, rgba(168,153,104,0.14), rgba(168,153,104,0.04)); border: 1px solid rgba(168,153,104,0.28); }
+  .dk .cont .c-ico { background: #a89968; color: #0e0e0c; }
+  .dk .cont .c-label { color: #a89968; }
+  .dk .cont .c-ref { color: #e8e3c9; }
+  .dk .cont .c-arr { color: #a89968; }
+  .dk .srow { border-bottom-color: #24201a; }
+  .dk .srow .num { background: #1a1814; color: #a89968; border: 1px solid #2a2620; }
+  .dk .srow.bm::before { background: #a89968; }
+  .dk .srow .en { color: #e8e3c9; }
+  .dk .srow .meaning { color: #8a8270; }
+  .dk .srow .ar { color: #a89968; }
+  .dk .srow .vcount { color: #b8b3a0; }
+  .dk .srow .type { color: #6b6656; }
+  .dk .dock { background: rgba(20,18,12,0.95); border: 1px solid rgba(168,153,104,0.22); }
+  .dk .dock .d { color: #6b6656; }
+  .dk .dock .d.active { background: #a89968; color: #0e0e0c; }
+
+  /* SEPIA */
+  .sp .screen { background: #f3e8cf; color: #3d2e14; }
+  .sp .hdr .title { color: #3d2e14; }
+  .sp .hdr .count { color: #8b6b3a; }
+  .sp .search { background: #faf1d8; border: 1px solid #e6d5a6; color: #6b4a16; }
+  .sp .search .kbd { background: rgba(139,107,58,0.15); color: #6b4a16; }
+  .sp .seg { background: #faf1d8; border: 1px solid #e6d5a6; color: #8b6b3a; }
+  .sp .seg .s.on { background: #8b6b3a; color: #faf1d8; }
+  .sp .cont { background: linear-gradient(135deg, rgba(139,107,58,0.12), rgba(139,107,58,0.03)); border: 1px solid rgba(139,107,58,0.28); }
+  .sp .cont .c-ico { background: #8b6b3a; color: #faf1d8; }
+  .sp .cont .c-label { color: #8b6b3a; }
+  .sp .cont .c-ref { color: #3d2e14; }
+  .sp .cont .c-arr { color: #8b6b3a; }
+  .sp .srow { border-bottom-color: #e6d5a6; }
+  .sp .srow .num { background: #faf1d8; color: #6b4a16; border: 1px solid #e6d5a6; }
+  .sp .srow.bm::before { background: #8b6b3a; }
+  .sp .srow .en { color: #3d2e14; }
+  .sp .srow .meaning { color: #6b4a16; }
+  .sp .srow .ar { color: #6b4a16; }
+  .sp .srow .vcount { color: #4a3a1e; }
+  .sp .srow .type { color: #8b6b3a; }
+  .sp .dock { background: rgba(61,46,20,0.95); border: 1px solid rgba(217,198,151,0.3); }
+  .sp .dock .d { color: #d9c697; }
+  .sp .dock .d.active { background: #d9c697; color: #3d2e14; }
+
+  /* Search state: highlight + empty */
+  .hl { background: rgba(168,153,104,0.35); border-radius: 2px; padding: 0 2px; }
+  .sp .hl { background: rgba(139,107,58,0.25); }
+</style>
+
+<div class="wrap">
+  <!-- DARK -->
+  <div class="col dark">
+    <div class="col-title">Dark</div>
+    <div class="col-sub">All · 114 · with Continue-reading card, first bookmarked surah marked with gold edge.</div>
+    <div class="row2">
+
+      <div>
+        <div class="phone dk">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="page">
+              <div class="hdr">
+                <div class="title">Surahs</div>
+                <div class="count">114</div>
+              </div>
+              <div class="search"><span class="ico">⌕</span><span class="ph">Search surah or number</span><span class="kbd">⌘K</span></div>
+              <div class="seg"><div class="s on">All</div><div class="s">Bookmarked</div><div class="s">Recent</div></div>
+
+              <div class="cont">
+                <div class="c-ico">↻</div>
+                <div class="c-body">
+                  <div class="c-label">Continue reading</div>
+                  <div class="c-ref">Al-Mulk · verse 14</div>
+                </div>
+                <div class="c-arr">›</div>
+              </div>
+
+              <div class="list">
+                <div class="srow"><div class="num">1</div><div class="mid"><div class="en">Al-Fatihah</div><div class="meaning">The Opening</div></div><div class="ar">الفاتحة</div><div class="meta"><div class="vcount">7</div><div class="type">Meccan</div></div></div>
+                <div class="srow bm"><div class="num">2</div><div class="mid"><div class="en">Al-Baqarah</div><div class="meaning">The Cow</div></div><div class="ar">البقرة</div><div class="meta"><div class="vcount">286</div><div class="type">Medinan</div></div></div>
+                <div class="srow"><div class="num">3</div><div class="mid"><div class="en">Ali 'Imran</div><div class="meaning">Family of Imran</div></div><div class="ar">آل عمران</div><div class="meta"><div class="vcount">200</div><div class="type">Medinan</div></div></div>
+                <div class="srow"><div class="num">4</div><div class="mid"><div class="en">An-Nisa'</div><div class="meaning">The Women</div></div><div class="ar">النساء</div><div class="meta"><div class="vcount">176</div><div class="type">Medinan</div></div></div>
+                <div class="srow bm"><div class="num">5</div><div class="mid"><div class="en">Al-Ma'idah</div><div class="meaning">The Table Spread</div></div><div class="ar">المائدة</div><div class="meta"><div class="vcount">120</div><div class="type">Medinan</div></div></div>
+                <div class="srow"><div class="num">6</div><div class="mid"><div class="en">Al-An'am</div><div class="meaning">The Cattle</div></div><div class="ar">الأنعام</div><div class="meta"><div class="vcount">165</div><div class="type">Meccan</div></div></div>
+                <div class="srow"><div class="num">7</div><div class="mid"><div class="en">Al-A'raf</div><div class="meaning">The Heights</div></div><div class="ar">الأعراف</div><div class="meta"><div class="vcount">206</div><div class="type">Meccan</div></div></div>
+                <div class="srow"><div class="num">8</div><div class="mid"><div class="en">Al-Anfal</div><div class="meaning">The Spoils of War</div></div><div class="ar">الأنفال</div><div class="meta"><div class="vcount">75</div><div class="type">Medinan</div></div></div>
+              </div>
+
+              <div class="dock">
+                <div class="d">📖</div>
+                <div class="d active">⌕</div>
+                <div class="d">✦</div>
+                <div class="d">⋯</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Dark · All (default)</div>
+      </div>
+
+      <div>
+        <div class="phone dk">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="page">
+              <div class="hdr">
+                <div class="title">Surahs</div>
+                <div class="count">3 matches</div>
+              </div>
+              <div class="search"><span class="ico">⌕</span><span style="color: #e8e3c9;">ra<span style="border-left: 1px solid #a89968; margin-left:1px;"></span></span><span class="kbd" style="margin-left:auto;">esc</span></div>
+              <div class="seg"><div class="s on">All</div><div class="s">Bookmarked</div><div class="s">Recent</div></div>
+
+              <div class="list" style="margin-top:4px;">
+                <div class="srow"><div class="num">13</div><div class="mid"><div class="en">Ar-<span class="hl">Ra</span>'d</div><div class="meaning">The Thunder</div></div><div class="ar">الرعد</div><div class="meta"><div class="vcount">43</div><div class="type">Medinan</div></div></div>
+                <div class="srow"><div class="num">30</div><div class="mid"><div class="en">Ar-<span class="hl">Ru</span>m</div><div class="meaning">The <span class="hl">Ro</span>mans</div></div><div class="ar">الروم</div><div class="meta"><div class="vcount">60</div><div class="type">Meccan</div></div></div>
+                <div class="srow"><div class="num">55</div><div class="mid"><div class="en">Ar-<span class="hl">Ra</span>hman</div><div class="meaning">The Most Merciful</div></div><div class="ar">الرحمن</div><div class="meta"><div class="vcount">78</div><div class="type">Medinan</div></div></div>
+              </div>
+
+              <div class="dock">
+                <div class="d">📖</div>
+                <div class="d active">⌕</div>
+                <div class="d">✦</div>
+                <div class="d">⋯</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Dark · Search "ra"</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SEPIA -->
+  <div class="col sepia">
+    <div class="col-title">Sepia</div>
+    <div class="col-sub">Bookmarked filter, and numeric jump ("67") resolving to Al-Mulk.</div>
+    <div class="row2">
+
+      <div>
+        <div class="phone sp">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="page">
+              <div class="hdr">
+                <div class="title">Surahs</div>
+                <div class="count">4 bookmarked</div>
+              </div>
+              <div class="search"><span class="ico">⌕</span><span class="ph">Search surah or number</span><span class="kbd">⌘K</span></div>
+              <div class="seg"><div class="s">All</div><div class="s on">Bookmarked</div><div class="s">Recent</div></div>
+
+              <div class="list" style="margin-top:4px;">
+                <div class="srow bm"><div class="num">2</div><div class="mid"><div class="en">Al-Baqarah</div><div class="meaning">The Cow</div></div><div class="ar">البقرة</div><div class="meta"><div class="vcount">286</div><div class="type">Medinan</div></div></div>
+                <div class="srow bm"><div class="num">18</div><div class="mid"><div class="en">Al-Kahf</div><div class="meaning">The Cave</div></div><div class="ar">الكهف</div><div class="meta"><div class="vcount">110</div><div class="type">Meccan</div></div></div>
+                <div class="srow bm"><div class="num">36</div><div class="mid"><div class="en">Ya-Sin</div><div class="meaning">Ya Sin</div></div><div class="ar">يس</div><div class="meta"><div class="vcount">83</div><div class="type">Meccan</div></div></div>
+                <div class="srow bm"><div class="num">67</div><div class="mid"><div class="en">Al-Mulk</div><div class="meaning">The Sovereignty</div></div><div class="ar">الملك</div><div class="meta"><div class="vcount">30</div><div class="type">Meccan</div></div></div>
+              </div>
+
+              <div class="dock">
+                <div class="d">📖</div>
+                <div class="d active">⌕</div>
+                <div class="d">✦</div>
+                <div class="d">⋯</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Sepia · Bookmarked</div>
+      </div>
+
+      <div>
+        <div class="phone sp">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="page">
+              <div class="hdr">
+                <div class="title">Surahs</div>
+                <div class="count">1 match</div>
+              </div>
+              <div class="search"><span class="ico">⌕</span><span style="color: #3d2e14;">67</span><span class="kbd" style="margin-left:auto;">esc</span></div>
+              <div class="seg"><div class="s on">All</div><div class="s">Bookmarked</div><div class="s">Recent</div></div>
+
+              <div style="padding: 8px 6px; font-size: 9px; color: #8b6b3a; text-transform: uppercase; letter-spacing: 1.2px;">Jumping to #67</div>
+              <div class="list">
+                <div class="srow bm"><div class="num"><span class="hl">67</span></div><div class="mid"><div class="en">Al-Mulk</div><div class="meaning">The Sovereignty</div></div><div class="ar">الملك</div><div class="meta"><div class="vcount">30</div><div class="type">Meccan</div></div></div>
+              </div>
+
+              <div style="margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgba(139,107,58,0.1); border: 1px dashed rgba(139,107,58,0.4); font-size: 9.5px; color: #6b4a16;">
+                <b style="letter-spacing: 0.4px;">Tip.</b> Type a number (1–114) to jump, a name (partial OK), or a reference like <b>2:255</b> to open directly.
+              </div>
+
+              <div class="dock">
+                <div class="d">📖</div>
+                <div class="d active">⌕</div>
+                <div class="d">✦</div>
+                <div class="d">⋯</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="state-label">Sepia · Numeric jump "67"</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 24px; padding: 14px 18px; background: #faf6ec; border: 1px solid #e6d5a6; border-radius: 10px; font-size: 13px; line-height: 1.55; color: #3d2e14;">
+  <b style="letter-spacing: 0.3px;">Anatomy.</b> Header with live count · inline search (⌘K on desktop, tap on mobile) · three-segment filter (All / Bookmarked / Recent) · Continue-reading card only on "All" · row = index circle, English + meaning, Arabic, verse count + Meccan/Medinan · gold left-edge marks bookmarked surahs (same vocabulary as the reader's verse-edge). Search supports name, number (<code>67</code>), and full ref (<code>2:255</code> opens verse directly). Empty state of "Recent" would mirror the dashed-border tip box.
+</div>
