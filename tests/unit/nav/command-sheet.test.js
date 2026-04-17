@@ -10,10 +10,35 @@ const MOCK_SURAHS = [
 
 vi.mock('../../../src/data/dataset.js', () => ({
   getSurahs: vi.fn().mockResolvedValue(MOCK_SURAHS),
+  getSurah: vi.fn().mockResolvedValue({ ar: ['Arabic text'], en: ['English text'] }),
 }))
 
 vi.mock('../../../src/data/surah-meanings.js', () => ({
   getMeaning: vi.fn((n) => ({ 1: 'The Opening', 2: 'The Cow', 67: 'The Sovereignty', 114: 'Mankind' })[n] || ''),
+}))
+
+vi.mock('../../../src/marks/store.js', () => ({
+  getAll: vi.fn().mockResolvedValue([]),
+}))
+
+vi.mock('../../../src/marks/tags.js', () => ({
+  getAllUsedTags: vi.fn().mockResolvedValue([]),
+  getColorForTag: vi.fn().mockReturnValue('#a89968'),
+}))
+
+vi.mock('../../../src/settings/theme.js', () => ({
+  setTheme: vi.fn().mockResolvedValue(true),
+}))
+
+vi.mock('../../../src/settings/font-size.js', () => ({
+  setFontSize: vi.fn().mockResolvedValue(true),
+  loadFontSize: vi.fn().mockResolvedValue('medium'),
+}))
+
+vi.mock('../../../src/core/db.js', () => ({
+  get: vi.fn().mockResolvedValue(undefined),
+  put: vi.fn().mockResolvedValue(undefined),
+  openDB: vi.fn().mockResolvedValue(undefined),
 }))
 
 function setupShell() {
@@ -65,7 +90,7 @@ describe('nav/command-sheet.js — shell', () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
 
-    openCommandSheet()
+    await openCommandSheet()
 
     const scrim = document.querySelector('.qa-cmd-scrim')
     const sheet = document.querySelector('.qa-cmd-sheet')
@@ -79,7 +104,7 @@ describe('nav/command-sheet.js — shell', () => {
     const { initCommandSheet, openCommandSheet, closeCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
 
-    openCommandSheet()
+    await openCommandSheet()
     closeCommandSheet()
 
     const sheet = document.querySelector('.qa-cmd-sheet')
@@ -90,7 +115,7 @@ describe('nav/command-sheet.js — shell', () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
 
-    openCommandSheet()
+    await openCommandSheet()
     document.querySelector('.qa-cmd-scrim').click()
 
     const sheet = document.querySelector('.qa-cmd-sheet')
@@ -101,7 +126,7 @@ describe('nav/command-sheet.js — shell', () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
 
-    openCommandSheet()
+    await openCommandSheet()
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
 
     const sheet = document.querySelector('.qa-cmd-sheet')
@@ -117,7 +142,7 @@ describe('nav/command-sheet.js — shell', () => {
     expect(document.querySelector('.qa-cmd-sheet')).toBeFalsy()
 
     // Post-destroy open is a no-op and must not throw
-    expect(() => openCommandSheet()).not.toThrow()
+    expect(() => { openCommandSheet() }).not.toThrow()
     expect(document.querySelector('.qa-cmd-sheet')).toBeFalsy()
   })
 })
@@ -143,27 +168,27 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
     await new Promise(r => setTimeout(r, 0))
   }
 
-  it('renders an Actions group on empty query with Open Review and Open Settings', async () => {
+  it('renders a Jump to group on empty query with Review hub and Settings', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('')
 
     const groups = document.querySelectorAll('.qa-cmd-group')
     expect(groups.length).toBeGreaterThanOrEqual(1)
     const titles = Array.from(groups).map(g => g.querySelector('.qa-cmd-group-title')?.textContent)
-    expect(titles).toContain('Actions')
+    expect(titles).toContain('Jump to')
 
     const items = document.querySelectorAll('.qa-cmd-item')
     const labels = Array.from(items).map(el => el.querySelector('.qa-cmd-item-label')?.textContent)
-    expect(labels).toContain('Open Review')
-    expect(labels).toContain('Open Settings')
+    expect(labels).toContain('Review hub')
+    expect(labels).toContain('Settings')
   })
 
   it('renders a Surahs group matching by number', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('67')
 
     const items = document.querySelectorAll('.qa-cmd-item[data-kind="surah"]')
@@ -175,7 +200,7 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
   it('renders a Surahs group matching by name substring, capped at 6', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('al')
 
     const items = document.querySelectorAll('.qa-cmd-item[data-kind="surah"]')
@@ -185,28 +210,30 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
     expect(names.some(n => n.includes('Al-Fatihah'))).toBe(true)
   })
 
-  it('renders a Verses group on direct-ref like 2:255', async () => {
+  it('renders a verse preview card on direct-ref like 2:255', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('2:255')
+    // Allow async getSurah to settle
+    await new Promise(r => setTimeout(r, 20))
 
-    const groups = document.querySelectorAll('.qa-cmd-group')
-    const titles = Array.from(groups).map(g => g.querySelector('.qa-cmd-group-title')?.textContent)
-    expect(titles).toContain('Verses')
+    const card = document.querySelector('.qa-cmd-vcard')
+    expect(card).toBeTruthy()
+    const ref = card.querySelector('.qa-cmd-vcard-ref')
+    expect(ref.textContent).toContain('2:255')
+    expect(ref.textContent).toContain('Al-Baqarah')
 
-    const item = document.querySelector('.qa-cmd-item[data-kind="verse"]')
-    expect(item).toBeTruthy()
-    expect(item.getAttribute('data-surah')).toBe('2')
-    expect(item.getAttribute('data-verse')).toBe('255')
-    expect(item.textContent).toContain('2:255')
-    expect(item.textContent).toContain('Al-Baqarah')
+    const openItem = document.querySelector('.qa-cmd-item[data-kind="verse"]')
+    expect(openItem).toBeTruthy()
+    expect(openItem.getAttribute('data-surah')).toBe('2')
+    expect(openItem.getAttribute('data-verse')).toBe('255')
   })
 
   it('shows an empty state when the query has no matches', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('zzzzz')
 
     expect(document.querySelectorAll('.qa-cmd-item')).toHaveLength(0)
@@ -221,7 +248,7 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
     const evts = await import('../../../src/core/events.js')
     const { Events } = await import('../../../src/core/constants.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('67')
 
     const navFn = vi.fn()
@@ -240,7 +267,7 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
     const evts = await import('../../../src/core/events.js')
     const { Events } = await import('../../../src/core/constants.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('2:255')
 
     const navFn = vi.fn()
@@ -252,14 +279,14 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
     expect(navFn).toHaveBeenCalledWith({ surah: 2, verse: 255 })
   })
 
-  it('activating Open Review changes hash to #/review and closes the sheet', async () => {
+  it('activating Review hub changes hash to #/review and closes the sheet', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('')
 
     const item = Array.from(document.querySelectorAll('.qa-cmd-item'))
-      .find(el => el.textContent.includes('Open Review'))
+      .find(el => el.textContent.includes('Review hub'))
     expect(item).toBeTruthy()
     item.click()
 
@@ -291,7 +318,7 @@ describe('nav/command-sheet.js — keyboard', () => {
   it('first item is active on render', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('al')
 
     const items = document.querySelectorAll('.qa-cmd-item')
@@ -302,7 +329,7 @@ describe('nav/command-sheet.js — keyboard', () => {
   it('ArrowDown moves selection to the next item', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('al')
 
     const input = document.querySelector('.qa-cmd-input')
@@ -316,7 +343,7 @@ describe('nav/command-sheet.js — keyboard', () => {
   it('ArrowUp on the first item wraps to the last', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('al')
 
     const input = document.querySelector('.qa-cmd-input')
@@ -331,7 +358,7 @@ describe('nav/command-sheet.js — keyboard', () => {
     const evts = await import('../../../src/core/events.js')
     const { Events } = await import('../../../src/core/constants.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
     await typeQuery('67')
 
     const navFn = vi.fn()
@@ -367,7 +394,7 @@ describe('nav/command-sheet.js — keyboard', () => {
   it('Cmd+K while open closes the sheet', async () => {
     const { initCommandSheet, openCommandSheet } = await import('../../../src/nav/command-sheet.js')
     await initCommandSheet()
-    openCommandSheet()
+    await openCommandSheet()
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))
 
