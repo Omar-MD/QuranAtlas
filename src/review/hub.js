@@ -161,8 +161,13 @@ async function initTagDeepLink(rawTag, container) {
   filteredMarks = filterMarks(sortedMarks, currentState)
   displayedCount = 0
 
-  renderFvrHeader(container, tag, marks)
-  render(container)
+  container.textContent = ''
+  const layout = document.createElement('div')
+  layout.className = 'qa-fvr-layout'
+  container.appendChild(layout)
+
+  renderFvrHeader(layout, tag, marks)
+  render(layout)
   setInitialFocus()
   emit(Events.REVIEW_OPEN)
 }

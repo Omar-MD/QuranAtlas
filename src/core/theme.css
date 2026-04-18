@@ -2666,12 +2666,10 @@ html[data-theme="sepia"] #bottom-nav {
   }
 }
 
-/* FVR keeps its existing centered no-rail layout at desktop */
-@media (min-width: 1180px) {
-  .qa-fvr-layout {
-    max-width: 720px;
-    margin: 0 auto;
-  }
+/* FVR layout — centered at all viewports, header + cards align to 720px */
+.qa-fvr-layout {
+  max-width: 720px;
+  margin: 0 auto;
 }
 
 /* FVR header */
