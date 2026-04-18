@@ -58,19 +58,19 @@
   --qa-space-8: 3rem;      /* 48px */
 
   /* --- LIGHT THEME (Default) --- */
-  --qa-bg-primary: #ffffff;
-  --qa-bg-secondary: #f4f4f5;
-  --qa-bg-surface: #fafafa;
-  
-  --qa-text-arabic: #000000;
-  --qa-text-primary: #18181b;     /* High contrast for readability */
-  --qa-text-secondary: #52525b;   /* Subordinate text, still AAA where possible */
-  
+  --qa-bg-primary: #fbf8f0;
+  --qa-bg-secondary: #f4ede0;
+  --qa-bg-surface: #f8f2e4;
+
+  --qa-text-arabic: #1a1a1a;
+  --qa-text-primary: #2d2820;
+  --qa-text-secondary: #5a4d38;
+
   --qa-accent: #8b6b3a;           /* Bronze — shared with Sepia, WCAG AA on white */
   --qa-accent-hover: #6b4a16;
-  
-  --qa-border: #e4e4e7;
-  --qa-border-subtle: #f4f4f5;
+
+  --qa-border: #e8dcc0;
+  --qa-border-subtle: #f1e9d3;
   --qa-verse-hover-bg: rgba(139, 107, 58, 0.06);
 
   --qa-skeleton: #e4e4e7;
