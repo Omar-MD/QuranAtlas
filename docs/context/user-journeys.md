@@ -59,6 +59,8 @@ On the reader.
 
 **Tablet+ variant:** Dock items grow from 38×38 to 42×42 for easier iPad tap targets (≥768px). Auto-hide behavior unchanged.
 
+**Desktop variant:** On viewports ≥1180px, the reader renders as two columns — translation (in a scholarly serif) on the left, Arabic justified to the start on the right. Translation is top-aligned with the Arabic opening line. Toggling Hide translation in Settings collapses to a single Arabic column.
+
 **Desktop variant (≥1180px):** Dock items expand to labeled pills — the visually-hidden text label ("Read", "Search", "Review", "More") unhides inline next to each glyph. Positioning stays bottom-centered.
 
 ### B2. Scroll hides dock, scroll-to-top surfaces it
