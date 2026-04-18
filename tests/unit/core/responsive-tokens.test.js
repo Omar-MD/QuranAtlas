@@ -120,4 +120,19 @@ describe('theme.css — responsive breakpoint tokens', () => {
     )
     expect(hit, 'expected a min-width: 768px block bumping .qa-dock-item to 42×42px').toBeDefined()
   })
+
+  it('at desktop, .qa-dock-label un-hides (position: static)', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-dock-label\s*\{[^}]*position:\s*static/.test(b[1]))
+    expect(hit, 'expected a min-width: 1180px block un-hiding .qa-dock-label').toBeDefined()
+  })
+
+  it('at desktop, .qa-dock-item becomes pill-shaped with gap + padding', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-dock-item\s*\{[^}]*border-radius:\s*999px/.test(b[1]) &&
+      /\.qa-dock-item\s*\{[^}]*gap:\s*0\.5rem/.test(b[1])
+    )
+    expect(hit, 'expected .qa-dock-item to be pill-shaped with gap 0.5rem at desktop').toBeDefined()
+  })
 })
