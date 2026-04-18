@@ -66,8 +66,8 @@
   --qa-text-primary: #2d2820;
   --qa-text-secondary: #5a4d38;
 
-  --qa-accent: #8b6b3a;           /* Bronze — shared with Sepia, WCAG AA on white */
-  --qa-accent-hover: #6b4a16;
+  --qa-accent: #78592e;           /* Alias of --qa-ambient-accent; unified bronze */
+  --qa-accent-hover: #5e3a18;     /* Darker bronze hover */
 
   --qa-border: #e8dcc0;
   --qa-border-subtle: #f1e9d3;
@@ -121,6 +121,12 @@
    * @media values in sync. */
   --qa-bp-tablet: 768px;
   --qa-bp-desktop: 1180px;
+
+  /* --- Selection + on-accent tokens --- */
+  --qa-on-accent: #faf1d8;                                                  /* Text color on solid --qa-ambient-accent fills */
+  --qa-selection-bg: rgba(120, 89, 46, 0.08);                               /* Lighter than ambient-accent-soft (WCAG AA >= 4.5:1) */
+  --qa-selection-text: var(--qa-ambient-accent);                            /* Accent text on soft tint */
+  --qa-selection-ring: color-mix(in srgb, var(--qa-ambient-accent) 35%, transparent);
 }
 
 /* Tablet: stepped chrome tokens step up. Reading tokens (Arabic, translation)
@@ -149,7 +155,7 @@ html[data-theme="sepia"] {
   --qa-text-primary: #3c2f1d;
   --qa-text-secondary: #4a3b26;
 
-  --qa-accent: #7c4f23;
+  --qa-accent: #78592e;           /* Aliased to --qa-ambient-accent */
   --qa-accent-hover: #5e3a18;
 
   --qa-border: #d9c595;
@@ -191,6 +197,11 @@ html[data-theme="sepia"] {
   --qa-ambient-pill-radius: 999px;
   --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.22);
   --qa-verse-hover-bg: rgba(124, 79, 35, 0.07);
+
+  --qa-on-accent: #faf1d8;                                                  /* Same as light — both share #78592e accent */
+  --qa-selection-bg: rgba(120, 89, 46, 0.08);                               /* Lighter than ambient-accent-soft (WCAG AA >= 4.5:1) */
+  --qa-selection-text: var(--qa-ambient-accent);
+  --qa-selection-ring: color-mix(in srgb, var(--qa-ambient-accent) 35%, transparent);
 }
 
 html[data-theme="dark"] {
@@ -202,8 +213,8 @@ html[data-theme="dark"] {
   --qa-text-primary: #dcdcdc;
   --qa-text-secondary: #a3a3a3;
 
-  --qa-accent: #7dd3fc;
-  --qa-accent-hover: #bae6fd;
+  --qa-accent: #d4a253;           /* Honey amber — aliased to --qa-ambient-accent */
+  --qa-accent-hover: #e4b882;     /* Lighter amber for hover */
 
   --qa-border: #232a30;
   --qa-border-subtle: #1d2328;
@@ -231,8 +242,9 @@ html[data-theme="dark"] {
   --qa-tag-default: #9ca3af;
 
   /* --- Ambient palette (redesign) --- */
-  --qa-ambient-accent: #7dd3fc;
-  --qa-ambient-accent-soft: rgba(125, 211, 252, 0.18);
+  --qa-ambient-accent: #d4a253;
+  --qa-ambient-accent-soft: rgba(212, 162, 83, 0.18);
+  --qa-ambient-kbd-color: #e4b882;
   --qa-ambient-parchment: #c8d4de;
   --qa-ambient-muted: #9bb0be;
   --qa-ambient-dim: #8da7b5;
@@ -242,7 +254,12 @@ html[data-theme="dark"] {
   --qa-ambient-sheet-radius: 16px;
   --qa-ambient-pill-radius: 999px;
   --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.4);
-  --qa-verse-hover-bg: rgba(125, 211, 252, 0.05);
+  --qa-verse-hover-bg: rgba(212, 162, 83, 0.05);
+
+  --qa-on-accent: #15110a;
+  --qa-selection-bg: var(--qa-ambient-accent-soft);
+  --qa-selection-text: var(--qa-ambient-accent);
+  --qa-selection-ring: color-mix(in srgb, var(--qa-ambient-accent) 35%, transparent);
 }
 
 /* ==========================================================================
