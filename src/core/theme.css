@@ -2068,6 +2068,39 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
 
 .qa-sheet--mark { max-height: 86%; }
 
+/* Desktop: mark editor grows and its body splits into two columns.
+ * Left: verse preview + note textarea. Right: selected tags + search + all tags.
+ * Uses the existing .qa-sheet--mark / .qa-mark-body modifier classes from
+ * src/marks/editor.js — no JS change. Matches --qa-bp-desktop. */
+@media (min-width: 1180px) {
+  .qa-sheet.qa-sheet--mark {
+    width: min(640px, calc(100vw - 32px));
+  }
+
+  .qa-sheet--mark .qa-mark-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 1.25rem;
+    row-gap: 0.75rem;
+    align-items: start;
+  }
+
+  /* Left column — preview + note */
+  .qa-sheet--mark .qa-mark-body > .qa-mark-quote,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-label,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-note {
+    grid-column: 1;
+  }
+
+  /* Right column — tags */
+  .qa-sheet--mark .qa-mark-body > .qa-mark-selected,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-search,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-all-head,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-chips--all {
+    grid-column: 2;
+  }
+}
+
 .qa-mark-hdr {
   text-align: left;
   padding-bottom: 10px;
