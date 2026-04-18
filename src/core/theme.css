@@ -481,6 +481,45 @@ html[data-theme="light"] .qa-dock-item--active {
   border-radius: 50%;
 }
 
+/* Tablet: larger dock hit targets for iPad. Glyph-only still — labels arrive
+ * at desktop. Matches --qa-bp-tablet. */
+@media (min-width: 768px) {
+  .qa-dock-item {
+    width: 2.625rem;
+    height: 2.625rem;
+  }
+  .qa-dock-icon {
+    font-size: 1.2rem;
+  }
+}
+
+/* Desktop: dock becomes a labeled pill. The sr-only .qa-dock-label unhides
+ * inline next to the glyph. Matches --qa-bp-desktop. */
+@media (min-width: 1180px) {
+  .qa-dock-item {
+    width: auto;
+    height: auto;
+    padding: 0.5rem 0.875rem;
+    border-radius: 999px;
+    gap: 0.5rem;
+    font-size: var(--qa-text-size-ui);
+  }
+  .qa-dock-label {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: nowrap;
+  }
+  .qa-dock-icon {
+    font-size: 1.15rem;
+  }
+}
+
 /* ==========================================================================
    Verse edge indicators — tap-active + bookmarked
    ========================================================================== */
@@ -1479,6 +1518,23 @@ html[data-theme="light"] .qa-dock-item--active {
 @media (max-width: 640px) {
   .qa-cmd-foot { display: none; }
 }
+
+/* Tablet+: show the ⌘K footer hint. The mobile rule above hides it below
+ * 640px; this makes "shown" the explicit intent at tablet+. */
+@media (min-width: 768px) {
+  .qa-cmd-foot {
+    display: flex;
+  }
+}
+
+/* Desktop: cap command sheet width so result lists don't stretch
+ * edge-to-edge on wide screens. */
+@media (min-width: 1180px) {
+  .qa-cmd-sheet {
+    max-width: 640px;
+  }
+}
+
 .qa-cmd-foot-group { display: inline-flex; align-items: center; gap: 6px; }
 
 .qa-cmd-kbd {
@@ -1783,7 +1839,11 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
   animation: qa-sheet-rise 0.22s ease forwards;
 }
-@media (min-width: 720px) {
+@keyframes qa-sheet-rise {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@media (min-width: 768px) {
   .qa-sheet {
     left: 50%;
     right: auto;
@@ -1796,10 +1856,6 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
     from { transform: translateX(-50%) translateY(20px); opacity: 0; }
     to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
   }
-}
-@keyframes qa-sheet-rise {
-  from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
 }
 
 .qa-sheet-grip {
@@ -2028,6 +2084,39 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
    ========================================================================== */
 
 .qa-sheet--mark { max-height: 86%; }
+
+/* Desktop: mark editor grows and its body splits into two columns.
+ * Left: verse preview + note textarea. Right: selected tags + search + all tags.
+ * Uses the existing .qa-sheet--mark / .qa-mark-body modifier classes from
+ * src/marks/editor.js — no JS change. Matches --qa-bp-desktop. */
+@media (min-width: 1180px) {
+  .qa-sheet.qa-sheet--mark {
+    width: min(640px, calc(100vw - 32px));
+  }
+
+  .qa-sheet--mark .qa-mark-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 1.25rem;
+    row-gap: 0.75rem;
+    align-items: start;
+  }
+
+  /* Left column — preview + note */
+  .qa-sheet--mark .qa-mark-body > .qa-mark-quote,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-label,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-note {
+    grid-column: 1;
+  }
+
+  /* Right column — tags */
+  .qa-sheet--mark .qa-mark-body > .qa-mark-selected,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-search,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-all-head,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-chips--all {
+    grid-column: 2;
+  }
+}
 
 .qa-mark-hdr {
   text-align: left;
@@ -2447,6 +2536,24 @@ html[data-theme="sepia"] .qa-review-seg-item--on { color: #3d2e14; }
   color: var(--qa-ambient-dim);
   font-size: 0.75rem;
   cursor: pointer;
+}
+
+/* Landscape phones & short-desktop windows: drop the 72vh min-height that
+ * overflows when viewport is short. Top-align content; sheets are unaffected
+ * (they already internal-scroll). */
+@media (max-height: 500px) {
+  .qa-onb-page {
+    min-height: 100%;
+    justify-content: flex-start;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  .qa-onb-hero {
+    padding-block: 0.5rem;
+  }
+  .qa-onb-dots {
+    margin-top: 0.75rem;
+  }
 }
 
 .qa-onb-hero {

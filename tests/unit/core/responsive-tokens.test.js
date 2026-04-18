@@ -111,4 +111,92 @@ describe('theme.css — responsive breakpoint tokens', () => {
     // container max-width shrinks to 900px in the translation-hidden state
     expect(hit[1]).toMatch(/max-width:\s*900px/)
   })
+
+  it('bumps .qa-dock-item size at tablet (42×42px)', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-dock-item\s*\{[^}]*width:\s*2\.625rem/.test(b[1]) &&
+      /\.qa-dock-item\s*\{[^}]*height:\s*2\.625rem/.test(b[1])
+    )
+    expect(hit, 'expected a min-width: 768px block bumping .qa-dock-item to 42×42px').toBeDefined()
+  })
+
+  it('at desktop, .qa-dock-label un-hides (position: static)', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-dock-label\s*\{[^}]*position:\s*static/.test(b[1]))
+    expect(hit, 'expected a min-width: 1180px block un-hiding .qa-dock-label').toBeDefined()
+  })
+
+  it('at desktop, .qa-dock-item becomes pill-shaped with gap + padding', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-dock-item\s*\{[^}]*border-radius:\s*999px/.test(b[1]) &&
+      /\.qa-dock-item\s*\{[^}]*gap:\s*0\.5rem/.test(b[1])
+    )
+    expect(hit, 'expected .qa-dock-item to be pill-shaped with gap 0.5rem at desktop').toBeDefined()
+  })
+
+  it('sheet-to-centered-modal triggers at min-width: 768px (not 720px)', () => {
+    // The .qa-sheet centered-modal rules must live in a 768px block now.
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-sheet\s*\{[^}]*top:\s*10vh/.test(b[1]) &&
+      /\.qa-sheet\s*\{[^}]*width:\s*min\(480px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
+    )
+    expect(hit, 'expected sheet-centered-modal rules under min-width: 768px').toBeDefined()
+  })
+
+  it('no remaining @media (min-width: 720px) targeting .qa-sheet', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*720px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const sheetHit = blocks.find(b => /\.qa-sheet\s*\{/.test(b[1]))
+    expect(sheetHit, 'no 720px block should still target .qa-sheet').toBeUndefined()
+  })
+
+  it('at desktop, .qa-sheet--mark widens to 640px', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-sheet\.qa-sheet--mark[^{]*\{[^}]*width:\s*min\(640px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
+    )
+    expect(hit, 'expected .qa-sheet--mark to widen to 640px at desktop').toBeDefined()
+  })
+
+  it('at desktop, .qa-mark-body becomes a 2-column grid', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-sheet--mark\s+\.qa-mark-body\s*\{[^}]*display:\s*grid/.test(b[1]) &&
+      /\.qa-sheet--mark\s+\.qa-mark-body\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/.test(b[1])
+    )
+    expect(hit, 'expected .qa-mark-body to be 2-col grid at desktop').toBeDefined()
+  })
+
+  it('at desktop, mark-body left column hosts quote + note; right hosts tags', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-mark-quote[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
+      /\.qa-mark-note[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
+      /\.qa-mark-selected[^{]*\{[^}]*grid-column:\s*2/.test(b[1])
+    )
+    expect(hit, 'expected quote+note in col 1 and selected tags in col 2').toBeDefined()
+  })
+
+  it('at desktop, .qa-cmd-sheet caps max-width at 640px', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-cmd-sheet\s*\{[^}]*max-width:\s*640px/.test(b[1]))
+    expect(hit, 'expected .qa-cmd-sheet to cap at 640px at desktop').toBeDefined()
+  })
+
+  it('at tablet+, .qa-cmd-foot is explicitly shown', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-cmd-foot\s*\{[^}]*display:\s*flex/.test(b[1]))
+    expect(hit, 'expected .qa-cmd-foot display:flex at min-width 768px').toBeDefined()
+  })
+
+  it('onboarding landscape guard: max-height: 500px shrinks .qa-onb-page', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*max-height:\s*500px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-onb-page\s*\{[^}]*min-height:\s*100%/.test(b[1]) &&
+      /\.qa-onb-page\s*\{[^}]*justify-content:\s*flex-start/.test(b[1])
+    )
+    expect(hit, 'expected .qa-onb-page height guard at max-height 500px').toBeDefined()
+  })
 })
