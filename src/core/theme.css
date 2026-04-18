@@ -1518,6 +1518,23 @@ html[data-theme="light"] .qa-dock-item--active {
 @media (max-width: 640px) {
   .qa-cmd-foot { display: none; }
 }
+
+/* Tablet+: show the ⌘K footer hint. The mobile rule above hides it below
+ * 640px; this makes "shown" the explicit intent at tablet+. */
+@media (min-width: 768px) {
+  .qa-cmd-foot {
+    display: flex;
+  }
+}
+
+/* Desktop: cap command sheet width so result lists don't stretch
+ * edge-to-edge on wide screens. */
+@media (min-width: 1180px) {
+  .qa-cmd-sheet {
+    max-width: 640px;
+  }
+}
+
 .qa-cmd-foot-group { display: inline-flex; align-items: center; gap: 6px; }
 
 .qa-cmd-kbd {
