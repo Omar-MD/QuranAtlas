@@ -186,6 +186,7 @@ html[data-theme="sepia"] {
   --qa-ambient-sheet-radius: 16px;
   --qa-ambient-pill-radius: 999px;
   --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.22);
+  --qa-verse-hover-bg: rgba(124, 79, 35, 0.07);
 }
 
 html[data-theme="dark"] {
@@ -237,6 +238,7 @@ html[data-theme="dark"] {
   --qa-ambient-sheet-radius: 16px;
   --qa-ambient-pill-radius: 999px;
   --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.4);
+  --qa-verse-hover-bg: rgba(125, 211, 252, 0.05);
 }
 
 /* ==========================================================================
