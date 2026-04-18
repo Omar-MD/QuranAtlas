@@ -13,7 +13,9 @@
 
 ## Journey results
 
-(filled in by Tasks 11–16)
+### A1 Onboarding
+- Mobile 375×667: PASS — Screen 1 renders (Begin button visible, dock at bottom), landscape guard does not apply (height 667 > 500px threshold, correct). All 4 screens navigable. Onboarding completes to reader at /#/s/1. Console: 0 errors.
+- Landscape 667×375: PASS — Landscape guard applies correctly: `.qa-onb-page` computed `min-height: 100%` (was 72vh), `justify-content: flex-start`. Screens 2–4 content fully visible. Screen 1 Begin button partially overlapped by fixed dock (pre-existing, matches Task 10 baseline — not a regression). Onboarding completes to reader. Console: 0 errors.
 
 ## Regressions found
 
