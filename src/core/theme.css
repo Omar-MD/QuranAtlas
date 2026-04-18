@@ -363,7 +363,7 @@ a:hover, a:focus {
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
   z-index: 99;
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition: transform 0.22s ease, visibility 0s linear 0s;
 }
 
 html[data-theme="dark"] .qa-pill-ref {
@@ -377,9 +377,10 @@ html[data-theme="dark"] .qa-pill-ref {
 }
 
 .qa-pill-ref--hidden {
-  opacity: 0;
+  visibility: hidden;
   transform: translateX(-50%) translateY(-10px);
   pointer-events: none;
+  transition: transform 0.22s ease, visibility 0s linear 0.22s;
 }
 
 .qa-pill-ref-text {
@@ -415,8 +416,7 @@ html[data-theme="dark"] .qa-pill-ref {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  transition: transform 0.28s ease, opacity 0.22s ease;
-  opacity: 1;
+  transition: transform 0.28s ease, visibility 0s linear 0s;
 }
 
 html[data-theme="dark"] #bottom-nav {
@@ -429,9 +429,10 @@ html[data-theme="sepia"] #bottom-nav {
 #bottom-nav:empty { display: none; }
 
 #bottom-nav.qa-dock--hidden {
-  opacity: 0;
+  visibility: hidden;
   transform: translateX(-50%) translateY(120%);
   pointer-events: none;
+  transition: transform 0.28s ease, visibility 0s linear 0.28s;
 }
 
 .qa-dock-item {
@@ -446,7 +447,7 @@ html[data-theme="sepia"] #bottom-nav {
   text-decoration: none;
   font-size: 1rem;
   line-height: 1;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: none;
 }
 
 .qa-dock-item:hover,
@@ -1399,12 +1400,13 @@ html[data-theme="light"] .qa-dock-item--active {
   background-color: var(--qa-ambient-surface);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: transform 0.18s ease, visibility 0s linear 0s;
 }
 
 .qa-cmd--hidden {
-  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
+  transition: transform 0.18s ease, visibility 0s linear 0.18s;
 }
 
 .qa-cmd-sheet.qa-cmd--hidden {
@@ -1873,8 +1875,8 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
   animation: qa-sheet-rise 0.22s ease forwards;
 }
 @keyframes qa-sheet-rise {
-  from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from { transform: translateY(20px); }
+  to   { transform: translateY(0); }
 }
 @media (min-width: 768px) {
   .qa-sheet {
@@ -1886,8 +1888,8 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
     width: min(480px, calc(100vw - 32px));
   }
   @keyframes qa-sheet-rise {
-    from { transform: translateX(-50%) translateY(20px); opacity: 0; }
-    to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+    from { transform: translateX(-50%) translateY(20px); }
+    to   { transform: translateX(-50%) translateY(0); }
   }
 }
 
