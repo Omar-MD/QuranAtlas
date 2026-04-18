@@ -1,5 +1,5 @@
 /**
- * Four onboarding screens. Each renderScreen() fully builds its DOM into `wrap`.
+ * Five onboarding screens. Each renderScreen() fully builds its DOM into `wrap`.
  */
 
 import { setTheme, loadTheme, getThemeOptions } from '../settings/theme.js'
@@ -22,6 +22,7 @@ export async function renderScreen(wrap, n, cb) {
   if (n === 1) { renderWelcome(page, cb) }
   else if (n === 2) { await renderTheme(page, cb) }
   else if (n === 3) { await renderTranslation(page, cb) }
+  else if (n === 4) { renderShortcuts(page, cb) }
   else { renderTagsIntro(page, cb) }
 
   const dots = document.createElement('div')
@@ -277,5 +278,67 @@ function renderTagsIntro(page, cb) {
   ghost.addEventListener('click', cb.onFinishSurahList)
   row.appendChild(primary)
   row.appendChild(ghost)
+  page.appendChild(row)
+}
+
+function renderShortcuts(page, cb) {
+  const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.platform)
+  const cmd = isMac ? '\u2318' : 'Ctrl' // ⌘
+
+  const headline = document.createElement('h1')
+  headline.className = 'qa-onb-headline'
+  headline.textContent = 'A few shortcuts'
+  page.appendChild(headline)
+
+  const lede = document.createElement('p')
+  lede.className = 'qa-onb-lede'
+  lede.textContent = 'QuranAtlas is faster than tapping. These work anywhere in the app.'
+  page.appendChild(lede)
+
+  const grid = document.createElement('div')
+  grid.className = 'qa-onb-shortcuts'
+
+  const rows = [
+    { keys: [cmd, 'K'],           desc: 'Search verses, tags, surahs' },
+    { keys: [cmd, '\u2191'],      desc: 'Bigger font', aux: [cmd, '\u2193', 'Smaller font'] },
+    { keys: ['g', 'r'],           desc: 'Review hub' },
+    { keys: ['g', 's'],           desc: 'Surah list' },
+    { keys: ['g', ','],           desc: 'Settings' },
+    { keys: ['Long-press'],       desc: 'Mark & tag a verse', gesture: true },
+  ]
+
+  for (const r of rows) {
+    const row = document.createElement('div')
+    row.className = 'qa-onb-shortcut-row'
+
+    const kbdWrap = document.createElement('div')
+    kbdWrap.className = 'qa-onb-shortcut-keys'
+    for (let i = 0; i < r.keys.length; i++) {
+      const kbd = document.createElement('kbd')
+      kbd.className = 'qa-onb-kbd' + (r.gesture ? ' qa-onb-kbd--gesture' : '')
+      kbd.textContent = r.keys[i]
+      kbdWrap.appendChild(kbd)
+    }
+    row.appendChild(kbdWrap)
+
+    const desc = document.createElement('span')
+    desc.className = 'qa-onb-shortcut-desc'
+    desc.textContent = r.desc
+    row.appendChild(desc)
+
+    grid.appendChild(row)
+  }
+
+  page.appendChild(grid)
+
+  const cta = document.createElement('button')
+  cta.type = 'button'
+  cta.className = 'qa-onb-cta qa-onb-cta--primary'
+  cta.textContent = 'Continue'
+  cta.addEventListener('click', cb.onContinue)
+
+  const row = document.createElement('div')
+  row.className = 'qa-onb-cta-row'
+  row.appendChild(cta)
   page.appendChild(row)
 }

@@ -2963,6 +2963,55 @@ html[data-theme="sepia"] #bottom-nav {
   border-color: var(--qa-ambient-accent-soft);
 }
 
+.qa-onb-shortcuts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 16px 0 20px;
+  text-align: left;
+}
+.qa-onb-shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--qa-ambient-parchment);
+}
+.qa-onb-shortcut-keys {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.qa-onb-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 8px;
+  border: 1px solid var(--qa-ambient-border);
+  border-radius: 5px;
+  background: var(--qa-ambient-surface);
+  color: var(--qa-ambient-kbd-color, var(--qa-ambient-accent));
+  font-family: var(--qa-font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.qa-onb-kbd--gesture {
+  font-weight: 400;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.qa-onb-shortcut-desc { color: var(--qa-ambient-muted); }
+
+@media (min-width: 1180px) {
+  .qa-onb-shortcuts {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 32px;
+  }
+  .qa-onb-shortcut-row { font-size: 1rem; }
+}
+
 /* Onboarding — tablet scale-up */
 @media (min-width: 768px) {
   .qa-onboarding {

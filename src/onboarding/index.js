@@ -31,8 +31,8 @@ export async function init() {
   const show = async () => {
     while (wrap.firstChild) { wrap.removeChild(wrap.firstChild) }
     await renderScreen(wrap, screen, {
-      total: 4,
-      onContinue: () => { screen += 1; if (screen > 4) { finish('fatihah') } else { show() } },
+      total: 5,
+      onContinue: () => { screen += 1; if (screen > 5) { finish('fatihah') } else { show() } },
       onSkip: () => { finish('fatihah') },
       onFinishFatihah: () => finish('fatihah'),
       onFinishSurahList: () => finish('surahs'),
