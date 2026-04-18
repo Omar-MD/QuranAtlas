@@ -481,6 +481,18 @@ html[data-theme="light"] .qa-dock-item--active {
   border-radius: 50%;
 }
 
+/* Tablet: larger dock hit targets for iPad. Glyph-only still — labels arrive
+ * at desktop. Matches --qa-bp-tablet. */
+@media (min-width: 768px) {
+  .qa-dock-item {
+    width: 2.625rem;
+    height: 2.625rem;
+  }
+  .qa-dock-icon {
+    font-size: 1.2rem;
+  }
+}
+
 /* ==========================================================================
    Verse edge indicators — tap-active + bookmarked
    ========================================================================== */
