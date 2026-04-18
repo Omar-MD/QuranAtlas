@@ -1325,15 +1325,17 @@ html[data-theme="light"] .qa-dock-item--active {
   }
 
   .qa-verse-arabic {
-    grid-column: 1;
+    grid-column: 2;
     margin-bottom: 0;
     text-align: start;
+    align-self: start;
   }
 
   .qa-verse-translation {
-    grid-column: 2;
+    grid-column: 1;
     border-top: none;
     padding-top: 0;
+    align-self: start;
   }
 }
 
