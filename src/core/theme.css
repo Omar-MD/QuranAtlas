@@ -707,9 +707,10 @@ html[data-theme="light"] .qa-dock-item--active {
 
 /* English Translation Block */
 .qa-verse-translation {
+  font-family: var(--qa-font-translation);
   font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base));
-  line-height: var(--qa-line-height-translation);
-  color: var(--qa-text-secondary);
+  line-height: 1.75;
+  color: var(--qa-text-primary);
   direction: ltr;
   text-align: left;
   padding-top: 0.75rem;
