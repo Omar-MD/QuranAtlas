@@ -61,9 +61,8 @@ describe('theme.css — responsive breakpoint tokens', () => {
 
   it('at desktop, #main-content max-width expands to 1180px', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
-    const hit = blocks.find(b => b[1].includes('#main-content'))
-    expect(hit, 'expected a min-width: 1180px block containing #main-content').toBeDefined()
-    expect(hit[1]).toMatch(/#main-content\s*\{[^}]*max-width:\s*1180px/)
+    const hit = blocks.find(b => /#main-content\s*\{[^}]*max-width:\s*1180px/.test(b[1]))
+    expect(hit, 'expected a min-width: 1180px block with #main-content { max-width: 1180px }').toBeDefined()
   })
 
   it('at desktop, .qa-verse padding bumped to 2.25rem', () => {

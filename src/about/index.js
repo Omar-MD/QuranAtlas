@@ -93,6 +93,10 @@ export async function init() {
     // Stats unavailable — leave as '—'
   }
 
+  // Body split — attribution (left) + install/version (right)
+  const bodySplit = document.createElement('div')
+  bodySplit.className = 'qa-about-body-split'
+
   // Attribution
   const attrSection = document.createElement('section')
   attrSection.className = 'qa-about-attribution'
@@ -119,16 +123,23 @@ export async function init() {
   }
 
   attrSection.appendChild(attrList)
-  mainContent.appendChild(attrSection)
+  bodySplit.appendChild(attrSection)
 
-  // PWA Install
-  renderInstallButton(mainContent)
+  // Right column — install + version
+  const bodyRight = document.createElement('div')
+  bodyRight.className = 'qa-about-body-right'
 
-  // Version (simplified)
+  // PWA Install (appends to bodyRight)
+  renderInstallButton(bodyRight)
+
+  // Version
   const versionLine = document.createElement('p')
   versionLine.className = 'qa-about-version-line'
   versionLine.textContent = `v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'unknown'}`
-  mainContent.appendChild(versionLine)
+  bodyRight.appendChild(versionLine)
+
+  bodySplit.appendChild(bodyRight)
+  mainContent.appendChild(bodySplit)
 
   announce('About page')
 

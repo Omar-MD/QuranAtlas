@@ -1178,6 +1178,41 @@ html[data-theme="sepia"] #bottom-nav {
   margin-top: 1rem;
 }
 
+/* Desktop — hero + 4-across stats + 2-col body */
+@media (min-width: 1180px) {
+  #main-content:has(> .qa-about-heading) {
+    max-width: 1000px;
+  }
+
+  .qa-about-heading,
+  .qa-about-mission {
+    text-align: center;
+  }
+  .qa-about-heading { font-size: 2rem; }
+  .qa-about-mission { font-size: 1.125rem; margin-bottom: 2rem; }
+
+  .qa-about-blessing-wrap {
+    max-width: 720px;
+    margin: 0 auto 2rem;
+    padding: 1.75rem 1.5rem;
+  }
+
+  .qa-about-stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+    margin: 2rem 0 2.5rem;
+  }
+
+  .qa-about-body-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    column-gap: 2.5rem;
+    align-items: start;
+  }
+  .qa-about-body-split .qa-about-attribution { margin-bottom: 0; }
+  .qa-about-body-split .qa-about-install { margin-bottom: 0; }
+  .qa-about-body-split .qa-about-version-line { text-align: left; margin-top: 0.75rem; }
+}
+
 /* ==========================================================================
    Modal (shared: clear-data, etc.)
    ========================================================================== */
@@ -1802,6 +1837,24 @@ html[data-theme="sepia"] #bottom-nav {
 }
 .qa-sl-row-vcount { font-size: 0.75rem; color: var(--qa-ambient-muted); font-variant-numeric: tabular-nums; }
 .qa-sl-row-type { font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--qa-ambient-dim); }
+
+/* Desktop — two-column rows */
+@media (min-width: 1180px) {
+  .qa-surah-list-page {
+    max-width: 1180px;
+  }
+
+  .qa-sl-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
+    row-gap: 0;
+  }
+
+  .qa-sl-continue {
+    grid-column: 1 / -1;
+  }
+}
 
 /* ==========================================================================
    Bottom sheet chrome — More, Settings, Mark editor, etc.
