@@ -672,6 +672,15 @@ html[data-theme="light"] .qa-dock-item--active {
   border-bottom: none;
 }
 
+@media (hover: hover) {
+  .qa-verse {
+    transition: background-color 0.18s ease;
+  }
+  .qa-verse:hover {
+    background-color: var(--qa-verse-hover-bg);
+  }
+}
+
 /* Arabic Text Block */
 .qa-verse-arabic {
   font-family: var(--qa-font-arabic);
