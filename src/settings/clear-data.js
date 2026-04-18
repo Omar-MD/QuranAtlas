@@ -47,11 +47,11 @@ export async function showClearDataConfirmation() {
   actions.className = 'qa-modal-actions'
 
   const cancelBtn = document.createElement('button')
-  cancelBtn.className = 'qa-btn qa-btn-secondary'
+  cancelBtn.className = 'qa-mark-btn qa-mark-btn--ghost'
   cancelBtn.textContent = 'Cancel'
 
   const confirmBtn = document.createElement('button')
-  confirmBtn.className = 'qa-btn qa-btn-danger'
+  confirmBtn.className = 'qa-mark-btn qa-mark-btn--danger-primary'
   confirmBtn.textContent = 'Clear All Data'
   confirmBtn.disabled = true
   confirmBtn.setAttribute('aria-describedby', 'clear-warning')

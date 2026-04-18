@@ -147,7 +147,7 @@ function renderInstallButton(container) {
   section.className = 'qa-about-install'
 
   const btn = document.createElement('button')
-  btn.className = 'qa-btn qa-btn-primary qa-about-install-btn'
+  btn.className = 'qa-about-install-btn'
   btn.textContent = 'Install App'
   btn.setAttribute('aria-label', 'Install QuranAtlas to your home screen')
   btn.addEventListener('click', async () => {

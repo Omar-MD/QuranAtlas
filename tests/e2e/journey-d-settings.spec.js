@@ -277,11 +277,11 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(modal.locator('h2')).toHaveText('Clear All Data?')
 
     // Confirm button starts disabled
-    const confirmBtn = modal.locator('.qa-btn-danger')
+    const confirmBtn = modal.locator('.qa-mark-btn--danger-primary')
     await expect(confirmBtn).toBeDisabled()
 
     // Cancel button is visible
-    const cancelVisible = modal.locator('.qa-btn-secondary')
+    const cancelVisible = modal.locator('.qa-mark-btn--ghost')
     await expect(cancelVisible).toBeVisible()
 
     // Type DELETE in the confirmation input
@@ -312,7 +312,7 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(backdrop).toBeVisible({ timeout: 5_000 })
 
     // Click Cancel
-    const cancelBtn = backdrop.locator('.qa-btn-secondary')
+    const cancelBtn = backdrop.locator('.qa-mark-btn--ghost')
     await cancelBtn.click()
 
     // Dialog closes
@@ -354,7 +354,7 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(backdrop).toBeVisible({ timeout: 5_000 })
 
     const modal = backdrop.locator('.qa-modal')
-    const confirmBtn = modal.locator('.qa-btn-danger')
+    const confirmBtn = modal.locator('.qa-mark-btn--danger-primary')
     const confirmInput = modal.locator('.qa-input-confirm')
 
     // Type lowercase 'delete' — confirm must remain disabled (case-sensitive)
@@ -370,7 +370,7 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(confirmBtn).toBeEnabled({ timeout: 3_000 })
 
     // Cancel so we don't reload
-    await modal.locator('.qa-btn-secondary').click()
+    await modal.locator('.qa-mark-btn--ghost').click()
     await expect(backdrop).not.toBeVisible({ timeout: 3_000 })
   })
 })
