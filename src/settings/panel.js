@@ -29,7 +29,6 @@ export async function initSettingsPanel() {
 
 export function openSettingsSheet() {
   if (sheet) { return }
-  currentView = 'main'
 
   scrim = document.createElement('div')
   scrim.className = 'qa-sheet-backdrop'
@@ -63,7 +62,6 @@ export function closeSettingsSheet() {
 async function renderMain() {
   if (!sheet) { return }
   while (sheet.firstChild) { sheet.removeChild(sheet.firstChild) }
-  currentView = 'main'
 
   const grip = document.createElement('div')
   grip.className = 'qa-sheet-grip'
@@ -279,7 +277,6 @@ function applyTranslationToDOM(visible) {
 async function renderTranslationPicker() {
   if (!sheet) { return }
   while (sheet.firstChild) { sheet.removeChild(sheet.firstChild) }
-  currentView = 'translation'
 
   const grip = document.createElement('div')
   grip.className = 'qa-sheet-grip'
