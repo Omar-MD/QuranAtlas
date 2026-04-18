@@ -151,4 +151,31 @@ describe('theme.css — responsive breakpoint tokens', () => {
     const sheetHit = blocks.find(b => /\.qa-sheet\s*\{/.test(b[1]))
     expect(sheetHit, 'no 720px block should still target .qa-sheet').toBeUndefined()
   })
+
+  it('at desktop, .qa-sheet--mark widens to 640px', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-sheet\.qa-sheet--mark[^{]*\{[^}]*width:\s*min\(640px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
+    )
+    expect(hit, 'expected .qa-sheet--mark to widen to 640px at desktop').toBeDefined()
+  })
+
+  it('at desktop, .qa-mark-body becomes a 2-column grid', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-sheet--mark\s+\.qa-mark-body\s*\{[^}]*display:\s*grid/.test(b[1]) &&
+      /\.qa-sheet--mark\s+\.qa-mark-body\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/.test(b[1])
+    )
+    expect(hit, 'expected .qa-mark-body to be 2-col grid at desktop').toBeDefined()
+  })
+
+  it('at desktop, mark-body left column hosts quote + note; right hosts tags', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-mark-quote[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
+      /\.qa-mark-note[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
+      /\.qa-mark-selected[^{]*\{[^}]*grid-column:\s*2/.test(b[1])
+    )
+    expect(hit, 'expected quote+note in col 1 and selected tags in col 2').toBeDefined()
+  })
 })
