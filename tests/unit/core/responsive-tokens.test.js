@@ -135,4 +135,20 @@ describe('theme.css — responsive breakpoint tokens', () => {
     )
     expect(hit, 'expected .qa-dock-item to be pill-shaped with gap 0.5rem at desktop').toBeDefined()
   })
+
+  it('sheet-to-centered-modal triggers at min-width: 768px (not 720px)', () => {
+    // The .qa-sheet centered-modal rules must live in a 768px block now.
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-sheet\s*\{[^}]*top:\s*10vh/.test(b[1]) &&
+      /\.qa-sheet\s*\{[^}]*width:\s*min\(480px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
+    )
+    expect(hit, 'expected sheet-centered-modal rules under min-width: 768px').toBeDefined()
+  })
+
+  it('no remaining @media (min-width: 720px) targeting .qa-sheet', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*720px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const sheetHit = blocks.find(b => /\.qa-sheet\s*\{/.test(b[1]))
+    expect(sheetHit, 'no 720px block should still target .qa-sheet').toBeUndefined()
+  })
 })

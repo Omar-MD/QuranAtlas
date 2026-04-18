@@ -1822,7 +1822,7 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
   animation: qa-sheet-rise 0.22s ease forwards;
 }
-@media (min-width: 720px) {
+@media (min-width: 768px) {
   .qa-sheet {
     left: 50%;
     right: auto;
