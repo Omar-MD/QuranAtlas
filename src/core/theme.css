@@ -2538,6 +2538,24 @@ html[data-theme="sepia"] .qa-review-seg-item--on { color: #3d2e14; }
   cursor: pointer;
 }
 
+/* Landscape phones & short-desktop windows: drop the 72vh min-height that
+ * overflows when viewport is short. Top-align content; sheets are unaffected
+ * (they already internal-scroll). */
+@media (max-height: 500px) {
+  .qa-onb-page {
+    min-height: 100%;
+    justify-content: flex-start;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  .qa-onb-hero {
+    padding-block: 0.5rem;
+  }
+  .qa-onb-dots {
+    margin-top: 0.75rem;
+  }
+}
+
 .qa-onb-hero {
   flex: 1;
   display: flex;

@@ -190,4 +190,13 @@ describe('theme.css — responsive breakpoint tokens', () => {
     const hit = blocks.find(b => /\.qa-cmd-foot\s*\{[^}]*display:\s*flex/.test(b[1]))
     expect(hit, 'expected .qa-cmd-foot display:flex at min-width 768px').toBeDefined()
   })
+
+  it('onboarding landscape guard: max-height: 500px shrinks .qa-onb-page', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*max-height:\s*500px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-onb-page\s*\{[^}]*min-height:\s*100%/.test(b[1]) &&
+      /\.qa-onb-page\s*\{[^}]*justify-content:\s*flex-start/.test(b[1])
+    )
+    expect(hit, 'expected .qa-onb-page height guard at max-height 500px').toBeDefined()
+  })
 })
