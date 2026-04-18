@@ -35,6 +35,7 @@ let flatItems = []
 let keyHandler = null
 let gChordTimer = null
 let gChordPending = false
+let _renderGen = 0
 
 export async function initCommandSheet() {
   destroyCommandSheet()
@@ -169,18 +170,27 @@ export function destroyCommandSheet() {
   tagCache = null
   activeIndex = 0
   flatItems = []
+  _renderGen = 0
   if (gChordTimer) { clearTimeout(gChordTimer); gChordTimer = null }
   gChordPending = false
 }
 
 async function render() {
   if (!results) { return }
+  const gen = ++_renderGen
   const query = (input?.value || '').trim()
-  while (results.firstChild) { results.removeChild(results.firstChild) }
-  flatItems = []
+
+  // Scratch DOM container — only committed to `results` if this render wins.
+  const scratch = document.createDocumentFragment()
+  // Local flat-items list — only committed to `flatItems` if this render wins.
+  const localItems = []
 
   if (!query) {
-    await renderEmptyState()
+    await renderEmptyState(scratch, localItems)
+    if (gen !== _renderGen) { return }
+    while (results.firstChild) { results.removeChild(results.firstChild) }
+    results.appendChild(scratch)
+    flatItems = localItems
     activeIndex = 0
     applyActive()
     return
@@ -188,7 +198,11 @@ async function render() {
 
   const refMatch = query.match(/^(\d+)\s*:\s*(\d+)$/)
   if (refMatch) {
-    await renderVersePreview(parseInt(refMatch[1], 10), parseInt(refMatch[2], 10))
+    await renderVersePreview(parseInt(refMatch[1], 10), parseInt(refMatch[2], 10), scratch, localItems)
+    if (gen !== _renderGen) { return }
+    while (results.firstChild) { results.removeChild(results.firstChild) }
+    results.appendChild(scratch)
+    flatItems = localItems
     activeIndex = 0
     applyActive()
     return
@@ -196,23 +210,28 @@ async function render() {
 
   const groups = resolve(query)
   if (groups.length === 0) {
+    while (results.firstChild) { results.removeChild(results.firstChild) }
     const empty = document.createElement('div')
     empty.className = 'qa-cmd-empty'
     empty.textContent = 'No matches'
     results.appendChild(empty)
+    flatItems = []
     activeIndex = 0
     return
   }
 
   for (const group of groups) {
     if (group.items.length === 0) { continue }
-    results.appendChild(renderGroup(group))
+    scratch.appendChild(renderGroup(group, localItems))
   }
+  while (results.firstChild) { results.removeChild(results.firstChild) }
+  results.appendChild(scratch)
+  flatItems = localItems
   activeIndex = 0
   applyActive()
 }
 
-async function renderEmptyState() {
+async function renderEmptyState(container, itemsList) {
   const recent = []
   try {
     const pos = await get('settings', 'lastSurface')
@@ -245,7 +264,7 @@ async function renderEmptyState() {
   }
 
   if (recent.length > 0) {
-    results.appendChild(renderGroup({ title: 'Recent', items: recent }))
+    container.appendChild(renderGroup({ title: 'Recent', items: recent }, itemsList))
   }
 
   const jumps = [
@@ -253,10 +272,10 @@ async function renderEmptyState() {
     { kind: 'action', glyph: '\u2630', label: 'Browse all surahs', meta: '114 surahs', href: '#/surahs', shortcut: 'G S' },
     { kind: 'action', glyph: '\u2699', label: 'Settings', meta: 'Theme · font · translation', href: '#/settings', shortcut: 'G ,' },
   ]
-  results.appendChild(renderGroup({ title: 'Jump to', items: jumps }))
+  container.appendChild(renderGroup({ title: 'Jump to', items: jumps }, itemsList))
 }
 
-async function renderVersePreview(s, v) {
+async function renderVersePreview(s, v, container, itemsList) {
   const meta = surahCache.find(x => x.n === s)
   if (!meta || s < 1 || s > 114 || v < 1 || v > meta.count) {
     const empty = document.createElement('div')
@@ -264,11 +283,11 @@ async function renderVersePreview(s, v) {
     empty.textContent = meta
       ? `Verse ${v} does not exist in ${meta.name} (max ${meta.count})`
       : `Surah ${s} does not exist (1–114)`
-    results.appendChild(empty)
+    container.appendChild(empty)
     return
   }
 
-  results.appendChild(renderGroupHeader({ title: 'Verse', count: 'direct match' }))
+  container.appendChild(renderGroupHeader({ title: 'Verse', count: 'direct match' }))
 
   const card = document.createElement('div')
   card.className = 'qa-cmd-vcard'
@@ -285,7 +304,7 @@ async function renderVersePreview(s, v) {
   card.appendChild(ref)
   card.appendChild(ar)
   card.appendChild(en)
-  results.appendChild(card)
+  container.appendChild(card)
 
   try {
     const data = await getSurah(s)
@@ -304,9 +323,9 @@ async function renderVersePreview(s, v) {
   const wrap = document.createElement('div')
   wrap.className = 'qa-cmd-group'
   for (const item of items) {
-    wrap.appendChild(renderItem(item))
+    wrap.appendChild(renderItem(item, itemsList))
   }
-  results.appendChild(wrap)
+  container.appendChild(wrap)
 }
 
 function applyActive() {
@@ -319,12 +338,12 @@ function applyActive() {
   }
 }
 
-function renderGroup(group) {
+function renderGroup(group, itemsList) {
   const wrap = document.createElement('div')
   wrap.className = 'qa-cmd-group'
   wrap.appendChild(renderGroupHeader({ title: group.title, count: group.items.length }))
   for (const item of group.items) {
-    wrap.appendChild(renderItem(item))
+    wrap.appendChild(renderItem(item, itemsList))
   }
   return wrap
 }
@@ -345,7 +364,7 @@ function renderGroupHeader({ title, count }) {
   return head
 }
 
-function renderItem(item) {
+function renderItem(item, itemsList) {
   const el = document.createElement('button')
   el.type = 'button'
   el.className = 'qa-cmd-item'
@@ -388,7 +407,8 @@ function renderItem(item) {
   }
 
   el.addEventListener('click', () => { activate(item) })
-  flatItems.push({ el, item })
+  const list = itemsList ?? flatItems
+  list.push({ el, item })
   return el
 }
 

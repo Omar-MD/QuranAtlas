@@ -29,6 +29,10 @@ import { scanA11y } from './fixtures/a11y.js'
 test.describe('Journey F: Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
+    // Wait for the app to finish its launch-restore navigation before touching IDB.
+    // Without this, handleLaunchRestore may navigate (hash change) while a page.evaluate
+    // is in-flight, causing "Execution context was destroyed" on the second IDB write.
+    await page.waitForFunction(() => window.location.hash !== '', { timeout: 5_000 }).catch(() => {})
     await clearAllData(page)
     await markOnboardingComplete(page)
     // Seed a "mercy" mark so tag search in F3 returns results
