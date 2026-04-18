@@ -2962,3 +2962,36 @@ html[data-theme="sepia"] #bottom-nav {
   color: var(--qa-ambient-accent);
   border-color: var(--qa-ambient-accent-soft);
 }
+
+/* Onboarding — tablet scale-up */
+@media (min-width: 768px) {
+  .qa-onboarding {
+    max-width: 560px;
+    padding: 40px 32px 56px;
+  }
+  .qa-onb-mark { font-size: 3rem; }
+  .qa-onb-blessing { font-size: 0.9375rem; max-width: 360px; }
+  .qa-onb-verse { font-size: 1.0625rem; }
+  .qa-onb-headline { font-size: 2rem; }
+  .qa-onb-lede { font-size: 0.9375rem; }
+}
+
+/* Onboarding — desktop scale-up */
+@media (min-width: 1180px) {
+  .qa-onboarding {
+    max-width: 680px;
+    padding: 64px 48px 72px;
+  }
+  .qa-onb-page { min-height: 60vh; }
+  .qa-onb-mark { font-size: 3.75rem; }
+  .qa-onb-tag { font-size: 0.75rem; }
+  .qa-onb-blessing { font-size: 1rem; }
+  .qa-onb-verse { font-size: 1.25rem; }
+  .qa-onb-headline { font-size: 2.5rem; line-height: 1.2; }
+  .qa-onb-lede {
+    font-size: 1rem;
+    max-width: 520px;
+    margin-inline: auto;
+  }
+  .qa-onb-swatches { gap: 14px; }
+}
