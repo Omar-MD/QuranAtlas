@@ -189,19 +189,19 @@ html[data-theme="sepia"] {
 }
 
 html[data-theme="dark"] {
-  --qa-bg-primary: #121212;
-  --qa-bg-secondary: #1e1e1e;
-  --qa-bg-surface: #181818;
-  
-  --qa-text-arabic: #e5e5e5;
-  --qa-text-primary: #d4d4d4;
+  --qa-bg-primary: #0f1215;
+  --qa-bg-secondary: #181c21;
+  --qa-bg-surface: #14181c;
+
+  --qa-text-arabic: #f0efe8;
+  --qa-text-primary: #dcdcdc;
   --qa-text-secondary: #a3a3a3;
-  
-  --qa-accent: #38bdf8;
-  --qa-accent-hover: #7dd3fc;
-  
-  --qa-border: #2e2e2e;
-  --qa-border-subtle: #262626;
+
+  --qa-accent: #7dd3fc;
+  --qa-accent-hover: #bae6fd;
+
+  --qa-border: #232a30;
+  --qa-border-subtle: #1d2328;
   
   --qa-skeleton: #2e2e2e;
 
@@ -226,14 +226,14 @@ html[data-theme="dark"] {
   --qa-tag-default: #9ca3af;
 
   /* --- Ambient palette (redesign) --- */
-  --qa-ambient-accent: #a89968;
-  --qa-ambient-accent-soft: rgba(168, 153, 104, 0.22);
-  --qa-ambient-parchment: #e8e3c9;
-  --qa-ambient-muted: #b8b3a0;
-  --qa-ambient-dim: #6b6656;
-  --qa-ambient-surface: #1a1814;
-  --qa-ambient-border: #24201a;
-  --qa-ambient-scrim: rgba(5, 5, 4, 0.62);
+  --qa-ambient-accent: #7dd3fc;
+  --qa-ambient-accent-soft: rgba(125, 211, 252, 0.18);
+  --qa-ambient-parchment: #c8d4de;
+  --qa-ambient-muted: #9bb0be;
+  --qa-ambient-dim: #8da7b5;
+  --qa-ambient-surface: #1c2128;
+  --qa-ambient-border: #2a323b;
+  --qa-ambient-scrim: rgba(5, 8, 12, 0.64);
   --qa-ambient-sheet-radius: 16px;
   --qa-ambient-pill-radius: 999px;
   --qa-ambient-elevation: 0 18px 40px rgba(0, 0, 0, 0.4);
