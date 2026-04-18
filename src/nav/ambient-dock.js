@@ -19,6 +19,7 @@ let scrollHandler = null
 let hashHandler = null
 let surfaceUnsub = null
 let hideUnsub = null
+let routeChangeUnsub = null
 let lastTop = 0
 let fadeTimer = null
 
@@ -88,6 +89,15 @@ export async function initAmbientDock() {
   updateActive(footer)
   applyRoutePersistence(footer)
   window.addEventListener('hashchange', hashHandler)
+
+  // Re-apply when the router navigates via pushState/replaceState (no native
+  // hashchange fires for those). ROUTER_ROUTE_CHANGE is emitted after each
+  // successful route settle, covering the initial boot-time navigation to
+  // #/onboarding (and any subsequent replaceState-based navigation).
+  routeChangeUnsub = on(Events.ROUTER_ROUTE_CHANGE, () => {
+    updateActive(footer)
+    applyRoutePersistence(footer)
+  })
 
   scrollTarget = document.getElementById('main-content')
   if (scrollTarget) {
@@ -161,6 +171,7 @@ export function destroyAmbientDock() {
   if (hashHandler) { window.removeEventListener('hashchange', hashHandler) }
   if (surfaceUnsub) { surfaceUnsub(); surfaceUnsub = null }
   if (hideUnsub) { hideUnsub(); hideUnsub = null }
+  if (routeChangeUnsub) { routeChangeUnsub(); routeChangeUnsub = null }
   scrollTarget = null
   scrollHandler = null
   hashHandler = null

@@ -52,8 +52,9 @@ Any route other than `#/onboarding`.
 
 On the reader.
 
-1. Tap reader body → dock fades in at bottom, pill fades in at top showing `{surah}:{verse} · {Name}` + ⌘K hint.
-2. No further input for ~3s → both fade out.
+1. Surah loads → dock briefly surfaces at bottom (then auto-fades after ~3s).
+2. Tap reader body → dock fades in again, pill fades in at top showing `{surah}:{verse} · {Name}` + ⌘K hint.
+3. No further input for ~3s → both fade out.
 
 **Surfaces:** Reader, Ambient dock, Ambient pill. **Persistence:** none.
 

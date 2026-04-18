@@ -143,6 +143,7 @@ async function handleRoute(hash) {
           showNotFound()
           return
         }
+        emit(Events.ROUTER_ROUTE_CHANGE, { hash })
         currentCleanup = await module.init(sanitizedParams, hooks) ?? null
         await put('settings', { key: 'lastSurface', value: hash })
       } catch (error) {

@@ -173,6 +173,8 @@ function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah
  */
 function finalizeSurah({ surahNum, surahMeta, surah, initIndicators, setupLongPress, mainContent }) {
   emit(Events.READER_SURAH_LOADED, { surah: surahNum })
+  // Surface the ambient dock briefly so the user sees nav chrome on every surah load.
+  emit(Events.AMBIENT_SURFACE, { reason: 'surah-load' })
   cleanupIndicatorsFn = initIndicators()
   cleanupLongPressFn = setupLongPress(mainContent)
   performance.mark('reader:first-verse')
