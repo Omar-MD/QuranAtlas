@@ -14,24 +14,47 @@ Source of truth baseline is the M10 E2E smoke-test matrix from `docs/superpowers
 
 ---
 
+## Keyboard shortcuts
+
+- `⌘K` / `Ctrl+K` — command sheet (search verses, tags, surahs)
+- `⌘↑` / `Ctrl+↑` — font size up
+- `⌘↓` / `Ctrl+↓` — font size down
+- `g r` — review hub
+- `g s` — surah list
+- `g ,` — settings
+- Long-press a verse — open mark editor
+
+---
+
 ## A. First run & session restore
 
 ### A1. First-run onboarding → Al-Fatihah
 
 Launch with a clean IDB (or cleared data).
 
+Screens: 1) Welcome, 2) Theme, 3) Translation, 4) Shortcuts (new), 5) Tags intro + final CTAs.
+
 1. App boots → `handleLaunchRestore` checks `settings.onboardingComplete`, finds nothing → navigates to `#/onboarding`.
 2. Screen 1 (Welcome): wordmark, blessing, Begin CTA, progress dot 1 lit. No dock, no pill.
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears.
 4. Pick a theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Translation): 4 options with Saheeh as default.
-5. Pick a translation (e.g. Pickthall) → tap **Continue** → Screen 4 (Tags intro): 2:286 verse preview with 3 sample chips, privacy note.
-6. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, `#/s/1`, ambient chrome returns.
+5. Pick a translation (e.g. Pickthall) → tap **Continue** → Screen 4 (Shortcuts).
+6. Screen 4 teaches core shortcuts: `⌘K` search; `⌘↑/⌘↓` font size; `g r / g s / g ,` navigation chords; long-press to mark a verse. Mac shows `⌘`, non-Mac shows `Ctrl`. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 5 (Tags intro).
+7. Screen 5: 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, `#/s/1`, ambient chrome returns.
 
 **Surfaces:** Onboarding → Reader. **Persistence:** `settings.theme`, `settings.translationId`, `settings.onboardingComplete`.
 
 **Alt paths:**
 - Any screen from 2 onward, tap **Skip** → same completion write, land on `#/s/1`.
-- Screen 4, tap **Browse all surahs** → completion write, land on `#/surahs`.
+- Screen 5, tap **Browse all surahs** → completion write, land on `#/surahs`.
+
+### A4. Power up (onboarding shortcuts screen)
+
+Screen 4 of the onboarding flow (see A1).
+
+1. Shown after translation selection; lists 6 shortcut rows: `⌘K`, `⌘↑` (bigger font) + `⌘↓` (smaller font), `g r`, `g s`, `g ,`, Long-press.
+2. Desktop (≥1180px) shows rows in a 2-column grid; mobile stacks in single column.
+3. Tap **Continue** → Screen 5 (Tags intro).
 
 **Landscape phone / short viewport:** When viewport height is under 500px (phones in landscape, small-height browser windows), the onboarding page drops its `72vh` min-height and top-aligns content with reduced hero padding, so no content clips off-screen.
 
@@ -179,6 +202,8 @@ This is a cross-cutting rule, not a feature — preserved intentionally.
 
 **Tablet+ variant (≥768px):** Settings sheet opens as a centered modal (~480px wide, top 10vh) instead of sliding up from the bottom. Previously this happened at 720px; now aligns with the canonical tablet breakpoint.
 
+**Font size.** 5-step slider: xs / sm / md / lg / xl (0.75 → 1.3). Preview shows a short English + Arabic line that scales with the slider. English renders on the left, Arabic on the right. Keyboard: `⌘↑` (Mac) / `Ctrl+↑` (others) bumps up; `⌘↓` / `Ctrl+↓` bumps down; announced to screen readers. Guarded against focused inputs.
+
 ### D2. Pick a translation
 
 Inside Settings sheet.
@@ -217,15 +242,30 @@ Inside Settings sheet.
 
 **Surfaces:** Review hub. **Persistence:** reads `positions.review` for view state (groupBy/sort/filters).
 
-### E2. Swap grouping
+### E2. Switch rail bucket list
 
 Inside review hub.
 
-1. Tap **Surah** segment → cards regroup under surah headers.
-2. Tap **Date** segment → flat list, newest first.
-3. Tap **Tag** segment → back to default; multi-tagged marks appear under each tag.
+The "Group by" segment changes which bucket list the rail shows, not how cards are grouped. Cards always render as a flat, unique, single-column list sorted by most-recent update — no duplicates when a mark carries multiple tags.
+
+1. Tap **Surah** segment → rail shows surah buckets; cards remain flat.
+2. Tap **Date** segment → rail shows month buckets; cards remain flat.
+3. Tap **Tag** segment (default) → rail shows tag buckets.
 
 **Persistence:** each tap writes `positions.review.groupBy`.
+
+### E2b. Filter by multiple tags (desktop)
+
+In Tag mode on desktop (≥1180px).
+
+1. Tap a tag rail row → OR filter applied; cards show marks that have that tag.
+2. Tap another tag rail row → OR filter expands; cards show marks carrying *either* tag.
+3. A chip bar appears above the cards showing active tag chips with `×` to remove each.
+4. `Clear all` removes all active tag filters.
+
+Surah and Date modes remain single-select. Mobile keeps the dropdown controls and single-select behavior.
+
+**Persistence:** `positions.review.activeTag`.
 
 ### E3. Tap chip → FVR deep link
 
@@ -252,7 +292,7 @@ Inside review hub (tag-grouped view).
 
 **Persistence:** `positions.review.activeTag`, `positions.review.surahFilter`.
 
-**Desktop variant (≥1180px):** The top dropdown controls (group-by segment, sort, tag filter, surah filter) are replaced by a sticky 220px left rail. The rail lists the active grouping's buckets (tags with counts, surahs with counts, or months with counts). Tapping a rail row filters cards to that group; tapping again clears the filter. FVR (`#/t/:tag`) keeps its existing centered no-rail layout at desktop.
+**Desktop variant (≥1180px):** The top dropdown controls (group-by segment, sort, tag filter, surah filter) are replaced by a sticky 220px left rail. The rail lists the active grouping's buckets. In Tag mode, multiple rows can be tapped for an OR filter (see E2b); in Surah/Date modes, a single row is selected at a time. Tapping an active row clears it. FVR (`#/t/:tag`) keeps its existing centered no-rail layout at desktop.
 
 ---
 
