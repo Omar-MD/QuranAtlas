@@ -1839,6 +1839,10 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
   animation: qa-sheet-rise 0.22s ease forwards;
 }
+@keyframes qa-sheet-rise {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
 @media (min-width: 768px) {
   .qa-sheet {
     left: 50%;
@@ -1852,10 +1856,6 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
     from { transform: translateX(-50%) translateY(20px); opacity: 0; }
     to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
   }
-}
-@keyframes qa-sheet-rise {
-  from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
 }
 
 .qa-sheet-grip {
