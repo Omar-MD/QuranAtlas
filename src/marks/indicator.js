@@ -59,13 +59,22 @@ export async function decorateVerse(verseKey, element) {
  * @returns {Function} cleanup function
  */
 export function init() {
-  // Build cache from IDB when a surah loads
+  // Build cache from IDB when a surah loads, then re-decorate all visible verses.
+  // Verses are rendered (and decorated via READER_VERSE_RENDERED) before this event
+  // fires. If marksCache was non-null from a prior load it would have been used
+  // instead of IDB, so the stale (empty) cache would silently hide any seeded marks.
+  // Re-decorating here corrects that after the fresh cache is ready.
   const unsub1 = on(Events.READER_SURAH_LOADED, async () => {
     try {
       const all = await getAll()
       marksCache = new Map(all.map(m => [m.verseKey, m]))
     } catch {
       marksCache = null // Keep null; decorateVerse will fall back to IDB
+    }
+    const visibleVerses = document.querySelectorAll('[data-verse-key]')
+    for (const el of visibleVerses) {
+      const verseKey = el.getAttribute('data-verse-key')
+      decorateVerse(verseKey, el)
     }
   })
 

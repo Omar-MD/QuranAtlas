@@ -28,6 +28,7 @@ let currentUndoRecord = null
 let currentEditingVerseKey = null
 let _historyPushed = false
 let _popstateHandler = null
+let _escHandler = null
 let _openCallId = 0
 
 on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
@@ -385,10 +386,10 @@ export async function openEditor(verseKey) {
     footer.appendChild(saveBtn)
   }
 
-  // Esc closes
-  sheet.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeEditor() }
-  })
+  // Esc closes — listen on document so the handler fires regardless of which
+  // element has focus (touch devices may leave no element focused after a gesture).
+  _escHandler = (e) => { if (e.key === 'Escape') { closeEditor() } }
+  document.addEventListener('keydown', _escHandler)
 
   renderChips()
 }
@@ -401,6 +402,10 @@ export function closeEditor() {
   activeModal = null
   currentEditingVerseKey = null
 
+  if (_escHandler) {
+    document.removeEventListener('keydown', _escHandler)
+    _escHandler = null
+  }
   if (_popstateHandler) {
     window.removeEventListener('popstate', _popstateHandler)
     _popstateHandler = null
