@@ -120,7 +120,7 @@ On the reader.
 
 **Surfaces:** Reader, Mark editor. **No persistence yet.**
 
-**Desktop variant (≥1180px):** Mark editor sheet grows to ~640px wide, and its body splits into a 2-column grid: verse preview + note textarea on the left, selected tags + all-tags search on the right. Footer buttons (Delete / Cancel / Save) span the full width below. All interactions (long-press, tag select, note edit, save) work identically.
+**Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width hero banner at the top; below it the body splits into 2 columns: note + label on the left, tag search + chips on the right. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
 
 ### C2. Multi-tag selection
 
@@ -251,6 +251,8 @@ Inside review hub (tag-grouped view).
 3. Tap × on a chip → that filter clears; tap **Clear all** → both clear.
 
 **Persistence:** `positions.review.activeTag`, `positions.review.surahFilter`.
+
+**Desktop variant (≥1180px):** The top dropdown controls (group-by segment, sort, tag filter, surah filter) are replaced by a sticky 220px left rail. The rail lists the active grouping's buckets (tags with counts, surahs with counts, or months with counts). Tapping a rail row filters cards to that group; tapping again clears the filter. FVR (`#/t/:tag`) keeps its existing centered no-rail layout at desktop.
 
 ---
 
