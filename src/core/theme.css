@@ -101,6 +101,9 @@
    * These supplement --qa-accent without replacing it. */
   --qa-ambient-accent: #78592e;
   --qa-ambient-accent-soft: rgba(120, 89, 46, 0.22);
+  /* kbd foreground: darker than --qa-ambient-accent so it clears WCAG AA 4.5:1
+   * against the soft-tinted surface (#ddd0b3). Ratio: 5.02:1. */
+  --qa-ambient-kbd-color: #6b4e24;
   --qa-ambient-parchment: #3d2e14;
   --qa-ambient-muted: #4a3a1e;
   --qa-ambient-dim: #6b4f28;
@@ -177,6 +180,7 @@ html[data-theme="sepia"] {
   /* --- Ambient palette (redesign) --- */
   --qa-ambient-accent: #78592e;
   --qa-ambient-accent-soft: rgba(120, 89, 46, 0.22);
+  --qa-ambient-kbd-color: #6b4e24;
   --qa-ambient-parchment: #3d2e14;
   --qa-ambient-muted: #4a3a1e;
   --qa-ambient-dim: #6b4f28;
@@ -1568,7 +1572,7 @@ html[data-theme="light"] .qa-dock-item--active {
   padding: 1px 5px;
   border-radius: 4px;
   background-color: var(--qa-ambient-accent-soft);
-  color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-kbd-color, var(--qa-ambient-accent));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.6875rem;
   letter-spacing: 0;
@@ -1677,7 +1681,7 @@ html[data-theme="light"] .qa-dock-item--active {
   padding: 1px 5px;
   border-radius: 4px;
   background-color: var(--qa-ambient-accent-soft);
-  color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-kbd-color, var(--qa-ambient-accent));
 }
 @media (max-width: 640px) {
   .qa-sl-search-kbd { display: none; }
@@ -1771,16 +1775,20 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
 }
 
 .qa-sl-row {
+  border-bottom: 1px dotted var(--qa-ambient-border);
+  position: relative;
+}
+.qa-sl-row-anchor {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 6px;
-  border-bottom: 1px dotted var(--qa-ambient-border);
   cursor: pointer;
   outline: none;
-  position: relative;
+  text-decoration: none;
+  color: inherit;
 }
-.qa-sl-row:focus-visible {
+.qa-sl-row-anchor:focus-visible {
   background-color: var(--qa-ambient-accent-soft);
 }
 .qa-sl-row--bm::before {
@@ -2152,7 +2160,7 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--qa-ambient-accent);
+  color: var(--qa-ambient-parchment);
 }
 
 .qa-mark-body { padding: 10px 14px 14px; }
