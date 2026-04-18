@@ -168,14 +168,14 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(hit, 'expected .qa-mark-body to be 2-col grid at desktop').toBeDefined()
   })
 
-  it('at desktop, mark-body left column hosts quote + note; right hosts tags', () => {
+  it('at desktop, mark-body left column hosts note + selected pills; right hosts all-tags', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /\.qa-mark-quote[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
       /\.qa-mark-note[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
-      /\.qa-mark-selected[^{]*\{[^}]*grid-column:\s*2/.test(b[1])
+      /\.qa-mark-selected[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
+      /\.qa-mark-chips--all[^{]*\{[^}]*grid-column:\s*2/.test(b[1])
     )
-    expect(hit, 'expected quote+note in col 1 and selected tags in col 2').toBeDefined()
+    expect(hit, 'expected note+selected pills in col 1 and all-tags chips in col 2').toBeDefined()
   })
 
   it('at desktop, .qa-cmd-sheet caps max-width at 640px', () => {

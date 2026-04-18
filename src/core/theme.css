@@ -2182,8 +2182,8 @@ html[data-theme="sepia"] #bottom-nav {
     align-items: start;
   }
   .qa-sheet--mark .qa-mark-body > .qa-mark-label,
-  .qa-sheet--mark .qa-mark-body > .qa-mark-note           { grid-column: 1; }
-  .qa-sheet--mark .qa-mark-body > .qa-mark-selected,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-note,
+  .qa-sheet--mark .qa-mark-body > .qa-mark-selected       { grid-column: 1; }
   .qa-sheet--mark .qa-mark-body > .qa-mark-search,
   .qa-sheet--mark .qa-mark-body > .qa-mark-all-head,
   .qa-sheet--mark .qa-mark-body > .qa-mark-chips--all     { grid-column: 2; }
