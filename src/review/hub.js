@@ -26,6 +26,7 @@ let surahs = []
 let _openEditor = null
 let unsubSyncUpdate = null
 let unsubVisibilityVisible = null
+let _railActiveGroup = null
 
 /**
  * Initialize the Review Hub.
@@ -96,6 +97,7 @@ export async function init(params = {}, { openEditor } = {}) {
     if (unsubSyncUpdate) { unsubSyncUpdate(); unsubSyncUpdate = null }
     if (unsubVisibilityVisible) { unsubVisibilityVisible(); unsubVisibilityVisible = null }
     _openEditor = null
+    _railActiveGroup = null
     clearUndoToast()
     const mc = document.getElementById('main-content')
     if (mc) { mc.textContent = '' }
@@ -314,13 +316,32 @@ function filterMarks(sorted, state) {
  * Render the hub view.
  */
 function render(container) {
-  // Don't clear if we're on FVR — the header was rendered separately.
-  if (currentState?.view !== 'fvr') {
+  const isFvr = currentState?.view === 'fvr'
+  const isDesktop = !isFvr && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1180px)').matches
+
+  if (!isFvr) {
     container.textContent = ''
   }
 
   // Filter from pre-sorted cache — O(n) with no sort overhead
   filteredMarks = filterMarks(sortedMarks, currentState)
+
+  // Apply rail active-group filter (desktop only)
+  if (isDesktop && _railActiveGroup !== null) {
+    if (currentState.groupBy === 'tag') {
+      filteredMarks = filteredMarks.filter(m => m.tags.includes(_railActiveGroup))
+    } else if (currentState.groupBy === 'surah') {
+      const surahNum = parseInt(_railActiveGroup, 10)
+      filteredMarks = filteredMarks.filter(m => parseInt(m.verseKey.split(':')[0], 10) === surahNum)
+    } else {
+      filteredMarks = filteredMarks.filter(m => {
+        const d = m.createdAt ? new Date(m.createdAt) : null
+        if (!d) return false
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return ym === _railActiveGroup
+      })
+    }
+  }
 
   if (filteredMarks.length === 0 && allMarks.length === 0) {
     renderEmptyState(container)
@@ -332,20 +353,40 @@ function render(container) {
     return
   }
 
-  if (currentState.view !== 'fvr') {
-    renderControls(container)
+  // Set up layout — desktop gets left rail + main column
+  let cardHost
+  if (isDesktop) {
+    const layout = document.createElement('div')
+    layout.className = 'qa-review-layout'
+    layout.appendChild(buildRail())
+    const main = document.createElement('div')
+    main.className = 'qa-review-main'
+    layout.appendChild(main)
+    container.appendChild(layout)
+    cardHost = main
+  } else {
+    cardHost = container
   }
+
+  if (!isFvr) {
+    renderControls(cardHost)
+  }
+
+  // Wrap cards in grid container (2-col at desktop via CSS)
+  const cardList = document.createElement('div')
+  cardList.className = 'qa-review-card-list'
+  cardHost.appendChild(cardList)
 
   const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
   displayedCount = pageMarks.length
 
   // Render synchronously first
   if (currentState.groupBy === 'tag') {
-    renderTagGrouped(container, pageMarks)
+    renderTagGrouped(cardList, pageMarks)
   } else if (currentState.groupBy === 'surah') {
-    renderGrouped(container, pageMarks)
+    renderGrouped(cardList, pageMarks)
   } else {
-    renderFlat(container, pageMarks)
+    renderFlat(cardList, pageMarks)
   }
 
   // Try to load content - this won't block render
@@ -354,7 +395,7 @@ function render(container) {
   })
 
   if (displayedCount < filteredMarks.length) {
-    renderLoadMore(container)
+    renderLoadMore(cardList)
   }
 }
 
@@ -421,6 +462,115 @@ function setInitialFocus() {
   if (firstFocusable) {
     firstFocusable.focus()
   }
+}
+
+/**
+ * Build the desktop left rail: group-by segment + filtered list of groups.
+ */
+function buildRail() {
+  const rail = document.createElement('aside')
+  rail.className = 'qa-review-rail'
+
+  const segLabel = document.createElement('div')
+  segLabel.className = 'qa-review-rail-section'
+  segLabel.textContent = 'Group by'
+  rail.appendChild(segLabel)
+
+  const seg = document.createElement('div')
+  seg.className = 'qa-review-seg'
+  seg.style.cssText = 'width:100%;display:flex'
+  for (const [key, label] of [['tag', 'Tag'], ['surah', 'Surah'], ['flat', 'Date']]) {
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'qa-review-seg-item' + (currentState.groupBy === key ? ' qa-review-seg-item--on' : '')
+    btn.style.flex = '1'
+    btn.textContent = label
+    btn.addEventListener('click', () => {
+      currentState.groupBy = key
+      _railActiveGroup = null
+      saveState(currentState).catch(() => {})
+      const mc = document.getElementById('main-content')
+      if (mc) render(mc)
+    })
+    seg.appendChild(btn)
+  }
+  rail.appendChild(seg)
+
+  const groupsLabel = document.createElement('div')
+  groupsLabel.className = 'qa-review-rail-section'
+  groupsLabel.textContent = currentState.groupBy === 'tag' ? 'Tags'
+    : currentState.groupBy === 'surah' ? 'Surahs'
+    : 'Dates'
+  rail.appendChild(groupsLabel)
+
+  for (const bucket of computeRailBuckets(allMarks, currentState.groupBy)) {
+    const row = document.createElement('button')
+    row.type = 'button'
+    row.className = 'qa-review-rail-row' + (_railActiveGroup === bucket.key ? ' qa-review-rail-row--on' : '')
+    if (bucket.dotColor) {
+      const dot = document.createElement('span')
+      dot.className = 'qa-review-rail-dot'
+      dot.style.backgroundColor = bucket.dotColor
+      row.appendChild(dot)
+    }
+    const labelEl = document.createElement('span')
+    labelEl.textContent = bucket.label
+    row.appendChild(labelEl)
+    const countEl = document.createElement('span')
+    countEl.className = 'qa-review-rail-count'
+    countEl.textContent = bucket.count
+    row.appendChild(countEl)
+    row.addEventListener('click', () => {
+      _railActiveGroup = _railActiveGroup === bucket.key ? null : bucket.key
+      const mc = document.getElementById('main-content')
+      if (mc) render(mc)
+    })
+    rail.appendChild(row)
+  }
+
+  return rail
+}
+
+/**
+ * Compute grouped bucket list for the desktop rail.
+ * @returns {{ key: string, label: string, count: number, dotColor?: string }[]}
+ */
+function computeRailBuckets(marks, groupBy) {
+  if (groupBy === 'tag') {
+    const byTag = new Map()
+    for (const m of marks) {
+      for (const t of m.tags || []) {
+        byTag.set(t, (byTag.get(t) || 0) + 1)
+      }
+    }
+    return Array.from(byTag.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag, count]) => ({ key: tag, label: tag, count, dotColor: getColorForTag(tag) }))
+  }
+  if (groupBy === 'surah') {
+    const bySurah = new Map()
+    for (const m of marks) {
+      const s = parseInt(m.verseKey.split(':')[0], 10)
+      bySurah.set(s, (bySurah.get(s) || 0) + 1)
+    }
+    return Array.from(bySurah.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([n, count]) => {
+        const meta = surahs.find(s => s.n === n)
+        return { key: String(n), label: meta ? meta.name : `Surah ${n}`, count }
+      })
+  }
+  // flat — group by YYYY-MM
+  const byMonth = new Map()
+  for (const m of marks) {
+    const d = m.createdAt ? new Date(m.createdAt) : null
+    if (!d) continue
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    byMonth.set(ym, (byMonth.get(ym) || 0) + 1)
+  }
+  return Array.from(byMonth.entries())
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([ym, count]) => ({ key: ym, label: ym, count }))
 }
 
 function renderControls(container) {
