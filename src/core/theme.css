@@ -1316,7 +1316,7 @@ html[data-theme="light"] .qa-dock-item--active {
 
 /* Desktop: two-column Arabic | translation grid. */
 @media (min-width: 1180px) {
-  #main-content {
+  #main-content:has(.qa-verse) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     column-gap: 2rem;
@@ -1325,6 +1325,7 @@ html[data-theme="light"] .qa-dock-item--active {
 
   /* Non-verse children of #main-content span both columns */
   .qa-surah-header,
+  .qa-surah-header-card,
   .qa-basmala,
   .qa-surah-end,
   .qa-invalid-verse-error {
@@ -1883,13 +1884,14 @@ html[data-theme="sepia"] .qa-sl-continue-icon { color: #3d2e14; }
     left: 50%;
     right: auto;
     bottom: auto;
-    top: 10vh;
-    transform: translateX(-50%);
+    top: 50%;
+    transform: translate(-50%, -50%);
     width: min(480px, calc(100vw - 32px));
+    max-height: min(720px, 86vh);
   }
   @keyframes qa-sheet-rise {
-    from { transform: translateX(-50%) translateY(20px); }
-    to   { transform: translateX(-50%) translateY(0); }
+    from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; }
+    to   { transform: translate(-50%, -50%); opacity: 1; }
   }
 }
 

@@ -73,10 +73,10 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(hit[1]).toMatch(/\.qa-verse\s*\{[^}]*padding:\s*2\.25rem\s+0/)
   })
 
-  it('at desktop, #main-content becomes a 2-column grid', () => {
+  it('at desktop, #main-content becomes a 2-column grid (scoped to reader via :has)', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /#main-content\s*\{[^}]*display:\s*grid/.test(b[1]) &&
+      /#main-content(?::has\([^)]+\))?\s*\{[^}]*display:\s*grid/.test(b[1]) &&
       /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/.test(b[1])
     )
     expect(hit, 'expected a min-width: 1180px block making #main-content a 2-col grid').toBeDefined()
@@ -140,7 +140,7 @@ describe('theme.css — responsive breakpoint tokens', () => {
     // The .qa-sheet centered-modal rules must live in a 768px block now.
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /\.qa-sheet\s*\{[^}]*top:\s*10vh/.test(b[1]) &&
+      /\.qa-sheet\s*\{[^}]*top:\s*50%/.test(b[1]) &&
       /\.qa-sheet\s*\{[^}]*width:\s*min\(480px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
     )
     expect(hit, 'expected sheet-centered-modal rules under min-width: 768px').toBeDefined()
