@@ -178,4 +178,16 @@ describe('theme.css — responsive breakpoint tokens', () => {
     )
     expect(hit, 'expected quote+note in col 1 and selected tags in col 2').toBeDefined()
   })
+
+  it('at desktop, .qa-cmd-sheet caps max-width at 640px', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-cmd-sheet\s*\{[^}]*max-width:\s*640px/.test(b[1]))
+    expect(hit, 'expected .qa-cmd-sheet to cap at 640px at desktop').toBeDefined()
+  })
+
+  it('at tablet+, .qa-cmd-foot is explicitly shown', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b => /\.qa-cmd-foot\s*\{[^}]*display:\s*flex/.test(b[1]))
+    expect(hit, 'expected .qa-cmd-foot display:flex at min-width 768px').toBeDefined()
+  })
 })
