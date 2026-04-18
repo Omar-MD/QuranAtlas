@@ -2139,37 +2139,60 @@ html[data-theme="sepia"] #bottom-nav {
 
 .qa-sheet--mark { max-height: 86%; }
 
-/* Desktop: mark editor grows and its body splits into two columns.
- * Left: verse preview + note textarea. Right: selected tags + search + all tags.
- * Uses the existing .qa-sheet--mark / .qa-mark-body modifier classes from
- * src/marks/editor.js — no JS change. Matches --qa-bp-desktop. */
+/* Desktop: verse-hero modal — 820px, scale-in, full-width quote hero, 2-col body */
 @media (min-width: 1180px) {
   .qa-sheet.qa-sheet--mark {
-    width: min(640px, calc(100vw - 32px));
+    width: min(820px, calc(100vw - 48px));
+    max-height: min(760px, 86vh);
+    border-radius: 14px;
+    animation: qa-modal-scale-in 0.18s ease forwards;
   }
 
+  .qa-sheet--mark .qa-sheet-grip { display: none; }
+
+  /* Verse hero: spans full width, gentle tint, centered text */
+  .qa-sheet--mark .qa-mark-quote {
+    grid-column: 1 / -1;
+    margin: 0 -14px 14px;
+    padding: 18px 22px;
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--qa-ambient-accent) 6%, transparent),
+      transparent);
+    border-left: none;
+    border-bottom: 1px solid var(--qa-ambient-border);
+    border-radius: 0;
+    text-align: center;
+  }
+  .qa-sheet--mark .qa-mark-quote-ref { letter-spacing: 0.15em; }
+  .qa-sheet--mark .qa-mark-quote-ar  { font-size: 1.375rem; line-height: 2; }
+  .qa-sheet--mark .qa-mark-quote-en  {
+    font-size: 0.9375rem;
+    max-width: 520px;
+    margin: 0 auto;
+    font-style: italic;
+  }
+
+  /* Body: 2-col under the hero */
   .qa-sheet--mark .qa-mark-body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 1.25rem;
-    row-gap: 0.75rem;
+    column-gap: 1.5rem;
+    row-gap: 0.5rem;
     align-items: start;
   }
-
-  /* Left column — preview + note */
-  .qa-sheet--mark .qa-mark-body > .qa-mark-quote,
   .qa-sheet--mark .qa-mark-body > .qa-mark-label,
-  .qa-sheet--mark .qa-mark-body > .qa-mark-note {
-    grid-column: 1;
-  }
-
-  /* Right column — tags */
+  .qa-sheet--mark .qa-mark-body > .qa-mark-note           { grid-column: 1; }
   .qa-sheet--mark .qa-mark-body > .qa-mark-selected,
   .qa-sheet--mark .qa-mark-body > .qa-mark-search,
   .qa-sheet--mark .qa-mark-body > .qa-mark-all-head,
-  .qa-sheet--mark .qa-mark-body > .qa-mark-chips--all {
-    grid-column: 2;
-  }
+  .qa-sheet--mark .qa-mark-body > .qa-mark-chips--all     { grid-column: 2; }
+
+  .qa-sheet--mark .qa-mark-note { min-height: 96px; }
+}
+
+@keyframes qa-modal-scale-in {
+  from { transform: translate(-50%, -50%) scale(0.96); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 .qa-mark-hdr {

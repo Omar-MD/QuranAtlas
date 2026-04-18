@@ -151,12 +151,12 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(sheetHit, 'no 720px block should still target .qa-sheet').toBeUndefined()
   })
 
-  it('at desktop, .qa-sheet--mark widens to 640px', () => {
+  it('at desktop, .qa-sheet--mark widens to 820px', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /\.qa-sheet\.qa-sheet--mark[^{]*\{[^}]*width:\s*min\(640px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
+      /\.qa-sheet\.qa-sheet--mark[^{]*\{[^}]*width:\s*min\(820px,\s*calc\(100vw\s*-\s*48px\)\)/.test(b[1])
     )
-    expect(hit, 'expected .qa-sheet--mark to widen to 640px at desktop').toBeDefined()
+    expect(hit, 'expected .qa-sheet--mark to widen to 820px at desktop').toBeDefined()
   })
 
   it('at desktop, .qa-mark-body becomes a 2-column grid', () => {
