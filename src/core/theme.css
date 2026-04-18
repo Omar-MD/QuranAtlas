@@ -138,19 +138,19 @@
 }
 
 html[data-theme="sepia"] {
-  --qa-bg-primary: #fbf0d9;
-  --qa-bg-secondary: #f1e4c3;
-  --qa-bg-surface: #f4e8cc;
-  
-  --qa-text-arabic: #3b2f21;
-  --qa-text-primary: #433422;
-  --qa-text-secondary: #5c4a3a;
-  
-  --qa-accent: #8b5a2b;
-  --qa-accent-hover: #704620;
-  
-  --qa-border: #e2d1b3;
-  --qa-border-subtle: #efe1c8;
+  --qa-bg-primary: #f7ebd0;
+  --qa-bg-secondary: #f0e1bc;
+  --qa-bg-surface: #f4e6c4;
+
+  --qa-text-arabic: #2e2315;
+  --qa-text-primary: #3c2f1d;
+  --qa-text-secondary: #4a3b26;
+
+  --qa-accent: #7c4f23;
+  --qa-accent-hover: #5e3a18;
+
+  --qa-border: #d9c595;
+  --qa-border-subtle: #e8d8af;
   
   --qa-skeleton: #e2d1b3;
 
