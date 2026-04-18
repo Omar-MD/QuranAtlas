@@ -45,8 +45,11 @@ test.describe('Journey E: Review hub', () => {
     // Seed marks across multiple surahs and tags so grouping / filtering tests work
     await seedMarks(page, SEED)
     await page.goto('/#/review')
-    // Wait for hub to render (segment pill is the first stable landmark)
-    await expect(page.locator('.qa-review-seg')).toBeVisible({ timeout: 8_000 })
+    // Wait for hub to render (segment pill is the first stable landmark).
+    // Longer timeout accommodates Mobile Chrome emulation: clearAllData →
+    // markOnboardingComplete → seedMarks → navigate → IDB-backed render can
+    // run 10s+ on the emulated device profile before the pill appears.
+    await expect(page.locator('.qa-review-seg')).toBeVisible({ timeout: 20_000 })
   })
 
   // -------------------------------------------------------------------------
