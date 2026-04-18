@@ -159,7 +159,10 @@ test.describe('Journey E: Review hub', () => {
 
   test('E2: surah grouping — mark for 1:1 and 2:255 both appear under their respective surah headers', async ({ page }) => {
     await page.locator('.qa-review-seg [data-group="surah"]').click()
-    await expect(page.locator('.qa-review-surah-header').first()).toBeVisible({ timeout: 5_000 })
+    // Wait for the Surah segment button to be active — this is set by render() in surah mode.
+    // NOTE: `.qa-review-surah-header` also exists inside tag-grouped view (as surah sub-headers),
+    // so it is not a reliable indicator that surah grouping has taken effect.
+    await expect(page.locator('.qa-review-seg [data-group="surah"].qa-review-seg-item--on')).toBeVisible({ timeout: 5_000 })
 
     // Verify card data-mark attributes for two different surahs are present
     await expect(page.locator('[data-mark="1:1"]')).toBeVisible()

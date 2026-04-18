@@ -55,6 +55,11 @@ export async function init(params = {}, { openEditor } = {}) {
 
   const saved = await loadState()
   currentState = saved || getDefaultState()
+  // 'fvr' view is URL-driven (only active while on #/t/:tag). Reset it when
+  // entering the hub directly via #/review so controls always render.
+  if (currentState.view === 'fvr') {
+    currentState.view = 'all'
+  }
 
   await reloadMarks()
   render(mainContent)

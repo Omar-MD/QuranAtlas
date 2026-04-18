@@ -234,7 +234,7 @@ Inside review hub (any card).
 1. Tap a tag chip on a mark card → browser navigates to `#/t/<tag>`.
 2. FVR renders: compact centered header (Tag label, color dot, tag name, `n verses · n surahs`, hairline) + flat list of mark cards for that tag.
 
-**Surfaces:** Review hub → FVR. **Persistence:** `settings.lastSurface = #/t/<tag>`, `positions.review.view = 'fvr'`.
+**Surfaces:** Review hub → FVR. **Persistence:** `settings.lastSurface = #/t/<tag>`, `positions.review.view = 'fvr'` (reset to `'all'` when hub is entered directly via `#/review`).
 
 ### E4. FVR back to hub
 
