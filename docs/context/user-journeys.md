@@ -33,6 +33,8 @@ Launch with a clean IDB (or cleared data).
 - Any screen from 2 onward, tap **Skip** → same completion write, land on `#/s/1`.
 - Screen 4, tap **Browse all surahs** → completion write, land on `#/surahs`.
 
+**Landscape phone / short viewport:** When viewport height is under 500px (phones in landscape, small-height browser windows), the onboarding page drops its `72vh` min-height and top-aligns content with reduced hero padding, so no content clips off-screen.
+
 ### A2. Reload stays on the last surface
 
 Any route other than `#/onboarding`.
@@ -54,6 +56,10 @@ On the reader.
 2. No further input for ~3s → both fade out.
 
 **Surfaces:** Reader, Ambient dock, Ambient pill. **Persistence:** none.
+
+**Tablet+ variant:** Dock items grow from 38×38 to 42×42 for easier iPad tap targets (≥768px). Auto-hide behavior unchanged.
+
+**Desktop variant (≥1180px):** Dock items expand to labeled pills — the visually-hidden text label ("Read", "Search", "Review", "More") unhides inline next to each glyph. Positioning stays bottom-centered.
 
 ### B2. Scroll hides dock, scroll-to-top surfaces it
 
@@ -110,6 +116,8 @@ On the reader.
 
 **Surfaces:** Reader, Mark editor. **No persistence yet.**
 
+**Desktop variant (≥1180px):** Mark editor sheet grows to ~640px wide, and its body splits into a 2-column grid: verse preview + note textarea on the left, selected tags + all-tags search on the right. Footer buttons (Delete / Cancel / Save) span the full width below. All interactions (long-press, tag select, note edit, save) work identically.
+
 ### C2. Multi-tag selection
 
 Inside mark editor.
@@ -164,6 +172,8 @@ This is a cross-cutting rule, not a feature — preserved intentionally.
 2. Tap **Settings** → More sheet closes → Settings sheet opens with current theme swatch active, font slider + preview, Reading section (translation toggle + picker link).
 
 **Surfaces:** Ambient dock, More sheet, Settings sheet.
+
+**Tablet+ variant (≥768px):** Settings sheet opens as a centered modal (~480px wide, top 10vh) instead of sliding up from the bottom. Previously this happened at 720px; now aligns with the canonical tablet breakpoint.
 
 ### D2. Pick a translation
 
@@ -249,6 +259,10 @@ Inside review hub (tag-grouped view).
 3. Press Enter → `NAVIGATION_NAVIGATE { surah: 2, verse: 255 }` → app.js routes to `#/s/2/255` → reader scrolls to 2:255.
 
 **Surfaces:** Command sheet → Reader.
+
+**Tablet+ variant:** Keyboard-shortcut footer hint (`⌘K`, `esc`) is explicitly shown at ≥768px (hidden below 640px mobile).
+
+**Desktop variant (≥1180px):** Command sheet caps at 640px wide; result rows stay comfortably readable instead of stretching edge-to-edge.
 
 ### F2. Mark a verse from command sheet
 
