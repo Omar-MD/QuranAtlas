@@ -2326,6 +2326,9 @@ html[data-theme="sepia"] .qa-mark-selected-count { color: #3d2e14; }
   opacity: 0.7;
   font-size: 0.75rem;
 }
+.qa-mark-chip:hover {
+  border-color: var(--qa-ambient-accent);
+}
 .qa-mark-chip--on {
   background-color: var(--qa-ambient-accent);
   color: var(--qa-ambient-surface);
