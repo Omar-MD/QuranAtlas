@@ -8,7 +8,7 @@ import * as router from './router.js'
 import { emit, on } from './events.js'
 import { Events } from './constants.js'
 import { logger } from './logger.js'
-import { init as initSafetySync } from '../safety/sync.js'
+import { init as initSafetySync, suppressNextVersionChange } from '../safety/sync.js'
 import { initInstallListener } from '../about/pwa-install.js'
 import { initTheme } from '../settings/theme.js'
 import { initFontSize } from '../settings/font-size.js'
@@ -47,6 +47,9 @@ export async function init() {
 
     // Expose More sheet globally so the dock can open it without a circular import
     window.__qaOpenMoreSheet = openMoreSheet
+    // Expose version-change suppression so test clearAllData can prevent the
+    // sync-banner overlay from blocking pointer events (Bug-2).
+    window.__qaSuppressNextVersionChange = suppressNextVersionChange
 
     // Listen for launch restore
     bootCleanups.push(on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
