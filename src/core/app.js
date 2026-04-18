@@ -45,11 +45,14 @@ export async function init() {
     await initTheme()
     await initFontSize()
 
-    // Expose More sheet globally so the dock can open it without a circular import
-    window.__qaOpenMoreSheet = openMoreSheet
-    // Expose version-change suppression so test clearAllData can prevent the
-    // sync-banner overlay from blocking pointer events (Bug-2).
-    window.__qaSuppressNextVersionChange = suppressNextVersionChange
+    // Expose dev/E2E escape-hatches — guarded so Vite tree-shakes them in prod.
+    if (import.meta.env.DEV) {
+      // Expose More sheet globally so the dock can open it without a circular import.
+      window.__qaOpenMoreSheet = openMoreSheet
+      // Expose version-change suppression so test clearAllData can prevent the
+      // sync-banner overlay from blocking pointer events (Bug-2).
+      window.__qaSuppressNextVersionChange = suppressNextVersionChange
+    }
 
     // Listen for launch restore
     bootCleanups.push(on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
