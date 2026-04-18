@@ -158,9 +158,12 @@ export async function clearAllData() {
   emit(Events.SETTINGS_DATA_CLEARED, {})
   announce('All data has been cleared. Reloading...')
 
-  // Reload after brief delay
+  // Navigate to root before reloading so the router re-runs the launch-restore
+  // check with a clean DB. If we reload on a non-root hash (e.g. #/s/1), the
+  // router matches that route directly and never calls handleLaunchRestore,
+  // so onboarding would not restart even though onboardingComplete is gone.
   setTimeout(() => {
-    window.location.reload()
+    window.location.href = window.location.origin + window.location.pathname
   }, 1500)
 
   return true
