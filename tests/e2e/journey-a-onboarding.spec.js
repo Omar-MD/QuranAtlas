@@ -40,7 +40,7 @@ async function advanceToScreen3(page) {
 }
 
 /**
- * Advance from screen 3 (Translation) through screen 4 (Tags intro).
+ * Advance from screen 3 (Translation) through screen 4 (Shortcuts) to screen 5 (Tags intro).
  * Picks "Pickthall" translation on screen 3.
  */
 async function advanceToScreen4(page) {
@@ -49,7 +49,11 @@ async function advanceToScreen4(page) {
   await pickthall.click()
   await expect(pickthall).toHaveClass(/qa-onb-t--on/)
 
-  // Continue → Screen 4
+  // Continue → Screen 4 (Shortcuts)
+  await page.locator('.qa-onb-cta--primary').click()
+  await expect(page.locator('.qa-onb-shortcuts')).toBeVisible({ timeout: 8_000 })
+
+  // Continue → Screen 5 (Tags intro)
   await page.locator('.qa-onb-cta--primary').click()
   await expect(page.locator('.qa-onb-vpreview')).toBeVisible({ timeout: 8_000 })
 }
@@ -121,7 +125,7 @@ test.describe('Journey A: First run & session restore', () => {
     const saheehOption = page.locator('.qa-onb-t').filter({ hasText: 'Saheeh' })
     await expect(saheehOption).toHaveClass(/qa-onb-t--on/)
 
-    // Step 5: Pick Pickthall → Continue → Screen 4 (Tags intro)
+    // Step 5: Pick Pickthall → Continue → Screen 4 (Shortcuts)
     const pickthall = page.locator('.qa-onb-t').filter({ hasText: 'Pickthall' })
     await pickthall.click()
     await expect(pickthall).toHaveClass(/qa-onb-t--on/)
@@ -130,7 +134,13 @@ test.describe('Journey A: First run & session restore', () => {
 
     await page.locator('.qa-onb-cta--primary').click()
 
-    // Screen 4: verse preview, 3 sample chips, privacy note
+    // Screen 4 (Shortcuts): keyboard shortcut grid with ≥1 rows
+    await expect(page.locator('.qa-onb-shortcuts')).toBeVisible({ timeout: 8_000 })
+    await expect(page.locator('.qa-onb-shortcut-row').first()).toBeVisible()
+
+    await page.locator('.qa-onb-cta--primary').click()
+
+    // Screen 5 (Tags intro): verse preview, 3 sample chips, privacy note
     await expect(page.locator('.qa-onb-vpreview')).toBeVisible({ timeout: 8_000 })
     await expect(page.locator('.qa-onb-chips')).toBeVisible()
     await expect(page.locator('.qa-onb-chip')).toHaveCount(3)
@@ -339,9 +349,23 @@ test.describe('Journey A: First run & session restore', () => {
     }
     expect(continueFocused).toBe(true)
     await page.keyboard.press('Enter')
+    await expect(page.locator('.qa-onb-shortcuts')).toBeVisible({ timeout: 8_000 })
+
+    // --- Screen 4 (Shortcuts) ---
+    // Tab to Continue
+    continueFocused = false
+    for (let i = 0; i < 10 && !continueFocused; i++) {
+      await page.keyboard.press('Tab')
+      continueFocused = await page.evaluate(() => {
+        const el = document.activeElement
+        return el?.classList?.contains('qa-onb-cta--primary') ?? false
+      })
+    }
+    expect(continueFocused).toBe(true)
+    await page.keyboard.press('Enter')
     await expect(page.locator('.qa-onb-vpreview')).toBeVisible({ timeout: 8_000 })
 
-    // --- Screen 4 (Tags intro) ---
+    // --- Screen 5 (Tags intro) ---
     // Tab to primary CTA "Open Al-Fatihah"
     continueFocused = false
     for (let i = 0; i < 6 && !continueFocused; i++) {
