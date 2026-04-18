@@ -41,7 +41,7 @@ test.describe('Journey G: About', () => {
   test('G1: dock → More sheet → About → renders all required sections', async ({ page }) => {
     // Step 1: open More sheet via dock ⋯
     await openMoreSheet(page)
-    await expect(page.locator('[aria-label="More"]')).toBeVisible()
+    await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
 
     // Step 2: tap "About" row → navigates to #/about
     await page.locator('button.qa-sheet-row').filter({ hasText: 'About' }).click()

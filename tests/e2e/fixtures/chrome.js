@@ -39,7 +39,7 @@ export async function openMoreSheet(page) {
  */
 export async function openSettingsSheet(page) {
   await openMoreSheet(page)
-  await page.locator('button.qa-sheet-row').filter({ hasText: 'Settings' }).click()
+  await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
   await expect(page.locator('.qa-sheet--settings')).toBeVisible()
 }
 
