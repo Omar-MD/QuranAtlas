@@ -10,6 +10,7 @@ export const Events = {
   DB_DELETE_BLOCKED: 'db:delete-blocked',
   DB_QUOTA_EXCEEDED: 'db:quota-exceeded',
   ROUTER_LAUNCH_RESTORE: 'router:launch-restore',
+  ROUTER_ROUTE_CHANGE: 'router:route-change',
   ROUTER_ROUTE_ERROR: 'router:route-error',
   READER_SURAH_LOADED: 'reader:surah-loaded',
   READER_POSITION_CHANGED: 'reader:position-changed',

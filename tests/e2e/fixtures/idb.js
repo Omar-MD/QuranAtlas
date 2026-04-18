@@ -6,6 +6,9 @@
  */
 export async function clearAllData(page) {
   await page.evaluate(() => new Promise((resolve, reject) => {
+    // Suppress the versionchange banner so deleting the DB from this tab does not
+    // poison appShell.style.pointerEvents (Bug-2).
+    window.__qaSuppressNextVersionChange?.()
     const req = indexedDB.deleteDatabase('quran-atlas')
     req.onsuccess = () => resolve()
     req.onerror = () => reject(req.error)

@@ -213,8 +213,10 @@ export async function init(_params = {}) {
     const li = document.createElement('li')
     li.className = 'qa-sl-row'
     if (bookmarkedSet.has(s.n)) { li.classList.add('qa-sl-row--bm') }
-    li.setAttribute('tabindex', '0')
-    li.setAttribute('role', 'link')
+
+    const anchor = document.createElement('a')
+    anchor.className = 'qa-sl-row-anchor'
+    anchor.href = `#/s/${s.n}`
 
     const num = document.createElement('span')
     num.className = 'qa-sl-row-num'
@@ -247,16 +249,11 @@ export async function init(_params = {}) {
     meta.appendChild(vc)
     meta.appendChild(ty)
 
-    li.appendChild(num)
-    li.appendChild(mid)
-    li.appendChild(ar)
-    li.appendChild(meta)
-
-    const go = () => { window.location.hash = `#/s/${s.n}` }
-    li.addEventListener('click', go)
-    li.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go() }
-    })
+    anchor.appendChild(num)
+    anchor.appendChild(mid)
+    anchor.appendChild(ar)
+    anchor.appendChild(meta)
+    li.appendChild(anchor)
     return li
   }
 

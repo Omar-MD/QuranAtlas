@@ -52,8 +52,9 @@ Any route other than `#/onboarding`.
 
 On the reader.
 
-1. Tap reader body → dock fades in at bottom, pill fades in at top showing `{surah}:{verse} · {Name}` + ⌘K hint.
-2. No further input for ~3s → both fade out.
+1. Surah loads → dock briefly surfaces at bottom (then auto-fades after ~3s).
+2. Tap reader body → dock fades in again, pill fades in at top showing `{surah}:{verse} · {Name}` + ⌘K hint.
+3. No further input for ~3s → both fade out.
 
 **Surfaces:** Reader, Ambient dock, Ambient pill. **Persistence:** none.
 
@@ -233,7 +234,7 @@ Inside review hub (any card).
 1. Tap a tag chip on a mark card → browser navigates to `#/t/<tag>`.
 2. FVR renders: compact centered header (Tag label, color dot, tag name, `n verses · n surahs`, hairline) + flat list of mark cards for that tag.
 
-**Surfaces:** Review hub → FVR. **Persistence:** `settings.lastSurface = #/t/<tag>`, `positions.review.view = 'fvr'`.
+**Surfaces:** Review hub → FVR. **Persistence:** `settings.lastSurface = #/t/<tag>`, `positions.review.view = 'fvr'` (reset to `'all'` when hub is entered directly via `#/review`).
 
 ### E4. FVR back to hub
 

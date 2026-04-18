@@ -172,9 +172,14 @@ function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah
  * Returns array of cleanup functions.
  */
 function finalizeSurah({ surahNum, surahMeta, surah, initIndicators, setupLongPress, mainContent }) {
-  emit(Events.READER_SURAH_LOADED, { surah: surahNum })
+  // initIndicators must run before READER_SURAH_LOADED so its READER_SURAH_LOADED
+  // listener fires for the current load (not just future loads) and can decorate
+  // any verses already rendered by renderSurahContent above.
   cleanupIndicatorsFn = initIndicators()
   cleanupLongPressFn = setupLongPress(mainContent)
+  emit(Events.READER_SURAH_LOADED, { surah: surahNum })
+  // Surface the ambient dock briefly so the user sees nav chrome on every surah load.
+  emit(Events.AMBIENT_SURFACE, { reason: 'surah-load' })
   performance.mark('reader:first-verse')
   performance.measure('reader:total-load', 'reader:fetch-start', 'reader:first-verse')
   announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)

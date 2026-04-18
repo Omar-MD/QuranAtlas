@@ -22,6 +22,7 @@ Bus mechanics live in `src/core/events.js` (mitt-backed `emit` / `on`, handlers 
 | `DB_VISIBILITY_VISIBLE` | `db:visibility-visible` | `core/db.js:79` | `reader/index.js:135`, `marks/indicator.js:135`, `review/hub.js:83` | `{}` |
 | `DB_QUOTA_EXCEEDED` | `db:quota-exceeded` | `core/db.js:157` | `core/quota-banner.js:74` | `{ storeName, message }` |
 | `ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `core/router.js:120` | `core/app.js:52` | `{}` |
+| `ROUTER_ROUTE_CHANGE` | `router:route-change` | `core/router.js:146` | `nav/ambient-dock.js:97` | `{ hash }` |
 | `READER_SURAH_LOADED` | `reader:surah-loaded` | `reader/index.js:175` | `nav/ambient-pill.js:58`, `marks/indicator.js:63`, `core/app.js:106` | `{ surah }` |
 | `READER_POSITION_CHANGED` | `reader:position-changed` | `reader/index.js:483` | `nav/ambient-pill.js:65` | `{ surah, verse }` |
 | `NAVIGATION_NAVIGATE` | `navigation:navigate` | `surahs/list.js:129`, `nav/command-sheet.js:417,419` | `core/app.js:97` | `{ surah, verse? }` |
@@ -31,7 +32,7 @@ Bus mechanics live in `src/core/events.js` (mitt-backed `emit` / `on`, handlers 
 | `MARKS_DELETED` | `marks:deleted` | `marks/store.js:67` | `marks/indicator.js:91` | `{ verseKey }` |
 | `MARKS_UNDO` | `marks:undo` | `core/ui.js:40` | `marks/indicator.js:101` | `{ verseKey }` |
 | `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/index.js:343` | `marks/indicator.js:72` | `{ verseKey, element }` |
-| `AMBIENT_SURFACE` | `ambient:surface` | `reader/index.js:700`, `nav/ambient-dock.js:60,67`, `nav/ambient-pill.js:85` | `nav/ambient-dock.js:111`, `nav/ambient-pill.js:71` | `{ reason }` |
+| `AMBIENT_SURFACE` | `ambient:surface` | `reader/index.js:176,700`, `nav/ambient-dock.js:60,67`, `nav/ambient-pill.js:85` | `nav/ambient-dock.js:111`, `nav/ambient-pill.js:71` | `{ reason }` |
 | `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.js:101` | `marks/editor.js:32`, `marks/indicator.js:116`, `review/hub.js:75` | `{ verseKeys }` |
 | `STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `data/offline.js:58` | `core/quota-banner.js:79` | `{}` |
 

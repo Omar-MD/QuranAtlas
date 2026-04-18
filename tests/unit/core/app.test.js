@@ -74,6 +74,7 @@ vi.mock('../../../src/about/pwa-install.js', () => ({
 
 vi.mock('../../../src/safety/sync.js', () => ({
   init: vi.fn(() => vi.fn()),
+  suppressNextVersionChange: vi.fn(),
 }))
 
 vi.mock('../../../src/core/quota-banner.js', () => ({

@@ -45,8 +45,11 @@ test.describe('Journey E: Review hub', () => {
     // Seed marks across multiple surahs and tags so grouping / filtering tests work
     await seedMarks(page, SEED)
     await page.goto('/#/review')
-    // Wait for hub to render (segment pill is the first stable landmark)
-    await expect(page.locator('.qa-review-seg')).toBeVisible({ timeout: 8_000 })
+    // Wait for hub to render (segment pill is the first stable landmark).
+    // Longer timeout accommodates Mobile Chrome emulation: clearAllData →
+    // markOnboardingComplete → seedMarks → navigate → IDB-backed render can
+    // run 10s+ on the emulated device profile before the pill appears.
+    await expect(page.locator('.qa-review-seg')).toBeVisible({ timeout: 20_000 })
   })
 
   // -------------------------------------------------------------------------
@@ -159,7 +162,10 @@ test.describe('Journey E: Review hub', () => {
 
   test('E2: surah grouping — mark for 1:1 and 2:255 both appear under their respective surah headers', async ({ page }) => {
     await page.locator('.qa-review-seg [data-group="surah"]').click()
-    await expect(page.locator('.qa-review-surah-header').first()).toBeVisible({ timeout: 5_000 })
+    // Wait for the Surah segment button to be active — this is set by render() in surah mode.
+    // NOTE: `.qa-review-surah-header` also exists inside tag-grouped view (as surah sub-headers),
+    // so it is not a reliable indicator that surah grouping has taken effect.
+    await expect(page.locator('.qa-review-seg [data-group="surah"].qa-review-seg-item--on')).toBeVisible({ timeout: 5_000 })
 
     // Verify card data-mark attributes for two different surahs are present
     await expect(page.locator('[data-mark="1:1"]')).toBeVisible()

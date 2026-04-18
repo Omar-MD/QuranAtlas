@@ -212,8 +212,7 @@ test.describe('Journey C: Verse marking', () => {
     // Count badge increments to ≥1
     const countBadge = page.locator('.qa-mark-selected-count')
     await expect(countBadge).toBeVisible()
-    const countText = await countBadge.textContent()
-    expect(parseInt(countText, 10)).toBeGreaterThanOrEqual(1)
+    expect(parseInt(await countBadge.textContent(), 10)).toBeGreaterThanOrEqual(1)
 
     // Select a second chip if available
     const remainingChips = allRegion.locator('.qa-mark-chip')
@@ -224,6 +223,9 @@ test.describe('Journey C: Verse marking', () => {
       expect(parseInt(newCount, 10)).toBeGreaterThanOrEqual(2)
     }
 
+    // Capture count AFTER optional second selection so the decrease comparison is correct
+    const beforeRemove = parseInt(await countBadge.textContent(), 10)
+
     // Tap × on the first selected chip → moves back to All
     const xBtn = selectedChip.locator('.qa-mark-chip-x')
     await expect(xBtn).toBeVisible()
@@ -232,9 +234,8 @@ test.describe('Journey C: Verse marking', () => {
     // Count should decrease
     await expect(async () => {
       const afterCount = await countBadge.textContent()
-      const before = parseInt(countText, 10)
       const after = parseInt(afterCount, 10)
-      expect(after).toBeLessThan(before)
+      expect(after).toBeLessThan(beforeRemove)
     }).toPass({ timeout: 3_000 })
 
     // The deselected tag chip should reappear in the All region
@@ -339,11 +340,16 @@ test.describe('Journey C: Verse marking', () => {
   // -------------------------------------------------------------------------
 
   test('C5: delete mark → undo toast appears → tap Undo restores mark', async ({ page }) => {
-    // Seed an existing mark on verse 1:1
+    // Seed an existing mark on verse 1:1.
+    // Use page.reload() after seeding to force a fresh page load so the indicator
+    // module starts with marksCache = null and falls back to IDB on first render.
+    // A simple page.goto('/#/s/1') when already on that route is a no-op in Chromium
+    // (same-URL navigation with same hash does not reload), leaving the stale empty
+    // marksCache from beforeEach in place and hiding the seeded mark.
     await clearAllData(page)
     await markOnboardingComplete(page)
     await seedMarks(page, [{ verseKey: '1:1', tags: ['mercy'], note: 'original note' }])
-    await page.goto('/#/s/1')
+    await page.reload()
     await waitForReader(page)
 
     const verseKey = '1:1'

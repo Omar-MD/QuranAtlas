@@ -39,8 +39,11 @@ export async function openMoreSheet(page) {
  */
 export async function openSettingsSheet(page) {
   await openMoreSheet(page)
-  await page.locator('button.qa-sheet-row').filter({ hasText: 'Settings' }).click()
+  await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
   await expect(page.locator('.qa-sheet--settings')).toBeVisible()
+  // Wait for the qa-sheet-rise animation (0.22s) to complete so axe contrast
+  // checks see final opacity: 1 state, not an intermediate blended value.
+  await page.waitForTimeout(300)
 }
 
 /**

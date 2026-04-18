@@ -39,15 +39,15 @@ test.describe('Journey D: Settings & appearance', () => {
   test('D1: open Settings sheet via More sheet → correct structure', async ({ page }) => {
     // Step 1: open ambient dock → tap ⋯ → More sheet opens
     await openMoreSheet(page)
-    await expect(page.locator('[aria-label="More"]')).toBeVisible()
+    await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
 
     // Step 2: tap Settings → More sheet closes → Settings sheet opens
-    await page.locator('button.qa-sheet-row').filter({ hasText: 'Settings' }).click()
+    await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
     const settings = page.locator('.qa-sheet--settings')
     await expect(settings).toBeVisible({ timeout: 5_000 })
 
     // More sheet should no longer be visible
-    await expect(page.locator('[aria-label="More"]')).not.toBeVisible({ timeout: 3_000 })
+    await expect(page.getByRole('dialog', { name: 'More' })).not.toBeVisible({ timeout: 3_000 })
 
     // Theme section: at least one active swatch
     const activeSwatch = settings.locator('.qa-theme-swatch--active')
