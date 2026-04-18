@@ -2055,11 +2055,12 @@ html[data-theme="sepia"] #bottom-nav {
 .qa-font-preview-ar {
   font-family: var(--qa-font-arabic);
   color: var(--qa-ambient-parchment);
-  font-size: 1rem;
+  font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base) * 0.7);
+  line-height: var(--qa-line-height-arabic);
 }
 .qa-font-preview-en {
   color: var(--qa-ambient-muted);
-  font-size: 0.8125rem;
+  font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.8);
 }
 
 .qa-settings-toggle-row {

@@ -8,9 +8,10 @@ import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
 
-const DEFAULT_SIZE = 'medium'
-const OPTIONS = ['small', 'medium', 'large']
-const SCALE = { small: 0.875, medium: 1, large: 1.15 }
+const DEFAULT_SIZE = 'md'
+const OPTIONS = ['xs', 'sm', 'md', 'lg', 'xl']
+const SCALE = { xs: 0.75, sm: 0.875, md: 1.0, lg: 1.15, xl: 1.3 }
+const LEGACY_MAP = { small: 'sm', medium: 'md', large: 'lg' }
 
 export function getFontSizeOptions() {
   return [...OPTIONS]
@@ -25,7 +26,15 @@ export function applyFontSize(size) {
 export async function loadFontSize() {
   try {
     const saved = await get('settings', 'fontSize')
-    return saved?.value || DEFAULT_SIZE
+    const raw = saved?.value
+    if (!raw) { return DEFAULT_SIZE }
+    if (OPTIONS.includes(raw)) { return raw }
+    if (LEGACY_MAP[raw]) {
+      const mapped = LEGACY_MAP[raw]
+      put('settings', { key: 'fontSize', value: mapped }).catch(() => {})
+      return mapped
+    }
+    return DEFAULT_SIZE
   } catch (error) {
     logger.error('Failed to load font size', { error })
     return DEFAULT_SIZE

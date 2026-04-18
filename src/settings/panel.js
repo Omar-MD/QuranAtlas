@@ -167,15 +167,15 @@ function buildFontSection(currentFont) {
 
   const preview = document.createElement('div')
   preview.className = 'qa-font-preview'
+  const enSpan = document.createElement('span')
+  enSpan.className = 'qa-font-preview-en'
+  enSpan.textContent = 'The Most Gracious \u00B7 '
   const arSpan = document.createElement('span')
   arSpan.className = 'qa-font-preview-ar'
   arSpan.setAttribute('dir', 'rtl')
   arSpan.textContent = '\u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650' // ٱلرَّحْمَـٰنِ
-  const enSpan = document.createElement('span')
-  enSpan.className = 'qa-font-preview-en'
-  enSpan.textContent = ' \u00B7 The Most Gracious'
-  preview.appendChild(arSpan)
   preview.appendChild(enSpan)
+  preview.appendChild(arSpan)
 
   slider.addEventListener('input', async () => {
     const idx = parseInt(slider.value, 10)

@@ -12,8 +12,9 @@ import { getMeaning } from '../data/surah-meanings.js'
 import { getAll as getAllMarks } from '../marks/store.js'
 import { getAllUsedTags, getColorForTag } from '../marks/tags.js'
 import { setTheme } from '../settings/theme.js'
-import { setFontSize, loadFontSize } from '../settings/font-size.js'
+import { setFontSize, loadFontSize, getFontSizeOptions } from '../settings/font-size.js'
 import { get } from '../core/db.js'
+import { announce } from '../a11y/announcer.js'
 
 const MAX_SURAH = 6
 const MAX_TAGS = 5
@@ -444,10 +445,13 @@ async function activate(item) {
 }
 
 async function bumpFont(dir) {
-  const order = ['small', 'medium', 'large']
+  const order = getFontSizeOptions()
   const cur = await loadFontSize()
   const idx = Math.max(0, Math.min(order.length - 1, order.indexOf(cur) + dir))
-  await setFontSize(order[idx])
+  const next = order[idx]
+  if (next === cur) { return }
+  await setFontSize(next)
+  announce(`Font size: ${next}`)
 }
 
 function onKeydown(e) {
@@ -456,6 +460,16 @@ function onKeydown(e) {
     e.preventDefault()
     if (isOpen) { closeCommandSheet() } else { openCommandSheet() }
     return
+  }
+
+  // Global font size shortcut: ⌘↑ / ⌘↓ (or Ctrl on non-Mac)
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
+    const target = e.target
+    const isFormField = target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)
+    if (!isFormField) {
+      if (e.key === 'ArrowUp')   { e.preventDefault(); bumpFont(+1); return }
+      if (e.key === 'ArrowDown') { e.preventDefault(); bumpFont(-1); return }
+    }
   }
 
   if (!isOpen) {
