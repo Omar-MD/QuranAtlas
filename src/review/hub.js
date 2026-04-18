@@ -26,7 +26,8 @@ let surahs = []
 let _openEditor = null
 let unsubSyncUpdate = null
 let unsubVisibilityVisible = null
-let _railActiveGroup = null
+let _railActiveGroup = null     // single-select (surah/date modes only)
+let _railActiveTags = new Set() // OR-multi-select (tag mode only)
 
 /**
  * Initialize the Review Hub.
@@ -38,6 +39,8 @@ export async function init(params = {}, { openEditor } = {}) {
   }
 
   _openEditor = openEditor || null
+  _railActiveTags = new Set()
+  _railActiveGroup = null
 
   // Tag deep link: #/t/:tag -> render FVR directly
   if (params.tag !== undefined) {
@@ -98,6 +101,7 @@ export async function init(params = {}, { openEditor } = {}) {
     if (unsubVisibilityVisible) { unsubVisibilityVisible(); unsubVisibilityVisible = null }
     _openEditor = null
     _railActiveGroup = null
+    _railActiveTags = new Set()
     clearUndoToast()
     const mc = document.getElementById('main-content')
     if (mc) { mc.textContent = '' }
@@ -326,14 +330,14 @@ function render(container) {
   // Filter from pre-sorted cache — O(n) with no sort overhead
   filteredMarks = filterMarks(sortedMarks, currentState)
 
-  // Apply rail active-group filter (desktop only)
-  if (isDesktop && _railActiveGroup !== null) {
-    if (currentState.groupBy === 'tag') {
-      filteredMarks = filteredMarks.filter(m => m.tags.includes(_railActiveGroup))
-    } else if (currentState.groupBy === 'surah') {
+  // Apply rail filters (desktop only)
+  if (isDesktop) {
+    if (currentState.groupBy === 'tag' && _railActiveTags.size > 0) {
+      filteredMarks = filteredMarks.filter(m => m.tags.some(t => _railActiveTags.has(t)))
+    } else if (currentState.groupBy === 'surah' && _railActiveGroup !== null) {
       const surahNum = parseInt(_railActiveGroup, 10)
       filteredMarks = filteredMarks.filter(m => parseInt(m.verseKey.split(':')[0], 10) === surahNum)
-    } else {
+    } else if (currentState.groupBy === 'flat' && _railActiveGroup !== null) {
       filteredMarks = filteredMarks.filter(m => {
         const d = m.createdAt ? new Date(m.createdAt) : null
         if (!d) return false
@@ -372,7 +376,52 @@ function render(container) {
     renderControls(cardHost)
   }
 
-  // Wrap cards in grid container (2-col at desktop via CSS)
+  // Chip bar — tag mode with active multi-select
+  if (isDesktop && currentState.groupBy === 'tag' && _railActiveTags.size > 0) {
+    const bar = document.createElement('div')
+    bar.className = 'qa-review-filter-bar'
+
+    const label = document.createElement('span')
+    label.className = 'qa-review-filter-bar-label'
+    label.textContent = 'Filtering by'
+    bar.appendChild(label)
+
+    for (const tag of _railActiveTags) {
+      const chip = document.createElement('span')
+      chip.className = 'qa-review-filter-chip'
+      const dot = document.createElement('span')
+      dot.className = 'qa-review-filter-chip-dot'
+      dot.style.backgroundColor = getColorForTag(tag)
+      chip.appendChild(dot)
+      chip.appendChild(document.createTextNode(tag))
+      const x = document.createElement('button')
+      x.type = 'button'
+      x.textContent = '\u00D7' // ×
+      x.setAttribute('aria-label', `Remove ${tag} filter`)
+      x.addEventListener('click', () => {
+        _railActiveTags.delete(tag)
+        const mc = document.getElementById('main-content')
+        if (mc) render(mc)
+      })
+      chip.appendChild(x)
+      bar.appendChild(chip)
+    }
+
+    const clearAll = document.createElement('button')
+    clearAll.type = 'button'
+    clearAll.className = 'qa-review-filter-bar-clear'
+    clearAll.textContent = 'Clear all'
+    clearAll.addEventListener('click', () => {
+      _railActiveTags = new Set()
+      const mc = document.getElementById('main-content')
+      if (mc) render(mc)
+    })
+    bar.appendChild(clearAll)
+
+    cardHost.appendChild(bar)
+  }
+
+  // Wrap cards in list container
   const cardList = document.createElement('div')
   cardList.className = 'qa-review-card-list'
   cardHost.appendChild(cardList)
@@ -380,14 +429,8 @@ function render(container) {
   const pageMarks = filteredMarks.slice(0, PAGE_SIZE)
   displayedCount = pageMarks.length
 
-  // Render synchronously first
-  if (currentState.groupBy === 'tag') {
-    renderTagGrouped(cardList, pageMarks)
-  } else if (currentState.groupBy === 'surah') {
-    renderGrouped(cardList, pageMarks)
-  } else {
-    renderFlat(cardList, pageMarks)
-  }
+  // Render synchronously first — flat, unique, single-column
+  renderCardList(cardList, pageMarks)
 
   // Try to load content - this won't block render
   loadVerseContentBackground(pageMarks).catch(() => {
@@ -488,6 +531,7 @@ function buildRail() {
     btn.addEventListener('click', () => {
       currentState.groupBy = key
       _railActiveGroup = null
+      _railActiveTags = new Set()
       saveState(currentState).catch(() => {})
       const mc = document.getElementById('main-content')
       if (mc) render(mc)
@@ -506,7 +550,10 @@ function buildRail() {
   for (const bucket of computeRailBuckets(allMarks, currentState.groupBy)) {
     const row = document.createElement('button')
     row.type = 'button'
-    row.className = 'qa-review-rail-row' + (_railActiveGroup === bucket.key ? ' qa-review-rail-row--on' : '')
+    const isOn = currentState.groupBy === 'tag'
+      ? _railActiveTags.has(bucket.key)
+      : _railActiveGroup === bucket.key
+    row.className = 'qa-review-rail-row' + (isOn ? ' qa-review-rail-row--on' : '')
     if (bucket.dotColor) {
       const dot = document.createElement('span')
       dot.className = 'qa-review-rail-dot'
@@ -521,7 +568,15 @@ function buildRail() {
     countEl.textContent = bucket.count
     row.appendChild(countEl)
     row.addEventListener('click', () => {
-      _railActiveGroup = _railActiveGroup === bucket.key ? null : bucket.key
+      if (currentState.groupBy === 'tag') {
+        if (_railActiveTags.has(bucket.key)) {
+          _railActiveTags.delete(bucket.key)
+        } else {
+          _railActiveTags.add(bucket.key)
+        }
+      } else {
+        _railActiveGroup = _railActiveGroup === bucket.key ? null : bucket.key
+      }
       const mc = document.getElementById('main-content')
       if (mc) render(mc)
     })
@@ -738,117 +793,12 @@ function renderControls(container) {
 }
 
 /**
- * Render marks grouped by tag → surah (two-level hierarchy).
- * Multi-tagged marks appear under each relevant tag group.
+ * Render the mark cards as a flat, unique, single-column list sorted by
+ * updatedAt (already sorted upstream). Each mark appears exactly once.
  * @param {HTMLElement} container
  * @param {Array} marks
  */
-function renderTagGrouped(container, marks) {
-  // Build tag → marks map. Multi-tagged marks appear under each tag.
-  const tagMap = new Map()
-  for (const mark of marks) {
-    for (const tag of mark.tags) {
-      if (!tagMap.has(tag)) {
-        tagMap.set(tag, [])
-      }
-      tagMap.get(tag).push(mark)
-    }
-  }
-
-  // Sort tags alphabetically
-  const sortedTags = [...tagMap.keys()].sort()
-  const fragment = document.createDocumentFragment()
-
-  for (const tag of sortedTags) {
-    const tagMarks = tagMap.get(tag)
-
-    // Tag header
-    const header = document.createElement('div')
-    header.className = 'qa-review-tag-header'
-
-    const dot = document.createElement('span')
-    dot.className = 'qa-review-tag-header-dot'
-    dot.style.backgroundColor = getColorForTag(tag)
-    header.appendChild(dot)
-
-    const label = document.createElement('span')
-    label.className = 'qa-review-tag-header-label'
-    label.textContent = tag
-    header.appendChild(label)
-
-    const count = document.createElement('span')
-    count.className = 'qa-review-tag-header-count'
-    count.textContent = `(${tagMarks.length})`
-    header.appendChild(count)
-
-    fragment.appendChild(header)
-
-    // Group marks within this tag by surah
-    const surahMap = new Map()
-    for (const mark of tagMarks) {
-      const surahNum = parseInt(mark.verseKey.split(':')[0], 10)
-      if (!surahMap.has(surahNum)) {
-        surahMap.set(surahNum, [])
-      }
-      surahMap.get(surahNum).push(mark)
-    }
-
-    const sortedSurahs = [...surahMap.keys()].sort((a, b) => a - b)
-    for (const surahNum of sortedSurahs) {
-      const surahHeader = document.createElement('div')
-      surahHeader.className = 'qa-review-surah-header'
-      surahHeader.setAttribute('data-surah-group', String(surahNum))
-      const meta = surahs.find(s => s.n === surahNum)
-      surahHeader.textContent = meta ? `${meta.name} (${meta.n})` : `Surah ${surahNum}`
-      fragment.appendChild(surahHeader)
-
-      // Sort marks by verse number (canonical order)
-      const surahMarks = surahMap.get(surahNum)
-        .sort((a, b) => {
-          const aVerse = parseInt(a.verseKey.split(':')[1], 10)
-          const bVerse = parseInt(b.verseKey.split(':')[1], 10)
-          return aVerse - bVerse
-        })
-
-      for (const mark of surahMarks) {
-        fragment.appendChild(renderMarkCard(mark, null))
-      }
-    }
-  }
-
-  container.appendChild(fragment)
-}
-
-async function renderGrouped(container, marks) {
-  const groups = new Map()
-  for (const mark of marks) {
-    const surahNum = parseInt(mark.verseKey.split(':')[0], 10)
-    if (!groups.has(surahNum)) {
-      groups.set(surahNum, [])
-    }
-    groups.get(surahNum).push(mark)
-  }
-
-  const sortedKeys = [...groups.keys()].sort((a, b) => a - b)
-  const fragment = document.createDocumentFragment()
-
-  for (const surahNum of sortedKeys) {
-    const header = document.createElement('div')
-    header.className = 'qa-review-surah-header'
-    header.setAttribute('data-surah-group', String(surahNum))
-    const meta = surahs.find(s => s.n === surahNum)
-    header.textContent = meta ? `${meta.name} (${meta.n})` : `Surah ${surahNum}`
-    fragment.appendChild(header)
-
-    for (const mark of groups.get(surahNum)) {
-      fragment.appendChild(renderMarkCard(mark, null))
-    }
-  }
-
-  container.appendChild(fragment)
-}
-
-async function renderFlat(container, marks) {
+function renderCardList(container, marks) {
   const fragment = document.createDocumentFragment()
   for (const mark of marks) {
     fragment.appendChild(renderMarkCard(mark, null))
@@ -946,13 +896,7 @@ function renderLoadMore(container) {
     const nextPage = filteredMarks.slice(displayedCount, displayedCount + PAGE_SIZE)
     displayedCount += nextPage.length
 
-    if (currentState.groupBy === 'tag') {
-      renderTagGrouped(container, nextPage)
-    } else if (currentState.groupBy === 'surah') {
-      renderGrouped(container, nextPage)
-    } else {
-      renderFlat(container, nextPage)
-    }
+    renderCardList(container, nextPage)
 
     if (displayedCount < filteredMarks.length) {
       renderLoadMore(container)

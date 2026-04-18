@@ -49,9 +49,8 @@ describe('review/hub.js', () => {
       await hub.init()
       const mainContent = document.getElementById('main-content')
       const markCards = mainContent.querySelectorAll('[data-mark]')
-      // Tag-grouped view: 30 unique marks on first page, multi-tagged marks appear
-      // under each tag so total DOM cards > 30; exact count varies by timestamp ordering
-      expect(markCards.length).toBeGreaterThan(30)
+      // Flat de-duped view: exactly PAGE_SIZE (30) unique marks on first page
+      expect(markCards.length).toBe(30)
     })
 
     it('emits review:open on mount', async () => {
@@ -75,39 +74,42 @@ describe('review/hub.js', () => {
       await new Promise(r => setTimeout(r, 50))
 
       const markCards = document.querySelectorAll('[data-mark]')
-      // All 60 marks loaded; 20 have 2 tags → 20×2 + 40×1 = 80 DOM cards
-      expect(markCards.length).toBe(80)
+      // All 60 marks loaded flat (no duplicates)
+      expect(markCards.length).toBe(60)
     })
   })
 
   describe('grouping', () => {
-    it('renders surah headers in surah-grouped view', async () => {
+    it('renders each mark exactly once regardless of tag count', async () => {
       await hub.init()
-      const headers = document.querySelectorAll('[data-surah-group]')
-      expect(headers.length).toBeGreaterThanOrEqual(1)
+      const cards = document.querySelectorAll('[data-mark="3:1"]')
+      // 3:1 has 2 tags ('favourite', 'study') — should appear exactly once
+      expect(cards.length).toBe(1)
     })
   })
 
   describe('tag-grouped view', () => {
-    it('renders tag headers in tag-grouped mode (default)', async () => {
+    it('does not render .qa-review-surah-header or .qa-review-tag-header', async () => {
       await hub.init()
-      const tagHeaders = document.querySelectorAll('.qa-review-tag-header')
-      expect(tagHeaders.length).toBeGreaterThanOrEqual(1)
+      expect(document.querySelectorAll('.qa-review-surah-header').length).toBe(0)
+      expect(document.querySelectorAll('.qa-review-tag-header').length).toBe(0)
     })
 
-    it('renders surah sub-headers within tag groups', async () => {
+    it('does not render surah sub-headers', async () => {
       await hub.init()
       const surahHeaders = document.querySelectorAll('[data-surah-group]')
-      expect(surahHeaders.length).toBeGreaterThanOrEqual(1)
+      expect(surahHeaders.length).toBe(0)
     })
 
-    it('multi-tagged marks appear under each relevant tag group', async () => {
-      // marks tagged ['favourite', 'study'] should appear under both groups
+    it('multi-tagged mark renders exactly once (no duplication)', async () => {
       await hub.init()
-      const tagHeaders = document.querySelectorAll('.qa-review-tag-header')
-      const labels = [...tagHeaders].map(h => h.querySelector('.qa-review-tag-header-label').textContent.toLowerCase())
-      expect(labels).toContain('favourite')
-      expect(labels).toContain('study')
+      // Load all pages
+      const loadMore = document.querySelector('[data-action="load-more"]')
+      if (loadMore) { loadMore.click(); await new Promise(r => setTimeout(r, 50)) }
+      const all = document.querySelectorAll('[data-mark]')
+      const keys = [...all].map(c => c.getAttribute('data-mark'))
+      const unique = new Set(keys)
+      expect(unique.size).toBe(keys.length)
     })
 
     it('mark cards show all tags as chips regardless of which group they are in', async () => {
@@ -157,9 +159,11 @@ describe('review/hub.js', () => {
       const surahBtn = document.querySelector('.qa-review-seg [data-group="surah"]')
       surahBtn.click()
       await new Promise(r => setTimeout(r, 100))
-      // Should have surah headers, no tag headers
+      // No tag or surah headers — flat render regardless of groupBy
       expect(document.querySelectorAll('.qa-review-tag-header').length).toBe(0)
-      expect(document.querySelectorAll('[data-surah-group]').length).toBeGreaterThanOrEqual(1)
+      expect(document.querySelectorAll('[data-surah-group]').length).toBe(0)
+      // But cards still render
+      expect(document.querySelectorAll('[data-mark]').length).toBeGreaterThan(0)
     })
   })
 
@@ -257,11 +261,9 @@ describe('review/hub.js', () => {
 
       await hub.init()
 
-      // 61 total, page 1 = 30 unique; '2:255' has 1 tag, 20 surah-3 marks have 2 tags
-      // first 30: '2:255'(1) + surah-3 top 20(2 tags each) + surah-2 top 9(1 tag each)
-      // = 1 + 40 + 9 = 50
+      // 61 total unique marks → page 1 = 30
       let cards = document.querySelectorAll('[data-mark]')
-      expect(cards.length).toBe(50)
+      expect(cards.length).toBe(30)
 
       // Simulate: another tab deleted a mark (already in IDB)
       await store.del('2:255')
@@ -273,8 +275,8 @@ describe('review/hub.js', () => {
       await new Promise(r => setTimeout(r, 50))
 
       cards = document.querySelectorAll('[data-mark]')
-      // Back to 60 marks → page 1: 20 surah-3 (2 tags) + 10 surah-2 (1 tag) = 50
-      expect(cards.length).toBe(50)
+      // Back to 60 marks → page 1 = 30 unique
+      expect(cards.length).toBe(30)
     })
 
     it('cleanup() unsubscribes event listeners so they do not fire after teardown', async () => {
@@ -329,9 +331,9 @@ describe('review/hub.js', () => {
 
       await new Promise(r => setTimeout(r, 50))
 
-      // 60 seeded marks remain → page 1: 20 surah-3 (2 tags) + 10 surah-2 (1 tag) = 50
+      // 60 seeded marks remain → page 1 = 30 unique
       const cards = document.querySelectorAll('[data-mark]')
-      expect(cards.length).toBe(50)
+      expect(cards.length).toBe(30)
     })
   })
 
