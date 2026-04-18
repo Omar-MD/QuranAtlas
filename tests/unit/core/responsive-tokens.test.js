@@ -111,4 +111,13 @@ describe('theme.css — responsive breakpoint tokens', () => {
     // container max-width shrinks to 900px in the translation-hidden state
     expect(hit[1]).toMatch(/max-width:\s*900px/)
   })
+
+  it('bumps .qa-dock-item size at tablet (42×42px)', () => {
+    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
+    const hit = blocks.find(b =>
+      /\.qa-dock-item\s*\{[^}]*width:\s*2\.625rem/.test(b[1]) &&
+      /\.qa-dock-item\s*\{[^}]*height:\s*2\.625rem/.test(b[1])
+    )
+    expect(hit, 'expected a min-width: 768px block bumping .qa-dock-item to 42×42px').toBeDefined()
+  })
 })
