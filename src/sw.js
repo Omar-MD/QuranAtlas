@@ -10,6 +10,10 @@
  */
 
 import { precacheAndRoute } from 'workbox-precaching'
+import { registerRoute } from 'workbox-routing'
+import { NetworkFirst } from 'workbox-strategies'
+import { CacheableResponsePlugin } from 'workbox-cacheable-response'
+import { ExpirationPlugin } from 'workbox-expiration'
 import { CACHE_DATASET } from './core/constants.js'
 import { checkForUpdate, applyUpdate } from './offline/dataset-updater.js'
 import { STAGING_CACHE } from './offline/staging-cache.js'
@@ -22,6 +26,23 @@ import {
 
 // Workbox injectManifest will populate this array
 precacheAndRoute(self.__WB_MANIFEST || [])
+
+// Cache dataset files with NetworkFirst so the reader works offline after a
+// single online visit.  Entries are stored in the same 'quran-dataset-v1'
+// cache that data/dataset.js falls back to, so no extra caches are created.
+//
+// NOTE: vite-plugin-pwa's `workbox.runtimeCaching` option is silently ignored
+// when using the 'injectManifest' strategy — routes must be registered here.
+registerRoute(
+  ({ url }) => url.pathname.startsWith('/dataset/'),
+  new NetworkFirst({
+    cacheName: CACHE_DATASET,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+    ],
+  })
+)
 
 self.addEventListener('install', (_event) => {
   // Don't call skipWaiting() unconditionally - wait for user prompt
