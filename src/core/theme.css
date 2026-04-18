@@ -493,6 +493,33 @@ html[data-theme="light"] .qa-dock-item--active {
   }
 }
 
+/* Desktop: dock becomes a labeled pill. The sr-only .qa-dock-label unhides
+ * inline next to the glyph. Matches --qa-bp-desktop. */
+@media (min-width: 1180px) {
+  .qa-dock-item {
+    width: auto;
+    height: auto;
+    padding: 0.5rem 0.875rem;
+    border-radius: 999px;
+    gap: 0.5rem;
+    font-size: var(--qa-text-size-ui);
+  }
+  .qa-dock-label {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: nowrap;
+  }
+  .qa-dock-icon {
+    font-size: 1.15rem;
+  }
+}
+
 /* ==========================================================================
    Verse edge indicators — tap-active + bookmarked
    ========================================================================== */
