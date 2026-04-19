@@ -16,6 +16,7 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "check-chunks": "node scripts/check-chunks.js",
+    "check-no-feature-state": "node scripts/check-no-feature-state.js",
     "lighthouse": "pnpm run build && lhci autorun --config=.lighthouserc.cjs",
     "clean": "rm -rf dist test-output",
     "mcp:cleanup": "rm -rf test-output",
