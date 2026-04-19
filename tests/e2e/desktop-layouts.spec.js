@@ -17,9 +17,22 @@ test.use({ viewport: { width: 1440, height: 900 } })
 
 test.describe('Desktop layouts @desktop', () => {
   test.beforeEach(async ({ page }) => {
+    // Step 1: load the app so window.__qaSuppressNextVersionChange is available.
     await page.goto('/')
+    // Step 2: wipe IDB and recreate with onboarding-complete.
     await clearAllData(page)
     await markOnboardingComplete(page)
+    // Step 3: hard-boot the app with a fresh IDB connection.
+    // about:blank breaks the current page context; the subsequent goto() to the
+    // app origin triggers a genuine HTTP load (not a hash change), so the app
+    // calls openDB() anew against the just-recreated database.  Tests that need
+    // extra marks call seedMarks() after beforeEach while the page is still
+    // on the app origin, then navigate to their target route.
+    await page.goto('about:blank')
+    await page.goto('/#/s/1')
+    // Wait for the reader to confirm the app has booted and is reading from the
+    // fresh IDB before any test navigates or seeds marks.
+    await expect(page.locator('[data-verse-key]').first()).toBeVisible({ timeout: 15_000 })
   })
 
   // ---------------------------------------------------------------------------
@@ -27,12 +40,17 @@ test.describe('Desktop layouts @desktop', () => {
   // ---------------------------------------------------------------------------
 
   test('surah list renders as 2-col grid', async ({ page }) => {
+    // Navigate to surahs; wait for the first row to appear before reading computed styles.
+    // Use expect().toBeVisible() (polling) rather than waitForSelector (one-shot) to
+    // tolerate the async getSurahs() fetch that populates the list.
     await page.goto('/#/surahs')
-    await page.waitForSelector('.qa-sl-list .qa-sl-row')
+    await expect(page.locator('.qa-sl-list .qa-sl-row').first()).toBeVisible({ timeout: 20_000 })
 
     const cols = await page.locator('.qa-sl-list').evaluate(
       el => getComputedStyle(el).gridTemplateColumns
     )
+    // At 1440px the CSS applies grid-template-columns: repeat(2, minmax(0, 1fr))
+    // which resolves to two equal pixel values, e.g. "756px 756px"
     expect(cols.split(' ').length).toBe(2)
 
     // Two consecutive rows share the same top offset (same grid row)
@@ -65,14 +83,12 @@ test.describe('Desktop layouts @desktop', () => {
 
   test('mark editor: verse-hero modal centered, grip hidden', async ({ page }) => {
     await page.goto('/#/s/1')
-    await page.waitForSelector('[data-verse-key]')
+    await expect(page.locator('[data-verse-key]').first()).toBeVisible({ timeout: 15_000 })
 
-    await page.evaluate(async () => {
-      const mod = await import('/src/marks/editor.js')
-      const v = document.querySelector('[data-verse-key]')
-      mod.openEditor(v.getAttribute('data-verse-key'))
-    })
-    await page.waitForSelector('.qa-sheet--mark')
+    // Open the editor via right-click (contextmenu) — the app suppresses the native
+    // context menu and calls openEditor() instead. This mirrors real user interaction.
+    await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 10_000 })
 
     // Wait for the scale-in animation to finish before reading geometry
     await page.locator('.qa-sheet--mark').evaluate(
@@ -110,7 +126,6 @@ test.describe('Desktop layouts @desktop', () => {
   // ---------------------------------------------------------------------------
 
   test('review hub: left rail builds + filters on click', async ({ page }) => {
-    await page.goto('/')
     await seedMarks(page, [
       { verseKey: '1:5',   tags: ['reflect'],                  note: '' },
       { verseKey: '2:255', tags: ['reflect', 'core-theology'], note: 'Ayat al-Kursi' },
@@ -194,32 +209,47 @@ test.describe('Desktop layouts @desktop', () => {
 
   test('mark editor: selected pills live in left column at desktop', async ({ page }) => {
     await page.goto('/#/s/1')
-    await page.waitForSelector('[data-verse-key]')
+    await expect(page.locator('[data-verse-key]').first()).toBeVisible({ timeout: 15_000 })
 
-    await page.evaluate(async () => {
-      const mod = await import('/src/marks/editor.js')
-      await mod.openEditor('1:1')
-    })
-    await page.waitForSelector('.qa-sheet--mark')
-    await page.waitForTimeout(250)
+    // Open editor via right-click (contextmenu) — same as user interaction.
+    await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 10_000 })
+    // Allow animation to settle before reading computed styles
+    await page.locator('.qa-sheet--mark').evaluate(
+      el => new Promise(r => setTimeout(r, 250))
+    )
 
-    // Select a tag to populate .qa-mark-selected
+    // Select a tag to populate .qa-mark-selected chips
+    await expect(page.locator('.qa-mark-chips--all .qa-mark-chip').first()).toBeVisible({ timeout: 5_000 })
     await page.locator('.qa-mark-chips--all .qa-mark-chip').first().click()
-    await page.waitForTimeout(200)
+    await expect(page.locator('.qa-mark-chips--selected .qa-mark-chip').first()).toBeVisible({ timeout: 3_000 })
 
-    const cols = await page.evaluate(() => {
-      const sel = document.querySelector('.qa-mark-selected')
-      const note = document.querySelector('.qa-mark-note')
-      const all = document.querySelector('.qa-mark-chips--all')
+    // The 2-col layout at desktop puts .qa-mark-body-left (note + selected) in
+    // the left column and .qa-mark-body-right (search + all tags) in the right.
+    // CSS auto-placement means gridColumnStart is "auto" in computed style even
+    // when the element is visually in column 1.  Check visual X-position instead.
+    const positions = await page.evaluate(() => {
+      const body = document.querySelector('.qa-mark-body').getBoundingClientRect()
+      const left = document.querySelector('.qa-mark-body-left').getBoundingClientRect()
+      const right = document.querySelector('.qa-mark-body-right').getBoundingClientRect()
+      const midX = body.left + body.width / 2
       return {
-        selected: getComputedStyle(sel).gridColumnStart,
-        note: getComputedStyle(note).gridColumnStart,
-        all: getComputedStyle(all).gridColumnStart,
+        leftCenterX: left.left + left.width / 2,
+        rightCenterX: right.left + right.width / 2,
+        midX,
       }
     })
-    expect(cols.selected).toBe('1')
-    expect(cols.note).toBe('1')
-    expect(cols.all).toBe('2')
+    // .qa-mark-body-left visual center should be LEFT of the body midpoint
+    expect(positions.leftCenterX).toBeLessThan(positions.midX)
+    // .qa-mark-body-right visual center should be RIGHT of the body midpoint
+    expect(positions.rightCenterX).toBeGreaterThan(positions.midX)
+    // .qa-mark-selected is inside .qa-mark-body-left which is left of .qa-mark-body-right
+    const selVsAll = await page.evaluate(() => {
+      const sel = document.querySelector('.qa-mark-selected').getBoundingClientRect()
+      const all = document.querySelector('.qa-mark-chips--all').getBoundingClientRect()
+      return { selRight: sel.right, allLeft: all.left }
+    })
+    expect(selVsAll.selRight).toBeLessThan(selVsAll.allLeft + 10)
   })
 
   // ---------------------------------------------------------------------------
@@ -227,15 +257,19 @@ test.describe('Desktop layouts @desktop', () => {
   // ---------------------------------------------------------------------------
 
   test('review hub: multi-tagged mark renders exactly once', async ({ page }) => {
-    await page.goto('/')
+    // Seed before navigating — beforeEach only runs clearAllData+markOnboardingComplete.
+    // No extra goto('/') needed; the page is already at '/' from beforeEach.
     await seedMarks(page, [
       { verseKey: '2:255', tags: ['reflect', 'core-theology'], note: '' },
       { verseKey: '1:5',   tags: ['reflect'],                  note: '' },
     ])
     await page.goto('/#/review')
-    await page.waitForSelector('.qa-review-layout')
-    await expect(page.locator('.qa-review-card[data-mark="2:255"]')).toBeVisible({ timeout: 10_000 })
+    // At 1440px the hub renders .qa-review-layout (desktop rail + main column).
+    // Wait for at least one card to confirm the hub has rendered with data.
+    await expect(page.locator('.qa-review-card').first()).toBeVisible({ timeout: 15_000 })
 
+    // The multi-tagged mark 2:255 must appear exactly once (flat deduped list)
+    await expect(page.locator('.qa-review-card[data-mark="2:255"]')).toBeVisible()
     const count = await page.locator('.qa-review-card[data-mark="2:255"]').count()
     expect(count).toBe(1)
 
@@ -244,10 +278,9 @@ test.describe('Desktop layouts @desktop', () => {
   })
 
   test('review hub: card list is single-column at desktop (no 2-col grid)', async ({ page }) => {
-    await page.goto('/')
     await seedMarks(page, [{ verseKey: '1:5', tags: ['reflect'], note: '' }])
     await page.goto('/#/review')
-    await page.waitForSelector('.qa-review-card-list')
+    await expect(page.locator('.qa-review-card-list')).toBeVisible({ timeout: 15_000 })
 
     const display = await page.locator('.qa-review-card-list').evaluate(
       el => getComputedStyle(el).display
@@ -256,7 +289,6 @@ test.describe('Desktop layouts @desktop', () => {
   })
 
   test('review hub: multi-tag OR filter + chip bar + clear', async ({ page }) => {
-    await page.goto('/')
     await seedMarks(page, [
       { verseKey: '1:5',   tags: ['reflect'],                  note: '' },
       { verseKey: '2:255', tags: ['reflect', 'core-theology'], note: '' },
@@ -264,49 +296,54 @@ test.describe('Desktop layouts @desktop', () => {
       { verseKey: '93:11', tags: ['gratitude'],                note: '' },
     ])
     await page.goto('/#/review')
-    await page.locator('.qa-review-rail-row').filter({ hasText: 'reflect' }).first().waitFor({ timeout: 15_000 })
+    // Wait for the rail to render with tag buckets (desktop ≥1180px only)
+    await expect(
+      page.locator('.qa-review-rail-row').filter({ hasText: 'reflect' }).first()
+    ).toBeVisible({ timeout: 15_000 })
 
-    // Click reflect + gratitude
+    // Click reflect + gratitude to activate two tag filters in the rail
     await page.locator('.qa-review-rail-row').filter({ hasText: 'reflect' }).first().click()
     await page.locator('.qa-review-rail-row').filter({ hasText: 'gratitude' }).first().click()
-    await page.waitForTimeout(300)
 
-    await expect(page.locator('.qa-review-filter-bar')).toBeVisible()
+    // Wait for chip bar to appear (re-render is synchronous after click)
+    await expect(page.locator('.qa-review-filter-bar')).toBeVisible({ timeout: 5_000 })
     const chipCount = await page.locator('.qa-review-filter-chip').count()
     expect(chipCount).toBe(2)
     const cardCount = await page.locator('.qa-review-card').count()
     expect(cardCount).toBe(4)
 
-    // Remove one via × button
+    // Remove one chip via its × button
     await page.locator('.qa-review-filter-chip button').first().click()
-    await page.waitForTimeout(200)
-    expect(await page.locator('.qa-review-filter-chip').count()).toBe(1)
+    await expect(page.locator('.qa-review-filter-chip')).toHaveCount(1, { timeout: 5_000 })
 
-    // Clear all
+    // Clear all remaining chips
     await page.locator('.qa-review-filter-bar-clear').click()
-    await page.waitForTimeout(200)
-    await expect(page.locator('.qa-review-filter-bar')).toHaveCount(0)
+    await expect(page.locator('.qa-review-filter-bar')).toHaveCount(0, { timeout: 5_000 })
   })
 
   // ---------------------------------------------------------------------------
   // 8. FVR centering
   // ---------------------------------------------------------------------------
 
-  test('FVR layout is centered at 720px max-width at desktop', async ({ page }) => {
-    await page.goto('/')
+  test('FVR layout is centered at desktop', async ({ page }) => {
+    // At viewport ≥1180px the CSS overrides .qa-fvr-layout max-width to 1000px.
+    // The test verifies centering (equal left/right gaps) regardless of the exact
+    // pixel width, and checks that the rendered width matches the CSS max-width.
     await seedMarks(page, [{ verseKey: '2:255', tags: ['reflect'], note: '' }])
     await page.goto('/#/t/reflect')
-    await page.waitForSelector('.qa-fvr-layout')
+    await expect(page.locator('.qa-fvr-layout')).toBeVisible({ timeout: 15_000 })
 
     const geom = await page.locator('.qa-fvr-layout').evaluate(el => {
       const r = el.getBoundingClientRect()
       return {
-        width: r.width,
+        width: Math.round(r.width),
         left: r.left,
         rightGap: window.innerWidth - r.right,
       }
     })
-    expect(Math.round(geom.width)).toBe(720)
+    // At 1440px viewport: desktop media query sets max-width:1000px
+    expect(geom.width).toBe(1000)
+    // Layout must be horizontally centered
     expect(Math.abs(geom.left - geom.rightGap)).toBeLessThan(2)
   })
 
