@@ -4,8 +4,11 @@
  */
 
 import mitt from 'mitt'
+import { Events } from './constants.js'
 
 export const emitter = mitt()
+
+const _knownEvents = new Set(Object.values(Events))
 
 /**
  * Subscribe to an event type.
@@ -26,6 +29,9 @@ export function on(type, callback) {
  * @param {*} [payload] - Event payload
  */
 export function emit(type, payload) {
+  if (import.meta.env.DEV && !_knownEvents.has(type)) {
+    throw new Error(`[events] unknown event: "${type}". Add it to Events in src/core/constants.js.`)
+  }
   const handlers = emitter.all.get(type)
   if (handlers) {
     for (const h of handlers.slice()) {

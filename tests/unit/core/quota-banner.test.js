@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { Events } from '../../../src/core/constants.js'
 
 vi.mock('../../../src/a11y/announcer.js', () => ({
   announce: vi.fn(),
@@ -47,7 +48,7 @@ describe('core/quota-banner.js', () => {
   it('shows a dismissible warning banner and persists suppression when dismissed', async () => {
     quotaBanner.init()
 
-    emit('storage:quota-warning')
+    emit(Events.STORAGE_QUOTA_WARNING)
     await waitFor(() => document.querySelector('.qa-quota-banner') !== null)
 
     const banner = document.querySelector('.qa-quota-banner')
@@ -68,7 +69,7 @@ describe('core/quota-banner.js', () => {
 
     quotaBanner.init()
 
-    emit('storage:quota-warning')
+    emit(Events.STORAGE_QUOTA_WARNING)
     await flushMicrotasks()
 
     expect(document.querySelector('.qa-quota-banner')).toBeNull()
@@ -77,9 +78,9 @@ describe('core/quota-banner.js', () => {
   it('does not duplicate the warning banner when one is already visible', async () => {
     quotaBanner.init()
 
-    emit('storage:quota-warning')
+    emit(Events.STORAGE_QUOTA_WARNING)
     await flushMicrotasks()
-    emit('storage:quota-warning')
+    emit(Events.STORAGE_QUOTA_WARNING)
     await flushMicrotasks()
 
     expect(document.querySelectorAll('.qa-quota-banner')).toHaveLength(1)
@@ -88,9 +89,9 @@ describe('core/quota-banner.js', () => {
   it('replaces a dismissible warning with a non-dismissible quota exceeded banner', async () => {
     quotaBanner.init()
 
-    emit('storage:quota-warning')
+    emit(Events.STORAGE_QUOTA_WARNING)
     await flushMicrotasks()
-    emit('db:quota-exceeded')
+    emit(Events.DB_QUOTA_EXCEEDED)
 
     const banner = document.querySelector('.qa-quota-banner')
     expect(banner).not.toBeNull()

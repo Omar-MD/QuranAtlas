@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { openDB } from '../../../src/core/db.js'
 import { save } from '../../../src/marks/store.js'
+import { Events } from '../../../src/core/constants.js'
 
 let indicator
 let events
@@ -79,7 +80,7 @@ describe('marks/indicator.js', () => {
       indicator.init()
 
       await store.del('2:255')
-      events.emit('sync:update-received', { verseKeys: ['2:255'] })
+      events.emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: ['2:255'] })
       await waitForIndicatorWork()
 
       expect(verse.classList.contains('qa-verse--bookmarked')).toBe(false)
@@ -96,7 +97,7 @@ describe('marks/indicator.js', () => {
       expect(verse.classList.contains('qa-verse--bookmarked')).toBe(true)
 
       indicator.init()
-      events.emit('marks:deleted', { verseKey: '1:1' })
+      events.emit(Events.MARKS_DELETED, { verseKey: '1:1' })
 
       expect(verse.classList.contains('qa-verse--bookmarked')).toBe(false)
     })
@@ -109,10 +110,10 @@ describe('marks/indicator.js', () => {
       document.body.appendChild(verse)
 
       indicator.init()
-      events.emit('reader:surah-loaded')
+      events.emit(Events.READER_SURAH_LOADED)
       await waitForIndicatorWork()
 
-      events.emit('marks:undo', { verseKey: '1:2' })
+      events.emit(Events.MARKS_UNDO, { verseKey: '1:2' })
       await waitForIndicatorWork()
 
       expect(verse.classList.contains('qa-verse--bookmarked')).toBe(true)
@@ -130,7 +131,7 @@ describe('marks/indicator.js', () => {
       document.body.appendChild(verse4)
 
       indicator.init()
-      events.emit('reader:surah-loaded')
+      events.emit(Events.READER_SURAH_LOADED)
       await waitForIndicatorWork()
 
       await indicator.decorateVerse('1:3', verse3)
@@ -141,7 +142,7 @@ describe('marks/indicator.js', () => {
       await store.save('1:3', ['study', 'reflection'])
       await store.del('1:4')
 
-      events.emit('db:visibility:visible')
+      events.emit(Events.DB_VISIBILITY_VISIBLE)
       await waitForIndicatorWork()
 
       expect(verse3.classList.contains('qa-verse--bookmarked')).toBe(true)
@@ -155,10 +156,10 @@ describe('marks/indicator.js', () => {
       verse.setAttribute('data-verse-key', '1:5')
 
       indicator.init()
-      events.emit('reader:surah-loaded')
+      events.emit(Events.READER_SURAH_LOADED)
       await waitForIndicatorWork()
 
-      events.emit('reader:verse-rendered', {
+      events.emit(Events.READER_VERSE_RENDERED, {
         verseKey: '1:5',
         element: verse,
       })

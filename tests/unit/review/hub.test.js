@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { openDB } from '../../../src/core/db.js'
 import { save as saveMark } from '../../../src/marks/store.js'
 import { on } from '../../../src/core/events.js'
+import { Events } from '../../../src/core/constants.js'
 
 // Mock dataset module to prevent fetch('/dataset/surahs.json') errors in jsdom
 vi.mock('../../../src/data/dataset.js', () => ({
@@ -269,7 +270,7 @@ describe('review/hub.js', () => {
       await store.del('2:255')
 
       // Fire the cross-tab event
-      emit('sync:update-received', { verseKeys: ['2:255'] })
+      emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: ['2:255'] })
 
       // Wait for async re-render
       await new Promise(r => setTimeout(r, 50))
@@ -288,7 +289,7 @@ describe('review/hub.js', () => {
 
       const mainContent = document.getElementById('main-content')
       mainContent.textContent = 'sentinel'
-      emit('sync:update-received', { verseKeys: [] })
+      emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: [] })
 
       await new Promise(r => setTimeout(r, 50))
       expect(mainContent.textContent).toBe('sentinel')
@@ -304,7 +305,7 @@ describe('review/hub.js', () => {
 
       const mainContent = document.getElementById('main-content')
       mainContent.textContent = 'sentinel'
-      emit('sync:update-received', { verseKeys: [] })
+      emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: [] })
 
       await new Promise(r => setTimeout(r, 50))
       expect(mainContent.textContent).toBe('sentinel')
@@ -327,7 +328,7 @@ describe('review/hub.js', () => {
       await store.del('2:255')
 
       // Simulate tab becoming visible
-      emit('db:visibility-visible', {})
+      emit(Events.DB_VISIBILITY_VISIBLE, {})
 
       await new Promise(r => setTimeout(r, 50))
 

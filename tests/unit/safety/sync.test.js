@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { logger } from '../../../src/core/logger.js'
+import { Events } from '../../../src/core/constants.js'
 
 // Mock BroadcastChannel
 class MockBroadcastChannel {
@@ -111,7 +112,7 @@ describe('safety/sync.js', () => {
     it('renders a reload banner and blocks app interaction', async () => {
       const { emit } = await import('../../../src/core/events.js')
 
-      emit('db:version-change')
+      emit(Events.DB_VERSION_CHANGE)
 
       const backdrop = document.querySelector('.qa-sync-backdrop')
       const banner = document.querySelector('.qa-sync-banner')
@@ -127,7 +128,7 @@ describe('safety/sync.js', () => {
       const { emit } = await import('../../../src/core/events.js')
 
       sync.suppressNextVersionChange()
-      emit('db:version-change')
+      emit(Events.DB_VERSION_CHANGE)
 
       expect(document.querySelector('.qa-sync-backdrop')).toBeNull()
     })
@@ -136,8 +137,8 @@ describe('safety/sync.js', () => {
       const { emit } = await import('../../../src/core/events.js')
 
       sync.suppressNextVersionChange()
-      emit('db:version-change') // suppressed
-      emit('db:version-change') // should show
+      emit(Events.DB_VERSION_CHANGE) // suppressed
+      emit(Events.DB_VERSION_CHANGE) // should show
 
       expect(document.querySelector('.qa-sync-backdrop')).not.toBeNull()
     })
@@ -145,8 +146,8 @@ describe('safety/sync.js', () => {
     it('does not render duplicate banners for repeated version change events', async () => {
       const { emit } = await import('../../../src/core/events.js')
 
-      emit('db:version-change')
-      emit('db:version-change')
+      emit(Events.DB_VERSION_CHANGE)
+      emit(Events.DB_VERSION_CHANGE)
 
       expect(document.querySelectorAll('.qa-sync-backdrop')).toHaveLength(1)
     })
@@ -154,7 +155,7 @@ describe('safety/sync.js', () => {
     it('removeBanner restores app interaction state', async () => {
       const { emit } = await import('../../../src/core/events.js')
 
-      emit('db:version-change')
+      emit(Events.DB_VERSION_CHANGE)
       sync.removeBanner()
 
       expect(document.querySelector('.qa-sync-backdrop')).toBeNull()

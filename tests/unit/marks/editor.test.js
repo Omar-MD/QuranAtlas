@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { openDB } from '../../../src/core/db.js'
 import { save, getByVerseKey } from '../../../src/marks/store.js'
+import { Events } from '../../../src/core/constants.js'
 
 vi.mock('../../../src/data/dataset.js', () => ({
   getSurahs: vi.fn().mockResolvedValue([
@@ -243,7 +244,7 @@ describe('marks/editor.js', () => {
       await save('2:255', ['favourite'])
       await editor.openEditor('2:255')
       expect(document.querySelector('.qa-sheet--mark')).toBeTruthy()
-      emit('sync:update-received', { verseKeys: ['2:255'] })
+      emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: ['2:255'] })
       expect(document.querySelector('.qa-sheet--mark')).toBeFalsy()
     })
 
@@ -251,7 +252,7 @@ describe('marks/editor.js', () => {
       const { emit } = await import('../../../src/core/events.js')
       await save('2:255', ['favourite'])
       await editor.openEditor('2:255')
-      emit('sync:update-received', { verseKeys: ['3:1'] })
+      emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: ['3:1'] })
       expect(document.querySelector('.qa-sheet--mark')).toBeTruthy()
     })
   })
