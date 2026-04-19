@@ -172,9 +172,9 @@ function finalizeSurah({ surahNum, surahMeta, surah, initIndicators, setupLongPr
   // any verses already rendered by renderSurahContent above.
   cleanupIndicatorsFn = initIndicators()
   cleanupLongPressFn = setupLongPress(mainContent)
-  emit(Events.READER_SURAH_LOADED, { surah: surahNum })
+  emit(Events.READER_SURAH_LOADED, /** @type {import('../core/constants.js').ReaderSurahLoadedPayload} */({ surah: surahNum }))
   // Surface the ambient dock briefly so the user sees nav chrome on every surah load.
-  emit(Events.AMBIENT_SURFACE, { reason: 'surah-load' })
+  emit(Events.AMBIENT_SURFACE, /** @type {import('../core/constants.js').AmbientSurfacePayload} */({ reason: 'surah-load' }))
   performance.mark('reader:first-verse')
   performance.measure('reader:total-load', 'reader:fetch-start', 'reader:first-verse')
   announce(`${surahMeta?.name ?? `Surah ${surahNum}`} loaded, ${surah.ar.length} verses`)
@@ -479,7 +479,7 @@ async function savePosition(surahNum, verse) {
       verse,
       savedAt: Date.now(),
     })
-    emit(Events.READER_POSITION_CHANGED, { surah: surahNum, verse })
+    emit(Events.READER_POSITION_CHANGED, /** @type {import('../core/constants.js').ReaderPositionChangedPayload} */({ surah: surahNum, verse }))
   } catch (error) {
     // Position save failed, emit event for UI warning
     logger.error('Failed to save position on visibility change:', {
@@ -682,7 +682,7 @@ function showEdges(verseEl) {
     edgeFadeTimer = null
   }, 1600)
 
-  emit(Events.AMBIENT_SURFACE, { reason: 'verse-tap' })
+  emit(Events.AMBIENT_SURFACE, /** @type {import('../core/constants.js').AmbientSurfacePayload} */({ reason: 'verse-tap' }))
 }
 
 function teardownEdgeIndicators() {

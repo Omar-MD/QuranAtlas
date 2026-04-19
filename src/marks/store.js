@@ -39,7 +39,7 @@ export async function save(verseKey, tags, note = '') {
       request.onerror = () => reject(request.error)
     })
 
-    emit(Events.MARKS_SAVED, { verseKey, tags })
+    emit(Events.MARKS_SAVED, /** @type {import('../core/constants.js').MarksSavedPayload} */({ verseKey, tags }))
     broadcastMarkChange([verseKey])
   } catch (error) {
     logger.error('Failed to save mark:', { verseKey, error })
@@ -64,7 +64,7 @@ export async function del(verseKey) {
       request.onerror = () => reject(request.error)
     })
 
-    emit(Events.MARKS_DELETED, { verseKey })
+    emit(Events.MARKS_DELETED, /** @type {import('../core/constants.js').MarksDeletedPayload} */({ verseKey }))
     broadcastMarkChange([verseKey])
   } catch (error) {
     logger.error('Failed to delete mark:', { verseKey, error })

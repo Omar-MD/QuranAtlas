@@ -44,7 +44,7 @@ export async function loadFontSize() {
 export async function setFontSize(size) {
   if (!OPTIONS.includes(size)) { return false }
   applyFontSize(size)
-  emit(Events.SETTINGS_FONT_SIZE_CHANGED, { size })
+  emit(Events.SETTINGS_FONT_SIZE_CHANGED, /** @type {import('../core/constants.js').SettingsFontSizeChangedPayload} */({ size }))
   put('settings', { key: 'fontSize', value: size }).catch((error) => {
     logger.error('Failed to save font size', { size, error })
   })

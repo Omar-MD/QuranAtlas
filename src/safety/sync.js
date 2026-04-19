@@ -98,7 +98,7 @@ function handleChannelMessage(event) {
         })
       }
     }
-    emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys })
+    emit(Events.SYNC_UPDATE_RECEIVED, /** @type {import('../core/constants.js').SyncUpdateReceivedPayload} */({ verseKeys }))
   }
 }
 

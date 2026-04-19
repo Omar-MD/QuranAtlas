@@ -126,7 +126,7 @@ export async function init(_params = {}) {
       const vNum = parseInt(refMatch[2], 10)
       const meta = surahs.find(s => s.n === sNum)
       if (meta && vNum >= 1 && vNum <= meta.count) {
-        emit(Events.NAVIGATION_NAVIGATE, { surah: sNum, verse: vNum })
+        emit(Events.NAVIGATION_NAVIGATE, /** @type {import('../core/constants.js').NavigationNavigatePayload} */({ surah: sNum, verse: vNum }))
         return
       }
     }

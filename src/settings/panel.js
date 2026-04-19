@@ -253,7 +253,7 @@ function buildReadingSection(visible, translations, translationId) {
     onToggle: async (next) => {
       try {
         await put('settings', { key: 'translationVisible', value: next })
-        emit(Events.SETTINGS_TRANSLATION_CHANGED, { visible: next })
+        emit(Events.SETTINGS_TRANSLATION_CHANGED, /** @type {import('../core/constants.js').SettingsTranslationChangedPayload} */({ visible: next }))
         applyTranslationToDOM(next)
       } catch (error) {
         logger.error('Failed to save translation setting', { error })

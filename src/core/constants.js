@@ -4,6 +4,52 @@
 
 export const CACHE_DATASET = 'quran-dataset-v1'
 
+// ---------------------------------------------------------------------------
+// Event payload typedefs — one per Events constant.
+// Shapes are derived from emit() call sites in src/.
+// ---------------------------------------------------------------------------
+
+/** @typedef {{}} DbVersionChangePayload */
+/** @typedef {{}} DbVisibilityVisiblePayload */
+/** @typedef {{ message: string }} DbDeleteBlockedPayload */
+/** @typedef {{ storeName: string, message: string }} DbQuotaExceededPayload */
+/** @typedef {{}} RouterLaunchRestorePayload */
+/** @typedef {{ hash: string }} RouterRouteChangePayload */
+/** @typedef {{ route: string, error: Error }} RouterRouteErrorPayload */
+/** @typedef {{ surah: object }} ReaderSurahLoadedPayload */
+/** @typedef {{ surah: number, verse: number }} ReaderPositionChangedPayload */
+/** @typedef {{ error: string, surah: number, verse: number }} ReaderPositionSaveFailedPayload */
+/** @typedef {{ surah: number, verse?: number }} NavigationNavigatePayload */
+/** @typedef {{ cached: number, total: number }} OfflineDownloadProgressPayload */
+/** @typedef {{}} OfflineDownloadCompletePayload */
+/** @typedef {{ error: string | Error }} OfflineDownloadErrorPayload */
+/** @typedef {{}} OfflineInstallAvailablePayload */
+/** @typedef {{}} OfflineInstallCompletePayload */
+/** @typedef {{ error: Error, context?: string }} AppInitErrorPayload */
+/** @typedef {{}} AppReadyForDownloadPayload */
+/** @typedef {{ from: string, to: string }} SettingsThemeChangedPayload */
+/** @typedef {{}} SettingsDataClearedPayload */
+/** @typedef {{ size: string }} SettingsFontSizeChangedPayload */
+/** @typedef {{ visible: boolean }} SettingsTranslationChangedPayload */
+/** @typedef {{}} ReviewOpenPayload */
+/** @typedef {{ tags: string[], surah: number|null }} ReviewFilterPayload */
+/** @typedef {{ verseKey: string, tags: string[] }} MarksSavedPayload */
+/** @typedef {{ verseKey: string }} MarksDeletedPayload */
+/** @typedef {{ verseKey: string }} MarksUndoPayload */
+/** @typedef {{ verseKey: string, error: string }} MarksSaveFailedPayload */
+/** @typedef {{ verseKey: string, element: HTMLElement }} ReaderVerseRenderedPayload */
+/** @typedef {{ reason: string }} AmbientSurfacePayload */
+/** @typedef {{ verseKeys: string[] }} SyncUpdateReceivedPayload */
+/** @typedef {{ from: string, to: string }} DatasetUpdateAvailablePayload */
+/** @typedef {{ progress: number, version: string }} DatasetDownloadProgressPayload */
+/** @typedef {{ from: string, to: string }} DatasetPendingConfirmationPayload */
+/** @typedef {{ version: string }} DatasetAppliedPayload */
+/** @typedef {{ error: Error }} DatasetUpdateFailedPayload */
+/** @typedef {{}} StorageQuotaWarningPayload */
+/** @typedef {{}} OfflineSwTimeoutPayload */
+/** @typedef {{ name: string }} SheetOpenedPayload */
+/** @typedef {{ name: string }} SheetClosedPayload */
+
 export const Events = {
   DB_VERSION_CHANGE: 'db:version-change',
   DB_VISIBILITY_VISIBLE: 'db:visibility-visible',
@@ -35,7 +81,6 @@ export const Events = {
   MARKS_SAVE_FAILED: 'marks:save-failed',
   READER_VERSE_RENDERED: 'reader:verse-rendered',
   AMBIENT_SURFACE: 'ambient:surface',
-  AMBIENT_HIDE: 'ambient:hide',
   SYNC_UPDATE_RECEIVED: 'sync:update-received',
   DATASET_UPDATE_AVAILABLE: 'dataset:update-available',
   DATASET_DOWNLOAD_PROGRESS: 'dataset:download-progress',
