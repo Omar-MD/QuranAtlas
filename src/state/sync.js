@@ -1,6 +1,5 @@
 const _state = {
   broadcastChannel: null,
-  deferredQueue: [],
 }
 
 export function get() { return _state }

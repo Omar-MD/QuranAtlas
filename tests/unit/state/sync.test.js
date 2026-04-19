@@ -13,12 +13,12 @@ describe('state/sync.js', () => {
   })
 
   it('get() returns initial state shape', () => {
-    expect(state.get()).toMatchObject({ broadcastChannel: null, deferredQueue: [] })
+    expect(state.get()).toMatchObject({ broadcastChannel: null })
   })
 
   it('set() shallow-merges patches', () => {
-    state.set({ deferredQueue: ['2:1'] })
-    expect(state.get().deferredQueue).toEqual(['2:1'])
-    expect(state.get().broadcastChannel).toBeNull() // untouched
+    const someMockChannel = {}
+    state.set({ broadcastChannel: someMockChannel })
+    expect(state.get().broadcastChannel).toBe(someMockChannel)
   })
 })
