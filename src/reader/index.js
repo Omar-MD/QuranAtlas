@@ -22,16 +22,13 @@ import {
   renderSkeleton,
   renderError,
 } from './render.js'
+import { setupChunkedAppend, CHUNK_SIZE } from './chunked-append.js'
 
 // Maximum time to wait for surah data fetch before showing error
 // 5000ms hard cutoff; 800ms is the performance *goal*, not the error threshold
 const SKELETON_TIMEOUT_MS = 5000
 
-// Number of verses to render per chunk for performance
-// 50 verses provides good initial render time while keeping DOM size manageable
-const CHUNK_SIZE = 50
-
-let scrollAppendBound = null
+let cleanupChunkedAppendFn = null
 let unsubVisibility = null
 let visibilityHandler = null
 let cleanupIndicatorsFn = null
@@ -197,10 +194,9 @@ export function cleanup() {
   clearUndoToast()
   clearUndoRecord()
   unobserve()
-  const mainContent = document.getElementById('main-content')
-  if (mainContent && scrollAppendBound) {
-    mainContent.removeEventListener('scroll', scrollAppendBound)
-    scrollAppendBound = null
+  if (cleanupChunkedAppendFn) {
+    cleanupChunkedAppendFn()
+    cleanupChunkedAppendFn = null
   }
   if (visibilityHandler) {
     document.removeEventListener('visibilitychange', visibilityHandler)
@@ -296,88 +292,17 @@ export async function init(
 }
 
 /**
- * Set up scroll tracking with append-on-scroll.
+ * Set up scroll tracking: position observer + chunked append listener.
  */
 function setupScrollTracking(container, surahNum) {
-  const mainContent = document.getElementById('main-content')
-  if (!mainContent) {
-    return
-  }
-
-  observeScroll(mainContent, {
+  observeScroll(container, {
     onPositionChange: ({ verse }) => {
       readerState.set({ lastTrackedVerse: verse })
       savePosition(surahNum, verse)
     },
   })
 
-  // Append more verses on scroll near bottom (throttled via rAF)
-  scrollAppendBound = () => {
-    if (!readerState.get().scrollAppendRafPending) {
-      readerState.set({ scrollAppendRafPending: true })
-      requestAnimationFrame(() => {
-        readerState.set({ scrollAppendRafPending: false })
-        handleScrollAppend()
-      })
-    }
-  }
-  mainContent.addEventListener('scroll', scrollAppendBound, { passive: true })
-}
-
-/**
- * Handle scroll events to append more verse chunks.
- * Uses rAF throttling to prevent multiple rapid scroll events from queuing
- * multiple render operations. The scrollAppendRafPending flag ensures only
- * one render cycle is active at a time.
- */
-function handleScrollAppend() {
-  const s = readerState.get()
-  if (s.isRendering || !s.currentSurah || s.renderedCount >= s.currentSurah.ar.length) {
-    return
-  }
-
-  const mainContent = document.getElementById('main-content')
-  if (!mainContent) {
-    return
-  }
-
-  const scrollBottom = mainContent.scrollTop + mainContent.clientHeight
-  const scrollHeight = mainContent.scrollHeight
-
-  // Append next chunk when within one viewport height of bottom
-  if (scrollHeight - scrollBottom < mainContent.clientHeight) {
-    // Set pending BEFORE the rAF to prevent race conditions
-    readerState.set({ scrollAppendRafPending: true })
-
-    requestAnimationFrame(() => {
-      // Reset pending flag immediately to allow next scroll to queue
-      readerState.set({ scrollAppendRafPending: false })
-
-      // Re-validate conditions in case they changed during the frame
-      const s2 = readerState.get()
-      if (s2.isRendering || !s2.currentSurah || s2.renderedCount >= s2.currentSurah.ar.length) {
-        return
-      }
-
-      readerState.set({ isRendering: true })
-      const startCount = readerState.get().renderedCount
-      renderVerseChunk(mainContent, s2.currentSurah, s2.translationVisible, s2.renderedCount, s2.renderedCount + CHUNK_SIZE)
-      readerState.set({ isRendering: false })
-
-      // Observe newly appended verses for scroll tracking
-      const startVerse = startCount + 1
-      const newElements = []
-      for (let v = startVerse; v <= readerState.get().renderedCount; v++) {
-        const el = mainContent.querySelector(`[data-verse="${v}"]`)
-        if (el) {
-          newElements.push(el)
-        }
-      }
-      if (newElements.length > 0) {
-        observeNewVerses(newElements)
-      }
-    })
-  }
+  cleanupChunkedAppendFn = setupChunkedAppend(container)
 }
 
 function scrollVerseIntoView(container, verseEl) {
