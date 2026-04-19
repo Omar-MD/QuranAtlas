@@ -4,14 +4,15 @@ IDB is the single source of client-side truth in QuranAtlas. This file documents
 
 The DB is `quran-atlas`, version 1, defined in `src/core/db.js`. Schema changes live in `onupgradeneeded`.
 
-**Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `core/db.js`, which checks required fields per store. Missing fields throw synchronously before any transaction opens. See the `schemas` table at `core/db.js:171` for the enforced minima.
+**Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `core/db.js`. Since the typedef-based shape validator refactor (`_shapes` + `_optionalTypes`), validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously. See `core/db.js` for the full `@typedef` declarations and shape tables.
 
 ---
 
 ## Store: `settings`
 
 - **keyPath:** `key`
-- **Record shape:** `{ key: string, value: any }`
+- **Record shape:** `{ key: string, value: any }` — typedef: `SettingsRecord`
+- **Validated fields:** `key` (string, required); `value` (any, required — present but not type-checked)
 - **Indexes:** none
 - **Written by:** many modules (this is the app's scratchpad for preferences and session pointers)
 
@@ -36,7 +37,7 @@ Plus any other ad-hoc keys a feature introduces. Convention: write `{ key, value
 
 - **keyPath:** `id` (string)
 - **Indexes:** `by-savedAt` on `savedAt`
-- **Minimum fields (per `validateWrite`):** `id`, `surah`, `verse`, `savedAt`
+- **Validated fields:** `id` (string), `surah` (number), `verse` (number), `savedAt` (number) — typedef: `PositionRecord`
 - **Written by:** `reader/index.js`, `review/state.js`
 
 ### Known record shapes
@@ -84,8 +85,8 @@ The review-state reuse is intentional — see the comment at the top of `review/
 - **Indexes:**
   - `by-tag` on `tags` (multiEntry — each tag is indexed separately)
   - `by-updated` on `updatedAt`
-- **Minimum fields (per `validateWrite`):** `verseKey`
-- **Written by:** `marks/store.js` only. If you write elsewhere, you're bypassing the event+broadcast contract.
+- **Validated fields:** `verseKey` (string, required); `tags` (string[], type-checked when present), `note` (string, type-checked when present), `createdAt` (number, type-checked when present), `updatedAt` (number, type-checked when present) — typedef: `MarkRecord`
+- **Written by:** `marks/store.js` only (bypasses `core/db.put()` — writes directly to IDB). If you write elsewhere, you're bypassing the event+broadcast contract.
 
 ### Record shape
 
@@ -122,7 +123,7 @@ If you bypass `store.js` and write `marks` directly, indicators go stale and oth
 ## Store: `activationState`
 
 - **keyPath:** `id`
-- **Minimum fields:** `id`, `status`
+- **Validated fields:** `id` (string), `status` (string) — typedef: `ActivationStateRecord`
 - **Written by:** `data/offline.js`, `offline/dataset-updater.js` (SW side)
 
 ### Record shapes
@@ -162,7 +163,7 @@ This isn't actively broken — the two writers don't collide in practice because
 ## Store: `datasetMeta`
 
 - **keyPath:** `id`
-- **Minimum fields:** `id`
+- **Validated fields:** `id` (string) — typedef: `DatasetMetaRecord`
 - **Written by:** `offline/dataset-updater.js` (SW side)
 
 ### Record shape
@@ -189,7 +190,7 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 ## Adding a new store
 
 1. Add the store in `core/db.js::openDB` inside `onupgradeneeded` and bump `DB_VERSION`. Write a clean upgrade path (no destructive rewrites unless you've handled migration).
-2. Add the required-fields entry to the `schemas` table in `validateWrite`.
+2. Add a `@typedef` JSDoc comment and a required-fields entry to `_shapes` in `validateWrite`. Add optional-but-type-checked fields to `_optionalTypes` if applicable.
 3. If the store needs an index, create it inside the same `onupgradeneeded` block.
 4. Update this file: add a section with keyPath, indexes, record shape, writers, and typical queries.
 5. Consider whether writes should cross tabs (broadcast via `safety/sync.js`) and whether they should emit a public event.

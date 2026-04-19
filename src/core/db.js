@@ -161,6 +161,41 @@ export async function put(storeName, value) {
   })
 }
 
+/** @typedef {{ key: string, value: any }} SettingsRecord */
+/** @typedef {{ id: string, surah: number, verse: number, savedAt: number }} PositionRecord */
+/** @typedef {{ verseKey: string, tags: string[], note: string, createdAt: number, updatedAt: number }} MarkRecord */
+/** @typedef {{ id: string, status: string }} ActivationStateRecord */
+/** @typedef {{ id: string }} DatasetMetaRecord */
+
+/**
+ * Required fields per store, with their expected runtime types.
+ * Use 'any' to require the field is present but skip type checking.
+ * Fields listed here are required; if absent the write is rejected.
+ */
+const _shapes = {
+  settings: { key: 'string', value: 'any' },
+  positions: { id: 'string', surah: 'number', verse: 'number', savedAt: 'number' },
+  marks: { verseKey: 'string' },
+  activationState: { id: 'string', status: 'string' },
+  datasetMeta: { id: 'string' },
+}
+
+/**
+ * Optional fields per store that are type-checked when present.
+ * If a field appears in the record but with the wrong type, the write is rejected.
+ */
+const _optionalTypes = {
+  marks: { tags: 'string[]', note: 'string', createdAt: 'number', updatedAt: 'number' },
+}
+
+function _typeOf(v) {
+  if (Array.isArray(v)) {
+    if (v.length === 0) { return 'string[]' } // empty arrays treated as valid string[]
+    return `${typeof v[0]}[]`
+  }
+  return typeof v
+}
+
 /**
  * Validate a write to a store.
  * @param {string} storeName
@@ -168,22 +203,32 @@ export async function put(storeName, value) {
  * @returns {Promise<boolean>}
  */
 export async function validateWrite(storeName, value) {
-  const schemas = {
-    settings: ['key', 'value'],
-    positions: ['id', 'surah', 'verse', 'savedAt'],
-    marks: ['verseKey'],
-    activationState: ['id', 'status'],
-    datasetMeta: ['id'],
-  }
-
-  const required = schemas[storeName]
-  if (!required) {
+  const shape = _shapes[storeName]
+  if (!shape) {
     throw new Error(`Unknown store: ${storeName}`)
   }
 
-  for (const field of required) {
+  // Check required fields
+  for (const [field, expected] of Object.entries(shape)) {
     if (!(field in value) || value[field] === undefined) {
       throw new Error(`missing required field: ${field}`)
+    }
+    if (expected === 'any') { continue }
+    const actual = _typeOf(value[field])
+    if (actual !== expected) {
+      throw new Error(`[db] ${storeName}.${field}: expected ${expected}, got ${actual}`)
+    }
+  }
+
+  // Check optional fields when present
+  const optionals = _optionalTypes[storeName]
+  if (optionals) {
+    for (const [field, expected] of Object.entries(optionals)) {
+      if (!(field in value) || value[field] === undefined) { continue }
+      const actual = _typeOf(value[field])
+      if (actual !== expected) {
+        throw new Error(`[db] ${storeName}.${field}: expected ${expected}, got ${actual}`)
+      }
     }
   }
 
