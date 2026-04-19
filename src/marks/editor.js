@@ -19,20 +19,20 @@ import { validateTagLabel } from '../safety/input-validator.js'
 import { on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { showUndoToast, clearUndoToast } from '../core/ui.js'
+import * as markEditorState from '../state/mark-editor.js'
 
 const LONG_PRESS_MS = 500
 const DIM_THRESHOLD = 7
 
 let activeModal = null
 let currentUndoRecord = null
-let currentEditingVerseKey = null
 let _historyPushed = false
 let _popstateHandler = null
 let _escHandler = null
 let _openCallId = 0
 
 on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
-  if (currentEditingVerseKey && verseKeys.includes(currentEditingVerseKey)) {
+  if (markEditorState.get().currentVerseKey && verseKeys.includes(markEditorState.get().currentVerseKey)) {
     closeEditor()
   }
 })
@@ -55,6 +55,7 @@ export async function openEditor(verseKey) {
 
   const selectedTags = new Set(existing?.tags || [])
   const noteValue = existing?.note || ''
+  markEditorState.set({ isOpen: true, currentVerseKey: verseKey, selectedTags: [...selectedTags], draftNote: noteValue })
 
   // Tag universe
   let allTags
@@ -252,7 +253,6 @@ export async function openEditor(verseKey) {
   shell.appendChild(sheet)
 
   activeModal = { backdrop: scrim, modal: sheet }
-  currentEditingVerseKey = verseKey
 
   // History entry for browser back
   _popstateHandler = () => { if (activeModal) { closeEditor() } }
@@ -267,6 +267,7 @@ export async function openEditor(verseKey) {
   if (isDesktop) { searchInput.focus() }
 
   function renderChips() {
+    markEditorState.set({ selectedTags: [...selectedTags] })
     // Selected strip
     while (selChips.firstChild) { selChips.removeChild(selChips.firstChild) }
     const selArr = [...selectedTags]
@@ -349,7 +350,10 @@ export async function openEditor(verseKey) {
   }
 
   searchInput.addEventListener('input', renderChips)
-  note.addEventListener('input', () => { saveBtn.disabled = selectedTags.size === 0 && !note.value.trim() })
+  note.addEventListener('input', () => {
+    markEditorState.set({ draftNote: note.value })
+    saveBtn.disabled = selectedTags.size === 0 && !note.value.trim()
+  })
 
   saveBtn.addEventListener('click', async () => {
     if (selectedTags.size === 0 && !note.value.trim()) { return }
@@ -410,7 +414,7 @@ export function closeEditor() {
   activeModal.backdrop.remove()
   activeModal.modal.remove()
   activeModal = null
-  currentEditingVerseKey = null
+  markEditorState.set({ isOpen: false, currentVerseKey: null, selectedTags: [], draftNote: '' })
 
   if (_escHandler) {
     document.removeEventListener('keydown', _escHandler)
