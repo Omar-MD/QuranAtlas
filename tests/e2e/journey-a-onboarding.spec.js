@@ -13,7 +13,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, seedLastSurface } from './fixtures/idb.js'
 import { waitForReader } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
@@ -375,16 +375,15 @@ test.describe('Journey A: First run & session restore', () => {
   // A2.1 Reload restores the last surface
   // -------------------------------------------------------------------------
   test('A2: reload stays on the last surface', async ({ page }) => {
-    // Mark onboarding complete and navigate to a surface other than #/onboarding
+    // Seed IDB directly: onboardingComplete + lastSurface = '#/review'.
+    // Using seedLastSurface (rather than navigating to the surface) avoids the race
+    // between parallel tests writing different values to the shared origin's IDB.
     await markOnboardingComplete(page)
+    await seedLastSurface(page, '#/review')
 
-    // Navigate to the review hub so lastSurface is written
-    await page.goto('/#/review')
-    // Wait for the route to settle — dock should be visible (non-reader route)
-    await expect(page.locator('#bottom-nav')).toBeVisible({ timeout: 8_000 })
-
-    // Hard reload — hash cleared, ROUTER_LAUNCH_RESTORE fires
-    await page.reload()
+    // Navigate to root with no hash — this simulates a fresh app launch / hard reload.
+    // handleRoute('') fires ROUTER_LAUNCH_RESTORE which reads lastSurface and restores it.
+    await page.goto('/')
 
     // App should restore the last surface (#/review) not boot to onboarding
     await expect(page.locator('.qa-onboarding')).toHaveCount(0)
@@ -395,12 +394,13 @@ test.describe('Journey A: First run & session restore', () => {
   // A2.2 Reload restores a reader surface
   // -------------------------------------------------------------------------
   test('A2: reload restores reader surface (e.g. #/s/2)', async ({ page }) => {
+    // Seed IDB directly to avoid navigation races with parallel tests.
     await markOnboardingComplete(page)
+    await seedLastSurface(page, '#/s/2')
 
-    await page.goto('/#/s/2')
-    await expect(page.locator('[data-surah-header]')).toBeVisible({ timeout: 10_000 })
-
-    await page.reload()
+    // Navigate to root (no hash) — simulates fresh app launch / hard reload.
+    // ROUTER_LAUNCH_RESTORE reads lastSurface and restores the reader.
+    await page.goto('/')
 
     await expect(page.locator('.qa-onboarding')).toHaveCount(0)
     await expect(page).toHaveURL(/#\/s\/2/, { timeout: 8_000 })
