@@ -13,10 +13,10 @@
 import { on, emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
+import * as syncState from '../state/sync.js'
 
 const CHANNEL_NAME = 'quran-atlas:sync'
 
-let channel = null
 let markChangeHandlers = []
 let bannerElement = null
 let unsubVersionChange = null
@@ -35,8 +35,9 @@ export function init() {
 
   // Set up BroadcastChannel if supported
   if (typeof BroadcastChannel !== 'undefined') {
-    channel = new BroadcastChannel(CHANNEL_NAME)
-    channel.onmessage = handleChannelMessage
+    const bc = new BroadcastChannel(CHANNEL_NAME)
+    bc.onmessage = handleChannelMessage
+    syncState.set({ broadcastChannel: bc })
   }
 
   // Set up versionchange listener
@@ -51,6 +52,7 @@ export function init() {
  * @param {string[]} verseKeys - verse keys that changed
  */
 export function broadcastMarkChange(verseKeys) {
+  const channel = syncState.get().broadcastChannel
   if (!channel) {
     return
   }
@@ -73,9 +75,10 @@ export function onMarkChange(callback) {
  * Close the channel and clean up all listeners.
  */
 function destroy() {
+  const channel = syncState.get().broadcastChannel
   if (channel) {
     channel.close()
-    channel = null
+    syncState.set({ broadcastChannel: null })
   }
   if (unsubVersionChange) {
     unsubVersionChange()
@@ -193,9 +196,10 @@ export function reset() {
   removeBanner()
   markChangeHandlers = []
   suppressVersionChangeBanner = false
+  const channel = syncState.get().broadcastChannel
   if (channel) {
     channel.close()
-    channel = null
+    syncState.set({ broadcastChannel: null })
   }
   unsubVersionChange = null
 }
