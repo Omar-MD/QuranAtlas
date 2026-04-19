@@ -83,24 +83,7 @@ export function initPositionTracking({ mainContent, surahNum, shouldSavePosition
       const { currentSurahNum: csn, lastTrackedVerse: ltv } = readerState.get()
       if (document.hidden && csn && ltv !== null) {
         flushDebounce()
-        const positionData = {
-          id: `s${csn}`,
-          surah: csn,
-          verse: ltv,
-          savedAt: Date.now(),
-        }
-        put('positions', positionData).catch(() => {
-          setTimeout(() => {
-            put('positions', positionData).catch((error) => {
-              logger.error('Failed to save position after retry:', {
-                surah: csn,
-                verse: ltv,
-                error,
-              })
-              emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: csn, verse: ltv })
-            })
-          }, 100)
-        })
+        savePosition(csn, ltv)
       }
     }
     document.addEventListener('visibilitychange', visibilityHandler)
