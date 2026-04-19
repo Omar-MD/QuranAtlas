@@ -12,10 +12,10 @@ function createAppShell() {
 }
 
 function applyDefaultRuntimeMocks() {
-  vi.doMock('../../../src/onboarding/index.js', () => ({
+  vi.doMock('../../../src/onboarding/Onboarding.svelte', () => ({
     isComplete: vi.fn(() => Promise.resolve(true)),
     markComplete: vi.fn(() => Promise.resolve()),
-    init: vi.fn(() => Promise.resolve(() => {})),
+    default: vi.fn(),
   }))
   vi.doMock('../../../src/core/db.js', () => ({
     openDB: vi.fn(() => Promise.resolve()),
@@ -81,13 +81,19 @@ vi.mock('../../../src/core/quota-banner.js', () => ({
   init: vi.fn(),
 }))
 
-vi.mock('../../../src/marks/indicator.js', () => ({
-  init: vi.fn(() => vi.fn()),
+vi.mock('../../../src/marks/indicator', () => ({
+  initIndicators: vi.fn(() => vi.fn()),
+  init: vi.fn(() => vi.fn()), // legacy alias
 }))
 
-vi.mock('../../../src/marks/editor.js', () => ({
-  setupLongPress: vi.fn(() => vi.fn()),
+vi.mock('../../../src/marks/editor-bridge', () => ({
   openEditor: vi.fn(),
+  registerEditor: vi.fn(),
+}))
+
+vi.mock('../../../src/marks/long-press', () => ({
+  longPress: vi.fn(),
+  setupLongPress: vi.fn(() => vi.fn()),
 }))
 
 vi.mock('../../../src/data/offline.js', () => ({
@@ -114,12 +120,16 @@ vi.mock('../../../src/settings/font-size.js', () => ({
 }))
 vi.mock('../../../src/settings/panel.js', () => ({
   initSettingsPanel: vi.fn(() => Promise.resolve()),
+  openSettingsSheet: vi.fn(),
 }))
 vi.mock('../../../src/nav/ambient-dock.js', () => ({
   initAmbientDock: vi.fn(() => Promise.resolve()),
 }))
 vi.mock('../../../src/nav/ambient-pill.js', () => ({
   initAmbientPill: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/nav/reader-actions.js', () => ({
+  initReaderActions: vi.fn(() => Promise.resolve()),
 }))
 
 describe('core/app.js init order', () => {
@@ -134,15 +144,15 @@ describe('core/app.js init order', () => {
   })
 
   it('calls router.register before router.init', async () => {
-    // Reset modules so app.js re-executes its init() call
+    // Reset modules so app-bootstrap re-executes fresh
     vi.resetModules()
     await silenceLogger()
 
-    // Re-import to trigger the auto-init at bottom of app.js
     const router = await import('../../../src/core/router.js')
 
-    // Importing app.js triggers init() which calls router methods
-    await import('../../../src/core/app.js')
+    // Import and explicitly call initBootstrap (replaces auto-init from old app.js)
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
 
     // Allow async init to complete
     await waitForAppWork()
@@ -166,7 +176,8 @@ describe('core/app.js init order', () => {
     await silenceLogger()
 
     const router = await import('../../../src/core/router.js')
-    await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
 
     await waitForAppWork()
 
@@ -186,19 +197,15 @@ describe('core/app.js init order', () => {
         setupLongPress: expect.any(Function),
       })
     )
+    // #/review and #/t/:tag are now Svelte component routes — no hooks object
+    // (openEditor is imported directly by Hub.svelte)
     expect(router.register).toHaveBeenCalledWith(
       '#/review',
-      expect.any(Function),
-      expect.objectContaining({
-        openEditor: expect.any(Function),
-      })
+      expect.any(Function)
     )
     expect(router.register).toHaveBeenCalledWith(
       '#/t/:tag',
-      expect.any(Function),
-      expect.objectContaining({
-        openEditor: expect.any(Function),
-      })
+      expect.any(Function)
     )
   })
 })
@@ -225,10 +232,12 @@ describe('core/app.js error recovery', () => {
     vi.doMock('../../../src/a11y/announcer.js', () => ({ announce: vi.fn() }))
 
     // Clear the body and add a fresh #main-content element
-    document.body.innerHTML = '<main id="main-content"></main>'
-    const main = document.getElementById('main-content')
+    const main = document.createElement('main')
+    main.id = 'main-content'
+    document.body.replaceChildren(main)
 
-    await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
     await new Promise(r => setTimeout(r, 100))
 
     const errorDiv = main.querySelector('.qa-error-state')
@@ -257,7 +266,8 @@ describe('core/app.js error recovery', () => {
     const { Events } = await import('../../../src/core/constants.js')
     const router = await import('../../../src/core/router.js')
 
-    await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
     await waitForAppWork()
 
     router.navigate.mockClear()
@@ -281,7 +291,8 @@ describe('core/app.js error recovery', () => {
     const { Events } = await import('../../../src/core/constants.js')
     const router = await import('../../../src/core/router.js')
 
-    await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
     await waitForAppWork()
 
     router.navigate.mockClear()
@@ -305,7 +316,8 @@ describe('core/app.js error recovery', () => {
     const { Events } = await import('../../../src/core/constants.js')
     const router = await import('../../../src/core/router.js')
 
-    await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
     await waitForAppWork()
 
     router.navigate.mockClear()
@@ -325,7 +337,8 @@ describe('core/app.js error recovery', () => {
     const { Events } = await import('../../../src/core/constants.js')
     const router = await import('../../../src/core/router.js')
 
-    await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
     await waitForAppWork()
 
     router.navigate.mockClear()
@@ -344,10 +357,12 @@ describe('core/app.js error recovery', () => {
     await silenceLogger()
     createAppShell()
 
-    const app = await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
     await waitForAppWork()
 
-    await app.init()
+    // Call initBootstrap again (replaces old app.init() re-call test)
+    await initBootstrap()
     await waitForAppWork()
 
     expect(document.querySelectorAll('.qa-brand')).toHaveLength(0)
@@ -373,7 +388,8 @@ describe('core/app.js error recovery', () => {
     const readyForDownload = vi.fn()
     events.on(Events.APP_READY_FOR_DOWNLOAD, readyForDownload)
 
-    const app = await import('../../../src/core/app.js')
+    const { initBootstrap } = await import('../../../src/app-bootstrap.ts')
+    await initBootstrap()
     await waitForAppWork()
 
     expect(offline.cancelDownload).toHaveBeenCalledTimes(1)
@@ -382,7 +398,7 @@ describe('core/app.js error recovery', () => {
     offline.cancelDownload.mockClear()
     readyForDownload.mockClear()
 
-    await app.init()
+    await initBootstrap()
     await waitForAppWork()
 
     expect(offline.cancelDownload).not.toHaveBeenCalled()

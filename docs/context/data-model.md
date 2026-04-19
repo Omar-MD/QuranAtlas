@@ -2,16 +2,18 @@
 
 IDB is the single source of client-side truth in QuranAtlas. This file documents every object store, every key, every index, and the record shape each surface writes. If you find something in IDB that isn't here, either (a) we've drifted — update this doc — or (b) an extension is writing there.
 
-The DB is `quran-atlas`, version 1, defined in `src/core/db.js`. Schema changes live in `onupgradeneeded`.
+The DB is `quran-atlas`, version 1, defined in `src/core/db.ts`. Schema changes live in `onupgradeneeded`.
 
-**Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `core/db.js`. Since the typedef-based shape validator refactor (`_shapes` + `_optionalTypes`), validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously. See `core/db.js` for the full `@typedef` declarations and shape tables.
+**Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `core/db.ts`. Validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously.
+
+**Compile-time contract.** The per-store record shapes are also encoded as TypeScript `interface`s and exported as the `StoreRecords` map from `core/db.ts`. `put<K>(store: K, record: StoreRecords[K])` makes the compiler refuse a write whose shape doesn't match the declared store. Runtime `validateWrite` is still the last-line defence (and carries the SW-side shape union for `activationState`); the TS types catch most drift in advance. The sections below quote the interface name that mirrors each runtime shape.
 
 ---
 
 ## Store: `settings`
 
 - **keyPath:** `key`
-- **Record shape:** `{ key: string, value: any }` — typedef: `SettingsRecord`
+- **Record shape:** `{ key: string, value: any }` — TS interface `SettingsRecord` in `core/db.ts`
 - **Validated fields:** `key` (string, required); `value` (any, required — present but not type-checked)
 - **Indexes:** none
 - **Written by:** many modules (this is the app's scratchpad for preferences and session pointers)
@@ -20,14 +22,14 @@ The DB is `quran-atlas`, version 1, defined in `src/core/db.js`. Schema changes 
 
 | Key | Value type | Writer | Purpose |
 |---|---|---|---|
-| `theme` | `'light' \| 'sepia' \| 'dark' \| 'auto'` | `settings/theme.js` | Active theme. `auto` follows `prefers-color-scheme`. |
-| `fontSize` | number (rem-scale multiplier) | `settings/font-size.js` | Reader font scale. |
-| `translationVisible` | boolean | `settings/panel.js` | Translation-toggle state. |
-| `translationId` | `'saheeh' \| 'pickthall' \| 'yusuf' \| 'khattab'` | `settings/panel.js`, `onboarding/screens.js` | Selected translation. |
-| `lastSurface` | string (hash path) | `core/router.js`, `review/hub.js` (FVR) | Where to resume on next launch. |
-| `recentSurahs` | `number[]` (length ≤5) | `core/app.js` (on `READER_SURAH_LOADED`) | Feeds the surah-list "Recent" filter. |
-| `onboardingComplete` | boolean | `onboarding/index.js` | First-run flow completion flag. |
-| `quota-warning-suppressed` | boolean | `core/quota-banner.js` | User dismissed the quota banner — don't re-show this session. |
+| `theme` | `'light' \| 'sepia' \| 'dark' \| 'auto'` | `settings/theme.ts` | Active theme. `auto` follows `prefers-color-scheme`. |
+| `fontSize` | number (rem-scale multiplier) | `settings/font-size.ts` | Reader font scale. |
+| `translationVisible` | boolean | `settings/Panel.svelte` | Translation-toggle state. |
+| `translationId` | `'saheeh' \| 'pickthall' \| 'yusuf' \| 'khattab'` | `settings/Panel.svelte`, `onboarding/Onboarding.svelte` | Selected translation. |
+| `lastSurface` | string (hash path) | `core/router.ts`, `review/Hub.svelte` (FVR) | Where to resume on next launch. |
+| `recentSurahs` | `number[]` (length ≤5) | `App.svelte` (`$effect` on `reader.currentSurahNum`) | Feeds the surah-list "Recent" filter. |
+| `onboardingComplete` | boolean | `onboarding/Onboarding.svelte` | First-run flow completion flag. |
+| `quota-warning-suppressed` | boolean | `core/quota-banner.svelte` | User dismissed the quota banner — don't re-show this session. |
 
 Plus any other ad-hoc keys a feature introduces. Convention: write `{ key, value }` shape and scope the key to the feature (e.g. `review:lastFilter`). Avoid stuffing structured data into `value` if it has a natural dedicated store.
 
@@ -37,8 +39,8 @@ Plus any other ad-hoc keys a feature introduces. Convention: write `{ key, value
 
 - **keyPath:** `id` (string)
 - **Indexes:** `by-savedAt` on `savedAt`
-- **Validated fields:** `id` (string), `surah` (number), `verse` (number), `savedAt` (number) — typedef: `PositionRecord`
-- **Written by:** `reader/index.js`, `review/state.js`
+- **Validated fields:** `id` (string), `surah` (number), `verse` (number), `savedAt` (number) — TS interface `PositionRecord` in `core/db.ts`
+- **Written by:** `reader/position.ts`, `review/state.ts`
 
 ### Known record shapes
 
@@ -69,13 +71,13 @@ Review hub state (`id: 'review'`) — reuses the store with dummy `surah`/`verse
 }
 ```
 
-The review-state reuse is intentional — see the comment at the top of `review/state.js`. It avoids carving out a new store for a single record.
+The review-state reuse is intentional — see the comment at the top of `review/state.ts`. It avoids carving out a new store for a single record.
 
 ### Typical queries
 
-- **Resume most recent**: `core/db.js::getMostRecentPosition` — opens a reverse cursor on `by-savedAt` and returns the first hit. Called in the launch-restore cascade.
-- **Resume specific surah**: `get('positions', 's<n>')` in `reader/index.js`.
-- **Load review state**: `review/state.js::load()` → `get('positions', 'review')`.
+- **Resume most recent**: `core/db.ts::getMostRecentPosition` — opens a reverse cursor on `by-savedAt` and returns the first hit. Called in the launch-restore cascade.
+- **Resume specific surah**: `get('positions', 's<n>')` in `reader/position.ts`.
+- **Load review state**: `review/state.ts::load()` → `get('positions', 'review')`.
 
 ---
 
@@ -85,8 +87,8 @@ The review-state reuse is intentional — see the comment at the top of `review/
 - **Indexes:**
   - `by-tag` on `tags` (multiEntry — each tag is indexed separately)
   - `by-updated` on `updatedAt`
-- **Validated fields:** `verseKey` (string, required); `tags` (string[], type-checked when present), `note` (string, type-checked when present), `createdAt` (number, type-checked when present), `updatedAt` (number, type-checked when present) — typedef: `MarkRecord`
-- **Written by:** `marks/store.js` only (bypasses `core/db.put()` — writes directly to IDB). If you write elsewhere, you're bypassing the event+broadcast contract.
+- **Validated fields:** `verseKey` (string, required); `tags` (string[], type-checked when present), `note` (string, type-checked when present), `createdAt` (number, type-checked when present), `updatedAt` (number, type-checked when present) — TS interface `MarkRecord` in `core/db.ts`
+- **Written by:** `marks/store.ts` only (bypasses `core/db.put()` — writes directly to IDB). If you write elsewhere, you're bypassing the event+broadcast contract.
 
 ### Record shape
 
@@ -102,18 +104,18 @@ The review-state reuse is intentional — see the comment at the top of `review/
 
 ### Write invariant
 
-`marks/store.js::save()` does three things in order, and callers rely on all three:
+`marks/store.ts::save()` does three things in order, and callers rely on all three:
 1. `put` the record (with createdAt preserved if existing, updatedAt refreshed).
 2. `emit(MARKS_SAVED, { verseKey, tags })` — refreshes indicators on the reader.
 3. `broadcastMarkChange([verseKey])` — peers receive `SYNC_UPDATE_RECEIVED` and re-read.
 
 `del()` mirrors this with `MARKS_DELETED` + broadcast.
 
-If you bypass `store.js` and write `marks` directly, indicators go stale and other tabs miss the change. Don't.
+If you bypass `store.ts` and write `marks` directly, indicators go stale and other tabs miss the change. Don't.
 
 ### Typical queries
 
-- **All marks**: `marks/store.js::getAll()` → `store.getAll()`.
+- **All marks**: `marks/store.ts::getAll()` → `store.getAll()`.
 - **One mark**: `getByVerseKey(verseKey)` → `store.get(verseKey)`.
 - **By tag** (FVR deep link): `getByTag(tag)` → `index('by-tag').getAll(tag)`. Multi-tagged marks appear in one query result; duplicates are not returned because `multiEntry` indexes verse keys once per tag.
 - **By recency**: the hub sorts in memory after `getAll()` — the `by-updated` index is available if a cursor-based fetch becomes needed.
@@ -123,12 +125,12 @@ If you bypass `store.js` and write `marks` directly, indicators go stale and oth
 ## Store: `activationState`
 
 - **keyPath:** `id`
-- **Validated fields:** `id` (string), `status` (string) — typedef: `ActivationStateRecord`
-- **Written by:** `data/offline.js`, `offline/dataset-updater.js` (SW side)
+- **Validated fields:** `id` (string), `status` (string) — TS interface `ActivationStateRecord` in `core/db.ts`
+- **Written by:** `data/offline.ts`, `offline/dataset-updater.js` (SW side)
 
 ### Record shapes
 
-**Client side (`data/offline.js`)** — minimal:
+**Client side (`data/offline.ts`)** — minimal:
 
 ```ts
 {
@@ -163,7 +165,7 @@ This isn't actively broken — the two writers don't collide in practice because
 ## Store: `datasetMeta`
 
 - **keyPath:** `id`
-- **Validated fields:** `id` (string) — typedef: `DatasetMetaRecord`
+- **Validated fields:** `id` (string) — TS interface `DatasetMetaRecord` in `core/db.ts`
 - **Written by:** `offline/dataset-updater.js` (SW side)
 
 ### Record shape
@@ -181,16 +183,16 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 
 ## Cross-cutting rules
 
-- **One writer per store**, by convention: `marks/store.js` for `marks`; `reader/index.js` + `review/state.js` for `positions`; `data/offline.js` + SW for `activationState`/`datasetMeta`. The `settings` store is shared — convention is that each feature owns its own keys.
-- **All writes go through `core/db.js::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
-- **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `safety/sync.js` shows the reload banner; `settings/clear-data.js` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
-- **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `core/quota-banner.js` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
-- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `positions`, extend `safety/sync.js`.
+- **One writer per store**, by convention: `marks/store.ts` for `marks`; `reader/position.ts` + `review/state.ts` for `positions`; `data/offline.ts` + SW for `activationState`/`datasetMeta`. The `settings` store is shared — convention is that each feature owns its own keys.
+- **All writes go through `core/db.ts::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
+- **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `safety/sync.ts` shows the reload banner; `settings/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
+- **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
+- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `positions`, extend `safety/sync.ts`.
 
 ## Adding a new store
 
-1. Add the store in `core/db.js::openDB` inside `onupgradeneeded` and bump `DB_VERSION`. Write a clean upgrade path (no destructive rewrites unless you've handled migration).
+1. Add the store in `core/db.ts::openDB` inside `onupgradeneeded` and bump `DB_VERSION`. Write a clean upgrade path (no destructive rewrites unless you've handled migration).
 2. Add a `@typedef` JSDoc comment and a required-fields entry to `_shapes` in `validateWrite`. Add optional-but-type-checked fields to `_optionalTypes` if applicable.
 3. If the store needs an index, create it inside the same `onupgradeneeded` block.
 4. Update this file: add a section with keyPath, indexes, record shape, writers, and typical queries.
-5. Consider whether writes should cross tabs (broadcast via `safety/sync.js`) and whether they should emit a public event.
+5. Consider whether writes should cross tabs (broadcast via `safety/sync.ts`) and whether they should emit a public event.

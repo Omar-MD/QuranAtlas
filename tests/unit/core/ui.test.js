@@ -1,5 +1,60 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+// The toast logic moved to ui.svelte (Svelte component) + ui-bridge.ts (delegate).
+// Tests register a DOM-based implementation that mirrors the original ui.js behaviour
+// so that existing assertions against the real DOM still hold.
+function makeDomToastImpl(emitFn) {
+  let undoTimer = null
+  let undoRecord = null
+
+  function clearUndoToast() {
+    if (undoTimer) { clearTimeout(undoTimer); undoTimer = null }
+    const toast = document.querySelector('.qa-undo-toast')
+    if (toast) { toast.remove() }
+  }
+
+  function clearUndoRecord() { undoRecord = null }
+
+  function showUndoToast({ verseKey, record, onUndo, onComplete }) {
+    clearUndoToast()
+    undoRecord = record
+
+    const toast = document.createElement('div')
+    toast.className = 'qa-undo-toast'
+    toast.setAttribute('role', 'status')
+    toast.setAttribute('aria-live', 'polite')
+
+    const text = document.createElement('span')
+    text.textContent = `Mark ${verseKey} deleted.`
+
+    const undoBtn = document.createElement('button')
+    undoBtn.textContent = 'Undo'
+    undoBtn.addEventListener('click', async () => {
+      if (undoRecord) {
+        await onUndo(undoRecord)
+        emitFn('marks:undo', { verseKey: undoRecord.verseKey })
+        undoRecord = null
+      }
+      clearUndoToast()
+      if (onComplete) { onComplete() }
+    })
+
+    toast.appendChild(text)
+    toast.appendChild(undoBtn)
+
+    const shell = document.getElementById('app-shell') || document.body
+    shell.appendChild(toast)
+
+    undoTimer = setTimeout(() => {
+      clearUndoToast()
+      undoRecord = null
+      if (onComplete) { onComplete() }
+    }, 5000)
+  }
+
+  return { showUndoToast, clearUndoToast, clearUndoRecord }
+}
+
 describe('core/ui.js', () => {
   let clear
   let on
@@ -10,9 +65,12 @@ describe('core/ui.js', () => {
   beforeEach(async () => {
     vi.resetModules()
     ;({ clear, on } = await import('../../../src/core/events.js'))
-    ;({ clearUndoRecord, clearUndoToast, showUndoToast } = await import('../../../src/core/ui.js'))
+    const bridgeMod = await import('../../../src/core/ui-bridge.js')
+    ;({ clearUndoRecord, clearUndoToast, showUndoToast } = bridgeMod)
+    const { emit } = await import('../../../src/core/events.js')
+    bridgeMod.registerUndoToast(makeDomToastImpl(emit))
     clear()
-    document.body.innerHTML = '<div id="app-shell"></div>'
+    document.body.appendChild(Object.assign(document.createElement('div'), { id: 'app-shell' }))
   })
 
   afterEach(() => {

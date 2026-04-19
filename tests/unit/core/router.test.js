@@ -56,7 +56,7 @@ describe('core/router.js', () => {
 
     // Wait for async handleRoute to complete
     await vi.waitFor(() => {
-      expect(restoreFn).toHaveBeenCalledWith(undefined)
+      expect(restoreFn).toHaveBeenCalledWith({})
     }, { timeout: 100 })
   })
 

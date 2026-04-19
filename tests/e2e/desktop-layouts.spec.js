@@ -161,7 +161,7 @@ test.describe('Desktop layouts @desktop', () => {
     await page.waitForSelector('[data-verse-key]')
 
     await page.evaluate(async () => {
-      const mod = await import('/src/settings/panel.js')
+      const mod = await import('/src/settings/panel-bridge.ts')
       await mod.openSettingsSheet()
     })
     await page.waitForSelector('.qa-font-slider')
@@ -192,13 +192,15 @@ test.describe('Desktop layouts @desktop', () => {
     await page.goto('/#/s/1')
     await page.waitForSelector('[data-verse-key]')
     await page.evaluate(async () => {
-      const mod = await import('/src/settings/panel.js')
+      const mod = await import('/src/settings/panel-bridge.ts')
       await mod.openSettingsSheet()
     })
     await page.waitForSelector('.qa-font-preview')
 
     const order = await page.locator('.qa-font-preview').evaluate(
-      el => Array.from(el.children).map(c => c.className)
+      el => Array.from(el.children).map(c =>
+        Array.from(c.classList).find(cn => cn.startsWith('qa-font-preview-')) ?? c.className
+      )
     )
     expect(order).toEqual(['qa-font-preview-en', 'qa-font-preview-ar'])
   })

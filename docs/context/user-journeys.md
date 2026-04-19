@@ -151,7 +151,7 @@ The reader renders a single centered column (max ~960px). Each verse stacks Arab
 
 From Settings sheet with Auto swatch selected.
 
-1. OS/browser flips `prefers-color-scheme` → `settings/theme.js` listener swaps `<html data-theme>`.
+1. OS/browser flips `prefers-color-scheme` → `settings/theme.ts` listener swaps `<html data-theme>`.
 2. Reader and all chrome reflect the new theme without reload.
 
 **Surfaces:** Settings sheet, all surfaces (theme applies globally).
@@ -194,7 +194,7 @@ Inside mark editor.
 Inside mark editor with ≥1 tag selected.
 
 1. Type into the note textarea → Save button enables.
-2. Tap **Save** → `marks/store.js::save` writes to IDB → `MARKS_SAVED` fires → `broadcastMarkChange` fires across tabs → sheet closes → reader shows gold left-edge on the verse.
+2. Tap **Save** → `marks/store.ts::save` writes to IDB → `MARKS_SAVED` fires → `broadcastMarkChange` fires across tabs → sheet closes → reader shows gold left-edge on the verse.
 
 **Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey]` with tags/note/timestamps.
 
@@ -203,7 +203,7 @@ Inside mark editor with ≥1 tag selected.
 Inside mark editor on an existing mark.
 
 1. Tap **Delete** → footer swaps to inline "Delete this mark?" confirm.
-2. Tap the red **Delete** → `marks/store.js::del` writes → `MARKS_DELETED` fires → sheet closes → undo toast appears at bottom.
+2. Tap the red **Delete** → `marks/store.ts::del` writes → `MARKS_DELETED` fires → sheet closes → undo toast appears at bottom.
 3. Tap **Undo** before it expires (~5s) → mark restored with original note/tags → gold edge returns.
 
 **Surfaces:** Mark editor, core undo toast, Reader. **Persistence:** delete then re-insert on undo.
@@ -237,7 +237,7 @@ Inside Settings sheet. Available translations are sourced from the dataset's `pr
 1. The **Show translation** row's subtitle shows the name of the currently-selected translation (e.g. "Bridges' Translation").
 2. When only one translation is bundled (today's dataset), the row body is non-interactive — there's no picker sub-view to open. `settings.translationId` is still auto-resolved to the bundled translation's id on first paint.
 3. When multiple translations are bundled, tapping the row body opens the Translation picker sub-view. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
-4. Toggle the translation-visibility switch → `SETTINGS_TRANSLATION_CHANGED { visible }` fires → reader hides/shows the translation line on next render.
+4. Toggle the translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on the rune re-renders with the translation line hidden/shown.
 
 **Surfaces:** Settings sheet, Reader. **Persistence:** `settings.translationId`, `settings.translationVisible`.
 
@@ -327,7 +327,7 @@ Inside review hub (tag-grouped view).
 
 1. Press **⌘K** (or tap Search glyph in dock) → command sheet opens.
 2. Type `2:255` → preview card shows (Arabic of Ayat al-Kursi + English); "Open verse" row is focused.
-3. Press Enter → `NAVIGATION_NAVIGATE { surah: 2, verse: 255 }` → app.js routes to `#/s/2/255` → reader scrolls to 2:255.
+3. Press Enter → `NAVIGATION_NAVIGATE { surah: 2, verse: 255 }` → `app-bootstrap.ts` routes to `#/s/2/255` → reader scrolls to 2:255.
 
 **Surfaces:** Command sheet → Reader.
 
@@ -426,7 +426,7 @@ With the service worker active and the dataset cached.
 Two tabs open on `#/s/1`.
 
 1. Tab A long-presses 1:5 → saves a mark → `broadcastMarkChange(['1:5'])` fires.
-2. Tab B's `safety/sync.js` receives → emits `SYNC_UPDATE_RECEIVED { verseKeys: ['1:5'] }`.
+2. Tab B's `safety/sync.ts` receives → emits `SYNC_UPDATE_RECEIVED { verseKeys: ['1:5'] }`.
 3. Tab B's reader indicator refreshes → gold edge appears on 1:5 without reload.
 
 **Surfaces:** Reader (both tabs). **Persistence:** IDB is shared; no double-write.
@@ -442,7 +442,7 @@ Two tabs open on `#/s/1`.
 
 1. Tab A running normally.
 2. Tab B runs Clear Data → `suppressNextVersionChange()` keeps Tab B's banner off → `deleteDB` triggers `onversionchange` in Tab A.
-3. Tab A's `safety/sync.js` shows a "Data was cleared in another tab — reload" banner.
+3. Tab A's `safety/sync.ts` shows a "Data was cleared in another tab — reload" banner.
 
 ---
 

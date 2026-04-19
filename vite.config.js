@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
 
@@ -6,6 +7,7 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 
 export default defineConfig({
   plugins: [
+    svelte(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
@@ -68,7 +70,7 @@ export default defineConfig({
           if (id.includes('src/marks/')) { return 'marks' }
           if (id.includes('src/review/hub.js')) { return 'review' }
           if (id.includes('src/settings/index.js')) { return 'settings' }
-          if (id.includes('src/about/index.js')) { return 'about' }
+          if (id.includes('src/about/About.svelte')) { return 'about' }
         }
       }
     }

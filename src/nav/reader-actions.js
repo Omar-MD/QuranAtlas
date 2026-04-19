@@ -1,24 +1,18 @@
 /**
  * Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m).
  *
- * Tracks the "current" surah + verse from READER_SURAH_LOADED and
- * READER_POSITION_CHANGED events (same source the ambient pill uses) so
- * shortcut handlers don't need a direct reference to reader module state.
- * Exposes small imperative helpers that scroll the reader or navigate the
- * router — callers are expected to gate on route themselves.
+ * Reads and writes the `reader` state rune directly — the same source the
+ * ambient pill and indicator already read. Writing back to the rune on
+ * keyboard navigation means the pill updates immediately; observeScroll
+ * will catch the rune up to IDB via savePosition once the scroll settles.
  */
 
-import { on } from '../core/events.js'
-import { Events } from '../core/constants.js'
 import { getSurahs } from '../data/dataset.js'
-import { openEditor } from '../marks/editor.js'
+import { openEditor } from '../marks/editor-bridge.js'
 import { announce } from '../a11y/announcer.js'
+import { reader } from '../state/reader.svelte'
 
-let currentSurah = null
-let currentVerse = 1
 let surahMetaCache = null
-let unsubLoaded = null
-let unsubPosition = null
 
 export async function initReaderActions() {
   try {
@@ -26,21 +20,14 @@ export async function initReaderActions() {
   } catch {
     surahMetaCache = []
   }
+  return () => { /* no subscriptions to clean up — state is read from the rune */ }
+}
 
-  unsubLoaded = on(Events.READER_SURAH_LOADED, ({ surah }) => {
-    currentSurah = surah
-    currentVerse = 1
-  })
-
-  unsubPosition = on(Events.READER_POSITION_CHANGED, ({ surah, verse }) => {
-    currentSurah = surah
-    currentVerse = verse
-  })
-
-  return () => {
-    if (unsubLoaded) { unsubLoaded(); unsubLoaded = null }
-    if (unsubPosition) { unsubPosition(); unsubPosition = null }
-  }
+function getCurrent() {
+  const surah = reader.currentSurahNum ?? null
+  const vk = reader.currentVerseKey
+  const verse = vk ? (parseInt(vk.split(':')[1] ?? '1', 10) || 1) : 1
+  return { surah, verse }
 }
 
 function getSurahCount(n) {
@@ -60,58 +47,65 @@ function scrollToVerseInDOM(verseNum) {
 }
 
 export function nextVerse() {
-  if (!currentSurah) { return false }
-  const max = getSurahCount(currentSurah)
-  const target = Math.min((currentVerse || 1) + 1, max || 1)
-  if (target === currentVerse) { return false }
-  currentVerse = target
-  announce(`Verse ${currentSurah}:${target}`)
+  const { surah, verse } = getCurrent()
+  if (!surah) { return false }
+  const max = getSurahCount(surah)
+  const target = Math.min(verse + 1, max || 1)
+  if (target === verse) { return false }
+  reader.currentVerseKey = `${surah}:${target}`
+  announce(`Verse ${surah}:${target}`)
   return scrollToVerseInDOM(target)
 }
 
 export function prevVerse() {
-  if (!currentSurah) { return false }
-  const target = Math.max((currentVerse || 1) - 1, 1)
-  if (target === currentVerse) { return false }
-  currentVerse = target
-  announce(`Verse ${currentSurah}:${target}`)
+  const { surah, verse } = getCurrent()
+  if (!surah) { return false }
+  const target = Math.max(verse - 1, 1)
+  if (target === verse) { return false }
+  reader.currentVerseKey = `${surah}:${target}`
+  announce(`Verse ${surah}:${target}`)
   return scrollToVerseInDOM(target)
 }
 
 export function firstVerse() {
-  if (!currentSurah) { return false }
-  currentVerse = 1
-  announce(`Verse ${currentSurah}:1`)
+  const { surah } = getCurrent()
+  if (!surah) { return false }
+  reader.currentVerseKey = `${surah}:1`
+  announce(`Verse ${surah}:1`)
   return scrollToVerseInDOM(1)
 }
 
 export function lastVerse() {
-  if (!currentSurah) { return false }
-  const max = getSurahCount(currentSurah)
+  const { surah } = getCurrent()
+  if (!surah) { return false }
+  const max = getSurahCount(surah)
   if (!max) { return false }
-  currentVerse = max
-  announce(`Verse ${currentSurah}:${max}`)
+  reader.currentVerseKey = `${surah}:${max}`
+  announce(`Verse ${surah}:${max}`)
   return scrollToVerseInDOM(max)
 }
 
 export function nextSurah() {
-  if (!currentSurah) { return false }
-  const next = Math.min(currentSurah + 1, 114)
-  if (next === currentSurah) { return false }
+  const { surah } = getCurrent()
+  if (!surah) { return false }
+  const next = Math.min(surah + 1, 114)
+  if (next === surah) { return false }
   window.location.hash = `#/s/${next}`
   return true
 }
 
 export function prevSurah() {
-  if (!currentSurah) { return false }
-  const prev = Math.max(currentSurah - 1, 1)
-  if (prev === currentSurah) { return false }
+  const { surah } = getCurrent()
+  if (!surah) { return false }
+  const prev = Math.max(surah - 1, 1)
+  if (prev === surah) { return false }
   window.location.hash = `#/s/${prev}`
   return true
 }
 
 export function markCurrent() {
-  if (!currentSurah) { return false }
-  openEditor(`${currentSurah}:${currentVerse || 1}`)
+  const { surah, verse } = getCurrent()
+  if (!surah) { return false }
+  openEditor(`${surah}:${verse || 1}`)
   return true
 }

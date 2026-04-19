@@ -7,33 +7,12 @@ import { join } from 'node:path'
 
 const ROOT = 'src'
 const ALLOW_LIST = new Set([
-  // DOM-handle plumbing — permitted module-scoped lets per spec section 5
-  'src/reader/index.js',
-  'src/reader/edge-indicators.js',
-  // Scroll observer handles and working position state
-  'src/reader/scroll-tracker.js',
-  // Cleanup registry so teardownPositionTracking can dispose prior init cleanups
-  'src/reader/position.js',
-  // Media query refs for theme auto-detection
-  'src/settings/theme.js',
-  // DOM element refs for settings panel sheet
-  'src/settings/panel.js',
-  // Marks cache for verse indicator decoration
-  'src/marks/indicator.js',
-  // DOM modal refs and call-ID sequencing for mark editor
-  'src/marks/editor.js',
-  // Init sequence counter to prevent stale renders
-  'src/about/index.js',
   // Deferred browser install prompt ref
-  'src/about/pwa-install.js',
+  'src/about/pwa-install.ts',
   // BroadcastChannel handlers and banner DOM ref
   'src/safety/sync.js',
-  // Runtime working arrays (loaded marks cache) and handler refs
-  'src/review/hub.js',
   // Screen-reader live-region DOM element ref
   'src/a11y/announcer.js',
-  // Init sequence counter to prevent stale renders
-  'src/surahs/list.js',
   // DOM element refs for ambient pill
   'src/nav/ambient-pill.js',
   // DOM element refs for more-sheet
