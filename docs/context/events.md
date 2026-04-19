@@ -4,6 +4,10 @@ Every event in `src/core/constants.js::Events`: who emits it, who listens, paylo
 
 Bus mechanics live in `src/core/events.js` (mitt-backed `emit` / `on`, handlers are try/catch-isolated). Background on the pattern is in `architecture.md`.
 
+Every `Events.*` constant has a corresponding JSDoc `@typedef` in `src/core/constants.js` (e.g. `MarksSavedPayload`, `SyncUpdateReceivedPayload`). High-traffic emit call sites are annotated with inline `@type` casts that reference those typedefs.
+
+`emit()` throws in dev (`import.meta.env.DEV`) when called with an event name not present in `Events`. This prevents typos and forces new events through the constants registry.
+
 **Source of truth reminder**: when the code disagrees with this table, the code wins. Re-grep `emit(Events.X` and `on(Events.X` to regenerate.
 
 ## Convention
@@ -68,9 +72,7 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 
 ### Listener-only (⚠ dead emitter)
 
-| Event | Value | Listeners | Notes |
-|---|---|---|---|
-| `AMBIENT_HIDE` | `ambient:hide` | `nav/ambient-dock.js:118`, `nav/ambient-pill.js:76` | No emitter. Chrome fade-out is currently driven locally (scroll, timeout) rather than via this bus event. |
+No listener-only events remain. `AMBIENT_HIDE` was removed in this pass — its listeners in `nav/ambient-dock.js` and `nav/ambient-pill.js` were deleted because fade-out is driven locally (scroll, timeout) rather than via the bus.
 
 ## Adding a new event
 
