@@ -2,6 +2,41 @@
 // Playwright runs the app in a real browser — use page.evaluate to talk to IDB.
 
 /**
+ * Apply the quran-atlas DB schema (mirrors src/core/db.js onupgradeneeded).
+ * Called from each fixture helper's onupgradeneeded handler.
+ *
+ * IMPORTANT: page.evaluate serialises its function argument as a string before
+ * sending it to the browser, so Node-side closures are not available there.
+ * _applySchema is therefore defined as a source-string constant (_APPLY_SCHEMA_SRC)
+ * that is embedded verbatim into each page.evaluate expression string — the one
+ * pattern that guarantees a single source of truth without new Function() or any
+ * other dynamic evaluation trick.
+ *
+ * @param {IDBDatabase} db
+ */
+// _APPLY_SCHEMA_SRC is the verbatim function body injected into each page.evaluate.
+const _APPLY_SCHEMA_SRC = `
+  if (!db.objectStoreNames.contains('settings')) {
+    db.createObjectStore('settings', { keyPath: 'key' })
+  }
+  if (!db.objectStoreNames.contains('positions')) {
+    const s = db.createObjectStore('positions', { keyPath: 'id' })
+    s.createIndex('by-savedAt', 'savedAt')
+  }
+  if (!db.objectStoreNames.contains('marks')) {
+    const s = db.createObjectStore('marks', { keyPath: 'verseKey' })
+    s.createIndex('by-tag', 'tags', { multiEntry: true })
+    s.createIndex('by-updated', 'updatedAt')
+  }
+  if (!db.objectStoreNames.contains('activationState')) {
+    db.createObjectStore('activationState', { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains('datasetMeta')) {
+    db.createObjectStore('datasetMeta', { keyPath: 'id' })
+  }
+`
+
+/**
  * Delete the quran-atlas DB entirely. Use in beforeEach for clean-slate tests.
  */
 export async function clearAllData(page) {
@@ -21,7 +56,7 @@ export async function clearAllData(page) {
  * Creates the full DB schema matching src/core/db.js so the app finds all stores on boot.
  */
 export async function markOnboardingComplete(page) {
-  await page.evaluate(() => new Promise((resolve, reject) => {
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
     const open = indexedDB.open('quran-atlas', 1)
     open.onsuccess = () => {
       const db = open.result
@@ -31,29 +66,11 @@ export async function markOnboardingComplete(page) {
       tx.onerror = () => reject(tx.error)
     }
     open.onerror = () => reject(open.error)
-    // Mirror the full schema from src/core/db.js so all stores exist on first boot
     open.onupgradeneeded = (event) => {
       const db = event.target.result
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings', { keyPath: 'key' })
-      }
-      if (!db.objectStoreNames.contains('positions')) {
-        const positionsStore = db.createObjectStore('positions', { keyPath: 'id' })
-        positionsStore.createIndex('by-savedAt', 'savedAt')
-      }
-      if (!db.objectStoreNames.contains('marks')) {
-        const marksStore = db.createObjectStore('marks', { keyPath: 'verseKey' })
-        marksStore.createIndex('by-tag', 'tags', { multiEntry: true })
-        marksStore.createIndex('by-updated', 'updatedAt')
-      }
-      if (!db.objectStoreNames.contains('activationState')) {
-        db.createObjectStore('activationState', { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains('datasetMeta')) {
-        db.createObjectStore('datasetMeta', { keyPath: 'id' })
-      }
+      ${_APPLY_SCHEMA_SRC}
     }
-  }))
+  }))()`)
 }
 
 /**
@@ -65,38 +82,24 @@ export async function markOnboardingComplete(page) {
  * @param {string} surface  — e.g. '#/review' or '#/s/2'
  */
 export async function seedLastSurface(page, surface) {
-  await page.evaluate((surf) => new Promise((resolve, reject) => {
+  // page.evaluate(expressionString) executes in the browser; the surface value is
+  // JSON-embedded so it is safe for any valid URL fragment string.
+  const surfaceJson = JSON.stringify(surface)
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
     const open = indexedDB.open('quran-atlas', 1)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
-      tx.objectStore('settings').put({ key: 'lastSurface', value: surf })
+      tx.objectStore('settings').put({ key: 'lastSurface', value: ${surfaceJson} })
       tx.oncomplete = () => { db.close(); resolve() }
       tx.onerror = () => reject(tx.error)
     }
     open.onerror = () => reject(open.error)
     open.onupgradeneeded = (event) => {
       const db = event.target.result
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings', { keyPath: 'key' })
-      }
-      if (!db.objectStoreNames.contains('positions')) {
-        const positionsStore = db.createObjectStore('positions', { keyPath: 'id' })
-        positionsStore.createIndex('by-savedAt', 'savedAt')
-      }
-      if (!db.objectStoreNames.contains('marks')) {
-        const marksStore = db.createObjectStore('marks', { keyPath: 'verseKey' })
-        marksStore.createIndex('by-tag', 'tags', { multiEntry: true })
-        marksStore.createIndex('by-updated', 'updatedAt')
-      }
-      if (!db.objectStoreNames.contains('activationState')) {
-        db.createObjectStore('activationState', { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains('datasetMeta')) {
-        db.createObjectStore('datasetMeta', { keyPath: 'id' })
-      }
+      ${_APPLY_SCHEMA_SRC}
     }
-  }), surface)
+  }))()`)
 }
 
 /**
@@ -112,6 +115,7 @@ export async function waitForLastSurface(page, expected, timeout = 8_000) {
   const { expect } = await import('@playwright/test')
   await expect(async () => {
     const value = await page.evaluate(() => new Promise((resolve, reject) => {
+      // No version arg — read-only poll; avoids triggering onupgradeneeded on an existing DB.
       const open = indexedDB.open('quran-atlas')
       open.onsuccess = () => {
         const db = open.result
@@ -131,14 +135,16 @@ export async function waitForLastSurface(page, expected, timeout = 8_000) {
  * Seed one or more marks. Each mark is { verseKey, tags, note? }.
  */
 export async function seedMarks(page, marks) {
-  await page.evaluate((records) => new Promise((resolve, reject) => {
+  // JSON-embed the records array so it is safe to splice into an expression string.
+  const recordsJson = JSON.stringify(marks)
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
     const open = indexedDB.open('quran-atlas', 1)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('marks', 'readwrite')
       const store = tx.objectStore('marks')
       const now = Date.now()
-      for (const r of records) {
+      for (const r of ${recordsJson}) {
         store.put({
           verseKey: r.verseKey,
           tags: r.tags,
@@ -153,24 +159,7 @@ export async function seedMarks(page, marks) {
     open.onerror = () => reject(open.error)
     open.onupgradeneeded = (event) => {
       const db = event.target.result
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings', { keyPath: 'key' })
-      }
-      if (!db.objectStoreNames.contains('positions')) {
-        const positionsStore = db.createObjectStore('positions', { keyPath: 'id' })
-        positionsStore.createIndex('by-savedAt', 'savedAt')
-      }
-      if (!db.objectStoreNames.contains('marks')) {
-        const marksStore = db.createObjectStore('marks', { keyPath: 'verseKey' })
-        marksStore.createIndex('by-tag', 'tags', { multiEntry: true })
-        marksStore.createIndex('by-updated', 'updatedAt')
-      }
-      if (!db.objectStoreNames.contains('activationState')) {
-        db.createObjectStore('activationState', { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains('datasetMeta')) {
-        db.createObjectStore('datasetMeta', { keyPath: 'id' })
-      }
+      ${_APPLY_SCHEMA_SRC}
     }
-  }), marks)
+  }))()`)
 }
