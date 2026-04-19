@@ -14,10 +14,10 @@ import { save as saveState, load as loadState, getDefaultState } from './state.j
 import { clearUndoToast } from '../core/ui.js'
 import { validateTagParam } from '../safety/input-validator.js'
 import { announce } from '../a11y/announcer.js'
+import * as reviewState from '../state/review.js'
 
 const PAGE_SIZE = 30
 
-let currentState = null
 let allMarks = []
 let sortedMarks = []  // Pre-sorted cache; rebuilt on load or sort change
 let filteredMarks = []
@@ -27,7 +27,11 @@ let _openEditor = null
 let unsubSyncUpdate = null
 let unsubVisibilityVisible = null
 let _railActiveGroup = null     // single-select (surah/date modes only)
-let _railActiveTags = new Set() // OR-multi-select (tag mode only)
+
+// Map state sort keys to IDB field names
+function sortKeyToField(sortKey) {
+  return sortKey === 'created' ? 'createdAt' : 'updatedAt'
+}
 
 /**
  * Initialize the Review Hub.
@@ -39,7 +43,7 @@ export async function init(params = {}, { openEditor } = {}) {
   }
 
   _openEditor = openEditor || null
-  _railActiveTags = new Set()
+  reviewState.set({ activeTags: [] })
   _railActiveGroup = null
 
   // Tag deep link: #/t/:tag -> render FVR directly
@@ -58,12 +62,24 @@ export async function init(params = {}, { openEditor } = {}) {
   }
 
   const saved = await loadState()
-  currentState = saved || getDefaultState()
+  const loaded = saved || getDefaultState()
   // 'fvr' view is URL-driven (only active while on #/t/:tag). Reset it when
   // entering the hub directly via #/review so controls always render.
-  if (currentState.view === 'fvr') {
-    currentState.view = 'all'
+  if (loaded.view === 'fvr') {
+    loaded.view = 'all'
   }
+
+  // Map IDB sortBy field to state sort key
+  const sortVal = loaded.sortBy === 'createdAt' ? 'created' : 'recent'
+
+  reviewState.set({
+    view: loaded.view,
+    groupBy: loaded.groupBy || 'tag',
+    sort: sortVal,
+    activeTag: loaded.activeTag || null,
+    activeTags: [],
+    surahFilter: loaded.surahFilter || null,
+  })
 
   await reloadMarks()
   render(mainContent)
@@ -101,11 +117,18 @@ export async function init(params = {}, { openEditor } = {}) {
     if (unsubVisibilityVisible) { unsubVisibilityVisible(); unsubVisibilityVisible = null }
     _openEditor = null
     _railActiveGroup = null
-    _railActiveTags = new Set()
+    reviewState.set({ activeTags: [] })
     clearUndoToast()
     const mc = document.getElementById('main-content')
     if (mc) { mc.textContent = '' }
-    currentState = null
+    reviewState.set({
+      view: 'all',
+      groupBy: 'tag',
+      sort: 'recent',
+      activeTag: null,
+      activeTags: [],
+      surahFilter: null,
+    })
     allMarks = []
     sortedMarks = []
     filteredMarks = []
@@ -135,14 +158,14 @@ async function initTagDeepLink(rawTag, container) {
     return
   }
 
-  const reviewState = {
+  const idbState = {
     view: 'fvr',
     activeTag: tag,
     surahFilter: null,
     sortBy: 'updatedAt',
     groupBy: 'surah',
   }
-  await saveState(reviewState)
+  await saveState(idbState)
   await put('settings', { key: 'lastSurface', value: `#/t/${encodeURIComponent(tag)}` })
 
   try {
@@ -155,10 +178,18 @@ async function initTagDeepLink(rawTag, container) {
     surahs = []
   }
 
-  currentState = reviewState
+  reviewState.set({
+    view: 'fvr',
+    groupBy: 'surah',
+    sort: 'recent',
+    activeTag: tag,
+    activeTags: [],
+    surahFilter: null,
+  })
+
   allMarks = marks
-  sortedMarks = sortMarks(marks, currentState.sortBy)
-  filteredMarks = filterMarks(sortedMarks, currentState)
+  sortedMarks = sortMarks(marks, reviewState.get().sort)
+  filteredMarks = filterMarks(sortedMarks, reviewState.get())
   displayedCount = 0
 
   container.textContent = ''
@@ -267,14 +298,17 @@ function renderTagNotFound(container, rawTag) {
  * @param {{ activeTag?: string|null, surahFilter?: number|null }} filter
  */
 export async function applyFilter(filter) {
+  const patch = {}
   if (filter.activeTag !== undefined) {
-    currentState.activeTag = filter.activeTag
+    patch.activeTag = filter.activeTag
   }
   if (filter.surahFilter !== undefined) {
-    currentState.surahFilter = filter.surahFilter
+    patch.surahFilter = filter.surahFilter
   }
-  await saveState(currentState)
-  emit(Events.REVIEW_FILTER, { tags: currentState.activeTag, surah: currentState.surahFilter })
+  reviewState.set(patch)
+  const s = reviewState.get()
+  await saveState({ ...s, sortBy: sortKeyToField(s.sort) })
+  emit(Events.REVIEW_FILTER, { tags: s.activeTag, surah: s.surahFilter })
 
   displayedCount = 0
   const mainContent = document.getElementById('main-content')
@@ -288,18 +322,19 @@ export async function applyFilter(filter) {
  */
 async function reloadMarks() {
   allMarks = await getAll()
-  sortedMarks = sortMarks(allMarks, currentState?.sortBy)
+  sortedMarks = sortMarks(allMarks, reviewState.get().sort)
 }
 
 /**
  * Sort marks by a given key. Pure function — returns a new array.
  * O(n log n) — called only on load or sort-key change.
  * @param {Array} marks
- * @param {string} [sortKey='updatedAt']
+ * @param {string} [sortKey='recent']
  * @returns {Array}
  */
-function sortMarks(marks, sortKey = 'updatedAt') {
-  return [...marks].sort((a, b) => b[sortKey] - a[sortKey])
+function sortMarks(marks, sortKey = 'recent') {
+  const field = sortKeyToField(sortKey)
+  return [...marks].sort((a, b) => b[field] - a[field])
 }
 
 /**
@@ -325,24 +360,26 @@ function filterMarks(sorted, state) {
  * Render the hub view.
  */
 function render(container) {
-  const isFvr = currentState?.view === 'fvr'
+  const s = reviewState.get()
+  const isFvr = s.view === 'fvr'
   const isDesktop = !isFvr && typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1180px)').matches
+  const railActiveTags = new Set(s.activeTags)
 
   if (!isFvr) {
     container.textContent = ''
   }
 
   // Filter from pre-sorted cache — O(n) with no sort overhead
-  filteredMarks = filterMarks(sortedMarks, currentState)
+  filteredMarks = filterMarks(sortedMarks, s)
 
   // Apply rail filters (desktop only)
   if (isDesktop) {
-    if (currentState.groupBy === 'tag' && _railActiveTags.size > 0) {
-      filteredMarks = filteredMarks.filter(m => m.tags.some(t => _railActiveTags.has(t)))
-    } else if (currentState.groupBy === 'surah' && _railActiveGroup !== null) {
+    if (s.groupBy === 'tag' && railActiveTags.size > 0) {
+      filteredMarks = filteredMarks.filter(m => m.tags.some(t => railActiveTags.has(t)))
+    } else if (s.groupBy === 'surah' && _railActiveGroup !== null) {
       const surahNum = parseInt(_railActiveGroup, 10)
       filteredMarks = filteredMarks.filter(m => parseInt(m.verseKey.split(':')[0], 10) === surahNum)
-    } else if (currentState.groupBy === 'flat' && _railActiveGroup !== null) {
+    } else if (s.groupBy === 'flat' && _railActiveGroup !== null) {
       filteredMarks = filteredMarks.filter(m => {
         const d = m.createdAt ? new Date(m.createdAt) : null
         if (!d) {return false}
@@ -382,7 +419,7 @@ function render(container) {
   }
 
   // Chip bar — tag mode with active multi-select
-  if (isDesktop && currentState.groupBy === 'tag' && _railActiveTags.size > 0) {
+  if (isDesktop && s.groupBy === 'tag' && railActiveTags.size > 0) {
     const bar = document.createElement('div')
     bar.className = 'qa-review-filter-bar'
 
@@ -391,7 +428,7 @@ function render(container) {
     label.textContent = 'Filtering by'
     bar.appendChild(label)
 
-    for (const tag of _railActiveTags) {
+    for (const tag of railActiveTags) {
       const chip = document.createElement('span')
       chip.className = 'qa-review-filter-chip'
       const dot = document.createElement('span')
@@ -404,7 +441,9 @@ function render(container) {
       x.textContent = '\u00D7' // ×
       x.setAttribute('aria-label', `Remove ${tag} filter`)
       x.addEventListener('click', () => {
-        _railActiveTags.delete(tag)
+        const updated = new Set(reviewState.get().activeTags)
+        updated.delete(tag)
+        reviewState.set({ activeTags: Array.from(updated) })
         const mc = document.getElementById('main-content')
         if (mc) {render(mc)}
       })
@@ -417,7 +456,7 @@ function render(container) {
     clearAll.className = 'qa-review-filter-bar-clear'
     clearAll.textContent = 'Clear all'
     clearAll.addEventListener('click', () => {
-      _railActiveTags = new Set()
+      reviewState.set({ activeTags: [] })
       const mc = document.getElementById('main-content')
       if (mc) {render(mc)}
     })
@@ -455,7 +494,7 @@ async function loadVerseContentBackground(marks) {
   for (const mark of marks) {
     neededSurahs.add(parseInt(mark.verseKey.split(':')[0], 10))
   }
-  
+
   const surahDataMap = new Map()
   await Promise.all([...neededSurahs].map(async num => {
     try {
@@ -473,12 +512,12 @@ async function loadVerseContentBackground(marks) {
     if (!surahData) {
       continue
     }
-    
+
     const card = document.querySelector(`[data-mark="${mark.verseKey}"]`)
     if (!card) {
       continue
     }
-    
+
     const verseNum = parseInt(mark.verseKey.split(':')[1], 10)
     const verseIdx = verseNum - 1
     const contentArea = card.querySelector('.qa-review-card-content')
@@ -516,6 +555,9 @@ function setInitialFocus() {
  * Build the desktop left rail: group-by segment + filtered list of groups.
  */
 function buildRail() {
+  const s = reviewState.get()
+  const railActiveTags = new Set(s.activeTags)
+
   const rail = document.createElement('aside')
   rail.className = 'qa-review-rail'
 
@@ -530,14 +572,14 @@ function buildRail() {
   for (const [key, label] of [['tag', 'Tag'], ['surah', 'Surah'], ['flat', 'Date']]) {
     const btn = document.createElement('button')
     btn.type = 'button'
-    btn.className = 'qa-review-seg-item' + (currentState.groupBy === key ? ' qa-review-seg-item--on' : '')
+    btn.className = 'qa-review-seg-item' + (s.groupBy === key ? ' qa-review-seg-item--on' : '')
     btn.style.flex = '1'
     btn.textContent = label
     btn.addEventListener('click', () => {
-      currentState.groupBy = key
+      reviewState.set({ groupBy: key, activeTags: [] })
       _railActiveGroup = null
-      _railActiveTags = new Set()
-      saveState(currentState).catch(() => {})
+      const currentS = reviewState.get()
+      saveState({ ...currentS, sortBy: sortKeyToField(currentS.sort) }).catch(() => {})
       const mc = document.getElementById('main-content')
       if (mc) {render(mc)}
     })
@@ -547,16 +589,16 @@ function buildRail() {
 
   const groupsLabel = document.createElement('div')
   groupsLabel.className = 'qa-review-rail-section'
-  groupsLabel.textContent = currentState.groupBy === 'tag' ? 'Tags'
-    : currentState.groupBy === 'surah' ? 'Surahs'
+  groupsLabel.textContent = s.groupBy === 'tag' ? 'Tags'
+    : s.groupBy === 'surah' ? 'Surahs'
     : 'Dates'
   rail.appendChild(groupsLabel)
 
-  for (const bucket of computeRailBuckets(allMarks, currentState.groupBy)) {
+  for (const bucket of computeRailBuckets(allMarks, s.groupBy)) {
     const row = document.createElement('button')
     row.type = 'button'
-    const isOn = currentState.groupBy === 'tag'
-      ? _railActiveTags.has(bucket.key)
+    const isOn = s.groupBy === 'tag'
+      ? railActiveTags.has(bucket.key)
       : _railActiveGroup === bucket.key
     row.className = 'qa-review-rail-row' + (isOn ? ' qa-review-rail-row--on' : '')
     if (bucket.dotColor) {
@@ -573,12 +615,14 @@ function buildRail() {
     countEl.textContent = bucket.count
     row.appendChild(countEl)
     row.addEventListener('click', () => {
-      if (currentState.groupBy === 'tag') {
-        if (_railActiveTags.has(bucket.key)) {
-          _railActiveTags.delete(bucket.key)
+      if (reviewState.get().groupBy === 'tag') {
+        const updated = new Set(reviewState.get().activeTags)
+        if (updated.has(bucket.key)) {
+          updated.delete(bucket.key)
         } else {
-          _railActiveTags.add(bucket.key)
+          updated.add(bucket.key)
         }
+        reviewState.set({ activeTags: Array.from(updated) })
       } else {
         _railActiveGroup = _railActiveGroup === bucket.key ? null : bucket.key
       }
@@ -634,6 +678,7 @@ function computeRailBuckets(marks, groupBy) {
 }
 
 function renderControls(container) {
+  const s = reviewState.get()
   const controls = document.createElement('div')
   controls.className = 'qa-review-controls'
 
@@ -648,12 +693,13 @@ function renderControls(container) {
     b.className = 'qa-review-seg-item'
     b.setAttribute('role', 'tab')
     b.setAttribute('data-group', value)
-    b.setAttribute('aria-selected', String(value === currentState.groupBy))
-    if (value === currentState.groupBy) { b.classList.add('qa-review-seg-item--on') }
+    b.setAttribute('aria-selected', String(value === s.groupBy))
+    if (value === s.groupBy) { b.classList.add('qa-review-seg-item--on') }
     b.textContent = label
     b.addEventListener('click', async () => {
-      currentState.groupBy = value
-      await saveState(currentState)
+      reviewState.set({ groupBy: value })
+      const cs = reviewState.get()
+      await saveState({ ...cs, sortBy: sortKeyToField(cs.sort) })
       displayedCount = 0
       render(container)
     })
@@ -666,19 +712,20 @@ function renderControls(container) {
   sortSelect.className = 'qa-review-select'
   sortSelect.setAttribute('data-control', 'sort')
   sortSelect.setAttribute('aria-label', 'Sort by')
-  for (const [value, label] of [['updatedAt', 'Sort: Recent'], ['createdAt', 'Sort: Created']]) {
+  for (const [value, label] of [['recent', 'Sort: Recent'], ['created', 'Sort: Created']]) {
     const opt = document.createElement('option')
     opt.value = value
     opt.textContent = label
-    if (value === currentState.sortBy) {
+    if (value === s.sort) {
       opt.selected = true
     }
     sortSelect.appendChild(opt)
   }
   sortSelect.addEventListener('change', async () => {
-    currentState.sortBy = sortSelect.value
-    sortedMarks = sortMarks(allMarks, currentState.sortBy)
-    await saveState(currentState)
+    reviewState.set({ sort: sortSelect.value })
+    sortedMarks = sortMarks(allMarks, reviewState.get().sort)
+    const cs = reviewState.get()
+    await saveState({ ...cs, sortBy: sortKeyToField(cs.sort) })
     displayedCount = 0
     render(container)
   })
@@ -698,14 +745,15 @@ function renderControls(container) {
     const opt = document.createElement('option')
     opt.value = tag
     opt.textContent = tag
-    if (tag === currentState.activeTag) {
+    if (tag === s.activeTag) {
       opt.selected = true
     }
     tagSelect.appendChild(opt)
   }
   tagSelect.addEventListener('change', async () => {
-    currentState.activeTag = tagSelect.value || null
-    await saveState(currentState)
+    reviewState.set({ activeTag: tagSelect.value || null })
+    const cs = reviewState.get()
+    await saveState({ ...cs, sortBy: sortKeyToField(cs.sort) })
     displayedCount = 0
     render(container)
   })
@@ -726,14 +774,15 @@ function renderControls(container) {
     opt.value = String(num)
     const meta = surahs.find(s => s.n === num)
     opt.textContent = meta ? `${meta.name} (${num})` : `Surah ${num}`
-    if (num === currentState.surahFilter) {
+    if (num === s.surahFilter) {
       opt.selected = true
     }
     surahSelect.appendChild(opt)
   }
   surahSelect.addEventListener('change', async () => {
-    currentState.surahFilter = surahSelect.value ? parseInt(surahSelect.value, 10) : null
-    await saveState(currentState)
+    reviewState.set({ surahFilter: surahSelect.value ? parseInt(surahSelect.value, 10) : null })
+    const cs = reviewState.get()
+    await saveState({ ...cs, sortBy: sortKeyToField(cs.sort) })
     displayedCount = 0
     render(container)
   })
@@ -742,20 +791,21 @@ function renderControls(container) {
   container.appendChild(controls)
 
   // Active filter chips
-  if (currentState.activeTag || currentState.surahFilter) {
+  if (s.activeTag || s.surahFilter) {
     const chipBar = document.createElement('div')
     chipBar.className = 'qa-review-active-filters'
 
-    if (currentState.activeTag) {
+    if (s.activeTag) {
       const chip = document.createElement('span')
       chip.className = 'qa-review-filter-chip'
-      chip.textContent = currentState.activeTag
+      chip.textContent = s.activeTag
       const dismiss = document.createElement('button')
       dismiss.textContent = '✕'
-      dismiss.setAttribute('aria-label', `Clear ${currentState.activeTag} filter`)
+      dismiss.setAttribute('aria-label', `Clear ${s.activeTag} filter`)
       dismiss.addEventListener('click', async () => {
-        currentState.activeTag = null
-        await saveState(currentState)
+        reviewState.set({ activeTag: null })
+        const cs = reviewState.get()
+        await saveState({ ...cs, sortBy: sortKeyToField(cs.sort) })
         displayedCount = 0
         render(container)
       })
@@ -763,17 +813,18 @@ function renderControls(container) {
       chipBar.appendChild(chip)
     }
 
-    if (currentState.surahFilter) {
+    if (s.surahFilter) {
       const chip = document.createElement('span')
       chip.className = 'qa-review-filter-chip'
-      const meta = surahs.find(s => s.n === currentState.surahFilter)
-      chip.textContent = meta ? meta.name : `Surah ${currentState.surahFilter}`
+      const meta = surahs.find(sr => sr.n === s.surahFilter)
+      chip.textContent = meta ? meta.name : `Surah ${s.surahFilter}`
       const dismiss = document.createElement('button')
       dismiss.textContent = '✕'
       dismiss.setAttribute('aria-label', `Clear surah filter`)
       dismiss.addEventListener('click', async () => {
-        currentState.surahFilter = null
-        await saveState(currentState)
+        reviewState.set({ surahFilter: null })
+        const cs = reviewState.get()
+        await saveState({ ...cs, sortBy: sortKeyToField(cs.sort) })
         displayedCount = 0
         render(container)
       })
@@ -785,9 +836,9 @@ function renderControls(container) {
     clearAll.className = 'qa-review-clear-all-btn'
     clearAll.textContent = 'Clear all'
     clearAll.addEventListener('click', async () => {
-      currentState.activeTag = null
-      currentState.surahFilter = null
-      await saveState(currentState)
+      reviewState.set({ activeTag: null, surahFilter: null })
+      const cs = reviewState.get()
+      await saveState({ ...cs, sortBy: sortKeyToField(cs.sort) })
       displayedCount = 0
       render(container)
     })
