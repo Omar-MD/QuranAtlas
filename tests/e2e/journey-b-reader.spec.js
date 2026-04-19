@@ -186,11 +186,12 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     const slider = page.locator('.qa-font-slider')
     await expect(slider).toBeVisible()
 
-    // Get current index value and increment it (wrapping at max=2 back to 0)
+    // Get current index value and increment it (wrapping at max=4 back to 0)
+    // Font-size system: 5 steps — xs(0), sm(1), md(2), lg(3), xl(4)
     const current = await slider.inputValue()
     const currentIdx = parseInt(current, 10)
-    const nextIdx = currentIdx < 2 ? currentIdx + 1 : 0
-    const nextSize = ['small', 'medium', 'large'][nextIdx]
+    const nextIdx = currentIdx < 4 ? currentIdx + 1 : 0
+    const nextSize = ['xs', 'sm', 'md', 'lg', 'xl'][nextIdx]
 
     // Drag slider to new position
     await slider.fill(String(nextIdx))
