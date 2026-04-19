@@ -121,10 +121,23 @@ graph LR
 - **Role:** First-run 4-screen walkthrough. Writes `settings.onboardingComplete`.
 
 ### `reader/`
-- **Files:** `index.js`, `scroll-tracker.js`
-- **Imports from:** `a11y`, `core`, `data`
+- **Files:** `index.js`, `render.js`, `chunked-append.js`, `verse-scroll.js`, `position.js`, `edge-indicators.js`, `scroll-tracker.js`
+- **Imports from:** `a11y`, `core`, `data`, `state`
 - **Imported by:** `core/app.js` *(route handler — dynamic import)*
-- **Role:** Main reading surface. `index.js` is ~700 lines and owns render + position tracking + translation toggle. `scroll-tracker.js` computes the currently-visible verse for pill updates.
+- **Role:** Main reading surface, split into focused modules:
+  - `index.js` — route entry: fetch guard, compose render/position/indicators, cleanup orchestration.
+  - `render.js` — DOM construction: verse chunks, surah header, basmala, end marker, skeleton, error state, invalid-verse notice.
+  - `chunked-append.js` — scroll listener + rAF-throttled append of the next 50-verse chunk when the reader nears the bottom. Owns `CHUNK_SIZE`.
+  - `verse-scroll.js` — `scrollVerseIntoView` alignment (3-rAF reflow) and `scrollToVerse` (lazy-renders chunks until target exists).
+  - `position.js` — scroll/IntersectionObserver position tracking, `visibilitychange` flush, `DB_VISIBILITY_VISIBLE` re-scroll, deep-link target-verse handling. `savePosition` is the **sole writer** for the `positions` IDB store (CLAUDE.md Rule 5). Tracks current cleanups in a module-scoped registry so `teardownPositionTracking()` can dispose them on re-init.
+  - `edge-indicators.js` — lazy left/right edge cue elements that flash on verse-number tap and emit `AMBIENT_SURFACE`.
+  - `scroll-tracker.js` — observeScroll / observeNewVerses; computes the currently-visible verse for pill updates.
+- **Internal imports:**
+  - `index.js` → `render`, `chunked-append` (CHUNK_SIZE), `position`, `edge-indicators`, `scroll-tracker`
+  - `position.js` → `scroll-tracker`, `chunked-append`, `verse-scroll`, `render` (invalid-verse notice)
+  - `verse-scroll.js` → `render` (renderVerseChunk), `chunked-append` (CHUNK_SIZE), `scroll-tracker`
+  - `chunked-append.js` → `render` (renderVerseChunk), `scroll-tracker`
+  - `render.js`, `edge-indicators.js` → `core`, `state` only
 - **Note:** does *not* import `marks/` directly — the `openEditor` / `setupLongPress` / `initIndicators` dependencies arrive via `hooks` injected by `router.register` in `app.js`. This keeps `reader/` independent of the marks subtree.
 
 ### `state/`

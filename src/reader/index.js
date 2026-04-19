@@ -183,7 +183,7 @@ export async function init(
       cleanup()
       finalCleanups.forEach(fn => fn())
     }
-  } catch (_error) {
+  } catch {
     clearTimeout(timeout)
     renderError(mainContent, surahNum, () => init({ surah: String(surahNum) }))
   }

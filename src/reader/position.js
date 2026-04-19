@@ -54,7 +54,7 @@ export function teardownPositionTracking() {
   const toRun = currentCleanups
   currentCleanups = null
   toRun.forEach(fn => {
-    try { fn() } catch (_e) { /* best-effort cleanup */ }
+    try { fn() } catch { /* best-effort cleanup */ }
   })
 }
 
