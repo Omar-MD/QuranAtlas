@@ -9,6 +9,7 @@ import { get } from '../core/db.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { openCommandSheet } from './command-sheet.js'
+import * as ambientState from '../state/ambient-chrome.js'
 
 const AUTO_FADE_MS = 2800
 const HIDE_DELTA = 40
@@ -20,7 +21,6 @@ let hashHandler = null
 let surfaceUnsub = null
 let routeChangeUnsub = null
 let lastTop = 0
-let fadeTimer = null
 
 const TABS = [
   { id: 'read',   label: 'Read',   icon: '\uD83D\uDCD6', matches: (h) => h.startsWith('#/s/') },
@@ -132,32 +132,38 @@ function reveal(footer) {
 }
 
 function scheduleFade(footer) {
-  if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
-  fadeTimer = setTimeout(() => {
-    if (isReaderRoute(window.location.hash)) {
-      footer.classList.add('qa-dock--hidden')
-    }
-    fadeTimer = null
-  }, AUTO_FADE_MS)
+  const { dockFadeTimerHandle } = ambientState.get()
+  if (dockFadeTimerHandle) { clearTimeout(dockFadeTimerHandle) }
+  ambientState.set({
+    dockFadeTimerHandle: setTimeout(() => {
+      if (isReaderRoute(window.location.hash)) {
+        footer.classList.add('qa-dock--hidden')
+      }
+      ambientState.set({ dockFadeTimerHandle: null })
+    }, AUTO_FADE_MS),
+  })
 }
 
 function applyRoutePersistence(footer) {
   const hash = window.location.hash || ''
   if (hash.startsWith('#/onboarding')) {
     footer.classList.add('qa-dock--hidden')
-    if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+    const { dockFadeTimerHandle: t } = ambientState.get()
+    if (t) { clearTimeout(t); ambientState.set({ dockFadeTimerHandle: null }) }
     return
   }
   if (isReaderRoute(hash)) {
     footer.classList.add('qa-dock--hidden')
   } else {
     footer.classList.remove('qa-dock--hidden')
-    if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+    const { dockFadeTimerHandle: t } = ambientState.get()
+    if (t) { clearTimeout(t); ambientState.set({ dockFadeTimerHandle: null }) }
   }
 }
 
 export function destroyAmbientDock() {
-  if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+  const { dockFadeTimerHandle } = ambientState.get()
+  if (dockFadeTimerHandle) { clearTimeout(dockFadeTimerHandle); ambientState.set({ dockFadeTimerHandle: null }) }
   if (scrollTarget && scrollHandler) {
     scrollTarget.removeEventListener('scroll', scrollHandler)
   }

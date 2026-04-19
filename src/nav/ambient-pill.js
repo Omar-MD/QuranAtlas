@@ -7,6 +7,7 @@ import { getSurahs } from '../data/dataset.js'
 import { emit, on } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { openCommandSheet } from './command-sheet.js'
+import * as ambientState from '../state/ambient-chrome.js'
 
 const AUTO_FADE_MS = 2800
 
@@ -20,7 +21,6 @@ let unsubPosition = null
 let unsubSurface = null
 let hashHandler = null
 let readerTapHandler = null
-let fadeTimer = null
 
 export async function initAmbientPill() {
   const topBar = document.getElementById('top-bar')
@@ -89,7 +89,8 @@ export async function initAmbientPill() {
 }
 
 export function destroyAmbientPill() {
-  if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+  const { pillFadeTimerHandle } = ambientState.get()
+  if (pillFadeTimerHandle) { clearTimeout(pillFadeTimerHandle); ambientState.set({ pillFadeTimerHandle: null }) }
   if (unsubLoaded) { unsubLoaded(); unsubLoaded = null }
   if (unsubPosition) { unsubPosition(); unsubPosition = null }
   if (unsubSurface) { unsubSurface(); unsubSurface = null }
@@ -107,6 +108,7 @@ export function destroyAmbientPill() {
   currentSurah = null
   currentVerse = 1
   surahsById = null
+  ambientState.set({ pillLabel: '' })
 }
 
 function reveal() {
@@ -115,11 +117,14 @@ function reveal() {
 }
 
 function scheduleFade() {
-  if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
-  fadeTimer = setTimeout(() => {
-    pillEl?.classList.add('qa-pill-ref--hidden')
-    fadeTimer = null
-  }, AUTO_FADE_MS)
+  const { pillFadeTimerHandle } = ambientState.get()
+  if (pillFadeTimerHandle) { clearTimeout(pillFadeTimerHandle) }
+  ambientState.set({
+    pillFadeTimerHandle: setTimeout(() => {
+      pillEl?.classList.add('qa-pill-ref--hidden')
+      ambientState.set({ pillFadeTimerHandle: null })
+    }, AUTO_FADE_MS),
+  })
 }
 
 async function ensureSurahCache() {
@@ -132,9 +137,11 @@ function render() {
   if (!refTextEl || !currentSurah) { return }
   const meta = surahsById?.get(currentSurah)
   const name = meta?.name || ''
-  refTextEl.textContent = name
+  const label = name
     ? `${currentSurah}:${currentVerse} \u00B7 ${name}`
     : `${currentSurah}:${currentVerse}`
+  refTextEl.textContent = label
+  ambientState.set({ pillLabel: label })
 }
 
 function isReaderRoute() {
@@ -145,7 +152,8 @@ function applyRouteVisibility() {
   if (!pillEl) { return }
   if (!isReaderRoute()) {
     pillEl.classList.add('qa-pill-ref--hidden')
-    if (fadeTimer) { clearTimeout(fadeTimer); fadeTimer = null }
+    const { pillFadeTimerHandle: t } = ambientState.get()
+    if (t) { clearTimeout(t); ambientState.set({ pillFadeTimerHandle: null }) }
   } else {
     pillEl.classList.add('qa-pill-ref--hidden')
   }
