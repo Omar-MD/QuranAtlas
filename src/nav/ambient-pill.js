@@ -18,7 +18,6 @@ let currentVerse = 1
 let unsubLoaded = null
 let unsubPosition = null
 let unsubSurface = null
-let unsubHide = null
 let hashHandler = null
 let readerTapHandler = null
 let fadeTimer = null
@@ -73,10 +72,6 @@ export async function initAmbientPill() {
     scheduleFade()
   })
 
-  unsubHide = on(Events.AMBIENT_HIDE, () => {
-    pillEl?.classList.add('qa-pill-ref--hidden')
-  })
-
   readerTapHandler = (e) => {
     if (!isReaderRoute()) { return }
     if (e.target.closest('.qa-pill-ref, #bottom-nav, .qa-cmd-sheet, .qa-cmd-scrim, .qa-sheet-backdrop, .qa-sheet')) {
@@ -98,7 +93,6 @@ export function destroyAmbientPill() {
   if (unsubLoaded) { unsubLoaded(); unsubLoaded = null }
   if (unsubPosition) { unsubPosition(); unsubPosition = null }
   if (unsubSurface) { unsubSurface(); unsubSurface = null }
-  if (unsubHide) { unsubHide(); unsubHide = null }
   if (readerTapHandler) {
     document.removeEventListener('click', readerTapHandler)
     readerTapHandler = null

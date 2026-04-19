@@ -18,7 +18,6 @@ let scrollTarget = null
 let scrollHandler = null
 let hashHandler = null
 let surfaceUnsub = null
-let hideUnsub = null
 let routeChangeUnsub = null
 let lastTop = 0
 let fadeTimer = null
@@ -125,12 +124,6 @@ export async function initAmbientDock() {
     }
   })
 
-  hideUnsub = on(Events.AMBIENT_HIDE, () => {
-    if (isReaderRoute(window.location.hash)) {
-      footer.classList.add('qa-dock--hidden')
-    }
-  })
-
   return destroyAmbientDock
 }
 
@@ -170,7 +163,6 @@ export function destroyAmbientDock() {
   }
   if (hashHandler) { window.removeEventListener('hashchange', hashHandler) }
   if (surfaceUnsub) { surfaceUnsub(); surfaceUnsub = null }
-  if (hideUnsub) { hideUnsub(); hideUnsub = null }
   if (routeChangeUnsub) { routeChangeUnsub(); routeChangeUnsub = null }
   scrollTarget = null
   scrollHandler = null
