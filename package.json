@@ -27,7 +27,8 @@
   "packageManager": "pnpm@10.31.0",
   "pnpm": {
     "overrides": {
-      "serialize-javascript": "^7.0.3"
+      "serialize-javascript": "^7.0.3",
+      "basic-ftp": "^5.3.0"
     },
     "patchedDependencies": {
       "vite-plugin-pwa@1.2.0": "patches/vite-plugin-pwa@1.2.0.patch"
