@@ -4,11 +4,13 @@
  * Covers:
  *   G1. Open About via dock More sheet → page renders all required sections
  *   G2. Install PWA (skipped — not testable in Playwright)
+ *   G3. Shortcut cheatsheet (`?`) → sheet opens, 4 groups visible, Esc closes
  *
  * Sources of truth:
  *   docs/context/user-journeys.md  §G
  *   src/about/index.js
  *   src/about/pwa-install.js
+ *   src/nav/shortcuts-sheet.js
  */
 
 import { test, expect } from '@playwright/test'
@@ -115,5 +117,43 @@ test.describe('Journey G: About', () => {
   test.skip('G2: PWA install button triggers installation prompt', async () => {
     // Not testable in Playwright — beforeinstallprompt cannot be faked.
     // Manual QA only.
+  })
+
+  // ---------------------------------------------------------------------------
+  // G3. Shortcut cheatsheet (`?`) — open, assert 4 groups, close via Esc
+  // ---------------------------------------------------------------------------
+
+  test('G3: press ? → keyboard shortcuts sheet opens and closes', async ({ page }) => {
+    // The reader is already loaded from beforeEach (/#/s/1).
+    // Ensure focus is on a non-text-input element so `?` fires the key handler.
+    await page.locator('#main-content').click({ position: { x: 50, y: 50 } })
+
+    // Step 1: press ? → shortcuts sheet opens
+    await page.keyboard.press('?')
+
+    const shortcutsSheet = page.locator('.qa-sheet--shortcuts')
+    await expect(shortcutsSheet).toBeVisible({ timeout: 5_000 })
+
+    // Sheet has correct ARIA role and label (src/nav/shortcuts-sheet.js)
+    await expect(shortcutsSheet).toHaveAttribute('role', 'dialog')
+    await expect(shortcutsSheet).toHaveAttribute('aria-label', 'Keyboard shortcuts')
+
+    // Title row
+    const titleEl = shortcutsSheet.locator('.qa-sheet-title')
+    await expect(titleEl).toHaveText('Keyboard shortcuts')
+
+    // Step 2: verify 4 section groups are present (Universal · Go to · Reader · Command sheet)
+    const groups = shortcutsSheet.locator('.qa-sc-group')
+    await expect(groups).toHaveCount(4)
+
+    const groupTitles = shortcutsSheet.locator('.qa-sc-group-title')
+    await expect(groupTitles.nth(0)).toHaveText('Universal')
+    await expect(groupTitles.nth(1)).toHaveText('Go to')
+    await expect(groupTitles.nth(2)).toHaveText('Reader')
+    await expect(groupTitles.nth(3)).toHaveText('Command sheet')
+
+    // Step 3: close via Esc → sheet is removed from DOM
+    await page.keyboard.press('Escape')
+    await expect(shortcutsSheet).not.toBeAttached({ timeout: 5_000 })
   })
 })
