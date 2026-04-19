@@ -134,7 +134,7 @@ test.describe('Desktop layouts @desktop', () => {
     ])
 
     await page.goto('/#/review')
-    await page.waitForSelector('.qa-review-layout')
+    await expect(page.locator('.qa-review-layout')).toBeVisible({ timeout: 15_000 })
 
     const layoutCols = await page.locator('.qa-review-layout').evaluate(
       el => getComputedStyle(el).gridTemplateColumns
@@ -288,6 +288,7 @@ test.describe('Desktop layouts @desktop', () => {
     expect(display).toBe('block')
   })
 
+  // E2b: filter by multiple tags (desktop) — rail OR filter + chip bar + clear all
   test('review hub: multi-tag OR filter + chip bar + clear', async ({ page }) => {
     await seedMarks(page, [
       { verseKey: '1:5',   tags: ['reflect'],                  note: '' },
