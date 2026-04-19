@@ -11,6 +11,7 @@ import { get } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { announce } from '../a11y/announcer.js'
+import * as surahsState from '../state/surahs.js'
 
 let _initSeq = 0
 
@@ -36,7 +37,7 @@ export async function init(_params = {}) {
     ? { surah: parseInt(resumeMatch[1], 10), verse: resumeMatch[2] ? parseInt(resumeMatch[2], 10) : 1 }
     : null
 
-  const state = { filter: 'all', query: '' }
+  surahsState.set({ filter: 'all', searchQuery: '' })
 
   const page = document.createElement('div')
   page.className = 'qa-surah-list-page'
@@ -84,7 +85,7 @@ export async function init(_params = {}) {
     b.setAttribute('role', 'tab')
     b.setAttribute('data-filter', key)
     b.textContent = label
-    b.addEventListener('click', () => { state.filter = key; rerender() })
+    b.addEventListener('click', () => { surahsState.set({ filter: key }); rerender() })
     seg.appendChild(b)
   }
   page.appendChild(seg)
@@ -100,23 +101,24 @@ export async function init(_params = {}) {
   mainContent.appendChild(page)
 
   function rerender() {
+    const { filter, searchQuery } = surahsState.get()
     for (const b of seg.querySelectorAll('.qa-sl-seg-item')) {
-      const on = b.getAttribute('data-filter') === state.filter
+      const on = b.getAttribute('data-filter') === filter
       b.classList.toggle('qa-sl-seg-item--on', on)
       b.setAttribute('aria-selected', on ? 'true' : 'false')
     }
 
     let items = surahs
-    if (state.filter === 'bookmarked') {
+    if (filter === 'bookmarked') {
       items = surahs.filter(s => bookmarkedSet.has(s.n))
-    } else if (state.filter === 'recent') {
+    } else if (filter === 'recent') {
       const order = new Map(recentSurahs.map((n, i) => [n, i]))
       items = surahs
         .filter(s => order.has(s.n))
         .sort((a, b) => order.get(a.n) - order.get(b.n))
     }
 
-    const q = state.query.trim()
+    const q = searchQuery.trim()
     const qLower = q.toLowerCase()
     const numericMatch = q.match(/^(\d+)$/)
     const refMatch = q.match(/^(\d+)\s*:\s*(\d+)$/)
@@ -146,9 +148,9 @@ export async function init(_params = {}) {
       })
     }
 
-    if (state.filter === 'bookmarked') {
+    if (filter === 'bookmarked') {
       count.textContent = `${items.length} bookmarked`
-    } else if (state.filter === 'recent') {
+    } else if (filter === 'recent') {
       count.textContent = items.length ? `${items.length} recent` : 'No recent'
     } else if (q) {
       count.textContent = items.length === 1 ? '1 match' : `${items.length} matches`
@@ -169,7 +171,7 @@ export async function init(_params = {}) {
 
     while (list.firstChild) { list.removeChild(list.firstChild) }
 
-    if (state.filter === 'all' && !q && resume) {
+    if (filter === 'all' && !q && resume) {
       const meta = surahs.find(s => s.n === resume.surah)
       if (meta) {
         const cont = document.createElement('li')
@@ -258,7 +260,7 @@ export async function init(_params = {}) {
   }
 
   search.addEventListener('input', () => {
-    state.query = search.value
+    surahsState.set({ searchQuery: search.value })
     rerender()
   })
 
