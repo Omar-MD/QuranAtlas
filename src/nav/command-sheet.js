@@ -5,6 +5,7 @@
  * with Open/Mark/Copy actions.
  */
 
+import * as cmdState from '../state/command-sheet.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { getSurahs, getSurah } from '../data/dataset.js'
@@ -34,16 +35,13 @@ const MAX_MARKS = 4
 let scrim = null
 let sheet = null
 let input = null
-let results = null
+let resultsEl = null
 let footerEl = null
-let isOpen = false
 let escapeHandler = null
 let inputHandler = null
 let surahCache = null
 let markCache = null
 let tagCache = null
-let activeIndex = 0
-let flatItems = []
 let keyHandler = null
 let gChordTimer = null
 let gChordPending = false
@@ -86,10 +84,10 @@ export async function initCommandSheet() {
   inputRow.appendChild(input)
   inputRow.appendChild(hint)
 
-  results = document.createElement('div')
-  results.className = 'qa-cmd-results'
-  results.setAttribute('role', 'listbox')
-  results.setAttribute('aria-label', 'Search results')
+  resultsEl = document.createElement('div')
+  resultsEl.className = 'qa-cmd-results'
+  resultsEl.setAttribute('role', 'listbox')
+  resultsEl.setAttribute('aria-label', 'Search results')
 
   footerEl = document.createElement('div')
   footerEl.className = 'qa-cmd-foot'
@@ -107,14 +105,14 @@ export async function initCommandSheet() {
   }
 
   sheet.appendChild(inputRow)
-  sheet.appendChild(results)
+  sheet.appendChild(resultsEl)
   sheet.appendChild(footerEl)
 
   document.body.appendChild(scrim)
   document.body.appendChild(sheet)
 
   escapeHandler = (e) => {
-    if (e.key === 'Escape' && isOpen) {
+    if (e.key === 'Escape' && cmdState.get().isOpen) {
       e.preventDefault()
       closeCommandSheet()
     }
@@ -136,7 +134,7 @@ export async function openCommandSheet() {
   if (!sheet || !scrim || !input) { return }
   scrim.classList.remove('qa-cmd--hidden')
   sheet.classList.remove('qa-cmd--hidden')
-  isOpen = true
+  cmdState.set({ isOpen: true, query: '' })
   input.value = ''
   input.focus()
   try {
@@ -153,7 +151,7 @@ export function closeCommandSheet() {
   if (!sheet || !scrim) { return }
   scrim.classList.add('qa-cmd--hidden')
   sheet.classList.add('qa-cmd--hidden')
-  isOpen = false
+  cmdState.set({ isOpen: false })
 }
 
 export function destroyCommandSheet() {
@@ -174,36 +172,34 @@ export function destroyCommandSheet() {
   scrim = null
   sheet = null
   input = null
-  results = null
+  resultsEl = null
   footerEl = null
-  isOpen = false
   surahCache = null
   markCache = null
   tagCache = null
-  activeIndex = 0
-  flatItems = []
+  cmdState.set({ isOpen: false, query: '', results: [], focusIndex: 0 })
   _renderGen = 0
   if (gChordTimer) { clearTimeout(gChordTimer); gChordTimer = null }
   gChordPending = false
 }
 
 async function render() {
-  if (!results) { return }
+  if (!resultsEl) { return }
   const gen = ++_renderGen
   const query = (input?.value || '').trim()
+  cmdState.set({ query })
 
-  // Scratch DOM container — only committed to `results` if this render wins.
+  // Scratch DOM container — only committed to `resultsEl` if this render wins.
   const scratch = document.createDocumentFragment()
-  // Local flat-items list — only committed to `flatItems` if this render wins.
+  // Local flat-items list — only committed to state.results if this render wins.
   const localItems = []
 
   if (!query) {
     await renderEmptyState(scratch, localItems)
     if (gen !== _renderGen) { return }
-    while (results.firstChild) { results.removeChild(results.firstChild) }
-    results.appendChild(scratch)
-    flatItems = localItems
-    activeIndex = 0
+    while (resultsEl.firstChild) { resultsEl.removeChild(resultsEl.firstChild) }
+    resultsEl.appendChild(scratch)
+    cmdState.set({ results: localItems, focusIndex: 0 })
     applyActive()
     return
   }
@@ -212,23 +208,21 @@ async function render() {
   if (refMatch) {
     await renderVersePreview(parseInt(refMatch[1], 10), parseInt(refMatch[2], 10), scratch, localItems)
     if (gen !== _renderGen) { return }
-    while (results.firstChild) { results.removeChild(results.firstChild) }
-    results.appendChild(scratch)
-    flatItems = localItems
-    activeIndex = 0
+    while (resultsEl.firstChild) { resultsEl.removeChild(resultsEl.firstChild) }
+    resultsEl.appendChild(scratch)
+    cmdState.set({ results: localItems, focusIndex: 0 })
     applyActive()
     return
   }
 
   const groups = resolve(query)
   if (groups.length === 0) {
-    while (results.firstChild) { results.removeChild(results.firstChild) }
+    while (resultsEl.firstChild) { resultsEl.removeChild(resultsEl.firstChild) }
     const empty = document.createElement('div')
     empty.className = 'qa-cmd-empty'
     empty.textContent = 'No matches'
-    results.appendChild(empty)
-    flatItems = []
-    activeIndex = 0
+    resultsEl.appendChild(empty)
+    cmdState.set({ results: [], focusIndex: 0 })
     return
   }
 
@@ -236,10 +230,9 @@ async function render() {
     if (group.items.length === 0) { continue }
     scratch.appendChild(renderGroup(group, localItems))
   }
-  while (results.firstChild) { results.removeChild(results.firstChild) }
-  results.appendChild(scratch)
-  flatItems = localItems
-  activeIndex = 0
+  while (resultsEl.firstChild) { resultsEl.removeChild(resultsEl.firstChild) }
+  resultsEl.appendChild(scratch)
+  cmdState.set({ results: localItems, focusIndex: 0 })
   applyActive()
 }
 
@@ -295,7 +288,7 @@ async function renderVersePreview(s, v, container, itemsList) {
     empty.className = 'qa-cmd-empty'
     empty.textContent = meta
       ? `Verse ${v} does not exist in ${meta.name} (max ${meta.count})`
-      : `Surah ${s} does not exist (1–114)`
+      : `Surah ${s} does not exist (1\u2013114)`
     container.appendChild(empty)
     return
   }
@@ -342,9 +335,10 @@ async function renderVersePreview(s, v, container, itemsList) {
 }
 
 function applyActive() {
-  for (let i = 0; i < flatItems.length; i++) {
-    const el = flatItems[i].el
-    const on = i === activeIndex
+  const { results, focusIndex } = cmdState.get()
+  for (let i = 0; i < results.length; i++) {
+    const el = results[i].el
+    const on = i === focusIndex
     el.classList.toggle('qa-cmd--active', on)
     el.setAttribute('aria-selected', on ? 'true' : 'false')
     if (on && typeof el.scrollIntoView === 'function') { el.scrollIntoView({ block: 'nearest' }) }
@@ -422,7 +416,7 @@ function renderItem(item, itemsList) {
   }
 
   el.addEventListener('click', () => { activate(item) })
-  const list = itemsList ?? flatItems
+  const list = itemsList ?? cmdState.get().results
   list.push({ el, item })
   return el
 }
@@ -495,18 +489,19 @@ async function gotoHome() {
 }
 
 function tabToNextGroup(dir) {
-  if (flatItems.length === 0) { return }
-  const cur = flatItems[activeIndex]?.item?.group
+  const { results, focusIndex } = cmdState.get()
+  if (results.length === 0) { return }
+  const cur = results[focusIndex]?.item?.group
   if (!cur) {
-    activeIndex = dir > 0 ? 0 : flatItems.length - 1
+    cmdState.set({ focusIndex: dir > 0 ? 0 : results.length - 1 })
     applyActive()
     return
   }
-  const len = flatItems.length
+  const len = results.length
   for (let step = 1; step <= len; step++) {
-    const i = ((activeIndex + dir * step) % len + len) % len
-    if (flatItems[i].item.group !== cur) {
-      activeIndex = i
+    const i = ((focusIndex + dir * step) % len + len) % len
+    if (results[i].item.group !== cur) {
+      cmdState.set({ focusIndex: i })
       applyActive()
       return
     }
@@ -519,7 +514,7 @@ function onKeydown(e) {
   const isK = e.key === 'k' || e.key === 'K'
   if (isK && (e.metaKey || e.ctrlKey)) {
     e.preventDefault()
-    if (isOpen) { closeCommandSheet() } else { openCommandSheet() }
+    if (cmdState.get().isOpen) { closeCommandSheet() } else { openCommandSheet() }
     return
   }
 
@@ -529,7 +524,7 @@ function onKeydown(e) {
 
   const textField = isTextEntry(e.target)
 
-  if (isOpen) {
+  if (cmdState.get().isOpen) {
     // In-sheet navigation. Tab cycles to the first item of the next group.
     if (e.key === 'Tab') {
       e.preventDefault()
@@ -538,22 +533,25 @@ function onKeydown(e) {
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      if (flatItems.length === 0) { return }
-      activeIndex = (activeIndex + 1) % flatItems.length
+      const { results, focusIndex } = cmdState.get()
+      if (results.length === 0) { return }
+      cmdState.set({ focusIndex: (focusIndex + 1) % results.length })
       applyActive()
       return
     }
     if (e.key === 'ArrowUp') {
       e.preventDefault()
-      if (flatItems.length === 0) { return }
-      activeIndex = (activeIndex - 1 + flatItems.length) % flatItems.length
+      const { results, focusIndex } = cmdState.get()
+      if (results.length === 0) { return }
+      cmdState.set({ focusIndex: (focusIndex - 1 + results.length) % results.length })
       applyActive()
       return
     }
     if (e.key === 'Enter') {
-      if (flatItems.length === 0) { return }
+      const { results, focusIndex } = cmdState.get()
+      if (results.length === 0) { return }
       e.preventDefault()
-      activate(flatItems[activeIndex].item)
+      activate(results[focusIndex].item)
       return
     }
     // All other keys (including `/`) go to the input when the sheet is open.
