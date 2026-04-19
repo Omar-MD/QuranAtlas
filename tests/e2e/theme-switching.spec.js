@@ -80,8 +80,8 @@ test.describe('Theme Switching', () => {
       return getComputedStyle(document.documentElement).getPropertyValue('--qa-bg-primary').trim()
     })
 
-    // Dark theme token comes from src/core/theme.css.
-    expect(bgVar).toBe('#121212')
+    // Dark theme token comes from src/core/theme.css: html[data-theme="dark"] { --qa-bg-primary: #0f1215 }
+    expect(bgVar).toBe('#0f1215')
   })
 
   test('sepia theme applies correct CSS variables', async ({ page }) => {
@@ -100,8 +100,8 @@ test.describe('Theme Switching', () => {
       return getComputedStyle(document.documentElement).getPropertyValue('--qa-bg-primary').trim()
     })
 
-    // Sepia theme token comes from src/core/theme.css.
-    expect(bgVar).toBe('#fbf0d9')
+    // Sepia theme token comes from src/core/theme.css: html[data-theme="sepia"] { --qa-bg-primary: #f7ebd0 }
+    expect(bgVar).toBe('#f7ebd0')
   })
 
   test('theme transition is smooth', async ({ page }) => {
