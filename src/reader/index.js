@@ -5,33 +5,28 @@
  */
 
 import { getSurah, getSurahs } from '../data/dataset.js'
-import { get, put } from '../core/db.js'
-import { emit, on } from '../core/events.js'
+import { get } from '../core/db.js'
+import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
-import { logger } from '../core/logger.js'
 import { clearUndoToast, clearUndoRecord } from '../core/ui.js'
-import { observeScroll, unobserve, flushDebounce } from './scroll-tracker.js'
+import { unobserve } from './scroll-tracker.js'
 import { announce } from '../a11y/announcer.js'
 import * as readerState from '../state/reader.js'
 import {
   renderVerseChunk,
   renderSurahHeader,
   renderBasmala,
-  renderInvalidVerseError,
   renderSurahEnd,
   renderSkeleton,
   renderError,
 } from './render.js'
-import { setupChunkedAppend, CHUNK_SIZE } from './chunked-append.js'
-import { scrollToVerse } from './verse-scroll.js'
+import { CHUNK_SIZE } from './chunked-append.js'
+import { initPositionTracking, teardownPositionTracking } from './position.js'
 
 // Maximum time to wait for surah data fetch before showing error
 // 5000ms hard cutoff; 800ms is the performance *goal*, not the error threshold
 const SKELETON_TIMEOUT_MS = 5000
 
-let cleanupChunkedAppendFn = null
-let unsubVisibility = null
-let visibilityHandler = null
 let cleanupIndicatorsFn = null
 let cleanupLongPressFn = null
 
@@ -85,87 +80,6 @@ function renderSurahContent({ mainContent, surah, surahMeta, translationVisible,
 }
 
 /**
- * Set up scroll/position tracking and scroll to initial position.
- * Returns array of cleanup functions.
- */
-function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah, surahMeta, savedPosition, targetVerse }) {
-  const cleanups = []
-
-  if (shouldSavePosition) {
-    setupScrollTracking(mainContent, surahNum)
-    visibilityHandler = () => {
-      const { currentSurahNum: csn, lastTrackedVerse: ltv } = readerState.get()
-      if (document.hidden && csn && ltv !== null) {
-        flushDebounce()
-        const positionData = {
-          id: `s${csn}`,
-          surah: csn,
-          verse: ltv,
-          savedAt: Date.now(),
-        }
-        put('positions', positionData).catch(() => {
-          setTimeout(() => {
-            put('positions', positionData).catch((error) => {
-              logger.error('Failed to save position after retry:', {
-                surah: csn,
-                verse: ltv,
-                error,
-              })
-              emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: csn, verse: ltv })
-            })
-          }, 100)
-        })
-      }
-    }
-    document.addEventListener('visibilitychange', visibilityHandler)
-    cleanups.push(() => {
-      document.removeEventListener('visibilitychange', visibilityHandler)
-      visibilityHandler = null
-    })
-  }
-
-  const unsubTranslation = on(Events.SETTINGS_TRANSLATION_CHANGED, ({ visible }) => {
-    readerState.set({ translationVisible: !!visible })
-  })
-  cleanups.push(() => { unsubTranslation() })
-
-  unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
-    const { currentSurah } = readerState.get()
-    if (currentSurah && mainContent) {
-      const position = await get('positions', `s${currentSurah.n}`)
-      if (position) {
-        scrollToVerse(mainContent, position.verse)
-      }
-    }
-  })
-  cleanups.push(() => {
-    if (unsubVisibility) { unsubVisibility(); unsubVisibility = null }
-  })
-
-  // Validate target verse
-  let invalidVerseError = null
-  if (targetVerse !== null) {
-    if (targetVerse < 1 || targetVerse > surah.ar.length) {
-      invalidVerseError = `Verse ${targetVerse} does not exist in ${surahMeta?.name ?? 'this Surah'} (${surah.ar.length} verses)`
-    }
-  }
-
-  // Scroll to saved position or deep link verse
-  if (savedPosition && !targetVerse && savedPosition.verse > 1) {
-    scrollToVerse(mainContent, savedPosition.verse)
-  } else if (targetVerse) {
-    const validTargetVerse = invalidVerseError ? 1 : targetVerse
-    scrollToVerse(mainContent, validTargetVerse)
-  }
-
-  if (invalidVerseError) {
-    renderInvalidVerseError(mainContent, invalidVerseError)
-  }
-
-  return cleanups
-}
-
-/**
  * Emit load event, set up indicators and long press, perf marks, announce.
  * Returns array of cleanup functions.
  */
@@ -195,18 +109,7 @@ export function cleanup() {
   clearUndoToast()
   clearUndoRecord()
   unobserve()
-  if (cleanupChunkedAppendFn) {
-    cleanupChunkedAppendFn()
-    cleanupChunkedAppendFn = null
-  }
-  if (visibilityHandler) {
-    document.removeEventListener('visibilitychange', visibilityHandler)
-    visibilityHandler = null
-  }
-  if (unsubVisibility) {
-    unsubVisibility()
-    unsubVisibility = null
-  }
+  teardownPositionTracking()
   if (cleanupIndicatorsFn) { cleanupIndicatorsFn(); cleanupIndicatorsFn = null }
   if (cleanupLongPressFn) { cleanupLongPressFn(); cleanupLongPressFn = null }
   teardownEdgeIndicators()
@@ -270,7 +173,7 @@ export async function init(
       surahNum,
     })
 
-    const trackingCleanups = initPositionTracking({
+    initPositionTracking({
       mainContent, surahNum, shouldSavePosition,
       surah: data.surah, surahMeta: data.surahMeta,
       savedPosition: data.savedPosition, targetVerse,
@@ -283,49 +186,11 @@ export async function init(
 
     return () => {
       cleanup()
-      trackingCleanups.forEach(fn => fn())
       finalCleanups.forEach(fn => fn())
     }
   } catch (_error) {
     clearTimeout(timeout)
     renderError(mainContent, surahNum, () => init({ surah: String(surahNum) }))
-  }
-}
-
-/**
- * Set up scroll tracking: position observer + chunked append listener.
- */
-function setupScrollTracking(container, surahNum) {
-  observeScroll(container, {
-    onPositionChange: ({ verse }) => {
-      readerState.set({ lastTrackedVerse: verse })
-      savePosition(surahNum, verse)
-    },
-  })
-
-  cleanupChunkedAppendFn = setupChunkedAppend(container)
-}
-
-/**
- * Save reading position to IDB.
- */
-async function savePosition(surahNum, verse) {
-  try {
-    await put('positions', {
-      id: `s${surahNum}`,
-      surah: surahNum,
-      verse,
-      savedAt: Date.now(),
-    })
-    emit(Events.READER_POSITION_CHANGED, /** @type {import('../core/constants.js').ReaderPositionChangedPayload} */({ surah: surahNum, verse }))
-  } catch (error) {
-    // Position save failed, emit event for UI warning
-    logger.error('Failed to save position on visibility change:', {
-      surah: surahNum,
-      verse,
-      error,
-    })
-    emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: surahNum, verse })
   }
 }
 

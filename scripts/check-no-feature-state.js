@@ -12,6 +12,8 @@ const ALLOW_LIST = new Set([
   'src/reader/edge-indicators.js',
   // Scroll observer handles and working position state
   'src/reader/scroll-tracker.js',
+  // Cleanup registry so teardownPositionTracking can dispose prior init cleanups
+  'src/reader/position.js',
   // Media query refs for theme auto-detection
   'src/settings/theme.js',
   // DOM element refs for settings panel sheet
