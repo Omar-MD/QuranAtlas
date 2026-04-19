@@ -11,6 +11,7 @@ import { getThemeOptions, setTheme, loadTheme } from './theme.js'
 import { getFontSizeOptions, setFontSize, loadFontSize } from './font-size.js'
 import { getTranslations } from '../data/dataset.js'
 import { logger } from '../core/logger.js'
+import * as settingsState from '../state/settings.js'
 
 async function loadTranslations() {
   try {
@@ -253,6 +254,7 @@ function buildReadingSection(visible, translations, translationId) {
     onToggle: async (next) => {
       try {
         await put('settings', { key: 'translationVisible', value: next })
+        settingsState.set({ translationVisible: next })
         emit(Events.SETTINGS_TRANSLATION_CHANGED, /** @type {import('../core/constants.js').SettingsTranslationChangedPayload} */({ visible: next }))
         applyTranslationToDOM(next)
       } catch (error) {
@@ -369,6 +371,7 @@ async function renderTranslationPicker() {
     row.addEventListener('click', async () => {
       try {
         await put('settings', { key: 'translationId', value: opt.id })
+        settingsState.set({ translationId: opt.id })
       } catch (error) {
         logger.error('Failed to save translation choice', { error })
       }

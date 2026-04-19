@@ -7,6 +7,7 @@ import { get, put } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
+import * as settingsState from '../state/settings.js'
 
 const DEFAULT_THEME = 'light'
 const THEME_OPTIONS = ['light', 'sepia', 'dark', 'auto']
@@ -83,6 +84,7 @@ export async function setTheme(theme) {
 
   const from = getCurrentThemePref()
   applyTheme(theme)
+  settingsState.set({ theme })
   emit(Events.SETTINGS_THEME_CHANGED, { from, to: theme })
 
   put('settings', { key: 'theme', value: theme }).catch((error) => {
@@ -111,4 +113,5 @@ export async function cycleTheme() {
 export async function initTheme() {
   const theme = await loadTheme()
   applyTheme(theme)
+  settingsState.set({ theme })
 }

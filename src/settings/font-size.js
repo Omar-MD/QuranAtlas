@@ -7,6 +7,7 @@ import { get, put } from '../core/db.js'
 import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
+import * as settingsState from '../state/settings.js'
 
 const DEFAULT_SIZE = 'md'
 const OPTIONS = ['xs', 'sm', 'md', 'lg', 'xl']
@@ -44,6 +45,7 @@ export async function loadFontSize() {
 export async function setFontSize(size) {
   if (!OPTIONS.includes(size)) { return false }
   applyFontSize(size)
+  settingsState.set({ fontSize: size })
   emit(Events.SETTINGS_FONT_SIZE_CHANGED, /** @type {import('../core/constants.js').SettingsFontSizeChangedPayload} */({ size }))
   put('settings', { key: 'fontSize', value: size }).catch((error) => {
     logger.error('Failed to save font size', { size, error })
@@ -61,4 +63,5 @@ export async function resetFontSize() {
 export async function initFontSize() {
   const size = await loadFontSize()
   applyFontSize(size)
+  settingsState.set({ fontSize: size })
 }
