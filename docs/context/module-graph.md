@@ -22,6 +22,7 @@ graph LR
   onboarding[onboarding]
   offline["offline<br/>(SW only)"]
   sw["sw.js"]
+  state[state]
 
   core --> a11y
   data --> core
@@ -36,18 +37,25 @@ graph LR
   nav --> data
   nav --> marks
   nav --> settings
+  nav --> state
   reader --> core
   reader --> data
   reader --> a11y
+  reader --> state
   review --> core
   review --> data
   review --> marks
   review --> a11y
   review --> safety
+  review --> state
   surahs --> core
   surahs --> data
   surahs --> marks
   surahs --> a11y
+  surahs --> state
+  marks --> state
+  settings --> state
+  safety --> state
   about --> a11y
   about --> marks
   onboarding --> core
@@ -118,6 +126,12 @@ graph LR
 - **Imported by:** `core/app.js` *(route handler — dynamic import)*
 - **Role:** Main reading surface. `index.js` is ~700 lines and owns render + position tracking + translation toggle. `scroll-tracker.js` computes the currently-visible verse for pill updates.
 - **Note:** does *not* import `marks/` directly — the `openEditor` / `setupLongPress` / `initIndicators` dependencies arrive via `hooks` injected by `router.register` in `app.js`. This keeps `reader/` independent of the marks subtree.
+
+### `state/`
+- **Files:** `ambient-chrome.js`, `command-sheet.js`, `mark-editor.js`, `reader.js`, `review.js`, `settings.js`, `surahs.js`, `sync.js`
+- **Imports from:** — *(zero imports — pure data containers)*
+- **Imported by:** `reader/index.js`, `review/hub.js`, `surahs/list.js`, `nav/command-sheet.js`, `nav/ambient-dock.js`, `nav/ambient-pill.js`, `marks/editor.js`, `settings/theme.js`, `settings/font-size.js`, `settings/panel.js`, `safety/sync.js`
+- **Role:** Application state containers extracted from feature modules. Each module exposes `get()` → snapshot and `set(patch)` → `Object.assign`. No IDB access, no events, no DOM — pure in-memory data. Enables isolated unit testing of state transitions without mounting surfaces.
 
 ### `review/`
 - **Files:** `hub.js`, `state.js`

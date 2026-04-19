@@ -85,6 +85,6 @@ The full event catalog — who emits, who listens, payload shapes, and dead even
 
 ## Where NOT to look for logic
 
-- No framework runtime, no reactive state library, no selectors. State lives in module-scoped variables inside each feature file, persisted to IDB. If you're asking "where's the store?" — the answer is "each surface owns its own state."
+- No framework runtime, no reactive state library, no selectors. State lives in `src/state/<surface>.js` modules; feature modules read via `state.get()` and write via `state.set(patch)`. State modules have zero imports — they are pure data containers. The mitt event bus continues to handle cross-surface notifications. DOM handles and event-listener refs remain in the feature files that own them.
 - No CSS-in-JS. All styles are in `src/core/theme.css`.
 - No routing library. `src/core/router.js` is ~170 lines and does everything.
