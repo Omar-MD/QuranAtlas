@@ -17,6 +17,7 @@ import { openMoreSheet } from '../nav/more-sheet.js'
 import { initAmbientDock } from '../nav/ambient-dock.js'
 import { initAmbientPill } from '../nav/ambient-pill.js'
 import { initCommandSheet } from '../nav/command-sheet.js'
+import { initReaderActions } from '../nav/reader-actions.js'
 import { init as initQuotaBanner } from './quota-banner.js'
 import { init as initIndicators } from '../marks/indicator.js'
 import { setupLongPress, openEditor } from '../marks/editor.js'
@@ -95,6 +96,7 @@ export async function init() {
 
     // Initialize settings gear panel, command sheet, and ambient nav chrome (pill + dock)
     bootCleanups.push(await initSettingsPanel())
+    bootCleanups.push(await initReaderActions())
     bootCleanups.push(await initCommandSheet())
     bootCleanups.push(await initAmbientDock())
     bootCleanups.push(await initAmbientPill())

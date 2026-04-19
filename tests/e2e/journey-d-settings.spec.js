@@ -84,52 +84,23 @@ test.describe('Journey D: Settings & appearance', () => {
   // D2. Pick a translation + visibility toggle
   // -------------------------------------------------------------------------
 
-  test('D2: tap Show translation row → translation picker sub-view with 4 options', async ({ page }) => {
+  test('D2: Show translation row subtitle reflects the shipped translation; picker is hidden when only one ships', async ({ page }) => {
     await openSettingsSheet(page)
 
-    // Tap the "Show translation" row body to open the picker
     const toggleBody = page.locator('.qa-settings-toggle-body')
     await expect(toggleBody).toBeVisible()
-    await toggleBody.click()
 
-    // Sheet should now show the translation picker sub-view
-    // Back button appears in the header
-    const backBtn = page.locator('.qa-sheet-back')
-    await expect(backBtn).toBeVisible({ timeout: 3_000 })
-
-    // All 4 translation options are listed
-    const choices = page.locator('.qa-settings-trans-choice')
-    await expect(choices).toHaveCount(4, { timeout: 3_000 })
-
-    // Verify name labels for the 4 options
-    const names = page.locator('.qa-settings-trans-name')
-    await expect(names.filter({ hasText: 'Saheeh International' })).toBeVisible()
-    await expect(names.filter({ hasText: 'Pickthall' })).toBeVisible()
-    await expect(names.filter({ hasText: 'Yusuf Ali' })).toBeVisible()
-    await expect(names.filter({ hasText: /Khattab/ })).toBeVisible()
-  })
-
-  test('D2: tap Pickthall → writes settings.translationId → returns to main view with updated subtitle', async ({ page }) => {
-    await openSettingsSheet(page)
-
-    // Open translation picker
-    await page.locator('.qa-settings-toggle-body').click()
-    await expect(page.locator('.qa-sheet-back')).toBeVisible({ timeout: 3_000 })
-
-    // Tap Pickthall
-    const pickthall = page.locator('.qa-settings-trans-choice').filter({ hasText: 'Pickthall' })
-    await expect(pickthall).toBeVisible()
-    await pickthall.click()
-
-    // Should return to main settings view (back button gone)
-    await expect(page.locator('.qa-sheet-back')).not.toBeVisible({ timeout: 3_000 })
-    await expect(page.locator('.qa-sheet--settings')).toBeVisible()
-
-    // Subtitle in the toggle row should now reflect Pickthall
+    // Subtitle names the translation actually bundled with the dataset
+    // (Bridges' Translation is the only translation in public/dataset today).
     const sub = page.locator('.qa-settings-toggle-sub')
-    await expect(sub).toContainText('Pickthall', { timeout: 3_000 })
+    await expect(sub).toContainText("Bridges", { timeout: 3_000 })
 
-    // Verify IDB write: settings.translationId = 'pickthall'
+    // With only one translation available, the row body is not a button
+    // and tapping it must not navigate to a picker sub-view.
+    await toggleBody.click()
+    await expect(page.locator('.qa-sheet-back')).toHaveCount(0)
+
+    // And translationId persisted in IDB matches the bundled id.
     const stored = await page.evaluate(() => new Promise((resolve, reject) => {
       const open = indexedDB.open('quran-atlas')
       open.onsuccess = () => {
@@ -142,22 +113,7 @@ test.describe('Journey D: Settings & appearance', () => {
       }
       open.onerror = () => reject(open.error)
     }))
-    expect(stored).toBe('pickthall')
-  })
-
-  test('D2: tap back button in picker → returns to main Settings view', async ({ page }) => {
-    await openSettingsSheet(page)
-
-    // Open picker
-    await page.locator('.qa-settings-toggle-body').click()
-    await expect(page.locator('.qa-sheet-back')).toBeVisible({ timeout: 3_000 })
-
-    // Tap back
-    await page.locator('.qa-sheet-back').click()
-
-    // Main view restored: theme swatches visible again, back button gone
-    await expect(page.locator('.qa-sheet-back')).not.toBeVisible({ timeout: 3_000 })
-    await expect(page.locator('.qa-theme-swatch').first()).toBeVisible()
+    expect(stored).toBe('bridges')
   })
 
   test('D2: toggle translation-visibility switch → switch state flips → IDB writes → DOM hides translations', async ({ page }) => {

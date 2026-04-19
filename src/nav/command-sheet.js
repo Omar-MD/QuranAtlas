@@ -11,9 +11,20 @@ import { getSurahs, getSurah } from '../data/dataset.js'
 import { getMeaning } from '../data/surah-meanings.js'
 import { getAll as getAllMarks } from '../marks/store.js'
 import { getAllUsedTags, getColorForTag } from '../marks/tags.js'
-import { setTheme } from '../settings/theme.js'
-import { setFontSize, loadFontSize, getFontSizeOptions } from '../settings/font-size.js'
-import { get } from '../core/db.js'
+import { setTheme, cycleTheme } from '../settings/theme.js'
+import { setFontSize, loadFontSize, getFontSizeOptions, resetFontSize } from '../settings/font-size.js'
+import { toggleTranslation } from '../settings/panel.js'
+import {
+  nextVerse as readerNextVerse,
+  prevVerse as readerPrevVerse,
+  nextSurah as readerNextSurah,
+  prevSurah as readerPrevSurah,
+  firstVerse as readerFirstVerse,
+  lastVerse as readerLastVerse,
+  markCurrent as readerMarkCurrent,
+} from './reader-actions.js'
+import { openShortcutsSheet, isShortcutsSheetOpen } from './shortcuts-sheet.js'
+import { getMostRecentPosition, get } from '../core/db.js'
 import { announce } from '../a11y/announcer.js'
 
 const MAX_SURAH = 6
@@ -269,9 +280,10 @@ async function renderEmptyState(container, itemsList) {
   }
 
   const jumps = [
-    { kind: 'action', glyph: '\u2726', label: 'Review hub', meta: 'All your marks', href: '#/review', shortcut: 'G R' },
-    { kind: 'action', glyph: '\u2630', label: 'Browse all surahs', meta: '114 surahs', href: '#/surahs', shortcut: 'G S' },
-    { kind: 'action', glyph: '\u2699', label: 'Settings', meta: 'Theme · font · translation', href: '#/settings', shortcut: 'G ,' },
+    { kind: 'action', glyph: '\u2726', label: 'Review hub',        meta: 'All your marks',               href: '#/review',   shortcut: 'G R' },
+    { kind: 'action', glyph: '\u2630', label: 'Browse all surahs', meta: '114 surahs',                   href: '#/surahs',   shortcut: 'G S' },
+    { kind: 'action', glyph: '\u24D8', label: 'About',             meta: 'Credits · version',            href: '#/about',    shortcut: 'G A' },
+    { kind: 'action', glyph: '\u2699', label: 'Preferences',       meta: 'Theme · font · translation',   href: '#/settings', shortcut: 'G P' },
   ]
   container.appendChild(renderGroup({ title: 'Jump to', items: jumps }, itemsList))
 }
@@ -317,9 +329,9 @@ async function renderVersePreview(s, v, container, itemsList) {
   }
 
   const items = [
-    { kind: 'verse', glyph: '\u21B5', surah: s, verse: v, label: 'Open verse', meta: `Scroll reader to ${s}:${v}` },
-    { kind: 'action', glyph: '\u2726', label: 'Mark this verse', meta: `Open mark editor for ${s}:${v}`, doMark: { verseKey: `${s}:${v}` }, shortcut: 'M' },
-    { kind: 'action', glyph: '\u2398', label: 'Copy reference', meta: `"${s}:${v}" to clipboard`, doCopy: `${s}:${v}` },
+    { kind: 'verse', glyph: '\u21B5', surah: s, verse: v, label: 'Open verse', meta: `Scroll reader to ${s}:${v}`, group: 'Verse' },
+    { kind: 'action', glyph: '\u2726', label: 'Mark this verse', meta: `Open mark editor for ${s}:${v}`, doMark: { verseKey: `${s}:${v}` }, shortcut: 'M', group: 'Verse' },
+    { kind: 'action', glyph: '\u2398', label: 'Copy reference', meta: `"${s}:${v}" to clipboard`, doCopy: `${s}:${v}`, group: 'Verse' },
   ]
   const wrap = document.createElement('div')
   wrap.className = 'qa-cmd-group'
@@ -344,6 +356,8 @@ function renderGroup(group, itemsList) {
   wrap.className = 'qa-cmd-group'
   wrap.appendChild(renderGroupHeader({ title: group.title, count: group.items.length }))
   for (const item of group.items) {
+    // Stamp the group title so Tab can jump between groups in onKeydown.
+    item.group = group.title
     wrap.appendChild(renderItem(item, itemsList))
   }
   return wrap
@@ -454,7 +468,54 @@ async function bumpFont(dir) {
   announce(`Font size: ${next}`)
 }
 
+function isTextEntry(target) {
+  if (!target) { return false }
+  if (['INPUT', 'TEXTAREA'].includes(target.tagName)) { return true }
+  return target.isContentEditable === true
+}
+
+function isReaderRoute() {
+  return (window.location?.hash || '').startsWith('#/s/')
+}
+
+function clearChord() {
+  gChordPending = false
+  if (gChordTimer) { clearTimeout(gChordTimer); gChordTimer = null }
+}
+
+async function gotoHome() {
+  try {
+    const pos = await getMostRecentPosition()
+    if (pos?.surah) {
+      window.location.hash = pos.verse > 1 ? `#/s/${pos.surah}/${pos.verse}` : `#/s/${pos.surah}`
+      return
+    }
+  } catch { /* ignore */ }
+  window.location.hash = '#/s/1'
+}
+
+function tabToNextGroup(dir) {
+  if (flatItems.length === 0) { return }
+  const cur = flatItems[activeIndex]?.item?.group
+  if (!cur) {
+    activeIndex = dir > 0 ? 0 : flatItems.length - 1
+    applyActive()
+    return
+  }
+  const len = flatItems.length
+  for (let step = 1; step <= len; step++) {
+    const i = ((activeIndex + dir * step) % len + len) % len
+    if (flatItems[i].item.group !== cur) {
+      activeIndex = i
+      applyActive()
+      return
+    }
+  }
+}
+
 function onKeydown(e) {
+  // ⌘K / Ctrl+K — toggle command sheet. Always fires regardless of focus
+  // (parity with industry convention; preventDefault stops browser use).
   const isK = e.key === 'k' || e.key === 'K'
   if (isK && (e.metaKey || e.ctrlKey)) {
     e.preventDefault()
@@ -462,55 +523,98 @@ function onKeydown(e) {
     return
   }
 
-  // Global font size shortcut: ⌘↑ / ⌘↓ (or Ctrl on non-Mac)
-  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey) {
-    const target = e.target
-    const isFormField = target && (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable)
-    if (!isFormField) {
-      if (e.key === 'ArrowUp')   { e.preventDefault(); bumpFont(+1); return }
-      if (e.key === 'ArrowDown') { e.preventDefault(); bumpFont(-1); return }
-    }
-  }
+  // If the shortcuts cheatsheet is open, let its own Esc handler close it —
+  // don't process any other shortcut while it's up.
+  if (isShortcutsSheetOpen()) { return }
 
-  if (!isOpen) {
-    if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) { return }
-    if (e.key === 'g' || e.key === 'G') {
-      gChordPending = true
-      if (gChordTimer) { clearTimeout(gChordTimer) }
-      gChordTimer = setTimeout(() => { gChordPending = false; gChordTimer = null }, 900)
+  const textField = isTextEntry(e.target)
+
+  if (isOpen) {
+    // In-sheet navigation. Tab cycles to the first item of the next group.
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      tabToNextGroup(e.shiftKey ? -1 : +1)
       return
     }
-    if (gChordPending) {
-      if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault(); gChordPending = false; if (gChordTimer) { clearTimeout(gChordTimer); gChordTimer = null }
-        window.location.hash = '#/review'; return
-      }
-      if (e.key === 's' || e.key === 'S') {
-        e.preventDefault(); gChordPending = false; if (gChordTimer) { clearTimeout(gChordTimer); gChordTimer = null }
-        window.location.hash = '#/surahs'; return
-      }
-      if (e.key === ',') {
-        e.preventDefault(); gChordPending = false; if (gChordTimer) { clearTimeout(gChordTimer); gChordTimer = null }
-        window.location.hash = '#/settings'; return
-      }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (flatItems.length === 0) { return }
+      activeIndex = (activeIndex + 1) % flatItems.length
+      applyActive()
+      return
     }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (flatItems.length === 0) { return }
+      activeIndex = (activeIndex - 1 + flatItems.length) % flatItems.length
+      applyActive()
+      return
+    }
+    if (e.key === 'Enter') {
+      if (flatItems.length === 0) { return }
+      e.preventDefault()
+      activate(flatItems[activeIndex].item)
+      return
+    }
+    // All other keys (including `/`) go to the input when the sheet is open.
     return
   }
 
-  if (e.key === 'ArrowDown') {
+  // Everything below this line only applies with the sheet closed AND with
+  // no text-entry focused.
+  if (textField) { return }
+
+  // Bare Esc / backspace on a non-modal surface: nothing to do here.
+  if (e.metaKey || e.ctrlKey || e.altKey) { return }
+
+  // `/` — open the command sheet (Gmail/GitHub convention).
+  if (e.key === '/') {
     e.preventDefault()
-    if (flatItems.length === 0) { return }
-    activeIndex = (activeIndex + 1) % flatItems.length
-    applyActive()
-  } else if (e.key === 'ArrowUp') {
+    openCommandSheet()
+    return
+  }
+
+  // `?` — shortcuts cheatsheet (Shift+/ on US layouts → e.key === '?').
+  if (e.key === '?') {
     e.preventDefault()
-    if (flatItems.length === 0) { return }
-    activeIndex = (activeIndex - 1 + flatItems.length) % flatItems.length
-    applyActive()
-  } else if (e.key === 'Enter') {
-    if (flatItems.length === 0) { return }
-    e.preventDefault()
-    activate(flatItems[activeIndex].item)
+    openShortcutsSheet()
+    return
+  }
+
+  // `g <letter>` chord: nav jumps.
+  if (e.key === 'g' || e.key === 'G') {
+    gChordPending = true
+    if (gChordTimer) { clearTimeout(gChordTimer) }
+    gChordTimer = setTimeout(() => { gChordPending = false; gChordTimer = null }, 900)
+    return
+  }
+  if (gChordPending) {
+    const k = e.key.toLowerCase()
+    if (k === 'h') { e.preventDefault(); clearChord(); gotoHome(); return }
+    if (k === 's') { e.preventDefault(); clearChord(); window.location.hash = '#/surahs'; return }
+    if (k === 'r') { e.preventDefault(); clearChord(); window.location.hash = '#/review'; return }
+    if (k === 'a') { e.preventDefault(); clearChord(); window.location.hash = '#/about'; return }
+    if (k === 'p') { e.preventDefault(); clearChord(); window.location.hash = '#/settings'; return }
+    // Any other key breaks the chord.
+    clearChord()
+  }
+
+  // Reader-only single-key shortcuts.
+  if (!isReaderRoute()) { return }
+
+  switch (e.key) {
+    case 'j': e.preventDefault(); readerNextVerse(); return
+    case 'k': e.preventDefault(); readerPrevVerse(); return
+    case ']': e.preventDefault(); readerNextSurah(); return
+    case '[': e.preventDefault(); readerPrevSurah(); return
+    case 'Home': e.preventDefault(); readerFirstVerse(); return
+    case 'End':  e.preventDefault(); readerLastVerse();  return
+    case 'm': case 'M': e.preventDefault(); readerMarkCurrent(); return
+    case 't': case 'T': e.preventDefault(); toggleTranslation(); return
+    case 'd': case 'D': e.preventDefault(); cycleTheme(); return
+    case '+': case '=': e.preventDefault(); bumpFont(+1); return
+    case '-': case '_': e.preventDefault(); bumpFont(-1); return
+    case '0': e.preventDefault(); resetFontSize().then(() => announce('Font size reset')); return
   }
 }
 

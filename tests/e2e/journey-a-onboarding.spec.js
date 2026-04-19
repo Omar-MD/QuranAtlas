@@ -41,13 +41,12 @@ async function advanceToScreen3(page) {
 
 /**
  * Advance from screen 3 (Translation) through screen 4 (Shortcuts) to screen 5 (Tags intro).
- * Picks "Pickthall" translation on screen 3.
+ * The dataset currently ships a single translation (Bridges'), which is
+ * auto-selected; the user just taps Continue.
  */
 async function advanceToScreen4(page) {
-  // Pick Pickthall (second item in the list)
-  const pickthall = page.locator('.qa-onb-t').filter({ hasText: 'Pickthall' })
-  await pickthall.click()
-  await expect(pickthall).toHaveClass(/qa-onb-t--on/)
+  const firstOption = page.locator('.qa-onb-t').first()
+  await expect(firstOption).toHaveClass(/qa-onb-t--on/)
 
   // Continue → Screen 4 (Shortcuts)
   await page.locator('.qa-onb-cta--primary').click()
@@ -120,18 +119,14 @@ test.describe('Journey A: First run & session restore', () => {
     await page.locator('.qa-onb-cta--primary').click()
     await expect(page.locator('.qa-onb-tlist')).toBeVisible({ timeout: 8_000 })
 
-    // 4 translation options; Saheeh is selected by default
-    await expect(page.locator('.qa-onb-t')).toHaveCount(4)
-    const saheehOption = page.locator('.qa-onb-t').filter({ hasText: 'Saheeh' })
-    await expect(saheehOption).toHaveClass(/qa-onb-t--on/)
+    // Translation options derive from dataset provenance; today the dataset
+    // ships exactly one translation (Bridges'), which is auto-selected.
+    const options = page.locator('.qa-onb-t')
+    const optionCount = await options.count()
+    expect(optionCount).toBeGreaterThan(0)
+    await expect(options.first()).toHaveClass(/qa-onb-t--on/)
 
-    // Step 5: Pick Pickthall → Continue → Screen 4 (Shortcuts)
-    const pickthall = page.locator('.qa-onb-t').filter({ hasText: 'Pickthall' })
-    await pickthall.click()
-    await expect(pickthall).toHaveClass(/qa-onb-t--on/)
-    // Saheeh is no longer active
-    await expect(saheehOption).not.toHaveClass(/qa-onb-t--on/)
-
+    // Step 5: Continue → Screen 4 (Shortcuts)
     await page.locator('.qa-onb-cta--primary').click()
 
     // Screen 4 (Shortcuts): keyboard shortcut grid with ≥1 rows
@@ -323,20 +318,9 @@ test.describe('Journey A: First run & session restore', () => {
     await expect(page.locator('.qa-onb-tlist')).toBeVisible({ timeout: 8_000 })
 
     // --- Screen 3 (Translation) ---
-    // Tab to Pickthall and activate
-    let pickthallFocused = false
-    for (let i = 0; i < 10 && !pickthallFocused; i++) {
-      await page.keyboard.press('Tab')
-      pickthallFocused = await page.evaluate(() => {
-        const el = document.activeElement
-        return el?.classList?.contains('qa-onb-t') &&
-          (el?.textContent?.includes('Pickthall') ?? false)
-      })
-    }
-    expect(pickthallFocused).toBe(true)
-    await page.keyboard.press('Enter')
-    const pickthallOption = page.locator('.qa-onb-t').filter({ hasText: 'Pickthall' })
-    await expect(pickthallOption).toHaveClass(/qa-onb-t--on/)
+    // Dataset ships a single translation which is auto-selected; just tab past.
+    const firstOption = page.locator('.qa-onb-t').first()
+    await expect(firstOption).toHaveClass(/qa-onb-t--on/)
 
     // Tab to Continue
     continueFocused = false

@@ -51,6 +51,13 @@ export async function setFontSize(size) {
   return true
 }
 
+/**
+ * Reset the font-size preference to the default step (md).
+ */
+export async function resetFontSize() {
+  return setFontSize(DEFAULT_SIZE)
+}
+
 export async function initFontSize() {
   const size = await loadFontSize()
   applyFontSize(size)

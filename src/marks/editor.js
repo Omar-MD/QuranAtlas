@@ -122,6 +122,16 @@ export async function openEditor(verseKey) {
     enLine.textContent = data?.en?.[v - 1] || ''
   }).catch(() => { /* keep ellipses */ })
 
+  // Column wrappers: at desktop the body becomes a 2-column grid; each column
+  // is a flex-column so the note textarea can flex-grow to match the right
+  // column's natural height (no dead space under "Selected").
+  const leftCol = document.createElement('div')
+  leftCol.className = 'qa-mark-body-left'
+  const rightCol = document.createElement('div')
+  rightCol.className = 'qa-mark-body-right'
+  body.appendChild(leftCol)
+  body.appendChild(rightCol)
+
   // Note textarea
   const noteLabel = document.createElement('label')
   noteLabel.className = 'qa-mark-label'
@@ -132,8 +142,8 @@ export async function openEditor(verseKey) {
   note.maxLength = 500
   note.value = noteValue
   note.setAttribute('placeholder', 'A thought to revisit…')
-  body.appendChild(noteLabel)
-  body.appendChild(note)
+  leftCol.appendChild(noteLabel)
+  leftCol.appendChild(note)
 
   // Selected strip
   const selStrip = document.createElement('div')
@@ -163,7 +173,7 @@ export async function openEditor(verseKey) {
   selStrip.appendChild(selHead)
   selStrip.appendChild(selChips)
   selStrip.appendChild(selEmpty)
-  body.appendChild(selStrip)
+  leftCol.appendChild(selStrip)
 
   // Tag search
   const searchWrap = document.createElement('div')
@@ -184,7 +194,7 @@ export async function openEditor(verseKey) {
   searchWrap.appendChild(searchIcon)
   searchWrap.appendChild(searchInput)
   searchWrap.appendChild(searchCount)
-  body.appendChild(searchWrap)
+  rightCol.appendChild(searchWrap)
 
   // All tags region
   const allHead = document.createElement('div')
@@ -198,8 +208,8 @@ export async function openEditor(verseKey) {
   allHead.appendChild(allCount)
   const allChips = document.createElement('div')
   allChips.className = 'qa-mark-chips qa-mark-chips--all'
-  body.appendChild(allHead)
-  body.appendChild(allChips)
+  rightCol.appendChild(allHead)
+  rightCol.appendChild(allChips)
 
   // Footer
   const footer = document.createElement('div')

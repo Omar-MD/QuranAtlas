@@ -63,22 +63,17 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('src/reader/index.js')) return 'reader'
-          if (id.includes('src/nav/index.js')) return 'nav'
-          if (id.includes('src/marks/')) return 'marks'
-          if (id.includes('src/review/hub.js')) return 'review'
-          if (id.includes('src/settings/index.js')) return 'settings'
-          if (id.includes('src/about/index.js')) return 'about'
+          if (id.includes('src/reader/index.js')) { return 'reader' }
+          if (id.includes('src/nav/index.js')) { return 'nav' }
+          if (id.includes('src/marks/')) { return 'marks' }
+          if (id.includes('src/review/hub.js')) { return 'review' }
+          if (id.includes('src/settings/index.js')) { return 'settings' }
+          if (id.includes('src/about/index.js')) { return 'about' }
         }
       }
     }
   },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version)
-  },
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['tests/setup.js'],
-    globals: true,
   }
 })

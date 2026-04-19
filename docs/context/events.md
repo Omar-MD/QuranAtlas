@@ -72,12 +72,6 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 |---|---|---|---|
 | `AMBIENT_HIDE` | `ambient:hide` | `nav/ambient-dock.js:118`, `nav/ambient-pill.js:76` | No emitter. Chrome fade-out is currently driven locally (scroll, timeout) rather than via this bus event. |
 
-### Fully dead
-
-| Event | Value | Notes |
-|---|---|---|
-| `READER_VERSE_ACTIVATED` | `reader:verse-activated` | Neither emitted nor listened. Safe to delete once you're sure no near-term plan expects it. |
-
 ## Adding a new event
 
 1. Add the constant to `core/constants.js::Events` (SCREAMING_SNAKE key, `domain:kebab-case` value).

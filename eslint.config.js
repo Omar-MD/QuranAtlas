@@ -51,5 +51,11 @@ export default [
       'no-eval': 'error',
       'no-implied-eval': 'error'
     }
+  },
+  {
+    files: ['src/core/logger.js'],
+    rules: {
+      'no-console': 'off'
+    }
   }
 ]

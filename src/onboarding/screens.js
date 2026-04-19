@@ -3,7 +3,9 @@
  */
 
 import { setTheme, loadTheme, getThemeOptions } from '../settings/theme.js'
-import { put } from '../core/db.js'
+import { get, put } from '../core/db.js'
+import { getTranslations } from '../data/dataset.js'
+import { logger } from '../core/logger.js'
 
 export async function renderScreen(wrap, n, cb) {
   const page = document.createElement('div')
@@ -152,17 +154,25 @@ async function renderTranslation(page, cb) {
 
   const lede = document.createElement('p')
   lede.className = 'qa-onb-lede'
-  lede.textContent = 'All translations ship offline. Switch between them per verse later.'
   page.appendChild(lede)
 
-  const opts = [
-    { id: 'saheeh',    name: 'Saheeh International', sub: 'Plain modern English · widely used', meta: 'Default' },
-    { id: 'pickthall', name: 'Pickthall',            sub: 'Classical, reverent phrasing · 1930' },
-    { id: 'yusuf',     name: 'Yusuf Ali',            sub: 'Literary, with commentary voice' },
-    { id: 'khattab',   name: 'Clear Qur\u2019an — Dr. Mustafa Khattab', sub: 'Contemporary, accessible' },
-  ]
+  let opts = []
+  try {
+    opts = await getTranslations()
+  } catch (error) {
+    logger.error('Failed to load translations for onboarding', { error })
+  }
 
-  let selected = 'saheeh'
+  lede.textContent = opts.length > 1
+    ? 'All translations ship offline. Switch between them per verse later.'
+    : 'This translation ships offline with the app.'
+
+  const savedId = (await get('settings', 'translationId'))?.value
+  let selected = opts.find(o => o.id === savedId)?.id || opts[0]?.id || null
+  if (selected && selected !== savedId) {
+    try { await put('settings', { key: 'translationId', value: selected }) } catch { /* ignore */ }
+  }
+
   const list = document.createElement('div')
   list.className = 'qa-onb-tlist'
   for (const o of opts) {
@@ -178,18 +188,13 @@ async function renderTranslation(page, cb) {
     name.textContent = o.name
     const sub = document.createElement('span')
     sub.className = 'qa-onb-t-sub'
-    sub.textContent = o.sub
+    sub.textContent = o.subtitle
     body.appendChild(name)
-    body.appendChild(sub)
+    if (o.subtitle) { body.appendChild(sub) }
     row.appendChild(radio)
     row.appendChild(body)
-    if (o.meta) {
-      const meta = document.createElement('span')
-      meta.className = 'qa-onb-t-meta'
-      meta.textContent = o.meta
-      row.appendChild(meta)
-    }
     row.addEventListener('click', async () => {
+      if (opts.length < 2) { return }
       selected = o.id
       try { await put('settings', { key: 'translationId', value: o.id }) } catch { /* ignore */ }
       for (const r of list.querySelectorAll('.qa-onb-t')) {
@@ -282,9 +287,6 @@ function renderTagsIntro(page, cb) {
 }
 
 function renderShortcuts(page, cb) {
-  const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.platform)
-  const cmd = isMac ? '\u2318' : 'Ctrl' // ⌘
-
   const headline = document.createElement('h1')
   headline.className = 'qa-onb-headline'
   headline.textContent = 'A few shortcuts'
@@ -292,19 +294,24 @@ function renderShortcuts(page, cb) {
 
   const lede = document.createElement('p')
   lede.className = 'qa-onb-lede'
-  lede.textContent = 'QuranAtlas is faster than tapping. These work anywhere in the app.'
+  lede.textContent = 'QuranAtlas is faster than tapping. Press ? any time to see the full list.'
   page.appendChild(lede)
 
   const grid = document.createElement('div')
   grid.className = 'qa-onb-shortcuts'
 
+  // Curated essentials: enough to feel the speed-up without overwhelming.
+  // Full list lives behind `?` in-app (src/nav/shortcuts-sheet.js).
   const rows = [
-    { keys: [cmd, 'K'],           desc: 'Search verses, tags, surahs' },
-    { keys: [cmd, '\u2191'],      desc: 'Bigger font', aux: [cmd, '\u2193', 'Smaller font'] },
-    { keys: ['g', 'r'],           desc: 'Review hub' },
-    { keys: ['g', 's'],           desc: 'Surah list' },
-    { keys: ['g', ','],           desc: 'Settings' },
-    { keys: ['Long-press'],       desc: 'Mark & tag a verse', gesture: true },
+    { keys: ['/'],             desc: 'Search verses, tags, surahs' },
+    { keys: ['?'],             desc: 'Show every shortcut' },
+    { keys: ['j'],             desc: 'Next verse',  aux: ['k', 'previous'] },
+    { keys: [']'],             desc: 'Next surah',  aux: ['[', 'previous'] },
+    { keys: ['m'],             desc: 'Mark the centered verse' },
+    { keys: ['t'],             desc: 'Toggle translation' },
+    { keys: ['+'],             desc: 'Bigger font', aux: ['-', 'smaller', '0', 'reset'] },
+    { keys: ['g', 'h'],        desc: 'Continue reading' },
+    { keys: ['Long-press'],    desc: 'Mark & tag a verse', gesture: true },
   ]
 
   for (const r of rows) {
@@ -313,10 +320,10 @@ function renderShortcuts(page, cb) {
 
     const kbdWrap = document.createElement('div')
     kbdWrap.className = 'qa-onb-shortcut-keys'
-    for (let i = 0; i < r.keys.length; i++) {
+    for (const k of r.keys) {
       const kbd = document.createElement('kbd')
       kbd.className = 'qa-onb-kbd' + (r.gesture ? ' qa-onb-kbd--gesture' : '')
-      kbd.textContent = r.keys[i]
+      kbd.textContent = k
       kbdWrap.appendChild(kbd)
     }
     row.appendChild(kbdWrap)

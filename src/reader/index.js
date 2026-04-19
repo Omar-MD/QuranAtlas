@@ -68,9 +68,9 @@ async function fetchSurahData({ surahNum }) {
 }
 
 /**
- * Render surah content: header, basmala, resume indicator, verse chunks, end marker, top bar.
+ * Render surah content: header, basmala, verse chunks, end marker.
  */
-function renderSurahContent({ mainContent, topBar, surah, surahMeta, translationVisible, _savedPosition, _targetVerse, surahNum }) {
+function renderSurahContent({ mainContent, surah, surahMeta, translationVisible, _savedPosition, _targetVerse, surahNum }) {
   mainContent.innerHTML = ''
   renderSurahHeader(mainContent, surahMeta)
   renderBasmala(mainContent, surahNum)
@@ -81,11 +81,6 @@ function renderSurahContent({ mainContent, topBar, surah, surahMeta, translation
   isRendering = false
 
   renderSurahEnd(mainContent, surahMeta)
-  // Remove stale EN toggle button from previous renders; translation toggle lives in the settings panel.
-  if (topBar) {
-    const stale = topBar.querySelector('.qa-toggle-btn')
-    if (stale) { stale.remove() }
-  }
 }
 
 /**
@@ -240,7 +235,6 @@ export async function init(
   currentSurahNum = surahNum
 
   const mainContent = document.getElementById('main-content')
-  const topBar = document.getElementById('top-bar')
   if (!mainContent) {
     return
   }
@@ -266,7 +260,7 @@ export async function init(
     const targetVerse = params.ayah ? parseInt(params.ayah, 10) : null
 
     renderSurahContent({
-      mainContent, topBar,
+      mainContent,
       surah: data.surah, surahMeta: data.surahMeta,
       translationVisible: data.translationVisible,
       savedPosition: data.savedPosition, targetVerse,

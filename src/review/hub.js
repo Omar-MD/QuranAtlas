@@ -345,7 +345,7 @@ function render(container) {
     } else if (currentState.groupBy === 'flat' && _railActiveGroup !== null) {
       filteredMarks = filteredMarks.filter(m => {
         const d = m.createdAt ? new Date(m.createdAt) : null
-        if (!d) return false
+        if (!d) {return false}
         const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
         return ym === _railActiveGroup
       })
@@ -406,7 +406,7 @@ function render(container) {
       x.addEventListener('click', () => {
         _railActiveTags.delete(tag)
         const mc = document.getElementById('main-content')
-        if (mc) render(mc)
+        if (mc) {render(mc)}
       })
       chip.appendChild(x)
       bar.appendChild(chip)
@@ -419,7 +419,7 @@ function render(container) {
     clearAll.addEventListener('click', () => {
       _railActiveTags = new Set()
       const mc = document.getElementById('main-content')
-      if (mc) render(mc)
+      if (mc) {render(mc)}
     })
     bar.appendChild(clearAll)
 
@@ -539,7 +539,7 @@ function buildRail() {
       _railActiveTags = new Set()
       saveState(currentState).catch(() => {})
       const mc = document.getElementById('main-content')
-      if (mc) render(mc)
+      if (mc) {render(mc)}
     })
     seg.appendChild(btn)
   }
@@ -583,7 +583,7 @@ function buildRail() {
         _railActiveGroup = _railActiveGroup === bucket.key ? null : bucket.key
       }
       const mc = document.getElementById('main-content')
-      if (mc) render(mc)
+      if (mc) {render(mc)}
     })
     rail.appendChild(row)
   }
@@ -624,7 +624,7 @@ function computeRailBuckets(marks, groupBy) {
   const byMonth = new Map()
   for (const m of marks) {
     const d = m.createdAt ? new Date(m.createdAt) : null
-    if (!d) continue
+    if (!d) {continue}
     const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     byMonth.set(ym, (byMonth.get(ym) || 0) + 1)
   }

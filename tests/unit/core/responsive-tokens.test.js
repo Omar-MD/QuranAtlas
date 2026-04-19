@@ -72,43 +72,18 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(hit[1]).toMatch(/\.qa-verse\s*\{[^}]*padding:\s*2\.25rem\s+0/)
   })
 
-  it('at desktop, #main-content becomes a 2-column grid (scoped to reader via :has)', () => {
+  it('at desktop, reader #main-content caps at 960px for a comfortable reading measure', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /#main-content(?::has\([^)]+\))?\s*\{[^}]*display:\s*grid/.test(b[1]) &&
-      /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/.test(b[1])
+      /#main-content:has\(\.qa-verse\)\s*\{[^}]*max-width:\s*960px/.test(b[1])
     )
-    expect(hit, 'expected a min-width: 1180px block making #main-content a 2-col grid').toBeDefined()
+    expect(hit, 'expected a min-width: 1180px block capping #main-content:has(.qa-verse) at 960px').toBeDefined()
   })
 
-  it('at desktop, .qa-verse uses subgrid for row alignment', () => {
+  it('at desktop, .qa-verse-arabic stacks above translation with margin-bottom', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
-    const hit = blocks.find(b => /\.qa-verse\s*\{[^}]*grid-template-columns:\s*subgrid/.test(b[1]))
-    expect(hit, 'expected .qa-verse to use subgrid at desktop').toBeDefined()
-  })
-
-  it('at desktop, non-verse children of #main-content span both columns', () => {
-    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
-    const hit = blocks.find(b =>
-      /\.qa-surah-header[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(b[1]) &&
-      /\.qa-basmala[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(b[1]) &&
-      /\.qa-surah-end[^{]*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(b[1])
-    )
-    expect(hit, 'expected header/basmala/end-marker to span both columns').toBeDefined()
-  })
-
-  it('at desktop, .qa-verse-arabic uses text-align: start (right under RTL)', () => {
-    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
-    const hit = blocks.find(b => /\.qa-verse-arabic\s*\{[^}]*text-align:\s*start/.test(b[1]))
-    expect(hit, 'expected .qa-verse-arabic text-align: start at desktop').toBeDefined()
-  })
-
-  it('at desktop, container collapses to single column when translation hidden (uses :has)', () => {
-    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
-    const hit = blocks.find(b => /:has\(\s*\.qa-verse-translation\.qa-hide-translation\s*\)/.test(b[1]))
-    expect(hit, 'expected a desktop :has() rule for translation-off collapse').toBeDefined()
-    // container max-width shrinks to 900px in the translation-hidden state
-    expect(hit[1]).toMatch(/max-width:\s*900px/)
+    const hit = blocks.find(b => /\.qa-verse-arabic\s*\{[^}]*margin-bottom:\s*1\.5rem/.test(b[1]))
+    expect(hit, 'expected .qa-verse-arabic margin-bottom: 1.5rem at desktop').toBeDefined()
   })
 
   it('bumps .qa-dock-item size at tablet (42×42px)', () => {
@@ -168,14 +143,22 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(hit, 'expected .qa-mark-body to be 2-col grid at desktop').toBeDefined()
   })
 
-  it('at desktop, mark-body left column hosts note + selected pills; right hosts all-tags', () => {
+  it('at desktop, mark-body wraps items in flex-column left/right containers so the note textarea flex-grows to match chip-column height', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
-    const hit = blocks.find(b =>
-      /\.qa-mark-note[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
-      /\.qa-mark-selected[^{]*\{[^}]*grid-column:\s*1/.test(b[1]) &&
-      /\.qa-mark-chips--all[^{]*\{[^}]*grid-column:\s*2/.test(b[1])
-    )
-    expect(hit, 'expected note+selected pills in col 1 and all-tags chips in col 2').toBeDefined()
+    const hit = blocks.find(b => {
+      const css = b[1]
+      // quote spans both grid columns
+      if (!/\.qa-mark-body\s*>\s*\.qa-mark-quote\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/.test(css)) { return false }
+      // both wrapper selectors present together, with flex column
+      const wrapperRule = css.match(/\.qa-mark-body-left[^{]*\.qa-mark-body-right\s*\{([^}]*)\}/s)
+      if (!wrapperRule) { return false }
+      if (!/display:\s*flex/.test(wrapperRule[1])) { return false }
+      if (!/flex-direction:\s*column/.test(wrapperRule[1])) { return false }
+      // note flex-grows inside the left wrapper
+      if (!/\.qa-mark-body-left\s*>\s*\.qa-mark-note\s*\{[^}]*flex:\s*1\s+1/.test(css)) { return false }
+      return true
+    })
+    expect(hit, 'expected mark-body to wrap items in flex-column left/right with note flex-growing to match chips height').toBeDefined()
   })
 
   it('at desktop, .qa-cmd-sheet caps max-width at 640px', () => {

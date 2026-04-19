@@ -10,6 +10,15 @@ async function flushMicrotasks() {
   await new Promise((resolve) => setTimeout(resolve, 0))
 }
 
+async function waitFor(predicate, { timeoutMs = 1000, intervalMs = 10 } = {}) {
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    if (predicate()) { return }
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
+  throw new Error('waitFor timed out')
+}
+
 describe('core/quota-banner.js', () => {
   let clear
   let emit
@@ -39,7 +48,7 @@ describe('core/quota-banner.js', () => {
     quotaBanner.init()
 
     emit('storage:quota-warning')
-    await flushMicrotasks()
+    await waitFor(() => document.querySelector('.qa-quota-banner') !== null)
 
     const banner = document.querySelector('.qa-quota-banner')
     const dismissBtn = document.querySelector('.qa-quota-banner-dismiss')
@@ -48,7 +57,7 @@ describe('core/quota-banner.js', () => {
     expect(dismissBtn).not.toBeNull()
 
     dismissBtn.click()
-    await flushMicrotasks()
+    await waitFor(() => document.querySelector('.qa-quota-banner') === null)
 
     expect(document.querySelector('.qa-quota-banner')).toBeNull()
     expect(await get('settings', SUPPRESS_KEY)).toEqual({ key: SUPPRESS_KEY, value: true })

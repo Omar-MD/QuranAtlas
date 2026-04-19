@@ -182,7 +182,7 @@ describe('nav/command-sheet.js — resolver + rendering', () => {
     const items = document.querySelectorAll('.qa-cmd-item')
     const labels = Array.from(items).map(el => el.querySelector('.qa-cmd-item-label')?.textContent)
     expect(labels).toContain('Review hub')
-    expect(labels).toContain('Settings')
+    expect(labels).toContain('Preferences')
   })
 
   it('renders a Surahs group matching by number', async () => {

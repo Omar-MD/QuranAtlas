@@ -422,28 +422,6 @@ describe('reader/index.js', () => {
     expect(document.querySelector('.qa-undo-toast')).toBeNull()
   })
 
-  it('preserves hamburger toggle in top-bar and removes any stale EN toggle', async () => {
-    const topBar = document.getElementById('top-bar')
-    const hamburger = document.createElement('button')
-    hamburger.className = 'qa-nav-toggle'
-    hamburger.textContent = '☰'
-    topBar.appendChild(hamburger)
-
-    const staleToggle = document.createElement('button')
-    staleToggle.className = 'qa-toggle-btn'
-    staleToggle.textContent = 'EN ▾'
-    topBar.appendChild(staleToggle)
-
-    const { init } = await import('../../../src/reader/index.js')
-    await init({ surah: '1' })
-
-    const preserved = topBar.querySelector('.qa-nav-toggle')
-    expect(preserved).toBeTruthy()
-    expect(preserved.textContent).toBe('☰')
-
-    expect(topBar.querySelector('.qa-toggle-btn')).toBeFalsy()
-  })
-
   it('saves position when document becomes hidden', async () => {
     const scrollTracker = await import('../../../src/reader/scroll-tracker.js')
     db.put.mockClear()

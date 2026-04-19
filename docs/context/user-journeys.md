@@ -16,13 +16,39 @@ Source of truth baseline is the M10 E2E smoke-test matrix from `docs/superpowers
 
 ## Keyboard shortcuts
 
-- `⌘K` / `Ctrl+K` — command sheet (search verses, tags, surahs)
-- `⌘↑` / `Ctrl+↑` — font size up
-- `⌘↓` / `Ctrl+↓` — font size down
-- `g r` — review hub
+Full, in-app reference is the `?` cheatsheet (see G3). Summary:
+
+**Universal**
+- `/` — open command sheet
+- `⌘K` / `Ctrl+K` — open command sheet (alias)
+- `?` — open shortcut cheatsheet
+- `Esc` — close sheet · back from FVR
+
+**Go to** (g-chord)
+- `g h` — home / continue reading
 - `g s` — surah list
-- `g ,` — settings
-- Long-press a verse — open mark editor
+- `g r` — review hub
+- `g a` — about
+- `g p` — preferences (settings)
+
+**Reader** (only on `#/s/*`, blocked when a text input is focused)
+- `j` / `k` — next / previous verse
+- `]` / `[` — next / previous surah
+- `Home` / `End` — first / last verse
+- `m` — mark the centered verse
+- `t` — toggle translation visibility
+- `+` / `-` — bigger / smaller font
+- `0` — reset font size to default
+- `d` — cycle theme (light → sepia → dark → auto)
+
+**Command sheet** (while open)
+- `↑` / `↓` — move selection
+- `Tab` / `Shift+Tab` — next / previous result group
+- `Enter` — activate
+- `Esc` — close
+
+**Gestures**
+- Long-press a verse — open mark editor (touch parity with `m`)
 
 ---
 
@@ -37,9 +63,9 @@ Screens: 1) Welcome, 2) Theme, 3) Translation, 4) Shortcuts (new), 5) Tags intro
 1. App boots → `handleLaunchRestore` checks `settings.onboardingComplete`, finds nothing → navigates to `#/onboarding`.
 2. Screen 1 (Welcome): wordmark, blessing, Begin CTA, progress dot 1 lit. No dock, no pill.
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears.
-4. Pick a theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Translation): 4 options with Saheeh as default.
-5. Pick a translation (e.g. Pickthall) → tap **Continue** → Screen 4 (Shortcuts).
-6. Screen 4 teaches core shortcuts: `⌘K` search; `⌘↑/⌘↓` font size; `g r / g s / g ,` navigation chords; long-press to mark a verse. Mac shows `⌘`, non-Mac shows `Ctrl`. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 5 (Tags intro).
+4. Pick a theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Translation): the options are derived from the shipped dataset's `provenance.json`. Today the corpus bundles a single translation (Bridges' Translation by Fadel Soliman), so one option is listed and auto-selected; the lede reads "This translation ships offline with the app." If the dataset ever bundles multiple translations, the screen lists all of them with the first as default.
+5. Tap **Continue** → Screen 4 (Shortcuts). (When multiple translations are available, pick one first.)
+6. Screen 4 teaches core shortcuts: `/` search; `?` full cheatsheet; `j` / `k` / `]` / `[` verse/surah nav; `m` mark; `t` translation toggle; `+` / `-` / `0` font; `g h` continue reading; long-press to mark. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 5 (Tags intro).
 7. Screen 5: 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, `#/s/1`, ambient chrome returns.
 
 **Surfaces:** Onboarding → Reader. **Persistence:** `settings.theme`, `settings.translationId`, `settings.onboardingComplete`.
@@ -52,7 +78,7 @@ Screens: 1) Welcome, 2) Theme, 3) Translation, 4) Shortcuts (new), 5) Tags intro
 
 Screen 4 of the onboarding flow (see A1).
 
-1. Shown after translation selection; lists 6 shortcut rows: `⌘K`, `⌘↑` (bigger font) + `⌘↓` (smaller font), `g r`, `g s`, `g ,`, Long-press.
+1. Shown after translation selection; lists 9 curated rows: `/`, `?`, `j`/`k` verse nav, `]`/`[` surah nav, `m` mark, `t` translation, `+`/`-`/`0` font, `g h` continue reading, long-press gesture. Lede reminds users they can press `?` anywhere for the full list.
 2. Desktop (≥1180px) shows rows in a 2-column grid; mobile stacks in single column.
 3. Tap **Continue** → Screen 5 (Tags intro).
 
@@ -83,7 +109,7 @@ On the reader.
 
 **Tablet+ variant:** Dock items grow from 38×38 to 42×42 for easier iPad tap targets (≥768px). Auto-hide behavior unchanged.
 
-**Desktop variant:** On viewports ≥1180px, the reader renders as two columns — translation (in a scholarly serif) on the left, Arabic justified to the start on the right. Translation is top-aligned with the Arabic opening line. Toggling Hide translation in Settings collapses to a single Arabic column.
+**Desktop variant:** On viewports ≥1180px, the reader renders as a single centered column capped at ~960px. Each verse stacks Arabic (justified, RTL — fills the full column width and wraps naturally) on top, translation below. Toggling Hide translation in Settings simply hides the translation block; the column width is unchanged.
 
 
 **Desktop variant (≥1180px):** Dock items expand to labeled pills — the visually-hidden text label ("Read", "Search", "Review", "More") unhides inline next to each glyph. Positioning stays bottom-centered.
@@ -119,7 +145,7 @@ From Settings sheet (see D1).
 **Surfaces:** Settings sheet, Reader.
 
 **Desktop variant (viewport ≥1180px):**
-The reader renders Arabic and translation in parallel two-column layout. Each verse occupies one row; Arabic on one side, translation on the other, top-aligned. Toggling translation off in Settings collapses the reader to a single centered column (max ~900px). Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
+The reader renders a single centered column (max ~960px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below with a soft separator. Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
 
 ### B6. Auto theme follows OS
 
@@ -206,13 +232,12 @@ This is a cross-cutting rule, not a feature — preserved intentionally.
 
 ### D2. Pick a translation
 
-Inside Settings sheet.
+Inside Settings sheet. Available translations are sourced from the dataset's `provenance.json` at render time — the picker never surfaces options that aren't actually present in the corpus.
 
-1. Tap **Show translation** row → sheet swaps to Translation picker sub-view listing the 4 options (Saheeh / Pickthall / Yusuf / Khattab).
-2. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
-3. Toggle the translation-visibility switch → `SETTINGS_TRANSLATION_CHANGED { visible }` fires → reader hides/shows the translation line on next render.
-
-**Note:** only the Bridges' translation currently ships in the dataset. The picker's 4 options are persisted as a preference but the reader renders one translation source regardless — picker support is stubbed pending additional translations in the dataset.
+1. The **Show translation** row's subtitle shows the name of the currently-selected translation (e.g. "Bridges' Translation").
+2. When only one translation is bundled (today's dataset), the row body is non-interactive — there's no picker sub-view to open. `settings.translationId` is still auto-resolved to the bundled translation's id on first paint.
+3. When multiple translations are bundled, tapping the row body opens the Translation picker sub-view. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
+4. Toggle the translation-visibility switch → `SETTINGS_TRANSLATION_CHANGED { visible }` fires → reader hides/shows the translation line on next render.
 
 **Surfaces:** Settings sheet, Reader. **Persistence:** `settings.translationId`, `settings.translationVisible`.
 
@@ -361,6 +386,16 @@ On surah list.
 2. About renders: wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid (Marks / Tags / Surahs / % Qur'an), attribution list, PWA install button (if install prompt has been captured), version line. No back link.
 
 **Surfaces:** Ambient dock → More sheet → About.
+
+### G3. Shortcut cheatsheet (`?`)
+
+From any non-text-input context.
+
+1. Press `?` → bottom sheet slides up titled "Keyboard shortcuts".
+2. Sheet lists every binding grouped into 4 sections: Universal, Go to, Reader, Command sheet — plus the long-press gesture row.
+3. Tap backdrop, tap `×`, or press `Esc` → sheet closes; focus returns to the prior surface. No persistence.
+
+**Surfaces:** any route → Shortcuts sheet.
 
 ### G2. Install PWA
 

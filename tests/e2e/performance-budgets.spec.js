@@ -3,46 +3,9 @@ import { expect, test } from '@playwright/test'
 const ROUTE_LOAD_BUDGET_MS = 500
 const ROUTE_LOAD_TIMEOUT_MS = 2000
 
-async function seedSavedPosition(page, surah, verse) {
-  await page.evaluate(
-    async ({ surah, verse }) => {
-      await new Promise((resolve, reject) => {
-        const request = indexedDB.open('quran-atlas')
-
-        request.onerror = () => reject(request.error)
-        request.onsuccess = (event) => {
-          const db = event.target.result
-          const tx = db.transaction('positions', 'readwrite')
-
-          tx.oncomplete = () => {
-            db.close()
-            resolve()
-          }
-          tx.onerror = () => reject(tx.error)
-          tx.onabort = () => reject(tx.error ?? new Error('Failed to seed saved position'))
-
-          tx.objectStore('positions').put({
-            id: `s${surah}`,
-            surah,
-            verse,
-            savedAt: Date.now(),
-          })
-        }
-      })
-    },
-    { surah, verse }
-  )
-}
-
-async function measureRouteLoad(page, {
-  hash,
-  expectedHeaderText,
-  targetVerse = null,
-  expectedResumeText = null,
-  requireScrolled = false,
-}) {
+async function measureRouteLoad(page, { hash, expectedHeaderText, targetVerse = null }) {
   return page.evaluate(
-    async ({ hash, expectedHeaderText, targetVerse, expectedResumeText, requireScrolled, timeoutMs }) => {
+    async ({ hash, expectedHeaderText, targetVerse, timeoutMs }) => {
       const container = document.getElementById('main-content')
       if (!container) {
         throw new Error('main-content container not found')
@@ -54,13 +17,6 @@ async function measureRouteLoad(page, {
         const header = document.querySelector('[data-surah-header]')
         if (!header || !header.textContent?.includes(expectedHeaderText)) {
           return false
-        }
-
-        if (expectedResumeText) {
-          const resumeIndicator = document.querySelector('[data-resume-indicator]')
-          if (!resumeIndicator || !resumeIndicator.textContent?.includes(expectedResumeText)) {
-            return false
-          }
         }
 
         if (targetVerse !== null) {
@@ -76,10 +32,6 @@ async function measureRouteLoad(page, {
           if (!isVisible) {
             return false
           }
-        }
-
-        if (requireScrolled && container.scrollTop <= 0) {
-          return false
         }
 
         return true
@@ -146,8 +98,6 @@ async function measureRouteLoad(page, {
       hash,
       expectedHeaderText,
       targetVerse,
-      expectedResumeText,
-      requireScrolled,
       timeoutMs: ROUTE_LOAD_TIMEOUT_MS,
     }
   )
@@ -167,27 +117,5 @@ test.describe('Performance budgets', () => {
     await expect(page.locator('[data-surah-header]')).toContainText('Al-Baqarah')
     await expect(page.locator('[data-verse="1"]')).toBeVisible()
     expect(renderTime).toBeLessThanOrEqual(ROUTE_LOAD_BUDGET_MS)
-  })
-
-  test('surah load and saved-position restore complete within 500ms', async ({ page }) => {
-    await page.goto('/#/s/1')
-    await expect(page.locator('[data-verse="1"]')).toBeVisible({ timeout: 10000 })
-
-    await seedSavedPosition(page, 2, 50)
-
-    const loadTime = await measureRouteLoad(page, {
-      hash: '#/s/2',
-      expectedHeaderText: 'Al-Baqarah',
-      expectedResumeText: 'Resume reading: Al-Baqarah 50',
-      requireScrolled: true,
-    })
-
-    await expect(page.locator('[data-surah-header]')).toContainText('Al-Baqarah')
-    await expect(page.locator('[data-resume-indicator]')).toContainText('Resume reading: Al-Baqarah 50')
-
-    const scrollTop = await page.evaluate(() => document.getElementById('main-content')?.scrollTop ?? 0)
-
-    expect(scrollTop).toBeGreaterThan(0)
-    expect(loadTime).toBeLessThanOrEqual(ROUTE_LOAD_BUDGET_MS)
   })
 })

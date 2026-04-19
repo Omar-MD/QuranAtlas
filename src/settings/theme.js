@@ -96,8 +96,16 @@ export function getThemeOptions() {
   return [...THEME_OPTIONS]
 }
 
-export function getAppliedVariants() {
-  return [...APPLIED_VARIANTS]
+/**
+ * Advance to the next theme in light → sepia → dark → auto → light order,
+ * applying + persisting it. Returns the new preference.
+ */
+export async function cycleTheme() {
+  const pref = getCurrentThemePref()
+  const idx = THEME_OPTIONS.indexOf(pref)
+  const next = THEME_OPTIONS[(idx + 1) % THEME_OPTIONS.length]
+  await setTheme(next)
+  return next
 }
 
 export async function initTheme() {

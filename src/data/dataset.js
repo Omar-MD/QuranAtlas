@@ -95,3 +95,34 @@ export async function getSurahs() {
   const url = `${DATASET_BASE}/surahs.json`
   return fetchNetworkFirst(url)
 }
+
+/**
+ * Get the list of translations actually present in the shipped dataset.
+ * Sourced from provenance.json so the UI never offers options the corpus
+ * does not contain. Today the dataset carries exactly one translation;
+ * when additional translations are added, provenance.json's `translation`
+ * field should become an array and this function will surface them all.
+ * @returns {Promise<Array<{id: string, name: string, subtitle: string}>>}
+ */
+export async function getTranslations() {
+  const provenance = await fetchNetworkFirst(`${DATASET_BASE}/provenance.json`)
+  const entries = Array.isArray(provenance.translation)
+    ? provenance.translation
+    : provenance.translation ? [provenance.translation] : []
+
+  return entries.map((entry) => {
+    const name = entry.name || 'Translation'
+    const id = entry.id || slugify(name)
+    const subtitle = entry.author ? `${entry.author}` : (entry.source || '')
+    return { id, name, subtitle }
+  })
+}
+
+function slugify(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .split('-')[0] || 'translation'
+}

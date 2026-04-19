@@ -9,14 +9,28 @@ import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { getThemeOptions, setTheme, loadTheme } from './theme.js'
 import { getFontSizeOptions, setFontSize, loadFontSize } from './font-size.js'
+import { getTranslations } from '../data/dataset.js'
 import { logger } from '../core/logger.js'
 
-const TRANSLATION_OPTIONS = [
-  { id: 'saheeh',    name: 'Saheeh International', sub: 'English · clear, modern' },
-  { id: 'pickthall', name: 'Pickthall',            sub: 'English · classical prose' },
-  { id: 'yusuf',     name: 'Yusuf Ali',            sub: 'English · with commentary' },
-  { id: 'khattab',   name: 'Clear Qur\u2019an (Khattab)', sub: 'English · contemporary' },
-]
+async function loadTranslations() {
+  try {
+    return await getTranslations()
+  } catch (error) {
+    logger.error('Failed to load translations', { error })
+    return []
+  }
+}
+
+async function resolveCurrentTranslationId(translations) {
+  const saved = (await get('settings', 'translationId'))?.value
+  const valid = translations.find(t => t.id === saved)
+  if (valid) { return valid.id }
+  const fallback = translations[0]?.id ?? null
+  if (fallback && fallback !== saved) {
+    try { await put('settings', { key: 'translationId', value: fallback }) } catch { /* ignore */ }
+  }
+  return fallback
+}
 
 let scrim = null
 let sheet = null
@@ -25,6 +39,25 @@ let escHandler = null
 export async function initSettingsPanel() {
   // No gear button — Settings opens from the "More" sheet or #/settings route.
   return () => { closeSettingsSheet() }
+}
+
+/**
+ * Flip translation visibility, persist, emit the shared settings event,
+ * and apply to any already-rendered verses. Returns the new value.
+ */
+export async function toggleTranslation() {
+  let next
+  try {
+    const current = await get('settings', 'translationVisible')
+    next = !(current?.value ?? true)
+    await put('settings', { key: 'translationVisible', value: next })
+  } catch (error) {
+    logger.error('Failed to toggle translation visibility', { error })
+    return null
+  }
+  emit(Events.SETTINGS_TRANSLATION_CHANGED, { visible: next })
+  applyTranslationToDOM(next)
+  return next
 }
 
 export function openSettingsSheet() {
@@ -84,16 +117,17 @@ async function renderMain() {
   const body = document.createElement('div')
   body.className = 'qa-sheet-body qa-settings-body'
 
-  const [currentTheme, currentFont, translationVisible, translationId] = await Promise.all([
+  const [currentTheme, currentFont, translationVisible, translations] = await Promise.all([
     loadTheme(),
     loadFontSize(),
     get('settings', 'translationVisible').then(r => r?.value ?? true),
-    get('settings', 'translationId').then(r => r?.value ?? 'saheeh'),
+    loadTranslations(),
   ])
+  const translationId = await resolveCurrentTranslationId(translations)
 
   body.appendChild(buildThemeSection(currentTheme))
   body.appendChild(buildFontSection(currentFont))
-  body.appendChild(buildReadingSection(translationVisible, translationId))
+  body.appendChild(buildReadingSection(translationVisible, translations, translationId))
 
   sheet.appendChild(grip)
   sheet.appendChild(hdr)
@@ -200,7 +234,7 @@ function buildFontSection(currentFont) {
   return section
 }
 
-function buildReadingSection(visible, translationId) {
+function buildReadingSection(visible, translations, translationId) {
   const section = document.createElement('section')
   section.className = 'qa-settings-section'
   const label = document.createElement('div')
@@ -208,9 +242,13 @@ function buildReadingSection(visible, translationId) {
   label.textContent = 'Reading'
   section.appendChild(label)
 
+  const current = translations.find(t => t.id === translationId)
+  const subLabel = current?.name || (translations[0]?.name ?? 'English')
+  const canPick = translations.length > 1
+
   section.appendChild(buildToggleRow({
     main: 'Show translation',
-    sub: TRANSLATION_OPTIONS.find(o => o.id === translationId)?.name || 'English',
+    sub: subLabel,
     on: visible,
     onToggle: async (next) => {
       try {
@@ -221,7 +259,7 @@ function buildReadingSection(visible, translationId) {
         logger.error('Failed to save translation setting', { error })
       }
     },
-    onTapSub: () => { renderTranslationPicker() },
+    onTapSub: canPick ? () => { renderTranslationPicker() } : null,
   }))
 
   return section
@@ -231,10 +269,12 @@ function buildToggleRow({ main, sub, on, onToggle, onTapSub }) {
   const row = document.createElement('div')
   row.className = 'qa-settings-toggle-row'
 
-  const body = document.createElement('button')
-  body.type = 'button'
+  const body = document.createElement(onTapSub ? 'button' : 'div')
+  if (onTapSub) {
+    body.type = 'button'
+    body.addEventListener('click', onTapSub)
+  }
   body.className = 'qa-settings-toggle-body'
-  body.addEventListener('click', onTapSub || (() => {}))
   const m = document.createElement('div')
   m.className = 'qa-settings-toggle-main'
   m.textContent = main
@@ -302,9 +342,10 @@ async function renderTranslationPicker() {
   const body = document.createElement('div')
   body.className = 'qa-sheet-body'
 
-  const current = (await get('settings', 'translationId'))?.value || 'saheeh'
+  const translations = await loadTranslations()
+  const current = await resolveCurrentTranslationId(translations)
 
-  for (const opt of TRANSLATION_OPTIONS) {
+  for (const opt of translations) {
     const row = document.createElement('button')
     row.type = 'button'
     row.className = 'qa-settings-trans-choice'
@@ -316,9 +357,9 @@ async function renderTranslationPicker() {
     name.textContent = opt.name
     const sub = document.createElement('span')
     sub.className = 'qa-settings-trans-sub'
-    sub.textContent = opt.sub
+    sub.textContent = opt.subtitle
     col.appendChild(name)
-    col.appendChild(sub)
+    if (opt.subtitle) { col.appendChild(sub) }
     const check = document.createElement('span')
     check.className = 'qa-settings-trans-check'
     check.setAttribute('aria-hidden', 'true')

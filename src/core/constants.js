@@ -36,7 +36,6 @@ export const Events = {
   READER_VERSE_RENDERED: 'reader:verse-rendered',
   AMBIENT_SURFACE: 'ambient:surface',
   AMBIENT_HIDE: 'ambient:hide',
-  READER_VERSE_ACTIVATED: 'reader:verse-activated',
   SYNC_UPDATE_RECEIVED: 'sync:update-received',
   DATASET_UPDATE_AVAILABLE: 'dataset:update-available',
   DATASET_DOWNLOAD_PROGRESS: 'dataset:download-progress',
