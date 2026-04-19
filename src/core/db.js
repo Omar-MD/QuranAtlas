@@ -190,8 +190,9 @@ const _optionalTypes = {
 
 function _typeOf(v) {
   if (Array.isArray(v)) {
-    if (v.length === 0) { return 'string[]' } // empty arrays treated as valid string[]
-    return `${typeof v[0]}[]`
+    if (v.length === 0) { return 'empty[]' }
+    const elemType = typeof v[0]
+    return v.every(x => typeof x === elemType) ? `${elemType}[]` : 'mixed[]'
   }
   return typeof v
 }
@@ -209,6 +210,8 @@ export async function validateWrite(storeName, value) {
   }
 
   // Check required fields
+  // Note: missing-field format ('missing required field: ${field}') matches existing db.test.js
+  // assertions — do not change. Type-mismatch errors use a different format intentionally.
   for (const [field, expected] of Object.entries(shape)) {
     if (!(field in value) || value[field] === undefined) {
       throw new Error(`missing required field: ${field}`)
@@ -216,7 +219,9 @@ export async function validateWrite(storeName, value) {
     if (expected === 'any') { continue }
     const actual = _typeOf(value[field])
     if (actual !== expected) {
-      throw new Error(`[db] ${storeName}.${field}: expected ${expected}, got ${actual}`)
+      // 'empty[]' is valid for any array type
+      if (actual === 'empty[]' && expected.endsWith('[]')) { continue }
+      throw new Error(`${storeName}.${field}: expected ${expected}, got ${actual}`)
     }
   }
 
@@ -227,7 +232,9 @@ export async function validateWrite(storeName, value) {
       if (!(field in value) || value[field] === undefined) { continue }
       const actual = _typeOf(value[field])
       if (actual !== expected) {
-        throw new Error(`[db] ${storeName}.${field}: expected ${expected}, got ${actual}`)
+        // 'empty[]' is valid for any array type
+        if (actual === 'empty[]' && expected.endsWith('[]')) { continue }
+        throw new Error(`${storeName}.${field}: expected ${expected}, got ${actual}`)
       }
     }
   }
