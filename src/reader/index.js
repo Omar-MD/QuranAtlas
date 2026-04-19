@@ -12,6 +12,7 @@ import { logger } from '../core/logger.js'
 import { clearUndoToast, clearUndoRecord } from '../core/ui.js'
 import { observeScroll, unobserve, observeNewVerses, flushDebounce } from './scroll-tracker.js'
 import { announce } from '../a11y/announcer.js'
+import * as readerState from '../state/reader.js'
 
 // Maximum time to wait for surah data fetch before showing error
 // 5000ms hard cutoff; 800ms is the performance *goal*, not the error threshold
@@ -21,16 +22,9 @@ const SKELETON_TIMEOUT_MS = 5000
 // 50 verses provides good initial render time while keeping DOM size manageable
 const CHUNK_SIZE = 50
 
-let currentSurah = null
-let currentSurahNum = null
-let renderedCount = 0
-let isRendering = false
 let scrollAppendBound = null
-let currentTranslationVisible = true
-let scrollAppendRafPending = false
 let unsubVisibility = null
 let visibilityHandler = null
-let lastTrackedVerse = null
 let cleanupIndicatorsFn = null
 let cleanupLongPressFn = null
 
@@ -50,7 +44,7 @@ async function fetchSurahData({ surahNum }) {
   performance.mark('reader:fetch-end')
   performance.measure('reader:surah-fetch', 'reader:fetch-start', 'reader:fetch-end')
 
-  if (currentSurahNum !== surahNum) { return null }
+  if (readerState.get().currentSurahNum !== surahNum) { return null }
 
   const [surahs, translationVisible, savedPosition] = await Promise.all([
     getSurahs(),
@@ -58,11 +52,11 @@ async function fetchSurahData({ surahNum }) {
     get('positions', `s${surahNum}`),
   ])
 
-  if (currentSurahNum !== surahNum) { return null }
+  if (readerState.get().currentSurahNum !== surahNum) { return null }
 
-  currentSurah = surah
+  readerState.set({ currentSurah: surah })
   const surahMeta = surahs.find(s => s.n === surahNum)
-  currentTranslationVisible = translationVisible
+  readerState.set({ translationVisible })
 
   return { surah, surahs, surahMeta, translationVisible, savedPosition }
 }
@@ -75,10 +69,10 @@ function renderSurahContent({ mainContent, surah, surahMeta, translationVisible,
   renderSurahHeader(mainContent, surahMeta)
   renderBasmala(mainContent, surahNum)
 
-  renderedCount = 0
-  isRendering = true
+  readerState.set({ renderedCount: 0 })
+  readerState.set({ isRendering: true })
   renderVerseChunk(mainContent, surah, translationVisible, 0, CHUNK_SIZE)
-  isRendering = false
+  readerState.set({ isRendering: false })
 
   renderSurahEnd(mainContent, surahMeta)
 }
@@ -93,23 +87,24 @@ function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah
   if (shouldSavePosition) {
     setupScrollTracking(mainContent, surahNum)
     visibilityHandler = () => {
-      if (document.hidden && currentSurahNum && lastTrackedVerse !== null) {
+      const { currentSurahNum: csn, lastTrackedVerse: ltv } = readerState.get()
+      if (document.hidden && csn && ltv !== null) {
         flushDebounce()
         const positionData = {
-          id: `s${currentSurahNum}`,
-          surah: currentSurahNum,
-          verse: lastTrackedVerse,
+          id: `s${csn}`,
+          surah: csn,
+          verse: ltv,
           savedAt: Date.now(),
         }
         put('positions', positionData).catch(() => {
           setTimeout(() => {
             put('positions', positionData).catch((error) => {
               logger.error('Failed to save position after retry:', {
-                surah: currentSurahNum,
-                verse: lastTrackedVerse,
+                surah: csn,
+                verse: ltv,
                 error,
               })
-              emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: currentSurahNum, verse: lastTrackedVerse })
+              emit(Events.READER_POSITION_SAVE_FAILED, { error: error.message, surah: csn, verse: ltv })
             })
           }, 100)
         })
@@ -123,11 +118,12 @@ function initPositionTracking({ mainContent, surahNum, shouldSavePosition, surah
   }
 
   const unsubTranslation = on(Events.SETTINGS_TRANSLATION_CHANGED, ({ visible }) => {
-    currentTranslationVisible = !!visible
+    readerState.set({ translationVisible: !!visible })
   })
   cleanups.push(() => { unsubTranslation() })
 
   unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
+    const { currentSurah } = readerState.get()
     if (currentSurah && mainContent) {
       const position = await get('positions', `s${currentSurah.n}`)
       if (position) {
@@ -208,12 +204,14 @@ export function cleanup() {
   if (cleanupIndicatorsFn) { cleanupIndicatorsFn(); cleanupIndicatorsFn = null }
   if (cleanupLongPressFn) { cleanupLongPressFn(); cleanupLongPressFn = null }
   teardownEdgeIndicators()
-  currentSurah = null
-  currentSurahNum = null
-  renderedCount = 0
-  lastTrackedVerse = null
-  currentTranslationVisible = true
-  scrollAppendRafPending = false
+  readerState.set({
+    currentSurah: null,
+    currentSurahNum: null,
+    renderedCount: 0,
+    lastTrackedVerse: null,
+    translationVisible: true,
+    scrollAppendRafPending: false,
+  })
 }
 
 export async function init(
@@ -229,10 +227,10 @@ export async function init(
     return
   }
 
-  if (currentSurahNum !== null && currentSurahNum !== surahNum) {
+  if (readerState.get().currentSurahNum !== null && readerState.get().currentSurahNum !== surahNum) {
     cleanup()
   }
-  currentSurahNum = surahNum
+  readerState.set({ currentSurahNum: surahNum })
 
   const mainContent = document.getElementById('main-content')
   if (!mainContent) {
@@ -243,8 +241,7 @@ export async function init(
   ensureEdgeIndicators()
 
   const timeout = setTimeout(() => {
-    currentSurahNum = null
-    currentSurah = null
+    readerState.set({ currentSurahNum: null, currentSurah: null })
     showError(mainContent, surahNum)
   }, SKELETON_TIMEOUT_MS)
 
@@ -314,7 +311,7 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
     const verseBlock = document.createElement('div')
     verseBlock.className = 'qa-verse'
     verseBlock.setAttribute('data-verse', `${verseNum}`)
-    verseBlock.setAttribute('data-verse-key', `${currentSurahNum}:${verseNum}`)
+    verseBlock.setAttribute('data-verse-key', `${readerState.get().currentSurahNum}:${verseNum}`)
 
     const arabicEl = document.createElement('div')
     arabicEl.className = 'qa-verse-arabic'
@@ -340,7 +337,7 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
     fragment.appendChild(verseBlock)
 
     emit(Events.READER_VERSE_RENDERED, {
-      verseKey: `${currentSurahNum}:${verseNum}`,
+      verseKey: `${readerState.get().currentSurahNum}:${verseNum}`,
       element: verseBlock,
     })
   }
@@ -351,7 +348,7 @@ function renderVerseChunk(container, surah, translationVisible, start, end) {
     container.appendChild(fragment)
   }
 
-  renderedCount = actualEnd
+  readerState.set({ renderedCount: actualEnd })
 }
 
 /**
@@ -365,17 +362,17 @@ function setupScrollTracking(container, surahNum) {
 
   observeScroll(mainContent, {
     onPositionChange: ({ verse }) => {
-      lastTrackedVerse = verse
+      readerState.set({ lastTrackedVerse: verse })
       savePosition(surahNum, verse)
     },
   })
 
   // Append more verses on scroll near bottom (throttled via rAF)
   scrollAppendBound = () => {
-    if (!scrollAppendRafPending) {
-      scrollAppendRafPending = true
+    if (!readerState.get().scrollAppendRafPending) {
+      readerState.set({ scrollAppendRafPending: true })
       requestAnimationFrame(() => {
-        scrollAppendRafPending = false
+        readerState.set({ scrollAppendRafPending: false })
         handleScrollAppend()
       })
     }
@@ -390,7 +387,8 @@ function setupScrollTracking(container, surahNum) {
  * one render cycle is active at a time.
  */
 function handleScrollAppend() {
-  if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) {
+  const s = readerState.get()
+  if (s.isRendering || !s.currentSurah || s.renderedCount >= s.currentSurah.ar.length) {
     return
   }
 
@@ -405,26 +403,27 @@ function handleScrollAppend() {
   // Append next chunk when within one viewport height of bottom
   if (scrollHeight - scrollBottom < mainContent.clientHeight) {
     // Set pending BEFORE the rAF to prevent race conditions
-    scrollAppendRafPending = true
-    
+    readerState.set({ scrollAppendRafPending: true })
+
     requestAnimationFrame(() => {
       // Reset pending flag immediately to allow next scroll to queue
-      scrollAppendRafPending = false
-      
+      readerState.set({ scrollAppendRafPending: false })
+
       // Re-validate conditions in case they changed during the frame
-      if (isRendering || !currentSurah || renderedCount >= currentSurah.ar.length) {
+      const s2 = readerState.get()
+      if (s2.isRendering || !s2.currentSurah || s2.renderedCount >= s2.currentSurah.ar.length) {
         return
       }
 
-      isRendering = true
-      const startCount = renderedCount
-      renderVerseChunk(mainContent, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
-      isRendering = false
+      readerState.set({ isRendering: true })
+      const startCount = readerState.get().renderedCount
+      renderVerseChunk(mainContent, s2.currentSurah, s2.translationVisible, s2.renderedCount, s2.renderedCount + CHUNK_SIZE)
+      readerState.set({ isRendering: false })
 
       // Observe newly appended verses for scroll tracking
       const startVerse = startCount + 1
       const newElements = []
-      for (let v = startVerse; v <= renderedCount; v++) {
+      for (let v = startVerse; v <= readerState.get().renderedCount; v++) {
         const el = mainContent.querySelector(`[data-verse="${v}"]`)
         if (el) {
           newElements.push(el)
@@ -497,15 +496,18 @@ async function savePosition(surahNum, verse) {
  */
 function scrollToVerse(container, verseNum) {
   // If verse is beyond currently rendered, load chunks until we reach it
-  while (verseNum > renderedCount && currentSurah && renderedCount < currentSurah.ar.length) {
-    isRendering = true
-    renderVerseChunk(container, currentSurah, currentTranslationVisible, renderedCount, renderedCount + CHUNK_SIZE)
-    isRendering = false
+  let s = readerState.get()
+  while (verseNum > s.renderedCount && s.currentSurah && s.renderedCount < s.currentSurah.ar.length) {
+    readerState.set({ isRendering: true })
+    const beforeCount = readerState.get().renderedCount
+    renderVerseChunk(container, s.currentSurah, s.translationVisible, beforeCount, beforeCount + CHUNK_SIZE)
+    readerState.set({ isRendering: false })
 
     // Observe newly appended verses for scroll tracking
-    const startVerse = renderedCount - (renderedCount % CHUNK_SIZE) + 1
+    const afterCount = readerState.get().renderedCount
+    const startVerse = beforeCount + 1
     const newElements = []
-    for (let v = startVerse; v <= renderedCount; v++) {
+    for (let v = startVerse; v <= afterCount; v++) {
       const el = container.querySelector(`[data-verse="${v}"]`)
       if (el) {
         newElements.push(el)
@@ -514,6 +516,7 @@ function scrollToVerse(container, verseNum) {
     if (newElements.length > 0) {
       observeNewVerses(newElements)
     }
+    s = readerState.get()
   }
 
   const verseEl = container.querySelector(`[data-verse="${verseNum}"]`)
