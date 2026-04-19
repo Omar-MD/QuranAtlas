@@ -24,7 +24,6 @@ test-output/
 playwright-report/
 blob-report/
 .playwright-mcp/
-final-verification-summary.png
 
 # Lighthouse
 .lighthouseci/
@@ -39,6 +38,13 @@ final-verification-summary.png
 .claude/settings.local.json
 .claude/plans/
 .vscode/*.local
+
+# AI agent workflow output (plans, specs, verification artifacts)
+.superpowers/
+docs/superpowers/
+
+# Git worktrees
+.worktrees/
 
 # Logs
 logs/
@@ -62,10 +68,3 @@ Thumbs.db
 *.swp
 *.swo
 *~
-
-# AI agent state
-#superpowers/
-
-# Git worktrees
-.worktrees/
-.superpowers/
