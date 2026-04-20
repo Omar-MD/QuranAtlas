@@ -17,11 +17,12 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 ### Reading experience
 
 - Continuous verse-interleaved layout. Arabic (Uthmani script via KFGQPC) on top of each verse, English translation (Bridges' by Fadel Soliman) underneath.
-- Translation toggle (on/off) — per-session preference, persists across reloads.
-- Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — automatically.
-- Adjustable font size (slider in Settings, live preview).
+- Translation toggle (on/off) — persists across sessions.
+- Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — and flips live when the OS changes.
+- Adjustable font size (slider in Settings, live preview); keyboard bindings (`⌘↑` / `⌘↓` / `0`) for quick changes.
 - Chunked rendering so long surahs like Al-Baqarah stay responsive.
 - Session restore: close the app and return later — lands back on the last-read verse.
+- **Desktop layout (≥1180px)**: centered reader column with verses stacked Arabic-over-English; mark editor opens as a centered verse-hero modal; review hub gets a sticky 220px left rail.
 
 ### Navigation
 
@@ -33,18 +34,18 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 
 ### Marks, tags, and review
 
-- Long-press any verse to open the **mark editor** (bottom sheet). No contextual menu, no alternative gesture — one path, always.
+- **One action surface per verse: the mark editor.** Reachable by long-press, right-click, the keyboard shortcut `m`, or "Mark this verse" from the command sheet. No contextual menu, no multi-action popover — every trigger lands on the same editor sheet.
 - Multi-tag selection with a visible "Selected" strip (count + clear-all + × chips) above the tag library.
 - **16 seed tags** plus **create-your-own** tags inline (type a new label → `+ create "taqwa"` chip → confirm). Each tag gets a deterministic color.
 - Free-text **note** per mark.
 - Delete with inline confirm + **undo toast** — miss-taps are recoverable for a few seconds.
-- **Review hub** (`#/review`) — every mark with a three-segment grouping pill (Tag / Surah / Date), tag + surah filters, sort, and pagination. Multi-tagged marks appear under each tag.
+- **Review hub** (`#/review`) — every mark with a three-segment grouping pill (Tag / Surah / Date), tag + surah filters, sort, and "load more" pagination. Cards render as a **flat deduped list** — a mark with multiple tags appears once; tags act as filters, not as groupers that duplicate the card.
 - **FVR — Filtered-Verse Review** (`#/t/{tag}`) — open all verses carrying a single tag with a compact centered header (color dot, tag name, verse/surah counts). Shareable as a link.
-- **Cross-tab coherence** — mark writes broadcast to other open tabs via BroadcastChannel; everything stays consistent across browser windows.
+- **Cross-tab coherence** — mark writes broadcast to other open tabs via BroadcastChannel; Clear Data in another tab prompts the live tab to reload. Everything stays consistent across browser windows.
 
 ### First-run onboarding
 
-- **Four-screen walkthrough** on first launch: Welcome · Theme pick · Translation pick · Tags intro.
+- **Five-screen walkthrough** on first launch: Welcome → Theme pick → Translation pick → **Shortcuts primer** → Tags intro.
 - Progress dots; Skip available from screen 2 onward.
 - Completes to Al-Fatihah or the surah directory.
 
@@ -54,12 +55,21 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 - Theme swatches, font slider with live preview, translation toggle and picker, Clear-all-data link.
 - Clear data wipes IDB and restarts onboarding — nothing leaves the device.
 
+### Keyboard shortcuts
+
+Designed for keyboard-first readers. Full reference via `?` from any non-input context.
+
+- **Universal**: `/` or `⌘K` command sheet · `?` cheatsheet · `Esc` close sheet / back from FVR.
+- **"Go to" chords**: `g h` continue reading · `g s` surah list · `g r` review hub · `g a` about · `g p` preferences.
+- **Reader** (on `#/s/*`): `j`/`k` next/prev verse · `]`/`[` next/prev surah · `Home`/`End` first/last verse · `m` mark the centered verse · `t` toggle translation · `+`/`-`/`0` font size · `d` cycle theme.
+- **Command sheet**: `↑`/`↓` move · `Tab`/`Shift+Tab` next/prev group · `Enter` activate.
+
 ### About
 
 - Wordmark + mission ("Read, reflect, remember.")
 - Qur'an 54:17 blessing in Arabic + translation.
 - 2×2 stat grid: Marks · Tags · Surahs · % Qur'an tagged.
-- Attribution (Bridges' translation, KFGQPC Arabic, Scheherazade New font, Vite/Lightning CSS/Workbox).
+- Attribution (Bridges' translation, KFGQPC Arabic, Scheherazade New font, Vite, Workbox).
 - Install-app CTA (when the browser's install prompt is available) and the app version.
 
 ### Offline
@@ -85,7 +95,7 @@ Deliberately out of scope — not on the roadmap unless that changes:
 - Copy-verse-to-clipboard or social sharing.
 - Multi-device sync or accounts.
 - Community features, shared annotations, public libraries.
-- Multiple active translation *editions* — the picker exposes four options (Saheeh, Pickthall, Yusuf, Khattab) and persists the selection, but only Bridges' translation currently ships in the dataset. Additional translations are future work.
+- Multiple active translation *editions* — the translation picker derives its options from the shipped dataset's `provenance.json`. Today the dataset bundles one translation (Bridges') and the picker sub-view is hidden; the scaffolding is ready to surface additional translations once the corpus ships them.
 - Footnotes or tafsir.
 - Export / import of marks.
 

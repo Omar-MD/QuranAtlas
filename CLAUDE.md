@@ -15,6 +15,8 @@ Read these before spelunking the codebase — they're designed to save you the f
 
 When a context doc disagrees with the code, the code wins — and you should update the doc in your PR.
 
+**Surface-level and data-level invariants live in the relevant context doc**, not in the rules below. Before making any change, read the context doc for the surface you're touching (per Rule 4) — that's where load-bearing design decisions and "do-not-regress" callouts live. Look for sections labelled **Invariant** in `user-journeys.md` and `data-model.md`. Examples: mark editor as sole per-verse action surface (`user-journeys.md` §C6), one writer per IDB store (`data-model.md` §Cross-cutting rules).
+
 ## Mandatory rules
 
 ### Rule 1 — Update `user-journeys.md` with every UI change
@@ -27,7 +29,7 @@ When a context doc disagrees with the code, the code wins — and you should upd
 - Changes to where a surface is reached from (e.g. "Settings moved out of More sheet").
 - Deletions of any of the above — move the journey to the **Deprecated** section with the commit SHA; don't silently delete.
 
-If the change is too small to document, it's also too small to make. Journeys drift faster than any other doc; keeping them honest is the only reason they stay useful.
+If a change alters anything a user can see or do, it's too small to skip `user-journeys.md` — and if it's too small to document there, it's too small to ship as user-facing behavior. **Internal refactors, build tooling, type-only changes, and doc-only commits do not require a `user-journeys.md` update**, but they still fall under Rule 2 for whichever context doc they touch. Journeys drift faster than any other doc; keeping them honest is the only reason they stay useful.
 
 Keep steps **surface-level** ("tap Save", "open More sheet") — not pixel-level. Skip animations, exact labels, and hover states. Those belong in specs, not context docs.
 
@@ -38,39 +40,29 @@ Keep steps **surface-level** ("tap Save", "open More sheet") — not pixel-level
 - Added/moved/deleted a module or crossed a new dependency boundary → update `module-graph.md`.
 - Added a new route or surface → update `feature-map.md` (and `user-journeys.md` if the surface is reachable end-to-end).
 - Changed boot flow, router behavior, or a cross-cutting pattern → update `architecture.md`.
+- Changed a `package.json` script, added/removed/upgraded a dev tool, bumped a pinned version, or changed a CI gate → update `docs/tech-stack.md`.
+- Added, removed, or meaningfully redesigned a user-facing feature; changed the "What's NOT included" scope; changed attribution strings — update `docs/product-info.md` (and the About page text if attribution changed).
+- **Renamed/moved/deleted a file or directory referenced by name in `CLAUDE.md`, `docs/workflow/*.md`, `docs/tech-stack.md`, or any `docs/context/*.md`** → update every cite in the same commit. File-path citations rot the fastest; the PR that moves the file owns the doc churn.
 
-### Rule 3 — Local-only for context, history, and decisions
+### Rule 3 — Local-first for context retrieval
 
-When looking up project context — recent work, commit history, prior decisions, "why was X built this way," "what changed recently," issue background — use **only local sources**:
+**Why:** this is a single-developer project. Feature branches, worktrees, uncommitted changes, and unpushed commits all live on this machine. The remote holds `main` and runs CI — it is never ahead of local for any active work, and it has no feature branches to consult.
+
+**Consequence:** for any "why", "what changed recently", "what's this branch for", "what's in progress" question, the remote has nothing local doesn't — and is often behind. Use only local sources:
 
 - `git log`, `git show`, `git diff`, `git blame`, `git status`, the working tree, untracked files.
 - Everything under `docs/` (especially `docs/context/`).
 
-**Do NOT use for context:** `gh issue …`, `gh pr …`, `gh api`, `git fetch`, `git log origin/*`, or any other command that reaches GitHub or a remote. The remote's only jobs are hosting code (pushes) and running CI — it is not a source of truth for product context, history, or decisions.
+**Do not use for context:** `gh issue …`, `gh pr …`, `gh api`, `git fetch`, `git log origin/*`. These are slower than local here and can mislead (local is authoritative).
 
-This rule governs **context gathering**, not all remote access. Explicit requests like "create a PR" or "push this commit" still go through — they write, they don't fetch context.
+**Carve-outs:** explicit user asks ("look at PR #42", "check CI on main") override. Write operations (`git push`, `gh pr create`) are neither context-gathering nor blocked.
 
-If a user explicitly asks you to check a remote issue or PR (e.g. "look at PR #42"), that user request overrides this rule. Default behavior is local-only.
+### Rule 4 — Cluster work by surface
 
-### Rule 4 — Long-press = mark editor only
+Before writing a plan, dispatching subagents, or adding Playwright specs, read **`docs/workflow/cluster-by-surface.md`**. It defines the surface model, planning / subagent / testing / verification rules, the red-flag checklist, the cross-cutting-exceptions table, and the "one unit or two?" decision tree.
 
-The single verse gesture is long-press → open mark editor. No contextual menu, no multi-action sheet, no preview popover. This is cross-cutting; don't reintroduce alternatives.
-
-### Rule 5 — One writer per IDB store (except `settings`)
-
-- `marks` — written only via `marks/store.js`. Never `put('marks', …)` directly.
-- `positions` — written by `reader/index.js` and `review/state.js`.
-- `activationState` / `datasetMeta` — written by `data/offline.js` (client) or `offline/dataset-updater.js` (SW).
-- `settings` is the shared scratchpad; convention is each feature owns its own keys, namespaced.
-
-Bypassing `marks/store.js` breaks cross-tab broadcast and the `MARKS_SAVED` / `MARKS_DELETED` event contracts.
+**TL;DR:** the unit of work is a surface or a contiguous cluster of surfaces — never a bug, never a file. Parallel subagents = distinct surfaces only. Extend the owning `tests/e2e/journey-X-*.spec.js` rather than creating new specs. **The playbook is canonical** — if this summary ever disagrees with it, the playbook wins.
 
 ## Workflow
 
-- Package manager: **pnpm** (pinned via `packageManager` in `package.json`).
-- Tests: `pnpm run test:run` (Vitest + jsdom + `fake-indexeddb/auto`). `npx vitest run` also works.
-- Build: `pnpm run build`.
-- Lint: `pnpm run lint`.
-- Chunk budget: `pnpm run check-chunks`.
-- See `docs/tech-stack.md` for the full script list.
-- Do not commit unless the user asks.
+Scripts, tooling, and stack references: see `docs/tech-stack.md`.

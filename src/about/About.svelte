@@ -16,7 +16,7 @@
     "Quran translation by Fadel Soliman (Bridges' Translation)",
     'Arabic typography by KFGQPC (King Fahd Glyphic and Typographic Project)',
     'Font: Scheherazade New (SIL Open Font License)',
-    'Built with Vite, Lightning CSS, Workbox',
+    'Built with Svelte, Vite, and Workbox',
   ]
 
   onMount(async () => {

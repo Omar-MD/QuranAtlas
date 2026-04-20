@@ -215,6 +215,8 @@ Inside mark editor on an existing mark.
 
 This is a cross-cutting rule, not a feature — preserved intentionally.
 
+> **Invariant (formerly `CLAUDE.md` Rule 4).** The mark editor is the **sole action surface** for a single verse. Long-press, right-click, and the command sheet's "Mark this verse" (F2) all route to it. Do **not** introduce a contextual menu, multi-action sheet, or preview popover as an alternative per-verse action surface. The verse-number tap (B3) surfaces edge indicators only — that's a navigation affordance, not a per-verse action, and is unaffected by this invariant.
+
 ---
 
 ## D. Settings & appearance

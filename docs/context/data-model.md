@@ -183,8 +183,16 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 
 ## Cross-cutting rules
 
-- **One writer per store**, by convention: `marks/store.ts` for `marks`; `reader/position.ts` + `review/state.ts` for `positions`; `data/offline.ts` + SW for `activationState`/`datasetMeta`. The `settings` store is shared — convention is that each feature owns its own keys.
-- **All writes go through `core/db.ts::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
+> **Invariant (formerly `CLAUDE.md` Rule 5) — one writer per store.** File references use basenames; grep for the basename, not a specific `.js`/`.ts`.
+>
+> - `marks` — written only via `marks/store`. Never `put('marks', …)` directly. Bypassing this breaks cross-tab broadcast and the `MARKS_SAVED` / `MARKS_DELETED` event contracts (see `marks` §Write invariant above).
+> - `positions` — written by `reader/position` (via `savePosition()`) and `review/state`.
+> - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced.
+>
+> Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
+
+- **All writes go through `core/db::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
 - **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `safety/sync.ts` shows the reload banner; `settings/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
 - **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
 - **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `positions`, extend `safety/sync.ts`.
