@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
   import ReviewCard from './ReviewCard.svelte'
-  import { getAll, getByLayerCanonical } from '../marks/store'
+  import { getAll, getByLayerCanonical, getAllCanonicalValues } from '../marks/store'
   import type { Mark } from '../marks/store'
   import { getColorForTag } from '../marks/tags'
   import { getSurahs } from '../data/dataset'
@@ -10,24 +10,44 @@
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { put } from '../core/db'
+  import { LAYER_NAMES, type LayerName } from '../core/db'
   import { logger } from '../core/logger'
   import { save as saveState, load as loadState, getDefaultState } from './state'
   import { clearUndoToast } from '../core/ui-bridge'
-  import { validateTagParam } from '../safety/input-validator'
+  import { validateLayerParam } from '../safety/input-validator'
   import { announce } from '../a11y/announcer'
   import { review } from '../state/review.svelte'
-  // openEditor bridge (review/ imports marks/ per module-graph)
   import { openEditor as _openEditor } from '../marks/editor-bridge'
 
-  // Props: tag is present when route is #/t/:tag (FVR), absent for #/review
-  const { tag: tagParam }: { tag?: string } = $props()
+  // Props: layer + value are present when route is #/<layer>/:value (FVR)
+  // tag is the legacy prop from #/t/:tag — handled as threads layer for backward compat
+  const { layer: layerParam, value: valueParam, tag: tagParam }: {
+    layer?: string
+    value?: string
+    tag?: string
+  } = $props()
 
-  // Use injected openEditor or fall back to the vanilla bridge
   function callOpenEditor(verseKey: string) {
     _openEditor(verseKey)
   }
 
   const PAGE_SIZE = 30
+
+  // Human-readable labels for each layer
+  const LAYER_LABELS: Record<LayerName, string> = {
+    threads:      'Thread',
+    subjects:     'Subject',
+    audience:     'Audience',
+    speaker:      'Speaker',
+    quotedSpeaker:'Quoted',
+    mode:         'Mode',
+    form:         'Form',
+    tone:         'Tone',
+    people:       'People',
+    places:       'Places',
+    events:       'Event',
+    divineNames:  'Name',
+  }
 
   // ── View state ────────────────────────────────────────────────────────────
   type HubView = 'all' | 'fvr' | 'not-found'
@@ -36,7 +56,8 @@
   let notFoundTag = $state('')
 
   // FVR header data
-  let fvrTag = $state('')
+  let fvrLayer = $state<LayerName>('threads')
+  let fvrValue = $state('')
   let fvrVerseCount = $state(0)
   let fvrSurahCount = $state(0)
 
@@ -46,6 +67,9 @@
   let filteredMarks = $state<Mark[]>([])
   let displayedMarks = $state<Mark[]>([])
   let hasMore = $state(false)
+
+  // Layer selector + value chips
+  let valuePool = $state<string[]>([])
 
   // Surahs metadata
   let surahs = $state<SurahMeta[]>([])
@@ -74,10 +98,13 @@
     })
   }
 
-  function filterMarks(sorted: Mark[], activeTag: string | null, surahFilter: number | null): Mark[] {
+  function filterMarks(sorted: Mark[], activeLayer: string, activeValue: string | null, surahFilter: number | null): Mark[] {
     let result = sorted
-    if (activeTag) {
-      result = result.filter(m => m._canon.threads.includes(activeTag))
+    if (activeValue) {
+      result = result.filter(m => {
+        const layer = activeLayer as LayerName
+        return m._canon[layer]?.includes(activeValue) ?? false
+      })
     }
     if (surahFilter) {
       const surahPrefix = `${surahFilter}:`
@@ -92,17 +119,6 @@
   }
 
   function computeRailBuckets(marks: Mark[], groupBy: string): { key: string; label: string; count: number; dotColor?: string }[] {
-    if (groupBy === 'tag') {
-      const byTag: Record<string, number> = {}
-      for (const m of marks) {
-        for (const t of m._canon.threads ?? []) {
-          byTag[t] = (byTag[t] ?? 0) + 1
-        }
-      }
-      return Object.entries(byTag)
-        .sort((a, b) => b[1] - a[1])
-        .map(([tag, count]) => ({ key: tag, label: tag, count, dotColor: getColorForTag(tag) }))
-    }
     if (groupBy === 'surah') {
       const bySurah: Record<number, number> = {}
       for (const m of marks) {
@@ -117,27 +133,40 @@
           return { key: String(n), label: meta ? meta.name : `Surah ${n}`, count }
         })
     }
-    // flat — group by YYYY-MM
-    const byMonth: Record<string, number> = {}
-    for (const m of marks) {
-      const d = m.createdAt ? new Date(m.createdAt) : null
-      if (!d) { continue }
-      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      byMonth[ym] = (byMonth[ym] ?? 0) + 1
+    if (groupBy === 'flat') {
+      const byMonth: Record<string, number> = {}
+      for (const m of marks) {
+        const d = m.createdAt ? new Date(m.createdAt) : null
+        if (!d) { continue }
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        byMonth[ym] = (byMonth[ym] ?? 0) + 1
+      }
+      return Object.entries(byMonth)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([ym, count]) => ({ key: ym, label: ym, count }))
     }
-    return Object.entries(byMonth)
-      .sort((a, b) => b[0].localeCompare(a[0]))
-      .map(([ym, count]) => ({ key: ym, label: ym, count }))
+    // tag (default) — use activeLayer canonical values
+    const layer = review.activeLayer as LayerName
+    const byVal: Record<string, number> = {}
+    for (const m of marks) {
+      for (const v of m._canon[layer] ?? []) {
+        byVal[v] = (byVal[v] ?? 0) + 1
+      }
+    }
+    return Object.entries(byVal)
+      .sort((a, b) => b[1] - a[1])
+      .map(([val, count]) => ({ key: val, label: val, count, dotColor: getColorForTag(val) }))
   }
 
   // ── Derived display list ───────────────────────────────────────────────────
 
   $effect(() => {
-    let result = filterMarks(sortedMarks, review.activeTag, review.surahFilter)
+    let result = filterMarks(sortedMarks, review.activeLayer, review.activeValue, review.surahFilter)
 
     if (isDesktop) {
       if (review.groupBy === 'tag' && railActiveTags.size > 0) {
-        result = result.filter(m => m._canon.threads.some(t => railActiveTags.has(t)))
+        const layer = review.activeLayer as LayerName
+        result = result.filter(m => m._canon[layer]?.some(t => railActiveTags.has(t)) ?? false)
       } else if (review.groupBy === 'surah' && railActiveGroup !== null) {
         const surahNum = parseInt(railActiveGroup, 10)
         result = result.filter(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10) === surahNum)
@@ -156,9 +185,8 @@
     hasMore = result.length > PAGE_SIZE
   })
 
-  // ── Unique tags / surahs for dropdowns ────────────────────────────────────
+  // ── Unique surahs for surah filter dropdown ────────────────────────────────
 
-  const uniqueTags = $derived([...new Set(allMarks.flatMap(m => m._canon.threads))].sort())
   const surahsWithMarks = $derived([...new Set(allMarks.map(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10)))].sort((a, b) => a - b))
   const railBuckets = $derived(computeRailBuckets(allMarks, review.groupBy))
 
@@ -167,48 +195,131 @@
   async function reloadMarks() {
     allMarks = await getAll()
     sortedMarks = sortMarks(allMarks, review.sort)
+    valuePool = await getAllCanonicalValues(review.activeLayer as LayerName)
+  }
+
+  async function reloadValuePool() {
+    valuePool = await getAllCanonicalValues(review.activeLayer as LayerName)
   }
 
   // ── Actions ────────────────────────────────────────────────────────────────
+
+  async function handleLayerChange(layer: LayerName) {
+    review.activeLayer = layer
+    review.activeValue = null
+    review.groupBy = 'tag'
+    railActiveTags.clear()
+    railActiveGroup = null
+    await reloadValuePool()
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: layer,
+      activeValue: null,
+      surahFilter: review.surahFilter,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
+  }
+
+  async function handleValueChipClick(val: string) {
+    if (review.activeValue === val) {
+      review.activeValue = null
+    } else {
+      review.activeValue = val
+    }
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: review.activeLayer,
+      activeValue: review.activeValue,
+      surahFilter: review.surahFilter,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
+  }
 
   async function handleGroupByChange(value: string) {
     review.groupBy = value
     review.activeTags = []
     railActiveTags.clear()
     railActiveGroup = null
-    await saveState({ view: review.view, activeTag: review.activeTag, surahFilter: review.surahFilter, sortBy: sortKeyToField(review.sort), groupBy: review.groupBy })
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: review.activeLayer,
+      activeValue: review.activeValue,
+      surahFilter: review.surahFilter,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
   }
 
   async function handleSortChange(value: string) {
     review.sort = value
     sortedMarks = sortMarks(allMarks, review.sort)
-    await saveState({ view: review.view, activeTag: review.activeTag, surahFilter: review.surahFilter, sortBy: sortKeyToField(review.sort), groupBy: review.groupBy })
-  }
-
-  async function handleTagFilterChange(value: string) {
-    review.activeTag = value || null
-    await saveState({ view: review.view, activeTag: review.activeTag, surahFilter: review.surahFilter, sortBy: sortKeyToField(review.sort), groupBy: review.groupBy })
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: review.activeLayer,
+      activeValue: review.activeValue,
+      surahFilter: review.surahFilter,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
   }
 
   async function handleSurahFilterChange(value: string) {
     review.surahFilter = value ? parseInt(value, 10) : null
-    await saveState({ view: review.view, activeTag: review.activeTag, surahFilter: review.surahFilter, sortBy: sortKeyToField(review.sort), groupBy: review.groupBy })
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: review.activeLayer,
+      activeValue: review.activeValue,
+      surahFilter: review.surahFilter,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
   }
 
-  async function clearTagFilter() {
-    review.activeTag = null
-    await saveState({ view: review.view, activeTag: review.activeTag, surahFilter: review.surahFilter, sortBy: sortKeyToField(review.sort), groupBy: review.groupBy })
+  async function clearValueFilter() {
+    review.activeValue = null
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: review.activeLayer,
+      activeValue: null,
+      surahFilter: review.surahFilter,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
   }
 
   async function clearSurahFilter() {
     review.surahFilter = null
-    await saveState({ view: review.view, activeTag: review.activeTag, surahFilter: review.surahFilter, sortBy: sortKeyToField(review.sort), groupBy: review.groupBy })
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: review.activeLayer,
+      activeValue: review.activeValue,
+      surahFilter: null,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
   }
 
   async function clearAllFilters() {
-    review.activeTag = null
+    review.activeValue = null
     review.surahFilter = null
-    await saveState({ view: review.view, activeTag: null, surahFilter: null, sortBy: sortKeyToField(review.sort), groupBy: review.groupBy })
+    await saveState({
+      view: review.view,
+      activeTag: null,
+      activeLayer: review.activeLayer,
+      activeValue: null,
+      surahFilter: null,
+      sortBy: sortKeyToField(review.sort),
+      groupBy: review.groupBy,
+    })
   }
 
   function loadMoreMarks() {
@@ -239,7 +350,6 @@
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
-  // Module-level cleanup refs — populated after mount completes async init
   let _unsubSync: (() => void) | null = null
   let _unsubVisible: (() => void) | null = null
 
@@ -247,7 +357,6 @@
     review.activeTags = []
     railActiveGroup = null
 
-    // Load surahs for name resolution
     try {
       surahs = await getSurahs()
     } catch (error) {
@@ -255,49 +364,61 @@
       surahs = []
     }
 
-    // Tag deep link: #/t/:tag → FVR branch
-    if (tagParam !== undefined) {
-      const validation = validateTagParam(tagParam)
+    // Resolve FVR params — new scheme: layer + value; legacy: tag (threads layer)
+    const fvrLayerRaw = layerParam ?? (tagParam !== undefined ? 'threads' : undefined)
+    const fvrValueRaw = valueParam ?? tagParam
+
+    if (fvrLayerRaw !== undefined && fvrValueRaw !== undefined) {
+      // FVR mode — validate layer + value
+      const validation = validateLayerParam(fvrLayerRaw, fvrValueRaw)
 
       if (!validation.valid) {
         hubView = 'not-found'
-        notFoundTag = String(tagParam ?? '').slice(0, 50)
+        notFoundTag = String(fvrValueRaw ?? '').slice(0, 50)
         announce(`No marks found for "${notFoundTag}". Visit Review Hub to browse your marks.`)
         return
       }
 
-      const tag = validation.label
-      const marks = await getByLayerCanonical('threads', tag)
+      const { layer, canonical } = validation
+      const marks = await getByLayerCanonical(layer, canonical)
 
       if (marks.length === 0) {
         hubView = 'not-found'
-        notFoundTag = String(tagParam ?? '').slice(0, 50)
+        notFoundTag = String(fvrValueRaw ?? '').slice(0, 50)
         announce(`No marks found for "${notFoundTag}". Visit Review Hub to browse your marks.`)
         return
       }
 
-      // Save FVR state
-      const idbState = {
+      // Persist FVR state
+      const lastSurfaceHash = tagParam !== undefined
+        ? `#/t/${encodeURIComponent(canonical)}`
+        : `#/${layer}/${encodeURIComponent(canonical)}`
+
+      await saveState({
         view: 'fvr',
-        activeTag: tag,
+        activeTag: canonical,
+        activeLayer: layer,
+        activeValue: canonical,
         surahFilter: null,
         sortBy: 'updatedAt',
         groupBy: 'surah',
-      }
-      await saveState(idbState)
-      await put('settings', { key: 'lastSurface', value: `#/t/${encodeURIComponent(tag)}` })
+      })
+      await put('settings', { key: 'lastSurface', value: lastSurfaceHash })
 
       review.view = 'fvr'
       review.groupBy = 'surah'
       review.sort = 'recent'
-      review.activeTag = tag
+      review.activeTag = canonical
+      review.activeLayer = layer
+      review.activeValue = canonical
       review.activeTags = []
       review.surahFilter = null
 
       allMarks = marks
       sortedMarks = sortMarks(marks, review.sort)
 
-      fvrTag = tag
+      fvrLayer = layer
+      fvrValue = canonical
       fvrVerseCount = marks.length
       fvrSurahCount = new Set(marks.map(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10))).size
 
@@ -310,7 +431,6 @@
     const saved = await loadState()
     const loaded = saved ?? getDefaultState()
 
-    // Reset FVR view when entering hub directly
     if (loaded.view === 'fvr') { loaded.view = 'all' }
 
     const sortVal = loaded.sortBy === 'createdAt' ? 'created' : 'recent'
@@ -319,6 +439,8 @@
     review.groupBy = loaded.groupBy ?? 'tag'
     review.sort = sortVal
     review.activeTag = loaded.activeTag ?? null
+    review.activeLayer = loaded.activeLayer ?? 'threads'
+    review.activeValue = loaded.activeValue ?? null
     review.activeTags = []
     review.surahFilter = loaded.surahFilter ?? null
 
@@ -327,7 +449,6 @@
     hubView = 'all'
     emit(Events.REVIEW_OPEN, {})
 
-    // Subscribe to cross-tab and visibility events
     _unsubSync = on(Events.SYNC_UPDATE_RECEIVED, async () => {
       await reloadMarks()
     })
@@ -347,6 +468,8 @@
       review.groupBy = 'tag'
       review.sort = 'recent'
       review.activeTag = null
+      review.activeLayer = 'threads'
+      review.activeValue = null
       review.surahFilter = null
       allMarks = []
       sortedMarks = []
@@ -358,7 +481,7 @@
 <!-- ── Not-found state ─────────────────────────────────────────────────── -->
 {#if hubView === 'not-found'}
   <div class="qa-review-tag-not-found">
-    <h2>Tag not found</h2>
+    <h2>Not found</h2>
     <p>No marks found for "{notFoundTag}".</p>
     <a href="#/review" class="qa-review-hub-link">Go to Review Hub</a>
   </div>
@@ -369,10 +492,10 @@
     <div class="qa-fvr-header">
       <a class="qa-fvr-back" href="#/review">← Marks</a>
       <div class="qa-fvr-title-block">
-        <div class="qa-fvr-label">Tag</div>
+        <div class="qa-fvr-label">{LAYER_LABELS[fvrLayer] ?? fvrLayer}</div>
         <h1 class="qa-fvr-title">
-          <span class="qa-fvr-dot" style:background-color={getColorForTag(fvrTag)}></span>
-          <span class="qa-fvr-name">{fvrTag}</span>
+          <span class="qa-fvr-dot" style:background-color={getColorForTag(fvrValue)}></span>
+          <span class="qa-fvr-name">{fvrValue}</span>
         </h1>
         <div class="qa-fvr-stats">
           <span><strong>{fvrVerseCount}</strong> verse{fvrVerseCount === 1 ? '' : 's'}</span>
@@ -382,7 +505,6 @@
       </div>
     </div>
 
-    <!-- FVR card list -->
     <div class="qa-review-card-list">
       {#each displayedMarks as mark (mark.verseKey)}
         <ReviewCard
@@ -403,7 +525,6 @@
 <!-- ── All-marks hub ─────────────────────────────────────────────────────── -->
 {:else if hubView === 'all'}
   {#if allMarks.length === 0 && sortedMarks.length === 0}
-    <!-- Empty state: no marks at all -->
     <div class="qa-review-empty">
       No marks yet. Start reading and mark verses to see them here.
     </div>
@@ -412,9 +533,24 @@
     <div class="qa-review-layout">
       <!-- Left rail -->
       <aside class="qa-review-rail">
+        <!-- Layer selector -->
+        <div class="qa-review-rail-section">Layer</div>
+        {#each LAYER_NAMES as ln (ln)}
+          <button
+            type="button"
+            class="qa-review-rail-row"
+            class:qa-review-rail-row--on={review.activeLayer === ln}
+            data-layer={ln}
+            onclick={() => handleLayerChange(ln)}
+          >
+            <span>{LAYER_LABELS[ln]}</span>
+            <span class="qa-review-rail-count">{allMarks.filter(m => (m._canon[ln]?.length ?? 0) > 0).length}</span>
+          </button>
+        {/each}
+
         <div class="qa-review-rail-section">Group by</div>
         <div class="qa-review-seg" style="width:100%;display:flex">
-          {#each [['tag', 'Tag'], ['surah', 'Surah'], ['flat', 'Date']] as groupItem (groupItem[0])}
+          {#each [['surah', 'Surah'], ['flat', 'Date'], ['tag', 'Value']] as groupItem (groupItem[0])}
             <button
               type="button"
               class="qa-review-seg-item"
@@ -426,7 +562,7 @@
         </div>
 
         <div class="qa-review-rail-section">
-          {review.groupBy === 'tag' ? 'Tags' : review.groupBy === 'surah' ? 'Surahs' : 'Dates'}
+          {review.groupBy === 'surah' ? 'Surahs' : review.groupBy === 'flat' ? 'Dates' : 'Values'}
         </div>
 
         {#each railBuckets as bucket (bucket.key)}
@@ -496,9 +632,29 @@
   {:else}
     <!-- Mobile: controls + cards -->
     <div class="qa-review-controls">
+      <!-- Layer segment pill -->
+      <div
+        class="qa-review-layer-seg qa-review-seg"
+        role="tablist"
+        aria-label="Layer"
+        style="grid-column:1/-1"
+      >
+        {#each LAYER_NAMES as ln (ln)}
+          <button
+            type="button"
+            class="qa-review-seg-item"
+            class:qa-review-seg-item--on={review.activeLayer === ln}
+            role="tab"
+            aria-selected={review.activeLayer === ln}
+            data-layer={ln}
+            onclick={() => handleLayerChange(ln)}
+          >{LAYER_LABELS[ln]}</button>
+        {/each}
+      </div>
+
       <!-- Group segment pill -->
       <div class="qa-review-seg" role="tablist" aria-label="Group by">
-        {#each [['tag', 'Tag'], ['surah', 'Surah'], ['flat', 'Date']] as groupItem (groupItem[0])}
+        {#each [['tag', 'Value'], ['surah', 'Surah'], ['flat', 'Date']] as groupItem (groupItem[0])}
           <button
             type="button"
             class="qa-review-seg-item"
@@ -523,20 +679,6 @@
         <option value="created">Sort: Created</option>
       </select>
 
-      <!-- Tag filter dropdown -->
-      <select
-        class="qa-review-select"
-        data-control="tag"
-        aria-label="Filter by tag"
-        value={review.activeTag ?? ''}
-        onchange={(e) => handleTagFilterChange((e.target as HTMLSelectElement).value)}
-      >
-        <option value="">Tag: All</option>
-        {#each uniqueTags as tag (tag)}
-          <option value={tag}>{tag}</option>
-        {/each}
-      </select>
-
       <!-- Surah filter dropdown -->
       <select
         class="qa-review-select"
@@ -553,13 +695,31 @@
       </select>
     </div>
 
+    <!-- Value chips for current layer -->
+    {#if valuePool.length > 0}
+      <div class="qa-review-value-chips" aria-label="Filter by {LAYER_LABELS[review.activeLayer as LayerName] ?? review.activeLayer} value">
+        {#each valuePool as val (val)}
+          <button
+            type="button"
+            class="qa-review-value-chip"
+            class:qa-review-value-chip--on={review.activeValue === val}
+            data-value={val}
+            onclick={() => handleValueChipClick(val)}
+          >
+            <span class="qa-review-value-chip-dot" style:background-color={getColorForTag(val)}></span>
+            {val}
+          </button>
+        {/each}
+      </div>
+    {/if}
+
     <!-- Active filter chips -->
-    {#if review.activeTag || review.surahFilter}
+    {#if review.activeValue || review.surahFilter}
       <div class="qa-review-active-filters">
-        {#if review.activeTag}
+        {#if review.activeValue}
           <span class="qa-review-filter-chip">
-            {review.activeTag}
-            <button onclick={clearTagFilter} aria-label="Clear {review.activeTag} filter">✕</button>
+            {review.activeValue}
+            <button onclick={clearValueFilter} aria-label="Clear {review.activeValue} filter">✕</button>
           </span>
         {/if}
         {#if review.surahFilter !== null}
@@ -601,12 +761,6 @@
 {/if}
 
 <style>
-  /* ── Card ─────────────────────────────────────────────────────────────── */
-  /* Note: .qa-review-card-* styles are defined here in the component.      */
-  /* The shared selectors in theme.css (.qa-review-controls, .qa-review-seg,*/
-  /* .qa-review-layout, .qa-fvr-*) are removed from theme.css as part of   */
-  /* this migration and scoped here instead.                                 */
-
   .qa-review-tag-not-found {
     text-align: center;
     padding: 3rem 1rem;
@@ -679,6 +833,49 @@
   .qa-review-select:focus-visible {
     outline: 2px solid var(--qa-ambient-accent);
     border-color: var(--qa-ambient-accent);
+  }
+
+  /* ── Value chips ──────────────────────────────────────────────────────── */
+
+  .qa-review-value-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 1rem;
+    padding: 0 0.25rem;
+  }
+
+  .qa-review-value-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.3125rem 0.625rem;
+    border-radius: 999px;
+    font-size: var(--qa-text-size-meta);
+    background-color: var(--qa-ambient-surface);
+    border: 1px solid var(--qa-ambient-border);
+    color: var(--qa-text-primary);
+    cursor: pointer;
+    font: inherit;
+    min-height: 32px;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .qa-review-value-chip:hover {
+    background-color: color-mix(in srgb, var(--qa-ambient-accent) 8%, var(--qa-ambient-surface));
+  }
+
+  .qa-review-value-chip--on {
+    background-color: var(--qa-selection-bg);
+    color: var(--qa-selection-text);
+    box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
+  }
+
+  .qa-review-value-chip-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
 
   .qa-review-active-filters {
@@ -761,6 +958,16 @@
     border: 1px solid var(--qa-ambient-border);
   }
 
+  .qa-review-layer-seg {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .qa-review-layer-seg::-webkit-scrollbar {
+    display: none;
+  }
+
   .qa-review-seg-item {
     padding: 5px 12px;
     border: none;
@@ -772,6 +979,7 @@
     font-weight: 600;
     cursor: pointer;
     letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 
   .qa-review-seg-item--on {
@@ -786,7 +994,7 @@
     display: block;
   }
 
-  /* ── Desktop — left rail + 2-col card grid ───────────────────────────── */
+  /* ── Desktop — left rail + main column ──────────────────────────────── */
   @media (min-width: 1180px) {
     .qa-review-layout {
       display: grid;
@@ -805,6 +1013,9 @@
       padding-right: 1rem;
       border-right: 1px solid var(--qa-ambient-border);
       font-size: var(--qa-text-size-meta);
+      max-height: 90vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
     }
 
     .qa-review-rail-section {

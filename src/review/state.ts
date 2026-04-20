@@ -18,6 +18,8 @@ const POSITION_ID = 'review'
 export type ReviewStateRecord = {
   view: string
   activeTag: string | null
+  activeLayer: string
+  activeValue: string | null
   surahFilter: number | null
   sortBy: string
   groupBy: string
@@ -26,6 +28,8 @@ export type ReviewStateRecord = {
 const DEFAULT_STATE: ReviewStateRecord = {
   view: 'all',
   activeTag: null,
+  activeLayer: 'threads',
+  activeValue: null,
   surahFilter: null,
   sortBy: 'updatedAt',
   groupBy: 'tag',

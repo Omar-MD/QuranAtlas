@@ -74,7 +74,7 @@
       {#each mark._canon.threads as tag (tag)}
         <a
           class="qa-review-card-chip"
-          href="#{`/t/${encodeURIComponent(tag)}`}"
+          href="#{`/threads/${encodeURIComponent(tag)}`}"
         >
           <span
             class="qa-review-card-chip-dot"
