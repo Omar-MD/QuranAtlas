@@ -24,7 +24,7 @@
     try {
       const allMarks = await getAll()
       marks = allMarks.length
-      tags = new Set(allMarks.flatMap(m => m.tags)).size
+      tags = new Set(allMarks.flatMap(m => m._canon.threads)).size
       surahs = new Set(allMarks.map(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10))).size
       pctTagged = ((allMarks.length / 6236) * 100).toFixed(2)
       statsLoaded = true
