@@ -1,15 +1,15 @@
 /**
  * Tag palette, seed tags, and color resolution.
  *
- * Tags are implicit — derived from the by-tag multiEntry index on marks.
+ * Tags are implicit — derived from the by-canon-threads multiEntry index on marks.
  * No separate IDB store. This module provides:
  * - A fixed 12-slot WCAG AA color palette
- * - 5 seed tag suggestions for cold-start
+ * - Seed tag suggestions for cold-start
  * - Deterministic label → color mapping (hash for custom, fixed slot for seeds)
- * - getAllUsedTags() via index-only key cursor scan
+ * - getAllUsedTags() via index-only key cursor scan on by-canon-threads
  */
 
-import { getDb } from '../core/db.js'
+import { getAllCanonicalValues } from './store.js'
 import { SEMANTIC_TAG_LABELS, getSemanticTagColor } from '../core/tag-colors.js'
 
 /**
@@ -95,26 +95,10 @@ export function getSeedTags() {
 }
 
 /**
- * Get all unique tag labels from the marks store via index-only key cursor.
- * Fast even at 500+ marks — no record deserialization.
- * @returns {Promise<string[]>} sorted unique tag labels
+ * Get all unique tag labels from the marks store (threads layer, canonical).
+ * Fast even at 500+ marks — uses index-only key cursor scan.
+ * @returns {Promise<string[]>} sorted unique canonical tag labels
  */
 export async function getAllUsedTags() {
-  const db = await getDb()
-  const tags = new Set()
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('marks', 'readonly')
-    const index = tx.objectStore('marks').index('by-tag')
-    const request = index.openKeyCursor()
-    request.onsuccess = () => {
-      const cursor = request.result
-      if (cursor) {
-        tags.add(cursor.key)
-        cursor.continue()
-      } else {
-        resolve([...tags].sort())
-      }
-    }
-    request.onerror = () => reject(request.error)
-  })
+  return getAllCanonicalValues('threads')
 }
