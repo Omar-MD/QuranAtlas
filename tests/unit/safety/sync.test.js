@@ -62,6 +62,28 @@ describe('safety/sync.js', () => {
     })
   })
 
+  describe('broadcastEdgeChange()', () => {
+    it('posts message with correct payload on the channel', () => {
+      sync.broadcastEdgeChange(['e1'])
+
+      const channel = MockBroadcastChannel.instances[0]
+      expect(channel.postMessage).toHaveBeenCalledWith({
+        type: 'edges:changed',
+        edgeIds: ['e1'],
+      })
+    })
+
+    it('posts message with multiple edgeIds for bulk operations', () => {
+      sync.broadcastEdgeChange(['e1', 'e2', 'e3'])
+
+      const channel = MockBroadcastChannel.instances[0]
+      expect(channel.postMessage).toHaveBeenCalledWith({
+        type: 'edges:changed',
+        edgeIds: ['e1', 'e2', 'e3'],
+      })
+    })
+  })
+
   describe('onMarkChange()', () => {
     it('fires callback when incoming message received', () => {
       const callback = vi.fn()
@@ -105,6 +127,32 @@ describe('safety/sync.js', () => {
       expect(errorSpy).toHaveBeenCalledWith('Sync handler error:', {
         error: expect.any(Error),
       })
+    })
+  })
+
+  describe('edges:changed message handling', () => {
+    it('fires SYNC_EDGES_UPDATED event when edges:changed message received', async () => {
+      const syncEdgesUpdated = vi.fn()
+      const { on } = await import('../../../src/core/events.js')
+
+      on(Events.SYNC_EDGES_UPDATED, syncEdgesUpdated)
+
+      const channel = MockBroadcastChannel.instances[0]
+      channel.onmessage({ data: { type: 'edges:changed', edgeIds: ['e1'] } })
+
+      expect(syncEdgesUpdated).toHaveBeenCalledWith({ edgeIds: ['e1'] })
+    })
+
+    it('fires SYNC_EDGES_UPDATED with multiple edgeIds', async () => {
+      const syncEdgesUpdated = vi.fn()
+      const { on } = await import('../../../src/core/events.js')
+
+      on(Events.SYNC_EDGES_UPDATED, syncEdgesUpdated)
+
+      const channel = MockBroadcastChannel.instances[0]
+      channel.onmessage({ data: { type: 'edges:changed', edgeIds: ['e1', 'e2', 'e3'] } })
+
+      expect(syncEdgesUpdated).toHaveBeenCalledWith({ edgeIds: ['e1', 'e2', 'e3'] })
     })
   })
 

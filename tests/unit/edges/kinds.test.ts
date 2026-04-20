@@ -11,6 +11,7 @@ describe('edges/kinds', () => {
     expect(inferDirectedFromKind('parallel')).toBe(false)
     expect(inferDirectedFromKind('contrast')).toBe(false)
     expect(inferDirectedFromKind('same-story')).toBe(false)
+    expect(inferDirectedFromKind('same-character')).toBe(false)
     expect(inferDirectedFromKind('echo')).toBe(false)
   })
   it('explains + expands + fulfills + abrogates are directed', () => {
