@@ -2,216 +2,102 @@
 
 **Read, reflect, remember.**
 
-A distraction-free Progressive Web App for reading the Quran on mobile devices. Works seamlessly online and offline, with a focused reading experience featuring Arabic text (Uthmani script) and English translation.
+[![CI](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml?query=branch%3Amain)
+[![Deploy](https://github.com/Omar-MD/QuranAtlas/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/Omar-MD/QuranAtlas/actions/workflows/deploy.yml?query=branch%3Amain)
 
-## Features
+QuranAtlas is a distraction-free, offline-first Qur'an reading app. Continuous verse-interleaved reading with Arabic (Uthmani) and English translation, personal verse marks with custom tags, and ambient navigation that gets out of the way while you read.
 
-- Clean Arabic text with English translation (Bridges' by Fadel Soliman)
-- Translation toggle on/off
-- Three themes: Light, Sepia, Dark
-- Session restore — picks up where you left off
-- Verse marking with tags (Favourite, Study, Reflection, Question)
-- Review hub to browse all your marks
-- Surah navigation with live search
-- Verse deep links (`#/s/2/255`)
-- Full offline support — download once, read anywhere
-- PWA install — add to home screen for native app experience
-- Automatic dataset updates
+## Environments
 
-## Tech Stack
-
-| Layer | Tool |
-|---|---|
-| Package Manager | pnpm |
-| Build Tool | Vite 8 (Rolldown-powered) |
-| PWA | vite-plugin-pwa + Workbox (injectManifest) |
-| CSS | Lightning CSS |
-| Testing | Vitest + jsdom + fake-indexeddb |
-| E2E | Playwright |
-| Linting | ESLint (strict mode) |
-
-See [docs/tech-stack.md](docs/tech-stack.md) for full details and rationale.
-
-## Prerequisites
-
-- **Node.js** 20+
-- **pnpm** 10+ (`corepack enable` or `npm install -g pnpm`)
-
-## Getting Started
-
-```bash
-# Install dependencies
-pnpm install
-
-# Start dev server
-pnpm dev
-
-# Run tests
-pnpm test          # watch mode
-pnpm test:run      # single run
-
-# Lint
-pnpm lint
-
-# Build for production
-pnpm build
-
-# Preview production build
-pnpm preview
-```
-
-## Available Commands
-
-| Command | Description |
-|---|---|
-| `pnpm dev` | Start dev server with HMR at `http://localhost:5173` |
-| `pnpm build` | Build for production (outputs to `dist/`) |
-| `pnpm preview` | Preview production build locally |
-| `pnpm test` | Run tests in watch mode |
-| `pnpm test:run` | Run tests once and exit |
-| `pnpm test:coverage` | Run tests with V8 coverage report |
-| `pnpm lint` | Run ESLint on `src/` |
-| `pnpm check-chunks` | Verify no JS chunk exceeds 150KB gzip |
-
-## Project Structure
-
-```
-src/
-├── core/                    # Infrastructure
-│   ├── app.js               # Bootstrap: wires modules, init lifecycle
-│   ├── router.js            # Hash router with launch restore
-│   ├── events.js            # Global pub/sub event bus
-│   ├── db.js                # IndexedDB connection (v1 schema)
-│   └── theme.css            # CSS variables for 3 themes
-│
-├── data/                    # Data access & offline
-│   ├── dataset.js           # Corpus access: getSurah(), getSurahs()
-│   ├── offline.js           # PWA install + corpus download
-│   └── dataset-updater.js   # Version check + cache invalidation
-│
-├── reader/                  # Reading experience (#/s/:surah/:ayah)
-│   ├── index.js             # Route handler
-│   ├── scroll-tracker.js    # Position tracking via IntersectionObserver
-│   └── resume-indicator.js  # "Resume reading" banner
-│
-├── nav/                     # Navigation & browsing
-│   └── index.js             # Surah list, search, filter
-│
-├── marks/                   # Verse marking & tagging
-│   ├── store.js             # IDB CRUD for marks
-│   ├── tags.js              # Default tag registry
-│   ├── editor.js            # Long-press modal, tag assignment
-│   └── indicator.js         # Colored dots on verses
-│
-├── review/                  # Review hub (#/review)
-│   ├── hub.js               # All Marks: grouping, filtering, pagination
-│   └── state.js             # Review state persistence
-│
-├── settings/                # Settings (#/settings)
-│   ├── index.js             # Settings page
-│   ├── theme.js             # Theme management
-│   └── clear-data.js        # Destructive data clear
-│
-├── about/                   # About (#/about)
-│   ├── index.js             # About page
-│   ├── versions.js          # App + dataset versions
-│   ├── attribution.js       # Credits
-│   ├── storage.js           # Storage quota display
-│   └── pwa-install.js       # Install button
-│
-├── safety/                  # Cross-cutting safety
-│   └── input-validator.js   # Navigation + tag validation
-│
-├── a11y/                    # Accessibility
-│   └── announcer.js         # aria-live announcements
-│
-└── sw.js                    # Service worker (separate context)
-```
-
-## Architecture
-
-### Module Communication
-
-All cross-module communication goes through `core/events.js` (pub/sub bus), with two documented exceptions:
-- `safety/` modules — may be imported directly by any feature
-- `a11y/` modules — may be imported directly by any feature
-
-Feature modules must not import from other feature modules (except `review/` → `marks/store.js` for data access).
-
-### IndexedDB Schema (v1)
-
-| Store | Key Path | Purpose |
+| Branch | Domain | Status |
 |---|---|---|
-| `settings` | `key` | Translation toggle, theme, deleted defaults |
-| `positions` | `id` | Per-surah reading position, review state |
-| `marks` | `verseKey` | Marked verses with tags (indexes: `by-tag`, `by-updated`) |
-| `activationState` | `id` | Offline download/update state machine |
-| `datasetMeta` | `id` | Dataset version tracking |
+| `main` (production) | [quranatlas.org](https://quranatlas.org) · [www.quranatlas.org](https://www.quranatlas.org) | [![CI](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml?query=branch%3Amain) [![Deploy](https://github.com/Omar-MD/QuranAtlas/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/Omar-MD/QuranAtlas/actions/workflows/deploy.yml?query=branch%3Amain) |
+| `staging` | [staging.quranatlas.org](https://staging.quranatlas.org) | [![CI](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml/badge.svg?branch=staging)](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml?query=branch%3Astaging) |
+| `dev` | [dev.quranatlas.org](https://dev.quranatlas.org) | [![CI](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/Omar-MD/QuranAtlas/actions/workflows/ci.yml?query=branch%3Adev) |
 
-### Routing
+Click any badge to open the workflow's run list — the most recent run (and any failures) are listed there.
 
-| Route | Module |
-|---|---|
-| `#/s/:surah` | `reader/index.js` |
-| `#/s/:surah/:ayah` | `reader/index.js` |
-| `#/review` | `review/hub.js` |
-| `#/settings` | `settings/index.js` |
-| `#/about` | `about/index.js` |
+## Who is it for?
 
-## Development Phases
+- Muslims who want a focused, uncluttered way to read the Qur'an on their phone or laptop.
+- Readers who need reliable offline access — commutes, travel, prayer times with no signal.
+- Students who mark verses by theme (mercy, patience, tawakkul, etc.) and revisit them grouped by tag.
 
-**Phase 1** — Online reading, PWA install, continuous reader with session restore, surah navigation
-**Phase 2** — Verse marks with default tags, review hub
-**Phase 3** — visibilitychange safety, verse deep links, dataset updates, settings/about
-**Phase 4** (future) — BroadcastChannel sync, custom tags, Filtered Verse Review, bulk delete
+## What you get
 
-See [docs/product-info.md](docs/product-info.md) for the full product overview and [docs/specs/](docs/specs/) for detailed story specifications.
+### Reading experience
+- Continuous verse-interleaved layout. Arabic (Uthmani script via KFGQPC) on top of each verse, English translation (Bridges' by Fadel Soliman) underneath.
+- Translation toggle (on/off) — persists across sessions.
+- Four themes: **Light**, **Sepia**, **Dark**, **Auto** (follows `prefers-color-scheme`, flips live when the OS changes).
+- Adjustable font size (slider + `⌘↑` / `⌘↓` / `0` shortcuts).
+- Chunked rendering so long surahs stay responsive.
+- Session restore — close the app and return later to the last-read verse.
+- Desktop layout (≥1180px) — centered reader, mark editor as a verse-hero modal, review hub with a sticky left rail.
 
-## Testing
+### Navigation
+- **Ambient dock** (floating bottom pill: Read · Search · Review · More) and **ambient pill** (current `{surah}:{verse}` on the reader).
+- **Command sheet** (`⌘K`) — unified search across surahs, verses, tags, marks, commands. Type `2:255` to jump; type `mer` to deep-link to the `mercy` tag.
+- **Surah directory** (`#/surahs`) with search, filter (All / Bookmarked / Recent), continue-reading card.
+- Deep links for every verse (`#/s/{surah}/{ayah}`) and every tag (`#/t/{tag}`).
+
+### Marks, tags, review
+- **One action surface per verse: the mark editor.** Reachable by long-press, right-click, `m`, or the command sheet.
+- 16 seed tags + create-your-own tags inline; free-text note per mark; delete with undo toast.
+- **Review hub** (`#/review`) — three-segment grouping pill (Tag / Surah / Date), tag + surah filters, sort, pagination. Marks render as a flat deduped list.
+- **FVR — Filtered-Verse Review** (`#/t/{tag}`) — all verses carrying a single tag, shareable by link.
+- **Cross-tab coherence** — mark writes broadcast to other tabs via BroadcastChannel.
+
+### First-run onboarding
+- Five-screen walkthrough: Welcome → Theme → Translation → Shortcuts primer → Tags intro. Skip available from screen 2 onward.
+
+### Keyboard shortcuts
+Full reference via `?` from any non-input context.
+- **Universal**: `⌘K` command sheet · `?` cheatsheet · `Esc` close / back from FVR.
+- **"Go to" chords**: `g h` continue · `g s` surah list · `g r` review · `g a` about · `g p` preferences.
+- **Reader**: `j` / `k` next/prev verse · `]` / `[` next/prev surah · `m` mark centered verse · `t` translation · `+` / `-` / `0` font · `d` cycle theme.
+
+### Offline & privacy
+- Service worker caches the full Qur'an corpus (6,236 verses) on first online use. Subsequent launches work fully offline.
+- Dataset updates fetched in background, verified by SHA-256, promoted atomically.
+- PWA install — add to home screen.
+- Everything lives in IndexedDB on the user's device. No sync, no tracking, no analytics, no backend. Clearing data is one tap.
+
+## What's NOT included
+
+Deliberately out of scope: audio recitation, transliteration, page-based Mushaf layout, full-text search across all verses, copy-verse / sharing, multi-device sync, community features, multiple translation editions (today: Bridges' only), footnotes / tafsir, import/export.
+
+## Tech stack
+
+Svelte 5 + TypeScript, Vite 8 (Rolldown), vite-plugin-pwa + Workbox (custom `src/sw.js`), IndexedDB, Vitest, Playwright, Lighthouse CI. CI/CD via GitHub Actions + Cloudflare Pages. Full details and rationale in [docs/tech-stack.md](docs/tech-stack.md).
+
+## Getting started
 
 ```bash
-# Run all tests
-pnpm test:run
-
-# Run with coverage
-pnpm test:coverage
-
-# Run specific test file
-pnpm test db.test.js
-
-# Watch mode (re-runs on file change)
-pnpm test
+pnpm install
+pnpm dev          # http://localhost:5173
+pnpm test         # unit tests, watch mode
+pnpm run validate # full local gate: lint + typecheck + tests + build + chunk budget
 ```
 
-Tests use Vitest with jsdom environment and fake-indexeddb. The pattern established in `tests/unit/core/db.test.js` serves as prior art for all IDB-related tests.
+Prerequisites: **Node.js 20+** and **pnpm 10+** (`corepack enable` will provision the pinned version).
 
-### MCP (Model Context Protocol)
+## Git flow
 
-QuranAtlas uses a single unified Playwright MCP that can dynamically adapt to different testing needs:
+Three long-lived branches, each mapped to a deployment:
 
-```bash
-# Clean up test output
-pnpm mcp:cleanup
-```
+- `main` → production — merge commit via PR; CI green required.
+- `staging` → `staging.quranatlas.org` — merge commit via PR from `dev`; CI green required.
+- `dev` → `dev.quranatlas.org` — direct pushes allowed; deploy runs only when CI passes.
 
-**Single MCP, Multiple Modes:**
-- `playwright` - One MCP that handles all device viewports and modes
-  - Use `browser_resize` tool to switch between mobile (393x851), tablet (768x1024), desktop (1280x720)
-  - Set `OPENCODE_PLAYWRIGHT_HEADLESS=true` env var for headless mode
-  - Supports offline testing, PWA verification, and visual regression
+Feature branches merge into `dev` and are deleted after merge. The three env branches are protected from deletion and force-push. CI runs on push and PR to any of the three; deploy fires via `workflow_run` on green CI.
 
-**Test Artifacts:**
-All test output goes to `test-output/` (visible, browsable):
-- `test-output/screenshots/` - MCP and manual screenshots
-- `test-output/traces/` - Playwright traces for debugging
-- `test-output/logs/` - Browser console logs
-- `test-output/report/` - HTML test reports
+## Docs
 
-See [docs/mcp-usage.md](docs/mcp-usage.md) for detailed usage guide including:
-- How to resize viewport dynamically
-- How to enable headless mode
-- Screenshot and artifact management
-- Common testing workflows
+- Product overview: [docs/product-info.md](docs/product-info.md)
+- Architecture, routing, events, boot flow: [docs/context/architecture.md](docs/context/architecture.md)
+- Feature map, module graph, events, data model, user journeys: [docs/context/](docs/context/)
+- Tech stack + CI/CD detail: [docs/tech-stack.md](docs/tech-stack.md)
+- Repo rules: [CLAUDE.md](CLAUDE.md) (authoritative for anyone touching the codebase)
 
 ## License
 
