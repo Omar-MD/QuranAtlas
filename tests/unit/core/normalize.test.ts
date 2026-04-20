@@ -51,3 +51,33 @@ describe('normalize', () => {
     expect(normalize('ahl-al-kitab')).toBe('ahl al kitab')
   })
 })
+
+describe('normalize — drift matrix (spec §3.4)', () => {
+  const merged: Array<[string, string[]]> = [
+    // [canonical, variations that must all normalize to same value]
+    ['موسي',          ['مُوسَى', 'مُوسَىٰ']],
+    ['muminin',       ['muminin', "mu'minin"]],
+    ['ahl al kitab',  ['ahl al-kitab', 'ahl al kitab', 'ahl-al-kitab']],
+    ['مومنين',        ['مؤمنين', 'مومنين']],
+  ]
+
+  for (const [canonical, variations] of merged) {
+    for (const v of variations) {
+      it(`merges "${v}" to canonical "${canonical}"`, () => {
+        expect(normalize(v)).toBe(canonical)
+      })
+    }
+  }
+
+  const distinct: Array<[string, string]> = [
+    ['muminin', 'muslimin'],
+    ['kafirin', 'munafiqin'],
+    ['muminin', 'muminim'],
+  ]
+
+  for (const [a, b] of distinct) {
+    it(`keeps "${a}" distinct from "${b}"`, () => {
+      expect(normalize(a)).not.toBe(normalize(b))
+    })
+  }
+})
