@@ -205,20 +205,21 @@ describe('core/app.js init order', () => {
         setupLongPress: expect.any(Function),
       })
     )
-    // #/review and FVR layer routes are Svelte component routes — no hooks object
-    // (openEditor is imported directly by Hub.svelte)
+    // #/review is a Svelte component route — no hooks object
     expect(router.register).toHaveBeenCalledWith(
       '#/review',
       expect.any(Function)
     )
-    // FVR: one route per layer — check threads and people as representatives
+    // FVR: each layer route passes { layer } as hook — check threads and people
     expect(router.register).toHaveBeenCalledWith(
       '#/threads/:value',
-      expect.any(Function)
+      expect.any(Function),
+      { layer: 'threads' }
     )
     expect(router.register).toHaveBeenCalledWith(
       '#/people/:value',
-      expect.any(Function)
+      expect.any(Function),
+      { layer: 'people' }
     )
   })
 })
