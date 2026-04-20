@@ -26,6 +26,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | IDB polyfill | **fake-indexeddb** | `^6.2.5` | IndexedDB for Vitest runs (auto-registered) |
 | Linter | **ESLint** | `^10.2.0` (+ `typescript-eslint` `^8.58.2`, `eslint-plugin-svelte` `^3.17.0`) | Code quality, strict mode |
 | Perf gate | **Lighthouse CI** | `@lhci/cli ^0.15.1` | Performance / a11y / best-practices regression guard |
+| Deploy | **cloudflare/wrangler-action** | `v3` | Runs `wrangler pages deploy` in CI using the artifact built by CI (no rebuild in deploy) |
 
 `lightningcss` ships as a transitive dep of Vite; it is **not** explicitly configured for CSS transforms in this project (Vite's default CSS pipeline applies). No direct dependency.
 
@@ -133,6 +134,33 @@ Journey specs A–G, I, and performance run against the **Vite dev server**. Jou
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).
 
 Composite gate: `pnpm run validate` runs lint → check → test:run → build → check-chunks.
+
+## CI/CD
+
+CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. All jobs run in parallel except `check-chunks` and `lighthouse`, which consume the `dist/` artifact uploaded by `build` (no redundant rebuilds). Jobs:
+
+| Job | Purpose |
+|---|---|
+| `lint` | `pnpm run lint` |
+| `typecheck` | `pnpm run check` (svelte-check) |
+| `test` | `pnpm run test:run` (Vitest, 40 specs) |
+| `feature-state` | `pnpm run check-no-feature-state` |
+| `audit` | `pnpm audit --audit-level moderate` |
+| `build` | `pnpm run build`; uploads `dist/` artifact |
+| `check-chunks` | `pnpm run check-chunks` against uploaded `dist/` |
+| `lighthouse` | `lhci autorun` against uploaded `dist/` |
+| `e2e` | Full Playwright suite (11 specs) with `PLAYWRIGHT_INCLUDE_OFFLINE=1` |
+| `ci-ok` | No-op aggregator — single required status check for branch protection |
+
+Deploy lives at `.github/workflows/deploy.yml` and observes CI via `workflow_run`: on CI success for a push to `dev`, `staging`, or `main`, the deploy job downloads the `dist/` artifact the CI run produced and runs `wrangler pages deploy` against the single Cloudflare Pages project `quranatlas`. Custom domains are bound per branch in the Cloudflare dashboard:
+
+| Branch | Domain |
+|---|---|
+| `main` (production) | `quranatlas.org`, `www.quranatlas.org` |
+| `staging` | `staging.quranatlas.org` |
+| `dev` | `dev.quranatlas.org` |
+
+Required repo secrets: `CLOUDFLARE_API_TOKEN` (scopes: `Cloudflare Pages:Edit`, `User Details:Read`) and `CLOUDFLARE_ACCOUNT_ID`.
 
 ## Module lifecycle
 
