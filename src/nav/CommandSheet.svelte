@@ -312,7 +312,7 @@
 
     close()
     if (item.kind === 'tag' && item.tag) {
-      window.location.hash = `#/t/${encodeURIComponent(item.tag)}`
+      window.location.hash = `#/threads/${encodeURIComponent(item.tag)}`
     } else if (item.kind === 'surah' && item.surah != null) {
       emit(Events.NAVIGATION_NAVIGATE, { surah: item.surah })
     } else if (item.kind === 'verse' && item.surah != null) {

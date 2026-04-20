@@ -372,7 +372,7 @@ Inside command sheet with a verse preview card (F1).
 Inside command sheet.
 
 1. Type `mer` → Tags group in the results shows `mercy` with count badge.
-2. Enter → `#/t/mercy` FVR (same landing as E3).
+2. Enter → `#/threads/mercy` FVR (same landing as E3).
 
 **Surfaces:** Command sheet → FVR.
 

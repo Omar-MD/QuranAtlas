@@ -391,7 +391,7 @@
 
       // Persist FVR state
       const lastSurfaceHash = tagParam !== undefined
-        ? `#/t/${encodeURIComponent(canonical)}`
+        ? `#/threads/${encodeURIComponent(canonical)}`
         : `#/${layer}/${encodeURIComponent(canonical)}`
 
       await saveState({
