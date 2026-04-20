@@ -26,12 +26,12 @@ jobs:
       TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
     steps:
       - name: Checkout at the verified SHA
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Download dist artifact from triggering CI run
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: build-output
           path: dist/
@@ -39,7 +39,7 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           version: 10.31.0
           run_install: false
