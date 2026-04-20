@@ -1,6 +1,6 @@
 /**
  * IndexedDB connection manager.
- * Opens the quran-atlas DB v1 with all required stores.
+ * Opens the quran-atlas DB v2 with all required stores.
  * All IDB access flows through this module.
  */
 

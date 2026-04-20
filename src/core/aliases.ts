@@ -24,6 +24,15 @@ export function buildAliasMap(): Map<string, string> {
       aliasMap.set(form, entry.canonical)
     }
   }
+
+  // Assert no protected terms appear as alias forms (prevent silent breakage)
+  const protectedForms = new Set(data.excludeFromAliasing)
+  for (const [form, canonical] of aliasMap) {
+    if (protectedForms.has(form)) {
+      throw new Error(`Alias form "${form}" → "${canonical}" conflicts with excludeFromAliasing. Protected terms must not appear as alias forms.`)
+    }
+  }
+
   return aliasMap
 }
 
