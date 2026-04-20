@@ -1,0 +1,68 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main, dev, staging]
+
+permissions:
+  contents: read
+  actions: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    concurrency:
+      group: deploy-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    env:
+      TARGET_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Checkout at the verified SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download dist artifact from triggering CI run
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >
+            pages deploy dist
+            --project-name=quranatlas
+            --branch=${{ github.event.workflow_run.head_branch }}
+            --commit-hash=${{ github.event.workflow_run.head_sha }}
+
+      - name: Write deploy summary
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          {
+            echo "### Deployed ${TARGET_BRANCH}"
+            echo ""
+            echo "- **Commit:** \`${TARGET_SHA}\`"
+            echo "- **Deployment URL:** ${DEPLOY_URL}"
+            echo "- **Live at:**"
+            case "${TARGET_BRANCH}" in
+              main) echo "  - https://quranatlas.org" ;;
+              dev) echo "  - https://dev.quranatlas.org" ;;
+              staging) echo "  - https://staging.quranatlas.org" ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -65,14 +65,16 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     await initTheme()
     await initFontSize()
 
-    // Expose dev/E2E escape-hatches — guarded so Vite tree-shakes them in prod.
-    if (import.meta.env.DEV) {
-      // Expose version-change suppression so test clearAllData can prevent the
-      // sync-banner overlay from blocking pointer events (Bug-2).  Must be
-      // exposed AFTER initSafetySync above so the suppress flag is consumed
-      // by the handler that's now guaranteed to be listening.
-      ;(globalThis as unknown as Record<string, unknown>).__qaSuppressNextVersionChange = suppressNextVersionChange
-    }
+    // Expose version-change suppression so E2E clearAllData can prevent the
+    // sync-banner overlay from blocking pointer events (Bug-2). Exposed in
+    // both DEV and PROD because the @offline Playwright project runs against
+    // a production preview build (vite preview); gating on import.meta.env.DEV
+    // would tree-shake the hatch and hang the fixture waiting for it. Safe to
+    // ship — the function only suppresses a single sync banner; nothing in
+    // production user flows invokes the global.
+    // Must be exposed AFTER initSafetySync above so the suppress flag is
+    // consumed by the handler that's now guaranteed to be listening.
+    ;(globalThis as unknown as Record<string, unknown>).__qaSuppressNextVersionChange = suppressNextVersionChange
 
     // Listen for launch restore
     pushCleanup(bootCleanups, on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))

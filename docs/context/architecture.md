@@ -98,3 +98,13 @@ The full event catalog — who emits, who listens, payload shapes, dead events, 
 - No third-party state library. State lives in `src/state/<surface>.svelte.ts` modules using Svelte 5 `$state` runes (flat objects for simple state, classes for complex state). State modules have zero imports and zero side effects — they are pure in-memory data containers. Cross-surface signalling still goes through the mitt event bus. DOM handles and event-listener refs remain in the feature module that owns them.
 - No CSS-in-JS. Theme tokens and shell rules live in `src/core/theme.css`; surface-specific styles live in `<style>` blocks inside their owning `.svelte` files.
 - No routing library. `src/core/router.ts` is a small hash router that does everything.
+
+## Deploy topology
+
+Three Git branches map to three Cloudflare Pages deployments on a single project (`quranatlas`):
+
+- `main` → production → `quranatlas.org` / `www.quranatlas.org`
+- `staging` → preview → `staging.quranatlas.org`
+- `dev` → preview → `dev.quranatlas.org`
+
+Flow: merge (or direct push to `dev`) triggers `.github/workflows/ci.yml`; on green CI, `.github/workflows/deploy.yml` fires via `workflow_run` and runs `wrangler pages deploy dist --branch=<branch>`. The `dist/` artifact uploaded by CI's `build` job is the exact bundle that ships — deploy never rebuilds. Cloudflare's build container is never invoked; custom domains are bound per branch in the CF dashboard. See `docs/tech-stack.md` §CI/CD for the full job matrix.
