@@ -166,8 +166,8 @@ jobs:
           NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
           echo "Upstream job results:"
-          echo "$NEEDS_JSON" | python3 -c 'import json,sys; d=json.load(sys.stdin); [print(f"  {k}: {v[\"result\"]}") for k,v in d.items()]'
-          if echo "$NEEDS_JSON" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(1 if any(v["result"] in ("failure","cancelled") for v in d.values()) else 0)'; then
+          printf '%s' "$NEEDS_JSON" | jq -r 'to_entries[] | "  \(.key): \(.value.result)"'
+          if printf '%s' "$NEEDS_JSON" | jq -e 'all(.[]; .result != "failure" and .result != "cancelled")' > /dev/null; then
             echo "All required CI gates passed (skipped jobs are allowed)."
           else
             echo "::error::One or more required CI gates failed or were cancelled."
