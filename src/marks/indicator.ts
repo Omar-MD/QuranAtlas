@@ -70,7 +70,7 @@ export async function decorateVerse(verseKey: string, element: HTMLElement): Pro
     mark = await getByVerseKey(verseKey)
   }
 
-  if (!mark || mark.tags.length === 0) { return }
+  if (!mark || mark.threads.length === 0) { return }
   element.classList.add('qa-verse--bookmarked')
 }
 
@@ -153,7 +153,7 @@ export function initIndicators(container?: HTMLElement): () => void {
       const changedKeys = new Set<string>()
       for (const [vk, mark] of newCache) {
         const old = marksCache?.get(vk)
-        if (!old || old.tags.join() !== mark.tags.join()) {
+        if (!old || old.threads.join() !== mark.threads.join()) {
           changedKeys.add(vk)
         }
       }

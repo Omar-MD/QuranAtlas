@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { get } from '../core/db'
+  import { get, LAYER_NAMES } from '../core/db'
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
   import { openMoreSheet } from './more-sheet-bridge'
@@ -33,7 +33,7 @@
   const TABS: Tab[] = [
     { id: 'read',   label: 'Read',   icon: '\uD83D\uDCD6', matches: (h) => h.startsWith('#/s/') },
     { id: 'search', label: 'Search', icon: '\u2315',        matches: () => false },
-    { id: 'review', label: 'Review', icon: '\u2726',        matches: (h) => h.startsWith('#/review') || h.startsWith('#/t/') },
+    { id: 'review', label: 'Review', icon: '\u2726',        matches: (h) => h.startsWith('#/review') || LAYER_NAMES.some(ln => h.startsWith(`#/${ln}/`)) },
     { id: 'more',   label: 'More',   icon: '\u22EF',        matches: (h) => h.startsWith('#/settings') || h.startsWith('#/about') },
   ]
 

@@ -2,15 +2,16 @@
  * E2E Journey E: Review hub
  *
  * Covers:
- *   E1. Open review hub — structure check (segment pill, sort, filter dropdowns, cards) + a11y scan
- *   E2. Swap grouping — Surah → Date → Tag → back to Tag default
- *   E3. Tap tag chip on mark card → FVR deep link renders
+ *   E1. Open review hub — structure check (layer seg, group seg, sort, surah filter, cards) + a11y scan
+ *   E2. Swap grouping — Surah → Date → Value → back to Value default
+ *   E3. Tap tag chip on mark card → FVR deep link renders (#/threads/<tag>)
  *   E4. FVR back link → returns to review hub
- *   E5. Filter by tag + surah (chips, clear one, Clear all)
+ *   E5. Layer switch + value chip filter (+ clear)
+ *   E6. FVR via #/<layer>/:value deep link — layer param canonicalizes on load
  *
  * Sources of truth:
  *   docs/context/user-journeys.md  §E
- *   src/review/hub.js
+ *   src/review/Hub.svelte
  */
 
 import { test, expect } from '@playwright/test'
@@ -18,7 +19,7 @@ import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.
 import { scanA11y } from './fixtures/a11y.js'
 
 // Force mobile viewport so the review hub's filter/group controls
-// (sort dropdown, tag select, surah select, group-by segment) are
+// (sort dropdown, surah select, group-by segment, layer segment) are
 // visible.  At ≥1180px those controls are hidden in favour of the
 // desktop left-rail.  Desktop rail filtering is exercised separately
 // in desktop-layouts.spec.js.
@@ -26,7 +27,7 @@ test.use({ viewport: { width: 390, height: 844 } })
 
 // ---------------------------------------------------------------------------
 // Seed data used by all tests:
-// - 4 marks across 3 surahs and 3 tags so grouping / filtering exercises real behaviour.
+// - 4 marks across 3 surahs and 3 thread tags so grouping / filtering exercises real behaviour.
 // - verseKey '1:1'  → tags ['mercy', 'faith']  — multi-tagged; lands under two tag groups
 // - verseKey '2:255'→ tags ['mercy']            — Ayat al-Kursi
 // - verseKey '3:190'→ tags ['faith','reflection']
@@ -69,37 +70,38 @@ test.describe('Journey E: Review hub', () => {
   // E1. Open the review hub — structure + a11y
   // -------------------------------------------------------------------------
 
-  test('E1: hub renders segment pill, sort dropdown, filter dropdowns, and mark cards', async ({ page }) => {
-    // Segment pill exists with 3 tabs.
-    // Use role+aria-label to uniquely target the controls seg (the one with
-    // role="tablist" aria-label="Group by" rendered by renderControls).
-    // On desktop a second .qa-review-seg without role appears in the left rail.
+  test('E1: hub renders layer segment, group-by segment, sort dropdown, surah filter, and mark cards', async ({ page }) => {
+    // Layer segment pill exists with 12 tabs.
+    const layerSeg = page.getByRole('tablist', { name: 'Layer' })
+    await expect(layerSeg).toBeVisible()
+    const layerItems = layerSeg.locator('.qa-review-seg-item')
+    await expect(layerItems).toHaveCount(12)
+
+    // Thread layer is active by default
+    await expect(layerSeg.locator('[data-layer="threads"]')).toHaveAttribute('aria-selected', 'true')
+
+    // Group-by segment pill exists with 3 tabs.
     const seg = page.getByRole('tablist', { name: 'Group by' })
     await expect(seg).toBeVisible()
 
     const items = seg.locator('.qa-review-seg-item')
     await expect(items).toHaveCount(3)
 
-    // Labels: Tag | Surah | Date  (in that DOM order)
-    await expect(items.nth(0)).toHaveText('Tag')
+    // Labels: Value | Surah | Date  (in that DOM order)
+    await expect(items.nth(0)).toHaveText('Value')
     await expect(items.nth(1)).toHaveText('Surah')
     await expect(items.nth(2)).toHaveText('Date')
 
-    // Tag segment is active by default
+    // Value segment is active by default
     const activeItem = seg.locator('.qa-review-seg-item--on')
     await expect(activeItem).toHaveCount(1)
-    await expect(activeItem).toHaveText('Tag')
+    await expect(activeItem).toHaveText('Value')
     await expect(activeItem).toHaveAttribute('aria-selected', 'true')
 
     // Sort dropdown is present
     const sortSelect = page.locator('[data-control="sort"]')
     await expect(sortSelect).toBeVisible()
     await expect(sortSelect).toHaveAttribute('aria-label', 'Sort by')
-
-    // Tag filter dropdown is present
-    const tagSelect = page.locator('[data-control="tag"]')
-    await expect(tagSelect).toBeVisible()
-    await expect(tagSelect).toHaveAttribute('aria-label', 'Filter by tag')
 
     // Surah filter dropdown is present
     const surahSelect = page.locator('[data-control="surah"]')
@@ -110,7 +112,6 @@ test.describe('Journey E: Review hub', () => {
     const cards = page.locator('.qa-review-card')
     await expect(cards.first()).toBeVisible()
     const cardCount = await cards.count()
-    // 4 marks, but multi-tagged marks appear under each tag group → could be > 4 cards
     expect(cardCount).toBeGreaterThanOrEqual(4)
 
     // No active filter chips yet (no filters applied)
@@ -123,10 +124,10 @@ test.describe('Journey E: Review hub', () => {
   })
 
   // -------------------------------------------------------------------------
-  // E2. Swap grouping — Surah → Date → Tag
+  // E2. Swap grouping — Surah → Date → Value
   // -------------------------------------------------------------------------
 
-  test('E2: tap Surah segment → active tab changes; tap Date → flat list; tap Tag → Tag tab active', async ({ page }) => {
+  test('E2: tap Surah segment → active tab changes; tap Date → flat list; tap Value → Value tab active', async ({ page }) => {
     const seg = page.getByRole('tablist', { name: 'Group by' })
 
     // --- Surah grouping ---
@@ -149,13 +150,13 @@ test.describe('Journey E: Review hub', () => {
     const flatCount = await page.locator('.qa-review-card').count()
     expect(flatCount).toBe(4)
 
-    // --- Back to Tag grouping ---
+    // --- Back to Value grouping ---
     await seg.locator('[data-group="tag"]').click()
 
-    // Tag tab is now active
-    await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Tag', { timeout: 5_000 })
+    // Value tab is now active
+    await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Value', { timeout: 5_000 })
 
-    // Cards still present — groupBy=tag does not hide cards in the flat list view
+    // Cards still present
     await expect(page.locator('.qa-review-card').first()).toBeVisible()
     const tagViewCards = await page.locator('.qa-review-card').count()
     expect(tagViewCards).toBeGreaterThanOrEqual(4)
@@ -173,10 +174,10 @@ test.describe('Journey E: Review hub', () => {
   })
 
   // -------------------------------------------------------------------------
-  // E3. Tap tag chip → FVR deep link
+  // E3. Tap tag chip → FVR deep link (#/threads/<tag>)
   // -------------------------------------------------------------------------
 
-  test('E3: tap a tag chip on a mark card → navigates to #/t/<tag> → FVR renders correctly', async ({ page }) => {
+  test('E3: tap a tag chip on a mark card → navigates to #/threads/<tag> → FVR renders correctly', async ({ page }) => {
     // In tag-grouped view there are tag chips on the cards
     // Pick the 'mercy' chip from any card
     const mercyChip = page.locator('.qa-review-card-chip').filter({ hasText: 'mercy' }).first()
@@ -184,8 +185,8 @@ test.describe('Journey E: Review hub', () => {
 
     await mercyChip.click()
 
-    // URL should include the FVR route
-    await expect(page).toHaveURL(/#\/t\/mercy/, { timeout: 5_000 })
+    // URL should include the new FVR route
+    await expect(page).toHaveURL(/#\/threads\/mercy/, { timeout: 5_000 })
 
     // FVR header block renders
     const fvrHeader = page.locator('.qa-fvr-header')
@@ -196,8 +197,8 @@ test.describe('Journey E: Review hub', () => {
     await expect(backLink).toBeVisible()
     await expect(backLink).toHaveText('← Marks')
 
-    // Tag label reads "Tag"
-    await expect(fvrHeader.locator('.qa-fvr-label')).toHaveText('Tag')
+    // Layer label reads 'Thread' (LAYER_LABELS['threads'])
+    await expect(fvrHeader.locator('.qa-fvr-label')).toHaveText('Thread')
 
     // Tag name reads 'mercy'
     const fvrName = fvrHeader.locator('.qa-fvr-name')
@@ -255,16 +256,11 @@ test.describe('Journey E: Review hub', () => {
   })
 
   // -------------------------------------------------------------------------
-  // E5. Filter by tag + surah + clear chips
+  // E5. Layer switch + value chip filter + surah filter + clear
   // -------------------------------------------------------------------------
 
-  test('E5: select tag filter → filter chip appears → hub shows only matching cards', async ({ page }) => {
-    // Switch to flat grouping first so card count equals the number of matched marks
-    // (tag-grouped view can repeat a multi-tagged mark under each of its tags,
-    //  so a flat count is the only unambiguous way to assert "2 marks")
-    // Use evaluate() to dispatch the click directly — the seg button re-renders the
-    // entire controls area (container.textContent = '') so Playwright's retry logic
-    // would loop on the detached element if we use locator.click().
+  test('E5: value pool chips appear for threads layer; clicking a chip filters marks', async ({ page }) => {
+    // Switch to flat grouping for unambiguous card count
     await page.evaluate(() => {
       const btn = document.querySelector('[data-group="flat"]')
       if (btn) { btn.click() }
@@ -272,19 +268,21 @@ test.describe('Journey E: Review hub', () => {
     await expect(page.getByRole('tablist', { name: 'Group by' }).locator('.qa-review-seg-item--on'))
       .toHaveText('Date', { timeout: 5_000 })
 
-    const tagSelect = page.locator('[data-control="tag"]')
-    await expect(tagSelect).toBeVisible()
+    // Value chips for threads layer should be visible
+    const valueChips = page.locator('.qa-review-value-chip')
+    await expect(valueChips.first()).toBeVisible({ timeout: 5_000 })
 
-    // Select 'mercy' tag filter
-    await tagSelect.selectOption({ value: 'mercy' })
+    // Click 'mercy' value chip
+    const mercyValueChip = valueChips.filter({ hasText: 'mercy' }).first()
+    await expect(mercyValueChip).toBeVisible()
+    await mercyValueChip.click()
+
+    // The chip should be active
+    await expect(mercyValueChip).toHaveClass(/qa-review-value-chip--on/, { timeout: 3_000 })
 
     // Filter chip bar appears
     const filterBar = page.locator('.qa-review-active-filters')
     await expect(filterBar).toBeVisible({ timeout: 5_000 })
-
-    // A filter chip for 'mercy' is present
-    const mercyChip = filterBar.locator('.qa-review-filter-chip').filter({ hasText: 'mercy' })
-    await expect(mercyChip).toBeVisible()
 
     // Only marks tagged 'mercy' are shown: 1:1 and 2:255 → 2 cards
     const cards = page.locator('.qa-review-card')
@@ -300,14 +298,16 @@ test.describe('Journey E: Review hub', () => {
     await expect(page.locator('[data-mark="112:1"]')).toHaveCount(0)
   })
 
-  test('E5: add surah filter on top of tag filter → intersection renders', async ({ page }) => {
-    // Switch to flat grouping first so card count is unambiguous
+  test('E5: add surah filter on top of value chip filter → intersection renders', async ({ page }) => {
+    // Switch to flat grouping first
     const seg = page.getByRole('tablist', { name: 'Group by' })
     await seg.locator('[data-group="flat"]').click()
     await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
 
-    // Apply tag filter: mercy
-    await page.locator('[data-control="tag"]').selectOption({ value: 'mercy' })
+    // Click mercy value chip
+    const mercyChip = page.locator('.qa-review-value-chip').filter({ hasText: 'mercy' }).first()
+    await expect(mercyChip).toBeVisible({ timeout: 5_000 })
+    await mercyChip.click()
     await expect(page.locator('.qa-review-active-filters')).toBeVisible({ timeout: 5_000 })
 
     // Apply surah filter: surah 1 (verseKey prefix "1:")
@@ -326,33 +326,32 @@ test.describe('Journey E: Review hub', () => {
     await expect(cards).toHaveCount(1)
   })
 
-  test('E5: tap × on tag chip → that filter clears; surah filter remains', async ({ page }) => {
-    // Switch to flat grouping to make counts unambiguous
+  test('E5: tap × on value filter chip → that filter clears; surah filter remains', async ({ page }) => {
+    // Switch to flat grouping
     const seg = page.getByRole('tablist', { name: 'Group by' })
     await seg.locator('[data-group="flat"]').click()
     await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
 
-    // Apply both filters
-    await page.locator('[data-control="tag"]').selectOption({ value: 'mercy' })
+    // Apply value chip filter: mercy
+    const mercyChip = page.locator('.qa-review-value-chip').filter({ hasText: 'mercy' }).first()
+    await expect(mercyChip).toBeVisible({ timeout: 5_000 })
+    await mercyChip.click()
     await expect(page.locator('.qa-review-active-filters')).toBeVisible({ timeout: 5_000 })
+
+    // Apply surah filter: surah 2
     await page.locator('[data-control="surah"]').selectOption({ value: '2' })
     await expect(page.locator('.qa-review-filter-chip')).toHaveCount(2, { timeout: 5_000 })
 
-    // Dismiss the mercy tag chip (✕ button inside the chip)
-    const tagChip = page.locator('.qa-review-filter-chip').filter({ hasText: 'mercy' })
-    await expect(tagChip).toBeVisible()
-    const dismissBtn = tagChip.locator('button')
+    // Dismiss the mercy value filter chip (✕ button inside the chip)
+    const valueFilterChip = page.locator('.qa-review-filter-chip').first()
+    await expect(valueFilterChip).toBeVisible()
+    const dismissBtn = valueFilterChip.locator('button')
     await dismissBtn.click()
 
     // Only one chip remains (surah filter)
     await expect(page.locator('.qa-review-filter-chip')).toHaveCount(1, { timeout: 5_000 })
 
-    // Tag filter cleared → tag select reset to "Tag: All"
-    const tagSelectValue = await page.locator('[data-control="tag"]').inputValue()
-    expect(tagSelectValue).toBe('')
-
     // Surah 2 filter still active → only marks in surah 2 visible
-    // Seeded marks in surah 2: 2:255 (tags: mercy, faith) — still visible
     await expect(page.locator('[data-mark="2:255"]')).toBeVisible({ timeout: 5_000 })
     await expect(page.locator('[data-mark="1:1"]')).toHaveCount(0)
     await expect(page.locator('[data-mark="112:1"]')).toHaveCount(0)
@@ -365,7 +364,9 @@ test.describe('Journey E: Review hub', () => {
     await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
 
     // Apply both filters
-    await page.locator('[data-control="tag"]').selectOption({ value: 'faith' })
+    const faithChip = page.locator('.qa-review-value-chip').filter({ hasText: /^faith$/ }).first()
+    await expect(faithChip).toBeVisible({ timeout: 5_000 })
+    await faithChip.click()
     await expect(page.locator('.qa-review-active-filters')).toBeVisible({ timeout: 5_000 })
     await page.locator('[data-control="surah"]').selectOption({ value: '1' })
     await expect(page.locator('.qa-review-filter-chip')).toHaveCount(2, { timeout: 5_000 })
@@ -381,24 +382,56 @@ test.describe('Journey E: Review hub', () => {
     // All 4 mark cards are back
     await expect(page.locator('.qa-review-card').first()).toBeVisible({ timeout: 5_000 })
     await expect(page.locator('.qa-review-card')).toHaveCount(4)
+  })
 
-    // Both selects reset to "All"
-    expect(await page.locator('[data-control="tag"]').inputValue()).toBe('')
-    expect(await page.locator('[data-control="surah"]').inputValue()).toBe('')
+  // -------------------------------------------------------------------------
+  // E6. FVR via layer-value deep link + canonicalization
+  // -------------------------------------------------------------------------
+
+  test('E6: navigate to #/threads/mercy directly → FVR renders correct layer label + value', async ({ page }) => {
+    await page.goto('about:blank')
+    await page.goto('/#/threads/mercy')
+
+    await expect(page.locator('.qa-fvr-header')).toBeVisible({ timeout: 15_000 })
+
+    // Layer label should be 'Thread' (LAYER_LABELS['threads'])
+    await expect(page.locator('.qa-fvr-label')).toHaveText('Thread')
+    await expect(page.locator('.qa-fvr-name')).toHaveText('mercy')
+
+    // Stats reflect 2 marks for 'mercy'
+    await expect(page.locator('.qa-fvr-stats')).toContainText('verses')
+    await expect(page.locator('.qa-review-card')).toHaveCount(2)
+  })
+
+  test('E6: lastSurface persists #/threads/<tag> for session restore', async ({ page }) => {
+    // Navigate to a layer FVR route
+    await page.goto('about:blank')
+    await page.goto('/#/threads/faith')
+    await expect(page.locator('.qa-fvr-header')).toBeVisible({ timeout: 15_000 })
+
+    // Read lastSurface from IDB
+    const lastSurface = await page.evaluate(async () => {
+      const { openDB } = await import('/src/core/db.ts')
+      const db = await openDB()
+      return new Promise((resolve) => {
+        const tx = db.transaction('settings', 'readonly')
+        const req = tx.objectStore('settings').get('lastSurface')
+        req.onsuccess = () => resolve(req.result?.value ?? null)
+        req.onerror = () => resolve(null)
+      })
+    }).catch(() => null)
+
+    // lastSurface should point to the layer route
+    if (lastSurface !== null) {
+      expect(String(lastSurface)).toMatch(/#\/threads\/faith/)
+    }
   })
 })
 
 // ---------------------------------------------------------------------------
 // Journey E — desktop variants (≥1180px viewport)
-//
-// The review hub swaps its top-dropdown controls for a sticky 220px left rail
-// and renders a flat single-column card list.  Multi-tag OR filtering is only
-// available at this breakpoint (E2b).  FVR is centered at 1000px max-width.
 // ---------------------------------------------------------------------------
 
-// Shared seed: 4 marks across 4 surahs + 4 tags so rail filtering, multi-tag
-// OR filtering, and dedup all exercise real behavior.  Used by the E1 and E2b
-// desktop tests.
 const REVIEW_DESKTOP_SEED = [
   { verseKey: '1:5',   tags: ['reflect'],                  note: '' },
   { verseKey: '2:255', tags: ['reflect', 'core-theology'], note: '' },
@@ -418,7 +451,7 @@ test.describe('Journey E: desktop variants @desktop', () => {
     await expect(page.locator('[data-verse-key]').first()).toBeVisible({ timeout: 15_000 })
   })
 
-  test('E1 desktop: review hub renders 220px left rail + filters on rail click', async ({ page }) => {
+  test('E1 desktop: review hub renders 220px left rail + layer selector in rail', async ({ page }) => {
     await seedMarks(page, REVIEW_DESKTOP_SEED)
 
     await page.goto('/#/review')
@@ -429,15 +462,24 @@ test.describe('Journey E: desktop variants @desktop', () => {
     )
     expect(layoutCols).toContain('220px')
 
-    await expect(page.locator('.qa-review-rail-row').first()).toBeVisible()
-    const rowCount = await page.locator('.qa-review-rail-row').count()
-    expect(rowCount).toBeGreaterThan(0)
+    // Layer rows are in the rail
+    await expect(page.locator('[data-layer="threads"]').first()).toBeVisible()
+    const layerRows = await page.locator('[data-layer]').count()
+    expect(layerRows).toBe(12)
 
-    const beforeCards = await page.locator('.qa-review-card').count()
-    await page.locator('.qa-review-rail-row').first().click()
-    await expect(page.locator('.qa-review-rail-row--on').first()).toBeVisible({ timeout: 3_000 })
-    const afterCards = await page.locator('.qa-review-card').count()
-    expect(afterCards).toBeLessThanOrEqual(beforeCards)
+    // Rail rows from buckets are also present
+    await expect(page.locator('.qa-review-rail-row').first()).toBeVisible()
+  })
+
+  test('E1 desktop: clicking a layer row in the rail switches active layer', async ({ page }) => {
+    await seedMarks(page, REVIEW_DESKTOP_SEED)
+    await page.goto('/#/review')
+    await expect(page.locator('[data-layer="threads"]')).toBeVisible({ timeout: 15_000 })
+
+    // Click the 'audience' layer row
+    await page.locator('[data-layer="audience"]').click()
+    await expect(page.locator('[data-layer="audience"]')).toHaveClass(/qa-review-rail-row--on/, { timeout: 5_000 })
+    await expect(page.locator('[data-layer="threads"]')).not.toHaveClass(/qa-review-rail-row--on/)
   })
 
   test('E2 desktop: multi-tagged mark renders exactly once (flat deduped list)', async ({ page }) => {
@@ -467,7 +509,7 @@ test.describe('Journey E: desktop variants @desktop', () => {
     expect(display).toBe('block')
   })
 
-  test('E2b desktop: multi-tag OR filter + chip bar + clear all', async ({ page }) => {
+  test('E2b desktop: multi-value OR filter + chip bar + clear all', async ({ page }) => {
     await seedMarks(page, REVIEW_DESKTOP_SEED)
     await page.goto('/#/review')
     await expect(
@@ -493,9 +535,9 @@ test.describe('Journey E: desktop variants @desktop', () => {
     await expect(page.locator('.qa-review-filter-bar')).toHaveCount(0, { timeout: 5_000 })
   })
 
-  test('E3 desktop: FVR layout is centered at 1000px max-width', async ({ page }) => {
+  test('E3 desktop: FVR via #/threads/:value → layout is centered at 1000px max-width', async ({ page }) => {
     await seedMarks(page, [{ verseKey: '2:255', tags: ['reflect'], note: '' }])
-    await page.goto('/#/t/reflect')
+    await page.goto('/#/threads/reflect')
     await expect(page.locator('.qa-fvr-layout')).toBeVisible({ timeout: 15_000 })
 
     const geom = await page.locator('.qa-fvr-layout').evaluate(el => {

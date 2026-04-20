@@ -29,7 +29,7 @@ Every `Events.*` constant has a corresponding entry in the `EventPayloads` map i
 | `ROUTER_ROUTE_CHANGE` | `router:route-change` | `core/router.ts:146` | `nav/AmbientDock.svelte` | `{ hash }` |
 | `NAVIGATION_NAVIGATE` | `navigation:navigate` | `surahs/SurahList.svelte`, `nav/CommandSheet.svelte` | `app-bootstrap.ts` | `{ surah, verse? }` |
 | `OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `data/offline.ts:164` | `data/offline.ts:265` *(self)* | `{ cached, total }` |
-| `MARKS_SAVED` | `marks:saved` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey, tags }` |
+| `MARKS_SAVED` | `marks:saved` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey, tags }` — `tags` = union of canonical keys across all 12 layers (not raw labels) |
 | `MARKS_DELETED` | `marks:deleted` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
 | `MARKS_UNDO` | `marks:undo` | `core/ui.svelte` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
 | `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/Verse.svelte` (onMount) | `marks/indicator.ts` (initIndicators) | `{ verseKey, element }` |
@@ -66,6 +66,10 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 | `DATASET_UPDATE_FAILED` | `dataset:update-failed` | `data/offline.ts:200` | `{ error }` |
 | `SHEET_OPENED` | `sheet:opened` | `settings/Panel.svelte` (on open), `nav/MoreSheet.svelte` | `{ name }` |
 | `SHEET_CLOSED` | `sheet:closed` | `settings/Panel.svelte` (on close), `nav/MoreSheet.svelte` | `{ name }` |
+| `EDGES_SAVED` | `edges:saved` | `edges/store.ts` (createEdge + updateEdge) | *(no listener yet)* | `{ edgeId, from, to, kind }` |
+| `EDGES_DELETED` | `edges:deleted` | `edges/store.ts` (deleteEdge) | *(no listener yet)* | `{ edgeId }` |
+| `EDGES_SAVE_FAILED` | `edges:save-failed` | `edges/store.ts` (createEdge on error) | *(no listener yet)* | `{ error }` |
+| `SYNC_EDGES_UPDATED` | `sync:edges-updated` | `safety/sync.ts` (handleChannelMessage receiver) | *(no listener yet)* | `{ edgeIds }` |
 
 ### Listener-only (⚠ dead emitter)
 

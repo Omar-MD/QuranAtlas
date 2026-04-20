@@ -40,15 +40,22 @@ beforeEach(async () => {
   await clearStores(['marks', 'positions', 'settings'])
 })
 
+const BASE_MARK = {
+  threads: [], subjects: [], audience: [], speaker: [],
+  quotedSpeaker: [], mode: [], form: [], tone: [],
+  people: [], places: [], events: [], divineNames: [],
+  flags: {}, note: '',
+}
+
 describe('IDB operation performance budgets', () => {
   it('mark save completes in under 200ms', async () => {
-    const { elapsed } = await measureAsync(() => save('2:255', ['favourite']))
+    const { elapsed } = await measureAsync(() => save({ ...BASE_MARK, verseKey: '2:255', threads: ['favourite'] }))
 
     expect(elapsed).toBeLessThan(MARK_MUTATION_BUDGET_MS)
   })
 
   it('mark delete completes in under 200ms', async () => {
-    await save('2:255', ['favourite'])
+    await save({ ...BASE_MARK, verseKey: '2:255', threads: ['favourite'] })
 
     const { elapsed } = await measureAsync(() => del('2:255'))
 
@@ -76,8 +83,14 @@ describe('IDB operation performance budgets', () => {
   })
 
   it('cross-tab re-read of 30 marks completes in under 300ms', async () => {
+    const BASE = {
+      threads: [], subjects: [], audience: [], speaker: [],
+      quotedSpeaker: [], mode: [], form: [], tone: [],
+      people: [], places: [], events: [], divineNames: [],
+      flags: {}, note: '',
+    }
     for (let i = 1; i <= 30; i++) {
-      await save(`2:${i}`, ['favourite'])
+      await save({ ...BASE, verseKey: `2:${i}`, threads: ['favourite'] })
     }
 
     const { elapsed, result } = await measureAsync(() => getAll())

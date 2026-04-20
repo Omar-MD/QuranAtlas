@@ -25,35 +25,40 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Route:** `#/review`
 - **Entry:** `src/review/Hub.svelte` (Svelte component, mounted via router `onRouteChange`)
 - **Files:** `review/Hub.svelte`, `review/ReviewCard.svelte`, `review/state.ts`
-- **Purpose:** All-marks surface. Three-segment grouping (Tag / Surah / Date), tag + surah filters, sort, paginated mark cards.
+- **Purpose:** All-marks surface. 12-layer selector segment, group-by segment (Value / Surah / Date), value chips per layer, surah filter, sort, paginated mark cards.
 - **Key behaviors:**
-  - Card grammar: ref eyebrow + jump link + async verse content + optional note + chip row. Tap card body → opens mark editor.
+  - **Layer selector:** 12 tabs (Thread / Subject / Audience / Speaker / Quoted / Mode / Form / Tone / People / Places / Event / Name) — clicking a layer switches `activeLayer`, resets `activeValue`, and reloads the value chip pool via `getAllCanonicalValues(layer)`.
+  - **Value chips:** clicking a chip sets `activeValue` and filters the card list to marks with that canonical value in the active layer (via `_canon[layer].includes(activeValue)`). Clicking the same chip again clears the filter.
+  - Card grammar: ref eyebrow + jump link + async verse content + optional note + chip row (threads only). Tap card body → opens mark editor.
   - Flat de-duplicated single-column list regardless of groupBy UI setting.
-  - Subscribes to `SYNC_UPDATE_RECEIVED` + `DB_VISIBILITY_VISIBLE` via `$effect` for cross-tab and tab-resume coherence.
-  - Desktop (≥1180px): left rail with group-by segment + bucket list; main column with filter bar.
+  - Subscribes to `SYNC_UPDATE_RECEIVED` + `DB_VISIBILITY_VISIBLE` for cross-tab and tab-resume coherence.
+  - Desktop (≥1180px): left rail with layer selector + group-by segment + bucket list; main column with filter bar.
   - `openEditor` imported directly from `marks/editor-bridge.ts` (no hooks injection needed).
 - **IDB touch:** reads `marks` (all), reads/writes `positions["review"]` for view state (via `review/state.ts` sole writer).
 
 ## FVR (Filtered-Verse Review)
 
-- **Route:** `#/t/:tag`
-- **Entry:** `src/review/Hub.svelte` (same component — branches on `tag` prop presence)
-- **Files:** `review/Hub.svelte` (shared), `safety/input-validator.ts` (tag validation)
-- **Purpose:** Deep-link view of all marks carrying a single tag. Compact centered header (color dot, verse/surah stats, hairline).
+- **Route:** `#/<layer>/:value` (e.g. `#/threads/mercy`, `#/people/musa`)
+- **Entry:** `src/review/Hub.svelte` (same component — branches on `layer` + `value` props)
+- **Files:** `review/Hub.svelte` (shared), `safety/input-validator.ts` (`validateLayerParam`)
+- **Purpose:** Deep-link view of all marks carrying a specific canonical value in a given layer. Compact centered header (layer label, color dot, value name, verse/surah stats, hairline).
 - **Key behaviors:**
-  - Validates `tag` param (≤50 chars, no control chars); invalid or empty tags render a "not found" state that announces via `a11y/announcer.ts`.
-  - Writes `settings.lastSurface = '#/t/:tag'` + `positions["review"]` with `view: 'fvr'` via `review/state.ts`.
+  - `validateLayerParam(layer, value)` from `safety/input-validator.ts` whitelists the layer against `LAYER_NAMES` and canonicalizes the value; invalid params render a "not found" state that announces via `a11y/announcer.ts`.
+  - Writes `settings.lastSurface = '#/<layer>/<value>'` + `positions["review"]` with `view: 'fvr'` via `review/state.ts`.
   - No group controls — shows a flat list under the FVR header.
+  - `ReviewCard.svelte` chip links use `#/threads/<tag>` (threads layer only; other layers have no chip row on the card).
 
 ## Mark editor
 
 - **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route)
-- **Files:** `marks/Editor.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh)
-- **Purpose:** Bottom sheet for tagging a verse. Triggered by long-press on a verse or by "Mark this verse" from command sheet.
+- **Files:** `marks/Editor.svelte`, `marks/TagLayerRegion.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh), `core/seeds.ts` (seed palettes)
+- **Purpose:** Bottom sheet for tagging a verse across 12 thematic layers. Triggered by long-press on a verse or by "Mark this verse" from command sheet.
 - **Key behaviors:**
-  - Selected strip (count + clear-all + × chips) above the All-tags region; chips move between regions on click.
-  - Seed tags (16 defaults) shown when no marks exist; otherwise used-tags list. Search filter + inline "+ create" chip for new tags (≤50 chars, no control chars).
-  - Note textarea; delete button hidden for new marks, inline-confirm + undo toast for existing.
+  - 12 collapsible `TagLayerRegion` sections: threads, subjects, audience, speaker, quotedSpeaker, mode, form, tone, people, places, events, divineNames. Threads, audience, and mode expanded by default; others collapsed.
+  - Each layer has a search input + chip pool (seeds ∪ existing canonicals ∪ user-added). Clicking a chip toggles selected/unselected within that layer; each layer shows its own count badge. Inline "+ label" chip creates a new tag in the layer.
+  - Flag row: "Open question" (`hasQuestion`) and "To apply" (`hasApplication`) checkboxes.
+  - Note textarea (optional, ≤500 chars).
+  - Delete button hidden for new marks; inline-confirm + undo toast for existing marks.
   - Closes if `SYNC_UPDATE_RECEIVED` reports the editing verseKey was deleted elsewhere.
   - Mounted persistently in `App.svelte` alongside `UndoToast` and `QuotaBanner`.
   - `long-press.ts` exposes a Svelte action (`use:longPress`) and an imperative `setupLongPress(container, onPress)` wrapper for vanilla-JS consumers.

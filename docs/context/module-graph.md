@@ -12,8 +12,12 @@ Everything in `src/` is either TypeScript (`.ts`) or Svelte 5 (`.svelte`/`.svelt
 graph LR
   a11y[a11y]
   core[core]
+  aliases_json["data/aliases.json"]
+  normalize["core/normalize.ts"]
+  aliases["core/aliases.ts"]
   data[data]
   safety[safety]
+  edges[edges]
   marks[marks]
   settings[settings]
   nav[nav]
@@ -26,9 +30,14 @@ graph LR
   sw["sw.js"]
   state[state]
 
+  normalize --> aliases
+  aliases --> aliases_json
   core --> a11y
+  core --> normalize
   data --> core
   safety --> core
+  edges --> core
+  edges --> safety
   marks --> core
   marks --> data
   marks --> safety
@@ -84,25 +93,35 @@ graph LR
 - **Role:** About page Svelte component + PWA install prompt capture/handling.
 
 ### `core/`
-- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `quota-banner.svelte`, `quota-banner.js`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
+- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `quota-banner.js`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
 - **Imports from:**
   - `core/quota-banner.svelte` → `a11y`
   - `core/ui.svelte` → emits `MARKS_UNDO` via the bus; no feature-dir imports
+  - `core/normalize.ts` → `core/aliases.ts`
+  - `core/aliases.ts` → `data/aliases.json`
   - Every other file: none outside core
 - **Imported by:** **every feature directory** — this is the trunk.
-- **Role:** Cross-cutting primitives. `db.ts` (IDB + strict `StoreRecords` types), `events.ts` (pub/sub + typed `EventPayloads`), `router.ts` (hash routing), `constants.ts` (Events enum + payload typedefs + shared constants), `logger.ts` (noop wrapper in tests, console in prod), `ui.svelte` (undo toast) + `ui-bridge.ts` (imperative `showUndoToast()`), `tag-colors.ts` (deterministic tag-color mapping), `quota-banner.svelte` (storage warnings). `theme.css` holds theme tokens + shell rules; surface-specific CSS lives inside each surface's `<style>` block.
+- **Role:** Cross-cutting primitives. `db.ts` (IDB + strict `StoreRecords` types + `LayerName` / `LAYER_NAMES` / `MarkRecord`), `events.ts` (pub/sub + typed `EventPayloads`), `router.ts` (hash routing), `constants.ts` (Events enum + payload typedefs + shared constants), `logger.ts` (noop wrapper in tests, console in prod), `normalize.ts` (canonicalization pipeline — `normalize()` + `canonicalize()`), `aliases.ts` (alias map + `excludeFromAliasing` guard), `ui.svelte` (undo toast) + `ui-bridge.ts` (imperative `showUndoToast()`), `tag-colors.ts` (deterministic tag-color mapping), `quota-banner.svelte` (storage warnings). `theme.css` holds theme tokens + shell rules; surface-specific CSS lives inside each surface's `<style>` block.
 
 ### `data/`
-- **Files:** `dataset.ts`, `offline.ts`, `surah-meanings.ts`
+- **Files:** `aliases.json`, `dataset.ts`, `offline.ts`, `surah-meanings.ts`
 - **Imports from:** `core`
-- **Imported by:** `marks`, `nav`, `reader`, `review`, `surahs`
-- **Role:** Corpus fetch. `dataset.ts::getSurahs()` + `getSurah(n)` serve the surah index and full surah payloads (cache-first via service worker). `offline.ts` tracks activation state + dataset update flow (client side; the SW half lives in `src/offline/`). `surah-meanings.ts` is the static mapping of surah-number → name meaning.
+- **Imported by:** `marks`, `nav`, `reader`, `review`, `surahs`; `aliases.json` imported by `core/aliases.ts`
+- **Role:** Corpus fetch + static data. `dataset.ts::getSurahs()` + `getSurah(n)` serve the surah index and full surah payloads (cache-first via service worker). `offline.ts` tracks activation state + dataset update flow (client side; the SW half lives in `src/offline/`). `surah-meanings.ts` is the static mapping of surah-number → name meaning. `aliases.json` is the seed alias map for the canonicalization pipeline.
+
+### `edges/`
+- **Files:** `store.ts`, `kinds.ts`
+- **Imports from:**
+  - `edges/store.ts` → `core/db`, `core/events`, `core/constants`, `core/logger`, `safety/sync`, `./kinds`
+  - `edges/kinds.ts` → nothing (pure data/logic)
+- **Imported by:** nothing at MVP (no UI surface yet — edge-creation UI is deferred; see `docs/context/future-work.md`)
+- **Role:** Verse-to-verse typed relationship store. `kinds.ts` exports `EDGE_KIND_SEEDS` (14 seed kinds) and `inferDirectedFromKind()`. `store.ts` is the sole IDB writer for the `edges` store — computes `_canonKind` (simple ASCII lowercase) and auto-infers `directed` from `inferDirectedFromKind()`. Provides `createEdge`, `updateEdge`, `deleteEdge`, `getById`, `getAll`, `getByVerse`, `getByKindCanonical`.
 
 ### `marks/`
-- **Files:** `Editor.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
-- **Imports from:** `core`, `data`, `safety`, `state`
+- **Files:** `Editor.svelte`, `TagLayerRegion.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
+- **Imports from:** `core` (including `core/normalize.ts` for `canonicalize()`), `data`, `safety`, `state`
 - **Imported by:** `about`, `app-bootstrap.ts`, `App.svelte`, `nav`, `reader` *(via app-bootstrap hooks)*, `review`, `surahs`
-- **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (CLAUDE.md Rule 5); `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette.
+- **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (CLAUDE.md Rule 5) — takes `MarkInput` (raw layer arrays) and computes `_canon` internally via `canonicalize()`. `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette + `getAllUsedTags()` (delegates to `store.ts::getAllCanonicalValues('threads')`).
 
 ### `nav/`
 - **Files:** `AmbientDock.svelte`, `AmbientPill.svelte`, `CommandSheet.svelte`, `MoreSheet.svelte`, `command-sheet-bridge.ts`, `more-sheet-bridge.ts`, `reader-actions.js`, `shortcuts-sheet.js`
@@ -153,15 +172,15 @@ graph LR
 
 ### `review/`
 - **Files:** `Hub.svelte`, `ReviewCard.svelte`, `state.ts`
-- **Imports from:** `a11y`, `core`, `data`, `marks`, `safety`, `state`
-- **Imported by:** `app-bootstrap.ts` *(lazy-loaded for `#/review` and `#/t/:tag` routes)*
-- **Role:** Svelte component routes. Both the review hub and FVR live in `Hub.svelte` — branches on whether the `tag` prop is present. `ReviewCard.svelte` is the per-mark card (async verse content loaded on mount). `state.ts` is the **sole writer** for `positions["review"]` (CLAUDE.md Rule 5) — persists view/filter/sort/groupBy.
+- **Imports from:** `a11y`, `core` (including `LAYER_NAMES`, `LayerName` from `core/db.ts`), `data`, `marks`, `safety` (`validateLayerParam`), `state`
+- **Imported by:** `app-bootstrap.ts` *(lazy-loaded for `#/review` and `#/<layer>/:value` FVR routes — one route per `LAYER_NAMES` entry)*
+- **Role:** Svelte component routes. Both the review hub (12-layer filter) and FVR live in `Hub.svelte` — branches on whether the `layer` + `value` props are present. `ReviewCard.svelte` is the per-mark card (async verse content loaded on mount); chip links use `#/threads/<tag>`. `state.ts` is the **sole writer** for `positions["review"]` (CLAUDE.md Rule 5) — persists view/activeLayer/activeValue/filter/sort/groupBy.
 
 ### `safety/`
 - **Files:** `input-validator.ts`, `sync.ts`
-- **Imports from:** `core`
+- **Imports from:** `core` (including `LAYER_NAMES`, `LayerName`, `canonicalize`)
 - **Imported by:** `marks`, `review`, `settings`
-- **Role:** `input-validator.ts::validateTagParam` gates URL-supplied tags (length + charset). `sync.ts` is the BroadcastChannel bridge — mirrors mark writes across tabs and emits `SYNC_UPDATE_RECEIVED` on receipt; also listens for `DB_VERSION_CHANGE` and shows the versionchange reload banner.
+- **Role:** `input-validator.ts` exports `validateTagParam` (gates URL-supplied tags, length + charset), `validateTagLabel`, `parseNavigationInput`, and `validateLayerParam` (whitelists a layer name against `LAYER_NAMES` and canonicalizes the value — used by FVR route handling in `review/Hub.svelte`). `sync.ts` is the BroadcastChannel bridge — mirrors mark writes across tabs and emits `SYNC_UPDATE_RECEIVED` on receipt; also listens for `DB_VERSION_CHANGE` and shows the versionchange reload banner.
 
 ### `settings/`
 - **Files:** `Panel.svelte`, `ClearDataConfirm.svelte`, `panel-bridge.ts`, `clear-data.ts`, `font-size.ts`, `theme.ts`

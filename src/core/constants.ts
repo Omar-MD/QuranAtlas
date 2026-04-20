@@ -46,6 +46,10 @@ export const Events = {
   OFFLINE_SW_TIMEOUT: 'offline:sw-timeout',
   SHEET_OPENED: 'sheet:opened',
   SHEET_CLOSED: 'sheet:closed',
+  EDGES_SAVED: 'edges:saved',
+  EDGES_DELETED: 'edges:deleted',
+  EDGES_SAVE_FAILED: 'edges:save-failed',
+  SYNC_EDGES_UPDATED: 'sync:edges-updated',
 } as const
 
 export type EventName = typeof Events[keyof typeof Events]
@@ -72,7 +76,7 @@ export type EventPayloads = {
   'settings:font-size-changed': { size: string }
   'review:open': Record<string, never>
   'review:filter': { tag: string | null; surah: number | null }
-  'marks:saved': { verseKey: string; tags: string[] }
+  'marks:saved': { verseKey: string; tags: string[] } // tags = union of canonical keys across all 12 layers
   'marks:deleted': { verseKey: string }
   'marks:undo': { verseKey: string }
   'marks:save-failed': { verseKey: string; error: string }
@@ -88,6 +92,10 @@ export type EventPayloads = {
   'offline:sw-timeout': Record<string, never>
   'sheet:opened': { name: string }
   'sheet:closed': { name: string }
+  'edges:saved': { edgeId: string; from: string; to: string; kind: string }
+  'edges:deleted': { edgeId: string }
+  'edges:save-failed': { error: string }
+  'sync:edges-updated': { edgeIds: string[] }
 }
 
 export const Errors = {

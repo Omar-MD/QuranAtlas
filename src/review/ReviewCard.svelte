@@ -69,12 +69,12 @@
     <div class="qa-review-card-note">{mark.note}</div>
   {/if}
 
-  {#if mark.tags.length > 0}
+  {#if mark._canon.threads.length > 0}
     <div class="qa-review-card-chips">
-      {#each mark.tags as tag (tag)}
+      {#each mark._canon.threads as tag (tag)}
         <a
           class="qa-review-card-chip"
-          href="#{`/t/${encodeURIComponent(tag)}`}"
+          href="#{`/threads/${encodeURIComponent(tag)}`}"
         >
           <span
             class="qa-review-card-chip-dot"

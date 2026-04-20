@@ -7,26 +7,36 @@
    *
    * Layout:
    * - Verse-preview header (shared verse-block grammar)
-   * - Left col: Note textarea + Selected strip (count badge, Clear all, × chips)
-   * - Right col: Tag search + All-tags region
+   * - Note textarea
+   * - Flag checkboxes (hasQuestion, hasApplication)
+   * - 12 TagLayerRegion sections (collapsible, search, chip pool per layer)
    * - Pinned footer: Delete · Cancel · Save
    * - Delete → inline confirm → undo toast
    */
 
   import { onMount } from 'svelte'
-  import { save, del, getByVerseKey, getAll } from './store'
-  import { getSeedTags, getAllUsedTags } from './tags'
+  import { save, del, getByVerseKey, getAllCanonicalValues } from './store'
   import { getSurah, getSurahs } from '../data/dataset'
-  import { validateTagLabel } from '../safety/input-validator'
   import { on } from '../core/events'
   import { Events } from '../core/constants'
   import { showUndoToast, clearUndoToast } from '../core/ui-bridge'
   import { markEditor } from '../state/mark-editor.svelte'
   import { registerEditor } from './editor-bridge'
-  import TagChip from './TagChip.svelte'
+  import { LAYER_NAMES } from '../core/db'
+  import type { LayerName } from '../core/db'
+  import { getSeedsForLayer } from '../core/seeds'
+  import TagLayerRegion from './TagLayerRegion.svelte'
   import type { Mark } from './store'
 
-  const DIM_THRESHOLD = 7
+  type LayerMap = Record<LayerName, string[]>
+
+  function emptyLayerMap(): LayerMap {
+    return {
+      threads: [], subjects: [], audience: [], speaker: [], quotedSpeaker: [],
+      mode: [], form: [], tone: [],
+      people: [], places: [], events: [], divineNames: [],
+    }
+  }
 
   // — Sheet open state ———————————————————————————————————————————————————
   let isOpen = $state(false)
@@ -41,30 +51,31 @@
 
   // — Editor data ——————————————————————————————————————————————————————————
   let isExisting = $state(false)
-  let selectedTags = $state<string[]>([])
-  let allTags = $state<string[]>([])
-  let searchQuery = $state('')
   let noteValue = $state('')
   let existingMark = $state<Mark | null>(null)
+
+  // Per-layer state
+  let selectedByLayer = $state<LayerMap>(emptyLayerMap())
+  let allByLayer = $state<LayerMap>(emptyLayerMap())
+  const collapsedByLayer = $state<Record<LayerName, boolean>>({
+    threads: false, audience: false, mode: false,
+    subjects: true, speaker: true, quotedSpeaker: true,
+    form: true, tone: true,
+    people: true, places: true, events: true, divineNames: true,
+  })
+
+  // Flag toggles
+  let flagHasQuestion = $state(false)
+  let flagHasApplication = $state(false)
 
   // — Delete confirm state ——————————————————————————————————————————————————
   let confirmingDelete = $state(false)
 
   // — Derived values ——————————————————————————————————————————————————————
-  const selectedSet = $derived(new Set(selectedTags))
-  const unselected = $derived(allTags.filter(t => !selectedSet.has(t)))
-  const q = $derived(searchQuery.trim().toLowerCase())
-  const filteredUnselected = $derived(q ? unselected.filter(t => t.toLowerCase().includes(q)) : unselected)
-  const dim = $derived(selectedTags.length >= DIM_THRESHOLD)
-  const canSave = $derived(selectedTags.length > 0 || noteValue.trim().length > 0)
-
-  // Validate "create" chip: only show when query has no exact match and is valid
-  const createLabel = $derived((): string | null => {
-    if (!q) { return null }
-    if (allTags.some(t => t.toLowerCase() === q)) { return null }
-    const validation = validateTagLabel(q)
-    return validation.valid ? validation.label : null
-  })
+  const totalSelected = $derived(
+    LAYER_NAMES.reduce((sum, l) => sum + selectedByLayer[l].length, 0)
+  )
+  const canSave = $derived(totalSelected > 0 || noteValue.trim().length > 0)
 
   // — History / keyboard management ————————————————————————————————————————
   let _historyPushed = false
@@ -84,39 +95,41 @@
     enText = '…'
     surahName = ''
     confirmingDelete = false
-    searchQuery = ''
 
-    const [existing, allMarksArr, surahs] = await Promise.all([
+    const [existing, surahs] = await Promise.all([
       getByVerseKey(vk),
-      getAll().catch(() => [] as Mark[]),
       getSurahs().catch(() => [] as { n: number; name?: string; arabic?: string; type?: string; count?: number }[]),
     ])
 
     isExisting = !!existing
     existingMark = existing ?? null
-    selectedTags = existing?.tags ?? []
     noteValue = existing?.note ?? ''
+    flagHasQuestion = existing?.flags.hasQuestion ?? false
+    flagHasApplication = existing?.flags.hasApplication ?? false
 
-    // Build tag universe
-    let tags: string[]
-    if (allMarksArr.length > 0) {
-      tags = await getAllUsedTags()
-    } else {
-      tags = getSeedTags().map(st => st.label)
+    // Build per-layer selected + all (seeds ∪ canonicals ∪ existing)
+    const newSelected = emptyLayerMap()
+    const newAll = emptyLayerMap()
+
+    for (const layer of LAYER_NAMES) {
+      newSelected[layer] = existing ? [...existing[layer]] : []
+      const seeds = getSeedsForLayer(layer)
+      const canonicals = await getAllCanonicalValues(layer)
+      const union = new Set<string>([...seeds, ...canonicals, ...newSelected[layer]])
+      newAll[layer] = [...union].sort()
     }
-    // Ensure seed tags always appear
-    const seedLabels = getSeedTags().map(st => st.label)
-    for (const sl of seedLabels) {
-      if (!tags.includes(sl)) { tags.push(sl) }
-    }
-    allTags = tags
+
+    selectedByLayer = newSelected
+    allByLayer = newAll
 
     const meta = surahs.find(x => x.n === surahNum)
     surahName = meta?.name ?? ''
 
+    // Sync global mark-editor state (flatten all selected tags for consumers)
+    const allSelected = LAYER_NAMES.flatMap(l => newSelected[l])
     markEditor.isOpen = true
     markEditor.currentVerseKey = vk
-    markEditor.selectedTags = [...selectedTags]
+    markEditor.selectedTags = allSelected
     markEditor.draftNote = noteValue
 
     isOpen = true
@@ -139,18 +152,6 @@
 
     _escHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') { closeEditor() } }
     document.addEventListener('keydown', _escHandler)
-
-    // Desktop focus
-    const isDesktop = typeof window.matchMedia === 'function'
-      ? window.matchMedia('(min-width: 640px)').matches
-      : false
-    if (isDesktop) {
-      // focus search after a tick so the element is rendered
-      setTimeout(() => {
-        const input = document.querySelector<HTMLInputElement>('.qa-mark-search-input')
-        input?.focus()
-      }, 0)
-    }
   }
 
   function closeEditor() {
@@ -164,7 +165,6 @@
 
     existingMark = null
     confirmingDelete = false
-    searchQuery = ''
 
     if (_escHandler) {
       document.removeEventListener('keydown', _escHandler)
@@ -180,31 +180,6 @@
     }
   }
 
-  // — Tag actions ———————————————————————————————————————————————————————
-  function selectTag(tag: string) {
-    if (!selectedSet.has(tag)) {
-      selectedTags = [...selectedTags, tag]
-      markEditor.selectedTags = [...selectedTags]
-    }
-  }
-
-  function unselectTag(tag: string) {
-    selectedTags = selectedTags.filter(t => t !== tag)
-    markEditor.selectedTags = [...selectedTags]
-  }
-
-  function clearAll() {
-    selectedTags = []
-    markEditor.selectedTags = []
-  }
-
-  function createTag(label: string) {
-    if (!allTags.includes(label)) { allTags = [...allTags, label] }
-    selectedTags = [...selectedTags, label]
-    markEditor.selectedTags = [...selectedTags]
-    searchQuery = ''
-  }
-
   function onNoteInput(e: Event) {
     noteValue = (e.target as HTMLTextAreaElement).value
     markEditor.draftNote = noteValue
@@ -213,18 +188,39 @@
   // — Save / delete ————————————————————————————————————————————————————
   async function handleSave() {
     if (!canSave) { return }
-    await save(verseKey, [...selectedTags], noteValue.trim())
+    await save({
+      verseKey,
+      ...selectedByLayer,
+      flags: {
+        ...(flagHasQuestion ? { hasQuestion: true } : {}),
+        ...(flagHasApplication ? { hasApplication: true } : {}),
+      },
+      note: noteValue.trim(),
+    })
     closeEditor()
   }
 
   async function handleConfirmDelete() {
     // Snapshot the $state-wrapped mark into a plain structured-cloneable
-    // object. Without the snapshot, the proxied `tags` array can't be passed
+    // object. Without the snapshot, the proxied arrays can't be passed
     // to IDB.put() in onUndo below — IDB rejects proxies with DataCloneError.
     const rec: Mark | null = existingMark
       ? {
           verseKey: existingMark.verseKey,
-          tags: [...existingMark.tags],
+          threads: [...existingMark.threads],
+          subjects: [...existingMark.subjects],
+          audience: [...existingMark.audience],
+          speaker: [...existingMark.speaker],
+          quotedSpeaker: [...existingMark.quotedSpeaker],
+          mode: [...existingMark.mode],
+          form: [...existingMark.form],
+          tone: [...existingMark.tone],
+          people: [...existingMark.people],
+          places: [...existingMark.places],
+          events: [...existingMark.events],
+          divineNames: [...existingMark.divineNames],
+          _canon: { ...existingMark._canon },
+          flags: { ...existingMark.flags },
           note: existingMark.note ?? '',
           createdAt: existingMark.createdAt,
           updatedAt: existingMark.updatedAt,
@@ -238,7 +234,14 @@
         record: rec,
         onUndo: async (r) => {
           const m = r as Mark
-          await save(m.verseKey, m.tags, m.note ?? '')
+          await save({
+            verseKey: m.verseKey,
+            threads: m.threads, subjects: m.subjects, audience: m.audience,
+            speaker: m.speaker, quotedSpeaker: m.quotedSpeaker,
+            mode: m.mode, form: m.form, tone: m.tone,
+            people: m.people, places: m.places, events: m.events, divineNames: m.divineNames,
+            flags: m.flags, note: m.note ?? '',
+          })
         },
         onComplete: () => { /* no-op */ },
       })
@@ -288,72 +291,40 @@
         <div class="qa-mark-quote-en">{enText}</div>
       </div>
 
-      <!-- Left column: note + selected strip -->
-      <div class="qa-mark-body-left">
-        <label class="qa-mark-label" for="qa-mark-note-input">Note (optional)</label>
-        <textarea
-          id="qa-mark-note-input"
-          class="qa-mark-note"
-          rows={2}
-          maxlength={500}
-          placeholder="A thought to revisit…"
-          value={noteValue}
-          oninput={onNoteInput}
-        ></textarea>
+      <!-- Note -->
+      <label class="qa-mark-label" for="qa-mark-note-input">Note (optional)</label>
+      <textarea
+        id="qa-mark-note-input"
+        class="qa-mark-note"
+        rows={2}
+        maxlength={500}
+        placeholder="A thought to revisit…"
+        value={noteValue}
+        oninput={onNoteInput}
+      ></textarea>
 
-        <div class="qa-mark-selected">
-          <div class="qa-mark-selected-head">
-            <span>Selected</span>
-            <span class="qa-mark-selected-count">{selectedTags.length}</span>
-            {#if selectedTags.length > 0}
-              <button type="button" class="qa-mark-clear-all" onclick={clearAll}>Clear all</button>
-            {/if}
-          </div>
-          <div class="qa-mark-chips qa-mark-chips--selected">
-            {#if selectedTags.length === 0}
-              <div class="qa-mark-selected-empty">No tags yet — pick one below or search.</div>
-            {:else}
-              {#each selectedTags as tag (tag)}
-                <TagChip {tag} selected ontoggle={() => unselectTag(tag)} />
-              {/each}
-            {/if}
-          </div>
-        </div>
+      <!-- Flags -->
+      <div class="qa-mark-flags">
+        <label class="qa-mark-flag-label">
+          <input type="checkbox" class="qa-mark-flag-checkbox" bind:checked={flagHasQuestion} />
+          Open question
+        </label>
+        <label class="qa-mark-flag-label">
+          <input type="checkbox" class="qa-mark-flag-checkbox" bind:checked={flagHasApplication} />
+          To apply
+        </label>
       </div>
 
-      <!-- Right column: search + all tags -->
-      <div class="qa-mark-body-right">
-        <div class="qa-mark-search">
-          <span class="qa-mark-search-icon" aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            class="qa-mark-search-input"
-            placeholder="Search or create a tag"
-            aria-label="Search or create a tag"
-            autocomplete="off"
-            maxlength={40}
-            bind:value={searchQuery}
+      <!-- 12 layer regions -->
+      <div class="qa-mark-layers">
+        {#each LAYER_NAMES as layer (layer)}
+          <TagLayerRegion
+            label={layer}
+            bind:selected={selectedByLayer[layer]}
+            bind:all={allByLayer[layer]}
+            bind:collapsed={collapsedByLayer[layer]}
           />
-          <span class="qa-mark-search-count">
-            {q ? (filteredUnselected.length === 1 ? '1 match' : `${filteredUnselected.length} matches`) : `${allTags.length} tags`}
-          </span>
-        </div>
-
-        <div class="qa-mark-all-head">
-          <span class="qa-mark-all-label">All tags</span>
-          <span class="qa-mark-all-count">
-            {filteredUnselected.length === 1 ? '1 unselected' : `${filteredUnselected.length} unselected`}
-          </span>
-        </div>
-
-        <div class="qa-mark-chips qa-mark-chips--all">
-          {#each filteredUnselected as tag (tag)}
-            <TagChip {tag} {dim} ontoggle={() => selectTag(tag)} />
-          {/each}
-          {#if createLabel()}
-            <TagChip tag={`+ create "${createLabel()}"`} create ontoggle={() => createTag(createLabel()!)} />
-          {/if}
-        </div>
+        {/each}
       </div>
     </div>
 
@@ -447,91 +418,28 @@
     outline: none;
     border-color: var(--qa-ambient-accent);
   }
-  .qa-mark-selected {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--qa-ambient-border);
-    background-color: color-mix(in srgb, var(--qa-ambient-accent) 4%, transparent);
-    margin-top: 12px;
-    margin-bottom: 10px;
+  .qa-mark-flags {
+    display: flex;
+    gap: 16px;
+    margin: 10px 0 8px;
   }
-  .qa-mark-selected-head {
+  .qa-mark-flag-label {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.625rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--qa-ambient-accent);
-    margin-bottom: 6px;
-  }
-  .qa-mark-selected-count {
-    padding: 1px 6px;
-    border-radius: 999px;
-    background-color: var(--qa-ambient-accent);
-    color: var(--qa-on-accent);
-    font-size: 0.625rem;
-    font-weight: 700;
-  }
-  .qa-mark-clear-all {
-    margin-left: auto;
-    border: none;
-    background: transparent;
-    color: var(--qa-danger-fg);
-    font-size: 0.6875rem;
-    cursor: pointer;
-    padding: 0;
-  }
-  .qa-mark-selected-empty {
-    font-size: 0.75rem;
-    font-style: italic;
-    color: var(--qa-ambient-muted);
-    padding: 4px 2px;
-  }
-  .qa-mark-search {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 10px;
-    border: 1px solid var(--qa-ambient-border);
-    border-radius: 8px;
-    margin: 10px 0 8px;
-  }
-  .qa-mark-search-icon { color: var(--qa-ambient-accent); font-size: 0.875rem; }
-  .qa-mark-search-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--qa-ambient-parchment);
-    font: inherit;
     font-size: 0.8125rem;
+    color: var(--qa-ambient-parchment);
+    cursor: pointer;
+    user-select: none;
   }
-  .qa-mark-search-count {
-    font-size: 0.6875rem;
-    color: var(--qa-ambient-muted);
+  .qa-mark-flag-checkbox {
+    accent-color: var(--qa-ambient-accent);
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
   }
-  .qa-mark-all-head {
-    display: flex;
-    align-items: center;
-    margin: 6px 0;
-  }
-  .qa-mark-all-label {
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--qa-ambient-accent);
-  }
-  .qa-mark-all-count {
-    margin-left: auto;
-    font-size: 0.6875rem;
-    color: var(--qa-ambient-muted);
-  }
-  .qa-mark-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    padding: 2px;
+  .qa-mark-layers {
+    margin-top: 8px;
   }
   .qa-mark-footer-spacer { flex: 1; }
   .qa-mark-btn {
@@ -570,7 +478,7 @@
     flex: 1;
   }
 
-  /* Desktop 2-column layout */
+  /* Desktop layout */
   @media (min-width: 640px) {
     :global(.qa-sheet--mark) .qa-sheet-grip { display: none; }
 
@@ -593,37 +501,6 @@
       max-width: 520px;
       margin: 0 auto;
       font-style: italic;
-    }
-
-    :global(.qa-sheet--mark) .qa-mark-body {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      column-gap: 1.5rem;
-      align-items: stretch;
-    }
-    :global(.qa-sheet--mark) .qa-mark-body > .qa-mark-quote { grid-column: 1 / -1; }
-    :global(.qa-sheet--mark) .qa-mark-body-left,
-    :global(.qa-sheet--mark) .qa-mark-body-right {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      min-height: 0;
-      gap: 0.5rem;
-    }
-    :global(.qa-sheet--mark) .qa-mark-body-left > .qa-mark-note {
-      flex: 1 1 0;
-      min-height: 96px;
-      resize: none;
-    }
-    :global(.qa-sheet--mark) .qa-mark-body-left > .qa-mark-label,
-    :global(.qa-sheet--mark) .qa-mark-body-left > .qa-mark-selected,
-    :global(.qa-sheet--mark) .qa-mark-body-right > .qa-mark-search,
-    :global(.qa-sheet--mark) .qa-mark-body-right > .qa-mark-all-head {
-      flex: 0 0 auto;
-    }
-    :global(.qa-sheet--mark) .qa-mark-body-right > .qa-mark-chips--all {
-      flex: 1 1 auto;
-      align-content: flex-start;
     }
   }
 </style>

@@ -1,4 +1,4 @@
-import { parseNavigationInput, validateTagLabel, validateTagParam } from '../../../src/safety/input-validator.js'
+import { parseNavigationInput, validateTagLabel, validateTagParam, validateLayerParam } from '../../../src/safety/input-validator.js'
 
 const SURAHS = [
   { n: 1, name: 'Al-Fatihah', count: 7 },
@@ -198,6 +198,28 @@ describe('safety/input-validator.js', () => {
       const result = validateTagParam('qur\u00e2n')
       expect(result.valid).toBe(true)
       expect(result.label).toBe('qur\u00e2n')
+    })
+  })
+
+  describe('validateLayerParam', () => {
+    it('accepts known layer + well-formed value', () => {
+      expect(validateLayerParam('audience', 'muminin').valid).toBe(true)
+      expect(validateLayerParam('people', 'musa').valid).toBe(true)
+    })
+    it('rejects unknown layer', () => {
+      expect(validateLayerParam('bogus', 'foo').valid).toBe(false)
+    })
+    it('rejects empty or overlong value', () => {
+      expect(validateLayerParam('threads', '').valid).toBe(false)
+      expect(validateLayerParam('threads', 'x'.repeat(51)).valid).toBe(false)
+    })
+    it('canonicalizes input value', () => {
+      const r = validateLayerParam('people', 'Moses')
+      expect(r.valid).toBe(true)
+      if (r.valid) {
+        expect(r.canonical).toBe('musa')
+        expect(r.layer).toBe('people')
+      }
     })
   })
 })

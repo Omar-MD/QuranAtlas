@@ -1,6 +1,6 @@
 /**
  * IndexedDB connection manager.
- * Opens the quran-atlas DB v1 with all required stores.
+ * Opens the quran-atlas DB v2 with all required stores.
  * All IDB access flows through this module.
  */
 
@@ -9,18 +9,61 @@ import { Events } from './constants'
 import { logger } from './logger'
 
 const DB_NAME = 'quran-atlas'
-const DB_VERSION = 1
+const DB_VERSION = 3
 
 let dbPromise: Promise<IDBDatabase> | null = null
 let dbRef: IDBDatabase | null = null
 let visibilityListenerAttached = false
 
+export type LayerName =
+  | 'threads' | 'subjects' | 'audience' | 'speaker' | 'quotedSpeaker'
+  | 'mode' | 'form' | 'tone' | 'people' | 'places' | 'events' | 'divineNames'
+
+export const LAYER_NAMES: LayerName[] = [
+  'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
+  'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
+]
+
+export interface MarkRecord {
+  verseKey: string
+  threads: string[]
+  subjects: string[]
+  audience: string[]
+  speaker: string[]
+  quotedSpeaker: string[]
+  mode: string[]
+  form: string[]
+  tone: string[]
+  people: string[]
+  places: string[]
+  events: string[]
+  divineNames: string[]
+  _canon: Record<LayerName, string[]>
+  flags: { hasQuestion?: boolean; hasApplication?: boolean }
+  note: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface EdgeRecord {
+  id: string
+  from: string
+  to: string
+  kind: string
+  _canonKind: string
+  directed: boolean
+  note: string
+  createdAt: number
+  updatedAt: number
+}
+
 export type StoreRecords = {
   settings: { key: string; value: unknown }
   positions: { id: string; surah: number; verse: number; savedAt: number; [k: string]: unknown }
-  marks: { verseKey: string; tags?: string[]; note?: string; createdAt?: number; updatedAt?: number }
+  marks: MarkRecord
   activationState: { id: string; status: string; [k: string]: unknown }
   datasetMeta: { id: string; version?: string; [k: string]: unknown }
+  edges: EdgeRecord
 }
 
 export type StoreName = keyof StoreRecords
@@ -50,12 +93,15 @@ export function openDB(): Promise<IDBDatabase> {
         positionsStore.createIndex('by-savedAt', 'savedAt')
       }
 
-      // Marks store: keyPath = 'verseKey'
-      if (!db.objectStoreNames.contains('marks')) {
-        const marksStore = db.createObjectStore('marks', { keyPath: 'verseKey' })
-        marksStore.createIndex('by-tag', 'tags', { multiEntry: true })
-        marksStore.createIndex('by-updated', 'updatedAt')
+      // Marks store: keyPath = 'verseKey' (v2 — drop + recreate for clean indexes)
+      if (db.objectStoreNames.contains('marks')) {
+        db.deleteObjectStore('marks')
       }
+      const marksStore = db.createObjectStore('marks', { keyPath: 'verseKey' })
+      for (const layer of LAYER_NAMES) {
+        marksStore.createIndex(`by-canon-${layer}`, `_canon.${layer}`, { multiEntry: true })
+      }
+      marksStore.createIndex('by-updated', 'updatedAt')
 
       // ActivationState store: keyPath = 'id'
       if (!db.objectStoreNames.contains('activationState')) {
@@ -65,6 +111,15 @@ export function openDB(): Promise<IDBDatabase> {
       // DatasetMeta store: keyPath = 'id'
       if (!db.objectStoreNames.contains('datasetMeta')) {
         db.createObjectStore('datasetMeta', { keyPath: 'id' })
+      }
+
+      // Edges store: keyPath = 'id' (v3)
+      if (!db.objectStoreNames.contains('edges')) {
+        const edgesStore = db.createObjectStore('edges', { keyPath: 'id' })
+        edgesStore.createIndex('by-from', 'from')
+        edgesStore.createIndex('by-to', 'to')
+        edgesStore.createIndex('by-canon-kind', '_canonKind')
+        edgesStore.createIndex('by-updated', 'updatedAt')
       }
     }
 
@@ -174,9 +229,25 @@ export async function put(storeName: string, value: unknown): Promise<void> {
 const _shapes: Record<string, Record<string, string>> = {
   settings: { key: 'string', value: 'any' },
   positions: { id: 'string', surah: 'number', verse: 'number', savedAt: 'number' },
-  marks: { verseKey: 'string' },
+  marks: {
+    verseKey: 'string',
+    threads: 'string[]', subjects: 'string[]', audience: 'string[]',
+    speaker: 'string[]', quotedSpeaker: 'string[]',
+    mode: 'string[]', form: 'string[]', tone: 'string[]',
+    people: 'string[]', places: 'string[]', events: 'string[]', divineNames: 'string[]',
+    _canon: 'any',
+    flags: 'any',
+    note: 'string',
+    createdAt: 'number',
+    updatedAt: 'number',
+  },
   activationState: { id: 'string', status: 'string' },
   datasetMeta: { id: 'string' },
+  edges: {
+    id: 'string', from: 'string', to: 'string',
+    kind: 'string', _canonKind: 'string', directed: 'boolean',
+    note: 'string', createdAt: 'number', updatedAt: 'number',
+  },
 }
 
 /**
@@ -184,7 +255,6 @@ const _shapes: Record<string, Record<string, string>> = {
  * If a field appears in the record but with the wrong type, the write is rejected.
  */
 const _optionalTypes: Record<string, Record<string, string>> = {
-  marks: { tags: 'string[]', note: 'string', createdAt: 'number', updatedAt: 'number' },
 }
 
 function _typeOf(v: unknown): string {

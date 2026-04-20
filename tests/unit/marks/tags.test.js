@@ -1,14 +1,24 @@
 import 'fake-indexeddb/auto'
-import { openDB } from '../../../src/core/db.js'
-import { save } from '../../../src/marks/store.js'
 import { SEMANTIC_TAG_LABELS, SEMANTIC_TAG_COLORS } from '../../../src/core/tag-colors.js'
 
+const BASE_INPUT = {
+  subjects: [], audience: [], speaker: [],
+  quotedSpeaker: [], mode: [], form: [], tone: [],
+  people: [], places: [], events: [], divineNames: [],
+  flags: {}, note: '',
+}
+
 let tags
+let save
 
 beforeEach(async () => {
-  vi.resetModules()
+  const { deleteDB, openDB } = await import('../../../src/core/db.js')
+  try { await deleteDB() } catch {}
   await openDB()
+  vi.resetModules()
   tags = await import('../../../src/marks/tags.js')
+  const storeModule = await import('../../../src/marks/store.js')
+  save = storeModule.save
 })
 
 // Re-export convenient aliases that the new describe block uses directly
@@ -98,16 +108,17 @@ describe('marks/tags.js', () => {
       expect(used).toEqual([])
     })
 
-    it('returns unique tags from marks', async () => {
-      await save('1:1', ['mercy', 'study'])
-      await save('2:1', ['mercy', 'custom-tag'])
+    it('returns unique tags from marks (canonicalized)', async () => {
+      await save({ ...BASE_INPUT, verseKey: '1:1', threads: ['mercy', 'study'] })
+      await save({ ...BASE_INPUT, verseKey: '2:1', threads: ['mercy', 'custom tag'] })
       const used = await tags.getAllUsedTags()
-      expect(used.sort()).toEqual(['custom-tag', 'mercy', 'study'])
+      // Note: 'custom tag' stored as-is; hyphen would be normalized to space by canonicalize
+      expect(used.sort()).toEqual(['custom tag', 'mercy', 'study'])
     })
 
     it('does not return duplicate tag names', async () => {
-      await save('1:1', ['mercy'])
-      await save('2:1', ['mercy'])
+      await save({ ...BASE_INPUT, verseKey: '1:1', threads: ['mercy'] })
+      await save({ ...BASE_INPUT, verseKey: '2:1', threads: ['mercy'] })
       const used = await tags.getAllUsedTags()
       expect(used).toEqual(['mercy'])
     })
