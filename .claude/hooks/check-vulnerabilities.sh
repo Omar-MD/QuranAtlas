@@ -23,9 +23,12 @@ context="[DEPENDABOT] $count open Dependabot alert(s) on $repo:
 
 $summary
 
-Address them when convenient: review in the repo's Security tab, merge any
-pending Dependabot auto-PRs, or bump the affected package in the appropriate
-lockfile and PR into dev per CLAUDE.md Rule 5. If the user asks to handle
-them now, propose a targeted plan before editing files."
+ACTION REQUIRED: At the very start of your first response in this session,
+notify the user of these alerts. Use a brief heading, then one line per alert
+with severity in brackets and a concise (<=15 word) description — do not paste
+the raw summary or CVE IDs unless asked. Then ask whether they want to address
+any now. If yes, propose a targeted plan before editing files (bump the
+affected package in the appropriate lockfile and PR into dev per CLAUDE.md
+Rule 5, or merge the pending Dependabot auto-PR)."
 
 jq -n --arg ctx "$context" '{hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: $ctx}}'
