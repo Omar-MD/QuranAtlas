@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main, dev, staging]
 
+# Only the latest CI run per branch/PR matters — cancel older in-flight runs
+# when a new push lands. github.ref is the pushed branch on push events and
+# refs/pull/N/merge on PR events, so one group per logical unit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint
