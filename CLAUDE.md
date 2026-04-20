@@ -12,6 +12,7 @@ Read before spelunking code — save first 30min grep:
 - **`docs/context/events.md`** — mitt event catalog: emitters, listeners, payloads, dead events.
 - **`docs/context/data-model.md`** — IDB stores, keys, indexes, record shapes, writers.
 - **`docs/context/user-journeys.md`** — cross-surface happy paths user can walk.
+- **`docs/context/future-work.md`** — agreed-but-unscheduled features, dataset roadmap, dropped ideas. Single home for deferred scope.
 
 Context doc disagree with code → code win. Update doc in PR.
 
@@ -43,6 +44,7 @@ Keep steps **surface-level** ("tap Save", "open More sheet") — not pixel-level
 - Changed `package.json` script, added/removed/upgraded dev tool, bumped pinned version, changed CI gate → update `docs/tech-stack.md`.
 - Added, removed, redesigned user-facing feature; changed "What's NOT included" scope; changed attribution strings — update `docs/product-info.md` (and About page text if attribution changed).
 - **Renamed/moved/deleted file or dir cited by name in `CLAUDE.md`, `docs/workflow/*.md`, `docs/tech-stack.md`, any `docs/context/*.md`** → update every cite same commit. File-path cites rot fastest; PR moving file owns doc churn.
+- **Agreed future feature / deferred scope / dataset-roadmap idea not in active plan** → add to `docs/context/future-work.md`. When work starts, move entry into the live plan; when shipped, delete from future-work (lasting record lives in code + git + the other context docs).
 
 ### Rule 3 — Local-first for context retrieval
 
