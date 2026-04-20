@@ -82,6 +82,23 @@ The full event catalog — who emits, who listens, payload shapes, dead events, 
 - `onversionchange` closes the connection and emits `DB_VERSION_CHANGE` so `safety/sync.ts` can show the reload banner.
 - A `visibilitychange` listener (attached once) emits `DB_VISIBILITY_VISIBLE` so reader / hub / indicators can re-sync state when the tab comes back.
 
+## Canonicalization pipeline
+
+Tag labels across all 12 layers go through `core/normalize.ts::canonicalize()`
+before being indexed for filter/query. The pipeline is deterministic:
+
+  raw → trim+collapse → NFKC → strip diacritics/tatweel/zero-width →
+  fold Arabic letter variants → lowercase ASCII → strip apostrophes →
+  hyphens→spaces → alias-resolve via data/aliases.json → canonical
+
+Raw labels are preserved on the mark record for display; canonical keys
+are denormalized onto `_canon.<layer>` array paths for index hits.
+
+The alias map (`data/aliases.json`) ships ~30 seed groups covering proper
+nouns and transliteration drift. `excludeFromAliasing` protects Quranic
+rank/quality distinctions (muminin/muslimin/muttaqin etc.) from collapsing
+into the same canonical form.
+
 ## Cross-cutting patterns
 
 - **Cleanup-returning initializers** — every `init()` (plus `initBootstrap`) that subscribes to events or touches the DOM returns a cleanup fn. The caller (router, `App.svelte` `onMount`) owns invocation. Svelte components use `onMount` + returned cleanup or `$effect` with a return value; vanilla helpers use an explicit cleanups array.
