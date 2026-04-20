@@ -1,12 +1,13 @@
 /**
  * Cross-tab safety and synchronization module.
- * Handles BroadcastChannel mark sync and IDB versionchange reload banner.
+ * Handles BroadcastChannel mark sync, edge sync, and IDB versionchange reload banner.
  * Permitted cross-module import (safety exception).
  *
  * Public API:
  * - init() — set up channel + versionchange listener; returns cleanup function
  * - broadcastMarkChange(verseKeys) — notify other tabs of mark changes
  * - onMarkChange(callback) — register handler for incoming mark changes
+ * - broadcastEdgeChange(edgeIds) — notify other tabs of edge changes
  * - reset() — full reset for testing
  */
 
@@ -62,6 +63,18 @@ export function broadcastMarkChange(verseKeys: string[]): void {
 }
 
 /**
+ * Broadcast an edge change to other tabs.
+ * Only call after IDB transaction oncomplete.
+ */
+export function broadcastEdgeChange(edgeIds: string[]): void {
+  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
+  if (!channel) {
+    return
+  }
+  channel.postMessage({ type: 'edges:changed', edgeIds })
+}
+
+/**
  * Register a handler for incoming mark changes from other tabs.
  * Returns an unsubscribe function.
  */
@@ -91,18 +104,20 @@ function destroy(): void {
  * Handle incoming BroadcastChannel messages.
  */
 function handleChannelMessage(event: MessageEvent): void {
-  const { type, verseKeys } = (event.data || {}) as { type?: string; verseKeys?: string[] }
-  if (type === 'marks:changed' && Array.isArray(verseKeys)) {
+  const data = (event.data || {}) as { type?: string; verseKeys?: string[]; edgeIds?: string[] }
+  if (data.type === 'marks:changed' && Array.isArray(data.verseKeys)) {
     for (const handler of markChangeHandlers) {
       try {
-        handler({ verseKeys })
+        handler({ verseKeys: data.verseKeys })
       } catch (error) {
         logger.error('Sync handler error:', {
           error,
         })
       }
     }
-    emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys })
+    emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: data.verseKeys })
+  } else if (data.type === 'edges:changed' && Array.isArray(data.edgeIds)) {
+    emit(Events.SYNC_EDGES_UPDATED, { edgeIds: data.edgeIds })
   }
 }
 

@@ -92,10 +92,10 @@ export type EventPayloads = {
   'offline:sw-timeout': Record<string, never>
   'sheet:opened': { name: string }
   'sheet:closed': { name: string }
-  'edges:saved': { fromVerseKey: string; toVerseKey: string; type: string }
-  'edges:deleted': { fromVerseKey: string; toVerseKey: string; type: string }
-  'edges:save-failed': { fromVerseKey: string; toVerseKey: string; error: string }
-  'sync:edges-updated': { edgeKeys: string[] }
+  'edges:saved': { edgeId: string; from: string; to: string; kind: string }
+  'edges:deleted': { edgeId: string }
+  'edges:save-failed': { error: string }
+  'sync:edges-updated': { edgeIds: string[] }
 }
 
 export const Errors = {
