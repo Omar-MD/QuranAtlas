@@ -12,6 +12,9 @@ Everything in `src/` is either TypeScript (`.ts`) or Svelte 5 (`.svelte`/`.svelt
 graph LR
   a11y[a11y]
   core[core]
+  aliases_json["data/aliases.json"]
+  normalize["core/normalize.ts"]
+  aliases["core/aliases.ts"]
   data[data]
   safety[safety]
   marks[marks]
@@ -26,7 +29,10 @@ graph LR
   sw["sw.js"]
   state[state]
 
+  normalize --> aliases
+  aliases --> aliases_json
   core --> a11y
+  core --> normalize
   data --> core
   safety --> core
   marks --> core
@@ -84,25 +90,27 @@ graph LR
 - **Role:** About page Svelte component + PWA install prompt capture/handling.
 
 ### `core/`
-- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `quota-banner.svelte`, `quota-banner.js`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
+- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `quota-banner.svelte`, `quota-banner.js`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
 - **Imports from:**
   - `core/quota-banner.svelte` → `a11y`
   - `core/ui.svelte` → emits `MARKS_UNDO` via the bus; no feature-dir imports
+  - `core/normalize.ts` → `core/aliases.ts`
+  - `core/aliases.ts` → `data/aliases.json`
   - Every other file: none outside core
 - **Imported by:** **every feature directory** — this is the trunk.
-- **Role:** Cross-cutting primitives. `db.ts` (IDB + strict `StoreRecords` types), `events.ts` (pub/sub + typed `EventPayloads`), `router.ts` (hash routing), `constants.ts` (Events enum + payload typedefs + shared constants), `logger.ts` (noop wrapper in tests, console in prod), `ui.svelte` (undo toast) + `ui-bridge.ts` (imperative `showUndoToast()`), `tag-colors.ts` (deterministic tag-color mapping), `quota-banner.svelte` (storage warnings). `theme.css` holds theme tokens + shell rules; surface-specific CSS lives inside each surface's `<style>` block.
+- **Role:** Cross-cutting primitives. `db.ts` (IDB + strict `StoreRecords` types + `LayerName` / `LAYER_NAMES` / `MarkRecord`), `events.ts` (pub/sub + typed `EventPayloads`), `router.ts` (hash routing), `constants.ts` (Events enum + payload typedefs + shared constants), `logger.ts` (noop wrapper in tests, console in prod), `normalize.ts` (canonicalization pipeline — `normalize()` + `canonicalize()`), `aliases.ts` (alias map + `excludeFromAliasing` guard), `ui.svelte` (undo toast) + `ui-bridge.ts` (imperative `showUndoToast()`), `tag-colors.ts` (deterministic tag-color mapping), `quota-banner.svelte` (storage warnings). `theme.css` holds theme tokens + shell rules; surface-specific CSS lives inside each surface's `<style>` block.
 
 ### `data/`
-- **Files:** `dataset.ts`, `offline.ts`, `surah-meanings.ts`
+- **Files:** `aliases.json`, `dataset.ts`, `offline.ts`, `surah-meanings.ts`
 - **Imports from:** `core`
-- **Imported by:** `marks`, `nav`, `reader`, `review`, `surahs`
-- **Role:** Corpus fetch. `dataset.ts::getSurahs()` + `getSurah(n)` serve the surah index and full surah payloads (cache-first via service worker). `offline.ts` tracks activation state + dataset update flow (client side; the SW half lives in `src/offline/`). `surah-meanings.ts` is the static mapping of surah-number → name meaning.
+- **Imported by:** `marks`, `nav`, `reader`, `review`, `surahs`; `aliases.json` imported by `core/aliases.ts`
+- **Role:** Corpus fetch + static data. `dataset.ts::getSurahs()` + `getSurah(n)` serve the surah index and full surah payloads (cache-first via service worker). `offline.ts` tracks activation state + dataset update flow (client side; the SW half lives in `src/offline/`). `surah-meanings.ts` is the static mapping of surah-number → name meaning. `aliases.json` is the seed alias map for the canonicalization pipeline.
 
 ### `marks/`
 - **Files:** `Editor.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
-- **Imports from:** `core`, `data`, `safety`, `state`
+- **Imports from:** `core` (including `core/normalize.ts` for `canonicalize()`), `data`, `safety`, `state`
 - **Imported by:** `about`, `app-bootstrap.ts`, `App.svelte`, `nav`, `reader` *(via app-bootstrap hooks)*, `review`, `surahs`
-- **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (CLAUDE.md Rule 5); `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette.
+- **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (CLAUDE.md Rule 5) — takes `MarkInput` (raw layer arrays) and computes `_canon` internally via `canonicalize()`. `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette + `getAllUsedTags()` (delegates to `store.ts::getAllCanonicalValues('threads')`).
 
 ### `nav/`
 - **Files:** `AmbientDock.svelte`, `AmbientPill.svelte`, `CommandSheet.svelte`, `MoreSheet.svelte`, `command-sheet-bridge.ts`, `more-sheet-bridge.ts`, `reader-actions.js`, `shortcuts-sheet.js`
