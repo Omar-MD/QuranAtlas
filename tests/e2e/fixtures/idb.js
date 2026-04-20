@@ -15,7 +15,12 @@
  * @param {IDBDatabase} db
  */
 // _APPLY_SCHEMA_SRC is the verbatim function body injected into each page.evaluate.
+// Mirrors src/core/db.ts onupgradeneeded for DB_VERSION 2 (12-layer schema).
 const _APPLY_SCHEMA_SRC = `
+  const LAYER_NAMES = [
+    'threads','subjects','audience','speaker','quotedSpeaker',
+    'mode','form','tone','people','places','events','divineNames',
+  ];
   if (!db.objectStoreNames.contains('settings')) {
     db.createObjectStore('settings', { keyPath: 'key' })
   }
@@ -23,11 +28,14 @@ const _APPLY_SCHEMA_SRC = `
     const s = db.createObjectStore('positions', { keyPath: 'id' })
     s.createIndex('by-savedAt', 'savedAt')
   }
-  if (!db.objectStoreNames.contains('marks')) {
-    const s = db.createObjectStore('marks', { keyPath: 'verseKey' })
-    s.createIndex('by-tag', 'tags', { multiEntry: true })
-    s.createIndex('by-updated', 'updatedAt')
+  if (db.objectStoreNames.contains('marks')) {
+    db.deleteObjectStore('marks')
   }
+  const marksStore = db.createObjectStore('marks', { keyPath: 'verseKey' })
+  for (const layer of LAYER_NAMES) {
+    marksStore.createIndex('by-canon-' + layer, '_canon.' + layer, { multiEntry: true })
+  }
+  marksStore.createIndex('by-updated', 'updatedAt')
   if (!db.objectStoreNames.contains('activationState')) {
     db.createObjectStore('activationState', { keyPath: 'id' })
   }
@@ -76,7 +84,7 @@ export async function clearAllData(page) {
  */
 export async function markOnboardingComplete(page) {
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 1)
+    const open = indexedDB.open('quran-atlas', 2)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -105,7 +113,7 @@ export async function seedLastSurface(page, surface) {
   // JSON-embedded so it is safe for any valid URL fragment string.
   const surfaceJson = JSON.stringify(surface)
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 1)
+    const open = indexedDB.open('quran-atlas', 2)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -190,22 +198,41 @@ export async function getMarkFromIdb(page, verseKey) {
 }
 
 /**
- * Seed one or more marks. Each mark is { verseKey, tags, note? }.
+ * Seed one or more marks using the v2 12-layer schema.
+ * Each mark is { verseKey, threads?, subjects?, audience?, speaker?,
+ * quotedSpeaker?, mode?, form?, tone?, people?, places?, events?,
+ * divineNames?, flags?, note? }.
+ * For backward compat, a top-level `tags` array is mapped into `threads`.
  */
 export async function seedMarks(page, marks) {
   // JSON-embed the records array so it is safe to splice into an expression string.
   const recordsJson = JSON.stringify(marks)
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 1)
+    const LAYER_NAMES = [
+      'threads','subjects','audience','speaker','quotedSpeaker',
+      'mode','form','tone','people','places','events','divineNames',
+    ]
+    const open = indexedDB.open('quran-atlas', 2)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('marks', 'readwrite')
       const store = tx.objectStore('marks')
       const now = Date.now()
       for (const r of ${recordsJson}) {
+        const threads = r.threads || r.tags || []
+        const layers = {}
+        for (const l of LAYER_NAMES) {
+          layers[l] = l === 'threads' ? threads : (r[l] || [])
+        }
+        const _canon = {}
+        for (const l of LAYER_NAMES) {
+          _canon[l] = layers[l].map(t => t.toLowerCase().normalize('NFC').replace(/[\\s\\-]+/g, '-').replace(/[^a-z0-9\\-'\\u0600-\\u06ff]/g, ''))
+        }
         store.put({
           verseKey: r.verseKey,
-          tags: r.tags,
+          ...layers,
+          _canon,
+          flags: r.flags || {},
           note: r.note || '',
           createdAt: now,
           updatedAt: now,

@@ -3,18 +3,20 @@
  *
  * Covers:
  *   C1. Long-press → open mark editor (happy path, a11y scan, @keyboard variant)
- *   C2. Multi-tag selection and deselect
- *   C3. Create a new tag inline
+ *   C2. Multi-tag selection and deselect (per-layer)
+ *   C3. Create a new tag inline (per-layer search)
  *   C4. Note + save → verify IDB write + gold edge
  *   C5. Delete + undo (@reduced-motion variant for undo toast)
  *   C6. Long-press has no alternative gesture (no context menu, no multi-action sheet)
+ *   C7. Multi-layer round-trip: tags in threads + audience + flags persist across open/close
  *
  * Sources of truth:
  *   docs/context/user-journeys.md  §C
- *   src/marks/editor.js
- *   src/marks/store.js
+ *   src/marks/Editor.svelte
+ *   src/marks/TagLayerRegion.svelte
+ *   src/marks/store.ts
  *   src/core/ui.js          (showUndoToast — .qa-undo-toast)
- *   src/marks/indicator.js  (.qa-verse--bookmarked)
+ *   src/marks/indicator.ts  (.qa-verse--bookmarked)
  */
 
 import { test, expect } from '@playwright/test'
@@ -33,6 +35,20 @@ import { scanA11y } from './fixtures/a11y.js'
 async function openMarkEditorViaRightClick(page) {
   await page.locator('.qa-verse').first().click({ button: 'right' })
   await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 5_000 })
+}
+
+/**
+ * Get the threads layer region (expanded by default).
+ */
+function threadsLayer(page) {
+  return page.locator('.qa-layer-region[data-layer="threads"]')
+}
+
+/**
+ * Get chips in the threads layer's "all" pool.
+ */
+function threadsAllChips(page) {
+  return threadsLayer(page).locator('.qa-layer-all .qa-mark-chip')
 }
 
 // ---------------------------------------------------------------------------
@@ -77,11 +93,18 @@ test.describe('Journey C: Verse marking', () => {
     // Note textarea is empty
     await expect(page.locator('.qa-mark-note')).toHaveValue('')
 
-    // Seed tags present in All region (≥1 chip visible)
-    const allChips = page.locator('.qa-mark-chips--all .qa-mark-chip')
-    await expect(allChips.first()).toBeVisible()
-    const chipCount = await allChips.count()
+    // Threads layer is expanded by default and has seed chips
+    const threadsRegion = page.locator('.qa-layer-region[data-layer="threads"]')
+    await expect(threadsRegion).toBeVisible()
+    const chips = threadsRegion.locator('.qa-layer-all .qa-mark-chip')
+    await expect(chips.first()).toBeVisible()
+    const chipCount = await chips.count()
     expect(chipCount).toBeGreaterThanOrEqual(1)
+
+    // Flag checkboxes are present and unchecked
+    const questionFlag = page.locator('.qa-mark-flag-checkbox').first()
+    await expect(questionFlag).toBeVisible()
+    await expect(questionFlag).not.toBeChecked()
   })
 
   // -------------------------------------------------------------------------
@@ -89,9 +112,6 @@ test.describe('Journey C: Verse marking', () => {
   // -------------------------------------------------------------------------
 
   test('C1: right-click also opens mark editor (no native context menu)', async ({ page }) => {
-    // Listen for a dialog event (which Playwright surfaces when a native context menu
-    // would appear). If the native menu opened it would not trigger a dialog, but
-    // we verify the mark editor opened instead of a native browser menu.
     await openMarkEditorViaRightClick(page)
     await expect(page.locator('.qa-sheet-title')).toHaveText('New mark')
   })
@@ -123,39 +143,40 @@ test.describe('Journey C: Verse marking', () => {
   })
 
   // -------------------------------------------------------------------------
-  // C2. Multi-tag selection and deselect
+  // C2. Multi-tag selection and deselect (per-layer)
   // -------------------------------------------------------------------------
 
-  test('C2: tap tag chip moves it to Selected strip; × removes it', async ({ page }) => {
+  test('C2: tap tag chip moves it to layer selected row; × removes it', async ({ page }) => {
     await openMarkEditorViaRightClick(page)
 
-    // Wait for chips to render
-    const allRegion = page.locator('.qa-mark-chips--all')
-    await expect(allRegion).toBeVisible()
-    const firstChip = allRegion.locator('.qa-mark-chip').first()
+    // Use the threads layer (expanded by default)
+    const layerRegion = page.locator('.qa-layer-region[data-layer="threads"]')
+    await expect(layerRegion).toBeVisible()
+
+    const allPool = layerRegion.locator('.qa-layer-all')
+    await expect(allPool).toBeVisible()
+    const firstChip = allPool.locator('.qa-mark-chip').first()
     await expect(firstChip).toBeVisible()
 
-    // Capture the chip's text content before clicking. The chip DOM is:
-    // <button><span class="qa-mark-chip-dot" />{tagName}</button>
-    // The dot span has no text content, so textContent = tagName.
+    // Capture the chip's text before clicking
     const tagLabel = (await firstChip.textContent()).trim()
 
     // Tap the chip to select it
     await firstChip.click()
 
-    // Selected strip should now contain a chip with that label
-    const selectedStrip = page.locator('.qa-mark-chips--selected')
-    await expect(selectedStrip).toBeVisible()
-    const selectedChip = selectedStrip.locator('.qa-mark-chip--on').first()
+    // Selected row in this layer should now show the chip
+    const selectedRow = layerRegion.locator('.qa-layer-selected')
+    await expect(selectedRow).toBeVisible()
+    const selectedChip = selectedRow.locator('.qa-mark-chip--on').first()
     await expect(selectedChip).toBeVisible({ timeout: 3_000 })
 
-    // Count badge increments to ≥1
-    const countBadge = page.locator('.qa-mark-selected-count')
+    // Layer count badge increments to ≥1
+    const countBadge = layerRegion.locator('.qa-layer-count')
     await expect(countBadge).toBeVisible()
     expect(parseInt(await countBadge.textContent(), 10)).toBeGreaterThanOrEqual(1)
 
     // Select a second chip if available
-    const remainingChips = allRegion.locator('.qa-mark-chip')
+    const remainingChips = allPool.locator('.qa-mark-chip')
     const remainingCount = await remainingChips.count()
     if (remainingCount > 0) {
       await remainingChips.first().click()
@@ -163,10 +184,10 @@ test.describe('Journey C: Verse marking', () => {
       expect(parseInt(newCount, 10)).toBeGreaterThanOrEqual(2)
     }
 
-    // Capture count AFTER optional second selection so the decrease comparison is correct
+    // Capture count AFTER optional second selection
     const beforeRemove = parseInt(await countBadge.textContent(), 10)
 
-    // Tap × on the first selected chip → moves back to All
+    // Tap × on the first selected chip → moves back to all pool
     const xBtn = selectedChip.locator('.qa-mark-chip-x')
     await expect(xBtn).toBeVisible()
     await xBtn.click()
@@ -178,35 +199,39 @@ test.describe('Journey C: Verse marking', () => {
       expect(after).toBeLessThan(beforeRemove)
     }).toPass({ timeout: 3_000 })
 
-    // The deselected tag chip should reappear in the All region
-    await expect(allRegion.locator(`.qa-mark-chip`).filter({ hasText: tagLabel.trim() })).toBeVisible({ timeout: 3_000 })
+    // The deselected tag chip should reappear in the all pool
+    await expect(allPool.locator('.qa-mark-chip').filter({ hasText: tagLabel.trim() })).toBeVisible({ timeout: 3_000 })
   })
 
   // -------------------------------------------------------------------------
-  // C3. Create new tag inline
+  // C3. Create new tag inline (per-layer search)
   // -------------------------------------------------------------------------
 
-  test('C3: type new label → "+ create" chip appears → tap creates and selects tag', async ({ page }) => {
+  test('C3: type new label in layer search → "+ create" chip appears → tap creates and selects tag', async ({ page }) => {
     await openMarkEditorViaRightClick(page)
 
-    const searchInput = page.locator('.qa-mark-search-input')
+    // Use the threads layer (expanded by default)
+    const layerRegion = page.locator('.qa-layer-region[data-layer="threads"]')
+    await expect(layerRegion).toBeVisible()
+
+    const searchInput = layerRegion.locator('.qa-layer-search')
     await expect(searchInput).toBeVisible()
 
-    // Type a unique tag label unlikely to exist in seed tags
-    await searchInput.fill('taqwa')
+    // Type a unique tag label unlikely to exist in threads seed tags
+    await searchInput.fill('unique-custom-tag-xyz')
 
-    // "+ create 'taqwa'" chip appears in All region
-    const createChip = page.locator('.qa-mark-chip--create')
+    // "+ unique-custom-tag-xyz" chip appears in the all pool
+    const createChip = layerRegion.locator('.qa-mark-chip--create')
     await expect(createChip).toBeVisible({ timeout: 3_000 })
-    await expect(createChip).toContainText('taqwa')
+    await expect(createChip).toContainText('unique-custom-tag-xyz')
 
     // Tap the create chip
     await createChip.click()
 
-    // New tag moves to Selected strip
-    const selectedStrip = page.locator('.qa-mark-chips--selected')
-    const taqwaChip = selectedStrip.locator('.qa-mark-chip--on').filter({ hasText: 'taqwa' })
-    await expect(taqwaChip).toBeVisible({ timeout: 3_000 })
+    // New tag moves to selected row
+    const selectedRow = layerRegion.locator('.qa-layer-selected')
+    const newChip = selectedRow.locator('.qa-mark-chip--on').filter({ hasText: 'unique-custom-tag-xyz' })
+    await expect(newChip).toBeVisible({ timeout: 3_000 })
 
     // Search input is cleared
     await expect(searchInput).toHaveValue('')
@@ -225,10 +250,10 @@ test.describe('Journey C: Verse marking', () => {
     // Get the verse key of the first verse (surah 1, verse 1)
     const verseKey = '1:1'
 
-    // Select a tag first so Save becomes enabled
-    const allRegion = page.locator('.qa-mark-chips--all')
-    await expect(allRegion).toBeVisible()
-    await allRegion.locator('.qa-mark-chip').first().click()
+    // Select a tag from threads layer (expanded by default)
+    const threadsRegion = page.locator('.qa-layer-region[data-layer="threads"]')
+    await expect(threadsRegion).toBeVisible()
+    await threadsRegion.locator('.qa-layer-all .qa-mark-chip').first().click()
 
     // Type a note
     const noteArea = page.locator('.qa-mark-note')
@@ -244,12 +269,13 @@ test.describe('Journey C: Verse marking', () => {
     // Sheet closes
     await expect(page.locator('.qa-sheet--mark')).not.toBeVisible({ timeout: 5_000 })
 
-    // IDB record exists
+    // IDB record exists with 12-layer schema
     const mark = await getMarkFromIdb(page, verseKey)
     expect(mark).toBeDefined()
     expect(mark.verseKey).toBe(verseKey)
-    expect(Array.isArray(mark.tags)).toBe(true)
-    expect(mark.tags.length).toBeGreaterThanOrEqual(1)
+    // threads layer should have the selected chip
+    expect(Array.isArray(mark.threads)).toBe(true)
+    expect(mark.threads.length).toBeGreaterThanOrEqual(1)
     expect(mark.note).toBe('A test reflection note.')
 
     // Gold edge: .qa-verse--bookmarked on the first verse element
@@ -280,11 +306,11 @@ test.describe('Journey C: Verse marking', () => {
   // -------------------------------------------------------------------------
 
   test('C5: delete mark → undo toast appears → tap Undo restores mark', async ({ page }) => {
-    // beforeEach already booted a clean app at /#/s/1.  Seed the mark, then
-    // page.reload() so the indicator module's marksCache restarts null and
+    // beforeEach already booted a clean app at /#/s/1.  Seed the mark (v2 schema),
+    // then page.reload() so the indicator module's marksCache restarts null and
     // falls back to IDB — otherwise the cached (empty) marksCache from the
     // initial mount would hide the newly-seeded mark.
-    await seedMarks(page, [{ verseKey: '1:1', tags: ['mercy'], note: 'original note' }])
+    await seedMarks(page, [{ verseKey: '1:1', threads: ['mercy'], note: 'original note' }])
     await page.reload()
     await waitForReader(page)
 
@@ -336,10 +362,10 @@ test.describe('Journey C: Verse marking', () => {
     // Gold edge returns
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
 
-    // IDB record is restored
+    // IDB record is restored with mercy in threads layer
     const restoredMark = await getMarkFromIdb(page, verseKey)
     expect(restoredMark).toBeDefined()
-    expect(restoredMark.tags).toContain('mercy')
+    expect(restoredMark.threads).toContain('mercy')
   })
 
   test('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion', async ({ page }) => {
@@ -347,7 +373,7 @@ test.describe('Journey C: Verse marking', () => {
 
     // beforeEach booted the app at /#/s/1.  Seed + reload so marksCache picks
     // up the new mark (page.goto to the same hash would no-op in Chromium).
-    await seedMarks(page, [{ verseKey: '1:1', tags: ['patience'], note: '' }])
+    await seedMarks(page, [{ verseKey: '1:1', threads: ['patience'], note: '' }])
     await page.reload()
     await waitForReader(page)
 
@@ -375,9 +401,6 @@ test.describe('Journey C: Verse marking', () => {
   // -------------------------------------------------------------------------
 
   test('C6: both right-click and long-press open ONLY the mark editor (no competing sheets)', async ({ page }) => {
-    // The C6 rule is cross-cutting: no contextual menu, no multi-action sheet,
-    // no preview popover — ever, via either entry point.  Exercise both in one
-    // test to share the beforeEach reader-mount + tag-data.
     let dialogFired = false
     page.on('dialog', () => { dialogFired = true })
 
@@ -407,14 +430,98 @@ test.describe('Journey C: Verse marking', () => {
     expect(await page.locator('.qa-sheet').count()).toBe(1)
     await expect(page.locator('.qa-sheet--actions')).toHaveCount(0)
   })
+
+  // -------------------------------------------------------------------------
+  // C7. Multi-layer round-trip: tags in threads + audience + flags persist
+  // -------------------------------------------------------------------------
+
+  test('C7: select tags in threads + audience, toggle hasQuestion flag, save, reopen, assert state', async ({ page }) => {
+    const verseKey = '1:1'
+
+    // Open editor for a new mark
+    await openMarkEditorViaRightClick(page)
+    await expect(page.locator('.qa-sheet-title')).toHaveText('New mark')
+
+    // --- Select 'mercy' from threads layer (expanded by default) ---
+    const threadsRegion = page.locator('.qa-layer-region[data-layer="threads"]')
+    await expect(threadsRegion).toBeVisible()
+    const mercyChip = threadsRegion.locator('.qa-layer-all .qa-mark-chip').filter({ hasText: 'mercy' })
+    await expect(mercyChip).toBeVisible({ timeout: 3_000 })
+    await mercyChip.click()
+    // Verify mercy is in threads selected row
+    const threadsSelected = threadsRegion.locator('.qa-layer-selected .qa-mark-chip--on')
+    await expect(threadsSelected.filter({ hasText: 'mercy' })).toBeVisible({ timeout: 3_000 })
+
+    // --- Expand audience layer and select 'muminin' ---
+    const audienceRegion = page.locator('.qa-layer-region[data-layer="audience"]')
+    await expect(audienceRegion).toBeVisible()
+    // Click the toggle button to expand if collapsed
+    const audienceToggle = audienceRegion.locator('.qa-layer-toggle')
+    const audienceExpanded = await audienceToggle.getAttribute('aria-expanded')
+    if (audienceExpanded === 'false') {
+      await audienceToggle.click()
+    }
+    const mumininChip = audienceRegion.locator('.qa-layer-all .qa-mark-chip').filter({ hasText: 'muminin' })
+    await expect(mumininChip).toBeVisible({ timeout: 3_000 })
+    await mumininChip.click()
+    const audienceSelected = audienceRegion.locator('.qa-layer-selected .qa-mark-chip--on')
+    await expect(audienceSelected.filter({ hasText: 'muminin' })).toBeVisible({ timeout: 3_000 })
+
+    // --- Toggle the hasQuestion flag ---
+    const questionCheckbox = page.locator('.qa-mark-flag-checkbox').first()
+    await expect(questionCheckbox).not.toBeChecked()
+    await questionCheckbox.click()
+    await expect(questionCheckbox).toBeChecked()
+
+    // --- Save ---
+    const saveBtn = page.locator('.qa-mark-btn--primary')
+    await expect(saveBtn).toBeEnabled()
+    await saveBtn.click()
+    await expect(page.locator('.qa-sheet--mark')).not.toBeVisible({ timeout: 5_000 })
+
+    // --- Verify IDB record ---
+    const mark = await getMarkFromIdb(page, verseKey)
+    expect(mark).toBeDefined()
+    expect(mark.threads).toContain('mercy')
+    expect(mark.audience).toContain('muminin')
+    expect(mark.flags.hasQuestion).toBe(true)
+
+    // --- Reopen editor and verify state is restored ---
+    const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
+    await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
+
+    await verse.click({ button: 'right' })
+    await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-sheet-title')).toHaveText('Edit mark')
+
+    // threads layer shows mercy selected
+    const threadsRegion2 = page.locator('.qa-layer-region[data-layer="threads"]')
+    await expect(threadsRegion2).toBeVisible()
+    const threadsSelected2 = threadsRegion2.locator('.qa-layer-selected .qa-mark-chip--on')
+    await expect(threadsSelected2.filter({ hasText: 'mercy' })).toBeVisible({ timeout: 3_000 })
+
+    // audience layer shows muminin selected (may need to expand)
+    const audienceRegion2 = page.locator('.qa-layer-region[data-layer="audience"]')
+    const audienceToggle2 = audienceRegion2.locator('.qa-layer-toggle')
+    const isExpanded2 = await audienceToggle2.getAttribute('aria-expanded')
+    if (isExpanded2 === 'false') {
+      await audienceToggle2.click()
+    }
+    const audienceSelected2 = audienceRegion2.locator('.qa-layer-selected .qa-mark-chip--on')
+    await expect(audienceSelected2.filter({ hasText: 'muminin' })).toBeVisible({ timeout: 3_000 })
+
+    // hasQuestion flag is checked
+    const questionCheckbox2 = page.locator('.qa-mark-flag-checkbox').first()
+    await expect(questionCheckbox2).toBeChecked()
+  })
 })
 
 // ---------------------------------------------------------------------------
 // Journey C — desktop variants (≥1180px viewport)
 //
 // The mark editor renders as an 820px-wide verse-hero modal at desktop: true
-// vertically-centered, grip hidden, and body in a 2-column split (note/selected
-// on the left, search/all chips on the right).
+// vertically-centered, grip hidden, and body scrollable (single-column layout
+// with 12 layer regions).
 // ---------------------------------------------------------------------------
 
 test.describe('Journey C: desktop variants @desktop', () => {
@@ -434,7 +541,6 @@ test.describe('Journey C: desktop variants @desktop', () => {
     await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 10_000 })
 
     // Wait for the scale-in animation to finish before reading geometry.
-    // getAnimations() is the deterministic signal — no fixed sleep.
     await page.locator('.qa-sheet--mark').evaluate(el =>
       Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
     )
@@ -465,43 +571,22 @@ test.describe('Journey C: desktop variants @desktop', () => {
     expect(quoteSpan).toContain('-1')
   })
 
-  test('C1 desktop: selected pills live in left column', async ({ page }) => {
+  test('C1 desktop: layer regions and flag checkboxes are visible', async ({ page }) => {
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
     const sheet = page.locator('.qa-sheet--mark')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
-    // Allow animation to settle before reading computed styles
     await sheet.evaluate(el =>
       Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
     )
 
-    // Select a tag to populate .qa-mark-selected chips
-    await expect(page.locator('.qa-mark-chips--all .qa-mark-chip').first()).toBeVisible({ timeout: 5_000 })
-    await page.locator('.qa-mark-chips--all .qa-mark-chip').first().click()
-    await expect(page.locator('.qa-mark-chips--selected .qa-mark-chip').first()).toBeVisible({ timeout: 3_000 })
+    // Threads layer visible and expanded
+    const threadsRegion = page.locator('.qa-layer-region[data-layer="threads"]')
+    await expect(threadsRegion).toBeVisible({ timeout: 5_000 })
+    await expect(threadsRegion.locator('.qa-layer-all')).toBeVisible()
 
-    // The 2-col layout at desktop puts .qa-mark-body-left (note + selected) in
-    // the left column and .qa-mark-body-right (search + all tags) in the right.
-    // CSS auto-placement means gridColumnStart is "auto" in computed style even
-    // when the element is visually in column 1.  Check visual X-position instead.
-    const positions = await page.evaluate(() => {
-      const body = document.querySelector('.qa-mark-body').getBoundingClientRect()
-      const left = document.querySelector('.qa-mark-body-left').getBoundingClientRect()
-      const right = document.querySelector('.qa-mark-body-right').getBoundingClientRect()
-      const midX = body.left + body.width / 2
-      return {
-        leftCenterX: left.left + left.width / 2,
-        rightCenterX: right.left + right.width / 2,
-        midX,
-      }
-    })
-    expect(positions.leftCenterX).toBeLessThan(positions.midX)
-    expect(positions.rightCenterX).toBeGreaterThan(positions.midX)
-
-    const selVsAll = await page.evaluate(() => {
-      const sel = document.querySelector('.qa-mark-selected').getBoundingClientRect()
-      const all = document.querySelector('.qa-mark-chips--all').getBoundingClientRect()
-      return { selRight: sel.right, allLeft: all.left }
-    })
-    expect(selVsAll.selRight).toBeLessThan(selVsAll.allLeft + 10)
+    // Flag checkboxes present
+    const flags = page.locator('.qa-mark-flags')
+    await expect(flags).toBeVisible()
+    expect(await page.locator('.qa-mark-flag-checkbox').count()).toBe(2)
   })
 })

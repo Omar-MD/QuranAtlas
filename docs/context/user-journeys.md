@@ -165,38 +165,39 @@ From Settings sheet with Auto swatch selected.
 On the reader.
 
 1. Long-press (or right-click) a verse → mark editor bottom sheet slides up.
-2. Header shows "New mark" + the verse ref; verse-preview card shows Arabic + English; note textarea is empty; tag chips are the 16 seed tags (or the user's used-tags list).
+2. Header shows "New mark" + the verse ref; verse-preview card shows Arabic + English; note textarea is empty; flag checkboxes (Open question, To apply) are unchecked; 12 collapsible layer regions appear — Threads, Audience, and Mode are expanded by default, others collapsed.
+3. Each layer has a search input + chip pool seeded from `core/seeds.ts` ∪ already-used canonicals.
 
 **Surfaces:** Reader, Mark editor. **No persistence yet.**
 
-**Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width hero banner at the top; below it the body splits into 2 columns: note + label on the left, tag search + chips on the right. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
+**Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width header; below it the single-column body shows note, flags, and 12 layer regions. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
 
-### C2. Multi-tag selection
+### C2. Multi-tag selection (per layer)
 
 Inside mark editor.
 
-1. Tap a tag chip in the All region → moves to the Selected strip with ×; count badge increments.
-2. Repeat for more tags. Tap × on a Selected chip → moves back to All.
+1. Tap a tag chip in a layer's chip pool → chip moves to that layer's selected row with ×; the layer count badge increments.
+2. Repeat for more tags (same layer or other layers). Tap × on a selected chip → chip moves back to the pool.
 
 **Surfaces:** Mark editor.
 
-### C3. Create a new tag inline
+### C3. Create a new tag inline (per layer)
 
 Inside mark editor.
 
-1. Type a new label (e.g. `taqwa`) in the search input → no match found → "+ create 'taqwa'" chip appears.
-2. Tap the create chip → new tag moves to Selected, search clears.
+1. Type a new label in a layer's search input → no match found → "+ label" chip appears.
+2. Tap the create chip → new tag added to this layer's pool and moved to selected; search clears.
 
 **Surfaces:** Mark editor.
 
 ### C4. Note + save
 
-Inside mark editor with ≥1 tag selected.
+Inside mark editor with ≥1 tag selected (any layer) or note text.
 
 1. Type into the note textarea → Save button enables.
-2. Tap **Save** → `marks/store.ts::save` writes to IDB → `MARKS_SAVED` fires → `broadcastMarkChange` fires across tabs → sheet closes → reader shows gold left-edge on the verse.
+2. Tap **Save** → `marks/store.ts::save` writes to IDB with all 12 layer arrays + flags → `MARKS_SAVED` fires → `broadcastMarkChange` fires across tabs → sheet closes → reader shows gold left-edge on the verse.
 
-**Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey]` with tags/note/timestamps.
+**Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey]` with 12 layer arrays + flags + note + timestamps.
 
 ### C5. Delete with undo
 
@@ -214,6 +215,18 @@ Inside mark editor on an existing mark.
 2. No browser context menu, no multi-action sheet, no preview popover.
 
 This is a cross-cutting rule, not a feature — preserved intentionally.
+
+### C7. Multi-layer tag round-trip
+
+Inside mark editor, new mark.
+
+1. Select a tag from the Threads layer → chip appears in layer's selected row.
+2. Expand Audience layer → select a tag → chip appears in Audience selected row.
+3. Tick "Open question" flag checkbox.
+4. Tap **Save** → sheet closes → gold edge appears.
+5. Reopen editor for the same verse → "Edit mark" shown → Threads and Audience layers pre-populated with the selected tags; "Open question" checkbox is checked.
+
+**Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey].threads`, `marks[verseKey].audience`, `marks[verseKey].flags.hasQuestion`.
 
 > **Invariant (formerly `CLAUDE.md` Rule 4).** The mark editor is the **sole action surface** for a single verse. Long-press, right-click, and the command sheet's "Mark this verse" (F2) all route to it. Do **not** introduce a contextual menu, multi-action sheet, or preview popover as an alternative per-verse action surface. The verse-number tap (B3) surfaces edge indicators only — that's a navigation affordance, not a per-verse action, and is unaffected by this invariant.
 
