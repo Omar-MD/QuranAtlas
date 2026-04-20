@@ -57,7 +57,7 @@
   // Per-layer state
   let selectedByLayer = $state<LayerMap>(emptyLayerMap())
   let allByLayer = $state<LayerMap>(emptyLayerMap())
-  let collapsedByLayer = $state<Record<LayerName, boolean>>({
+  const collapsedByLayer = $state<Record<LayerName, boolean>>({
     threads: false, audience: false, mode: false,
     subjects: true, speaker: true, quotedSpeaker: true,
     form: true, tone: true,

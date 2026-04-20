@@ -9,6 +9,7 @@
     collapsed: boolean
   }
 
+  // eslint-disable-next-line prefer-const
   let { label, selected = $bindable(), all = $bindable(), collapsed = $bindable() }: Props = $props()
 
   let query = $state('')
