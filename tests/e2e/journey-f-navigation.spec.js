@@ -4,7 +4,7 @@
  * Covers:
  *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
  *   F2. Arrow-down to "Mark this verse" row → Enter → mark editor opens
- *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/t/mercy FVR
+ *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/threads/mercy FVR
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
  *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
@@ -138,7 +138,7 @@ test.describe('Journey F: Navigation', () => {
   // F3. Tag search → FVR
   // ---------------------------------------------------------------------------
 
-  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/t/mercy FVR', async ({ page }) => {
+  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/threads/mercy FVR', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('mer')
 
@@ -161,7 +161,7 @@ test.describe('Journey F: Navigation', () => {
     await page.keyboard.press('Enter')
 
     // Should navigate to the tag FVR route
-    await expect(page).toHaveURL(/#\/t\/mercy/, { timeout: 8_000 })
+    await expect(page).toHaveURL(/#\/threads\/mercy/, { timeout: 8_000 })
 
     // FVR header block should render
     const fvrHeader = page.locator('.qa-fvr-header')

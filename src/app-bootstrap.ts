@@ -105,7 +105,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     router.register('#/about', async () => (await import('./about/About.svelte')).default)
     // FVR: #/<layer>/:value — one route per layer (replaces legacy #/t/:tag)
     for (const layerName of LAYER_NAMES) {
-      router.register(`#/${layerName}/:value`, async () => (await import('./review/Hub.svelte')).default)
+      router.register(
+        `#/${layerName}/:value`,
+        async () => (await import('./review/Hub.svelte')).default,
+        { layer: layerName },
+      )
     }
     router.register('#/surahs', async () => (await import('./surahs/SurahList.svelte')).default)
     router.register('#/onboarding', async () => (await import('./onboarding/Onboarding.svelte')).default)

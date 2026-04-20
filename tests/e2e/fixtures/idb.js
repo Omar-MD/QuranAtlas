@@ -15,7 +15,7 @@
  * @param {IDBDatabase} db
  */
 // _APPLY_SCHEMA_SRC is the verbatim function body injected into each page.evaluate.
-// Mirrors src/core/db.ts onupgradeneeded for DB_VERSION 2 (12-layer schema).
+// Mirrors src/core/db.ts onupgradeneeded for DB_VERSION 3 (12-layer marks + edges store).
 const _APPLY_SCHEMA_SRC = `
   const LAYER_NAMES = [
     'threads','subjects','audience','speaker','quotedSpeaker',
@@ -41,6 +41,13 @@ const _APPLY_SCHEMA_SRC = `
   }
   if (!db.objectStoreNames.contains('datasetMeta')) {
     db.createObjectStore('datasetMeta', { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains('edges')) {
+    const edgesStore = db.createObjectStore('edges', { keyPath: 'id' })
+    edgesStore.createIndex('by-from', 'from')
+    edgesStore.createIndex('by-to', 'to')
+    edgesStore.createIndex('by-canon-kind', '_canonKind')
+    edgesStore.createIndex('by-updated', 'updatedAt')
   }
 `
 
@@ -84,7 +91,7 @@ export async function clearAllData(page) {
  */
 export async function markOnboardingComplete(page) {
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 2)
+    const open = indexedDB.open('quran-atlas', 3)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -113,7 +120,7 @@ export async function seedLastSurface(page, surface) {
   // JSON-embedded so it is safe for any valid URL fragment string.
   const surfaceJson = JSON.stringify(surface)
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 2)
+    const open = indexedDB.open('quran-atlas', 3)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -212,7 +219,7 @@ export async function seedMarks(page, marks) {
       'threads','subjects','audience','speaker','quotedSpeaker',
       'mode','form','tone','people','places','events','divineNames',
     ]
-    const open = indexedDB.open('quran-atlas', 2)
+    const open = indexedDB.open('quran-atlas', 3)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('marks', 'readwrite')

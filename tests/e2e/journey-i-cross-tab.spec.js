@@ -71,7 +71,7 @@ test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reloa
     await expect(markEditor).toBeVisible({ timeout: 5_000 })
 
     // Select a tag so Save becomes enabled
-    const allRegion = pageA.locator('.qa-mark-chips--all')
+    const allRegion = pageA.locator('.qa-layer-all').first()
     await expect(allRegion).toBeVisible()
     await allRegion.locator('.qa-mark-chip').first().click()
 

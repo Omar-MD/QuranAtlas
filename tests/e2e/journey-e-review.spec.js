@@ -364,7 +364,7 @@ test.describe('Journey E: Review hub', () => {
     await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
 
     // Apply both filters
-    const faithChip = page.locator('.qa-review-value-chip').filter({ hasText: /^faith$/ }).first()
+    const faithChip = page.locator('.qa-review-value-chip').filter({ hasText: 'faith' }).first()
     await expect(faithChip).toBeVisible({ timeout: 5_000 })
     await faithChip.click()
     await expect(page.locator('.qa-review-active-filters')).toBeVisible({ timeout: 5_000 })

@@ -188,9 +188,22 @@
   // — Save / delete ————————————————————————————————————————————————————
   async function handleSave() {
     if (!canSave) { return }
+    // Spread each layer into a plain array — $state-proxied arrays can't be
+    // cloned by IDB (DataCloneError), so we must deproxy before passing to save().
     await save({
       verseKey,
-      ...selectedByLayer,
+      threads: [...selectedByLayer.threads],
+      subjects: [...selectedByLayer.subjects],
+      audience: [...selectedByLayer.audience],
+      speaker: [...selectedByLayer.speaker],
+      quotedSpeaker: [...selectedByLayer.quotedSpeaker],
+      mode: [...selectedByLayer.mode],
+      form: [...selectedByLayer.form],
+      tone: [...selectedByLayer.tone],
+      people: [...selectedByLayer.people],
+      places: [...selectedByLayer.places],
+      events: [...selectedByLayer.events],
+      divineNames: [...selectedByLayer.divineNames],
       flags: {
         ...(flagHasQuestion ? { hasQuestion: true } : {}),
         ...(flagHasApplication ? { hasApplication: true } : {}),
