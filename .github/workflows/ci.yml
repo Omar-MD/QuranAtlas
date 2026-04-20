@@ -107,6 +107,12 @@ jobs:
 
   e2e:
     name: E2E (Playwright)
+    # Skip E2E for PRs targeting dev (fast feature iteration) — it re-runs
+    # on the push to dev after merge, and on every PR/push to staging + main.
+    # Opt-in per PR by applying the `run-e2e` label for risky changes.
+    if: >
+      !(github.event_name == 'pull_request' && github.base_ref == 'dev') ||
+      contains(github.event.pull_request.labels.*.name, 'run-e2e')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -149,6 +155,21 @@ jobs:
   ci-ok:
     name: CI OK
     needs: [lint, typecheck, test, feature-state, audit, build, check-chunks, lighthouse, e2e]
+    # Run even when e2e is skipped (PRs to dev without the run-e2e label).
+    # `always()` lets this job evaluate needs.* results; the step body then
+    # fails if any upstream job failed or was cancelled.
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - run: echo "All CI gates passed."
+      - name: Aggregate CI results
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "Upstream job results:"
+          echo "$NEEDS_JSON" | python3 -c 'import json,sys; d=json.load(sys.stdin); [print(f"  {k}: {v[\"result\"]}") for k,v in d.items()]'
+          if echo "$NEEDS_JSON" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(1 if any(v["result"] in ("failure","cancelled") for v in d.values()) else 0)'; then
+            echo "All required CI gates passed (skipped jobs are allowed)."
+          else
+            echo "::error::One or more required CI gates failed or were cancelled."
+            exit 1
+          fi

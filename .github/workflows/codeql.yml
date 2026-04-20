@@ -1,17 +1,17 @@
 name: CodeQL
 
 on:
-  push:
-    branches: [main, dev, staging]
-  pull_request:
-    branches: [main, dev, staging]
+  # Schedule-only: CodeQL runs weekly as a background scan (catches newly-
+  # disclosed issues in existing code). Intentionally not wired to push/PR
+  # events — per-change scanning is overkill for a single-maintainer repo.
+  # Run manually via workflow_dispatch when you want an immediate scan.
   schedule:
-    # Weekly at 04:00 UTC Monday — catches newly-disclosed issues in existing code
     - cron: '0 4 * * 1'
+  workflow_dispatch: {}
 
 concurrency:
-  group: codeql-${{ github.ref }}
-  cancel-in-progress: true
+  group: codeql
+  cancel-in-progress: false
 
 permissions:
   contents: read
