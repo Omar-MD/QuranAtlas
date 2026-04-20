@@ -2,7 +2,7 @@
 
 IDB is the single source of client-side truth in QuranAtlas. This file documents every object store, every key, every index, and the record shape each surface writes. If you find something in IDB that isn't here, either (a) we've drifted — update this doc — or (b) an extension is writing there.
 
-The DB is `quran-atlas`, version 2, defined in `src/core/db.ts`. Schema changes live in `onupgradeneeded`.
+The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes live in `onupgradeneeded`.
 
 **Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `core/db.ts`. Validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously.
 
@@ -212,11 +212,65 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 
 ---
 
+## Store: `edges`
+
+- **keyPath:** `id` (string, UUID)
+- **DB_VERSION:** 3 (added in v3)
+- **Indexes:**
+  - `by-from` on `from`
+  - `by-to` on `to`
+  - `by-canon-kind` on `_canonKind`
+  - `by-updated` on `updatedAt`
+- **Validated fields (all required):** `id` (string), `from` (string), `to` (string), `kind` (string), `_canonKind` (string), `directed` (boolean), `note` (string), `createdAt` (number), `updatedAt` (number) — TS interface `EdgeRecord` in `core/db.ts`
+- **Written by:** `edges/store.ts` only. External callers NEVER populate `_canonKind` — it is computed inside the writer.
+
+### Record shape
+
+```ts
+{
+  id: string,             // UUID
+  from: string,           // verseKey, e.g. '2:255'
+  to: string,             // verseKey, e.g. '20:98'
+  kind: string,           // raw user-supplied kind label, e.g. 'Parallel'
+  _canonKind: string,     // kind.trim().toLowerCase() — computed by store, never by callers
+  directed: boolean,      // false for symmetric kinds; auto-inferred unless overridden
+  note: string,           // '' if no note
+  createdAt: number,
+  updatedAt: number,
+}
+```
+
+### Write invariant
+
+`edges/store.ts::createEdge()` takes `from`, `to`, `kind`, and optional `{ directed, note }`, then:
+1. Validates both verse keys against `/^\d+:\d+(-\d+)?$/`.
+2. Computes `_canonKind = kind.trim().toLowerCase()` (simple ASCII normalization, not the Arabic tag pipeline).
+3. Infers `directed` from `inferDirectedFromKind(_canonKind)` unless overridden in opts.
+4. `put`s the record.
+5. `emit(EDGES_SAVED, { edgeId, from, to, kind })`.
+6. `broadcastEdgeChange([edgeId])` — peers receive `SYNC_EDGES_UPDATED` and re-read.
+
+**Invariant: `_canonKind` is computed inside `edges/store.ts` only. No external caller should populate `_canonKind`.**
+
+`updateEdge` re-derives `_canonKind` (and re-infers `directed` unless the caller passes an explicit override) when `kind` is included in the patch.
+
+`deleteEdge` emits `EDGES_DELETED` + broadcast.
+
+### Typical queries
+
+- **All edges**: `getAll()` → `store.getAll()`.
+- **One edge**: `getById(id)`.
+- **By verse (either end)**: `getByVerse(verseKey)` — unions `by-from` and `by-to` index lookups, deduplicates by id.
+- **By kind**: `getByKindCanonical(canonKind)` → `index('by-canon-kind').getAll(canonKind)`.
+
+---
+
 ## Cross-cutting rules
 
 > **Invariant (formerly `CLAUDE.md` Rule 5) — one writer per store.** File references use basenames; grep for the basename, not a specific `.js`/`.ts`.
 >
 > - `marks` — written only via `marks/store`. Never `put('marks', …)` directly. Bypassing this breaks `_canon` computation, cross-tab broadcast, and the `MARKS_SAVED` / `MARKS_DELETED` event contracts (see `marks` §Write invariant above).
+> - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
 > - `positions` — written by `reader/position` (via `savePosition()`) and `review/state`.
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
 > - `settings` is the shared scratchpad — each feature owns its own keys, namespaced.
@@ -226,7 +280,7 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 - **All writes go through `core/db::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
 - **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `safety/sync.ts` shows the reload banner; `settings/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
 - **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
-- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `positions`, extend `safety/sync.ts`.
+- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Edge writes broadcast `'edges:changed'` → `SYNC_EDGES_UPDATED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `positions`, extend `safety/sync.ts`.
 
 ## Adding a new store
 
