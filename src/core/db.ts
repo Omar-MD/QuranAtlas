@@ -9,7 +9,7 @@ import { Events } from './constants'
 import { logger } from './logger'
 
 const DB_NAME = 'quran-atlas'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 let dbPromise: Promise<IDBDatabase> | null = null
 let dbRef: IDBDatabase | null = null
@@ -45,12 +45,25 @@ export interface MarkRecord {
   updatedAt: number
 }
 
+export interface EdgeRecord {
+  id: string
+  from: string
+  to: string
+  kind: string
+  _canonKind: string
+  directed: boolean
+  note: string
+  createdAt: number
+  updatedAt: number
+}
+
 export type StoreRecords = {
   settings: { key: string; value: unknown }
   positions: { id: string; surah: number; verse: number; savedAt: number; [k: string]: unknown }
   marks: MarkRecord
   activationState: { id: string; status: string; [k: string]: unknown }
   datasetMeta: { id: string; version?: string; [k: string]: unknown }
+  edges: EdgeRecord
 }
 
 export type StoreName = keyof StoreRecords
@@ -98,6 +111,15 @@ export function openDB(): Promise<IDBDatabase> {
       // DatasetMeta store: keyPath = 'id'
       if (!db.objectStoreNames.contains('datasetMeta')) {
         db.createObjectStore('datasetMeta', { keyPath: 'id' })
+      }
+
+      // Edges store: keyPath = 'id' (v3)
+      if (!db.objectStoreNames.contains('edges')) {
+        const edgesStore = db.createObjectStore('edges', { keyPath: 'id' })
+        edgesStore.createIndex('by-from', 'from')
+        edgesStore.createIndex('by-to', 'to')
+        edgesStore.createIndex('by-canon-kind', '_canonKind')
+        edgesStore.createIndex('by-updated', 'updatedAt')
       }
     }
 
@@ -221,6 +243,11 @@ const _shapes: Record<string, Record<string, string>> = {
   },
   activationState: { id: 'string', status: 'string' },
   datasetMeta: { id: 'string' },
+  edges: {
+    id: 'string', from: 'string', to: 'string',
+    kind: 'string', _canonKind: 'string', directed: 'boolean',
+    note: 'string', createdAt: 'number', updatedAt: 'number',
+  },
 }
 
 /**

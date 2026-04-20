@@ -17,6 +17,7 @@ graph LR
   aliases["core/aliases.ts"]
   data[data]
   safety[safety]
+  edges[edges]
   marks[marks]
   settings[settings]
   nav[nav]
@@ -35,6 +36,8 @@ graph LR
   core --> normalize
   data --> core
   safety --> core
+  edges --> core
+  edges --> safety
   marks --> core
   marks --> data
   marks --> safety
@@ -105,6 +108,14 @@ graph LR
 - **Imports from:** `core`
 - **Imported by:** `marks`, `nav`, `reader`, `review`, `surahs`; `aliases.json` imported by `core/aliases.ts`
 - **Role:** Corpus fetch + static data. `dataset.ts::getSurahs()` + `getSurah(n)` serve the surah index and full surah payloads (cache-first via service worker). `offline.ts` tracks activation state + dataset update flow (client side; the SW half lives in `src/offline/`). `surah-meanings.ts` is the static mapping of surah-number → name meaning. `aliases.json` is the seed alias map for the canonicalization pipeline.
+
+### `edges/`
+- **Files:** `store.ts`, `kinds.ts`
+- **Imports from:**
+  - `edges/store.ts` → `core/db`, `core/events`, `core/constants`, `core/logger`, `safety/sync`, `./kinds`
+  - `edges/kinds.ts` → nothing (pure data/logic)
+- **Imported by:** nothing at MVP (no UI surface yet — edge-creation UI is deferred; see `docs/context/future-work.md`)
+- **Role:** Verse-to-verse typed relationship store. `kinds.ts` exports `EDGE_KIND_SEEDS` (14 seed kinds) and `inferDirectedFromKind()`. `store.ts` is the sole IDB writer for the `edges` store — computes `_canonKind` (simple ASCII lowercase) and auto-infers `directed` from `inferDirectedFromKind()`. Provides `createEdge`, `updateEdge`, `deleteEdge`, `getById`, `getAll`, `getByVerse`, `getByKindCanonical`.
 
 ### `marks/`
 - **Files:** `Editor.svelte`, `TagLayerRegion.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`

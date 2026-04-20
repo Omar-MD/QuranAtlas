@@ -120,6 +120,24 @@ describe('core/db.js', () => {
   })
 })
 
+describe('edges store v3', () => {
+  it('accepts an edge record', async () => {
+    await openDB()
+    await put('edges', {
+      id: 'e1',
+      from: '2:255',
+      to: '20:98',
+      kind: 'parallel',
+      _canonKind: 'parallel',
+      directed: false,
+      note: '',
+      createdAt: 1, updatedAt: 2,
+    })
+    const got = await get('edges', 'e1')
+    expect(got.from).toBe('2:255')
+  })
+})
+
 describe('marks store v2', () => {
   beforeEach(async () => {
     // Reset IDB and module state for a clean slate

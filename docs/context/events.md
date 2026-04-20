@@ -66,10 +66,10 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 | `DATASET_UPDATE_FAILED` | `dataset:update-failed` | `data/offline.ts:200` | `{ error }` |
 | `SHEET_OPENED` | `sheet:opened` | `settings/Panel.svelte` (on open), `nav/MoreSheet.svelte` | `{ name }` |
 | `SHEET_CLOSED` | `sheet:closed` | `settings/Panel.svelte` (on close), `nav/MoreSheet.svelte` | `{ name }` |
-| `EDGES_SAVED` | `edges:saved` | *(cluster 4 — not yet wired)* | *(no listener yet)* | `{ fromVerseKey, toVerseKey, type }` |
-| `EDGES_DELETED` | `edges:deleted` | *(cluster 4 — not yet wired)* | *(no listener yet)* | `{ fromVerseKey, toVerseKey, type }` |
-| `EDGES_SAVE_FAILED` | `edges:save-failed` | *(cluster 4 — not yet wired)* | *(no listener yet)* | `{ fromVerseKey, toVerseKey, error }` |
-| `SYNC_EDGES_UPDATED` | `sync:edges-updated` | *(cluster 4 — not yet wired)* | *(no listener yet)* | `{ edgeKeys }` |
+| `EDGES_SAVED` | `edges:saved` | `edges/store.ts` (createEdge + updateEdge) | *(no listener yet)* | `{ edgeId, from, to, kind }` |
+| `EDGES_DELETED` | `edges:deleted` | `edges/store.ts` (deleteEdge) | *(no listener yet)* | `{ edgeId }` |
+| `EDGES_SAVE_FAILED` | `edges:save-failed` | `edges/store.ts` (createEdge on error) | *(no listener yet)* | `{ error }` |
+| `SYNC_EDGES_UPDATED` | `sync:edges-updated` | `safety/sync.ts` (handleChannelMessage receiver) | *(no listener yet)* | `{ edgeIds }` |
 
 ### Listener-only (⚠ dead emitter)
 
