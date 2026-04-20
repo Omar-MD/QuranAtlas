@@ -90,7 +90,7 @@ graph LR
 - **Role:** About page Svelte component + PWA install prompt capture/handling.
 
 ### `core/`
-- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `quota-banner.svelte`, `quota-banner.js`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
+- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `quota-banner.js`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
 - **Imports from:**
   - `core/quota-banner.svelte` → `a11y`
   - `core/ui.svelte` → emits `MARKS_UNDO` via the bus; no feature-dir imports
@@ -107,7 +107,7 @@ graph LR
 - **Role:** Corpus fetch + static data. `dataset.ts::getSurahs()` + `getSurah(n)` serve the surah index and full surah payloads (cache-first via service worker). `offline.ts` tracks activation state + dataset update flow (client side; the SW half lives in `src/offline/`). `surah-meanings.ts` is the static mapping of surah-number → name meaning. `aliases.json` is the seed alias map for the canonicalization pipeline.
 
 ### `marks/`
-- **Files:** `Editor.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
+- **Files:** `Editor.svelte`, `TagLayerRegion.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
 - **Imports from:** `core` (including `core/normalize.ts` for `canonicalize()`), `data`, `safety`, `state`
 - **Imported by:** `about`, `app-bootstrap.ts`, `App.svelte`, `nav`, `reader` *(via app-bootstrap hooks)*, `review`, `surahs`
 - **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (CLAUDE.md Rule 5) — takes `MarkInput` (raw layer arrays) and computes `_canon` internally via `canonicalize()`. `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette + `getAllUsedTags()` (delegates to `store.ts::getAllCanonicalValues('threads')`).

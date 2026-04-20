@@ -48,12 +48,14 @@ For dependencies between directories, see `module-graph.md`. For the events each
 ## Mark editor
 
 - **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route)
-- **Files:** `marks/Editor.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh)
-- **Purpose:** Bottom sheet for tagging a verse. Triggered by long-press on a verse or by "Mark this verse" from command sheet.
+- **Files:** `marks/Editor.svelte`, `marks/TagLayerRegion.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh), `core/seeds.ts` (seed palettes)
+- **Purpose:** Bottom sheet for tagging a verse across 12 thematic layers. Triggered by long-press on a verse or by "Mark this verse" from command sheet.
 - **Key behaviors:**
-  - Selected strip (count + clear-all + × chips) above the All-tags region; chips move between regions on click.
-  - Seed tags (16 defaults) shown when no marks exist; otherwise used-tags list. Search filter + inline "+ create" chip for new tags (≤50 chars, no control chars).
-  - Note textarea; delete button hidden for new marks, inline-confirm + undo toast for existing.
+  - 12 collapsible `TagLayerRegion` sections: threads, subjects, audience, speaker, quotedSpeaker, mode, form, tone, people, places, events, divineNames. Threads, audience, and mode expanded by default; others collapsed.
+  - Each layer has a search input + chip pool (seeds ∪ existing canonicals ∪ user-added). Clicking a chip toggles selected/unselected within that layer; each layer shows its own count badge. Inline "+ label" chip creates a new tag in the layer.
+  - Flag row: "Open question" (`hasQuestion`) and "To apply" (`hasApplication`) checkboxes.
+  - Note textarea (optional, ≤500 chars).
+  - Delete button hidden for new marks; inline-confirm + undo toast for existing marks.
   - Closes if `SYNC_UPDATE_RECEIVED` reports the editing verseKey was deleted elsewhere.
   - Mounted persistently in `App.svelte` alongside `UndoToast` and `QuotaBanner`.
   - `long-press.ts` exposes a Svelte action (`use:longPress`) and an imperative `setupLongPress(container, onPress)` wrapper for vanilla-JS consumers.
