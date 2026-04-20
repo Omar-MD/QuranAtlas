@@ -4,7 +4,6 @@ import { CACHE_DATASET } from '../../src/core/constants.js'
 
 const SW_READY_TIMEOUT_MS = 10000
 const MESSAGE_TIMEOUT_MS = SW_READY_TIMEOUT_MS
-const IS_PREVIEW_MODE = process.env.PLAYWRIGHT_USE_PREVIEW === '1'
 
 async function openApp(page) {
   await page.goto('/')
@@ -60,18 +59,17 @@ async function waitForActiveController(page) {
   expect(state).toEqual({ supported: true, active: true, controlled: true })
 }
 
-test.describe('Service Worker integration', () => {
-  test.skip(!IS_PREVIEW_MODE,
-    'Service worker integration requires PLAYWRIGHT_USE_PREVIEW=1 so Playwright runs against vite preview.'
-  )
-
-  test('service worker registers and claims the page on first load', async ({ page }) => {
+// Service worker tests require a production build (SW is only emitted by
+// vite-plugin-pwa during `vite build`).  They run exclusively on the
+// "Offline (Preview)" project via the @offline tag.
+test.describe('Service Worker integration @offline', () => {
+  test('service worker registers and claims the page on first load @offline', async ({ page }) => {
     await openApp(page)
 
     await waitForActiveController(page)
   })
 
-  test('PURGE_DATASET_CACHE clears the corpus cache and notifies the client', async ({ page }) => {
+  test('PURGE_DATASET_CACHE clears the corpus cache and notifies the client @offline', async ({ page }) => {
     await openApp(page)
     await waitForActiveController(page)
 
@@ -118,7 +116,7 @@ test.describe('Service Worker integration', () => {
     expect(purgeResult).toEqual({ notified: true, cleared: true })
   })
 
-  test('SKIP_WAITING activates a waiting service worker', async ({ page }) => {
+  test('SKIP_WAITING activates a waiting service worker @offline', async ({ page }) => {
     await openApp(page)
     await waitForActiveController(page)
 

@@ -53,6 +53,14 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     performance.mark('db:open')
     performance.measure('app:db-open', 'app:start', 'db:open')
 
+    // Initialize safety sync FIRST so its DB_VERSION_CHANGE listener is
+    // guaranteed registered before any other code (tests, user actions, other
+    // tabs) can trigger a versionchange.  Previously this ran much later in
+    // bootstrap, which meant the E2E `__qaSuppressNextVersionChange` hatch
+    // could be called before the handler existed, leaking the suppress flag
+    // into a later (real) versionchange and silencing the reload banner.
+    pushCleanup(bootCleanups, initSafetySync())
+
     // Apply saved theme + font size before router dispatches first route
     await initTheme()
     await initFontSize()
@@ -60,7 +68,9 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // Expose dev/E2E escape-hatches — guarded so Vite tree-shakes them in prod.
     if (import.meta.env.DEV) {
       // Expose version-change suppression so test clearAllData can prevent the
-      // sync-banner overlay from blocking pointer events (Bug-2).
+      // sync-banner overlay from blocking pointer events (Bug-2).  Must be
+      // exposed AFTER initSafetySync above so the suppress flag is consumed
+      // by the handler that's now guaranteed to be listening.
       ;(globalThis as unknown as Record<string, unknown>).__qaSuppressNextVersionChange = suppressNextVersionChange
     }
 
@@ -121,8 +131,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // Capture PWA install prompt if available
     initInstallListener()
 
-    // Initialize safety sync (handles IDB versionchange reload banner)
-    pushCleanup(bootCleanups, initSafetySync())
+    // Safety sync already initialized above, before route handling starts.
 
     // Quota warning / exceeded banner is now mounted in App.svelte as <QuotaBanner />
     // and self-initializes via $effect when the component mounts.

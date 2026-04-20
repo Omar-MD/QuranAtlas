@@ -117,7 +117,7 @@ test.describe('Journey E: Review hub', () => {
     await expect(page.locator('.qa-review-active-filters')).toHaveCount(0)
   })
 
-  test('E1: a11y — no serious/critical axe violations on review hub', async ({ page }) => {
+  test('E1: a11y — no serious/critical axe violations on review hub @a11y', async ({ page }) => {
     const violations = await scanA11y(page, { include: ['#main-content'] })
     expect(violations).toEqual([])
   })
@@ -217,7 +217,7 @@ test.describe('Journey E: Review hub', () => {
     expect(fvrCardCount).toBe(2)
   })
 
-  test('E3: a11y — no serious/critical axe violations on FVR view', async ({ page }) => {
+  test('E3: a11y — no serious/critical axe violations on FVR view @a11y', async ({ page }) => {
     const mercyChip = page.locator('.qa-review-card-chip').filter({ hasText: 'mercy' }).first()
     await expect(mercyChip).toBeVisible({ timeout: 5_000 })
     await mercyChip.click()
@@ -385,5 +385,128 @@ test.describe('Journey E: Review hub', () => {
     // Both selects reset to "All"
     expect(await page.locator('[data-control="tag"]').inputValue()).toBe('')
     expect(await page.locator('[data-control="surah"]').inputValue()).toBe('')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Journey E — desktop variants (≥1180px viewport)
+//
+// The review hub swaps its top-dropdown controls for a sticky 220px left rail
+// and renders a flat single-column card list.  Multi-tag OR filtering is only
+// available at this breakpoint (E2b).  FVR is centered at 1000px max-width.
+// ---------------------------------------------------------------------------
+
+// Shared seed: 4 marks across 4 surahs + 4 tags so rail filtering, multi-tag
+// OR filtering, and dedup all exercise real behavior.  Used by the E1 and E2b
+// desktop tests.
+const REVIEW_DESKTOP_SEED = [
+  { verseKey: '1:5',   tags: ['reflect'],                  note: '' },
+  { verseKey: '2:255', tags: ['reflect', 'core-theology'], note: '' },
+  { verseKey: '67:1',  tags: ['reflect', 'protection'],    note: '' },
+  { verseKey: '93:11', tags: ['gratitude'],                note: '' },
+]
+
+test.describe('Journey E: desktop variants @desktop', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('about:blank')
+    await page.goto('/#/s/1')
+    await expect(page.locator('[data-verse-key]').first()).toBeVisible({ timeout: 15_000 })
+  })
+
+  test('E1 desktop: review hub renders 220px left rail + filters on rail click', async ({ page }) => {
+    await seedMarks(page, REVIEW_DESKTOP_SEED)
+
+    await page.goto('/#/review')
+    await expect(page.locator('.qa-review-layout')).toBeVisible({ timeout: 15_000 })
+
+    const layoutCols = await page.locator('.qa-review-layout').evaluate(
+      el => getComputedStyle(el).gridTemplateColumns
+    )
+    expect(layoutCols).toContain('220px')
+
+    await expect(page.locator('.qa-review-rail-row').first()).toBeVisible()
+    const rowCount = await page.locator('.qa-review-rail-row').count()
+    expect(rowCount).toBeGreaterThan(0)
+
+    const beforeCards = await page.locator('.qa-review-card').count()
+    await page.locator('.qa-review-rail-row').first().click()
+    await expect(page.locator('.qa-review-rail-row--on').first()).toBeVisible({ timeout: 3_000 })
+    const afterCards = await page.locator('.qa-review-card').count()
+    expect(afterCards).toBeLessThanOrEqual(beforeCards)
+  })
+
+  test('E2 desktop: multi-tagged mark renders exactly once (flat deduped list)', async ({ page }) => {
+    await seedMarks(page, [
+      { verseKey: '2:255', tags: ['reflect', 'core-theology'], note: '' },
+      { verseKey: '1:5',   tags: ['reflect'],                  note: '' },
+    ])
+    await page.goto('/#/review')
+    await expect(page.locator('.qa-review-card').first()).toBeVisible({ timeout: 15_000 })
+
+    await expect(page.locator('.qa-review-card[data-mark="2:255"]')).toBeVisible()
+    const count = await page.locator('.qa-review-card[data-mark="2:255"]').count()
+    expect(count).toBe(1)
+
+    const total = await page.locator('.qa-review-card').count()
+    expect(total).toBe(2)
+  })
+
+  test('E2 desktop: card list is single-column (no 2-col grid)', async ({ page }) => {
+    await seedMarks(page, [{ verseKey: '1:5', tags: ['reflect'], note: '' }])
+    await page.goto('/#/review')
+    await expect(page.locator('.qa-review-card-list')).toBeVisible({ timeout: 15_000 })
+
+    const display = await page.locator('.qa-review-card-list').evaluate(
+      el => getComputedStyle(el).display
+    )
+    expect(display).toBe('block')
+  })
+
+  test('E2b desktop: multi-tag OR filter + chip bar + clear all', async ({ page }) => {
+    await seedMarks(page, REVIEW_DESKTOP_SEED)
+    await page.goto('/#/review')
+    await expect(
+      page.locator('.qa-review-rail-row').filter({ hasText: 'reflect' }).first()
+    ).toBeVisible({ timeout: 15_000 })
+
+    // Click reflect + gratitude to activate two tag filters in the rail
+    await page.locator('.qa-review-rail-row').filter({ hasText: 'reflect' }).first().click()
+    await page.locator('.qa-review-rail-row').filter({ hasText: 'gratitude' }).first().click()
+
+    await expect(page.locator('.qa-review-filter-bar')).toBeVisible({ timeout: 5_000 })
+    const chipCount = await page.locator('.qa-review-filter-chip').count()
+    expect(chipCount).toBe(2)
+    const cardCount = await page.locator('.qa-review-card').count()
+    expect(cardCount).toBe(4)
+
+    // Remove one chip via its × button
+    await page.locator('.qa-review-filter-chip button').first().click()
+    await expect(page.locator('.qa-review-filter-chip')).toHaveCount(1, { timeout: 5_000 })
+
+    // Clear all remaining chips
+    await page.locator('.qa-review-filter-bar-clear').click()
+    await expect(page.locator('.qa-review-filter-bar')).toHaveCount(0, { timeout: 5_000 })
+  })
+
+  test('E3 desktop: FVR layout is centered at 1000px max-width', async ({ page }) => {
+    await seedMarks(page, [{ verseKey: '2:255', tags: ['reflect'], note: '' }])
+    await page.goto('/#/t/reflect')
+    await expect(page.locator('.qa-fvr-layout')).toBeVisible({ timeout: 15_000 })
+
+    const geom = await page.locator('.qa-fvr-layout').evaluate(el => {
+      const r = el.getBoundingClientRect()
+      return {
+        width: Math.round(r.width),
+        left: r.left,
+        rightGap: window.innerWidth - r.right,
+      }
+    })
+    expect(geom.width).toBe(1000)
+    expect(Math.abs(geom.left - geom.rightGap)).toBeLessThan(2)
   })
 })

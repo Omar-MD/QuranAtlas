@@ -21,11 +21,12 @@ Vite's entry is `src/app.ts`, which imports `App.svelte` and calls `mount(App, {
 3. `initBootstrap()` from `src/app-bootstrap.ts` runs after the route handler is in place. It:
    - Drains any partial `bootCleanups` from a previous call.
    - `openDB()` — opens/creates the IDB (`onupgradeneeded` creates stores + indexes).
+   - `initSafetySync()` — must run immediately after `openDB()` so the `DB_VERSION_CHANGE` listener is registered before any versionchange can fire (from another tab or E2E suppress hatch). If this runs later, a `suppressNextVersionChange()` call can leak its flag into a later real versionchange and silently suppress the reload banner.
    - `initTheme()` + `initFontSize()` — apply persisted theme/font *before* router dispatch so there's no flash.
    - Registers route handlers (see below), then calls `router.init()` to dispatch the current hash.
    - Initializes reader keyboard actions (`initReaderActions`).
    - Wires global subscribers: `NAVIGATION_NAVIGATE` → router.
-   - Initializes safety sync, registers the service worker (production only), captures the PWA install prompt, and restores activation state.
+   - Registers the service worker (production only), captures the PWA install prompt, and restores activation state.
 4. `App.svelte` keeps two cross-cutting `$effect`s:
    - Watches `reader.currentSurahNum`; when it changes, calls `refreshForSurah()` to re-decorate indicators and updates `settings.recentSurahs` (writes the store directly — recent-surahs is the single feature that owns that key).
 
@@ -37,7 +38,7 @@ On any boot failure the `catch` block renders a minimal error card with a Retry 
 - `register(pattern, loader, hooks)` stores a dynamic import loader. The module is fetched lazily on first match.
 - Each route module exports `async init(params, hooks) → cleanup?`. The returned function (if any) is invoked by the router before the next route mounts.
 - **Param sanitization** — `sanitizeParams()` rejects any value containing HTML tags, `javascript:` / `data:` / `vbscript:` schemes, inline event handlers, `://`, or values >100 chars. Rejected routes hit `ROUTER_ROUTE_ERROR` and show the not-found card.
-- After a successful mount, the router writes `settings.lastSurface` so reload lands back on the same surface.
+- After a successful mount, the router writes `settings.lastSurface` so reload lands back on the same surface. Writes are skipped for `#/onboarding` because launch-restore explicitly rejects it as a target — persisting it would be wasted I/O and, worse, an in-flight write racing with a test fixture's seeded `lastSurface` was the root cause of the A2 flakiness fixed in mid-2026.
 
 ### Route table
 

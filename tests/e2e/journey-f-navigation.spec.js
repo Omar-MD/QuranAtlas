@@ -87,7 +87,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview', async ({ page }) => {
+  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview @a11y', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('2:255')
     await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
@@ -229,7 +229,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F4: a11y — no serious/critical axe violations on surah list', async ({ page }) => {
+  test('F4: a11y — no serious/critical axe violations on surah list @a11y', async ({ page }) => {
     await page.goto('/#/surahs')
     await expect(page.locator('.qa-surah-list-page')).toBeVisible({ timeout: 8_000 })
 
@@ -372,5 +372,44 @@ test.describe('Journey F: Navigation', () => {
     // Press ⌘K again → should close
     await page.keyboard.press('Meta+k')
     await expect(cmdSheet).toHaveClass(/qa-cmd--hidden/, { timeout: 3_000 })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Journey F — desktop variants (≥1180px viewport)
+//
+// The surah directory renders as a 2-column grid at desktop.
+// ---------------------------------------------------------------------------
+
+test.describe('Journey F: desktop variants @desktop', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  // Boot directly at /#/surahs — skips the reader-mount dataset fetch we
+  // would immediately discard.  about:blank breaks the current page context
+  // so the next goto triggers a true HTTP load (not a hash-only change),
+  // which is required after clearAllData wipes the IDB the app was using.
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('about:blank')
+    await page.goto('/#/surahs')
+  })
+
+  test('F4 desktop: surah list renders as 2-col grid', async ({ page }) => {
+    await expect(page.locator('.qa-sl-list .qa-sl-row').first()).toBeVisible({ timeout: 20_000 })
+
+    const cols = await page.locator('.qa-sl-list').evaluate(
+      el => getComputedStyle(el).gridTemplateColumns
+    )
+    // At 1440px the CSS applies grid-template-columns: repeat(2, minmax(0, 1fr))
+    expect(cols.split(' ').length).toBe(2)
+
+    // Two consecutive rows share the same top offset (same grid row)
+    const rowTops = await page.locator('.qa-sl-row').evaluateAll(rows => [
+      rows[0].getBoundingClientRect().top,
+      rows[1].getBoundingClientRect().top,
+    ])
+    expect(Math.abs(rowTops[0] - rowTops[1])).toBeLessThan(2)
   })
 })

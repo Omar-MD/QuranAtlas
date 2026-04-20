@@ -18,55 +18,13 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
-import { waitForReader } from './fixtures/chrome.js'
+import { clearAllData, markOnboardingComplete, seedMarks, getMarkFromIdb } from './fixtures/idb.js'
+import { waitForReader, longPress } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Simulate a long-press by dispatching TouchEvent sequences via evaluate.
- * The gesture code in src/marks/editor.js listens for touchstart/touchend,
- * not mousedown/pointerdown, so mouse.down() doesn't trigger it.
- */
-async function longPress(locator) {
-  const box = await locator.boundingBox()
-  const x = Math.round(box.x + box.width / 2)
-  const y = Math.round(box.y + box.height / 2)
-
-  const hit = await locator.page().evaluate(([cx, cy]) => {
-    const el = document.elementFromPoint(cx, cy)
-    if (!el) {
-      return false
-    }
-    window.__lpTarget = el
-    const touch = new Touch({ identifier: 1, target: el, clientX: cx, clientY: cy, pageX: cx, pageY: cy, screenX: cx, screenY: cy })
-    el.dispatchEvent(new TouchEvent('touchstart', {
-      bubbles: true, cancelable: true,
-      touches: [touch], targetTouches: [touch], changedTouches: [touch],
-    }))
-    return true
-  }, [x, y])
-  if (!hit) {
-    throw new Error(`longPress: no element at (${x}, ${y})`)
-  }
-
-  await locator.page().waitForTimeout(600)
-
-  await locator.page().evaluate(() => {
-    const el = window.__lpTarget
-    if (!el) {
-      return
-    }
-    delete window.__lpTarget
-    el.dispatchEvent(new TouchEvent('touchend', {
-      bubbles: true, cancelable: true,
-      touches: [], targetTouches: [], changedTouches: [],
-    }))
-  })
-}
 
 /**
  * Open the mark editor for the first verse via right-click (contextmenu).
@@ -75,24 +33,6 @@ async function longPress(locator) {
 async function openMarkEditorViaRightClick(page) {
   await page.locator('.qa-verse').first().click({ button: 'right' })
   await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 5_000 })
-}
-
-/**
- * Read a mark record from IDB by verseKey. Returns undefined if not found.
- */
-async function getMarkFromIdb(page, verseKey) {
-  return page.evaluate((vk) => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas')
-    open.onsuccess = () => {
-      const db = open.result
-      if (!db.objectStoreNames.contains('marks')) { resolve(undefined); db.close(); return }
-      const tx = db.transaction('marks', 'readonly')
-      const req = tx.objectStore('marks').get(vk)
-      req.onsuccess = () => { resolve(req.result); db.close() }
-      req.onerror = () => { resolve(undefined); db.close() }
-    }
-    open.onerror = () => reject(open.error)
-  }), verseKey)
 }
 
 // ---------------------------------------------------------------------------
@@ -160,7 +100,7 @@ test.describe('Journey C: Verse marking', () => {
   // C1. a11y — axe-core scan of open mark editor
   // -------------------------------------------------------------------------
 
-  test('C1: a11y — no serious/critical axe violations on open mark editor', async ({ page }) => {
+  test('C1: a11y — no serious/critical axe violations on open mark editor @a11y', async ({ page }) => {
     await openMarkEditorViaRightClick(page)
 
     const violations = await scanA11y(page, { include: ['.qa-sheet--mark'] })
@@ -340,14 +280,10 @@ test.describe('Journey C: Verse marking', () => {
   // -------------------------------------------------------------------------
 
   test('C5: delete mark → undo toast appears → tap Undo restores mark', async ({ page }) => {
-    // Seed an existing mark on verse 1:1.
-    // Use page.reload() after seeding to force a fresh page load so the indicator
-    // module starts with marksCache = null and falls back to IDB on first render.
-    // A simple page.goto('/#/s/1') when already on that route is a no-op in Chromium
-    // (same-URL navigation with same hash does not reload), leaving the stale empty
-    // marksCache from beforeEach in place and hiding the seeded mark.
-    await clearAllData(page)
-    await markOnboardingComplete(page)
+    // beforeEach already booted a clean app at /#/s/1.  Seed the mark, then
+    // page.reload() so the indicator module's marksCache restarts null and
+    // falls back to IDB — otherwise the cached (empty) marksCache from the
+    // initial mount would hide the newly-seeded mark.
     await seedMarks(page, [{ verseKey: '1:1', tags: ['mercy'], note: 'original note' }])
     await page.reload()
     await waitForReader(page)
@@ -409,11 +345,10 @@ test.describe('Journey C: Verse marking', () => {
   test('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
 
-    // Seed a mark
-    await clearAllData(page)
-    await markOnboardingComplete(page)
+    // beforeEach booted the app at /#/s/1.  Seed + reload so marksCache picks
+    // up the new mark (page.goto to the same hash would no-op in Chromium).
     await seedMarks(page, [{ verseKey: '1:1', tags: ['patience'], note: '' }])
-    await page.goto('/#/s/1')
+    await page.reload()
     await waitForReader(page)
 
     // Open editor and delete without undo
@@ -439,51 +374,134 @@ test.describe('Journey C: Verse marking', () => {
   // C6. Long-press has no alternative gesture
   // -------------------------------------------------------------------------
 
-  test('C6: right-click suppresses native context menu and opens mark editor only', async ({ page }) => {
-    // Track whether a dialog/contextmenu appears outside of the mark editor
+  test('C6: both right-click and long-press open ONLY the mark editor (no competing sheets)', async ({ page }) => {
+    // The C6 rule is cross-cutting: no contextual menu, no multi-action sheet,
+    // no preview popover — ever, via either entry point.  Exercise both in one
+    // test to share the beforeEach reader-mount + tag-data.
     let dialogFired = false
     page.on('dialog', () => { dialogFired = true })
 
-    // Right-click the verse
-    await page.locator('.qa-verse').first().click({ button: 'right' })
-
-    // Mark editor should open
-    await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 5_000 })
-
-    // No browser dialog (context menus don't fire as Playwright dialogs,
-    // but we verify no unexpected dialog was triggered)
-    expect(dialogFired).toBe(false)
-
-    // No multi-action sheet (no other sheet or popover besides the mark editor)
-    // Verify only the mark editor sheet is present
-    const allSheets = page.locator('.qa-sheet')
-    const sheetCount = await allSheets.count()
-    expect(sheetCount).toBe(1)
-
-    // No preview popover
-    await expect(page.locator('.qa-verse-preview')).toHaveCount(0)
-    await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
-  })
-
-  test('C6: long-press on verse opens only mark editor, not any other action sheet', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible()
+    const sheet = page.locator('.qa-sheet--mark')
 
-    await longPress(firstVerse)
+    // --- Path 1: right-click (desktop contextmenu) ---
+    await firstVerse.click({ button: 'right' })
+    await expect(sheet).toBeVisible({ timeout: 5_000 })
 
-    // Mark editor opens
-    await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 5_000 })
-
-    // No other sheets open alongside the mark editor
-    const allSheets = page.locator('.qa-sheet')
-    const sheetCount = await allSheets.count()
-    expect(sheetCount).toBe(1)
-
-    // No multi-action sheet
+    // No browser dialog (native context menu suppressed)
+    expect(dialogFired).toBe(false)
+    // Only one sheet in the DOM, and no alternative surfaces
+    expect(await page.locator('.qa-sheet').count()).toBe(1)
     await expect(page.locator('.qa-sheet--actions')).toHaveCount(0)
+    await expect(page.locator('.qa-verse-preview')).toHaveCount(0)
+    await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
 
-    // Close and verify verse has no unexpected state changes
+    // Close the editor between paths
     await page.keyboard.press('Escape')
-    await expect(page.locator('.qa-sheet--mark')).not.toBeVisible({ timeout: 3_000 })
+    await expect(sheet).not.toBeVisible({ timeout: 3_000 })
+
+    // --- Path 2: touch long-press ---
+    await longPress(firstVerse)
+    await expect(sheet).toBeVisible({ timeout: 5_000 })
+    expect(await page.locator('.qa-sheet').count()).toBe(1)
+    await expect(page.locator('.qa-sheet--actions')).toHaveCount(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Journey C — desktop variants (≥1180px viewport)
+//
+// The mark editor renders as an 820px-wide verse-hero modal at desktop: true
+// vertically-centered, grip hidden, and body in a 2-column split (note/selected
+// on the left, search/all chips on the right).
+// ---------------------------------------------------------------------------
+
+test.describe('Journey C: desktop variants @desktop', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+  })
+
+  test('C1 desktop: verse-hero modal centered at 820px, grip hidden', async ({ page }) => {
+    // Open editor via right-click — the app suppresses the native context menu.
+    await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 10_000 })
+
+    // Wait for the scale-in animation to finish before reading geometry.
+    // getAnimations() is the deterministic signal — no fixed sleep.
+    await page.locator('.qa-sheet--mark').evaluate(el =>
+      Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
+    )
+
+    const geom = await page.locator('.qa-sheet--mark').evaluate(el => {
+      const r = el.getBoundingClientRect()
+      return {
+        computedWidth: getComputedStyle(el).width,
+        topGap: r.top,
+        bottomGap: window.innerHeight - r.bottom,
+        leftGap: r.left,
+        rightGap: window.innerWidth - r.right,
+      }
+    })
+
+    expect(geom.computedWidth).toBe('820px')
+    expect(Math.abs(geom.topGap - geom.bottomGap)).toBeLessThan(10)
+    expect(Math.abs(geom.leftGap - geom.rightGap)).toBeLessThan(2)
+
+    const gripDisplay = await page.locator('.qa-sheet--mark .qa-sheet-grip').evaluate(
+      el => getComputedStyle(el).display
+    )
+    expect(gripDisplay).toBe('none')
+
+    const quoteSpan = await page.locator('.qa-sheet--mark .qa-mark-quote').evaluate(
+      el => getComputedStyle(el).gridColumn
+    )
+    expect(quoteSpan).toContain('-1')
+  })
+
+  test('C1 desktop: selected pills live in left column', async ({ page }) => {
+    await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    const sheet = page.locator('.qa-sheet--mark')
+    await expect(sheet).toBeVisible({ timeout: 10_000 })
+    // Allow animation to settle before reading computed styles
+    await sheet.evaluate(el =>
+      Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
+    )
+
+    // Select a tag to populate .qa-mark-selected chips
+    await expect(page.locator('.qa-mark-chips--all .qa-mark-chip').first()).toBeVisible({ timeout: 5_000 })
+    await page.locator('.qa-mark-chips--all .qa-mark-chip').first().click()
+    await expect(page.locator('.qa-mark-chips--selected .qa-mark-chip').first()).toBeVisible({ timeout: 3_000 })
+
+    // The 2-col layout at desktop puts .qa-mark-body-left (note + selected) in
+    // the left column and .qa-mark-body-right (search + all tags) in the right.
+    // CSS auto-placement means gridColumnStart is "auto" in computed style even
+    // when the element is visually in column 1.  Check visual X-position instead.
+    const positions = await page.evaluate(() => {
+      const body = document.querySelector('.qa-mark-body').getBoundingClientRect()
+      const left = document.querySelector('.qa-mark-body-left').getBoundingClientRect()
+      const right = document.querySelector('.qa-mark-body-right').getBoundingClientRect()
+      const midX = body.left + body.width / 2
+      return {
+        leftCenterX: left.left + left.width / 2,
+        rightCenterX: right.left + right.width / 2,
+        midX,
+      }
+    })
+    expect(positions.leftCenterX).toBeLessThan(positions.midX)
+    expect(positions.rightCenterX).toBeGreaterThan(positions.midX)
+
+    const selVsAll = await page.evaluate(() => {
+      const sel = document.querySelector('.qa-mark-selected').getBoundingClientRect()
+      const all = document.querySelector('.qa-mark-chips--all').getBoundingClientRect()
+      return { selRight: sel.right, allLeft: all.left }
+    })
+    expect(selVsAll.selRight).toBeLessThan(selVsAll.allLeft + 10)
   })
 })

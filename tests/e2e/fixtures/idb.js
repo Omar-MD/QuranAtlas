@@ -38,16 +38,35 @@ const _APPLY_SCHEMA_SRC = `
 
 /**
  * Delete the quran-atlas DB entirely. Use in beforeEach for clean-slate tests.
+ *
+ * Waits for the app to be ready (bootstrap has exposed the suppress hatch AND
+ * initialized the safety-sync listener) before issuing the delete, so the
+ * versionchange is handled cleanly and no suppress flag leaks into later tests.
+ * Also waits for `onsuccess` (not just `onblocked`) to ensure the delete has
+ * actually completed before subsequent fixture writes open a fresh DB.
  */
 export async function clearAllData(page) {
+  // Wait for the E2E hatch to appear; its exposure in app-bootstrap.ts is
+  // ordered AFTER initSafetySync, so its presence implies the safety-sync
+  // DB_VERSION_CHANGE listener is already registered.
+  await page.waitForFunction(
+    () => typeof window.__qaSuppressNextVersionChange === 'function',
+    null,
+    { timeout: 10_000 },
+  )
   await page.evaluate(() => new Promise((resolve, reject) => {
     // Suppress the versionchange banner so deleting the DB from this tab does not
     // poison appShell.style.pointerEvents (Bug-2).
-    window.__qaSuppressNextVersionChange?.()
+    window.__qaSuppressNextVersionChange()
     const req = indexedDB.deleteDatabase('quran-atlas')
     req.onsuccess = () => resolve()
     req.onerror = () => reject(req.error)
-    req.onblocked = () => resolve() // best-effort
+    // onblocked: another connection is holding the DB open and didn't respond
+    // to versionchange.  This should be rare (our db.ts closes on versionchange),
+    // but if it happens we still wait for onsuccess — the delete will finish
+    // when that connection eventually closes.  Resolving eagerly here was the
+    // old behavior and caused race-prone half-deleted state for later fixtures.
+    req.onblocked = () => { /* keep waiting for onsuccess */ }
   }))
 }
 
@@ -129,6 +148,45 @@ export async function waitForLastSurface(page, expected, timeout = 8_000) {
     }))
     expect(value).toBe(expected)
   }).toPass({ timeout })
+}
+
+/**
+ * Read a single settings value by key.  Returns null if the DB or key is absent.
+ * Centralises the inline `indexedDB.open('quran-atlas')` boilerplate that was
+ * previously copy-pasted across specs (A1 onboardingComplete, D2 translationId
+ * / translationVisible, B5 fontSize, etc.).
+ */
+export async function readSetting(page, key) {
+  return page.evaluate((k) => new Promise((resolve, reject) => {
+    const open = indexedDB.open('quran-atlas')
+    open.onsuccess = () => {
+      const db = open.result
+      if (!db.objectStoreNames.contains('settings')) { resolve(null); db.close(); return }
+      const tx = db.transaction('settings', 'readonly')
+      const req = tx.objectStore('settings').get(k)
+      req.onsuccess = () => { resolve(req.result?.value ?? null); db.close() }
+      req.onerror = () => { resolve(null); db.close() }
+    }
+    open.onerror = () => reject(open.error)
+  }), key)
+}
+
+/**
+ * Read a mark record from IDB by verseKey.  Returns undefined if not found.
+ */
+export async function getMarkFromIdb(page, verseKey) {
+  return page.evaluate((vk) => new Promise((resolve, reject) => {
+    const open = indexedDB.open('quran-atlas')
+    open.onsuccess = () => {
+      const db = open.result
+      if (!db.objectStoreNames.contains('marks')) { resolve(undefined); db.close(); return }
+      const tx = db.transaction('marks', 'readonly')
+      const req = tx.objectStore('marks').get(vk)
+      req.onsuccess = () => { resolve(req.result); db.close() }
+      req.onerror = () => { resolve(undefined); db.close() }
+    }
+    open.onerror = () => reject(open.error)
+  }), verseKey)
 }
 
 /**

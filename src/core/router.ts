@@ -160,7 +160,7 @@ async function handleRoute(hash: string): Promise<void> {
       emit(Events.ROUTER_ROUTE_CHANGE, { hash })
       _onRouteChange?.(module, sanitizedParams, hooks)
       currentCleanup = () => { _onRouteChange?.(null, {}, {}) }
-      await put('settings', { key: 'lastSurface', value: hash })
+      await persistLastSurface(hash)
       return
     }
 
@@ -177,7 +177,7 @@ async function handleRoute(hash: string): Promise<void> {
         }
         emit(Events.ROUTER_ROUTE_CHANGE, { hash })
         currentCleanup = await moduleWithInit.init(sanitizedParams, hooks) ?? null
-        await put('settings', { key: 'lastSurface', value: hash })
+        await persistLastSurface(hash)
       } catch (error) {
         logger.error('Route failed:', {
           route: hash,
@@ -189,6 +189,17 @@ async function handleRoute(hash: string): Promise<void> {
   } else {
     showNotFound(hash)
   }
+}
+
+/**
+ * Persist the current hash as lastSurface for session-restore, unless it's a
+ * route that handleLaunchRestore explicitly rejects (#/onboarding). Writing it
+ * would be wasteful and — worse — an in-flight write can overtake a test
+ * fixture's seeded lastSurface and break session-restore assertions.
+ */
+async function persistLastSurface(hash: string): Promise<void> {
+  if (hash === '#/onboarding') { return }
+  await put('settings', { key: 'lastSurface', value: hash })
 }
 
 /**

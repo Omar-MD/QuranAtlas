@@ -22,55 +22,11 @@
 
 import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
-import { waitForReader } from './fixtures/chrome.js'
+import { waitForReader, longPress } from './fixtures/chrome.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Simulate a long-press by dispatching TouchEvent sequences via evaluate.
- * The gesture code in src/marks/editor.js listens for touchstart/touchend,
- * not mousedown/pointerdown, so mouse.down() doesn't trigger it.
- * Scrolls the element into view first so elementFromPoint returns the correct target.
- */
-async function longPress(locator) {
-  await locator.scrollIntoViewIfNeeded()
-  const box = await locator.boundingBox()
-  const x = Math.round(box.x + box.width / 2)
-  const y = Math.round(box.y + box.height / 2)
-
-  const hit = await locator.page().evaluate(([cx, cy]) => {
-    const el = document.elementFromPoint(cx, cy)
-    if (!el) {
-      return false
-    }
-    window.__lpTarget = el
-    const touch = new Touch({ identifier: 1, target: el, clientX: cx, clientY: cy, pageX: cx, pageY: cy, screenX: cx, screenY: cy })
-    el.dispatchEvent(new TouchEvent('touchstart', {
-      bubbles: true, cancelable: true,
-      touches: [touch], targetTouches: [touch], changedTouches: [touch],
-    }))
-    return true
-  }, [x, y])
-  if (!hit) {
-    throw new Error(`longPress: no element at (${x}, ${y})`)
-  }
-
-  await locator.page().waitForTimeout(600)
-
-  await locator.page().evaluate(() => {
-    const el = window.__lpTarget
-    if (!el) {
-      return
-    }
-    delete window.__lpTarget
-    el.dispatchEvent(new TouchEvent('touchend', {
-      bubbles: true, cancelable: true,
-      touches: [], targetTouches: [], changedTouches: [],
-    }))
-  })
-}
 
 /**
  * Bootstrap a fresh page: clear data, mark onboarding done, go to reader.

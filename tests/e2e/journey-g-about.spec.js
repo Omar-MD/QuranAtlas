@@ -100,7 +100,7 @@ test.describe('Journey G: About', () => {
     expect(vText).toMatch(/^v/)
   })
 
-  test('G1: a11y — no serious/critical axe violations on About page', async ({ page }) => {
+  test('G1: a11y — no serious/critical axe violations on About page @a11y', async ({ page }) => {
     await openMoreSheet(page)
     await page.locator('button.qa-sheet-row').filter({ hasText: 'About' }).click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
@@ -155,5 +155,38 @@ test.describe('Journey G: About', () => {
     // Step 3: close via Esc → sheet is removed from DOM
     await page.keyboard.press('Escape')
     await expect(shortcutsSheet).not.toBeAttached({ timeout: 5_000 })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Journey G — desktop variants (≥1180px viewport)
+//
+// About page: 4-across stat grid, 2-col body split.
+// ---------------------------------------------------------------------------
+
+test.describe('Journey G: desktop variants @desktop', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  // Boot directly at /#/about — skips the /#/s/1 reader mount we would
+  // immediately discard.  about:blank breaks the current page context so the
+  // next goto is a true HTTP load, which is required after clearAllData
+  // wipes the IDB the app was using.
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('about:blank')
+    await page.goto('/#/about')
+  })
+
+  test('G1 desktop: stats render 4-across; body splits into 2 columns', async ({ page }) => {
+    await expect(page.locator('.qa-about-stat-grid')).toBeVisible()
+
+    const statCols = await page.locator('.qa-about-stat-grid').evaluate(
+      el => getComputedStyle(el).gridTemplateColumns
+    )
+    expect(statCols.split(' ').length).toBe(4)
+
+    await expect(page.locator('.qa-about-body-split')).toHaveCount(1)
   })
 })

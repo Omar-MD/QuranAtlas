@@ -15,7 +15,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, readSetting } from './fixtures/idb.js'
 import { waitForReader, surfaceDock, openMoreSheet, openSettingsSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
@@ -67,7 +67,7 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(settings.locator('.qa-settings-switch')).toBeVisible()
   })
 
-  test('D1: a11y — no serious/critical axe violations on open Settings sheet', async ({ page }) => {
+  test('D1: a11y — no serious/critical axe violations on open Settings sheet @a11y', async ({ page }) => {
     await openSettingsSheet(page)
     const violations = await scanA11y(page, { include: ['.qa-sheet--settings'] })
     expect(violations).toEqual([])
@@ -101,19 +101,7 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(page.locator('.qa-sheet-back')).toHaveCount(0)
 
     // And translationId persisted in IDB matches the bundled id.
-    const stored = await page.evaluate(() => new Promise((resolve, reject) => {
-      const open = indexedDB.open('quran-atlas')
-      open.onsuccess = () => {
-        const db = open.result
-        if (!db.objectStoreNames.contains('settings')) { resolve(null); db.close(); return }
-        const tx = db.transaction('settings', 'readonly')
-        const req = tx.objectStore('settings').get('translationId')
-        req.onsuccess = () => { resolve(req.result?.value ?? null); db.close() }
-        req.onerror = () => { resolve(null); db.close() }
-      }
-      open.onerror = () => reject(open.error)
-    }))
-    expect(stored).toBe('bridges')
+    expect(await readSetting(page, 'translationId')).toBe('bridges')
   })
 
   test('D2: toggle translation-visibility switch → switch state flips → IDB writes → DOM hides translations', async ({ page }) => {
@@ -140,22 +128,9 @@ test.describe('Journey D: Settings & appearance', () => {
     const expectedChecked = String(!isOn)
     await expect(sw).toHaveAttribute('aria-checked', expectedChecked, { timeout: 3_000 })
 
-    // Verify IDB write for translationVisible
-    const storedVisible = await page.evaluate(() => new Promise((resolve, reject) => {
-      const open = indexedDB.open('quran-atlas')
-      open.onsuccess = () => {
-        const db = open.result
-        if (!db.objectStoreNames.contains('settings')) { resolve(null); db.close(); return }
-        const tx = db.transaction('settings', 'readonly')
-        const req = tx.objectStore('settings').get('translationVisible')
-        req.onsuccess = () => { resolve(req.result?.value ?? null); db.close() }
-        req.onerror = () => { resolve(null); db.close() }
-      }
-      open.onerror = () => reject(open.error)
-    }))
-
-    // If switch was on (visible=true), toggling makes visible=false, and vice-versa
-    expect(storedVisible).toBe(!isOn)
+    // Verify IDB write for translationVisible.
+    // If switch was on (visible=true), toggling makes visible=false, and vice-versa.
+    expect(await readSetting(page, 'translationVisible')).toBe(!isOn)
 
     // DOM effect: translation elements should gain/lose .qa-hide-translation
     // (applyTranslationToDOM runs synchronously after the toggle)
@@ -328,5 +303,68 @@ test.describe('Journey D: Settings & appearance', () => {
     // Cancel so we don't reload
     await modal.locator('.qa-mark-btn--ghost').click()
     await expect(backdrop).not.toBeVisible({ timeout: 3_000 })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Journey D — desktop variants (≥1180px viewport)
+//
+// Font preview is bound to the font-size tokens and lays out English left,
+// Arabic right at the desktop breakpoint.
+// ---------------------------------------------------------------------------
+
+test.describe('Journey D: desktop variants @desktop', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+  })
+
+  test('D1 desktop: font preview scales when slider moves', async ({ page }) => {
+    await openSettingsSheet(page)
+    await expect(page.locator('.qa-font-slider')).toBeVisible()
+
+    const getArSize = () => page.locator('.qa-font-preview-ar').evaluate(
+      el => parseFloat(getComputedStyle(el).fontSize)
+    )
+
+    // After dispatching the input event, wait one paint cycle (double-rAF) so
+    // the CSS custom-property update has flushed through style-recalc.  This
+    // replaces a fixed-duration waitForTimeout(200) with a deterministic signal.
+    const flushOneFrame = () =>
+      page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))
+
+    await page.locator('.qa-font-slider').evaluate(el => {
+      el.value = '0' // xs
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await flushOneFrame()
+    const xsSize = await getArSize()
+
+    await page.locator('.qa-font-slider').evaluate(el => {
+      el.value = '4' // xl
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await flushOneFrame()
+    const xlSize = await getArSize()
+
+    // xl should be noticeably larger than xs (ratio ~1.73 since 1.3 / 0.75)
+    expect(xlSize).toBeGreaterThan(xsSize * 1.5)
+  })
+
+  test('D1 desktop: font preview renders English left, Arabic right', async ({ page }) => {
+    await openSettingsSheet(page)
+    await expect(page.locator('.qa-font-preview')).toBeVisible()
+
+    const order = await page.locator('.qa-font-preview').evaluate(
+      el => Array.from(el.children).map(c =>
+        Array.from(c.classList).find(cn => cn.startsWith('qa-font-preview-')) ?? c.className
+      )
+    )
+    expect(order).toEqual(['qa-font-preview-en', 'qa-font-preview-ar'])
   })
 })

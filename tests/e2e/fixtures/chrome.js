@@ -40,10 +40,13 @@ export async function openMoreSheet(page) {
 export async function openSettingsSheet(page) {
   await openMoreSheet(page)
   await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
-  await expect(page.locator('.qa-sheet--settings')).toBeVisible()
-  // Wait for the qa-sheet-rise animation (0.22s) to complete so axe contrast
-  // checks see final opacity: 1 state, not an intermediate blended value.
-  await page.waitForTimeout(300)
+  const sheet = page.locator('.qa-sheet--settings')
+  await expect(sheet).toBeVisible()
+  // Wait for the qa-sheet-rise animation to finish so axe contrast checks see
+  // the final opacity: 1 state (not an intermediate blended value).
+  await sheet.evaluate(el =>
+    Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
+  )
 }
 
 /**
@@ -52,4 +55,51 @@ export async function openSettingsSheet(page) {
 export async function openCommandSheet(page) {
   await page.keyboard.press('Meta+k') // Mac; Playwright aliases Meta→Ctrl on other OS
   await expect(page.locator('.qa-cmd-sheet')).toBeVisible()
+}
+
+/**
+ * Simulate a long-press by dispatching TouchEvent sequences via evaluate.
+ * The gesture code in src/marks/long-press.ts listens for touchstart/touchend,
+ * not mousedown/pointerdown, so mouse.down() doesn't trigger it.
+ * Scrolls the element into view first so elementFromPoint returns the correct target.
+ */
+export async function longPress(locator) {
+  await locator.scrollIntoViewIfNeeded()
+  const box = await locator.boundingBox()
+  const x = Math.round(box.x + box.width / 2)
+  const y = Math.round(box.y + box.height / 2)
+
+  const hit = await locator.page().evaluate(([cx, cy]) => {
+    const el = document.elementFromPoint(cx, cy)
+    if (!el) {
+      return false
+    }
+    window.__lpTarget = el
+    const touch = new Touch({ identifier: 1, target: el, clientX: cx, clientY: cy, pageX: cx, pageY: cy, screenX: cx, screenY: cy })
+    el.dispatchEvent(new TouchEvent('touchstart', {
+      bubbles: true, cancelable: true,
+      touches: [touch], targetTouches: [touch], changedTouches: [touch],
+    }))
+    return true
+  }, [x, y])
+  if (!hit) {
+    throw new Error(`longPress: no element at (${x}, ${y})`)
+  }
+
+  // Semantic hold duration — the app's long-press threshold is 500ms (see
+  // src/marks/long-press.ts:LONG_PRESS_MS).  550ms gives a 10% buffer without
+  // being a wait-for-state we could replace with auto-waiting.
+  await locator.page().waitForTimeout(550)
+
+  await locator.page().evaluate(() => {
+    const el = window.__lpTarget
+    if (!el) {
+      return
+    }
+    delete window.__lpTarget
+    el.dispatchEvent(new TouchEvent('touchend', {
+      bubbles: true, cancelable: true,
+      touches: [], targetTouches: [], changedTouches: [],
+    }))
+  })
 }

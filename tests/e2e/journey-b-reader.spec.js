@@ -21,7 +21,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, readSetting } from './fixtures/idb.js'
 import { waitForReader, surfaceDock, openSettingsSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
@@ -211,21 +211,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect(preview).toBeVisible()
 
     // Verify IDB persisted the new size
-    const saved = await page.evaluate(() =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open('quran-atlas')
-        open.onsuccess = () => {
-          const db = open.result
-          if (!db.objectStoreNames.contains('settings')) { resolve(null); db.close(); return }
-          const tx = db.transaction('settings', 'readonly')
-          const req = tx.objectStore('settings').get('fontSize')
-          req.onsuccess = () => { resolve(req.result?.value ?? null); db.close() }
-          req.onerror = () => { resolve(null); db.close() }
-        }
-        open.onerror = () => reject(open.error)
-      })
-    )
-    expect(saved).toBe(nextSize)
+    expect(await readSetting(page, 'fontSize')).toBe(nextSize)
   })
 
   // -------------------------------------------------------------------------
@@ -275,7 +261,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // A11y — Axe-core scan of the reader surface
   // -------------------------------------------------------------------------
 
-  test('a11y: no serious/critical axe violations on reader surface', async ({ page }) => {
+  test('B: a11y — no serious/critical axe violations on reader surface @a11y', async ({ page }) => {
     // Surface the dock so the full ambient chrome is in the DOM
     await surfaceDock(page)
 

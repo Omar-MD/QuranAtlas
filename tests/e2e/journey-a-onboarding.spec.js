@@ -13,7 +13,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedLastSurface } from './fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting } from './fixtures/idb.js'
 import { waitForReader } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
@@ -145,21 +145,7 @@ test.describe('Journey A: First run & session restore', () => {
     await page.locator('.qa-onb-cta--primary').click()
 
     // onboardingComplete written to IDB
-    const onboardingComplete = await page.evaluate(() =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open('quran-atlas')
-        open.onsuccess = () => {
-          const db = open.result
-          if (!db.objectStoreNames.contains('settings')) { resolve(false); db.close(); return }
-          const tx = db.transaction('settings', 'readonly')
-          const req = tx.objectStore('settings').get('onboardingComplete')
-          req.onsuccess = () => { resolve(req.result?.value === true); db.close() }
-          req.onerror = () => { resolve(false); db.close() }
-        }
-        open.onerror = () => reject(open.error)
-      })
-    )
-    expect(onboardingComplete).toBe(true)
+    expect(await readSetting(page, 'onboardingComplete')).toBe(true)
 
     // Reader mounts; hash is #/s/1
     await waitForReader(page)
@@ -224,27 +210,13 @@ test.describe('Journey A: First run & session restore', () => {
     await expect(page).toHaveURL(/#\/surahs/, { timeout: 8_000 })
 
     // onboardingComplete was written
-    const onboardingComplete = await page.evaluate(() =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open('quran-atlas')
-        open.onsuccess = () => {
-          const db = open.result
-          if (!db.objectStoreNames.contains('settings')) { resolve(false); db.close(); return }
-          const tx = db.transaction('settings', 'readonly')
-          const req = tx.objectStore('settings').get('onboardingComplete')
-          req.onsuccess = () => { resolve(req.result?.value === true); db.close() }
-          req.onerror = () => { resolve(false); db.close() }
-        }
-        open.onerror = () => reject(open.error)
-      })
-    )
-    expect(onboardingComplete).toBe(true)
+    expect(await readSetting(page, 'onboardingComplete')).toBe(true)
   })
 
   // -------------------------------------------------------------------------
   // A1.5 a11y — axe-core scan on onboarding screen 1
   // -------------------------------------------------------------------------
-  test('A1: a11y — no serious/critical axe violations on screen 1', async ({ page }) => {
+  test('A1: a11y — no serious/critical axe violations on screen 1 @a11y', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 8_000 })
 
@@ -255,7 +227,7 @@ test.describe('Journey A: First run & session restore', () => {
   // -------------------------------------------------------------------------
   // A1.6 a11y — axe-core scan on screen 2 (Theme)
   // -------------------------------------------------------------------------
-  test('A1: a11y — no serious/critical axe violations on screen 2 (Theme)', async ({ page }) => {
+  test('A1: a11y — no serious/critical axe violations on screen 2 (Theme) @a11y', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 8_000 })
 
@@ -409,12 +381,60 @@ test.describe('Journey A: First run & session restore', () => {
   // -------------------------------------------------------------------------
   // A2.3 a11y — no violations on the reader surface post-onboarding
   // -------------------------------------------------------------------------
-  test('A2: a11y — no serious/critical axe violations on reader after onboarding', async ({ page }) => {
+  test('A2: a11y — no serious/critical axe violations on reader after onboarding @a11y', async ({ page }) => {
     await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
 
     const violations = await scanA11y(page)
     expect(violations).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Journey A — desktop variants (≥1180px viewport)
+// ---------------------------------------------------------------------------
+
+test.describe('Journey A: desktop variants @desktop', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+  })
+
+  test('A1 desktop: onboarding wordmark and container scale up', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('.qa-onboarding')).toBeVisible()
+
+    const sizes = await page.evaluate(() => {
+      const w = getComputedStyle(document.querySelector('.qa-onboarding')).maxWidth
+      const m = getComputedStyle(document.querySelector('.qa-onb-mark')).fontSize
+      return { wrap: w, mark: parseFloat(m) }
+    })
+    expect(sizes.wrap).toBe('680px')
+    expect(sizes.mark).toBeGreaterThanOrEqual(60) // 3.75rem
+  })
+
+  test('A4 desktop: shortcuts screen renders 2-col', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('.qa-onboarding')).toBeVisible()
+
+    // Welcome → Theme
+    await page.locator('.qa-onb-cta--primary').first().click()
+    await expect(page.locator('.qa-onb-swatches')).toBeVisible()
+    // Theme → Translation
+    await page.locator('.qa-onb-cta--primary').first().click()
+    await expect(page.locator('.qa-onb-tlist')).toBeVisible()
+    // Translation → Shortcuts
+    await page.locator('.qa-onb-cta--primary').first().click()
+    await expect(page.locator('.qa-onb-shortcuts')).toBeVisible()
+    const cols = await page.locator('.qa-onb-shortcuts').evaluate(
+      el => getComputedStyle(el).gridTemplateColumns
+    )
+    expect(cols.split(' ').length).toBe(2)
+
+    const rows = await page.locator('.qa-onb-shortcut-row').count()
+    expect(rows).toBeGreaterThanOrEqual(6)
   })
 })
