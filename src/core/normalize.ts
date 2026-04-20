@@ -11,8 +11,16 @@
  *   canonical  — normalized + alias-resolved (see resolveCanonical)
  */
 
+const HARAKAT_RE = /[\u064B-\u0652\u0670\u0640]/g
+const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF]/g
+
 export function normalize(input: string): string {
-  // Step 1: trim + collapse whitespace
-  return input.trim().replace(/\s+/g, ' ').toLowerCase()
-  // Step 2+: remaining pipeline added in subsequent tasks
+  let s = input
+    .normalize('NFKC')
+    .replace(HARAKAT_RE, '')
+    .replace(ZERO_WIDTH_RE, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+  return s
 }
