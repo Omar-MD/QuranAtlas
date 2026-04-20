@@ -82,9 +82,16 @@ describe('core/db.js', () => {
       await expect(validateWrite('positions', { surah: 1, verse: 5, savedAt: 1000 })).rejects.toThrow('missing required field: id')
     })
 
-    it('validates marks store: requires verseKey', async () => {
-      await expect(validateWrite('marks', { verseKey: '1:1', tags: ['important'] })).resolves.toBe(true)
-      await expect(validateWrite('marks', { tags: ['important'] })).rejects.toThrow('missing required field: verseKey')
+    it('validates marks store: requires verseKey + all layer fields', async () => {
+      const validMark = {
+        verseKey: '1:1',
+        threads: [], subjects: [], audience: [], speaker: [],
+        quotedSpeaker: [], mode: [], form: [], tone: [],
+        people: [], places: [], events: [], divineNames: [],
+        _canon: {}, flags: {}, note: '', createdAt: 1, updatedAt: 2,
+      }
+      await expect(validateWrite('marks', validMark)).resolves.toBe(true)
+      await expect(validateWrite('marks', { threads: [] })).rejects.toThrow('missing required field: verseKey')
     })
 
     it('validates activationState store: requires id and status', async () => {
@@ -110,5 +117,50 @@ describe('core/db.js', () => {
       const dbAfter = await getDb()
       expect(dbAfter).not.toBe(promiseBefore)
     })
+  })
+})
+
+describe('marks store v2', () => {
+  beforeEach(async () => {
+    // Reset IDB and module state for a clean slate
+    const { deleteDB, openDB } = await import('../../../src/core/db.js')
+    try { await deleteDB() } catch {}
+    await openDB()
+  })
+
+  it('accepts a mark with 12 layer arrays + flags + _canon', async () => {
+    const { put, get } = await import('../../../src/core/db.js')
+    const record = {
+      verseKey: '2:255',
+      threads: ['mercy'],
+      subjects: [],
+      audience: ['muminin'],
+      speaker: ['allah'],
+      quotedSpeaker: [],
+      mode: [],
+      form: [],
+      tone: [],
+      people: [],
+      places: [],
+      events: [],
+      divineNames: [],
+      _canon: {
+        threads: ['mercy'],
+        subjects: [],
+        audience: ['muminin'],
+        speaker: ['allah'],
+        quotedSpeaker: [],
+        mode: [], form: [], tone: [],
+        people: [], places: [], events: [], divineNames: [],
+      },
+      flags: { hasQuestion: true },
+      note: '',
+      createdAt: 1, updatedAt: 2,
+    }
+    await put('marks', record)
+    const got = await get('marks', '2:255')
+    expect(got.audience).toEqual(['muminin'])
+    expect(got._canon.audience).toEqual(['muminin'])
+    expect(got.flags.hasQuestion).toBe(true)
   })
 })
