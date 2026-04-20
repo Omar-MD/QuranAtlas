@@ -11,6 +11,8 @@
  *   canonical  — normalized + alias-resolved (see resolveCanonical)
  */
 
+import { resolveCanonical } from './aliases'
+
 const HARAKAT_RE = /[\u064B-\u0652\u0670\u0640]/g
 const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF]/g
 
@@ -37,4 +39,8 @@ export function normalize(input: string): string {
     .replace(/\s+/g, ' ')
     .toLowerCase()
   return s
+}
+
+export function canonicalize(input: string): string {
+  return resolveCanonical(normalize(input))
 }

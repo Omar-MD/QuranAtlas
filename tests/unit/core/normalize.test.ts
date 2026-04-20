@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalize } from '../../../src/core/normalize'
+import { normalize, canonicalize } from '../../../src/core/normalize'
 
 describe('normalize', () => {
   it('trims outer whitespace and collapses inner whitespace', () => {
@@ -80,4 +80,25 @@ describe('normalize — drift matrix (spec §3.4)', () => {
       expect(normalize(a)).not.toBe(normalize(b))
     })
   }
+})
+
+describe('canonicalize', () => {
+  it('resolves Moses to musa via alias', () => {
+    expect(canonicalize('Moses')).toBe('musa')
+  })
+
+  it('resolves Arabic script via normalization + alias', () => {
+    expect(canonicalize('مُوسَى')).toBe('musa')
+  })
+
+  it('keeps rank-protected terms distinct', () => {
+    expect(canonicalize('muminin')).toBe('muminin')
+    expect(canonicalize("Mu'minin")).toBe('muminin')
+    expect(canonicalize('muslimin')).toBe('muslimin')
+    expect(canonicalize('muminin')).not.toBe(canonicalize('muslimin'))
+  })
+
+  it('falls through to normalize result when no alias', () => {
+    expect(canonicalize('Some New Tag')).toBe('some new tag')
+  })
 })
