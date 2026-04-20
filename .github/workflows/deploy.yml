@@ -44,17 +44,25 @@ jobs:
           version: 10.31.0
           run_install: false
 
+      # Use pnpm dlx directly instead of cloudflare/wrangler-action, which is
+      # still on Node 20 (no v4 released as of 2026-04-20). Direct invocation
+      # keeps us on bumped action majors everywhere and uses the latest
+      # wrangler each time — Cloudflare ships wrangler updates frequently.
       - name: Deploy to Cloudflare Pages
         id: deploy
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >
-            pages deploy dist
-            --project-name=quranatlas
-            --branch=${{ github.event.workflow_run.head_branch }}
-            --commit-hash=${{ github.event.workflow_run.head_sha }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          pnpm dlx wrangler@latest pages deploy dist \
+            --project-name=quranatlas \
+            --branch="${TARGET_BRANCH}" \
+            --commit-hash="${TARGET_SHA}" \
+            | tee deploy-output.txt
+          # wrangler prints "Take a peek over at https://<id>.quranatlas.pages.dev"
+          DEPLOY_URL=$(grep -Eo 'https://[a-f0-9]+\.quranatlas\.pages\.dev' deploy-output.txt | tail -1)
+          echo "deployment-url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Write deploy summary
         env:
