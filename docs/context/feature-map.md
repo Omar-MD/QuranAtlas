@@ -25,25 +25,28 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Route:** `#/review`
 - **Entry:** `src/review/Hub.svelte` (Svelte component, mounted via router `onRouteChange`)
 - **Files:** `review/Hub.svelte`, `review/ReviewCard.svelte`, `review/state.ts`
-- **Purpose:** All-marks surface. Three-segment grouping (Tag / Surah / Date), tag + surah filters, sort, paginated mark cards.
+- **Purpose:** All-marks surface. 12-layer selector segment, group-by segment (Value / Surah / Date), value chips per layer, surah filter, sort, paginated mark cards.
 - **Key behaviors:**
-  - Card grammar: ref eyebrow + jump link + async verse content + optional note + chip row. Tap card body → opens mark editor.
+  - **Layer selector:** 12 tabs (Thread / Subject / Audience / Speaker / Quoted / Mode / Form / Tone / People / Places / Event / Name) — clicking a layer switches `activeLayer`, resets `activeValue`, and reloads the value chip pool via `getAllCanonicalValues(layer)`.
+  - **Value chips:** clicking a chip sets `activeValue` and filters the card list to marks with that canonical value in the active layer (via `_canon[layer].includes(activeValue)`). Clicking the same chip again clears the filter.
+  - Card grammar: ref eyebrow + jump link + async verse content + optional note + chip row (threads only). Tap card body → opens mark editor.
   - Flat de-duplicated single-column list regardless of groupBy UI setting.
-  - Subscribes to `SYNC_UPDATE_RECEIVED` + `DB_VISIBILITY_VISIBLE` via `$effect` for cross-tab and tab-resume coherence.
-  - Desktop (≥1180px): left rail with group-by segment + bucket list; main column with filter bar.
+  - Subscribes to `SYNC_UPDATE_RECEIVED` + `DB_VISIBILITY_VISIBLE` for cross-tab and tab-resume coherence.
+  - Desktop (≥1180px): left rail with layer selector + group-by segment + bucket list; main column with filter bar.
   - `openEditor` imported directly from `marks/editor-bridge.ts` (no hooks injection needed).
 - **IDB touch:** reads `marks` (all), reads/writes `positions["review"]` for view state (via `review/state.ts` sole writer).
 
 ## FVR (Filtered-Verse Review)
 
-- **Route:** `#/t/:tag`
-- **Entry:** `src/review/Hub.svelte` (same component — branches on `tag` prop presence)
-- **Files:** `review/Hub.svelte` (shared), `safety/input-validator.ts` (tag validation)
-- **Purpose:** Deep-link view of all marks carrying a single tag. Compact centered header (color dot, verse/surah stats, hairline).
+- **Route:** `#/<layer>/:value` (e.g. `#/threads/mercy`, `#/people/musa`)
+- **Entry:** `src/review/Hub.svelte` (same component — branches on `layer` + `value` props)
+- **Files:** `review/Hub.svelte` (shared), `safety/input-validator.ts` (`validateLayerParam`)
+- **Purpose:** Deep-link view of all marks carrying a specific canonical value in a given layer. Compact centered header (layer label, color dot, value name, verse/surah stats, hairline).
 - **Key behaviors:**
-  - Validates `tag` param (≤50 chars, no control chars); invalid or empty tags render a "not found" state that announces via `a11y/announcer.ts`.
-  - Writes `settings.lastSurface = '#/t/:tag'` + `positions["review"]` with `view: 'fvr'` via `review/state.ts`.
+  - `validateLayerParam(layer, value)` from `safety/input-validator.ts` whitelists the layer against `LAYER_NAMES` and canonicalizes the value; invalid params render a "not found" state that announces via `a11y/announcer.ts`.
+  - Writes `settings.lastSurface = '#/<layer>/<value>'` + `positions["review"]` with `view: 'fvr'` via `review/state.ts`.
   - No group controls — shows a flat list under the FVR header.
+  - `ReviewCard.svelte` chip links use `#/threads/<tag>` (threads layer only; other layers have no chip row on the card).
 
 ## Mark editor
 

@@ -265,61 +265,82 @@ Inside Settings sheet.
 ### E1. Open the review hub
 
 1. Dock → tap **Review** glyph (or ⌘K → "Review hub" → Enter) → `#/review`.
-2. Hub renders: 3-segment grouping pill (Tag / Surah / Date) with Tag active by default, sort dropdown, tag + surah filter dropdowns, mark cards for the first 30 results.
+2. Hub renders: 12-layer selector segment (Thread active by default), group-by segment (Value / Surah / Date), value chips for the active layer, sort dropdown, surah filter dropdown, mark cards for the first 30 results.
 
-**Surfaces:** Review hub. **Persistence:** reads `positions.review` for view state (groupBy/sort/filters).
+**Surfaces:** Review hub. **Persistence:** reads `positions.review` for view state (activeLayer/activeValue/groupBy/sort/filters).
 
-### E2. Switch rail bucket list
+### E2. Switch layer + value chip
 
 Inside review hub.
 
-The "Group by" segment changes which bucket list the rail shows, not how cards are grouped. Cards always render as a flat, unique, single-column list sorted by most-recent update — no duplicates when a mark carries multiple tags.
+1. Tap a layer tab (e.g. **Audience**) → `activeLayer` switches, `activeValue` resets, value chips reload for that layer.
+2. Tap a value chip (e.g. `muminin`) → `activeValue = 'muminin'`, card list filters to marks with that canonical value in the audience layer.
+3. Tap the same chip again → `activeValue` clears; all marks for that layer shown.
+
+**Persistence:** each tap writes `positions.review.activeLayer` / `positions.review.activeValue`.
+
+### E2b. Switch group-by bucket list
+
+Inside review hub.
+
+The "Group by" segment changes which bucket list the rail shows, not how cards are grouped. Cards always render as a flat, unique, single-column list sorted by most-recent update — no duplicates when a mark carries multiple values.
 
 1. Tap **Surah** segment → rail shows surah buckets; cards remain flat.
 2. Tap **Date** segment → rail shows month buckets; cards remain flat.
-3. Tap **Tag** segment (default) → rail shows tag buckets.
+3. Tap **Value** segment (default) → rail shows canonical values for the active layer.
 
 **Persistence:** each tap writes `positions.review.groupBy`.
 
-### E2b. Filter by multiple tags (desktop)
+### E2c. Filter by multiple values (desktop)
 
-In Tag mode on desktop (≥1180px).
+In Value mode on desktop (≥1180px).
 
-1. Tap a tag rail row → OR filter applied; cards show marks that have that tag.
-2. Tap another tag rail row → OR filter expands; cards show marks carrying *either* tag.
-3. A chip bar appears above the cards showing active tag chips with `×` to remove each.
-4. `Clear all` removes all active tag filters.
+1. Tap a value rail row → OR filter applied; cards show marks that have that canonical value in the active layer.
+2. Tap another value rail row → OR filter expands; cards show marks carrying *either* value.
+3. A chip bar appears above the cards showing active value chips with `×` to remove each.
+4. `Clear all` removes all active value filters.
 
-Surah and Date modes remain single-select. Mobile keeps the dropdown controls and single-select behavior.
+Surah and Date modes remain single-select. Mobile keeps the chip strip and single-select behavior.
 
-**Persistence:** `positions.review.activeTag`.
+**Persistence:** `positions.review.activeValue`.
 
-### E3. Tap chip → FVR deep link
+### E3. Tap thread chip → FVR deep link
 
-Inside review hub (any card).
+Inside review hub (any card — threads layer only).
 
-1. Tap a tag chip on a mark card → browser navigates to `#/t/<tag>`.
-2. FVR renders: compact centered header (Tag label, color dot, tag name, `n verses · n surahs`, hairline) + flat list of mark cards for that tag.
+1. Tap a thread chip on a mark card → browser navigates to `#/threads/<tag>`.
+2. FVR renders: compact centered header (layer label "Thread", color dot, canonical value, `n verses · n surahs`, hairline) + flat list of mark cards for that thread value.
 
-**Surfaces:** Review hub → FVR. **Persistence:** `settings.lastSurface = #/t/<tag>`, `positions.review.view = 'fvr'` (reset to `'all'` when hub is entered directly via `#/review`).
+**Surfaces:** Review hub → FVR. **Persistence:** `settings.lastSurface = #/threads/<tag>`, `positions.review.view = 'fvr'` (reset to `'all'` when hub is entered directly via `#/review`).
 
 ### E4. FVR back to hub
 
 Inside FVR.
 
-1. Tap **← Marks** → `#/review` → review hub re-renders with segment pill and all cards.
+1. Tap **← Marks** → `#/review` → review hub re-renders with layer segment, group-by pill, and all cards.
 
-### E5. Filter by tag + surah
+### E5. Filter by value chip + surah
 
-Inside review hub (tag-grouped view).
+Inside review hub.
 
-1. Pick a tag from the tag dropdown → filter chip appears in active-filters row; hub re-renders with only cards carrying that tag (only that tag's group shown).
+1. Tap a value chip in the chip strip → filter chip appears in active-filters row; hub re-renders with only cards having that canonical value in the active layer.
 2. Pick a surah from the surah dropdown → second filter chip → hub shows intersection.
 3. Tap × on a chip → that filter clears; tap **Clear all** → both clear.
 
-**Persistence:** `positions.review.activeTag`, `positions.review.surahFilter`.
+**Persistence:** `positions.review.activeValue`, `positions.review.surahFilter`.
 
-**Desktop variant (≥1180px):** The top dropdown controls (group-by segment, sort, tag filter, surah filter) are replaced by a sticky 220px left rail. The rail lists the active grouping's buckets. In Tag mode, multiple rows can be tapped for an OR filter (see E2b); in Surah/Date modes, a single row is selected at a time. Tapping an active row clears it. FVR (`#/t/:tag`) keeps its existing centered no-rail layout at desktop.
+**Desktop variant (≥1180px):** The mobile chip strip and dropdowns are replaced by a sticky 220px left rail containing the layer selector (12 rows) + group-by segment + bucket rows. In Value mode, multiple rows can be tapped for an OR filter (see E2c); in Surah/Date modes, a single row is selected at a time. Tapping an active row clears it. FVR (`#/<layer>/:value`) keeps its existing centered no-rail layout at desktop.
+
+### E6. FVR via direct deep link
+
+Navigating directly to a layer-value URL.
+
+1. User navigates to `#/people/Moses` → router passes `{ layer: 'people', value: 'Moses' }` to Hub.svelte → `validateLayerParam('people', 'Moses')` canonicalizes to `musa`.
+2. `getByLayerCanonical('people', 'musa')` fetches matching marks → FVR renders with layer label "People", value "musa".
+3. If no marks found for that layer+value → "Not found" state, link back to `#/review`.
+4. `settings.lastSurface` persists as `#/people/musa` for session restore.
+
+**Surfaces:** FVR. **Persistence:** `settings.lastSurface`, `positions.review` (view: 'fvr').
 
 ---
 
@@ -450,4 +471,6 @@ Two tabs open on `#/s/1`.
 
 ## Deprecated
 
-(None yet. When a journey is removed in a future change, move its entry here with the commit SHA that removed it, so the change is explicit.)
+### E3 (legacy). `#/t/:tag` FVR route — removed in commit cb4e3a2
+
+The old FVR route `#/t/:tag` (e.g. `#/t/mercy`) dispatched Hub.svelte with a `tag` prop and filtered the threads layer only. It was replaced by the `#/<layer>/:value` scheme in cluster-3-review-hub-fvr (commits cb4e3a2, 3fec509). Pre-release — no users when removed. The new canonical route for the same content is `#/threads/mercy`.

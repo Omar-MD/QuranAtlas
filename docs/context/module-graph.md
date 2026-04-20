@@ -161,15 +161,15 @@ graph LR
 
 ### `review/`
 - **Files:** `Hub.svelte`, `ReviewCard.svelte`, `state.ts`
-- **Imports from:** `a11y`, `core`, `data`, `marks`, `safety`, `state`
-- **Imported by:** `app-bootstrap.ts` *(lazy-loaded for `#/review` and `#/t/:tag` routes)*
-- **Role:** Svelte component routes. Both the review hub and FVR live in `Hub.svelte` — branches on whether the `tag` prop is present. `ReviewCard.svelte` is the per-mark card (async verse content loaded on mount). `state.ts` is the **sole writer** for `positions["review"]` (CLAUDE.md Rule 5) — persists view/filter/sort/groupBy.
+- **Imports from:** `a11y`, `core` (including `LAYER_NAMES`, `LayerName` from `core/db.ts`), `data`, `marks`, `safety` (`validateLayerParam`), `state`
+- **Imported by:** `app-bootstrap.ts` *(lazy-loaded for `#/review` and `#/<layer>/:value` FVR routes — one route per `LAYER_NAMES` entry)*
+- **Role:** Svelte component routes. Both the review hub (12-layer filter) and FVR live in `Hub.svelte` — branches on whether the `layer` + `value` props are present. `ReviewCard.svelte` is the per-mark card (async verse content loaded on mount); chip links use `#/threads/<tag>`. `state.ts` is the **sole writer** for `positions["review"]` (CLAUDE.md Rule 5) — persists view/activeLayer/activeValue/filter/sort/groupBy.
 
 ### `safety/`
 - **Files:** `input-validator.ts`, `sync.ts`
-- **Imports from:** `core`
+- **Imports from:** `core` (including `LAYER_NAMES`, `LayerName`, `canonicalize`)
 - **Imported by:** `marks`, `review`, `settings`
-- **Role:** `input-validator.ts::validateTagParam` gates URL-supplied tags (length + charset). `sync.ts` is the BroadcastChannel bridge — mirrors mark writes across tabs and emits `SYNC_UPDATE_RECEIVED` on receipt; also listens for `DB_VERSION_CHANGE` and shows the versionchange reload banner.
+- **Role:** `input-validator.ts` exports `validateTagParam` (gates URL-supplied tags, length + charset), `validateTagLabel`, `parseNavigationInput`, and `validateLayerParam` (whitelists a layer name against `LAYER_NAMES` and canonicalizes the value — used by FVR route handling in `review/Hub.svelte`). `sync.ts` is the BroadcastChannel bridge — mirrors mark writes across tabs and emits `SYNC_UPDATE_RECEIVED` on receipt; also listens for `DB_VERSION_CHANGE` and shows the versionchange reload banner.
 
 ### `settings/`
 - **Files:** `Panel.svelte`, `ClearDataConfirm.svelte`, `panel-bridge.ts`, `clear-data.ts`, `font-size.ts`, `theme.ts`
