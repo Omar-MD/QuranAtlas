@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
   import ReviewCard from './ReviewCard.svelte'
-  import { getAll, getByTag } from '../marks/store'
+  import { getAll, getByLayerCanonical } from '../marks/store'
   import type { Mark } from '../marks/store'
   import { getColorForTag } from '../marks/tags'
   import { getSurahs } from '../data/dataset'
@@ -77,7 +77,7 @@
   function filterMarks(sorted: Mark[], activeTag: string | null, surahFilter: number | null): Mark[] {
     let result = sorted
     if (activeTag) {
-      result = result.filter(m => m.tags.includes(activeTag))
+      result = result.filter(m => m._canon.threads.includes(activeTag))
     }
     if (surahFilter) {
       const surahPrefix = `${surahFilter}:`
@@ -95,7 +95,7 @@
     if (groupBy === 'tag') {
       const byTag: Record<string, number> = {}
       for (const m of marks) {
-        for (const t of m.tags ?? []) {
+        for (const t of m._canon.threads ?? []) {
           byTag[t] = (byTag[t] ?? 0) + 1
         }
       }
@@ -137,7 +137,7 @@
 
     if (isDesktop) {
       if (review.groupBy === 'tag' && railActiveTags.size > 0) {
-        result = result.filter(m => m.tags.some(t => railActiveTags.has(t)))
+        result = result.filter(m => m._canon.threads.some(t => railActiveTags.has(t)))
       } else if (review.groupBy === 'surah' && railActiveGroup !== null) {
         const surahNum = parseInt(railActiveGroup, 10)
         result = result.filter(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10) === surahNum)
@@ -158,7 +158,7 @@
 
   // ── Unique tags / surahs for dropdowns ────────────────────────────────────
 
-  const uniqueTags = $derived([...new Set(allMarks.flatMap(m => m.tags))].sort())
+  const uniqueTags = $derived([...new Set(allMarks.flatMap(m => m._canon.threads))].sort())
   const surahsWithMarks = $derived([...new Set(allMarks.map(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10)))].sort((a, b) => a - b))
   const railBuckets = $derived(computeRailBuckets(allMarks, review.groupBy))
 
@@ -267,7 +267,7 @@
       }
 
       const tag = validation.label
-      const marks = await getByTag(tag)
+      const marks = await getByLayerCanonical('threads', tag)
 
       if (marks.length === 0) {
         hubView = 'not-found'

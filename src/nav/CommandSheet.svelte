@@ -187,7 +187,7 @@
       items.push({
         kind: 'verse', glyph: `${s}:`, surah: s, verse: v,
         label: `${s}:${v}${meta ? ` \u00B7 ${meta.name}` : ''}`,
-        meta: mk.tags.slice(0, 3).join(', '), group: 'Recent',
+        meta: mk._canon.threads.slice(0, 3).join(', '), group: 'Recent',
       })
     }
 
@@ -242,7 +242,7 @@
 
     const tagMatches = tagCache.filter(t => t.toLowerCase().includes(lower)).slice(0, MAX_TAGS)
     for (const t of tagMatches) {
-      const count = markCache.filter(m => m.tags.includes(t)).length
+      const count = markCache.filter(m => m._canon.threads.includes(t)).length
       allItems.push({ kind: 'tag', tag: t, tagColor: getColorForTag(t), label: t, meta: `${count} mark${count === 1 ? '' : 's'}`, group: 'Tags' })
     }
 
@@ -257,14 +257,14 @@
 
     const markMatches = markCache.filter(m => {
       if (m.verseKey.includes(lower)) { return true }
-      return m.tags.some(t => t.toLowerCase().includes(lower))
+      return m._canon.threads.some(t => t.toLowerCase().includes(lower))
     }).slice(0, MAX_MARKS)
     for (const m of markMatches) {
       const parts = m.verseKey.split(':')
       const s = parseInt(parts[0] ?? '0', 10)
       const v = parseInt(parts[1] ?? '0', 10)
       const meta = surahCache.find(x => x.n === s)
-      allItems.push({ kind: 'verse', glyph: '\u2726', surah: s, verse: v, label: `${m.verseKey}${meta ? ` \u00B7 ${meta.name}` : ''}`, meta: m.tags.join(', '), group: 'Marks' })
+      allItems.push({ kind: 'verse', glyph: '\u2726', surah: s, verse: v, label: `${m.verseKey}${meta ? ` \u00B7 ${meta.name}` : ''}`, meta: m._canon.threads.join(', '), group: 'Marks' })
     }
 
     const commands = buildCommands(lower)

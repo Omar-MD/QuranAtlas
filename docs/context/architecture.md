@@ -7,7 +7,7 @@ One-page orientation for anyone (or any agent) walking into this codebase cold. 
 - **Svelte 5 (runes) + TypeScript + Vite** — the app root is `src/App.svelte` mounted from `src/app.ts` into `#app`. Reactivity is built on Svelte 5 runes (`$state`, `$derived`, `$effect`); no stores. TS config is `strict: true`. `svelte-check` runs in CI. No JSX.
 - **Runes as the state primitive** — application state lives in `src/state/*.svelte.ts` modules (see `module-graph.md#state/`). Components read the rune object directly and render reactively; feature modules write to it. State modules have zero imports and zero side effects — pure in-memory containers.
 - **Hybrid CSS** — theme tokens and top-level shell rules stay in `src/core/theme.css` (data-theme variables, ambient chrome, sheets). Surface-specific styles are co-located in each `<style>` block inside `.svelte` files and get Svelte-scoped class hashes. Class grammar is still `qa-<surface>-<part>` (e.g. `qa-review-card-chip`, `qa-sheet-backdrop`). Themes swap CSS variables on `<html data-theme="…">`.
-- **IndexedDB for all persistence** — DB name `quran-atlas`, version 1, 5 stores (see `data-model.md`). Every IDB access routes through `src/core/db.ts`. Store record shapes are declared as TS `interface`s re-exported via `StoreRecords` so the `put()` validator and callers share the same compile-time contract.
+- **IndexedDB for all persistence** — DB name `quran-atlas`, version 2, 5 stores (see `data-model.md`). Every IDB access routes through `src/core/db.ts`. Store record shapes are declared as TS `interface`s re-exported via `StoreRecords` so the `put()` validator and callers share the same compile-time contract.
 - **Mitt for cross-module communication** — tiny pub/sub (`src/core/events.ts`). Event names centralised in `src/core/constants.ts::Events`. Payload typedefs live beside the enum. Events that were snapshots of rune state (`READER_SURAH_LOADED`, `READER_POSITION_CHANGED`, `SETTINGS_TRANSLATION_CHANGED`) were dissolved into rune reads in Phase 6 — see `events.md` "Dissolved into rune reads."
 - **Service worker for offline** — `src/sw.js` + Workbox; the Quran corpus is cached in `CACHE_DATASET` and surahs load from cache first. The SW and `src/offline/` helpers stay vanilla JS by design.
 - **Testing** — Vitest + jsdom + `fake-indexeddb/auto` for units; Playwright for the 185-journey E2E contract. DOM-coupled unit tests that previously hand-rolled `document.createElement` fixtures for vanilla renderers were removed during the Svelte migration — the Playwright suite is now the enforcement layer for UI behavior.
@@ -81,6 +81,23 @@ The full event catalog — who emits, who listens, payload shapes, dead events, 
 - Quota errors emit `DB_QUOTA_EXCEEDED` for the banner module to catch.
 - `onversionchange` closes the connection and emits `DB_VERSION_CHANGE` so `safety/sync.ts` can show the reload banner.
 - A `visibilitychange` listener (attached once) emits `DB_VISIBILITY_VISIBLE` so reader / hub / indicators can re-sync state when the tab comes back.
+
+## Canonicalization pipeline
+
+Tag labels across all 12 layers go through `core/normalize.ts::canonicalize()`
+before being indexed for filter/query. The pipeline is deterministic:
+
+  raw → trim+collapse → NFKC → strip diacritics/tatweel/zero-width →
+  fold Arabic letter variants → lowercase ASCII → strip apostrophes →
+  hyphens→spaces → alias-resolve via data/aliases.json → canonical
+
+Raw labels are preserved on the mark record for display; canonical keys
+are denormalized onto `_canon.<layer>` array paths for index hits.
+
+The alias map (`data/aliases.json`) ships ~30 seed groups covering proper
+nouns and transliteration drift. `excludeFromAliasing` protects Quranic
+rank/quality distinctions (muminin/muslimin/muttaqin etc.) from collapsing
+into the same canonical form.
 
 ## Cross-cutting patterns
 

@@ -94,7 +94,7 @@
 
     isExisting = !!existing
     existingMark = existing ?? null
-    selectedTags = existing?.tags ?? []
+    selectedTags = existing?.threads ?? []
     noteValue = existing?.note ?? ''
 
     // Build tag universe
@@ -213,18 +213,39 @@
   // — Save / delete ————————————————————————————————————————————————————
   async function handleSave() {
     if (!canSave) { return }
-    await save(verseKey, [...selectedTags], noteValue.trim())
+    await save({
+      verseKey,
+      threads: [...selectedTags],
+      subjects: [], audience: [], speaker: [], quotedSpeaker: [],
+      mode: [], form: [], tone: [],
+      people: [], places: [], events: [], divineNames: [],
+      flags: {},
+      note: noteValue.trim(),
+    })
     closeEditor()
   }
 
   async function handleConfirmDelete() {
     // Snapshot the $state-wrapped mark into a plain structured-cloneable
-    // object. Without the snapshot, the proxied `tags` array can't be passed
+    // object. Without the snapshot, the proxied arrays can't be passed
     // to IDB.put() in onUndo below — IDB rejects proxies with DataCloneError.
     const rec: Mark | null = existingMark
       ? {
           verseKey: existingMark.verseKey,
-          tags: [...existingMark.tags],
+          threads: [...existingMark.threads],
+          subjects: [...existingMark.subjects],
+          audience: [...existingMark.audience],
+          speaker: [...existingMark.speaker],
+          quotedSpeaker: [...existingMark.quotedSpeaker],
+          mode: [...existingMark.mode],
+          form: [...existingMark.form],
+          tone: [...existingMark.tone],
+          people: [...existingMark.people],
+          places: [...existingMark.places],
+          events: [...existingMark.events],
+          divineNames: [...existingMark.divineNames],
+          _canon: { ...existingMark._canon },
+          flags: { ...existingMark.flags },
           note: existingMark.note ?? '',
           createdAt: existingMark.createdAt,
           updatedAt: existingMark.updatedAt,
@@ -238,7 +259,14 @@
         record: rec,
         onUndo: async (r) => {
           const m = r as Mark
-          await save(m.verseKey, m.tags, m.note ?? '')
+          await save({
+            verseKey: m.verseKey,
+            threads: m.threads, subjects: m.subjects, audience: m.audience,
+            speaker: m.speaker, quotedSpeaker: m.quotedSpeaker,
+            mode: m.mode, form: m.form, tone: m.tone,
+            people: m.people, places: m.places, events: m.events, divineNames: m.divineNames,
+            flags: m.flags, note: m.note ?? '',
+          })
         },
         onComplete: () => { /* no-op */ },
       })
