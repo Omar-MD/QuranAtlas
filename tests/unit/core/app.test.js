@@ -22,6 +22,10 @@ function applyDefaultRuntimeMocks() {
     get: vi.fn(() => Promise.resolve(null)),
     getMostRecentPosition: vi.fn(() => Promise.resolve(null)),
     put: vi.fn(() => Promise.resolve()),
+    LAYER_NAMES: [
+      'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
+      'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
+    ],
   }))
   vi.doMock('../../../src/nav/command-sheet.js', () => ({
     initCommandSheet: vi.fn(() => Promise.resolve()),
@@ -55,6 +59,10 @@ vi.mock('../../../src/core/db.js', () => ({
   get: vi.fn(() => Promise.resolve(null)),
   getMostRecentPosition: vi.fn(() => Promise.resolve(null)),
   put: vi.fn(() => Promise.resolve()),
+  LAYER_NAMES: [
+    'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
+    'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
+  ],
 }))
 
 vi.mock('../../../src/nav/command-sheet.js', () => ({
@@ -197,14 +205,19 @@ describe('core/app.js init order', () => {
         setupLongPress: expect.any(Function),
       })
     )
-    // #/review and #/t/:tag are now Svelte component routes — no hooks object
+    // #/review and FVR layer routes are Svelte component routes — no hooks object
     // (openEditor is imported directly by Hub.svelte)
     expect(router.register).toHaveBeenCalledWith(
       '#/review',
       expect.any(Function)
     )
+    // FVR: one route per layer — check threads and people as representatives
     expect(router.register).toHaveBeenCalledWith(
-      '#/t/:tag',
+      '#/threads/:value',
+      expect.any(Function)
+    )
+    expect(router.register).toHaveBeenCalledWith(
+      '#/people/:value',
       expect.any(Function)
     )
   })

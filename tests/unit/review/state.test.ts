@@ -13,6 +13,8 @@ describe('review/state.ts', () => {
       await save({
         view: 'all',
         activeTag: null,
+        activeLayer: 'threads',
+        activeValue: null,
         surahFilter: null,
         sortBy: 'updatedAt',
         groupBy: 'surah',
@@ -22,6 +24,7 @@ describe('review/state.ts', () => {
       expect(record?.id).toBe('review')
       expect((record as Record<string, unknown>)?.sortBy).toBe('updatedAt')
       expect((record as Record<string, unknown>)?.groupBy).toBe('surah')
+      expect((record as Record<string, unknown>)?.activeLayer).toBe('threads')
     })
   })
 
@@ -35,6 +38,8 @@ describe('review/state.ts', () => {
       await save({
         view: 'all',
         activeTag: 'favourite',
+        activeLayer: 'people',
+        activeValue: 'musa',
         surahFilter: 2,
         sortBy: 'createdAt',
         groupBy: 'flat',
@@ -42,6 +47,8 @@ describe('review/state.ts', () => {
 
       const result = await load()
       expect(result?.activeTag).toBe('favourite')
+      expect(result?.activeLayer).toBe('people')
+      expect(result?.activeValue).toBe('musa')
       expect(result?.surahFilter).toBe(2)
       expect(result?.sortBy).toBe('createdAt')
       expect(result?.groupBy).toBe('flat')
@@ -54,6 +61,8 @@ describe('review/state.ts', () => {
       expect(defaults).toEqual({
         view: 'all',
         activeTag: null,
+        activeLayer: 'threads',
+        activeValue: null,
         surahFilter: null,
         sortBy: 'updatedAt',
         groupBy: 'tag',

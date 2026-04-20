@@ -3,6 +3,28 @@
  * Permitted cross-module import (safety exception).
  */
 
+import { LAYER_NAMES, type LayerName } from '../core/db'
+import { canonicalize } from '../core/normalize'
+
+const LAYER_SET = new Set<string>(LAYER_NAMES)
+
+export function validateLayerParam(layer: string, value: string):
+  | { valid: true; layer: LayerName; canonical: string }
+  | { valid: false; reason: string }
+{
+  if (!LAYER_SET.has(layer)) {
+    return { valid: false, reason: `unknown layer: ${layer}` }
+  }
+  if (!value || value.length > 50) {
+    return { valid: false, reason: 'empty or overlong value' }
+  }
+  const canonical = canonicalize(value)
+  if (!canonical) {
+    return { valid: false, reason: 'value empty after canonicalization' }
+  }
+  return { valid: true, layer: layer as LayerName, canonical }
+}
+
 export type SurahEntry = { n: number; name: string; count: number }
 
 export type ParseNavResult =
