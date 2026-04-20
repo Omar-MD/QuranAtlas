@@ -63,6 +63,18 @@ Before writing a plan, dispatching subagents, or adding Playwright specs, read *
 
 **TL;DR:** the unit of work is a surface or a contiguous cluster of surfaces — never a bug, never a file. Parallel subagents = distinct surfaces only. Extend the owning `tests/e2e/journey-X-*.spec.js` rather than creating new specs. **The playbook is canonical** — if this summary ever disagrees with it, the playbook wins.
 
+### Rule 5 — Default PR target is `dev`
+
+**All feature work, bug fixes, refactors, and any code-level change PRs into `dev` unless I explicitly say otherwise.** Branches on the remote:
+
+- `dev` → deploys to `dev.quranatlas.org` on push/merge.
+- `staging` → deploys to `staging.quranatlas.org`; receives merge commits from `dev` via PR only.
+- `main` → deploys to `quranatlas.org`; receives merge commits from `staging` via PR only.
+
+Flow: feature branch → PR → `dev` → (promote) → PR `dev → staging` → (promote) → PR `staging → main`. Merge commits only (no squash, no rebase). The three env branches are protected from deletion and force-push; feature branches auto-delete on merge.
+
+**Only target `staging` or `main` directly if I ask for a hotfix, a promotion PR, or explicitly name the branch.** Default everywhere else: `dev`. When using `gh pr create`, pass `--base dev` unless the instruction contradicts it.
+
 ## Workflow
 
 Scripts, tooling, and stack references: see `docs/tech-stack.md`.
