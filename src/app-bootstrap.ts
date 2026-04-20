@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Imports from JS modules — types will be added in a later migration task
-import { openDB, get, getMostRecentPosition } from './core/db.js'
+import { openDB, get, getMostRecentPosition, LAYER_NAMES } from './core/db.js'
 import * as router from './core/router.js'
 import { emit, on } from './core/events.js'
 import { Events } from './core/constants.js'
@@ -103,7 +103,10 @@ export async function initBootstrap(): Promise<Array<() => void>> {
       },
     }))
     router.register('#/about', async () => (await import('./about/About.svelte')).default)
-    router.register('#/t/:tag', async () => (await import('./review/Hub.svelte')).default)
+    // FVR: #/<layer>/:value — one route per layer (replaces legacy #/t/:tag)
+    for (const layerName of LAYER_NAMES) {
+      router.register(`#/${layerName}/:value`, async () => (await import('./review/Hub.svelte')).default)
+    }
     router.register('#/surahs', async () => (await import('./surahs/SurahList.svelte')).default)
     router.register('#/onboarding', async () => (await import('./onboarding/Onboarding.svelte')).default)
 
