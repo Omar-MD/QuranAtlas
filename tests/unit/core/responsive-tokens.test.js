@@ -13,8 +13,9 @@ const LEGACY_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces
 const SHEET_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/sheet.css'), 'utf8')
 const MODAL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/modal.css'), 'utf8')
 const APP_SHELL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/app-shell.css'), 'utf8')
-const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${LEGACY_CSS}\n${SHEET_CSS}\n${MODAL_CSS}\n${APP_SHELL_CSS}`
-const ONBOARDING_SVELTE = readFileSync(resolve(__dirname, '../../../src/onboarding/Onboarding.svelte'), 'utf8')
+const ABOUT_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/about.css'), 'utf8')
+const ONBOARDING_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/onboarding.css'), 'utf8')
+const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${LEGACY_CSS}\n${SHEET_CSS}\n${MODAL_CSS}\n${APP_SHELL_CSS}\n${ABOUT_CSS}\n${ONBOARDING_CSS}`
 
 describe('styles — responsive breakpoint tokens', () => {
   it('defines --qa-bp-tablet: 768px in :root', () => {
@@ -118,12 +119,11 @@ describe('styles — responsive breakpoint tokens', () => {
   /* .qa-cmd-sheet/.qa-cmd-foot responsive rules now live in nav/CommandSheet.svelte <style> */
 
   it('onboarding landscape guard: max-height: 500px shrinks .qa-onb-page', () => {
-    // Onboarding CSS was co-located into Onboarding.svelte during Svelte migration.
-    // The guard lives in the component <style> block, not theme.css.
-    const blocks = [...ONBOARDING_SVELTE.matchAll(/@media\s*\(\s*max-height:\s*500px\s*\)\s*\{([\s\S]*?)\n  \}/g)]
+    // Onboarding CSS lives in src/styles/surfaces/onboarding.css (PR 6 migration).
+    const blocks = [...ONBOARDING_CSS.matchAll(/@media\s*\(\s*max-height:\s*500px\s*\)\s*\{([\s\S]*?)\n    \}\s*\n  \}/g)]
     const hit = blocks.find(b =>
-      /:global\(\.qa-onb-page\)\s*\{[^}]*min-height:\s*100%/.test(b[1]) &&
-      /:global\(\.qa-onb-page\)\s*\{[^}]*justify-content:\s*flex-start/.test(b[1])
+      /\.qa-onb-page\s*\{[^}]*min-height:\s*100%/.test(b[1]) &&
+      /\.qa-onb-page\s*\{[^}]*justify-content:\s*flex-start/.test(b[1])
     )
     expect(hit, 'expected .qa-onb-page height guard at max-height 500px').toBeDefined()
   })
