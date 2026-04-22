@@ -112,7 +112,7 @@ On the reader.
 **Desktop variant:** On viewports ≥1180px, the reader renders as a single centered column capped at ~960px. Each verse stacks Arabic (justified, RTL — fills the full column width and wraps naturally) on top, translation below. Toggling Hide translation in Settings simply hides the translation block; the column width is unchanged.
 
 
-**Desktop variant (≥1180px):** Ambient dock becomes a 64-px left edge rail with 5 tabs (Read / Surahs / Search / Review / Marks). Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Bottom-center pill is gone; top-right chrome includes `TagModePill` only while a tag session is open.
+**Desktop variant (≥1180px):** Ambient dock is a 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah} : {verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Surah list reached via ⋯ More → "Surah list", command sheet, or `G`+`S` shortcut (not a rail tab). Bottom-center pill is gone; top-right chrome includes `TagModePill` only while a tag session is open.
 
 **Mobile / tablet variant (<1180px):** Ambient dock is hidden entirely. Primary navigation is `MarginHeader` at the top: surah crumb pill (→ command sheet), circular fast-tag toggle, ⋮ more button, and a second row of section tabs (Read / Review N / Marks / Threads). Header auto-hides on scroll down and reveals on scroll up or any `AMBIENT_SURFACE` emit. `#main-content` reserves ~108 px of top padding so the surah title is never covered.
 
@@ -147,7 +147,7 @@ From Settings sheet (see D1).
 **Surfaces:** Settings sheet, Reader.
 
 **Desktop variant (viewport ≥1180px):**
-The reader renders a single centered column (max ~960px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below with a soft separator. Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
+The reader renders a single centered column (max ~960px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below (no separator line). Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
 
 ### B6. Auto theme follows OS
 
@@ -174,18 +174,19 @@ On the reader.
 
 **Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width header; below it the single-column body shows note, flags, and 12 layer regions. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
 
-### C1b. Fast-tag quickbar (mobile entry)
+### C1b. Fast-tag quickbar
 
-On the reader, mobile or tablet (<1180px).
+On the reader.
 
-1. With a verse currently active in view, tap the circular fast-tag button in the `MarginHeader` top row (dot-only icon, right of the surah crumb, left of ⋮).
-2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head.
-3. The fast-tag quickbar slides in at bottom-center: "↑ Suggested for {surah:verse}" + horizontal chip row. Tap a chip to toggle — selections debounce-save to IDB after 350 ms via `marks/store::save`. The header dot on the MarginHeader button glows green (light) / mint (dark) while the session is active.
-4. Tap the same fast-tag button again to end the session (or Esc on desktop). `tagSession.end()` resets state; the verse returns to normal styling.
+1. **Mobile / tablet (<1180px):** tap the circular fast-tag button in the `MarginHeader` top row (dot-only icon, right of the surah crumb, left of ⋮). **Desktop (≥1180px):** tap the top-right `TagModePill` ("Tag mode", hollow dot when off) — it targets the current `reader.currentVerseKey`.
+2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head. The toggle's dot fills green (light) / mint (dark) while the session is active. Each verse with saved tags reveals an inline chip row under it (`VerseTags.svelte`) — these chips are only visible while fast-tag mode is open.
+3. The fast-tag quickbar slides in at bottom-center: "↑ Suggested for {surah:verse}" + horizontal chip row. Tap a chip to toggle — selections debounce-save to IDB after 350 ms via `marks/store::save`.
+4. **Switch active verse while session is open:** short-tap any other verse in the reader → the session's target verse swaps to the tapped one (`beginFast(newKey)`), quickbar refreshes. A short-tap while the session is *closed* does nothing (no auto-start from verse tap).
+5. Tap the same toggle again to end the session. `tagSession.end()` resets state; the verse returns to normal styling; verse tag chips hide everywhere.
 
-**Surfaces:** Reader, MarginHeader, Fast-tag quickbar (`tag/AmbientDock.svelte`). **Persistence:** `marks` store via debounced save.
+**Surfaces:** Reader, MarginHeader (mobile) / TagModePill (desktop), Fast-tag quickbar (`tag/AmbientDock.svelte`), VerseTags. **Persistence:** `marks` store via debounced save.
 
-**Desktop variant (≥1180px):** no button in the header; use long-press → deep Editor (C1), or programmatic `beginFast()` callers. The quickbar itself is desktop-capable — shows an explicit `accept` button (applies every quick-pick) and uses `⌘/Ctrl + Enter` to escalate to the deep sheet (`openDeep`).
+**Quickbar escalation:** `⌘/Ctrl + Enter` escalates to the deep sheet (`openDeep`); an explicit `accept` button applies every quick-pick.
 
 ### C2. Multi-tag selection (per layer)
 

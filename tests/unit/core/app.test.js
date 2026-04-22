@@ -242,6 +242,10 @@ describe('core/app.js error recovery', () => {
       get: vi.fn().mockResolvedValue(null),
       put: vi.fn().mockResolvedValue(),
       getMostRecentPosition: vi.fn().mockResolvedValue(null),
+      LAYER_NAMES: [
+        'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
+        'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
+      ],
     }))
     vi.doMock('../../../src/nav/command-sheet.js', () => ({ initCommandSheet: vi.fn().mockResolvedValue(), openCommandSheet: vi.fn(), closeCommandSheet: vi.fn(), destroyCommandSheet: vi.fn() }))
     vi.doMock('../../../src/data/offline.js', () => ({

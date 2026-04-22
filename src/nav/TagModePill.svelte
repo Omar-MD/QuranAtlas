@@ -1,29 +1,55 @@
 <script lang="ts">
   /**
-   * Top-right "● Tag mode" pill — visible while a tag session is active
-   * on reader route. Desktop only (mobile surfaces the state via header).
-   * Tap ends session.
+   * Top-right "Tag mode" pill — desktop only, reader routes only.
+   * Always visible on reader. Toggles fast-tag quickbar:
+   *   off → beginFast(currentVerseKey)
+   *   on  → tagSession.end()
    */
 
+  import { onMount } from 'svelte'
   import { tagSession } from '../state/tag-session.svelte'
+  import { reader } from '../state/reader.svelte'
+  import { on } from '../core/events'
+  import { Events } from '../core/constants'
+  import { beginFast } from '../tag/session-bridge'
 
-  const visible = $derived.by(() => {
-    return !!tagSession.verseKey && (tagSession.quickbarOpen || tagSession.sheetOpen)
-  })
+  let currentHash = $state(typeof window !== 'undefined' ? window.location.hash || '' : '')
 
-  function exit(): void {
-    tagSession.end()
+  const isReaderRoute = $derived(currentHash.startsWith('#/s/'))
+  const active = $derived(tagSession.quickbarOpen || tagSession.sheetOpen)
+  const visible = $derived(isReaderRoute)
+
+  function toggle(): void {
+    if (active) { tagSession.end(); return }
+    const vk = reader.currentVerseKey
+    if (!vk) { return }
+    void beginFast(vk)
   }
+
+  onMount(() => {
+    currentHash = window.location.hash || ''
+    const onHash = () => { currentHash = window.location.hash || '' }
+    window.addEventListener('hashchange', onHash)
+    const unsubRoute = on(Events.ROUTER_ROUTE_CHANGE, () => {
+      currentHash = window.location.hash || ''
+    })
+    return () => {
+      window.removeEventListener('hashchange', onHash)
+      unsubRoute()
+    }
+  })
 </script>
 
 {#if visible}
   <button
     type="button"
     class="qa-tag-pill"
-    onclick={exit}
-    aria-label="Exit tag mode"
+    class:qa-tag-pill--on={active}
+    onclick={toggle}
+    aria-pressed={active}
+    aria-label={active ? 'Exit tag mode' : 'Start tag mode on current verse'}
   >
-    <span class="qa-tag-dot" aria-hidden="true"></span>
+    <span class="qa-tag-dot" class:qa-tag-dot--on={active} aria-hidden="true"></span>
     Tag mode
   </button>
 {/if}
@@ -50,15 +76,23 @@
     z-index: 140;
   }
   .qa-tag-pill:hover { border-color: var(--qa-ambient-accent); }
+  .qa-tag-pill--on { border-color: var(--qa-ambient-accent); }
+
   .qa-tag-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    background: transparent;
+    border: 1.5px solid var(--qa-ambient-accent);
+  }
+  .qa-tag-dot--on {
     background: #15803d;
+    border-color: #15803d;
     box-shadow: 0 0 0 2px color-mix(in srgb, #15803d 28%, transparent);
   }
-  :global(html[data-theme="dark"]) .qa-tag-dot {
+  :global(html[data-theme="dark"]) .qa-tag-dot--on {
     background: #86efac;
+    border-color: #86efac;
     box-shadow: 0 0 0 2px color-mix(in srgb, #86efac 30%, transparent);
   }
 

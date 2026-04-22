@@ -1,18 +1,21 @@
 <script lang="ts">
   /**
-   * Left edge rail (desktop ≥1180px). Always visible on desktop — no
-   * auto-fade. Rendered into `#bottom-nav` (layout host in App.svelte).
-   * Hidden on mobile/tablet; MarginHeader owns primary nav there.
+   * Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav`
+   * (layout host in App.svelte). Top section: logo + primary nav icons.
+   * Bottom section: rotated verse crumb + more (kebab) button. Hidden on
+   * mobile/tablet; MarginHeader owns primary nav there.
    */
 
   import { onMount } from 'svelte'
   import { get, LAYER_NAMES } from '../core/db'
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
+  import { reader } from '../state/reader.svelte'
   import { openCommandSheet } from './command-sheet-bridge'
+  import { openMoreSheet } from './more-sheet-bridge'
 
   type Tab = {
-    id: 'read' | 'surahs' | 'search' | 'review' | 'marks'
+    id: 'read' | 'search' | 'review' | 'marks'
     label: string
     matches: (h: string) => boolean
   }
@@ -22,12 +25,19 @@
   let footer: HTMLElement | null = null
 
   const TABS: Tab[] = [
-    { id: 'read',   label: 'Read',    matches: (h) => h.startsWith('#/s/') },
-    { id: 'surahs', label: 'Surahs',  matches: (h) => h.startsWith('#/surahs') },
-    { id: 'search', label: 'Search',  matches: () => false },
-    { id: 'review', label: 'Review',  matches: (h) => h.startsWith('#/review') || LAYER_NAMES.some(ln => h.startsWith(`#/${ln}/`)) },
-    { id: 'marks',  label: 'Marks',   matches: () => false },
+    { id: 'read',   label: 'Read',   matches: (h) => h.startsWith('#/s/') },
+    { id: 'search', label: 'Search', matches: () => false },
+    { id: 'review', label: 'Review', matches: (h) => h.startsWith('#/review') || LAYER_NAMES.some(ln => h.startsWith(`#/${ln}/`)) },
+    { id: 'marks',  label: 'Marks',  matches: () => false },
   ]
+
+  const crumbText = $derived.by(() => {
+    const s = reader.currentSurahNum
+    const vk = reader.currentVerseKey
+    const v = vk ? vk.split(':')[1] ?? '' : ''
+    if (!s) { return '' }
+    return v ? `${s} : ${v}` : `${s}`
+  })
 
   function isReaderRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
   function isOnboardingRoute(h: string): boolean { return (h || '').startsWith('#/onboarding') }
@@ -39,7 +49,6 @@
 
   function getHref(id: Tab['id']): string {
     if (id === 'read')   { return lastSurahHref }
-    if (id === 'surahs') { return '#/surahs' }
     if (id === 'review') { return '#/review' }
     if (id === 'marks')  { return '#/review' }
     return '#'
@@ -86,48 +95,88 @@
   })
 </script>
 
-{#each TABS as tab (tab.id)}
-  <a
-    class="qa-rail-item"
-    class:qa-rail-item--active={tab.matches(currentHash)}
-    data-tab={tab.id}
-    aria-label={tab.label}
-    aria-current={tab.matches(currentHash) ? 'page' : undefined}
-    href={getHref(tab.id)}
-    onclick={(e) => handleClick(e, tab.id)}
+<div class="qa-rail-top">
+  <div class="qa-rail-logo" aria-hidden="true">أ</div>
+  {#each TABS as tab (tab.id)}
+    <a
+      class="qa-rail-item"
+      class:qa-rail-item--active={tab.matches(currentHash)}
+      data-tab={tab.id}
+      aria-label={tab.label}
+      aria-current={tab.matches(currentHash) ? 'page' : undefined}
+      href={getHref(tab.id)}
+      onclick={(e) => handleClick(e, tab.id)}
+    >
+      {#if tab.id === 'read'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h7a3 3 0 0 1 3 3v13"/>
+          <path d="M20 4h-7a3 3 0 0 0-3 3v13"/>
+          <path d="M4 4v13a2 2 0 0 0 2 2h6"/>
+          <path d="M20 4v13a2 2 0 0 1-2 2h-6"/>
+        </svg>
+      {:else if tab.id === 'search'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6"/>
+          <line x1="15" y1="15" x2="20" y2="20"/>
+        </svg>
+      {:else if tab.id === 'review'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12 3 14.5 9.5 21 10 16 14.5 17.5 21 12 17.5 6.5 21 8 14.5 3 10 9.5 9.5 12 3"/>
+        </svg>
+      {:else if tab.id === 'marks'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 3h12v18l-6-4.5L6 21z"/>
+        </svg>
+      {/if}
+      <span class="qa-rail-tip">{tab.label}</span>
+    </a>
+  {/each}
+</div>
+
+<div class="qa-rail-bottom">
+  {#if crumbText}
+    <div class="qa-rail-crumb" aria-label="Current verse">
+      <span class="qa-rail-crumb-text">{crumbText}</span>
+    </div>
+  {/if}
+  <button
+    type="button"
+    class="qa-rail-more"
+    data-tab="more"
+    aria-label="More"
+    onclick={openMoreSheet}
   >
-    {#if tab.id === 'read'}
-      <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 4h7a3 3 0 0 1 3 3v13"/>
-        <path d="M20 4h-7a3 3 0 0 0-3 3v13"/>
-        <path d="M4 4v13a2 2 0 0 0 2 2h6"/>
-        <path d="M20 4v13a2 2 0 0 1-2 2h-6"/>
-      </svg>
-    {:else if tab.id === 'surahs'}
-      <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="4" y1="7" x2="20" y2="7"/>
-        <line x1="4" y1="12" x2="20" y2="12"/>
-        <line x1="4" y1="17" x2="14" y2="17"/>
-      </svg>
-    {:else if tab.id === 'search'}
-      <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="10.5" cy="10.5" r="6"/>
-        <line x1="15" y1="15" x2="20" y2="20"/>
-      </svg>
-    {:else if tab.id === 'review'}
-      <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polygon points="12 3 14.5 9.5 21 10 16 14.5 17.5 21 12 17.5 6.5 21 8 14.5 3 10 9.5 9.5 12 3"/>
-      </svg>
-    {:else if tab.id === 'marks'}
-      <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M6 3h12v18l-6-4.5L6 21z"/>
-      </svg>
-    {/if}
-    <span class="qa-rail-tip">{tab.label}</span>
-  </a>
-{/each}
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="12" r="1.6"/>
+      <circle cx="12" cy="12" r="1.6"/>
+      <circle cx="19" cy="12" r="1.6"/>
+    </svg>
+  </button>
+</div>
 
 <style>
+  .qa-rail-top,
+  .qa-rail-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .qa-rail-bottom { gap: 14px; }
+
+  .qa-rail-logo {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--qa-ambient-parchment);
+    font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+    font-size: 1.5rem;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
   .qa-rail-item {
     position: relative;
     display: flex;
@@ -143,7 +192,7 @@
   .qa-rail-item:hover,
   .qa-rail-item:focus-visible {
     color: var(--qa-ambient-parchment);
-    background-color: var(--qa-ambient-accent-soft);
+    background-color: color-mix(in srgb, var(--qa-ambient-border) 50%, transparent);
     outline: none;
   }
   .qa-rail-icon {
@@ -152,7 +201,7 @@
   }
   .qa-rail-item--active {
     color: var(--qa-ambient-parchment);
-    background-color: color-mix(in srgb, var(--qa-ambient-surface) 80%, transparent);
+    background-color: color-mix(in srgb, var(--qa-ambient-border) 70%, transparent);
   }
   .qa-rail-tip {
     position: absolute;
@@ -177,7 +226,48 @@
     transform: translateY(-50%) translateX(0);
   }
 
+  .qa-rail-crumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    min-height: 72px;
+  }
+  .qa-rail-crumb-text {
+    transform: rotate(-90deg);
+    white-space: nowrap;
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    color: var(--qa-ambient-dim);
+  }
+
+  .qa-rail-more {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--qa-ambient-dim);
+    cursor: pointer;
+    border-radius: 10px;
+    transition: color 0.12s ease, background-color 0.12s ease;
+  }
+  .qa-rail-more:hover,
+  .qa-rail-more:focus-visible {
+    color: var(--qa-ambient-parchment);
+    background-color: color-mix(in srgb, var(--qa-ambient-border) 50%, transparent);
+    outline: none;
+  }
+  .qa-rail-more svg {
+    width: 18px;
+    height: 18px;
+  }
+
   @media (max-width: 1179px) {
-    .qa-rail-item { display: none; }
+    .qa-rail-top,
+    .qa-rail-bottom { display: none; }
   }
 </style>

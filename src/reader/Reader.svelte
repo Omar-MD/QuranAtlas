@@ -290,9 +290,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
-    padding: 2rem 1.25rem;
-    margin-bottom: 1.5rem;
+    gap: 0.5rem;
+    padding: 1.125rem 1rem;
+    margin-bottom: 0.75rem;
     border: 1px solid var(--qa-ambient-border);
     border-radius: 12px;
     background: var(--qa-ambient-surface);
@@ -321,16 +321,13 @@
     font-family: var(--qa-font-arabic);
     font-size: 1.75rem;
     text-align: center;
-    padding: 1.5rem 0;
+    padding: 0.75rem 0;
     color: var(--qa-text-arabic);
     direction: rtl;
     line-height: var(--qa-line-height-arabic);
   }
 
   /* Individual Verse Container — layout co-located in Verse.svelte */
-  :global(.qa-verse:last-child) {
-    border-bottom: none;
-  }
 
   @media (hover: hover) {
     :global(.qa-verse) {
@@ -338,6 +335,7 @@
     }
     :global(.qa-verse:hover) {
       background-color: var(--qa-verse-hover-bg);
+      border-radius: 14px;
     }
   }
 
@@ -350,7 +348,7 @@
     text-align: justify;
     color: var(--qa-text-arabic);
     word-spacing: 0.1em;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
   }
   /* verse number / tagging badge styles co-located in Verse.svelte */
 
@@ -362,25 +360,11 @@
     color: var(--qa-text-primary);
     direction: ltr;
     text-align: left;
-    padding-top: 0.75rem;
-    border-top: 1px dashed var(--qa-border);
+    padding-top: 0.25rem;
   }
 
   :global(.qa-verse-translation.qa-hide-translation) {
     display: none;
-  }
-
-  /* Tablet: bump verse breathing room ~25% */
-  @media (min-width: 768px) {
-    :global(.qa-verse) {
-      padding: 1.875rem 0;
-    }
-    :global(.qa-verse-arabic) {
-      margin-bottom: 1.25rem;
-    }
-    :global(.qa-verse-translation) {
-      padding-top: 0.9375rem;
-    }
   }
 
   /* Surah end marker */
@@ -433,16 +417,4 @@
     font-size: var(--qa-text-size-ui);
   }
 
-  /* Desktop reading column */
-  @media (min-width: 1180px) {
-    :global(.qa-verse) {
-      padding: 2.25rem 0;
-    }
-    :global(.qa-verse-arabic) {
-      margin-bottom: 1.5rem;
-    }
-    :global(.qa-verse-translation) {
-      padding-top: 1rem;
-    }
-  }
 </style>

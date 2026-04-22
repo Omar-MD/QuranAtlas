@@ -19,14 +19,19 @@ import { initReaderActions } from './nav/reader-actions.js'
 import { initIndicators } from './marks/indicator'
 import { setupTapGestures } from './marks/long-press'
 import { beginFast, openDeep } from './tag/session-bridge'
+import { tagSession } from './state/tag-session.svelte'
 import { registerEditor } from './marks/editor-bridge'
 
-// Bind both gesture paths to the reader container:
-//   short-tap  → fast-path quickbar (tag/AmbientDock)
-//   long-press → deep tag sheet (tag/TagSheet)
+// Bind tap gestures to the reader container:
+//   short-tap  → only while fast-tag mode is open: switch the active verse
+//                being tagged. Does NOT start a new session from an idle tap.
+//   long-press → deep tag sheet (tag/TagSheet).
+// Fast-mode entry: explicit toggle (MarginHeader dot / TagModePill).
 function setupLongPress(container: HTMLElement): () => void {
   return setupTapGestures(container, {
-    onShort: (vk) => { void beginFast(vk) },
+    onShort: (vk) => {
+      if (tagSession.quickbarOpen) { void beginFast(vk) }
+    },
     onLong: (vk) => { void openDeep(vk) },
   })
 }

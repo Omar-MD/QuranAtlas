@@ -140,13 +140,16 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 - **Entry:** `src/nav/AmbientDock.svelte` (Svelte component mounted inside `#bottom-nav` in `App.svelte`)
 - **Files:** `nav/AmbientDock.svelte`
-- **Purpose:** 64-px left edge rail on desktop (≥1180px) with 5 icon tabs (Read / Surahs / Search / Review / Marks). Always-on — no auto-fade.
+- **Purpose:** 56-px full-height left panel on desktop (≥1180px). Cream-surface panel (`var(--qa-ambient-surface)`) with right-border separator. Top section: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom section: rotated verse crumb (`{surah} : {verse}`) + ⋯ more button. Always-on — no auto-fade.
 - **Key behaviors:**
   - Desktop only: entire rail hidden via `@media (max-width: 1179px)`. Mobile primary nav is `MarginHeader`.
+  - `#app-shell` gets `padding-left: 56px` at ≥1180px so main-content sits flush right of the panel; rail itself is `position: fixed` and escapes the shift.
   - Hidden on `#/onboarding` via `qa-dock--hidden` class on `#bottom-nav`.
-  - Read → last-visited surah (from `settings.lastSurface`, default `#/s/1`), Surahs → `#/surahs`, Search → `openCommandSheet()`, Review + Marks → `#/review`.
+  - Read → last-visited surah (from `settings.lastSurface`, default `#/s/1`), Search → `openCommandSheet()`, Review + Marks → `#/review`. Surah list reachable via More sheet → "Surah list", command sheet, or `G`+`S` shortcut (no longer a rail tab).
   - Hover/focus shows parchment tooltip to the right of the icon.
-  - Emits `AMBIENT_SURFACE` on click while on reader routes.
+  - Verse crumb reads `reader.currentSurahNum` + `reader.currentVerseKey` runes reactively; rendered rotated 90° via `transform: rotate(-90deg)` on inline text; hidden when no surah set.
+  - ⋯ more button has `data-tab="more"` and calls `openMoreSheet()`.
+  - Emits `AMBIENT_SURFACE` on tab click while on reader routes.
 
 ## Margin header (mobile top nav)
 
@@ -187,15 +190,20 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 ## Tag-mode pill (desktop)
 
-- **Entry:** `src/nav/TagModePill.svelte` (mounted in `App.svelte`). Visible when `tagSession.quickbarOpen || tagSession.sheetOpen`.
+- **Entry:** `src/nav/TagModePill.svelte` (mounted in `App.svelte`). Always visible on desktop (≥1180px) reader routes (`#/s/`); hidden everywhere else.
 - **Files:** `nav/TagModePill.svelte`
-- **Purpose:** Top-right desktop pill showing active-session dot + "Tag mode" label while a quickbar/sheet session is open.
+- **Purpose:** Top-right desktop toggle for fast-tag mode. Two visual states:
+  - **Off** (hollow dot) — tap starts fast-tag on `reader.currentVerseKey` via `beginFast(vk)`. No-op if no active verse.
+  - **On** (filled dot, green/mint) — `tagSession.quickbarOpen || sheetOpen` true. Tap calls `tagSession.end()`.
+- **Key behaviors:**
+  - Listens to `ROUTER_ROUTE_CHANGE` + `hashchange` to hide off-reader routes.
+  - Mirror of the mobile MarginHeader fast-tag dot button; desktop users have no other entry point since verse tap does not start fast-tag mode.
 
 ## Verse tags (inline chip row)
 
 - **Entry:** `src/reader/VerseTags.svelte` (rendered inside every `Verse.svelte`).
 - **Files:** `reader/VerseTags.svelte`
-- **Purpose:** Shows canonical tag chips under each verse when that verse has a mark. Updates live on `MARKS_SAVED` / `MARKS_DELETED` for the matching `verseKey`.
+- **Purpose:** Shows canonical tag chips under each verse when that verse has a mark. **Gated on `tagSession.quickbarOpen`** — chips are only visible while fast-tag mode is active. When the user exits tag mode, chips hide on every verse (keeps reader uncluttered). Updates live on `MARKS_SAVED` / `MARKS_DELETED` for the matching `verseKey`.
 
 ## Surah progress chip
 

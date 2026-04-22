@@ -135,7 +135,7 @@
     <button type="button" class="qa-mh-tag" class:qa-mh-tag--on={tagSession.quickbarOpen} aria-label="Tag mode" aria-pressed={tagSession.quickbarOpen} onclick={openTagMode}>
       <span class="qa-mh-tag-dot" aria-hidden="true"></span>
     </button>
-    <button type="button" class="qa-mh-icon" aria-label="More" onclick={openMoreSheet}>
+    <button type="button" class="qa-mh-icon" data-tab="more" aria-label="More" onclick={openMoreSheet}>
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <circle cx="6" cy="12" r="1.6"/>
         <circle cx="12" cy="12" r="1.6"/>

@@ -74,17 +74,14 @@
 <style>
   :global(.qa-verse) {
     position: relative;
-    padding: 1.5rem 0 1.5rem 0;
-    border-bottom: 1px solid var(--qa-border-subtle);
+    padding: 0.875rem 24px 0.875rem 30px;
     content-visibility: auto;
     contain-intrinsic-size: 0 200px;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    transition: background-color 0.2s ease;
   }
   :global(.qa-verse.qa-verse--active) {
-    padding-left: 30px;
     background: color-mix(in srgb, var(--qa-text-primary) 4%, transparent);
     border-radius: 14px;
-    border-bottom-color: transparent;
     box-shadow: inset 0 0 0 1px var(--qa-ambient-border);
     content-visibility: visible;
     transition: none;
@@ -105,7 +102,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
   }
   :global(.qa-verse-number) {
     display: inline-block;

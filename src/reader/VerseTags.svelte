@@ -11,6 +11,7 @@
   import { LAYER_NAMES } from '../core/db'
   import type { LayerName } from '../core/db'
   import { hueForLayer } from '../data/tag-layers'
+  import { tagSession } from '../state/tag-session.svelte'
 
   interface Props { verseKey: string }
   const { verseKey }: Props = $props()
@@ -53,7 +54,7 @@
   })
 </script>
 
-{#if pairs.length}
+{#if tagSession.quickbarOpen && pairs.length}
   <div class="qa-vtags" aria-label="Verse tags">
     {#each pairs as p (p.layer + ':' + p.value)}
       <span class="qa-vtag">

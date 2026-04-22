@@ -30,7 +30,9 @@ export async function surfaceDock(page) {
  */
 export async function openMoreSheet(page) {
   await surfaceDock(page)
-  await page.locator('[data-tab="more"]').click()
+  // Rail (desktop) and MarginHeader (mobile) both expose data-tab="more";
+  // only one is visible at a time based on viewport.
+  await page.locator('[data-tab="more"]:visible').click()
   await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
 }
 

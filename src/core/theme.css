@@ -382,21 +382,22 @@ a:hover, a:focus {
 }
 #bottom-nav:empty { display: none; }
 
-/* Desktop (≥1180px): vertical edge rail, flush against left edge, no card. */
+/* Desktop (≥1180px): full-height left panel, flush against left edge. */
 @media (min-width: 1180px) {
   #bottom-nav {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    justify-content: space-between;
+    align-items: center;
     position: fixed;
-    left: 8px;
-    top: 50%;
-    bottom: auto;
-    transform: translateY(-50%);
-    padding: 6px 4px;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 56px;
+    padding: 18px 0 24px;
     z-index: 100;
-    background: transparent;
-    border: none;
+    background: var(--qa-ambient-surface);
+    border-right: 1px solid var(--qa-ambient-border);
     box-shadow: none;
     transition: opacity 0.2s ease;
   }
@@ -573,10 +574,12 @@ a:hover, a:focus {
 }
 
 @media (min-width: 1180px) {
+  #app-shell {
+    padding-left: 56px;
+  }
   #main-content {
     padding: 2rem 3rem;
     max-width: 1180px;
-    padding-top: 2rem;
   }
 }
 
