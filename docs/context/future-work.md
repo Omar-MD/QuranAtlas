@@ -64,6 +64,14 @@ Items discussed and rejected, recorded here so they're not re-litigated without 
 
 ---
 
+## Infrastructure
+
+### Visual regression — linux baselines
+
+Current 45 baselines under `tests/e2e/visual/baseline.spec.js-snapshots/` are darwin-captured. CI (linux) excludes the `visual` project because font rendering + anti-aliasing differ past the 5% `maxDiffPixelRatio` threshold. Local-only gate via `pnpm test:e2e:visual` until linux baselines are captured (via Docker `mcr.microsoft.com/playwright` or an ephemeral CI artifact-and-commit flow) and committed alongside the darwin set.
+
+---
+
 ## Adding to this doc
 
 When a future feature is agreed on but not scheduled:

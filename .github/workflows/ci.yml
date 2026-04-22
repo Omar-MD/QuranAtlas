@@ -139,8 +139,12 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
 
-      - name: Run Playwright suite
-        run: pnpm run test:e2e
+      # Visual regression baselines live under tests/e2e/visual/*-darwin.png.
+      # CI runs on linux and produces non-matching snapshots (font/AA diffs
+      # exceed the 5% threshold), so we exclude the `visual` project here and
+      # keep it as a local pre-merge gate via `pnpm test:e2e:visual`.
+      - name: Run Playwright suite (non-visual)
+        run: pnpm exec playwright test --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"
         env:
           PLAYWRIGHT_INCLUDE_OFFLINE: '1'
 
