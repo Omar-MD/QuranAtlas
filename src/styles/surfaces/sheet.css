@@ -26,6 +26,11 @@
     backdrop-filter: blur(var(--qa-blur-md));
     opacity: 1;
     animation: qa-sheet-fade var(--qa-transition-base) forwards;
+
+    /* MoreSheet uses <button> as backdrop for keyboard close — zero UA chrome
+       so the 2px outset button border doesn't paint a viewport rim. */
+    border: 0;
+    padding: 0;
   }
 
   .qa-sheet {
