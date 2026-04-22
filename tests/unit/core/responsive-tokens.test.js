@@ -4,12 +4,15 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-// Tokens now split across semantic.css; surface rules in _legacy.css (migrates
-// per-surface in PRs 2-13). Onboarding styles co-located in Onboarding.svelte.
+// Tokens now split across semantic.css; surface rules in _legacy.css +
+// per-surface files under surfaces/ (migrates per-surface in PRs 2-13).
+// Onboarding styles co-located in Onboarding.svelte.
 const PRIMITIVES_CSS = readFileSync(resolve(__dirname, '../../../src/styles/tokens/primitives.css'), 'utf8')
 const SEMANTIC_CSS = readFileSync(resolve(__dirname, '../../../src/styles/tokens/semantic.css'), 'utf8')
 const LEGACY_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/_legacy.css'), 'utf8')
-const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${LEGACY_CSS}`
+const SHEET_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/sheet.css'), 'utf8')
+const MODAL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/modal.css'), 'utf8')
+const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${LEGACY_CSS}\n${SHEET_CSS}\n${MODAL_CSS}`
 const ONBOARDING_SVELTE = readFileSync(resolve(__dirname, '../../../src/onboarding/Onboarding.svelte'), 'utf8')
 
 describe('styles — responsive breakpoint tokens', () => {
