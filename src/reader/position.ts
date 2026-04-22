@@ -44,6 +44,14 @@ export async function savePosition(surahNum: number, verse: number): Promise<voi
 
 export type PositionTrackingOptions = {
   mainContent: HTMLElement
+  /**
+   * Actual scrolling element — used as the IntersectionObserver root and as
+   * the scroll source for position updates. In this app that's typically the
+   * `#main-content` element from the app shell (overflow-y: auto). If omitted,
+   * defaults to `mainContent` for back-compat with tests that pass a
+   * scrollable container directly.
+   */
+  scroller?: HTMLElement
   surahNum: number
   shouldSavePosition?: boolean
   surahMeta?: SurahMeta
@@ -84,6 +92,7 @@ export function teardownPositionTracking(): void {
 export function initPositionTracking(opts: PositionTrackingOptions): Array<() => void> {
   const {
     mainContent,
+    scroller,
     surahNum,
     shouldSavePosition = true,
     surahMeta,
@@ -93,6 +102,7 @@ export function initPositionTracking(opts: PositionTrackingOptions): Array<() =>
     ensureVerseRendered,
     onInvalidVerseError,
   } = opts
+  const scrollHost = scroller ?? mainContent
 
   // Dispose any prior cleanups before registering new ones.
   teardownPositionTracking()
@@ -102,6 +112,7 @@ export function initPositionTracking(opts: PositionTrackingOptions): Array<() =>
 
   if (shouldSavePosition) {
     observeScroll(mainContent, {
+      scroller: scrollHost,
       onPositionChange: ({ verse }) => {
         lastTrackedVerse = verse
         void savePosition(surahNum, verse)
