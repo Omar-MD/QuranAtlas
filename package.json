@@ -16,13 +16,14 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "lint:css": "stylelint 'src/styles/**/*.css'",
+    "check:styles": "node scripts/check-theme-parity.mjs && node scripts/check-token-usage.mjs && node scripts/check-at-layer.mjs",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check-chunks": "node scripts/check-chunks.js",
     "check-no-feature-state": "node scripts/check-no-feature-state.js",
     "lighthouse": "pnpm run build && lhci autorun --config=.lighthouserc.cjs",
     "clean": "rm -rf dist test-output",
     "mcp:cleanup": "rm -rf test-output",
-    "validate": "pnpm run lint && pnpm run lint:css && pnpm run check && pnpm run test:run && pnpm run build && pnpm run check-chunks"
+    "validate": "pnpm run lint && pnpm run lint:css && pnpm run check:styles && pnpm run check && pnpm run test:run && pnpm run build && pnpm run check-chunks"
   },
   "keywords": [],
   "author": "",
