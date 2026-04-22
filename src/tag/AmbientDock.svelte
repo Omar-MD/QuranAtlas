@@ -134,10 +134,6 @@
   @media (min-width: 1180px) {
     .qa-qb-mobile-only  { display: none !important; }
   }
-  @keyframes qa-qb-in {
-    from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-  }
   :global(html[data-theme="dark"]) .qa-qb {
     background-color: rgba(20, 18, 12, 0.94);
   }
