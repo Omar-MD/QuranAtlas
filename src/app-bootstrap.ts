@@ -17,13 +17,18 @@ import { initFontSize } from './settings/font-size.ts'
 import { openSettingsSheet } from './settings/panel-bridge.ts'
 import { initReaderActions } from './nav/reader-actions.js'
 import { initIndicators } from './marks/indicator'
-import { openEditor } from './marks/editor-bridge'
-import { setupLongPress as setupLongPressAction } from './marks/long-press'
+import { setupTapGestures } from './marks/long-press'
+import { beginFast, openDeep } from './tag/session-bridge'
+import { registerEditor } from './marks/editor-bridge'
 
-// Wrap setupLongPress to bind openEditor so the reader hook receives the
-// correct signature: setupLongPress(container) → cleanup.
+// Bind both gesture paths to the reader container:
+//   short-tap  → fast-path quickbar (tag/AmbientDock)
+//   long-press → deep tag sheet (tag/TagSheet)
 function setupLongPress(container: HTMLElement): () => void {
-  return setupLongPressAction(container, openEditor)
+  return setupTapGestures(container, {
+    onShort: (vk) => { void beginFast(vk) },
+    onLong: (vk) => { void openDeep(vk) },
+  })
 }
 
 /** Module-level cleanups array — drained at the top of each initBootstrap call and on error. */
@@ -46,6 +51,10 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   bootCleanups.length = 0
 
   performance.mark('app:start')
+
+  // Route `openEditor` calls (long-press, command-sheet, review) to the
+  // TagSheet deep path. TagSheet subscribes to tagSession.sheetOpen.
+  registerEditor((vk) => { void openDeep(vk) })
 
   try {
     // Open database (creates stores if first run)

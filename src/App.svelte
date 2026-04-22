@@ -7,13 +7,16 @@
   import { refreshForSurah } from './marks/indicator'
   import UndoToast from './core/ui.svelte'
   import QuotaBanner from './core/quota-banner.svelte'
-  import Editor from './marks/Editor.svelte'
   import Panel from './settings/Panel.svelte'
   import ClearDataConfirm from './settings/ClearDataConfirm.svelte'
   import AmbientDock from './nav/AmbientDock.svelte'
-  import AmbientPill from './nav/AmbientPill.svelte'
+  import MarginHeader from './nav/MarginHeader.svelte'
   import CommandSheet from './nav/CommandSheet.svelte'
   import MoreSheet from './nav/MoreSheet.svelte'
+  import TagAmbientDock from './tag/AmbientDock.svelte'
+  import TagSheet from './tag/TagSheet.svelte'
+  import TagModePill from './nav/TagModePill.svelte'
+  import { tagSession } from './state/tag-session.svelte'
 
   let cleanups: Array<() => void> = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,17 +95,24 @@
 <a href="#main-content" class="qa-skip-link">Skip to content</a>
 <div id="app-shell">
   <!-- svelte-ignore a11y_no_redundant_roles -->
-  <header id="top-bar" role="banner"><AmbientPill /></header>
+  <header id="top-bar" role="banner"></header>
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <!-- svelte-ignore a11y_no_redundant_roles -->
   <main id="main-content" role="main" tabindex="0"></main>
   <!-- svelte-ignore a11y_no_redundant_roles -->
   <footer id="bottom-nav" role="contentinfo"><AmbientDock /></footer>
 </div>
+<MarginHeader />
 <UndoToast />
 <QuotaBanner />
-<Editor />
 <Panel />
 <ClearDataConfirm />
 <CommandSheet />
 <MoreSheet />
+<TagAmbientDock />
+<TagModePill />
+<TagSheet
+  isOpen={tagSession.sheetOpen && !!tagSession.verseKey}
+  verseKey={tagSession.verseKey ?? ''}
+  onclose={() => tagSession.end()}
+/>

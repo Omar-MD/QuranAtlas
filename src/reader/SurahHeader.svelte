@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SurahMeta } from '../data/dataset'
   import { formatSurahMeta, formatArabicSurahName, shouldRenderBasmala } from './render-helpers'
+  import SurahProgress from '../nav/SurahProgress.svelte'
 
   interface Props {
     surahNum: number
@@ -17,6 +18,7 @@
 <div class="qa-surah-header-card" data-surah-header="">
   <div class="qa-surah-name" dir="rtl">{arabicName}</div>
   <div class="qa-surah-meta">{metaLine}</div>
+  <SurahProgress />
 </div>
 
 {#if showBasmala}

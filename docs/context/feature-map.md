@@ -136,16 +136,72 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Filter and search state managed via the `surahs` rune (`state/surahs.svelte.ts`).
   - CSS co-located in `SurahList.svelte` `<style>` block; removed from `theme.css`.
 
-## Ambient dock
+## Ambient dock (desktop left rail)
 
 - **Entry:** `src/nav/AmbientDock.svelte` (Svelte component mounted inside `#bottom-nav` in `App.svelte`)
 - **Files:** `nav/AmbientDock.svelte`
-- **Purpose:** Floating bottom pill with 4 glyphs (Read, Search, Review, More). Always-on chrome that replaces a traditional bottom tab bar.
+- **Purpose:** 64-px left edge rail on desktop (≥1180px) with 5 icon tabs (Read / Surahs / Search / Review / Marks). Always-on — no auto-fade.
 - **Key behaviors:**
-  - On reader routes: hidden by default, surfaces on tap (`AMBIENT_SURFACE`) and auto-fades after ~2.8s.
-  - On non-reader routes: persistent (no fade).
-  - On `#/onboarding`: hidden entirely.
-  - Read glyph → `#/s/1`, Search → `openCommandSheet()` via bridge, Review → `#/review`, More → `openMoreSheet()` via bridge.
+  - Desktop only: entire rail hidden via `@media (max-width: 1179px)`. Mobile primary nav is `MarginHeader`.
+  - Hidden on `#/onboarding` via `qa-dock--hidden` class on `#bottom-nav`.
+  - Read → last-visited surah (from `settings.lastSurface`, default `#/s/1`), Surahs → `#/surahs`, Search → `openCommandSheet()`, Review + Marks → `#/review`.
+  - Hover/focus shows parchment tooltip to the right of the icon.
+  - Emits `AMBIENT_SURFACE` on click while on reader routes.
+
+## Margin header (mobile top nav)
+
+- **Route:** all routes; auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE`.
+- **Entry:** `src/nav/MarginHeader.svelte` (mounted persistently in `App.svelte`; display-hidden on desktop ≥1180px).
+- **Files:** `nav/MarginHeader.svelte`
+- **Purpose:** Mobile/tablet (<1180px) fixed top bar. Row 1: surah breadcrumb pill (`{surah} : {verse} · {Name}` ▼) + circular fast-tag toggle + ⋮ more. Row 2: section tabs (Read / Review N / Marks / Threads).
+- **Key behaviors:**
+  - Crumb button → `openCommandSheet()` (surah picker).
+  - Fast-tag button (dot-only circle): toggles `tagSession.quickbarOpen`; when active pulses green (light) / mint (dark). Calls `beginFast(verseKey)` to start, `tagSession.end()` to stop. Reads `reader.currentVerseKey`; no-op if no active verse.
+  - ⋮ button → `openMoreSheet()`.
+  - Section tabs use `#/review` for Review/Marks/Threads stubs today; Read jumps to `lastSurahHref` from `settings.lastSurface`.
+  - Review count badge reads `marks/store::getAll().length`; updates on `MARKS_SAVED` / `MARKS_DELETED`.
+  - Scroll listener on `#main-content` toggles `qa-mh--hidden` (transform translateY −100%).
+- **Reader clearance:** `theme.css` pads `#main-content` by `calc(env(safe-area-inset-top) + 108px)` at <768 and 768–1179 breakpoints so the header never covers the surah title.
+
+## Fast-tag quickbar
+
+- **Entry:** `src/tag/AmbientDock.svelte` (mounted in `App.svelte` as `TagAmbientDock`). Opens when `tagSession.quickbarOpen === true`.
+- **Files:** `tag/AmbientDock.svelte`, `tag/TagChip.svelte`, `tag/session-bridge.ts`, `state/tag-session.svelte.ts`, `data/tag-layers.ts`
+- **Purpose:** Fast path for tagging a single verse — floating bottom-center bar with suggested tag chips. Complement to the deep path (`marks/Editor.svelte`).
+- **Key behaviors:**
+  - Triggered by: mobile MarginHeader fast-tag button, or programmatic `beginFast(verseKey)` via `tag/session-bridge.ts`.
+  - `beginFast` hydrates `tagSession` from any existing mark for the verse (`marks/store::getByVerseKey`), then sets `quickbarOpen = true`.
+  - Suggested chips come from `data/tag-layers::QUICK_PICKS`. Tap chip → `tagSession.toggle(layer, value)` → debounced 350 ms save through `marks/store::save`.
+  - Desktop `accept` button applies every quick-pick at once. `⌘/Ctrl + Enter` opens the deep sheet (`openMore()` → `sheetOpen = true`, `quickbarOpen = false`).
+  - Esc ends the session (`tagSession.end()`).
+  - Active verse in the reader gets `.qa-verse--active` styling (accent bracket, inset ring, parchment verse-key) driven by `isActive = tagSession.verseKey === verseKey && tagSession.quickbarOpen`.
+
+## Deep-tag sheet (fast-path peer)
+
+- **Entry:** `src/tag/TagSheet.svelte` (mounted in `App.svelte`). Opens when `tagSession.sheetOpen === true`.
+- **Files:** `tag/TagSheet.svelte`, `tag/TagModeToggle.svelte`, `tag/VerseSpotlight.svelte`, `tag/session-bridge.ts`
+- **Purpose:** Deep counterpart to the quickbar — full 12-layer editor that shares `tagSession` state.
+- **Key behaviors:**
+  - Opened via `openDeep(verseKey)` (session-bridge) or the quickbar's `⌘+Enter` transition.
+  - Writes through `marks/store::save`. Legacy `marks/Editor.svelte` remains the canonical long-press surface.
+
+## Tag-mode pill (desktop)
+
+- **Entry:** `src/nav/TagModePill.svelte` (mounted in `App.svelte`). Visible when `tagSession.quickbarOpen || tagSession.sheetOpen`.
+- **Files:** `nav/TagModePill.svelte`
+- **Purpose:** Top-right desktop pill showing active-session dot + "Tag mode" label while a quickbar/sheet session is open.
+
+## Verse tags (inline chip row)
+
+- **Entry:** `src/reader/VerseTags.svelte` (rendered inside every `Verse.svelte`).
+- **Files:** `reader/VerseTags.svelte`
+- **Purpose:** Shows canonical tag chips under each verse when that verse has a mark. Updates live on `MARKS_SAVED` / `MARKS_DELETED` for the matching `verseKey`.
+
+## Surah progress chip
+
+- **Entry:** `src/nav/SurahProgress.svelte` (rendered inside `reader/SurahHeader.svelte`).
+- **Files:** `nav/SurahProgress.svelte`, `data/juz.ts`
+- **Purpose:** Juz / surah-progress meta chip under the surah title (juz number + percent through surah).
 
 ## Ambient pill
 

@@ -112,7 +112,9 @@ On the reader.
 **Desktop variant:** On viewports ≥1180px, the reader renders as a single centered column capped at ~960px. Each verse stacks Arabic (justified, RTL — fills the full column width and wraps naturally) on top, translation below. Toggling Hide translation in Settings simply hides the translation block; the column width is unchanged.
 
 
-**Desktop variant (≥1180px):** Dock items expand to labeled pills — the visually-hidden text label ("Read", "Search", "Review", "More") unhides inline next to each glyph. Positioning stays bottom-centered.
+**Desktop variant (≥1180px):** Ambient dock becomes a 64-px left edge rail with 5 tabs (Read / Surahs / Search / Review / Marks). Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Bottom-center pill is gone; top-right chrome includes `TagModePill` only while a tag session is open.
+
+**Mobile / tablet variant (<1180px):** Ambient dock is hidden entirely. Primary navigation is `MarginHeader` at the top: surah crumb pill (→ command sheet), circular fast-tag toggle, ⋮ more button, and a second row of section tabs (Read / Review N / Marks / Threads). Header auto-hides on scroll down and reveals on scroll up or any `AMBIENT_SURFACE` emit. `#main-content` reserves ~108 px of top padding so the surah title is never covered.
 
 ### B2. Scroll hides dock, scroll-to-top surfaces it
 
@@ -171,6 +173,19 @@ On the reader.
 **Surfaces:** Reader, Mark editor. **No persistence yet.**
 
 **Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width header; below it the single-column body shows note, flags, and 12 layer regions. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
+
+### C1b. Fast-tag quickbar (mobile entry)
+
+On the reader, mobile or tablet (<1180px).
+
+1. With a verse currently active in view, tap the circular fast-tag button in the `MarginHeader` top row (dot-only icon, right of the surah crumb, left of ⋮).
+2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head.
+3. The fast-tag quickbar slides in at bottom-center: "↑ Suggested for {surah:verse}" + horizontal chip row. Tap a chip to toggle — selections debounce-save to IDB after 350 ms via `marks/store::save`. The header dot on the MarginHeader button glows green (light) / mint (dark) while the session is active.
+4. Tap the same fast-tag button again to end the session (or Esc on desktop). `tagSession.end()` resets state; the verse returns to normal styling.
+
+**Surfaces:** Reader, MarginHeader, Fast-tag quickbar (`tag/AmbientDock.svelte`). **Persistence:** `marks` store via debounced save.
+
+**Desktop variant (≥1180px):** no button in the header; use long-press → deep Editor (C1), or programmatic `beginFast()` callers. The quickbar itself is desktop-capable — shows an explicit `accept` button (applies every quick-pick) and uses `⌘/Ctrl + Enter` to escalate to the deep sheet (`openDeep`).
 
 ### C2. Multi-tag selection (per layer)
 

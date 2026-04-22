@@ -124,10 +124,16 @@ graph LR
 - **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (CLAUDE.md Rule 5) — takes `MarkInput` (raw layer arrays) and computes `_canon` internally via `canonicalize()`. `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette + `getAllUsedTags()` (delegates to `store.ts::getAllCanonicalValues('threads')`).
 
 ### `nav/`
-- **Files:** `AmbientDock.svelte`, `AmbientPill.svelte`, `CommandSheet.svelte`, `MoreSheet.svelte`, `command-sheet-bridge.ts`, `more-sheet-bridge.ts`, `reader-actions.js`, `shortcuts-sheet.js`
-- **Imports from:** `core`, `data`, `marks`, `settings`, `state`, `a11y`
-- **Imported by:** `src/App.svelte` (component mounts), `src/app-bootstrap.ts` (`reader-actions`)
-- **Role:** Navigation chrome + reader keyboard actions. Dock + pill (ambient), command sheet (⌘K), more sheet (dock ⋯ parent) are Svelte 5 components. Bridge modules (`*-bridge.ts`) provide typed imperative open/close APIs. `reader-actions.js` backs the `j/k/[/]/Home/End/m` shortcuts by reading and writing the `reader` rune directly (no events). `shortcuts-sheet.js` is the in-reader shortcuts help sheet.
+- **Files:** `AmbientDock.svelte` (desktop left rail), `AmbientPill.svelte`, `MarginHeader.svelte` (mobile top nav), `SurahProgress.svelte`, `TagModePill.svelte`, `CommandSheet.svelte`, `MoreSheet.svelte`, `command-sheet-bridge.ts`, `more-sheet-bridge.ts`, `reader-actions.js`, `shortcuts-sheet.js`
+- **Imports from:** `core`, `data`, `marks`, `settings`, `state` (incl. `state/tag-session.svelte.ts`), `tag` (`session-bridge`), `a11y`
+- **Imported by:** `src/App.svelte` (component mounts), `src/app-bootstrap.ts` (`reader-actions`), `reader/SurahHeader.svelte` (`SurahProgress`)
+- **Role:** Navigation chrome + reader keyboard actions. `AmbientDock` = desktop (≥1180px) 64-px left edge rail. `MarginHeader` = mobile/tablet fixed top nav (crumb + fast-tag toggle + ⋮ + section tabs). `TagModePill` = desktop active-session indicator. `SurahProgress` = juz/percent chip used in `SurahHeader`. Command sheet (⌘K), more sheet (dock ⋯ parent) are Svelte 5 components. Bridge modules (`*-bridge.ts`) provide typed imperative open/close APIs. `reader-actions.js` backs the `j/k/[/]/Home/End/m` shortcuts by reading and writing the `reader` rune directly (no events). `shortcuts-sheet.js` is the in-reader shortcuts help sheet.
+
+### `tag/`
+- **Files:** `AmbientDock.svelte` (fast-path quickbar), `TagSheet.svelte` (deep sheet), `TagChip.svelte`, `TagModeToggle.svelte`, `VerseSpotlight.svelte`, `session-bridge.ts`
+- **Imports from:** `core`, `data` (`tag-layers`), `marks` (`store`), `state` (`tag-session.svelte.ts`)
+- **Imported by:** `App.svelte` (`TagAmbientDock`, `TagSheet`), `nav/MarginHeader.svelte` (`beginFast`)
+- **Role:** Fast-path tagging surfaces. Shares `tagSession` state with deep path. `session-bridge::beginFast(verseKey)` hydrates the session from any existing mark and opens the quickbar; `openDeep` opens the deep sheet. Persistence still flows through `marks/store.ts` (single writer).
 
 ### `offline/`
 - **Files:** `dataset-updater.js`, `manifest-fetcher.js`, `sha256-verifier.js`, `staging-cache.js`
@@ -165,7 +171,7 @@ graph LR
 - **Note:** does *not* import `marks/` directly — the `openEditor` / `setupLongPress` / `initIndicators` dependencies arrive via props passed through `router.register` hooks from `app-bootstrap.ts`. This keeps `reader/` independent of the marks subtree.
 
 ### `state/`
-- **Files:** `ambient-chrome.svelte.ts`, `command-sheet.svelte.ts`, `mark-editor.svelte.ts`, `reader.svelte.ts`, `review.svelte.ts`, `settings.svelte.ts`, `surahs.svelte.ts`, `sync.ts`
+- **Files:** `ambient-chrome.svelte.ts`, `command-sheet.svelte.ts`, `mark-editor.svelte.ts`, `reader.svelte.ts`, `review.svelte.ts`, `settings.svelte.ts`, `surahs.svelte.ts`, `sync.ts`, `tag-session.svelte.ts`
 - **Imports from:** — *(zero imports — pure data containers)*
 - **Imported by:** `reader/Reader.svelte`, `review/Hub.svelte`, `surahs/SurahList.svelte`, `nav/CommandSheet.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/reader-actions.js`, `marks/Editor.svelte`, `settings/theme.ts`, `settings/font-size.ts`, `settings/Panel.svelte`, `safety/sync.ts`, `App.svelte`
 - **Role:** Application state containers. Each module exports a single `$state`-backed object (or class) that components read directly and feature modules write to. Zero imports, zero side effects — pure in-memory data containers. Svelte's fine-grained reactivity means components that read `reader.currentSurahNum` re-render automatically when any writer (scroll tracking, keyboard actions, router) updates it, with no manual subscription. Enables isolated unit testing of state transitions without mounting components.

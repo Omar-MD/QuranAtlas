@@ -102,6 +102,12 @@ vi.mock('../../../src/marks/editor-bridge', () => ({
 vi.mock('../../../src/marks/long-press', () => ({
   longPress: vi.fn(),
   setupLongPress: vi.fn(() => vi.fn()),
+  setupTapGestures: vi.fn(() => vi.fn()),
+}))
+
+vi.mock('../../../src/tag/session-bridge', () => ({
+  beginFast: vi.fn(() => Promise.resolve()),
+  openDeep: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('../../../src/data/offline.js', () => ({

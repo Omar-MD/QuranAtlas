@@ -359,7 +359,7 @@ a:hover, a:focus {
 #main-content {
   flex: 1;
   min-height: 0;
-  padding: 1.5rem 1rem calc(90px + env(safe-area-inset-bottom));
+  padding: calc(env(safe-area-inset-top) + 108px) 1rem calc(90px + env(safe-area-inset-bottom));
   overflow-y: auto;
   scroll-behavior: smooth;
   margin: 0 auto;
@@ -372,38 +372,38 @@ a:hover, a:focus {
    (pill styles co-located in nav/AmbientPill.svelte)
    ========================================================================== */
 
+/* AmbientPill (top-bar) is replaced by edge rail (desktop) / MarginHeader
+ * (mobile) — hide the legacy top-bar host entirely. */
+#top-bar { display: none !important; }
+
+/* Mobile / tablet: hide the dock host — MarginHeader owns primary nav. */
 #bottom-nav {
-  position: fixed;
-  left: 50%;
-  bottom: calc(14px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
-  z-index: 100;
-  display: flex;
-  gap: 2px;
-  padding: 5px;
-  border-radius: 999px;
-  background-color: color-mix(in srgb, var(--qa-ambient-surface) 95%, transparent);
-  border: 1px solid var(--qa-ambient-accent-soft);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  transition: transform 0.28s ease, visibility 0s linear 0s;
+  display: none;
 }
-
-html[data-theme="dark"] #bottom-nav {
-  background-color: rgba(20, 18, 12, 0.92);
-}
-html[data-theme="sepia"] #bottom-nav {
-  background-color: color-mix(in srgb, var(--qa-ambient-surface) 92%, transparent);
-}
-
 #bottom-nav:empty { display: none; }
 
-#bottom-nav.qa-dock--hidden {
-  visibility: hidden;
-  transform: translateX(-50%) translateY(120%);
-  pointer-events: none;
-  transition: transform 0.28s ease, visibility 0s linear 0.28s;
+/* Desktop (≥1180px): vertical edge rail, flush against left edge, no card. */
+@media (min-width: 1180px) {
+  #bottom-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: fixed;
+    left: 8px;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    padding: 6px 4px;
+    z-index: 100;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    transition: opacity 0.2s ease;
+  }
+  #bottom-nav.qa-dock--hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 
 /* dock-item styles co-located in nav/AmbientDock.svelte */
@@ -564,7 +564,7 @@ html[data-theme="sepia"] #bottom-nav {
 
   #main-content {
     grid-area: main;
-    padding: 2rem 1.5rem;
+    padding: calc(env(safe-area-inset-top) + 108px) 1.5rem 2rem;
   }
 
   #bottom-nav {
@@ -576,6 +576,7 @@ html[data-theme="sepia"] #bottom-nav {
   #main-content {
     padding: 2rem 3rem;
     max-width: 1180px;
+    padding-top: 2rem;
   }
 }
 
@@ -802,4 +803,43 @@ html[data-theme="sepia"] #bottom-nav {
 @media (min-width: 1180px) {
   .qa-sc-list { grid-template-columns: 1fr 1fr; gap: 12px 32px; }
   .qa-sc-row { font-size: 0.9375rem; }
+}
+
+/* ==========================================================================
+   Tagging UI — layer hues + JetBrains Mono font
+   Used by src/tag/* (group dots, chip hues, meta text).
+   ========================================================================== */
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono/JetBrainsMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono/JetBrainsMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --lh-speech: #b45309;
+  --lh-narrative: #6d28d9;
+  --lh-themes: #15803d;
+  --lh-entities: #0e7490;
+}
+html[data-theme="sepia"] {
+  --lh-speech: #b45309;
+  --lh-narrative: #6d28d9;
+  --lh-themes: #15803d;
+  --lh-entities: #0e7490;
+}
+html[data-theme="dark"] {
+  --lh-speech: #fbbf24;
+  --lh-narrative: #d8b4fe;
+  --lh-themes: #86efac;
+  --lh-entities: #67e8f9;
 }

@@ -293,9 +293,9 @@
     gap: 0.75rem;
     padding: 2rem 1.25rem;
     margin-bottom: 1.5rem;
-    border: 1px solid var(--qa-border);
+    border: 1px solid var(--qa-ambient-border);
     border-radius: 12px;
-    background: var(--qa-bg-surface);
+    background: var(--qa-ambient-surface);
     text-align: center;
   }
 
@@ -327,15 +327,7 @@
     line-height: var(--qa-line-height-arabic);
   }
 
-  /* Individual Verse Container */
-  :global(.qa-verse) {
-    padding: 1.5rem 0;
-    border-bottom: 1px solid var(--qa-border-subtle);
-    position: relative;
-    content-visibility: auto;
-    contain-intrinsic-size: 0 200px;
-  }
-
+  /* Individual Verse Container — layout co-located in Verse.svelte */
   :global(.qa-verse:last-child) {
     border-bottom: none;
   }
@@ -360,26 +352,7 @@
     word-spacing: 0.1em;
     margin-bottom: 1rem;
   }
-
-  :global(.qa-verse-number) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--qa-font-sans);
-    font-size: 1rem;
-    color: var(--qa-ambient-accent);
-    margin-inline-start: 0.75rem;
-    margin-inline-end: 0.25rem;
-    direction: ltr;
-    unicode-bidi: isolate;
-    border: 1px solid var(--qa-ambient-accent);
-    border-radius: 50%;
-    width: 2.75rem;
-    height: 2.75rem;
-    vertical-align: middle;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
+  /* verse number / tagging badge styles co-located in Verse.svelte */
 
   /* English Translation Block */
   :global(.qa-verse-translation) {
@@ -420,20 +393,9 @@
     text-transform: uppercase;
   }
 
-  /* Bookmarked verse — persistent 2px gold left-edge inside the verse block */
-  :global(.qa-verse.qa-verse--bookmarked) {
-    position: relative;
-  }
-  :global(.qa-verse.qa-verse--bookmarked::before) {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 6px;
-    bottom: 6px;
-    width: 2px;
-    border-radius: 2px;
-    background-color: var(--qa-ambient-accent);
-  }
+  /* Bookmarked verse — class still applied by marks/indicator.ts for a11y/
+     test assertions, but no visual left-edge accent: accent strictly belongs
+     to the active-tagging quickbar path (see Verse.svelte .qa-verse--active). */
 
   /* Edge indicators — fixed positioned, appended to body */
   :global(.qa-edge-indicator) {

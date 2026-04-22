@@ -46,6 +46,9 @@ docs/superpowers/
 # Git worktrees
 .worktrees/
 
+# Scratch / design-reference dirs (not product code)
+svelte-integration/
+
 # Logs
 logs/
 *.log
