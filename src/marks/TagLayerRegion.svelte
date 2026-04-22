@@ -72,36 +72,3 @@
   {/if}
 </section>
 
-<style>
-  .qa-layer-region { margin-bottom: 10px; }
-  .qa-layer-toggle {
-    display: flex; align-items: center; gap: 6px;
-    width: 100%; padding: 6px 8px;
-    background: transparent; border: none;
-    color: var(--qa-ambient-accent);
-    font-size: 0.6875rem; text-transform: uppercase;
-    letter-spacing: 0.08em; cursor: pointer;
-  }
-  .qa-layer-count {
-    margin-left: auto;
-    padding: 1px 6px;
-    border-radius: var(--qa-radius-pill);
-    background: var(--qa-ambient-accent);
-    color: var(--qa-on-accent);
-    font-size: 0.625rem;
-  }
-  .qa-layer-selected,
-  .qa-layer-all {
-    display: flex; flex-wrap: wrap; gap: 5px; padding: 4px;
-  }
-  .qa-layer-search {
-    width: 100%;
-    padding: 7px 10px;
-    border: 1px solid var(--qa-ambient-border);
-    border-radius: var(--qa-radius-md);
-    background: var(--qa-bg-primary);
-    color: var(--qa-ambient-parchment);
-    font: inherit; font-size: 0.8125rem;
-    margin: 6px 0;
-  }
-</style>
