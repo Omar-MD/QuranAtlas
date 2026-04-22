@@ -1,0 +1,589 @@
+/**
+ * review — Review Hub (list/filter/controls/rail/FVR header) and ReviewCard
+ * (single-mark card with ar/en/note/chips).
+ *
+ * Consumers:
+ *   src/review/Hub.svelte        → .qa-review-*, .qa-fvr-*
+ *   src/review/ReviewCard.svelte → .qa-review-card-*
+ */
+@layer surfaces {
+  /* ============================================================
+     Empty / not-found messaging
+     ============================================================ */
+  .qa-review-tag-not-found {
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+
+  .qa-review-tag-not-found h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--qa-text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .qa-review-tag-not-found p {
+    color: var(--qa-text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  .qa-review-hub-link {
+    color: var(--qa-accent);
+    text-decoration: underline;
+  }
+
+  .qa-review-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--qa-text-secondary);
+  }
+
+  .qa-review-no-results {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--qa-text-secondary);
+  }
+
+  .qa-review-clear-filter {
+    margin-top: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--qa-accent);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: var(--qa-text-size-meta);
+    text-decoration: underline;
+  }
+
+  /* ============================================================
+     Controls (mobile grid of selects)
+     ============================================================ */
+  .qa-review-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: var(--qa-ambient-surface);
+    border: 1px solid var(--qa-ambient-border);
+    border-radius: var(--qa-radius-xl);
+  }
+
+  .qa-review-select {
+    padding: 0.5rem 0.75rem;
+    background-color: var(--qa-surface-app);
+    border: 1px solid var(--qa-ambient-border);
+    border-radius: var(--qa-radius-md);
+    font-size: var(--qa-text-size-meta);
+    font-weight: 500;
+    color: var(--qa-text-primary);
+    min-height: 44px;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .qa-review-select:focus-visible {
+    outline: var(--qa-focus-ring-width) solid var(--qa-focus-ring-color);
+    border-color: var(--qa-accent);
+  }
+
+  /* ============================================================
+     Value chips (layer-value pickers)
+     ============================================================ */
+  .qa-review-value-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 1rem;
+    padding: 0 0.25rem;
+  }
+
+  .qa-review-value-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.3125rem 0.625rem;
+    border-radius: var(--qa-radius-pill);
+    background-color: var(--qa-ambient-surface);
+    border: 1px solid var(--qa-ambient-border);
+    color: var(--qa-text-primary);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--qa-text-size-meta);
+    min-height: 32px;
+    transition: background-color var(--qa-transition-fast), box-shadow var(--qa-transition-fast);
+  }
+
+  .qa-review-value-chip:hover {
+    background-color: color-mix(in srgb, var(--qa-accent) 8%, var(--qa-ambient-surface));
+  }
+
+  .qa-review-value-chip--on {
+    background-color: var(--qa-selection-bg);
+    color: var(--qa-selection-text);
+    box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
+  }
+
+  .qa-review-value-chip-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--qa-radius-circle);
+    flex-shrink: 0;
+  }
+
+  /* ============================================================
+     Active filter chips (mobile)
+     ============================================================ */
+  .qa-review-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+
+  .qa-review-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--qa-radius-pill);
+    font-size: var(--qa-text-size-meta);
+    background-color: var(--qa-ambient-surface);
+    border: 1px solid var(--qa-ambient-border);
+    color: var(--qa-text-primary);
+    min-height: 32px;
+  }
+
+  .qa-review-filter-chip button {
+    background: none;
+    border: none;
+    color: var(--qa-text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .qa-review-filter-chip button:hover {
+    color: var(--qa-color-error);
+  }
+
+  .qa-review-clear-all-btn {
+    background: none;
+    border: none;
+    color: var(--qa-accent);
+    font-weight: 500;
+    font-size: var(--qa-text-size-meta);
+    cursor: pointer;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .qa-review-clear-all-btn:hover {
+    text-decoration: underline;
+  }
+
+  /* ============================================================
+     Load-more button
+     ============================================================ */
+  .qa-review-load-more {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    margin: 2rem 0;
+    background-color: var(--qa-surface-raised);
+    border: 1px dashed var(--qa-border);
+    border-radius: var(--qa-radius-xl);
+    font-weight: 600;
+    color: var(--qa-text-primary);
+    cursor: pointer;
+    transition: background-color var(--qa-transition-base), border-color var(--qa-transition-base), color var(--qa-transition-base);
+  }
+
+  .qa-review-load-more:hover {
+    background-color: var(--qa-bg-surface);
+    border-color: var(--qa-accent);
+    color: var(--qa-accent);
+  }
+
+  /* ============================================================
+     Segment pills (layer picker)
+     ============================================================ */
+  .qa-review-seg {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: var(--qa-radius-pill);
+    background-color: var(--qa-ambient-surface);
+    border: 1px solid var(--qa-ambient-border);
+  }
+
+  .qa-review-layer-seg {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .qa-review-layer-seg::-webkit-scrollbar {
+    display: none;
+  }
+
+  .qa-review-seg-item {
+    padding: 5px 12px;
+    border: none;
+    border-radius: var(--qa-radius-pill);
+    background: transparent;
+    color: var(--qa-ambient-dim);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .qa-review-seg-item--on {
+    background-color: var(--qa-selection-bg);
+    color: var(--qa-selection-text);
+    box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
+  }
+
+  /* ============================================================
+     Cards list
+     ============================================================ */
+  .qa-review-card-list {
+    display: block;
+  }
+
+  /* ============================================================
+     Desktop — left rail + main column
+     ============================================================ */
+  @media (min-width: 1180px) {
+    .qa-review-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      column-gap: 2rem;
+      align-items: start;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .qa-review-layout .qa-review-controls {
+      display: none;
+    }
+
+    .qa-review-rail {
+      position: sticky;
+      top: 1rem;
+      padding-right: 1rem;
+      border-right: 1px solid var(--qa-ambient-border);
+      font-size: var(--qa-text-size-meta);
+      max-height: 90vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    .qa-review-rail-section {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--qa-accent);
+      font-weight: 700;
+      margin: 14px 0 6px;
+    }
+
+    .qa-review-rail-section:first-child {
+      margin-top: 0;
+    }
+
+    .qa-review-rail-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: var(--qa-radius-sm);
+      cursor: pointer;
+      color: var(--qa-ambient-parchment);
+      font: inherit;
+      border: none;
+      background: transparent;
+      text-align: left;
+      width: 100%;
+    }
+
+    .qa-review-rail-row:hover {
+      background-color: color-mix(in srgb, var(--qa-accent) 4%, transparent);
+    }
+
+    .qa-review-rail-row--on {
+      background-color: var(--qa-selection-bg);
+      color: var(--qa-selection-text);
+      box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
+    }
+
+    .qa-review-rail-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: var(--qa-radius-circle);
+      flex-shrink: 0;
+    }
+
+    .qa-review-rail-count {
+      margin-left: auto;
+      font-size: 0.6875rem;
+      color: var(--qa-ambient-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .qa-review-main {
+      min-width: 0;
+    }
+
+    .qa-review-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 1rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--qa-ambient-border);
+      font-size: var(--qa-text-size-meta);
+    }
+
+    .qa-review-filter-bar-label {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--qa-ambient-muted);
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .qa-review-filter-bar .qa-review-filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px 4px 10px;
+      border-radius: var(--qa-radius-pill);
+      background: var(--qa-selection-bg);
+      color: var(--qa-selection-text);
+      box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
+    }
+
+    .qa-review-filter-bar .qa-review-filter-chip-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--qa-radius-circle);
+      flex-shrink: 0;
+    }
+
+    .qa-review-filter-bar .qa-review-filter-chip button {
+      margin-left: 4px;
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-size: 0.875rem;
+      padding: 0 2px;
+      line-height: 1;
+      opacity: 0.7;
+    }
+
+    .qa-review-filter-bar .qa-review-filter-chip button:hover {
+      opacity: 1;
+    }
+
+    .qa-review-filter-bar-clear {
+      margin-left: auto;
+      border: none;
+      background: transparent;
+      color: var(--qa-ambient-muted);
+      cursor: pointer;
+      font-size: 0.8125rem;
+      text-decoration: underline;
+    }
+  }
+
+  /* ============================================================
+     FVR layout (Filtered Verse Review header + layout shell)
+     ============================================================ */
+  .qa-fvr-layout {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .qa-fvr-header {
+    position: relative;
+    max-width: 720px;
+    margin: 0 auto 14px;
+    padding: 38px 16px 14px;
+    border-bottom: 1px solid var(--qa-ambient-border);
+  }
+
+  .qa-fvr-back {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    font-size: 0.75rem;
+    color: var(--qa-ambient-dim);
+    text-decoration: none;
+  }
+
+  .qa-fvr-title-block {
+    text-align: center;
+  }
+
+  .qa-fvr-label {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    color: var(--qa-accent);
+    margin-bottom: 4px;
+  }
+
+  .qa-fvr-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--qa-ambient-parchment);
+    margin: 0 0 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .qa-fvr-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: var(--qa-radius-circle);
+  }
+
+  .qa-fvr-stats {
+    font-size: 0.75rem;
+    color: var(--qa-ambient-muted);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .qa-fvr-stats strong {
+    color: var(--qa-ambient-parchment);
+    font-weight: 700;
+  }
+
+  .qa-fvr-sep {
+    opacity: 0.4;
+  }
+
+  @media (min-width: 1180px) {
+    .qa-fvr-layout {
+      max-width: 1000px;
+    }
+
+    .qa-fvr-header {
+      max-width: 1000px;
+      padding: 56px 24px 22px;
+      margin-bottom: 22px;
+    }
+
+    .qa-fvr-label {
+      margin-bottom: 10px;
+    }
+
+    .qa-fvr-title {
+      font-size: 1.375rem;
+      margin-bottom: 18px;
+    }
+
+    .qa-fvr-stats {
+      font-size: 0.8125rem;
+      gap: 14px;
+    }
+  }
+
+  /* ============================================================
+     ReviewCard — single mark card (src/review/ReviewCard.svelte)
+     ============================================================ */
+  .qa-review-card {
+    padding: 13px;
+    border-radius: 11px;
+    border: 1px solid var(--qa-ambient-border);
+    background-color: var(--qa-ambient-surface);
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+
+  .qa-review-card-ref {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--qa-accent);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .qa-review-card-jump {
+    margin-left: auto;
+    color: var(--qa-ambient-dim);
+    text-decoration: none;
+    font-size: 0.875rem;
+    opacity: 0.6;
+  }
+
+  .qa-review-card-ar {
+    font-family: var(--qa-font-arabic);
+    direction: rtl;
+    text-align: right;
+    font-size: 1.0625rem;
+    line-height: 1.95;
+    color: var(--qa-ambient-parchment);
+    margin-bottom: 6px;
+  }
+
+  .qa-review-card-en {
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    color: var(--qa-ambient-muted);
+    margin-bottom: 8px;
+  }
+
+  .qa-review-card-note {
+    padding: 6px 9px;
+    border-radius: var(--qa-radius-sm);
+    border-left: 2px solid var(--qa-accent);
+    background-color: color-mix(in srgb, var(--qa-accent) 8%, transparent);
+    color: var(--qa-ambient-parchment);
+    font-style: italic;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    margin-bottom: 8px;
+  }
+
+  .qa-review-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .qa-review-card-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--qa-radius-pill);
+    background-color: var(--qa-selection-bg);
+    color: var(--qa-selection-text);
+    font-size: 0.6875rem;
+    text-decoration: none;
+  }
+
+  .qa-review-card-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--qa-radius-circle);
+  }
+}
