@@ -1,0 +1,56 @@
+/* ==========================================================================
+   Animations Layer
+
+   All @keyframes live here. Globally named qa-* — consumers reference by name
+   from any surface. Per-surface @keyframes forbidden post-migration.
+
+   Migrated from:
+     theme.css: qa-sheet-fade, qa-sheet-rise, qa-modal-scale-in
+     Reader.svelte: qa-skeleton-shimmer
+     VerseSpotlight.svelte: qa-spotlight-fade, qa-spotlight-pulse
+     AmbientDock.svelte: qa-qb-in
+   ========================================================================== */
+
+@layer animations {
+  @keyframes qa-sheet-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes qa-sheet-rise {
+    from { transform: translateY(20px); }
+    to   { transform: translateY(0); }
+  }
+
+  @media (min-width: 768px) {
+    @keyframes qa-sheet-rise {
+      from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; }
+      to   { transform: translate(-50%, -50%); opacity: 1; }
+    }
+  }
+
+  @keyframes qa-modal-scale-in {
+    from { transform: translate(-50%, -50%) scale(0.96); opacity: 0; }
+    to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+
+  @keyframes qa-skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+
+  @keyframes qa-spotlight-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes qa-spotlight-pulse {
+    0%, 100% { filter: brightness(1); }
+    50%      { filter: brightness(1.06); }
+  }
+
+  @keyframes qa-qb-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+}

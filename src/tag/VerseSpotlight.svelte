@@ -91,14 +91,6 @@
       inset 0 0 0 1.5px color-mix(in srgb, var(--qa-ambient-accent) 55%, transparent),
       0 0 32px color-mix(in srgb, var(--qa-ambient-accent) 22%, transparent);
   }
-  @keyframes qa-spotlight-fade {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes qa-spotlight-pulse {
-    0%, 100% { filter: brightness(1); }
-    50%      { filter: brightness(1.06); }
-  }
   @media (prefers-reduced-motion: reduce) {
     .qa-spotlight-hole { animation: none; }
   }

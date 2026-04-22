@@ -471,10 +471,6 @@
     height: 1rem;
     margin: 0.75rem 0;
   }
-  @keyframes qa-skeleton-shimmer {
-    from { background-position: 200% 0; }
-    to   { background-position: -200% 0; }
-  }
   @media (prefers-reduced-motion: reduce) {
     .qa-skeleton { animation: none; }
   }

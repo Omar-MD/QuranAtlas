@@ -1,0 +1,284 @@
+/* ==========================================================================
+   Design Tokens — Semantic
+
+   Role tokens prefixed --qa-*. Referenced by surface files (and by alias
+   shims for backward compatibility until each surface migrates).
+
+   Light defaults in :root. Sepia + dark define only what differs.
+   scripts/check-theme-parity.mjs enforces every override exists in :root.
+   ========================================================================== */
+
+@layer tokens {
+  :root {
+    color-scheme: light;
+
+    /* --- Surface --------------------------------------------------------- */
+    --qa-surface-app:          var(--c-parchment-50);
+    --qa-surface-raised:       var(--c-parchment-100);
+    --qa-surface-sheet:        var(--c-bronze-50);
+    --qa-surface-input:        var(--c-parchment-50);
+    --qa-surface-verse-hover:  var(--c-verse-hover-light);
+    --qa-surface-skeleton:     #e4e4e7;
+    --qa-surface-error:        var(--c-red-100);
+    --qa-surface-danger:       var(--c-danger-fill);
+
+    /* --- Text ------------------------------------------------------------ */
+    --qa-text-primary:    var(--c-bronze-900);
+    --qa-text-muted:      #5a4d38;
+    --qa-text-dim:        var(--c-bronze-500);
+    --qa-text-arabic:     #1a1a1a;
+    --qa-text-accent:     var(--c-bronze-500);
+    --qa-text-on-accent:  var(--c-bronze-50);
+    --qa-text-kbd:        var(--c-bronze-600);
+    --qa-text-error:      var(--c-red-700);
+    --qa-text-danger:     var(--c-danger-light);
+
+    /* --- On-sheet family (used ONLY inside context-root in sheet.css) --- */
+    --qa-text-on-sheet:        var(--c-bronze-800);
+    --qa-text-on-sheet-muted:  #4a3a1e;
+    --qa-text-on-sheet-dim:    #6b4f28;
+    --qa-border-on-sheet:      var(--c-bronze-200);
+
+    /* --- Border ---------------------------------------------------------- */
+    --qa-border-subtle:   var(--c-parchment-300);
+    --qa-border-default:  var(--c-parchment-400);
+    --qa-border-strong:   var(--c-bronze-200);
+    --qa-border-accent:   var(--c-bronze-500);
+    --qa-border-error:    var(--c-red-300);
+    --qa-border-danger:   var(--c-danger-fill);
+
+    /* --- Accent ---------------------------------------------------------- */
+    --qa-accent:        var(--c-bronze-500);
+    --qa-accent-hover:  var(--c-bronze-700);
+    --qa-accent-soft:   var(--c-accent-soft-light);
+
+    /* --- Selection + focus ---------------------------------------------- */
+    --qa-selection-bg:     var(--c-selection-light);
+    --qa-selection-text:   var(--qa-accent);
+    --qa-selection-ring:   color-mix(in srgb, var(--qa-accent) 35%, transparent);
+    --qa-focus-ring:       var(--qa-accent);
+    --qa-focus-ring-width: var(--fp-ring-width);
+    --qa-focus-ring-offset: var(--fp-ring-offset);
+
+    /* --- Scrim ----------------------------------------------------------- */
+    --qa-scrim: var(--c-scrim-light);
+
+    /* --- Elevation ------------------------------------------------------- */
+    --qa-elevation-sm:      var(--sh-sm);
+    --qa-elevation-md:      var(--sh-md);
+    --qa-elevation-lg:      var(--sh-lg);
+    --qa-elevation-sheet:   var(--sh-sheet);
+    --qa-elevation-popover: var(--sh-popover);
+
+    /* --- Typography ------------------------------------------------------ */
+    --qa-font-arabic:      var(--ff-arabic);
+    --qa-font-translation: var(--ff-translation);
+    --qa-font-ui:          var(--ff-sans);
+    --qa-font-mono:        var(--ff-mono);
+    --qa-text-size-arabic:      var(--fs-arabic);
+    --qa-text-size-translation: var(--fs-translation);
+    --qa-text-size-ui:          var(--fs-md);
+    --qa-text-size-meta:        var(--fs-base);
+    --qa-line-height-arabic:      var(--lh-loose);
+    --qa-line-height-translation: var(--lh-relaxed);
+    --qa-line-height-ui:          var(--lh-base);
+    --qa-font-size-base: 1;
+
+    /* --- Spacing pass-through ------------------------------------------- */
+    --qa-space-0:  var(--s-0);
+    --qa-space-1:  var(--s-1);
+    --qa-space-2:  var(--s-2);
+    --qa-space-3:  var(--s-3);
+    --qa-space-4:  var(--s-4);
+    --qa-space-5:  var(--s-5);
+    --qa-space-6:  var(--s-6);
+    --qa-space-7:  var(--s-7);
+    --qa-space-8:  var(--s-8);
+    --qa-space-9:  var(--s-9);
+    --qa-space-10: var(--s-10);
+
+    /* --- Radius (role-named) -------------------------------------------- */
+    --qa-radius-chip:     var(--r-xs);
+    --qa-radius-button:   var(--r-md);
+    --qa-radius-card:     var(--r-lg);
+    --qa-radius-sheet:    var(--r-2xl);
+    --qa-radius-modal:    var(--r-xl);
+    --qa-radius-hairline: var(--r-xs);
+    --qa-radius-pill:     var(--r-pill);
+    --qa-radius-circle:   var(--r-circle);
+
+    /* --- Z-index --------------------------------------------------------- */
+    --qa-z-raised:         var(--zp-raised);
+    --qa-z-overlay-local:  var(--zp-overlay-local);
+    --qa-z-chrome:         var(--zp-chrome);
+    --qa-z-overlay:        var(--zp-overlay);
+    --qa-z-sheet-backdrop: var(--zp-sheet-backdrop);
+    --qa-z-sheet:          var(--zp-sheet);
+    --qa-z-toast:          var(--zp-toast);
+    --qa-z-skip-link:      var(--zp-skip-link);
+
+    /* --- Tag palette (hash-based) --------------------------------------- */
+    --qa-tag-0:  var(--c-tag-light-0);
+    --qa-tag-1:  var(--c-tag-light-1);
+    --qa-tag-2:  var(--c-tag-light-2);
+    --qa-tag-3:  var(--c-tag-light-3);
+    --qa-tag-4:  var(--c-tag-light-4);
+    --qa-tag-5:  var(--c-tag-light-5);
+    --qa-tag-6:  var(--c-tag-light-6);
+    --qa-tag-7:  var(--c-tag-light-7);
+    --qa-tag-8:  var(--c-tag-light-8);
+    --qa-tag-9:  var(--c-tag-light-9);
+    --qa-tag-10: var(--c-tag-light-10);
+    --qa-tag-11: var(--c-tag-light-11);
+    --qa-tag-default: var(--c-tag-default-light);
+
+    /* --- Tag layers ----------------------------------------------------- */
+    --qa-tag-layer-speech:    var(--c-tag-light-0);
+    --qa-tag-layer-narrative: var(--c-tag-light-4);
+    --qa-tag-layer-themes:    var(--c-tag-light-5);
+    --qa-tag-layer-entities:  var(--c-tag-light-10);
+
+    /* --- Misc ----------------------------------------------------------- */
+    --qa-touch-min:             var(--tp-min);
+    --qa-blur-sm:               var(--blur-sm);
+    --qa-blur-md:               var(--blur-md);
+    --qa-shadow-spread-infinite: var(--sh-spread-infinite);
+    --qa-bp-tablet:  var(--bp-tablet);
+    --qa-bp-desktop: var(--bp-desktop);
+
+    /* =====================================================================
+       ALIAS SHIMS — keep pre-migration --qa-* names resolving until each
+       surface PR retires its consumers. Every entry here is scheduled for
+       removal in the corresponding surface PR (2–13).
+       ==================================================================== */
+    --qa-bg-primary:       var(--qa-surface-app);
+    --qa-bg-secondary:     var(--qa-surface-raised);
+    --qa-bg-surface:       var(--qa-surface-input);
+    --qa-text-secondary:   var(--qa-text-muted);
+    --qa-border:           var(--qa-border-default);
+    --qa-verse-hover-bg:   var(--qa-surface-verse-hover);
+    --qa-skeleton:         var(--qa-surface-skeleton);
+    --qa-bg-error:         var(--qa-surface-error);
+    --qa-color-error:      var(--qa-text-error);
+    --qa-on-accent:        var(--qa-text-on-accent);
+    --qa-ambient-accent:         var(--qa-accent);
+    --qa-ambient-accent-soft:    var(--qa-accent-soft);
+    --qa-ambient-kbd-color:      var(--qa-text-kbd);
+    --qa-ambient-parchment:      var(--qa-text-on-sheet);
+    --qa-ambient-muted:          var(--qa-text-on-sheet-muted);
+    --qa-ambient-dim:            var(--qa-text-on-sheet-dim);
+    --qa-ambient-surface:        var(--qa-surface-sheet);
+    --qa-ambient-border:         var(--qa-border-on-sheet);
+    --qa-ambient-scrim:          var(--qa-scrim);
+    --qa-ambient-sheet-radius:   var(--qa-radius-sheet);
+    --qa-ambient-pill-radius:    var(--qa-radius-pill);
+    --qa-ambient-elevation:      var(--qa-elevation-lg);
+    --qa-radius-xs:  var(--r-xs);
+    --qa-radius-sm:  var(--r-sm);
+    --qa-radius-md:  var(--r-md);
+    --qa-radius-lg:  var(--r-lg);
+    --qa-radius-xl:  var(--r-xl);
+    --qa-radius-2xl: var(--r-xl);
+    --qa-radius-3xl: var(--r-xl);
+    --qa-radius-4xl: var(--r-2xl);
+    --qa-radius-5xl: var(--r-2xl);
+    --qa-shadow-sm:      var(--sh-sm);
+    --qa-shadow-md:      var(--sh-md);
+    --qa-shadow-lg:      var(--sh-lg);
+    --qa-shadow-sheet:   var(--sh-sheet);
+    --qa-shadow-popover: var(--sh-popover);
+    --qa-danger-fg:     var(--qa-text-danger);
+    --qa-danger-bg:     var(--qa-surface-danger);
+    --qa-danger-border: var(--qa-border-danger);
+    --qa-backdrop-blur-sm: var(--qa-blur-sm);
+    --qa-backdrop-blur-md: var(--qa-blur-md);
+    --qa-focus-ring-color: var(--qa-focus-ring);
+    --lh-speech:    var(--qa-tag-layer-speech);
+    --lh-narrative: var(--qa-tag-layer-narrative);
+    --lh-themes:    var(--qa-tag-layer-themes);
+    --lh-entities:  var(--qa-tag-layer-entities);
+    --qa-font-sans: var(--qa-font-ui);
+  }
+
+  /* Stepped chrome — reading tokens stay fluid via clamp() above. */
+  @media (min-width: 768px) {
+    :root {
+      --qa-text-size-ui:   1.0625rem;
+      --qa-text-size-meta: 0.9375rem;
+    }
+  }
+
+  @media (min-width: 1180px) {
+    :root {
+      --qa-text-size-ui:   var(--fs-lg);
+      --qa-text-size-meta: var(--fs-md);
+    }
+  }
+
+  /* --------------------- SEPIA theme --------------------- */
+  html[data-theme="sepia"] {
+    color-scheme: light;
+
+    --qa-surface-app:        var(--c-sepia-50);
+    --qa-surface-raised:     var(--c-sepia-100);
+    --qa-surface-input:      var(--c-sepia-50);
+    --qa-surface-verse-hover: var(--c-verse-hover-sepia);
+    --qa-surface-skeleton:   #e2d1b3;
+    --qa-surface-error:      #fdf3e7;
+    --qa-border-subtle:      var(--c-sepia-300);
+    --qa-border-default:     var(--c-sepia-400);
+    --qa-border-error:       #c07842;
+    --qa-text-error:         #7a3520;
+  }
+
+  /* --------------------- DARK theme ---------------------- */
+  html[data-theme="dark"] {
+    color-scheme: dark;
+
+    --qa-surface-app:        var(--c-ink-900);
+    --qa-surface-raised:     var(--c-ink-800);
+    --qa-surface-sheet:      var(--c-ink-950);
+    --qa-surface-input:      var(--c-ink-900);
+    --qa-surface-verse-hover: var(--c-verse-hover-dark);
+    --qa-surface-skeleton:   #2e2e2e;
+    --qa-surface-error:      var(--c-red-900);
+    --qa-text-primary:       var(--c-ink-100);
+    --qa-text-muted:         var(--c-ink-200);
+    --qa-text-dim:           #8da7b5;
+    --qa-text-arabic:        var(--c-ink-50);
+    --qa-text-error:         #fca5a5;
+    --qa-text-danger:        var(--c-danger-dark);
+    --qa-text-kbd:           var(--c-amber-300);
+    --qa-text-on-accent:     #15110a;
+    --qa-text-on-sheet:       #c8d4de;
+    --qa-text-on-sheet-muted: #9bb0be;
+    --qa-text-on-sheet-dim:   #8da7b5;
+    --qa-border-on-sheet:     #2a323b;
+    --qa-border-subtle:      #1d2328;
+    --qa-border-default:     var(--c-ink-700);
+    --qa-border-error:       var(--c-red-950);
+    --qa-accent:             var(--c-amber-400);
+    --qa-accent-hover:       var(--c-amber-300);
+    --qa-accent-soft:        var(--c-accent-soft-dark);
+    --qa-scrim:              var(--c-scrim-dark);
+    --qa-elevation-lg:       var(--sh-dark-lg);
+    --qa-selection-bg:       var(--qa-accent-soft);
+    --qa-tag-0:  var(--c-tag-dark-0);
+    --qa-tag-1:  var(--c-tag-dark-1);
+    --qa-tag-2:  var(--c-tag-dark-2);
+    --qa-tag-3:  var(--c-tag-dark-3);
+    --qa-tag-4:  var(--c-tag-dark-4);
+    --qa-tag-5:  var(--c-tag-dark-5);
+    --qa-tag-6:  var(--c-tag-dark-6);
+    --qa-tag-7:  var(--c-tag-dark-7);
+    --qa-tag-8:  var(--c-tag-dark-8);
+    --qa-tag-9:  var(--c-tag-dark-9);
+    --qa-tag-10: var(--c-tag-dark-10);
+    --qa-tag-11: var(--c-tag-dark-11);
+    --qa-tag-default: var(--c-tag-default-dark);
+    --qa-tag-layer-speech:    var(--c-tag-dark-0);
+    --qa-tag-layer-narrative: var(--c-tag-dark-4);
+    --qa-tag-layer-themes:    var(--c-tag-dark-5);
+    --qa-tag-layer-entities:  var(--c-tag-dark-10);
+  }
+}
