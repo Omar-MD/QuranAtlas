@@ -11,11 +11,15 @@
 // Number of verses appended per chunk. Balances render time vs DOM size.
 export const CHUNK_SIZE = 50
 
+import { findScrollAncestor } from './scroll-ancestor'
+
 /**
- * Attach a scroll listener to `container` that calls `appendChunk` when the
- * user is within one viewport height of the bottom.
+ * Attach a scroll listener to the nearest scrolling ancestor of `container`
+ * that calls `appendChunk` when the user is within one viewport height of the
+ * bottom. Scroll events do NOT bubble, so the listener must bind to the
+ * element that actually scrolls (commonly `#main-content` in this app).
  *
- * @param container    - The scrollable reader container.
+ * @param container    - The rendered verses host element.
  * @param appendChunk  - Called with no arguments when more verses should load.
  * @returns A cleanup function that removes the listener.
  */
@@ -27,6 +31,11 @@ export function setupChunkedAppend(
     return () => {}
   }
 
+  const scroller = findScrollAncestor(container, { requireOverflowing: true })
+  if (!scroller) {
+    return () => {}
+  }
+
   let rafPending = false
 
   const onScroll = () => {
@@ -34,15 +43,15 @@ export function setupChunkedAppend(
       rafPending = true
       requestAnimationFrame(() => {
         rafPending = false
-        handleScrollAppend(container, appendChunk)
+        handleScrollAppend(scroller, appendChunk)
       })
     }
   }
 
-  container.addEventListener('scroll', onScroll, { passive: true })
+  scroller.addEventListener('scroll', onScroll, { passive: true })
 
   return () => {
-    container.removeEventListener('scroll', onScroll)
+    scroller.removeEventListener('scroll', onScroll)
   }
 }
 

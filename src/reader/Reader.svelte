@@ -14,6 +14,7 @@
   import { clearUndoToast, clearUndoRecord } from '../core/ui-bridge'
   import { setupChunkedAppend, CHUNK_SIZE } from './chunked-append'
   import { initPositionTracking, teardownPositionTracking, savePosition } from './position'
+  import { observeNewVerses } from './scroll-tracker'
   import { isValidSurahNum } from './render-helpers'
 
   // ---------------------------------------------------------------------------
@@ -76,6 +77,7 @@
   function appendChunk() {
     if (!surahData || renderedCount >= surahData.ar.length) { return }
     const nextEnd = Math.min(renderedCount + CHUNK_SIZE, surahData.ar.length)
+    const firstNewVerseNum = renderedCount + 1
     const newItems: VerseItem[] = []
     for (let i = renderedCount; i < nextEnd; i++) {
       newItems.push({
@@ -86,6 +88,22 @@
     }
     verses = [...verses, ...newItems]
     renderedCount = nextEnd
+
+    // Register the newly-appended verses with the scroll tracker so the
+    // center-band IntersectionObserver fires on them as the user scrolls
+    // past. Without this, only verses from the first chunk would ever update
+    // the saved position. Runs after Svelte flushes the new DOM nodes.
+    if (container) {
+      requestAnimationFrame(() => {
+        if (!container) { return }
+        const els: HTMLElement[] = []
+        for (let n = firstNewVerseNum; n <= nextEnd; n++) {
+          const el = container.querySelector<HTMLElement>(`[data-verse="${n}"]`)
+          if (el) { els.push(el) }
+        }
+        if (els.length > 0) { observeNewVerses(els) }
+      })
+    }
   }
 
   /**
@@ -116,10 +134,13 @@
     const initialVerseSafe = Number.isFinite(initialVerse) ? initialVerse : 1
     reader.currentVerseKey = `${surahNum}:${initialVerseSafe}`
 
-    // Persist an initial position record so other surfaces (surah list
-    // continue-reading card, ambient pill, etc.) can discover the last-visited
-    // reader location even if the user never scrolls.
-    void savePosition(surahNum, initialVerseSafe)
+    // Deep link (#/s/N/V) → persist that verse immediately so other surfaces
+    // pick it up even if the user never scrolls. Plain #/s/N must NOT write
+    // — it would clobber a previously saved scroll position with verse 1 and
+    // cause the reader to jump back to the top on navigate-away-and-back.
+    if (ayahParam) {
+      void savePosition(surahNum, initialVerseSafe)
+    }
 
     void loadSurah()
 
@@ -176,10 +197,26 @@
       const posVerse = typeof pos?.verse === 'number' ? pos.verse : null
       savedPosition = posVerse ? { verse: posVerse } : null
 
+      // First-visit seed: if no prior record exists, write verse 1 so other
+      // surfaces (continue-reading card, ambient pill) can surface this surah
+      // even if the user never scrolls. Subsequent visits preserve the real
+      // saved position — see the onMount comment.
+      if (posVerse === null && !ayahParam) {
+        void savePosition(surahNum, 1)
+      }
+
       // Render first chunk
       verses = []
       renderedCount = 0
       appendChunk()
+
+      // Reset scroll to top of the app-shell scroller. Browsers preserve
+      // scrollTop across hash-route changes; without this, remounting the
+      // reader with a shorter first-chunk document causes the browser to
+      // clamp the stale scrollTop to the new content height — user briefly
+      // sees the end of chunk 1 before the position-restore scroll runs.
+      const shellScroller = document.getElementById('main-content')
+      if (shellScroller) { shellScroller.scrollTop = 0 }
 
       reader.currentSurah = surahData
 
@@ -191,6 +228,7 @@
 
         const posCleanups = initPositionTracking({
           mainContent: container,
+          scroller: document.getElementById('main-content') ?? undefined,
           surahNum,
           shouldSavePosition: true,
           surahMeta: surahMeta ?? undefined,
