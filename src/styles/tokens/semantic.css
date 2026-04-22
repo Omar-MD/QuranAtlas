@@ -215,7 +215,7 @@
   /* Stepped chrome — reading tokens stay fluid via clamp() above. */
   @media (min-width: 768px) {
     :root {
-      --qa-text-size-ui:   var(--fs-lg);
+      --qa-text-size-ui:   1.0625rem;
       --qa-text-size-meta: 0.9375rem;
     }
   }
