@@ -11,6 +11,8 @@
 // Number of verses appended per chunk. Balances render time vs DOM size.
 export const CHUNK_SIZE = 50
 
+import { findScrollAncestor } from './scroll-ancestor'
+
 /**
  * Attach a scroll listener to the nearest scrolling ancestor of `container`
  * that calls `appendChunk` when the user is within one viewport height of the
@@ -29,7 +31,7 @@ export function setupChunkedAppend(
     return () => {}
   }
 
-  const scroller = findScrollAncestor(container)
+  const scroller = findScrollAncestor(container, { requireOverflowing: true })
   if (!scroller) {
     return () => {}
   }
@@ -51,24 +53,6 @@ export function setupChunkedAppend(
   return () => {
     scroller.removeEventListener('scroll', onScroll)
   }
-}
-
-/**
- * Walk up from `el` looking for an ancestor whose overflow-y is `auto` or
- * `scroll` AND whose scrollHeight > clientHeight. Returns the scroller or null.
- */
-function findScrollAncestor(el: HTMLElement): HTMLElement | null {
-  let cur: HTMLElement | null = el
-  while (cur && cur !== document.body && cur !== document.documentElement) {
-    const style = getComputedStyle(cur)
-    const oy = style.overflowY
-    if ((oy === 'auto' || oy === 'scroll') && cur.scrollHeight > cur.clientHeight) {
-      return cur
-    }
-    cur = cur.parentElement
-  }
-  // Fallback: known app-shell scroll host.
-  return document.getElementById('main-content')
 }
 
 /**
