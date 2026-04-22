@@ -1,0 +1,78 @@
+/**
+ * modal — shared centered-modal chrome: backdrop, container, actions row,
+ * plus the .qa-input field variant and .qa-warning-text used in modal bodies.
+ * Consumers: settings/ClearDataConfirm.svelte, settings/clear-data.ts.
+ *
+ * Context-scoped token inheritance root (mirrors .qa-sheet overrides).
+ */
+@layer surfaces {
+  .qa-modal,
+  .qa-modal-backdrop {
+    --qa-text-primary:   var(--qa-text-on-sheet);
+    --qa-text-muted:     var(--qa-text-on-sheet-muted);
+    --qa-text-dim:       var(--qa-text-on-sheet-dim);
+    --qa-border-default: var(--qa-border-on-sheet);
+  }
+
+  .qa-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgb(0 0 0 / 50%);
+    z-index: var(--qa-z-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(var(--qa-blur-sm));
+  }
+
+  .qa-modal {
+    background: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-default);
+    border-radius: var(--qa-radius-sheet);
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--qa-elevation-lg);
+  }
+
+  .qa-modal h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--qa-text-primary);
+  }
+
+  .qa-modal p {
+    font-size: var(--qa-text-size-ui);
+    color: var(--qa-text-muted);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .qa-warning-text {
+    color: var(--qa-text-error);
+    font-weight: 600;
+  }
+
+  .qa-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--qa-border-default);
+    border-radius: var(--qa-radius-button);
+    background: var(--qa-surface-app);
+    color: var(--qa-text-primary);
+    font-size: var(--qa-text-size-ui);
+    margin-bottom: 1rem;
+  }
+
+  .qa-input:focus-visible {
+    outline: var(--qa-focus-ring-width) solid var(--qa-focus-ring);
+    border-color: var(--qa-focus-ring);
+  }
+
+  .qa-modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+}
