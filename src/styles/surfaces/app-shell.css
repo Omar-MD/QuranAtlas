@@ -105,9 +105,14 @@
       pointer-events: none;
     }
 
-    /* Reader column cap — the only `:has()` selector in the codebase. */
+    /* Reader column cap — `:has()` selectors restricted to this file per spec. */
     #main-content:has(.qa-verse) {
       max-width: 960px;
+    }
+
+    /* About page column — wider than Reader cap for stat-grid + body-split. */
+    #main-content:has(> .qa-about-heading) {
+      max-width: 1000px;
     }
   }
 }
