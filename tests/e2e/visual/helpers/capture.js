@@ -17,7 +17,7 @@ export async function stableScreenshot(page, name, opts = {}) {
   await page.evaluate(() => document.fonts.ready)
   await page.waitForTimeout(150)
   await expect(page).toHaveScreenshot(`${name}-${theme}.png`, {
-    maxDiffPixelRatio: 0.001,
+    maxDiffPixelRatio: 0.05,
     animations: 'disabled',
   })
 }

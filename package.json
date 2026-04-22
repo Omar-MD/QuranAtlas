@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:sw": "PLAYWRIGHT_USE_PREVIEW=1 playwright test tests/e2e/sw-integration.spec.js",
+    "test:e2e:visual": "playwright test --project=visual",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "lint:css": "stylelint 'src/styles/**/*.css'",
