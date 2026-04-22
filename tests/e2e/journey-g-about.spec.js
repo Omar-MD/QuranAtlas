@@ -114,9 +114,39 @@ test.describe('Journey G: About', () => {
   // G2. Install PWA — not testable in Playwright
   // ---------------------------------------------------------------------------
 
-  test.skip('G2: PWA install button triggers installation prompt', async () => {
-    // Not testable in Playwright — beforeinstallprompt cannot be faked.
-    // Manual QA only.
+  test('G2: PWA install button triggers installation prompt', async ({ page }) => {
+    // The initInstallListener in app-bootstrap listens for
+    // `beforeinstallprompt` and stores the event as the deferred prompt.
+    // Dispatch a synthetic event with the same shape after app boot but
+    // BEFORE navigating to #/about — About.svelte reads getInstallPrompt()
+    // at mount time to decide whether to render the Install button.
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.waitForFunction(() => typeof window.__qaSuppressNextVersionChange === 'function')
+
+    await page.evaluate(() => {
+      const ev = new Event('beforeinstallprompt', { cancelable: true })
+      // BeforeInstallPromptEvent shape consumed by pwa-install.ts
+      Object.assign(ev, {
+        prompt: () => {},
+        userChoice: Promise.resolve({ outcome: 'accepted' }),
+      })
+      window.dispatchEvent(ev)
+    })
+
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 8_000 })
+
+    const installBtn = page.locator('.qa-about-install-btn')
+    await expect(installBtn).toBeVisible()
+    await expect(installBtn).toHaveText('Install App')
+    await expect(installBtn).toBeEnabled()
+
+    await installBtn.click()
+
+    await expect(installBtn).toHaveText('Installed!', { timeout: 3_000 })
+    await expect(installBtn).toBeDisabled()
   })
 
   // ---------------------------------------------------------------------------
