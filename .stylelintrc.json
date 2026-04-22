@@ -78,6 +78,13 @@
         "selector-max-type": 1,
         "font-family-name-quotes": null
       }
+    },
+    {
+      "files": ["src/styles/surfaces/nav.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "selector-no-qualifying-type": null
+      }
     }
   ]
 }

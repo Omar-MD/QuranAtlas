@@ -24,10 +24,25 @@ function walk(dir, exts) {
 
 export function checkTokenUsage({ semantic, surfaceFiles }) {
   // Global declared set — from token CSS sources passed via `semantic`
-  // (caller may concatenate primitives + motion + semantic).
+  // (caller may concatenate primitives + motion + semantic). Also include
+  // any `style:--X={...}` directives found in Svelte files, since those set
+  // custom properties that global CSS can legitimately `var(--X)` against.
   const globalDeclared = new Set()
   for (const m of semantic.matchAll(/--(qa-[a-zA-Z0-9-]+)\s*:/g)) {
     globalDeclared.add(m[1])
+  }
+  for (const { path, content } of surfaceFiles) {
+    if (!path.endsWith('.svelte')) continue
+    // Svelte files may set custom properties via style:--X={} directive or
+    // `style="--X: …"` / `style={`--X: …`}` attribute forms. Any --qa-X: or
+    // style:--qa-X= appearing in a .svelte file is a legitimate declaration
+    // that global surface CSS can legitimately consume via var(--qa-X).
+    for (const m of content.matchAll(/style:--(qa-[a-zA-Z0-9-]+)\s*=/g)) {
+      globalDeclared.add(m[1])
+    }
+    for (const m of content.matchAll(/--(qa-[a-zA-Z0-9-]+)\s*:/g)) {
+      globalDeclared.add(m[1])
+    }
   }
 
   const errors = []
