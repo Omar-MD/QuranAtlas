@@ -75,16 +75,13 @@
     --qa-font-translation: var(--ff-translation);
     --qa-font-ui:          var(--ff-sans);
     --qa-font-mono:        var(--ff-mono);
-
     --qa-text-size-arabic:      var(--fs-arabic);
     --qa-text-size-translation: var(--fs-translation);
     --qa-text-size-ui:          var(--fs-md);
     --qa-text-size-meta:        var(--fs-base);
-
     --qa-line-height-arabic:      var(--lh-loose);
     --qa-line-height-translation: var(--lh-relaxed);
     --qa-line-height-ui:          var(--lh-base);
-
     --qa-font-size-base: 1;
 
     /* --- Spacing pass-through ------------------------------------------- */
@@ -146,7 +143,6 @@
     --qa-blur-sm:               var(--blur-sm);
     --qa-blur-md:               var(--blur-md);
     --qa-shadow-spread-infinite: var(--sh-spread-infinite);
-
     --qa-bp-tablet:  var(--bp-tablet);
     --qa-bp-desktop: var(--bp-desktop);
 
@@ -165,7 +161,6 @@
     --qa-bg-error:         var(--qa-surface-error);
     --qa-color-error:      var(--qa-text-error);
     --qa-on-accent:        var(--qa-text-on-accent);
-
     --qa-ambient-accent:         var(--qa-accent);
     --qa-ambient-accent-soft:    var(--qa-accent-soft);
     --qa-ambient-kbd-color:      var(--qa-text-kbd);
@@ -178,7 +173,6 @@
     --qa-ambient-sheet-radius:   var(--qa-radius-sheet);
     --qa-ambient-pill-radius:    var(--qa-radius-pill);
     --qa-ambient-elevation:      var(--qa-elevation-lg);
-
     --qa-radius-xs:  var(--r-xs);
     --qa-radius-sm:  var(--r-sm);
     --qa-radius-md:  var(--r-md);
@@ -188,27 +182,21 @@
     --qa-radius-3xl: var(--r-xl);
     --qa-radius-4xl: var(--r-2xl);
     --qa-radius-5xl: var(--r-2xl);
-
     --qa-shadow-sm:      var(--sh-sm);
     --qa-shadow-md:      var(--sh-md);
     --qa-shadow-lg:      var(--sh-lg);
     --qa-shadow-sheet:   var(--sh-sheet);
     --qa-shadow-popover: var(--sh-popover);
-
     --qa-danger-fg:     var(--qa-text-danger);
     --qa-danger-bg:     var(--qa-surface-danger);
     --qa-danger-border: var(--qa-border-danger);
-
     --qa-backdrop-blur-sm: var(--qa-blur-sm);
     --qa-backdrop-blur-md: var(--qa-blur-md);
-
     --qa-focus-ring-color: var(--qa-focus-ring);
-
     --lh-speech:    var(--qa-tag-layer-speech);
     --lh-narrative: var(--qa-tag-layer-narrative);
     --lh-themes:    var(--qa-tag-layer-themes);
     --lh-entities:  var(--qa-tag-layer-entities);
-
     --qa-font-sans: var(--qa-font-ui);
   }
 
@@ -219,6 +207,7 @@
       --qa-text-size-meta: 0.9375rem;
     }
   }
+
   @media (min-width: 1180px) {
     :root {
       --qa-text-size-ui:   var(--fs-lg);
@@ -236,11 +225,9 @@
     --qa-surface-verse-hover: var(--c-verse-hover-sepia);
     --qa-surface-skeleton:   #e2d1b3;
     --qa-surface-error:      #fdf3e7;
-
     --qa-border-subtle:      var(--c-sepia-300);
     --qa-border-default:     var(--c-sepia-400);
     --qa-border-error:       #c07842;
-
     --qa-text-error:         #7a3520;
   }
 
@@ -255,7 +242,6 @@
     --qa-surface-verse-hover: var(--c-verse-hover-dark);
     --qa-surface-skeleton:   #2e2e2e;
     --qa-surface-error:      var(--c-red-900);
-
     --qa-text-primary:       var(--c-ink-100);
     --qa-text-muted:         var(--c-ink-200);
     --qa-text-dim:           #8da7b5;
@@ -264,25 +250,19 @@
     --qa-text-danger:        var(--c-danger-dark);
     --qa-text-kbd:           var(--c-amber-300);
     --qa-text-on-accent:     #15110a;
-
     --qa-text-on-sheet:       #c8d4de;
     --qa-text-on-sheet-muted: #9bb0be;
     --qa-text-on-sheet-dim:   #8da7b5;
     --qa-border-on-sheet:     #2a323b;
-
     --qa-border-subtle:      #1d2328;
     --qa-border-default:     var(--c-ink-700);
     --qa-border-error:       var(--c-red-950);
-
     --qa-accent:             var(--c-amber-400);
     --qa-accent-hover:       var(--c-amber-300);
     --qa-accent-soft:        var(--c-accent-soft-dark);
-
     --qa-scrim:              var(--c-scrim-dark);
     --qa-elevation-lg:       var(--sh-dark-lg);
-
     --qa-selection-bg:       var(--qa-accent-soft);
-
     --qa-tag-0:  var(--c-tag-dark-0);
     --qa-tag-1:  var(--c-tag-dark-1);
     --qa-tag-2:  var(--c-tag-dark-2);
@@ -296,7 +276,6 @@
     --qa-tag-10: var(--c-tag-dark-10);
     --qa-tag-11: var(--c-tag-dark-11);
     --qa-tag-default: var(--c-tag-default-dark);
-
     --qa-tag-layer-speech:    var(--c-tag-dark-0);
     --qa-tag-layer-narrative: var(--c-tag-dark-4);
     --qa-tag-layer-themes:    var(--c-tag-dark-5);

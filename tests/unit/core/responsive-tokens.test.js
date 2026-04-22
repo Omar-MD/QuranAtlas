@@ -86,7 +86,8 @@ describe('styles — responsive breakpoint tokens', () => {
     // The .qa-sheet centered-modal rules must live in a 768px block now.
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /\.qa-sheet\s*\{[^}]*top:\s*50%/.test(b[1]) &&
+      // Accept both split positioning (top: 50%) and shorthand inset.
+      (/\.qa-sheet\s*\{[^}]*top:\s*50%/.test(b[1]) || /\.qa-sheet\s*\{[^}]*inset:\s*50%/.test(b[1])) &&
       /\.qa-sheet\s*\{[^}]*width:\s*min\(480px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
     )
     expect(hit, 'expected sheet-centered-modal rules under min-width: 768px').toBeDefined()

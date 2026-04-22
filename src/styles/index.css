@@ -18,11 +18,11 @@
 
 @layer reset, tokens, base, animations, utilities, surfaces, overrides;
 
-@import './reset.css';
-@import './tokens/primitives.css';
-@import './tokens/motion.css';
-@import './tokens/semantic.css';
-@import './base.css';
-@import './animations.css';
-@import './utilities.css';
-@import './surfaces/_legacy.css';
+@import url('./reset.css');
+@import url('./tokens/primitives.css');
+@import url('./tokens/motion.css');
+@import url('./tokens/semantic.css');
+@import url('./base.css');
+@import url('./animations.css');
+@import url('./utilities.css');
+@import url('./surfaces/_legacy.css');

@@ -28,6 +28,7 @@
     min-height: 0;
     padding: 0;
   }
+
   #top-bar > * {
     pointer-events: auto;
   }
@@ -77,6 +78,7 @@
       box-shadow: none;
       transition: opacity var(--qa-transition-base);
     }
+
     #bottom-nav.qa-dock--hidden {
       opacity: 0;
       pointer-events: none;
@@ -142,7 +144,7 @@
   .qa-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgb(0 0 0 / 50%);
     z-index: 300;
     display: flex;
     align-items: center;
@@ -209,12 +211,7 @@
     /* App shell: single-column grid; dock + pill + command sheet carry all nav */
     #app-shell {
       display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr auto;
-      grid-template-areas:
-        "topbar"
-        "main"
-        "footer";
+      grid-template: "topbar" auto "main" 1fr "footer" auto / 1fr;
     }
 
     #top-bar {
@@ -235,6 +232,7 @@
     #app-shell {
       padding-left: 56px;
     }
+
     #main-content {
       padding: 2rem 3rem;
       max-width: 1180px;
@@ -258,8 +256,8 @@
     inset: 0;
     z-index: calc(var(--qa-z-sheet) - 1);
     background-color: var(--qa-ambient-scrim);
-    backdrop-filter: blur(var(--qa-backdrop-blur-md));
     -webkit-backdrop-filter: blur(var(--qa-backdrop-blur-md));
+    backdrop-filter: blur(var(--qa-backdrop-blur-md));
     opacity: 1;
     animation: qa-sheet-fade var(--qa-transition-base) forwards;
   }
@@ -283,10 +281,7 @@
 
   @media (min-width: 768px) {
     .qa-sheet {
-      left: 50%;
-      right: auto;
-      bottom: auto;
-      top: 50%;
+      inset: 50% auto auto 50%;
       transform: translate(-50%, -50%);
       width: min(480px, calc(100vw - 32px));
       max-height: min(720px, 86vh);
@@ -310,6 +305,7 @@
     border-bottom: 1px solid var(--qa-ambient-border);
     flex-shrink: 0;
   }
+
   .qa-sheet-title {
     font-size: 0.9375rem;
     font-weight: 700;
@@ -317,6 +313,7 @@
     flex: 1;
     text-align: center;
   }
+
   .qa-sheet-back {
     border: none;
     background: transparent;
@@ -325,6 +322,7 @@
     cursor: pointer;
     padding: 4px 6px;
   }
+
   .qa-sheet-close {
     border: none;
     background: transparent;
@@ -334,6 +332,7 @@
     padding: 4px 6px;
     line-height: 1;
   }
+
   .qa-sheet-body {
     flex: 1;
     overflow-y: auto;
@@ -356,6 +355,7 @@
     font: inherit;
   }
   .qa-sheet-row:last-child { border-bottom: none; }
+
   .qa-sheet-row-icon {
     width: 28px;
     text-align: center;
@@ -366,13 +366,14 @@
   .qa-sheet-row-label { font-size: 0.875rem; font-weight: 600; }
   .qa-sheet-row-meta { font-size: 0.75rem; color: var(--qa-ambient-muted); }
   .qa-sheet-row--danger { color: var(--qa-danger-fg); }
+
   .qa-sheet-row--danger .qa-sheet-row-icon,
   .qa-sheet-row--danger .qa-sheet-row-label { color: var(--qa-danger-fg); }
 
   /* ========================================================================
      Mark editor — sheet chrome (cross-cutting .qa-sheet sizing + animation)
      Surface-specific interior styles (.qa-mark-*) are co-located in
-     src/marks/Editor.svelte <style>.
+     src/marks/Editor.svelte \3c style>.
      ======================================================================== */
 
   .qa-sheet--mark { max-height: 86%; }
@@ -393,6 +394,7 @@
 
   .qa-sc-body { padding-bottom: 20px; }
   .qa-sc-group { margin: 18px 0 8px; }
+
   .qa-sc-group-title {
     font-size: 0.6875rem;
     text-transform: uppercase;
@@ -401,11 +403,13 @@
     color: var(--qa-ambient-accent);
     margin: 0 0 10px;
   }
+
   .qa-sc-list {
     display: grid;
     grid-template-columns: 1fr;
     gap: 10px 24px;
   }
+
   .qa-sc-row {
     display: grid;
     grid-template-columns: minmax(110px, auto) 1fr;
@@ -414,11 +418,13 @@
     font-size: 0.875rem;
     color: var(--qa-ambient-parchment);
   }
+
   .qa-sc-keys {
     display: inline-flex;
     gap: 4px;
     flex-wrap: wrap;
   }
+
   .qa-sc-kbd {
     display: inline-flex;
     align-items: center;
@@ -433,6 +439,7 @@
     font-size: 0.75rem;
     font-weight: 600;
   }
+
   .qa-sc-kbd--gesture {
     font-weight: 400;
     text-transform: uppercase;
