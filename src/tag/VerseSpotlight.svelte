@@ -64,34 +64,3 @@
   </div>
 {/if}
 
-<style>
-  .qa-spotlight {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 90;
-    background: color-mix(in srgb, var(--qa-bg-primary) 62%, transparent);
-    animation: qa-spotlight-fade var(--qa-transition-base) forwards;
-  }
-  :global(html[data-theme="dark"]) .qa-spotlight {
-    background: rgba(6, 8, 12, 0.56);
-  }
-  .qa-spotlight-hole {
-    position: absolute;
-    border-radius: var(--qa-radius-2xl);
-    box-shadow:
-      0 0 0 9999px color-mix(in srgb, var(--qa-bg-primary) 62%, transparent),
-      inset 0 0 0 1.5px color-mix(in srgb, var(--qa-ambient-accent) 55%, transparent),
-      0 0 32px color-mix(in srgb, var(--qa-ambient-accent) 22%, transparent);
-    animation: qa-spotlight-pulse 1.6s ease-in-out infinite;
-  }
-  :global(html[data-theme="dark"]) .qa-spotlight-hole {
-    box-shadow:
-      0 0 0 9999px rgba(6, 8, 12, 0.56),
-      inset 0 0 0 1.5px color-mix(in srgb, var(--qa-ambient-accent) 55%, transparent),
-      0 0 32px color-mix(in srgb, var(--qa-ambient-accent) 22%, transparent);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .qa-spotlight-hole { animation: none; }
-  }
-</style>
