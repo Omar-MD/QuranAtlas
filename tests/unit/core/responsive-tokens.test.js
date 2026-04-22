@@ -12,7 +12,8 @@ const SEMANTIC_CSS = readFileSync(resolve(__dirname, '../../../src/styles/tokens
 const LEGACY_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/_legacy.css'), 'utf8')
 const SHEET_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/sheet.css'), 'utf8')
 const MODAL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/modal.css'), 'utf8')
-const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${LEGACY_CSS}\n${SHEET_CSS}\n${MODAL_CSS}`
+const APP_SHELL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/app-shell.css'), 'utf8')
+const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${LEGACY_CSS}\n${SHEET_CSS}\n${MODAL_CSS}\n${APP_SHELL_CSS}`
 const ONBOARDING_SVELTE = readFileSync(resolve(__dirname, '../../../src/onboarding/Onboarding.svelte'), 'utf8')
 
 describe('styles — responsive breakpoint tokens', () => {

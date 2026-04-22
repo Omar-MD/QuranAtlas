@@ -62,6 +62,15 @@
         "declaration-block-no-duplicate-properties": null,
         "selector-max-type": 1
       }
+    },
+    {
+      "files": ["src/styles/surfaces/app-shell.css"],
+      "rules": {
+        "selector-max-id": 1,
+        "selector-max-universal": 1,
+        "property-no-vendor-prefix": null,
+        "declaration-block-no-duplicate-properties": null
+      }
     }
   ]
 }
