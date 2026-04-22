@@ -202,6 +202,8 @@
     --qa-backdrop-blur-sm: var(--qa-blur-sm);
     --qa-backdrop-blur-md: var(--qa-blur-md);
 
+    --qa-focus-ring-color: var(--qa-focus-ring);
+
     --lh-speech:    var(--qa-tag-layer-speech);
     --lh-narrative: var(--qa-tag-layer-narrative);
     --lh-themes:    var(--qa-tag-layer-themes);
