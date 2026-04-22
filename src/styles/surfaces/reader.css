@@ -1,0 +1,289 @@
+/**
+ * reader — Reader column chrome: surah header, basmala, verse container,
+ * arabic + translation blocks, verse number + tagging badge, verse-tag chips,
+ * edge-indicators (body-appended imperative nodes), skeletons, invalid-verse error.
+ *
+ * Consumers: src/reader/{Reader,Verse,VerseTags,SurahHeader,EdgeIndicator}.svelte
+ * plus imperative DOM injection from src/reader/edge-indicators.ts.
+ */
+@layer surfaces {
+  .qa-surah-header-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.125rem 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--qa-ambient-border);
+    border-radius: var(--qa-radius-xl);
+    background: var(--qa-ambient-surface);
+    text-align: center;
+  }
+
+  .qa-surah-name {
+    font-family: var(--qa-font-arabic);
+    font-size: 2.75rem;
+    color: var(--qa-text-arabic);
+    direction: rtl;
+    line-height: var(--qa-line-height-arabic);
+  }
+
+  .qa-surah-meta {
+    font-size: 0.75rem;
+    color: var(--qa-text-muted);
+    margin-top: 0.25rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .qa-basmala {
+    font-family: var(--qa-font-arabic);
+    font-size: 1.75rem;
+    text-align: center;
+    padding: 0.75rem 0;
+    color: var(--qa-text-arabic);
+    direction: rtl;
+    line-height: var(--qa-line-height-arabic);
+  }
+
+  /* Verse container */
+  .qa-verse {
+    position: relative;
+    padding: 1.125rem 24px 1.125rem 30px;
+    content-visibility: auto;
+    contain-intrinsic-size: 0 200px;
+    transition: background-color var(--qa-transition-base);
+  }
+
+  .qa-verse + .qa-verse {
+    border-top: 1px solid var(--qa-border-subtle);
+  }
+
+  .qa-verse.qa-verse--active {
+    background: color-mix(in srgb, var(--qa-text-primary) 4%, transparent);
+    border-radius: var(--qa-radius-2xl);
+    box-shadow: inset 0 0 0 1px var(--qa-ambient-border);
+    content-visibility: visible;
+    transition: none;
+  }
+
+  @media (hover: hover) {
+    .qa-verse {
+      transition: background-color var(--qa-transition-base);
+    }
+
+    .qa-verse:hover {
+      background-color: var(--qa-surface-verse-hover);
+      border-radius: var(--qa-radius-2xl);
+    }
+  }
+
+  .qa-verse-accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 14px;
+    border: 3px solid var(--qa-accent);
+    border-right: none;
+    border-radius: 14px 0 0 14px;
+    pointer-events: none;
+  }
+
+  .qa-verse-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .qa-verse-number {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--qa-ambient-dim);
+    font-family: var(--qa-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .qa-verse--active .qa-verse-number {
+    color: var(--qa-ambient-parchment);
+    font-weight: 700;
+  }
+
+  .qa-verse-tagging {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--qa-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    color: var(--qa-ambient-dim);
+    font-weight: 500;
+  }
+
+  .qa-verse-tagging-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--qa-radius-circle);
+    background: transparent;
+    border: 1.5px solid var(--qa-accent);
+  }
+
+  /* Arabic + translation text blocks */
+  .qa-verse-arabic {
+    font-family: var(--qa-font-arabic);
+    font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base));
+    line-height: var(--qa-line-height-arabic);
+    direction: rtl;
+    text-align: start;
+    color: var(--qa-text-arabic);
+    word-spacing: 0.05em;
+    margin-bottom: 0.875rem;
+  }
+
+  .qa-verse-translation {
+    font-family: var(--qa-font-translation);
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base));
+    line-height: var(--qa-line-height-translation);
+    color: var(--qa-text-primary);
+    direction: ltr;
+    text-align: left;
+    padding-top: 0.25rem;
+    text-wrap: pretty;
+  }
+
+  .qa-verse-translation.qa-hide-translation {
+    display: none;
+  }
+
+  /* Verse-tag chips */
+  .qa-vtags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+
+  .qa-vtag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px 3px 8px;
+    border-radius: var(--qa-radius-sm);
+    background: color-mix(in srgb, var(--qa-ambient-surface) 70%, transparent);
+    border: 1px solid var(--qa-border-subtle);
+    font-family: var(--qa-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    color: var(--qa-ambient-dim);
+  }
+
+  .qa-vtag-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--qa-radius-circle);
+    opacity: 0.75;
+  }
+
+  .qa-vtag-lbl {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--qa-ambient-dim);
+    font-weight: 600;
+  }
+
+  .qa-vtag-val {
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--qa-ambient-parchment);
+    font-weight: 500;
+  }
+
+  /* Surah end marker */
+  .qa-surah-end {
+    text-align: center;
+    padding: 2rem 0 1rem;
+    color: var(--qa-text-muted);
+    font-size: var(--qa-text-size-meta);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Edge indicators — body-appended imperative nodes (edge-indicators.ts). */
+  .qa-edge-indicator {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 36px;
+    background-color: var(--qa-accent);
+    opacity: 0;
+    border-radius: var(--qa-radius-hairline);
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity var(--qa-transition-base), top var(--qa-transition-base);
+  }
+
+  .qa-edge-indicator--left {
+    left: 0;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .qa-edge-indicator--right {
+    right: 0;
+    border-radius: 2px 0 0 2px;
+  }
+
+  .qa-edge-indicator--visible {
+    opacity: 0.7;
+  }
+
+  /* Invalid verse error */
+  .qa-invalid-verse-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background-color: var(--qa-surface-error);
+    border: 1px solid var(--qa-border-error);
+    color: var(--qa-text-error);
+    border-radius: var(--qa-radius-md);
+    font-size: var(--qa-text-size-ui);
+  }
+
+  /* Loading skeleton */
+  .qa-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--qa-surface-skeleton) 0%,
+      color-mix(in srgb, var(--qa-surface-skeleton) 60%, transparent) 50%,
+      var(--qa-surface-skeleton) 100%
+    );
+    background-size: 200% 100%;
+    border-radius: var(--qa-radius-xs);
+    animation: qa-skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+
+  .qa-skeleton-line {
+    height: 1rem;
+    margin: 0.75rem 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qa-skeleton {
+      animation: none;
+    }
+  }
+}
