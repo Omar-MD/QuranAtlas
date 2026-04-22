@@ -53,13 +53,13 @@
     top: 10px;
     bottom: 10px;
     width: 2px;
-    border-radius: 2px;
+    border-radius: var(--qa-radius-hairline);
     background-color: var(--qa-ambient-accent);
   }
   .qa-sl-row-num {
     width: 26px;
     height: 26px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     display: inline-flex;
     align-items: center;
     justify-content: center;

@@ -74,14 +74,17 @@
 <style>
   :global(.qa-verse) {
     position: relative;
-    padding: 0.875rem 24px 0.875rem 30px;
+    padding: 1.125rem 24px 1.125rem 30px;
     content-visibility: auto;
     contain-intrinsic-size: 0 200px;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--qa-transition-base);
+  }
+  :global(.qa-verse + .qa-verse) {
+    border-top: 1px solid var(--qa-border-subtle);
   }
   :global(.qa-verse.qa-verse--active) {
     background: color-mix(in srgb, var(--qa-text-primary) 4%, transparent);
-    border-radius: 14px;
+    border-radius: var(--qa-radius-2xl);
     box-shadow: inset 0 0 0 1px var(--qa-ambient-border);
     content-visibility: visible;
     transition: none;
@@ -113,7 +116,7 @@
     border-radius: 0;
     background: transparent;
     color: var(--qa-ambient-dim);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.14em;
     font-weight: 500;
@@ -128,7 +131,7 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.1em;
     color: var(--qa-ambient-dim);
@@ -137,7 +140,7 @@
   .qa-verse-tagging-dot {
     width: 7px;
     height: 7px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     background: transparent;
     border: 1.5px solid var(--qa-ambient-accent);
   }

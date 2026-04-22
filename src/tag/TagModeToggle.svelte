@@ -34,7 +34,7 @@
     bottom: calc(80px + env(safe-area-inset-bottom));
     display: inline-flex;
     padding: 4px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background-color: color-mix(in srgb, var(--qa-ambient-surface) 94%, transparent);
     border: 1px solid var(--qa-ambient-border);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
@@ -45,7 +45,7 @@
   }
   .qa-tagmode-btn {
     padding: 5px 11px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: none;
     background: transparent;
     color: var(--qa-ambient-dim);

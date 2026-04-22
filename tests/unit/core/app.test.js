@@ -85,10 +85,6 @@ vi.mock('../../../src/safety/sync.js', () => ({
   suppressNextVersionChange: vi.fn(),
 }))
 
-vi.mock('../../../src/core/quota-banner.js', () => ({
-  init: vi.fn(),
-}))
-
 vi.mock('../../../src/marks/indicator', () => ({
   initIndicators: vi.fn(() => vi.fn()),
   init: vi.fn(() => vi.fn()), // legacy alias

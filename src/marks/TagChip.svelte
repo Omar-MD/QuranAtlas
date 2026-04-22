@@ -36,19 +36,19 @@
     align-items: center;
     gap: 5px;
     padding: 4px 9px 4px 7px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px solid var(--qa-ambient-border);
     background-color: var(--qa-ambient-surface);
     color: var(--qa-ambient-parchment);
     font: inherit;
     font-size: 0.75rem;
     cursor: pointer;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--qa-transition-fast);
   }
   .qa-mark-chip-dot {
     width: 6px;
     height: 6px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
   }
   .qa-mark-chip-x {
     margin-left: 2px;

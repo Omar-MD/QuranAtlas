@@ -262,7 +262,6 @@
       <div class="qa-invalid-verse-error" data-invalid-verse-error="">
         {invalidVerseError}
         <button
-          class="qa-error-dismiss"
           aria-label="Dismiss"
           onclick={() => { invalidVerseError = null }}
         >×</button>
@@ -294,7 +293,7 @@
     padding: 1.125rem 1rem;
     margin-bottom: 0.75rem;
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     background: var(--qa-ambient-surface);
     text-align: center;
   }
@@ -331,11 +330,11 @@
 
   @media (hover: hover) {
     :global(.qa-verse) {
-      transition: background-color 0.18s ease;
+      transition: background-color var(--qa-transition-base);
     }
     :global(.qa-verse:hover) {
       background-color: var(--qa-verse-hover-bg);
-      border-radius: 14px;
+      border-radius: var(--qa-radius-2xl);
     }
   }
 
@@ -345,10 +344,10 @@
     font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base));
     line-height: var(--qa-line-height-arabic);
     direction: rtl;
-    text-align: justify;
+    text-align: start;
     color: var(--qa-text-arabic);
-    word-spacing: 0.1em;
-    margin-bottom: 0.5rem;
+    word-spacing: 0.05em;
+    margin-bottom: 0.875rem;
   }
   /* verse number / tagging badge styles co-located in Verse.svelte */
 
@@ -356,11 +355,12 @@
   :global(.qa-verse-translation) {
     font-family: var(--qa-font-translation);
     font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base));
-    line-height: 1.75;
+    line-height: var(--qa-line-height-translation);
     color: var(--qa-text-primary);
     direction: ltr;
     text-align: left;
     padding-top: 0.25rem;
+    text-wrap: pretty;
   }
 
   :global(.qa-verse-translation.qa-hide-translation) {
@@ -390,10 +390,10 @@
     height: 36px;
     background-color: var(--qa-ambient-accent);
     opacity: 0;
-    border-radius: 2px;
+    border-radius: var(--qa-radius-hairline);
     pointer-events: none;
     z-index: 50;
-    transition: opacity 0.18s ease, top 0.18s ease;
+    transition: opacity var(--qa-transition-base), top var(--qa-transition-base);
   }
 
   :global(.qa-edge-indicator--left) { left: 0; border-radius: 0 2px 2px 0; }
@@ -413,8 +413,32 @@
     background-color: var(--qa-bg-error);
     border: 1px solid var(--qa-border-error);
     color: var(--qa-text-error);
-    border-radius: 8px;
+    border-radius: var(--qa-radius-md);
     font-size: var(--qa-text-size-ui);
+  }
+
+  /* Loading skeleton — placeholder lines shown during surah fetch */
+  .qa-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--qa-skeleton) 0%,
+      color-mix(in srgb, var(--qa-skeleton) 60%, transparent) 50%,
+      var(--qa-skeleton) 100%
+    );
+    background-size: 200% 100%;
+    border-radius: var(--qa-radius-xs);
+    animation: qa-skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+  .qa-skeleton-line {
+    height: 1rem;
+    margin: 0.75rem 0;
+  }
+  @keyframes qa-skeleton-shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qa-skeleton { animation: none; }
   }
 
 </style>

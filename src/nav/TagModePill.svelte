@@ -63,7 +63,7 @@
     align-items: center;
     gap: 8px;
     padding: 7px 14px 7px 12px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px solid var(--qa-ambient-border);
     background: var(--qa-ambient-surface);
     color: var(--qa-ambient-parchment);
@@ -81,19 +81,14 @@
   .qa-tag-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     background: transparent;
     border: 1.5px solid var(--qa-ambient-accent);
   }
   .qa-tag-dot--on {
-    background: #15803d;
-    border-color: #15803d;
-    box-shadow: 0 0 0 2px color-mix(in srgb, #15803d 28%, transparent);
-  }
-  :global(html[data-theme="dark"]) .qa-tag-dot--on {
-    background: #86efac;
-    border-color: #86efac;
-    box-shadow: 0 0 0 2px color-mix(in srgb, #86efac 30%, transparent);
+    background: var(--lh-themes);
+    border-color: var(--lh-themes);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--lh-themes) 28%, transparent);
   }
 
   @media (max-width: 1179px) {

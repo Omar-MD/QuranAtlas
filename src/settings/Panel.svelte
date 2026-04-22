@@ -179,7 +179,7 @@
           onclick={closeSettingsSheet}
         >✕</button>
       </div>
-      <div class="qa-sheet-body qa-settings-body">
+      <div class="qa-sheet-body">
         <!-- Theme section -->
         <section class="qa-settings-section">
           <div class="qa-settings-label">Theme</div>
@@ -194,7 +194,7 @@
                 onclick={() => handleTheme(opt)}
               >
                 <span class="qa-theme-swatch-preview" aria-hidden="true">
-                  <span class="qa-theme-swatch-inner">الله</span>
+                  <span>الله</span>
                 </span>
                 <span class="qa-theme-swatch-label">
                   {opt.charAt(0).toUpperCase() + opt.slice(1)}
@@ -342,7 +342,7 @@
     align-items: stretch;
     padding: 0;
     border: 2px solid transparent;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     background: transparent;
     cursor: pointer;
     overflow: hidden;
@@ -377,7 +377,7 @@
   .qa-font-preview {
     margin-top: 10px;
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: var(--qa-radius-md);
     background-color: color-mix(in srgb, var(--qa-ambient-accent) 6%, transparent);
     text-align: center;
   }
@@ -419,13 +419,13 @@
   .qa-settings-switch {
     width: 36px;
     height: 20px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     position: relative;
     border: none;
     background-color: var(--qa-ambient-border);
     cursor: pointer;
     flex-shrink: 0;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--qa-transition-base);
   }
   .qa-settings-switch--on { background-color: var(--qa-ambient-accent); }
   .qa-settings-switch-knob {
@@ -434,10 +434,10 @@
     left: 2px;
     width: 16px;
     height: 16px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     background-color: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-    transition: left 0.2s ease;
+    transition: left var(--qa-transition-base);
   }
   .qa-settings-switch--on .qa-settings-switch-knob { left: 18px; }
 

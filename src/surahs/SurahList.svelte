@@ -263,7 +263,7 @@
     align-items: center;
     gap: 8px;
     padding: 9px 12px;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
     margin-bottom: 10px;
@@ -287,7 +287,7 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.625rem;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--qa-radius-xs);
     background-color: var(--qa-ambient-accent-soft);
     color: var(--qa-ambient-kbd-color, var(--qa-ambient-accent));
   }
@@ -299,7 +299,7 @@
     display: flex;
     gap: 4px;
     padding: 3px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     margin-bottom: 10px;
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
@@ -309,14 +309,14 @@
     text-align: center;
     padding: 6px 10px;
     border: none;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background: transparent;
     color: var(--qa-ambient-dim);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color var(--qa-transition-fast), color var(--qa-transition-fast);
   }
   .qa-sl-seg-item--on {
     background-color: var(--qa-selection-bg);
@@ -326,7 +326,7 @@
 
   .qa-sl-hint {
     padding: 8px 10px;
-    border-radius: 8px;
+    border-radius: var(--qa-radius-md);
     border: 1px dashed var(--qa-ambient-border);
     color: var(--qa-ambient-muted);
     font-size: 0.75rem;
@@ -340,7 +340,7 @@
   }
 
   .qa-sl-continue {
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     border: 1px solid var(--qa-ambient-accent-soft);
     background-color: color-mix(in srgb, var(--qa-ambient-accent) 8%, transparent);
     margin-bottom: 10px;
@@ -360,7 +360,7 @@
   .qa-sl-continue-icon {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     display: inline-flex;
     align-items: center;
     justify-content: center;

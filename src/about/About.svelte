@@ -67,7 +67,7 @@
       {/each}
     </ul>
   </section>
-  <div class="qa-about-body-right">
+  <div>
     {#if installAvailable}
       <section class="qa-about-install">
         <button
@@ -112,7 +112,7 @@
     margin: 2rem 0;
     padding: 1.5rem;
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     background-color: var(--qa-ambient-surface);
     text-align: center;
   }
@@ -148,7 +148,7 @@
     padding: 1.5rem 1rem;
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     gap: 0.25rem;
   }
 
@@ -205,14 +205,14 @@
   .qa-about-install-btn {
     width: 100%;
     padding: 1rem;
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
     background-color: var(--qa-ambient-accent);
     color: var(--qa-on-accent);
     border: none;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
+    transition: background-color var(--qa-transition-base), opacity var(--qa-transition-base);
   }
 
   .qa-about-install-btn:hover {

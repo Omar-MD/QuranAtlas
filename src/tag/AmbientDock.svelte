@@ -117,7 +117,7 @@
     flex-direction: column;
     gap: 10px;
     padding: 12px 16px 14px;
-    border-radius: 18px;
+    border-radius: var(--qa-radius-4xl);
     background-color: color-mix(in srgb, var(--qa-ambient-surface) 96%, transparent);
     border: 1px solid var(--qa-ambient-border);
     box-shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
@@ -126,7 +126,7 @@
     z-index: 110;
     width: min(560px, calc(100vw - 24px));
     box-sizing: border-box;
-    animation: qa-qb-in 0.2s ease forwards;
+    animation: qa-qb-in var(--qa-transition-base) forwards;
   }
   @media (max-width: 1179px) {
     .qa-qb-desktop-only { display: none !important; }
@@ -146,7 +146,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.75rem;
     color: var(--qa-ambient-dim);
   }
@@ -160,7 +160,7 @@
   .qa-qb-spacer { flex: 1; }
   .qa-qb-accept {
     padding: 4px 10px;
-    border-radius: 6px;
+    border-radius: var(--qa-radius-sm);
     border: none;
     background: transparent;
     color: var(--qa-ambient-accent);
@@ -173,7 +173,7 @@
   .qa-qb-accept:hover { background: var(--qa-ambient-accent-soft); }
   .qa-qb-kbd {
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--qa-radius-xs);
     background: var(--qa-bg-secondary);
     border: 1px solid var(--qa-ambient-border);
     font-size: 0.625rem;
@@ -197,7 +197,7 @@
     align-items: center;
     gap: 5px;
     padding: 5px 10px 5px 8px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px dashed color-mix(in srgb, var(--qa-chip-hue, var(--qa-ambient-border)) 60%, transparent);
     background: transparent;
     color: var(--qa-ambient-parchment);
@@ -222,7 +222,7 @@
     justify-content: center;
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     font-size: 0.7rem;
     font-weight: 700;
     color: var(--qa-chip-hue, var(--qa-ambient-accent));

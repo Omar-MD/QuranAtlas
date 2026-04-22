@@ -45,10 +45,10 @@
     align-items: center;
     gap: 10px;
     padding: 5px 12px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background: color-mix(in srgb, var(--qa-ambient-surface) 70%, transparent);
     border: 1px solid var(--qa-border-subtle);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -59,7 +59,7 @@
     width: 64px;
     height: 3px;
     background: var(--qa-border);
-    border-radius: 2px;
+    border-radius: var(--qa-radius-hairline);
     overflow: hidden;
     display: inline-block;
   }
@@ -67,7 +67,7 @@
     display: block;
     height: 100%;
     background: var(--qa-ambient-accent);
-    border-radius: 2px;
+    border-radius: var(--qa-radius-hairline);
   }
   .qa-sp-pct { color: var(--qa-ambient-accent); font-weight: 600; }
   @media (min-width: 1180px) {

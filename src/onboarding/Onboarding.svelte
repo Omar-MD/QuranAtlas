@@ -147,7 +147,7 @@
             onclick={() => pickTheme(opt)}
           >
             <span class="qa-onb-sw-chip" dir="rtl">
-              <span class="qa-onb-sw-glyph">الله</span>
+              <span>الله</span>
             </span>
             <span class="qa-onb-sw-label">{opt.charAt(0).toUpperCase() + opt.slice(1)}</span>
           </button>
@@ -348,7 +348,7 @@
     align-items: center;
     padding: 10px 4px;
     border: 1.5px solid var(--qa-ambient-border);
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     background: transparent;
     cursor: pointer;
   }
@@ -359,7 +359,7 @@
   .qa-onb-sw-chip {
     width: 100%;
     aspect-ratio: 1;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     margin-bottom: 6px;
     display: flex;
     align-items: center;
@@ -386,7 +386,7 @@
     gap: 10px;
     padding: 10px 12px;
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     background: transparent;
     text-align: left;
     cursor: pointer;
@@ -399,7 +399,7 @@
   .qa-onb-t-radio {
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     border: 1.5px solid var(--qa-ambient-dim);
     flex-shrink: 0;
     position: relative;
@@ -409,7 +409,7 @@
     content: '';
     position: absolute;
     inset: 2px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     background-color: var(--qa-ambient-accent);
   }
   .qa-onb-t-body { flex: 1; display: flex; flex-direction: column; }
@@ -443,12 +443,12 @@
     align-items: center;
     gap: 5px;
     padding: 3px 9px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     font-size: 0.75rem;
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
   }
-  .qa-onb-chip-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .qa-onb-chip-dot { width: 6px; height: 6px; border-radius: var(--qa-radius-circle); }
   .qa-onb-privacy {
     font-size: 0.75rem;
     color: var(--qa-ambient-dim);
@@ -463,14 +463,14 @@
     justify-content: center;
     margin: 22px 0 14px;
   }
-  :global(.qa-onb-dot) { width: 6px; height: 6px; border-radius: 50%; background-color: var(--qa-ambient-border); }
+  :global(.qa-onb-dot) { width: 6px; height: 6px; border-radius: var(--qa-radius-circle); background-color: var(--qa-ambient-border); }
   :global(.qa-onb-dot--on) { width: 18px; border-radius: 3px; background-color: var(--qa-ambient-accent); }
 
   .qa-onb-cta-row { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
   .qa-onb-cta {
     padding: 12px 16px;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     font: inherit;
     font-size: 0.8125rem;
     font-weight: 600;

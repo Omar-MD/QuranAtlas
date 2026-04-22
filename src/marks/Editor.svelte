@@ -342,7 +342,7 @@
     </div>
 
     <!-- Footer -->
-    <div class="qa-sheet-footer qa-mark-footer">
+    <div>
       {#if confirmingDelete}
         <div class="qa-mark-confirm-text">Delete this mark?</div>
         <button type="button" class="qa-mark-btn qa-mark-btn--ghost" onclick={() => { confirmingDelete = false }}>Keep</button>
@@ -383,7 +383,7 @@
   .qa-mark-body { padding: 10px 14px 14px; }
   .qa-mark-quote {
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--qa-radius-md);
     border-left: 2px solid var(--qa-ambient-accent);
     background-color: color-mix(in srgb, var(--qa-ambient-accent) 6%, transparent);
     margin-bottom: 12px;
@@ -419,7 +419,7 @@
     width: 100%;
     padding: 9px 11px;
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 8px;
+    border-radius: var(--qa-radius-md);
     background-color: var(--qa-bg-primary);
     color: var(--qa-ambient-parchment);
     font: inherit;
@@ -457,7 +457,7 @@
   .qa-mark-footer-spacer { flex: 1; }
   .qa-mark-btn {
     padding: 9px 14px;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     border: 1px solid transparent;
     background: transparent;
     color: var(--qa-ambient-parchment);

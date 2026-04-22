@@ -184,10 +184,10 @@
     justify-content: center;
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     color: var(--qa-ambient-dim);
     text-decoration: none;
-    transition: color 0.12s ease, background-color 0.12s ease;
+    transition: color var(--qa-transition-fast), background-color var(--qa-transition-fast);
   }
   .qa-rail-item:hover,
   .qa-rail-item:focus-visible {
@@ -209,7 +209,7 @@
     top: 50%;
     transform: translateY(-50%) translateX(-4px);
     padding: 4px 9px;
-    border-radius: 6px;
+    border-radius: var(--qa-radius-sm);
     background: var(--qa-ambient-parchment);
     color: var(--qa-bg-primary);
     font-size: 0.75rem;
@@ -217,7 +217,7 @@
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.12s ease, transform 0.12s ease;
+    transition: opacity var(--qa-transition-fast), transform var(--qa-transition-fast);
     z-index: 2;
   }
   .qa-rail-item:hover .qa-rail-tip,
@@ -236,7 +236,7 @@
   .qa-rail-crumb-text {
     transform: rotate(-90deg);
     white-space: nowrap;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.75rem;
     letter-spacing: 0.08em;
     color: var(--qa-ambient-dim);
@@ -252,8 +252,8 @@
     background: transparent;
     color: var(--qa-ambient-dim);
     cursor: pointer;
-    border-radius: 10px;
-    transition: color 0.12s ease, background-color 0.12s ease;
+    border-radius: var(--qa-radius-lg);
+    transition: color var(--qa-transition-fast), background-color var(--qa-transition-fast);
   }
   .qa-rail-more:hover,
   .qa-rail-more:focus-visible {

@@ -139,7 +139,7 @@
     -webkit-backdrop-filter: blur(14px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
     z-index: 99;
-    transition: transform 0.22s ease, visibility 0s linear 0s;
+    transition: transform var(--qa-transition-base), visibility 0s linear 0s;
   }
 
   :global(html[data-theme="dark"]) .qa-pill-ref {
@@ -148,15 +148,15 @@
   }
 
   .qa-pill-ref:focus-visible {
-    outline: 2px solid var(--qa-ambient-accent);
-    outline-offset: 2px;
+    outline: var(--qa-focus-ring-width) solid var(--qa-focus-ring-color);
+    outline-offset: var(--qa-focus-ring-offset);
   }
 
   .qa-pill-ref--hidden {
     visibility: hidden;
     transform: translateX(-50%) translateY(-10px);
     pointer-events: none;
-    transition: transform 0.22s ease, visibility 0s linear 0.22s;
+    transition: transform var(--qa-transition-base), visibility 0s linear 0.22s;
   }
 
   .qa-pill-ref-text {
@@ -169,7 +169,7 @@
     font-size: 0.6875rem;
     color: var(--qa-ambient-dim);
     border: 1px solid var(--qa-ambient-accent-soft);
-    border-radius: 4px;
+    border-radius: var(--qa-radius-xs);
     padding: 1px 5px;
   }
 </style>

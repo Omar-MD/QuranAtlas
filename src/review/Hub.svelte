@@ -814,14 +814,14 @@
     padding: 1rem;
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
   }
 
   .qa-review-select {
     padding: 0.5rem 0.75rem;
     background-color: var(--qa-bg-primary);
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 8px;
+    border-radius: var(--qa-radius-md);
     font-size: var(--qa-text-size-meta);
     font-weight: 500;
     color: var(--qa-text-primary);
@@ -831,7 +831,7 @@
   }
 
   .qa-review-select:focus-visible {
-    outline: 2px solid var(--qa-ambient-accent);
+    outline: var(--qa-focus-ring-width) solid var(--qa-focus-ring-color);
     border-color: var(--qa-ambient-accent);
   }
 
@@ -850,7 +850,7 @@
     align-items: center;
     gap: 0.375rem;
     padding: 0.3125rem 0.625rem;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     font-size: var(--qa-text-size-meta);
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
@@ -858,7 +858,7 @@
     cursor: pointer;
     font: inherit;
     min-height: 32px;
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color var(--qa-transition-fast), box-shadow var(--qa-transition-fast);
   }
 
   .qa-review-value-chip:hover {
@@ -874,7 +874,7 @@
   .qa-review-value-chip-dot {
     width: 7px;
     height: 7px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     flex-shrink: 0;
   }
 
@@ -891,7 +891,7 @@
     align-items: center;
     gap: 0.375rem;
     padding: 0.375rem 0.75rem;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     font-size: var(--qa-text-size-meta);
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
@@ -934,11 +934,11 @@
     margin: 2rem 0;
     background-color: var(--qa-bg-secondary);
     border: 1px dashed var(--qa-border);
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     font-weight: 600;
     color: var(--qa-text-primary);
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background-color var(--qa-transition-base), border-color var(--qa-transition-base), color var(--qa-transition-base);
   }
 
   .qa-review-load-more:hover {
@@ -953,7 +953,7 @@
     display: inline-flex;
     gap: 4px;
     padding: 3px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background-color: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
   }
@@ -971,7 +971,7 @@
   .qa-review-seg-item {
     padding: 5px 12px;
     border: none;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background: transparent;
     color: var(--qa-ambient-dim);
     font: inherit;
@@ -1034,7 +1034,7 @@
       align-items: center;
       gap: 8px;
       padding: 5px 8px;
-      border-radius: 6px;
+      border-radius: var(--qa-radius-sm);
       cursor: pointer;
       color: var(--qa-ambient-parchment);
       font: inherit;
@@ -1054,7 +1054,7 @@
       box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
     }
 
-    .qa-review-rail-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .qa-review-rail-dot { width: 9px; height: 9px; border-radius: var(--qa-radius-circle); flex-shrink: 0; }
 
     .qa-review-rail-count {
       margin-left: auto;
@@ -1090,7 +1090,7 @@
       align-items: center;
       gap: 6px;
       padding: 4px 8px 4px 10px;
-      border-radius: 999px;
+      border-radius: var(--qa-radius-pill);
       background: var(--qa-selection-bg);
       color: var(--qa-selection-text);
       box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
@@ -1099,7 +1099,7 @@
     .qa-review-filter-bar .qa-review-filter-chip-dot {
       width: 8px;
       height: 8px;
-      border-radius: 50%;
+      border-radius: var(--qa-radius-circle);
       flex-shrink: 0;
     }
 
@@ -1177,7 +1177,7 @@
   .qa-fvr-dot {
     width: 9px;
     height: 9px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
   }
 
   .qa-fvr-stats {

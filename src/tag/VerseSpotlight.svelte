@@ -71,14 +71,14 @@
     pointer-events: none;
     z-index: 90;
     background: color-mix(in srgb, var(--qa-bg-primary) 62%, transparent);
-    animation: qa-spotlight-fade 0.22s ease forwards;
+    animation: qa-spotlight-fade var(--qa-transition-base) forwards;
   }
   :global(html[data-theme="dark"]) .qa-spotlight {
     background: rgba(6, 8, 12, 0.56);
   }
   .qa-spotlight-hole {
     position: absolute;
-    border-radius: 14px;
+    border-radius: var(--qa-radius-2xl);
     box-shadow:
       0 0 0 9999px color-mix(in srgb, var(--qa-bg-primary) 62%, transparent),
       inset 0 0 0 1.5px color-mix(in srgb, var(--qa-ambient-accent) 55%, transparent),

@@ -41,10 +41,10 @@
 </script>
 
 <section class="qa-layer-region" data-layer={label.toLowerCase()}>
-  <header class="qa-layer-header">
+  <header>
     <button type="button" class="qa-layer-toggle" onclick={() => collapsed = !collapsed} aria-expanded={!collapsed}>
-      <span class="qa-layer-chevron">{collapsed ? '▸' : '▾'}</span>
-      <span class="qa-layer-label">{label}</span>
+      <span>{collapsed ? '▸' : '▾'}</span>
+      <span>{label}</span>
       <span class="qa-layer-count">{selected.length}</span>
     </button>
   </header>
@@ -85,7 +85,7 @@
   .qa-layer-count {
     margin-left: auto;
     padding: 1px 6px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background: var(--qa-ambient-accent);
     color: var(--qa-on-accent);
     font-size: 0.625rem;
@@ -98,7 +98,7 @@
     width: 100%;
     padding: 7px 10px;
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 8px;
+    border-radius: var(--qa-radius-md);
     background: var(--qa-bg-primary);
     color: var(--qa-ambient-parchment);
     font: inherit; font-size: 0.8125rem;

@@ -170,7 +170,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: transform 0.24s ease, opacity 0.24s ease;
+    transition: transform var(--qa-transition-base), opacity var(--qa-transition-base);
   }
   .qa-mh--hidden {
     transform: translateY(-100%);
@@ -189,7 +189,7 @@
     align-items: center;
     gap: 6px;
     padding: 7px 12px 7px 14px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px solid var(--qa-ambient-border);
     background: var(--qa-ambient-surface);
     color: var(--qa-ambient-parchment);
@@ -200,7 +200,7 @@
   }
   .qa-mh-crumb-text {
     text-align: left;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.8125rem;
     font-weight: 500;
     letter-spacing: 0.01em;
@@ -217,7 +217,7 @@
   .qa-mh-icon {
     width: 36px;
     height: 36px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     border: 1px solid var(--qa-ambient-border);
     background: var(--qa-ambient-surface);
     color: var(--qa-ambient-parchment);
@@ -238,7 +238,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     border: 1px solid var(--qa-ambient-border);
     background: var(--qa-ambient-surface);
     color: var(--qa-ambient-parchment);
@@ -249,19 +249,14 @@
   .qa-mh-tag-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     background: transparent;
     border: 1.5px solid var(--qa-ambient-accent);
   }
   .qa-mh-tag--on .qa-mh-tag-dot {
-    background: #15803d;
-    border-color: #15803d;
-    box-shadow: 0 0 0 2px color-mix(in srgb, #15803d 28%, transparent);
-  }
-  :global(html[data-theme="dark"]) .qa-mh-tag--on .qa-mh-tag-dot {
-    background: #86efac;
-    border-color: #86efac;
-    box-shadow: 0 0 0 2px color-mix(in srgb, #86efac 30%, transparent);
+    background: var(--lh-themes);
+    border-color: var(--lh-themes);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--lh-themes) 28%, transparent);
   }
 
   .qa-mh-tabs {
@@ -274,7 +269,7 @@
   .qa-mh-tabs::-webkit-scrollbar { display: none; }
   .qa-mh-tab {
     padding: 6px 14px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: none;
     background: transparent;
     color: var(--qa-ambient-dim);
@@ -293,7 +288,7 @@
     font-weight: 600;
   }
   .qa-mh-count {
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-weight: 500;
     color: var(--qa-ambient-dim);
   }

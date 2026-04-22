@@ -56,7 +56,7 @@
     >↗</a>
   </div>
 
-  <div class="qa-review-card-content">
+  <div>
     {#if arabicText}
       <div class="qa-review-card-ar" dir="rtl">{arabicText}</div>
     {/if}
@@ -136,7 +136,7 @@
 
   .qa-review-card-note {
     padding: 6px 9px;
-    border-radius: 6px;
+    border-radius: var(--qa-radius-sm);
     border-left: 2px solid var(--qa-ambient-accent);
     background-color: color-mix(in srgb, var(--qa-ambient-accent) 8%, transparent);
     color: var(--qa-ambient-parchment);
@@ -157,7 +157,7 @@
     align-items: center;
     gap: 4px;
     padding: 2px 8px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background-color: var(--qa-selection-bg);
     color: var(--qa-selection-text);
     font-size: 0.6875rem;
@@ -167,6 +167,6 @@
   .qa-review-card-chip-dot {
     width: 6px;
     height: 6px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
   }
 </style>

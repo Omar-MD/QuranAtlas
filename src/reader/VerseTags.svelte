@@ -79,10 +79,10 @@
     align-items: center;
     gap: 5px;
     padding: 3px 9px 3px 8px;
-    border-radius: 6px;
+    border-radius: var(--qa-radius-sm);
     background: color-mix(in srgb, var(--qa-ambient-surface) 70%, transparent);
     border: 1px solid var(--qa-border-subtle);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.06em;
     color: var(--qa-ambient-dim);
@@ -90,7 +90,7 @@
   .qa-vtag-dot {
     width: 5px;
     height: 5px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     opacity: 0.75;
   }
   .qa-vtag-lbl {

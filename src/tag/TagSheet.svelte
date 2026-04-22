@@ -232,7 +232,7 @@
             aria-selected={activeTab === g.id}
             onclick={() => activeTab = g.id}
           >
-            <span class="qa-ts-tab-text">{GROUP_LABEL[g.id]}</span>
+            <span>{GROUP_LABEL[g.id]}</span>
             {#if count > 0}<span class="qa-ts-tab-count">{count}</span>{/if}
           </button>
         {/each}
@@ -383,13 +383,13 @@
   }
   .qa-ts-hdr-text { flex: 1; }
   .qa-ts-title {
-    font-family: 'Lora', Georgia, serif;
+    font-family: var(--qa-font-translation);
     font-size: 1.0625rem;
     font-weight: 600;
     color: var(--qa-ambient-parchment);
   }
   .qa-ts-sub {
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.1em;
     color: var(--qa-ambient-dim);
@@ -397,10 +397,10 @@
   }
   .qa-ts-count {
     padding: 4px 10px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     background: var(--qa-ambient-accent-soft);
     color: var(--qa-ambient-accent);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -413,7 +413,7 @@
   .qa-ts-close {
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     border: none;
     background: transparent;
     color: var(--qa-ambient-dim);
@@ -434,11 +434,11 @@
   .qa-ts-preview {
     padding: 14px 16px;
     margin-bottom: 16px;
-    border-radius: 12px;
+    border-radius: var(--qa-radius-xl);
     background: color-mix(in srgb, var(--qa-ambient-surface) 95%, transparent);
   }
   .qa-ts-pref {
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.12em;
     color: var(--qa-ambient-dim);
@@ -465,7 +465,7 @@
     gap: 8px;
     padding: 9px 12px;
     border: 1px solid var(--qa-ambient-border);
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     background: color-mix(in srgb, var(--qa-ambient-surface) 40%, transparent);
     margin-bottom: 14px;
   }
@@ -482,12 +482,12 @@
   .qa-ts-search-input::placeholder { color: var(--qa-ambient-dim); }
   .qa-ts-kbd {
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--qa-radius-xs);
     border: 1px solid var(--qa-border-subtle);
     background: var(--qa-bg-secondary);
     color: var(--qa-ambient-dim);
     font-size: 0.625rem;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
   }
   .qa-ts-search-pop {
     position: absolute;
@@ -495,10 +495,10 @@
     left: 0;
     right: 0;
     padding: 4px;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     background: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--qa-shadow-popover);
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -521,10 +521,10 @@
     text-align: left;
   }
   .qa-ts-search-row:hover { background: var(--qa-ambient-accent-soft); }
-  .qa-ts-search-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .qa-ts-search-dot { width: 6px; height: 6px; border-radius: var(--qa-radius-circle); flex-shrink: 0; }
   .qa-ts-search-val { flex: 1; font-weight: 500; }
   .qa-ts-search-lbl {
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.1em;
     color: var(--qa-ambient-dim);
@@ -585,7 +585,7 @@
     border-radius: 9px;
     background: var(--qa-ambient-accent);
     color: var(--qa-on-accent);
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     font-weight: 700;
   }
@@ -599,7 +599,7 @@
     padding: 8px 0;
   }
   .qa-ts-lbl {
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.12em;
     color: var(--qa-ambient-dim);
@@ -624,7 +624,7 @@
     align-items: center;
     gap: 6px;
     padding: 4px 9px 4px 8px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px solid var(--qa-ambient-border);
     background: transparent;
     color: var(--qa-ambient-parchment);
@@ -637,14 +637,14 @@
     border-color: color-mix(in srgb, var(--qa-ambient-accent) 45%, transparent);
     font-weight: 500;
   }
-  .qa-ts-chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .qa-ts-chip-dot { width: 6px; height: 6px; border-radius: var(--qa-radius-circle); flex-shrink: 0; }
   .qa-ts-chip-x { opacity: 0.6; margin-left: 2px; color: var(--qa-ambient-dim); }
 
   .qa-ts-combo { position: relative; display: inline-flex; }
   .qa-ts-combo-input {
     min-width: 100px;
     padding: 4px 10px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px dashed var(--qa-ambient-border);
     background: transparent;
     color: var(--qa-ambient-parchment);
@@ -660,10 +660,10 @@
     left: 0;
     min-width: 200px;
     padding: 4px;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     background: var(--qa-ambient-surface);
     border: 1px solid var(--qa-ambient-border);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--qa-shadow-popover);
     z-index: 10;
     display: flex;
     flex-direction: column;
@@ -689,7 +689,7 @@
   .qa-ts-note-hdr {
     display: flex;
     justify-content: space-between;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.12em;
     color: var(--qa-ambient-dim);
@@ -701,7 +701,7 @@
     width: 100%;
     min-height: 72px;
     padding: 10px;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     border: 1px solid var(--qa-ambient-border);
     background: var(--qa-bg-primary);
     color: var(--qa-ambient-parchment);
@@ -725,7 +725,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px solid var(--qa-ambient-border);
     background: transparent;
     color: var(--qa-ambient-parchment);
@@ -746,7 +746,7 @@
     justify-content: center;
     width: 16px;
     height: 16px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     background: color-mix(in srgb, var(--qa-ambient-accent) 14%, transparent);
     color: var(--qa-ambient-accent);
     font-weight: 700;
@@ -767,7 +767,7 @@
   }
   .qa-ts-meta {
     flex: 1;
-    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.14em;
     color: var(--qa-ambient-dim);
@@ -776,7 +776,7 @@
   .qa-ts-meta-kbd {
     display: inline-block;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--qa-radius-xs);
     border: 1px solid var(--qa-border-subtle);
     background: var(--qa-bg-secondary);
     color: var(--qa-ambient-dim);
@@ -785,7 +785,7 @@
   }
   .qa-ts-btn {
     padding: 8px 16px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px solid transparent;
     font: inherit;
     font-size: 0.8125rem;

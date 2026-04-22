@@ -502,7 +502,7 @@
         {#each groups as group (group.title)}
           <div class="qa-cmd-group">
             <div class="qa-cmd-group-head">
-              <span class="qa-cmd-group-title">{group.title}</span>
+              <span>{group.title}</span>
               <span class="qa-cmd-group-count">{group.items.length}</span>
             </div>
             {#each group.items as item (item.kind + (item.label ?? '') + (item.surah ?? '') + (item.verse ?? '') + (item.tag ?? '') + (item.doCommand ?? ''))}
@@ -555,7 +555,7 @@
     background: rgba(14, 14, 12, 0.62);
     backdrop-filter: blur(6px);
     opacity: 1;
-    transition: opacity 0.18s ease;
+    transition: opacity var(--qa-transition-base);
     border: none;
     cursor: default;
     padding: 0;
@@ -566,7 +566,7 @@
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.18s ease, visibility 0s linear 0.18s;
+    transition: opacity var(--qa-transition-base), visibility 0s linear 0.18s;
   }
 
   .qa-cmd-sheet {
@@ -580,11 +580,11 @@
     display: flex;
     flex-direction: column;
     border: 1px solid var(--qa-ambient-accent-soft);
-    border-radius: 16px;
+    border-radius: var(--qa-radius-3xl);
     background-color: var(--qa-ambient-surface);
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
     overflow: hidden;
-    transition: transform 0.18s ease, visibility 0s linear 0s;
+    transition: transform var(--qa-transition-base), visibility 0s linear 0s;
   }
 
   .qa-cmd-input-row {
@@ -621,7 +621,7 @@
     font-size: 0.6875rem;
     color: var(--qa-ambient-dim);
     border: 1px solid var(--qa-ambient-accent-soft);
-    border-radius: 4px;
+    border-radius: var(--qa-radius-xs);
     padding: 1px 6px;
   }
 
@@ -663,7 +663,7 @@
     text-align: left;
     cursor: pointer;
     font: inherit;
-    transition: background-color 0.12s ease;
+    transition: background-color var(--qa-transition-fast);
   }
 
   .qa-cmd-item:hover,
@@ -677,7 +677,7 @@
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: 6px;
+    border-radius: var(--qa-radius-sm);
     background-color: var(--qa-ambient-accent-soft);
     color: var(--qa-ambient-accent);
     font-size: 0.75rem;
@@ -739,7 +739,7 @@
     display: inline-flex;
     align-items: center;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--qa-radius-xs);
     background-color: var(--qa-ambient-accent-soft);
     color: var(--qa-ambient-kbd-color, var(--qa-ambient-accent));
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -761,14 +761,14 @@
     content: '';
     width: 9px;
     height: 9px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     background-color: var(--qa-cmd-dot, var(--qa-ambient-accent));
   }
 
   .qa-cmd-vcard {
     margin: 8px 12px 10px;
     padding: 10px 12px;
-    border-radius: 10px;
+    border-radius: var(--qa-radius-lg);
     border: 1px solid var(--qa-ambient-accent-soft);
     background-color: color-mix(in srgb, var(--qa-ambient-accent) 6%, transparent);
   }

@@ -33,7 +33,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 11px;
-    border-radius: 999px;
+    border-radius: var(--qa-radius-pill);
     border: 1px solid transparent;
     background-color: transparent;
     color: var(--qa-ambient-parchment);
@@ -41,12 +41,12 @@
     font-size: 0.8125rem;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color 0.12s ease, color 0.12s ease;
+    transition: background-color var(--qa-transition-fast), color var(--qa-transition-fast);
   }
   .qa-tag-chip-dot {
     width: 5px;
     height: 5px;
-    border-radius: 50%;
+    border-radius: var(--qa-radius-circle);
     opacity: 0.6;
   }
   .qa-tag-chip:hover {

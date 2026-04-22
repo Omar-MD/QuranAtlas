@@ -93,7 +93,7 @@ graph LR
 - **Role:** About page Svelte component + PWA install prompt capture/handling.
 
 ### `core/`
-- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `quota-banner.js`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
+- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `router.ts`, `tag-colors.ts`, `theme.css`, `ui.svelte`, `ui-bridge.ts`
 - **Imports from:**
   - `core/quota-banner.svelte` → `a11y`
   - `core/ui.svelte` → emits `MARKS_UNDO` via the bus; no feature-dir imports
