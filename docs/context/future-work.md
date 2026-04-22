@@ -64,6 +64,28 @@ Items discussed and rejected, recorded here so they're not re-litigated without 
 
 ---
 
+## CSS token refactor — surface migrations (PRs 2–13)
+
+Foundation PR landed 2026-04-22. Remaining work: per-surface PRs migrating every Svelte component `<style>` block into `src/styles/surfaces/*.css` per the design spec (unversioned; lives in `docs/superpowers/specs/`).
+
+Order (each gets its own implementation plan at PR start):
+1. quota-banner (simple, single component)
+2. modal + sheet (shared chrome — migrate before any consumer surface)
+3. app-shell
+4. about
+5. onboarding
+6. surahs
+7. nav (AmbientDock, AmbientPill, CommandSheet, MarginHeader, SurahProgress, TagModePill)
+8. reader (Verse, Reader, VerseTags, EdgeIndicator)
+9. tag (AmbientDock, TagChip, TagModeToggle, TagSheet, VerseSpotlight)
+10. marks (Editor, TagChip, TagLayerRegion)
+11. review (Hub, ReviewCard)
+12. settings + final cleanup (delete `_legacy.css`)
+
+`pre-css-refactor-baseline` branch preserved on origin until PR 13 merges — rollback + visual-regression comparison safety net.
+
+---
+
 ## Adding to this doc
 
 When a future feature is agreed on but not scheduled:
