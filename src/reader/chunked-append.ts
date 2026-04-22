@@ -12,10 +12,12 @@
 export const CHUNK_SIZE = 50
 
 /**
- * Attach a scroll listener to `container` that calls `appendChunk` when the
- * user is within one viewport height of the bottom.
+ * Attach a scroll listener to the nearest scrolling ancestor of `container`
+ * that calls `appendChunk` when the user is within one viewport height of the
+ * bottom. Scroll events do NOT bubble, so the listener must bind to the
+ * element that actually scrolls (commonly `#main-content` in this app).
  *
- * @param container    - The scrollable reader container.
+ * @param container    - The rendered verses host element.
  * @param appendChunk  - Called with no arguments when more verses should load.
  * @returns A cleanup function that removes the listener.
  */
@@ -27,6 +29,11 @@ export function setupChunkedAppend(
     return () => {}
   }
 
+  const scroller = findScrollAncestor(container)
+  if (!scroller) {
+    return () => {}
+  }
+
   let rafPending = false
 
   const onScroll = () => {
@@ -34,16 +41,34 @@ export function setupChunkedAppend(
       rafPending = true
       requestAnimationFrame(() => {
         rafPending = false
-        handleScrollAppend(container, appendChunk)
+        handleScrollAppend(scroller, appendChunk)
       })
     }
   }
 
-  container.addEventListener('scroll', onScroll, { passive: true })
+  scroller.addEventListener('scroll', onScroll, { passive: true })
 
   return () => {
-    container.removeEventListener('scroll', onScroll)
+    scroller.removeEventListener('scroll', onScroll)
   }
+}
+
+/**
+ * Walk up from `el` looking for an ancestor whose overflow-y is `auto` or
+ * `scroll` AND whose scrollHeight > clientHeight. Returns the scroller or null.
+ */
+function findScrollAncestor(el: HTMLElement): HTMLElement | null {
+  let cur: HTMLElement | null = el
+  while (cur && cur !== document.body && cur !== document.documentElement) {
+    const style = getComputedStyle(cur)
+    const oy = style.overflowY
+    if ((oy === 'auto' || oy === 'scroll') && cur.scrollHeight > cur.clientHeight) {
+      return cur
+    }
+    cur = cur.parentElement
+  }
+  // Fallback: known app-shell scroll host.
+  return document.getElementById('main-content')
 }
 
 /**
