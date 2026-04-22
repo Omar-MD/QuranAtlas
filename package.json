@@ -51,6 +51,8 @@
     "eslint-plugin-svelte": "^3.17.0",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.0.1",
+    "stylelint": "^17.8.0",
+    "stylelint-config-standard": "^40.0.0",
     "svelte": "^5.55.4",
     "svelte-check": "^4.4.6",
     "typescript": "^6.0.3",
