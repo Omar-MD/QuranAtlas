@@ -1,0 +1,54 @@
+/**
+ * toast — Undo toast + generic error-state chrome.
+ *
+ * `.qa-undo-toast` is rendered by src/core/ui.svelte (appears imperatively
+ * via `showUndoToast()` in src/core/ui-bridge.ts).
+ *
+ * `.qa-error-state` + `.qa-retry-btn` are used both by imperative DOM
+ * injection (src/app-bootstrap.ts, src/core/router.ts) and by
+ * src/reader/Reader.svelte during surah fetch failures.
+ */
+@layer surfaces {
+  .qa-undo-toast {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--qa-text-primary);
+    color: var(--qa-surface-app);
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--qa-radius-pill);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    z-index: var(--qa-z-sheet);
+    font-size: var(--qa-text-size-ui);
+    box-shadow: var(--qa-shadow-sm);
+  }
+
+  .qa-undo-toast button {
+    background: none;
+    border: none;
+    color: var(--qa-surface-app);
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .qa-error-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--qa-text-muted);
+  }
+
+  .qa-retry-btn {
+    margin-top: 1rem;
+    background: var(--qa-surface-raised);
+    color: var(--qa-text-primary);
+    border: 1px solid var(--qa-border-default);
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--qa-radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+  }
+}

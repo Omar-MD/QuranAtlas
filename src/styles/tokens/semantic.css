@@ -1,8 +1,8 @@
 /* ==========================================================================
    Design Tokens — Semantic
 
-   Role tokens prefixed --qa-*. Referenced by surface files (and by alias
-   shims for backward compatibility until each surface migrates).
+   Role tokens prefixed --qa-*. Referenced by surface files directly.
+   Alias shims retired in PR 13 final cleanup.
 
    Light defaults in :root. Sepia + dark define only what differs.
    scripts/check-theme-parity.mjs enforces every override exists in :root.
@@ -146,33 +146,7 @@
     --qa-bp-tablet:  var(--bp-tablet);
     --qa-bp-desktop: var(--bp-desktop);
 
-    /* =====================================================================
-       ALIAS SHIMS — keep pre-migration --qa-* names resolving until each
-       surface PR retires its consumers. Every entry here is scheduled for
-       removal in the corresponding surface PR (2–13).
-       ==================================================================== */
-    --qa-bg-primary:       var(--qa-surface-app);
-    --qa-bg-secondary:     var(--qa-surface-raised);
-    --qa-bg-surface:       var(--qa-surface-input);
-    --qa-text-secondary:   var(--qa-text-muted);
-    --qa-border:           var(--qa-border-default);
-    --qa-verse-hover-bg:   var(--qa-surface-verse-hover);
-    --qa-skeleton:         var(--qa-surface-skeleton);
-    --qa-bg-error:         var(--qa-surface-error);
-    --qa-color-error:      var(--qa-text-error);
-    --qa-on-accent:        var(--qa-text-on-accent);
-    --qa-ambient-accent:         var(--qa-accent);
-    --qa-ambient-accent-soft:    var(--qa-accent-soft);
-    --qa-ambient-kbd-color:      var(--qa-text-kbd);
-    --qa-ambient-parchment:      var(--qa-text-on-sheet);
-    --qa-ambient-muted:          var(--qa-text-on-sheet-muted);
-    --qa-ambient-dim:            var(--qa-text-on-sheet-dim);
-    --qa-ambient-surface:        var(--qa-surface-sheet);
-    --qa-ambient-border:         var(--qa-border-on-sheet);
-    --qa-ambient-scrim:          var(--qa-scrim);
-    --qa-ambient-sheet-radius:   var(--qa-radius-sheet);
-    --qa-ambient-pill-radius:    var(--qa-radius-pill);
-    --qa-ambient-elevation:      var(--qa-elevation-lg);
+    /* --- Radius (size-stepped) ------------------------------------------ */
     --qa-radius-xs:  var(--r-xs);
     --qa-radius-sm:  var(--r-sm);
     --qa-radius-md:  var(--r-md);

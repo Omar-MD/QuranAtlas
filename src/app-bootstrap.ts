@@ -256,7 +256,7 @@ function showOfflineBanner() {
   banner.setAttribute('aria-live', 'assertive')
   banner.style.cssText = [
     'position:fixed', 'bottom:0', 'left:0', 'right:0',
-    'background:var(--qa-color-error,#dc2626)', 'color:#fff',
+    'background:var(--qa-text-error,#dc2626)', 'color:#fff',
     'text-align:center', 'padding:0.75rem 1rem',
     'font-size:0.875rem', 'z-index:9999',
   ].join(';')

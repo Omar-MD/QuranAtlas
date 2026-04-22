@@ -26,7 +26,7 @@
     right: 0;
     border: none;
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-size: 0.75rem;
     cursor: pointer;
   }
@@ -69,13 +69,13 @@
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.22em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     margin-bottom: 22px;
   }
 
   .qa-onb-blessing {
     font-size: 0.8125rem;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
     line-height: 1.6;
     max-width: 260px;
     margin: 0 auto;
@@ -93,7 +93,7 @@
   .qa-onb-verse-tr {
     margin-top: 4px;
     font-size: 0.75rem;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-style: normal;
   }
 
@@ -102,7 +102,7 @@
     font-size: 1.625rem;
     line-height: 1.25;
     margin: 0 0 10px;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-onb-gold {
@@ -112,7 +112,7 @@
   .qa-onb-lede {
     font-size: 0.8125rem;
     line-height: 1.6;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
     margin-bottom: 18px;
   }
 
@@ -128,7 +128,7 @@
     flex-direction: column;
     align-items: center;
     padding: 10px 4px;
-    border: 1.5px solid var(--qa-ambient-border);
+    border: 1.5px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-xl);
     background: transparent;
     cursor: pointer;
@@ -178,7 +178,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-onb-tlist {
@@ -193,7 +193,7 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-lg);
     background: transparent;
     text-align: left;
@@ -210,7 +210,7 @@
     width: 14px;
     height: 14px;
     border-radius: var(--qa-radius-circle);
-    border: 1.5px solid var(--qa-ambient-dim);
+    border: 1.5px solid var(--qa-text-on-sheet-dim);
     flex-shrink: 0;
     position: relative;
   }
@@ -236,18 +236,18 @@
   .qa-onb-t-name {
     font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-onb-t-sub {
     font-size: 0.75rem;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
   }
 
   .qa-onb-vpreview {
     padding: 12px 0;
-    border-top: 1px dotted var(--qa-ambient-border);
-    border-bottom: 1px dotted var(--qa-ambient-border);
+    border-top: 1px dotted var(--qa-border-on-sheet);
+    border-bottom: 1px dotted var(--qa-border-on-sheet);
     margin: 14px 0 12px;
   }
 
@@ -255,7 +255,7 @@
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     margin-bottom: 6px;
   }
 
@@ -263,13 +263,13 @@
     font-family: var(--qa-font-arabic);
     font-size: 1.0625rem;
     line-height: 1.9;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     margin-bottom: 6px;
   }
 
   .qa-onb-ven {
     font-size: 0.8125rem;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
     line-height: 1.55;
   }
 
@@ -286,8 +286,8 @@
     padding: 3px 9px;
     border-radius: var(--qa-radius-pill);
     font-size: 0.75rem;
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
+    background-color: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
   }
 
   .qa-onb-chip-dot {
@@ -298,7 +298,7 @@
 
   .qa-onb-privacy {
     font-size: 0.75rem;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     line-height: 1.55;
     text-align: center;
     margin-top: 8px;
@@ -315,7 +315,7 @@
     width: 6px;
     height: 6px;
     border-radius: var(--qa-radius-circle);
-    background-color: var(--qa-ambient-border);
+    background-color: var(--qa-border-on-sheet);
   }
 
   .qa-onb-dot--on {
@@ -351,7 +351,7 @@
   .qa-onb-cta--ghost {
     background: transparent;
     color: var(--qa-accent);
-    border-color: var(--qa-ambient-accent-soft);
+    border-color: var(--qa-accent-soft);
   }
 
   .qa-onb-shortcuts {
@@ -367,7 +367,7 @@
     align-items: center;
     gap: 12px;
     font-size: 0.875rem;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-onb-shortcut-keys {
@@ -382,9 +382,9 @@
     justify-content: center;
     min-width: 28px;
     padding: 2px 8px;
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: 5px;
-    background: var(--qa-ambient-surface);
+    background: var(--qa-surface-sheet);
     color: var(--qa-text-kbd);
     font-family: var(--qa-font-ui);
     font-size: 0.75rem;
@@ -399,7 +399,7 @@
   }
 
   .qa-onb-shortcut-desc {
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
   }
 
   @media (min-width: 1180px) {

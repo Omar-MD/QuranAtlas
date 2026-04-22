@@ -30,9 +30,9 @@
     z-index: 200;
     display: flex;
     flex-direction: column;
-    border-top-left-radius: var(--qa-ambient-sheet-radius);
-    border-top-right-radius: var(--qa-ambient-sheet-radius);
-    border-top: 1px solid var(--qa-ambient-border);
+    border-top-left-radius: var(--qa-radius-sheet);
+    border-top-right-radius: var(--qa-radius-sheet);
+    border-top: 1px solid var(--qa-border-on-sheet);
     box-shadow: 0 -14px 40px rgb(0 0 0 / 18%);
 
     --qa-ts-pad: 22px;
@@ -46,7 +46,7 @@
       border-top-left-radius: 0;
       border-top-right-radius: 0;
       border-top: none;
-      border-left: 1px solid var(--qa-ambient-border);
+      border-left: 1px solid var(--qa-border-on-sheet);
       box-shadow: -14px 0 40px rgb(0 0 0 / 10%);
 
       --qa-ts-pad: 22px;
@@ -58,7 +58,7 @@
     align-items: center;
     gap: 10px;
     padding: 14px var(--qa-ts-pad) 12px;
-    border-bottom: 1px solid var(--qa-ambient-border);
+    border-bottom: 1px solid var(--qa-border-on-sheet);
   }
 
   .qa-ts-hdr-text {
@@ -69,21 +69,21 @@
     font-family: var(--qa-font-translation);
     font-size: 1.0625rem;
     font-weight: 600;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-ts-sub {
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.1em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     margin-top: 2px;
   }
 
   .qa-ts-count {
     padding: 4px 10px;
     border-radius: var(--qa-radius-pill);
-    background: var(--qa-ambient-accent-soft);
+    background: var(--qa-accent-soft);
     color: var(--qa-accent);
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
@@ -111,7 +111,7 @@
     border-radius: var(--qa-radius-circle);
     border: none;
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -124,8 +124,8 @@
   }
 
   .qa-ts-close:hover {
-    color: var(--qa-ambient-parchment);
-    background: var(--qa-ambient-accent-soft);
+    color: var(--qa-text-on-sheet);
+    background: var(--qa-accent-soft);
   }
 
   .qa-ts-body {
@@ -138,14 +138,14 @@
     padding: 14px 16px;
     margin-bottom: 16px;
     border-radius: var(--qa-radius-xl);
-    background: color-mix(in srgb, var(--qa-ambient-surface) 95%, transparent);
+    background: color-mix(in srgb, var(--qa-surface-sheet) 95%, transparent);
   }
 
   .qa-ts-pref {
     font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.12em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     margin-bottom: 6px;
   }
 
@@ -161,7 +161,7 @@
     font-family: var(--qa-font-translation);
     font-size: 0.8125rem;
     line-height: 1.55;
-    color: var(--qa-text-secondary);
+    color: var(--qa-text-muted);
   }
 
   .qa-ts-search {
@@ -170,16 +170,16 @@
     align-items: center;
     gap: 8px;
     padding: 9px 12px;
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-lg);
-    background: color-mix(in srgb, var(--qa-ambient-surface) 40%, transparent);
+    background: color-mix(in srgb, var(--qa-surface-sheet) 40%, transparent);
     margin-bottom: 14px;
   }
 
   .qa-ts-search-icon {
     width: 16px;
     height: 16px;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     flex-shrink: 0;
   }
 
@@ -187,14 +187,14 @@
     flex: 1;
     border: none;
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.875rem;
     outline: none;
   }
 
   .qa-ts-search-input::placeholder {
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-ts-kbd {
@@ -202,7 +202,7 @@
     border-radius: var(--qa-radius-xs);
     border: 1px solid var(--qa-border-subtle);
     background: var(--qa-surface-raised);
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-size: 0.625rem;
     font-family: var(--qa-font-mono);
   }
@@ -214,8 +214,8 @@
     right: 0;
     padding: 4px;
     border-radius: var(--qa-radius-lg);
-    background: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
+    background: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
     box-shadow: var(--qa-shadow-popover);
     z-index: 10;
     display: flex;
@@ -233,7 +233,7 @@
     border-radius: 7px;
     border: none;
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     cursor: pointer;
@@ -241,7 +241,7 @@
   }
 
   .qa-ts-search-row:hover {
-    background: var(--qa-ambient-accent-soft);
+    background: var(--qa-accent-soft);
   }
 
   .qa-ts-search-dot {
@@ -260,7 +260,7 @@
     font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.1em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     text-transform: uppercase;
   }
 
@@ -285,7 +285,7 @@
     padding: 10px 12px;
     border: none;
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font: inherit;
     font-size: 0.8125rem;
     font-weight: 500;
@@ -296,14 +296,14 @@
   }
 
   .qa-ts-tab:hover {
-    color: var(--qa-ambient-parchment);
-    background: color-mix(in srgb, var(--qa-ambient-accent-soft) 60%, transparent);
+    color: var(--qa-text-on-sheet);
+    background: color-mix(in srgb, var(--qa-accent-soft) 60%, transparent);
   }
 
   .qa-ts-tab--on {
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-weight: 600;
-    background: color-mix(in srgb, var(--qa-ambient-accent-soft) 40%, transparent);
+    background: color-mix(in srgb, var(--qa-accent-soft) 40%, transparent);
   }
 
   @media (min-width: 1180px) {
@@ -336,7 +336,7 @@
     padding: 0 5px;
     border-radius: 9px;
     background: var(--qa-accent);
-    color: var(--qa-on-accent);
+    color: var(--qa-text-on-accent);
     font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     font-weight: 700;
@@ -360,7 +360,7 @@
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.12em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     text-transform: uppercase;
     font-weight: 600;
     padding-top: 6px;
@@ -390,9 +390,9 @@
     gap: 6px;
     padding: 4px 9px 4px 8px;
     border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     cursor: pointer;
@@ -414,7 +414,7 @@
   .qa-ts-chip-x {
     opacity: 0.6;
     margin-left: 2px;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-ts-combo {
@@ -426,16 +426,16 @@
     min-width: 100px;
     padding: 4px 10px;
     border-radius: var(--qa-radius-pill);
-    border: 1px dashed var(--qa-ambient-border);
+    border: 1px dashed var(--qa-border-on-sheet);
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     outline: none;
   }
 
   .qa-ts-combo-input::placeholder {
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-ts-combo-input:focus {
@@ -450,8 +450,8 @@
     min-width: 200px;
     padding: 4px;
     border-radius: var(--qa-radius-lg);
-    background: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
+    background: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
     box-shadow: var(--qa-shadow-popover);
     z-index: 10;
     display: flex;
@@ -467,7 +467,7 @@
     border-radius: 7px;
     border: none;
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     cursor: pointer;
@@ -475,7 +475,7 @@
   }
 
   .qa-ts-combo-row:hover {
-    background: var(--qa-ambient-accent-soft);
+    background: var(--qa-accent-soft);
   }
 
   .qa-ts-note {
@@ -488,7 +488,7 @@
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.12em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     margin-bottom: 6px;
   }
 
@@ -506,9 +506,9 @@
     min-height: 72px;
     padding: 10px;
     border-radius: var(--qa-radius-lg);
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     background: var(--qa-surface-app);
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-family: var(--qa-font-translation);
     font-size: 0.9375rem;
@@ -535,21 +535,21 @@
     gap: 6px;
     padding: 6px 12px;
     border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     cursor: pointer;
   }
 
   .qa-ts-flag:hover {
-    background: var(--qa-ambient-accent-soft);
+    background: var(--qa-accent-soft);
   }
 
   .qa-ts-flag--on {
     background: var(--qa-accent);
-    color: var(--qa-on-accent);
+    color: var(--qa-text-on-accent);
     border-color: transparent;
     font-weight: 600;
   }
@@ -568,8 +568,8 @@
   }
 
   .qa-ts-flag--on .qa-ts-flag-icon {
-    background: color-mix(in srgb, var(--qa-on-accent) 20%, transparent);
-    color: var(--qa-on-accent);
+    background: color-mix(in srgb, var(--qa-text-on-accent) 20%, transparent);
+    color: var(--qa-text-on-accent);
   }
 
   .qa-ts-footer {
@@ -577,8 +577,8 @@
     align-items: center;
     gap: 8px;
     padding: 12px var(--qa-ts-pad);
-    border-top: 1px solid var(--qa-ambient-border);
-    background: color-mix(in srgb, var(--qa-ambient-surface) 75%, transparent);
+    border-top: 1px solid var(--qa-border-on-sheet);
+    background: color-mix(in srgb, var(--qa-surface-sheet) 75%, transparent);
   }
 
   .qa-ts-meta {
@@ -586,7 +586,7 @@
     font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.14em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     text-align: center;
   }
 
@@ -596,7 +596,7 @@
     border-radius: var(--qa-radius-xs);
     border: 1px solid var(--qa-border-subtle);
     background: var(--qa-surface-raised);
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     margin-right: 4px;
     font-size: 0.6875rem;
   }
@@ -613,7 +613,7 @@
 
   .qa-ts-btn--primary {
     background: var(--qa-accent);
-    color: var(--qa-on-accent);
+    color: var(--qa-text-on-accent);
   }
 
   .qa-ts-btn--primary:hover {
@@ -622,13 +622,13 @@
 
   .qa-ts-btn--ghost {
     background: transparent;
-    color: var(--qa-ambient-parchment);
-    border-color: var(--qa-ambient-border);
+    color: var(--qa-text-on-sheet);
+    border-color: var(--qa-border-on-sheet);
   }
 
   .qa-ts-btn--danger {
     background: transparent;
-    color: var(--qa-color-error);
+    color: var(--qa-text-error);
     border-color: transparent;
     padding: 8px 0;
   }
@@ -664,8 +664,8 @@
     gap: 10px;
     padding: 12px 16px 14px;
     border-radius: var(--qa-radius-4xl);
-    background-color: color-mix(in srgb, var(--qa-ambient-surface) 96%, transparent);
-    border: 1px solid var(--qa-ambient-border);
+    background-color: color-mix(in srgb, var(--qa-surface-sheet) 96%, transparent);
+    border: 1px solid var(--qa-border-on-sheet);
     box-shadow: 0 14px 40px rgb(0 0 0 / 12%);
     backdrop-filter: blur(14px);
     z-index: 110;
@@ -696,7 +696,7 @@
     gap: 8px;
     font-family: var(--qa-font-mono);
     font-size: 0.75rem;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-qb-caret {
@@ -705,11 +705,11 @@
   }
 
   .qa-qb-label {
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-qb-vk {
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-weight: 600;
     letter-spacing: 0.04em;
   }
@@ -732,16 +732,16 @@
   }
 
   .qa-qb-accept:hover {
-    background: var(--qa-ambient-accent-soft);
+    background: var(--qa-accent-soft);
   }
 
   .qa-qb-kbd {
     padding: 2px 6px;
     border-radius: var(--qa-radius-xs);
     background: var(--qa-surface-raised);
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     font-size: 0.625rem;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-qb-chips {
@@ -765,9 +765,9 @@
     gap: 5px;
     padding: 5px 10px 5px 8px;
     border-radius: var(--qa-radius-pill);
-    border: 1px dashed color-mix(in srgb, var(--qa-chip-hue, var(--qa-ambient-border)) 60%, transparent);
+    border: 1px dashed color-mix(in srgb, var(--qa-chip-hue, var(--qa-border-on-sheet)) 60%, transparent);
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     cursor: pointer;
@@ -782,7 +782,7 @@
     background: color-mix(in srgb, var(--qa-chip-hue, var(--qa-accent)) 18%, transparent);
     border-color: color-mix(in srgb, var(--qa-chip-hue, var(--qa-accent)) 60%, transparent);
     border-style: solid;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-weight: 500;
   }
 
@@ -812,8 +812,8 @@
     display: inline-flex;
     padding: 4px;
     border-radius: var(--qa-radius-pill);
-    background-color: color-mix(in srgb, var(--qa-ambient-surface) 94%, transparent);
-    border: 1px solid var(--qa-ambient-border);
+    background-color: color-mix(in srgb, var(--qa-surface-sheet) 94%, transparent);
+    border: 1px solid var(--qa-border-on-sheet);
     box-shadow: 0 8px 20px rgb(0 0 0 / 16%);
     backdrop-filter: blur(10px);
     z-index: 120;
@@ -825,7 +825,7 @@
     border-radius: var(--qa-radius-pill);
     border: none;
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     cursor: pointer;
     font: inherit;
     font-weight: 600;
@@ -834,11 +834,11 @@
 
   .qa-tagmode-btn--on {
     background-color: var(--qa-accent);
-    color: var(--qa-on-accent);
+    color: var(--qa-text-on-accent);
   }
 
   .qa-tagmode-btn:not(.qa-tagmode-btn--on):hover {
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   @media (min-width: 1180px) {
@@ -861,7 +861,7 @@
     border-radius: var(--qa-radius-pill);
     border: 1px solid transparent;
     background-color: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     white-space: nowrap;
@@ -878,12 +878,12 @@
   }
 
   .qa-tag-chip:hover {
-    background-color: var(--qa-ambient-accent-soft);
+    background-color: var(--qa-accent-soft);
   }
 
   .qa-tag-chip--on {
     background-color: var(--qa-accent);
-    color: var(--qa-on-accent);
+    color: var(--qa-text-on-accent);
     font-weight: 600;
   }
 

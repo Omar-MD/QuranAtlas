@@ -31,7 +31,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-family: var(--qa-font-arabic);
     font-size: 1.5rem;
     line-height: 1;
@@ -46,15 +46,15 @@
     width: 40px;
     height: 40px;
     border-radius: var(--qa-radius-lg);
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     text-decoration: none;
     transition: color var(--qa-transition-fast), background-color var(--qa-transition-fast);
   }
 
   .qa-rail-item:hover,
   .qa-rail-item:focus-visible {
-    color: var(--qa-ambient-parchment);
-    background-color: color-mix(in srgb, var(--qa-ambient-border) 50%, transparent);
+    color: var(--qa-text-on-sheet);
+    background-color: color-mix(in srgb, var(--qa-border-on-sheet) 50%, transparent);
     outline: none;
   }
 
@@ -64,8 +64,8 @@
   }
 
   .qa-rail-item--active {
-    color: var(--qa-ambient-parchment);
-    background-color: color-mix(in srgb, var(--qa-ambient-border) 70%, transparent);
+    color: var(--qa-text-on-sheet);
+    background-color: color-mix(in srgb, var(--qa-border-on-sheet) 70%, transparent);
   }
 
   .qa-rail-tip {
@@ -75,8 +75,8 @@
     transform: translateY(-50%) translateX(-4px);
     padding: 4px 9px;
     border-radius: var(--qa-radius-sm);
-    background: var(--qa-ambient-parchment);
-    color: var(--qa-bg-primary);
+    background: var(--qa-text-on-sheet);
+    color: var(--qa-surface-app);
     font-size: 0.75rem;
     font-weight: 500;
     white-space: nowrap;
@@ -106,7 +106,7 @@
     font-family: var(--qa-font-mono);
     font-size: 0.75rem;
     letter-spacing: 0.08em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-rail-more {
@@ -117,7 +117,7 @@
     justify-content: center;
     border: none;
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     cursor: pointer;
     border-radius: var(--qa-radius-lg);
     transition: color var(--qa-transition-fast), background-color var(--qa-transition-fast);
@@ -125,8 +125,8 @@
 
   .qa-rail-more:hover,
   .qa-rail-more:focus-visible {
-    color: var(--qa-ambient-parchment);
-    background-color: color-mix(in srgb, var(--qa-ambient-border) 50%, transparent);
+    color: var(--qa-text-on-sheet);
+    background-color: color-mix(in srgb, var(--qa-border-on-sheet) 50%, transparent);
     outline: none;
   }
 
@@ -153,12 +153,12 @@
     align-items: center;
     gap: 7px;
     padding: 5px 12px;
-    border-radius: var(--qa-ambient-pill-radius);
-    background-color: color-mix(in srgb, var(--qa-ambient-surface) 92%, transparent);
-    color: var(--qa-ambient-parchment);
+    border-radius: var(--qa-radius-pill);
+    background-color: color-mix(in srgb, var(--qa-surface-sheet) 92%, transparent);
+    color: var(--qa-text-on-sheet);
     font-size: 0.75rem;
     letter-spacing: 0.02em;
-    border: 1px solid var(--qa-ambient-accent-soft);
+    border: 1px solid var(--qa-accent-soft);
     cursor: pointer;
     backdrop-filter: blur(14px);
     box-shadow: 0 6px 20px rgb(0 0 0 / 14%);
@@ -191,8 +191,8 @@
   .qa-pill-ref-hint {
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
-    color: var(--qa-ambient-dim);
-    border: 1px solid var(--qa-ambient-accent-soft);
+    color: var(--qa-text-on-sheet-dim);
+    border: 1px solid var(--qa-accent-soft);
     border-radius: var(--qa-radius-xs);
     padding: 1px 5px;
   }
@@ -230,9 +230,9 @@
     z-index: 300;
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--qa-ambient-accent-soft);
+    border: 1px solid var(--qa-accent-soft);
     border-radius: var(--qa-radius-3xl);
-    background-color: var(--qa-ambient-surface);
+    background-color: var(--qa-surface-sheet);
     box-shadow: 0 18px 40px rgb(0 0 0 / 40%);
     overflow: hidden;
     transition: transform var(--qa-transition-base), visibility 0s linear 0s;
@@ -243,12 +243,12 @@
     align-items: center;
     gap: 0.625rem;
     padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--qa-ambient-border);
+    border-bottom: 1px solid var(--qa-border-on-sheet);
   }
 
   .qa-cmd-input-glyph {
     font-size: 1.125rem;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     line-height: 1;
   }
 
@@ -257,21 +257,21 @@
     border: none;
     outline: none;
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-size: 1rem;
     line-height: 1.4;
     min-width: 0;
   }
 
   .qa-cmd-input::placeholder {
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-cmd-input-hint {
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
-    color: var(--qa-ambient-dim);
-    border: 1px solid var(--qa-ambient-accent-soft);
+    color: var(--qa-text-on-sheet-dim);
+    border: 1px solid var(--qa-accent-soft);
     border-radius: var(--qa-radius-xs);
     padding: 1px 6px;
   }
@@ -294,12 +294,12 @@
     font-size: 0.6875rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-cmd-group-count {
     font-variant-numeric: tabular-nums;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-cmd-item {
@@ -310,7 +310,7 @@
     padding: 0.625rem 1rem;
     border: none;
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     text-align: left;
     cursor: pointer;
     font: inherit;
@@ -319,7 +319,7 @@
 
   .qa-cmd-item:hover,
   .qa-cmd-item.qa-cmd--active {
-    background-color: var(--qa-ambient-accent-soft);
+    background-color: var(--qa-accent-soft);
   }
 
   .qa-cmd-item-glyph {
@@ -329,7 +329,7 @@
     width: 24px;
     height: 24px;
     border-radius: var(--qa-radius-sm);
-    background-color: var(--qa-ambient-accent-soft);
+    background-color: var(--qa-accent-soft);
     color: var(--qa-accent);
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
@@ -346,30 +346,30 @@
   .qa-cmd-item-label {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-cmd-item-meta {
     font-size: 0.75rem;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-cmd-empty {
     padding: 1.25rem 1rem;
     text-align: center;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-size: 0.875rem;
   }
 
   .qa-cmd-foot {
-    border-top: 1px solid var(--qa-ambient-border);
+    border-top: 1px solid var(--qa-border-on-sheet);
     padding: 8px 14px;
     display: flex;
     gap: 14px;
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   @media (max-width: 640px) {
@@ -401,7 +401,7 @@
     align-items: center;
     padding: 1px 5px;
     border-radius: var(--qa-radius-xs);
-    background-color: var(--qa-ambient-accent-soft);
+    background-color: var(--qa-accent-soft);
     color: var(--qa-text-kbd);
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
@@ -432,7 +432,7 @@
     margin: 8px 12px 10px;
     padding: 10px 12px;
     border-radius: var(--qa-radius-lg);
-    border: 1px solid var(--qa-ambient-accent-soft);
+    border: 1px solid var(--qa-accent-soft);
     background-color: color-mix(in srgb, var(--qa-accent) 6%, transparent);
   }
 
@@ -448,14 +448,14 @@
     font-family: var(--qa-font-arabic);
     font-size: 1rem;
     line-height: 1.85;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     margin-bottom: 4px;
   }
 
   .qa-cmd-vcard-en {
     font-size: 0.8125rem;
     line-height: 1.5;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
   }
 
   /* ================================================================ margin header */
@@ -467,7 +467,7 @@
     right: 0;
     z-index: 95;
     padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
-    background: color-mix(in srgb, var(--qa-bg-primary) 92%, transparent);
+    background: color-mix(in srgb, var(--qa-surface-app) 92%, transparent);
     backdrop-filter: blur(14px);
     display: flex;
     flex-direction: column;
@@ -495,9 +495,9 @@
     gap: 6px;
     padding: 7px 12px 7px 14px;
     border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-ambient-border);
-    background: var(--qa-ambient-surface);
-    color: var(--qa-ambient-parchment);
+    border: 1px solid var(--qa-border-on-sheet);
+    background: var(--qa-surface-sheet);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     cursor: pointer;
     min-width: 0;
@@ -518,7 +518,7 @@
   .qa-mh-chevron {
     width: 14px;
     height: 14px;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     flex-shrink: 0;
   }
 
@@ -526,9 +526,9 @@
     width: 36px;
     height: 36px;
     border-radius: var(--qa-radius-circle);
-    border: 1px solid var(--qa-ambient-border);
-    background: var(--qa-ambient-surface);
-    color: var(--qa-ambient-parchment);
+    border: 1px solid var(--qa-border-on-sheet);
+    background: var(--qa-surface-sheet);
+    color: var(--qa-text-on-sheet);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -553,9 +553,9 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--qa-radius-circle);
-    border: 1px solid var(--qa-ambient-border);
-    background: var(--qa-ambient-surface);
-    color: var(--qa-ambient-parchment);
+    border: 1px solid var(--qa-border-on-sheet);
+    background: var(--qa-surface-sheet);
+    color: var(--qa-text-on-sheet);
     cursor: pointer;
     flex-shrink: 0;
   }
@@ -595,7 +595,7 @@
     border-radius: var(--qa-radius-pill);
     border: none;
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font: inherit;
     font-size: 0.8125rem;
     font-weight: 500;
@@ -605,20 +605,20 @@
   }
 
   .qa-mh-tab:hover {
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-mh-tab--on {
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
-    color: var(--qa-ambient-parchment);
+    background-color: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
+    color: var(--qa-text-on-sheet);
     font-weight: 600;
   }
 
   .qa-mh-count {
     font-family: var(--qa-font-mono);
     font-weight: 500;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-mh-tab--on .qa-mh-count {
@@ -639,24 +639,24 @@
     gap: 10px;
     padding: 5px 12px;
     border-radius: var(--qa-radius-pill);
-    background: color-mix(in srgb, var(--qa-ambient-surface) 70%, transparent);
+    background: color-mix(in srgb, var(--qa-surface-sheet) 70%, transparent);
     border: 1px solid var(--qa-border-subtle);
     font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-sp-label {
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-weight: 600;
   }
 
   .qa-sp-bar {
     width: 64px;
     height: 3px;
-    background: var(--qa-border);
+    background: var(--qa-border-default);
     border-radius: var(--qa-radius-hairline);
     overflow: hidden;
     display: inline-block;
@@ -696,9 +696,9 @@
     gap: 8px;
     padding: 7px 14px 7px 12px;
     border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-ambient-border);
-    background: var(--qa-ambient-surface);
-    color: var(--qa-ambient-parchment);
+    border: 1px solid var(--qa-border-on-sheet);
+    background: var(--qa-surface-sheet);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     font-weight: 600;

@@ -25,7 +25,6 @@
 @import url('./base.css');
 @import url('./animations.css');
 @import url('./utilities.css');
-@import url('./surfaces/_legacy.css');
 @import url('./surfaces/quota-banner.css');
 @import url('./surfaces/modal.css');
 @import url('./surfaces/sheet.css');
@@ -38,3 +37,5 @@
 @import url('./surfaces/tag.css');
 @import url('./surfaces/marks.css');
 @import url('./surfaces/review.css');
+@import url('./surfaces/settings.css');
+@import url('./surfaces/toast.css');

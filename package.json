@@ -17,7 +17,7 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "lint:css": "stylelint 'src/styles/**/*.css'",
-    "check:styles": "node scripts/check-theme-parity.mjs && node scripts/check-token-usage.mjs && node scripts/check-at-layer.mjs",
+    "check:styles": "node scripts/check-theme-parity.mjs && node scripts/check-token-usage.mjs && node scripts/check-at-layer.mjs && node scripts/check-no-svelte-style.mjs",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check-chunks": "node scripts/check-chunks.js",
     "check-no-feature-state": "node scripts/check-no-feature-state.js",

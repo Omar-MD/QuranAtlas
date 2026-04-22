@@ -40,22 +40,6 @@
       }
     },
     {
-      "files": ["src/styles/surfaces/_legacy.css"],
-      "rules": {
-        "selector-max-id": null,
-        "selector-max-type": null,
-        "selector-max-universal": null,
-        "selector-class-pattern": null,
-        "selector-no-qualifying-type": null,
-        "selector-max-compound-selectors": null,
-        "declaration-no-important": null,
-        "custom-property-pattern": null,
-        "no-duplicate-selectors": null,
-        "declaration-block-no-duplicate-properties": null,
-        "property-no-vendor-prefix": null
-      }
-    },
-    {
       "files": ["src/styles/surfaces/sheet.css", "src/styles/surfaces/modal.css"],
       "rules": {
         "property-no-vendor-prefix": null,
@@ -100,6 +84,12 @@
       "rules": {
         "selector-max-type": 1,
         "selector-max-compound-selectors": 3
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/toast.css"],
+      "rules": {
+        "selector-max-type": 1
       }
     }
   ]
