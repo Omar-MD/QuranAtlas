@@ -1,0 +1,28 @@
+/* ==========================================================================
+   QuranAtlas Design System — Entry Point
+
+   Layer order (declared once, consumed everywhere):
+     reset       — box-sizing, margin/padding zero-out
+     tokens      — :root primitive + semantic custom properties
+     base        — html/body/a/::selection/focus-visible/scrollbar defaults
+     animations  — all @keyframes (globally named qa-*)
+     utilities   — a11y helpers (.qa-visually-hidden, .qa-skip-link)
+     surfaces    — per-surface component CSS
+     overrides   — escape hatch; empty by default; justify each entry
+
+   Rules inside layers win by layer order, not source order.
+   Rules outside any layer beat every layered rule — stylelint forbids them.
+
+   See docs/superpowers/specs/2026-04-22-css-token-refactor-design.md
+   ========================================================================== */
+
+@layer reset, tokens, base, animations, utilities, surfaces, overrides;
+
+@import './reset.css';
+@import './tokens/primitives.css';
+@import './tokens/motion.css';
+@import './tokens/semantic.css';
+@import './base.css';
+@import './animations.css';
+@import './utilities.css';
+@import './surfaces/_legacy.css';
