@@ -85,6 +85,15 @@
         "selector-max-type": 1,
         "selector-no-qualifying-type": null
       }
+    },
+    {
+      "files": ["src/styles/surfaces/tag.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "selector-max-universal": 1,
+        "selector-no-qualifying-type": null,
+        "property-no-vendor-prefix": null
+      }
     }
   ]
 }

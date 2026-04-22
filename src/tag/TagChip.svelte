@@ -23,42 +23,7 @@
   onclick={ontoggle}
   aria-pressed={on}
 >
-  <span class="qa-tag-chip-dot" style:background-color={hue}></span>
+  <span class="qa-tag-chip-dot" style:--qa-tag-chip-hue={hue}></span>
   {value}
 </button>
 
-<style>
-  .qa-tag-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 11px;
-    border-radius: var(--qa-radius-pill);
-    border: 1px solid transparent;
-    background-color: transparent;
-    color: var(--qa-ambient-parchment);
-    font: inherit;
-    font-size: 0.8125rem;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color var(--qa-transition-fast), color var(--qa-transition-fast);
-  }
-  .qa-tag-chip-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: var(--qa-radius-circle);
-    opacity: 0.6;
-  }
-  .qa-tag-chip:hover {
-    background-color: var(--qa-ambient-accent-soft);
-  }
-  .qa-tag-chip--on {
-    background-color: var(--qa-ambient-accent);
-    color: var(--qa-on-accent);
-    font-weight: 600;
-  }
-  .qa-tag-chip--on .qa-tag-chip-dot {
-    background-color: currentColor !important;
-    opacity: 0.85;
-  }
-</style>
