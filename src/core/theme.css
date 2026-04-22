@@ -424,7 +424,12 @@ a:hover, a:focus {
   margin: 0 auto;
   width: 100%;
   max-width: 800px;
+  /* Hide scrollbar globally across all themes. Content remains scrollable;
+   * only the visual track is suppressed for a cleaner reading surface. */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE + old Edge */
 }
+#main-content::-webkit-scrollbar { display: none; } /* Chromium + Safari */
 
 /* ==========================================================================
    Ambient dock — floating 4-glyph pill
