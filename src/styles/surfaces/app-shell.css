@@ -1,0 +1,113 @@
+/**
+ * app-shell — #app-shell layout, #top-bar (hidden; kept for DOM structure),
+ * #main-content scroller, #bottom-nav dock (desktop left rail, hidden on
+ * mobile/tablet — MarginHeader carries primary nav there).
+ *
+ * Only file allowed `:has()` per spec (cross-surface reach for Reader column cap).
+ * Scrollbar is suppressed across all themes for a cleaner reading surface.
+ */
+@layer surfaces {
+  #app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #top-bar {
+    position: relative;
+    z-index: 99;
+    pointer-events: none;
+    min-height: 0;
+    padding: 0;
+    display: none;
+  }
+
+  #top-bar > * {
+    pointer-events: auto;
+  }
+
+  #main-content {
+    flex: 1;
+    min-height: 0;
+    padding: calc(env(safe-area-inset-top) + 108px) 1rem calc(90px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 800px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #main-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  #bottom-nav {
+    display: none;
+  }
+
+  #bottom-nav:empty {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    #app-shell {
+      display: grid;
+      grid-template: "topbar" auto "main" 1fr "footer" auto / 1fr;
+    }
+
+    #top-bar {
+      grid-area: topbar;
+    }
+
+    #main-content {
+      grid-area: main;
+      padding: calc(env(safe-area-inset-top) + 108px) 1.5rem 2rem;
+    }
+
+    #bottom-nav {
+      grid-area: footer;
+    }
+  }
+
+  @media (min-width: 1180px) {
+    #app-shell {
+      padding-left: 56px;
+    }
+
+    #main-content {
+      padding: 2rem 3rem;
+      max-width: 1180px;
+    }
+
+    #bottom-nav {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 56px;
+      padding: 18px 0 24px;
+      z-index: 100;
+      background: var(--qa-surface-sheet);
+      border-right: 1px solid var(--qa-border-on-sheet);
+      box-shadow: none;
+      transition: opacity var(--qa-transition-base);
+    }
+
+    #bottom-nav.qa-dock--hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Reader column cap — the only `:has()` selector in the codebase. */
+    #main-content:has(.qa-verse) {
+      max-width: 960px;
+    }
+  }
+}
