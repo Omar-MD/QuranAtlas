@@ -39,39 +39,3 @@
   <span class="qa-sp-pct">{pct}%</span>
 </div>
 
-<style>
-  .qa-surah-progress {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 5px 12px;
-    border-radius: var(--qa-radius-pill);
-    background: color-mix(in srgb, var(--qa-ambient-surface) 70%, transparent);
-    border: 1px solid var(--qa-border-subtle);
-    font-family: var(--qa-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--qa-ambient-dim);
-  }
-  .qa-sp-label { color: var(--qa-ambient-parchment); font-weight: 600; }
-  .qa-sp-bar {
-    width: 64px;
-    height: 3px;
-    background: var(--qa-border);
-    border-radius: var(--qa-radius-hairline);
-    overflow: hidden;
-    display: inline-block;
-  }
-  .qa-sp-bar i {
-    display: block;
-    height: 100%;
-    background: var(--qa-ambient-accent);
-    border-radius: var(--qa-radius-hairline);
-  }
-  .qa-sp-pct { color: var(--qa-ambient-accent); font-weight: 600; }
-  @media (min-width: 1180px) {
-    .qa-surah-progress { font-size: 0.6875rem; padding: 6px 14px; }
-    .qa-sp-bar { width: 96px; }
-  }
-</style>
