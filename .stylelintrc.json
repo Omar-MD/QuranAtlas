@@ -94,6 +94,13 @@
         "selector-no-qualifying-type": null,
         "property-no-vendor-prefix": null
       }
+    },
+    {
+      "files": ["src/styles/surfaces/review.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "selector-max-compound-selectors": 3
+      }
     }
   ]
 }
