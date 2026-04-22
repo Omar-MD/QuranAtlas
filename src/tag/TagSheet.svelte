@@ -19,6 +19,8 @@
   import { tagSession } from '../state/tag-session.svelte'
   import { LAYER_GROUPS, LAYER_LABELS, hueForLayer } from '../data/tag-layers'
   import type { LayerGroup } from '../data/tag-layers'
+  import { on } from '../core/events'
+  import { Events } from '../core/constants'
 
   interface Props { isOpen: boolean; verseKey: string; onclose: () => void }
   const { isOpen, verseKey, onclose }: Props = $props()
@@ -80,7 +82,9 @@
   }
 
   async function handleDelete(): Promise<void> {
-    const snapshot = previousMark
+    // $state.snapshot unwraps the reactive proxy on previousMark so the
+    // plain Mark can be passed through structured-clone (IDB put) during undo.
+    const snapshot = previousMark ? $state.snapshot(previousMark) as Mark : undefined
     await del(verseKey)
     showUndoToast({
       verseKey,
@@ -153,7 +157,16 @@
       else if (e.key === 'Escape') { e.preventDefault(); onclose() }
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    // If another tab deletes/edits the verse we're currently editing, close
+    // silently — mirrors the cross-tab invariant in user-journeys §I2.
+    const unsubSync = on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => {
+      if (!isOpen || !verseKey) { return }
+      if (Array.isArray(verseKeys) && verseKeys.includes(verseKey)) { onclose() }
+    })
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      unsubSync()
+    }
   })
 </script>
 

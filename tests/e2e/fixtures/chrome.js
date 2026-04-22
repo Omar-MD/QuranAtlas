@@ -17,22 +17,31 @@ export async function dismissOnboarding(page) {
 }
 
 /**
- * Surface the ambient dock on a reader route (it auto-hides).
+ * Ensure primary-nav chrome is reachable.
+ * Desktop (≥1180px): left rail (#bottom-nav contents) is always visible — no-op.
+ * Mobile (<1180px): MarginHeader is fixed at top; if hidden by scroll, scroll main to top.
  */
 export async function surfaceDock(page) {
-  // Tap reader body to trigger AMBIENT_SURFACE
-  await page.locator('#main-content').click({ position: { x: 50, y: 50 } })
-  await expect(page.locator('#bottom-nav')).not.toHaveClass(/qa-dock--hidden/)
+  const header = page.locator('header.qa-mh').first()
+  if (await header.count() > 0) {
+    const hidden = await header.evaluate(el => el.classList.contains('qa-mh--hidden')).catch(() => false)
+    if (hidden) {
+      await page.evaluate(() => {
+        const el = document.getElementById('main-content')
+        if (el) { el.scrollTo(0, 0); el.dispatchEvent(new Event('scroll')) }
+      })
+    }
+  }
+  await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
 }
 
 /**
- * Open the More sheet via dock ⋯ button.
+ * Open the More sheet via the ⋯ button on whichever nav is visible
+ * (desktop rail or mobile MarginHeader).
  */
 export async function openMoreSheet(page) {
   await surfaceDock(page)
-  // Rail (desktop) and MarginHeader (mobile) both expose data-tab="more";
-  // only one is visible at a time based on viewport.
-  await page.locator('[data-tab="more"]:visible').click()
+  await page.locator('[data-tab="more"]:visible').first().click()
   await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
 }
 

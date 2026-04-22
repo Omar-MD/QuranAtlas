@@ -126,7 +126,9 @@ test.describe('Journey G: About', () => {
   test('G3: press ? → keyboard shortcuts sheet opens and closes', async ({ page }) => {
     // The reader is already loaded from beforeEach (/#/s/1).
     // Ensure focus is on a non-text-input element so `?` fires the key handler.
-    await page.locator('#main-content').click({ position: { x: 50, y: 50 } })
+    // Focus #main-content directly — a click at (50,50) on mobile is blocked by
+    // the fixed MarginHeader at the top.
+    await page.evaluate(() => document.getElementById('main-content')?.focus())
 
     // Step 1: press ? → shortcuts sheet opens
     await page.keyboard.press('?')

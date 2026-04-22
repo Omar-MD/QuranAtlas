@@ -540,15 +540,19 @@ test.describe('Journey E: desktop variants @desktop', () => {
     await page.goto('/#/threads/reflect')
     await expect(page.locator('.qa-fvr-layout')).toBeVisible({ timeout: 15_000 })
 
+    // FVR is centered inside #main-content (the left rail sits outside main
+    // at ≥1180px). Measure relative to main's box, not the viewport.
     const geom = await page.locator('.qa-fvr-layout').evaluate(el => {
+      const main = document.getElementById('main-content')
+      const mr = main.getBoundingClientRect()
       const r = el.getBoundingClientRect()
       return {
         width: Math.round(r.width),
-        left: r.left,
-        rightGap: window.innerWidth - r.right,
+        leftGap: r.left - mr.left,
+        rightGap: mr.right - r.right,
       }
     })
     expect(geom.width).toBe(1000)
-    expect(Math.abs(geom.left - geom.rightGap)).toBeLessThan(2)
+    expect(Math.abs(geom.leftGap - geom.rightGap)).toBeLessThan(2)
   })
 })

@@ -65,21 +65,21 @@ test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reloa
     // Tab B should NOT have the gold edge before Tab A acts
     await expect(verse1_5_B).not.toHaveClass(/qa-verse--bookmarked/)
 
-    // Tab A: long-press 1:5 → mark editor opens
+    // Tab A: long-press 1:5 → TagSheet opens
     await longPress(verse1_5_A)
-    const markEditor = pageA.locator('.qa-sheet--mark')
-    await expect(markEditor).toBeVisible({ timeout: 5_000 })
+    const tagSheet = pageA.locator('.qa-ts')
+    await expect(tagSheet).toBeVisible({ timeout: 5_000 })
 
-    // Select a tag so Save becomes enabled
-    const allRegion = pageA.locator('.qa-layer-all').first()
-    await expect(allRegion).toBeVisible()
-    await allRegion.locator('.qa-mark-chip').first().click()
+    // Add a tag via the Themes tab threads combobox (value commits on Enter)
+    await pageA.locator('.qa-ts-tab', { hasText: 'Themes' }).click()
+    const threadsInput = pageA.locator('.qa-ts-layer', { has: pageA.locator('.qa-ts-lbl', { hasText: /^threads$/i }) }).locator('.qa-ts-combo-input')
+    await threadsInput.click()
+    await threadsInput.fill('mercy')
+    await threadsInput.press('Enter')
 
-    // Tab A: tap Save → editor closes → broadcastMarkChange fires
-    const saveBtn = pageA.locator('.qa-mark-btn--primary')
-    await expect(saveBtn).toBeEnabled({ timeout: 3_000 })
-    await saveBtn.click()
-    await expect(markEditor).not.toBeVisible({ timeout: 5_000 })
+    // Tab A: tap Save → sheet closes → broadcastMarkChange fires
+    await pageA.locator('.qa-ts-btn--primary').click()
+    await expect(tagSheet).not.toBeVisible({ timeout: 5_000 })
 
     // Tab A: verify gold edge on 1:5
     await expect(verse1_5_A).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
@@ -123,40 +123,29 @@ test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor clos
     await pageB.evaluate(() => { window.location.hash = '#/s/2/255' })
     await pageB.locator('.qa-verse[data-verse-key="2:255"]').waitFor({ state: 'attached', timeout: 10_000 })
 
-    // Tab A: open mark editor for 2:255 via right-click (contextmenu handler)
+    // Tab A: open TagSheet for 2:255 via right-click (contextmenu handler)
     const verse_A = pageA.locator('.qa-verse[data-verse-key="2:255"]')
     await expect(verse_A).toBeVisible({ timeout: 5_000 })
     await verse_A.click({ button: 'right' })
 
-    const markEditor = pageA.locator('.qa-sheet--mark')
-    await expect(markEditor).toBeVisible({ timeout: 5_000 })
-    // Confirm it's an edit (existing mark in shared IDB)
-    await expect(pageA.locator('.qa-sheet-title')).toHaveText('Edit mark')
+    const tagSheetA = pageA.locator('.qa-ts')
+    await expect(tagSheetA).toBeVisible({ timeout: 5_000 })
 
-    // Tab B: open mark editor for 2:255 via right-click
+    // Tab B: open TagSheet for 2:255 via right-click, then delete
     const verse_B = pageB.locator('.qa-verse[data-verse-key="2:255"]')
     await expect(verse_B).toBeVisible({ timeout: 5_000 })
     await verse_B.click({ button: 'right' })
 
-    const markEditorB = pageB.locator('.qa-sheet--mark')
-    await expect(markEditorB).toBeVisible({ timeout: 5_000 })
-    await expect(pageB.locator('.qa-sheet-title')).toHaveText('Edit mark')
+    const tagSheetB = pageB.locator('.qa-ts')
+    await expect(tagSheetB).toBeVisible({ timeout: 5_000 })
 
-    // Tab B: click Delete → confirm prompt → confirm delete
-    const deleteBtn = pageB.locator('.qa-mark-btn--danger[data-action="delete"]')
-    await expect(deleteBtn).toBeVisible()
-    await deleteBtn.click()
+    // Tab B: click Delete (TagSheet deletes immediately — no confirm step)
+    await pageB.locator('.qa-ts-btn--danger').click()
+    await expect(tagSheetB).not.toBeVisible({ timeout: 5_000 })
 
-    const confirmDeleteBtn = pageB.locator('.qa-mark-btn--danger-primary')
-    await expect(confirmDeleteBtn).toBeVisible({ timeout: 3_000 })
-    await confirmDeleteBtn.click()
-
-    // Tab B editor closes; broadcastMarkChange(['2:255']) fires over BroadcastChannel
-    await expect(markEditorB).not.toBeVisible({ timeout: 5_000 })
-
-    // Tab A editor should close silently: SYNC_UPDATE_RECEIVED fires → editor.js
-    // checks currentEditingVerseKey ('2:255') ∈ verseKeys → closeEditor()
-    await expect(markEditor).not.toBeVisible({ timeout: 8_000 })
+    // Tab A sheet should close silently: SYNC_UPDATE_RECEIVED fires → TagSheet
+    // listens for the currently-edited verseKey and calls onclose().
+    await expect(tagSheetA).not.toBeVisible({ timeout: 8_000 })
 
     // Tab A: gold edge should be gone (indicator re-reads IDB on SYNC_UPDATE)
     await expect(verse_A).not.toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })

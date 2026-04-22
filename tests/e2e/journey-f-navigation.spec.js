@@ -124,14 +124,12 @@ test.describe('Journey F: Navigation', () => {
     const sheet = page.locator('.qa-cmd-sheet')
     await expect(sheet).toHaveClass(/qa-cmd--hidden/, { timeout: 5_000 })
 
-    // Mark editor should open for verse 2:255
-    const markEditor = page.locator('.qa-sheet--mark')
-    await expect(markEditor).toBeVisible({ timeout: 5_000 })
+    // TagSheet should open for verse 2:255
+    const tagSheet = page.locator('.qa-ts')
+    await expect(tagSheet).toBeVisible({ timeout: 5_000 })
 
-    // Editor header should reference 2:255
-    const markRef = page.locator('.qa-mark-ref')
-    await expect(markRef).toBeVisible()
-    await expect(markRef).toContainText('2')
+    // Sheet header should reference 2:255
+    await expect(tagSheet.locator('.qa-ts-sub')).toContainText('2:255')
   })
 
   // ---------------------------------------------------------------------------
@@ -177,14 +175,11 @@ test.describe('Journey F: Navigation', () => {
   // F4. Surah directory
   // ---------------------------------------------------------------------------
 
-  test('F4: dock → Search → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
-    // Surface dock on reader and click Search tab
-    await surfaceDock(page)
-    const searchTab = page.locator('[data-tab="search"]')
-    await expect(searchTab).toBeVisible()
-    await searchTab.click()
-
-    // Wait for command sheet to open
+  test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
+    // Desktop exposes a Search tab in the left rail; mobile routes through
+    // the command sheet via ⌘K or the MarginHeader crumb.  Use ⌘K — the
+    // canonical cross-viewport keyboard entry — to reach "Browse all surahs".
+    await openCommandSheet(page)
     const cmdSheet = page.locator('.qa-cmd-sheet')
     await expect(cmdSheet).toBeVisible({ timeout: 5_000 })
 
@@ -288,28 +283,10 @@ test.describe('Journey F: Navigation', () => {
   // F6. Keyboard navigation @keyboard
   // ---------------------------------------------------------------------------
 
-  test('F6: Tab to ambient pill → Enter opens command sheet @keyboard', async ({ page }) => {
-    // The pill is on reader route and surfaces on tap.
-    // Surface the dock + pill first by tapping the reader body.
-    await page.locator('#main-content').click({ position: { x: 50, y: 50 } })
-
-    const pill = page.locator('.qa-pill-ref')
-    await expect(pill).not.toHaveClass(/qa-pill-ref--hidden/, { timeout: 3_000 })
-
-    // Tab through focusable elements until we land on the pill.
-    // The pill has tabindex="0" so it is in the tab order.
-    let pillFocused = false
-    for (let i = 0; i < 20 && !pillFocused; i++) {
-      await page.keyboard.press('Tab')
-      pillFocused = await page.evaluate(() => {
-        const el = document.activeElement
-        return el?.classList?.contains('qa-pill-ref') ?? false
-      })
-    }
-    expect(pillFocused).toBe(true)
-
-    // Press Enter → command sheet should open
-    await page.keyboard.press('Enter')
+  test('F6: ⌘K opens command sheet @keyboard', async ({ page }) => {
+    // The canonical keyboard entry for the command sheet is ⌘K (Meta+k on
+    // Mac, Ctrl+k elsewhere — Playwright aliases Meta→Ctrl on non-Mac).
+    await page.keyboard.press('Meta+k')
     const cmdSheet = page.locator('.qa-cmd-sheet')
     await expect(cmdSheet).toBeVisible({ timeout: 5_000 })
     await expect(cmdSheet).not.toHaveClass(/qa-cmd--hidden/)

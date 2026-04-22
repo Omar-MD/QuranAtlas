@@ -34,7 +34,7 @@ Every `Events.*` constant has a corresponding entry in the `EventPayloads` map i
 | `MARKS_UNDO` | `marks:undo` | `core/ui.svelte` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
 | `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/Verse.svelte` (onMount) | `marks/indicator.ts` (initIndicators) | `{ verseKey, element }` |
 | `AMBIENT_SURFACE` | `ambient:surface` | `reader/Reader.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `{ reason }` |
-| `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `marks/Editor.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
+| `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `tag/TagSheet.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
 | `STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `data/offline.ts:58` | `core/quota-banner.svelte:79` | `{}` |
 
 ### Emitter-only (⚠ dead listener)
