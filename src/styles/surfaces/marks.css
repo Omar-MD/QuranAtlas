@@ -27,7 +27,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-mark-body {
@@ -54,14 +54,14 @@
     font-family: var(--qa-font-arabic);
     font-size: 1rem;
     line-height: 1.85;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     margin-bottom: 4px;
   }
 
   .qa-mark-quote-en {
     font-size: 0.8125rem;
     line-height: 1.55;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
   }
 
   .qa-mark-label {
@@ -76,10 +76,10 @@
   .qa-mark-note {
     width: 100%;
     padding: 9px 11px;
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-md);
     background-color: var(--qa-surface-app);
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     resize: vertical;
@@ -102,7 +102,7 @@
     align-items: center;
     gap: 6px;
     font-size: 0.8125rem;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     cursor: pointer;
     user-select: none;
   }
@@ -127,7 +127,7 @@
     border-radius: var(--qa-radius-lg);
     border: 1px solid transparent;
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     font-weight: 600;
@@ -135,13 +135,13 @@
   }
 
   .qa-mark-btn--ghost {
-    border-color: var(--qa-ambient-border);
-    color: var(--qa-ambient-parchment);
+    border-color: var(--qa-border-on-sheet);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-mark-btn--primary {
     background-color: var(--qa-accent);
-    color: var(--qa-on-accent);
+    color: var(--qa-text-on-accent);
     border-color: var(--qa-accent);
   }
 
@@ -166,7 +166,7 @@
 
   .qa-mark-confirm-text {
     font-size: 0.8125rem;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     flex: 1;
   }
 
@@ -186,7 +186,7 @@
         transparent
       );
       border-left: none;
-      border-bottom: 1px solid var(--qa-ambient-border);
+      border-bottom: 1px solid var(--qa-border-on-sheet);
       border-radius: 0;
       text-align: center;
     }
@@ -218,9 +218,9 @@
     gap: 5px;
     padding: 4px 9px 4px 7px;
     border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-ambient-border);
-    background-color: var(--qa-ambient-surface);
-    color: var(--qa-ambient-parchment);
+    border: 1px solid var(--qa-border-on-sheet);
+    background-color: var(--qa-surface-sheet);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.75rem;
     cursor: pointer;
@@ -289,7 +289,7 @@
     padding: 1px 6px;
     border-radius: var(--qa-radius-pill);
     background: var(--qa-accent);
-    color: var(--qa-on-accent);
+    color: var(--qa-text-on-accent);
     font-size: 0.625rem;
   }
 
@@ -304,10 +304,10 @@
   .qa-layer-search {
     width: 100%;
     padding: 7px 10px;
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-md);
     background: var(--qa-surface-app);
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font: inherit;
     font-size: 0.8125rem;
     margin: 6px 0;

@@ -19,7 +19,7 @@
   .qa-sl-title {
     font-size: 1.375rem;
     font-weight: 700;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     margin: 0;
   }
 
@@ -27,7 +27,7 @@
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-sl-search {
@@ -36,13 +36,13 @@
     gap: 8px;
     padding: 9px 12px;
     border-radius: var(--qa-radius-lg);
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
+    background-color: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
     margin-bottom: 10px;
   }
 
   .qa-sl-search-icon {
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-size: 0.9rem;
   }
 
@@ -51,12 +51,12 @@
     border: none;
     outline: none;
     background: transparent;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-size: 0.875rem;
   }
 
   .qa-sl-search-input::placeholder {
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-sl-search-kbd {
@@ -64,7 +64,7 @@
     font-size: 0.625rem;
     padding: 1px 5px;
     border-radius: var(--qa-radius-xs);
-    background-color: var(--qa-ambient-accent-soft);
+    background-color: var(--qa-accent-soft);
     color: var(--qa-text-kbd);
   }
 
@@ -80,8 +80,8 @@
     padding: 3px;
     border-radius: var(--qa-radius-pill);
     margin-bottom: 10px;
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
+    background-color: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
   }
 
   .qa-sl-seg-item {
@@ -91,7 +91,7 @@
     border: none;
     border-radius: var(--qa-radius-pill);
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -108,8 +108,8 @@
   .qa-sl-hint {
     padding: 8px 10px;
     border-radius: var(--qa-radius-md);
-    border: 1px dashed var(--qa-ambient-border);
-    color: var(--qa-ambient-muted);
+    border: 1px dashed var(--qa-border-on-sheet);
+    color: var(--qa-text-on-sheet-muted);
     font-size: 0.75rem;
     margin-bottom: 10px;
   }
@@ -122,7 +122,7 @@
 
   .qa-sl-continue {
     border-radius: var(--qa-radius-xl);
-    border: 1px solid var(--qa-ambient-accent-soft);
+    border: 1px solid var(--qa-accent-soft);
     background-color: color-mix(in srgb, var(--qa-accent) 8%, transparent);
     margin-bottom: 10px;
     overflow: hidden;
@@ -171,7 +171,7 @@
   .qa-sl-continue-ref {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-sl-continue-chev {
@@ -181,7 +181,7 @@
 
   /* Row */
   .qa-sl-row {
-    border-bottom: 1px dotted var(--qa-ambient-border);
+    border-bottom: 1px dotted var(--qa-border-on-sheet);
     position: relative;
   }
 
@@ -197,7 +197,7 @@
   }
 
   .qa-sl-row-anchor:focus-visible {
-    background-color: var(--qa-ambient-accent-soft);
+    background-color: var(--qa-accent-soft);
   }
 
   .qa-sl-row--bm::before {
@@ -218,8 +218,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--qa-ambient-border);
-    background-color: var(--qa-ambient-surface);
+    border: 1px solid var(--qa-border-on-sheet);
+    background-color: var(--qa-surface-sheet);
     color: var(--qa-accent);
     font-size: 0.75rem;
     font-weight: 600;
@@ -238,14 +238,14 @@
   .qa-sl-row-en {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     line-height: 1.2;
   }
 
   .qa-sl-row-meaning {
     font-size: 0.75rem;
     font-style: italic;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
   }
 
   .qa-sl-row-ar {
@@ -266,7 +266,7 @@
 
   .qa-sl-row-vcount {
     font-size: 0.75rem;
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
     font-variant-numeric: tabular-nums;
   }
 
@@ -274,7 +274,7 @@
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   @media (min-width: 1180px) {

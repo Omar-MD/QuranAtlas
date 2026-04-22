@@ -1,8 +1,9 @@
 /**
  * about — standalone About page: heading, mission, blessing card, stats grid,
  * attribution list, install CTA, version line. Page-level surface (not inside
- * sheet context), but blessing/stats "cards" consume --qa-ambient-* aliases
- * that resolve to the on-sheet palette — they're parchment panels on page bg.
+ * sheet context), but blessing/stats "cards" consume the on-sheet palette
+ * (`--qa-surface-sheet`, `--qa-border-on-sheet`, `--qa-text-on-sheet*`) —
+ * they're parchment panels sitting on page bg.
  *
  * Consumer: src/about/About.svelte. Desktop Reader-column `:has()` rule for
  * about page lives in app-shell.css (spec: `:has()` restricted there).
@@ -34,9 +35,9 @@
   .qa-about-blessing-wrap {
     margin: 2rem 0;
     padding: 1.5rem;
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-xl);
-    background-color: var(--qa-ambient-surface);
+    background-color: var(--qa-surface-sheet);
     text-align: center;
   }
 
@@ -44,13 +45,13 @@
     font-family: 'Scheherazade New', 'Amiri', serif;
     font-size: 1.25rem;
     line-height: 2;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     margin: 0 0 0.75rem;
   }
 
   .qa-about-blessing-translation {
     font-size: var(--qa-text-size-meta);
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
     font-style: italic;
     margin: 0;
     line-height: 1.6;
@@ -69,8 +70,8 @@
     align-items: center;
     justify-content: center;
     padding: 1.5rem 1rem;
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
+    background-color: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-xl);
     gap: 0.25rem;
   }
@@ -84,13 +85,13 @@
 
   .qa-about-stat-label {
     font-size: var(--qa-text-size-meta);
-    color: var(--qa-ambient-muted);
+    color: var(--qa-text-on-sheet-muted);
     text-align: center;
   }
 
   .qa-about-version-line {
     font-size: var(--qa-text-size-meta);
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     text-align: center;
     margin: 1rem 0 0.5rem;
   }

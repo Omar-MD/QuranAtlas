@@ -14,9 +14,9 @@
     gap: 0.5rem;
     padding: 1.125rem 1rem;
     margin-bottom: 0.75rem;
-    border: 1px solid var(--qa-ambient-border);
+    border: 1px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-xl);
-    background: var(--qa-ambient-surface);
+    background: var(--qa-surface-sheet);
     text-align: center;
   }
 
@@ -63,7 +63,7 @@
   .qa-verse.qa-verse--active {
     background: color-mix(in srgb, var(--qa-text-primary) 4%, transparent);
     border-radius: var(--qa-radius-2xl);
-    box-shadow: inset 0 0 0 1px var(--qa-ambient-border);
+    box-shadow: inset 0 0 0 1px var(--qa-border-on-sheet);
     content-visibility: visible;
     transition: none;
   }
@@ -106,7 +106,7 @@
     border: none;
     border-radius: 0;
     background: transparent;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-family: var(--qa-font-mono);
     font-size: 0.6875rem;
     letter-spacing: 0.14em;
@@ -116,7 +116,7 @@
   }
 
   .qa-verse--active .qa-verse-number {
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-weight: 700;
   }
 
@@ -127,7 +127,7 @@
     font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.1em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-weight: 500;
   }
 
@@ -181,12 +181,12 @@
     gap: 5px;
     padding: 3px 9px 3px 8px;
     border-radius: var(--qa-radius-sm);
-    background: color-mix(in srgb, var(--qa-ambient-surface) 70%, transparent);
+    background: color-mix(in srgb, var(--qa-surface-sheet) 70%, transparent);
     border: 1px solid var(--qa-border-subtle);
     font-family: var(--qa-font-mono);
     font-size: 0.625rem;
     letter-spacing: 0.06em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
   }
 
   .qa-vtag-dot {
@@ -199,14 +199,14 @@
   .qa-vtag-lbl {
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: var(--qa-ambient-dim);
+    color: var(--qa-text-on-sheet-dim);
     font-weight: 600;
   }
 
   .qa-vtag-val {
     text-transform: none;
     letter-spacing: 0.02em;
-    color: var(--qa-ambient-parchment);
+    color: var(--qa-text-on-sheet);
     font-weight: 500;
   }
 
