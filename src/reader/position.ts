@@ -111,16 +111,16 @@ export function initPositionTracking(opts: PositionTrackingOptions): Array<() =>
   const cleanups: Array<() => void> = []
 
   // Grace window: ignore IO-driven saves that report a verse earlier than
-  // the restore target while the initial scroll-to-saved-position is still
-  // in flight. Without this, the IO fires for verse 1 (top of chunk) before
+  // the restore target while a programmatic scroll-to-saved-position is in
+  // flight. Without this, the IO fires for verse 1 (top of chunk) before
   // `scrollToVerse` lands on the target, and the 1s debounce overwrites the
-  // persisted position with verse 1.
-  const mountedAt = Date.now()
+  // persisted position with verse 1. Re-armed on every warm-resume restore
+  // so IO transits during those scrolls don't corrupt saved position either.
   const GRACE_MS = 2000
   const restoreTarget = (savedPosition?.verse ?? targetVerse) ?? null
-  const withinGrace = () => Date.now() - mountedAt < GRACE_MS
+  let graceUntil = Date.now() + GRACE_MS
   const allowSave = (verse: number): boolean => {
-    if (!withinGrace()) { return true }
+    if (Date.now() >= graceUntil) { return true }
     if (restoreTarget === null) { return true }
     return verse >= restoreTarget
   }
@@ -158,12 +158,21 @@ export function initPositionTracking(opts: PositionTrackingOptions): Array<() =>
     })
   }
 
+  // Warm-resume restore (tab hidden → visible without remount, e.g. iOS
+  // lock/unlock). Skip when the tracker already holds the reader state —
+  // the browser preserves scroll on warm resume, and an IDB read here can
+  // race with an in-flight hide-time save and scroll the user back to a
+  // stale verse. Only restore when the tracker is fresh (lastTrackedVerse
+  // still null) and the scroller has collapsed to the top.
   const unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
-    if (currentSurahNum !== null && mainContent) {
-      const position = await get('positions', `s${currentSurahNum}`)
-      if (position && typeof position.verse === 'number') {
-        scrollToVerse(mainContent, position.verse, ensureVerseRendered)
-      }
+    if (currentSurahNum === null || !mainContent) { return }
+    if (lastTrackedVerse !== null) { return }
+    const scrollerEl = scrollHost
+    if (scrollerEl && scrollerEl.scrollTop > 4) { return }
+    const position = await get('positions', `s${currentSurahNum}`)
+    if (position && typeof position.verse === 'number' && position.verse > 1) {
+      graceUntil = Date.now() + GRACE_MS
+      scrollToVerse(mainContent, position.verse, ensureVerseRendered)
     }
   })
   cleanups.push(() => { unsubVisibility() })
