@@ -134,6 +134,13 @@ test.describe('Journey C: Verse marking', () => {
     await expect(page.locator('.qa-ts')).toHaveCount(0)
   })
 
+  test('C: keyboard m on centered verse opens fast-tag panel, not TagSheet', async ({ page }) => {
+    await page.evaluate(() => document.getElementById('main-content')?.focus())
+    await page.keyboard.press('m')
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
+  })
+
   // -------------------------------------------------------------------------
   // C2. Add a tag to a layer → click chip removes it
   // -------------------------------------------------------------------------
