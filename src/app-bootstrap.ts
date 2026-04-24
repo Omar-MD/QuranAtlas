@@ -25,14 +25,14 @@ import { registerEditor } from './marks/editor-bridge'
 // Bind tap gestures to the reader container:
 //   short-tap  → only while fast-tag mode is open: switch the active verse
 //                being tagged. Does NOT start a new session from an idle tap.
-//   long-press → deep tag sheet (tag/TagSheet).
-// Fast-mode entry: explicit toggle (MarginHeader dot / TagModePill).
+//   long-press → fast-tag inline panel (mobile-nav-redesign 2026-04-25).
+// Deep editor reached only via ⛶ in VerseTagPanel + programmatic bridges.
 function setupLongPress(container: HTMLElement): () => void {
   return setupTapGestures(container, {
     onShort: (vk) => {
       if (tagSession.quickbarOpen) { void beginFast(vk) }
     },
-    onLong: (vk) => { void openDeep(vk) },
+    onLong: (vk) => { void beginFast(vk) },
   })
 }
 
