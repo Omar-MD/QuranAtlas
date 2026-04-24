@@ -119,7 +119,7 @@ test.describe('Journey G: About', () => {
     await expect(drawer).not.toBeVisible({ timeout: 3_000 })
   })
 
-  test.fixme('G: Clear data link is present on About page footer', async ({ page }) => {
+  test('G: Clear data link is present on About page footer', async ({ page }) => {
     await page.goto('/#/about')
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
     const link = page.locator('.qa-about-clear-data')

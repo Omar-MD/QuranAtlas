@@ -66,6 +66,11 @@ test.describe('Journey D: Settings & appearance', () => {
     expect(violations).toEqual([])
   })
 
+  test('D: Clear-data row is no longer in Settings sheet (post-redesign)', async ({ page }) => {
+    await openSettingsSheet(page)
+    await expect(page.locator('.qa-sheet--settings .qa-sheet-row--danger')).toHaveCount(0)
+  })
+
   test('D1: Escape closes the Settings sheet', async ({ page }) => {
     await openSettingsSheet(page)
     await expect(page.locator('.qa-sheet--settings')).toBeVisible()
@@ -182,10 +187,11 @@ test.describe('Journey D: Settings & appearance', () => {
   // D4. Clear all data
   // -------------------------------------------------------------------------
 
-  test.fixme('D4: Clear data → type DELETE → confirm → page reloads → onboarding restarts', async ({ page }) => {
-    // Open More sheet and tap "Clear data"
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+  test('D4: Clear data → type DELETE → confirm → page reloads → onboarding restarts', async ({ page }) => {
+    // Post-2026-04-25: Clear-data lives on About page footer.
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 
@@ -225,9 +231,10 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 10_000 })
   })
 
-  test.fixme('D4: Cancel clear data → dialog closes, nothing changes', async ({ page }) => {
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+  test('D4: Cancel clear data → dialog closes, nothing changes', async ({ page }) => {
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 
@@ -249,9 +256,10 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(page.locator('.qa-onboarding')).toHaveCount(0)
   })
 
-  test.fixme('D4: Escape closes clear data dialog without clearing', async ({ page }) => {
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+  test('D4: Escape closes clear data dialog without clearing', async ({ page }) => {
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 
@@ -268,9 +276,10 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(page.locator('.qa-onboarding')).toHaveCount(0)
   })
 
-  test.fixme('D4: clear data confirm button stays disabled when input is not exactly DELETE', async ({ page }) => {
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+  test('D4: clear data confirm button stays disabled when input is not exactly DELETE', async ({ page }) => {
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 

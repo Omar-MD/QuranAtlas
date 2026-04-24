@@ -195,3 +195,24 @@
     }
   }
 }
+
+/* Clear-data link migrated from Settings sheet (2026-04-25 mobile-nav redesign). */
+.qa-about-clear-section {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--qa-border-subtle, rgba(0, 0, 0, 0.08));
+}
+
+.qa-about-clear-data {
+  background: transparent;
+  border: 0;
+  color: var(--qa-text-error, #c0392b);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.qa-about-clear-data:hover {
+  opacity: 0.85;
+}
