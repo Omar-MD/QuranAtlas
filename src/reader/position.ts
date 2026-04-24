@@ -110,24 +110,51 @@ export function initPositionTracking(opts: PositionTrackingOptions): Array<() =>
   currentSurahNum = surahNum
   const cleanups: Array<() => void> = []
 
+  // Grace window: ignore IO-driven saves that report a verse earlier than
+  // the restore target while the initial scroll-to-saved-position is still
+  // in flight. Without this, the IO fires for verse 1 (top of chunk) before
+  // `scrollToVerse` lands on the target, and the 1s debounce overwrites the
+  // persisted position with verse 1.
+  const mountedAt = Date.now()
+  const GRACE_MS = 2000
+  const restoreTarget = (savedPosition?.verse ?? targetVerse) ?? null
+  const withinGrace = () => Date.now() - mountedAt < GRACE_MS
+  const allowSave = (verse: number): boolean => {
+    if (!withinGrace()) { return true }
+    if (restoreTarget === null) { return true }
+    return verse >= restoreTarget
+  }
+
   if (shouldSavePosition) {
     observeScroll(mainContent, {
       scroller: scrollHost,
       onPositionChange: ({ verse }) => {
         lastTrackedVerse = verse
+        if (!allowSave(verse)) { return }
         void savePosition(surahNum, verse)
       },
     })
 
-    const visibilityHandler = () => {
-      if (document.hidden && currentSurahNum !== null && lastTrackedVerse !== null) {
-        flushDebounce()
-        void savePosition(currentSurahNum, lastTrackedVerse)
-      }
+    // Persist on every tab-hide / screen-lock / page-close.
+    // Quirks this must handle:
+    //   - IO debounce (1s) means lastTrackedVerse can lag pendingPosition.
+    //     Flush unconditionally so the most-recent verse is captured, even
+    //     if the callback hasn't fired once yet this mount.
+    //   - iOS Safari does not always fire `visibilitychange` before unload
+    //     on true tab close; `pagehide` is the reliable signal there.
+    const persistOnExit = () => {
+      if (currentSurahNum === null) { return }
+      flushDebounce() // may synchronously update lastTrackedVerse
+      if (lastTrackedVerse === null) { return }
+      if (!allowSave(lastTrackedVerse)) { return }
+      void savePosition(currentSurahNum, lastTrackedVerse)
     }
+    const visibilityHandler = () => { if (document.hidden) { persistOnExit() } }
     document.addEventListener('visibilitychange', visibilityHandler)
+    window.addEventListener('pagehide', persistOnExit)
     cleanups.push(() => {
       document.removeEventListener('visibilitychange', visibilityHandler)
+      window.removeEventListener('pagehide', persistOnExit)
     })
   }
 
