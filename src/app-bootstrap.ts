@@ -133,7 +133,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     performance.mark('router:resolve')
     performance.measure('app:router-init', 'db:open', 'router:resolve')
 
-    // Settings panel, CommandSheet, AmbientDock, AmbientPill, MoreSheet are all
+    // Settings panel, CommandSheet, AmbientDock, AmbientPill, NavDrawer are all
     // now mounted as components in App.svelte — no init calls needed here.
     pushCleanup(bootCleanups, await initReaderActions())
 

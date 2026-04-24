@@ -12,7 +12,6 @@
   import AmbientDock from './nav/AmbientDock.svelte'
   import MarginHeader from './nav/MarginHeader.svelte'
   import CommandSheet from './nav/CommandSheet.svelte'
-  import MoreSheet from './nav/MoreSheet.svelte'
   import NavDrawer from './nav/NavDrawer.svelte'
   import TagSheet from './tag/TagSheet.svelte'
   import TagModePill from './nav/TagModePill.svelte'
@@ -108,7 +107,6 @@
 <Panel />
 <ClearDataConfirm />
 <CommandSheet />
-<MoreSheet />
 <NavDrawer />
 <TagModePill />
 <TagSheet
