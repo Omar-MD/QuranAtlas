@@ -44,7 +44,7 @@ const BASE_MARK = {
   threads: [], subjects: [], audience: [], speaker: [],
   quotedSpeaker: [], mode: [], form: [], tone: [],
   people: [], places: [], events: [], divineNames: [],
-  flags: {}, note: '',
+  note: '',
 }
 
 describe('IDB operation performance budgets', () => {
@@ -87,7 +87,7 @@ describe('IDB operation performance budgets', () => {
       threads: [], subjects: [], audience: [], speaker: [],
       quotedSpeaker: [], mode: [], form: [], tone: [],
       people: [], places: [], events: [], divineNames: [],
-      flags: {}, note: '',
+      note: '',
     }
     for (let i = 1; i <= 30; i++) {
       await save({ ...BASE, verseKey: `2:${i}`, threads: ['favourite'] })

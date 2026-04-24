@@ -6,7 +6,7 @@ const BASE_INPUT = {
   threads: [], subjects: [], audience: [], speaker: [],
   quotedSpeaker: [], mode: [], form: [], tone: [],
   people: [], places: [], events: [], divineNames: [],
-  flags: {}, note: '',
+  note: '',
 }
 
 let store
@@ -126,7 +126,7 @@ describe('marks/store.js', () => {
       const sync = await import('../../../src/safety/sync.js')
       const spy = vi.spyOn(sync, 'broadcastMarkChange')
 
-      await store.save({ ...BASE_INPUT, verseKey: '2:255' })
+      await store.save({ ...BASE_INPUT, verseKey: '2:255', threads: ['favourite'] })
 
       expect(spy).toHaveBeenCalledWith(['2:255'])
       spy.mockRestore()
@@ -136,7 +136,7 @@ describe('marks/store.js', () => {
       const sync = await import('../../../src/safety/sync.js')
       const spy = vi.spyOn(sync, 'broadcastMarkChange')
 
-      await store.save({ ...BASE_INPUT, verseKey: '2:255' })
+      await store.save({ ...BASE_INPUT, verseKey: '2:255', threads: ['favourite'] })
       spy.mockClear()
 
       await store.del('2:255')

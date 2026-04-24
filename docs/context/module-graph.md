@@ -110,8 +110,8 @@ graph LR
   - `onboarding/Onboarding.svelte` → `surfaces/onboarding.css` (theme-swatch hex retained as demo literals)
   - `surahs/{SurahList,SurahRow}.svelte` → `surfaces/surahs.css`
   - `nav/{AmbientDock,AmbientPill,CommandSheet,MarginHeader,SurahProgress,TagModePill}.svelte` → `surfaces/nav.css`
-  - `reader/{Reader,Verse,VerseTags}.svelte` + imperative `edge-indicators.ts` class strings → `surfaces/reader.css`
-  - `tag/{TagSheet,AmbientDock,TagModeToggle,TagChip,VerseSpotlight}.svelte` → `surfaces/tag.css` (`color-mix()` surface policy exercised here; TagChip dot hue piped via `style:--qa-tag-chip-hue`)
+  - `reader/{Reader,Verse,VerseTagPanel}.svelte` + imperative `edge-indicators.ts` class strings → `surfaces/reader.css` (VerseTagPanel owns the `.qa-vtp-*` block inside `surfaces/tag.css` — inline fast-tag panel)
+  - `tag/{TagSheet,TagModeToggle,TagChip,VerseSpotlight}.svelte` → `surfaces/tag.css` (`color-mix()` surface policy exercised here; TagChip dot hue piped via `style:--qa-tag-chip-hue`)
   - `marks/{Editor,TagChip,TagLayerRegion}.svelte` → `surfaces/marks.css`
   - `review/{Hub,ReviewCard}.svelte` → `surfaces/review.css`
   - `settings/Panel.svelte` → `surfaces/settings.css`
@@ -146,10 +146,10 @@ graph LR
 - **Role:** Navigation chrome + reader keyboard actions. `AmbientDock` = desktop (≥1180px) 64-px left edge rail. `MarginHeader` = mobile/tablet fixed top nav (crumb + fast-tag toggle + ⋮ + section tabs). `TagModePill` = desktop active-session indicator. `SurahProgress` = juz/percent chip used in `SurahHeader`. Command sheet (⌘K), more sheet (dock ⋯ parent) are Svelte 5 components. Bridge modules (`*-bridge.ts`) provide typed imperative open/close APIs. `reader-actions.js` backs the `j/k/[/]/Home/End/m` shortcuts by reading and writing the `reader` rune directly (no events). `shortcuts-sheet.js` is the in-reader shortcuts help sheet.
 
 ### `tag/`
-- **Files:** `AmbientDock.svelte` (fast-path quickbar), `TagSheet.svelte` (deep sheet), `TagChip.svelte`, `TagModeToggle.svelte`, `VerseSpotlight.svelte`, `session-bridge.ts`
+- **Files:** `TagSheet.svelte` (deep sheet), `TagChip.svelte`, `TagModeToggle.svelte`, `VerseSpotlight.svelte`, `session-bridge.ts`
 - **Imports from:** `core`, `data` (`tag-layers`), `marks` (`store`), `state` (`tag-session.svelte.ts`)
-- **Imported by:** `App.svelte` (`TagAmbientDock`, `TagSheet`), `nav/MarginHeader.svelte` (`beginFast`)
-- **Role:** Fast-path tagging surfaces. Shares `tagSession` state with deep path. `session-bridge::beginFast(verseKey)` hydrates the session from any existing mark and opens the quickbar; `openDeep` opens the deep sheet. Persistence still flows through `marks/store.ts` (single writer).
+- **Imported by:** `App.svelte` (`TagSheet`), `nav/MarginHeader.svelte` (`beginFast`), `reader/VerseTagPanel.svelte` (state only; panel lives under `reader/`)
+- **Role:** Fast-path tagging surfaces. Shares `tagSession` state with deep path. `session-bridge::beginFast(verseKey)` hydrates the session from any existing mark and flips `quickbarOpen` — the inline suggestions UI then renders inside the active verse via `reader/VerseTagPanel.svelte`. `openDeep` opens the deep sheet. Persistence still flows through `marks/store.ts` (single writer).
 
 ### `offline/`
 - **Files:** `dataset-updater.js`, `manifest-fetcher.js`, `sha256-verifier.js`, `staging-cache.js`

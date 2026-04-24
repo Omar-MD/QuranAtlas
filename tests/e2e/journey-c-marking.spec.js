@@ -33,12 +33,11 @@ async function openTagSheetViaRightClick(page) {
   await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 }
 
-/** Click a tab group by label (Speech / Narrative / Themes / Entities). */
-async function activateTab(page, label) {
-  await page.locator('.qa-ts-tab', { hasText: label }).click()
-}
+/** Group sections replaced tabs — helper kept as a no-op so existing
+ *  test prose remains readable; all groups are always rendered now. */
+async function activateTab(_page, _label) { /* no-op: all groups visible */ }
 
-/** Layer row (within the currently active tab) keyed by visible label text. */
+/** Layer row keyed by visible label text. All rows render simultaneously. */
 function layerRow(page, label) {
   return page.locator('.qa-ts-layer').filter({ has: page.locator('.qa-ts-lbl', { hasText: new RegExp(`^${label}$`, 'i') }) })
 }
@@ -50,7 +49,7 @@ async function addTagToLayer(page, layerLabel, value) {
   await input.click()
   await input.fill(value)
   await input.press('Enter')
-  await expect(row.locator('.qa-ts-chip--on').filter({ hasText: value })).toBeVisible({ timeout: 3_000 })
+  await expect(row.locator('.qa-ts-hchip--on').filter({ hasText: value })).toBeVisible({ timeout: 3_000 })
 }
 
 test.describe('Journey C: Verse marking', () => {
@@ -77,26 +76,19 @@ test.describe('Journey C: Verse marking', () => {
 
     // Title
     await expect(sheet.locator('.qa-ts-title')).toHaveText('Mark verse')
-    // Verse reference (header sub-line)
-    await expect(sheet.locator('.qa-ts-sub')).toContainText('1:1')
 
-    // Verse preview card
+    // Verse preview card — ref is on the preview, not duplicated in the title
     await expect(sheet.locator('.qa-ts-preview')).toBeVisible()
+    await expect(sheet.locator('.qa-ts-pref')).toContainText('1:1')
     await expect(sheet.locator('.qa-ts-par')).toBeVisible()
     await expect(sheet.locator('.qa-ts-pen')).toBeVisible()
 
     // Note textarea empty on a new mark
     await expect(sheet.locator('.qa-ts-note-area')).toHaveValue('')
 
-    // Tabs present (Speech / Narrative / Themes / Entities)
-    const tabs = sheet.locator('.qa-ts-tab')
-    await expect(tabs).toHaveCount(4)
-
-    // Flag buttons unpressed
-    const flags = sheet.locator('.qa-ts-flag')
-    await expect(flags).toHaveCount(2)
-    await expect(flags.nth(0)).toHaveAttribute('aria-pressed', 'false')
-    await expect(flags.nth(1)).toHaveAttribute('aria-pressed', 'false')
+    // Four group sections (Speech / Narrative / Themes / Entities)
+    const groups = sheet.locator('.qa-ts-grp')
+    await expect(groups).toHaveCount(4)
   })
 
   test('C1: right-click also opens TagSheet (no native context menu)', async ({ page }) => {
@@ -138,15 +130,15 @@ test.describe('Journey C: Verse marking', () => {
     await input.fill('mercy')
     await input.press('Enter')
 
-    const chip = threads.locator('.qa-ts-chip--on').filter({ hasText: 'mercy' })
+    const chip = threads.locator('.qa-ts-hchip--on').filter({ hasText: 'mercy' })
     await expect(chip).toBeVisible({ timeout: 3_000 })
 
     // Header count reflects one selected tag
     await expect(page.locator('.qa-ts-count')).toContainText('1')
 
-    // Tab badge on Themes shows 1
-    const themesTab = page.locator('.qa-ts-tab', { hasText: 'Themes' })
-    await expect(themesTab.locator('.qa-ts-tab-count')).toHaveText('1')
+    // Themes group section badge shows 1
+    const themesGrp = page.locator('.qa-ts-grp').filter({ has: page.locator('.qa-ts-grp-name', { hasText: 'Themes' }) })
+    await expect(themesGrp.locator('.qa-ts-grp-count')).toHaveText('1')
 
     // Click chip → toggles off (removed from draft)
     await chip.click()
@@ -168,7 +160,7 @@ test.describe('Journey C: Verse marking', () => {
     await input.fill('unique-custom-tag-xyz')
     await input.press('Enter')
 
-    const newChip = threads.locator('.qa-ts-chip--on').filter({ hasText: 'unique-custom-tag-xyz' })
+    const newChip = threads.locator('.qa-ts-hchip--on').filter({ hasText: 'unique-custom-tag-xyz' })
     await expect(newChip).toBeVisible({ timeout: 3_000 })
     await expect(input).toHaveValue('')
   })
@@ -221,10 +213,13 @@ test.describe('Journey C: Verse marking', () => {
 
     await openTagSheetViaRightClick(page)
 
-    // Delete immediately (no confirm step in TagSheet)
+    // Delete requires inline confirm (Delete → Delete)
     const deleteBtn = page.locator('.qa-ts-btn--danger')
     await expect(deleteBtn).toBeVisible()
     await deleteBtn.click()
+    const confirmBtn = page.locator('.qa-ts-btn--danger-primary')
+    await expect(confirmBtn).toBeVisible({ timeout: 3_000 })
+    await confirmBtn.click()
 
     // Sheet closes
     await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 5_000 })
@@ -253,6 +248,7 @@ test.describe('Journey C: Verse marking', () => {
 
     await openTagSheetViaRightClick(page)
     await page.locator('.qa-ts-btn--danger').click()
+    await page.locator('.qa-ts-btn--danger-primary').click()
 
     const undoToast = page.locator('.qa-undo-toast')
     await expect(undoToast).toBeVisible({ timeout: 3_000 })
@@ -308,11 +304,6 @@ test.describe('Journey C: Verse marking', () => {
     await activateTab(page, 'Speech')
     await addTagToLayer(page, 'audience', 'muminin')
 
-    // Toggle Open question flag
-    const qFlag = page.locator('.qa-ts-flag').nth(0)
-    await qFlag.click()
-    await expect(qFlag).toHaveAttribute('aria-pressed', 'true')
-
     // Save
     await page.locator('.qa-ts-btn--primary').click()
     await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 5_000 })
@@ -322,7 +313,6 @@ test.describe('Journey C: Verse marking', () => {
     expect(mark).toBeDefined()
     expect(mark.threads).toContain('mercy')
     expect(mark.audience).toContain('muminin')
-    expect(mark.flags.hasQuestion).toBe(true)
 
     // Reopen
     const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
@@ -332,12 +322,12 @@ test.describe('Journey C: Verse marking', () => {
 
     // Themes tab: mercy chip is present
     await activateTab(page, 'Themes')
-    await expect(layerRow(page, 'threads').locator('.qa-ts-chip--on').filter({ hasText: 'mercy' }))
+    await expect(layerRow(page, 'threads').locator('.qa-ts-hchip--on').filter({ hasText: 'mercy' }))
       .toBeVisible({ timeout: 3_000 })
 
     // Speech tab: muminin chip is present
     await activateTab(page, 'Speech')
-    await expect(layerRow(page, 'audience').locator('.qa-ts-chip--on').filter({ hasText: 'muminin' }))
+    await expect(layerRow(page, 'audience').locator('.qa-ts-hchip--on').filter({ hasText: 'muminin' }))
       .toBeVisible({ timeout: 3_000 })
   })
 })
@@ -382,11 +372,10 @@ test.describe('Journey C: desktop variants @desktop', () => {
     expect(Math.round(geom.width)).toBe(560)
   })
 
-  test('C1 desktop: tabs and flag buttons visible', async ({ page }) => {
+  test('C1 desktop: four group sections visible', async ({ page }) => {
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
-    await expect(sheet.locator('.qa-ts-tab')).toHaveCount(4)
-    await expect(sheet.locator('.qa-ts-flag')).toHaveCount(2)
+    await expect(sheet.locator('.qa-ts-grp')).toHaveCount(4)
   })
 })

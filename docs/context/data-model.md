@@ -99,7 +99,7 @@ The review-state reuse is intentional — see the comment at the top of `review/
   - `by-canon-events` on `_canon.events` (multiEntry)
   - `by-canon-divineNames` on `_canon.divineNames` (multiEntry)
   - `by-updated` on `updatedAt`
-- **Validated fields (all required):** `verseKey` (string), 12 layer fields (string[], see below), `_canon` (any), `flags` (any), `note` (string), `createdAt` (number), `updatedAt` (number) — TS interface `MarkRecord` + `LayerName` + `LAYER_NAMES` in `core/db.ts`
+- **Validated fields (all required):** `verseKey` (string), 12 layer fields (string[], see below), `_canon` (any), `note` (string), `createdAt` (number), `updatedAt` (number) — TS interface `MarkRecord` + `LayerName` + `LAYER_NAMES` in `core/db.ts`
 - **Written by:** `marks/store.ts` only. External callers NEVER populate `_canon` — it is computed inside the writer.
 
 ### Record shape
@@ -122,7 +122,6 @@ The review-state reuse is intentional — see the comment at the top of `review/
   divineNames: string[],
   // Denormalized canonical keys (computed by store.ts::save(), never by callers):
   _canon: Record<LayerName, string[]>,
-  flags: { hasQuestion?: boolean; hasApplication?: boolean },
   note: string,              // '' if no note
   createdAt: number,
   updatedAt: number,
@@ -138,6 +137,10 @@ The review-state reuse is intentional — see the comment at the top of `review/
 4. `broadcastMarkChange([verseKey])` — peers receive `SYNC_UPDATE_RECEIVED` and re-read.
 
 **Invariant: `_canon` is computed inside `marks/store.ts::save()` only. No external caller should ever populate `_canon`.**
+
+**Invariant: a mark must carry ≥1 tag across the 12 layers to persist.** `save()` rejects empty input with `EmptyMarkError` before any IDB touch — a note alone is not sufficient. UI guards Save at the callsite so the error should never be user-visible. Exported helper: `hasAnyTag(input)`.
+
+**Mark-level flags** (`hasQuestion`, `hasApplication`) were part of the 2026-04-20 data-model spec but were removed from UI + schema in the tagging polish pass; deferred to `future-work.md` if later needed.
 
 `del()` mirrors this with `MARKS_DELETED` + broadcast.
 

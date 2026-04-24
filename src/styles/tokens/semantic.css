@@ -39,6 +39,10 @@
     --qa-text-on-sheet-dim:    #6b4f28;
     --qa-border-on-sheet:      var(--c-bronze-200);
 
+    /* --- Toast (dark floating pill, inverted from app surface) ----------- */
+    --qa-surface-toast:        var(--c-ink-800);
+    --qa-text-on-toast:        var(--c-parchment-50);
+
     /* --- Border ---------------------------------------------------------- */
     --qa-border-subtle:   var(--c-parchment-300);
     --qa-border-default:  var(--c-parchment-400);
@@ -203,6 +207,8 @@
     --qa-border-default:     var(--c-sepia-400);
     --qa-border-error:       #c07842;
     --qa-text-error:         #7a3520;
+    --qa-surface-toast:      var(--c-ink-800);
+    --qa-text-on-toast:      var(--c-sepia-50);
   }
 
   /* --------------------- DARK theme ---------------------- */
@@ -229,6 +235,10 @@
     --qa-text-on-sheet-dim:   #8da7b5;
     --qa-border-on-sheet:     #2a323b;
     --qa-border-subtle:      #1d2328;
+
+    /* Dark: raised ink-700 pill so it lifts off ink-900 app bg */
+    --qa-surface-toast:      var(--c-ink-700);
+    --qa-text-on-toast:      var(--c-ink-100);
     --qa-border-default:     var(--c-ink-700);
     --qa-border-error:       var(--c-red-950);
     --qa-accent:             var(--c-amber-400);

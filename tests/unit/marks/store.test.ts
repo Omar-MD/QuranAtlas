@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import 'fake-indexeddb/auto'
-import { save, getByVerseKey } from '../../../src/marks/store'
+import { save, getByVerseKey, EmptyMarkError } from '../../../src/marks/store'
 
 beforeEach(async () => {
   const { deleteDB, openDB } = await import('../../../src/core/db')
@@ -20,7 +20,6 @@ describe('marks/store save()', () => {
       mode: [], form: [], tone: [],
       people: ['Moses'],
       places: [], events: [], divineNames: [],
-      flags: {},
       note: '',
     })
     const got = await getByVerseKey('2:255')
@@ -31,13 +30,25 @@ describe('marks/store save()', () => {
     expect(got?.updatedAt).toBeGreaterThanOrEqual(got!.createdAt)
   })
 
-  it('preserves createdAt on update', async () => {
-    const baseRecord = {
+  it('rejects empty marks (no tags across any layer)', async () => {
+    const empty = {
       verseKey: '2:255',
       threads: [], subjects: [], audience: [], speaker: [],
       quotedSpeaker: [], mode: [], form: [], tone: [],
       people: [], places: [], events: [], divineNames: [],
-      flags: {}, note: '',
+      note: 'just a note',
+    }
+    await expect(save(empty)).rejects.toBeInstanceOf(EmptyMarkError)
+    expect(await getByVerseKey('2:255')).toBeUndefined()
+  })
+
+  it('preserves createdAt on update', async () => {
+    const baseRecord = {
+      verseKey: '2:255',
+      threads: ['favourite'], subjects: [], audience: [], speaker: [],
+      quotedSpeaker: [], mode: [], form: [], tone: [],
+      people: [], places: [], events: [], divineNames: [],
+      note: '',
     }
     await save(baseRecord)
     const first = await getByVerseKey('2:255')

@@ -1,6 +1,7 @@
 /**
  * Imperative bridge to begin a fast-path tagging session from a verse tap.
- * Mirrors `marks/editor-bridge.openEditor` but for the quickbar.
+ * Mirrors `marks/editor-bridge.openEditor` but for the inline verse panel
+ * (`reader/VerseTagPanel`, previously `tag/AmbientDock`).
  */
 
 import { tagSession } from '../state/tag-session.svelte'

@@ -12,7 +12,6 @@ const VALID_MARK = {
     quotedSpeaker: [], mode: [], form: [], tone: [],
     people: [], places: [], events: [], divineNames: [],
   },
-  flags: {},
   note: 'test',
   createdAt: 1,
   updatedAt: 1,

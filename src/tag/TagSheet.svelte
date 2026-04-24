@@ -18,28 +18,26 @@
   import { showUndoToast } from '../core/ui-bridge'
   import { tagSession } from '../state/tag-session.svelte'
   import { LAYER_GROUPS, LAYER_LABELS, hueForLayer } from '../data/tag-layers'
-  import type { LayerGroup } from '../data/tag-layers'
   import { on } from '../core/events'
   import { Events } from '../core/constants'
 
   interface Props { isOpen: boolean; verseKey: string; onclose: () => void }
   const { isOpen, verseKey, onclose }: Props = $props()
 
-  const GROUP_LABEL: Record<LayerGroup['id'], string> = {
-    speech: 'Speech',
-    narrative: 'Narrative',
-    themes: 'Themes',
-    entities: 'Entities',
-  }
-
-  let activeTab = $state<LayerGroup['id']>('speech')
   let surahName = $state('')
   let arText = $state('…')
   let enText = $state('…')
   let previousMark = $state<Mark | undefined>(undefined)
   let searchQuery = $state('')
+  let previewCollapsed = $state(false)
+  let confirmingDelete = $state(false)
 
   const draftCount = $derived.by(() => tagSession.totalSelected())
+  const canSave = $derived(draftCount > 0)
+
+  $effect(() => {
+    if (!isOpen) { confirmingDelete = false }
+  })
 
   $effect(() => {
     if (!isOpen || !verseKey) { return }
@@ -71,12 +69,12 @@
       places: [...tagSession.draft.places],
       events: [...tagSession.draft.events],
       divineNames: [...tagSession.draft.divineNames],
-      flags: { hasQuestion: tagSession.flagHasQuestion, hasApplication: tagSession.flagHasApplication },
       note: tagSession.note,
     }
   }
 
   async function handleSave(): Promise<void> {
+    if (!canSave) { return }
     await save(buildInput())
     onclose()
   }
@@ -98,7 +96,7 @@
           speaker: m.speaker, quotedSpeaker: m.quotedSpeaker,
           mode: m.mode, form: m.form, tone: m.tone,
           people: m.people, places: m.places, events: m.events, divineNames: m.divineNames,
-          flags: m.flags, note: m.note,
+          note: m.note,
         })
       },
     })
@@ -176,7 +174,6 @@
     <header class="qa-ts-hdr">
       <div class="qa-ts-hdr-text">
         <div class="qa-ts-title">Mark verse</div>
-        <div class="qa-ts-sub">{verseKey} · {surahName.toUpperCase()}</div>
       </div>
       {#if draftCount > 0}
         <span class="qa-ts-count">{draftCount}<span class="qa-ts-count-lbl">&nbsp;TAGS</span></span>
@@ -187,11 +184,27 @@
     </header>
 
     <div class="qa-ts-body">
-      <div class="qa-ts-preview">
-        <div class="qa-ts-pref">{verseKey} · {surahName.toUpperCase()}</div>
-        <div class="qa-ts-par" dir="rtl">{arText}</div>
-        <div class="qa-ts-pen">{enText}</div>
-      </div>
+      <button
+        type="button"
+        class="qa-ts-preview"
+        class:qa-ts-preview--collapsed={previewCollapsed}
+        aria-expanded={!previewCollapsed}
+        aria-label={previewCollapsed ? 'Expand verse' : 'Collapse verse'}
+        onclick={() => previewCollapsed = !previewCollapsed}
+      >
+        <div class="qa-ts-preview-head">
+          <span class="qa-ts-pref">{verseKey} · {surahName.toUpperCase()}</span>
+          <svg class="qa-ts-preview-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 6 8 10 12 6"/>
+          </svg>
+        </div>
+        {#if !previewCollapsed}
+          <div class="qa-ts-par" dir="rtl">{arText}</div>
+          <div class="qa-ts-pen">{enText}</div>
+        {:else}
+          <div class="qa-ts-pen qa-ts-pen--one-line">{enText}</div>
+        {/if}
+      </button>
 
       <div class="qa-ts-search">
         <svg class="qa-ts-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
@@ -221,45 +234,35 @@
         {/if}
       </div>
 
-      <div class="qa-ts-tabs" role="tablist">
-        {#each LAYER_GROUPS as g (g.id)}
-          {@const count = g.layers.reduce((n, l) => n + tagSession.draft[l].length, 0)}
-          <button
-            type="button"
-            role="tab"
-            class="qa-ts-tab"
-            class:qa-ts-tab--on={activeTab === g.id}
-            aria-selected={activeTab === g.id}
-            onclick={() => activeTab = g.id}
-          >
-            <span>{GROUP_LABEL[g.id]}</span>
-            {#if count > 0}<span class="qa-ts-tab-count">{count}</span>{/if}
-          </button>
-        {/each}
-      </div>
-
       {#each LAYER_GROUPS as g (g.id)}
-        {#if activeTab === g.id}
-          <div class="qa-ts-layers" role="tabpanel">
+        {@const groupCount = g.layers.reduce((n, l) => n + tagSession.draft[l].length, 0)}
+        <section class="qa-ts-grp" style:--qa-grp-hue={g.hueVar}>
+          <header class="qa-ts-grp-hdr">
+            <span class="qa-ts-grp-name">{g.name}</span>
+            {#if groupCount > 0}<span class="qa-ts-grp-count">{groupCount}</span>{/if}
+          </header>
+          <div class="qa-ts-layers">
             {#each g.layers as layer (layer)}
-              <div class="qa-ts-layer">
+              <div class="qa-ts-layer" style:--qa-chip-hue={hueForLayer(layer)}>
                 <div class="qa-ts-lbl">{LAYER_LABELS[layer]}</div>
                 <div class="qa-ts-layer-body">
                   {#each tagSession.draft[layer] as v (v)}
                     <button
                       type="button"
-                      class="qa-ts-chip qa-ts-chip--on"
+                      class="qa-ts-hchip qa-ts-hchip--on"
+                      aria-pressed="true"
                       onclick={() => toggle(layer, v)}
                     >
-                      <span class="qa-ts-chip-dot" style:background-color={hueForLayer(layer)}></span>
-                      {v}<span class="qa-ts-chip-x" aria-hidden="true">×</span>
+                      <span class="qa-ts-hchip-hash" aria-hidden="true">#</span>
+                      <span class="qa-ts-hchip-val">{v}</span>
+                      <span class="qa-ts-hchip-x" aria-hidden="true">×</span>
                     </button>
                   {/each}
                   <div class="qa-ts-combo">
                     <input
                       class="qa-ts-combo-input"
                       type="text"
-                      placeholder={tagSession.draft[layer].length ? '+ add' : `add ${LAYER_LABELS[layer]}…`}
+                      placeholder={tagSession.draft[layer].length ? '+ add' : `+ ${LAYER_LABELS[layer]}`}
                       bind:value={inputs[layer]}
                       onfocus={() => { openFor = layer }}
                       onblur={() => setTimeout(() => { if (openFor === layer) { openFor = null } }, 140)}
@@ -279,7 +282,7 @@
                             class="qa-ts-combo-row"
                             onmousedown={(e) => { e.preventDefault(); commit(layer, s) }}
                           >
-                            <span class="qa-ts-chip-dot" style:background-color={hueForLayer(layer)}></span>{s}
+                            <span class="qa-ts-combo-hash" aria-hidden="true">#</span>{s}
                           </button>
                         {/each}
                       </div>
@@ -289,7 +292,7 @@
               </div>
             {/each}
           </div>
-        {/if}
+        </section>
       {/each}
 
       <div class="qa-ts-note">
@@ -305,33 +308,21 @@
         ></textarea>
       </div>
 
-      <div class="qa-ts-flags" role="group" aria-label="Flags">
-        <button
-          type="button"
-          class="qa-ts-flag"
-          class:qa-ts-flag--on={tagSession.flagHasQuestion}
-          onclick={() => tagSession.flagHasQuestion = !tagSession.flagHasQuestion}
-          aria-pressed={tagSession.flagHasQuestion}
-        >
-          <span class="qa-ts-flag-icon">?</span>Open question
-        </button>
-        <button
-          type="button"
-          class="qa-ts-flag"
-          class:qa-ts-flag--on={tagSession.flagHasApplication}
-          onclick={() => tagSession.flagHasApplication = !tagSession.flagHasApplication}
-          aria-pressed={tagSession.flagHasApplication}
-        >
-          <span class="qa-ts-flag-icon">✓</span>To apply
-        </button>
-      </div>
     </div>
 
     <footer class="qa-ts-footer">
-      <button type="button" class="qa-ts-btn qa-ts-btn--danger" onclick={handleDelete}>Delete</button>
-      <div class="qa-ts-meta"><span class="qa-ts-meta-kbd">⌘↵</span> COMMIT</div>
-      <button type="button" class="qa-ts-btn qa-ts-btn--ghost qa-ts-cancel" onclick={onclose}>Cancel</button>
-      <button type="button" class="qa-ts-btn qa-ts-btn--primary" onclick={handleSave}>Save</button>
+      {#if confirmingDelete}
+        <span class="qa-ts-confirm-text">Delete this mark?</span>
+        <button type="button" class="qa-ts-btn qa-ts-btn--ghost" onclick={() => confirmingDelete = false}>Keep</button>
+        <button type="button" class="qa-ts-btn qa-ts-btn--danger-primary" onclick={handleDelete}>Delete</button>
+      {:else}
+        {#if previousMark}
+          <button type="button" class="qa-ts-btn qa-ts-btn--danger" onclick={() => confirmingDelete = true} aria-label="Delete mark">Delete</button>
+        {/if}
+        <div class="qa-ts-meta"><span class="qa-ts-meta-kbd">⌘↵</span> COMMIT</div>
+        <button type="button" class="qa-ts-btn qa-ts-btn--ghost qa-ts-cancel" onclick={onclose}>Cancel</button>
+        <button type="button" class="qa-ts-btn qa-ts-btn--primary" disabled={!canSave} onclick={handleSave}>Save</button>
+      {/if}
     </footer>
   </aside>
 {/if}

@@ -128,8 +128,8 @@ test.describe('Journey F: Navigation', () => {
     const tagSheet = page.locator('.qa-ts')
     await expect(tagSheet).toBeVisible({ timeout: 5_000 })
 
-    // Sheet header should reference 2:255
-    await expect(tagSheet.locator('.qa-ts-sub')).toContainText('2:255')
+    // Verse preview prefix should reference 2:255
+    await expect(tagSheet.locator('.qa-ts-pref')).toContainText('2:255')
   })
 
   // ---------------------------------------------------------------------------
@@ -176,9 +176,9 @@ test.describe('Journey F: Navigation', () => {
   // ---------------------------------------------------------------------------
 
   test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
-    // Desktop exposes a Search tab in the left rail; mobile routes through
-    // the command sheet via ⌘K or the MarginHeader crumb.  Use ⌘K — the
-    // canonical cross-viewport keyboard entry — to reach "Browse all surahs".
+    // Desktop exposes a Search tab in the left rail; the command sheet (⌘K)
+    // is the canonical cross-viewport keyboard entry to reach "Browse all
+    // surahs".  (Mobile MarginHeader crumb routes straight to `#/surahs`.)
     await openCommandSheet(page)
     const cmdSheet = page.locator('.qa-cmd-sheet')
     await expect(cmdSheet).toBeVisible({ timeout: 5_000 })

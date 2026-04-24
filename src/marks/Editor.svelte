@@ -8,7 +8,6 @@
    * Layout:
    * - Verse-preview header (shared verse-block grammar)
    * - Note textarea
-   * - Flag checkboxes (hasQuestion, hasApplication)
    * - 12 TagLayerRegion sections (collapsible, search, chip pool per layer)
    * - Pinned footer: Delete · Cancel · Save
    * - Delete → inline confirm → undo toast
@@ -64,10 +63,6 @@
     people: true, places: true, events: true, divineNames: true,
   })
 
-  // Flag toggles
-  let flagHasQuestion = $state(false)
-  let flagHasApplication = $state(false)
-
   // — Delete confirm state ——————————————————————————————————————————————————
   let confirmingDelete = $state(false)
 
@@ -75,7 +70,7 @@
   const totalSelected = $derived(
     LAYER_NAMES.reduce((sum, l) => sum + selectedByLayer[l].length, 0)
   )
-  const canSave = $derived(totalSelected > 0 || noteValue.trim().length > 0)
+  const canSave = $derived(totalSelected > 0)
 
   // — History / keyboard management ————————————————————————————————————————
   let _historyPushed = false
@@ -104,8 +99,6 @@
     isExisting = !!existing
     existingMark = existing ?? null
     noteValue = existing?.note ?? ''
-    flagHasQuestion = existing?.flags.hasQuestion ?? false
-    flagHasApplication = existing?.flags.hasApplication ?? false
 
     // Build per-layer selected + all (seeds ∪ canonicals ∪ existing)
     const newSelected = emptyLayerMap()
@@ -204,10 +197,6 @@
       places: [...selectedByLayer.places],
       events: [...selectedByLayer.events],
       divineNames: [...selectedByLayer.divineNames],
-      flags: {
-        ...(flagHasQuestion ? { hasQuestion: true } : {}),
-        ...(flagHasApplication ? { hasApplication: true } : {}),
-      },
       note: noteValue.trim(),
     })
     closeEditor()
@@ -233,7 +222,6 @@
           events: [...existingMark.events],
           divineNames: [...existingMark.divineNames],
           _canon: { ...existingMark._canon },
-          flags: { ...existingMark.flags },
           note: existingMark.note ?? '',
           createdAt: existingMark.createdAt,
           updatedAt: existingMark.updatedAt,
@@ -253,7 +241,7 @@
             speaker: m.speaker, quotedSpeaker: m.quotedSpeaker,
             mode: m.mode, form: m.form, tone: m.tone,
             people: m.people, places: m.places, events: m.events, divineNames: m.divineNames,
-            flags: m.flags, note: m.note ?? '',
+            note: m.note ?? '',
           })
         },
         onComplete: () => { /* no-op */ },
@@ -315,18 +303,6 @@
         value={noteValue}
         oninput={onNoteInput}
       ></textarea>
-
-      <!-- Flags -->
-      <div class="qa-mark-flags">
-        <label class="qa-mark-flag-label">
-          <input type="checkbox" class="qa-mark-flag-checkbox" bind:checked={flagHasQuestion} />
-          Open question
-        </label>
-        <label class="qa-mark-flag-label">
-          <input type="checkbox" class="qa-mark-flag-checkbox" bind:checked={flagHasApplication} />
-          To apply
-        </label>
-      </div>
 
       <!-- 12 layer regions -->
       <div class="qa-mark-layers">

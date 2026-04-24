@@ -88,7 +88,7 @@ describe('core/db.js', () => {
         threads: [], subjects: [], audience: [], speaker: [],
         quotedSpeaker: [], mode: [], form: [], tone: [],
         people: [], places: [], events: [], divineNames: [],
-        _canon: {}, flags: {}, note: '', createdAt: 1, updatedAt: 2,
+        _canon: {}, note: '', createdAt: 1, updatedAt: 2,
       }
       await expect(validateWrite('marks', validMark)).resolves.toBe(true)
       await expect(validateWrite('marks', { threads: [] })).rejects.toThrow('missing required field: verseKey')
@@ -146,7 +146,7 @@ describe('marks store v2', () => {
     await openDB()
   })
 
-  it('accepts a mark with 12 layer arrays + flags + _canon', async () => {
+  it('accepts a mark with 12 layer arrays + _canon', async () => {
     const { put, get } = await import('../../../src/core/db.js')
     const record = {
       verseKey: '2:255',
@@ -171,7 +171,6 @@ describe('marks store v2', () => {
         mode: [], form: [], tone: [],
         people: [], places: [], events: [], divineNames: [],
       },
-      flags: { hasQuestion: true },
       note: '',
       createdAt: 1, updatedAt: 2,
     }
@@ -179,6 +178,5 @@ describe('marks store v2', () => {
     const got = await get('marks', '2:255')
     expect(got.audience).toEqual(['muminin'])
     expect(got._canon.audience).toEqual(['muminin'])
-    expect(got.flags.hasQuestion).toBe(true)
   })
 })

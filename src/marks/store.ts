@@ -29,8 +29,18 @@ export interface MarkInput {
   places: string[]
   events: string[]
   divineNames: string[]
-  flags: { hasQuestion?: boolean; hasApplication?: boolean }
   note: string
+}
+
+export class EmptyMarkError extends Error {
+  constructor() { super('Mark must have at least one tag'); this.name = 'EmptyMarkError' }
+}
+
+export function hasAnyTag(input: Pick<MarkInput, LayerName>): boolean {
+  for (const layer of LAYER_NAMES) {
+    if (input[layer].length > 0) { return true }
+  }
+  return false
 }
 
 function computeCanon(input: MarkInput): Record<LayerName, string[]> {
@@ -57,6 +67,7 @@ function allCanonicalTags(canon: Record<LayerName, string[]>): string[] {
  * @throws {Error} If IDB operation fails
  */
 export async function save(input: MarkInput): Promise<void> {
+  if (!hasAnyTag(input)) { throw new EmptyMarkError() }
   try {
     const existing = await getByVerseKey(input.verseKey)
     const now = Date.now()

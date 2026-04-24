@@ -11,28 +11,59 @@
 @layer surfaces {
   .qa-undo-toast {
     position: fixed;
-    bottom: 5rem;
+    bottom: calc(16px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
-    background: var(--qa-text-primary);
-    color: var(--qa-surface-app);
-    padding: 0.875rem 1.5rem;
+    max-width: calc(100vw - 24px);
+    width: max-content;
+    background: var(--qa-surface-toast);
+    color: var(--qa-text-on-toast);
+    padding: 10px 14px;
     border-radius: var(--qa-radius-pill);
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 1.5rem;
-    z-index: var(--qa-z-sheet);
-    font-size: var(--qa-text-size-ui);
-    box-shadow: var(--qa-shadow-sm);
+    gap: 14px;
+    z-index: var(--qa-z-toast);
+    font-family: var(--qa-font-translation);
+    font-size: 0.875rem;
+    line-height: 1.3;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 22%);
+  }
+
+  @media (min-width: 1180px) {
+    .qa-undo-toast {
+      bottom: 24px;
+      padding: 11px 16px 11px 18px;
+      font-size: 0.9375rem;
+      gap: 18px;
+    }
+  }
+
+  .qa-undo-toast > span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .qa-undo-toast button {
+    flex-shrink: 0;
     background: none;
     border: none;
-    color: var(--qa-surface-app);
-    font-weight: 700;
+    padding: 4px 6px;
+    margin: -4px -2px -4px 0;
+    color: var(--qa-text-on-toast);
+    font: inherit;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     cursor: pointer;
     text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .qa-undo-toast button:hover {
+    opacity: 0.85;
   }
 
   .qa-error-state {

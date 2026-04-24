@@ -97,6 +97,18 @@ Any route other than `#/onboarding`.
 
 ## B. Reader & ambient chrome
 
+### B0. Surah header composition
+
+At the top of every surah the reader shows a flat, centered header with no card background and no ornament chrome:
+
+1. Arabic surah name (naskh font stack, body-text color, no "سُورَةُ" prefix).
+2. English meta caption (`{NAME} · SURAH {n} · {count} VERSES · {type}`).
+3. Juz / surah-progress chip (`SurahProgress`).
+
+Below, on every surah except 1 and 9, the standalone Bismillah renders as the Unicode Quranic ligature `﷽` (U+FDFD) in a naskh-first font stack (`Amiri Quran` → `Scheherazade New` → `Amiri` → `Noto Naskh Arabic` → system arabic fallback), sharing the same body-text color as the verse arabic. Full voweled text is exposed via `aria-label` for screen readers.
+
+**Surfaces:** Reader (`SurahHeader.svelte`).
+
 ### B1. Tap to surface chrome
 
 On the reader.
@@ -109,12 +121,12 @@ On the reader.
 
 **Tablet+ variant:** Dock items grow from 38×38 to 42×42 for easier iPad tap targets (≥768px). Auto-hide behavior unchanged.
 
-**Desktop variant:** On viewports ≥1180px, the reader renders as a single centered column capped at ~960px. Each verse stacks Arabic (justified, RTL — fills the full column width and wraps naturally) on top, translation below. Toggling Hide translation in Settings simply hides the translation block; the column width is unchanged.
+**Desktop variant:** On viewports ≥1180px, the reader renders as a single centered column capped at ~1080px. Each verse stacks Arabic (justified, RTL — fills the full column width and wraps naturally) on top, translation below. Toggling Hide translation in Settings simply hides the translation block; the column width is unchanged.
 
 
 **Desktop variant (≥1180px):** Ambient dock is a 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah} : {verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Surah list reached via ⋯ More → "Surah list", command sheet, or `G`+`S` shortcut (not a rail tab). Bottom-center pill is gone; top-right chrome includes `TagModePill` only while a tag session is open.
 
-**Mobile / tablet variant (<1180px):** Ambient dock is hidden entirely. Primary navigation is `MarginHeader` at the top: surah crumb pill (→ command sheet), circular fast-tag toggle, ⋮ more button, and a second row of section tabs (Read / Review N / Marks / Threads). Header auto-hides on scroll down and reveals on scroll up or any `AMBIENT_SURFACE` emit. `#main-content` reserves ~108 px of top padding so the surah title is never covered.
+**Mobile / tablet variant (<1180px):** Ambient dock is hidden entirely. Primary navigation is `MarginHeader` at the top: surah name pill (→ surah list at `#/surahs`), circular fast-tag toggle, ⋮ more button, and a second row of section tabs (Read / Review N / Marks / Threads). Crumb shows surah name only (no verse ref). Header auto-hides on scroll down and reveals on scroll up or any `AMBIENT_SURFACE` emit. `#main-content` reserves ~108 px of top padding so the surah title is never covered.
 
 ### B2. Scroll hides dock, scroll-to-top surfaces it
 
@@ -147,7 +159,7 @@ From Settings sheet (see D1).
 **Surfaces:** Settings sheet, Reader.
 
 **Desktop variant (viewport ≥1180px):**
-The reader renders a single centered column (max ~960px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below (no separator line). Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
+The reader renders a single centered column (max ~1080px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below (no separator line). Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
 
 ### B6. Auto theme follows OS
 
@@ -167,26 +179,34 @@ From Settings sheet with Auto swatch selected.
 On the reader.
 
 1. Long-press (or right-click) a verse → mark editor bottom sheet slides up.
-2. Header shows "New mark" + the verse ref; verse-preview card shows Arabic + English; note textarea is empty; flag checkboxes (Open question, To apply) are unchecked; 12 collapsible layer regions appear — Threads, Audience, and Mode are expanded by default, others collapsed.
+2. Header shows "New mark" + the verse ref; verse-preview card shows Arabic + English; note textarea is empty; 12 collapsible layer regions appear — Threads, Audience, and Mode are expanded by default, others collapsed.
 3. Each layer has a search input + chip pool seeded from `core/seeds.ts` ∪ already-used canonicals.
 
 **Surfaces:** Reader, Mark editor. **No persistence yet.**
 
-**Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width header; below it the single-column body shows note, flags, and 12 layer regions. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
+**Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width header; below it the single-column body shows note and 12 layer regions. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
 
-### C1b. Fast-tag quickbar
+### C1b. Fast-tag inline panel
 
 On the reader.
 
 1. **Mobile / tablet (<1180px):** tap the circular fast-tag button in the `MarginHeader` top row (dot-only icon, right of the surah crumb, left of ⋮). **Desktop (≥1180px):** tap the top-right `TagModePill` ("Tag mode", hollow dot when off) — it targets the current `reader.currentVerseKey`.
-2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head. The toggle's dot fills green (light) / mint (dark) while the session is active. Each verse with saved tags reveals an inline chip row under it (`VerseTags.svelte`) — these chips are only visible while fast-tag mode is open.
-3. The fast-tag quickbar slides in at bottom-center: "↑ Suggested for {surah:verse}" + horizontal chip row. Tap a chip to toggle — selections debounce-save to IDB after 350 ms via `marks/store::save`.
-4. **Switch active verse while session is open:** short-tap any other verse in the reader → the session's target verse swaps to the tapped one (`beginFast(newKey)`), quickbar refreshes. A short-tap while the session is *closed* does nothing (no auto-start from verse tap).
-5. Tap the same toggle again to end the session. `tagSession.end()` resets state; the verse returns to normal styling; verse tag chips hide everywhere.
+2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head. The toggle's dot fills green (light) / mint (dark) while the session is active.
+3. The fast-tag panel (`reader/VerseTagPanel.svelte`) renders inline inside the active verse, below the translation: one row per layer group (Speech / Narrative / Themes / Entities — all four always rendered, every layer reachable) of `#value` chips colored by layer hue, plus a `+ add` affordance per group and a muted regenerate icon top-right. Tap a chip to toggle — selections debounce-save to IDB after 350 ms via `marks/store::save`. Click `+ add` to swap in an inline input. The input **requires** an explicit `<prefix>:<value>` — the prefix autofills as the user types (e.g. typing `s` in Speech fills `speaker:` with the completion selected, typing `q` fills `quoted:`, typing `d` in Entities fills `divine:`). The next keystroke either accepts the completion or replaces it. Aliases live in `data/tag-layers::LAYER_PREFIXES`; autofill logic in `autofillPrefix`, commit parse in `parseLayeredValue`. If the prefix doesn't resolve to a layer in the group, or the value is empty, commit is refused (red underline + error state). Enter commits, Escape cancels.
+4. **Switch active verse while session is open:** short-tap any other verse in the reader → the session's target verse swaps to the tapped one (`beginFast(newKey)`), the panel re-renders inside the new active verse. A short-tap while the session is *closed* does nothing (no auto-start from verse tap).
+5. Tap the same toggle again to end the session. `tagSession.end()` resets state; the verse returns to normal styling; the panel unmounts.
 
-**Surfaces:** Reader, MarginHeader (mobile) / TagModePill (desktop), Fast-tag quickbar (`tag/AmbientDock.svelte`), VerseTags. **Persistence:** `marks` store via debounced save.
+**Surfaces:** Reader, MarginHeader (mobile) / TagModePill (desktop), Fast-tag inline panel (`reader/VerseTagPanel.svelte`). **Persistence:** `marks` store via debounced save.
 
-**Quickbar escalation:** `⌘/Ctrl + Enter` escalates to the deep sheet (`openDeep`); an explicit `accept` button applies every quick-pick.
+**Panel escalation:** `⌘/Ctrl + Enter` escalates to the deep sheet (`openDeep`). No "accept all" button — chip toggles and inline add are the only mutations from this surface.
+
+**Deep sheet presentation:**
+- **Mobile (<1180px):** full-screen sheet with sticky header + footer and safe-area insets. The verse-preview card is tap-collapsible (chevron) so a long ayah can be reduced to a one-line summary and the body content (search, layer tabs, chips, note) gets more breathing room.
+- **Desktop (≥1180px):** right-side vertical panel (~min(560px, 44vw)); preview-collapse still available via the same chevron.
+- **Header:** "Mark verse" title only (no duplicated `verseKey · SURAH` subline — the ref already lives on the preview card).
+- **Body layout:** no tab switcher — all four layer groups stack as sections in outer→inner reading order (Speech → Narrative → Themes → Entities), each with a hue-colored left rail that visually nests its layer rows. Layers within each group follow the same outer→inner principle (Speech: speaker → audience → quotedSpeaker → form; Narrative: mode → tone; Themes: threads → subjects; Entities: events → people → places → divineNames). Chips are hashtag-style (`#value` with `#` colored by layer hue) matching the fast-tag panel visual — tap a chip to remove it; underline combobox per row for type-to-create with seed suggestions.
+- **Delete flow:** Delete button only renders for existing marks. First tap swaps the footer into an inline confirm row (`Delete this mark? [Keep] [Delete]`); second tap on the solid red button commits and fires the undo toast. Closing the sheet resets any pending confirm.
+- **Empty-mark guard:** `marks/store::save` rejects (`EmptyMarkError`) any mark with zero tags across all 12 layers — a note alone is not sufficient. UI enforces the same rule proactively: Save button is disabled in the deep sheet + legacy mark editor until ≥1 tag is selected; the inline fast-tag panel's debounced save skips writes while the draft is empty.
 
 ### C2. Multi-tag selection (per layer)
 
@@ -211,9 +231,9 @@ Inside mark editor.
 Inside mark editor with ≥1 tag selected (any layer) or note text.
 
 1. Type into the note textarea → Save button enables.
-2. Tap **Save** → `marks/store.ts::save` writes to IDB with all 12 layer arrays + flags → `MARKS_SAVED` fires → `broadcastMarkChange` fires across tabs → sheet closes → reader shows gold left-edge on the verse.
+2. Tap **Save** → `marks/store.ts::save` writes to IDB with all 12 layer arrays → `MARKS_SAVED` fires → `broadcastMarkChange` fires across tabs → sheet closes → reader shows gold left-edge on the verse.
 
-**Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey]` with 12 layer arrays + flags + note + timestamps.
+**Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey]` with 12 layer arrays + note + timestamps.
 
 ### C5. Delete with undo
 
@@ -238,11 +258,10 @@ Inside mark editor, new mark.
 
 1. Select a tag from the Threads layer → chip appears in layer's selected row.
 2. Expand Audience layer → select a tag → chip appears in Audience selected row.
-3. Tick "Open question" flag checkbox.
-4. Tap **Save** → sheet closes → gold edge appears.
-5. Reopen editor for the same verse → "Edit mark" shown → Threads and Audience layers pre-populated with the selected tags; "Open question" checkbox is checked.
+3. Tap **Save** → sheet closes → gold edge appears.
+4. Reopen editor for the same verse → "Edit mark" shown → Threads and Audience layers pre-populated with the selected tags.
 
-**Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey].threads`, `marks[verseKey].audience`, `marks[verseKey].flags.hasQuestion`.
+**Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey].threads`, `marks[verseKey].audience`.
 
 > **Invariant (formerly `CLAUDE.md` Rule 4).** The mark editor is the **sole action surface** for a single verse. Long-press, right-click, and the command sheet's "Mark this verse" (F2) all route to it. Do **not** introduce a contextual menu, multi-action sheet, or preview popover as an alternative per-verse action surface. The verse-number tap (B3) surfaces edge indicators only — that's a navigation affordance, not a per-verse action, and is unaffected by this invariant.
 

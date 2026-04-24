@@ -70,8 +70,8 @@ test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reloa
     const tagSheet = pageA.locator('.qa-ts')
     await expect(tagSheet).toBeVisible({ timeout: 5_000 })
 
-    // Add a tag via the Themes tab threads combobox (value commits on Enter)
-    await pageA.locator('.qa-ts-tab', { hasText: 'Themes' }).click()
+    // Add a tag via the threads layer combobox (value commits on Enter).
+    // All group sections are always rendered — no tab activation needed.
     const threadsInput = pageA.locator('.qa-ts-layer', { has: pageA.locator('.qa-ts-lbl', { hasText: /^threads$/i }) }).locator('.qa-ts-combo-input')
     await threadsInput.click()
     await threadsInput.fill('mercy')
@@ -139,8 +139,9 @@ test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor clos
     const tagSheetB = pageB.locator('.qa-ts')
     await expect(tagSheetB).toBeVisible({ timeout: 5_000 })
 
-    // Tab B: click Delete (TagSheet deletes immediately — no confirm step)
+    // Tab B: click Delete → confirm Delete (inline confirm step)
     await pageB.locator('.qa-ts-btn--danger').click()
+    await pageB.locator('.qa-ts-btn--danger-primary').click()
     await expect(tagSheetB).not.toBeVisible({ timeout: 5_000 })
 
     // Tab A sheet should close silently: SYNC_UPDATE_RECEIVED fires → TagSheet

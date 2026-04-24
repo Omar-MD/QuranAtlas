@@ -73,12 +73,12 @@ describe('styles — responsive breakpoint tokens', () => {
 
   // .qa-verse desktop padding rules moved to Reader.svelte <style> block (Phase 5 migration)
 
-  it('at desktop, reader #main-content caps at 960px for a comfortable reading measure', () => {
+  it('at desktop, reader #main-content caps at 1080px for a comfortable reading measure', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /#main-content:has\(\.qa-verse\)\s*\{[^}]*max-width:\s*960px/.test(b[1])
+      /#main-content:has\(\.qa-verse\)\s*\{[^}]*max-width:\s*1080px/.test(b[1])
     )
-    expect(hit, 'expected a min-width: 1180px block capping #main-content:has(.qa-verse) at 960px').toBeDefined()
+    expect(hit, 'expected a min-width: 1180px block capping #main-content:has(.qa-verse) at 1080px').toBeDefined()
   })
 
   // .qa-verse-arabic desktop margin rules moved to Reader.svelte <style> block (Phase 5 migration)

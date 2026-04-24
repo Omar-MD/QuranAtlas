@@ -2,7 +2,7 @@
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
   import { tagSession } from '../state/tag-session.svelte'
-  import VerseTags from './VerseTags.svelte'
+  import VerseTagPanel from './VerseTagPanel.svelte'
 
   interface Props {
     verseKey: string
@@ -55,7 +55,7 @@
   <div class="qa-verse-head">
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <span class="qa-verse-number" onclick={handleNumberTap}>{surahNum} : {verseNum}</span>
+    <span class="qa-verse-number" onclick={handleNumberTap} aria-label="Verse {surahNum}:{verseNum}">{verseNum}</span>
     {#if isActive}
       <span class="qa-verse-tagging" aria-label="Tagging this verse">
         <span class="qa-verse-tagging-dot" aria-hidden="true"></span>tagging
@@ -68,6 +68,8 @@
     class:qa-hide-translation={!translationVisible}
     data-translation=""
   >{translation}</div>
-  <VerseTags {verseKey} />
+  {#if isActive}
+    <VerseTagPanel {verseKey} />
+  {/if}
 </div>
 

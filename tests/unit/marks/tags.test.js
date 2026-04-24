@@ -5,7 +5,7 @@ const BASE_INPUT = {
   subjects: [], audience: [], speaker: [],
   quotedSpeaker: [], mode: [], form: [], tone: [],
   people: [], places: [], events: [], divineNames: [],
-  flags: {}, note: '',
+  note: '',
 }
 
 let tags

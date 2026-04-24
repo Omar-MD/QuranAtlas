@@ -15,7 +15,7 @@
   const credits = [
     "Quran translation by Fadel Soliman (Bridges' Translation)",
     'Arabic typography by KFGQPC (King Fahd Glyphic and Typographic Project)',
-    'Font: Scheherazade New (SIL Open Font License)',
+    'Fonts: Amiri and Amiri Quran by Khaled Hosny (SIL Open Font License)',
     'Built with Svelte, Vite, and Workbox',
   ]
 

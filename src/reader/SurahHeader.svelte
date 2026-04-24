@@ -15,12 +15,20 @@
   const showBasmala = $derived(shouldRenderBasmala(surahNum))
 </script>
 
-<div class="qa-surah-header-card" data-surah-header="">
+<div class="qa-surah-header" data-surah-header="">
   <div class="qa-surah-name" dir="rtl">{arabicName}</div>
   <div class="qa-surah-meta">{metaLine}</div>
   <SurahProgress />
 </div>
 
 {#if showBasmala}
-  <div class="qa-basmala">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>
+  <div class="qa-basmala">
+    <span
+      class="qa-basmala-text"
+      dir="rtl"
+      lang="ar"
+      aria-label="بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ"
+      role="img"
+    >﷽</span>
+  </div>
 {/if}

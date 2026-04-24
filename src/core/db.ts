@@ -39,7 +39,6 @@ export interface MarkRecord {
   events: string[]
   divineNames: string[]
   _canon: Record<LayerName, string[]>
-  flags: { hasQuestion?: boolean; hasApplication?: boolean }
   note: string
   createdAt: number
   updatedAt: number
@@ -236,7 +235,6 @@ const _shapes: Record<string, Record<string, string>> = {
     mode: 'string[]', form: 'string[]', tone: 'string[]',
     people: 'string[]', places: 'string[]', events: 'string[]', divineNames: 'string[]',
     _canon: 'any',
-    flags: 'any',
     note: 'string',
     createdAt: 'number',
     updatedAt: 'number',

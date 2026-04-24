@@ -91,29 +91,6 @@
     border-color: var(--qa-accent);
   }
 
-  .qa-mark-flags {
-    display: flex;
-    gap: 16px;
-    margin: 10px 0 8px;
-  }
-
-  .qa-mark-flag-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8125rem;
-    color: var(--qa-text-on-sheet);
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .qa-mark-flag-checkbox {
-    accent-color: var(--qa-accent);
-    width: 15px;
-    height: 15px;
-    cursor: pointer;
-  }
-
   .qa-mark-layers {
     margin-top: 8px;
   }

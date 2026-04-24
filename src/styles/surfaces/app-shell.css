@@ -107,7 +107,7 @@
 
     /* Reader column cap — `:has()` selectors restricted to this file per spec. */
     #main-content:has(.qa-verse) {
-      max-width: 960px;
+      max-width: 1080px;
     }
 
     /* About page column — wider than Reader cap for stat-grid + body-split. */

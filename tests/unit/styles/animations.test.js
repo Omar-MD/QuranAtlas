@@ -26,7 +26,6 @@ describe('animations consolidation', () => {
       'qa-skeleton-shimmer',
       'qa-spotlight-fade',
       'qa-spotlight-pulse',
-      'qa-qb-in',
     ]
     for (const name of required) {
       expect(animationsCss).toMatch(new RegExp(`@keyframes\\s+${name}\\b`))

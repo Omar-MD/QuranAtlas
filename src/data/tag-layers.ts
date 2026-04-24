@@ -12,12 +12,23 @@ export interface LayerGroup {
   readonly layers: readonly LayerName[]
 }
 
+/**
+ * Layer groups in outer → inner order. Within each group, layers are
+ * ordered from the most containing / scope-setting concept to the most
+ * specific / nested detail, so the deep-sheet rendering reads top-down
+ * as "context → narrative frame → participants → specifics":
+ *
+ *   Speech    — speaker (source)     → audience (recipient) → quotedSpeaker (nested voice) → form (utterance shape)
+ *   Narrative — mode (discourse mode) → tone (emotional colour)
+ *   Themes    — threads (cross-cutting arcs) → subjects (specific subjects)
+ *   Entities  — events (narrative frame) → people (agents) → places (setting) → divineNames (theological specifics)
+ */
 export const LAYER_GROUPS: readonly LayerGroup[] = [
   {
     id: 'speech',
     name: 'Speech',
     hueVar: 'var(--lh-speech)',
-    layers: ['speaker', 'quotedSpeaker', 'audience', 'form'] as const,
+    layers: ['speaker', 'audience', 'quotedSpeaker', 'form'] as const,
   },
   {
     id: 'narrative',
@@ -35,7 +46,7 @@ export const LAYER_GROUPS: readonly LayerGroup[] = [
     id: 'entities',
     name: 'Entities',
     hueVar: 'var(--lh-entities)',
-    layers: ['people', 'places', 'events', 'divineNames'] as const,
+    layers: ['events', 'people', 'places', 'divineNames'] as const,
   },
 ] as const
 
@@ -70,6 +81,72 @@ export function hueForLayer(layer: LayerName): string {
 export interface QuickPick {
   readonly layer: LayerName
   readonly value: string
+}
+
+/**
+ * Prefix aliases accepted by the inline fast-tag panel's typed syntax
+ * (`<prefix>:<value>`). Keys are `LayerName`; values are lowercased
+ * aliases the user may type. First alias doubles as the canonical
+ * display prefix shown in the placeholder hint.
+ */
+export const LAYER_PREFIXES: Readonly<Record<LayerName, readonly string[]>> = {
+  threads: ['theme', 'themes', 'thread', 'threads'],
+  subjects: ['subject', 'subjects'],
+  audience: ['audience'],
+  speaker: ['speaker'],
+  quotedSpeaker: ['quoted', 'quotedspeaker'],
+  mode: ['mode'],
+  form: ['form'],
+  tone: ['tone'],
+  people: ['people', 'person'],
+  places: ['place', 'places'],
+  events: ['event', 'events'],
+  divineNames: ['divine', 'divinename', 'divinenames', 'name', 'names'],
+}
+
+/**
+ * Parse the inline typed-tag syntax `<prefix>:<value>` against a group's
+ * allowed layers. Returns `null` if the prefix is absent, doesn't match
+ * any layer in the group, or the value is empty. An explicit prefix is
+ * always required — callers autofill the prefix as the user types so the
+ * user never has to remember layer names by hand.
+ */
+export function parseLayeredValue(
+  group: LayerGroup,
+  raw: string,
+): { layer: LayerName; value: string } | null {
+  const trimmed = raw.trim()
+  if (!trimmed) { return null }
+  const colon = trimmed.indexOf(':')
+  if (colon <= 0) { return null }
+  const prefix = trimmed.slice(0, colon).trim().toLowerCase().replace(/\s+/g, '')
+  const value = trimmed.slice(colon + 1).trim()
+  if (!prefix || !value) { return null }
+  const matched = group.layers.find(l => (LAYER_PREFIXES[l] as readonly string[]).includes(prefix))
+  if (!matched) { return null }
+  return { layer: matched, value }
+}
+
+/**
+ * Given a group and a partial string the user has typed so far, return the
+ * completion that should be auto-filled into the input. The completion
+ * includes the trailing `:` so the caret lands in the value portion. If no
+ * prefix alias in the group starts with the typed fragment (or the typed
+ * fragment already contains a colon, or it already equals a complete
+ * prefix), returns `null` and the caller leaves the input untouched.
+ */
+export function autofillPrefix(group: LayerGroup, typed: string): string | null {
+  if (!typed || typed.includes(':')) { return null }
+  const needle = typed.toLowerCase()
+  for (const layer of group.layers) {
+    for (const alias of LAYER_PREFIXES[layer]) {
+      if (alias === needle) { return null }          // already a full prefix — let user type `:`
+      if (alias.startsWith(needle)) {
+        return alias + ':'
+      }
+    }
+  }
+  return null
 }
 
 export const QUICK_PICKS: readonly QuickPick[] = [

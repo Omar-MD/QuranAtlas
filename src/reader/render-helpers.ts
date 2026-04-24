@@ -31,12 +31,11 @@ export function formatSurahMeta(meta: SurahMeta): string {
 }
 
 /**
- * Format the Arabic surah name with honorific prefix.
- * e.g. "سُورَةُ الفاتحة"
+ * Return the Arabic surah name (no honorific prefix).
+ * e.g. "الفاتحة"
  */
 export function formatArabicSurahName(meta: SurahMeta): string {
-  const arabic = typeof meta['arabic'] === 'string' ? meta['arabic'] : ''
-  return `سُورَةُ ${arabic}`
+  return typeof meta['arabic'] === 'string' ? meta['arabic'] : ''
 }
 
 /**

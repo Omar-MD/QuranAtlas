@@ -14,7 +14,6 @@
   import { get, LAYER_NAMES } from '../core/db'
   import { getSurahs } from '../data/dataset'
   import { getAll as getAllMarks } from '../marks/store'
-  import { openCommandSheet } from './command-sheet-bridge'
   import { openMoreSheet } from './more-sheet-bridge'
   import { beginFast } from '../tag/session-bridge'
   import { tagSession } from '../state/tag-session.svelte'
@@ -28,6 +27,8 @@
   let lastSurahHref = $state('#/s/1')
   let surahName = $state('')
   let reviewCount = $state(0)
+  /** Last reader route the crumb toggled out from — used to return without history-stack growth. */
+  let crumbReturnHref = $state('')
 
   type Tab = { id: 'read' | 'review' | 'marks' | 'threads'; label: string; active: (h: string) => boolean }
   const TABS: Tab[] = [
@@ -41,10 +42,8 @@
 
   const crumbText = $derived.by(() => {
     const s = reader.currentSurahNum
-    const vk = reader.currentVerseKey
-    const verse = vk ? vk.split(':')[1] ?? '1' : '1'
     if (!s) { return 'QuranAtlas' }
-    return `${s} : ${verse} · ${surahName || `Surah ${s}`}`
+    return surahName || `Surah ${s}`
   })
 
   function handleTab(e: Event, id: Tab['id']): void {
@@ -57,7 +56,17 @@
   }
 
   function openSurahPicker(): void {
-    openCommandSheet()
+    const h = window.location.hash || ''
+    if (h.startsWith('#/surahs')) {
+      const target = crumbReturnHref || lastSurahHref
+      crumbReturnHref = ''
+      history.replaceState(null, '', target)
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+      return
+    }
+    if (h.startsWith('#/s/')) { crumbReturnHref = h }
+    history.replaceState(null, '', '#/surahs')
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
   }
 
   function openTagMode(): void {
@@ -126,7 +135,7 @@
 
 <header class="qa-mh" class:qa-mh--hidden={hidden} aria-label="Primary navigation">
   <div class="qa-mh-row">
-    <button type="button" class="qa-mh-crumb" onclick={openSurahPicker} aria-label="Open surah picker">
+    <button type="button" class="qa-mh-crumb" onclick={openSurahPicker} aria-label="Open surah list">
       <span class="qa-mh-crumb-text">{crumbText}</span>
       <svg class="qa-mh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="6 9 12 15 18 9"/>

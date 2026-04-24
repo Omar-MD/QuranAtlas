@@ -29,8 +29,8 @@ Every `Events.*` constant has a corresponding entry in the `EventPayloads` map i
 | `ROUTER_ROUTE_CHANGE` | `router:route-change` | `core/router.ts:146` | `nav/AmbientDock.svelte`, `nav/MarginHeader.svelte` | `{ hash }` |
 | `NAVIGATION_NAVIGATE` | `navigation:navigate` | `surahs/SurahList.svelte`, `nav/CommandSheet.svelte` | `app-bootstrap.ts` | `{ surah, verse? }` |
 | `OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `data/offline.ts:164` | `data/offline.ts:265` *(self)* | `{ cached, total }` |
-| `MARKS_SAVED` | `marks:saved` | `marks/store.ts` | `marks/indicator.ts` (initIndicators), `nav/MarginHeader.svelte`, `reader/VerseTags.svelte` | `{ verseKey, tags }` — `tags` = union of canonical keys across all 12 layers (not raw labels) |
-| `MARKS_DELETED` | `marks:deleted` | `marks/store.ts` | `marks/indicator.ts` (initIndicators), `nav/MarginHeader.svelte`, `reader/VerseTags.svelte` | `{ verseKey }` |
+| `MARKS_SAVED` | `marks:saved` | `marks/store.ts` | `marks/indicator.ts` (initIndicators), `nav/MarginHeader.svelte` | `{ verseKey, tags }` — `tags` = union of canonical keys across all 12 layers (not raw labels) |
+| `MARKS_DELETED` | `marks:deleted` | `marks/store.ts` | `marks/indicator.ts` (initIndicators), `nav/MarginHeader.svelte` | `{ verseKey }` |
 | `MARKS_UNDO` | `marks:undo` | `core/ui.svelte` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
 | `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/Verse.svelte` (onMount) | `marks/indicator.ts` (initIndicators) | `{ verseKey, element }` |
 | `AMBIENT_SURFACE` | `ambient:surface` | `reader/Reader.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `{ reason }` |

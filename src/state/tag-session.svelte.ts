@@ -1,8 +1,9 @@
 /**
  * Tag-session state (runes). Holds the live state for a single tagging
- * session — one verse at a time. Both the fast path (quickbar via
- * `tag/AmbientDock`) and the deep path (`marks/Editor` or `tag/TagSheet`)
- * read/write this state. Persistence still flows through `marks/store.ts`.
+ * session — one verse at a time. Both the fast path (inline panel via
+ * `reader/VerseTagPanel`) and the deep path (`marks/Editor` or
+ * `tag/TagSheet`) read/write this state. Persistence still flows through
+ * `marks/store.ts`.
  */
 
 import type { LayerName } from '../core/db'
@@ -22,14 +23,10 @@ export class TagSessionState {
   sheetOpen = $state(false)
   draft = $state<LayerMap>(emptyLayerMap())
   note = $state('')
-  flagHasQuestion = $state(false)
-  flagHasApplication = $state(false)
 
   begin(verseKey: string, current?: Partial<LayerMap>, note = ''): void {
     this.verseKey = verseKey
     this.note = note
-    this.flagHasQuestion = false
-    this.flagHasApplication = false
     const next = emptyLayerMap()
     if (current) {
       for (const l of LAYER_NAMES) {
@@ -46,8 +43,6 @@ export class TagSessionState {
     this.sheetOpen = false
     this.draft = emptyLayerMap()
     this.note = ''
-    this.flagHasQuestion = false
-    this.flagHasApplication = false
   }
 
   toggle(layer: LayerName, value: string): void {

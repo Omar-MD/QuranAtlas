@@ -208,7 +208,7 @@ export async function getMarkFromIdb(page, verseKey) {
  * Seed one or more marks using the v2 12-layer schema.
  * Each mark is { verseKey, threads?, subjects?, audience?, speaker?,
  * quotedSpeaker?, mode?, form?, tone?, people?, places?, events?,
- * divineNames?, flags?, note? }.
+ * divineNames?, note? }.
  * For backward compat, a top-level `tags` array is mapped into `threads`.
  */
 export async function seedMarks(page, marks) {
@@ -239,7 +239,6 @@ export async function seedMarks(page, marks) {
           verseKey: r.verseKey,
           ...layers,
           _canon,
-          flags: r.flags || {},
           note: r.note || '',
           createdAt: now,
           updatedAt: now,

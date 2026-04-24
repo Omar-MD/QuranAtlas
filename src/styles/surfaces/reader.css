@@ -3,48 +3,81 @@
  * arabic + translation blocks, verse number + tagging badge, verse-tag chips,
  * edge-indicators (body-appended imperative nodes), skeletons, invalid-verse error.
  *
- * Consumers: src/reader/{Reader,Verse,VerseTags,SurahHeader,EdgeIndicator}.svelte
+ * Consumers: src/reader/{Reader,Verse,SurahHeader,EdgeIndicator}.svelte
  * plus imperative DOM injection from src/reader/edge-indicators.ts.
  */
 @layer surfaces {
-  .qa-surah-header-card {
+  .qa-surah-header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    padding: 1.125rem 1rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid var(--qa-border-on-sheet);
-    border-radius: var(--qa-radius-xl);
-    background: var(--qa-surface-sheet);
+    gap: 0.625rem;
+    padding: 1.5rem 1rem 1rem;
+    margin-bottom: 0.25rem;
     text-align: center;
   }
 
   .qa-surah-name {
-    font-family: var(--qa-font-arabic);
-    font-size: 2.75rem;
+    font-family:
+      Amiri,
+      'Scheherazade New',
+      'Noto Naskh Arabic',
+      var(--qa-font-arabic);
+    font-size: clamp(2.75rem, 5vw + 1.5rem, 3.75rem);
+    font-weight: 400;
     color: var(--qa-text-arabic);
     direction: rtl;
-    line-height: var(--qa-line-height-arabic);
+    line-height: 1.4;
+    letter-spacing: 0;
+    font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+    text-rendering: optimizelegibility;
   }
 
   .qa-surah-meta {
     font-size: 0.75rem;
     color: var(--qa-text-muted);
-    margin-top: 0.25rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-weight: 600;
   }
 
+  /* Bismillah — U+FDFD Quranic ligature. Glyph is ~11× wider than its
+     font-size, so size must track container width, not viewport, to keep
+     the single non-wrapping glyph inside the reader column on every size. */
   .qa-basmala {
-    font-family: var(--qa-font-arabic);
-    font-size: 1.75rem;
-    text-align: center;
-    padding: 0.75rem 0;
+    container-type: inline-size;
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem 1rem 2rem;
+    margin: 0.5rem auto 1rem;
+  }
+
+  .qa-basmala-text {
+    font-family:
+      'Amiri Quran',
+      'Scheherazade New',
+      Amiri,
+      'Noto Naskh Arabic',
+      var(--qa-font-arabic);
+    font-size: clamp(1.375rem, 8cqi, 5rem);
+    font-weight: 400;
     color: var(--qa-text-arabic);
     direction: rtl;
-    line-height: var(--qa-line-height-arabic);
+    line-height: 1.15;
+    text-align: center;
+    max-width: 100%;
+    font-feature-settings: "liga" 1, "calt" 1, "dlig" 1, "kern" 1;
+    text-rendering: optimizelegibility;
+  }
+
+  @media (max-width: 600px) {
+    .qa-surah-header {
+      padding: 1rem 0.75rem 0.75rem;
+    }
+
+    .qa-basmala {
+      padding: 1rem 0.75rem 1.5rem;
+    }
   }
 
   /* Verse container */
@@ -65,6 +98,9 @@
     border-radius: var(--qa-radius-2xl);
     box-shadow: inset 0 0 0 1px var(--qa-border-on-sheet);
     content-visibility: visible;
+
+    /* Prevents bounce when chips wrap to an extra line during selection toggles */
+    contain-intrinsic-size: auto 260px;
     transition: none;
   }
 
@@ -164,50 +200,6 @@
 
   .qa-verse-translation.qa-hide-translation {
     display: none;
-  }
-
-  /* Verse-tag chips */
-  .qa-vtags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-    padding-top: 8px;
-  }
-
-  .qa-vtag {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 9px 3px 8px;
-    border-radius: var(--qa-radius-sm);
-    background: color-mix(in srgb, var(--qa-surface-sheet) 70%, transparent);
-    border: 1px solid var(--qa-border-subtle);
-    font-family: var(--qa-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.06em;
-    color: var(--qa-text-on-sheet-dim);
-  }
-
-  .qa-vtag-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: var(--qa-radius-circle);
-    opacity: 0.75;
-  }
-
-  .qa-vtag-lbl {
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--qa-text-on-sheet-dim);
-    font-weight: 600;
-  }
-
-  .qa-vtag-val {
-    text-transform: none;
-    letter-spacing: 0.02em;
-    color: var(--qa-text-on-sheet);
-    font-weight: 500;
   }
 
   /* Surah end marker */

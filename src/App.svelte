@@ -13,7 +13,6 @@
   import MarginHeader from './nav/MarginHeader.svelte'
   import CommandSheet from './nav/CommandSheet.svelte'
   import MoreSheet from './nav/MoreSheet.svelte'
-  import TagAmbientDock from './tag/AmbientDock.svelte'
   import TagSheet from './tag/TagSheet.svelte'
   import TagModePill from './nav/TagModePill.svelte'
   import { tagSession } from './state/tag-session.svelte'
@@ -109,7 +108,6 @@
 <ClearDataConfirm />
 <CommandSheet />
 <MoreSheet />
-<TagAmbientDock />
 <TagModePill />
 <TagSheet
   isOpen={tagSession.sheetOpen && !!tagSession.verseKey}

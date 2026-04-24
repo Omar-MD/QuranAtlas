@@ -35,6 +35,7 @@ Context: core data-model overhaul brainstormed 2026-04-20. Introduces 12 free-fo
 - **Community-curated aliases** — shared alias artifact with review/approval workflow. Lets communities ratify that `believers` → `muminin` in a specific cultural convention, without imposing globally.
 - **Subordinate-rank hierarchy metadata** — dataset ships `subordinateOf` / `partOf` relations per classical tafsir (muhsinin ⊂ muminin ⊂ muslimin). Filters offer "include subordinate ranks" toggle. Graph renders hierarchy visually.
 - **Pillars layer** — revisit as a dedicated layer only if organic usage shows users forming a "pillar" tag convention. Alternatively extend threads seed palette.
+- **Mark-level flags (`hasQuestion`, `hasApplication`)** — shipped briefly in the 2026-04-20 data-model but pulled from UI + schema during tagging polish (empty-mark guard made them redundant; tags cover the same intents). Re-consider if post-launch usage shows users wanting a first-class "revisit later" / "to apply" toggle outside the tag layers.
 - **Memorization flag** — status enum (not-started / learning / memorized / needs-review). Rabbit-hole-adjacent (spaced-repetition = own product); deferred until clear need.
 - **Teaching / share-export flag** — marks verses user intends to share in halaqa / dawah. Bundles naturally with future sharing layer.
 - **Source citation layer** — free-form or structured references to tafsir, hadith, scholar names. Distinct from edge evidence; applies to verse itself.

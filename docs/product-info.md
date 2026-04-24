@@ -69,7 +69,7 @@ Designed for keyboard-first readers. Full reference via `?` from any non-input c
 - Wordmark + mission ("Read, reflect, remember.")
 - Qur'an 54:17 blessing in Arabic + translation.
 - 2×2 stat grid: Marks · Tags · Surahs · % Qur'an tagged.
-- Attribution (Bridges' translation, KFGQPC Arabic, Scheherazade New font, Vite, Workbox).
+- Attribution (Bridges' translation, KFGQPC Arabic, Amiri + Amiri Quran fonts by Khaled Hosny, Vite, Workbox).
 - Install-app CTA (when the browser's install prompt is available) and the app version.
 
 ### Offline

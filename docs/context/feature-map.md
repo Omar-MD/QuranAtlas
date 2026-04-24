@@ -56,7 +56,6 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Key behaviors:**
   - 12 collapsible `TagLayerRegion` sections: threads, subjects, audience, speaker, quotedSpeaker, mode, form, tone, people, places, events, divineNames. Threads, audience, and mode expanded by default; others collapsed.
   - Each layer has a search input + chip pool (seeds ∪ existing canonicals ∪ user-added). Clicking a chip toggles selected/unselected within that layer; each layer shows its own count badge. Inline "+ label" chip creates a new tag in the layer.
-  - Flag row: "Open question" (`hasQuestion`) and "To apply" (`hasApplication`) checkboxes.
   - Note textarea (optional, ≤500 chars).
   - Delete button hidden for new marks; inline-confirm + undo toast for existing marks.
   - Closes if `SYNC_UPDATE_RECEIVED` reports the editing verseKey was deleted elsewhere.
@@ -156,9 +155,9 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Route:** all routes; auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE`.
 - **Entry:** `src/nav/MarginHeader.svelte` (mounted persistently in `App.svelte`; display-hidden on desktop ≥1180px).
 - **Files:** `nav/MarginHeader.svelte`
-- **Purpose:** Mobile/tablet (<1180px) fixed top bar. Row 1: surah breadcrumb pill (`{surah} : {verse} · {Name}` ▼) + circular fast-tag toggle + ⋮ more. Row 2: section tabs (Read / Review N / Marks / Threads).
+- **Purpose:** Mobile/tablet (<1180px) fixed top bar. Row 1: surah name pill (`{Name}` ▼) + circular fast-tag toggle + ⋮ more. Row 2: section tabs (Read / Review N / Marks / Threads).
 - **Key behaviors:**
-  - Crumb button → `openCommandSheet()` (surah picker).
+  - Crumb button → navigates to `#/surahs` (surah list).
   - Fast-tag button (dot-only circle): toggles `tagSession.quickbarOpen`; when active pulses green (light) / mint (dark). Calls `beginFast(verseKey)` to start, `tagSession.end()` to stop. Reads `reader.currentVerseKey`; no-op if no active verse.
   - ⋮ button → `openMoreSheet()`.
   - Section tabs use `#/review` for Review/Marks/Threads stubs today; Read jumps to `lastSurahHref` from `settings.lastSurface`.
@@ -166,27 +165,34 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Scroll listener on `#main-content` toggles `qa-mh--hidden` (transform translateY −100%).
 - **Reader clearance:** `theme.css` pads `#main-content` by `calc(env(safe-area-inset-top) + 108px)` at <768 and 768–1179 breakpoints so the header never covers the surah title.
 
-## Fast-tag quickbar
+## Fast-tag panel (inline, in-verse)
 
-- **Entry:** `src/tag/AmbientDock.svelte` (mounted in `App.svelte` as `TagAmbientDock`). Opens when `tagSession.quickbarOpen === true`.
-- **Files:** `tag/AmbientDock.svelte`, `tag/TagChip.svelte`, `tag/session-bridge.ts`, `state/tag-session.svelte.ts`, `data/tag-layers.ts`
-- **Purpose:** Fast path for tagging a single verse — floating bottom-center bar with suggested tag chips. Complement to the deep path (`marks/Editor.svelte`).
+- **Entry:** `src/reader/VerseTagPanel.svelte` (rendered inside `reader/Verse.svelte` under the translation, gated on `isActive`). Opens when `tagSession.quickbarOpen === true` for that verse.
+- **Files:** `reader/VerseTagPanel.svelte`, `reader/Verse.svelte`, `tag/session-bridge.ts`, `state/tag-session.svelte.ts`, `data/tag-layers.ts`
+- **Purpose:** Fast path for tagging a single verse — inline suggestion panel under the active verse's translation, grouped by layer group (Speech / Narrative / Themes / Entities) with color-coded `#` glyph per layer hue. Replaces the retired floating `tag/AmbientDock` quickbar. Complement to the deep path (`marks/Editor.svelte`).
 - **Key behaviors:**
-  - Triggered by: mobile MarginHeader fast-tag button, or programmatic `beginFast(verseKey)` via `tag/session-bridge.ts`.
+  - Triggered by: mobile MarginHeader fast-tag button or desktop `TagModePill`, or programmatic `beginFast(verseKey)` via `tag/session-bridge.ts`.
   - `beginFast` hydrates `tagSession` from any existing mark for the verse (`marks/store::getByVerseKey`), then sets `quickbarOpen = true`.
-  - Suggested chips come from `data/tag-layers::QUICK_PICKS`. Tap chip → `tagSession.toggle(layer, value)` → debounced 350 ms save through `marks/store::save`.
-  - Desktop `accept` button applies every quick-pick at once. `⌘/Ctrl + Enter` opens the deep sheet (`openMore()` → `sheetOpen = true`, `quickbarOpen = false`).
-  - Esc ends the session (`tagSession.end()`).
-  - Active verse in the reader gets `.qa-verse--active` styling (accent bracket, inset ring, parchment verse-key) driven by `isActive = tagSession.verseKey === verseKey && tagSession.quickbarOpen`.
+  - Suggested chips come from `data/tag-layers::QUICK_PICKS`, grouped into rows by `LAYER_GROUPS`. Tap chip → `tagSession.toggle(layer, value)` → debounced 350 ms save through `marks/store::save`.
+  - Inline type-to-create: `+ add` per group swaps to an `<input>`; Enter commits (creates a new value in the group's first layer), Escape cancels.
+  - Regenerate icon (top-right) is a placeholder for future contextual suggestions.
+  - `⌘/Ctrl + Enter` opens the deep sheet (`sheetOpen = true`, `quickbarOpen = false`). Esc ends the session (`tagSession.end()`).
+  - No "Accept all" button, no "Suggested for {verseKey}" header — chip toggles are the only interaction.
+  - Active verse in the reader gets `.qa-verse--active` styling (accent bracket, inset ring, parchment verse-key) + `contain-intrinsic-size: auto 260px` to prevent bounce when chips wrap during selection. Drive: `isActive = tagSession.verseKey === verseKey && tagSession.quickbarOpen`.
 
 ## Deep-tag sheet (fast-path peer)
 
 - **Entry:** `src/tag/TagSheet.svelte` (mounted in `App.svelte`). Opens when `tagSession.sheetOpen === true`.
 - **Files:** `tag/TagSheet.svelte`, `tag/TagModeToggle.svelte`, `tag/VerseSpotlight.svelte`, `tag/session-bridge.ts`
-- **Purpose:** Deep counterpart to the quickbar — full 12-layer editor that shares `tagSession` state.
+- **Purpose:** Deep counterpart to the inline fast-tag panel — full 12-layer editor that shares `tagSession` state.
 - **Key behaviors:**
-  - Opened via `openDeep(verseKey)` (session-bridge) or the quickbar's `⌘+Enter` transition.
+  - Opened via `openDeep(verseKey)` (session-bridge) or the inline panel's `⌘+Enter` transition.
+  - Body renders all four layer groups stacked as sections in outer→inner reading order (Speech → Narrative → Themes → Entities), no tab bar. Each section is visually nested: a hue-colored left rail + mono uppercase group name + optional count badge, with layer rows indented inside. Layers within each group are ordered from outer scope to inner detail: Speech = speaker → audience → quotedSpeaker → form; Narrative = mode → tone; Themes = threads → subjects; Entities = events → people → places → divineNames. Chip grammar mirrors `reader/VerseTagPanel.svelte`: hashtag chips (`#value` with `#` colored by layer hue) for selected values, tap-to-remove (× surfaces on hover). Each row has an underline combobox input for type-to-create with seed suggestions via `getSeedsForLayer`.
   - Writes through `marks/store::save`. Legacy `marks/Editor.svelte` remains the canonical long-press surface.
+  - **Mobile (<1180px):** full-screen sheet (`inset: 0`), safe-area insets on sticky header + sticky footer, body scrolls between. Verse preview is a collapsible button: tap chevron (or preview card) to reduce Arabic + full translation to a single-line ellipsised summary, freeing vertical space on long ayat. Cancel button + `⌘↵` meta-hint hidden on mobile; Save button stretches; tap targets enlarged.
+  - **Desktop ≥1180px:** right-side vertical panel (~min(560px, 44vw)), unchanged.
+  - **Header:** "Mark verse" title only — verse ref is not duplicated in the header (already in the preview card).
+  - **Delete:** shown only when an existing mark is loaded. First tap swaps the footer into an inline confirm (`Delete this mark? [Keep] [Delete]`); second tap on the solid red button commits, then the undo toast fires. Closing the sheet cancels any pending confirm.
 
 ## Tag-mode pill (desktop)
 
@@ -198,12 +204,6 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Key behaviors:**
   - Listens to `ROUTER_ROUTE_CHANGE` + `hashchange` to hide off-reader routes.
   - Mirror of the mobile MarginHeader fast-tag dot button; desktop users have no other entry point since verse tap does not start fast-tag mode.
-
-## Verse tags (inline chip row)
-
-- **Entry:** `src/reader/VerseTags.svelte` (rendered inside every `Verse.svelte`).
-- **Files:** `reader/VerseTags.svelte`
-- **Purpose:** Shows canonical tag chips under each verse when that verse has a mark. **Gated on `tagSession.quickbarOpen`** — chips are only visible while fast-tag mode is active. When the user exits tag mode, chips hide on every verse (keeps reader uncluttered). Updates live on `MARKS_SAVED` / `MARKS_DELETED` for the matching `verseKey`.
 
 ## Surah progress chip
 
