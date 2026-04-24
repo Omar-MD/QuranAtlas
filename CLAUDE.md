@@ -65,7 +65,21 @@ Before plan, dispatch subagents, add Playwright specs, read **`docs/workflow/clu
 
 **TL;DR:** unit of work = surface or contiguous cluster of surfaces — never bug, never file. Parallel subagents = distinct surfaces only. Extend owning `tests/e2e/journey-X-*.spec.js` rather than create new specs. **Playbook canonical** — summary disagree with it → playbook win.
 
-### Rule 5 — Default PR target is `dev`
+### Rule 5 — Major bug uncaught by tests → add a regression test, validated against the bug
+
+When a bug significant enough to warrant a fix slips past the existing test suite, the fix is incomplete until a new or extended test exists that would have caught it. Same commit (or its immediate follower) — never "I'll add the test later".
+
+**Validation protocol (mandatory):**
+
+1. Run the new test against the **buggy** version of the code (revert the fix locally, e.g. `cp` the pre-fix file from `git show <sha>:<path>`). It must **fail**.
+2. Restore the fix. The test must **pass**.
+3. Only then commit. The commit message records that both legs were verified.
+
+A test that passes on the buggy code is not a regression guard — it's confirmation theatre. If step 1 passes, the test isn't actually exercising the bug; redesign it (different repro, stricter assertion, harder-to-cheat scenario) until it fails on the buggy version.
+
+Extend the owning `tests/e2e/journey-X-*.spec.js` per Rule 4; add a unit test alongside if the bug is a pure-function regression. Cite the new test from the journey entry's persistence/regression-guard line so future readers know which spec defends it.
+
+### Rule 6 — Default PR target is `dev`
 
 **All feature work, bug fixes, refactors, code-level PRs → `dev` unless I say otherwise.** Remote branches:
 
