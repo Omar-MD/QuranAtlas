@@ -29,7 +29,20 @@ import { scanA11y } from './fixtures/a11y.js'
 // ---------------------------------------------------------------------------
 
 async function openTagSheetViaRightClick(page) {
+  // Post-2026-04-25 redesign: right-click opens fast-tag inline panel; click ⛶
+  // to escalate to deep TagSheet.
   await page.locator('.qa-verse').first().click({ button: 'right' })
+  await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+  await page.locator('.qa-vtp-escalate').click()
+  await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
+}
+
+/** Long-press a verse, then click ⛶ to reach the deep TagSheet. */
+async function openTagSheetViaLongPress(page, verseLocator) {
+  const v = verseLocator ?? page.locator('.qa-verse').first()
+  await longPress(v)
+  await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+  await page.locator('.qa-vtp-escalate').click()
   await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 }
 
@@ -65,11 +78,11 @@ test.describe('Journey C: Verse marking', () => {
   // C1. Happy path — long-press opens TagSheet
   // -------------------------------------------------------------------------
 
-  test.fixme('C1: long-press verse opens TagSheet with correct structure', async ({ page }) => {
+  test('C1: long-press verse opens TagSheet (via ⛶) with correct structure', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible({ timeout: 5_000 })
 
-    await longPress(firstVerse)
+    await openTagSheetViaLongPress(page, firstVerse)
 
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 5_000 })
@@ -91,12 +104,12 @@ test.describe('Journey C: Verse marking', () => {
     await expect(groups).toHaveCount(4)
   })
 
-  test.fixme('C1: right-click also opens TagSheet (no native context menu)', async ({ page }) => {
+  test('C1: right-click also opens TagSheet (no native context menu)', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     await expect(page.locator('.qa-ts-title')).toHaveText('Mark verse')
   })
 
-  test.fixme('C1: a11y — no serious/critical axe violations on open TagSheet @a11y', async ({ page }) => {
+  test('C1: a11y — no serious/critical axe violations on open TagSheet @a11y', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     // Delete button uses --qa-color-error on a semi-transparent footer — axe
     // flags contrast there against the baseline surface.  Excluded pending a
@@ -105,7 +118,7 @@ test.describe('Journey C: Verse marking', () => {
     expect(violations).toEqual([])
   })
 
-  test.fixme('C1: keyboard — Escape closes TagSheet @keyboard', async ({ page }) => {
+  test('C1: keyboard — Escape closes TagSheet @keyboard', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible()
@@ -141,11 +154,25 @@ test.describe('Journey C: Verse marking', () => {
     await expect(page.locator('.qa-ts')).toHaveCount(0)
   })
 
+  test('C: ⛶ button in fast-tag panel opens deep TagSheet', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').first()
+    await longPress(firstVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+
+    const escalate = page.locator('.qa-vtp-escalate')
+    await expect(escalate).toBeVisible()
+    await expect(escalate).toHaveAttribute('aria-label', 'Open full tag editor')
+
+    await escalate.click()
+    await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-vtp')).toHaveCount(0)
+  })
+
   // -------------------------------------------------------------------------
   // C2. Add a tag to a layer → click chip removes it
   // -------------------------------------------------------------------------
 
-  test.fixme('C2: add tag to layer via combobox; click chip removes it', async ({ page }) => {
+  test('C2: add tag to layer via combobox; click chip removes it', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     await activateTab(page, 'Themes')
 
@@ -178,7 +205,7 @@ test.describe('Journey C: Verse marking', () => {
   // C3. Add a new (non-seed) tag inline
   // -------------------------------------------------------------------------
 
-  test.fixme('C3: type new label + Enter in layer combobox → tag added', async ({ page }) => {
+  test('C3: type new label + Enter in layer combobox → tag added', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     await activateTab(page, 'Themes')
 
@@ -197,7 +224,7 @@ test.describe('Journey C: Verse marking', () => {
   // C4. Note + save → IDB write + gold edge
   // -------------------------------------------------------------------------
 
-  test.fixme('C4: select tag, type note, Save → mark written to IDB → gold edge on verse', async ({ page }) => {
+  test('C4: select tag, type note, Save → mark written to IDB → gold edge on verse', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     await activateTab(page, 'Themes')
     await addTagToLayer(page, 'threads', 'mercy')
@@ -230,7 +257,7 @@ test.describe('Journey C: Verse marking', () => {
   // C5. Delete + undo
   // -------------------------------------------------------------------------
 
-  test.fixme('C5: delete mark → undo toast appears → tap Undo restores mark', async ({ page }) => {
+  test('C5: delete mark → undo toast appears → tap Undo restores mark', async ({ page }) => {
     await seedMarks(page, [{ verseKey: '1:1', threads: ['mercy'], note: 'original note' }])
     await page.reload()
     await waitForReader(page)
@@ -268,7 +295,7 @@ test.describe('Journey C: Verse marking', () => {
     expect(restored.threads).toContain('mercy')
   })
 
-  test.fixme('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion', async ({ page }) => {
+  test('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await seedMarks(page, [{ verseKey: '1:1', threads: ['patience'], note: '' }])
     await page.reload()
@@ -290,28 +317,30 @@ test.describe('Journey C: Verse marking', () => {
   // C6. Only TagSheet opens — no competing surfaces
   // -------------------------------------------------------------------------
 
-  test.fixme('C6: right-click and long-press each open ONLY the TagSheet', async ({ page }) => {
+  test('C6: right-click and long-press each open ONLY the fast-tag panel (⛶ → TagSheet)', async ({ page }) => {
     let dialogFired = false
     page.on('dialog', () => { dialogFired = true })
 
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible()
-    const sheet = page.locator('.qa-ts')
 
-    // Path 1: right-click
+    // Path 1: right-click → fast-tag panel (no competing surfaces)
     await firstVerse.click({ button: 'right' })
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     expect(dialogFired).toBe(false)
     await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
     await expect(page.locator('.qa-sheet--actions')).toHaveCount(0)
     await expect(page.locator('.qa-verse-preview')).toHaveCount(0)
+    // ⛶ escalation reaches deep TagSheet
+    await page.locator('.qa-vtp-escalate').click()
+    await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 
     await page.keyboard.press('Escape')
-    await expect(sheet).not.toBeVisible({ timeout: 3_000 })
+    await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 3_000 })
 
-    // Path 2: touch long-press
+    // Path 2: touch long-press → fast-tag panel (same invariant)
     await longPress(firstVerse)
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
   })
 
@@ -319,7 +348,7 @@ test.describe('Journey C: Verse marking', () => {
   // C7. Multi-layer round-trip: threads + audience persist across reopen
   // -------------------------------------------------------------------------
 
-  test.fixme('C7: select threads + audience tags, save, reopen, assert draft restored', async ({ page }) => {
+  test('C7: select threads + audience tags, save, reopen, assert draft restored', async ({ page }) => {
     const verseKey = '1:1'
 
     await openTagSheetViaRightClick(page)
@@ -342,10 +371,12 @@ test.describe('Journey C: Verse marking', () => {
     expect(mark.threads).toContain('mercy')
     expect(mark.audience).toContain('muminin')
 
-    // Reopen
+    // Reopen — right-click → fast-tag → ⛶ → deep TagSheet
     const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
     await verse.click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await page.locator('.qa-vtp-escalate').click()
     await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 
     // Themes tab: mercy chip is present
@@ -376,7 +407,7 @@ test.describe('Journey C: desktop variants @desktop', () => {
     await waitForReader(page)
   })
 
-  test.fixme('C1 desktop: TagSheet is a right-side panel, full-height', async ({ page }) => {
+  test('C1 desktop: TagSheet is a right-side panel, full-height', async ({ page }) => {
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
@@ -400,7 +431,7 @@ test.describe('Journey C: desktop variants @desktop', () => {
     expect(Math.round(geom.width)).toBe(560)
   })
 
-  test.fixme('C1 desktop: four group sections visible', async ({ page }) => {
+  test('C1 desktop: four group sections visible', async ({ page }) => {
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
