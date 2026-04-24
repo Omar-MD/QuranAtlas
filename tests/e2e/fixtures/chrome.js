@@ -32,7 +32,12 @@ export async function surfaceDock(page) {
       })
     }
   }
-  await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
+  } else {
+    await expect(page.locator('.qa-mh-hamburger')).toBeVisible()
+  }
 }
 
 /**
@@ -46,15 +51,22 @@ export async function openMoreSheet(page) {
 }
 
 /**
- * Open the Settings sheet via More → Settings.
+ * Open the Settings sheet.
+ * Desktop (≥1180px): More sheet → Settings (existing path; updated in Task 8).
+ * Mobile  (<1180px): MarginHeader gear icon → Settings (post-2026-04-25 redesign).
  */
 export async function openSettingsSheet(page) {
-  await openMoreSheet(page)
-  await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await openMoreSheet(page)
+    await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
+  } else {
+    const gear = page.locator('.qa-mh-settings')
+    await expect(gear).toBeVisible({ timeout: 5_000 })
+    await gear.click()
+  }
   const sheet = page.locator('.qa-sheet--settings')
   await expect(sheet).toBeVisible()
-  // Wait for the qa-sheet-rise animation to finish so axe contrast checks see
-  // the final opacity: 1 state (not an intermediate blended value).
   await sheet.evaluate(el =>
     Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
   )
