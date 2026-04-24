@@ -1,11 +1,11 @@
 /**
  * nav — AmbientDock (desktop left rail), AmbientPill (floating top pill),
  * CommandSheet (top-anchored ⌘K-style sheet), MarginHeader (mobile sticky
- * header), SurahProgress (pill within margin header), TagModePill (desktop
+ * header), SurahProgress (pill within margin header), NavDrawer (left-slide
  * right pill).
  *
  * Consumers: src/nav/{AmbientDock,AmbientPill,CommandSheet,MarginHeader,
- * SurahProgress,TagModePill}.svelte.
+ * SurahProgress,NavDrawer}.svelte.
  *
  * Z-index literals preserved (specific layering relative to scrim/pill/sheet
  * contexts predates the semantic z-tier; refactor-not-redesign).
@@ -630,56 +630,6 @@
     }
   }
 
-  /* ================================================================ tag-mode pill (desktop) */
-
-  .qa-tag-pill {
-    position: fixed;
-    top: 18px;
-    right: 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 14px 7px 12px;
-    border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-border-on-sheet);
-    background: var(--qa-surface-sheet);
-    color: var(--qa-text-on-sheet);
-    font: inherit;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgb(0 0 0 / 8%);
-    z-index: 140;
-  }
-
-  .qa-tag-pill:hover {
-    border-color: var(--qa-accent);
-  }
-
-  .qa-tag-pill--on {
-    border-color: var(--qa-accent);
-  }
-
-  .qa-tag-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--qa-radius-circle);
-    background: transparent;
-    border: 1.5px solid var(--qa-accent);
-  }
-
-  .qa-tag-dot--on {
-    background: var(--lh-themes);
-    border-color: var(--lh-themes);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--lh-themes) 28%, transparent);
-  }
-
-  @media (max-width: 1179px) {
-    .qa-tag-pill {
-      display: none;
-    }
-  }
 }
 
 /* ---------------------------------------------------------------------------

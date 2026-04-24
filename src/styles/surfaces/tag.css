@@ -9,7 +9,6 @@
  * Consumers:
  *   src/tag/TagSheet.svelte       → .qa-ts-*
  *   src/reader/VerseTagPanel.svelte → .qa-vtp-*     (inline fast-path panel)
- *   src/tag/TagModeToggle.svelte  → .qa-tagmode-*
  *   src/tag/TagChip.svelte        → .qa-tag-chip-*  (single-layer quickbar chip)
  *   src/tag/VerseSpotlight.svelte → .qa-spotlight-*
  *
@@ -888,52 +887,6 @@
   .qa-vtp-add-input::placeholder {
     color: var(--qa-text-on-sheet-dim);
     opacity: 0.7;
-  }
-
-  /* ================================================================
-     TagModeToggle — small Fast/Deep pill shown during tag session
-     ================================================================ */
-  .qa-tagmode {
-    position: fixed;
-    right: calc(12px + env(safe-area-inset-right));
-    bottom: calc(80px + env(safe-area-inset-bottom));
-    display: inline-flex;
-    padding: 4px;
-    border-radius: var(--qa-radius-pill);
-    background-color: color-mix(in srgb, var(--qa-surface-sheet) 94%, transparent);
-    border: 1px solid var(--qa-border-on-sheet);
-    box-shadow: 0 8px 20px rgb(0 0 0 / 16%);
-    backdrop-filter: blur(10px);
-    z-index: 120;
-    font-size: 0.75rem;
-  }
-
-  .qa-tagmode-btn {
-    padding: 5px 11px;
-    border-radius: var(--qa-radius-pill);
-    border: none;
-    background: transparent;
-    color: var(--qa-text-on-sheet-dim);
-    cursor: pointer;
-    font: inherit;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-  }
-
-  .qa-tagmode-btn--on {
-    background-color: var(--qa-accent);
-    color: var(--qa-text-on-accent);
-  }
-
-  .qa-tagmode-btn:not(.qa-tagmode-btn--on):hover {
-    color: var(--qa-text-on-sheet);
-  }
-
-  @media (min-width: 1180px) {
-    .qa-tagmode {
-      right: 24px;
-      bottom: 24px;
-    }
   }
 
   /* ================================================================

@@ -14,7 +14,6 @@
   import CommandSheet from './nav/CommandSheet.svelte'
   import NavDrawer from './nav/NavDrawer.svelte'
   import TagSheet from './tag/TagSheet.svelte'
-  import TagModePill from './nav/TagModePill.svelte'
   import { tagSession } from './state/tag-session.svelte'
 
   let cleanups: Array<() => void> = []
@@ -108,7 +107,6 @@
 <ClearDataConfirm />
 <CommandSheet />
 <NavDrawer />
-<TagModePill />
 <TagSheet
   isOpen={tagSession.sheetOpen && !!tagSession.verseKey}
   verseKey={tagSession.verseKey ?? ''}
