@@ -161,6 +161,16 @@ From Settings sheet (see D1).
 **Desktop variant (viewport ≥1180px):**
 The reader renders a single centered column (max ~1080px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below (no separator line). Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
 
+### B7. Scroll position survives warm-resume (iOS lock / tab-hide)
+
+Reader is deep in a surah.
+
+1. Lock screen / switch tabs → `visibilitychange` fires with hidden → `persistOnExit` flushes the tracker's pending verse and writes it to `positions.s<n>`.
+2. Unlock / return to tab → `visibilitychange` fires with visible → `DB_VISIBILITY_VISIBLE` is emitted, but the reader's handler restores scroll **only** when the tracker is fresh (no `lastTrackedVerse`) AND the scroller has collapsed to the top. Otherwise the browser's preserved scroll is trusted.
+3. Stale IDB values (e.g. a prior write the hide-time save hadn't replaced yet) never force-scroll an already-scrolled reader back to an earlier verse.
+
+**Surfaces:** Reader. **Persistence:** `positions.s<n>` on hide; read on fresh-mount restore only. **Regression guard:** `tests/e2e/journey-b-reader.spec.js` §B7.
+
 ### B6. Auto theme follows OS
 
 From Settings sheet with Auto swatch selected.

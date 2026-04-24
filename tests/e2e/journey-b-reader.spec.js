@@ -226,6 +226,79 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   })
 
   // -------------------------------------------------------------------------
+  // B7. Scroll position survives warm-resume (iOS lock/unlock regression)
+  //
+  // Repro of 2026-04 bug: user deep in a surah, screen locks, screen unlocks
+  // → reader snaps back to verse 1.  Root cause was the `DB_VISIBILITY_VISIBLE`
+  // handler unconditionally scroll-restoring from IDB (which could be stale
+  // mid hide-time save) even when the browser had already preserved scroll.
+  // -------------------------------------------------------------------------
+
+  test('B7: warm-resume (visibilitychange hidden→visible) preserves scroll position', async ({ page }) => {
+    await page.goto('/#/s/2')
+    await waitForReader(page)
+
+    // Scroll deep into the surah and let the debounce settle so the tracker
+    // has a non-null `lastTrackedVerse`.
+    await page.evaluate(() => {
+      const el = document.getElementById('main-content')
+      if (el) { el.scrollTo(0, 6000); el.dispatchEvent(new Event('scroll')) }
+    })
+    await page.waitForTimeout(1500)
+
+    const before = await page.evaluate(() => {
+      const el = document.getElementById('main-content')
+      return el?.scrollTop ?? 0
+    })
+    expect(before).toBeGreaterThan(1000)
+
+    // Simulate iOS lock (hidden).  Playwright cannot flip `document.hidden`
+    // natively, so override the getters and fire `visibilitychange` manually.
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    await page.waitForTimeout(200)
+
+    // Simulate the race that made the original bug observable: IDB holds a
+    // STALE early verse (e.g. a prior write that the hide-time save never
+    // replaced before the tab was suspended) while the browser has
+    // preserved scroll.  Write AFTER the hide-time save has already run so
+    // persistOnExit doesn't overwrite the stale value back.
+    await page.evaluate(async () => {
+      const dbReq = indexedDB.open('quran-atlas')
+      await new Promise((resolve) => {
+        dbReq.onsuccess = () => {
+          const db = dbReq.result
+          const tx = db.transaction('positions', 'readwrite')
+          tx.objectStore('positions').put({ id: 's2', surah: 2, verse: 1, savedAt: Date.now() })
+          tx.oncomplete = () => resolve(undefined)
+          tx.onerror = () => resolve(undefined)
+        }
+        dbReq.onerror = () => resolve(undefined)
+      })
+    })
+
+    // Unlock.
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => false })
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' })
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    await page.waitForTimeout(2000)
+
+    const after = await page.evaluate(() => {
+      const el = document.getElementById('main-content')
+      return el?.scrollTop ?? 0
+    })
+    // Scroll must not be reset toward the top (buggy warm-resume handler
+    // would have called `scrollToVerse(1)` via stale IDB and driven scrollTop
+    // back near 0).
+    expect(after).toBeGreaterThan(1000)
+  })
+
+  // -------------------------------------------------------------------------
   // A11y — Axe-core scan of the reader surface
   // -------------------------------------------------------------------------
 
