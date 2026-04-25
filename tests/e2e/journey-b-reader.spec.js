@@ -206,8 +206,10 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
   test('B5: font slider writes settings and updates preview scale', async ({ page }) => {
     await openSettingsSheet(page)
+    // Post 2026-04-25: font size slider lives inside the Typography subview.
+    await page.getByText('Size, spacing & margins').click()
 
-    const slider = page.locator('.qa-font-slider')
+    const slider = page.getByLabel('Font size')
     await expect(slider).toBeVisible()
 
     const current = await slider.inputValue()
@@ -225,7 +227,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       expect(attr).toBe(nextSize)
     }).toPass({ timeout: 3_000 })
 
-    const preview = page.locator('.qa-font-preview-en')
+    const preview = page.getByTestId('typography-preview')
     await expect(preview).toBeVisible()
 
     expect(await readSetting(page, 'fontSize')).toBe(nextSize)

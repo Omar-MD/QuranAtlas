@@ -87,48 +87,6 @@
     background-color: var(--qa-surface-sheet);
   }
 
-  .qa-font-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .qa-font-min {
-    font-size: 0.875rem;
-    color: var(--qa-text-on-sheet-dim);
-  }
-
-  .qa-font-max {
-    font-size: 1.25rem;
-    color: var(--qa-text-on-sheet);
-    font-weight: 600;
-  }
-
-  .qa-font-slider {
-    flex: 1;
-    accent-color: var(--qa-accent);
-  }
-
-  .qa-font-preview {
-    margin-top: 10px;
-    padding: 8px 10px;
-    border-radius: var(--qa-radius-md);
-    background-color: color-mix(in srgb, var(--qa-accent) 6%, transparent);
-    text-align: center;
-  }
-
-  .qa-font-preview-ar {
-    font-family: var(--qa-font-arabic);
-    color: var(--qa-text-on-sheet);
-    font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base) * 0.7);
-    line-height: var(--qa-line-height-arabic);
-  }
-
-  .qa-font-preview-en {
-    color: var(--qa-text-on-sheet-muted);
-    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.8);
-  }
-
   .qa-settings-toggle-row {
     display: flex;
     align-items: center;
