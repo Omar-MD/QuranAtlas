@@ -22,7 +22,8 @@
 
   const HIDE_DELTA = 36
   const SHOW_NEAR_TOP = 20
-  const LONG_PRESS_MS = 400
+  const LONG_PRESS_MS = 350
+  const LONG_PRESS_JITTER_PX = 10
 
   let hidden = $state(false)
   let lastTop = 0
@@ -119,15 +120,30 @@
   // ---- Settings gear: short tap → settings; long-press → cycle theme ----
   let settingsTimer: ReturnType<typeof setTimeout> | null = null
   let settingsLongFired = false
+  let settingsStartX = 0
+  let settingsStartY = 0
 
-  function onSettingsPointerDown(): void {
+  function onSettingsPointerDown(e: PointerEvent): void {
+    // Suppress native iOS callout (Copy / Look up / image action) that would
+    // otherwise race the long-press timer.
+    e.preventDefault()
     settingsLongFired = false
+    settingsStartX = e.clientX
+    settingsStartY = e.clientY
     if (settingsTimer) { clearTimeout(settingsTimer) }
     settingsTimer = setTimeout(() => {
       settingsLongFired = true
       void cycleTheme()
       navigator.vibrate?.(8)
     }, LONG_PRESS_MS)
+  }
+  function onSettingsPointerMove(e: PointerEvent): void {
+    if (!settingsTimer) { return }
+    const dx = e.clientX - settingsStartX
+    const dy = e.clientY - settingsStartY
+    if (dx * dx + dy * dy > LONG_PRESS_JITTER_PX * LONG_PRESS_JITTER_PX) {
+      clearTimeout(settingsTimer); settingsTimer = null
+    }
   }
   function onSettingsPointerUp(): void {
     if (settingsTimer) { clearTimeout(settingsTimer); settingsTimer = null }
@@ -137,6 +153,12 @@
   function onSettingsPointerCancel(): void {
     if (settingsTimer) { clearTimeout(settingsTimer); settingsTimer = null }
     settingsLongFired = false
+  }
+  function onSettingsContextMenu(e: Event): void {
+    // Defensive: if the OS still surfaces a context menu (e.g. trackpad
+    // right-click on macOS desktop / Android long-press fallback), block it
+    // so the long-press → cycleTheme contract isn't masked by a menu.
+    e.preventDefault()
   }
 
   // ---- Mount ----
@@ -226,9 +248,11 @@
     class="qa-mh-settings"
     aria-label="Open settings"
     onpointerdown={onSettingsPointerDown}
+    onpointermove={onSettingsPointerMove}
     onpointerup={onSettingsPointerUp}
     onpointercancel={onSettingsPointerCancel}
     onpointerleave={onSettingsPointerCancel}
+    oncontextmenu={onSettingsContextMenu}
   >
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3"/>

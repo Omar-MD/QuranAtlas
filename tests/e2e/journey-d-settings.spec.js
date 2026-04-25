@@ -527,3 +527,71 @@ test.describe('Journey D: Night mode', () => {
     }).toPass({ timeout: 3_000 })
   })
 })
+
+// ---------------------------------------------------------------------------
+// D7. Mobile gear long-press → cycleTheme (callout-suppression regression).
+//
+// Prior bug: iOS long-press over the gear surfaced the native callout
+// (Copy / Look up) which raced + won against the long-press timer. Fix is a
+// combination of CSS guards (-webkit-touch-callout: none, user-select: none,
+// touch-action: manipulation, svg pointer-events: none), pointerdown
+// e.preventDefault(), contextmenu suppression, jitter-tolerant cancellation,
+// and a tightened threshold (350ms < typical OS callout 500ms).
+// ---------------------------------------------------------------------------
+
+test.describe('Journey D: Mobile gear long-press', () => {
+  // Gear is mobile-only chrome (hidden ≥1180px). Force a phone viewport so
+  // this suite is meaningful in the chromium project too.
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+  })
+
+  test('D7: long-press gear cycles theme; short tap opens settings', async ({ page }) => {
+    const gear = page.locator('.qa-mh-settings')
+    await expect(gear).toBeVisible({ timeout: 5_000 })
+
+    const before = await page.evaluate(() =>
+      document.documentElement.getAttribute('data-theme-pref') ?? 'light'
+    )
+
+    // Long-press: hold for 500ms (> 350ms threshold). Theme should cycle and
+    // settings sheet must NOT open.
+    const box = await gear.boundingBox()
+    if (!box) { throw new Error('gear not measurable') }
+    const cx = box.x + box.width / 2
+    const cy = box.y + box.height / 2
+    await page.mouse.move(cx, cy)
+    await page.mouse.down()
+    await page.waitForTimeout(500)
+    await page.mouse.up()
+
+    await expect(async () => {
+      const after = await page.evaluate(() =>
+        document.documentElement.getAttribute('data-theme-pref') ?? 'light'
+      )
+      expect(after).not.toBe(before)
+    }).toPass({ timeout: 3_000 })
+
+    // Settings sheet should not be open.
+    await expect(page.locator('.qa-sheet--settings')).toHaveCount(0)
+  })
+
+  test('D7: short tap on gear opens settings (does not cycle theme)', async ({ page }) => {
+    const gear = page.locator('.qa-mh-settings')
+    const before = await page.evaluate(() =>
+      document.documentElement.getAttribute('data-theme-pref') ?? 'light'
+    )
+    await gear.click()
+    await expect(page.locator('.qa-sheet--settings')).toBeVisible({ timeout: 3_000 })
+    const after = await page.evaluate(() =>
+      document.documentElement.getAttribute('data-theme-pref') ?? 'light'
+    )
+    expect(after).toBe(before)
+  })
+})

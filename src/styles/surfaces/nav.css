@@ -497,17 +497,34 @@
     justify-content: center;
     color: var(--qa-text-on-sheet);
     flex-shrink: 0;
+
+    /* Suppress iOS long-press callout (Copy / Look up / image action) that
+       races + wins against the 350ms theme-cycle timer on .qa-mh-settings.
+       Also kills text selection on accidental drag during hold. */
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: manipulation;
   }
 
   .qa-mh-hamburger svg,
   .qa-mh-settings svg {
     width: 22px;
     height: 22px;
+
+    /* Route pointer events to the button — not to inline SVG paths, which
+       iOS otherwise treats as a separate hit target with image actions. */
+    pointer-events: none;
   }
 
   .qa-mh-hamburger:hover,
   .qa-mh-settings:hover {
     color: var(--qa-accent);
+  }
+
+  .qa-mh-settings:active {
+    color: var(--qa-accent);
+    transform: scale(0.94);
+    transition: transform 60ms ease-out;
   }
 
   .qa-mh-label {
