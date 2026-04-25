@@ -119,6 +119,37 @@ test.describe('Journey G: About', () => {
     await expect(drawer).not.toBeVisible({ timeout: 3_000 })
   })
 
+  test('G: hamburger toggles the drawer (open → click again → close)', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'drawer hamburger is mobile-only')
+
+    const hamburger = page.locator('.qa-mh-hamburger')
+    const drawer = page.locator('.qa-nav-drawer')
+
+    await hamburger.click()
+    await expect(drawer).toBeVisible({ timeout: 3_000 })
+
+    await hamburger.click()
+    await expect(drawer).not.toBeVisible({ timeout: 3_000 })
+  })
+
+  test('G: tapping label on About after reading 67 resumes #/s/67 (not Fatihah)', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'header label is mobile chrome only')
+
+    // 1. Read surah 67 to seed positions store.
+    await page.goto('/#/s/67')
+    await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 5_000 })
+
+    // 2. Cold-load About — currentSurahNum rune is null, label says "QuranAtlas".
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+
+    // 3. Tap the label — must resume the most-recent surah, not reset to Fatihah.
+    await page.locator('.qa-mh-label').click()
+    await expect(page).toHaveURL(/#\/s\/67/, { timeout: 3_000 })
+  })
+
   test('G: Clear data link is present on About page footer', async ({ page }) => {
     await page.goto('/#/about')
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })

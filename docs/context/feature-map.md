@@ -160,7 +160,8 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Files:** `nav/MarginHeader.svelte`, `nav/swipe-gestures.ts` (pure helper)
 - **Purpose:** Mobile/tablet (<1180px) fixed top bar, single row, ~52 px tall. Layout: **hamburger `≡`** · **bilingual surah label** · **settings gear `⚙`**.
 - **Key behaviors:**
-  - Hamburger → `openNavDrawer()` (Review / About). Replaces the retired ⋮ kebab.
+  - Hamburger → `toggleNavDrawer()` (Review / About). Toggles open/closed; second tap dismisses (post 2026-04-25). Replaces the retired ⋮ kebab.
+  - Center label tap (no surah in rune, e.g. cold-load on About): resumes via `getMostRecentPosition()` → `#/s/<lastSurah>` (Reader picks per-surah saved verse from `positions` IDB). Falls back to `#/s/1` only if no positions exist. Prior behavior hard-reset to Fatihah verse 1.
   - Center label: Arabic surah name (top, RTL) + uppercase smallcaps English (bottom, with chevron `▾`). Tap = surah list (or back to last surah if already on surah list). Swipe left/right on label = next/prev surah, clamped 1–114; haptic nudge at boundaries.
   - Swipe down on header = `#/surahs`.
   - Gear: short tap = `openSettingsSheet()`. Long-press ≥400 ms = `cycleTheme()` (parity with keyboard `d`).

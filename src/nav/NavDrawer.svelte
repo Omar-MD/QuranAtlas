@@ -11,6 +11,7 @@
 
   function open(): void { isOpen = true }
   function close(): void { isOpen = false }
+  function toggle(): void { isOpen = !isOpen }
 
   function go(href: string): void {
     close()
@@ -38,7 +39,7 @@
   }
 
   onMount(() => {
-    registerNavDrawer(open, close)
+    registerNavDrawer(open, close, toggle)
   })
 </script>
 

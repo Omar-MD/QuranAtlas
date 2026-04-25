@@ -13,9 +13,9 @@
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
   import { reader } from '../state/reader.svelte'
-  import { get } from '../core/db'
+  import { get, getMostRecentPosition } from '../core/db'
   import { getSurahs } from '../data/dataset'
-  import { openNavDrawer } from './nav-drawer-bridge'
+  import { toggleNavDrawer } from './nav-drawer-bridge'
   import { openSettingsSheet } from '../settings/panel-bridge'
   import { cycleTheme } from '../settings/theme'
   import { classifySwipe, clampSurah } from './swipe-gestures'
@@ -43,17 +43,25 @@
 
   function openDrawer(): void {
     emit(Events.AMBIENT_SURFACE, { reason: 'margin-header' })
-    openNavDrawer()
+    toggleNavDrawer()
   }
 
-  function tapLabel(): void {
-    if (!labelHasSurah) {
-      window.location.hash = '#/s/1'
-      return
-    }
+  async function tapLabel(): Promise<void> {
     const h = window.location.hash || ''
     if (h.startsWith('#/surahs')) {
       window.location.hash = lastSurahHref
+      return
+    }
+    if (!labelHasSurah) {
+      // Non-reader screen with no in-memory surah (e.g. cold load on About).
+      // Resume from the most recent reading position rather than hard-resetting
+      // to Fatihah verse 1. Reader picks up the per-surah saved verse from IDB.
+      const pos = await getMostRecentPosition()
+      if (pos) {
+        window.location.hash = `#/s/${pos.surah}`
+        return
+      }
+      window.location.hash = '#/s/1'
       return
     }
     window.location.hash = '#/surahs'
