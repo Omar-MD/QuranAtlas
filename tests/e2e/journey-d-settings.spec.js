@@ -51,12 +51,10 @@ test.describe('Journey D: Settings & appearance', () => {
       await expect(settings.locator(`.qa-theme-swatch--${theme}`)).toBeVisible()
     }
 
-    // Font section: slider + preview
-    await expect(settings.locator('.qa-font-slider')).toBeVisible()
-    await expect(settings.locator('.qa-font-preview')).toBeVisible()
+    // Typography section: nav row that opens the Typography subview
+    await expect(settings.getByText('Size, spacing & margins')).toBeVisible()
 
-    // Reading section: toggle row with switch
-    await expect(settings.locator('.qa-settings-toggle-row')).toBeVisible()
+    // Reading section: switch for translation visibility
     await expect(settings.locator('.qa-settings-switch')).toBeVisible()
   })
 
@@ -85,13 +83,17 @@ test.describe('Journey D: Settings & appearance', () => {
   test('D2: Show translation row subtitle reflects the shipped translation; picker is hidden when only one ships', async ({ page }) => {
     await openSettingsSheet(page)
 
-    const toggleBody = page.locator('.qa-settings-toggle-body')
+    // Scope to the Reading section's toggle row (Typography section above also
+    // uses the same toggle-body pattern post-2026-04-25 redesign).
+    const readingRow = page.locator('.qa-settings-toggle-row').filter({
+      has: page.locator('.qa-settings-switch'),
+    })
+    const toggleBody = readingRow.locator('.qa-settings-toggle-body')
     await expect(toggleBody).toBeVisible()
 
     // Subtitle names the translation actually bundled with the dataset
     // (Bridges' Translation is the only translation in public/dataset today).
-    const sub = page.locator('.qa-settings-toggle-sub')
-    await expect(sub).toContainText("Bridges", { timeout: 3_000 })
+    await expect(readingRow.locator('.qa-settings-toggle-sub')).toContainText("Bridges", { timeout: 3_000 })
 
     // With only one translation available, the row body is not a button
     // and tapping it must not navigate to a picker sub-view.
@@ -326,47 +328,140 @@ test.describe('Journey D: desktop variants @desktop', () => {
     await waitForReader(page)
   })
 
-  test('D1 desktop: font preview scales when slider moves', async ({ page }) => {
+  test('D1 desktop: typography preview scales when font-size slider moves', async ({ page }) => {
     await openSettingsSheet(page)
-    await expect(page.locator('.qa-font-slider')).toBeVisible()
+    await page.getByText('Size, spacing & margins').click()
+    const slider = page.getByLabel('Font size')
+    await expect(slider).toBeVisible()
 
-    const getArSize = () => page.locator('.qa-font-preview-ar').evaluate(
+    const getArSize = () => page.locator('.qa-typography-preview .qa-verse-arabic').evaluate(
       el => parseFloat(getComputedStyle(el).fontSize)
     )
 
-    // After dispatching the input event, wait one paint cycle (double-rAF) so
-    // the CSS custom-property update has flushed through style-recalc.  This
-    // replaces a fixed-duration waitForTimeout(200) with a deterministic signal.
     const flushOneFrame = () =>
       page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))))
 
-    await page.locator('.qa-font-slider').evaluate(el => {
+    await slider.evaluate(el => {
       el.value = '0' // xs
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
     await flushOneFrame()
     const xsSize = await getArSize()
 
-    await page.locator('.qa-font-slider').evaluate(el => {
+    await slider.evaluate(el => {
       el.value = '4' // xl
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
     await flushOneFrame()
     const xlSize = await getArSize()
 
-    // xl should be noticeably larger than xs (ratio ~1.73 since 1.3 / 0.75)
     expect(xlSize).toBeGreaterThan(xsSize * 1.5)
   })
+})
 
-  test('D1 desktop: font preview renders English left, Arabic right', async ({ page }) => {
+// ---------------------------------------------------------------------------
+// D5. Typography subview (line spacing, word spacing, reader margins)
+// ---------------------------------------------------------------------------
+
+test.describe('Journey D: Typography subview @desktop', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+  })
+
+  async function openTypography(page) {
     await openSettingsSheet(page)
-    await expect(page.locator('.qa-font-preview')).toBeVisible()
+    await page.getByText('Size, spacing & margins').click()
+    await expect(page.getByTestId('typography-preview')).toBeVisible()
+  }
 
-    const order = await page.locator('.qa-font-preview').evaluate(
-      el => Array.from(el.children).map(c =>
-        Array.from(c.classList).find(cn => cn.startsWith('qa-font-preview-')) ?? c.className
-      )
+  test('D5: opens subview and exposes 4 sliders', async ({ page }) => {
+    await openTypography(page)
+    await expect(page.getByLabel('Font size')).toBeVisible()
+    await expect(page.getByLabel('Line spacing')).toBeVisible()
+    await expect(page.getByLabel('Word spacing')).toBeVisible()
+    await expect(page.getByLabel('Reader margins')).toBeVisible()
+  })
+
+  test('D5: line-spacing xl applies line-height ≈ 2.85 to .qa-verse-arabic', async ({ page }) => {
+    await openTypography(page)
+    await page.getByLabel('Line spacing').evaluate(el => {
+      el.value = '4'
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await page.keyboard.press('Escape')
+    const ratio = await page.locator('.qa-verse-arabic').first().evaluate(
+      (el) => parseFloat(getComputedStyle(el).lineHeight) /
+              parseFloat(getComputedStyle(el).fontSize)
     )
-    expect(order).toEqual(['qa-font-preview-en', 'qa-font-preview-ar'])
+    expect(ratio).toBeGreaterThan(2.8)
+    expect(ratio).toBeLessThan(2.9)
+  })
+
+  test('D5: word-spacing xs sets word-spacing to 0 on .qa-verse-arabic', async ({ page }) => {
+    await openTypography(page)
+    await page.getByLabel('Word spacing').evaluate(el => {
+      el.value = '0'
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await page.keyboard.press('Escape')
+    const ws = await page.locator('.qa-verse-arabic').first().evaluate(
+      (el) => getComputedStyle(el).wordSpacing
+    )
+    expect(ws).toBe('0px')
+  })
+
+  test('D5: reader-margins xl narrows #main-content max-width', async ({ page }) => {
+    await openSettingsSheet(page)
+    await page.getByText('Size, spacing & margins').click()
+    const beforeWidth = await page.locator('#main-content').evaluate(
+      (el) => parseFloat(getComputedStyle(el).maxWidth)
+    )
+    await page.getByLabel('Reader margins').evaluate(el => {
+      el.value = '4'
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await page.keyboard.press('Escape')
+    const afterWidth = await page.locator('#main-content').evaluate(
+      (el) => parseFloat(getComputedStyle(el).maxWidth)
+    )
+    expect(afterWidth).toBeLessThan(beforeWidth)
+  })
+
+  test('D5: settings persist across reload', async ({ page }) => {
+    await openTypography(page)
+    await page.getByLabel('Line spacing').evaluate(el => {
+      el.value = '4'
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await page.getByLabel('Word spacing').evaluate(el => {
+      el.value = '0'
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    expect(await readSetting(page, 'lineSpacing')).toBe('xl')
+    expect(await readSetting(page, 'wordSpacing')).toBe('xs')
+
+    await page.reload()
+    await waitForReader(page)
+    expect(await page.evaluate(() => document.documentElement.dataset.lineSpacing)).toBe('xl')
+    expect(await page.evaluate(() => document.documentElement.dataset.wordSpacing)).toBe('xs')
+  })
+
+  test('D5: reset button hidden by default, appears on change, restores defaults', async ({ page }) => {
+    await openTypography(page)
+    await expect(page.getByTestId('typography-reset')).toHaveCount(0)
+    await page.getByLabel('Line spacing').evaluate(el => {
+      el.value = '4'
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await expect(page.getByTestId('typography-reset')).toBeVisible()
+    await page.getByTestId('typography-reset').click()
+    await expect(page.getByTestId('typography-reset')).toHaveCount(0)
+    expect(await page.evaluate(() => document.documentElement.dataset.lineSpacing)).toBe('md')
   })
 })
