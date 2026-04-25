@@ -15,6 +15,7 @@
   import { onMount, tick } from 'svelte'
   import { registerNavDrawer, type DrawerTab } from './nav-drawer-bridge'
   import { reader } from '../state/reader.svelte'
+  import { settings } from '../state/settings.svelte'
   import { surahs as surahsState } from '../state/surahs.svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
@@ -33,6 +34,13 @@
   let loaded = $state(false)
 
   let listEl: HTMLElement | null = $state(null)
+
+  // Reader unmounts on non-reader routes (About, Review, …) and clears
+  // reader.currentSurahNum, so falling back to settings.currentPosition
+  // keeps the drawer's "current surah" highlight stable across navigation.
+  const currentSurahN = $derived<number | null>(
+    reader.currentSurahNum ?? settings.currentPosition?.surah ?? null
+  )
 
   const visibleItems = $derived.by<SurahMeta[]>(() => {
     const { filter, searchQuery } = surahsState
@@ -99,7 +107,7 @@
 
   function scrollToCurrentSurah(): void {
     if (!listEl) { return }
-    const cur = reader.currentSurahNum
+    const cur = currentSurahN
     if (!cur) { return }
     const row = listEl.querySelector<HTMLElement>(`[data-surah="${cur}"]`)
     if (row) { row.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior }) }
@@ -262,7 +270,7 @@
           {#each visibleItems as s (s.n)}
             <li
               class="qa-nav-drawer-surah-row"
-              class:qa-nav-drawer-surah-row--current={s.n === reader.currentSurahNum}
+              class:qa-nav-drawer-surah-row--current={s.n === currentSurahN}
               data-surah={s.n}
             >
               <button

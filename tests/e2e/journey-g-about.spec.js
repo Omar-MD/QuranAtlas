@@ -169,6 +169,34 @@ test.describe('Journey G: About', () => {
     await expect(page).toHaveURL(/#\/s\/67/, { timeout: 3_000 })
   })
 
+  test('G: drawer current-surah highlight survives navigating to About and back', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'drawer hamburger is mobile chrome only')
+
+    // 1. Read surah 67 — populates settings.currentPosition in IDB.
+    await page.goto('/#/s/67')
+    await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 5_000 })
+
+    // 2. Navigate to About without going through the drawer first. This
+    //    unmounts Reader and nulls reader.currentSurahNum, leaving the
+    //    persisted settings.currentPosition as the only surviving signal of
+    //    "where the user is reading". Mirrors the user-reported repro: open
+    //    drawer from About → highlight gone.
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+
+    // 3. Open drawer — current-surah row must carry the --current class
+    //    *immediately*. Tight 400ms timeout: with the fix the class is
+    //    present on first paint via settings.currentPosition fallback.
+    //    Without it, reader.currentSurahNum is null until session-restore
+    //    eventually re-mounts Reader (~600-1000ms), which is long enough
+    //    to be perceived as a missing highlight.
+    await page.locator('.qa-mh-hamburger').click()
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 3_000 })
+    const row67 = page.locator('.qa-nav-drawer-surah-row[data-surah="67"]')
+    await expect(row67).toHaveClass(/qa-nav-drawer-surah-row--current/, { timeout: 400 })
+  })
+
   test('G: Clear data link is present on About page footer', async ({ page }) => {
     await page.goto('/#/about')
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
