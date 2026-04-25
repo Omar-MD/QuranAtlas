@@ -8,7 +8,6 @@
   import { getThemeOptions, setTheme } from './theme.ts'
   import { getFontSizeOptions, setFontSize } from './font-size.ts'
   import { getTranslations } from '../data/dataset.js'
-  import { showClearDataConfirmation } from './clear-data.ts'
   import { registerPanel } from './panel-bridge.ts'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
@@ -134,13 +133,6 @@
     view = 'main'
   }
 
-  // ---- Clear data ----
-
-  async function handleClearData() {
-    closeSettingsSheet()
-    await showClearDataConfirmation()
-  }
-
   // ---- Keyboard: Escape closes ----
 
   function handleKeydown(e: KeyboardEvent) {
@@ -264,19 +256,6 @@
           </div>
         </section>
 
-        <!-- Clear data -->
-        <section class="qa-settings-section">
-          <button
-            type="button"
-            class="qa-sheet-row qa-sheet-row--danger"
-            onclick={handleClearData}
-          >
-            <span class="qa-sheet-row-body">
-              <span class="qa-sheet-row-label">Clear all data</span>
-              <span class="qa-sheet-row-meta">Removes all marks, positions &amp; settings</span>
-            </span>
-          </button>
-        </section>
       </div>
 
     {:else}

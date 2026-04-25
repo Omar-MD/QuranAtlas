@@ -8,7 +8,7 @@
  */
 
 import { getSurahs } from '../data/dataset.js'
-import { openEditor } from '../marks/editor-bridge.js'
+import { beginFast } from '../tag/session-bridge'
 import { announce } from '../a11y/announcer.js'
 import { reader } from '../state/reader.svelte'
 
@@ -106,6 +106,6 @@ export function prevSurah() {
 export function markCurrent() {
   const { surah, verse } = getCurrent()
   if (!surah) { return false }
-  openEditor(`${surah}:${verse || 1}`)
+  void beginFast(`${surah}:${verse || 1}`)
   return true
 }

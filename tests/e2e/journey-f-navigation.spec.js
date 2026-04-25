@@ -100,10 +100,13 @@ test.describe('Journey F: Navigation', () => {
   // F2. Mark a verse from command sheet
   // ---------------------------------------------------------------------------
 
-  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens mark editor', async ({ page }) => {
-    // Open command sheet and type verse reference
+  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel', async ({ page }) => {
+    // Open command sheet and type verse reference for the currently-loaded
+    // surah (reader is at #/s/1 from beforeEach). The fast-tag panel renders
+    // inside the visible Verse component, so the target verse must be in
+    // the rendered surah.
     await openCommandSheet(page)
-    await page.locator('.qa-cmd-input').fill('2:255')
+    await page.locator('.qa-cmd-input').fill('1:1')
     await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
 
     // Confirm "Open verse" is currently active (index 0)
@@ -118,18 +121,16 @@ test.describe('Journey F: Navigation', () => {
     const activeLabel = activeItem.locator('.qa-cmd-item-label')
     await expect(activeLabel).toHaveText('Mark this verse')
 
-    // Press Enter → command sheet closes → mark editor opens
+    // Press Enter → command sheet closes → fast-tag inline panel opens
+    // (post-2026-04-25 mobile-nav-redesign: was mark editor)
     await page.keyboard.press('Enter')
 
     const sheet = page.locator('.qa-cmd-sheet')
     await expect(sheet).toHaveClass(/qa-cmd--hidden/, { timeout: 5_000 })
 
-    // TagSheet should open for verse 2:255
-    const tagSheet = page.locator('.qa-ts')
-    await expect(tagSheet).toBeVisible({ timeout: 5_000 })
-
-    // Verse preview prefix should reference 2:255
-    await expect(tagSheet.locator('.qa-ts-pref')).toContainText('2:255')
+    // Fast-tag inline panel surfaces; deep TagSheet must NOT open
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
   })
 
   // ---------------------------------------------------------------------------

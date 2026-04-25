@@ -47,4 +47,9 @@
     0%, 100% { filter: brightness(1); }
     50%      { filter: brightness(1.06); }
   }
+
+  @keyframes qa-nav-drawer-in {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
+  }
 }

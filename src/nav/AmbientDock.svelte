@@ -12,7 +12,7 @@
   import { Events } from '../core/constants'
   import { reader } from '../state/reader.svelte'
   import { openCommandSheet } from './command-sheet-bridge'
-  import { openMoreSheet } from './more-sheet-bridge'
+  import { openNavDrawer } from './nav-drawer-bridge'
 
   type Tab = {
     id: 'read' | 'search' | 'review' | 'marks'
@@ -144,7 +144,7 @@
     class="qa-rail-more"
     data-tab="more"
     aria-label="More"
-    onclick={openMoreSheet}
+    onclick={openNavDrawer}
   >
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <circle cx="5" cy="12" r="1.6"/>

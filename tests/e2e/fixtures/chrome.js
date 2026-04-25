@@ -32,29 +32,49 @@ export async function surfaceDock(page) {
       })
     }
   }
-  await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
+  } else {
+    await expect(page.locator('.qa-mh-hamburger')).toBeVisible()
+  }
 }
 
 /**
- * Open the More sheet via the ⋯ button on whichever nav is visible
- * (desktop rail or mobile MarginHeader).
+ * Open the nav drawer (replaces MoreSheet 2026-04-25).
+ * Desktop (≥1180px): ⋯ kebab on AmbientDock rail.
+ * Mobile  (<1180px): ≡ hamburger on MarginHeader.
  */
-export async function openMoreSheet(page) {
+export async function openNavDrawer(page) {
   await surfaceDock(page)
-  await page.locator('[data-tab="more"]:visible').first().click()
-  await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await page.locator('[data-tab="more"]:visible').first().click()
+  } else {
+    await page.locator('.qa-mh-hamburger').click()
+  }
+  await expect(page.locator('.qa-nav-drawer')).toBeVisible()
 }
 
+/** Backwards-compat alias — legacy tests still call openMoreSheet. */
+export const openMoreSheet = openNavDrawer
+
 /**
- * Open the Settings sheet via More → Settings.
+ * Open the Settings sheet.
+ * Desktop (≥1180px): navigate to #/settings (router opens the sheet).
+ * Mobile  (<1180px): MarginHeader gear icon (post-2026-04-25 redesign).
  */
 export async function openSettingsSheet(page) {
-  await openMoreSheet(page)
-  await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await page.evaluate(() => { window.location.hash = '#/settings' })
+  } else {
+    const gear = page.locator('.qa-mh-settings')
+    await expect(gear).toBeVisible({ timeout: 5_000 })
+    await gear.click()
+  }
   const sheet = page.locator('.qa-sheet--settings')
   await expect(sheet).toBeVisible()
-  // Wait for the qa-sheet-rise animation to finish so axe contrast checks see
-  // the final opacity: 1 state (not an intermediate blended value).
   await sheet.evaluate(el =>
     Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
   )

@@ -3,6 +3,7 @@
   import { getAll } from '../marks/store'
   import { announce } from '../a11y/announcer'
   import { getInstallPrompt, promptInstall } from './pwa-install'
+  import { showClearDataConfirmation } from '../settings/clear-data'
 
   let marks = $state(0)
   let tags = $state(0)
@@ -40,6 +41,10 @@
       installDone = true
       announce('App installed')
     }
+  }
+
+  async function handleClearData() {
+    await showClearDataConfirmation()
   }
 </script>
 
@@ -83,4 +88,12 @@
     <p class="qa-about-version-line">v{__APP_VERSION__}</p>
   </div>
 </div>
+
+<section class="qa-about-clear-section">
+  <button
+    type="button"
+    class="qa-about-clear-data"
+    onclick={handleClearData}
+  >Clear all data</button>
+</section>
 

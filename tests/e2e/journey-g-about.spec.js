@@ -40,13 +40,13 @@ test.describe('Journey G: About', () => {
   // G1. Open About — happy path + structure check
   // ---------------------------------------------------------------------------
 
-  test('G1: dock → More sheet → About → renders all required sections', async ({ page }) => {
-    // Step 1: open More sheet via dock ⋯
-    await openMoreSheet(page)
-    await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
+  test('G1: drawer → About → renders all required sections', async ({ page }) => {
+    // Post-2026-04-25 redesign: dock/header → drawer → About link
+    await openMoreSheet(page)  // shim → openNavDrawer
+    const drawer = page.locator('.qa-nav-drawer')
+    await expect(drawer).toBeVisible()
 
-    // Step 2: tap "About" row → navigates to #/about
-    await page.locator('button.qa-sheet-row').filter({ hasText: 'About' }).click()
+    await drawer.locator('button', { hasText: 'About' }).click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
 
     // Wordmark / page heading
@@ -100,9 +100,36 @@ test.describe('Journey G: About', () => {
     expect(vText).toMatch(/^v/)
   })
 
+  test('G: hamburger drawer opens with Review and About items', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'drawer hamburger is mobile-only; desktop ambient dock has its own kebab')
+
+    const hamburger = page.locator('.qa-mh-hamburger')
+    await expect(hamburger).toBeVisible({ timeout: 5_000 })
+    await hamburger.click()
+
+    const drawer = page.locator('.qa-nav-drawer')
+    await expect(drawer).toBeVisible({ timeout: 3_000 })
+
+    await expect(drawer.locator('button', { hasText: 'Review' })).toBeVisible()
+    await expect(drawer.locator('button', { hasText: 'About' })).toBeVisible()
+
+    await drawer.locator('button', { hasText: 'About' }).click()
+    await expect(page).toHaveURL(/#\/about/, { timeout: 5_000 })
+    await expect(drawer).not.toBeVisible({ timeout: 3_000 })
+  })
+
+  test('G: Clear data link is present on About page footer', async ({ page }) => {
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const link = page.locator('.qa-about-clear-data')
+    await expect(link).toBeVisible()
+    await expect(link).toHaveText(/Clear all data/i)
+  })
+
   test('G1: a11y — no serious/critical axe violations on About page @a11y', async ({ page }) => {
-    await openMoreSheet(page)
-    await page.locator('button.qa-sheet-row').filter({ hasText: 'About' }).click()
+    await openMoreSheet(page)  // shim → openNavDrawer
+    await page.locator('.qa-nav-drawer button', { hasText: 'About' }).click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
 

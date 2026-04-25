@@ -12,9 +12,8 @@
   import AmbientDock from './nav/AmbientDock.svelte'
   import MarginHeader from './nav/MarginHeader.svelte'
   import CommandSheet from './nav/CommandSheet.svelte'
-  import MoreSheet from './nav/MoreSheet.svelte'
+  import NavDrawer from './nav/NavDrawer.svelte'
   import TagSheet from './tag/TagSheet.svelte'
-  import TagModePill from './nav/TagModePill.svelte'
   import { tagSession } from './state/tag-session.svelte'
 
   let cleanups: Array<() => void> = []
@@ -107,8 +106,7 @@
 <Panel />
 <ClearDataConfirm />
 <CommandSheet />
-<MoreSheet />
-<TagModePill />
+<NavDrawer />
 <TagSheet
   isOpen={tagSession.sheetOpen && !!tagSession.verseKey}
   verseKey={tagSession.verseKey ?? ''}

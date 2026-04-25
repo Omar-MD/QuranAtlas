@@ -50,13 +50,31 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       // Read tab should be active on a reader route
       await expect(readTab).toHaveClass(/qa-rail-item--active/)
     } else {
-      // Mobile: MarginHeader top bar visible with crumb + more
+      // Mobile: MarginHeader single-row layout (2026-04-25 redesign)
       const header = page.locator('header.qa-mh')
       await expect(header).toBeVisible()
       await expect(header).not.toHaveClass(/qa-mh--hidden/)
-      await expect(page.locator('.qa-mh-crumb')).toBeVisible()
-      await expect(page.locator('.qa-mh-icon[data-tab="more"]')).toBeVisible()
+      await expect(page.locator('.qa-mh-hamburger')).toBeVisible()
+      await expect(page.locator('.qa-mh-label')).toBeVisible()
+      await expect(page.locator('.qa-mh-settings')).toBeVisible()
     }
+  })
+
+  test('B1: mobile margin header is a single row, ≤ 60 px tall (post-redesign)', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'desktop uses ambient rail, not margin header')
+
+    const header = page.locator('header.qa-mh')
+    await expect(header).toBeVisible()
+
+    // Row 2 tabs gone, fast-tag dot gone, old kebab gone
+    await expect(page.locator('.qa-mh-tabs')).toHaveCount(0)
+    await expect(page.locator('.qa-mh-tag')).toHaveCount(0)
+    await expect(page.locator('.qa-mh-icon[data-tab="more"]')).toHaveCount(0)
+
+    const height = await header.evaluate(el => el.getBoundingClientRect().height)
+    expect(height).toBeLessThanOrEqual(60)
+    expect(height).toBeGreaterThan(40)
   })
 
   // -------------------------------------------------------------------------
@@ -66,26 +84,45 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   test('B1: primary nav visible under @reduced-motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await surfaceDock(page)
-    await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    if (isDesktop) {
+      await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
+    } else {
+      await expect(page.locator('.qa-mh-hamburger')).toBeVisible()
+    }
   })
 
   // -------------------------------------------------------------------------
   // B1. @keyboard variant — primary-nav chrome is keyboard-reachable
   // -------------------------------------------------------------------------
 
-  test('B1: primary-nav more button is keyboard-focusable @keyboard', async ({ page }) => {
-    const moreBtn = page.locator('[data-tab="more"]:visible').first()
-    await expect(moreBtn).toBeVisible()
-    // Tab through focusable elements and confirm the More button can receive focus
-    let moreFocused = false
-    for (let i = 0; i < 20 && !moreFocused; i++) {
-      await page.keyboard.press('Tab')
-      moreFocused = await page.evaluate(() => {
-        const el = document.activeElement
-        return !!el && el.matches('[data-tab="more"]')
-      })
+  test('B1: primary-nav is keyboard-focusable @keyboard', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    if (isDesktop) {
+      const moreBtn = page.locator('[data-tab="more"]:visible').first()
+      await expect(moreBtn).toBeVisible()
+      let focused = false
+      for (let i = 0; i < 20 && !focused; i++) {
+        await page.keyboard.press('Tab')
+        focused = await page.evaluate(() => {
+          const el = document.activeElement
+          return !!el && el.matches('[data-tab="more"]')
+        })
+      }
+      expect(focused).toBe(true)
+    } else {
+      const hamburger = page.locator('.qa-mh-hamburger')
+      await expect(hamburger).toBeVisible()
+      let focused = false
+      for (let i = 0; i < 20 && !focused; i++) {
+        await page.keyboard.press('Tab')
+        focused = await page.evaluate(() => {
+          const el = document.activeElement
+          return !!el && el.classList.contains('qa-mh-hamburger')
+        })
+      }
+      expect(focused).toBe(true)
     }
-    expect(moreFocused).toBe(true)
   })
 
   // -------------------------------------------------------------------------
@@ -151,10 +188,15 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // -------------------------------------------------------------------------
 
   test('B4: non-reader routes keep primary nav visible', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     for (const route of ['#/surahs', '#/review', '#/about']) {
       await page.goto(`/${route}`)
-      const moreBtn = page.locator('[data-tab="more"]:visible').first()
-      await expect(moreBtn).toBeVisible({ timeout: 5_000 })
+      if (isDesktop) {
+        const moreBtn = page.locator('[data-tab="more"]:visible').first()
+        await expect(moreBtn).toBeVisible({ timeout: 5_000 })
+      } else {
+        await expect(page.locator('.qa-mh-hamburger')).toBeVisible({ timeout: 5_000 })
+      }
     }
   })
 

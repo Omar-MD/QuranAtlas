@@ -30,7 +30,7 @@
   #main-content {
     flex: 1;
     min-height: 0;
-    padding: calc(env(safe-area-inset-top) + 108px) 1rem calc(90px + env(safe-area-inset-bottom));
+    padding: calc(env(safe-area-inset-top) + 56px) 1rem calc(90px + env(safe-area-inset-bottom));
     overflow-y: auto;
     scroll-behavior: smooth;
     margin: 0 auto;
@@ -64,7 +64,7 @@
 
     #main-content {
       grid-area: main;
-      padding: calc(env(safe-area-inset-top) + 108px) 1.5rem 2rem;
+      padding: calc(env(safe-area-inset-top) + 56px) 1.5rem 2rem;
     }
 
     #bottom-nav {

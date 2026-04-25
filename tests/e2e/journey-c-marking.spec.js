@@ -29,7 +29,20 @@ import { scanA11y } from './fixtures/a11y.js'
 // ---------------------------------------------------------------------------
 
 async function openTagSheetViaRightClick(page) {
+  // Post-2026-04-25 redesign: right-click opens fast-tag inline panel; click ⛶
+  // to escalate to deep TagSheet.
   await page.locator('.qa-verse').first().click({ button: 'right' })
+  await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+  await page.locator('.qa-vtp-escalate').click()
+  await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
+}
+
+/** Long-press a verse, then click ⛶ to reach the deep TagSheet. */
+async function openTagSheetViaLongPress(page, verseLocator) {
+  const v = verseLocator ?? page.locator('.qa-verse').first()
+  await longPress(v)
+  await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+  await page.locator('.qa-vtp-escalate').click()
   await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 }
 
@@ -65,11 +78,11 @@ test.describe('Journey C: Verse marking', () => {
   // C1. Happy path — long-press opens TagSheet
   // -------------------------------------------------------------------------
 
-  test('C1: long-press verse opens TagSheet with correct structure', async ({ page }) => {
+  test('C1: long-press verse opens TagSheet (via ⛶) with correct structure', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible({ timeout: 5_000 })
 
-    await longPress(firstVerse)
+    await openTagSheetViaLongPress(page, firstVerse)
 
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 5_000 })
@@ -111,6 +124,48 @@ test.describe('Journey C: Verse marking', () => {
     await expect(sheet).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(sheet).not.toBeVisible({ timeout: 3_000 })
+  })
+
+  // -------------------------------------------------------------------------
+  // C1 (post-redesign 2026-04-25). Long-press / right-click open the
+  // FAST-TAG inline panel, not the deep TagSheet. Editor reachable only
+  // via ⛶ escalation. Regression guard for mobile-nav-redesign spec §3.
+  // -------------------------------------------------------------------------
+
+  test('C1: long-press opens fast-tag inline panel, not TagSheet', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').first()
+    await expect(firstVerse).toBeVisible({ timeout: 5_000 })
+    await longPress(firstVerse)
+
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
+  })
+
+  test('C1: right-click opens fast-tag inline panel, not TagSheet', async ({ page }) => {
+    await page.locator('.qa-verse').first().click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
+  })
+
+  test('C: keyboard m on centered verse opens fast-tag panel, not TagSheet', async ({ page }) => {
+    await page.evaluate(() => document.getElementById('main-content')?.focus())
+    await page.keyboard.press('m')
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
+  })
+
+  test('C: ⛶ button in fast-tag panel opens deep TagSheet', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').first()
+    await longPress(firstVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+
+    const escalate = page.locator('.qa-vtp-escalate')
+    await expect(escalate).toBeVisible()
+    await expect(escalate).toHaveAttribute('aria-label', 'Open full tag editor')
+
+    await escalate.click()
+    await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-vtp')).toHaveCount(0)
   })
 
   // -------------------------------------------------------------------------
@@ -262,28 +317,30 @@ test.describe('Journey C: Verse marking', () => {
   // C6. Only TagSheet opens — no competing surfaces
   // -------------------------------------------------------------------------
 
-  test('C6: right-click and long-press each open ONLY the TagSheet', async ({ page }) => {
+  test('C6: right-click and long-press each open ONLY the fast-tag panel (⛶ → TagSheet)', async ({ page }) => {
     let dialogFired = false
     page.on('dialog', () => { dialogFired = true })
 
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible()
-    const sheet = page.locator('.qa-ts')
 
-    // Path 1: right-click
+    // Path 1: right-click → fast-tag panel (no competing surfaces)
     await firstVerse.click({ button: 'right' })
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     expect(dialogFired).toBe(false)
     await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
     await expect(page.locator('.qa-sheet--actions')).toHaveCount(0)
     await expect(page.locator('.qa-verse-preview')).toHaveCount(0)
+    // ⛶ escalation reaches deep TagSheet
+    await page.locator('.qa-vtp-escalate').click()
+    await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 
     await page.keyboard.press('Escape')
-    await expect(sheet).not.toBeVisible({ timeout: 3_000 })
+    await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 3_000 })
 
-    // Path 2: touch long-press
+    // Path 2: touch long-press → fast-tag panel (same invariant)
     await longPress(firstVerse)
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
   })
 
@@ -314,10 +371,12 @@ test.describe('Journey C: Verse marking', () => {
     expect(mark.threads).toContain('mercy')
     expect(mark.audience).toContain('muminin')
 
-    // Reopen
+    // Reopen — right-click → fast-tag → ⛶ → deep TagSheet
     const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
     await verse.click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await page.locator('.qa-vtp-escalate').click()
     await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 
     // Themes tab: mercy chip is present
@@ -349,7 +408,10 @@ test.describe('Journey C: desktop variants @desktop', () => {
   })
 
   test('C1 desktop: TagSheet is a right-side panel, full-height', async ({ page }) => {
+    // Post 2026-04-25: right-click → fast-tag panel; click ⛶ to escalate.
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
+    await page.locator('.qa-vtp-escalate').click()
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
 
@@ -374,6 +436,8 @@ test.describe('Journey C: desktop variants @desktop', () => {
 
   test('C1 desktop: four group sections visible', async ({ page }) => {
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
+    await page.locator('.qa-vtp-escalate').click()
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
     await expect(sheet.locator('.qa-ts-grp')).toHaveCount(4)

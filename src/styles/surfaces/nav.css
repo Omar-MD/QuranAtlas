@@ -1,11 +1,11 @@
 /**
  * nav — AmbientDock (desktop left rail), AmbientPill (floating top pill),
  * CommandSheet (top-anchored ⌘K-style sheet), MarginHeader (mobile sticky
- * header), SurahProgress (pill within margin header), TagModePill (desktop
+ * header), SurahProgress (pill within margin header), NavDrawer (left-slide
  * right pill).
  *
  * Consumers: src/nav/{AmbientDock,AmbientPill,CommandSheet,MarginHeader,
- * SurahProgress,TagModePill}.svelte.
+ * SurahProgress,NavDrawer}.svelte.
  *
  * Z-index literals preserved (specific layering relative to scrim/pill/sheet
  * contexts predates the semantic z-tier; refactor-not-redesign).
@@ -458,7 +458,10 @@
     color: var(--qa-text-on-sheet-muted);
   }
 
-  /* ================================================================ margin header */
+  /* ================================================================ margin header
+     Single-row mobile/tablet top nav (2026-04-25 redesign).
+     Layout: [≡] · bilingual surah label · [⚙]
+  */
 
   .qa-mh {
     position: fixed;
@@ -466,12 +469,13 @@
     left: 0;
     right: 0;
     z-index: 95;
-    padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    height: calc(env(safe-area-inset-top) + 52px);
+    padding: env(safe-area-inset-top) 8px 0;
     background: color-mix(in srgb, var(--qa-surface-app) 92%, transparent);
     backdrop-filter: blur(14px);
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
     transition: transform var(--qa-transition-base), opacity var(--qa-transition-base);
   }
 
@@ -481,154 +485,91 @@
     pointer-events: none;
   }
 
-  .qa-mh-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .qa-mh-crumb {
-    flex: 0 1 auto;
-    margin-right: auto;
+  .qa-mh-hamburger,
+  .qa-mh-settings {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    width: 44px;
+    height: 44px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 12px 7px 14px;
-    border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-border-on-sheet);
-    background: var(--qa-surface-sheet);
+    justify-content: center;
     color: var(--qa-text-on-sheet);
-    font: inherit;
-    cursor: pointer;
-    min-width: 0;
-    max-width: 100%;
+    flex-shrink: 0;
   }
 
-  .qa-mh-crumb-text {
-    text-align: left;
-    font-family: var(--qa-font-mono);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+  .qa-mh-hamburger svg,
+  .qa-mh-settings svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .qa-mh-hamburger:hover,
+  .qa-mh-settings:hover {
+    color: var(--qa-accent);
+  }
+
+  .qa-mh-label {
+    flex: 1 1 auto;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 4px 8px;
+    color: var(--qa-text-on-sheet);
+    min-width: 0;
+  }
+
+  .qa-mh-label-ar {
+    font-family: var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
+    font-size: 17px;
+    line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .qa-mh-label-en {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--qa-font-mono);
+    font-size: 10px;
+    letter-spacing: 0.13em;
+    color: var(--qa-text-on-sheet-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
   .qa-mh-chevron {
-    width: 14px;
-    height: 14px;
+    width: 10px;
+    height: 10px;
     color: var(--qa-text-on-sheet-dim);
     flex-shrink: 0;
   }
 
-  .qa-mh-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--qa-radius-circle);
-    border: 1px solid var(--qa-border-on-sheet);
-    background: var(--qa-surface-sheet);
-    color: var(--qa-text-on-sheet);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .qa-mh-icon svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .qa-mh-icon:hover {
-    border-color: var(--qa-accent);
-    color: var(--qa-accent);
-  }
-
-  .qa-mh-tag {
-    width: 36px;
-    height: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--qa-radius-circle);
-    border: 1px solid var(--qa-border-on-sheet);
-    background: var(--qa-surface-sheet);
-    color: var(--qa-text-on-sheet);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .qa-mh-tag:hover {
-    border-color: var(--qa-accent);
-  }
-
-  .qa-mh-tag-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--qa-radius-circle);
-    background: transparent;
-    border: 1.5px solid var(--qa-accent);
-  }
-
-  .qa-mh-tag--on .qa-mh-tag-dot {
-    background: var(--lh-themes);
-    border-color: var(--lh-themes);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--lh-themes) 28%, transparent);
-  }
-
-  .qa-mh-tabs {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .qa-mh-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .qa-mh-tab {
-    padding: 6px 14px;
-    border-radius: var(--qa-radius-pill);
-    border: none;
-    background: transparent;
-    color: var(--qa-text-on-sheet-dim);
-    font: inherit;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .qa-mh-tab:hover {
-    color: var(--qa-text-on-sheet);
-  }
-
-  .qa-mh-tab--on {
-    background-color: var(--qa-surface-sheet);
-    border: 1px solid var(--qa-border-on-sheet);
-    color: var(--qa-text-on-sheet);
+  .qa-mh-wordmark {
     font-weight: 600;
-  }
-
-  .qa-mh-count {
-    font-family: var(--qa-font-mono);
-    font-weight: 500;
-    color: var(--qa-text-on-sheet-dim);
-  }
-
-  .qa-mh-tab--on .qa-mh-count {
-    color: var(--qa-accent);
+    letter-spacing: 0.04em;
+    font-size: 15px;
   }
 
   @media (min-width: 1180px) {
     .qa-mh {
       display: none;
     }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qa-mh { transition: none; }
   }
 
   /* ================================================================ surah progress */
@@ -689,54 +630,65 @@
     }
   }
 
-  /* ================================================================ tag-mode pill (desktop) */
+}
 
-  .qa-tag-pill {
-    position: fixed;
-    top: 18px;
-    right: 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 14px 7px 12px;
-    border-radius: var(--qa-radius-pill);
-    border: 1px solid var(--qa-border-on-sheet);
-    background: var(--qa-surface-sheet);
-    color: var(--qa-text-on-sheet);
-    font: inherit;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgb(0 0 0 / 8%);
-    z-index: 140;
-  }
+/* ---------------------------------------------------------------------------
+   NavDrawer — mobile + desktop left-slide drawer (replaces MoreSheet 2026-04-25).
+   --------------------------------------------------------------------------- */
 
-  .qa-tag-pill:hover {
-    border-color: var(--qa-accent);
-  }
+.qa-nav-drawer-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  border: 0; padding: 0; cursor: pointer;
+  z-index: 60;
+}
 
-  .qa-tag-pill--on {
-    border-color: var(--qa-accent);
-  }
+.qa-nav-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: min(80vw, 320px);
+  background: var(--qa-surface-sheet, var(--qa-bg-surface, #fff));
+  color: var(--qa-text, inherit);
+  display: flex; flex-direction: column;
+  z-index: 61;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+  animation: qa-nav-drawer-in 180ms ease-out;
+}
 
-  .qa-tag-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: var(--qa-radius-circle);
-    background: transparent;
-    border: 1.5px solid var(--qa-accent);
-  }
+.qa-nav-drawer-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--qa-border-on-sheet, rgba(0, 0, 0, 0.08));
+}
 
-  .qa-tag-dot--on {
-    background: var(--lh-themes);
-    border-color: var(--lh-themes);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--lh-themes) 28%, transparent);
-  }
+.qa-nav-drawer-wordmark {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
 
-  @media (max-width: 1179px) {
-    .qa-tag-pill {
-      display: none;
-    }
-  }
+.qa-nav-drawer-close {
+  background: transparent; border: 0; font-size: 18px; line-height: 1;
+  width: 36px; height: 36px; cursor: pointer;
+  color: inherit;
+}
+
+.qa-nav-drawer-list {
+  display: flex; flex-direction: column;
+  padding: 8px 0;
+}
+
+.qa-nav-drawer-item {
+  background: transparent; border: 0; cursor: pointer;
+  text-align: left;
+  padding: 14px 20px;
+  font-size: 16px;
+  color: inherit;
+}
+
+.qa-nav-drawer-item:focus-visible,
+.qa-nav-drawer-item:hover {
+  background: var(--qa-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qa-nav-drawer { animation: none; }
 }

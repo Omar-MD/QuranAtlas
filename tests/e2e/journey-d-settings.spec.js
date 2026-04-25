@@ -36,18 +36,11 @@ test.describe('Journey D: Settings & appearance', () => {
   // D1. Open Settings sheet — happy path + a11y scan
   // -------------------------------------------------------------------------
 
-  test('D1: open Settings sheet via More sheet → correct structure', async ({ page }) => {
-    // Step 1: open ambient dock → tap ⋯ → More sheet opens
-    await openMoreSheet(page)
-    await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
-
-    // Step 2: tap Settings → More sheet closes → Settings sheet opens
-    await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
+  test('D1: open Settings sheet → correct structure', async ({ page }) => {
+    // Post-2026-04-25 redesign: gear icon (mobile) or #/settings route (desktop).
+    await openSettingsSheet(page)
     const settings = page.locator('.qa-sheet--settings')
     await expect(settings).toBeVisible({ timeout: 5_000 })
-
-    // More sheet should no longer be visible
-    await expect(page.getByRole('dialog', { name: 'More' })).not.toBeVisible({ timeout: 3_000 })
 
     // Theme section: at least one active swatch
     const activeSwatch = settings.locator('.qa-theme-swatch--active')
@@ -71,6 +64,11 @@ test.describe('Journey D: Settings & appearance', () => {
     await openSettingsSheet(page)
     const violations = await scanA11y(page, { include: ['.qa-sheet--settings'] })
     expect(violations).toEqual([])
+  })
+
+  test('D: Clear-data row is no longer in Settings sheet (post-redesign)', async ({ page }) => {
+    await openSettingsSheet(page)
+    await expect(page.locator('.qa-sheet--settings .qa-sheet-row--danger')).toHaveCount(0)
   })
 
   test('D1: Escape closes the Settings sheet', async ({ page }) => {
@@ -190,9 +188,10 @@ test.describe('Journey D: Settings & appearance', () => {
   // -------------------------------------------------------------------------
 
   test('D4: Clear data → type DELETE → confirm → page reloads → onboarding restarts', async ({ page }) => {
-    // Open More sheet and tap "Clear data"
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+    // Post-2026-04-25: Clear-data lives on About page footer.
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 
@@ -233,8 +232,9 @@ test.describe('Journey D: Settings & appearance', () => {
   })
 
   test('D4: Cancel clear data → dialog closes, nothing changes', async ({ page }) => {
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 
@@ -257,8 +257,9 @@ test.describe('Journey D: Settings & appearance', () => {
   })
 
   test('D4: Escape closes clear data dialog without clearing', async ({ page }) => {
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 
@@ -276,8 +277,9 @@ test.describe('Journey D: Settings & appearance', () => {
   })
 
   test('D4: clear data confirm button stays disabled when input is not exactly DELETE', async ({ page }) => {
-    await openMoreSheet(page)
-    const clearRow = page.locator('.qa-sheet-row--danger')
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const clearRow = page.locator('.qa-about-clear-data')
     await expect(clearRow).toBeVisible({ timeout: 5_000 })
     await clearRow.click()
 

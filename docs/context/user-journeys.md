@@ -124,9 +124,9 @@ On the reader.
 **Desktop variant:** On viewports ≥1180px, the reader renders as a single centered column capped at ~1080px. Each verse stacks Arabic (justified, RTL — fills the full column width and wraps naturally) on top, translation below. Toggling Hide translation in Settings simply hides the translation block; the column width is unchanged.
 
 
-**Desktop variant (≥1180px):** Ambient dock is a 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah} : {verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Surah list reached via ⋯ More → "Surah list", command sheet, or `G`+`S` shortcut (not a rail tab). Bottom-center pill is gone; top-right chrome includes `TagModePill` only while a tag session is open.
+**Desktop variant (≥1180px):** Ambient dock is a 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah} : {verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Surah list reached via ⋯ → drawer (no Surah-list item), command sheet, or `G`+`S` shortcut (not a rail tab). Bottom-center pill is gone; **TagModePill retired 2026-04-25** — desktop fast-tag entry is now via right-click on a verse, same as mobile long-press.
 
-**Mobile / tablet variant (<1180px):** Ambient dock is hidden entirely. Primary navigation is `MarginHeader` at the top: surah name pill (→ surah list at `#/surahs`), circular fast-tag toggle, ⋮ more button, and a second row of section tabs (Read / Review N / Marks / Threads). Crumb shows surah name only (no verse ref). Header auto-hides on scroll down and reveals on scroll up or any `AMBIENT_SURFACE` emit. `#main-content` reserves ~108 px of top padding so the surah title is never covered.
+**Mobile / tablet variant (<1180px) — single-row redesign 2026-04-25:** Ambient dock is hidden entirely. Primary navigation is `MarginHeader` at the top, ~52 px tall — left **hamburger ≡** opens the nav drawer, center **bilingual surah label** (Arabic name on top, uppercase smallcaps English below with `▾` chevron), right **settings gear ⚙**. No second-row tabs, no kebab, no fast-tag dot. Header auto-hides on scroll down and reveals on scroll up or any `AMBIENT_SURFACE` emit. `#main-content` reserves ~56 px of top padding (was 108 px). **Gestures:** tap label = surah list (or back if already there); swipe left/right on label = next/prev surah (clamped 1–114); swipe down on header = surah list; tap gear = settings sheet; long-press gear ≥400 ms = cycle theme (parity with keyboard `d`). **Regression guard:** `tests/e2e/journey-b-reader.spec.js` 'mobile margin header is a single row, ≤ 60 px tall'.
 
 ### B2. Scroll hides dock, scroll-to-top surfaces it
 
@@ -184,31 +184,30 @@ From Settings sheet with Auto swatch selected.
 
 ## C. Marking a verse
 
-### C1. Long-press → open mark editor
+### C1. Long-press → fast-tag inline panel
 
-On the reader.
+On the reader (post 2026-04-25 mobile-nav-redesign — was deep mark editor).
 
-1. Long-press (or right-click) a verse → mark editor bottom sheet slides up.
-2. Header shows "New mark" + the verse ref; verse-preview card shows Arabic + English; note textarea is empty; 12 collapsible layer regions appear — Threads, Audience, and Mode are expanded by default, others collapsed.
-3. Each layer has a search input + chip pool seeded from `core/seeds.ts` ∪ already-used canonicals.
+1. Long-press a verse (touch) or right-click a verse (desktop) → `beginFast(verseKey)` → the fast-tag inline panel (`reader/VerseTagPanel.svelte`) renders inside that verse below the translation.
+2. Verse gains the active-state treatment (left-edge accent bracket, "tagging" dot in verse head). No persistence until a chip is toggled.
 
-**Surfaces:** Reader, Mark editor. **No persistence yet.**
+The deep TagSheet (12-layer editor) is reachable **only** through the panel's `⛶` escalation button or the `⌘/Ctrl+Enter` keyboard shortcut. Programmatic bridges (Review hub) still call `editor-bridge::openEditor`, which routes via `app-bootstrap` to `openDeep`.
 
-**Desktop variant (≥1180px):** Mark editor sheet widens to 820px and centers true-vertically (verse-hero modal). The verse quote becomes a full-width header; below it the single-column body shows note and 12 layer regions. The bottom grip is hidden; sheet scales in via animation. All interactions (long-press, tag select, note edit, save) work identically.
+**Surfaces:** Reader, Fast-tag inline panel. **Persistence:** none until first chip toggle. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C1: long-press opens fast-tag inline panel, not TagSheet' + 'C1: right-click opens fast-tag inline panel, not TagSheet'.
 
 ### C1b. Fast-tag inline panel
 
 On the reader.
 
-1. **Mobile / tablet (<1180px):** tap the circular fast-tag button in the `MarginHeader` top row (dot-only icon, right of the surah crumb, left of ⋮). **Desktop (≥1180px):** tap the top-right `TagModePill` ("Tag mode", hollow dot when off) — it targets the current `reader.currentVerseKey`.
-2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head. The toggle's dot fills green (light) / mint (dark) while the session is active.
+1. **Entry points (post 2026-04-25):** long-press verse (touch), right-click verse (desktop), keyboard `m` on centered verse, command-sheet "Mark this verse" (F2). All four call `beginFast(verseKey)`. The retired `MarginHeader` fast-tag dot and desktop `TagModePill` no longer exist.
+2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head.
 3. The fast-tag panel (`reader/VerseTagPanel.svelte`) renders inline inside the active verse, below the translation: one row per layer group (Speech / Narrative / Themes / Entities — all four always rendered, every layer reachable) of `#value` chips colored by layer hue, plus a `+ add` affordance per group and a muted regenerate icon top-right. Tap a chip to toggle — selections debounce-save to IDB after 350 ms via `marks/store::save`. Click `+ add` to swap in an inline input. The input **requires** an explicit `<prefix>:<value>` — the prefix autofills as the user types (e.g. typing `s` in Speech fills `speaker:` with the completion selected, typing `q` fills `quoted:`, typing `d` in Entities fills `divine:`). The next keystroke either accepts the completion or replaces it. Aliases live in `data/tag-layers::LAYER_PREFIXES`; autofill logic in `autofillPrefix`, commit parse in `parseLayeredValue`. If the prefix doesn't resolve to a layer in the group, or the value is empty, commit is refused (red underline + error state). Enter commits, Escape cancels.
 4. **Switch active verse while session is open:** short-tap any other verse in the reader → the session's target verse swaps to the tapped one (`beginFast(newKey)`), the panel re-renders inside the new active verse. A short-tap while the session is *closed* does nothing (no auto-start from verse tap).
 5. Tap the same toggle again to end the session. `tagSession.end()` resets state; the verse returns to normal styling; the panel unmounts.
 
-**Surfaces:** Reader, MarginHeader (mobile) / TagModePill (desktop), Fast-tag inline panel (`reader/VerseTagPanel.svelte`). **Persistence:** `marks` store via debounced save.
+**Surfaces:** Reader, Fast-tag inline panel (`reader/VerseTagPanel.svelte`). **Persistence:** `marks` store via debounced save. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C: ⛶ button in fast-tag panel opens deep TagSheet'.
 
-**Panel escalation:** `⌘/Ctrl + Enter` escalates to the deep sheet (`openDeep`). No "accept all" button — chip toggles and inline add are the only mutations from this surface.
+**Panel escalation:** `⌘/Ctrl + Enter` keyboard shortcut OR tap the `⛶` button top-right of the panel (replaces the retired "regenerate" placeholder) → `openDeep(verseKey)` → deep TagSheet. No "accept all" button — chip toggles and inline add are the only mutations from this surface.
 
 **Deep sheet presentation:**
 - **Mobile (<1180px):** full-screen sheet with sticky header + footer and safe-area insets. The verse-preview card is tap-collapsible (chevron) so a long ayah can be reduced to a one-line summary and the body content (search, layer tabs, chips, note) gets more breathing room.
@@ -257,10 +256,10 @@ Inside mark editor on an existing mark.
 
 ### C6. Long-press has no alternative gesture
 
-1. Right-click or long-press a verse → only the mark editor opens.
-2. No browser context menu, no multi-action sheet, no preview popover.
+1. Right-click or long-press a verse → only the **fast-tag inline panel** opens (post 2026-04-25 redesign).
+2. No browser context menu, no multi-action sheet, no preview popover, no deep sheet.
 
-This is a cross-cutting rule, not a feature — preserved intentionally.
+This is a cross-cutting rule, not a feature — preserved intentionally. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C6: right-click and long-press each open ONLY the fast-tag panel (⛶ → TagSheet)'.
 
 ### C7. Multi-layer tag round-trip
 
@@ -273,7 +272,7 @@ Inside mark editor, new mark.
 
 **Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey].threads`, `marks[verseKey].audience`.
 
-> **Invariant (formerly `CLAUDE.md` Rule 4).** The mark editor is the **sole action surface** for a single verse. Long-press, right-click, and the command sheet's "Mark this verse" (F2) all route to it. Do **not** introduce a contextual menu, multi-action sheet, or preview popover as an alternative per-verse action surface. The verse-number tap (B3) surfaces edge indicators only — that's a navigation affordance, not a per-verse action, and is unaffected by this invariant.
+> **Invariant (formerly `CLAUDE.md` Rule 4) — reframed 2026-04-25.** The **fast-tag inline panel** is the sole per-verse action surface. Long-press, right-click, keyboard `m`, and the command sheet's "Mark this verse" (F2) all route to it via `beginFast(verseKey)`. The deep TagSheet is reachable **only** via the panel's `⛶` escalation, the `⌘/Ctrl+Enter` keyboard shortcut, or programmatic bridges (Review hub via `editor-bridge::openEditor`). Do **not** introduce a contextual menu, multi-action sheet, or preview popover as an alternative per-verse action surface. The verse-number tap (B3) surfaces edge indicators only — that's a navigation affordance, not a per-verse action, and is unaffected.
 
 ---
 
@@ -281,10 +280,13 @@ Inside mark editor, new mark.
 
 ### D1. Open Settings sheet
 
-1. Open Ambient dock → tap **⋯** → More sheet opens.
-2. Tap **Settings** → More sheet closes → Settings sheet opens with current theme swatch active, font slider + preview, Reading section (translation toggle + picker link).
+Post 2026-04-25 mobile-nav-redesign (was More sheet → Settings).
 
-**Surfaces:** Ambient dock, More sheet, Settings sheet.
+1. **Mobile (<1180px):** tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet opens. Long-press gear ≥400 ms cycles theme without opening the sheet.
+2. **Desktop (≥1180px):** navigate to `#/settings` (e.g. via `G`+`P` shortcut or command sheet "Preferences") → Settings sheet opens.
+3. Sheet content unchanged: theme swatches, font slider + preview, Reading section (translation toggle + picker link).
+
+**Surfaces:** MarginHeader (mobile) or Router (desktop) → Settings sheet.
 
 **Tablet+ variant (≥768px):** Settings sheet opens as a centered modal (~480px wide, top 10vh) instead of sliding up from the bottom. Previously this happened at 720px; now aligns with the canonical tablet breakpoint.
 
@@ -310,11 +312,13 @@ Inside Settings sheet.
 
 ### D4. Clear all data
 
-1. From More sheet or Settings sheet (wherever the Clear data link lives) → **Clear data** → confirmation dialog appears.
-2. Confirm → `safety/sync.js::suppressNextVersionChange()` arms, then `deleteDB()` runs → DB gone → page reloads → first-run onboarding (A1) starts fresh.
-3. Cancel → dialog closes, nothing changes.
+Post 2026-04-25 mobile-nav-redesign — Clear-data lives on About page footer (was Settings sheet bottom row).
 
-**Surfaces:** More sheet → clear-data confirmation → full app reset.
+1. Navigate to `#/about` (drawer → About) → scroll to footer → tap **Clear all data** link → confirmation dialog appears.
+2. Type `DELETE`, tap red **Clear All Data** → `safety/sync.js::suppressNextVersionChange()` arms, then `deleteDB()` runs → DB gone → page reloads → first-run onboarding (A1) starts fresh.
+3. Cancel / Escape → dialog closes, nothing changes.
+
+**Surfaces:** About page → clear-data confirmation → full app reset. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D: Clear-data row is no longer in Settings sheet (post-redesign)' + `tests/e2e/journey-g-about.spec.js` 'G: Clear data link is present on About page footer' + the four rerouted D4 confirmation tests.
 
 ---
 
@@ -418,12 +422,12 @@ Navigating directly to a layer-value URL.
 
 ### F2. Mark a verse from command sheet
 
-Inside command sheet with a verse preview card (F1).
+Inside command sheet with a verse preview card (F1). Post 2026-04-25 mobile-nav-redesign.
 
 1. Arrow-down past "Open verse" → "Mark this verse" row focused.
-2. Enter → command sheet closes → mark editor opens for that verse.
+2. Enter → command sheet closes → `beginFast(verseKey)` → fast-tag inline panel opens on that verse (was deep mark editor).
 
-**Surfaces:** Command sheet → Mark editor.
+**Surfaces:** Command sheet → Fast-tag inline panel. **Regression guard:** `tests/e2e/journey-f-navigation.spec.js` 'F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel'.
 
 ### F3. Tag search → FVR
 
@@ -463,10 +467,13 @@ On surah list.
 
 ### G1. Open About
 
-1. Dock → **⋯** → More sheet → **About** → `#/about`.
-2. About renders: wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid (Marks / Tags / Surahs / % Qur'an), attribution list, PWA install button (if install prompt has been captured), version line. No back link.
+Post 2026-04-25 mobile-nav-redesign — was More sheet → About.
 
-**Surfaces:** Ambient dock → More sheet → About.
+1. **Mobile (<1180px):** tap hamburger `≡` on `MarginHeader` → drawer slides in from left → tap **About**.
+2. **Desktop (≥1180px):** tap `⋯` on ambient dock → drawer slides in from left → tap **About**.
+3. About renders: wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid (Marks / Tags / Surahs / % Qur'an), attribution list, PWA install button (if install prompt has been captured), version line, **Clear all data** link in footer (D4 entry point). No back link.
+
+**Surfaces:** MarginHeader / AmbientDock → NavDrawer → About. **Regression guard:** `tests/e2e/journey-g-about.spec.js` 'G: hamburger drawer opens with Review and About items'.
 
 ### G3. Shortcut cheatsheet (`?`)
 
@@ -532,3 +539,23 @@ Two tabs open on `#/s/1`.
 ### E3 (legacy). `#/t/:tag` FVR route — removed in commit cb4e3a2
 
 The old FVR route `#/t/:tag` (e.g. `#/t/mercy`) dispatched Hub.svelte with a `tag` prop and filtered the threads layer only. It was replaced by the `#/<layer>/:value` scheme in cluster-3-review-hub-fvr (commits cb4e3a2, 3fec509). Pre-release — no users when removed. The new canonical route for the same content is `#/threads/mercy`.
+
+### B1/D1/D4/G1 (legacy). MoreSheet — retired 2026-04-25 in commit c297e61
+
+First-level parent sheet from the dock's ⋯ button. Held five rows: Settings · Review hub · Surah list · About · Clear data. Replaced by `NavDrawer.svelte` (left-slide, two items: Review · About) plus per-surface entry points: gear icon → Settings, About → Clear-data, ambient pill / center label → Surah list, command sheet → "Browse all surahs". Pre-release — no users when removed.
+
+### B1/C1b (legacy). MarginHeader two-row layout + fast-tag dot — retired 2026-04-25 in commit daaff6b
+
+Mobile/tablet header was ~108 px tall: row 1 = surah crumb pill + circular fast-tag dot + ⋮ kebab; row 2 = Read · Review N · Marks · Threads tabs (two of which stubbed to `#/review`). Replaced by single-row layout (~52 px) — hamburger · bilingual surah label · settings gear. Fast-tag entry moved to long-press / right-click on a verse.
+
+### C1/C1b (legacy). TagModePill — retired 2026-04-25 in commit ba94d8d
+
+Desktop-only top-right "Tag mode" toggle pill. Replaced by the unified gesture model: right-click any verse to start fast-tag at all breakpoints. `TagModeToggle.svelte` (Fast/Deep mini-pill) was already orphaned and deleted in the same commit.
+
+### C1 (legacy). Long-press → mark editor — flipped 2026-04-25 in commit 818001b
+
+Long-press / right-click / keyboard `m` previously opened the deep mark editor (`tag/TagSheet`). Now opens the fast-tag inline panel (`reader/VerseTagPanel`) via `beginFast(verseKey)`. Deep editor reachable only via the panel's `⛶` escalation, `⌘+Enter`, or programmatic bridges (Review hub).
+
+### D4 (legacy). Clear data in Settings sheet / More sheet — moved 2026-04-25 in commit 0890a53
+
+Clear-data row sat at the bottom of the Settings sheet (and earlier the More sheet). Moved to the About page footer; confirmation flow (`safety/clear-data.ts::showClearDataConfirmation`) unchanged.

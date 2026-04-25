@@ -1,7 +1,7 @@
 /**
  * sheet — shared bottom-sheet chrome: backdrop, container, grip, header,
  * body, rows, mark-editor sheet modifier, shortcuts cheatsheet.
- * Consumers: nav/MoreSheet.svelte, settings/Panel.svelte, marks/Editor.svelte
+ * Consumers: settings/Panel.svelte, marks/Editor.svelte
  * (via .qa-sheet--mark modifier + :global() interior rules).
  *
  * Context-scoped token inheritance root. Descendants of .qa-sheet read
@@ -27,7 +27,7 @@
     opacity: 1;
     animation: qa-sheet-fade var(--qa-transition-base) forwards;
 
-    /* MoreSheet uses <button> as backdrop for keyboard close — zero UA chrome
+    /* Backdrop may render as <button> for keyboard close — zero UA chrome
        so the 2px outset button border doesn't paint a viewport rim. */
     border: 0;
     padding: 0;

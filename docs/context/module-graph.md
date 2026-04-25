@@ -109,9 +109,9 @@ graph LR
   - `about/About.svelte` → `surfaces/about.css` (about-heading `:has()` rule lives in `app-shell.css`)
   - `onboarding/Onboarding.svelte` → `surfaces/onboarding.css` (theme-swatch hex retained as demo literals)
   - `surahs/{SurahList,SurahRow}.svelte` → `surfaces/surahs.css`
-  - `nav/{AmbientDock,AmbientPill,CommandSheet,MarginHeader,SurahProgress,TagModePill}.svelte` → `surfaces/nav.css`
+  - `nav/{AmbientDock,AmbientPill,CommandSheet,MarginHeader,NavDrawer,SurahProgress}.svelte` → `surfaces/nav.css`
   - `reader/{Reader,Verse,VerseTagPanel}.svelte` + imperative `edge-indicators.ts` class strings → `surfaces/reader.css` (VerseTagPanel owns the `.qa-vtp-*` block inside `surfaces/tag.css` — inline fast-tag panel)
-  - `tag/{TagSheet,TagModeToggle,TagChip,VerseSpotlight}.svelte` → `surfaces/tag.css` (`color-mix()` surface policy exercised here; TagChip dot hue piped via `style:--qa-tag-chip-hue`)
+  - `tag/{TagSheet,TagChip,VerseSpotlight}.svelte` → `surfaces/tag.css` (`color-mix()` surface policy exercised here; TagChip dot hue piped via `style:--qa-tag-chip-hue`)
   - `marks/{Editor,TagChip,TagLayerRegion}.svelte` → `surfaces/marks.css`
   - `review/{Hub,ReviewCard}.svelte` → `surfaces/review.css`
   - `settings/Panel.svelte` → `surfaces/settings.css`
@@ -140,10 +140,10 @@ graph LR
 - **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (CLAUDE.md Rule 5) — takes `MarkInput` (raw layer arrays) and computes `_canon` internally via `canonicalize()`. `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette + `getAllUsedTags()` (delegates to `store.ts::getAllCanonicalValues('threads')`).
 
 ### `nav/`
-- **Files:** `AmbientDock.svelte` (desktop left rail), `AmbientPill.svelte`, `MarginHeader.svelte` (mobile top nav), `SurahProgress.svelte`, `TagModePill.svelte`, `CommandSheet.svelte`, `MoreSheet.svelte`, `command-sheet-bridge.ts`, `more-sheet-bridge.ts`, `reader-actions.js`, `shortcuts-sheet.js`
+- **Files:** `AmbientDock.svelte` (desktop left rail), `AmbientPill.svelte`, `MarginHeader.svelte` (mobile top nav, single-row 2026-04-25), `NavDrawer.svelte` (left-slide, replaces MoreSheet), `SurahProgress.svelte`, `CommandSheet.svelte`, `command-sheet-bridge.ts`, `nav-drawer-bridge.ts`, `swipe-gestures.ts` (pure helper for MarginHeader gestures), `reader-actions.js`, `shortcuts-sheet.js`
 - **Imports from:** `core`, `data`, `marks`, `settings`, `state` (incl. `state/tag-session.svelte.ts`), `tag` (`session-bridge`), `a11y`
 - **Imported by:** `src/App.svelte` (component mounts), `src/app-bootstrap.ts` (`reader-actions`), `reader/SurahHeader.svelte` (`SurahProgress`)
-- **Role:** Navigation chrome + reader keyboard actions. `AmbientDock` = desktop (≥1180px) 64-px left edge rail. `MarginHeader` = mobile/tablet fixed top nav (crumb + fast-tag toggle + ⋮ + section tabs). `TagModePill` = desktop active-session indicator. `SurahProgress` = juz/percent chip used in `SurahHeader`. Command sheet (⌘K), more sheet (dock ⋯ parent) are Svelte 5 components. Bridge modules (`*-bridge.ts`) provide typed imperative open/close APIs. `reader-actions.js` backs the `j/k/[/]/Home/End/m` shortcuts by reading and writing the `reader` rune directly (no events). `shortcuts-sheet.js` is the in-reader shortcuts help sheet.
+- **Role:** Navigation chrome + reader keyboard actions. `AmbientDock` = desktop (≥1180px) 56-px left edge rail. `MarginHeader` = mobile/tablet fixed top nav (single row 2026-04-25: hamburger · bilingual surah label · gear). `NavDrawer` = left-slide (Review · About) opened by hamburger / dock kebab. `SurahProgress` = juz/percent chip used in `SurahHeader`. Command sheet (⌘K) + drawer are Svelte 5 components. Bridge modules (`*-bridge.ts`) provide typed imperative open/close APIs. `swipe-gestures.ts` is a pure DOM-free helper for MarginHeader's left/right/down classifier. `reader-actions.js` backs the `j/k/[/]/Home/End/m` shortcuts by reading and writing the `reader` rune directly (no events). `shortcuts-sheet.js` is the in-reader shortcuts help sheet.
 
 ### `tag/`
 - **Files:** `TagSheet.svelte` (deep sheet), `TagChip.svelte`, `TagModeToggle.svelte`, `VerseSpotlight.svelte`, `session-bridge.ts`
@@ -207,7 +207,7 @@ graph LR
 ### `settings/`
 - **Files:** `Panel.svelte`, `ClearDataConfirm.svelte`, `panel-bridge.ts`, `clear-data.ts`, `font-size.ts`, `theme.ts`
 - **Imports from:** `a11y`, `core`, `data`, `safety`, `state`
-- **Imported by:** `App.svelte` (mounts Panel + ClearDataConfirm), `app-bootstrap.ts` (initTheme, initFontSize, openSettingsSheet), `nav/CommandSheet.svelte`, `nav/MoreSheet.svelte`, `onboarding/Onboarding.svelte`
+- **Imported by:** `App.svelte` (mounts Panel + ClearDataConfirm), `app-bootstrap.ts` (initTheme, initFontSize, openSettingsSheet), `nav/CommandSheet.svelte`, `nav/MarginHeader.svelte` (`openSettingsSheet` + `cycleTheme`), `about/About.svelte` (`showClearDataConfirmation`), `onboarding/Onboarding.svelte`
 - **Role:** Settings bottom-sheet surface. `Panel.svelte` is persistently mounted in `App.svelte` and opened imperatively. `ClearDataConfirm.svelte` is the confirmation modal (also persistently mounted). `panel-bridge.ts` exposes `openSettingsSheet()` / `closeSettingsSheet()` / `toggleTranslation()` as imperative APIs for non-component callers. `theme.ts` owns the `data-theme` attribute + `prefers-color-scheme` listener for Auto and writes the `settings.translationVisible` rune; `Reader.svelte` mirrors the rune into a prop via `$effect` (no event). `font-size.ts` handles rem-scale adjustments. `clear-data.ts` owns the wipe confirmation + `deleteDB` call.
 
 ### `surahs/`

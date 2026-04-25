@@ -90,10 +90,6 @@
     scheduleSave()
   }
 
-  function regenerate(): void {
-    // Placeholder — QUICK_PICKS is static for now. Future: contextual suggestions.
-  }
-
   let addError = $state(false)
 
   function commitAdd(group: LayerGroup): void {
@@ -166,16 +162,14 @@
 <div class="qa-vtp" aria-label="Suggested tags">
   <button
     type="button"
-    class="qa-vtp-regen"
-    aria-label="Regenerate suggestions"
-    title="Regenerate suggestions"
-    onclick={regenerate}
+    class="qa-vtp-escalate"
+    aria-label="Open full tag editor"
+    title="Full editor"
+    onclick={openDeep}
   >
     <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M2.8 8a5.2 5.2 0 0 1 8.9-3.8M13.2 8a5.2 5.2 0 0 1-8.9 3.8"
-            stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-      <path d="M10.6 2.6 11.5 4.4l1.8-.4M5.4 13.4 4.5 11.6l-1.8.4"
-            stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 6V3h3M13 6V3h-3M3 10v3h3M13 10v3h-3"
+            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
 
