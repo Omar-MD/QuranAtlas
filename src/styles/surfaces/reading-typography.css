@@ -1,0 +1,44 @@
+@layer surfaces {
+  /* ==========================================================================
+     Reading typography — user-tunable controls
+
+     Three independent <html> attributes control reader text rendering:
+       data-line-spacing  — line-height on .qa-verse-arabic + .qa-verse-translation
+       data-word-spacing  — word-spacing on .qa-verse-arabic + .qa-verse-translation
+       data-reader-margin — max-width on #main-content (reader column only)
+
+     md is the baseline (matches the values previously hardcoded in reader.css
+     and app-shell.css). The other steps scale around md.
+
+     Sole writer: src/settings/reading-typography.ts
+     Spec: docs/superpowers/specs/2026-04-25-reading-typography-design.md
+     ========================================================================== */
+
+  /* ---- Line spacing (Arabic + translation, ratio preserved) ---- */
+  [data-line-spacing="xs"] .qa-verse-arabic { line-height: 1.85; }
+  [data-line-spacing="xs"] .qa-verse-translation { line-height: 1.35; }
+  [data-line-spacing="sm"] .qa-verse-arabic { line-height: 2.05; }
+  [data-line-spacing="sm"] .qa-verse-translation { line-height: 1.5; }
+  [data-line-spacing="md"] .qa-verse-arabic { line-height: 2.25; }
+  [data-line-spacing="md"] .qa-verse-translation { line-height: 1.65; }
+  [data-line-spacing="lg"] .qa-verse-arabic { line-height: 2.55; }
+  [data-line-spacing="lg"] .qa-verse-translation { line-height: 1.85; }
+  [data-line-spacing="xl"] .qa-verse-arabic { line-height: 2.85; }
+  [data-line-spacing="xl"] .qa-verse-translation { line-height: 2.05; }
+
+  /* ---- Word spacing (single value, applies to both) ---- */
+  [data-word-spacing="xs"] .qa-verse-arabic,
+  [data-word-spacing="xs"] .qa-verse-translation { word-spacing: 0; }
+
+  [data-word-spacing="sm"] .qa-verse-arabic,
+  [data-word-spacing="sm"] .qa-verse-translation { word-spacing: 0.025em; }
+
+  [data-word-spacing="md"] .qa-verse-arabic,
+  [data-word-spacing="md"] .qa-verse-translation { word-spacing: 0.05em; }
+
+  [data-word-spacing="lg"] .qa-verse-arabic,
+  [data-word-spacing="lg"] .qa-verse-translation { word-spacing: 0.1em; }
+
+  [data-word-spacing="xl"] .qa-verse-arabic,
+  [data-word-spacing="xl"] .qa-verse-translation { word-spacing: 0.18em; }
+}
