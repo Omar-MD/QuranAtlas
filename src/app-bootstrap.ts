@@ -15,6 +15,7 @@ import { initInstallListener } from './about/pwa-install'
 import { initTheme } from './settings/theme.ts'
 import { initFontSize } from './settings/font-size.ts'
 import { initReadingTypography } from './settings/reading-typography.ts'
+import { initNightMode } from './settings/night-mode.ts'
 import { openSettingsSheet } from './settings/panel-bridge.ts'
 import { initReaderActions } from './nav/reader-actions.js'
 import { initIndicators } from './marks/indicator'
@@ -80,6 +81,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     await initTheme()
     await initFontSize()
     await initReadingTypography()
+    await initNightMode()
 
     // Expose version-change suppression so E2E clearAllData can prevent the
     // sync-banner overlay from blocking pointer events (Bug-2). Exposed in
