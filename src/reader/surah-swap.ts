@@ -21,16 +21,16 @@ const FIRST_SURAH = 1
 const LAST_SURAH = 114
 
 /** Pull distance (in CSS pixels) required to fill the indicator circle. */
-export const PULL_THRESHOLD_PX = 110
+export const PULL_THRESHOLD_PX = 180
 
 /** Cool-down after a commit so a quick second pull doesn't double-fire. */
 const COMMIT_COOLDOWN_MS = 800
 
 /** Idle timeout — wheel input that stops accumulating decays the pull state. */
-const WHEEL_IDLE_MS = 220
+const WHEEL_IDLE_MS = 260
 
 /** Slop — small overscroll deltas below this are ignored. */
-const PULL_SLOP_PX = 4
+const PULL_SLOP_PX = 18
 
 export type SwapAnchor = 'top' | 'bottom'
 export type PullDirection = 'forward' | 'backward'

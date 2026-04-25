@@ -76,13 +76,6 @@
 
   const prevMeta = $derived(allSurahs.find(s => s.n === prevSurah(surahNum)) ?? null)
   const nextMeta = $derived(allSurahs.find(s => s.n === nextSurah(surahNum)) ?? null)
-  const pullLabel = $derived(
-    pullState?.direction === 'forward'
-      ? (nextMeta?.name ?? '')
-      : pullState?.direction === 'backward'
-        ? (prevMeta?.name ?? '')
-        : ''
-  )
 
   // ---------------------------------------------------------------------------
   // Reactive translation toggle — keep in sync with settings rune after load
@@ -390,7 +383,6 @@
   <PullToSwapIndicator
     direction={pullState?.direction ?? null}
     progress={pullState?.progress ?? 0}
-    label={pullLabel}
   />
 {/if}
 
