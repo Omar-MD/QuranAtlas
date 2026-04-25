@@ -354,7 +354,8 @@
         class="qa-continue-prev"
         data-continue-prev=""
         onclick={() => swapToSurah(prevSurah(surahNum), 'bottom')}
-      >← Continue to {prevMeta.name}</button>
+        aria-label={`Previous surah: ${prevMeta.name}`}
+      ><span class="qa-continue-arrow" aria-hidden="true">↑</span><span class="qa-continue-title">{prevMeta.name}</span></button>
     {/if}
 
     <SurahHeader {surahNum} meta={surahMeta} />
@@ -374,7 +375,8 @@
         class="qa-continue-next"
         data-continue-next=""
         onclick={() => swapToSurah(nextSurah(surahNum), 'top')}
-      >Continue to {nextMeta.name} →</button>
+        aria-label={`Next surah: ${nextMeta.name}`}
+      ><span class="qa-continue-title">{nextMeta.name}</span><span class="qa-continue-arrow" aria-hidden="true">↓</span></button>
     {:else}
       <div class="qa-surah-end" data-surah-end="">End of {surahMeta.name}</div>
     {/if}
