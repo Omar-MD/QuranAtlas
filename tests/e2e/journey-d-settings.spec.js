@@ -55,7 +55,9 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(settings.getByText('Size, spacing & margins')).toBeVisible()
 
     // Reading section: switch for translation visibility
-    await expect(settings.locator('.qa-settings-switch')).toBeVisible()
+    await expect(settings.getByRole('switch', { name: 'Show translation' })).toBeVisible()
+    // Theme section: night-mode switch
+    await expect(settings.getByTestId('night-mode-switch')).toBeVisible()
   })
 
   test('D1: a11y — no serious/critical axe violations on open Settings sheet @a11y', async ({ page }) => {
@@ -83,10 +85,11 @@ test.describe('Journey D: Settings & appearance', () => {
   test('D2: Show translation row subtitle reflects the shipped translation; picker is hidden when only one ships', async ({ page }) => {
     await openSettingsSheet(page)
 
-    // Scope to the Reading section's toggle row (Typography section above also
-    // uses the same toggle-body pattern post-2026-04-25 redesign).
+    // Scope to the Reading section's toggle row. Multiple toggle rows exist
+    // (Typography nav, night-mode in Theme, Reading translation) — locate via
+    // the translation switch's aria-label.
     const readingRow = page.locator('.qa-settings-toggle-row').filter({
-      has: page.locator('.qa-settings-switch'),
+      has: page.getByRole('switch', { name: 'Show translation' }),
     })
     const toggleBody = readingRow.locator('.qa-settings-toggle-body')
     await expect(toggleBody).toBeVisible()
@@ -108,8 +111,9 @@ test.describe('Journey D: Settings & appearance', () => {
     // Close settings sheet and go directly to reader to seed translation elements
     await openSettingsSheet(page)
 
-    // The switch is initially on (translationVisible = true by default)
-    const sw = page.locator('.qa-settings-switch')
+    // The switch is initially on (translationVisible = true by default).
+    // Scope to translation switch by aria-label since night-mode also uses .qa-settings-switch.
+    const sw = page.getByRole('switch', { name: 'Show translation' })
     await expect(sw).toBeVisible()
 
     const isOn = await sw.evaluate(el => el.classList.contains('qa-settings-switch--on'))
