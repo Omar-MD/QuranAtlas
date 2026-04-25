@@ -34,7 +34,15 @@ function setupLongPress(container: HTMLElement): () => void {
     onShort: (vk) => {
       if (tagSession.quickbarOpen) { void beginFast(vk) }
     },
-    onLong: (vk) => { void beginFast(vk) },
+    onLong: (vk) => {
+      // Long-press on the verse already in fast-tag mode → exit (mobile has
+      // no Esc key; this complements the explicit ✕ in VerseTagPanel).
+      if (tagSession.quickbarOpen && tagSession.verseKey === vk) {
+        tagSession.end()
+        return
+      }
+      void beginFast(vk)
+    },
   })
 }
 

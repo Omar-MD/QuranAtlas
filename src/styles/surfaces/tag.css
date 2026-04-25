@@ -706,7 +706,7 @@
     position: relative;
     margin-top: 12px;
     padding-top: 12px;
-    padding-right: 28px;               /* leave room for regen icon */
+    padding-right: 60px;               /* leave room for close + escalate icons */
     border-top: 1px solid var(--qa-border-subtle);
   }
 
@@ -717,33 +717,48 @@
     }
   }
 
-  /* Regenerate — muted icon-only button, top-right */
+  /* Top-right action cluster: close (left) + escalate to deep editor (right).
+     Both muted icon-only buttons; close is the sole exit affordance on
+     mobile (no Esc key). */
+  .qa-vtp-close,
   .qa-vtp-escalate {
     position: absolute;
     top: 10px;
-    right: 0;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border-radius: var(--qa-radius-circle);
     border: none;
     background: transparent;
     color: var(--qa-text-on-sheet-dim);
     cursor: pointer;
-    opacity: 0.55;
+    opacity: 0.6;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition: opacity var(--qa-transition-fast);
+
+    /* Suppress iOS long-press callout on the close icon — same hardening
+       pattern as MarginHeader gear (callout race with verse long-press). */
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: manipulation;
   }
 
+  .qa-vtp-close { right: 32px; }
+  .qa-vtp-escalate { right: 0; }
+
+  .qa-vtp-close:hover,
+  .qa-vtp-close:focus-visible,
   .qa-vtp-escalate:hover,
   .qa-vtp-escalate:focus-visible {
     opacity: 1;
   }
 
+  .qa-vtp-close svg,
   .qa-vtp-escalate svg {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
   }
 
   /* Grid — label column + chip flow column */

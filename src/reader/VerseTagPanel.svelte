@@ -162,6 +162,19 @@
 <div class="qa-vtp" aria-label="Suggested tags">
   <button
     type="button"
+    class="qa-vtp-close"
+    aria-label="Exit fast-tag mode"
+    title="Exit fast-tag"
+    onclick={() => tagSession.end()}
+    data-testid="vtp-close"
+  >
+    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M4 4l8 8M12 4l-8 8"
+            stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <button
+    type="button"
     class="qa-vtp-escalate"
     aria-label="Open full tag editor"
     title="Full editor"

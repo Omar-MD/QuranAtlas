@@ -168,6 +168,41 @@ test.describe('Journey C: Verse marking', () => {
     await expect(page.locator('.qa-vtp')).toHaveCount(0)
   })
 
+  test('C: ✕ close button in fast-tag panel ends session (mobile exit)', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').first()
+    await longPress(firstVerse)
+    const panel = page.locator('.qa-vtp')
+    await expect(panel).toBeVisible({ timeout: 5_000 })
+
+    const close = page.getByTestId('vtp-close')
+    await expect(close).toBeVisible()
+    await expect(close).toHaveAttribute('aria-label', 'Exit fast-tag mode')
+    await close.click()
+
+    await expect(panel).toHaveCount(0, { timeout: 3_000 })
+  })
+
+  test('C: long-press on the active fast-tag verse exits the session', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').first()
+    await longPress(firstVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+
+    // Second long-press on the same verse → session ends.
+    await longPress(firstVerse)
+    await expect(page.locator('.qa-vtp')).toHaveCount(0, { timeout: 3_000 })
+  })
+
+  test('C: long-press on a different verse switches the active verse, does NOT exit', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').nth(0)
+    const secondVerse = page.locator('.qa-verse').nth(1)
+    await longPress(firstVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+
+    // Long-press a different verse → panel still visible (switched, not exited).
+    await longPress(secondVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 3_000 })
+  })
+
   // -------------------------------------------------------------------------
   // C2. Add a tag to a layer → click chip removes it
   // -------------------------------------------------------------------------
