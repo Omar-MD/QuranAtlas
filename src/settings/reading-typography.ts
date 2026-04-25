@@ -72,6 +72,29 @@ export async function resetReadingTypography(): Promise<boolean> {
   return true
 }
 
+/**
+ * "Reading flow" — coordinated knob that drives all four spacing dimensions
+ * (line, word, margin, verse) together. The Settings UI exposes a single
+ * slider over this; the four IDB keys remain individually-addressable so a
+ * future advanced view can split them again.
+ */
+const FLOW_DIMS: Dimension[] = ['lineSpacing', 'wordSpacing', 'readerMargin', 'verseSpacing']
+
+export async function setReadingFlow(step: Step): Promise<boolean> {
+  if (!isStep(step)) { return false }
+  const results = await Promise.all(FLOW_DIMS.map((d) => setReadingStep(d, step)))
+  return results.every(Boolean)
+}
+
+/**
+ * Returns the shared step when all four flow dimensions match, else null
+ * (mixed state — UI shows the slider thumb at md but treats it as default).
+ */
+export function getReadingFlowStep(values: Record<Dimension, Step>): Step | null {
+  const first = values[FLOW_DIMS[0]!]
+  return FLOW_DIMS.every((d) => values[d] === first) ? first : null
+}
+
 export async function initReadingTypography(): Promise<void> {
   const loaded = await loadReadingSettings()
   for (const dim of ALL_DIMENSIONS) {

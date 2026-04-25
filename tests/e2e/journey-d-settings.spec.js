@@ -384,17 +384,20 @@ test.describe('Journey D: Typography subview @desktop', () => {
     await expect(page.getByTestId('typography-preview')).toBeVisible()
   }
 
-  test('D5: opens subview and exposes 4 sliders', async ({ page }) => {
+  test('D5: subview exposes Font size + Reading flow sliders only', async ({ page }) => {
     await openTypography(page)
     await expect(page.getByLabel('Font size')).toBeVisible()
-    await expect(page.getByLabel('Line spacing')).toBeVisible()
-    await expect(page.getByLabel('Word spacing')).toBeVisible()
-    await expect(page.getByLabel('Reader margins')).toBeVisible()
+    await expect(page.getByLabel('Reading flow')).toBeVisible()
+    // Old four-knob layout retired 2026-04-25 — collapsed into "Reading flow".
+    await expect(page.getByLabel('Line spacing')).toHaveCount(0)
+    await expect(page.getByLabel('Word spacing')).toHaveCount(0)
+    await expect(page.getByLabel('Reader margins')).toHaveCount(0)
+    await expect(page.getByLabel('Verse spacing')).toHaveCount(0)
   })
 
-  test('D5: line-spacing xl applies line-height ≈ 2.85 to .qa-verse-arabic', async ({ page }) => {
+  test('D5: reading-flow xl drives line-height ≈ 2.85 on .qa-verse-arabic', async ({ page }) => {
     await openTypography(page)
-    await page.getByLabel('Line spacing').evaluate(el => {
+    await page.getByLabel('Reading flow').evaluate(el => {
       el.value = '4'
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
@@ -407,9 +410,9 @@ test.describe('Journey D: Typography subview @desktop', () => {
     expect(ratio).toBeLessThan(2.9)
   })
 
-  test('D5: word-spacing xs sets word-spacing to 0 on .qa-verse-arabic', async ({ page }) => {
+  test('D5: reading-flow xs sets word-spacing to 0 on .qa-verse-arabic', async ({ page }) => {
     await openTypography(page)
-    await page.getByLabel('Word spacing').evaluate(el => {
+    await page.getByLabel('Reading flow').evaluate(el => {
       el.value = '0'
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
@@ -420,13 +423,12 @@ test.describe('Journey D: Typography subview @desktop', () => {
     expect(ws).toBe('0px')
   })
 
-  test('D5: reader-margins xl narrows #main-content max-width', async ({ page }) => {
-    await openSettingsSheet(page)
-    await page.getByText('Size, spacing & margins').click()
+  test('D5: reading-flow xl narrows #main-content max-width', async ({ page }) => {
+    await openTypography(page)
     const beforeWidth = await page.locator('#main-content').evaluate(
       (el) => parseFloat(getComputedStyle(el).maxWidth)
     )
-    await page.getByLabel('Reader margins').evaluate(el => {
+    await page.getByLabel('Reading flow').evaluate(el => {
       el.value = '4'
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
@@ -437,29 +439,29 @@ test.describe('Journey D: Typography subview @desktop', () => {
     expect(afterWidth).toBeLessThan(beforeWidth)
   })
 
-  test('D5: settings persist across reload', async ({ page }) => {
+  test('D5: reading-flow writes all four IDB keys + persists across reload', async ({ page }) => {
     await openTypography(page)
-    await page.getByLabel('Line spacing').evaluate(el => {
+    await page.getByLabel('Reading flow').evaluate(el => {
       el.value = '4'
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
-    await page.getByLabel('Word spacing').evaluate(el => {
-      el.value = '0'
-      el.dispatchEvent(new Event('input', { bubbles: true }))
-    })
     expect(await readSetting(page, 'lineSpacing')).toBe('xl')
-    expect(await readSetting(page, 'wordSpacing')).toBe('xs')
+    expect(await readSetting(page, 'wordSpacing')).toBe('xl')
+    expect(await readSetting(page, 'readerMargin')).toBe('xl')
+    expect(await readSetting(page, 'verseSpacing')).toBe('xl')
 
     await page.reload()
     await waitForReader(page)
     expect(await page.evaluate(() => document.documentElement.dataset.lineSpacing)).toBe('xl')
-    expect(await page.evaluate(() => document.documentElement.dataset.wordSpacing)).toBe('xs')
+    expect(await page.evaluate(() => document.documentElement.dataset.wordSpacing)).toBe('xl')
+    expect(await page.evaluate(() => document.documentElement.dataset.readerMargin)).toBe('xl')
+    expect(await page.evaluate(() => document.documentElement.dataset.verseSpacing)).toBe('xl')
   })
 
   test('D5: reset button hidden by default, appears on change, restores defaults', async ({ page }) => {
     await openTypography(page)
     await expect(page.getByTestId('typography-reset')).toHaveCount(0)
-    await page.getByLabel('Line spacing').evaluate(el => {
+    await page.getByLabel('Reading flow').evaluate(el => {
       el.value = '4'
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
@@ -467,6 +469,7 @@ test.describe('Journey D: Typography subview @desktop', () => {
     await page.getByTestId('typography-reset').click()
     await expect(page.getByTestId('typography-reset')).toHaveCount(0)
     expect(await page.evaluate(() => document.documentElement.dataset.lineSpacing)).toBe('md')
+    expect(await page.evaluate(() => document.documentElement.dataset.readerMargin)).toBe('md')
   })
 })
 

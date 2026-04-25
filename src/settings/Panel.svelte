@@ -9,9 +9,10 @@
   import { getFontSizeOptions, setFontSize, resetFontSize } from './font-size.ts'
   import {
     getReadingOptions,
-    setReadingStep,
+    setReadingFlow,
+    getReadingFlowStep,
     resetReadingTypography,
-    type Dimension as ReadingDimension,
+    type ReadingStep,
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
   import { getTranslations } from '../data/dataset.js'
@@ -120,17 +121,29 @@
     if (size) { await setFontSize(size) }
   }
 
-  // ---- Reading typography (line spacing, word spacing, reader margin) ----
+  // ---- Reading flow (single slider drives line/word/margin/verse-spacing) ----
 
   function readingIndexOf(step: string): number {
     const idx = readingOptions.indexOf(step as typeof readingOptions[number])
     return idx >= 0 ? idx : 2
   }
 
-  async function handleReadingSlider(dim: ReadingDimension, e: Event) {
+  // Slider thumb position. Falls back to md when the four underlying dims are
+  // out of sync (e.g. a future advanced split has run) — the slider only
+  // commits a single coordinated value, so a mixed state collapses to md.
+  const readingFlowStep = $derived<ReadingStep>(
+    getReadingFlowStep({
+      lineSpacing: settings.lineSpacing,
+      wordSpacing: settings.wordSpacing,
+      readerMargin: settings.readerMargin,
+      verseSpacing: settings.verseSpacing,
+    }) ?? 'md',
+  )
+
+  async function handleFlowSlider(e: Event) {
     const idx = parseInt((e.target as HTMLInputElement).value, 10)
     const step = readingOptions[Math.max(0, Math.min(readingOptions.length - 1, idx))]
-    if (step) { await setReadingStep(dim, step) }
+    if (step) { await setReadingFlow(step) }
   }
 
   async function handleResetTypography() {
@@ -138,22 +151,12 @@
   }
 
   function typographySubtitle(): string {
-    const allDefault =
-      settings.fontSize === 'md' &&
-      settings.lineSpacing === 'md' &&
-      settings.wordSpacing === 'md' &&
-      settings.readerMargin === 'md' &&
-      settings.verseSpacing === 'md'
-    if (allDefault) { return 'Default' }
-    return `Aa ${settings.fontSize} · ↕ ${settings.lineSpacing} · ↔ ${settings.wordSpacing} · ⇔ ${settings.readerMargin} · ⇕ ${settings.verseSpacing}`
+    if (typographyIsDefault) { return 'Default' }
+    return `Aa ${settings.fontSize} · ↕ ${readingFlowStep}`
   }
 
   const typographyIsDefault = $derived(
-    settings.fontSize === 'md' &&
-    settings.lineSpacing === 'md' &&
-    settings.wordSpacing === 'md' &&
-    settings.readerMargin === 'md' &&
-    settings.verseSpacing === 'md'
+    settings.fontSize === 'md' && readingFlowStep === 'md'
   )
 
   // ---- Translation toggle ----
@@ -394,78 +397,21 @@
         </div>
 
         <div class="qa-typography-slider">
-          <label class="qa-typography-slider-label" for="qa-tslider-line">Line spacing</label>
+          <label class="qa-typography-slider-label" for="qa-tslider-flow">Reading flow</label>
           <div class="qa-typography-slider-row">
-            <span class="qa-typography-slider-min" aria-hidden="true">≡</span>
+            <span class="qa-typography-slider-min" aria-hidden="true">▮</span>
             <input
-              id="qa-tslider-line"
+              id="qa-tslider-flow"
               class="qa-typography-slider-input"
               type="range"
               min="0"
               max={readingOptions.length - 1}
               step="1"
-              value={readingIndexOf(settings.lineSpacing)}
-              oninput={(e) => handleReadingSlider('lineSpacing', e)}
-              aria-label="Line spacing"
-            />
-            <span class="qa-typography-slider-max" aria-hidden="true">☰</span>
-          </div>
-        </div>
-
-        <div class="qa-typography-slider">
-          <label class="qa-typography-slider-label" for="qa-tslider-word">Word spacing</label>
-          <div class="qa-typography-slider-row">
-            <span class="qa-typography-slider-min" aria-hidden="true">a·b</span>
-            <input
-              id="qa-tslider-word"
-              class="qa-typography-slider-input"
-              type="range"
-              min="0"
-              max={readingOptions.length - 1}
-              step="1"
-              value={readingIndexOf(settings.wordSpacing)}
-              oninput={(e) => handleReadingSlider('wordSpacing', e)}
-              aria-label="Word spacing"
-            />
-            <span class="qa-typography-slider-max" aria-hidden="true">a  b</span>
-          </div>
-        </div>
-
-        <div class="qa-typography-slider">
-          <label class="qa-typography-slider-label" for="qa-tslider-margin">Margins</label>
-          <div class="qa-typography-slider-row">
-            <span class="qa-typography-slider-min" aria-hidden="true">◫</span>
-            <input
-              id="qa-tslider-margin"
-              class="qa-typography-slider-input"
-              type="range"
-              min="0"
-              max={readingOptions.length - 1}
-              step="1"
-              value={readingIndexOf(settings.readerMargin)}
-              oninput={(e) => handleReadingSlider('readerMargin', e)}
-              aria-label="Reader margins"
+              value={readingIndexOf(readingFlowStep)}
+              oninput={handleFlowSlider}
+              aria-label="Reading flow"
             />
             <span class="qa-typography-slider-max" aria-hidden="true">▯</span>
-          </div>
-        </div>
-
-        <div class="qa-typography-slider">
-          <label class="qa-typography-slider-label" for="qa-tslider-verse-spacing">Verse spacing</label>
-          <div class="qa-typography-slider-row">
-            <span class="qa-typography-slider-min" aria-hidden="true">≡</span>
-            <input
-              id="qa-tslider-verse-spacing"
-              class="qa-typography-slider-input"
-              type="range"
-              min="0"
-              max={readingOptions.length - 1}
-              step="1"
-              value={readingIndexOf(settings.verseSpacing)}
-              oninput={(e) => handleReadingSlider('verseSpacing', e)}
-              aria-label="Verse spacing"
-            />
-            <span class="qa-typography-slider-max" aria-hidden="true">☰</span>
           </div>
         </div>
 
