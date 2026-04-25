@@ -20,6 +20,7 @@
   import { getAll as getAllMarks } from '../marks/store'
   import { getAllUsedTags, getColorForTag } from '../marks/tags.js'
   import { setTheme, cycleTheme } from '../settings/theme'
+  import { toggleNightMode } from '../settings/night-mode'
   import { setFontSize, loadFontSize, getFontSizeOptions, resetFontSize } from '../settings/font-size'
   import { toggleTranslation } from '../settings/panel-bridge'
   import { beginFast } from '../tag/session-bridge'
@@ -439,6 +440,10 @@
       case 'm': case 'M': e.preventDefault(); readerMarkCurrent(); return
       case 't': case 'T': e.preventDefault(); void toggleTranslation(); return
       case 'd': case 'D': e.preventDefault(); void cycleTheme(); return
+      case 'n': case 'N':
+        e.preventDefault()
+        void toggleNightMode().then((on) => announce(on ? 'Night mode on' : 'Night mode off'))
+        return
       case '+': case '=': e.preventDefault(); void bumpFont(+1); return
       case '-': case '_': e.preventDefault(); void bumpFont(-1); return
       case '0': e.preventDefault(); void resetFontSize().then(() => announce('Font size reset')); return
