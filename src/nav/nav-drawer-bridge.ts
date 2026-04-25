@@ -5,24 +5,25 @@
  * window global.
  */
 
-let _open: (() => void) | null = null
+export type DrawerTab = 'surahs' | 'review'
+
+let _open: ((tab?: DrawerTab) => void) | null = null
 let _close: (() => void) | null = null
-let _toggle: (() => void) | null = null
+let _toggle: ((tab?: DrawerTab) => void) | null = null
 
 export function registerNavDrawer(
-  open: () => void,
+  open: (tab?: DrawerTab) => void,
   close: () => void,
-  toggle?: () => void
+  toggle?: (tab?: DrawerTab) => void
 ): void {
   _open = open
   _close = close
   _toggle = toggle ?? null
 }
 
-export function openNavDrawer(): void { _open?.() }
+export function openNavDrawer(tab?: DrawerTab): void { _open?.(tab) }
 export function closeNavDrawer(): void { _close?.() }
-export function toggleNavDrawer(): void {
-  if (_toggle) { _toggle(); return }
-  // Fallback for callers that registered before the toggle parameter existed.
-  _open?.()
+export function toggleNavDrawer(tab?: DrawerTab): void {
+  if (_toggle) { _toggle(tab); return }
+  _open?.(tab)
 }
