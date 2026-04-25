@@ -308,15 +308,16 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     // Simulate the race that made the original bug observable: IDB holds a
     // STALE early verse (e.g. a prior write that the hide-time save never
     // replaced before the tab was suspended) while the browser has
-    // preserved scroll.  Write AFTER the hide-time save has already run so
-    // persistOnExit doesn't overwrite the stale value back.
+    // preserved scroll. Write the global currentPosition record AFTER the
+    // hide-time save has already run so persistOnExit doesn't overwrite
+    // the stale value back.
     await page.evaluate(async () => {
       const dbReq = indexedDB.open('quran-atlas')
       await new Promise((resolve) => {
         dbReq.onsuccess = () => {
           const db = dbReq.result
-          const tx = db.transaction('positions', 'readwrite')
-          tx.objectStore('positions').put({ id: 's2', surah: 2, verse: 1, savedAt: Date.now() })
+          const tx = db.transaction('settings', 'readwrite')
+          tx.objectStore('settings').put({ key: 'currentPosition', value: { surah: 2, verse: 1 } })
           tx.oncomplete = () => resolve(undefined)
           tx.onerror = () => resolve(undefined)
         }
@@ -340,6 +341,88 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     // would have called `scrollToVerse(1)` via stale IDB and driven scrollTop
     // back near 0).
     expect(after).toBeGreaterThan(1000)
+  })
+
+  // -------------------------------------------------------------------------
+  // B-Cross: Cross-surah infinite scroll (2026-04-25)
+  //
+  // Reader is single-surah; scrolling past the end of N or top of N swaps
+  // the mounted surah to N+1 / N-1 with wrap (114 ↔ 1). Continue links
+  // provide an explicit affordance; overscroll triggers the same swap.
+  // -------------------------------------------------------------------------
+
+  test('B-Cross1: end-of-surah Continue link swaps to next surah', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    // Scroll to the end so the chunked-append finishes rendering and the
+    // Continue link replaces the surah-end terminator.
+    await page.evaluate(() => {
+      const el = document.getElementById('main-content')
+      if (el) { el.scrollTo(0, el.scrollHeight) }
+    })
+    await expect(page.locator('[data-continue-next]')).toBeVisible({ timeout: 5_000 })
+
+    await page.locator('[data-continue-next]').click()
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/2')
+  })
+
+  test('B-Cross2: top-of-surah Continue link swaps to previous surah', async ({ page }) => {
+    await page.goto('/#/s/2')
+    await waitForReader(page)
+
+    await expect(page.locator('[data-continue-prev]')).toBeVisible()
+    await page.locator('[data-continue-prev]').click()
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/1')
+  })
+
+  test('B-Cross3: forward wrap — Surah 114 Continue link → Surah 1', async ({ page }) => {
+    await page.goto('/#/s/114')
+    await waitForReader(page)
+    await page.evaluate(() => {
+      const el = document.getElementById('main-content')
+      if (el) { el.scrollTo(0, el.scrollHeight) }
+    })
+    await expect(page.locator('[data-continue-next]')).toBeVisible({ timeout: 5_000 })
+    await page.locator('[data-continue-next]').click()
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/1')
+  })
+
+  test('B-Cross4: backward wrap — Surah 1 Continue link → Surah 114', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await expect(page.locator('[data-continue-prev]')).toBeVisible()
+    await page.locator('[data-continue-prev]').click()
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/114')
+  })
+
+  test('B-Cross5: settings.currentPosition is overwritten on swap', async ({ page }) => {
+    await page.goto('/#/s/3')
+    await waitForReader(page)
+    // Allow the initial savePosition to land
+    await page.waitForTimeout(500)
+
+    await expect(page.locator('[data-continue-prev]')).toBeVisible()
+    await page.locator('[data-continue-prev]').click()
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/2')
+
+    // Wait for the new surah to mount and write its position
+    await waitForReader(page)
+    await page.waitForTimeout(800)
+
+    const pos = await page.evaluate(() => new Promise((resolve) => {
+      const open = indexedDB.open('quran-atlas')
+      open.onsuccess = () => {
+        const db = open.result
+        const tx = db.transaction('settings', 'readonly')
+        const req = tx.objectStore('settings').get('currentPosition')
+        req.onsuccess = () => { resolve(req.result?.value ?? null); db.close() }
+        req.onerror = () => { resolve(null); db.close() }
+      }
+      open.onerror = () => resolve(null)
+    }))
+    expect(pos).toBeTruthy()
+    expect(pos.surah).toBe(2)
   })
 
   // -------------------------------------------------------------------------

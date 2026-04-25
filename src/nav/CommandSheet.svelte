@@ -34,7 +34,8 @@
     markCurrent as readerMarkCurrent,
   } from './reader-actions.js'
   import { openShortcutsSheet, isShortcutsSheetOpen } from './shortcuts-sheet.js'
-  import { getMostRecentPosition, get } from '../core/db'
+  import { get } from '../core/db'
+  import { loadGlobalPosition } from '../reader/global-position'
   import { announce } from '../a11y/announcer'
   import { registerCommandSheet } from './command-sheet-bridge'
 
@@ -351,7 +352,7 @@
 
   async function gotoHome(): Promise<void> {
     try {
-      const pos = await getMostRecentPosition()
+      const pos = await loadGlobalPosition()
       if (pos?.surah) {
         window.location.hash = (pos.verse ?? 0) > 1 ? `#/s/${pos.surah}/${pos.verse}` : `#/s/${pos.surah}`
         return

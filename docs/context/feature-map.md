@@ -10,15 +10,16 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 - **Route:** `#/s/:surah`, `#/s/:surah/:ayah`
 - **Entry:** `src/reader/Reader.svelte` (Svelte 5 component; lazy-loaded via `app-bootstrap.ts`)
-- **Files:** `reader/Reader.svelte`, `reader/Verse.svelte`, `reader/SurahHeader.svelte`, `reader/EdgeIndicator.svelte`, `reader/position.ts`, `reader/chunked-append.ts`, `reader/verse-scroll.ts`, `reader/scroll-tracker.ts`, `reader/edge-indicators.ts`, `reader/render-helpers.ts`
-- **Purpose:** Main reading surface. Chunked verse rendering, translation toggle, position persistence, bookmark edge indicators.
+- **Files:** `reader/Reader.svelte`, `reader/Verse.svelte`, `reader/SurahHeader.svelte`, `reader/EdgeIndicator.svelte`, `reader/position.ts`, `reader/global-position.ts`, `reader/surah-swap.ts`, `reader/chunked-append.ts`, `reader/verse-scroll.ts`, `reader/scroll-tracker.ts`, `reader/edge-indicators.ts`, `reader/render-helpers.ts`
+- **Purpose:** Main reading surface. Chunked verse rendering, translation toggle, position persistence, bookmark edge indicators, cross-surah continuation.
 - **Key behaviors:**
   - Loads one surah at a time via `data/dataset.ts::getSurah`.
   - Emits `AMBIENT_SURFACE` on first render, `READER_VERSE_RENDERED` per verse. Reader surah + position is shared through the `reader` state rune (`reader.currentSurahNum`, `reader.currentVerseKey`) rather than events — see `events.md` "Dissolved into rune reads."
   - Listens to `DB_VISIBILITY_VISIBLE` to scroll to last position after tab focus; translation toggle reactive via `settings.translationVisible` rune (`$effect`).
   - `setupLongPress` hook (from `marks/long-press.ts`) wires the single verse gesture: long-press → mark editor (passed as prop from `app-bootstrap.ts`).
   - `initIndicators` hook (from `marks/indicator.ts`) decorates rendered verses with mark indicators.
-- **IDB touch:** reads `positions` (resume), writes `positions` on scroll (sole writer via `reader/position.ts`).
+  - **Cross-surah continuation (2026-04-25):** `← Continue to {prev}` button above the SurahHeader and `Continue to {next} →` button replacing the surah-end terminator (rendered once the last chunk has loaded). Tap or wheel/touch overscroll past either edge fires `swapToSurah` (single-surah swap with wrap 114↔1). See user-journeys §B-Cross.
+- **IDB touch:** writes `settings.currentPosition` on scroll center-band crossings (sole writer via `reader/global-position.ts`); also overwritten on every surah load and swap.
 
 ## Review hub
 
@@ -34,7 +35,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Subscribes to `SYNC_UPDATE_RECEIVED` + `DB_VISIBILITY_VISIBLE` for cross-tab and tab-resume coherence.
   - Desktop (≥1180px): left rail with layer selector + group-by segment + bucket list; main column with filter bar.
   - `openEditor` imported directly from `marks/editor-bridge.ts` (no hooks injection needed).
-- **IDB touch:** reads `marks` (all), reads/writes `positions["review"]` for view state (via `review/state.ts` sole writer).
+- **IDB touch:** reads `marks` (all), reads/writes `meta["review"]` for view state (via `review/state.ts` sole writer).
 
 ## FVR (Filtered-Verse Review)
 
@@ -44,7 +45,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Purpose:** Deep-link view of all marks carrying a specific canonical value in a given layer. Compact centered header (layer label, color dot, value name, verse/surah stats, hairline).
 - **Key behaviors:**
   - `validateLayerParam(layer, value)` from `safety/input-validator.ts` whitelists the layer against `LAYER_NAMES` and canonicalizes the value; invalid params render a "not found" state that announces via `a11y/announcer.ts`.
-  - Writes `settings.lastSurface = '#/<layer>/<value>'` + `positions["review"]` with `view: 'fvr'` via `review/state.ts`.
+  - Writes `settings.lastSurface = '#/<layer>/<value>'` + `meta["review"]` with `view: 'fvr'` via `review/state.ts`.
   - No group controls — shows a flat list under the FVR header.
   - `ReviewCard.svelte` chip links use `#/threads/<tag>` (threads layer only; other layers have no chip row on the card).
 
@@ -172,7 +173,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Purpose:** Mobile/tablet (<1180px) fixed top bar, single row, ~52 px tall. Layout: **hamburger `≡`** · **bilingual surah label** · **settings gear `⚙`**.
 - **Key behaviors:**
   - Hamburger → `toggleNavDrawer()` (Review / About). Toggles open/closed; second tap dismisses (post 2026-04-25). Replaces the retired ⋮ kebab.
-  - Center label tap (no surah in rune, e.g. cold-load on About): resumes via `getMostRecentPosition()` → `#/s/<lastSurah>` (Reader picks per-surah saved verse from `positions` IDB). Falls back to `#/s/1` only if no positions exist. Prior behavior hard-reset to Fatihah verse 1.
+  - Center label tap (no surah in rune, e.g. cold-load on About): resumes via `loadGlobalPosition()` → `#/s/<lastSurah>` (Reader picks the global saved verse from `settings.currentPosition`). Falls back to `#/s/1` only if no global position record exists.
   - Center label: Arabic surah name (top, RTL) + uppercase smallcaps English (bottom, with chevron `▾`). Tap = surah list (or back to last surah if already on surah list). Swipe left/right on label = next/prev surah, clamped 1–114; haptic nudge at boundaries.
   - Swipe down on header = `#/surahs`.
   - Gear: short tap = `openSettingsSheet()`. Long-press ≥400 ms = `cycleTheme()` (parity with keyboard `d`).

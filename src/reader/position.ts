@@ -1,39 +1,30 @@
 /**
  * Reader position tracking — observes scroll, persists last-read verse to
- * the `positions` IDB store, and scrolls to the saved/target verse on load.
+ * the global position record, and scrolls to the target verse on load.
  *
- * `savePosition` is the SOLE writer for the `positions` store (per CLAUDE.md
- * Rule 5). Do not add other IDB writes to that store here or elsewhere.
+ * Persistence is delegated to `./global-position.ts` (sole writer for
+ * `settings.currentPosition`). Per-surah persistence was retired in DB v4
+ * (cross-surah infinite scroll 2026-04-25): only one surah's position is
+ * tracked at a time.
  */
 
-import { get, put } from '../core/db'
 import { emit, on } from '../core/events'
 import { Events } from '../core/constants'
-import { logger } from '../core/logger'
 import type { SurahMeta } from '../data/dataset'
 import { observeScroll, flushDebounce } from './scroll-tracker'
 import { scrollToVerse } from './verse-scroll'
 import { reader } from '../state/reader.svelte'
+import { saveGlobalPosition, loadGlobalPosition } from './global-position'
 
 /**
- * Save reading position to IDB. Sole writer for the `positions` store.
+ * Save reading position to IDB via the global-position writer.
  */
 export async function savePosition(surahNum: number, verse: number): Promise<void> {
   try {
-    await put('positions', {
-      id: `s${surahNum}`,
-      surah: surahNum,
-      verse,
-      savedAt: Date.now(),
-    })
+    await saveGlobalPosition(surahNum, verse)
     reader.currentSurahNum = surahNum
     reader.currentVerseKey = `${surahNum}:${verse}`
   } catch (error) {
-    logger.error('Failed to save position on visibility change:', {
-      surah: surahNum,
-      verse,
-      error,
-    })
     emit(Events.READER_POSITION_SAVE_FAILED, {
       error: error instanceof Error ? error.message : String(error),
       surah: surahNum,
@@ -159,18 +150,16 @@ export function initPositionTracking(opts: PositionTrackingOptions): Array<() =>
   }
 
   // Warm-resume restore (tab hidden → visible without remount, e.g. iOS
-  // lock/unlock). Skip when the tracker already holds the reader state —
-  // the browser preserves scroll on warm resume, and an IDB read here can
-  // race with an in-flight hide-time save and scroll the user back to a
-  // stale verse. Only restore when the tracker is fresh (lastTrackedVerse
-  // still null) and the scroller has collapsed to the top.
+  // lock/unlock). Only restore when the tracker is fresh (lastTrackedVerse
+  // still null) and the scroller is at the top — otherwise the browser-
+  // preserved scroll position is authoritative.
   const unsubVisibility = on(Events.DB_VISIBILITY_VISIBLE, async () => {
     if (currentSurahNum === null || !mainContent) { return }
     if (lastTrackedVerse !== null) { return }
     const scrollerEl = scrollHost
     if (scrollerEl && scrollerEl.scrollTop > 4) { return }
-    const position = await get('positions', `s${currentSurahNum}`)
-    if (position && typeof position.verse === 'number' && position.verse > 1) {
+    const position = await loadGlobalPosition()
+    if (position && position.surah === currentSurahNum && position.verse > 1) {
       graceUntil = Date.now() + GRACE_MS
       scrollToVerse(mainContent, position.verse, ensureVerseRendered)
     }

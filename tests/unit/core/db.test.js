@@ -9,10 +9,12 @@ describe('core/db.js', () => {
   it('opens the database with all stores', async () => {
     const db = await openDB()
     expect(db.objectStoreNames.contains('settings')).toBe(true)
-    expect(db.objectStoreNames.contains('positions')).toBe(true)
+    expect(db.objectStoreNames.contains('meta')).toBe(true)
     expect(db.objectStoreNames.contains('marks')).toBe(true)
     expect(db.objectStoreNames.contains('activationState')).toBe(true)
     expect(db.objectStoreNames.contains('datasetMeta')).toBe(true)
+    // Legacy positions store dropped in DB v4 (cross-surah infinite scroll)
+    expect(db.objectStoreNames.contains('positions')).toBe(false)
   })
 
   it('reads and writes to the settings store', async () => {
@@ -40,35 +42,6 @@ describe('core/db.js', () => {
   })
 
 
-  describe('getMostRecentPosition()', () => {
-    it('returns the most recently saved position', async () => {
-      const { getMostRecentPosition } = await import('../../../src/core/db.js')
-      const { put } = await import('../../../src/core/db.js')
-      await put('positions', { id: 's1', surah: 1, verse: 5, savedAt: 1000 })
-      await put('positions', { id: 's2', surah: 2, verse: 100, savedAt: 2000 })
-      await put('positions', { id: 's3', surah: 3, verse: 10, savedAt: 1500 })
-
-      const result = await getMostRecentPosition()
-      expect(result).toEqual({ id: 's2', surah: 2, verse: 100, savedAt: 2000 })
-    })
-
-    it('returns null when no positions saved', async () => {
-      // Delete all positions first
-      const { getDb } = await import('../../../src/core/db.js')
-      const db = await getDb()
-      const tx = db.transaction('positions', 'readwrite')
-      const store = tx.objectStore('positions')
-      await new Promise((resolve) => {
-        const req = store.clear()
-        req.onsuccess = resolve
-      })
-
-      const { getMostRecentPosition } = await import('../../../src/core/db.js')
-      const result = await getMostRecentPosition()
-      expect(result).toBeNull()
-    })
-  })
-
   describe('validateWrite()', () => {
     it('validates settings store: requires key and value', async () => {
       await expect(validateWrite('settings', { key: 'theme', value: 'dark' })).resolves.toBe(true)
@@ -76,10 +49,9 @@ describe('core/db.js', () => {
       await expect(validateWrite('settings', { value: 'dark' })).rejects.toThrow('missing required field: key')
     })
 
-    it('validates positions store: requires id, surah, verse, savedAt', async () => {
-      await expect(validateWrite('positions', { id: 's1', surah: 1, verse: 5, savedAt: 1000 })).resolves.toBe(true)
-      await expect(validateWrite('positions', { id: 's1', surah: 1, verse: 5 })).rejects.toThrow('missing required field: savedAt')
-      await expect(validateWrite('positions', { surah: 1, verse: 5, savedAt: 1000 })).rejects.toThrow('missing required field: id')
+    it('validates meta store: requires id', async () => {
+      await expect(validateWrite('meta', { id: 'review' })).resolves.toBe(true)
+      await expect(validateWrite('meta', { foo: 'bar' })).rejects.toThrow('missing required field: id')
     })
 
     it('validates marks store: requires verseKey + all layer fields', async () => {

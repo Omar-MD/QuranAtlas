@@ -5,7 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Imports from JS modules — types will be added in a later migration task
-import { openDB, get, getMostRecentPosition, LAYER_NAMES } from './core/db.js'
+import { openDB, get, LAYER_NAMES } from './core/db.js'
+import { loadGlobalPosition } from './reader/global-position'
 import * as router from './core/router.js'
 import { emit, on } from './core/events.js'
 import { Events } from './core/constants.js'
@@ -233,9 +234,9 @@ async function handleLaunchRestore() {
     router.navigate(lastSurfaceVal, { replace: true })
     return
   }
-  const position = await getMostRecentPosition()
+  const position = await loadGlobalPosition()
   if (position) {
-    logger.info('Session restore: most recent position', { surah: position.surah, verse: position.verse })
+    logger.info('Session restore: global position', { surah: position.surah, verse: position.verse })
     router.navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
   } else {
     logger.info('Session restore: default surah 1')

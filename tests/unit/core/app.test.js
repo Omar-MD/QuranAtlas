@@ -20,12 +20,16 @@ function applyDefaultRuntimeMocks() {
   vi.doMock('../../../src/core/db.js', () => ({
     openDB: vi.fn(() => Promise.resolve()),
     get: vi.fn(() => Promise.resolve(null)),
-    getMostRecentPosition: vi.fn(() => Promise.resolve(null)),
     put: vi.fn(() => Promise.resolve()),
     LAYER_NAMES: [
       'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
       'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
     ],
+  }))
+  vi.doMock('../../../src/reader/global-position', () => ({
+    loadGlobalPosition: vi.fn(() => Promise.resolve(null)),
+    saveGlobalPosition: vi.fn(() => Promise.resolve()),
+    clearGlobalPosition: vi.fn(() => Promise.resolve()),
   }))
   vi.doMock('../../../src/nav/command-sheet.js', () => ({
     initCommandSheet: vi.fn(() => Promise.resolve()),
@@ -57,12 +61,17 @@ vi.mock('../../../src/core/router.js', () => ({
 vi.mock('../../../src/core/db.js', () => ({
   openDB: vi.fn(() => Promise.resolve()),
   get: vi.fn(() => Promise.resolve(null)),
-  getMostRecentPosition: vi.fn(() => Promise.resolve(null)),
   put: vi.fn(() => Promise.resolve()),
   LAYER_NAMES: [
     'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
     'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
   ],
+}))
+
+vi.mock('../../../src/reader/global-position', () => ({
+  loadGlobalPosition: vi.fn(() => Promise.resolve(null)),
+  saveGlobalPosition: vi.fn(() => Promise.resolve()),
+  clearGlobalPosition: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('../../../src/nav/command-sheet.js', () => ({
@@ -237,11 +246,15 @@ describe('core/app.js error recovery', () => {
       openDB: vi.fn().mockRejectedValue(new Error('IDB unavailable')),
       get: vi.fn().mockResolvedValue(null),
       put: vi.fn().mockResolvedValue(),
-      getMostRecentPosition: vi.fn().mockResolvedValue(null),
       LAYER_NAMES: [
         'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
         'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
       ],
+    }))
+    vi.doMock('../../../src/reader/global-position', () => ({
+      loadGlobalPosition: vi.fn().mockResolvedValue(null),
+      saveGlobalPosition: vi.fn().mockResolvedValue(),
+      clearGlobalPosition: vi.fn().mockResolvedValue(),
     }))
     vi.doMock('../../../src/nav/command-sheet.js', () => ({ initCommandSheet: vi.fn().mockResolvedValue(), openCommandSheet: vi.fn(), closeCommandSheet: vi.fn(), destroyCommandSheet: vi.fn() }))
     vi.doMock('../../../src/data/offline.js', () => ({
@@ -297,7 +310,7 @@ describe('core/app.js error recovery', () => {
     expect(router.navigate).toHaveBeenCalledWith('#/review', { replace: true })
   })
 
-  it('falls back to the most recent position on launch restore', async () => {
+  it('falls back to the global position on launch restore', async () => {
     vi.resetModules()
     applyDefaultRuntimeMocks()
     await silenceLogger()
@@ -305,7 +318,8 @@ describe('core/app.js error recovery', () => {
 
     const db = await import('../../../src/core/db.js')
     db.get.mockResolvedValue(null)
-    db.getMostRecentPosition.mockResolvedValue({ surah: 2, verse: 255 })
+    const gp = await import('../../../src/reader/global-position')
+    gp.loadGlobalPosition.mockResolvedValue({ surah: 2, verse: 255 })
 
     const events = await import('../../../src/core/events.js')
     const { Events } = await import('../../../src/core/constants.js')
@@ -330,7 +344,8 @@ describe('core/app.js error recovery', () => {
 
     const db = await import('../../../src/core/db.js')
     db.get.mockResolvedValue(null)
-    db.getMostRecentPosition.mockResolvedValue(null)
+    const gp = await import('../../../src/reader/global-position')
+    gp.loadGlobalPosition.mockResolvedValue(null)
 
     const events = await import('../../../src/core/events.js')
     const { Events } = await import('../../../src/core/constants.js')

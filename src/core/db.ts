@@ -6,10 +6,9 @@
 
 import { emit } from './events'
 import { Events } from './constants'
-import { logger } from './logger'
 
 const DB_NAME = 'quran-atlas'
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 let dbPromise: Promise<IDBDatabase> | null = null
 let dbRef: IDBDatabase | null = null
@@ -58,7 +57,7 @@ export interface EdgeRecord {
 
 export type StoreRecords = {
   settings: { key: string; value: unknown }
-  positions: { id: string; surah: number; verse: number; savedAt: number; [k: string]: unknown }
+  meta: { id: string; [k: string]: unknown }
   marks: MarkRecord
   activationState: { id: string; status: string; [k: string]: unknown }
   datasetMeta: { id: string; version?: string; [k: string]: unknown }
@@ -86,10 +85,18 @@ export function openDB(): Promise<IDBDatabase> {
         db.createObjectStore('settings', { keyPath: 'key' })
       }
 
-      // Positions store: keyPath = 'id'
-      if (!db.objectStoreNames.contains('positions')) {
-        const positionsStore = db.createObjectStore('positions', { keyPath: 'id' })
-        positionsStore.createIndex('by-savedAt', 'savedAt')
+      // Drop legacy positions store from v1-v3 (cross-surah infinite scroll
+      // 2026-04-25: per-surah position tracking replaced with single global
+      // position in settings.currentPosition; review-hub state migrated to
+      // the new `meta` store).
+      if (db.objectStoreNames.contains('positions')) {
+        db.deleteObjectStore('positions')
+      }
+
+      // Meta store (v4+): keyPath = 'id'. Holds single-row metadata records
+      // (review-hub state, etc.). Replaces the old `positions` reuse pattern.
+      if (!db.objectStoreNames.contains('meta')) {
+        db.createObjectStore('meta', { keyPath: 'id' })
       }
 
       // Marks store: keyPath = 'verseKey' (v2 — drop + recreate for clean indexes)
@@ -227,7 +234,7 @@ export async function put(storeName: string, value: unknown): Promise<void> {
  */
 const _shapes: Record<string, Record<string, string>> = {
   settings: { key: 'string', value: 'any' },
-  positions: { id: 'string', surah: 'number', verse: 'number', savedAt: 'number' },
+  meta: { id: 'string' },
   marks: {
     verseKey: 'string',
     threads: 'string[]', subjects: 'string[]', audience: 'string[]',
@@ -322,32 +329,3 @@ export async function del(storeName: string, key: IDBValidKey): Promise<void> {
   })
 }
 
-/**
- * Get the most recently saved reading position.
- */
-export async function getMostRecentPosition(): Promise<{ surah: number; verse: number } | null> {
-  try {
-    const db = await getDb()
-    const tx = db.transaction('positions', 'readonly')
-    const store = tx.objectStore('positions')
-    const index = store.index('by-savedAt')
-    const request = index.openCursor(null, 'prev')
-
-    return new Promise((resolve) => {
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result
-        if (cursor) {
-          resolve(cursor.value as { surah: number; verse: number })
-        } else {
-          resolve(null)
-        }
-      }
-      request.onerror = () => resolve(null)
-    })
-  } catch (error) {
-    logger.error('Failed to get most recent position:', {
-      error,
-    })
-    return null
-  }
-}

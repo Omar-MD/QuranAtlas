@@ -37,7 +37,7 @@ async function measureAsync(work) {
 
 beforeEach(async () => {
   await openDB()
-  await clearStores(['marks', 'positions', 'settings'])
+  await clearStores(['marks', 'meta', 'settings'])
 })
 
 const BASE_MARK = {
@@ -62,12 +62,10 @@ describe('IDB operation performance budgets', () => {
     expect(elapsed).toBeLessThan(MARK_MUTATION_BUDGET_MS)
   })
 
-  it('position save completes in under 50ms', async () => {
-    const { elapsed } = await measureAsync(() => put('positions', {
-      id: 's1',
-      surah: 1,
-      verse: 5,
-      savedAt: Date.now(),
+  it('global position save (settings.currentPosition) completes in under 50ms', async () => {
+    const { elapsed } = await measureAsync(() => put('settings', {
+      key: 'currentPosition',
+      value: { surah: 1, verse: 5 },
     }))
 
     expect(elapsed).toBeLessThan(POSITION_SAVE_BUDGET_MS)

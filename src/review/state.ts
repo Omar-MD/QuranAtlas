@@ -1,19 +1,19 @@
 /**
  * Review state persistence.
- * Persists/restores view mode, filters, sort, and grouping to IDB positions["review"].
+ * Persists/restores view mode, filters, sort, and grouping to IDB meta["review"].
  * Written on every state change (immediate, no debounce).
  *
- * Note: Review state is stored in the 'positions' object store with a special id 'review'.
- * This store typically stores reading positions (surah, verse), so we include these fields
- * with dummy values (0) to maintain compatibility. This is an intentional schema reuse
- * to avoid creating a dedicated store for a single record.
+ * SOLE WRITER: This module is the ONLY writer for meta['review'] (CLAUDE.md Rule 5).
  *
- * SOLE WRITER: This module is the ONLY writer for positions['review'] (CLAUDE.md Rule 5).
+ * Stored under the `meta` object store (DB v4+). Pre-v4 the record lived
+ * in `positions['review']` with dummy surah/verse fields; the v4 schema
+ * change (cross-surah infinite scroll 2026-04-25) dropped that store and
+ * relocated this record to `meta`.
  */
 
 import { get, put } from '../core/db'
 
-const POSITION_ID = 'review'
+const RECORD_ID = 'review'
 
 export type ReviewStateRecord = {
   view: string
@@ -44,15 +44,10 @@ export function getDefaultState(): ReviewStateRecord {
 
 /**
  * Save review state to IDB.
- * Note: This stores in the 'positions' store with dummy surah/verse values
- * (0) because the store requires these fields for reading position records.
- * The actual review state is stored in the additional fields.
  */
 export async function save(reviewState: ReviewStateRecord): Promise<void> {
-  await put('positions', {
-    id: POSITION_ID,
-    surah: 0,
-    verse: 0,
+  await put('meta', {
+    id: RECORD_ID,
     savedAt: Date.now(),
     ...reviewState,
   })
@@ -62,7 +57,7 @@ export async function save(reviewState: ReviewStateRecord): Promise<void> {
  * Load review state from IDB.
  */
 export async function load(): Promise<ReviewStateRecord | null> {
-  const record = await get('positions', POSITION_ID)
+  const record = await get('meta', RECORD_ID)
   if (!record) {
     return null
   }

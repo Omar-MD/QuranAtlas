@@ -3,7 +3,8 @@
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
   import { getAll as getAllMarks } from '../marks/store'
-  import { get, getMostRecentPosition } from '../core/db'
+  import { get } from '../core/db'
+  import { loadGlobalPosition } from '../reader/global-position'
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
@@ -105,7 +106,7 @@
     const [fetchedSurahs, marks, lastPosition, recentRec] = await Promise.all([
       getSurahs(),
       getAllMarks().catch(() => []),
-      getMostRecentPosition().catch(() => null),
+      loadGlobalPosition().catch(() => null),
       get('settings', 'recentSurahs').catch(() => undefined),
     ])
 

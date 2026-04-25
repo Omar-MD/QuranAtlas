@@ -13,7 +13,8 @@
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
   import { reader } from '../state/reader.svelte'
-  import { get, getMostRecentPosition } from '../core/db'
+  import { get } from '../core/db'
+  import { loadGlobalPosition } from '../reader/global-position'
   import { getSurahs } from '../data/dataset'
   import { toggleNavDrawer } from './nav-drawer-bridge'
   import { openSettingsSheet } from '../settings/panel-bridge'
@@ -56,7 +57,7 @@
       // Non-reader screen with no in-memory surah (e.g. cold load on About).
       // Resume from the most recent reading position rather than hard-resetting
       // to Fatihah verse 1. Reader picks up the per-surah saved verse from IDB.
-      const pos = await getMostRecentPosition()
+      const pos = await loadGlobalPosition()
       if (pos) {
         window.location.hash = `#/s/${pos.surah}`
         return

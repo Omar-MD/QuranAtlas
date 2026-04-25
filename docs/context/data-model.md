@@ -39,49 +39,38 @@ Plus any other ad-hoc keys a feature introduces. Convention: write `{ key, value
 
 ---
 
-## Store: `positions`
+## Store: `meta`
 
 - **keyPath:** `id` (string)
-- **Indexes:** `by-savedAt` on `savedAt`
-- **Validated fields:** `id` (string), `surah` (number), `verse` (number), `savedAt` (number) — TS interface `PositionRecord` in `core/db.ts`
-- **Written by:** `reader/position.ts`, `review/state.ts`
+- **Validated fields:** `id` (string)
+- **Written by:** `review/state.ts` (sole writer for `meta['review']`)
+- **DB_VERSION:** introduced in v4 (cross-surah infinite scroll, 2026-04-25). Replaces the legacy `positions` store, which previously held both per-surah reading positions and the review-hub state with dummy `surah`/`verse` fields.
 
 ### Known record shapes
 
-Reader position per surah (`id: 's<n>'`):
-
-```ts
-{
-  id: `s${surahNum}`,       // e.g. 's2'
-  surah: number,
-  verse: number,
-  savedAt: number,           // Date.now() — feeds by-savedAt index
-}
-```
-
-Review hub state (`id: 'review'`) — reuses the store with dummy `surah`/`verse` to satisfy the schema:
+Review hub state (`id: 'review'`):
 
 ```ts
 {
   id: 'review',
-  surah: 0,                  // dummy, required by validateWrite
-  verse: 0,                  // dummy, required by validateWrite
   savedAt: number,
   view: 'all' | 'fvr',
   activeTag: string | null,
+  activeLayer: string,
+  activeValue: string | null,
   surahFilter: number | null,
   sortBy: 'updatedAt' | 'createdAt',
   groupBy: 'tag' | 'surah' | 'flat',
 }
 ```
 
-The review-state reuse is intentional — see the comment at the top of `review/state.ts`. It avoids carving out a new store for a single record.
-
 ### Typical queries
 
-- **Resume most recent**: `core/db.ts::getMostRecentPosition` — opens a reverse cursor on `by-savedAt` and returns the first hit. Called in the launch-restore cascade.
-- **Resume specific surah**: `get('positions', 's<n>')` in `reader/position.ts`.
-- **Load review state**: `review/state.ts::load()` → `get('positions', 'review')`.
+- **Load review state**: `review/state.ts::load()` → `get('meta', 'review')`.
+
+### Reading position
+
+Per-surah position records (`positions['s<n>']`) were retired in DB v4. Reading position is now a single global record stored as `settings.currentPosition` (see the `settings` store section). Sole reader/writer: `src/reader/global-position.ts`. The launch-restore cascade calls `loadGlobalPosition()` instead of the removed `getMostRecentPosition`.
 
 ---
 
@@ -278,16 +267,16 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 >
 > - `marks` — written only via `marks/store`. Never `put('marks', …)` directly. Bypassing this breaks `_canon` computation, cross-tab broadcast, and the `MARKS_SAVED` / `MARKS_DELETED` event contracts (see `marks` §Write invariant above).
 > - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
-> - `positions` — written by `reader/position` (via `savePosition()`) and `review/state`.
+> - `meta` — written by `review/state` (sole writer for `meta['review']`).
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
-> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` (`settings/reading-typography`), `nightMode` (`settings/night-mode`).
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `currentPosition` (`reader/global-position`).
 >
 > Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
 
 - **All writes go through `core/db::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
 - **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `safety/sync.ts` shows the reload banner; `settings/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
 - **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
-- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Edge writes broadcast `'edges:changed'` → `SYNC_EDGES_UPDATED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `positions`, extend `safety/sync.ts`.
+- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Edge writes broadcast `'edges:changed'` → `SYNC_EDGES_UPDATED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `meta`, extend `safety/sync.ts`.
 
 ## Adding a new store
 

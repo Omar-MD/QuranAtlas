@@ -209,6 +209,37 @@
     text-transform: uppercase;
   }
 
+  /* Cross-surah continuation links — replace the surah-end terminator at the
+     end of the current surah and prepend at the very top of the surah, so
+     users can swap to adjacent surahs without leaving the reader. */
+  .qa-continue-next,
+  .qa-continue-prev {
+    display: block;
+    width: 100%;
+    margin: 1.5rem 0;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--qa-border-subtle);
+    border-radius: var(--qa-radius-md);
+    background: transparent;
+    color: var(--qa-text-secondary, var(--qa-text-muted));
+    font-size: var(--qa-text-size-meta);
+    font-family: inherit;
+    text-align: center;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background var(--qa-transition-base), color var(--qa-transition-base);
+  }
+
+  .qa-continue-next:hover,
+  .qa-continue-prev:hover,
+  .qa-continue-next:focus-visible,
+  .qa-continue-prev:focus-visible {
+    background: var(--qa-surface-elevated, transparent);
+    color: var(--qa-accent);
+    outline: none;
+  }
+
+
   /* Edge indicators — body-appended imperative nodes (edge-indicators.ts). */
   .qa-edge-indicator {
     position: fixed;

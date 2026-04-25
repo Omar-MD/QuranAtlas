@@ -16,6 +16,14 @@
   import { initPositionTracking, teardownPositionTracking, savePosition } from './position'
   import { observeNewVerses } from './scroll-tracker'
   import { isValidSurahNum } from './render-helpers'
+  import {
+    nextSurah,
+    prevSurah,
+    swapToSurah,
+    consumeSwapAnchor,
+    setupOverscrollSwap,
+    type SwapAnchor,
+  } from './surah-swap'
 
   // ---------------------------------------------------------------------------
   // Props — route params + hooks injected from app-bootstrap.ts
@@ -45,7 +53,7 @@
 
   let surahData = $state<SurahData | null>(null)
   let surahMeta = $state<SurahMeta | null>(null)
-  let savedPosition = $state<{ verse: number } | null>(null)
+  let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
   let translationVisible = $state(settings.translationVisible ?? true)
   let verses = $state<VerseItem[]>([])
@@ -56,6 +64,13 @@
 
   let container: HTMLElement | null = $state(null)
   let cleanups: Array<() => void> = []
+
+  // Captured at mount: 'top' for forward swaps and fresh entry, 'bottom'
+  // for backward swaps so the user emerges from the previous surah's end.
+  let swapAnchor: SwapAnchor = 'top'
+
+  const prevMeta = $derived(allSurahs.find(s => s.n === prevSurah(surahNum)) ?? null)
+  const nextMeta = $derived(allSurahs.find(s => s.n === nextSurah(surahNum)) ?? null)
 
   // ---------------------------------------------------------------------------
   // Reactive translation toggle — keep in sync with settings rune after load
@@ -128,19 +143,21 @@
       return
     }
 
+    // Capture the swap anchor stashed by the prior swapToSurah() call (if
+    // any). Forward swaps anchor to 'top'; backward swaps to 'bottom'.
+    swapAnchor = consumeSwapAnchor()
+
     // Update shared reader state
     reader.currentSurahNum = surahNum
     const initialVerse = ayahParam ? parseInt(ayahParam, 10) : 1
     const initialVerseSafe = Number.isFinite(initialVerse) ? initialVerse : 1
     reader.currentVerseKey = `${surahNum}:${initialVerseSafe}`
 
-    // Deep link (#/s/N/V) → persist that verse immediately so other surfaces
-    // pick it up even if the user never scrolls. Plain #/s/N must NOT write
-    // — it would clobber a previously saved scroll position with verse 1 and
-    // cause the reader to jump back to the top on navigate-away-and-back.
-    if (ayahParam) {
-      void savePosition(surahNum, initialVerseSafe)
-    }
+    // Always persist the global position to (surah, initialVerse) on entry
+    // — single-position model means landing on a surah overwrites any prior
+    // surah's saved verse. Backward swaps overwrite later in loadSurah once
+    // the terminal verse is known.
+    void savePosition(surahNum, initialVerseSafe)
 
     void loadSurah()
 
@@ -171,14 +188,13 @@
     try {
       performance.mark('reader:fetch-start')
 
-      const [data, surahs, transVisible, pos] = await Promise.all([
+      const [data, surahs, transVisible] = await Promise.all([
         getSurah(surahNum),
         getSurahs(),
         get('settings', 'translationVisible').then((r) => {
           const v = r?.value
           return typeof v === 'boolean' ? v : true
         }),
-        get('positions', `s${surahNum}`),
       ])
 
       clearTimeout(timeoutId)
@@ -191,19 +207,9 @@
 
       surahData = data
       surahMeta = surahs.find((s) => s.n === surahNum) ?? null
+      allSurahs = surahs
       translationVisible = transVisible
       settings.translationVisible = transVisible
-
-      const posVerse = typeof pos?.verse === 'number' ? pos.verse : null
-      savedPosition = posVerse ? { verse: posVerse } : null
-
-      // First-visit seed: if no prior record exists, write verse 1 so other
-      // surfaces (continue-reading card, ambient pill) can surface this surah
-      // even if the user never scrolls. Subsequent visits preserve the real
-      // saved position — see the onMount comment.
-      if (posVerse === null && !ayahParam) {
-        void savePosition(surahNum, 1)
-      }
 
       // Render first chunk
       verses = []
@@ -226,13 +232,27 @@
       requestAnimationFrame(() => {
         if (!container) { return }
 
+        // Backward swap: expand all chunks then anchor scroll at the bottom
+        // so the user sees the previous surah's terminal verse.
+        if (swapAnchor === 'bottom' && surahData) {
+          ensureVerseRendered(surahData.ar.length)
+          requestAnimationFrame(() => {
+            if (shellScroller) {
+              shellScroller.scrollTop = shellScroller.scrollHeight
+            }
+            if (surahData) {
+              void savePosition(surahNum, surahData.ar.length)
+            }
+          })
+        }
+
         const posCleanups = initPositionTracking({
           mainContent: container,
           scroller: document.getElementById('main-content') ?? undefined,
           surahNum,
           shouldSavePosition: true,
           surahMeta: surahMeta ?? undefined,
-          savedPosition,
+          savedPosition: null,
           targetVerse: targetVerse ?? null,
           totalVerseCount: surahData?.ar.length ?? 0,
           ensureVerseRendered,
@@ -242,6 +262,15 @@
 
         // Set up chunked append scroll listener
         cleanups.push(setupChunkedAppend(container, appendChunk))
+
+        // Wire cross-surah overscroll swap (forward + backward, with wrap)
+        if (shellScroller) {
+          cleanups.push(setupOverscrollSwap({
+            scroller: shellScroller,
+            onForward: () => swapToSurah(nextSurah(surahNum), 'top'),
+            onBackward: () => swapToSurah(prevSurah(surahNum), 'bottom'),
+          }))
+        }
 
         // Wire hooks (indicators + long-press). initIndicators handles its own
         // initial mark-cache load + decoration now that READER_SURAH_LOADED is gone.
@@ -306,6 +335,15 @@
       </div>
     {/if}
 
+    {#if prevMeta}
+      <button
+        type="button"
+        class="qa-continue-prev"
+        data-continue-prev=""
+        onclick={() => swapToSurah(prevSurah(surahNum), 'bottom')}
+      >← Continue to {prevMeta.name}</button>
+    {/if}
+
     <SurahHeader {surahNum} meta={surahMeta} />
 
     {#each verses as v (v.key)}
@@ -317,7 +355,16 @@
       />
     {/each}
 
-    <div class="qa-surah-end" data-surah-end="">End of {surahMeta.name}</div>
+    {#if renderedCount === (surahData?.ar.length ?? 0) && nextMeta}
+      <button
+        type="button"
+        class="qa-continue-next"
+        data-continue-next=""
+        onclick={() => swapToSurah(nextSurah(surahNum), 'top')}
+      >Continue to {nextMeta.name} →</button>
+    {:else}
+      <div class="qa-surah-end" data-surah-end="">End of {surahMeta.name}</div>
+    {/if}
   </div>
 {/if}
 

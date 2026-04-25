@@ -140,7 +140,7 @@ On the reader.
 1. Tap the number circle on any verse → thin accent bars appear at the verse's row on both viewport edges (~1.6s).
 2. Pill label updates to the tapped verse.
 
-**Surfaces:** Reader, Ambient pill. **Persistence:** `positions.s<n>` updated (savedAt + verse).
+**Surfaces:** Reader, Ambient pill. **Persistence:** `settings.currentPosition` updated (single global record; see B-Cross).
 
 ### B4. Non-reader routes → persistent dock, no pill
 
@@ -165,11 +165,22 @@ The reader renders a single centered column (max ~1080px). Each verse stacks Ara
 
 Reader is deep in a surah.
 
-1. Lock screen / switch tabs → `visibilitychange` fires with hidden → `persistOnExit` flushes the tracker's pending verse and writes it to `positions.s<n>`.
+1. Lock screen / switch tabs → `visibilitychange` fires with hidden → `persistOnExit` flushes the tracker's pending verse and writes it to `settings.currentPosition`.
 2. Unlock / return to tab → `visibilitychange` fires with visible → `DB_VISIBILITY_VISIBLE` is emitted, but the reader's handler restores scroll **only** when the tracker is fresh (no `lastTrackedVerse`) AND the scroller has collapsed to the top. Otherwise the browser's preserved scroll is trusted.
 3. Stale IDB values (e.g. a prior write the hide-time save hadn't replaced yet) never force-scroll an already-scrolled reader back to an earlier verse.
 
-**Surfaces:** Reader. **Persistence:** `positions.s<n>` on hide; read on fresh-mount restore only. **Regression guard:** `tests/e2e/journey-b-reader.spec.js` §B7.
+**Surfaces:** Reader. **Persistence:** `settings.currentPosition` on hide; read on fresh-mount restore only. **Regression guard:** `tests/e2e/journey-b-reader.spec.js` §B7.
+
+### B-Cross. Cross-surah infinite scroll (forward + backward, with wrap)
+
+Reader is single-surah; only one surah is mounted at a time. Scrolling past the end of N (or top of N) swaps the mounted surah to N+1 / N-1 with wrap (114 ↔ 1).
+
+1. **Forward swap.** At the end of surah N: a "Continue to {next.name} →" button replaces the "End of {meta.name}" terminator once the last chunk has rendered. Tapping it — or wheel/touch overscrolling past the bottom — fires `swapToSurah(nextSurah(N), 'top')` → URL becomes `#/s/{N+1}` → Reader remounts at `scrollTop=0`.
+2. **Backward swap.** Above the SurahHeader: a "← Continue to {prev.name}" button is always present. Tapping it — or wheel/touch overscrolling past the top — fires `swapToSurah(prevSurah(N), 'bottom')` → URL becomes `#/s/{N-1}` → Reader remounts and anchors `scrollTop=scrollHeight` so the user emerges from the previous surah's terminal verse.
+3. **Wrap.** Surah 114 forward → surah 1; surah 1 backward → surah 114.
+4. **Position persistence is single-global.** Each surah load overwrites `settings.currentPosition` to (newN, 1) or (newN, lastVerse) on backward; in-surah scroll center-band crossings overwrite it as the user reads.
+
+**Surfaces:** Reader. **Persistence:** `settings.currentPosition` (overwritten on every swap). **Regression guard:** `tests/e2e/journey-b-reader.spec.js` §B-Cross1–§B-Cross5.
 
 ### B6. Auto theme follows OS
 
@@ -467,7 +478,7 @@ On surah list.
 1. With search cleared and All filter active → Continue-reading card shows at top with the last-read position.
 2. Tap → navigates to that surah + verse.
 
-**Persistence:** read from most recent `positions.s<n>` via `getMostRecentPosition`.
+**Persistence:** read from `settings.currentPosition` via `loadGlobalPosition`.
 
 ### F6. Keyboard navigation
 

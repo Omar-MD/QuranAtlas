@@ -48,14 +48,14 @@ describe('db.js typedef shape validation', () => {
     await expect(db.put('marks', rec)).resolves.not.toThrow()
   })
 
-  it('rejects a positions record with missing required field', async () => {
-    const bad = { id: 's1', surah: 1 } // missing verse, savedAt
-    await expect(db.put('positions', bad)).rejects.toThrow()
+  it('rejects a meta record with missing required field id', async () => {
+    const bad = { foo: 'bar' }
+    await expect(db.put('meta', bad)).rejects.toThrow(/id/i)
   })
 
-  it('accepts a valid positions record', async () => {
-    const good = { id: 's1', surah: 1, verse: 1, savedAt: Date.now() }
-    await expect(db.put('positions', good)).resolves.not.toThrow()
+  it('accepts a valid meta record', async () => {
+    const good = { id: 'review', view: 'all', savedAt: Date.now() }
+    await expect(db.put('meta', good)).resolves.not.toThrow()
   })
 
   it('accepts any type for settings.value (validates the "any" path)', async () => {

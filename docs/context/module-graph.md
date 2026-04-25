@@ -164,23 +164,27 @@ graph LR
 - **Role:** First-run 5-screen walkthrough (Svelte component). `Onboarding.svelte` exports `isComplete()` and `markComplete()` from its module script for use by the boot-time redirect in `app-bootstrap.ts`. Writes `settings.onboardingComplete`. `screens.ts` is pure data (shortcut rows, sample chips).
 
 ### `reader/`
-- **Files:** `Reader.svelte`, `Verse.svelte`, `SurahHeader.svelte`, `EdgeIndicator.svelte`, `render-helpers.ts`, `chunked-append.ts`, `verse-scroll.ts`, `position.ts`, `edge-indicators.ts`, `scroll-tracker.ts`
+- **Files:** `Reader.svelte`, `Verse.svelte`, `SurahHeader.svelte`, `EdgeIndicator.svelte`, `render-helpers.ts`, `chunked-append.ts`, `verse-scroll.ts`, `position.ts`, `global-position.ts`, `surah-swap.ts`, `edge-indicators.ts`, `scroll-tracker.ts`
 - **Imports from:** `a11y`, `core`, `data`, `state`
-- **Imported by:** `app-bootstrap.ts` *(route handler — dynamic import via `Reader.svelte`)*
+- **Imported by:** `app-bootstrap.ts` *(route handler — dynamic import via `Reader.svelte`; also static import of `global-position.ts` for launch restore)*; `nav/CommandSheet.svelte`, `nav/MarginHeader.svelte`, `surahs/SurahList.svelte` (each statically import `global-position.ts`).
 - **Role:** Main reading surface (Svelte 5), split into focused modules:
-  - `Reader.svelte` — route component: surah load, chunked-append loop wiring, position tracking lifecycle, hook wiring (`initIndicators`, `setupLongPress` via props from `app-bootstrap.ts`).
+  - `Reader.svelte` — route component: surah load, chunked-append loop wiring, position tracking lifecycle, hook wiring (`initIndicators`, `setupLongPress` via props from `app-bootstrap.ts`), Continue links + cross-surah swap (`surah-swap.ts`).
   - `Verse.svelte` — single verse row: Arabic text + number circle, translation, `READER_VERSE_RENDERED` emit on mount.
   - `SurahHeader.svelte` — surah header card + conditional basmala.
   - `EdgeIndicator.svelte` — left/right fixed edge cue elements that flash on verse-number tap and emit `AMBIENT_SURFACE`.
   - `render-helpers.ts` — pure formatting helpers: `shouldRenderBasmala`, `formatSurahMeta`, `formatArabicSurahName`, `makeVerseKey`, `isValidSurahNum`.
   - `chunked-append.ts` — scroll listener; calls `appendChunk` callback when near bottom. Owns `CHUNK_SIZE`.
   - `verse-scroll.ts` — `scrollVerseIntoView` alignment (3-rAF reflow) and `scrollToVerse` with optional `ensureVerseRendered` callback.
-  - `position.ts` — scroll/IntersectionObserver position tracking, `visibilitychange` flush, `DB_VISIBILITY_VISIBLE` re-scroll, deep-link target-verse handling. `savePosition` is the **sole writer** for the `positions` IDB store (CLAUDE.md Rule 5).
+  - `position.ts` — scroll/IntersectionObserver position tracking, `visibilitychange` flush, `DB_VISIBILITY_VISIBLE` re-scroll, deep-link target-verse handling. Delegates persistence to `global-position.ts`.
+  - `global-position.ts` — **sole writer** for `settings.currentPosition` (CLAUDE.md Rule 5). Single global record (current surah + verse), supersedes the legacy per-surah `positions` store dropped in DB v4.
+  - `surah-swap.ts` — cross-surah swap orchestration: `nextSurah`/`prevSurah` wrap math (114↔1), `setupOverscrollSwap` wheel/touch detector, `swapToSurah` + `consumeSwapAnchor` (anchor stash so backward swaps land at scrollHeight).
   - `edge-indicators.ts` — imperative edge indicator module (used outside of Svelte context if needed).
   - `scroll-tracker.ts` — `observeScroll` / `observeNewVerses`; computes the currently-visible verse.
 - **Internal imports:**
-  - `Reader.svelte` → `Verse`, `SurahHeader`, `EdgeIndicator`, `render-helpers`, `chunked-append`, `position`, `state/reader`, `state/settings`
-  - `position.ts` → `scroll-tracker`, `verse-scroll`, `core/db`, `core/events`, `core/logger`
+  - `Reader.svelte` → `Verse`, `SurahHeader`, `EdgeIndicator`, `render-helpers`, `chunked-append`, `position`, `surah-swap`, `state/reader`, `state/settings`
+  - `position.ts` → `scroll-tracker`, `verse-scroll`, `global-position`, `core/events`, `state/reader`
+  - `global-position.ts` → `core/db`, `core/logger`, `state/settings`
+  - `surah-swap.ts` → *(no internal reader imports — standalone)*
   - `verse-scroll.ts` → *(no internal reader imports — standalone)*
   - `chunked-append.ts` → *(no internal reader imports — standalone)*
   - `edge-indicators.ts` → `core`, `state` only
@@ -196,7 +200,7 @@ graph LR
 - **Files:** `Hub.svelte`, `ReviewCard.svelte`, `state.ts`
 - **Imports from:** `a11y`, `core` (including `LAYER_NAMES`, `LayerName` from `core/db.ts`), `data`, `marks`, `safety` (`validateLayerParam`), `state`
 - **Imported by:** `app-bootstrap.ts` *(lazy-loaded for `#/review` and `#/<layer>/:value` FVR routes — one route per `LAYER_NAMES` entry)*
-- **Role:** Svelte component routes. Both the review hub (12-layer filter) and FVR live in `Hub.svelte` — branches on whether the `layer` + `value` props are present. `ReviewCard.svelte` is the per-mark card (async verse content loaded on mount); chip links use `#/threads/<tag>`. `state.ts` is the **sole writer** for `positions["review"]` (CLAUDE.md Rule 5) — persists view/activeLayer/activeValue/filter/sort/groupBy.
+- **Role:** Svelte component routes. Both the review hub (12-layer filter) and FVR live in `Hub.svelte` — branches on whether the `layer` + `value` props are present. `ReviewCard.svelte` is the per-mark card (async verse content loaded on mount); chip links use `#/threads/<tag>`. `state.ts` is the **sole writer** for `meta["review"]` (CLAUDE.md Rule 5) — persists view/activeLayer/activeValue/filter/sort/groupBy.
 
 ### `safety/`
 - **Files:** `input-validator.ts`, `sync.ts`

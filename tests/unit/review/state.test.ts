@@ -4,12 +4,12 @@ import { save, load, getDefaultState } from '../../../src/review/state'
 
 beforeEach(async () => {
   await openDB()
-  await del('positions', 'review')
+  await del('meta', 'review')
 })
 
 describe('review/state.ts', () => {
   describe('save()', () => {
-    it('writes review state to positions["review"]', async () => {
+    it('writes review state to meta["review"]', async () => {
       await save({
         view: 'all',
         activeTag: null,
@@ -20,7 +20,7 @@ describe('review/state.ts', () => {
         groupBy: 'surah',
       })
 
-      const record = await get('positions', 'review')
+      const record = await get('meta', 'review')
       expect(record?.id).toBe('review')
       expect((record as Record<string, unknown>)?.sortBy).toBe('updatedAt')
       expect((record as Record<string, unknown>)?.groupBy).toBe('surah')
