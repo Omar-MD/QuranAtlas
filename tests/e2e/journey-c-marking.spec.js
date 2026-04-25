@@ -2,12 +2,12 @@
  * E2E Journey C: Verse marking (TagSheet)
  *
  * Covers:
- *   C1. Long-press / right-click → open TagSheet (happy path, a11y, keyboard)
+ *   C1. Double-tap / right-click → open TagSheet (happy path, a11y, keyboard)
  *   C2. Add tag via layer combobox suggestion; click chip removes it
  *   C3. Add a new tag inline (type + Enter commits)
  *   C4. Note + save → verify IDB write + gold edge
  *   C5. Delete → undo toast → tap Undo restores mark
- *   C6. Right-click and long-press open ONLY TagSheet (no competing surfaces)
+ *   C6. Right-click and double-tap open ONLY TagSheet (no competing surfaces)
  *   C7. Multi-layer round-trip: threads + audience tags persist across reopen
  *
  * Sources of truth:
@@ -21,7 +21,7 @@
 
 import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, seedMarks, getMarkFromIdb } from './fixtures/idb.js'
-import { waitForReader, longPress } from './fixtures/chrome.js'
+import { waitForReader, doubleTap } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // ---------------------------------------------------------------------------
@@ -37,10 +37,10 @@ async function openTagSheetViaRightClick(page) {
   await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 }
 
-/** Long-press a verse, then click ⛶ to reach the deep TagSheet. */
-async function openTagSheetViaLongPress(page, verseLocator) {
+/** Double-tap a verse, then click ⛶ to reach the deep TagSheet. */
+async function openTagSheetViaDoubleTap(page, verseLocator) {
   const v = verseLocator ?? page.locator('.qa-verse').first()
-  await longPress(v)
+  await doubleTap(v)
   await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
   await page.locator('.qa-vtp-escalate').click()
   await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
@@ -75,14 +75,14 @@ test.describe('Journey C: Verse marking', () => {
   })
 
   // -------------------------------------------------------------------------
-  // C1. Happy path — long-press opens TagSheet
+  // C1. Happy path — double-tap opens TagSheet
   // -------------------------------------------------------------------------
 
-  test('C1: long-press verse opens TagSheet (via ⛶) with correct structure', async ({ page }) => {
+  test('C1: double-tap verse opens TagSheet (via ⛶) with correct structure', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible({ timeout: 5_000 })
 
-    await openTagSheetViaLongPress(page, firstVerse)
+    await openTagSheetViaDoubleTap(page, firstVerse)
 
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 5_000 })
@@ -127,15 +127,15 @@ test.describe('Journey C: Verse marking', () => {
   })
 
   // -------------------------------------------------------------------------
-  // C1 (post-redesign 2026-04-25). Long-press / right-click open the
+  // C1 (post-redesign 2026-04-25). Double-tap / right-click open the
   // FAST-TAG inline panel, not the deep TagSheet. Editor reachable only
   // via ⛶ escalation. Regression guard for mobile-nav-redesign spec §3.
   // -------------------------------------------------------------------------
 
-  test('C1: long-press opens fast-tag inline panel, not TagSheet', async ({ page }) => {
+  test('C1: double-tap opens fast-tag inline panel, not TagSheet', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible({ timeout: 5_000 })
-    await longPress(firstVerse)
+    await doubleTap(firstVerse)
 
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     await expect(page.locator('.qa-ts')).toHaveCount(0)
@@ -156,7 +156,7 @@ test.describe('Journey C: Verse marking', () => {
 
   test('C: ⛶ button in fast-tag panel opens deep TagSheet', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
-    await longPress(firstVerse)
+    await doubleTap(firstVerse)
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
 
     const escalate = page.locator('.qa-vtp-escalate')
@@ -170,7 +170,7 @@ test.describe('Journey C: Verse marking', () => {
 
   test('C: ✕ close button in fast-tag panel ends session (mobile exit)', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
-    await longPress(firstVerse)
+    await doubleTap(firstVerse)
     const panel = page.locator('.qa-vtp')
     await expect(panel).toBeVisible({ timeout: 5_000 })
 
@@ -182,24 +182,18 @@ test.describe('Journey C: Verse marking', () => {
     await expect(panel).toHaveCount(0, { timeout: 3_000 })
   })
 
-  test('C: long-press on the active fast-tag verse exits the session', async ({ page }) => {
-    const firstVerse = page.locator('.qa-verse').first()
-    await longPress(firstVerse)
-    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
-
-    // Second long-press on the same verse → session ends.
-    await longPress(firstVerse)
-    await expect(page.locator('.qa-vtp')).toHaveCount(0, { timeout: 3_000 })
-  })
-
-  test('C: long-press on a different verse switches the active verse, does NOT exit', async ({ page }) => {
+  test('C: double-tap on a different verse switches the active verse, panel stays open', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').nth(0)
     const secondVerse = page.locator('.qa-verse').nth(1)
-    await longPress(firstVerse)
+    await doubleTap(firstVerse)
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
 
-    // Long-press a different verse → panel still visible (switched, not exited).
-    await longPress(secondVerse)
+    // Double-tap a different verse → panel still visible (switched, not exited).
+    // The old long-press contract had a "press same verse twice → exit" rule;
+    // retired with the gesture switch since a double-tap fires onShort on its
+    // first tap (already switching the active verse), making "same verse →
+    // exit" fire spuriously. Mobile exits via the ✕ button only.
+    await doubleTap(secondVerse)
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 3_000 })
   })
 
@@ -352,7 +346,7 @@ test.describe('Journey C: Verse marking', () => {
   // C6. Only TagSheet opens — no competing surfaces
   // -------------------------------------------------------------------------
 
-  test('C6: right-click and long-press each open ONLY the fast-tag panel (⛶ → TagSheet)', async ({ page }) => {
+  test('C6: right-click and double-tap each open ONLY the fast-tag panel (⛶ → TagSheet)', async ({ page }) => {
     let dialogFired = false
     page.on('dialog', () => { dialogFired = true })
 
@@ -373,8 +367,8 @@ test.describe('Journey C: Verse marking', () => {
     await page.keyboard.press('Escape')
     await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 3_000 })
 
-    // Path 2: touch long-press → fast-tag panel (same invariant)
-    await longPress(firstVerse)
+    // Path 2: touch double-tap → fast-tag panel (same invariant)
+    await doubleTap(firstVerse)
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
   })

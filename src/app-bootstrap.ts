@@ -26,22 +26,24 @@ import { tagSession } from './state/tag-session.svelte'
 import { registerEditor } from './marks/editor-bridge'
 
 // Bind tap gestures to the reader container:
-//   short-tap  → only while fast-tag mode is open: switch the active verse
-//                being tagged. Does NOT start a new session from an idle tap.
-//   long-press → fast-tag inline panel (mobile-nav-redesign 2026-04-25).
+//   short-tap   → only while fast-tag mode is open: switch the active verse
+//                 being tagged. Does NOT start a new session from an idle tap.
+//   double-tap  → open the fast-tag inline panel (replaces long-press since
+//                 2026-04-25 — long-press is reserved for OS-native gestures
+//                 like text selection and the iOS callout).
 // Deep editor reached only via ⛶ in VerseTagPanel + programmatic bridges.
 function setupLongPress(container: HTMLElement): () => void {
   return setupTapGestures(container, {
     onShort: (vk) => {
       if (tagSession.quickbarOpen) { void beginFast(vk) }
     },
-    onLong: (vk) => {
-      // Long-press on the verse already in fast-tag mode → exit (mobile has
-      // no Esc key; this complements the explicit ✕ in VerseTagPanel).
-      if (tagSession.quickbarOpen && tagSession.verseKey === vk) {
-        tagSession.end()
-        return
-      }
+    onDouble: (vk) => {
+      // Open fast-tag, or switch the active verse if another is already in
+      // session. The toggle-to-exit behavior of the old long-press contract
+      // doesn't translate to double-tap: a tap-then-double-tap on a *new*
+      // verse already calls onShort first (which switches the active verse),
+      // so a "same verse → exit" rule would fire spuriously. Mobile exits
+      // via the explicit ✕ in VerseTagPanel.
       void beginFast(vk)
     },
   })

@@ -48,7 +48,7 @@ Full, in-app reference is the `?` cheatsheet (see G3). Summary:
 - `Esc` — close
 
 **Gestures**
-- Long-press a verse — open mark editor (touch parity with `m`)
+- Double-tap a verse — open mark editor (touch parity with `m`)
 
 ---
 
@@ -65,7 +65,7 @@ Screens: 1) Welcome, 2) Theme, 3) Translation, 4) Shortcuts (new), 5) Tags intro
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears.
 4. Pick a theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Translation): the options are derived from the shipped dataset's `provenance.json`. Today the corpus bundles a single translation (Bridges' Translation by Fadel Soliman), so one option is listed and auto-selected; the lede reads "This translation ships offline with the app." If the dataset ever bundles multiple translations, the screen lists all of them with the first as default.
 5. Tap **Continue** → Screen 4 (Shortcuts). (When multiple translations are available, pick one first.)
-6. Screen 4 teaches core shortcuts: `/` search; `?` full cheatsheet; `j` / `k` / `]` / `[` verse/surah nav; `m` mark; `t` translation toggle; `+` / `-` / `0` font; `g h` continue reading; long-press to mark. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 5 (Tags intro).
+6. Screen 4 teaches core shortcuts: `/` search; `?` full cheatsheet; `j` / `k` / `]` / `[` verse/surah nav; `m` mark; `t` translation toggle; `+` / `-` / `0` font; `g h` continue reading; double-tap to mark. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 5 (Tags intro).
 7. Screen 5: 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, `#/s/1`, ambient chrome returns.
 
 **Surfaces:** Onboarding → Reader. **Persistence:** `settings.theme`, `settings.translationId`, `settings.onboardingComplete`.
@@ -78,7 +78,7 @@ Screens: 1) Welcome, 2) Theme, 3) Translation, 4) Shortcuts (new), 5) Tags intro
 
 Screen 4 of the onboarding flow (see A1).
 
-1. Shown after translation selection; lists 9 curated rows: `/`, `?`, `j`/`k` verse nav, `]`/`[` surah nav, `m` mark, `t` translation, `+`/`-`/`0` font, `g h` continue reading, long-press gesture. Lede reminds users they can press `?` anywhere for the full list.
+1. Shown after translation selection; lists 9 curated rows: `/`, `?`, `j`/`k` verse nav, `]`/`[` surah nav, `m` mark, `t` translation, `+`/`-`/`0` font, `g h` continue reading, double-tap gesture. Lede reminds users they can press `?` anywhere for the full list.
 2. Desktop (≥1180px) shows rows in a 2-column grid; mobile stacks in single column.
 3. Tap **Continue** → Screen 5 (Tags intro).
 
@@ -124,7 +124,7 @@ On the reader.
 **Desktop variant:** On viewports ≥1180px, the reader renders as a single centered column capped at ~1080px. Each verse stacks Arabic (justified, RTL — fills the full column width and wraps naturally) on top, translation below. Toggling Hide translation in Settings simply hides the translation block; the column width is unchanged.
 
 
-**Desktop variant (≥1180px):** Ambient dock is a 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah} : {verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Surah list reached via ⋯ → drawer (no Surah-list item), command sheet, or `G`+`S` shortcut (not a rail tab). Bottom-center pill is gone; **TagModePill retired 2026-04-25** — desktop fast-tag entry is now via right-click on a verse, same as mobile long-press.
+**Desktop variant (≥1180px):** Ambient dock is a 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah} : {verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows a parchment tooltip to the right. Surah list reached via ⋯ → drawer (no Surah-list item), command sheet, or `G`+`S` shortcut (not a rail tab). Bottom-center pill is gone; **TagModePill retired 2026-04-25** — desktop fast-tag entry is now via right-click on a verse, same as mobile double-tap.
 
 **Mobile / tablet variant (<1180px) — single-row redesign 2026-04-25, drawer overhauled 2026-04-25:** Ambient dock is hidden entirely. Primary navigation is `MarginHeader` at the top, ~52 px tall — left **hamburger ≡** opens the nav drawer, center **bilingual surah label** (Arabic name on top, uppercase smallcaps English below — no chevron post-overhaul), right **settings gear ⚙**. No second-row tabs, no kebab, no fast-tag dot. Header auto-hides on scroll down and reveals on scroll up or any `AMBIENT_SURFACE` emit. `#main-content` reserves ~56 px of top padding. **Gestures:** **tap label = no-op** (surah list lives in drawer); swipe left/right on label = next/prev surah (clamped 1–114); swipe down on header = `openNavDrawer('surahs')` (no longer hash navigation); tap gear = settings sheet; long-press gear ≥400 ms = cycle theme (parity with keyboard `d`). **Regression guard:** `tests/e2e/journey-b-reader.spec.js` 'mobile margin header is a single row, ≤ 60 px tall' + `tests/e2e/journey-f-navigation.spec.js` `F-mobile-5` (center label tap is a no-op).
 
@@ -153,18 +153,18 @@ On the reader.
 
 **Surfaces:** Ambient dock, Ambient pill.
 
-### B5. Typography live preview (font size · line spacing · word spacing · margins · verse spacing)
+### B5. Typography live preview (font size · reading flow)
 
 From Settings sheet → **Typography** row → Typography subview (see D1, D5).
 
-1. Drag any of the five sliders → corresponding `settings.*` writes through `font-size.ts` / `reading-typography.ts` → reader updates live (font-size emits `SETTINGS_FONT_SIZE_CHANGED`; the other four update via `<html data-*>` attribute change picked up by CSS attribute selectors — no events).
+1. Two sliders only — **Font size** and **Reading flow**. Reading flow is a coordinated knob that drives line spacing, word spacing, reader margins, and verse spacing all at the same step (xs/sm/md/lg/xl). Drag → font-size emits `SETTINGS_FONT_SIZE_CHANGED`; reading-flow writes the four IDB keys via `reading-typography.ts::setReadingFlow` → CSS attribute selectors on `<html data-line-spacing|data-word-spacing|data-reader-margin|data-verse-spacing>` re-render the reader live.
 2. Live preview line at the top of the subview reflects the change immediately.
-3. On mobile the **Margins** slider drives `.qa-verse` horizontal padding (xs ≈ edge-to-edge, xl gives wide gutters); `#main-content` drops its outer 1rem horizontal padding when reader content is present so the slider owns the full inset budget. **Verse spacing** drives `.qa-verse` vertical padding everywhere.
+3. On mobile, the reading-flow slider's margin component drives `.qa-verse` horizontal padding via `--qa-verse-pad-x` (xs ≈ edge-to-edge, xl wide gutters); `#main-content` drops its outer 1rem horizontal padding when reader content is present so the slider owns the full inset budget. The vertical-spacing component drives `.qa-verse` padding via `--qa-verse-pad-y` everywhere.
 
 **Surfaces:** Settings sheet (Typography subview), Reader.
 
 **Desktop variant (viewport ≥1180px):**
-The reader renders a single centered column (max ~1080px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below (no separator line). Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
+The reader renders a single centered column (max ~1080px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below (no separator line). Toggling translation off in Settings hides the translation block; column width is unchanged. Double-tap works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
 
 ### B7. Scroll position survives warm-resume (iOS lock / tab-hide)
 
@@ -201,28 +201,28 @@ From Settings sheet with Auto swatch selected.
 
 ## C. Marking a verse
 
-### C1. Long-press → fast-tag inline panel
+### C1. Double-tap → fast-tag inline panel
 
 On the reader (post 2026-04-25 mobile-nav-redesign — was deep mark editor).
 
-1. Long-press a verse (touch) or right-click a verse (desktop) → `beginFast(verseKey)` → the fast-tag inline panel (`reader/VerseTagPanel.svelte`) renders inside that verse below the translation.
+1. Double-tap a verse (touch) or right-click a verse (desktop) → `beginFast(verseKey)` → the fast-tag inline panel (`reader/VerseTagPanel.svelte`) renders inside that verse below the translation.
 2. Verse gains the active-state treatment (left-edge accent bracket, "tagging" dot in verse head). No persistence until a chip is toggled.
 
 The deep TagSheet (12-layer editor) is reachable **only** through the panel's `⛶` escalation button or the `⌘/Ctrl+Enter` keyboard shortcut. Programmatic bridges (Review hub) still call `editor-bridge::openEditor`, which routes via `app-bootstrap` to `openDeep`.
 
-**Surfaces:** Reader, Fast-tag inline panel. **Persistence:** none until first chip toggle. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C1: long-press opens fast-tag inline panel, not TagSheet' + 'C1: right-click opens fast-tag inline panel, not TagSheet'.
+**Surfaces:** Reader, Fast-tag inline panel. **Persistence:** none until first chip toggle. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C1: double-tap opens fast-tag inline panel, not TagSheet' + 'C1: right-click opens fast-tag inline panel, not TagSheet'.
 
 ### C1b. Fast-tag inline panel
 
 On the reader.
 
-1. **Entry points (post 2026-04-25):** long-press verse (touch), right-click verse (desktop), keyboard `m` on centered verse, command-sheet "Mark this verse" (F2). All four call `beginFast(verseKey)`. The retired `MarginHeader` fast-tag dot and desktop `TagModePill` no longer exist.
+1. **Entry points (post 2026-04-25):** double-tap verse (touch), right-click verse (desktop), keyboard `m` on centered verse, command-sheet "Mark this verse" (F2). All four call `beginFast(verseKey)`. The retired `MarginHeader` fast-tag dot and desktop `TagModePill` no longer exist.
 2. The verse gains the active-state treatment: left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in the verse head.
 3. The fast-tag panel (`reader/VerseTagPanel.svelte`) renders inline inside the active verse, below the translation: one row per layer group (Speech / Narrative / Themes / Entities — all four always rendered, every layer reachable) of `#value` chips colored by layer hue, plus a `+ add` affordance per group and a muted regenerate icon top-right. Tap a chip to toggle — selections debounce-save to IDB after 350 ms via `marks/store::save`. Click `+ add` to swap in an inline input. The input **requires** an explicit `<prefix>:<value>` — the prefix autofills as the user types (e.g. typing `s` in Speech fills `speaker:` with the completion selected, typing `q` fills `quoted:`, typing `d` in Entities fills `divine:`). The next keystroke either accepts the completion or replaces it. Aliases live in `data/tag-layers::LAYER_PREFIXES`; autofill logic in `autofillPrefix`, commit parse in `parseLayeredValue`. If the prefix doesn't resolve to a layer in the group, or the value is empty, commit is refused (red underline + error state). Enter commits, Escape cancels.
 4. **Switch active verse while session is open:** short-tap any other verse in the reader → the session's target verse swaps to the tapped one (`beginFast(newKey)`), the panel re-renders inside the new active verse. A short-tap while the session is *closed* does nothing (no auto-start from verse tap).
-5. **Exit the session.** Three paths: (a) tap the `✕` close button top-right of the panel (sole exit affordance on mobile, no Esc key); (b) press `Escape` (desktop); (c) long-press the active verse a second time. Long-press on a *different* verse switches the active verse rather than exiting. All three call `tagSession.end()` → state resets, verse returns to normal styling, panel unmounts.
+5. **Exit the session.** Two paths: (a) tap the `✕` close button top-right of the panel (sole exit affordance on mobile, no Esc key); (b) press `Escape` (desktop). Double-tap on a *different* verse switches the active verse rather than exiting. The old long-press "press same verse twice → exit" rule was retired with the 2026-04-25 gesture switch — a double-tap fires onShort on its first tap (already switching the active verse), so a "same verse → exit" rule would fire spuriously. Both paths call `tagSession.end()` → state resets, verse returns to normal styling, panel unmounts.
 
-**Surfaces:** Reader, Fast-tag inline panel (`reader/VerseTagPanel.svelte`). **Persistence:** `marks` store via debounced save. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C: ⛶ button in fast-tag panel opens deep TagSheet' + 'C: ✕ close button …' + 'C: long-press on the active fast-tag verse exits the session' + 'C: long-press on a different verse switches the active verse, does NOT exit'.
+**Surfaces:** Reader, Fast-tag inline panel (`reader/VerseTagPanel.svelte`). **Persistence:** `marks` store via debounced save. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C: ⛶ button in fast-tag panel opens deep TagSheet' + 'C: ✕ close button …' + 'C: double-tap on a different verse switches the active verse, panel stays open'.
 
 **Panel escalation:** `⌘/Ctrl + Enter` keyboard shortcut OR tap the `⛶` button top-right of the panel (replaces the retired "regenerate" placeholder) → `openDeep(verseKey)` → deep TagSheet. No "accept all" button — chip toggles and inline add are the only mutations from this surface.
 
@@ -271,12 +271,12 @@ Inside mark editor on an existing mark.
 
 **Surfaces:** Mark editor, core undo toast, Reader. **Persistence:** delete then re-insert on undo.
 
-### C6. Long-press has no alternative gesture
+### C6. Double-tap has no alternative gesture
 
-1. Right-click or long-press a verse → only the **fast-tag inline panel** opens (post 2026-04-25 redesign).
+1. Right-click or double-tap a verse → only the **fast-tag inline panel** opens (post 2026-04-25 redesign).
 2. No browser context menu, no multi-action sheet, no preview popover, no deep sheet.
 
-This is a cross-cutting rule, not a feature — preserved intentionally. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C6: right-click and long-press each open ONLY the fast-tag panel (⛶ → TagSheet)'.
+This is a cross-cutting rule, not a feature — preserved intentionally. **Regression guard:** `tests/e2e/journey-c-marking.spec.js` 'C6: right-click and double-tap each open ONLY the fast-tag panel (⛶ → TagSheet)'.
 
 ### C7. Multi-layer tag round-trip
 
@@ -289,7 +289,7 @@ Inside mark editor, new mark.
 
 **Surfaces:** Mark editor, Reader (indicator). **Persistence:** `marks[verseKey].threads`, `marks[verseKey].audience`.
 
-> **Invariant (formerly `CLAUDE.md` Rule 4) — reframed 2026-04-25.** The **fast-tag inline panel** is the sole per-verse action surface. Long-press, right-click, keyboard `m`, and the command sheet's "Mark this verse" (F2) all route to it via `beginFast(verseKey)`. The deep TagSheet is reachable **only** via the panel's `⛶` escalation, the `⌘/Ctrl+Enter` keyboard shortcut, or programmatic bridges (Review hub via `editor-bridge::openEditor`). Do **not** introduce a contextual menu, multi-action sheet, or preview popover as an alternative per-verse action surface. The verse-number tap (B3) surfaces edge indicators only — that's a navigation affordance, not a per-verse action, and is unaffected.
+> **Invariant (formerly `CLAUDE.md` Rule 4) — reframed 2026-04-25.** The **fast-tag inline panel** is the sole per-verse action surface. Double-tap, right-click, keyboard `m`, and the command sheet's "Mark this verse" (F2) all route to it via `beginFast(verseKey)`. The deep TagSheet is reachable **only** via the panel's `⛶` escalation, the `⌘/Ctrl+Enter` keyboard shortcut, or programmatic bridges (Review hub via `editor-bridge::openEditor`). Do **not** introduce a contextual menu, multi-action sheet, or preview popover as an alternative per-verse action surface. The verse-number tap (B3) surfaces edge indicators only — that's a navigation affordance, not a per-verse action, and is unaffected.
 
 ---
 
@@ -299,7 +299,7 @@ Inside mark editor, new mark.
 
 Post 2026-04-25 mobile-nav-redesign (was More sheet → Settings).
 
-1. **Mobile (<1180px):** tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet opens. Long-press gear ≥400 ms cycles theme without opening the sheet.
+1. **Mobile (<1180px):** tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet opens. Double-tap gear ≥400 ms cycles theme without opening the sheet.
 2. **Desktop (≥1180px):** navigate to `#/settings` (e.g. via `G`+`P` shortcut or command sheet "Preferences") → Settings sheet opens.
 3. Sheet content (post 2026-04-25): theme swatches, **Typography** nav row (opens subview — see D5), Reading section (translation toggle + picker link).
 
@@ -309,17 +309,17 @@ Post 2026-04-25 mobile-nav-redesign (was More sheet → Settings).
 
 **Font size keyboard shortcuts** still work outside the subview: `⌘↑` (Mac) / `Ctrl+↑` (others) bumps up; `⌘↓` / `Ctrl+↓` bumps down; announced to screen readers. Guarded against focused inputs.
 
-### D5. Typography subview (font size · line spacing · word spacing · margins · verse spacing)
+### D5. Typography subview (font size · reading flow)
 
 Inside Settings sheet, post 2026-04-25.
 
-1. Tap the **Typography** row on the main Settings view → subview opens. Subtitle reads `Default` when all five values are `md`, otherwise a compact summary like `Aa lg · ↕ md · ↔ xs · ⇔ md · ⇕ lg`.
+1. Tap the **Typography** row on the main Settings view → subview opens. Subtitle reads `Default` when both knobs are `md`, otherwise a compact summary like `Aa lg · ↕ xl`.
 2. Subview top: live preview block (one Arabic verse + translation line) wrapped in the reader's column rules so margin and spacing changes are visible inside the sheet.
-3. Five sliders, each 5-step (xs / sm / md / lg / xl) — Font size, Line spacing, Word spacing, Margins, Verse spacing. Drag → respective IDB key writes (`fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`) → CSS attribute selectors on `<html>` (and the `--qa-font-size-base` var for font size) re-render the reader live. **Margins** drives `.qa-verse` horizontal padding via `--qa-verse-pad-x` (mobile: full edge control; desktop: still a max-width cap on the column). **Verse spacing** drives `.qa-verse` vertical padding via `--qa-verse-pad-y`.
-4. **Reset to default** appears below the sliders only when at least one of the five ≠ `md`. Tap → all five return to `md` and the button hides.
+3. Two sliders, each 5-step (xs / sm / md / lg / xl) — **Font size** and **Reading flow**. Font size writes `fontSize` IDB key. Reading flow is a coordinated knob: a single drag writes all four spacing keys (`lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`) to the same step via `setReadingFlow(step)`. CSS attribute selectors on `<html data-…>` (and `--qa-font-size-base` for font size) re-render the reader live. The four IDB keys remain individually-addressable so a future advanced view can split them again.
+4. **Reset to default** appears below the sliders only when at least one knob ≠ `md`. Tap → font size + all four flow keys return to `md` and the button hides.
 5. Back arrow returns to main Settings view; subtitle reflects new state.
 
-**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`, `settings.verseSpacing`. **Sole writer (line/word/margin/verse-spacing):** `src/settings/reading-typography.ts`. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D5: …' set + `tests/unit/settings/reading-typography.test.ts`.
+**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`, `settings.verseSpacing`. **Sole writer (line/word/margin/verse-spacing):** `src/settings/reading-typography.ts` — UI exposes only the `setReadingFlow` aggregator. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D5: …' set + `tests/unit/settings/reading-typography.test.ts`.
 
 ### D2. Pick a translation
 
@@ -511,7 +511,7 @@ Post 2026-04-25 mobile-nav-redesign — was More sheet → About.
 From any non-text-input context.
 
 1. Press `?` → bottom sheet slides up titled "Keyboard shortcuts".
-2. Sheet lists every binding grouped into 4 sections: Universal, Go to, Reader, Command sheet — plus the long-press gesture row.
+2. Sheet lists every binding grouped into 4 sections: Universal, Go to, Reader, Command sheet — plus the double-tap gesture row.
 3. Tap backdrop, tap `×`, or press `Esc` → sheet closes; focus returns to the prior surface. No persistence.
 
 **Surfaces:** any route → Shortcuts sheet.
@@ -544,7 +544,7 @@ With the service worker active and the dataset cached.
 
 Two tabs open on `#/s/1`.
 
-1. Tab A long-presses 1:5 → saves a mark → `broadcastMarkChange(['1:5'])` fires.
+1. Tab A double-taps 1:5 → saves a mark → `broadcastMarkChange(['1:5'])` fires.
 2. Tab B's `safety/sync.ts` receives → emits `SYNC_UPDATE_RECEIVED { verseKeys: ['1:5'] }`.
 3. Tab B's reader indicator refreshes → gold edge appears on 1:5 without reload.
 
@@ -577,15 +577,15 @@ First-level parent sheet from the dock's ⋯ button. Held five rows: Settings ·
 
 ### B1/C1b (legacy). MarginHeader two-row layout + fast-tag dot — retired 2026-04-25 in commit daaff6b
 
-Mobile/tablet header was ~108 px tall: row 1 = surah crumb pill + circular fast-tag dot + ⋮ kebab; row 2 = Read · Review N · Marks · Threads tabs (two of which stubbed to `#/review`). Replaced by single-row layout (~52 px) — hamburger · bilingual surah label · settings gear. Fast-tag entry moved to long-press / right-click on a verse.
+Mobile/tablet header was ~108 px tall: row 1 = surah crumb pill + circular fast-tag dot + ⋮ kebab; row 2 = Read · Review N · Marks · Threads tabs (two of which stubbed to `#/review`). Replaced by single-row layout (~52 px) — hamburger · bilingual surah label · settings gear. Fast-tag entry moved to double-tap / right-click on a verse.
 
 ### C1/C1b (legacy). TagModePill — retired 2026-04-25 in commit ba94d8d
 
 Desktop-only top-right "Tag mode" toggle pill. Replaced by the unified gesture model: right-click any verse to start fast-tag at all breakpoints. `TagModeToggle.svelte` (Fast/Deep mini-pill) was already orphaned and deleted in the same commit.
 
-### C1 (legacy). Long-press → mark editor — flipped 2026-04-25 in commit 818001b
+### C1 (legacy). Double-tap → mark editor — flipped 2026-04-25 in commit 818001b
 
-Long-press / right-click / keyboard `m` previously opened the deep mark editor (`tag/TagSheet`). Now opens the fast-tag inline panel (`reader/VerseTagPanel`) via `beginFast(verseKey)`. Deep editor reachable only via the panel's `⛶` escalation, `⌘+Enter`, or programmatic bridges (Review hub).
+Double-tap / right-click / keyboard `m` previously opened the deep mark editor (`tag/TagSheet`). Now opens the fast-tag inline panel (`reader/VerseTagPanel`) via `beginFast(verseKey)`. Deep editor reachable only via the panel's `⛶` escalation, `⌘+Enter`, or programmatic bridges (Review hub).
 
 ### D4 (legacy). Clear data in Settings sheet / More sheet — moved 2026-04-25 in commit 0890a53
 

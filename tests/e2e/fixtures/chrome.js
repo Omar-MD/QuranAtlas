@@ -89,48 +89,46 @@ export async function openCommandSheet(page) {
 }
 
 /**
- * Simulate a long-press by dispatching TouchEvent sequences via evaluate.
+ * Simulate a double-tap by dispatching two TouchEvent pairs ~120ms apart.
+ * Replaces the long-press gesture for opening the fast-tag panel
+ * (mobile-nav-redesign 2026-04-25 — long-press was retired so OS-native
+ * gestures like text selection / iOS callouts could surface unblocked).
+ *
  * The gesture code in src/marks/long-press.ts listens for touchstart/touchend,
- * not mousedown/pointerdown, so mouse.down() doesn't trigger it.
- * Scrolls the element into view first so elementFromPoint returns the correct target.
+ * not mousedown/pointerdown, so mouse.down() doesn't trigger it. Scrolls the
+ * element into view first so elementFromPoint returns the correct target.
  */
-export async function longPress(locator) {
+export async function doubleTap(locator) {
   await locator.scrollIntoViewIfNeeded()
   const box = await locator.boundingBox()
   const x = Math.round(box.x + box.width / 2)
   const y = Math.round(box.y + box.height / 2)
 
-  const hit = await locator.page().evaluate(([cx, cy]) => {
-    const el = document.elementFromPoint(cx, cy)
-    if (!el) {
-      return false
-    }
-    window.__lpTarget = el
-    const touch = new Touch({ identifier: 1, target: el, clientX: cx, clientY: cy, pageX: cx, pageY: cy, screenX: cx, screenY: cy })
-    el.dispatchEvent(new TouchEvent('touchstart', {
-      bubbles: true, cancelable: true,
-      touches: [touch], targetTouches: [touch], changedTouches: [touch],
-    }))
-    return true
-  }, [x, y])
-  if (!hit) {
-    throw new Error(`longPress: no element at (${x}, ${y})`)
+  async function tap(cx, cy) {
+    const hit = await locator.page().evaluate(([cx, cy]) => {
+      const el = document.elementFromPoint(cx, cy)
+      if (!el) { return false }
+      const touch = new Touch({ identifier: 1, target: el, clientX: cx, clientY: cy, pageX: cx, pageY: cy, screenX: cx, screenY: cy })
+      el.dispatchEvent(new TouchEvent('touchstart', {
+        bubbles: true, cancelable: true,
+        touches: [touch], targetTouches: [touch], changedTouches: [touch],
+      }))
+      el.dispatchEvent(new TouchEvent('touchend', {
+        bubbles: true, cancelable: true,
+        touches: [], targetTouches: [], changedTouches: [touch],
+      }))
+      return true
+    }, [cx, cy])
+    if (!hit) { throw new Error(`doubleTap: no element at (${cx}, ${cy})`) }
   }
 
-  // Semantic hold duration — the app's long-press threshold is 500ms (see
-  // src/marks/long-press.ts:LONG_PRESS_MS).  550ms gives a 10% buffer without
-  // being a wait-for-state we could replace with auto-waiting.
-  await locator.page().waitForTimeout(550)
-
-  await locator.page().evaluate(() => {
-    const el = window.__lpTarget
-    if (!el) {
-      return
-    }
-    delete window.__lpTarget
-    el.dispatchEvent(new TouchEvent('touchend', {
-      bubbles: true, cancelable: true,
-      touches: [], targetTouches: [], changedTouches: [],
-    }))
-  })
+  await tap(x, y)
+  // Inter-tap delay must stay under setupTapGestures' DOUBLE_TAP_MS (300ms).
+  await locator.page().waitForTimeout(120)
+  await tap(x, y)
 }
+
+// Back-compat alias — older specs imported `longPress`. The gesture they
+// drive now is double-tap, so the name is misleading. Re-export points at
+// `doubleTap`; new specs should import the canonical name directly.
+export const longPress = doubleTap

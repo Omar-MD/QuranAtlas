@@ -22,7 +22,7 @@
 
 import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
-import { waitForReader, longPress } from './fixtures/chrome.js'
+import { waitForReader, doubleTap } from './fixtures/chrome.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -65,8 +65,8 @@ test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reloa
     // Tab B should NOT have the gold edge before Tab A acts
     await expect(verse1_5_B).not.toHaveClass(/qa-verse--bookmarked/)
 
-    // Tab A: long-press 1:5 → fast-tag panel → ⛶ → TagSheet (post 2026-04-25)
-    await longPress(verse1_5_A)
+    // Tab A: double-tap 1:5 → fast-tag panel → ⛶ → TagSheet (post 2026-04-25)
+    await doubleTap(verse1_5_A)
     await expect(pageA.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     await pageA.locator('.qa-vtp-escalate').click()
     const tagSheet = pageA.locator('.qa-ts')
