@@ -25,6 +25,7 @@ export const Events = {
   OFFLINE_INSTALL_COMPLETE: 'offline:install-complete',
   APP_INIT_ERROR: 'app:init-error',
   APP_READY_FOR_DOWNLOAD: 'app:ready-for-download',
+  APP_UPDATE_AVAILABLE: 'app:update-available',
   SETTINGS_THEME_CHANGED: 'settings:theme-changed',
   SETTINGS_DATA_CLEARED: 'settings:data-cleared',
   SETTINGS_FONT_SIZE_CHANGED: 'settings:font-size-changed',
@@ -71,6 +72,7 @@ export type EventPayloads = {
   'offline:install-complete': Record<string, never>
   'app:init-error': { error: Error; context?: string }
   'app:ready-for-download': Record<string, never>
+  'app:update-available': Record<string, never>
   'settings:theme-changed': { from: string; to: string }
   'settings:data-cleared': Record<string, never>
   'settings:font-size-changed': { size: string }

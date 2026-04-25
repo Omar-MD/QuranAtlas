@@ -26,6 +26,7 @@
 @import url('./animations.css');
 @import url('./utilities.css');
 @import url('./surfaces/quota-banner.css');
+@import url('./surfaces/update-banner.css');
 @import url('./surfaces/modal.css');
 @import url('./surfaces/sheet.css');
 @import url('./surfaces/app-shell.css');

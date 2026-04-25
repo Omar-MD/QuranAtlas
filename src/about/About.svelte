@@ -85,7 +85,9 @@
         </button>
       </section>
     {/if}
-    <p class="qa-about-version-line">v{__APP_VERSION__}</p>
+    <p class="qa-about-version-line" data-testid="about-version">
+      v{__APP_VERSION__} · <span class="qa-about-version-sha">{__BUILD_SHA__}</span>
+    </p>
   </div>
 </div>
 

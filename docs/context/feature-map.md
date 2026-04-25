@@ -99,6 +99,17 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Dismissal: backdrop tap, swipe-left, ✕ button, Esc.
   - Wordmark in header is non-interactive — About reached via the list item.
 
+## Update banner (rolled-out new build)
+
+- **Entry:** `src/core/UpdateBanner.svelte` (Svelte component, mounted persistently in `App.svelte`).
+- **Files:** `core/UpdateBanner.svelte`, `core/constants.ts` (event), `app-bootstrap.ts` (`registerServiceWorker` listens for `updatefound` + `applyAppUpdate` exported), `styles/surfaces/update-banner.css`.
+- **Purpose:** Notify the user when a new build was rolled out so they don't keep using a cached version. Surfaces on `Events.APP_UPDATE_AVAILABLE` (emitted when the SW reaches `installed` state with an existing controller).
+- **Key behaviors:**
+  - **Reload** button calls `applyAppUpdate()` → posts `SKIP_WAITING` to the waiting SW → reloads on `controllerchange`.
+  - **✕** dismisses the banner without reloading (state persists until next update).
+  - Hidden on dev builds (SW only registered in `import.meta.env.PROD`).
+- **Build identity:** version + short commit SHA shown on About page footer (`v<X.Y.Z> · <sha>`) and logged to console on boot. Both injected at build time via Vite `define` (`__APP_VERSION__`, `__BUILD_SHA__`, `__BUILD_TIME__` — see `vite.config.js`; vitest mirrors with `'test'` SHA).
+
 ## About
 
 - **Route:** `#/about`

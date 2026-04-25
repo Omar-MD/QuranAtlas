@@ -7,6 +7,7 @@
   import { refreshForSurah } from './marks/indicator'
   import UndoToast from './core/ui.svelte'
   import QuotaBanner from './core/quota-banner.svelte'
+  import UpdateBanner from './core/UpdateBanner.svelte'
   import Panel from './settings/Panel.svelte'
   import ClearDataConfirm from './settings/ClearDataConfirm.svelte'
   import AmbientDock from './nav/AmbientDock.svelte'
@@ -103,6 +104,7 @@
 <MarginHeader />
 <UndoToast />
 <QuotaBanner />
+<UpdateBanner />
 <Panel />
 <ClearDataConfirm />
 <CommandSheet />

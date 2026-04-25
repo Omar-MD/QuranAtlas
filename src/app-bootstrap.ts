@@ -67,6 +67,15 @@ export async function initBootstrap(): Promise<Array<() => void>> {
 
   performance.mark('app:start')
 
+  // Build banner — visible in devtools so the active build is unambiguous
+  // even when the About page isn't open. Mirrors the version shown there.
+  // eslint-disable-next-line no-console
+  console.info(
+    `%cQuranAtlas v${__APP_VERSION__} · ${__BUILD_SHA__}`,
+    'color:#b08040;font-weight:600',
+    `(built ${__BUILD_TIME__})`
+  )
+
   // Route `openEditor` calls (long-press, command-sheet, review) to the
   // TagSheet deep path. TagSheet subscribes to tagSession.sheetOpen.
   registerEditor((vk) => { void openDeep(vk) })
@@ -237,12 +246,38 @@ async function handleLaunchRestore() {
 /**
  * Register the service worker.
  * Skipped in dev mode — SW is only meaningful in production builds.
+ *
+ * Detects when a new SW version is waiting (rolled-out new release) and
+ * emits APP_UPDATE_AVAILABLE so the UpdateBanner can prompt the user.
  */
+let _swReg: ServiceWorkerRegistration | null = null
+
 async function registerServiceWorker() {
   if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     try {
-      await navigator.serviceWorker.register('/sw.js', {
+      const reg = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
+      })
+      _swReg = reg
+
+      // If a new SW is already waiting at register time (e.g. user opens a
+      // new tab while a previous tab installed the new version), surface
+      // immediately.
+      if (reg.waiting && navigator.serviceWorker.controller) {
+        emit(Events.APP_UPDATE_AVAILABLE, {})
+      }
+
+      // New version found while this tab is open: wait for the installing
+      // SW to reach 'installed' state with an existing controller (= the
+      // new build is fully ready, just waiting to activate).
+      reg.addEventListener('updatefound', () => {
+        const installing = reg.installing
+        if (!installing) { return }
+        installing.addEventListener('statechange', () => {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            emit(Events.APP_UPDATE_AVAILABLE, {})
+          }
+        })
       })
     } catch (error) {
       logger.error('SW registration failed:', {
@@ -252,6 +287,26 @@ async function registerServiceWorker() {
       showOfflineBanner()
     }
   }
+}
+
+/**
+ * User-initiated app update: tell the waiting SW to activate, then reload
+ * once it takes control. Called from UpdateBanner.
+ */
+export async function applyAppUpdate(): Promise<void> {
+  const reg = _swReg ?? (await navigator.serviceWorker.getRegistration())
+  if (!reg?.waiting) {
+    // No waiting SW (already activated, or banner stale) — just reload.
+    location.reload()
+    return
+  }
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) { return }
+    reloaded = true
+    location.reload()
+  })
+  reg.waiting.postMessage({ type: 'SKIP_WAITING' })
 }
 
 /**

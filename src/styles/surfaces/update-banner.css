@@ -1,0 +1,72 @@
+@layer surfaces {
+  /* ==========================================================================
+     update-banner — new build rolled out, prompt user to reload.
+
+     Rendered by src/core/UpdateBanner.svelte (mounted persistently in
+     App.svelte). Surfaces on Events.APP_UPDATE_AVAILABLE (emitted by
+     app-bootstrap when a waiting SW is detected with an active controller).
+     ========================================================================== */
+  .qa-update-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--qa-z-sheet);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    background: var(--qa-accent-soft);
+    border-bottom: 1px solid var(--qa-accent);
+    color: var(--qa-text-on-sheet);
+    font-size: var(--qa-text-size-meta);
+    line-height: 1.4;
+    box-shadow: var(--qa-elevation-sm);
+  }
+
+  .qa-update-banner-text {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .qa-update-banner-action {
+    padding: 4px 12px;
+    border: 1px solid var(--qa-accent);
+    border-radius: var(--qa-radius-sm);
+    background: var(--qa-accent);
+    color: var(--qa-text-on-accent);
+    font: inherit;
+    font-size: var(--qa-text-size-meta);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .qa-update-banner-action:hover,
+  .qa-update-banner-action:focus-visible {
+    background: var(--qa-accent-hover);
+  }
+
+  .qa-update-banner-action:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  .qa-update-banner-dismiss {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: var(--qa-radius-circle);
+    background: transparent;
+    color: var(--qa-text-on-sheet);
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .qa-update-banner-dismiss:hover,
+  .qa-update-banner-dismiss:focus-visible {
+    background: color-mix(in srgb, var(--qa-text-on-sheet) 8%, transparent);
+  }
+}

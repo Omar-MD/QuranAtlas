@@ -133,6 +133,15 @@ test.describe('Journey G: About', () => {
     await expect(drawer).not.toBeVisible({ timeout: 3_000 })
   })
 
+  test('G: About footer shows version + commit SHA', async ({ page }) => {
+    await page.goto('/#/about')
+    const version = page.getByTestId('about-version')
+    await expect(version).toBeVisible({ timeout: 5_000 })
+    const text = await version.innerText()
+    // Format: "v<semver> · <sha>" — sha is short (>=3 hex chars) or "dev" / "test".
+    expect(text).toMatch(/^v\d+\.\d+\.\d+\s+·\s+([a-f0-9]{3,}|dev|test)$/i)
+  })
+
   test('G: tapping label on About after reading 67 resumes #/s/67 (not Fatihah)', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'header label is mobile chrome only')
