@@ -566,13 +566,6 @@
     max-width: 100%;
   }
 
-  .qa-mh-chevron {
-    width: 10px;
-    height: 10px;
-    color: var(--qa-text-on-sheet-dim);
-    flex-shrink: 0;
-  }
-
   .qa-mh-wordmark {
     font-weight: 600;
     letter-spacing: 0.04em;
