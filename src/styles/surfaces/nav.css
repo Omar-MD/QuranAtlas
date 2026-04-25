@@ -650,7 +650,9 @@
 }
 
 /* ---------------------------------------------------------------------------
-   NavDrawer — mobile + desktop left-slide drawer (replaces MoreSheet 2026-04-25).
+   NavDrawer — mobile (<1180px) full-screen tabbed surface; desktop side-panel.
+   Mobile: Surahs (search + filter pills + auto-scrolled list) and Review (Hub
+   row + 12 grouped layer rows) tabs. Header wordmark routes to About.
    --------------------------------------------------------------------------- */
 
 .qa-nav-drawer-backdrop {
@@ -661,14 +663,23 @@
 }
 
 .qa-nav-drawer {
-  position: fixed; top: 0; left: 0; bottom: 0;
-  width: min(80vw, 320px);
+  position: fixed;
+  top: 0; left: 0; bottom: 0; right: 0;
   background: var(--qa-surface-sheet, var(--qa-bg-surface, #fff));
   color: var(--qa-text, inherit);
   display: flex; flex-direction: column;
   z-index: 61;
   box-shadow: 4px 0 24px rgb(0 0 0 / 18%);
   animation: qa-nav-drawer-in 180ms ease-out;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (min-width: 1180px) {
+  .qa-nav-drawer {
+    right: auto;
+    width: min(80vw, 360px);
+  }
 }
 
 .qa-nav-drawer-hdr {
@@ -678,8 +689,25 @@
 }
 
 .qa-nav-drawer-wordmark {
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  display: inline-flex; align-items: center; gap: 7px;
+  background: transparent; border: 0; padding: 6px 4px;
+  cursor: pointer; color: inherit;
+  font-weight: 600; letter-spacing: 0.04em;
+  font-size: 15px;
+}
+.qa-nav-drawer-wordmark:focus-visible {
+  outline: 2px solid var(--qa-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.qa-nav-drawer-info {
+  width: 18px; height: 18px;
+  border: 1px solid var(--qa-accent);
+  border-radius: 50%;
+  color: var(--qa-accent);
+  font-size: 11px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgb(176 138 78 / 10%);
 }
 
 .qa-nav-drawer-close {
@@ -688,24 +716,162 @@
   color: inherit;
 }
 
-.qa-nav-drawer-list {
-  display: flex; flex-direction: column;
-  padding: 8px 0;
+/* Tabs */
+.qa-nav-drawer-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--qa-border-on-sheet, rgb(0 0 0 / 8%));
+}
+.qa-nav-drawer-tab {
+  flex: 1; padding: 12px 0;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  background: transparent; border: 0;
+  color: var(--qa-text-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+.qa-nav-drawer-tab--on {
+  color: var(--qa-text);
+  border-bottom-color: var(--qa-accent);
+  font-weight: 600;
 }
 
-.qa-nav-drawer-item {
-  background: transparent; border: 0; cursor: pointer;
-  text-align: left;
-  padding: 14px 20px;
-  font-size: 16px;
-  color: inherit;
+.qa-nav-drawer-tab-body {
+  flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;
+}
+.qa-nav-drawer-review-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: block;
 }
 
-.qa-nav-drawer-item:focus-visible,
-.qa-nav-drawer-item:hover {
-  background: var(--qa-bg-hover, rgb(0 0 0 / 4%));
+/* Surahs tab */
+.qa-nav-drawer-search {
+  display: flex; align-items: center; gap: 8px;
+  margin: 10px 14px 4px;
+  padding: 9px 12px;
+  background: rgb(0 0 0 / 4%);
+  border-radius: 8px;
+}
+.qa-nav-drawer-search-icon { color: var(--qa-text-muted); font-size: 14px; }
+.qa-nav-drawer-search-input {
+  flex: 1;
+  background: transparent; border: 0; outline: 0;
+  font-family: inherit; font-size: 14px; color: inherit;
 }
 
+.qa-nav-drawer-pills {
+  display: flex; gap: 6px;
+  padding: 4px 14px 8px;
+}
+.qa-nav-drawer-pill {
+  padding: 5px 11px;
+  border-radius: 99px;
+  font-size: 11px;
+  background: rgb(0 0 0 / 6%);
+  border: 0; color: inherit;
+  cursor: pointer;
+}
+.qa-nav-drawer-pill--on {
+  background: var(--qa-text);
+  color: var(--qa-surface-sheet, var(--qa-bg-surface));
+}
+
+.qa-nav-drawer-surah-list {
+  flex: 1; overflow-y: auto;
+  list-style: none; margin: 0; padding: 0;
+  overscroll-behavior: contain;
+}
+.qa-nav-drawer-surah-row {
+  border-left: 2px solid transparent;
+}
+.qa-nav-drawer-surah-row--current {
+  background: rgb(176 138 78 / 14%);
+  border-left-color: var(--qa-accent);
+}
+.qa-nav-drawer-surah-row--current .qa-nav-drawer-surah-num {
+  background: var(--qa-accent);
+  color: var(--qa-surface-sheet, var(--qa-bg-surface));
+}
+.qa-nav-drawer-surah-row--current .qa-nav-drawer-surah-name {
+  font-weight: 600;
+}
+
+.qa-nav-drawer-surah-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%;
+  background: transparent; border: 0;
+  padding: 11px 14px;
+  font: inherit; color: inherit;
+  text-align: left; cursor: pointer;
+}
+.qa-nav-drawer-surah-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 6%);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+  flex-shrink: 0;
+}
+.qa-nav-drawer-surah-name { flex: 1; font-size: 13.5px; }
+.qa-nav-drawer-surah-star { color: var(--qa-accent); font-size: 11px; }
+.qa-nav-drawer-surah-ar {
+  color: var(--qa-text-muted);
+  font-family: var(--qa-font-arabic);
+  font-size: 14px;
+}
+
+/* Review tab */
+.qa-nav-drawer-hub-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  background: rgb(0 0 0 / 2%);
+  border: 0;
+  border-bottom: 1px solid var(--qa-border-on-sheet, rgb(0 0 0 / 6%));
+  padding: 13px 18px;
+  font: inherit; color: inherit;
+  text-align: left; cursor: pointer;
+  font-weight: 600;
+}
+.qa-nav-drawer-hub-icon { font-size: 15px; }
+.qa-nav-drawer-hub-name { flex: 1; font-size: 14px; }
+
+.qa-nav-drawer-group-hdr {
+  padding: 11px 18px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--qa-text-muted);
+}
+
+.qa-nav-drawer-layer-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  background: transparent; border: 0;
+  padding: 11px 18px;
+  font: inherit; color: inherit;
+  text-align: left; cursor: pointer;
+}
+.qa-nav-drawer-layer-row:hover,
+.qa-nav-drawer-layer-row:focus-visible {
+  background: rgb(0 0 0 / 4%);
+  outline: none;
+}
+.qa-nav-drawer-layer-name { flex: 1; font-size: 13.5px; }
+.qa-nav-drawer-layer-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.qa-nav-drawer-layer-dot--speech    { background: var(--lh-speech); }
+.qa-nav-drawer-layer-dot--narrative { background: var(--lh-narrative); }
+.qa-nav-drawer-layer-dot--themes    { background: var(--lh-themes); }
+.qa-nav-drawer-layer-dot--entities  { background: var(--lh-entities); }
+
+.qa-nav-drawer-chev { color: var(--qa-text-muted); font-size: 14px; }
+
+@keyframes qa-nav-drawer-in {
+  from { transform: translateX(-12px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
 @media (prefers-reduced-motion: reduce) {
   .qa-nav-drawer { animation: none; }
 }
