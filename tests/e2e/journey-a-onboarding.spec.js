@@ -196,7 +196,7 @@ test.describe('Journey A: First run & session restore', () => {
   // -------------------------------------------------------------------------
   // A1.4 Alt path — "Browse all surahs" from screen 4 lands on #/surahs
   // -------------------------------------------------------------------------
-  test('A1: alt path — Browse all surahs from screen 4 lands on #/surahs', async ({ page }) => {
+  test('A1: alt path — Browse all surahs from screen 4 opens drawer (mobile) or surah list (desktop)', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 8_000 })
 
@@ -206,8 +206,15 @@ test.describe('Journey A: First run & session restore', () => {
     // Tap "Browse all surahs" (ghost CTA)
     await page.locator('.qa-onb-cta--ghost').click()
 
-    // Lands on surah list
-    await expect(page).toHaveURL(/#\/surahs/, { timeout: 8_000 })
+    // Mobile (<1180px): hard-redirect to drawer + last surface (post 2026-04-25).
+    // Desktop (≥1180px): standalone #/surahs page renders.
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    if (isDesktop) {
+      await expect(page).toHaveURL(/#\/surahs/, { timeout: 8_000 })
+    } else {
+      await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 8_000 })
+      await page.waitForFunction(() => !window.location.hash.startsWith('#/surahs'), { timeout: 5_000 })
+    }
 
     // onboardingComplete was written
     expect(await readSetting(page, 'onboardingComplete')).toBe(true)

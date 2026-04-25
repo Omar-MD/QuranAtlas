@@ -396,6 +396,22 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/114')
   })
 
+  test('B-Cross-arrow: continue link is a single-line arrow + italic title (~22px tall)', async ({ page }) => {
+    // Mid-quran surah so prev exists without wrap edge cases.
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    const prevLink = page.locator('[data-continue-prev]')
+    await expect(prevLink).toBeVisible()
+    // Arrow + italic title structure
+    await expect(prevLink.locator('.qa-continue-arrow')).toContainText('↑')
+    await expect(prevLink.locator('.qa-continue-title')).toBeVisible()
+
+    // Height check — sanity guard against regression to full-width banner.
+    const box = await prevLink.boundingBox()
+    expect(box?.height ?? 999).toBeLessThan(36)
+  })
+
   test('B-Cross5: settings.currentPosition is overwritten on swap', async ({ page }) => {
     await page.goto('/#/s/3')
     await waitForReader(page)

@@ -144,7 +144,7 @@
     class="qa-rail-more"
     data-tab="more"
     aria-label="More"
-    onclick={openNavDrawer}
+    onclick={() => openNavDrawer()}
   >
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <circle cx="5" cy="12" r="1.6"/>

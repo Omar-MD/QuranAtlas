@@ -147,7 +147,24 @@ export async function initBootstrap(): Promise<Array<() => void>> {
         { layer: layerName },
       )
     }
-    router.register('#/surahs', async () => (await import('./surahs/SurahList.svelte')).default)
+    router.register('#/surahs', async () => {
+      const isMobile = window.matchMedia('(max-width: 1179px)').matches
+      if (isMobile) {
+        // Redirect: replace hash with last surface (or Fatihah default), open the
+        // drawer on Surahs tab. The replaceState avoids a back-stack entry that
+        // would loop the user through #/surahs again on Back.
+        const lastRec = await get('settings', 'lastSurface').catch(() => undefined)
+        const last = (typeof lastRec?.value === 'string' && lastRec.value && lastRec.value !== '#/surahs')
+          ? lastRec.value
+          : '#/s/1'
+        history.replaceState(null, '', last)
+        queueMicrotask(() => {
+          void import('./nav/nav-drawer-bridge').then(m => m.openNavDrawer('surahs'))
+        })
+        return (await import('./nav/EmptyRoute.svelte')).default
+      }
+      return (await import('./surahs/SurahList.svelte')).default
+    })
     router.register('#/onboarding', async () => (await import('./onboarding/Onboarding.svelte')).default)
 
     // Initialize router AFTER routes are registered so first dispatch finds them

@@ -200,7 +200,7 @@
 .qa-about-clear-section {
   margin-top: 32px;
   padding-top: 16px;
-  border-top: 1px solid var(--qa-border-subtle, rgba(0, 0, 0, 0.08));
+  border-top: 1px solid var(--qa-border-subtle, rgb(0 0 0 / 8%));
 }
 
 .qa-about-clear-data {

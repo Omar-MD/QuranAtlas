@@ -13,6 +13,7 @@
   import { LAYER_NAMES, type LayerName } from '../core/db'
   import { logger } from '../core/logger'
   import { save as saveState, load as loadState, getDefaultState } from './state'
+  import { parseLayerFromHash } from './parse-layer-query'
   import { clearUndoToast } from '../core/ui-bridge'
   import { validateLayerParam } from '../safety/input-validator'
   import { announce } from '../a11y/announcer'
@@ -444,6 +445,14 @@
     review.activeTags = []
     review.surahFilter = loaded.surahFilter ?? null
 
+    // Override activeLayer if URL carries ?layer=<name>; lets the NavDrawer
+    // Review tab deep-link a layer without a new route pattern.
+    const queryLayer = parseLayerFromHash(window.location.hash)
+    if (queryLayer) {
+      review.activeLayer = queryLayer
+      review.activeValue = null
+    }
+
     await reloadMarks()
 
     hubView = 'all'
@@ -458,9 +467,20 @@
     })
   }
 
+  function onHashChange(): void {
+    const q = parseLayerFromHash(window.location.hash)
+    if (q && q !== review.activeLayer) {
+      review.activeLayer = q
+      review.activeValue = null
+      void reloadMarks()
+    }
+  }
+
   onMount(() => {
     doInit().catch(err => logger.error('Hub init failed:', { error: err }))
+    window.addEventListener('hashchange', onHashChange)
     return () => {
+      window.removeEventListener('hashchange', onHashChange)
       if (_unsubSync) { _unsubSync(); _unsubSync = null }
       if (_unsubVisible) { _unsubVisible(); _unsubVisible = null }
       review.activeTags = []

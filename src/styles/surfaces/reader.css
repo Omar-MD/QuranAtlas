@@ -209,32 +209,39 @@
     text-transform: uppercase;
   }
 
-  /* Cross-surah continuation links — quiet click fallback for the
-     pull-to-swap gesture. Pull is the primary affordance on touch (see
-     .qa-pull-indicator below); these links exist for click/keyboard users
-     and a11y. Styled as subtle inline text rather than bordered buttons. */
-  .qa-continue-next,
-  .qa-continue-prev {
-    display: block;
-    width: 100%;
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
-    border: none;
+  /* Cross-surah continuation links — minimal arrow + italic surah title.
+     Pull-to-swap is the primary touch affordance (see .qa-pull-indicator);
+     these links are the click/keyboard fallback. ~22px tall vs the ~46px
+     full-width banner they replaced 2026-04-25. */
+  .qa-continue-prev,
+  .qa-continue-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px auto;
+    padding: 4px 8px;
+    border: 0;
     background: transparent;
     color: var(--qa-text-muted);
-    font-size: var(--qa-text-size-meta);
     font-family: inherit;
-    text-align: center;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: var(--qa-text-size-meta);
     cursor: pointer;
     transition: color var(--qa-transition-base);
   }
 
-  .qa-continue-next:hover,
+  .qa-continue-arrow {
+    font-size: 14px;
+  }
+
+  .qa-continue-title {
+    font-style: italic;
+  }
+
   .qa-continue-prev:hover,
-  .qa-continue-next:focus-visible,
-  .qa-continue-prev:focus-visible {
+  .qa-continue-next:hover,
+  .qa-continue-prev:focus-visible,
+  .qa-continue-next:focus-visible {
     color: var(--qa-accent);
     outline: none;
   }

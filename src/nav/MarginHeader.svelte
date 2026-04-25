@@ -13,10 +13,8 @@
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
   import { reader } from '../state/reader.svelte'
-  import { get } from '../core/db'
-  import { loadGlobalPosition } from '../reader/global-position'
   import { getSurahs } from '../data/dataset'
-  import { toggleNavDrawer } from './nav-drawer-bridge'
+  import { openNavDrawer, toggleNavDrawer } from './nav-drawer-bridge'
   import { openSettingsSheet } from '../settings/panel-bridge'
   import { cycleTheme } from '../settings/theme'
   import { classifySwipe, clampSurah } from './swipe-gestures'
@@ -30,8 +28,6 @@
   let lastTop = 0
   let surahName = $state('')
   let surahArabicName = $state('')
-  let lastSurahHref = $state('#/s/1')
-
   const currentSurahNum = $derived(reader.currentSurahNum)
 
   const labelEnglish = $derived.by(() => {
@@ -45,27 +41,6 @@
   function openDrawer(): void {
     emit(Events.AMBIENT_SURFACE, { reason: 'margin-header' })
     toggleNavDrawer()
-  }
-
-  async function tapLabel(): Promise<void> {
-    const h = window.location.hash || ''
-    if (h.startsWith('#/surahs')) {
-      window.location.hash = lastSurahHref
-      return
-    }
-    if (!labelHasSurah) {
-      // Non-reader screen with no in-memory surah (e.g. cold load on About).
-      // Resume from the most recent reading position rather than hard-resetting
-      // to Fatihah verse 1. Reader picks up the per-surah saved verse from IDB.
-      const pos = await loadGlobalPosition()
-      if (pos) {
-        window.location.hash = `#/s/${pos.surah}`
-        return
-      }
-      window.location.hash = '#/s/1'
-      return
-    }
-    window.location.hash = '#/surahs'
   }
 
   // ---- Swipe gestures ----
@@ -123,7 +98,7 @@
       dy: t.clientY - headerTouchY0,
       dtMs: performance.now() - headerTouchT0,
     })
-    if (dir === 'down') { window.location.hash = '#/surahs' }
+    if (dir === 'down') { openNavDrawer('surahs') }
   }
 
   // ---- Settings gear: short tap → settings; long-press → cycle theme ----
@@ -172,12 +147,6 @@
 
   // ---- Mount ----
   onMount(() => {
-    get('settings', 'lastSurface').then((rec) => {
-      const v = typeof rec?.value === 'string' ? rec.value : ''
-      const m = v.match(/^#\/s\/(\d+)/)
-      if (m && m[1]) { lastSurahHref = `#/s/${m[1]}` }
-    }).catch(() => { /* ignore */ })
-
     const refreshSurahName = () => {
       getSurahs().then((list) => {
         const s = reader.currentSurahNum
@@ -231,11 +200,9 @@
     </svg>
   </button>
 
-  <button
-    type="button"
+  <div
     class="qa-mh-label"
-    aria-label={labelHasSurah ? 'Open surah list' : 'Go to Al-Fatihah'}
-    onclick={tapLabel}
+    role="presentation"
     ontouchstart={onLabelTouchStart}
     ontouchend={onLabelTouchEnd}
   >
@@ -243,14 +210,11 @@
       <span class="qa-mh-label-ar" dir="rtl" lang="ar">{surahArabicName}</span>
       <span class="qa-mh-label-en">
         <span>{labelEnglish}</span>
-        <svg class="qa-mh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
       </span>
     {:else}
       <span class="qa-mh-wordmark">QuranAtlas</span>
     {/if}
-  </button>
+  </div>
 
   <button
     type="button"
