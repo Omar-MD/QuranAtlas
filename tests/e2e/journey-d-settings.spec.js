@@ -465,3 +465,61 @@ test.describe('Journey D: Typography subview @desktop', () => {
     expect(await page.evaluate(() => document.documentElement.dataset.lineSpacing)).toBe('md')
   })
 })
+
+// ---------------------------------------------------------------------------
+// D6. Night recitation mode (dim+warm overlay; toggle composes with theme)
+// ---------------------------------------------------------------------------
+
+test.describe('Journey D: Night mode', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+  })
+
+  test('D6: settings switch toggles data-night-mode + overlay opacity', async ({ page }) => {
+    await openSettingsSheet(page)
+    const sw = page.getByTestId('night-mode-switch')
+    await expect(sw).toBeVisible()
+    await expect(sw).toHaveAttribute('aria-checked', 'false')
+
+    await sw.click()
+    await expect(sw).toHaveAttribute('aria-checked', 'true')
+    expect(await page.evaluate(() => document.documentElement.getAttribute('data-night-mode'))).toBe('on')
+    await expect(async () => {
+      const opacity = await page.locator('.qa-night-shift').evaluate(
+        (el) => parseFloat(getComputedStyle(el).opacity)
+      )
+      expect(opacity).toBeGreaterThan(0)
+    }).toPass({ timeout: 3_000 })
+
+    await sw.click()
+    await expect(sw).toHaveAttribute('aria-checked', 'false')
+    expect(await page.evaluate(() => document.documentElement.hasAttribute('data-night-mode'))).toBe(false)
+  })
+
+  test('D6: night mode persists across reload', async ({ page }) => {
+    await openSettingsSheet(page)
+    await page.getByTestId('night-mode-switch').click()
+    expect(await readSetting(page, 'nightMode')).toBe(true)
+
+    await page.reload()
+    await waitForReader(page)
+    expect(await page.evaluate(() => document.documentElement.getAttribute('data-night-mode'))).toBe('on')
+  })
+
+  test('D6: pressing n on reader toggles night mode @keyboard', async ({ page }) => {
+    await page.locator('#main-content').focus()
+    await page.keyboard.press('n')
+    await expect(async () => {
+      expect(await page.evaluate(() => document.documentElement.getAttribute('data-night-mode'))).toBe('on')
+    }).toPass({ timeout: 3_000 })
+
+    await page.keyboard.press('n')
+    await expect(async () => {
+      expect(await page.evaluate(() => document.documentElement.hasAttribute('data-night-mode'))).toBe(false)
+    }).toPass({ timeout: 3_000 })
+  })
+})
