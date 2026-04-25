@@ -640,9 +640,7 @@
     }
   }
 
-}
-
-/* ---------------------------------------------------------------------------
+  /* ---------------------------------------------------------------------------
    NavDrawer — mobile (<1180px) full-screen tabbed surface; desktop side-panel.
    Mobile: Surahs (search + filter pills + auto-scrolled list) and Review (Hub
    row + 12 grouped layer rows) tabs. Header wordmark routes to About.
@@ -657,9 +655,9 @@
 
 .qa-nav-drawer {
   position: fixed;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: var(--qa-surface-sheet, var(--qa-bg-surface, #fff));
-  color: var(--qa-text, inherit);
+  inset: 0;
+  background: var(--qa-surface-app);
+  color: var(--qa-text-primary);
   display: flex; flex-direction: column;
   z-index: 100;
   box-shadow: 4px 0 24px rgb(0 0 0 / 18%);
@@ -672,48 +670,50 @@
   .qa-nav-drawer {
     right: auto;
     width: min(80vw, 360px);
+    border-right: 1px solid var(--qa-border-subtle);
   }
 }
 
 .qa-nav-drawer-hdr {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--qa-border-on-sheet, rgb(0 0 0 / 8%));
+  border-bottom: 1px solid var(--qa-border-subtle);
 }
 
 .qa-nav-drawer-wordmark {
-  display: inline-flex; align-items: center; gap: 7px;
+  display: inline-flex; align-items: baseline; gap: 6px;
   background: transparent; border: 0; padding: 6px 4px;
-  cursor: pointer; color: inherit;
+  cursor: pointer; color: var(--qa-text-primary);
   font-weight: 600; letter-spacing: 0.04em;
   font-size: 15px;
 }
+
 .qa-nav-drawer-wordmark:focus-visible {
   outline: 2px solid var(--qa-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
+
 .qa-nav-drawer-info {
-  width: 18px; height: 18px;
-  border: 1px solid var(--qa-accent);
-  border-radius: 50%;
-  color: var(--qa-accent);
-  font-size: 11px; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: rgb(176 138 78 / 10%);
+  color: var(--qa-text-muted);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .qa-nav-drawer-close {
   background: transparent; border: 0; font-size: 18px; line-height: 1;
   width: 36px; height: 36px; cursor: pointer;
-  color: inherit;
+  color: var(--qa-text-primary);
 }
 
 /* Tabs */
 .qa-nav-drawer-tabs {
   display: flex;
-  border-bottom: 1px solid var(--qa-border-on-sheet, rgb(0 0 0 / 8%));
+  border-bottom: 1px solid var(--qa-border-subtle);
 }
+
 .qa-nav-drawer-tab {
   flex: 1; padding: 12px 0;
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
@@ -722,8 +722,9 @@
   border-bottom: 2px solid transparent;
   cursor: pointer;
 }
+
 .qa-nav-drawer-tab--on {
-  color: var(--qa-text);
+  color: var(--qa-text-primary);
   border-bottom-color: var(--qa-accent);
   font-weight: 600;
 }
@@ -731,6 +732,7 @@
 .qa-nav-drawer-tab-body {
   flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;
 }
+
 .qa-nav-drawer-review-body {
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -742,31 +744,39 @@
   display: flex; align-items: center; gap: 8px;
   margin: 10px 14px 4px;
   padding: 9px 12px;
-  background: rgb(0 0 0 / 4%);
+  background: var(--qa-surface-raised);
+  border: 1px solid var(--qa-border-subtle);
   border-radius: 8px;
 }
 .qa-nav-drawer-search-icon { color: var(--qa-text-muted); font-size: 14px; }
+
 .qa-nav-drawer-search-input {
   flex: 1;
   background: transparent; border: 0; outline: 0;
-  font-family: inherit; font-size: 14px; color: inherit;
+  font-family: inherit; font-size: 14px; color: var(--qa-text-primary);
 }
+.qa-nav-drawer-search-input::placeholder { color: var(--qa-text-dim); }
 
 .qa-nav-drawer-pills {
   display: flex; gap: 6px;
   padding: 4px 14px 8px;
 }
+
 .qa-nav-drawer-pill {
   padding: 5px 11px;
   border-radius: 99px;
   font-size: 11px;
-  background: rgb(0 0 0 / 6%);
-  border: 0; color: inherit;
+  background: var(--qa-surface-raised);
+  border: 1px solid var(--qa-border-subtle);
+  color: var(--qa-text-primary);
   cursor: pointer;
 }
+
 .qa-nav-drawer-pill--on {
-  background: var(--qa-text);
-  color: var(--qa-surface-sheet, var(--qa-bg-surface));
+  background: var(--qa-accent);
+  border-color: var(--qa-accent);
+  color: var(--qa-text-on-accent);
+  font-weight: 600;
 }
 
 .qa-nav-drawer-surah-list {
@@ -774,17 +784,21 @@
   list-style: none; margin: 0; padding: 0;
   overscroll-behavior: contain;
 }
+
 .qa-nav-drawer-surah-row {
   border-left: 2px solid transparent;
 }
+
 .qa-nav-drawer-surah-row--current {
-  background: rgb(176 138 78 / 14%);
+  background: var(--qa-accent-soft);
   border-left-color: var(--qa-accent);
 }
+
 .qa-nav-drawer-surah-row--current .qa-nav-drawer-surah-num {
   background: var(--qa-accent);
-  color: var(--qa-surface-sheet, var(--qa-bg-surface));
+  color: var(--qa-text-on-accent);
 }
+
 .qa-nav-drawer-surah-row--current .qa-nav-drawer-surah-name {
   font-weight: 600;
 }
@@ -794,19 +808,22 @@
   width: 100%;
   background: transparent; border: 0;
   padding: 11px 14px;
-  font: inherit; color: inherit;
+  font: inherit; color: var(--qa-text-primary);
   text-align: left; cursor: pointer;
 }
+
 .qa-nav-drawer-surah-num {
   width: 24px; height: 24px;
   border-radius: 50%;
-  background: rgb(0 0 0 / 6%);
+  background: var(--qa-surface-raised);
+  border: 1px solid var(--qa-border-subtle);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 600;
   flex-shrink: 0;
 }
 .qa-nav-drawer-surah-name { flex: 1; font-size: 13.5px; }
 .qa-nav-drawer-surah-star { color: var(--qa-accent); font-size: 11px; }
+
 .qa-nav-drawer-surah-ar {
   color: var(--qa-text-muted);
   font-family: var(--qa-font-arabic);
@@ -817,15 +834,15 @@
 .qa-nav-drawer-hub-row {
   display: flex; align-items: center; gap: 12px;
   width: 100%;
-  background: rgb(0 0 0 / 2%);
+  background: var(--qa-surface-raised);
   border: 0;
-  border-bottom: 1px solid var(--qa-border-on-sheet, rgb(0 0 0 / 6%));
+  border-bottom: 1px solid var(--qa-border-subtle);
   padding: 13px 18px;
-  font: inherit; color: inherit;
+  font: inherit; color: var(--qa-text-primary);
   text-align: left; cursor: pointer;
   font-weight: 600;
 }
-.qa-nav-drawer-hub-icon { font-size: 15px; }
+.qa-nav-drawer-hub-icon { font-size: 15px; color: var(--qa-accent); }
 .qa-nav-drawer-hub-name { flex: 1; font-size: 14px; }
 
 .qa-nav-drawer-group-hdr {
@@ -841,15 +858,17 @@
   width: 100%;
   background: transparent; border: 0;
   padding: 11px 18px;
-  font: inherit; color: inherit;
+  font: inherit; color: var(--qa-text-primary);
   text-align: left; cursor: pointer;
 }
+
 .qa-nav-drawer-layer-row:hover,
 .qa-nav-drawer-layer-row:focus-visible {
-  background: rgb(0 0 0 / 4%);
+  background: var(--qa-surface-raised);
   outline: none;
 }
 .qa-nav-drawer-layer-name { flex: 1; font-size: 13.5px; }
+
 .qa-nav-drawer-layer-dot {
   width: 9px; height: 9px; border-radius: 50%;
   flex-shrink: 0;
@@ -861,6 +880,7 @@
 
 .qa-nav-drawer-chev { color: var(--qa-text-muted); font-size: 14px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .qa-nav-drawer { animation: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .qa-nav-drawer { animation: none; }
+  }
 }

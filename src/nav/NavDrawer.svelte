@@ -200,7 +200,7 @@
         onclick={goAbout}
       >
         <span class="qa-nav-drawer-wordmark-text">QuranAtlas</span>
-        <span class="qa-nav-drawer-info" aria-hidden="true">&#9432;</span>
+        <span class="qa-nav-drawer-info" aria-hidden="true">about</span>
       </button>
       <button
         type="button"
