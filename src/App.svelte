@@ -112,3 +112,4 @@
   verseKey={tagSession.verseKey ?? ''}
   onclose={() => tagSession.end()}
 />
+<div class="qa-night-shift" aria-hidden="true"></div>
