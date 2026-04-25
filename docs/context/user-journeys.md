@@ -173,14 +173,15 @@ Reader is deep in a surah.
 
 ### B-Cross. Cross-surah infinite scroll (forward + backward, with wrap)
 
-Reader is single-surah; only one surah is mounted at a time. Scrolling past the end of N (or top of N) swaps the mounted surah to N+1 / N-1 with wrap (114 ↔ 1).
+Reader is single-surah; only one surah is mounted at a time. Pulling past the end of N (or top of N) swaps the mounted surah to N+1 / N-1 with wrap (114 ↔ 1).
 
-1. **Forward swap.** At the end of surah N: a "Continue to {next.name} →" button replaces the "End of {meta.name}" terminator once the last chunk has rendered. Tapping it — or wheel/touch overscrolling past the bottom — fires `swapToSurah(nextSurah(N), 'top')` → URL becomes `#/s/{N+1}` → Reader remounts at `scrollTop=0`.
-2. **Backward swap.** Above the SurahHeader: a "← Continue to {prev.name}" button is always present. Tapping it — or wheel/touch overscrolling past the top — fires `swapToSurah(prevSurah(N), 'bottom')` → URL becomes `#/s/{N-1}` → Reader remounts and anchors `scrollTop=scrollHeight` so the user emerges from the previous surah's terminal verse.
-3. **Wrap.** Surah 114 forward → surah 1; surah 1 backward → surah 114.
-4. **Position persistence is single-global.** Each surah load overwrites `settings.currentPosition` to (newN, 1) or (newN, lastVerse) on backward; in-surah scroll center-band crossings overwrite it as the user reads.
+1. **Pull-to-swap (primary affordance).** When the user pulls past either edge of the scroller, a Chrome-mobile-style circular progress indicator appears (centered, top for backward / bottom for forward). The arc fills as the user pulls; once it completes (~110 px of pull) the swap commits on release. The native browser pull-to-refresh is suppressed via `overscroll-behavior-y: contain` on `#main-content`. Wheel input on desktop accumulates the same way.
+2. **Forward swap.** Pull past bottom past the threshold → release → `swapToSurah(nextSurah(N), 'top')` → URL becomes `#/s/{N+1}` → Reader remounts at `scrollTop=0`. Click fallback: "Continue to {next.name} →" link below the last verse.
+3. **Backward swap.** Pull past top past the threshold → release → `swapToSurah(prevSurah(N), 'bottom')` → URL becomes `#/s/{N-1}` → Reader remounts and anchors `scrollTop=scrollHeight` so the user emerges from the previous surah's terminal verse. Click fallback: "← Continue to {prev.name}" link above the SurahHeader.
+4. **Wrap.** Surah 114 forward → surah 1; surah 1 backward → surah 114.
+5. **Position persistence is single-global.** Each surah load overwrites `settings.currentPosition` to (newN, 1) or (newN, lastVerse) on backward; in-surah scroll center-band crossings overwrite it as the user reads.
 
-**Surfaces:** Reader. **Persistence:** `settings.currentPosition` (overwritten on every swap). **Regression guard:** `tests/e2e/journey-b-reader.spec.js` §B-Cross1–§B-Cross5.
+**Surfaces:** Reader. **Persistence:** `settings.currentPosition` (overwritten on every swap). **Regression guard:** `tests/e2e/journey-b-reader.spec.js` §B-Cross1–§B-Cross5 + `tests/unit/reader/surah-swap.test.ts` (wheel/touch pull tracker, threshold + commit).
 
 ### B6. Auto theme follows OS
 

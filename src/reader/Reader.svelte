@@ -21,9 +21,11 @@
     prevSurah,
     swapToSurah,
     consumeSwapAnchor,
-    setupOverscrollSwap,
+    setupPullToSwap,
     type SwapAnchor,
+    type PullState,
   } from './surah-swap'
+  import PullToSwapIndicator from './PullToSwapIndicator.svelte'
 
   // ---------------------------------------------------------------------------
   // Props — route params + hooks injected from app-bootstrap.ts
@@ -69,8 +71,18 @@
   // for backward swaps so the user emerges from the previous surah's end.
   let swapAnchor: SwapAnchor = 'top'
 
+  // Pull-to-swap progress state — drives the circular indicator overlay.
+  let pullState = $state<PullState | null>(null)
+
   const prevMeta = $derived(allSurahs.find(s => s.n === prevSurah(surahNum)) ?? null)
   const nextMeta = $derived(allSurahs.find(s => s.n === nextSurah(surahNum)) ?? null)
+  const pullLabel = $derived(
+    pullState?.direction === 'forward'
+      ? (nextMeta?.name ?? '')
+      : pullState?.direction === 'backward'
+        ? (prevMeta?.name ?? '')
+        : ''
+  )
 
   // ---------------------------------------------------------------------------
   // Reactive translation toggle — keep in sync with settings rune after load
@@ -263,12 +275,20 @@
         // Set up chunked append scroll listener
         cleanups.push(setupChunkedAppend(container, appendChunk))
 
-        // Wire cross-surah overscroll swap (forward + backward, with wrap)
+        // Wire pull-to-swap gesture — Chrome-mobile-style circular indicator
+        // drives a progress 0..1 that the user fills by pulling past the
+        // top/bottom edge. Commit fires the swap.
         if (shellScroller) {
-          cleanups.push(setupOverscrollSwap({
+          cleanups.push(setupPullToSwap({
             scroller: shellScroller,
-            onForward: () => swapToSurah(nextSurah(surahNum), 'top'),
-            onBackward: () => swapToSurah(prevSurah(surahNum), 'bottom'),
+            onPull: (state) => { pullState = state },
+            onCommit: (direction) => {
+              if (direction === 'forward') {
+                swapToSurah(nextSurah(surahNum), 'top')
+              } else {
+                swapToSurah(prevSurah(surahNum), 'bottom')
+              }
+            },
           }))
         }
 
@@ -366,5 +386,11 @@
       <div class="qa-surah-end" data-surah-end="">End of {surahMeta.name}</div>
     {/if}
   </div>
+
+  <PullToSwapIndicator
+    direction={pullState?.direction ?? null}
+    progress={pullState?.progress ?? 0}
+    label={pullLabel}
+  />
 {/if}
 

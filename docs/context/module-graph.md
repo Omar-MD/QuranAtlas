@@ -164,7 +164,7 @@ graph LR
 - **Role:** First-run 5-screen walkthrough (Svelte component). `Onboarding.svelte` exports `isComplete()` and `markComplete()` from its module script for use by the boot-time redirect in `app-bootstrap.ts`. Writes `settings.onboardingComplete`. `screens.ts` is pure data (shortcut rows, sample chips).
 
 ### `reader/`
-- **Files:** `Reader.svelte`, `Verse.svelte`, `SurahHeader.svelte`, `EdgeIndicator.svelte`, `render-helpers.ts`, `chunked-append.ts`, `verse-scroll.ts`, `position.ts`, `global-position.ts`, `surah-swap.ts`, `edge-indicators.ts`, `scroll-tracker.ts`
+- **Files:** `Reader.svelte`, `Verse.svelte`, `SurahHeader.svelte`, `EdgeIndicator.svelte`, `PullToSwapIndicator.svelte`, `render-helpers.ts`, `chunked-append.ts`, `verse-scroll.ts`, `position.ts`, `global-position.ts`, `surah-swap.ts`, `edge-indicators.ts`, `scroll-tracker.ts`
 - **Imports from:** `a11y`, `core`, `data`, `state`
 - **Imported by:** `app-bootstrap.ts` *(route handler — dynamic import via `Reader.svelte`; also static import of `global-position.ts` for launch restore)*; `nav/CommandSheet.svelte`, `nav/MarginHeader.svelte`, `surahs/SurahList.svelte` (each statically import `global-position.ts`).
 - **Role:** Main reading surface (Svelte 5), split into focused modules:
@@ -177,7 +177,8 @@ graph LR
   - `verse-scroll.ts` — `scrollVerseIntoView` alignment (3-rAF reflow) and `scrollToVerse` with optional `ensureVerseRendered` callback.
   - `position.ts` — scroll/IntersectionObserver position tracking, `visibilitychange` flush, `DB_VISIBILITY_VISIBLE` re-scroll, deep-link target-verse handling. Delegates persistence to `global-position.ts`.
   - `global-position.ts` — **sole writer** for `settings.currentPosition` (CLAUDE.md Rule 5). Single global record (current surah + verse), supersedes the legacy per-surah `positions` store dropped in DB v4.
-  - `surah-swap.ts` — cross-surah swap orchestration: `nextSurah`/`prevSurah` wrap math (114↔1), `setupOverscrollSwap` wheel/touch detector, `swapToSurah` + `consumeSwapAnchor` (anchor stash so backward swaps land at scrollHeight).
+  - `surah-swap.ts` — cross-surah swap orchestration: `nextSurah`/`prevSurah` wrap math (114↔1), `setupPullToSwap` wheel/touch pull tracker (emits 0..1 progress, commits on release past full), `swapToSurah` + `consumeSwapAnchor` (anchor stash so backward swaps land at scrollHeight). `PULL_THRESHOLD_PX` (~110) is the pull distance to fill the indicator arc.
+  - `PullToSwapIndicator.svelte` — Chrome-mobile-PTR-style circular SVG progress arc + chevron + optional label. Driven by Reader.svelte from the `setupPullToSwap` `onPull` callback.
   - `edge-indicators.ts` — imperative edge indicator module (used outside of Svelte context if needed).
   - `scroll-tracker.ts` — `observeScroll` / `observeNewVerses`; computes the currently-visible verse.
 - **Internal imports:**

@@ -4,7 +4,8 @@ import {
   prevSurah,
   swapToSurah,
   consumeSwapAnchor,
-  setupOverscrollSwap,
+  setupPullToSwap,
+  PULL_THRESHOLD_PX,
 } from '../../../src/reader/surah-swap'
 
 describe('reader/surah-swap.ts — wrap math', () => {
@@ -31,7 +32,6 @@ describe('reader/surah-swap.ts — wrap math', () => {
 
 describe('reader/surah-swap.ts — anchor stash + consume', () => {
   beforeEach(() => {
-    // Clean any leftover from a previous test
     consumeSwapAnchor()
   })
 
@@ -55,60 +55,130 @@ describe('reader/surah-swap.ts — anchor stash + consume', () => {
   })
 })
 
-describe('reader/surah-swap.ts — setupOverscrollSwap', () => {
+describe('reader/surah-swap.ts — setupPullToSwap (wheel)', () => {
   let scroller: HTMLElement
-  let onForward: ReturnType<typeof vi.fn>
-  let onBackward: ReturnType<typeof vi.fn>
+  let onPull: ReturnType<typeof vi.fn>
+  let onCommit: ReturnType<typeof vi.fn>
   let cleanup: () => void
 
   beforeEach(() => {
     scroller = document.createElement('div')
     Object.defineProperty(scroller, 'clientHeight', { value: 500, configurable: true })
     Object.defineProperty(scroller, 'scrollHeight', { value: 1000, configurable: true })
-    onForward = vi.fn()
-    onBackward = vi.fn()
-    cleanup = setupOverscrollSwap({ scroller, onForward, onBackward })
+    onPull = vi.fn()
+    onCommit = vi.fn()
+    cleanup = setupPullToSwap({ scroller, onPull, onCommit })
   })
 
   afterEach(() => { cleanup() })
 
-  it('fires onForward when wheel-down past the bottom edge', () => {
-    scroller.scrollTop = 500 // scrollTop + clientHeight = 1000 = scrollHeight
-    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 80 }))
-    expect(onForward).toHaveBeenCalledTimes(1)
-    expect(onBackward).not.toHaveBeenCalled()
+  it('emits forward progress as wheel-down accumulates at scroll-bottom', () => {
+    scroller.scrollTop = 500 // at bottom
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 30 }))
+    const last = onPull.mock.calls.at(-1)?.[0]
+    expect(last?.direction).toBe('forward')
+    expect(last?.progress).toBeGreaterThan(0)
+    expect(last?.progress).toBeLessThan(1)
   })
 
-  it('fires onBackward when wheel-up past the top edge', () => {
+  it('emits backward progress as wheel-up accumulates at scroll-top', () => {
     scroller.scrollTop = 0
-    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: -80 }))
-    expect(onBackward).toHaveBeenCalledTimes(1)
-    expect(onForward).not.toHaveBeenCalled()
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: -30 }))
+    const last = onPull.mock.calls.at(-1)?.[0]
+    expect(last?.direction).toBe('backward')
+    expect(last?.progress).toBeGreaterThan(0)
   })
 
-  it('ignores small wheel deltas below the threshold', () => {
+  it('does not emit when not at edge', () => {
+    scroller.scrollTop = 200
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 30 }))
+    expect(onPull).not.toHaveBeenCalled()
+    expect(onCommit).not.toHaveBeenCalled()
+  })
+
+  it('reaches progress=1 and commits forward when wheel sum exceeds threshold', () => {
+    vi.useFakeTimers()
     scroller.scrollTop = 500
-    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 5 }))
-    expect(onForward).not.toHaveBeenCalled()
+    // Pull past threshold in chunks
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: PULL_THRESHOLD_PX + 20 }))
+    // Wait past the wheel-idle commit window
+    vi.advanceTimersByTime(300)
+    expect(onCommit).toHaveBeenCalledTimes(1)
+    expect(onCommit).toHaveBeenCalledWith('forward')
+    vi.useRealTimers()
   })
 
-  it('ignores wheel-down when not yet at the bottom edge', () => {
-    scroller.scrollTop = 200 // 200 + 500 = 700 < 1000 scrollHeight
-    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 80 }))
-    expect(onForward).not.toHaveBeenCalled()
-  })
-
-  it('debounces repeated triggers within the cool-down window', () => {
+  it('does NOT commit if wheel sum stays below threshold', () => {
+    vi.useFakeTimers()
     scroller.scrollTop = 500
-    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 80 }))
-    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 80 }))
-    expect(onForward).toHaveBeenCalledTimes(1)
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 30 }))
+    vi.advanceTimersByTime(300)
+    expect(onCommit).not.toHaveBeenCalled()
+    vi.useRealTimers()
   })
 
-  it('cleanup removes listeners', () => {
+  it('cleanup removes listeners — no further pull events fire', () => {
     cleanup()
     scroller.scrollTop = 500
-    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 80 }))
-    expect(onForward).not.toHaveBeenCalled()
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: PULL_THRESHOLD_PX + 50 }))
+    expect(onPull).not.toHaveBeenCalled()
+    expect(onCommit).not.toHaveBeenCalled()
+  })
+})
+
+describe('reader/surah-swap.ts — setupPullToSwap (touch)', () => {
+  let scroller: HTMLElement
+  let onPull: ReturnType<typeof vi.fn>
+  let onCommit: ReturnType<typeof vi.fn>
+  let cleanup: () => void
+
+  beforeEach(() => {
+    scroller = document.createElement('div')
+    Object.defineProperty(scroller, 'clientHeight', { value: 500, configurable: true })
+    Object.defineProperty(scroller, 'scrollHeight', { value: 1000, configurable: true })
+    onPull = vi.fn()
+    onCommit = vi.fn()
+    cleanup = setupPullToSwap({ scroller, onPull, onCommit })
+  })
+
+  afterEach(() => { cleanup() })
+
+  function makeTouchEvent(type: string, clientY: number): TouchEvent {
+    const t = { clientY, identifier: 0, target: scroller } as unknown as Touch
+    return new TouchEvent(type, { touches: type === 'touchend' ? [] : [t] })
+  }
+
+  it('forward: finger up at scroll-bottom past threshold then release commits', () => {
+    scroller.scrollTop = 500
+    scroller.dispatchEvent(makeTouchEvent('touchstart', 400))
+    scroller.dispatchEvent(makeTouchEvent('touchmove', 400 - (PULL_THRESHOLD_PX + 20)))
+    scroller.dispatchEvent(makeTouchEvent('touchend', 0))
+    expect(onCommit).toHaveBeenCalledWith('forward')
+  })
+
+  it('backward: finger down at scroll-top past threshold then release commits', () => {
+    scroller.scrollTop = 0
+    scroller.dispatchEvent(makeTouchEvent('touchstart', 100))
+    scroller.dispatchEvent(makeTouchEvent('touchmove', 100 + (PULL_THRESHOLD_PX + 20)))
+    scroller.dispatchEvent(makeTouchEvent('touchend', 0))
+    expect(onCommit).toHaveBeenCalledWith('backward')
+  })
+
+  it('release with progress < 1 does not commit and resets state', () => {
+    scroller.scrollTop = 500
+    scroller.dispatchEvent(makeTouchEvent('touchstart', 400))
+    scroller.dispatchEvent(makeTouchEvent('touchmove', 400 - 30))
+    scroller.dispatchEvent(makeTouchEvent('touchend', 0))
+    expect(onCommit).not.toHaveBeenCalled()
+    // Last emit should be release (null)
+    expect(onPull.mock.calls.at(-1)?.[0]).toBeNull()
+  })
+
+  it('finger movement that does not start at an edge is ignored', () => {
+    scroller.scrollTop = 200
+    scroller.dispatchEvent(makeTouchEvent('touchstart', 400))
+    scroller.dispatchEvent(makeTouchEvent('touchmove', 400 - 200))
+    scroller.dispatchEvent(makeTouchEvent('touchend', 0))
+    expect(onCommit).not.toHaveBeenCalled()
   })
 })

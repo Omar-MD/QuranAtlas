@@ -18,7 +18,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Listens to `DB_VISIBILITY_VISIBLE` to scroll to last position after tab focus; translation toggle reactive via `settings.translationVisible` rune (`$effect`).
   - `setupLongPress` hook (from `marks/long-press.ts`) wires the single verse gesture: long-press → mark editor (passed as prop from `app-bootstrap.ts`).
   - `initIndicators` hook (from `marks/indicator.ts`) decorates rendered verses with mark indicators.
-  - **Cross-surah continuation (2026-04-25):** `← Continue to {prev}` button above the SurahHeader and `Continue to {next} →` button replacing the surah-end terminator (rendered once the last chunk has loaded). Tap or wheel/touch overscroll past either edge fires `swapToSurah` (single-surah swap with wrap 114↔1). See user-journeys §B-Cross.
+  - **Cross-surah continuation (2026-04-25):** Chrome-mobile-PTR-style pull-to-swap is the primary affordance — pulling past either edge of the scroller fills a circular progress arc (`PullToSwapIndicator.svelte`); release past full progress commits a single-surah swap with wrap 114↔1 (`surah-swap.ts::setupPullToSwap`). Native browser pull-to-refresh is suppressed via `overscroll-behavior-y: contain` on `#main-content`. Click fallback: subtle Continue links above SurahHeader and below the last verse. See user-journeys §B-Cross.
 - **IDB touch:** writes `settings.currentPosition` on scroll center-band crossings (sole writer via `reader/global-position.ts`); also overwritten on every surah load and swap.
 
 ## Review hub
