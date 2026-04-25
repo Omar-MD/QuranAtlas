@@ -149,14 +149,14 @@ On the reader.
 
 **Surfaces:** Ambient dock, Ambient pill.
 
-### B5. Font slider live preview
+### B5. Typography live preview (font size · line spacing · word spacing · margins)
 
-From Settings sheet (see D1).
+From Settings sheet → **Typography** row → Typography subview (see D1, D5).
 
-1. Drag the font slider → `settings.fontSize` writes → `SETTINGS_FONT_SIZE_CHANGED` fires.
-2. Reader re-renders text at the new scale; preview line in settings also scales.
+1. Drag any of the four sliders → corresponding `settings.*` writes through `font-size.ts` / `reading-typography.ts` → reader updates live (font-size emits `SETTINGS_FONT_SIZE_CHANGED`; the other three update via `<html data-*>` attribute change picked up by CSS attribute selectors — no events).
+2. Live preview line at the top of the subview reflects the change immediately.
 
-**Surfaces:** Settings sheet, Reader.
+**Surfaces:** Settings sheet (Typography subview), Reader.
 
 **Desktop variant (viewport ≥1180px):**
 The reader renders a single centered column (max ~1080px). Each verse stacks Arabic (RTL, justified, filling the full column width and wrapping naturally) on top, translation below (no separator line). Toggling translation off in Settings hides the translation block; column width is unchanged. Long-press works on either cell to open the mark editor for that verse. All other behaviors (scroll position persistence, bookmark edge indicators, verse numbers) are unchanged.
@@ -284,13 +284,25 @@ Post 2026-04-25 mobile-nav-redesign (was More sheet → Settings).
 
 1. **Mobile (<1180px):** tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet opens. Long-press gear ≥400 ms cycles theme without opening the sheet.
 2. **Desktop (≥1180px):** navigate to `#/settings` (e.g. via `G`+`P` shortcut or command sheet "Preferences") → Settings sheet opens.
-3. Sheet content unchanged: theme swatches, font slider + preview, Reading section (translation toggle + picker link).
+3. Sheet content (post 2026-04-25): theme swatches, **Typography** nav row (opens subview — see D5), Reading section (translation toggle + picker link).
 
 **Surfaces:** MarginHeader (mobile) or Router (desktop) → Settings sheet.
 
 **Tablet+ variant (≥768px):** Settings sheet opens as a centered modal (~480px wide, top 10vh) instead of sliding up from the bottom. Previously this happened at 720px; now aligns with the canonical tablet breakpoint.
 
-**Font size.** 5-step slider: xs / sm / md / lg / xl (0.75 → 1.3). Preview shows a short English + Arabic line that scales with the slider. English renders on the left, Arabic on the right. Keyboard: `⌘↑` (Mac) / `Ctrl+↑` (others) bumps up; `⌘↓` / `Ctrl+↓` bumps down; announced to screen readers. Guarded against focused inputs.
+**Font size keyboard shortcuts** still work outside the subview: `⌘↑` (Mac) / `Ctrl+↑` (others) bumps up; `⌘↓` / `Ctrl+↓` bumps down; announced to screen readers. Guarded against focused inputs.
+
+### D5. Typography subview (font size · line spacing · word spacing · margins)
+
+Inside Settings sheet, post 2026-04-25.
+
+1. Tap the **Typography** row on the main Settings view → subview opens. Subtitle reads `Default` when all four values are `md`, otherwise a compact summary like `Aa lg · ↕ md · ↔ xs · ⇔ md`.
+2. Subview top: live preview block (one Arabic verse + translation line) wrapped in the reader's column rules so margin changes are visible inside the sheet.
+3. Four sliders, each 5-step (xs / sm / md / lg / xl) — Font size, Line spacing, Word spacing, Margins. Drag → respective IDB key writes (`fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`) → CSS attribute selectors on `<html>` (and the `--qa-font-size-base` var for font size) re-render the reader live.
+4. **Reset to default** appears below the sliders only when at least one of the four ≠ `md`. Tap → all four return to `md` and the button hides.
+5. Back arrow returns to main Settings view; subtitle reflects new state.
+
+**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`. **Sole writer (line/word/margin):** `src/settings/reading-typography.ts`. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D5: …' set + `tests/unit/settings/reading-typography.test.ts`.
 
 ### D2. Pick a translation
 

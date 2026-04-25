@@ -77,15 +77,16 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 - **Route:** `#/settings` (stub — opens sheet over the previous surface, then replaces hash back)
 - **Entry:** `src/settings/Panel.svelte` (Svelte component, mounted persistently in App.svelte); opened imperatively via `settings/panel-bridge.ts::openSettingsSheet()`.
-- **Files:** `settings/Panel.svelte`, `settings/ClearDataConfirm.svelte`, `settings/panel-bridge.ts`, `settings/theme.ts`, `settings/font-size.ts`, `settings/clear-data.ts`
-- **Purpose:** Bottom sheet. Theme swatches (Light/Sepia/Dark/Auto), font slider with live preview, translation toggle + nested picker. Clear-data row removed 2026-04-25 — moved to About page footer.
+- **Files:** `settings/Panel.svelte`, `settings/ClearDataConfirm.svelte`, `settings/panel-bridge.ts`, `settings/theme.ts`, `settings/font-size.ts`, `settings/reading-typography.ts`, `settings/clear-data.ts`
+- **Purpose:** Bottom sheet. Theme swatches (Light/Sepia/Dark/Auto), Typography nav row → subview (font size + line/word spacing + reader margins + reset), translation toggle + nested picker. Clear-data row removed 2026-04-25 — moved to About page footer. Inline font slider removed 2026-04-25 — folded into Typography subview.
 - **Key behaviors:**
   - Theme swatches call `setTheme(opt)` from `settings/theme.ts`, which writes `settings.theme` and swaps `data-theme` on `<html>`.
-  - Font slider writes `settings.fontSize`; reader/preview watch via `SETTINGS_FONT_SIZE_CHANGED`.
+  - Typography subview hosts 4 sliders: font size (`settings/font-size.ts`), line spacing / word spacing / reader margin (`settings/reading-typography.ts` — sole writer for those three keys). Each slider is 5-step (xs/sm/md/lg/xl). Reader picks up changes via CSS attribute selectors on `<html data-line-spacing|data-word-spacing|data-reader-margin>` plus the existing `--qa-font-size-base` var. **Reset to default** restores all four to `md` and is shown only when at least one differs.
   - Translation toggle writes `settings.translationVisible` (IDB + rune); `Reader.svelte` re-renders via `$effect` on the rune (no event).
   - Clear-data confirmation modal (`ClearDataConfirm.svelte`, also persistently mounted in App.svelte) is invoked by `settings/clear-data.ts::showClearDataConfirmation`. Sole entry point post 2026-04-25 is the **About page footer link** — modal → `deleteDB` → reload.
   - `toggleTranslation()` exported from `panel-bridge.ts` for use by command-sheet and other callers.
-- **IDB touch:** `settings` store (theme, fontSize, translationVisible, translationId).
+- **Subviews:** `'main' | 'translation-picker' | 'typography'`.
+- **IDB touch:** `settings` store (theme, fontSize, translationVisible, translationId, lineSpacing, wordSpacing, readerMargin).
 
 ## Nav drawer
 

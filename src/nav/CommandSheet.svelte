@@ -22,6 +22,7 @@
   import { setTheme, cycleTheme } from '../settings/theme'
   import { setFontSize, loadFontSize, getFontSizeOptions, resetFontSize } from '../settings/font-size'
   import { toggleTranslation } from '../settings/panel-bridge'
+  import { beginFast } from '../tag/session-bridge'
   import {
     nextVerse as readerNextVerse,
     prevVerse as readerPrevVerse,
@@ -299,7 +300,6 @@
     }
     if (item.doMark) {
       close()
-      const { beginFast } = await import('../tag/session-bridge')
       await beginFast(item.doMark.verseKey)
       return
     }

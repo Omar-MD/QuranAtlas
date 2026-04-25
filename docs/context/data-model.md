@@ -23,7 +23,10 @@ The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes 
 | Key | Value type | Writer | Purpose |
 |---|---|---|---|
 | `theme` | `'light' \| 'sepia' \| 'dark' \| 'auto'` | `settings/theme.ts` | Active theme. `auto` follows `prefers-color-scheme`. |
-| `fontSize` | number (rem-scale multiplier) | `settings/font-size.ts` | Reader font scale. |
+| `fontSize` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/font-size.ts` | Reader font scale (sole writer). |
+| `lineSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader line-height step (Arabic + translation, ratio preserved). Sole writer. |
+| `wordSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader word-spacing step (Arabic + translation). Sole writer. |
+| `readerMargin` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader column max-width step. Inverse semantics — larger step = narrower column. Sole writer. |
 | `translationVisible` | boolean | `settings/Panel.svelte` | Translation-toggle state. |
 | `translationId` | `'saheeh' \| 'pickthall' \| 'yusuf' \| 'khattab'` | `settings/Panel.svelte`, `onboarding/Onboarding.svelte` | Selected translation. |
 | `lastSurface` | string (hash path) | `core/router.ts`, `review/Hub.svelte` (FVR) | Where to resume on next launch. |
@@ -276,7 +279,7 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 > - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
 > - `positions` — written by `reader/position` (via `savePosition()`) and `review/state`.
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
-> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced.
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` (`settings/reading-typography`).
 >
 > Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
 

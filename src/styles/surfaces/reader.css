@@ -179,18 +179,15 @@
   .qa-verse-arabic {
     font-family: var(--qa-font-arabic);
     font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base));
-    line-height: var(--qa-line-height-arabic);
     direction: rtl;
     text-align: start;
     color: var(--qa-text-arabic);
-    word-spacing: 0.05em;
     margin-bottom: 0.875rem;
   }
 
   .qa-verse-translation {
     font-family: var(--qa-font-translation);
     font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base));
-    line-height: var(--qa-line-height-translation);
     color: var(--qa-text-primary);
     direction: ltr;
     text-align: left;
