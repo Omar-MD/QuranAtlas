@@ -13,7 +13,6 @@
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
   import { reader } from '../state/reader.svelte'
-  import { get } from '../core/db'
   import { getSurahs } from '../data/dataset'
   import { openNavDrawer, toggleNavDrawer } from './nav-drawer-bridge'
   import { openSettingsSheet } from '../settings/panel-bridge'
@@ -29,8 +28,6 @@
   let lastTop = 0
   let surahName = $state('')
   let surahArabicName = $state('')
-  let lastSurahHref = $state('#/s/1')
-
   const currentSurahNum = $derived(reader.currentSurahNum)
 
   const labelEnglish = $derived.by(() => {
@@ -150,12 +147,6 @@
 
   // ---- Mount ----
   onMount(() => {
-    get('settings', 'lastSurface').then((rec) => {
-      const v = typeof rec?.value === 'string' ? rec.value : ''
-      const m = v.match(/^#\/s\/(\d+)/)
-      if (m && m[1]) { lastSurahHref = `#/s/${m[1]}` }
-    }).catch(() => { /* ignore */ })
-
     const refreshSurahName = () => {
       getSurahs().then((list) => {
         const s = reader.currentSurahNum
