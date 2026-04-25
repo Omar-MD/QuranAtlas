@@ -41,12 +41,12 @@ test.describe('Journey G: About', () => {
   // ---------------------------------------------------------------------------
 
   test('G1: drawer → About → renders all required sections', async ({ page }) => {
-    // Post-2026-04-25 redesign: dock/header → drawer → About link
+    // Post-2026-04-25 drawer overhaul: header wordmark + ⓘ icon = sole About entry.
     await openMoreSheet(page)  // shim → openNavDrawer
     const drawer = page.locator('.qa-nav-drawer')
     await expect(drawer).toBeVisible()
 
-    await drawer.locator('button', { hasText: 'About' }).click()
+    await drawer.locator('.qa-nav-drawer-wordmark').click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
 
     // Wordmark / page heading
@@ -100,7 +100,7 @@ test.describe('Journey G: About', () => {
     expect(vText).toMatch(/^v/)
   })
 
-  test('G: hamburger drawer opens with Review and About items', async ({ page }) => {
+  test('G: hamburger drawer opens with Surahs+Review tabs and wordmark→About', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'drawer hamburger is mobile-only; desktop ambient dock has its own kebab')
 
@@ -111,15 +111,22 @@ test.describe('Journey G: About', () => {
     const drawer = page.locator('.qa-nav-drawer')
     await expect(drawer).toBeVisible({ timeout: 3_000 })
 
-    await expect(drawer.locator('button', { hasText: 'Review' })).toBeVisible()
-    await expect(drawer.locator('button', { hasText: 'About' })).toBeVisible()
+    // Two tabs: Surahs (default) · Review
+    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Surahs' })).toBeVisible()
+    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Review' })).toBeVisible()
 
-    await drawer.locator('button', { hasText: 'About' }).click()
+    // Wordmark with ⓘ icon = About entry
+    await expect(drawer.locator('.qa-nav-drawer-wordmark')).toBeVisible()
+
+    await drawer.locator('.qa-nav-drawer-wordmark').click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 5_000 })
     await expect(drawer).not.toBeVisible({ timeout: 3_000 })
   })
 
-  test('G: hamburger toggles the drawer (open → click again → close)', async ({ page }) => {
+  test('G: drawer dismisses via ✕ close button', async ({ page }) => {
+    // Post 2026-04-25: drawer is full-screen on mobile (z:100), occluding the
+    // MarginHeader hamburger (z:95). Toggle-by-second-tap is gone; the in-drawer
+    // ✕ button (and backdrop, swipe-left, Esc) are the dismissal paths.
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'drawer hamburger is mobile-only')
 
@@ -129,7 +136,7 @@ test.describe('Journey G: About', () => {
     await hamburger.click()
     await expect(drawer).toBeVisible({ timeout: 3_000 })
 
-    await hamburger.click()
+    await page.locator('.qa-nav-drawer-close').click()
     await expect(drawer).not.toBeVisible({ timeout: 3_000 })
   })
 
@@ -142,20 +149,23 @@ test.describe('Journey G: About', () => {
     expect(text).toMatch(/^v\d+\.\d+\.\d+\s+·\s+([a-f0-9]{3,}|dev|test)$/i)
   })
 
-  test('G: tapping label on About after reading 67 resumes #/s/67 (not Fatihah)', async ({ page }) => {
+  test('G: hamburger from About opens drawer with current-surah hydrated', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
-    test.skip(isDesktop, 'header label is mobile chrome only')
+    test.skip(isDesktop, 'header hamburger is mobile chrome only')
 
-    // 1. Read surah 67 to seed positions store.
+    // 1. Read surah 67 to set the reader rune.
     await page.goto('/#/s/67')
     await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 5_000 })
 
-    // 2. Cold-load About — currentSurahNum rune is null, label says "QuranAtlas".
+    // 2. Visit About — center-label tap is no-op post 2026-04-25; surah-resume
+    //    happens via the drawer instead.
     await page.goto('/#/about')
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
 
-    // 3. Tap the label — must resume the most-recent surah, not reset to Fatihah.
-    await page.locator('.qa-mh-label').click()
+    // 3. Open drawer + tap the row for surah 67 → resume reading.
+    await page.locator('.qa-mh-hamburger').click()
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 3_000 })
+    await page.locator('.qa-nav-drawer-surah-row[data-surah="67"]').click()
     await expect(page).toHaveURL(/#\/s\/67/, { timeout: 3_000 })
   })
 
@@ -169,7 +179,7 @@ test.describe('Journey G: About', () => {
 
   test('G1: a11y — no serious/critical axe violations on About page @a11y', async ({ page }) => {
     await openMoreSheet(page)  // shim → openNavDrawer
-    await page.locator('.qa-nav-drawer button', { hasText: 'About' }).click()
+    await page.locator('.qa-nav-drawer-wordmark').click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
 

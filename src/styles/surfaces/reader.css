@@ -223,17 +223,15 @@
     padding: 4px 8px;
     border: 0;
     background: transparent;
-    color: rgb(108 94 68 / 55%);
+    color: var(--qa-text-muted);
     font-family: inherit;
     font-size: var(--qa-text-size-meta);
     cursor: pointer;
-    transition: color var(--qa-transition-base), opacity var(--qa-transition-base);
+    transition: color var(--qa-transition-base);
   }
 
   .qa-continue-arrow {
     font-size: 14px;
-    opacity: 0.75;
-    transition: opacity var(--qa-transition-base);
   }
 
   .qa-continue-title {
@@ -244,14 +242,8 @@
   .qa-continue-next:hover,
   .qa-continue-prev:focus-visible,
   .qa-continue-next:focus-visible {
-    color: var(--qa-text-muted);
+    color: var(--qa-accent);
     outline: none;
-  }
-  .qa-continue-prev:hover .qa-continue-arrow,
-  .qa-continue-next:hover .qa-continue-arrow,
-  .qa-continue-prev:focus-visible .qa-continue-arrow,
-  .qa-continue-next:focus-visible .qa-continue-arrow {
-    opacity: 1;
   }
 
   /* Pull-to-swap indicator — minimal Chrome-mobile-PTR-style ring with a
