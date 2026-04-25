@@ -322,6 +322,8 @@ Inside Settings sheet.
 1. Tap a theme swatch (Light / Sepia / Dark / Auto) → `settings/theme.js::setTheme` writes `settings.theme` and flips `<html data-theme>`.
 2. All surfaces re-theme live. Auto additionally attaches a `prefers-color-scheme` listener.
 
+**Night recitation mode (post 2026-04-25)** is an independent toggle below the theme swatches that overlays a dim+warm tint via the persistent `.qa-night-shift` element (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, driven by `data-night-mode="on"` on `<html>` written by `settings/night-mode.ts`). Composes with any base theme. Reachable from the Settings row or via the global `n` reader shortcut (announced via `a11y/announcer`). Persists in `settings.nightMode` (boolean). **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D6: …' set + `tests/unit/settings/night-mode.test.ts`.
+
 ### D4. Clear all data
 
 Post 2026-04-25 mobile-nav-redesign — Clear-data lives on About page footer (was Settings sheet bottom row).
