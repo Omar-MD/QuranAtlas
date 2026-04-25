@@ -240,4 +240,75 @@
   .qa-settings-trans-choice--on .qa-settings-trans-check {
     opacity: 1;
   }
+
+  /* ---- Typography subview ---- */
+
+  .qa-settings-toggle-chev {
+    align-self: center;
+    color: var(--qa-text-secondary);
+    font-size: 1.25rem;
+    padding: 0 0.25rem;
+  }
+
+  .qa-typography-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .qa-typography-preview {
+    background: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    text-align: center;
+  }
+
+  .qa-typography-slider {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .qa-typography-slider-label {
+    font-size: 0.85rem;
+    color: var(--qa-text-secondary);
+    font-weight: 500;
+  }
+
+  .qa-typography-slider-row {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr 2.5rem;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .qa-typography-slider-input {
+    width: 100%;
+  }
+
+  .qa-typography-slider-min,
+  .qa-typography-slider-max {
+    color: var(--qa-text-secondary);
+    text-align: center;
+    font-size: 0.95rem;
+  }
+
+  .qa-typography-slider-max--lg {
+    font-size: 1.25rem;
+  }
+
+  .qa-typography-reset {
+    align-self: center;
+    background: transparent;
+    border: 0;
+    color: var(--qa-accent);
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+  }
+
+  .qa-typography-reset:hover {
+    text-decoration: underline;
+  }
 }

@@ -6,7 +6,13 @@
   import { logger } from '../core/logger.js'
   import { settings } from '../state/settings.svelte.ts'
   import { getThemeOptions, setTheme } from './theme.ts'
-  import { getFontSizeOptions, setFontSize } from './font-size.ts'
+  import { getFontSizeOptions, setFontSize, resetFontSize } from './font-size.ts'
+  import {
+    getReadingOptions,
+    setReadingStep,
+    resetReadingTypography,
+    type Dimension as ReadingDimension,
+  } from './reading-typography.ts'
   import { getTranslations } from '../data/dataset.js'
   import { registerPanel } from './panel-bridge.ts'
 
@@ -14,8 +20,8 @@
 
   // Sheet visibility
   let open = $state(false)
-  // View: 'main' | 'translation-picker'
-  let view = $state<'main' | 'translation-picker'>('main')
+  // View: 'main' | 'translation-picker' | 'typography'
+  let view = $state<'main' | 'translation-picker' | 'typography'>('main')
 
   // Data loaded when sheet opens
   let translations = $state<TranslationEntry[]>([])
@@ -24,6 +30,7 @@
   // Computed from settings rune
   const themeOptions = getThemeOptions()
   const fontOptions = getFontSizeOptions()
+  const readingOptions = getReadingOptions()
 
   async function loadSheetData() {
     try {
@@ -107,6 +114,40 @@
     const size = fontOptions[Math.max(0, Math.min(fontOptions.length - 1, idx))]
     if (size) { await setFontSize(size) }
   }
+
+  // ---- Reading typography (line spacing, word spacing, reader margin) ----
+
+  function readingIndexOf(step: string): number {
+    const idx = readingOptions.indexOf(step as typeof readingOptions[number])
+    return idx >= 0 ? idx : 2
+  }
+
+  async function handleReadingSlider(dim: ReadingDimension, e: Event) {
+    const idx = parseInt((e.target as HTMLInputElement).value, 10)
+    const step = readingOptions[Math.max(0, Math.min(readingOptions.length - 1, idx))]
+    if (step) { await setReadingStep(dim, step) }
+  }
+
+  async function handleResetTypography() {
+    await Promise.all([resetFontSize(), resetReadingTypography()])
+  }
+
+  function typographySubtitle(): string {
+    const allDefault =
+      settings.fontSize === 'md' &&
+      settings.lineSpacing === 'md' &&
+      settings.wordSpacing === 'md' &&
+      settings.readerMargin === 'md'
+    if (allDefault) { return 'Default' }
+    return `Aa ${settings.fontSize} · ↕ ${settings.lineSpacing} · ↔ ${settings.wordSpacing} · ⇔ ${settings.readerMargin}`
+  }
+
+  const typographyIsDefault = $derived(
+    settings.fontSize === 'md' &&
+    settings.lineSpacing === 'md' &&
+    settings.wordSpacing === 'md' &&
+    settings.readerMargin === 'md'
+  )
 
   // ---- Translation toggle ----
 
@@ -196,26 +237,19 @@
           </div>
         </section>
 
-        <!-- Font size section -->
+        <!-- Typography section (font size, line/word spacing, margins) -->
         <section class="qa-settings-section">
-          <div class="qa-settings-label">Font size</div>
-          <div class="qa-font-wrap">
-            <span class="qa-font-min">Aa</span>
-            <input
-              type="range"
-              class="qa-font-slider"
-              min="0"
-              max={fontOptions.length - 1}
-              step="1"
-              value={fontIndexOf(settings.fontSize)}
-              aria-label="Font size"
-              oninput={handleFontSlider}
-            />
-            <span class="qa-font-max">Aa</span>
-          </div>
-          <div class="qa-font-preview">
-            <span class="qa-font-preview-en">The Most Gracious · </span>
-            <span class="qa-font-preview-ar" dir="rtl">ٱلرَّحْمَـٰنِ</span>
+          <div class="qa-settings-label">Typography</div>
+          <div class="qa-settings-toggle-row">
+            <button
+              type="button"
+              class="qa-settings-toggle-body"
+              onclick={() => { view = 'typography' }}
+            >
+              <div class="qa-settings-toggle-main">Size, spacing &amp; margins</div>
+              <div class="qa-settings-toggle-sub">{typographySubtitle()}</div>
+            </button>
+            <span class="qa-settings-toggle-chev" aria-hidden="true">›</span>
           </div>
         </section>
 
@@ -258,7 +292,7 @@
 
       </div>
 
-    {:else}
+    {:else if view === 'translation-picker'}
       <!-- Translation picker view -->
       <div class="qa-sheet-hdr">
         <button
@@ -291,6 +325,114 @@
             <span class="qa-settings-trans-check" aria-hidden="true">✓</span>
           </button>
         {/each}
+      </div>
+
+    {:else}
+      <!-- Typography subview -->
+      <div class="qa-sheet-hdr">
+        <button
+          type="button"
+          class="qa-sheet-back"
+          aria-label="Back"
+          onclick={() => { view = 'main' }}
+        >← Typography</button>
+        <button
+          type="button"
+          class="qa-sheet-close"
+          aria-label="Close"
+          onclick={closeSettingsSheet}
+        >✕</button>
+      </div>
+      <div class="qa-sheet-body qa-typography-body">
+        <div class="qa-typography-preview" data-testid="typography-preview">
+          <p class="qa-verse-arabic" dir="rtl">ٱلرَّحْمَـٰنُ عَلَّمَ ٱلْقُرْءَانَ</p>
+          <p class="qa-verse-translation">The Most Gracious. He has taught the Qur'an.</p>
+        </div>
+
+        <div class="qa-typography-slider">
+          <label class="qa-typography-slider-label" for="qa-tslider-fs">Font size</label>
+          <div class="qa-typography-slider-row">
+            <span class="qa-typography-slider-min" aria-hidden="true">Aa</span>
+            <input
+              id="qa-tslider-fs"
+              class="qa-typography-slider-input"
+              type="range"
+              min="0"
+              max={fontOptions.length - 1}
+              step="1"
+              value={fontIndexOf(settings.fontSize)}
+              oninput={handleFontSlider}
+              aria-label="Font size"
+            />
+            <span class="qa-typography-slider-max qa-typography-slider-max--lg" aria-hidden="true">Aa</span>
+          </div>
+        </div>
+
+        <div class="qa-typography-slider">
+          <label class="qa-typography-slider-label" for="qa-tslider-line">Line spacing</label>
+          <div class="qa-typography-slider-row">
+            <span class="qa-typography-slider-min" aria-hidden="true">≡</span>
+            <input
+              id="qa-tslider-line"
+              class="qa-typography-slider-input"
+              type="range"
+              min="0"
+              max={readingOptions.length - 1}
+              step="1"
+              value={readingIndexOf(settings.lineSpacing)}
+              oninput={(e) => handleReadingSlider('lineSpacing', e)}
+              aria-label="Line spacing"
+            />
+            <span class="qa-typography-slider-max" aria-hidden="true">☰</span>
+          </div>
+        </div>
+
+        <div class="qa-typography-slider">
+          <label class="qa-typography-slider-label" for="qa-tslider-word">Word spacing</label>
+          <div class="qa-typography-slider-row">
+            <span class="qa-typography-slider-min" aria-hidden="true">a·b</span>
+            <input
+              id="qa-tslider-word"
+              class="qa-typography-slider-input"
+              type="range"
+              min="0"
+              max={readingOptions.length - 1}
+              step="1"
+              value={readingIndexOf(settings.wordSpacing)}
+              oninput={(e) => handleReadingSlider('wordSpacing', e)}
+              aria-label="Word spacing"
+            />
+            <span class="qa-typography-slider-max" aria-hidden="true">a  b</span>
+          </div>
+        </div>
+
+        <div class="qa-typography-slider">
+          <label class="qa-typography-slider-label" for="qa-tslider-margin">Margins</label>
+          <div class="qa-typography-slider-row">
+            <span class="qa-typography-slider-min" aria-hidden="true">◫</span>
+            <input
+              id="qa-tslider-margin"
+              class="qa-typography-slider-input"
+              type="range"
+              min="0"
+              max={readingOptions.length - 1}
+              step="1"
+              value={readingIndexOf(settings.readerMargin)}
+              oninput={(e) => handleReadingSlider('readerMargin', e)}
+              aria-label="Reader margins"
+            />
+            <span class="qa-typography-slider-max" aria-hidden="true">▯</span>
+          </div>
+        </div>
+
+        {#if !typographyIsDefault}
+          <button
+            type="button"
+            class="qa-typography-reset"
+            onclick={handleResetTypography}
+            data-testid="typography-reset"
+          >Reset to default</button>
+        {/if}
       </div>
     {/if}
   </div>
