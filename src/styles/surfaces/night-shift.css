@@ -1,0 +1,28 @@
+@layer surfaces {
+  /* ==========================================================================
+     Night recitation mode — dim+warm overlay
+
+     A persistent full-viewport element with mix-blend-mode: multiply darkens
+     and warms every pixel beneath. Composes with any theme. Layout-safe:
+     pointer-events: none, no impact on stacking of fixed elements (sits on
+     top with high z-index but is fully transparent unless night mode is on).
+
+     Driver: src/settings/night-mode.ts (writes data-night-mode on <html>).
+     Spec: docs/superpowers/specs/2026-04-25-night-recitation-mode-design.md
+     ========================================================================== */
+
+  .qa-night-shift {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background: #ffb070;
+    opacity: 0;
+    mix-blend-mode: multiply;
+    transition: opacity var(--qa-transition-base);
+  }
+
+  [data-night-mode="on"] .qa-night-shift {
+    opacity: 0.28;
+  }
+}
