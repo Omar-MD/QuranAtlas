@@ -13,6 +13,7 @@
     resetReadingTypography,
     type Dimension as ReadingDimension,
   } from './reading-typography.ts'
+  import { toggleNightMode } from './night-mode.ts'
   import { getTranslations } from '../data/dataset.js'
   import { registerPanel } from './panel-bridge.ts'
 
@@ -100,6 +101,10 @@
 
   async function handleTheme(opt: string) {
     await setTheme(opt)
+  }
+
+  async function handleNightMode() {
+    await toggleNightMode()
   }
 
   // ---- Font size ----
@@ -234,6 +239,24 @@
                 </span>
               </button>
             {/each}
+          </div>
+          <div class="qa-settings-toggle-row qa-settings-toggle-row--night">
+            <div class="qa-settings-toggle-body">
+              <div class="qa-settings-toggle-main">Night mode</div>
+              <div class="qa-settings-toggle-sub">Dim + warm tint over any theme</div>
+            </div>
+            <button
+              type="button"
+              class="qa-settings-switch"
+              class:qa-settings-switch--on={settings.nightMode}
+              role="switch"
+              aria-checked={settings.nightMode}
+              aria-label="Night mode"
+              onclick={handleNightMode}
+              data-testid="night-mode-switch"
+            >
+              <span class="qa-settings-switch-knob"></span>
+            </button>
           </div>
         </section>
 
