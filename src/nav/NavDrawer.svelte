@@ -42,13 +42,34 @@
     reader.currentSurahNum ?? settings.currentPosition?.surah ?? null
   )
 
-  const visibleItems = $derived.by<SurahMeta[]>(() => {
-    const { filter, searchQuery } = surahsState
-    const q = searchQuery.trim()
-    const qLower = q.toLowerCase()
-    const refMatch = q.match(/^(\d+)\s*:\s*(\d+)$/)
-    if (refMatch) { return [] }
+  // Parsed search query — surface different shapes (S:V ref, surah-number,
+  // big-number = verse-only, free text). Other derivations key off this.
+  type ParsedQuery =
+    | { kind: 'empty' }
+    | { kind: 'ref'; surah: number; verse: number }
+    | { kind: 'surahNum'; n: number }
+    | { kind: 'verseNum'; v: number }
+    | { kind: 'text'; q: string }
+  const parsedQuery = $derived.by<ParsedQuery>(() => {
+    const q = surahsState.searchQuery.trim()
+    if (!q) { return { kind: 'empty' } }
+    const ref = q.match(/^(\d+)\s*:\s*(\d+)$/)
+    if (ref) {
+      return { kind: 'ref', surah: parseInt(ref[1] ?? '0', 10), verse: parseInt(ref[2] ?? '0', 10) }
+    }
+    const num = q.match(/^(\d+)$/)
+    if (num) {
+      const n = parseInt(num[1] ?? '0', 10)
+      if (n >= 1 && n <= 114) { return { kind: 'surahNum', n } }
+      // 115–286 makes sense as a verse number — only Al-Baqarah (286) holds
+      // it. Beyond 286 nothing satisfies, list goes empty.
+      return { kind: 'verseNum', v: n }
+    }
+    return { kind: 'text', q: q.toLowerCase() }
+  })
 
+  const visibleItems = $derived.by<SurahMeta[]>(() => {
+    const { filter } = surahsState
     let items: SurahMeta[] = allSurahs
     if (filter === 'bookmarked') {
       items = allSurahs.filter(s => bookmarkedSet.has(s.n))
@@ -59,22 +80,42 @@
         .sort((a, b) => (order.get(a.n) ?? 0) - (order.get(b.n) ?? 0))
     }
 
-    const numericMatch = q.match(/^(\d+)$/)
-    if (numericMatch) {
-      const raw = numericMatch[1]
-      const jumpN = raw !== undefined ? parseInt(raw, 10) : NaN
-      if (!isNaN(jumpN) && jumpN >= 1 && jumpN <= 114) {
-        return items.filter(s => s.n === jumpN)
-      }
-    } else if (q) {
-      return items.filter(s => {
-        const name = (s.name ?? '').toLowerCase()
-        const meaning = (getMeaning(s.n) ?? '').toLowerCase()
-        const ar = ((s as Record<string, unknown>)['arabic'] as string | undefined ?? '').toLowerCase()
-        return name.includes(qLower) || meaning.includes(qLower) || ar.includes(qLower)
-      })
+    const p = parsedQuery
+    if (p.kind === 'empty') { return items }
+    if (p.kind === 'surahNum') { return items.filter(s => s.n === p.n) }
+    if (p.kind === 'verseNum') { return items.filter(s => s.count >= p.v) }
+    if (p.kind === 'ref') {
+      // Show only the target surah if it can hold the verse. Tap or Enter
+      // both navigate via goRef() — the row click is the candidate selector.
+      return items.filter(s => s.n === p.surah && s.count >= p.verse)
     }
-    return items
+    return items.filter(s => {
+      const name = (s.name ?? '').toLowerCase()
+      const meaning = (getMeaning(s.n) ?? '').toLowerCase()
+      const ar = ((s as Record<string, unknown>)['arabic'] as string | undefined ?? '').toLowerCase()
+      return name.includes(p.q) || meaning.includes(p.q) || ar.includes(p.q)
+    })
+  })
+
+  // Hint shown above the surah list when the query parses as a verse-jump
+  // candidate. Lets the user confirm the jump before pressing Enter, instead
+  // of mid-typing "2:255" firing on the partial "2:2".
+  const searchHint = $derived.by<string | null>(() => {
+    const p = parsedQuery
+    if (p.kind === 'ref') {
+      const meta = allSurahs.find(s => s.n === p.surah)
+      if (!meta) { return `No surah ${p.surah}` }
+      if (p.verse < 1 || p.verse > meta.count) {
+        return `${meta.name} has ${meta.count} verses`
+      }
+      return `Press Enter to jump to ${meta.name} ${p.verse}`
+    }
+    if (p.kind === 'verseNum') {
+      const matchCount = allSurahs.filter(s => s.count >= p.v).length
+      if (matchCount === 0) { return `No surah has ${p.v} verses` }
+      return `Surahs with at least ${p.v} verses (${matchCount})`
+    }
+    return null
   })
 
   async function open(tab?: DrawerTab): Promise<void> {
@@ -136,17 +177,26 @@
 
   function handleSearchInput(e: Event): void {
     const input = e.target as HTMLInputElement
-    const q = input.value
-    surahsState.searchQuery = q
+    surahsState.searchQuery = input.value
+  }
 
-    const refMatch = q.trim().match(/^(\d+)\s*:\s*(\d+)$/)
-    if (refMatch) {
-      const sNum = parseInt(refMatch[1] ?? '0', 10)
-      const vNum = parseInt(refMatch[2] ?? '0', 10)
-      const meta = allSurahs.find(s => s.n === sNum)
-      if (meta && vNum >= 1 && vNum <= meta.count) {
-        emit(Events.NAVIGATION_NAVIGATE, { surah: sNum, verse: vNum })
-        close()
+  function commitRefJump(): boolean {
+    const p = parsedQuery
+    if (p.kind !== 'ref') { return false }
+    const meta = allSurahs.find(s => s.n === p.surah)
+    if (!meta || p.verse < 1 || p.verse > meta.count) { return false }
+    emit(Events.NAVIGATION_NAVIGATE, { surah: p.surah, verse: p.verse })
+    close()
+    return true
+  }
+
+  function handleSearchKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Enter') {
+      if (commitRefJump()) { e.preventDefault(); return }
+      // Enter on a single-surah filter (numeric / unique text match) opens it.
+      if (visibleItems.length === 1 && visibleItems[0]) {
+        e.preventDefault()
+        goSurah(visibleItems[0].n)
       }
     }
   }
@@ -250,6 +300,7 @@
             maxlength={20}
             value={surahsState.searchQuery}
             oninput={handleSearchInput}
+            onkeydown={handleSearchKeydown}
           />
         </label>
 
@@ -266,6 +317,10 @@
           {/each}
         </div>
 
+        {#if searchHint}
+          <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
+        {/if}
+
         <ul class="qa-nav-drawer-surah-list" bind:this={listEl}>
           {#each visibleItems as s (s.n)}
             <li
@@ -276,8 +331,10 @@
               <button
                 type="button"
                 class="qa-nav-drawer-surah-btn"
-                onclick={() => goSurah(s.n)}
-                aria-label={`Open ${s.name}`}
+                onclick={() => { if (!commitRefJump()) { goSurah(s.n) } }}
+                aria-label={parsedQuery.kind === 'ref' && parsedQuery.surah === s.n
+                  ? `Open ${s.name} verse ${parsedQuery.verse}`
+                  : `Open ${s.name}`}
               >
                 <span class="qa-nav-drawer-surah-num">{s.n}</span>
                 <span class="qa-nav-drawer-surah-name">{s.name}</span>
