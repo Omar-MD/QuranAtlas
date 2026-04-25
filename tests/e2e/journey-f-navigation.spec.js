@@ -176,7 +176,7 @@ test.describe('Journey F: Navigation', () => {
   // F4. Surah directory
   // ---------------------------------------------------------------------------
 
-  test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
+  test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row @desktop', async ({ page }) => {
     // Desktop exposes a Search tab in the left rail; the command sheet (⌘K)
     // is the canonical cross-viewport keyboard entry to reach "Browse all
     // surahs".  (Mobile MarginHeader crumb routes straight to `#/surahs`.)
@@ -225,7 +225,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F4: a11y — no serious/critical axe violations on surah list @a11y', async ({ page }) => {
+  test('F4: a11y — no serious/critical axe violations on surah list @a11y @desktop', async ({ page }) => {
     await page.goto('/#/surahs')
     await expect(page.locator('.qa-surah-list-page')).toBeVisible({ timeout: 8_000 })
 
@@ -237,7 +237,7 @@ test.describe('Journey F: Navigation', () => {
   // F5. Continue-reading card
   // ---------------------------------------------------------------------------
 
-  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates', async ({ page }) => {
+  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates @desktop', async ({ page }) => {
     // Navigate to surah 67 so the reader writes a position record
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -262,7 +262,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F5: continue-reading card is hidden when search query is active', async ({ page }) => {
+  test('F5: continue-reading card is hidden when search query is active @desktop', async ({ page }) => {
     // Navigate to surah 67 to set the last position
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -327,7 +327,7 @@ test.describe('Journey F: Navigation', () => {
     await expect(cmdSheet).toHaveClass(/qa-cmd--hidden/, { timeout: 3_000 })
   })
 
-  test('F6: global shortcut G then S → navigates to #/surahs @keyboard', async ({ page }) => {
+  test('F6: global shortcut G then S → navigates to #/surahs @keyboard @desktop', async ({ page }) => {
     // Ensure focus is not on an input (reader is loaded, no input focused)
     await expect(page.locator('.qa-verse').first()).toBeVisible()
 
@@ -389,5 +389,117 @@ test.describe('Journey F: desktop variants @desktop', () => {
       rows[1].getBoundingClientRect().top,
     ])
     expect(Math.abs(rowTops[0] - rowTops[1])).toBeLessThan(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Journey F — mobile drawer (post 2026-04-25 redesign)
+//
+// Hamburger opens a full-screen drawer with two tabs (Surahs / Review).
+// Surahs tab carries everything the desktop #/surahs page provides; Review
+// tab carries Hub + 12 grouped layer rows. Wordmark in header → About.
+// Mobile #/surahs deep-links hard-redirect to drawer-open.
+// ---------------------------------------------------------------------------
+
+test.describe('Journey F: mobile drawer', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    // MarginHeader hamburger is hidden on viewports ≥1180px (desktop runs the
+    // AmbientDock kebab path instead, covered separately). Skip cleanly so
+    // these tests run only on Mobile Chrome / mobile-sized projects.
+    const vp = testInfo.project.use.viewport
+    if (vp && vp.width >= 1180) { testInfo.skip(true, 'mobile-only suite') }
+
+    await page.goto('/')
+    await page.waitForFunction(() => window.location.hash !== '', { timeout: 5_000 }).catch(() => {})
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+  })
+
+  test('F-mobile-1: hamburger opens drawer with Surahs tab default and current-surah highlighted', async ({ page }) => {
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    const drawer = page.locator('.qa-nav-drawer')
+    await expect(drawer).toBeVisible()
+
+    // Surahs tab is on by default
+    await expect(page.locator('.qa-nav-drawer-tab--on')).toHaveText(/Surahs/i)
+
+    // Current surah (18 — Al-Kahf) is highlighted
+    const currentRow = page.locator('.qa-nav-drawer-surah-row--current')
+    await expect(currentRow).toHaveAttribute('data-surah', '18')
+
+    // Wordmark is a button (About entry)
+    await expect(page.locator('.qa-nav-drawer-wordmark')).toBeVisible()
+  })
+
+  test('F-mobile-2: switch to Review tab → Hub row + 12 layer rows', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    await page.locator('.qa-nav-drawer-tab', { hasText: 'Review' }).click()
+
+    await expect(page.locator('.qa-nav-drawer-hub-row')).toBeVisible()
+    const layerRows = page.locator('.qa-nav-drawer-layer-row')
+    await expect(layerRows).toHaveCount(12)
+
+    // Tap "people" row → routes to #/review?layer=people
+    await page.locator('.qa-nav-drawer-layer-row[data-layer="people"]').click()
+    await expect(page).toHaveURL(/#\/review\?layer=people$/)
+  })
+
+  test('F-mobile-3: wordmark in drawer routes to #/about', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    await page.locator('.qa-nav-drawer-wordmark').click()
+    await expect(page).toHaveURL(/#\/about$/)
+  })
+
+  test('F-mobile-4: typing #/surahs on mobile redirects + opens drawer', async ({ page }) => {
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    await page.evaluate(() => { window.location.hash = '#/surahs' })
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 4_000 })
+    // Hash should be replaced (not on #/surahs)
+    await page.waitForFunction(() => !window.location.hash.startsWith('#/surahs'), { timeout: 4_000 })
+  })
+
+  test('F-mobile-5: center label tap is a no-op', async ({ page }) => {
+    await page.goto('/#/s/2')
+    await waitForReader(page)
+
+    const before = page.url()
+    await page.locator('.qa-mh-label').click({ position: { x: 50, y: 10 } }).catch(() => {})
+    expect(page.url()).toBe(before)
+    await expect(page.locator('.qa-nav-drawer')).not.toBeVisible()
+  })
+
+  test('F-mobile-6: search filters in-drawer surah list', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    const search = page.locator('.qa-nav-drawer-search-input')
+    await search.fill('mulk')
+
+    const rows = page.locator('.qa-nav-drawer-surah-row')
+    await expect(rows.filter({ hasText: 'Al-Mulk' })).toHaveCount(1)
+  })
+
+  test('F-mobile-7: Bookmarked filter narrows list to bookmarked surahs', async ({ page }) => {
+    await seedMarks(page, [{ verseKey: '67:1', tags: ['mercy'], note: '' }])
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    await page.locator('.qa-nav-drawer-pill', { hasText: 'Bookmarked' }).click()
+    const rows = page.locator('.qa-nav-drawer-surah-row')
+    await expect(rows).toHaveCount(1)
+    await expect(rows.first()).toContainText('Al-Mulk')
   })
 })
