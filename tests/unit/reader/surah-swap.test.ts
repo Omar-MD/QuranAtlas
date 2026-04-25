@@ -8,6 +8,14 @@ import {
   PULL_THRESHOLD_PX,
 } from '../../../src/reader/surah-swap'
 
+/**
+ * Pull-to-swap requires the scroller to have settled at an edge for
+ * SCROLL_SETTLE_MS (~250) before wheel/touch input is allowed to
+ * accumulate as pull. Tests therefore advance past that window before
+ * dispatching the gesture events.
+ */
+const SETTLE_WAIT_MS = 300
+
 describe('reader/surah-swap.ts — wrap math', () => {
   it('nextSurah increments inside the range', () => {
     expect(nextSurah(1)).toBe(2)
@@ -62,18 +70,24 @@ describe('reader/surah-swap.ts — setupPullToSwap (wheel)', () => {
   let cleanup: () => void
 
   beforeEach(() => {
+    vi.useFakeTimers()
     scroller = document.createElement('div')
     Object.defineProperty(scroller, 'clientHeight', { value: 500, configurable: true })
     Object.defineProperty(scroller, 'scrollHeight', { value: 1000, configurable: true })
     onPull = vi.fn()
     onCommit = vi.fn()
     cleanup = setupPullToSwap({ scroller, onPull, onCommit })
+    // Walk past the SCROLL_SETTLE_MS gate that arms wheel/touch input.
+    vi.advanceTimersByTime(SETTLE_WAIT_MS)
   })
 
-  afterEach(() => { cleanup() })
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
 
   it('emits forward progress as wheel-down accumulates at scroll-bottom', () => {
-    scroller.scrollTop = 500 // at bottom
+    scroller.scrollTop = 500
     scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 30 }))
     const last = onPull.mock.calls.at(-1)?.[0]
     expect(last?.direction).toBe('forward')
@@ -97,24 +111,28 @@ describe('reader/surah-swap.ts — setupPullToSwap (wheel)', () => {
   })
 
   it('reaches progress=1 and commits forward when wheel sum exceeds threshold', () => {
-    vi.useFakeTimers()
     scroller.scrollTop = 500
-    // Pull past threshold in chunks
     scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: PULL_THRESHOLD_PX + 20 }))
-    // Wait past the wheel-idle commit window
-    vi.advanceTimersByTime(300)
+    vi.advanceTimersByTime(400)
     expect(onCommit).toHaveBeenCalledTimes(1)
     expect(onCommit).toHaveBeenCalledWith('forward')
-    vi.useRealTimers()
   })
 
   it('does NOT commit if wheel sum stays below threshold', () => {
-    vi.useFakeTimers()
     scroller.scrollTop = 500
     scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: 30 }))
-    vi.advanceTimersByTime(300)
+    vi.advanceTimersByTime(400)
     expect(onCommit).not.toHaveBeenCalled()
-    vi.useRealTimers()
+  })
+
+  it('ignores wheel input that arrives during ongoing scroll (no settle)', () => {
+    scroller.scrollTop = 500
+    // Simulate scroll activity right before the wheel — settle gate must veto.
+    scroller.dispatchEvent(new Event('scroll'))
+    scroller.dispatchEvent(new WheelEvent('wheel', { deltaY: PULL_THRESHOLD_PX + 50 }))
+    vi.advanceTimersByTime(400)
+    expect(onPull).not.toHaveBeenCalled()
+    expect(onCommit).not.toHaveBeenCalled()
   })
 
   it('cleanup removes listeners — no further pull events fire', () => {
@@ -133,15 +151,20 @@ describe('reader/surah-swap.ts — setupPullToSwap (touch)', () => {
   let cleanup: () => void
 
   beforeEach(() => {
+    vi.useFakeTimers()
     scroller = document.createElement('div')
     Object.defineProperty(scroller, 'clientHeight', { value: 500, configurable: true })
     Object.defineProperty(scroller, 'scrollHeight', { value: 1000, configurable: true })
     onPull = vi.fn()
     onCommit = vi.fn()
     cleanup = setupPullToSwap({ scroller, onPull, onCommit })
+    vi.advanceTimersByTime(SETTLE_WAIT_MS)
   })
 
-  afterEach(() => { cleanup() })
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
 
   function makeTouchEvent(type: string, clientY: number): TouchEvent {
     const t = { clientY, identifier: 0, target: scroller } as unknown as Touch
@@ -170,7 +193,6 @@ describe('reader/surah-swap.ts — setupPullToSwap (touch)', () => {
     scroller.dispatchEvent(makeTouchEvent('touchmove', 400 - 30))
     scroller.dispatchEvent(makeTouchEvent('touchend', 0))
     expect(onCommit).not.toHaveBeenCalled()
-    // Last emit should be release (null)
     expect(onPull.mock.calls.at(-1)?.[0]).toBeNull()
   })
 
@@ -178,6 +200,15 @@ describe('reader/surah-swap.ts — setupPullToSwap (touch)', () => {
     scroller.scrollTop = 200
     scroller.dispatchEvent(makeTouchEvent('touchstart', 400))
     scroller.dispatchEvent(makeTouchEvent('touchmove', 400 - 200))
+    scroller.dispatchEvent(makeTouchEvent('touchend', 0))
+    expect(onCommit).not.toHaveBeenCalled()
+  })
+
+  it('touchstart during ongoing scroll (no settle) cannot pull even at edge', () => {
+    scroller.scrollTop = 500
+    scroller.dispatchEvent(new Event('scroll'))
+    scroller.dispatchEvent(makeTouchEvent('touchstart', 400))
+    scroller.dispatchEvent(makeTouchEvent('touchmove', 400 - (PULL_THRESHOLD_PX + 50)))
     scroller.dispatchEvent(makeTouchEvent('touchend', 0))
     expect(onCommit).not.toHaveBeenCalled()
   })

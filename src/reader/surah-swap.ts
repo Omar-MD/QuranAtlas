@@ -32,6 +32,13 @@ const WHEEL_IDLE_MS = 260
 /** Slop — small overscroll deltas below this are ignored. */
 const PULL_SLOP_PX = 18
 
+/**
+ * Require the scroller to have settled at an edge for this long before
+ * wheel input is allowed to accumulate as pull. Prevents the inertia of
+ * a fast scroll-to-end from immediately triggering a swap.
+ */
+const SCROLL_SETTLE_MS = 250
+
 export type SwapAnchor = 'top' | 'bottom'
 export type PullDirection = 'forward' | 'backward'
 
@@ -100,12 +107,21 @@ export function setupPullToSwap(opts: PullToSwapOptions): () => void {
   const { scroller, onPull, onCommit } = opts
 
   let lastCommitAt = 0
+  let lastScrollAt = 0
   let pullDirection: PullDirection | null = null
   let pullDistance = 0
 
   // Touch tracking
-  let touchStartY: number | null = null
+  let touchAnchorY: number | null = null
   let touchActiveDirection: PullDirection | null = null
+  /**
+   * Edge state at the moment the finger landed. The pull gesture is only
+   * eligible if the scroller was already at an edge when contact began.
+   * A continuous swipe that crosses an edge mid-gesture (e.g. user
+   * scrolls fast from mid-surah to the end) does NOT trigger a swap —
+   * the user must lift and re-touch at the edge to pull.
+   */
+  let touchStartEdge: 'top' | 'bottom' | null = null
 
   // Wheel tracking
   let wheelIdleTimer: ReturnType<typeof setTimeout> | null = null
@@ -115,6 +131,8 @@ export function setupPullToSwap(opts: PullToSwapOptions): () => void {
   const isAtTop = (): boolean => scroller.scrollTop <= 0
 
   const inCooldown = (): boolean => Date.now() - lastCommitAt < COMMIT_COOLDOWN_MS
+
+  const isScrollSettled = (): boolean => Date.now() - lastScrollAt > SCROLL_SETTLE_MS
 
   const emit = (): void => {
     if (pullDirection === null) {
@@ -128,8 +146,9 @@ export function setupPullToSwap(opts: PullToSwapOptions): () => void {
   const release = (): void => {
     pullDirection = null
     pullDistance = 0
-    touchStartY = null
+    touchAnchorY = null
     touchActiveDirection = null
+    touchStartEdge = null
     if (wheelIdleTimer) { clearTimeout(wheelIdleTimer); wheelIdleTimer = null }
     onPull(null)
   }
@@ -157,24 +176,35 @@ export function setupPullToSwap(opts: PullToSwapOptions): () => void {
   const onTouchStart = (e: TouchEvent): void => {
     const t = e.touches[0]
     if (!t) { return }
-    touchStartY = t.clientY
+    // Only arm the gesture if the scroller is already at an edge AND
+    // the scroll has settled. A mid-page touchstart cannot pull;
+    // neither can a touch that lands during inertial scroll.
+    if (isAtTop() && isScrollSettled()) {
+      touchStartEdge = 'top'
+    } else if (isAtBottom() && isScrollSettled()) {
+      touchStartEdge = 'bottom'
+    } else {
+      touchStartEdge = null
+    }
+    touchAnchorY = t.clientY
     touchActiveDirection = null
     pullDistance = 0
     pullDirection = null
   }
 
   const onTouchMove = (e: TouchEvent): void => {
-    if (touchStartY === null || inCooldown()) { return }
+    if (touchAnchorY === null || touchStartEdge === null || inCooldown()) { return }
     const t = e.touches[0]
     if (!t) { return }
-    const dy = t.clientY - touchStartY
+    const dy = t.clientY - touchAnchorY
 
-    // Decide direction based on initial pull and edge state. A finger moving
-    // up at scroll-bottom = forward; moving down at scroll-top = backward.
+    // Decide direction based on initial pull and the edge captured at
+    // touchstart. The scroller must still be at that edge — if a quick
+    // sub-gesture scrolled away, the pull is canceled.
     if (touchActiveDirection === null) {
-      if (dy < -PULL_SLOP_PX && isAtBottom()) {
+      if (touchStartEdge === 'bottom' && dy < -PULL_SLOP_PX && isAtBottom()) {
         touchActiveDirection = 'forward'
-      } else if (dy > PULL_SLOP_PX && isAtTop()) {
+      } else if (touchStartEdge === 'top' && dy > PULL_SLOP_PX && isAtTop()) {
         touchActiveDirection = 'backward'
       } else {
         return
@@ -202,6 +232,10 @@ export function setupPullToSwap(opts: PullToSwapOptions): () => void {
   // ---- Wheel ----
   const onWheel = (e: WheelEvent): void => {
     if (inCooldown()) { return }
+    // Wheel deltas only count once the scroller has settled at the edge.
+    // This prevents a fast scroll-to-end from immediately rolling into a
+    // swap on the first wheel tick past the bottom.
+    if (!isScrollSettled()) { return }
 
     const dy = e.deltaY
     if (dy > PULL_SLOP_PX && isAtBottom()) {
@@ -222,6 +256,13 @@ export function setupPullToSwap(opts: PullToSwapOptions): () => void {
     }, WHEEL_IDLE_MS)
   }
 
+  // Track scroll activity so wheel + touch handlers can require a settle
+  // window before accumulating pull. Initialised to "just scrolled" so the
+  // first wheel/touch right after mount can't fire immediately.
+  lastScrollAt = Date.now()
+  const onScroll = (): void => { lastScrollAt = Date.now() }
+
+  scroller.addEventListener('scroll', onScroll, { passive: true })
   scroller.addEventListener('touchstart', onTouchStart, { passive: true })
   scroller.addEventListener('touchmove', onTouchMove, { passive: true })
   scroller.addEventListener('touchend', onTouchEnd, { passive: true })
@@ -229,6 +270,7 @@ export function setupPullToSwap(opts: PullToSwapOptions): () => void {
   scroller.addEventListener('wheel', onWheel, { passive: true })
 
   return () => {
+    scroller.removeEventListener('scroll', onScroll)
     scroller.removeEventListener('touchstart', onTouchStart)
     scroller.removeEventListener('touchmove', onTouchMove)
     scroller.removeEventListener('touchend', onTouchEnd)
