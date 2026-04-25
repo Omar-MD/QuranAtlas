@@ -153,12 +153,13 @@ On the reader.
 
 **Surfaces:** Ambient dock, Ambient pill.
 
-### B5. Typography live preview (font size · line spacing · word spacing · margins)
+### B5. Typography live preview (font size · line spacing · word spacing · margins · verse spacing)
 
 From Settings sheet → **Typography** row → Typography subview (see D1, D5).
 
-1. Drag any of the four sliders → corresponding `settings.*` writes through `font-size.ts` / `reading-typography.ts` → reader updates live (font-size emits `SETTINGS_FONT_SIZE_CHANGED`; the other three update via `<html data-*>` attribute change picked up by CSS attribute selectors — no events).
+1. Drag any of the five sliders → corresponding `settings.*` writes through `font-size.ts` / `reading-typography.ts` → reader updates live (font-size emits `SETTINGS_FONT_SIZE_CHANGED`; the other four update via `<html data-*>` attribute change picked up by CSS attribute selectors — no events).
 2. Live preview line at the top of the subview reflects the change immediately.
+3. On mobile the **Margins** slider drives `.qa-verse` horizontal padding (xs ≈ edge-to-edge, xl gives wide gutters); `#main-content` drops its outer 1rem horizontal padding when reader content is present so the slider owns the full inset budget. **Verse spacing** drives `.qa-verse` vertical padding everywhere.
 
 **Surfaces:** Settings sheet (Typography subview), Reader.
 
@@ -308,17 +309,17 @@ Post 2026-04-25 mobile-nav-redesign (was More sheet → Settings).
 
 **Font size keyboard shortcuts** still work outside the subview: `⌘↑` (Mac) / `Ctrl+↑` (others) bumps up; `⌘↓` / `Ctrl+↓` bumps down; announced to screen readers. Guarded against focused inputs.
 
-### D5. Typography subview (font size · line spacing · word spacing · margins)
+### D5. Typography subview (font size · line spacing · word spacing · margins · verse spacing)
 
 Inside Settings sheet, post 2026-04-25.
 
-1. Tap the **Typography** row on the main Settings view → subview opens. Subtitle reads `Default` when all four values are `md`, otherwise a compact summary like `Aa lg · ↕ md · ↔ xs · ⇔ md`.
-2. Subview top: live preview block (one Arabic verse + translation line) wrapped in the reader's column rules so margin changes are visible inside the sheet.
-3. Four sliders, each 5-step (xs / sm / md / lg / xl) — Font size, Line spacing, Word spacing, Margins. Drag → respective IDB key writes (`fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`) → CSS attribute selectors on `<html>` (and the `--qa-font-size-base` var for font size) re-render the reader live.
-4. **Reset to default** appears below the sliders only when at least one of the four ≠ `md`. Tap → all four return to `md` and the button hides.
+1. Tap the **Typography** row on the main Settings view → subview opens. Subtitle reads `Default` when all five values are `md`, otherwise a compact summary like `Aa lg · ↕ md · ↔ xs · ⇔ md · ⇕ lg`.
+2. Subview top: live preview block (one Arabic verse + translation line) wrapped in the reader's column rules so margin and spacing changes are visible inside the sheet.
+3. Five sliders, each 5-step (xs / sm / md / lg / xl) — Font size, Line spacing, Word spacing, Margins, Verse spacing. Drag → respective IDB key writes (`fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`) → CSS attribute selectors on `<html>` (and the `--qa-font-size-base` var for font size) re-render the reader live. **Margins** drives `.qa-verse` horizontal padding via `--qa-verse-pad-x` (mobile: full edge control; desktop: still a max-width cap on the column). **Verse spacing** drives `.qa-verse` vertical padding via `--qa-verse-pad-y`.
+4. **Reset to default** appears below the sliders only when at least one of the five ≠ `md`. Tap → all five return to `md` and the button hides.
 5. Back arrow returns to main Settings view; subtitle reflects new state.
 
-**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`. **Sole writer (line/word/margin):** `src/settings/reading-typography.ts`. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D5: …' set + `tests/unit/settings/reading-typography.test.ts`.
+**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`, `settings.verseSpacing`. **Sole writer (line/word/margin/verse-spacing):** `src/settings/reading-typography.ts`. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D5: …' set + `tests/unit/settings/reading-typography.test.ts`.
 
 ### D2. Pick a translation
 

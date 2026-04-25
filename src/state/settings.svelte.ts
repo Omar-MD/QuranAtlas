@@ -13,6 +13,7 @@ export const settings = $state({
   lineSpacing: 'md' as ReadingStep,
   wordSpacing: 'md' as ReadingStep,
   readerMargin: 'md' as ReadingStep,
+  verseSpacing: 'md' as ReadingStep,
   nightMode: false,
   currentPosition: null as GlobalPosition,
 })

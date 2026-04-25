@@ -139,10 +139,14 @@
     [data-reader-margin="xl"] #main-content:has(.qa-verse) { max-width: 600px; }
   }
 
-  /* Reader margin tiers for mobile (<768px). Default cap is 800px / 100% of
-     narrow viewports; only lg/xl produce a visible narrowing. */
+  /* Reader on mobile (<768px): drop the scroller's 1rem horizontal padding
+     so the user-tunable --qa-verse-pad-x (set by [data-reader-margin] in
+     reading-typography.css) owns the full inset budget. Without this, the
+     slider would be fighting an extra ~32px of fixed chrome. */
   @media (max-width: 767px) {
-    [data-reader-margin="lg"] #main-content:has(.qa-verse) { max-width: 92%; }
-    [data-reader-margin="xl"] #main-content:has(.qa-verse) { max-width: 84%; }
+    #main-content:has(.qa-verse) {
+      padding-left: 0;
+      padding-right: 0;
+    }
   }
 }

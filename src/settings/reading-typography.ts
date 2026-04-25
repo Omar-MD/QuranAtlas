@@ -16,6 +16,7 @@ const DIMENSIONS = {
   lineSpacing: { idbKey: 'lineSpacing', attr: 'data-line-spacing' },
   wordSpacing: { idbKey: 'wordSpacing', attr: 'data-word-spacing' },
   readerMargin: { idbKey: 'readerMargin', attr: 'data-reader-margin' },
+  verseSpacing: { idbKey: 'verseSpacing', attr: 'data-verse-spacing' },
 } as const
 
 export type Dimension = keyof typeof DIMENSIONS
@@ -40,6 +41,7 @@ export async function loadReadingSettings(): Promise<Record<Dimension, Step>> {
     lineSpacing: DEFAULT,
     wordSpacing: DEFAULT,
     readerMargin: DEFAULT,
+    verseSpacing: DEFAULT,
   }
   await Promise.all(ALL_DIMENSIONS.map(async (dim) => {
     try {

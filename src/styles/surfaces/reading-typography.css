@@ -41,4 +41,27 @@
 
   [data-word-spacing="xl"] .qa-verse-arabic,
   [data-word-spacing="xl"] .qa-verse-translation { word-spacing: 0.18em; }
+
+  /* ---- Verse spacing (vertical padding between verses) ----
+     md baseline matches the previously hardcoded 1.125rem. Steps consumed
+     by .qa-verse via --qa-verse-pad-y. */
+  [data-verse-spacing="xs"] { --qa-verse-pad-y: 0.5rem; }
+  [data-verse-spacing="sm"] { --qa-verse-pad-y: 0.875rem; }
+  [data-verse-spacing="md"] { --qa-verse-pad-y: 1.125rem; }
+  [data-verse-spacing="lg"] { --qa-verse-pad-y: 1.625rem; }
+  [data-verse-spacing="xl"] { --qa-verse-pad-y: 2.25rem; }
+
+  /* ---- Reader margin: mobile (<768px) ----
+     Drives `.qa-verse` horizontal padding via --qa-verse-pad-x so xs reaches
+     near edge-to-edge and xl gives generous gutters. The `:has(.qa-verse)`
+     rule below also drops #main-content's outer 1rem padding so the slider
+     owns the entire mobile inset budget.
+     md baseline matches the previously hardcoded 24px. */
+  @media (max-width: 767px) {
+    [data-reader-margin="xs"] { --qa-verse-pad-x: 6px; }
+    [data-reader-margin="sm"] { --qa-verse-pad-x: 14px; }
+    [data-reader-margin="md"] { --qa-verse-pad-x: 24px; }
+    [data-reader-margin="lg"] { --qa-verse-pad-x: 36px; }
+    [data-reader-margin="xl"] { --qa-verse-pad-x: 52px; }
+  }
 }

@@ -142,16 +142,18 @@
       settings.fontSize === 'md' &&
       settings.lineSpacing === 'md' &&
       settings.wordSpacing === 'md' &&
-      settings.readerMargin === 'md'
+      settings.readerMargin === 'md' &&
+      settings.verseSpacing === 'md'
     if (allDefault) { return 'Default' }
-    return `Aa ${settings.fontSize} · ↕ ${settings.lineSpacing} · ↔ ${settings.wordSpacing} · ⇔ ${settings.readerMargin}`
+    return `Aa ${settings.fontSize} · ↕ ${settings.lineSpacing} · ↔ ${settings.wordSpacing} · ⇔ ${settings.readerMargin} · ⇕ ${settings.verseSpacing}`
   }
 
   const typographyIsDefault = $derived(
     settings.fontSize === 'md' &&
     settings.lineSpacing === 'md' &&
     settings.wordSpacing === 'md' &&
-    settings.readerMargin === 'md'
+    settings.readerMargin === 'md' &&
+    settings.verseSpacing === 'md'
   )
 
   // ---- Translation toggle ----
@@ -445,6 +447,25 @@
               aria-label="Reader margins"
             />
             <span class="qa-typography-slider-max" aria-hidden="true">▯</span>
+          </div>
+        </div>
+
+        <div class="qa-typography-slider">
+          <label class="qa-typography-slider-label" for="qa-tslider-verse-spacing">Verse spacing</label>
+          <div class="qa-typography-slider-row">
+            <span class="qa-typography-slider-min" aria-hidden="true">≡</span>
+            <input
+              id="qa-tslider-verse-spacing"
+              class="qa-typography-slider-input"
+              type="range"
+              min="0"
+              max={readingOptions.length - 1}
+              step="1"
+              value={readingIndexOf(settings.verseSpacing)}
+              oninput={(e) => handleReadingSlider('verseSpacing', e)}
+              aria-label="Verse spacing"
+            />
+            <span class="qa-typography-slider-max" aria-hidden="true">☰</span>
           </div>
         </div>
 

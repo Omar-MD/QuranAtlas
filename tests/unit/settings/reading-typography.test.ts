@@ -2,11 +2,12 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { del, openDB, put } from '../../../src/core/db.js'
 import { settings } from '../../../src/state/settings.svelte.ts'
 
-const KEYS = ['lineSpacing', 'wordSpacing', 'readerMargin'] as const
+const KEYS = ['lineSpacing', 'wordSpacing', 'readerMargin', 'verseSpacing'] as const
 const ATTRS = {
   lineSpacing: 'data-line-spacing',
   wordSpacing: 'data-word-spacing',
   readerMargin: 'data-reader-margin',
+  verseSpacing: 'data-verse-spacing',
 } as const
 
 describe('reading-typography', () => {
@@ -37,7 +38,7 @@ describe('reading-typography', () => {
   it('loadReadingSettings returns md defaults on fresh install', async () => {
     const { loadReadingSettings } = await import('../../../src/settings/reading-typography.ts')
     const result = await loadReadingSettings()
-    expect(result).toEqual({ lineSpacing: 'md', wordSpacing: 'md', readerMargin: 'md' })
+    expect(result).toEqual({ lineSpacing: 'md', wordSpacing: 'md', readerMargin: 'md', verseSpacing: 'md' })
   })
 
   it('loadReadingSettings returns saved values when present', async () => {
@@ -49,6 +50,7 @@ describe('reading-typography', () => {
       lineSpacing: 'lg',
       wordSpacing: 'xs',
       readerMargin: 'xl',
+      verseSpacing: 'md',
     })
   })
 

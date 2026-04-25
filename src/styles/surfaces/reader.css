@@ -80,10 +80,18 @@
     }
   }
 
-  /* Verse container */
+  /* Verse container.
+     `--qa-verse-pad-x` and `--qa-verse-pad-y` are the user-tunable tiers,
+     written by reading-typography.css under [data-reader-margin] (mobile)
+     and [data-verse-spacing]. The +6px on padding-left reserves room for
+     the 14px-wide .qa-verse-accent rail without crowding the text. */
   .qa-verse {
     position: relative;
-    padding: 1.125rem 24px 1.125rem 30px;
+    padding:
+      var(--qa-verse-pad-y, 1.125rem)
+      var(--qa-verse-pad-x, 24px)
+      var(--qa-verse-pad-y, 1.125rem)
+      calc(var(--qa-verse-pad-x, 24px) + 6px);
     content-visibility: auto;
     contain-intrinsic-size: 0 200px;
     transition: background-color var(--qa-transition-base);

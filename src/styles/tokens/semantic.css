@@ -88,6 +88,11 @@
     --qa-line-height-ui:          var(--lh-base);
     --qa-font-size-base: 1;
 
+    /* --- Reader inset tiers (defaults; tier overrides in
+       surfaces/reading-typography.css) ----------------------------------- */
+    --qa-verse-pad-x: 24px;
+    --qa-verse-pad-y: 1.125rem;
+
     /* --- Spacing pass-through ------------------------------------------- */
     --qa-space-0:  var(--s-0);
     --qa-space-1:  var(--s-1);
