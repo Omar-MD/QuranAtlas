@@ -408,7 +408,10 @@ test.describe('Journey C: desktop variants @desktop', () => {
   })
 
   test('C1 desktop: TagSheet is a right-side panel, full-height', async ({ page }) => {
+    // Post 2026-04-25: right-click → fast-tag panel; click ⛶ to escalate.
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
+    await page.locator('.qa-vtp-escalate').click()
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
 
@@ -433,6 +436,8 @@ test.describe('Journey C: desktop variants @desktop', () => {
 
   test('C1 desktop: four group sections visible', async ({ page }) => {
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
+    await page.locator('.qa-vtp-escalate').click()
     const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
     await expect(sheet.locator('.qa-ts-grp')).toHaveCount(4)

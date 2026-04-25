@@ -654,11 +654,6 @@
   animation: qa-nav-drawer-in 180ms ease-out;
 }
 
-@keyframes qa-nav-drawer-in {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(0); }
-}
-
 .qa-nav-drawer-hdr {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 16px;

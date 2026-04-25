@@ -65,8 +65,10 @@ test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reloa
     // Tab B should NOT have the gold edge before Tab A acts
     await expect(verse1_5_B).not.toHaveClass(/qa-verse--bookmarked/)
 
-    // Tab A: long-press 1:5 → TagSheet opens
+    // Tab A: long-press 1:5 → fast-tag panel → ⛶ → TagSheet (post 2026-04-25)
     await longPress(verse1_5_A)
+    await expect(pageA.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await pageA.locator('.qa-vtp-escalate').click()
     const tagSheet = pageA.locator('.qa-ts')
     await expect(tagSheet).toBeVisible({ timeout: 5_000 })
 
@@ -123,18 +125,22 @@ test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor clos
     await pageB.evaluate(() => { window.location.hash = '#/s/2/255' })
     await pageB.locator('.qa-verse[data-verse-key="2:255"]').waitFor({ state: 'attached', timeout: 10_000 })
 
-    // Tab A: open TagSheet for 2:255 via right-click (contextmenu handler)
+    // Tab A: open TagSheet for 2:255 via right-click → ⛶ (post 2026-04-25)
     const verse_A = pageA.locator('.qa-verse[data-verse-key="2:255"]')
     await expect(verse_A).toBeVisible({ timeout: 5_000 })
     await verse_A.click({ button: 'right' })
+    await expect(pageA.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await pageA.locator('.qa-vtp-escalate').click()
 
     const tagSheetA = pageA.locator('.qa-ts')
     await expect(tagSheetA).toBeVisible({ timeout: 5_000 })
 
-    // Tab B: open TagSheet for 2:255 via right-click, then delete
+    // Tab B: open TagSheet for 2:255 via right-click → ⛶, then delete
     const verse_B = pageB.locator('.qa-verse[data-verse-key="2:255"]')
     await expect(verse_B).toBeVisible({ timeout: 5_000 })
     await verse_B.click({ button: 'right' })
+    await expect(pageB.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await pageB.locator('.qa-vtp-escalate').click()
 
     const tagSheetB = pageB.locator('.qa-ts')
     await expect(tagSheetB).toBeVisible({ timeout: 5_000 })
