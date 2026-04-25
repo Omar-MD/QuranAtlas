@@ -50,9 +50,9 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 ## Mark editor
 
-- **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route)
+- **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route). Post 2026-04-25: app-bootstrap routes `openEditor` to `openDeep` (TagSheet) — Editor.svelte itself is no longer mounted. Programmatic callers from Review hub still flow through this bridge.
 - **Files:** `marks/Editor.svelte`, `marks/TagLayerRegion.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh), `core/seeds.ts` (seed palettes)
-- **Purpose:** Bottom sheet for tagging a verse across 12 thematic layers. Triggered by long-press on a verse or by "Mark this verse" from command sheet.
+- **Purpose:** Bottom sheet for tagging a verse across 12 thematic layers. Reachable only via the fast-tag panel's `⛶` escalation, the `⌘+Enter` keyboard shortcut, or programmatic bridges (Review hub).
 - **Key behaviors:**
   - 12 collapsible `TagLayerRegion` sections: threads, subjects, audience, speaker, quotedSpeaker, mode, form, tone, people, places, events, divineNames. Threads, audience, and mode expanded by default; others collapsed.
   - Each layer has a search input + chip pool (seeds ∪ existing canonicals ∪ user-added). Clicking a chip toggles selected/unselected within that layer; each layer shows its own count badge. Inline "+ label" chip creates a new tag in the layer.
@@ -71,42 +71,43 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Key behaviors:**
   - Arrow keys navigate, Enter activates, Esc closes. No hash route — pure overlay.
   - Emits `NAVIGATION_NAVIGATE` for verse/surah targets (`app-bootstrap.ts` routes the hash).
-  - Opens mark editor directly for "Mark this verse" shortcut.
+  - "Mark this verse" calls `beginFast(verseKey)` (post 2026-04-25 — was `openEditor`); fast-tag inline panel surfaces.
 
 ## Settings sheet
 
 - **Route:** `#/settings` (stub — opens sheet over the previous surface, then replaces hash back)
 - **Entry:** `src/settings/Panel.svelte` (Svelte component, mounted persistently in App.svelte); opened imperatively via `settings/panel-bridge.ts::openSettingsSheet()`.
 - **Files:** `settings/Panel.svelte`, `settings/ClearDataConfirm.svelte`, `settings/panel-bridge.ts`, `settings/theme.ts`, `settings/font-size.ts`, `settings/clear-data.ts`
-- **Purpose:** Bottom sheet. Theme swatches (Light/Sepia/Dark/Auto), font slider with live preview, translation toggle + nested picker, Clear data link.
+- **Purpose:** Bottom sheet. Theme swatches (Light/Sepia/Dark/Auto), font slider with live preview, translation toggle + nested picker. Clear-data row removed 2026-04-25 — moved to About page footer.
 - **Key behaviors:**
   - Theme swatches call `setTheme(opt)` from `settings/theme.ts`, which writes `settings.theme` and swaps `data-theme` on `<html>`.
   - Font slider writes `settings.fontSize`; reader/preview watch via `SETTINGS_FONT_SIZE_CHANGED`.
   - Translation toggle writes `settings.translationVisible` (IDB + rune); `Reader.svelte` re-renders via `$effect` on the rune (no event).
-  - Clear data link delegates to `ClearDataConfirm.svelte` (also persistently mounted in App.svelte) via `settings/clear-data.ts::showClearDataConfirmation` — confirmation modal → `deleteDB` → reload.
+  - Clear-data confirmation modal (`ClearDataConfirm.svelte`, also persistently mounted in App.svelte) is invoked by `settings/clear-data.ts::showClearDataConfirmation`. Sole entry point post 2026-04-25 is the **About page footer link** — modal → `deleteDB` → reload.
   - `toggleTranslation()` exported from `panel-bridge.ts` for use by command-sheet and other callers.
 - **IDB touch:** `settings` store (theme, fontSize, translationVisible, translationId).
 
-## More sheet
+## Nav drawer
 
-- **Entry:** `src/nav/MoreSheet.svelte` (Svelte component mounted in `App.svelte`); `openMoreSheet()` from `nav/more-sheet-bridge.ts` triggers it. The `window.__qaOpenMoreSheet` global has been removed.
-- **Files:** `nav/MoreSheet.svelte`, `nav/more-sheet-bridge.ts`
-- **Purpose:** First-level parent sheet from the dock's ⋯ button. Five entries: Settings, Review hub, Surah list, About, Clear data.
+- **Entry:** `src/nav/NavDrawer.svelte` (mounted persistently in `App.svelte`); `openNavDrawer()` / `closeNavDrawer()` from `nav/nav-drawer-bridge.ts` trigger it.
+- **Files:** `nav/NavDrawer.svelte`, `nav/nav-drawer-bridge.ts`
+- **Purpose:** Left-slide drawer (mobile + desktop). Replaces `MoreSheet` (deleted 2026-04-25). Two items: **Review** (→ `#/review`), **About** (→ `#/about`). No count badges (no marks-store coupling).
 - **Key behaviors:**
-  - Settings entry closes this sheet then calls `openSettingsSheet()` directly (not via route).
-  - Review / Surah / About navigate via hash.
-  - Clear data calls `showClearDataConfirmation`.
+  - Mobile: opened by `MarginHeader` hamburger `≡`. Desktop: opened by `AmbientDock` ⋯ kebab.
+  - Dismissal: backdrop tap, swipe-left, ✕ button, Esc.
+  - Wordmark in header is non-interactive — About reached via the list item.
 
 ## About
 
 - **Route:** `#/about`
 - **Entry:** `src/about/About.svelte` (Svelte component, mounted via router `onRouteChange`)
 - **Files:** `about/About.svelte`, `about/pwa-install.ts`
-- **Purpose:** Static-ish page with wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid (Marks / Tags / Surahs / % Qur'an), attribution, PWA install CTA (if prompt available), version.
+- **Purpose:** Static-ish page with wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid (Marks / Tags / Surahs / % Qur'an), attribution, PWA install CTA (if prompt available), version, **Clear all data** link in footer (post 2026-04-25 — was Settings sheet bottom row).
 - **Key behaviors:**
   - `getAll()` from `marks/store.ts` fuels the stat grid; `onMount` handles async load with fallback to zeros.
   - PWA install handled via `getInstallPrompt` / `promptInstall` in `about/pwa-install.ts`.
-  - No back link (arrived via More sheet or hash-change).
+  - Clear-data link calls `showClearDataConfirmation` from `settings/clear-data.ts` (sole entry point post-redesign).
+  - No back link (arrived via NavDrawer or hash-change).
 
 ## Onboarding
 
@@ -144,40 +145,39 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Desktop only: entire rail hidden via `@media (max-width: 1179px)`. Mobile primary nav is `MarginHeader`.
   - `#app-shell` gets `padding-left: 56px` at ≥1180px so main-content sits flush right of the panel; rail itself is `position: fixed` and escapes the shift.
   - Hidden on `#/onboarding` via `qa-dock--hidden` class on `#bottom-nav`.
-  - Read → last-visited surah (from `settings.lastSurface`, default `#/s/1`), Search → `openCommandSheet()`, Review + Marks → `#/review`. Surah list reachable via More sheet → "Surah list", command sheet, or `G`+`S` shortcut (no longer a rail tab).
+  - Read → last-visited surah (from `settings.lastSurface`, default `#/s/1`), Search → `openCommandSheet()`, Review + Marks → `#/review`. Surah list reachable via command sheet or `G`+`S` shortcut (no longer a rail tab; drawer doesn't carry it either).
   - Hover/focus shows parchment tooltip to the right of the icon.
   - Verse crumb reads `reader.currentSurahNum` + `reader.currentVerseKey` runes reactively; rendered rotated 90° via `transform: rotate(-90deg)` on inline text; hidden when no surah set.
-  - ⋯ more button has `data-tab="more"` and calls `openMoreSheet()`.
+  - ⋯ more button has `data-tab="more"` and calls `openNavDrawer()` (was `openMoreSheet()` pre 2026-04-25).
   - Emits `AMBIENT_SURFACE` on tab click while on reader routes.
 
-## Margin header (mobile top nav)
+## Margin header (mobile top nav) — single-row redesign 2026-04-25
 
 - **Route:** all routes; auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE`.
 - **Entry:** `src/nav/MarginHeader.svelte` (mounted persistently in `App.svelte`; display-hidden on desktop ≥1180px).
-- **Files:** `nav/MarginHeader.svelte`
-- **Purpose:** Mobile/tablet (<1180px) fixed top bar. Row 1: surah name pill (`{Name}` ▼) + circular fast-tag toggle + ⋮ more. Row 2: section tabs (Read / Review N / Marks / Threads).
+- **Files:** `nav/MarginHeader.svelte`, `nav/swipe-gestures.ts` (pure helper)
+- **Purpose:** Mobile/tablet (<1180px) fixed top bar, single row, ~52 px tall. Layout: **hamburger `≡`** · **bilingual surah label** · **settings gear `⚙`**.
 - **Key behaviors:**
-  - Crumb button → navigates to `#/surahs` (surah list).
-  - Fast-tag button (dot-only circle): toggles `tagSession.quickbarOpen`; when active pulses green (light) / mint (dark). Calls `beginFast(verseKey)` to start, `tagSession.end()` to stop. Reads `reader.currentVerseKey`; no-op if no active verse.
-  - ⋮ button → `openMoreSheet()`.
-  - Section tabs use `#/review` for Review/Marks/Threads stubs today; Read jumps to `lastSurahHref` from `settings.lastSurface`.
-  - Review count badge reads `marks/store::getAll().length`; updates on `MARKS_SAVED` / `MARKS_DELETED`.
+  - Hamburger → `openNavDrawer()` (Review / About). Replaces the retired ⋮ kebab.
+  - Center label: Arabic surah name (top, RTL) + uppercase smallcaps English (bottom, with chevron `▾`). Tap = surah list (or back to last surah if already on surah list). Swipe left/right on label = next/prev surah, clamped 1–114; haptic nudge at boundaries.
+  - Swipe down on header = `#/surahs`.
+  - Gear: short tap = `openSettingsSheet()`. Long-press ≥400 ms = `cycleTheme()` (parity with keyboard `d`).
   - Scroll listener on `#main-content` toggles `qa-mh--hidden` (transform translateY −100%).
-- **Reader clearance:** `theme.css` pads `#main-content` by `calc(env(safe-area-inset-top) + 108px)` at <768 and 768–1179 breakpoints so the header never covers the surah title.
+  - Swipe classifier: `nav/swipe-gestures.ts::classifySwipe` — pure threshold/velocity math (covered by Vitest unit tests at `tests/unit/nav/swipe-gestures.test.ts`).
+- **Reader clearance:** `app-shell.css` pads `#main-content` by `calc(env(safe-area-inset-top) + 56px)` at <768 and 768–1179 breakpoints (was 108 px pre-redesign).
 
 ## Fast-tag panel (inline, in-verse)
 
 - **Entry:** `src/reader/VerseTagPanel.svelte` (rendered inside `reader/Verse.svelte` under the translation, gated on `isActive`). Opens when `tagSession.quickbarOpen === true` for that verse.
 - **Files:** `reader/VerseTagPanel.svelte`, `reader/Verse.svelte`, `tag/session-bridge.ts`, `state/tag-session.svelte.ts`, `data/tag-layers.ts`
-- **Purpose:** Fast path for tagging a single verse — inline suggestion panel under the active verse's translation, grouped by layer group (Speech / Narrative / Themes / Entities) with color-coded `#` glyph per layer hue. Replaces the retired floating `tag/AmbientDock` quickbar. Complement to the deep path (`marks/Editor.svelte`).
+- **Purpose:** Sole per-verse action surface (post 2026-04-25 redesign) — inline suggestion panel under the active verse's translation, grouped by layer group (Speech / Narrative / Themes / Entities) with color-coded `#` glyph per layer hue. Replaces the retired floating `tag/AmbientDock` quickbar. Deep editor (`tag/TagSheet`) reachable only via the `⛶` escalation button or `⌘+Enter`.
 - **Key behaviors:**
-  - Triggered by: mobile MarginHeader fast-tag button or desktop `TagModePill`, or programmatic `beginFast(verseKey)` via `tag/session-bridge.ts`.
+  - **Entry points:** long-press verse (touch), right-click verse (desktop), keyboard `m` on centered verse, command-sheet "Mark this verse" (F2). All four call `beginFast(verseKey)`.
   - `beginFast` hydrates `tagSession` from any existing mark for the verse (`marks/store::getByVerseKey`), then sets `quickbarOpen = true`.
   - Suggested chips come from `data/tag-layers::QUICK_PICKS`, grouped into rows by `LAYER_GROUPS`. Tap chip → `tagSession.toggle(layer, value)` → debounced 350 ms save through `marks/store::save`.
   - Inline type-to-create: `+ add` per group swaps to an `<input>`; Enter commits (creates a new value in the group's first layer), Escape cancels.
-  - Regenerate icon (top-right) is a placeholder for future contextual suggestions.
-  - `⌘/Ctrl + Enter` opens the deep sheet (`sheetOpen = true`, `quickbarOpen = false`). Esc ends the session (`tagSession.end()`).
-  - No "Accept all" button, no "Suggested for {verseKey}" header — chip toggles are the only interaction.
+  - **`⛶` escalate button** (top-right, replaces retired regenerate placeholder) → `openDeep(verseKey)` → deep TagSheet. `⌘/Ctrl + Enter` keyboard shortcut does the same. Esc ends the session (`tagSession.end()`).
+  - No "Accept all" button, no "Suggested for {verseKey}" header — chip toggles + ⛶ are the only interactions.
   - Active verse in the reader gets `.qa-verse--active` styling (accent bracket, inset ring, parchment verse-key) + `contain-intrinsic-size: auto 260px` to prevent bounce when chips wrap during selection. Drive: `isActive = tagSession.verseKey === verseKey && tagSession.quickbarOpen`.
 
 ## Deep-tag sheet (fast-path peer)
@@ -193,17 +193,6 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - **Desktop ≥1180px:** right-side vertical panel (~min(560px, 44vw)), unchanged.
   - **Header:** "Mark verse" title only — verse ref is not duplicated in the header (already in the preview card).
   - **Delete:** shown only when an existing mark is loaded. First tap swaps the footer into an inline confirm (`Delete this mark? [Keep] [Delete]`); second tap on the solid red button commits, then the undo toast fires. Closing the sheet cancels any pending confirm.
-
-## Tag-mode pill (desktop)
-
-- **Entry:** `src/nav/TagModePill.svelte` (mounted in `App.svelte`). Always visible on desktop (≥1180px) reader routes (`#/s/`); hidden everywhere else.
-- **Files:** `nav/TagModePill.svelte`
-- **Purpose:** Top-right desktop toggle for fast-tag mode. Two visual states:
-  - **Off** (hollow dot) — tap starts fast-tag on `reader.currentVerseKey` via `beginFast(vk)`. No-op if no active verse.
-  - **On** (filled dot, green/mint) — `tagSession.quickbarOpen || sheetOpen` true. Tap calls `tagSession.end()`.
-- **Key behaviors:**
-  - Listens to `ROUTER_ROUTE_CHANGE` + `hashchange` to hide off-reader routes.
-  - Mirror of the mobile MarginHeader fast-tag dot button; desktop users have no other entry point since verse tap does not start fast-tag mode.
 
 ## Surah progress chip
 
