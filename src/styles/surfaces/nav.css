@@ -550,8 +550,11 @@
     font-family:
       'Amiri Quran',
       var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
-    font-size: 18px;
-    line-height: 1.1;
+    /* 18px clipped المُنَافِقُونَ + similar long names on 390px viewports
+       once the ≡ + ⚙ buttons claimed their 44px each. 15px keeps the
+       longest 14-char names intact with comfortable headroom. */
+    font-size: 15px;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
