@@ -79,10 +79,51 @@ test.describe('Journey D: Settings & appearance', () => {
   })
 
   // -------------------------------------------------------------------------
+  // D1b. Riwayah row — three swatches; switch persists across reload
+  // -------------------------------------------------------------------------
+
+  test('D1b: settings — Riwayah row exposes three swatches; switch persists across reload', async ({ page }) => {
+    await openSettingsSheet(page)
+    const sheet = page.locator('.qa-sheet--settings')
+    await expect(sheet).toBeVisible({ timeout: 5_000 })
+
+    // Three Riwayah swatches must be present
+    const swatches = sheet.locator('.qa-riwayah-swatch')
+    await expect(swatches).toHaveCount(3)
+
+    // Swatch labels match the three riwayahs
+    await expect(swatches.filter({ hasText: 'Ḥafṣ' })).toHaveCount(1)
+    await expect(swatches.filter({ hasText: 'Warsh' })).toHaveCount(1)
+    await expect(swatches.filter({ hasText: 'Qālūn' })).toHaveCount(1)
+
+    // Click Warsh → it becomes active
+    await swatches.filter({ hasText: 'Warsh' }).click()
+    await expect(sheet.locator('.qa-riwayah-swatch--active')).toContainText('Warsh', { timeout: 3_000 })
+
+    // html[data-riwayah] updates immediately
+    await expect(async () => {
+      const attr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
+      expect(attr).toBe('warsh')
+    }).toPass({ timeout: 3_000 })
+
+    // Close and reload — choice must survive
+    await page.keyboard.press('Escape')
+    await page.reload()
+    await waitForReader(page)
+
+    await openSettingsSheet(page)
+    await expect(page.locator('.qa-sheet--settings .qa-riwayah-swatch--active')).toContainText('Warsh', { timeout: 5_000 })
+
+    // Restore Qālūn so other tests get the default
+    await page.locator('.qa-sheet--settings .qa-riwayah-swatch').filter({ hasText: 'Qālūn' }).click()
+    await page.keyboard.press('Escape')
+  })
+
+  // -------------------------------------------------------------------------
   // D2. Pick a translation + visibility toggle
   // -------------------------------------------------------------------------
 
-  test('D2: Show translation row subtitle reflects the shipped translation; picker is hidden when only one ships', async ({ page }) => {
+  test('D2: Show translation row subtitle is visible; picker sub-view hidden when ≤1 translation ships', async ({ page }) => {
     await openSettingsSheet(page)
 
     // Scope to the Reading section's toggle row. Multiple toggle rows exist
@@ -94,17 +135,16 @@ test.describe('Journey D: Settings & appearance', () => {
     const toggleBody = readingRow.locator('.qa-settings-toggle-body')
     await expect(toggleBody).toBeVisible()
 
-    // Subtitle names the translation actually bundled with the dataset
-    // (Bridges' Translation is the only translation in public/dataset today).
-    await expect(readingRow.locator('.qa-settings-toggle-sub')).toContainText("Bridges", { timeout: 3_000 })
+    // Subtitle shows whatever translation name is resolved (or "English" fallback
+    // when no translations are bundled). We do NOT assert "Bridges" because no
+    // translations ship today.
+    const sub = readingRow.locator('.qa-settings-toggle-sub')
+    await expect(sub).toBeVisible({ timeout: 3_000 })
 
-    // With only one translation available, the row body is not a button
+    // With 0-1 translations available, the row body is not a button
     // and tapping it must not navigate to a picker sub-view.
     await toggleBody.click()
     await expect(page.locator('.qa-sheet-back')).toHaveCount(0)
-
-    // And translationId persisted in IDB matches the bundled id.
-    expect(await readSetting(page, 'translationId')).toBe('bridges')
   })
 
   test('D2: toggle translation-visibility switch → switch state flips → IDB writes → DOM hides translations', async ({ page }) => {
@@ -395,19 +435,39 @@ test.describe('Journey D: Typography subview @desktop', () => {
     await expect(page.getByLabel('Verse spacing')).toHaveCount(0)
   })
 
-  test('D5: reading-flow xl drives line-height ≈ 2.85 on .qa-verse-arabic', async ({ page }) => {
+  test('D5: reading-flow xl drives a higher line-height on .qa-verse-arabic than xs', async ({ page }) => {
+    // The Riwayah-aware line-height formula: floor(riwayah) + delta(step).
+    // Qaloon xl = 1.72 + 0.40 = 2.12; xs = 1.72 + 0.00 = 1.72.
+    // We verify xl > xs (the step has an effect) and the absolute value is
+    // in the expected range for Qaloon xl (~2.12).
     await openTypography(page)
+
     await page.getByLabel('Reading flow').evaluate(el => {
-      el.value = '4'
+      el.value = '0' // xs
       el.dispatchEvent(new Event('input', { bubbles: true }))
     })
     await page.keyboard.press('Escape')
-    const ratio = await page.locator('.qa-verse-arabic').first().evaluate(
+    const xsRatio = await page.locator('.qa-verse-arabic').first().evaluate(
       (el) => parseFloat(getComputedStyle(el).lineHeight) /
               parseFloat(getComputedStyle(el).fontSize)
     )
-    expect(ratio).toBeGreaterThan(2.8)
-    expect(ratio).toBeLessThan(2.9)
+
+    await openTypography(page)
+    await page.getByLabel('Reading flow').evaluate(el => {
+      el.value = '4' // xl
+      el.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await page.keyboard.press('Escape')
+    const xlRatio = await page.locator('.qa-verse-arabic').first().evaluate(
+      (el) => parseFloat(getComputedStyle(el).lineHeight) /
+              parseFloat(getComputedStyle(el).fontSize)
+    )
+
+    // xl must be strictly larger than xs
+    expect(xlRatio).toBeGreaterThan(xsRatio)
+    // Qaloon xl: line-height = 2.12, so ratio ≈ 2.12 (within a small tolerance)
+    expect(xlRatio).toBeGreaterThan(2.0)
+    expect(xlRatio).toBeLessThan(2.5)
   })
 
   test('D5: reading-flow xs sets word-spacing to 0 on .qa-verse-arabic', async ({ page }) => {
