@@ -29,6 +29,7 @@ export const Events = {
   SETTINGS_THEME_CHANGED: 'settings:theme-changed',
   SETTINGS_DATA_CLEARED: 'settings:data-cleared',
   SETTINGS_FONT_SIZE_CHANGED: 'settings:font-size-changed',
+  SETTINGS_RIWAYAH_CHANGED: 'settings:riwayah-changed',
   REVIEW_OPEN: 'review:open',
   REVIEW_FILTER: 'review:filter',
   MARKS_SAVED: 'marks:saved',
@@ -76,6 +77,7 @@ export type EventPayloads = {
   'settings:theme-changed': { from: string; to: string }
   'settings:data-cleared': Record<string, never>
   'settings:font-size-changed': { size: string }
+  'settings:riwayah-changed': { from: 'hafs' | 'warsh' | 'qaloon'; to: 'hafs' | 'warsh' | 'qaloon' }
   'review:open': Record<string, never>
   'review:filter': { tag: string | null; surah: number | null }
   'marks:saved': { verseKey: string; tags: string[] } // tags = union of canonical keys across all 12 layers
