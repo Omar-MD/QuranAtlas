@@ -8,17 +8,24 @@
 
 import type { SurahMeta } from '../data/dataset'
 import { settings } from '../state/settings.svelte'
+import type { Riwayah } from '../settings/riwayah'
 
 /**
- * Whether to render a standalone basmala before the first verse.
+ * Whether to render a standalone basmala block before the first verse.
  *
- * Quranic conventions:
- *  - Surah 1 (Al-Fatiha): basmala IS verse 1 in the dataset — do NOT render separately.
- *  - Surah 9 (At-Tawbah): no basmala.
- *  - All others: render basmala between header and verse 1.
+ * Quranic conventions differ across the riwayat for Al-Fātiḥah:
+ *  - **Hafs**: counts the basmala AS ayah 1 (it IS in the dataset as verse 1).
+ *    Rendering a standalone block would double it. Skip.
+ *  - **Warsh + Qaloon**: do NOT count the basmala as an ayah (their ayah 1 is
+ *    `اِ۬لْحَمْدُ لِلهِ...`), but tradition still displays the basmala above the
+ *    surah text. Render the standalone block.
+ *  - **Surah 9 (At-Tawbah)**: no basmala in any riwayah.
+ *  - **All other surahs**: render the basmala block in every riwayah.
  */
-export function shouldRenderBasmala(surahNum: number): boolean {
-  return surahNum !== 1 && surahNum !== 9
+export function shouldRenderBasmala(surahNum: number, riwayah: Riwayah = settings.riwayah): boolean {
+  if (surahNum === 9) { return false }
+  if (surahNum === 1) { return riwayah !== 'hafs' }
+  return true
 }
 
 /**

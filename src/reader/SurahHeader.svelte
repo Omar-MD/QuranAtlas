@@ -2,6 +2,7 @@
   import type { SurahMeta } from '../data/dataset'
   import { formatSurahMeta, formatArabicSurahName, shouldRenderBasmala } from './render-helpers'
   import { reader } from '../state/reader.svelte'
+  import { settings } from '../state/settings.svelte'
   import SurahProgress from '../nav/SurahProgress.svelte'
 
   interface Props {
@@ -13,7 +14,7 @@
 
   const arabicName = $derived(formatArabicSurahName(meta))
   const metaLine = $derived(formatSurahMeta(meta))
-  const showBasmala = $derived(shouldRenderBasmala(surahNum))
+  const showBasmala = $derived(shouldRenderBasmala(surahNum, settings.riwayah))
 </script>
 
 {#if !reader.surahHeaderHidden}
