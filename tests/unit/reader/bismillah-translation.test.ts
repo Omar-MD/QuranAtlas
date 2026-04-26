@@ -29,12 +29,31 @@ describe('Bismillah translation', () => {
     )
   })
 
-  it('surah 1 renders neither the bismillah block nor the translation', () => {
+  it('surah 1 (Hafs): renders neither the bismillah block nor the translation (basmala IS ayah 1 in dataset)', () => {
+    settings.riwayah = 'hafs'
     const { container } = render(SurahHeader, {
       props: { surahNum: 1, meta: meta(1, 'Al-Fatihah', 'الفاتحة', 7) },
     })
     expect(container.querySelector('.qa-basmala')).toBeNull()
     expect(container.querySelector('.qa-basmala-translation')).toBeNull()
+  })
+
+  it('surah 1 (Warsh): renders the bismillah block + translation (basmala not counted as ayah)', () => {
+    settings.riwayah = 'warsh'
+    const { container } = render(SurahHeader, {
+      props: { surahNum: 1, meta: meta(1, 'Al-Fatihah', 'الفاتحة', 7) },
+    })
+    expect(container.querySelector('.qa-basmala')).not.toBeNull()
+    expect(container.querySelector('.qa-basmala-translation')).not.toBeNull()
+  })
+
+  it('surah 1 (Qaloon): renders the bismillah block + translation (basmala not counted as ayah)', () => {
+    settings.riwayah = 'qaloon'
+    const { container } = render(SurahHeader, {
+      props: { surahNum: 1, meta: meta(1, 'Al-Fatihah', 'الفاتحة', 7) },
+    })
+    expect(container.querySelector('.qa-basmala')).not.toBeNull()
+    expect(container.querySelector('.qa-basmala-translation')).not.toBeNull()
   })
 
   it('surah 9 renders neither the bismillah block nor the translation', () => {

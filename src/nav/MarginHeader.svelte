@@ -165,9 +165,9 @@
     const refreshSurahName = () => {
       getSurahs().then((list) => {
         const s = reader.currentSurahNum
-        const meta = list.find((x) => x.n === s) as { name?: string; arabic?: string } | undefined
+        const meta = list.find((x) => x.n === s) as { name?: string; name_ar?: string } | undefined
         surahName = meta?.name ?? ''
-        surahArabicName = meta?.arabic ?? ''
+        surahArabicName = meta?.name_ar ?? ''
       }).catch(() => { /* ignore */ })
     }
     refreshSurahName()
