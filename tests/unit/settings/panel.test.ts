@@ -178,6 +178,26 @@ describe('Panel.svelte (D1 / D1b / D2 / D3 / D5)', () => {
     }
   })
 
+  it('B5: typography subview font slider drives data-font-size + writes fontSize IDB', async () => {
+    await mountAndOpen()
+    const navBtn = [...document.querySelectorAll('.qa-settings-toggle-body')]
+      .find(el => el.textContent?.includes('Size, spacing & margins'))! as HTMLButtonElement
+    await fireEvent.click(navBtn)
+    await flush()
+
+    const fontSlider = document.querySelector('#qa-tslider-fs') as HTMLInputElement
+    expect(fontSlider).not.toBeNull()
+    fontSlider.value = '4'
+    fontSlider.dispatchEvent(new Event('input', { bubbles: true }))
+
+    await vi.waitFor(() => {
+      expect(settings.fontSize).toBe('xl')
+      expect(document.documentElement.getAttribute('data-font-size')).toBe('xl')
+    })
+    const stored = await get('settings', 'fontSize') as { value: string } | undefined
+    expect(stored?.value).toBe('xl')
+  })
+
   it('D5: typography subview exposes Font size + Reading flow only (no legacy 4 sliders)', async () => {
     await mountAndOpen()
     const navBtn = [...document.querySelectorAll('.qa-settings-toggle-body')]

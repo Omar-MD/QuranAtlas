@@ -21,7 +21,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, readSetting } from './fixtures/idb.js'
+import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
 import { waitForReader, surfaceDock, openSettingsSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
@@ -204,34 +204,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // B5. Font slider live preview
   // -------------------------------------------------------------------------
 
-  test('B5: font slider writes settings and updates preview scale', async ({ page }) => {
-    await openSettingsSheet(page)
-    // Post 2026-04-25: font size slider lives inside the Typography subview.
-    await page.getByText('Size, spacing & margins').click()
-
-    const slider = page.getByLabel('Font size')
-    await expect(slider).toBeVisible()
-
-    const current = await slider.inputValue()
-    const currentIdx = parseInt(current, 10)
-    const nextIdx = currentIdx < 4 ? currentIdx + 1 : 0
-    const nextSize = ['xs', 'sm', 'md', 'lg', 'xl'][nextIdx]
-
-    await slider.fill(String(nextIdx))
-    await slider.dispatchEvent('input')
-
-    await expect(async () => {
-      const attr = await page.evaluate(() =>
-        document.documentElement.getAttribute('data-font-size')
-      )
-      expect(attr).toBe(nextSize)
-    }).toPass({ timeout: 3_000 })
-
-    const preview = page.getByTestId('typography-preview')
-    await expect(preview).toBeVisible()
-
-    expect(await readSetting(page, 'fontSize')).toBe(nextSize)
-  })
+  // B5 font slider → IDB + data-font-size ported to
+  // tests/unit/settings/panel.test.ts (Phase 3, 2026-04-26).
 
   // -------------------------------------------------------------------------
   // B6. Auto theme follows OS (prefers-color-scheme)
