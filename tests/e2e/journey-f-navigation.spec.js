@@ -19,7 +19,7 @@
 
 import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
-import { waitForReader, surfaceDock, openCommandSheet } from './fixtures/chrome.js'
+import { waitForReader, openCommandSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // ---------------------------------------------------------------------------
@@ -285,73 +285,8 @@ test.describe('Journey F: Navigation', () => {
   // F6. Keyboard navigation @keyboard
   // ---------------------------------------------------------------------------
 
-  test('F6: ⌘K opens command sheet @keyboard @chromium-only', async ({ page }) => {
-    // The canonical keyboard entry for the command sheet is ⌘K (Meta+k on
-    // Mac, Ctrl+k elsewhere — Playwright aliases Meta→Ctrl on non-Mac).
-    await page.keyboard.press('Meta+k')
-    const cmdSheet = page.locator('.qa-cmd-sheet')
-    await expect(cmdSheet).toBeVisible({ timeout: 5_000 })
-    await expect(cmdSheet).not.toHaveClass(/qa-cmd--hidden/)
-  })
-
-  test('F6: command sheet — ArrowUp/ArrowDown move focus; Escape closes @keyboard @chromium-only', async ({ page }) => {
-    await openCommandSheet(page)
-
-    const cmdSheet = page.locator('.qa-cmd-sheet')
-    await expect(cmdSheet).toBeVisible()
-
-    // Type to get results with multiple items
-    await page.locator('.qa-cmd-input').fill('2:255')
-    await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
-
-    // First item should be active ("Open verse")
-    const firstActive = page.locator('.qa-cmd--active')
-    await expect(firstActive.locator('.qa-cmd-item-label')).toHaveText('Open verse')
-
-    // ArrowDown → "Mark this verse" becomes active
-    await page.keyboard.press('ArrowDown')
-    const secondActive = page.locator('.qa-cmd--active')
-    await expect(secondActive.locator('.qa-cmd-item-label')).toHaveText('Mark this verse')
-
-    // ArrowDown again → "Copy reference"
-    await page.keyboard.press('ArrowDown')
-    const thirdActive = page.locator('.qa-cmd--active')
-    await expect(thirdActive.locator('.qa-cmd-item-label')).toHaveText('Copy reference')
-
-    // ArrowUp → back to "Mark this verse"
-    await page.keyboard.press('ArrowUp')
-    const backToSecond = page.locator('.qa-cmd--active')
-    await expect(backToSecond.locator('.qa-cmd-item-label')).toHaveText('Mark this verse')
-
-    // Escape closes the sheet
-    await page.keyboard.press('Escape')
-    await expect(cmdSheet).toHaveClass(/qa-cmd--hidden/, { timeout: 3_000 })
-  })
-
-  test('F6: global shortcut G then S → navigates to #/surahs @keyboard @desktop', async ({ page }) => {
-    // Ensure focus is not on an input (reader is loaded, no input focused)
-    await expect(page.locator('.qa-verse').first()).toBeVisible()
-
-    // Press g then s (chord shortcut for surah list)
-    await page.keyboard.press('g')
-    await page.keyboard.press('s')
-
-    // Should navigate to surah list
-    await expect(page).toHaveURL(/#\/surahs/, { timeout: 5_000 })
-    await expect(page.locator('.qa-surah-list-page')).toBeVisible({ timeout: 8_000 })
-  })
-
-  test('F6: ⌘K closes already-open command sheet @keyboard @chromium-only', async ({ page }) => {
-    // Open command sheet
-    await openCommandSheet(page)
-    const cmdSheet = page.locator('.qa-cmd-sheet')
-    await expect(cmdSheet).toBeVisible()
-    await expect(cmdSheet).not.toHaveClass(/qa-cmd--hidden/)
-
-    // Press ⌘K again → should close
-    await page.keyboard.press('Meta+k')
-    await expect(cmdSheet).toHaveClass(/qa-cmd--hidden/, { timeout: 3_000 })
-  })
+  // F6 ⌘K open/close, ArrowUp/Down focus, Escape close, G→S chord ported to
+  // tests/unit/nav/command-sheet.test.ts (Phase 2 bucket 4, 2026-04-26).
 })
 
 // ---------------------------------------------------------------------------
