@@ -65,6 +65,12 @@ Items discussed and rejected, recorded here so they're not re-litigated without 
 
 ---
 
+## Page-image rendering for non-Hafs riwayat
+
+Warsh + Qaloon render via Amiri Quran fallback on WebKit (`docs/context/riwayat-dataset.md` § "Cross-engine rendering") because the upstream KFGQPC v0.10 outline geometry breaks in CoreGraphics / Quartz. The stopgap preserves every tashkeel + Maghrebi spelling but loses authentic Uthman Taha typography for Safari users. The proper long-term fix is the industry-standard pattern — page-image rendering of pre-typeset Mushaf pages — used by Tarteel, quran.com, quran-android (Qaloon flavor), Mushaf Mecca, AAYAAT, Quranflash for the same reason. Pipeline: (a) source KFGQPC's official Madinah Mushaf Warsh + Qaloon PDFs from `nashr.qurancomplex.gov.sa`, (b) extract per-page PNG (or SVG outlines via `pdftocairo -svg`) at 2× DPR for retina, (c) ship under `public/dataset/mushaf-pages/{warsh,qaloon}/{NNN}.png`, ~30-50 MB per riwayah after compression — precache via SW, (d) overlay invisible Unicode text per ayah for selection / copy / verse-tap-to-mark. Out of scope until a contributor commits to the asset pipeline build + size budget.
+
+---
+
 ## Translation packs
 
 The KFGQPC dataset ships Arabic only. The translation toggle, picker, and onboarding screen 4 are all live in code but render an empty state (`provenance.translations[]` is `[]`). Adding translations means: (a) build a per-translation per-surah JSON pipeline under `public/dataset/translations/{id}/{NNN}.json`, (b) extend `provenance.json` `translations[]` with each pack's metadata, (c) wire `loadTranslationForSurah(translationId, surahNo)` in `src/data/dataset.ts` (currently a typed stub returning `null`), (d) hook the existing `Verse.svelte` translation block to render the loaded text. No UI churn — all surfaces are ready.

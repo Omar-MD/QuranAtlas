@@ -99,6 +99,12 @@ Any route other than `#/onboarding`.
 
 > **Invariant (Riwayah + reader text source).** Reader text source = active Riwayah (from `settings['riwayah']`, default Qālūn). Sole writer of `settings['riwayah']` is `settings/riwayah.ts`. Font follows via `--qa-font-arabic` cascade (set by `:root[data-riwayah=...]` overrides). Line-height floor follows the active Riwayah (Hafs 1.76 / Warsh 1.73 / Qālūn 1.72). Each `.qa-verse-arabic` element carries `data-riwayah` mirroring the active Riwayah for CSS specificity.
 
+> **Invariant (Cross-engine font rendering, post 2026-04-27).** Two fonts ship for reader Arabic, gated by browser engine:
+> 1. **Chromium / Firefox (Skia / Gecko) → KFGQPC v0.18 Hafs / v0.10 Warsh / v0.10 Qaloon.** Hafs woff2 is pre-processed via `scripts/font-diag/hint-kfgqpc.sh` (perpendicular outline embolden + ttfautohint) so its strokes grid-fit to the same pixel positions as on WebKit. Warsh + Qaloon ship raw upstream — these engines render the upstream outlines correctly.
+> 2. **WebKit (Safari macOS / iOS Safari / iOS Chrome / headless WebKit) → KFGQPC Hafs (processed) for Hafs, Amiri Quran for Warsh + Qaloon.** KFGQPC Warsh and Qaloon v0.10 outline geometry produces hollow / broken combining-mark stacks in CoreGraphics — not fixable via post-processing (verified). Amiri Quran (Khaled Hosny, OFL, hinted, full Quranic mark coverage) preserves every tashkeel and Maghrebi-orthography spelling; only the calligrapher's hand changes (Uthman Taha → Khaled Hosny).
+>
+> Detection: `src/core/engine-detect.ts` sets `data-engine="safari"` on `<html>` when `navigator.vendor === "Apple Computer, Inc."` (every WebKit derivative; no other engine sets this). CSS substitution lives in `src/styles/tokens/semantic.css` via `[data-engine='safari'][data-riwayah='warsh']` + `[data-engine='safari'][data-riwayah='qaloon']` rules. Long-term proper fix = page-image rendering for non-Hafs riwayat (`docs/context/future-work.md`). Full landscape + research summary in `docs/context/riwayat-dataset.md` § "Cross-engine rendering". **Regression guard:** `tests/unit/assets/kfgqpc-hinting.test.ts` asserts hinting tables present in the shipped Hafs woff2 (validated via Rule 5 break-and-restore).
+
 ### B0. Surah header composition (post 2026-04-26)
 
 At the top of every surah the reader shows a flat 2-column grid header — no card background, no ornament chrome:

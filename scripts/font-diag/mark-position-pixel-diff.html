@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="utf-8">
+<title>KFGQPC mark-position pixel diff</title>
+<!--
+  Test #6 — Combining-mark Y-position pixel diff between WebKit and Blink.
+
+  Hypothesis H3: Core Text drops `mkmk` for KFGQPC's GPOS table. Mark glyphs
+  that should stack on prior marks instead stack on the base, putting the
+  topmost mark at a Y position close to the base's mark anchor instead of
+  above the prior mark.
+
+  Test verses chosen for stress:
+    27:30  — bismillah-shape verse: dagger alif (U+0670) on shadda+kasra stack.
+             Expected: dagger alif sits ABOVE the shadda+vowel cluster.
+    2:255  — Ayat al-Kursi: 11 mark stacks across one verse, including the
+             rare small high seen U+06EC.
+
+  How to run:
+    1. Serve locally: `cd scripts/font-diag && python3 -m http.server 8765`
+       (or open via the dev server — file relies on /fonts/ being reachable).
+    2. Open in Safari and Chrome at the same window size + DPI.
+    3. Click "Capture" in each browser. The output box shows per-glyph
+       client-rect Y coordinates of every span with class="m" (each combining
+       mark cluster).
+    4. Diff the two outputs. Anchor stacks where Safari's top mark Y is
+       LOWER (closer to baseline) than Chrome's by > 4px = mkmk dropped.
+
+  Why client-rect Y per span (not screenshot diff): Quartz vs Skia anti-alias
+  differently so per-pixel diffs are noisy; box geometry isolates positioning
+  from rasterization.
+-->
+<style>
+  @font-face {
+    font-family: 'KFGQPC Hafs';
+    src: url('/fonts/kfgqpc-hafs/hafs.18.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 1rem; max-width: 60rem; margin: 0 auto; }
+  .verse {
+    font-family: 'KFGQPC Hafs', serif;
+    font-size: 64px;
+    direction: rtl;
+    line-height: 2.2;
+    text-rendering: optimizelegibility;
+    border: 1px dashed #888;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    background: #fff;
+    color: #222;
+  }
+  pre { background: #111; color: #eee; padding: 0.75rem; overflow-x: auto; font-size: 11px; }
+  button { padding: 0.5rem 1rem; font-size: 14px; cursor: pointer; }
+  small { color: #666; }
+</style>
+</head>
+<body>
+
+<h1>KFGQPC mark-position pixel diff</h1>
+<p>Open in <strong>Safari</strong> and <strong>Chrome</strong>, click Capture in each, diff the JSON.</p>
+
+<h3>27:30 — dagger alif on shadda+kasra (mkmk stress)</h3>
+<div class="verse" id="v1">إِنَّهُۥ مِن سُلَيْمَٰنَ وَإِنَّهُۥ بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+
+<h3>2:255 — Ayat al-Kursi opener (11 mark stacks)</h3>
+<div class="verse" id="v2">ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌ وَلَا نَوْمٌ</div>
+
+<h3>Single bismillah ligature (rendering reference — should be identical across engines)</h3>
+<div class="verse" id="v3">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+
+<button id="cap">Capture</button>
+<small>UA + DPR are recorded so Safari↔Chrome comparisons can be matched.</small>
+
+<pre id="out">(Click Capture to populate. Then save to safari.json / chrome.json and diff.)</pre>
+
+<script>
+  // Capture per-Unicode-codepoint client rects so the diff isolates which
+  // glyphs (not pixels) move between engines. Each verse div is split into
+  // <span> wrappers per codepoint at click time, then rebuilt afterward
+  // so the page stays clean for re-capture.
+  function captureVerse(div) {
+    const original = div.textContent;
+    const codepoints = [...original];
+    const spans = codepoints.map(cp => {
+      const s = document.createElement('span');
+      s.className = 'm';
+      s.textContent = cp;
+      s.dataset.cp = cp.codePointAt(0).toString(16).toUpperCase().padStart(4, '0');
+      return s;
+    });
+    div.replaceChildren(...spans);
+
+    const rows = spans.map(s => {
+      const r = s.getBoundingClientRect();
+      return {
+        cp: 'U+' + s.dataset.cp,
+        char: s.textContent,
+        x: +r.x.toFixed(2),
+        y: +r.y.toFixed(2),
+        top: +r.top.toFixed(2),
+        bottom: +r.bottom.toFixed(2),
+        w: +r.width.toFixed(2),
+        h: +r.height.toFixed(2),
+      };
+    });
+
+    div.replaceChildren(document.createTextNode(original));
+    return rows;
+  }
+
+  document.getElementById('cap').addEventListener('click', () => {
+    const out = {
+      ua: navigator.userAgent,
+      vendor: navigator.vendor,
+      dpr: window.devicePixelRatio,
+      viewport: { w: innerWidth, h: innerHeight },
+      v1_27_30: captureVerse(document.getElementById('v1')),
+      v2_2_255: captureVerse(document.getElementById('v2')),
+      v3_bismillah: captureVerse(document.getElementById('v3')),
+    };
+    document.getElementById('out').textContent = JSON.stringify(out, null, 2);
+  });
+</script>
+</body>
+</html>
