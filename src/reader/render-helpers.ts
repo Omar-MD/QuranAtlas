@@ -23,12 +23,13 @@ export function shouldRenderBasmala(surahNum: number): boolean {
 
 /**
  * Format the surah header meta line.
- * e.g. "AL-FATIHAH · SURAH 1 · 7 VERSES · MECCAN"
+ * Surah name is rendered separately as the Arabic Mushaf title — this line
+ * carries only the ordinal + verse count.
+ * e.g. "SURAH 1 · 7 VERSES"
  */
 export function formatSurahMeta(meta: SurahMeta): string {
-  const nameUpper = (meta.name ?? '').toUpperCase()
   const count = meta.counts[settings.riwayah]
-  return `${nameUpper} · SURAH ${meta.n} · ${count} VERSES`
+  return `SURAH ${meta.n} · ${count} VERSES`
 }
 
 /**
