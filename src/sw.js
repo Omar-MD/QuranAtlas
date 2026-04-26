@@ -77,7 +77,14 @@ self.addEventListener('fetch', (_event) => {
 })
 
 self.addEventListener('message', (event) => {
-  if (!event.source || !event.source.url.startsWith(self.location.origin)) {
+  // Origin gate: drop messages that don't come from a same-origin client.
+  // ExtendableMessageEvent carries both `origin` (string) and `source`
+  // (Client). `origin` is the spec-recommended check; `source.url` is a
+  // belt-and-braces guard for environments that leave `origin` empty.
+  if (event.origin && event.origin !== self.location.origin) {
+    return
+  }
+  if (!event.source || !event.source.url || !event.source.url.startsWith(self.location.origin)) {
     return
   }
 

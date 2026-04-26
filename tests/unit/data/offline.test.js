@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import 'fake-indexeddb/auto'
-import { openDB, put, get } from '../../../src/core/db.js'
+import { openDB, put } from '../../../src/core/db.js'
 import * as events from '../../../src/core/events.js'
 
 // Mock serviceWorker
