@@ -116,6 +116,14 @@ Empirically (2026-04-26) the Vite dev server runs the suite faster than the prev
 **7.7 — Time the new spec before merging.**
 Run `time pnpm playwright test tests/e2e/<your-spec>.spec.js --reporter=line` locally. If a spec adds >5s to its journey file's wall time, justify it in the PR description (or shrink it). New spec files cap at 15s wall on chromium project; nest into existing `journey-X-*.spec.js` rather than spawn a new file (Rule 4 already says this — Rule 7.7 enforces the perf side).
 
+### Rule 8 — Zero build warnings before commit
+
+**No commit may introduce or carry forward a warning from `pnpm build`, `pnpm lint`, or `pnpm check`.** Run all three before staging — if any prints a warning (rolldown `INEFFECTIVE_DYNAMIC_IMPORT`, eslint `Unused eslint-disable directive`, svelte-check `0 ERRORS 0 WARNINGS` violation, etc.), fix it in the same change. "Pre-existing warning" is not an excuse — fix it as part of the commit that touches the area, or split a separate cleanup commit ahead of yours.
+
+**Why:** warnings rot. A single accepted warning trains the eye to skip output, and the next ten warnings hide in the noise. The audited 2026-04-26 build had two — an unused `eslint-disable no-console` and a dynamic-import that was statically imported elsewhere — both surviving because every prior commit treated them as someone else's problem. Treat the warning bar as `error`; if the bar were lower we would have caught the dynamic-import bundle bloat months earlier.
+
+**How to apply:** before `git add`, run `pnpm lint && pnpm check && pnpm build` and read every line of output. Any non-empty warning section gates the commit. If the warning is genuinely intractable (third-party tool emits a false positive that cannot be silenced cleanly), document the exception inline next to the offending code (`// rolldown bug #1234 — silenced via .browserslistrc`) AND in the PR description — never silently.
+
 ## Workflow
 
 Scripts, tooling, stack refs: see `docs/tech-stack.md`.

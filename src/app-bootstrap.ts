@@ -26,6 +26,7 @@ import { beginFast, openDeep } from './tag/session-bridge'
 import { tagSession } from './state/tag-session.svelte'
 import { registerEditor } from './marks/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
+import { openNavDrawer } from './nav/nav-drawer-bridge'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -74,7 +75,6 @@ export async function initBootstrap(): Promise<Array<() => void>> {
 
   // Build banner — visible in devtools so the active build is unambiguous
   // even when the About page isn't open. Mirrors the version shown there.
-  // eslint-disable-next-line no-console
   console.info(
     `%cQuranAtlas v${__APP_VERSION__} · ${__BUILD_SHA__}`,
     'color:#b08040;font-weight:600',
@@ -163,9 +163,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
           ? lastRec.value
           : '#/s/1'
         history.replaceState(null, '', last)
-        queueMicrotask(() => {
-          void import('./nav/nav-drawer-bridge').then(m => m.openNavDrawer('surahs'))
-        })
+        queueMicrotask(() => { openNavDrawer('surahs') })
         return (await import('./nav/EmptyRoute.svelte')).default
       }
       return (await import('./surahs/SurahList.svelte')).default
