@@ -166,6 +166,11 @@ async function main() {
   const perRiwayahCounts = { hafs: [], warsh: [], qaloon: [] }
   for (let i = 1; i <= 114; i++) {
     const key = pad3(i)
+    for (const r of RIWAYAT) {
+      if (!splits[r][key]) {
+        throw new Error(`${r} missing surah ${key} after split — check input ayat for surah ${i}`)
+      }
+    }
     namesEn.push(splits.qaloon[key].sura_name_en)
     namesAr.push(splits.qaloon[key].sura_name_ar)
     for (const r of RIWAYAT) {
@@ -204,23 +209,28 @@ async function main() {
   }
   await writeFile(join(DATASET_DIR, 'provenance.json'), JSON.stringify(provenance), 'utf8')
 
-  // 6. manifest.json — sha256 of every shipped file under public/dataset/
+  // 6. manifest.json — sha256 of every shipped file under public/dataset/.
+  // provenance.json is hashed against a builtAt-stripped form so the manifest
+  // stays stable across no-op rebuilds (otherwise every re-run dirties git).
   const allFiles = await listFiles(DATASET_DIR)
   const files = {}
   for (const f of allFiles) {
     if (f.endsWith('manifest.json')) { continue }
-    if (f.endsWith('.json') && f.includes('/riwayat/') && !f.includes('/riwayat/hafs/') && !f.includes('/riwayat/warsh/') && !f.includes('/riwayat/qaloon/')) {
-      // Skip the monolithic source files — they are inputs, not shipped.
-      continue
-    }
+    // Immediate children of riwayat/ are monolithic source inputs, not shipped.
+    if (dirname(f) === RIWAYAT_DIR) { continue }
     const rel = relative(DATASET_DIR, f).replace(/\\/g, '/')
-    files[rel] = await sha256(f)
+    if (rel === 'provenance.json') {
+      const stable = JSON.stringify({ ...provenance, builtAt: '' })
+      files[rel] = createHash('sha256').update(stable).digest('hex')
+    } else {
+      files[rel] = await sha256(f)
+    }
   }
   await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify({ packageVersion: PACKAGE_VERSION, builtAt: provenance.builtAt, files }), 'utf8')
 
   console.log(`[build-riwayat] done — 342 surah files + surahs.json + juz.json + provenance.json + manifest.json`)
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((e) => { console.error(e); process.exit(1) })
 }
