@@ -115,7 +115,9 @@
     --r-circle: 50%;
 
     /* --- Font families --------------------------------------------------- */
-    --ff-arabic:      'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
+    --ff-kfgqpc-hafs:   'KFGQPC Hafs', serif;
+    --ff-kfgqpc-warsh:  'KFGQPC Warsh', serif;
+    --ff-kfgqpc-qaloon: 'KFGQPC Qaloon', serif;
     --ff-translation: 'Newsreader', georgia, serif;
     --ff-sans:        system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
     --ff-mono:        'Geist Mono', ui-monospace, menlo, monospace;

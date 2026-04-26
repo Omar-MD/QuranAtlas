@@ -56,6 +56,36 @@
     unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
   }
 
+  @font-face {
+    font-family: 'KFGQPC Hafs';
+    src: url('/fonts/kfgqpc-hafs/hafs.18.woff2') format('woff2'),
+         url('/fonts/kfgqpc-hafs/hafs.18.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  }
+
+  @font-face {
+    font-family: 'KFGQPC Warsh';
+    src: url('/fonts/kfgqpc-warsh/warsh.10.woff2') format('woff2'),
+         url('/fonts/kfgqpc-warsh/warsh.10.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  }
+
+  @font-face {
+    font-family: 'KFGQPC Qaloon';
+    src: url('/fonts/kfgqpc-qaloon/qaloon.10.woff2') format('woff2'),
+         url('/fonts/kfgqpc-qaloon/qaloon.10.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  }
+
   body {
     font-family: var(--qa-font-ui);
     background-color: var(--qa-surface-app);

@@ -75,7 +75,7 @@
     --qa-elevation-popover: var(--sh-popover);
 
     /* --- Typography ------------------------------------------------------ */
-    --qa-font-arabic:      var(--ff-arabic);
+    --qa-font-arabic:      var(--ff-kfgqpc-qaloon);
     --qa-font-translation: var(--ff-translation);
     --qa-font-ui:          var(--ff-sans);
     --qa-font-mono:        var(--ff-mono);
@@ -182,6 +182,11 @@
     --lh-entities:  var(--qa-tag-layer-entities);
     --qa-font-sans: var(--qa-font-ui);
   }
+
+  /* Riwayah-bound Arabic font — follows <html data-riwayah="..."> */
+  :root[data-riwayah='hafs']   { --qa-font-arabic: var(--ff-kfgqpc-hafs); }
+  :root[data-riwayah='warsh']  { --qa-font-arabic: var(--ff-kfgqpc-warsh); }
+  :root[data-riwayah='qaloon'] { --qa-font-arabic: var(--ff-kfgqpc-qaloon); }
 
   /* Stepped chrome — reading tokens stay fluid via clamp() above. */
   @media (min-width: 768px) {
