@@ -11,5 +11,6 @@ export class ReaderState {
   isRendering = $state(false)
   scrollAppendRafPending = $state(false)
   lastTrackedVerse = $state<string | null>(null)
+  surahHeaderHidden = $state(false)
 }
 export const reader = new ReaderState()

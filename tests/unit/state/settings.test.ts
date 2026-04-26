@@ -7,6 +7,7 @@ describe('state/settings.svelte.ts', () => {
     settings.fontSize = 'md'
     settings.translationId = null
     settings.translationVisible = true
+    settings.surahHeaderHidden = false
   })
 
   it('has correct initial state', () => {
@@ -27,5 +28,14 @@ describe('state/settings.svelte.ts', () => {
     expect(settings.theme).toBe('sepia')
     expect(settings.translationVisible).toBe(false)
     expect(settings.fontSize).toBe('md') // untouched
+  })
+
+  it('exposes surahHeaderHidden default false', () => {
+    expect(settings.surahHeaderHidden).toBe(false)
+  })
+
+  it('surahHeaderHidden is directly assignable', () => {
+    settings.surahHeaderHidden = true
+    expect(settings.surahHeaderHidden).toBe(true)
   })
 })

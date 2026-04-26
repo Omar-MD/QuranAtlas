@@ -18,6 +18,7 @@ import { initFontSize } from './settings/font-size.ts'
 import { initRiwayah } from './settings/riwayah.ts'
 import { initReadingTypography } from './settings/reading-typography.ts'
 import { initNightMode } from './settings/night-mode.ts'
+import { initSurahHeaderHidden } from './settings/surah-header-visibility.ts'
 import { openSettingsSheet } from './settings/panel-bridge.ts'
 import { initReaderActions } from './nav/reader-actions.js'
 import { initIndicators } from './marks/indicator'
@@ -105,6 +106,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     await initRiwayah()
     await initReadingTypography()
     await initNightMode()
+    await initSurahHeaderHidden()
 
     // Expose version-change suppression so E2E clearAllData can prevent the
     // sync-banner overlay from blocking pointer events (Bug-2). Exposed in

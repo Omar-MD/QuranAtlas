@@ -533,37 +533,30 @@
     border: 0;
     cursor: pointer;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
     padding: 4px 8px;
     color: var(--qa-text-on-sheet);
     min-width: 0;
   }
 
+  .qa-mh-label:focus-visible {
+    outline: 2px solid var(--qa-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
   .qa-mh-label-ar {
-    font-family: var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
-    font-size: 17px;
+    font-family:
+      'Amiri Quran',
+      var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
+    font-size: 18px;
     line-height: 1.1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
-  }
-
-  .qa-mh-label-en {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-family: var(--qa-font-mono);
-    font-size: 10px;
-    letter-spacing: 0.13em;
-    color: var(--qa-text-on-sheet-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-mh-wordmark {

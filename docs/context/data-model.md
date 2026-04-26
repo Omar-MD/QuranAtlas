@@ -30,6 +30,7 @@ The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes 
 | `readerMargin` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader column inset step. Desktop: max-width on `#main-content` (inverse — larger step = narrower). Mobile: `--qa-verse-pad-x` on `.qa-verse` (xs ≈ edge-to-edge, xl wide gutters). Sole writer. |
 | `verseSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Vertical padding between verses via `--qa-verse-pad-y` on `.qa-verse`. Sole writer. |
 | `nightMode` | boolean | `settings/night-mode.ts` | Night recitation mode (dim+warm overlay via `.qa-night-shift`). Sole writer. |
+| `surahHeaderHidden` | boolean | `settings/surah-header-visibility.ts` | User hid the in-reader Surah Header (title + meta + juz). Toggled by MarginHeader center-label tap. Bismillah + verses still render. Default `false`. Persists across surah navigation. Sole writer. |
 | `translationVisible` | boolean | `settings/Panel.svelte` | Translation-toggle state. |
 | `translationId` | `'saheeh' \| 'pickthall' \| 'yusuf' \| 'khattab'` | `settings/Panel.svelte`, `onboarding/Onboarding.svelte` | Selected translation. |
 | `lastSurface` | string (hash path) | `core/router.ts`, `review/Hub.svelte` (FVR) | Where to resume on next launch. |
@@ -275,7 +276,7 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 > - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
 > - `meta` — written by `review/state` (sole writer for `meta['review']`).
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
-> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `currentPosition` (`reader/global-position`).
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `surahHeaderHidden` (`settings/surah-header-visibility`), `currentPosition` (`reader/global-position`).
 >
 > Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
 
