@@ -83,11 +83,11 @@
     const p = parsedQuery
     if (p.kind === 'empty') { return items }
     if (p.kind === 'surahNum') { return items.filter(s => s.n === p.n) }
-    if (p.kind === 'verseNum') { return items.filter(s => s.count >= p.v) }
+    if (p.kind === 'verseNum') { return items.filter(s => s.counts[settings.riwayah] >= p.v) }
     if (p.kind === 'ref') {
       // Show only the target surah if it can hold the verse. Tap or Enter
       // both navigate via goRef() — the row click is the candidate selector.
-      return items.filter(s => s.n === p.surah && s.count >= p.verse)
+      return items.filter(s => s.n === p.surah && s.counts[settings.riwayah] >= p.verse)
     }
     return items.filter(s => {
       const name = (s.name ?? '').toLowerCase()
@@ -105,13 +105,13 @@
     if (p.kind === 'ref') {
       const meta = allSurahs.find(s => s.n === p.surah)
       if (!meta) { return `No surah ${p.surah}` }
-      if (p.verse < 1 || p.verse > meta.count) {
-        return `${meta.name} has ${meta.count} verses`
+      if (p.verse < 1 || p.verse > meta.counts[settings.riwayah]) {
+        return `${meta.name} has ${meta.counts[settings.riwayah]} verses`
       }
       return `Press Enter to jump to ${meta.name} ${p.verse}`
     }
     if (p.kind === 'verseNum') {
-      const matchCount = allSurahs.filter(s => s.count >= p.v).length
+      const matchCount = allSurahs.filter(s => s.counts[settings.riwayah] >= p.v).length
       if (matchCount === 0) { return `No surah has ${p.v} verses` }
       return `Surahs with at least ${p.v} verses (${matchCount})`
     }
@@ -184,7 +184,7 @@
     const p = parsedQuery
     if (p.kind !== 'ref') { return false }
     const meta = allSurahs.find(s => s.n === p.surah)
-    if (!meta || p.verse < 1 || p.verse > meta.count) { return false }
+    if (!meta || p.verse < 1 || p.verse > meta.counts[settings.riwayah]) { return false }
     emit(Events.NAVIGATION_NAVIGATE, { surah: p.surah, verse: p.verse })
     close()
     return true

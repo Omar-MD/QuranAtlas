@@ -1,7 +1,7 @@
-import type { SurahData } from '../data/dataset'
+import type { SurahPayload } from '../data/dataset'
 
 export class ReaderState {
-  currentSurah = $state<SurahData | null>(null)
+  currentSurah = $state<SurahPayload | null>(null)
   currentSurahNum = $state<number | null>(null)
   currentVerseKey = $state<string | null>(null)
   fontMultiplier = $state(1.0)

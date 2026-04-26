@@ -7,13 +7,14 @@
   import { reader } from '../state/reader.svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { juzProgress, type SurahCount } from '../data/juz'
+  import { settings } from '../state/settings.svelte'
   import { onMount } from 'svelte'
 
   let surahs = $state<SurahCount[]>([])
 
   onMount(() => {
     getSurahs().then((list: SurahMeta[]) => {
-      surahs = list.map((s) => ({ n: s.n, count: s.count }))
+      surahs = list.map((s) => ({ n: s.n, count: s.counts[settings.riwayah] }))
     }).catch(() => { /* ignore */ })
   })
 

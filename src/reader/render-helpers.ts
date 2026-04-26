@@ -7,6 +7,7 @@
  */
 
 import type { SurahMeta } from '../data/dataset'
+import { settings } from '../state/settings.svelte'
 
 /**
  * Whether to render a standalone basmala before the first verse.
@@ -26,8 +27,8 @@ export function shouldRenderBasmala(surahNum: number): boolean {
  */
 export function formatSurahMeta(meta: SurahMeta): string {
   const nameUpper = (meta.name ?? '').toUpperCase()
-  const typeUpper = (typeof meta['type'] === 'string' ? meta['type'] : '').toUpperCase()
-  return `${nameUpper} · SURAH ${meta.n} · ${meta.count} VERSES · ${typeUpper}`
+  const count = meta.counts[settings.riwayah]
+  return `${nameUpper} · SURAH ${meta.n} · ${count} VERSES`
 }
 
 /**
@@ -35,7 +36,7 @@ export function formatSurahMeta(meta: SurahMeta): string {
  * e.g. "الفاتحة"
  */
 export function formatArabicSurahName(meta: SurahMeta): string {
-  return typeof meta['arabic'] === 'string' ? meta['arabic'] : ''
+  return meta.name_ar ?? ''
 }
 
 /**

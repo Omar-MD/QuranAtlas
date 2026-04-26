@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
+  import { settings } from '../state/settings.svelte'
   import { getAll as getAllMarks } from '../marks/store'
   import { get } from '../core/db'
   import { loadGlobalPosition } from '../reader/global-position'
@@ -144,7 +145,7 @@
         const sNum = parseInt(sRaw, 10)
         const vNum = parseInt(vRaw, 10)
         const meta = allSurahs.find(s => s.n === sNum)
-        if (meta && vNum >= 1 && vNum <= meta.count) {
+        if (meta && vNum >= 1 && vNum <= meta.counts[settings.riwayah]) {
           emit(Events.NAVIGATION_NAVIGATE, { surah: sNum, verse: vNum })
         }
       }

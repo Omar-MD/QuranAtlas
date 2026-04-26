@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
+  import { settings } from '../state/settings.svelte'
 
   interface Props {
     surah: SurahMeta
@@ -9,7 +10,7 @@
 
   const { surah, bookmarked }: Props = $props()
 
-  const arabic = $derived((surah as Record<string, unknown>)['arabic'] as string | undefined ?? '')
+  const arabic = $derived(surah.name_ar ?? '')
   const type = $derived(((surah as Record<string, unknown>)['type'] as string | undefined ?? '').toLowerCase())
 </script>
 
@@ -22,7 +23,7 @@
     </span>
     <span class="qa-sl-row-ar" dir="rtl">{arabic}</span>
     <span class="qa-sl-row-meta">
-      <span class="qa-sl-row-vcount">{surah.count ?? ''}</span>
+      <span class="qa-sl-row-vcount">{surah.counts[settings.riwayah] ?? ''}</span>
       <span class="qa-sl-row-type">{type}</span>
     </span>
   </a>

@@ -16,6 +16,7 @@
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
   import { getSurahs, getSurah, type SurahMeta } from '../data/dataset'
+  import { settings } from '../state/settings.svelte'
   import { getMeaning } from '../data/surah-meanings'
   import { getAll as getAllMarks } from '../marks/store'
   import { getAllUsedTags, getColorForTag } from '../marks/tags.js'
@@ -205,7 +206,7 @@
 
   async function buildVersePreviewResult(s: number, v: number): Promise<{ items: ResultItem[]; card: VerseCard | null }> {
     const meta = surahCache.find(x => x.n === s)
-    if (!meta || s < 1 || s > 114 || v < 1 || v > meta.count) {
+    if (!meta || s < 1 || s > 114 || v < 1 || v > meta.counts[settings.riwayah]) {
       return { items: [], card: null }
     }
 
@@ -216,8 +217,8 @@
     let en = '\u2026'
     try {
       const data = await getSurah(s)
-      ar = data.ar[v - 1] ?? ''
-      en = data.en[v - 1] ?? ''
+      ar = data.ayat[v - 1]?.aya_text ?? ''
+      en = ''
     } catch {
       en = 'Content unavailable offline'
     }

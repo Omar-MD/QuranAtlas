@@ -27,8 +27,8 @@
     try {
       const data = await getSurah(sNum)
       const idx = vNum - 1
-      arabicText = (data.ar && data.ar[idx]) ? (data.ar[idx] ?? null) : null
-      englishText = (data.en && data.en[idx]) ? (data.en[idx] ?? null) : null
+      arabicText = data.ayat[idx]?.aya_text ?? null
+      englishText = null
     } catch {
       // silently fail — content stays blank
     }

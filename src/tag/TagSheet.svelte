@@ -46,8 +46,8 @@
     const ayah = parseInt(ayahStr ?? '1', 10)
     getSurahs().then((list) => { surahName = list.find((m) => m.n === surah)?.name ?? '' })
     getSurah(surah).then((s) => {
-      arText = s?.ar?.[ayah - 1] ?? '…'
-      enText = s?.en?.[ayah - 1] ?? '…'
+      arText = s?.ayat?.[ayah - 1]?.aya_text ?? '…'
+      enText = ''
     }).catch(() => { /* ignore */ })
     getByVerseKey(verseKey).then((m) => { previousMark = m }).catch(() => { /* ignore */ })
   })

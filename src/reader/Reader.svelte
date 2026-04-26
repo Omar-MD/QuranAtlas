@@ -6,9 +6,9 @@
   import { reader } from '../state/reader.svelte'
   import { settings } from '../state/settings.svelte'
   import { getSurah, getSurahs } from '../data/dataset'
-  import type { SurahData, SurahMeta } from '../data/dataset'
+  import type { SurahPayload, SurahMeta } from '../data/dataset'
   import { get } from '../core/db'
-  import { emit } from '../core/events'
+  import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
   import { clearUndoToast, clearUndoRecord } from '../core/ui-bridge'
@@ -53,7 +53,7 @@
 
   type VerseItem = { key: string; ar: string; en: string }
 
-  let surahData = $state<SurahData | null>(null)
+  let surahData = $state<SurahPayload | null>(null)
   let surahMeta = $state<SurahMeta | null>(null)
   let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
@@ -95,15 +95,16 @@
 
   /** Append up to CHUNK_SIZE more verses to the rendered list. */
   function appendChunk() {
-    if (!surahData || renderedCount >= surahData.ar.length) { return }
-    const nextEnd = Math.min(renderedCount + CHUNK_SIZE, surahData.ar.length)
+    if (!surahData || renderedCount >= surahData.ayat.length) { return }
+    const nextEnd = Math.min(renderedCount + CHUNK_SIZE, surahData.ayat.length)
     const firstNewVerseNum = renderedCount + 1
     const newItems: VerseItem[] = []
     for (let i = renderedCount; i < nextEnd; i++) {
+      const ayah = surahData.ayat[i]
       newItems.push({
-        key: `${surahNum}:${i + 1}`,
-        ar: surahData.ar[i] ?? '',
-        en: surahData.en[i] ?? '',
+        key: `${surahData.sura_no}:${ayah?.aya_no ?? (i + 1)}`,
+        ar: ayah?.aya_text ?? '',
+        en: '',
       })
     }
     verses = [...verses, ...newItems]
@@ -132,7 +133,7 @@
    */
   function ensureVerseRendered(targetN: number) {
     if (!surahData) { return }
-    while (renderedCount < targetN && renderedCount < surahData.ar.length) {
+    while (renderedCount < targetN && renderedCount < surahData.ayat.length) {
       appendChunk()
     }
   }
@@ -166,7 +167,27 @@
 
     void loadSurah()
 
+    // Re-fetch the surah when the user switches Riwayah so the reader
+    // immediately shows the correct orthography. Restore the scroll anchor
+    // (clamped to the last ayah of the new riwayah when the prior position
+    // overshoots the new ayah count).
+    const offRiwayah = on(Events.SETTINGS_RIWAYAH_CHANGED, async () => {
+      const anchorKey = reader.currentVerseKey
+      const anchorAya = anchorKey ? parseInt(anchorKey.split(':')[1] ?? '1', 10) : 1
+      await loadSurah()
+      const ayatList = surahData?.ayat ?? []
+      const lastAya = ayatList.length > 0 ? (ayatList[ayatList.length - 1]?.aya_no ?? 1) : 1
+      const safeAya = Math.min(anchorAya, lastAya)
+      if (safeAya > 1) {
+        ensureVerseRendered(safeAya)
+        // Re-use existing scroll-to-verse mechanism via the position tracker
+        const el = container?.querySelector<HTMLElement>(`[data-verse="${safeAya}"]`)
+        if (el) { el.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior }) }
+      }
+    })
+
     return () => {
+      offRiwayah()
       // Cleanup on unmount
       teardownPositionTracking()
       for (const fn of cleanups) { try { fn() } catch { /* ignore */ } }
@@ -240,13 +261,13 @@
         // Backward swap: expand all chunks then anchor scroll at the bottom
         // so the user sees the previous surah's terminal verse.
         if (swapAnchor === 'bottom' && surahData) {
-          ensureVerseRendered(surahData.ar.length)
+          ensureVerseRendered(surahData.ayat.length)
           requestAnimationFrame(() => {
             if (shellScroller) {
               shellScroller.scrollTop = shellScroller.scrollHeight
             }
             if (surahData) {
-              void savePosition(surahNum, surahData.ar.length)
+              void savePosition(surahNum, surahData.ayat.length)
             }
           })
         }
@@ -259,7 +280,7 @@
           surahMeta: surahMeta ?? undefined,
           savedPosition: null,
           targetVerse: targetVerse ?? null,
-          totalVerseCount: surahData?.ar.length ?? 0,
+          totalVerseCount: surahData?.ayat.length ?? 0,
           ensureVerseRendered,
           onInvalidVerseError: (msg) => { invalidVerseError = msg },
         })
@@ -302,7 +323,7 @@
         performance.measure('reader:total-load', 'reader:fetch-start', 'reader:first-verse')
 
         const name = surahMeta?.name ?? `Surah ${surahNum}`
-        announce(`${name} loaded, ${surahData?.ar.length ?? 0} verses`)
+        announce(`${name} loaded, ${surahData?.ayat.length ?? 0} verses`)
       })
     } catch {
       clearTimeout(timeoutId)
@@ -369,7 +390,7 @@
       />
     {/each}
 
-    {#if renderedCount === (surahData?.ar.length ?? 0) && nextMeta}
+    {#if renderedCount === (surahData?.ayat.length ?? 0) && nextMeta}
       <button
         type="button"
         class="qa-continue-next"

@@ -129,12 +129,10 @@
 
     // Load verse text asynchronously
     getSurah(surahNum).then(data => {
-      if (Array.isArray(data?.ar)) {
-        arText = data.ar[verseNum - 1] ?? '…'
+      if (data?.ayat) {
+        arText = data.ayat[verseNum - 1]?.aya_text ?? '…'
       }
-      if (Array.isArray(data?.en)) {
-        enText = data.en[verseNum - 1] ?? '…'
-      }
+      enText = ''
     }).catch(() => { /* keep ellipses */ })
 
     // History entry for browser-back
