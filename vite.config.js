@@ -45,8 +45,18 @@ export default defineConfig({
           }
         ]
       },
+      // With strategies: 'injectManifest' the `workbox.*` keys are silently
+       // ignored — `globPatterns` and `runtimeCaching` must live under
+       // top-level `injectManifest` and inside src/sw.js respectively.
+       // The previous `workbox.globPatterns: ['**/*.{js,css,html,woff2}']`
+       // never reached the precache manifest, so KFGQPC font woff2 files
+       // (≈260 KB) were excluded — the SW only fetched them on first runtime
+       // request, and on flaky mobile they sometimes never arrived (root
+       // cause of the missing-tashkeel reports).
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,woff2}']
+      },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^\/dataset\/.*/i,

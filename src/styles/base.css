@@ -62,7 +62,13 @@
          url('/fonts/kfgqpc-hafs/hafs.18.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
-    font-display: block;
+    /* swap (not block): on slow mobile the 87KB woff2 can exceed the 3s
+       block timeout, after which the browser falls through to the next
+       family in the stack — Amiri (also @font-face declared above). swap
+       shows Amiri immediately and upgrades to KFGQPC when it arrives,
+       so users on poor connections never see system Arabic with stripped
+       Quranic marks. */
+    font-display: swap;
     unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
   }
 
@@ -72,7 +78,13 @@
          url('/fonts/kfgqpc-warsh/warsh.10.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
-    font-display: block;
+    /* swap (not block): on slow mobile the 87KB woff2 can exceed the 3s
+       block timeout, after which the browser falls through to the next
+       family in the stack — Amiri (also @font-face declared above). swap
+       shows Amiri immediately and upgrades to KFGQPC when it arrives,
+       so users on poor connections never see system Arabic with stripped
+       Quranic marks. */
+    font-display: swap;
     unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
   }
 
@@ -82,7 +94,13 @@
          url('/fonts/kfgqpc-qaloon/qaloon.10.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
-    font-display: block;
+    /* swap (not block): on slow mobile the 87KB woff2 can exceed the 3s
+       block timeout, after which the browser falls through to the next
+       family in the stack — Amiri (also @font-face declared above). swap
+       shows Amiri immediately and upgrades to KFGQPC when it arrives,
+       so users on poor connections never see system Arabic with stripped
+       Quranic marks. */
+    font-display: swap;
     unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
   }
 
