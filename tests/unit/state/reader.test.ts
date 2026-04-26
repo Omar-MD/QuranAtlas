@@ -13,6 +13,7 @@ describe('state/reader.svelte.ts', () => {
     reader.isRendering = false
     reader.scrollAppendRafPending = false
     reader.lastTrackedVerse = null
+    reader.surahHeaderHidden = false
   })
 
   it('has correct initial state', () => {
@@ -43,5 +44,12 @@ describe('state/reader.svelte.ts', () => {
 
   it('assignment does not throw', () => {
     expect(() => { reader.scrollY = 500 }).not.toThrow()
+  })
+
+  it('exposes surahHeaderHidden default false and is assignable', () => {
+    expect(reader.surahHeaderHidden).toBe(false)
+    reader.surahHeaderHidden = true
+    expect(reader.surahHeaderHidden).toBe(true)
+    reader.surahHeaderHidden = false
   })
 })
