@@ -44,8 +44,19 @@ import Hub from '../../../src/review/Hub.svelte'
 import { review } from '../../../src/state/review.svelte'
 import { openDB, del } from '../../../src/core/db'
 
-async function flush() {
-  for (let i = 0; i < 5; i++) { await Promise.resolve() }
+// Find element by selector + optional text predicate. Polls so async Svelte
+// init (mocked getAll/getSurahs/reloadValuePool) has time to settle without
+// brittle hard-coded microtask counts.
+function $$<T extends Element = HTMLElement>(
+  selector: string,
+  predicate?: (el: Element) => boolean,
+): Promise<T> {
+  return vi.waitFor(() => {
+    const list = [...document.querySelectorAll(selector)]
+    const el = predicate ? list.find(predicate) : list[0]
+    if (!el) throw new Error(`element not found: ${selector}${predicate ? ' (predicate)' : ''}`)
+    return el as unknown as T
+  }, { timeout: 1500, interval: 10 })
 }
 
 describe('Hub.svelte (E2 / E5)', () => {
@@ -60,106 +71,95 @@ describe('Hub.svelte (E2 / E5)', () => {
     window.location.hash = '#/review'
   })
 
-  async function mountAndInit() {
+  async function mount() {
     render(Hub, { props: {} })
-    // doInit fires async — wait for getAll + reloadValuePool to settle.
-    for (let i = 0; i < 8; i++) { await Promise.resolve() }
-    await new Promise(r => setTimeout(r, 0))
-    await flush()
+    // Wait for value chips (rendered after async getAllCanonicalValues +
+    // reloadValuePool) — that's the latest async state in init.
+    await $$('.qa-review-value-chip')
   }
 
   it('E2: tap Surah segment → review.groupBy === "surah"', async () => {
-    await mountAndInit()
-    const surahSeg = document.querySelector('.qa-review-seg [data-group="surah"]') as HTMLButtonElement
-    expect(surahSeg).not.toBeNull()
-    await fireEvent.click(surahSeg)
-    await flush()
-    expect(review.groupBy).toBe('surah')
+    await mount()
+    await fireEvent.click(await $$<HTMLButtonElement>('.qa-review-seg [data-group="surah"]'))
+    await vi.waitFor(() => expect(review.groupBy).toBe('surah'))
 
-    const flatSeg = document.querySelector('[data-group="flat"]') as HTMLButtonElement
-    await fireEvent.click(flatSeg)
-    await flush()
-    expect(review.groupBy).toBe('flat')
+    await fireEvent.click(await $$<HTMLButtonElement>('[data-group="flat"]'))
+    await vi.waitFor(() => expect(review.groupBy).toBe('flat'))
 
-    const tagSeg = document.querySelector('[data-group="tag"]') as HTMLButtonElement
-    await fireEvent.click(tagSeg)
-    await flush()
-    expect(review.groupBy).toBe('tag')
+    await fireEvent.click(await $$<HTMLButtonElement>('[data-group="tag"]'))
+    await vi.waitFor(() => expect(review.groupBy).toBe('tag'))
   })
 
   it('E5: tap a value chip → activeValue set + filter chip surfaces', async () => {
-    await mountAndInit()
-    const mercyChip = [...document.querySelectorAll('.qa-review-value-chip')]
-      .find(el => el.textContent?.trim().toLowerCase().includes('mercy'))! as HTMLButtonElement
-    expect(mercyChip).not.toBeNull()
-
+    await mount()
+    const mercyChip = await $$<HTMLButtonElement>(
+      '.qa-review-value-chip',
+      el => !!el.textContent?.trim().toLowerCase().includes('mercy'),
+    )
     await fireEvent.click(mercyChip)
-    await flush()
 
-    expect(review.activeValue).toBe('mercy')
-    expect(document.querySelector('.qa-review-active-filters')).not.toBeNull()
-    expect(document.querySelector('.qa-review-filter-chip')!.textContent).toContain('mercy')
+    await vi.waitFor(() => expect(review.activeValue).toBe('mercy'))
+    await $$('.qa-review-active-filters')
+    const chip = await $$('.qa-review-filter-chip')
+    expect(chip.textContent).toContain('mercy')
   })
 
   it('E5: × on value filter chip clears activeValue, surah filter remains', async () => {
-    await mountAndInit()
-
-    const mercyChip = [...document.querySelectorAll('.qa-review-value-chip')]
-      .find(el => el.textContent?.trim().toLowerCase().includes('mercy'))! as HTMLButtonElement
+    await mount()
+    const mercyChip = await $$<HTMLButtonElement>(
+      '.qa-review-value-chip',
+      el => !!el.textContent?.trim().toLowerCase().includes('mercy'),
+    )
     await fireEvent.click(mercyChip)
-    await flush()
+    await vi.waitFor(() => expect(review.activeValue).toBe('mercy'))
 
-    const surahSelect = document.querySelector('[data-control="surah"]') as HTMLSelectElement
+    const surahSelect = await $$<HTMLSelectElement>('[data-control="surah"]')
     surahSelect.value = '1'
     await fireEvent.change(surahSelect)
-    await flush()
+    await vi.waitFor(() => expect(review.surahFilter).toBe(1))
 
-    expect(review.activeValue).toBe('mercy')
-    expect(review.surahFilter).toBe(1)
-
-    const dismissBtn = document.querySelector('.qa-review-filter-chip button') as HTMLButtonElement
+    const dismissBtn = await $$<HTMLButtonElement>('.qa-review-filter-chip button')
     await fireEvent.click(dismissBtn)
-    await flush()
 
-    expect(review.activeValue).toBeNull()
-    expect(review.surahFilter).toBe(1)
+    await vi.waitFor(() => {
+      expect(review.activeValue).toBeNull()
+      expect(review.surahFilter).toBe(1)
+    })
   })
 
   it('E5: Clear all → both activeValue and surahFilter reset', async () => {
-    await mountAndInit()
-
-    const faithChip = [...document.querySelectorAll('.qa-review-value-chip')]
-      .find(el => el.textContent?.trim().toLowerCase().includes('faith'))! as HTMLButtonElement
+    await mount()
+    const faithChip = await $$<HTMLButtonElement>(
+      '.qa-review-value-chip',
+      el => !!el.textContent?.trim().toLowerCase().includes('faith'),
+    )
     await fireEvent.click(faithChip)
-    await flush()
+    await vi.waitFor(() => expect(review.activeValue).toBe('faith'))
 
-    const surahSelect = document.querySelector('[data-control="surah"]') as HTMLSelectElement
+    const surahSelect = await $$<HTMLSelectElement>('[data-control="surah"]')
     surahSelect.value = '1'
     await fireEvent.change(surahSelect)
-    await flush()
+    await vi.waitFor(() => expect(review.surahFilter).toBe(1))
 
-    expect(review.activeValue).toBe('faith')
-    expect(review.surahFilter).toBe(1)
-
-    const clearAllBtn = document.querySelector('.qa-review-clear-all-btn') as HTMLButtonElement
-    expect(clearAllBtn).not.toBeNull()
+    const clearAllBtn = await $$<HTMLButtonElement>('.qa-review-clear-all-btn')
     await fireEvent.click(clearAllBtn)
-    await flush()
 
-    expect(review.activeValue).toBeNull()
-    expect(review.surahFilter).toBeNull()
-    expect(document.querySelector('.qa-review-active-filters')).toBeNull()
+    await vi.waitFor(() => {
+      expect(review.activeValue).toBeNull()
+      expect(review.surahFilter).toBeNull()
+      expect(document.querySelector('.qa-review-active-filters')).toBeNull()
+    })
   })
 
   it('E5: tap value chip again toggles it off', async () => {
-    await mountAndInit()
-    const mercyChip = [...document.querySelectorAll('.qa-review-value-chip')]
-      .find(el => el.textContent?.trim().toLowerCase().includes('mercy'))! as HTMLButtonElement
+    await mount()
+    const mercyChip = await $$<HTMLButtonElement>(
+      '.qa-review-value-chip',
+      el => !!el.textContent?.trim().toLowerCase().includes('mercy'),
+    )
     await fireEvent.click(mercyChip)
-    await flush()
-    expect(review.activeValue).toBe('mercy')
+    await vi.waitFor(() => expect(review.activeValue).toBe('mercy'))
     await fireEvent.click(mercyChip)
-    await flush()
-    expect(review.activeValue).toBeNull()
+    await vi.waitFor(() => expect(review.activeValue).toBeNull())
   })
 })
