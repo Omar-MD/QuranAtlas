@@ -8,6 +8,7 @@ import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
 import { settings, type Riwayah } from '../state/settings.svelte.ts'
+import { broadcastRiwayahChange } from '../safety/sync'
 
 const RIWAYAH_OPTIONS: readonly Riwayah[] = ['hafs', 'warsh', 'qaloon'] as const
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
@@ -55,6 +56,7 @@ export async function setRiwayah(next: Riwayah): Promise<boolean> {
     return false
   }
   emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: prev, to: next })
+  broadcastRiwayahChange(next)
   return true
 }
 

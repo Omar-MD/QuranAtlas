@@ -1,6 +1,6 @@
 /**
  * Cross-tab safety and synchronization module.
- * Handles BroadcastChannel mark sync, edge sync, and IDB versionchange reload banner.
+ * Handles BroadcastChannel mark sync, edge sync, riwayah sync, and IDB versionchange reload banner.
  * Permitted cross-module import (safety exception).
  *
  * Public API:
@@ -8,6 +8,7 @@
  * - broadcastMarkChange(verseKeys) — notify other tabs of mark changes
  * - onMarkChange(callback) — register handler for incoming mark changes
  * - broadcastEdgeChange(edgeIds) — notify other tabs of edge changes
+ * - broadcastRiwayahChange(next) — notify other tabs of riwayah changes
  * - reset() — full reset for testing
  */
 
@@ -15,11 +16,13 @@ import { on, emit } from '../core/events'
 import { Events } from '../core/constants'
 import { logger } from '../core/logger'
 import { sync } from '../state/sync.svelte.ts'
+import { applyRiwayah } from '../settings/riwayah'
 const syncState = { get: () => sync, set: (p: Partial<typeof sync>) => Object.assign(sync, p) }
 
 const CHANNEL_NAME = 'quran-atlas:sync'
 
 type MarkChangeHandler = (data: { verseKeys: string[] }) => void
+type Riwayah = 'hafs' | 'warsh' | 'qaloon'
 
 let markChangeHandlers: MarkChangeHandler[] = []
 let bannerElement: HTMLElement | null = null
@@ -75,6 +78,18 @@ export function broadcastEdgeChange(edgeIds: string[]): void {
 }
 
 /**
+ * Broadcast a Riwayah change to other tabs.
+ * Only call after the IDB put succeeds.
+ */
+export function broadcastRiwayahChange(next: Riwayah): void {
+  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
+  if (!channel) {
+    return
+  }
+  channel.postMessage({ type: 'riwayah:changed', value: next })
+}
+
+/**
  * Register a handler for incoming mark changes from other tabs.
  * Returns an unsubscribe function.
  */
@@ -104,7 +119,7 @@ function destroy(): void {
  * Handle incoming BroadcastChannel messages.
  */
 function handleChannelMessage(event: MessageEvent): void {
-  const data = (event.data || {}) as { type?: string; verseKeys?: string[]; edgeIds?: string[] }
+  const data = (event.data || {}) as { type?: string; verseKeys?: string[]; edgeIds?: string[]; value?: string }
   if (data.type === 'marks:changed' && Array.isArray(data.verseKeys)) {
     for (const handler of markChangeHandlers) {
       try {
@@ -118,6 +133,12 @@ function handleChannelMessage(event: MessageEvent): void {
     emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: data.verseKeys })
   } else if (data.type === 'edges:changed' && Array.isArray(data.edgeIds)) {
     emit(Events.SYNC_EDGES_UPDATED, { edgeIds: data.edgeIds })
+  } else if (data.type === 'riwayah:changed' && (data.value === 'hafs' || data.value === 'warsh' || data.value === 'qaloon')) {
+    const next = data.value as Riwayah
+    const prev = (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-riwayah') : null) as Riwayah | null
+    if (prev === next) { return }
+    applyRiwayah(next)
+    emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: (prev ?? 'qaloon'), to: next })
   }
 }
 
