@@ -120,13 +120,7 @@ test.describe('Journey C: Verse marking', () => {
     expect(violations).toEqual([])
   })
 
-  test('C1: keyboard — Escape closes TagSheet @keyboard @chromium-only', async ({ page }) => {
-    await openTagSheetViaRightClick(page)
-    const sheet = page.locator('.qa-ts')
-    await expect(sheet).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(sheet).not.toBeVisible({ timeout: 3_000 })
-  })
+  // C1 keyboard Escape ported to tests/unit/tag/tag-sheet.test.ts (Phase 2 bucket 2, 2026-04-26).
 
   // -------------------------------------------------------------------------
   // C1 (post-redesign 2026-04-25). Double-tap / right-click open the
@@ -156,33 +150,8 @@ test.describe('Journey C: Verse marking', () => {
     await expect(page.locator('.qa-ts')).toHaveCount(0)
   })
 
-  test('C: ⛶ button in fast-tag panel opens deep TagSheet', async ({ page }) => {
-    const firstVerse = page.locator('.qa-verse').first()
-    await doubleTap(firstVerse)
-    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
-
-    const escalate = page.locator('.qa-vtp-escalate')
-    await expect(escalate).toBeVisible()
-    await expect(escalate).toHaveAttribute('aria-label', 'Open full tag editor')
-
-    await escalate.click()
-    await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('.qa-vtp')).toHaveCount(0)
-  })
-
-  test('C: ✕ close button in fast-tag panel ends session (mobile exit)', async ({ page }) => {
-    const firstVerse = page.locator('.qa-verse').first()
-    await doubleTap(firstVerse)
-    const panel = page.locator('.qa-vtp')
-    await expect(panel).toBeVisible({ timeout: 5_000 })
-
-    const close = page.getByTestId('vtp-close')
-    await expect(close).toBeVisible()
-    await expect(close).toHaveAttribute('aria-label', 'Exit fast-tag mode')
-    await close.click()
-
-    await expect(panel).toHaveCount(0, { timeout: 3_000 })
-  })
+  // C: ⛶ escalate button + ✕ close button ported to
+  // tests/unit/tag/verse-tag-panel.test.ts (Phase 2 bucket 2, 2026-04-26).
 
   test('C: double-tap on a different verse switches the active verse, panel stays open', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').nth(0)
@@ -203,53 +172,8 @@ test.describe('Journey C: Verse marking', () => {
   // C2. Add a tag to a layer → click chip removes it
   // -------------------------------------------------------------------------
 
-  test('C2: add tag to layer via combobox; click chip removes it @chromium-only', async ({ page }) => {
-    await openTagSheetViaRightClick(page)
-    await activateTab(page, 'Themes')
-
-    const threads = layerRow(page, 'threads')
-    await expect(threads).toBeVisible()
-
-    // Type "mercy" and commit with Enter
-    const input = threads.locator('.qa-ts-combo-input')
-    await input.click()
-    await input.fill('mercy')
-    await input.press('Enter')
-
-    const chip = threads.locator('.qa-ts-hchip--on').filter({ hasText: 'mercy' })
-    await expect(chip).toBeVisible({ timeout: 3_000 })
-
-    // Header count reflects one selected tag
-    await expect(page.locator('.qa-ts-count')).toContainText('1')
-
-    // Themes group section badge shows 1
-    const themesGrp = page.locator('.qa-ts-grp').filter({ has: page.locator('.qa-ts-grp-name', { hasText: 'Themes' }) })
-    await expect(themesGrp.locator('.qa-ts-grp-count')).toHaveText('1')
-
-    // Click chip → toggles off (removed from draft)
-    await chip.click()
-    await expect(chip).not.toBeVisible({ timeout: 3_000 })
-    await expect(page.locator('.qa-ts-count')).toHaveCount(0) // header count hides at 0
-  })
-
-  // -------------------------------------------------------------------------
-  // C3. Add a new (non-seed) tag inline
-  // -------------------------------------------------------------------------
-
-  test('C3: type new label + Enter in layer combobox → tag added @chromium-only', async ({ page }) => {
-    await openTagSheetViaRightClick(page)
-    await activateTab(page, 'Themes')
-
-    const threads = layerRow(page, 'threads')
-    const input = threads.locator('.qa-ts-combo-input')
-    await input.click()
-    await input.fill('unique-custom-tag-xyz')
-    await input.press('Enter')
-
-    const newChip = threads.locator('.qa-ts-hchip--on').filter({ hasText: 'unique-custom-tag-xyz' })
-    await expect(newChip).toBeVisible({ timeout: 3_000 })
-    await expect(input).toHaveValue('')
-  })
+  // C2 combobox add + chip toggle (with count badges) and C3 new-label commit
+  // ported to tests/unit/tag/tag-sheet.test.ts (Phase 2 bucket 2, 2026-04-26).
 
   // -------------------------------------------------------------------------
   // C4. Note + save → IDB write + gold edge
