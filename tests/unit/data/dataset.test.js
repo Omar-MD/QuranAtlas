@@ -1,11 +1,18 @@
+import { describe, it, expect, beforeAll, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { getManifestUrls, getSurah, getSurahs } from '../../../src/data/dataset.js'
 
 const DATASET_PATH = join(process.cwd(), 'public', 'dataset')
 
+// Mock loadRiwayah BEFORE importing dataset module — controls which Riwayah
+// path getSurah resolves to.
+let mockedRiwayah = 'qaloon'
+vi.mock('../../../src/settings/riwayah.ts', () => ({
+  loadRiwayah: vi.fn(async () => mockedRiwayah),
+}))
+
 function mockFetch(url) {
-  const filePath = join(DATASET_PATH, url.replace('/dataset/', ''))
+  const filePath = join(DATASET_PATH, String(url).replace('/dataset/', ''))
   try {
     const content = readFileSync(filePath, 'utf-8')
     return Promise.resolve({
@@ -14,80 +21,75 @@ function mockFetch(url) {
       json: () => Promise.resolve(JSON.parse(content)),
     })
   } catch {
-    return Promise.resolve({
-      ok: false,
-      status: 404,
-    })
+    return Promise.resolve({ ok: false, status: 404 })
   }
 }
 
-describe('data/dataset.js', () => {
-  beforeAll(() => {
-    globalThis.fetch = mockFetch
-  })
+beforeAll(() => { globalThis.fetch = mockFetch })
 
+describe('data/dataset', () => {
   describe('getManifestUrls()', () => {
-    it('returns a non-empty array of URL strings', async () => {
+    it('lists 342 per-surah riwayat files (114 × 3)', async () => {
+      const { getManifestUrls } = await import('../../../src/data/dataset.ts')
       const urls = await getManifestUrls()
-      expect(Array.isArray(urls)).toBe(true)
-      expect(urls.length).toBeGreaterThan(0)
-      expect(typeof urls[0]).toBe('string')
+      const riwayat = urls.filter((u) => u.includes('/riwayat/'))
+      expect(riwayat.length).toBe(342)
     })
 
-    it('includes all 114 surah files', async () => {
+    it('includes the metadata files', async () => {
+      const { getManifestUrls } = await import('../../../src/data/dataset.ts')
       const urls = await getManifestUrls()
-      const surahUrls = urls.filter(u => u.includes('/surah/'))
-      expect(surahUrls.length).toBe(114)
-    })
-
-    it('includes metadata files', async () => {
-      const urls = await getManifestUrls()
-      expect(urls.some(u => u.endsWith('/surahs.json'))).toBe(true)
-      expect(urls.some(u => u.endsWith('/annotations.json'))).toBe(true)
+      expect(urls.some((u) => u.endsWith('/surahs.json'))).toBe(true)
+      expect(urls.some((u) => u.endsWith('/juz.json'))).toBe(true)
+      expect(urls.some((u) => u.endsWith('/provenance.json'))).toBe(true)
     })
   })
 
-  describe('getSurah()', () => {
-    it('returns ar and en arrays for a valid surah', async () => {
-      const surah = await getSurah(1)
-      expect(surah).toHaveProperty('ar')
-      expect(surah).toHaveProperty('en')
-      expect(Array.isArray(surah.ar)).toBe(true)
-      expect(Array.isArray(surah.en)).toBe(true)
+  describe('getSurah(n)', () => {
+    it('fetches /dataset/riwayat/qaloon/001.json by default and returns SurahPayload', async () => {
+      mockedRiwayah = 'qaloon'
+      const { getSurah } = await import('../../../src/data/dataset.ts')
+      const data = await getSurah(1)
+      expect(data.riwayah).toBe('qaloon')
+      expect(data.sura_no).toBe(1)
+      expect(Array.isArray(data.ayat)).toBe(true)
+      expect(data.ayat.length).toBeGreaterThan(0)
+      expect(data.ayat[0].aya_text).toContain('اِ۬لْحَمْدُ')
     })
 
-    it('returns 7 verses for Al-Fatiha', async () => {
-      const surah = await getSurah(1)
-      expect(surah.ar.length).toBe(7)
-      expect(surah.en.length).toBe(7)
+    it('respects active Riwayah for path resolution', async () => {
+      mockedRiwayah = 'hafs'
+      vi.resetModules() // re-import with fresh mock binding
+      const { getSurah } = await import('../../../src/data/dataset.ts')
+      const data = await getSurah(1)
+      expect(data.riwayah).toBe('hafs')
+      expect(data.ayat[0]).toHaveProperty('aya_text_emlaey') // Hafs-only field
     })
 
-    it('returns 286 verses for Al-Baqarah', async () => {
-      const surah = await getSurah(2)
-      expect(surah.ar.length).toBe(286)
-    })
-
-    it('throws for invalid surah numbers', async () => {
+    it('rejects out-of-range surah numbers', async () => {
+      const { getSurah } = await import('../../../src/data/dataset.ts')
       await expect(getSurah(0)).rejects.toThrow()
       await expect(getSurah(115)).rejects.toThrow()
-      await expect(getSurah(-1)).rejects.toThrow()
+      await expect(getSurah(1.5)).rejects.toThrow()
     })
   })
 
   describe('getSurahs()', () => {
-    it('returns an array of 114 surah metadata entries', async () => {
-      const surahs = await getSurahs()
-      expect(Array.isArray(surahs)).toBe(true)
-      expect(surahs.length).toBe(114)
+    it('returns 114 entries with per-Riwayah counts', async () => {
+      const { getSurahs } = await import('../../../src/data/dataset.ts')
+      const list = await getSurahs()
+      expect(list).toHaveLength(114)
+      expect(list[0]).toMatchObject({ n: 1, name: 'Al-Fātiḥah' })
+      expect(list[0].counts).toMatchObject({ hafs: expect.any(Number), warsh: expect.any(Number), qaloon: expect.any(Number) })
     })
+  })
 
-    it('each entry has required metadata fields', async () => {
-      const surahs = await getSurahs()
-      const first = surahs[0]
-      expect(first).toHaveProperty('n')
-      expect(first).toHaveProperty('name')
-      expect(first).toHaveProperty('arabic')
-      expect(first).toHaveProperty('count')
+  describe('getTranslations()', () => {
+    it('returns empty array when provenance.translations is empty', async () => {
+      const { getTranslations } = await import('../../../src/data/dataset.ts')
+      const list = await getTranslations()
+      expect(Array.isArray(list)).toBe(true)
+      expect(list).toHaveLength(0)
     })
   })
 })
