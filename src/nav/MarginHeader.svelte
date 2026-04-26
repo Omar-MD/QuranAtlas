@@ -20,6 +20,7 @@
   import { openNavDrawer, toggleNavDrawer } from './nav-drawer-bridge'
   import { openSettingsSheet } from '../settings/panel-bridge'
   import { cycleTheme } from '../settings/theme'
+  import { toggleSurahHeaderHidden } from '../settings/surah-header-visibility'
   import { classifySwipe, clampSurah } from './swipe-gestures'
 
   const HIDE_DELTA = 36
@@ -32,10 +33,6 @@
   let surahArabicName = $state('')
   const currentSurahNum = $derived(reader.currentSurahNum)
 
-  const labelEnglish = $derived.by(() => {
-    if (!currentSurahNum) { return 'QuranAtlas' }
-    return (surahName || `SURAH ${currentSurahNum}`).toUpperCase()
-  })
   const labelHasSurah = $derived(currentSurahNum != null)
 
   function isReaderRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
@@ -72,14 +69,37 @@
       } else {
         navigator.vibrate?.(10)
       }
-    } else if (dir === 'right') {
+      return
+    }
+    if (dir === 'right') {
       const prev = clampSurah((currentSurahNum ?? 1) - 1)
       if (prev !== currentSurahNum) {
         window.location.hash = `#/s/${prev}`
       } else {
         navigator.vibrate?.(10)
       }
+      return
     }
+    // dir === null → tap. Toggle SurahHeader visibility on reader route only.
+    // Mouse + keyboard share onLabelClick / onLabelKeyDown below; this branch
+    // covers the touch path. preventDefault stops the synthetic click that
+    // some browsers fire after touchend, which would otherwise double-toggle.
+    if (isReaderRoute(window.location.hash)) {
+      void toggleSurahHeaderHidden()
+      e.preventDefault()
+    }
+  }
+
+  function onLabelClick(): void {
+    if (!isReaderRoute(window.location.hash) || !labelHasSurah) { return }
+    void toggleSurahHeaderHidden()
+  }
+
+  function onLabelKeyDown(e: KeyboardEvent): void {
+    if (e.key !== 'Enter' && e.key !== ' ') { return }
+    if (!isReaderRoute(window.location.hash) || !labelHasSurah) { return }
+    e.preventDefault()
+    void toggleSurahHeaderHidden()
   }
 
   let headerTouchT0 = 0
@@ -197,15 +217,16 @@
 
   <div
     class="qa-mh-label"
-    role="presentation"
+    role="button"
+    tabindex="0"
+    aria-label={labelHasSurah ? `Toggle surah header for ${surahName}` : 'QuranAtlas'}
     ontouchstart={onLabelTouchStart}
     ontouchend={onLabelTouchEnd}
+    onclick={onLabelClick}
+    onkeydown={onLabelKeyDown}
   >
     {#if labelHasSurah}
       <span class="qa-mh-label-ar" dir="rtl" lang="ar">{surahArabicName}</span>
-      <span class="qa-mh-label-en">
-        <span>{labelEnglish}</span>
-      </span>
     {:else}
       <span class="qa-mh-wordmark">QuranAtlas</span>
     {/if}
