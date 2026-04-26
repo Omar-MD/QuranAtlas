@@ -181,7 +181,7 @@ export async function loadTranslationForSurah(_translationId: string, _surahNo: 
 function slugify(text: string): string {
   return String(text)
     .toLowerCase()
-    .replace(/['']/g, '')
+    .replace(/['‘’]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .split('-')[0] || 'translation'

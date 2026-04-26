@@ -85,9 +85,22 @@ export function init(): () => void {
 /**
  * Sanitize route parameters to prevent XSS injection.
  */
+// Param keys come from author-defined route patterns (e.g. `:surah`, `:value`),
+// but CodeQL can't statically prove that — `params` is typed as a generic
+// record and the keys flow from the regex match. Restrict writes to a
+// conservative identifier shape (matches the `:name` syntax our route registry
+// accepts) so the assignments below cannot mutate prototype slots even if a
+// future caller passes attacker-controlled keys.
+const SAFE_KEY = /^[a-zA-Z_][a-zA-Z0-9_]*$/
+
 function sanitizeParams(params: RouteParams): RouteParams | null {
-  const sanitized: RouteParams = {}
+  const sanitized: RouteParams = Object.create(null) as RouteParams
   for (const [key, value] of Object.entries(params)) {
+    if (!SAFE_KEY.test(key)) {
+      logger.warn('Router: rejected param with unsafe key shape:', { key })
+      return null
+    }
+
     // Reject if value contains HTML/script tags or dangerous characters
     if (typeof value !== 'string') {
       sanitized[key] = value
