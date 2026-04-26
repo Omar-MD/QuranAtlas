@@ -241,12 +241,16 @@
     text-align: start;
     color: var(--qa-text-arabic);
     margin-bottom: 0.875rem;
-    /* KFGQPC fonts (Hafs / Warsh / Qaloon) ship contextual marks, ligatures
-       and kerning that Warsh + Qaloon glyph compositions REQUIRE — without
-       calt the alef + small-high-stop combos render as base + floating mark
-       and word spacing visibly drifts. Hafs tolerates the absence; Warsh +
-       Qaloon do not. Keep these features on at all times. */
-    font-feature-settings: "liga" 1, "calt" 1, "kern" 1, "rlig" 1;
+    /* KFGQPC fonts ship contextual marks, ligatures, kerning AND mark/mkmk
+       positioning. Setting font-feature-settings to an explicit list (even
+       a permissive one with "liga", "calt", "kern", "rlig" all on) caused
+       iOS Safari to drop the default `mark` and `mkmk` features off the
+       font's GPOS table — so combining marks (sukun stacks, dagger alif
+       U+0670, small high seen U+06EC) collapsed to base position and the
+       verse looked like it had been rendered in a fallback font without
+       Quranic marks. text-rendering: optimizelegibility implies all
+       OpenType features are enabled by default in WebKit, so the explicit
+       list was redundant on top and harmful on iOS. */
     text-rendering: optimizelegibility;
   }
 
