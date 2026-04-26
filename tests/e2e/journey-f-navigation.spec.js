@@ -400,14 +400,24 @@ test.describe('Journey F: mobile drawer', () => {
     await page.waitForFunction(() => !window.location.hash.startsWith('#/surahs'), { timeout: 4_000 })
   })
 
-  test('F-mobile-5: center label tap is a no-op', async ({ page }) => {
+  test('F-mobile-5: center label tap toggles surah-header visibility (no nav, no drawer)', async ({ page }) => {
     await page.goto('/#/s/2')
     await waitForReader(page)
 
+    // Header should be visible by default
+    await expect(page.locator('[data-surah-header]')).toBeVisible()
+
     const before = page.url()
-    await page.locator('.qa-mh-label').click({ position: { x: 50, y: 10 } }).catch(() => {})
+    await page.locator('.qa-mh-label').click()
+    // Tap should not navigate or open the drawer
     expect(page.url()).toBe(before)
     await expect(page.locator('.qa-nav-drawer')).not.toBeVisible()
+    // Tap should hide the in-reader Surah Header
+    await expect(page.locator('[data-surah-header]')).toHaveCount(0)
+
+    // Tap again → re-shows
+    await page.locator('.qa-mh-label').click()
+    await expect(page.locator('[data-surah-header]')).toBeVisible()
   })
 
   // F-mobile-6 / 7 / 8 / 9 (search free-text filter, Bookmarked filter, ref-jump

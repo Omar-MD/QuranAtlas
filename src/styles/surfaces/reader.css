@@ -276,10 +276,7 @@
     font-family: inherit;
     font-size: var(--qa-text-size-meta);
     cursor: pointer;
-    opacity: 0.4;
-    transition:
-      opacity var(--qa-transition-base),
-      color var(--qa-transition-base);
+    transition: color var(--qa-transition-base);
   }
 
   .qa-continue-arrow {
@@ -296,7 +293,6 @@
   .qa-continue-prev:focus-visible,
   .qa-continue-next:focus-visible {
     color: var(--qa-accent);
-    opacity: 1;
     outline: none;
   }
 
