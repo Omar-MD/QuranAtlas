@@ -15,6 +15,7 @@ import { init as initSafetySync, suppressNextVersionChange } from './safety/sync
 import { initInstallListener } from './about/pwa-install'
 import { initTheme } from './settings/theme.ts'
 import { initFontSize } from './settings/font-size.ts'
+import { initRiwayah } from './settings/riwayah.ts'
 import { initReadingTypography } from './settings/reading-typography.ts'
 import { initNightMode } from './settings/night-mode.ts'
 import { openSettingsSheet } from './settings/panel-bridge.ts'
@@ -100,6 +101,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // Apply saved theme + font size before router dispatches first route
     await initTheme()
     await initFontSize()
+    await initRiwayah()
     await initReadingTypography()
     await initNightMode()
 
