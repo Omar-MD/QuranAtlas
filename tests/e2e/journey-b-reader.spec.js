@@ -458,10 +458,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   })
 
   test('B-Riwayah2: switching Riwayah to Ḥafṣ updates html[data-riwayah] and reloads text @chromium-only', async ({ page }) => {
-    // Capture Qaloon first ayah text (set in beforeEach)
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
-    const qaloonText = await firstAyah.textContent()
 
     // Switch to Hafs via Settings sheet Riwayah swatches
     await openSettingsSheet(page)
