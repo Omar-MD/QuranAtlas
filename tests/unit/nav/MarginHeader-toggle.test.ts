@@ -4,10 +4,14 @@ import MarginHeader from '../../../src/nav/MarginHeader.svelte'
 import { reader } from '../../../src/state/reader.svelte.ts'
 import { settings } from '../../../src/state/settings.svelte.ts'
 
+// Real dataset uses `name_ar` (not `arabic`) — see public/dataset/surahs.json.
+// Mock here MUST mirror that shape so a regression like the 2026-04-26 bug
+// (label silently rendered empty because the component read `meta.arabic`)
+// surfaces in this suite.
 vi.mock('../../../src/data/dataset', () => ({
   getSurahs: vi.fn(async () => [
-    { n: 2, name: 'Al-Baqarah', arabic: 'البقرة', name_ar: 'البقرة',
-      counts: { hafs: 286, warsh: 286, qaloon: 287 } },
+    { n: 2, name: 'Al-Baqarah', name_ar: 'البَقَرَة',
+      counts: { hafs: 286, warsh: 285, qaloon: 285 } },
   ]),
 }))
 vi.mock('../../../src/nav/nav-drawer-bridge', () => ({
@@ -82,6 +86,13 @@ describe('MarginHeader.svelte — surah label tap toggles surah header visibilit
     await flush()
     expect(container.querySelector('.qa-mh-label-ar')).not.toBeNull()
     expect(container.querySelector('.qa-mh-label-en')).toBeNull()
+  })
+
+  it('Arabic label text comes from the dataset name_ar field (regression: label was empty when component read .arabic)', async () => {
+    const { container } = render(MarginHeader)
+    await flush()
+    const ar = container.querySelector('.qa-mh-label-ar')
+    expect(ar?.textContent?.trim()).toBe('البَقَرَة')
   })
 
   it('swipe-left on label navigates next surah and does NOT toggle visibility (regression guard)', async () => {

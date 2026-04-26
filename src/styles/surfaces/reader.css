@@ -9,12 +9,14 @@
 @layer surfaces {
   .qa-surah-header {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto auto;
     grid-template-rows: auto auto;
     align-items: center;
-    column-gap: 1rem;
+    column-gap: 1.25rem;
     padding: 0.75rem 1rem;
-    margin-bottom: 0.25rem;
+    margin: 0 auto 0.25rem;
+    width: fit-content;
+    max-width: 100%;
   }
 
   .qa-surah-meta-col {
@@ -64,21 +66,24 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1.25rem;
     padding: 1.5rem 1rem 2rem;
     margin: 0.5rem auto 1rem;
   }
 
   .qa-basmala-translation {
+    display: block;
     font-size: 0.85rem;
     font-style: italic;
     color: var(--qa-text-muted);
     text-align: center;
     max-width: 36ch;
     line-height: 1.4;
+    margin-top: 0.25rem;
   }
 
   .qa-basmala-text {
+    display: block;
     font-family:
       'Amiri Quran',
       'Scheherazade New',
@@ -89,7 +94,11 @@
     font-weight: 400;
     color: var(--qa-text-arabic);
     direction: rtl;
-    line-height: 1.15;
+    /* line-height 1.15 was too tight: the U+FDFD glyph's descender extends
+       below the line-box and crashed into the translation span below it.
+       Bumped to 1.5 so the line-box matches the rendered glyph extent and
+       the gap below is honored by flex layout. */
+    line-height: 1.5;
     text-align: center;
     max-width: 100%;
     font-feature-settings: "liga" 1, "calt" 1, "dlig" 1, "kern" 1;
@@ -232,6 +241,13 @@
     text-align: start;
     color: var(--qa-text-arabic);
     margin-bottom: 0.875rem;
+    /* KFGQPC fonts (Hafs / Warsh / Qaloon) ship contextual marks, ligatures
+       and kerning that Warsh + Qaloon glyph compositions REQUIRE — without
+       calt the alef + small-high-stop combos render as base + floating mark
+       and word spacing visibly drifts. Hafs tolerates the absence; Warsh +
+       Qaloon do not. Keep these features on at all times. */
+    font-feature-settings: "liga" 1, "calt" 1, "kern" 1, "rlig" 1;
+    text-rendering: optimizelegibility;
   }
 
   .qa-verse-translation {
