@@ -16,10 +16,12 @@
 
   /* ---- Line spacing (Arabic + translation, ratio preserved) ---- */
 
-  /* Arabic line-height is Riwayah-aware: floor varies per KFGQPC font (Hafs 1.76,
-     Warsh 1.73, Qaloon 1.72). The variable is set by reading-typography.ts whenever
-     lineSpacing changes or the active Riwayah switches. */
-  .qa-verse-arabic { line-height: var(--qa-line-height-arabic, 1.92); }
+  /* Arabic line-height is Riwayah-aware. The floor is 1.92 across all three
+     KFGQPC riwayat (matches Madinah mushaf leading and clears tashkeel
+     collisions); md (default) lands at 2.12. The variable is set by
+     reading-typography.ts on lineSpacing change or Riwayah switch; the
+     fallback below covers the very first paint before init. */
+  .qa-verse-arabic { line-height: var(--qa-line-height-arabic, 2.12); }
   [data-line-spacing="xs"] .qa-verse-translation { line-height: 1.35; }
   [data-line-spacing="sm"] .qa-verse-translation { line-height: 1.5; }
   [data-line-spacing="md"] .qa-verse-translation { line-height: 1.65; }

@@ -42,6 +42,16 @@
     qaloon: { label: 'Qālūn',  sub: 'Qālūn ʿan Nāfiʿ · 6214 ayāt' },
   }
 
+  // Typography preview text per Riwayah — pulled verbatim from each
+  // KFGQPC-shipped corpus (Sūrat ar-Raḥmān 1–2). The reader and the
+  // preview render character-for-character identical strings, so users
+  // see the exact diacritic shapes that will appear in the mushaf.
+  const PREVIEW_AR: Record<Riwayah, string> = {
+    hafs:   'ٱلرَّحۡمَٰنُ عَلَّمَ ٱلۡقُرۡءَانَ',
+    warsh:  'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
+    qaloon: 'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
+  }
+
   async function loadSheetData() {
     try {
       const [loadedTranslations, visibleRec] = await Promise.all([
@@ -407,7 +417,7 @@
       </div>
       <div class="qa-sheet-body qa-typography-body">
         <div class="qa-typography-preview" data-testid="typography-preview">
-          <p class="qa-verse-arabic" dir="rtl">ٱلرَّحْمَـٰنُ عَلَّمَ ٱلْقُرْءَانَ</p>
+          <p class="qa-verse-arabic" dir="rtl">{PREVIEW_AR[(settings.riwayah as Riwayah | undefined) ?? 'qaloon']}</p>
           <p class="qa-verse-translation">The Most Gracious. He has taught the Qur'an.</p>
         </div>
 

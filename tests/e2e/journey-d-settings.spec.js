@@ -208,10 +208,9 @@ test.describe('Journey D: Typography subview @desktop', () => {
   // on real Riwayah-driven CSS variables and stay here.
 
   test('D5: reading-flow xl drives a higher line-height on .qa-verse-arabic than xs', async ({ page }) => {
-    // The Riwayah-aware line-height formula: floor(riwayah) + delta(step).
-    // Qaloon xl = 1.72 + 0.40 = 2.12; xs = 1.72 + 0.00 = 1.72.
-    // We verify xl > xs (the step has an effect) and the absolute value is
-    // in the expected range for Qaloon xl (~2.12).
+    // The line-height formula: floor + delta(step). Floor is shared 1.92 across
+    // riwayat (KFGQPC tashkeel needs ≥1.9 to clear the line above); xl = 2.32,
+    // xs = 1.92. Verify xl > xs and the absolute value lands near 2.32.
     await openTypography(page)
 
     await page.getByLabel('Reading flow').evaluate(el => {
@@ -237,8 +236,8 @@ test.describe('Journey D: Typography subview @desktop', () => {
 
     // xl must be strictly larger than xs
     expect(xlRatio).toBeGreaterThan(xsRatio)
-    // Qaloon xl: line-height = 2.12, so ratio ≈ 2.12 (within a small tolerance)
-    expect(xlRatio).toBeGreaterThan(2.0)
+    // xl line-height = 2.32 across riwayat; ratio ≈ 2.32 (small tolerance).
+    expect(xlRatio).toBeGreaterThan(2.2)
     expect(xlRatio).toBeLessThan(2.5)
   })
 

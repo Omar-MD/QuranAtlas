@@ -28,10 +28,15 @@ const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')
 export const AYAT_COUNTS = { hafs: 6236, warsh: 6214, qaloon: 6214 }
 export const RIWAYAT = ['hafs', 'warsh', 'qaloon']
 
+// minLineHeight = unitless line-height at the xs step on the Reading-flow
+// slider. KFGQPC tashkeel (esp. shadda + alif khanjariyya) collides with
+// the line above at the font's design metric (1.72–1.76); 1.92 matches
+// conventional Madinah mushaf leading. Mirrored in
+// src/settings/reading-typography.ts (RIWAYAH_FLOOR); keep in sync.
 const RIWAYAH_META = {
-  hafs:   { label: 'Ḥafṣ ʿan ʿĀṣim',   version: '18', fontFamily: 'KFGQPC Hafs',   minLineHeight: 1.76 },
-  warsh:  { label: 'Warsh ʿan Nāfiʿ',  version: '10', fontFamily: 'KFGQPC Warsh',  minLineHeight: 1.73 },
-  qaloon: { label: 'Qālūn ʿan Nāfiʿ',  version: '10', fontFamily: 'KFGQPC Qaloon', minLineHeight: 1.72 },
+  hafs:   { label: 'Ḥafṣ ʿan ʿĀṣim',   version: '18', fontFamily: 'KFGQPC Hafs',   minLineHeight: 1.92 },
+  warsh:  { label: 'Warsh ʿan Nāfiʿ',  version: '10', fontFamily: 'KFGQPC Warsh',  minLineHeight: 1.92 },
+  qaloon: { label: 'Qālūn ʿan Nāfiʿ',  version: '10', fontFamily: 'KFGQPC Qaloon', minLineHeight: 1.92 },
 }
 
 const FONT_PATHS = {
