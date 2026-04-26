@@ -538,6 +538,9 @@
     padding: 4px 8px;
     color: var(--qa-text-on-sheet);
     min-width: 0;
+    /* Ellipsis lives on this container, not the inner span — hiding overflow
+       on the span clipped tashkeel descenders vertically. */
+    overflow: hidden;
   }
 
   .qa-mh-label:focus-visible {
@@ -552,12 +555,18 @@
       var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
     /* 18px clipped المُنَافِقُونَ + similar long names on 390px viewports
        once the ≡ + ⚙ buttons claimed their 44px each. 15px keeps the
-       longest 14-char names intact with comfortable headroom. */
+       longest 14-char names intact with comfortable headroom.
+       line-height >= 1.6: Quranic naskh fonts (Amiri Quran here) carry
+       descent ~1.4–1.8× em for tashkeel below the baseline (sukun, kasra,
+       dagger alif). 1.2 cropped the bottom of long surah names (المنافقون)
+       on iOS. 1.6 covers the descent without inflating the header height
+       since the parent `.qa-mh` has fixed 52px content-box already. */
     font-size: 15px;
-    line-height: 1.2;
+    line-height: 1.6;
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    /* overflow:hidden lives on the `.qa-mh-label` container instead — on
+       this span it cropped descenders / tashkeel marks vertically. */
     max-width: 100%;
     color: var(--qa-text-on-sheet);
   }
