@@ -17,5 +17,6 @@ export const settings = $state({
   readerMargin: 'md' as ReadingStep,
   verseSpacing: 'md' as ReadingStep,
   nightMode: false,
+  surahHeaderHidden: false,
   currentPosition: null as GlobalPosition,
 })
