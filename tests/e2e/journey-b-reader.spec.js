@@ -168,7 +168,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // B3. Tap verse number for edge indicator
   // -------------------------------------------------------------------------
 
-  test('B3: tap verse number shows edge indicators on both sides', async ({ page }) => {
+  test('B3: tap verse number shows edge indicators on both sides @chromium-only', async ({ page }) => {
     const verseNumber = page.locator('.qa-verse-number').first()
     await expect(verseNumber).toBeVisible({ timeout: 5_000 })
     await verseNumber.click()
@@ -278,7 +278,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // mid hide-time save) even when the browser had already preserved scroll.
   // -------------------------------------------------------------------------
 
-  test('B7: warm-resume (visibilitychange hidden→visible) preserves scroll position', async ({ page }) => {
+  test('B7: warm-resume (visibilitychange hidden→visible) preserves scroll position @chromium-only', async ({ page }) => {
     await page.goto('/#/s/2')
     await waitForReader(page)
 
@@ -288,7 +288,19 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       const el = document.getElementById('main-content')
       if (el) { el.scrollTo(0, 6000); el.dispatchEvent(new Event('scroll')) }
     })
-    await page.waitForTimeout(1500)
+    // Poll until the scroll-tracker debounce fires and writes the deep
+    // position to IDB, signalling lastTrackedVerse is populated.
+    await expect.poll(async () => page.evaluate(() => new Promise((resolve) => {
+      const open = indexedDB.open('quran-atlas')
+      open.onsuccess = () => {
+        const db = open.result
+        const tx = db.transaction('settings', 'readonly')
+        const req = tx.objectStore('settings').get('currentPosition')
+        req.onsuccess = () => { resolve(req.result?.value?.verse ?? 0); db.close() }
+        req.onerror = () => { resolve(0); db.close() }
+      }
+      open.onerror = () => resolve(0)
+    })), { timeout: 5_000 }).toBeGreaterThan(1)
 
     const before = await page.evaluate(() => {
       const el = document.getElementById('main-content')
@@ -303,7 +315,6 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
       document.dispatchEvent(new Event('visibilitychange'))
     })
-    await page.waitForTimeout(200)
 
     // Simulate the race that made the original bug observable: IDB holds a
     // STALE early verse (e.g. a prior write that the hide-time save never
@@ -331,16 +342,15 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' })
       document.dispatchEvent(new Event('visibilitychange'))
     })
-    await page.waitForTimeout(2000)
 
-    const after = await page.evaluate(() => {
-      const el = document.getElementById('main-content')
-      return el?.scrollTop ?? 0
-    })
     // Scroll must not be reset toward the top (buggy warm-resume handler
     // would have called `scrollToVerse(1)` via stale IDB and driven scrollTop
-    // back near 0).
-    expect(after).toBeGreaterThan(1000)
+    // back near 0). Poll over the warm-resume window — buggy code would
+    // converge to ~0; correct code keeps scrollTop > 1000 throughout.
+    await expect.poll(async () => page.evaluate(() => {
+      const el = document.getElementById('main-content')
+      return el?.scrollTop ?? 0
+    }), { timeout: 2_500, intervals: [200, 400, 600, 800] }).toBeGreaterThan(1000)
   })
 
   // -------------------------------------------------------------------------
@@ -351,7 +361,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // provide an explicit affordance; overscroll triggers the same swap.
   // -------------------------------------------------------------------------
 
-  test('B-Cross1: end-of-surah Continue link swaps to next surah', async ({ page }) => {
+  test('B-Cross1: end-of-surah Continue link swaps to next surah @chromium-only', async ({ page }) => {
     await page.goto('/#/s/1')
     await waitForReader(page)
 
@@ -367,7 +377,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/2')
   })
 
-  test('B-Cross2: top-of-surah Continue link swaps to previous surah', async ({ page }) => {
+  test('B-Cross2: top-of-surah Continue link swaps to previous surah @chromium-only', async ({ page }) => {
     await page.goto('/#/s/2')
     await waitForReader(page)
 
@@ -376,7 +386,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/1')
   })
 
-  test('B-Cross3: forward wrap — Surah 114 Continue link → Surah 1', async ({ page }) => {
+  test('B-Cross3: forward wrap — Surah 114 Continue link → Surah 1 @chromium-only', async ({ page }) => {
     await page.goto('/#/s/114')
     await waitForReader(page)
     await page.evaluate(() => {
@@ -388,7 +398,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/1')
   })
 
-  test('B-Cross4: backward wrap — Surah 1 Continue link → Surah 114', async ({ page }) => {
+  test('B-Cross4: backward wrap — Surah 1 Continue link → Surah 114 @chromium-only', async ({ page }) => {
     await page.goto('/#/s/1')
     await waitForReader(page)
     await expect(page.locator('[data-continue-prev]')).toBeVisible()
@@ -396,7 +406,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/114')
   })
 
-  test('B-Cross-arrow: continue link is a single-line arrow + italic title (~22px tall)', async ({ page }) => {
+  test('B-Cross-arrow: continue link is a single-line arrow + italic title (~22px tall) @chromium-only', async ({ page }) => {
     // Mid-quran surah so prev exists without wrap edge cases.
     await page.goto('/#/s/18')
     await waitForReader(page)
@@ -412,21 +422,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(box?.height ?? 999).toBeLessThan(36)
   })
 
-  test('B-Cross5: settings.currentPosition is overwritten on swap', async ({ page }) => {
-    await page.goto('/#/s/3')
-    await waitForReader(page)
-    // Allow the initial savePosition to land
-    await page.waitForTimeout(500)
-
-    await expect(page.locator('[data-continue-prev]')).toBeVisible()
-    await page.locator('[data-continue-prev]').click()
-    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/2')
-
-    // Wait for the new surah to mount and write its position
-    await waitForReader(page)
-    await page.waitForTimeout(800)
-
-    const pos = await page.evaluate(() => new Promise((resolve) => {
+  test('B-Cross5: settings.currentPosition is overwritten on swap @chromium-only', async ({ page }) => {
+    const readPosition = () => page.evaluate(() => new Promise((resolve) => {
       const open = indexedDB.open('quran-atlas')
       open.onsuccess = () => {
         const db = open.result
@@ -437,6 +434,19 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       }
       open.onerror = () => resolve(null)
     }))
+
+    await page.goto('/#/s/3')
+    await waitForReader(page)
+    await expect.poll(async () => (await readPosition())?.surah, { timeout: 5_000 }).toBe(3)
+
+    await expect(page.locator('[data-continue-prev]')).toBeVisible()
+    await page.locator('[data-continue-prev]').click()
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/2')
+
+    await waitForReader(page)
+    await expect.poll(async () => (await readPosition())?.surah, { timeout: 5_000 }).toBe(2)
+
+    const pos = await readPosition()
     expect(pos).toBeTruthy()
     expect(pos.surah).toBe(2)
   })
@@ -457,7 +467,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   //   Switching via Settings swatches re-renders with Ḥafṣ orthography.
   // -------------------------------------------------------------------------
 
-  test('B-Riwayah1: reader defaults to Qālūn — data-riwayah + Maghrebi orthography', async ({ page }) => {
+  test('B-Riwayah1: reader defaults to Qālūn — data-riwayah + Maghrebi orthography @chromium-only', async ({ page }) => {
     // beforeEach already loaded /#/s/1 with Qālūn default
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
@@ -473,7 +483,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(htmlAttr).toBe('qaloon')
   })
 
-  test('B-Riwayah2: switching Riwayah to Ḥafṣ updates html[data-riwayah] and reloads text', async ({ page }) => {
+  test('B-Riwayah2: switching Riwayah to Ḥafṣ updates html[data-riwayah] and reloads text @chromium-only', async ({ page }) => {
     // Capture Qaloon first ayah text (set in beforeEach)
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })

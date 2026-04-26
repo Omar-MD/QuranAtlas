@@ -140,7 +140,7 @@ test.describe('Journey G: About', () => {
     await expect(drawer).not.toBeVisible({ timeout: 3_000 })
   })
 
-  test('G: About footer shows version + commit SHA', async ({ page }) => {
+  test('G: About footer shows version + commit SHA @chromium-only', async ({ page }) => {
     await page.goto('/#/about')
     const version = page.getByTestId('about-version')
     await expect(version).toBeVisible({ timeout: 5_000 })
@@ -197,7 +197,7 @@ test.describe('Journey G: About', () => {
     await expect(row67).toHaveClass(/qa-nav-drawer-surah-row--current/, { timeout: 400 })
   })
 
-  test('G: Clear data link is present on About page footer', async ({ page }) => {
+  test('G: Clear data link is present on About page footer @chromium-only', async ({ page }) => {
     await page.goto('/#/about')
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
     const link = page.locator('.qa-about-clear-data')
@@ -219,7 +219,7 @@ test.describe('Journey G: About', () => {
   // G2. Install PWA — not testable in Playwright
   // ---------------------------------------------------------------------------
 
-  test('G2: PWA install button triggers installation prompt', async ({ page }) => {
+  test('G2: PWA install button triggers installation prompt @chromium-only', async ({ page }) => {
     // The initInstallListener in app-bootstrap listens for
     // `beforeinstallprompt` and stores the event as the deferred prompt.
     // Dispatch a synthetic event with the same shape after app boot but
@@ -258,7 +258,7 @@ test.describe('Journey G: About', () => {
   // G3. Shortcut cheatsheet (`?`) — open, assert 4 groups, close via Esc
   // ---------------------------------------------------------------------------
 
-  test('G3: press ? → keyboard shortcuts sheet opens and closes', async ({ page }) => {
+  test('G3: press ? → keyboard shortcuts sheet opens and closes @chromium-only', async ({ page }) => {
     // The reader is already loaded from beforeEach (/#/s/1).
     // Ensure focus is on a non-text-input element so `?` fires the key handler.
     // Focus #main-content directly — a click at (50,50) on mobile is blocked by

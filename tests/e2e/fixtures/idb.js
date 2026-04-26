@@ -89,6 +89,34 @@ export async function clearAllData(page) {
 }
 
 /**
+ * Clear a single object store without dropping the entire DB. Use this in
+ * preference to `clearAllData` whenever a test only mutates one store —
+ * skips IDB schema teardown + recreate (~3–4s per call) and avoids forcing
+ * the app to cold-boot on the next navigation.
+ *
+ * Reach for `clearAllData` only when the test exercises cross-store
+ * invariants, the onboarding boot flow, or the clear-data UX itself.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'settings'|'marks'|'edges'|'meta'|'activationState'|'datasetMeta'} storeName
+ */
+export async function clearStore(page, storeName) {
+  const nameJson = JSON.stringify(storeName)
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
+    const open = indexedDB.open('quran-atlas')
+    open.onsuccess = () => {
+      const db = open.result
+      if (!db.objectStoreNames.contains(${nameJson})) { db.close(); resolve(); return }
+      const tx = db.transaction(${nameJson}, 'readwrite')
+      tx.objectStore(${nameJson}).clear()
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject(tx.error) }
+    }
+    open.onerror = () => resolve()
+  }))()`)
+}
+
+/**
  * Pre-set onboardingComplete so tests that don't exercise onboarding can skip it.
  * Creates the full DB schema matching src/core/db.js so the app finds all stores on boot.
  */

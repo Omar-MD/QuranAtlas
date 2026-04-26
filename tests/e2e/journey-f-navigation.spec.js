@@ -47,7 +47,7 @@ test.describe('Journey F: Navigation', () => {
   // F1. Command sheet direct verse-ref
   // ---------------------------------------------------------------------------
 
-  test('F1: ⌘K → type 2:255 → verse preview card appears → Enter navigates to #/s/2/255', async ({ page }) => {
+  test('F1: ⌘K → type 2:255 → verse preview card appears → Enter navigates to #/s/2/255 @chromium-only', async ({ page }) => {
     // Open the command sheet
     await openCommandSheet(page)
 
@@ -88,7 +88,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview @a11y', async ({ page }) => {
+  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview @a11y @chromium-only', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('2:255')
     await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
@@ -101,7 +101,7 @@ test.describe('Journey F: Navigation', () => {
   // F2. Mark a verse from command sheet
   // ---------------------------------------------------------------------------
 
-  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel', async ({ page }) => {
+  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel @chromium-only', async ({ page }) => {
     // Open command sheet and type verse reference for the currently-loaded
     // surah (reader is at #/s/1 from beforeEach). The fast-tag panel renders
     // inside the visible Verse component, so the target verse must be in
@@ -138,7 +138,7 @@ test.describe('Journey F: Navigation', () => {
   // F3. Tag search → FVR
   // ---------------------------------------------------------------------------
 
-  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/threads/mercy FVR', async ({ page }) => {
+  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/threads/mercy FVR @chromium-only', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('mer')
 
@@ -238,7 +238,7 @@ test.describe('Journey F: Navigation', () => {
   // F5. Continue-reading card
   // ---------------------------------------------------------------------------
 
-  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates @desktop', async ({ page }) => {
+  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates @desktop @chromium-only', async ({ page }) => {
     // Navigate to surah 67 so the reader writes a position record
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -263,7 +263,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F5: continue-reading card is hidden when search query is active @desktop', async ({ page }) => {
+  test('F5: continue-reading card is hidden when search query is active @desktop @chromium-only', async ({ page }) => {
     // Navigate to surah 67 to set the last position
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -285,7 +285,7 @@ test.describe('Journey F: Navigation', () => {
   // F6. Keyboard navigation @keyboard
   // ---------------------------------------------------------------------------
 
-  test('F6: ⌘K opens command sheet @keyboard', async ({ page }) => {
+  test('F6: ⌘K opens command sheet @keyboard @chromium-only', async ({ page }) => {
     // The canonical keyboard entry for the command sheet is ⌘K (Meta+k on
     // Mac, Ctrl+k elsewhere — Playwright aliases Meta→Ctrl on non-Mac).
     await page.keyboard.press('Meta+k')
@@ -294,7 +294,7 @@ test.describe('Journey F: Navigation', () => {
     await expect(cmdSheet).not.toHaveClass(/qa-cmd--hidden/)
   })
 
-  test('F6: command sheet — ArrowUp/ArrowDown move focus; Escape closes @keyboard', async ({ page }) => {
+  test('F6: command sheet — ArrowUp/ArrowDown move focus; Escape closes @keyboard @chromium-only', async ({ page }) => {
     await openCommandSheet(page)
 
     const cmdSheet = page.locator('.qa-cmd-sheet')
@@ -341,7 +341,7 @@ test.describe('Journey F: Navigation', () => {
     await expect(page.locator('.qa-surah-list-page')).toBeVisible({ timeout: 8_000 })
   })
 
-  test('F6: ⌘K closes already-open command sheet @keyboard', async ({ page }) => {
+  test('F6: ⌘K closes already-open command sheet @keyboard @chromium-only', async ({ page }) => {
     // Open command sheet
     await openCommandSheet(page)
     const cmdSheet = page.locator('.qa-cmd-sheet')

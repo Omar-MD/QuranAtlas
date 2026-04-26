@@ -388,7 +388,7 @@ test.describe('Journey E: Review hub', () => {
   // E6. FVR via layer-value deep link + canonicalization
   // -------------------------------------------------------------------------
 
-  test('E6: navigate to #/threads/mercy directly → FVR renders correct layer label + value', async ({ page }) => {
+  test('E6: navigate to #/threads/mercy directly → FVR renders correct layer label + value @chromium-only', async ({ page }) => {
     await page.goto('about:blank')
     await page.goto('/#/threads/mercy')
 
@@ -403,7 +403,7 @@ test.describe('Journey E: Review hub', () => {
     await expect(page.locator('.qa-review-card')).toHaveCount(2)
   })
 
-  test('E6: lastSurface persists #/threads/<tag> for session restore', async ({ page }) => {
+  test('E6: lastSurface persists #/threads/<tag> for session restore @chromium-only', async ({ page }) => {
     // Navigate to a layer FVR route
     await page.goto('about:blank')
     await page.goto('/#/threads/faith')

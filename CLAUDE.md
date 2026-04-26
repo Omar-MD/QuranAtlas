@@ -91,6 +91,31 @@ Flow: feature branch → PR → `dev` → (promote) → PR `dev → staging` →
 
 **Target `staging` or `main` direct only if I ask hotfix, promotion PR, or name branch.** Default elsewhere: `dev`. Using `gh pr create`, pass `--base dev` unless instruction contradicts.
 
+### Rule 7 — Playwright e2e tests must not bloat suite wall time
+
+E2e suite speed is a renewable budget — every careless spec spends it. Audit 2026-04-26 found ~110s wall time dominated by setup duplication, not assertions. Below sub-rules keep new specs from re-introducing the same waste. Violations rejected at review.
+
+**7.1 — No fixed sleeps. Ever.**
+`page.waitForTimeout(N)`, `setTimeout(resolve, N)`, `await new Promise(r => setTimeout(r, N))` banned in test code. Replace with `await expect(locator).toHaveX(...)`, `await expect.poll(fn).toBe(...)`, `await expect(async () => { ... }).toPass({ timeout })`, or `page.waitForFunction(fn)` against the actual condition. Sleeps either over-pay (wasted ms × thousands of runs) or under-pay (flake). The only acceptable timing call is the `actionTimeout`-bound assertion. Carve-outs: (a) gesture fixtures simulating physical timing (`fixtures/chrome.js` double-tap interval) — keep ≤150ms; (b) long-press tests where the hold itself is the gesture — keep within ~30ms of the app's own threshold (e.g. 380ms when the app fires at 350ms). Document the threshold in a comment on the line.
+
+**7.2 — Scope IDB resets to what the test actually mutates.**
+Default to `clearStore('settings')` (or whichever single store the test touches) over `clearAllData(page)`. Full DB drop forces app cold-boot + reader re-mount + 5 object stores recreated; tens of seconds wasted across the suite. Only reach for `clearAllData` when the test exercises cross-store invariants, onboarding flow, or clear-data UX itself. Add the scoped helper to `tests/e2e/fixtures/idb.js` if it does not yet exist — do not inline `page.evaluate(() => indexedDB.delete...)` in specs.
+
+**7.3 — One `beforeEach` per spec file. Nested `describe` blocks do not get their own.**
+Pre-2026-04-26 `journey-d-settings.spec.js` had 5 redundant `beforeEach` blocks all running `clearAllData → markOnboardingComplete → goto → waitForReader`. If a sub-group needs different setup, hoist the shared pieces to the outer hook and let the inner block override only the delta (viewport, route, single store). If a sub-group has zero overlap with the outer setup, it belongs in a separate spec file, not a nested describe.
+
+**7.4 — Mobile Chrome project tag-gate (`@mobile`).**
+Tests that assert mobile-specific behavior (`MarginHeader`, drawer swipe, gear long-press, header auto-hide, viewport-conditional layout) tag with `@mobile`. The Mobile Chrome project's `grep` filters to `@mobile` only. Untagged tests run on chromium once. Default assumption: viewport-agnostic = chromium-only. Re-tagging later is cheap; running 100+ tests twice for a year is not. If unsure whether a behavior is viewport-agnostic, tag it `@mobile` AND leave it on chromium — small cost.
+
+**7.5 — Reuse onboarded `storageState` for any test whose first action is "skip onboarding."**
+The `tests/e2e/.auth/onboarded.json` snapshot (created by `global-setup.ts`) carries onboarding-complete + default settings. Tests use it via `test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })` instead of `markOnboardingComplete(page)` + `clearAllData` + cold-boot. Saves ~1–2s per test. Tests that exercise the onboarding flow itself opt out with `test.use({ storageState: { cookies: [], origins: [] } })`. If `global-setup.ts` does not yet exist when this rule first applies, build it before adding the next setup-heavy spec — do not extend the old fixture-call cargo cult.
+
+**7.6 — Default to the dev server. Reach for the preview build only when the SW must be exercised.**
+Empirically (2026-04-26) the Vite dev server runs the suite faster than the preview build (~30s vs ~37s on chromium); preview's per-test render path is slower without HMR's bundle pre-warming and the build cost does not amortise. The Offline (Preview) project remains the single carve-out — the SW only emits in production builds. New specs default to the dev server (no env flag needed). If a test genuinely needs preview-only behavior (minified bundle, real SW, production CSP), tag it `@offline` to route it through the existing preview project rather than spawning a new one.
+
+**7.7 — Time the new spec before merging.**
+Run `time pnpm playwright test tests/e2e/<your-spec>.spec.js --reporter=line` locally. If a spec adds >5s to its journey file's wall time, justify it in the PR description (or shrink it). New spec files cap at 15s wall on chromium project; nest into existing `journey-X-*.spec.js` rather than spawn a new file (Rule 4 already says this — Rule 7.7 enforces the perf side).
+
 ## Workflow
 
 Scripts, tooling, stack refs: see `docs/tech-stack.md`.

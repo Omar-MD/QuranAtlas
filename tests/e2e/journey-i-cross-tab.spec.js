@@ -43,7 +43,7 @@ async function setupPage(page, route = '/#/s/1') {
 // Journey I1: Another tab saves a mark → Tab B reflects gold edge
 // ---------------------------------------------------------------------------
 
-test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reload', async ({ browser }) => {
+test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reload @chromium-only', async ({ browser }) => {
   const ctx = await browser.newContext()
   const pageA = await ctx.newPage()
   const pageB = await ctx.newPage()
@@ -98,7 +98,7 @@ test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reloa
 // Journey I2: Mark deleted in Tab B while Tab A has editor open → editor closes
 // ---------------------------------------------------------------------------
 
-test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor closes silently', async ({ browser }) => {
+test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor closes silently @chromium-only', async ({ browser }) => {
   const ctx = await browser.newContext()
   const pageA = await ctx.newPage()
   const pageB = await ctx.newPage()
@@ -165,7 +165,7 @@ test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor clos
 // Journey I3: Clear Data in Tab B → Tab A shows reload banner
 // ---------------------------------------------------------------------------
 
-test('I3: Tab B deletes IDB → Tab A safety/sync.js shows reload banner', async ({ browser }) => {
+test('I3: Tab B deletes IDB → Tab A safety/sync.js shows reload banner @chromium-only', async ({ browser }) => {
   const ctx = await browser.newContext()
   const pageA = await ctx.newPage()
   const pageB = await ctx.newPage()

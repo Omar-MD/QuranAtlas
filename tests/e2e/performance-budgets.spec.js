@@ -104,7 +104,7 @@ async function measureRouteLoad(page, { hash, expectedHeaderText, targetVerse = 
 }
 
 test.describe('Performance budgets', () => {
-  test('Al-Baqarah initial render shows the first verse within 2000ms', async ({ page }) => {
+  test('Al-Baqarah initial render shows the first verse within 2000ms @chromium-only', async ({ page }) => {
     await page.goto('/#/s/1')
     await expect(page.locator('[data-verse="1"]')).toBeVisible({ timeout: 10000 })
 
