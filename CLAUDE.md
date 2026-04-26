@@ -124,6 +124,61 @@ Run `time pnpm playwright test tests/e2e/<your-spec>.spec.js --reporter=line` lo
 
 **How to apply:** before `git add`, run `pnpm lint && pnpm check && pnpm build` and read every line of output. Any non-empty warning section gates the commit. If the warning is genuinely intractable (third-party tool emits a false positive that cannot be silenced cleanly), document the exception inline next to the offending code (`// rolldown bug #1234 — silenced via .browserslistrc`) AND in the PR description — never silently.
 
+### Rule 9 — Unit-first. E2E reserved for things only e2e can prove.
+
+**Default new test placement = `tests/unit/`.** A test belongs in `tests/e2e/` ONLY if it depends on AT LEAST ONE of the following — every one of which fails in jsdom + `@testing-library/svelte`:
+
+1. **Real layout / paint** — `getComputedStyle`, `getBoundingClientRect`, viewport-conditional CSS branches that need actual cascade (`@media`, `var(--…)` resolution against the real stylesheet), `if (isDesktop)` paths whose assertion differs by viewport.
+2. **Real touch / pointer gesture timing** — double-tap window (300 ms), long-press hold, swipe distance/velocity, scroll-driven auto-hide, pointer capture across multiple elements.
+3. **Real service-worker lifecycle** — `controllerchange`, `SKIP_WAITING`, real precache, `@offline` project (production build).
+4. **Real cross-tab behavior** — `BroadcastChannel` between two `BrowserContext`s, IDB `versionchange` racing across tabs.
+5. **axe-core a11y scans** — needs a fully-painted page; jsdom resolves `display: none` / contrast incorrectly.
+6. **Real keyboard nav across multi-screen flows** — Tab loops through Onboarding screens, focus-visible across components mounted by the router.
+7. **Real `page.reload()` + re-hydrate** — proves boot wires the right init function (e.g. `initNightMode`, `initRiwayah`) into the actual app shell.
+8. **Performance budget** — real first-paint timing.
+9. **Real router + hash navigation** — only when the test asserts the URL change AND the resulting surface mounted; pure parser/redirect logic stays unit (router has its own unit suite).
+
+**If none of the above apply, the test is a unit test.** Component structure, state-machine transitions, IDB read/write, event-bus emit/listen, router-parser pure logic, single-component keyboard handlers, settings/font/theme/marks/edges/tag-session/review/drawer/command-sheet runes — all unit. Mount Svelte components with `@testing-library/svelte` (vitest config already wires the browser-condition plugin); use `fake-indexeddb` for IDB; mock data/dataset / safety/sync / a11y/announcer / marks/store at the module boundary.
+
+**Why:** every e2e adds 0.3–2.5 s to wall time × every CI run for the life of the test; a unit costs ~10–80 ms and never flakes on viewport, SW timing, or browser quirks. The 2026-04-26 audit converted ~42 e2e cases to unit and cut suite wall time 14% with stronger guards (Rule 5 break-and-restore validation works against unit code paths just as well as against e2e). New e2e written for behavior unit could prove erodes that gain.
+
+**How to apply (BEFORE writing a new test):**
+
+1. Walk the 9-criterion list above. If you cannot point to a specific criterion the test depends on, write it as a unit test. Default to unit.
+2. If the test you would have written hits unit-level concerns (DOM count, role/aria queries, IDB write, event emit, single-component keyboard handler), open the matching `tests/unit/<surface>/*.test.ts` instead and extend it. Do not start with the e2e file.
+3. If the test mixes a unit-level concern with an e2e-level concern (e.g. "click swatch → IDB write → reload → attribute persists"), split it: unit for the click→write leg, e2e for the reload→re-hydrate leg. Cite both from the journey entry's regression-guard line.
+4. If unsure, write the unit version first. If the unit cannot express the assertion at all (because of one of the 9 criteria), upgrade to e2e and document why in a one-line comment on the test (`// e2e because: real layout — assertion is on getBoundingClientRect`).
+
+**Component testing recipe (the path that did not exist before 2026-04-26):**
+
+```ts
+import { render, fireEvent } from '@testing-library/svelte'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Mock module-boundary deps the component imports.
+vi.mock('../../../src/data/dataset', () => ({ getSurahs: vi.fn(async () => []) }))
+
+import MyComponent from '../../../src/foo/MyComponent.svelte'
+// Import bridge / store the component registers with on mount, then drive it.
+import { openMyThing } from '../../../src/foo/my-bridge'
+
+async function flush() { for (let i = 0; i < 4; i++) { await Promise.resolve() } }
+
+describe('MyComponent.svelte', () => {
+  it('does the thing', async () => {
+    render(MyComponent)
+    await flush()
+    openMyThing()
+    await flush()
+    // assert against document.querySelector / fireEvent.click / vi.waitFor.
+  })
+})
+```
+
+`vitest.config.js` already includes `@testing-library/svelte/vite`'s `svelteTesting()` plugin so Svelte resolves to the browser build; `tests/setup.js` already auto-loads `fake-indexeddb`. New unit specs need no extra wiring.
+
+**Cross-references:** Rule 4 still scopes work by surface — extend the owning unit file rather than spawn a new one when the surface already has one. Rule 5's break-and-restore validation applies identically to unit tests (often easier — break the pure function, run vitest, restore). Rule 7's wall-time discipline ceases to matter the moment the test moves to vitest, which is the entire point.
+
 ## Workflow
 
 Scripts, tooling, stack refs: see `docs/tech-stack.md`.
