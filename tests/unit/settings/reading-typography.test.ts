@@ -93,6 +93,33 @@ describe('reading-typography', () => {
     }
   })
 
+  it('setReadingFlow writes all four IDB keys + applies attributes (ports D5 e2e)', async () => {
+    const { setReadingFlow } = await import('../../../src/settings/reading-typography.ts')
+    expect(await setReadingFlow('xl')).toBe(true)
+    for (const k of KEYS) {
+      const stored = await (await import('../../../src/core/db.js')).get('settings', k) as { value: string } | undefined
+      expect(stored?.value).toBe('xl')
+      expect(document.documentElement.getAttribute(ATTRS[k])).toBe('xl')
+      expect(settings[k]).toBe('xl')
+    }
+  })
+
+  it('setReadingFlow + initReadingTypography round-trip restores all four keys (ports D5 reload e2e)', async () => {
+    const { setReadingFlow, initReadingTypography } =
+      await import('../../../src/settings/reading-typography.ts')
+    await setReadingFlow('xl')
+    // Simulate reload: clear in-memory rune + DOM, then init from IDB.
+    for (const k of KEYS) {
+      ;(settings as any)[k] = 'md'
+      document.documentElement.removeAttribute(ATTRS[k])
+    }
+    await initReadingTypography()
+    for (const k of KEYS) {
+      expect(settings[k]).toBe('xl')
+      expect(document.documentElement.getAttribute(ATTRS[k])).toBe('xl')
+    }
+  })
+
   it('initReadingTypography hydrates rune + applies attributes from IDB', async () => {
     await put('settings', { key: 'lineSpacing', value: 'lg' })
     await put('settings', { key: 'wordSpacing', value: 'sm' })

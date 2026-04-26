@@ -330,7 +330,7 @@ Inside Settings sheet, post 2026-04-25.
 4. **Reset to default** appears below the sliders only when at least one knob ≠ `md`. Tap → font size + all four flow keys return to `md` and the button hides.
 5. Back arrow returns to main Settings view; subtitle reflects new state.
 
-**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`, `settings.verseSpacing`. **Sole writer (line/word/margin/verse-spacing):** `src/settings/reading-typography.ts` — UI exposes only the `setReadingFlow` aggregator. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D5: …' set + `tests/unit/settings/reading-typography.test.ts`.
+**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`, `settings.verseSpacing`. **Sole writer (line/word/margin/verse-spacing):** `src/settings/reading-typography.ts` — UI exposes only the `setReadingFlow` aggregator. **Regression guards:** `tests/unit/settings/{panel,reading-typography}.test.ts` (subview structure, slider→IDB, reset button, persist round-trip) + `tests/e2e/journey-d-settings.spec.js` 'D5: reading-flow …' (real-CSS line-height / word-spacing / max-width assertions).
 
 ### D2. Pick a translation
 
@@ -349,7 +349,7 @@ Inside Settings sheet.
 1. Tap a theme swatch (Light / Sepia / Dark / Auto) → `settings/theme.js::setTheme` writes `settings.theme` and flips `<html data-theme>`.
 2. All surfaces re-theme live. Auto additionally attaches a `prefers-color-scheme` listener.
 
-**Night recitation mode (post 2026-04-25)** is an independent toggle below the theme swatches that overlays a dim+warm tint via the persistent `.qa-night-shift` element (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, driven by `data-night-mode="on"` on `<html>` written by `settings/night-mode.ts`). Composes with any base theme. Reachable from the Settings row or via the global `n` reader shortcut (announced via `a11y/announcer`). Persists in `settings.nightMode` (boolean). **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D6: …' set + `tests/unit/settings/night-mode.test.ts`.
+**Night recitation mode (post 2026-04-25)** is an independent toggle below the theme swatches that overlays a dim+warm tint via the persistent `.qa-night-shift` element (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, driven by `data-night-mode="on"` on `<html>` written by `settings/night-mode.ts`). Composes with any base theme. Reachable from the Settings row or via the global `n` reader shortcut (announced via `a11y/announcer`). Persists in `settings.nightMode` (boolean). **Regression guards:** `tests/unit/settings/night-mode.test.ts` (toggle / IDB write / init reload round-trip) + `tests/e2e/journey-d-settings.spec.js` 'D6: settings switch toggles data-night-mode + overlay opacity' (real overlay CSS) + 'D6: pressing n on reader toggles night mode' (global keybind).
 
 ### D4. Clear all data
 
@@ -359,7 +359,7 @@ Post 2026-04-25 mobile-nav-redesign — Clear-data lives on About page footer (w
 2. Type `DELETE`, tap red **Clear All Data** → `safety/sync.js::suppressNextVersionChange()` arms, then `deleteDB()` runs → DB gone → page reloads → first-run onboarding (A1) starts fresh.
 3. Cancel / Escape → dialog closes, nothing changes.
 
-**Surfaces:** About page → clear-data confirmation → full app reset. **Regression guards:** `tests/e2e/journey-d-settings.spec.js` 'D: Clear-data row is no longer in Settings sheet (post-redesign)' + `tests/e2e/journey-g-about.spec.js` 'G: Clear data link is present on About page footer' + the four rerouted D4 confirmation tests.
+**Surfaces:** About page → clear-data confirmation → full app reset. **Regression guards:** `tests/unit/settings/{panel,clear-data-confirm}.test.ts` (Settings has no clear-data row + dialog cancel/Escape/disabled-until-DELETE) + `tests/e2e/journey-d-settings.spec.js` 'D4: Clear data → type DELETE → confirm → page reloads → onboarding restarts' (real reload→onboarding leg) + `tests/e2e/journey-g-about.spec.js` 'G: Clear data link is present on About page footer'.
 
 ---
 

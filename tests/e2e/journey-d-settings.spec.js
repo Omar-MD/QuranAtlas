@@ -15,8 +15,8 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, readSetting } from './fixtures/idb.js'
-import { waitForReader, surfaceDock, openMoreSheet, openSettingsSheet } from './fixtures/chrome.js'
+import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
+import { waitForReader, openSettingsSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // ---------------------------------------------------------------------------
@@ -33,201 +33,17 @@ test.describe('Journey D: Settings & appearance', () => {
   })
 
   // -------------------------------------------------------------------------
-  // D1. Open Settings sheet — happy path + a11y scan
+  // D1. Open Settings sheet — a11y scan only.
+  // Structural / Escape / clear-data-row-absence / theme-swap / Riwayah-swatch
+  // / translation-toggle / typography-subview-structure / reset-button checks
+  // ported to tests/unit/settings/panel.test.ts (Phase 2 bucket 1, 2026-04-26).
   // -------------------------------------------------------------------------
-
-  test('D1: open Settings sheet → correct structure', async ({ page }) => {
-    // Post-2026-04-25 redesign: gear icon (mobile) or #/settings route (desktop).
-    await openSettingsSheet(page)
-    const settings = page.locator('.qa-sheet--settings')
-    await expect(settings).toBeVisible({ timeout: 5_000 })
-
-    // Theme section: at least one active swatch
-    const activeSwatch = settings.locator('.qa-theme-swatch--active')
-    await expect(activeSwatch).toBeVisible()
-
-    // All 4 theme swatches are present
-    for (const theme of ['light', 'sepia', 'dark', 'auto']) {
-      await expect(settings.locator(`.qa-theme-swatch--${theme}`)).toBeVisible()
-    }
-
-    // Typography section: nav row that opens the Typography subview
-    await expect(settings.getByText('Size, spacing & margins')).toBeVisible()
-
-    // Reading section: switch for translation visibility
-    await expect(settings.getByRole('switch', { name: 'Show translation' })).toBeVisible()
-    // Theme section: night-mode switch
-    await expect(settings.getByTestId('night-mode-switch')).toBeVisible()
-  })
 
   test('D1: a11y — no serious/critical axe violations on open Settings sheet @a11y', async ({ page }) => {
     await openSettingsSheet(page)
     const violations = await scanA11y(page, { include: ['.qa-sheet--settings'] })
     expect(violations).toEqual([])
   })
-
-  test('D: Clear-data row is no longer in Settings sheet (post-redesign) @chromium-only', async ({ page }) => {
-    await openSettingsSheet(page)
-    await expect(page.locator('.qa-sheet--settings .qa-sheet-row--danger')).toHaveCount(0)
-  })
-
-  test('D1: Escape closes the Settings sheet @chromium-only', async ({ page }) => {
-    await openSettingsSheet(page)
-    await expect(page.locator('.qa-sheet--settings')).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.locator('.qa-sheet--settings')).not.toBeVisible({ timeout: 3_000 })
-  })
-
-  // -------------------------------------------------------------------------
-  // D1b. Riwayah row — three swatches; switch persists across reload
-  // -------------------------------------------------------------------------
-
-  test('D1b: settings — Riwayah row exposes three swatches; switch persists across reload @chromium-only', async ({ page }) => {
-    await openSettingsSheet(page)
-    const sheet = page.locator('.qa-sheet--settings')
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
-
-    // Three Riwayah swatches must be present
-    const swatches = sheet.locator('.qa-riwayah-swatch')
-    await expect(swatches).toHaveCount(3)
-
-    // Swatch labels match the three riwayahs
-    await expect(swatches.filter({ hasText: 'Ḥafṣ' })).toHaveCount(1)
-    await expect(swatches.filter({ hasText: 'Warsh' })).toHaveCount(1)
-    await expect(swatches.filter({ hasText: 'Qālūn' })).toHaveCount(1)
-
-    // Click Warsh → it becomes active
-    await swatches.filter({ hasText: 'Warsh' }).click()
-    await expect(sheet.locator('.qa-riwayah-swatch--active')).toContainText('Warsh', { timeout: 3_000 })
-
-    // html[data-riwayah] updates immediately
-    await expect(async () => {
-      const attr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
-      expect(attr).toBe('warsh')
-    }).toPass({ timeout: 3_000 })
-
-    // Close and reload — choice must survive
-    await page.keyboard.press('Escape')
-    await page.reload()
-    await waitForReader(page)
-
-    await openSettingsSheet(page)
-    await expect(page.locator('.qa-sheet--settings .qa-riwayah-swatch--active')).toContainText('Warsh', { timeout: 5_000 })
-
-    // Restore Qālūn so other tests get the default
-    await page.locator('.qa-sheet--settings .qa-riwayah-swatch').filter({ hasText: 'Qālūn' }).click()
-    await page.keyboard.press('Escape')
-  })
-
-  // -------------------------------------------------------------------------
-  // D2. Pick a translation + visibility toggle
-  // -------------------------------------------------------------------------
-
-  test('D2: Show translation row subtitle is visible; picker sub-view hidden when ≤1 translation ships @chromium-only', async ({ page }) => {
-    await openSettingsSheet(page)
-
-    // Scope to the Reading section's toggle row. Multiple toggle rows exist
-    // (Typography nav, night-mode in Theme, Reading translation) — locate via
-    // the translation switch's aria-label.
-    const readingRow = page.locator('.qa-settings-toggle-row').filter({
-      has: page.getByRole('switch', { name: 'Show translation' }),
-    })
-    const toggleBody = readingRow.locator('.qa-settings-toggle-body')
-    await expect(toggleBody).toBeVisible()
-
-    // Subtitle shows whatever translation name is resolved (or "English" fallback
-    // when no translations are bundled). We do NOT assert "Bridges" because no
-    // translations ship today.
-    const sub = readingRow.locator('.qa-settings-toggle-sub')
-    await expect(sub).toBeVisible({ timeout: 3_000 })
-
-    // With 0-1 translations available, the row body is not a button
-    // and tapping it must not navigate to a picker sub-view.
-    await toggleBody.click()
-    await expect(page.locator('.qa-sheet-back')).toHaveCount(0)
-  })
-
-  test('D2: toggle translation-visibility switch → switch state flips → IDB writes → DOM hides translations @chromium-only', async ({ page }) => {
-    // Close settings sheet and go directly to reader to seed translation elements
-    await openSettingsSheet(page)
-
-    // The switch is initially on (translationVisible = true by default).
-    // Scope to translation switch by aria-label since night-mode also uses .qa-settings-switch.
-    const sw = page.getByRole('switch', { name: 'Show translation' })
-    await expect(sw).toBeVisible()
-
-    const isOn = await sw.evaluate(el => el.classList.contains('qa-settings-switch--on'))
-
-    // Toggle the switch
-    await sw.click()
-
-    // Switch class should have flipped
-    if (isOn) {
-      await expect(sw).not.toHaveClass(/qa-settings-switch--on/, { timeout: 3_000 })
-    } else {
-      await expect(sw).toHaveClass(/qa-settings-switch--on/, { timeout: 3_000 })
-    }
-
-    // aria-checked attribute on the switch should reflect the new state
-    const expectedChecked = String(!isOn)
-    await expect(sw).toHaveAttribute('aria-checked', expectedChecked, { timeout: 3_000 })
-
-    // Verify IDB write for translationVisible.
-    // If switch was on (visible=true), toggling makes visible=false, and vice-versa.
-    expect(await readSetting(page, 'translationVisible')).toBe(!isOn)
-
-    // DOM effect: translation elements should gain/lose .qa-hide-translation
-    // (applyTranslationToDOM runs synchronously after the toggle)
-    const translationEls = page.locator('[data-translation]')
-    const translationCount = await translationEls.count()
-    if (translationCount > 0) {
-      if (isOn) {
-        // Was visible, now hidden — first translation el should have qa-hide-translation
-        await expect(translationEls.first()).toHaveClass(/qa-hide-translation/, { timeout: 3_000 })
-      } else {
-        // Was hidden, now visible — class should be removed
-        await expect(translationEls.first()).not.toHaveClass(/qa-hide-translation/, { timeout: 3_000 })
-      }
-    }
-  })
-
-  // -------------------------------------------------------------------------
-  // D3. Theme swap — all 4 themes
-  // -------------------------------------------------------------------------
-
-  for (const theme of ['light', 'sepia', 'dark', 'auto']) {
-    test(`D3: theme swap → ${theme} writes data-theme-pref and activates swatch @chromium-only`, async ({ page }) => {
-      await openSettingsSheet(page)
-
-      const swatch = page.locator(`.qa-theme-swatch--${theme}`)
-      await expect(swatch).toBeVisible()
-      await swatch.click()
-
-      // data-theme-pref reflects the stored preference ('light'|'sepia'|'dark'|'auto')
-      await expect(async () => {
-        const pref = await page.evaluate(() =>
-          document.documentElement.getAttribute('data-theme-pref')
-        )
-        expect(pref).toBe(theme)
-      }).toPass({ timeout: 3_000 })
-
-      // data-theme reflects the applied variant:
-      // for 'auto' it resolves to 'light' or 'dark' depending on OS; just check it's set
-      const applied = await page.evaluate(() =>
-        document.documentElement.getAttribute('data-theme')
-      )
-      expect(['light', 'sepia', 'dark']).toContain(applied)
-
-      // The tapped swatch should now carry the --active class
-      await expect(swatch).toHaveClass(/qa-theme-swatch--active/, { timeout: 3_000 })
-
-      // All other swatches should not have --active
-      for (const other of ['light', 'sepia', 'dark', 'auto'].filter(t => t !== theme)) {
-        const otherSwatch = page.locator(`.qa-theme-swatch--${other}`)
-        await expect(otherSwatch).not.toHaveClass(/qa-theme-swatch--active/)
-      }
-    })
-  }
 
   // D3-bg: <html> background matches <body> background under every theme so
   // that mobile-landscape safe-area gutters do not leak the UA default white.
@@ -311,81 +127,9 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 10_000 })
   })
 
-  test('D4: Cancel clear data → dialog closes, nothing changes @chromium-only', async ({ page }) => {
-    await page.goto('/#/about')
-    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
-    const clearRow = page.locator('.qa-about-clear-data')
-    await expect(clearRow).toBeVisible({ timeout: 5_000 })
-    await clearRow.click()
-
-    // Confirmation dialog appears
-    const backdrop = page.locator('.qa-modal-backdrop')
-    await expect(backdrop).toBeVisible({ timeout: 5_000 })
-
-    // Click Cancel
-    const cancelBtn = backdrop.locator('.qa-mark-btn--ghost')
-    await cancelBtn.click()
-
-    // Dialog closes
-    await expect(backdrop).not.toBeVisible({ timeout: 3_000 })
-
-    // URL has not changed to onboarding
-    expect(page.url()).not.toContain('onboarding')
-
-    // Reader is still accessible (onboarding did NOT restart)
-    await expect(page.locator('.qa-onboarding')).toHaveCount(0)
-  })
-
-  test('D4: Escape closes clear data dialog without clearing @chromium-only', async ({ page }) => {
-    await page.goto('/#/about')
-    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
-    const clearRow = page.locator('.qa-about-clear-data')
-    await expect(clearRow).toBeVisible({ timeout: 5_000 })
-    await clearRow.click()
-
-    const backdrop = page.locator('.qa-modal-backdrop')
-    await expect(backdrop).toBeVisible({ timeout: 5_000 })
-
-    // Press Escape
-    await page.keyboard.press('Escape')
-
-    // Dialog closes
-    await expect(backdrop).not.toBeVisible({ timeout: 3_000 })
-
-    // Onboarding did not restart
-    await expect(page.locator('.qa-onboarding')).toHaveCount(0)
-  })
-
-  test('D4: clear data confirm button stays disabled when input is not exactly DELETE @chromium-only', async ({ page }) => {
-    await page.goto('/#/about')
-    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
-    const clearRow = page.locator('.qa-about-clear-data')
-    await expect(clearRow).toBeVisible({ timeout: 5_000 })
-    await clearRow.click()
-
-    const backdrop = page.locator('.qa-modal-backdrop')
-    await expect(backdrop).toBeVisible({ timeout: 5_000 })
-
-    const modal = backdrop.locator('.qa-modal')
-    const confirmBtn = modal.locator('.qa-mark-btn--danger-primary')
-    const confirmInput = modal.locator('.qa-input-confirm')
-
-    // Type lowercase 'delete' — confirm must remain disabled (case-sensitive)
-    await confirmInput.fill('delete')
-    await expect(confirmBtn).toBeDisabled()
-
-    // Type partial 'DELET' — still disabled
-    await confirmInput.fill('DELET')
-    await expect(confirmBtn).toBeDisabled()
-
-    // Correct 'DELETE' — enables
-    await confirmInput.fill('DELETE')
-    await expect(confirmBtn).toBeEnabled({ timeout: 3_000 })
-
-    // Cancel so we don't reload
-    await modal.locator('.qa-mark-btn--ghost').click()
-    await expect(backdrop).not.toBeVisible({ timeout: 3_000 })
-  })
+  // D4 cancel / Escape / disabled-until-DELETE ported to
+  // tests/unit/settings/clear-data-confirm.test.ts (Phase 2 bucket 1, 2026-04-26).
+  // The reload→onboarding leg of D4 happy path stays e2e (real reload).
 })
 
 // ---------------------------------------------------------------------------
@@ -458,16 +202,10 @@ test.describe('Journey D: Typography subview @desktop', () => {
     await expect(page.getByTestId('typography-preview')).toBeVisible()
   }
 
-  test('D5: subview exposes Font size + Reading flow sliders only', async ({ page }) => {
-    await openTypography(page)
-    await expect(page.getByLabel('Font size')).toBeVisible()
-    await expect(page.getByLabel('Reading flow')).toBeVisible()
-    // Old four-knob layout retired 2026-04-25 — collapsed into "Reading flow".
-    await expect(page.getByLabel('Line spacing')).toHaveCount(0)
-    await expect(page.getByLabel('Word spacing')).toHaveCount(0)
-    await expect(page.getByLabel('Reader margins')).toHaveCount(0)
-    await expect(page.getByLabel('Verse spacing')).toHaveCount(0)
-  })
+  // D5 subview-structure / reset button-show-and-restore / IDB writes + reload
+  // ported to tests/unit/settings/{panel,reading-typography}.test.ts
+  // (Phase 2 bucket 1, 2026-04-26). Remaining D5 e2e tests use getComputedStyle
+  // on real Riwayah-driven CSS variables and stay here.
 
   test('D5: reading-flow xl drives a higher line-height on .qa-verse-arabic than xs', async ({ page }) => {
     // The Riwayah-aware line-height formula: floor(riwayah) + delta(step).
@@ -533,38 +271,6 @@ test.describe('Journey D: Typography subview @desktop', () => {
     expect(afterWidth).toBeLessThan(beforeWidth)
   })
 
-  test('D5: reading-flow writes all four IDB keys + persists across reload', async ({ page }) => {
-    await openTypography(page)
-    await page.getByLabel('Reading flow').evaluate(el => {
-      el.value = '4'
-      el.dispatchEvent(new Event('input', { bubbles: true }))
-    })
-    expect(await readSetting(page, 'lineSpacing')).toBe('xl')
-    expect(await readSetting(page, 'wordSpacing')).toBe('xl')
-    expect(await readSetting(page, 'readerMargin')).toBe('xl')
-    expect(await readSetting(page, 'verseSpacing')).toBe('xl')
-
-    await page.reload()
-    await waitForReader(page)
-    expect(await page.evaluate(() => document.documentElement.dataset.lineSpacing)).toBe('xl')
-    expect(await page.evaluate(() => document.documentElement.dataset.wordSpacing)).toBe('xl')
-    expect(await page.evaluate(() => document.documentElement.dataset.readerMargin)).toBe('xl')
-    expect(await page.evaluate(() => document.documentElement.dataset.verseSpacing)).toBe('xl')
-  })
-
-  test('D5: reset button hidden by default, appears on change, restores defaults', async ({ page }) => {
-    await openTypography(page)
-    await expect(page.getByTestId('typography-reset')).toHaveCount(0)
-    await page.getByLabel('Reading flow').evaluate(el => {
-      el.value = '4'
-      el.dispatchEvent(new Event('input', { bubbles: true }))
-    })
-    await expect(page.getByTestId('typography-reset')).toBeVisible()
-    await page.getByTestId('typography-reset').click()
-    await expect(page.getByTestId('typography-reset')).toHaveCount(0)
-    expect(await page.evaluate(() => document.documentElement.dataset.lineSpacing)).toBe('md')
-    expect(await page.evaluate(() => document.documentElement.dataset.readerMargin)).toBe('md')
-  })
 })
 
 // ---------------------------------------------------------------------------
@@ -601,15 +307,8 @@ test.describe('Journey D: Night mode', () => {
     expect(await page.evaluate(() => document.documentElement.hasAttribute('data-night-mode'))).toBe(false)
   })
 
-  test('D6: night mode persists across reload @chromium-only', async ({ page }) => {
-    await openSettingsSheet(page)
-    await page.getByTestId('night-mode-switch').click()
-    expect(await readSetting(page, 'nightMode')).toBe(true)
-
-    await page.reload()
-    await waitForReader(page)
-    expect(await page.evaluate(() => document.documentElement.getAttribute('data-night-mode'))).toBe('on')
-  })
+  // D6 persist-across-reload covered by tests/unit/settings/night-mode.test.ts
+  // initNightMode + setNightMode (Phase 2 bucket 1, 2026-04-26).
 
   test('D6: pressing n on reader toggles night mode @keyboard @chromium-only', async ({ page }) => {
     await page.locator('#main-content').focus()
