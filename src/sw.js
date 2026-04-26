@@ -45,8 +45,15 @@ registerRoute(
 )
 
 self.addEventListener('install', (_event) => {
-  // Don't call skipWaiting() unconditionally - wait for user prompt
-  // The SKIP_WAITING message case handles user-initiated activation
+  // Skip the waiting state immediately so a new SW activates on the next
+  // navigation tick rather than after the user accepts the UpdateBanner
+  // prompt. Required for users on stale precaches — most importantly iOS
+  // PWA installs (WebKit #199110: PWA in iOS use old assets after publish),
+  // where the user has no obvious surface to dismiss + reload.
+  // The SKIP_WAITING message handler stays as a no-op fallback for the
+  // edge case where the install event has already fired but the new SW is
+  // still in `waiting` (e.g. tabs left open across the publish).
+  self.skipWaiting()
 })
 
 function logActivateFailure(taskName, error) {
