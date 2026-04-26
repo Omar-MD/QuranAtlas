@@ -7,6 +7,9 @@
 import { get, put } from '../core/db.js'
 import { logger } from '../core/logger.js'
 import { settings } from '../state/settings.svelte.ts'
+import type { Riwayah } from './riwayah'
+import { on } from '../core/events.ts'
+import { Events } from '../core/constants'
 
 const OPTIONS = ['xs', 'sm', 'md', 'lg', 'xl'] as const
 type Step = typeof OPTIONS[number]
@@ -24,6 +27,24 @@ export type ReadingStep = Step
 
 const ALL_DIMENSIONS = Object.keys(DIMENSIONS) as Dimension[]
 
+const RIWAYAH_FLOOR: Record<Riwayah, number> = { hafs: 1.76, warsh: 1.73, qaloon: 1.72 }
+const STEP_DELTA: Record<Step, number> = { xs: 0.00, sm: 0.10, md: 0.20, lg: 0.30, xl: 0.40 }
+
+export function lineHeightFor(riwayah: Riwayah, step: Step): number {
+  return Number((RIWAYAH_FLOOR[riwayah] + STEP_DELTA[step]).toFixed(3))
+}
+
+function currentRiwayah(): Riwayah {
+  if (typeof document === 'undefined') { return 'qaloon' }
+  const v = document.documentElement.getAttribute('data-riwayah')
+  return (v === 'hafs' || v === 'warsh' || v === 'qaloon') ? v : 'qaloon'
+}
+
+function applyArabicLineHeight(riwayah: Riwayah, step: Step): void {
+  if (typeof document === 'undefined') { return }
+  document.documentElement.style.setProperty('--qa-arabic-line-height', String(lineHeightFor(riwayah, step)))
+}
+
 function isStep(v: unknown): v is Step {
   return typeof v === 'string' && (OPTIONS as readonly string[]).includes(v)
 }
@@ -34,6 +55,9 @@ export function getReadingOptions(): Step[] {
 
 export function applyReadingStep(dim: Dimension, step: Step): void {
   document.documentElement.setAttribute(DIMENSIONS[dim].attr, step)
+  if (dim === 'lineSpacing') {
+    applyArabicLineHeight(currentRiwayah(), step)
+  }
 }
 
 export async function loadReadingSettings(): Promise<Record<Dimension, Step>> {
@@ -101,4 +125,9 @@ export async function initReadingTypography(): Promise<void> {
     applyReadingStep(dim, loaded[dim])
   }
   Object.assign(settings, loaded)
+  on(Events.SETTINGS_RIWAYAH_CHANGED, ({ to }) => {
+    const stepAttr = document.documentElement.getAttribute('data-line-spacing')
+    const step: Step = (OPTIONS as readonly string[]).includes(stepAttr ?? '') ? (stepAttr as Step) : DEFAULT
+    applyArabicLineHeight(to, step)
+  })
 }
