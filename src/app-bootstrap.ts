@@ -29,6 +29,7 @@ import { registerEditor } from './marks/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './nav/nav-drawer-bridge'
 import { loadKfgqpcFontsProgrammatically } from './core/font-loader.ts'
+import { detectEngine } from './core/engine-detect.ts'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -141,6 +142,12 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   }
 
   try {
+    // Set data-engine="safari" on <html> before first paint so the CSS
+    // variable substitution in tokens/semantic.css picks Amiri Quran for
+    // Warsh + Qaloon on WebKit. See docs/context/riwayat-dataset.md
+    // § "Cross-engine rendering" for the rationale.
+    detectEngine()
+
     // Open database (creates stores if first run)
     await openDB()
     performance.mark('db:open')

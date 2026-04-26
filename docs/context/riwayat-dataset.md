@@ -164,6 +164,42 @@ Why so tall: Arabic Uthmanic glyphs reach far above and below the baseline (smal
 
 ---
 
+## Cross-engine rendering
+
+KFGQPC's three webfonts ship with two unrelated rendering issues across browser engines. Each has a different fix.
+
+### Issue 1 — Hafs (v0.18): unhinted outlines render thin on WebKit
+
+KFGQPC `hafs.18.ttf` ships with no TrueType hinting (`fpgm` / `prep` / `cvt` tables absent, `maxp.maxFunctionDefs = 0`). FreeType (Skia / Chromium) auto-hints unhinted fonts so verses look bold; CoreGraphics / Quartz (WebKit / Safari macOS + iOS) does not auto-hint and has no stem-darkening fallback (Apple removed it in macOS 10.14+) so verses render hairline.
+
+**Fix shipped:** `scripts/font-diag/hint-kfgqpc.sh` runs perpendicular outline-embolden via `embolden-glyf.py` (offset 30 font units against UPM 2048) followed by `ttfautohint --default-script=arab --stem-width-mode=sqq`. Output replaces `public/fonts/kfgqpc-hafs/hafs.18.woff2` (~88 KB → ~118 KB). Both engines now grid-fit to the same pixel positions.
+
+**Regression guard:** `tests/unit/assets/kfgqpc-hinting.test.ts` parses the WOFF2 table directory of the shipped Hafs file and asserts `fpgm` / `prep` / `cvt ` are present — fails if a future asset re-import drops back to upstream unhinted bytes.
+
+### Issue 2 — Warsh + Qaloon (v0.10): outline geometry breaks in CoreGraphics
+
+KFGQPC `warsh.10.ttf` and `qaloon.10.ttf` have outline encoding that CoreGraphics rasterises as hollow / broken combining-mark stacks (sheen ش base, jeem ج family, shadda+vowel pairs). Skia (Chromium) and Gecko (Firefox) render the same outlines correctly. Verified locally via `scripts/font-diag/render-compare.mjs` (Playwright Chromium ↔ WebKit screenshot pairs).
+
+**Not fixable via binary post-processing.** Tested and ruled out 2026-04-26/27:
+- `ttfautohint` — no effect.
+- Perpendicular outline embolden (`scripts/font-diag/embolden-glyf.py` at offset 15, 20, 30, both sign directions) — no effect.
+- `skia-pathops` boolean union via `fontTools.ttLib.removeOverlaps` — no effect.
+
+**No alternative font available.** Confirmed exhaustively via web research:
+- KFGQPC publishes only v0.10 of Qaloon; no newer version, no "QaloonSmart" variant. Last update 2010.
+- Quran Foundation, Tarteel QUL, quran.com, fawazahmed0/quran-api, NaifAlsultan typst-quran-package, me_quran, PDMS Saleem, Khaled Hosny / SIL fonts — none ship a Qaloon-specific Naskh font with full Quranic combining-mark coverage.
+- Every Quran app that supports Qaloon visually (Tarteel, quran.com, quran-android, Mushaf Mecca, AAYAAT, Quranflash) does so via **page-image rendering** (PNG/SVG of pre-typeset pages, Unicode text underneath only for selection/sharing).
+
+**Stopgap shipped:** Substitute Amiri Quran (Khaled Hosny, OFL, hinted, full Quranic mark coverage) for Warsh and Qaloon on WebKit only. Hafs unaffected (its embolden+ttfautohint pipeline works). The `data-engine="safari"` attribute is set in `src/core/engine-detect.ts` from `navigator.vendor === "Apple Computer, Inc."` (set by every WebKit derivative including Mobile Safari, iOS Safari, headless WebKit; not by Chromium or Firefox). CSS in `src/styles/tokens/semantic.css` swaps `--qa-font-arabic` to Amiri Quran for `[data-engine='safari'][data-riwayah='warsh']` and `[data-engine='safari'][data-riwayah='qaloon']`.
+
+**What is preserved:** Every tashkeel renders accurately — fatha, kasra, damma, sukun, shadda stacks, dagger alif U+0670, small high seen U+06EC, alif waslah ٱ, sajdah-cue marks U+06D6+. GPOS mark/mkmk anchors handle combining-mark stacking. The Qaloon / Warsh text data (Maghrebi-orthography spellings, riwaya-specific marks) is rendered exactly — only the typeface's calligraphic hand changes.
+
+**What changes:** The calligrapher's hand shifts from Uthman Taha (KFGQPC) to Khaled Hosny (Amiri Quran). Both are Mashriqi Naskh; Amiri Quran's marks sit slightly higher above the baseline and stems are heavier. Chromium and Firefox users continue to see authentic KFGQPC typesetting.
+
+**Long-term proper fix:** Page-image rendering for non-Hafs riwayat (industry-standard pattern across Quran apps). Tracked in `docs/context/future-work.md`.
+
+---
+
 ## Provenance and license
 
 - **Upstream publisher:** King Fahd Glorious Qur'an Printing Complex (مجمع الملك فهد لطباعة المصحف الشريف), Madinah, KSA.
