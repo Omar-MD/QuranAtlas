@@ -17,6 +17,16 @@
   <meta name="description" content="Distraction-free Quran reading PWA — read, reflect, remember.">
   <title>QuranAtlas</title>
   <link rel="preload" href="/src/styles/index.css" as="style">
+  <!-- Preload the KFGQPC riwayah fonts so the first reader paint already has
+       the Mushaf glyphs + Quranic tashkeel. Without preload, the browser only
+       requests the font once it sees a `.qa-verse-arabic` element using the
+       family — adding 200-500ms latency on slow mobile and triggering the
+       Amiri fallback (still readable but not authentic). All three are
+       preloaded so any boot-time `data-riwayah` choice is covered with a
+       single round trip; total payload ≈260 KB woff2. -->
+  <link rel="preload" href="/fonts/kfgqpc-hafs/hafs.18.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/kfgqpc-warsh/warsh.10.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/kfgqpc-qaloon/qaloon.10.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="stylesheet" href="/src/styles/index.css">
