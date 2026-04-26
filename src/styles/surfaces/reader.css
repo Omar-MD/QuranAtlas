@@ -241,17 +241,19 @@
     text-align: start;
     color: var(--qa-text-arabic);
     margin-bottom: 0.875rem;
-    /* KFGQPC fonts ship contextual marks, ligatures, kerning AND mark/mkmk
-       positioning. Setting font-feature-settings to an explicit list (even
-       a permissive one with "liga", "calt", "kern", "rlig" all on) caused
-       iOS Safari to drop the default `mark` and `mkmk` features off the
-       font's GPOS table — so combining marks (sukun stacks, dagger alif
-       U+0670, small high seen U+06EC) collapsed to base position and the
-       verse looked like it had been rendered in a fallback font without
-       Quranic marks. text-rendering: optimizelegibility implies all
-       OpenType features are enabled by default in WebKit, so the explicit
-       list was redundant on top and harmful on iOS. */
     text-rendering: optimizelegibility;
+    /* Sub-pixel text-shadow as a faux-bold layer for KFGQPC. Core Text
+       (macOS + iOS Safari) anti-aliases hairline strokes much lighter
+       than HarfBuzz + Skia (Chrome), so KFGQPC's Quranic combining marks
+       (sukun stacks, dagger alif U+0670, small high seen U+06EC) read as
+       anaemic on Safari while solid on Chrome. macOS dropped subpixel-
+       antialiased since Mojave so font-smoothing hints are no-ops. The
+       sub-pixel shadow stains glyph edges so they catch one extra pixel
+       of weight when the rasterizer rounds to the device grid. Applied
+       universally — Chrome's heavier rendering already saturates the grid
+       so the shadow has near-zero visible effect there, while Safari
+       picks up the missing weight to match Chrome's appearance. */
+    -webkit-text-stroke: 0.7px var(--qa-text-arabic);
   }
 
   .qa-verse-translation {
