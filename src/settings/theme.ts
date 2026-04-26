@@ -116,15 +116,28 @@ export function getThemeOptions(): string[] {
 }
 
 /**
- * Advance to the next theme in light → sepia → dark → auto → light order,
- * applying + persisting it. Returns the new preference.
+ * Advance to the next theme in light → sepia → dark → light order, applying
+ * + persisting it. Returns the new preference.
+ *
+ * `auto` is intentionally omitted from the cycle: when the OS is in dark
+ * mode, `auto` resolves to `dark` and the cycle step `dark → auto` produced
+ * a visually identical result, requiring two taps to actually move from
+ * dark to light. Auto remains selectable via the Settings sheet swatches.
+ * If the user is currently on `auto`, the next tap commits the resolved
+ * variant first (light or dark depending on the OS) so the cycle is
+ * deterministic from any starting state.
  */
+const CYCLE_OPTIONS = ['light', 'sepia', 'dark'] as const
+
 export async function cycleTheme(): Promise<string> {
   const pref = getCurrentThemePref()
-  const idx = THEME_OPTIONS.indexOf(pref)
-  const next = THEME_OPTIONS[(idx + 1) % THEME_OPTIONS.length] ?? DEFAULT_THEME
-  await setTheme(next)
-  return next
+  const current = pref === 'auto' ? resolveAuto() : pref
+  const idx = CYCLE_OPTIONS.indexOf(current as typeof CYCLE_OPTIONS[number])
+  const next = idx === -1
+    ? CYCLE_OPTIONS[0]
+    : CYCLE_OPTIONS[(idx + 1) % CYCLE_OPTIONS.length]
+  await setTheme(next as string)
+  return next as string
 }
 
 export async function initTheme(): Promise<void> {
