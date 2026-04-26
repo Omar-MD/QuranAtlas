@@ -87,6 +87,61 @@
     background-color: var(--qa-surface-sheet);
   }
 
+  /* ---- Riwayah picker ---- */
+
+  .qa-riwayah-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 0 12px;
+  }
+
+  .qa-riwayah-block-label {
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--qa-text-on-sheet-muted);
+  }
+
+  .qa-riwayah-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .qa-riwayah-swatch {
+    display: grid;
+    gap: 2px;
+    padding: 8px;
+    border: 1.5px solid var(--qa-border-on-sheet);
+    border-radius: var(--qa-radius-button);
+    background: var(--qa-surface-sheet);
+    text-align: start;
+    cursor: pointer;
+    color: inherit;
+  }
+
+  .qa-riwayah-swatch:hover {
+    border-color: var(--qa-border-strong);
+  }
+
+  .qa-riwayah-swatch--active {
+    border-color: var(--qa-accent);
+    background: var(--qa-surface-raised);
+  }
+
+  .qa-riwayah-swatch-label {
+    font-weight: 600;
+    font-size: var(--fs-base);
+    color: var(--qa-text-on-sheet);
+  }
+
+  .qa-riwayah-swatch-sub {
+    font-size: var(--fs-xs);
+    color: var(--qa-text-on-sheet-dim);
+  }
+
+  /* ---- Toggle rows ---- */
+
   .qa-settings-toggle-row {
     display: flex;
     align-items: center;

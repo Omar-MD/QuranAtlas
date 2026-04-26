@@ -17,6 +17,7 @@
   import { toggleNightMode } from './night-mode.ts'
   import { getTranslations } from '../data/dataset.js'
   import { registerPanel } from './panel-bridge.ts'
+  import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
 
@@ -33,6 +34,13 @@
   const themeOptions = getThemeOptions()
   const fontOptions = getFontSizeOptions()
   const readingOptions = getReadingOptions()
+  let riwayahOptions = $state(getRiwayahOptions())
+
+  const RIWAYAH_LABELS: Record<Riwayah, { label: string; sub: string }> = {
+    hafs:   { label: 'Ḥafṣ',   sub: 'Ḥafṣ ʿan ʿĀṣim · 6236 ayāt' },
+    warsh:  { label: 'Warsh',  sub: 'Warsh ʿan Nāfiʿ · 6214 ayāt' },
+    qaloon: { label: 'Qālūn',  sub: 'Qālūn ʿan Nāfiʿ · 6214 ayāt' },
+  }
 
   async function loadSheetData() {
     try {
@@ -47,6 +55,8 @@
         Object.assign(settings, { translationVisible: visible })
       }
       translationId = await resolveCurrentTranslationId(loadedTranslations)
+      const r = await loadRiwayah()
+      ;(settings as Record<string, unknown>).riwayah = r
     } catch (error) {
       logger.error('Failed to load settings sheet data', { error })
     }
@@ -171,6 +181,12 @@
     }
   }
 
+  // ---- Riwayah picker ----
+
+  async function handleRiwayah(r: Riwayah) {
+    await setRiwayah(r)
+  }
+
   // ---- Translation picker ----
 
   async function handleTranslationChoice(opt: TranslationEntry) {
@@ -284,6 +300,24 @@
         <!-- Reading section -->
         <section class="qa-settings-section">
           <div class="qa-settings-label">Reading</div>
+          <div class="qa-riwayah-block">
+            <div class="qa-riwayah-block-label">Riwayah</div>
+            <div class="qa-riwayah-row" role="radiogroup" aria-label="Riwayah">
+              {#each riwayahOptions as opt (opt)}
+                <button
+                  type="button"
+                  class="qa-riwayah-swatch"
+                  class:qa-riwayah-swatch--active={settings.riwayah === opt}
+                  role="radio"
+                  aria-checked={settings.riwayah === opt}
+                  onclick={() => handleRiwayah(opt)}
+                >
+                  <span class="qa-riwayah-swatch-label">{RIWAYAH_LABELS[opt].label}</span>
+                  <span class="qa-riwayah-swatch-sub">{RIWAYAH_LABELS[opt].sub}</span>
+                </button>
+              {/each}
+            </div>
+          </div>
           <div class="qa-settings-toggle-row">
             {#if translations.length > 1}
               <button
