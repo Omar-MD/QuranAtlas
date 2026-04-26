@@ -19,18 +19,20 @@
 
 <script lang="ts">
   /**
-   * Onboarding — 5-screen first-run flow.
+   * Onboarding — 6-screen first-run flow.
    *
    * Screen 1: Welcome
    * Screen 2: Theme picker
-   * Screen 3: Translation picker
-   * Screen 4: Keyboard shortcuts
-   * Screen 5: Tags intro + finish CTAs
+   * Screen 3: Riwayah picker
+   * Screen 4: Translation picker
+   * Screen 5: Keyboard shortcuts
+   * Screen 6: Tags intro + finish CTAs
    */
 
   import { onMount } from 'svelte'
   import { getTranslations } from '../data/dataset'
   import { setTheme, loadTheme, getThemeOptions } from '../settings/theme.js'
+  import { setRiwayah, loadRiwayah, getRiwayahOptions, type Riwayah } from '../settings/riwayah'
   import { logger } from '../core/logger.js'
   import { SHORTCUT_ROWS, SAMPLE_CHIPS } from './screens'
   import OnboardingScreen from './OnboardingScreen.svelte'
@@ -38,14 +40,28 @@
 
   // ── component state ───────────────────────────────────────────────────────
 
-  const TOTAL = 5
+  const TOTAL = 6
 
   let screen = $state(1)
 
   // Screen 2 — theme
   let currentTheme = $state('light')
 
-  // Screen 3 — translation
+  // Screen 3 — riwayah
+  const riwayahOptions = getRiwayahOptions()
+  let selectedRiwayah = $state<Riwayah>('qaloon')
+
+  const RIWAYAH_CARDS: Record<Riwayah, { label: string; ayatLabel: string; description: string }> = {
+    hafs:   { label: 'Ḥafṣ ʿan ʿĀṣim',   ayatLabel: '6236 ayāt', description: 'The most widespread reading worldwide.' },
+    warsh:  { label: 'Warsh ʿan Nāfiʿ',  ayatLabel: '6214 ayāt', description: 'Read across the Maghreb and West Africa.' },
+    qaloon: { label: 'Qālūn ʿan Nāfiʿ',  ayatLabel: '6214 ayāt', description: 'Read in Libya, Tunisia, and parts of Mauritania.' },
+  }
+
+  async function pickRiwayah(r: Riwayah) {
+    if (await setRiwayah(r)) { selectedRiwayah = r }
+  }
+
+  // Screen 4 — translation
   let translationOptions = $state<TranslationEntry[]>([])
   let selectedTranslationId = $state<string | null>(null)
 
@@ -55,7 +71,10 @@
     // Load saved theme for screen 2
     currentTheme = (await loadTheme()) as string
 
-    // Load translation options for screen 3
+    // Load persisted riwayah for screen 3
+    selectedRiwayah = await loadRiwayah()
+
+    // Load translation options for screen 4
     try {
       const opts = await getTranslations()
       translationOptions = opts
@@ -104,7 +123,7 @@
     currentTheme = opt
   }
 
-  // ── screen 3 — translation ────────────────────────────────────────────────
+  // ── screen 4 — translation ────────────────────────────────────────────────
 
   async function pickTranslation(id: string) {
     if (translationOptions.length < 2) { return }
@@ -160,7 +179,41 @@
     </OnboardingScreen>
 
   {:else if screen === 3}
-    <!-- ── Screen 3: Translation ──────────────────────────────────────── -->
+    <!-- ── Screen 3: Riwayah ──────────────────────────────────────────────── -->
+    <OnboardingScreen {screen} total={TOTAL} onSkip={skip}>
+      <h1 class="qa-onb-headline">
+        Choose your <span class="qa-onb-gold">Riwayah</span>.
+      </h1>
+      <p class="qa-onb-lede">
+        The transmission of the Qur&rsquo;an&rsquo;s recitation. You can change this anytime in Settings.
+      </p>
+
+      <div class="qa-onb-rlist">
+        {#each riwayahOptions as opt (opt)}
+          <button
+            type="button"
+            class="qa-onb-r{selectedRiwayah === opt ? ' qa-onb-r--on' : ''}"
+            role="radio"
+            aria-checked={selectedRiwayah === opt}
+            onclick={() => pickRiwayah(opt)}
+          >
+            <span class="qa-onb-r-radio"></span>
+            <span class="qa-onb-r-body">
+              <span class="qa-onb-r-name">{RIWAYAH_CARDS[opt].label}</span>
+              <span class="qa-onb-r-meta">{RIWAYAH_CARDS[opt].ayatLabel}</span>
+              <span class="qa-onb-r-desc">{RIWAYAH_CARDS[opt].description}</span>
+            </span>
+          </button>
+        {/each}
+      </div>
+
+      <div class="qa-onb-cta-row">
+        <button type="button" class="qa-onb-cta qa-onb-cta--primary" onclick={advance}>Continue</button>
+      </div>
+    </OnboardingScreen>
+
+  {:else if screen === 4}
+    <!-- ── Screen 4: Translation ──────────────────────────────────────────── -->
     <OnboardingScreen {screen} total={TOTAL} onSkip={skip}>
       <h1 class="qa-onb-headline">
         Which <span class="qa-onb-gold">translation</span>?
@@ -194,8 +247,8 @@
       </div>
     </OnboardingScreen>
 
-  {:else if screen === 4}
-    <!-- ── Screen 4: Shortcuts ────────────────────────────────────────── -->
+  {:else if screen === 5}
+    <!-- ── Screen 5: Shortcuts ────────────────────────────────────────── -->
     <OnboardingScreen {screen} total={TOTAL} onSkip={skip}>
       <h1 class="qa-onb-headline">A few shortcuts</h1>
       <p class="qa-onb-lede">QuranAtlas is faster than tapping. Press <kbd class="qa-onb-kbd">?</kbd> any time to see the full list.</p>
@@ -218,8 +271,8 @@
       </div>
     </OnboardingScreen>
 
-  {:else}
-    <!-- ── Screen 5: Tags intro ────────────────────────────────────────── -->
+  {:else if screen === 6}
+    <!-- ── Screen 6: Tags intro ────────────────────────────────────────── -->
     <OnboardingScreen {screen} total={TOTAL} onSkip={skip}>
       <h1 class="qa-onb-headline">
         Mark what <span class="qa-onb-gold">speaks</span> to you.
