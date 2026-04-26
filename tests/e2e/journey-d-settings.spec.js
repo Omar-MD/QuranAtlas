@@ -626,17 +626,15 @@ test.describe('Journey D: Night mode', () => {
 })
 
 // ---------------------------------------------------------------------------
-// D7. Mobile gear long-press → cycleTheme (callout-suppression regression).
+// D7. Mobile gear double-tap → cycleTheme (replaced long-press 2026-04-26).
 //
-// Prior bug: iOS long-press over the gear surfaced the native callout
-// (Copy / Look up) which raced + won against the long-press timer. Fix is a
-// combination of CSS guards (-webkit-touch-callout: none, user-select: none,
-// touch-action: manipulation, svg pointer-events: none), pointerdown
-// e.preventDefault(), contextmenu suppression, jitter-tolerant cancellation,
-// and a tightened threshold (350ms < typical OS callout 500ms).
+// Single tap → settings sheet. Double-tap (two clicks within 300ms) →
+// cycle theme. The single-tap commit is debounced for the same 300ms window
+// so the second tap can suppress the sheet open and rewrite the action to
+// cycleTheme without the sheet flashing.
 // ---------------------------------------------------------------------------
 
-test.describe('Journey D: Mobile gear long-press', () => {
+test.describe('Journey D: Mobile gear double-tap', () => {
   // Gear is mobile-only chrome (hidden ≥1180px). Force a phone viewport so
   // this suite is meaningful in the chromium project too.
   test.use({ viewport: { width: 390, height: 844 } })
@@ -649,7 +647,7 @@ test.describe('Journey D: Mobile gear long-press', () => {
     await waitForReader(page)
   })
 
-  test('D7: long-press gear cycles theme; short tap opens settings', async ({ page }) => {
+  test('D7: double-tap gear cycles theme; settings sheet stays closed', async ({ page }) => {
     const gear = page.locator('.qa-mh-settings')
     await expect(gear).toBeVisible({ timeout: 5_000 })
 
@@ -657,30 +655,23 @@ test.describe('Journey D: Mobile gear long-press', () => {
       document.documentElement.getAttribute('data-theme-pref') ?? 'light'
     )
 
-    // Long-press: hold > app's 350ms threshold. The hold itself is the
-    // gesture — see Rule 7.1 carve-out for physical-timing simulation.
-    // Tightened from 500ms to 380ms to shave wall time without flake.
+    // Two clicks well within the 300ms double-tap window.
     const box = await gear.boundingBox()
     if (!box) { throw new Error('gear not measurable') }
     const cx = box.x + box.width / 2
     const cy = box.y + box.height / 2
-    await page.mouse.move(cx, cy)
-    await page.mouse.down()
-    await page.waitForTimeout(380)
-    await page.mouse.up()
+    await page.mouse.click(cx, cy, { delay: 0 })
+    await page.mouse.click(cx, cy, { delay: 0 })
 
-    await expect(async () => {
-      const after = await page.evaluate(() =>
-        document.documentElement.getAttribute('data-theme-pref') ?? 'light'
-      )
-      expect(after).not.toBe(before)
-    }).toPass({ timeout: 3_000 })
+    await expect.poll(async () => page.evaluate(() =>
+      document.documentElement.getAttribute('data-theme-pref') ?? 'light'
+    ), { timeout: 3_000 }).not.toBe(before)
 
-    // Settings sheet should not be open.
+    // Settings sheet must NOT have opened.
     await expect(page.locator('.qa-sheet--settings')).toHaveCount(0)
   })
 
-  test('D7: short tap on gear opens settings (does not cycle theme)', async ({ page }) => {
+  test('D7: single tap on gear opens settings (does not cycle theme)', async ({ page }) => {
     const gear = page.locator('.qa-mh-settings')
     const before = await page.evaluate(() =>
       document.documentElement.getAttribute('data-theme-pref') ?? 'light'

@@ -2,9 +2,13 @@ import { expect } from '@playwright/test'
 
 /**
  * Wait for the reader to finish mounting (first verse rendered).
+ *
+ * Timeout is generous (25s) because CI runners are 2-4× slower than local
+ * dev hardware and the reader cold-boot path waits on dataset fetch + IDB
+ * schema check + first verse render. Local runs still resolve in <2s.
  */
 export async function waitForReader(page) {
-  await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 10_000 })
+  await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 25_000 })
 }
 
 /**

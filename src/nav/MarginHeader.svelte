@@ -6,7 +6,10 @@
    *
    * Auto-hides on scroll-down; reveals on scroll-up or `ambient:surface`.
    * Tap label = surah list; swipe l/r on label = prev/next surah;
-   * swipe down on header = surah list. Long-press gear = cycle theme.
+   * swipe down on header = surah list. Double-tap gear = cycle theme
+   * (replaced long-press 2026-04-26: double-tap is more accessible, avoids
+   * the iOS callout race that long-press fought against, and matches the
+   * reader verse double-tap convention).
    */
 
   import { onMount } from 'svelte'
@@ -21,8 +24,7 @@
 
   const HIDE_DELTA = 36
   const SHOW_NEAR_TOP = 20
-  const LONG_PRESS_MS = 350
-  const LONG_PRESS_JITTER_PX = 10
+  const DOUBLE_TAP_MS = 300
 
   let hidden = $state(false)
   let lastTop = 0
@@ -101,47 +103,40 @@
     if (dir === 'down') { openNavDrawer('surahs') }
   }
 
-  // ---- Settings gear: short tap → settings; long-press → cycle theme ----
-  let settingsTimer: ReturnType<typeof setTimeout> | null = null
-  let settingsLongFired = false
-  let settingsStartX = 0
-  let settingsStartY = 0
+  // ---- Settings gear: single tap → settings; double tap → cycle theme ----
+  // Tap counter mirrors the reader's setupTapGestures so touch + mouse share
+  // the same path; we deliberately avoid the native `dblclick` event because
+  // mobile browsers fire it inconsistently when the first tap also opens a
+  // sheet. Single-tap is committed after the DOUBLE_TAP_MS window expires so
+  // the second tap can rewrite the action to cycleTheme without the sheet
+  // flashing open first.
+  let settingsTapTimer: ReturnType<typeof setTimeout> | null = null
+  let settingsLastTapAt = 0
 
-  function onSettingsPointerDown(e: PointerEvent): void {
-    // Suppress native iOS callout (Copy / Look up / image action) that would
-    // otherwise race the long-press timer.
-    e.preventDefault()
-    settingsLongFired = false
-    settingsStartX = e.clientX
-    settingsStartY = e.clientY
-    if (settingsTimer) { clearTimeout(settingsTimer) }
-    settingsTimer = setTimeout(() => {
-      settingsLongFired = true
-      void cycleTheme()
-      navigator.vibrate?.(8)
-    }, LONG_PRESS_MS)
-  }
-  function onSettingsPointerMove(e: PointerEvent): void {
-    if (!settingsTimer) { return }
-    const dx = e.clientX - settingsStartX
-    const dy = e.clientY - settingsStartY
-    if (dx * dx + dy * dy > LONG_PRESS_JITTER_PX * LONG_PRESS_JITTER_PX) {
-      clearTimeout(settingsTimer); settingsTimer = null
-    }
-  }
-  function onSettingsPointerUp(): void {
-    if (settingsTimer) { clearTimeout(settingsTimer); settingsTimer = null }
-    if (settingsLongFired) { return }
+  function commitSingleTap(): void {
+    settingsTapTimer = null
     openSettingsSheet()
   }
-  function onSettingsPointerCancel(): void {
-    if (settingsTimer) { clearTimeout(settingsTimer); settingsTimer = null }
-    settingsLongFired = false
+
+  function onSettingsTap(): void {
+    const now = performance.now()
+    if (settingsTapTimer && (now - settingsLastTapAt) < DOUBLE_TAP_MS) {
+      clearTimeout(settingsTapTimer)
+      settingsTapTimer = null
+      settingsLastTapAt = 0
+      void cycleTheme()
+      navigator.vibrate?.(8)
+      return
+    }
+    settingsLastTapAt = now
+    if (settingsTapTimer) { clearTimeout(settingsTapTimer) }
+    settingsTapTimer = setTimeout(commitSingleTap, DOUBLE_TAP_MS)
   }
+
   function onSettingsContextMenu(e: Event): void {
-    // Defensive: if the OS still surfaces a context menu (e.g. trackpad
-    // right-click on macOS desktop / Android long-press fallback), block it
-    // so the long-press → cycleTheme contract isn't masked by a menu.
+    // Defensive: trackpad right-click on macOS desktop / Android long-press
+    // fallback can still surface a native menu. Block it — the gear has no
+    // contextual affordance.
     e.preventDefault()
   }
 
@@ -174,7 +169,7 @@
       unsubRoute()
       unsubSurface()
       main?.removeEventListener('scroll', onScroll)
-      if (settingsTimer) { clearTimeout(settingsTimer); settingsTimer = null }
+      if (settingsTapTimer) { clearTimeout(settingsTapTimer); settingsTapTimer = null }
     }
   })
 </script>
@@ -220,11 +215,7 @@
     type="button"
     class="qa-mh-settings"
     aria-label="Open settings"
-    onpointerdown={onSettingsPointerDown}
-    onpointermove={onSettingsPointerMove}
-    onpointerup={onSettingsPointerUp}
-    onpointercancel={onSettingsPointerCancel}
-    onpointerleave={onSettingsPointerCancel}
+    onclick={onSettingsTap}
     oncontextmenu={onSettingsContextMenu}
   >
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
