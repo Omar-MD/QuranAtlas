@@ -62,9 +62,20 @@
   .qa-basmala {
     container-type: inline-size;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
     padding: 1.5rem 1rem 2rem;
     margin: 0.5rem auto 1rem;
+  }
+
+  .qa-basmala-translation {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--qa-text-muted);
+    text-align: center;
+    max-width: 36ch;
+    line-height: 1.4;
   }
 
   .qa-basmala-text {
