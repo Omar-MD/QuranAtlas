@@ -42,7 +42,7 @@ function currentRiwayah(): Riwayah {
 
 function applyArabicLineHeight(riwayah: Riwayah, step: Step): void {
   if (typeof document === 'undefined') { return }
-  document.documentElement.style.setProperty('--qa-arabic-line-height', String(lineHeightFor(riwayah, step)))
+  document.documentElement.style.setProperty('--qa-line-height-arabic', String(lineHeightFor(riwayah, step)))
 }
 
 function isStep(v: unknown): v is Step {

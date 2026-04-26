@@ -34,7 +34,7 @@
   const themeOptions = getThemeOptions()
   const fontOptions = getFontSizeOptions()
   const readingOptions = getReadingOptions()
-  let riwayahOptions = $state(getRiwayahOptions())
+  const riwayahOptions = getRiwayahOptions()
 
   const RIWAYAH_LABELS: Record<Riwayah, { label: string; sub: string }> = {
     hafs:   { label: 'Ḥafṣ',   sub: 'Ḥafṣ ʿan ʿĀṣim · 6236 ayāt' },

@@ -173,6 +173,7 @@ export async function getTranslations(): Promise<TranslationEntry[]> {
  * translation isn't shipped — no translations ship today, so this always
  * returns null. Wired up later when translation packs land.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function loadTranslationForSurah(_translationId: string, _surahNo: number): Promise<TranslationPayload | null> {
   return null
 }

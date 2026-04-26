@@ -19,7 +19,7 @@
   /* Arabic line-height is Riwayah-aware: floor varies per KFGQPC font (Hafs 1.76,
      Warsh 1.73, Qaloon 1.72). The variable is set by reading-typography.ts whenever
      lineSpacing changes or the active Riwayah switches. */
-  .qa-verse-arabic { line-height: var(--qa-arabic-line-height, 1.92); }
+  .qa-verse-arabic { line-height: var(--qa-line-height-arabic, 1.92); }
   [data-line-spacing="xs"] .qa-verse-translation { line-height: 1.35; }
   [data-line-spacing="sm"] .qa-verse-translation { line-height: 1.5; }
   [data-line-spacing="md"] .qa-verse-translation { line-height: 1.65; }
