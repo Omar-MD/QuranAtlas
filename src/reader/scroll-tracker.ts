@@ -136,8 +136,8 @@ export function unobserve(): number | null {
     }
     scrollHandler = null
   }
-  if (sentinelEl && sentinelEl.parentNode) {
-    sentinelEl.parentNode.removeChild(sentinelEl)
+  if (sentinelEl) {
+    sentinelEl.remove()
     sentinelEl = null
   }
   if (debounceTimer) {

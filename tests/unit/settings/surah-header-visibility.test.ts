@@ -57,6 +57,7 @@ describe('surah-header-visibility', () => {
     const { setSurahHeaderHidden } = await import('../../../src/settings/surah-header-visibility.ts')
     await setSurahHeaderHidden(true)
     reader.currentSurahNum = 1
+    expect(reader.surahHeaderHidden).toBe(true)
     reader.currentSurahNum = 2
     expect(reader.surahHeaderHidden).toBe(true)
     expect(settings.surahHeaderHidden).toBe(true)
