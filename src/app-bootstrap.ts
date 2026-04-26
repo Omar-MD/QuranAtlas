@@ -86,6 +86,21 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   // TagSheet deep path. TagSheet subscribes to tagSession.sheetOpen.
   registerEditor((vk) => { void openDeep(vk) })
 
+  // Programmatic font kickoff (iOS WebKit defense-in-depth — Apple Dev Forum
+  // 671608). The hidden divs in index.html cover the render-tree-side route;
+  // the CSS Font Loading API call below covers the script route. Together
+  // they survive iOS WebKit defects that skip one or the other (off-viewport
+  // paint elision, dynamic-only-use deferral). Fire-and-forget — no await,
+  // since this just primes the network fetch and registers the family;
+  // failure to load is tolerable because @font-face will still be tried when
+  // the reader actually mounts. Guard against environments without the
+  // Font Loading API (jsdom in unit tests).
+  if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
+    for (const fam of ['KFGQPC Hafs', 'KFGQPC Warsh', 'KFGQPC Qaloon']) {
+      void document.fonts.load(`16px "${fam}"`, 'ا').catch(() => { /* ignore — fallback chain handles it */ })
+    }
+  }
+
   try {
     // Open database (creates stores if first run)
     await openDB()

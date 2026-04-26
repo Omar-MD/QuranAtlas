@@ -32,21 +32,20 @@
   <link rel="stylesheet" href="/src/styles/index.css">
 </head>
 <body>
-  <!-- iOS WebKit deferred-load workaround. KFGQPC families are declared in
-       CSS but only used by reader content mounted post-onboarding (Svelte
-       router injects verses dynamically). iOS WebKit has an unresolved bug
-       (Apple Dev Forum 671608) where @font-face fonts are never fetched if
-       not referenced in the initial DOM. Even <link rel=preload> doesn't
-       always trigger registration without an actual usage. The three
-       off-screen elements below reference each KFGQPC family with an
-       Arabic codepoint inside the @font-face unicode-range, forcing iOS to
-       register + fetch all three on first paint — so any later riwayah
-       switch already has the font cached and renders KFGQPC, not the
-       Amiri fallback. Must NOT use display:none — that drops from the
-       render tree and the bug returns. -->
-  <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;font-size:1px;font-family:'KFGQPC Hafs',serif">ا</div>
-  <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;font-size:1px;font-family:'KFGQPC Warsh',serif">ا</div>
-  <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;font-size:1px;font-family:'KFGQPC Qaloon',serif">ا</div>
+  <!-- iOS WebKit deferred-load workaround (Apple Dev Forum 671608).
+       Round 1 used `font-size:1px` + far off-screen positioning — works on
+       Android Blink and Playwright WebKit but Safari 17+ on real iPhones
+       still skipped font registration: iOS defers paint for sub-pixel font
+       and content positioned outside the viewport, so the @font-face never
+       fires.  Round 2 uses visibility:hidden + zero box + a real 16px
+       font-size + an Arabic codepoint inside @font-face unicode-range.
+       visibility:hidden keeps the element in the render tree (display:none
+       drops it and re-triggers the bug); width/height:0 + overflow:hidden
+       keeps it layout-inert; font-size:16px ensures iOS WebKit treats the
+       element as a real glyph render so it actually fetches the font. -->
+  <div aria-hidden="true" style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;font-size:16px;font-family:'KFGQPC Hafs',serif">ا</div>
+  <div aria-hidden="true" style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;font-size:16px;font-family:'KFGQPC Warsh',serif">ا</div>
+  <div aria-hidden="true" style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;font-size:16px;font-family:'KFGQPC Qaloon',serif">ا</div>
   <div id="app"></div>
   <script type="module" src="/src/app.ts"></script>
 </body>
