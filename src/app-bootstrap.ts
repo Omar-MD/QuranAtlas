@@ -99,6 +99,38 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     for (const fam of ['KFGQPC Hafs', 'KFGQPC Warsh', 'KFGQPC Qaloon']) {
       void document.fonts.load(`16px "${fam}"`, 'ا').catch(() => { /* ignore — fallback chain handles it */ })
     }
+    // iOS Safari paints the reader DOM with a fallback font when verses
+    // mount before KFGQPC swaps in, then doesn't re-shape RTL Arabic text
+    // when font-display:swap brings in the real face — combining marks
+    // (sukun, dagger alif, small high seen) collapse to base position.
+    // Force a re-paint once fonts are ready AND each time the reader
+    // mounts new verses (router navigation, riwayah switch). Toggling a
+    // no-op transform invalidates the layout cache + re-runs glyph shaping
+    // with the now-loaded KFGQPC font.
+    const reshape = (root: ParentNode = document) => {
+      const verses = root.querySelectorAll('.qa-verse-arabic')
+      for (const el of verses) {
+        const v = el as HTMLElement
+        v.style.transform = 'translateZ(0)'
+        void v.offsetHeight
+        v.style.transform = ''
+      }
+    }
+    let fontsAreReady = false
+    void document.fonts.ready.then(() => { fontsAreReady = true; reshape() }).catch(() => { /* ignore */ })
+    // Observe #main-content for new verse subtrees so post-mount renders
+    // also get the kick. Cheap — only fires when the router replaces the
+    // reader subtree, not on tashkeel toggles or font-size slider.
+    const observer = new MutationObserver(() => { if (fontsAreReady) reshape() })
+    const startObserve = () => {
+      const main = document.getElementById('main-content')
+      if (main) observer.observe(main, { childList: true, subtree: true })
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startObserve, { once: true })
+    } else {
+      startObserve()
+    }
   }
 
   try {
