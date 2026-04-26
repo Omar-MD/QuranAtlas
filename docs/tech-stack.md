@@ -98,7 +98,8 @@ The `packageManager` field pins `pnpm@10.31.0` exactly. Commands also run under 
 
 ### Optional environment variables
 - `PLAYWRIGHT_INCLUDE_OFFLINE=1` — includes the `@offline` project (otherwise skipped locally; always included in CI). See `playwright.config.js`.
-- `PLAYWRIGHT_USE_PREVIEW=1` — run Playwright against a production preview build instead of the dev server. Used by `test:e2e:sw`.
+- `PLAYWRIGHT_USE_PREVIEW=1` — run Playwright against a production preview build instead of the dev server. Used by `test:e2e:sw` and by CI (vite's on-demand compile under workers=6 on the 2-core runner serialised past the 25 s `waitForReader` timeout). When set, the `Offline (Preview)` project reuses the same preview server instead of spawning a second build.
+- `PLAYWRIGHT_SKIP_BUILD=1` — assume `dist/` already exists; skip the prebuild step inside the preview webServer command. CI sets this after downloading the `dist/` artifact from the Build job, avoiding a redundant rebuild.
 
 ## Architecture and internals
 
@@ -130,7 +131,7 @@ Two layers:
   - `sw-integration.spec.js` — SW cache + runtime caching (preview build only)
   - `visual/baseline.spec.js` — CSS visual regression (5 surfaces × 3 themes × 3 viewports)
 
-Journey specs A–G, I, and performance run against the **Vite dev server**. Journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW).
+Locally, journey specs A–G, I, and performance run against the **Vite dev server**; journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW). In CI, all projects share a single preview server (`PLAYWRIGHT_USE_PREVIEW=1` + `PLAYWRIGHT_SKIP_BUILD=1`) — the e2e job depends on the Build job and reuses its `dist/` artifact rather than rebuilding.
 
 ### Static checks
 - **ESLint** (strict mode, `typescript-eslint`, `eslint-plugin-svelte`) via `pnpm run lint`.
@@ -163,7 +164,7 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `st
 | `build` | `pnpm run build`; uploads `dist/` artifact |
 | `check-chunks` | `pnpm run check-chunks` against uploaded `dist/` |
 | `lighthouse` | `lhci autorun` against uploaded `dist/` |
-| `e2e` | Full Playwright suite (11 specs) with `PLAYWRIGHT_INCLUDE_OFFLINE=1` |
+| `e2e` | Full Playwright suite (11 specs) with `PLAYWRIGHT_INCLUDE_OFFLINE=1`, `PLAYWRIGHT_USE_PREVIEW=1`, `PLAYWRIGHT_SKIP_BUILD=1`. Depends on `build` and downloads its `dist/` artifact, then runs against a preview server (no dev-server compile path under workers=6). |
 | `ci-ok` | No-op aggregator — single required status check for branch protection |
 
 Deploy lives at `.github/workflows/deploy.yml` and observes CI via `workflow_run`: on CI success for a push to `dev`, `staging`, or `main`, the deploy job downloads the `dist/` artifact the CI run produced and runs `wrangler pages deploy` against the single Cloudflare Pages project `quranatlas`. Custom domains are bound per branch in the Cloudflare dashboard:
