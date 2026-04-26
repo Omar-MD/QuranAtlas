@@ -3,9 +3,9 @@ import { splitRiwayah, computeSurahsMeta, AYAT_COUNTS } from './build-riwayat.mj
 
 describe('splitRiwayah', () => {
   const sampleHafs = [
-    { id: 1, jozz: 1, sora: 1, sora_name_en: 'Al-Fātiḥah', sora_name_ar: 'الفَاتِحة', page: '1', line_start: 2, line_end: 2, aya_no: 1, aya_text: 'بسم الله', aya_text_emlaey: 'بسم الله' },
-    { id: 2, jozz: 1, sora: 1, sora_name_en: 'Al-Fātiḥah', sora_name_ar: 'الفَاتِحة', page: '1', line_start: 3, line_end: 3, aya_no: 2, aya_text: 'الحمد لله', aya_text_emlaey: 'الحمد لله' },
-    { id: 3, jozz: 1, sora: 2, sora_name_en: 'Al-Baqarah', sora_name_ar: 'البَقَرَة', page: '2', line_start: 3, line_end: 3, aya_no: 1, aya_text: 'الم', aya_text_emlaey: 'الم' },
+    { id: 1, jozz: 1, sora: 1, sora_name_en: 'Al-Fātiḥah', sora_name_ar: 'الفَاتِحة', page: '1', line_start: 2, line_end: 2, aya_no: 1, aya_text: 'بسم الله ١', aya_text_emlaey: 'بسم الله ١' },
+    { id: 2, jozz: 1, sora: 1, sora_name_en: 'Al-Fātiḥah', sora_name_ar: 'الفَاتِحة', page: '1', line_start: 3, line_end: 3, aya_no: 2, aya_text: 'الحمد لله ٢', aya_text_emlaey: 'الحمد لله ٢' },
+    { id: 3, jozz: 1, sora: 2, sora_name_en: 'Al-Baqarah', sora_name_ar: 'البَقَرَة', page: '2', line_start: 3, line_end: 3, aya_no: 1, aya_text: 'الم ١', aya_text_emlaey: 'الم ١' },
   ]
 
   it('groups ayat by surah, normalises sora→sura_no, preserves aya_text_emlaey for Hafs', () => {
@@ -17,19 +17,42 @@ describe('splitRiwayah', () => {
     expect(s1.sura_name_en).toBe('Al-Fātiḥah')
     expect(s1.ayat).toHaveLength(2)
     expect(s1.ayat[0].aya_no).toBe(1)
-    expect(s1.ayat[0].aya_text_emlaey).toBe('بسم الله')
     expect(s1.ayat[0]).not.toHaveProperty('sora')
     expect(s1.ayat[0]).not.toHaveProperty('sora_name_en')
   })
 
+  it('strips trailing Arabic-Indic verse number from aya_text', () => {
+    const split = splitRiwayah('hafs', sampleHafs)
+    expect(split['001'].ayat[0].aya_text).toBe('بسم الله')
+    expect(split['001'].ayat[1].aya_text).toBe('الحمد لله')
+    expect(split['002'].ayat[0].aya_text).toBe('الم')
+  })
+
+  it('strips trailing Arabic-Indic verse number from aya_text_emlaey when present', () => {
+    const split = splitRiwayah('hafs', sampleHafs)
+    expect(split['001'].ayat[0].aya_text_emlaey).toBe('بسم الله')
+    expect(split['001'].ayat[1].aya_text_emlaey).toBe('الحمد لله')
+  })
+
+  it('throws when captured digit disagrees with aya_no', () => {
+    const corrupt = [{ id: 1, jozz: 1, sora: 1, sora_name_en: 'X', sora_name_ar: 'X', page: '1', line_start: 1, line_end: 1, aya_no: 1, aya_text: 'foo ٢' }]
+    expect(() => splitRiwayah('hafs', corrupt)).toThrow(/does not match aya_no/)
+  })
+
+  it('throws when no trailing Arabic-Indic digit is present', () => {
+    const missing = [{ id: 1, jozz: 1, sora: 1, sora_name_en: 'X', sora_name_ar: 'X', page: '1', line_start: 1, line_end: 1, aya_no: 1, aya_text: 'foo' }]
+    expect(() => splitRiwayah('hafs', missing)).toThrow(/Expected trailing Arabic-Indic digit/)
+  })
+
   const sampleWarsh = [
-    { id: 1, jozz: 1, sura_no: 1, sura_name_en: 'Al-Fātiḥah', sura_name_ar: 'الفَاتِحة', page: '1', line_start: 3, line_end: 3, aya_no: 1, aya_text: 'اِ۬لْحَمْدُ', },
+    { id: 1, jozz: 1, sura_no: 1, sura_name_en: 'Al-Fātiḥah', sura_name_ar: 'الفَاتِحة', page: '1', line_start: 3, line_end: 3, aya_no: 1, aya_text: 'اِ۬لْحَمْدُ ١' },
   ]
 
   it('preserves sura_no field-name for Warsh / Qaloon (no aya_text_emlaey)', () => {
     const split = splitRiwayah('warsh', sampleWarsh)
     expect(split['001'].riwayah).toBe('warsh')
     expect(split['001'].ayat[0]).not.toHaveProperty('aya_text_emlaey')
+    expect(split['001'].ayat[0].aya_text).toBe('اِ۬لْحَمْدُ')
   })
 })
 

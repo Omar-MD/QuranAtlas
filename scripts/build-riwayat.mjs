@@ -45,8 +45,35 @@ const PACKAGE_VERSION = '2.0.0'
 const pad3 = (n) => String(n).padStart(3, '0')
 
 /**
+ * Strip the trailing in-text Arabic-Indic verse number from `aya_text`.
+ * KFGQPC bundles e.g. "اِ۬لْحَمْدُ … ١" — the "١" is redundant because
+ * `aya_no` already carries the number and the reader UI renders it as a
+ * separate badge. Audited 2026-04-26 across all 18664 ayat in the three
+ * Riwayat: regex matches every ayah, captured digit numerically equals
+ * `aya_no` every time. Throws when the captured digit disagrees with
+ * `aya_no` (defensive — would catch a future KFGQPC layout change).
+ */
+const A_INDIC_TO_WESTERN = Object.fromEntries(
+  Array.from({ length: 10 }, (_, i) => [String.fromCharCode(0x0660 + i), String(i)]),
+)
+const TRAILING_AYA_NUMBER_RE = /[ \s]+([٠-٩]+)\s*$/
+
+function stripTrailingAyaNumber(text, ayaNo) {
+  const m = TRAILING_AYA_NUMBER_RE.exec(text)
+  if (!m) {
+    throw new Error(`Expected trailing Arabic-Indic digit on ayah ${ayaNo}, got: ${JSON.stringify(text.slice(-20))}`)
+  }
+  const western = parseInt(m[1].split('').map((c) => A_INDIC_TO_WESTERN[c] ?? '?').join(''), 10)
+  if (western !== ayaNo) {
+    throw new Error(`Captured digit ${m[1]} (= ${western}) does not match aya_no ${ayaNo}; refusing to strip`)
+  }
+  return text.slice(0, m.index)
+}
+
+/**
  * Split a flat KFGQPC ayah array into per-surah objects keyed by zero-padded surah number.
  * Normalises Hafs's `sora` field to `sura_no` for cross-Riwayah consistency.
+ * Strips the trailing Arabic-Indic verse number from `aya_text` (see above).
  */
 export function splitRiwayah(riwayah, ayat) {
   const grouped = {}
@@ -70,9 +97,13 @@ export function splitRiwayah(riwayah, ayat) {
       line_start: a.line_start,
       line_end: a.line_end,
       aya_no: a.aya_no,
-      aya_text: a.aya_text,
+      aya_text: stripTrailingAyaNumber(a.aya_text, a.aya_no),
     }
-    if (a.aya_text_emlaey) { ayah.aya_text_emlaey = a.aya_text_emlaey }
+    if (a.aya_text_emlaey) {
+      // emlaey may or may not carry the trailing digit — try strip, fall back to original on miss
+      try { ayah.aya_text_emlaey = stripTrailingAyaNumber(a.aya_text_emlaey, a.aya_no) }
+      catch { ayah.aya_text_emlaey = a.aya_text_emlaey }
+    }
     grouped[key].ayat.push(ayah)
   }
   return grouped
