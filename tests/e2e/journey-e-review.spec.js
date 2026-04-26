@@ -127,40 +127,9 @@ test.describe('Journey E: Review hub', () => {
   // E2. Swap grouping — Surah → Date → Value
   // -------------------------------------------------------------------------
 
-  test('E2: tap Surah segment → active tab changes; tap Date → flat list; tap Value → Value tab active', async ({ page }) => {
-    const seg = page.getByRole('tablist', { name: 'Group by' })
-
-    // --- Surah grouping ---
-    await seg.locator('[data-group="surah"]').click()
-
-    // Surah tab is now active
-    await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Surah', { timeout: 5_000 })
-
-    // Mark cards are still present (groupBy alone does not filter the card list)
-    await expect(page.locator('.qa-review-card').first()).toBeVisible()
-
-    // --- Date (flat) grouping ---
-    await seg.locator('[data-group="flat"]').click()
-
-    // Date tab is now active
-    await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
-
-    // All 4 mark cards visible in flat list (groupBy does not filter)
-    await expect(page.locator('.qa-review-card').first()).toBeVisible()
-    const flatCount = await page.locator('.qa-review-card').count()
-    expect(flatCount).toBe(4)
-
-    // --- Back to Value grouping ---
-    await seg.locator('[data-group="tag"]').click()
-
-    // Value tab is now active
-    await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Value', { timeout: 5_000 })
-
-    // Cards still present
-    await expect(page.locator('.qa-review-card').first()).toBeVisible()
-    const tagViewCards = await page.locator('.qa-review-card').count()
-    expect(tagViewCards).toBeGreaterThanOrEqual(4)
-  })
+  // E2 groupBy segment-state ported to tests/unit/review/hub.test.ts (Phase 2
+  // bucket 5, 2026-04-26). The card-list-side-effect of groupBy stays e2e via
+  // the surah-grouping seeded-marks check below.
 
   test('E2: surah grouping — mark for 1:1 and 2:255 both visible after switching to Surah tab', async ({ page }) => {
     const seg = page.getByRole('tablist', { name: 'Group by' })
@@ -259,129 +228,24 @@ test.describe('Journey E: Review hub', () => {
   // E5. Layer switch + value chip filter + surah filter + clear
   // -------------------------------------------------------------------------
 
-  test('E5: value pool chips appear for threads layer; clicking a chip filters marks', async ({ page }) => {
-    // Switch to flat grouping for unambiguous card count
-    await page.evaluate(() => {
-      const btn = document.querySelector('[data-group="flat"]')
-      if (btn) { btn.click() }
-    })
-    await expect(page.getByRole('tablist', { name: 'Group by' }).locator('.qa-review-seg-item--on'))
-      .toHaveText('Date', { timeout: 5_000 })
+  // E5 value-chip toggle, surah-filter intersection (state-machine), filter-chip
+  // dismiss + Clear all ported to tests/unit/review/hub.test.ts (Phase 2 bucket
+  // 5, 2026-04-26). The card-count side-effect under each filter combination
+  // stays e2e via the seeded-marks integration tests below.
 
-    // Value chips for threads layer should be visible
-    const valueChips = page.locator('.qa-review-value-chip')
-    await expect(valueChips.first()).toBeVisible({ timeout: 5_000 })
-
-    // Click 'mercy' value chip
-    const mercyValueChip = valueChips.filter({ hasText: 'mercy' }).first()
-    await expect(mercyValueChip).toBeVisible()
-    await mercyValueChip.click()
-
-    // The chip should be active
-    await expect(mercyValueChip).toHaveClass(/qa-review-value-chip--on/, { timeout: 3_000 })
-
-    // Filter chip bar appears
-    const filterBar = page.locator('.qa-review-active-filters')
-    await expect(filterBar).toBeVisible({ timeout: 5_000 })
-
-    // Only marks tagged 'mercy' are shown: 1:1 and 2:255 → 2 cards
-    const cards = page.locator('.qa-review-card')
-    await expect(cards.first()).toBeVisible({ timeout: 5_000 })
-    await expect(cards).toHaveCount(2)
-
-    // Exact marks present
-    await expect(page.locator('[data-mark="1:1"]')).toBeVisible()
-    await expect(page.locator('[data-mark="2:255"]')).toBeVisible()
-
-    // Cards not tagged 'mercy' are absent
-    await expect(page.locator('[data-mark="3:190"]')).toHaveCount(0)
-    await expect(page.locator('[data-mark="112:1"]')).toHaveCount(0)
-  })
-
-  test('E5: add surah filter on top of value chip filter → intersection renders', async ({ page }) => {
-    // Switch to flat grouping first
+  test('E5: tap value + surah filter → intersection narrows card count to 1 (surface-level)', async ({ page }) => {
     const seg = page.getByRole('tablist', { name: 'Group by' })
     await seg.locator('[data-group="flat"]').click()
     await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
 
-    // Click mercy value chip
     const mercyChip = page.locator('.qa-review-value-chip').filter({ hasText: 'mercy' }).first()
     await expect(mercyChip).toBeVisible({ timeout: 5_000 })
     await mercyChip.click()
-    await expect(page.locator('.qa-review-active-filters')).toBeVisible({ timeout: 5_000 })
-
-    // Apply surah filter: surah 1 (verseKey prefix "1:")
     await page.locator('[data-control="surah"]').selectOption({ value: '1' })
-
-    // Two filter chips should be present now
-    const chips = page.locator('.qa-review-filter-chip')
-    await expect(chips).toHaveCount(2, { timeout: 5_000 })
-
-    // Clear all button appears
-    await expect(page.locator('.qa-review-clear-all-btn')).toBeVisible()
 
     // Intersection: mercy ∩ surah 1 = only 1:1
     await expect(page.locator('[data-mark="1:1"]')).toBeVisible({ timeout: 5_000 })
-    const cards = page.locator('.qa-review-card')
-    await expect(cards).toHaveCount(1)
-  })
-
-  test('E5: tap × on value filter chip → that filter clears; surah filter remains', async ({ page }) => {
-    // Switch to flat grouping
-    const seg = page.getByRole('tablist', { name: 'Group by' })
-    await seg.locator('[data-group="flat"]').click()
-    await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
-
-    // Apply value chip filter: mercy
-    const mercyChip = page.locator('.qa-review-value-chip').filter({ hasText: 'mercy' }).first()
-    await expect(mercyChip).toBeVisible({ timeout: 5_000 })
-    await mercyChip.click()
-    await expect(page.locator('.qa-review-active-filters')).toBeVisible({ timeout: 5_000 })
-
-    // Apply surah filter: surah 2
-    await page.locator('[data-control="surah"]').selectOption({ value: '2' })
-    await expect(page.locator('.qa-review-filter-chip')).toHaveCount(2, { timeout: 5_000 })
-
-    // Dismiss the mercy value filter chip (✕ button inside the chip)
-    const valueFilterChip = page.locator('.qa-review-filter-chip').first()
-    await expect(valueFilterChip).toBeVisible()
-    const dismissBtn = valueFilterChip.locator('button')
-    await dismissBtn.click()
-
-    // Only one chip remains (surah filter)
-    await expect(page.locator('.qa-review-filter-chip')).toHaveCount(1, { timeout: 5_000 })
-
-    // Surah 2 filter still active → only marks in surah 2 visible
-    await expect(page.locator('[data-mark="2:255"]')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('[data-mark="1:1"]')).toHaveCount(0)
-    await expect(page.locator('[data-mark="112:1"]')).toHaveCount(0)
-  })
-
-  test('E5: tap Clear all → both filters clear → all cards return', async ({ page }) => {
-    // Switch to flat grouping for predictable card count
-    const seg = page.getByRole('tablist', { name: 'Group by' })
-    await seg.locator('[data-group="flat"]').click()
-    await expect(seg.locator('.qa-review-seg-item--on')).toHaveText('Date', { timeout: 5_000 })
-
-    // Apply both filters
-    const faithChip = page.locator('.qa-review-value-chip').filter({ hasText: 'faith' }).first()
-    await expect(faithChip).toBeVisible({ timeout: 5_000 })
-    await faithChip.click()
-    await expect(page.locator('.qa-review-active-filters')).toBeVisible({ timeout: 5_000 })
-    await page.locator('[data-control="surah"]').selectOption({ value: '1' })
-    await expect(page.locator('.qa-review-filter-chip')).toHaveCount(2, { timeout: 5_000 })
-
-    // Tap Clear all
-    const clearAllBtn = page.locator('.qa-review-clear-all-btn')
-    await expect(clearAllBtn).toBeVisible()
-    await clearAllBtn.click()
-
-    // Filter bar disappears
-    await expect(page.locator('.qa-review-active-filters')).toHaveCount(0, { timeout: 5_000 })
-
-    // All 4 mark cards are back
-    await expect(page.locator('.qa-review-card').first()).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('.qa-review-card')).toHaveCount(4)
+    await expect(page.locator('.qa-review-card')).toHaveCount(1)
   })
 
   // -------------------------------------------------------------------------
