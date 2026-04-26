@@ -9,6 +9,7 @@
     arabic: string
     translation: string
     translationVisible: boolean
+    riwayah?: 'hafs' | 'warsh' | 'qaloon'
     setupLongPress?: (node: HTMLElement) => () => void
     onNumberTap?: (verseEl: HTMLElement) => void
   }
@@ -18,6 +19,7 @@
     arabic,
     translation,
     translationVisible,
+    riwayah = 'qaloon',
     setupLongPress,
     onNumberTap,
   }: Props = $props()
@@ -62,7 +64,7 @@
       </span>
     {/if}
   </div>
-  <div class="qa-verse-arabic" dir="rtl">{arabic}</div>
+  <div class="qa-verse-arabic" dir="rtl" data-riwayah={riwayah}>{arabic}</div>
   <div
     class="qa-verse-translation"
     class:qa-hide-translation={!translationVisible}
