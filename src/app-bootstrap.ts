@@ -28,6 +28,7 @@ import { tagSession } from './state/tag-session.svelte'
 import { registerEditor } from './marks/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './nav/nav-drawer-bridge'
+import { loadKfgqpcFontsProgrammatically } from './core/font-loader.ts'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -99,6 +100,12 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     for (const fam of ['KFGQPC Hafs', 'KFGQPC Warsh', 'KFGQPC Qaloon']) {
       void document.fonts.load(`16px "${fam}"`, 'ا').catch(() => { /* ignore — fallback chain handles it */ })
     }
+    // Belt-and-braces for iOS Safari: bypass CSS @font-face activation
+    // entirely by constructing the FontFace from the woff2 ArrayBuffer
+    // and adding to document.fonts. Survives every iOS-specific defect
+    // we have hit on the CSS path (combining marks not engaging GPOS,
+    // late paint with fallback, render-tree-side activation race).
+    loadKfgqpcFontsProgrammatically()
     // iOS Safari paints the reader DOM with a fallback font when verses
     // mount before KFGQPC swaps in, then doesn't re-shape RTL Arabic text
     // when font-display:swap brings in the real face — combining marks
