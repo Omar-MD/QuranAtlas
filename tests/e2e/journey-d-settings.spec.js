@@ -229,6 +229,40 @@ test.describe('Journey D: Settings & appearance', () => {
     })
   }
 
+  // D3-bg: <html> background matches <body> background under every theme so
+  // that mobile-landscape safe-area gutters do not leak the UA default white.
+  // <meta name="theme-color"> tracks --qa-surface-app so PWA chrome retints.
+  for (const theme of ['light', 'sepia', 'dark']) {
+    test(`D3-bg: ${theme} → html bg + theme-color meta match --qa-surface-app`, async ({ page }) => {
+      await openSettingsSheet(page)
+      await page.locator(`.qa-theme-swatch--${theme}`).click()
+      await expect(async () => {
+        const pref = await page.evaluate(() =>
+          document.documentElement.getAttribute('data-theme')
+        )
+        expect(pref).toBe(theme)
+      }).toPass({ timeout: 3_000 })
+
+      let snapshot
+      await expect(async () => {
+        snapshot = await page.evaluate(() => {
+          const root = document.documentElement
+          const surface = getComputedStyle(root).getPropertyValue('--qa-surface-app').trim()
+          return {
+            surface,
+            htmlBg: getComputedStyle(root).backgroundColor,
+            bodyBg: getComputedStyle(document.body).backgroundColor,
+            metaThemeColor: document.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? null,
+          }
+        })
+        expect(snapshot.htmlBg).toBe(snapshot.bodyBg)
+      }).toPass({ timeout: 3_000 })
+
+      expect(snapshot.htmlBg).not.toBe('rgba(0, 0, 0, 0)')
+      expect(snapshot.metaThemeColor).toBe(snapshot.surface)
+    })
+  }
+
   // -------------------------------------------------------------------------
   // D4. Clear all data
   // -------------------------------------------------------------------------

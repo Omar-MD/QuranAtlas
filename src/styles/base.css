@@ -86,6 +86,10 @@
     unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
   }
 
+  html {
+    background-color: var(--qa-surface-app);
+  }
+
   body {
     font-family: var(--qa-font-ui);
     background-color: var(--qa-surface-app);

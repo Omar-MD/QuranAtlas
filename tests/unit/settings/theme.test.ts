@@ -87,6 +87,31 @@ describe('settings/theme.ts', () => {
     unsub()
   })
 
+  it('syncs <meta name="theme-color"> to --qa-surface-app on every applyTheme', async () => {
+    document.querySelectorAll('meta[name="theme-color"]').forEach((node) => node.remove())
+    const surfaceByTheme = {
+      light: 'rgb(11, 22, 33)',
+      sepia: 'rgb(44, 55, 66)',
+      dark: 'rgb(77, 88, 99)',
+    }
+    const original = window.getComputedStyle
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+      const variant = document.documentElement.getAttribute('data-theme') ?? 'light'
+      const value = surfaceByTheme[variant as keyof typeof surfaceByTheme] ?? ''
+      const real = original.call(window, el)
+      return { ...real, getPropertyValue: (prop: string) => prop === '--qa-surface-app' ? value : real.getPropertyValue(prop) } as CSSStyleDeclaration
+    })
+
+    applyTheme('light')
+    expect(document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content).toBe(surfaceByTheme.light)
+
+    applyTheme('dark')
+    expect(document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content).toBe(surfaceByTheme.dark)
+
+    applyTheme('sepia')
+    expect(document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content).toBe(surfaceByTheme.sepia)
+  })
+
   it('returns the supported theme options as a new array', () => {
     const options = getThemeOptions()
 

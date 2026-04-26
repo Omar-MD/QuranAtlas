@@ -32,6 +32,21 @@ function resolveAuto(): string {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+function syncThemeColorMeta(): void {
+  if (typeof document === 'undefined') { return }
+  const surface = getComputedStyle(document.documentElement)
+    .getPropertyValue('--qa-surface-app')
+    .trim()
+  if (!surface) { return }
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.name = 'theme-color'
+    document.head.appendChild(meta)
+  }
+  meta.content = surface
+}
+
 export function applyTheme(theme: string): void {
   if (!THEME_OPTIONS.includes(theme)) {
     logger.warn('Invalid theme:', { theme })
@@ -44,6 +59,7 @@ export function applyTheme(theme: string): void {
   document.documentElement.classList.add(`theme-${variant}`)
   document.documentElement.setAttribute('data-theme', variant)
   document.documentElement.setAttribute('data-theme-pref', theme)
+  syncThemeColorMeta()
 
   if (theme === 'auto') {
     if (!mediaQuery && typeof window !== 'undefined' && window.matchMedia) {

@@ -25,6 +25,7 @@ import { setupTapGestures } from './marks/long-press'
 import { beginFast, openDeep } from './tag/session-bridge'
 import { tagSession } from './state/tag-session.svelte'
 import { registerEditor } from './marks/editor-bridge'
+import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -278,7 +279,10 @@ async function registerServiceWorker() {
   if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+        scope: '/',
+        // Bypass HTTP cache when fetching /sw.js so installed PWAs pick up
+        // new builds without waiting for the browser's 24h cache TTL.
+        updateViaCache: 'none'
       })
       _swReg = reg
 
@@ -301,6 +305,8 @@ async function registerServiceWorker() {
           }
         })
       })
+
+      startSwUpdatePolling(reg)
     } catch (error) {
       logger.error('SW registration failed:', {
         error,

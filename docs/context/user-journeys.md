@@ -199,6 +199,15 @@ From Settings sheet with Auto swatch selected.
 
 **Surfaces:** Settings sheet, all surfaces (theme applies globally).
 
+### B6-bg. Theme covers safe-area gutters + PWA chrome
+
+Implicit on every theme apply.
+
+1. `settings/theme.ts::applyTheme` swaps `<html data-theme>` and writes `<meta name="theme-color">` from the live `--qa-surface-app` value, so installed-PWA system chrome (Android Chrome toolbar, iOS standalone status bar fallback) retints with the theme instead of staying white.
+2. `styles/base.css` paints `<html>` with `var(--qa-surface-app)`. iOS landscape `viewport-fit=cover` exposes safe-area gutters around the notch — without an html bg they showed UA white/cream regardless of theme. Now they match the theme.
+
+**Surfaces:** all (cross-cutting). **Invariant:** `<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` value under every theme. **Regression guard:** `tests/e2e/journey-d-settings.spec.js` D3-bg (light / sepia / dark).
+
 ---
 
 ## C. Marking a verse
