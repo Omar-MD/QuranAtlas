@@ -6,7 +6,8 @@
   "description": "Distraction-free Quran reading PWA",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "pnpm build:dataset && vite build",
+    "build:dataset": "node scripts/build-riwayat.mjs",
     "preview": "vite preview --strictPort",
     "test": "vitest",
     "test:run": "vitest run",
