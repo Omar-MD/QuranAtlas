@@ -23,6 +23,7 @@ The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes 
 | Key | Value type | Writer | Purpose |
 |---|---|---|---|
 | `theme` | `'light' \| 'sepia' \| 'dark' \| 'auto'` | `settings/theme.ts` | Active theme. `auto` follows `prefers-color-scheme`. |
+| `riwayah` | `'hafs' \| 'warsh' \| 'qaloon'` | `settings/riwayah.ts` | Active Riwayah for reader text + font + line-height floor. Default `'qaloon'`. Sole writer. Cross-tab broadcast via `safety/sync.ts::broadcastRiwayahChange`. |
 | `fontSize` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/font-size.ts` | Reader font scale (sole writer). |
 | `lineSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader line-height step (Arabic + translation, ratio preserved). Sole writer. |
 | `wordSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader word-spacing step (Arabic + translation). Sole writer. |
@@ -262,6 +263,10 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 
 ---
 
+## Static datasets (read-only, not in IDB)
+
+- `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-riwayat.mjs` from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+
 ## Cross-cutting rules
 
 > **Invariant (formerly `CLAUDE.md` Rule 5) — one writer per store.** File references use basenames; grep for the basename, not a specific `.js`/`.ts`.
@@ -270,7 +275,7 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 > - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
 > - `meta` — written by `review/state` (sole writer for `meta['review']`).
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
-> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `currentPosition` (`reader/global-position`).
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `currentPosition` (`reader/global-position`).
 >
 > Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
 

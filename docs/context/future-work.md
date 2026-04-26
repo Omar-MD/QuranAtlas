@@ -65,6 +65,12 @@ Items discussed and rejected, recorded here so they're not re-litigated without 
 
 ---
 
+## Translation packs
+
+The KFGQPC dataset ships Arabic only. The translation toggle, picker, and onboarding screen 4 are all live in code but render an empty state (`provenance.translations[]` is `[]`). Adding translations means: (a) build a per-translation per-surah JSON pipeline under `public/dataset/translations/{id}/{NNN}.json`, (b) extend `provenance.json` `translations[]` with each pack's metadata, (c) wire `loadTranslationForSurah(translationId, surahNo)` in `src/data/dataset.ts` (currently a typed stub returning `null`), (d) hook the existing `Verse.svelte` translation block to render the loaded text. No UI churn — all surfaces are ready.
+
+---
+
 ## Infrastructure
 
 ### Visual regression — linux baselines

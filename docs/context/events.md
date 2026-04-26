@@ -35,6 +35,7 @@ Every `Events.*` constant has a corresponding entry in the `EventPayloads` map i
 | `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/Verse.svelte` (onMount) | `marks/indicator.ts` (initIndicators) | `{ verseKey, element }` |
 | `AMBIENT_SURFACE` | `ambient:surface` | `reader/Reader.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `{ reason }` |
 | `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `tag/TagSheet.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
+| `SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `settings/riwayah.ts::setRiwayah` (local switch); `safety/sync.ts::handleChannelMessage` (cross-tab fan-in via `applyRiwayah`) | `reader/Reader.svelte` (refetches active surah, restores `aya_no` anchor — clamps to last ayah on miss); `settings/reading-typography.ts::initReadingTypography` (re-clamps `--qa-arabic-line-height` to new Riwayah's floor) | `{ from: 'hafs' \| 'warsh' \| 'qaloon'; to: 'hafs' \| 'warsh' \| 'qaloon' }` |
 | `STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `data/offline.ts:58` | `core/quota-banner.svelte:79` | `{}` |
 
 ### Emitter-only (⚠ dead listener)

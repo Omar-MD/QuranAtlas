@@ -20,6 +20,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - `initIndicators` hook (from `marks/indicator.ts`) decorates rendered verses with mark indicators.
   - **Cross-surah continuation (2026-04-25):** Chrome-mobile-PTR-style pull-to-swap is the primary affordance — pulling past either edge of the scroller fills a circular progress arc (`PullToSwapIndicator.svelte`); release past full progress commits a single-surah swap with wrap 114↔1 (`surah-swap.ts::setupPullToSwap`). Native browser pull-to-refresh is suppressed via `overscroll-behavior-y: contain` on `#main-content`. Click fallback (post 2026-04-25 redesign): single-line italic arrow + surah title at top (`↑ <prev>`) and bottom (`<next> ↓`) — no border, ~22px tall — replaces the previous full-width "Continue to {surah}" buttons. Markup uses `.qa-continue-arrow` + `.qa-continue-title` spans inside `.qa-continue-prev`/`.qa-continue-next`; see `styles/surfaces/reader.css`. See user-journeys §B-Cross.
 - **IDB touch:** writes `settings.currentPosition` on scroll center-band crossings (sole writer via `reader/global-position.ts`); also overwritten on every surah load and swap.
+- **Riwayah:** each `.qa-verse-arabic` element carries `data-riwayah={activeRiwayah}`. CSS rules in `styles/surfaces/reader.css` keyed on `:root[data-riwayah="hafs"|"warsh"|"qaloon"]` set `--qa-font-arabic` and `--qa-arabic-line-height`. Sole text-source writer: `data/dataset.ts::getSurah` reads `settings['riwayah']` to resolve the per-surah URL (`public/dataset/riwayat/{riwayah}/{NNN}.json`).
 
 ## Review hub
 
@@ -78,7 +79,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 - **Route:** `#/settings` (stub — opens sheet over the previous surface, then replaces hash back)
 - **Entry:** `src/settings/Panel.svelte` (Svelte component, mounted persistently in App.svelte); opened imperatively via `settings/panel-bridge.ts::openSettingsSheet()`.
-- **Files:** `settings/Panel.svelte`, `settings/ClearDataConfirm.svelte`, `settings/panel-bridge.ts`, `settings/theme.ts`, `settings/font-size.ts`, `settings/reading-typography.ts`, `settings/night-mode.ts`, `settings/clear-data.ts`
+- **Files:** `settings/Panel.svelte`, `settings/ClearDataConfirm.svelte`, `settings/panel-bridge.ts`, `settings/theme.ts`, `settings/font-size.ts`, `settings/reading-typography.ts`, `settings/night-mode.ts`, `settings/riwayah.ts`, `settings/clear-data.ts`
 - **Purpose:** Bottom sheet. Theme swatches (Light/Sepia/Dark/Auto), Typography nav row → subview (font size + reading flow + reset), translation toggle + nested picker. Clear-data row removed 2026-04-25 — moved to About page footer. Inline font slider removed 2026-04-25 — folded into Typography subview.
 - **Key behaviors:**
   - Theme swatches call `setTheme(opt)` from `settings/theme.ts`, which writes `settings.theme` and swaps `data-theme` on `<html>`.
@@ -88,7 +89,8 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - `toggleTranslation()` exported from `panel-bridge.ts` for use by command-sheet and other callers.
 - **Subviews:** `'main' | 'translation-picker' | 'typography'`.
 - **Night mode (post 2026-04-25):** Toggle row in the Theme section drives `data-night-mode` on `<html>`; the persistent `.qa-night-shift` overlay (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, `mix-blend-mode: multiply`) raises its opacity in response. Composes over any theme. Also toggleable via the `n` global reader shortcut (`nav/CommandSheet.svelte`). Sole writer of `settings.nightMode`: `settings/night-mode.ts`.
-- **IDB touch:** `settings` store (theme, fontSize, translationVisible, translationId, lineSpacing, wordSpacing, readerMargin, verseSpacing, nightMode).
+- **Reading → Riwayah row:** three-swatch picker (Ḥafṣ / Warsh / Qālūn) above the translation toggle. Tap a swatch → `settings/riwayah.ts::setRiwayah` writes `settings['riwayah']`, emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab. Reader re-renders with the new text source, font, and line-height floor.
+- **IDB touch:** `settings` store (theme, fontSize, riwayah, translationVisible, translationId, lineSpacing, wordSpacing, readerMargin, verseSpacing, nightMode).
 
 ## Nav drawer
 
@@ -131,11 +133,12 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Route:** `#/onboarding`
 - **Entry:** `src/onboarding/Onboarding.svelte` (Svelte component, mounted via router `onRouteChange`); `isComplete()` / `markComplete()` exported from module script and called from `app-bootstrap.ts::handleLaunchRestore`
 - **Files:** `onboarding/Onboarding.svelte`, `onboarding/OnboardingScreen.svelte`, `onboarding/screens.ts`
-- **Purpose:** First-run 5-screen flow — Welcome → Theme → Translation → Shortcuts → Tags intro.
+- **Purpose:** First-run 6-screen flow — Welcome → Theme → Riwayah → Translation → Shortcuts → Tags intro.
 - **Key behaviors:**
   - Progress dots + Skip button from screen 2 onward.
   - Theme picker writes through `settings/theme.ts::setTheme` so the change applies live.
-  - Translation picker writes `settings.translationId` directly to IDB.
+  - **Screen 3 (Choose Riwayah):** three radio cards (Ḥafṣ / Warsh / Qālūn); default Qālūn. Continue or Skip both write `settings['riwayah']` via `settings/riwayah.ts::setRiwayah` (sole writer). `RIWAYAH_OPTIONS` and label/metadata are defined inline in `Onboarding.svelte`.
+  - Translation screen (screen 4) renders an empty state because no translation pack ships today (`provenance.translations[]` is `[]`). Picker sub-view hidden.
   - Completion writes `settings.onboardingComplete = true`; CTAs route to `#/s/1` or `#/surahs`.
   - Ambient dock + pill hidden on this route (`AmbientDock.svelte` guards `#/onboarding`; pill's non-reader-routes check naturally hides it).
   - Short-viewport guard (`@media (max-height: 500px)`): drops the 72vh min-height so landscape phones and short windows don't overflow; content top-aligns instead.

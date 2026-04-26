@@ -73,7 +73,8 @@ Defined in `package.json`:
 | Command | Action |
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
-| `pnpm run build` | Build production bundle into `dist/` (`vite build`) |
+| `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && vite build`) |
+| `pnpm run build:dataset` | Split KFGQPC riwayat JSONs into per-surah files + regenerate `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` (`node scripts/build-riwayat.mjs`) |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm test` | Run Vitest in watch mode |
 | `pnpm run test:run` | Run Vitest once (CI-style) |

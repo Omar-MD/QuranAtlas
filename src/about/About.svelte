@@ -14,9 +14,8 @@
   let installDone = $state(false)
 
   const credits = [
-    "Quran translation by Fadel Soliman (Bridges' Translation)",
-    'Arabic typography by KFGQPC (King Fahd Glyphic and Typographic Project)',
-    'Fonts: Amiri and Amiri Quran by Khaled Hosny (SIL Open Font License)',
+    "Qur'an text (Hafs, Warsh, Qaloon riwayat) and Uthmanic fonts: King Fahd Glorious Qur'an Printing Complex (مجمع الملك فهد لطباعة المصحف الشريف), Madinah",
+    'Latin & Arabic typography: Amiri and Amiri Quran by Khaled Hosny (SIL Open Font License)',
     'Built with Svelte, Vite, and Workbox',
   ]
 

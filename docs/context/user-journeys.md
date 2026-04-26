@@ -58,17 +58,17 @@ Full, in-app reference is the `?` cheatsheet (see G3). Summary:
 
 Launch with a clean IDB (or cleared data).
 
-Screens: 1) Welcome, 2) Theme, 3) Translation, 4) Shortcuts (new), 5) Tags intro + final CTAs.
+Screens: 1) Welcome, 2) Theme, 3) Riwayah, 4) Translation, 5) Shortcuts, 6) Tags intro + final CTAs.
 
 1. App boots → `handleLaunchRestore` checks `settings.onboardingComplete`, finds nothing → navigates to `#/onboarding`.
 2. Screen 1 (Welcome): wordmark, blessing, Begin CTA, progress dot 1 lit. No dock, no pill.
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears.
-4. Pick a theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Translation): the options are derived from the shipped dataset's `provenance.json`. Today the corpus bundles a single translation (Bridges' Translation by Fadel Soliman), so one option is listed and auto-selected; the lede reads "This translation ships offline with the app." If the dataset ever bundles multiple translations, the screen lists all of them with the first as default.
-5. Tap **Continue** → Screen 4 (Shortcuts). (When multiple translations are available, pick one first.)
-6. Screen 4 teaches core shortcuts: `/` search; `?` full cheatsheet; `j` / `k` / `]` / `[` verse/surah nav; `m` mark; `t` translation toggle; `+` / `-` / `0` font; `g h` continue reading; double-tap to mark. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 5 (Tags intro).
-7. Screen 5: 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, `#/s/1`, ambient chrome returns.
+4. Pick a theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Choose Riwayah): three radio cards — Ḥafṣ ʿan ʿĀṣim · Warsh ʿan Nāfiʿ · Qālūn ʿan Nāfiʿ. Default-selected: Qālūn. Tap **Continue** to persist and advance; tap **Skip** to leave the default unchanged and advance. Persists `settings['riwayah']` (sole writer `settings/riwayah.ts`).
+5. Tap **Continue** → Screen 4 (Translation): the options are derived from the shipped dataset's `provenance.json`. Today no translation pack ships (`provenance.translations[]` is empty), so the screen shows an empty state and the Continue button advances immediately. The scaffolding is ready to surface translation packs once they land.
+6. Tap **Continue** → Screen 5 (Shortcuts). Screen 5 teaches core shortcuts: `/` search; `?` full cheatsheet; `j` / `k` / `]` / `[` verse/surah nav; `m` mark; `t` translation toggle; `+` / `-` / `0` font; `g h` continue reading; double-tap to mark. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 6 (Tags intro).
+7. Screen 6: 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, `#/s/1`, ambient chrome returns.
 
-**Surfaces:** Onboarding → Reader. **Persistence:** `settings.theme`, `settings.translationId`, `settings.onboardingComplete`.
+**Surfaces:** Onboarding → Reader. **Persistence:** `settings.theme`, `settings.riwayah`, `settings.translationId`, `settings.onboardingComplete`.
 
 **Alt paths:**
 - Any screen from 2 onward, tap **Skip** → same completion write, land on `#/s/1`.
@@ -76,7 +76,7 @@ Screens: 1) Welcome, 2) Theme, 3) Translation, 4) Shortcuts (new), 5) Tags intro
 
 ### A4. Power up (onboarding shortcuts screen)
 
-Screen 4 of the onboarding flow (see A1).
+Screen 5 of the onboarding flow (see A1).
 
 1. Shown after translation selection; lists 9 curated rows: `/`, `?`, `j`/`k` verse nav, `]`/`[` surah nav, `m` mark, `t` translation, `+`/`-`/`0` font, `g h` continue reading, double-tap gesture. Lede reminds users they can press `?` anywhere for the full list.
 2. Desktop (≥1180px) shows rows in a 2-column grid; mobile stacks in single column.
@@ -96,6 +96,8 @@ Any route other than `#/onboarding`.
 ---
 
 ## B. Reader & ambient chrome
+
+> **Invariant (Riwayah + reader text source).** Reader text source = active Riwayah (from `settings['riwayah']`, default Qālūn). Sole writer of `settings['riwayah']` is `settings/riwayah.ts`. Font follows via `--qa-font-arabic` cascade (set by `:root[data-riwayah=...]` overrides). Line-height floor follows the active Riwayah (Hafs 1.76 / Warsh 1.73 / Qālūn 1.72). Each `.qa-verse-arabic` element carries `data-riwayah` mirroring the active Riwayah for CSS specificity.
 
 ### B0. Surah header composition
 
@@ -301,7 +303,7 @@ Post 2026-04-25 mobile-nav-redesign (was More sheet → Settings).
 
 1. **Mobile (<1180px):** tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet opens. Double-tap gear ≥400 ms cycles theme without opening the sheet.
 2. **Desktop (≥1180px):** navigate to `#/settings` (e.g. via `G`+`P` shortcut or command sheet "Preferences") → Settings sheet opens.
-3. Sheet content (post 2026-04-25): theme swatches, **Typography** nav row (opens subview — see D5), Reading section (translation toggle + picker link).
+3. Sheet content (post 2026-04-25): theme swatches, **Typography** nav row (opens subview — see D5), Reading section (Riwayah three-swatch picker + translation toggle + picker link). The Riwayah picker sits above the translation toggle; switching emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, and re-renders the reader with the new Riwayah's text + font + line-height floor.
 
 **Surfaces:** MarginHeader (mobile) or Router (desktop) → Settings sheet.
 
@@ -325,9 +327,8 @@ Inside Settings sheet, post 2026-04-25.
 
 Inside Settings sheet. Available translations are sourced from the dataset's `provenance.json` at render time — the picker never surfaces options that aren't actually present in the corpus.
 
-1. The **Show translation** row's subtitle shows the name of the currently-selected translation (e.g. "Bridges' Translation").
-2. When only one translation is bundled (today's dataset), the row body is non-interactive — there's no picker sub-view to open. `settings.translationId` is still auto-resolved to the bundled translation's id on first paint.
-3. When multiple translations are bundled, tapping the row body opens the Translation picker sub-view. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
+1. The **Show translation** row's subtitle shows the name of the currently-selected translation. Today no translation pack ships (`provenance.translations[]` is empty), so the row is non-interactive and the sub-view is not shown.
+2. When a translation pack ships, the row becomes interactive and tapping it opens the Translation picker sub-view. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
 4. Toggle the translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on the rune re-renders with the translation line hidden/shown.
 
 **Surfaces:** Settings sheet, Reader. **Persistence:** `settings.translationId`, `settings.translationVisible`.

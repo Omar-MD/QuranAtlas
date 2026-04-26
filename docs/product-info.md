@@ -16,7 +16,8 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 
 ### Reading experience
 
-- Continuous verse-interleaved layout. Arabic (Uthmani script via KFGQPC) on top of each verse, English translation (Bridges' by Fadel Soliman) underneath.
+- Continuous verse-interleaved layout. Arabic (Uthmani script, KFGQPC fonts) on top of each verse. English translation surface is scaffolded but no translation pack ships today — toggle is present in code, ready to surface packs once they land.
+- **Riwayah picker.** Three transmissions ship: Ḥafṣ ʿan ʿĀṣim, Warsh ʿan Nāfiʿ, Qālūn ʿan Nāfiʿ. Default Qālūn. Choose at first launch (onboarding screen 3) or change anytime in Settings → Reading. Each Riwayah uses its own KFGQPC font (Uthmanic script per the official Madinah Mushaf for that transmission) and its own line-height floor.
 - Translation toggle (on/off) — persists across sessions.
 - Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — and flips live when the OS changes.
 - Adjustable font size (slider in Settings, live preview); keyboard bindings (`⌘↑` / `⌘↓` / `0`) for quick changes.
@@ -45,14 +46,14 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 
 ### First-run onboarding
 
-- **Five-screen walkthrough** on first launch: Welcome → Theme pick → Translation pick → **Shortcuts primer** → Tags intro.
+- **Six-screen walkthrough** on first launch: Welcome → Theme pick → Riwayah pick → Translation pick → Shortcuts primer → Tags intro.
 - Progress dots; Skip available from screen 2 onward.
 - Completes to Al-Fatihah or the surah directory.
 
 ### Settings
 
-- Bottom sheet (opened from the dock's ⋯ More menu → Settings).
-- Theme swatches, font slider with live preview, translation toggle and picker, Clear-all-data link.
+- Bottom sheet (mobile: tap gear ⚙ in `MarginHeader`; desktop: `G`+`P` shortcut or command sheet "Preferences").
+- Theme swatches, Riwayah three-swatch picker, font slider with live preview, translation toggle (empty state today), Clear-all-data link.
 - Clear data wipes IDB and restarts onboarding — nothing leaves the device.
 
 ### Keyboard shortcuts
@@ -69,7 +70,7 @@ Designed for keyboard-first readers. Full reference via `?` from any non-input c
 - Wordmark + mission ("Read, reflect, remember.")
 - Qur'an 54:17 blessing in Arabic + translation.
 - 2×2 stat grid: Marks · Tags · Surahs · % Qur'an tagged.
-- Attribution (Bridges' translation, KFGQPC Arabic, Amiri + Amiri Quran fonts by Khaled Hosny, Vite, Workbox).
+- Attribution: Qur'an text (Hafs, Warsh, Qaloon riwayat) and Uthmanic fonts from King Fahd Glorious Qur'an Printing Complex (KFGQPC), Madinah; Amiri + Amiri Quran fonts by Khaled Hosny; Svelte, Vite, Workbox.
 - Install-app CTA (when the browser's install prompt is available) and the app version.
 
 ### Offline
@@ -95,7 +96,7 @@ Deliberately out of scope — not on the roadmap unless that changes:
 - Copy-verse-to-clipboard or social sharing.
 - Multi-device sync or accounts.
 - Community features, shared annotations, public libraries.
-- Multiple active translation *editions* — the translation picker derives its options from the shipped dataset's `provenance.json`. Today the dataset bundles one translation (Bridges') and the picker sub-view is hidden; the scaffolding is ready to surface additional translations once the corpus ships them.
+- Translations are not currently shipped — the toggle, picker, and onboarding screen 4 scaffolding remain in code, ready to surface translation packs once they land.
 - Footnotes or tafsir.
 - Export / import of marks.
 
