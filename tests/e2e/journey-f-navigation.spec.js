@@ -435,18 +435,13 @@ test.describe('Journey F: mobile drawer', () => {
     await expect(page.locator('.qa-nav-drawer-wordmark')).toBeVisible()
   })
 
-  test('F-mobile-2: switch to Review tab → Hub row + 12 layer rows', async ({ page }) => {
+  // F-mobile-2 Review tab structure ported to tests/unit/nav/drawer.test.ts.
+  // Layer-tap navigation (router integration) stays e2e below as part of F-mobile flows.
+  test('F-mobile-2: tapping layer row routes to #/review?layer=<name>', async ({ page }) => {
     await page.goto('/#/s/1')
     await waitForReader(page)
-
     await page.locator('.qa-mh-hamburger').click()
     await page.locator('.qa-nav-drawer-tab', { hasText: 'Review' }).click()
-
-    await expect(page.locator('.qa-nav-drawer-hub-row')).toBeVisible()
-    const layerRows = page.locator('.qa-nav-drawer-layer-row')
-    await expect(layerRows).toHaveCount(12)
-
-    // Tap "people" row → routes to #/review?layer=people
     await page.locator('.qa-nav-drawer-layer-row[data-layer="people"]').click()
     await expect(page).toHaveURL(/#\/review\?layer=people$/)
   })
@@ -480,72 +475,8 @@ test.describe('Journey F: mobile drawer', () => {
     await expect(page.locator('.qa-nav-drawer')).not.toBeVisible()
   })
 
-  test('F-mobile-6: search filters in-drawer surah list', async ({ page }) => {
-    await page.goto('/#/s/1')
-    await waitForReader(page)
-
-    await page.locator('.qa-mh-hamburger').click()
-    const search = page.locator('.qa-nav-drawer-search-input')
-    await search.fill('mulk')
-
-    const rows = page.locator('.qa-nav-drawer-surah-row')
-    await expect(rows.filter({ hasText: 'Al-Mulk' })).toHaveCount(1)
-  })
-
-  test('F-mobile-7: Bookmarked filter narrows list to bookmarked surahs', async ({ page }) => {
-    await seedMarks(page, [{ verseKey: '67:1', tags: ['mercy'], note: '' }])
-    await page.goto('/#/s/1')
-    await waitForReader(page)
-
-    await page.locator('.qa-mh-hamburger').click()
-    await page.locator('.qa-nav-drawer-pill', { hasText: 'Bookmarked' }).click()
-    const rows = page.locator('.qa-nav-drawer-surah-row')
-    await expect(rows).toHaveCount(1)
-    await expect(rows.first()).toContainText('Al-Mulk')
-  })
-
-  test('F-mobile-8: typing 2:255 does NOT auto-navigate; Enter commits the jump', async ({ page }) => {
-    // Regression: drawer search used to call NAVIGATION_NAVIGATE on every
-    // input event whenever the buffer matched /^\d+:\d+$/, so the partial
-    // "2:2" of someone typing "2:255" fired immediately and landed the user
-    // at 2:2. Fix: navigate only on Enter / row tap.
-    await page.goto('/#/s/1')
-    await waitForReader(page)
-
-    await page.locator('.qa-mh-hamburger').click()
-    const search = page.locator('.qa-nav-drawer-search-input')
-    await search.pressSequentially('2:255', { delay: 30 })
-
-    // Drawer should still be open; URL still on /#/s/1.
-    await expect(page.locator('.qa-nav-drawer')).toBeVisible()
-    await expect(page).toHaveURL(/#\/s\/1/)
-
-    // Hint should explicitly mention pressing Enter for the verse jump.
-    await expect(page.locator('.qa-nav-drawer-search-hint')).toContainText(/Enter/)
-    // Visible row is the candidate surah only.
-    const rows = page.locator('.qa-nav-drawer-surah-row')
-    await expect(rows).toHaveCount(1)
-    await expect(rows.first()).toHaveAttribute('data-surah', '2')
-
-    // Enter commits the jump → navigate to #/s/2/255.
-    await search.press('Enter')
-    await expect(page).toHaveURL(/#\/s\/2\/255/, { timeout: 3_000 })
-  })
-
-  test('F-mobile-9: number 255 lists only surahs with at least 255 verses', async ({ page }) => {
-    // Regression: typing a number out of the surah-index range (115–286) used
-    // to leave the list unfiltered (full 114-row directory). Now those values
-    // filter the list to surahs whose verseCount meets the threshold — only
-    // Al-Baqarah (286) for 255.
-    await page.goto('/#/s/1')
-    await waitForReader(page)
-
-    await page.locator('.qa-mh-hamburger').click()
-    await page.locator('.qa-nav-drawer-search-input').fill('255')
-
-    const rows = page.locator('.qa-nav-drawer-surah-row')
-    await expect(rows).toHaveCount(1)
-    await expect(rows.first()).toHaveAttribute('data-surah', '2')
-    await expect(page.locator('.qa-nav-drawer-search-hint')).toContainText(/255 verses/)
-  })
+  // F-mobile-6 / 7 / 8 / 9 (search free-text filter, Bookmarked filter, ref-jump
+  // hint + Enter commit, verseNum filter) ported to tests/unit/nav/drawer.test.ts
+  // (Phase 2 bucket 3, 2026-04-26). Real router-navigation legs covered by the
+  // F-mobile-2 layer-tap test above.
 })
