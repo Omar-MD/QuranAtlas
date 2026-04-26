@@ -116,74 +116,64 @@ test.describe('Service Worker integration @offline', () => {
     expect(purgeResult).toEqual({ notified: true, cleared: true })
   })
 
-  test('SKIP_WAITING activates a waiting service worker @offline', async ({ page }) => {
+  test('a new SW auto-activates without waiting (skipWaiting in install) @offline', async ({ page }) => {
+    // Since 51289 (PR #51), src/sw.js calls self.skipWaiting() unconditionally
+    // in the install handler. The new SW must therefore transition installing
+    // → activating → activated without ever entering the `waiting` state, and
+    // the page's controller must change to the new script URL automatically
+    // — no SKIP_WAITING message, no UpdateBanner prompt. This is required by
+    // the iOS PWA stale-precache fix (WebKit #199110) and is the single
+    // source of truth for SW activation timing.
     await openApp(page)
     await waitForActiveController(page)
 
-    const skipWaitingResult = await page.evaluate(async ({ timeoutMs }) => {
+    const result = await page.evaluate(async ({ timeoutMs }) => {
       const controller = navigator.serviceWorker.controller
       if (!controller) {
-        return { hadWaiting: false, controlled: false, switched: false, controllerScriptUrl: null }
+        return { autoActivated: false, controllerScriptUrl: null, sawWaiting: false }
       }
 
       const originalScriptUrl = controller.scriptURL
       const nextScriptUrl = `/sw.js?task15-skip-waiting=${Date.now()}`
-      const registration = await navigator.serviceWorker.register(nextScriptUrl, {
-        scope: '/',
-      })
 
-      const waitingWorker = await new Promise((resolve) => {
-        const startedAt = Date.now()
-
-        const checkWaitingWorker = () => {
-          if (registration.waiting) {
-            resolve(registration.waiting)
-            return
-          }
-
-          if (registration.installing?.state === 'redundant' || Date.now() - startedAt >= timeoutMs) {
-            resolve(null)
-            return
-          }
-
-          setTimeout(checkWaitingWorker, 50)
-        }
-
-        checkWaitingWorker()
-      })
-
-      if (!waitingWorker) {
-        return {
-          hadWaiting: false,
-          controlled: !!navigator.serviceWorker.controller,
-          switched: false,
-          controllerScriptUrl: navigator.serviceWorker.controller?.scriptURL ?? null,
-        }
-      }
-
-      const controllerChanged = await new Promise((resolve) => {
+      // Race controllerchange against a poll that detects the (forbidden)
+      // `waiting` state. With unconditional skipWaiting, controllerchange
+      // wins; if the SW ever sits in `waiting`, that flag flips and the
+      // assertion fails — locking in the contract.
+      const controllerChanged = new Promise((resolve) => {
         const timer = setTimeout(() => resolve(false), timeoutMs)
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           clearTimeout(timer)
           resolve(true)
         }, { once: true })
-
-        waitingWorker.postMessage({ type: 'SKIP_WAITING' })
       })
 
+      const registration = await navigator.serviceWorker.register(nextScriptUrl, { scope: '/' })
+
+      let sawWaiting = false
+      const waitingWatch = (async () => {
+        const startedAt = Date.now()
+        while (Date.now() - startedAt < timeoutMs) {
+          if (registration.waiting) { sawWaiting = true; return }
+          if (navigator.serviceWorker.controller?.scriptURL?.includes('task15-skip-waiting=')) { return }
+          await new Promise(r => setTimeout(r, 25))
+        }
+      })()
+
+      const switched = await controllerChanged
+      await waitingWatch
       await navigator.serviceWorker.ready
 
       return {
-        hadWaiting: true,
-        controlled: !!navigator.serviceWorker.controller,
-        switched: controllerChanged && navigator.serviceWorker.controller?.scriptURL !== originalScriptUrl,
+        autoActivated: switched && navigator.serviceWorker.controller?.scriptURL !== originalScriptUrl,
         controllerScriptUrl: navigator.serviceWorker.controller?.scriptURL ?? null,
+        sawWaiting,
       }
     }, {
       timeoutMs: MESSAGE_TIMEOUT_MS,
     })
 
-    expect(skipWaitingResult).toMatchObject({ hadWaiting: true, controlled: true, switched: true })
-    expect(skipWaitingResult.controllerScriptUrl).toContain('task15-skip-waiting=')
+    expect(result).toMatchObject({ autoActivated: true, sawWaiting: false })
+    expect(result.controllerScriptUrl).toContain('task15-skip-waiting=')
   })
 })
