@@ -3,6 +3,7 @@
  * Manages check, download, verify, and apply lifecycle.
  */
 
+import { CACHE_DATASET } from '../core/constants.js'
 import { fetchManifest } from './manifest-fetcher.js'
 import { verify } from './sha256-verifier.js'
 import { stageFile, getStagedResponse, deleteStaging, copyToLive } from './staging-cache.js'
@@ -145,7 +146,7 @@ export async function checkForUpdate() {
 
     await setState({ status: 'downloading', version: targetVersion, progress: 0 })
 
-    const liveCache = await caches.open('quran-dataset-v1')
+    const liveCache = await caches.open(CACHE_DATASET)
 
     let downloaded = 0
     for (const file of filesToDownload) {

@@ -3,8 +3,10 @@
  * Isolates in-progress downloads from the live dataset cache.
  */
 
+import { CACHE_DATASET } from '../core/constants.js'
+
 export const STAGING_CACHE = 'quran-dataset-staging'
-const LIVE_CACHE = 'quran-dataset-v1'
+const LIVE_CACHE = CACHE_DATASET
 
 /**
  * Stage a file into the staging cache.

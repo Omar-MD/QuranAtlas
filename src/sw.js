@@ -28,8 +28,8 @@ import {
 precacheAndRoute(self.__WB_MANIFEST || [])
 
 // Cache dataset files with NetworkFirst so the reader works offline after a
-// single online visit.  Entries are stored in the same 'quran-dataset-v1'
-// cache that data/dataset.js falls back to, so no extra caches are created.
+// single online visit.  Entries are stored in CACHE_DATASET
+// so no extra caches are created.
 //
 // NOTE: vite-plugin-pwa's `workbox.runtimeCaching` option is silently ignored
 // when using the 'injectManifest' strategy — routes must be registered here.

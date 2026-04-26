@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { CACHE_DATASET } from '../../../src/core/constants.js'
 
 // Mock Cache API with in-memory store
 let caches_store = new Map()
@@ -71,7 +72,7 @@ describe('staging-cache.js', () => {
 
     await copyToLive()
 
-    const liveCache = await caches.open('quran-dataset-v1')
+    const liveCache = await caches.open(CACHE_DATASET)
     const result = await liveCache.match('/dataset/surah-1.json')
     expect(result).toBeDefined()
   })
