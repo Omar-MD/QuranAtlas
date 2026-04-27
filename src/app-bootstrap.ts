@@ -5,7 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Imports from JS modules — types will be added in a later migration task
-import { openDB, get, getMostRecentPosition } from './core/db.js'
+import { openDB, get, LAYER_NAMES } from './core/db.js'
+import { loadGlobalPosition } from './reader/global-position'
 import * as router from './core/router.js'
 import { emit, on } from './core/events.js'
 import { Events } from './core/constants.js'
@@ -14,16 +15,43 @@ import { init as initSafetySync, suppressNextVersionChange } from './safety/sync
 import { initInstallListener } from './about/pwa-install'
 import { initTheme } from './settings/theme.ts'
 import { initFontSize } from './settings/font-size.ts'
+import { initRiwayah } from './settings/riwayah.ts'
+import { initReadingTypography } from './settings/reading-typography.ts'
+import { initNightMode } from './settings/night-mode.ts'
+import { initSurahHeaderHidden } from './settings/surah-header-visibility.ts'
 import { openSettingsSheet } from './settings/panel-bridge.ts'
 import { initReaderActions } from './nav/reader-actions.js'
 import { initIndicators } from './marks/indicator'
-import { openEditor } from './marks/editor-bridge'
-import { setupLongPress as setupLongPressAction } from './marks/long-press'
+import { setupTapGestures } from './marks/long-press'
+import { beginFast, openDeep } from './tag/session-bridge'
+import { tagSession } from './state/tag-session.svelte'
+import { registerEditor } from './marks/editor-bridge'
+import { startSwUpdatePolling } from './core/sw-update-poll.ts'
+import { openNavDrawer } from './nav/nav-drawer-bridge'
+import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
 
-// Wrap setupLongPress to bind openEditor so the reader hook receives the
-// correct signature: setupLongPress(container) → cleanup.
+// Bind tap gestures to the reader container:
+//   short-tap   → only while fast-tag mode is open: switch the active verse
+//                 being tagged. Does NOT start a new session from an idle tap.
+//   double-tap  → open the fast-tag inline panel (replaces long-press since
+//                 2026-04-25 — long-press is reserved for OS-native gestures
+//                 like text selection and the iOS callout).
+// Deep editor reached only via ⛶ in VerseTagPanel + programmatic bridges.
 function setupLongPress(container: HTMLElement): () => void {
-  return setupLongPressAction(container, openEditor)
+  return setupTapGestures(container, {
+    onShort: (vk) => {
+      if (tagSession.quickbarOpen) { void beginFast(vk) }
+    },
+    onDouble: (vk) => {
+      // Open fast-tag, or switch the active verse if another is already in
+      // session. The toggle-to-exit behavior of the old long-press contract
+      // doesn't translate to double-tap: a tap-then-double-tap on a *new*
+      // verse already calls onShort first (which switches the active verse),
+      // so a "same verse → exit" rule would fire spuriously. Mobile exits
+      // via the explicit ✕ in VerseTagPanel.
+      void beginFast(vk)
+    },
+  })
 }
 
 /** Module-level cleanups array — drained at the top of each initBootstrap call and on error. */
@@ -47,6 +75,69 @@ export async function initBootstrap(): Promise<Array<() => void>> {
 
   performance.mark('app:start')
 
+  // Build banner — visible in devtools so the active build is unambiguous
+  // even when the About page isn't open. Mirrors the version shown there.
+  console.info(
+    `%cQuranAtlas v${__APP_VERSION__} · ${__BUILD_SHA__}`,
+    'color:#b08040;font-weight:600',
+    `(built ${__BUILD_TIME__})`
+  )
+
+  // Route `openEditor` calls (long-press, command-sheet, review) to the
+  // TagSheet deep path. TagSheet subscribes to tagSession.sheetOpen.
+  registerEditor((vk) => { void openDeep(vk) })
+
+  // Programmatic font kickoff (iOS WebKit defense-in-depth — Apple Dev Forum
+  // 671608). The hidden divs in index.html cover the render-tree-side route;
+  // the CSS Font Loading API call below covers the script route. Together
+  // they survive iOS WebKit defects that skip one or the other (off-viewport
+  // paint elision, dynamic-only-use deferral). Fire-and-forget — no await,
+  // since this just primes the network fetch and registers the family;
+  // failure to load is tolerable because @font-face will still be tried when
+  // the reader actually mounts. Guard against environments without the
+  // Font Loading API (jsdom in unit tests).
+  if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
+    void document.fonts.load('16px "Amiri Quran"', 'ا').catch(() => { /* ignore — fallback chain handles it */ })
+    // Belt-and-braces for iOS Safari: bypass CSS @font-face activation
+    // entirely by constructing the FontFace from the woff2 ArrayBuffer
+    // and adding to document.fonts. Survives every iOS-specific defect
+    // we have hit on the CSS path (combining marks not engaging GPOS,
+    // late paint with fallback, render-tree-side activation race).
+    loadArabicQuranFontProgrammatically()
+    // iOS Safari paints the reader DOM with a fallback font when verses
+    // mount before Amiri Quran swaps in, then doesn't re-shape RTL Arabic
+    // text when font-display:swap brings in the real face — combining
+    // marks (sukun, dagger alif, small high seen) collapse to base
+    // position. Force a re-paint once fonts are ready AND each time the
+    // reader mounts new verses (router navigation, riwayah switch).
+    // Toggling a no-op transform invalidates the layout cache + re-runs
+    // glyph shaping with the now-loaded Amiri Quran font.
+    const reshape = (root: ParentNode = document) => {
+      const verses = root.querySelectorAll('.qa-verse-arabic')
+      for (const el of verses) {
+        const v = el as HTMLElement
+        v.style.transform = 'translateZ(0)'
+        void v.offsetHeight
+        v.style.transform = ''
+      }
+    }
+    let fontsAreReady = false
+    void document.fonts.ready.then(() => { fontsAreReady = true; reshape() }).catch(() => { /* ignore */ })
+    // Observe #main-content for new verse subtrees so post-mount renders
+    // also get the kick. Cheap — only fires when the router replaces the
+    // reader subtree, not on tashkeel toggles or font-size slider.
+    const observer = new MutationObserver(() => { if (fontsAreReady) reshape() })
+    const startObserve = () => {
+      const main = document.getElementById('main-content')
+      if (main) observer.observe(main, { childList: true, subtree: true })
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startObserve, { once: true })
+    } else {
+      startObserve()
+    }
+  }
+
   try {
     // Open database (creates stores if first run)
     await openDB()
@@ -64,15 +155,21 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // Apply saved theme + font size before router dispatches first route
     await initTheme()
     await initFontSize()
+    await initRiwayah()
+    await initReadingTypography()
+    await initNightMode()
+    await initSurahHeaderHidden()
 
-    // Expose dev/E2E escape-hatches — guarded so Vite tree-shakes them in prod.
-    if (import.meta.env.DEV) {
-      // Expose version-change suppression so test clearAllData can prevent the
-      // sync-banner overlay from blocking pointer events (Bug-2).  Must be
-      // exposed AFTER initSafetySync above so the suppress flag is consumed
-      // by the handler that's now guaranteed to be listening.
-      ;(globalThis as unknown as Record<string, unknown>).__qaSuppressNextVersionChange = suppressNextVersionChange
-    }
+    // Expose version-change suppression so E2E clearAllData can prevent the
+    // sync-banner overlay from blocking pointer events (Bug-2). Exposed in
+    // both DEV and PROD because the @offline Playwright project runs against
+    // a production preview build (vite preview); gating on import.meta.env.DEV
+    // would tree-shake the hatch and hang the fixture waiting for it. Safe to
+    // ship — the function only suppresses a single sync banner; nothing in
+    // production user flows invokes the global.
+    // Must be exposed AFTER initSafetySync above so the suppress flag is
+    // consumed by the handler that's now guaranteed to be listening.
+    ;(globalThis as unknown as Record<string, unknown>).__qaSuppressNextVersionChange = suppressNextVersionChange
 
     // Listen for launch restore
     pushCleanup(bootCleanups, on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
@@ -101,8 +198,30 @@ export async function initBootstrap(): Promise<Array<() => void>> {
       },
     }))
     router.register('#/about', async () => (await import('./about/About.svelte')).default)
-    router.register('#/t/:tag', async () => (await import('./review/Hub.svelte')).default)
-    router.register('#/surahs', async () => (await import('./surahs/SurahList.svelte')).default)
+    // FVR: #/<layer>/:value — one route per layer (replaces legacy #/t/:tag)
+    for (const layerName of LAYER_NAMES) {
+      router.register(
+        `#/${layerName}/:value`,
+        async () => (await import('./review/Hub.svelte')).default,
+        { layer: layerName },
+      )
+    }
+    router.register('#/surahs', async () => {
+      const isMobile = window.matchMedia('(max-width: 1179px)').matches
+      if (isMobile) {
+        // Redirect: replace hash with last surface (or Fatihah default), open the
+        // drawer on Surahs tab. The replaceState avoids a back-stack entry that
+        // would loop the user through #/surahs again on Back.
+        const lastRec = await get('settings', 'lastSurface').catch(() => undefined)
+        const last = (typeof lastRec?.value === 'string' && lastRec.value && lastRec.value !== '#/surahs')
+          ? lastRec.value
+          : '#/s/1'
+        history.replaceState(null, '', last)
+        queueMicrotask(() => { openNavDrawer('surahs') })
+        return (await import('./nav/EmptyRoute.svelte')).default
+      }
+      return (await import('./surahs/SurahList.svelte')).default
+    })
     router.register('#/onboarding', async () => (await import('./onboarding/Onboarding.svelte')).default)
 
     // Initialize router AFTER routes are registered so first dispatch finds them
@@ -110,7 +229,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     performance.mark('router:resolve')
     performance.measure('app:router-init', 'db:open', 'router:resolve')
 
-    // Settings panel, CommandSheet, AmbientDock, AmbientPill, MoreSheet are all
+    // Settings panel, CommandSheet, AmbientDock, AmbientPill, NavDrawer are all
     // now mounted as components in App.svelte — no init calls needed here.
     pushCleanup(bootCleanups, await initReaderActions())
 
@@ -189,9 +308,9 @@ async function handleLaunchRestore() {
     router.navigate(lastSurfaceVal, { replace: true })
     return
   }
-  const position = await getMostRecentPosition()
+  const position = await loadGlobalPosition()
   if (position) {
-    logger.info('Session restore: most recent position', { surah: position.surah, verse: position.verse })
+    logger.info('Session restore: global position', { surah: position.surah, verse: position.verse })
     router.navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
   } else {
     logger.info('Session restore: default surah 1')
@@ -202,13 +321,44 @@ async function handleLaunchRestore() {
 /**
  * Register the service worker.
  * Skipped in dev mode — SW is only meaningful in production builds.
+ *
+ * Detects when a new SW version is waiting (rolled-out new release) and
+ * emits APP_UPDATE_AVAILABLE so the UpdateBanner can prompt the user.
  */
+let _swReg: ServiceWorkerRegistration | null = null
+
 async function registerServiceWorker() {
   if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     try {
-      await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+      const reg = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        // Bypass HTTP cache when fetching /sw.js so installed PWAs pick up
+        // new builds without waiting for the browser's 24h cache TTL.
+        updateViaCache: 'none'
       })
+      _swReg = reg
+
+      // If a new SW is already waiting at register time (e.g. user opens a
+      // new tab while a previous tab installed the new version), surface
+      // immediately.
+      if (reg.waiting && navigator.serviceWorker.controller) {
+        emit(Events.APP_UPDATE_AVAILABLE, {})
+      }
+
+      // New version found while this tab is open: wait for the installing
+      // SW to reach 'installed' state with an existing controller (= the
+      // new build is fully ready, just waiting to activate).
+      reg.addEventListener('updatefound', () => {
+        const installing = reg.installing
+        if (!installing) { return }
+        installing.addEventListener('statechange', () => {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            emit(Events.APP_UPDATE_AVAILABLE, {})
+          }
+        })
+      })
+
+      startSwUpdatePolling(reg)
     } catch (error) {
       logger.error('SW registration failed:', {
         error,
@@ -217,6 +367,26 @@ async function registerServiceWorker() {
       showOfflineBanner()
     }
   }
+}
+
+/**
+ * User-initiated app update: tell the waiting SW to activate, then reload
+ * once it takes control. Called from UpdateBanner.
+ */
+export async function applyAppUpdate(): Promise<void> {
+  const reg = _swReg ?? (await navigator.serviceWorker.getRegistration())
+  if (!reg?.waiting) {
+    // No waiting SW (already activated, or banner stale) — just reload.
+    location.reload()
+    return
+  }
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) { return }
+    reloaded = true
+    location.reload()
+  })
+  reg.waiting.postMessage({ type: 'SKIP_WAITING' })
 }
 
 /**
@@ -233,7 +403,7 @@ function showOfflineBanner() {
   banner.setAttribute('aria-live', 'assertive')
   banner.style.cssText = [
     'position:fixed', 'bottom:0', 'left:0', 'right:0',
-    'background:var(--qa-color-error,#dc2626)', 'color:#fff',
+    'background:var(--qa-text-error,#dc2626)', 'color:#fff',
     'text-align:center', 'padding:0.75rem 1rem',
     'font-size:0.875rem', 'z-index:9999',
   ].join(';')

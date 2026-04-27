@@ -1,0 +1,44 @@
+/* ==========================================================================
+   QuranAtlas Design System — Entry Point
+
+   Layer order (declared once, consumed everywhere):
+     reset       — box-sizing, margin/padding zero-out
+     tokens      — :root primitive + semantic custom properties
+     base        — html/body/a/::selection/focus-visible/scrollbar defaults
+     animations  — all @keyframes (globally named qa-*)
+     utilities   — a11y helpers (.qa-visually-hidden, .qa-skip-link)
+     surfaces    — per-surface component CSS
+     overrides   — escape hatch; empty by default; justify each entry
+
+   Rules inside layers win by layer order, not source order.
+   Rules outside any layer beat every layered rule — stylelint forbids them.
+
+   See docs/superpowers/specs/2026-04-22-css-token-refactor-design.md
+   ========================================================================== */
+
+@layer reset, tokens, base, animations, utilities, surfaces, overrides;
+
+@import url('./reset.css');
+@import url('./tokens/primitives.css');
+@import url('./tokens/motion.css');
+@import url('./tokens/semantic.css');
+@import url('./base.css');
+@import url('./animations.css');
+@import url('./utilities.css');
+@import url('./surfaces/quota-banner.css');
+@import url('./surfaces/update-banner.css');
+@import url('./surfaces/modal.css');
+@import url('./surfaces/sheet.css');
+@import url('./surfaces/app-shell.css');
+@import url('./surfaces/about.css');
+@import url('./surfaces/onboarding.css');
+@import url('./surfaces/surahs.css');
+@import url('./surfaces/nav.css');
+@import url('./surfaces/reader.css');
+@import url('./surfaces/reading-typography.css');
+@import url('./surfaces/tag.css');
+@import url('./surfaces/marks.css');
+@import url('./surfaces/review.css');
+@import url('./surfaces/settings.css');
+@import url('./surfaces/night-shift.css');
+@import url('./surfaces/toast.css');

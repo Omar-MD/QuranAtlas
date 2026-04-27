@@ -3,12 +3,13 @@
  * Manages check, download, verify, and apply lifecycle.
  */
 
+import { CACHE_DATASET } from '../core/constants.js'
 import { fetchManifest } from './manifest-fetcher.js'
 import { verify } from './sha256-verifier.js'
 import { stageFile, getStagedResponse, deleteStaging, copyToLive } from './staging-cache.js'
 
 const DB_NAME = 'quran-atlas'
-const DB_VERSION = 1
+const DB_VERSION = 4
 const DATASET_META_ID = 'current'
 
 /** Session-scoped cached IDB connection. Cleared on versionchange. */
@@ -130,7 +131,7 @@ export async function checkForUpdate() {
 
     const isMajor = parseMajor(manifest.packageVersion) > parseMajor(meta.version)
     const targetVersion = manifest.packageVersion
-    // manifest.files is { "surah/001.json": "sha256hex", ... } (build-dataset.js format)
+    // manifest.files is { "riwayat/hafs/001.json": "sha256hex", ... } (build-riwayat.mjs format)
     const filesToDownload = manifest.files && typeof manifest.files === 'object' && !Array.isArray(manifest.files)
       ? Object.entries(manifest.files).map(([filename, sha256]) => ({
           url: `/dataset/${filename}`,
@@ -145,7 +146,7 @@ export async function checkForUpdate() {
 
     await setState({ status: 'downloading', version: targetVersion, progress: 0 })
 
-    const liveCache = await caches.open('quran-dataset-v1')
+    const liveCache = await caches.open(CACHE_DATASET)
 
     let downloaded = 0
     for (const file of filesToDownload) {

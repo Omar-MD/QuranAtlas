@@ -6,22 +6,26 @@
   "description": "Distraction-free Quran reading PWA",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "pnpm build:dataset && vite build",
+    "build:dataset": "node scripts/build-riwayat.mjs",
     "preview": "vite preview --strictPort",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:sw": "PLAYWRIGHT_USE_PREVIEW=1 playwright test tests/e2e/sw-integration.spec.js",
+    "test:e2e:visual": "playwright test --project=visual",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
+    "lint:css": "stylelint 'src/styles/**/*.css'",
+    "check:styles": "node scripts/check-theme-parity.mjs && node scripts/check-token-usage.mjs && node scripts/check-at-layer.mjs && node scripts/check-no-svelte-style.mjs",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check-chunks": "node scripts/check-chunks.js",
     "check-no-feature-state": "node scripts/check-no-feature-state.js",
     "lighthouse": "pnpm run build && lhci autorun --config=.lighthouserc.cjs",
     "clean": "rm -rf dist test-output",
     "mcp:cleanup": "rm -rf test-output",
-    "validate": "pnpm run lint && pnpm run check && pnpm run test:run && pnpm run build && pnpm run check-chunks"
+    "validate": "pnpm run lint && pnpm run lint:css && pnpm run check:styles && pnpm run check && pnpm run test:run && pnpm run build && pnpm run check-chunks"
   },
   "keywords": [],
   "author": "",
@@ -30,7 +34,10 @@
   "pnpm": {
     "overrides": {
       "serialize-javascript": "^7.0.3",
-      "basic-ftp": "^5.3.0"
+      "basic-ftp": "^5.3.0",
+      "tmp": "^0.2.4",
+      "uuid@<14.0.0": ">=14.0.0",
+      "postcss@<8.5.10": ">=8.5.10"
     },
     "patchedDependencies": {
       "vite-plugin-pwa@1.2.0": "patches/vite-plugin-pwa@1.2.0.patch"
@@ -50,6 +57,8 @@
     "eslint-plugin-svelte": "^3.17.0",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^29.0.1",
+    "stylelint": "^17.8.0",
+    "stylelint-config-standard": "^40.0.0",
     "svelte": "^5.55.4",
     "svelte-check": "^4.4.6",
     "typescript": "^6.0.3",

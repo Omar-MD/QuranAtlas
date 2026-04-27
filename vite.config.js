@@ -2,8 +2,18 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'))
+
+// Short git SHA at build time. execFileSync (no shell) keeps the call
+// safe even though the args are static — no shell-injection surface.
+// Falls back to 'dev' if git unavailable (e.g. sandboxed builds).
+let buildSha = 'dev'
+try {
+  buildSha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf-8' }).trim()
+} catch { /* keep 'dev' */ }
+const buildTime = new Date().toISOString()
 
 export default defineConfig({
   plugins: [
@@ -35,8 +45,18 @@ export default defineConfig({
           }
         ]
       },
+      // With strategies: 'injectManifest' the `workbox.*` keys are silently
+       // ignored — `globPatterns` and `runtimeCaching` must live under
+       // top-level `injectManifest` and inside src/sw.js respectively.
+       // The previous `workbox.globPatterns: ['**/*.{js,css,html,woff2}']`
+       // never reached the precache manifest, so KFGQPC font woff2 files
+       // (≈260 KB) were excluded — the SW only fetched them on first runtime
+       // request, and on flaky mobile they sometimes never arrived (root
+       // cause of the missing-tashkeel reports).
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,woff2}']
+      },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^\/dataset\/.*/i,
@@ -76,6 +96,8 @@ export default defineConfig({
     }
   },
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version)
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_SHA__: JSON.stringify(buildSha),
+    __BUILD_TIME__: JSON.stringify(buildTime)
   }
 })

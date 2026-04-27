@@ -25,7 +25,9 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | DOM env | **jsdom** | `^29.0.1` | Browser-like environment for Vitest |
 | IDB polyfill | **fake-indexeddb** | `^6.2.5` | IndexedDB for Vitest runs (auto-registered) |
 | Linter | **ESLint** | `^10.2.0` (+ `typescript-eslint` `^8.58.2`, `eslint-plugin-svelte` `^3.17.0`) | Code quality, strict mode |
+| CSS linter | **Stylelint** | `^17.8.0` (+ `stylelint-config-standard` `^40.0.0`) | Selector grammar + custom-property prefix discipline under `src/styles/` |
 | Perf gate | **Lighthouse CI** | `@lhci/cli ^0.15.1` | Performance / a11y / best-practices regression guard |
+| Deploy | **cloudflare/wrangler-action** | `v3` | Runs `wrangler pages deploy` in CI using the artifact built by CI (no rebuild in deploy) |
 
 `lightningcss` ships as a transitive dep of Vite; it is **not** explicitly configured for CSS transforms in this project (Vite's default CSS pipeline applies). No direct dependency.
 
@@ -71,28 +73,33 @@ Defined in `package.json`:
 | Command | Action |
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
-| `pnpm run build` | Build production bundle into `dist/` (`vite build`) |
+| `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && vite build`) |
+| `pnpm run build:dataset` | Split KFGQPC riwayat JSONs into per-surah files + regenerate `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` (`node scripts/build-riwayat.mjs`) |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm test` | Run Vitest in watch mode |
 | `pnpm run test:run` | Run Vitest once (CI-style) |
 | `pnpm run test:coverage` | Run Vitest with v8 coverage |
 | `pnpm run test:e2e` | Run the full Playwright suite (all journey specs A–I + performance + SW integration) |
 | `pnpm run test:e2e:sw` | Run just the SW-integration spec against a production preview build (`PLAYWRIGHT_USE_PREVIEW=1`) |
+| `pnpm run test:e2e:visual` | Run the `visual` Playwright project (CSS visual-regression baselines under `tests/e2e/visual/`) |
 | `pnpm run lint` | ESLint over `src/` |
 | `pnpm run lint:fix` | ESLint with `--fix` |
+| `pnpm run lint:css` | Stylelint over `src/styles/**/*.css` (config at `.stylelintrc.json`) |
 | `pnpm run check` | `svelte-check --tsconfig ./tsconfig.json` — type gate |
+| `pnpm run check:styles` | Run `check-theme-parity.mjs` + `check-token-usage.mjs` + `check-at-layer.mjs` (design-token gates) |
 | `pnpm run check-chunks` | Gzipped chunk-budget check (`scripts/check-chunks.js`, ≤150 KB per chunk) |
 | `pnpm run check-no-feature-state` | Assert feature modules don't hold top-level mutable state (`scripts/check-no-feature-state.js`) |
 | `pnpm run lighthouse` | Build + Lighthouse CI (`lhci autorun --config=.lighthouserc.cjs`) |
 | `pnpm run clean` | Remove `dist` and `test-output` |
 | `pnpm run mcp:cleanup` | Remove `test-output` (for MCP browser sessions) |
-| **`pnpm run validate`** | Composite gate: `lint` → `check` → `test:run` → `build` → `check-chunks`. Run before pushing. |
+| **`pnpm run validate`** | Composite gate: `lint` → `lint:css` → `check:styles` → `check` → `test:run` → `build` → `check-chunks`. Run before pushing. |
 
 The `packageManager` field pins `pnpm@10.31.0` exactly. Commands also run under `npx` (e.g. `npx vitest run`), but pnpm is the canonical path.
 
 ### Optional environment variables
 - `PLAYWRIGHT_INCLUDE_OFFLINE=1` — includes the `@offline` project (otherwise skipped locally; always included in CI). See `playwright.config.js`.
-- `PLAYWRIGHT_USE_PREVIEW=1` — run Playwright against a production preview build instead of the dev server. Used by `test:e2e:sw`.
+- `PLAYWRIGHT_USE_PREVIEW=1` — run Playwright against a production preview build instead of the dev server. Used by `test:e2e:sw` and by CI (vite's on-demand compile under workers=6 on the 2-core runner serialised past the 25 s `waitForReader` timeout). When set, the `Offline (Preview)` project reuses the same preview server instead of spawning a second build.
+- `PLAYWRIGHT_SKIP_BUILD=1` — assume `dist/` already exists; skip the prebuild step inside the preview webServer command. CI sets this after downloading the `dist/` artifact from the Build job, avoiding a redundant rebuild.
 
 ## Architecture and internals
 
@@ -110,7 +117,7 @@ These used to be inlined in this file; they now live in `docs/context/`:
 Two layers:
 
 - **Unit tests (Vitest + jsdom + `fake-indexeddb/auto`)** — **40 files** under `tests/unit/` covering core, reader, marks, review, settings, nav, safety, data/offline, state modules, service worker handlers, and a console-guard. Runs in every CI job via `pnpm run test:run`.
-- **E2E tests (Playwright)** — **11 specs** under `tests/e2e/`:
+- **E2E tests (Playwright)** — **12 specs** under `tests/e2e/`:
   - `journey-a-onboarding.spec.js` — first-run + session restore
   - `journey-b-reader.spec.js` — reader + ambient chrome
   - `journey-c-marking.spec.js` — mark editor
@@ -122,17 +129,53 @@ Two layers:
   - `journey-i-cross-tab.spec.js` — cross-tab sync
   - `performance-budgets.spec.js` — initial render budgets
   - `sw-integration.spec.js` — SW cache + runtime caching (preview build only)
+  - `visual/baseline.spec.js` — CSS visual regression (5 surfaces × 3 themes × 3 viewports)
 
-Journey specs A–G, I, and performance run against the **Vite dev server**. Journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW).
+Locally, journey specs A–G, I, and performance run against the **Vite dev server**; journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW). In CI, all projects share a single preview server (`PLAYWRIGHT_USE_PREVIEW=1` + `PLAYWRIGHT_SKIP_BUILD=1`) — the e2e job depends on the Build job and reuses its `dist/` artifact rather than rebuilding.
 
 ### Static checks
 - **ESLint** (strict mode, `typescript-eslint`, `eslint-plugin-svelte`) via `pnpm run lint`.
+- **Stylelint** (`stylelint-config-standard`) via `pnpm run lint:css` — enforces selector grammar + custom-property prefixes under `src/styles/`.
 - **svelte-check** type gate via `pnpm run check`.
+- **Design-token gates** via `pnpm run check:styles`:
+  - `check-theme-parity.mjs` — every token in a theme override must exist in `:root`.
+  - `check-token-usage.mjs` — every `var(--qa-*)` must resolve to a declared token (global or file-local/scoped).
+  - `check-at-layer.mjs` — no bare rules outside `@layer` (except `reset.css` / `base.css` / `index.css`).
 - **Gzipped-chunk budget** via `pnpm run check-chunks` (≤150 KB per chunk).
 - **Feature-state guard** via `pnpm run check-no-feature-state` (blocks top-level mutable state in feature modules).
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).
+- **Visual regression** via `pnpm run test:e2e:visual` — 45 baselines (5 surfaces × 3 themes × 3 viewports); threshold 5% to absorb Arabic font anti-aliasing + `clamp()` sub-pixel reflow.
 
-Composite gate: `pnpm run validate` runs lint → check → test:run → build → check-chunks.
+Composite gate: `pnpm run validate` runs lint → lint:css → check:styles → check → test:run → build → check-chunks.
+
+Minimum browser: Chrome 111, Safari 16.2, Firefox 113 (required for `color-mix()` in `semantic.css`).
+
+## CI/CD
+
+CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. All jobs run in parallel except `check-chunks` and `lighthouse`, which consume the `dist/` artifact uploaded by `build` (no redundant rebuilds). Jobs:
+
+| Job | Purpose |
+|---|---|
+| `lint` | `pnpm run lint` |
+| `typecheck` | `pnpm run check` (svelte-check) |
+| `test` | `pnpm run test:run` (Vitest, 40 specs) |
+| `feature-state` | `pnpm run check-no-feature-state` |
+| `audit` | `pnpm audit --audit-level moderate` |
+| `build` | `pnpm run build`; uploads `dist/` artifact |
+| `check-chunks` | `pnpm run check-chunks` against uploaded `dist/` |
+| `lighthouse` | `lhci autorun` against uploaded `dist/` |
+| `e2e` | Full Playwright suite (11 specs) with `PLAYWRIGHT_INCLUDE_OFFLINE=1`, `PLAYWRIGHT_USE_PREVIEW=1`, `PLAYWRIGHT_SKIP_BUILD=1`. Depends on `build` and downloads its `dist/` artifact, then runs against a preview server (no dev-server compile path under workers=6). |
+| `ci-ok` | No-op aggregator — single required status check for branch protection |
+
+Deploy lives at `.github/workflows/deploy.yml` and observes CI via `workflow_run`: on CI success for a push to `dev`, `staging`, or `main`, the deploy job downloads the `dist/` artifact the CI run produced and runs `wrangler pages deploy` against the single Cloudflare Pages project `quranatlas`. Custom domains are bound per branch in the Cloudflare dashboard:
+
+| Branch | Domain |
+|---|---|
+| `main` (production) | `quranatlas.org`, `www.quranatlas.org` |
+| `staging` | `staging.quranatlas.org` |
+| `dev` | `dev.quranatlas.org` |
+
+Required repo secrets: `CLOUDFLARE_API_TOKEN` (scopes: `Cloudflare Pages:Edit`, `User Details:Read`) and `CLOUDFLARE_ACCOUNT_ID`.
 
 ## Module lifecycle
 

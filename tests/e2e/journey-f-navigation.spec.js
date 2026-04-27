@@ -4,7 +4,7 @@
  * Covers:
  *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
  *   F2. Arrow-down to "Mark this verse" row → Enter → mark editor opens
- *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/t/mercy FVR
+ *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/threads/mercy FVR
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
  *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
@@ -19,7 +19,7 @@
 
 import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
-import { waitForReader, surfaceDock, openCommandSheet } from './fixtures/chrome.js'
+import { waitForReader, openCommandSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // ---------------------------------------------------------------------------
@@ -47,7 +47,7 @@ test.describe('Journey F: Navigation', () => {
   // F1. Command sheet direct verse-ref
   // ---------------------------------------------------------------------------
 
-  test('F1: ⌘K → type 2:255 → verse preview card appears → Enter navigates to #/s/2/255', async ({ page }) => {
+  test('F1: ⌘K → type 2:255 → verse preview card appears → Enter navigates to #/s/2/255 @chromium-only', async ({ page }) => {
     // Open the command sheet
     await openCommandSheet(page)
 
@@ -62,11 +62,12 @@ test.describe('Journey F: Navigation', () => {
     const vcard = page.locator('.qa-cmd-vcard')
     await expect(vcard).toBeVisible({ timeout: 5_000 })
 
-    // Card should contain Arabic and English text
+    // Card should contain Arabic text; translation field exists in DOM
+    // but may be empty (no translations ship today) and thus zero-height.
     const arText = page.locator('.qa-cmd-vcard-ar')
     const enText = page.locator('.qa-cmd-vcard-en')
     await expect(arText).toBeVisible()
-    await expect(enText).toBeVisible()
+    await expect(enText).toBeAttached()
     // The ref line should mention "2:255"
     const refLine = page.locator('.qa-cmd-vcard-ref')
     await expect(refLine).toContainText('2:255')
@@ -87,7 +88,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview @a11y', async ({ page }) => {
+  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview @a11y @chromium-only', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('2:255')
     await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
@@ -100,10 +101,13 @@ test.describe('Journey F: Navigation', () => {
   // F2. Mark a verse from command sheet
   // ---------------------------------------------------------------------------
 
-  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens mark editor', async ({ page }) => {
-    // Open command sheet and type verse reference
+  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel @chromium-only', async ({ page }) => {
+    // Open command sheet and type verse reference for the currently-loaded
+    // surah (reader is at #/s/1 from beforeEach). The fast-tag panel renders
+    // inside the visible Verse component, so the target verse must be in
+    // the rendered surah.
     await openCommandSheet(page)
-    await page.locator('.qa-cmd-input').fill('2:255')
+    await page.locator('.qa-cmd-input').fill('1:1')
     await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
 
     // Confirm "Open verse" is currently active (index 0)
@@ -118,27 +122,23 @@ test.describe('Journey F: Navigation', () => {
     const activeLabel = activeItem.locator('.qa-cmd-item-label')
     await expect(activeLabel).toHaveText('Mark this verse')
 
-    // Press Enter → command sheet closes → mark editor opens
+    // Press Enter → command sheet closes → fast-tag inline panel opens
+    // (post-2026-04-25 mobile-nav-redesign: was mark editor)
     await page.keyboard.press('Enter')
 
     const sheet = page.locator('.qa-cmd-sheet')
     await expect(sheet).toHaveClass(/qa-cmd--hidden/, { timeout: 5_000 })
 
-    // Mark editor should open for verse 2:255
-    const markEditor = page.locator('.qa-sheet--mark')
-    await expect(markEditor).toBeVisible({ timeout: 5_000 })
-
-    // Editor header should reference 2:255
-    const markRef = page.locator('.qa-mark-ref')
-    await expect(markRef).toBeVisible()
-    await expect(markRef).toContainText('2')
+    // Fast-tag inline panel surfaces; deep TagSheet must NOT open
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
   })
 
   // ---------------------------------------------------------------------------
   // F3. Tag search → FVR
   // ---------------------------------------------------------------------------
 
-  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/t/mercy FVR', async ({ page }) => {
+  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/threads/mercy FVR @chromium-only', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('mer')
 
@@ -161,7 +161,7 @@ test.describe('Journey F: Navigation', () => {
     await page.keyboard.press('Enter')
 
     // Should navigate to the tag FVR route
-    await expect(page).toHaveURL(/#\/t\/mercy/, { timeout: 8_000 })
+    await expect(page).toHaveURL(/#\/threads\/mercy/, { timeout: 8_000 })
 
     // FVR header block should render
     const fvrHeader = page.locator('.qa-fvr-header')
@@ -177,14 +177,11 @@ test.describe('Journey F: Navigation', () => {
   // F4. Surah directory
   // ---------------------------------------------------------------------------
 
-  test('F4: dock → Search → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
-    // Surface dock on reader and click Search tab
-    await surfaceDock(page)
-    const searchTab = page.locator('[data-tab="search"]')
-    await expect(searchTab).toBeVisible()
-    await searchTab.click()
-
-    // Wait for command sheet to open
+  test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row @desktop', async ({ page }) => {
+    // Desktop exposes a Search tab in the left rail; the command sheet (⌘K)
+    // is the canonical cross-viewport keyboard entry to reach "Browse all
+    // surahs".  (Mobile MarginHeader crumb routes straight to `#/surahs`.)
+    await openCommandSheet(page)
     const cmdSheet = page.locator('.qa-cmd-sheet')
     await expect(cmdSheet).toBeVisible({ timeout: 5_000 })
 
@@ -229,7 +226,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F4: a11y — no serious/critical axe violations on surah list @a11y', async ({ page }) => {
+  test('F4: a11y — no serious/critical axe violations on surah list @a11y @desktop', async ({ page }) => {
     await page.goto('/#/surahs')
     await expect(page.locator('.qa-surah-list-page')).toBeVisible({ timeout: 8_000 })
 
@@ -241,7 +238,7 @@ test.describe('Journey F: Navigation', () => {
   // F5. Continue-reading card
   // ---------------------------------------------------------------------------
 
-  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates', async ({ page }) => {
+  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates @desktop @chromium-only', async ({ page }) => {
     // Navigate to surah 67 so the reader writes a position record
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -266,7 +263,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F5: continue-reading card is hidden when search query is active', async ({ page }) => {
+  test('F5: continue-reading card is hidden when search query is active @desktop @chromium-only', async ({ page }) => {
     // Navigate to surah 67 to set the last position
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -288,91 +285,8 @@ test.describe('Journey F: Navigation', () => {
   // F6. Keyboard navigation @keyboard
   // ---------------------------------------------------------------------------
 
-  test('F6: Tab to ambient pill → Enter opens command sheet @keyboard', async ({ page }) => {
-    // The pill is on reader route and surfaces on tap.
-    // Surface the dock + pill first by tapping the reader body.
-    await page.locator('#main-content').click({ position: { x: 50, y: 50 } })
-
-    const pill = page.locator('.qa-pill-ref')
-    await expect(pill).not.toHaveClass(/qa-pill-ref--hidden/, { timeout: 3_000 })
-
-    // Tab through focusable elements until we land on the pill.
-    // The pill has tabindex="0" so it is in the tab order.
-    let pillFocused = false
-    for (let i = 0; i < 20 && !pillFocused; i++) {
-      await page.keyboard.press('Tab')
-      pillFocused = await page.evaluate(() => {
-        const el = document.activeElement
-        return el?.classList?.contains('qa-pill-ref') ?? false
-      })
-    }
-    expect(pillFocused).toBe(true)
-
-    // Press Enter → command sheet should open
-    await page.keyboard.press('Enter')
-    const cmdSheet = page.locator('.qa-cmd-sheet')
-    await expect(cmdSheet).toBeVisible({ timeout: 5_000 })
-    await expect(cmdSheet).not.toHaveClass(/qa-cmd--hidden/)
-  })
-
-  test('F6: command sheet — ArrowUp/ArrowDown move focus; Escape closes @keyboard', async ({ page }) => {
-    await openCommandSheet(page)
-
-    const cmdSheet = page.locator('.qa-cmd-sheet')
-    await expect(cmdSheet).toBeVisible()
-
-    // Type to get results with multiple items
-    await page.locator('.qa-cmd-input').fill('2:255')
-    await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
-
-    // First item should be active ("Open verse")
-    const firstActive = page.locator('.qa-cmd--active')
-    await expect(firstActive.locator('.qa-cmd-item-label')).toHaveText('Open verse')
-
-    // ArrowDown → "Mark this verse" becomes active
-    await page.keyboard.press('ArrowDown')
-    const secondActive = page.locator('.qa-cmd--active')
-    await expect(secondActive.locator('.qa-cmd-item-label')).toHaveText('Mark this verse')
-
-    // ArrowDown again → "Copy reference"
-    await page.keyboard.press('ArrowDown')
-    const thirdActive = page.locator('.qa-cmd--active')
-    await expect(thirdActive.locator('.qa-cmd-item-label')).toHaveText('Copy reference')
-
-    // ArrowUp → back to "Mark this verse"
-    await page.keyboard.press('ArrowUp')
-    const backToSecond = page.locator('.qa-cmd--active')
-    await expect(backToSecond.locator('.qa-cmd-item-label')).toHaveText('Mark this verse')
-
-    // Escape closes the sheet
-    await page.keyboard.press('Escape')
-    await expect(cmdSheet).toHaveClass(/qa-cmd--hidden/, { timeout: 3_000 })
-  })
-
-  test('F6: global shortcut G then S → navigates to #/surahs @keyboard', async ({ page }) => {
-    // Ensure focus is not on an input (reader is loaded, no input focused)
-    await expect(page.locator('.qa-verse').first()).toBeVisible()
-
-    // Press g then s (chord shortcut for surah list)
-    await page.keyboard.press('g')
-    await page.keyboard.press('s')
-
-    // Should navigate to surah list
-    await expect(page).toHaveURL(/#\/surahs/, { timeout: 5_000 })
-    await expect(page.locator('.qa-surah-list-page')).toBeVisible({ timeout: 8_000 })
-  })
-
-  test('F6: ⌘K closes already-open command sheet @keyboard', async ({ page }) => {
-    // Open command sheet
-    await openCommandSheet(page)
-    const cmdSheet = page.locator('.qa-cmd-sheet')
-    await expect(cmdSheet).toBeVisible()
-    await expect(cmdSheet).not.toHaveClass(/qa-cmd--hidden/)
-
-    // Press ⌘K again → should close
-    await page.keyboard.press('Meta+k')
-    await expect(cmdSheet).toHaveClass(/qa-cmd--hidden/, { timeout: 3_000 })
-  })
+  // F6 ⌘K open/close, ArrowUp/Down focus, Escape close, G→S chord ported to
+  // tests/unit/nav/command-sheet.test.ts (Phase 2 bucket 4, 2026-04-26).
 })
 
 // ---------------------------------------------------------------------------
@@ -412,4 +326,102 @@ test.describe('Journey F: desktop variants @desktop', () => {
     ])
     expect(Math.abs(rowTops[0] - rowTops[1])).toBeLessThan(2)
   })
+})
+
+// ---------------------------------------------------------------------------
+// Journey F — mobile drawer (post 2026-04-25 redesign)
+//
+// Hamburger opens a full-screen drawer with two tabs (Surahs / Review).
+// Surahs tab carries everything the desktop #/surahs page provides; Review
+// tab carries Hub + 12 grouped layer rows. Wordmark in header → About.
+// Mobile #/surahs deep-links hard-redirect to drawer-open.
+// ---------------------------------------------------------------------------
+
+test.describe('Journey F: mobile drawer', () => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    // MarginHeader hamburger is hidden on viewports ≥1180px (desktop runs the
+    // AmbientDock kebab path instead, covered separately). Skip cleanly so
+    // these tests run only on Mobile Chrome / mobile-sized projects.
+    const vp = testInfo.project.use.viewport
+    if (vp && vp.width >= 1180) { testInfo.skip(true, 'mobile-only suite') }
+
+    await page.goto('/')
+    await page.waitForFunction(() => window.location.hash !== '', { timeout: 5_000 }).catch(() => {})
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+  })
+
+  test('F-mobile-1: hamburger opens drawer with Surahs tab default and current-surah highlighted', async ({ page }) => {
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    const drawer = page.locator('.qa-nav-drawer')
+    await expect(drawer).toBeVisible()
+
+    // Surahs tab is on by default
+    await expect(page.locator('.qa-nav-drawer-tab--on')).toHaveText(/Surahs/i)
+
+    // Current surah (18 — Al-Kahf) is highlighted
+    const currentRow = page.locator('.qa-nav-drawer-surah-row--current')
+    await expect(currentRow).toHaveAttribute('data-surah', '18')
+
+    // Wordmark is a button (About entry)
+    await expect(page.locator('.qa-nav-drawer-wordmark')).toBeVisible()
+  })
+
+  // F-mobile-2 Review tab structure ported to tests/unit/nav/drawer.test.ts.
+  // Layer-tap navigation (router integration) stays e2e below as part of F-mobile flows.
+  test('F-mobile-2: tapping layer row routes to #/review?layer=<name>', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await page.locator('.qa-mh-hamburger').click()
+    await page.locator('.qa-nav-drawer-tab', { hasText: 'Review' }).click()
+    await page.locator('.qa-nav-drawer-layer-row[data-layer="people"]').click()
+    await expect(page).toHaveURL(/#\/review\?layer=people$/)
+  })
+
+  test('F-mobile-3: wordmark in drawer routes to #/about', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    await page.locator('.qa-nav-drawer-wordmark').click()
+    await expect(page).toHaveURL(/#\/about$/)
+  })
+
+  test('F-mobile-4: typing #/surahs on mobile redirects + opens drawer', async ({ page }) => {
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    await page.evaluate(() => { window.location.hash = '#/surahs' })
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 4_000 })
+    // Hash should be replaced (not on #/surahs)
+    await page.waitForFunction(() => !window.location.hash.startsWith('#/surahs'), { timeout: 4_000 })
+  })
+
+  test('F-mobile-5: center label tap toggles surah-header visibility (no nav, no drawer)', async ({ page }) => {
+    await page.goto('/#/s/2')
+    await waitForReader(page)
+
+    // Header should be visible by default
+    await expect(page.locator('[data-surah-header]')).toBeVisible()
+
+    const before = page.url()
+    await page.locator('.qa-mh-label').click()
+    // Tap should not navigate or open the drawer
+    expect(page.url()).toBe(before)
+    await expect(page.locator('.qa-nav-drawer')).not.toBeVisible()
+    // Tap should hide the in-reader Surah Header
+    await expect(page.locator('[data-surah-header]')).toHaveCount(0)
+
+    // Tap again → re-shows
+    await page.locator('.qa-mh-label').click()
+    await expect(page.locator('[data-surah-header]')).toBeVisible()
+  })
+
+  // F-mobile-6 / 7 / 8 / 9 (search free-text filter, Bookmarked filter, ref-jump
+  // hint + Enter commit, verseNum filter) ported to tests/unit/nav/drawer.test.ts
+  // (Phase 2 bucket 3, 2026-04-26). Real router-navigation legs covered by the
+  // F-mobile-2 layer-tap test above.
 })

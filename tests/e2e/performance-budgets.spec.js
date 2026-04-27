@@ -17,7 +17,7 @@ async function measureRouteLoad(page, { hash, expectedHeaderText, targetVerse = 
 
       const isReady = () => {
         const header = document.querySelector('[data-surah-header]')
-        // The surah meta line is rendered uppercase ("AL-BAQARAH · SURAH 2 …")
+        // The surah meta line is rendered uppercase ("SURAH 2 · 286 VERSES")
         // so compare case-insensitively.
         if (!header || !header.textContent?.toLowerCase().includes(expectedHeaderText.toLowerCase())) {
           return false
@@ -104,17 +104,17 @@ async function measureRouteLoad(page, { hash, expectedHeaderText, targetVerse = 
 }
 
 test.describe('Performance budgets', () => {
-  test('Al-Baqarah initial render shows the first verse within 2000ms', async ({ page }) => {
+  test('Al-Baqarah initial render shows the first verse within 2000ms @chromium-only', async ({ page }) => {
     await page.goto('/#/s/1')
     await expect(page.locator('[data-verse="1"]')).toBeVisible({ timeout: 10000 })
 
     const renderTime = await measureRouteLoad(page, {
       hash: '#/s/2',
-      expectedHeaderText: 'Al-Baqarah',
+      expectedHeaderText: 'SURAH 2',
       targetVerse: 1,
     })
 
-    await expect(page.locator('[data-surah-header]')).toContainText('AL-BAQARAH')
+    await expect(page.locator('[data-surah-header]')).toContainText('SURAH 2')
     await expect(page.locator('[data-verse="1"]')).toBeVisible()
     expect(renderTime).toBeLessThanOrEqual(ROUTE_LOAD_BUDGET_MS)
   })

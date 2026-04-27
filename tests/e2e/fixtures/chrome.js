@@ -2,9 +2,13 @@ import { expect } from '@playwright/test'
 
 /**
  * Wait for the reader to finish mounting (first verse rendered).
+ *
+ * Timeout is generous (25s) because CI runners are 2-4× slower than local
+ * dev hardware and the reader cold-boot path waits on dataset fetch + IDB
+ * schema check + first verse render. Local runs still resolve in <2s.
  */
 export async function waitForReader(page) {
-  await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 10_000 })
+  await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 25_000 })
 }
 
 /**
@@ -17,33 +21,64 @@ export async function dismissOnboarding(page) {
 }
 
 /**
- * Surface the ambient dock on a reader route (it auto-hides).
+ * Ensure primary-nav chrome is reachable.
+ * Desktop (≥1180px): left rail (#bottom-nav contents) is always visible — no-op.
+ * Mobile (<1180px): MarginHeader is fixed at top; if hidden by scroll, scroll main to top.
  */
 export async function surfaceDock(page) {
-  // Tap reader body to trigger AMBIENT_SURFACE
-  await page.locator('#main-content').click({ position: { x: 50, y: 50 } })
-  await expect(page.locator('#bottom-nav')).not.toHaveClass(/qa-dock--hidden/)
+  const header = page.locator('header.qa-mh').first()
+  if (await header.count() > 0) {
+    const hidden = await header.evaluate(el => el.classList.contains('qa-mh--hidden')).catch(() => false)
+    if (hidden) {
+      await page.evaluate(() => {
+        const el = document.getElementById('main-content')
+        if (el) { el.scrollTo(0, 0); el.dispatchEvent(new Event('scroll')) }
+      })
+    }
+  }
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await expect(page.locator('[data-tab="more"]:visible').first()).toBeVisible()
+  } else {
+    await expect(page.locator('.qa-mh-hamburger')).toBeVisible()
+  }
 }
 
 /**
- * Open the More sheet via dock ⋯ button.
+ * Open the nav drawer (replaces MoreSheet 2026-04-25).
+ * Desktop (≥1180px): ⋯ kebab on AmbientDock rail.
+ * Mobile  (<1180px): ≡ hamburger on MarginHeader.
  */
-export async function openMoreSheet(page) {
+export async function openNavDrawer(page) {
   await surfaceDock(page)
-  await page.locator('[data-tab="more"]').click()
-  await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await page.locator('[data-tab="more"]:visible').first().click()
+  } else {
+    await page.locator('.qa-mh-hamburger').click()
+  }
+  await expect(page.locator('.qa-nav-drawer')).toBeVisible()
 }
 
+/** Backwards-compat alias — legacy tests still call openMoreSheet. */
+export const openMoreSheet = openNavDrawer
+
 /**
- * Open the Settings sheet via More → Settings.
+ * Open the Settings sheet.
+ * Desktop (≥1180px): navigate to #/settings (router opens the sheet).
+ * Mobile  (<1180px): MarginHeader gear icon (post-2026-04-25 redesign).
  */
 export async function openSettingsSheet(page) {
-  await openMoreSheet(page)
-  await page.locator('button.qa-sheet-row:not(.qa-sheet-row--danger)').filter({ hasText: 'Settings' }).click()
+  const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+  if (isDesktop) {
+    await page.evaluate(() => { window.location.hash = '#/settings' })
+  } else {
+    const gear = page.locator('.qa-mh-settings')
+    await expect(gear).toBeVisible({ timeout: 5_000 })
+    await gear.click()
+  }
   const sheet = page.locator('.qa-sheet--settings')
   await expect(sheet).toBeVisible()
-  // Wait for the qa-sheet-rise animation to finish so axe contrast checks see
-  // the final opacity: 1 state (not an intermediate blended value).
   await sheet.evaluate(el =>
     Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
   )
@@ -58,48 +93,46 @@ export async function openCommandSheet(page) {
 }
 
 /**
- * Simulate a long-press by dispatching TouchEvent sequences via evaluate.
+ * Simulate a double-tap by dispatching two TouchEvent pairs ~120ms apart.
+ * Replaces the long-press gesture for opening the fast-tag panel
+ * (mobile-nav-redesign 2026-04-25 — long-press was retired so OS-native
+ * gestures like text selection / iOS callouts could surface unblocked).
+ *
  * The gesture code in src/marks/long-press.ts listens for touchstart/touchend,
- * not mousedown/pointerdown, so mouse.down() doesn't trigger it.
- * Scrolls the element into view first so elementFromPoint returns the correct target.
+ * not mousedown/pointerdown, so mouse.down() doesn't trigger it. Scrolls the
+ * element into view first so elementFromPoint returns the correct target.
  */
-export async function longPress(locator) {
+export async function doubleTap(locator) {
   await locator.scrollIntoViewIfNeeded()
   const box = await locator.boundingBox()
   const x = Math.round(box.x + box.width / 2)
   const y = Math.round(box.y + box.height / 2)
 
-  const hit = await locator.page().evaluate(([cx, cy]) => {
-    const el = document.elementFromPoint(cx, cy)
-    if (!el) {
-      return false
-    }
-    window.__lpTarget = el
-    const touch = new Touch({ identifier: 1, target: el, clientX: cx, clientY: cy, pageX: cx, pageY: cy, screenX: cx, screenY: cy })
-    el.dispatchEvent(new TouchEvent('touchstart', {
-      bubbles: true, cancelable: true,
-      touches: [touch], targetTouches: [touch], changedTouches: [touch],
-    }))
-    return true
-  }, [x, y])
-  if (!hit) {
-    throw new Error(`longPress: no element at (${x}, ${y})`)
+  async function tap(cx, cy) {
+    const hit = await locator.page().evaluate(([cx, cy]) => {
+      const el = document.elementFromPoint(cx, cy)
+      if (!el) { return false }
+      const touch = new Touch({ identifier: 1, target: el, clientX: cx, clientY: cy, pageX: cx, pageY: cy, screenX: cx, screenY: cy })
+      el.dispatchEvent(new TouchEvent('touchstart', {
+        bubbles: true, cancelable: true,
+        touches: [touch], targetTouches: [touch], changedTouches: [touch],
+      }))
+      el.dispatchEvent(new TouchEvent('touchend', {
+        bubbles: true, cancelable: true,
+        touches: [], targetTouches: [], changedTouches: [touch],
+      }))
+      return true
+    }, [cx, cy])
+    if (!hit) { throw new Error(`doubleTap: no element at (${cx}, ${cy})`) }
   }
 
-  // Semantic hold duration — the app's long-press threshold is 500ms (see
-  // src/marks/long-press.ts:LONG_PRESS_MS).  550ms gives a 10% buffer without
-  // being a wait-for-state we could replace with auto-waiting.
-  await locator.page().waitForTimeout(550)
-
-  await locator.page().evaluate(() => {
-    const el = window.__lpTarget
-    if (!el) {
-      return
-    }
-    delete window.__lpTarget
-    el.dispatchEvent(new TouchEvent('touchend', {
-      bubbles: true, cancelable: true,
-      touches: [], targetTouches: [], changedTouches: [],
-    }))
-  })
+  await tap(x, y)
+  // Inter-tap delay must stay under setupTapGestures' DOUBLE_TAP_MS (300ms).
+  await locator.page().waitForTimeout(120)
+  await tap(x, y)
 }
+
+// Back-compat alias — older specs imported `longPress`. The gesture they
+// drive now is double-tap, so the name is misleading. Re-export points at
+// `doubleTap`; new specs should import the canonical name directly.
+export const longPress = doubleTap

@@ -2,7 +2,7 @@
 
 IDB is the single source of client-side truth in QuranAtlas. This file documents every object store, every key, every index, and the record shape each surface writes. If you find something in IDB that isn't here, either (a) we've drifted — update this doc — or (b) an extension is writing there.
 
-The DB is `quran-atlas`, version 1, defined in `src/core/db.ts`. Schema changes live in `onupgradeneeded`.
+The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes live in `onupgradeneeded`.
 
 **Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `core/db.ts`. Validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously.
 
@@ -23,7 +23,14 @@ The DB is `quran-atlas`, version 1, defined in `src/core/db.ts`. Schema changes 
 | Key | Value type | Writer | Purpose |
 |---|---|---|---|
 | `theme` | `'light' \| 'sepia' \| 'dark' \| 'auto'` | `settings/theme.ts` | Active theme. `auto` follows `prefers-color-scheme`. |
-| `fontSize` | number (rem-scale multiplier) | `settings/font-size.ts` | Reader font scale. |
+| `riwayah` | `'hafs' \| 'warsh' \| 'qaloon'` | `settings/riwayah.ts` | Active Riwayah for reader text + font + line-height floor. Default `'qaloon'`. Sole writer. Cross-tab broadcast via `safety/sync.ts::broadcastRiwayahChange`. |
+| `fontSize` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/font-size.ts` | Reader font scale (sole writer). |
+| `lineSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader line-height step (Arabic + translation, ratio preserved). Sole writer. |
+| `wordSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader word-spacing step (Arabic + translation). Sole writer. |
+| `readerMargin` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader column inset step. Desktop: max-width on `#main-content` (inverse — larger step = narrower). Mobile: `--qa-verse-pad-x` on `.qa-verse` (xs ≈ edge-to-edge, xl wide gutters). Sole writer. |
+| `verseSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Vertical padding between verses via `--qa-verse-pad-y` on `.qa-verse`. Sole writer. |
+| `nightMode` | boolean | `settings/night-mode.ts` | Night recitation mode (dim+warm overlay via `.qa-night-shift`). Sole writer. |
+| `surahHeaderHidden` | boolean | `settings/surah-header-visibility.ts` | User hid the in-reader Surah Header (title + meta + juz). Toggled by MarginHeader center-label tap. Bismillah + verses still render. Default `false`. Persists across surah navigation. Sole writer. |
 | `translationVisible` | boolean | `settings/Panel.svelte` | Translation-toggle state. |
 | `translationId` | `'saheeh' \| 'pickthall' \| 'yusuf' \| 'khattab'` | `settings/Panel.svelte`, `onboarding/Onboarding.svelte` | Selected translation. |
 | `lastSurface` | string (hash path) | `core/router.ts`, `review/Hub.svelte` (FVR) | Where to resume on next launch. |
@@ -35,68 +42,83 @@ Plus any other ad-hoc keys a feature introduces. Convention: write `{ key, value
 
 ---
 
-## Store: `positions`
+## Store: `meta`
 
 - **keyPath:** `id` (string)
-- **Indexes:** `by-savedAt` on `savedAt`
-- **Validated fields:** `id` (string), `surah` (number), `verse` (number), `savedAt` (number) — TS interface `PositionRecord` in `core/db.ts`
-- **Written by:** `reader/position.ts`, `review/state.ts`
+- **Validated fields:** `id` (string)
+- **Written by:** `review/state.ts` (sole writer for `meta['review']`)
+- **DB_VERSION:** introduced in v4 (cross-surah infinite scroll, 2026-04-25). Replaces the legacy `positions` store, which previously held both per-surah reading positions and the review-hub state with dummy `surah`/`verse` fields.
 
 ### Known record shapes
 
-Reader position per surah (`id: 's<n>'`):
-
-```ts
-{
-  id: `s${surahNum}`,       // e.g. 's2'
-  surah: number,
-  verse: number,
-  savedAt: number,           // Date.now() — feeds by-savedAt index
-}
-```
-
-Review hub state (`id: 'review'`) — reuses the store with dummy `surah`/`verse` to satisfy the schema:
+Review hub state (`id: 'review'`):
 
 ```ts
 {
   id: 'review',
-  surah: 0,                  // dummy, required by validateWrite
-  verse: 0,                  // dummy, required by validateWrite
   savedAt: number,
   view: 'all' | 'fvr',
   activeTag: string | null,
+  activeLayer: string,
+  activeValue: string | null,
   surahFilter: number | null,
   sortBy: 'updatedAt' | 'createdAt',
   groupBy: 'tag' | 'surah' | 'flat',
 }
 ```
 
-The review-state reuse is intentional — see the comment at the top of `review/state.ts`. It avoids carving out a new store for a single record.
-
 ### Typical queries
 
-- **Resume most recent**: `core/db.ts::getMostRecentPosition` — opens a reverse cursor on `by-savedAt` and returns the first hit. Called in the launch-restore cascade.
-- **Resume specific surah**: `get('positions', 's<n>')` in `reader/position.ts`.
-- **Load review state**: `review/state.ts::load()` → `get('positions', 'review')`.
+- **Load review state**: `review/state.ts::load()` → `get('meta', 'review')`.
+
+### Reading position
+
+Per-surah position records (`positions['s<n>']`) were retired in DB v4. Reading position is now a single global record stored as `settings.currentPosition` (see the `settings` store section). Sole reader/writer: `src/reader/global-position.ts`. The launch-restore cascade calls `loadGlobalPosition()` instead of the removed `getMostRecentPosition`.
 
 ---
 
 ## Store: `marks`
 
 - **keyPath:** `verseKey` (string, e.g. `'2:255'`)
+- **DB_VERSION:** 2 (v1 → v2 dropped and recreated the store — no migration; pre-release)
 - **Indexes:**
-  - `by-tag` on `tags` (multiEntry — each tag is indexed separately)
+  - `by-canon-threads` on `_canon.threads` (multiEntry)
+  - `by-canon-subjects` on `_canon.subjects` (multiEntry)
+  - `by-canon-audience` on `_canon.audience` (multiEntry)
+  - `by-canon-speaker` on `_canon.speaker` (multiEntry)
+  - `by-canon-quotedSpeaker` on `_canon.quotedSpeaker` (multiEntry)
+  - `by-canon-mode` on `_canon.mode` (multiEntry)
+  - `by-canon-form` on `_canon.form` (multiEntry)
+  - `by-canon-tone` on `_canon.tone` (multiEntry)
+  - `by-canon-people` on `_canon.people` (multiEntry)
+  - `by-canon-places` on `_canon.places` (multiEntry)
+  - `by-canon-events` on `_canon.events` (multiEntry)
+  - `by-canon-divineNames` on `_canon.divineNames` (multiEntry)
   - `by-updated` on `updatedAt`
-- **Validated fields:** `verseKey` (string, required); `tags` (string[], type-checked when present), `note` (string, type-checked when present), `createdAt` (number, type-checked when present), `updatedAt` (number, type-checked when present) — TS interface `MarkRecord` in `core/db.ts`
-- **Written by:** `marks/store.ts` only (bypasses `core/db.put()` — writes directly to IDB). If you write elsewhere, you're bypassing the event+broadcast contract.
+- **Validated fields (all required):** `verseKey` (string), 12 layer fields (string[], see below), `_canon` (any), `note` (string), `createdAt` (number), `updatedAt` (number) — TS interface `MarkRecord` + `LayerName` + `LAYER_NAMES` in `core/db.ts`
+- **Written by:** `marks/store.ts` only. External callers NEVER populate `_canon` — it is computed inside the writer.
 
 ### Record shape
 
 ```ts
 {
   verseKey: string,          // 'S:V', e.g. '2:255'
-  tags: string[],             // lowercased labels, 1+ expected
-  note: string,               // '' if no note; introduced in M6
+  // 12 free-form user-tagged layers (raw user input):
+  threads: string[],
+  subjects: string[],
+  audience: string[],
+  speaker: string[],
+  quotedSpeaker: string[],
+  mode: string[],
+  form: string[],
+  tone: string[],
+  people: string[],
+  places: string[],
+  events: string[],
+  divineNames: string[],
+  // Denormalized canonical keys (computed by store.ts::save(), never by callers):
+  _canon: Record<LayerName, string[]>,
+  note: string,              // '' if no note
   createdAt: number,
   updatedAt: number,
 }
@@ -104,20 +126,28 @@ The review-state reuse is intentional — see the comment at the top of `review/
 
 ### Write invariant
 
-`marks/store.ts::save()` does three things in order, and callers rely on all three:
-1. `put` the record (with createdAt preserved if existing, updatedAt refreshed).
-2. `emit(MARKS_SAVED, { verseKey, tags })` — refreshes indicators on the reader.
-3. `broadcastMarkChange([verseKey])` — peers receive `SYNC_UPDATE_RECEIVED` and re-read.
+`marks/store.ts::save()` takes a `MarkInput` (raw layer arrays, no `_canon`), then:
+1. Calls `computeCanon()` which runs every label through `core/normalize.ts::canonicalize()`.
+2. `put`s the record (with createdAt preserved if existing, updatedAt refreshed).
+3. `emit(MARKS_SAVED, { verseKey, tags })` — `tags` = union of canonical keys across all 12 layers.
+4. `broadcastMarkChange([verseKey])` — peers receive `SYNC_UPDATE_RECEIVED` and re-read.
+
+**Invariant: `_canon` is computed inside `marks/store.ts::save()` only. No external caller should ever populate `_canon`.**
+
+**Invariant: a mark must carry ≥1 tag across the 12 layers to persist.** `save()` rejects empty input with `EmptyMarkError` before any IDB touch — a note alone is not sufficient. UI guards Save at the callsite so the error should never be user-visible. Exported helper: `hasAnyTag(input)`.
+
+**Mark-level flags** (`hasQuestion`, `hasApplication`) were part of the 2026-04-20 data-model spec but were removed from UI + schema in the tagging polish pass; deferred to `future-work.md` if later needed.
 
 `del()` mirrors this with `MARKS_DELETED` + broadcast.
 
-If you bypass `store.ts` and write `marks` directly, indicators go stale and other tabs miss the change. Don't.
+If you bypass `store.ts` and write `marks` directly, `_canon` will be stale/missing, indexes will be wrong, indicators will go stale, and other tabs will miss the change. Don't.
 
 ### Typical queries
 
 - **All marks**: `marks/store.ts::getAll()` → `store.getAll()`.
 - **One mark**: `getByVerseKey(verseKey)` → `store.get(verseKey)`.
-- **By tag** (FVR deep link): `getByTag(tag)` → `index('by-tag').getAll(tag)`. Multi-tagged marks appear in one query result; duplicates are not returned because `multiEntry` indexes verse keys once per tag.
+- **By layer canonical** (FVR deep link, filter): `getByLayerCanonical(layer, canonical)` → `index('by-canon-<layer>').getAll(canonical)`.
+- **All canonical values for a layer**: `getAllCanonicalValues(layer)` — index-only key cursor scan.
 - **By recency**: the hub sorts in memory after `getAll()` — the `by-updated` index is available if a cursor-based fetch becomes needed.
 
 ---
@@ -181,21 +211,79 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 
 ---
 
+## Store: `edges`
+
+- **keyPath:** `id` (string, UUID)
+- **DB_VERSION:** 3 (added in v3)
+- **Indexes:**
+  - `by-from` on `from`
+  - `by-to` on `to`
+  - `by-canon-kind` on `_canonKind`
+  - `by-updated` on `updatedAt`
+- **Validated fields (all required):** `id` (string), `from` (string), `to` (string), `kind` (string), `_canonKind` (string), `directed` (boolean), `note` (string), `createdAt` (number), `updatedAt` (number) — TS interface `EdgeRecord` in `core/db.ts`
+- **Written by:** `edges/store.ts` only. External callers NEVER populate `_canonKind` — it is computed inside the writer.
+
+### Record shape
+
+```ts
+{
+  id: string,             // UUID
+  from: string,           // verseKey, e.g. '2:255'
+  to: string,             // verseKey, e.g. '20:98'
+  kind: string,           // raw user-supplied kind label, e.g. 'Parallel'
+  _canonKind: string,     // kind.trim().toLowerCase() — computed by store, never by callers
+  directed: boolean,      // false for symmetric kinds; auto-inferred unless overridden
+  note: string,           // '' if no note
+  createdAt: number,
+  updatedAt: number,
+}
+```
+
+### Write invariant
+
+`edges/store.ts::createEdge()` takes `from`, `to`, `kind`, and optional `{ directed, note }`, then:
+1. Validates both verse keys against `/^\d+:\d+(-\d+)?$/`.
+2. Computes `_canonKind = kind.trim().toLowerCase()` (simple ASCII normalization, not the Arabic tag pipeline).
+3. Infers `directed` from `inferDirectedFromKind(_canonKind)` unless overridden in opts.
+4. `put`s the record.
+5. `emit(EDGES_SAVED, { edgeId, from, to, kind })`.
+6. `broadcastEdgeChange([edgeId])` — peers receive `SYNC_EDGES_UPDATED` and re-read.
+
+**Invariant: `_canonKind` is computed inside `edges/store.ts` only. No external caller should populate `_canonKind`.**
+
+`updateEdge` re-derives `_canonKind` (and re-infers `directed` unless the caller passes an explicit override) when `kind` is included in the patch.
+
+`deleteEdge` emits `EDGES_DELETED` + broadcast.
+
+### Typical queries
+
+- **All edges**: `getAll()` → `store.getAll()`.
+- **One edge**: `getById(id)`.
+- **By verse (either end)**: `getByVerse(verseKey)` — unions `by-from` and `by-to` index lookups, deduplicates by id.
+- **By kind**: `getByKindCanonical(canonKind)` → `index('by-canon-kind').getAll(canonKind)`.
+
+---
+
+## Static datasets (read-only, not in IDB)
+
+- `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-riwayat.mjs` from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+
 ## Cross-cutting rules
 
 > **Invariant (formerly `CLAUDE.md` Rule 5) — one writer per store.** File references use basenames; grep for the basename, not a specific `.js`/`.ts`.
 >
-> - `marks` — written only via `marks/store`. Never `put('marks', …)` directly. Bypassing this breaks cross-tab broadcast and the `MARKS_SAVED` / `MARKS_DELETED` event contracts (see `marks` §Write invariant above).
-> - `positions` — written by `reader/position` (via `savePosition()`) and `review/state`.
+> - `marks` — written only via `marks/store`. Never `put('marks', …)` directly. Bypassing this breaks `_canon` computation, cross-tab broadcast, and the `MARKS_SAVED` / `MARKS_DELETED` event contracts (see `marks` §Write invariant above).
+> - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
+> - `meta` — written by `review/state` (sole writer for `meta['review']`).
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
-> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced.
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `surahHeaderHidden` (`settings/surah-header-visibility`), `currentPosition` (`reader/global-position`).
 >
 > Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
 
 - **All writes go through `core/db::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
 - **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `safety/sync.ts` shows the reload banner; `settings/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
 - **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
-- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `positions`, extend `safety/sync.ts`.
+- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Edge writes broadcast `'edges:changed'` → `SYNC_EDGES_UPDATED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `meta`, extend `safety/sync.ts`.
 
 ## Adding a new store
 

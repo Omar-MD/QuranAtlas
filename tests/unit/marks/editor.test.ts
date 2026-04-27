@@ -87,6 +87,7 @@ describe('MarkEditorState — tag-selection invariants', () => {
 
     it('clears all selected tags', () => {
       state.selectedTags = ['favourite', 'study']
+      expect(state.selectedTags).toEqual(['favourite', 'study'])
       state.selectedTags = []
       expect(state.selectedTags).toEqual([])
     })
@@ -100,6 +101,7 @@ describe('MarkEditorState — tag-selection invariants', () => {
 
     it('clears draft note', () => {
       state.draftNote = 'A thought'
+      expect(state.draftNote).toBe('A thought')
       state.draftNote = ''
       expect(state.draftNote).toBe('')
     })

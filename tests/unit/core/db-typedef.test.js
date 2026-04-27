@@ -2,6 +2,21 @@
 import 'fake-indexeddb/auto'
 import { describe, it, expect, beforeEach } from 'vitest'
 
+const VALID_MARK = {
+  verseKey: '2:255',
+  threads: ['mercy'], subjects: [], audience: [], speaker: [],
+  quotedSpeaker: [], mode: [], form: [], tone: [],
+  people: [], places: [], events: [], divineNames: [],
+  _canon: {
+    threads: ['mercy'], subjects: [], audience: [], speaker: [],
+    quotedSpeaker: [], mode: [], form: [], tone: [],
+    people: [], places: [], events: [], divineNames: [],
+  },
+  note: 'test',
+  createdAt: 1,
+  updatedAt: 1,
+}
+
 describe('db.js typedef shape validation', () => {
   let db
 
@@ -13,30 +28,34 @@ describe('db.js typedef shape validation', () => {
     db = mod
   })
 
-  it('rejects a marks record with wrong field type (tags should be string[])', async () => {
-    // tags must be an array; passing a string should fail
-    const bad = { verseKey: '2:255', tags: 'mercy', note: '', createdAt: 1, updatedAt: 1 }
-    await expect(db.put('marks', bad)).rejects.toThrow(/tags/i)
+  it('accepts a fully-valid marks record (v2 shape)', async () => {
+    await expect(db.put('marks', VALID_MARK)).resolves.not.toThrow()
   })
 
-  it('rejects a marks record with wrong array element type (tags should be string[])', async () => {
-    const bad = { verseKey: '2:255', tags: [123], note: '', createdAt: 1, updatedAt: 1 }
-    await expect(db.put('marks', bad)).rejects.toThrow(/tags/i)
+  it('rejects a marks record missing required field threads', async () => {
+    const bad = { ...VALID_MARK }
+    delete bad.threads
+    await expect(db.put('marks', bad)).rejects.toThrow(/threads/i)
   })
 
-  it('accepts a fully-valid marks record', async () => {
-    const good = { verseKey: '2:255', tags: ['mercy'], note: 'test', createdAt: 1, updatedAt: 1 }
-    await expect(db.put('marks', good)).resolves.not.toThrow()
+  it('rejects a marks record with wrong type for threads (string instead of array)', async () => {
+    const bad = { ...VALID_MARK, threads: 'mercy' }
+    await expect(db.put('marks', bad)).rejects.toThrow(/threads/i)
   })
 
-  it('rejects a positions record with missing required field', async () => {
-    const bad = { id: 's1', surah: 1 } // missing verse, savedAt
-    await expect(db.put('positions', bad)).rejects.toThrow()
+  it('accepts an empty array for marks.threads (empty[] special case)', async () => {
+    const rec = { ...VALID_MARK, verseKey: '1:1', threads: [] }
+    await expect(db.put('marks', rec)).resolves.not.toThrow()
   })
 
-  it('accepts a valid positions record', async () => {
-    const good = { id: 's1', surah: 1, verse: 1, savedAt: Date.now() }
-    await expect(db.put('positions', good)).resolves.not.toThrow()
+  it('rejects a meta record with missing required field id', async () => {
+    const bad = { foo: 'bar' }
+    await expect(db.put('meta', bad)).rejects.toThrow(/id/i)
+  })
+
+  it('accepts a valid meta record', async () => {
+    const good = { id: 'review', view: 'all', savedAt: Date.now() }
+    await expect(db.put('meta', good)).resolves.not.toThrow()
   })
 
   it('accepts any type for settings.value (validates the "any" path)', async () => {
@@ -48,15 +67,5 @@ describe('db.js typedef shape validation', () => {
 
   it('throws on an unknown store name', async () => {
     await expect(db.validateWrite('unknownStore', { foo: 'bar' })).rejects.toThrow('Unknown store: unknownStore')
-  })
-
-  it('accepts an empty array for marks.tags (empty[] special case)', async () => {
-    const rec = { verseKey: '1:1', tags: [], note: '', createdAt: 1, updatedAt: 1 }
-    await expect(db.put('marks', rec)).resolves.not.toThrow()
-  })
-
-  it('rejects a mixed-type array for marks.tags', async () => {
-    const bad = { verseKey: '2:1', tags: ['mercy', 42], note: '', createdAt: 1, updatedAt: 1 }
-    await expect(db.put('marks', bad)).rejects.toThrow(/tags/i)
   })
 })

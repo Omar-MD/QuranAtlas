@@ -1,0 +1,54 @@
+/**
+ * quota-banner — storage-low warning banner (fixed, top of viewport).
+ * Rendered by src/core/quota-banner.svelte. Mounted persistently in App.svelte.
+ */
+@layer surfaces {
+  .qa-quota-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--qa-z-sheet);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    background: var(--qa-surface-error);
+    border-bottom: 1px solid var(--qa-border-error);
+    color: var(--qa-text-error);
+    font-size: var(--qa-text-size-meta);
+    line-height: 1.4;
+    box-shadow: var(--qa-elevation-sm);
+  }
+
+  .qa-quota-banner-link {
+    color: var(--qa-text-error);
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  .qa-quota-banner-link:hover,
+  .qa-quota-banner-link:focus-visible {
+    color: var(--qa-text-error);
+    text-decoration-thickness: 2px;
+  }
+
+  .qa-quota-banner-dismiss {
+    margin-left: auto;
+    padding: 4px 10px;
+    border: 1px solid var(--qa-border-error);
+    border-radius: var(--qa-radius-sm);
+    background: transparent;
+    color: var(--qa-text-error);
+    font: inherit;
+    font-size: var(--qa-text-size-meta);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .qa-quota-banner-dismiss:hover,
+  .qa-quota-banner-dismiss:focus-visible {
+    background: color-mix(in srgb, var(--qa-text-error) 8%, transparent);
+  }
+}

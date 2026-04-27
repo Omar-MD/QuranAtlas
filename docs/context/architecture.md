@@ -6,8 +6,11 @@ One-page orientation for anyone (or any agent) walking into this codebase cold. 
 
 - **Svelte 5 (runes) + TypeScript + Vite** — the app root is `src/App.svelte` mounted from `src/app.ts` into `#app`. Reactivity is built on Svelte 5 runes (`$state`, `$derived`, `$effect`); no stores. TS config is `strict: true`. `svelte-check` runs in CI. No JSX.
 - **Runes as the state primitive** — application state lives in `src/state/*.svelte.ts` modules (see `module-graph.md#state/`). Components read the rune object directly and render reactively; feature modules write to it. State modules have zero imports and zero side effects — pure in-memory containers.
-- **Hybrid CSS** — theme tokens and top-level shell rules stay in `src/core/theme.css` (data-theme variables, ambient chrome, sheets). Surface-specific styles are co-located in each `<style>` block inside `.svelte` files and get Svelte-scoped class hashes. Class grammar is still `qa-<surface>-<part>` (e.g. `qa-review-card-chip`, `qa-sheet-backdrop`). Themes swap CSS variables on `<html data-theme="…">`.
-- **IndexedDB for all persistence** — DB name `quran-atlas`, version 1, 5 stores (see `data-model.md`). Every IDB access routes through `src/core/db.ts`. Store record shapes are declared as TS `interface`s re-exported via `StoreRecords` so the `put()` validator and callers share the same compile-time contract.
+- **CSS design system** — all CSS lives in `src/styles/`. The entry `styles/index.css` declares an `@layer` cascade (`reset, tokens, base, animations, utilities, surfaces, overrides`) and imports every layer file. Tokens are two-tier: primitive (`tokens/primitives.css`, prefixed `--c-`, `--s-`, `--r-`, `--ff-`, `--fs-`, `--lh-`, `--ls-`, `--fw-`, `--sh-`, `--dur-`, `--ease-`, `--zp-`, `--bp-`, `--tp-`, `--fp-`, `--blur-`) → semantic (`tokens/semantic.css`, prefixed `--qa-*`). Theme strategy: `:root` = light default, `html[data-theme="sepia"|"dark"]` override only what differs. Class grammar is `qa-<surface>-<part>` (e.g. `qa-review-card-chip`). Motion tokens composite into `--qa-transition-{fast,base,slow}` values (`"<dur> <ease>"`) so surfaces write `transition: color var(--qa-transition-base);`.
+  - **Token-only discipline.** Surface CSS references semantic `--qa-*` tokens for every design decision. No hardcoded hex, no literal `border-radius: 12px`, no raw `0.2s ease`. Primitives never consumed outside `semantic.css` (enforced by stylelint). All per-surface CSS lives in `styles/surfaces/*.css`; `.svelte` files never contain `<style>` blocks (enforced by `scripts/check-no-svelte-style.mjs`).
+  - **Lint gates.** `scripts/check-theme-parity.mjs` fails if a theme override declares a token missing from `:root`. `scripts/check-token-usage.mjs` fails on any unresolved `var(--qa-*)` reference. `scripts/check-at-layer.mjs` fails if any CSS file outside `reset.css`/`base.css`/`index.css` has rules outside a declared `@layer`. `scripts/check-no-svelte-style.mjs` fails if any `.svelte` file contains a `<style>` block. All four run via `pnpm check:styles` inside `validate`. `stylelint` handles selector grammar + custom-property prefixes via `.stylelintrc.json`.
+  - **Visual regression.** `tests/e2e/visual/baseline.spec.js` captures 45 PNG baselines (5 surfaces × 3 themes × 3 viewports) via `pnpm test:e2e:visual`. Threshold 5% to absorb Arabic font anti-aliasing + `clamp()` sub-pixel reflow.
+- **IndexedDB for all persistence** — DB name `quran-atlas`, version 2, 5 stores (see `data-model.md`). Every IDB access routes through `src/core/db.ts`. Store record shapes are declared as TS `interface`s re-exported via `StoreRecords` so the `put()` validator and callers share the same compile-time contract.
 - **Mitt for cross-module communication** — tiny pub/sub (`src/core/events.ts`). Event names centralised in `src/core/constants.ts::Events`. Payload typedefs live beside the enum. Events that were snapshots of rune state (`READER_SURAH_LOADED`, `READER_POSITION_CHANGED`, `SETTINGS_TRANSLATION_CHANGED`) were dissolved into rune reads in Phase 6 — see `events.md` "Dissolved into rune reads."
 - **Service worker for offline** — `src/sw.js` + Workbox; the Quran corpus is cached in `CACHE_DATASET` and surahs load from cache first. The SW and `src/offline/` helpers stay vanilla JS by design.
 - **Testing** — Vitest + jsdom + `fake-indexeddb/auto` for units; Playwright for the 185-journey E2E contract. DOM-coupled unit tests that previously hand-rolled `document.createElement` fixtures for vanilla renderers were removed during the Svelte migration — the Playwright suite is now the enforcement layer for UI behavior.
@@ -23,6 +26,7 @@ Vite's entry is `src/app.ts`, which imports `App.svelte` and calls `mount(App, {
    - `openDB()` — opens/creates the IDB (`onupgradeneeded` creates stores + indexes).
    - `initSafetySync()` — must run immediately after `openDB()` so the `DB_VERSION_CHANGE` listener is registered before any versionchange can fire (from another tab or E2E suppress hatch). If this runs later, a `suppressNextVersionChange()` call can leak its flag into a later real versionchange and silently suppress the reload banner.
    - `initTheme()` + `initFontSize()` — apply persisted theme/font *before* router dispatch so there's no flash.
+   - `initRiwayah()` — reads `settings['riwayah']` (sole writer `settings/riwayah.ts`, default `'qaloon'`) and sets `data-riwayah` on `<html>` so font-family + line-height CSS rules fire before the reader mounts. Runs after `initFontSize()` and before `initReadingTypography()` — typography needs to know the active Riwayah to clamp its line-height floor correctly.
    - Registers route handlers (see below), then calls `router.init()` to dispatch the current hash.
    - Initializes reader keyboard actions (`initReaderActions`).
    - Wires global subscribers: `NAVIGATION_NAVIGATE` → router.
@@ -82,13 +86,31 @@ The full event catalog — who emits, who listens, payload shapes, dead events, 
 - `onversionchange` closes the connection and emits `DB_VERSION_CHANGE` so `safety/sync.ts` can show the reload banner.
 - A `visibilitychange` listener (attached once) emits `DB_VISIBILITY_VISIBLE` so reader / hub / indicators can re-sync state when the tab comes back.
 
+## Canonicalization pipeline
+
+Tag labels across all 12 layers go through `core/normalize.ts::canonicalize()`
+before being indexed for filter/query. The pipeline is deterministic:
+
+  raw → trim+collapse → NFKC → strip diacritics/tatweel/zero-width →
+  fold Arabic letter variants → lowercase ASCII → strip apostrophes →
+  hyphens→spaces → alias-resolve via data/aliases.json → canonical
+
+Raw labels are preserved on the mark record for display; canonical keys
+are denormalized onto `_canon.<layer>` array paths for index hits.
+
+The alias map (`data/aliases.json`) ships ~30 seed groups covering proper
+nouns and transliteration drift. `excludeFromAliasing` protects Quranic
+rank/quality distinctions (muminin/muslimin/muttaqin etc.) from collapsing
+into the same canonical form.
+
 ## Cross-cutting patterns
 
 - **Cleanup-returning initializers** — every `init()` (plus `initBootstrap`) that subscribes to events or touches the DOM returns a cleanup fn. The caller (router, `App.svelte` `onMount`) owns invocation. Svelte components use `onMount` + returned cleanup or `$effect` with a return value; vanilla helpers use an explicit cleanups array.
 - **Bottom sheets over modals** — `.qa-sheet-backdrop` + `.qa-sheet.qa-sheet--bottom` is the standard overlay shape (settings, more, mark editor, command sheet). Each opener emits `SHEET_OPENED` / `SHEET_CLOSED` with `{ name }`.
 - **Persistent-overlay mount pattern** — Svelte components that are not route components but need to be open-able imperatively (`UndoToast`, `QuotaBanner`, `Editor`, `Panel`, `ClearDataConfirm`, `CommandSheet`, `MoreSheet`) are mounted unconditionally in `App.svelte`. They expose an imperative API via a bridge module (`core/ui-bridge.ts`, `settings/panel-bridge.ts`, `marks/editor-bridge.ts`, `nav/command-sheet-bridge.ts`, `nav/more-sheet-bridge.ts`) that non-component callers import. The bridge module holds a module-level reference set during the component's `onMount`. This pattern avoids circular imports and keeps the imperative open/close API stable across surfaces.
-- **Long-press = mark editor only** — no contextual menu, no multi-action sheet. `marks/long-press.ts::setupLongPress` (plus its `use:longPress` Svelte action counterpart) is wired once per reader mount.
-- **Multi-tab coherence** — `safety/sync.ts` BroadcastChannels mark writes across tabs; receivers listen for `SYNC_UPDATE_RECEIVED` and re-read affected verse keys.
+- **Double-tap = fast-tag panel only** (touch); right-click on desktop. No contextual menu, no multi-action sheet. `marks/long-press.ts::setupTapGestures` is wired once per reader mount via `app-bootstrap.ts::setupLongPress`. The standalone `longPress` Svelte action remains exported for any future surface that wants the press gesture but is unused today; the file name is kept for git-history continuity.
+- **Dataset path and active corpus** — the reader corpus moved from `public/dataset/surah/{NNN}.json` (old PUA-encoded Hafs, quran.com-derived) to `public/dataset/riwayat/{name}/{NNN}.json` (KFGQPC: hafs / warsh / qaloon). `src/data/dataset.ts::getSurah(n)` reads `settings['riwayah']` (sole writer `settings/riwayah.ts`, default `'qaloon'`) to resolve the URL. Per-surah files are emitted at build time by `scripts/build-riwayat.mjs` from three monolithic source JSONs; the script also regenerates `surahs.json`, `juz.json`, `manifest.json`, and `provenance.json`. Run via `pnpm build:dataset`; chained automatically by `pnpm build`.
+- **Multi-tab coherence** — `safety/sync.ts` BroadcastChannels mark writes and Riwayah switches across tabs; receivers re-read and emit `SYNC_UPDATE_RECEIVED` / `SETTINGS_RIWAYAH_CHANGED` locally.
 - **Ambient chrome** — dock and pill auto-fade on reader routes, persist elsewhere. Hidden entirely on `#/onboarding`.
 - **Tests mirror beforeEach pattern** — `fake-indexeddb/auto`, fresh shell DOM, clear `marks` store where state carry-over would flake. `vi.resetModules()` only where needed (not in hub tests — they deliberately depend on state carry-over).
 - **Responsive breakpoints** — three tiers: mobile (<768px), tablet (768–1179px), desktop (≥1180px). Canonical values live in `:root` as `--qa-bp-tablet` / `--qa-bp-desktop` and are duplicated as literals in `@media` queries (CSS cannot read custom properties inside media conditions). Typography uses a two-track system: stepped chrome tokens (`--qa-text-size-ui`, `--qa-text-size-meta`) redefined per breakpoint, and fluid reading tokens (`--qa-text-size-arabic`, `--qa-text-size-translation`) defined once via `clamp()`. User font-size slider multiplies the resulting value via `--qa-font-size-base`, unchanged. Reader on desktop switches to a 2-column Arabic|translation grid using CSS subgrid; when translation is toggled off, `#main-content:has(.qa-hide-translation)` collapses the grid to a single centered column. Chrome surfaces (ambient dock, bottom sheets, command sheet, onboarding) all adapt at the same two breakpoints: dock grows from 38×38 to 42×42 at tablet and becomes a labeled pill at desktop; bottom sheets become a centered modal at tablet (width ~480px) and the mark editor widens to 640px with a 2-column body grid at desktop; command sheet caps at 640px on desktop; onboarding adds a `max-height: 500px` landscape guard that drops the 72vh min-height when the viewport is short.
@@ -96,5 +118,15 @@ The full event catalog — who emits, who listens, payload shapes, dead events, 
 ## Where NOT to look for logic
 
 - No third-party state library. State lives in `src/state/<surface>.svelte.ts` modules using Svelte 5 `$state` runes (flat objects for simple state, classes for complex state). State modules have zero imports and zero side effects — they are pure in-memory data containers. Cross-surface signalling still goes through the mitt event bus. DOM handles and event-listener refs remain in the feature module that owns them.
-- No CSS-in-JS. Theme tokens and shell rules live in `src/core/theme.css`; surface-specific styles live in `<style>` blocks inside their owning `.svelte` files.
+- No CSS-in-JS. All CSS lives under `src/styles/` (entry `index.css`); every surface's CSS sits in `styles/surfaces/<surface>.css`. `.svelte` files carry no `<style>` blocks (enforced by `scripts/check-no-svelte-style.mjs`).
 - No routing library. `src/core/router.ts` is a small hash router that does everything.
+
+## Deploy topology
+
+Three Git branches map to three Cloudflare Pages deployments on a single project (`quranatlas`):
+
+- `main` → production → `quranatlas.org` / `www.quranatlas.org`
+- `staging` → preview → `staging.quranatlas.org`
+- `dev` → preview → `dev.quranatlas.org`
+
+Flow: merge (or direct push to `dev`) triggers `.github/workflows/ci.yml`; on green CI, `.github/workflows/deploy.yml` fires via `workflow_run` and runs `wrangler pages deploy dist --branch=<branch>`. The `dist/` artifact uploaded by CI's `build` job is the exact bundle that ships — deploy never rebuilds. Cloudflare's build container is never invoked; custom domains are bound per branch in the CF dashboard. See `docs/tech-stack.md` §CI/CD for the full job matrix.

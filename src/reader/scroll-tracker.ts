@@ -13,6 +13,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let onPositionChangeCallback: ((pos: { verse: number }) => void) | null = null
 let scrollHandler: (() => void) | null = null
 let containerRef: HTMLElement | null = null
+let scrollerRef: HTMLElement | null = null
 let sentinelEl: HTMLElement | null = null
 
 /**
@@ -20,31 +21,30 @@ let sentinelEl: HTMLElement | null = null
  */
 export function observeScroll(
   container: HTMLElement,
-  { onPositionChange }: { onPositionChange: (pos: { verse: number }) => void },
+  {
+    onPositionChange,
+    scroller,
+  }: {
+    onPositionChange: (pos: { verse: number }) => void
+    /**
+     * The actual scrolling element to use as IntersectionObserver `root`.
+     * Required when `container` itself has `overflow: visible` — otherwise
+     * IO stays frozen because the root and target scroll together and their
+     * intersection never changes. Pass `#main-content` from the Reader.
+     * If omitted, defaults to `container` (back-compat for callers where
+     * container *is* the scroller — notably the unit test fixture).
+     */
+    scroller?: HTMLElement
+  },
 ): void {
   onPositionChangeCallback = onPositionChange
   containerRef = container
+  scrollerRef = scroller ?? container
 
   if (typeof IntersectionObserver === 'undefined') {
     setupScrollFallback()
     return
   }
-
-  const sentinel = document.createElement('div')
-  sentinel.setAttribute('data-scroll-sentinel', '')
-  sentinel.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: ${CENTER_BAND_PX * 2}px;
-    transform: translateY(-50%);
-    pointer-events: none;
-    visibility: hidden;
-  `
-  container.style.position = 'relative'
-  container.appendChild(sentinel)
-  sentinelEl = sentinel
 
   const verseSentinels = container.querySelectorAll('[data-verse]')
   const centerObserver = new IntersectionObserver(
@@ -61,7 +61,7 @@ export function observeScroll(
       }
     },
     {
-      root: container,
+      root: scrollerRef,
       rootMargin: `-${CENTER_BAND_PX}px 0px -${CENTER_BAND_PX}px 0px`,
       threshold: 0,
     },
@@ -91,12 +91,15 @@ function setupScrollFallback(): void {
   if (!containerRef) {
     return
   }
+  // Fallback also reads scrollTop — it must come from the actual scroller, not
+  // from a wrapper with overflow:visible.
+  const scroller = scrollerRef ?? containerRef
 
   scrollHandler = () => {
     if (!containerRef) { return }
-    const containerRect = containerRef.getBoundingClientRect()
-    const scrollTop = containerRef.scrollTop
-    const centerTop = scrollTop + containerRect.height / 2
+    const scrollerRect = scroller.getBoundingClientRect()
+    const scrollTop = scroller.scrollTop
+    const centerTop = scrollTop + scrollerRect.height / 2
     const verseEls = containerRef.querySelectorAll('[data-verse]')
 
     for (const el of verseEls) {
@@ -114,7 +117,7 @@ function setupScrollFallback(): void {
     }
   }
 
-  containerRef.addEventListener('scroll', scrollHandler)
+  scroller.addEventListener('scroll', scrollHandler)
 }
 
 /**
@@ -126,12 +129,15 @@ export function unobserve(): number | null {
     observer.disconnect()
     observer = null
   }
-  if (scrollHandler && containerRef) {
-    containerRef.removeEventListener('scroll', scrollHandler)
+  if (scrollHandler) {
+    const target = scrollerRef ?? containerRef
+    if (target) {
+      target.removeEventListener('scroll', scrollHandler)
+    }
     scrollHandler = null
   }
-  if (sentinelEl && sentinelEl.parentNode) {
-    sentinelEl.parentNode.removeChild(sentinelEl)
+  if (sentinelEl) {
+    sentinelEl.remove()
     sentinelEl = null
   }
   if (debounceTimer) {
@@ -142,6 +148,7 @@ export function unobserve(): number | null {
   pendingPosition = null
   onPositionChangeCallback = null
   containerRef = null
+  scrollerRef = null
   return lastPending
 }
 

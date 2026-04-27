@@ -26,15 +26,16 @@ Every `Events.*` constant has a corresponding entry in the `EventPayloads` map i
 | `DB_VISIBILITY_VISIBLE` | `db:visibility-visible` | `core/db.ts:79` | `reader/position.ts:135`, `marks/indicator.ts` (initIndicators), `review/Hub.svelte:83` | `{}` |
 | `DB_QUOTA_EXCEEDED` | `db:quota-exceeded` | `core/db.ts:157` | `core/quota-banner.svelte:74` | `{ storeName, message }` |
 | `ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `core/router.ts:120` | `app-bootstrap.ts:52` | `{}` |
-| `ROUTER_ROUTE_CHANGE` | `router:route-change` | `core/router.ts:146` | `nav/AmbientDock.svelte` | `{ hash }` |
+| `ROUTER_ROUTE_CHANGE` | `router:route-change` | `core/router.ts:146` | `nav/AmbientDock.svelte`, `nav/MarginHeader.svelte` | `{ hash }` |
 | `NAVIGATION_NAVIGATE` | `navigation:navigate` | `surahs/SurahList.svelte`, `nav/CommandSheet.svelte` | `app-bootstrap.ts` | `{ surah, verse? }` |
 | `OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `data/offline.ts:164` | `data/offline.ts:265` *(self)* | `{ cached, total }` |
-| `MARKS_SAVED` | `marks:saved` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey, tags }` |
+| `MARKS_SAVED` | `marks:saved` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey, tags }` — `tags` = union of canonical keys across all 12 layers (not raw labels) |
 | `MARKS_DELETED` | `marks:deleted` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
 | `MARKS_UNDO` | `marks:undo` | `core/ui.svelte` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
 | `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/Verse.svelte` (onMount) | `marks/indicator.ts` (initIndicators) | `{ verseKey, element }` |
-| `AMBIENT_SURFACE` | `ambient:surface` | `reader/Reader.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte` | `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte` | `{ reason }` |
-| `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `marks/Editor.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
+| `AMBIENT_SURFACE` | `ambient:surface` | `reader/Reader.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `{ reason }` |
+| `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `tag/TagSheet.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
+| `SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `settings/riwayah.ts::setRiwayah` (local switch); `safety/sync.ts::handleChannelMessage` (cross-tab fan-in via `applyRiwayah`) | `reader/Reader.svelte` (refetches active surah, restores `aya_no` anchor — clamps to last ayah on miss); `settings/reading-typography.ts::initReadingTypography` (re-clamps `--qa-arabic-line-height` to new Riwayah's floor) | `{ from: 'hafs' \| 'warsh' \| 'qaloon'; to: 'hafs' \| 'warsh' \| 'qaloon' }` |
 | `STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `data/offline.ts:58` | `core/quota-banner.svelte:79` | `{}` |
 
 ### Emitter-only (⚠ dead listener)
@@ -64,8 +65,12 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 | `DATASET_PENDING_CONFIRMATION` | `dataset:pending-confirmation` | `data/offline.ts:188` | `{ from, to }` |
 | `DATASET_APPLIED` | `dataset:applied` | `data/offline.ts:195` | `{ version }` |
 | `DATASET_UPDATE_FAILED` | `dataset:update-failed` | `data/offline.ts:200` | `{ error }` |
-| `SHEET_OPENED` | `sheet:opened` | `settings/Panel.svelte` (on open), `nav/MoreSheet.svelte` | `{ name }` |
-| `SHEET_CLOSED` | `sheet:closed` | `settings/Panel.svelte` (on close), `nav/MoreSheet.svelte` | `{ name }` |
+| `SHEET_OPENED` | `sheet:opened` | `settings/Panel.svelte` (on open) | `{ name }` |
+| `SHEET_CLOSED` | `sheet:closed` | `settings/Panel.svelte` (on close) | `{ name }` |
+| `EDGES_SAVED` | `edges:saved` | `edges/store.ts` (createEdge + updateEdge) | *(no listener yet)* | `{ edgeId, from, to, kind }` |
+| `EDGES_DELETED` | `edges:deleted` | `edges/store.ts` (deleteEdge) | *(no listener yet)* | `{ edgeId }` |
+| `EDGES_SAVE_FAILED` | `edges:save-failed` | `edges/store.ts` (createEdge on error) | *(no listener yet)* | `{ error }` |
+| `SYNC_EDGES_UPDATED` | `sync:edges-updated` | `safety/sync.ts` (handleChannelMessage receiver) | *(no listener yet)* | `{ edgeIds }` |
 
 ### Listener-only (⚠ dead emitter)
 

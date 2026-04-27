@@ -2,7 +2,7 @@
  * Shared constants used across client and service worker code.
  */
 
-export const CACHE_DATASET = 'quran-dataset-v1'
+export const CACHE_DATASET = 'quran-dataset-v2'
 
 // ---------------------------------------------------------------------------
 // Event payload types — one per Events constant.
@@ -25,9 +25,11 @@ export const Events = {
   OFFLINE_INSTALL_COMPLETE: 'offline:install-complete',
   APP_INIT_ERROR: 'app:init-error',
   APP_READY_FOR_DOWNLOAD: 'app:ready-for-download',
+  APP_UPDATE_AVAILABLE: 'app:update-available',
   SETTINGS_THEME_CHANGED: 'settings:theme-changed',
   SETTINGS_DATA_CLEARED: 'settings:data-cleared',
   SETTINGS_FONT_SIZE_CHANGED: 'settings:font-size-changed',
+  SETTINGS_RIWAYAH_CHANGED: 'settings:riwayah-changed',
   REVIEW_OPEN: 'review:open',
   REVIEW_FILTER: 'review:filter',
   MARKS_SAVED: 'marks:saved',
@@ -46,6 +48,10 @@ export const Events = {
   OFFLINE_SW_TIMEOUT: 'offline:sw-timeout',
   SHEET_OPENED: 'sheet:opened',
   SHEET_CLOSED: 'sheet:closed',
+  EDGES_SAVED: 'edges:saved',
+  EDGES_DELETED: 'edges:deleted',
+  EDGES_SAVE_FAILED: 'edges:save-failed',
+  SYNC_EDGES_UPDATED: 'sync:edges-updated',
 } as const
 
 export type EventName = typeof Events[keyof typeof Events]
@@ -67,12 +73,14 @@ export type EventPayloads = {
   'offline:install-complete': Record<string, never>
   'app:init-error': { error: Error; context?: string }
   'app:ready-for-download': Record<string, never>
+  'app:update-available': Record<string, never>
   'settings:theme-changed': { from: string; to: string }
   'settings:data-cleared': Record<string, never>
   'settings:font-size-changed': { size: string }
+  'settings:riwayah-changed': { from: 'hafs' | 'warsh' | 'qaloon'; to: 'hafs' | 'warsh' | 'qaloon' }
   'review:open': Record<string, never>
   'review:filter': { tag: string | null; surah: number | null }
-  'marks:saved': { verseKey: string; tags: string[] }
+  'marks:saved': { verseKey: string; tags: string[] } // tags = union of canonical keys across all 12 layers
   'marks:deleted': { verseKey: string }
   'marks:undo': { verseKey: string }
   'marks:save-failed': { verseKey: string; error: string }
@@ -88,6 +96,10 @@ export type EventPayloads = {
   'offline:sw-timeout': Record<string, never>
   'sheet:opened': { name: string }
   'sheet:closed': { name: string }
+  'edges:saved': { edgeId: string; from: string; to: string; kind: string }
+  'edges:deleted': { edgeId: string }
+  'edges:save-failed': { error: string }
+  'sync:edges-updated': { edgeIds: string[] }
 }
 
 export const Errors = {

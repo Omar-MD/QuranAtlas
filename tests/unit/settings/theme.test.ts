@@ -4,7 +4,24 @@ import { Events } from '../../../src/core/constants.js'
 import { del, get, openDB } from '../../../src/core/db.js'
 import { clear, on } from '../../../src/core/events.js'
 import { logger } from '../../../src/core/logger.js'
-import { applyTheme, getThemeOptions, initTheme, setTheme } from '../../../src/settings/theme.ts'
+import { applyTheme, cycleTheme, getThemeOptions, initTheme, setTheme } from '../../../src/settings/theme.ts'
+
+function mockPrefersDark(matches: boolean) {
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (q: string) => ({
+      matches: q.includes('dark') ? matches : false,
+      media: q,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+      onchange: null,
+    }),
+  })
+}
 
 async function resetThemeSetting() {
   try {
@@ -87,11 +104,60 @@ describe('settings/theme.ts', () => {
     unsub()
   })
 
+  it('syncs <meta name="theme-color"> to --qa-surface-app on every applyTheme', async () => {
+    document.querySelectorAll('meta[name="theme-color"]').forEach((node) => node.remove())
+    const surfaceByTheme = {
+      light: 'rgb(11, 22, 33)',
+      sepia: 'rgb(44, 55, 66)',
+      dark: 'rgb(77, 88, 99)',
+    }
+    const original = window.getComputedStyle
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+      const variant = document.documentElement.getAttribute('data-theme') ?? 'light'
+      const value = surfaceByTheme[variant as keyof typeof surfaceByTheme] ?? ''
+      const real = original.call(window, el)
+      return { ...real, getPropertyValue: (prop: string) => prop === '--qa-surface-app' ? value : real.getPropertyValue(prop) } as CSSStyleDeclaration
+    })
+
+    applyTheme('light')
+    expect(document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content).toBe(surfaceByTheme.light)
+
+    applyTheme('dark')
+    expect(document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content).toBe(surfaceByTheme.dark)
+
+    applyTheme('sepia')
+    expect(document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content).toBe(surfaceByTheme.sepia)
+  })
+
   it('returns the supported theme options as a new array', () => {
     const options = getThemeOptions()
 
     expect(options).toEqual(['light', 'sepia', 'dark', 'auto'])
     expect(options).not.toBe(getThemeOptions())
+  })
+
+  describe('cycleTheme', () => {
+    it('cycles light → sepia → dark → light, skipping auto so the visible variant always changes', async () => {
+      mockPrefersDark(false)
+      applyTheme('light')
+      expect(await cycleTheme()).toBe('sepia')
+      expect(await cycleTheme()).toBe('dark')
+      expect(await cycleTheme()).toBe('light')
+    })
+
+    it('from auto + OS dark, next tap goes to light (regression: dark→auto→dark previously needed two taps to reach light)', async () => {
+      mockPrefersDark(true)
+      applyTheme('auto')
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+      expect(await cycleTheme()).toBe('light')
+    })
+
+    it('from auto + OS light, next tap goes to sepia', async () => {
+      mockPrefersDark(false)
+      applyTheme('auto')
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+      expect(await cycleTheme()).toBe('sepia')
+    })
   })
 
   it('initTheme loads the persisted value and applies it', async () => {

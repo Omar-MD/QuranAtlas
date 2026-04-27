@@ -6,15 +6,26 @@
   import { reader } from '../state/reader.svelte'
   import { settings } from '../state/settings.svelte'
   import { getSurah, getSurahs } from '../data/dataset'
-  import type { SurahData, SurahMeta } from '../data/dataset'
+  import type { SurahPayload, SurahMeta } from '../data/dataset'
   import { get } from '../core/db'
-  import { emit } from '../core/events'
+  import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
   import { clearUndoToast, clearUndoRecord } from '../core/ui-bridge'
   import { setupChunkedAppend, CHUNK_SIZE } from './chunked-append'
   import { initPositionTracking, teardownPositionTracking, savePosition } from './position'
+  import { observeNewVerses } from './scroll-tracker'
   import { isValidSurahNum } from './render-helpers'
+  import {
+    nextSurah,
+    prevSurah,
+    swapToSurah,
+    consumeSwapAnchor,
+    setupPullToSwap,
+    type SwapAnchor,
+    type PullState,
+  } from './surah-swap'
+  import PullToSwapIndicator from './PullToSwapIndicator.svelte'
 
   // ---------------------------------------------------------------------------
   // Props — route params + hooks injected from app-bootstrap.ts
@@ -42,9 +53,9 @@
 
   type VerseItem = { key: string; ar: string; en: string }
 
-  let surahData = $state<SurahData | null>(null)
+  let surahData = $state<SurahPayload | null>(null)
   let surahMeta = $state<SurahMeta | null>(null)
-  let savedPosition = $state<{ verse: number } | null>(null)
+  let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
   let translationVisible = $state(settings.translationVisible ?? true)
   let verses = $state<VerseItem[]>([])
@@ -55,6 +66,16 @@
 
   let container: HTMLElement | null = $state(null)
   let cleanups: Array<() => void> = []
+
+  // Captured at mount: 'top' for forward swaps and fresh entry, 'bottom'
+  // for backward swaps so the user emerges from the previous surah's end.
+  let swapAnchor: SwapAnchor = 'top'
+
+  // Pull-to-swap progress state — drives the circular indicator overlay.
+  let pullState = $state<PullState | null>(null)
+
+  const prevMeta = $derived(allSurahs.find(s => s.n === prevSurah(surahNum)) ?? null)
+  const nextMeta = $derived(allSurahs.find(s => s.n === nextSurah(surahNum)) ?? null)
 
   // ---------------------------------------------------------------------------
   // Reactive translation toggle — keep in sync with settings rune after load
@@ -74,18 +95,36 @@
 
   /** Append up to CHUNK_SIZE more verses to the rendered list. */
   function appendChunk() {
-    if (!surahData || renderedCount >= surahData.ar.length) { return }
-    const nextEnd = Math.min(renderedCount + CHUNK_SIZE, surahData.ar.length)
+    if (!surahData || renderedCount >= surahData.ayat.length) { return }
+    const nextEnd = Math.min(renderedCount + CHUNK_SIZE, surahData.ayat.length)
+    const firstNewVerseNum = renderedCount + 1
     const newItems: VerseItem[] = []
     for (let i = renderedCount; i < nextEnd; i++) {
+      const ayah = surahData.ayat[i]
       newItems.push({
-        key: `${surahNum}:${i + 1}`,
-        ar: surahData.ar[i] ?? '',
-        en: surahData.en[i] ?? '',
+        key: `${surahData.sura_no}:${ayah?.aya_no ?? (i + 1)}`,
+        ar: ayah?.aya_text ?? '',
+        en: '',
       })
     }
     verses = [...verses, ...newItems]
     renderedCount = nextEnd
+
+    // Register the newly-appended verses with the scroll tracker so the
+    // center-band IntersectionObserver fires on them as the user scrolls
+    // past. Without this, only verses from the first chunk would ever update
+    // the saved position. Runs after Svelte flushes the new DOM nodes.
+    if (container) {
+      requestAnimationFrame(() => {
+        if (!container) { return }
+        const els: HTMLElement[] = []
+        for (let n = firstNewVerseNum; n <= nextEnd; n++) {
+          const el = container.querySelector<HTMLElement>(`[data-verse="${n}"]`)
+          if (el) { els.push(el) }
+        }
+        if (els.length > 0) { observeNewVerses(els) }
+      })
+    }
   }
 
   /**
@@ -94,7 +133,7 @@
    */
   function ensureVerseRendered(targetN: number) {
     if (!surahData) { return }
-    while (renderedCount < targetN && renderedCount < surahData.ar.length) {
+    while (renderedCount < targetN && renderedCount < surahData.ayat.length) {
       appendChunk()
     }
   }
@@ -110,20 +149,45 @@
       return
     }
 
+    // Capture the swap anchor stashed by the prior swapToSurah() call (if
+    // any). Forward swaps anchor to 'top'; backward swaps to 'bottom'.
+    swapAnchor = consumeSwapAnchor()
+
     // Update shared reader state
     reader.currentSurahNum = surahNum
     const initialVerse = ayahParam ? parseInt(ayahParam, 10) : 1
     const initialVerseSafe = Number.isFinite(initialVerse) ? initialVerse : 1
     reader.currentVerseKey = `${surahNum}:${initialVerseSafe}`
 
-    // Persist an initial position record so other surfaces (surah list
-    // continue-reading card, ambient pill, etc.) can discover the last-visited
-    // reader location even if the user never scrolls.
+    // Always persist the global position to (surah, initialVerse) on entry
+    // — single-position model means landing on a surah overwrites any prior
+    // surah's saved verse. Backward swaps overwrite later in loadSurah once
+    // the terminal verse is known.
     void savePosition(surahNum, initialVerseSafe)
 
     void loadSurah()
 
+    // Re-fetch the surah when the user switches Riwayah so the reader
+    // immediately shows the correct orthography. Restore the scroll anchor
+    // (clamped to the last ayah of the new riwayah when the prior position
+    // overshoots the new ayah count).
+    const offRiwayah = on(Events.SETTINGS_RIWAYAH_CHANGED, async () => {
+      const anchorKey = reader.currentVerseKey
+      const anchorAya = anchorKey ? parseInt(anchorKey.split(':')[1] ?? '1', 10) : 1
+      await loadSurah()
+      const ayatList = surahData?.ayat ?? []
+      const lastAya = ayatList.length > 0 ? (ayatList[ayatList.length - 1]?.aya_no ?? 1) : 1
+      const safeAya = Math.min(anchorAya, lastAya)
+      if (safeAya > 1) {
+        ensureVerseRendered(safeAya)
+        // Re-use existing scroll-to-verse mechanism via the position tracker
+        const el = container?.querySelector<HTMLElement>(`[data-verse="${safeAya}"]`)
+        if (el) { el.scrollIntoView({ block: 'start', behavior: 'instant' as ScrollBehavior }) }
+      }
+    })
+
     return () => {
+      offRiwayah()
       // Cleanup on unmount
       teardownPositionTracking()
       for (const fn of cleanups) { try { fn() } catch { /* ignore */ } }
@@ -150,14 +214,13 @@
     try {
       performance.mark('reader:fetch-start')
 
-      const [data, surahs, transVisible, pos] = await Promise.all([
+      const [data, surahs, transVisible] = await Promise.all([
         getSurah(surahNum),
         getSurahs(),
         get('settings', 'translationVisible').then((r) => {
           const v = r?.value
           return typeof v === 'boolean' ? v : true
         }),
-        get('positions', `s${surahNum}`),
       ])
 
       clearTimeout(timeoutId)
@@ -170,16 +233,22 @@
 
       surahData = data
       surahMeta = surahs.find((s) => s.n === surahNum) ?? null
+      allSurahs = surahs
       translationVisible = transVisible
       settings.translationVisible = transVisible
-
-      const posVerse = typeof pos?.verse === 'number' ? pos.verse : null
-      savedPosition = posVerse ? { verse: posVerse } : null
 
       // Render first chunk
       verses = []
       renderedCount = 0
       appendChunk()
+
+      // Reset scroll to top of the app-shell scroller. Browsers preserve
+      // scrollTop across hash-route changes; without this, remounting the
+      // reader with a shorter first-chunk document causes the browser to
+      // clamp the stale scrollTop to the new content height — user briefly
+      // sees the end of chunk 1 before the position-restore scroll runs.
+      const shellScroller = document.getElementById('main-content')
+      if (shellScroller) { shellScroller.scrollTop = 0 }
 
       reader.currentSurah = surahData
 
@@ -189,14 +258,29 @@
       requestAnimationFrame(() => {
         if (!container) { return }
 
+        // Backward swap: expand all chunks then anchor scroll at the bottom
+        // so the user sees the previous surah's terminal verse.
+        if (swapAnchor === 'bottom' && surahData) {
+          ensureVerseRendered(surahData.ayat.length)
+          requestAnimationFrame(() => {
+            if (shellScroller) {
+              shellScroller.scrollTop = shellScroller.scrollHeight
+            }
+            if (surahData) {
+              void savePosition(surahNum, surahData.ayat.length)
+            }
+          })
+        }
+
         const posCleanups = initPositionTracking({
           mainContent: container,
+          scroller: document.getElementById('main-content') ?? undefined,
           surahNum,
           shouldSavePosition: true,
           surahMeta: surahMeta ?? undefined,
-          savedPosition,
+          savedPosition: null,
           targetVerse: targetVerse ?? null,
-          totalVerseCount: surahData?.ar.length ?? 0,
+          totalVerseCount: surahData?.ayat.length ?? 0,
           ensureVerseRendered,
           onInvalidVerseError: (msg) => { invalidVerseError = msg },
         })
@@ -204,6 +288,23 @@
 
         // Set up chunked append scroll listener
         cleanups.push(setupChunkedAppend(container, appendChunk))
+
+        // Wire pull-to-swap gesture — Chrome-mobile-style circular indicator
+        // drives a progress 0..1 that the user fills by pulling past the
+        // top/bottom edge. Commit fires the swap.
+        if (shellScroller) {
+          cleanups.push(setupPullToSwap({
+            scroller: shellScroller,
+            onPull: (state) => { pullState = state },
+            onCommit: (direction) => {
+              if (direction === 'forward') {
+                swapToSurah(nextSurah(surahNum), 'top')
+              } else {
+                swapToSurah(prevSurah(surahNum), 'bottom')
+              }
+            },
+          }))
+        }
 
         // Wire hooks (indicators + long-press). initIndicators handles its own
         // initial mark-cache load + decoration now that READER_SURAH_LOADED is gone.
@@ -222,7 +323,7 @@
         performance.measure('reader:total-load', 'reader:fetch-start', 'reader:first-verse')
 
         const name = surahMeta?.name ?? `Surah ${surahNum}`
-        announce(`${name} loaded, ${surahData?.ar.length ?? 0} verses`)
+        announce(`${name} loaded, ${surahData?.ayat.length ?? 0} verses`)
       })
     } catch {
       clearTimeout(timeoutId)
@@ -262,11 +363,20 @@
       <div class="qa-invalid-verse-error" data-invalid-verse-error="">
         {invalidVerseError}
         <button
-          class="qa-error-dismiss"
           aria-label="Dismiss"
           onclick={() => { invalidVerseError = null }}
         >×</button>
       </div>
+    {/if}
+
+    {#if prevMeta}
+      <button
+        type="button"
+        class="qa-continue-prev"
+        data-continue-prev=""
+        onclick={() => swapToSurah(prevSurah(surahNum), 'bottom')}
+        aria-label={`Previous surah: ${prevMeta.name}`}
+      ><span class="qa-continue-arrow" aria-hidden="true">↑</span><span class="qa-continue-title">{prevMeta.name}</span></button>
     {/if}
 
     <SurahHeader {surahNum} meta={surahMeta} />
@@ -280,207 +390,22 @@
       />
     {/each}
 
-    <div class="qa-surah-end" data-surah-end="">End of {surahMeta.name}</div>
+    {#if renderedCount === (surahData?.ayat.length ?? 0) && nextMeta}
+      <button
+        type="button"
+        class="qa-continue-next"
+        data-continue-next=""
+        onclick={() => swapToSurah(nextSurah(surahNum), 'top')}
+        aria-label={`Next surah: ${nextMeta.name}`}
+      ><span class="qa-continue-title">{nextMeta.name}</span><span class="qa-continue-arrow" aria-hidden="true">↓</span></button>
+    {:else}
+      <div class="qa-surah-end" data-surah-end="">End of {surahMeta.name}</div>
+    {/if}
   </div>
+
+  <PullToSwapIndicator
+    direction={pullState?.direction ?? null}
+    progress={pullState?.progress ?? 0}
+  />
 {/if}
 
-<style>
-  /* Surah header card */
-  :global(.qa-surah-header-card) {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 2rem 1.25rem;
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--qa-border);
-    border-radius: 12px;
-    background: var(--qa-bg-surface);
-    text-align: center;
-  }
-
-  :global(.qa-surah-name) {
-    font-family: var(--qa-font-arabic);
-    font-size: 2.75rem;
-    color: var(--qa-text-arabic);
-    direction: rtl;
-    line-height: var(--qa-line-height-arabic);
-  }
-
-  :global(.qa-surah-meta) {
-    font-size: 0.75rem;
-    color: var(--qa-text-secondary);
-    margin-top: 0.25rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
-
-  /* Basmala */
-  :global(.qa-basmala) {
-    font-family: var(--qa-font-arabic);
-    font-size: 1.75rem;
-    text-align: center;
-    padding: 1.5rem 0;
-    color: var(--qa-text-arabic);
-    direction: rtl;
-    line-height: var(--qa-line-height-arabic);
-  }
-
-  /* Individual Verse Container */
-  :global(.qa-verse) {
-    padding: 1.5rem 0;
-    border-bottom: 1px solid var(--qa-border-subtle);
-    position: relative;
-    content-visibility: auto;
-    contain-intrinsic-size: 0 200px;
-  }
-
-  :global(.qa-verse:last-child) {
-    border-bottom: none;
-  }
-
-  @media (hover: hover) {
-    :global(.qa-verse) {
-      transition: background-color 0.18s ease;
-    }
-    :global(.qa-verse:hover) {
-      background-color: var(--qa-verse-hover-bg);
-    }
-  }
-
-  /* Arabic Text Block */
-  :global(.qa-verse-arabic) {
-    font-family: var(--qa-font-arabic);
-    font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base));
-    line-height: var(--qa-line-height-arabic);
-    direction: rtl;
-    text-align: justify;
-    color: var(--qa-text-arabic);
-    word-spacing: 0.1em;
-    margin-bottom: 1rem;
-  }
-
-  :global(.qa-verse-number) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--qa-font-sans);
-    font-size: 1rem;
-    color: var(--qa-ambient-accent);
-    margin-inline-start: 0.75rem;
-    margin-inline-end: 0.25rem;
-    direction: ltr;
-    unicode-bidi: isolate;
-    border: 1px solid var(--qa-ambient-accent);
-    border-radius: 50%;
-    width: 2.75rem;
-    height: 2.75rem;
-    vertical-align: middle;
-    flex-shrink: 0;
-    cursor: pointer;
-  }
-
-  /* English Translation Block */
-  :global(.qa-verse-translation) {
-    font-family: var(--qa-font-translation);
-    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base));
-    line-height: 1.75;
-    color: var(--qa-text-primary);
-    direction: ltr;
-    text-align: left;
-    padding-top: 0.75rem;
-    border-top: 1px dashed var(--qa-border);
-  }
-
-  :global(.qa-verse-translation.qa-hide-translation) {
-    display: none;
-  }
-
-  /* Tablet: bump verse breathing room ~25% */
-  @media (min-width: 768px) {
-    :global(.qa-verse) {
-      padding: 1.875rem 0;
-    }
-    :global(.qa-verse-arabic) {
-      margin-bottom: 1.25rem;
-    }
-    :global(.qa-verse-translation) {
-      padding-top: 0.9375rem;
-    }
-  }
-
-  /* Surah end marker */
-  :global(.qa-surah-end) {
-    text-align: center;
-    padding: 2rem 0 1rem;
-    color: var(--qa-text-secondary);
-    font-size: var(--qa-text-size-meta);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  /* Bookmarked verse — persistent 2px gold left-edge inside the verse block */
-  :global(.qa-verse.qa-verse--bookmarked) {
-    position: relative;
-  }
-  :global(.qa-verse.qa-verse--bookmarked::before) {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 6px;
-    bottom: 6px;
-    width: 2px;
-    border-radius: 2px;
-    background-color: var(--qa-ambient-accent);
-  }
-
-  /* Edge indicators — fixed positioned, appended to body */
-  :global(.qa-edge-indicator) {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 2px;
-    height: 36px;
-    background-color: var(--qa-ambient-accent);
-    opacity: 0;
-    border-radius: 2px;
-    pointer-events: none;
-    z-index: 50;
-    transition: opacity 0.18s ease, top 0.18s ease;
-  }
-
-  :global(.qa-edge-indicator--left) { left: 0; border-radius: 0 2px 2px 0; }
-  :global(.qa-edge-indicator--right) { right: 0; border-radius: 2px 0 0 2px; }
-
-  :global(.qa-edge-indicator--visible) {
-    opacity: 0.7;
-  }
-
-  /* Invalid verse error */
-  :global(.qa-invalid-verse-error) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-    background-color: var(--qa-bg-error);
-    border: 1px solid var(--qa-border-error);
-    color: var(--qa-text-error);
-    border-radius: 8px;
-    font-size: var(--qa-text-size-ui);
-  }
-
-  /* Desktop reading column */
-  @media (min-width: 1180px) {
-    :global(.qa-verse) {
-      padding: 2.25rem 0;
-    }
-    :global(.qa-verse-arabic) {
-      margin-bottom: 1.5rem;
-    }
-    :global(.qa-verse-translation) {
-      padding-top: 1rem;
-    }
-  }
-</style>

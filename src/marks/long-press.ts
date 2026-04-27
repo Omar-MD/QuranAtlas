@@ -103,3 +103,119 @@ export function setupLongPress(
   const action = longPress(container, onPress)
   return () => action.destroy()
 }
+
+/**
+ * Tap gesture handler for verse rows.
+ *
+ *   short-tap   → onShort (e.g. switch active verse while fast-tag is open)
+ *   double-tap  → onDouble (e.g. open fast-tag panel — replaces long-press
+ *                 since 2026-04-25; long-press now stays free for the OS)
+ *
+ * Touch double-tap detected via two ends within DOUBLE_TAP_MS on the same
+ * `[data-verse-key]`. Desktop maps native `dblclick` and right-click
+ * `contextmenu` to onDouble for parity.
+ */
+const DOUBLE_TAP_MS = 300
+
+export function setupTapGestures(
+  container: HTMLElement,
+  { onShort, onDouble }: {
+    onShort?: (verseKey: string) => void
+    onDouble?: (verseKey: string) => void
+  },
+): () => void {
+  let touchStartX: number | null = null
+  let touchStartY: number | null = null
+  let touchMoved = false
+  let handledByTouch = false
+  let lastTapVerse: string | null = null
+  let lastTapAt = 0
+
+  function getVerseKey(target: EventTarget | null): string | null {
+    if (!(target instanceof Element)) { return null }
+    const el = target.closest('[data-verse-key]') as HTMLElement | null
+    return el?.dataset['verseKey'] ?? null
+  }
+
+  function onTouchStart(e: TouchEvent): void {
+    if (!getVerseKey(e.target)) { return }
+    const t = e.touches[0]
+    if (!t) { return }
+    touchStartX = t.clientX
+    touchStartY = t.clientY
+    touchMoved = false
+  }
+
+  function onTouchEnd(e: TouchEvent): void {
+    const verseKey = getVerseKey(e.target)
+    if (!verseKey || touchMoved) {
+      touchStartX = null; touchStartY = null
+      return
+    }
+    touchStartX = null; touchStartY = null
+    handledByTouch = true
+    setTimeout(() => { handledByTouch = false }, 400)
+
+    const now = Date.now()
+    if (lastTapVerse === verseKey && (now - lastTapAt) < DOUBLE_TAP_MS) {
+      lastTapVerse = null
+      lastTapAt = 0
+      onDouble?.(verseKey)
+      return
+    }
+    lastTapVerse = verseKey
+    lastTapAt = now
+    onShort?.(verseKey)
+  }
+
+  function onTouchMove(e: TouchEvent): void {
+    if (touchStartX === null || touchStartY === null) { return }
+    const t = e.touches[0]
+    if (!t) { return }
+    const dx = Math.abs(t.clientX - touchStartX)
+    const dy = Math.abs(t.clientY - touchStartY)
+    if (dx > TOUCH_MOVE_THRESHOLD || dy > TOUCH_MOVE_THRESHOLD) {
+      touchMoved = true
+    }
+  }
+
+  function onClick(e: MouseEvent): void {
+    if (handledByTouch) { return }
+    const target = e.target as HTMLElement | null
+    if (target?.closest('.qa-verse-number, button, a')) { return }
+    const verseKey = getVerseKey(e.target)
+    if (!verseKey) { return }
+    onShort?.(verseKey)
+  }
+
+  function onDblClick(e: MouseEvent): void {
+    const target = e.target as HTMLElement | null
+    if (target?.closest('button, a')) { return }
+    const verseKey = getVerseKey(e.target)
+    if (!verseKey) { return }
+    onDouble?.(verseKey)
+  }
+
+  function onContextMenu(e: MouseEvent): void {
+    const verseKey = getVerseKey(e.target)
+    if (!verseKey) { return }
+    e.preventDefault()
+    onDouble?.(verseKey)
+  }
+
+  container.addEventListener('touchstart', onTouchStart, { passive: true })
+  container.addEventListener('touchend', onTouchEnd, { passive: true })
+  container.addEventListener('touchmove', onTouchMove, { passive: true })
+  container.addEventListener('click', onClick)
+  container.addEventListener('dblclick', onDblClick)
+  container.addEventListener('contextmenu', onContextMenu)
+
+  return () => {
+    container.removeEventListener('touchstart', onTouchStart)
+    container.removeEventListener('touchend', onTouchEnd)
+    container.removeEventListener('touchmove', onTouchMove)
+    container.removeEventListener('click', onClick)
+    container.removeEventListener('dblclick', onDblClick)
+    container.removeEventListener('contextmenu', onContextMenu)
+  }
+}

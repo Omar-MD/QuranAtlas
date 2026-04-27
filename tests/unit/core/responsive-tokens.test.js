@@ -4,29 +4,36 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const THEME_CSS = readFileSync(resolve(__dirname, '../../../src/core/theme.css'), 'utf8')
-// Surface CSS was migrated into component <style> blocks during the Svelte port.
-// Onboarding styles now live in Onboarding.svelte (co-located).
-const ONBOARDING_SVELTE = readFileSync(resolve(__dirname, '../../../src/onboarding/Onboarding.svelte'), 'utf8')
+// Tokens now split across primitives.css + semantic.css; surface rules live
+// under surfaces/. _legacy.css was retired in PR 13 final cleanup.
+const PRIMITIVES_CSS = readFileSync(resolve(__dirname, '../../../src/styles/tokens/primitives.css'), 'utf8')
+const SEMANTIC_CSS = readFileSync(resolve(__dirname, '../../../src/styles/tokens/semantic.css'), 'utf8')
+const SHEET_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/sheet.css'), 'utf8')
+const MODAL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/modal.css'), 'utf8')
+const APP_SHELL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/app-shell.css'), 'utf8')
+const ABOUT_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/about.css'), 'utf8')
+const ONBOARDING_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/onboarding.css'), 'utf8')
+const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${SHEET_CSS}\n${MODAL_CSS}\n${APP_SHELL_CSS}\n${ABOUT_CSS}\n${ONBOARDING_CSS}`
 
-describe('theme.css — responsive breakpoint tokens', () => {
+describe('styles — responsive breakpoint tokens', () => {
   it('defines --qa-bp-tablet: 768px in :root', () => {
-    expect(THEME_CSS).toMatch(/--qa-bp-tablet:\s*768px/)
+    expect(THEME_CSS).toMatch(/--(qa-bp|bp)-tablet:\s*768px/)
   })
 
   it('defines --qa-bp-desktop: 1180px in :root', () => {
-    expect(THEME_CSS).toMatch(/--qa-bp-desktop:\s*1180px/)
+    expect(THEME_CSS).toMatch(/--(qa-bp|bp)-desktop:\s*1180px/)
   })
 
-  it('defines --qa-text-size-arabic as clamp(2.25rem, 1.8rem + 2.2vw, 3.5rem)', () => {
+  it('defines --qa-text-size-arabic as clamp(2.125rem, 1.85rem + 1.4vw, 2.75rem)', () => {
+    // Value either directly on the semantic token or via --fs-arabic primitive.
     expect(THEME_CSS).toMatch(
-      /--qa-text-size-arabic:\s*clamp\(\s*2\.25rem\s*,\s*1\.8rem\s*\+\s*2\.2vw\s*,\s*3\.5rem\s*\)/
+      /--(qa-text-size-arabic|fs-arabic):\s*clamp\(\s*2\.125rem\s*,\s*1\.85rem\s*\+\s*1\.4vw\s*,\s*2\.75rem\s*\)/
     )
   })
 
-  it('defines --qa-text-size-translation as clamp(1.125rem, 1rem + 0.6vw, 1.5rem)', () => {
+  it('defines --qa-text-size-translation as clamp(1.0625rem, 1rem + 0.3vw, 1.125rem)', () => {
     expect(THEME_CSS).toMatch(
-      /--qa-text-size-translation:\s*clamp\(\s*1\.125rem\s*,\s*1rem\s*\+\s*0\.6vw\s*,\s*1\.5rem\s*\)/
+      /--(qa-text-size-translation|fs-translation):\s*clamp\(\s*1\.0625rem\s*,\s*1rem\s*\+\s*0\.3vw\s*,\s*1\.125rem\s*\)/
     )
   })
 
@@ -42,16 +49,18 @@ describe('theme.css — responsive breakpoint tokens', () => {
     expect(block[0]).toMatch(/--qa-text-size-meta:\s*0\.9375rem/)
   })
 
-  it('overrides --qa-text-size-ui to 1.125rem at min-width: 1180px', () => {
+  it('overrides --qa-text-size-ui to 1.125rem (or var(--fs-lg)) at min-width: 1180px', () => {
     const block = THEME_CSS.match(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{\s*:root\s*\{[^}]*\}\s*\}/)
     expect(block, 'desktop :root override block must exist').not.toBeNull()
-    expect(block[0]).toMatch(/--qa-text-size-ui:\s*1\.125rem/)
+    expect(block[0]).toMatch(/--qa-text-size-ui:\s*(1\.125rem|var\(--fs-lg\))/)
+    // Primitive --fs-lg is 1.125rem — verified in primitives.css
+    expect(SEMANTIC_CSS).toMatch(/--qa-text-size-ui:\s*var\(--fs-lg\)|--qa-text-size-ui:\s*1\.125rem/)
   })
 
-  it('overrides --qa-text-size-meta to 1rem at min-width: 1180px', () => {
+  it('overrides --qa-text-size-meta to 1rem (or var(--fs-md)) at min-width: 1180px', () => {
     const block = THEME_CSS.match(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{\s*:root\s*\{[^}]*\}\s*\}/)
     expect(block, 'desktop :root override block must exist').not.toBeNull()
-    expect(block[0]).toMatch(/--qa-text-size-meta:\s*1rem/)
+    expect(block[0]).toMatch(/--qa-text-size-meta:\s*(1rem|var\(--fs-md\))/)
   })
 
   // .qa-verse tablet rules moved to Reader.svelte <style> block (Phase 5 migration)
@@ -64,12 +73,12 @@ describe('theme.css — responsive breakpoint tokens', () => {
 
   // .qa-verse desktop padding rules moved to Reader.svelte <style> block (Phase 5 migration)
 
-  it('at desktop, reader #main-content caps at 960px for a comfortable reading measure', () => {
+  it('at desktop, reader #main-content caps at 1080px for a comfortable reading measure', () => {
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /#main-content:has\(\.qa-verse\)\s*\{[^}]*max-width:\s*960px/.test(b[1])
+      /#main-content:has\(\.qa-verse\)\s*\{[^}]*max-width:\s*1080px/.test(b[1])
     )
-    expect(hit, 'expected a min-width: 1180px block capping #main-content:has(.qa-verse) at 960px').toBeDefined()
+    expect(hit, 'expected a min-width: 1180px block capping #main-content:has(.qa-verse) at 1080px').toBeDefined()
   })
 
   // .qa-verse-arabic desktop margin rules moved to Reader.svelte <style> block (Phase 5 migration)
@@ -80,7 +89,8 @@ describe('theme.css — responsive breakpoint tokens', () => {
     // The .qa-sheet centered-modal rules must live in a 768px block now.
     const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/g)]
     const hit = blocks.find(b =>
-      /\.qa-sheet\s*\{[^}]*top:\s*50%/.test(b[1]) &&
+      // Accept both split positioning (top: 50%) and shorthand inset.
+      (/\.qa-sheet\s*\{[^}]*top:\s*50%/.test(b[1]) || /\.qa-sheet\s*\{[^}]*inset:\s*50%/.test(b[1])) &&
       /\.qa-sheet\s*\{[^}]*width:\s*min\(480px,\s*calc\(100vw\s*-\s*32px\)\)/.test(b[1])
     )
     expect(hit, 'expected sheet-centered-modal rules under min-width: 768px').toBeDefined()
@@ -107,12 +117,11 @@ describe('theme.css — responsive breakpoint tokens', () => {
   /* .qa-cmd-sheet/.qa-cmd-foot responsive rules now live in nav/CommandSheet.svelte <style> */
 
   it('onboarding landscape guard: max-height: 500px shrinks .qa-onb-page', () => {
-    // Onboarding CSS was co-located into Onboarding.svelte during Svelte migration.
-    // The guard lives in the component <style> block, not theme.css.
-    const blocks = [...ONBOARDING_SVELTE.matchAll(/@media\s*\(\s*max-height:\s*500px\s*\)\s*\{([\s\S]*?)\n  \}/g)]
+    // Onboarding CSS lives in src/styles/surfaces/onboarding.css (PR 6 migration).
+    const blocks = [...ONBOARDING_CSS.matchAll(/@media\s*\(\s*max-height:\s*500px\s*\)\s*\{([\s\S]*?)\n    \}\s*\n  \}/g)]
     const hit = blocks.find(b =>
-      /:global\(\.qa-onb-page\)\s*\{[^}]*min-height:\s*100%/.test(b[1]) &&
-      /:global\(\.qa-onb-page\)\s*\{[^}]*justify-content:\s*flex-start/.test(b[1])
+      /\.qa-onb-page\s*\{[^}]*min-height:\s*100%/.test(b[1]) &&
+      /\.qa-onb-page\s*\{[^}]*justify-content:\s*flex-start/.test(b[1])
     )
     expect(hit, 'expected .qa-onb-page height guard at max-height 500px').toBeDefined()
   })

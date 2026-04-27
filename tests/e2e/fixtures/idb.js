@@ -15,24 +15,42 @@
  * @param {IDBDatabase} db
  */
 // _APPLY_SCHEMA_SRC is the verbatim function body injected into each page.evaluate.
+// Mirrors src/core/db.ts onupgradeneeded for DB_VERSION 4 (drops legacy positions
+// store; adds meta store; 12-layer marks + edges store).
 const _APPLY_SCHEMA_SRC = `
+  const LAYER_NAMES = [
+    'threads','subjects','audience','speaker','quotedSpeaker',
+    'mode','form','tone','people','places','events','divineNames',
+  ];
   if (!db.objectStoreNames.contains('settings')) {
     db.createObjectStore('settings', { keyPath: 'key' })
   }
-  if (!db.objectStoreNames.contains('positions')) {
-    const s = db.createObjectStore('positions', { keyPath: 'id' })
-    s.createIndex('by-savedAt', 'savedAt')
+  if (db.objectStoreNames.contains('positions')) {
+    db.deleteObjectStore('positions')
   }
-  if (!db.objectStoreNames.contains('marks')) {
-    const s = db.createObjectStore('marks', { keyPath: 'verseKey' })
-    s.createIndex('by-tag', 'tags', { multiEntry: true })
-    s.createIndex('by-updated', 'updatedAt')
+  if (!db.objectStoreNames.contains('meta')) {
+    db.createObjectStore('meta', { keyPath: 'id' })
   }
+  if (db.objectStoreNames.contains('marks')) {
+    db.deleteObjectStore('marks')
+  }
+  const marksStore = db.createObjectStore('marks', { keyPath: 'verseKey' })
+  for (const layer of LAYER_NAMES) {
+    marksStore.createIndex('by-canon-' + layer, '_canon.' + layer, { multiEntry: true })
+  }
+  marksStore.createIndex('by-updated', 'updatedAt')
   if (!db.objectStoreNames.contains('activationState')) {
     db.createObjectStore('activationState', { keyPath: 'id' })
   }
   if (!db.objectStoreNames.contains('datasetMeta')) {
     db.createObjectStore('datasetMeta', { keyPath: 'id' })
+  }
+  if (!db.objectStoreNames.contains('edges')) {
+    const edgesStore = db.createObjectStore('edges', { keyPath: 'id' })
+    edgesStore.createIndex('by-from', 'from')
+    edgesStore.createIndex('by-to', 'to')
+    edgesStore.createIndex('by-canon-kind', '_canonKind')
+    edgesStore.createIndex('by-updated', 'updatedAt')
   }
 `
 
@@ -71,12 +89,40 @@ export async function clearAllData(page) {
 }
 
 /**
+ * Clear a single object store without dropping the entire DB. Use this in
+ * preference to `clearAllData` whenever a test only mutates one store —
+ * skips IDB schema teardown + recreate (~3–4s per call) and avoids forcing
+ * the app to cold-boot on the next navigation.
+ *
+ * Reach for `clearAllData` only when the test exercises cross-store
+ * invariants, the onboarding boot flow, or the clear-data UX itself.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'settings'|'marks'|'edges'|'meta'|'activationState'|'datasetMeta'} storeName
+ */
+export async function clearStore(page, storeName) {
+  const nameJson = JSON.stringify(storeName)
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
+    const open = indexedDB.open('quran-atlas')
+    open.onsuccess = () => {
+      const db = open.result
+      if (!db.objectStoreNames.contains(${nameJson})) { db.close(); resolve(); return }
+      const tx = db.transaction(${nameJson}, 'readwrite')
+      tx.objectStore(${nameJson}).clear()
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject(tx.error) }
+    }
+    open.onerror = () => resolve()
+  }))()`)
+}
+
+/**
  * Pre-set onboardingComplete so tests that don't exercise onboarding can skip it.
  * Creates the full DB schema matching src/core/db.js so the app finds all stores on boot.
  */
 export async function markOnboardingComplete(page) {
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 1)
+    const open = indexedDB.open('quran-atlas', 4)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -105,7 +151,7 @@ export async function seedLastSurface(page, surface) {
   // JSON-embedded so it is safe for any valid URL fragment string.
   const surfaceJson = JSON.stringify(surface)
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 1)
+    const open = indexedDB.open('quran-atlas', 4)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -190,22 +236,40 @@ export async function getMarkFromIdb(page, verseKey) {
 }
 
 /**
- * Seed one or more marks. Each mark is { verseKey, tags, note? }.
+ * Seed one or more marks using the v2 12-layer schema.
+ * Each mark is { verseKey, threads?, subjects?, audience?, speaker?,
+ * quotedSpeaker?, mode?, form?, tone?, people?, places?, events?,
+ * divineNames?, note? }.
+ * For backward compat, a top-level `tags` array is mapped into `threads`.
  */
 export async function seedMarks(page, marks) {
   // JSON-embed the records array so it is safe to splice into an expression string.
   const recordsJson = JSON.stringify(marks)
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 1)
+    const LAYER_NAMES = [
+      'threads','subjects','audience','speaker','quotedSpeaker',
+      'mode','form','tone','people','places','events','divineNames',
+    ]
+    const open = indexedDB.open('quran-atlas', 4)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('marks', 'readwrite')
       const store = tx.objectStore('marks')
       const now = Date.now()
       for (const r of ${recordsJson}) {
+        const threads = r.threads || r.tags || []
+        const layers = {}
+        for (const l of LAYER_NAMES) {
+          layers[l] = l === 'threads' ? threads : (r[l] || [])
+        }
+        const _canon = {}
+        for (const l of LAYER_NAMES) {
+          _canon[l] = layers[l].map(t => t.toLowerCase().normalize('NFC').replace(/[\\s\\-]+/g, '-').replace(/[^a-z0-9\\-'\\u0600-\\u06ff]/g, ''))
+        }
         store.put({
           verseKey: r.verseKey,
-          tags: r.tags,
+          ...layers,
+          _canon,
           note: r.note || '',
           createdAt: now,
           updatedAt: now,

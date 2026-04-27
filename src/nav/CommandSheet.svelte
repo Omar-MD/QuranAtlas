@@ -16,12 +16,15 @@
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
   import { getSurahs, getSurah, type SurahMeta } from '../data/dataset'
+  import { settings } from '../state/settings.svelte'
   import { getMeaning } from '../data/surah-meanings'
   import { getAll as getAllMarks } from '../marks/store'
   import { getAllUsedTags, getColorForTag } from '../marks/tags.js'
   import { setTheme, cycleTheme } from '../settings/theme'
+  import { toggleNightMode } from '../settings/night-mode'
   import { setFontSize, loadFontSize, getFontSizeOptions, resetFontSize } from '../settings/font-size'
   import { toggleTranslation } from '../settings/panel-bridge'
+  import { beginFast } from '../tag/session-bridge'
   import {
     nextVerse as readerNextVerse,
     prevVerse as readerPrevVerse,
@@ -32,7 +35,8 @@
     markCurrent as readerMarkCurrent,
   } from './reader-actions.js'
   import { openShortcutsSheet, isShortcutsSheetOpen } from './shortcuts-sheet.js'
-  import { getMostRecentPosition, get } from '../core/db'
+  import { get } from '../core/db'
+  import { loadGlobalPosition } from '../reader/global-position'
   import { announce } from '../a11y/announcer'
   import { registerCommandSheet } from './command-sheet-bridge'
 
@@ -187,7 +191,7 @@
       items.push({
         kind: 'verse', glyph: `${s}:`, surah: s, verse: v,
         label: `${s}:${v}${meta ? ` \u00B7 ${meta.name}` : ''}`,
-        meta: mk.tags.slice(0, 3).join(', '), group: 'Recent',
+        meta: mk._canon.threads.slice(0, 3).join(', '), group: 'Recent',
       })
     }
 
@@ -202,7 +206,7 @@
 
   async function buildVersePreviewResult(s: number, v: number): Promise<{ items: ResultItem[]; card: VerseCard | null }> {
     const meta = surahCache.find(x => x.n === s)
-    if (!meta || s < 1 || s > 114 || v < 1 || v > meta.count) {
+    if (!meta || s < 1 || s > 114 || v < 1 || v > meta.counts[settings.riwayah]) {
       return { items: [], card: null }
     }
 
@@ -213,15 +217,15 @@
     let en = '\u2026'
     try {
       const data = await getSurah(s)
-      ar = data.ar[v - 1] ?? ''
-      en = data.en[v - 1] ?? ''
+      ar = data.ayat[v - 1]?.aya_text ?? ''
+      en = ''
     } catch {
       en = 'Content unavailable offline'
     }
 
     const items: ResultItem[] = [
       { kind: 'verse',  glyph: '\u21B5', surah: s, verse: v, label: 'Open verse',      meta: `Scroll reader to ${s}:${v}`, group: 'Verse' },
-      { kind: 'action', glyph: '\u2726', label: 'Mark this verse', meta: `Open mark editor for ${s}:${v}`, doMark: { verseKey: `${s}:${v}` }, shortcut: 'M', group: 'Verse' },
+      { kind: 'action', glyph: '\u2726', label: 'Mark this verse', meta: `Start fast-tag on ${s}:${v}`, doMark: { verseKey: `${s}:${v}` }, shortcut: 'M', group: 'Verse' },
       { kind: 'action', glyph: '\u2398', label: 'Copy reference',  meta: `"${s}:${v}" to clipboard`,       doCopy: `${s}:${v}`, group: 'Verse' },
     ]
     return { items, card: { refLabel, ar, en } }
@@ -242,7 +246,7 @@
 
     const tagMatches = tagCache.filter(t => t.toLowerCase().includes(lower)).slice(0, MAX_TAGS)
     for (const t of tagMatches) {
-      const count = markCache.filter(m => m.tags.includes(t)).length
+      const count = markCache.filter(m => m._canon.threads.includes(t)).length
       allItems.push({ kind: 'tag', tag: t, tagColor: getColorForTag(t), label: t, meta: `${count} mark${count === 1 ? '' : 's'}`, group: 'Tags' })
     }
 
@@ -257,14 +261,14 @@
 
     const markMatches = markCache.filter(m => {
       if (m.verseKey.includes(lower)) { return true }
-      return m.tags.some(t => t.toLowerCase().includes(lower))
+      return m._canon.threads.some(t => t.toLowerCase().includes(lower))
     }).slice(0, MAX_MARKS)
     for (const m of markMatches) {
       const parts = m.verseKey.split(':')
       const s = parseInt(parts[0] ?? '0', 10)
       const v = parseInt(parts[1] ?? '0', 10)
       const meta = surahCache.find(x => x.n === s)
-      allItems.push({ kind: 'verse', glyph: '\u2726', surah: s, verse: v, label: `${m.verseKey}${meta ? ` \u00B7 ${meta.name}` : ''}`, meta: m.tags.join(', '), group: 'Marks' })
+      allItems.push({ kind: 'verse', glyph: '\u2726', surah: s, verse: v, label: `${m.verseKey}${meta ? ` \u00B7 ${meta.name}` : ''}`, meta: m._canon.threads.join(', '), group: 'Marks' })
     }
 
     const commands = buildCommands(lower)
@@ -299,8 +303,7 @@
     }
     if (item.doMark) {
       close()
-      const { openEditor } = await import('../marks/editor-bridge')
-      openEditor(item.doMark.verseKey)
+      await beginFast(item.doMark.verseKey)
       return
     }
     if (item.doCommand === 'theme-dark')   { await setTheme('dark');   close(); return }
@@ -312,7 +315,7 @@
 
     close()
     if (item.kind === 'tag' && item.tag) {
-      window.location.hash = `#/t/${encodeURIComponent(item.tag)}`
+      window.location.hash = `#/threads/${encodeURIComponent(item.tag)}`
     } else if (item.kind === 'surah' && item.surah != null) {
       emit(Events.NAVIGATION_NAVIGATE, { surah: item.surah })
     } else if (item.kind === 'verse' && item.surah != null) {
@@ -350,7 +353,7 @@
 
   async function gotoHome(): Promise<void> {
     try {
-      const pos = await getMostRecentPosition()
+      const pos = await loadGlobalPosition()
       if (pos?.surah) {
         window.location.hash = (pos.verse ?? 0) > 1 ? `#/s/${pos.surah}/${pos.verse}` : `#/s/${pos.surah}`
         return
@@ -439,6 +442,10 @@
       case 'm': case 'M': e.preventDefault(); readerMarkCurrent(); return
       case 't': case 'T': e.preventDefault(); void toggleTranslation(); return
       case 'd': case 'D': e.preventDefault(); void cycleTheme(); return
+      case 'n': case 'N':
+        e.preventDefault()
+        void toggleNightMode().then((on) => announce(on ? 'Night mode on' : 'Night mode off'))
+        return
       case '+': case '=': e.preventDefault(); void bumpFont(+1); return
       case '-': case '_': e.preventDefault(); void bumpFont(-1); return
       case '0': e.preventDefault(); void resetFontSize().then(() => announce('Font size reset')); return
@@ -502,7 +509,7 @@
         {#each groups as group (group.title)}
           <div class="qa-cmd-group">
             <div class="qa-cmd-group-head">
-              <span class="qa-cmd-group-title">{group.title}</span>
+              <span>{group.title}</span>
               <span class="qa-cmd-group-count">{group.items.length}</span>
             </div>
             {#each group.items as item (item.kind + (item.label ?? '') + (item.surah ?? '') + (item.verse ?? '') + (item.tag ?? '') + (item.doCommand ?? ''))}
@@ -547,251 +554,3 @@
     </div>
 </div>
 
-<style>
-  .qa-cmd-scrim {
-    position: fixed;
-    inset: 0;
-    z-index: 299;
-    background: rgba(14, 14, 12, 0.62);
-    backdrop-filter: blur(6px);
-    opacity: 1;
-    transition: opacity 0.18s ease;
-    border: none;
-    cursor: default;
-    padding: 0;
-  }
-
-  .qa-cmd-scrim.qa-cmd--hidden,
-  .qa-cmd-sheet.qa-cmd--hidden {
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.18s ease, visibility 0s linear 0.18s;
-  }
-
-  .qa-cmd-sheet {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(640px, calc(100vw - 24px));
-    max-height: calc(100dvh - 24px);
-    z-index: 300;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--qa-ambient-accent-soft);
-    border-radius: 16px;
-    background-color: var(--qa-ambient-surface);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
-    overflow: hidden;
-    transition: transform 0.18s ease, visibility 0s linear 0s;
-  }
-
-  .qa-cmd-input-row {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--qa-ambient-border);
-  }
-
-  .qa-cmd-input-glyph {
-    font-size: 1.125rem;
-    color: var(--qa-ambient-dim);
-    line-height: 1;
-  }
-
-  .qa-cmd-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--qa-ambient-parchment);
-    font-size: 1rem;
-    line-height: 1.4;
-    min-width: 0;
-  }
-
-  .qa-cmd-input::placeholder {
-    color: var(--qa-ambient-dim);
-  }
-
-  .qa-cmd-input-hint {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.6875rem;
-    color: var(--qa-ambient-dim);
-    border: 1px solid var(--qa-ambient-accent-soft);
-    border-radius: 4px;
-    padding: 1px 6px;
-  }
-
-  .qa-cmd-results {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0.5rem 0;
-  }
-
-  .qa-cmd-group {
-    padding: 0.375rem 0 0.5rem;
-  }
-
-  .qa-cmd-group-head {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 1rem 0.375rem;
-    font-size: 0.6875rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--qa-ambient-dim);
-  }
-
-  .qa-cmd-group-count {
-    font-variant-numeric: tabular-nums;
-    color: var(--qa-ambient-dim);
-  }
-
-  .qa-cmd-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.625rem 1rem;
-    border: none;
-    background: transparent;
-    color: var(--qa-ambient-parchment);
-    text-align: left;
-    cursor: pointer;
-    font: inherit;
-    transition: background-color 0.12s ease;
-  }
-
-  .qa-cmd-item:hover,
-  .qa-cmd-item.qa-cmd--active {
-    background-color: var(--qa-ambient-accent-soft);
-  }
-
-  .qa-cmd-item-glyph {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    background-color: var(--qa-ambient-accent-soft);
-    color: var(--qa-ambient-accent);
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
-  }
-
-  .qa-cmd-item-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .qa-cmd-item-label {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--qa-ambient-parchment);
-  }
-
-  .qa-cmd-item-meta {
-    font-size: 0.75rem;
-    color: var(--qa-ambient-dim);
-  }
-
-  .qa-cmd-empty {
-    padding: 1.25rem 1rem;
-    text-align: center;
-    color: var(--qa-ambient-dim);
-    font-size: 0.875rem;
-  }
-
-  .qa-cmd-foot {
-    border-top: 1px solid var(--qa-ambient-border);
-    padding: 8px 14px;
-    display: flex;
-    gap: 14px;
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--qa-ambient-dim);
-  }
-
-  @media (max-width: 640px) {
-    .qa-cmd-foot { display: none; }
-  }
-
-  @media (min-width: 768px) {
-    .qa-cmd-foot { display: flex; }
-  }
-
-  @media (min-width: 1180px) {
-    .qa-cmd-sheet { max-width: 640px; }
-  }
-
-  .qa-cmd-foot-group { display: inline-flex; align-items: center; gap: 6px; }
-
-  .qa-cmd-kbd {
-    display: inline-flex;
-    align-items: center;
-    padding: 1px 5px;
-    border-radius: 4px;
-    background-color: var(--qa-ambient-accent-soft);
-    color: var(--qa-ambient-kbd-color, var(--qa-ambient-accent));
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.6875rem;
-    letter-spacing: 0;
-  }
-
-  .qa-cmd-item-kbd { margin-left: auto; }
-
-  .qa-cmd-item-glyph--dot {
-    background: transparent;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .qa-cmd-item-glyph--dot::before {
-    content: '';
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background-color: var(--qa-cmd-dot, var(--qa-ambient-accent));
-  }
-
-  .qa-cmd-vcard {
-    margin: 8px 12px 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--qa-ambient-accent-soft);
-    background-color: color-mix(in srgb, var(--qa-ambient-accent) 6%, transparent);
-  }
-
-  .qa-cmd-vcard-ref {
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--qa-ambient-accent);
-    margin-bottom: 6px;
-  }
-
-  .qa-cmd-vcard-ar {
-    font-family: var(--qa-font-arabic);
-    font-size: 1rem;
-    line-height: 1.85;
-    color: var(--qa-ambient-parchment);
-    margin-bottom: 4px;
-  }
-
-  .qa-cmd-vcard-en {
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    color: var(--qa-ambient-muted);
-  }
-</style>

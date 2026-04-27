@@ -7,36 +7,44 @@
  */
 
 import type { SurahMeta } from '../data/dataset'
+import { settings } from '../state/settings.svelte'
+import type { Riwayah } from '../settings/riwayah'
 
 /**
- * Whether to render a standalone basmala before the first verse.
+ * Whether to render a standalone basmala block before the first verse.
  *
- * Quranic conventions:
- *  - Surah 1 (Al-Fatiha): basmala IS verse 1 in the dataset — do NOT render separately.
- *  - Surah 9 (At-Tawbah): no basmala.
- *  - All others: render basmala between header and verse 1.
+ * Quranic conventions differ across the riwayat for Al-Fātiḥah:
+ *  - **Hafs**: counts the basmala AS ayah 1 (it IS in the dataset as verse 1).
+ *    Rendering a standalone block would double it. Skip.
+ *  - **Warsh + Qaloon**: do NOT count the basmala as an ayah (their ayah 1 is
+ *    `اِ۬لْحَمْدُ لِلهِ...`), but tradition still displays the basmala above the
+ *    surah text. Render the standalone block.
+ *  - **Surah 9 (At-Tawbah)**: no basmala in any riwayah.
+ *  - **All other surahs**: render the basmala block in every riwayah.
  */
-export function shouldRenderBasmala(surahNum: number): boolean {
-  return surahNum !== 1 && surahNum !== 9
+export function shouldRenderBasmala(surahNum: number, riwayah: Riwayah = settings.riwayah): boolean {
+  if (surahNum === 9) { return false }
+  if (surahNum === 1) { return riwayah !== 'hafs' }
+  return true
 }
 
 /**
  * Format the surah header meta line.
- * e.g. "AL-FATIHAH · SURAH 1 · 7 VERSES · MECCAN"
+ * Surah name is rendered separately as the Arabic Mushaf title — this line
+ * carries only the ordinal + verse count.
+ * e.g. "SURAH 1 · 7 VERSES"
  */
 export function formatSurahMeta(meta: SurahMeta): string {
-  const nameUpper = (meta.name ?? '').toUpperCase()
-  const typeUpper = (typeof meta['type'] === 'string' ? meta['type'] : '').toUpperCase()
-  return `${nameUpper} · SURAH ${meta.n} · ${meta.count} VERSES · ${typeUpper}`
+  const count = meta.counts[settings.riwayah]
+  return `SURAH ${meta.n} · ${count} VERSES`
 }
 
 /**
- * Format the Arabic surah name with honorific prefix.
- * e.g. "سُورَةُ الفاتحة"
+ * Return the Arabic surah name (no honorific prefix).
+ * e.g. "الفاتحة"
  */
 export function formatArabicSurahName(meta: SurahMeta): string {
-  const arabic = typeof meta['arabic'] === 'string' ? meta['arabic'] : ''
-  return `سُورَةُ ${arabic}`
+  return meta.name_ar ?? ''
 }
 
 /**

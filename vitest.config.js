@@ -1,19 +1,22 @@
 import { defineConfig } from 'vitest/config'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { svelteTesting } from '@testing-library/svelte/vite'
 import { readFileSync } from 'node:fs'
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'))
 
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [svelte(), svelteTesting()],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_SHA__: JSON.stringify('test'),
+    __BUILD_TIME__: JSON.stringify('1970-01-01T00:00:00.000Z'),
   },
   test: {
     environment: 'jsdom',
     setupFiles: ['tests/setup.js'],
     globals: true,
-    include: ['tests/unit/**/*.test.js', 'tests/unit/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.js', 'tests/unit/**/*.test.ts', 'scripts/**/*.test.mjs'],
     exclude: ['tests/e2e/**', 'node_modules/**', '.opencode/**', '.cache/**', 'dist/**'],
     coverage: {
       provider: 'v8',

@@ -40,13 +40,13 @@ test.describe('Journey G: About', () => {
   // G1. Open About — happy path + structure check
   // ---------------------------------------------------------------------------
 
-  test('G1: dock → More sheet → About → renders all required sections', async ({ page }) => {
-    // Step 1: open More sheet via dock ⋯
-    await openMoreSheet(page)
-    await expect(page.getByRole('dialog', { name: 'More' })).toBeVisible()
+  test('G1: drawer → About → renders all required sections', async ({ page }) => {
+    // Post-2026-04-25 drawer overhaul: header wordmark + ⓘ icon = sole About entry.
+    await openMoreSheet(page)  // shim → openNavDrawer
+    const drawer = page.locator('.qa-nav-drawer')
+    await expect(drawer).toBeVisible()
 
-    // Step 2: tap "About" row → navigates to #/about
-    await page.locator('button.qa-sheet-row').filter({ hasText: 'About' }).click()
+    await drawer.locator('.qa-nav-drawer-wordmark').click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
 
     // Wordmark / page heading
@@ -100,9 +100,114 @@ test.describe('Journey G: About', () => {
     expect(vText).toMatch(/^v/)
   })
 
+  test('G: hamburger drawer opens with Surahs+Review tabs and wordmark→About', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'drawer hamburger is mobile-only; desktop ambient dock has its own kebab')
+
+    const hamburger = page.locator('.qa-mh-hamburger')
+    await expect(hamburger).toBeVisible({ timeout: 5_000 })
+    await hamburger.click()
+
+    const drawer = page.locator('.qa-nav-drawer')
+    await expect(drawer).toBeVisible({ timeout: 3_000 })
+
+    // Two tabs: Surahs (default) · Review
+    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Surahs' })).toBeVisible()
+    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Review' })).toBeVisible()
+
+    // Wordmark with ⓘ icon = About entry
+    await expect(drawer.locator('.qa-nav-drawer-wordmark')).toBeVisible()
+
+    await drawer.locator('.qa-nav-drawer-wordmark').click()
+    await expect(page).toHaveURL(/#\/about/, { timeout: 5_000 })
+    await expect(drawer).not.toBeVisible({ timeout: 3_000 })
+  })
+
+  test('G: drawer dismisses via ✕ close button', async ({ page }) => {
+    // Post 2026-04-25: drawer is full-screen on mobile (z:100), occluding the
+    // MarginHeader hamburger (z:95). Toggle-by-second-tap is gone; the in-drawer
+    // ✕ button (and backdrop, swipe-left, Esc) are the dismissal paths.
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'drawer hamburger is mobile-only')
+
+    const hamburger = page.locator('.qa-mh-hamburger')
+    const drawer = page.locator('.qa-nav-drawer')
+
+    await hamburger.click()
+    await expect(drawer).toBeVisible({ timeout: 3_000 })
+
+    await page.locator('.qa-nav-drawer-close').click()
+    await expect(drawer).not.toBeVisible({ timeout: 3_000 })
+  })
+
+  test('G: About footer shows version + commit SHA @chromium-only', async ({ page }) => {
+    await page.goto('/#/about')
+    const version = page.getByTestId('about-version')
+    await expect(version).toBeVisible({ timeout: 5_000 })
+    const text = await version.innerText()
+    // Format: "v<semver> · <sha>" — sha is short (>=3 hex chars) or "dev" / "test".
+    expect(text).toMatch(/^v\d+\.\d+\.\d+\s+·\s+([a-f0-9]{3,}|dev|test)$/i)
+  })
+
+  test('G: hamburger from About opens drawer with current-surah hydrated', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'header hamburger is mobile chrome only')
+
+    // 1. Read surah 67 to set the reader rune.
+    await page.goto('/#/s/67')
+    await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 5_000 })
+
+    // 2. Visit About — center-label tap is no-op post 2026-04-25; surah-resume
+    //    happens via the drawer instead.
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+
+    // 3. Open drawer + tap the row for surah 67 → resume reading.
+    await page.locator('.qa-mh-hamburger').click()
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 3_000 })
+    await page.locator('.qa-nav-drawer-surah-row[data-surah="67"]').click()
+    await expect(page).toHaveURL(/#\/s\/67/, { timeout: 3_000 })
+  })
+
+  test('G: drawer current-surah highlight survives navigating to About and back', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'drawer hamburger is mobile chrome only')
+
+    // 1. Read surah 67 — populates settings.currentPosition in IDB.
+    await page.goto('/#/s/67')
+    await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 5_000 })
+
+    // 2. Navigate to About without going through the drawer first. This
+    //    unmounts Reader and nulls reader.currentSurahNum, leaving the
+    //    persisted settings.currentPosition as the only surviving signal of
+    //    "where the user is reading". Mirrors the user-reported repro: open
+    //    drawer from About → highlight gone.
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+
+    // 3. Open drawer — current-surah row must carry the --current class
+    //    *immediately*. Tight 400ms timeout: with the fix the class is
+    //    present on first paint via settings.currentPosition fallback.
+    //    Without it, reader.currentSurahNum is null until session-restore
+    //    eventually re-mounts Reader (~600-1000ms), which is long enough
+    //    to be perceived as a missing highlight.
+    await page.locator('.qa-mh-hamburger').click()
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 3_000 })
+    const row67 = page.locator('.qa-nav-drawer-surah-row[data-surah="67"]')
+    await expect(row67).toHaveClass(/qa-nav-drawer-surah-row--current/, { timeout: 400 })
+  })
+
+  test('G: Clear data link is present on About page footer @chromium-only', async ({ page }) => {
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
+    const link = page.locator('.qa-about-clear-data')
+    await expect(link).toBeVisible()
+    await expect(link).toHaveText(/Clear all data/i)
+  })
+
   test('G1: a11y — no serious/critical axe violations on About page @a11y', async ({ page }) => {
-    await openMoreSheet(page)
-    await page.locator('button.qa-sheet-row').filter({ hasText: 'About' }).click()
+    await openMoreSheet(page)  // shim → openNavDrawer
+    await page.locator('.qa-nav-drawer-wordmark').click()
     await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
 
@@ -114,19 +219,51 @@ test.describe('Journey G: About', () => {
   // G2. Install PWA — not testable in Playwright
   // ---------------------------------------------------------------------------
 
-  test.skip('G2: PWA install button triggers installation prompt', async () => {
-    // Not testable in Playwright — beforeinstallprompt cannot be faked.
-    // Manual QA only.
+  test('G2: PWA install button triggers installation prompt @chromium-only', async ({ page }) => {
+    // The initInstallListener in app-bootstrap listens for
+    // `beforeinstallprompt` and stores the event as the deferred prompt.
+    // Dispatch a synthetic event with the same shape after app boot but
+    // BEFORE navigating to #/about — About.svelte reads getInstallPrompt()
+    // at mount time to decide whether to render the Install button.
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.waitForFunction(() => typeof window.__qaSuppressNextVersionChange === 'function')
+
+    await page.evaluate(() => {
+      const ev = new Event('beforeinstallprompt', { cancelable: true })
+      // BeforeInstallPromptEvent shape consumed by pwa-install.ts
+      Object.assign(ev, {
+        prompt: () => {},
+        userChoice: Promise.resolve({ outcome: 'accepted' }),
+      })
+      window.dispatchEvent(ev)
+    })
+
+    await page.goto('/#/about')
+    await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 8_000 })
+
+    const installBtn = page.locator('.qa-about-install-btn')
+    await expect(installBtn).toBeVisible()
+    await expect(installBtn).toHaveText('Install App')
+    await expect(installBtn).toBeEnabled()
+
+    await installBtn.click()
+
+    await expect(installBtn).toHaveText('Installed!', { timeout: 3_000 })
+    await expect(installBtn).toBeDisabled()
   })
 
   // ---------------------------------------------------------------------------
   // G3. Shortcut cheatsheet (`?`) — open, assert 4 groups, close via Esc
   // ---------------------------------------------------------------------------
 
-  test('G3: press ? → keyboard shortcuts sheet opens and closes', async ({ page }) => {
+  test('G3: press ? → keyboard shortcuts sheet opens and closes @chromium-only', async ({ page }) => {
     // The reader is already loaded from beforeEach (/#/s/1).
     // Ensure focus is on a non-text-input element so `?` fires the key handler.
-    await page.locator('#main-content').click({ position: { x: 50, y: 50 } })
+    // Focus #main-content directly — a click at (50,50) on mobile is blocked by
+    // the fixed MarginHeader at the top.
+    await page.evaluate(() => document.getElementById('main-content')?.focus())
 
     // Step 1: press ? → shortcuts sheet opens
     await page.keyboard.press('?')

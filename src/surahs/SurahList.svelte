@@ -2,8 +2,10 @@
   import { onMount } from 'svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
+  import { settings } from '../state/settings.svelte'
   import { getAll as getAllMarks } from '../marks/store'
-  import { get, getMostRecentPosition } from '../core/db'
+  import { get } from '../core/db'
+  import { loadGlobalPosition } from '../reader/global-position'
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
@@ -105,7 +107,7 @@
     const [fetchedSurahs, marks, lastPosition, recentRec] = await Promise.all([
       getSurahs(),
       getAllMarks().catch(() => []),
-      getMostRecentPosition().catch(() => null),
+      loadGlobalPosition().catch(() => null),
       get('settings', 'recentSurahs').catch(() => undefined),
     ])
 
@@ -143,7 +145,7 @@
         const sNum = parseInt(sRaw, 10)
         const vNum = parseInt(vRaw, 10)
         const meta = allSurahs.find(s => s.n === sNum)
-        if (meta && vNum >= 1 && vNum <= meta.count) {
+        if (meta && vNum >= 1 && vNum <= meta.counts[settings.riwayah]) {
           emit(Events.NAVIGATION_NAVIGATE, { surah: sNum, verse: vNum })
         }
       }
@@ -232,175 +234,3 @@
   </ul>
 </div>
 
-<style>
-  .qa-surah-list-page {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 18px 18px 120px;
-  }
-
-  .qa-sl-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .qa-sl-title {
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: var(--qa-ambient-parchment);
-    margin: 0;
-  }
-  .qa-sl-count {
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--qa-ambient-dim);
-  }
-
-  .qa-sl-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
-    margin-bottom: 10px;
-  }
-  .qa-sl-search-icon {
-    color: var(--qa-ambient-dim);
-    font-size: 0.9rem;
-  }
-  .qa-sl-search-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--qa-ambient-parchment);
-    font-size: 0.875rem;
-  }
-  .qa-sl-search-input::placeholder {
-    color: var(--qa-ambient-dim);
-  }
-  .qa-sl-search-kbd {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.625rem;
-    padding: 1px 5px;
-    border-radius: 4px;
-    background-color: var(--qa-ambient-accent-soft);
-    color: var(--qa-ambient-kbd-color, var(--qa-ambient-accent));
-  }
-  @media (max-width: 640px) {
-    .qa-sl-search-kbd { display: none; }
-  }
-
-  .qa-sl-seg {
-    display: flex;
-    gap: 4px;
-    padding: 3px;
-    border-radius: 999px;
-    margin-bottom: 10px;
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
-  }
-  .qa-sl-seg-item {
-    flex: 1;
-    text-align: center;
-    padding: 6px 10px;
-    border: none;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--qa-ambient-dim);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-  .qa-sl-seg-item--on {
-    background-color: var(--qa-selection-bg);
-    color: var(--qa-selection-text);
-    box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
-  }
-
-  .qa-sl-hint {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px dashed var(--qa-ambient-border);
-    color: var(--qa-ambient-muted);
-    font-size: 0.75rem;
-    margin-bottom: 10px;
-  }
-
-  .qa-sl-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .qa-sl-continue {
-    border-radius: 12px;
-    border: 1px solid var(--qa-ambient-accent-soft);
-    background-color: color-mix(in srgb, var(--qa-ambient-accent) 8%, transparent);
-    margin-bottom: 10px;
-    overflow: hidden;
-  }
-  .qa-sl-continue-inner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-  }
-  .qa-sl-continue-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--qa-ambient-accent);
-    color: var(--qa-on-accent);
-    font-size: 0.875rem;
-    flex-shrink: 0;
-  }
-  .qa-sl-continue-body { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
-  .qa-sl-continue-eyebrow {
-    font-size: 0.625rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--qa-ambient-accent);
-  }
-  .qa-sl-continue-ref {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--qa-ambient-parchment);
-  }
-  .qa-sl-continue-chev {
-    color: var(--qa-ambient-accent);
-    font-size: 1rem;
-  }
-
-  /* Desktop — two-column rows */
-  @media (min-width: 1180px) {
-    .qa-surah-list-page {
-      max-width: 1180px;
-    }
-
-    .qa-sl-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: 2rem;
-      row-gap: 0;
-    }
-
-    .qa-sl-continue {
-      grid-column: 1 / -1;
-    }
-  }
-</style>

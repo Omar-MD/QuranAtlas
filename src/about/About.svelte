@@ -3,6 +3,7 @@
   import { getAll } from '../marks/store'
   import { announce } from '../a11y/announcer'
   import { getInstallPrompt, promptInstall } from './pwa-install'
+  import { showClearDataConfirmation } from '../settings/clear-data'
 
   let marks = $state(0)
   let tags = $state(0)
@@ -13,9 +14,8 @@
   let installDone = $state(false)
 
   const credits = [
-    "Quran translation by Fadel Soliman (Bridges' Translation)",
-    'Arabic typography by KFGQPC (King Fahd Glyphic and Typographic Project)',
-    'Font: Scheherazade New (SIL Open Font License)',
+    "Qur'an text (Hafs, Warsh, Qaloon riwayat): King Fahd Glorious Qur'an Printing Complex (مجمع الملك فهد لطباعة المصحف الشريف), Madinah",
+    'Latin & Arabic typography: Amiri and Amiri Quran by Khaled Hosny (SIL Open Font License)',
     'Built with Svelte, Vite, and Workbox',
   ]
 
@@ -24,7 +24,7 @@
     try {
       const allMarks = await getAll()
       marks = allMarks.length
-      tags = new Set(allMarks.flatMap(m => m.tags)).size
+      tags = new Set(allMarks.flatMap(m => m._canon.threads)).size
       surahs = new Set(allMarks.map(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10))).size
       pctTagged = ((allMarks.length / 6236) * 100).toFixed(2)
       statsLoaded = true
@@ -40,6 +40,10 @@
       installDone = true
       announce('App installed')
     }
+  }
+
+  async function handleClearData() {
+    await showClearDataConfirmation()
   }
 </script>
 
@@ -67,7 +71,7 @@
       {/each}
     </ul>
   </section>
-  <div class="qa-about-body-right">
+  <div>
     {#if installAvailable}
       <section class="qa-about-install">
         <button
@@ -80,181 +84,17 @@
         </button>
       </section>
     {/if}
-    <p class="qa-about-version-line">v{__APP_VERSION__}</p>
+    <p class="qa-about-version-line" data-testid="about-version">
+      v{__APP_VERSION__} · <span class="qa-about-version-sha">{__BUILD_SHA__}</span>
+    </p>
   </div>
 </div>
 
-<style>
-  .qa-about-heading {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--qa-text-primary);
-    margin-bottom: 0.25rem;
-  }
+<section class="qa-about-clear-section">
+  <button
+    type="button"
+    class="qa-about-clear-data"
+    onclick={handleClearData}
+  >Clear all data</button>
+</section>
 
-  .qa-about-mission {
-    font-size: 1.125rem;
-    color: var(--qa-text-secondary);
-    font-style: italic;
-    margin-bottom: 2.5rem;
-  }
-
-  .qa-about-section-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--qa-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.75rem;
-  }
-
-  .qa-about-blessing-wrap {
-    margin: 2rem 0;
-    padding: 1.5rem;
-    border: 1px solid var(--qa-ambient-border);
-    border-radius: 12px;
-    background-color: var(--qa-ambient-surface);
-    text-align: center;
-  }
-
-  .qa-about-blessing {
-    font-family: 'Scheherazade New', 'Amiri', serif;
-    font-size: 1.25rem;
-    line-height: 2;
-    color: var(--qa-ambient-parchment);
-    margin: 0 0 0.75rem;
-  }
-
-  .qa-about-blessing-translation {
-    font-size: var(--qa-text-size-meta);
-    color: var(--qa-ambient-muted);
-    font-style: italic;
-    margin: 0;
-    line-height: 1.6;
-  }
-
-  .qa-about-stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin: 2rem 0;
-  }
-
-  .qa-about-stat-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem 1rem;
-    background-color: var(--qa-ambient-surface);
-    border: 1px solid var(--qa-ambient-border);
-    border-radius: 12px;
-    gap: 0.25rem;
-  }
-
-  .qa-about-stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--qa-ambient-accent);
-    line-height: 1;
-  }
-
-  .qa-about-stat-label {
-    font-size: var(--qa-text-size-meta);
-    color: var(--qa-ambient-muted);
-    text-align: center;
-  }
-
-  .qa-about-version-line {
-    font-size: var(--qa-text-size-meta);
-    color: var(--qa-ambient-dim);
-    text-align: center;
-    margin: 1rem 0 0.5rem;
-  }
-
-  .qa-about-attribution {
-    margin-bottom: 2rem;
-  }
-
-  .qa-about-attr-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .qa-about-attr-list li {
-    font-size: var(--qa-text-size-meta);
-    color: var(--qa-text-secondary);
-    padding-left: 1rem;
-    position: relative;
-  }
-
-  .qa-about-attr-list li::before {
-    content: "·";
-    position: absolute;
-    left: 0;
-    color: var(--qa-ambient-accent);
-    font-weight: 700;
-  }
-
-  .qa-about-install {
-    margin-bottom: 2rem;
-  }
-
-  .qa-about-install-btn {
-    width: 100%;
-    padding: 1rem;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    background-color: var(--qa-ambient-accent);
-    color: var(--qa-on-accent);
-    border: none;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
-  }
-
-  .qa-about-install-btn:hover {
-    background-color: var(--qa-accent-hover);
-  }
-
-  .qa-about-install-btn:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-
-  @media (min-width: 1180px) {
-    :global(#main-content:has(> .qa-about-heading)) {
-      max-width: 1000px;
-    }
-
-    .qa-about-heading,
-    .qa-about-mission {
-      text-align: center;
-    }
-    .qa-about-heading { font-size: 2rem; }
-    .qa-about-mission { font-size: 1.125rem; margin-bottom: 2rem; }
-
-    .qa-about-blessing-wrap {
-      max-width: 720px;
-      margin: 0 auto 2rem;
-      padding: 1.75rem 1.5rem;
-    }
-
-    .qa-about-stat-grid {
-      grid-template-columns: repeat(4, 1fr);
-      margin: 2rem 0 2.5rem;
-    }
-
-    .qa-about-body-split {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 260px;
-      column-gap: 2.5rem;
-      align-items: start;
-    }
-    .qa-about-body-split .qa-about-attribution { margin-bottom: 0; }
-    .qa-about-body-split .qa-about-install { margin-bottom: 0; }
-    .qa-about-body-split .qa-about-version-line { text-align: left; margin-top: 0.75rem; }
-  }
-</style>

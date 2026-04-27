@@ -28,8 +28,8 @@ import {
 precacheAndRoute(self.__WB_MANIFEST || [])
 
 // Cache dataset files with NetworkFirst so the reader works offline after a
-// single online visit.  Entries are stored in the same 'quran-dataset-v1'
-// cache that data/dataset.js falls back to, so no extra caches are created.
+// single online visit.  Entries are stored in CACHE_DATASET
+// so no extra caches are created.
 //
 // NOTE: vite-plugin-pwa's `workbox.runtimeCaching` option is silently ignored
 // when using the 'injectManifest' strategy — routes must be registered here.
@@ -45,8 +45,15 @@ registerRoute(
 )
 
 self.addEventListener('install', (_event) => {
-  // Don't call skipWaiting() unconditionally - wait for user prompt
-  // The SKIP_WAITING message case handles user-initiated activation
+  // Skip the waiting state immediately so a new SW activates on the next
+  // navigation tick rather than after the user accepts the UpdateBanner
+  // prompt. Required for users on stale precaches — most importantly iOS
+  // PWA installs (WebKit #199110: PWA in iOS use old assets after publish),
+  // where the user has no obvious surface to dismiss + reload.
+  // The SKIP_WAITING message handler stays as a no-op fallback for the
+  // edge case where the install event has already fired but the new SW is
+  // still in `waiting` (e.g. tabs left open across the publish).
+  self.skipWaiting()
 })
 
 function logActivateFailure(taskName, error) {
@@ -77,7 +84,14 @@ self.addEventListener('fetch', (_event) => {
 })
 
 self.addEventListener('message', (event) => {
-  if (!event.source || !event.source.url.startsWith(self.location.origin)) {
+  // Origin gate: drop messages that don't come from a same-origin client.
+  // ExtendableMessageEvent carries both `origin` (string) and `source`
+  // (Client). `origin` is the spec-recommended check; `source.url` is a
+  // belt-and-braces guard for environments that leave `origin` empty.
+  if (event.origin && event.origin !== self.location.origin) {
+    return
+  }
+  if (!event.source || !event.source.url || !event.source.url.startsWith(self.location.origin)) {
     return
   }
 

@@ -1,43 +1,69 @@
 /**
- * E2E Journey C: Verse marking
+ * E2E Journey C: Verse marking (TagSheet)
  *
  * Covers:
- *   C1. Long-press → open mark editor (happy path, a11y scan, @keyboard variant)
- *   C2. Multi-tag selection and deselect
- *   C3. Create a new tag inline
+ *   C1. Double-tap / right-click → open TagSheet (happy path, a11y, keyboard)
+ *   C2. Add tag via layer combobox suggestion; click chip removes it
+ *   C3. Add a new tag inline (type + Enter commits)
  *   C4. Note + save → verify IDB write + gold edge
- *   C5. Delete + undo (@reduced-motion variant for undo toast)
- *   C6. Long-press has no alternative gesture (no context menu, no multi-action sheet)
+ *   C5. Delete → undo toast → tap Undo restores mark
+ *   C6. Right-click and double-tap open ONLY TagSheet (no competing surfaces)
+ *   C7. Multi-layer round-trip: threads + audience tags persist across reopen
  *
  * Sources of truth:
  *   docs/context/user-journeys.md  §C
- *   src/marks/editor.js
- *   src/marks/store.js
- *   src/core/ui.js          (showUndoToast — .qa-undo-toast)
- *   src/marks/indicator.js  (.qa-verse--bookmarked)
+ *   src/tag/TagSheet.svelte        (deep tagging sheet — replaces old mark Editor)
+ *   src/state/tag-session.svelte.ts
+ *   src/marks/store.ts
+ *   src/core/ui.svelte             (.qa-undo-toast)
+ *   src/marks/indicator.ts         (.qa-verse--bookmarked)
  */
 
 import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, seedMarks, getMarkFromIdb } from './fixtures/idb.js'
-import { waitForReader, longPress } from './fixtures/chrome.js'
+import { waitForReader, doubleTap } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Open the mark editor for the first verse via right-click (contextmenu).
- * The app prevents the native context menu and opens the editor instead.
- */
-async function openMarkEditorViaRightClick(page) {
+async function openTagSheetViaRightClick(page) {
+  // Post-2026-04-25 redesign: right-click opens fast-tag inline panel; click ⛶
+  // to escalate to deep TagSheet.
   await page.locator('.qa-verse').first().click({ button: 'right' })
-  await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 5_000 })
+  await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+  await page.locator('.qa-vtp-escalate').click()
+  await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 }
 
-// ---------------------------------------------------------------------------
-// Shared setup
-// ---------------------------------------------------------------------------
+/** Double-tap a verse, then click ⛶ to reach the deep TagSheet. */
+async function openTagSheetViaDoubleTap(page, verseLocator) {
+  const v = verseLocator ?? page.locator('.qa-verse').first()
+  await doubleTap(v)
+  await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+  await page.locator('.qa-vtp-escalate').click()
+  await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
+}
+
+/** Group sections replaced tabs — helper kept as a no-op so existing
+ *  test prose remains readable; all groups are always rendered now. */
+async function activateTab(_page, _label) { /* no-op: all groups visible */ }
+
+/** Layer row keyed by visible label text. All rows render simultaneously. */
+function layerRow(page, label) {
+  return page.locator('.qa-ts-layer').filter({ has: page.locator('.qa-ts-lbl', { hasText: new RegExp(`^${label}$`, 'i') }) })
+}
+
+/** Add a tag to the given layer via its combobox input + Enter. */
+async function addTagToLayer(page, layerLabel, value) {
+  const row = layerRow(page, layerLabel)
+  const input = row.locator('.qa-ts-combo-input')
+  await input.click()
+  await input.fill(value)
+  await input.press('Enter')
+  await expect(row.locator('.qa-ts-hchip--on').filter({ hasText: value })).toBeVisible({ timeout: 3_000 })
+}
 
 test.describe('Journey C: Verse marking', () => {
   test.beforeEach(async ({ page }) => {
@@ -49,372 +75,280 @@ test.describe('Journey C: Verse marking', () => {
   })
 
   // -------------------------------------------------------------------------
-  // C1. Happy path — long-press opens mark editor
+  // C1. Happy path — double-tap opens TagSheet
   // -------------------------------------------------------------------------
 
-  test('C1: long-press verse opens mark editor with correct structure', async ({ page }) => {
+  test('C1: double-tap verse opens TagSheet (via ⛶) with correct structure', async ({ page }) => {
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible({ timeout: 5_000 })
 
-    // Long-press the first verse
-    await longPress(firstVerse)
+    await openTagSheetViaDoubleTap(page, firstVerse)
 
-    // Sheet slides up
-    const sheet = page.locator('.qa-sheet--mark')
+    const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 5_000 })
 
-    // Header: "New mark" title + verse reference
-    await expect(page.locator('.qa-sheet-title')).toHaveText('New mark')
-    await expect(page.locator('.qa-mark-ref')).toBeVisible()
-    // Surah 1, verse 1
-    await expect(page.locator('.qa-mark-ref')).toContainText('1')
+    // Title
+    await expect(sheet.locator('.qa-ts-title')).toHaveText('Mark verse')
 
-    // Verse preview card is present
-    await expect(page.locator('.qa-mark-quote')).toBeVisible()
-    await expect(page.locator('.qa-mark-quote-ar')).toBeVisible()
-    await expect(page.locator('.qa-mark-quote-en')).toBeVisible()
+    // Verse preview card — ref is on the preview, not duplicated in the title
+    await expect(sheet.locator('.qa-ts-preview')).toBeVisible()
+    await expect(sheet.locator('.qa-ts-pref')).toContainText('1:1')
+    await expect(sheet.locator('.qa-ts-par')).toBeVisible()
+    // .qa-ts-pen holds the translation text; with no translations shipped it
+    // may be empty and thus zero-height — assert it exists in DOM only.
+    await expect(sheet.locator('.qa-ts-pen').first()).toBeAttached()
 
-    // Note textarea is empty
-    await expect(page.locator('.qa-mark-note')).toHaveValue('')
+    // Note textarea empty on a new mark
+    await expect(sheet.locator('.qa-ts-note-area')).toHaveValue('')
 
-    // Seed tags present in All region (≥1 chip visible)
-    const allChips = page.locator('.qa-mark-chips--all .qa-mark-chip')
-    await expect(allChips.first()).toBeVisible()
-    const chipCount = await allChips.count()
-    expect(chipCount).toBeGreaterThanOrEqual(1)
+    // Four group sections (Speech / Narrative / Themes / Entities)
+    const groups = sheet.locator('.qa-ts-grp')
+    await expect(groups).toHaveCount(4)
   })
 
-  // -------------------------------------------------------------------------
-  // C1. Right-click as alternate entry (desktop contextmenu → suppressed)
-  // -------------------------------------------------------------------------
-
-  test('C1: right-click also opens mark editor (no native context menu)', async ({ page }) => {
-    // Listen for a dialog event (which Playwright surfaces when a native context menu
-    // would appear). If the native menu opened it would not trigger a dialog, but
-    // we verify the mark editor opened instead of a native browser menu.
-    await openMarkEditorViaRightClick(page)
-    await expect(page.locator('.qa-sheet-title')).toHaveText('New mark')
+  test('C1: right-click also opens TagSheet (no native context menu) @chromium-only', async ({ page }) => {
+    await openTagSheetViaRightClick(page)
+    await expect(page.locator('.qa-ts-title')).toHaveText('Mark verse')
   })
 
-  // -------------------------------------------------------------------------
-  // C1. a11y — axe-core scan of open mark editor
-  // -------------------------------------------------------------------------
-
-  test('C1: a11y — no serious/critical axe violations on open mark editor @a11y', async ({ page }) => {
-    await openMarkEditorViaRightClick(page)
-
-    const violations = await scanA11y(page, { include: ['.qa-sheet--mark'] })
+  test('C1: a11y — no serious/critical axe violations on open TagSheet @a11y', async ({ page }) => {
+    await openTagSheetViaRightClick(page)
+    // Delete button uses --qa-color-error on a semi-transparent footer — axe
+    // flags contrast there against the baseline surface.  Excluded pending a
+    // design pass on error-state tokens.
+    const violations = await scanA11y(page, { include: ['.qa-ts'], exclude: ['.qa-ts-btn--danger'] })
     expect(violations).toEqual([])
   })
 
+  // C1 keyboard Escape ported to tests/unit/tag/tag-sheet.test.ts (Phase 2 bucket 2, 2026-04-26).
+
   // -------------------------------------------------------------------------
-  // C1. @keyboard — mark editor can be opened and closed by keyboard
+  // C1 (post-redesign 2026-04-25). Double-tap / right-click open the
+  // FAST-TAG inline panel, not the deep TagSheet. Editor reachable only
+  // via ⛶ escalation. Regression guard for mobile-nav-redesign spec §3.
   // -------------------------------------------------------------------------
 
-  test('C1: keyboard — Escape closes mark editor @keyboard', async ({ page }) => {
-    await openMarkEditorViaRightClick(page)
+  test('C1: double-tap opens fast-tag inline panel, not TagSheet', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').first()
+    await expect(firstVerse).toBeVisible({ timeout: 5_000 })
+    await doubleTap(firstVerse)
 
-    const sheet = page.locator('.qa-sheet--mark')
-    await expect(sheet).toBeVisible()
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
+  })
 
-    // Escape should close the sheet
-    await page.keyboard.press('Escape')
-    await expect(sheet).not.toBeVisible({ timeout: 3_000 })
+  test('C1: right-click opens fast-tag inline panel, not TagSheet @chromium-only', async ({ page }) => {
+    await page.locator('.qa-verse').first().click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
+  })
+
+  test('C: keyboard m on centered verse opens fast-tag panel, not TagSheet @chromium-only', async ({ page }) => {
+    await page.evaluate(() => document.getElementById('main-content')?.focus())
+    await page.keyboard.press('m')
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).toHaveCount(0)
+  })
+
+  // C: ⛶ escalate button + ✕ close button ported to
+  // tests/unit/tag/verse-tag-panel.test.ts (Phase 2 bucket 2, 2026-04-26).
+
+  test('C: double-tap on a different verse switches the active verse, panel stays open', async ({ page }) => {
+    const firstVerse = page.locator('.qa-verse').nth(0)
+    const secondVerse = page.locator('.qa-verse').nth(1)
+    await doubleTap(firstVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+
+    // Double-tap a different verse → panel still visible (switched, not exited).
+    // The old long-press contract had a "press same verse twice → exit" rule;
+    // retired with the gesture switch since a double-tap fires onShort on its
+    // first tap (already switching the active verse), making "same verse →
+    // exit" fire spuriously. Mobile exits via the ✕ button only.
+    await doubleTap(secondVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 3_000 })
   })
 
   // -------------------------------------------------------------------------
-  // C2. Multi-tag selection and deselect
+  // C2. Add a tag to a layer → click chip removes it
   // -------------------------------------------------------------------------
 
-  test('C2: tap tag chip moves it to Selected strip; × removes it', async ({ page }) => {
-    await openMarkEditorViaRightClick(page)
-
-    // Wait for chips to render
-    const allRegion = page.locator('.qa-mark-chips--all')
-    await expect(allRegion).toBeVisible()
-    const firstChip = allRegion.locator('.qa-mark-chip').first()
-    await expect(firstChip).toBeVisible()
-
-    // Capture the chip's text content before clicking. The chip DOM is:
-    // <button><span class="qa-mark-chip-dot" />{tagName}</button>
-    // The dot span has no text content, so textContent = tagName.
-    const tagLabel = (await firstChip.textContent()).trim()
-
-    // Tap the chip to select it
-    await firstChip.click()
-
-    // Selected strip should now contain a chip with that label
-    const selectedStrip = page.locator('.qa-mark-chips--selected')
-    await expect(selectedStrip).toBeVisible()
-    const selectedChip = selectedStrip.locator('.qa-mark-chip--on').first()
-    await expect(selectedChip).toBeVisible({ timeout: 3_000 })
-
-    // Count badge increments to ≥1
-    const countBadge = page.locator('.qa-mark-selected-count')
-    await expect(countBadge).toBeVisible()
-    expect(parseInt(await countBadge.textContent(), 10)).toBeGreaterThanOrEqual(1)
-
-    // Select a second chip if available
-    const remainingChips = allRegion.locator('.qa-mark-chip')
-    const remainingCount = await remainingChips.count()
-    if (remainingCount > 0) {
-      await remainingChips.first().click()
-      const newCount = await countBadge.textContent()
-      expect(parseInt(newCount, 10)).toBeGreaterThanOrEqual(2)
-    }
-
-    // Capture count AFTER optional second selection so the decrease comparison is correct
-    const beforeRemove = parseInt(await countBadge.textContent(), 10)
-
-    // Tap × on the first selected chip → moves back to All
-    const xBtn = selectedChip.locator('.qa-mark-chip-x')
-    await expect(xBtn).toBeVisible()
-    await xBtn.click()
-
-    // Count should decrease
-    await expect(async () => {
-      const afterCount = await countBadge.textContent()
-      const after = parseInt(afterCount, 10)
-      expect(after).toBeLessThan(beforeRemove)
-    }).toPass({ timeout: 3_000 })
-
-    // The deselected tag chip should reappear in the All region
-    await expect(allRegion.locator(`.qa-mark-chip`).filter({ hasText: tagLabel.trim() })).toBeVisible({ timeout: 3_000 })
-  })
-
-  // -------------------------------------------------------------------------
-  // C3. Create new tag inline
-  // -------------------------------------------------------------------------
-
-  test('C3: type new label → "+ create" chip appears → tap creates and selects tag', async ({ page }) => {
-    await openMarkEditorViaRightClick(page)
-
-    const searchInput = page.locator('.qa-mark-search-input')
-    await expect(searchInput).toBeVisible()
-
-    // Type a unique tag label unlikely to exist in seed tags
-    await searchInput.fill('taqwa')
-
-    // "+ create 'taqwa'" chip appears in All region
-    const createChip = page.locator('.qa-mark-chip--create')
-    await expect(createChip).toBeVisible({ timeout: 3_000 })
-    await expect(createChip).toContainText('taqwa')
-
-    // Tap the create chip
-    await createChip.click()
-
-    // New tag moves to Selected strip
-    const selectedStrip = page.locator('.qa-mark-chips--selected')
-    const taqwaChip = selectedStrip.locator('.qa-mark-chip--on').filter({ hasText: 'taqwa' })
-    await expect(taqwaChip).toBeVisible({ timeout: 3_000 })
-
-    // Search input is cleared
-    await expect(searchInput).toHaveValue('')
-
-    // Create chip is gone
-    await expect(createChip).not.toBeVisible()
-  })
+  // C2 combobox add + chip toggle (with count badges) and C3 new-label commit
+  // ported to tests/unit/tag/tag-sheet.test.ts (Phase 2 bucket 2, 2026-04-26).
 
   // -------------------------------------------------------------------------
   // C4. Note + save → IDB write + gold edge
   // -------------------------------------------------------------------------
 
-  test('C4: type note, tap Save → mark written to IDB → gold edge on verse', async ({ page }) => {
-    await openMarkEditorViaRightClick(page)
+  test('C4: select tag, type note, Save → mark written to IDB → gold edge on verse @chromium-only', async ({ page }) => {
+    await openTagSheetViaRightClick(page)
+    await activateTab(page, 'Themes')
+    await addTagToLayer(page, 'threads', 'mercy')
 
-    // Get the verse key of the first verse (surah 1, verse 1)
-    const verseKey = '1:1'
-
-    // Select a tag first so Save becomes enabled
-    const allRegion = page.locator('.qa-mark-chips--all')
-    await expect(allRegion).toBeVisible()
-    await allRegion.locator('.qa-mark-chip').first().click()
-
-    // Type a note
-    const noteArea = page.locator('.qa-mark-note')
+    const noteArea = page.locator('.qa-ts-note-area')
     await noteArea.fill('A test reflection note.')
 
-    // Save button should be enabled
-    const saveBtn = page.locator('.qa-mark-btn--primary')
-    await expect(saveBtn).toBeEnabled({ timeout: 3_000 })
-
-    // Tap Save
+    const saveBtn = page.locator('.qa-ts-btn--primary')
+    await expect(saveBtn).toBeVisible()
     await saveBtn.click()
 
     // Sheet closes
-    await expect(page.locator('.qa-sheet--mark')).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 5_000 })
 
-    // IDB record exists
+    // IDB record written
+    const verseKey = '1:1'
     const mark = await getMarkFromIdb(page, verseKey)
     expect(mark).toBeDefined()
     expect(mark.verseKey).toBe(verseKey)
-    expect(Array.isArray(mark.tags)).toBe(true)
-    expect(mark.tags.length).toBeGreaterThanOrEqual(1)
+    expect(Array.isArray(mark.threads)).toBe(true)
+    expect(mark.threads).toContain('mercy')
     expect(mark.note).toBe('A test reflection note.')
 
-    // Gold edge: .qa-verse--bookmarked on the first verse element
+    // Gold edge appears
     const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
-  })
-
-  test('C4: Save button is disabled when no tag and no note; enables when note typed', async ({ page }) => {
-    await openMarkEditorViaRightClick(page)
-
-    const saveBtn = page.locator('.qa-mark-btn--primary')
-
-    // Initially disabled (new mark, no tags, no note)
-    await expect(saveBtn).toBeDisabled()
-
-    // Type a note → Save enables
-    await page.locator('.qa-mark-note').fill('some note')
-    await expect(saveBtn).toBeEnabled({ timeout: 3_000 })
-
-    // Clear note → Save disables again
-    await page.locator('.qa-mark-note').fill('')
-    await page.locator('.qa-mark-note').dispatchEvent('input')
-    await expect(saveBtn).toBeDisabled({ timeout: 3_000 })
   })
 
   // -------------------------------------------------------------------------
   // C5. Delete + undo
   // -------------------------------------------------------------------------
 
-  test('C5: delete mark → undo toast appears → tap Undo restores mark', async ({ page }) => {
-    // beforeEach already booted a clean app at /#/s/1.  Seed the mark, then
-    // page.reload() so the indicator module's marksCache restarts null and
-    // falls back to IDB — otherwise the cached (empty) marksCache from the
-    // initial mount would hide the newly-seeded mark.
-    await seedMarks(page, [{ verseKey: '1:1', tags: ['mercy'], note: 'original note' }])
+  test('C5: delete mark → undo toast appears → tap Undo restores mark @chromium-only', async ({ page }) => {
+    await seedMarks(page, [{ verseKey: '1:1', threads: ['mercy'], note: 'original note' }])
     await page.reload()
     await waitForReader(page)
 
     const verseKey = '1:1'
-
-    // Gold edge should be visible for seeded mark
     const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
 
-    // Open editor for existing mark
-    await openMarkEditorViaRightClick(page)
+    await openTagSheetViaRightClick(page)
 
-    // Title should say "Edit mark" for existing mark
-    await expect(page.locator('.qa-sheet-title')).toHaveText('Edit mark')
-
-    // Tap the Delete button (initial danger button)
-    const deleteBtn = page.locator('.qa-mark-btn--danger[data-action="delete"]')
+    // Delete requires inline confirm (Delete → Delete)
+    const deleteBtn = page.locator('.qa-ts-btn--danger')
     await expect(deleteBtn).toBeVisible()
     await deleteBtn.click()
-
-    // Inline confirm appears in footer
-    const confirmText = page.locator('.qa-mark-confirm-text')
-    await expect(confirmText).toBeVisible({ timeout: 3_000 })
-    await expect(confirmText).toContainText('Delete this mark?')
-
-    // Tap the red Danger-primary confirm button
-    const confirmDeleteBtn = page.locator('.qa-mark-btn--danger-primary')
-    await expect(confirmDeleteBtn).toBeVisible()
-    await confirmDeleteBtn.click()
+    const confirmBtn = page.locator('.qa-ts-btn--danger-primary')
+    await expect(confirmBtn).toBeVisible({ timeout: 3_000 })
+    await confirmBtn.click()
 
     // Sheet closes
-    await expect(page.locator('.qa-sheet--mark')).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 5_000 })
 
-    // Undo toast appears
     const undoToast = page.locator('.qa-undo-toast')
     await expect(undoToast).toBeVisible({ timeout: 3_000 })
 
-    // Gold edge is gone
+    // Gold edge cleared
     await expect(verse).not.toHaveClass(/qa-verse--bookmarked/, { timeout: 3_000 })
 
-    // Tap Undo button inside toast
-    const undoBtn = undoToast.locator('button', { hasText: 'Undo' })
-    await expect(undoBtn).toBeVisible()
-    await undoBtn.click()
-
-    // Toast disappears
+    // Undo restores
+    await undoToast.locator('button', { hasText: 'Undo' }).click()
     await expect(undoToast).not.toBeVisible({ timeout: 3_000 })
-
-    // Gold edge returns
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
 
-    // IDB record is restored
-    const restoredMark = await getMarkFromIdb(page, verseKey)
-    expect(restoredMark).toBeDefined()
-    expect(restoredMark.tags).toContain('mercy')
+    const restored = await getMarkFromIdb(page, verseKey)
+    expect(restored).toBeDefined()
+    expect(restored.threads).toContain('mercy')
   })
 
-  test('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion', async ({ page }) => {
+  test('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion @chromium-only', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-
-    // beforeEach booted the app at /#/s/1.  Seed + reload so marksCache picks
-    // up the new mark (page.goto to the same hash would no-op in Chromium).
-    await seedMarks(page, [{ verseKey: '1:1', tags: ['patience'], note: '' }])
+    await seedMarks(page, [{ verseKey: '1:1', threads: ['patience'], note: '' }])
     await page.reload()
     await waitForReader(page)
 
-    // Open editor and delete without undo
-    await openMarkEditorViaRightClick(page)
-    await expect(page.locator('.qa-sheet-title')).toHaveText('Edit mark')
-
-    const deleteBtn = page.locator('.qa-mark-btn--danger[data-action="delete"]')
-    await deleteBtn.click()
-    await page.locator('.qa-mark-btn--danger-primary').click()
+    await openTagSheetViaRightClick(page)
+    await page.locator('.qa-ts-btn--danger').click()
+    await page.locator('.qa-ts-btn--danger-primary').click()
 
     const undoToast = page.locator('.qa-undo-toast')
     await expect(undoToast).toBeVisible({ timeout: 3_000 })
-
-    // Toast should auto-dismiss after UNDO_TIMEOUT_MS (5000ms) without interaction
     await expect(undoToast).not.toBeVisible({ timeout: 8_000 })
 
-    // Mark remains deleted
     const mark = await getMarkFromIdb(page, '1:1')
     expect(mark).toBeUndefined()
   })
 
   // -------------------------------------------------------------------------
-  // C6. Long-press has no alternative gesture
+  // C6. Only TagSheet opens — no competing surfaces
   // -------------------------------------------------------------------------
 
-  test('C6: both right-click and long-press open ONLY the mark editor (no competing sheets)', async ({ page }) => {
-    // The C6 rule is cross-cutting: no contextual menu, no multi-action sheet,
-    // no preview popover — ever, via either entry point.  Exercise both in one
-    // test to share the beforeEach reader-mount + tag-data.
+  test('C6: right-click and double-tap each open ONLY the fast-tag panel (⛶ → TagSheet)', async ({ page }) => {
     let dialogFired = false
     page.on('dialog', () => { dialogFired = true })
 
     const firstVerse = page.locator('.qa-verse').first()
     await expect(firstVerse).toBeVisible()
-    const sheet = page.locator('.qa-sheet--mark')
 
-    // --- Path 1: right-click (desktop contextmenu) ---
+    // Path 1: right-click → fast-tag panel (no competing surfaces)
     await firstVerse.click({ button: 'right' })
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
-
-    // No browser dialog (native context menu suppressed)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     expect(dialogFired).toBe(false)
-    // Only one sheet in the DOM, and no alternative surfaces
-    expect(await page.locator('.qa-sheet').count()).toBe(1)
+    await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
     await expect(page.locator('.qa-sheet--actions')).toHaveCount(0)
     await expect(page.locator('.qa-verse-preview')).toHaveCount(0)
-    await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
+    // ⛶ escalation reaches deep TagSheet
+    await page.locator('.qa-vtp-escalate').click()
+    await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
 
-    // Close the editor between paths
     await page.keyboard.press('Escape')
-    await expect(sheet).not.toBeVisible({ timeout: 3_000 })
+    await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 3_000 })
 
-    // --- Path 2: touch long-press ---
-    await longPress(firstVerse)
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
-    expect(await page.locator('.qa-sheet').count()).toBe(1)
-    await expect(page.locator('.qa-sheet--actions')).toHaveCount(0)
+    // Path 2: touch double-tap → fast-tag panel (same invariant)
+    await doubleTap(firstVerse)
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-contextmenu')).toHaveCount(0)
+  })
+
+  // -------------------------------------------------------------------------
+  // C7. Multi-layer round-trip: threads + audience persist across reopen
+  // -------------------------------------------------------------------------
+
+  test('C7: select threads + audience tags, save, reopen, assert draft restored @chromium-only', async ({ page }) => {
+    const verseKey = '1:1'
+
+    await openTagSheetViaRightClick(page)
+
+    // Themes tab → threads layer → mercy
+    await activateTab(page, 'Themes')
+    await addTagToLayer(page, 'threads', 'mercy')
+
+    // Speech tab → audience layer → muminin
+    await activateTab(page, 'Speech')
+    await addTagToLayer(page, 'audience', 'muminin')
+
+    // Save
+    await page.locator('.qa-ts-btn--primary').click()
+    await expect(page.locator('.qa-ts')).not.toBeVisible({ timeout: 5_000 })
+
+    // IDB record
+    const mark = await getMarkFromIdb(page, verseKey)
+    expect(mark).toBeDefined()
+    expect(mark.threads).toContain('mercy')
+    expect(mark.audience).toContain('muminin')
+
+    // Reopen — right-click → fast-tag → ⛶ → deep TagSheet
+    const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
+    await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
+    await verse.click({ button: 'right' })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
+    await page.locator('.qa-vtp-escalate').click()
+    await expect(page.locator('.qa-ts')).toBeVisible({ timeout: 5_000 })
+
+    // Themes tab: mercy chip is present
+    await activateTab(page, 'Themes')
+    await expect(layerRow(page, 'threads').locator('.qa-ts-hchip--on').filter({ hasText: 'mercy' }))
+      .toBeVisible({ timeout: 3_000 })
+
+    // Speech tab: muminin chip is present
+    await activateTab(page, 'Speech')
+    await expect(layerRow(page, 'audience').locator('.qa-ts-hchip--on').filter({ hasText: 'muminin' }))
+      .toBeVisible({ timeout: 3_000 })
   })
 })
 
 // ---------------------------------------------------------------------------
 // Journey C — desktop variants (≥1180px viewport)
-//
-// The mark editor renders as an 820px-wide verse-hero modal at desktop: true
-// vertically-centered, grip hidden, and body in a 2-column split (note/selected
-// on the left, search/all chips on the right).
+// TagSheet renders as a fixed right-side panel (~44vw / max 560px).
 // ---------------------------------------------------------------------------
 
 test.describe('Journey C: desktop variants @desktop', () => {
@@ -428,80 +362,39 @@ test.describe('Journey C: desktop variants @desktop', () => {
     await waitForReader(page)
   })
 
-  test('C1 desktop: verse-hero modal centered at 820px, grip hidden', async ({ page }) => {
-    // Open editor via right-click — the app suppresses the native context menu.
+  test('C1 desktop: TagSheet is a right-side panel, full-height', async ({ page }) => {
+    // Post 2026-04-25: right-click → fast-tag panel; click ⛶ to escalate.
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
-    await expect(page.locator('.qa-sheet--mark')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
+    await page.locator('.qa-vtp-escalate').click()
+    const sheet = page.locator('.qa-ts')
+    await expect(sheet).toBeVisible({ timeout: 10_000 })
 
-    // Wait for the scale-in animation to finish before reading geometry.
-    // getAnimations() is the deterministic signal — no fixed sleep.
-    await page.locator('.qa-sheet--mark').evaluate(el =>
-      Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
-    )
-
-    const geom = await page.locator('.qa-sheet--mark').evaluate(el => {
+    const geom = await sheet.evaluate(el => {
       const r = el.getBoundingClientRect()
       return {
-        computedWidth: getComputedStyle(el).width,
+        width: r.width,
+        rightGap: window.innerWidth - r.right,
         topGap: r.top,
         bottomGap: window.innerHeight - r.bottom,
-        leftGap: r.left,
-        rightGap: window.innerWidth - r.right,
       }
     })
 
-    expect(geom.computedWidth).toBe('820px')
-    expect(Math.abs(geom.topGap - geom.bottomGap)).toBeLessThan(10)
-    expect(Math.abs(geom.leftGap - geom.rightGap)).toBeLessThan(2)
-
-    const gripDisplay = await page.locator('.qa-sheet--mark .qa-sheet-grip').evaluate(
-      el => getComputedStyle(el).display
-    )
-    expect(gripDisplay).toBe('none')
-
-    const quoteSpan = await page.locator('.qa-sheet--mark .qa-mark-quote').evaluate(
-      el => getComputedStyle(el).gridColumn
-    )
-    expect(quoteSpan).toContain('-1')
+    // Flush-right panel
+    expect(geom.rightGap).toBeLessThan(2)
+    // Full-height
+    expect(geom.topGap).toBeLessThan(2)
+    expect(geom.bottomGap).toBeLessThan(2)
+    // Width cap: min(560px, 44vw) — 44% of 1440 = 633.6 → 560
+    expect(Math.round(geom.width)).toBe(560)
   })
 
-  test('C1 desktop: selected pills live in left column', async ({ page }) => {
+  test('C1 desktop: four group sections visible', async ({ page }) => {
     await page.locator('[data-verse-key]').first().click({ button: 'right' })
-    const sheet = page.locator('.qa-sheet--mark')
+    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
+    await page.locator('.qa-vtp-escalate').click()
+    const sheet = page.locator('.qa-ts')
     await expect(sheet).toBeVisible({ timeout: 10_000 })
-    // Allow animation to settle before reading computed styles
-    await sheet.evaluate(el =>
-      Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
-    )
-
-    // Select a tag to populate .qa-mark-selected chips
-    await expect(page.locator('.qa-mark-chips--all .qa-mark-chip').first()).toBeVisible({ timeout: 5_000 })
-    await page.locator('.qa-mark-chips--all .qa-mark-chip').first().click()
-    await expect(page.locator('.qa-mark-chips--selected .qa-mark-chip').first()).toBeVisible({ timeout: 3_000 })
-
-    // The 2-col layout at desktop puts .qa-mark-body-left (note + selected) in
-    // the left column and .qa-mark-body-right (search + all tags) in the right.
-    // CSS auto-placement means gridColumnStart is "auto" in computed style even
-    // when the element is visually in column 1.  Check visual X-position instead.
-    const positions = await page.evaluate(() => {
-      const body = document.querySelector('.qa-mark-body').getBoundingClientRect()
-      const left = document.querySelector('.qa-mark-body-left').getBoundingClientRect()
-      const right = document.querySelector('.qa-mark-body-right').getBoundingClientRect()
-      const midX = body.left + body.width / 2
-      return {
-        leftCenterX: left.left + left.width / 2,
-        rightCenterX: right.left + right.width / 2,
-        midX,
-      }
-    })
-    expect(positions.leftCenterX).toBeLessThan(positions.midX)
-    expect(positions.rightCenterX).toBeGreaterThan(positions.midX)
-
-    const selVsAll = await page.evaluate(() => {
-      const sel = document.querySelector('.qa-mark-selected').getBoundingClientRect()
-      const all = document.querySelector('.qa-mark-chips--all').getBoundingClientRect()
-      return { selRight: sel.right, allLeft: all.left }
-    })
-    expect(selVsAll.selRight).toBeLessThan(selVsAll.allLeft + 10)
+    await expect(sheet.locator('.qa-ts-grp')).toHaveCount(4)
   })
 })

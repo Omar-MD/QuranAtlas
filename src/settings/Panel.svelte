@@ -6,17 +6,25 @@
   import { logger } from '../core/logger.js'
   import { settings } from '../state/settings.svelte.ts'
   import { getThemeOptions, setTheme } from './theme.ts'
-  import { getFontSizeOptions, setFontSize } from './font-size.ts'
+  import { getFontSizeOptions, setFontSize, resetFontSize } from './font-size.ts'
+  import {
+    getReadingOptions,
+    setReadingFlow,
+    getReadingFlowStep,
+    resetReadingTypography,
+    type ReadingStep,
+  } from './reading-typography.ts'
+  import { toggleNightMode } from './night-mode.ts'
   import { getTranslations } from '../data/dataset.js'
-  import { showClearDataConfirmation } from './clear-data.ts'
   import { registerPanel } from './panel-bridge.ts'
+  import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
 
   // Sheet visibility
   let open = $state(false)
-  // View: 'main' | 'translation-picker'
-  let view = $state<'main' | 'translation-picker'>('main')
+  // View: 'main' | 'translation-picker' | 'typography'
+  let view = $state<'main' | 'translation-picker' | 'typography'>('main')
 
   // Data loaded when sheet opens
   let translations = $state<TranslationEntry[]>([])
@@ -25,6 +33,24 @@
   // Computed from settings rune
   const themeOptions = getThemeOptions()
   const fontOptions = getFontSizeOptions()
+  const readingOptions = getReadingOptions()
+  const riwayahOptions = getRiwayahOptions()
+
+  const RIWAYAH_LABELS: Record<Riwayah, { label: string; sub: string }> = {
+    hafs:   { label: 'Ḥafṣ',   sub: 'Ḥafṣ ʿan ʿĀṣim · 6236 ayāt' },
+    warsh:  { label: 'Warsh',  sub: 'Warsh ʿan Nāfiʿ · 6214 ayāt' },
+    qaloon: { label: 'Qālūn',  sub: 'Qālūn ʿan Nāfiʿ · 6214 ayāt' },
+  }
+
+  // Typography preview text per Riwayah — pulled verbatim from each
+  // KFGQPC-shipped corpus (Sūrat ar-Raḥmān 1–2). The reader and the
+  // preview render character-for-character identical strings, so users
+  // see the exact diacritic shapes that will appear in the mushaf.
+  const PREVIEW_AR: Record<Riwayah, string> = {
+    hafs:   'ٱلرَّحۡمَٰنُ عَلَّمَ ٱلۡقُرۡءَانَ',
+    warsh:  'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
+    qaloon: 'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
+  }
 
   async function loadSheetData() {
     try {
@@ -39,6 +65,8 @@
         Object.assign(settings, { translationVisible: visible })
       }
       translationId = await resolveCurrentTranslationId(loadedTranslations)
+      const r = await loadRiwayah()
+      ;(settings as Record<string, unknown>).riwayah = r
     } catch (error) {
       logger.error('Failed to load settings sheet data', { error })
     }
@@ -96,6 +124,10 @@
     await setTheme(opt)
   }
 
+  async function handleNightMode() {
+    await toggleNightMode()
+  }
+
   // ---- Font size ----
 
   function fontIndexOf(size: string): number {
@@ -109,6 +141,44 @@
     if (size) { await setFontSize(size) }
   }
 
+  // ---- Reading flow (single slider drives line/word/margin/verse-spacing) ----
+
+  function readingIndexOf(step: string): number {
+    const idx = readingOptions.indexOf(step as typeof readingOptions[number])
+    return idx >= 0 ? idx : 2
+  }
+
+  // Slider thumb position. Falls back to md when the four underlying dims are
+  // out of sync (e.g. a future advanced split has run) — the slider only
+  // commits a single coordinated value, so a mixed state collapses to md.
+  const readingFlowStep = $derived<ReadingStep>(
+    getReadingFlowStep({
+      lineSpacing: settings.lineSpacing,
+      wordSpacing: settings.wordSpacing,
+      readerMargin: settings.readerMargin,
+      verseSpacing: settings.verseSpacing,
+    }) ?? 'md',
+  )
+
+  async function handleFlowSlider(e: Event) {
+    const idx = parseInt((e.target as HTMLInputElement).value, 10)
+    const step = readingOptions[Math.max(0, Math.min(readingOptions.length - 1, idx))]
+    if (step) { await setReadingFlow(step) }
+  }
+
+  async function handleResetTypography() {
+    await Promise.all([resetFontSize(), resetReadingTypography()])
+  }
+
+  function typographySubtitle(): string {
+    if (typographyIsDefault) { return 'Default' }
+    return `Aa ${settings.fontSize} · ↕ ${readingFlowStep}`
+  }
+
+  const typographyIsDefault = $derived(
+    settings.fontSize === 'md' && readingFlowStep === 'md'
+  )
+
   // ---- Translation toggle ----
 
   async function handleTranslationToggle() {
@@ -119,6 +189,12 @@
     } catch (error) {
       logger.error('Failed to save translation setting', { error })
     }
+  }
+
+  // ---- Riwayah picker ----
+
+  async function handleRiwayah(r: Riwayah) {
+    await setRiwayah(r)
   }
 
   // ---- Translation picker ----
@@ -132,13 +208,6 @@
       logger.error('Failed to save translation choice', { error })
     }
     view = 'main'
-  }
-
-  // ---- Clear data ----
-
-  async function handleClearData() {
-    closeSettingsSheet()
-    await showClearDataConfirmation()
   }
 
   // ---- Keyboard: Escape closes ----
@@ -179,7 +248,7 @@
           onclick={closeSettingsSheet}
         >✕</button>
       </div>
-      <div class="qa-sheet-body qa-settings-body">
+      <div class="qa-sheet-body">
         <!-- Theme section -->
         <section class="qa-settings-section">
           <div class="qa-settings-label">Theme</div>
@@ -194,7 +263,7 @@
                 onclick={() => handleTheme(opt)}
               >
                 <span class="qa-theme-swatch-preview" aria-hidden="true">
-                  <span class="qa-theme-swatch-inner">الله</span>
+                  <span>الله</span>
                 </span>
                 <span class="qa-theme-swatch-label">
                   {opt.charAt(0).toUpperCase() + opt.slice(1)}
@@ -202,34 +271,63 @@
               </button>
             {/each}
           </div>
+          <div class="qa-settings-toggle-row qa-settings-toggle-row--night">
+            <div class="qa-settings-toggle-body">
+              <div class="qa-settings-toggle-main">Night mode</div>
+              <div class="qa-settings-toggle-sub">Dim + warm tint over any theme</div>
+            </div>
+            <button
+              type="button"
+              class="qa-settings-switch"
+              class:qa-settings-switch--on={settings.nightMode}
+              role="switch"
+              aria-checked={settings.nightMode}
+              aria-label="Night mode"
+              onclick={handleNightMode}
+              data-testid="night-mode-switch"
+            >
+              <span class="qa-settings-switch-knob"></span>
+            </button>
+          </div>
         </section>
 
-        <!-- Font size section -->
+        <!-- Typography section (font size, line/word spacing, margins) -->
         <section class="qa-settings-section">
-          <div class="qa-settings-label">Font size</div>
-          <div class="qa-font-wrap">
-            <span class="qa-font-min">Aa</span>
-            <input
-              type="range"
-              class="qa-font-slider"
-              min="0"
-              max={fontOptions.length - 1}
-              step="1"
-              value={fontIndexOf(settings.fontSize)}
-              aria-label="Font size"
-              oninput={handleFontSlider}
-            />
-            <span class="qa-font-max">Aa</span>
-          </div>
-          <div class="qa-font-preview">
-            <span class="qa-font-preview-en">The Most Gracious · </span>
-            <span class="qa-font-preview-ar" dir="rtl">ٱلرَّحْمَـٰنِ</span>
+          <div class="qa-settings-label">Typography</div>
+          <div class="qa-settings-toggle-row">
+            <button
+              type="button"
+              class="qa-settings-toggle-body"
+              onclick={() => { view = 'typography' }}
+            >
+              <div class="qa-settings-toggle-main">Size, spacing &amp; margins</div>
+              <div class="qa-settings-toggle-sub">{typographySubtitle()}</div>
+            </button>
+            <span class="qa-settings-toggle-chev" aria-hidden="true">›</span>
           </div>
         </section>
 
         <!-- Reading section -->
         <section class="qa-settings-section">
           <div class="qa-settings-label">Reading</div>
+          <div class="qa-riwayah-block">
+            <div class="qa-riwayah-block-label">Riwayah</div>
+            <div class="qa-riwayah-row" role="radiogroup" aria-label="Riwayah">
+              {#each riwayahOptions as opt (opt)}
+                <button
+                  type="button"
+                  class="qa-riwayah-swatch"
+                  class:qa-riwayah-swatch--active={settings.riwayah === opt}
+                  role="radio"
+                  aria-checked={settings.riwayah === opt}
+                  onclick={() => handleRiwayah(opt)}
+                >
+                  <span class="qa-riwayah-swatch-label">{RIWAYAH_LABELS[opt].label}</span>
+                  <span class="qa-riwayah-swatch-sub">{RIWAYAH_LABELS[opt].sub}</span>
+                </button>
+              {/each}
+            </div>
+          </div>
           <div class="qa-settings-toggle-row">
             {#if translations.length > 1}
               <button
@@ -264,22 +362,9 @@
           </div>
         </section>
 
-        <!-- Clear data -->
-        <section class="qa-settings-section">
-          <button
-            type="button"
-            class="qa-sheet-row qa-sheet-row--danger"
-            onclick={handleClearData}
-          >
-            <span class="qa-sheet-row-body">
-              <span class="qa-sheet-row-label">Clear all data</span>
-              <span class="qa-sheet-row-meta">Removes all marks, positions &amp; settings</span>
-            </span>
-          </button>
-        </section>
       </div>
 
-    {:else}
+    {:else if view === 'translation-picker'}
       <!-- Translation picker view -->
       <div class="qa-sheet-hdr">
         <button
@@ -313,153 +398,77 @@
           </button>
         {/each}
       </div>
+
+    {:else}
+      <!-- Typography subview -->
+      <div class="qa-sheet-hdr">
+        <button
+          type="button"
+          class="qa-sheet-back"
+          aria-label="Back"
+          onclick={() => { view = 'main' }}
+        >← Typography</button>
+        <button
+          type="button"
+          class="qa-sheet-close"
+          aria-label="Close"
+          onclick={closeSettingsSheet}
+        >✕</button>
+      </div>
+      <div class="qa-sheet-body qa-typography-body">
+        <div class="qa-typography-preview" data-testid="typography-preview">
+          <p class="qa-verse-arabic" dir="rtl">{PREVIEW_AR[(settings.riwayah as Riwayah | undefined) ?? 'qaloon']}</p>
+          <p class="qa-verse-translation">The Most Gracious. He has taught the Qur'an.</p>
+        </div>
+
+        <div class="qa-typography-slider">
+          <label class="qa-typography-slider-label" for="qa-tslider-fs">Font size</label>
+          <div class="qa-typography-slider-row">
+            <span class="qa-typography-slider-min" aria-hidden="true">Aa</span>
+            <input
+              id="qa-tslider-fs"
+              class="qa-typography-slider-input"
+              type="range"
+              min="0"
+              max={fontOptions.length - 1}
+              step="1"
+              value={fontIndexOf(settings.fontSize)}
+              oninput={handleFontSlider}
+              aria-label="Font size"
+            />
+            <span class="qa-typography-slider-max qa-typography-slider-max--lg" aria-hidden="true">Aa</span>
+          </div>
+        </div>
+
+        <div class="qa-typography-slider">
+          <label class="qa-typography-slider-label" for="qa-tslider-flow">Reading flow</label>
+          <div class="qa-typography-slider-row">
+            <span class="qa-typography-slider-min" aria-hidden="true">▮</span>
+            <input
+              id="qa-tslider-flow"
+              class="qa-typography-slider-input"
+              type="range"
+              min="0"
+              max={readingOptions.length - 1}
+              step="1"
+              value={readingIndexOf(readingFlowStep)}
+              oninput={handleFlowSlider}
+              aria-label="Reading flow"
+            />
+            <span class="qa-typography-slider-max" aria-hidden="true">▯</span>
+          </div>
+        </div>
+
+        {#if !typographyIsDefault}
+          <button
+            type="button"
+            class="qa-typography-reset"
+            onclick={handleResetTypography}
+            data-testid="typography-reset"
+          >Reset to default</button>
+        {/if}
+      </div>
     {/if}
   </div>
 {/if}
 
-<style>
-  .qa-settings-section {
-    padding: 10px 2px 14px;
-    border-top: 1px solid var(--qa-ambient-border);
-  }
-  .qa-settings-section:first-child { border-top: none; }
-  .qa-settings-label {
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--qa-ambient-accent);
-    margin-bottom: 8px;
-  }
-
-  .qa-theme-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-  }
-  .qa-theme-swatch {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    padding: 0;
-    border: 2px solid transparent;
-    border-radius: 10px;
-    background: transparent;
-    cursor: pointer;
-    overflow: hidden;
-  }
-  .qa-theme-swatch--active { border-color: var(--qa-ambient-accent); }
-  .qa-theme-swatch-preview {
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--qa-font-arabic);
-    font-size: 1.25rem;
-    border-bottom: 1px solid var(--qa-ambient-border);
-  }
-  :global(.qa-theme-swatch--light) .qa-theme-swatch-preview { background: #fbf8f0; color: #3d2e14; }
-  :global(.qa-theme-swatch--sepia) .qa-theme-swatch-preview { background: #f3e8cf; color: #6b4a16; }
-  :global(.qa-theme-swatch--dark)  .qa-theme-swatch-preview { background: #0e0e0c; color: #a89968; }
-  :global(.qa-theme-swatch--auto)  .qa-theme-swatch-preview { background: linear-gradient(135deg, #fbf8f0 50%, #0e0e0c 50%); color: #a89968; }
-  .qa-theme-swatch-label {
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 4px 0;
-    color: var(--qa-ambient-parchment);
-    background-color: var(--qa-ambient-surface);
-  }
-
-  .qa-font-wrap { display: flex; align-items: center; gap: 8px; }
-  .qa-font-min { font-size: 0.875rem; color: var(--qa-ambient-dim); }
-  .qa-font-max { font-size: 1.25rem; color: var(--qa-ambient-parchment); font-weight: 600; }
-  .qa-font-slider { flex: 1; accent-color: var(--qa-ambient-accent); }
-  .qa-font-preview {
-    margin-top: 10px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background-color: color-mix(in srgb, var(--qa-ambient-accent) 6%, transparent);
-    text-align: center;
-  }
-  .qa-font-preview-ar {
-    font-family: var(--qa-font-arabic);
-    color: var(--qa-ambient-parchment);
-    font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base) * 0.7);
-    line-height: var(--qa-line-height-arabic);
-  }
-  .qa-font-preview-en {
-    color: var(--qa-ambient-muted);
-    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.8);
-  }
-
-  .qa-settings-toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 4px;
-    border-top: 1px solid var(--qa-ambient-border);
-  }
-  .qa-settings-toggle-row:first-child { border-top: none; }
-  .qa-settings-toggle-body {
-    border: none;
-    background: transparent;
-    color: var(--qa-ambient-parchment);
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    padding: 0;
-    flex: 1;
-    text-align: left;
-    cursor: pointer;
-    min-width: 0;
-  }
-  .qa-settings-toggle-main { font-size: 0.875rem; font-weight: 600; }
-  .qa-settings-toggle-sub { font-size: 0.75rem; color: var(--qa-ambient-muted); }
-
-  .qa-settings-switch {
-    width: 36px;
-    height: 20px;
-    border-radius: 999px;
-    position: relative;
-    border: none;
-    background-color: var(--qa-ambient-border);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color 0.2s ease;
-  }
-  .qa-settings-switch--on { background-color: var(--qa-ambient-accent); }
-  .qa-settings-switch-knob {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background-color: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-    transition: left 0.2s ease;
-  }
-  .qa-settings-switch--on .qa-settings-switch-knob { left: 18px; }
-
-  .qa-settings-trans-choice {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 4px;
-    border: none;
-    border-bottom: 1px solid var(--qa-ambient-border);
-    background: transparent;
-    cursor: pointer;
-  }
-  .qa-settings-trans-choice:last-child { border-bottom: none; }
-  .qa-settings-trans-body { display: flex; flex-direction: column; flex: 1; text-align: left; }
-  .qa-settings-trans-name { font-size: 0.875rem; color: var(--qa-ambient-parchment); font-weight: 600; }
-  .qa-settings-trans-sub { font-size: 0.75rem; color: var(--qa-ambient-muted); }
-  .qa-settings-trans-check {
-    color: var(--qa-ambient-accent);
-    opacity: 0;
-    font-size: 0.875rem;
-  }
-  .qa-settings-trans-choice--on .qa-settings-trans-check { opacity: 1; }
-</style>

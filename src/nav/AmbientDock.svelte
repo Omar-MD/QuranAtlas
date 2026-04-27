@@ -1,97 +1,66 @@
 <script lang="ts">
+  /**
+   * Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav`
+   * (layout host in App.svelte). Top section: logo + primary nav icons.
+   * Bottom section: rotated verse crumb + more (kebab) button. Hidden on
+   * mobile/tablet; MarginHeader owns primary nav there.
+   */
+
   import { onMount } from 'svelte'
-  import { get } from '../core/db'
+  import { get, LAYER_NAMES } from '../core/db'
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
-  import { openMoreSheet } from './more-sheet-bridge'
+  import { reader } from '../state/reader.svelte'
   import { openCommandSheet } from './command-sheet-bridge'
-  import { ambientChrome } from '../state/ambient-chrome.svelte'
-
-  const AUTO_FADE_MS = 2800
-  const HIDE_DELTA = 40
-  const SHOW_NEAR_TOP = 20
+  import { openNavDrawer } from './nav-drawer-bridge'
 
   type Tab = {
-    id: string
+    id: 'read' | 'search' | 'review' | 'marks'
     label: string
-    icon: string
     matches: (h: string) => boolean
   }
 
   let lastSurahHref = $state('#/s/1')
-  let currentHash = $state(window.location.hash || '')
-  let lastTop = 0
-
-  // footer DOM ref — set in onMount
+  let currentHash = $state(typeof window !== 'undefined' ? window.location.hash || '' : '')
   let footer: HTMLElement | null = null
 
-  function setHidden(v: boolean): void {
-    if (!footer) { return }
-    footer.classList.toggle('qa-dock--hidden', v)
-  }
-
   const TABS: Tab[] = [
-    { id: 'read',   label: 'Read',   icon: '\uD83D\uDCD6', matches: (h) => h.startsWith('#/s/') },
-    { id: 'search', label: 'Search', icon: '\u2315',        matches: () => false },
-    { id: 'review', label: 'Review', icon: '\u2726',        matches: (h) => h.startsWith('#/review') || h.startsWith('#/t/') },
-    { id: 'more',   label: 'More',   icon: '\u22EF',        matches: (h) => h.startsWith('#/settings') || h.startsWith('#/about') },
+    { id: 'read',   label: 'Read',   matches: (h) => h.startsWith('#/s/') },
+    { id: 'search', label: 'Search', matches: () => false },
+    { id: 'review', label: 'Review', matches: (h) => h.startsWith('#/review') || LAYER_NAMES.some(ln => h.startsWith(`#/${ln}/`)) },
+    { id: 'marks',  label: 'Marks',  matches: () => false },
   ]
 
-  function isReaderRoute(hash: string): boolean {
-    return (hash || '').startsWith('#/s/')
-  }
+  const crumbText = $derived.by(() => {
+    const s = reader.currentSurahNum
+    const vk = reader.currentVerseKey
+    const v = vk ? vk.split(':')[1] ?? '' : ''
+    if (!s) { return '' }
+    return v ? `${s} : ${v}` : `${s}`
+  })
 
-  function isOnboardingRoute(hash: string): boolean {
-    return (hash || '').startsWith('#/onboarding')
-  }
+  function isReaderRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
+  function isOnboardingRoute(h: string): boolean { return (h || '').startsWith('#/onboarding') }
 
   function applyRoutePersistence(hash: string): void {
-    if (isOnboardingRoute(hash)) {
-      setHidden(true)
-      if (ambientChrome.dockFadeTimerHandle) {
-        clearTimeout(ambientChrome.dockFadeTimerHandle)
-        ambientChrome.dockFadeTimerHandle = null
-      }
-      return
-    }
-    if (isReaderRoute(hash)) {
-      setHidden(true)
-    } else {
-      setHidden(false)
-      if (ambientChrome.dockFadeTimerHandle) {
-        clearTimeout(ambientChrome.dockFadeTimerHandle)
-        ambientChrome.dockFadeTimerHandle = null
-      }
-    }
+    if (!footer) { return }
+    footer.classList.toggle('qa-dock--hidden', isOnboardingRoute(hash))
   }
 
-  function scheduleFade(): void {
-    if (ambientChrome.dockFadeTimerHandle) {
-      clearTimeout(ambientChrome.dockFadeTimerHandle)
-    }
-    ambientChrome.dockFadeTimerHandle = setTimeout(() => {
-      if (isReaderRoute(window.location.hash)) {
-        setHidden(true)
-      }
-      ambientChrome.dockFadeTimerHandle = null
-    }, AUTO_FADE_MS)
-  }
-
-  function getHref(id: string): string {
-    if (id === 'read') { return lastSurahHref }
+  function getHref(id: Tab['id']): string {
+    if (id === 'read')   { return lastSurahHref }
     if (id === 'review') { return '#/review' }
+    if (id === 'marks')  { return '#/review' }
     return '#'
   }
 
-  function handleClick(e: MouseEvent, id: string): void {
+  function handleClick(e: MouseEvent, id: Tab['id']): void {
     if (id === 'search') {
       e.preventDefault()
       openCommandSheet()
-    } else if (id === 'more') {
-      e.preventDefault()
-      emit(Events.AMBIENT_SURFACE, { reason: 'dock' })
-      openMoreSheet()
-    } else {
+      return
+    }
+    if (isReaderRoute(window.location.hash)) {
       emit(Events.AMBIENT_SURFACE, { reason: 'dock' })
     }
   }
@@ -99,7 +68,6 @@
   onMount(() => {
     footer = document.getElementById('bottom-nav')
 
-    // Load last-read surah for the Read tab href
     get('settings', 'lastSurface').then((rec) => {
       const val = typeof rec?.value === 'string' ? rec.value : ''
       const m = val.match(/^#\/s\/(\d+)/)
@@ -120,153 +88,69 @@
       applyRoutePersistence(currentHash)
     })
 
-    const unsubSurface = on(Events.AMBIENT_SURFACE, () => {
-      if (isReaderRoute(window.location.hash)) {
-        setHidden(false)
-        scheduleFade()
-      }
-    })
-
-    const mainContent = document.getElementById('main-content')
-    let scrollHandler: (() => void) | null = null
-    if (mainContent) {
-      scrollHandler = () => {
-        const top = mainContent.scrollTop
-        const delta = top - lastTop
-        if (!isReaderRoute(window.location.hash)) { return }
-        if (top < SHOW_NEAR_TOP) {
-          setHidden(false)
-        } else if (delta > HIDE_DELTA) {
-          setHidden(true)
-          lastTop = top
-        } else if (delta < -HIDE_DELTA) {
-          setHidden(false)
-          lastTop = top
-        }
-      }
-      mainContent.addEventListener('scroll', scrollHandler, { passive: true })
-    }
-
     return () => {
       window.removeEventListener('hashchange', onHashChange)
       unsubRoute()
-      unsubSurface()
-      if (mainContent && scrollHandler) {
-        mainContent.removeEventListener('scroll', scrollHandler)
-      }
-      if (ambientChrome.dockFadeTimerHandle) {
-        clearTimeout(ambientChrome.dockFadeTimerHandle)
-        ambientChrome.dockFadeTimerHandle = null
-      }
     }
   })
 </script>
 
-{#each TABS as tab (tab.id)}
-  <a
-    class="qa-dock-item"
-    class:qa-dock-item--active={tab.matches(currentHash)}
-    data-tab={tab.id}
-    aria-label={tab.label}
-    aria-current={tab.matches(currentHash) ? 'page' : undefined}
-    href={getHref(tab.id)}
-    onclick={(e) => handleClick(e, tab.id)}
+<div class="qa-rail-top">
+  <div class="qa-rail-logo" aria-hidden="true">أ</div>
+  {#each TABS as tab (tab.id)}
+    <a
+      class="qa-rail-item"
+      class:qa-rail-item--active={tab.matches(currentHash)}
+      data-tab={tab.id}
+      aria-label={tab.label}
+      aria-current={tab.matches(currentHash) ? 'page' : undefined}
+      href={getHref(tab.id)}
+      onclick={(e) => handleClick(e, tab.id)}
+    >
+      {#if tab.id === 'read'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h7a3 3 0 0 1 3 3v13"/>
+          <path d="M20 4h-7a3 3 0 0 0-3 3v13"/>
+          <path d="M4 4v13a2 2 0 0 0 2 2h6"/>
+          <path d="M20 4v13a2 2 0 0 1-2 2h-6"/>
+        </svg>
+      {:else if tab.id === 'search'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6"/>
+          <line x1="15" y1="15" x2="20" y2="20"/>
+        </svg>
+      {:else if tab.id === 'review'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12 3 14.5 9.5 21 10 16 14.5 17.5 21 12 17.5 6.5 21 8 14.5 3 10 9.5 9.5 12 3"/>
+        </svg>
+      {:else if tab.id === 'marks'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 3h12v18l-6-4.5L6 21z"/>
+        </svg>
+      {/if}
+      <span class="qa-rail-tip">{tab.label}</span>
+    </a>
+  {/each}
+</div>
+
+<div class="qa-rail-bottom">
+  {#if crumbText}
+    <div class="qa-rail-crumb" aria-label="Current verse">
+      <span class="qa-rail-crumb-text">{crumbText}</span>
+    </div>
+  {/if}
+  <button
+    type="button"
+    class="qa-rail-more"
+    data-tab="more"
+    aria-label="More"
+    onclick={() => openNavDrawer()}
   >
-    <span class="qa-dock-icon" aria-hidden="true">{tab.icon}</span>
-    <span class="qa-dock-label">{tab.label}</span>
-  </a>
-{/each}
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="5" cy="12" r="1.6"/>
+      <circle cx="12" cy="12" r="1.6"/>
+      <circle cx="19" cy="12" r="1.6"/>
+    </svg>
+  </button>
+</div>
 
-<style>
-  .qa-dock-item {
-    position: relative;
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    color: var(--qa-ambient-dim);
-    text-decoration: none;
-    font-size: 1rem;
-    line-height: 1;
-    transition: none;
-  }
-
-  .qa-dock-item:hover,
-  .qa-dock-item:focus-visible {
-    color: var(--qa-ambient-accent);
-    text-decoration: none;
-    outline: none;
-    background-color: var(--qa-ambient-accent-soft);
-  }
-
-  .qa-dock-icon {
-    font-size: 1.1rem;
-    line-height: 1;
-  }
-
-  /* Visually hidden label (kept for a11y) */
-  .qa-dock-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .qa-dock-item--active {
-    background-color: var(--qa-selection-bg);
-    color: var(--qa-selection-text);
-    box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
-  }
-
-  /* Touch target hit zone */
-  .qa-dock-item::after {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border-radius: 50%;
-  }
-
-  /* Tablet: larger dock hit targets for iPad. Glyph-only still. */
-  @media (min-width: 768px) {
-    .qa-dock-item {
-      width: 2.625rem;
-      height: 2.625rem;
-    }
-    .qa-dock-icon {
-      font-size: 1.2rem;
-    }
-  }
-
-  /* Desktop: dock becomes a labeled pill. */
-  @media (min-width: 1180px) {
-    .qa-dock-item {
-      width: auto;
-      height: auto;
-      padding: 0.5rem 0.875rem;
-      border-radius: 999px;
-      gap: 0.5rem;
-      font-size: var(--qa-text-size-ui);
-    }
-    .qa-dock-label {
-      position: static;
-      width: auto;
-      height: auto;
-      padding: 0;
-      margin: 0;
-      overflow: visible;
-      clip: auto;
-      clip-path: none;
-      white-space: nowrap;
-    }
-    .qa-dock-icon {
-      font-size: 1.15rem;
-    }
-  }
-</style>

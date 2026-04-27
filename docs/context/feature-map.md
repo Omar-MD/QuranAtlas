@@ -10,50 +10,57 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 - **Route:** `#/s/:surah`, `#/s/:surah/:ayah`
 - **Entry:** `src/reader/Reader.svelte` (Svelte 5 component; lazy-loaded via `app-bootstrap.ts`)
-- **Files:** `reader/Reader.svelte`, `reader/Verse.svelte`, `reader/SurahHeader.svelte`, `reader/EdgeIndicator.svelte`, `reader/position.ts`, `reader/chunked-append.ts`, `reader/verse-scroll.ts`, `reader/scroll-tracker.ts`, `reader/edge-indicators.ts`, `reader/render-helpers.ts`
-- **Purpose:** Main reading surface. Chunked verse rendering, translation toggle, position persistence, bookmark edge indicators.
+- **Files:** `reader/Reader.svelte`, `reader/Verse.svelte`, `reader/SurahHeader.svelte`, `reader/EdgeIndicator.svelte`, `reader/position.ts`, `reader/global-position.ts`, `reader/surah-swap.ts`, `reader/chunked-append.ts`, `reader/verse-scroll.ts`, `reader/scroll-tracker.ts`, `reader/edge-indicators.ts`, `reader/render-helpers.ts`
+- **Purpose:** Main reading surface. Chunked verse rendering, translation toggle, position persistence, bookmark edge indicators, cross-surah continuation.
 - **Key behaviors:**
   - Loads one surah at a time via `data/dataset.ts::getSurah`.
   - Emits `AMBIENT_SURFACE` on first render, `READER_VERSE_RENDERED` per verse. Reader surah + position is shared through the `reader` state rune (`reader.currentSurahNum`, `reader.currentVerseKey`) rather than events — see `events.md` "Dissolved into rune reads."
   - Listens to `DB_VISIBILITY_VISIBLE` to scroll to last position after tab focus; translation toggle reactive via `settings.translationVisible` rune (`$effect`).
-  - `setupLongPress` hook (from `marks/long-press.ts`) wires the single verse gesture: long-press → mark editor (passed as prop from `app-bootstrap.ts`).
+  - `setupLongPress` hook (from `marks/long-press.ts`) wires the single verse gesture: double-tap → mark editor (passed as prop from `app-bootstrap.ts`).
   - `initIndicators` hook (from `marks/indicator.ts`) decorates rendered verses with mark indicators.
-- **IDB touch:** reads `positions` (resume), writes `positions` on scroll (sole writer via `reader/position.ts`).
+  - **Cross-surah continuation (2026-04-25, recessed 2026-04-26):** Chrome-mobile-PTR-style pull-to-swap is the primary affordance — pulling past either edge of the scroller fills a circular progress arc (`PullToSwapIndicator.svelte`); release past full progress commits a single-surah swap with wrap 114↔1 (`surah-swap.ts::setupPullToSwap`). Native browser pull-to-refresh is suppressed via `overscroll-behavior-y: contain` on `#main-content`. Click fallback (post 2026-04-25 redesign, restyled 2026-04-26): single-line italic arrow + surah title at top (`↑ <prev>`) and bottom (`<next> ↓`) — no border, sits flush against the scroller edges (`margin: 2px auto`), muted text color with small italic title (0.7rem) + 12px arrow; reveals to accent color on hover/focus. Markup uses `.qa-continue-arrow` + `.qa-continue-title` spans inside `.qa-continue-prev`/`.qa-continue-next`; see `styles/surfaces/reader.css`. See user-journeys §B-Cross.
+  - **Surah Header (post 2026-04-26):** 2-col grid layout — Mushaf Arabic title (`'Amiri Quran'`) in the right column spans both rows full-height; meta line (`SURAH N · COUNT VERSES`, surah English name dropped — Arabic carries it) + juz progress in the left column. Visibility gated by `reader.surahHeaderHidden` rune (mirrors `settings.surahHeaderHidden`); toggled by MarginHeader center-label tap; preference persists across surahs. Bismillah block adds an English translation (`In the Name of Allah — the Most Compassionate, Most Merciful`) under the U+FDFD glyph (always rendered when basmala renders, ignores `settings.translationVisible`; bismillah keeps rendering when the header is hidden).
+- **IDB touch:** writes `settings.currentPosition` on scroll center-band crossings (sole writer via `reader/global-position.ts`); also overwritten on every surah load and swap. Reads `settings.surahHeaderHidden` (sole writer `settings/surah-header-visibility.ts`) via the `reader.surahHeaderHidden` rune to decide whether to render `SurahHeader.svelte`.
+- **Riwayah:** each `.qa-verse-arabic` element carries `data-riwayah={activeRiwayah}`. CSS rules in `styles/tokens/semantic.css` keyed on `:root[data-riwayah="hafs"|"warsh"|"qaloon"]` set `--qa-font-arabic` (all three resolve to Amiri Quran via `--ff-amiri-quran`). Sole text-source writer: `data/dataset.ts::getSurah` reads `settings['riwayah']` to resolve the per-surah URL (`public/dataset/riwayat/{riwayah}/{NNN}.json`).
 
 ## Review hub
 
 - **Route:** `#/review`
 - **Entry:** `src/review/Hub.svelte` (Svelte component, mounted via router `onRouteChange`)
 - **Files:** `review/Hub.svelte`, `review/ReviewCard.svelte`, `review/state.ts`
-- **Purpose:** All-marks surface. Three-segment grouping (Tag / Surah / Date), tag + surah filters, sort, paginated mark cards.
+- **Purpose:** All-marks surface. 12-layer selector segment, group-by segment (Value / Surah / Date), value chips per layer, surah filter, sort, paginated mark cards.
 - **Key behaviors:**
-  - Card grammar: ref eyebrow + jump link + async verse content + optional note + chip row. Tap card body → opens mark editor.
+  - **Layer selector:** 12 tabs (Thread / Subject / Audience / Speaker / Quoted / Mode / Form / Tone / People / Places / Event / Name) — clicking a layer switches `activeLayer`, resets `activeValue`, and reloads the value chip pool via `getAllCanonicalValues(layer)`.
+  - **Value chips:** clicking a chip sets `activeValue` and filters the card list to marks with that canonical value in the active layer (via `_canon[layer].includes(activeValue)`). Clicking the same chip again clears the filter.
+  - Card grammar: ref eyebrow + jump link + async verse content + optional note + chip row (threads only). Tap card body → opens mark editor.
   - Flat de-duplicated single-column list regardless of groupBy UI setting.
-  - Subscribes to `SYNC_UPDATE_RECEIVED` + `DB_VISIBILITY_VISIBLE` via `$effect` for cross-tab and tab-resume coherence.
-  - Desktop (≥1180px): left rail with group-by segment + bucket list; main column with filter bar.
+  - Subscribes to `SYNC_UPDATE_RECEIVED` + `DB_VISIBILITY_VISIBLE` for cross-tab and tab-resume coherence.
+  - Desktop (≥1180px): left rail with layer selector + group-by segment + bucket list; main column with filter bar.
   - `openEditor` imported directly from `marks/editor-bridge.ts` (no hooks injection needed).
-- **IDB touch:** reads `marks` (all), reads/writes `positions["review"]` for view state (via `review/state.ts` sole writer).
+- **IDB touch:** reads `marks` (all), reads/writes `meta["review"]` for view state (via `review/state.ts` sole writer).
 
 ## FVR (Filtered-Verse Review)
 
-- **Route:** `#/t/:tag`
-- **Entry:** `src/review/Hub.svelte` (same component — branches on `tag` prop presence)
-- **Files:** `review/Hub.svelte` (shared), `safety/input-validator.ts` (tag validation)
-- **Purpose:** Deep-link view of all marks carrying a single tag. Compact centered header (color dot, verse/surah stats, hairline).
+- **Route:** `#/<layer>/:value` (e.g. `#/threads/mercy`, `#/people/musa`)
+- **Entry:** `src/review/Hub.svelte` (same component — branches on `layer` + `value` props)
+- **Files:** `review/Hub.svelte` (shared), `safety/input-validator.ts` (`validateLayerParam`)
+- **Purpose:** Deep-link view of all marks carrying a specific canonical value in a given layer. Compact centered header (layer label, color dot, value name, verse/surah stats, hairline).
 - **Key behaviors:**
-  - Validates `tag` param (≤50 chars, no control chars); invalid or empty tags render a "not found" state that announces via `a11y/announcer.ts`.
-  - Writes `settings.lastSurface = '#/t/:tag'` + `positions["review"]` with `view: 'fvr'` via `review/state.ts`.
+  - `validateLayerParam(layer, value)` from `safety/input-validator.ts` whitelists the layer against `LAYER_NAMES` and canonicalizes the value; invalid params render a "not found" state that announces via `a11y/announcer.ts`.
+  - Writes `settings.lastSurface = '#/<layer>/<value>'` + `meta["review"]` with `view: 'fvr'` via `review/state.ts`.
   - No group controls — shows a flat list under the FVR header.
+  - `ReviewCard.svelte` chip links use `#/threads/<tag>` (threads layer only; other layers have no chip row on the card).
 
 ## Mark editor
 
-- **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route)
-- **Files:** `marks/Editor.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh)
-- **Purpose:** Bottom sheet for tagging a verse. Triggered by long-press on a verse or by "Mark this verse" from command sheet.
+- **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route). Post 2026-04-25: app-bootstrap routes `openEditor` to `openDeep` (TagSheet) — Editor.svelte itself is no longer mounted. Programmatic callers from Review hub still flow through this bridge.
+- **Files:** `marks/Editor.svelte`, `marks/TagLayerRegion.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh), `core/seeds.ts` (seed palettes)
+- **Purpose:** Bottom sheet for tagging a verse across 12 thematic layers. Reachable only via the fast-tag panel's `⛶` escalation, the `⌘+Enter` keyboard shortcut, or programmatic bridges (Review hub).
 - **Key behaviors:**
-  - Selected strip (count + clear-all + × chips) above the All-tags region; chips move between regions on click.
-  - Seed tags (16 defaults) shown when no marks exist; otherwise used-tags list. Search filter + inline "+ create" chip for new tags (≤50 chars, no control chars).
-  - Note textarea; delete button hidden for new marks, inline-confirm + undo toast for existing.
+  - 12 collapsible `TagLayerRegion` sections: threads, subjects, audience, speaker, quotedSpeaker, mode, form, tone, people, places, events, divineNames. Threads, audience, and mode expanded by default; others collapsed.
+  - Each layer has a search input + chip pool (seeds ∪ existing canonicals ∪ user-added). Clicking a chip toggles selected/unselected within that layer; each layer shows its own count badge. Inline "+ label" chip creates a new tag in the layer.
+  - Note textarea (optional, ≤500 chars).
+  - Delete button hidden for new marks; inline-confirm + undo toast for existing marks.
   - Closes if `SYNC_UPDATE_RECEIVED` reports the editing verseKey was deleted elsewhere.
   - Mounted persistently in `App.svelte` alongside `UndoToast` and `QuotaBanner`.
   - `long-press.ts` exposes a Svelte action (`use:longPress`) and an imperative `setupLongPress(container, onPress)` wrapper for vanilla-JS consumers.
@@ -67,63 +74,84 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Key behaviors:**
   - Arrow keys navigate, Enter activates, Esc closes. No hash route — pure overlay.
   - Emits `NAVIGATION_NAVIGATE` for verse/surah targets (`app-bootstrap.ts` routes the hash).
-  - Opens mark editor directly for "Mark this verse" shortcut.
+  - "Mark this verse" calls `beginFast(verseKey)` (post 2026-04-25 — was `openEditor`); fast-tag inline panel surfaces.
 
 ## Settings sheet
 
 - **Route:** `#/settings` (stub — opens sheet over the previous surface, then replaces hash back)
 - **Entry:** `src/settings/Panel.svelte` (Svelte component, mounted persistently in App.svelte); opened imperatively via `settings/panel-bridge.ts::openSettingsSheet()`.
-- **Files:** `settings/Panel.svelte`, `settings/ClearDataConfirm.svelte`, `settings/panel-bridge.ts`, `settings/theme.ts`, `settings/font-size.ts`, `settings/clear-data.ts`
-- **Purpose:** Bottom sheet. Theme swatches (Light/Sepia/Dark/Auto), font slider with live preview, translation toggle + nested picker, Clear data link.
+- **Files:** `settings/Panel.svelte`, `settings/ClearDataConfirm.svelte`, `settings/panel-bridge.ts`, `settings/theme.ts`, `settings/font-size.ts`, `settings/reading-typography.ts`, `settings/night-mode.ts`, `settings/riwayah.ts`, `settings/clear-data.ts`
+- **Purpose:** Bottom sheet. Theme swatches (Light/Sepia/Dark/Auto), Typography nav row → subview (font size + reading flow + reset), translation toggle + nested picker. Clear-data row removed 2026-04-25 — moved to About page footer. Inline font slider removed 2026-04-25 — folded into Typography subview.
 - **Key behaviors:**
   - Theme swatches call `setTheme(opt)` from `settings/theme.ts`, which writes `settings.theme` and swaps `data-theme` on `<html>`.
-  - Font slider writes `settings.fontSize`; reader/preview watch via `SETTINGS_FONT_SIZE_CHANGED`.
+  - Typography subview hosts 2 sliders: **Font size** (`settings/font-size.ts`) and **Reading flow** (`settings/reading-typography.ts::setReadingFlow` — coordinated knob that writes all four spacing keys at once). Each slider is 5-step (xs/sm/md/lg/xl). Reader picks up changes via CSS attribute selectors on `<html data-line-spacing|data-word-spacing|data-reader-margin|data-verse-spacing>` plus the existing `--qa-font-size-base` var. Margins drives `.qa-verse` horizontal padding (`--qa-verse-pad-x`); verse spacing drives vertical padding (`--qa-verse-pad-y`); on mobile `#main-content` drops its 1rem horizontal padding when `.qa-verse` is present so the slider owns the inset budget. **Reset to default** restores font size + all four flow keys to `md` and is shown only when at least one differs. The four flow IDB keys remain individually-addressable so a future advanced view could split them.
   - Translation toggle writes `settings.translationVisible` (IDB + rune); `Reader.svelte` re-renders via `$effect` on the rune (no event).
-  - Clear data link delegates to `ClearDataConfirm.svelte` (also persistently mounted in App.svelte) via `settings/clear-data.ts::showClearDataConfirmation` — confirmation modal → `deleteDB` → reload.
+  - Clear-data confirmation modal (`ClearDataConfirm.svelte`, also persistently mounted in App.svelte) is invoked by `settings/clear-data.ts::showClearDataConfirmation`. Sole entry point post 2026-04-25 is the **About page footer link** — modal → `deleteDB` → reload.
   - `toggleTranslation()` exported from `panel-bridge.ts` for use by command-sheet and other callers.
-- **IDB touch:** `settings` store (theme, fontSize, translationVisible, translationId).
+- **Subviews:** `'main' | 'translation-picker' | 'typography'`.
+- **Night mode (post 2026-04-25):** Toggle row in the Theme section drives `data-night-mode` on `<html>`; the persistent `.qa-night-shift` overlay (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, `mix-blend-mode: multiply`) raises its opacity in response. Composes over any theme. Also toggleable via the `n` global reader shortcut (`nav/CommandSheet.svelte`). Sole writer of `settings.nightMode`: `settings/night-mode.ts`.
+- **Reading → Riwayah row:** three-swatch picker (Ḥafṣ / Warsh / Qālūn) above the translation toggle. Tap a swatch → `settings/riwayah.ts::setRiwayah` writes `settings['riwayah']`, emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab. Reader re-renders with the new text source, font, and line-height floor.
+- **IDB touch:** `settings` store (theme, fontSize, riwayah, translationVisible, translationId, lineSpacing, wordSpacing, readerMargin, verseSpacing, nightMode).
 
-## More sheet
+## Nav drawer
 
-- **Entry:** `src/nav/MoreSheet.svelte` (Svelte component mounted in `App.svelte`); `openMoreSheet()` from `nav/more-sheet-bridge.ts` triggers it. The `window.__qaOpenMoreSheet` global has been removed.
-- **Files:** `nav/MoreSheet.svelte`, `nav/more-sheet-bridge.ts`
-- **Purpose:** First-level parent sheet from the dock's ⋯ button. Five entries: Settings, Review hub, Surah list, About, Clear data.
+- **Entry:** `src/nav/NavDrawer.svelte` (mounted persistently in `App.svelte`); `openNavDrawer(tab?)` / `closeNavDrawer()` / `toggleNavDrawer(tab?)` from `nav/nav-drawer-bridge.ts` trigger it.
+- **Files:** `nav/NavDrawer.svelte`, `nav/nav-drawer-bridge.ts`, `nav/EmptyRoute.svelte`, `review/parse-layer-query.ts`.
+- **Purpose:** Mobile (<1180px) full-screen tabbed surface — sole entry point for the surah list and per-layer Review jumps (post 2026-04-25 overhaul). Two tabs: **Surahs** (default) · **Review**. Header carries a tappable QuranAtlas wordmark + ⓘ icon → `#/about`. ✕ closes. No footer (build version moved to About page).
 - **Key behaviors:**
-  - Settings entry closes this sheet then calls `openSettingsSheet()` directly (not via route).
-  - Review / Surah / About navigate via hash.
-  - Clear data calls `showClearDataConfirmation`.
+  - Mobile: opened by `MarginHeader` hamburger `≡` and by header swipe-down (`openNavDrawer('surahs')`). Desktop (≥1180px): opened by `AmbientDock` ⋯ kebab — same component, narrower side-panel layout (`min(80vw, 360px)`).
+  - **Surahs tab:** search input (name / number / `s:v` ref) + filter pills (All / ★ Bookmarked / ⏱ Recent) + scrolling surah list. Each row shows the number badge, English name, optional ★ bookmark glyph, and the **Arabic surah title** (`s.name_ar`, RTL, `--qa-font-arabic`) right-aligned. On open, list scrolls so the current surah is centered (`reader.currentSurahNum ?? settings.currentPosition.surah`); current row gets a tinted background, accent left rail, filled-circle number badge, bold name. Tapping a row navigates to `#/s/<n>` and dismisses drawer. Search reuses `state/surahs.svelte.ts` `filter` + `searchQuery` runes (reset to `'all'` / `''` on each open). Search semantics: number 1–114 filters to that surah; number ≥115 filters to surahs whose verse count meets the threshold (e.g. typing `255` lists only Al-Baqarah); free text matches name / Arabic (`name_ar`) / meaning; `S:V` shows the candidate row + "Press Enter to jump" hint and commits on Enter or row tap (no auto-navigate while typing — fix for 2026-04-25 bug where partial `2:25` fired before user finished `2:255`).
+  - **Review tab:** top **Hub** row → `#/review`; below, 4 group sections (Speech / Narrative / Themes / Entities) holding the 12 layer rows from `data/tag-layers::LAYER_GROUPS`. Each row carries a hue dot (`var(--lh-{group})`) and `LAYER_LABELS[layer]`. Tapping a layer routes to `#/review?layer=<name>` and dismisses; `Hub.svelte` reads the query via `parse-layer-query::parseLayerFromHash` to set `activeLayer`.
+  - Dismissal: backdrop tap, swipe-left, ✕ button, Esc. Drawer state (`isOpen`, `activeTab`) is local; not persisted.
+  - Wordmark + ⓘ in header is the sole entry to `#/about` from the drawer.
+- **IDB touch:** reads `marks` (bookmarked-set), `settings.recentSurahs` (recent filter). No writes.
+
+## Update banner (rolled-out new build)
+
+- **Entry:** `src/core/UpdateBanner.svelte` (Svelte component, mounted persistently in `App.svelte`).
+- **Files:** `core/UpdateBanner.svelte`, `core/constants.ts` (event), `app-bootstrap.ts` (`registerServiceWorker` listens for `updatefound` + `applyAppUpdate` exported), `core/sw-update-poll.ts` (visibility/focus/interval poller), `styles/surfaces/update-banner.css`.
+- **Purpose:** Notify the user when a new build was rolled out so they don't keep using a cached version. Surfaces on `Events.APP_UPDATE_AVAILABLE` (emitted when the SW reaches `installed` state with an existing controller).
+- **Key behaviors:**
+  - **Reload** button calls `applyAppUpdate()` → posts `SKIP_WAITING` to the waiting SW → reloads on `controllerchange`.
+  - **✕** dismisses the banner without reloading (state persists until next update).
+  - Hidden on dev builds (SW only registered in `import.meta.env.PROD`).
+  - SW registered with `updateViaCache: 'none'` so the browser does not serve a stale `/sw.js` from its HTTP cache (default 24h TTL would otherwise hide new builds from installed PWAs).
+  - `core/sw-update-poll.ts::startSwUpdatePolling` calls `reg.update()` on `visibilitychange` (when app becomes visible), on `window.focus`, and every 30 minutes — installed PWAs rarely trigger a hard reload, so without this poll the register-time check is the only one that ever fires and users had to clear all data to receive new builds. **Regression guard:** `tests/unit/core/sw-update-poll.test.ts`.
+- **Build identity:** version + short commit SHA shown on About page footer (`v<X.Y.Z> · <sha>`) and logged to console on boot. Both injected at build time via Vite `define` (`__APP_VERSION__`, `__BUILD_SHA__`, `__BUILD_TIME__` — see `vite.config.js`; vitest mirrors with `'test'` SHA).
 
 ## About
 
 - **Route:** `#/about`
 - **Entry:** `src/about/About.svelte` (Svelte component, mounted via router `onRouteChange`)
 - **Files:** `about/About.svelte`, `about/pwa-install.ts`
-- **Purpose:** Static-ish page with wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid (Marks / Tags / Surahs / % Qur'an), attribution, PWA install CTA (if prompt available), version.
+- **Purpose:** Static-ish page with wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid (Marks / Tags / Surahs / % Qur'an), attribution, PWA install CTA (if prompt available), version, **Clear all data** link in footer (post 2026-04-25 — was Settings sheet bottom row).
 - **Key behaviors:**
   - `getAll()` from `marks/store.ts` fuels the stat grid; `onMount` handles async load with fallback to zeros.
   - PWA install handled via `getInstallPrompt` / `promptInstall` in `about/pwa-install.ts`.
-  - No back link (arrived via More sheet or hash-change).
+  - Clear-data link calls `showClearDataConfirmation` from `settings/clear-data.ts` (sole entry point post-redesign).
+  - No back link (arrived via NavDrawer or hash-change).
 
 ## Onboarding
 
 - **Route:** `#/onboarding`
 - **Entry:** `src/onboarding/Onboarding.svelte` (Svelte component, mounted via router `onRouteChange`); `isComplete()` / `markComplete()` exported from module script and called from `app-bootstrap.ts::handleLaunchRestore`
 - **Files:** `onboarding/Onboarding.svelte`, `onboarding/OnboardingScreen.svelte`, `onboarding/screens.ts`
-- **Purpose:** First-run 5-screen flow — Welcome → Theme → Translation → Shortcuts → Tags intro.
+- **Purpose:** First-run 6-screen flow — Welcome → Theme → Riwayah → Translation → Shortcuts → Tags intro.
 - **Key behaviors:**
   - Progress dots + Skip button from screen 2 onward.
   - Theme picker writes through `settings/theme.ts::setTheme` so the change applies live.
-  - Translation picker writes `settings.translationId` directly to IDB.
+  - **Screen 3 (Choose Riwayah):** three radio cards (Ḥafṣ / Warsh / Qālūn); default Qālūn. Continue or Skip both write `settings['riwayah']` via `settings/riwayah.ts::setRiwayah` (sole writer). `RIWAYAH_OPTIONS` and label/metadata are defined inline in `Onboarding.svelte`.
+  - Translation screen (screen 4) renders an empty state because no translation pack ships today (`provenance.translations[]` is `[]`). Picker sub-view hidden.
   - Completion writes `settings.onboardingComplete = true`; CTAs route to `#/s/1` or `#/surahs`.
   - Ambient dock + pill hidden on this route (`AmbientDock.svelte` guards `#/onboarding`; pill's non-reader-routes check naturally hides it).
   - Short-viewport guard (`@media (max-height: 500px)`): drops the 72vh min-height so landscape phones and short windows don't overflow; content top-aligns instead.
 
-## Surah list
+## Surah list (desktop only post 2026-04-25)
 
-- **Route:** `#/surahs`
-- **Entry:** `src/surahs/SurahList.svelte` (Svelte component, mounted via router `onRouteChange`)
-- **Files:** `surahs/SurahList.svelte`, `surahs/SurahRow.svelte`
-- **Purpose:** Browseable directory of all 114 surahs. Name / meaning / type / verse count, Bookmarked + Recent filters, search by name/number/ref (`67`, `67:1`, "Mulk"), continue-reading card.
+- **Route:** `#/surahs` — desktop (≥1180px) only. On mobile the route loader replaces the hash with `settings.lastSurface` and opens the **NavDrawer** Surahs tab via `openNavDrawer('surahs')`. See `app-bootstrap.ts`'s `#/surahs` registration. The mobile path mounts `nav/EmptyRoute.svelte` as a synthetic empty component while the redirect runs in a microtask.
+- **Entry:** `src/surahs/SurahList.svelte` (Svelte component, mounted via router `onRouteChange` on desktop)
+- **Files:** `surahs/SurahList.svelte`, `surahs/SurahRow.svelte`, `nav/EmptyRoute.svelte` (mobile redirect synthetic component)
+- **Purpose:** Desktop browseable directory of all 114 surahs. Name / meaning / type / verse count, Bookmarked + Recent filters, search by name/number/ref (`67`, `67:1`, "Mulk"), continue-reading card. (Mobile users get the drawer's Surahs tab instead — same data, different surface.)
 - **Key behaviors:**
   - "Bookmarked" filter reads unique surah numbers from `marks/store.ts::getAll()` (sole read path per CLAUDE.md Rule 5).
   - "Recent" filter reads `settings.recentSurahs` (populated by `App.svelte`'s `$effect` on `reader.currentSurahNum`, capped at 5).
@@ -131,16 +159,69 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Filter and search state managed via the `surahs` rune (`state/surahs.svelte.ts`).
   - CSS co-located in `SurahList.svelte` `<style>` block; removed from `theme.css`.
 
-## Ambient dock
+## Ambient dock (desktop left rail)
 
 - **Entry:** `src/nav/AmbientDock.svelte` (Svelte component mounted inside `#bottom-nav` in `App.svelte`)
 - **Files:** `nav/AmbientDock.svelte`
-- **Purpose:** Floating bottom pill with 4 glyphs (Read, Search, Review, More). Always-on chrome that replaces a traditional bottom tab bar.
+- **Purpose:** 56-px full-height left panel on desktop (≥1180px). Cream-surface panel (`var(--qa-ambient-surface)`) with right-border separator. Top section: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom section: rotated verse crumb (`{surah} : {verse}`) + ⋯ more button. Always-on — no auto-fade.
 - **Key behaviors:**
-  - On reader routes: hidden by default, surfaces on tap (`AMBIENT_SURFACE`) and auto-fades after ~2.8s.
-  - On non-reader routes: persistent (no fade).
-  - On `#/onboarding`: hidden entirely.
-  - Read glyph → `#/s/1`, Search → `openCommandSheet()` via bridge, Review → `#/review`, More → `openMoreSheet()` via bridge.
+  - Desktop only: entire rail hidden via `@media (max-width: 1179px)`. Mobile primary nav is `MarginHeader`.
+  - `#app-shell` gets `padding-left: 56px` at ≥1180px so main-content sits flush right of the panel; rail itself is `position: fixed` and escapes the shift.
+  - Hidden on `#/onboarding` via `qa-dock--hidden` class on `#bottom-nav`.
+  - Read → last-visited surah (from `settings.lastSurface`, default `#/s/1`), Search → `openCommandSheet()`, Review + Marks → `#/review`. Surah list reachable via command sheet or `G`+`S` shortcut (no longer a rail tab; drawer doesn't carry it either).
+  - Hover/focus shows parchment tooltip to the right of the icon.
+  - Verse crumb reads `reader.currentSurahNum` + `reader.currentVerseKey` runes reactively; rendered rotated 90° via `transform: rotate(-90deg)` on inline text; hidden when no surah set.
+  - ⋯ more button has `data-tab="more"` and calls `openNavDrawer()` (was `openMoreSheet()` pre 2026-04-25).
+  - Emits `AMBIENT_SURFACE` on tab click while on reader routes.
+
+## Margin header (mobile top nav) — single-row redesign 2026-04-25
+
+- **Route:** all routes; auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE`.
+- **Entry:** `src/nav/MarginHeader.svelte` (mounted persistently in `App.svelte`; display-hidden on desktop ≥1180px).
+- **Files:** `nav/MarginHeader.svelte`, `nav/swipe-gestures.ts` (pure helper)
+- **Purpose:** Mobile/tablet (<1180px) fixed top bar, single row, ~56 px tall. Layout: **hamburger `≡`** · **Arabic surah label** · **settings gear `⚙`**.
+- **Key behaviors:**
+  - Hamburger → `toggleNavDrawer()`. Toggles open/closed; second tap dismisses. Drawer is the full-screen tabbed surface (Surahs / Review) post 2026-04-25 overhaul — see Nav drawer entry above.
+  - Center label (post 2026-04-26): single-line Arabic surah name in `'Amiri Quran'` Mushaf script, 18px (the previous uppercase smallcaps English subline was dropped — Arabic stands alone). **Tap toggles the in-reader Surah Header visibility** via `settings/surah-header-visibility.ts::toggleSurahHeaderHidden` (rune `reader.surahHeaderHidden` mirrors `settings.surahHeaderHidden` IDB key); no-op off the reader route or when no surah is loaded. Tap is routed through `onLabelTouchEnd` for touch (with `preventDefault` to suppress the synthetic click that would otherwise double-toggle) and through `onclick` / `onkeydown` (Enter / Space) for mouse + keyboard. Swipe left/right on label = next/prev surah, clamped 1–114; haptic nudge at boundaries. (No chevron glyph; the destination it implied no longer exists.)
+  - Swipe down on header = `openNavDrawer('surahs')` (post 2026-04-25 — was hash navigation to `#/surahs`).
+  - Gear: short tap = `openSettingsSheet()`. Double-tap ≥400 ms = `cycleTheme()` (parity with keyboard `d`).
+  - Scroll listener on `#main-content` toggles `qa-mh--hidden` (transform translateY −100%).
+  - Swipe classifier: `nav/swipe-gestures.ts::classifySwipe` — pure threshold/velocity math (covered by Vitest unit tests at `tests/unit/nav/swipe-gestures.test.ts`).
+- **Reader clearance:** `app-shell.css` pads `#main-content` by `calc(env(safe-area-inset-top) + 60px)` at <768 and 768–1179 breakpoints (was 108 px pre-redesign).
+
+## Fast-tag panel (inline, in-verse)
+
+- **Entry:** `src/reader/VerseTagPanel.svelte` (rendered inside `reader/Verse.svelte` under the translation, gated on `isActive`). Opens when `tagSession.quickbarOpen === true` for that verse.
+- **Files:** `reader/VerseTagPanel.svelte`, `reader/Verse.svelte`, `tag/session-bridge.ts`, `state/tag-session.svelte.ts`, `data/tag-layers.ts`
+- **Purpose:** Sole per-verse action surface (post 2026-04-25 redesign) — inline suggestion panel under the active verse's translation, grouped by layer group (Speech / Narrative / Themes / Entities) with color-coded `#` glyph per layer hue. Replaces the retired floating `tag/AmbientDock` quickbar. Deep editor (`tag/TagSheet`) reachable only via the `⛶` escalation button or `⌘+Enter`.
+- **Key behaviors:**
+  - **Entry points:** double-tap verse (touch), right-click verse (desktop), keyboard `m` on centered verse, command-sheet "Mark this verse" (F2). All four call `beginFast(verseKey)`.
+  - `beginFast` hydrates `tagSession` from any existing mark for the verse (`marks/store::getByVerseKey`), then sets `quickbarOpen = true`.
+  - Suggested chips come from `data/tag-layers::QUICK_PICKS`, grouped into rows by `LAYER_GROUPS`. Tap chip → `tagSession.toggle(layer, value)` → debounced 350 ms save through `marks/store::save`.
+  - Inline type-to-create: `+ add` per group swaps to an `<input>`; Enter commits (creates a new value in the group's first layer), Escape cancels.
+  - **`⛶` escalate button** (top-right, replaces retired regenerate placeholder) → `openDeep(verseKey)` → deep TagSheet. `⌘/Ctrl + Enter` keyboard shortcut does the same. Esc ends the session (`tagSession.end()`).
+  - No "Accept all" button, no "Suggested for {verseKey}" header — chip toggles + ⛶ are the only interactions.
+  - Active verse in the reader gets `.qa-verse--active` styling (accent bracket, inset ring, parchment verse-key) + `contain-intrinsic-size: auto 260px` to prevent bounce when chips wrap during selection. Drive: `isActive = tagSession.verseKey === verseKey && tagSession.quickbarOpen`.
+
+## Deep-tag sheet (fast-path peer)
+
+- **Entry:** `src/tag/TagSheet.svelte` (mounted in `App.svelte`). Opens when `tagSession.sheetOpen === true`.
+- **Files:** `tag/TagSheet.svelte`, `tag/TagModeToggle.svelte`, `tag/VerseSpotlight.svelte`, `tag/session-bridge.ts`
+- **Purpose:** Deep counterpart to the inline fast-tag panel — full 12-layer editor that shares `tagSession` state.
+- **Key behaviors:**
+  - Opened via `openDeep(verseKey)` (session-bridge) or the inline panel's `⌘+Enter` transition.
+  - Body renders all four layer groups stacked as sections in outer→inner reading order (Speech → Narrative → Themes → Entities), no tab bar. Each section is visually nested: a hue-colored left rail + mono uppercase group name + optional count badge, with layer rows indented inside. Layers within each group are ordered from outer scope to inner detail: Speech = speaker → audience → quotedSpeaker → form; Narrative = mode → tone; Themes = threads → subjects; Entities = events → people → places → divineNames. Chip grammar mirrors `reader/VerseTagPanel.svelte`: hashtag chips (`#value` with `#` colored by layer hue) for selected values, tap-to-remove (× surfaces on hover). Each row has an underline combobox input for type-to-create with seed suggestions via `getSeedsForLayer`.
+  - Writes through `marks/store::save`. Legacy `marks/Editor.svelte` remains the canonical double-tap surface.
+  - **Mobile (<1180px):** full-screen sheet (`inset: 0`), safe-area insets on sticky header + sticky footer, body scrolls between. Verse preview is a collapsible button: tap chevron (or preview card) to reduce Arabic + full translation to a single-line ellipsised summary, freeing vertical space on long ayat. Cancel button + `⌘↵` meta-hint hidden on mobile; Save button stretches; tap targets enlarged.
+  - **Desktop ≥1180px:** right-side vertical panel (~min(560px, 44vw)), unchanged.
+  - **Header:** "Mark verse" title only — verse ref is not duplicated in the header (already in the preview card).
+  - **Delete:** shown only when an existing mark is loaded. First tap swaps the footer into an inline confirm (`Delete this mark? [Keep] [Delete]`); second tap on the solid red button commits, then the undo toast fires. Closing the sheet cancels any pending confirm.
+
+## Surah progress chip
+
+- **Entry:** `src/nav/SurahProgress.svelte` (rendered inside `reader/SurahHeader.svelte`).
+- **Files:** `nav/SurahProgress.svelte`, `data/juz.ts`
+- **Purpose:** Juz / surah-progress meta chip under the surah title (juz number + percent through surah).
 
 ## Ambient pill
 

@@ -1,0 +1,96 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "selector-class-pattern": "^qa-[a-z0-9]+(-[a-z0-9]+)*(--[a-z0-9]+(-[a-z0-9]+)*)?$",
+    "selector-max-compound-selectors": 2,
+    "selector-max-id": 0,
+    "selector-max-type": 0,
+    "selector-max-universal": 0,
+    "selector-no-qualifying-type": true,
+    "declaration-no-important": true,
+    "custom-property-pattern": "^(qa|c|s|r|ff|fs|lh|ls|fw|sh|dur|ease|zp|bp|tp|fp|blur)-[a-z0-9]+(-[a-z0-9]+)*$",
+    "no-duplicate-selectors": true,
+    "no-descending-specificity": null,
+    "color-hex-length": "short",
+    "no-empty-source": null,
+    "media-feature-range-notation": null,
+    "property-no-deprecated": null,
+    "declaration-block-single-line-max-declarations": null
+  },
+  "overrides": [
+    {
+      "files": ["src/styles/reset.css", "src/styles/base.css"],
+      "rules": {
+        "selector-max-type": null,
+        "selector-max-universal": null,
+        "selector-max-compound-selectors": 3,
+        "selector-no-qualifying-type": null,
+        "declaration-no-important": null
+      }
+    },
+    {
+      "files": ["src/styles/tokens/**/*.css"],
+      "rules": {
+        "selector-max-type": null,
+        "selector-class-pattern": null,
+        "selector-max-compound-selectors": null,
+        "selector-no-qualifying-type": null,
+        "custom-property-empty-line-before": null,
+        "at-rule-empty-line-before": null
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/sheet.css", "src/styles/surfaces/modal.css"],
+      "rules": {
+        "property-no-vendor-prefix": null,
+        "declaration-block-no-duplicate-properties": null,
+        "selector-max-type": 1
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/app-shell.css"],
+      "rules": {
+        "selector-max-id": 1,
+        "selector-max-universal": 1,
+        "property-no-vendor-prefix": null,
+        "declaration-block-no-duplicate-properties": null
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/about.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "font-family-name-quotes": null
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/nav.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "selector-no-qualifying-type": null
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/tag.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "selector-max-universal": 1,
+        "selector-no-qualifying-type": null,
+        "property-no-vendor-prefix": null
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/review.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "selector-max-compound-selectors": 3
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/toast.css"],
+      "rules": {
+        "selector-max-type": 1
+      }
+    }
+  ]
+}

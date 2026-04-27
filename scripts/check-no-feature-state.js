@@ -2,7 +2,7 @@
 // Fails if any file under src/ (excluding allow-listed dirs/files)
 // declares a top-level mutable `let` or `var` at column 0.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 const ROOT = 'src'
@@ -34,10 +34,12 @@ const SKIP_FILES = new Set(['sw.js', 'sw-handlers.js'])
 const offenders = []
 
 function walk(dir) {
-  for (const name of readdirSync(dir)) {
+  // Dirent objects carry .isDirectory() so we don't need a separate statSync —
+  // avoids a TOCTOU race between stat + readFile.
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const name = entry.name
     const path = join(dir, name)
-    const stat = statSync(path)
-    if (stat.isDirectory()) {
+    if (entry.isDirectory()) {
       if (SKIP_DIRS.has(name)) continue
       walk(path)
     } else if (name.endsWith('.js') && !SKIP_FILES.has(name) && !ALLOW_LIST.has(path)) {
