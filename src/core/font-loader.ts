@@ -1,5 +1,5 @@
 /**
- * Programmatic FontFace loader for the three KFGQPC riwayah fonts.
+ * Programmatic FontFace loader for Amiri Quran.
  *
  * Background — iOS Safari renders `.qa-verse-arabic` with collapsed
  * combining marks even after the CSS `@font-face` reports `loaded` via
@@ -16,8 +16,8 @@
  * the woff2 manually, hand the ArrayBuffer to the FontFace constructor,
  * await load(), then add to document.fonts. This gives iOS a fresh,
  * unblemished FontFace registration that doesn't depend on CSS cascade
- * timing or render-tree side effects. The CSS @font-face declarations
- * stay in place as the canonical source for non-iOS browsers and as a
+ * timing or render-tree side effects. The CSS @font-face declaration
+ * stays in place as the canonical source for non-iOS browsers and as a
  * fallback should the fetch fail.
  */
 
@@ -26,14 +26,12 @@ import { logger } from './logger.js'
 const ARABIC_RANGE = 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF'
 
 const FONT_SOURCES: ReadonlyArray<{ family: string, url: string }> = [
-  { family: 'KFGQPC Hafs',   url: '/fonts/kfgqpc-hafs/hafs.18.woff2' },
-  { family: 'KFGQPC Warsh',  url: '/fonts/kfgqpc-warsh/warsh.10.woff2' },
-  { family: 'KFGQPC Qaloon', url: '/fonts/kfgqpc-qaloon/qaloon.10.woff2' },
+  { family: 'Amiri Quran', url: '/fonts/amiri-quran/AmiriQuran-Regular.woff2' },
 ]
 
 let started = false
 
-export function loadKfgqpcFontsProgrammatically(): void {
+export function loadArabicQuranFontProgrammatically(): void {
   if (started) { return }
   started = true
 

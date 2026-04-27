@@ -75,7 +75,7 @@
     --qa-elevation-popover: var(--sh-popover);
 
     /* --- Typography ------------------------------------------------------ */
-    --qa-font-arabic:      var(--ff-kfgqpc-qaloon);
+    --qa-font-arabic:      var(--ff-amiri-quran);
     --qa-font-translation: var(--ff-translation);
     --qa-font-ui:          var(--ff-sans);
     --qa-font-mono:        var(--ff-mono);
@@ -183,48 +183,14 @@
     --qa-font-sans: var(--qa-font-ui);
   }
 
-  /* Riwayah-bound Arabic font — follows <html data-riwayah="..."> */
-  :root[data-riwayah='hafs']   { --qa-font-arabic: var(--ff-kfgqpc-hafs); }
-  :root[data-riwayah='warsh']  { --qa-font-arabic: var(--ff-kfgqpc-warsh); }
-  :root[data-riwayah='qaloon'] { --qa-font-arabic: var(--ff-kfgqpc-qaloon); }
-
-  /* WebKit-only fallback for Warsh + Qaloon. KFGQPC v0.10 outlines have
-     structural rendering failures in CoreGraphics/Quartz (Safari macOS,
-     iOS Safari, iOS Chrome) — verified locally: Naskh strokes hairline,
-     ش / ج family hollow, mark stacks degraded; not fixable via
-     ttfautohint, outline embolden, or skia-pathops removeOverlaps.
-     Skia (Chromium) renders the same outlines correctly. Until KFGQPC
-     ships a v0.11+ Qaloon/Warsh, fall back to Amiri Quran on WebKit —
-     hinted by Khaled Hosny, OFL, full Quranic combining-mark coverage
-     (fatha, kasra, damma, sukun, shadda, dagger alif U+0670, small
-     high seen U+06EC), GPOS mark/mkmk anchors, Mashriqi Naskh family
-     compatible with KFGQPC's calligraphic style. KFGQPC retains
-     priority — fallback only fires when KFGQPC fails to load. The
-     `@supports (-webkit-touch-callout: none)` selector matches Safari
-     only; Chromium ignores it. Hafs unaffected — its outlines render
-     correctly through KFGQPC v0.18 + ttfautohint pipeline. */
-  /* WebKit-only fallback for Warsh + Qaloon. KFGQPC v0.10 outline geometry
-     produces hollow / broken combining-mark stacks in CoreGraphics / Quartz
-     (Safari macOS, iOS Safari, iOS Chrome). Verified locally: Skia
-     (Chromium) and Gecko (Firefox) render the same outlines correctly;
-     CoreGraphics renders the bug. Not fixable via ttfautohint, outline
-     embolden, or skia-pathops removeOverlaps — the issue is in the upstream
-     font and there is no public alternative Qaloon / Warsh Naskh font with
-     full Quranic mark coverage. Amiri Quran by Khaled Hosny (OFL,
-     professionally hinted, full GPOS mark/mkmk anchors covering fatha,
-     kasra, damma, sukun, shadda stacks, dagger alif U+0670, small high seen
-     U+06EC, alif waslah ٱ, sajdah-cue marks U+06D6) renders Qaloon /
-     Warsh text accurately on every engine. Calligrapher's hand changes
-     (Uthman Taha → Khaled Hosny — both Mashriqi Naskh, marks sit slightly
-     higher in Amiri Quran) but every tashkeel renders correctly and the
-     Quranic text data is preserved. The `data-engine="safari"` attribute
-     is set in `src/core/engine-detect.ts` from `navigator.vendor`. Hafs
-     unaffected — its outlines render correctly through the embolden +
-     ttfautohint pipeline (see `scripts/font-diag/`). Long-term proper
-     fix is page-image rendering for non-Hafs riwayat — tracked in
-     `docs/context/future-work.md`. */
-  :root[data-engine='safari'][data-riwayah='warsh']  { --qa-font-arabic: 'Amiri Quran', 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif; }
-  :root[data-engine='safari'][data-riwayah='qaloon'] { --qa-font-arabic: 'Amiri Quran', 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif; }
+  /* Riwayah-bound Arabic font. All three riwayat render in Amiri Quran —
+     single calligraphic face cross-engine, full Quranic mark coverage,
+     no engine-conditional fallback. Riwayah text data still drives the
+     orthographic differences (Hafs vs Warsh vs Qaloon glyphs in the
+     dataset); only the calligrapher's hand is unified. */
+  :root[data-riwayah='hafs'],
+  :root[data-riwayah='warsh'],
+  :root[data-riwayah='qaloon'] { --qa-font-arabic: var(--ff-amiri-quran); }
 
   /* Stepped chrome — reading tokens stay fluid via clamp() above. */
   @media (min-width: 768px) {

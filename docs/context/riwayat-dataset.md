@@ -92,111 +92,52 @@ function ayaSurah(rec: any): number {
 
 ## Fonts
 
-KFGQPC publishes a dedicated Uthmanic font per riwaya. **Generic Arabic fonts will mis-render Warsh and Qaloon text** (special small alif `ا۬` / `ا۪`, qasr marks, wasla over alif, distinct mark stacking). Always pair text with its matching font:
+All three riwayat render in **Amiri Quran** (Khaled Hosny, OFL) — a single Mashriqi Naskh face with full Quranic mark coverage that renders identically on every engine (Skia / CoreGraphics / Gecko). The riwayah text data (Maghrebi-orthography spellings, riwaya-specific marks like small high seen `U+06EC` for Warsh/Qaloon) drives the orthographic differences; only the calligrapher's hand is unified.
 
 ```
-public/fonts/
-  kfgqpc-hafs/
-    hafs.18.ttf       237 KB
-    hafs.18.woff2      86 KB
-  kfgqpc-warsh/
-    warsh.10.ttf      250 KB
-    warsh.10.woff2     89 KB
-  kfgqpc-qaloon/
-    qaloon.10.ttf     255 KB
-    qaloon.10.woff2    89 KB
+public/fonts/amiri-quran/
+  AmiriQuran-Regular.woff2    ~135 KB
 ```
-
-Prefer `.woff2` for the web; ship `.ttf` for offline/legacy fallback.
 
 ### Font metrics → minimum line-height
 
-All three fonts use **`unitsPerEm` = 2048**. Vertical metrics from the file (in design units), and the resulting CSS `line-height` floor:
+`unitsPerEm = 1024`, `OS/2 sTypoAscender = 1990`, `sTypoDescender = -1138`. CSS `line-height` floor ≈ **1.92** to clear stacked harakat + dagger alif + hamzat al-wasl. Reader uses 2.12 by default (mid step on the 5-step Reading flow slider; `src/styles/surfaces/reading-typography.css`).
 
-| Riwaya | Win ascent | Win descent | Total | Min `line-height` (unitless) |
-|---|---:|---:|---:|---:|
-| Hafs   | 2400 | 1200 | 3600 | **1.76** |
-| Warsh  | 2375 | 1175 | 3550 | **1.73** |
-| Qaloon | 2350 | 1175 | 3525 | **1.72** |
+For mixed Arabic + Latin lines (e.g. translation toggle), apply the Arabic line-height on the Arabic span specifically — let the Latin run inherit a tighter value or the page grows visibly.
 
-Why so tall: Arabic Uthmanic glyphs reach far above and below the baseline (small alif overlays, low madda, stacked harakat + dagger alif, hamzat al-wasl). The fonts declare matching `OS/2 sTypoAscender / sTypoDescender` and `hhea ascent / descent` — same numbers across all three metric tables (no asymmetry to negotiate), so any layout engine produces the same height.
-
-**Reader CSS rules:**
-
-- Use `line-height: 1.8` or higher in any container that renders these fonts. Below ~1.7, top harakat clip on adjacent lines.
-- Do **not** use `line-height: 1` or numeric pixel values smaller than `font-size × 1.72`.
-- If the existing reader sets a lower line-height for the PUA Hafs corpus, that value is **not** safe for these KFGQPC fonts — gate per-corpus.
-- For mixed Arabic + Latin lines (e.g. translation toggle), apply `line-height` on the Arabic span specifically; let the Latin run inherit a tighter value, or the page grows visibly.
-
-### `@font-face` declarations
+### `@font-face` declaration
 
 ```css
 @font-face {
-  font-family: "KFGQPC Hafs";
-  src: url("/fonts/kfgqpc-hafs/hafs.18.woff2") format("woff2"),
-       url("/fonts/kfgqpc-hafs/hafs.18.ttf")  format("truetype");
+  font-family: 'Amiri Quran';
+  src: url('/fonts/amiri-quran/AmiriQuran-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
   font-display: swap;
   unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
 }
-
-@font-face {
-  font-family: "KFGQPC Warsh";
-  src: url("/fonts/kfgqpc-warsh/warsh.10.woff2") format("woff2"),
-       url("/fonts/kfgqpc-warsh/warsh.10.ttf")  format("truetype");
-  font-display: swap;
-  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
-}
-
-@font-face {
-  font-family: "KFGQPC Qaloon";
-  src: url("/fonts/kfgqpc-qaloon/qaloon.10.woff2") format("woff2"),
-       url("/fonts/kfgqpc-qaloon/qaloon.10.ttf")  format("truetype");
-  font-display: swap;
-  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
-}
-
-.qa-aya[data-riwaya="hafs"]   { font-family: "KFGQPC Hafs",   serif; line-height: 1.8;  }
-.qa-aya[data-riwaya="warsh"]  { font-family: "KFGQPC Warsh",  serif; line-height: 1.78; }
-.qa-aya[data-riwaya="qaloon"] { font-family: "KFGQPC Qaloon", serif; line-height: 1.78; }
 ```
 
-`font-display: swap` is acceptable here only because Latin fallback won't render the Arabic glyphs anyway — the verse will appear as `.notdef` boxes during the swap window. If that flash is unacceptable, switch to `block` for these three families.
+Wired through tokens — `--ff-amiri-quran` (defined in `src/styles/tokens/primitives.css`) → `--qa-font-arabic` (in `src/styles/tokens/semantic.css`, bound for all three `[data-riwayah=...]` selectors). The reader's `.qa-verse-arabic` consumes `--qa-font-arabic`.
+
+`font-display: swap` is acceptable because Latin fallback won't render the Arabic glyphs anyway — the verse appears as `.notdef` boxes during the swap window. If that flash is unacceptable, switch to `block`.
 
 ---
 
 ## Cross-engine rendering
 
-KFGQPC's three webfonts ship with two unrelated rendering issues across browser engines. Each has a different fix.
+Amiri Quran is professionally hinted (Khaled Hosny / aliftype) and renders identically on Chromium (Skia), WebKit (CoreGraphics — macOS Safari, iOS Safari, iOS Chrome, headless WebKit), and Firefox (Gecko). Every tashkeel renders accurately — fatha, kasra, damma, sukun, shadda stacks, dagger alif `U+0670`, small high seen `U+06EC`, alif waslah `ٱ`, sajdah-cue marks `U+06D6+`. GPOS mark/mkmk anchors handle combining-mark stacking on every engine. No engine-conditional fallback, no post-processing pipeline, no `data-engine` attribute.
 
-### Issue 1 — Hafs (v0.18): unhinted outlines render thin on WebKit
+### History — KFGQPC fonts retired 2026-04-27
 
-KFGQPC `hafs.18.ttf` ships with no TrueType hinting (`fpgm` / `prep` / `cvt` tables absent, `maxp.maxFunctionDefs = 0`). FreeType (Skia / Chromium) auto-hints unhinted fonts so verses look bold; CoreGraphics / Quartz (WebKit / Safari macOS + iOS) does not auto-hint and has no stem-darkening fallback (Apple removed it in macOS 10.14+) so verses render hairline.
+The app previously shipped KFGQPC Hafs v0.18, Warsh v0.10, and Qaloon v0.10 (Uthman Taha's hand, official Madinah Mushaf). Two unrelated rendering bugs forced replacement:
 
-**Fix shipped:** `scripts/font-diag/hint-kfgqpc.sh` runs perpendicular outline-embolden via `embolden-glyf.py` (offset 30 font units against UPM 2048) followed by `ttfautohint --default-script=arab --stem-width-mode=sqq`. Output replaces `public/fonts/kfgqpc-hafs/hafs.18.woff2` (~88 KB → ~118 KB). Both engines now grid-fit to the same pixel positions.
+1. **Hafs (v0.18)** — shipped unhinted (no `fpgm` / `prep` / `cvt` tables). Skia auto-hinted; CoreGraphics did not, rendering hairline. Worked around with a perpendicular outline-embolden + `ttfautohint --default-script=arab --stem-width-mode=sqq` pipeline.
+2. **Warsh + Qaloon (v0.10)** — outline geometry rendered as hollow / broken combining-mark stacks in CoreGraphics. Not fixable via post-processing (verified `ttfautohint`, embolden, `skia-pathops removeOverlaps`). Worked around by substituting Amiri Quran on WebKit only via `[data-engine='safari']` CSS rule.
 
-**Regression guard:** `tests/unit/assets/kfgqpc-hinting.test.ts` parses the WOFF2 table directory of the shipped Hafs file and asserts `fpgm` / `prep` / `cvt ` are present — fails if a future asset re-import drops back to upstream unhinted bytes.
+Maintaining a two-track font pipeline plus an engine-detection attribute for what was effectively "use Amiri Quran on Safari" was net-negative complexity. Single-font-everywhere is cleaner: same calligraphic hand cross-engine, no asset post-processing, no engine sniffing, smaller bundle (~390 KB of KFGQPC woff2 dropped). The KFGQPC *text dataset* (per-surah JSON under `public/dataset/riwayat/{hafs,warsh,qaloon}/`) is unchanged and remains the canonical content source — only the rendering font changed.
 
-### Issue 2 — Warsh + Qaloon (v0.10): outline geometry breaks in CoreGraphics
-
-KFGQPC `warsh.10.ttf` and `qaloon.10.ttf` have outline encoding that CoreGraphics rasterises as hollow / broken combining-mark stacks (sheen ش base, jeem ج family, shadda+vowel pairs). Skia (Chromium) and Gecko (Firefox) render the same outlines correctly. Verified locally via `scripts/font-diag/render-compare.mjs` (Playwright Chromium ↔ WebKit screenshot pairs).
-
-**Not fixable via binary post-processing.** Tested and ruled out 2026-04-26/27:
-- `ttfautohint` — no effect.
-- Perpendicular outline embolden (`scripts/font-diag/embolden-glyf.py` at offset 15, 20, 30, both sign directions) — no effect.
-- `skia-pathops` boolean union via `fontTools.ttLib.removeOverlaps` — no effect.
-
-**No alternative font available.** Confirmed exhaustively via web research:
-- KFGQPC publishes only v0.10 of Qaloon; no newer version, no "QaloonSmart" variant. Last update 2010.
-- Quran Foundation, Tarteel QUL, quran.com, fawazahmed0/quran-api, NaifAlsultan typst-quran-package, me_quran, PDMS Saleem, Khaled Hosny / SIL fonts — none ship a Qaloon-specific Naskh font with full Quranic combining-mark coverage.
-- Every Quran app that supports Qaloon visually (Tarteel, quran.com, quran-android, Mushaf Mecca, AAYAAT, Quranflash) does so via **page-image rendering** (PNG/SVG of pre-typeset pages, Unicode text underneath only for selection/sharing).
-
-**Stopgap shipped:** Substitute Amiri Quran (Khaled Hosny, OFL, hinted, full Quranic mark coverage) for Warsh and Qaloon on WebKit only. Hafs unaffected (its embolden+ttfautohint pipeline works). The `data-engine="safari"` attribute is set in `src/core/engine-detect.ts` from `navigator.vendor === "Apple Computer, Inc."` (set by every WebKit derivative including Mobile Safari, iOS Safari, headless WebKit; not by Chromium or Firefox). CSS in `src/styles/tokens/semantic.css` swaps `--qa-font-arabic` to Amiri Quran for `[data-engine='safari'][data-riwayah='warsh']` and `[data-engine='safari'][data-riwayah='qaloon']`.
-
-**What is preserved:** Every tashkeel renders accurately — fatha, kasra, damma, sukun, shadda stacks, dagger alif U+0670, small high seen U+06EC, alif waslah ٱ, sajdah-cue marks U+06D6+. GPOS mark/mkmk anchors handle combining-mark stacking. The Qaloon / Warsh text data (Maghrebi-orthography spellings, riwaya-specific marks) is rendered exactly — only the typeface's calligraphic hand changes.
-
-**What changes:** The calligrapher's hand shifts from Uthman Taha (KFGQPC) to Khaled Hosny (Amiri Quran). Both are Mashriqi Naskh; Amiri Quran's marks sit slightly higher above the baseline and stems are heavier. Chromium and Firefox users continue to see authentic KFGQPC typesetting.
-
-**Long-term proper fix:** Page-image rendering for non-Hafs riwayat (industry-standard pattern across Quran apps). Tracked in `docs/context/future-work.md`.
+For users who want the authentic Uthman Taha typesetting (Madinah Mushaf hand) or the Tarabulsi typesetting (Libyan Jamahiriya Mushaf), the long-term path is page-image rendering — see `docs/context/future-work.md`. That route ships pre-typeset PDF/PNG pages from the official mushaf, preserving every calligrapher's hand at the cost of asset size and the ability to live-restyle text.
 
 ---
 

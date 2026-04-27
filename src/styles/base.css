@@ -4,12 +4,12 @@
 
    @font-face lives here (external CSS), NOT inlined in <head>. Inline @font-face
    in index.html <style> caused iOS Safari to fall through to a fallback for
-   .qa-verse-arabic verses (KFGQPC was loaded per `document.fonts`, but the
-   render tree painted with a fallback font that lacked Quranic combining marks
+   .qa-verse-arabic verses (the font was loaded per `document.fonts`, but the
+   render tree painted with a fallback that lacked Quranic combining marks
    — dagger alif, sukun stacks). External @font-face round-trips through
    the cascade in a way iOS WebKit handles consistently with desktop. The
    web.dev "inline for early discovery" optimization was a perf micro-opt,
-   not a correctness requirement, and the fonts are preloaded in <head>
+   not a correctness requirement, and the font is preloaded in <head>
    anyway so discovery is already early.
    ========================================================================== */
 
@@ -60,33 +60,6 @@
   @font-face {
     font-family: 'Amiri Quran';
     src: url('/fonts/amiri-quran/AmiriQuran-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
-  }
-
-  @font-face {
-    font-family: 'KFGQPC Hafs';
-    src: url('/fonts/kfgqpc-hafs/hafs.18.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
-  }
-
-  @font-face {
-    font-family: 'KFGQPC Warsh';
-    src: url('/fonts/kfgqpc-warsh/warsh.10.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
-  }
-
-  @font-face {
-    font-family: 'KFGQPC Qaloon';
-    src: url('/fonts/kfgqpc-qaloon/qaloon.10.woff2') format('woff2');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
