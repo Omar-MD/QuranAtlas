@@ -13,11 +13,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 vi.mock('../../../src/data/dataset', () => ({
   getSurahs: vi.fn(async () => ([
-    { n: 1,   name: 'Al-Fatihah', counts: { hafs: 7,   warsh: 7,   qaloon: 7   } },
-    { n: 2,   name: 'Al-Baqarah', counts: { hafs: 286, warsh: 286, qaloon: 286 } },
-    { n: 18,  name: 'Al-Kahf',    counts: { hafs: 110, warsh: 110, qaloon: 110 } },
-    { n: 67,  name: 'Al-Mulk',    counts: { hafs: 30,  warsh: 30,  qaloon: 30  } },
-    { n: 112, name: 'Al-Ikhlas',  counts: { hafs: 4,   warsh: 4,   qaloon: 4   } },
+    { n: 1,   name: 'Al-Fatihah', name_ar: 'الفَاتِحة',  counts: { hafs: 7,   warsh: 7,   qaloon: 7   } },
+    { n: 2,   name: 'Al-Baqarah', name_ar: 'البَقَرَة',   counts: { hafs: 286, warsh: 286, qaloon: 286 } },
+    { n: 18,  name: 'Al-Kahf',    name_ar: 'الكَهف',     counts: { hafs: 110, warsh: 110, qaloon: 110 } },
+    { n: 67,  name: 'Al-Mulk',    name_ar: 'المُلك',     counts: { hafs: 30,  warsh: 30,  qaloon: 30  } },
+    { n: 112, name: 'Al-Ikhlas',  name_ar: 'الإخلَاص',   counts: { hafs: 4,   warsh: 4,   qaloon: 4   } },
   ])),
 }))
 vi.mock('../../../src/data/surah-meanings', () => ({
@@ -110,6 +110,23 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     await fireEvent.keyDown(search, { key: 'Enter' })
     await flush()
     expect(navigatedTo).toEqual({ surah: 2, verse: 255 })
+  })
+
+  it('renders the Arabic surah name (name_ar) on every row', async () => {
+    await mountAndOpen('surahs')
+
+    const rows = document.querySelectorAll('.qa-nav-drawer-surah-row')
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      const ar = row.querySelector('.qa-nav-drawer-surah-ar') as HTMLElement | null
+      expect(ar, `row ${row.getAttribute('data-surah')} has Arabic span`).not.toBeNull()
+      expect(ar!.textContent?.trim().length, `row ${row.getAttribute('data-surah')} Arabic non-empty`).toBeGreaterThan(0)
+      expect(ar!.getAttribute('dir')).toBe('rtl')
+      expect(ar!.getAttribute('lang')).toBe('ar')
+    }
+    // Spot-check that one of the known mock values is present
+    expect(document.querySelector('[data-surah="67"] .qa-nav-drawer-surah-ar')!.textContent)
+      .toContain('المُلك')
   })
 
   it('F-mobile-9: typing 255 (out of surah-index range) lists only surahs with ≥ 255 verses', async () => {

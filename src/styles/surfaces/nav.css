@@ -469,7 +469,7 @@
     left: 0;
     right: 0;
     z-index: 95;
-    height: calc(env(safe-area-inset-top) + 52px);
+    height: calc(env(safe-area-inset-top) + 56px);
     padding: env(safe-area-inset-top) 8px 0;
     background: color-mix(in srgb, var(--qa-surface-app) 92%, transparent);
     backdrop-filter: blur(14px);
@@ -490,8 +490,8 @@
     background: transparent;
     border: 0;
     cursor: pointer;
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -508,8 +508,8 @@
 
   .qa-mh-hamburger svg,
   .qa-mh-settings svg {
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
 
     /* Route pointer events to the button — not to inline SVG paths, which
        iOS otherwise treats as a separate hit target with image actions. */
@@ -553,16 +553,14 @@
     font-family:
       'Amiri Quran',
       var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
-    /* 18px clipped المُنَافِقُونَ + similar long names on 390px viewports
-       once the ≡ + ⚙ buttons claimed their 44px each. 15px keeps the
-       longest 14-char names intact with comfortable headroom.
-       line-height >= 1.6: Quranic naskh fonts (Amiri Quran here) carry
-       descent ~1.4–1.8× em for tashkeel below the baseline (sukun, kasra,
-       dagger alif). 1.2 cropped the bottom of long surah names (المنافقون)
-       on iOS. 1.6 covers the descent without inflating the header height
-       since the parent `.qa-mh` has fixed 52px content-box already. */
-    font-size: 15px;
-    line-height: 1.6;
+    /* 18px fits the longest 14-char names (المُنَافِقُونَ etc.) on 390px
+       viewports once the ≡ + ⚙ buttons claimed their 48px each. The
+       header content-box is 56px so descent fits at line-height 1.55.
+       line-height ≥ 1.55: Quranic naskh fonts carry descent ~1.4–1.8× em
+       for tashkeel below the baseline (sukun, kasra, dagger alif). 1.2
+       cropped the bottom of long surah names on iOS. */
+    font-size: 18px;
+    line-height: 1.55;
     white-space: nowrap;
     text-overflow: ellipsis;
     /* overflow:hidden lives on the `.qa-mh-label` container instead — on
@@ -574,7 +572,7 @@
   .qa-mh-wordmark {
     font-weight: 600;
     letter-spacing: 0.04em;
-    font-size: 15px;
+    font-size: 17px;
   }
 
   @media (min-width: 1180px) {
@@ -839,7 +837,8 @@
 .qa-nav-drawer-surah-ar {
   color: var(--qa-text-muted);
   font-family: var(--qa-font-arabic);
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 /* Review tab */

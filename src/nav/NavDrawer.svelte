@@ -92,7 +92,7 @@
     return items.filter(s => {
       const name = (s.name ?? '').toLowerCase()
       const meaning = (getMeaning(s.n) ?? '').toLowerCase()
-      const ar = ((s as Record<string, unknown>)['arabic'] as string | undefined ?? '').toLowerCase()
+      const ar = (s.name_ar ?? '').toLowerCase()
       return name.includes(p.q) || meaning.includes(p.q) || ar.includes(p.q)
     })
   })
@@ -341,7 +341,7 @@
                 {#if bookmarkedSet.has(s.n)}
                   <span class="qa-nav-drawer-surah-star" aria-hidden="true">&#9733;</span>
                 {/if}
-                <span class="qa-nav-drawer-surah-ar" dir="rtl" lang="ar">{(s as { arabic?: string }).arabic ?? ''}</span>
+                <span class="qa-nav-drawer-surah-ar" dir="rtl" lang="ar">{s.name_ar}</span>
               </button>
             </li>
           {/each}
