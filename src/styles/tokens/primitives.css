@@ -115,19 +115,16 @@
     --r-circle: 50%;
 
     /* --- Font families --------------------------------------------------- */
-    /* KFGQPC fonts ship the authentic Mushaf glyphs + Quran-specific marks
-       (small high seen U+06EC, dagger alif U+0670, open fathatan U+08F0,
-       etc). When they fail to load (slow mobile, CDN MIME issue, SW cache
-       miss) the browser falls back through this chain: Amiri + Scheherazade
-       are the only web-safe fonts that ship the full set of Quranic
-       tashkeel — bare `serif` defers to system Arabic (iOS Geeza Pro,
-       Android Noto Sans Arabic) which silently drops marks like sukun,
-       shadda + fatha stacks, and Quran-only marks. Real users on poor
-       connections will still see complete tashkeel even if the KFGQPC
-       woff2 never arrives. */
-    --ff-kfgqpc-hafs:   'KFGQPC Hafs',   'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif;
-    --ff-kfgqpc-warsh:  'KFGQPC Warsh',  'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif;
-    --ff-kfgqpc-qaloon: 'KFGQPC Qaloon', 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+    /* Amiri Quran (Khaled Hosny, OFL) is the single Arabic Quranic face used
+       across all three riwayat. Full Quranic mark coverage (fatha, kasra,
+       damma, sukun, shadda, dagger alif U+0670, small high seen U+06EC,
+       alif waslah ٱ, sajdah-cue marks U+06D6), GPOS mark/mkmk anchors,
+       renders identically on every engine (Skia / CoreGraphics / Gecko).
+       Fallback chain — Amiri (non-Quran cut), Scheherazade New, Noto Naskh
+       Arabic — preserves tashkeel if the primary fails to load. Bare
+       `serif` defers to system Arabic (iOS Geeza Pro, Android Noto Sans
+       Arabic) which silently drops Quran-only marks. */
+    --ff-amiri-quran: 'Amiri Quran', 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif;
     --ff-translation: 'Newsreader', georgia, serif;
     --ff-sans:        system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
     --ff-mono:        'Geist Mono', ui-monospace, menlo, monospace;

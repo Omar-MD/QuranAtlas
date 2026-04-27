@@ -28,8 +28,7 @@ import { tagSession } from './state/tag-session.svelte'
 import { registerEditor } from './marks/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './nav/nav-drawer-bridge'
-import { loadKfgqpcFontsProgrammatically } from './core/font-loader.ts'
-import { detectEngine } from './core/engine-detect.ts'
+import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -98,23 +97,21 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   // the reader actually mounts. Guard against environments without the
   // Font Loading API (jsdom in unit tests).
   if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
-    for (const fam of ['KFGQPC Hafs', 'KFGQPC Warsh', 'KFGQPC Qaloon']) {
-      void document.fonts.load(`16px "${fam}"`, 'ا').catch(() => { /* ignore — fallback chain handles it */ })
-    }
+    void document.fonts.load('16px "Amiri Quran"', 'ا').catch(() => { /* ignore — fallback chain handles it */ })
     // Belt-and-braces for iOS Safari: bypass CSS @font-face activation
     // entirely by constructing the FontFace from the woff2 ArrayBuffer
     // and adding to document.fonts. Survives every iOS-specific defect
     // we have hit on the CSS path (combining marks not engaging GPOS,
     // late paint with fallback, render-tree-side activation race).
-    loadKfgqpcFontsProgrammatically()
+    loadArabicQuranFontProgrammatically()
     // iOS Safari paints the reader DOM with a fallback font when verses
-    // mount before KFGQPC swaps in, then doesn't re-shape RTL Arabic text
-    // when font-display:swap brings in the real face — combining marks
-    // (sukun, dagger alif, small high seen) collapse to base position.
-    // Force a re-paint once fonts are ready AND each time the reader
-    // mounts new verses (router navigation, riwayah switch). Toggling a
-    // no-op transform invalidates the layout cache + re-runs glyph shaping
-    // with the now-loaded KFGQPC font.
+    // mount before Amiri Quran swaps in, then doesn't re-shape RTL Arabic
+    // text when font-display:swap brings in the real face — combining
+    // marks (sukun, dagger alif, small high seen) collapse to base
+    // position. Force a re-paint once fonts are ready AND each time the
+    // reader mounts new verses (router navigation, riwayah switch).
+    // Toggling a no-op transform invalidates the layout cache + re-runs
+    // glyph shaping with the now-loaded Amiri Quran font.
     const reshape = (root: ParentNode = document) => {
       const verses = root.querySelectorAll('.qa-verse-arabic')
       for (const el of verses) {
@@ -142,12 +139,6 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   }
 
   try {
-    // Set data-engine="safari" on <html> before first paint so the CSS
-    // variable substitution in tokens/semantic.css picks Amiri Quran for
-    // Warsh + Qaloon on WebKit. See docs/context/riwayat-dataset.md
-    // § "Cross-engine rendering" for the rationale.
-    detectEngine()
-
     // Open database (creates stores if first run)
     await openDB()
     performance.mark('db:open')
