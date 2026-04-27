@@ -1,17 +1,24 @@
 #!/usr/bin/env node
 /**
- * QuranAtlas dataset build pipeline (Riwayat edition).
+ * QuranAtlas dataset build pipeline.
  *
- * Reads the three monolithic KFGQPC Riwayah JSONs from
- *   public/dataset/riwayat/{hafs,warsh,qaloon}.json
- * and emits:
- *   public/dataset/riwayat/{name}/{NNN}.json   (114 per Riwayah, 342 total)
- *   public/dataset/surahs.json                 (114 entries, per-Riwayah counts)
- *   public/dataset/juz.json                    (30 entries)
- *   public/dataset/manifest.json               (sha256 per shipped file)
- *   public/dataset/provenance.json             (corpus + Riwayah + font metadata)
+ * Reads monolithic source files committed to the repo:
+ *   public/dataset/riwayat/{hafs,warsh,qaloon}.json   (KFGQPC corpus)
+ *   public/dataset/translations/{id}.raw.json         (one per shipped translation)
+ *
+ * Emits:
+ *   public/dataset/riwayat/{name}/{NNN}.json          (114 per Riwayah, 342 total)
+ *   public/dataset/translations/{id}/{NNN}.json       (114 per shipped translation)
+ *   public/dataset/surahs.json                        (114 entries, per-Riwayah counts)
+ *   public/dataset/juz.json                           (30 entries)
+ *   public/dataset/manifest.json                      (sha256 per shipped file)
+ *   public/dataset/provenance.json                    (corpus + Riwayah + translations + font metadata)
  *
  * Run via: pnpm build:dataset
+ *
+ * Translation source files are produced by their respective fetch scripts
+ * (e.g. scripts/fetch-translation-saheeh.mjs) and committed to git so this
+ * build runs offline.
  */
 
 import { createHash } from 'node:crypto'
@@ -24,6 +31,26 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')
+const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
+
+/**
+ * Translations shipped in the dataset. Each entry resolves a monolithic raw
+ * source file produced by its fetch script. Add new entries here when adding
+ * a translation pack — the build phase auto-handles them.
+ */
+const SHIPPED_TRANSLATIONS = [
+  {
+    id: 'saheeh',
+    rawFile: 'saheeh.raw.json',
+    label: 'Saheeh International',
+    translator: 'Saheeh International',
+    language: 'en',
+    license: 'Free for non-commercial distribution (Saheeh International Foundation)',
+    licenseUrl: 'https://saheehinternational.com/',
+    source: 'Quran.com qdc API translation 20',
+    sourceUrl: 'https://api.qurancdn.com/api/qdc/quran/translations/20',
+  },
+]
 
 export const AYAT_COUNTS = { hafs: 6236, warsh: 6214, qaloon: 6214 }
 export const RIWAYAT = ['hafs', 'warsh', 'qaloon']
@@ -45,7 +72,7 @@ const FONT_PATHS = {
   qaloon: { woff2: '/fonts/kfgqpc-qaloon/qaloon.10.woff2', ttf: '/fonts/kfgqpc-qaloon/qaloon.10.ttf' },
 }
 
-const PACKAGE_VERSION = '2.0.0'
+const PACKAGE_VERSION = '2.1.0'
 
 const pad3 = (n) => String(n).padStart(3, '0')
 
@@ -131,6 +158,82 @@ export function computeSurahsMeta(namesEn, namesAr, perRiwayahCounts) {
   }))
 }
 
+/**
+ * Validate + split a monolithic translation source into per-surah payloads.
+ * Hafs verse counts are passed in; mismatched upstream counts hard-fail
+ * (would indicate a different mushaf counting and thus text/verse drift).
+ *
+ * Asserts: 114 surahs present, per-surah verse count matches Hafs, verse keys
+ * are exactly "{surah}:{n}" for 1..count, every [N] marker resolves to
+ * footnotes[N], footnote keys are contiguous 1..K, and every defined
+ * footnote is referenced at least once.
+ */
+const MARKER_RE = /\[(\d+)\]/g
+
+export function buildTranslationSplits(rawSource, expectedHafsCounts) {
+  if (!rawSource || typeof rawSource !== 'object' || !rawSource.surahs) {
+    throw new Error('translation raw source missing `surahs`')
+  }
+  const ids = Object.keys(rawSource.surahs)
+  if (ids.length !== 114) {
+    throw new Error(`translation has ${ids.length} surahs, expected 114`)
+  }
+  const perSurah = {}
+  let totalVerses = 0
+  let totalFootnotes = 0
+  for (let n = 1; n <= 114; n++) {
+    const key = pad3(n)
+    const src = rawSource.surahs[key]
+    if (!src) {
+      throw new Error(`translation missing surah ${key}`)
+    }
+    const expected = expectedHafsCounts[n - 1]
+    if (!Array.isArray(src.verses) || src.verses.length !== expected) {
+      throw new Error(`translation surah ${key} verse count ${src.verses?.length} != Hafs ${expected}`)
+    }
+    for (let i = 0; i < src.verses.length; i++) {
+      const expectedKey = `${n}:${i + 1}`
+      if (src.verses[i].key !== expectedKey) {
+        throw new Error(`translation surah ${key} verse[${i}].key=${src.verses[i].key} expected ${expectedKey}`)
+      }
+      if (typeof src.verses[i].text !== 'string' || !src.verses[i].text) {
+        throw new Error(`translation surah ${key} verse[${i}] missing text`)
+      }
+    }
+    const fnKeys = Object.keys(src.footnotes || {})
+    const expectedFnKeys = new Set(Array.from({ length: fnKeys.length }, (_, i) => String(i + 1)))
+    if (fnKeys.length !== expectedFnKeys.size || fnKeys.some((k) => !expectedFnKeys.has(k))) {
+      throw new Error(`translation surah ${key} footnote keys non-contiguous: ${fnKeys.join(',')}`)
+    }
+    const seenMarkers = new Set()
+    for (const v of src.verses) {
+      for (const m of v.text.matchAll(MARKER_RE)) {
+        const idx = m[1]
+        if (!src.footnotes || !(idx in src.footnotes)) {
+          throw new Error(`translation surah ${key} verse ${v.key}: marker [${idx}] has no matching footnote`)
+        }
+        seenMarkers.add(idx)
+      }
+    }
+    for (const k of fnKeys) {
+      if (!seenMarkers.has(k)) {
+        throw new Error(`translation surah ${key}: footnote ${k} defined but never referenced`)
+      }
+    }
+    perSurah[key] = {
+      translationId: rawSource.translationId,
+      translationVersion: rawSource.translationVersion,
+      surahNo: n,
+      intro: Array.isArray(src.intro) ? src.intro : [],
+      verses: src.verses.map((v) => ({ key: v.key, text: v.text })),
+      footnotes: { ...src.footnotes },
+    }
+    totalVerses += src.verses.length
+    totalFootnotes += fnKeys.length
+  }
+  return { perSurah, totals: { verses: totalVerses, footnotes: totalFootnotes } }
+}
+
 /** Build the 30-entry juz array from Hafs (juz boundaries are constant across Riwayat). */
 export function computeJuzMeta(hafsAyat) {
   const seen = new Set()
@@ -163,7 +266,7 @@ async function listFiles(rootDir) {
 }
 
 async function main() {
-  console.log('[build-riwayat] starting')
+  console.log('[build-dataset] starting')
   // 1. Read inputs
   const sources = {}
   for (const r of RIWAYAT) {
@@ -173,7 +276,7 @@ async function main() {
     if (sources[r].length !== AYAT_COUNTS[r]) {
       throw new Error(`Ayah count mismatch for ${r}: got ${sources[r].length}, expected ${AYAT_COUNTS[r]}`)
     }
-    console.log(`[build-riwayat] ${r}: ${sources[r].length} ayat`)
+    console.log(`[build-dataset] ${r}: ${sources[r].length} ayat`)
   }
 
   // 2. Wipe + emit per-surah split files
@@ -221,7 +324,44 @@ async function main() {
   if (juzMeta.length !== 30) { throw new Error(`juz count ${juzMeta.length}, expected 30`) }
   await writeFile(join(DATASET_DIR, 'juz.json'), JSON.stringify(juzMeta), 'utf8')
 
-  // 5. provenance.json
+  // 5. translations — split each shipped translation pack from its raw source.
+  const translationProvenance = []
+  const hafsCounts = perRiwayahCounts.hafs.slice() // 114-entry array, matches surah index
+  for (const t of SHIPPED_TRANSLATIONS) {
+    const rawPath = join(TRANSLATIONS_DIR, t.rawFile)
+    if (!existsSync(rawPath)) {
+      throw new Error(`Missing translation source: ${rawPath} (run scripts/fetch-translation-${t.id}.mjs)`)
+    }
+    const raw = JSON.parse(await readFile(rawPath, 'utf8'))
+    if (raw.translationId !== t.id) {
+      throw new Error(`translation source ${rawPath} has translationId=${raw.translationId}, expected ${t.id}`)
+    }
+    const { perSurah, totals } = buildTranslationSplits(raw, hafsCounts)
+    const outDir = join(TRANSLATIONS_DIR, t.id)
+    if (existsSync(outDir)) { await rm(outDir, { recursive: true, force: true }) }
+    await mkdir(outDir, { recursive: true })
+    for (const [key, payload] of Object.entries(perSurah)) {
+      await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
+    }
+    console.log(`[build-dataset] translation ${t.id}: 114 surahs, ${totals.verses} verses, ${totals.footnotes} footnotes`)
+    translationProvenance.push({
+      id: t.id,
+      label: t.label,
+      translator: t.translator,
+      language: t.language,
+      version: raw.translationVersion,
+      ayatCount: totals.verses,
+      footnoteCount: totals.footnotes,
+      hasIntros: Object.values(perSurah).some((s) => Array.isArray(s.intro) && s.intro.length > 0),
+      license: t.license,
+      licenseUrl: t.licenseUrl,
+      source: t.source,
+      sourceUrl: t.sourceUrl,
+      fetchedAt: raw.fetchedAt,
+    })
+  }
+
+  // 6. provenance.json
   const provenance = {
     packageVersion: PACKAGE_VERSION,
     builtAt: new Date().toISOString(),
@@ -240,20 +380,22 @@ async function main() {
       fontFamily: RIWAYAH_META[id].fontFamily,
       minLineHeight: RIWAYAH_META[id].minLineHeight,
     })),
-    translations: [],
+    translations: translationProvenance,
     fonts: FONT_PATHS,
   }
   await writeFile(join(DATASET_DIR, 'provenance.json'), JSON.stringify(provenance), 'utf8')
 
-  // 6. manifest.json — sha256 of every shipped file under public/dataset/.
+  // 7. manifest.json — sha256 of every shipped file under public/dataset/.
   // provenance.json is hashed against a builtAt-stripped form so the manifest
   // stays stable across no-op rebuilds (otherwise every re-run dirties git).
+  // Immediate children of riwayat/ and translations/ are monolithic source
+  // inputs (not shipped) and excluded from the manifest.
   const allFiles = await listFiles(DATASET_DIR)
   const files = {}
   for (const f of allFiles) {
     if (f.endsWith('manifest.json')) { continue }
-    // Immediate children of riwayat/ are monolithic source inputs, not shipped.
     if (dirname(f) === RIWAYAT_DIR) { continue }
+    if (dirname(f) === TRANSLATIONS_DIR) { continue }
     const rel = relative(DATASET_DIR, f).replace(/\\/g, '/')
     if (rel === 'provenance.json') {
       const stable = JSON.stringify({ ...provenance, builtAt: '' })
@@ -264,7 +406,7 @@ async function main() {
   }
   await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify({ packageVersion: PACKAGE_VERSION, builtAt: provenance.builtAt, files }), 'utf8')
 
-  console.log(`[build-riwayat] done — 342 surah files + surahs.json + juz.json + provenance.json + manifest.json`)
+  console.log(`[build-dataset] done — wrote per-surah riwayat + translation files, surahs.json, juz.json, provenance.json, manifest.json`)
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

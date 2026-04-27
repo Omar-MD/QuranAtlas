@@ -5,8 +5,8 @@
   import EdgeIndicator from './EdgeIndicator.svelte'
   import { reader } from '../state/reader.svelte'
   import { settings } from '../state/settings.svelte'
-  import { getSurah, getSurahs } from '../data/dataset'
-  import type { SurahPayload, SurahMeta } from '../data/dataset'
+  import { getSurah, getSurahs, loadTranslationForSurah } from '../data/dataset'
+  import type { SurahPayload, SurahMeta, TranslationPayload } from '../data/dataset'
   import { get } from '../core/db'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
@@ -55,6 +55,8 @@
 
   let surahData = $state<SurahPayload | null>(null)
   let surahMeta = $state<SurahMeta | null>(null)
+  let translationPack = $state<TranslationPayload | null>(null)
+  let translationByVerse = $state<Record<string, string>>({})
   let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
   let translationVisible = $state(settings.translationVisible ?? true)
@@ -101,10 +103,11 @@
     const newItems: VerseItem[] = []
     for (let i = renderedCount; i < nextEnd; i++) {
       const ayah = surahData.ayat[i]
+      const key = `${surahData.sura_no}:${ayah?.aya_no ?? (i + 1)}`
       newItems.push({
-        key: `${surahData.sura_no}:${ayah?.aya_no ?? (i + 1)}`,
+        key,
         ar: ayah?.aya_text ?? '',
-        en: '',
+        en: translationByVerse[key] ?? '',
       })
     }
     verses = [...verses, ...newItems]
@@ -214,13 +217,20 @@
     try {
       performance.mark('reader:fetch-start')
 
-      const [data, surahs, transVisible] = await Promise.all([
+      const [data, surahs, transVisible, transId, pack] = await Promise.all([
         getSurah(surahNum),
         getSurahs(),
         get('settings', 'translationVisible').then((r) => {
           const v = r?.value
           return typeof v === 'boolean' ? v : true
         }),
+        get('settings', 'translationId').then((r) => {
+          const v = r?.value
+          return typeof v === 'string' && v ? v : (settings.translationId ?? 'saheeh')
+        }),
+        // Optimistically fetch the default pack while we resolve the user's
+        // saved id; if the saved id differs, a second fetch follows below.
+        loadTranslationForSurah(settings.translationId ?? 'saheeh', surahNum).catch(() => null),
       ])
 
       clearTimeout(timeoutId)
@@ -236,6 +246,21 @@
       allSurahs = surahs
       translationVisible = transVisible
       settings.translationVisible = transVisible
+
+      // Resolve translation pack — re-fetch if the user's saved id differs
+      // from the optimistic fetch's id.
+      const optimisticId = settings.translationId ?? 'saheeh'
+      let resolvedPack = pack
+      if (transId !== optimisticId) {
+        resolvedPack = await loadTranslationForSurah(transId, surahNum).catch(() => null)
+      }
+      settings.translationId = transId
+      translationPack = resolvedPack
+      const map: Record<string, string> = {}
+      if (resolvedPack) {
+        for (const v of resolvedPack.verses) { map[v.key] = v.text }
+      }
+      translationByVerse = map
 
       // Render first chunk
       verses = []
@@ -386,6 +411,7 @@
         verseKey={v.key}
         arabic={v.ar}
         translation={v.en}
+        footnotes={translationPack?.footnotes ?? {}}
         {translationVisible}
       />
     {/each}

@@ -94,6 +94,7 @@
     font-weight: 400;
     color: var(--qa-text-arabic);
     direction: rtl;
+
     /* line-height 1.15 was too tight: the U+FDFD glyph's descender extends
        below the line-box and crashed into the translation span below it.
        Bumped to 1.5 so the line-box matches the rendered glyph extent and
@@ -117,12 +118,14 @@
       row-gap: 0.5rem;
       padding: 0.5rem 0.75rem;
     }
+
     .qa-surah-meta-col {
       grid-column: 1;
       grid-row: auto;
       align-items: center;
       text-align: center;
     }
+
     .qa-surah-name {
       grid-column: 1;
       grid-row: auto;
@@ -241,6 +244,7 @@
     text-align: start;
     color: var(--qa-text-arabic);
     margin-bottom: 0.875rem;
+
     /* Amiri Quran ships contextual marks, ligatures, kerning AND mark/mkmk
        positioning. Setting font-feature-settings to an explicit list (even
        a permissive one with "liga", "calt", "kern", "rlig" all on) caused
@@ -266,6 +270,84 @@
 
   .qa-verse-translation.qa-hide-translation {
     display: none;
+  }
+
+  /* Footnote marker — superscript button inside translation text. Click toggles
+     the inline footnote panel for the verse. Sized down + colored to read as a
+     reference mark, not a UI control. */
+  .qa-fn-marker {
+    display: inline;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0 0.1em;
+    margin: 0;
+    font: inherit;
+    font-size: 0.7em;
+    line-height: 1;
+    vertical-align: super;
+    color: var(--qa-accent);
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.15em;
+    border-radius: 2px;
+  }
+
+  .qa-fn-marker::before { content: '['; }
+  .qa-fn-marker::after  { content: ']'; }
+
+  .qa-fn-marker:hover,
+  .qa-fn-marker:focus-visible {
+    color: var(--qa-accent-hover);
+    outline: 2px solid var(--qa-accent);
+    outline-offset: 1px;
+  }
+
+  .qa-fn-marker[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--qa-accent) 12%, transparent);
+  }
+
+  /* Inline footnote panel — appears below the verse translation while open.
+     One panel per verse at most. */
+  .qa-fn-popover {
+    margin: 0.4rem 0 0.2rem 0.5rem;
+    padding: 0.55rem 2rem 0.55rem 0.7rem;
+    border-left: 2px solid var(--qa-accent);
+    background: color-mix(in srgb, var(--qa-accent) 6%, transparent);
+    color: var(--qa-text-primary);
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.92);
+    line-height: 1.5;
+    border-radius: 4px;
+    position: relative;
+    text-wrap: pretty;
+  }
+
+  .qa-fn-popover-num {
+    font-weight: 600;
+    margin-right: 0.4em;
+    color: var(--qa-accent);
+  }
+
+  .qa-fn-popover-close {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.3rem;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0.15rem 0.4rem;
+    color: var(--qa-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+
+  .qa-fn-popover-close:hover,
+  .qa-fn-popover-close:focus-visible {
+    color: var(--qa-text-primary);
+    outline: 2px solid var(--qa-accent);
+    outline-offset: 1px;
   }
 
   /* Surah end marker */

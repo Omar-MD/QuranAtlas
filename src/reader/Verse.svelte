@@ -3,12 +3,14 @@
   import { Events } from '../core/constants'
   import { tagSession } from '../state/tag-session.svelte'
   import VerseTagPanel from './VerseTagPanel.svelte'
+  import { parseTranslationTokens } from './translation-tokens'
 
   interface Props {
     verseKey: string
     arabic: string
     translation: string
     translationVisible: boolean
+    footnotes?: Record<string, string>
     riwayah?: 'hafs' | 'warsh' | 'qaloon'
     setupLongPress?: (node: HTMLElement) => () => void
     onNumberTap?: (verseEl: HTMLElement) => void
@@ -19,6 +21,7 @@
     arabic,
     translation,
     translationVisible,
+    footnotes = {},
     riwayah = 'qaloon',
     setupLongPress,
     onNumberTap,
@@ -27,6 +30,9 @@
   const verseNum = $derived(verseKey.split(':')[1] ?? '')
   const surahNum = $derived(verseKey.split(':')[0] ?? '')
   const isActive = $derived(tagSession.verseKey === verseKey && tagSession.quickbarOpen)
+  const tokens = $derived(parseTranslationTokens(translation))
+
+  let openFn = $state<string | null>(null)
 
   function handleMount(node: HTMLElement) {
     const key = node.getAttribute('data-verse-key') ?? verseKey
@@ -41,6 +47,17 @@
   function handleNumberTap(e: MouseEvent) {
     const verseEl = (e.currentTarget as HTMLElement).closest('.qa-verse') as HTMLElement | null
     if (verseEl && onNumberTap) { onNumberTap(verseEl) }
+  }
+
+  function toggleFootnote(idx: string) {
+    openFn = openFn === idx ? null : idx
+  }
+
+  function handleFootnoteKey(e: KeyboardEvent) {
+    if (e.key === 'Escape' && openFn !== null) {
+      openFn = null
+      e.stopPropagation()
+    }
   }
 </script>
 
@@ -69,7 +86,38 @@
     class="qa-verse-translation"
     class:qa-hide-translation={!translationVisible}
     data-translation=""
-  >{translation}</div>
+    onkeydown={handleFootnoteKey}
+    role="presentation"
+  >
+    {#each tokens as t, i (i)}
+      {#if t.type === 'text'}{t.value}{:else}<button
+          type="button"
+          class="qa-fn-marker"
+          data-fn={t.idx}
+          aria-expanded={openFn === t.idx}
+          aria-controls="fn-{verseKey}-{t.idx}"
+          aria-label="Footnote {t.idx}"
+          onclick={() => toggleFootnote(t.idx)}
+        >{t.idx}</button>{/if}
+    {/each}
+  </div>
+  {#if translationVisible && openFn !== null && footnotes[openFn]}
+    <div
+      class="qa-fn-popover"
+      id="fn-{verseKey}-{openFn}"
+      role="note"
+      data-footnote=""
+    >
+      <span class="qa-fn-popover-num" aria-hidden="true">[{openFn}]</span>
+      <span class="qa-fn-popover-text">{footnotes[openFn]}</span>
+      <button
+        type="button"
+        class="qa-fn-popover-close"
+        aria-label="Close footnote"
+        onclick={() => { openFn = null }}
+      >×</button>
+    </div>
+  {/if}
   {#if isActive}
     <VerseTagPanel {verseKey} />
   {/if}

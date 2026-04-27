@@ -16,9 +16,9 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 
 ### Reading experience
 
-- Continuous verse-interleaved layout. Arabic (Uthmani script, Amiri Quran by Khaled Hosny) on top of each verse. English translation surface is scaffolded but no translation pack ships today — toggle is present in code, ready to surface packs once they land.
+- Continuous verse-interleaved layout. Arabic (Uthmani script, Amiri Quran by Khaled Hosny) on top of each verse with the English translation directly below.
+- **English translation: Saheeh International** (free for non-commercial distribution by the Saheeh International Foundation). All 6,236 verses plus 1,903 inline footnotes — tap a `[N]` marker in any verse to disclose the footnote text. Translation visibility toggles on/off and persists across sessions.
 - **Riwayah picker.** Three transmissions ship: Ḥafṣ ʿan ʿĀṣim, Warsh ʿan Nāfiʿ, Qālūn ʿan Nāfiʿ. Default Qālūn. Choose at first launch (onboarding screen 3) or change anytime in Settings → Reading. All three Riwayat render in the same Amiri Quran face — the Riwayah text data drives the orthographic differences (small high seen `U+06EC` for Warsh/Qaloon, alif waslah, riwaya-specific marks).
-- Translation toggle (on/off) — persists across sessions.
 - Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — and flips live when the OS changes.
 - Adjustable font size (slider in Settings, live preview); keyboard bindings (`⌘↑` / `⌘↓` / `0`) for quick changes.
 - Chunked rendering so long surahs like Al-Baqarah stay responsive.
@@ -53,7 +53,7 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 ### Settings
 
 - Bottom sheet (mobile: tap gear ⚙ in `MarginHeader`; desktop: `G`+`P` shortcut or command sheet "Preferences").
-- Theme swatches, Riwayah three-swatch picker, font slider with live preview, translation toggle (empty state today), Clear-all-data link.
+- Theme swatches, Riwayah three-swatch picker, font slider with live preview, translation toggle, Clear-all-data link.
 - Clear data wipes IDB and restarts onboarding — nothing leaves the device.
 
 ### Keyboard shortcuts
@@ -96,7 +96,8 @@ Deliberately out of scope — not on the roadmap unless that changes:
 - Copy-verse-to-clipboard or social sharing.
 - Multi-device sync or accounts.
 - Community features, shared annotations, public libraries.
-- Translations are not currently shipped — the toggle, picker, and onboarding screen 4 scaffolding remain in code, ready to surface translation packs once they land.
+- Only one English translation ships today (Saheeh International). The translation picker is reserved for when a second pack lands; future candidates and licensing notes live in `docs/context/future-work.md` §Translation packs.
+- Per-surah introductions are not yet shipped — the translation pack schema reserves space for them but the current source (Saheeh) does not provide them via API.
 - Footnotes or tafsir.
 - Export / import of marks.
 

@@ -40,12 +40,18 @@ export type TranslationEntry = {
   id: string
   name: string
   subtitle: string
+  language: string
 }
 
+export type TranslationVerse = { key: string; text: string }
+
 export type TranslationPayload = {
-  id: string
-  surah: number
-  ayat: Array<{ aya_no: number; text: string }>
+  translationId: string
+  translationVersion: string
+  surahNo: number
+  intro: string[]
+  verses: TranslationVerse[]
+  footnotes: Record<string, string>
 }
 
 type ManifestJson = { files: Record<string, unknown> }
@@ -61,9 +67,18 @@ type ProvenanceRiwayahEntry = {
 
 type ProvenanceTranslationEntry = {
   id?: string
-  name?: string
-  author?: string
+  label?: string
+  translator?: string
+  language?: string
+  version?: string
+  ayatCount?: number
+  footnoteCount?: number
+  hasIntros?: boolean
+  license?: string
+  licenseUrl?: string
   source?: string
+  sourceUrl?: string
+  fetchedAt?: string
 }
 
 type ProvenanceJson = {
@@ -153,29 +168,41 @@ export async function getSurahs(): Promise<SurahMeta[]> {
  * Get the list of translations actually present in the shipped dataset.
  * Sourced from provenance.json so the UI never offers options the corpus
  * does not contain.
- *
- * Currently empty — translation packs land in a future milestone. The
- * picker / toggle / onboarding screen all tolerate an empty list.
  */
 export async function getTranslations(): Promise<TranslationEntry[]> {
   const provenance = await fetchNetworkFirst(`${DATASET_BASE}/provenance.json`) as ProvenanceJson
   const entries = Array.isArray(provenance.translations) ? provenance.translations : []
   return entries.map((entry) => {
-    const name = entry.name || 'Translation'
+    const name = entry.label || 'Translation'
     const id = entry.id || slugify(name)
-    const subtitle = entry.author ? entry.author : (entry.source || '')
-    return { id, name, subtitle }
+    const subtitle = entry.translator || entry.source || ''
+    const language = entry.language || 'en'
+    return { id, name, subtitle, language }
   })
 }
 
 /**
- * Load a translation pack for a single surah. Returns null when the
- * translation isn't shipped — no translations ship today, so this always
- * returns null. Wired up later when translation packs land.
+ * Load a translation pack for a single surah. Returns null when no pack is
+ * shipped for the requested id (graceful when the user picks a translation
+ * that has been removed from the dataset).
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function loadTranslationForSurah(_translationId: string, _surahNo: number): Promise<TranslationPayload | null> {
-  return null
+export async function loadTranslationForSurah(translationId: string, surahNo: number): Promise<TranslationPayload | null> {
+  if (!translationId) { return null }
+  if (surahNo < 1 || surahNo > 114 || !Number.isInteger(surahNo)) {
+    throw new Error(`Invalid surah number: ${surahNo}`)
+  }
+  const padded = String(surahNo).padStart(3, '0')
+  const url = `${DATASET_BASE}/translations/${translationId}/${padded}.json`
+  try {
+    return await fetchNetworkFirst(url) as TranslationPayload
+  } catch (e) {
+    // Translation pack absent for this id — the reader continues without
+    // translations rather than failing the surah load.
+    if (e instanceof Error && /404|Failed to fetch/.test(e.message)) {
+      return null
+    }
+    throw e
+  }
 }
 
 function slugify(text: string): string {

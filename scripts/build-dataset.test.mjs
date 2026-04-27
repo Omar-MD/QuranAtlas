@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitRiwayah, computeSurahsMeta, AYAT_COUNTS } from './build-riwayat.mjs'
+import { splitRiwayah, computeSurahsMeta, AYAT_COUNTS, buildTranslationSplits } from './build-dataset.mjs'
 
 describe('splitRiwayah', () => {
   const sampleHafs = [
@@ -70,5 +70,87 @@ describe('AYAT_COUNTS', () => {
     expect(AYAT_COUNTS.hafs).toBe(6236)
     expect(AYAT_COUNTS.warsh).toBe(6214)
     expect(AYAT_COUNTS.qaloon).toBe(6214)
+  })
+})
+
+describe('buildTranslationSplits', () => {
+  // Synthetic 114-surah translation source. Verse texts are placeholders; we
+  // assert structural invariants only (no real translation content needed for
+  // the unit test).
+  function makeFakeSource(perSurahCounts, mutate) {
+    const surahs = {}
+    for (let n = 1; n <= 114; n++) {
+      const k = String(n).padStart(3, '0')
+      const cnt = perSurahCounts[n - 1]
+      const verses = Array.from({ length: cnt }, (_, i) => ({ key: `${n}:${i + 1}`, text: `placeholder-${n}-${i + 1}` }))
+      surahs[k] = { intro: [], verses, footnotes: {} }
+    }
+    const src = {
+      translationId: 'fake', translationVersion: 'v0', surahs,
+      counts: { surahs: 114, verses: perSurahCounts.reduce((a, b) => a + b, 0), footnotes: 0 },
+    }
+    if (mutate) { mutate(src) }
+    return src
+  }
+
+  const HAFS_TINY = Array(114).fill(2)
+
+  it('happy path — 114 surahs with matching counts produce per-surah payloads', () => {
+    const src = makeFakeSource(HAFS_TINY)
+    const { perSurah, totals } = buildTranslationSplits(src, HAFS_TINY)
+    expect(Object.keys(perSurah)).toHaveLength(114)
+    expect(perSurah['001']).toMatchObject({ translationId: 'fake', translationVersion: 'v0', surahNo: 1, intro: [], footnotes: {} })
+    expect(perSurah['001'].verses).toEqual([{ key: '1:1', text: 'placeholder-1-1' }, { key: '1:2', text: 'placeholder-1-2' }])
+    expect(totals.verses).toBe(228)
+    expect(totals.footnotes).toBe(0)
+  })
+
+  it('throws when verse count drifts from Hafs count', () => {
+    const src = makeFakeSource(HAFS_TINY, (s) => { s.surahs['001'].verses.pop() })
+    expect(() => buildTranslationSplits(src, HAFS_TINY)).toThrow(/verse count/)
+  })
+
+  it('throws when verse keys are misaligned', () => {
+    const src = makeFakeSource(HAFS_TINY, (s) => { s.surahs['001'].verses[0].key = '99:99' })
+    expect(() => buildTranslationSplits(src, HAFS_TINY)).toThrow(/expected 1:1/)
+  })
+
+  it('throws when surah count is wrong', () => {
+    const src = makeFakeSource(HAFS_TINY, (s) => { delete s.surahs['114'] })
+    expect(() => buildTranslationSplits(src, HAFS_TINY)).toThrow(/expected 114/)
+  })
+
+  it('resolves [N] markers and accepts contiguous footnote map', () => {
+    const src = makeFakeSource(HAFS_TINY, (s) => {
+      s.surahs['001'].verses[0].text = 'before[1] middle[2] end'
+      s.surahs['001'].footnotes = { '1': 'first note', '2': 'second note' }
+    })
+    const { perSurah } = buildTranslationSplits(src, HAFS_TINY)
+    expect(perSurah['001'].footnotes).toEqual({ '1': 'first note', '2': 'second note' })
+    expect(perSurah['001'].verses[0].text).toBe('before[1] middle[2] end')
+  })
+
+  it('throws when a [N] marker has no matching footnote (orphan)', () => {
+    const src = makeFakeSource(HAFS_TINY, (s) => {
+      s.surahs['001'].verses[0].text = 'lonely[1] marker'
+      s.surahs['001'].footnotes = {}
+    })
+    expect(() => buildTranslationSplits(src, HAFS_TINY)).toThrow(/no matching footnote/)
+  })
+
+  it('throws when footnote keys are non-contiguous', () => {
+    const src = makeFakeSource(HAFS_TINY, (s) => {
+      s.surahs['001'].verses[0].text = 'a[1] b[3]'
+      s.surahs['001'].footnotes = { '1': 'x', '3': 'y' }
+    })
+    expect(() => buildTranslationSplits(src, HAFS_TINY)).toThrow(/non-contiguous/)
+  })
+
+  it('throws when a defined footnote is unreferenced', () => {
+    const src = makeFakeSource(HAFS_TINY, (s) => {
+      s.surahs['001'].verses[0].text = 'only[1] used'
+      s.surahs['001'].footnotes = { '1': 'used', '2': 'orphan' }
+    })
+    expect(() => buildTranslationSplits(src, HAFS_TINY)).toThrow(/non-contiguous|never referenced/)
   })
 })

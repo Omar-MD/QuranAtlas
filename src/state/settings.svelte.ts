@@ -10,7 +10,7 @@ export const settings = $state({
   theme: 'auto' as Theme,
   riwayah: 'qaloon' as Riwayah,
   fontSize: 'md' as FontSize,
-  translationId: null as TranslationId,
+  translationId: 'saheeh' as TranslationId,
   translationVisible: true,
   lineSpacing: 'md' as ReadingStep,
   wordSpacing: 'md' as ReadingStep,

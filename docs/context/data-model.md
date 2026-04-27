@@ -32,7 +32,7 @@ The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes 
 | `nightMode` | boolean | `settings/night-mode.ts` | Night recitation mode (dim+warm overlay via `.qa-night-shift`). Sole writer. |
 | `surahHeaderHidden` | boolean | `settings/surah-header-visibility.ts` | User hid the in-reader Surah Header (title + meta + juz). Toggled by MarginHeader center-label tap. Bismillah + verses still render. Default `false`. Persists across surah navigation. Sole writer. |
 | `translationVisible` | boolean | `settings/Panel.svelte` | Translation-toggle state. |
-| `translationId` | `'saheeh' \| 'pickthall' \| 'yusuf' \| 'khattab'` | `settings/Panel.svelte`, `onboarding/Onboarding.svelte` | Selected translation. |
+| `translationId` | string (id from `provenance.translations[]`; default `'saheeh'`) | `settings/Panel.svelte`, `onboarding/Onboarding.svelte` | Selected translation. Validated at read time against the shipped pack list. |
 | `lastSurface` | string (hash path) | `core/router.ts`, `review/Hub.svelte` (FVR) | Where to resume on next launch. |
 | `recentSurahs` | `number[]` (length ≤5) | `App.svelte` (`$effect` on `reader.currentSurahNum`) | Feeds the surah-list "Recent" filter. |
 | `onboardingComplete` | boolean | `onboarding/Onboarding.svelte` | First-run flow completion flag. |
@@ -266,7 +266,25 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 
 ## Static datasets (read-only, not in IDB)
 
-- `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-riwayat.mjs` from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+- `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-dataset.mjs` (renamed from `build-riwayat.mjs` 2026-04-27) from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+
+### Translation packs
+
+- `public/dataset/translations/{id}/{NNN}.json` (114 files per shipped translation) — per-surah translation pack consumed by `Reader.svelte` via `dataset.ts::loadTranslationForSurah(id, n)`. **Schema:**
+  ```ts
+  {
+    translationId: string,         // 'saheeh', 'bridges', etc.
+    translationVersion: string,    // upstream id + fetch month, e.g. '20.2026-04'
+    surahNo: number,               // 1..114
+    intro: string[],               // optional surah intro paragraphs (empty array when not shipped)
+    verses: Array<{ key: string, text: string }>,
+    footnotes: Record<string, string>, // keys '1'..'K' contiguous; markers in text are `[N]` tokens
+  }
+  ```
+- `public/dataset/translations/{id}.raw.json` — **monolithic source**, committed to git, produced by per-translation fetch scripts (`scripts/fetch-translation-saheeh.mjs`). Skipped from `manifest.json` like the riwayat sources. Re-run the fetch script only when refreshing the upstream pack; ordinary builds run offline against the committed source.
+- **Invariants (asserted by `scripts/build-dataset.mjs::buildTranslationSplits`):** 114 surahs present; per-surah verse count matches Hafs counting from `surahs.json`; verse keys are exactly `${surahNo}:${1..count}`; every `[N]` marker in verse text resolves to `footnotes[N]`; footnote keys are contiguous 1..K; every defined footnote is referenced at least once. Build hard-fails on any violation.
+- **Markers:** `[N]` tokens in verse text are tokenised by `src/reader/translation-tokens.ts` and rendered as buttons by `Verse.svelte`; clicking one expands the footnote text inline below the translation. Translation strings stay byte-exact end-to-end (the build script does not normalize whitespace or punctuation) so license terms remain valid for redistribution.
+- **provenance.json `translations[]`** — one entry per shipped pack: `{ id, label, translator, language, version, ayatCount, footnoteCount, hasIntros, license, licenseUrl, source, sourceUrl, fetchedAt }`. The Settings translation picker reads this list (via `dataset.ts::getTranslations`) so the UI never offers a pack the dataset does not contain.
 
 ## Cross-cutting rules
 

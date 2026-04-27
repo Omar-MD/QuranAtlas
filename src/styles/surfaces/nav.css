@@ -538,6 +538,7 @@
     padding: 4px 8px;
     color: var(--qa-text-on-sheet);
     min-width: 0;
+
     /* Ellipsis lives on this container, not the inner span — hiding overflow
        on the span clipped tashkeel descenders vertically. */
     overflow: hidden;
@@ -553,6 +554,7 @@
     font-family:
       'Amiri Quran',
       var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
+
     /* 18px fits the longest 14-char names (المُنَافِقُونَ etc.) on 390px
        viewports once the ≡ + ⚙ buttons claimed their 48px each. The
        header content-box is 56px so descent fits at line-height 1.55.
@@ -563,6 +565,7 @@
     line-height: 1.55;
     white-space: nowrap;
     text-overflow: ellipsis;
+
     /* overflow:hidden lives on the `.qa-mh-label` container instead — on
        this span it cropped descenders / tashkeel marks vertically. */
     max-width: 100%;

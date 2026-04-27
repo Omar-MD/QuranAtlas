@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm build:dataset && vite build",
-    "build:dataset": "node scripts/build-riwayat.mjs",
+    "build:dataset": "node scripts/build-dataset.mjs",
+    "fetch:translation:saheeh": "node scripts/fetch-translation-saheeh.mjs",
     "preview": "vite preview --strictPort",
     "test": "vitest",
     "test:run": "vitest run",

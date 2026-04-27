@@ -15,6 +15,7 @@
 
   const credits = [
     "Qur'an text (Hafs, Warsh, Qaloon riwayat): King Fahd Glorious Qur'an Printing Complex (مجمع الملك فهد لطباعة المصحف الشريف), Madinah",
+    'English translation & footnotes: Saheeh International (free for non-commercial distribution by the Saheeh International Foundation)',
     'Latin & Arabic typography: Amiri and Amiri Quran by Khaled Hosny (SIL Open Font License)',
     'Built with Svelte, Vite, and Workbox',
   ]

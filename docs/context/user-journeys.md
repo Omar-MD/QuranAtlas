@@ -64,7 +64,7 @@ Screens: 1) Welcome, 2) Theme, 3) Riwayah, 4) Translation, 5) Shortcuts, 6) Tags
 2. Screen 1 (Welcome): wordmark, blessing, Begin CTA, progress dot 1 lit. No dock, no pill.
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears.
 4. Pick a theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Choose Riwayah): three radio cards — Ḥafṣ ʿan ʿĀṣim · Warsh ʿan Nāfiʿ · Qālūn ʿan Nāfiʿ. Default-selected: Qālūn. Tap **Continue** to persist and advance; tap **Skip** to leave the default unchanged and advance. Persists `settings['riwayah']` (sole writer `settings/riwayah.ts`).
-5. Tap **Continue** → Screen 4 (Translation): the options are derived from the shipped dataset's `provenance.json`. Today no translation pack ships (`provenance.translations[]` is empty), so the screen shows an empty state and the Continue button advances immediately. The scaffolding is ready to surface translation packs once they land.
+5. Tap **Continue** → Screen 4 (Translation): the options are derived from the shipped dataset's `provenance.json`. Saheeh International ships as the default English pack (since 2026-04-27); when it is the only available option the screen shows it as a single non-interactive row and the Continue button advances immediately. Picker becomes interactive once a second translation lands.
 6. Tap **Continue** → Screen 5 (Shortcuts). Screen 5 teaches core shortcuts: `/` search; `?` full cheatsheet; `j` / `k` / `]` / `[` verse/surah nav; `m` mark; `t` translation toggle; `+` / `-` / `0` font; `g h` continue reading; double-tap to mark. Desktop renders 2-col grid; mobile stacks single-col. Tap **Continue** → Screen 6 (Tags intro).
 7. Screen 6: 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, `#/s/1`, ambient chrome returns.
 
@@ -138,6 +138,20 @@ On the reader.
 **Mobile drawer (full-screen, post 2026-04-25):** Hamburger or swipe-down opens a full-screen drawer with two tabs — **Surahs** (default) · **Review**. Surahs tab: search input + filter pills (All / ★ Bookmarked / ⏱ Recent) + scrolling surah list, auto-scrolled to and highlighting the currently-reading surah. Each row shows the number badge, English name, optional ★ bookmark glyph, and the **Arabic surah title** (`s.name_ar`, RTL, `--qa-font-arabic`) right-aligned (added 2026-04-27 — was rendering blank because the component read a non-existent `arabic` field). Review tab: top **Hub** row (→ `#/review`) + 12 layer rows in 4 grouped sections (Speech / Narrative / Themes / Entities) — tapping a layer navigates to `#/review?layer=<name>`. Header carries a tappable QuranAtlas wordmark + ⓘ icon → `#/about`. ✕ closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state is local; not persisted. **Regression guards:** `tests/unit/nav/drawer.test.ts` (Review tab structure, search-text filter, Bookmarked pill, 2:255 ref-jump hint + Enter, verseNum filter, Arabic-title-on-every-row — Rule 5 break-and-restore validated) + `tests/e2e/journey-f-navigation.spec.js` `F-mobile-1` (current-surah highlight) / `F-mobile-2` (layer-tap navigates) / `F-mobile-3` (wordmark→About) / `F-mobile-4` (deep-link redirect) / `F-mobile-5` (center-label no-op).
 
 **Invariant (mobile, post 2026-04-25):** the hamburger drawer is the sole in-app entry to the full surah list. The standalone `#/surahs` page renders only on desktop ≥1180px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
+
+### B-Translation. Read English translation + open inline footnote
+
+On the reader, with `settings.translationVisible: true` (default).
+
+1. Surah loads. Each verse renders Arabic on top and the English translation directly below in a flowing single-line block.
+2. Within the translation, footnote references appear as small bracketed numbers (`[1]`, `[2]`, …) coloured in the accent hue. Sequential within the surah; the same upstream footnote appearing in two verses appears under two different per-surah indices.
+3. Tap a `[N]` marker → an inline footnote panel discloses below the translation with the footnote text and a `×` close button. `aria-expanded="true"` flips on the marker.
+4. Tap the same marker again, or the `×`, or press **Esc** with focus inside the verse → panel closes. Tapping a different marker swaps the open panel to that footnote (one open footnote per verse at any time).
+5. Toggle **Hide translation** (Settings sheet or `t` key) → the translation block, all `[N]` markers, and any open footnote panel disappear in one repaint via `settings.translationVisible` rune. Toggling back on restores text and markers but starts with no panel open.
+
+**Surfaces:** Reader (`Verse.svelte`, `reader/translation-tokens.ts`). **Persistence/regression-guards:** `tests/unit/reader/translation-tokens.test.ts` (token parser — text/marker splits, contiguous markers, no markers, malformed). Translation pack absent / `loadTranslationForSurah` returns `null` ⇒ verses render with empty translation strings, no markers, no panels — reader stays functional.
+
+**Default translation:** Saheeh International (`settings.translationId === 'saheeh'`); see `data-model.md` §Translation packs for schema and `architecture.md` §Translation pipeline for the build/runtime path.
 
 ### B2. Scroll hides dock, scroll-to-top surfaces it
 
@@ -341,9 +355,8 @@ Inside Settings sheet, post 2026-04-25.
 
 Inside Settings sheet. Available translations are sourced from the dataset's `provenance.json` at render time — the picker never surfaces options that aren't actually present in the corpus.
 
-1. The **Show translation** row's subtitle shows the name of the currently-selected translation. Today no translation pack ships (`provenance.translations[]` is empty), so the row is non-interactive and the sub-view is not shown.
-2. When a translation pack ships, the row becomes interactive and tapping it opens the Translation picker sub-view. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
-4. Toggle the translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on the rune re-renders with the translation line hidden/shown.
+1. The **Show translation** row's subtitle shows the name of the currently-selected translation — Saheeh International by default since 2026-04-27. With a single shipped pack the picker sub-view is not opened on tap (the row is informational); when a second pack lands the row becomes interactive and tapping it opens the Translation picker sub-view. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
+2. Toggle the translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on the rune re-renders with the translation line hidden/shown. Footnote markers (`[N]`) and any open inline footnote panels disappear with the translation.
 
 **Surfaces:** Settings sheet, Reader. **Persistence:** `settings.translationId`, `settings.translationVisible`.
 

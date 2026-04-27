@@ -500,4 +500,52 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     }).toPass({ timeout: 3_000 })
     await page.keyboard.press('Escape')
   })
+
+  // -------------------------------------------------------------------------
+  // B-Translation: Saheeh translation pack renders + footnote disclosure
+  // -------------------------------------------------------------------------
+  // Real layout / paint criterion (Rule 9 §1): the popover panel mounts inside
+  // the verse and depends on the actual reader DOM tree being live (chunked
+  // append, marker tokenisation, ARIA wiring). Unit tests cover the parser
+  // and the loader; this spec covers the assembled stack.
+
+  test('B-Translation: shipped translation renders with footnote markers; markers disclose inline panel; Esc closes', async ({ page }) => {
+    // Verse 1:1 must render with at least one [N] marker rendered as a button.
+    const v1 = page.locator('.qa-verse[data-verse="1"]')
+    await expect(v1).toBeVisible()
+
+    const translation = v1.locator('.qa-verse-translation')
+    await expect(translation).toBeVisible()
+    // Translation text non-empty.
+    const translationText = (await translation.textContent()) ?? ''
+    expect(translationText.trim().length).toBeGreaterThan(10)
+
+    // At least one footnote marker button is present in v1.
+    const markers = v1.locator('button.qa-fn-marker')
+    expect(await markers.count()).toBeGreaterThan(0)
+
+    const firstMarker = markers.first()
+    await expect(firstMarker).toHaveAttribute('aria-expanded', 'false')
+
+    // Tap marker → inline footnote panel appears.
+    await firstMarker.click()
+    await expect(firstMarker).toHaveAttribute('aria-expanded', 'true')
+    const panel = v1.locator('.qa-fn-popover')
+    await expect(panel).toBeVisible()
+    const panelText = (await panel.textContent()) ?? ''
+    // Panel must include a footnote-number prefix (`[1]` etc.) plus body text.
+    expect(panelText.length).toBeGreaterThan(5)
+
+    // Close button dismisses the panel and flips aria-expanded back.
+    await panel.locator('.qa-fn-popover-close').click()
+    await expect(panel).toHaveCount(0)
+    await expect(firstMarker).toHaveAttribute('aria-expanded', 'false')
+
+    // Re-open, then dismiss with Esc.
+    await firstMarker.click()
+    await expect(v1.locator('.qa-fn-popover')).toBeVisible()
+    await firstMarker.focus()
+    await page.keyboard.press('Escape')
+    await expect(v1.locator('.qa-fn-popover')).toHaveCount(0)
+  })
 })

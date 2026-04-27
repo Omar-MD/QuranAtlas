@@ -85,11 +85,49 @@ describe('data/dataset', () => {
   })
 
   describe('getTranslations()', () => {
-    it('returns empty array when provenance.translations is empty', async () => {
+    it('lists each shipped pack with id, label, translator, language', async () => {
       const { getTranslations } = await import('../../../src/data/dataset.ts')
       const list = await getTranslations()
       expect(Array.isArray(list)).toBe(true)
-      expect(list).toHaveLength(0)
+      expect(list.length).toBeGreaterThanOrEqual(1)
+      const saheeh = list.find((t) => t.id === 'saheeh')
+      expect(saheeh).toBeDefined()
+      expect(saheeh.name).toBe('Saheeh International')
+      expect(saheeh.subtitle).toBe('Saheeh International')
+      expect(saheeh.language).toBe('en')
+    })
+  })
+
+  describe('loadTranslationForSurah()', () => {
+    it('returns the per-surah pack for a shipped translation', async () => {
+      const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
+      const pack = await loadTranslationForSurah('saheeh', 1)
+      expect(pack).not.toBeNull()
+      expect(pack.translationId).toBe('saheeh')
+      expect(pack.surahNo).toBe(1)
+      expect(Array.isArray(pack.verses)).toBe(true)
+      expect(pack.verses.length).toBeGreaterThan(0)
+      expect(pack.verses[0].key).toBe('1:1')
+      // Saheeh ships footnotes for the bismillah verse — at least one should be present.
+      expect(Object.keys(pack.footnotes).length).toBeGreaterThan(0)
+    })
+
+    it('returns null for an absent translation pack (404)', async () => {
+      const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
+      const pack = await loadTranslationForSurah('does-not-exist', 1)
+      expect(pack).toBeNull()
+    })
+
+    it('rejects out-of-range surah numbers', async () => {
+      const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
+      await expect(loadTranslationForSurah('saheeh', 0)).rejects.toThrow()
+      await expect(loadTranslationForSurah('saheeh', 115)).rejects.toThrow()
+    })
+
+    it('returns null for an empty id', async () => {
+      const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
+      const pack = await loadTranslationForSurah('', 1)
+      expect(pack).toBeNull()
     })
   })
 })
