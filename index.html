@@ -17,17 +17,14 @@
   <meta name="description" content="Distraction-free Quran reading PWA — read, reflect, remember.">
   <title>QuranAtlas</title>
   <link rel="preload" href="/src/styles/index.css" as="style">
-  <!-- Preload critical above-the-fold fonts — KFGQPC for verses (any of three
-       riwayat is reachable at boot via the `data-riwayah` attribute) and
-       Amiri Quran for the MarginHeader Arabic surah label. `crossorigin` is
-       required for `as=font` per HTML spec — fonts always go through CORS
-       in anonymous mode (CSS Fonts L4 §4.8.2 Font fetching requirements),
-       and dropping the attribute would leave the preload unmatched even on
-       same-origin. `type="font/woff2"` so the browser picks the right
-       priority bucket without sniffing. -->
-  <link rel="preload" href="/fonts/kfgqpc-hafs/hafs.18.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/fonts/kfgqpc-warsh/warsh.10.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/fonts/kfgqpc-qaloon/qaloon.10.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- Preload critical above-the-fold font — Amiri Quran is the single
+       Arabic Quranic face used for verses across all three riwayat AND
+       the MarginHeader Arabic surah label. `crossorigin` is required for
+       `as=font` per HTML spec — fonts always go through CORS in anonymous
+       mode (CSS Fonts L4 §4.8.2 Font fetching requirements), and dropping
+       the attribute would leave the preload unmatched even on same-origin.
+       `type="font/woff2"` so the browser picks the right priority bucket
+       without sniffing. -->
   <link rel="preload" href="/fonts/amiri-quran/AmiriQuran-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/favicon.ico" sizes="any">
@@ -39,15 +36,13 @@
        Android Blink and Playwright WebKit but Safari 17+ on real iPhones
        still skipped font registration: iOS defers paint for sub-pixel font
        and content positioned outside the viewport, so the @font-face never
-       fires.  Round 2 uses visibility:hidden + zero box + a real 16px
+       fires. Round 2 uses visibility:hidden + zero box + a real 16px
        font-size + an Arabic codepoint inside @font-face unicode-range.
        visibility:hidden keeps the element in the render tree (display:none
        drops it and re-triggers the bug); width/height:0 + overflow:hidden
        keeps it layout-inert; font-size:16px ensures iOS WebKit treats the
        element as a real glyph render so it actually fetches the font. -->
-  <div aria-hidden="true" style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;font-size:16px;font-family:'KFGQPC Hafs',serif">ا</div>
-  <div aria-hidden="true" style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;font-size:16px;font-family:'KFGQPC Warsh',serif">ا</div>
-  <div aria-hidden="true" style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;font-size:16px;font-family:'KFGQPC Qaloon',serif">ا</div>
+  <div aria-hidden="true" style="visibility:hidden;position:absolute;width:0;height:0;overflow:hidden;font-size:16px;font-family:'Amiri Quran',serif">ا</div>
   <div id="app"></div>
   <script type="module" src="/src/app.ts"></script>
 </body>

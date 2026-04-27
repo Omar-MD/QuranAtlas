@@ -101,11 +101,6 @@ The `packageManager` field pins `pnpm@10.31.0` exactly. Commands also run under 
 - `PLAYWRIGHT_USE_PREVIEW=1` — run Playwright against a production preview build instead of the dev server. Used by `test:e2e:sw` and by CI (vite's on-demand compile under workers=6 on the 2-core runner serialised past the 25 s `waitForReader` timeout). When set, the `Offline (Preview)` project reuses the same preview server instead of spawning a second build.
 - `PLAYWRIGHT_SKIP_BUILD=1` — assume `dist/` already exists; skip the prebuild step inside the preview webServer command. CI sets this after downloading the `dist/` artifact from the Build job, avoiding a redundant rebuild.
 
-## Asset-prep tooling (one-off, not in CI)
-
-- **`ttfautohint` 1.8+** + **`woff2`** + **fontTools (Python)** + optional **`skia-pathops`**. Used by `scripts/font-diag/hint-kfgqpc.sh` to embolden + autohint the KFGQPC Hafs woff2 shipped under `public/fonts/`. Required because upstream KFGQPC TTFs are unhinted and WebKit / Skia handle unhinted fonts asymmetrically — see `docs/context/riwayat-dataset.md` § "Cross-engine rendering" for the full landscape and stopgap. Run manually after any KFGQPC asset re-import; not wired into `pnpm build`.
-  - Install: `brew install ttfautohint woff2` and `pip install fonttools brotli skia-pathops`.
-
 ## Architecture and internals
 
 These used to be inlined in this file; they now live in `docs/context/`:

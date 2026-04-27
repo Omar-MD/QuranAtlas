@@ -241,7 +241,7 @@
     text-align: start;
     color: var(--qa-text-arabic);
     margin-bottom: 0.875rem;
-    /* KFGQPC fonts ship contextual marks, ligatures, kerning AND mark/mkmk
+    /* Amiri Quran ships contextual marks, ligatures, kerning AND mark/mkmk
        positioning. Setting font-feature-settings to an explicit list (even
        a permissive one with "liga", "calt", "kern", "rlig" all on) caused
        iOS Safari to drop the default `mark` and `mkmk` features off the
