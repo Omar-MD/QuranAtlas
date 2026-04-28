@@ -183,14 +183,20 @@
     --qa-font-sans: var(--qa-font-ui);
   }
 
-  /* Riwayah-bound Arabic font. All three riwayat render in Amiri Quran —
-     single calligraphic face cross-engine, full Quranic mark coverage,
-     no engine-conditional fallback. Riwayah text data still drives the
-     orthographic differences (Hafs vs Warsh vs Qaloon glyphs in the
-     dataset); only the calligrapher's hand is unified. */
+  /* Riwayah-bound Arabic font. Default = Amiri Quran across all three
+     riwayat (single calligraphic face, cross-engine, full Quranic mark
+     coverage). User may override per riwayah via the typography settings:
+     `[data-arabic-font='kfgqpc']` resolves to the riwayah-specific
+     KFGQPC mushaf cut, `[data-arabic-font='scheherazade']` to Scheherazade
+     New. Riwayah text data drives orthographic differences regardless. */
   :root[data-riwayah='hafs'],
   :root[data-riwayah='warsh'],
   :root[data-riwayah='qaloon'] { --qa-font-arabic: var(--ff-amiri-quran); }
+
+  :root[data-arabic-font='scheherazade'] { --qa-font-arabic: var(--ff-scheherazade-new); }
+  :root[data-riwayah='hafs'][data-arabic-font='kfgqpc']   { --qa-font-arabic: var(--ff-kfgqpc-hafs); }
+  :root[data-riwayah='warsh'][data-arabic-font='kfgqpc']  { --qa-font-arabic: var(--ff-kfgqpc-warsh); }
+  :root[data-riwayah='qaloon'][data-arabic-font='kfgqpc'] { --qa-font-arabic: var(--ff-kfgqpc-qaloon); }
 
   /* Stepped chrome — reading tokens stay fluid via clamp() above. */
   @media (min-width: 768px) {

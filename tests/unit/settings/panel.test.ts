@@ -30,7 +30,8 @@ import { del, get, openDB } from '../../../src/core/db.js'
 import { settings } from '../../../src/state/settings.svelte.ts'
 
 const FLOW_KEYS = ['theme', 'translationVisible', 'translationId', 'riwayah', 'fontSize',
-                   'lineSpacing', 'wordSpacing', 'readerMargin', 'verseSpacing'] as const
+                   'lineSpacing', 'wordSpacing', 'readerMargin', 'verseSpacing',
+                   'arabicFont_hafs', 'arabicFont_warsh', 'arabicFont_qaloon'] as const
 
 async function flush() {
   await Promise.resolve()
@@ -63,7 +64,11 @@ describe('Panel.svelte (D1 / D1b / D2 / D3 / D5)', () => {
       readerMargin: 'md',
       verseSpacing: 'md',
       nightMode: false,
+      arabicFontHafs: 'amiri-quran',
+      arabicFontWarsh: 'amiri-quran',
+      arabicFontQaloon: 'amiri-quran',
     })
+    document.documentElement.removeAttribute('data-arabic-font')
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.removeAttribute('data-theme-pref')
     document.documentElement.removeAttribute('data-night-mode')
@@ -243,5 +248,53 @@ describe('Panel.svelte (D1 / D1b / D2 / D3 / D5)', () => {
       expect(document.documentElement.dataset.readerMargin).toBe('md')
       expect(document.querySelector('[data-testid="typography-reset"]')).toBeNull()
     })
+  })
+
+  it('D5: Arabic font picker shows 3 swatches; click writes per-riwayah + applies attr', async () => {
+    Object.assign(settings, { riwayah: 'hafs' as const })
+    document.documentElement.setAttribute('data-riwayah', 'hafs')
+
+    await mountAndOpen()
+    const navBtn = [...document.querySelectorAll('.qa-settings-toggle-body')]
+      .find(el => el.textContent?.includes('Size, spacing & margins'))! as HTMLButtonElement
+    await fireEvent.click(navBtn)
+    await flush()
+
+    const swatches = document.querySelectorAll('.qa-arabic-font-swatch')
+    expect(swatches).toHaveLength(3)
+    expect(document.querySelector('[data-testid="arabic-font-amiri-quran"]')).not.toBeNull()
+    expect(document.querySelector('[data-testid="arabic-font-kfgqpc"]')).not.toBeNull()
+    expect(document.querySelector('[data-testid="arabic-font-scheherazade"]')).not.toBeNull()
+
+    const kfgqpc = document.querySelector('[data-testid="arabic-font-kfgqpc"]') as HTMLButtonElement
+    expect(kfgqpc.textContent).toContain('KFGQPC Ḥafṣ')
+
+    await fireEvent.click(kfgqpc)
+    await vi.waitFor(() => {
+      expect(settings.arabicFontHafs).toBe('kfgqpc')
+      expect(document.documentElement.getAttribute('data-arabic-font')).toBe('kfgqpc')
+    })
+    const stored = await get('settings', 'arabicFont_hafs') as { value: string } | undefined
+    expect(stored?.value).toBe('kfgqpc')
+  })
+
+  it('D5: Arabic font picker label re-renders when riwayah switches (Hafs → Warsh)', async () => {
+    Object.assign(settings, { riwayah: 'hafs' as const })
+    document.documentElement.setAttribute('data-riwayah', 'hafs')
+
+    await mountAndOpen()
+    const navBtn = [...document.querySelectorAll('.qa-settings-toggle-body')]
+      .find(el => el.textContent?.includes('Size, spacing & margins'))! as HTMLButtonElement
+    await fireEvent.click(navBtn)
+    await flush()
+
+    expect(document.querySelector('[data-testid="arabic-font-kfgqpc"]')?.textContent)
+      .toContain('KFGQPC Ḥafṣ')
+
+    Object.assign(settings, { riwayah: 'warsh' as const })
+    await flush()
+
+    expect(document.querySelector('[data-testid="arabic-font-kfgqpc"]')?.textContent)
+      .toContain('KFGQPC Warsh')
   })
 })

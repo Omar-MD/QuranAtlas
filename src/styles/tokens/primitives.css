@@ -126,6 +126,10 @@
        `serif` defers to system Arabic (iOS Geeza Pro, Android Noto Sans
        Arabic) which silently drops Quran-only marks. */
     --ff-amiri-quran: 'Amiri Quran', 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', serif;
+    --ff-scheherazade-new: 'Scheherazade New', 'Amiri Quran', 'Amiri', 'Noto Naskh Arabic', serif;
+    --ff-kfgqpc-hafs:   'KFGQPC Uthmanic Hafs', 'Amiri Quran', 'Scheherazade New', serif;
+    --ff-kfgqpc-warsh:  'KFGQPC Uthmanic Warsh', 'Amiri Quran', 'Scheherazade New', serif;
+    --ff-kfgqpc-qaloon: 'KFGQPC Uthmanic Qaloon', 'Amiri Quran', 'Scheherazade New', serif;
     --ff-translation: 'Newsreader', georgia, serif;
     --ff-sans:        system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
     --ff-mono:        'Geist Mono', ui-monospace, menlo, monospace;
