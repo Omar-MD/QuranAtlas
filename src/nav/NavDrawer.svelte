@@ -211,6 +211,12 @@
     touchStartY = t.clientY
   }
   function onTouchEnd(e: TouchEvent): void {
+    // Ignore swipes that started inside the bookmarks list — the row-level
+    // swipe-to-delete gesture handles its own horizontal swipe and would
+    // otherwise lose to the drawer-close handler (which uses the same
+    // dx<-48 threshold).
+    const target = e.target as HTMLElement | null
+    if (target?.closest('.qa-bookmarks-list')) { return }
     const t = e.changedTouches[0]
     if (!t) { return }
     const dx = t.clientX - touchStartX

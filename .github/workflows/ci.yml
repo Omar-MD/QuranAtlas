@@ -20,6 +20,82 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      e2e_relevant: ${{ steps.filter.outputs.e2e_relevant }}
+      reason: ${{ steps.filter.outputs.reason }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          # All untrusted inputs are surfaced via env (not interpolated into
+          # the run: body) to avoid command-injection vectors.
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          set -eu
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            BASE="$PR_BASE_SHA"
+            HEAD="$PR_HEAD_SHA"
+          else
+            BASE="$PUSH_BEFORE"
+            HEAD="$PUSH_AFTER"
+          fi
+
+          # New branch / first push / empty base — run e2e (no baseline).
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            echo "e2e_relevant=true" >> "$GITHUB_OUTPUT"
+            echo "reason=no-baseline" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only "$BASE" "$HEAD" || true)
+          if [ -z "$CHANGED" ]; then
+            echo "e2e_relevant=false" >> "$GITHUB_OUTPUT"
+            echo "reason=no-files-changed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED" | sed 's/^/  /'
+
+          # E2E-IRRELEVANT paths — any change that lands ENTIRELY inside
+          # this list skips the Playwright suite. Everything else runs e2e:
+          # source, styles, public assets, vite/playwright config, lockfile.
+          #
+          #   docs/**          — context docs, journeys, future-work
+          #   tests/unit/**    — unit suite runs in its own job
+          #   scripts/**       — build/dataset scripts (Build job covers impact)
+          #   *.md             — root-level READMEs / changelogs
+          #   .github/**/*.md  — issue / PR templates
+          #   LICENSE / .gitignore / .editorconfig — meta-only
+          RELEVANT=$(echo "$CHANGED" | grep -vE \
+            -e '^docs/' \
+            -e '^tests/unit/' \
+            -e '^scripts/' \
+            -e '\.md$' \
+            -e '^LICENSE$' \
+            -e '^\.gitignore$' \
+            -e '^\.editorconfig$' \
+            -e '^\.github/.*\.md$' \
+            || true)
+
+          if [ -z "$RELEVANT" ]; then
+            echo "e2e_relevant=false" >> "$GITHUB_OUTPUT"
+            echo "reason=docs-or-unit-only" >> "$GITHUB_OUTPUT"
+          else
+            echo "e2e_relevant=true" >> "$GITHUB_OUTPUT"
+            FIRST=$(echo "$RELEVANT" | head -1)
+            echo "reason=changed:${FIRST}" >> "$GITHUB_OUTPUT"
+          fi
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -107,19 +183,31 @@ jobs:
 
   e2e:
     name: E2E (Playwright)
-    # Skip E2E for PRs targeting dev (fast feature iteration) — it re-runs
-    # on the push to dev after merge, and on every PR/push to staging + main.
-    # Opt-in per PR by applying the `run-e2e` label for risky changes.
+    # Two skip gates:
+    #
+    #   1. **Path filter** — `changes.e2e_relevant=false` means the diff is
+    #      entirely docs / unit tests / scripts / *.md (no UI, source, asset,
+    #      config, or e2e-spec changes). Skip — the unit + lint + build jobs
+    #      already cover that scope. Force a run by including any file outside
+    #      the irrelevant list, or by applying `run-e2e` to the PR.
+    #
+    #   2. **PR-to-dev fast lane** — PRs targeting `dev` skip e2e for fast
+    #      feature iteration; it re-runs on the push to `dev` after merge,
+    #      and on every PR/push to `staging` + `main`. Override per-PR via
+    #      the `run-e2e` label.
     if: >
-      !(github.event_name == 'pull_request' && github.base_ref == 'dev') ||
-      contains(github.event.pull_request.labels.*.name, 'run-e2e')
+      (needs.changes.outputs.e2e_relevant == 'true') &&
+      (
+        !(github.event_name == 'pull_request' && github.base_ref == 'dev') ||
+        contains(github.event.pull_request.labels.*.name, 'run-e2e')
+      )
     # Reuse the dist/ artifact from the Build job so Playwright runs against
     # a preview server (statically served prod bundle) rather than the dev
     # server. The dev-server path is too slow under workers=6 on 2-core CI:
     # vite's on-demand compilation queues up across workers and pushes the
     # 25s waitForReader timeout (every test fails at .qa-verse not visible).
     # Preview removes the compile path entirely; one build, many readers.
-    needs: build
+    needs: [build, changes]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -175,7 +263,7 @@ jobs:
 
   ci-ok:
     name: CI OK
-    needs: [lint, typecheck, test, feature-state, audit, build, check-chunks, lighthouse, e2e]
+    needs: [changes, lint, typecheck, test, feature-state, audit, build, check-chunks, lighthouse, e2e]
     # Run even when e2e is skipped (PRs to dev without the run-e2e label).
     # `always()` lets this job evaluate needs.* results; the step body then
     # fails if any upstream job failed or was cancelled.

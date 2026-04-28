@@ -165,8 +165,28 @@
     transition: background-color var(--qa-transition-base);
   }
 
+  /* Verse-to-verse seam — was a hard 1px border-top across the full verse
+     width which read as "panels detached." Replaced with a softly fading
+     hairline that's transparent at the column edges and barely-there in
+     the middle — enough to register a beat between verses but light
+     enough to feel like a single flowing passage. */
   .qa-verse + .qa-verse {
-    border-top: 1px solid var(--qa-border-subtle);
+    border-top: 0;
+  }
+  .qa-verse + .qa-verse::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      color-mix(in srgb, var(--qa-text-muted) 14%, transparent) 50%,
+      transparent 100%
+    );
   }
 
   .qa-verse.qa-verse--active {
@@ -211,12 +231,19 @@
   }
 
   .qa-verse-number {
-    display: inline-block;
-    width: auto;
-    height: auto;
-    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Tap target: WCAG 2.5.8 (24px min) + Apple HIG (44px). Padding +
+       negative margin keeps the hit zone generous (≥ 32px square) while
+       the visual glyph stays where it was — surrounding layout is
+       unaffected. */
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px 10px;
+    margin: -6px -10px;
     border: none;
-    border-radius: 0;
+    border-radius: var(--qa-radius-sm, 6px);
     background: transparent;
     color: var(--qa-text-on-sheet-dim);
     font-family: var(--qa-font-mono);
@@ -225,6 +252,14 @@
     font-weight: 500;
     cursor: pointer;
     flex-shrink: 0;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .qa-verse-number:active {
+    background: color-mix(in srgb, var(--qa-accent) 12%, transparent);
   }
 
   .qa-verse--active .qa-verse-number {

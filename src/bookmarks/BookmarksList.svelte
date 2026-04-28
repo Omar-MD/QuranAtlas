@@ -106,16 +106,34 @@
     touchKey = key
   }
 
+  function onTouchMove(e: TouchEvent, key: string): void {
+    if (touchKey !== key) { return }
+    const t = e.touches[0]
+    if (!t) { return }
+    const dx = t.clientX - touchStartX
+    const dy = Math.abs(t.clientY - touchStartY)
+    // Once horizontal intent is clear, claim the gesture so the parent
+    // drawer's left-swipe-to-close handler does not also fire on touchend.
+    if (Math.abs(dx) > 12 && Math.abs(dx) > dy * 1.5) {
+      e.stopPropagation()
+    }
+  }
+
   function onTouchEnd(e: TouchEvent, key: string): void {
     if (touchKey !== key) { return }
     const t = e.changedTouches[0]
     if (!t) { touchKey = null; return }
     const dx = t.clientX - touchStartX
     const dy = Math.abs(t.clientY - touchStartY)
-    if (dx < -48 && dy < 24) {
+    // Generous threshold (32px) so a deliberate flick reliably reveals the
+    // delete button — was 48px which felt sluggish + matched the drawer's
+    // own close threshold.
+    if (dx < -32 && dy < 28) {
       openSwipeKey = key
+      e.stopPropagation()
     } else if (dx > 24 && openSwipeKey === key) {
       openSwipeKey = null
+      e.stopPropagation()
     }
     touchKey = null
   }
@@ -165,6 +183,7 @@
                 class="qa-bookmarks-row-btn"
                 onclick={() => handleRowClick(b)}
                 ontouchstart={(e) => onTouchStart(e, b.verseKey)}
+                ontouchmove={(e) => onTouchMove(e, b.verseKey)}
                 ontouchend={(e) => onTouchEnd(e, b.verseKey)}
                 aria-label={`Jump to verse ${b.verseKey}`}
               >
