@@ -183,20 +183,14 @@
     --qa-font-sans: var(--qa-font-ui);
   }
 
-  /* Riwayah-bound Arabic font. Default = Amiri Quran across all three
-     riwayat (single calligraphic face, cross-engine, full Quranic mark
-     coverage). User may override per riwayah via the typography settings:
-     `[data-arabic-font='kfgqpc']` resolves to the riwayah-specific
-     KFGQPC mushaf cut, `[data-arabic-font='scheherazade']` to Scheherazade
-     New. Riwayah text data drives orthographic differences regardless. */
-  :root[data-riwayah='hafs'],
-  :root[data-riwayah='warsh'],
-  :root[data-riwayah='qaloon'] { --qa-font-arabic: var(--ff-amiri-quran); }
-
-  :root[data-arabic-font='scheherazade'] { --qa-font-arabic: var(--ff-scheherazade-new); }
-  :root[data-riwayah='hafs'][data-arabic-font='kfgqpc']   { --qa-font-arabic: var(--ff-kfgqpc-hafs); }
-  :root[data-riwayah='warsh'][data-arabic-font='kfgqpc']  { --qa-font-arabic: var(--ff-kfgqpc-warsh); }
-  :root[data-riwayah='qaloon'][data-arabic-font='kfgqpc'] { --qa-font-arabic: var(--ff-kfgqpc-qaloon); }
+  /* Riwayah-bound Arabic font. Each riwayah is paired with its own
+     KFGQPC Uthmanic mushaf cut — using a different riwayah's font cut
+     mis-renders combining marks, since each cut is authored against
+     its own orthography. Amiri Quran is the cross-riwayah fallback in
+     each token's font-family chain. */
+  :root[data-riwayah='hafs']   { --qa-font-arabic: var(--ff-kfgqpc-hafs); }
+  :root[data-riwayah='warsh']  { --qa-font-arabic: var(--ff-kfgqpc-warsh); }
+  :root[data-riwayah='qaloon'] { --qa-font-arabic: var(--ff-kfgqpc-qaloon); }
 
   /* Stepped chrome — reading tokens stay fluid via clamp() above. */
   @media (min-width: 768px) {

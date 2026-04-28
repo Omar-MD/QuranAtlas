@@ -92,33 +92,36 @@ function ayaSurah(rec: any): number {
 
 ## Fonts
 
-All three riwayat render in **Amiri Quran** (Khaled Hosny, OFL) — a single Mashriqi Naskh face with full Quranic mark coverage that renders identically on every engine (Skia / CoreGraphics / Gecko). The riwayah text data (Maghrebi-orthography spellings, riwaya-specific marks like small high seen `U+06EC` for Warsh/Qaloon) drives the orthographic differences; only the calligrapher's hand is unified.
+Each riwayah is paired with its own KFGQPC Uthmanic mushaf cut — the official KSA Madinah Mushaf hand, authored against that riwayah's orthography. **Cross-riwayah font reuse mis-renders combining marks** (using the Hafs cut on Warsh text was the bug behind the 2026-04-27 → 2026-04-28 churn): each cut's GPOS mark anchors are tuned to its own marks set (Warsh `U+06EC` small high rounded zero; Qaloon imala dot, naql signs; etc.). Amiri Quran (Khaled Hosny, OFL) is kept as the cross-riwayah fallback for engines or moments when KFGQPC isn't loaded.
 
 ```
-public/fonts/amiri-quran/
-  AmiriQuran-Regular.woff2    ~135 KB
+public/fonts/kfgqpc-uthmanic-hafs/uthmanic_hafs_v22.woff2     ~107 KB  (Hafs)
+public/fonts/kfgqpc-uthmanic-warsh/UthmanicWarsh_V21.woff2     ~91 KB  (Warsh)
+public/fonts/kfgqpc-uthmanic-qaloon/UthmanicQaloun_V21.woff2   ~91 KB  (Qaloon)
+public/fonts/amiri-quran/AmiriQuran-Regular.woff2             ~135 KB  (cross-riwayah fallback)
 ```
 
 ### Font metrics → minimum line-height
 
-`unitsPerEm = 1024`, `OS/2 sTypoAscender = 1990`, `sTypoDescender = -1138`. CSS `line-height` floor ≈ **1.92** to clear stacked harakat + dagger alif + hamzat al-wasl. Reader uses 2.12 by default (mid step on the 5-step Reading flow slider; `src/styles/surfaces/reading-typography.css`).
+KFGQPC line-height floor ≈ **1.92** to clear stacked harakat + dagger alif + hamzat al-wasl across all three cuts. Reader uses 2.12 by default (mid step on the 5-step Reading flow slider; `src/styles/surfaces/reading-typography.css`).
 
 For mixed Arabic + Latin lines (e.g. translation toggle), apply the Arabic line-height on the Arabic span specifically — let the Latin run inherit a tighter value or the page grows visibly.
 
-### `@font-face` declaration
+### `@font-face` declarations
 
 ```css
 @font-face {
-  font-family: 'Amiri Quran';
-  src: url('/fonts/amiri-quran/AmiriQuran-Regular.woff2') format('woff2');
+  font-family: 'KFGQPC Uthmanic Hafs';
+  src: url('/fonts/kfgqpc-uthmanic-hafs/uthmanic_hafs_v22.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
   unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
 }
+/* … same shape for KFGQPC Uthmanic Warsh / Qaloon and Amiri Quran fallback. */
 ```
 
-Wired through tokens — `--ff-amiri-quran` (defined in `src/styles/tokens/primitives.css`) → `--qa-font-arabic` (in `src/styles/tokens/semantic.css`, bound for all three `[data-riwayah=...]` selectors). The reader's `.qa-verse-arabic` consumes `--qa-font-arabic`.
+Wired through tokens — `--ff-kfgqpc-{hafs,warsh,qaloon}` (defined in `src/styles/tokens/primitives.css`) → `--qa-font-arabic` (in `src/styles/tokens/semantic.css`, bound to each `[data-riwayah=...]` selector). The reader's `.qa-verse-arabic` consumes `--qa-font-arabic`.
 
 `font-display: swap` is acceptable because Latin fallback won't render the Arabic glyphs anyway — the verse appears as `.notdef` boxes during the swap window. If that flash is unacceptable, switch to `block`.
 
@@ -126,18 +129,8 @@ Wired through tokens — `--ff-amiri-quran` (defined in `src/styles/tokens/primi
 
 ## Cross-engine rendering
 
-Amiri Quran is professionally hinted (Khaled Hosny / aliftype) and renders identically on Chromium (Skia), WebKit (CoreGraphics — macOS Safari, iOS Safari, iOS Chrome, headless WebKit), and Firefox (Gecko). Every tashkeel renders accurately — fatha, kasra, damma, sukun, shadda stacks, dagger alif `U+0670`, small high seen `U+06EC`, alif waslah `ٱ`, sajdah-cue marks `U+06D6+`. GPOS mark/mkmk anchors handle combining-mark stacking on every engine. No engine-conditional fallback, no post-processing pipeline, no `data-engine` attribute.
+KFGQPC Uthmanic fonts render across Chromium (Skia), WebKit (CoreGraphics — macOS Safari, iOS Safari, iOS Chrome, headless WebKit), and Firefox (Gecko) when each riwayah is paired with its own cut. Cross-riwayah font reuse (e.g. the Hafs cut on Warsh text) was the source of an earlier hollow-mark bug investigation — fixed by binding `[data-riwayah='hafs']` → `--ff-kfgqpc-hafs`, `'warsh'` → `--ff-kfgqpc-warsh`, `'qaloon'` → `--ff-kfgqpc-qaloon`. Amiri Quran sits in each token's font-family chain as the cross-riwayah fallback for engines or moments when KFGQPC isn't loaded. **Regression guard:** `tests/unit/styles/font-tokens.test.js` rejects any cross-riwayah font misuse.
 
-### History — KFGQPC fonts retired 2026-04-27
-
-The app previously shipped KFGQPC Hafs v0.18, Warsh v0.10, and Qaloon v0.10 (Uthman Taha's hand, official Madinah Mushaf). Two unrelated rendering bugs forced replacement:
-
-1. **Hafs (v0.18)** — shipped unhinted (no `fpgm` / `prep` / `cvt` tables). Skia auto-hinted; CoreGraphics did not, rendering hairline. Worked around with a perpendicular outline-embolden + `ttfautohint --default-script=arab --stem-width-mode=sqq` pipeline.
-2. **Warsh + Qaloon (v0.10)** — outline geometry rendered as hollow / broken combining-mark stacks in CoreGraphics. Not fixable via post-processing (verified `ttfautohint`, embolden, `skia-pathops removeOverlaps`). Worked around by substituting Amiri Quran on WebKit only via `[data-engine='safari']` CSS rule.
-
-Maintaining a two-track font pipeline plus an engine-detection attribute for what was effectively "use Amiri Quran on Safari" was net-negative complexity. Single-font-everywhere is cleaner: same calligraphic hand cross-engine, no asset post-processing, no engine sniffing, smaller bundle (~390 KB of KFGQPC woff2 dropped). The KFGQPC *text dataset* (per-surah JSON under `public/dataset/riwayat/{hafs,warsh,qaloon}/`) is unchanged and remains the canonical content source — only the rendering font changed.
-
-For users who want the authentic Uthman Taha typesetting (Madinah Mushaf hand) or the Tarabulsi typesetting (Libyan Jamahiriya Mushaf), the long-term path is page-image rendering — see `docs/context/future-work.md`. That route ships pre-typeset PDF/PNG pages from the official mushaf, preserving every calligrapher's hand at the cost of asset size and the ability to live-restyle text.
 
 ---
 

@@ -35,7 +35,7 @@ Every `Events.*` constant has a corresponding entry in the `EventPayloads` map i
 | `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/Verse.svelte` (onMount) | `marks/indicator.ts` (initIndicators) | `{ verseKey, element }` |
 | `AMBIENT_SURFACE` | `ambient:surface` | `reader/Reader.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `{ reason }` |
 | `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `tag/TagSheet.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
-| `SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `settings/riwayah.ts::setRiwayah` (local switch); `safety/sync.ts::handleChannelMessage` (cross-tab fan-in via `applyRiwayah`) | `reader/Reader.svelte` (refetches active surah, restores `aya_no` anchor — clamps to last ayah on miss); `settings/reading-typography.ts::initReadingTypography` (re-clamps `--qa-arabic-line-height` to new Riwayah's floor); `settings/arabic-font.ts::initArabicFont` (reapplies the new Riwayah's stored font choice to `<html data-arabic-font>`) | `{ from: 'hafs' \| 'warsh' \| 'qaloon'; to: 'hafs' \| 'warsh' \| 'qaloon' }` |
+| `SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `settings/riwayah.ts::setRiwayah` (local switch); `safety/sync.ts::handleChannelMessage` (cross-tab fan-in via `applyRiwayah`) | `reader/Reader.svelte` (refetches active surah, restores `aya_no` anchor — clamps to last ayah on miss); `settings/reading-typography.ts::initReadingTypography` (re-clamps `--qa-arabic-line-height` to new Riwayah's floor) | `{ from: 'hafs' \| 'warsh' \| 'qaloon'; to: 'hafs' \| 'warsh' \| 'qaloon' }` |
 | `STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `data/offline.ts:58` | `core/quota-banner.svelte:79` | `{}` |
 
 ### Emitter-only (⚠ dead listener)
@@ -52,7 +52,6 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 | `SETTINGS_THEME_CHANGED` | `settings:theme-changed` | `settings/theme.ts` (via `setTheme()`) | `{ from, to }` |
 | `SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `settings/clear-data.ts` (via `clearAllData()`) | `{}` |
 | `SETTINGS_FONT_SIZE_CHANGED` | `settings:font-size-changed` | `settings/font-size.ts` (via `setFontSize()`) | `{ size }` |
-| `SETTINGS_ARABIC_FONT_CHANGED` | `settings:arabic-font-changed` | `settings/arabic-font.ts` (via `setArabicFont()`) | `{ riwayah, from, to }` |
 | `REVIEW_OPEN` | `review:open` | `review/Hub.svelte:64,157` | `{}` |
 | `REVIEW_FILTER` | `review:filter` | `review/Hub.svelte:262` | `{ tags, surah }` |
 | `MARKS_SAVE_FAILED` | `marks:save-failed` | `marks/store.ts:46` | `{ verseKey, error }` |

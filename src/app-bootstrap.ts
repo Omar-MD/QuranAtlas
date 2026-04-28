@@ -17,7 +17,6 @@ import { initTheme } from './settings/theme.ts'
 import { initFontSize } from './settings/font-size.ts'
 import { initRiwayah } from './settings/riwayah.ts'
 import { initReadingTypography } from './settings/reading-typography.ts'
-import { initArabicFont } from './settings/arabic-font.ts'
 import { initNightMode } from './settings/night-mode.ts'
 import { initSurahHeaderHidden } from './settings/surah-header-visibility.ts'
 import { openSettingsSheet } from './settings/panel-bridge.ts'
@@ -157,7 +156,6 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     await initTheme()
     await initFontSize()
     await initRiwayah()
-    await initArabicFont()
     await initReadingTypography()
     await initNightMode()
     await initSurahHeaderHidden()

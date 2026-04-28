@@ -30,7 +30,6 @@ export const Events = {
   SETTINGS_DATA_CLEARED: 'settings:data-cleared',
   SETTINGS_FONT_SIZE_CHANGED: 'settings:font-size-changed',
   SETTINGS_RIWAYAH_CHANGED: 'settings:riwayah-changed',
-  SETTINGS_ARABIC_FONT_CHANGED: 'settings:arabic-font-changed',
   REVIEW_OPEN: 'review:open',
   REVIEW_FILTER: 'review:filter',
   MARKS_SAVED: 'marks:saved',
@@ -79,11 +78,6 @@ export type EventPayloads = {
   'settings:data-cleared': Record<string, never>
   'settings:font-size-changed': { size: string }
   'settings:riwayah-changed': { from: 'hafs' | 'warsh' | 'qaloon'; to: 'hafs' | 'warsh' | 'qaloon' }
-  'settings:arabic-font-changed': {
-    riwayah: 'hafs' | 'warsh' | 'qaloon'
-    from: 'amiri-quran' | 'kfgqpc' | 'scheherazade'
-    to: 'amiri-quran' | 'kfgqpc' | 'scheherazade'
-  }
   'review:open': Record<string, never>
   'review:filter': { tag: string | null; surah: number | null }
   'marks:saved': { verseKey: string; tags: string[] } // tags = union of canonical keys across all 12 layers
