@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "pnpm build:dataset && vite build",
     "build:dataset": "node scripts/build-dataset.mjs",
+    "build:verse-aliases": "node scripts/derive-verse-aliases.mjs",
     "fetch:translation:saheeh": "node scripts/fetch-translation-saheeh.mjs",
     "preview": "vite preview --strictPort",
     "test": "vitest",

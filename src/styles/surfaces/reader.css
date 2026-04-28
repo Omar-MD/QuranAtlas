@@ -272,6 +272,26 @@
     display: none;
   }
 
+  /* Continuation marker — used when a Madinan ayah is the second+ half of a
+     Hafs split. The full translation lives on the primary (first) half;
+     this marker tells the user the translation is shared with the previous
+     verse, rather than rendering blank. Smaller + dimmed so it reads as
+     metadata, not content. */
+  .qa-verse-translation--continuation {
+    color: var(--qa-text-muted);
+    font-style: italic;
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.875);
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+  }
+
+  .qa-verse-continuation-marker {
+    color: var(--qa-accent);
+    font-style: normal;
+    font-size: 0.95em;
+  }
+
   /* Footnote marker — superscript button inside translation text. Click toggles
      the inline footnote panel for the verse. Sized down + colored to read as a
      reference mark, not a UI control. */

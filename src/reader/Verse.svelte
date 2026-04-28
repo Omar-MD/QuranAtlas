@@ -14,6 +14,15 @@
     riwayah?: 'hafs' | 'warsh' | 'qaloon'
     setupLongPress?: (node: HTMLElement) => () => void
     onNumberTap?: (verseEl: HTMLElement) => void
+    /** Translation lookup role for cross-riwayah display.
+     * - 'identity' / 'merged' / 'primary': render translation directly.
+     * - 'continuation': this Madinan ayah is the second+ half of a Hafs split;
+     *   show "↑ continued from N" marker instead of the full translation.
+     * - 'none': no Hafs equivalent (Bismillah carve-out cases). */
+    translationRole?: 'identity' | 'merged' | 'primary' | 'continuation' | 'none'
+    /** When `translationRole === 'continuation'`, the Madinan ayah index of
+     * the primary (first) half of the split. Used to render the marker. */
+    primaryAyah?: number
   }
 
   const {
@@ -25,6 +34,8 @@
     riwayah = 'qaloon',
     setupLongPress,
     onNumberTap,
+    translationRole = 'identity',
+    primaryAyah,
   }: Props = $props()
 
   const verseNum = $derived(verseKey.split(':')[1] ?? '')
@@ -82,25 +93,40 @@
     {/if}
   </div>
   <div class="qa-verse-arabic" dir="rtl" data-riwayah={riwayah}>{arabic}</div>
-  <div
-    class="qa-verse-translation"
-    class:qa-hide-translation={!translationVisible}
-    data-translation=""
-    onkeydown={handleFootnoteKey}
-    role="presentation"
-  >
-    {#each tokens as t, i (i)}
-      {#if t.type === 'text'}{t.value}{:else}<button
-          type="button"
-          class="qa-fn-marker"
-          data-fn={t.idx}
-          aria-expanded={openFn === t.idx}
-          aria-controls="fn-{verseKey}-{t.idx}"
-          aria-label="Footnote {t.idx}"
-          onclick={() => toggleFootnote(t.idx)}
-        >{t.idx}</button>{/if}
-    {/each}
-  </div>
+  {#if translationRole === 'continuation'}
+    <div
+      class="qa-verse-translation qa-verse-translation--continuation"
+      class:qa-hide-translation={!translationVisible}
+      data-translation=""
+      data-translation-role="continuation"
+      role="presentation"
+      aria-label="Translation continued from verse {primaryAyah}"
+    >
+      <span class="qa-verse-continuation-marker" aria-hidden="true">↑</span>
+      <span class="qa-verse-continuation-text">continued from verse {primaryAyah}</span>
+    </div>
+  {:else}
+    <div
+      class="qa-verse-translation"
+      class:qa-hide-translation={!translationVisible}
+      data-translation=""
+      data-translation-role={translationRole}
+      onkeydown={handleFootnoteKey}
+      role="presentation"
+    >
+      {#each tokens as t, i (i)}
+        {#if t.type === 'text'}{t.value}{:else}<button
+            type="button"
+            class="qa-fn-marker"
+            data-fn={t.idx}
+            aria-expanded={openFn === t.idx}
+            aria-controls="fn-{verseKey}-{t.idx}"
+            aria-label="Footnote {t.idx}"
+            onclick={() => toggleFootnote(t.idx)}
+          >{t.idx}</button>{/if}
+      {/each}
+    </div>
+  {/if}
   {#if translationVisible && openFn !== null && footnotes[openFn]}
     <div
       class="qa-fn-popover"

@@ -154,3 +154,11 @@ Update `docs/product-info.md` and the About page when wiring this dataset into a
 - `docs/context/data-model.md` — IDB stores. This dataset is read-only at build time; nothing about it is written to IDB unless a future surface caches it.
 - `docs/context/architecture.md` — boot flow + asset pipeline.
 - `docs/context/future-work.md` — translation packs are the next dataset addition; Riwayah picker is already shipped.
+
+## Translation alignment with riwayat
+
+Translations are **Hafs-keyed (Kufan numbering)**. Warsh and Qaloon follow Madinan numbering and partition the same Quranic text differently in 50 surahs (~22 ayat net diff). The dataset enumerates these divergences in `public/dataset/translations/_verse-map.json` (checks anchor — not a scholarly per-ayah equivalence table) and ships per-riwayah coverage stats in `provenance.json::translations[].coverage`. See `data-model.md` "Translation ↔ riwayah alignment" for the full schema, invariants, and runtime guard.
+
+The verse-map's count divergences are **cross-validated against [quran-center/quran-meta](https://github.com/quran-center/quran-meta)** (Tanzil-derived independent dataset) — pinned in `tests/fixtures/quran-meta-counts.json`, asserted by `tests/unit/data/translation-riwayah-alignment.test.js`.
+
+**Per-ayah aliases shipped**: `public/dataset/translations/_verse-aliases.json` enumerates the Hafs ↔ Warsh ↔ Qaloon mapping for all 51 surahs that diverge (50 by count + surah 1 for the Bismillah carve-out). The aliases are derived **mechanically** by `scripts/derive-verse-aliases.mjs` aligning each surah's word streams across the three riwayat — KFGQPC's Madinah Mushaf is itself the authoritative scholarly source, since the verse-boundary splits are encoded in the per-riwayah ayah arrays. 45 of 51 surahs align with high confidence; 6 surahs use an end-fingerprint fallback and carry `reviewRecommended: true` (cross-reference with al-Dani's *Al-Bayan fi 'Adad Ay al-Qur'an* recommended). See `data-model.md` "Translation ↔ riwayah alignment" for the full schema and the runtime lookup in `Reader.svelte`.

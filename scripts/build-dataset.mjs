@@ -32,6 +32,8 @@ const REPO_ROOT = join(__dirname, '..')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')
 const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
+const VERSE_MAP_PATH = join(TRANSLATIONS_DIR, '_verse-map.json')
+const VERSE_ALIASES_PATH = join(TRANSLATIONS_DIR, '_verse-aliases.json')
 
 /**
  * Translations shipped in the dataset. Each entry resolves a monolithic raw
@@ -234,6 +236,172 @@ export function buildTranslationSplits(rawSource, expectedHafsCounts) {
   return { perSurah, totals: { verses: totalVerses, footnotes: totalFootnotes } }
 }
 
+/**
+ * Validate _verse-map.json against the freshly-computed surahs.json counts.
+ * The verse-map is the canonical fact file enumerating every surah whose
+ * verse-count diverges across the three riwayat. Translations are keyed to
+ * the primary riwayah (Hafs / Kufan numbering); Warsh and Qaloon (Madinan
+ * numbering) partition the same Quranic text differently in the surahs
+ * listed there, which is why a Hafs-numbered translation cannot 1:1 map to
+ * every Warsh / Qaloon ayah without explicit scholarly aliases.
+ *
+ * Hard-fails when the verse-map's listed divergences drift from what
+ * surahs.json actually says — dataset bumps must update both in lockstep.
+ */
+export function validateVerseMap(verseMap, surahsMeta) {
+  if (!verseMap || typeof verseMap !== 'object') {
+    throw new Error('_verse-map.json missing or not an object')
+  }
+  if (verseMap?._meta?.primaryRiwayah !== 'hafs') {
+    throw new Error(`_verse-map.json _meta.primaryRiwayah must be 'hafs', got ${verseMap?._meta?.primaryRiwayah}`)
+  }
+  if (!Array.isArray(verseMap.divergences)) {
+    throw new Error('_verse-map.json divergences must be an array')
+  }
+  const actualDivergent = surahsMeta
+    .filter((s) => !(s.counts.hafs === s.counts.warsh && s.counts.warsh === s.counts.qaloon))
+    .map((s) => ({ surah: s.n, counts: s.counts }))
+  const declared = new Map(verseMap.divergences.map((d) => [d.surah, d.counts]))
+  const actual = new Map(actualDivergent.map((d) => [d.surah, d.counts]))
+  const missingFromMap = [...actual.keys()].filter((n) => !declared.has(n))
+  const extraInMap = [...declared.keys()].filter((n) => !actual.has(n))
+  if (missingFromMap.length > 0 || extraInMap.length > 0) {
+    throw new Error(
+      `_verse-map.json divergences drift from surahs.json — `
+      + `missing surahs: [${missingFromMap.join(',')}], extra: [${extraInMap.join(',')}]. `
+      + `Regenerate _verse-map.json to match.`,
+    )
+  }
+  for (const [surah, counts] of actual) {
+    const dec = declared.get(surah)
+    if (dec.hafs !== counts.hafs || dec.warsh !== counts.warsh || dec.qaloon !== counts.qaloon) {
+      throw new Error(
+        `_verse-map.json surah ${surah} counts ${JSON.stringify(dec)} `
+        + `disagree with surahs.json ${JSON.stringify(counts)}`,
+      )
+    }
+  }
+  return { divergent: actual.size }
+}
+
+/**
+ * Validate _verse-aliases.json against the per-surah ayah counts. The aliases
+ * are mechanically derived from KFGQPC by `scripts/derive-verse-aliases.mjs`;
+ * this validator hard-fails when:
+ *   - the aliases file is missing
+ *   - any divergent surah lacks alias entries
+ *   - the aliases reference an ayah index outside the riwayah's actual count
+ *   - the alias count for a surah does not equal Hafs's ayah count
+ *
+ * Surah 1 (Al-Fatiha) is included for the Bismillah carve-out even though
+ * counts agree across riwayat — semantically divergent.
+ */
+export function validateVerseAliases(verseAliases, surahsMeta) {
+  if (!verseAliases || typeof verseAliases !== 'object') {
+    throw new Error('_verse-aliases.json missing or not an object')
+  }
+  if (!verseAliases.aliases || typeof verseAliases.aliases !== 'object') {
+    throw new Error('_verse-aliases.json: `aliases` must be an object')
+  }
+  const expectedSurahs = surahsMeta
+    .filter((s) => s.n === 1 || !(s.counts.hafs === s.counts.warsh && s.counts.warsh === s.counts.qaloon))
+    .map((s) => s.n)
+  for (const n of expectedSurahs) {
+    const entries = verseAliases.aliases[String(n)]
+    const meta = surahsMeta.find((s) => s.n === n)
+    if (!Array.isArray(entries)) {
+      throw new Error(`_verse-aliases.json missing surah ${n}`)
+    }
+    if (entries.length !== meta.counts.hafs) {
+      throw new Error(`_verse-aliases.json surah ${n}: ${entries.length} entries, expected ${meta.counts.hafs} (hafs count)`)
+    }
+    for (const entry of entries) {
+      if (typeof entry.hafs !== 'number') {
+        throw new Error(`_verse-aliases.json surah ${n}: entry missing hafs index`)
+      }
+      for (const r of ['warsh', 'qaloon']) {
+        const v = entry[r]
+        if (v === null) { continue }
+        const indices = Array.isArray(v) ? v : [v]
+        for (const idx of indices) {
+          if (!Number.isInteger(idx) || idx < 1 || idx > meta.counts[r]) {
+            throw new Error(`_verse-aliases.json surah ${n} hafs ${entry.hafs}: ${r} index ${idx} out of range [1..${meta.counts[r]}]`)
+          }
+        }
+      }
+    }
+  }
+  return { surahCount: expectedSurahs.length }
+}
+
+/**
+ * Compute coverage of a Hafs-numbered translation across the three riwayat.
+ * For every (riwayah, surah, ayah) the riwayah ships, look up the equivalent
+ * Hafs key in the translation. Reports per-riwayah `{ total, covered, missing,
+ * divergentSurahs }`. Hafs is always 100%; Warsh / Qaloon will be missing the
+ * count delta on each divergent surah (translation has fewer / more keys at
+ * the surah's tail than the riwayah has ayat).
+ *
+ * This is a structural check, not a scholarly equivalence check: it confirms
+ * the translation key for `(surah, ayah)` resolves to a non-empty string when
+ * the riwayah has that ayah index — it does NOT prove that key's text is the
+ * scholarly counterpart of the verse at that boundary.
+ */
+export function computeTranslationCoverage(translationPerSurah, splitsByRiwayah, verseAliases) {
+  const coverage = {}
+  for (const r of RIWAYAT) {
+    let total = 0
+    let covered = 0
+    const divergentSurahs = []
+    const missingKeys = []
+    for (let n = 1; n <= 114; n++) {
+      const key = pad3(n)
+      const surah = splitsByRiwayah[r][key]
+      if (!surah) { throw new Error(`coverage: ${r} missing surah ${key}`) }
+      const transSurah = translationPerSurah[key]
+      if (!transSurah) { throw new Error(`coverage: translation missing surah ${key}`) }
+      const transKeys = new Set(transSurah.verses.map((v) => v.key))
+      // Build inverse alias lookup for this surah & riwayah: Madinan ayah →
+      // [Hafs ayah]. Hafs is identity. Surahs without aliases fall through
+      // to identity.
+      const surahAliases = verseAliases?.aliases?.[String(n)]
+      const resolveHafsKeys = (ayaNo) => {
+        if (r === 'hafs' || !surahAliases) { return [`${n}:${ayaNo}`] }
+        const hits = []
+        for (const entry of surahAliases) {
+          const target = entry[r]
+          if (target === ayaNo) { hits.push(entry.hafs) }
+          else if (Array.isArray(target) && target.includes(ayaNo)) { hits.push(entry.hafs) }
+        }
+        return hits.map((h) => `${n}:${h}`)
+      }
+      let surahCovered = 0
+      for (const ayah of surah.ayat) {
+        total += 1
+        const hafsKeys = resolveHafsKeys(ayah.aya_no)
+        const hit = hafsKeys.some((k) => transKeys.has(k))
+        if (hit) {
+          covered += 1
+          surahCovered += 1
+        } else {
+          missingKeys.push(`${n}:${ayah.aya_no}`)
+        }
+      }
+      if (surahCovered !== surah.ayat.length) {
+        divergentSurahs.push(n)
+      }
+    }
+    coverage[r] = {
+      total,
+      covered,
+      missing: total - covered,
+      divergentSurahs,
+      ...(missingKeys.length > 0 ? { missingKeys } : {}),
+    }
+  }
+  return coverage
+}
+
 /** Build the 30-entry juz array from Hafs (juz boundaries are constant across Riwayat). */
 export function computeJuzMeta(hafsAyat) {
   const seen = new Set()
@@ -319,6 +487,26 @@ async function main() {
   const surahsMeta = computeSurahsMeta(namesEn, namesAr, perRiwayahCounts)
   await writeFile(join(DATASET_DIR, 'surahs.json'), JSON.stringify(surahsMeta), 'utf8')
 
+  // 3a. Validate translations/_verse-map.json matches surahs.json divergences.
+  // This is a checks anchor: any future riwayah dataset bump that changes a
+  // surah's count must be reflected in the verse-map in the same commit.
+  if (!existsSync(VERSE_MAP_PATH)) {
+    throw new Error(`Missing ${relative(REPO_ROOT, VERSE_MAP_PATH)} — required for translation cross-riwayah checks`)
+  }
+  const verseMap = JSON.parse(await readFile(VERSE_MAP_PATH, 'utf8'))
+  const vmResult = validateVerseMap(verseMap, surahsMeta)
+  console.log(`[build-dataset] verse-map: ${vmResult.divergent} divergent surahs validated against surahs.json`)
+
+  // 3b. Validate translations/_verse-aliases.json (per-ayah Hafs ↔ Warsh ↔
+  // Qaloon equivalence table, mechanically derived from KFGQPC by
+  // scripts/derive-verse-aliases.mjs).
+  if (!existsSync(VERSE_ALIASES_PATH)) {
+    throw new Error(`Missing ${relative(REPO_ROOT, VERSE_ALIASES_PATH)} — run \`pnpm verse-aliases\` (or \`node scripts/derive-verse-aliases.mjs\`)`)
+  }
+  const verseAliases = JSON.parse(await readFile(VERSE_ALIASES_PATH, 'utf8'))
+  const vaResult = validateVerseAliases(verseAliases, surahsMeta)
+  console.log(`[build-dataset] verse-aliases: ${vaResult.surahCount} surah alias tables validated`)
+
   // 4. juz.json (from Hafs; juz/page constant across Riwayat)
   const juzMeta = computeJuzMeta(sources.hafs)
   if (juzMeta.length !== 30) { throw new Error(`juz count ${juzMeta.length}, expected 30`) }
@@ -344,6 +532,20 @@ async function main() {
       await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
     }
     console.log(`[build-dataset] translation ${t.id}: 114 surahs, ${totals.verses} verses, ${totals.footnotes} footnotes`)
+
+    // Cross-riwayah coverage: for every (riwayah, surah, ayah) shipped, does
+    // the translation have a key for that exact `${surah}:${ayah}` address?
+    // Hafs always 100% (build-time invariant above); Warsh / Qaloon expose
+    // the Madinan-numbering deltas as `missing` ayat in `divergentSurahs`.
+    const coverage = computeTranslationCoverage(perSurah, splits, verseAliases)
+    for (const r of RIWAYAT) {
+      const c = coverage[r]
+      console.log(`[build-dataset]   coverage[${r}]: ${c.covered}/${c.total} (${c.missing} missing across ${c.divergentSurahs.length} divergent surahs)`)
+    }
+    if (coverage.hafs.missing !== 0) {
+      throw new Error(`translation ${t.id}: Hafs coverage incomplete — ${coverage.hafs.missing} ayat lack a translation key (verse-map keys translations to Hafs)`)
+    }
+
     translationProvenance.push({
       id: t.id,
       label: t.label,
@@ -358,6 +560,12 @@ async function main() {
       source: t.source,
       sourceUrl: t.sourceUrl,
       fetchedAt: raw.fetchedAt,
+      primaryRiwayah: 'hafs',
+      coverage: {
+        hafs:   { total: coverage.hafs.total,   covered: coverage.hafs.covered,   missing: coverage.hafs.missing,   divergentSurahs: coverage.hafs.divergentSurahs },
+        warsh:  { total: coverage.warsh.total,  covered: coverage.warsh.covered,  missing: coverage.warsh.missing,  divergentSurahs: coverage.warsh.divergentSurahs },
+        qaloon: { total: coverage.qaloon.total, covered: coverage.qaloon.covered, missing: coverage.qaloon.missing, divergentSurahs: coverage.qaloon.divergentSurahs },
+      },
     })
   }
 

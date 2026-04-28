@@ -284,7 +284,63 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 - `public/dataset/translations/{id}.raw.json` — **monolithic source**, committed to git, produced by per-translation fetch scripts (`scripts/fetch-translation-saheeh.mjs`). Skipped from `manifest.json` like the riwayat sources. Re-run the fetch script only when refreshing the upstream pack; ordinary builds run offline against the committed source.
 - **Invariants (asserted by `scripts/build-dataset.mjs::buildTranslationSplits`):** 114 surahs present; per-surah verse count matches Hafs counting from `surahs.json`; verse keys are exactly `${surahNo}:${1..count}`; every `[N]` marker in verse text resolves to `footnotes[N]`; footnote keys are contiguous 1..K; every defined footnote is referenced at least once. Build hard-fails on any violation.
 - **Markers:** `[N]` tokens in verse text are tokenised by `src/reader/translation-tokens.ts` and rendered as buttons by `Verse.svelte`; clicking one expands the footnote text inline below the translation. Translation strings stay byte-exact end-to-end (the build script does not normalize whitespace or punctuation) so license terms remain valid for redistribution.
-- **provenance.json `translations[]`** — one entry per shipped pack: `{ id, label, translator, language, version, ayatCount, footnoteCount, hasIntros, license, licenseUrl, source, sourceUrl, fetchedAt }`. The Settings translation picker reads this list (via `dataset.ts::getTranslations`) so the UI never offers a pack the dataset does not contain.
+- **provenance.json `translations[]`** — one entry per shipped pack: `{ id, label, translator, language, version, ayatCount, footnoteCount, hasIntros, license, licenseUrl, source, sourceUrl, fetchedAt, primaryRiwayah, coverage }`. The Settings translation picker reads this list (via `dataset.ts::getTranslations`) so the UI never offers a pack the dataset does not contain.
+
+#### Translation ↔ riwayah alignment
+
+Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan numbering) partition the same Quranic text differently in 50 surahs (~22 ayat net difference: Hafs 6236, Warsh / Qaloon 6214). A Hafs-numbered translation cannot 1:1 map to every Warsh / Qaloon ayah without explicit scholarly aliases — at split boundaries the same Quranic text is partitioned across different ayah counts.
+
+- `public/dataset/translations/_verse-aliases.json` — **per-ayah Hafs ↔ Warsh ↔ Qaloon equivalence table**, mechanically derived from KFGQPC by `scripts/derive-verse-aliases.mjs`. Schema:
+  ```ts
+  {
+    _meta: { version: 1, description, generator, source, method, generatedAt },
+    aliases: Record<string /* surahNo */, Array<{
+      hafs: number,
+      warsh: number | number[] | null,
+      qaloon: number | number[] | null,
+    }>>,
+    aliasMeta: Record<string, {
+      method: 'word-stream' | 'end-fingerprint',
+      warshMethod: string,
+      qaloonMethod: string,
+      reviewRecommended: boolean,
+    }>,
+  }
+  ```
+  KFGQPC's Madinah Mushaf is the authoritative source — verse-boundary splits are encoded in the per-riwayah ayah arrays. Two aligners produce the table:
+    1. **Word-stream cumulative** (`method: 'word-stream'`) — 45 of 51 surahs. Concatenates each surah's ayah text per riwayah, walks both word streams together, recovers boundaries from cumulative-position parity.
+    2. **Ayah-boundary DP** (`method: 'ayah-dp'`) — 6 surahs (27, 36, 40, 41, 56, 57) where qira'at-level word-count drift defeats word-stream alignment. Dynamic-programming search over ayah groupings; minimises Σ |hWordCount − oWordCountSum| with `MAX_GROUP_SIZE = 3`. Handles both Madinan splits (Hafs 1 → Warsh [1, 2]) and Hafs combines (Hafs 1 + 2 → Warsh 1, e.g. surah 36 Yaseen).
+  Surah 1 is included for the Bismillah carve-out (Hafs 1:1 → `null` in Warsh / Qaloon — Bismillah renders as a standalone separator glyph, not as ayah). All 51 surahs carry `reviewRecommended: false`; both aligners produce structurally-correct alignments. Build hard-fails (`scripts/build-dataset.mjs::validateVerseAliases`) when the alias file is missing, has out-of-range indices, or has the wrong entry count for any surah.
+  - **Runtime use**: `Reader.svelte::loadSurah` calls `data/verse-aliases.ts::loadVerseAliases()` once per session and `resolveTranslationFor(aliases, riwayah, surahNo, ayahNo)` per visible ayah. The resolver returns a `TranslationRole` discriminator:
+    - `identity` — 1:1 alias (or surah without aliases). Render translation as-is.
+    - `merged` — multiple Hafs ayat → this Madinan ayah (Hafs combine, e.g. surah 36 Warsh 1 = Hafs 1 + 2). Concat translations.
+    - `primary` — first half of a Hafs split (Hafs 1:7 → Warsh [1:6, 1:7], `primary` is 1:6). Render full translation.
+    - `continuation` — subsequent half of a Hafs split. `Verse.svelte` renders a `qa-verse-translation--continuation` marker ("↑ continued from verse N") instead of duplicating the translation; the `primaryAyah` field carries N.
+    - `none` — no Hafs equivalent (currently unreachable in shipped data after aliases land). Cell renders empty; dev-only `[translation-miss]` warning fires.
+  - **Coverage impact**: with aliases applied, `provenance.json::translations[].coverage` reports 100% for all three riwayat; pre-aliases the cross-riwayah miss count was 26 ayat across 18 surahs.
+
+- `public/dataset/translations/_verse-map.json` — **checks anchor**, not a scholarly per-ayah equivalence table. Schema:
+  ```ts
+  {
+    _meta: {
+      version: 2,
+      primaryRiwayah: 'hafs',
+      verifiedScholarly: false,
+      description: string,
+      scholarlySource: { primary: string, secondary: string },
+      crossValidation: { checkedAt: string, source: string, sourceCommit: string, sourceFiles: string[], result: string, method: string },
+    },
+    translations: Record<TranslationId, { primaryRiwayah: 'hafs' }>,
+    divergences: Array<{ surah: number, name: string, counts: { hafs, warsh, qaloon } }>,
+  }
+  ```
+  Sole writer: hand-curated; build hard-fails (`scripts/build-dataset.mjs::validateVerseMap`) when the listed divergences drift from `surahs.json` count diffs. Per-ayah Kufan↔Madinan boundary mapping is not yet provided; future scholarly extension belongs in this file under a `verseAliases` block.
+  - **Scholarly source for future per-ayah extension:** Abu 'Amr al-Dani's *Al-Bayan fi 'Adad Ay al-Qur'an* (canonical Sunni reference cataloguing Kufan / Madinan / Basran / Shami / Makkan boundaries) — available only as printed / scanned manuscript as of 2026-04, no machine-readable per-ayah alias table is in public circulation. KFGQPC's printed Madinah Mushaf marginalia (`ك` / `م` indicators) is the secondary source.
+  - **Cross-validated against** [quran-center/quran-meta](https://github.com/quran-center/quran-meta) (Tanzil-derived) — per-surah Hafs / Warsh / Qaloon counts agree exactly across all 114 surahs and three riwayat, totals 6236 / 6214 / 6214 as expected. Pinned in `tests/fixtures/quran-meta-counts.json`; regen instructions in `tests/fixtures/regen-quran-meta-counts.md`. Cross-validation regression guards live in `tests/unit/data/translation-riwayah-alignment.test.js`.
+- **Coverage block** (`provenance.translations[].coverage[riwayah]`) — `{ total, covered, missing, divergentSurahs }` per riwayah, computed by `scripts/build-dataset.mjs::computeTranslationCoverage`. Hafs always 100%; Warsh / Qaloon expose the count delta as `missing` ayat in `divergentSurahs`. Structural only — does NOT prove that matched keys are scholarly counterparts at split boundaries.
+- **Build invariants** (in addition to those listed above): `_verse-map.json` divergences must equal `surahs.json` count diffs; Hafs translation coverage must be 100%; `provenance.json` records per-riwayah coverage stats.
+- **Runtime guard**: `Reader.svelte::loadSurah` walks the active riwayah's ayat after building `translationByVerse` and emits `logger.warn('[translation-miss] …')` (dev-only) when the active riwayah ships an ayah index the Hafs-numbered translation has no key for. Production users see the empty translation cell without a console flood.
+- **Regression guard**: `tests/unit/data/translation-riwayah-alignment.test.js` asserts the verse-map ↔ surahs.json invariant, every Hafs ayah has non-empty translation text, and coverage misses are confined to verse-map-flagged divergent surahs.
 
 ## Cross-cutting rules
 

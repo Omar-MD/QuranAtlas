@@ -1,0 +1,477 @@
+{
+  "_meta": {
+    "version": 2,
+    "primaryRiwayah": "hafs",
+    "description": "Verse-numbering divergence facts across the three shipped riwayat. Translations are keyed to the primary riwayah (Hafs / Kufan numbering); Warsh and Qaloon follow Madinan numbering and partition the same Quranic text differently in the surahs listed below. This file enumerates count divergences derived from surahs.json — it is a checks anchor, NOT a scholarly per-ayah equivalence table. Per-ayah Kufan-Madinan boundary mapping requires authoritative input and is not yet provided.",
+    "scholarlySource": {
+      "primary": "Abu 'Amr al-Dani (d. 444 AH), 'Al-Bayan fi 'Adad Ay al-Qur'an' — the canonical Sunni reference cataloguing every Kufan / Madinan / Basran / Shami / Makkan verse-counting boundary. Available only as printed / scanned manuscript; no machine-readable per-ayah alias table is in public circulation as of 2026-04. Future per-ayah extension of this file should transcribe al-Dani's chapter-by-chapter splits into a `verseAliases` block.",
+      "secondary": "King Fahd Glorious Qur'an Printing Complex (KFGQPC) Madinah Mushaf marginalia — the printed Mushaf marks Kufan splits with marginal indicators ('ك' for kūfī, 'م' for madanī, etc.) on each diverging ayah."
+    },
+    "crossValidation": {
+      "checkedAt": "2026-04-28",
+      "source": "https://github.com/quran-center/quran-meta",
+      "sourceCommit": "main",
+      "sourceFiles": ["src/lists/HafsLists.ts::SurahList", "src/lists/WarshLists.ts::SurahList", "src/lists/QalunLists.ts::SurahList"],
+      "result": "Per-surah ayah counts in QuranAtlas's KFGQPC dataset agree with quran-meta (Tanzil-derived) for all 114 surahs and all three riwayat. Hafs total 6236, Warsh / Qaloon total 6214. The divergence set listed below is corroborated by an independent dataset.",
+      "method": "Parsed quran-meta SurahList tuples [startAyahId, ayahCount, surahOrder, rukuCount, name, used], extracted ayahCount per surah, compared against surahs.json[].counts."
+    },
+    "verifiedScholarly": false
+  },
+  "translations": {
+    "saheeh": {
+      "primaryRiwayah": "hafs"
+    }
+  },
+  "divergences": [
+    {
+      "surah": 2,
+      "name": "Al-Baqarah",
+      "counts": {
+        "hafs": 286,
+        "warsh": 285,
+        "qaloon": 285
+      }
+    },
+    {
+      "surah": 4,
+      "name": "An-Nisā’",
+      "counts": {
+        "hafs": 176,
+        "warsh": 175,
+        "qaloon": 175
+      }
+    },
+    {
+      "surah": 5,
+      "name": "Al-Mā’idah",
+      "counts": {
+        "hafs": 120,
+        "warsh": 122,
+        "qaloon": 122
+      }
+    },
+    {
+      "surah": 6,
+      "name": "Al-An‘ām",
+      "counts": {
+        "hafs": 165,
+        "warsh": 167,
+        "qaloon": 167
+      }
+    },
+    {
+      "surah": 8,
+      "name": "Al-Anfāl",
+      "counts": {
+        "hafs": 75,
+        "warsh": 76,
+        "qaloon": 76
+      }
+    },
+    {
+      "surah": 9,
+      "name": "At-Taubah",
+      "counts": {
+        "hafs": 129,
+        "warsh": 130,
+        "qaloon": 130
+      }
+    },
+    {
+      "surah": 11,
+      "name": "Hūd",
+      "counts": {
+        "hafs": 123,
+        "warsh": 121,
+        "qaloon": 121
+      }
+    },
+    {
+      "surah": 13,
+      "name": "Ar-Ra‘d",
+      "counts": {
+        "hafs": 43,
+        "warsh": 44,
+        "qaloon": 44
+      }
+    },
+    {
+      "surah": 14,
+      "name": "Ibrāhīm",
+      "counts": {
+        "hafs": 52,
+        "warsh": 54,
+        "qaloon": 54
+      }
+    },
+    {
+      "surah": 17,
+      "name": "Al-Isrā’",
+      "counts": {
+        "hafs": 111,
+        "warsh": 110,
+        "qaloon": 110
+      }
+    },
+    {
+      "surah": 18,
+      "name": "Al-Kahf",
+      "counts": {
+        "hafs": 110,
+        "warsh": 105,
+        "qaloon": 105
+      }
+    },
+    {
+      "surah": 19,
+      "name": "Maryam",
+      "counts": {
+        "hafs": 98,
+        "warsh": 99,
+        "qaloon": 99
+      }
+    },
+    {
+      "surah": 20,
+      "name": "Ṭā-Hā",
+      "counts": {
+        "hafs": 135,
+        "warsh": 134,
+        "qaloon": 134
+      }
+    },
+    {
+      "surah": 21,
+      "name": "Al-Anbiyā’",
+      "counts": {
+        "hafs": 112,
+        "warsh": 111,
+        "qaloon": 111
+      }
+    },
+    {
+      "surah": 22,
+      "name": "Al-Ḥajj",
+      "counts": {
+        "hafs": 78,
+        "warsh": 76,
+        "qaloon": 76
+      }
+    },
+    {
+      "surah": 23,
+      "name": "Al-Mu’minūn",
+      "counts": {
+        "hafs": 118,
+        "warsh": 119,
+        "qaloon": 119
+      }
+    },
+    {
+      "surah": 24,
+      "name": "An-Nūr",
+      "counts": {
+        "hafs": 64,
+        "warsh": 62,
+        "qaloon": 62
+      }
+    },
+    {
+      "surah": 26,
+      "name": "Ash-Shu‘arā’",
+      "counts": {
+        "hafs": 227,
+        "warsh": 226,
+        "qaloon": 226
+      }
+    },
+    {
+      "surah": 27,
+      "name": "An-Naml",
+      "counts": {
+        "hafs": 93,
+        "warsh": 95,
+        "qaloon": 95
+      }
+    },
+    {
+      "surah": 30,
+      "name": "Ar-Rūm",
+      "counts": {
+        "hafs": 60,
+        "warsh": 59,
+        "qaloon": 59
+      }
+    },
+    {
+      "surah": 31,
+      "name": "Luqmān",
+      "counts": {
+        "hafs": 34,
+        "warsh": 33,
+        "qaloon": 33
+      }
+    },
+    {
+      "surah": 35,
+      "name": "Fāṭir",
+      "counts": {
+        "hafs": 45,
+        "warsh": 46,
+        "qaloon": 46
+      }
+    },
+    {
+      "surah": 36,
+      "name": "Yā-Sīn",
+      "counts": {
+        "hafs": 83,
+        "warsh": 82,
+        "qaloon": 82
+      }
+    },
+    {
+      "surah": 38,
+      "name": "Ṣād",
+      "counts": {
+        "hafs": 88,
+        "warsh": 86,
+        "qaloon": 86
+      }
+    },
+    {
+      "surah": 39,
+      "name": "Az-Zumar",
+      "counts": {
+        "hafs": 75,
+        "warsh": 72,
+        "qaloon": 72
+      }
+    },
+    {
+      "surah": 40,
+      "name": "Ghāfir",
+      "counts": {
+        "hafs": 85,
+        "warsh": 84,
+        "qaloon": 84
+      }
+    },
+    {
+      "surah": 41,
+      "name": "Fuṣṣilat",
+      "counts": {
+        "hafs": 54,
+        "warsh": 53,
+        "qaloon": 53
+      }
+    },
+    {
+      "surah": 42,
+      "name": "Ash-Shūra",
+      "counts": {
+        "hafs": 53,
+        "warsh": 50,
+        "qaloon": 50
+      }
+    },
+    {
+      "surah": 44,
+      "name": "Ad-Dukhān",
+      "counts": {
+        "hafs": 59,
+        "warsh": 56,
+        "qaloon": 56
+      }
+    },
+    {
+      "surah": 45,
+      "name": "Al-Jāthiyah",
+      "counts": {
+        "hafs": 37,
+        "warsh": 36,
+        "qaloon": 36
+      }
+    },
+    {
+      "surah": 46,
+      "name": "Al-Aḥqāf",
+      "counts": {
+        "hafs": 35,
+        "warsh": 34,
+        "qaloon": 34
+      }
+    },
+    {
+      "surah": 47,
+      "name": "Muḥammad",
+      "counts": {
+        "hafs": 38,
+        "warsh": 39,
+        "qaloon": 39
+      }
+    },
+    {
+      "surah": 52,
+      "name": "Aṭ-Ṭūr",
+      "counts": {
+        "hafs": 49,
+        "warsh": 47,
+        "qaloon": 47
+      }
+    },
+    {
+      "surah": 53,
+      "name": "An-Najm",
+      "counts": {
+        "hafs": 62,
+        "warsh": 61,
+        "qaloon": 61
+      }
+    },
+    {
+      "surah": 55,
+      "name": "Ar-Raḥmān",
+      "counts": {
+        "hafs": 78,
+        "warsh": 77,
+        "qaloon": 77
+      }
+    },
+    {
+      "surah": 56,
+      "name": "Al-Wāqi‘ah",
+      "counts": {
+        "hafs": 96,
+        "warsh": 99,
+        "qaloon": 99
+      }
+    },
+    {
+      "surah": 57,
+      "name": "Al-Ḥadīd",
+      "counts": {
+        "hafs": 29,
+        "warsh": 28,
+        "qaloon": 28
+      }
+    },
+    {
+      "surah": 58,
+      "name": "Al-Mujādilah",
+      "counts": {
+        "hafs": 22,
+        "warsh": 21,
+        "qaloon": 21
+      }
+    },
+    {
+      "surah": 67,
+      "name": "Al-Mulk",
+      "counts": {
+        "hafs": 30,
+        "warsh": 31,
+        "qaloon": 31
+      }
+    },
+    {
+      "surah": 71,
+      "name": "Nūḥ",
+      "counts": {
+        "hafs": 28,
+        "warsh": 30,
+        "qaloon": 30
+      }
+    },
+    {
+      "surah": 73,
+      "name": "Al-Muzzammil",
+      "counts": {
+        "hafs": 20,
+        "warsh": 18,
+        "qaloon": 18
+      }
+    },
+    {
+      "surah": 74,
+      "name": "Al-Muddaththir",
+      "counts": {
+        "hafs": 56,
+        "warsh": 55,
+        "qaloon": 55
+      }
+    },
+    {
+      "surah": 75,
+      "name": "Al-Qiyāmah",
+      "counts": {
+        "hafs": 40,
+        "warsh": 39,
+        "qaloon": 39
+      }
+    },
+    {
+      "surah": 79,
+      "name": "An-Nāzi‘āt",
+      "counts": {
+        "hafs": 46,
+        "warsh": 45,
+        "qaloon": 45
+      }
+    },
+    {
+      "surah": 89,
+      "name": "Al-Fajr",
+      "counts": {
+        "hafs": 30,
+        "warsh": 32,
+        "qaloon": 32
+      }
+    },
+    {
+      "surah": 96,
+      "name": "Al-‘Alaq",
+      "counts": {
+        "hafs": 19,
+        "warsh": 20,
+        "qaloon": 20
+      }
+    },
+    {
+      "surah": 99,
+      "name": "Az-Zalzalah",
+      "counts": {
+        "hafs": 8,
+        "warsh": 9,
+        "qaloon": 9
+      }
+    },
+    {
+      "surah": 101,
+      "name": "Al-Qāri‘ah",
+      "counts": {
+        "hafs": 11,
+        "warsh": 10,
+        "qaloon": 10
+      }
+    },
+    {
+      "surah": 106,
+      "name": "Quraish",
+      "counts": {
+        "hafs": 4,
+        "warsh": 5,
+        "qaloon": 5
+      }
+    },
+    {
+      "surah": 107,
+      "name": "Al-Mā‘ūn",
+      "counts": {
+        "hafs": 7,
+        "warsh": 6,
+        "qaloon": 6
+      }
+    }
+  ]
+}

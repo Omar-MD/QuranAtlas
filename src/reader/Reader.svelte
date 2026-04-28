@@ -7,10 +7,12 @@
   import { settings } from '../state/settings.svelte'
   import { getSurah, getSurahs, loadTranslationForSurah } from '../data/dataset'
   import type { SurahPayload, SurahMeta, TranslationPayload } from '../data/dataset'
+  import { loadVerseAliases, resolveTranslationFor, type VerseAliases, type TranslationRole } from '../data/verse-aliases'
   import { get } from '../core/db'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
+  import { logger } from '../core/logger'
   import { clearUndoToast, clearUndoRecord } from '../core/ui-bridge'
   import { setupChunkedAppend, CHUNK_SIZE } from './chunked-append'
   import { initPositionTracking, teardownPositionTracking, savePosition } from './position'
@@ -51,12 +53,13 @@
   const surahNum = $derived(parseInt(surahParam ?? '', 10))
   const targetVerse = $derived(ayahParam ? parseInt(ayahParam, 10) : null)
 
-  type VerseItem = { key: string; ar: string; en: string }
+  type VerseItem = { key: string; ar: string; en: string; translationRole: TranslationRole; primaryAyah?: number }
 
   let surahData = $state<SurahPayload | null>(null)
   let surahMeta = $state<SurahMeta | null>(null)
   let translationPack = $state<TranslationPayload | null>(null)
   let translationByVerse = $state<Record<string, string>>({})
+  let translationRoleByVerse = $state<Record<string, { role: TranslationRole, primaryAyah?: number }>>({})
   let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
   let translationVisible = $state(settings.translationVisible ?? true)
@@ -104,10 +107,13 @@
     for (let i = renderedCount; i < nextEnd; i++) {
       const ayah = surahData.ayat[i]
       const key = `${surahData.sura_no}:${ayah?.aya_no ?? (i + 1)}`
+      const roleInfo = translationRoleByVerse[key]
       newItems.push({
         key,
         ar: ayah?.aya_text ?? '',
         en: translationByVerse[key] ?? '',
+        translationRole: roleInfo?.role ?? 'identity',
+        primaryAyah: roleInfo?.primaryAyah,
       })
     }
     verses = [...verses, ...newItems]
@@ -217,7 +223,7 @@
     try {
       performance.mark('reader:fetch-start')
 
-      const [data, surahs, transVisible, transId, pack] = await Promise.all([
+      const [data, surahs, transVisible, transId, pack, verseAliases] = await Promise.all([
         getSurah(surahNum),
         getSurahs(),
         get('settings', 'translationVisible').then((r) => {
@@ -231,6 +237,10 @@
         // Optimistically fetch the default pack while we resolve the user's
         // saved id; if the saved id differs, a second fetch follows below.
         loadTranslationForSurah(settings.translationId ?? 'saheeh', surahNum).catch(() => null),
+        // Cross-riwayah verse-equivalence aliases. Hafs-keyed translations
+        // require this map to look up the right Hafs ayah(s) for each
+        // Warsh / Qaloon ayah. Cached after first fetch.
+        loadVerseAliases().catch(() => null) as Promise<VerseAliases | null>,
       ])
 
       clearTimeout(timeoutId)
@@ -256,11 +266,59 @@
       }
       settings.translationId = transId
       translationPack = resolvedPack
-      const map: Record<string, string> = {}
+
+      // Build the per-verse translation map keyed by the active riwayah's
+      // (surah, ayah) tuples. Translations ship Hafs-keyed (Kufan numbering);
+      // for Warsh / Qaloon (Madinan numbering) we resolve each riwayah ayah
+      // to the corresponding Hafs ayah(s) via `_verse-aliases.json`. KFGQPC's
+      // Madinah Mushaf is the authoritative scholarly source — splits are
+      // encoded in the dataset itself, derived mechanically by
+      // `scripts/derive-verse-aliases.mjs`.
+      //
+      // Role per Madinan ayah:
+      //   - identity: 1:1 alias (or surah without aliases) — show translation as-is
+      //   - merged:   multiple Hafs ayat → this Madinan ayah; concat their texts
+      //   - primary:  this Madinan ayah is the FIRST half of a Hafs split — show full translation
+      //   - continuation: subsequent half — show "↑ continued" marker, no translation
+      //   - none:    no Hafs equivalent (e.g. Warsh / Qaloon's surah-1 first ayah)
+      const hafsMap: Record<string, string> = {}
       if (resolvedPack) {
-        for (const v of resolvedPack.verses) { map[v.key] = v.text }
+        for (const v of resolvedPack.verses) { hafsMap[v.key] = v.text }
+      }
+      const map: Record<string, string> = {}
+      const roleMap: Record<string, { role: TranslationRole, primaryAyah?: number }> = {}
+      if (resolvedPack && data?.ayat?.length) {
+        const missing: string[] = []
+        for (const ayah of data.ayat) {
+          const riwayahKey = `${data.sura_no}:${ayah.aya_no}`
+          const resolution = resolveTranslationFor(verseAliases, data.riwayah, data.sura_no, ayah.aya_no)
+          roleMap[riwayahKey] = { role: resolution.role, primaryAyah: resolution.primaryAyah }
+          if (resolution.role === 'continuation') {
+            // Translation lives on the primary ayah; this one shows the marker.
+            map[riwayahKey] = ''
+          } else if (resolution.role === 'none') {
+            map[riwayahKey] = ''
+            missing.push(riwayahKey)
+          } else {
+            const parts = resolution.hafsKeys.map((k) => hafsMap[k] ?? '').filter(Boolean)
+            if (parts.length === 0) {
+              missing.push(riwayahKey)
+              map[riwayahKey] = ''
+            } else {
+              map[riwayahKey] = parts.join(' ')
+            }
+          }
+        }
+        if (missing.length > 0) {
+          logger.warn(
+            `[translation-miss] riwayah=${data.riwayah} translation=${transId} `
+            + `surah=${data.sura_no} missing=${missing.length} keys=${missing.slice(0, 5).join(',')}`
+            + (missing.length > 5 ? `…+${missing.length - 5}` : ''),
+          )
+        }
       }
       translationByVerse = map
+      translationRoleByVerse = roleMap
 
       // Render first chunk
       verses = []
@@ -413,6 +471,8 @@
         translation={v.en}
         footnotes={translationPack?.footnotes ?? {}}
         {translationVisible}
+        translationRole={v.translationRole}
+        primaryAyah={v.primaryAyah}
       />
     {/each}
 

@@ -154,9 +154,16 @@ On the reader, with `settings.translationVisible: true` (default).
 4. Tap the same marker again, or the `×`, or press **Esc** with focus inside the verse → panel closes. Tapping a different marker swaps the open panel to that footnote (one open footnote per verse at any time).
 5. Toggle **Hide translation** (Settings sheet or `t` key) → the translation block, all `[N]` markers, and any open footnote panel disappear in one repaint via `settings.translationVisible` rune. Toggling back on restores text and markers but starts with no panel open.
 
-**Surfaces:** Reader (`Verse.svelte`, `reader/translation-tokens.ts`). **Persistence/regression-guards:** `tests/unit/reader/translation-tokens.test.ts` (token parser — text/marker splits, contiguous markers, no markers, malformed). Translation pack absent / `loadTranslationForSurah` returns `null` ⇒ verses render with empty translation strings, no markers, no panels — reader stays functional.
+**Surfaces:** Reader (`Verse.svelte`, `reader/translation-tokens.ts`). **Persistence/regression-guards:** `tests/unit/reader/translation-tokens.test.ts` (token parser — text/marker splits, contiguous markers, no markers, malformed); `tests/unit/data/translation-riwayah-alignment.test.js` (Hafs translation 100% covered; cross-riwayah misses confined to verse-map-flagged divergent surahs; `_verse-map.json` ↔ `surahs.json` invariant). Translation pack absent / `loadTranslationForSurah` returns `null` ⇒ verses render with empty translation strings, no markers, no panels — reader stays functional.
 
 **Default translation:** Saheeh International (`settings.translationId === 'saheeh'`); see `data-model.md` §Translation packs for schema and `architecture.md` §Translation pipeline for the build/runtime path.
+
+**Cross-riwayah alignment:** translations are Hafs-keyed (Kufan numbering). Warsh and Qaloon (Madinan numbering) partition the same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases live in `public/dataset/translations/_verse-aliases.json` (mechanically derived from KFGQPC by `scripts/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh / Qaloon ayah via `resolveTranslationFor()` and renders one of:
+- **Identity / merged / primary** — translation displays normally.
+- **Continuation** — when a Hafs ayah splits into two Madinan ayat (e.g. Hafs 1:7 → Warsh 1:6 + 1:7), the second Madinan ayah shows a small italic "↑ continued from verse N" marker instead of duplicating the full translation.
+- **None** — empty cell, dev-only `[translation-miss]` log (currently unreachable after aliases).
+
+Coverage 100% across all three riwayat. Bismillah glyph + translation render above Warsh / Qaloon surah 1 via `SurahHeader.svelte::shouldRenderBasmala`. See `data-model.md` §Translation ↔ riwayah alignment for the schema and runtime contract.
 
 ### B2. Scroll hides dock, scroll-to-top surfaces it
 
