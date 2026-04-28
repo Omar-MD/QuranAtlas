@@ -30,10 +30,20 @@
   let openSwipeKey = $state<string | null>(null)
   let loaded = $state(false)
 
-  let touchStartX = 0
-  let touchStartY = 0
-  let touchKey: string | null = null
+  // iOS-style progressive swipe: row tracks the finger live during touchmove,
+  // snaps to revealed/closed on touchend by threshold OR velocity.
+  let activeSwipeKey = $state<string | null>(null)
+  let activeSwipeDx = $state(0)
+  let touchStart: { x: number; y: number; key: string; t: number } | null = null
+  let scrollAxis: 'horizontal' | 'vertical' | null = null
+  let suppressClickKey: string | null = null
+  let suppressClickAt = 0
 
+  const REVEAL_PX = 76                 // delete button width — open-state translateX
+  const SNAP_THRESHOLD_PX = 38         // half the button: past this snaps revealed
+  const VELOCITY_SNAP = 0.45           // px/ms — past this any leftward flick reveals
+  const AXIS_LOCK_PX = 8               // intent-detection threshold
+  const SUPPRESS_CLICK_MS = 600        // ignore the synthetic click that follows touchend
   const SNIPPET_CHARS = 50
 
   async function load(): Promise<void> {
@@ -78,6 +88,13 @@
   }
 
   function handleRowClick(b: Bookmark): void {
+    // Suppress the synthetic click that follows a touchend whose gesture was
+    // a horizontal swipe — without this guard, even a small left swipe that
+    // didn't pass the snap threshold would trigger navigation.
+    if (suppressClickKey === b.verseKey && Date.now() - suppressClickAt < SUPPRESS_CLICK_MS) {
+      suppressClickKey = null
+      return
+    }
     if (openSwipeKey === b.verseKey) {
       // Swipe is open — first click closes it instead of navigating.
       openSwipeKey = null
@@ -98,44 +115,104 @@
     }
   }
 
+  function rowBaseDx(key: string): number {
+    return openSwipeKey === key ? -REVEAL_PX : 0
+  }
+
   function onTouchStart(e: TouchEvent, key: string): void {
     const t = e.touches[0]
     if (!t) { return }
-    touchStartX = t.clientX
-    touchStartY = t.clientY
-    touchKey = key
+    // Tapping a different row while one is open closes the open one first.
+    if (openSwipeKey && openSwipeKey !== key) {
+      openSwipeKey = null
+    }
+    touchStart = { x: t.clientX, y: t.clientY, key, t: performance.now() }
+    scrollAxis = null
+    activeSwipeKey = key
+    activeSwipeDx = rowBaseDx(key)
   }
 
   function onTouchMove(e: TouchEvent, key: string): void {
-    if (touchKey !== key) { return }
+    if (!touchStart || touchStart.key !== key) { return }
     const t = e.touches[0]
     if (!t) { return }
-    const dx = t.clientX - touchStartX
-    const dy = Math.abs(t.clientY - touchStartY)
-    // Once horizontal intent is clear, claim the gesture so the parent
-    // drawer's left-swipe-to-close handler does not also fire on touchend.
-    if (Math.abs(dx) > 12 && Math.abs(dx) > dy * 1.5) {
-      e.stopPropagation()
+    const dx = t.clientX - touchStart.x
+    const dy = t.clientY - touchStart.y
+
+    // Axis lock: claim the gesture once direction is clear. Vertical scrolls
+    // are released back to the drawer body; horizontal swipes own touchmove +
+    // touchend so the parent drawer's left-swipe-to-close handler does not
+    // also fire.
+    if (scrollAxis === null && (Math.abs(dx) > AXIS_LOCK_PX || Math.abs(dy) > AXIS_LOCK_PX)) {
+      scrollAxis = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical'
     }
+    if (scrollAxis !== 'horizontal') { return }
+
+    e.stopPropagation()
+
+    // Live-track the finger from the row's resting position. Allow a small
+    // overshoot past REVEAL_PX so the rubber-band feels right; clamp the
+    // right side at 0 so swiping right on a closed row does nothing.
+    const next = rowBaseDx(key) + dx
+    activeSwipeDx = Math.max(-REVEAL_PX * 1.18, Math.min(0, next))
   }
 
   function onTouchEnd(e: TouchEvent, key: string): void {
-    if (touchKey !== key) { return }
-    const t = e.changedTouches[0]
-    if (!t) { touchKey = null; return }
-    const dx = t.clientX - touchStartX
-    const dy = Math.abs(t.clientY - touchStartY)
-    // Generous threshold (32px) so a deliberate flick reliably reveals the
-    // delete button — was 48px which felt sluggish + matched the drawer's
-    // own close threshold.
-    if (dx < -32 && dy < 28) {
-      openSwipeKey = key
-      e.stopPropagation()
-    } else if (dx > 24 && openSwipeKey === key) {
-      openSwipeKey = null
-      e.stopPropagation()
+    if (!touchStart || touchStart.key !== key) {
+      activeSwipeKey = null
+      activeSwipeDx = 0
+      touchStart = null
+      scrollAxis = null
+      return
     }
-    touchKey = null
+    const t = e.changedTouches[0]
+    const wasHorizontal = scrollAxis === 'horizontal'
+    if (wasHorizontal) {
+      e.stopPropagation()
+      suppressClickKey = key
+      suppressClickAt = Date.now()
+    }
+    if (t && wasHorizontal) {
+      const dx = t.clientX - touchStart.x
+      const dt = Math.max(1, performance.now() - touchStart.t)
+      const velocity = -dx / dt   // positive = leftward speed in px/ms
+      const wasOpen = openSwipeKey === key
+      // Snap rules:
+      //   - leftward flick past VELOCITY_SNAP → reveal
+      //   - resting dx past SNAP_THRESHOLD_PX (negative) → reveal
+      //   - else if was open and user dragged it closed past threshold → close
+      //   - otherwise return to previous resting state
+      if (activeSwipeDx <= -SNAP_THRESHOLD_PX || velocity > VELOCITY_SNAP) {
+        openSwipeKey = key
+      } else if (wasOpen && activeSwipeDx > -SNAP_THRESHOLD_PX) {
+        openSwipeKey = null
+      } else if (!wasOpen) {
+        openSwipeKey = null
+      }
+    }
+    activeSwipeKey = null
+    activeSwipeDx = 0
+    touchStart = null
+    scrollAxis = null
+  }
+
+  function rowStyle(key: string): string {
+    if (activeSwipeKey === key) {
+      // Live-tracking phase: no transition (1:1 finger follow).
+      return `transform: translateX(${activeSwipeDx}px); transition: none;`
+    }
+    // Resting phase: spring snap.
+    return ''
+  }
+
+  function delStyle(key: string): string {
+    if (activeSwipeKey === key) {
+      // Opacity fades from 0 → 1 across the swipe so the button materializes
+      // progressively rather than appearing fully formed at the threshold.
+      const progress = Math.min(1, Math.abs(activeSwipeDx) / REVEAL_PX)
+      return `opacity: ${progress.toFixed(3)}; transition: none;`
+    }
+    return ''
   }
 
   let unsubs: Array<() => void> = []
@@ -181,6 +258,7 @@
               <button
                 type="button"
                 class="qa-bookmarks-row-btn"
+                style={rowStyle(b.verseKey)}
                 onclick={() => handleRowClick(b)}
                 ontouchstart={(e) => onTouchStart(e, b.verseKey)}
                 ontouchmove={(e) => onTouchMove(e, b.verseKey)}
@@ -193,9 +271,10 @@
               <button
                 type="button"
                 class="qa-bookmarks-row-del"
+                style={delStyle(b.verseKey)}
                 aria-label={`Delete bookmark ${b.verseKey}`}
                 onclick={() => handleDelete(b)}
-              >&#x2715;</button>
+              >Delete</button>
             </li>
           {/each}
         </ul>

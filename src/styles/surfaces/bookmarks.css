@@ -71,6 +71,11 @@
     position: relative;
     overflow: hidden;
     border-bottom: 1px solid var(--qa-border-subtle);
+    /* Delete button paints in the right edge; row btn slides over it.
+       Theme-aware terracotta — picks the parchment-palette danger fill in
+       light/sepia, deeper terracotta in dark; cleaner against cream than
+       the raw browser red. */
+    background: var(--qa-surface-danger, var(--qa-text-error));
   }
 
   .qa-bookmarks-row-btn {
@@ -78,14 +83,22 @@
     align-items: center;
     gap: 12px;
     width: 100%;
-    background: transparent;
+    /* Opaque background so the delete button behind us is occluded until
+       the user actually swipes. Tracks the surrounding surface so light/
+       sepia/dark themes keep the row appearance consistent. */
+    background: var(--qa-surface-app);
     border: 0;
     padding: 11px 14px;
     font: inherit;
     color: var(--qa-text-primary);
     text-align: left;
     cursor: pointer;
-    transition: transform 160ms ease, background 120ms ease;
+    /* iOS-style spring snap on touchend (when no inline transition: none
+       is set). The cubic-bezier mirrors UIKit's standard ease curve. */
+    transition: transform 240ms cubic-bezier(0.32, 0.72, 0, 1),
+                background 120ms ease;
+    will-change: transform;
+    touch-action: pan-y;
   }
 
   .qa-bookmarks-row-btn:hover,
@@ -121,40 +134,85 @@
     position: absolute;
     inset-block: 0;
     inset-inline-end: 0;
-    width: 64px;
-    background: var(--qa-text-error, #dc2626);
+    width: 76px;
+    /* Theme-aware terracotta fill — matches `.qa-bookmarks-row` background
+       so they read as a single recessed surface during the swipe. */
+    background: var(--qa-surface-danger, var(--qa-text-error));
     color: #fff;
     border: 0;
-    font-size: 18px;
+    border-inline-start: 1px solid color-mix(in srgb, #000 18%, transparent);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     cursor: pointer;
-    transform: translateX(100%);
-    transition: transform 160ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Always positioned at the right edge; the row button slides left to
+       reveal it. Inline `style="opacity: …"` from the component fades the
+       button progressively in lock-step with the swipe; the resting opacity
+       below covers the snap-revealed state. */
+    opacity: 0;
+    transition: opacity 240ms cubic-bezier(0.32, 0.72, 0, 1),
+                background 120ms ease,
+                box-shadow 120ms ease;
+    z-index: 0;
+  }
+
+  .qa-bookmarks-row-del:hover,
+  .qa-bookmarks-row-del:focus-visible {
+    background: color-mix(in srgb, var(--qa-surface-danger, var(--qa-text-error)) 86%, #000);
+    box-shadow: inset 2px 0 0 0 color-mix(in srgb, #fff 30%, transparent);
+    outline: none;
+  }
+
+  .qa-bookmarks-row-del:active {
+    background: color-mix(in srgb, var(--qa-surface-danger, var(--qa-text-error)) 78%, #000);
   }
 
   .qa-bookmarks-row--swiped .qa-bookmarks-row-btn {
-    transform: translateX(-64px);
+    transform: translateX(-76px);
   }
 
   .qa-bookmarks-row--swiped .qa-bookmarks-row-del {
-    transform: translateX(0);
+    opacity: 1;
   }
 
-  /* Desktop hover-reveal × — no swipe gesture available. */
+  /* Desktop hover-reveal — no swipe gesture available. The mobile slide-out
+     pattern is replaced by an inline icon-style button at the row's right
+     edge, only visible on hover/focus. Surface-level "delete" copy is kept
+     short ("✕") on desktop so it stays out of the row's primary content. */
   @media (hover: hover) and (min-width: 1180px) {
+    .qa-bookmarks-row {
+      background: transparent;
+    }
+
     .qa-bookmarks-row-del {
-      transform: translateX(0);
       width: auto;
       inset-block: 50%;
       inset-inline-end: 12px;
       transform: translateY(-50%);
       background: transparent;
       color: var(--qa-text-muted);
+      border: 0;
       font-size: 14px;
-      padding: 4px 8px;
-      border-radius: 6px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: var(--qa-radius-sm, 6px);
       opacity: 0;
       transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
     }
+
+    /* Replace the "Delete" string on desktop with an ✕ glyph via ::before;
+       hide the label so it does not bleed past the icon-sized button. */
+    .qa-bookmarks-row-del::before {
+      content: '\2715';
+      font-size: 14px;
+      line-height: 1;
+    }
+    .qa-bookmarks-row-del { font-size: 0; }
+    .qa-bookmarks-row-del::before { font-size: 14px; }
 
     .qa-bookmarks-row:hover .qa-bookmarks-row-del,
     .qa-bookmarks-row-del:focus-visible {
@@ -163,8 +221,9 @@
 
     .qa-bookmarks-row-del:hover,
     .qa-bookmarks-row-del:focus-visible {
-      color: var(--qa-text-error, #dc2626);
+      color: var(--qa-text-danger, var(--qa-text-error));
       background: var(--qa-surface-raised);
+      box-shadow: none;
     }
 
     .qa-bookmarks-row--swiped .qa-bookmarks-row-btn {
