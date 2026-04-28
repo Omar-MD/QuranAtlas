@@ -30,24 +30,41 @@
     min-width: 0;
   }
 
+  /* Surah title — distinct calligraphic treatment. The active KFGQPC
+     riwayah face provides the orthography; CSS adds traditional flourish
+     ornaments (﴿ ﴾) around the name + a slight letter-spacing + medium-
+     heavier stroke + accent color so the title reads as a calligraphic
+     header rather than running prose. */
   .qa-surah-name {
     grid-column: 2;
     grid-row: 1 / span 2;
     align-self: center;
     text-align: right;
     font-family:
-      'Amiri Quran',
       'Scheherazade New',
       'Noto Naskh Arabic',
       var(--qa-font-arabic);
-    font-size: clamp(2rem, 4.5vw + 1rem, 2.75rem);
-    font-weight: 400;
-    color: var(--qa-text-arabic);
+    font-size: clamp(2.125rem, 4.6vw + 1rem, 2.875rem);
+    font-weight: 500;
+    color: var(--qa-accent);
     direction: rtl;
     line-height: 1.2;
-    letter-spacing: 0;
-    font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+    letter-spacing: 0.01em;
+    font-feature-settings: "liga" 1, "calt" 1, "kern" 1, "dlig" 1;
     text-rendering: optimizelegibility;
+  }
+
+  .qa-surah-name::before {
+    content: '\FD3F';   /* ornate right parenthesis ﴿ — wraps after name (RTL) */
+    margin-inline-start: 0.35em;
+    color: var(--qa-text-muted);
+    font-size: 0.85em;
+  }
+  .qa-surah-name::after {
+    content: '\FD3E';   /* ornate left parenthesis ﴾ — wraps before name (RTL) */
+    margin-inline-end: 0.35em;
+    color: var(--qa-text-muted);
+    font-size: 0.85em;
   }
 
   .qa-surah-meta {
@@ -85,9 +102,7 @@
   .qa-basmala-text {
     display: block;
     font-family:
-      'Amiri Quran',
       'Scheherazade New',
-      Amiri,
       'Noto Naskh Arabic',
       var(--qa-font-arabic);
     font-size: clamp(1.375rem, 8cqi, 5rem);
@@ -222,12 +237,25 @@
     font-weight: 700;
   }
 
+  /* Filled-bookmark glyph: SVG mask so the color tracks `currentColor`
+     across themes + night mode. The path is a classic
+     rectangle-with-bottom-notch bookmark shape (24×24 viewBox). */
   .qa-verse--bookmarked-glyph .qa-verse-number::before {
-    content: '\2605';
+    content: '';
+    display: inline-block;
+    width: 0.85em;
+    height: 0.95em;
     margin-inline-end: 4px;
-    font-size: 0.875rem;
-    line-height: 1;
-    vertical-align: middle;
+    vertical-align: -0.12em;
+    background-color: currentColor;
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 3h12c.55 0 1 .45 1 1v17l-7-4-7 4V4c0-.55.45-1 1-1z'/></svg>");
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    mask-position: center;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 3h12c.55 0 1 .45 1 1v17l-7-4-7 4V4c0-.55.45-1 1-1z'/></svg>");
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    -webkit-mask-position: center;
   }
 
   .qa-verse--pulse {
@@ -266,16 +294,17 @@
     color: var(--qa-text-arabic);
     margin-bottom: 0.875rem;
 
-    /* Amiri Quran ships contextual marks, ligatures, kerning AND mark/mkmk
-       positioning. Setting font-feature-settings to an explicit list (even
-       a permissive one with "liga", "calt", "kern", "rlig" all on) caused
-       iOS Safari to drop the default `mark` and `mkmk` features off the
-       font's GPOS table — so combining marks (sukun stacks, dagger alif
-       U+0670, small high seen U+06EC) collapsed to base position and the
-       verse looked like it had been rendered in a fallback font without
-       Quranic marks. text-rendering: optimizelegibility implies all
-       OpenType features are enabled by default in WebKit, so the explicit
-       list was redundant on top and harmful on iOS. */
+    /* The KFGQPC family ships contextual marks, ligatures, kerning AND
+       mark/mkmk positioning. Setting font-feature-settings to an explicit
+       list (even a permissive one with "liga", "calt", "kern", "rlig" all
+       on) caused iOS Safari to drop the default `mark` and `mkmk`
+       features off the font's GPOS table — so combining marks (sukun
+       stacks, dagger alif U+0670, small high seen U+06EC) collapsed to
+       base position and the verse looked like it had been rendered in a
+       fallback font without Quranic marks. text-rendering:
+       optimizelegibility implies all OpenType features are enabled by
+       default in WebKit, so the explicit list was redundant on top and
+       harmful on iOS. */
     text-rendering: optimizelegibility;
   }
 

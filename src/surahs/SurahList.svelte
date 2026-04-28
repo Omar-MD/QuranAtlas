@@ -188,7 +188,7 @@
   <header class="qa-sl-header">
     <h1 class="qa-sl-title">Surahs</h1>
     <span class="qa-sl-count">{loaded ? countLabel : '114'}</span>
-    <a class="qa-sl-bookmarks-link" href="#/bookmarks">★ Bookmarks</a>
+    <a class="qa-sl-bookmarks-link" href="#/bookmarks"><span class="qa-icon-bookmark" aria-hidden="true"></span> Bookmarks</a>
   </header>
 
   <label class="qa-sl-search">

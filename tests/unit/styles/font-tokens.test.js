@@ -12,9 +12,9 @@ import { resolve } from 'node:path'
  *   - Warsh  → KFGQPC Uthmanic Warsh  (--ff-kfgqpc-warsh)
  *   - Qaloon → KFGQPC Uthmanic Qaloon (--ff-kfgqpc-qaloon)
  *
- * Amiri Quran (Khaled Hosny, OFL) sits in each token's font-family chain
- * as the cross-riwayah fallback because its Unicode coverage spans all
- * three; bare `serif` is the last resort.
+ * The Amiri / Amiri Quran family was dropped 2026-04-28 — Noto Naskh
+ * Arabic is the cross-riwayah fallback in each token's font-family chain;
+ * bare `serif` is the last resort.
  */
 
 const repoRoot = process.cwd()
@@ -36,17 +36,16 @@ describe('arabic font tokens — KFGQPC default per riwayah', () => {
     }
   })
 
-  it('--ff-amiri-quran fallback token is preserved for cross-riwayah fallback', () => {
-    const match = primitivesCss.match(/--ff-amiri-quran\s*:\s*([^;]+);/)
-    expect(match, '--ff-amiri-quran token defined').not.toBeNull()
-    expect(match[1].trim()).toMatch(/^'Amiri Quran'/)
+  it('drops the --ff-amiri-quran token (Amiri family removed 2026-04-28)', () => {
+    expect(primitivesCss).not.toMatch(/--ff-amiri-quran/)
+    expect(semanticCss).not.toMatch(/--ff-amiri-quran/)
   })
 
-  it('each KFGQPC token chains to Amiri Quran as fallback', () => {
+  it('each KFGQPC token chains to Noto Naskh Arabic as cross-riwayah fallback', () => {
     for (const riwayah of ['hafs', 'warsh', 'qaloon']) {
       const re = new RegExp(`--ff-kfgqpc-${riwayah}\\s*:\\s*([^;]+);`)
       const match = primitivesCss.match(re)
-      expect(match[1], `--ff-kfgqpc-${riwayah} fallback chain`).toContain("'Amiri Quran'")
+      expect(match[1], `--ff-kfgqpc-${riwayah} fallback chain`).toContain("'Noto Naskh Arabic'")
     }
   })
 

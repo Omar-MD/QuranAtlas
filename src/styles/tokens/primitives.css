@@ -119,15 +119,15 @@
     /* Quranic Arabic font tokens. Each riwayah is paired with its own
        KFGQPC Uthmanic mushaf cut (the official KSA Madinah Mushaf hand,
        authored to fit each riwayah's own orthography — using the Hafs
-       cut for Warsh/Qaloon text mis-renders combining marks). Amiri
-       Quran (Khaled Hosny, OFL) is the cross-riwayah fallback because
-       its Unicode coverage spans all three; bare `serif` is the last
-       resort and will drop Quran-only marks (sajdah cues, alif waslah,
-       small-high-seen, etc.) on most systems. */
-    --ff-amiri-quran:   'Amiri Quran', 'Amiri', 'Noto Naskh Arabic', serif;
-    --ff-kfgqpc-hafs:   'KFGQPC Uthmanic Hafs',   'Amiri Quran', serif;
-    --ff-kfgqpc-warsh:  'KFGQPC Uthmanic Warsh',  'Amiri Quran', serif;
-    --ff-kfgqpc-qaloon: 'KFGQPC Uthmanic Qaloon', 'Amiri Quran', serif;
+       cut for Warsh/Qaloon text mis-renders combining marks). Amiri /
+       Amiri Quran were dropped 2026-04-28 — the KFGQPC family covers
+       every riwayah we ship; bare `serif` is the last resort and will
+       drop Quran-only marks (sajdah cues, alif waslah, small-high-seen,
+       etc.) on systems without the KFGQPC family installed, which is
+       acceptable since we self-host the woff2 alongside the app. */
+    --ff-kfgqpc-hafs:   'KFGQPC Uthmanic Hafs',   'Noto Naskh Arabic', serif;
+    --ff-kfgqpc-warsh:  'KFGQPC Uthmanic Warsh',  'Noto Naskh Arabic', serif;
+    --ff-kfgqpc-qaloon: 'KFGQPC Uthmanic Qaloon', 'Noto Naskh Arabic', serif;
     --ff-translation: 'Newsreader', georgia, serif;
     --ff-sans:        system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
     --ff-mono:        'Geist Mono', ui-monospace, menlo, monospace;

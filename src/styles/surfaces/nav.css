@@ -552,8 +552,8 @@
 
   .qa-mh-label-ar {
     font-family:
-      'Amiri Quran',
-      var(--qa-font-arabic, 'Amiri', 'Scheherazade New', serif);
+      'Scheherazade New',
+      var(--qa-font-arabic, serif);
 
     /* 18px fits the longest 14-char names (المُنَافِقُونَ etc.) on 390px
        viewports once the ≡ + ⚙ buttons claimed their 48px each. The

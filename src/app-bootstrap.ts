@@ -100,7 +100,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   // the reader actually mounts. Guard against environments without the
   // Font Loading API (jsdom in unit tests).
   if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
-    void document.fonts.load('16px "Amiri Quran"', 'ا').catch(() => { /* ignore — fallback chain handles it */ })
+    void document.fonts.load('16px "KFGQPC Uthmanic Qaloon"', 'ا').catch(() => { /* ignore — fallback chain handles it */ })
     // Belt-and-braces for iOS Safari: bypass CSS @font-face activation
     // entirely by constructing the FontFace from the woff2 ArrayBuffer
     // and adding to document.fonts. Survives every iOS-specific defect
@@ -108,13 +108,14 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // late paint with fallback, render-tree-side activation race).
     loadArabicQuranFontProgrammatically()
     // iOS Safari paints the reader DOM with a fallback font when verses
-    // mount before Amiri Quran swaps in, then doesn't re-shape RTL Arabic
-    // text when font-display:swap brings in the real face — combining
-    // marks (sukun, dagger alif, small high seen) collapse to base
-    // position. Force a re-paint once fonts are ready AND each time the
-    // reader mounts new verses (router navigation, riwayah switch).
-    // Toggling a no-op transform invalidates the layout cache + re-runs
-    // glyph shaping with the now-loaded Amiri Quran font.
+    // mount before the KFGQPC Uthmanic riwayah face swaps in, then
+    // doesn't re-shape RTL Arabic text when font-display:swap brings in
+    // the real face — combining marks (sukun, dagger alif, small high
+    // seen) collapse to base position. Force a re-paint once fonts are
+    // ready AND each time the reader mounts new verses (router
+    // navigation, riwayah switch). Toggling a no-op transform
+    // invalidates the layout cache + re-runs glyph shaping with the
+    // now-loaded KFGQPC face.
     const reshape = (root: ParentNode = document) => {
       const verses = root.querySelectorAll('.qa-verse-arabic')
       for (const el of verses) {

@@ -11,17 +11,21 @@
     top: 0;
     left: 0;
     right: 0;
-    z-index: var(--qa-z-sheet);
+    z-index: 1000;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
-    background: var(--qa-accent-soft);
-    border-bottom: 1px solid var(--qa-accent);
-    color: var(--qa-text-on-sheet);
+    padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
+    /* Fully opaque accent fill — was --qa-accent-soft (~22% alpha) which
+       let scrolling page content bleed through. Updated 2026-04-28 to
+       guarantee the banner remains legible regardless of the surface
+       behind it, and to make the "Reload" call-to-action unmistakable. */
+    background: var(--qa-accent);
+    border-bottom: 2px solid var(--qa-accent-hover, var(--qa-accent));
+    color: var(--qa-text-on-accent);
     font-size: var(--qa-text-size-meta);
     line-height: 1.4;
-    box-shadow: var(--qa-elevation-sm);
+    box-shadow: var(--qa-elevation-md, 0 4px 12px rgb(0 0 0 / 18%));
   }
 
   .qa-update-banner-text {
@@ -30,20 +34,23 @@
   }
 
   .qa-update-banner-action {
-    padding: 4px 12px;
-    border: 1px solid var(--qa-accent);
+    padding: 6px 14px;
+    border: 1px solid var(--qa-text-on-accent);
     border-radius: var(--qa-radius-sm);
-    background: var(--qa-accent);
-    color: var(--qa-text-on-accent);
+    background: var(--qa-text-on-accent);
+    color: var(--qa-accent);
     font: inherit;
     font-size: var(--qa-text-size-meta);
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
   }
 
   .qa-update-banner-action:hover,
   .qa-update-banner-action:focus-visible {
-    background: var(--qa-accent-hover);
+    background: var(--qa-surface-app);
+    color: var(--qa-accent);
+    outline: 2px solid var(--qa-text-on-accent);
+    outline-offset: 1px;
   }
 
   .qa-update-banner-action:disabled {
@@ -57,7 +64,7 @@
     border: 0;
     border-radius: var(--qa-radius-circle);
     background: transparent;
-    color: var(--qa-text-on-sheet);
+    color: var(--qa-text-on-accent);
     font-size: 1rem;
     cursor: pointer;
     display: inline-flex;
@@ -67,6 +74,10 @@
 
   .qa-update-banner-dismiss:hover,
   .qa-update-banner-dismiss:focus-visible {
-    background: color-mix(in srgb, var(--qa-text-on-sheet) 8%, transparent);
+    background: color-mix(in srgb, var(--qa-text-on-accent) 18%, transparent);
+  }
+
+  .qa-update-banner-text {
+    color: var(--qa-text-on-accent);
   }
 }

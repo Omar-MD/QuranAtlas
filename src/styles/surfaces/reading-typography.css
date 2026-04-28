@@ -17,7 +17,7 @@
   /* ---- Line spacing (Arabic + translation, ratio preserved) ---- */
 
   /* Arabic line-height. The floor is 1.92 across all three riwayat
-     (matches Madinah mushaf leading and clears Amiri Quran tashkeel
+     (matches Madinah mushaf leading and clears KFGQPC tashkeel
      collisions); md (default) lands at 2.12. The variable is set by
      reading-typography.ts on lineSpacing change or Riwayah switch; the
      fallback below covers the very first paint before init. */

@@ -75,7 +75,7 @@
     --qa-elevation-popover: var(--sh-popover);
 
     /* --- Typography ------------------------------------------------------ */
-    --qa-font-arabic:      var(--ff-amiri-quran);
+    --qa-font-arabic:      var(--ff-kfgqpc-qaloon);
     --qa-font-translation: var(--ff-translation);
     --qa-font-ui:          var(--ff-sans);
     --qa-font-mono:        var(--ff-mono);
@@ -186,8 +186,9 @@
   /* Riwayah-bound Arabic font. Each riwayah is paired with its own
      KFGQPC Uthmanic mushaf cut — using a different riwayah's font cut
      mis-renders combining marks, since each cut is authored against
-     its own orthography. Amiri Quran is the cross-riwayah fallback in
-     each token's font-family chain. */
+     its own orthography. The Amiri family was the cross-riwayah
+     fallback before 2026-04-28; dropped — `Noto Naskh Arabic` is the
+     last-resort fallback in each token's font-family chain. */
   :root[data-riwayah='hafs']   { --qa-font-arabic: var(--ff-kfgqpc-hafs); }
   :root[data-riwayah='warsh']  { --qa-font-arabic: var(--ff-kfgqpc-warsh); }
   :root[data-riwayah='qaloon'] { --qa-font-arabic: var(--ff-kfgqpc-qaloon); }

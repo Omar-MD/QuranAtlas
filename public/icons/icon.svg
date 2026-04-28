@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="QuranAtlas">
+  <defs>
+    <linearGradient id="qa-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2a47"/>
+      <stop offset="1" stop-color="#0c1426"/>
+    </linearGradient>
+    <linearGradient id="qa-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0d28a"/>
+      <stop offset="1" stop-color="#b08040"/>
+    </linearGradient>
+    <linearGradient id="qa-page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf6e3"/>
+      <stop offset="1" stop-color="#e8d9b0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="96" ry="96" fill="url(#qa-bg)"/>
+
+  <!-- Decorative outer ring (gold halo) -->
+  <circle cx="256" cy="256" r="208" stroke="url(#qa-gold)" stroke-width="3" fill="none" opacity="0.55"/>
+  <circle cx="256" cy="256" r="186" stroke="url(#qa-gold)" stroke-width="1.5" fill="none" opacity="0.35"/>
+
+  <!-- Crescent moon (top) -->
+  <g transform="translate(256 116)">
+    <path d="M 0 -38 A 42 42 0 1 0 0 46 A 32 32 0 1 1 8 -36 Z" fill="url(#qa-gold)"/>
+  </g>
+
+  <!-- Open book — two parchment pages meeting at center spine -->
+  <g transform="translate(256 296)">
+    <!-- spine shadow line -->
+    <rect x="-2" y="-86" width="4" height="172" fill="#000" opacity="0.4"/>
+
+    <!-- left page (slight curve via path) -->
+    <path
+      d="M -132 -78 Q -20 -86 -8 -78 L -8 78 Q -20 86 -132 78 Z"
+      fill="url(#qa-page)" stroke="url(#qa-gold)" stroke-width="2"/>
+    <!-- right page -->
+    <path
+      d="M 8 -78 Q 20 -86 132 -78 L 132 78 Q 20 86 8 78 Z"
+      fill="url(#qa-page)" stroke="url(#qa-gold)" stroke-width="2"/>
+
+    <!-- text lines (left page) — Arabic-direction long-short pattern -->
+    <g stroke="#3a2a18" stroke-width="3.2" stroke-linecap="round" opacity="0.45">
+      <line x1="-110" y1="-50" x2="-26" y2="-50"/>
+      <line x1="-94"  y1="-26" x2="-26" y2="-26"/>
+      <line x1="-110" y1="-2"  x2="-44" y2="-2"/>
+      <line x1="-100" y1="22"  x2="-26" y2="22"/>
+      <line x1="-110" y1="46"  x2="-60" y2="46"/>
+    </g>
+    <!-- text lines (right page) -->
+    <g stroke="#3a2a18" stroke-width="3.2" stroke-linecap="round" opacity="0.45">
+      <line x1="26"  y1="-50" x2="110" y2="-50"/>
+      <line x1="26"  y1="-26" x2="94"  y2="-26"/>
+      <line x1="44"  y1="-2"  x2="110" y2="-2"/>
+      <line x1="26"  y1="22"  x2="100" y2="22"/>
+      <line x1="60"  y1="46"  x2="110" y2="46"/>
+    </g>
+  </g>
+
+  <!-- Star at the moon's tip (small accent) -->
+  <g transform="translate(304 100)" fill="url(#qa-gold)">
+    <path d="M 0 -10 L 3 -3 L 10 0 L 3 3 L 0 10 L -3 3 L -10 0 L -3 -3 Z"/>
+  </g>
+</svg>

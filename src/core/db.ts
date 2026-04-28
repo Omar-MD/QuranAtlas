@@ -161,6 +161,20 @@ export function openDB(): Promise<IDBDatabase> {
       resolve(dbRef)
     }
     request.onerror = () => reject(request.error)
+    // Onblocked: a peer tab held an older-version connection during the
+    // upgrade and didn't respond to its own versionchange. Without this
+    // handler the open() Promise hangs forever and downstream reads/writes
+    // (e.g. `bookmarks/store.ts::add`) silently never resolve. Surface a
+    // reload banner so the user can close the stale peer; reject the
+    // promise so callers don't await forever, and emit DB_DELETE_BLOCKED
+    // (re-using the existing message channel) for telemetry.
+    request.onblocked = () => {
+      emit(Events.DB_DELETE_BLOCKED, {
+        message: 'QuranAtlas is updating. Please close other tabs running this site and reload.',
+      })
+      dbPromise = null
+      reject(new Error('IDB upgrade blocked by peer connection'))
+    }
   })
 
   if (!visibilityListenerAttached) {
