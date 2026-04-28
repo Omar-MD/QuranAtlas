@@ -3,6 +3,7 @@ export type Theme = 'light' | 'sepia' | 'dark' | 'auto'
 export type FontSize = 'sm' | 'md' | 'lg' | 'xl'
 export type ReadingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
+export type ArabicFont = 'amiri-quran' | 'kfgqpc' | 'scheherazade'
 
 export type GlobalPosition = { surah: number; verse: number } | null
 
@@ -19,4 +20,7 @@ export const settings = $state({
   nightMode: false,
   surahHeaderHidden: false,
   currentPosition: null as GlobalPosition,
+  arabicFontHafs: 'amiri-quran' as ArabicFont,
+  arabicFontWarsh: 'amiri-quran' as ArabicFont,
+  arabicFontQaloon: 'amiri-quran' as ArabicFont,
 })

@@ -29,6 +29,9 @@ The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes 
 | `wordSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader word-spacing step (Arabic + translation). Sole writer. |
 | `readerMargin` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Reader column inset step. Desktop: max-width on `#main-content` (inverse — larger step = narrower). Mobile: `--qa-verse-pad-x` on `.qa-verse` (xs ≈ edge-to-edge, xl wide gutters). Sole writer. |
 | `verseSpacing` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `settings/reading-typography.ts` | Vertical padding between verses via `--qa-verse-pad-y` on `.qa-verse`. Sole writer. |
+| `arabicFont_hafs` | `'amiri-quran' \| 'kfgqpc' \| 'scheherazade'` | `settings/arabic-font.ts` | Arabic font choice for the Hafs riwayah. Default `'amiri-quran'`. Sole writer. Active value drives `<html data-arabic-font>` only when `settings.riwayah === 'hafs'`. |
+| `arabicFont_warsh` | `'amiri-quran' \| 'kfgqpc' \| 'scheherazade'` | `settings/arabic-font.ts` | Arabic font choice for the Warsh riwayah. Default `'amiri-quran'`. Sole writer. Same active-Riwayah rule as `arabicFont_hafs`. |
+| `arabicFont_qaloon` | `'amiri-quran' \| 'kfgqpc' \| 'scheherazade'` | `settings/arabic-font.ts` | Arabic font choice for the Qaloon riwayah. Default `'amiri-quran'`. Sole writer. Same active-Riwayah rule as `arabicFont_hafs`. |
 | `nightMode` | boolean | `settings/night-mode.ts` | Night recitation mode (dim+warm overlay via `.qa-night-shift`). Sole writer. |
 | `surahHeaderHidden` | boolean | `settings/surah-header-visibility.ts` | User hid the in-reader Surah Header (title + meta + juz). Toggled by MarginHeader center-label tap. Bismillah + verses still render. Default `false`. Persists across surah navigation. Sole writer. |
 | `translationVisible` | boolean | `settings/Panel.svelte` | Translation-toggle state. |
@@ -294,7 +297,7 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 > - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
 > - `meta` — written by `review/state` (sole writer for `meta['review']`).
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
-> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `surahHeaderHidden` (`settings/surah-header-visibility`), `currentPosition` (`reader/global-position`).
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `arabicFont_hafs` / `arabicFont_warsh` / `arabicFont_qaloon` (`settings/arabic-font`), `nightMode` (`settings/night-mode`), `surahHeaderHidden` (`settings/surah-header-visibility`), `currentPosition` (`reader/global-position`).
 >
 > Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
 
