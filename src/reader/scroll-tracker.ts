@@ -135,10 +135,10 @@ export function unobserve(): number | null {
     }
     scrollHandler = null
   }
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-    debounceTimer = null
-  }
+  // clearTimeout(null) is a safe no-op in both browser and Node — drop the
+  // guard (CodeQL js/unneeded-defensive-code).
+  clearTimeout(debounceTimer ?? undefined)
+  debounceTimer = null
   const lastPending = pendingPosition
   pendingPosition = null
   onPositionChangeCallback = null
