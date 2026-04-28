@@ -117,7 +117,7 @@
       ])
 
       await loadBookmarkedSet()
-      recentSurahs = Array.isArray(recentRec?.value) ? (recentRec.value as number[]).slice(0, 5) : []
+      recentSurahs = Array.isArray(recentRec?.value) ? (recentRec.value as number[]).slice(0, 7) : []
 
       resume = lastPosition
         ? { surah: lastPosition.surah, verse: lastPosition.verse }
@@ -138,6 +138,9 @@
       on(Events.BOOKMARKS_DELETED, () => { void loadBookmarkedSet() }),
       on(Events.SYNC_BOOKMARKS_UPDATED, () => { void loadBookmarkedSet() }),
       on(Events.SETTINGS_RIWAYAH_CHANGED, () => { void loadBookmarkedSet() }),
+      on(Events.SETTINGS_RECENT_SURAHS_UPDATED, ({ surahs }) => {
+        recentSurahs = surahs.slice(0, 7)
+      }),
     ]
   })
 

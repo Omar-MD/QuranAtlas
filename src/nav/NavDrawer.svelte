@@ -17,7 +17,7 @@
    * Desktop (≥1180px) currently opens the drawer too via AmbientDock kebab;
    * styling on desktop keeps the narrow side-panel look (see nav.css).
    */
-  import { onMount, tick } from 'svelte'
+  import { onMount, onDestroy, tick } from 'svelte'
   import { registerNavDrawer, type DrawerTab, type ReadSubTab } from './nav-drawer-bridge'
   import { reader } from '../state/reader.svelte'
   import { settings } from '../state/settings.svelte'
@@ -26,9 +26,11 @@
   import { getMeaning } from '../data/surah-meanings'
   import { get } from '../core/db'
   import { LAYER_GROUPS, LAYER_LABELS } from '../data/tag-layers'
-  import { emit } from '../core/events'
+  import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import BookmarksList from '../bookmarks/BookmarksList.svelte'
+
+  const RECENT_SURAHS_CAP = 7
 
   let isOpen = $state(false)
   let activeTab = $state<DrawerTab>('read')
@@ -119,7 +121,13 @@
     surahsState.filter = 'all'
     surahsState.searchQuery = ''
 
-    if (!loaded) { await loadData() }
+    // Heavy: surah list (114 entries + meta) — fetch once, reuse.
+    // Light: recents — refresh every open so a surah visited since the
+    //                  last open shows up. Closes the "sometimes works,
+    //                  sometimes doesn't" gap from the prior cache-on-first-
+    //                  open behavior.
+    if (!loaded) { await loadAllSurahs() }
+    await loadRecents()
 
     await tick()
     if (activeTab === 'read' && activeSubTab === 'surahs') { scrollToCurrentSurah() }
@@ -129,14 +137,16 @@
     if (isOpen) { close() } else { void open(tab) }
   }
 
-  async function loadData(): Promise<void> {
-    const [fetchedSurahs, recentRec] = await Promise.all([
-      getSurahs(),
-      get('settings', 'recentSurahs').catch(() => undefined),
-    ])
-    allSurahs = fetchedSurahs
-    recentSurahs = Array.isArray(recentRec?.value) ? (recentRec.value as number[]).slice(0, 5) : []
+  async function loadAllSurahs(): Promise<void> {
+    allSurahs = await getSurahs()
     loaded = true
+  }
+
+  async function loadRecents(): Promise<void> {
+    const rec = await get('settings', 'recentSurahs').catch(() => undefined)
+    recentSurahs = Array.isArray(rec?.value)
+      ? (rec.value as number[]).slice(0, RECENT_SURAHS_CAP)
+      : []
   }
 
   function scrollToCurrentSurah(): void {
@@ -224,8 +234,22 @@
     if (dx < -48 && dy < 24) { close() }
   }
 
+  let recentsUnsub: (() => void) | null = null
+
   onMount(() => {
     registerNavDrawer(open, close, toggle)
+    // Live-update the Recent list while the drawer is open — App.svelte's
+    // trackRecentSurah emits this after each successful IDB write. Without
+    // the listener, opening the drawer once + navigating to a new surah +
+    // switching to the Recent pill would show stale data until full reload.
+    recentsUnsub = on(Events.SETTINGS_RECENT_SURAHS_UPDATED, ({ surahs }) => {
+      recentSurahs = surahs.slice(0, RECENT_SURAHS_CAP)
+    })
+  })
+
+  onDestroy(() => {
+    recentsUnsub?.()
+    recentsUnsub = null
   })
 
   const FILTERS = [

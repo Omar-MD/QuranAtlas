@@ -57,6 +57,7 @@ export const Events = {
   BOOKMARKS_SAVE_FAILED: 'bookmarks:save-failed',
   SYNC_BOOKMARKS_UPDATED: 'sync:bookmarks-updated',
   BOOKMARK_JUMP_LANDED: 'bookmark:jump-landed',
+  SETTINGS_RECENT_SURAHS_UPDATED: 'settings:recent-surahs-updated',
 } as const
 
 export type EventName = typeof Events[keyof typeof Events]
@@ -110,6 +111,7 @@ export type EventPayloads = {
   'bookmarks:save-failed': { verseKey: string; riwayah: 'hafs' | 'warsh' | 'qaloon'; error: string }
   'sync:bookmarks-updated': { verseKeys: string[]; riwayah: 'hafs' | 'warsh' | 'qaloon' }
   'bookmark:jump-landed': { verseKey: string }
+  'settings:recent-surahs-updated': { surahs: number[] }
 }
 
 export const Errors = {
