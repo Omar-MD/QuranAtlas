@@ -14,7 +14,6 @@ let onPositionChangeCallback: ((pos: { verse: number }) => void) | null = null
 let scrollHandler: (() => void) | null = null
 let containerRef: HTMLElement | null = null
 let scrollerRef: HTMLElement | null = null
-let sentinelEl: HTMLElement | null = null
 
 /**
  * Start observing scroll position changes.
@@ -135,10 +134,6 @@ export function unobserve(): number | null {
       target.removeEventListener('scroll', scrollHandler)
     }
     scrollHandler = null
-  }
-  if (sentinelEl) {
-    sentinelEl.remove()
-    sentinelEl = null
   }
   if (debounceTimer) {
     clearTimeout(debounceTimer)
