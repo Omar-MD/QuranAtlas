@@ -18,7 +18,6 @@
   import { getTranslations } from '../data/dataset.js'
   import { registerPanel } from './panel-bridge.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
-  import { getArabicFontOptions, setArabicFont, type ArabicFont } from './arabic-font.ts'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
 
@@ -36,29 +35,6 @@
   const fontOptions = getFontSizeOptions()
   const readingOptions = getReadingOptions()
   const riwayahOptions = getRiwayahOptions()
-  const arabicFontOptions = getArabicFontOptions()
-
-  const ARABIC_FONT_LABELS: Record<ArabicFont, string> = {
-    'amiri-quran': 'Amiri Quran',
-    kfgqpc: 'KFGQPC',
-    scheherazade: 'Scheherazade',
-  }
-  const ARABIC_FONT_SUB: Record<ArabicFont, string> = {
-    'amiri-quran': 'aliftype · default',
-    kfgqpc: 'King Fahd Complex',
-    scheherazade: 'SIL · academic',
-  }
-
-  function activeArabicFont(r: Riwayah | undefined): ArabicFont {
-    if (r === 'hafs') return settings.arabicFontHafs
-    if (r === 'warsh') return settings.arabicFontWarsh
-    return settings.arabicFontQaloon
-  }
-
-  async function handleArabicFont(font: ArabicFont) {
-    const r = (settings.riwayah ?? 'qaloon') as Riwayah
-    await setArabicFont(r, font)
-  }
 
   const RIWAYAH_LABELS: Record<Riwayah, { label: string; sub: string }> = {
     hafs:   { label: 'Ḥafṣ',   sub: 'Ḥafṣ ʿan ʿĀṣim · 6236 ayāt' },
@@ -461,30 +437,6 @@
               aria-label="Font size"
             />
             <span class="qa-typography-slider-max qa-typography-slider-max--lg" aria-hidden="true">Aa</span>
-          </div>
-        </div>
-
-        <div class="qa-arabic-font-block">
-          <div class="qa-arabic-font-label">Arabic font</div>
-          <div class="qa-arabic-font-row" role="radiogroup" aria-label="Arabic font">
-            {#each arabicFontOptions as opt (opt)}
-              {@const active = activeArabicFont(settings.riwayah as Riwayah | undefined) === opt}
-              {@const riw = (settings.riwayah ?? 'qaloon') as Riwayah}
-              <button
-                type="button"
-                class="qa-arabic-font-swatch"
-                class:qa-arabic-font-swatch--active={active}
-                role="radio"
-                aria-checked={active}
-                onclick={() => handleArabicFont(opt)}
-                data-testid={`arabic-font-${opt}`}
-              >
-                <span class="qa-arabic-font-swatch-label">
-                  {opt === 'kfgqpc' ? `KFGQPC ${RIWAYAH_LABELS[riw].label}` : ARABIC_FONT_LABELS[opt]}
-                </span>
-                <span class="qa-arabic-font-swatch-sub">{ARABIC_FONT_SUB[opt]}</span>
-              </button>
-            {/each}
           </div>
         </div>
 

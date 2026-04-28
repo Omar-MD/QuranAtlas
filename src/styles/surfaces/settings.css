@@ -140,59 +140,6 @@
     color: var(--qa-text-on-sheet-dim);
   }
 
-  /* ---- Arabic font picker (typography subview) ---- */
-
-  .qa-arabic-font-block {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 4px 0 12px;
-  }
-
-  .qa-arabic-font-label {
-    font-size: var(--fs-sm);
-    font-weight: 600;
-    color: var(--qa-text-on-sheet-muted);
-  }
-
-  .qa-arabic-font-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }
-
-  .qa-arabic-font-swatch {
-    display: grid;
-    gap: 2px;
-    padding: 8px;
-    border: 1.5px solid var(--qa-border-on-sheet);
-    border-radius: var(--qa-radius-button);
-    background: var(--qa-surface-sheet);
-    text-align: start;
-    cursor: pointer;
-    color: inherit;
-  }
-
-  .qa-arabic-font-swatch:hover {
-    border-color: var(--qa-border-strong);
-  }
-
-  .qa-arabic-font-swatch--active {
-    border-color: var(--qa-accent);
-    background: var(--qa-surface-raised);
-  }
-
-  .qa-arabic-font-swatch-label {
-    font-weight: 600;
-    font-size: var(--fs-base);
-    color: var(--qa-text-on-sheet);
-  }
-
-  .qa-arabic-font-swatch-sub {
-    font-size: var(--fs-xs);
-    color: var(--qa-text-on-sheet-dim);
-  }
-
   /* ---- Toggle rows ---- */
 
   .qa-settings-toggle-row {

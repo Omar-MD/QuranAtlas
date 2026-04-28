@@ -5,44 +5,23 @@ import { resolve } from 'node:path'
 /**
  * Reader Arabic font-token guard.
  *
- * 2026-04-27: shipped the single-font (Amiri Quran) cascade after retiring
- * the KFGQPC trio for an iOS hollow-mark bug.
+ * Each riwayah is paired with its own KFGQPC Uthmanic mushaf cut. Using
+ * a different riwayah's font cut mis-renders combining marks, since each
+ * cut is authored against its own orthography:
+ *   - Hafs   → KFGQPC Uthmanic Hafs   (--ff-kfgqpc-hafs)
+ *   - Warsh  → KFGQPC Uthmanic Warsh  (--ff-kfgqpc-warsh)
+ *   - Qaloon → KFGQPC Uthmanic Qaloon (--ff-kfgqpc-qaloon)
  *
- * 2026-04-28: re-introduced the KFGQPC trio (Hafs v22, Warsh V21, Qaloon V21)
- * AND Scheherazade New as opt-in alternates per Riwayah. Default for every
- * Riwayah is still Amiri Quran. The opt-in fonts only activate when the user
- * sets `<html data-arabic-font='kfgqpc'>` or `'scheherazade'` from the
- * Settings → Typography subview (per-Riwayah persistence in IDB keys
- * `arabicFont_hafs`, `arabicFont_warsh`, `arabicFont_qaloon`).
- *
- * The assertions below codify both the default-stays-Amiri-Quran invariant
- * AND the opt-in cascade shape so neither side regresses.
+ * Amiri Quran (Khaled Hosny, OFL) sits in each token's font-family chain
+ * as the cross-riwayah fallback because its Unicode coverage spans all
+ * three; bare `serif` is the last resort.
  */
 
 const repoRoot = process.cwd()
 const primitivesCss = readFileSync(resolve(repoRoot, 'src/styles/tokens/primitives.css'), 'utf8')
 const semanticCss = readFileSync(resolve(repoRoot, 'src/styles/tokens/semantic.css'), 'utf8')
 
-describe('arabic font tokens — Amiri Quran default + KFGQPC/Scheherazade opt-in', () => {
-  it('defines --ff-amiri-quran with Amiri Quran as the primary family', () => {
-    const match = primitivesCss.match(/--ff-amiri-quran\s*:\s*([^;]+);/)
-    expect(match, '--ff-amiri-quran token defined').not.toBeNull()
-    expect(match[1].trim()).toMatch(/^'Amiri Quran'/)
-  })
-
-  it('initial --qa-font-arabic resolves to var(--ff-amiri-quran)', () => {
-    expect(semanticCss).toMatch(/--qa-font-arabic\s*:\s*var\(--ff-amiri-quran\)/)
-  })
-
-  it('binds all three riwayat default to --ff-amiri-quran', () => {
-    for (const riwayah of ['hafs', 'warsh', 'qaloon']) {
-      const re = new RegExp(`:root\\[data-riwayah=['"]${riwayah}['"]\\]`)
-      expect(semanticCss, `riwayah selector ${riwayah}`).toMatch(re)
-    }
-    const bindingMatches = semanticCss.match(/--qa-font-arabic\s*:\s*var\(--ff-amiri-quran\)/g) ?? []
-    expect(bindingMatches.length, 'at least 2 default bindings (root + riwayah block)').toBeGreaterThanOrEqual(2)
-  })
-
+describe('arabic font tokens — KFGQPC default per riwayah', () => {
   it('defines a --ff-kfgqpc-{riwayah} token for each riwayah with the matching family', () => {
     const expected = {
       hafs: 'KFGQPC Uthmanic Hafs',
@@ -57,25 +36,55 @@ describe('arabic font tokens — Amiri Quran default + KFGQPC/Scheherazade opt-i
     }
   })
 
-  it('defines --ff-scheherazade-new with Scheherazade New as the primary family', () => {
-    const match = primitivesCss.match(/--ff-scheherazade-new\s*:\s*([^;]+);/)
-    expect(match, '--ff-scheherazade-new token defined').not.toBeNull()
-    expect(match[1].trim()).toMatch(/^'Scheherazade New'/)
+  it('--ff-amiri-quran fallback token is preserved for cross-riwayah fallback', () => {
+    const match = primitivesCss.match(/--ff-amiri-quran\s*:\s*([^;]+);/)
+    expect(match, '--ff-amiri-quran token defined').not.toBeNull()
+    expect(match[1].trim()).toMatch(/^'Amiri Quran'/)
   })
 
-  it('opt-in KFGQPC cascade activates only under [data-arabic-font="kfgqpc"] AND matching riwayah', () => {
+  it('each KFGQPC token chains to Amiri Quran as fallback', () => {
     for (const riwayah of ['hafs', 'warsh', 'qaloon']) {
-      const re = new RegExp(
-        `:root\\[data-riwayah=['"]${riwayah}['"]\\]\\[data-arabic-font=['"]kfgqpc['"]\\][^{]*\\{[^}]*--qa-font-arabic\\s*:\\s*var\\(--ff-kfgqpc-${riwayah}\\)`,
-      )
-      expect(semanticCss, `kfgqpc cascade for ${riwayah}`).toMatch(re)
+      const re = new RegExp(`--ff-kfgqpc-${riwayah}\\s*:\\s*([^;]+);`)
+      const match = primitivesCss.match(re)
+      expect(match[1], `--ff-kfgqpc-${riwayah} fallback chain`).toContain("'Amiri Quran'")
     }
   })
 
-  it('opt-in Scheherazade cascade activates under [data-arabic-font="scheherazade"]', () => {
-    expect(semanticCss).toMatch(
-      /:root\[data-arabic-font=['"]scheherazade['"]\][^{]*\{[^}]*--qa-font-arabic\s*:\s*var\(--ff-scheherazade-new\)/,
-    )
+  it('binds each riwayah to its own KFGQPC token', () => {
+    const expected = {
+      hafs:   'kfgqpc-hafs',
+      warsh:  'kfgqpc-warsh',
+      qaloon: 'kfgqpc-qaloon',
+    }
+    for (const [riwayah, token] of Object.entries(expected)) {
+      const re = new RegExp(
+        `:root\\[data-riwayah=['"]${riwayah}['"]\\][^{]*\\{[^}]*--qa-font-arabic\\s*:\\s*var\\(--ff-${token}\\)`,
+      )
+      expect(semanticCss, `${riwayah} → --ff-${token}`).toMatch(re)
+    }
+  })
+
+  it('does not bind two riwayat to the same KFGQPC cut (cross-riwayah font misuse guard)', () => {
+    const offenders = []
+    for (const riwayah of ['hafs', 'warsh', 'qaloon']) {
+      for (const otherCut of ['hafs', 'warsh', 'qaloon']) {
+        if (riwayah === otherCut) continue
+        const re = new RegExp(
+          `:root\\[data-riwayah=['"]${riwayah}['"]\\][^{]*\\{[^}]*--qa-font-arabic\\s*:\\s*var\\(--ff-kfgqpc-${otherCut}\\)`,
+        )
+        if (re.test(semanticCss)) offenders.push(`${riwayah} → kfgqpc-${otherCut}`)
+      }
+    }
+    expect(offenders, 'no riwayah uses another riwayah\'s KFGQPC cut').toEqual([])
+  })
+
+  it('drops the legacy --ff-scheherazade-new token (picker removed)', () => {
+    expect(primitivesCss).not.toMatch(/--ff-scheherazade-new/)
+    expect(semanticCss).not.toMatch(/--ff-scheherazade-new/)
+  })
+
+  it('drops every [data-arabic-font="..."] selector (picker removed)', () => {
+    expect(semanticCss).not.toMatch(/data-arabic-font/)
   })
 
   it('drops every [data-engine="safari"] font-fallback rule', () => {
