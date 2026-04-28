@@ -22,6 +22,9 @@ import { initSurahHeaderHidden } from './settings/surah-header-visibility.ts'
 import { openSettingsSheet } from './settings/panel-bridge.ts'
 import { initReaderActions } from './nav/reader-actions.js'
 import { initIndicators } from './marks/indicator'
+import { initBookmarkIndicators } from './bookmarks/indicator'
+import { initBookmarkClickHandler } from './bookmarks/click-handler'
+import { initBookmarkPulse } from './bookmarks/pulse'
 import { setupTapGestures } from './marks/long-press'
 import { beginFast, openDeep } from './tag/session-bridge'
 import { tagSession } from './state/tag-session.svelte'
@@ -217,12 +220,37 @@ export async function initBootstrap(): Promise<Array<() => void>> {
           ? lastRec.value
           : '#/s/1'
         history.replaceState(null, '', last)
-        queueMicrotask(() => { openNavDrawer('surahs') })
+        queueMicrotask(() => { openNavDrawer('read') })
         return (await import('./nav/EmptyRoute.svelte')).default
       }
       return (await import('./surahs/SurahList.svelte')).default
     })
+    router.register('#/bookmarks', async () => {
+      const isMobile = window.matchMedia('(max-width: 1179px)').matches
+      if (isMobile) {
+        // Mobile users get the drawer's Read>Bookmarks sub-tab instead — the
+        // route exists so desktop links + share URLs still resolve. Redirect to
+        // the last reader surface so the drawer overlays the reader, not a
+        // blank shell.
+        const lastRec = await get('settings', 'lastSurface').catch(() => undefined)
+        const last = (typeof lastRec?.value === 'string' && lastRec.value && lastRec.value !== '#/bookmarks')
+          ? lastRec.value
+          : '#/s/1'
+        history.replaceState(null, '', last)
+        queueMicrotask(() => { openNavDrawer('read', 'bookmarks') })
+        return (await import('./nav/EmptyRoute.svelte')).default
+      }
+      return (await import('./bookmarks/BookmarksPage.svelte')).default
+    })
     router.register('#/onboarding', async () => (await import('./onboarding/Onboarding.svelte')).default)
+
+    // Bookmarks: global click toggle (verse-id tap), indicator cache + glyph
+    // decoration, and pulse-on-jump landing. All three are app-wide and live
+    // outside the reader unit lifecycle (the indicator stays in sync across
+    // route changes via events).
+    pushCleanup(bootCleanups, initBookmarkClickHandler())
+    pushCleanup(bootCleanups, initBookmarkIndicators())
+    pushCleanup(bootCleanups, initBookmarkPulse())
 
     // Initialize router AFTER routes are registered so first dispatch finds them
     pushCleanup(bootCleanups, router.init())

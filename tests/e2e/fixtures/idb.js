@@ -15,8 +15,8 @@
  * @param {IDBDatabase} db
  */
 // _APPLY_SCHEMA_SRC is the verbatim function body injected into each page.evaluate.
-// Mirrors src/core/db.ts onupgradeneeded for DB_VERSION 4 (drops legacy positions
-// store; adds meta store; 12-layer marks + edges store).
+// Mirrors src/core/db.ts onupgradeneeded for DB_VERSION 5 (drops legacy positions
+// store; adds meta store; 12-layer marks + edges store; bookmarks store).
 const _APPLY_SCHEMA_SRC = `
   const LAYER_NAMES = [
     'threads','subjects','audience','speaker','quotedSpeaker',
@@ -51,6 +51,11 @@ const _APPLY_SCHEMA_SRC = `
     edgesStore.createIndex('by-to', 'to')
     edgesStore.createIndex('by-canon-kind', '_canonKind')
     edgesStore.createIndex('by-updated', 'updatedAt')
+  }
+  if (!db.objectStoreNames.contains('bookmarks')) {
+    const bookmarksStore = db.createObjectStore('bookmarks', { keyPath: ['riwayah','verseKey'] })
+    bookmarksStore.createIndex('by-riwayah-surah', ['riwayah','surah'])
+    bookmarksStore.createIndex('by-riwayah', 'riwayah')
   }
 `
 
@@ -98,7 +103,7 @@ export async function clearAllData(page) {
  * invariants, the onboarding boot flow, or the clear-data UX itself.
  *
  * @param {import('@playwright/test').Page} page
- * @param {'settings'|'marks'|'edges'|'meta'|'activationState'|'datasetMeta'} storeName
+ * @param {'settings'|'marks'|'edges'|'meta'|'activationState'|'datasetMeta'|'bookmarks'} storeName
  */
 export async function clearStore(page, storeName) {
   const nameJson = JSON.stringify(storeName)
@@ -122,7 +127,7 @@ export async function clearStore(page, storeName) {
  */
 export async function markOnboardingComplete(page) {
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 4)
+    const open = indexedDB.open('quran-atlas', 5)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -151,7 +156,7 @@ export async function seedLastSurface(page, surface) {
   // JSON-embedded so it is safe for any valid URL fragment string.
   const surfaceJson = JSON.stringify(surface)
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 4)
+    const open = indexedDB.open('quran-atlas', 5)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -250,7 +255,7 @@ export async function seedMarks(page, marks) {
       'threads','subjects','audience','speaker','quotedSpeaker',
       'mode','form','tone','people','places','events','divineNames',
     ]
-    const open = indexedDB.open('quran-atlas', 4)
+    const open = indexedDB.open('quran-atlas', 5)
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('marks', 'readwrite')

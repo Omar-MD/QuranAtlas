@@ -745,6 +745,39 @@
   display: block;
 }
 
+.qa-nav-drawer-bookmarks-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sub-tabs (Read mode: Surahs · Bookmarks) */
+.qa-nav-drawer-subtabs {
+  display: flex;
+  gap: 6px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--qa-border-subtle);
+}
+
+.qa-nav-drawer-subtab {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--qa-surface-raised);
+  border: 1px solid var(--qa-border-subtle);
+  color: var(--qa-text-primary);
+  cursor: pointer;
+}
+
+.qa-nav-drawer-subtab--on {
+  background: var(--qa-accent);
+  border-color: var(--qa-accent);
+  color: var(--qa-text-on-accent);
+  font-weight: 600;
+}
+
 /* Surahs tab */
 .qa-nav-drawer-search {
   display: flex; align-items: center; gap: 8px;

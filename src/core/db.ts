@@ -8,7 +8,7 @@ import { emit } from './events'
 import { Events } from './constants'
 
 const DB_NAME = 'quran-atlas'
-const DB_VERSION = 4
+const DB_VERSION = 5
 
 let dbPromise: Promise<IDBDatabase> | null = null
 let dbRef: IDBDatabase | null = null
@@ -55,6 +55,15 @@ export interface EdgeRecord {
   updatedAt: number
 }
 
+export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
+
+export interface BookmarkRecord {
+  riwayah: Riwayah
+  verseKey: string
+  surah: number
+  createdAt: number
+}
+
 export type StoreRecords = {
   settings: { key: string; value: unknown }
   meta: { id: string; [k: string]: unknown }
@@ -62,6 +71,7 @@ export type StoreRecords = {
   activationState: { id: string; status: string; [k: string]: unknown }
   datasetMeta: { id: string; version?: string; [k: string]: unknown }
   edges: EdgeRecord
+  bookmarks: BookmarkRecord
 }
 
 export type StoreName = keyof StoreRecords
@@ -126,6 +136,17 @@ export function openDB(): Promise<IDBDatabase> {
         edgesStore.createIndex('by-to', 'to')
         edgesStore.createIndex('by-canon-kind', '_canonKind')
         edgesStore.createIndex('by-updated', 'updatedAt')
+      }
+
+      // Bookmarks store (v5): compound key [riwayah, verseKey] — bookmarks are
+      // riwayah-scoped (switching riwayah surfaces a different set). Indexes
+      // power the BookmarksList sub-tab grouped-by-surah view.
+      if (!db.objectStoreNames.contains('bookmarks')) {
+        const bookmarksStore = db.createObjectStore('bookmarks', {
+          keyPath: ['riwayah', 'verseKey'],
+        })
+        bookmarksStore.createIndex('by-riwayah-surah', ['riwayah', 'surah'])
+        bookmarksStore.createIndex('by-riwayah', 'riwayah')
       }
     }
 
@@ -252,6 +273,10 @@ const _shapes: Record<string, Record<string, string>> = {
     id: 'string', from: 'string', to: 'string',
     kind: 'string', _canonKind: 'string', directed: 'boolean',
     note: 'string', createdAt: 'number', updatedAt: 'number',
+  },
+  bookmarks: {
+    riwayah: 'string', verseKey: 'string',
+    surah: 'number', createdAt: 'number',
   },
 }
 

@@ -1,10 +1,15 @@
 <script lang="ts">
   /**
-   * Mobile (<1180px): full-screen drawer with two tabs (Surahs / Review).
-   * Surahs tab: search + filter pills + surah list, auto-scrolled to the
-   * currently-reading surah (highlighted with accent rail + filled circle).
-   * Review tab: Hub link + 12 grouped layer rows. Tapping a layer routes
-   * to #/review?layer=<name>.
+   * Mobile (<1180px): full-screen drawer with two top-level mode tabs:
+   *   - Read   — Surahs (default) and Bookmarks sub-tabs.
+   *   - Study  — Hub link + 12 grouped layer rows (was the legacy "Review" tab).
+   *
+   * Read sub-tabs:
+   *   - Surahs    — search + filter pills (All / ⏱ Recent) + scrolling surah
+   *                 list, auto-scrolled to and highlighting the currently-
+   *                 reading surah.
+   *   - Bookmarks — verse-level list grouped by surah, swipe-left to delete.
+   *                 Reading-mode entry replacing the legacy ★ Bookmarked pill.
    *
    * Header: tappable QuranAtlas wordmark (+ ⓘ) → #/about. ✕ closes.
    * No footer — drawer ends with the last list/menu row.
@@ -13,23 +18,23 @@
    * styling on desktop keeps the narrow side-panel look (see nav.css).
    */
   import { onMount, tick } from 'svelte'
-  import { registerNavDrawer, type DrawerTab } from './nav-drawer-bridge'
+  import { registerNavDrawer, type DrawerTab, type ReadSubTab } from './nav-drawer-bridge'
   import { reader } from '../state/reader.svelte'
   import { settings } from '../state/settings.svelte'
   import { surahs as surahsState } from '../state/surahs.svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
-  import { getAll as getAllMarks } from '../marks/store'
   import { get } from '../core/db'
   import { LAYER_GROUPS, LAYER_LABELS } from '../data/tag-layers'
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
+  import BookmarksList from '../bookmarks/BookmarksList.svelte'
 
   let isOpen = $state(false)
-  let activeTab = $state<DrawerTab>('surahs')
+  let activeTab = $state<DrawerTab>('read')
+  let activeSubTab = $state<ReadSubTab>('surahs')
 
   let allSurahs = $state<SurahMeta[]>([])
-  let bookmarkedSet = $state(new Set<number>())
   let recentSurahs = $state<number[]>([])
   let loaded = $state(false)
 
@@ -42,8 +47,6 @@
     reader.currentSurahNum ?? settings.currentPosition?.surah ?? null
   )
 
-  // Parsed search query — surface different shapes (S:V ref, surah-number,
-  // big-number = verse-only, free text). Other derivations key off this.
   type ParsedQuery =
     | { kind: 'empty' }
     | { kind: 'ref'; surah: number; verse: number }
@@ -61,8 +64,6 @@
     if (num) {
       const n = parseInt(num[1] ?? '0', 10)
       if (n >= 1 && n <= 114) { return { kind: 'surahNum', n } }
-      // 115–286 makes sense as a verse number — only Al-Baqarah (286) holds
-      // it. Beyond 286 nothing satisfies, list goes empty.
       return { kind: 'verseNum', v: n }
     }
     return { kind: 'text', q: q.toLowerCase() }
@@ -71,9 +72,7 @@
   const visibleItems = $derived.by<SurahMeta[]>(() => {
     const { filter } = surahsState
     let items: SurahMeta[] = allSurahs
-    if (filter === 'bookmarked') {
-      items = allSurahs.filter(s => bookmarkedSet.has(s.n))
-    } else if (filter === 'recent') {
+    if (filter === 'recent') {
       const order = new Map(recentSurahs.map((n, i) => [n, i]))
       items = allSurahs
         .filter(s => order.has(s.n))
@@ -85,8 +84,6 @@
     if (p.kind === 'surahNum') { return items.filter(s => s.n === p.n) }
     if (p.kind === 'verseNum') { return items.filter(s => s.counts[settings.riwayah] >= p.v) }
     if (p.kind === 'ref') {
-      // Show only the target surah if it can hold the verse. Tap or Enter
-      // both navigate via goRef() — the row click is the candidate selector.
       return items.filter(s => s.n === p.surah && s.counts[settings.riwayah] >= p.verse)
     }
     return items.filter(s => {
@@ -97,9 +94,6 @@
     })
   })
 
-  // Hint shown above the surah list when the query parses as a verse-jump
-  // candidate. Lets the user confirm the jump before pressing Enter, instead
-  // of mid-typing "2:255" firing on the partial "2:2".
   const searchHint = $derived.by<string | null>(() => {
     const p = parsedQuery
     if (p.kind === 'ref') {
@@ -118,8 +112,9 @@
     return null
   })
 
-  async function open(tab?: DrawerTab): Promise<void> {
-    activeTab = tab ?? 'surahs'
+  async function open(tab?: DrawerTab, subTab?: ReadSubTab): Promise<void> {
+    activeTab = tab ?? 'read'
+    activeSubTab = subTab ?? 'surahs'
     isOpen = true
     surahsState.filter = 'all'
     surahsState.searchQuery = ''
@@ -127,7 +122,7 @@
     if (!loaded) { await loadData() }
 
     await tick()
-    if (activeTab === 'surahs') { scrollToCurrentSurah() }
+    if (activeTab === 'read' && activeSubTab === 'surahs') { scrollToCurrentSurah() }
   }
   function close(): void { isOpen = false }
   function toggle(tab?: DrawerTab): void {
@@ -135,13 +130,11 @@
   }
 
   async function loadData(): Promise<void> {
-    const [fetchedSurahs, marks, recentRec] = await Promise.all([
+    const [fetchedSurahs, recentRec] = await Promise.all([
       getSurahs(),
-      getAllMarks().catch(() => []),
       get('settings', 'recentSurahs').catch(() => undefined),
     ])
     allSurahs = fetchedSurahs
-    bookmarkedSet = new Set(marks.map(m => parseInt(m.verseKey.split(':')[0] ?? '0', 10)))
     recentSurahs = Array.isArray(recentRec?.value) ? (recentRec.value as number[]).slice(0, 5) : []
     loaded = true
   }
@@ -156,9 +149,14 @@
 
   function setTab(t: DrawerTab): void {
     activeTab = t
-    if (t === 'surahs') {
+    if (t === 'read' && activeSubTab === 'surahs') {
       void tick().then(scrollToCurrentSurah)
     }
+  }
+
+  function setSubTab(s: ReadSubTab): void {
+    activeSubTab = s
+    if (s === 'surahs') { void tick().then(scrollToCurrentSurah) }
   }
 
   function go(href: string): void {
@@ -171,7 +169,7 @@
   function goReviewHub(): void { go('#/review') }
   function goReviewLayer(layer: string): void { go(`#/review?layer=${layer}`) }
 
-  function setFilter(f: 'all' | 'bookmarked' | 'recent'): void {
+  function setFilter(f: 'all' | 'recent'): void {
     surahsState.filter = f
   }
 
@@ -193,7 +191,6 @@
   function handleSearchKeydown(e: KeyboardEvent): void {
     if (e.key === 'Enter') {
       if (commitRefJump()) { e.preventDefault(); return }
-      // Enter on a single-surah filter (numeric / unique text match) opens it.
       if (visibleItems.length === 1 && visibleItems[0]) {
         e.preventDefault()
         goSurah(visibleItems[0].n)
@@ -227,7 +224,6 @@
 
   const FILTERS = [
     { key: 'all' as const, label: 'All' },
-    { key: 'bookmarked' as const, label: '★ Bookmarked' },
     { key: 'recent' as const, label: '⏱ Recent' },
   ]
 </script>
@@ -272,81 +268,103 @@
       <button
         type="button"
         role="tab"
-        aria-selected={activeTab === 'surahs'}
+        aria-selected={activeTab === 'read'}
         class="qa-nav-drawer-tab"
-        class:qa-nav-drawer-tab--on={activeTab === 'surahs'}
-        onclick={() => setTab('surahs')}
-      >Surahs</button>
+        class:qa-nav-drawer-tab--on={activeTab === 'read'}
+        onclick={() => setTab('read')}
+      >Read</button>
       <button
         type="button"
         role="tab"
-        aria-selected={activeTab === 'review'}
+        aria-selected={activeTab === 'study'}
         class="qa-nav-drawer-tab"
-        class:qa-nav-drawer-tab--on={activeTab === 'review'}
-        onclick={() => setTab('review')}
-      >Review</button>
+        class:qa-nav-drawer-tab--on={activeTab === 'study'}
+        onclick={() => setTab('study')}
+      >Study</button>
     </div>
 
-    {#if activeTab === 'surahs'}
-      <div class="qa-nav-drawer-tab-body">
-        <label class="qa-nav-drawer-search">
-          <span class="qa-nav-drawer-search-icon" aria-hidden="true">&#x2315;</span>
-          <input
-            type="search"
-            class="qa-nav-drawer-search-input"
-            placeholder="Search surah or 2:255"
-            aria-label="Search surah by name, number, or verse reference"
-            autocomplete="off"
-            maxlength={20}
-            value={surahsState.searchQuery}
-            oninput={handleSearchInput}
-            onkeydown={handleSearchKeydown}
-          />
-        </label>
+    {#if activeTab === 'read'}
+      <div class="qa-nav-drawer-subtabs" role="tablist" aria-label="Reading mode">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeSubTab === 'surahs'}
+          class="qa-nav-drawer-subtab"
+          class:qa-nav-drawer-subtab--on={activeSubTab === 'surahs'}
+          onclick={() => setSubTab('surahs')}
+        >Surahs</button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeSubTab === 'bookmarks'}
+          class="qa-nav-drawer-subtab"
+          class:qa-nav-drawer-subtab--on={activeSubTab === 'bookmarks'}
+          onclick={() => setSubTab('bookmarks')}
+        >Bookmarks</button>
+      </div>
 
-        <div class="qa-nav-drawer-pills" role="tablist" aria-label="Filter">
-          {#each FILTERS as f (f.key)}
-            <button
-              type="button"
-              role="tab"
-              class="qa-nav-drawer-pill"
-              class:qa-nav-drawer-pill--on={surahsState.filter === f.key}
-              aria-selected={surahsState.filter === f.key}
-              onclick={() => setFilter(f.key)}
-            >{f.label}</button>
-          {/each}
-        </div>
+      {#if activeSubTab === 'surahs'}
+        <div class="qa-nav-drawer-tab-body">
+          <label class="qa-nav-drawer-search">
+            <span class="qa-nav-drawer-search-icon" aria-hidden="true">&#x2315;</span>
+            <input
+              type="search"
+              class="qa-nav-drawer-search-input"
+              placeholder="Search surah or 2:255"
+              aria-label="Search surah by name, number, or verse reference"
+              autocomplete="off"
+              maxlength={20}
+              value={surahsState.searchQuery}
+              oninput={handleSearchInput}
+              onkeydown={handleSearchKeydown}
+            />
+          </label>
 
-        {#if searchHint}
-          <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
-        {/if}
-
-        <ul class="qa-nav-drawer-surah-list" bind:this={listEl}>
-          {#each visibleItems as s (s.n)}
-            <li
-              class="qa-nav-drawer-surah-row"
-              class:qa-nav-drawer-surah-row--current={s.n === currentSurahN}
-              data-surah={s.n}
-            >
+          <div class="qa-nav-drawer-pills" role="tablist" aria-label="Filter">
+            {#each FILTERS as f (f.key)}
               <button
                 type="button"
-                class="qa-nav-drawer-surah-btn"
-                onclick={() => { if (!commitRefJump()) { goSurah(s.n) } }}
-                aria-label={parsedQuery.kind === 'ref' && parsedQuery.surah === s.n
-                  ? `Open ${s.name} verse ${parsedQuery.verse}`
-                  : `Open ${s.name}`}
+                role="tab"
+                class="qa-nav-drawer-pill"
+                class:qa-nav-drawer-pill--on={surahsState.filter === f.key}
+                aria-selected={surahsState.filter === f.key}
+                onclick={() => setFilter(f.key)}
+              >{f.label}</button>
+            {/each}
+          </div>
+
+          {#if searchHint}
+            <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
+          {/if}
+
+          <ul class="qa-nav-drawer-surah-list" bind:this={listEl}>
+            {#each visibleItems as s (s.n)}
+              <li
+                class="qa-nav-drawer-surah-row"
+                class:qa-nav-drawer-surah-row--current={s.n === currentSurahN}
+                data-surah={s.n}
               >
-                <span class="qa-nav-drawer-surah-num">{s.n}</span>
-                <span class="qa-nav-drawer-surah-name">{s.name}</span>
-                {#if bookmarkedSet.has(s.n)}
-                  <span class="qa-nav-drawer-surah-star" aria-hidden="true">&#9733;</span>
-                {/if}
-                <span class="qa-nav-drawer-surah-ar" dir="rtl" lang="ar">{s.name_ar}</span>
-              </button>
-            </li>
-          {/each}
-        </ul>
-      </div>
+                <button
+                  type="button"
+                  class="qa-nav-drawer-surah-btn"
+                  onclick={() => { if (!commitRefJump()) { goSurah(s.n) } }}
+                  aria-label={parsedQuery.kind === 'ref' && parsedQuery.surah === s.n
+                    ? `Open ${s.name} verse ${parsedQuery.verse}`
+                    : `Open ${s.name}`}
+                >
+                  <span class="qa-nav-drawer-surah-num">{s.n}</span>
+                  <span class="qa-nav-drawer-surah-name">{s.name}</span>
+                  <span class="qa-nav-drawer-surah-ar" dir="rtl" lang="ar">{s.name_ar}</span>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {:else}
+        <div class="qa-nav-drawer-tab-body qa-nav-drawer-bookmarks-body">
+          <BookmarksList onNavigate={() => close()} />
+        </div>
+      {/if}
     {:else}
       <div class="qa-nav-drawer-tab-body qa-nav-drawer-review-body">
         <button

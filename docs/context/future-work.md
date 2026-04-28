@@ -41,7 +41,7 @@ Context: core data-model overhaul brainstormed 2026-04-20. Introduces 12 free-fo
 - **Source citation layer** — free-form or structured references to tafsir, hadith, scholar names. Distinct from edge evidence; applies to verse itself.
 - **Certainty note flag** — optional `uncertain: boolean` on the note field (lightweight "still working this out" marker). Ships if post-MVP usage data shows demand.
 - **Orphan edges filter** — review hub filter showing edges whose endpoints no longer have marks.
-- **Collections** — add-to-collection from verse detail; curated study sets. Lightweight bookmark grouping.
+- **Bookmark collections** — group bookmarks into named, curated study sets (e.g. "Surah Yaseen routine"). MVP bookmarks (shipped 2026-04-28, riwayah-scoped, verse-id single-tap toggle) cover the flat list; collections layer on top.
 - **Community layer** — public/shared collections, curated thematic paths, follow study sets from trusted users, contribute optional classifications, compare interpretations or tag systems. Large surface; captured here as a placeholder.
 - **AI assistant mode** — summarize verse clusters, suggest tags, detect possible themes, find related verses, help organize notes, reflection prompts. Always shows **why** it suggested something; never authoritative over the text.
 

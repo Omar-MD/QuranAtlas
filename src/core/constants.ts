@@ -52,6 +52,11 @@ export const Events = {
   EDGES_DELETED: 'edges:deleted',
   EDGES_SAVE_FAILED: 'edges:save-failed',
   SYNC_EDGES_UPDATED: 'sync:edges-updated',
+  BOOKMARKS_SAVED: 'bookmarks:saved',
+  BOOKMARKS_DELETED: 'bookmarks:deleted',
+  BOOKMARKS_SAVE_FAILED: 'bookmarks:save-failed',
+  SYNC_BOOKMARKS_UPDATED: 'sync:bookmarks-updated',
+  BOOKMARK_JUMP_LANDED: 'bookmark:jump-landed',
 } as const
 
 export type EventName = typeof Events[keyof typeof Events]
@@ -100,6 +105,11 @@ export type EventPayloads = {
   'edges:deleted': { edgeId: string }
   'edges:save-failed': { error: string }
   'sync:edges-updated': { edgeIds: string[] }
+  'bookmarks:saved': { verseKey: string; riwayah: 'hafs' | 'warsh' | 'qaloon' }
+  'bookmarks:deleted': { verseKey: string; riwayah: 'hafs' | 'warsh' | 'qaloon' }
+  'bookmarks:save-failed': { verseKey: string; riwayah: 'hafs' | 'warsh' | 'qaloon'; error: string }
+  'sync:bookmarks-updated': { verseKeys: string[]; riwayah: 'hafs' | 'warsh' | 'qaloon' }
+  'bookmark:jump-landed': { verseKey: string }
 }
 
 export const Errors = {

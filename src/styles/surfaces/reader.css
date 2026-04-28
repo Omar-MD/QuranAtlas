@@ -217,6 +217,27 @@
     font-weight: 700;
   }
 
+  .qa-verse--bookmarked-glyph .qa-verse-number {
+    color: var(--qa-accent);
+    font-weight: 700;
+  }
+
+  .qa-verse--bookmarked-glyph .qa-verse-number::before {
+    content: '\2605';
+    margin-inline-end: 4px;
+    font-size: 0.875rem;
+    line-height: 1;
+    vertical-align: middle;
+  }
+
+  .qa-verse--pulse {
+    animation: qa-verse-pulse 1000ms ease-out 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qa-verse--pulse { animation: none; }
+  }
+
   .qa-verse-tagging {
     display: inline-flex;
     align-items: center;

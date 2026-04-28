@@ -9,7 +9,7 @@ import { verify } from './sha256-verifier.js'
 import { stageFile, getStagedResponse, deleteStaging, copyToLive } from './staging-cache.js'
 
 const DB_NAME = 'quran-atlas'
-const DB_VERSION = 4
+const DB_VERSION = 5
 const DATASET_META_ID = 'current'
 
 /** Session-scoped cached IDB connection. Cleared on versionchange. */

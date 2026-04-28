@@ -71,6 +71,11 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 | `EDGES_DELETED` | `edges:deleted` | `edges/store.ts` (deleteEdge) | *(no listener yet)* | `{ edgeId }` |
 | `EDGES_SAVE_FAILED` | `edges:save-failed` | `edges/store.ts` (createEdge on error) | *(no listener yet)* | `{ error }` |
 | `SYNC_EDGES_UPDATED` | `sync:edges-updated` | `safety/sync.ts` (handleChannelMessage receiver) | *(no listener yet)* | `{ edgeIds }` |
+| `BOOKMARKS_SAVED` | `bookmarks:saved` | `bookmarks/store.ts` (add) | `bookmarks/indicator.ts` (cache + glyph), `bookmarks/BookmarksList.svelte` (reload), `surahs/SurahList.svelte` (★ surah-row hint reload) | `{ verseKey, riwayah }` |
+| `BOOKMARKS_DELETED` | `bookmarks:deleted` | `bookmarks/store.ts` (del) | same as `BOOKMARKS_SAVED` | `{ verseKey, riwayah }` |
+| `BOOKMARKS_SAVE_FAILED` | `bookmarks:save-failed` | `bookmarks/store.ts` (add on error) | *(no listener yet)* | `{ verseKey, riwayah, error }` |
+| `SYNC_BOOKMARKS_UPDATED` | `sync:bookmarks-updated` | `safety/sync.ts` (handleChannelMessage receiver) | `bookmarks/indicator.ts`, `bookmarks/BookmarksList.svelte`, `surahs/SurahList.svelte` | `{ verseKeys, riwayah }` |
+| `BOOKMARK_JUMP_LANDED` | `bookmark:jump-landed` | `bookmarks/BookmarksList.svelte` (row click) | `bookmarks/pulse.ts` (verse cell pulse on landing) | `{ verseKey }` |
 
 ### Listener-only (⚠ dead emitter)
 

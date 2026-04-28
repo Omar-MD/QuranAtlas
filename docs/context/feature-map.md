@@ -96,16 +96,30 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 ## Nav drawer
 
-- **Entry:** `src/nav/NavDrawer.svelte` (mounted persistently in `App.svelte`); `openNavDrawer(tab?)` / `closeNavDrawer()` / `toggleNavDrawer(tab?)` from `nav/nav-drawer-bridge.ts` trigger it.
-- **Files:** `nav/NavDrawer.svelte`, `nav/nav-drawer-bridge.ts`, `nav/EmptyRoute.svelte`, `review/parse-layer-query.ts`.
-- **Purpose:** Mobile (<1180px) full-screen tabbed surface — sole entry point for the surah list and per-layer Review jumps (post 2026-04-25 overhaul). Two tabs: **Surahs** (default) · **Review**. Header carries a tappable QuranAtlas wordmark + ⓘ icon → `#/about`. ✕ closes. No footer (build version moved to About page).
+- **Entry:** `src/nav/NavDrawer.svelte` (mounted persistently in `App.svelte`); `openNavDrawer(tab?, subTab?)` / `closeNavDrawer()` / `toggleNavDrawer(tab?)` from `nav/nav-drawer-bridge.ts` trigger it.
+- **Files:** `nav/NavDrawer.svelte`, `nav/nav-drawer-bridge.ts`, `nav/EmptyRoute.svelte`, `bookmarks/BookmarksList.svelte`, `review/parse-layer-query.ts`.
+- **Purpose:** Mobile (<1180px) full-screen tabbed surface — sole entry point for the surah list, bookmarks list, and per-layer Review jumps. Two top-level mode tabs: **Read** (default) · **Study**. Read mode has two sub-tabs: **Surahs** (default) · **Bookmarks**. Restructured 2026-04-28 to mirror the 2-mode product model (Reading vs Thematic Study). Header carries a tappable QuranAtlas wordmark + ⓘ icon → `#/about`. ✕ closes. No footer.
 - **Key behaviors:**
-  - Mobile: opened by `MarginHeader` hamburger `≡` and by header swipe-down (`openNavDrawer('surahs')`). Desktop (≥1180px): opened by `AmbientDock` ⋯ kebab — same component, narrower side-panel layout (`min(80vw, 360px)`).
-  - **Surahs tab:** search input (name / number / `s:v` ref) + filter pills (All / ★ Bookmarked / ⏱ Recent) + scrolling surah list. Each row shows the number badge, English name, optional ★ bookmark glyph, and the **Arabic surah title** (`s.name_ar`, RTL, `--qa-font-arabic`) right-aligned. On open, list scrolls so the current surah is centered (`reader.currentSurahNum ?? settings.currentPosition.surah`); current row gets a tinted background, accent left rail, filled-circle number badge, bold name. Tapping a row navigates to `#/s/<n>` and dismisses drawer. Search reuses `state/surahs.svelte.ts` `filter` + `searchQuery` runes (reset to `'all'` / `''` on each open). Search semantics: number 1–114 filters to that surah; number ≥115 filters to surahs whose verse count meets the threshold (e.g. typing `255` lists only Al-Baqarah); free text matches name / Arabic (`name_ar`) / meaning; `S:V` shows the candidate row + "Press Enter to jump" hint and commits on Enter or row tap (no auto-navigate while typing — fix for 2026-04-25 bug where partial `2:25` fired before user finished `2:255`).
-  - **Review tab:** top **Hub** row → `#/review`; below, 4 group sections (Speech / Narrative / Themes / Entities) holding the 12 layer rows from `data/tag-layers::LAYER_GROUPS`. Each row carries a hue dot (`var(--lh-{group})`) and `LAYER_LABELS[layer]`. Tapping a layer routes to `#/review?layer=<name>` and dismisses; `Hub.svelte` reads the query via `parse-layer-query::parseLayerFromHash` to set `activeLayer`.
-  - Dismissal: backdrop tap, swipe-left, ✕ button, Esc. Drawer state (`isOpen`, `activeTab`) is local; not persisted.
+  - Mobile: opened by `MarginHeader` hamburger `≡` and by header swipe-down (`openNavDrawer('read')`). Desktop (≥1180px): opened by `AmbientDock` ⋯ kebab — same component, narrower side-panel layout (`min(80vw, 360px)`).
+  - **Read > Surahs sub-tab:** search input (name / number / `s:v` ref) + filter pills (All / ⏱ Recent) + scrolling surah list. Each row shows the number badge, English name, and **Arabic surah title** (`s.name_ar`, RTL, `--qa-font-arabic`) right-aligned. On open, list scrolls so the current surah is centered (`reader.currentSurahNum ?? settings.currentPosition.surah`); current row gets a tinted background, accent left rail, filled-circle number badge, bold name. Tapping a row navigates to `#/s/<n>` and dismisses drawer. Search reuses `state/surahs.svelte.ts` `filter` + `searchQuery` runes (reset to `'all'` / `''` on each open). Search semantics: number 1–114 filters to that surah; number ≥115 filters to surahs whose verse count meets the threshold; free text matches name / Arabic (`name_ar`) / meaning; `S:V` shows the candidate row + "Press Enter to jump" hint and commits on Enter or row tap.
+  - **Read > Bookmarks sub-tab:** delegates to shared `bookmarks/BookmarksList.svelte`. Verse-level rows grouped by surah (canonical order). Each row shows the `surah:verse` ref + a truncated Arabic snippet (RTL). Tap a row → emit `BOOKMARK_JUMP_LANDED` + close drawer + `NAVIGATION_NAVIGATE` (`#/s/<n>/<v>`); reader's verse-cell pulses 1s on landing (`bookmarks/pulse.ts`). Swipe-left → reveals Delete button (mobile); desktop hover-`×`. Empty state: "Tap a verse number in the reader to bookmark it." Bookmarks scope to `settings.riwayah`.
+  - **Study tab:** top **Hub** row → `#/review`; below, 4 group sections (Speech / Narrative / Themes / Entities) holding the 12 layer rows from `data/tag-layers::LAYER_GROUPS`. Each row carries a hue dot (`var(--lh-{group})`) and `LAYER_LABELS[layer]`. Tapping a layer routes to `#/review?layer=<name>` and dismisses; `Hub.svelte` reads the query via `parse-layer-query::parseLayerFromHash` to set `activeLayer`.
+  - Dismissal: backdrop tap, swipe-left, ✕ button, Esc. Drawer state (`isOpen`, `activeTab`, `activeSubTab`) is local; not persisted.
   - Wordmark + ⓘ in header is the sole entry to `#/about` from the drawer.
-- **IDB touch:** reads `marks` (bookmarked-set), `settings.recentSurahs` (recent filter). No writes.
+- **IDB touch:** reads `bookmarks` store (active-riwayah list) via `BookmarksList`, `settings.recentSurahs` (recent filter). No writes from the drawer itself; bookmark deletes flow through `bookmarks/store.ts::del`.
+
+## Bookmarks (Reading mode)
+
+- **Entry / surface:** verse-id roundel in the reader (single-tap toggle); drawer Read>Bookmarks sub-tab; desktop `#/bookmarks` page.
+- **Files:** `src/bookmarks/store.ts`, `src/bookmarks/indicator.ts`, `src/bookmarks/click-handler.ts`, `src/bookmarks/pulse.ts`, `src/bookmarks/BookmarksList.svelte`, `src/bookmarks/BookmarksPage.svelte`, `src/styles/surfaces/bookmarks.css`. Schema in `core/db.ts` (`bookmarks` store, DB v5).
+- **Purpose:** Lightweight "save this verse" feature. Riwayah-scoped — switching riwayah surfaces a different set; the same `verseKey` carries one bookmark per riwayah. Verse-id glyph (mono `255`) renders with a leading ★ + accent color when bookmarked. Independent from the 12-layer marks system: bookmarks are a 1-tap toggle; marks are a deliberate semantic tagging gesture (long-press / double-tap → editor).
+- **Key behaviors:**
+  - Single click on `.qa-verse-number` → `bookmarks/click-handler.ts` calls `toggle(verseKey, settings.riwayah)`. Skipped while `tagSession.quickbarOpen` to avoid colliding with fast-tag's switch-active-verse semantics.
+  - Indicator cache (`bookmarks/indicator.ts`) holds the active-riwayah verseKey set in memory; reacts to `BOOKMARKS_SAVED` / `BOOKMARKS_DELETED` / `SYNC_BOOKMARKS_UPDATED` / `SETTINGS_RIWAYAH_CHANGED` / `DB_VISIBILITY_VISIBLE`. Decorates each verse via `qa-verse--bookmarked-glyph` class on `[data-verse-key]` mount.
+  - List click → emits `BOOKMARK_JUMP_LANDED` + navigates to `#/s/<n>/<v>`. `bookmarks/pulse.ts` polls for the verse element (up to 3s), adds `qa-verse--pulse` for 1s.
+  - Cross-tab sync via `safety/sync.ts::broadcastBookmarkChange`.
+  - Desktop `/bookmarks` page (`bookmarks/BookmarksPage.svelte`) mirrors the mobile sub-tab. Reachable from `/surahs` page (★ Bookmarks header link) and direct `#/bookmarks` URL. Mobile arrivals at `#/bookmarks` redirect to `lastSurface` and open the drawer with the Bookmarks sub-tab.
+- **IDB touch:** `bookmarks` store (sole writer `bookmarks/store.ts`).
 
 ## Update banner (rolled-out new build)
 
@@ -149,10 +163,10 @@ For dependencies between directories, see `module-graph.md`. For the events each
 
 ## Surah list (desktop only post 2026-04-25)
 
-- **Route:** `#/surahs` — desktop (≥1180px) only. On mobile the route loader replaces the hash with `settings.lastSurface` and opens the **NavDrawer** Surahs tab via `openNavDrawer('surahs')`. See `app-bootstrap.ts`'s `#/surahs` registration. The mobile path mounts `nav/EmptyRoute.svelte` as a synthetic empty component while the redirect runs in a microtask.
+- **Route:** `#/surahs` — desktop (≥1180px) only. On mobile the route loader replaces the hash with `settings.lastSurface` and opens the **NavDrawer** Surahs tab via `openNavDrawer('read')`. See `app-bootstrap.ts`'s `#/surahs` registration. The mobile path mounts `nav/EmptyRoute.svelte` as a synthetic empty component while the redirect runs in a microtask.
 - **Entry:** `src/surahs/SurahList.svelte` (Svelte component, mounted via router `onRouteChange` on desktop)
 - **Files:** `surahs/SurahList.svelte`, `surahs/SurahRow.svelte`, `nav/EmptyRoute.svelte` (mobile redirect synthetic component)
-- **Purpose:** Desktop browseable directory of all 114 surahs. Name / meaning / type / verse count, Bookmarked + Recent filters, search by name/number/ref (`67`, `67:1`, "Mulk"), continue-reading card. (Mobile users get the drawer's Surahs tab instead — same data, different surface.)
+- **Purpose:** Desktop browseable directory of all 114 surahs. Name / meaning / type / verse count, Recent filter, search by name/number/ref (`67`, `67:1`, "Mulk"), continue-reading card, ★ Bookmarks header link to `#/bookmarks` (the dedicated bookmark list page replaces the legacy "Bookmarked" filter pill). (Mobile users get the drawer's Read sub-tabs instead — same data, different surface.)
 - **Key behaviors:**
   - "Bookmarked" filter reads unique surah numbers from `marks/store.ts::getAll()` (sole read path per CLAUDE.md Rule 5).
   - "Recent" filter reads `settings.recentSurahs` (populated by `App.svelte`'s `$effect` on `reader.currentSurahNum`, capped at 5).
@@ -184,7 +198,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Key behaviors:**
   - Hamburger → `toggleNavDrawer()`. Toggles open/closed; second tap dismisses. Drawer is the full-screen tabbed surface (Surahs / Review) post 2026-04-25 overhaul — see Nav drawer entry above.
   - Center label (post 2026-04-26): single-line Arabic surah name in `'Amiri Quran'` Mushaf script, 18px (the previous uppercase smallcaps English subline was dropped — Arabic stands alone). **Tap toggles the in-reader Surah Header visibility** via `settings/surah-header-visibility.ts::toggleSurahHeaderHidden` (rune `reader.surahHeaderHidden` mirrors `settings.surahHeaderHidden` IDB key); no-op off the reader route or when no surah is loaded. Tap is routed through `onLabelTouchEnd` for touch (with `preventDefault` to suppress the synthetic click that would otherwise double-toggle) and through `onclick` / `onkeydown` (Enter / Space) for mouse + keyboard. Swipe left/right on label = next/prev surah, clamped 1–114; haptic nudge at boundaries. (No chevron glyph; the destination it implied no longer exists.)
-  - Swipe down on header = `openNavDrawer('surahs')` (post 2026-04-25 — was hash navigation to `#/surahs`).
+  - Swipe down on header = `openNavDrawer('read')` (post 2026-04-25 — was hash navigation to `#/surahs`).
   - Gear: short tap = `openSettingsSheet()`. Double-tap ≥400 ms = `cycleTheme()` (parity with keyboard `d`).
   - Scroll listener on `#main-content` toggles `qa-mh--hidden` (transform translateY −100%).
   - Swipe classifier: `nav/swipe-gestures.ts::classifySwipe` — pure threshold/velocity math (covered by Vitest unit tests at `tests/unit/nav/swipe-gestures.test.ts`).

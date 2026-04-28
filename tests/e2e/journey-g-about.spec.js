@@ -100,7 +100,7 @@ test.describe('Journey G: About', () => {
     expect(vText).toMatch(/^v/)
   })
 
-  test('G: hamburger drawer opens with Surahs+Review tabs and wordmark→About', async ({ page }) => {
+  test('G: hamburger drawer opens with Read+Study tabs and wordmark→About', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'drawer hamburger is mobile-only; desktop ambient dock has its own kebab')
 
@@ -111,9 +111,12 @@ test.describe('Journey G: About', () => {
     const drawer = page.locator('.qa-nav-drawer')
     await expect(drawer).toBeVisible({ timeout: 3_000 })
 
-    // Two tabs: Surahs (default) · Review
-    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Surahs' })).toBeVisible()
-    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Review' })).toBeVisible()
+    // Two top-level mode tabs: Read (default) · Study (post 2026-04-28 restructure).
+    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Read' })).toBeVisible()
+    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Study' })).toBeVisible()
+    // Read mode exposes Surahs · Bookmarks sub-tabs.
+    await expect(drawer.locator('.qa-nav-drawer-subtab', { hasText: 'Surahs' })).toBeVisible()
+    await expect(drawer.locator('.qa-nav-drawer-subtab', { hasText: 'Bookmarks' })).toBeVisible()
 
     // Wordmark with ⓘ icon = About entry
     await expect(drawer.locator('.qa-nav-drawer-wordmark')).toBeVisible()

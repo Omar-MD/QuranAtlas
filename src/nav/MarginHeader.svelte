@@ -120,7 +120,7 @@
       dy: t.clientY - headerTouchY0,
       dtMs: performance.now() - headerTouchT0,
     })
-    if (dir === 'down') { openNavDrawer('surahs') }
+    if (dir === 'down') { openNavDrawer('read') }
   }
 
   // ---- Settings gear: single tap → settings; double tap → cycle theme ----

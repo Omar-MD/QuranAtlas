@@ -133,6 +133,18 @@ graph LR
 - **Imported by:** nothing at MVP (no UI surface yet — edge-creation UI is deferred; see `docs/context/future-work.md`)
 - **Role:** Verse-to-verse typed relationship store. `kinds.ts` exports `EDGE_KIND_SEEDS` (14 seed kinds) and `inferDirectedFromKind()`. `store.ts` is the sole IDB writer for the `edges` store — computes `_canonKind` (simple ASCII lowercase) and auto-infers `directed` from `inferDirectedFromKind()`. Provides `createEdge`, `updateEdge`, `deleteEdge`, `getById`, `getAll`, `getByVerse`, `getByKindCanonical`.
 
+### `bookmarks/`
+- **Files:** `store.ts`, `indicator.ts`, `click-handler.ts`, `pulse.ts`, `BookmarksList.svelte`, `BookmarksPage.svelte`
+- **Imports from:**
+  - `bookmarks/store.ts` → `core/db`, `core/events`, `core/constants`, `core/logger`, `safety/sync`
+  - `bookmarks/indicator.ts` → `./store`, `core/events`, `core/constants`, `state/settings.svelte`
+  - `bookmarks/click-handler.ts` → `./store`, `core/logger`, `state/settings.svelte`, `state/tag-session.svelte`
+  - `bookmarks/pulse.ts` → `core/events`, `core/constants`
+  - `bookmarks/BookmarksList.svelte` → `./store`, `data/dataset`, `core/events`, `core/constants`, `state/settings.svelte`
+  - `bookmarks/BookmarksPage.svelte` → `./BookmarksList.svelte`, `./store`, `core/events`, `core/constants`, `state/settings.svelte`, `a11y/announcer`
+- **Imported by:** `app-bootstrap.ts` (init for indicator + click-handler + pulse), `nav/NavDrawer.svelte` (`BookmarksList`), `surahs/SurahList.svelte` (`getAllForRiwayah` for the surah-row star).
+- **Role:** Riwayah-scoped verse bookmarks. `store.ts` is the sole IDB writer (CLAUDE.md Rule 5). `click-handler.ts` is a global `document.click` listener that toggles bookmarks on `.qa-verse-number` taps (skipped while `tagSession.quickbarOpen` to coexist with fast-tag). `indicator.ts` keeps an in-memory active-riwayah verseKey set and decorates verse-id glyphs (`qa-verse--bookmarked-glyph`). `pulse.ts` listens for `BOOKMARK_JUMP_LANDED` and pulses the landed verse cell for 1s. `BookmarksList.svelte` is shared between drawer Read>Bookmarks sub-tab and `BookmarksPage.svelte` (desktop `#/bookmarks` route).
+
 ### `marks/`
 - **Files:** `Editor.svelte`, `TagLayerRegion.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
 - **Imports from:** `core` (including `core/normalize.ts` for `canonicalize()`), `data`, `safety`, `state`

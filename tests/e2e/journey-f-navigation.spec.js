@@ -351,7 +351,7 @@ test.describe('Journey F: mobile drawer', () => {
     await markOnboardingComplete(page)
   })
 
-  test('F-mobile-1: hamburger opens drawer with Surahs tab default and current-surah highlighted', async ({ page }) => {
+  test('F-mobile-1: hamburger opens drawer with Read tab + Surahs sub-tab default and current-surah highlighted', async ({ page }) => {
     await page.goto('/#/s/18')
     await waitForReader(page)
 
@@ -359,8 +359,9 @@ test.describe('Journey F: mobile drawer', () => {
     const drawer = page.locator('.qa-nav-drawer')
     await expect(drawer).toBeVisible()
 
-    // Surahs tab is on by default
-    await expect(page.locator('.qa-nav-drawer-tab--on')).toHaveText(/Surahs/i)
+    // Read tab is on by default; Surahs sub-tab is on by default
+    await expect(page.locator('.qa-nav-drawer-tab--on')).toHaveText(/Read/i)
+    await expect(page.locator('.qa-nav-drawer-subtab--on')).toHaveText(/Surahs/i)
 
     // Current surah (18 — Al-Kahf) is highlighted
     const currentRow = page.locator('.qa-nav-drawer-surah-row--current')
@@ -370,13 +371,11 @@ test.describe('Journey F: mobile drawer', () => {
     await expect(page.locator('.qa-nav-drawer-wordmark')).toBeVisible()
   })
 
-  // F-mobile-2 Review tab structure ported to tests/unit/nav/drawer.test.ts.
-  // Layer-tap navigation (router integration) stays e2e below as part of F-mobile flows.
-  test('F-mobile-2: tapping layer row routes to #/review?layer=<name>', async ({ page }) => {
+  test('F-mobile-2: tapping layer row in Study tab routes to #/review?layer=<name>', async ({ page }) => {
     await page.goto('/#/s/1')
     await waitForReader(page)
     await page.locator('.qa-mh-hamburger').click()
-    await page.locator('.qa-nav-drawer-tab', { hasText: 'Review' }).click()
+    await page.locator('.qa-nav-drawer-tab', { hasText: 'Study' }).click()
     await page.locator('.qa-nav-drawer-layer-row[data-layer="people"]').click()
     await expect(page).toHaveURL(/#\/review\?layer=people$/)
   })

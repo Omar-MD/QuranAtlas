@@ -2,7 +2,7 @@
 
 IDB is the single source of client-side truth in QuranAtlas. This file documents every object store, every key, every index, and the record shape each surface writes. If you find something in IDB that isn't here, either (a) we've drifted — update this doc — or (b) an extension is writing there.
 
-The DB is `quran-atlas`, version 3, defined in `src/core/db.ts`. Schema changes live in `onupgradeneeded`.
+The DB is `quran-atlas`, version 5, defined in `src/core/db.ts`. Schema changes live in `onupgradeneeded`.
 
 **Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `core/db.ts`. Validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously.
 
@@ -261,6 +261,45 @@ Only written after a successful `copyToLive` in the dataset-update pipeline. The
 - **One edge**: `getById(id)`.
 - **By verse (either end)**: `getByVerse(verseKey)` — unions `by-from` and `by-to` index lookups, deduplicates by id.
 - **By kind**: `getByKindCanonical(canonKind)` → `index('by-canon-kind').getAll(canonKind)`.
+
+---
+
+## Store: `bookmarks`
+
+- **keyPath:** `['riwayah', 'verseKey']` (compound)
+- **DB_VERSION:** 5 (added in v5, 2026-04-28). Bookmarks scope to riwayah — switching riwayah surfaces a different set; the same `verseKey` can carry one bookmark per riwayah.
+- **Indexes:**
+  - `by-riwayah-surah` on `['riwayah', 'surah']` — backs the BookmarksList grouped-by-surah view for the active riwayah.
+  - `by-riwayah` on `riwayah` — fast all-bookmarks-for-riwayah load.
+- **Validated fields (all required):** `riwayah` (string), `verseKey` (string), `surah` (number), `createdAt` (number) — TS interface `BookmarkRecord` in `core/db.ts`.
+- **Written by:** `bookmarks/store.ts` only.
+
+### Record shape
+
+```ts
+{
+  riwayah: 'hafs' | 'warsh' | 'qaloon',
+  verseKey: string,    // '2:255'
+  surah: number,       // denormalized for the by-riwayah-surah index
+  createdAt: number,
+}
+```
+
+### Write invariant
+
+Bookmarks are toggled, not edited:
+
+- `add(verseKey, riwayah)` → derives `surah` from the verseKey, `put`s the record, emits `BOOKMARKS_SAVED`, then `broadcastBookmarkChange([verseKey], riwayah)`.
+- `del(verseKey, riwayah)` → deletes by compound key, emits `BOOKMARKS_DELETED`, then broadcasts.
+- `toggle(verseKey, riwayah)` → `getOne` then add/del. Returns the new state (`true` = bookmarked, `false` = removed).
+
+Cross-tab peers receive `SYNC_BOOKMARKS_UPDATED` with `{ verseKeys, riwayah }` and re-decorate the verse-id glyph + reload the list.
+
+### Typical queries
+
+- **Single bookmark**: `getOne(verseKey, riwayah)` → `store.get([riwayah, verseKey])`.
+- **All for active riwayah**: `getAllForRiwayah(riwayah)` → `index('by-riwayah').getAll(riwayah)`, sorted by canonical (surah, verse).
+- **Grouped for active riwayah**: `getGroupedForRiwayah(riwayah)` → returns `Map<surah, BookmarkRecord[]>` in canonical order.
 
 ---
 

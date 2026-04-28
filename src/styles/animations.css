@@ -52,4 +52,10 @@
     from { transform: translateX(-100%); }
     to   { transform: translateX(0); }
   }
+
+  /* Bookmark jump-landed pulse — fades verse cell from accent-tint to transparent. */
+  @keyframes qa-verse-pulse {
+    0%   { background-color: color-mix(in srgb, var(--qa-accent) 22%, transparent); }
+    100% { background-color: transparent; }
+  }
 }

@@ -78,6 +78,18 @@ export function broadcastEdgeChange(edgeIds: string[]): void {
 }
 
 /**
+ * Broadcast a bookmark change to other tabs.
+ * Only call after IDB transaction oncomplete.
+ */
+export function broadcastBookmarkChange(verseKeys: string[], riwayah: Riwayah): void {
+  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
+  if (!channel) {
+    return
+  }
+  channel.postMessage({ type: 'bookmarks:changed', verseKeys, riwayah })
+}
+
+/**
  * Broadcast a Riwayah change to other tabs.
  * Only call after the IDB put succeeds.
  */
@@ -119,7 +131,7 @@ function destroy(): void {
  * Handle incoming BroadcastChannel messages.
  */
 function handleChannelMessage(event: MessageEvent): void {
-  const data = (event.data || {}) as { type?: string; verseKeys?: string[]; edgeIds?: string[]; value?: string }
+  const data = (event.data || {}) as { type?: string; verseKeys?: string[]; edgeIds?: string[]; value?: string; riwayah?: string }
   if (data.type === 'marks:changed' && Array.isArray(data.verseKeys)) {
     for (const handler of markChangeHandlers) {
       try {
@@ -133,6 +145,8 @@ function handleChannelMessage(event: MessageEvent): void {
     emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: data.verseKeys })
   } else if (data.type === 'edges:changed' && Array.isArray(data.edgeIds)) {
     emit(Events.SYNC_EDGES_UPDATED, { edgeIds: data.edgeIds })
+  } else if (data.type === 'bookmarks:changed' && Array.isArray(data.verseKeys) && (data.riwayah === 'hafs' || data.riwayah === 'warsh' || data.riwayah === 'qaloon')) {
+    emit(Events.SYNC_BOOKMARKS_UPDATED, { verseKeys: data.verseKeys, riwayah: data.riwayah })
   } else if (data.type === 'riwayah:changed' && (data.value === 'hafs' || data.value === 'warsh' || data.value === 'qaloon')) {
     const next = data.value as Riwayah
     const prev = (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-riwayah') : null) as Riwayah | null

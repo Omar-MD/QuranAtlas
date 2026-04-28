@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
   import { settings } from '../state/settings.svelte'
-  import { getAll as getAllMarks } from '../marks/store'
+  import { getAllForRiwayah as getAllBookmarks } from '../bookmarks/store'
   import { get } from '../core/db'
   import { loadGlobalPosition } from '../reader/global-position'
-  import { emit } from '../core/events'
+  import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
   import { surahs as surahsState } from '../state/surahs.svelte'
+  import type { Riwayah } from '../core/db'
   import SurahRow from './SurahRow.svelte'
 
   // ---- data loaded on mount ----
@@ -30,9 +31,7 @@
     if (refMatch) { return [] }
 
     let items: SurahMeta[] = allSurahs
-    if (filter === 'bookmarked') {
-      items = allSurahs.filter(s => bookmarkedSet.has(s.n))
-    } else if (filter === 'recent') {
+    if (filter === 'recent') {
       const order = new Map(recentSurahs.map((n, i) => [n, i]))
       items = allSurahs
         .filter(s => order.has(s.n))
@@ -62,9 +61,7 @@
     const { filter, searchQuery } = surahsState
     const q = searchQuery.trim()
     const numericMatch = q.match(/^(\d+)$/)
-    if (filter === 'bookmarked') {
-      return `${visibleItems.length} bookmarked`
-    } else if (filter === 'recent') {
+    if (filter === 'recent') {
       return visibleItems.length ? `${visibleItems.length} recent` : 'No recent'
     } else if (q && !numericMatch) {
       return visibleItems.length === 1 ? '1 match' : `${visibleItems.length} matches`
@@ -103,32 +100,50 @@
 
   const resumeMeta = $derived(resume ? allSurahs.find(s => s.n === resume?.surah) ?? null : null)
 
-  onMount(async () => {
-    const [fetchedSurahs, marks, lastPosition, recentRec] = await Promise.all([
-      getSurahs(),
-      getAllMarks().catch(() => []),
-      loadGlobalPosition().catch(() => null),
-      get('settings', 'recentSurahs').catch(() => undefined),
-    ])
+  async function loadBookmarkedSet(): Promise<void> {
+    const riwayah = (settings.riwayah ?? 'qaloon') as Riwayah
+    const bookmarks = await getAllBookmarks(riwayah).catch(() => [])
+    bookmarkedSet = new Set(bookmarks.map(b => b.surah))
+  }
 
-    bookmarkedSet = new Set(marks.map(m => {
-      const parts = m.verseKey.split(':')
-      return parseInt(parts[0] ?? '0', 10)
-    }))
-    recentSurahs = Array.isArray(recentRec?.value) ? (recentRec.value as number[]).slice(0, 5) : []
+  let bookmarkUnsubs: Array<() => void> = []
 
-    resume = lastPosition
-      ? { surah: lastPosition.surah, verse: lastPosition.verse }
-      : null
+  onMount(() => {
+    void (async () => {
+      const [fetchedSurahs, lastPosition, recentRec] = await Promise.all([
+        getSurahs(),
+        loadGlobalPosition().catch(() => null),
+        get('settings', 'recentSurahs').catch(() => undefined),
+      ])
 
-    allSurahs = fetchedSurahs
-    loaded = true
+      await loadBookmarkedSet()
+      recentSurahs = Array.isArray(recentRec?.value) ? (recentRec.value as number[]).slice(0, 5) : []
 
-    // Reset filter/search on mount
-    surahsState.filter = 'all'
-    surahsState.searchQuery = ''
+      resume = lastPosition
+        ? { surah: lastPosition.surah, verse: lastPosition.verse }
+        : null
 
-    announce('Surah list')
+      allSurahs = fetchedSurahs
+      loaded = true
+
+      // Reset filter/search on mount
+      surahsState.filter = 'all'
+      surahsState.searchQuery = ''
+
+      announce('Surah list')
+    })()
+
+    bookmarkUnsubs = [
+      on(Events.BOOKMARKS_SAVED, () => { void loadBookmarkedSet() }),
+      on(Events.BOOKMARKS_DELETED, () => { void loadBookmarkedSet() }),
+      on(Events.SYNC_BOOKMARKS_UPDATED, () => { void loadBookmarkedSet() }),
+      on(Events.SETTINGS_RIWAYAH_CHANGED, () => { void loadBookmarkedSet() }),
+    ]
+  })
+
+  onDestroy(() => {
+    for (const u of bookmarkUnsubs) { u() }
+    bookmarkUnsubs = []
   })
 
   function handleSearchInput(e: Event) {
@@ -152,7 +167,7 @@
     }
   }
 
-  function setFilter(f: 'all' | 'bookmarked' | 'recent') {
+  function setFilter(f: 'all' | 'recent') {
     surahsState.filter = f
   }
 
@@ -165,7 +180,6 @@
 
   const FILTERS = [
     { key: 'all' as const, label: 'All' },
-    { key: 'bookmarked' as const, label: 'Bookmarked' },
     { key: 'recent' as const, label: 'Recent' },
   ]
 </script>
@@ -174,6 +188,7 @@
   <header class="qa-sl-header">
     <h1 class="qa-sl-title">Surahs</h1>
     <span class="qa-sl-count">{loaded ? countLabel : '114'}</span>
+    <a class="qa-sl-bookmarks-link" href="#/bookmarks">★ Bookmarks</a>
   </header>
 
   <label class="qa-sl-search">
