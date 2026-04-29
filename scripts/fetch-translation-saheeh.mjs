@@ -6,7 +6,7 @@
  * into clean text + numbered footnote markers, writes the monolithic source
  * file consumed by the build pipeline:
  *
- *   public/dataset/translations/saheeh.raw.json
+ *   data/raw/saheeh.raw.json
  *
  * Run via: node scripts/fetch-translation-saheeh.mjs
  *
@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..')
-const OUT_PATH = join(REPO_ROOT, 'public', 'dataset', 'translations', 'saheeh.raw.json')
+const OUT_PATH = join(REPO_ROOT, 'data', 'raw', 'saheeh.raw.json')
 
 const TRANSLATION_ID = 20
 const API_BASE = 'https://api.qurancdn.com/api/qdc'

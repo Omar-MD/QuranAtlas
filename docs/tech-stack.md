@@ -75,7 +75,7 @@ Defined in `package.json`:
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
 | `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && vite build`) |
 | `pnpm run build:dataset` | Split KFGQPC riwayat JSONs + each shipped translation `.raw.json` into per-surah files; regenerate `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` (`node scripts/build-dataset.mjs`). Renamed from `build-riwayat.mjs` 2026-04-27 when translations phase landed; runs offline against committed source files. |
-| `pnpm run fetch:translation:saheeh` | One-shot networked fetch of Saheeh International (Quran.com qdc translation 20) into `public/dataset/translations/saheeh.raw.json` (committed). Re-run only when refreshing the upstream pack. |
+| `pnpm run fetch:translation:saheeh` | One-shot networked fetch of Saheeh International (Quran.com qdc translation 20) into `data/raw/saheeh.raw.json` (committed; outside `public/` so it's build-only and never shipped to clients). Re-run only when refreshing the upstream pack. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm test` | Run Vitest in watch mode |
 | `pnpm run test:run` | Run Vitest once (CI-style) |

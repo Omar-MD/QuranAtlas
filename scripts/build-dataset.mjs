@@ -4,7 +4,7 @@
  *
  * Reads monolithic source files committed to the repo:
  *   data/sources/riwayat/{hafs,warsh,qaloon}.json     (KFGQPC corpus — build-only, not shipped)
- *   public/dataset/translations/{id}.raw.json         (one per shipped translation)
+ *   data/raw/{id}.raw.json                            (one per shipped translation — build-only, not shipped)
  *
  * Emits:
  *   public/dataset/riwayat/{name}/{NNN}.json          (114 per Riwayah, 342 total)
@@ -31,6 +31,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'sources', 'riwayat')   // build-only inputs (not shipped)
+const RAW_TRANSLATIONS_DIR = join(REPO_ROOT, 'data', 'raw')                 // build-only inputs (not shipped) — see scripts/fetch-translation-*.mjs
 const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')                            // shipped output (per-surah split files)
 const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
 const VERSE_MAP_PATH = join(TRANSLATIONS_DIR, '_verse-map.json')
@@ -518,7 +519,7 @@ async function main() {
   const translationProvenance = []
   const hafsCounts = perRiwayahCounts.hafs.slice() // 114-entry array, matches surah index
   for (const t of SHIPPED_TRANSLATIONS) {
-    const rawPath = join(TRANSLATIONS_DIR, t.rawFile)
+    const rawPath = join(RAW_TRANSLATIONS_DIR, t.rawFile)
     if (!existsSync(rawPath)) {
       throw new Error(`Missing translation source: ${rawPath} (run scripts/fetch-translation-${t.id}.mjs)`)
     }

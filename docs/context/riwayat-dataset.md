@@ -226,7 +226,7 @@ Per-ayah equivalence is otherwise grounded in al-Dani's *Al-Bayan fi `Add Ay al-
 
 ## Translation source pipeline
 
-`public/dataset/translations/saheeh.raw.json` is fetched once by `scripts/fetch-translation-saheeh.mjs` from quran.com qdc API (translation id 20 = Saheeh International). The fetcher normalises HTML markup, renumbers footnote IDs per surah (1..K), and rewrites markers as `[N]`. Output committed to git so subsequent builds run offline.
+`data/raw/saheeh.raw.json` (outside `public/`, build-only input, never shipped) is fetched once by `scripts/fetch-translation-saheeh.mjs` from quran.com qdc API (translation id 20 = Saheeh International). The fetcher normalises HTML markup, renumbers footnote IDs per surah (1..K), and rewrites markers as `[N]`. Output committed to git so subsequent builds run offline.
 
 `public/dataset/translations/saheeh/NNN.json` (per-surah translation packs) ship to the user. Keyed by `verse_key: "S:V"` with Hafs / Kufi numbering — by definition the same indexing as the local Hafs Arabic dataset.
 
