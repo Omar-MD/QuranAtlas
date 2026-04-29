@@ -93,15 +93,17 @@ graph LR
 - **Role:** About page Svelte component + PWA install prompt capture/handling.
 
 ### `core/`
-- **Files:** `constants.ts`, `db.ts`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `router.ts`, `sw-update-poll.ts`, `tag-colors.ts`, `ui.svelte`, `ui-bridge.ts`
+- **Files:** `constants.ts`, `db.ts` (barrel), `db/{types.ts, migrations.js, validate.ts, connection.ts}`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `router.ts`, `sw-update-poll.ts`, `tag-colors.ts`, `ui.svelte`, `ui-bridge.ts`
 - **Imports from:**
   - `core/quota-banner.svelte` → `a11y`
   - `core/ui.svelte` → emits `MARKS_UNDO` via the bus; no feature-dir imports
   - `core/normalize.ts` → `core/aliases.ts`
   - `core/aliases.ts` → `data/aliases.json`
+  - `core/db/connection.ts` → `core/events`, `core/constants`, `core/db/{migrations,validate,types}`
+  - `core/db.ts` (barrel) → re-exports from `core/db/{types,migrations,validate,connection}`
   - Every other file: none outside core
 - **Imported by:** **every feature directory** — this is the trunk.
-- **Role:** Cross-cutting primitives. `db.ts` (IDB + strict `StoreRecords` types + `LayerName` / `LAYER_NAMES` / `MarkRecord`), `events.ts` (pub/sub + typed `EventPayloads`), `router.ts` (hash routing), `constants.ts` (Events enum + payload typedefs + shared constants), `logger.ts` (noop wrapper in tests, console in prod), `normalize.ts` (canonicalization pipeline — `normalize()` + `canonicalize()`), `aliases.ts` (alias map + `excludeFromAliasing` guard), `ui.svelte` (undo toast) + `ui-bridge.ts` (imperative `showUndoToast()`), `tag-colors.ts` (deterministic tag-color mapping), `quota-banner.svelte` (storage warnings).
+- **Role:** Cross-cutting primitives. `db/` is the IDB layer (split 2026-04-29 audit C-2 / R-07 from a single 370-LOC `db.ts`): `db/types.ts` is pure types + `LAYER_NAMES`; `db/migrations.js` owns `applySchema(db)` (closure-free, single source of truth for the e2e fixture's `_APPLY_SCHEMA_SRC` via `Function.toString()` — closes the audit C-1 hand-mirror gap); `db/validate.ts` owns the `_shapes` table + `validateWrite`; `db/connection.ts` owns open/close + `get`/`put`/`del` + version-change wiring. `db.ts` survives as a barrel re-exporter so the 52 existing call sites don't churn — new code should import from the specific sub-module. `events.ts` (pub/sub + typed `EventPayloads`), `router.ts` (hash routing), `constants.ts` (Events enum + payload typedefs + shared constants), `logger.ts` (noop wrapper in tests, console in prod), `normalize.ts` (canonicalization pipeline — `normalize()` + `canonicalize()`), `aliases.ts` (alias map + `excludeFromAliasing` guard), `ui.svelte` (undo toast) + `ui-bridge.ts` (imperative `showUndoToast()`), `tag-colors.ts` (deterministic tag-color mapping), `quota-banner.svelte` (storage warnings).
 - **CSS:** All styles live under `src/styles/` (entry `styles/index.css`). Tokens in `styles/tokens/{primitives,motion,semantic}.css`; shell rules in `styles/{reset,base,animations,utilities}.css`; per-surface files under `styles/surfaces/*.css`. Component → surface map:
   - `core/quota-banner.svelte` → `surfaces/quota-banner.css`
   - shared sheet + modal chrome → `surfaces/sheet.css` + `surfaces/modal.css` (context-scoped token inheritance roots; sheet-context redefines `--qa-text-primary`, `--qa-text-muted`, `--qa-text-dim`, `--qa-border-default` to on-sheet tokens)
@@ -241,7 +243,7 @@ graph LR
 
 ## Quick heuristics
 
-- **Want to change persistence shape?** Touch `core/db.ts` (stores + `validateWrite` table + `StoreRecords` interfaces). Then propagate to `marks/store.ts`, `review/state.ts`, `settings/*`, and any direct `put()` call sites — TS will flag them.
+- **Want to change persistence shape?** Schema lives in `core/db/migrations.js::applySchema` (closure-free; bumps `DB_VERSION` there); validation in `core/db/validate.ts::_shapes`; types in `core/db/types.ts`. Propagate to `marks/store.ts`, `review/state.ts`, `settings/*`, and any direct `put()` call sites — TS will flag them. The e2e fixture's schema source (`tests/e2e/fixtures/idb.js::_APPLY_SCHEMA_SRC`) is now derived from `applySchema.toString()` so it cannot drift.
 - **Want to add a route?** Register in `src/app-bootstrap.ts` via `router.register`; create `src/<feature>/<Feature>.svelte` and lazy-load via `() => import('./<feature>/<Feature>.svelte')`.
 - **Want to add a cross-module signal?** Add the constant to `core/constants.ts::Events` and the payload typedef to `EventPayloads`. Emit from the owner, listen from consumers. Don't import the module directly — that's what the bus exists to avoid. If the signal would just broadcast a rune value that consumers could read directly, skip the event entirely and read the rune (see "Dissolved into rune reads" in `events.md`).
 - **Want to wire a new piece of chrome?** Put the component under `nav/` and mount it in `App.svelte`.
