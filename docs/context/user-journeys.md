@@ -337,50 +337,55 @@ Inside mark editor, new mark.
 
 ## D. Settings & appearance
 
-### D1. Open Settings sheet
+### D1. Open Settings sheet — full-screen redesign 2026-04-29
 
-Post 2026-04-25 mobile-nav-redesign (was More sheet → Settings).
+Post 2026-04-29 redesign (was multi-view bottom sheet with Typography subview + Translation picker subview).
 
-1. **Mobile (<1180px):** single-tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet opens (after the 300 ms double-tap window expires, so a quick second tap can rewrite the action). Double-tap gear (≤300 ms apart) cycles theme without opening the sheet.
-2. **Desktop (≥1180px):** navigate to `#/settings` (e.g. via `G`+`P` shortcut or command sheet "Preferences") → Settings sheet opens.
-3. Sheet content (post 2026-04-25): theme swatches, **Typography** nav row (opens subview — see D5), Reading section (Riwayah three-swatch picker + translation toggle + picker link). The Riwayah picker sits above the translation toggle; switching emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, and re-renders the reader with the new Riwayah's text + font + line-height floor.
+1. **Mobile + tablet (<1180px):** single-tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet **takes over the full viewport** (`inset: 0`, safe-area insets top + bottom, no border). Double-tap gear (≤300 ms apart) cycles theme without opening the sheet.
+2. **Desktop (≥1180px):** navigate to `#/settings` (e.g. via `G`+`P` shortcut or command sheet "Preferences") → Settings sheet opens as a centered modal (~440px, max-height 720px). Same component, narrower frame.
+3. Sheet content (single view — no subview navigation): **header** (Settings title + ✕ close), **sticky live preview band** at the top (warm-bronze dark background regardless of theme — Sūrat ar-Raḥmān 1–2 rendered in the active riwayah's glyphs), **scrollable body** with three sections in daily-use-frequency order:
+   - **Reading** — Font size slider (5-step), Reading flow slider (5-step coordinated knob), Show-translation toggle (subtitle = current pack name), Reset-to-default link (only when at least one typography knob ≠ md).
+   - **Appearance** — 4 theme swatches (Light · Sepia · Dark · Auto), Night-mode toggle.
+   - **Recitation** — collapsed by default. Single row reads `Riwayah · {label} ʿan {transmitter} · {ayat count}`. Tap → 3 swatches mount inline (`role="radiogroup"`), chevron rotates 90°. Re-opening the sheet resets the collapsed state — Riwayah is set-and-forget.
+4. Every change updates the sticky preview live (font size + reading flow + theme palette + riwayah glyph swap when a swatch is picked).
+5. Switching riwayah emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, and re-renders the reader with the new Riwayah's text + font + line-height floor.
+
+**Dismissal:** ✕ close button, backdrop tap, Esc.
 
 **Surfaces:** MarginHeader (mobile) or Router (desktop) → Settings sheet.
 
-**Tablet+ variant (≥768px):** Settings sheet opens as a centered modal (~480px wide, top 10vh) instead of sliding up from the bottom. Previously this happened at 720px; now aligns with the canonical tablet breakpoint.
+**Font size keyboard shortcuts** still work outside the sheet: `⌘↑` (Mac) / `Ctrl+↑` (others) bumps up; `⌘↓` / `Ctrl+↓` bumps down; announced to screen readers. Guarded against focused inputs.
 
-**Font size keyboard shortcuts** still work outside the subview: `⌘↑` (Mac) / `Ctrl+↑` (others) bumps up; `⌘↓` / `Ctrl+↓` bumps down; announced to screen readers. Guarded against focused inputs.
+### D5. Typography (font size · reading flow) — inline since 2026-04-29
 
-### D5. Typography subview (font size · reading flow)
+Inline in the Settings sheet's **Reading** section (no longer a subview).
 
-Inside Settings sheet, post 2026-04-25.
+1. **Font size** slider — 5-step (xs / sm / md / lg / xl), writes `fontSize` IDB key, drives `--qa-font-size-base`. Endcaps: `Aa` (small) / `Aa` (large).
+2. **Reading flow** slider — 5-step coordinated knob: a single drag writes all four spacing keys (`lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`) to the same step via `setReadingFlow(step)`. CSS attribute selectors on `<html data-…>` re-render the reader live. The four IDB keys remain individually-addressable so a future advanced view can split them again. Arabic line-height = `1.92 + delta(step)` — the floor (xs) clears KFGQPC tashkeel collisions across all riwayat, md (default) lands at 2.12. Endcaps: `▮` (tight) / `▯` (loose).
+3. **Reset to default** appears at the end of the Reading section only when at least one knob (font size or reading flow) ≠ `md`. Tap → font size + all four flow keys return to `md` and the link hides.
+4. The sticky preview band at the top of the sheet shows Sūrat ar-Raḥmān 1–2 in the active Riwayah — characters + tashkeel encoding match what the reader will produce. The Arabic font is whatever the active Riwayah is bound to (Hafs → KFGQPC Hafs, Warsh → KFGQPC Warsh, Qaloon → KFGQPC Qaloon — see the Reader Arabic-font invariant in section B). The preview band uses a fixed warm-bronze dark background so it stays a consistent reference frame across all themes including Dark.
+5. Section header right-aside: `Default` when both knobs are `md`, otherwise a compact summary like `Aa lg · ↕ xl`.
 
-1. Tap the **Typography** row on the main Settings view → subview opens. Subtitle reads `Default` when both knobs are `md`, otherwise a compact summary like `Aa lg · ↕ xl`.
-2. Subview top: live preview block (one Arabic verse + translation line) wrapped in the reader's column rules so margin and spacing changes are visible inside the sheet. The Arabic preview text is the active Riwayah's actual rendering of Sūrat ar-Raḥmān 1–2 — same characters and tashkeel encoding the reader will produce, so the preview is a true sample (not a generic Naskh string). The Arabic font is whatever the active Riwayah is bound to (Hafs → KFGQPC Hafs, Warsh → KFGQPC Warsh, Qaloon → KFGQPC Qaloon — see the Reader Arabic-font invariant in section B).
-3. **Font size** slider — 5-step (xs / sm / md / lg / xl), writes `fontSize` IDB key, drives `--qa-font-size-base`.
-4. **Reading flow** slider — 5-step coordinated knob: a single drag writes all four spacing keys (`lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`) to the same step via `setReadingFlow(step)`. CSS attribute selectors on `<html data-…>` re-render the reader live. The four IDB keys remain individually-addressable so a future advanced view can split them again. Arabic line-height = `1.92 + delta(step)` — the floor (xs) clears KFGQPC tashkeel collisions across all riwayat, md (default) lands at 2.12.
-5. **Reset to default** appears below the sliders only when at least one knob (font size or reading flow) ≠ `md`. Tap → font size + all four flow keys return to `md` and the button hides.
-6. Back arrow returns to main Settings view; subtitle reflects new state.
-
-**Surfaces:** Settings sheet (Typography subview), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`, `settings.verseSpacing`. **Sole writer (line/word/margin/verse-spacing):** `src/settings/reading-typography.ts`. **Regression guards:** `tests/unit/settings/{panel,reading-typography}.test.ts` (subview structure, slider → IDB, reset button, persist round-trip) + `tests/e2e/journey-d-settings.spec.js` 'D5: reading-flow …' (real-CSS line-height / word-spacing / max-width assertions).
+**Surfaces:** Settings sheet (Reading section), Reader. **Persistence:** `settings.fontSize`, `settings.lineSpacing`, `settings.wordSpacing`, `settings.readerMargin`, `settings.verseSpacing`. **Sole writer (line/word/margin/verse-spacing):** `src/settings/reading-typography.ts`. **Regression guards:** `tests/unit/settings/{panel,reading-typography}.test.ts` (full-screen structure, slider → IDB, reset link, persist round-trip, live-preview reflects state) + `tests/e2e/journey-d-settings.spec.js` 'D5: reading-flow …' (real-CSS line-height / word-spacing / max-width assertions).
 
 ### D2. Pick a translation
 
-Inside Settings sheet. Available translations are sourced from the dataset's `provenance.json` at render time — the picker never surfaces options that aren't actually present in the corpus.
+Inside Settings sheet's **Reading** section. Available translations are sourced from the dataset's `provenance.json` at render time — the picker never surfaces options that aren't actually present in the corpus.
 
-1. The **Show translation** row's subtitle shows the name of the currently-selected translation — Saheeh International by default since 2026-04-27. With a single shipped pack the picker sub-view is not opened on tap (the row is informational); when a second pack lands the row becomes interactive and tapping it opens the Translation picker sub-view. Tap an option → `settings.translationId` writes → returns to main Settings view with subtitle updated.
-2. Toggle the translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on the rune re-renders with the translation line hidden/shown. Footnote markers (`[N]`) and any open inline footnote panels disappear with the translation.
+1. The **Show translation** row's subtitle shows the name of the currently-selected translation — Saheeh International by default since 2026-04-27. With a single shipped pack the picker is hidden entirely (the row shows the toggle + subtitle only). When a second pack lands the picker UI returns — wiring deferred until then per `docs/context/future-work.md` (Translation picker UI · M5).
+2. Toggle the translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on the rune re-renders with the translation line hidden/shown. Footnote markers (`[N]`) and any open inline footnote panels disappear with the translation. The sticky preview at the top of the Settings sheet also drops its translation line in lockstep.
 
 **Surfaces:** Settings sheet, Reader. **Persistence:** `settings.translationId`, `settings.translationVisible`.
 
 ### D3. Theme swap (explicit)
 
-Inside Settings sheet.
+Inside Settings sheet's **Appearance** section.
 
 1. Tap a theme swatch (Light / Sepia / Dark / Auto) → `settings/theme.js::setTheme` writes `settings.theme` and flips `<html data-theme>`.
 2. All surfaces re-theme live. Auto additionally attaches a `prefers-color-scheme` listener.
+3. The Settings sheet's sticky preview band keeps its fixed warm-bronze dark background regardless of the chosen theme — it's a constant reference frame, not a theme demo. Theme changes still re-paint everything else (the reader behind, all chrome).
 
-**Night recitation mode (post 2026-04-25)** is an independent toggle below the theme swatches that overlays a dim+warm tint via the persistent `.qa-night-shift` element (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, driven by `data-night-mode="on"` on `<html>` written by `settings/night-mode.ts`). Composes with any base theme. Reachable from the Settings row or via the global `n` reader shortcut (announced via `a11y/announcer`). Persists in `settings.nightMode` (boolean). **Regression guards:** `tests/unit/settings/night-mode.test.ts` (toggle / IDB write / init reload round-trip) + `tests/e2e/journey-d-settings.spec.js` 'D6: settings switch toggles data-night-mode + overlay opacity' (real overlay CSS) + 'D6: pressing n on reader toggles night mode' (global keybind).
+**Night recitation mode (post 2026-04-25)** is an independent toggle below the theme swatches inside the Appearance section. Drives `data-night-mode="on"` on `<html>` (sole writer `settings/night-mode.ts`); overlays a dim+warm tint via the persistent `.qa-night-shift` element (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, `mix-blend-mode: multiply`). Composes with any base theme. Reachable from the Appearance row or via the global `n` reader shortcut (announced via `a11y/announcer`). Persists in `settings.nightMode` (boolean). **Regression guards:** `tests/unit/settings/night-mode.test.ts` (toggle / IDB write / init reload round-trip) + `tests/e2e/journey-d-settings.spec.js` 'D6: settings switch toggles data-night-mode + overlay opacity' (real overlay CSS) + 'D6: pressing n on reader toggles night mode' (global keybind).
 
 ### D4. Clear all data
 

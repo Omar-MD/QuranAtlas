@@ -1,6 +1,10 @@
 /**
- * settings — Settings panel chrome (hosted inside `.qa-sheet`).
- * Theme swatches, font slider + preview, toggle rows, translation picker.
+ * settings — Settings sheet chrome.
+ *
+ * Two shapes:
+ *   - <1180px (mobile + tablet): full-screen via .qa-sheet--settings-fs override.
+ *     Sticky preview band at top; daily-use IA below (Reading · Appearance · Recitation).
+ *   - ≥1180px (desktop): inherits the centered modal shape from sheet.css.
  *
  * Theme-swatch preview hexes (#fbf8f0 / #3d2e14 / #f3e8cf / #6b4a16 /
  * #0e0e0c / #a89968) are intentional literals — they demo the *other*
@@ -9,27 +13,345 @@
  * Consumer: src/settings/Panel.svelte
  */
 @layer surfaces {
-  .qa-settings-section {
-    padding: 10px 2px 14px;
+  /* ============================================================
+     Full-screen override (mobile + tablet, <1180px).
+     Higher specificity than the .qa-sheet base in sheet.css:
+     .qa-sheet.qa-sheet--settings-fs (2 classes) > .qa-sheet (1 class).
+     ============================================================ */
+
+  @media (max-width: 1179px) {
+    .qa-sheet.qa-sheet--settings-fs {
+      position: fixed;
+      inset: 0;
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      transform: none;
+      border: none;
+      border-radius: 0;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      animation: qa-sheet-fade var(--qa-transition-base) forwards;
+    }
+
+    /* Full-screen sheet covers everything; keep backdrop for tap-close
+       but make it transparent to avoid double-darkening behind sheet. */
+    .qa-sheet-backdrop--settings-fs {
+      background-color: transparent;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Desktop ≥1180px: sheet keeps its inherited modal shape from sheet.css.
+     Settings-specific sizing nudge so it doesn't feel cramped. */
+  @media (min-width: 1180px) {
+    .qa-sheet.qa-sheet--settings-fs {
+      width: min(440px, calc(100vw - 32px));
+      max-height: min(720px, 86vh);
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      overflow: hidden;
+    }
+  }
+
+  /* ============================================================
+     Header
+     ============================================================ */
+
+  .qa-settings-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem 0.5rem;
+    border-bottom: 1px solid var(--qa-border-on-sheet);
+    flex-shrink: 0;
+  }
+
+  .qa-settings-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--qa-text-on-sheet);
+    margin: 0;
+  }
+
+  .qa-settings-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--qa-radius-circle);
+    background: rgb(0 0 0 / 4%);
+    color: var(--qa-text-on-sheet-muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color var(--qa-transition-base);
+  }
+
+  .qa-settings-close:hover,
+  .qa-settings-close:focus-visible {
+    background: rgb(0 0 0 / 8%);
+  }
+
+  /* ============================================================
+     Live preview band — pinned at top of scroll region.
+     Dark warm bronze background overrides whatever theme is active so
+     preview stays a fixed reference even when Theme = Dark.
+     ============================================================ */
+
+  .qa-settings-preview {
+    background: var(--c-bronze-900);
+    color: var(--qa-accent);
+    padding: 1rem 1rem 0.95rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.4rem;
+    border-bottom: 1px solid var(--qa-accent);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .qa-settings-preview::after {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--qa-accent) 50%, transparent);
+  }
+
+  .qa-settings-preview-eye {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--c-bronze-300);
+    font-weight: 600;
+  }
+
+  .qa-settings-preview-ar {
+    /* Inherits .qa-verse-arabic font (riwayah-aware via [data-riwayah]).
+       Override color to gold for legibility on dark band. */
+    color: var(--c-bronze-200);
+    margin: 0;
+    line-height: 1.95;
+  }
+
+  .qa-settings-preview-tr {
+    font-size: 0.72rem;
+    color: var(--c-bronze-300);
+    font-style: italic;
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  /* Short-viewport guard — halve preview vertical breathing room
+     so landscape phones don't lose the body section. */
+  @media (max-height: 500px) {
+    .qa-settings-preview {
+      padding: 0.55rem 1rem 0.5rem;
+      gap: 0.25rem;
+    }
+    .qa-settings-preview-ar { line-height: 1.65; }
+  }
+
+  /* ============================================================
+     Body — scrollable region under preview
+     ============================================================ */
+
+  .qa-settings-body {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding: 0.4rem 1.1rem 1.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .qa-settings-sect {
+    padding: 0.95rem 0;
     border-top: 1px solid var(--qa-border-on-sheet);
   }
 
-  .qa-settings-section:first-child {
+  .qa-settings-sect:first-child {
     border-top: none;
+    padding-top: 0.7rem;
   }
 
-  .qa-settings-label {
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--qa-accent);
-    margin-bottom: 8px;
+  .qa-settings-sect-hdr {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
   }
+
+  .qa-settings-sect-name {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--qa-accent);
+    font-weight: 700;
+  }
+
+  .qa-settings-sect-aside {
+    font-size: 0.68rem;
+    color: var(--qa-text-on-sheet-dim);
+    font-style: italic;
+  }
+
+  /* ============================================================
+     Sliders (Reading section)
+     ============================================================ */
+
+  .qa-settings-slider + .qa-settings-slider {
+    margin-top: 0.7rem;
+  }
+
+  .qa-settings-slider-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .qa-settings-slider-label {
+    font-size: 0.78rem;
+    color: var(--qa-text-on-sheet);
+    font-weight: 500;
+  }
+
+  .qa-settings-slider-value {
+    font-size: 0.66rem;
+    color: var(--qa-text-on-sheet-dim);
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .qa-settings-slider-track-row {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr 2.25rem;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.3rem;
+  }
+
+  .qa-settings-slider-input {
+    width: 100%;
+  }
+
+  .qa-settings-slider-min,
+  .qa-settings-slider-max {
+    color: var(--qa-text-on-sheet-dim);
+    text-align: center;
+    font-size: 0.95rem;
+  }
+
+  .qa-settings-slider-max--lg {
+    font-size: 1.25rem;
+  }
+
+  .qa-settings-reset {
+    display: block;
+    margin: 0.85rem auto 0;
+    background: transparent;
+    border: 0;
+    color: var(--qa-accent);
+    font-size: 0.78rem;
+    font-style: italic;
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--qa-accent) 40%, transparent);
+  }
+
+  .qa-settings-reset:hover {
+    text-decoration-color: var(--qa-accent);
+  }
+
+  /* ============================================================
+     Toggle row (Show translation, Night mode)
+     ============================================================ */
+
+  .qa-settings-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0;
+    margin-top: 0.5rem;
+    border-top: 1px dashed color-mix(in srgb, var(--qa-accent) 25%, transparent);
+  }
+
+  .qa-settings-toggle-body {
+    border: none;
+    background: transparent;
+    color: var(--qa-text-on-sheet);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0;
+    flex: 1;
+    text-align: left;
+    cursor: default;
+    min-width: 0;
+  }
+
+  .qa-settings-toggle-main {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--qa-text-on-sheet);
+  }
+
+  .qa-settings-toggle-sub {
+    font-size: 0.7rem;
+    color: var(--qa-text-on-sheet-muted);
+    margin-top: 0.05rem;
+  }
+
+  .qa-settings-switch {
+    width: 36px;
+    height: 20px;
+    border-radius: var(--qa-radius-pill);
+    position: relative;
+    border: none;
+    background-color: var(--qa-border-on-sheet);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color var(--qa-transition-base);
+  }
+
+  .qa-settings-switch--on {
+    background-color: var(--qa-accent);
+  }
+
+  .qa-settings-switch-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: var(--qa-radius-circle);
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+    transition: left var(--qa-transition-base);
+  }
+
+  .qa-settings-switch--on .qa-settings-switch-knob {
+    left: 18px;
+  }
+
+  /* ============================================================
+     Theme swatches (Appearance section)
+     ============================================================ */
 
   .qa-theme-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    gap: 0.4rem;
   }
 
   .qa-theme-swatch {
@@ -42,6 +364,7 @@
     background: transparent;
     cursor: pointer;
     overflow: hidden;
+    transition: border-color var(--qa-transition-base);
   }
 
   .qa-theme-swatch--active {
@@ -79,45 +402,83 @@
   }
 
   .qa-theme-swatch-label {
-    font-size: 0.6875rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    padding: 4px 0;
+    letter-spacing: 0.06em;
+    padding: 0.25rem 0;
     color: var(--qa-text-on-sheet);
     background-color: var(--qa-surface-sheet);
+    font-weight: 600;
+    text-align: center;
   }
 
-  /* ---- Riwayah picker ---- */
+  /* ============================================================
+     Recitation section — collapsed nav row + expanded swatches
+     ============================================================ */
 
-  .qa-riwayah-block {
+  .qa-settings-recite-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.65rem 0;
+    border: none;
+    background: transparent;
+    color: var(--qa-text-on-sheet);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .qa-settings-recite-body {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 10px 0 12px;
+    gap: 0.1rem;
+    min-width: 0;
   }
 
-  .qa-riwayah-block-label {
-    font-size: var(--fs-sm);
-    font-weight: 600;
+  .qa-settings-recite-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--qa-text-on-sheet);
+  }
+
+  .qa-settings-recite-sub {
+    font-size: 0.7rem;
     color: var(--qa-text-on-sheet-muted);
+  }
+
+  .qa-settings-recite-chev {
+    color: var(--qa-accent);
+    font-size: 1.1rem;
+    line-height: 1;
+    transition: transform var(--qa-transition-base);
+    transform-origin: center;
+    display: inline-block;
+  }
+
+  .qa-settings-recite-chev--open {
+    transform: rotate(90deg);
   }
 
   .qa-riwayah-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
   }
 
   .qa-riwayah-swatch {
     display: grid;
-    gap: 2px;
-    padding: 8px;
+    gap: 0.2rem;
+    padding: 0.55rem 0.4rem;
     border: 1.5px solid var(--qa-border-on-sheet);
     border-radius: var(--qa-radius-button);
     background: var(--qa-surface-sheet);
     text-align: start;
     cursor: pointer;
     color: inherit;
+    transition: border-color var(--qa-transition-base), background-color var(--qa-transition-base);
   }
 
   .qa-riwayah-swatch:hover {
@@ -131,197 +492,13 @@
 
   .qa-riwayah-swatch-label {
     font-weight: 600;
-    font-size: var(--fs-base);
+    font-size: 0.85rem;
     color: var(--qa-text-on-sheet);
   }
 
   .qa-riwayah-swatch-sub {
-    font-size: var(--fs-xs);
+    font-size: 0.65rem;
     color: var(--qa-text-on-sheet-dim);
-  }
-
-  /* ---- Toggle rows ---- */
-
-  .qa-settings-toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 4px;
-    border-top: 1px solid var(--qa-border-on-sheet);
-  }
-
-  .qa-settings-toggle-row:first-child {
-    border-top: none;
-  }
-
-  .qa-settings-toggle-body {
-    border: none;
-    background: transparent;
-    color: var(--qa-text-on-sheet);
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    padding: 0;
-    flex: 1;
-    text-align: left;
-    cursor: pointer;
-    min-width: 0;
-  }
-
-  .qa-settings-toggle-main {
-    font-size: 0.875rem;
-    font-weight: 600;
-  }
-
-  .qa-settings-toggle-sub {
-    font-size: 0.75rem;
-    color: var(--qa-text-on-sheet-muted);
-  }
-
-  .qa-settings-switch {
-    width: 36px;
-    height: 20px;
-    border-radius: var(--qa-radius-pill);
-    position: relative;
-    border: none;
-    background-color: var(--qa-border-on-sheet);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background-color var(--qa-transition-base);
-  }
-
-  .qa-settings-switch--on {
-    background-color: var(--qa-accent);
-  }
-
-  .qa-settings-switch-knob {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: var(--qa-radius-circle);
-    background-color: #fff;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
-    transition: left var(--qa-transition-base);
-  }
-
-  .qa-settings-switch--on .qa-settings-switch-knob {
-    left: 18px;
-  }
-
-  .qa-settings-trans-choice {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 10px 4px;
-    border: none;
-    border-bottom: 1px solid var(--qa-border-on-sheet);
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .qa-settings-trans-choice:last-child {
-    border-bottom: none;
-  }
-
-  .qa-settings-trans-body {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    text-align: left;
-  }
-
-  .qa-settings-trans-name {
-    font-size: 0.875rem;
-    color: var(--qa-text-on-sheet);
-    font-weight: 600;
-  }
-
-  .qa-settings-trans-sub {
-    font-size: 0.75rem;
-    color: var(--qa-text-on-sheet-muted);
-  }
-
-  .qa-settings-trans-check {
-    color: var(--qa-accent);
-    opacity: 0;
-    font-size: 0.875rem;
-  }
-
-  .qa-settings-trans-choice--on .qa-settings-trans-check {
-    opacity: 1;
-  }
-
-  /* ---- Typography subview ---- */
-
-  .qa-settings-toggle-chev {
-    align-self: center;
-    color: var(--qa-text-muted);
-    font-size: 1.25rem;
-    padding: 0 0.25rem;
-  }
-
-  .qa-typography-body {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .qa-typography-preview {
-    background: var(--qa-surface-sheet);
-    border: 1px solid var(--qa-border-on-sheet);
-    border-radius: 0.75rem;
-    padding: 1rem 1.25rem;
-    text-align: center;
-  }
-
-  .qa-typography-slider {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .qa-typography-slider-label {
-    font-size: 0.85rem;
-    color: var(--qa-text-muted);
-    font-weight: 500;
-  }
-
-  .qa-typography-slider-row {
-    display: grid;
-    grid-template-columns: 2.5rem 1fr 2.5rem;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .qa-typography-slider-input {
-    width: 100%;
-  }
-
-  .qa-typography-slider-min,
-  .qa-typography-slider-max {
-    color: var(--qa-text-muted);
-    text-align: center;
-    font-size: 0.95rem;
-  }
-
-  .qa-typography-slider-max--lg {
-    font-size: 1.25rem;
-  }
-
-  .qa-typography-reset {
-    align-self: center;
-    background: transparent;
-    border: 0;
-    color: var(--qa-accent);
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-  }
-
-  .qa-typography-reset:hover {
-    text-decoration: underline;
+    line-height: 1.3;
   }
 }
