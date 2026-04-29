@@ -45,21 +45,27 @@ describe('core/haptics', () => {
     installMatchMedia(false)
     const haptics = await import('../../../src/core/haptics.ts')
     haptics.tap()
-    expect(vibrateSpy).toHaveBeenCalledWith(8)
+    expect(vibrateSpy).toHaveBeenCalledWith(15)
   })
 
   it('toggle() fires a 3-pulse pattern', async () => {
     installMatchMedia(false)
     const haptics = await import('../../../src/core/haptics.ts')
     haptics.toggle()
-    expect(vibrateSpy).toHaveBeenCalledWith([12, 22, 12])
+    expect(vibrateSpy).toHaveBeenCalledWith([15, 30, 15])
   })
 
-  it('select() fires a 12 ms pulse', async () => {
+  it('select() fires a select pulse', async () => {
     installMatchMedia(false)
     const haptics = await import('../../../src/core/haptics.ts')
     haptics.select()
-    expect(vibrateSpy).toHaveBeenCalledWith(12)
+    expect(vibrateSpy).toHaveBeenCalledWith(20)
+  })
+
+  it('isAvailable() reflects vibrate + reduce-motion state', async () => {
+    installMatchMedia(false)
+    const haptics = await import('../../../src/core/haptics.ts')
+    expect(haptics.isAvailable()).toBe(true)
   })
 
   it('no-ops when navigator.vibrate is absent', async () => {

@@ -8,8 +8,9 @@
  * Respects `prefers-reduced-motion` — users who disable motion also get
  * no haptics, since vibration is a motion cue.
  *
- * Durations follow Material guidance for non-stop pulses (≤ 20 ms tap,
- * 12 ms select, 18 ms toggle). Anything longer feels jittery on Android.
+ * Pulse durations are tuned for Android Chrome's vibration motor — too
+ * short (<10 ms) and many phones drop the pulse entirely; ≥15 ms is the
+ * threshold where every test device fired reliably.
  */
 
 let vibrateFn: ((pattern: number | number[]) => boolean) | null = null
@@ -37,7 +38,15 @@ function fire(pattern: number | number[]): void {
   try { vibrateFn(pattern) } catch { /* no-op */ }
 }
 
-export function tap(): void { fire(8) }
-export function select(): void { fire(12) }
-export function toggle(): void { fire([12, 22, 12]) }
-export function warn(): void { fire([18, 32, 18]) }
+export function tap(): void { fire(15) }
+export function select(): void { fire(20) }
+export function toggle(): void { fire([15, 30, 15]) }
+export function warn(): void { fire([25, 40, 25]) }
+
+/** True only on platforms that actually deliver vibration — Android Chrome
+ *  with `navigator.vibrate` and not running under reduced-motion. iOS
+ *  Safari and desktop without a motor return false so callers can choose
+ *  to add a visual / audio fallback. */
+export function isAvailable(): boolean {
+  return vibrateFn !== null && !reduceMotion
+}
