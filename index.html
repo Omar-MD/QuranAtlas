@@ -8,7 +8,7 @@
        2. Run: console.log(Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(document.querySelector('script')?.textContent || ''))).map(b => b.toString(16).padStart(2, '0')).join(''))
        3. Update the hash below with the output
        Note: Currently no inline scripts exist, this is a placeholder for future inline event handlers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/AO8vAagk08SqUGxY96ci/dGyTDsuoetPOJYMn7sc+E='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/AO8vAagk08SqUGxY96ci/dGyTDsuoetPOJYMn7sc+E='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'">
   <meta name="theme-color" content="#1d2a47">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
