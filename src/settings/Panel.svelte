@@ -236,7 +236,9 @@
     aria-modal="true"
     aria-label="Settings"
   >
-    <!-- Live preview band — covers top, ✕ floats inside, theme-true colors -->
+    <!-- Live preview band — fixed-height theme-true band; content stage
+         inside scrolls when verse text overflows so the band itself never
+         resizes regardless of font-size / reading-flow slider position. -->
     <div class="qa-settings-preview" data-testid="settings-preview" aria-live="polite">
       <button
         type="button"
@@ -247,16 +249,26 @@
       <div class="qa-settings-preview-eye">
         Live preview · {RIWAYAH_LABELS[currentRiwayah].label}
       </div>
-      <p class="qa-verse-arabic qa-settings-preview-ar" dir="rtl">{PREVIEW_AR[currentRiwayah]}</p>
-      <!-- Always rendered to reserve layout space; visibility hidden when
-           toggle is off so the preview height stays stable. Inherits
-           font-size / line-height / word-spacing from .qa-verse-translation
-           so the reader's reading-flow + font-size sliders drive it. -->
-      <p
-        class="qa-verse-translation qa-settings-preview-tr"
-        class:qa-settings-preview-tr--hidden={!settings.translationVisible}
-        aria-hidden={!settings.translationVisible}
-      >{PREVIEW_TRANSLATION}</p>
+      <!-- tabindex=0 makes the scrollable preview keyboard-accessible
+           (axe-core scrollable-region rule). aria-label gives screen
+           readers a name for the region. -->
+      <div
+        class="qa-settings-preview-stage"
+        tabindex="0"
+        role="region"
+        aria-label="Live preview"
+      >
+        <p class="qa-verse-arabic qa-settings-preview-ar" dir="rtl">{PREVIEW_AR[currentRiwayah]}</p>
+        <!-- Always rendered to reserve layout space; visibility hidden when
+             toggle is off so the preview height stays stable. Inherits
+             font-size / line-height / word-spacing from .qa-verse-translation
+             so the reader's reading-flow + font-size sliders drive it. -->
+        <p
+          class="qa-verse-translation qa-settings-preview-tr"
+          class:qa-settings-preview-tr--hidden={!settings.translationVisible}
+          aria-hidden={!settings.translationVisible}
+        >{PREVIEW_TRANSLATION}</p>
+      </div>
     </div>
 
     <div class="qa-settings-body">
