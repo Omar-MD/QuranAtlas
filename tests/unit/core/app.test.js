@@ -12,9 +12,11 @@ function createAppShell() {
 }
 
 function applyDefaultRuntimeMocks() {
-  vi.doMock('../../../src/onboarding/Onboarding.svelte', () => ({
+  vi.doMock('../../../src/onboarding/state', () => ({
     isComplete: vi.fn(() => Promise.resolve(true)),
     markComplete: vi.fn(() => Promise.resolve()),
+  }))
+  vi.doMock('../../../src/onboarding/Onboarding.svelte', () => ({
     default: vi.fn(),
   }))
   vi.doMock('../../../src/core/db.js', () => ({

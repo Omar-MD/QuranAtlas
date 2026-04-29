@@ -170,10 +170,10 @@ graph LR
 - **Role:** SW dataset-update pipeline: fetch manifest, stage in a separate cache, SHA-256 verify, promote to live cache.
 
 ### `onboarding/`
-- **Files:** `Onboarding.svelte`, `OnboardingScreen.svelte`, `screens.ts`
+- **Files:** `Onboarding.svelte`, `OnboardingScreen.svelte`, `screens.ts`, `state.ts`
 - **Imports from:** `core`, `data`, `settings`
-- **Imported by:** `app-bootstrap.ts` *(via dynamic import in `handleLaunchRestore` and route registration)*
-- **Role:** First-run 6-screen walkthrough (Svelte component). `Onboarding.svelte` exports `isComplete()` and `markComplete()` from its module script for use by the boot-time redirect in `app-bootstrap.ts`. Writes `settings.onboardingComplete` and `settings['riwayah']` (via `settings/riwayah.ts::setRiwayah`). `screens.ts` is pure data (shortcut rows, sample chips). Riwayah card options and labels are defined inline in `Onboarding.svelte`.
+- **Imported by:** `app-bootstrap.ts` *(state.ts imported eagerly via dynamic import in `handleLaunchRestore`; the Svelte component is loaded only on the `#/onboarding` route)*
+- **Role:** First-run 6-screen walkthrough (Svelte component). `state.ts` exposes `isComplete()` and `markComplete()` for the boot-time redirect — the audit R-31 split (2026-04-29) extracted them out of `<script module>` so app-bootstrap doesn't pull the whole component file into the launch path's eager import graph. Writes `settings.onboardingComplete` and `settings['riwayah']` (via `settings/riwayah.ts::setRiwayah`). `screens.ts` is pure data (shortcut rows, sample chips). Riwayah card options and labels are defined inline in `Onboarding.svelte`.
 
 ### `reader/`
 - **Files:** `Reader.svelte`, `Verse.svelte`, `SurahHeader.svelte`, `EdgeIndicator.svelte`, `PullToSwapIndicator.svelte`, `render-helpers.ts`, `chunked-append.ts`, `verse-scroll.ts`, `position.ts`, `global-position.ts`, `surah-swap.ts`, `edge-indicators.ts`, `scroll-tracker.ts`, `font-reshape.ts`

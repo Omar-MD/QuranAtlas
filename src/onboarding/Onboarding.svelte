@@ -1,23 +1,6 @@
-<script module lang="ts">
-  /**
-   * Module-level exports — callable without mounting the component.
-   * Used by app-bootstrap.ts::handleLaunchRestore for the boot-time redirect.
-   */
-  import { get, put } from '../core/db.js'
-
-  export async function isComplete(): Promise<boolean> {
-    try {
-      const rec = await get('settings', 'onboardingComplete')
-      return rec?.value === true
-    } catch { return false }
-  }
-
-  export async function markComplete(): Promise<void> {
-    try { await put('settings', { key: 'onboardingComplete', value: true }) } catch { /* ignore */ }
-  }
-</script>
-
 <script lang="ts">
+  import { get, put } from '../core/db.js'
+  import { markComplete } from './state'
   /**
    * Onboarding — 6-screen first-run flow.
    *

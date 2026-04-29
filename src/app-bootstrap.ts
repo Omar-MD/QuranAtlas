@@ -338,7 +338,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
  * Handle launch restore: navigate to last-read position or default surah.
  */
 async function handleLaunchRestore() {
-  const { isComplete } = await import('./onboarding/Onboarding.svelte')
+  const { isComplete } = await import('./onboarding/state')
   const done = await isComplete()
   if (!done) {
     logger.info('First-run: onboarding')
