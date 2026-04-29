@@ -16,6 +16,12 @@ export interface SwUpdatePollDeps {
 }
 
 export const SW_UPDATE_POLL_INTERVAL_MS = 30 * 60 * 1000
+// Audit R-26 (2026-04-29): visibility + focus + 30-min timer all
+// fire pollUpdate() — heavy multi-tab users get a thundering herd of
+// reg.update() calls within seconds (open laptop, alt-tab between
+// 5 tabs, each fires visibility+focus). 5-minute floor between polls
+// flattens that. Long enough to still catch updates promptly.
+const MIN_GAP_MS = 5 * 60 * 1000
 
 export function startSwUpdatePolling(
   reg: Pick<ServiceWorkerRegistration, 'update'>,
@@ -25,7 +31,11 @@ export function startSwUpdatePolling(
     setInterval: (handler, ms) => setInterval(handler, ms),
   }
 ): void {
+  let lastPollAt = 0
   const pollUpdate = () => {
+    const now = Date.now()
+    if (now - lastPollAt < MIN_GAP_MS) { return }
+    lastPollAt = now
     reg.update().catch((error) => {
       logger.warn('SW update poll failed:', { error })
     })
