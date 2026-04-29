@@ -219,6 +219,46 @@ Multi-device sync (`#17`) is v2.2. Skeleton sub-design at `docs/superpowers/spec
 
 `style-src 'unsafe-inline'` is the broad permission Svelte's inline `style:` directives currently rely on (per-tag colour hue, per-row computed surfaces, etc.). Removing it means moving every inline `style="…"` to either CSS variables on a parent element or a generated nonce-stamped stylesheet. Long refactor with no security gain unless we also tighten the rest of the CSP. Schedule alongside the v1.3 inline-style audit, after audio + WBW have landed and the inline-style surface is stable.
 
+### tests/e2e/global-setup.ts + storageState reuse (audit R-15 / Rule 6.5)
+
+CLAUDE.md Rule 6.5 mandates a `tests/e2e/global-setup.ts` that walks onboarding once and saves the authenticated state to `tests/e2e/.auth/onboarded.json`. Specs whose first action is "skip onboarding" then opt in via `test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })` instead of paying the `markOnboardingComplete + clearAllData + cold-boot` tax (~1–2 s per test).
+
+Deferred from N15. Building global-setup right requires choosing the canonical onboarded settings (theme + riwayah + translation defaults) and walking each acceptance gate; subsequent spec migrations then need eyeball verification per spec. Together it is a ~1 day's work and the e2e suite isn't currently the bottleneck on a single-developer pre-release project. Land alongside the next setup-heavy spec or when CI wall time exceeds two minutes.
+
+`journey-d-settings.spec.js`'s 5 nested `beforeEach` blocks (audit R-28) collapse into the outer one as part of the same refactor — both are deferred together.
+
+### `core/tokenisable.ts` sub-verse contract + reader virtualisation (audit R-06 / R-22 / C-3)
+
+The verse-grain DOM contract (`[data-verse-key]` selectors in `marks/long-press.ts`, `bookmarks/click-handler.ts`, `reader/scroll-tracker.ts`, `marks/indicator.ts`) is load-bearing today. Word-by-word translation (`#9`), tajweed coloring (`#11`), and audio verse-tick highlight (`#13`) all need sub-verse granularity.
+
+Audit C-3 prescribes:
+1. Define `core/tokenisable.ts` — `data-token-key="surah:ayah[:wordIdx]"` contract + `getTokenAt(x, y) → TokenKey` helper.
+2. Convert long-press / click-handler / scroll-tracker / indicator to consume the contract.
+3. Then virtualise the reader via IntersectionObserver recycling ±3 chunks (audit R-22 — caps DOM at ~150 verses; required before WBW lands or Al-Baqarah's 286 verses × 50–150 nodes hits 14k–40k DOM nodes).
+
+Order matters: virtualise BEFORE the tokenisable contract = re-write twice (the consumer cache invalidation interacts with DOM recycling).
+
+Land as a single brainstorm + plan pass before WBW (`#9`) or audio (`#13`) start — both are blocked on this. ~6–10 files touched in tokenisable; ~3 files in virtualisation; per-test rewrites in their owning journeys.
+
+### `core/persistent-overlay.ts` factory + lazy mount (audit R-13 / CC-9 / N22 + N25)
+
+Six bridges exist today (`core/ui-bridge`, `marks/editor-bridge`, `nav/command-sheet-bridge`, `nav/nav-drawer-bridge`, `settings/panel-bridge`, `tag/session-bridge`) — all the same shape: persistent component calls `register*()` in `onMount`, non-component callers import the module-level function. Audio (`#13` → bridge #7), mushaf (`#14` → bridge #8), tafsir (`#12` → bridge #9) extend the pattern linearly.
+
+`createOverlayBridge<API>({ open, close, isOpen })` factory consolidates them into one definition. Subsequent N25 step lazy-mounts each overlay in `App.svelte` on first `open*()` call — the eager chunk drops ~10–15 KB gzip because the overlay components aren't compiled into the entry bundle until a user action triggers them.
+
+Deferred because the migration is mechanical but six-file-wide and best done in a single coherent PR with eyeball verification of each overlay's existing semantics. Schedule alongside the audio (`#13`) work — the audio player overlay will be the first new consumer of the factory and provides a real validation of the API.
+
+### Per-asset-class SW partition + offline opt-in selector UI (audit R-11 / C-4 / N21)
+
+Single `/dataset/*` `NetworkFirst` route serves 459 dataset files today; the `CACHE_DATASET` button promises "everything offline". Once audio (`#13`, 1–3 GB per reciter) and page-image mushaf (`#14`, 30–50 MB × 3 riwayat) ship under the same prefix, the button silently triggers multi-GB downloads under the same NetworkFirst strategy.
+
+Audit C-4 prescribes per-feature offline opt-in selector + per-asset-class SW routing **before** any GB-scale asset class ships:
+
+- `core/sw/strategies.ts` — per-route: `/dataset/riwayat/*` (NetworkFirst), `/dataset/audio/{reciter}/*` (CacheFirst, range-aware, per-reciter cache), `/dataset/mushaf-pages/{riwayah}/*` (CacheFirst, content-addressed), `/dataset/search-index.json` (CacheFirst single asset).
+- `offline/offline-selector.svelte` — UI with size estimates per category (Text · Audio per reciter · Pages per riwayah · Search index).
+
+Deferred to v1.2 (per audit ship sequence). Audio + mushaf are v2.0 / v2.1 — the partition has to land before either does.
+
 ### E2e Mobile Chrome project tag-gate flip (audit R-29 / Rule 6.4)
 
 Mobile Chrome currently runs every spec that's not tagged `@offline` / `@desktop` / `@chromium-only` — ~50 redundant runs per CI cycle for tests with no viewport branch. Audit R-29 / CLAUDE.md Rule 6.4 prescribes: flip Mobile Chrome's grep to `/@mobile/` only, retag the genuinely-mobile specs (`MarginHeader`, drawer swipe, gear long-press, header auto-hide, viewport-conditional CSS) with `@mobile`, and let untagged tests run on chromium once.
