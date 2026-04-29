@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <!-- CSP SHA-256 hash covers any inline scripts. To regenerate after changes:
-       1. Open browser DevTools Console on the page
-       2. Run: console.log(Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(document.querySelector('script')?.textContent || ''))).map(b => b.toString(16).padStart(2, '0')).join(''))
-       3. Update the hash below with the output
-       Note: Currently no inline scripts exist, this is a placeholder for future inline event handlers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/AO8vAagk08SqUGxY96ci/dGyTDsuoetPOJYMn7sc+E='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'">
+  <!-- CSP migrated to HTTP headers via public/_headers (Cloudflare Pages)
+       per audit R-19 / R-32 / N24 (2026-04-29). The header form supports
+       frame-ancestors (which meta-CSP cannot enforce) and lets us layer
+       X-Frame-Options + X-Content-Type-Options + Permissions-Policy +
+       Cross-Origin-* defences. Local Vite dev / Playwright preview run
+       without a CSP — they're trusted environments behind localhost. -->
   <meta name="theme-color" content="#1d2a47">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">

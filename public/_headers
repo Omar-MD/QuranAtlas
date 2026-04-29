@@ -1,0 +1,42 @@
+# Cloudflare Pages headers — see https://developers.cloudflare.com/pages/configuration/headers/
+#
+# CSP migrated from <meta http-equiv="Content-Security-Policy"> in
+# index.html to HTTP headers per audit R-19 / R-32 / N24 (2026-04-29).
+# Header CSP gives us:
+#   - frame-ancestors enforcement (meta CSP cannot enforce it)
+#   - X-Frame-Options as an extra defence-in-depth for older crawlers
+#   - per-route policy overrides if/when sync v2 needs a wider
+#     connect-src
+#
+# unsafe-inline on style-src remains until Svelte's inline `style:`
+# directives migrate to CSS variables / generated stylesheets (audit
+# C-6 / R-19c — deferred to v1.3 per future-work.md). The script-src
+# sha256 hash slot is a placeholder for future inline scripts; today
+# there are none.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; manifest-src 'self'; worker-src 'self'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+# Dataset files: long-cache + integrity verified by the SW chain of
+# trust (sw-handlers.js getHashMap + bundled __MANIFEST_DIGEST__).
+/dataset/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts (KFGQPC, Newsreader, Geist Mono): long-cache; URLs are
+# content-addressed by version.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Icons + manifest: short-cache. Manifest is the only place
+# manifest.webmanifest is fetched, and we want PWA install banners to
+# pick up icon updates within a day.
+/manifest.webmanifest
+  Cache-Control: public, max-age=86400
+/icons/*
+  Cache-Control: public, max-age=86400
