@@ -133,11 +133,36 @@ describe('translation ↔ riwayah alignment', () => {
     })
 
     it('every count-divergent surah from surahs.json has an alias table (plus surah 1 for Bismillah carve-out)', () => {
-      const expected = surahs
+      const expectedMin = surahs
         .filter((s) => s.n === 1 || !(s.counts.hafs === s.counts.warsh && s.counts.warsh === s.counts.qaloon))
         .map((s) => String(s.n))
-      const declared = Object.keys(verseAliases.aliases).sort((a, b) => +a - +b)
-      expect(declared).toEqual(expected.sort((a, b) => +a - +b))
+      const declared = Object.keys(verseAliases.aliases)
+      // Count-divergent surahs are a SUBSET of aliased surahs. Some surahs have
+      // equal Hafs/Warsh/Qaloon counts but internally divergent ayah boundaries
+      // (e.g. surah 7 — Hafs ayah 1 = الٓمٓصٓ alone, Madinan combines it with
+      // ayah 2; resync via a compensating split later in the surah). These
+      // also need alias entries; derive-verse-aliases.mjs catches them via
+      // word-stream alignment regardless of count equality.
+      for (const n of expectedMin) {
+        expect(declared).toContain(n)
+      }
+    })
+
+    it('boundary-drift regression — count-equal surahs whose Madinan ayah-boundaries shift internally have alias entries', () => {
+      // These surahs all have Hafs.count === Warsh.count === Qaloon.count yet
+      // their per-ayah boundaries diverge. Pre-2026-04-29 derive-verse-aliases.mjs
+      // skipped them on count-equality and the reader identity-mapped Madinan
+      // ayat to mismatching Hafs translation keys (e.g. Warsh viewer in Al-A`raf
+      // saw the "Alif Lam Mim Sad" translation for ayah 1 even though Warsh
+      // ayah 1 contains Alif-Lam-Mim-Sad + Kitab-unzila merged).
+      const boundaryDriftSurahs = ['3', '7', '15', '28', '29', '32', '43', '69', '103']
+      const declared = Object.keys(verseAliases.aliases)
+      for (const n of boundaryDriftSurahs) {
+        expect(declared, `surah ${n} (boundary-drift) must have alias entry`).toContain(n)
+        const entries = verseAliases.aliases[n]
+        const isIdentity = entries.every((e) => e.warsh === e.hafs && e.qaloon === e.hafs)
+        expect(isIdentity, `surah ${n} alias must NOT be pure identity`).toBe(false)
+      }
     })
 
     it('alias table for each surah has exactly Hafs.count entries', () => {

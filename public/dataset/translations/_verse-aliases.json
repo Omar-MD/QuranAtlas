@@ -5,7 +5,7 @@
     "generator": "scripts/derive-verse-aliases.mjs",
     "source": "public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json",
     "method": "Word-stream cumulative alignment. Hafs ayah I aligns to the contiguous Warsh / Qaloon ayat whose normalised-text word ranges overlap Hafs ayah I's range. Bismillah carve-out applied to surah 1. Hard-fails on qira'at-level word-count drift (no surahs in current dataset).",
-    "generatedAt": "2026-04-28T20:02:13.135Z"
+    "generatedAt": "2026-04-29T10:47:59.128Z"
   },
   "aliases": {
     "1": [
@@ -1487,6 +1487,1020 @@
         "hafs": 286,
         "warsh": 285,
         "qaloon": 285
+      }
+    ],
+    "3": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 4,
+        "warsh": [
+          3,
+          4
+        ],
+        "qaloon": [
+          3,
+          4
+        ]
+      },
+      {
+        "hafs": 5,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 6,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 7,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 8,
+        "warsh": 8,
+        "qaloon": 8
+      },
+      {
+        "hafs": 9,
+        "warsh": 9,
+        "qaloon": 9
+      },
+      {
+        "hafs": 10,
+        "warsh": 10,
+        "qaloon": 10
+      },
+      {
+        "hafs": 11,
+        "warsh": 11,
+        "qaloon": 11
+      },
+      {
+        "hafs": 12,
+        "warsh": 12,
+        "qaloon": 12
+      },
+      {
+        "hafs": 13,
+        "warsh": 13,
+        "qaloon": 13
+      },
+      {
+        "hafs": 14,
+        "warsh": 14,
+        "qaloon": 14
+      },
+      {
+        "hafs": 15,
+        "warsh": 15,
+        "qaloon": 15
+      },
+      {
+        "hafs": 16,
+        "warsh": 16,
+        "qaloon": 16
+      },
+      {
+        "hafs": 17,
+        "warsh": 17,
+        "qaloon": 17
+      },
+      {
+        "hafs": 18,
+        "warsh": 18,
+        "qaloon": 18
+      },
+      {
+        "hafs": 19,
+        "warsh": 19,
+        "qaloon": 19
+      },
+      {
+        "hafs": 20,
+        "warsh": 20,
+        "qaloon": 20
+      },
+      {
+        "hafs": 21,
+        "warsh": 21,
+        "qaloon": 21
+      },
+      {
+        "hafs": 22,
+        "warsh": 22,
+        "qaloon": 22
+      },
+      {
+        "hafs": 23,
+        "warsh": 23,
+        "qaloon": 23
+      },
+      {
+        "hafs": 24,
+        "warsh": 24,
+        "qaloon": 24
+      },
+      {
+        "hafs": 25,
+        "warsh": 25,
+        "qaloon": 25
+      },
+      {
+        "hafs": 26,
+        "warsh": 26,
+        "qaloon": 26
+      },
+      {
+        "hafs": 27,
+        "warsh": 27,
+        "qaloon": 27
+      },
+      {
+        "hafs": 28,
+        "warsh": 28,
+        "qaloon": 28
+      },
+      {
+        "hafs": 29,
+        "warsh": 29,
+        "qaloon": 29
+      },
+      {
+        "hafs": 30,
+        "warsh": 30,
+        "qaloon": 30
+      },
+      {
+        "hafs": 31,
+        "warsh": 31,
+        "qaloon": 31
+      },
+      {
+        "hafs": 32,
+        "warsh": 32,
+        "qaloon": 32
+      },
+      {
+        "hafs": 33,
+        "warsh": 33,
+        "qaloon": 33
+      },
+      {
+        "hafs": 34,
+        "warsh": 34,
+        "qaloon": 34
+      },
+      {
+        "hafs": 35,
+        "warsh": 35,
+        "qaloon": 35
+      },
+      {
+        "hafs": 36,
+        "warsh": 36,
+        "qaloon": 36
+      },
+      {
+        "hafs": 37,
+        "warsh": 37,
+        "qaloon": 37
+      },
+      {
+        "hafs": 38,
+        "warsh": 38,
+        "qaloon": 38
+      },
+      {
+        "hafs": 39,
+        "warsh": 39,
+        "qaloon": 39
+      },
+      {
+        "hafs": 40,
+        "warsh": 40,
+        "qaloon": 40
+      },
+      {
+        "hafs": 41,
+        "warsh": 41,
+        "qaloon": 41
+      },
+      {
+        "hafs": 42,
+        "warsh": 42,
+        "qaloon": 42
+      },
+      {
+        "hafs": 43,
+        "warsh": 43,
+        "qaloon": 43
+      },
+      {
+        "hafs": 44,
+        "warsh": 44,
+        "qaloon": 44
+      },
+      {
+        "hafs": 45,
+        "warsh": 45,
+        "qaloon": 45
+      },
+      {
+        "hafs": 46,
+        "warsh": 46,
+        "qaloon": 46
+      },
+      {
+        "hafs": 47,
+        "warsh": 47,
+        "qaloon": 47
+      },
+      {
+        "hafs": 48,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 49,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 50,
+        "warsh": 49,
+        "qaloon": 49
+      },
+      {
+        "hafs": 51,
+        "warsh": 50,
+        "qaloon": 50
+      },
+      {
+        "hafs": 52,
+        "warsh": 51,
+        "qaloon": 51
+      },
+      {
+        "hafs": 53,
+        "warsh": 52,
+        "qaloon": 52
+      },
+      {
+        "hafs": 54,
+        "warsh": 53,
+        "qaloon": 53
+      },
+      {
+        "hafs": 55,
+        "warsh": 54,
+        "qaloon": 54
+      },
+      {
+        "hafs": 56,
+        "warsh": 55,
+        "qaloon": 55
+      },
+      {
+        "hafs": 57,
+        "warsh": 56,
+        "qaloon": 56
+      },
+      {
+        "hafs": 58,
+        "warsh": 57,
+        "qaloon": 57
+      },
+      {
+        "hafs": 59,
+        "warsh": 58,
+        "qaloon": 58
+      },
+      {
+        "hafs": 60,
+        "warsh": 59,
+        "qaloon": 59
+      },
+      {
+        "hafs": 61,
+        "warsh": 60,
+        "qaloon": 60
+      },
+      {
+        "hafs": 62,
+        "warsh": 61,
+        "qaloon": 61
+      },
+      {
+        "hafs": 63,
+        "warsh": 62,
+        "qaloon": 62
+      },
+      {
+        "hafs": 64,
+        "warsh": 63,
+        "qaloon": 63
+      },
+      {
+        "hafs": 65,
+        "warsh": 64,
+        "qaloon": 64
+      },
+      {
+        "hafs": 66,
+        "warsh": 65,
+        "qaloon": 65
+      },
+      {
+        "hafs": 67,
+        "warsh": 66,
+        "qaloon": 66
+      },
+      {
+        "hafs": 68,
+        "warsh": 67,
+        "qaloon": 67
+      },
+      {
+        "hafs": 69,
+        "warsh": 68,
+        "qaloon": 68
+      },
+      {
+        "hafs": 70,
+        "warsh": 69,
+        "qaloon": 69
+      },
+      {
+        "hafs": 71,
+        "warsh": 70,
+        "qaloon": 70
+      },
+      {
+        "hafs": 72,
+        "warsh": 71,
+        "qaloon": 71
+      },
+      {
+        "hafs": 73,
+        "warsh": 72,
+        "qaloon": 72
+      },
+      {
+        "hafs": 74,
+        "warsh": 73,
+        "qaloon": 73
+      },
+      {
+        "hafs": 75,
+        "warsh": 74,
+        "qaloon": 74
+      },
+      {
+        "hafs": 76,
+        "warsh": 75,
+        "qaloon": 75
+      },
+      {
+        "hafs": 77,
+        "warsh": 76,
+        "qaloon": 76
+      },
+      {
+        "hafs": 78,
+        "warsh": 77,
+        "qaloon": 77
+      },
+      {
+        "hafs": 79,
+        "warsh": 78,
+        "qaloon": 78
+      },
+      {
+        "hafs": 80,
+        "warsh": 79,
+        "qaloon": 79
+      },
+      {
+        "hafs": 81,
+        "warsh": 80,
+        "qaloon": 80
+      },
+      {
+        "hafs": 82,
+        "warsh": 81,
+        "qaloon": 81
+      },
+      {
+        "hafs": 83,
+        "warsh": 82,
+        "qaloon": 82
+      },
+      {
+        "hafs": 84,
+        "warsh": 83,
+        "qaloon": 83
+      },
+      {
+        "hafs": 85,
+        "warsh": 84,
+        "qaloon": 84
+      },
+      {
+        "hafs": 86,
+        "warsh": 85,
+        "qaloon": 85
+      },
+      {
+        "hafs": 87,
+        "warsh": 86,
+        "qaloon": 86
+      },
+      {
+        "hafs": 88,
+        "warsh": 87,
+        "qaloon": 87
+      },
+      {
+        "hafs": 89,
+        "warsh": 88,
+        "qaloon": 88
+      },
+      {
+        "hafs": 90,
+        "warsh": 89,
+        "qaloon": 89
+      },
+      {
+        "hafs": 91,
+        "warsh": 90,
+        "qaloon": 90
+      },
+      {
+        "hafs": 92,
+        "warsh": [
+          91,
+          92
+        ],
+        "qaloon": [
+          91,
+          92
+        ]
+      },
+      {
+        "hafs": 93,
+        "warsh": 93,
+        "qaloon": 93
+      },
+      {
+        "hafs": 94,
+        "warsh": 94,
+        "qaloon": 94
+      },
+      {
+        "hafs": 95,
+        "warsh": 95,
+        "qaloon": 95
+      },
+      {
+        "hafs": 96,
+        "warsh": 96,
+        "qaloon": 96
+      },
+      {
+        "hafs": 97,
+        "warsh": 97,
+        "qaloon": 97
+      },
+      {
+        "hafs": 98,
+        "warsh": 98,
+        "qaloon": 98
+      },
+      {
+        "hafs": 99,
+        "warsh": 99,
+        "qaloon": 99
+      },
+      {
+        "hafs": 100,
+        "warsh": 100,
+        "qaloon": 100
+      },
+      {
+        "hafs": 101,
+        "warsh": 101,
+        "qaloon": 101
+      },
+      {
+        "hafs": 102,
+        "warsh": 102,
+        "qaloon": 102
+      },
+      {
+        "hafs": 103,
+        "warsh": 103,
+        "qaloon": 103
+      },
+      {
+        "hafs": 104,
+        "warsh": 104,
+        "qaloon": 104
+      },
+      {
+        "hafs": 105,
+        "warsh": 105,
+        "qaloon": 105
+      },
+      {
+        "hafs": 106,
+        "warsh": 106,
+        "qaloon": 106
+      },
+      {
+        "hafs": 107,
+        "warsh": 107,
+        "qaloon": 107
+      },
+      {
+        "hafs": 108,
+        "warsh": 108,
+        "qaloon": 108
+      },
+      {
+        "hafs": 109,
+        "warsh": 109,
+        "qaloon": 109
+      },
+      {
+        "hafs": 110,
+        "warsh": 110,
+        "qaloon": 110
+      },
+      {
+        "hafs": 111,
+        "warsh": 111,
+        "qaloon": 111
+      },
+      {
+        "hafs": 112,
+        "warsh": 112,
+        "qaloon": 112
+      },
+      {
+        "hafs": 113,
+        "warsh": 113,
+        "qaloon": 113
+      },
+      {
+        "hafs": 114,
+        "warsh": 114,
+        "qaloon": 114
+      },
+      {
+        "hafs": 115,
+        "warsh": 115,
+        "qaloon": 115
+      },
+      {
+        "hafs": 116,
+        "warsh": 116,
+        "qaloon": 116
+      },
+      {
+        "hafs": 117,
+        "warsh": 117,
+        "qaloon": 117
+      },
+      {
+        "hafs": 118,
+        "warsh": 118,
+        "qaloon": 118
+      },
+      {
+        "hafs": 119,
+        "warsh": 119,
+        "qaloon": 119
+      },
+      {
+        "hafs": 120,
+        "warsh": 120,
+        "qaloon": 120
+      },
+      {
+        "hafs": 121,
+        "warsh": 121,
+        "qaloon": 121
+      },
+      {
+        "hafs": 122,
+        "warsh": 122,
+        "qaloon": 122
+      },
+      {
+        "hafs": 123,
+        "warsh": 123,
+        "qaloon": 123
+      },
+      {
+        "hafs": 124,
+        "warsh": 124,
+        "qaloon": 124
+      },
+      {
+        "hafs": 125,
+        "warsh": 125,
+        "qaloon": 125
+      },
+      {
+        "hafs": 126,
+        "warsh": 126,
+        "qaloon": 126
+      },
+      {
+        "hafs": 127,
+        "warsh": 127,
+        "qaloon": 127
+      },
+      {
+        "hafs": 128,
+        "warsh": 128,
+        "qaloon": 128
+      },
+      {
+        "hafs": 129,
+        "warsh": 129,
+        "qaloon": 129
+      },
+      {
+        "hafs": 130,
+        "warsh": 130,
+        "qaloon": 130
+      },
+      {
+        "hafs": 131,
+        "warsh": 131,
+        "qaloon": 131
+      },
+      {
+        "hafs": 132,
+        "warsh": 132,
+        "qaloon": 132
+      },
+      {
+        "hafs": 133,
+        "warsh": 133,
+        "qaloon": 133
+      },
+      {
+        "hafs": 134,
+        "warsh": 134,
+        "qaloon": 134
+      },
+      {
+        "hafs": 135,
+        "warsh": 135,
+        "qaloon": 135
+      },
+      {
+        "hafs": 136,
+        "warsh": 136,
+        "qaloon": 136
+      },
+      {
+        "hafs": 137,
+        "warsh": 137,
+        "qaloon": 137
+      },
+      {
+        "hafs": 138,
+        "warsh": 138,
+        "qaloon": 138
+      },
+      {
+        "hafs": 139,
+        "warsh": 139,
+        "qaloon": 139
+      },
+      {
+        "hafs": 140,
+        "warsh": 140,
+        "qaloon": 140
+      },
+      {
+        "hafs": 141,
+        "warsh": 141,
+        "qaloon": 141
+      },
+      {
+        "hafs": 142,
+        "warsh": 142,
+        "qaloon": 142
+      },
+      {
+        "hafs": 143,
+        "warsh": 143,
+        "qaloon": 143
+      },
+      {
+        "hafs": 144,
+        "warsh": 144,
+        "qaloon": 144
+      },
+      {
+        "hafs": 145,
+        "warsh": 145,
+        "qaloon": 145
+      },
+      {
+        "hafs": 146,
+        "warsh": 146,
+        "qaloon": 146
+      },
+      {
+        "hafs": 147,
+        "warsh": 147,
+        "qaloon": 147
+      },
+      {
+        "hafs": 148,
+        "warsh": 148,
+        "qaloon": 148
+      },
+      {
+        "hafs": 149,
+        "warsh": 149,
+        "qaloon": 149
+      },
+      {
+        "hafs": 150,
+        "warsh": 150,
+        "qaloon": 150
+      },
+      {
+        "hafs": 151,
+        "warsh": 151,
+        "qaloon": 151
+      },
+      {
+        "hafs": 152,
+        "warsh": 152,
+        "qaloon": 152
+      },
+      {
+        "hafs": 153,
+        "warsh": 153,
+        "qaloon": 153
+      },
+      {
+        "hafs": 154,
+        "warsh": 154,
+        "qaloon": 154
+      },
+      {
+        "hafs": 155,
+        "warsh": 155,
+        "qaloon": 155
+      },
+      {
+        "hafs": 156,
+        "warsh": 156,
+        "qaloon": 156
+      },
+      {
+        "hafs": 157,
+        "warsh": 157,
+        "qaloon": 157
+      },
+      {
+        "hafs": 158,
+        "warsh": 158,
+        "qaloon": 158
+      },
+      {
+        "hafs": 159,
+        "warsh": 159,
+        "qaloon": 159
+      },
+      {
+        "hafs": 160,
+        "warsh": 160,
+        "qaloon": 160
+      },
+      {
+        "hafs": 161,
+        "warsh": 161,
+        "qaloon": 161
+      },
+      {
+        "hafs": 162,
+        "warsh": 162,
+        "qaloon": 162
+      },
+      {
+        "hafs": 163,
+        "warsh": 163,
+        "qaloon": 163
+      },
+      {
+        "hafs": 164,
+        "warsh": 164,
+        "qaloon": 164
+      },
+      {
+        "hafs": 165,
+        "warsh": 165,
+        "qaloon": 165
+      },
+      {
+        "hafs": 166,
+        "warsh": 166,
+        "qaloon": 166
+      },
+      {
+        "hafs": 167,
+        "warsh": 167,
+        "qaloon": 167
+      },
+      {
+        "hafs": 168,
+        "warsh": 168,
+        "qaloon": 168
+      },
+      {
+        "hafs": 169,
+        "warsh": 169,
+        "qaloon": 169
+      },
+      {
+        "hafs": 170,
+        "warsh": 170,
+        "qaloon": 170
+      },
+      {
+        "hafs": 171,
+        "warsh": 171,
+        "qaloon": 171
+      },
+      {
+        "hafs": 172,
+        "warsh": 172,
+        "qaloon": 172
+      },
+      {
+        "hafs": 173,
+        "warsh": 173,
+        "qaloon": 173
+      },
+      {
+        "hafs": 174,
+        "warsh": 174,
+        "qaloon": 174
+      },
+      {
+        "hafs": 175,
+        "warsh": 175,
+        "qaloon": 175
+      },
+      {
+        "hafs": 176,
+        "warsh": 176,
+        "qaloon": 176
+      },
+      {
+        "hafs": 177,
+        "warsh": 177,
+        "qaloon": 177
+      },
+      {
+        "hafs": 178,
+        "warsh": 178,
+        "qaloon": 178
+      },
+      {
+        "hafs": 179,
+        "warsh": 179,
+        "qaloon": 179
+      },
+      {
+        "hafs": 180,
+        "warsh": 180,
+        "qaloon": 180
+      },
+      {
+        "hafs": 181,
+        "warsh": 181,
+        "qaloon": 181
+      },
+      {
+        "hafs": 182,
+        "warsh": 182,
+        "qaloon": 182
+      },
+      {
+        "hafs": 183,
+        "warsh": 183,
+        "qaloon": 183
+      },
+      {
+        "hafs": 184,
+        "warsh": 184,
+        "qaloon": 184
+      },
+      {
+        "hafs": 185,
+        "warsh": 185,
+        "qaloon": 185
+      },
+      {
+        "hafs": 186,
+        "warsh": 186,
+        "qaloon": 186
+      },
+      {
+        "hafs": 187,
+        "warsh": 187,
+        "qaloon": 187
+      },
+      {
+        "hafs": 188,
+        "warsh": 188,
+        "qaloon": 188
+      },
+      {
+        "hafs": 189,
+        "warsh": 189,
+        "qaloon": 189
+      },
+      {
+        "hafs": 190,
+        "warsh": 190,
+        "qaloon": 190
+      },
+      {
+        "hafs": 191,
+        "warsh": 191,
+        "qaloon": 191
+      },
+      {
+        "hafs": 192,
+        "warsh": 192,
+        "qaloon": 192
+      },
+      {
+        "hafs": 193,
+        "warsh": 193,
+        "qaloon": 193
+      },
+      {
+        "hafs": 194,
+        "warsh": 194,
+        "qaloon": 194
+      },
+      {
+        "hafs": 195,
+        "warsh": 195,
+        "qaloon": 195
+      },
+      {
+        "hafs": 196,
+        "warsh": 196,
+        "qaloon": 196
+      },
+      {
+        "hafs": 197,
+        "warsh": 197,
+        "qaloon": 197
+      },
+      {
+        "hafs": 198,
+        "warsh": 198,
+        "qaloon": 198
+      },
+      {
+        "hafs": 199,
+        "warsh": 199,
+        "qaloon": 199
+      },
+      {
+        "hafs": 200,
+        "warsh": 200,
+        "qaloon": 200
       }
     ],
     "4": [
@@ -3830,6 +4844,1050 @@
         "qaloon": 167
       }
     ],
+    "7": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 4,
+        "warsh": 3,
+        "qaloon": 3
+      },
+      {
+        "hafs": 5,
+        "warsh": 4,
+        "qaloon": 4
+      },
+      {
+        "hafs": 6,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 7,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 8,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 9,
+        "warsh": 8,
+        "qaloon": 8
+      },
+      {
+        "hafs": 10,
+        "warsh": 9,
+        "qaloon": 9
+      },
+      {
+        "hafs": 11,
+        "warsh": 10,
+        "qaloon": 10
+      },
+      {
+        "hafs": 12,
+        "warsh": 11,
+        "qaloon": 11
+      },
+      {
+        "hafs": 13,
+        "warsh": 12,
+        "qaloon": 12
+      },
+      {
+        "hafs": 14,
+        "warsh": 13,
+        "qaloon": 13
+      },
+      {
+        "hafs": 15,
+        "warsh": 14,
+        "qaloon": 14
+      },
+      {
+        "hafs": 16,
+        "warsh": 15,
+        "qaloon": 15
+      },
+      {
+        "hafs": 17,
+        "warsh": 16,
+        "qaloon": 16
+      },
+      {
+        "hafs": 18,
+        "warsh": 17,
+        "qaloon": 17
+      },
+      {
+        "hafs": 19,
+        "warsh": 18,
+        "qaloon": 18
+      },
+      {
+        "hafs": 20,
+        "warsh": 19,
+        "qaloon": 19
+      },
+      {
+        "hafs": 21,
+        "warsh": 20,
+        "qaloon": 20
+      },
+      {
+        "hafs": 22,
+        "warsh": 21,
+        "qaloon": 21
+      },
+      {
+        "hafs": 23,
+        "warsh": 22,
+        "qaloon": 22
+      },
+      {
+        "hafs": 24,
+        "warsh": 23,
+        "qaloon": 23
+      },
+      {
+        "hafs": 25,
+        "warsh": 24,
+        "qaloon": 24
+      },
+      {
+        "hafs": 26,
+        "warsh": 25,
+        "qaloon": 25
+      },
+      {
+        "hafs": 27,
+        "warsh": 26,
+        "qaloon": 26
+      },
+      {
+        "hafs": 28,
+        "warsh": 27,
+        "qaloon": 27
+      },
+      {
+        "hafs": 29,
+        "warsh": 28,
+        "qaloon": 28
+      },
+      {
+        "hafs": 30,
+        "warsh": 28,
+        "qaloon": 28
+      },
+      {
+        "hafs": 31,
+        "warsh": 29,
+        "qaloon": 29
+      },
+      {
+        "hafs": 32,
+        "warsh": 30,
+        "qaloon": 30
+      },
+      {
+        "hafs": 33,
+        "warsh": 31,
+        "qaloon": 31
+      },
+      {
+        "hafs": 34,
+        "warsh": 32,
+        "qaloon": 32
+      },
+      {
+        "hafs": 35,
+        "warsh": 33,
+        "qaloon": 33
+      },
+      {
+        "hafs": 36,
+        "warsh": 34,
+        "qaloon": 34
+      },
+      {
+        "hafs": 37,
+        "warsh": 35,
+        "qaloon": 35
+      },
+      {
+        "hafs": 38,
+        "warsh": [
+          36,
+          37
+        ],
+        "qaloon": [
+          36,
+          37
+        ]
+      },
+      {
+        "hafs": 39,
+        "warsh": 38,
+        "qaloon": 38
+      },
+      {
+        "hafs": 40,
+        "warsh": 39,
+        "qaloon": 39
+      },
+      {
+        "hafs": 41,
+        "warsh": 40,
+        "qaloon": 40
+      },
+      {
+        "hafs": 42,
+        "warsh": 41,
+        "qaloon": 41
+      },
+      {
+        "hafs": 43,
+        "warsh": 42,
+        "qaloon": 42
+      },
+      {
+        "hafs": 44,
+        "warsh": 43,
+        "qaloon": 43
+      },
+      {
+        "hafs": 45,
+        "warsh": 44,
+        "qaloon": 44
+      },
+      {
+        "hafs": 46,
+        "warsh": 45,
+        "qaloon": 45
+      },
+      {
+        "hafs": 47,
+        "warsh": 46,
+        "qaloon": 46
+      },
+      {
+        "hafs": 48,
+        "warsh": 47,
+        "qaloon": 47
+      },
+      {
+        "hafs": 49,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 50,
+        "warsh": 49,
+        "qaloon": 49
+      },
+      {
+        "hafs": 51,
+        "warsh": 50,
+        "qaloon": 50
+      },
+      {
+        "hafs": 52,
+        "warsh": 51,
+        "qaloon": 51
+      },
+      {
+        "hafs": 53,
+        "warsh": 52,
+        "qaloon": 52
+      },
+      {
+        "hafs": 54,
+        "warsh": 53,
+        "qaloon": 53
+      },
+      {
+        "hafs": 55,
+        "warsh": 54,
+        "qaloon": 54
+      },
+      {
+        "hafs": 56,
+        "warsh": 55,
+        "qaloon": 55
+      },
+      {
+        "hafs": 57,
+        "warsh": 56,
+        "qaloon": 56
+      },
+      {
+        "hafs": 58,
+        "warsh": 57,
+        "qaloon": 57
+      },
+      {
+        "hafs": 59,
+        "warsh": 58,
+        "qaloon": 58
+      },
+      {
+        "hafs": 60,
+        "warsh": 59,
+        "qaloon": 59
+      },
+      {
+        "hafs": 61,
+        "warsh": 60,
+        "qaloon": 60
+      },
+      {
+        "hafs": 62,
+        "warsh": 61,
+        "qaloon": 61
+      },
+      {
+        "hafs": 63,
+        "warsh": 62,
+        "qaloon": 62
+      },
+      {
+        "hafs": 64,
+        "warsh": 63,
+        "qaloon": 63
+      },
+      {
+        "hafs": 65,
+        "warsh": 64,
+        "qaloon": 64
+      },
+      {
+        "hafs": 66,
+        "warsh": 65,
+        "qaloon": 65
+      },
+      {
+        "hafs": 67,
+        "warsh": 66,
+        "qaloon": 66
+      },
+      {
+        "hafs": 68,
+        "warsh": 67,
+        "qaloon": 67
+      },
+      {
+        "hafs": 69,
+        "warsh": 68,
+        "qaloon": 68
+      },
+      {
+        "hafs": 70,
+        "warsh": 69,
+        "qaloon": 69
+      },
+      {
+        "hafs": 71,
+        "warsh": 70,
+        "qaloon": 70
+      },
+      {
+        "hafs": 72,
+        "warsh": 71,
+        "qaloon": 71
+      },
+      {
+        "hafs": 73,
+        "warsh": 72,
+        "qaloon": 72
+      },
+      {
+        "hafs": 74,
+        "warsh": 73,
+        "qaloon": 73
+      },
+      {
+        "hafs": 75,
+        "warsh": 74,
+        "qaloon": 74
+      },
+      {
+        "hafs": 76,
+        "warsh": 75,
+        "qaloon": 75
+      },
+      {
+        "hafs": 77,
+        "warsh": 76,
+        "qaloon": 76
+      },
+      {
+        "hafs": 78,
+        "warsh": 77,
+        "qaloon": 77
+      },
+      {
+        "hafs": 79,
+        "warsh": 78,
+        "qaloon": 78
+      },
+      {
+        "hafs": 80,
+        "warsh": 79,
+        "qaloon": 79
+      },
+      {
+        "hafs": 81,
+        "warsh": 80,
+        "qaloon": 80
+      },
+      {
+        "hafs": 82,
+        "warsh": 81,
+        "qaloon": 81
+      },
+      {
+        "hafs": 83,
+        "warsh": 82,
+        "qaloon": 82
+      },
+      {
+        "hafs": 84,
+        "warsh": 83,
+        "qaloon": 83
+      },
+      {
+        "hafs": 85,
+        "warsh": 84,
+        "qaloon": 84
+      },
+      {
+        "hafs": 86,
+        "warsh": 85,
+        "qaloon": 85
+      },
+      {
+        "hafs": 87,
+        "warsh": 86,
+        "qaloon": 86
+      },
+      {
+        "hafs": 88,
+        "warsh": 87,
+        "qaloon": 87
+      },
+      {
+        "hafs": 89,
+        "warsh": 88,
+        "qaloon": 88
+      },
+      {
+        "hafs": 90,
+        "warsh": 89,
+        "qaloon": 89
+      },
+      {
+        "hafs": 91,
+        "warsh": 90,
+        "qaloon": 90
+      },
+      {
+        "hafs": 92,
+        "warsh": 91,
+        "qaloon": 91
+      },
+      {
+        "hafs": 93,
+        "warsh": 92,
+        "qaloon": 92
+      },
+      {
+        "hafs": 94,
+        "warsh": 93,
+        "qaloon": 93
+      },
+      {
+        "hafs": 95,
+        "warsh": 94,
+        "qaloon": 94
+      },
+      {
+        "hafs": 96,
+        "warsh": 95,
+        "qaloon": 95
+      },
+      {
+        "hafs": 97,
+        "warsh": 96,
+        "qaloon": 96
+      },
+      {
+        "hafs": 98,
+        "warsh": 97,
+        "qaloon": 97
+      },
+      {
+        "hafs": 99,
+        "warsh": 98,
+        "qaloon": 98
+      },
+      {
+        "hafs": 100,
+        "warsh": 99,
+        "qaloon": 99
+      },
+      {
+        "hafs": 101,
+        "warsh": 100,
+        "qaloon": 100
+      },
+      {
+        "hafs": 102,
+        "warsh": 101,
+        "qaloon": 101
+      },
+      {
+        "hafs": 103,
+        "warsh": 102,
+        "qaloon": 102
+      },
+      {
+        "hafs": 104,
+        "warsh": 103,
+        "qaloon": 103
+      },
+      {
+        "hafs": 105,
+        "warsh": 104,
+        "qaloon": 104
+      },
+      {
+        "hafs": 106,
+        "warsh": 105,
+        "qaloon": 105
+      },
+      {
+        "hafs": 107,
+        "warsh": 106,
+        "qaloon": 106
+      },
+      {
+        "hafs": 108,
+        "warsh": 107,
+        "qaloon": 107
+      },
+      {
+        "hafs": 109,
+        "warsh": 108,
+        "qaloon": 108
+      },
+      {
+        "hafs": 110,
+        "warsh": 109,
+        "qaloon": 109
+      },
+      {
+        "hafs": 111,
+        "warsh": 110,
+        "qaloon": 110
+      },
+      {
+        "hafs": 112,
+        "warsh": 111,
+        "qaloon": 111
+      },
+      {
+        "hafs": 113,
+        "warsh": 112,
+        "qaloon": 112
+      },
+      {
+        "hafs": 114,
+        "warsh": 113,
+        "qaloon": 113
+      },
+      {
+        "hafs": 115,
+        "warsh": 114,
+        "qaloon": 114
+      },
+      {
+        "hafs": 116,
+        "warsh": 115,
+        "qaloon": 115
+      },
+      {
+        "hafs": 117,
+        "warsh": 116,
+        "qaloon": 116
+      },
+      {
+        "hafs": 118,
+        "warsh": 117,
+        "qaloon": 117
+      },
+      {
+        "hafs": 119,
+        "warsh": 118,
+        "qaloon": 118
+      },
+      {
+        "hafs": 120,
+        "warsh": 119,
+        "qaloon": 119
+      },
+      {
+        "hafs": 121,
+        "warsh": 120,
+        "qaloon": 120
+      },
+      {
+        "hafs": 122,
+        "warsh": 121,
+        "qaloon": 121
+      },
+      {
+        "hafs": 123,
+        "warsh": 122,
+        "qaloon": 122
+      },
+      {
+        "hafs": 124,
+        "warsh": 123,
+        "qaloon": 123
+      },
+      {
+        "hafs": 125,
+        "warsh": 124,
+        "qaloon": 124
+      },
+      {
+        "hafs": 126,
+        "warsh": 125,
+        "qaloon": 125
+      },
+      {
+        "hafs": 127,
+        "warsh": 126,
+        "qaloon": 126
+      },
+      {
+        "hafs": 128,
+        "warsh": 127,
+        "qaloon": 127
+      },
+      {
+        "hafs": 129,
+        "warsh": 128,
+        "qaloon": 128
+      },
+      {
+        "hafs": 130,
+        "warsh": 129,
+        "qaloon": 129
+      },
+      {
+        "hafs": 131,
+        "warsh": 130,
+        "qaloon": 130
+      },
+      {
+        "hafs": 132,
+        "warsh": 131,
+        "qaloon": 131
+      },
+      {
+        "hafs": 133,
+        "warsh": 132,
+        "qaloon": 132
+      },
+      {
+        "hafs": 134,
+        "warsh": 133,
+        "qaloon": 133
+      },
+      {
+        "hafs": 135,
+        "warsh": 134,
+        "qaloon": 134
+      },
+      {
+        "hafs": 136,
+        "warsh": 135,
+        "qaloon": 135
+      },
+      {
+        "hafs": 137,
+        "warsh": [
+          136,
+          137
+        ],
+        "qaloon": [
+          136,
+          137
+        ]
+      },
+      {
+        "hafs": 138,
+        "warsh": 138,
+        "qaloon": 138
+      },
+      {
+        "hafs": 139,
+        "warsh": 139,
+        "qaloon": 139
+      },
+      {
+        "hafs": 140,
+        "warsh": 140,
+        "qaloon": 140
+      },
+      {
+        "hafs": 141,
+        "warsh": 141,
+        "qaloon": 141
+      },
+      {
+        "hafs": 142,
+        "warsh": 142,
+        "qaloon": 142
+      },
+      {
+        "hafs": 143,
+        "warsh": 143,
+        "qaloon": 143
+      },
+      {
+        "hafs": 144,
+        "warsh": 144,
+        "qaloon": 144
+      },
+      {
+        "hafs": 145,
+        "warsh": 145,
+        "qaloon": 145
+      },
+      {
+        "hafs": 146,
+        "warsh": 146,
+        "qaloon": 146
+      },
+      {
+        "hafs": 147,
+        "warsh": 147,
+        "qaloon": 147
+      },
+      {
+        "hafs": 148,
+        "warsh": 148,
+        "qaloon": 148
+      },
+      {
+        "hafs": 149,
+        "warsh": 149,
+        "qaloon": 149
+      },
+      {
+        "hafs": 150,
+        "warsh": 150,
+        "qaloon": 150
+      },
+      {
+        "hafs": 151,
+        "warsh": 151,
+        "qaloon": 151
+      },
+      {
+        "hafs": 152,
+        "warsh": 152,
+        "qaloon": 152
+      },
+      {
+        "hafs": 153,
+        "warsh": 153,
+        "qaloon": 153
+      },
+      {
+        "hafs": 154,
+        "warsh": 154,
+        "qaloon": 154
+      },
+      {
+        "hafs": 155,
+        "warsh": 155,
+        "qaloon": 155
+      },
+      {
+        "hafs": 156,
+        "warsh": 156,
+        "qaloon": 156
+      },
+      {
+        "hafs": 157,
+        "warsh": 157,
+        "qaloon": 157
+      },
+      {
+        "hafs": 158,
+        "warsh": 158,
+        "qaloon": 158
+      },
+      {
+        "hafs": 159,
+        "warsh": 159,
+        "qaloon": 159
+      },
+      {
+        "hafs": 160,
+        "warsh": 160,
+        "qaloon": 160
+      },
+      {
+        "hafs": 161,
+        "warsh": 161,
+        "qaloon": 161
+      },
+      {
+        "hafs": 162,
+        "warsh": 162,
+        "qaloon": 162
+      },
+      {
+        "hafs": 163,
+        "warsh": 163,
+        "qaloon": 163
+      },
+      {
+        "hafs": 164,
+        "warsh": 164,
+        "qaloon": 164
+      },
+      {
+        "hafs": 165,
+        "warsh": 165,
+        "qaloon": 165
+      },
+      {
+        "hafs": 166,
+        "warsh": 166,
+        "qaloon": 166
+      },
+      {
+        "hafs": 167,
+        "warsh": 167,
+        "qaloon": 167
+      },
+      {
+        "hafs": 168,
+        "warsh": 168,
+        "qaloon": 168
+      },
+      {
+        "hafs": 169,
+        "warsh": 169,
+        "qaloon": 169
+      },
+      {
+        "hafs": 170,
+        "warsh": 170,
+        "qaloon": 170
+      },
+      {
+        "hafs": 171,
+        "warsh": 171,
+        "qaloon": 171
+      },
+      {
+        "hafs": 172,
+        "warsh": 172,
+        "qaloon": 172
+      },
+      {
+        "hafs": 173,
+        "warsh": 173,
+        "qaloon": 173
+      },
+      {
+        "hafs": 174,
+        "warsh": 174,
+        "qaloon": 174
+      },
+      {
+        "hafs": 175,
+        "warsh": 175,
+        "qaloon": 175
+      },
+      {
+        "hafs": 176,
+        "warsh": 176,
+        "qaloon": 176
+      },
+      {
+        "hafs": 177,
+        "warsh": 177,
+        "qaloon": 177
+      },
+      {
+        "hafs": 178,
+        "warsh": 178,
+        "qaloon": 178
+      },
+      {
+        "hafs": 179,
+        "warsh": 179,
+        "qaloon": 179
+      },
+      {
+        "hafs": 180,
+        "warsh": 180,
+        "qaloon": 180
+      },
+      {
+        "hafs": 181,
+        "warsh": 181,
+        "qaloon": 181
+      },
+      {
+        "hafs": 182,
+        "warsh": 182,
+        "qaloon": 182
+      },
+      {
+        "hafs": 183,
+        "warsh": 183,
+        "qaloon": 183
+      },
+      {
+        "hafs": 184,
+        "warsh": 184,
+        "qaloon": 184
+      },
+      {
+        "hafs": 185,
+        "warsh": 185,
+        "qaloon": 185
+      },
+      {
+        "hafs": 186,
+        "warsh": 186,
+        "qaloon": 186
+      },
+      {
+        "hafs": 187,
+        "warsh": 187,
+        "qaloon": 187
+      },
+      {
+        "hafs": 188,
+        "warsh": 188,
+        "qaloon": 188
+      },
+      {
+        "hafs": 189,
+        "warsh": 189,
+        "qaloon": 189
+      },
+      {
+        "hafs": 190,
+        "warsh": 190,
+        "qaloon": 190
+      },
+      {
+        "hafs": 191,
+        "warsh": 191,
+        "qaloon": 191
+      },
+      {
+        "hafs": 192,
+        "warsh": 192,
+        "qaloon": 192
+      },
+      {
+        "hafs": 193,
+        "warsh": 193,
+        "qaloon": 193
+      },
+      {
+        "hafs": 194,
+        "warsh": 194,
+        "qaloon": 194
+      },
+      {
+        "hafs": 195,
+        "warsh": 195,
+        "qaloon": 195
+      },
+      {
+        "hafs": 196,
+        "warsh": 196,
+        "qaloon": 196
+      },
+      {
+        "hafs": 197,
+        "warsh": 197,
+        "qaloon": 197
+      },
+      {
+        "hafs": 198,
+        "warsh": 198,
+        "qaloon": 198
+      },
+      {
+        "hafs": 199,
+        "warsh": 199,
+        "qaloon": 199
+      },
+      {
+        "hafs": 200,
+        "warsh": 200,
+        "qaloon": 200
+      },
+      {
+        "hafs": 201,
+        "warsh": 201,
+        "qaloon": 201
+      },
+      {
+        "hafs": 202,
+        "warsh": 202,
+        "qaloon": 202
+      },
+      {
+        "hafs": 203,
+        "warsh": 203,
+        "qaloon": 203
+      },
+      {
+        "hafs": 204,
+        "warsh": 204,
+        "qaloon": 204
+      },
+      {
+        "hafs": 205,
+        "warsh": 205,
+        "qaloon": 205
+      },
+      {
+        "hafs": 206,
+        "warsh": 206,
+        "qaloon": 206
+      }
+    ],
     "8": [
       {
         "hafs": 1,
@@ -6002,6 +8060,578 @@
         "hafs": 52,
         "warsh": 54,
         "qaloon": 54
+      }
+    ],
+    "15": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 3,
+        "warsh": 3,
+        "qaloon": 3
+      },
+      {
+        "hafs": 4,
+        "warsh": 4,
+        "qaloon": 4
+      },
+      {
+        "hafs": 5,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 6,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 7,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 8,
+        "warsh": 8,
+        "qaloon": [
+          7,
+          8
+        ]
+      },
+      {
+        "hafs": 9,
+        "warsh": 9,
+        "qaloon": [
+          8,
+          9
+        ]
+      },
+      {
+        "hafs": 10,
+        "warsh": 10,
+        "qaloon": [
+          9,
+          10
+        ]
+      },
+      {
+        "hafs": 11,
+        "warsh": 11,
+        "qaloon": [
+          10,
+          11
+        ]
+      },
+      {
+        "hafs": 12,
+        "warsh": 12,
+        "qaloon": [
+          11,
+          12
+        ]
+      },
+      {
+        "hafs": 13,
+        "warsh": 13,
+        "qaloon": [
+          12,
+          13
+        ]
+      },
+      {
+        "hafs": 14,
+        "warsh": 14,
+        "qaloon": [
+          13,
+          14
+        ]
+      },
+      {
+        "hafs": 15,
+        "warsh": 15,
+        "qaloon": [
+          14,
+          15
+        ]
+      },
+      {
+        "hafs": 16,
+        "warsh": 16,
+        "qaloon": [
+          15,
+          16
+        ]
+      },
+      {
+        "hafs": 17,
+        "warsh": 17,
+        "qaloon": [
+          16,
+          17
+        ]
+      },
+      {
+        "hafs": 18,
+        "warsh": 18,
+        "qaloon": [
+          17,
+          18
+        ]
+      },
+      {
+        "hafs": 19,
+        "warsh": 19,
+        "qaloon": [
+          18,
+          19
+        ]
+      },
+      {
+        "hafs": 20,
+        "warsh": 20,
+        "qaloon": [
+          19,
+          20
+        ]
+      },
+      {
+        "hafs": 21,
+        "warsh": 21,
+        "qaloon": [
+          20,
+          21
+        ]
+      },
+      {
+        "hafs": 22,
+        "warsh": 22,
+        "qaloon": [
+          21,
+          22
+        ]
+      },
+      {
+        "hafs": 23,
+        "warsh": 23,
+        "qaloon": [
+          22,
+          23
+        ]
+      },
+      {
+        "hafs": 24,
+        "warsh": 24,
+        "qaloon": [
+          23,
+          24
+        ]
+      },
+      {
+        "hafs": 25,
+        "warsh": 25,
+        "qaloon": [
+          24,
+          25
+        ]
+      },
+      {
+        "hafs": 26,
+        "warsh": 26,
+        "qaloon": [
+          25,
+          26
+        ]
+      },
+      {
+        "hafs": 27,
+        "warsh": 27,
+        "qaloon": [
+          26,
+          27
+        ]
+      },
+      {
+        "hafs": 28,
+        "warsh": 28,
+        "qaloon": [
+          27,
+          28
+        ]
+      },
+      {
+        "hafs": 29,
+        "warsh": 29,
+        "qaloon": [
+          28,
+          29
+        ]
+      },
+      {
+        "hafs": 30,
+        "warsh": 30,
+        "qaloon": [
+          29,
+          30
+        ]
+      },
+      {
+        "hafs": 31,
+        "warsh": 31,
+        "qaloon": [
+          30,
+          31
+        ]
+      },
+      {
+        "hafs": 32,
+        "warsh": 32,
+        "qaloon": [
+          31,
+          32
+        ]
+      },
+      {
+        "hafs": 33,
+        "warsh": 33,
+        "qaloon": 33
+      },
+      {
+        "hafs": 34,
+        "warsh": 34,
+        "qaloon": 34
+      },
+      {
+        "hafs": 35,
+        "warsh": 35,
+        "qaloon": 35
+      },
+      {
+        "hafs": 36,
+        "warsh": 36,
+        "qaloon": 36
+      },
+      {
+        "hafs": 37,
+        "warsh": 37,
+        "qaloon": 37
+      },
+      {
+        "hafs": 38,
+        "warsh": 38,
+        "qaloon": 38
+      },
+      {
+        "hafs": 39,
+        "warsh": 39,
+        "qaloon": 39
+      },
+      {
+        "hafs": 40,
+        "warsh": 40,
+        "qaloon": 40
+      },
+      {
+        "hafs": 41,
+        "warsh": 41,
+        "qaloon": 41
+      },
+      {
+        "hafs": 42,
+        "warsh": 42,
+        "qaloon": 42
+      },
+      {
+        "hafs": 43,
+        "warsh": 43,
+        "qaloon": 43
+      },
+      {
+        "hafs": 44,
+        "warsh": 44,
+        "qaloon": 44
+      },
+      {
+        "hafs": 45,
+        "warsh": 45,
+        "qaloon": 45
+      },
+      {
+        "hafs": 46,
+        "warsh": 46,
+        "qaloon": 46
+      },
+      {
+        "hafs": 47,
+        "warsh": 47,
+        "qaloon": 47
+      },
+      {
+        "hafs": 48,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 49,
+        "warsh": 49,
+        "qaloon": 49
+      },
+      {
+        "hafs": 50,
+        "warsh": 50,
+        "qaloon": 50
+      },
+      {
+        "hafs": 51,
+        "warsh": 51,
+        "qaloon": 51
+      },
+      {
+        "hafs": 52,
+        "warsh": 52,
+        "qaloon": 52
+      },
+      {
+        "hafs": 53,
+        "warsh": 53,
+        "qaloon": 53
+      },
+      {
+        "hafs": 54,
+        "warsh": 54,
+        "qaloon": 54
+      },
+      {
+        "hafs": 55,
+        "warsh": 55,
+        "qaloon": 55
+      },
+      {
+        "hafs": 56,
+        "warsh": 56,
+        "qaloon": 56
+      },
+      {
+        "hafs": 57,
+        "warsh": 57,
+        "qaloon": 57
+      },
+      {
+        "hafs": 58,
+        "warsh": 58,
+        "qaloon": 58
+      },
+      {
+        "hafs": 59,
+        "warsh": 59,
+        "qaloon": 59
+      },
+      {
+        "hafs": 60,
+        "warsh": 60,
+        "qaloon": 60
+      },
+      {
+        "hafs": 61,
+        "warsh": 61,
+        "qaloon": 61
+      },
+      {
+        "hafs": 62,
+        "warsh": 62,
+        "qaloon": 62
+      },
+      {
+        "hafs": 63,
+        "warsh": 63,
+        "qaloon": 63
+      },
+      {
+        "hafs": 64,
+        "warsh": 64,
+        "qaloon": 64
+      },
+      {
+        "hafs": 65,
+        "warsh": 65,
+        "qaloon": 65
+      },
+      {
+        "hafs": 66,
+        "warsh": 66,
+        "qaloon": 66
+      },
+      {
+        "hafs": 67,
+        "warsh": 67,
+        "qaloon": 67
+      },
+      {
+        "hafs": 68,
+        "warsh": 68,
+        "qaloon": 68
+      },
+      {
+        "hafs": 69,
+        "warsh": 69,
+        "qaloon": 69
+      },
+      {
+        "hafs": 70,
+        "warsh": 70,
+        "qaloon": 70
+      },
+      {
+        "hafs": 71,
+        "warsh": 71,
+        "qaloon": 71
+      },
+      {
+        "hafs": 72,
+        "warsh": 72,
+        "qaloon": 72
+      },
+      {
+        "hafs": 73,
+        "warsh": 73,
+        "qaloon": 73
+      },
+      {
+        "hafs": 74,
+        "warsh": 74,
+        "qaloon": 74
+      },
+      {
+        "hafs": 75,
+        "warsh": 75,
+        "qaloon": 75
+      },
+      {
+        "hafs": 76,
+        "warsh": 76,
+        "qaloon": 76
+      },
+      {
+        "hafs": 77,
+        "warsh": 77,
+        "qaloon": 77
+      },
+      {
+        "hafs": 78,
+        "warsh": 78,
+        "qaloon": 78
+      },
+      {
+        "hafs": 79,
+        "warsh": 79,
+        "qaloon": 79
+      },
+      {
+        "hafs": 80,
+        "warsh": 80,
+        "qaloon": 80
+      },
+      {
+        "hafs": 81,
+        "warsh": 81,
+        "qaloon": 81
+      },
+      {
+        "hafs": 82,
+        "warsh": 82,
+        "qaloon": 82
+      },
+      {
+        "hafs": 83,
+        "warsh": 83,
+        "qaloon": 83
+      },
+      {
+        "hafs": 84,
+        "warsh": 84,
+        "qaloon": 84
+      },
+      {
+        "hafs": 85,
+        "warsh": 85,
+        "qaloon": 85
+      },
+      {
+        "hafs": 86,
+        "warsh": 86,
+        "qaloon": 86
+      },
+      {
+        "hafs": 87,
+        "warsh": 87,
+        "qaloon": 87
+      },
+      {
+        "hafs": 88,
+        "warsh": 88,
+        "qaloon": 88
+      },
+      {
+        "hafs": 89,
+        "warsh": 89,
+        "qaloon": 89
+      },
+      {
+        "hafs": 90,
+        "warsh": 90,
+        "qaloon": 90
+      },
+      {
+        "hafs": 91,
+        "warsh": 91,
+        "qaloon": 91
+      },
+      {
+        "hafs": 92,
+        "warsh": 92,
+        "qaloon": 92
+      },
+      {
+        "hafs": 93,
+        "warsh": 93,
+        "qaloon": 93
+      },
+      {
+        "hafs": 94,
+        "warsh": 94,
+        "qaloon": 94
+      },
+      {
+        "hafs": 95,
+        "warsh": 95,
+        "qaloon": 95
+      },
+      {
+        "hafs": 96,
+        "warsh": 96,
+        "qaloon": 96
+      },
+      {
+        "hafs": 97,
+        "warsh": 97,
+        "qaloon": 97
+      },
+      {
+        "hafs": 98,
+        "warsh": 98,
+        "qaloon": 98
+      },
+      {
+        "hafs": 99,
+        "warsh": 99,
+        "qaloon": 99
       }
     ],
     "17": [
@@ -11826,6 +14456,807 @@
         "qaloon": 95
       }
     ],
+    "28": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 4,
+        "warsh": 3,
+        "qaloon": 3
+      },
+      {
+        "hafs": 5,
+        "warsh": 4,
+        "qaloon": 4
+      },
+      {
+        "hafs": 6,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 7,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 8,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 9,
+        "warsh": 8,
+        "qaloon": 8
+      },
+      {
+        "hafs": 10,
+        "warsh": 9,
+        "qaloon": 9
+      },
+      {
+        "hafs": 11,
+        "warsh": 10,
+        "qaloon": 10
+      },
+      {
+        "hafs": 12,
+        "warsh": 11,
+        "qaloon": 11
+      },
+      {
+        "hafs": 13,
+        "warsh": 12,
+        "qaloon": 12
+      },
+      {
+        "hafs": 14,
+        "warsh": 13,
+        "qaloon": 13
+      },
+      {
+        "hafs": 15,
+        "warsh": 14,
+        "qaloon": 14
+      },
+      {
+        "hafs": 16,
+        "warsh": 15,
+        "qaloon": 15
+      },
+      {
+        "hafs": 17,
+        "warsh": 16,
+        "qaloon": 16
+      },
+      {
+        "hafs": 18,
+        "warsh": 17,
+        "qaloon": 17
+      },
+      {
+        "hafs": 19,
+        "warsh": 18,
+        "qaloon": 18
+      },
+      {
+        "hafs": 20,
+        "warsh": 19,
+        "qaloon": 19
+      },
+      {
+        "hafs": 21,
+        "warsh": 20,
+        "qaloon": 20
+      },
+      {
+        "hafs": 22,
+        "warsh": 21,
+        "qaloon": 21
+      },
+      {
+        "hafs": 23,
+        "warsh": [
+          22,
+          23
+        ],
+        "qaloon": [
+          22,
+          23
+        ]
+      },
+      {
+        "hafs": 24,
+        "warsh": 24,
+        "qaloon": 24
+      },
+      {
+        "hafs": 25,
+        "warsh": 25,
+        "qaloon": 25
+      },
+      {
+        "hafs": 26,
+        "warsh": 26,
+        "qaloon": 26
+      },
+      {
+        "hafs": 27,
+        "warsh": 27,
+        "qaloon": 27
+      },
+      {
+        "hafs": 28,
+        "warsh": 28,
+        "qaloon": 28
+      },
+      {
+        "hafs": 29,
+        "warsh": 29,
+        "qaloon": 29
+      },
+      {
+        "hafs": 30,
+        "warsh": 30,
+        "qaloon": 30
+      },
+      {
+        "hafs": 31,
+        "warsh": 31,
+        "qaloon": 31
+      },
+      {
+        "hafs": 32,
+        "warsh": 32,
+        "qaloon": 32
+      },
+      {
+        "hafs": 33,
+        "warsh": 33,
+        "qaloon": 33
+      },
+      {
+        "hafs": 34,
+        "warsh": 34,
+        "qaloon": 34
+      },
+      {
+        "hafs": 35,
+        "warsh": 35,
+        "qaloon": 35
+      },
+      {
+        "hafs": 36,
+        "warsh": 36,
+        "qaloon": 36
+      },
+      {
+        "hafs": 37,
+        "warsh": 37,
+        "qaloon": 37
+      },
+      {
+        "hafs": 38,
+        "warsh": 38,
+        "qaloon": 38
+      },
+      {
+        "hafs": 39,
+        "warsh": 39,
+        "qaloon": 39
+      },
+      {
+        "hafs": 40,
+        "warsh": 40,
+        "qaloon": 40
+      },
+      {
+        "hafs": 41,
+        "warsh": 41,
+        "qaloon": 41
+      },
+      {
+        "hafs": 42,
+        "warsh": 42,
+        "qaloon": 42
+      },
+      {
+        "hafs": 43,
+        "warsh": 43,
+        "qaloon": 43
+      },
+      {
+        "hafs": 44,
+        "warsh": 44,
+        "qaloon": 44
+      },
+      {
+        "hafs": 45,
+        "warsh": 45,
+        "qaloon": 45
+      },
+      {
+        "hafs": 46,
+        "warsh": 46,
+        "qaloon": 46
+      },
+      {
+        "hafs": 47,
+        "warsh": 47,
+        "qaloon": 47
+      },
+      {
+        "hafs": 48,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 49,
+        "warsh": 49,
+        "qaloon": 49
+      },
+      {
+        "hafs": 50,
+        "warsh": 50,
+        "qaloon": 50
+      },
+      {
+        "hafs": 51,
+        "warsh": 51,
+        "qaloon": 51
+      },
+      {
+        "hafs": 52,
+        "warsh": 52,
+        "qaloon": 52
+      },
+      {
+        "hafs": 53,
+        "warsh": 53,
+        "qaloon": 53
+      },
+      {
+        "hafs": 54,
+        "warsh": 54,
+        "qaloon": 54
+      },
+      {
+        "hafs": 55,
+        "warsh": 55,
+        "qaloon": 55
+      },
+      {
+        "hafs": 56,
+        "warsh": 56,
+        "qaloon": 56
+      },
+      {
+        "hafs": 57,
+        "warsh": 57,
+        "qaloon": 57
+      },
+      {
+        "hafs": 58,
+        "warsh": 58,
+        "qaloon": 58
+      },
+      {
+        "hafs": 59,
+        "warsh": 59,
+        "qaloon": 59
+      },
+      {
+        "hafs": 60,
+        "warsh": 60,
+        "qaloon": 60
+      },
+      {
+        "hafs": 61,
+        "warsh": 61,
+        "qaloon": 61
+      },
+      {
+        "hafs": 62,
+        "warsh": 62,
+        "qaloon": 62
+      },
+      {
+        "hafs": 63,
+        "warsh": 63,
+        "qaloon": 63
+      },
+      {
+        "hafs": 64,
+        "warsh": 64,
+        "qaloon": 64
+      },
+      {
+        "hafs": 65,
+        "warsh": 65,
+        "qaloon": 65
+      },
+      {
+        "hafs": 66,
+        "warsh": 66,
+        "qaloon": 66
+      },
+      {
+        "hafs": 67,
+        "warsh": 67,
+        "qaloon": 67
+      },
+      {
+        "hafs": 68,
+        "warsh": 68,
+        "qaloon": 68
+      },
+      {
+        "hafs": 69,
+        "warsh": 69,
+        "qaloon": 69
+      },
+      {
+        "hafs": 70,
+        "warsh": 70,
+        "qaloon": 70
+      },
+      {
+        "hafs": 71,
+        "warsh": 71,
+        "qaloon": 71
+      },
+      {
+        "hafs": 72,
+        "warsh": 72,
+        "qaloon": 72
+      },
+      {
+        "hafs": 73,
+        "warsh": 73,
+        "qaloon": 73
+      },
+      {
+        "hafs": 74,
+        "warsh": 74,
+        "qaloon": 74
+      },
+      {
+        "hafs": 75,
+        "warsh": 75,
+        "qaloon": 75
+      },
+      {
+        "hafs": 76,
+        "warsh": 76,
+        "qaloon": 76
+      },
+      {
+        "hafs": 77,
+        "warsh": 77,
+        "qaloon": 77
+      },
+      {
+        "hafs": 78,
+        "warsh": 78,
+        "qaloon": 78
+      },
+      {
+        "hafs": 79,
+        "warsh": 79,
+        "qaloon": 79
+      },
+      {
+        "hafs": 80,
+        "warsh": 80,
+        "qaloon": 80
+      },
+      {
+        "hafs": 81,
+        "warsh": 81,
+        "qaloon": 81
+      },
+      {
+        "hafs": 82,
+        "warsh": 82,
+        "qaloon": 82
+      },
+      {
+        "hafs": 83,
+        "warsh": 83,
+        "qaloon": 83
+      },
+      {
+        "hafs": 84,
+        "warsh": 84,
+        "qaloon": 84
+      },
+      {
+        "hafs": 85,
+        "warsh": 85,
+        "qaloon": 85
+      },
+      {
+        "hafs": 86,
+        "warsh": 86,
+        "qaloon": 86
+      },
+      {
+        "hafs": 87,
+        "warsh": 87,
+        "qaloon": 87
+      },
+      {
+        "hafs": 88,
+        "warsh": 88,
+        "qaloon": 88
+      }
+    ],
+    "29": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 4,
+        "warsh": 3,
+        "qaloon": 3
+      },
+      {
+        "hafs": 5,
+        "warsh": 4,
+        "qaloon": 4
+      },
+      {
+        "hafs": 6,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 7,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 8,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 9,
+        "warsh": 8,
+        "qaloon": 8
+      },
+      {
+        "hafs": 10,
+        "warsh": 9,
+        "qaloon": 9
+      },
+      {
+        "hafs": 11,
+        "warsh": 10,
+        "qaloon": 10
+      },
+      {
+        "hafs": 12,
+        "warsh": 11,
+        "qaloon": 11
+      },
+      {
+        "hafs": 13,
+        "warsh": 12,
+        "qaloon": 12
+      },
+      {
+        "hafs": 14,
+        "warsh": 13,
+        "qaloon": 13
+      },
+      {
+        "hafs": 15,
+        "warsh": 14,
+        "qaloon": 14
+      },
+      {
+        "hafs": 16,
+        "warsh": 15,
+        "qaloon": 15
+      },
+      {
+        "hafs": 17,
+        "warsh": 16,
+        "qaloon": 16
+      },
+      {
+        "hafs": 18,
+        "warsh": 17,
+        "qaloon": 17
+      },
+      {
+        "hafs": 19,
+        "warsh": 18,
+        "qaloon": 18
+      },
+      {
+        "hafs": 20,
+        "warsh": 19,
+        "qaloon": 19
+      },
+      {
+        "hafs": 21,
+        "warsh": 20,
+        "qaloon": 20
+      },
+      {
+        "hafs": 22,
+        "warsh": 21,
+        "qaloon": 21
+      },
+      {
+        "hafs": 23,
+        "warsh": 22,
+        "qaloon": 22
+      },
+      {
+        "hafs": 24,
+        "warsh": 23,
+        "qaloon": 23
+      },
+      {
+        "hafs": 25,
+        "warsh": 24,
+        "qaloon": 24
+      },
+      {
+        "hafs": 26,
+        "warsh": 25,
+        "qaloon": 25
+      },
+      {
+        "hafs": 27,
+        "warsh": 26,
+        "qaloon": 26
+      },
+      {
+        "hafs": 28,
+        "warsh": 27,
+        "qaloon": 27
+      },
+      {
+        "hafs": 29,
+        "warsh": [
+          28,
+          29
+        ],
+        "qaloon": [
+          28,
+          29
+        ]
+      },
+      {
+        "hafs": 30,
+        "warsh": 30,
+        "qaloon": 30
+      },
+      {
+        "hafs": 31,
+        "warsh": 31,
+        "qaloon": 31
+      },
+      {
+        "hafs": 32,
+        "warsh": 32,
+        "qaloon": 32
+      },
+      {
+        "hafs": 33,
+        "warsh": 33,
+        "qaloon": 33
+      },
+      {
+        "hafs": 34,
+        "warsh": 34,
+        "qaloon": 34
+      },
+      {
+        "hafs": 35,
+        "warsh": 35,
+        "qaloon": 35
+      },
+      {
+        "hafs": 36,
+        "warsh": 36,
+        "qaloon": 36
+      },
+      {
+        "hafs": 37,
+        "warsh": 37,
+        "qaloon": 37
+      },
+      {
+        "hafs": 38,
+        "warsh": 38,
+        "qaloon": 38
+      },
+      {
+        "hafs": 39,
+        "warsh": 39,
+        "qaloon": 39
+      },
+      {
+        "hafs": 40,
+        "warsh": 40,
+        "qaloon": 40
+      },
+      {
+        "hafs": 41,
+        "warsh": 41,
+        "qaloon": 41
+      },
+      {
+        "hafs": 42,
+        "warsh": 42,
+        "qaloon": 42
+      },
+      {
+        "hafs": 43,
+        "warsh": 43,
+        "qaloon": 43
+      },
+      {
+        "hafs": 44,
+        "warsh": 44,
+        "qaloon": 44
+      },
+      {
+        "hafs": 45,
+        "warsh": 45,
+        "qaloon": 45
+      },
+      {
+        "hafs": 46,
+        "warsh": 46,
+        "qaloon": 46
+      },
+      {
+        "hafs": 47,
+        "warsh": 47,
+        "qaloon": 47
+      },
+      {
+        "hafs": 48,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 49,
+        "warsh": 49,
+        "qaloon": 49
+      },
+      {
+        "hafs": 50,
+        "warsh": 50,
+        "qaloon": 50
+      },
+      {
+        "hafs": 51,
+        "warsh": 51,
+        "qaloon": 51
+      },
+      {
+        "hafs": 52,
+        "warsh": 52,
+        "qaloon": 52
+      },
+      {
+        "hafs": 53,
+        "warsh": 53,
+        "qaloon": 53
+      },
+      {
+        "hafs": 54,
+        "warsh": 54,
+        "qaloon": 54
+      },
+      {
+        "hafs": 55,
+        "warsh": 55,
+        "qaloon": 55
+      },
+      {
+        "hafs": 56,
+        "warsh": 56,
+        "qaloon": 56
+      },
+      {
+        "hafs": 57,
+        "warsh": 57,
+        "qaloon": 57
+      },
+      {
+        "hafs": 58,
+        "warsh": 58,
+        "qaloon": 58
+      },
+      {
+        "hafs": 59,
+        "warsh": 59,
+        "qaloon": 59
+      },
+      {
+        "hafs": 60,
+        "warsh": 60,
+        "qaloon": 60
+      },
+      {
+        "hafs": 61,
+        "warsh": 61,
+        "qaloon": 61
+      },
+      {
+        "hafs": 62,
+        "warsh": 62,
+        "qaloon": 62
+      },
+      {
+        "hafs": 63,
+        "warsh": 63,
+        "qaloon": 63
+      },
+      {
+        "hafs": 64,
+        "warsh": 64,
+        "qaloon": 64
+      },
+      {
+        "hafs": 65,
+        "warsh": 65,
+        "qaloon": 65
+      },
+      {
+        "hafs": 66,
+        "warsh": 66,
+        "qaloon": 66
+      },
+      {
+        "hafs": 67,
+        "warsh": 67,
+        "qaloon": 67
+      },
+      {
+        "hafs": 68,
+        "warsh": 68,
+        "qaloon": 68
+      },
+      {
+        "hafs": 69,
+        "warsh": 69,
+        "qaloon": 69
+      }
+    ],
     "30": [
       {
         "hafs": 1,
@@ -12304,6 +15735,164 @@
         "hafs": 34,
         "warsh": 33,
         "qaloon": 33
+      }
+    ],
+    "32": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 4,
+        "warsh": 3,
+        "qaloon": 3
+      },
+      {
+        "hafs": 5,
+        "warsh": 4,
+        "qaloon": 4
+      },
+      {
+        "hafs": 6,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 7,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 8,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 9,
+        "warsh": 8,
+        "qaloon": 8
+      },
+      {
+        "hafs": 10,
+        "warsh": [
+          9,
+          10
+        ],
+        "qaloon": [
+          9,
+          10
+        ]
+      },
+      {
+        "hafs": 11,
+        "warsh": 11,
+        "qaloon": 11
+      },
+      {
+        "hafs": 12,
+        "warsh": 12,
+        "qaloon": 12
+      },
+      {
+        "hafs": 13,
+        "warsh": 13,
+        "qaloon": 13
+      },
+      {
+        "hafs": 14,
+        "warsh": 14,
+        "qaloon": 14
+      },
+      {
+        "hafs": 15,
+        "warsh": 15,
+        "qaloon": 15
+      },
+      {
+        "hafs": 16,
+        "warsh": 16,
+        "qaloon": 16
+      },
+      {
+        "hafs": 17,
+        "warsh": 17,
+        "qaloon": 17
+      },
+      {
+        "hafs": 18,
+        "warsh": 18,
+        "qaloon": 18
+      },
+      {
+        "hafs": 19,
+        "warsh": 19,
+        "qaloon": 19
+      },
+      {
+        "hafs": 20,
+        "warsh": 20,
+        "qaloon": 20
+      },
+      {
+        "hafs": 21,
+        "warsh": 21,
+        "qaloon": 21
+      },
+      {
+        "hafs": 22,
+        "warsh": 22,
+        "qaloon": 22
+      },
+      {
+        "hafs": 23,
+        "warsh": 23,
+        "qaloon": 23
+      },
+      {
+        "hafs": 24,
+        "warsh": 24,
+        "qaloon": 24
+      },
+      {
+        "hafs": 25,
+        "warsh": 25,
+        "qaloon": 25
+      },
+      {
+        "hafs": 26,
+        "warsh": 26,
+        "qaloon": 26
+      },
+      {
+        "hafs": 27,
+        "warsh": 27,
+        "qaloon": 27
+      },
+      {
+        "hafs": 28,
+        "warsh": 28,
+        "qaloon": 28
+      },
+      {
+        "hafs": 29,
+        "warsh": 29,
+        "qaloon": 29
+      },
+      {
+        "hafs": 30,
+        "warsh": 30,
+        "qaloon": 30
       }
     ],
     "35": [
@@ -14757,6 +18346,459 @@
         "hafs": 53,
         "warsh": 50,
         "qaloon": 50
+      }
+    ],
+    "43": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 4,
+        "warsh": 3,
+        "qaloon": 3
+      },
+      {
+        "hafs": 5,
+        "warsh": 4,
+        "qaloon": 4
+      },
+      {
+        "hafs": 6,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 7,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 8,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 9,
+        "warsh": 8,
+        "qaloon": 8
+      },
+      {
+        "hafs": 10,
+        "warsh": 9,
+        "qaloon": 9
+      },
+      {
+        "hafs": 11,
+        "warsh": 10,
+        "qaloon": 10
+      },
+      {
+        "hafs": 12,
+        "warsh": 11,
+        "qaloon": 11
+      },
+      {
+        "hafs": 13,
+        "warsh": 12,
+        "qaloon": 12
+      },
+      {
+        "hafs": 14,
+        "warsh": 13,
+        "qaloon": 13
+      },
+      {
+        "hafs": 15,
+        "warsh": 14,
+        "qaloon": 14
+      },
+      {
+        "hafs": 16,
+        "warsh": 15,
+        "qaloon": 15
+      },
+      {
+        "hafs": 17,
+        "warsh": 16,
+        "qaloon": 16
+      },
+      {
+        "hafs": 18,
+        "warsh": 17,
+        "qaloon": 17
+      },
+      {
+        "hafs": 19,
+        "warsh": 18,
+        "qaloon": 18
+      },
+      {
+        "hafs": 20,
+        "warsh": 19,
+        "qaloon": 19
+      },
+      {
+        "hafs": 21,
+        "warsh": 20,
+        "qaloon": 20
+      },
+      {
+        "hafs": 22,
+        "warsh": 21,
+        "qaloon": 21
+      },
+      {
+        "hafs": 23,
+        "warsh": 22,
+        "qaloon": 22
+      },
+      {
+        "hafs": 24,
+        "warsh": 23,
+        "qaloon": 23
+      },
+      {
+        "hafs": 25,
+        "warsh": 24,
+        "qaloon": 24
+      },
+      {
+        "hafs": 26,
+        "warsh": 25,
+        "qaloon": 25
+      },
+      {
+        "hafs": 27,
+        "warsh": 26,
+        "qaloon": 26
+      },
+      {
+        "hafs": 28,
+        "warsh": 27,
+        "qaloon": 27
+      },
+      {
+        "hafs": 29,
+        "warsh": 28,
+        "qaloon": 28
+      },
+      {
+        "hafs": 30,
+        "warsh": 29,
+        "qaloon": 29
+      },
+      {
+        "hafs": 31,
+        "warsh": 30,
+        "qaloon": 30
+      },
+      {
+        "hafs": 32,
+        "warsh": 31,
+        "qaloon": 31
+      },
+      {
+        "hafs": 33,
+        "warsh": 32,
+        "qaloon": 32
+      },
+      {
+        "hafs": 34,
+        "warsh": 33,
+        "qaloon": 33
+      },
+      {
+        "hafs": 35,
+        "warsh": 34,
+        "qaloon": 34
+      },
+      {
+        "hafs": 36,
+        "warsh": 35,
+        "qaloon": 35
+      },
+      {
+        "hafs": 37,
+        "warsh": 36,
+        "qaloon": 36
+      },
+      {
+        "hafs": 38,
+        "warsh": 37,
+        "qaloon": 37
+      },
+      {
+        "hafs": 39,
+        "warsh": 38,
+        "qaloon": 38
+      },
+      {
+        "hafs": 40,
+        "warsh": 39,
+        "qaloon": 39
+      },
+      {
+        "hafs": 41,
+        "warsh": 40,
+        "qaloon": 40
+      },
+      {
+        "hafs": 42,
+        "warsh": 41,
+        "qaloon": 41
+      },
+      {
+        "hafs": 43,
+        "warsh": 42,
+        "qaloon": 42
+      },
+      {
+        "hafs": 44,
+        "warsh": 43,
+        "qaloon": 43
+      },
+      {
+        "hafs": 45,
+        "warsh": 44,
+        "qaloon": 44
+      },
+      {
+        "hafs": 46,
+        "warsh": 45,
+        "qaloon": 45
+      },
+      {
+        "hafs": 47,
+        "warsh": 46,
+        "qaloon": 46
+      },
+      {
+        "hafs": 48,
+        "warsh": 47,
+        "qaloon": 47
+      },
+      {
+        "hafs": 49,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 50,
+        "warsh": 49,
+        "qaloon": 49
+      },
+      {
+        "hafs": 51,
+        "warsh": 50,
+        "qaloon": 50
+      },
+      {
+        "hafs": 52,
+        "warsh": [
+          51,
+          52
+        ],
+        "qaloon": [
+          51,
+          52
+        ]
+      },
+      {
+        "hafs": 53,
+        "warsh": 53,
+        "qaloon": 53
+      },
+      {
+        "hafs": 54,
+        "warsh": 54,
+        "qaloon": 54
+      },
+      {
+        "hafs": 55,
+        "warsh": 55,
+        "qaloon": 55
+      },
+      {
+        "hafs": 56,
+        "warsh": 56,
+        "qaloon": 56
+      },
+      {
+        "hafs": 57,
+        "warsh": 57,
+        "qaloon": 57
+      },
+      {
+        "hafs": 58,
+        "warsh": 58,
+        "qaloon": 58
+      },
+      {
+        "hafs": 59,
+        "warsh": 59,
+        "qaloon": 59
+      },
+      {
+        "hafs": 60,
+        "warsh": 60,
+        "qaloon": 60
+      },
+      {
+        "hafs": 61,
+        "warsh": 61,
+        "qaloon": 61
+      },
+      {
+        "hafs": 62,
+        "warsh": 62,
+        "qaloon": 62
+      },
+      {
+        "hafs": 63,
+        "warsh": 63,
+        "qaloon": 63
+      },
+      {
+        "hafs": 64,
+        "warsh": 64,
+        "qaloon": 64
+      },
+      {
+        "hafs": 65,
+        "warsh": 65,
+        "qaloon": 65
+      },
+      {
+        "hafs": 66,
+        "warsh": 66,
+        "qaloon": 66
+      },
+      {
+        "hafs": 67,
+        "warsh": 67,
+        "qaloon": 67
+      },
+      {
+        "hafs": 68,
+        "warsh": 68,
+        "qaloon": 68
+      },
+      {
+        "hafs": 69,
+        "warsh": 69,
+        "qaloon": 69
+      },
+      {
+        "hafs": 70,
+        "warsh": 70,
+        "qaloon": 70
+      },
+      {
+        "hafs": 71,
+        "warsh": 71,
+        "qaloon": 71
+      },
+      {
+        "hafs": 72,
+        "warsh": 72,
+        "qaloon": 72
+      },
+      {
+        "hafs": 73,
+        "warsh": 73,
+        "qaloon": 73
+      },
+      {
+        "hafs": 74,
+        "warsh": 74,
+        "qaloon": 74
+      },
+      {
+        "hafs": 75,
+        "warsh": 75,
+        "qaloon": 75
+      },
+      {
+        "hafs": 76,
+        "warsh": 76,
+        "qaloon": 76
+      },
+      {
+        "hafs": 77,
+        "warsh": 77,
+        "qaloon": 77
+      },
+      {
+        "hafs": 78,
+        "warsh": 78,
+        "qaloon": 78
+      },
+      {
+        "hafs": 79,
+        "warsh": 79,
+        "qaloon": 79
+      },
+      {
+        "hafs": 80,
+        "warsh": 80,
+        "qaloon": 80
+      },
+      {
+        "hafs": 81,
+        "warsh": 81,
+        "qaloon": 81
+      },
+      {
+        "hafs": 82,
+        "warsh": 82,
+        "qaloon": 82
+      },
+      {
+        "hafs": 83,
+        "warsh": 83,
+        "qaloon": 83
+      },
+      {
+        "hafs": 84,
+        "warsh": 84,
+        "qaloon": 84
+      },
+      {
+        "hafs": 85,
+        "warsh": 85,
+        "qaloon": 85
+      },
+      {
+        "hafs": 86,
+        "warsh": 86,
+        "qaloon": 86
+      },
+      {
+        "hafs": 87,
+        "warsh": 87,
+        "qaloon": 87
+      },
+      {
+        "hafs": 88,
+        "warsh": 88,
+        "qaloon": 88
+      },
+      {
+        "hafs": 89,
+        "warsh": 89,
+        "qaloon": 89
       }
     ],
     "44": [
@@ -17501,6 +21543,274 @@
         "qaloon": 31
       }
     ],
+    "69": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": 2,
+        "qaloon": 2
+      },
+      {
+        "hafs": 4,
+        "warsh": 3,
+        "qaloon": 3
+      },
+      {
+        "hafs": 5,
+        "warsh": 4,
+        "qaloon": 4
+      },
+      {
+        "hafs": 6,
+        "warsh": 5,
+        "qaloon": 5
+      },
+      {
+        "hafs": 7,
+        "warsh": 6,
+        "qaloon": 6
+      },
+      {
+        "hafs": 8,
+        "warsh": 7,
+        "qaloon": 7
+      },
+      {
+        "hafs": 9,
+        "warsh": 8,
+        "qaloon": 8
+      },
+      {
+        "hafs": 10,
+        "warsh": 9,
+        "qaloon": 9
+      },
+      {
+        "hafs": 11,
+        "warsh": 10,
+        "qaloon": 10
+      },
+      {
+        "hafs": 12,
+        "warsh": 11,
+        "qaloon": 11
+      },
+      {
+        "hafs": 13,
+        "warsh": 12,
+        "qaloon": 12
+      },
+      {
+        "hafs": 14,
+        "warsh": 13,
+        "qaloon": 13
+      },
+      {
+        "hafs": 15,
+        "warsh": 14,
+        "qaloon": 14
+      },
+      {
+        "hafs": 16,
+        "warsh": 15,
+        "qaloon": 15
+      },
+      {
+        "hafs": 17,
+        "warsh": 16,
+        "qaloon": 16
+      },
+      {
+        "hafs": 18,
+        "warsh": 17,
+        "qaloon": 17
+      },
+      {
+        "hafs": 19,
+        "warsh": 18,
+        "qaloon": 18
+      },
+      {
+        "hafs": 20,
+        "warsh": 19,
+        "qaloon": 19
+      },
+      {
+        "hafs": 21,
+        "warsh": 20,
+        "qaloon": 20
+      },
+      {
+        "hafs": 22,
+        "warsh": 21,
+        "qaloon": 21
+      },
+      {
+        "hafs": 23,
+        "warsh": 22,
+        "qaloon": 22
+      },
+      {
+        "hafs": 24,
+        "warsh": 23,
+        "qaloon": 23
+      },
+      {
+        "hafs": 25,
+        "warsh": [
+          24,
+          25
+        ],
+        "qaloon": [
+          24,
+          25
+        ]
+      },
+      {
+        "hafs": 26,
+        "warsh": 26,
+        "qaloon": 26
+      },
+      {
+        "hafs": 27,
+        "warsh": 27,
+        "qaloon": 27
+      },
+      {
+        "hafs": 28,
+        "warsh": 28,
+        "qaloon": 28
+      },
+      {
+        "hafs": 29,
+        "warsh": 29,
+        "qaloon": 29
+      },
+      {
+        "hafs": 30,
+        "warsh": 30,
+        "qaloon": 30
+      },
+      {
+        "hafs": 31,
+        "warsh": 31,
+        "qaloon": 31
+      },
+      {
+        "hafs": 32,
+        "warsh": 32,
+        "qaloon": 32
+      },
+      {
+        "hafs": 33,
+        "warsh": 33,
+        "qaloon": 33
+      },
+      {
+        "hafs": 34,
+        "warsh": 34,
+        "qaloon": 34
+      },
+      {
+        "hafs": 35,
+        "warsh": 35,
+        "qaloon": 35
+      },
+      {
+        "hafs": 36,
+        "warsh": 36,
+        "qaloon": 36
+      },
+      {
+        "hafs": 37,
+        "warsh": 37,
+        "qaloon": 37
+      },
+      {
+        "hafs": 38,
+        "warsh": 38,
+        "qaloon": 38
+      },
+      {
+        "hafs": 39,
+        "warsh": 39,
+        "qaloon": 39
+      },
+      {
+        "hafs": 40,
+        "warsh": 40,
+        "qaloon": 40
+      },
+      {
+        "hafs": 41,
+        "warsh": 41,
+        "qaloon": 41
+      },
+      {
+        "hafs": 42,
+        "warsh": 42,
+        "qaloon": 42
+      },
+      {
+        "hafs": 43,
+        "warsh": 43,
+        "qaloon": 43
+      },
+      {
+        "hafs": 44,
+        "warsh": 44,
+        "qaloon": 44
+      },
+      {
+        "hafs": 45,
+        "warsh": 45,
+        "qaloon": 45
+      },
+      {
+        "hafs": 46,
+        "warsh": 46,
+        "qaloon": 46
+      },
+      {
+        "hafs": 47,
+        "warsh": 47,
+        "qaloon": 47
+      },
+      {
+        "hafs": 48,
+        "warsh": 48,
+        "qaloon": 48
+      },
+      {
+        "hafs": 49,
+        "warsh": 49,
+        "qaloon": 49
+      },
+      {
+        "hafs": 50,
+        "warsh": 50,
+        "qaloon": 50
+      },
+      {
+        "hafs": 51,
+        "warsh": 51,
+        "qaloon": 51
+      },
+      {
+        "hafs": 52,
+        "warsh": 52,
+        "qaloon": 52
+      }
+    ],
     "71": [
       {
         "hafs": 1,
@@ -18851,6 +23161,29 @@
         "qaloon": 10
       }
     ],
+    "103": [
+      {
+        "hafs": 1,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 2,
+        "warsh": 1,
+        "qaloon": 1
+      },
+      {
+        "hafs": 3,
+        "warsh": [
+          2,
+          3
+        ],
+        "qaloon": [
+          2,
+          3
+        ]
+      }
+    ],
     "106": [
       {
         "hafs": 1,
@@ -18930,6 +23263,12 @@
       "qaloonMethod": "word-stream",
       "reviewRecommended": false
     },
+    "3": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
     "4": {
       "method": "word-stream",
       "warshMethod": "word-stream",
@@ -18946,6 +23285,12 @@
       "method": "word-stream",
       "warshMethod": "word-stream",
       "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
+    "7": {
+      "method": "ayah-dp",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "ayah-dp",
       "reviewRecommended": false
     },
     "8": {
@@ -18973,6 +23318,12 @@
       "reviewRecommended": false
     },
     "14": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
+    "15": {
       "method": "word-stream",
       "warshMethod": "word-stream",
       "qaloonMethod": "word-stream",
@@ -19038,6 +23389,18 @@
       "qaloonMethod": "ayah-dp",
       "reviewRecommended": false
     },
+    "28": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
+    "29": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
     "30": {
       "method": "word-stream",
       "warshMethod": "word-stream",
@@ -19045,6 +23408,12 @@
       "reviewRecommended": false
     },
     "31": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
+    "32": {
       "method": "word-stream",
       "warshMethod": "word-stream",
       "qaloonMethod": "word-stream",
@@ -19087,6 +23456,12 @@
       "reviewRecommended": false
     },
     "42": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
+    "43": {
       "method": "word-stream",
       "warshMethod": "word-stream",
       "qaloonMethod": "word-stream",
@@ -19158,6 +23533,12 @@
       "qaloonMethod": "word-stream",
       "reviewRecommended": false
     },
+    "69": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
     "71": {
       "method": "word-stream",
       "warshMethod": "word-stream",
@@ -19207,6 +23588,12 @@
       "reviewRecommended": false
     },
     "101": {
+      "method": "word-stream",
+      "warshMethod": "word-stream",
+      "qaloonMethod": "word-stream",
+      "reviewRecommended": false
+    },
+    "103": {
       "method": "word-stream",
       "warshMethod": "word-stream",
       "qaloonMethod": "word-stream",

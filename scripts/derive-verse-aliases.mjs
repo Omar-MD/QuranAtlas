@@ -38,17 +38,20 @@ const REPO_ROOT = join(__dirname, '..')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')
 
-const RIWAYAT = ['hafs', 'warsh', 'qaloon']
-
-// Normalise Arabic text for word-stream comparison: strip diacritics,
-// alif/yaa/taa-marbuta variants, non-letter chars; collapse whitespace.
-const DIACRITICS_RE = /[ً-ٰٟۖ-ۭ‌-‏﻿]/g
+// Normalise Arabic text for word-stream comparison.
+// Promote U+0670 (alif khanjariyah) to explicit alif U+0627 BEFORE stripping
+// combining marks — Warsh rasm writes silent alif as ٰ where Hafs writes ا;
+// both denote the same alif phoneme, so they must tokenise identically.
 function normalise(s) {
-  let out = s.normalize('NFKD').replace(DIACRITICS_RE, '')
-  out = out.replace(/[ٱآأإ]/g, 'ا') // alif variants → ا
-  out = out.replace(/ى/g, 'ي')                     // alif maqsura → ي
-  out = out.replace(/ة/g, 'ه')                     // taa marbuta → ه
-  out = out.replace(/[^ء-ي\s]/g, '')               // strip non-letters
+  let out = s.normalize('NFKD')
+  out = out.replace(/\u0670/g, '\u0627')               // alif khanjariyah → ا
+  out = out.replace(/\p{M}/gu, '')                      // strip remaining combining marks
+  out = out.replace(/[\u0671\u0622\u0623\u0625]/g, '\u0627') // alif-wasla, madda-alif, alif-hamza → ا
+  out = out.replace(/[\u0649\u0626\u06D2]/g, '\u064A')        // alif-maqsura, hamza-on-ya, yeh-barree → ي
+  out = out.replace(/\u0629/g, '\u0647')               // taa marbuta → ه
+  out = out.replace(/[\u0621\u0624]/g, '')             // drop hamza-on-line, hamza-on-waw
+  out = out.replace(/[\u200C-\u200F\uFEFF]/g, '')     // strip zero-widths
+  out = out.replace(/[^\u0620-\u064A\s]/g, '')        // keep Arabic letter block + whitespace
   return out.replace(/\s+/g, ' ').trim()
 }
 
@@ -205,18 +208,12 @@ function alignWordStream(hafsAyat, otherAyat, otherKey, bismillahDrop) {
   }
 
   // For each Hafs ayah ending at h.cum[i], collect Other ayat whose range
-  // overlaps Hafs's [h.cum[i-1], h.cum[i]) word-position range.
+  // overlaps Hafs's word-position range.
   const aliases = []
   let oIdx = 0
-  let prevHEnd = 0
   for (let i = 0; i < h.cum.length; i++) {
     const hEnd = h.cum[i]
     const otherAyatHere = []
-    // Add the Other ayah that starts at or before prevHEnd and extends past it
-    if (oIdx < o.cum.length && (oIdx === 0 ? 0 : o.cum[oIdx - 1]) < hEnd) {
-      // current oIdx ayah overlaps
-    }
-    // Walk forward through Other ayat that END within [prevHEnd, hEnd]
     while (oIdx < o.cum.length && o.cum[oIdx] <= hEnd) {
       otherAyatHere.push(oIdx + 1)
       oIdx++
@@ -235,7 +232,6 @@ function alignWordStream(hafsAyat, otherAyat, otherKey, bismillahDrop) {
         : otherAyatHere.length === 1 ? otherAyatHere[0]
         : otherAyatHere,
     })
-    prevHEnd = hEnd
   }
   return aliases
 }
@@ -250,11 +246,6 @@ async function main() {
   for (const meta of surahsMeta) {
     const n = meta.n
     const counts = meta.counts
-    const isCountDivergent = !(counts.hafs === counts.warsh && counts.warsh === counts.qaloon)
-    // Surah 1 is semantically divergent even when counts agree (Bismillah is
-    // ayah 1 in Hafs but a standalone glyph in Warsh / Qaloon — every ayah
-    // index 1..6 references different content). Always emit aliases for it.
-    if (!isCountDivergent && n !== 1) { continue }
 
     const hafs = await loadRiwayahSurah('hafs', n)
     const warsh = await loadRiwayahSurah('warsh', n)
@@ -286,6 +277,14 @@ async function main() {
       warsh: wa.warsh,
       qaloon: q.aliases[i].qaloon,
     }))
+    // Identity-aligned surahs (every Hafs N → Warsh N → Qaloon N) carry no
+    // routing information; skip emit to keep the alias file scoped to the
+    // surahs that actually need cross-riwayah lookup. Surah 1 is the only
+    // identity-counted surah with semantic divergence (Bismillah carve-out)
+    // — keep it via the bismillah-drop path that produces a `null` for
+    // Hafs ayah 1.
+    const isIdentity = merged.every((a) => a.warsh === a.hafs && a.qaloon === a.hafs)
+    if (isIdentity && n !== 1) { continue }
     // Per-surah alignment quality. word-stream is the confident path
     // (cumulative-word-position alignment); end-fingerprint is the fallback
     // when qira'at-level word-count drift defeats word-stream — those

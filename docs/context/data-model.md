@@ -327,7 +327,7 @@ Cross-tab peers receive `SYNC_BOOKMARKS_UPDATED` with `{ verseKeys, riwayah }` a
 
 #### Translation ↔ riwayah alignment
 
-Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan numbering) partition the same Quranic text differently in 50 surahs (~22 ayat net difference: Hafs 6236, Warsh / Qaloon 6214). A Hafs-numbered translation cannot 1:1 map to every Warsh / Qaloon ayah without explicit scholarly aliases — at split boundaries the same Quranic text is partitioned across different ayah counts.
+Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan numbering) partition the same Quranic text differently. Hafs total 6236; Warsh / Qaloon 6214. A Hafs-numbered translation cannot 1:1 map to every Warsh / Qaloon ayah without explicit scholarly aliases — at split boundaries the same Quranic text is partitioned across different ayah counts. Note: count-equality across the three riwayat is **not** sufficient to imply identity boundaries (see `riwayat-dataset.md` § Challenges → "Boundary drift at equal counts" — 9 surahs have equal counts but internally drifted boundaries that resync via compensating splits).
 
 - `public/dataset/translations/_verse-aliases.json` — **per-ayah Hafs ↔ Warsh ↔ Qaloon equivalence table**, mechanically derived from KFGQPC by `scripts/derive-verse-aliases.mjs`. Schema:
   ```ts
@@ -339,7 +339,7 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
       qaloon: number | number[] | null,
     }>>,
     aliasMeta: Record<string, {
-      method: 'word-stream' | 'end-fingerprint',
+      method: 'word-stream' | 'ayah-dp',
       warshMethod: string,
       qaloonMethod: string,
       reviewRecommended: boolean,
@@ -347,9 +347,9 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
   }
   ```
   KFGQPC's Madinah Mushaf is the authoritative source — verse-boundary splits are encoded in the per-riwayah ayah arrays. Two aligners produce the table:
-    1. **Word-stream cumulative** (`method: 'word-stream'`) — 45 of 51 surahs. Concatenates each surah's ayah text per riwayah, walks both word streams together, recovers boundaries from cumulative-position parity.
-    2. **Ayah-boundary DP** (`method: 'ayah-dp'`) — 6 surahs (27, 36, 40, 41, 56, 57) where qira'at-level word-count drift defeats word-stream alignment. Dynamic-programming search over ayah groupings; minimises Σ |hWordCount − oWordCountSum| with `MAX_GROUP_SIZE = 3`. Handles both Madinan splits (Hafs 1 → Warsh [1, 2]) and Hafs combines (Hafs 1 + 2 → Warsh 1, e.g. surah 36 Yaseen).
-  Surah 1 is included for the Bismillah carve-out (Hafs 1:1 → `null` in Warsh / Qaloon — Bismillah renders as a standalone separator glyph, not as ayah). All 51 surahs carry `reviewRecommended: false`; both aligners produce structurally-correct alignments. Build hard-fails (`scripts/build-dataset.mjs::validateVerseAliases`) when the alias file is missing, has out-of-range indices, or has the wrong entry count for any surah.
+    1. **Word-stream cumulative** (`method: 'word-stream'`) — 53 of 60 surahs. Concatenates each surah's ayah text per riwayah, walks both word streams together, recovers boundaries from cumulative-position parity.
+    2. **Ayah-boundary DP** (`method: 'ayah-dp'`) — 7 surahs (7, 27, 36, 40, 41, 56, 57) where qira'at-level word-count drift defeats word-stream alignment. Dynamic-programming search over ayah groupings; minimises Σ |hWordCount − oWordCountSum| with `MAX_GROUP_SIZE = 4`. Handles both Madinan splits (Hafs 1 → Warsh [1, 2]) and Hafs combines (Hafs 1 + 2 → Warsh 1, e.g. surah 36 Yaseen).
+  Surah 1 is included for the Bismillah carve-out (Hafs 1:1 → `null` in Warsh / Qaloon — Bismillah renders as a standalone separator glyph, not as ayah). The derive script runs alignment for all 114 surahs and skips emit only when the result is true identity (every Hafs N → Warsh N → Qaloon N) — count-equality alone is **not** a skip trigger. Build hard-fails (`scripts/build-dataset.mjs::validateVerseAliases`) when the alias file is missing, has out-of-range indices, or has the wrong entry count for any surah.
   - **Runtime use**: `Reader.svelte::loadSurah` calls `data/verse-aliases.ts::loadVerseAliases()` once per session and `resolveTranslationFor(aliases, riwayah, surahNo, ayahNo)` per visible ayah. The resolver returns a `TranslationRole` discriminator:
     - `identity` — 1:1 alias (or surah without aliases). Render translation as-is.
     - `merged` — multiple Hafs ayat → this Madinan ayah (Hafs combine, e.g. surah 36 Warsh 1 = Hafs 1 + 2). Concat translations.
@@ -357,6 +357,7 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
     - `continuation` — subsequent half of a Hafs split. `Verse.svelte` renders a `qa-verse-translation--continuation` marker ("↑ continued from verse N") instead of duplicating the translation; the `primaryAyah` field carries N.
     - `none` — no Hafs equivalent (currently unreachable in shipped data after aliases land). Cell renders empty; dev-only `[translation-miss]` warning fires.
   - **Coverage impact**: with aliases applied, `provenance.json::translations[].coverage` reports 100% for all three riwayat; pre-aliases the cross-riwayah miss count was 26 ayat across 18 surahs.
+  - **Validation**: `scripts/validate-translation-mapping.mjs` is the canonical checker — modes A (alias-coverage), B (translation-source vs. quran.com qdc API, network), C (cross-riwayah render simulation, Jaccard ≥ 0.55). Run before any change to alias derivation, translation fetcher, or per-riwayah JSON. See `riwayat-dataset.md` § Validation & regression machinery.
 
 - `public/dataset/translations/_verse-map.json` — **checks anchor**, not a scholarly per-ayah equivalence table. Schema:
   ```ts

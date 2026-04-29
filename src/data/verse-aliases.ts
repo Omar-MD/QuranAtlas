@@ -12,10 +12,10 @@
  * Mushaf is the authoritative scholarly source — splits are encoded in the
  * dataset itself.
  *
- * Quality flag: 6 surahs (27, 36, 40, 41, 56, 57) align via end-fingerprint
+ * Quality flag: 7 surahs (7, 27, 36, 40, 41, 56, 57) align via ayah-DP
  * fallback because of qira'at-level word-count drift; their aliases carry
- * `reviewRecommended: true` and are less reliable than the 45 word-stream
- * surahs.
+ `aliasMeta[n].method === 'ayah-dp'` and are structurally valid but less
+ * confident than the 53 word-stream surahs.
  */
 
 import { CACHE_DATASET } from '../core/constants'
@@ -33,7 +33,7 @@ export type AliasEntry = {
 export type VerseAliases = {
   _meta: { version: number, description: string, generator: string, source: string, method: string, generatedAt: string }
   aliases: Record<string, AliasEntry[]>
-  aliasMeta: Record<string, { method: 'word-stream' | 'end-fingerprint', warshMethod: string, qaloonMethod: string, reviewRecommended: boolean }>
+  aliasMeta: Record<string, { method: 'word-stream' | 'ayah-dp', warshMethod: string, qaloonMethod: string, reviewRecommended: boolean }>
 }
 
 let cached: VerseAliases | null = null
