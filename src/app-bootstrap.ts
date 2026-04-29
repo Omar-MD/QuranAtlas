@@ -7,6 +7,7 @@
 // Imports from JS modules — types will be added in a later migration task
 import { openDB, get, LAYER_NAMES } from './core/db.js'
 import { loadGlobalPosition } from './reader/global-position'
+import { reshapeArabicVerses, reshapeAddedNodes } from './reader/font-reshape'
 import * as router from './core/router.js'
 import { emit, on } from './core/events.js'
 import { Events } from './core/constants.js'
@@ -104,30 +105,15 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   // here we only do the iOS-defense reshape observer setup that doesn't
   // depend on a specific riwayah.
   if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
-    // iOS Safari paints the reader DOM with a fallback font when verses
-    // mount before the KFGQPC Uthmanic riwayah face swaps in, then
-    // doesn't re-shape RTL Arabic text when font-display:swap brings in
-    // the real face — combining marks (sukun, dagger alif, small high
-    // seen) collapse to base position. Force a re-paint once fonts are
-    // ready AND each time the reader mounts new verses (router
-    // navigation, riwayah switch). Toggling a no-op transform
-    // invalidates the layout cache + re-runs glyph shaping with the
-    // now-loaded KFGQPC face.
-    const reshape = (root: ParentNode = document) => {
-      const verses = root.querySelectorAll('.qa-verse-arabic')
-      for (const el of verses) {
-        const v = el as HTMLElement
-        v.style.transform = 'translateZ(0)'
-        void v.offsetHeight
-        v.style.transform = ''
-      }
-    }
+    // Reshape logic + reasoning live in src/reader/font-reshape.ts. The
+    // observer scopes work to mutation.addedNodes — re-walking the whole
+    // document on every chunk-append turned Al-Baqarah's render into
+    // ~1700 forced reflows (audit R-04, 2026-04-29).
     let fontsAreReady = false
-    void document.fonts.ready.then(() => { fontsAreReady = true; reshape() }).catch(() => { /* ignore */ })
-    // Observe #main-content for new verse subtrees so post-mount renders
-    // also get the kick. Cheap — only fires when the router replaces the
-    // reader subtree, not on tashkeel toggles or font-size slider.
-    const observer = new MutationObserver(() => { if (fontsAreReady) reshape() })
+    void document.fonts.ready.then(() => { fontsAreReady = true; reshapeArabicVerses() }).catch(() => { /* ignore */ })
+    const observer = new MutationObserver((mutations) => {
+      if (fontsAreReady) reshapeAddedNodes(mutations)
+    })
     const startObserve = () => {
       const main = document.getElementById('main-content')
       if (main) observer.observe(main, { childList: true, subtree: true })

@@ -176,7 +176,7 @@ graph LR
 - **Role:** First-run 6-screen walkthrough (Svelte component). `Onboarding.svelte` exports `isComplete()` and `markComplete()` from its module script for use by the boot-time redirect in `app-bootstrap.ts`. Writes `settings.onboardingComplete` and `settings['riwayah']` (via `settings/riwayah.ts::setRiwayah`). `screens.ts` is pure data (shortcut rows, sample chips). Riwayah card options and labels are defined inline in `Onboarding.svelte`.
 
 ### `reader/`
-- **Files:** `Reader.svelte`, `Verse.svelte`, `SurahHeader.svelte`, `EdgeIndicator.svelte`, `PullToSwapIndicator.svelte`, `render-helpers.ts`, `chunked-append.ts`, `verse-scroll.ts`, `position.ts`, `global-position.ts`, `surah-swap.ts`, `edge-indicators.ts`, `scroll-tracker.ts`
+- **Files:** `Reader.svelte`, `Verse.svelte`, `SurahHeader.svelte`, `EdgeIndicator.svelte`, `PullToSwapIndicator.svelte`, `render-helpers.ts`, `chunked-append.ts`, `verse-scroll.ts`, `position.ts`, `global-position.ts`, `surah-swap.ts`, `edge-indicators.ts`, `scroll-tracker.ts`, `font-reshape.ts`
 - **Imports from:** `a11y`, `core`, `data`, `state`
 - **Imported by:** `app-bootstrap.ts` *(route handler — dynamic import via `Reader.svelte`; also static import of `global-position.ts` for launch restore)*; `nav/CommandSheet.svelte`, `nav/MarginHeader.svelte`, `surahs/SurahList.svelte` (each statically import `global-position.ts`).
 - **Role:** Main reading surface (Svelte 5), split into focused modules:
