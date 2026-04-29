@@ -33,13 +33,21 @@ precacheAndRoute(self.__WB_MANIFEST || [])
 //
 // NOTE: vite-plugin-pwa's `workbox.runtimeCaching` option is silently ignored
 // when using the 'injectManifest' strategy — routes must be registered here.
+// Stopgap cap of 1000 entries: the manifest currently lists ~459 files
+// (3 riwayat × 114 surahs + 114 saheeh splits + juz/surahs/provenance/
+// _verse-aliases/_verse-map/manifest). The earlier cap of 200 silently
+// LRU-evicted the offline corpus the moment a user read across all three
+// riwayat. Per-asset-class partition + per-feature offline opt-in selector
+// land in N21 (audit R-11, C-4); when that ships, audio/mushaf/search
+// move out of this cache and the cap can come down accordingly. Per-origin
+// quota dominates well before the entry count does.
 registerRoute(
   ({ url }) => url.pathname.startsWith('/dataset/'),
   new NetworkFirst({
     cacheName: CACHE_DATASET,
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+      new ExpirationPlugin({ maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 * 365 }),
     ],
   })
 )
