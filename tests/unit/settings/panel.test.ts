@@ -284,10 +284,15 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     expect(labels).toEqual(['Font size', 'Reading flow'])
   })
 
-  it('D5: reset button hidden by default; appears after slider change; click restores defaults', async () => {
+  it('D5: reset button always rendered (disabled idle at default); enables on slider change; click restores defaults', async () => {
     await mountAndOpen()
 
-    expect(document.querySelector('[data-testid="typography-reset"]')).toBeNull()
+    // Always rendered now (no layout shift when sliders move). At default
+    // it is disabled + carries the --idle modifier.
+    const initialBtn = document.querySelector('[data-testid="typography-reset"]') as HTMLButtonElement
+    expect(initialBtn).not.toBeNull()
+    expect(initialBtn.disabled).toBe(true)
+    expect(initialBtn.classList.contains('qa-settings-reset--idle')).toBe(true)
 
     const flowSlider = document.querySelector('#qa-tslider-flow') as HTMLInputElement
     flowSlider.value = '4'
@@ -298,7 +303,8 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     })
 
     const resetBtn = document.querySelector('[data-testid="typography-reset"]') as HTMLButtonElement
-    expect(resetBtn).not.toBeNull()
+    expect(resetBtn.disabled).toBe(false)
+    expect(resetBtn.classList.contains('qa-settings-reset--idle')).toBe(false)
 
     await fireEvent.click(resetBtn)
 
@@ -307,7 +313,9 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
       expect(settings.readerMargin).toBe('md')
       expect(document.documentElement.dataset.lineSpacing).toBe('md')
       expect(document.documentElement.dataset.readerMargin).toBe('md')
-      expect(document.querySelector('[data-testid="typography-reset"]')).toBeNull()
+      const after = document.querySelector('[data-testid="typography-reset"]') as HTMLButtonElement
+      expect(after.disabled).toBe(true)
+      expect(after.classList.contains('qa-settings-reset--idle')).toBe(true)
     })
   })
 

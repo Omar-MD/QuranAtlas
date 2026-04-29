@@ -171,11 +171,6 @@
     settings.fontSize === 'md' && readingFlowStep === 'md'
   )
 
-  function readingAside(): string {
-    if (typographyIsDefault) { return 'Default' }
-    return `Aa ${settings.fontSize} · ↕ ${readingFlowStep}`
-  }
-
   async function handleTranslationToggle() {
     const next = !settings.translationVisible
     try {
@@ -251,7 +246,9 @@
       </div>
       <!-- tabindex=0 makes the scrollable preview keyboard-accessible
            (axe-core scrollable-region rule). aria-label gives screen
-           readers a name for the region. -->
+           readers a name for the region. role=region on a div is the
+           supported pattern for a labeled scrollable landmark. -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div
         class="qa-settings-preview-stage"
         tabindex="0"
@@ -277,7 +274,17 @@
       <section class="qa-settings-sect qa-settings-sect--reading">
         <div class="qa-settings-sect-hdr">
           <span class="qa-settings-sect-name">Reading</span>
-          <span class="qa-settings-sect-aside">{readingAside()}</span>
+          <!-- Reset always rendered (disabled at default) so slider movement
+               does not push the rest of the section up/down. -->
+          <button
+            type="button"
+            class="qa-settings-reset"
+            class:qa-settings-reset--idle={typographyIsDefault}
+            onclick={handleResetTypography}
+            disabled={typographyIsDefault}
+            data-testid="typography-reset"
+            aria-label="Reset reading to default"
+          >↻ Reset</button>
         </div>
 
         <div class="qa-settings-slider">
@@ -324,14 +331,6 @@
           </div>
         </div>
 
-        {#if !typographyIsDefault}
-          <button
-            type="button"
-            class="qa-settings-reset"
-            onclick={handleResetTypography}
-            data-testid="typography-reset"
-          >Reset to default</button>
-        {/if}
       </section>
 
       <!-- Sources: flex 1 -->
