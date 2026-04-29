@@ -10,14 +10,16 @@ const DATASET_BASE = '/dataset'
 const FETCH_TIMEOUT_MS = 3000
 
 export type AyahRecord = {
-  id: number
+  // id / line_start / line_end carried for Hafs only (audit R-24,
+  // 2026-04-29) because the v2.1 page-image mushaf renderer will
+  // need them. Warsh + Qaloon ship without these fields.
+  id?: number
   jozz: number
   page: string
-  line_start: number
-  line_end: number
+  line_start?: number
+  line_end?: number
   aya_no: number
   aya_text: string
-  aya_text_emlaey?: string
 }
 
 export type SurahPayload = {

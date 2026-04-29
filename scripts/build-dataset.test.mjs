@@ -8,7 +8,7 @@ describe('splitRiwayah', () => {
     { id: 3, jozz: 1, sora: 2, sora_name_en: 'Al-Baqarah', sora_name_ar: 'البَقَرَة', page: '2', line_start: 3, line_end: 3, aya_no: 1, aya_text: 'الم ١', aya_text_emlaey: 'الم ١' },
   ]
 
-  it('groups ayat by surah, normalises sora→sura_no, preserves aya_text_emlaey for Hafs', () => {
+  it('groups ayat by surah, normalises sora→sura_no', () => {
     const split = splitRiwayah('hafs', sampleHafs)
     expect(Object.keys(split).sort()).toEqual(['001', '002'])
     const s1 = split['001']
@@ -21,6 +21,12 @@ describe('splitRiwayah', () => {
     expect(s1.ayat[0]).not.toHaveProperty('sora_name_en')
   })
 
+  it('drops aya_text_emlaey from output (audit R-24, 2026-04-29 — was 30% of Hafs payload, zero src/ readers)', () => {
+    const split = splitRiwayah('hafs', sampleHafs)
+    expect(split['001'].ayat[0]).not.toHaveProperty('aya_text_emlaey')
+    expect(split['001'].ayat[1]).not.toHaveProperty('aya_text_emlaey')
+  })
+
   it('strips trailing Arabic-Indic verse number from aya_text', () => {
     const split = splitRiwayah('hafs', sampleHafs)
     expect(split['001'].ayat[0].aya_text).toBe('بسم الله')
@@ -28,10 +34,11 @@ describe('splitRiwayah', () => {
     expect(split['002'].ayat[0].aya_text).toBe('الم')
   })
 
-  it('strips trailing Arabic-Indic verse number from aya_text_emlaey when present', () => {
+  it('keeps id / line_start / line_end on Hafs (mushaf v2.1 future)', () => {
     const split = splitRiwayah('hafs', sampleHafs)
-    expect(split['001'].ayat[0].aya_text_emlaey).toBe('بسم الله')
-    expect(split['001'].ayat[1].aya_text_emlaey).toBe('الحمد لله')
+    expect(split['001'].ayat[0]).toHaveProperty('id')
+    expect(split['001'].ayat[0]).toHaveProperty('line_start')
+    expect(split['001'].ayat[0]).toHaveProperty('line_end')
   })
 
   it('throws when captured digit disagrees with aya_no', () => {
@@ -48,10 +55,13 @@ describe('splitRiwayah', () => {
     { id: 1, jozz: 1, sura_no: 1, sura_name_en: 'Al-Fātiḥah', sura_name_ar: 'الفَاتِحة', page: '1', line_start: 3, line_end: 3, aya_no: 1, aya_text: 'اِ۬لْحَمْدُ ١' },
   ]
 
-  it('preserves sura_no field-name for Warsh / Qaloon (no aya_text_emlaey)', () => {
+  it('preserves sura_no field-name for Warsh / Qaloon, drops aya_text_emlaey + id + line_* (audit R-24)', () => {
     const split = splitRiwayah('warsh', sampleWarsh)
     expect(split['001'].riwayah).toBe('warsh')
     expect(split['001'].ayat[0]).not.toHaveProperty('aya_text_emlaey')
+    expect(split['001'].ayat[0]).not.toHaveProperty('id')
+    expect(split['001'].ayat[0]).not.toHaveProperty('line_start')
+    expect(split['001'].ayat[0]).not.toHaveProperty('line_end')
     expect(split['001'].ayat[0].aya_text).toBe('اِ۬لْحَمْدُ')
   })
 })

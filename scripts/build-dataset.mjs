@@ -126,19 +126,23 @@ export function splitRiwayah(riwayah, ayat) {
         ayat: [],
       }
     }
+    // Audit R-24 (2026-04-29): aya_text_emlaey was ~30% of Hafs corpus
+    // bytes with zero src/ readers; drop entirely. id / line_start /
+    // line_end are kept ONLY for Hafs because the v2.1 page-image
+    // mushaf renderer (future-work.md #14) will need them for the
+    // KFGQPC Hafs layout. Warsh + Qaloon don't have authored mushaf
+    // page metadata in our source files anyway, so dropping them there
+    // is purely a payload win (~16% per file).
     const ayah = {
-      id: a.id,
       jozz: a.jozz,
       page: a.page,
-      line_start: a.line_start,
-      line_end: a.line_end,
       aya_no: a.aya_no,
       aya_text: stripTrailingAyaNumber(a.aya_text, a.aya_no),
     }
-    if (a.aya_text_emlaey) {
-      // emlaey may or may not carry the trailing digit — try strip, fall back to original on miss
-      try { ayah.aya_text_emlaey = stripTrailingAyaNumber(a.aya_text_emlaey, a.aya_no) }
-      catch { ayah.aya_text_emlaey = a.aya_text_emlaey }
+    if (riwayah === 'hafs') {
+      ayah.id = a.id
+      ayah.line_start = a.line_start
+      ayah.line_end = a.line_end
     }
     grouped[key].ayat.push(ayah)
   }

@@ -63,7 +63,9 @@ describe('data/dataset', () => {
       const { getSurah } = await import('../../../src/data/dataset.ts')
       const data = await getSurah(1)
       expect(data.riwayah).toBe('hafs')
-      expect(data.ayat[0]).toHaveProperty('aya_text_emlaey') // Hafs-only field
+      // line_start retained on Hafs only (audit R-24, 2026-04-29) for the
+      // v2.1 page-image mushaf renderer; Warsh/Qaloon ship without it.
+      expect(data.ayat[0]).toHaveProperty('line_start')
     })
 
     it('rejects out-of-range surah numbers', async () => {
