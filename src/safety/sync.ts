@@ -214,13 +214,38 @@ function handleChannelMessage(event: MessageEvent): void {
   }
 }
 
+// Per-element validation for inbound BroadcastChannel arrays. Audit
+// R-21 (2026-04-29): a peer tab on a hostile bundle could post arrays
+// with arbitrary element shapes (proto-pollution payloads, unbounded
+// strings). Cap element count + verse-key shape + edge-id shape so a
+// downstream consumer that spreads the array can't be poisoned.
+const VERSE_KEY_RE = /^\d+:\d+$/
+const EDGE_ID_RE = /^[a-zA-Z0-9_-]+$/
+const MAX_VERSE_KEYS = 10_000   // a single broadcast > 10k keys is hostile
+const MAX_EDGE_IDS = 10_000
+
+function validVerseKeys(arr: unknown): arr is string[] {
+  if (!Array.isArray(arr)) return false
+  if (arr.length > MAX_VERSE_KEYS) return false
+  return arr.every((k) => typeof k === 'string' && k.length <= 12 && VERSE_KEY_RE.test(k))
+}
+
+function validEdgeIds(arr: unknown): arr is string[] {
+  if (!Array.isArray(arr)) return false
+  if (arr.length > MAX_EDGE_IDS) return false
+  return arr.every((id) => typeof id === 'string' && id.length <= 64 && EDGE_ID_RE.test(id))
+}
+
 // Default in-tree handlers for marks / edges / bookmarks. Feature-owned
 // topics (settings.riwayah, future audio, etc.) registerTopic from their
 // own init modules.
 function registerCoreTopicHandlers(): void {
   registerTopic('marks', (payload) => {
-    const p = (payload || {}) as { verseKeys?: string[] }
-    if (!Array.isArray(p.verseKeys)) { return }
+    const p = (payload || {}) as { verseKeys?: unknown }
+    if (!validVerseKeys(p.verseKeys)) {
+      logger.warn('Sync rejected marks payload: invalid verseKeys array')
+      return
+    }
     for (const handler of markChangeHandlers) {
       try {
         handler({ verseKeys: p.verseKeys })
@@ -231,14 +256,23 @@ function registerCoreTopicHandlers(): void {
     emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: p.verseKeys })
   })
   registerTopic('edges', (payload) => {
-    const p = (payload || {}) as { edgeIds?: string[] }
-    if (!Array.isArray(p.edgeIds)) { return }
+    const p = (payload || {}) as { edgeIds?: unknown }
+    if (!validEdgeIds(p.edgeIds)) {
+      logger.warn('Sync rejected edges payload: invalid edgeIds array')
+      return
+    }
     emit(Events.SYNC_EDGES_UPDATED, { edgeIds: p.edgeIds })
   })
   registerTopic('bookmarks', (payload) => {
-    const p = (payload || {}) as { verseKeys?: string[]; riwayah?: string }
-    if (!Array.isArray(p.verseKeys)) { return }
-    if (p.riwayah !== 'hafs' && p.riwayah !== 'warsh' && p.riwayah !== 'qaloon') { return }
+    const p = (payload || {}) as { verseKeys?: unknown; riwayah?: string }
+    if (!validVerseKeys(p.verseKeys)) {
+      logger.warn('Sync rejected bookmarks payload: invalid verseKeys array')
+      return
+    }
+    if (p.riwayah !== 'hafs' && p.riwayah !== 'warsh' && p.riwayah !== 'qaloon') {
+      logger.warn('Sync rejected bookmarks payload: invalid riwayah')
+      return
+    }
     emit(Events.SYNC_BOOKMARKS_UPDATED, { verseKeys: p.verseKeys, riwayah: p.riwayah })
   })
 }

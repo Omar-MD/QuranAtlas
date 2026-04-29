@@ -3,9 +3,15 @@
 // import the connection lifecycle independently of the validator
 // machinery — audit C-2 / R-07 (2026-04-29).
 //
-// Separated from connection.ts so future per-element length caps,
-// enum tightening, and `__proto__`/`constructor` strip (audit R-20 / N18)
-// can land here without touching the connection lifecycle.
+// Adds (N18, audit R-20 / R-21):
+//  - per-string length caps so a crafted MARKS IMPORT (#8) can't
+//    quota-DoS the store
+//  - per-array length caps + per-element length caps for tag arrays
+//  - bookmark.riwayah enum check (string passed through arbitrarily
+//    pre-fix — `'literally any value'` would persist)
+//  - __proto__ / constructor / prototype stripping uniformly applied
+//    so a malicious payload can't pollute a downstream consumer that
+//    spreads the record into a fresh object
 
 /**
  * Required fields per store, with their expected runtime types.
@@ -55,6 +61,77 @@ function _typeOf(v: unknown): string {
   return typeof v
 }
 
+// Per-store length caps applied after type-check. Keep generous enough
+// that legitimate user content (long footnotes, deep tag taxonomies)
+// fits, but tight enough that a crafted import can't dump megabytes
+// per record.
+const STRING_CAPS: Record<string, Record<string, number>> = {
+  marks: {
+    verseKey: 12,        // 'NNN:NNN' max
+    note: 500,           // matches the editor's UI cap
+  },
+  edges: {
+    id: 64,
+    from: 12, to: 12,
+    kind: 64, _canonKind: 64,
+    note: 500,
+  },
+  bookmarks: {
+    riwayah: 8, verseKey: 12,
+  },
+  meta: { id: 64 },
+  activationState: { id: 64, status: 32 },
+  datasetMeta: { id: 64 },
+  settings: { key: 64 },
+}
+
+const ARRAY_CAPS = { perArray: 256, perElement: 64 }
+
+const RIWAYAH_ENUM = new Set(['hafs', 'warsh', 'qaloon'])
+
+const PROTOTYPE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+function checkLengthCaps(storeName: string, rec: Record<string, unknown>): void {
+  // Per-string field caps.
+  const caps = STRING_CAPS[storeName]
+  if (caps) {
+    for (const [field, max] of Object.entries(caps)) {
+      const v = rec[field]
+      if (typeof v === 'string' && v.length > max) {
+        throw new Error(`${storeName}.${field}: length ${v.length} exceeds cap ${max}`)
+      }
+    }
+  }
+  // Per-array length + per-element length for any string[] field on the record.
+  for (const [field, v] of Object.entries(rec)) {
+    if (!Array.isArray(v)) { continue }
+    if (v.length > ARRAY_CAPS.perArray) {
+      throw new Error(`${storeName}.${field}: array length ${v.length} exceeds cap ${ARRAY_CAPS.perArray}`)
+    }
+    for (const el of v) {
+      if (typeof el === 'string' && el.length > ARRAY_CAPS.perElement) {
+        throw new Error(`${storeName}.${field}: element length ${el.length} exceeds cap ${ARRAY_CAPS.perElement}`)
+      }
+    }
+  }
+}
+
+function checkProtoKeys(storeName: string, rec: Record<string, unknown>): void {
+  for (const key of Object.keys(rec)) {
+    if (PROTOTYPE_KEYS.has(key)) {
+      throw new Error(`${storeName}: prototype-pollution key '${key}' is rejected`)
+    }
+  }
+}
+
+function checkEnums(storeName: string, rec: Record<string, unknown>): void {
+  if (storeName === 'bookmarks') {
+    if (typeof rec.riwayah !== 'string' || !RIWAYAH_ENUM.has(rec.riwayah)) {
+      throw new Error(`bookmarks.riwayah: expected 'hafs' | 'warsh' | 'qaloon', got ${JSON.stringify(rec.riwayah)}`)
+    }
+  }
+}
+
 /**
  * Validate a write to a store.
  */
@@ -91,6 +168,10 @@ export async function validateWrite(storeName: string, value: unknown): Promise<
       }
     }
   }
+
+  checkProtoKeys(storeName, rec)
+  checkEnums(storeName, rec)
+  checkLengthCaps(storeName, rec)
 
   return true
 }
