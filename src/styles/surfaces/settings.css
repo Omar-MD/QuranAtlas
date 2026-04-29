@@ -130,7 +130,8 @@
     color: var(--qa-text-arabic);
     margin: 0;
     line-height: 2.05;
-    font-size: 1.55rem;
+    /* font-size flows through .qa-verse-arabic's calc(var(--qa-text-size-arabic)
+       * var(--qa-font-size-base)) so the Font-size slider drives this preview. */
   }
 
   .qa-settings-preview-tr {
@@ -148,7 +149,7 @@
       padding: 0.7rem 1rem 0.6rem;
       gap: 0.3rem;
     }
-    .qa-settings-preview-ar { line-height: 1.7; font-size: 1.2rem; }
+    .qa-settings-preview-ar { line-height: 1.7; }
   }
 
   /* ============================================================
