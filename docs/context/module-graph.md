@@ -83,7 +83,7 @@ graph LR
 ### `a11y/`
 - **Files:** `announcer.ts`
 - **Imports from:** —
-- **Imported by:** `about`, `core/quota-banner.svelte`, `marks/Editor.svelte`, `reader`, `review`, `settings/clear-data.ts`, `surahs`
+- **Imported by:** `about`, `core/quota-banner.svelte`, `reader`, `review`, `settings/clear-data.ts`, `surahs`
 - **Role:** Screen-reader live-region announcer (`announce(message)`).
 
 ### `about/`
@@ -112,7 +112,7 @@ graph LR
   - `nav/{AmbientDock,AmbientPill,CommandSheet,MarginHeader,NavDrawer,SurahProgress}.svelte` → `surfaces/nav.css`
   - `reader/{Reader,Verse,VerseTagPanel}.svelte` + imperative `edge-indicators.ts` class strings → `surfaces/reader.css` (VerseTagPanel owns the `.qa-vtp-*` block inside `surfaces/tag.css` — inline fast-tag panel)
   - `tag/{TagSheet,TagChip,VerseSpotlight}.svelte` → `surfaces/tag.css` (`color-mix()` surface policy exercised here; TagChip dot hue piped via `style:--qa-tag-chip-hue`)
-  - `marks/{Editor,TagChip,TagLayerRegion}.svelte` → `surfaces/marks.css`
+  - (deep tag editor formerly at `marks/{Editor,TagChip,TagLayerRegion}.svelte` — removed 2026-04-29 audit R-30; deep sheet now lives at `tag/TagSheet.svelte`) → `surfaces/marks.css` retained for `qa-mark-*` chrome consumed by `tag/TagChip.svelte`, `settings/ClearDataConfirm.svelte`, etc.
   - `review/{Hub,ReviewCard}.svelte` → `surfaces/review.css`
   - `settings/Panel.svelte` → `surfaces/settings.css`
   - `core/ui.svelte` undo toast + imperative `.qa-error-state` / `.qa-retry-btn` (used by `app-bootstrap.ts`, `core/router.ts`, `reader/Reader.svelte`) → `surfaces/toast.css`
@@ -146,10 +146,10 @@ graph LR
 - **Role:** Riwayah-scoped verse bookmarks. `store.ts` is the sole IDB writer (data-model.md cross-cutting rules). `click-handler.ts` is a global `document.click` listener that toggles bookmarks on `.qa-verse-number` taps (skipped while `tagSession.quickbarOpen` to coexist with fast-tag). `indicator.ts` keeps an in-memory active-riwayah verseKey set and decorates verse-id glyphs (`qa-verse--bookmarked-glyph`). `pulse.ts` listens for `BOOKMARK_JUMP_LANDED` and pulses the landed verse cell for 1s. `BookmarksList.svelte` is shared between drawer Read>Bookmarks sub-tab and `BookmarksPage.svelte` (desktop `#/bookmarks` route).
 
 ### `marks/`
-- **Files:** `Editor.svelte`, `TagLayerRegion.svelte`, `TagChip.svelte`, `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
+- **Files:** `editor-bridge.ts`, `long-press.ts`, `indicator.ts`, `store.ts`, `tags.js`
 - **Imports from:** `core` (including `core/normalize.ts` for `canonicalize()`), `data`, `safety`, `state`
 - **Imported by:** `about`, `app-bootstrap.ts`, `App.svelte`, `nav`, `reader` *(via app-bootstrap hooks)*, `review`, `surahs`
-- **Role:** Marks CRUD + UI (Svelte 5). `store.ts` is the sole IDB writer (data-model.md cross-cutting rules) — takes `MarkInput` (raw layer arrays) and computes `_canon` internally via `canonicalize()`. `Editor.svelte` is the bottom-sheet component mounted persistently in `App.svelte`; `TagChip.svelte` renders individual chips; `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers; `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette + `getAllUsedTags()` (delegates to `store.ts::getAllCanonicalValues('threads')`).
+- **Role:** Marks data + lightweight UI hooks (Svelte 5). `store.ts` is the sole IDB writer (data-model.md cross-cutting rules) — takes `MarkInput` (raw layer arrays) and computes `_canon` internally via `canonicalize()`. `long-press.ts` exposes the `longPress` Svelte action and `setupLongPress` wrapper; `editor-bridge.ts` provides `openEditor(verseKey)` for imperative callers (now routed by `app-bootstrap.ts` to the deep sheet at `tag/TagSheet.svelte`); `indicator.ts` decorates bookmarked verses via event subscriptions; `tags.js` exposes the seed tag palette + `getAllUsedTags()` (delegates to `store.ts::getAllCanonicalValues('threads')`).
 
 ### `nav/`
 - **Files:** `AmbientDock.svelte` (desktop left rail), `AmbientPill.svelte`, `MarginHeader.svelte` (mobile top nav, single-row 2026-04-25; center label tap is a no-op post-overhaul), `NavDrawer.svelte` (full-screen tabbed Surahs/Review surface on mobile; narrow side-panel on desktop; replaces MoreSheet), `EmptyRoute.svelte` (synthetic empty component for the mobile `#/surahs` redirect), `SurahProgress.svelte`, `CommandSheet.svelte`, `command-sheet-bridge.ts`, `nav-drawer-bridge.ts`, `swipe-gestures.ts` (pure helper for MarginHeader gestures), `reader-actions.js`, `shortcuts-sheet.js`
@@ -206,7 +206,7 @@ graph LR
 ### `state/`
 - **Files:** `ambient-chrome.svelte.ts`, `command-sheet.svelte.ts`, `mark-editor.svelte.ts`, `reader.svelte.ts`, `review.svelte.ts`, `settings.svelte.ts`, `surahs.svelte.ts`, `sync.ts`, `tag-session.svelte.ts`
 - **Imports from:** — *(zero imports — pure data containers)*
-- **Imported by:** `reader/Reader.svelte`, `review/Hub.svelte`, `surahs/SurahList.svelte`, `nav/CommandSheet.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/reader-actions.js`, `marks/Editor.svelte`, `settings/theme.ts`, `settings/font-size.ts`, `settings/Panel.svelte`, `safety/sync.ts`, `App.svelte`
+- **Imported by:** `reader/Reader.svelte`, `review/Hub.svelte`, `surahs/SurahList.svelte`, `nav/CommandSheet.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/reader-actions.js`, `settings/theme.ts`, `settings/font-size.ts`, `settings/Panel.svelte`, `safety/sync.ts`, `App.svelte`
 - **Role:** Application state containers. Each module exports a single `$state`-backed object (or class) that components read directly and feature modules write to. Zero imports, zero side effects — pure in-memory data containers. Svelte's fine-grained reactivity means components that read `reader.currentSurahNum` re-render automatically when any writer (scroll tracking, keyboard actions, router) updates it, with no manual subscription. Enables isolated unit testing of state transitions without mounting components.
 
 ### `review/`

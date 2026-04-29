@@ -52,14 +52,12 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - No group controls — shows a flat list under the FVR header.
   - `ReviewCard.svelte` chip links use `#/threads/<tag>` (threads layer only; other layers have no chip row on the card).
 
-## Mark editor
+## Mark editor (deep tag sheet)
 
-- **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route). Post 2026-04-25: app-bootstrap routes `openEditor` to `openDeep` (TagSheet) — Editor.svelte itself is no longer mounted. Programmatic callers from Review hub still flow through this bridge.
-- **Files:** `marks/Editor.svelte`, `marks/TagLayerRegion.svelte`, `marks/TagChip.svelte`, `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh), `core/seeds.ts` (seed palettes)
+- **Entry:** `src/marks/editor-bridge.ts::openEditor(verseKey)` (imperative open, no route). app-bootstrap routes `openEditor` to `openDeep` (which surfaces `tag/TagSheet.svelte`). The historical `marks/Editor.svelte` bottom sheet was removed 2026-04-29 (audit R-30) along with its `TagLayerRegion` / marks-side `TagChip` siblings and the unused `MarkEditorState` rune; the deep tag sheet now lives entirely under `tag/`.
+- **Files:** `marks/editor-bridge.ts`, `marks/long-press.ts`, `marks/store.ts`, `marks/tags.js` (palette), `marks/indicator.ts` (visual refresh), `tag/TagSheet.svelte`, `tag/TagChip.svelte`, `tag/session-bridge.ts`, `core/seeds.ts` (seed palettes).
 - **Purpose:** Bottom sheet for tagging a verse across 12 thematic layers. Reachable only via the fast-tag panel's `⛶` escalation, the `⌘+Enter` keyboard shortcut, or programmatic bridges (Review hub).
 - **Key behaviors:**
-  - 12 collapsible `TagLayerRegion` sections: threads, subjects, audience, speaker, quotedSpeaker, mode, form, tone, people, places, events, divineNames. Threads, audience, and mode expanded by default; others collapsed.
-  - Each layer has a search input + chip pool (seeds ∪ existing canonicals ∪ user-added). Clicking a chip toggles selected/unselected within that layer; each layer shows its own count badge. Inline "+ label" chip creates a new tag in the layer.
   - Note textarea (optional, ≤500 chars).
   - Delete button hidden for new marks; inline-confirm + undo toast for existing marks.
   - Closes if `SYNC_UPDATE_RECEIVED` reports the editing verseKey was deleted elsewhere.

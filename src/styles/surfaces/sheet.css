@@ -1,7 +1,8 @@
 /**
  * sheet — shared bottom-sheet chrome: backdrop, container, grip, header,
- * body, rows, mark-editor sheet modifier, shortcuts cheatsheet.
- * Consumers: settings/Panel.svelte, marks/Editor.svelte
+ * body, rows, mark-editor sheet modifier (now driven by tag/TagSheet.svelte),
+ * shortcuts cheatsheet.
+ * Consumers: settings/Panel.svelte, tag/TagSheet.svelte
  * (via .qa-sheet--mark modifier + :global() interior rules).
  *
  * Context-scoped token inheritance root. Descendants of .qa-sheet read

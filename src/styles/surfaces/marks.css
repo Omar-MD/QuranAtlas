@@ -8,10 +8,10 @@
  * TagChip dot colour comes from `style:background-color={color}` on the dot
  * element — component-side inline attribute; no CSS declaration needed.
  *
- * Consumers:
- *   src/marks/Editor.svelte          → .qa-mark-*, .qa-sheet--mark overrides
- *   src/marks/TagChip.svelte         → .qa-mark-chip-*  (tag chip inside editor)
- *   src/marks/TagLayerRegion.svelte  → .qa-layer-*      (collapsible layer section)
+ * Consumers (post 2026-04-29 audit R-30 — deep editor moved to tag/):
+ *   src/tag/TagSheet.svelte          → .qa-mark-*, .qa-sheet--mark overrides
+ *   src/tag/TagChip.svelte           → .qa-mark-chip-*  (tag chip inside the sheet)
+ *   src/settings/ClearDataConfirm.svelte → .qa-mark-*  (chrome reuse)
  */
 @layer surfaces {
   /* ============================================================

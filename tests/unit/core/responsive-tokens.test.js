@@ -110,9 +110,10 @@ describe('styles — responsive breakpoint tokens', () => {
     expect(hit, 'expected .qa-sheet--mark to widen to 820px at desktop').toBeDefined()
   })
 
-  // NOTE: .qa-mark-body 2-col grid and flex-column left/right layout are now
-  // co-located in src/marks/Editor.svelte <style> (Task 7 of the Svelte migration).
-  // These theme.css assertions were removed from this test file accordingly.
+  // NOTE: .qa-mark-body 2-col grid and flex-column left/right layout were
+  // co-located in src/marks/Editor.svelte <style>. The deep editor was
+  // migrated to src/tag/TagSheet.svelte (audit R-30, 2026-04-29) — those
+  // theme.css assertions are no longer relevant.
 
   /* .qa-cmd-sheet/.qa-cmd-foot responsive rules now live in nav/CommandSheet.svelte <style> */
 

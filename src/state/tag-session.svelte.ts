@@ -1,9 +1,8 @@
 /**
  * Tag-session state (runes). Holds the live state for a single tagging
  * session — one verse at a time. Both the fast path (inline panel via
- * `reader/VerseTagPanel`) and the deep path (`marks/Editor` or
- * `tag/TagSheet`) read/write this state. Persistence still flows through
- * `marks/store.ts`.
+ * `reader/VerseTagPanel`) and the deep path (`tag/TagSheet`) read/write
+ * this state. Persistence still flows through `marks/store.ts`.
  */
 
 import type { LayerName } from '../core/db'
