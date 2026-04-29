@@ -5,7 +5,7 @@ const SURFACES = [
   { name: 'reader',     url: '/#/s/1/1',    wait: '.qa-verse'           },
   { name: 'surahs',     url: '/#/surahs',   wait: '.qa-sl-row'          },
   { name: 'about',      url: '/#/about',    wait: '.qa-about-body-split' },
-  { name: 'settings',   url: '/#/settings', wait: '.qa-settings-section' },
+  { name: 'settings',   url: '/#/settings', wait: '.qa-settings-sect' },
   { name: 'review-hub', url: '/#/review',   wait: 'main'                 },
 ]
 
