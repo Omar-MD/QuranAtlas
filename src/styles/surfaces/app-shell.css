@@ -12,6 +12,10 @@
     flex-direction: column;
     height: 100dvh;
     overflow: hidden;
+    /* Landscape notch-safe horizontal insets. Zero in portrait; non-zero
+       only on iPhone landscape so content does not run under the notch. */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   #top-bar {

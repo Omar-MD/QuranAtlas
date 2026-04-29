@@ -322,11 +322,15 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     expect(preview.querySelector('.qa-settings-preview-tr')?.textContent)
       .toContain('The Most Gracious')
 
-    // Toggle off → translation line disappears
+    // Toggle off → translation row stays in DOM (reserves layout space) but
+    // is marked hidden so preview height does not shift on toggle.
     const sw = document.querySelector('[aria-label="Show translation"]') as HTMLButtonElement
     await fireEvent.click(sw)
     await vi.waitFor(() => {
-      expect(preview.querySelector('.qa-settings-preview-tr')).toBeNull()
+      const tr = preview.querySelector('.qa-settings-preview-tr')
+      expect(tr).not.toBeNull()
+      expect(tr?.classList.contains('qa-settings-preview-tr--hidden')).toBe(true)
+      expect(tr?.getAttribute('aria-hidden')).toBe('true')
     })
   })
 

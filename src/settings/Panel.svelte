@@ -46,17 +46,18 @@
     auto:  { label: 'Auto',  sub: 'Follows system preference' },
   }
 
-  // Sūrat ar-Raḥmān 1–2 — character-for-character per riwayah corpus.
-  // No verse-number glyphs (font ligatures collide with literal U+0660
-  // digits and double-render) and short enough that font-slider scaling
-  // cannot push the preview beyond a single visual line at md and below.
+  // Sūrat ar-Raḥmān 1–4, character-for-character per riwayah corpus.
+  // No verse-number glyphs (KFGQPC end-of-verse ligature collides with
+  // literal U+0660 digits and double-renders); spaces between verses keep
+  // it a single flowing string the reader cascade can scale cleanly.
   const PREVIEW_AR: Record<Riwayah, string> = {
-    hafs:   'ٱلرَّحۡمَٰنُ عَلَّمَ ٱلۡقُرۡءَانَ',
-    warsh:  'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
-    qaloon: 'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
+    hafs:   'ٱلرَّحۡمَٰنُ عَلَّمَ ٱلۡقُرۡءَانَ خَلَقَ ٱلۡإِنسَٰنَ عَلَّمَهُ ٱلۡبَيَانَ',
+    warsh:  'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ خَلَقَ اَ۬لِانسَٰنَ عَلَّمَهُ اَ۬لْبَيَانَ',
+    qaloon: 'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ خَلَقَ اَ۬لِانسَٰنَ عَلَّمَهُ اَ۬لْبَيَانَ',
   }
 
-  const PREVIEW_TRANSLATION = 'The Most Gracious — He has taught the Qurʾān'
+  const PREVIEW_TRANSLATION =
+    'The Most Gracious — He has taught the Qurʾān. He created humankind and taught him eloquent speech.'
 
   const currentRiwayah = $derived<Riwayah>((settings.riwayah as Riwayah | undefined) ?? 'qaloon')
 
@@ -247,9 +248,15 @@
         Live preview · {RIWAYAH_LABELS[currentRiwayah].label}
       </div>
       <p class="qa-verse-arabic qa-settings-preview-ar" dir="rtl">{PREVIEW_AR[currentRiwayah]}</p>
-      {#if settings.translationVisible}
-        <p class="qa-settings-preview-tr">{PREVIEW_TRANSLATION}</p>
-      {/if}
+      <!-- Always rendered to reserve layout space; visibility hidden when
+           toggle is off so the preview height stays stable. Inherits
+           font-size / line-height / word-spacing from .qa-verse-translation
+           so the reader's reading-flow + font-size sliders drive it. -->
+      <p
+        class="qa-verse-translation qa-settings-preview-tr"
+        class:qa-settings-preview-tr--hidden={!settings.translationVisible}
+        aria-hidden={!settings.translationVisible}
+      >{PREVIEW_TRANSLATION}</p>
     </div>
 
     <div class="qa-settings-body">

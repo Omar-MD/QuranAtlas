@@ -77,6 +77,9 @@
 
   html {
     background-color: var(--qa-surface-app);
+    /* Lock to user-set zoom; iOS rotates without auto-resizing text. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
@@ -88,6 +91,8 @@
     transition: background-color var(--qa-transition-base), color var(--qa-transition-base);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Kills double-tap zoom globally; pan/swipe still work via overrides. */
+    touch-action: manipulation;
   }
 
   a {

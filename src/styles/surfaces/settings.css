@@ -34,6 +34,10 @@
       border-radius: 0;
       padding-top: env(safe-area-inset-top);
       padding-bottom: 0;
+      /* Notch-safe in landscape: keeps content off iPhone landscape notch
+         while preserving full-bleed in portrait where insets are zero. */
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
       display: grid;
       grid-template-rows: auto 1fr auto;
       animation: qa-sheet-fade var(--qa-transition-base) forwards;
@@ -75,9 +79,10 @@
     border-bottom: 1px solid var(--qa-border-on-sheet);
     flex-shrink: 0;
     position: relative;
-    /* Cap so large font-size doesn't squash the body. The Arabic +
-       translation still scale, just clipped if both end up taller. */
-    max-height: 38vh;
+    /* Cap so large font-size doesn't squash the body. Slightly more
+       generous now that translation row is space-reserved, so toggling
+       it doesn't change preview height regardless of slider position. */
+    max-height: 44vh;
     overflow: hidden;
   }
 
@@ -143,14 +148,19 @@
   }
 
   .qa-settings-preview-tr {
-    /* Mirrors .qa-verse-translation in reader so the Font-size slider
-       drives the preview translation in lockstep with the Arabic. */
-    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.85);
+    /* Inherits font-size / line-height / word-spacing from
+       .qa-verse-translation cascade — sliders drive this preview in
+       lockstep with the reader. Only theme polish here. */
     color: var(--qa-text-on-sheet-muted);
     font-style: italic;
     opacity: 0.92;
     margin: 0;
-    line-height: 1.55;
+  }
+
+  /* Reserve layout space when translation is toggled off — preview stays
+     the same height regardless of toggle state. */
+  .qa-settings-preview-tr--hidden {
+    visibility: hidden;
   }
 
   /* Short-viewport guard */
