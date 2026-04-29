@@ -94,6 +94,12 @@ vi.mock('../../../src/about/pwa-install.js', () => ({
 vi.mock('../../../src/safety/sync.js', () => ({
   init: vi.fn(() => vi.fn()),
   suppressNextVersionChange: vi.fn(),
+  registerTopic: vi.fn(() => vi.fn()),
+  broadcast: vi.fn(),
+  broadcastMarkChange: vi.fn(),
+  broadcastEdgeChange: vi.fn(),
+  broadcastBookmarkChange: vi.fn(),
+  broadcastRiwayahChange: vi.fn(),
 }))
 
 vi.mock('../../../src/marks/indicator', () => ({

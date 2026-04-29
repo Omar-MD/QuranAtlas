@@ -8,7 +8,7 @@ import { emit } from '../core/events.js'
 import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
 import { settings, type Riwayah } from '../state/settings.svelte.ts'
-import { broadcastRiwayahChange } from '../safety/sync'
+import { broadcastRiwayahChange, registerTopic } from '../safety/sync'
 
 const RIWAYAH_OPTIONS: readonly Riwayah[] = ['hafs', 'warsh', 'qaloon'] as const
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
@@ -61,6 +61,18 @@ export async function setRiwayah(next: Riwayah): Promise<boolean> {
 }
 
 export async function initRiwayah(): Promise<Riwayah> {
+  // Register the cross-tab topic handler. settings/riwayah owns its own
+  // applyRiwayah / event-emit on incoming messages — sync.ts no longer
+  // imports from this module, breaking the audit CC-4 cycle (2026-04-29).
+  registerTopic('settings.riwayah', (payload) => {
+    const v = (payload || {}) as { value?: unknown }
+    if (!isRiwayah(v.value)) { return }
+    const next = v.value
+    const prev = (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-riwayah') : null) as Riwayah | null
+    if (prev === next) { return }
+    applyRiwayah(next)
+    emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: (prev ?? DEFAULT_RIWAYAH), to: next })
+  })
   const r = await loadRiwayah()
   applyRiwayah(r)
   ;(settings as Record<string, unknown>).riwayah = r

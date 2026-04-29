@@ -46,8 +46,8 @@ describe('safety/sync.js', () => {
 
       const channel = MockBroadcastChannel.instances[0]
       expect(channel.postMessage).toHaveBeenCalledWith({
-        type: 'marks:changed',
-        verseKeys: ['2:255'],
+        topic: 'marks',
+        payload: { verseKeys: ['2:255'] },
       })
     })
 
@@ -56,8 +56,8 @@ describe('safety/sync.js', () => {
 
       const channel = MockBroadcastChannel.instances[0]
       expect(channel.postMessage).toHaveBeenCalledWith({
-        type: 'marks:changed',
-        verseKeys: ['2:255', '3:1', '3:2'],
+        topic: 'marks',
+        payload: { verseKeys: ['2:255', '3:1', '3:2'] },
       })
     })
   })
@@ -68,8 +68,8 @@ describe('safety/sync.js', () => {
 
       const channel = MockBroadcastChannel.instances[0]
       expect(channel.postMessage).toHaveBeenCalledWith({
-        type: 'edges:changed',
-        edgeIds: ['e1'],
+        topic: 'edges',
+        payload: { edgeIds: ['e1'] },
       })
     })
 
@@ -78,8 +78,8 @@ describe('safety/sync.js', () => {
 
       const channel = MockBroadcastChannel.instances[0]
       expect(channel.postMessage).toHaveBeenCalledWith({
-        type: 'edges:changed',
-        edgeIds: ['e1', 'e2', 'e3'],
+        topic: 'edges',
+        payload: { edgeIds: ['e1', 'e2', 'e3'] },
       })
     })
   })

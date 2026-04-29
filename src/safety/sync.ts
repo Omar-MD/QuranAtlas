@@ -1,14 +1,31 @@
 /**
  * Cross-tab safety and synchronization module.
- * Handles BroadcastChannel mark sync, edge sync, riwayah sync, and IDB versionchange reload banner.
+ * Handles BroadcastChannel topic dispatch + IDB versionchange reload banner.
  * Permitted cross-module import (safety exception).
+ *
+ * Topic-dispatch model (audit R-10 / C-2 / C-5 / CC-4, 2026-04-29):
+ * sync.ts owns no feature knowledge — it routes incoming envelopes to
+ * handlers registered via `registerTopic(topic, fn)`. Each feature
+ * registers its own handler at boot (e.g. settings/riwayah.ts:initRiwayah
+ * registers the 'settings.riwayah' topic). The pre-fix import-cycle
+ * `safety/sync.ts ↔ settings/riwayah.ts` is dissolved by removing the
+ * `import { applyRiwayah }` direction; settings/riwayah.ts still imports
+ * the outgoing `broadcast*` helpers (one-way dependency).
+ *
+ * Per-feature `broadcast*Change` wrappers stay as thin convenience
+ * functions over the generic `broadcast(topic, payload)` so existing
+ * call sites don't churn. Future audio/sync v2 work should add a single
+ * registerTopic call rather than another bespoke message type.
  *
  * Public API:
  * - init() — set up channel + versionchange listener; returns cleanup function
- * - broadcastMarkChange(verseKeys) — notify other tabs of mark changes
- * - onMarkChange(callback) — register handler for incoming mark changes
- * - broadcastEdgeChange(edgeIds) — notify other tabs of edge changes
- * - broadcastRiwayahChange(next) — notify other tabs of riwayah changes
+ * - registerTopic(topic, fn) — feature handler for incoming messages
+ * - broadcast(topic, payload) — generic outgoing broadcast
+ * - broadcastMarkChange / broadcastEdgeChange / broadcastBookmarkChange /
+ *   broadcastRiwayahChange — back-compat wrappers
+ * - onMarkChange(callback) — legacy handler registry for marks (kept
+ *   alive because marks/store consumes it directly; new code should
+ *   prefer registerTopic('marks', …))
  * - reset() — full reset for testing
  */
 
@@ -16,7 +33,6 @@ import { on, emit } from '../core/events'
 import { Events } from '../core/constants'
 import { logger } from '../core/logger'
 import { sync } from '../state/sync.svelte.ts'
-import { applyRiwayah } from '../settings/riwayah'
 const syncState = { get: () => sync, set: (p: Partial<typeof sync>) => Object.assign(sync, p) }
 
 const CHANNEL_NAME = 'quran-atlas:sync'
@@ -24,10 +40,40 @@ const CHANNEL_NAME = 'quran-atlas:sync'
 type MarkChangeHandler = (data: { verseKeys: string[] }) => void
 type Riwayah = 'hafs' | 'warsh' | 'qaloon'
 
+type TopicHandler = (payload: unknown) => void
+
 let markChangeHandlers: MarkChangeHandler[] = []
+let topicHandlers: Map<string, TopicHandler> = new Map()
 let bannerElement: HTMLElement | null = null
 let unsubVersionChange: (() => void) | null = null
 let suppressVersionChangeBanner = false
+
+/**
+ * Register a handler for inbound BroadcastChannel messages on a topic.
+ * Each topic has at most one handler (overwrites if called twice — call
+ * during init only).
+ */
+export function registerTopic(topic: string, fn: TopicHandler): () => void {
+  topicHandlers.set(topic, fn)
+  return () => {
+    if (topicHandlers.get(topic) === fn) {
+      topicHandlers.delete(topic)
+    }
+  }
+}
+
+/**
+ * Generic broadcast — `payload` is whatever the topic owner expects on
+ * the receive side. Future features should prefer this over adding
+ * another bespoke `broadcast*Change` function.
+ */
+export function broadcast(topic: string, payload: unknown): void {
+  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
+  if (!channel) {
+    return
+  }
+  channel.postMessage({ topic, payload })
+}
 
 /**
  * Initialize the safety sync module.
@@ -47,6 +93,11 @@ export function init(): () => void {
     syncState.set({ broadcastChannel: bc })
   }
 
+  // Wire built-in topic handlers (feature-owned topics register from
+  // their own init module — e.g. settings/riwayah.ts registers
+  // 'settings.riwayah' inside initRiwayah).
+  registerCoreTopicHandlers()
+
   // Set up versionchange listener
   unsubVersionChange = on(Events.DB_VERSION_CHANGE, handleVersionChange)
 
@@ -54,51 +105,24 @@ export function init(): () => void {
 }
 
 /**
- * Broadcast a mark change to other tabs.
- * Only call after IDB transaction oncomplete.
+ * Per-topic outgoing wrappers. Thin convenience over `broadcast()` so
+ * call sites don't churn. Only call after IDB transaction oncomplete
+ * (or, for riwayah, after the IDB put succeeds).
  */
 export function broadcastMarkChange(verseKeys: string[]): void {
-  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
-  if (!channel) {
-    return
-  }
-  channel.postMessage({ type: 'marks:changed', verseKeys })
+  broadcast('marks', { verseKeys })
 }
 
-/**
- * Broadcast an edge change to other tabs.
- * Only call after IDB transaction oncomplete.
- */
 export function broadcastEdgeChange(edgeIds: string[]): void {
-  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
-  if (!channel) {
-    return
-  }
-  channel.postMessage({ type: 'edges:changed', edgeIds })
+  broadcast('edges', { edgeIds })
 }
 
-/**
- * Broadcast a bookmark change to other tabs.
- * Only call after IDB transaction oncomplete.
- */
 export function broadcastBookmarkChange(verseKeys: string[], riwayah: Riwayah): void {
-  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
-  if (!channel) {
-    return
-  }
-  channel.postMessage({ type: 'bookmarks:changed', verseKeys, riwayah })
+  broadcast('bookmarks', { verseKeys, riwayah })
 }
 
-/**
- * Broadcast a Riwayah change to other tabs.
- * Only call after the IDB put succeeds.
- */
 export function broadcastRiwayahChange(next: Riwayah): void {
-  const channel = syncState.get().broadcastChannel as BroadcastChannel | null
-  if (!channel) {
-    return
-  }
-  channel.postMessage({ type: 'riwayah:changed', value: next })
+  broadcast('settings.riwayah', { value: next })
 }
 
 /**
@@ -128,32 +152,95 @@ function destroy(): void {
 }
 
 /**
- * Handle incoming BroadcastChannel messages.
+ * Handle incoming BroadcastChannel messages. Dumb dispatcher: looks up
+ * the handler registered for `topic` and calls it with `payload`.
+ *
+ * Built-in topics ('marks', 'edges', 'bookmarks') wire default handlers
+ * during init() so the existing event-bus contracts (SYNC_UPDATE_RECEIVED
+ * etc.) keep firing without each consumer needing to registerTopic.
+ * Feature-owned topics like 'settings.riwayah' register from their own
+ * init module — that is what dissolves the import cycle.
+ *
+ * Pre-fix message envelopes used { type: 'marks:changed', verseKeys, … }
+ * with one shape per topic. The new envelope is { topic, payload }; we
+ * still accept the legacy shape for one release in case a peer tab on
+ * an older bundle is sending it.
  */
 function handleChannelMessage(event: MessageEvent): void {
-  const data = (event.data || {}) as { type?: string; verseKeys?: string[]; edgeIds?: string[]; value?: string; riwayah?: string }
-  if (data.type === 'marks:changed' && Array.isArray(data.verseKeys)) {
+  const data = event.data
+  if (!data || typeof data !== 'object') { return }
+
+  // Legacy envelope — translate to topic+payload and fall through.
+  // Removed once no in-the-wild bundle still sends `type:`.
+  let topic: string | undefined
+  let payload: unknown
+  if (typeof (data as { topic?: unknown }).topic === 'string') {
+    topic = (data as { topic: string }).topic
+    payload = (data as { payload?: unknown }).payload
+  } else if (typeof (data as { type?: unknown }).type === 'string') {
+    const legacyType = (data as { type: string }).type
+    switch (legacyType) {
+      case 'marks:changed':
+        topic = 'marks'
+        payload = { verseKeys: (data as { verseKeys?: string[] }).verseKeys }
+        break
+      case 'edges:changed':
+        topic = 'edges'
+        payload = { edgeIds: (data as { edgeIds?: string[] }).edgeIds }
+        break
+      case 'bookmarks:changed':
+        topic = 'bookmarks'
+        payload = { verseKeys: (data as { verseKeys?: string[] }).verseKeys, riwayah: (data as { riwayah?: string }).riwayah }
+        break
+      case 'riwayah:changed':
+        topic = 'settings.riwayah'
+        payload = { value: (data as { value?: string }).value }
+        break
+      default:
+        return
+    }
+  } else {
+    return
+  }
+
+  const handler = topic ? topicHandlers.get(topic) : undefined
+  if (!handler) {
+    return
+  }
+  try {
+    handler(payload)
+  } catch (error) {
+    logger.error('Sync topic handler error:', { topic, error })
+  }
+}
+
+// Default in-tree handlers for marks / edges / bookmarks. Feature-owned
+// topics (settings.riwayah, future audio, etc.) registerTopic from their
+// own init modules.
+function registerCoreTopicHandlers(): void {
+  registerTopic('marks', (payload) => {
+    const p = (payload || {}) as { verseKeys?: string[] }
+    if (!Array.isArray(p.verseKeys)) { return }
     for (const handler of markChangeHandlers) {
       try {
-        handler({ verseKeys: data.verseKeys })
+        handler({ verseKeys: p.verseKeys })
       } catch (error) {
-        logger.error('Sync handler error:', {
-          error,
-        })
+        logger.error('Sync handler error:', { error })
       }
     }
-    emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: data.verseKeys })
-  } else if (data.type === 'edges:changed' && Array.isArray(data.edgeIds)) {
-    emit(Events.SYNC_EDGES_UPDATED, { edgeIds: data.edgeIds })
-  } else if (data.type === 'bookmarks:changed' && Array.isArray(data.verseKeys) && (data.riwayah === 'hafs' || data.riwayah === 'warsh' || data.riwayah === 'qaloon')) {
-    emit(Events.SYNC_BOOKMARKS_UPDATED, { verseKeys: data.verseKeys, riwayah: data.riwayah })
-  } else if (data.type === 'riwayah:changed' && (data.value === 'hafs' || data.value === 'warsh' || data.value === 'qaloon')) {
-    const next = data.value as Riwayah
-    const prev = (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-riwayah') : null) as Riwayah | null
-    if (prev === next) { return }
-    applyRiwayah(next)
-    emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: (prev ?? 'qaloon'), to: next })
-  }
+    emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: p.verseKeys })
+  })
+  registerTopic('edges', (payload) => {
+    const p = (payload || {}) as { edgeIds?: string[] }
+    if (!Array.isArray(p.edgeIds)) { return }
+    emit(Events.SYNC_EDGES_UPDATED, { edgeIds: p.edgeIds })
+  })
+  registerTopic('bookmarks', (payload) => {
+    const p = (payload || {}) as { verseKeys?: string[]; riwayah?: string }
+    if (!Array.isArray(p.verseKeys)) { return }
+    if (p.riwayah !== 'hafs' && p.riwayah !== 'warsh' && p.riwayah !== 'qaloon') { return }
+    emit(Events.SYNC_BOOKMARKS_UPDATED, { verseKeys: p.verseKeys, riwayah: p.riwayah })
+  })
 }
 
 /**
@@ -246,6 +333,7 @@ export function removeBanner(): void {
 export function reset(): void {
   removeBanner()
   markChangeHandlers = []
+  topicHandlers = new Map()
   suppressVersionChangeBanner = false
   const channel = syncState.get().broadcastChannel as BroadcastChannel | null
   if (channel) {
