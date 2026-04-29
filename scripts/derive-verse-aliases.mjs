@@ -340,7 +340,9 @@ async function main() {
     failures: failures.length > 0 ? failures : undefined,
   }
   // (failures captured per-surah inside the loop now; legacy hard-fail removed)
-  await writeFile(join(DATASET_DIR, 'translations', '_verse-aliases.json'), JSON.stringify(output, null, 2), 'utf8')
+  // Minified — saves ~50% (376 KB → ~180 KB) on first reader open. Schema is
+  // documented in `docs/context/data-model.md`; pretty-printing buys nothing.
+  await writeFile(join(DATASET_DIR, 'translations', '_verse-aliases.json'), JSON.stringify(output), 'utf8')
   console.log(`[verse-aliases] wrote ${Object.keys(aliases).length} divergent surah alias tables`)
 }
 

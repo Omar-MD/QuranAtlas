@@ -237,10 +237,14 @@
         // Optimistically fetch the default pack while we resolve the user's
         // saved id; if the saved id differs, a second fetch follows below.
         loadTranslationForSurah(settings.translationId ?? 'saheeh', surahNum).catch(() => null),
-        // Cross-riwayah verse-equivalence aliases. Hafs-keyed translations
-        // require this map to look up the right Hafs ayah(s) for each
-        // Warsh / Qaloon ayah. Cached after first fetch.
-        loadVerseAliases().catch(() => null) as Promise<VerseAliases | null>,
+        // Cross-riwayah verse-equivalence aliases. Hafs viewer always
+        // resolves identity (translations are Hafs-keyed) and never reads
+        // the table, so skip the ~170 KB fetch in that path. Lazy-loaded
+        // on the first switch to Warsh / Qaloon by `loadVerseAliases`'s
+        // own caching layer.
+        settings.riwayah === 'hafs'
+          ? Promise.resolve(null) as Promise<VerseAliases | null>
+          : loadVerseAliases().catch(() => null) as Promise<VerseAliases | null>,
       ])
 
       clearTimeout(timeoutId)

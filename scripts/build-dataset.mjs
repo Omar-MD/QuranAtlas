@@ -3,7 +3,7 @@
  * QuranAtlas dataset build pipeline.
  *
  * Reads monolithic source files committed to the repo:
- *   public/dataset/riwayat/{hafs,warsh,qaloon}.json   (KFGQPC corpus)
+ *   data/sources/riwayat/{hafs,warsh,qaloon}.json     (KFGQPC corpus — build-only, not shipped)
  *   public/dataset/translations/{id}.raw.json         (one per shipped translation)
  *
  * Emits:
@@ -30,7 +30,8 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
-const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')
+const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'sources', 'riwayat')   // build-only inputs (not shipped)
+const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')                            // shipped output (per-surah split files)
 const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
 const VERSE_MAP_PATH = join(TRANSLATIONS_DIR, '_verse-map.json')
 const VERSE_ALIASES_PATH = join(TRANSLATIONS_DIR, '_verse-aliases.json')
@@ -331,7 +332,7 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
       }
     }
   }
-  return { surahCount: expectedSurahs.length }
+  return { surahCount: expectedSurahs.length, totalAliasedSurahs: Object.keys(verseAliases.aliases).length }
 }
 
 /**
@@ -435,10 +436,11 @@ async function listFiles(rootDir) {
 
 async function main() {
   console.log('[build-dataset] starting')
-  // 1. Read inputs
+  // 1. Read inputs from build-only source dir (data/sources/riwayat/) — these
+  // monolithic files are NOT shipped; only the per-surah split outputs are.
   const sources = {}
   for (const r of RIWAYAT) {
-    const path = join(RIWAYAT_DIR, `${r}.json`)
+    const path = join(RIWAYAT_SOURCE_DIR, `${r}.json`)
     if (!existsSync(path)) { throw new Error(`Missing source: ${path}`) }
     sources[r] = JSON.parse(await readFile(path, 'utf8'))
     if (sources[r].length !== AYAT_COUNTS[r]) {
@@ -505,7 +507,7 @@ async function main() {
   }
   const verseAliases = JSON.parse(await readFile(VERSE_ALIASES_PATH, 'utf8'))
   const vaResult = validateVerseAliases(verseAliases, surahsMeta)
-  console.log(`[build-dataset] verse-aliases: ${vaResult.surahCount} surah alias tables validated`)
+  console.log(`[build-dataset] verse-aliases: ${vaResult.totalAliasedSurahs} surah alias tables (${vaResult.surahCount} count-divergent + ${vaResult.totalAliasedSurahs - vaResult.surahCount} boundary-drift)`)
 
   // 4. juz.json (from Hafs; juz/page constant across Riwayat)
   const juzMeta = computeJuzMeta(sources.hafs)

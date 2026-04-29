@@ -14,7 +14,9 @@ These are the **active reader corpus** — the prior PUA-encoded Hafs corpus (qu
 
 ## Build pipeline
 
-The three monolithic source files (`hafs.json` / `warsh.json` / `qaloon.json` under `public/dataset/riwayat/`) are inputs to `scripts/build-riwayat.mjs`. The script splits each into 114 per-surah files (`riwayat/{name}/{NNN}.json`), regenerates `surahs.json` (114 entries with per-Riwayah `counts`), `juz.json` (30 entries from Hafs — juz boundaries are constant across Riwayat), and writes a fresh `manifest.json` (sha256 per shipped file; `provenance.json` is hashed against a `builtAt`-stripped form so the manifest stays idempotent across no-op rebuilds) and `provenance.json` (v2.0.0). Run via `pnpm build:dataset`; chained automatically by `pnpm build`.
+The three monolithic source files (`hafs.json` / `warsh.json` / `qaloon.json` under **`data/sources/riwayat/`** — build-only, not under `public/`, so they never ship to clients) are inputs to `scripts/build-dataset.mjs`. The script splits each into 114 per-surah files (`public/dataset/riwayat/{name}/{NNN}.json` — these DO ship), regenerates `surahs.json` (114 entries with per-Riwayah `counts`), `juz.json` (30 entries from Hafs — juz boundaries are constant across Riwayat), and writes a fresh `manifest.json` (sha256 per shipped file; `provenance.json` is hashed against a `builtAt`-stripped form so the manifest stays idempotent across no-op rebuilds) and `provenance.json` (v2.0.0). Run via `pnpm build:dataset`; chained automatically by `pnpm build`.
+
+Keeping the monolithic `*.json` (8.6 MB combined) outside `public/` ensures Vite doesn't copy them to `dist/` — only the per-surah split files (each ~10–35 KB) are exposed to the runtime, and even those are fetched lazily per-surah. `data/sources/riwayat/` is committed to git (the KFGQPC corpus is the project's source of truth) but never part of the deploy.
 
 After source data is split into per-surah files, the verse-aliases pipeline runs `scripts/derive-verse-aliases.mjs` to emit `public/dataset/translations/_verse-aliases.json`. This is the per-ayah Hafs↔Warsh↔Qaloon equivalence table that lets translations (Hafs-keyed) display correctly when the user views Warsh or Qaloon. Algorithm + invariants documented in **§ Cross-riwayah translation alignment** below.
 
@@ -132,6 +134,14 @@ Wired through tokens — `--ff-kfgqpc-{hafs,warsh,qaloon}` (defined in `src/styl
 ### Cross-engine rendering
 
 KFGQPC Uthmanic fonts render across Chromium (Skia), WebKit (CoreGraphics — macOS Safari, iOS Safari, iOS Chrome, headless WebKit), and Firefox (Gecko) when each riwayah is paired with its own cut. Cross-riwayah font reuse (e.g. the Hafs cut on Warsh text) was the source of an earlier hollow-mark bug investigation — fixed by binding `[data-riwayah='hafs']` → `--ff-kfgqpc-hafs`, `'warsh'` → `--ff-kfgqpc-warsh`, `'qaloon'` → `--ff-kfgqpc-qaloon`. Amiri Quran sits in each token's font-family chain as the cross-riwayah fallback for engines or moments when KFGQPC isn't loaded. **Regression guard:** `tests/unit/styles/font-tokens.test.js` rejects any cross-riwayah font misuse.
+
+### Lazy font delivery (post-2026-04-29)
+
+The three KFGQPC woff2 cuts are **not** in the SW precache manifest. `vite.config.js::injectManifest.globPatterns` lists `**/*.{js,css,html}` only — woff2 are explicitly excluded. The active-riwayah cut is fetched at boot by `src/core/font-loader.ts::loadArabicQuranFontProgrammatically(activeRiwayah)`, called from `src/app-bootstrap.ts` immediately after `initRiwayah()` resolves the user's saved choice. The other two cuts arrive only when the user switches via Settings — `loadArabicQuranFontProgrammatically` subscribes to the `SETTINGS_RIWAYAH_CHANGED` event and is idempotent per-riwayah.
+
+A CacheFirst SW route at `/fonts/*.woff2` (`src/sw.js`) keeps each fetched cut warm for the deploy lifetime. CSS `@font-face` declarations for all three cuts stay in `src/styles/base.css` as the canonical activation path on non-iOS browsers (the programmatic FontFace construction is the iOS-WebKit GPOS-race workaround).
+
+**Why this matters.** Single-riwayah users (~85 % of installs) save ~180 KB up-front — the woff2 for the two unused cuts. CSS Font Loading API + the existing `@font-face` declarations remain as belt-and-braces; failure of the programmatic fetch falls back to engine-driven font load via the unicode-range match.
 
 ---
 

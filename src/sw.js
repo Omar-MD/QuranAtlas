@@ -11,7 +11,7 @@
 
 import { precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst } from 'workbox-strategies'
+import { NetworkFirst, CacheFirst } from 'workbox-strategies'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { CACHE_DATASET } from './core/constants.js'
@@ -40,6 +40,23 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+    ],
+  })
+)
+
+// woff2 font files are content-addressed by version (KFGQPC v22, Newsreader,
+// Geist Mono); URLs are stable for the lifetime of the deploy. CacheFirst
+// avoids re-downloading on every visit. Only the active riwayah's font is
+// fetched on-demand by `core/font-loader.ts` (other-riwayah cuts arrive only
+// when the user switches), so this cache stays scoped to what the user
+// actually uses.
+registerRoute(
+  ({ url }) => url.pathname.startsWith('/fonts/') && url.pathname.endsWith('.woff2'),
+  new CacheFirst({
+    cacheName: 'qa-fonts-v1',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 }),
     ],
   })
 )

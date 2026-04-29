@@ -48,13 +48,16 @@ export default defineConfig({
       // With strategies: 'injectManifest' the `workbox.*` keys are silently
        // ignored — `globPatterns` and `runtimeCaching` must live under
        // top-level `injectManifest` and inside src/sw.js respectively.
-       // The previous `workbox.globPatterns: ['**/*.{js,css,html,woff2}']`
-       // never reached the precache manifest, so KFGQPC font woff2 files
-       // (≈260 KB) were excluded — the SW only fetched them on first runtime
-       // request, and on flaky mobile they sometimes never arrived (root
-       // cause of the missing-tashkeel reports).
+       //
+       // Fonts (woff2) deliberately EXCLUDED from precache — they're handled
+       // by a CacheFirst runtime route in src/sw.js. Single-riwayah users
+       // would otherwise pay ~180 KB up-front for the two unused KFGQPC
+       // riwayah cuts. The active riwayah's woff2 is fetched at boot by
+       // `core/font-loader.ts` (which keys off the hydrated `settings.riwayah`)
+       // and cached for the deploy lifetime; other-riwayah cuts arrive only
+       // when the user switches via Settings.
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,woff2}']
+        globPatterns: ['**/*.{js,css,html}']
       },
       workbox: {
         runtimeCaching: [

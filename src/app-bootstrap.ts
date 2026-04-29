@@ -99,14 +99,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   // failure to load is tolerable because @font-face will still be tried when
   // the reader actually mounts. Guard against environments without the
   // Font Loading API (jsdom in unit tests).
+  //
+  // Active-riwayah font is fetched after `initRiwayah()` resolves below;
+  // here we only do the iOS-defense reshape observer setup that doesn't
+  // depend on a specific riwayah.
   if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
-    void document.fonts.load('16px "KFGQPC Uthmanic Qaloon"', 'ا').catch(() => { /* ignore — fallback chain handles it */ })
-    // Belt-and-braces for iOS Safari: bypass CSS @font-face activation
-    // entirely by constructing the FontFace from the woff2 ArrayBuffer
-    // and adding to document.fonts. Survives every iOS-specific defect
-    // we have hit on the CSS path (combining marks not engaging GPOS,
-    // late paint with fallback, render-tree-side activation race).
-    loadArabicQuranFontProgrammatically()
     // iOS Safari paints the reader DOM with a fallback font when verses
     // mount before the KFGQPC Uthmanic riwayah face swaps in, then
     // doesn't re-shape RTL Arabic text when font-display:swap brings in
@@ -159,10 +156,42 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // Apply saved theme + font size before router dispatches first route
     await initTheme()
     await initFontSize()
-    await initRiwayah()
+    const activeRiwayah = await initRiwayah()
     await initReadingTypography()
     await initNightMode()
     await initSurahHeaderHidden()
+
+    // Active-riwayah KFGQPC font kickoff — fetch only the cut the user is
+    // actually viewing. CSS Font Loading API call primes the family name;
+    // programmatic FontFace construction (font-loader.ts) bypasses iOS
+    // WebKit's @font-face GPOS-activation race. Fire-and-forget; failure
+    // tolerable (CSS @font-face + Amiri Quran fallback both still active).
+    if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
+      const familyMap: Record<typeof activeRiwayah, string> = {
+        hafs: 'KFGQPC Uthmanic Hafs',
+        warsh: 'KFGQPC Uthmanic Warsh',
+        qaloon: 'KFGQPC Uthmanic Qaloon',
+      }
+      void document.fonts.load(`16px "${familyMap[activeRiwayah]}"`, 'ا').catch(() => { /* ignore */ })
+      loadArabicQuranFontProgrammatically(activeRiwayah)
+    }
+    // Lazy-load the new riwayah's font when user switches via Settings.
+    pushCleanup(bootCleanups, on(Events.SETTINGS_RIWAYAH_CHANGED, ({ to }) => {
+      loadArabicQuranFontProgrammatically(to)
+    }))
+
+    // Prefetch al-Fatiha for the active riwayah — ~1.5 KB primes the
+    // SW NetworkFirst cache so the most-likely first reader open hits a
+    // warm cache. Below idle priority; the browser drops the request
+    // under contention.
+    if (typeof document !== 'undefined') {
+      const link = document.createElement('link')
+      link.rel = 'prefetch'
+      link.as = 'fetch'
+      link.crossOrigin = 'anonymous'
+      link.href = `/dataset/riwayat/${activeRiwayah}/001.json`
+      document.head.appendChild(link)
+    }
 
     // Expose version-change suppression so E2E clearAllData can prevent the
     // sync-banner overlay from blocking pointer events (Bug-2). Exposed in
