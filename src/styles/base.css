@@ -111,6 +111,30 @@
     outline-offset: var(--qa-focus-ring-offset);
   }
 
+  /* Touch chrome — kill the default blue iOS / grey Android tap flash on
+     all interactive elements. Replaced by the press-down scale below for
+     deliberate, theme-consistent visual feedback. */
+  button, a, [role="button"], [role="switch"], [role="radio"], [role="tab"],
+  input, select, textarea, summary, label {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Press-down feedback on touch devices only — desktop hover/focus still
+     owns its own affordances. Range inputs / native form controls are
+     excluded so the slider thumb is not double-scaled. */
+  @media (hover: none) and (pointer: coarse) {
+    button:not(:disabled):active,
+    [role="button"]:not([aria-disabled="true"]):active,
+    [role="switch"]:not([aria-disabled="true"]):active,
+    [role="radio"]:not([aria-disabled="true"]):active,
+    [role="tab"]:not([aria-disabled="true"]):active,
+    a:active,
+    summary:active {
+      transform: scale(0.96);
+      transition: transform 90ms ease-out;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
