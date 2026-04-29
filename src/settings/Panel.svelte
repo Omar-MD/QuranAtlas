@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { get, put } from '../core/db.js'
+  import { get } from '../core/db.js'
   import { emit } from '../core/events.js'
   import { Events } from '../core/constants.js'
   import { logger } from '../core/logger.js'
@@ -16,7 +16,7 @@
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
   import { getTranslations } from '../data/dataset.js'
-  import { registerPanel } from './panel-bridge.ts'
+  import { registerPanel, setTranslationVisible, setTranslationId } from './panel-bridge.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
@@ -97,7 +97,7 @@
     if (valid) { return valid.id }
     const fallback = availableTranslations[0]?.id ?? null
     if (fallback && fallback !== saved) {
-      try { await put('settings', { key: 'translationId', value: fallback }) } catch { /* ignore */ }
+      await setTranslationId(fallback)
     }
     return fallback
   }
@@ -173,11 +173,8 @@
 
   async function handleTranslationToggle() {
     const next = !settings.translationVisible
-    try {
-      await put('settings', { key: 'translationVisible', value: next })
-      Object.assign(settings, { translationVisible: next })
-    } catch (error) {
-      logger.error('Failed to save translation setting', { error })
+    if ((await setTranslationVisible(next)) === null) {
+      logger.error('Failed to save translation setting', { next })
     }
   }
 
@@ -187,13 +184,8 @@
   }
 
   async function handleTranslationChoice(opt: TranslationEntry) {
-    try {
-      await put('settings', { key: 'translationId', value: opt.id })
-      Object.assign(settings, { translationId: opt.id })
-      translationId = opt.id
-    } catch (error) {
-      logger.error('Failed to save translation choice', { error })
-    }
+    await setTranslationId(opt.id)
+    translationId = opt.id
     picker = null
   }
 

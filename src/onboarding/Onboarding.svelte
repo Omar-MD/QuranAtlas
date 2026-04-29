@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { get, put } from '../core/db.js'
+  import { get } from '../core/db.js'
+  import { setTranslationId } from '../settings/panel-bridge'
   import { markComplete } from './state'
   /**
    * Onboarding — 6-screen first-run flow.
@@ -70,7 +71,7 @@
 
       // Persist default selection if it differs from saved
       if (matched && matched !== savedId) {
-        try { await put('settings', { key: 'translationId', value: matched }) } catch { /* ignore */ }
+        await setTranslationId(matched)
       }
     } catch (error) {
       logger.error('Failed to load translations for onboarding', { error })
@@ -111,7 +112,7 @@
   async function pickTranslation(id: string) {
     if (translationOptions.length < 2) { return }
     selectedTranslationId = id
-    try { await put('settings', { key: 'translationId', value: id }) } catch { /* ignore */ }
+    await setTranslationId(id)
   }
 </script>
 

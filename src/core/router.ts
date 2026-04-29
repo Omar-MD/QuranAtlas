@@ -7,9 +7,9 @@
  */
 
 import { emit } from './events'
-import { put } from './db'
 import { Events } from './constants'
 import { logger } from './logger'
+import { persistLastSurface } from '../state/last-surface.svelte'
 
 export type RouteParams = Record<string, string>
 
@@ -204,16 +204,8 @@ async function handleRoute(hash: string): Promise<void> {
   }
 }
 
-/**
- * Persist the current hash as lastSurface for session-restore, unless it's a
- * route that handleLaunchRestore explicitly rejects (#/onboarding). Writing it
- * would be wasteful and — worse — an in-flight write can overtake a test
- * fixture's seeded lastSurface and break session-restore assertions.
- */
-async function persistLastSurface(hash: string): Promise<void> {
-  if (hash === '#/onboarding') { return }
-  await put('settings', { key: 'lastSurface', value: hash })
-}
+// persistLastSurface lives in state/last-surface.svelte.ts so router +
+// review/Hub.svelte share a sole-writer path (audit R-08 / R-25 / CC-3).
 
 /**
  * Render a user-visible not-found message.

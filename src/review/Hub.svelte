@@ -9,8 +9,8 @@
   import type { SurahMeta } from '../data/dataset'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
-  import { put } from '../core/db'
   import { LAYER_NAMES, type LayerName } from '../core/db'
+  import { persistLastSurface } from '../state/last-surface.svelte'
   import { logger } from '../core/logger'
   import { save as saveState, load as loadState, getDefaultState } from './state'
   import { parseLayerFromHash } from './parse-layer-query'
@@ -404,7 +404,7 @@
         sortBy: 'updatedAt',
         groupBy: 'surah',
       })
-      await put('settings', { key: 'lastSurface', value: lastSurfaceHash })
+      await persistLastSurface(lastSurfaceHash)
 
       review.view = 'fvr'
       review.groupBy = 'surah'

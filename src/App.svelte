@@ -2,9 +2,7 @@
   import { onMount, mount, unmount, type Component } from 'svelte'
   import { initBootstrap } from './app-bootstrap'
   import { onRouteChange } from './core/router'
-  import { get, put } from './core/db'
-  import { emit } from './core/events'
-  import { Events } from './core/constants'
+  import { trackRecentSurah } from './state/recent-surahs.svelte'
   import { reader } from './state/reader.svelte'
   import { refreshForSurah } from './marks/indicator'
   import UndoToast from './core/ui.svelte'
@@ -32,21 +30,9 @@
     void trackRecentSurah(surah)
   })
 
-  // Last 7 surahs — bumped from 5 to give the drawer's Recent filter
-  // enough breadth to feel useful for casual back-and-forth reading.
-  const RECENT_SURAHS_CAP = 7
-
-  async function trackRecentSurah(surah: number): Promise<void> {
-    try {
-      const rec = await get('settings', 'recentSurahs')
-      const prev = Array.isArray(rec?.value) ? (rec.value as number[]) : []
-      const next = [surah, ...prev.filter((n) => n !== surah)].slice(0, RECENT_SURAHS_CAP)
-      await put('settings', { key: 'recentSurahs', value: next })
-      // Notify drawer / surahs-list so a Recent view that's currently open
-      // refreshes without waiting for a full reload.
-      emit(Events.SETTINGS_RECENT_SURAHS_UPDATED, { surahs: next })
-    } catch { /* ignore */ }
-  }
+  // Sole-writer + race-safe trackRecentSurah lives in
+  // state/recent-surahs.svelte.ts (audit R-27 / N11). App.svelte just
+  // calls into it on every READER_SURAH_CHANGE.
 
   onMount(() => {
     let mounted = true

@@ -27,20 +27,49 @@ export function closeSettingsSheet(): void {
 }
 
 /**
- * Flip translation visibility, persist, emit the shared settings event,
- * and apply to any already-rendered verses. Returns the new value.
- * Preserved from settings/panel.js for consumers (command-sheet.js etc).
+ * Sole writer for `settings.translationVisible`. Pre-fix this was
+ * shared with settings/Panel.svelte::handleTranslationToggle (audit
+ * R-08 / CC-3, 2026-04-29). Both surfaces (command sheet, panel
+ * toggle, keyboard shortcut) now go through here.
+ *
+ * Setting an explicit value sets it; passing `undefined` flips the
+ * current value.
  */
-export async function toggleTranslation(): Promise<boolean | null> {
-  let next: boolean | null = null
+export async function setTranslationVisible(next?: boolean): Promise<boolean | null> {
+  let resolved: boolean
   try {
-    const current = await get('settings', 'translationVisible')
-    next = !(current?.value as boolean | undefined ?? true)
-    await put('settings', { key: 'translationVisible', value: next })
+    if (next === undefined) {
+      const current = await get('settings', 'translationVisible')
+      resolved = !(current?.value as boolean | undefined ?? true)
+    } else {
+      resolved = next
+    }
+    await put('settings', { key: 'translationVisible', value: resolved })
   } catch (error) {
-    logger.error('Failed to toggle translation visibility', { error })
+    logger.error('Failed to write translationVisible', { error })
     return null
   }
-  Object.assign(settings, { translationVisible: next })
-  return next
+  Object.assign(settings, { translationVisible: resolved })
+  return resolved
+}
+
+// Back-compat alias retained for the existing command-sheet caller. New
+// callers should use setTranslationVisible(undefined) directly.
+export async function toggleTranslation(): Promise<boolean | null> {
+  return setTranslationVisible(undefined)
+}
+
+/**
+ * Sole writer for `settings.translationId`. Pre-fix this was joint-
+ * owned by settings/Panel.svelte::handleTranslationChoice and
+ * onboarding/Onboarding.svelte's translation picker (audit CC-3).
+ */
+export async function setTranslationId(id: string): Promise<void> {
+  try {
+    await put('settings', { key: 'translationId', value: id })
+  } catch (error) {
+    logger.error('Failed to write translationId', { id, error })
+    return
+  }
+  Object.assign(settings, { translationId: id })
 }
