@@ -152,11 +152,10 @@ test.describe('Journey D: desktop variants @desktop', () => {
 
   test('D1 desktop: typography preview scales when font-size slider moves', async ({ page }) => {
     await openSettingsSheet(page)
-    await page.getByText('Size, spacing & margins').click()
     const slider = page.getByLabel('Font size')
     await expect(slider).toBeVisible()
 
-    const getArSize = () => page.locator('.qa-typography-preview .qa-verse-arabic').evaluate(
+    const getArSize = () => page.locator('.qa-settings-preview .qa-verse-arabic').evaluate(
       el => parseFloat(getComputedStyle(el).fontSize)
     )
 
@@ -197,9 +196,12 @@ test.describe('Journey D: Typography subview @desktop', () => {
   })
 
   async function openTypography(page) {
+    // Post 2026-04-29: sliders are inline in the Reading section — no
+    // subview to open. Helper kept so call sites stay readable.
     await openSettingsSheet(page)
-    await page.getByText('Size, spacing & margins').click()
-    await expect(page.getByTestId('typography-preview')).toBeVisible()
+    await expect(page.getByTestId('settings-preview')).toBeVisible()
+    await expect(page.getByLabel('Font size')).toBeVisible()
+    await expect(page.getByLabel('Reading flow')).toBeVisible()
   }
 
   // D5 subview-structure / reset button-show-and-restore / IDB writes + reload

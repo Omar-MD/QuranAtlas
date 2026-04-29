@@ -461,8 +461,11 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
 
-    // Switch to Hafs via Settings sheet Riwayah swatches
+    // Switch to Hafs via Settings sheet Riwayah swatches.
+    // Post 2026-04-29: Recitation section is collapsed by default — tap
+    // the row to reveal the 3 swatches.
     await openSettingsSheet(page)
+    await page.locator('.qa-settings-recite-row').click()
     const hafsBtn = page.locator('.qa-riwayah-swatch').filter({ hasText: 'Ḥafṣ' })
     await expect(hafsBtn).toBeVisible({ timeout: 5_000 })
     await hafsBtn.click()
@@ -493,6 +496,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
     // Restore Qālūn so other tests get the default
     await openSettingsSheet(page)
+    await page.locator('.qa-settings-recite-row').click()
     await page.locator('.qa-riwayah-swatch').filter({ hasText: 'Qālūn' }).click()
     await expect(async () => {
       const attr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
