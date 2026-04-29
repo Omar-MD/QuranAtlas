@@ -320,7 +320,7 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     // Qālūn corpus glyphs (default test setup)
     expect(ar.textContent).toContain('اِ۬لرَّحْمَٰنُ')
     expect(preview.querySelector('.qa-settings-preview-tr')?.textContent)
-      .toContain('The Most Compassionate')
+      .toContain('The Most Gracious')
 
     // Toggle off → translation line disappears
     const sw = document.querySelector('[aria-label="Show translation"]') as HTMLButtonElement

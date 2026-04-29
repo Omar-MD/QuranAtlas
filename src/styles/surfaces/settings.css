@@ -37,6 +37,9 @@
       display: grid;
       grid-template-rows: auto 1fr auto;
       animation: qa-sheet-fade var(--qa-transition-base) forwards;
+      /* Sheet body bg now mirrors reader app surface so theme switch
+         visibly repaints the entire settings page (not just preview). */
+      background: var(--qa-surface-app);
     }
 
     .qa-sheet-backdrop--settings-fs {
@@ -52,6 +55,7 @@
       display: grid;
       grid-template-rows: auto 1fr auto;
       overflow: hidden;
+      background: var(--qa-surface-app);
     }
   }
 
@@ -62,15 +66,19 @@
   .qa-settings-preview {
     background: var(--qa-surface-raised);
     color: var(--qa-text-primary);
-    padding: 2.1rem 1.25rem 2rem;
+    padding: 1.6rem 1.25rem 1.45rem;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.7rem;
+    gap: 0.55rem;
     border-bottom: 1px solid var(--qa-border-on-sheet);
     flex-shrink: 0;
     position: relative;
+    /* Cap so large font-size doesn't squash the body. The Arabic +
+       translation still scale, just clipped if both end up taller. */
+    max-height: 38vh;
+    overflow: hidden;
   }
 
   .qa-settings-preview::after {
@@ -135,7 +143,9 @@
   }
 
   .qa-settings-preview-tr {
-    font-size: 0.78rem;
+    /* Mirrors .qa-verse-translation in reader so the Font-size slider
+       drives the preview translation in lockstep with the Arabic. */
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.85);
     color: var(--qa-text-on-sheet-muted);
     font-style: italic;
     opacity: 0.92;
@@ -460,7 +470,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     position: relative;
-    background: var(--qa-surface-sheet);
+    background: var(--qa-surface-app);
   }
 
   .qa-settings-footer::before {

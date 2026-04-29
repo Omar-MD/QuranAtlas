@@ -46,17 +46,17 @@
     auto:  { label: 'Auto',  sub: 'Follows system preference' },
   }
 
-  // Sūrat ar-Raḥmān 1–4 — character-for-character per riwayah corpus.
-  // Four short ayat give a richer multi-line sample without overflowing
-  // the preview band; verse-end glyph (U+06DD) separates them.
+  // Sūrat ar-Raḥmān 1–2 — character-for-character per riwayah corpus.
+  // No verse-number glyphs (font ligatures collide with literal U+0660
+  // digits and double-render) and short enough that font-slider scaling
+  // cannot push the preview beyond a single visual line at md and below.
   const PREVIEW_AR: Record<Riwayah, string> = {
-    hafs:   'ٱلرَّحۡمَٰنُ ۝١ عَلَّمَ ٱلۡقُرۡءَانَ ۝٢ خَلَقَ ٱلۡإِنسَٰنَ ۝٣ عَلَّمَهُ ٱلۡبَيَانَ ۝٤',
-    warsh:  'اِ۬لرَّحْمَٰنُ ۝١ عَلَّمَ اَ۬لْقُرْءَانَ ۝٢ خَلَقَ اَ۬لْإِنْسَٰنَ ۝٣ عَلَّمَهُ اَ۬لْبَيَانَ ۝٤',
-    qaloon: 'اِ۬لرَّحْمَٰنُ ۝١ عَلَّمَ اَ۬لْقُرْءَانَ ۝٢ خَلَقَ اَ۬لْإِنْسَٰنَ ۝٣ عَلَّمَهُ اَ۬لْبَيَانَ ۝٤',
+    hafs:   'ٱلرَّحۡمَٰنُ عَلَّمَ ٱلۡقُرۡءَانَ',
+    warsh:  'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
+    qaloon: 'اِ۬لرَّحْمَٰنُ عَلَّمَ اَ۬لْقُرْءَانَ',
   }
 
-  const PREVIEW_TRANSLATION =
-    'The Most Compassionate · taught the Qurʾān · created humankind · taught them eloquence.'
+  const PREVIEW_TRANSLATION = 'The Most Gracious — He has taught the Qurʾān'
 
   const currentRiwayah = $derived<Riwayah>((settings.riwayah as Riwayah | undefined) ?? 'qaloon')
 
