@@ -93,7 +93,7 @@ graph LR
 - **Role:** About page Svelte component + PWA install prompt capture/handling.
 
 ### `core/`
-- **Files:** `constants.ts`, `db.ts` (barrel), `db/{types.ts, migrations.js, validate.ts, connection.ts}`, `events.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `router.ts`, `sw-update-poll.ts`, `tag-colors.ts`, `ui.svelte`, `ui-bridge.ts`
+- **Files:** `constants.ts`, `db.ts` (barrel), `db/{types.ts, migrations.js, validate.ts, connection.ts}`, `events.ts`, `init-graph.ts`, `logger.ts`, `normalize.ts`, `aliases.ts`, `seeds.ts`, `quota-banner.svelte`, `router.ts`, `sw-update-poll.ts`, `tag-colors.ts`, `ui.svelte`, `ui-bridge.ts`
 - **Imports from:**
   - `core/quota-banner.svelte` → `a11y`
   - `core/ui.svelte` → emits `MARKS_UNDO` via the bus; no feature-dir imports
@@ -244,6 +244,7 @@ graph LR
 ## Quick heuristics
 
 - **Want to change persistence shape?** Schema lives in `core/db/migrations.js::applySchema` (closure-free; bumps `DB_VERSION` there); validation in `core/db/validate.ts::_shapes`; types in `core/db/types.ts`. Propagate to `marks/store.ts`, `review/state.ts`, `settings/*`, and any direct `put()` call sites — TS will flag them. The e2e fixture's schema source (`tests/e2e/fixtures/idb.js::_APPLY_SCHEMA_SRC`) is now derived from `applySchema.toString()` so it cannot drift.
+- **Want to add a boot-time init?** Use `core/init-graph.ts::register({ name, deps, init })` and call `boot()` from `app-bootstrap.ts` once it's wired through. Each node declares its deps explicitly so the next contributor doesn't have to eyeball line ordering. Audio init waits on riwayah; SRS waits on marks; sync v2 waits on settings — declare those `deps` arrays and the topological sort runs them in the right order.
 - **Want to add a route?** Register in `src/app-bootstrap.ts` via `router.register`; create `src/<feature>/<Feature>.svelte` and lazy-load via `() => import('./<feature>/<Feature>.svelte')`.
 - **Want to add a cross-module signal?** Add the constant to `core/constants.ts::Events` and the payload typedef to `EventPayloads`. Emit from the owner, listen from consumers. Don't import the module directly — that's what the bus exists to avoid. If the signal would just broadcast a rune value that consumers could read directly, skip the event entirely and read the rune (see "Dissolved into rune reads" in `events.md`).
 - **Want to wire a new piece of chrome?** Put the component under `nav/` and mount it in `App.svelte`.
