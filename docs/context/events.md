@@ -49,9 +49,9 @@ These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_
 | `READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `reader/position.ts:117,491` | `{ error, surah, verse }` |
 | `APP_INIT_ERROR` | `app:init-error` | `app-bootstrap.ts:139,199` | `{ error, context? }` |
 | `APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `app-bootstrap.ts:240` | `{}` |
-| `SETTINGS_THEME_CHANGED` | `settings:theme-changed` | `settings/theme.ts` (via `setTheme()`) | `{ from, to }` |
 | `SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `settings/clear-data.ts` (via `clearAllData()`) | `{}` |
-| `SETTINGS_FONT_SIZE_CHANGED` | `settings:font-size-changed` | `settings/font-size.ts` (via `setFontSize()`) | `{ size }` |
+| ~~`SETTINGS_THEME_CHANGED`~~ | ~~`settings:theme-changed`~~ | _Removed 2026-04-29 audit C-7 — was emitted with no listeners; theme rune mutation in `settings/theme.ts` is the single source of truth._ |
+| ~~`SETTINGS_FONT_SIZE_CHANGED`~~ | ~~`settings:font-size-changed`~~ | _Removed 2026-04-29 audit C-7 — was emitted with no listeners; font-size rune mutation in `settings/font-size.ts` is the single source of truth._ |
 | `REVIEW_OPEN` | `review:open` | `review/Hub.svelte:64,157` | `{}` |
 | `REVIEW_FILTER` | `review:filter` | `review/Hub.svelte:262` | `{ tags, surah }` |
 | `MARKS_SAVE_FAILED` | `marks:save-failed` | `marks/store.ts:46` | `{ verseKey, error }` |

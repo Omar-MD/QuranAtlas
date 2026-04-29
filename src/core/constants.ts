@@ -26,9 +26,7 @@ export const Events = {
   APP_INIT_ERROR: 'app:init-error',
   APP_READY_FOR_DOWNLOAD: 'app:ready-for-download',
   APP_UPDATE_AVAILABLE: 'app:update-available',
-  SETTINGS_THEME_CHANGED: 'settings:theme-changed',
   SETTINGS_DATA_CLEARED: 'settings:data-cleared',
-  SETTINGS_FONT_SIZE_CHANGED: 'settings:font-size-changed',
   SETTINGS_RIWAYAH_CHANGED: 'settings:riwayah-changed',
   REVIEW_OPEN: 'review:open',
   REVIEW_FILTER: 'review:filter',
@@ -80,9 +78,7 @@ export type EventPayloads = {
   'app:init-error': { error: Error; context?: string }
   'app:ready-for-download': Record<string, never>
   'app:update-available': Record<string, never>
-  'settings:theme-changed': { from: string; to: string }
   'settings:data-cleared': Record<string, never>
-  'settings:font-size-changed': { size: string }
   'settings:riwayah-changed': { from: 'hafs' | 'warsh' | 'qaloon'; to: 'hafs' | 'warsh' | 'qaloon' }
   'review:open': Record<string, never>
   'review:filter': { tag: string | null; surah: number | null }

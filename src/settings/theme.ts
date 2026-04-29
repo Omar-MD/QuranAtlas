@@ -4,8 +4,6 @@
  */
 
 import { get, put } from '../core/db.js'
-import { emit } from '../core/events.js'
-import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
 import { settings } from '../state/settings.svelte.ts'
 
@@ -99,10 +97,10 @@ export async function setTheme(theme: string): Promise<boolean> {
     return false
   }
 
-  const from = getCurrentThemePref()
   applyTheme(theme)
   Object.assign(settings, { theme: theme as typeof settings.theme })
-  emit(Events.SETTINGS_THEME_CHANGED, { from, to: theme })
+  // SETTINGS_THEME_CHANGED removed (audit C-7) — emitter had no
+  // listeners; the rune mutation above is the single source of truth.
 
   put('settings', { key: 'theme', value: theme }).catch((error) => {
     logger.error('Failed to save theme:', { theme, error })

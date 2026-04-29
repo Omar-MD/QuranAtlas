@@ -7,6 +7,7 @@
   import { refreshForSurah } from './marks/indicator'
   import UndoToast from './core/ui.svelte'
   import QuotaBanner from './core/quota-banner.svelte'
+  import SaveFailureToast from './core/save-failure-toast.svelte'
   import UpdateBanner from './core/UpdateBanner.svelte'
   import Panel from './settings/Panel.svelte'
   import ClearDataConfirm from './settings/ClearDataConfirm.svelte'
@@ -99,6 +100,7 @@
 <MarginHeader />
 <UndoToast />
 <QuotaBanner />
+<SaveFailureToast />
 <UpdateBanner />
 <Panel />
 <ClearDataConfirm />

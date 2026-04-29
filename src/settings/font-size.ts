@@ -4,8 +4,6 @@
  */
 
 import { get, put } from '../core/db.js'
-import { emit } from '../core/events.js'
-import { Events } from '../core/constants.js'
 import { logger } from '../core/logger.js'
 import { settings } from '../state/settings.svelte.ts'
 
@@ -47,7 +45,8 @@ export async function setFontSize(size: string): Promise<boolean> {
   if (!OPTIONS.includes(size as FontSizeOption)) { return false }
   applyFontSize(size)
   Object.assign(settings, { fontSize: size as typeof settings.fontSize })
-  emit(Events.SETTINGS_FONT_SIZE_CHANGED, { size })
+  // SETTINGS_FONT_SIZE_CHANGED removed (audit C-7) — emitter had no
+  // listeners; the rune mutation above is the single source of truth.
   put('settings', { key: 'fontSize', value: size }).catch((error) => {
     logger.error('Failed to save font size', { size, error })
   })

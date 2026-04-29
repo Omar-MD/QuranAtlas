@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Events } from '../../../src/core/constants.js'
 import { del, get, openDB } from '../../../src/core/db.js'
-import { clear, on } from '../../../src/core/events.js'
+import { clear } from '../../../src/core/events.js'
 import { logger } from '../../../src/core/logger.js'
 import { applyTheme, cycleTheme, getThemeOptions, initTheme, setTheme } from '../../../src/settings/theme.ts'
 
@@ -49,31 +48,21 @@ describe('settings/theme.ts', () => {
     vi.restoreAllMocks()
   })
 
-  it('emits theme changes with from/to and persists the new theme asynchronously', async () => {
-    const received = []
-    const unsub = on(Events.SETTINGS_THEME_CHANGED, (payload) => received.push(payload))
-
+  it('applies the new theme attribute and persists asynchronously', async () => {
     applyTheme('sepia')
 
     const success = await setTheme('dark')
 
     expect(success).toBe(true)
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
-    expect(received).toHaveLength(1)
-    expect(received[0]).toMatchObject({ from: 'sepia', to: 'dark' })
-    expect(received[0]).not.toHaveProperty('theme')
 
     await vi.waitFor(async () => {
       expect(await get('settings', 'theme')).toEqual({ key: 'theme', value: 'dark' })
     })
-
-    unsub()
   })
 
-  it('rejects invalid themes without emitting or persisting anything', async () => {
+  it('rejects invalid themes without persisting anything', async () => {
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
-    const received = []
-    const unsub = on(Events.SETTINGS_THEME_CHANGED, (payload) => received.push(payload))
 
     applyTheme('light')
 
@@ -81,27 +70,19 @@ describe('settings/theme.ts', () => {
 
     expect(success).toBe(false)
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
-    expect(received).toEqual([])
     expect(await get('settings', 'theme')).toBeUndefined()
     expect(warnSpy).toHaveBeenCalledWith('Invalid theme:', { theme: 'midnight' })
-
-    unsub()
   })
 
-  it('derives the previous theme from CSS classes when data-theme-pref and data-theme are absent', async () => {
-    const received = []
-    const unsub = on(Events.SETTINGS_THEME_CHANGED, (payload) => received.push(payload))
-
+  it('applies sepia even when only the legacy theme-dark class is present', async () => {
     document.documentElement.classList.add('theme-dark')
     document.documentElement.removeAttribute('data-theme')
     document.documentElement.removeAttribute('data-theme-pref')
 
-    await setTheme('sepia')
+    const success = await setTheme('sepia')
 
-    expect(received).toHaveLength(1)
-    expect(received[0]).toMatchObject({ from: 'dark', to: 'sepia' })
-
-    unsub()
+    expect(success).toBe(true)
+    expect(document.documentElement.getAttribute('data-theme')).toBe('sepia')
   })
 
   it('syncs <meta name="theme-color"> to --qa-surface-app on every applyTheme', async () => {
