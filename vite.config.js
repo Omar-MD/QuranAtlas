@@ -100,13 +100,22 @@ export default defineConfig({
     target: 'es2020',
     rollupOptions: {
       output: {
+        // Manual chunks split static-import clusters out of the entry chunk
+        // so a hash bump on hot UI code does not invalidate them in every
+        // visitor's cache. Dynamic imports (Reader, Hub, Onboarding,
+        // SurahList, BookmarksPage) auto-chunk; we only declare chunks
+        // here for static-import clusters.
+        //
+        // Audit R-23 (2026-04-29) found the prior table referenced four
+        // files that no longer exist (src/reader/index.js, src/nav/index.js,
+        // src/review/hub.js, src/settings/index.js); those rules silently
+        // no-op'd. Bootstrap-chunk experiment landed ~2 KB gzip MORE in
+        // total eager (chunk wrapper overhead vs. the boot code's tight
+        // coupling to entry), so we skip that for now and revisit when
+        // audio + sync land and there's a clearer eager-vs-lazy boundary.
         manualChunks(id) {
-          if (id.includes('src/reader/index.js')) { return 'reader' }
-          if (id.includes('src/nav/index.js')) { return 'nav' }
           if (id.includes('src/marks/')) { return 'marks' }
-          if (id.includes('src/review/hub.js')) { return 'review' }
-          if (id.includes('src/settings/index.js')) { return 'settings' }
-          if (id.includes('src/about/About.svelte')) { return 'about' }
+          if (id.includes('src/about/About.svelte') || id.includes('src/about/pwa-install')) { return 'about' }
         }
       }
     }
