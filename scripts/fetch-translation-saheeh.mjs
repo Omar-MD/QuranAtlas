@@ -13,20 +13,56 @@
  * The output is committed to git so subsequent builds run offline.
  */
 
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createHash } from 'node:crypto'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..')
 const OUT_PATH = join(REPO_ROOT, 'data', 'raw', 'saheeh.raw.json')
 
+// SHA-256 pin of the upstream API content as it last looked when this
+// translation pack was approved. The raw API response is non-deterministic
+// (footnote IDs reorder, surahs grow new variants), so we pin the
+// post-normalised JSON we write to OUT_PATH instead — anything that
+// silently changes upstream now fails the build until a human runs
+//   pnpm fetch:translation:saheeh -- --update-pin
+// and re-reviews. Closes audit R-18 supply-chain gap (2026-04-29).
+const PIN_PATH = join(REPO_ROOT, 'scripts', 'saheeh-api.sha256')
+const ARGS = new Set(process.argv.slice(2))
+const UPDATE_PIN = ARGS.has('--update-pin')
+
 const TRANSLATION_ID = 20
 const API_BASE = 'https://api.qurancdn.com/api/qdc'
 const UA = 'QuranAtlas-fetch/1.0 (https://quranatlas.org)'
 
-const SUP_RE = /<sup\s+foot_note=(?:"?(\d+)"?)[^>]*>(\d+)<\/sup>/g
+// Tightened to require at least one non-> character inside the foot_note=
+// attribute and to refuse straddling newlines, so a hostile API response
+// can't smuggle through a fragment that survives one pass but resembles
+// a tag on the next.
+const SUP_RE = /<sup\s+foot_note="?(\d+)"?[^>]*>(\d+)<\/sup>/g
 const HTML_TAG_RE = /<[^>]+>/g
+
+/**
+ * Repeatedly strip HTML tags until the result is a fixed point. A single
+ * pass leaves nested constructs ("<scr<script>ipt>" → "<script>") on the
+ * ground (audit C-1 / CodeQL js/incomplete-multi-character-sanitization,
+ * 2026-04-29). The loop runs at most until no replacement happens, with
+ * a generous cap so a maliciously deep nest can't pin the build.
+ */
+function stripHtmlTags(s) {
+  let prev
+  let curr = s
+  let i = 0
+  do {
+    prev = curr
+    curr = curr.replace(HTML_TAG_RE, '')
+    i++
+  } while (curr !== prev && i < 32)
+  return curr
+}
 const PAD3 = (n) => String(n).padStart(3, '0')
 
 async function getJSON(url, retries = 3) {
@@ -65,7 +101,7 @@ async function fetchFootnote(id, cache) {
     throw new Error(`missing footnote text for id ${id}`)
   }
   // Some footnote bodies wrap content in HTML tags — strip but preserve text.
-  const stripped = text.replace(HTML_TAG_RE, '').trim()
+  const stripped = stripHtmlTags(text).trim()
   cache.set(id, stripped)
   return stripped
 }
@@ -93,7 +129,7 @@ function normaliseVerseText(rawText, surahFootnoteCounter, surahFootnoteOrder) {
   result += rawText.slice(lastIndex)
   if (HTML_TAG_RE.test(result)) {
     HTML_TAG_RE.lastIndex = 0
-    result = result.replace(HTML_TAG_RE, '')
+    result = stripHtmlTags(result)
   }
   return result.trim()
 }
@@ -170,8 +206,29 @@ async function main() {
     surahs,
   }
 
+  // Hash the post-normalised content (deterministic across runs as long
+  // as upstream didn't drift). Compare against the committed pin in
+  // scripts/saheeh-api.sha256. Rejects a silent upstream change unless
+  // --update-pin is passed.
+  const serialized = JSON.stringify(out, null, 0)
+  const digest = createHash('sha256').update(serialized).digest('hex')
+  const pinExists = existsSync(PIN_PATH)
+  const expected = pinExists ? (await readFile(PIN_PATH, 'utf8')).trim() : null
+
+  if (UPDATE_PIN || !pinExists) {
+    await writeFile(PIN_PATH, digest + '\n', 'utf8')
+    console.log(`[fetch-saheeh] ${pinExists ? 'updated' : 'created'} pin: ${PIN_PATH}`)
+    console.log(`[fetch-saheeh] new digest: ${digest}`)
+  } else if (expected !== digest) {
+    throw new Error(
+      `Upstream content drift: digest ${digest} !== pinned ${expected}\n` +
+      `Re-review the diff in ${OUT_PATH} (which will not be written) and\n` +
+      `if the change is intended, re-run: pnpm fetch:translation:saheeh -- --update-pin`,
+    )
+  }
+
   await mkdir(dirname(OUT_PATH), { recursive: true })
-  await writeFile(OUT_PATH, JSON.stringify(out, null, 0), 'utf8')
+  await writeFile(OUT_PATH, serialized, 'utf8')
   console.log(`\n[fetch-saheeh] wrote ${OUT_PATH}`)
   console.log(`[fetch-saheeh] surahs=114 verses=${totalVerses} footnotes=${totalFootnotes} unique-footnote-ids=${fnCache.size}`)
 }
