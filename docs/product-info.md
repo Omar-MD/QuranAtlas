@@ -85,21 +85,19 @@ Designed for keyboard-first readers. Full reference via `?` from any non-input c
 - Everything lives in IndexedDB on the user's device.
 - No sync, no tracking, no analytics, no backend. Clearing data is one tap and wipes everything.
 
-## What's NOT included
+## Roadmap
 
-Deliberately out of scope — not on the roadmap unless that changes:
+QuranAtlas ships incrementally. Nothing is permanently "out of scope" — features the team has agreed on but hasn't built yet live in [`docs/context/future-work.md`](context/future-work.md) with horizon (v1.1 / v1.2 / v2+ / dataset), blockers, and dependency notes per item.
 
-- Audio recitation.
-- Transliteration (Latin-letter Arabic).
-- Page-based Mushaf layout (juz/hizb/ruku navigation).
-- Full-text search across all 6,236 verses.
-- Copy-verse-to-clipboard or social sharing.
-- Multi-device sync or accounts.
-- Community features, shared annotations, public libraries.
-- Only one English translation ships today (Saheeh International). The translation picker is reserved for when a second pack lands; future candidates and licensing notes live in `docs/context/future-work.md` §Translation packs.
-- Per-surah introductions are not yet shipped — the translation pack schema reserves space for them but the current source (Saheeh) does not provide them via API.
-- Footnotes or tafsir.
-- Export / import of marks.
+Pipeline today (non-exhaustive — see `future-work.md` for the full list and ordering):
+
+- **Reading core** — juz / hizb / rubʿ / ruku navigation; full-text Arabic + translation search; reading plan / khatm tracker / streak; page-break indicators.
+- **Memorization (hifz)** — per-verse memorization status flag, hide-drill / cover-text mode, spaced-repetition review queue.
+- **Audio recitation** — playback, reciter picker, verse loop / repeat (single largest v2 milestone).
+- **Page-based Mushaf layout** — page-break indicators (lightweight) and full page-image rendering (asset pipeline).
+- **Language aids** — word-by-word translation, transliteration, tajweed coloring.
+- **Translation expansion** — translation picker UI (gated on a second shipped pack), per-surah intros, additional translations, external tafsir packs.
+- **Sharing, export, sync** — copy verse to clipboard, share verse, marks + bookmarks export / import, multi-device sync, community / shared collections.
 
 ## Learn more
 

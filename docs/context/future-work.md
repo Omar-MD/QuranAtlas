@@ -32,18 +32,19 @@ Context: core data-model overhaul brainstormed 2026-04-20. Introduces 12 free-fo
 - **Edge revisit log** — timestamp every time user re-opens an edge. Most-revisited edges = user's insight attractors. Weight in graph rendering + dedicated "your most-returned connections" surface.
 - **Edge clusters / meta-reflection groups** — user groups related edges (e.g. "these 5 abrogation edges show legal evolution toward mercy") with cluster-level note. Edge-of-edges reflection layer.
 - **Edge structured-evidence field** — structured citations (tafsir, hadith, scholar name + reference) supporting why the edge exists. MVP uses free-text edge note; v2+ promotes to typed reference store.
-- **Community-curated aliases** — shared alias artifact with review/approval workflow. Lets communities ratify that `believers` → `muminin` in a specific cultural convention, without imposing globally.
+- **Community-curated aliases** — shared alias artifact with review/approval workflow. Lets communities ratify that `believers` → `muminin` in a specific cultural convention, without imposing globally. (See also §Sharing, export, sync — Community / shared collections.)
 - **Subordinate-rank hierarchy metadata** — dataset ships `subordinateOf` / `partOf` relations per classical tafsir (muhsinin ⊂ muminin ⊂ muslimin). Filters offer "include subordinate ranks" toggle. Graph renders hierarchy visually.
 - **Pillars layer** — revisit as a dedicated layer only if organic usage shows users forming a "pillar" tag convention. Alternatively extend threads seed palette.
 - **Mark-level flags (`hasQuestion`, `hasApplication`)** — shipped briefly in the 2026-04-20 data-model but pulled from UI + schema during tagging polish (empty-mark guard made them redundant; tags cover the same intents). Re-consider if post-launch usage shows users wanting a first-class "revisit later" / "to apply" toggle outside the tag layers.
-- **Memorization flag** — status enum (not-started / learning / memorized / needs-review). Rabbit-hole-adjacent (spaced-repetition = own product); deferred until clear need.
-- **Teaching / share-export flag** — marks verses user intends to share in halaqa / dawah. Bundles naturally with future sharing layer.
-- **Source citation layer** — free-form or structured references to tafsir, hadith, scholar names. Distinct from edge evidence; applies to verse itself.
+- **Teaching / share-export flag** — marks verses user intends to share in halaqa / dawah. Bundles naturally with future sharing layer (see §Sharing, export, sync).
+- **Source citation layer** — free-form or structured references to tafsir, hadith, scholar names. Distinct from edge evidence; applies to verse itself. (See also §Tafsir.)
 - **Certainty note flag** — optional `uncertain: boolean` on the note field (lightweight "still working this out" marker). Ships if post-MVP usage data shows demand.
 - **Orphan edges filter** — review hub filter showing edges whose endpoints no longer have marks.
 - **Bookmark collections** — group bookmarks into named, curated study sets (e.g. "Surah Yaseen routine"). MVP bookmarks (shipped 2026-04-28, riwayah-scoped, verse-id single-tap toggle) cover the flat list; collections layer on top.
-- **Community layer** — public/shared collections, curated thematic paths, follow study sets from trusted users, contribute optional classifications, compare interpretations or tag systems. Large surface; captured here as a placeholder.
 - **AI assistant mode** — summarize verse clusters, suggest tags, detect possible themes, find related verses, help organize notes, reflection prompts. Always shows **why** it suggested something; never authoritative over the text.
+
+(Per-verse memorization-status flag, formerly listed here, has been promoted to §Memorization (hifz) §v1.1 — was re-scoped 2026-04-29 from "deferred" to a near-term cheap unlock.)
+(Community layer, formerly listed here, has been promoted to §Sharing, export, sync §v2+.)
 
 ### Dataset enrichment roadmap
 
@@ -80,6 +81,117 @@ Saheeh International (id `saheeh`, 6236 verses, 1903 footnotes) ships as the def
 - **Per-surah intros (M4).** The pack schema reserves `intro: string[]` per surah but ships empty arrays today. Saheeh's printed introductions are not in the Quran.com qdc API; Maududi's Tafhim intros are exposed via `/chapters/{id}/info` but Islamic Publications retains copyright and free redistribution is unconfirmed. Resolve licensing before importing; render above verse 1 below the bismillah block. Should toggle with `settings.translationVisible` so intros disappear alongside verse translations.
 - **Translation picker UI (M5).** `dataset.ts::getTranslations()` already maps `provenance.translations[]` to a UI-shaped list and the Settings translation-picker subview is wired; only the Settings entry is hidden today because there is one shipped pack. When a second pack lands, expose the picker plus migrate `settings.translationId` cleanly (pre-release schema-change discipline still applies).
 - **Additional translations.** Strong candidates with clear redistribution status: Bridges' Translation (id 149 on Quran.com qdc, CC BY-ND, includes qiraat-aware footnotes that complement QuranAtlas's riwayat-aware corpus); Mufti Taqi Usmani (id 84, copyright held by Maktaba Ma'ariful Quran — verify license before fetching); Abdel Haleem (Oxford, fully copyrighted — would need a licensed source). Mustafa Khattab's *The Clear Quran* — originally targeted as the first pack — is no longer served by Quran.com's public API and has no other free redistribution channel; revisit if `theclearquran.org` exposes a licensed feed.
+
+---
+
+## Reading core
+
+### v1.1 — near-MVP
+
+- **Juz / hizb / rubʿ / ruku navigation.** Static metadata tables (juz boundaries are 30 fixed `surah:verse` pairs; hizb / rubʿ / ruku boundaries are similarly small fixed tables). Add jump-to-juz action in command sheet, surah header chip, and nav drawer. Cheap unlock for "1 juz/day = khatm in Ramadan" daily-routine reading. Highest cheap-ROI item among Tier 1.
+
+- **Full-text Arabic + translation search.** MiniSearch / Lunr static index built at translation-pack precache time (~1 MB gzip across 6,236 verses). Wire into existing command-sheet search; new result group "Verse text". Today the command sheet only resolves refs / surahs / tags — readers who recall a phrase but not a reference are blocked.
+
+- **Reading plan / khatm tracker / streak.** New IDB store `readingPlan` (target verses or pages per day, started date, completed count, completed verseKeys set). Daily-target progress card on Surah list + About stat grid. Streak counter from days that hit target. Habit-forming retention loop, no external deps.
+
+### v1.2
+
+- **Page-break indicators (Hafs first).** KFGQPC publishes per-verse page numbers for the standard 604-page Madinah Mushaf; embed as `pageNumber` on Hafs verse records. Render thin gold rule + page number between verses on page boundary. Jump-to-page in command sheet. Lightweight subset of full page-image rendering — see §Page-based Mushaf layout.
+
+### v2+ — longer horizon
+
+- **Verse comparison view (parallel passages).** Side-by-side reader for parallel passages (Musa across 7 / 20 / 26 / 28). Derive candidates from layer overlap (`people + places + events ≥ 2`). Diff-highlight differing tokens. Builds on the 12-layer marks system; partly captured under §Tag/verse multi-layer §v2+ "Compare mode" — converge once both items mature.
+
+---
+
+## Memorization (hifz)
+
+### v1.1 — near-MVP
+
+- **Memorization status flag (per-verse).** Status enum `none | learning | memorized | review`. Add to mark record (or new `hifz` store keyed by `riwayah` + `verseKey`). Toggle chip in fast-tag panel + filter in Review hub. Foundation for every other hifz feature. Schema-add only — pre-release schema-change discipline (no users yet) keeps this cheap. Promoted from §Tag/verse multi-layer §v2+ on 2026-04-29 once "go-to memorization app" was named as product north star.
+
+### v1.2
+
+- **Hide-drill / cover-text mode.** Toggle CSS attribute on `<html>` (`data-drill="arabic-hidden" | "translation-hidden"`) with per-verse blur + tap-to-reveal. New shortcut + menu entry. Practice queue surfaces verses where `memorization ∈ {learning, review}`. Depends on memorization status flag.
+
+### v2+ — longer horizon
+
+- **Spaced-repetition review queue (SRS).** FSRS or SM-2 algorithm; per-verse review history store; daily due-queue UI; dashboard (cards due / mature / leeches). Pairs with memorization status + hide-drill. Differentiator vs every other Quran app. Largest hifz lift; treat as v2 milestone.
+
+---
+
+## Audio recitation
+
+### v2 — milestone
+
+- **Recitation playback + reciter picker + verse loop.** Reciter asset hosting (every-ayah.com / quran.com mp3 corpora — 1–3 GB per reciter), streaming + HTTP range-request playback, SW precache strategy (per-surah on demand, not full corpus), reciter picker (initial set ≥ 3: Ḥuṣarī, Sudais, Minshawi), A-B loop range, repeat-N, sync-to-verse highlight + autoscroll. Settings: reciter, playback rate, repeat behavior. Single biggest leverage feature in the product — every "main" Quran app ships audio, and absent it QuranAtlas reads as a study tool, not a daily companion. Single biggest scope item too: licensing, asset budget, SW caching strategy, and player UI all need decisions. Pairs strongly with §Language aids — Tajweed coloring (visual rule highlight while audio plays).
+
+---
+
+## Page-based Mushaf layout
+
+Distinct from §"Page-image rendering for authentic mushaf hands" above (which is about *calligrapher* selection — Tarabulsi, Indo-Pak, etc.). This section is about *page anchoring* for hifz workflows where students memorize by visual page position in the standard 604-page Madinah Mushaf.
+
+- **Page-break indicators.** See §Reading core §v1.2.
+- **Page-image Mushaf rendering (full).** Pipeline already designed in §"Page-image rendering for authentic mushaf hands" (KFGQPC PDF → per-page PNG @ 2× DPR, ~30–50 MB per riwayah, SW precache, invisible Unicode overlay for selection / tap-to-mark). Per-riwayah toggle in Settings → Reading. Subsumes page-break indicators if shipped. Asset budget is the biggest blocker.
+
+---
+
+## Language aids
+
+### v1.3 — once Reading core ships
+
+- **Word-by-word translation.** Quran.com qdc API has word-aligned data; build pipeline mirroring the Saheeh fetch. Schema: per-verse `words: [{ar, en, root}]`. Render Arabic line as spans; tap / hover reveals gloss. Significant touch on `reader/Verse.svelte` — re-tokenisation has knock-on effects for translation footnote markers, long-press, and selection.
+
+- **Transliteration.** New translation-pack-like store; Quran.com qdc serves it. Render line under Arabic, gated by `settings.transliterationVisible`. Architecture parallels the existing translation-pack flow.
+
+- **Tajweed coloring.** Tajweed-rule annotation dataset (KFGQPC tajweed-marked corpus, or quran.com tajweed JSON). Render colored spans over Arabic glyphs without breaking riwayah orthography. Toggle in Settings → Reading. Standalone value medium; pairs strongly with §Audio recitation for full recitation-learning loop.
+
+---
+
+## Sharing, export, sync
+
+### v1.1 — cheap unlocks
+
+- **Copy verse to clipboard + share.** `navigator.clipboard.writeText` + Web Share API. Add to fast-tag panel `⛶` row or verse long-press menu. Half-day implementation; standard quote-to-friend flow.
+
+### v1.2
+
+- **Marks + bookmarks export / import.** JSON export of all marks, bookmarks, settings; import flow with merge / replace choice. Backup + device-migration without committing to multi-device sync. Pairs with the privacy stance: data is portable, leaves only on user demand.
+
+### v2+ — longer horizon
+
+- **Multi-device sync.** End-to-end-encrypted sync (account-less, device-pair via QR / passphrase). Resolves the "no accounts" privacy stance with sync the server cannot read. Substantial backend lift; defer until single-device experience is complete.
+
+- **Community / shared collections.** Public / shared collections, curated thematic paths, follow study sets from trusted users, contribute optional classifications, compare interpretations or tag systems. Promoted from §Tag/verse multi-layer §v2+ on 2026-04-29. Large surface; captured here as a placeholder until product direction firms.
+
+---
+
+## Tafsir
+
+### v1.3 onward
+
+- **External tafsir packs.** Beyond Saheeh's inline footnotes (1,903 shipped). Candidates with redistribution clarity: Tafsir Ibn Kathir (English abridged, public domain), Maududi's Tafhim (Islamic Publications copyright — verify), Tafsir al-Jalalayn (English, Royal Aal al-Bayt — license check). Pack format mirrors translation-pack architecture; render in a verse-detail bottom sheet, not inline. Tafsir selection lives in Settings → Sources alongside the riwayah and translation pickers.
+
+---
+
+## Recommended ship sequence
+
+Effort × ROI ordering as analysed 2026-04-29 against the "go-to Quran reading + memorization app" north star. Move items into active plans roughly in this order — not a contract; re-evaluate when each tier ships.
+
+**v1.1 — Tier 1 cheap wins (~1 sprint total).** Juz / hizb / rubʿ / ruku nav · per-verse memorization status flag · copy + share verse · reading plan / khatm tracker / streak · full-text Arabic + translation search.
+
+**v1.2 — Tier 2 medium lift.** Hide-drill / cover-text mode · page-break indicators (Hafs) · marks + bookmarks export / import.
+
+**v1.3.** Word-by-word translation · transliteration · tajweed coloring · external tafsir packs (start with one).
+
+**v2.0 — single-feature milestone.** Audio recitation + reciter picker + verse loop. Single biggest leverage in the entire roadmap.
+
+**v2.1.** Page-image Mushaf rendering (per-riwayah) · spaced-repetition review queue.
+
+**v2.2.** Verse comparison view · multi-device sync · community / shared collections.
+
+Cross-cutting: every shipped tier moves its entries out of this doc per the §"Adding to this doc" rule.
 
 ---
 
