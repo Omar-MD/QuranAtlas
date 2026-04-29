@@ -1,6 +1,6 @@
 # Cluster-by-surface — workflow playbook
 
-Referenced by `CLAUDE.md` Rule 6. Read this before writing a multi-unit plan, dispatching subagents, or adding new Playwright specs.
+Referenced by `CLAUDE.md` Rule 4. Read this before writing a multi-unit plan, dispatching subagents, or adding new Playwright specs.
 
 ## The unit
 

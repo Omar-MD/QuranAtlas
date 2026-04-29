@@ -17,7 +17,7 @@
 | P0-1 | **SW manifest fail-open** at `sw-handlers.js:56-58` defeats SHA-256 chain of trust the moment manifest fetch fails | A4 | every offline user; supply-chain |
 | P0-2 | **`saheeh.raw.json` ships 2.1 MB of pure waste** to every client because `public/dataset/translations/saheeh.raw.json` is build-input that Vite copies verbatim | A3 | 25% of full-precache bandwidth |
 | P0-3 | **`maxEntries: 200` in `src/sw.js:42`** silently LRU-evicts 459-file dataset → cache-miss on offline reads | A3 | every multi-riwayah offline user |
-| P0-4 | **Rule-5 violation rate ≈60% on last 10 fixes** (recent-surahs cap-7, swipe-delete, verse-id tap, three settings-preview fixes have NO regression test) | A5 | every future regression of these surfaces |
+| P0-4 | **Regression-test gap on last 10 fixes** (recent-surahs cap-7, swipe-delete, verse-id tap, three settings-preview fixes have NO regression test) | A5 | every future regression of these surfaces |
 | P0-5 | **`reshape()` MutationObserver in `app-bootstrap.ts:116-140` walks ALL verses** on every chunk-append, ~1,700 forced reflows on Al-Baqarah scroll — one-line fix | A3 | every iPhone reader |
 
 **Five P1 findings (block v1.1 sprint kickoff):**
@@ -27,7 +27,7 @@
 | P1-1 | `core/db.ts` is a god module (32+ importers; conflates connection + validation + type registry) | every new store touches it; hifz/SRS/search/plan all queue here |
 | P1-2 | `settings.value: 'any'` god-bag with 16 keys; multi-writer leaks (`translationVisible`, `lastSurface`); fragile joint-ownership of `translationId` | every settings reader has its own validator (15 files) |
 | P1-3 | Schema migration is destructive-recreate-only; `onupgradeneeded` has zero back-fill plumbing | first user-visible release closes this window |
-| P1-4 | `tests/e2e/global-setup.ts` (Rule 7.5) **does not exist**; every e2e pays cold-boot setup tax | Rule 7.5 explicitly requires it before next setup-heavy spec |
+| P1-4 | `tests/e2e/global-setup.ts` (Rule 6.5) **does not exist**; every e2e pays cold-boot setup tax | Rule 6.5 explicitly requires it before next setup-heavy spec |
 | P1-5 | `safety/sync.ts` is a per-feature dispatcher (4 bespoke message types calcify the pattern) AND has a load-bearing import cycle with `settings/riwayah.ts` | every new persisted concept adds a `case` here; sync v2 can't deprecate cleanly |
 
 **Composite north star.** Move from *clean by accident* (single-dev discipline) to *clean by construction* (architectural invariants enforced at compile time + test time). Concrete target: every future-work item from §1 to §16 lands in ≤5 files; §13 (audio), §14 (mushaf), §17 (sync) land in ≤15 files each because the cross-cutting layers they need exist before they arrive.
@@ -150,7 +150,7 @@ Each finding cited inline with `file:line`; full evidence in `tmp/audit-NN-*.md`
 
 ### 4.3 Performance + assets + SW — *full audit: `tmp/audit-03-perf-assets.md`*
 
-- **Bundle is small** (~87 KB gzip total, 0 warnings, well under 500 KB budget). `Rule 8` holds.
+- **Bundle is small** (~87 KB gzip total, 0 warnings, well under 500 KB budget). `Rule 7` holds.
 - **`vite.config.js:90-97` `manualChunks` is dead** — five of six rules reference files that no longer exist; eager chunk inflated by ~12 KB gzip.
 - **`saheeh.raw.json` ships 2.1 MB of pure waste** in `dist/` (P0).
 - **`maxEntries: 200` cap vs 459 manifest files** silently LRU-evicts offline corpus (P0).
@@ -180,10 +180,10 @@ Each finding cited inline with `file:line`; full evidence in `tmp/audit-NN-*.md`
 - **3 force re-architecture:** audio (#13, ~25+ files, persistent player overlay + new SW range-cache), page-image mushaf (#14, asset blowout + selection model), sync (#17, every store gains tombstone + breaks sole-writer invariant).
 - **#9 word-by-word is the highest-risk "additive" feature** (CC-1).
 - **#18 community contradicts no-accounts privacy stance** in `product-info.md`.
-- **HALF-B test architecture:** 80 unit / 11 e2e; 635 unit cases / ~131 chromium e2e cases. Five Rule-7/9 violations found. **Rule 5 violation rate ≈60% on last 10 fixes** — six commits ship without regression test.
-- **`global-setup.ts` (Rule 7.5) does not exist.** Every test pays cold-boot setup tax.
-- **`journey-d-settings.spec.js` regressed Rule 7.3** (5 nested `beforeEach`).
-- **Rule 7.4 mobile tag-gate inverted** — Mobile Chrome project runs every untagged spec on top of chromium; ~50 redundant cases.
+- **HALF-B test architecture:** 80 unit / 11 e2e; 635 unit cases / ~131 chromium e2e cases. Five Rule-6/8 violations found. **Regression-test gap rate ≈60% on last 10 fixes** — six commits ship without regression test.
+- **`global-setup.ts` (Rule 6.5) does not exist.** Every test pays cold-boot setup tax.
+- **`journey-d-settings.spec.js` regressed Rule 6.3** (5 nested `beforeEach`).
+- **Rule 6.4 mobile tag-gate inverted** — Mobile Chrome project runs every untagged spec on top of chromium; ~50 redundant cases.
 - **`_APPLY_SCHEMA_SRC` in `tests/e2e/fixtures/idb.js`** is a single fixture point of failure (CC-2 / C-1).
 - **Cumulative future-work test cost** ceiling: +2.7s unit / +40–50s e2e if every roadmap feature ships. Audio + mushaf + sync = 60% of e2e delta.
 
@@ -199,7 +199,7 @@ Severity scale: **Critical / High / Medium / Low**. Blast-radius = number of fil
 | R-02 | `saheeh.raw.json` ships to clients | **High** | bandwidth + storage; advertises pipeline | 1 file move | A3 |
 | R-03 | `maxEntries: 200` vs 459 files | **High** | offline reads fail silently | 1 line | A3 |
 | R-04 | `reshape()` over-walks | **High** | iPhone perf complaint surface | 1 line | A3 |
-| R-05 | Rule-5 ≈60% violation rate | **High** | every regression repeat-fixed; trust erosion | continuous | A5 |
+| R-05 | Regression-test gap rate ≈60% | **High** | every regression repeat-fixed; trust erosion | continuous | A5 |
 | R-06 | Verse-grain DOM no escape hatch (CC-1) | **High** | WBW + audio + tajweed all blocked or duplicated work | 6 modules at first WBW lands | A1, A5, A3 |
 | R-07 | `core/db.ts` god module (CC-2) | **High** | every new store touches it; types drag runtime; e2e fixture diverges | ~32 importers; 9 fixture-coupled specs | A1, A2, A5 |
 | R-08 | Settings god-bag (CC-3) | **High** | 15-file validator drift; multi-writer leaks; 3 race conditions | ~15 readers + 3 race callers | A1, A2 |
@@ -209,7 +209,7 @@ Severity scale: **Critical / High / Medium / Low**. Blast-radius = number of fil
 | R-12 | Boot order line-coded (CC-8) | **Medium** | next contributor reorders → boot break | every future `init*` call | A1 |
 | R-13 | Bridge proliferation no factory (CC-9) | **Medium** | linear growth with persistent overlays | 6 today, +3 by v2 | A1 |
 | R-14 | Dead-event silent failures (CC-10) | **Medium** | data loss invisible to user | 7 silent-failure events | A2 |
-| R-15 | `global-setup.ts` (Rule 7.5) absent | **Medium** | suite wall-time tax compounds with every spec | every e2e test | A5 |
+| R-15 | `global-setup.ts` (Rule 6.5) absent | **Medium** | suite wall-time tax compounds with every spec | every e2e test | A5 |
 | R-16 | `_APPLY_SCHEMA_SRC` fixture mirror | **Medium** | red suite at every DB version bump | 9 specs | A5 |
 | R-17 | Vocabulary drift (CC-11) | **Medium** | onboarding cost + audio "reciter vs riwayah" collision | conceptual; permeates docs | A1 |
 | R-18 | Build-script no upstream pin | **High** *(supply-chain)* | poisoned dataset reaches users | every build | A4 |
@@ -222,8 +222,8 @@ Severity scale: **Critical / High / Medium / Low**. Blast-radius = number of fil
 | R-25 | Boundary leaks: UI reads IDB raw | **Medium** | sole-writer rule erosion | 4 callsites | A1 |
 | R-26 | Update-poll thundering-herd risk | **Low** | minor traffic on multi-tab | 5 lines | A3 |
 | R-27 | Race conditions (riwayah/theme/recent) | **Medium** | divergence between IDB and rune | 4 writers | A2 |
-| R-28 | Rule 7.3 regression in journey-d | **Low** | redundant setup work | 1 spec | A5 |
-| R-29 | Rule 7.4 mobile tag inversion | **Medium** | ~50 redundant cases × every CI run | mobile project | A5 |
+| R-28 | Rule 6.3 regression in journey-d | **Low** | redundant setup work | 1 spec | A5 |
+| R-29 | Rule 6.4 mobile tag inversion | **Medium** | ~50 redundant cases × every CI run | mobile project | A5 |
 | R-30 | Marks/Editor.svelte dead-by-policy still mounted | **Low** | code duplication with TagSheet | 1 file | A1 |
 | R-31 | onboarding component imported just for `isComplete()` | **Low** | +10 KB on launch path | 1 file split | A1 |
 | R-32 | `connect-src` will need explicit allow-list at sync v2 | **Low → Medium** at v2 | accidental allow-all if forgotten | 1 directive | A4 |
@@ -307,7 +307,7 @@ The architecture that absorbs every `future-work.md` item with **least blast rad
 7. **`offline/offline-selector.svelte`** — per-feature opt-in (Text · Audio per reciter · Pages per riwayah · Search index) with size estimates. Ships in v1.2 alongside the SW partition. CC-7 + C-4.
 8. **`core/sw/strategies.ts`** — per-asset-class routing: `/dataset/riwayat/*` (NetworkFirst, no eviction), `/dataset/audio/{reciter}/*` (CacheFirst, per-reciter cache, range-aware), `/dataset/mushaf-pages/{riwayah}/*` (CacheFirst, content-addressed), `/dataset/search-index.json` (CacheFirst, single asset). Manifest digest baked into bundle via Vite `define`. Fail-closed. CC-5 + CC-7.
 9. **`core/silent-failure-toast.ts`** — wires the seven dead silent-failure events into the existing `quota-banner.svelte` toast pattern. CC-10.
-10. **`tests/e2e/global-setup.ts`** — reuses onboarded `storageState` per Rule 7.5; e2e fixture imports the *real* `core/db/migrations.ts` schema (no hand-mirror). C-1 + R-15 + R-16.
+10. **`tests/e2e/global-setup.ts`** — reuses onboarded `storageState` per Rule 6.5; e2e fixture imports the *real* `core/db/migrations.ts` schema (no hand-mirror). C-1 + R-15 + R-16.
 
 ### 6.3 Invariants to encode (and enforce)
 
@@ -351,7 +351,7 @@ The architecture that absorbs every `future-work.md` item with **least blast rad
 - Mobile Chrome project flips to `grep: /@mobile/`; ~50 cases drop.
 - `_APPLY_SCHEMA_SRC` removed; fixture imports real schema from `core/db/migrations.ts` via Node-side serialisation.
 - `journey-d-settings.spec.js` collapses 5 `beforeEach` to 1 + per-describe deltas.
-- Rule-5 backfill: unit tests for the 6 missing-guard fixes (recent-surahs cap-7, swipe-delete, verse-id tap, three settings-preview fixes); break-and-restore-protocol verified.
+- Regression-test backfill: unit tests for the 6 missing-guard fixes (recent-surahs cap-7, swipe-delete, verse-id tap, three settings-preview fixes); each test verified against pre-fix code (must fail) and post-fix code (must pass).
 - `journey-h-offline.spec.js:49` 10s `setTimeout` replaced with `waitForFunction` against SW state.
 
 ---
@@ -368,7 +368,7 @@ Land as a single PR titled `chore(arch): P0 hardening`.
 - [ ] **R-02** Move `public/dataset/translations/saheeh.raw.json` → `data/raw/saheeh.raw.json`; update `scripts/build-dataset.mjs` source path.
 - [ ] **R-03** Raise `maxEntries: 200` → `500` (or remove cap; per-origin quota dominates).
 - [ ] **R-04** Scope `reshape()` to `mutation.addedNodes` only; add unit test asserting only added nodes are walked.
-- [ ] **R-05** Backfill 6 missing Rule-5 regression tests (5 unit, 1 e2e) for last 10 fixes; verify break-and-restore protocol on each.
+- [ ] **R-05** Backfill 6 missing regression tests (5 unit, 1 e2e) for last 10 fixes; each verified against pre-fix code (fails) and post-fix code (passes).
 - [ ] **R-19a** CSP: add `frame-ancestors 'none'` to current meta tag (header migration in P2).
 - [ ] **R-23** Rewrite `vite.config.js manualChunks` against current paths; add `bootstrap` chunk.
 - [ ] **R-34** Delete dead Amiri-Quran warmup div in `index.html`.
@@ -385,8 +385,8 @@ Strict sequence; later items depend on earlier. No future-work lands during this
 3. **Generic safety/sync envelope schema** (R-10, C-2, C-5) — `{ topic, keys?, originDeviceId, lastModified }`; features `register({ topic, apply })` at boot; cycle dissolved
 4. **`core/init-graph.ts` dependency runner** (R-12) — replaces line-order in `app-bootstrap.ts`
 5. **Dead-event triage** (R-14, C-7) — wire silent-failure events to `quota-banner.svelte`; delete vestigial `SETTINGS_THEME_CHANGED`/`SETTINGS_FONT_SIZE_CHANGED`/dead telemetry; add `// roadmap: v1.1` markers to EDGES_*
-6. **`tests/e2e/global-setup.ts`** (R-15, Rule 7.5 prerequisite)
-7. **Mobile Chrome project tag-gate flip** (R-29, Rule 7.4)
+6. **`tests/e2e/global-setup.ts`** (R-15, Rule 6.5 prerequisite)
+7. **Mobile Chrome project tag-gate flip** (R-29, Rule 6.4)
 8. **Build-script upstream pin** (R-18) — `scripts/saheeh-api.sha256` + `--update-pin` flag; tighten `SUP_RE` + fixedpoint loop for the two CodeQL Medium alerts
 9. **IDB write-side validation: length caps + enum on `bookmarks.riwayah` + `__proto__` strip** (R-20)
 10. **Boundary-leak sweep** (R-25) — `state/recent-surahs.svelte.ts` sole-reader for `NavDrawer` + `SurahList`; same for translation-id
@@ -442,14 +442,14 @@ For each conflict in §3, the tier where it lands:
 | **File churn** per future-work item | growing (god modules accumulate touches) | flat (each item lands in its own dir, registers with cores) | init-graph + overlay factory + sync registration |
 | **Performance ceiling** | ~30 KB gzip eager + ~14k DOM nodes max + 200-entry SW cap | ~18 KB gzip eager + virtualised ±3 chunks + per-class caches | manualChunks + lazy overlays + virtualisation + per-class strategies |
 | **Security floor** | meta CSP, fail-open SW, no upstream pin, IDB length-cap gaps | header CSP + frame-ancestors, fail-closed SW, upstream pin, full IDB length/enum caps, BroadcastChannel schema | P0.R-01 + P1.8/.9 + P2.17 |
-| **Test economics** | 60% Rule-5 violation; no global-setup; mobile project doubles work; fixture mirrors db.ts | Rule-5 100%; global-setup landed; mobile @-tagged; fixture imports real schema | P0.R-05 + P1.6/7 + P1.1 |
+| **Test economics** | 60% regression-test gap; no global-setup; mobile project doubles work; fixture mirrors db.ts | regression coverage 100% on bug fixes; global-setup landed; mobile @-tagged; fixture imports real schema | P0.R-05 + P1.6/7 + P1.1 |
 | **Architectural invariants** | line comments + memory + audit docs | enforced by eslint rules + CI grep tests | §6.3 invariant table |
 
 ---
 
 ## 10. What this audit deliberately did NOT do
 
-- Did not measure real e2e wall-time on this commit (Rule 7's "~110s pre-audit" taken on faith from CLAUDE.md).
+- Did not measure real e2e wall-time on this commit (Rule 6's "~110s pre-audit" taken on faith from CLAUDE.md).
 - Did not run accessibility-compliance or frontend-design red-teams (structural audit only).
 - Did not red-team individual unit-test assertions; spot-checks confirmed Rule-9 scoping but suite-wide assertion quality is its own audit.
 - Did not project costs of `Page-image rendering for authentic mushaf hands` (calligrapher selection — distinct from §14 page-anchoring; out of scope until contributor commits to asset pipeline per `future-work.md`).

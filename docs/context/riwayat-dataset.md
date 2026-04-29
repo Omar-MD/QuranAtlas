@@ -289,7 +289,7 @@ if (isIdentity && n !== 1) { continue }
 
 Word-stream / ayah-DP alignment runs unconditionally; only TRULY identity-aligned surahs are skipped. Alias coverage went **51 → 60 surahs**.
 
-**Regression guard.** `tests/unit/data/translation-riwayah-alignment.test.js` — explicit assertion that all 9 boundary-drift surahs have non-identity alias entries. Validated via Rule 5 break-and-restore (test fails on the buggy script, passes after fix).
+**Regression guard.** `tests/unit/data/translation-riwayah-alignment.test.js` — explicit assertion that all 9 boundary-drift surahs have non-identity alias entries. Validated against the buggy script (test fails) and against the fix (test passes).
 
 **Takeaway.** Equal counts ≠ identity boundaries. The only sound check is to actually align the word streams and inspect the result; counts are a false-positive-prone proxy. Future work that touches the alignment pipeline should likewise distrust shortcuts that bypass alignment entirely.
 

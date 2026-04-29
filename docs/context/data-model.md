@@ -384,7 +384,7 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
 
 ## Cross-cutting rules
 
-> **Invariant (formerly `CLAUDE.md` Rule 5) — one writer per store.** File references use basenames; grep for the basename, not a specific `.js`/`.ts`.
+> **Invariant — one writer per store.** File references use basenames; grep for the basename, not a specific `.js`/`.ts`.
 >
 > - `marks` — written only via `marks/store`. Never `put('marks', …)` directly. Bypassing this breaks `_canon` computation, cross-tab broadcast, and the `MARKS_SAVED` / `MARKS_DELETED` event contracts (see `marks` §Write invariant above).
 > - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).

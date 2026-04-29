@@ -65,7 +65,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - Closes if `SYNC_UPDATE_RECEIVED` reports the editing verseKey was deleted elsewhere.
   - Mounted persistently in `App.svelte` alongside `UndoToast` and `QuotaBanner`.
   - `long-press.ts` exposes a Svelte action (`use:longPress`) and an imperative `setupLongPress(container, onPress)` wrapper for vanilla-JS consumers.
-- **IDB touch:** `marks` (CRUD via `marks/store.ts` only — CLAUDE.md Rule 5).
+- **IDB touch:** `marks` (CRUD via `marks/store.ts` only — data-model.md cross-cutting rules).
 
 ## Command sheet
 
@@ -172,7 +172,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Files:** `surahs/SurahList.svelte`, `surahs/SurahRow.svelte`, `nav/EmptyRoute.svelte` (mobile redirect synthetic component)
 - **Purpose:** Desktop browseable directory of all 114 surahs. Name / meaning / type / verse count, Recent filter, search by name/number/ref (`67`, `67:1`, "Mulk"), continue-reading card, ★ Bookmarks header link to `#/bookmarks` (the dedicated bookmark list page replaces the legacy "Bookmarked" filter pill). (Mobile users get the drawer's Read sub-tabs instead — same data, different surface.)
 - **Key behaviors:**
-  - "Bookmarked" filter reads unique surah numbers from `marks/store.ts::getAll()` (sole read path per CLAUDE.md Rule 5).
+  - "Bookmarked" filter reads unique surah numbers from `marks/store.ts::getAll()` (sole read path per data-model.md cross-cutting rules).
   - "Recent" filter reads `settings.recentSurahs` (populated by `App.svelte`'s `$effect` on `reader.currentSurahNum`, capped at 5).
   - Direct-ref query (e.g. `2:255`) emits `NAVIGATION_NAVIGATE` for verse jump.
   - Filter and search state managed via the `surahs` rune (`state/surahs.svelte.ts`).
