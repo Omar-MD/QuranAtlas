@@ -51,7 +51,7 @@ test.describe('Journey D: Settings & appearance', () => {
   for (const theme of ['light', 'sepia', 'dark']) {
     test(`D3-bg: ${theme} → html bg + theme-color meta match --qa-surface-app @chromium-only`, async ({ page }) => {
       await openSettingsSheet(page)
-      await page.locator(`.qa-theme-swatch--${theme}`).click()
+      await page.locator(`.qa-settings-tf-dot--${theme}`).click()
       await expect(async () => {
         const pref = await page.evaluate(() =>
           document.documentElement.getAttribute('data-theme')

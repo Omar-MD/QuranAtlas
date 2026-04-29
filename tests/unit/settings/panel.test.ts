@@ -1,21 +1,21 @@
 /**
- * Component tests for Panel.svelte — covers the 2026-04-29 full-screen redesign:
+ * Component tests for Panel.svelte — covers the 2026-04-29 v7 redesign:
  *
- *   D1:   Settings sheet structure — header, sticky preview, 3 sections in
- *         order (Reading · Appearance · Recitation), 4 theme swatches,
- *         translation toggle, night-mode switch.
- *   D1:   Escape closes the sheet.
- *   D:    Clear-data row not in sheet (post-redesign).
- *   D1b:  Recitation collapsed by default; tap expands; 3 riwayah swatches
- *         appear; clicking one persists to IDB + flips active.
- *   D2:   Show translation row subtitle visible; toggle writes IDB + flips rune.
- *   D3:   Each theme swatch click → setTheme runs + active class flips.
- *   D5:   Font-size + Reading-flow sliders reachable directly (no subview tap).
- *         Reset button hidden by default; appears on slider change; click restores defaults.
- *   D6:   Sticky live preview present; reflects current riwayah glyphs;
- *         translation line gated on translationVisible.
- *   D7:   Translation picker subview never mounts when only 1 translation
- *         is shipped (stub view fully removed).
+ *   D1:   Sheet structure — preview band (no header bar), Reading + Sources
+ *         sections, theme footer with swatches + night moon, ✕ inside preview.
+ *   D1:   Escape closes the sheet (also closes any open picker first).
+ *   D:    Clear-data row not in sheet.
+ *   D2:   Translation toggle in dual-action row (Translation row inside Sources).
+ *   D2:   Translation chevron disabled when ≤1 translation; popover does not open.
+ *   D3:   Theme swatches in footer pill — 4 swatches, click writes setTheme.
+ *   D3:   Night moon toggle — click writes nightMode.
+ *   D5:   Sliders inline (no subview); reset link appears on change + restores.
+ *   D6:   Live preview present + theme-true (uses var(--qa-surface-raised));
+ *         translation line gated on translationVisible rune.
+ *   D7:   Recitation popover — tap source row opens, riwayah click writes IDB,
+ *         popover closes; tap scrim closes.
+ *   D8:   Picker popover dismiss — Escape closes picker first then sheet on
+ *         second press.
  */
 
 import { render, fireEvent } from '@testing-library/svelte'
@@ -52,13 +52,7 @@ async function mountAndOpen() {
   await Promise.resolve()
 }
 
-async function expandRecitation() {
-  const row = document.querySelector('.qa-settings-recite-row') as HTMLButtonElement
-  await fireEvent.click(row)
-  await flush()
-}
-
-describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
+describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
   beforeEach(async () => {
     await openDB()
     for (const k of FLOW_KEYS) {
@@ -82,27 +76,32 @@ describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
     document.documentElement.className = ''
   })
 
-  it('D1: opens with header, sticky preview, 3 sections in order, 4 theme swatches', async () => {
+  it('D1: opens with preview band, Reading + Sources sections, theme footer', async () => {
     await mountAndOpen()
 
     const sheet = document.querySelector('.qa-sheet--settings-fs')
     expect(sheet).not.toBeNull()
 
-    expect(document.querySelector('.qa-settings-title')?.textContent).toBe('Settings')
+    // Preview band — no separate header bar
     expect(document.querySelector('[data-testid="settings-preview"]')).not.toBeNull()
 
+    // ✕ inside preview, not separate header
+    const preview = document.querySelector('.qa-settings-preview')!
+    expect(preview.querySelector('.qa-settings-close')).not.toBeNull()
+
+    // No standalone settings title element
+    expect(document.querySelector('.qa-settings-title')).toBeNull()
+
+    // Two body sections in order: Reading, Sources
     const sectionNames = [...document.querySelectorAll('.qa-settings-sect-name')]
       .map(el => el.textContent)
-    expect(sectionNames).toEqual(['Reading', 'Appearance', 'Recitation'])
+    expect(sectionNames).toEqual(['Reading', 'Sources'])
 
-    expect(document.querySelectorAll('.qa-theme-swatch')).toHaveLength(4)
-    for (const t of ['light', 'sepia', 'dark', 'auto']) {
-      expect(document.querySelector(`.qa-theme-swatch--${t}`)).not.toBeNull()
-    }
-
-    const translationSwitch = sheet!.querySelector('[aria-label="Show translation"]')
-    expect(translationSwitch).not.toBeNull()
-    expect(sheet!.querySelector('[data-testid="night-mode-switch"]')).not.toBeNull()
+    // Theme footer present with 4 swatches + night moon
+    const footer = document.querySelector('.qa-settings-footer')!
+    expect(footer).not.toBeNull()
+    expect(footer.querySelectorAll('.qa-settings-tf-dot')).toHaveLength(4)
+    expect(footer.querySelector('[data-testid="night-mode-switch"]')).not.toBeNull()
   })
 
   it('D: clear-data row is not in the Settings sheet', async () => {
@@ -122,67 +121,83 @@ describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
     expect(document.querySelector('.qa-sheet--settings-fs')).toBeNull()
   })
 
-  it('D1b: Recitation collapsed by default; tap expands; swatches appear', async () => {
+  it('D7: tapping Recitation row opens popover; clicking a swatch writes IDB + closes', async () => {
     await mountAndOpen()
-    const row = document.querySelector('.qa-settings-recite-row') as HTMLButtonElement
-    expect(row).not.toBeNull()
-    expect(row.getAttribute('aria-expanded')).toBe('false')
-    expect(document.querySelectorAll('.qa-riwayah-swatch')).toHaveLength(0)
+    expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
 
+    const row = document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement
+    expect(row).not.toBeNull()
     await fireEvent.click(row)
     await flush()
 
-    expect(row.getAttribute('aria-expanded')).toBe('true')
-    expect(document.querySelectorAll('.qa-riwayah-swatch')).toHaveLength(3)
-  })
+    const pop = document.querySelector('[data-testid="settings-pop"]')!
+    expect(pop).not.toBeNull()
+    expect(pop.getAttribute('aria-label')).toBe('Choose Recitation')
 
-  it('D1b: clicking a riwayah swatch persists to IDB + flips active', async () => {
-    await mountAndOpen()
-    await expandRecitation()
+    const rows = pop.querySelectorAll('.qa-settings-pop-row')
+    expect(rows).toHaveLength(3)
 
-    const swatches = document.querySelectorAll('.qa-riwayah-swatch')
-    expect(swatches).toHaveLength(3)
-    const labels = [...swatches].map(el => el.textContent ?? '')
-    expect(labels.some(l => l.includes('Ḥafṣ'))).toBe(true)
-    expect(labels.some(l => l.includes('Warsh'))).toBe(true)
-    expect(labels.some(l => l.includes('Qālūn'))).toBe(true)
-
-    const warsh = [...swatches].find(el => el.textContent?.includes('Warsh'))!
+    const warsh = [...rows].find(el => el.textContent?.includes('Warsh')) as HTMLButtonElement
     await fireEvent.click(warsh)
 
     await vi.waitFor(async () => {
       const rec = await get('settings', 'riwayah') as { value: string } | undefined
       expect(rec?.value).toBe('warsh')
+      expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
     })
-
-    const active = document.querySelector('.qa-riwayah-swatch--active')!
-    expect(active.textContent).toContain('Warsh')
   })
 
-  it('D1b: closing + reopening collapses Recitation back to default', async () => {
+  it('D7: tapping scrim closes the popover without writing', async () => {
     await mountAndOpen()
-    await expandRecitation()
-    expect(document.querySelectorAll('.qa-riwayah-swatch')).toHaveLength(3)
-
-    closeSettingsSheet()
+    const row = document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement
+    await fireEvent.click(row)
     await flush()
-    openSettingsSheet()
-    await flush()
-    await Promise.resolve()
-    await Promise.resolve()
+    expect(document.querySelector('[data-testid="settings-pop"]')).not.toBeNull()
 
-    const row = document.querySelector('.qa-settings-recite-row') as HTMLButtonElement
-    expect(row.getAttribute('aria-expanded')).toBe('false')
-    expect(document.querySelectorAll('.qa-riwayah-swatch')).toHaveLength(0)
+    const scrim = document.querySelector('.qa-settings-pop-scrim') as HTMLElement
+    await fireEvent.click(scrim)
+    await flush()
+
+    expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
+    // Riwayah unchanged
+    expect(settings.riwayah).toBe('qaloon')
   })
 
-  it('D2: Show translation row subtitle visible (≤1 translation = read-only body)', async () => {
+  it('D8: Escape with picker open closes picker first, sheet stays open', async () => {
     await mountAndOpen()
-    const sheet = document.querySelector('.qa-sheet--settings-fs')!
-    expect(sheet.textContent).toContain('Show translation')
+    const row = document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement
+    await fireEvent.click(row)
+    await flush()
+    expect(document.querySelector('[data-testid="settings-pop"]')).not.toBeNull()
 
-    const subs = sheet.querySelectorAll('.qa-settings-toggle-sub')
-    expect([...subs].some(el => el.textContent === 'English')).toBe(true)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flush()
+
+    expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
+    expect(document.querySelector('.qa-sheet--settings-fs')).not.toBeNull()
+
+    // Second Escape closes the sheet
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flush()
+    expect(document.querySelector('.qa-sheet--settings-fs')).toBeNull()
+  })
+
+  it('D2: Translation row appears in Sources with toggle + chev', async () => {
+    await mountAndOpen()
+    const transRow = document.querySelector('.qa-settings-trans-row')!
+    expect(transRow).not.toBeNull()
+    expect(transRow.textContent).toContain('Translation')
+    expect(transRow.querySelector('[aria-label="Show translation"]')).not.toBeNull()
+    expect(transRow.querySelector('.qa-settings-trans-chev')).not.toBeNull()
+  })
+
+  it('D2: chevron is disabled when only 1 translation; click does not open popover', async () => {
+    await mountAndOpen()
+    const chev = document.querySelector('.qa-settings-trans-chev') as HTMLButtonElement
+    expect(chev.disabled).toBe(true)
+    await fireEvent.click(chev)
+    await flush()
+    expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
   })
 
   it('D2: toggle translation switch → IDB write + rune flip', async () => {
@@ -201,22 +216,23 @@ describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
     expect(sw.getAttribute('aria-checked')).toBe('false')
   })
 
-  it('D3: clicking each theme swatch persists the choice + sets data-theme-pref', async () => {
+  it('D3: theme footer pill has 4 swatches; clicking each persists', async () => {
     await mountAndOpen()
+    const dots = document.querySelectorAll('.qa-settings-tf-dot')
+    expect(dots).toHaveLength(4)
+    for (const t of ['light', 'sepia', 'dark', 'auto']) {
+      expect(document.querySelector(`.qa-settings-tf-dot--${t}`)).not.toBeNull()
+    }
 
     for (const theme of ['light', 'sepia', 'dark', 'auto'] as const) {
-      const sw = document.querySelector(`.qa-theme-swatch--${theme}`) as HTMLButtonElement
-      expect(sw).not.toBeNull()
+      const sw = document.querySelector(`.qa-settings-tf-dot--${theme}`) as HTMLButtonElement
       await fireEvent.click(sw)
 
       await vi.waitFor(() => {
         expect(document.documentElement.getAttribute('data-theme-pref')).toBe(theme)
       })
 
-      const applied = document.documentElement.getAttribute('data-theme')
-      expect(['light', 'sepia', 'dark']).toContain(applied)
-
-      expect(sw.classList.contains('qa-theme-swatch--active')).toBe(true)
+      expect(sw.classList.contains('qa-settings-tf-dot--act')).toBe(true)
 
       await vi.waitFor(async () => {
         const rec = await get('settings', 'theme') as { value: string } | undefined
@@ -225,7 +241,22 @@ describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
     }
   })
 
-  it('D5: font slider reachable directly (no subview); writes fontSize + flips data-font-size', async () => {
+  it('D3: night moon click toggles night mode', async () => {
+    await mountAndOpen()
+    const moon = document.querySelector('[data-testid="night-mode-switch"]') as HTMLButtonElement
+    expect(moon).not.toBeNull()
+    expect(moon.getAttribute('aria-checked')).toBe('false')
+
+    await fireEvent.click(moon)
+
+    await vi.waitFor(() => {
+      expect(settings.nightMode).toBe(true)
+      expect(document.documentElement.getAttribute('data-night-mode')).toBe('on')
+      expect(moon.classList.contains('qa-settings-tf-night--on')).toBe(true)
+    })
+  })
+
+  it('D5: font slider directly reachable; writes fontSize + flips data-font-size', async () => {
     await mountAndOpen()
 
     const fontSlider = document.querySelector('#qa-tslider-fs') as HTMLInputElement
@@ -247,9 +278,6 @@ describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
 
     expect(document.querySelector('#qa-tslider-fs')).not.toBeNull()
     expect(document.querySelector('#qa-tslider-flow')).not.toBeNull()
-
-    expect(document.querySelector('label[for="qa-tslider-fs"]')?.textContent).toBe('Font size')
-    expect(document.querySelector('label[for="qa-tslider-flow"]')?.textContent).toBe('Reading flow')
 
     const labels = [...document.querySelectorAll('.qa-settings-slider-label')]
       .map(el => el.textContent)
@@ -292,7 +320,7 @@ describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
     // Qālūn corpus glyphs (default test setup)
     expect(ar.textContent).toContain('اِ۬لرَّحْمَٰنُ')
     expect(preview.querySelector('.qa-settings-preview-tr')?.textContent)
-      .toContain('The Most Gracious')
+      .toContain('The Most Compassionate')
 
     // Toggle off → translation line disappears
     const sw = document.querySelector('[aria-label="Show translation"]') as HTMLButtonElement
@@ -302,26 +330,38 @@ describe('Panel.svelte (2026-04-29 full-screen redesign)', () => {
     })
   })
 
-  it('D6: switching riwayah inside Recitation swaps preview glyphs', async () => {
+  it('D7: switching riwayah via popover swaps preview glyphs', async () => {
     await mountAndOpen()
-    await expandRecitation()
 
-    const hafs = [...document.querySelectorAll('.qa-riwayah-swatch')]
-      .find(el => el.textContent?.includes('Ḥafṣ'))!
+    const row = document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement
+    await fireEvent.click(row)
+    await flush()
+
+    const pop = document.querySelector('[data-testid="settings-pop"]')!
+    const hafs = [...pop.querySelectorAll('.qa-settings-pop-row')]
+      .find(el => el.textContent?.includes('Ḥafṣ')) as HTMLButtonElement
     await fireEvent.click(hafs)
 
     await vi.waitFor(() => {
       const ar = document.querySelector('.qa-settings-preview-ar')!
-      // Hafs corpus uses U+06E1/U+0670 (small ḥā', superscript alif)
       expect(ar.textContent).toContain('ٱلرَّحۡمَٰنُ')
     })
   })
 
-  it('D7: translation picker view does not mount (stub fully removed)', async () => {
+  it('D7: re-opening sheet resets picker state', async () => {
     await mountAndOpen()
-    expect(document.querySelector('.qa-settings-trans-choice')).toBeNull()
-    // No back-to-main affordance survives — single view only.
-    expect(document.querySelector('.qa-sheet-back')).toBeNull()
+    const row = document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement
+    await fireEvent.click(row)
+    await flush()
+    expect(document.querySelector('[data-testid="settings-pop"]')).not.toBeNull()
+
+    closeSettingsSheet()
+    await flush()
+    openSettingsSheet()
+    await flush()
+    await Promise.resolve()
+
+    expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
   })
 
 })

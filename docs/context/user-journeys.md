@@ -337,20 +337,24 @@ Inside mark editor, new mark.
 
 ## D. Settings & appearance
 
-### D1. Open Settings sheet — full-screen redesign 2026-04-29
+### D1. Open Settings sheet — v7 polish redesign 2026-04-29
 
-Post 2026-04-29 redesign (was multi-view bottom sheet with Typography subview + Translation picker subview).
+Iterated the same day on top of the initial 2026-04-29 full-screen pass; final shape replaces the earlier "Reading / Appearance / Recitation" three-section layout with a balanced two-section body + footer rail and tap-to-popover source pickers.
 
 1. **Mobile + tablet (<1180px):** single-tap the gear `⚙` on the right side of `MarginHeader` → Settings sheet **takes over the full viewport** (`inset: 0`, safe-area insets top + bottom, no border). Double-tap gear (≤300 ms apart) cycles theme without opening the sheet.
 2. **Desktop (≥1180px):** navigate to `#/settings` (e.g. via `G`+`P` shortcut or command sheet "Preferences") → Settings sheet opens as a centered modal (~440px, max-height 720px). Same component, narrower frame.
-3. Sheet content (single view — no subview navigation): **header** (Settings title + ✕ close), **sticky live preview band** at the top (warm-bronze dark background regardless of theme — Sūrat ar-Raḥmān 1–2 rendered in the active riwayah's glyphs), **scrollable body** with three sections in daily-use-frequency order:
-   - **Reading** — Font size slider (5-step), Reading flow slider (5-step coordinated knob), Show-translation toggle (subtitle = current pack name), Reset-to-default link (only when at least one typography knob ≠ md).
-   - **Appearance** — 4 theme swatches (Light · Sepia · Dark · Auto), Night-mode toggle.
-   - **Recitation** — collapsed by default. Single row reads `Riwayah · {label} ʿan {transmitter} · {ayat count}`. Tap → 3 swatches mount inline (`role="radiogroup"`), chevron rotates 90°. Re-opening the sheet resets the collapsed state — Riwayah is set-and-forget.
-4. Every change updates the sticky preview live (font size + reading flow + theme palette + riwayah glyph swap when a swatch is picked).
-5. Switching riwayah emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, and re-renders the reader with the new Riwayah's text + font + line-height floor.
+3. Sheet content (three zones, no scroll under default content):
+   - **Live preview band** at the top — theme-true colors (preview = `var(--qa-surface-raised)`, Arabic = `var(--qa-text-arabic)`). Sūrat ar-Raḥmān 1–2 rendered in the active riwayah's glyphs. The ✕ close button floats inside the band's top-right (no separate header bar). Translation line under the Arabic is gated on `settings.translationVisible`.
+   - **Body** — two sections, each `flex: 1` (balanced). Soft hairline gold-fade separator between them.
+     - **Reading** — Font size slider (5-step), Reading flow slider (5-step coordinated knob), Reset-to-default pill button (only when at least one typography knob ≠ md). Section header right-aside summarises (`Aa md · ↕ md` or `Default`).
+     - **Sources** — Recitation source row (`[data-testid="src-row-recitation"]`) showing `RECITATION · Qālūn ʿan Nāfiʿ ›` and Translation dual-action row showing `TRANSLATION · Saheeh International › [toggle]`. Tapping a source row opens a centred **picker popover**; the toggle on the Translation row controls `settings.translationVisible` independently.
+   - **Theme footer** at the bottom — pill cluster of 4 theme swatches with mini Mushaf glyphs in each theme's palette + a 38 px **night-mode moon ☾** pill alongside. Italic serif "Theme" label anchors the cluster left.
+4. Every change updates the live preview (font size + reading flow + theme palette + riwayah glyph swap when a popover row is picked).
+5. Switching riwayah via the popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, and re-renders the reader with the new Riwayah's text + font + line-height floor.
 
-**Dismissal:** ✕ close button, backdrop tap, Esc.
+**Picker popover** (`[data-testid="settings-pop"]`): blurred + tinted scrim, parchment-gradient surface on light themes / deep-ink gradient on dark, gold hairline corner ornaments, italic serif "Choose a {Riwāyah / translation}" title + uppercase eyebrow key. Each row: name + italic sub-meta + opacity-0 gold check badge that lights when active. Hover/focus tints background. Backdrop tap, Esc, or row-tap dismisses. With the popover open, Esc closes the popover first; a second Esc closes the sheet.
+
+**Dismissal:** ✕ close button (inside preview), backdrop tap, Esc.
 
 **Surfaces:** MarginHeader (mobile) or Router (desktop) → Settings sheet.
 

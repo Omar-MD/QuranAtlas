@@ -214,10 +214,10 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   test('B6: auto theme swatch follows OS color-scheme change', async ({ page }) => {
     await openSettingsSheet(page)
 
-    const autoSwatch = page.locator('.qa-theme-swatch--auto')
+    const autoSwatch = page.locator('.qa-settings-tf-dot--auto')
     await expect(autoSwatch).toBeVisible()
     await autoSwatch.click()
-    await expect(autoSwatch).toHaveClass(/qa-theme-swatch--active/, { timeout: 3_000 })
+    await expect(autoSwatch).toHaveClass(/qa-settings-tf-dot--act/, { timeout: 3_000 })
 
     await expect(async () => {
       const pref = await page.evaluate(() =>
@@ -461,12 +461,12 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
 
-    // Switch to Hafs via Settings sheet Riwayah swatches.
-    // Post 2026-04-29: Recitation section is collapsed by default — tap
-    // the row to reveal the 3 swatches.
+    // Switch to Hafs via Settings sheet Recitation popover.
+    // Post 2026-04-29 v7: tap the Recitation source row → popover opens
+    // with 3 riwayah rows; clicking one writes IDB + closes popover.
     await openSettingsSheet(page)
-    await page.locator('.qa-settings-recite-row').click()
-    const hafsBtn = page.locator('.qa-riwayah-swatch').filter({ hasText: 'Ḥafṣ' })
+    await page.getByTestId('src-row-recitation').click()
+    const hafsBtn = page.locator('.qa-settings-pop-row').filter({ hasText: 'Ḥafṣ' })
     await expect(hafsBtn).toBeVisible({ timeout: 5_000 })
     await hafsBtn.click()
 
@@ -496,8 +496,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
     // Restore Qālūn so other tests get the default
     await openSettingsSheet(page)
-    await page.locator('.qa-settings-recite-row').click()
-    await page.locator('.qa-riwayah-swatch').filter({ hasText: 'Qālūn' }).click()
+    await page.getByTestId('src-row-recitation').click()
+    await page.locator('.qa-settings-pop-row').filter({ hasText: 'Qālūn' }).click()
     await expect(async () => {
       const attr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
       expect(attr).toBe('qaloon')
