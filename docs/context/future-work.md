@@ -197,6 +197,28 @@ Cross-cutting: every shipped tier moves its entries out of this doc per the §"A
 
 ## Infrastructure
 
+### Before v1.0 launch — IDB migration plumbing (deferred from N10 / audit C-8)
+
+Schema migrations are destructive-recreate today (`core/db/migrations.js::applySchema` drops + recreates `marks` on every upgrade; new stores guard with `if (!contains)`). Acceptable while there are no users and the project memory `project_pre_release` documents the schema-changes-free posture.
+
+When a user-visible release is scheduled:
+- Add versioned `_shapes` (`_shapes_v5`, `_shapes_v6`, …) so new fields can land without dropping the store.
+- Add a cursor-walk back-fill helper for adding fields to existing rows.
+- Stable `bumpVersion()` API that wraps `DB_VERSION = N + 1` plus the diff function.
+- ~150 LOC of dormant infrastructure — the cheap insurance audit C-8 asked for; land alongside the first release-train milestone, not under the time pressure of an actual schema change.
+
+### Audio sub-design (N30 skeleton, audit C-7 / R-06 / R-11)
+
+Audio (`#13`) is the v2.0 milestone. Skeleton sub-design at `docs/superpowers/specs/2026-04-29-audio-design-SKELETON.md` (gitignored — local only) tracks the prereqs satisfied by P2: `core/tokenisable.ts` (verse-tick highlight contract), per-asset-class SW routing (`core/sw/strategies.ts`), `core/persistent-overlay.ts` (audio player overlay factory), `docs/context/glossary.md` (reciter vs riwayah disambiguation). Open questions: range-cache strategy, media-session integration, IDB schema for playback position, persistent player overlay API.
+
+### Sync v2 sub-design + crypto threat model (N31 skeleton, audit C-8 / R-10)
+
+Multi-device sync (`#17`) is v2.2. Skeleton sub-design at `docs/superpowers/specs/2026-04-29-sync-v2-design-SKELETON.md`. Crypto threat model drafted at `docs/superpowers/specs/2026-04-29-sync-v2-crypto-threat-model.md` covering identity, key exchange, transport, replay, equivocation, account-recovery. Both gitignored. The generic sync envelope landed in N12 (`safety/sync.ts::registerTopic` + `broadcast`), so each future store can plug into sync v2 by registering its topic — no per-store deprecation churn when the engine arrives.
+
+### Remove `'unsafe-inline'` from `style-src` (audit C-6 / R-19c)
+
+`style-src 'unsafe-inline'` is the broad permission Svelte's inline `style:` directives currently rely on (per-tag colour hue, per-row computed surfaces, etc.). Removing it means moving every inline `style="…"` to either CSS variables on a parent element or a generated nonce-stamped stylesheet. Long refactor with no security gain unless we also tighten the rest of the CSP. Schedule alongside the v1.3 inline-style audit, after audio + WBW have landed and the inline-style surface is stable.
+
 ### Visual regression — linux baselines
 
 Current 45 baselines under `tests/e2e/visual/baseline.spec.js-snapshots/` are darwin-captured. CI (linux) excludes the `visual` project because font rendering + anti-aliasing differ past the 5% `maxDiffPixelRatio` threshold. Local-only gate via `pnpm test:e2e:visual` until linux baselines are captured (via Docker `mcr.microsoft.com/playwright` or an ephemeral CI artifact-and-commit flow) and committed alongside the darwin set.
