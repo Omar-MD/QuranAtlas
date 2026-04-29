@@ -237,6 +237,7 @@ graph LR
 
 ### Root-level service-worker files
 - **`src/sw.js`** and **`src/sw-handlers.js`** — service worker entry. Imports from `offline/` only (plus Workbox packages). Not part of the client bundle.
+- **Manifest chain of trust (fail-CLOSED).** `vite.config.js` reads `public/dataset/manifest.json` at build time and bakes its SHA-256 into the bundle as `__MANIFEST_DIGEST__`. `sw-handlers.js::getHashMap` verifies the fetched manifest body matches that digest before trusting any per-file hash. Any failure — fetch error, timeout, !ok response, missing or mismatched expected digest, malformed JSON, URL not listed in the verified manifest — emits `DATASET_ERROR` and aborts; nothing reaches `cache.put`. Closes the prior fail-open hole where a swapped or DoS'd manifest left subsequent files cached unverified.
 
 ## Quick heuristics
 

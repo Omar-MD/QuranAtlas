@@ -3,6 +3,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8'))
 
@@ -14,6 +15,18 @@ try {
   buildSha = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf-8' }).trim()
 } catch { /* keep 'dev' */ }
 const buildTime = new Date().toISOString()
+
+// SHA-256 of public/dataset/manifest.json baked into the bundle. The SW
+// uses it to verify the fetched manifest before trusting any per-file
+// hashes, closing the chain-of-trust hole at sw-handlers.js where a
+// manifest-fetch failure (or a swapped manifest) would otherwise leave
+// caches written without verification. If the file is missing at build
+// time the digest stays null and the SW fails closed on any cache op.
+let manifestDigest = null
+try {
+  const manifestBytes = readFileSync(new URL('./public/dataset/manifest.json', import.meta.url))
+  manifestDigest = createHash('sha256').update(manifestBytes).digest('hex')
+} catch { /* leave null; SW will fail-closed */ }
 
 export default defineConfig({
   plugins: [
@@ -101,6 +114,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __BUILD_SHA__: JSON.stringify(buildSha),
-    __BUILD_TIME__: JSON.stringify(buildTime)
+    __BUILD_TIME__: JSON.stringify(buildTime),
+    __MANIFEST_DIGEST__: JSON.stringify(manifestDigest)
   }
 })

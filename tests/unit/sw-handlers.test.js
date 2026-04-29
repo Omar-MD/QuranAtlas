@@ -60,13 +60,14 @@ describe('sw-handlers.js', () => {
           return createResponse(JSON.stringify({ surah: 1 }))
         }),
         verifyFn: vi.fn(async () => true),
+        expectedManifestDigest: 'manifest-digest',
       }
 
       await handleCacheDataset(deps, ['/dataset/surah/001.json'])
 
       expect(deps.cacheOpen).toHaveBeenCalledWith('quran-dataset-v1')
       expect(cache.put).toHaveBeenCalledTimes(1)
-      expect(deps.verifyFn).toHaveBeenCalledTimes(1)
+      expect(deps.verifyFn).toHaveBeenCalledTimes(2) // manifest + downloaded body
       expect(deps.fetchFn).toHaveBeenCalledTimes(2)
       expect(clients[0].postMessage).toHaveBeenCalledWith({
         type: 'DATASET_PROGRESS',
@@ -101,7 +102,11 @@ describe('sw-handlers.js', () => {
 
           return createResponse(JSON.stringify({ surah: 1 }))
         }),
-        verifyFn: vi.fn(async () => false),
+        // 1st call = manifest verify (true). 2nd = downloaded body verify (false → mismatch).
+        verifyFn: vi.fn()
+          .mockResolvedValueOnce(true)
+          .mockResolvedValueOnce(false),
+        expectedManifestDigest: 'manifest-digest',
       }
 
       await handleCacheDataset(deps, ['/dataset/surah/001.json'])
@@ -147,9 +152,12 @@ describe('sw-handlers.js', () => {
 
           return downloadedResponse
         }),
+        // 1st = manifest verify (true). 2nd = cached verify (false → re-download). 3rd = downloaded verify (true).
         verifyFn: vi.fn()
+          .mockResolvedValueOnce(true)
           .mockResolvedValueOnce(false)
           .mockResolvedValueOnce(true),
+        expectedManifestDigest: 'manifest-digest',
       }
 
       await handleCacheDataset(deps, ['/dataset/surah/001.json'])
@@ -200,6 +208,7 @@ describe('sw-handlers.js', () => {
           return downloadedResponse
         }),
         verifyFn: vi.fn(async () => true),
+        expectedManifestDigest: 'manifest-digest',
       }
 
       await handleCacheDataset(deps, ['/dataset/surah/001.json'])
@@ -245,6 +254,7 @@ describe('sw-handlers.js', () => {
           return createResponse(JSON.stringify({ fresh: true }))
         }),
         verifyFn: vi.fn(async () => true),
+        expectedManifestDigest: 'manifest-digest',
       }
 
       await handleCacheDataset(deps, ['/dataset/surah/001.json'])
@@ -262,9 +272,8 @@ describe('sw-handlers.js', () => {
       })
     })
 
-    it('falls back to download without hashes when manifest fetch never resolves', async () => {
+    it('fails CLOSED when manifest fetch never resolves (no cache writes, DATASET_ERROR)', async () => {
       vi.useFakeTimers()
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       const clients = [createClient()]
       const store = new Map()
@@ -288,6 +297,7 @@ describe('sw-handlers.js', () => {
           return createResponse(JSON.stringify({ surah: 1 }))
         }),
         verifyFn: vi.fn(async () => true),
+        expectedManifestDigest: 'manifest-digest',
       }
 
       const work = handleCacheDataset(deps, ['/dataset/surah/001.json'])
@@ -304,18 +314,111 @@ describe('sw-handlers.js', () => {
       await work
 
       expect(deps.fetchFn).toHaveBeenCalledWith('/dataset/manifest.json', { cache: 'no-store' })
-      expect(deps.fetchFn).toHaveBeenCalledWith('/dataset/surah/001.json')
-      expect(deps.verifyFn).not.toHaveBeenCalled()
-      expect(cache.put).toHaveBeenCalledTimes(1)
-      expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
-      expect(consoleWarnSpy).toHaveBeenNthCalledWith(1,
-        'handleCacheDataset: manifest fetch failed, skipping SHA-256 verification'
-      )
-      expect(clients[0].postMessage).toHaveBeenLastCalledWith({
-        type: 'DATASET_COMPLETE',
+      expect(deps.fetchFn).not.toHaveBeenCalledWith('/dataset/surah/001.json')
+      expect(cache.put).not.toHaveBeenCalled()
+      expect(clients[0].postMessage).toHaveBeenCalledWith({
+        type: 'DATASET_ERROR',
+        url: '/dataset/manifest.json',
+        error: 'manifest verification failed: aborting cache (chain of trust broken)',
       })
+      expect(clients[0].postMessage).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'DATASET_COMPLETE' })
+      )
 
       vi.useRealTimers()
+    })
+
+    it('fails CLOSED when manifest body digest does not match expectedManifestDigest', async () => {
+      const clients = [createClient()]
+      const cache = {
+        match: vi.fn(async () => undefined),
+        put: vi.fn(),
+        delete: vi.fn(),
+      }
+
+      const deps = {
+        cacheName: 'quran-dataset-v1',
+        cacheOpen: vi.fn(async () => cache),
+        clientsMatchAll: vi.fn(async () => clients),
+        fetchFn: vi.fn(async () => createResponse(JSON.stringify({
+          files: { 'surah/001.json': 'hash-1' },
+        }))),
+        verifyFn: vi.fn(async () => false), // manifest verify fails
+        expectedManifestDigest: 'expected-manifest-digest',
+      }
+
+      await handleCacheDataset(deps, ['/dataset/surah/001.json'])
+
+      expect(cache.put).not.toHaveBeenCalled()
+      expect(clients[0].postMessage).toHaveBeenCalledWith({
+        type: 'DATASET_ERROR',
+        url: '/dataset/manifest.json',
+        error: 'manifest verification failed: aborting cache (chain of trust broken)',
+      })
+      expect(deps.fetchFn).toHaveBeenCalledTimes(1) // never fetches the data file
+    })
+
+    it('fails CLOSED when expectedManifestDigest is missing (e.g. dev build with no bundled digest)', async () => {
+      const clients = [createClient()]
+      const cache = {
+        match: vi.fn(async () => undefined),
+        put: vi.fn(),
+        delete: vi.fn(),
+      }
+
+      const deps = {
+        cacheName: 'quran-dataset-v1',
+        cacheOpen: vi.fn(async () => cache),
+        clientsMatchAll: vi.fn(async () => clients),
+        fetchFn: vi.fn(),
+        verifyFn: vi.fn(),
+        expectedManifestDigest: null,
+      }
+
+      await handleCacheDataset(deps, ['/dataset/surah/001.json'])
+
+      expect(deps.fetchFn).not.toHaveBeenCalled()
+      expect(cache.put).not.toHaveBeenCalled()
+      expect(clients[0].postMessage).toHaveBeenCalledWith({
+        type: 'DATASET_ERROR',
+        url: '/dataset/manifest.json',
+        error: 'manifest verification failed: aborting cache (chain of trust broken)',
+      })
+    })
+
+    it('fails CLOSED when a requested url is not listed in the verified manifest', async () => {
+      const clients = [createClient()]
+      const cache = {
+        match: vi.fn(async () => undefined),
+        put: vi.fn(),
+        delete: vi.fn(),
+      }
+
+      const deps = {
+        cacheName: 'quran-dataset-v1',
+        cacheOpen: vi.fn(async () => cache),
+        clientsMatchAll: vi.fn(async () => clients),
+        fetchFn: vi.fn(async (url) => {
+          if (url === '/dataset/manifest.json') {
+            return createResponse(JSON.stringify({
+              files: { 'surah/001.json': 'hash-1' },
+            }))
+          }
+          return createResponse('{}')
+        }),
+        verifyFn: vi.fn(async () => true),
+        expectedManifestDigest: 'manifest-digest',
+      }
+
+      // Request a URL that is NOT listed in the manifest.
+      await handleCacheDataset(deps, ['/dataset/surah/999.json'])
+
+      expect(cache.put).not.toHaveBeenCalled()
+      expect(clients[0].postMessage).toHaveBeenCalledWith({
+        type: 'DATASET_ERROR',
+        url: '/dataset/surah/999.json',
+        error: 'url not listed in verified manifest: aborting cache',
+      })
     })
   })
 

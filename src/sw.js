@@ -124,6 +124,7 @@ self.addEventListener('message', (event) => {
             clientsMatchAll: () => self.clients.matchAll(),
             fetchFn: (url, options) => fetch(url, options),
             verifyFn: verify,
+            expectedManifestDigest: typeof __MANIFEST_DIGEST__ !== 'undefined' ? __MANIFEST_DIGEST__ : null,
           },
           urls
         )
