@@ -219,6 +219,12 @@ Multi-device sync (`#17`) is v2.2. Skeleton sub-design at `docs/superpowers/spec
 
 `style-src 'unsafe-inline'` is the broad permission Svelte's inline `style:` directives currently rely on (per-tag colour hue, per-row computed surfaces, etc.). Removing it means moving every inline `style="…"` to either CSS variables on a parent element or a generated nonce-stamped stylesheet. Long refactor with no security gain unless we also tighten the rest of the CSP. Schedule alongside the v1.3 inline-style audit, after audio + WBW have landed and the inline-style surface is stable.
 
+### E2e Mobile Chrome project tag-gate flip (audit R-29 / Rule 6.4)
+
+Mobile Chrome currently runs every spec that's not tagged `@offline` / `@desktop` / `@chromium-only` — ~50 redundant runs per CI cycle for tests with no viewport branch. Audit R-29 / CLAUDE.md Rule 6.4 prescribes: flip Mobile Chrome's grep to `/@mobile/` only, retag the genuinely-mobile specs (`MarginHeader`, drawer swipe, gear long-press, header auto-hide, viewport-conditional CSS) with `@mobile`, and let untagged tests run on chromium once.
+
+Deferred from N16 because the retag is per-spec investigative work (not a config flip alone) and a single-developer pre-release project doesn't currently pay the CI cost the audit budget assumed. Schedule alongside a future test-stability sprint or once CI cost / wall-time becomes a real constraint.
+
 ### Visual regression — linux baselines
 
 Current 45 baselines under `tests/e2e/visual/baseline.spec.js-snapshots/` are darwin-captured. CI (linux) excludes the `visual` project because font rendering + anti-aliasing differ past the 5% `maxDiffPixelRatio` threshold. Local-only gate via `pnpm test:e2e:visual` until linux baselines are captured (via Docker `mcr.microsoft.com/playwright` or an ephemeral CI artifact-and-commit flow) and committed alongside the darwin set.
