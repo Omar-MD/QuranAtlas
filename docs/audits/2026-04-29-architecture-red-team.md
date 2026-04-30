@@ -385,7 +385,7 @@ Strict sequence; later items depend on earlier. No future-work lands during this
 3. **Generic safety/sync envelope schema** (R-10, C-2, C-5) — `{ topic, keys?, originDeviceId, lastModified }`; features `register({ topic, apply })` at boot; cycle dissolved
 4. **`core/init-graph.ts` dependency runner** (R-12) — replaces line-order in `app-bootstrap.ts`
 5. **Dead-event triage** (R-14, C-7) — wire silent-failure events to `quota-banner.svelte`; delete vestigial `SETTINGS_THEME_CHANGED`/`SETTINGS_FONT_SIZE_CHANGED`/dead telemetry; add `// roadmap: v1.1` markers to EDGES_*
-6. **`tests/e2e/global-setup.ts`** (R-15, Rule 6.5 prerequisite)
+6. ✅ **`tests/e2e/global-setup.ts`** (R-15, Rule 6.5 prerequisite) — landed 2026-04-30 via N15; spec at `docs/superpowers/specs/2026-04-30-n15-global-setup-design.md`
 7. **Mobile Chrome project tag-gate flip** (R-29, Rule 6.4)
 8. **Build-script upstream pin** (R-18) — `scripts/saheeh-api.sha256` + `--update-pin` flag; tighten `SUP_RE` + fixedpoint loop for the two CodeQL Medium alerts
 9. **IDB write-side validation: length caps + enum on `bookmarks.riwayah` + `__proto__` strip** (R-20)
