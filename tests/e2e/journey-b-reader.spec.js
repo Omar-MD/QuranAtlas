@@ -38,7 +38,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // B1. Primary-nav chrome visible on reader
   // -------------------------------------------------------------------------
 
-  test('B1: primary-nav chrome is visible on reader surface', async ({ page }) => {
+  test('B1: primary-nav chrome is visible on reader surface @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
 
     if (isDesktop) {
@@ -60,7 +60,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     }
   })
 
-  test('B1: mobile margin header is a single row, ≤ 60 px tall (post-redesign)', async ({ page }) => {
+  test('B1: mobile margin header is a single row, ≤ 60 px tall (post-redesign) @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'desktop uses ambient rail, not margin header')
 
@@ -81,7 +81,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // B1. @reduced-motion variant — chrome still reaches steady state
   // -------------------------------------------------------------------------
 
-  test('B1: primary nav visible under @reduced-motion', async ({ page }) => {
+  test('B1: primary nav visible under @reduced-motion @mobile', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await surfaceDock(page)
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
@@ -96,7 +96,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // B1. @keyboard variant — primary-nav chrome is keyboard-reachable
   // -------------------------------------------------------------------------
 
-  test('B1: primary-nav is keyboard-focusable @keyboard', async ({ page }) => {
+  test('B1: primary-nav is keyboard-focusable @keyboard @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     if (isDesktop) {
       const moreBtn = page.locator('[data-tab="more"]:visible').first()
@@ -131,7 +131,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   //   Mobile:  MarginHeader auto-hides on scroll-down, reveals near top
   // -------------------------------------------------------------------------
 
-  test('B2: scroll behavior matches viewport (rail always / header auto-hide)', async ({ page }) => {
+  test('B2: scroll behavior matches viewport (rail always / header auto-hide) @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
 
     if (isDesktop) {
@@ -187,7 +187,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // B4. Non-reader routes keep primary nav visible
   // -------------------------------------------------------------------------
 
-  test('B4: non-reader routes keep primary nav visible', async ({ page }) => {
+  test('B4: non-reader routes keep primary nav visible @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     for (const route of ['#/surahs', '#/review', '#/about']) {
       await page.goto(`/${route}`)
