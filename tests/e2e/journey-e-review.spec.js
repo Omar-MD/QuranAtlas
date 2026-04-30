@@ -15,7 +15,11 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
+import { seedMarks } from './fixtures/idb.js'
+
+// Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
+// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.
+test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 import { scanA11y } from './fixtures/a11y.js'
 
 // Force mobile viewport so the review hub's filter/group controls
@@ -47,18 +51,11 @@ const SEED = [
 
 test.describe('Journey E: Review hub', () => {
   test.beforeEach(async ({ page }) => {
-    // Step 1: ensure the app has loaded at least once so that
-    // window.__qaSuppressNextVersionChange is available.
+    // storageState already provides onboarded state.  Boot, seed marks,
+    // then navigate to the review hub.  Each test gets a fresh
+    // BrowserContext so seeded marks don't leak across tests.
     await page.goto('/')
-    // Step 2: wipe IDB, recreate schema with onboarding complete, then seed marks.
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await seedMarks(page, SEED)
-    // Step 3: perform a full page reload to /#/review so the app boots fresh with
-    // the newly-seeded IDB.  We navigate to about:blank first to break any pending
-    // SPA state, then to the target URL — this guarantees a real HTTP navigation
-    // rather than a mere hash change, giving the app a clean IDB connection.
-    await page.goto('about:blank')
     await page.goto('/#/review')
     // Step 4: wait for the controls group-by tablist (role=tablist + aria-label)
     // and at least one mark card — together these confirm hub.init() completed with data.
@@ -307,10 +304,6 @@ test.describe('Journey E: desktop variants @desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
-    await page.goto('about:blank')
     await page.goto('/#/s/1')
     await expect(page.locator('[data-verse-key]').first()).toBeVisible({ timeout: 15_000 })
   })
