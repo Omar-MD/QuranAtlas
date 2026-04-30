@@ -18,9 +18,13 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
+import { seedMarks } from './fixtures/idb.js'
 import { waitForReader, openCommandSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
+
+// Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
+// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.
+test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 // ---------------------------------------------------------------------------
 // Shared setup
@@ -29,12 +33,6 @@ import { scanA11y } from './fixtures/a11y.js'
 test.describe('Journey F: Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    // Wait for the app to finish its launch-restore navigation before touching IDB.
-    // Without this, handleLaunchRestore may navigate (hash change) while a page.evaluate
-    // is in-flight, causing "Execution context was destroyed" on the second IDB write.
-    await page.waitForFunction(() => window.location.hash !== '', { timeout: 5_000 }).catch(() => {})
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     // Seed a "mercy" mark so tag search in F3 returns results
     await seedMarks(page, [
       { verseKey: '2:255', tags: ['mercy'], note: '' },
@@ -299,14 +297,8 @@ test.describe('Journey F: desktop variants @desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   // Boot directly at /#/surahs — skips the reader-mount dataset fetch we
-  // would immediately discard.  about:blank breaks the current page context
-  // so the next goto triggers a true HTTP load (not a hash-only change),
-  // which is required after clearAllData wipes the IDB the app was using.
+  // would immediately discard.  storageState provides onboarded state.
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
-    await page.goto('about:blank')
     await page.goto('/#/surahs')
   })
 
@@ -346,9 +338,6 @@ test.describe('Journey F: mobile drawer', () => {
     if (vp && vp.width >= 1180) { testInfo.skip(true, 'mobile-only suite') }
 
     await page.goto('/')
-    await page.waitForFunction(() => window.location.hash !== '', { timeout: 5_000 }).catch(() => {})
-    await clearAllData(page)
-    await markOnboardingComplete(page)
   })
 
   test('F-mobile-1: hamburger opens drawer with Read tab + Surahs sub-tab default and current-surah highlighted', async ({ page }) => {
