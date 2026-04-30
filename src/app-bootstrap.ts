@@ -33,6 +33,7 @@ import { registerEditor } from './marks/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './nav/nav-drawer-bridge'
 import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
+import { initAudio } from './audio/init'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -146,6 +147,14 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     await initReadingTypography()
     await initNightMode()
     await initSurahHeaderHidden()
+
+    // Audio (v2.0 milestone). Loads audio settings, wires cross-tab
+    // gating, registers reader-highlight + auto-scroll subscribers.
+    // Runs after initRiwayah so the active riwayah is in scope; audio
+    // dataset URLs themselves don't depend on riwayah today (per spec)
+    // but future per-riwayah reciter filtering (e.g. Warsh-only reciters
+    // in Warsh mode) plugs in here.
+    pushCleanup(bootCleanups, await initAudio())
 
     // Active-riwayah KFGQPC font kickoff — fetch only the cut the user is
     // actually viewing. CSS Font Loading API call primes the family name;

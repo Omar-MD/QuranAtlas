@@ -1,0 +1,25 @@
+/* Audio surface — verse-tick highlight + accent classes used by the audio
+ * player. Component-internal CSS for AudioMiniBar / AudioFullOverlay
+ * stays inline in the .svelte components per the project's surface-CSS
+ * boundary; this file owns rules that reach INTO the reader DOM.
+ *
+ * `.qa-verse-active` is added by `reader/audio-highlight.ts` to every
+ * element matching `verseTokenSelector(surah, ayah)` while audio is
+ * playing that verse. Subtle background tint chosen over a left-rule
+ * (competes with mark indicators) and over glyph-color shift (would
+ * fight future tajweed coloring).
+ */
+
+@layer surfaces {
+  .qa-verse-active {
+    background: color-mix(in oklab, var(--qa-accent, #4af) 10%, transparent);
+    transition: background 200ms ease;
+  }
+
+  /* When the active verse contains word-grain spans (v2.1+ word-karaoke
+   * mode), the verse container also gets the class — collapse the
+   * background to avoid double-tinting. */
+  .qa-verse-active .qa-verse-active {
+    background: transparent;
+  }
+}

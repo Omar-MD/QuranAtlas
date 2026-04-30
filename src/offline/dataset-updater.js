@@ -7,9 +7,8 @@ import { CACHE_DATASET } from '../core/constants.js'
 import { fetchManifest } from './manifest-fetcher.js'
 import { verify } from './sha256-verifier.js'
 import { stageFile, getStagedResponse, deleteStaging, copyToLive } from './staging-cache.js'
+import { DB_NAME, DB_VERSION } from '../core/db/migrations.js'
 
-const DB_NAME = 'quran-atlas'
-const DB_VERSION = 5
 const DATASET_META_ID = 'current'
 
 /** Session-scoped cached IDB connection. Cleared on versionchange. */

@@ -37,6 +37,12 @@ Every `Events.*` constant has a corresponding entry in the `EventPayloads` map i
 | `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `tag/TagSheet.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
 | `SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `settings/riwayah.ts::setRiwayah` (local switch); `safety/sync.ts::handleChannelMessage` (cross-tab fan-in via `applyRiwayah`) | `reader/Reader.svelte` (refetches active surah, restores `aya_no` anchor — clamps to last ayah on miss); `settings/reading-typography.ts::initReadingTypography` (re-clamps `--qa-arabic-line-height` to new Riwayah's floor) | `{ from: 'hafs' \| 'warsh' \| 'qaloon'; to: 'hafs' \| 'warsh' \| 'qaloon' }` |
 | `STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `data/offline.ts:58` | `core/quota-banner.svelte:79` | `{}` |
+| `AUDIO_VERSE_CHANGED` | `audio:verse-changed` | `audio/player-runtime.ts` (timeupdate → ayahAtMs match) | `reader/audio-highlight.ts` (applies `.qa-verse-active`), `reader/audio-autoscroll.ts` (smart-defer scroll) | `{ verseKey }` |
+| `AUDIO_STARTED` | `audio:started` | `audio/player-runtime.ts` (`<audio>.play()` event) | `core/save-failure-toast.svelte` (mount-on-demand pattern, future) | `{ reciter, surah }` |
+| `AUDIO_PAUSED` | `audio:paused` | `audio/player-runtime.ts` | _(no listener yet)_ | `{ positionMs }` |
+| `AUDIO_ENDED` | `audio:ended` | `audio/player-runtime.ts` | _(no listener yet — future "auto-advance to next surah" hook)_ | `{ surah }` |
+| `AUDIO_ERROR` | `audio:error` | `audio/player-runtime.ts` (`<audio>` error, no-resume-target, missing reciter) | `core/save-failure-toast.svelte` (toast routing — known codes: `AUDIO_PLAYBACK_ERROR`, `AUDIO_NO_RESUME_TARGET`, `AUDIO_NO_RECITER`) | `{ code, message }` |
+| `AUDIO_RECITER_CHANGED` | `audio:reciter-changed` | `audio/player-runtime.ts::setReciterMidPlayback` | _(no listener yet)_ | `{ reciter }` |
 
 ### Emitter-only (⚠ dead listener)
 

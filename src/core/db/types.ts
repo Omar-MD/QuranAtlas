@@ -54,6 +54,16 @@ export interface BookmarkRecord {
   createdAt: number
 }
 
+export interface AudioPositionRecord {
+  /** Composite primary key `${reciter}:${surah}`. */
+  id: string
+  reciter: string
+  surah: number
+  ayah: number
+  ms: number
+  lastPlayedAt: number
+}
+
 export type StoreRecords = {
   settings: { key: string; value: unknown }
   meta: { id: string; [k: string]: unknown }
@@ -62,6 +72,7 @@ export type StoreRecords = {
   datasetMeta: { id: string; version?: string; [k: string]: unknown }
   edges: EdgeRecord
   bookmarks: BookmarkRecord
+  audioPosition: AudioPositionRecord
 }
 
 export type StoreName = keyof StoreRecords

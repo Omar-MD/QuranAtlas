@@ -43,6 +43,10 @@ const _shapes: Record<string, Record<string, string>> = {
     riwayah: 'string', verseKey: 'string',
     surah: 'number', createdAt: 'number',
   },
+  audioPosition: {
+    id: 'string', reciter: 'string', surah: 'number',
+    ayah: 'number', ms: 'number', lastPlayedAt: 'number',
+  },
 }
 
 /**
@@ -78,6 +82,10 @@ const STRING_CAPS: Record<string, Record<string, number>> = {
   },
   bookmarks: {
     riwayah: 8, verseKey: 12,
+  },
+  audioPosition: {
+    id: 96,        // `${reciter}:${surah}` — reciter id <= 80 + ':' + surah <= 3
+    reciter: 80,
   },
   meta: { id: 64 },
   activationState: { id: 64, status: 32 },

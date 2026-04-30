@@ -25,7 +25,7 @@
  */
 
 export const DB_NAME = 'quran-atlas'
-export const DB_VERSION = 5
+export const DB_VERSION = 6
 
 /**
  * @param {IDBDatabase} db
@@ -89,5 +89,18 @@ export function applySchema(db) {
     })
     bookmarksStore.createIndex('by-riwayah-surah', ['riwayah', 'surah'])
     bookmarksStore.createIndex('by-riwayah', 'riwayah')
+  }
+
+  // Audio playback positions (v6): per-(reciter, surah) resume points
+  // for the audio player. Key shape `${reciter}:${surah}` (string).
+  // Sole writer is `state/audio-position.svelte.ts`. LRU cap 50 enforced
+  // by the writer (not by the schema). `play()` no-target uses the
+  // `by-last-played-at` index to find the most recent row.
+  if (!db.objectStoreNames.contains('audioPosition')) {
+    const audioPositionStore = db.createObjectStore('audioPosition', {
+      keyPath: 'id',
+    })
+    audioPositionStore.createIndex('by-last-played-at', 'lastPlayedAt')
+    audioPositionStore.createIndex('by-reciter', 'reciter')
   }
 }

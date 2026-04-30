@@ -37,6 +37,13 @@ The DB is `quran-atlas`, version 5, defined in `src/core/db.ts`. Schema changes 
 | `recentSurahs` | `number[]` (length ≤5) | `App.svelte` (`$effect` on `reader.currentSurahNum`) | Feeds the surah-list "Recent" filter. |
 | `onboardingComplete` | boolean | `onboarding/Onboarding.svelte` | First-run flow completion flag. |
 | `quota-warning-suppressed` | boolean | `core/quota-banner.svelte` | User dismissed the quota banner — don't re-show this session. |
+| `audioReciter` | `string \| null` | `settings/audio.ts` | Active reciter id (default `null` until first selection). Sole writer. |
+| `audioSpeed` | `0.75 \| 1 \| 1.25 \| 1.5 \| 2` | `settings/audio.ts` | Audio playback rate. Default `1`. Sole writer. |
+| `audioRepeat` | `{ mode: 'off' \| 'verse' \| 'range' \| 'surah'; count?: number }` | `settings/audio.ts` | Audio repeat policy. Default `{ mode: 'off' }`. Sole writer. |
+| `audioLoopRange` | `{ from: VerseKey; to: VerseKey } \| null` | `settings/audio.ts` | A-B loop range when repeat mode is `'range'`. Sole writer. |
+| `audioPrefetchNext` | boolean | `settings/audio.ts` | Pre-fetch next surah at 70% playback. Default `true`. Sole writer. |
+| `audioAutoScrollMode` | `'smart' \| 'always' \| 'off'` | `settings/audio.ts` | Reader scroll-follow policy during playback. Default `'smart'` (defer 5s after manual scroll). Sole writer. |
+| `audioFirstPlayHintShown` | boolean | `settings/audio.ts`, `audio/AudioFullOverlay.svelte` | One-time hint dismissal flag. Sole writer. |
 
 Plus any other ad-hoc keys a feature introduces. Convention: write `{ key, value }` shape and scope the key to the feature (e.g. `review:lastFilter`). Avoid stuffing structured data into `value` if it has a natural dedicated store.
 
@@ -303,6 +310,41 @@ Cross-tab peers receive `SYNC_BOOKMARKS_UPDATED` with `{ verseKeys, riwayah }` a
 
 ---
 
+## Store: `audioPosition`
+
+- **keyPath:** `id` (string, composite `${reciter}:${surah}`)
+- **DB_VERSION:** introduced in v6 (audio v2.0 milestone, 2026-04-30).
+- **Indexes:**
+  - `by-last-played-at` on `lastPlayedAt` — backs `loadMostRecent()` (drives `play()` no-target resume) via `cursor(prev)` over the index.
+  - `by-reciter` on `reciter` — supports future "all positions for this reciter" queries (settings `clear reciter audio` flow).
+- **Validated fields (all required):** `id`, `reciter`, `surah`, `ayah`, `ms`, `lastPlayedAt`. Length caps: `id ≤ 96`, `reciter ≤ 80`. TS interface `AudioPositionRecord` in `core/db/types.ts`.
+- **Written by:** `state/audio-position.svelte.ts` only.
+
+### Record shape
+
+```ts
+{
+  id: `${reciter}:${surah}`,   // e.g. 'alafasy:36'
+  reciter: 'alafasy',
+  surah: 36,
+  ayah: 27,
+  ms: 91234,
+  lastPlayedAt: 1714492800000,
+}
+```
+
+### Write invariant
+
+Position writes are debounced inside `audio/player-runtime.ts`: written on pause, on every `audio:verse-changed`, and on a 10s ticker while playing. The runtime calls `savePosition()` which `put()`s the record (fire-and-forget) then asynchronously runs `enforceLruCap()` — when row count exceeds `MAX_ROWS = 50`, the oldest by `lastPlayedAt` is evicted in a separate transaction. Storage budget is therefore always ≤ ~10 KB regardless of how many (reciter, surah) pairs the user touches.
+
+### Typical queries
+
+- **Resume current pair**: `loadPosition(reciter, surah)` → `get('audioPosition', `${reciter}:${surah}`)`.
+- **`play()` no-target**: `loadMostRecent()` → cursor over `by-last-played-at` index, descending; first row is the answer.
+- **Clear one reciter** (future Storage UI): `index('by-reciter').getAllKeys(reciter)` → batch `del()`.
+
+---
+
 ## Static datasets (read-only, not in IDB)
 
 - `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-dataset.mjs` (renamed from `build-riwayat.mjs` 2026-04-27) from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
@@ -384,13 +426,16 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
 
 ## Cross-cutting rules
 
+> **Invariant — single global `<audio>` element.** Owned by `state/audio.svelte.ts::getOrCreateAudioElement()`. Multiple `<audio>` elements break iOS media-session binding (it picks the most-recently-played) and risk concurrent playback races. Mini-bar, full overlay, and `audio/player-runtime.ts` all read from / write to the same singleton.
+
 > **Invariant — one writer per store.** File references use basenames; grep for the basename, not a specific `.js`/`.ts`.
 >
 > - `marks` — written only via `marks/store`. Never `put('marks', …)` directly. Bypassing this breaks `_canon` computation, cross-tab broadcast, and the `MARKS_SAVED` / `MARKS_DELETED` event contracts (see `marks` §Write invariant above).
 > - `edges` — written only via `edges/store`. Never `put('edges', …)` directly. Bypassing this breaks `_canonKind` computation, cross-tab broadcast, and the `EDGES_SAVED` / `EDGES_DELETED` event contracts (see `edges` §Write invariant above).
 > - `meta` — written by `review/state` (sole writer for `meta['review']`).
 > - `activationState` / `datasetMeta` — written by `data/offline` (client) or `offline/dataset-updater` (SW).
-> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `surahHeaderHidden` (`settings/surah-header-visibility`), `currentPosition` (`reader/global-position`), `lastSurface` (`state/last-surface`), `recentSurahs` (`state/recent-surahs`), `translationVisible` and `translationId` (`settings/panel-bridge`), `onboardingComplete` (`onboarding/state`), `quota-warning-suppressed` (`core/quota-banner.svelte`). `state/recent-surahs.ts` serialises read-modify-write through a chained promise so two rapid surah switches can no longer race the get + put.
+> - `audioPosition` — written only via `state/audio-position`. Audio runtime debounces (verse-change / 10s ticker / pause) and dispatches save through this module; LRU 50-row cap enforced inside the writer.
+> - `settings` is the shared scratchpad — each feature owns its own keys, namespaced. Sole-writer keys: `theme` (`settings/theme`), `riwayah` (`settings/riwayah`), `fontSize` (`settings/font-size`), `lineSpacing` / `wordSpacing` / `readerMargin` / `verseSpacing` (`settings/reading-typography`), `nightMode` (`settings/night-mode`), `surahHeaderHidden` (`settings/surah-header-visibility`), `currentPosition` (`reader/global-position`), `lastSurface` (`state/last-surface`), `recentSurahs` (`state/recent-surahs`), `translationVisible` and `translationId` (`settings/panel-bridge`), `onboardingComplete` (`onboarding/state`), `quota-warning-suppressed` (`core/quota-banner.svelte`), `audioReciter` / `audioSpeed` / `audioRepeat` / `audioLoopRange` / `audioPrefetchNext` / `audioAutoScrollMode` / `audioFirstPlayHintShown` (`settings/audio`). `state/recent-surahs.ts` serialises read-modify-write through a chained promise so two rapid surah switches can no longer race the get + put.
 >
 > Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to this list in the same commit.
 

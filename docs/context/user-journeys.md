@@ -615,6 +615,58 @@ Two tabs open on `#/s/1`.
 
 ---
 
+## J. Audio recitation (architecture landed 2026-04-30)
+
+**Invariant.** `AudioMiniBar` visible iff `audioState.status !== 'idle'`. Single global `<audio>` element owned by `state/audio.svelte.ts::getOrCreateAudioElement()` — never duplicated.
+
+**Status.** Audio architecture, IDB schema (`audioPosition`, DB v6), runtime, cross-tab gating, mini-bar + full-overlay shells, reader verse-tick + smart-defer autoscroll, SW per-reciter cache partition all shipped 2026-04-30. Reciter dataset acquisition pipeline (forced alignment), settings UI surfaces (Sources reciter picker, Reading audio prefs, Storage cache controls), and reader long-press "Play from here" entry are tracked in `docs/context/future-work.md` §Audio recitation §v2 — milestone.
+
+### J1. Resume recent playback
+
+1. App boots; user previously listened to Surah 36 with Alafasy and paused at verse 27.
+2. Mini-bar is hidden (status `idle`) until the user explicitly resumes (no ambient audio on cold boot).
+3. User opens audio entry (future Settings UI / command-sheet entry) → `play()` no-target → `loadMostRecent()` returns surah 36 / Alafasy / verse 27 / 91234 ms → `<audio>` element loads `/dataset/audio/alafasy/036.mp3`, seeks, plays.
+4. Mini-bar surfaces at the bottom of the reader showing surah, reciter, verse.
+5. Reader's currently-playing verse gains `.qa-verse-active` background tint via `[data-token-key^="36:27"]` selector.
+
+**Surfaces:** Audio mini-bar; reader.
+
+### J2. Mini-bar + full overlay
+
+1. Mini-bar pinned bottom-of-reader while audio is non-idle. Tap mini-bar (or its surah label area) → opens `AudioFullOverlay` via `audioPlayerBridge.api.open()`.
+2. Full overlay shows surah / reciter / verse meta, scrubber, transport (prev / play-pause / next / stop). User adjusts → calls into `audio/player-runtime.ts`.
+3. Full overlay close button collapses back to mini-bar.
+
+**Surfaces:** Audio mini-bar; audio full overlay.
+
+### J3. Smart-defer auto-scroll
+
+1. Audio plays; `audio:verse-changed` fires on each ayah boundary (via timing JSON).
+2. With `audioAutoScrollMode = 'smart'` (default), `reader/audio-autoscroll.ts` scrolls the playing verse into view UNLESS the user has manually scrolled in the last 5 seconds.
+3. User who wants to read ahead scrolls manually → autoscroll yields for 5s. After 5s of no manual scroll, autoscroll resumes.
+
+**Surfaces:** Reader.
+
+### J4. Cross-tab takeover
+
+1. Tab A is playing audio. User opens Tab B and presses play.
+2. Tab B emits `broadcast('audio.playback', { kind: 'started', tabId: B, ... })`.
+3. Tab A's `initCrossTab` receiver sees `tabId !== self.tabId` → calls `pauseFromCrossTab()` → `<audio>` pauses, mini-bar status flips to `paused`.
+4. Tab A's pause writes `audioPosition` to IDB. Tab B reads max(`lastPlayedAt`) when its own `play()` resolves → starts at the position Tab A just wrote (soft sync handoff).
+
+**Surfaces:** Mini-bar (Tab A flips to paused state); audio toast (future, "Paused — playing in another tab").
+
+### J5. Lock-screen / Bluetooth controls (manual smoke — not Playwright)
+
+1. Audio plays; `audio/media-session.ts::registerActionHandlers` wired all seven media actions (play / pause / prev / next / seekback / seekfwd / seekto).
+2. User locks phone → lock screen shows track metadata (surah label · reciter · "QuranAtlas" album · static brand artwork).
+3. Lock-screen play / pause buttons drive `audio/player-runtime.ts::resume / pause`. Headset multifunction button does the same.
+4. Track metadata updates only on surah-change or reciter-change (not on every verse, to avoid lock-screen flicker).
+
+**Surfaces:** Lock-screen / Bluetooth headset / car-stereo.
+
+---
+
 ## Deprecated
 
 ### E3 (legacy). `#/t/:tag` FVR route — removed in commit cb4e3a2

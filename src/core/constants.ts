@@ -56,6 +56,12 @@ export const Events = {
   SYNC_BOOKMARKS_UPDATED: 'sync:bookmarks-updated',
   BOOKMARK_JUMP_LANDED: 'bookmark:jump-landed',
   SETTINGS_RECENT_SURAHS_UPDATED: 'settings:recent-surahs-updated',
+  AUDIO_STARTED: 'audio:started',
+  AUDIO_VERSE_CHANGED: 'audio:verse-changed',
+  AUDIO_PAUSED: 'audio:paused',
+  AUDIO_ENDED: 'audio:ended',
+  AUDIO_ERROR: 'audio:error',
+  AUDIO_RECITER_CHANGED: 'audio:reciter-changed',
 } as const
 
 export type EventName = typeof Events[keyof typeof Events]
@@ -108,6 +114,12 @@ export type EventPayloads = {
   'sync:bookmarks-updated': { verseKeys: string[]; riwayah: 'hafs' | 'warsh' | 'qaloon' }
   'bookmark:jump-landed': { verseKey: string }
   'settings:recent-surahs-updated': { surahs: number[] }
+  'audio:started': { reciter: string | null; surah: number | null }
+  'audio:verse-changed': { verseKey: string }
+  'audio:paused': { positionMs: number }
+  'audio:ended': { surah: number | null }
+  'audio:error': { code: string; message: string }
+  'audio:reciter-changed': { reciter: string }
 }
 
 export const Errors = {

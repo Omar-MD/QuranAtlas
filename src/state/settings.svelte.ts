@@ -6,6 +6,13 @@ export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
 
 export type GlobalPosition = { surah: number; verse: number } | null
 
+// Audio settings (v2.0 milestone).
+export type AudioSpeed = 0.75 | 1 | 1.25 | 1.5 | 2
+export type AudioRepeatMode = 'off' | 'verse' | 'range' | 'surah'
+export type AudioAutoScrollMode = 'smart' | 'always' | 'off'
+export type AudioRepeat = { mode: AudioRepeatMode; count?: number }
+export type AudioLoopRange = { from: string; to: string } | null
+
 export const settings = $state({
   theme: 'auto' as Theme,
   riwayah: 'qaloon' as Riwayah,
@@ -19,4 +26,11 @@ export const settings = $state({
   nightMode: false,
   surahHeaderHidden: false,
   currentPosition: null as GlobalPosition,
+  audioReciter: null as string | null,
+  audioSpeed: 1 as AudioSpeed,
+  audioRepeat: { mode: 'off' as AudioRepeatMode } as AudioRepeat,
+  audioLoopRange: null as AudioLoopRange,
+  audioPrefetchNext: true,
+  audioAutoScrollMode: 'smart' as AudioAutoScrollMode,
+  audioFirstPlayHintShown: false,
 })

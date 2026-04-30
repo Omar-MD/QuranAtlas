@@ -458,6 +458,28 @@ describe('sw-handlers.js', () => {
 
       expect(deps.cachesDelete).not.toHaveBeenCalled()
     })
+
+    it('preserves qa-audio-* and qa-fonts-* caches by prefix', async () => {
+      const deps = {
+        expectedCaches: new Set(['quran-dataset-v1']),
+        cachesKeys: vi.fn(async () => [
+          'quran-dataset-v1',
+          'workbox-precache-v2-123',
+          'qa-audio-alafasy-v1',
+          'qa-audio-husary-v1',
+          'qa-audio-timing-alafasy-v1',
+          'qa-audio-meta-v1',
+          'qa-fonts-v1',
+          'truly-stale-cache',
+        ]),
+        cachesDelete: vi.fn(async () => true),
+      }
+
+      await cleanupStaleCaches(deps)
+
+      expect(deps.cachesDelete).toHaveBeenCalledTimes(1)
+      expect(deps.cachesDelete).toHaveBeenCalledWith('truly-stale-cache')
+    })
   })
 
   describe('handlePurgeCache()', () => {

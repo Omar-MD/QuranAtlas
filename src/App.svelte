@@ -16,6 +16,8 @@
   import CommandSheet from './nav/CommandSheet.svelte'
   import NavDrawer from './nav/NavDrawer.svelte'
   import TagSheet from './tag/TagSheet.svelte'
+  import AudioMiniBar from './audio/AudioMiniBar.svelte'
+  import AudioFullOverlay from './audio/AudioFullOverlay.svelte'
   import { tagSession } from './state/tag-session.svelte'
 
   let cleanups: Array<() => void> = []
@@ -111,4 +113,6 @@
   verseKey={tagSession.verseKey ?? ''}
   onclose={() => tagSession.end()}
 />
+<AudioMiniBar />
+<AudioFullOverlay />
 <div class="qa-night-shift" aria-hidden="true"></div>
