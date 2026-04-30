@@ -21,15 +21,15 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
 import { waitForReader, surfaceDock, openSettingsSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
+// Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
+// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.
+test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
+
 test.describe('Journey B: Reader & ambient chrome', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
