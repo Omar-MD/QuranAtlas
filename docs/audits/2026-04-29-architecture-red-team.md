@@ -398,10 +398,10 @@ After Tier P1: every v1.1 future-work item drops into ≤5 files as projected in
 12. **Tokenisable contract** (R-06, C-3) — `core/tokenisable.ts`; convert long-press / click-handler / scroll-tracker / indicator
 13. **Reader virtualisation** (R-22) — IntersectionObserver recycler keeping ±3 chunks
 14. **Per-asset-class SW routing + per-feature offline opt-in selector** (R-11, C-4) — `core/sw/strategies.ts` + `offline/offline-selector.svelte`
-15. **Persistent-overlay factory** (R-13) — `createOverlayBridge<API>()`; migrate 6 existing bridges
+15. ✅ **Persistent-overlay factory** (R-13, N22) — landed 2026-05-01; spec at `docs/superpowers/specs/2026-05-01-overlay-factory-adoption-design.md`. 5 hand-rolled bridges migrated to `createOverlayBridge<API>()` (UndoToast, Settings Panel, CommandSheet, NavDrawer, TagSheet). CommandSheet's global keydown extracted to `nav/global-shortcuts.ts` so ⌘K survives lazy-mount. TagSheet flipped from prop-driven to api-driven; `tagSession.sheetOpen` rune retired.
 16. **Strip `aya_text_emlaey` + unused `id` / `line_*` from non-Hafs corpus** (R-24) — ~35% dataset reduction
 17. **CSP migration to HTTP headers + `connect-src` per-feature allow-list framework** (R-19, R-32)
-18. **Lazy-mount overlays in `App.svelte`** — eager chunk drops ~10–15 KB gzip
+18. ✅ **Lazy-mount overlays in `App.svelte`** (N25) — landed 2026-05-01 alongside N22. Boot bundle 122.98 → 72.81 kB raw (-40.8%) / 39.49 → 23.34 kB gzip (-40.9%). 5 lazy chunks emitted (ui 1.05, NavDrawer 8.78, CommandSheet 10.39, Panel 10.59, TagSheet 10.90 kB raw). Factory's `setMounter` + pending-call queue handles the chicken-and-egg between boot-time bridge calls and component mount.
 19. **Update-poll `lastPollAt` debounce** (R-26)
 20. **Vocabulary dictionary** (R-17) — `docs/context/glossary.md`; reciter vs riwayah disambiguation locked before audio
 
