@@ -16,7 +16,7 @@
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
   import { getTranslations } from '../data/dataset.js'
-  import { registerPanel, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
+  import { panelBridge, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
@@ -200,7 +200,12 @@
   }
 
   onMount(() => {
-    registerPanel({ openSettingsSheet, closeSettingsSheet })
+    panelBridge.register({
+      open: openSettingsSheet,
+      close: closeSettingsSheet,
+      isOpen: () => open,
+    })
+    return () => { panelBridge.unregister() }
   })
 
   const currentTranslationName = $derived(

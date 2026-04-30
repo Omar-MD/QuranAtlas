@@ -1,30 +1,40 @@
 /**
- * Imperative bridge for the Settings panel Svelte component.
- * Same pattern as core/ui-bridge.ts — component registers its open fn on mount.
+ * Settings Panel — overlay bridge + sole-writer/-reader data functions.
+ *
+ * The OVERLAY surface (open/close) goes through createOverlayBridge —
+ * audit N22 (2026-05-01). External callers (`MarginHeader`, command
+ * sheet, app-bootstrap routes) keep importing `openSettingsSheet` /
+ * `closeSettingsSheet` — those names are now thin wrappers over
+ * `panelBridge.api.<method>()`.
+ *
+ * The DATA functions (setTranslationVisible / setTranslationId /
+ * loadTranslationId / toggleTranslation) stay as plain async exports.
+ * They are sole-writer/-reader for `settings.translationVisible` +
+ * `settings.translationId` (audit R-08 / R-25). Not overlay surface —
+ * they live here only because the Settings Panel was historically the
+ * sole UI for both. Other surfaces (CommandSheet, keyboard 't' shortcut,
+ * onboarding picker) call them too.
  */
 
 import { get, put } from '../core/db.js'
 import { logger } from '../core/logger.js'
 import { settings } from '../state/settings.svelte.ts'
+import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-overlay'
 
-type PanelExports = {
-  openSettingsSheet: () => void
-  closeSettingsSheet: () => void
+// ── Overlay surface ─────────────────────────────────────────────────────────
+
+export interface PanelOverlayAPI extends BaseOverlayAPI {
+  open(): void
+  close(): void
+  isOpen(): boolean
 }
 
-let _instance: PanelExports | null = null
+export const panelBridge = createOverlayBridge<PanelOverlayAPI>({ name: 'settings-panel' })
 
-export function registerPanel(instance: PanelExports): void {
-  _instance = instance
-}
+export const openSettingsSheet = (): void => panelBridge.api.open()
+export const closeSettingsSheet = (): void => panelBridge.api.close()
 
-export function openSettingsSheet(): void {
-  _instance?.openSettingsSheet()
-}
-
-export function closeSettingsSheet(): void {
-  _instance?.closeSettingsSheet()
-}
+// ── Data: settings.translationVisible (sole writer) ─────────────────────────
 
 /**
  * Sole writer for `settings.translationVisible`. Pre-fix this was
@@ -58,6 +68,8 @@ export async function setTranslationVisible(next?: boolean): Promise<boolean | n
 export async function toggleTranslation(): Promise<boolean | null> {
   return setTranslationVisible(undefined)
 }
+
+// ── Data: settings.translationId (sole writer + reader) ─────────────────────
 
 /**
  * Sole writer for `settings.translationId`. Pre-fix this was joint-
