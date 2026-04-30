@@ -26,7 +26,7 @@ When you need the surface → source-files mapping for a unit (e.g. "which modul
 
 Applies to any UI, theme, layout, or design brainstorm — whether initiated explicitly via a brainstorm skill or implicitly when the user asks "what would it take to…".
 
-1. **Ground in the real source before the first clarifying question.** Read `src/core/theme.css` (tokens and shell rules) and the surface's own `.svelte` / `.ts` files before opening a scope card or asking scoping questions. Cite actual selectors (`.qa-sl-seg-item--on`, `.qa-mark-chips--all`, `.qa-review-controls`) and tokens (`--qa-accent`, `--qa-ambient-accent`) in the first round — not abstracted descriptions.
+1. **Ground in the real source before the first clarifying question.** Read `src/styles/tokens/semantic.css` (tokens and shell rules) and the surface's own `.svelte` / `.ts` files before opening a scope card or asking scoping questions. Cite actual selectors (`.qa-sl-seg-item--on`, `.qa-mark-chips--all`, `.qa-review-controls`) and tokens (`--qa-accent`, `--qa-ambient-accent`) in the first round — not abstracted descriptions.
 2. **No placeholder mockups as the opener.** A visual companion should show real computed colors, real selectors, real DOM structure — not invented swatches.
 3. **One brainstorm per surface-cluster**, not one per concern. Bundle every open question for that surface into the single brainstorm (mirrors Planning rule §1).
 
@@ -86,7 +86,7 @@ These changes don't map to a single UI surface. Treat each as its own cluster wi
 | Event bus | `docs/context/events.md` | Every journey whose surface emits or listens to the changed event |
 | Router / launch-restore / `lastSurface` | `docs/context/architecture.md` §Router | A (launch-restore), F (navigation), any surface that writes `lastSurface` |
 | Safety / sync (versionchange, BroadcastChannel) | `docs/context/architecture.md` §IndexedDB + `data-model.md` §Cross-cutting | I (cross-tab), D4 (clear-data) |
-| Theme tokens (not per-surface selectors) | `docs/context/architecture.md` §Stack (theme refs) + `src/core/theme.css` `:root` / `[data-theme]` blocks | B6 (auto theme), D3 (theme swap), `@a11y` across journeys |
+| Theme tokens (not per-surface selectors) | `docs/context/architecture.md` §Stack (theme refs) + `src/styles/tokens/semantic.css` `:root` / `[data-theme]` blocks | B6 (auto theme), D3 (theme swap), `@a11y` across journeys |
 | Runes state modules | `docs/context/module-graph.md` | Every surface that imports the changed state slice |
 | Chunk budgets | `docs/tech-stack.md` §scripts | Build + `pnpm run check-chunks`; no journey spec needed |
 | Service worker / offline | `docs/context/architecture.md` §Boot flow + `docs/context/data-model.md` §`activationState` | H — `PLAYWRIGHT_INCLUDE_OFFLINE=1`, preview server, production build |

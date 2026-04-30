@@ -98,7 +98,7 @@ before being indexed for filter/query. The pipeline is deterministic:
 Raw labels are preserved on the mark record for display; canonical keys
 are denormalized onto `_canon.<layer>` array paths for index hits.
 
-The alias map (`data/aliases.json`) ships ~30 seed groups covering proper
+The alias map (`src/data/aliases.json`) ships ~30 seed groups covering proper
 nouns and transliteration drift. `excludeFromAliasing` protects Quranic
 rank/quality distinctions (muminin/muslimin/muttaqin etc.) from collapsing
 into the same canonical form.

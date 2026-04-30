@@ -8,7 +8,7 @@ Authentic Qur'anic text sourced from the **King Fahd Glorious Qur'an Printing Co
 - **Warsh** عن نافع (Maghreb, West Africa, parts of Western Europe)
 - **Qaloon** عن نافع (Libya, Tunisia, parts of Mauritania)
 
-These are the **active reader corpus** — the prior PUA-encoded Hafs corpus (quran.com-derived) was removed. `data/dataset.ts::getSurah(n)` reads `settings['riwayah']` to resolve the per-surah URL from `public/dataset/riwayat/{riwayah}/{NNN}.json`.
+These are the **active reader corpus** — the prior PUA-encoded Hafs corpus (quran.com-derived) was removed. `src/data/dataset.ts::getSurah(n)` reads `settings['riwayah']` to resolve the per-surah URL from `public/dataset/riwayat/{riwayah}/{NNN}.json`.
 
 ---
 

@@ -163,11 +163,11 @@ If you bypass `store.ts` and write `marks` directly, `_canon` will be stale/miss
 
 - **keyPath:** `id`
 - **Validated fields:** `id` (string), `status` (string) — TS interface `ActivationStateRecord` in `core/db.ts`
-- **Written by:** `data/offline.ts`, `offline/dataset-updater.js` (SW side)
+- **Written by:** `src/data/offline.ts`, `offline/dataset-updater.js` (SW side)
 
 ### Record shapes
 
-**Client side (`data/offline.ts`)** — minimal:
+**Client side (`src/data/offline.ts`)** — minimal:
 
 ```ts
 {
@@ -392,7 +392,7 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
     1. **Word-stream cumulative** (`method: 'word-stream'`) — 53 of 60 surahs. Concatenates each surah's ayah text per riwayah, walks both word streams together, recovers boundaries from cumulative-position parity.
     2. **Ayah-boundary DP** (`method: 'ayah-dp'`) — 7 surahs (7, 27, 36, 40, 41, 56, 57) where qira'at-level word-count drift defeats word-stream alignment. Dynamic-programming search over ayah groupings; minimises Σ |hWordCount − oWordCountSum| with `MAX_GROUP_SIZE = 4`. Handles both Madinan splits (Hafs 1 → Warsh [1, 2]) and Hafs combines (Hafs 1 + 2 → Warsh 1, e.g. surah 36 Yaseen).
   Surah 1 is included for the Bismillah carve-out (Hafs 1:1 → `null` in Warsh / Qaloon — Bismillah renders as a standalone separator glyph, not as ayah). The derive script runs alignment for all 114 surahs and skips emit only when the result is true identity (every Hafs N → Warsh N → Qaloon N) — count-equality alone is **not** a skip trigger. Build hard-fails (`scripts/build-dataset.mjs::validateVerseAliases`) when the alias file is missing, has out-of-range indices, or has the wrong entry count for any surah.
-  - **Runtime use**: `Reader.svelte::loadSurah` calls `data/verse-aliases.ts::loadVerseAliases()` once per session and `resolveTranslationFor(aliases, riwayah, surahNo, ayahNo)` per visible ayah. The resolver returns a `TranslationRole` discriminator:
+  - **Runtime use**: `Reader.svelte::loadSurah` calls `src/data/verse-aliases.ts::loadVerseAliases()` once per session and `resolveTranslationFor(aliases, riwayah, surahNo, ayahNo)` per visible ayah. The resolver returns a `TranslationRole` discriminator:
     - `identity` — 1:1 alias (or surah without aliases). Render translation as-is.
     - `merged` — multiple Hafs ayat → this Madinan ayah (Hafs combine, e.g. surah 36 Warsh 1 = Hafs 1 + 2). Concat translations.
     - `primary` — first half of a Hafs split (Hafs 1:7 → Warsh [1:6, 1:7], `primary` is 1:6). Render full translation.

@@ -13,7 +13,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 - **Files:** `reader/Reader.svelte`, `reader/Verse.svelte`, `reader/SurahHeader.svelte`, `reader/EdgeIndicator.svelte`, `reader/position.ts`, `reader/global-position.ts`, `reader/surah-swap.ts`, `reader/chunked-append.ts`, `reader/verse-scroll.ts`, `reader/scroll-tracker.ts`, `reader/edge-indicators.ts`, `reader/render-helpers.ts`, `reader/translation-tokens.ts`
 - **Purpose:** Main reading surface. Chunked verse rendering, translation rendering with footnote markers, translation toggle, position persistence, bookmark edge indicators, cross-surah continuation.
 - **Key behaviors:**
-  - Loads one surah at a time via `data/dataset.ts::getSurah`.
+  - Loads one surah at a time via `src/data/dataset.ts::getSurah`.
   - Emits `AMBIENT_SURFACE` on first render, `READER_VERSE_RENDERED` per verse. Reader surah + position is shared through the `reader` state rune (`reader.currentSurahNum`, `reader.currentVerseKey`) rather than events — see `events.md` "Dissolved into rune reads."
   - Listens to `DB_VISIBILITY_VISIBLE` to scroll to last position after tab focus; translation toggle reactive via `settings.translationVisible` rune (`$effect`).
   - **Translation pack join (2026-04-27):** in `loadSurah`, fetches `loadTranslationForSurah(settings.translationId, surahNum)` in parallel with the riwayat surah; builds a `verseKey → text` lookup and assigns `v.en` from it during chunked append. Footnote map (`translationPack.footnotes`) is passed to every `Verse.svelte`. `[N]` markers in translation text are tokenised by `reader/translation-tokens.ts` and rendered as `<button class="qa-fn-marker">` elements; clicking one disclose-toggles a `.qa-fn-popover` panel below the verse with the footnote text. Esc closes the panel. Translation pack absent or 404s ⇒ verses render with empty translation strings (no marker buttons), reader still functional. Default `settings.translationId` is `'saheeh'` (Saheeh International, free for non-commercial distribution); user-facing picker is deferred until a second translation ships.
@@ -22,7 +22,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
   - **Cross-surah continuation (2026-04-25, recessed 2026-04-26):** Chrome-mobile-PTR-style pull-to-swap is the primary affordance — pulling past either edge of the scroller fills a circular progress arc (`PullToSwapIndicator.svelte`); release past full progress commits a single-surah swap with wrap 114↔1 (`surah-swap.ts::setupPullToSwap`). Native browser pull-to-refresh is suppressed via `overscroll-behavior-y: contain` on `#main-content`. Click fallback (post 2026-04-25 redesign, restyled 2026-04-26): single-line italic arrow + surah title at top (`↑ <prev>`) and bottom (`<next> ↓`) — no border, sits flush against the scroller edges (`margin: 2px auto`), muted text color with small italic title (0.7rem) + 12px arrow; reveals to accent color on hover/focus. Markup uses `.qa-continue-arrow` + `.qa-continue-title` spans inside `.qa-continue-prev`/`.qa-continue-next`; see `styles/surfaces/reader.css`. See user-journeys §B-Cross.
   - **Surah Header (post 2026-04-26):** 2-col grid layout — Mushaf Arabic title (`'Amiri Quran'`) in the right column spans both rows full-height; meta line (`SURAH N · COUNT VERSES`, surah English name dropped — Arabic carries it) + juz progress in the left column. Visibility gated by `reader.surahHeaderHidden` rune (mirrors `settings.surahHeaderHidden`); toggled by MarginHeader center-label tap; preference persists across surahs. Bismillah block adds an English translation (`In the Name of Allah — the Most Compassionate, Most Merciful`) under the U+FDFD glyph (always rendered when basmala renders, ignores `settings.translationVisible`; bismillah keeps rendering when the header is hidden).
 - **IDB touch:** writes `settings.currentPosition` on scroll center-band crossings (sole writer via `reader/global-position.ts`); also overwritten on every surah load and swap. Reads `settings.surahHeaderHidden` (sole writer `settings/surah-header-visibility.ts`) via the `reader.surahHeaderHidden` rune to decide whether to render `SurahHeader.svelte`.
-- **Riwayah:** each `.qa-verse-arabic` element carries `data-riwayah={activeRiwayah}`. CSS rules in `styles/tokens/semantic.css` keyed on `:root[data-riwayah="hafs"|"warsh"|"qaloon"]` set `--qa-font-arabic` (all three resolve to Amiri Quran via `--ff-amiri-quran`). Sole text-source writer: `data/dataset.ts::getSurah` reads `settings['riwayah']` to resolve the per-surah URL (`public/dataset/riwayat/{riwayah}/{NNN}.json`).
+- **Riwayah:** each `.qa-verse-arabic` element carries `data-riwayah={activeRiwayah}`. CSS rules in `styles/tokens/semantic.css` keyed on `:root[data-riwayah="hafs"|"warsh"|"qaloon"]` set `--qa-font-arabic` (all three resolve to Amiri Quran via `--ff-amiri-quran`). Sole text-source writer: `src/data/dataset.ts::getSurah` reads `settings['riwayah']` to resolve the per-surah URL (`public/dataset/riwayat/{riwayah}/{NNN}.json`).
 
 ## Review hub
 
@@ -209,7 +209,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 ## Fast-tag panel (inline, in-verse)
 
 - **Entry:** `src/reader/VerseTagPanel.svelte` (rendered inside `reader/Verse.svelte` under the translation, gated on `isActive`). Opens when `tagSession.quickbarOpen === true` for that verse.
-- **Files:** `reader/VerseTagPanel.svelte`, `reader/Verse.svelte`, `tag/session-bridge.ts`, `state/tag-session.svelte.ts`, `data/tag-layers.ts`
+- **Files:** `reader/VerseTagPanel.svelte`, `reader/Verse.svelte`, `tag/session-bridge.ts`, `state/tag-session.svelte.ts`, `src/data/tag-layers.ts`
 - **Purpose:** Sole per-verse action surface (post 2026-04-25 redesign) — inline suggestion panel under the active verse's translation, grouped by layer group (Speech / Narrative / Themes / Entities) with color-coded `#` glyph per layer hue. Replaces the retired floating `tag/AmbientDock` quickbar. Deep editor (`tag/TagSheet`) reachable only via the `⛶` escalation button or `⌘+Enter`.
 - **Key behaviors:**
   - **Entry points:** double-tap verse (touch), right-click verse (desktop), keyboard `m` on centered verse, command-sheet "Mark this verse" (F2). All four call `beginFast(verseKey)`.
@@ -237,7 +237,7 @@ For dependencies between directories, see `module-graph.md`. For the events each
 ## Surah progress chip
 
 - **Entry:** `src/nav/SurahProgress.svelte` (rendered inside `reader/SurahHeader.svelte`).
-- **Files:** `nav/SurahProgress.svelte`, `data/juz.ts`
+- **Files:** `nav/SurahProgress.svelte`, `src/data/juz.ts`
 - **Purpose:** Juz / surah-progress meta chip under the surah title (juz number + percent through surah).
 
 ## Ambient pill
