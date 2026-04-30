@@ -43,7 +43,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.MARKS_SAVED` | `marks:saved` | `src/marks/store.ts:88` | `src/marks/indicator.ts:98` |
 | `Events.MARKS_SAVE_FAILED` | `marks:save-failed` | `src/marks/store.ts:95` | `src/core/save-failure-toast.svelte:36` |
 | `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:46` | `src/marks/indicator.ts:117` |
-| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/bookmarks/BookmarksList.svelte:106`<br>`src/nav/CommandSheet.svelte:320`<br>`src/nav/CommandSheet.svelte:322`<br>`src/nav/NavDrawer.svelte:196`<br>`src/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:290` |
+| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/bookmarks/BookmarksList.svelte:106`<br>`src/nav/CommandSheet.svelte:320`<br>`src/nav/CommandSheet.svelte:322`<br>`src/nav/NavDrawer.svelte:194`<br>`src/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:290` |
 | `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:179` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:130`<br>`src/data/offline.ts:147`<br>`src/data/offline.ts:191`<br>`src/data/offline.ts:248` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:167` | `src/data/offline.ts:272` |
@@ -58,7 +58,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.ROUTER_ROUTE_CHANGE` | `router:route-change` | `src/core/router.ts:173`<br>`src/core/router.ts:191` | `src/nav/AmbientDock.svelte:86`<br>`src/nav/MarginHeader.svelte:174` |
 | `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:54` |
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/settings/clear-data.ts:170` | _(none)_ |
-| `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/state/recent-surahs.svelte.ts:26` | `src/nav/NavDrawer.svelte:245`<br>`src/surahs/SurahList.svelte:141` |
+| `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/state/recent-surahs.svelte.ts:26` | `src/nav/NavDrawer.svelte:243`<br>`src/surahs/SurahList.svelte:141` |
 | `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/settings/riwayah.ts:58`<br>`src/settings/riwayah.ts:74` | `src/app-bootstrap.ts:174`<br>`src/bookmarks/BookmarksList.svelte:227`<br>`src/bookmarks/BookmarksPage.svelte:36`<br>`src/bookmarks/indicator.ts:100`<br>`src/reader/Reader.svelte:183`<br>`src/settings/reading-typography.ts:133`<br>`src/surahs/SurahList.svelte:140` |
 | `Events.SHEET_CLOSED` | `sheet:closed` | `src/nav/shortcuts-sheet.js:162`<br>`src/settings/Panel.svelte:129` | _(none)_ |
 | `Events.SHEET_OPENED` | `sheet:opened` | `src/nav/shortcuts-sheet.js:153`<br>`src/settings/Panel.svelte:112` | _(none)_ |

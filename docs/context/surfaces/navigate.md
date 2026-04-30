@@ -187,7 +187,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/bookmarks/store.ts:59` |
 | `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/bookmarks/store.ts:42` |
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/bookmarks/store.ts:38` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/bookmarks/BookmarksList.svelte:106`, `src/nav/CommandSheet.svelte:320`, `src/nav/CommandSheet.svelte:322`, `src/nav/NavDrawer.svelte:196`, `src/surahs/SurahList.svelte:167` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/bookmarks/BookmarksList.svelte:106`, `src/nav/CommandSheet.svelte:320`, `src/nav/CommandSheet.svelte:322`, `src/nav/NavDrawer.svelte:194`, `src/surahs/SurahList.svelte:167` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/nav/shortcuts-sheet.js:162` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/nav/shortcuts-sheet.js:153` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -200,7 +200,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/bookmarks/BookmarksList.svelte:224`, `src/bookmarks/BookmarksPage.svelte:33`, `src/bookmarks/indicator.ts:77`, `src/surahs/SurahList.svelte:137` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/bookmarks/indicator.ts:105` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/bookmarks/indicator.ts:73` |
-| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/nav/NavDrawer.svelte:245`, `src/surahs/SurahList.svelte:141` |
+| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/nav/NavDrawer.svelte:243`, `src/surahs/SurahList.svelte:141` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/bookmarks/BookmarksList.svelte:227`, `src/bookmarks/BookmarksPage.svelte:36`, `src/bookmarks/indicator.ts:100`, `src/surahs/SurahList.svelte:140` |
 | `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/bookmarks/BookmarksList.svelte:226`, `src/bookmarks/BookmarksPage.svelte:35`, `src/bookmarks/indicator.ts:91`, `src/surahs/SurahList.svelte:139` |
 <!-- AUTO-GENERATED:events-listen END -->
