@@ -192,9 +192,19 @@ export async function cleanupStaleCaches(deps) {
   const { expectedCaches, cachesKeys, cachesDelete } = deps
   const allCacheNames = await cachesKeys()
 
+  // Preserve workbox-precache* (Workbox internal) and per-feature
+  // partitioned caches by name pattern. Audio caches are per-reciter
+  // (qa-audio-{reciter}-v1, qa-audio-timing-{reciter}-v1) and the meta
+  // cache (qa-audio-meta-v1); fonts cache is qa-fonts-v1. None of these
+  // are in `expectedCaches` because the activate handler doesn't enumerate
+  // every reciter — they're allowlisted by prefix instead.
+  const PRESERVE_PREFIXES = ['workbox-precache', 'qa-audio-', 'qa-fonts-']
+  const isPreserved = (name) =>
+    PRESERVE_PREFIXES.some((p) => name.startsWith(p)) || expectedCaches.has(name)
+
   await Promise.all(
     allCacheNames
-      .filter(name => !name.startsWith('workbox-precache') && !expectedCaches.has(name))
+      .filter(name => !isPreserved(name))
       .map(name => cachesDelete(name))
   )
 }

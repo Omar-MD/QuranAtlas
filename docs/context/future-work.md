@@ -18,7 +18,7 @@ Context: core data-model overhaul brainstormed 2026-04-20. Introduces 12 free-fo
 
 ### v1.1 — near-MVP
 
-- **User-personal alias overrides** — local IDB store lets user add custom aliases on top of shipped `data/aliases.json`. Guardrail: refuses to alias any label in `excludeFromAliasing` (protects muminin/muslimin/muttaqin/etc. rank distinctions).
+- **User-personal alias overrides** — local IDB store lets user add custom aliases on top of shipped `src/data/aliases.json`. Guardrail: refuses to alias any label in `excludeFromAliasing` (protects muminin/muslimin/muttaqin/etc. rank distinctions).
 - **Edge creation UI** — "Link this verse to…" action in verse detail + edge list chip row on marked verses. Bundled with auto-suggest below (shipping edge-UI without suggestions = too much manual work for too little reward).
 - **Auto-suggested edges from layer overlap** — system surfaces suggestions like "Verse A and Verse B share people=musa + places=sinai + events=exodus → possible `same-story` edge?". One-tap accept/dismiss. Killer tadabbur feature — reveals connections user didn't consciously notice.
 - **Per-edge-kind reflection prompt** — creating `parallel` edge asks "What differs in this telling?", `contrast` asks "What opposite is shown?", `fulfills` asks "What was promised / realized?". Drives depth of edge-level note capture.
@@ -122,9 +122,23 @@ Saheeh International (id `saheeh`, 6236 verses, 1903 footnotes) ships as the def
 
 ## Audio recitation
 
-### v2 — milestone
+### v2 — milestone (architecture landed 2026-04-30; ship-blocking work remaining)
 
-- **Recitation playback + reciter picker + verse loop.** Reciter asset hosting (every-ayah.com / quran.com mp3 corpora — 1–3 GB per reciter), streaming + HTTP range-request playback, SW precache strategy (per-surah on demand, not full corpus), reciter picker (initial set ≥ 3: Ḥuṣarī, Sudais, Minshawi), A-B loop range, repeat-N, sync-to-verse highlight + autoscroll. Settings: reciter, playback rate, repeat behavior. Single biggest leverage feature in the product — every "main" Quran app ships audio, and absent it QuranAtlas reads as a study tool, not a daily companion. Single biggest scope item too: licensing, asset budget, SW caching strategy, and player UI all need decisions. Pairs strongly with §Language aids — Tajweed coloring (visual rule highlight while audio plays).
+Architecture, runtime, IDB schema, cross-tab gating, media-session wiring, mini-bar + full-overlay components, reader verse-tick highlight + smart-defer autoscroll all landed 2026-04-30 against `docs/superpowers/specs/2026-04-30-audio-design.md`. The audio surface is mounted in `App.svelte` and wired into the boot path (`initAudio` after `initRiwayah`); audio routes are partitioned in the SW (`/dataset/audio/{reciter}/{NNN}.mp3` → CacheFirst per-reciter namespace). What ships when this milestone closes is **dataset + UX polish**:
+
+- **Reciter dataset acquisition pipeline.** Forced-alignment via whisperX / Montreal forced aligner produces per-(reciter, surah) word-level timing JSON. Pipeline is its own design+plan (separate spec when work begins). At minimum 3 Hafs reciters (Alafasy, Husary, Sudais) for v2.0 launch; Warsh + Qaloon parity once a forced-alignment run is staffed.
+- **`workbox-range-requests` plugin.** Currently the SW serves cached audio with full 200 OK; modern browsers tolerate but do not exploit Range arithmetic from cached responses. Add the plugin (returns 206 Partial) when audio data ships and verify on real devices. ~5 LOC code change + dep add.
+- **Settings UI surfaces.** `settings/audio.ts` setters wired but not surfaced in `Panel.svelte`. Land:
+  - Sources → Reciter picker (radio list, manifest-loaded).
+  - Reading → Speed default (chip row), Repeat default (chip row), Auto-scroll mode (segmented), Pre-fetch next surah (toggle).
+  - Storage → per-reciter audio cache MB used + "Clear {reciter} audio" button.
+- **Reader long-press menu — "Play from here" entry.** Requires extending the existing fast-tag double-tap menu in `marks/long-press.ts::setupTapGestures` rather than adding a new gesture (per `user-journeys.md` C6 invariant: mark editor is the sole per-verse-tap action surface). ~30 LOC.
+- **Audio brand artwork PNG assets.** `public/icons/audio-art-{96,256,512}.png` referenced by `audio/media-session.ts::setMetadata`. Three sizes; static QuranAtlas brand mark.
+- **A-B loop UX + Repeat-N drill mode UI.** API surface defined (`setLoopRange`, `setRepeat('verse', N)`); discoverability and affordance design owned by overlay-UI follow-up.
+- **`audio:reciter-changed` listener for reader.** `setReciterMidPlayback` emits the event; reader currently has no UI tie-in. Wire to a transient toast or chip update.
+- **E2e specs (Rule 8 9-criterion gate).** `tests/e2e/journey-h-audio.spec.js` (NEW journey letter): real `<audio>.play()` lifecycle in `@offline` project, cross-tab gate via two `BrowserContext`s, range-request 206-from-cache path. Lock-screen control = manual smoke on real device.
+- **CSP `media-src`.** Currently inherits `'self'`. If reciter dataset offloads to CDN (Cloudflare Pages 25 MB single-file cap is a concern with full-surah mp3s up to ~30 MB for al-Baqarah), explicitly add the CDN host.
+- **Tajweed coloring × audio.** Tajweed (#11) is v1.3, audio is v2.0 — composition lands as part of whichever ships second; covered separately under §Language aids.
 
 ---
 
@@ -207,9 +221,9 @@ When a user-visible release is scheduled:
 - Stable `bumpVersion()` API that wraps `DB_VERSION = N + 1` plus the diff function.
 - ~150 LOC of dormant infrastructure — the cheap insurance audit C-8 asked for; land alongside the first release-train milestone, not under the time pressure of an actual schema change.
 
-### Audio sub-design (N30 skeleton, audit C-7 / R-06 / R-11)
+### Audio sub-design (N30 — landed 2026-04-30)
 
-Audio (`#13`) is the v2.0 milestone. Skeleton sub-design at `docs/superpowers/specs/2026-04-29-audio-design-SKELETON.md` (gitignored — local only) tracks the prereqs satisfied by P2: `core/tokenisable.ts` (verse-tick highlight contract), per-asset-class SW routing (`core/sw/strategies.ts`), `core/persistent-overlay.ts` (audio player overlay factory), `docs/context/glossary.md` (reciter vs riwayah disambiguation). Open questions: range-cache strategy, media-session integration, IDB schema for playback position, persistent player overlay API.
+The audio architecture, IDB schema (`audioPosition` store, DB v6), runtime, cross-tab gating, mini-bar + full-overlay shells, reader verse-tick + smart-defer autoscroll, and SW per-reciter cache partition all landed 2026-04-30 against `docs/superpowers/specs/2026-04-30-audio-design.md` (the post-brainstorm spec that supersedes the gitignored skeleton). Remaining ship-blocking work tracked under §Audio recitation §v2 above. Companion items: `core/tokenisable.ts` shipped narrow audio scope (verse-grain DOM contract via `data-token-key` on `.qa-verse`); reader virtualisation (N20) + WBW migration of long-press / click-handler / scroll-tracker / indicator from `data-verse-key` to `data-token-key` remain deferred for WBW's own design pass.
 
 ### Sync v2 sub-design + crypto threat model (N31 skeleton, audit C-8 / R-10)
 
@@ -229,35 +243,30 @@ Deferred from N15. Building global-setup right requires choosing the canonical o
 
 ### `core/tokenisable.ts` sub-verse contract + reader virtualisation (audit R-06 / R-22 / C-3)
 
-The verse-grain DOM contract (`[data-verse-key]` selectors in `marks/long-press.ts`, `bookmarks/click-handler.ts`, `reader/scroll-tracker.ts`, `marks/indicator.ts`) is load-bearing today. Word-by-word translation (`#9`), tajweed coloring (`#11`), and audio verse-tick highlight (`#13`) all need sub-verse granularity.
+Step 1 of the audit prescription landed 2026-04-30 in narrow audio-driven scope: `core/tokenisable.ts` exports `parseTokenKey`, `formatTokenKey`, `getTokenAt(x, y)`, and `verseTokenSelector(surah, ayah)`. `Verse.svelte` emits `data-token-key={verseKey}` alongside the existing `data-verse-key` so the contract is satisfied at verse grain without disturbing existing consumers. Audio's `reader/audio-highlight.ts` reads via `verseTokenSelector` — picks up word-level spans automatically when WBW lands.
 
-Audit C-3 prescribes:
-1. Define `core/tokenisable.ts` — `data-token-key="surah:ayah[:wordIdx]"` contract + `getTokenAt(x, y) → TokenKey` helper.
-2. Convert long-press / click-handler / scroll-tracker / indicator to consume the contract.
-3. Then virtualise the reader via IntersectionObserver recycling ±3 chunks (audit R-22 — caps DOM at ~150 verses; required before WBW lands or Al-Baqarah's 286 verses × 50–150 nodes hits 14k–40k DOM nodes).
+Steps 2 and 3 are still deferred:
+- **Step 2** — migrate `marks/long-press.ts`, `bookmarks/click-handler.ts`, `reader/scroll-tracker.ts`, `marks/indicator.ts` from `data-verse-key` to `data-token-key`. Each consumer has a stable selector today; the migration is a search-and-replace plus updating tests. Land alongside WBW (`#9`) when sub-verse consumers actually need word-grain (today they only ever ask "which verse").
+- **Step 3** — reader virtualisation via IntersectionObserver recycling ±3 chunks (audit R-22). Caps DOM at ~150 verses; required before WBW lands or Al-Baqarah's 286 verses × 50–150 nodes hits 14k–40k DOM nodes.
 
-Order matters: virtualise BEFORE the tokenisable contract = re-write twice (the consumer cache invalidation interacts with DOM recycling).
-
-Land as a single brainstorm + plan pass before WBW (`#9`) or audio (`#13`) start — both are blocked on this. ~6–10 files touched in tokenisable; ~3 files in virtualisation; per-test rewrites in their owning journeys.
+Order still matters: virtualise BEFORE the consumer migration = re-write twice (the consumer cache invalidation interacts with DOM recycling). Single brainstorm + plan pass before WBW (`#9`) starts.
 
 ### `core/persistent-overlay.ts` factory + lazy mount (audit R-13 / CC-9 / N22 + N25)
 
-Six bridges exist today (`core/ui-bridge`, `marks/editor-bridge`, `nav/command-sheet-bridge`, `nav/nav-drawer-bridge`, `settings/panel-bridge`, `tag/session-bridge`) — all the same shape: persistent component calls `register*()` in `onMount`, non-component callers import the module-level function. Audio (`#13` → bridge #7), mushaf (`#14` → bridge #8), tafsir (`#12` → bridge #9) extend the pattern linearly.
+The factory landed 2026-04-30 alongside the audio milestone (audio player overlay = first new consumer). Six existing bridges (`core/ui-bridge`, `marks/editor-bridge`, `nav/command-sheet-bridge`, `nav/nav-drawer-bridge`, `settings/panel-bridge`, `tag/session-bridge`) are still hand-rolled and have NOT been migrated to the factory — that's the remaining N22 work. Each migration is mechanical: replace ~5 LOC of `register*()` + module-state with `createOverlayBridge<API>({ name })`, validate with eyeball check + existing tests. Land alongside the next overlay touch (e.g. tafsir bottom-sheet `#12`).
 
-`createOverlayBridge<API>({ open, close, isOpen })` factory consolidates them into one definition. Subsequent N25 step lazy-mounts each overlay in `App.svelte` on first `open*()` call — the eager chunk drops ~10–15 KB gzip because the overlay components aren't compiled into the entry bundle until a user action triggers them.
-
-Deferred because the migration is mechanical but six-file-wide and best done in a single coherent PR with eyeball verification of each overlay's existing semantics. Schedule alongside the audio (`#13`) work — the audio player overlay will be the first new consumer of the factory and provides a real validation of the API.
+N25 (lazy-mount on first `open()`) is unaffected by the factory landing — it still requires per-overlay surgery in `App.svelte` and component-side import-on-demand. Worth ~10–15 KB gzip out of the entry bundle once all six existing overlays migrate. Schedule when the entry-bundle size becomes a real bottleneck (today: ~38 KB gzip, well under budget).
 
 ### Per-asset-class SW partition + offline opt-in selector UI (audit R-11 / C-4 / N21)
 
-Single `/dataset/*` `NetworkFirst` route serves 459 dataset files today; the `CACHE_DATASET` button promises "everything offline". Once audio (`#13`, 1–3 GB per reciter) and page-image mushaf (`#14`, 30–50 MB × 3 riwayat) ship under the same prefix, the button silently triggers multi-GB downloads under the same NetworkFirst strategy.
+The audio half of N21 landed 2026-04-30 directly in `src/sw.js` (per-reciter `qa-audio-{reciter}-v1` cache namespace, timing JSON cache, audio meta NetworkFirst route). The `cleanupStaleCaches` helper in `sw-handlers.js` was extended to preserve `qa-audio-*` and `qa-fonts-*` caches by prefix. The dedicated `core/sw/strategies.ts` aggregator module from the audit is unstarted — current routes live in-line in `sw.js`. Remaining N21 work:
 
-Audit C-4 prescribes per-feature offline opt-in selector + per-asset-class SW routing **before** any GB-scale asset class ships:
+- **Mushaf-pages route** (`/dataset/mushaf-pages/{riwayah}/*` CacheFirst, content-addressed) — lands when page-image mushaf (`#14`) starts.
+- **Search-index route** — lands when full-text search (Reading core §v1.1) starts.
+- **`offline/offline-selector.svelte`** — per-feature opt-in UI with size estimates (Text · Audio per reciter · Pages per riwayah · Search index). Lands alongside Settings Storage section work.
+- **Move audio routes from `sw.js` to `core/sw/strategies.ts` aggregator** — refactor for clarity once 3+ asset-class routes co-exist; today (2 routes) inline is fine.
 
-- `core/sw/strategies.ts` — per-route: `/dataset/riwayat/*` (NetworkFirst), `/dataset/audio/{reciter}/*` (CacheFirst, range-aware, per-reciter cache), `/dataset/mushaf-pages/{riwayah}/*` (CacheFirst, content-addressed), `/dataset/search-index.json` (CacheFirst single asset).
-- `offline/offline-selector.svelte` — UI with size estimates per category (Text · Audio per reciter · Pages per riwayah · Search index).
-
-Deferred to v1.2 (per audit ship sequence). Audio + mushaf are v2.0 / v2.1 — the partition has to land before either does.
+Deferred to v1.2 (per audit ship sequence). The audio prefix has shipped early to unblock audio; mushaf + search ship under the same partition pattern when their work begins.
 
 ### E2e Mobile Chrome project tag-gate flip (audit R-29 / Rule 6.4)
 

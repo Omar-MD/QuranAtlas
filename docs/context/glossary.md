@@ -43,7 +43,7 @@ This is the audio-collision risk the audit flagged. Pin the meanings now:
 
 ## surface vs route vs view
 
-- **Surface.** The user-visible, cluster-by-surface unit. Each one has a journey entry in `docs/context/user-journeys.md` and a Playwright spec. The cluster-by-surface playbook lives at `docs/workflow/cluster-by-surface.md`.
+- **Surface.** The user-visible, cluster-by-surface unit. Each one has a journey entry in `docs/context/surfaces/<surface>.md` and a Playwright spec. The cluster-by-surface playbook lives at `docs/workflow/cluster-by-surface.md`.
 - **Route.** A hash pattern registered on `core/router.ts` (`#/s/:surah`, `#/review`, etc.). One surface may have multiple routes (e.g. the reader has `#/s/:surah` and `#/s/:surah/:ayah`). Routes are concrete; surfaces are conceptual.
 - **View.** Forbidden as an identifier for either. Don't introduce. ("View" is fine in casual prose but never as a function name, prop name, or doc heading.)
 

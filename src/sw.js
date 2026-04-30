@@ -42,12 +42,90 @@ precacheAndRoute(self.__WB_MANIFEST || [])
 // move out of this cache and the cap can come down accordingly. Per-origin
 // quota dominates well before the entry count does.
 registerRoute(
-  ({ url }) => url.pathname.startsWith('/dataset/'),
+  ({ url }) =>
+    url.pathname.startsWith('/dataset/') &&
+    !url.pathname.startsWith('/dataset/audio/'),
   new NetworkFirst({
     cacheName: CACHE_DATASET,
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({ maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+    ],
+  })
+)
+
+// Audio asset partition (N21, audit C-4 / R-11). Audio files are
+// per-surah mp3s under `/dataset/audio/{reciter}/{NNN}.mp3` plus
+// word-level timing JSON at `/dataset/audio/{reciter}/timing/{NNN}.json`,
+// and a top-level reciter catalog at `/dataset/audio/index.json`.
+// Each reciter gets its own cache namespace so switching reciter cannot
+// LRU-evict another reciter's in-progress download. The audio dataset
+// itself ships with the v2.0 audio milestone — these routes scaffold
+// the SW so requests resolve correctly the moment audio data lands.
+//
+// RangeRequests support: <audio> elements progressively-fetch via
+// `Range:` headers. Workbox CacheFirst returns full cached responses;
+// modern browsers tolerate 200 OK on Range requests by reading the
+// requested slice from the full body. The dedicated `workbox-range-
+// requests` plugin (returns 206 Partial) lands when audio data ships
+// and its real-device behavior is verified.
+function audioReciterFromUrl(url) {
+  // /dataset/audio/{reciter}/...   — extract {reciter} segment.
+  const parts = url.pathname.split('/')
+  // ['', 'dataset', 'audio', '{reciter}', ...]
+  return parts[3] || 'unknown'
+}
+
+registerRoute(
+  ({ url }) => url.pathname.match(/^\/dataset\/audio\/[^/]+\/\d+\.mp3$/),
+  async (args) => {
+    const reciter = audioReciterFromUrl(args.url)
+    const strategy = new CacheFirst({
+      cacheName: `qa-audio-${reciter}-v1`,
+      plugins: [
+        new CacheableResponsePlugin({ statuses: [0, 200] }),
+        new ExpirationPlugin({
+          maxEntries: 200,
+          maxAgeSeconds: 60 * 60 * 24 * 90,
+          purgeOnQuotaError: true,
+        }),
+      ],
+    })
+    return strategy.handle(args)
+  }
+)
+
+registerRoute(
+  ({ url }) => url.pathname.match(/^\/dataset\/audio\/[^/]+\/timing\/\d+\.json$/),
+  async (args) => {
+    const reciter = audioReciterFromUrl(args.url)
+    const strategy = new CacheFirst({
+      cacheName: `qa-audio-timing-${reciter}-v1`,
+      plugins: [
+        new CacheableResponsePlugin({ statuses: [0, 200] }),
+        new ExpirationPlugin({
+          maxEntries: 120,
+          maxAgeSeconds: 60 * 60 * 24 * 90,
+          purgeOnQuotaError: true,
+        }),
+      ],
+    })
+    return strategy.handle(args)
+  }
+)
+
+registerRoute(
+  ({ url }) =>
+    url.pathname === '/dataset/audio/index.json' ||
+    url.pathname.match(/^\/dataset\/audio\/[^/]+\/manifest\.json$/),
+  new NetworkFirst({
+    cacheName: 'qa-audio-meta-v1',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({
+        maxEntries: 32,
+        maxAgeSeconds: 60 * 60 * 24 * 7,
+      }),
     ],
   })
 )

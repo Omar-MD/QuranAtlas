@@ -24,10 +24,12 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check-chunks": "node scripts/check-chunks.js",
     "check-no-feature-state": "node scripts/check-no-feature-state.js",
+    "docs:derive": "node scripts/docs/derive.mjs",
+    "docs:check": "node scripts/docs/derive.mjs --check",
     "lighthouse": "pnpm run build && lhci autorun --config=.lighthouserc.cjs",
     "clean": "rm -rf dist test-output",
     "mcp:cleanup": "rm -rf test-output",
-    "validate": "pnpm run lint && pnpm run lint:css && pnpm run check:styles && pnpm run check && pnpm run test:run && pnpm run build && pnpm run check-chunks"
+    "validate": "pnpm run lint && pnpm run lint:css && pnpm run check:styles && pnpm run check && pnpm run test:run && pnpm run build && pnpm run check-chunks && pnpm run docs:check"
   },
   "keywords": [],
   "author": "",

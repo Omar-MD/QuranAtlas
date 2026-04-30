@@ -1,0 +1,22 @@
+# Paths cited in load-bearing docs that may not exist on disk.
+# One path per line. Empty lines + lines starting with # are ignored.
+#
+# Use cases:
+#  - Forward references to planned-but-not-built files (tracked in future-work.md
+#    or in CLAUDE.md rules describing future state).
+#  - Historical references to files that were deleted by lifecycle policy
+#    (e.g. completed plans removed per `feedback_plan_lifecycle` memory).
+#
+# Every entry should explain WHY in a comment. Drift checked: when an entry's
+# file actually exists on disk, the cite-check warns to remove the allowlist
+# row.
+
+# Rule 6.5 storageState reuse — planned-but-not-built; tracked in
+# future-work.md §Infrastructure §"tests/e2e/global-setup.ts + storageState reuse".
+tests/e2e/.auth/onboarded.json
+tests/e2e/global-setup.ts
+
+# Audio v2.0 ship-blocking work — planned spec; tracked in
+# future-work.md §Audio recitation §v2.
+tests/e2e/journey-h-audio.spec.js
+

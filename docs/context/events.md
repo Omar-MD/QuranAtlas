@@ -1,134 +1,106 @@
-# Event Bus Catalog
+# Events catalog
 
-Every event in `src/core/constants.ts::Events`: who emits it, who listens, payload shape, and — importantly — whether each end of the wire is actually connected. This is the wiring diagram of the app. Without it, an agent has to grep each side separately to understand cross-module effects.
+> AUTO-GENERATED from `src/core/constants.ts` (Events map) + `emit(Events.X)` / `on(Events.X)` call sites across `src/**`. Run `pnpm docs:derive` to regenerate. Manual edits below the next paragraph are preserved (write them outside the auto-generated table).
 
-Bus mechanics live in `src/core/events.ts` (mitt-backed `emit` / `on`, handlers are try/catch-isolated, typed via `EventPayloads`). Background on the pattern is in `architecture.md`.
+Total events declared: **53**. Live emits: **51**. Live listeners: **29**.
 
-Every `Events.*` constant has a corresponding entry in the `EventPayloads` map in `src/core/constants.ts`. Emit / on signatures use these types, so passing the wrong payload shape fails `svelte-check`.
-
-`emit()` throws in dev (`import.meta.env.DEV`) when called with an event name not present in `Events`. This prevents typos and forces new events through the constants registry.
-
-**Source of truth reminder**: when the code disagrees with this table, the code wins. Re-grep `emit(Events.X` and `on(Events.X` to regenerate.
-
-## Convention
-
-- Event-name constants are SCREAMING_SNAKE; their string values are `domain:kebab-case` (e.g. `MARKS_SAVED` → `'marks:saved'`).
-- Payloads are always objects. `{}` means "signal only, no data."
-- A one-way event (emitter with no listener, or listener with no emitter) is marked **⚠ dead** in the Status column and grouped at the bottom. These are either telemetry hooks, aspirational plumbing from past milestones, or genuine orphans to clean up.
+Dead (declared but neither emitted nor listened): **2**.
+Orphan emit (emitted, never listened): **22**.
+Orphan listen (listened, never emitted): **0**.
 
 ## Catalog
 
-### Wired events (emitter ↔ listener both exist)
+<!-- AUTO-GENERATED:catalog START -->
+| Constant | Event name | Emit sites | Listen sites |
+| --- | --- | --- | --- |
+| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/nav/AmbientDock.svelte:64`<br>`src/nav/AmbientPill.svelte:90`<br>`src/nav/MarginHeader.svelte:41`<br>`src/reader/EdgeIndicator.svelte:42`<br>`src/reader/Reader.svelte:407`<br>`src/reader/edge-indicators.ts:62` | `src/nav/AmbientPill.svelte:76`<br>`src/nav/MarginHeader.svelte:175` |
+| `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:325`<br>`src/app-bootstrap.ts:419` | `src/core/save-failure-toast.svelte:51` |
+| `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:480` | _(none)_ |
+| `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:398`<br>`src/app-bootstrap.ts:409` | `src/core/UpdateBanner.svelte:19` |
+| `Events.AUDIO_ENDED` | `audio:ended` | `src/audio/player-runtime.ts:116` | _(none)_ |
+| `Events.AUDIO_ERROR` | `audio:error` | `src/audio/player-runtime.ts:121`<br>`src/audio/player-runtime.ts:161`<br>`src/audio/player-runtime.ts:168` | _(none)_ |
+| `Events.AUDIO_PAUSED` | `audio:paused` | `src/audio/player-runtime.ts:109` | _(none)_ |
+| `Events.AUDIO_RECITER_CHANGED` | `audio:reciter-changed` | _(none)_ | _(none)_ |
+| `Events.AUDIO_STARTED` | `audio:started` | `src/audio/player-runtime.ts:103` | _(none)_ |
+| `Events.AUDIO_VERSE_CHANGED` | `audio:verse-changed` | `src/audio/player-runtime.ts:79` | `src/reader/audio-autoscroll.ts:48`<br>`src/reader/audio-highlight.ts:32` |
+| `Events.BOOKMARKS_DELETED` | `bookmarks:deleted` | `src/bookmarks/store.ts:59` | `src/bookmarks/BookmarksList.svelte:225`<br>`src/bookmarks/BookmarksPage.svelte:34`<br>`src/bookmarks/indicator.ts:84`<br>`src/surahs/SurahList.svelte:138` |
+| `Events.BOOKMARKS_SAVED` | `bookmarks:saved` | `src/bookmarks/store.ts:38` | `src/bookmarks/BookmarksList.svelte:224`<br>`src/bookmarks/BookmarksPage.svelte:33`<br>`src/bookmarks/indicator.ts:77`<br>`src/surahs/SurahList.svelte:137` |
+| `Events.BOOKMARKS_SAVE_FAILED` | `bookmarks:save-failed` | `src/bookmarks/store.ts:42` | `src/core/save-failure-toast.svelte:39` |
+| `Events.BOOKMARK_JUMP_LANDED` | `bookmark:jump-landed` | `src/bookmarks/BookmarksList.svelte:104` | `src/bookmarks/pulse.ts:29` |
+| `Events.DATASET_APPLIED` | `dataset:applied` | `src/data/offline.ts:202` | _(none)_ |
+| `Events.DATASET_DOWNLOAD_PROGRESS` | `dataset:download-progress` | `src/data/offline.ts:217` | _(none)_ |
+| `Events.DATASET_PENDING_CONFIRMATION` | `dataset:pending-confirmation` | `src/data/offline.ts:195` | _(none)_ |
+| `Events.DATASET_UPDATE_AVAILABLE` | `dataset:update-available` | `src/data/offline.ts:210` | _(none)_ |
+| `Events.DATASET_UPDATE_FAILED` | `dataset:update-failed` | `src/data/offline.ts:207` | _(none)_ |
+| `Events.DB_DELETE_BLOCKED` | `db:delete-blocked` | `src/core/db/connection.ts:52`<br>`src/core/db/connection.ts:89` | `src/core/save-failure-toast.svelte:48` |
+| `Events.DB_QUOTA_EXCEEDED` | `db:quota-exceeded` | `src/core/db/connection.ts:126` | `src/core/quota-banner.svelte:12` |
+| `Events.DB_VERSION_CHANGE` | `db:version-change` | `src/core/db/connection.ts:39` | `src/safety/sync.ts:102` |
+| `Events.DB_VISIBILITY_VISIBLE` | `db:visibility-visible` | `src/core/db/connection.ts:64` | `src/bookmarks/indicator.ts:105`<br>`src/marks/indicator.ts:147`<br>`src/reader/position.ts:156`<br>`src/review/Hub.svelte:465` |
+| `Events.EDGES_DELETED` | `edges:deleted` | `src/edges/store.ts:107` | _(none)_ |
+| `Events.EDGES_SAVED` | `edges:saved` | `src/edges/store.ts:63`<br>`src/edges/store.ts:95` | _(none)_ |
+| `Events.EDGES_SAVE_FAILED` | `edges:save-failed` | `src/edges/store.ts:68` | `src/core/save-failure-toast.svelte:42` |
+| `Events.MARKS_DELETED` | `marks:deleted` | `src/marks/store.ts:113` | `src/marks/indicator.ts:111` |
+| `Events.MARKS_SAVED` | `marks:saved` | `src/marks/store.ts:88` | `src/marks/indicator.ts:98` |
+| `Events.MARKS_SAVE_FAILED` | `marks:save-failed` | `src/marks/store.ts:95` | `src/core/save-failure-toast.svelte:36` |
+| `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:46` | `src/marks/indicator.ts:117` |
+| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/bookmarks/BookmarksList.svelte:106`<br>`src/nav/CommandSheet.svelte:320`<br>`src/nav/CommandSheet.svelte:322`<br>`src/nav/NavDrawer.svelte:196`<br>`src/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:290` |
+| `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:179` | _(none)_ |
+| `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:130`<br>`src/data/offline.ts:147`<br>`src/data/offline.ts:191`<br>`src/data/offline.ts:248` | _(none)_ |
+| `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:167` | `src/data/offline.ts:272` |
+| `Events.OFFLINE_INSTALL_AVAILABLE` | `offline:install-available` | `src/data/offline.ts:286` | _(none)_ |
+| `Events.OFFLINE_INSTALL_COMPLETE` | `offline:install-complete` | `src/data/offline.ts:291` | _(none)_ |
+| `Events.OFFLINE_SW_TIMEOUT` | `offline:sw-timeout` | `src/data/offline.ts:89` | _(none)_ |
+| `Events.READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `src/reader/position.ts:28` | `src/core/save-failure-toast.svelte:45` |
+| `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/reader/Verse.svelte:50` | `src/bookmarks/indicator.ts:73`<br>`src/marks/indicator.ts:94` |
+| `Events.REVIEW_FILTER` | `review:filter` | _(none)_ | _(none)_ |
+| `Events.REVIEW_OPEN` | `review:open` | `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459` | _(none)_ |
+| `Events.ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `src/core/router.ts:148` | `src/app-bootstrap.ts:203` |
+| `Events.ROUTER_ROUTE_CHANGE` | `router:route-change` | `src/core/router.ts:173`<br>`src/core/router.ts:191` | `src/nav/AmbientDock.svelte:86`<br>`src/nav/MarginHeader.svelte:174` |
+| `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:54` |
+| `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/settings/clear-data.ts:170` | _(none)_ |
+| `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/state/recent-surahs.svelte.ts:26` | `src/nav/NavDrawer.svelte:245`<br>`src/surahs/SurahList.svelte:141` |
+| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/settings/riwayah.ts:58`<br>`src/settings/riwayah.ts:74` | `src/app-bootstrap.ts:174`<br>`src/bookmarks/BookmarksList.svelte:227`<br>`src/bookmarks/BookmarksPage.svelte:36`<br>`src/bookmarks/indicator.ts:100`<br>`src/reader/Reader.svelte:183`<br>`src/settings/reading-typography.ts:133`<br>`src/surahs/SurahList.svelte:140` |
+| `Events.SHEET_CLOSED` | `sheet:closed` | `src/nav/shortcuts-sheet.js:162`<br>`src/settings/Panel.svelte:129` | _(none)_ |
+| `Events.SHEET_OPENED` | `sheet:opened` | `src/nav/shortcuts-sheet.js:153`<br>`src/settings/Panel.svelte:112` | _(none)_ |
+| `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:58` | `src/core/quota-banner.svelte:18` |
+| `Events.SYNC_BOOKMARKS_UPDATED` | `sync:bookmarks-updated` | `src/safety/sync.ts:276` | `src/bookmarks/BookmarksList.svelte:226`<br>`src/bookmarks/BookmarksPage.svelte:35`<br>`src/bookmarks/indicator.ts:91`<br>`src/surahs/SurahList.svelte:139` |
+| `Events.SYNC_EDGES_UPDATED` | `sync:edges-updated` | `src/safety/sync.ts:264` | _(none)_ |
+| `Events.SYNC_UPDATE_RECEIVED` | `sync:update-received` | `src/safety/sync.ts:256` | `src/marks/indicator.ts:130`<br>`src/review/Hub.svelte:461`<br>`src/tag/TagSheet.svelte:160` |
+<!-- AUTO-GENERATED:catalog END -->
 
-| Event | Value | Emitters | Listeners | Payload |
-|---|---|---|---|---|
-| `DB_VERSION_CHANGE` | `db:version-change` | `core/db.ts:68` | `safety/sync.ts:43` | `{}` |
-| `DB_VISIBILITY_VISIBLE` | `db:visibility-visible` | `core/db.ts:79` | `reader/position.ts:135`, `marks/indicator.ts` (initIndicators), `review/Hub.svelte:83` | `{}` |
-| `DB_QUOTA_EXCEEDED` | `db:quota-exceeded` | `core/db.ts:157` | `core/quota-banner.svelte:74` | `{ storeName, message }` |
-| `ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `core/router.ts:120` | `app-bootstrap.ts:52` | `{}` |
-| `ROUTER_ROUTE_CHANGE` | `router:route-change` | `core/router.ts:146` | `nav/AmbientDock.svelte`, `nav/MarginHeader.svelte` | `{ hash }` |
-| `NAVIGATION_NAVIGATE` | `navigation:navigate` | `surahs/SurahList.svelte`, `nav/CommandSheet.svelte` | `app-bootstrap.ts` | `{ surah, verse? }` |
-| `OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `data/offline.ts:164` | `data/offline.ts:265` *(self)* | `{ cached, total }` |
-| `MARKS_SAVED` | `marks:saved` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey, tags }` — `tags` = union of canonical keys across all 12 layers (not raw labels) |
-| `MARKS_DELETED` | `marks:deleted` | `marks/store.ts` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
-| `MARKS_UNDO` | `marks:undo` | `core/ui.svelte` | `marks/indicator.ts` (initIndicators) | `{ verseKey }` |
-| `READER_VERSE_RENDERED` | `reader:verse-rendered` | `reader/Verse.svelte` (onMount) | `marks/indicator.ts` (initIndicators) | `{ verseKey, element }` |
-| `AMBIENT_SURFACE` | `ambient:surface` | `reader/Reader.svelte`, `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `nav/AmbientDock.svelte`, `nav/AmbientPill.svelte`, `nav/MarginHeader.svelte` | `{ reason }` |
-| `SYNC_UPDATE_RECEIVED` | `sync:update-received` | `safety/sync.ts:101` | `tag/TagSheet.svelte` (onMount), `marks/indicator.ts` (initIndicators), `review/Hub.svelte` | `{ verseKeys }` |
-| `SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `settings/riwayah.ts::setRiwayah` (local switch); `safety/sync.ts::handleChannelMessage` (cross-tab fan-in via `applyRiwayah`) | `reader/Reader.svelte` (refetches active surah, restores `aya_no` anchor — clamps to last ayah on miss); `settings/reading-typography.ts::initReadingTypography` (re-clamps `--qa-arabic-line-height` to new Riwayah's floor) | `{ from: 'hafs' \| 'warsh' \| 'qaloon'; to: 'hafs' \| 'warsh' \| 'qaloon' }` |
-| `STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `data/offline.ts:58` | `core/quota-banner.svelte:79` | `{}` |
+## Dead events
 
-### Emitter-only (⚠ dead listener)
+Declared in `Events` but neither emitted nor listened. Candidate for deletion.
 
-These fire but nothing subscribes. Some are intentional telemetry stubs (`SHEET_OPENED`/`SHEET_CLOSED` for future analytics); others are failure signals waiting for a UI that hasn't been built. Don't remove without checking — a listener may be added in a near-term milestone. Do remove if genuinely orphaned.
+<!-- AUTO-GENERATED:dead START -->
+- `Events.AUDIO_RECITER_CHANGED` (`audio:reciter-changed`)
+- `Events.REVIEW_FILTER` (`review:filter`)
+<!-- AUTO-GENERATED:dead END -->
 
-| Event | Value | Emitters | Payload |
-|---|---|---|---|
-| `DB_DELETE_BLOCKED` | `db:delete-blocked` | `core/db.ts:112` | `{ message }` |
-| `ROUTER_ROUTE_ERROR` | `router:route-error` | `core/router.ts:142,153` | `{ route, error }` |
-| `READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `reader/position.ts:117,491` | `{ error, surah, verse }` |
-| `APP_INIT_ERROR` | `app:init-error` | `app-bootstrap.ts:139,199` | `{ error, context? }` |
-| `APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `app-bootstrap.ts:240` | `{}` |
-| `SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `settings/clear-data.ts` (via `clearAllData()`) | `{}` |
-| ~~`SETTINGS_THEME_CHANGED`~~ | ~~`settings:theme-changed`~~ | _Removed 2026-04-29 audit C-7 — was emitted with no listeners; theme rune mutation in `settings/theme.ts` is the single source of truth._ |
-| ~~`SETTINGS_FONT_SIZE_CHANGED`~~ | ~~`settings:font-size-changed`~~ | _Removed 2026-04-29 audit C-7 — was emitted with no listeners; font-size rune mutation in `settings/font-size.ts` is the single source of truth._ |
-| `REVIEW_OPEN` | `review:open` | `review/Hub.svelte:64,157` | `{}` |
-| `REVIEW_FILTER` | `review:filter` | `review/Hub.svelte:262` | `{ tags, surah }` |
-| `MARKS_SAVE_FAILED` | `marks:save-failed` | `marks/store.ts:46` | `{ verseKey, error }` |
-| `OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `data/offline.ts:174` | `{}` |
-| `OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `data/offline.ts:134,153,184,241` | `{ error }` |
-| `OFFLINE_INSTALL_AVAILABLE` | `offline:install-available` | `data/offline.ts:279` | `{}` |
-| `OFFLINE_INSTALL_COMPLETE` | `offline:install-complete` | `data/offline.ts:284` | `{}` |
-| `OFFLINE_SW_TIMEOUT` | `offline:sw-timeout` | `data/offline.ts:95` | `{}` |
-| `DATASET_UPDATE_AVAILABLE` | `dataset:update-available` | `data/offline.ts:203` | `{ from, to }` |
-| `DATASET_DOWNLOAD_PROGRESS` | `dataset:download-progress` | `data/offline.ts:210` | `{ progress, version }` |
-| `DATASET_PENDING_CONFIRMATION` | `dataset:pending-confirmation` | `data/offline.ts:188` | `{ from, to }` |
-| `DATASET_APPLIED` | `dataset:applied` | `data/offline.ts:195` | `{ version }` |
-| `DATASET_UPDATE_FAILED` | `dataset:update-failed` | `data/offline.ts:200` | `{ error }` |
-| `SHEET_OPENED` | `sheet:opened` | `settings/Panel.svelte` (on open) | `{ name }` |
-| `SHEET_CLOSED` | `sheet:closed` | `settings/Panel.svelte` (on close) | `{ name }` |
-| `EDGES_SAVED` | `edges:saved` | `edges/store.ts` (createEdge + updateEdge) | *(no listener yet)* | `{ edgeId, from, to, kind }` |
-| `EDGES_DELETED` | `edges:deleted` | `edges/store.ts` (deleteEdge) | *(no listener yet)* | `{ edgeId }` |
-| `EDGES_SAVE_FAILED` | `edges:save-failed` | `edges/store.ts` (createEdge on error) | *(no listener yet)* | `{ error }` |
-| `SYNC_EDGES_UPDATED` | `sync:edges-updated` | `safety/sync.ts` (handleChannelMessage receiver) | *(no listener yet)* | `{ edgeIds }` |
-| `BOOKMARKS_SAVED` | `bookmarks:saved` | `bookmarks/store.ts` (add) | `bookmarks/indicator.ts` (cache + glyph), `bookmarks/BookmarksList.svelte` (reload), `surahs/SurahList.svelte` (★ surah-row hint reload) | `{ verseKey, riwayah }` |
-| `BOOKMARKS_DELETED` | `bookmarks:deleted` | `bookmarks/store.ts` (del) | same as `BOOKMARKS_SAVED` | `{ verseKey, riwayah }` |
-| `BOOKMARKS_SAVE_FAILED` | `bookmarks:save-failed` | `bookmarks/store.ts` (add on error) | *(no listener yet)* | `{ verseKey, riwayah, error }` |
-| `SYNC_BOOKMARKS_UPDATED` | `sync:bookmarks-updated` | `safety/sync.ts` (handleChannelMessage receiver) | `bookmarks/indicator.ts`, `bookmarks/BookmarksList.svelte`, `surahs/SurahList.svelte` | `{ verseKeys, riwayah }` |
-| `BOOKMARK_JUMP_LANDED` | `bookmark:jump-landed` | `bookmarks/BookmarksList.svelte` (row click) | `bookmarks/pulse.ts` (verse cell pulse on landing) | `{ verseKey }` |
+## Orphan emits (no listener)
 
-### Listener-only (⚠ dead emitter)
+<!-- AUTO-GENERATED:orphan-emit START -->
+- `Events.APP_READY_FOR_DOWNLOAD` (`app:ready-for-download`) — emitted at `src/app-bootstrap.ts:480`
+- `Events.AUDIO_ENDED` (`audio:ended`) — emitted at `src/audio/player-runtime.ts:116`
+- `Events.AUDIO_ERROR` (`audio:error`) — emitted at `src/audio/player-runtime.ts:121`<br>`src/audio/player-runtime.ts:161`<br>`src/audio/player-runtime.ts:168`
+- `Events.AUDIO_PAUSED` (`audio:paused`) — emitted at `src/audio/player-runtime.ts:109`
+- `Events.AUDIO_STARTED` (`audio:started`) — emitted at `src/audio/player-runtime.ts:103`
+- `Events.DATASET_APPLIED` (`dataset:applied`) — emitted at `src/data/offline.ts:202`
+- `Events.DATASET_DOWNLOAD_PROGRESS` (`dataset:download-progress`) — emitted at `src/data/offline.ts:217`
+- `Events.DATASET_PENDING_CONFIRMATION` (`dataset:pending-confirmation`) — emitted at `src/data/offline.ts:195`
+- `Events.DATASET_UPDATE_AVAILABLE` (`dataset:update-available`) — emitted at `src/data/offline.ts:210`
+- `Events.DATASET_UPDATE_FAILED` (`dataset:update-failed`) — emitted at `src/data/offline.ts:207`
+- `Events.EDGES_DELETED` (`edges:deleted`) — emitted at `src/edges/store.ts:107`
+- `Events.EDGES_SAVED` (`edges:saved`) — emitted at `src/edges/store.ts:63`<br>`src/edges/store.ts:95`
+- `Events.OFFLINE_DOWNLOAD_COMPLETE` (`offline:download-complete`) — emitted at `src/data/offline.ts:179`
+- `Events.OFFLINE_DOWNLOAD_ERROR` (`offline:download-error`) — emitted at `src/data/offline.ts:130`<br>`src/data/offline.ts:147`<br>`src/data/offline.ts:191`<br>`src/data/offline.ts:248`
+- `Events.OFFLINE_INSTALL_AVAILABLE` (`offline:install-available`) — emitted at `src/data/offline.ts:286`
+- `Events.OFFLINE_INSTALL_COMPLETE` (`offline:install-complete`) — emitted at `src/data/offline.ts:291`
+- `Events.OFFLINE_SW_TIMEOUT` (`offline:sw-timeout`) — emitted at `src/data/offline.ts:89`
+- `Events.REVIEW_OPEN` (`review:open`) — emitted at `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459`
+- `Events.SETTINGS_DATA_CLEARED` (`settings:data-cleared`) — emitted at `src/settings/clear-data.ts:170`
+- `Events.SHEET_CLOSED` (`sheet:closed`) — emitted at `src/nav/shortcuts-sheet.js:162`<br>`src/settings/Panel.svelte:129`
+- `Events.SHEET_OPENED` (`sheet:opened`) — emitted at `src/nav/shortcuts-sheet.js:153`<br>`src/settings/Panel.svelte:112`
+- `Events.SYNC_EDGES_UPDATED` (`sync:edges-updated`) — emitted at `src/safety/sync.ts:264`
+<!-- AUTO-GENERATED:orphan-emit END -->
 
-No listener-only events remain. `AMBIENT_HIDE` was removed earlier — fade-out is driven locally in `nav/AmbientDock.svelte` / `nav/AmbientPill.svelte` (scroll timers + `$effect`) rather than via the bus.
-
-### Dissolved into rune reads (Phase 6 — Task 12)
-
-Three state-shaped events were deleted from `Events` because their payload was always a snapshot of a state rune. Listeners now read the rune directly; the dev-time `emit()` guard rejects any resurrected callers.
-
-| Former event | Rune read that replaces it |
-|---|---|
-| `READER_SURAH_LOADED` | `reader.currentSurahNum` — `App.svelte` tracks it via `$effect` and calls `indicator.refreshForSurah()` + the recent-surahs IDB tracker. `nav/reader-actions.js` reads the rune at call time. |
-| `READER_POSITION_CHANGED` | `reader.currentVerseKey` — `AmbientPill.svelte` renders `{reader.currentVerseKey}` reactively; `reader-actions.js` reads + writes the rune directly on keyboard nav. |
-| `SETTINGS_TRANSLATION_CHANGED` | `settings.translationVisible` — `Reader.svelte` has a `$effect` that mirrors the rune into its local `translationVisible` state; the `Verse` component receives it as a prop and toggles `class:qa-hide-translation` reactively. |
-
-## Adding a new event
-
-1. Add the constant to `core/constants.ts::Events` (SCREAMING_SNAKE key, `domain:kebab-case` value) and add a payload entry to `EventPayloads`.
-2. Emit with a literal object payload: `emit(Events.FOO_BAR, { field: 1 })`.
-3. Subscribe with `const unsub = on(Events.FOO_BAR, handler)`; return the unsubscriber from the component's `onMount` (or track it in a module-level cleanups array for non-component callers).
-4. Update this file.
-
-Before adding an event, ask whether the signal is just a snapshot of a rune in `src/state/`. If yes, skip the event — components can `$effect` on the rune directly. See "Dissolved into rune reads" above for three events removed under this rule in Phase 6.
-
-## Subscribing from a surface (pattern)
-
-### In a Svelte 5 component
-
-```svelte
-<script lang="ts">
-  import { onMount } from 'svelte'
-  import { on } from '../core/events'
-  import { Events } from '../core/constants'
-
-  onMount(() => {
-    const unsub = on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => { /* … */ })
-    return unsub
-  })
-</script>
-```
-
-### In a non-component module
-
-```ts
-import { on } from '../core/events'
-import { Events } from '../core/constants'
-
-let _unsub: (() => void) | null = null
-
-export async function init(): Promise<() => void> {
-  _unsub = on(Events.SYNC_UPDATE_RECEIVED, ({ verseKeys }) => { /* … */ })
-  return () => { _unsub?.(); _unsub = null }
-}
-```
-
-Every feature that subscribes to events should return a cleanup function. Svelte components return it from `onMount`; non-component modules return it from `init()` so the caller (usually `app-bootstrap.ts`) can drain it on teardown.

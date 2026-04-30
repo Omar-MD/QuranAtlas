@@ -77,6 +77,7 @@
   class:qa-verse--active={isActive}
   data-verse={verseNum}
   data-verse-key={verseKey}
+  data-token-key={verseKey}
   use:handleMount
 >
   {#if isActive}

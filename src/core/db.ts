@@ -20,6 +20,7 @@ export type {
   EdgeRecord,
   Riwayah,
   BookmarkRecord,
+  AudioPositionRecord,
   StoreRecords,
   StoreName,
 } from './db/types'
