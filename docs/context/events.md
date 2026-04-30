@@ -14,9 +14,9 @@ Orphan listen (listened, never emitted): **0**.
 | Constant | Event name | Emit sites | Listen sites |
 | --- | --- | --- | --- |
 | `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/nav/AmbientDock.svelte:64`<br>`src/nav/AmbientPill.svelte:90`<br>`src/nav/MarginHeader.svelte:41`<br>`src/reader/EdgeIndicator.svelte:42`<br>`src/reader/Reader.svelte:407`<br>`src/reader/edge-indicators.ts:62` | `src/nav/AmbientPill.svelte:76`<br>`src/nav/MarginHeader.svelte:175` |
-| `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:325`<br>`src/app-bootstrap.ts:419` | `src/core/save-failure-toast.svelte:51` |
-| `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:480` | _(none)_ |
-| `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:398`<br>`src/app-bootstrap.ts:409` | `src/core/UpdateBanner.svelte:19` |
+| `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:331`<br>`src/app-bootstrap.ts:425` | `src/core/save-failure-toast.svelte:51` |
+| `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:486` | _(none)_ |
+| `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:404`<br>`src/app-bootstrap.ts:415` | `src/core/UpdateBanner.svelte:19` |
 | `Events.AUDIO_ENDED` | `audio:ended` | `src/audio/player-runtime.ts:116` | _(none)_ |
 | `Events.AUDIO_ERROR` | `audio:error` | `src/audio/player-runtime.ts:121`<br>`src/audio/player-runtime.ts:161`<br>`src/audio/player-runtime.ts:168` | _(none)_ |
 | `Events.AUDIO_PAUSED` | `audio:paused` | `src/audio/player-runtime.ts:109` | _(none)_ |
@@ -42,8 +42,8 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.MARKS_DELETED` | `marks:deleted` | `src/marks/store.ts:113` | `src/marks/indicator.ts:111` |
 | `Events.MARKS_SAVED` | `marks:saved` | `src/marks/store.ts:88` | `src/marks/indicator.ts:98` |
 | `Events.MARKS_SAVE_FAILED` | `marks:save-failed` | `src/marks/store.ts:95` | `src/core/save-failure-toast.svelte:36` |
-| `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:46` | `src/marks/indicator.ts:117` |
-| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/bookmarks/BookmarksList.svelte:106`<br>`src/nav/CommandSheet.svelte:320`<br>`src/nav/CommandSheet.svelte:322`<br>`src/nav/NavDrawer.svelte:194`<br>`src/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:290` |
+| `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:41` | `src/marks/indicator.ts:117` |
+| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/bookmarks/BookmarksList.svelte:106`<br>`src/nav/CommandSheet.svelte:303`<br>`src/nav/CommandSheet.svelte:305`<br>`src/nav/NavDrawer.svelte:194`<br>`src/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:296` |
 | `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:179` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:130`<br>`src/data/offline.ts:147`<br>`src/data/offline.ts:191`<br>`src/data/offline.ts:248` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:167` | `src/data/offline.ts:272` |
@@ -54,18 +54,18 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/reader/Verse.svelte:50` | `src/bookmarks/indicator.ts:73`<br>`src/marks/indicator.ts:94` |
 | `Events.REVIEW_FILTER` | `review:filter` | _(none)_ | _(none)_ |
 | `Events.REVIEW_OPEN` | `review:open` | `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459` | _(none)_ |
-| `Events.ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `src/core/router.ts:148` | `src/app-bootstrap.ts:203` |
+| `Events.ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `src/core/router.ts:148` | `src/app-bootstrap.ts:204` |
 | `Events.ROUTER_ROUTE_CHANGE` | `router:route-change` | `src/core/router.ts:173`<br>`src/core/router.ts:191` | `src/nav/AmbientDock.svelte:86`<br>`src/nav/MarginHeader.svelte:174` |
 | `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:54` |
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/settings/clear-data.ts:170` | _(none)_ |
 | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/state/recent-surahs.svelte.ts:26` | `src/nav/NavDrawer.svelte:243`<br>`src/surahs/SurahList.svelte:141` |
-| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/settings/riwayah.ts:58`<br>`src/settings/riwayah.ts:74` | `src/app-bootstrap.ts:174`<br>`src/bookmarks/BookmarksList.svelte:227`<br>`src/bookmarks/BookmarksPage.svelte:36`<br>`src/bookmarks/indicator.ts:100`<br>`src/reader/Reader.svelte:183`<br>`src/settings/reading-typography.ts:133`<br>`src/surahs/SurahList.svelte:140` |
+| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/settings/riwayah.ts:58`<br>`src/settings/riwayah.ts:74` | `src/app-bootstrap.ts:175`<br>`src/bookmarks/BookmarksList.svelte:227`<br>`src/bookmarks/BookmarksPage.svelte:36`<br>`src/bookmarks/indicator.ts:100`<br>`src/reader/Reader.svelte:183`<br>`src/settings/reading-typography.ts:133`<br>`src/surahs/SurahList.svelte:140` |
 | `Events.SHEET_CLOSED` | `sheet:closed` | `src/nav/shortcuts-sheet.js:162`<br>`src/settings/Panel.svelte:129` | _(none)_ |
 | `Events.SHEET_OPENED` | `sheet:opened` | `src/nav/shortcuts-sheet.js:153`<br>`src/settings/Panel.svelte:112` | _(none)_ |
 | `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:58` | `src/core/quota-banner.svelte:18` |
 | `Events.SYNC_BOOKMARKS_UPDATED` | `sync:bookmarks-updated` | `src/safety/sync.ts:276` | `src/bookmarks/BookmarksList.svelte:226`<br>`src/bookmarks/BookmarksPage.svelte:35`<br>`src/bookmarks/indicator.ts:91`<br>`src/surahs/SurahList.svelte:139` |
 | `Events.SYNC_EDGES_UPDATED` | `sync:edges-updated` | `src/safety/sync.ts:264` | _(none)_ |
-| `Events.SYNC_UPDATE_RECEIVED` | `sync:update-received` | `src/safety/sync.ts:256` | `src/marks/indicator.ts:130`<br>`src/review/Hub.svelte:461`<br>`src/tag/TagSheet.svelte:160` |
+| `Events.SYNC_UPDATE_RECEIVED` | `sync:update-received` | `src/safety/sync.ts:256` | `src/marks/indicator.ts:130`<br>`src/review/Hub.svelte:461`<br>`src/tag/TagSheet.svelte:175` |
 <!-- AUTO-GENERATED:catalog END -->
 
 ## Dead events
@@ -80,7 +80,7 @@ Declared in `Events` but neither emitted nor listened. Candidate for deletion.
 ## Orphan emits (no listener)
 
 <!-- AUTO-GENERATED:orphan-emit START -->
-- `Events.APP_READY_FOR_DOWNLOAD` (`app:ready-for-download`) — emitted at `src/app-bootstrap.ts:480`
+- `Events.APP_READY_FOR_DOWNLOAD` (`app:ready-for-download`) — emitted at `src/app-bootstrap.ts:486`
 - `Events.AUDIO_ENDED` (`audio:ended`) — emitted at `src/audio/player-runtime.ts:116`
 - `Events.AUDIO_ERROR` (`audio:error`) — emitted at `src/audio/player-runtime.ts:121`<br>`src/audio/player-runtime.ts:161`<br>`src/audio/player-runtime.ts:168`
 - `Events.AUDIO_PAUSED` (`audio:paused`) — emitted at `src/audio/player-runtime.ts:109`

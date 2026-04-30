@@ -88,6 +88,7 @@ graph LR
   src_reader --> src_nav
   src_reader --> src_settings
   src_reader --> src_state
+  src_reader --> src_tag
   src_review --> src_a11y
   src_review --> src_core
   src_review --> src_data
@@ -186,7 +187,7 @@ graph LR
 
 ### `src/reader`
 
-- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/marks`, `src/nav`, `src/settings`, `src/state`
+- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/marks`, `src/nav`, `src/settings`, `src/state`, `src/tag`
 - **Imported by:** `src`, `src/audio`, `src/nav`, `src/surahs`
 
 ### `src/review`
@@ -222,6 +223,6 @@ graph LR
 ### `src/tag`
 
 - **Imports from:** `src/core`, `src/data`, `src/marks`, `src/state`
-- **Imported by:** `src`, `src/nav`
+- **Imported by:** `src`, `src/nav`, `src/reader`
 
 <!-- AUTO-GENERATED:dirs END -->

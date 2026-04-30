@@ -55,8 +55,8 @@ test_paths:
 | `src/nav/CommandSheet.svelte` | Module-level re-export so callers can do: |
 | `src/nav/EmptyRoute.svelte` | intentionally empty |
 | `src/nav/NavDrawer.svelte` | Mobile (<1180px): full-screen drawer with two top-level mode tabs: |
-| `src/nav/command-sheet-bridge.ts` | Bridge for the CommandSheet Svelte component. |
-| `src/nav/nav-drawer-bridge.ts` | Imperative bridge for the NavDrawer Svelte component. Mirrors the |
+| `src/nav/command-sheet-bridge.ts` | Bridge for the CommandSheet (⌘K) overlay. Migrated to |
+| `src/nav/nav-drawer-bridge.ts` | Imperative bridge for the NavDrawer Svelte component. Migrated to |
 | `src/nav/reader-actions.js` | Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m). |
 | `src/nav/shortcuts-sheet.js` | Shortcuts cheatsheet — opened by `?` (also reachable from More → Shortcuts |
 | `src/nav/swipe-gestures.ts` | Pure swipe-classification helpers for MarginHeader gestures. |
@@ -187,7 +187,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/bookmarks/store.ts:59` |
 | `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/bookmarks/store.ts:42` |
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/bookmarks/store.ts:38` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/bookmarks/BookmarksList.svelte:106`, `src/nav/CommandSheet.svelte:320`, `src/nav/CommandSheet.svelte:322`, `src/nav/NavDrawer.svelte:194`, `src/surahs/SurahList.svelte:167` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/bookmarks/BookmarksList.svelte:106`, `src/nav/CommandSheet.svelte:303`, `src/nav/CommandSheet.svelte:305`, `src/nav/NavDrawer.svelte:194`, `src/surahs/SurahList.svelte:167` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/nav/shortcuts-sheet.js:162` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/nav/shortcuts-sheet.js:153` |
 <!-- AUTO-GENERATED:events-emit END -->

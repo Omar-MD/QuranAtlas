@@ -50,6 +50,7 @@ Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side ver
 | `src/tag/TagSheet.svelte` | Deep tagging sheet. |
 | `src/tag/VerseSpotlight.svelte` | Dims reader + draws attention to focused verse. Fixed scrim w/ a "hole" |
 | `src/tag/session-bridge.ts` | Imperative bridge to begin a fast-path tagging session from a verse tap. |
+| `src/tag/sheet-bridge.ts` | Bridge for the deep TagSheet overlay (`tag/TagSheet.svelte`). Migrated |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -148,7 +149,7 @@ _(no cross-surface reads detected)_
 | `marks:saved` | `Events.MARKS_SAVED` | `src/marks/indicator.ts:98` |
 | `marks:undo` | `Events.MARKS_UNDO` | `src/marks/indicator.ts:117` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/marks/indicator.ts:94` |
-| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/marks/indicator.ts:130`, `src/tag/TagSheet.svelte:160` |
+| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/marks/indicator.ts:130`, `src/tag/TagSheet.svelte:175` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants

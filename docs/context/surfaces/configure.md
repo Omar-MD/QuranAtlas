@@ -50,7 +50,7 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/settings/clear-data.ts` | Clear data: confirmation flow and data deletion. |
 | `src/settings/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
 | `src/settings/night-mode.ts` | Night recitation mode: dim+warm overlay, composes over any theme. |
-| `src/settings/panel-bridge.ts` | Imperative bridge for the Settings panel Svelte component. |
+| `src/settings/panel-bridge.ts` | Settings Panel — overlay bridge + sole-writer/-reader data functions. |
 | `src/settings/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
 | `src/settings/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
 | `src/settings/surah-header-visibility.ts` | Surah header visibility: persisted user preference for whether the in-reader |
