@@ -11,6 +11,7 @@
 
   import { onMount } from 'svelte'
   import { tagSession } from '../state/tag-session.svelte'
+  import { tagSheetBridge } from '../tag/sheet-bridge'
   import { LAYER_GROUPS, LAYER_PREFIXES, QUICK_PICKS, hueForLayer, parseLayeredValue, autofillPrefix } from '../data/tag-layers'
   import type { LayerGroup } from '../data/tag-layers'
   import { save } from '../marks/store'
@@ -141,8 +142,9 @@
   }
 
   function openDeep(): void {
+    if (!tagSession.verseKey) { return }
     tagSession.quickbarOpen = false
-    tagSession.sheetOpen = true
+    tagSheetBridge.api.open(tagSession.verseKey)
   }
 
   onMount(() => {

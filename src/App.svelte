@@ -18,7 +18,6 @@
   import TagSheet from './tag/TagSheet.svelte'
   import AudioMiniBar from './audio/AudioMiniBar.svelte'
   import AudioFullOverlay from './audio/AudioFullOverlay.svelte'
-  import { tagSession } from './state/tag-session.svelte'
 
   let cleanups: Array<() => void> = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,11 +107,7 @@
 <ClearDataConfirm />
 <CommandSheet />
 <NavDrawer />
-<TagSheet
-  isOpen={tagSession.sheetOpen && !!tagSession.verseKey}
-  verseKey={tagSession.verseKey ?? ''}
-  onclose={() => tagSession.end()}
-/>
+<TagSheet />
 <AudioMiniBar />
 <AudioFullOverlay />
 <div class="qa-night-shift" aria-hidden="true"></div>

@@ -19,7 +19,6 @@ describe('state/tag-session.svelte.ts', () => {
     const s = new TagSessionState()
     expect(s.verseKey).toBeNull()
     expect(s.quickbarOpen).toBe(false)
-    expect(s.sheetOpen).toBe(false)
     expect(s.note).toBe('')
     expect(s.totalSelected()).toBe(0)
     for (const l of LAYER_NAMES) { expect(s.draft[l]).toEqual([]) }
@@ -62,15 +61,13 @@ describe('state/tag-session.svelte.ts', () => {
     expect(s.totalSelected()).toBe(3)
   })
 
-  it('end() clears verseKey, both opens, the draft, and the note', () => {
+  it('end() clears verseKey, quickbarOpen, the draft, and the note', () => {
     const s = new TagSessionState()
     s.begin('1:1', { threads: ['mercy'] }, 'note')
     s.quickbarOpen = true
-    s.sheetOpen = true
     s.end()
     expect(s.verseKey).toBeNull()
     expect(s.quickbarOpen).toBe(false)
-    expect(s.sheetOpen).toBe(false)
     expect(s.note).toBe('')
     expect(s.totalSelected()).toBe(0)
   })

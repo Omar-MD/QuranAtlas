@@ -17,12 +17,21 @@
   import { getSurah, getSurahs } from '../data/dataset'
   import { showUndoToast } from '../core/ui-bridge'
   import { tagSession } from '../state/tag-session.svelte'
+  import { tagSheetBridge } from './sheet-bridge'
   import { LAYER_GROUPS, LAYER_LABELS, hueForLayer } from '../data/tag-layers'
   import { on } from '../core/events'
   import { Events } from '../core/constants'
 
-  interface Props { isOpen: boolean; verseKey: string; onclose: () => void }
-  const { isOpen, verseKey, onclose }: Props = $props()
+  // Self-tracked open state — registered with tagSheetBridge on mount.
+  // Pre-2026-05-01 these were prop-driven from App.svelte threading
+  // tagSession.sheetOpen + tagSession.verseKey. Audit N22.
+  let isOpen = $state(false)
+  let verseKey = $state('')
+
+  function onclose(): void {
+    isOpen = false
+    tagSession.end()
+  }
 
   let surahName = $state('')
   let arText = $state('…')
@@ -149,6 +158,12 @@
   }
 
   onMount(() => {
+    tagSheetBridge.register({
+      open: (vk: string) => { verseKey = vk; isOpen = true },
+      close: onclose,
+      isOpen: () => isOpen,
+    })
+
     const onKey = (e: KeyboardEvent) => {
       if (!isOpen) { return }
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); void handleSave() }
@@ -164,6 +179,7 @@
     return () => {
       window.removeEventListener('keydown', onKey)
       unsubSync()
+      tagSheetBridge.unregister()
     }
   })
 </script>

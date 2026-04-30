@@ -19,7 +19,8 @@ function emptyLayerMap(): LayerMap {
 export class TagSessionState {
   verseKey = $state<string | null>(null)
   quickbarOpen = $state(false)
-  sheetOpen = $state(false)
+  // sheetOpen rune retired 2026-05-01 (audit N22) — TagSheet now self-tracks
+  // open state via tagSheetBridge. Single source of truth.
   draft = $state<LayerMap>(emptyLayerMap())
   note = $state('')
 
@@ -39,7 +40,6 @@ export class TagSessionState {
   end(): void {
     this.verseKey = null
     this.quickbarOpen = false
-    this.sheetOpen = false
     this.draft = emptyLayerMap()
     this.note = ''
   }

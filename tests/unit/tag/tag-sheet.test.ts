@@ -2,11 +2,16 @@
  * Component tests for TagSheet.svelte (deep tag editor).
  *
  * Ports:
- *   C1 keyboard: Escape closes the deep TagSheet (calls onclose)
+ *   C1 keyboard: Escape closes the deep TagSheet
  *   C2: type in a layer combobox + Enter → chip appears + draft updates
  *   C2: click a selected hchip → toggles it off
  *   C3: type a brand-new label + Enter → tag added
- *   C: Save calls marks/store.save() with the layered draft + closes via onclose
+ *   C: Save calls marks/store.save() with the layered draft + closes
+ *
+ * As of 2026-05-01 (audit N22) TagSheet is api-driven — open via
+ * `tagSheetBridge.api.open(verseKey)` after render. Close path either
+ * dispatches Esc or clicks Save → component's internal onclose calls
+ * tagSession.end() and flips isOpen=false.
  */
 
 import { render, fireEvent } from '@testing-library/svelte'
@@ -30,6 +35,7 @@ vi.mock('../../../src/core/ui-bridge', () => ({
 
 import TagSheet from '../../../src/tag/TagSheet.svelte'
 import { tagSession } from '../../../src/state/tag-session.svelte'
+import { tagSheetBridge } from '../../../src/tag/sheet-bridge'
 import { save } from '../../../src/marks/store'
 
 const saveMock = vi.mocked(save)
@@ -40,25 +46,30 @@ async function flush() {
   await Promise.resolve()
 }
 
+async function mountAndOpen(): Promise<void> {
+  render(TagSheet)
+  await flush()
+  tagSession.end()
+  tagSession.begin('1:1')
+  tagSheetBridge.api.open('1:1')
+  await flush()
+}
+
 describe('TagSheet.svelte (C1 / C2 / C3 / save)', () => {
   beforeEach(() => {
     saveMock.mockClear()
     tagSession.end()
-    tagSession.begin('1:1')
-    tagSession.sheetOpen = true
   })
 
-  it('C1 keyboard: Escape closes the sheet (calls onclose)', async () => {
-    const onclose = vi.fn()
-    render(TagSheet, { props: { isOpen: true, verseKey: '1:1', onclose } })
-    await flush()
-
+  it('C1 keyboard: Escape closes the sheet', async () => {
+    await mountAndOpen()
     expect(document.querySelector('.qa-ts')).not.toBeNull()
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await flush()
 
-    expect(onclose).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('.qa-ts')).toBeNull()
+    expect(tagSheetBridge.isOpen()).toBe(false)
   })
 
   function findThreadsInput() {
@@ -73,9 +84,7 @@ describe('TagSheet.svelte (C1 / C2 / C3 / save)', () => {
   }
 
   it('C2: type in threads combobox + Enter → chip + draft layer + count badges update', async () => {
-    const onclose = vi.fn()
-    render(TagSheet, { props: { isOpen: true, verseKey: '1:1', onclose } })
-    await flush()
+    await mountAndOpen()
 
     const input = findThreadsInput()!
     expect(input).not.toBeNull()
@@ -102,9 +111,7 @@ describe('TagSheet.svelte (C1 / C2 / C3 / save)', () => {
   })
 
   it('C3: type a brand-new (non-seed) label + Enter commits it on the draft', async () => {
-    const onclose = vi.fn()
-    render(TagSheet, { props: { isOpen: true, verseKey: '1:1', onclose } })
-    await flush()
+    await mountAndOpen()
 
     const input = findThreadsInput()!
     input.focus()
@@ -118,9 +125,7 @@ describe('TagSheet.svelte (C1 / C2 / C3 / save)', () => {
   })
 
   it('C2: click a selected hchip toggles it off the draft', async () => {
-    const onclose = vi.fn()
-    render(TagSheet, { props: { isOpen: true, verseKey: '1:1', onclose } })
-    await flush()
+    await mountAndOpen()
 
     const input = findThreadsInput()!
     input.value = 'mercy'
@@ -138,9 +143,7 @@ describe('TagSheet.svelte (C1 / C2 / C3 / save)', () => {
   })
 
   it('save: clicking Save persists the layered draft via marks/store + closes', async () => {
-    const onclose = vi.fn()
-    render(TagSheet, { props: { isOpen: true, verseKey: '1:1', onclose } })
-    await flush()
+    await mountAndOpen()
 
     const input = findThreadsInput()!
     input.value = 'mercy'
@@ -160,6 +163,7 @@ describe('TagSheet.svelte (C1 / C2 / C3 / save)', () => {
       verseKey: '1:1',
       threads: ['mercy'],
     })
-    expect(onclose).toHaveBeenCalled()
+    // After save, onclose runs internally → bridge reports closed.
+    expect(tagSheetBridge.isOpen()).toBe(false)
   })
 })
