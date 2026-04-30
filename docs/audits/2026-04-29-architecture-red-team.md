@@ -223,7 +223,7 @@ Severity scale: **Critical / High / Medium / Low**. Blast-radius = number of fil
 | R-26 | Update-poll thundering-herd risk | **Low** | minor traffic on multi-tab | 5 lines | A3 |
 | R-27 | Race conditions (riwayah/theme/recent) | **Medium** | divergence between IDB and rune | 4 writers | A2 |
 | R-28 | Rule 6.3 regression in journey-d | **Low** | redundant setup work | 1 spec | A5 |
-| R-29 | Rule 6.4 mobile tag inversion | **Medium** | ~50 redundant cases × every CI run | mobile project | A5 |
+| R-29 | Rule 6.4 mobile tag inversion (P1.7 N16, 2026-04-30) ✅ | **Medium** | ~50 redundant cases × every CI run | mobile project | A5 |
 | R-30 | Marks/Editor.svelte dead-by-policy still mounted | **Low** | code duplication with TagSheet | 1 file | A1 |
 | R-31 | onboarding component imported just for `isComplete()` | **Low** | +10 KB on launch path | 1 file split | A1 |
 | R-32 | `connect-src` will need explicit allow-list at sync v2 | **Low → Medium** at v2 | accidental allow-all if forgotten | 1 directive | A4 |
@@ -386,7 +386,7 @@ Strict sequence; later items depend on earlier. No future-work lands during this
 4. **`core/init-graph.ts` dependency runner** (R-12) — replaces line-order in `app-bootstrap.ts`
 5. **Dead-event triage** (R-14, C-7) — wire silent-failure events to `quota-banner.svelte`; delete vestigial `SETTINGS_THEME_CHANGED`/`SETTINGS_FONT_SIZE_CHANGED`/dead telemetry; add `// roadmap: v1.1` markers to EDGES_*
 6. ✅ **`tests/e2e/global-setup.ts`** (R-15, Rule 6.5 prerequisite) — landed 2026-04-30 via N15; spec at `docs/superpowers/specs/2026-04-30-n15-global-setup-design.md`
-7. **Mobile Chrome project tag-gate flip** (R-29, Rule 6.4)
+7. ✅ **Mobile Chrome project tag-gate flip** (R-29, Rule 6.4) — landed 2026-04-30 via N16; spec at `docs/superpowers/specs/2026-04-30-n16-mobile-chrome-tag-gate-design.md`. Mobile Chrome 22.4s/46 → 10.6s/18 (-52%).
 8. **Build-script upstream pin** (R-18) — `scripts/saheeh-api.sha256` + `--update-pin` flag; tighten `SUP_RE` + fixedpoint loop for the two CodeQL Medium alerts
 9. **IDB write-side validation: length caps + enum on `bookmarks.riwayah` + `__proto__` strip** (R-20)
 10. **Boundary-leak sweep** (R-25) — `state/recent-surahs.svelte.ts` sole-reader for `NavDrawer` + `SurahList`; same for translation-id
