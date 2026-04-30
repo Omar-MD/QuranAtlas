@@ -50,6 +50,10 @@ const OFFLINE_BASE_URL = USE_PREVIEW_SERVER
 
 export default defineConfig({
   testDir: './tests/e2e',
+  // Captures an onboarded storageState once per suite run; specs opt in via
+  // `test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })`.  See
+  // `tests/e2e/global-setup.ts` and CLAUDE.md Rule 6.5.
+  globalSetup: './tests/e2e/global-setup.ts',
   outputDir: './test-output/traces',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

@@ -24,6 +24,7 @@ test-output/
 playwright-report/
 blob-report/
 .playwright-mcp/
+tests/e2e/.auth/
 
 # Lighthouse
 .lighthouseci/
