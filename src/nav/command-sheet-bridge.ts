@@ -1,21 +1,19 @@
 /**
- * Bridge for the CommandSheet Svelte component.
- * Allows AmbientDock / AmbientPill / keyboard handler to open the
- * command sheet imperatively without a circular import.
+ * Bridge for the CommandSheet (⌘K) overlay. Migrated to
+ * createOverlayBridge 2026-05-01 (audit N22). Allows AmbientDock /
+ * AmbientPill / global-shortcuts module to open / close the command
+ * sheet without a circular import on the Svelte component.
  */
 
-let _open: (() => void) | null = null
-let _close: (() => void) | null = null
+import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-overlay'
 
-export function registerCommandSheet(open: () => void, close: () => void): void {
-  _open = open
-  _close = close
+export interface CommandSheetAPI extends BaseOverlayAPI {
+  open(): void
+  close(): void
+  isOpen(): boolean
 }
 
-export function openCommandSheet(): void {
-  _open?.()
-}
+export const commandSheetBridge = createOverlayBridge<CommandSheetAPI>({ name: 'command-sheet' })
 
-export function closeCommandSheet(): void {
-  _close?.()
-}
+export const openCommandSheet = (): void => commandSheetBridge.api.open()
+export const closeCommandSheet = (): void => commandSheetBridge.api.close()

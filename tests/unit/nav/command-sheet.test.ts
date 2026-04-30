@@ -5,10 +5,16 @@
  *   F6: ArrowDown / ArrowUp move focus across results; Escape closes
  *   F6: G then S chord navigates to #/surahs (and G then R → #/review,
  *       G then A → #/about, G then P → #/settings)
+ *
+ * As of 2026-05-01 (audit N22) the global-keydown handler lives in
+ * `src/nav/global-shortcuts.ts`, not inside CommandSheet.svelte. Tests
+ * call `initGlobalShortcuts()` after render so the document listener
+ * is wired and dispatched ⌘K / g-chord events still drive the sheet via
+ * `commandSheetBridge`.
  */
 
 import { render, fireEvent } from '@testing-library/svelte'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 vi.mock('../../../src/data/dataset', () => ({
   getSurahs: vi.fn(async () => ([
@@ -56,15 +62,24 @@ vi.mock('../../../src/a11y/announcer', () => ({ announce: vi.fn() }))
 
 import CommandSheet from '../../../src/nav/CommandSheet.svelte'
 import { commandSheet } from '../../../src/state/command-sheet.svelte'
+import { initGlobalShortcuts } from '../../../src/nav/global-shortcuts'
 
 async function flush() {
   for (let i = 0; i < 4; i++) { await Promise.resolve() }
 }
 
 describe('CommandSheet.svelte (F6 keyboard)', () => {
+  let teardownShortcuts: (() => void) | null = null
+
   beforeEach(() => {
     Object.assign(commandSheet, { query: '', results: [], focusIndex: 0, isOpen: false })
     window.location.hash = ''
+    teardownShortcuts = initGlobalShortcuts()
+  })
+
+  afterEach(() => {
+    teardownShortcuts?.()
+    teardownShortcuts = null
   })
 
   it('F6: ⌘K opens the sheet; second ⌘K closes it', async () => {

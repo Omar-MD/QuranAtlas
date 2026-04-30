@@ -34,6 +34,7 @@ import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './nav/nav-drawer-bridge'
 import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
 import { initAudio } from './audio/init'
+import { initGlobalShortcuts } from './nav/global-shortcuts'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -285,6 +286,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // Settings panel, CommandSheet, AmbientDock, AmbientPill, NavDrawer are all
     // now mounted as components in App.svelte — no init calls needed here.
     pushCleanup(bootCleanups, await initReaderActions())
+
+    // Global keyboard shortcuts (⌘K, /, ?, g-chord nav, reader hotkeys).
+    // Lives outside any overlay component so it survives lazy-mount of the
+    // command sheet (audit N22 / N25, 2026-05-01).
+    pushCleanup(bootCleanups, initGlobalShortcuts())
 
     // Handle navigation events from command sheet
     pushCleanup(bootCleanups, on(Events.NAVIGATION_NAVIGATE, ({ surah, verse }: { surah: number; verse?: number }) => {
