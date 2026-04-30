@@ -15,7 +15,7 @@
 
 import { commandSheetBridge, openCommandSheet, closeCommandSheet } from './command-sheet-bridge'
 import { openShortcutsSheet, isShortcutsSheetOpen } from './shortcuts-sheet.js'
-import { setTheme, cycleTheme } from '../settings/theme'
+import { cycleTheme } from '../settings/theme'
 import { toggleNightMode } from '../settings/night-mode'
 import { setFontSize, loadFontSize, getFontSizeOptions, resetFontSize } from '../settings/font-size'
 import { toggleTranslation } from '../settings/panel-bridge'
