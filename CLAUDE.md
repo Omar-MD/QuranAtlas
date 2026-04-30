@@ -6,45 +6,55 @@ Project rules auto-loaded by Claude Code in this repo.
 
 Read before spelunking code — save first 30min grep:
 
-- **`docs/context/architecture.md`** — stack, boot flow, router, events, IDB, cross-cutting patterns.
-- **`docs/context/feature-map.md`** — every user-facing surface: entry, route, files, behavior.
-- **`docs/context/module-graph.md`** — per-dir imports-from / imported-by, mermaid graph.
-- **`docs/context/events.md`** — mitt event catalog: emitters, listeners, payloads, dead events.
-- **`docs/context/data-model.md`** — IDB stores, keys, indexes, record shapes, writers.
-- **`docs/context/user-journeys.md`** — cross-surface happy paths user can walk.
+- **`docs/context/surfaces/<surface>.md`** — per-surface dossier. 8 surfaces: `read`, `mark`, `review`, `navigate`, `listen`, `configure`, `onboard`, `infra`. Each carries Reach (entry + route) + Inventory (auto) + Behavior (journey steps) + Data (owned store body) + Events (auto, emit/listen) + Invariants + Regression guards + Deprecated.
+- **`docs/context/architecture.md`** — stack, boot flow, router, init-graph DAG, cross-cutting patterns.
+- **`docs/context/data-model.md`** — cross-cutting rules + auto-gen store→owner index (per-store body lives in owning dossier).
+- **`docs/context/events.md`** — auto-generated event catalog (emit/listen call-site scan).
+- **`docs/context/module-graph.md`** — auto-generated per-dir imports-from / imported-by + mermaid graph.
+- **`docs/context/feature-map.md`** — auto-generated dossier index (surface → dossier file + purpose).
+- **`docs/context/glossary.md`** — single-source vocabulary dictionary.
+- **`docs/context/riwayat-dataset.md`** — KFGQPC dataset, font pairing, line-height floors, license caveats.
+- **`docs/context/deprecated.md`** — cross-surface retirements graveyard. Per-surface deprecations live in dossier §Deprecated.
 - **`docs/context/future-work.md`** — agreed-but-unscheduled features, dataset roadmap, dropped ideas. Single home for deferred scope.
 
 Context doc disagree with code → code win. Update doc in PR.
 
-**Surface + data invariants live in relevant context doc**, not rules below. Before change, read context doc for surface touched (Rule 4) — load-bearing decisions + "do-not-regress" callouts there. Look for **Invariant** sections in `user-journeys.md` and `data-model.md`. Examples: mark editor sole per-verse action surface (`user-journeys.md` §C6), one writer per IDB store (`data-model.md` §Cross-cutting rules).
+**Auto-gen primacy.** Sections fenced with `<!-- AUTO-GENERATED:<name> START -->` … `END` are written exclusively by `scripts/docs/derive-*.mjs`. Hand-edits inside the fence fail CI (SHA-256 manifest mismatch). When manual prose conflicts with the auto-generated block, the auto-generated block wins — re-run `pnpm docs:derive`.
+
+**Surface + data invariants live in the dossier**, not rules below. Before change, read the surface's dossier — load-bearing decisions + "do-not-regress" callouts there under §Invariants. Examples: fast-tag panel sole per-verse-action surface (`surfaces/mark.md` §Invariants), one writer per IDB store (`data-model.md` §Cross-cutting rules + each dossier §Invariants).
 
 ## Mandatory rules
 
-### Rule 1 — Update `user-journeys.md` with every UI change
+### Rule 1 — Update the owning surface dossier with every UI change
 
-**Any change altering user-facing behavior must update `docs/context/user-journeys.md` in same commit.** Includes:
+**Any change altering user-facing behavior must update `docs/context/surfaces/<surface>.md` in same commit.** Edit the §Behavior section of the dossier whose `surface:` frontmatter matches the unit of work. Includes:
 
-- New surfaces, screens, sheets, dialogs.
-- Renamed/moved buttons/CTAs, reordered screens, altered flow steps.
-- New keyboard shortcuts or gestures.
-- Changes to where surface reached from (e.g. "Settings moved out of More sheet").
-- Deletions of above — move journey to **Deprecated** section with commit SHA; no silent delete.
+- New surfaces, screens, sheets, dialogs → update Behavior + Reach.
+- Renamed/moved buttons/CTAs, reordered screens, altered flow steps → update Behavior.
+- New keyboard shortcuts or gestures → update Reach (single-surface) or `navigate` §Global keyboard reference (cross-cutting).
+- Changes to where a surface is reached from → update Reach in both source and destination dossiers.
+- New invariant ("do-not-regress" callout) → add to §Invariants of the dossier that owns the rule.
+- Deletions of above — move entry to dossier §Deprecated with commit SHA; cross-surface retirements go to `docs/context/deprecated.md`. No silent delete.
 
-Change alter anything user see or do → too small to skip `user-journeys.md`. Too small to doc there → too small to ship user-facing. **Internal refactors, build tooling, type-only changes, doc-only commits skip `user-journeys.md` update**, still fall under Rule 2 for context doc touched. Journeys drift fastest; honesty = only reason stay useful.
+Change alter anything user see or do → too small to skip dossier update. Too small to doc there → too small to ship user-facing. **Internal refactors, build tooling, type-only changes, doc-only commits skip behavior update**, still fall under Rule 2 for context doc touched. Dossiers drift fastest; honesty = only reason they stay useful.
 
-Keep steps **surface-level** ("tap Save", "open More sheet") — not pixel-level. Skip animations, exact labels, hover states. Those belong in specs.
+Auto-generated fence blocks (Inventory, Data, Events, Regression guards) **must not be hand-edited** — re-run `pnpm docs:derive` after changing the source. CI fails on fence hash mismatch.
+
+Keep Behavior steps **surface-level** ("tap Save", "open More sheet") — not pixel-level. Skip animations, exact labels, hover states. Those belong in specs.
 
 ### Rule 2 — Update the relevant context doc when its subject changes
 
-- Changed IDB store, key, index, record shape → update `data-model.md`.
-- Added/removed/rewired event → update `events.md`.
-- Added/moved/deleted module or crossed new dep boundary → update `module-graph.md`.
-- Added new route or surface → update `feature-map.md` (and `user-journeys.md` if surface reachable end-to-end).
-- Changed boot flow, router behavior, cross-cutting pattern → update `architecture.md`.
+- Changed IDB store keyPath, index, record shape, or sole-writer → update the **owning dossier's §Data** (per the store→owner index in `data-model.md`). Cross-cutting write-gate / invariant changes → `data-model.md`.
+- Added/removed/rewired event → no manual update needed. `pnpm docs:derive` regenerates `events.md` + per-dossier event blocks from the `emit(Events.X)` / `on(Events.X)` call sites.
+- Added/moved/deleted module or crossed a new dep boundary → no manual update needed. `pnpm docs:derive` regenerates `module-graph.md` from import statements.
+- Added new route or surface →
+  - If it absorbs into one of the 8 existing surfaces, extend that dossier's Reach + Inventory + Behavior.
+  - If it is a wholly new surface (rare — 8 dossiers were chosen to absorb v1.1–v2.2 roadmap), create `docs/context/surfaces/<new>.md` with frontmatter (`surface`, `src_paths`, `owns_stores`, `test_paths`) and run `pnpm docs:derive` to populate the auto blocks. `feature-map.md` re-renders to include the new dossier automatically.
+- Changed boot flow, router behavior, init-graph DAG, cross-cutting pattern → update `architecture.md`.
 - Changed `package.json` script, added/removed/upgraded dev tool, bumped pinned version, changed CI gate → update `docs/tech-stack.md`.
-- Added, removed, redesigned user-facing feature; changed "What's NOT included" scope; changed attribution strings — update `docs/product-info.md` (and About page text if attribution changed).
-- **Renamed/moved/deleted file or dir cited by name in `CLAUDE.md`, `docs/workflow/*.md`, `docs/tech-stack.md`, any `docs/context/*.md`** → update every cite same commit. File-path cites rot fastest; PR moving file owns doc churn.
-- **Agreed future feature / deferred scope / dataset-roadmap idea not in active plan** → add to `docs/context/future-work.md`. When work starts, move entry into the live plan; when shipped, delete from future-work (lasting record lives in code + git + the other context docs).
+- Added, removed, redesigned user-facing feature; changed "What's NOT included" scope; changed attribution strings → update `docs/product-info.md` (and About page text if attribution changed).
+- **Renamed/moved/deleted file or dir cited by name in `CLAUDE.md`, `docs/workflow/*.md`, `docs/tech-stack.md`, any `docs/context/*.md`** → update every cite same commit. `pnpm docs:check` enforces this via `derive-cite-check.mjs` (CI-gated). File-path cites rot fastest; PR moving the file owns the doc churn.
+- **Agreed future feature / deferred scope / dataset-roadmap idea not in active plan** → add to `docs/context/future-work.md`. When work starts, move entry into the live plan; when shipped, delete from future-work (lasting record lives in code + git + the dossier).
 
 ### Rule 3 — Local-first for context retrieval
 
