@@ -331,7 +331,7 @@ test.describe('Journey F: desktop variants @desktop', () => {
 // Mobile #/surahs deep-links hard-redirect to drawer-open.
 // ---------------------------------------------------------------------------
 
-test.describe('Journey F: mobile drawer', () => {
+test.describe('Journey F: mobile drawer @mobile', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     // MarginHeader hamburger is hidden on viewports ≥1180px (desktop runs the
     // AmbientDock kebab path instead, covered separately). Skip cleanly so
