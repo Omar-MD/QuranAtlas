@@ -8,81 +8,122 @@
 //   3. The bridge tracks open/closed state so consumers can poll
 //      `bridge.isOpen()` without coupling to the component instance.
 //
-// This factory consolidates the pattern so future overlays (audio v2.0
-// is the first new consumer; mushaf v2.1, tafsir v1.3 will follow) gain
-// a typed, testable bridge in one line.
-//
-// What this factory does NOT do (deferred to N25 / app-bootstrap):
-//   - Lazy-mount the overlay component on first `open()`. The owning
-//     component must be mounted at App.svelte boot today; lazy-mount
-//     ships when N25 lands. Consumers DO NOT need to change when that
-//     happens — `bridge.api` keeps the same shape.
+// Lazy-mount support (N25): the bridge can be wired to an App-level
+// "mounter" function that triggers a dynamic import + mount of the owning
+// overlay component. When `api.<method>()` is called before the component
+// has registered, the factory:
+//   - Calls the mounter once (idempotent across the lazy-import window).
+//   - Queues the call onto a pending-call queue.
+//   - On `register(api)`, drains the queue in arrival order.
+// Eager-mount consumers (audio currently) skip `setMounter` entirely —
+// the mounter trigger is opt-in and inert when unused.
 
-export interface OverlayBridge<API> {
-  /** Component-side: register the API on mount. Called exactly once per
-   *  component lifetime; calling twice replaces the prior registration
-   *  (covers HMR + test re-render). */
-  register(api: API): void
+import { logger } from './logger.js'
 
-  /** Component-side: clear the registration on unmount. Idempotent. */
-  unregister(): void
-
-  /** Imperative: invoke registered methods. Calls before `register` are
-   *  silently dropped — overlay components mount synchronously at boot
-   *  in production, so a real call site never races registration. Tests
-   *  that arrange-act before mount are responsible for awaiting mount.
-   *  Returns whatever the registered API method returns; if no API is
-   *  registered, returns undefined. */
-  api: API
-
-  /** True when the overlay reports itself open. */
+// `open` is deliberately NOT on the base — its signature varies per overlay
+// (UndoToast: open(opts); NavDrawer: open(tab?, subTab?); TagSheet:
+// open(verseKey); Settings/CommandSheet/Audio: open()). Forcing a base
+// shape would either bivariantly weaken the type or block strict-mode
+// declarations. close + isOpen ARE universal: every overlay supports
+// imperative dismissal + open-state interrogation.
+export interface BaseOverlayAPI {
+  close(): void
   isOpen(): boolean
 }
 
-/**
- * Create a typed overlay bridge.
- *
- * The API type must include `open(): void`, `close(): void`, and
- * `isOpen(): boolean`. The factory uses `isOpen()` from the registered
- * API as the source of truth — `bridge.isOpen()` delegates to it. Audio
- * uses runes-backed state, command-sheet uses a Svelte store; both are
- * compatible because we only care about the boolean answer at call time.
- */
-export interface BaseOverlayAPI {
-  open(): void
-  close(): void
+export interface OverlayBridge<API extends BaseOverlayAPI> {
+  /** Component-side: register the API on mount. Called exactly once per
+   *  component lifetime; calling twice replaces the prior registration
+   *  (covers HMR + test re-render). On register, any pending calls
+   *  queued during lazy-mount drain in arrival order. */
+  register(api: API): void
+
+  /** Component-side: clear the registration on unmount. Idempotent.
+   *  Also clears any pending-call queue and re-arms the mounter so the
+   *  next first-method-call after re-mount can trigger lazy-mount again
+   *  (HMR + test re-render hygiene). */
+  unregister(): void
+
+  /** Imperative: invoke registered methods. If the bridge has a mounter
+   *  set and the API is not yet registered, the call is queued and the
+   *  mounter is triggered (idempotently). Returns whatever the registered
+   *  API method returns; if no API is registered AND no mounter is set,
+   *  returns undefined silently. */
+  api: API
+
+  /** True when the overlay reports itself open. False if not registered. */
   isOpen(): boolean
+
+  /** App.svelte calls this once at boot per lazy-mounted overlay. The
+   *  function should flip a $state flag that triggers a dynamic-import +
+   *  mount of the overlay component. Calling setMounter twice with
+   *  different functions warns in dev (catches App.svelte refactor
+   *  mistakes); the latest function wins. */
+  setMounter(fn: () => void): void
 }
 
 export function createOverlayBridge<API extends BaseOverlayAPI>(opts: {
   name: string
 }): OverlayBridge<API> {
-  // `opts.name` carried into the bridge for future diagnostics (a
-  // devtools panel listing active bridges grepping registrations);
-  // also makes typo'd duplicate registrations visible at construction
-  // time should that ever land. The runtime cost is ~0 — a single
-  // string property hang.
   const name = opts.name
-  const noop = () => undefined as unknown
   let registered: API | null = null
+  let mounter: (() => void) | null = null
+  let mounterFired = false
+  type Pending = { method: string | symbol; args: unknown[] }
+  const pending: Pending[] = []
 
   const proxy = new Proxy({} as API, {
     get(_target, prop: string | symbol) {
-      if (registered === null) { return noop }
-      const value = (registered as Record<string | symbol, unknown>)[prop]
-      if (typeof value === 'function') {
-        return (value as (...args: unknown[]) => unknown).bind(registered)
+      if (registered !== null) {
+        const value = (registered as Record<string | symbol, unknown>)[prop]
+        if (typeof value === 'function') {
+          return (value as (...args: unknown[]) => unknown).bind(registered)
+        }
+        return value
       }
-      return value
+      // Not registered — return a function that either queues (if a
+      // mounter is wired) or no-ops (eager-mount with a real race).
+      return (...args: unknown[]) => {
+        if (mounter && !mounterFired) {
+          mounterFired = true
+          try { mounter() } catch (e) { logger.error(`OverlayBridge(${name}) mounter threw`, { error: e }) }
+        }
+        if (mounter) {
+          pending.push({ method: prop, args })
+        }
+        // No return value while pending — the registered API's return is
+        // not visible to callers that fired before mount.
+        return undefined
+      }
     },
   })
 
   return {
     register(api: API): void {
       registered = api
+      // Drain the pending queue in arrival order, binding each call to
+      // the freshly-registered API.
+      while (pending.length > 0) {
+        const call = pending.shift()!
+        try {
+          const fn = (api as Record<string | symbol, unknown>)[call.method]
+          if (typeof fn === 'function') {
+            (fn as (...args: unknown[]) => unknown).apply(api, call.args)
+          }
+        } catch (e) {
+          logger.error(`OverlayBridge(${name}) pending-call replay threw`, {
+            method: String(call.method),
+            error: e,
+          })
+        }
+      }
     },
     unregister(): void {
       registered = null
+      pending.length = 0
+      // Re-arm the mounter so a subsequent re-mount cycle (HMR / test
+      // re-render) can re-trigger the dynamic-import path if necessary.
+      mounterFired = false
     },
     api: proxy,
     isOpen(): boolean {
@@ -92,6 +133,12 @@ export function createOverlayBridge<API extends BaseOverlayAPI>(opts: {
       } catch {
         return false
       }
+    },
+    setMounter(fn: () => void): void {
+      if (mounter !== null && mounter !== fn) {
+        logger.warn(`OverlayBridge(${name}) setMounter called twice with distinct fns`)
+      }
+      mounter = fn
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [Symbol.toStringTag]: `OverlayBridge(${name})` as any,

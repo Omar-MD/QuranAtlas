@@ -9,6 +9,7 @@
 import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-overlay'
 
 export interface AudioOverlayAPI extends BaseOverlayAPI {
+  open(): void
   /** Optional hook to scroll the overlay's contents (used by the
    *  long-press menu's "Play from here" to focus the now-playing card). */
   focusNowPlaying?(): void
