@@ -44,6 +44,17 @@ async function loadBearingDocs() {
   return out;
 }
 
+// Paths under these prefixes are gitignored (or otherwise local-only). They
+// may exist on dev machines but not on CI; not load-bearing for context.
+const GITIGNORED_PREFIXES = [
+  'docs/superpowers/specs/',
+  'docs/superpowers/plans/',
+  'docs/superpowers/notes/',
+  'docs/superpowers/verification/',
+  'docs/audits/',
+  'tmp/',
+];
+
 function isCheckablePath(s) {
   if (!s || s.length > 200) return false;
   if (s.includes(' ') || s.includes('\n')) return false;
@@ -51,6 +62,7 @@ function isCheckablePath(s) {
   // Template placeholders: <surface>, <Feature>, NNN, MMM, XXX, YYYY-MM-DD
   if (s.includes('<') || s.includes('>')) return false;
   if (/\b(NNN|MMM|XXX|YYY|YYYY-MM-DD)\b/.test(s)) return false;
+  if (GITIGNORED_PREFIXES.some((p) => s.startsWith(p))) return false;
   if (!s.includes('/')) {
     if (ROOT_FILES_RE.test(s)) return true;
     return false;
