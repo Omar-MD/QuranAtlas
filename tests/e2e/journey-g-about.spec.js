@@ -104,7 +104,7 @@ test.describe('Journey G: About', () => {
     expect(vText).toMatch(/^v/)
   })
 
-  test('G: hamburger drawer opens with Read+Study tabs and wordmark→About', async ({ page }) => {
+  test('G: hamburger drawer opens with Read+Study tabs and wordmark→About @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'drawer hamburger is mobile-only; desktop ambient dock has its own kebab')
 
@@ -130,7 +130,7 @@ test.describe('Journey G: About', () => {
     await expect(drawer).not.toBeVisible({ timeout: 3_000 })
   })
 
-  test('G: drawer dismisses via ✕ close button', async ({ page }) => {
+  test('G: drawer dismisses via ✕ close button @mobile', async ({ page }) => {
     // Post 2026-04-25: drawer is full-screen on mobile (z:100), occluding the
     // MarginHeader hamburger (z:95). Toggle-by-second-tap is gone; the in-drawer
     // ✕ button (and backdrop, swipe-left, Esc) are the dismissal paths.
@@ -156,7 +156,7 @@ test.describe('Journey G: About', () => {
     expect(text).toMatch(/^v\d+\.\d+\.\d+\s+·\s+([a-f0-9]{3,}|dev|test)$/i)
   })
 
-  test('G: hamburger from About opens drawer with current-surah hydrated', async ({ page }) => {
+  test('G: hamburger from About opens drawer with current-surah hydrated @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'header hamburger is mobile chrome only')
 
@@ -176,7 +176,7 @@ test.describe('Journey G: About', () => {
     await expect(page).toHaveURL(/#\/s\/67/, { timeout: 3_000 })
   })
 
-  test('G: drawer current-surah highlight survives navigating to About and back', async ({ page }) => {
+  test('G: drawer current-surah highlight survives navigating to About and back @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'drawer hamburger is mobile chrome only')
 
