@@ -32,8 +32,10 @@ test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 test.describe('Journey F: Navigation', () => {
   test.beforeEach(async ({ page }) => {
+    // Wait for app boot to settle before seeding so launch-restore
+    // IDB reads cannot race with the seed write.
     await page.goto('/')
-    // Seed a "mercy" mark so tag search in F3 returns results
+    await waitForReader(page)
     await seedMarks(page, [
       { verseKey: '2:255', tags: ['mercy'], note: '' },
     ])

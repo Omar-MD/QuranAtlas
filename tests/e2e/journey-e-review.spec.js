@@ -16,11 +16,12 @@
 
 import { test, expect } from '@playwright/test'
 import { seedMarks } from './fixtures/idb.js'
+import { waitForReader } from './fixtures/chrome.js'
+import { scanA11y } from './fixtures/a11y.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
 // CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
-import { scanA11y } from './fixtures/a11y.js'
 
 // Force mobile viewport so the review hub's filter/group controls
 // (sort dropdown, surah select, group-by segment, layer segment) are
@@ -51,10 +52,12 @@ const SEED = [
 
 test.describe('Journey E: Review hub', () => {
   test.beforeEach(async ({ page }) => {
-    // storageState already provides onboarded state.  Boot, seed marks,
-    // then navigate to the review hub.  Each test gets a fresh
-    // BrowserContext so seeded marks don't leak across tests.
+    // storageState already provides onboarded state.  Boot fully (wait for
+    // reader paint) before seeding so launch-restore IDB reads cannot race
+    // with the seed write.  Each test gets a fresh BrowserContext so
+    // seeded marks don't leak across tests.
     await page.goto('/')
+    await waitForReader(page)
     await seedMarks(page, SEED)
     await page.goto('/#/review')
     // Step 4: wait for the controls group-by tablist (role=tablist + aria-label)

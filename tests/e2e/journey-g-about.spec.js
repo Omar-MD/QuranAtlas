@@ -14,7 +14,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
+import { seedMarks } from './fixtures/idb.js'
 import { waitForReader, openMoreSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
@@ -28,8 +28,10 @@ test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 test.describe('Journey G: About', () => {
   test.beforeEach(async ({ page }) => {
+    // Wait for app boot to settle before seeding so launch-restore
+    // IDB reads cannot race with the seed write.
     await page.goto('/')
-    // Seed marks so the stat grid shows non-zero values
+    await waitForReader(page)
     await seedMarks(page, [
       { verseKey: '1:1', tags: ['mercy'], note: '' },
       { verseKey: '2:255', tags: ['mercy', 'faith'], note: '' },
@@ -230,11 +232,8 @@ test.describe('Journey G: About', () => {
     // Dispatch a synthetic event with the same shape after app boot but
     // BEFORE navigating to #/about — About.svelte reads getInstallPrompt()
     // at mount time to decide whether to render the Install button.
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
-    await page.waitForFunction(() => typeof window.__qaSuppressNextVersionChange === 'function')
-
+    // storageState already provides onboarded state — no clearAllData
+    // needed (would race with parallel workers under dev-server load).
     await page.evaluate(() => {
       const ev = new Event('beforeinstallprompt', { cancelable: true })
       // BeforeInstallPromptEvent shape consumed by pwa-install.ts
