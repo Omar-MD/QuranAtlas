@@ -1,0 +1,220 @@
+---
+surface: read
+src_paths:
+  - 'src/reader/**'
+  - 'src/nav/AmbientDock.svelte'
+  - 'src/nav/AmbientPill.svelte'
+  - 'src/nav/MarginHeader.svelte'
+  - 'src/nav/SurahProgress.svelte'
+owns_stores:
+  - meta
+test_paths:
+  unit:
+    - 'tests/unit/reader/**'
+    - 'tests/unit/state/reader.test.ts'
+    - 'tests/unit/state/surah-header-visibility.test.ts'
+    - 'tests/unit/nav/MarginHeader-toggle.test.ts'
+    - 'tests/unit/nav/ambient-*.test.ts'
+    - 'tests/unit/styles/font-tokens.test.js'
+  e2e:
+    - 'tests/e2e/journey-b-reader*.spec.js'
+---
+
+# Surface: read
+
+> Reader chrome — verse rendering, ambient dock + pill + margin header, surah header + bismillah, cross-surah scroll, typography knobs, scroll-position persistence. NOT the marking flow (that's `mark` surface) — but excludes `reader/VerseTagPanel.svelte` which the `mark` dossier owns.
+
+## Reach
+
+| Entry | Trigger | Result |
+| --- | --- | --- |
+| Hash route `#/s/:n` | URL | Reader mounts surah n at top |
+| Hash route `#/s/:n/:v` | URL | Reader mounts surah n, scrolls to verse v |
+| Hash route `#/` (default) | URL | redirects to `lastSurface` (last-read) |
+| Pull-to-swap past edge | gesture | swap to next/prev surah with wrap (114↔1) |
+| Click `↑ <prev>` / `<next> ↓` link | tap | swap to prev/next surah |
+| MarginHeader hamburger swipe-down (mobile) | gesture | `openNavDrawer('read')` |
+| MarginHeader center label tap (mobile) | tap | toggle `surahHeaderHidden` |
+| MarginHeader label swipe left/right (mobile) | gesture | next/prev surah (clamped 1–114) |
+| MarginHeader gear single tap (mobile) | tap | open Settings sheet (debounced 300 ms) |
+| MarginHeader gear double-tap (mobile, ≤300 ms) | gesture | cycle theme (parity with keyboard `d`) |
+| AmbientDock tap (desktop) | tap | open command sheet / Review / Marks |
+| Verse number tap | tap | edge indicators ~1.6 s + pill label updates |
+| Reader body tap | tap | dock + pill fade in for ~3 s |
+| Visibility-restore | passive | restore `currentPosition` only when tracker fresh + scroller at top |
+
+## Inventory
+
+<!-- AUTO-GENERATED:inventory START -->
+| Path | Role |
+| --- | --- |
+| `src/nav/AmbientDock.svelte` | Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav` |
+| `src/nav/AmbientPill.svelte` | On reader route: stays hidden until AMBIENT_SURFACE fires |
+| `src/nav/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout (2026-04-25): |
+| `src/nav/SurahProgress.svelte` | Tiny progress chip under surah title. Tracks the current juz the reader |
+| `src/reader/EdgeIndicator.svelte` | EdgeIndicator — the pair of left/right fixed indicators that briefly flash |
+| `src/reader/PullToSwapIndicator.svelte` | PullToSwapIndicator — minimal Chrome-mobile-PTR-style circular progress |
+| `src/reader/Reader.svelte` | _(no leading comment)_ |
+| `src/reader/SurahHeader.svelte` | _(no leading comment)_ |
+| `src/reader/Verse.svelte` | Translation lookup role for cross-riwayah display. |
+| `src/reader/VerseTagPanel.svelte` | Inline fast-path tag panel. Rendered inside the active verse under the |
+| `src/reader/audio-autoscroll.ts` | Smart-defer auto-scroll: scroll the playing verse into view UNLESS the |
+| `src/reader/audio-highlight.ts` | Audio verse-tick highlight. Subscribes to `audio:verse-changed` and |
+| `src/reader/chunked-append.ts` | Chunked verse append — scroll listener that appends more verse chunks |
+| `src/reader/edge-indicators.ts` | Verse-tap edge indicators — lazily-created left/right visual cues that |
+| `src/reader/font-reshape.ts` | iOS Safari paints the reader DOM with a fallback font when verses mount |
+| `src/reader/global-position.ts` | Global reading position — single record (current surah + verse) that |
+| `src/reader/position.ts` | Reader position tracking — observes scroll, persists last-read verse to |
+| `src/reader/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
+| `src/reader/scroll-ancestor.ts` | Find the nearest scrolling ancestor of `el`. |
+| `src/reader/scroll-tracker.ts` | Scroll position tracking using IntersectionObserver. |
+| `src/reader/surah-swap.ts` | Cross-surah swap orchestration. |
+| `src/reader/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
+| `src/reader/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
+<!-- AUTO-GENERATED:inventory END -->
+
+## Behavior
+
+### Surah header (post 2026-04-26)
+
+Flat 2-column grid header, no card background, no ornament chrome:
+
+- **Left column** (full height, `grid-row: 1 / span 2`): `SURAH {n} · {count} VERSES` uppercase tracked meta caption stacked above the Juz / surah-progress chip (`SurahProgress.svelte`).
+- **Right column** (full height, vertically centered): Arabic surah name in `'Amiri Quran'` Mushaf script, no honorific prefix, RTL.
+
+Header gated on `reader.surahHeaderHidden` — `true` unmounts header (toggled via MarginHeader center-label tap; persisted in `settings.surahHeaderHidden`, sole writer `settings/surah-header-visibility.ts`). Toggle is pure show/hide — no auto-scroll.
+
+Below header on every surah except 1 + 9, standalone bismillah renders the Unicode ligature `﷽` (U+FDFD) in naskh-first font stack (`Amiri Quran` → `Scheherazade New` → `Amiri` → `Noto Naskh Arabic` → system Arabic fallback). Italic English translation always renders below the glyph: *"In the Name of Allah — the Most Compassionate, Most Merciful"* — independent of `settings.translationVisible`. `aria-label` exposes voweled text. Bismillah NOT gated by `surahHeaderHidden`.
+
+Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush against scroller edges (`margin: 2px auto`), muted text color, italic 0.7 rem title, 12 px arrow; reveal to accent on hover/focus.
+
+### Ambient chrome
+
+**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list via ⋯ → drawer, command sheet, or `G+S`.
+
+**Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px); right settings gear ⚙ (48 px tap target, 26 px icon). Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. `#main-content` reserves ~60 px top padding.
+
+**Tablet+ (≥768 px):** AmbientDock items grow 38×38 → 42×42 for iPad tap targets.
+
+### Ambient pill
+
+Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3 s showing `{surah}:{verse} · {Name}` + `⌘K` hint. Verse-number tap updates pill label. Hidden on non-reader routes (`#/surahs`, `#/review`, `#/about`, etc.).
+
+### Translation rendering
+
+Each verse renders Arabic on top + English translation directly below in flowing single-line block. Footnote refs appear as bracketed numbers (`[1]`, `[2]`, …) coloured in accent hue, sequential per surah. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
+
+Toggle "Hide translation" (Settings or `t`) → translation block, all `[N]` markers, any open footnote panel disappear in one repaint via `settings.translationVisible` rune.
+
+**Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qaloon (Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/Qaloon ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
+
+### Cross-surah infinite scroll
+
+Reader is single-surah; only one surah mounted at a time. Pull past edge swaps to N+1 / N-1 with wrap (114 ↔ 1).
+
+1. Pull past bottom past threshold (~110 px) → release → `swapToSurah(nextSurah(N), 'top')` → URL `#/s/{N+1}` → Reader remounts at `scrollTop=0`. Click fallback: single-line `<next.name> ↓` link.
+2. Pull past top past threshold → release → `swapToSurah(prevSurah(N), 'bottom')` → URL `#/s/{N-1}` → Reader remounts and anchors `scrollTop=scrollHeight`. Click fallback: `↑ <prev.name>` link above SurahHeader.
+3. Wrap: 114→1 forward, 1→114 backward.
+4. Native browser pull-to-refresh suppressed via `overscroll-behavior-y: contain` on `#main-content`. Wheel input on desktop accumulates the same way.
+5. Position persistence is single-global: each surah load overwrites `settings.currentPosition` to `(newN, 1)` or `(newN, lastVerse)` on backward; in-surah scroll center-band crossings also overwrite.
+
+### Scroll position survives warm-resume (iOS lock / tab-hide)
+
+1. Lock screen / switch tabs → `visibilitychange` fires hidden → `persistOnExit` flushes tracker's pending verse → `settings.currentPosition`.
+2. Unlock / return → `visibilitychange` fires visible → `DB_VISIBILITY_VISIBLE` emitted; reader's handler restores scroll **only** when tracker is fresh (no `lastTrackedVerse`) AND scroller has collapsed to top. Otherwise browser's preserved scroll is trusted.
+3. Stale IDB values never force-scroll an already-scrolled reader back.
+
+### Typography knobs (live preview)
+
+Two sliders inline in Settings sheet's Reading section drive reader live:
+
+1. **Font size** — 5-step (xs/sm/md/lg/xl), writes `fontSize`, drives `--qa-font-size-base`. Endcaps `Aa` (small) / `Aa` (large).
+2. **Reading flow** — 5-step coordinated knob: single drag writes all four spacing keys (`lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`) to same step via `setReadingFlow(step)`. Arabic line-height = `1.92 + delta(step)`; floor (xs) clears KFGQPC tashkeel collisions across all riwayat; md (default) lands at 2.12. Endcaps `▮` (tight) / `▯` (loose).
+3. **Reset to default** appears only when at least one knob ≠ md.
+
+Mobile reading-flow margin component drives `.qa-verse` horizontal padding via `--qa-verse-pad-x`. Vertical-spacing component drives `.qa-verse` padding via `--qa-verse-pad-y`.
+
+Font-size keyboard shortcuts: `⌘↑` / `Ctrl+↑` bumps up; `⌘↓` / `Ctrl+↓` bumps down. Announced to screen readers; guarded against focused inputs.
+
+### Verse-number edge indicator
+
+Tap number circle on any verse → thin accent bars appear at verse's row on both viewport edges (~1.6 s). Pill label updates to tapped verse. `settings.currentPosition` updated.
+
+### Auto-hide chrome on scroll
+
+Scroll down → dock hides; scroll back near top → dock surfaces.
+
+## Data
+
+<!-- AUTO-GENERATED:data-owned START -->
+- `meta`
+<!-- AUTO-GENERATED:data-owned END -->
+
+<!-- AUTO-GENERATED:data-read START -->
+_(no cross-surface reads detected)_
+<!-- AUTO-GENERATED:data-read END -->
+
+### `meta` store body
+
+Last-read position + sticky-page state. Single global record; updated on every surah mount + center-band scroll crossing + warm-resume hide.
+
+Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `surahHeaderHidden`, `currentPosition`, `lastSurface`. (See `configure` dossier for `settings` store body.)
+
+## Events
+
+<!-- AUTO-GENERATED:events-emit START -->
+| Event | Constant | Sites |
+| --- | --- | --- |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/nav/AmbientDock.svelte:64`, `src/nav/AmbientPill.svelte:90`, `src/nav/MarginHeader.svelte:41`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/Reader.svelte:407`, `src/reader/edge-indicators.ts:62` |
+| `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/reader/position.ts:28` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:50` |
+<!-- AUTO-GENERATED:events-emit END -->
+
+<!-- AUTO-GENERATED:events-listen START -->
+| Event | Constant | Sites |
+| --- | --- | --- |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/nav/AmbientPill.svelte:76`, `src/nav/MarginHeader.svelte:175` |
+| `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/reader/audio-autoscroll.ts:48`, `src/reader/audio-highlight.ts:32` |
+| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/reader/position.ts:156` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/nav/AmbientDock.svelte:86`, `src/nav/MarginHeader.svelte:174` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/reader/Reader.svelte:183` |
+<!-- AUTO-GENERATED:events-listen END -->
+
+## Invariants
+
+- **Reader text source = active Riwayah.** From `settings['riwayah']` (default Qālūn). Sole writer of `settings['riwayah']` is `settings/riwayah.ts`. Font follows via `--qa-font-arabic` cascade (set by `:root[data-riwayah=...]` overrides). Reader's reading-typography slider drives line-height; floor at `xs` step clears stacked harakat across all riwayat. Each `.qa-verse-arabic` carries `data-riwayah` mirroring active Riwayah.
+- **Each Riwayah pairs with its own KFGQPC Uthmanic mushaf cut.** Cross-Riwayah reuse mis-renders combining marks. Mapping: `hafs → KFGQPC Uthmanic Hafs v22`, `warsh → KFGQPC Uthmanic Warsh V21`, `qaloon → KFGQPC Uthmanic Qaloon V21`. Each token's font-family chain falls back to **Amiri Quran** (Khaled Hosny, OFL) when KFGQPC isn't loaded, then bare `serif`. No user-facing font picker. Wired through `--ff-kfgqpc-{riwayah}` (`src/styles/tokens/primitives.css`) → `--qa-font-arabic` (`src/styles/tokens/semantic.css`). Regression guard: `tests/unit/styles/font-tokens.test.js`.
+- **Hamburger drawer is the sole in-app entry to the full surah list (mobile, post 2026-04-25).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
+- **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
+- **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/journey-d-settings.spec.js` D3-bg.
+
+## Regression guards
+
+<!-- AUTO-GENERATED:tests START -->
+**Unit (11):**
+
+- `tests/unit/nav/MarginHeader-toggle.test.ts`
+- `tests/unit/reader/SurahHeader.test.ts`
+- `tests/unit/reader/bismillah-translation.test.ts`
+- `tests/unit/reader/font-reshape.test.ts`
+- `tests/unit/reader/global-position.test.ts`
+- `tests/unit/reader/render-helpers.test.ts`
+- `tests/unit/reader/scroll-tracker.test.ts`
+- `tests/unit/reader/surah-swap.test.ts`
+- `tests/unit/reader/translation-tokens.test.ts`
+- `tests/unit/state/reader.test.ts`
+- `tests/unit/styles/font-tokens.test.js`
+
+**E2E (1):**
+
+- `tests/e2e/journey-b-reader.spec.js`
+<!-- AUTO-GENERATED:tests END -->
+
+## Deprecated
+
+- **2026-04-25 (`c297e61`):** MoreSheet retired. First-level dock-⋯ sheet held Settings · Review · Surah list · About · Clear data — replaced by NavDrawer (left-slide, two items: Review · About) + per-surface entry points.
+- **2026-04-25 (`daaff6b`):** MarginHeader two-row layout + fast-tag dot retired. Mobile/tablet header was ~108 px tall with row-1 surah-crumb pill + circular fast-tag dot + ⋮ kebab and row-2 Read · Review N · Marks · Threads tabs. Replaced by single-row layout (~52 px).
+- **2026-04-25 (`ba94d8d`):** TagModePill retired. Desktop-only top-right "Tag mode" toggle pill replaced by unified gesture model (right-click any verse).
+- **2026-04-25 `<commit-pending>`:** MarginHeader center-label tap → surah list and full-width Continue-to buttons retired. Center label was a button routing to `#/surahs`; replaced by non-interactive div (no chevron). Surah list reachable only via hamburger drawer or header swipe-down. Continue-to-prev/next buttons were full-width uppercase tracked-text rows (~46 px); replaced by single-line italic arrow + surah title (~22 px).
+- **2026-04-25 `<commit-pending>`:** NavDrawer two-row Review/About list retired. Replaced by full-screen tabbed surface (Surahs + Review tabs).
+- **Continue-arrow opacity reverted (2026-04-26):** tried `opacity: 0.4` for stronger recede but pushed contrast below WCAG 1.4.3 — reverted; recede now from small font + flush margin only.
