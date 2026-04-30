@@ -17,6 +17,10 @@ import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting } fr
 import { waitForReader } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
+// Onboarding flow tests must boot with no `onboardingComplete` flag.
+// Opt OUT of the onboarded snapshot every other journey spec uses.
+test.use({ storageState: { cookies: [], origins: [] } })
+
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
