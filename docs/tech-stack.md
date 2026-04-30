@@ -134,6 +134,16 @@ Two layers:
 
 Locally, journey specs A–G, I, and performance run against the **Vite dev server**; journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW). In CI, all projects share a single preview server (`PLAYWRIGHT_USE_PREVIEW=1` + `PLAYWRIGHT_SKIP_BUILD=1`) — the e2e job depends on the Build job and reuses its `dist/` artifact rather than rebuilding.
 
+#### Suite setup: `tests/e2e/global-setup.ts` + `storageState` reuse (N15, 2026-04-30)
+
+Playwright's `globalSetup` hook captures an onboarded `storageState` snapshot once per suite run into `tests/e2e/.auth/onboarded.json` (gitignored). The hook boots the app, marks `onboardingComplete=true` in IDB, navigates past onboarding, and writes the captured cookies + localStorage + IDB to disk. Every non-onboarding journey spec opts in via:
+
+```js
+test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
+```
+
+Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-test `markOnboardingComplete + clearAllData + cold-boot` needed, and the `marks`/`edges`/`bookmarks` stores are reset to the snapshot (empty) implicitly between tests. Onboarding-flow specs (`journey-a`) and SW/cross-tab carve-outs (`journey-h`, `journey-i`) opt OUT with `test.use({ storageState: { cookies: [], origins: [] } })`. See `CLAUDE.md` Rule 6.5 and the spec at `docs/superpowers/specs/2026-04-30-n15-global-setup-design.md`.
+
 ### Static checks
 - **ESLint** (strict mode, `typescript-eslint`, `eslint-plugin-svelte`) via `pnpm run lint`.
 - **Stylelint** (`stylelint-config-standard`) via `pnpm run lint:css` — enforces selector grammar + custom-property prefixes under `src/styles/`.
