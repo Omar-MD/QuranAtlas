@@ -4,23 +4,22 @@ Referenced by `CLAUDE.md` Rule 4. Read this before writing a multi-unit plan, di
 
 ## The unit
 
-A **surface** is a user-visible region with a documented journey and a Playwright spec. The table below is the canonical surface → journey/spec map; the surface → *source files* mapping is not duplicated here because `docs/context/user-journeys.md` already owns it (Rule 1 keeps it fresh — follow the journey row to the modules it touches).
+A **surface** is a user-visible region with a documented dossier and a Playwright spec. The table below is the canonical surface → dossier / spec map; the surface → *source files* mapping is not duplicated here because each dossier's frontmatter `src_paths` already owns it (Rule 1 keeps it fresh — `pnpm docs:derive` regenerates the auto Inventory block from the globs).
 
-| Surface | Journey / spec |
-|---|---|
-| First-run onboarding + session restore | A — `journey-a-onboarding.spec.js` |
-| Reader + ambient chrome (dock, pill) | B — `journey-b-reader.spec.js` |
-| Mark editor | C — `journey-c-marking.spec.js` |
-| Settings sheet, theme, clear-data | D — `journey-d-settings.spec.js` |
-| Review hub + FVR | E — `journey-e-review.spec.js` |
-| Command sheet + surah directory | F — `journey-f-navigation.spec.js` |
-| About + shortcuts + PWA install | G — `journey-g-about.spec.js` |
-| Offline activation (`@offline`) | H — `journey-h-offline.spec.js` |
-| Cross-tab sync | I — `journey-i-cross-tab.spec.js` |
+| Surface | Dossier | Spec |
+|---|---|---|
+| `read` (reader + ambient chrome + cross-surah scroll + typography) | `docs/context/surfaces/read.md` | `journey-b-reader.spec.js` |
+| `mark` (fast-tag panel + deep TagSheet) | `docs/context/surfaces/mark.md` | `journey-c-marking.spec.js` |
+| `review` (Review hub + FVR; future: SRS, graph, compare) | `docs/context/surfaces/review.md` | `journey-e-review.spec.js` |
+| `navigate` (command sheet + drawer + surah list + bookmarks) | `docs/context/surfaces/navigate.md` | `journey-f-navigation.spec.js` |
+| `listen` (audio recitation) | `docs/context/surfaces/listen.md` | `journey-h-audio.spec.js` *(planned)* |
+| `configure` (Settings sheet + About) | `docs/context/surfaces/configure.md` | `journey-d-settings.spec.js` + `journey-g-about.spec.js` |
+| `onboard` (first-run wizard + session restore) | `docs/context/surfaces/onboard.md` | `journey-a-onboarding.spec.js` |
+| `infra` (SW + cross-tab + manifest) | `docs/context/surfaces/infra.md` | `journey-h-offline.spec.js` + `journey-i-cross-tab.spec.js` + `sw-integration.spec.js` |
 
-The **unit of work** is a surface, or a contiguous cluster of surfaces that share source files or journey rows. A single bug is never a unit.
+The **unit of work** is a surface, or a contiguous cluster of surfaces that share source files or invariants. A single bug is never a unit.
 
-When you need the surface → source-files mapping for a unit (e.g. "which modules does Journey A touch?"), open the matching `user-journeys.md` section and follow the modules it references. Journeys routinely reach across multiple `src/<feature>/` dirs — that's expected, and that cross-surface reach is exactly what makes the journey a cluster.
+When you need the surface → source-files mapping for a unit, open the matching dossier — its §Inventory section is the auto-generated file list (regenerate with `pnpm docs:derive` if stale). Surfaces routinely reach across multiple `src/<feature>/` dirs — that's expected, and that cross-surface reach is exactly what makes the surface a cluster, not a single dir.
 
 ## Brainstorming rules
 
@@ -34,8 +33,8 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 
 1. **One unit per surface-cluster.** If two candidate units both touch `src/<same-feature>/`, collapse them.
 2. **A journey that spans surfaces is one unit, not two.** Example: I2 (mark deleted in Tab B while Tab A editor open) touches `src/marks/` AND `src/safety/sync.ts`. That's one unit — the coupling is the point.
-3. **Docs land with the unit.** `user-journeys.md` (Rule 1), plus any affected `data-model.md` / `events.md` / `module-graph.md` / `architecture.md` / `feature-map.md` (Rule 2), are part of the unit. Not a separate task. Not a subagent handoff.
-4. **Tests land with the unit.** If the unit adds a new `user-journeys.md` row, the matching Playwright spec (new or extended) is part of the same commit. If the journey already exists, extend the owning `journey-X-*.spec.js` — do not create a parallel spec.
+3. **Docs land with the unit.** Owning dossier's §Behavior + §Reach + §Invariants (Rule 1), plus `data-model.md` / `architecture.md` if cross-cutting (Rule 2), are part of the unit. `events.md` / `module-graph.md` / `feature-map.md` regenerate automatically (`pnpm docs:derive`) — no manual update. Not a separate task. Not a subagent handoff.
+4. **Tests land with the unit.** If the unit adds new behavior to a dossier, the matching Playwright spec (new or extended) is part of the same commit. If the surface already has its journey spec, extend the owning `journey-X-*.spec.js` — do not create a parallel spec.
 5. **Plan lifecycle.** Completed plans are deleted in the final commit, not archived. The lasting record lives in code + `git log` + `docs/context/`.
 
 ## Subagent dispatch rules
@@ -49,7 +48,7 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 ## Testing rules
 
 1. **Journey spec is canonical.** The spec at `tests/e2e/journey-X-*.spec.js` is the *only* e2e home for its surface(s). Extend it; do not create a new spec file for a covered journey.
-2. **New spec file iff new `user-journeys.md` row.** This is the sole trigger for a new spec.
+2. **New spec file iff new dossier.** A new `surfaces/<surface>.md` is the sole trigger for a new spec file.
 3. **One spec per cluster during verification.** Run the surface's journey spec at the real viewport. Don't run the full suite to verify a single-surface change.
 4. **Flake reproduction = `--repeat-each=N --workers=M` on the one spec.** Not the whole suite.
 5. **Tag-scoped projects are not extra specs.** `@a11y`, `@desktop`, `@keyboard`, `@reduced-motion`, `@offline` are assertions inside the owning journey spec — not separate files.
@@ -69,7 +68,7 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 | Two units / subagents touch the same `src/<feature>/` tree | Collapse to one unit |
 | Plan has N units for N bugs on one surface | Collapse to one unit |
 | New spec file proposed for a covered journey | Extend the journey spec |
-| `user-journeys.md` update queued as a separate task or subagent | Fold into the surface's unit |
+| Dossier §Behavior update queued as a separate task or subagent | Fold into the surface's unit |
 | "Run full e2e suite" to verify a single-surface change | Run the one journey spec |
 | Playwright invoked with different specs within one cluster | Collapse to the owning spec |
 | Subagent spawned for work that fits in main context | Execute in main session |
@@ -82,14 +81,14 @@ These changes don't map to a single UI surface. Treat each as its own cluster wi
 
 | Virtual surface | Canonical doc | Verify |
 |---|---|---|
-| IDB schema / store contracts | `docs/context/data-model.md` | Every journey whose surface reads/writes the changed store |
-| Event bus | `docs/context/events.md` | Every journey whose surface emits or listens to the changed event |
-| Router / launch-restore / `lastSurface` | `docs/context/architecture.md` §Router | A (launch-restore), F (navigation), any surface that writes `lastSurface` |
-| Safety / sync (versionchange, BroadcastChannel) | `docs/context/architecture.md` §IndexedDB + `data-model.md` §Cross-cutting | I (cross-tab), D4 (clear-data) |
-| Theme tokens (not per-surface selectors) | `docs/context/architecture.md` §Stack (theme refs) + `src/styles/tokens/semantic.css` `:root` / `[data-theme]` blocks | B6 (auto theme), D3 (theme swap), `@a11y` across journeys |
-| Runes state modules | `docs/context/module-graph.md` | Every surface that imports the changed state slice |
+| IDB schema / store contracts | `docs/context/data-model.md` (cross-cutting rules) + owning dossier §Data | Every dossier whose surface reads/writes the changed store |
+| Event bus | `docs/context/events.md` (auto-gen catalog) + each dossier's §Events block | Every dossier whose §Events emit/listen block touches the changed event |
+| Router / launch-restore / `lastSurface` | `docs/context/architecture.md` §Router | `onboard` (launch-restore), `navigate` + `read` (any surface that writes `lastSurface`) |
+| Safety / sync (versionchange, BroadcastChannel) | `docs/context/surfaces/infra.md` §Cross-tab coherence | `infra` + `mark` (I1/I2 marks change), `configure` (I3 clear-data) |
+| Theme tokens (not per-surface selectors) | `docs/context/architecture.md` §Stack + `src/styles/tokens/semantic.css` `:root` / `[data-theme]` blocks | `read` (auto theme), `configure` (theme swap), `@a11y` across surfaces |
+| Runes state modules | `docs/context/module-graph.md` (auto-gen) | Every dossier that imports the changed state slice |
 | Chunk budgets | `docs/tech-stack.md` §scripts | Build + `pnpm run check-chunks`; no journey spec needed |
-| Service worker / offline | `docs/context/architecture.md` §Boot flow + `docs/context/data-model.md` §`activationState` | H — `PLAYWRIGHT_INCLUDE_OFFLINE=1`, preview server, production build |
+| Service worker / offline | `docs/context/surfaces/infra.md` + `docs/context/architecture.md` §Boot flow | `infra` — `PLAYWRIGHT_INCLUDE_OFFLINE=1`, preview server, production build |
 
 For virtual surfaces: still one cluster, still one plan unit, but verification runs the batch of affected journey specs — as one Playwright invocation, not N.
 
@@ -98,7 +97,7 @@ For virtual surfaces: still one cluster, still one plan unit, but verification r
 ```
 Do the candidates share any file under src/<feature>/ ?
   └─ Yes → one unit.
-  └─ No → Do they share a journey row in user-journeys.md ?
+  └─ No → Do they share a dossier in docs/context/surfaces/ ?
             └─ Yes → one unit.
             └─ No → Do they share an event, IDB store, or state slice ?
                       └─ Yes → one unit (virtual surface).

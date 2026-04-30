@@ -20,6 +20,3 @@ tests/e2e/global-setup.ts
 # future-work.md §Audio recitation §v2.
 tests/e2e/journey-h-audio.spec.js
 
-# Cited from CLAUDE.md Rules + cluster-by-surface.md playbook; removed in
-# phases 7 + 8 of feat/docs-restructure-surface-dossiers.
-docs/context/user-journeys.md
