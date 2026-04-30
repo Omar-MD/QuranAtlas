@@ -1,30 +1,25 @@
 /**
- * Imperative bridge for the NavDrawer Svelte component. Mirrors the
- * pattern of more-sheet-bridge (which this replaces 2026-04-25) so
- * MarginHeader can open the drawer without a circular import or
- * window global.
+ * Imperative bridge for the NavDrawer Svelte component. Migrated to
+ * createOverlayBridge 2026-05-01 (audit N22). MarginHeader / route
+ * redirects / AmbientDock open the drawer via these wrappers — no
+ * circular import on the .svelte module.
  */
+
+import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-overlay'
 
 export type DrawerTab = 'read' | 'study'
 export type ReadSubTab = 'surahs' | 'bookmarks'
 
-let _open: ((tab?: DrawerTab, subTab?: ReadSubTab) => void) | null = null
-let _close: (() => void) | null = null
-let _toggle: ((tab?: DrawerTab) => void) | null = null
-
-export function registerNavDrawer(
-  open: (tab?: DrawerTab, subTab?: ReadSubTab) => void,
-  close: () => void,
-  toggle?: (tab?: DrawerTab) => void
-): void {
-  _open = open
-  _close = close
-  _toggle = toggle ?? null
+export interface NavDrawerAPI extends BaseOverlayAPI {
+  open(tab?: DrawerTab, subTab?: ReadSubTab): void
+  close(): void
+  toggle(tab?: DrawerTab): void
+  isOpen(): boolean
 }
 
-export function openNavDrawer(tab?: DrawerTab, subTab?: ReadSubTab): void { _open?.(tab, subTab) }
-export function closeNavDrawer(): void { _close?.() }
-export function toggleNavDrawer(tab?: DrawerTab): void {
-  if (_toggle) { _toggle(tab); return }
-  _open?.(tab)
-}
+export const navDrawerBridge = createOverlayBridge<NavDrawerAPI>({ name: 'nav-drawer' })
+
+export const openNavDrawer = (tab?: DrawerTab, subTab?: ReadSubTab): void =>
+  navDrawerBridge.api.open(tab, subTab)
+export const closeNavDrawer = (): void => navDrawerBridge.api.close()
+export const toggleNavDrawer = (tab?: DrawerTab): void => navDrawerBridge.api.toggle(tab)

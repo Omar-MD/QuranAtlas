@@ -18,7 +18,7 @@
    * styling on desktop keeps the narrow side-panel look (see nav.css).
    */
   import { onMount, onDestroy, tick } from 'svelte'
-  import { registerNavDrawer, type DrawerTab, type ReadSubTab } from './nav-drawer-bridge'
+  import { navDrawerBridge, type DrawerTab, type ReadSubTab } from './nav-drawer-bridge'
   import { reader } from '../state/reader.svelte'
   import { settings } from '../state/settings.svelte'
   import { surahs as surahsState } from '../state/surahs.svelte'
@@ -235,7 +235,7 @@
   let recentsUnsub: (() => void) | null = null
 
   onMount(() => {
-    registerNavDrawer(open, close, toggle)
+    navDrawerBridge.register({ open, close, toggle, isOpen: () => isOpen })
     // Live-update the Recent list while the drawer is open — App.svelte's
     // trackRecentSurah emits this after each successful IDB write. Without
     // the listener, opening the drawer once + navigating to a new surah +
@@ -248,6 +248,7 @@
   onDestroy(() => {
     recentsUnsub?.()
     recentsUnsub = null
+    navDrawerBridge.unregister()
   })
 
   const FILTERS = [
