@@ -52,27 +52,82 @@ function parseYaml(src) {
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
+    if (/^\s*$/.test(line)) { i++; continue; }
     const m = /^([a-z_][a-z0-9_]*):\s*(.*)$/i.exec(line);
     if (!m) { i++; continue; }
     const key = m[1];
     const rest = m[2].trim();
-    if (rest === '') {
-      const child = {};
-      i++;
-      while (i < lines.length && /^\s+/.test(lines[i])) {
-        const c = /^\s+([a-z_][a-z0-9_]*):\s*(.*)$/i.exec(lines[i]);
-        if (c) {
-          child[c[1]] = parseScalarOrList(c[2].trim());
-        }
-        i++;
-      }
-      out[key] = child;
-    } else {
+    if (rest !== '') {
       out[key] = parseScalarOrList(rest);
       i++;
+      continue;
+    }
+    const childLines = [];
+    i++;
+    while (i < lines.length && (/^\s+/.test(lines[i]) || /^\s*$/.test(lines[i]))) {
+      childLines.push(lines[i]);
+      i++;
+    }
+    if (childLines.length === 0) {
+      out[key] = {};
+      continue;
+    }
+    const dashCount = childLines.filter((l) => /^\s*-\s/.test(l)).length;
+    const colonCount = childLines.filter((l) => /^\s+[a-z_][a-z0-9_]*:/i.test(l)).length;
+    if (dashCount > 0 && colonCount === 0) {
+      out[key] = childLines
+        .map((l) => /^\s*-\s*(.*)$/.exec(l))
+        .filter(Boolean)
+        .map((m) => stripQuotes(m[1].trim()))
+        .filter(Boolean);
+    } else {
+      out[key] = parseNestedObject(childLines);
     }
   }
   return out;
+}
+
+function parseNestedObject(childLines) {
+  const child = {};
+  let j = 0;
+  while (j < childLines.length) {
+    const cl = childLines[j];
+    if (/^\s*$/.test(cl)) { j++; continue; }
+    const cm = /^\s+([a-z_][a-z0-9_]*):\s*(.*)$/i.exec(cl);
+    if (!cm) { j++; continue; }
+    const ckey = cm[1];
+    const crest = cm[2].trim();
+    if (crest !== '') {
+      child[ckey] = parseScalarOrList(crest);
+      j++;
+      continue;
+    }
+    const baseIndent = (cl.match(/^\s+/) ?? [''])[0].length;
+    const grandChildLines = [];
+    j++;
+    while (j < childLines.length) {
+      const gl = childLines[j];
+      const ind = (gl.match(/^\s+/) ?? [''])[0].length;
+      if (gl.trim() === '' || ind > baseIndent) {
+        grandChildLines.push(gl);
+        j++;
+      } else {
+        break;
+      }
+    }
+    const dashCount = grandChildLines.filter((l) => /^\s*-\s/.test(l)).length;
+    const colonCount = grandChildLines.filter((l) => /^\s+[a-z_][a-z0-9_]*:/i.test(l)).length;
+    if (dashCount > 0 && colonCount === 0) {
+      child[ckey] = grandChildLines
+        .map((l) => /^\s*-\s*(.*)$/.exec(l))
+        .filter(Boolean)
+        .map((m) => stripQuotes(m[1].trim()))
+        .filter(Boolean);
+    } else {
+      child[ckey] = parseNestedObject(grandChildLines);
+    }
+  }
+  return child;
 }
 
 function parseScalarOrList(s) {

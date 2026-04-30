@@ -5,5 +5,5 @@
 <!-- AUTO-GENERATED:dossier-index START -->
 | Surface | Dossier | Purpose |
 | --- | --- | --- |
-| _(no dossiers yet)_ | | |
+| **mark** | [`surfaces/mark.md`](surfaces/mark.md) | Per-verse tagging. Fast-tag inline panel + deep TagSheet (12-layer editor) + marks IDB persistence + cross-tab sync. |
 <!-- AUTO-GENERATED:dossier-index END -->

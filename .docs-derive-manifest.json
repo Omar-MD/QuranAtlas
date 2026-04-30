@@ -1,5 +1,12 @@
 {
   "_comment": "SHA-256 hashes of AUTO-GENERATED fence blocks. Maintained by scripts/docs/derive.mjs. Do not hand-edit.",
   "version": 1,
-  "blocks": {}
+  "blocks": {
+    "docs/context/surfaces/mark.md:inventory": "baa36e61e192ed8ea3e909af01ba4aa8452988c32098cf9387c427d3d3a70080",
+    "docs/context/surfaces/mark.md:data-owned": "2d211eddb353d9d3e723413f45a93b9812dce86ed6a9d74728d6eeeccd7cb629",
+    "docs/context/surfaces/mark.md:data-read": "ec17b62494212085767a8413d464b7f28471a80005ed7eba9f993f1f98c8a66f",
+    "docs/context/surfaces/mark.md:tests": "903a90c45c62b793253cd2aa8db9784e67a8b9feddb0c803f82baecce6250581",
+    "docs/context/surfaces/mark.md:events-emit": "b55ead35a9fd045b14e660007aafa33acd226723939124df0b88d160d2f0f8f8",
+    "docs/context/surfaces/mark.md:events-listen": "1caa6d1e72a1c7045c11c8713c0af01a56ff238ba6fbffa65d6958a19e05414c"
+  }
 }
