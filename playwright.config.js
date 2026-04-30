@@ -12,16 +12,11 @@ const SKIP_BUILD = process.env.PLAYWRIGHT_SKIP_BUILD === '1'
 const PLAYWRIGHT_PORT = USE_PREVIEW_SERVER ? 4173 : 5173
 const PLAYWRIGHT_BASE_URL = `http://localhost:${PLAYWRIGHT_PORT}`
 const OFFLINE_GREP = /@offline/
-// Desktop-variant tests force viewport to 1440×900 via test.use({ viewport }),
-// so running them on Mobile Chrome just repeats the same 1440 layout.  Chromium
-// runs them; Mobile Chrome skips them.
-const DESKTOP_GREP = /@desktop/
-// `@chromium-only` opts a test out of the Mobile Chrome project.  Use for tests
-// with no viewport branch, no mobile-specific selectors, and no touch-gesture
-// dependency — pure IDB / settings / keyboard / cross-tab / command-sheet flows.
-// Mobile Chrome still covers anything that branches on viewport, drives drawer
-// or MarginHeader, or simulates a touch gesture.  See CLAUDE.md Rule 7.4.
-const CHROMIUM_ONLY_GREP = /@chromium-only/
+// Mobile Chrome runs only specs explicitly tagged `@mobile` — viewport-agnostic
+// tests run on chromium once. Tag `@mobile` when a test asserts MarginHeader,
+// drawer swipe, gear double-tap, auto-hide on scroll, viewport-conditional
+// layout, or real touch-gesture timing. See CLAUDE.md Rule 6.4.
+const MOBILE_GREP = /@mobile/
 
 // The Offline project requires a production build (for the service worker),
 // which takes ~30–60s.  By default we skip it for local runs unless opted in:
@@ -81,7 +76,8 @@ export default defineConfig({
     {
       name: 'Mobile Chrome',
       testIgnore: /visual\//,
-      grepInvert: [OFFLINE_GREP, DESKTOP_GREP, CHROMIUM_ONLY_GREP],
+      grep: MOBILE_GREP,
+      grepInvert: OFFLINE_GREP,
       use: { ...devices['Pixel 5'] },
     },
     {

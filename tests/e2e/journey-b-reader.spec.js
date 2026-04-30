@@ -168,7 +168,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // B3. Tap verse number for edge indicator
   // -------------------------------------------------------------------------
 
-  test('B3: tap verse number shows edge indicators on both sides @chromium-only', async ({ page }) => {
+  test('B3: tap verse number shows edge indicators on both sides', async ({ page }) => {
     const verseNumber = page.locator('.qa-verse-number').first()
     await expect(verseNumber).toBeVisible({ timeout: 5_000 })
     await verseNumber.click()
@@ -252,7 +252,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // mid hide-time save) even when the browser had already preserved scroll.
   // -------------------------------------------------------------------------
 
-  test('B7: warm-resume (visibilitychange hidden→visible) preserves scroll position @chromium-only', async ({ page }) => {
+  test('B7: warm-resume (visibilitychange hidden→visible) preserves scroll position', async ({ page }) => {
     await page.goto('/#/s/2')
     await waitForReader(page)
 
@@ -335,7 +335,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // provide an explicit affordance; overscroll triggers the same swap.
   // -------------------------------------------------------------------------
 
-  test('B-Cross1: end-of-surah Continue link swaps to next surah @chromium-only', async ({ page }) => {
+  test('B-Cross1: end-of-surah Continue link swaps to next surah', async ({ page }) => {
     await page.goto('/#/s/1')
     await waitForReader(page)
 
@@ -351,7 +351,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/2')
   })
 
-  test('B-Cross2: top-of-surah Continue link swaps to previous surah @chromium-only', async ({ page }) => {
+  test('B-Cross2: top-of-surah Continue link swaps to previous surah', async ({ page }) => {
     await page.goto('/#/s/2')
     await waitForReader(page)
 
@@ -360,7 +360,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/1')
   })
 
-  test('B-Cross3: forward wrap — Surah 114 Continue link → Surah 1 @chromium-only', async ({ page }) => {
+  test('B-Cross3: forward wrap — Surah 114 Continue link → Surah 1', async ({ page }) => {
     await page.goto('/#/s/114')
     await waitForReader(page)
     await page.evaluate(() => {
@@ -372,7 +372,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/1')
   })
 
-  test('B-Cross4: backward wrap — Surah 1 Continue link → Surah 114 @chromium-only', async ({ page }) => {
+  test('B-Cross4: backward wrap — Surah 1 Continue link → Surah 114', async ({ page }) => {
     await page.goto('/#/s/1')
     await waitForReader(page)
     await expect(page.locator('[data-continue-prev]')).toBeVisible()
@@ -380,7 +380,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 5_000 }).toBe('#/s/114')
   })
 
-  test('B-Cross-arrow: continue link is a single-line arrow + italic title (~22px tall) @chromium-only', async ({ page }) => {
+  test('B-Cross-arrow: continue link is a single-line arrow + italic title (~22px tall)', async ({ page }) => {
     // Mid-quran surah so prev exists without wrap edge cases.
     await page.goto('/#/s/18')
     await waitForReader(page)
@@ -396,7 +396,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(box?.height ?? 999).toBeLessThan(36)
   })
 
-  test('B-Cross5: settings.currentPosition is overwritten on swap @chromium-only', async ({ page }) => {
+  test('B-Cross5: settings.currentPosition is overwritten on swap', async ({ page }) => {
     const readPosition = () => page.evaluate(() => new Promise((resolve) => {
       const open = indexedDB.open('quran-atlas')
       open.onsuccess = () => {
@@ -441,7 +441,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   //   Switching via Settings swatches re-renders with Ḥafṣ orthography.
   // -------------------------------------------------------------------------
 
-  test('B-Riwayah1: reader defaults to Qālūn — data-riwayah + Maghrebi orthography @chromium-only', async ({ page }) => {
+  test('B-Riwayah1: reader defaults to Qālūn — data-riwayah + Maghrebi orthography', async ({ page }) => {
     // beforeEach already loaded /#/s/1 with Qālūn default
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
@@ -457,7 +457,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(htmlAttr).toBe('qaloon')
   })
 
-  test('B-Riwayah2: switching Riwayah to Ḥafṣ updates html[data-riwayah] and reloads text @chromium-only', async ({ page }) => {
+  test('B-Riwayah2: switching Riwayah to Ḥafṣ updates html[data-riwayah] and reloads text', async ({ page }) => {
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
 

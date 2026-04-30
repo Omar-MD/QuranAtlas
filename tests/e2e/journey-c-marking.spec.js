@@ -109,7 +109,7 @@ test.describe('Journey C: Verse marking', () => {
     await expect(groups).toHaveCount(4)
   })
 
-  test('C1: right-click also opens TagSheet (no native context menu) @chromium-only', async ({ page }) => {
+  test('C1: right-click also opens TagSheet (no native context menu)', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     await expect(page.locator('.qa-ts-title')).toHaveText('Mark verse')
   })
@@ -140,13 +140,13 @@ test.describe('Journey C: Verse marking', () => {
     await expect(page.locator('.qa-ts')).toHaveCount(0)
   })
 
-  test('C1: right-click opens fast-tag inline panel, not TagSheet @chromium-only', async ({ page }) => {
+  test('C1: right-click opens fast-tag inline panel, not TagSheet', async ({ page }) => {
     await page.locator('.qa-verse').first().click({ button: 'right' })
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
     await expect(page.locator('.qa-ts')).toHaveCount(0)
   })
 
-  test('C: keyboard m on centered verse opens fast-tag panel, not TagSheet @chromium-only', async ({ page }) => {
+  test('C: keyboard m on centered verse opens fast-tag panel, not TagSheet', async ({ page }) => {
     await page.evaluate(() => document.getElementById('main-content')?.focus())
     await page.keyboard.press('m')
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
@@ -182,7 +182,7 @@ test.describe('Journey C: Verse marking', () => {
   // C4. Note + save → IDB write + gold edge
   // -------------------------------------------------------------------------
 
-  test('C4: select tag, type note, Save → mark written to IDB → gold edge on verse @chromium-only', async ({ page }) => {
+  test('C4: select tag, type note, Save → mark written to IDB → gold edge on verse', async ({ page }) => {
     await openTagSheetViaRightClick(page)
     await activateTab(page, 'Themes')
     await addTagToLayer(page, 'threads', 'mercy')
@@ -215,7 +215,7 @@ test.describe('Journey C: Verse marking', () => {
   // C5. Delete + undo
   // -------------------------------------------------------------------------
 
-  test('C5: delete mark → undo toast appears → tap Undo restores mark @chromium-only', async ({ page }) => {
+  test('C5: delete mark → undo toast appears → tap Undo restores mark', async ({ page }) => {
     await seedMarks(page, [{ verseKey: '1:1', threads: ['mercy'], note: 'original note' }])
     await page.reload()
     await waitForReader(page)
@@ -253,7 +253,7 @@ test.describe('Journey C: Verse marking', () => {
     expect(restored.threads).toContain('mercy')
   })
 
-  test('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion @chromium-only', async ({ page }) => {
+  test('C5: undo toast auto-dismisses after ~5s without undo @reduced-motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await seedMarks(page, [{ verseKey: '1:1', threads: ['patience'], note: '' }])
     await page.reload()
@@ -306,7 +306,7 @@ test.describe('Journey C: Verse marking', () => {
   // C7. Multi-layer round-trip: threads + audience persist across reopen
   // -------------------------------------------------------------------------
 
-  test('C7: select threads + audience tags, save, reopen, assert draft restored @chromium-only', async ({ page }) => {
+  test('C7: select threads + audience tags, save, reopen, assert draft restored', async ({ page }) => {
     const verseKey = '1:1'
 
     await openTagSheetViaRightClick(page)
@@ -354,7 +354,7 @@ test.describe('Journey C: Verse marking', () => {
 // TagSheet renders as a fixed right-side panel (~44vw / max 560px).
 // ---------------------------------------------------------------------------
 
-test.describe('Journey C: desktop variants @desktop', () => {
+test.describe('Journey C: desktop variants', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {

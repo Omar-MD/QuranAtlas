@@ -463,7 +463,7 @@ test.describe('Journey A: First run & session restore', () => {
 // Journey A — desktop variants (≥1180px viewport)
 // ---------------------------------------------------------------------------
 
-test.describe('Journey A: desktop variants @desktop', () => {
+test.describe('Journey A: desktop variants', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {

@@ -51,7 +51,7 @@ test.describe('Journey D: Settings & appearance', () => {
   // that mobile-landscape safe-area gutters do not leak the UA default white.
   // <meta name="theme-color"> tracks --qa-surface-app so PWA chrome retints.
   for (const theme of ['light', 'sepia', 'dark']) {
-    test(`D3-bg: ${theme} → html bg + theme-color meta match --qa-surface-app @chromium-only`, async ({ page }) => {
+    test(`D3-bg: ${theme} → html bg + theme-color meta match --qa-surface-app`, async ({ page }) => {
       await openSettingsSheet(page)
       await page.locator(`.qa-settings-tf-dot--${theme}`).click()
       await expect(async () => {
@@ -85,7 +85,7 @@ test.describe('Journey D: Settings & appearance', () => {
   // D4. Clear all data
   // -------------------------------------------------------------------------
 
-  test('D4: Clear data → type DELETE → confirm → page reloads → onboarding restarts @chromium-only', async ({ page }) => {
+  test('D4: Clear data → type DELETE → confirm → page reloads → onboarding restarts', async ({ page }) => {
     // Post-2026-04-25: Clear-data lives on About page footer.
     await page.goto('/#/about')
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
@@ -141,7 +141,7 @@ test.describe('Journey D: Settings & appearance', () => {
 // Arabic right at the desktop breakpoint.
 // ---------------------------------------------------------------------------
 
-test.describe('Journey D: desktop variants @desktop', () => {
+test.describe('Journey D: desktop variants', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {
@@ -183,7 +183,7 @@ test.describe('Journey D: desktop variants @desktop', () => {
 // D5. Typography subview (line spacing, word spacing, reader margins)
 // ---------------------------------------------------------------------------
 
-test.describe('Journey D: Typography subview @desktop', () => {
+test.describe('Journey D: Typography subview', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {
@@ -280,7 +280,7 @@ test.describe('Journey D: Night mode', () => {
     await waitForReader(page)
   })
 
-  test('D6: settings switch toggles data-night-mode + overlay opacity @chromium-only', async ({ page }) => {
+  test('D6: settings switch toggles data-night-mode + overlay opacity', async ({ page }) => {
     await openSettingsSheet(page)
     const sw = page.getByTestId('night-mode-switch')
     await expect(sw).toBeVisible()
@@ -304,7 +304,7 @@ test.describe('Journey D: Night mode', () => {
   // D6 persist-across-reload covered by tests/unit/settings/night-mode.test.ts
   // initNightMode + setNightMode (Phase 2 bucket 1, 2026-04-26).
 
-  test('D6: pressing n on reader toggles night mode @keyboard @chromium-only', async ({ page }) => {
+  test('D6: pressing n on reader toggles night mode @keyboard', async ({ page }) => {
     await page.locator('#main-content').focus()
     await page.keyboard.press('n')
     await expect(async () => {

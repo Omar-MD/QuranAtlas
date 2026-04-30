@@ -47,7 +47,7 @@ test.describe('Journey F: Navigation', () => {
   // F1. Command sheet direct verse-ref
   // ---------------------------------------------------------------------------
 
-  test('F1: ⌘K → type 2:255 → verse preview card appears → Enter navigates to #/s/2/255 @chromium-only', async ({ page }) => {
+  test('F1: ⌘K → type 2:255 → verse preview card appears → Enter navigates to #/s/2/255', async ({ page }) => {
     // Open the command sheet
     await openCommandSheet(page)
 
@@ -88,7 +88,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview @a11y @chromium-only', async ({ page }) => {
+  test('F1: a11y — no serious/critical axe violations on open command sheet with verse preview @a11y', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('2:255')
     await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
@@ -101,7 +101,7 @@ test.describe('Journey F: Navigation', () => {
   // F2. Mark a verse from command sheet
   // ---------------------------------------------------------------------------
 
-  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel @chromium-only', async ({ page }) => {
+  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel', async ({ page }) => {
     // Open command sheet and type verse reference for the currently-loaded
     // surah (reader is at #/s/1 from beforeEach). The fast-tag panel renders
     // inside the visible Verse component, so the target verse must be in
@@ -138,7 +138,7 @@ test.describe('Journey F: Navigation', () => {
   // F3. Tag search → FVR
   // ---------------------------------------------------------------------------
 
-  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/threads/mercy FVR @chromium-only', async ({ page }) => {
+  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/threads/mercy FVR', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('mer')
 
@@ -177,7 +177,7 @@ test.describe('Journey F: Navigation', () => {
   // F4. Surah directory
   // ---------------------------------------------------------------------------
 
-  test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row @desktop', async ({ page }) => {
+  test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
     // Desktop exposes a Search tab in the left rail; the command sheet (⌘K)
     // is the canonical cross-viewport keyboard entry to reach "Browse all
     // surahs".  (Mobile MarginHeader crumb routes straight to `#/surahs`.)
@@ -226,7 +226,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F4: a11y — no serious/critical axe violations on surah list @a11y @desktop', async ({ page }) => {
+  test('F4: a11y — no serious/critical axe violations on surah list @a11y', async ({ page }) => {
     await page.goto('/#/surahs')
     await expect(page.locator('.qa-surah-list-page')).toBeVisible({ timeout: 8_000 })
 
@@ -238,7 +238,7 @@ test.describe('Journey F: Navigation', () => {
   // F5. Continue-reading card
   // ---------------------------------------------------------------------------
 
-  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates @desktop @chromium-only', async ({ page }) => {
+  test('F5: after visiting #/s/67, surah list shows continue-reading card at top; tap navigates', async ({ page }) => {
     // Navigate to surah 67 so the reader writes a position record
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -263,7 +263,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F5: continue-reading card is hidden when search query is active @desktop @chromium-only', async ({ page }) => {
+  test('F5: continue-reading card is hidden when search query is active', async ({ page }) => {
     // Navigate to surah 67 to set the last position
     await page.goto('/#/s/67')
     await waitForReader(page)
@@ -295,7 +295,7 @@ test.describe('Journey F: Navigation', () => {
 // The surah directory renders as a 2-column grid at desktop.
 // ---------------------------------------------------------------------------
 
-test.describe('Journey F: desktop variants @desktop', () => {
+test.describe('Journey F: desktop variants', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   // Boot directly at /#/surahs — skips the reader-mount dataset fetch we
