@@ -101,6 +101,6 @@ Pipeline today (non-exhaustive — see `future-work.md` for the full list and or
 
 ## Learn more
 
-- User-facing end-to-end flows: [`docs/context/user-journeys.md`](context/user-journeys.md)
+- User-facing end-to-end flows: [`docs/context/surfaces/<surface>.md`](context/user-journeys.md)
 - Codebase orientation: [`docs/context/architecture.md`](context/architecture.md)
 - All context docs: [`docs/context/`](context/)

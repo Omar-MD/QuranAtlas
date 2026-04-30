@@ -49,6 +49,7 @@
     "docs/context/surfaces/read.md:events-emit": "e1f0f256af52fa2edef3b9a803c3b0254ca526d3664d5ea53ec44bb25e1ec6d6",
     "docs/context/surfaces/read.md:events-listen": "fd043837a0e4e738e9bc73ef57acd0df901ced4f59022ded216aeb6fee5e1dd0",
     "docs/context/surfaces/review.md:events-emit": "f13f7c2fbf687c29a1e7d22466a71fc123c030c0afcca9178bcfbafc7ee73b15",
-    "docs/context/surfaces/review.md:events-listen": "6a8d95f32cd21c50305b89360fce751c33351586170b755db4cd19f970132316"
+    "docs/context/surfaces/review.md:events-listen": "6a8d95f32cd21c50305b89360fce751c33351586170b755db4cd19f970132316",
+    "docs/context/data-model.md:store-owner-index": "f237f48c74bc4157db26ed8c8f1f300270f7a37241e7a9524e2a2d96ae3b3aee"
   }
 }

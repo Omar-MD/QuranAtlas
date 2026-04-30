@@ -109,9 +109,44 @@ Pulse animation (`bookmarks/pulse.ts`) — landing-flash on jumped-to verse fire
 
 Press `?` → bottom sheet slides up titled "Keyboard shortcuts". Lists every binding grouped into 4 sections: Universal, Go to, Reader, Command sheet — plus double-tap gesture row. Backdrop tap, `×`, Esc → close. No persistence.
 
-### Global keyboard
+### Global keyboard reference
 
-`Tab` lands on ambient pill → Enter opens command sheet. Inside command sheet: ArrowUp/Down moves focus, Enter activates, Esc closes. `G` then `S` → surah list. Other shortcuts: `j`/`k`/`]`/`[` verse/surah nav (delegated to reader); `m` mark; `t` translation toggle; `+`/`-`/`0` font; `g h` continue reading; `n` night-mode; `d` cycle theme; `?` cheatsheet.
+Full in-app reference is the `?` cheatsheet. Summary:
+
+**Universal**
+- `/` — open command sheet
+- `⌘K` / `Ctrl+K` — open command sheet (alias)
+- `?` — open shortcut cheatsheet
+- `Esc` — close sheet · back from FVR
+
+**Go to** (g-chord)
+- `g h` — home / continue reading
+- `g s` — surah list
+- `g r` — review hub
+- `g a` — about
+- `g p` — preferences (settings)
+
+**Reader** (only on `#/s/*`, blocked when a text input is focused)
+- `j` / `k` — next / previous verse
+- `]` / `[` — next / previous surah
+- `Home` / `End` — first / last verse
+- `m` — mark the centered verse
+- `t` — toggle translation visibility
+- `n` — toggle night-mode
+- `+` / `-` — bigger / smaller font
+- `0` — reset font size to default
+- `d` — cycle theme (light → sepia → dark → auto)
+
+**Command sheet** (while open)
+- `↑` / `↓` — move selection
+- `Tab` / `Shift+Tab` — next / previous result group
+- `Enter` — activate
+- `Esc` — close
+
+**Gestures**
+- Double-tap a verse (touch) → fast-tag inline panel (parity with `m`)
+- Right-click a verse (desktop) → fast-tag inline panel
+- `⌘/Ctrl + Enter` from fast-tag → escalate to deep TagSheet
 
 ## Data
 
