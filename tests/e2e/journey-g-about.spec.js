@@ -18,6 +18,10 @@ import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.
 import { waitForReader, openMoreSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
+// Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
+// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.
+test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
+
 // ---------------------------------------------------------------------------
 // Shared setup
 // ---------------------------------------------------------------------------
@@ -25,8 +29,6 @@ import { scanA11y } from './fixtures/a11y.js'
 test.describe('Journey G: About', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     // Seed marks so the stat grid shows non-zero values
     await seedMarks(page, [
       { verseKey: '1:1', tags: ['mercy'], note: '' },
@@ -308,14 +310,8 @@ test.describe('Journey G: desktop variants @desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   // Boot directly at /#/about — skips the /#/s/1 reader mount we would
-  // immediately discard.  about:blank breaks the current page context so the
-  // next goto is a true HTTP load, which is required after clearAllData
-  // wipes the IDB the app was using.
+  // immediately discard.  storageState already provides onboarded state.
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
-    await page.goto('about:blank')
     await page.goto('/#/about')
   })
 

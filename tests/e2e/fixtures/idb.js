@@ -1,7 +1,7 @@
 // Shared helpers for seeding / clearing IndexedDB before/between tests.
 // Playwright runs the app in a real browser — use page.evaluate to talk to IDB.
 
-import { applySchema } from '../../../src/core/db/migrations.js'
+import { applySchema, DB_NAME, DB_VERSION } from '../../../src/core/db/migrations.js'
 
 /**
  * The schema-applier source text injected verbatim into each
@@ -88,7 +88,7 @@ export async function clearStore(page, storeName) {
  */
 export async function markOnboardingComplete(page) {
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 5)
+    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${DB_VERSION})
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -117,7 +117,7 @@ export async function seedLastSurface(page, surface) {
   // JSON-embedded so it is safe for any valid URL fragment string.
   const surfaceJson = JSON.stringify(surface)
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas', 5)
+    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${DB_VERSION})
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
@@ -216,7 +216,7 @@ export async function seedMarks(page, marks) {
       'threads','subjects','audience','speaker','quotedSpeaker',
       'mode','form','tone','people','places','events','divineNames',
     ]
-    const open = indexedDB.open('quran-atlas', 5)
+    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${DB_VERSION})
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('marks', 'readwrite')
