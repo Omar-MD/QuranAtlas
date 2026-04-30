@@ -327,7 +327,7 @@ test.describe('Journey D: Night mode', () => {
 // cycleTheme without the sheet flashing.
 // ---------------------------------------------------------------------------
 
-test.describe('Journey D: Mobile gear double-tap', () => {
+test.describe('Journey D: Mobile gear double-tap @mobile', () => {
   // Gear is mobile-only chrome (hidden ≥1180px). Force a phone viewport so
   // this suite is meaningful in the chromium project too.
   test.use({ viewport: { width: 390, height: 844 } })
