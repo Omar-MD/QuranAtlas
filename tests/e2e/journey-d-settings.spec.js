@@ -15,9 +15,14 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
 import { waitForReader, openSettingsSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
+
+// Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
+// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.  Per Rule 6.3 the 5
+// nested beforeEach blocks below stay separate (different viewports) but
+// no longer carry redundant clearAllData + markOnboardingComplete pairs.
+test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 // ---------------------------------------------------------------------------
 // Shared setup
@@ -25,9 +30,6 @@ import { scanA11y } from './fixtures/a11y.js'
 
 test.describe('Journey D: Settings & appearance', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -143,9 +145,6 @@ test.describe('Journey D: desktop variants @desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -188,9 +187,6 @@ test.describe('Journey D: Typography subview @desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -280,9 +276,6 @@ test.describe('Journey D: Typography subview @desktop', () => {
 
 test.describe('Journey D: Night mode', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -340,9 +333,6 @@ test.describe('Journey D: Mobile gear double-tap', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
