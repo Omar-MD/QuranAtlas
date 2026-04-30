@@ -18,6 +18,12 @@ import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete } from './fixtures/idb.js'
 import { waitForReader, openCommandSheet } from './fixtures/chrome.js'
 
+// Rule 6.2 carve-out: SW lifecycle exercises cross-store cache invariants and
+// must boot from a fully fresh state.  Opt OUT of the onboarded storageState
+// every other journey spec uses; rely on `clearAllData + markOnboardingComplete`
+// in `beforeEach` for clean per-test state.
+test.use({ storageState: { cookies: [], origins: [] } })
+
 /**
  * Wait until the service worker is active and controlling the page.
  * The SW uses registerType:'prompt' so it stays in "waiting" after first

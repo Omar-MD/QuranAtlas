@@ -24,6 +24,11 @@ import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, seedMarks } from './fixtures/idb.js'
 import { waitForReader, doubleTap } from './fixtures/chrome.js'
 
+// Rule 6.2 carve-out: cross-tab IDB versionchange + BroadcastChannel tests
+// span multiple stores and need full fresh state.  Each test here calls
+// `browser.newContext()` directly without storageState, so the onboarded
+// snapshot used by other journey specs never reaches these tests.
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
