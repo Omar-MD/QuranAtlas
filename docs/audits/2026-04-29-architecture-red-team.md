@@ -212,14 +212,14 @@ Severity scale: **Critical / High / Medium / Low**. Blast-radius = number of fil
 | R-15 | `global-setup.ts` (Rule 6.5) absent | **Medium** | suite wall-time tax compounds with every spec | every e2e test | A5 |
 | R-16 | `_APPLY_SCHEMA_SRC` fixture mirror | **Medium** | red suite at every DB version bump | 9 specs | A5 |
 | R-17 | Vocabulary drift (CC-11) | **Medium** | onboarding cost + audio "reciter vs riwayah" collision | conceptual; permeates docs | A1 |
-| R-18 | Build-script no upstream pin | **High** *(supply-chain)* | poisoned dataset reaches users | every build | A4 |
+| R-18 | Build-script no upstream pin (P1.8, 2026-04-30) ✅ | **High** *(supply-chain)* | poisoned dataset reaches users | every build | A4 |
 | R-19 | CSP gaps (frame-ancestors, headers, unsafe-inline) | **Medium** | clickjacking; CSS-injection vectors | global | A4 |
-| R-20 | IDB write-side length/enum gaps | **Medium → High at MARKS IMPORT** | quota-DoS via crafted import | marks + bookmarks stores | A4 |
+| R-20 | IDB write-side length/enum gaps (N18 / P1.9, shipped 2026-04-29; paperwork 2026-04-30) ✅ | **Medium → High at MARKS IMPORT** | quota-DoS via crafted import | marks + bookmarks stores | A4 |
 | R-21 | BroadcastChannel element-validation gap | **Low** | proto pollution latent | downstream consumers | A4 |
 | R-22 | Reader no virtualisation | **Medium** | OOM / jank under WBW 8–12× DOM growth | reader hot path | A3 |
 | R-23 | manualChunks dead config | **Low** | +12 KB gzip eager | 1 file | A3 |
 | R-24 | `aya_text_emlaey` 30% Hafs payload, no readers | **Medium** | bandwidth waste | 1 schema + 1 build script | A3 |
-| R-25 | Boundary leaks: UI reads IDB raw | **Medium** | sole-writer rule erosion | 4 callsites | A1 |
+| R-25 | Boundary leaks: UI reads IDB raw (P1.10, 2026-04-30) ✅ | **Medium** | sole-writer rule erosion | 4 callsites | A1 |
 | R-26 | Update-poll thundering-herd risk | **Low** | minor traffic on multi-tab | 5 lines | A3 |
 | R-27 | Race conditions (riwayah/theme/recent) | **Medium** | divergence between IDB and rune | 4 writers | A2 |
 | R-28 | Rule 6.3 regression in journey-d | **Low** | redundant setup work | 1 spec | A5 |
@@ -387,9 +387,9 @@ Strict sequence; later items depend on earlier. No future-work lands during this
 5. **Dead-event triage** (R-14, C-7) — wire silent-failure events to `quota-banner.svelte`; delete vestigial `SETTINGS_THEME_CHANGED`/`SETTINGS_FONT_SIZE_CHANGED`/dead telemetry; add `// roadmap: v1.1` markers to EDGES_*
 6. ✅ **`tests/e2e/global-setup.ts`** (R-15, Rule 6.5 prerequisite) — landed 2026-04-30 via N15; spec at `docs/superpowers/specs/2026-04-30-n15-global-setup-design.md`
 7. ✅ **Mobile Chrome project tag-gate flip** (R-29, Rule 6.4) — landed 2026-04-30 via N16; spec at `docs/superpowers/specs/2026-04-30-n16-mobile-chrome-tag-gate-design.md`. Mobile Chrome 22.4s/46 → 10.6s/18 (-52%).
-8. **Build-script upstream pin** (R-18) — `scripts/saheeh-api.sha256` + `--update-pin` flag; tighten `SUP_RE` + fixedpoint loop for the two CodeQL Medium alerts
-9. **IDB write-side validation: length caps + enum on `bookmarks.riwayah` + `__proto__` strip** (R-20)
-10. **Boundary-leak sweep** (R-25) — `state/recent-surahs.svelte.ts` sole-reader for `NavDrawer` + `SurahList`; same for translation-id
+8. ✅ **Build-script upstream pin** (R-18) — landed 2026-04-30 via tech-debt-sweep; spec at `docs/superpowers/specs/2026-04-30-tech-debt-sweep-design.md`. `scripts/saheeh-api.sha256` committed; hash excludes `fetchedAt` so pin is stable across runs.
+9. ✅ **IDB write-side validation: length caps + enum on `bookmarks.riwayah` + `__proto__` strip** (R-20) — code shipped in N18 (`core/db/validate.ts`); audit paperwork closed 2026-04-30.
+10. ✅ **Boundary-leak sweep** (R-25) — landed 2026-04-30 via tech-debt-sweep. NavDrawer / SurahList migrated to `loadRecentSurahs()`; Panel migrated to new `loadTranslationId()` sole-reader in `panel-bridge.ts`.
 
 After Tier P1: every v1.1 future-work item drops into ≤5 files as projected in Audit 5 HALF-A.
 
