@@ -20,7 +20,13 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedMarks, getMarkFromIdb } from './fixtures/idb.js'
+import { seedMarks, getMarkFromIdb } from './fixtures/idb.js'
+
+// Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
+// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.  Each test gets a
+// fresh BrowserContext with the snapshot reloaded, so per-test marks state
+// is reset implicitly without `clearAllData`.
+test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 import { waitForReader, doubleTap } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
@@ -67,9 +73,6 @@ async function addTagToLayer(page, layerLabel, value) {
 
 test.describe('Journey C: Verse marking', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -355,9 +358,6 @@ test.describe('Journey C: desktop variants @desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
