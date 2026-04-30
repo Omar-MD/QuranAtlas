@@ -212,7 +212,7 @@ test.describe('Journey A: First run & session restore', () => {
   // -------------------------------------------------------------------------
   // A1.4 Alt path — "Browse all surahs" from screen 4 lands on #/surahs
   // -------------------------------------------------------------------------
-  test('A1: alt path — Browse all surahs from screen 4 opens drawer (mobile) or surah list (desktop)', async ({ page }) => {
+  test('A1: alt path — Browse all surahs from screen 4 opens drawer (mobile) or surah list (desktop) @mobile', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 8_000 })
 
