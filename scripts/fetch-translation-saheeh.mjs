@@ -206,12 +206,15 @@ async function main() {
     surahs,
   }
 
-  // Hash the post-normalised content (deterministic across runs as long
-  // as upstream didn't drift). Compare against the committed pin in
+  // Hash the post-normalised content excluding `fetchedAt` (which moves
+  // every run) so the digest is stable across runs as long as upstream
+  // didn't drift. Compare against the committed pin in
   // scripts/saheeh-api.sha256. Rejects a silent upstream change unless
   // --update-pin is passed.
   const serialized = JSON.stringify(out, null, 0)
-  const digest = createHash('sha256').update(serialized).digest('hex')
+  const { fetchedAt: _ignored, ...canonical } = out
+  const canonicalSerialized = JSON.stringify(canonical, null, 0)
+  const digest = createHash('sha256').update(canonicalSerialized).digest('hex')
   const pinExists = existsSync(PIN_PATH)
   const expected = pinExists ? (await readFile(PIN_PATH, 'utf8')).trim() : null
 
