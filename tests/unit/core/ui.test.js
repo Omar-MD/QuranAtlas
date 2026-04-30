@@ -1,23 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The toast logic moved to ui.svelte (Svelte component) + ui-bridge.ts (delegate).
-// Tests register a DOM-based implementation that mirrors the original ui.js behaviour
-// so that existing assertions against the real DOM still hold.
+// The toast logic moved to ui.svelte (Svelte component) + ui-bridge.ts
+// (createOverlayBridge consumer, audit N22). Tests register a DOM-based
+// implementation that mirrors the original ui.js behaviour so existing
+// assertions against the real DOM still hold. The implementation now
+// matches the OverlayBridge<UndoToastAPI> shape (open/close/isOpen/clearRecord);
+// public wrappers showUndoToast / clearUndoToast / clearUndoRecord on the
+// bridge module dispatch through bridge.api.<method>().
 function makeDomToastImpl(emitFn) {
   let undoTimer = null
   let undoRecord = null
+  let visible = false
 
-  function clearUndoToast() {
+  function close() {
     if (undoTimer) { clearTimeout(undoTimer); undoTimer = null }
+    visible = false
     const toast = document.querySelector('.qa-undo-toast')
     if (toast) { toast.remove() }
   }
 
-  function clearUndoRecord() { undoRecord = null }
+  function clearRecord() { undoRecord = null }
 
-  function showUndoToast({ verseKey, record, onUndo, onComplete }) {
-    clearUndoToast()
+  function open({ verseKey, record, onUndo, onComplete }) {
+    close()
     undoRecord = record
+    visible = true
 
     const toast = document.createElement('div')
     toast.className = 'qa-undo-toast'
@@ -35,7 +42,7 @@ function makeDomToastImpl(emitFn) {
         emitFn('marks:undo', { verseKey: undoRecord.verseKey })
         undoRecord = null
       }
-      clearUndoToast()
+      close()
       if (onComplete) { onComplete() }
     })
 
@@ -46,16 +53,16 @@ function makeDomToastImpl(emitFn) {
     shell.appendChild(toast)
 
     undoTimer = setTimeout(() => {
-      clearUndoToast()
+      close()
       undoRecord = null
       if (onComplete) { onComplete() }
     }, 5000)
   }
 
-  return { showUndoToast, clearUndoToast, clearUndoRecord }
+  return { open, close, isOpen: () => visible, clearRecord }
 }
 
-describe('core/ui.js', () => {
+describe('core/ui-bridge', () => {
   let clear
   let on
   let clearUndoRecord
@@ -65,16 +72,18 @@ describe('core/ui.js', () => {
   beforeEach(async () => {
     vi.resetModules()
     ;({ clear, on } = await import('../../../src/core/events.js'))
-    const bridgeMod = await import('../../../src/core/ui-bridge.js')
+    const bridgeMod = await import('../../../src/core/ui-bridge.ts')
     ;({ clearUndoRecord, clearUndoToast, showUndoToast } = bridgeMod)
     const { emit } = await import('../../../src/core/events.js')
-    bridgeMod.registerUndoToast(makeDomToastImpl(emit))
+    bridgeMod.undoToastBridge.register(makeDomToastImpl(emit))
     clear()
     document.body.appendChild(Object.assign(document.createElement('div'), { id: 'app-shell' }))
   })
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.useRealTimers()
+    const bridgeMod = await import('../../../src/core/ui-bridge.ts')
+    bridgeMod.undoToastBridge.unregister()
   })
 
   it('renders an undo toast and auto-dismisses it after the timeout', async () => {
@@ -135,7 +144,7 @@ describe('core/ui.js', () => {
   })
 
   it('falls back to document.body when app-shell is unavailable', async () => {
-    document.body.innerHTML = ''
+    while (document.body.firstChild) { document.body.removeChild(document.body.firstChild) }
 
     showUndoToast({
       verseKey: '1:1',

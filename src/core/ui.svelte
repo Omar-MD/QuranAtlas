@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { emit } from './events'
   import { UI, Events } from './constants'
-  import { registerUndoToast } from './ui-bridge'
+  import { undoToastBridge, type UndoToastOpts } from './ui-bridge'
 
   let visible = $state(false)
   let verseKey = $state('')
@@ -19,12 +19,7 @@
     onCompleteFn = null
   }
 
-  function showUndoToast(opts: {
-    verseKey: string
-    record: unknown
-    onUndo: (rec: unknown) => Promise<void>
-    onComplete?: () => void
-  }) {
+  function open(opts: UndoToastOpts) {
     clear()
     verseKey = opts.verseKey
     record = opts.record
@@ -37,8 +32,8 @@
     }, UI.UNDO_TIMEOUT_MS)
   }
 
-  function clearUndoToast() { clear() }
-  function clearUndoRecord() { record = null }
+  function close() { clear() }
+  function clearRecord() { record = null }
 
   async function handleUndo() {
     if (record && onUndoFn) {
@@ -51,7 +46,8 @@
   }
 
   onMount(() => {
-    registerUndoToast({ showUndoToast, clearUndoToast, clearUndoRecord })
+    undoToastBridge.register({ open, close, isOpen: () => visible, clearRecord })
+    return () => { undoToastBridge.unregister() }
   })
 </script>
 
