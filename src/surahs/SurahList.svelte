@@ -4,7 +4,7 @@
   import { getMeaning } from '../data/surah-meanings'
   import { settings } from '../state/settings.svelte'
   import { getAllForRiwayah as getAllBookmarks } from '../bookmarks/store'
-  import { get } from '../core/db'
+  import { loadRecentSurahs } from '../state/recent-surahs.svelte'
   import { loadGlobalPosition } from '../reader/global-position'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
@@ -110,14 +110,14 @@
 
   onMount(() => {
     void (async () => {
-      const [fetchedSurahs, lastPosition, recentRec] = await Promise.all([
+      const [fetchedSurahs, lastPosition, recentList] = await Promise.all([
         getSurahs(),
         loadGlobalPosition().catch(() => null),
-        get('settings', 'recentSurahs').catch(() => undefined),
+        loadRecentSurahs(),
       ])
 
       await loadBookmarkedSet()
-      recentSurahs = Array.isArray(recentRec?.value) ? (recentRec.value as number[]).slice(0, 7) : []
+      recentSurahs = recentList.slice(0, 7)
 
       resume = lastPosition
         ? { surah: lastPosition.surah, verse: lastPosition.verse }

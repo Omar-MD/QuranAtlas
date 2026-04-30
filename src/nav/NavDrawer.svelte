@@ -24,7 +24,7 @@
   import { surahs as surahsState } from '../state/surahs.svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
-  import { get } from '../core/db'
+  import { loadRecentSurahs } from '../state/recent-surahs.svelte'
   import { LAYER_GROUPS, LAYER_LABELS } from '../data/tag-layers'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
@@ -143,10 +143,8 @@
   }
 
   async function loadRecents(): Promise<void> {
-    const rec = await get('settings', 'recentSurahs').catch(() => undefined)
-    recentSurahs = Array.isArray(rec?.value)
-      ? (rec.value as number[]).slice(0, RECENT_SURAHS_CAP)
-      : []
+    const surahs = await loadRecentSurahs()
+    recentSurahs = surahs.slice(0, RECENT_SURAHS_CAP)
   }
 
   function scrollToCurrentSurah(): void {

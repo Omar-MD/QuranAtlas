@@ -73,3 +73,16 @@ export async function setTranslationId(id: string): Promise<void> {
   }
   Object.assign(settings, { translationId: id })
 }
+
+/**
+ * Sole reader for `settings.translationId`. Companion to setTranslationId
+ * — audit R-25 (2026-04-30); Panel.svelte previously read raw IDB.
+ */
+export async function loadTranslationId(): Promise<string | null> {
+  try {
+    const rec = await get('settings', 'translationId')
+    return typeof rec?.value === 'string' ? rec.value : null
+  } catch {
+    return null
+  }
+}

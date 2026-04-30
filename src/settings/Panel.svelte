@@ -16,7 +16,7 @@
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
   import { getTranslations } from '../data/dataset.js'
-  import { registerPanel, setTranslationVisible, setTranslationId } from './panel-bridge.ts'
+  import { registerPanel, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
@@ -92,7 +92,7 @@
   async function resolveCurrentTranslationId(
     availableTranslations: TranslationEntry[]
   ): Promise<string | null> {
-    const saved = (await get('settings', 'translationId'))?.value as string | undefined
+    const saved = (await loadTranslationId()) ?? undefined
     const valid = availableTranslations.find(t => t.id === saved)
     if (valid) { return valid.id }
     const fallback = availableTranslations[0]?.id ?? null
