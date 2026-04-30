@@ -1,5 +1,5 @@
 {
-  "_comment": "SHA-256 hashes of AUTO-GENERATED fence blocks per dossier. Maintained by scripts/docs/derive.mjs. Do not hand-edit.",
+  "_comment": "SHA-256 hashes of AUTO-GENERATED fence blocks. Maintained by scripts/docs/derive.mjs. Do not hand-edit.",
   "version": 1,
   "blocks": {}
 }

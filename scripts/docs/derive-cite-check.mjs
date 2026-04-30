@@ -69,6 +69,7 @@ function stripFragment(s) {
   if (hashIdx !== -1) r = r.slice(0, hashIdx);
   const symIdx = r.indexOf('::');
   if (symIdx !== -1) r = r.slice(0, symIdx);
+  r = r.replace(/:\d+(?::\d+)?$/, '');
   return r;
 }
 

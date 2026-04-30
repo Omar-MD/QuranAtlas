@@ -20,8 +20,19 @@ const checkMode = args.includes('--check');
 // Each deriver: { name, script, mode: 'check-only' | 'writer' }
 // 'check-only' derivers run in both write and check modes (they only validate).
 // 'writer' derivers regenerate output; check mode re-runs them then `git diff`s.
+//
+// Order matters: derive-events / derive-module-graph / derive-feature-map
+// produce full files; per-dossier derivers (inventory, data, tests,
+// events-blocks) write fence blocks and update the manifest.
 const derivers = [
-  { name: 'cite-check', script: 'derive-cite-check.mjs', mode: 'check-only' },
+  { name: 'cite-check',     script: 'derive-cite-check.mjs',     mode: 'check-only' },
+  { name: 'events',         script: 'derive-events.mjs',         mode: 'writer' },
+  { name: 'module-graph',   script: 'derive-module-graph.mjs',   mode: 'writer' },
+  { name: 'inventory',      script: 'derive-inventory.mjs',      mode: 'writer' },
+  { name: 'data',           script: 'derive-data.mjs',           mode: 'writer' },
+  { name: 'tests',          script: 'derive-tests.mjs',          mode: 'writer' },
+  { name: 'events-blocks',  script: 'derive-events-blocks.mjs',  mode: 'writer' },
+  { name: 'feature-map',    script: 'derive-feature-map.mjs',    mode: 'writer' },
 ];
 
 function run(cmd, cmdArgs, opts = {}) {
