@@ -278,7 +278,7 @@
     font-style: italic;
   }
   .qa-storage-row--gated {
-    opacity: 0.6;
+    color: var(--qa-text-dim);
   }
   .qa-storage-row--gated .qa-storage-row-hdr {
     cursor: default;
