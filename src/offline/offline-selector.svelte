@@ -26,15 +26,16 @@
   type Row = {
     cat: Category
     label: string
+    short: string
     sub: string
     gatedAt: string | null
   }
 
   const ROWS: Row[] = [
-    { cat: 'text',   label: 'Text · Qurʾān corpus', sub: 'All riwayat + Saheeh translation',      gatedAt: null   },
-    { cat: 'audio',  label: 'Audio · per reciter',  sub: 'Recitation MP3s + word-timing JSON',    gatedAt: 'v2.0' },
-    { cat: 'pages',  label: 'Pages · per riwāyah',  sub: 'KFGQPC Mushaf page-image cuts',         gatedAt: 'v2.1' },
-    { cat: 'search', label: 'Search index',         sub: 'Full-text Arabic + translation search', gatedAt: 'v1.1' },
+    { cat: 'text',   label: 'Text · Qurʾān corpus', short: 'Text',   sub: 'All riwayat + Saheeh translation',      gatedAt: null   },
+    { cat: 'audio',  label: 'Audio · per reciter',  short: 'Audio',  sub: 'Recitation MP3s + word-timing JSON',    gatedAt: 'v2.0' },
+    { cat: 'pages',  label: 'Pages · per riwāyah',  short: 'Pages',  sub: 'KFGQPC Mushaf page-image cuts',         gatedAt: 'v2.1' },
+    { cat: 'search', label: 'Search index',         short: 'Search', sub: 'Full-text Arabic + translation search', gatedAt: 'v1.1' },
   ]
 
   let open = $state(false)
@@ -44,7 +45,7 @@
     structuredClone($state.snapshot(settings.offlineCategories ?? DEFAULT_OFFLINE_CATEGORIES))
   )
   let storageBudget = $state<{ usage: number; quota: number; available: number } | null>(null)
-  let busy = $state(false)
+  let busy  = $state(false)
   let saved = $state(false)
   let errorMsg = $state<string | null>(null)
 
@@ -107,8 +108,10 @@
       : 0
   )
 
-  const cachedCount = $derived(
-    ROWS.filter(r => isCategoryCheckedIn(settings.offlineCategories, r.cat)).length
+  const cachedNames = $derived(
+    ROWS
+      .filter(r => isCategoryCheckedIn(settings.offlineCategories, r.cat))
+      .map(r => r.short)
   )
 
   async function refreshBytes(): Promise<void> {
@@ -177,10 +180,10 @@
   >
     <span id="qa-storage-hdr" class="qa-settings-sect-name">Storage</span>
     <span class="qa-storage-summary-meta">
-      {#if cachedCount === 0}
+      {#if cachedNames.length === 0}
         <span class="qa-storage-summary-hint">Cache content for offline use</span>
       {:else}
-        <span class="qa-storage-summary-count">{cachedCount} of {ROWS.length} cached</span>
+        <span class="qa-storage-summary-count">{cachedNames.join(' · ')} cached</span>
       {/if}
     </span>
     <span class="qa-storage-summary-chev" aria-hidden="true">›</span>
@@ -219,13 +222,6 @@
       </ul>
 
       <div class="qa-storage-footer">
-        <div class="qa-storage-budget" data-testid="storage-budget">
-          {#if storageBudget}
-            {fmt(storageBudget.usage)} of {fmt(storageBudget.quota)} used
-          {:else}
-            &nbsp;
-          {/if}
-        </div>
         <button
           type="button"
           class="qa-storage-apply"
@@ -424,23 +420,15 @@
     flex-shrink: 0;
   }
 
-  /* Footer — usage line + apply CTA */
+  /* Footer — apply CTA + error messages */
 
   .qa-storage-footer {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.55rem;
     padding-top: 0.55rem;
-  }
-
-  .qa-storage-budget {
-    flex: 1;
-    min-width: 8rem;
-    color: var(--qa-text-on-sheet-muted);
-    font-size: 0.68rem;
-    letter-spacing: 0.02em;
-    font-variant-numeric: tabular-nums;
   }
 
   .qa-storage-err {
