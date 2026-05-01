@@ -20,6 +20,7 @@
 import { getAll, getByVerseKey } from './store'
 import { on } from '../core/events'
 import { Events } from '../core/constants'
+import { tokenVerseKey } from '../core/tokenisable'
 import type { Mark } from './store'
 
 /**
@@ -50,8 +51,9 @@ export async function refreshForSurah(_surahNum: number, scope?: ParentNode): Pr
     marksCache = null
   }
   const root: ParentNode = scope ?? document
-  for (const el of root.querySelectorAll<HTMLElement>('[data-verse-key]')) {
-    const vk = el.getAttribute('data-verse-key')
+  for (const el of root.querySelectorAll<HTMLElement>('[data-token-key]')) {
+    const raw = el.getAttribute('data-token-key')
+    const vk = raw ? tokenVerseKey(raw) : null
     if (vk) { void decorateVerse(vk, el) }
   }
 }
@@ -104,13 +106,13 @@ export function initIndicators(container?: HTMLElement): () => void {
         marksCache = null
       }
     }
-    const el = scope.querySelector<HTMLElement>(`[data-verse-key="${verseKey}"]`)
+    const el = scope.querySelector<HTMLElement>(`[data-token-key="${verseKey}"]`)
     if (el) { void decorateVerse(verseKey, el) }
   })
 
   const unsub4 = on(Events.MARKS_DELETED, ({ verseKey }) => {
     if (marksCache !== null) { marksCache.delete(verseKey) }
-    const el = scope.querySelector<HTMLElement>(`[data-verse-key="${verseKey}"]`)
+    const el = scope.querySelector<HTMLElement>(`[data-token-key="${verseKey}"]`)
     if (el) { el.classList.remove('qa-verse--bookmarked') }
   })
 
@@ -123,7 +125,7 @@ export function initIndicators(container?: HTMLElement): () => void {
         marksCache = null
       }
     }
-    const el = scope.querySelector<HTMLElement>(`[data-verse-key="${verseKey}"]`)
+    const el = scope.querySelector<HTMLElement>(`[data-token-key="${verseKey}"]`)
     if (el) { void decorateVerse(verseKey, el) }
   })
 
@@ -139,7 +141,7 @@ export function initIndicators(container?: HTMLElement): () => void {
       }
     }
     for (const vk of verseKeys) {
-      const el = scope.querySelector<HTMLElement>(`[data-verse-key="${vk}"]`)
+      const el = scope.querySelector<HTMLElement>(`[data-token-key="${vk}"]`)
       if (el) { void decorateVerse(vk, el) }
     }
   })
@@ -166,14 +168,15 @@ export function initIndicators(container?: HTMLElement): () => void {
       marksCache = newCache
 
       for (const vk of changedKeys) {
-        const el = scope.querySelector<HTMLElement>(`[data-verse-key="${vk}"]`)
+        const el = scope.querySelector<HTMLElement>(`[data-token-key="${vk}"]`)
         if (el) { void decorateVerse(vk, el) }
       }
     } catch {
       // Fallback: invalidate cache and re-decorate all visible verses via IDB
       marksCache = null
-      for (const el of scope.querySelectorAll<HTMLElement>('[data-verse-key]')) {
-        const vk = el.getAttribute('data-verse-key')
+      for (const el of scope.querySelectorAll<HTMLElement>('[data-token-key]')) {
+        const raw = el.getAttribute('data-token-key')
+        const vk = raw ? tokenVerseKey(raw) : null
         if (vk) { void decorateVerse(vk, el) }
       }
     }
