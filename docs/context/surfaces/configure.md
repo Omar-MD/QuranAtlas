@@ -69,10 +69,10 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 
 **Desktop (≥1180 px):** `#/settings` (e.g. via `G`+`P` or command-sheet "Preferences") opens as centered modal (~440 px, max-height 720 px). Same component, narrower frame.
 
-Three zones (no scroll under default content):
+Three zones:
 
 1. **Live preview band** at top — theme-true colors. Sūrat ar-Raḥmān 1–4 in active riwayah's glyphs. Arabic uses `.qa-verse-arabic`, translation uses `.qa-verse-translation` — same cascade as reader (font-size, line-height, word-spacing all match exactly). Translation row always rendered; visibility gated on `settings.translationVisible` — row keeps layout space when toggled off, preview height does not shift on toggle. ✕ close button floats top-right inside band.
-2. **Body** — two sections, each `flex: 1` (balanced). Soft hairline gold-fade separator between them.
+2. **Body** — three sections (Reading + Sources + Storage), content-sized (`flex: 0 0 auto`) with soft hairline gold-fade separator between adjacent sections. Body scrolls vertically when content overflows the available space (no per-section stretch — N21 added Storage so equal-flex balance no longer fits the modal/portrait viewport).
    - **Reading** — Font size slider (5-step) + Reading flow slider (5-step coordinated knob). Reset-to-default pill in section header right edge, **always rendered** (disabled = idle when both knobs at `md`); flipping in/out of default never reflows slider rows. Preview band hard-locked at 42dvh portrait / 38dvh landscape / 240 px desktop modal — inner stage scrolls when verse content overflows.
    - **Sources** — Recitation source row (`[data-testid="src-row-recitation"]`) showing `RECITATION · Qālūn ʿan Nāfiʿ ›`; Translation dual-action row showing `TRANSLATION · Saheeh International › [toggle]`. Tapping source row opens centered picker popover. Toggle on Translation row controls `settings.translationVisible` independently.
 3. **Theme footer** — pill cluster of 4 theme swatches with mini Mushaf glyphs in each theme's palette + 38 px **night-mode moon ☾** pill. Italic serif "Theme" label anchors cluster left.

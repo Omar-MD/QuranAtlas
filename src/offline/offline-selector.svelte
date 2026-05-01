@@ -161,7 +161,7 @@
 </script>
 
 <section
-  class="qa-storage"
+  class="qa-settings-sect qa-storage"
   data-testid="storage-section"
   aria-labelledby="qa-storage-hdr"
 >
@@ -230,94 +230,162 @@
 </section>
 
 <style>
-  .qa-storage {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+  /* Storage section — themed against the same on-sheet tokens the rest of
+     the Settings panel uses so it inherits the parchment/sepia/dark
+     surfaces in lockstep with theme swaps. */
+
   .qa-storage-rows {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--qa-border, rgba(0,0,0,0.08));
-    border-radius: 6px;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 22%, transparent);
+    border-radius: var(--qa-radius-sm);
     overflow: hidden;
+    background: color-mix(in srgb, var(--qa-accent) 4%, transparent);
   }
-  .qa-storage-row {
-    border-bottom: 1px solid var(--qa-border, rgba(0,0,0,0.06));
+
+  .qa-storage-row + .qa-storage-row {
+    border-top: 1px solid color-mix(in srgb, var(--qa-accent) 14%, transparent);
   }
-  .qa-storage-row:last-child { border-bottom: none; }
+
   .qa-storage-row-hdr {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.6rem 0.8rem;
+    gap: 0.7rem;
+    padding: 0.55rem 0.75rem;
     cursor: pointer;
     list-style: none;
     user-select: none;
+    transition: background-color var(--qa-transition-base);
   }
+
+  .qa-storage-row[open] .qa-storage-row-hdr {
+    background: color-mix(in srgb, var(--qa-accent) 7%, transparent);
+  }
+
+  .qa-storage-row-hdr:hover,
+  .qa-storage-row-hdr:focus-visible {
+    background: color-mix(in srgb, var(--qa-accent) 9%, transparent);
+  }
+
   .qa-storage-row-hdr::-webkit-details-marker { display: none; }
+
   .qa-storage-row-label {
+    font-size: 0.82rem;
     font-weight: 500;
+    color: var(--qa-text-on-sheet);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
+
   .qa-storage-row-size {
-    color: var(--qa-text-soft, rgba(0,0,0,0.6));
+    color: var(--qa-text-on-sheet-dim);
     font-variant-numeric: tabular-nums;
-    font-size: 0.85rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
   }
+
   .qa-storage-row-body {
-    padding: 0.4rem 0.8rem 0.8rem;
-    font-size: 0.85rem;
+    padding: 0.2rem 0.75rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
   }
+
   .qa-storage-row-sub {
-    margin: 0 0 0.4rem;
-    color: var(--qa-text-soft, rgba(0,0,0,0.6));
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--qa-text-on-sheet-muted);
+    line-height: 1.45;
   }
+
   .qa-storage-row-gated {
     margin: 0;
-    color: var(--qa-text-soft, rgba(0,0,0,0.6));
+    font-size: 0.75rem;
+    color: var(--qa-text-on-sheet-dim);
     font-style: italic;
   }
-  .qa-storage-row--gated {
-    color: var(--qa-text-dim);
+
+  .qa-storage-row--gated .qa-storage-row-label,
+  .qa-storage-row--gated .qa-storage-row-size {
+    color: var(--qa-text-on-sheet-dim);
   }
+
   .qa-storage-row--gated .qa-storage-row-hdr {
     cursor: default;
   }
+
   .qa-storage-checkrow {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.55rem;
     cursor: pointer;
+    font-size: 0.78rem;
+    color: var(--qa-text-on-sheet);
   }
+
+  .qa-storage-checkrow input {
+    accent-color: var(--qa-accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
   .qa-storage-footer {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
-    padding-top: 0.4rem;
+    gap: 0.6rem;
+    padding-top: 0.2rem;
   }
+
   .qa-storage-budget {
     flex: 1;
-    color: var(--qa-text-soft, rgba(0,0,0,0.6));
-    font-size: 0.85rem;
+    min-width: 8rem;
+    color: var(--qa-text-on-sheet-muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
   }
+
   .qa-storage-quota-err,
   .qa-storage-err {
     flex-basis: 100%;
     margin: 0;
-    color: var(--qa-color-danger, #c0392b);
-    font-size: 0.85rem;
+    color: var(--qa-text-danger);
+    font-size: 0.75rem;
   }
+
   .qa-storage-apply {
-    border: 1px solid var(--qa-border, rgba(0,0,0,0.12));
-    border-radius: 999px;
-    padding: 0.4rem 1rem;
-    background: var(--qa-surface-elevated, transparent);
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 45%, transparent);
+    border-radius: var(--qa-radius-pill);
+    padding: 0.32rem 0.95rem;
+    background: transparent;
+    color: var(--qa-accent);
     cursor: pointer;
     font: inherit;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    transition:
+      background-color var(--qa-transition-base),
+      border-color var(--qa-transition-base),
+      color var(--qa-transition-base);
   }
+
+  .qa-storage-apply:hover:not(:disabled),
+  .qa-storage-apply:focus-visible:not(:disabled) {
+    background: var(--qa-accent);
+    color: var(--qa-text-on-accent);
+    border-color: var(--qa-accent);
+  }
+
   .qa-storage-apply:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
   }
 </style>
