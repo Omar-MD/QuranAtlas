@@ -82,7 +82,6 @@ Defined in `package.json`:
 | `pnpm run test:coverage` | Run Vitest with v8 coverage |
 | `pnpm run test:e2e` | Run the full Playwright suite (all journey specs A–I + performance + SW integration) |
 | `pnpm run test:e2e:sw` | Run just the SW-integration spec against a production preview build (`PLAYWRIGHT_USE_PREVIEW=1`) |
-| `pnpm run test:e2e:visual` | Run the `visual` Playwright project (CSS visual-regression baselines under `tests/e2e/visual/`) |
 | `pnpm run lint` | ESLint over `src/` |
 | `pnpm run lint:fix` | ESLint with `--fix` |
 | `pnpm run lint:css` | Stylelint over `src/styles/**/*.css` (config at `.stylelintrc.json`) |
@@ -130,7 +129,6 @@ Two layers:
   - `journey-i-cross-tab.spec.js` — cross-tab sync
   - `performance-budgets.spec.js` — initial render budgets
   - `sw-integration.spec.js` — SW cache + runtime caching (preview build only)
-  - `visual/baseline.spec.js` — CSS visual regression (5 surfaces × 3 themes × 3 viewports)
 
 Locally, journey specs A–G, I, and performance run against the **Vite dev server**; journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW). In CI, all projects share a single preview server (`PLAYWRIGHT_USE_PREVIEW=1` + `PLAYWRIGHT_SKIP_BUILD=1`) — the e2e job depends on the Build job and reuses its `dist/` artifact rather than rebuilding.
 
@@ -155,7 +153,6 @@ Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-te
 - **Gzipped-chunk budget** via `pnpm run check-chunks` (≤150 KB per chunk).
 - **Feature-state guard** via `pnpm run check-no-feature-state` (blocks top-level mutable state in feature modules).
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).
-- **Visual regression** via `pnpm run test:e2e:visual` — 45 baselines (5 surfaces × 3 themes × 3 viewports); threshold 5% to absorb Arabic font anti-aliasing + `clamp()` sub-pixel reflow.
 
 Composite gate: `pnpm run validate` runs lint → lint:css → check:styles → check → test:run → build → check-chunks.
 

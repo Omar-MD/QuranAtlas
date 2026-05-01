@@ -268,10 +268,6 @@ The audio half of N21 landed 2026-04-30 directly in `src/sw.js` (per-reciter `qa
 
 Deferred to v1.2 (per audit ship sequence). The audio prefix has shipped early to unblock audio; mushaf + search ship under the same partition pattern when their work begins.
 
-### Visual regression — linux baselines
-
-Current 45 baselines under `tests/e2e/visual/baseline.spec.js-snapshots/` are darwin-captured. CI (linux) excludes the `visual` project because font rendering + anti-aliasing differ past the 5% `maxDiffPixelRatio` threshold. Local-only gate via `pnpm test:e2e:visual` until linux baselines are captured (via Docker `mcr.microsoft.com/playwright` or an ephemeral CI artifact-and-commit flow) and committed alongside the darwin set.
-
 ---
 
 ## Adding to this doc

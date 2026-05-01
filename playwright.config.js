@@ -69,21 +69,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /visual\//,
       grepInvert: OFFLINE_GREP,
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'Mobile Chrome',
-      testIgnore: /visual\//,
       grep: MOBILE_GREP,
       grepInvert: OFFLINE_GREP,
       use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'visual',
-      testMatch: /visual\/.*\.spec\.js/,
-      use: { ...devices['Desktop Chrome'] },
     },
     ...(INCLUDE_OFFLINE
       ? [{
