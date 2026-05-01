@@ -1,0 +1,21 @@
+/* N20 reader virtualisation — per-chunk state styling.
+ * Spacer chunks carry inline style.height (R-19c carve-out per
+ * docs/context/csp-allowlist.md — continuous DOM-driven value).
+ * Loading chunks render existing .qa-skeleton + .qa-skeleton-line children. */
+
+[data-chunk] {
+  display: block;
+}
+
+[data-chunk-state="spacer"] {
+  /* Inert: no children, no listeners, just height. */
+  contain: strict;
+}
+
+[data-chunk-state="loading"] {
+  contain: layout;
+}
+
+[data-chunk-state="live"] {
+  contain: layout;
+}

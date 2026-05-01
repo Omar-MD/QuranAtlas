@@ -35,6 +35,7 @@
 @import url('./surfaces/surahs.css');
 @import url('./surfaces/nav.css');
 @import url('./surfaces/reader.css');
+@import url('./surfaces/reader-virtualiser.css');
 @import url('./surfaces/reading-typography.css');
 @import url('./surfaces/tag.css');
 @import url('./surfaces/tag-slots.css');
