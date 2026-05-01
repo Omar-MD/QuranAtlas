@@ -94,6 +94,16 @@ function ayaSurah(rec: any): number {
 
 `page` + `line_start` / `line_end` are the official Madinah mushaf coordinates **for that riwaya's mushaf** — Warsh and Qaloon use different page layouts than Hafs. Do not cross-reference page numbers across riwayat.
 
+### Per-surah output schema (post-R-24, 2026-05-01)
+
+The build script (`scripts/build-dataset.mjs::splitMonolithIntoSurahs`) drops fields with no runtime consumer to shrink shipped payload. Per-ayah output fields:
+
+- **All three riwayat:** `jozz`, `page`, `aya_no`, `aya_text` (trailing ayah-number sigil stripped).
+- **Hafs only (kept for v2.1 page-image renderer, future-work.md #14):** `id`, `line_start`, `line_end`.
+- **Dropped from output:** `aya_text_emlaey` (Hafs source field — was ~30% of Hafs payload, zero `src/` readers); `id` / `line_start` / `line_end` for Warsh / Qaloon (~16% per file). Total saving across the three riwayat: ~35%.
+
+If a future feature needs `aya_text_emlaey` (search normalisation, etc.) or non-Hafs `line_*` (cross-riwayah page renderer), reinstate the field in the splitter and bump `manifest.packageVersion`. Don't read it from sources at runtime — only the per-surah split files ship.
+
 ---
 
 ## Fonts
