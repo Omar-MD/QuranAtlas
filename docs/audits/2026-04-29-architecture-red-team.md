@@ -200,7 +200,7 @@ Severity scale: **Critical / High / Medium / Low**. Blast-radius = number of fil
 | R-03 | `maxEntries: 200` vs 459 files | **High** | offline reads fail silently | 1 line | A3 |
 | R-04 | `reshape()` over-walks | **High** | iPhone perf complaint surface | 1 line | A3 |
 | R-05 | Regression-test gap rate ≈60% | **High** | every regression repeat-fixed; trust erosion | continuous | A5 |
-| R-06 | Verse-grain DOM no escape hatch (CC-1) | **High** | WBW + audio + tajweed all blocked or duplicated work | 6 modules at first WBW lands | A1, A5, A3 |
+| R-06 | Verse-grain DOM no escape hatch (CC-1) ✅ 2026-05-01 (N19) | **High** | WBW + audio + tajweed all blocked or duplicated work | 6 modules at first WBW lands | A1, A5, A3 |
 | R-07 | `core/db.ts` god module (CC-2) | **High** | every new store touches it; types drag runtime; e2e fixture diverges | ~32 importers; 9 fixture-coupled specs | A1, A2, A5 |
 | R-08 | Settings god-bag (CC-3) | **High** | 15-file validator drift; multi-writer leaks; 3 race conditions | ~15 readers + 3 race callers | A1, A2 |
 | R-09 | Schema migration absent (CC-6) | **High** | first user-visible release closes window | every store at first user-visible delta | A2 |
@@ -216,7 +216,7 @@ Severity scale: **Critical / High / Medium / Low**. Blast-radius = number of fil
 | R-19 | CSP gaps (frame-ancestors, headers, unsafe-inline) | **Medium** | clickjacking; CSS-injection vectors | global | A4 |
 | R-20 | IDB write-side length/enum gaps (N18 / P1.9, shipped 2026-04-29; paperwork 2026-04-30) ✅ | **Medium → High at MARKS IMPORT** | quota-DoS via crafted import | marks + bookmarks stores | A4 |
 | R-21 | BroadcastChannel element-validation gap | **Low** | proto pollution latent | downstream consumers | A4 |
-| R-22 | Reader no virtualisation | **Medium** | OOM / jank under WBW 8–12× DOM growth | reader hot path | A3 |
+| R-22 | Reader no virtualisation ✅ 2026-05-01 (N20) | **Medium** | OOM / jank under WBW 8–12× DOM growth | reader hot path | A3 |
 | R-23 | manualChunks dead config | **Low** | +12 KB gzip eager | 1 file | A3 |
 | R-24 | `aya_text_emlaey` 30% Hafs payload, no readers | **Medium** | bandwidth waste | 1 schema + 1 build script | A3 |
 | R-25 | Boundary leaks: UI reads IDB raw (P1.10, 2026-04-30) ✅ | **Medium** | sole-writer rule erosion | 4 callsites | A1 |
@@ -395,8 +395,8 @@ After Tier P1: every v1.1 future-work item drops into ≤5 files as projected in
 
 ### Tier P2 — unblock v1.2 / pre-audio (~3 weeks)
 
-12. **Tokenisable contract** (R-06, C-3) — `core/tokenisable.ts`; convert long-press / click-handler / scroll-tracker / indicator
-13. **Reader virtualisation** (R-22) — IntersectionObserver recycler keeping ±3 chunks
+12. ✅ **Tokenisable contract** (R-06, C-3, N19) — landed 2026-05-01; spec at `docs/superpowers/specs/2026-05-01-n19-n20-tokenisable-virtualisation-design.md`. `core/tokenisable.ts` already shipped 2026-04-30 with audio-driven scope; N19 added `closestTokenKey` + `tokenVerseKey` and migrated long-press, bookmark click-handler, marks indicator, bookmarks indicator, pulse, VerseSpotlight to read `data-token-key`. `data-verse-key` alias dropped in same-day N20.
+13. ✅ **Reader virtualisation** (R-22, N20) — landed 2026-05-01; same spec. IntersectionObserver-driven recycler, 20-ayat chunks, ±1 window, max 60 live verses. Sync materialise on `ensureVerseRendered` for deep-link / warm-resume; rAF-batched skeleton transit on scroll-driven materialise. `chunked-append.ts` retired. Regression guards at `tests/unit/reader/chunked-virtualiser.test.ts` (12 tests) + `tests/e2e/journey-b-reader.spec.js` B-Virt1/2/3 (memory ceiling, deep-link, reload restore).
 14. **Per-asset-class SW routing + per-feature offline opt-in selector** (R-11, C-4) — `core/sw/strategies.ts` + `offline/offline-selector.svelte`
 15. ✅ **Persistent-overlay factory** (R-13, N22) — landed 2026-05-01; spec at `docs/superpowers/specs/2026-05-01-overlay-factory-adoption-design.md`. 5 hand-rolled bridges migrated to `createOverlayBridge<API>()` (UndoToast, Settings Panel, CommandSheet, NavDrawer, TagSheet). CommandSheet's global keydown extracted to `nav/global-shortcuts.ts` so ⌘K survives lazy-mount. TagSheet flipped from prop-driven to api-driven; `tagSession.sheetOpen` rune retired.
 16. ✅ **Strip `aya_text_emlaey` + unused `id` / `line_*` from non-Hafs corpus** (R-24) — landed 2026-05-01. `scripts/build-dataset.mjs::splitMonolithIntoSurahs` drops `aya_text_emlaey` from Hafs output (~30% per file) and `id` / `line_start` / `line_end` from Warsh + Qaloon output (~16% per file); Hafs retains `id` / `line_*` for the v2.1 page-image renderer (future-work.md #14). Per-surah output schema documented in `docs/context/riwayat-dataset.md` §Per-surah output schema. Regression guards at `scripts/build-dataset.test.mjs` (17 tests pass).

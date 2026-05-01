@@ -60,7 +60,7 @@ test_paths:
 | `src/reader/VerseTagPanel.svelte` | Inline fast-path tag panel. Rendered inside the active verse under the |
 | `src/reader/audio-autoscroll.ts` | Smart-defer auto-scroll: scroll the playing verse into view UNLESS the |
 | `src/reader/audio-highlight.ts` | Audio verse-tick highlight. Subscribes to `audio:verse-changed` and |
-| `src/reader/chunked-append.ts` | Chunked verse append — scroll listener that appends more verse chunks |
+| `src/reader/chunked-virtualiser.ts` | Chunked virtualiser — IntersectionObserver-driven recycler that mounts |
 | `src/reader/edge-indicators.ts` | Verse-tap edge indicators — lazily-created left/right visual cues that |
 | `src/reader/font-reshape.ts` | iOS Safari paints the reader DOM with a fallback font when verses mount |
 | `src/reader/global-position.ts` | Global reading position — single record (current surah + verse) that |
@@ -117,6 +117,7 @@ Reader is single-surah; only one surah mounted at a time. Pull past edge swaps t
 3. Wrap: 114→1 forward, 1→114 backward.
 4. Native browser pull-to-refresh suppressed via `overscroll-behavior-y: contain` on `#main-content`. Wheel input on desktop accumulates the same way.
 5. Position persistence is single-global: each surah load overwrites `settings.currentPosition` to `(newN, 1)` or `(newN, lastVerse)` on backward; in-surah scroll center-band crossings also overwrite.
+6. **Within-surah scroll is virtualised** (N20, 2026-05-01) — only ±1 chunk (~60 verses) live in the DOM; chunks outside the window are inert height-preserving spacers (`data-chunk-state="spacer"`). Center-band IO drives the active chunk; eviction transitions are invisible to the user. Scroll-driven materialise transit through a brief skeleton state (one rAF); deep-link / warm-resume materialise synchronously so `scrollToVerse` finds the target.
 
 ### Scroll position survives warm-resume (iOS lock / tab-hide)
 
@@ -165,7 +166,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/nav/AmbientDock.svelte:64`, `src/nav/AmbientPill.svelte:90`, `src/nav/MarginHeader.svelte:41`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/Reader.svelte:407`, `src/reader/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/nav/AmbientDock.svelte:64`, `src/nav/AmbientPill.svelte:90`, `src/nav/MarginHeader.svelte:41`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/Reader.svelte:452`, `src/reader/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/reader/position.ts:28` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:50` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -186,17 +187,19 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **Each Riwayah pairs with its own KFGQPC Uthmanic mushaf cut.** Cross-Riwayah reuse mis-renders combining marks. Mapping: `hafs → KFGQPC Uthmanic Hafs v22`, `warsh → KFGQPC Uthmanic Warsh V21`, `qaloon → KFGQPC Uthmanic Qaloon V21`. Each token's font-family chain falls back to **Amiri Quran** (Khaled Hosny, OFL) when KFGQPC isn't loaded, then bare `serif`. No user-facing font picker. Wired through `--ff-kfgqpc-{riwayah}` (`src/styles/tokens/primitives.css`) → `--qa-font-arabic` (`src/styles/tokens/semantic.css`). Regression guard: `tests/unit/styles/font-tokens.test.js`.
 - **Hamburger drawer is the sole in-app entry to the full surah list (mobile, post 2026-04-25).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
-- **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. `data-verse-key` is retained as a deprecated alias on `.qa-verse` through N19; **dropped in N20**. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
+- **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. `data-verse-key` was dropped in N20 (2026-05-01). New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
+- **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/journey-b-reader.spec.js` B-Virt1/2/3 + `tests/unit/reader/chunked-virtualiser.test.ts`.
 - **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/journey-d-settings.spec.js` D3-bg.
 
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (11):**
+**Unit (12):**
 
 - `tests/unit/nav/MarginHeader-toggle.test.ts`
 - `tests/unit/reader/SurahHeader.test.ts`
 - `tests/unit/reader/bismillah-translation.test.ts`
+- `tests/unit/reader/chunked-virtualiser.test.ts`
 - `tests/unit/reader/font-reshape.test.ts`
 - `tests/unit/reader/global-position.test.ts`
 - `tests/unit/reader/render-helpers.test.ts`
@@ -219,3 +222,5 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **2026-04-25 `<commit-pending>`:** MarginHeader center-label tap → surah list and full-width Continue-to buttons retired. Center label was a button routing to `#/surahs`; replaced by non-interactive div (no chevron). Surah list reachable only via hamburger drawer or header swipe-down. Continue-to-prev/next buttons were full-width uppercase tracked-text rows (~46 px); replaced by single-line italic arrow + surah title (~22 px).
 - **2026-04-25 `<commit-pending>`:** NavDrawer two-row Review/About list retired. Replaced by full-screen tabbed surface (Surahs + Review tabs).
 - **Continue-arrow opacity reverted (2026-04-26):** tried `opacity: 0.4` for stronger recede but pushed contrast below WCAG 1.4.3 — reverted; recede now from small font + flush margin only.
+- **2026-05-01 `<commit-pending>` (N20):** `data-verse-key` DOM attribute on `.qa-verse` removed — verse identity DOM contract is now `data-token-key` (handles verse-grain + future word-grain uniformly). Migration landed across long-press, bookmark click-handler, marks indicator, bookmarks indicator, pulse, VerseSpotlight (PR N19); attribute dropped (PR N20).
+- **2026-05-01 `<commit-pending>` (N20):** `chunked-append.ts` retired. Monotonic chunk-append (CHUNK_SIZE=50, never recycled) replaced by `chunked-virtualiser.ts` recycler (20-ayat chunks, ±1 window, max 60 verses live).

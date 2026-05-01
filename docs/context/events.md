@@ -13,7 +13,7 @@ Orphan listen (listened, never emitted): **0**.
 <!-- AUTO-GENERATED:catalog START -->
 | Constant | Event name | Emit sites | Listen sites |
 | --- | --- | --- | --- |
-| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/nav/AmbientDock.svelte:64`<br>`src/nav/AmbientPill.svelte:90`<br>`src/nav/MarginHeader.svelte:41`<br>`src/reader/EdgeIndicator.svelte:42`<br>`src/reader/Reader.svelte:407`<br>`src/reader/edge-indicators.ts:62` | `src/nav/AmbientPill.svelte:76`<br>`src/nav/MarginHeader.svelte:175` |
+| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/nav/AmbientDock.svelte:64`<br>`src/nav/AmbientPill.svelte:90`<br>`src/nav/MarginHeader.svelte:41`<br>`src/reader/EdgeIndicator.svelte:42`<br>`src/reader/Reader.svelte:452`<br>`src/reader/edge-indicators.ts:62` | `src/nav/AmbientPill.svelte:76`<br>`src/nav/MarginHeader.svelte:175` |
 | `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:331`<br>`src/app-bootstrap.ts:425` | `src/core/save-failure-toast.svelte:51` |
 | `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:486` | _(none)_ |
 | `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:404`<br>`src/app-bootstrap.ts:415` | `src/core/UpdateBanner.svelte:19` |
