@@ -410,8 +410,8 @@ After Tier P1: every v1.1 future-work item drops into ≤5 files as projected in
 21. **Range-request handler + media-session integration** for audio
 22. **Op-log + tombstone field on every record** for sync (every existing store touched)
 23. **Crypto threat model document** before any sync code lands; consider third-party crypto audit before launch
-24. **`unsafe-inline` removal** (R-19c) — refactor inline `style:` to CSS variables
-25. **Visual-regression linux baselines** (already in `future-work.md` §Infrastructure)
+24. ⏳ **`unsafe-inline` removal** (R-19c) — partial 2026-05-01. 19 of 25 inline-style call-sites migrated to attribute-based bindings (`data-group` for layer-group hue, `data-tag-slot` for the 28-color tag palette, `data-chip` for onboarding sample chips, plus static-value cleanups in Reader skeleton + Hub layer-seg). Helpers `getSlotForTag` (slots `'sem-<label>'` / `'p<N>'` matching `src/core/tag-colors.ts` + `src/marks/tags.js::TAG_PALETTE`) + `[data-tag-slot=...]` rules in `src/styles/surfaces/tag-slots.css` (theme-aware via `[data-theme='dark']` overrides). 6 remaining hits carry truly continuous DOM-driven values (`VerseSpotlight` rect, `SurahProgress` pct, `BookmarksList` finger-tracked swipe transform + opacity) — full removal would require VerseSpotlight → SVG mask, SurahProgress → bucketed % classes, BookmarksList swipe → bucketed translate (UX regression on 1:1 gesture fidelity). `'unsafe-inline'` stays in `style-src` for these; full drop deferred per audit C-6 framing. Registry updated at `docs/context/csp-allowlist.md` with the load-bearing reason.
+25. ❌ **Visual-regression linux baselines** — cancelled 2026-05-01 per user direction. The `visual` Playwright project + 45 darwin baselines under `tests/e2e/visual/` were deleted; `test:e2e:visual` script removed from `package.json`; project removed from `playwright.config.js`. Lighthouse CI continues to cover gross-style regressions; design-token gates (`check:styles`) catch token drift; component unit tests catch DOM-structure regressions. The cost-of-maintenance vs. catch-rate did not justify keeping it.
 
 ---
 
