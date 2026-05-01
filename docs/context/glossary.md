@@ -60,7 +60,7 @@ A persistent-overlay pattern used by `nav/CommandSheet.svelte`, `tag/TagSheet.sv
 - The Svelte component, mounted persistently in `App.svelte`, calls `register*({ open, close })` in `onMount`.
 - Imperative callers (vanilla JS, command sheet, keyboard handlers) import the module-level `open*()` / `close*()` functions and call them.
 
-Six bridges exist as of 2026-04-29: `core/ui-bridge`, `marks/editor-bridge`, `nav/command-sheet-bridge`, `nav/nav-drawer-bridge`, `settings/panel-bridge`, `tag/session-bridge`. Audit R-13 / N22 plans a `core/persistent-overlay.ts` factory to consolidate these — once that lands, "bridge" becomes synonymous with "overlay registered with `createOverlayBridge`".
+As of 2026-05-01 (N22 / R-13), all five overlay bridges (UndoToast, Settings Panel, CommandSheet, NavDrawer, TagSheet) are produced by `core/persistent-overlay.ts::createOverlayBridge<API>()`. "Bridge" is synonymous with "overlay registered with `createOverlayBridge`". The factory's `setMounter` + pending-call queue handles the chicken-and-egg between boot-time bridge calls and lazy-mounted components (N25). New persistent overlays MUST use the factory — hand-rolled bridges are forbidden.
 
 ## sole writer
 
