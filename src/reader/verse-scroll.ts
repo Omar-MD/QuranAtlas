@@ -29,7 +29,11 @@ export function scrollVerseIntoView(container: HTMLElement, verseEl: HTMLElement
   }
 
   if (typeof verseEl.scrollIntoView === 'function') {
-    verseEl.scrollIntoView({ block: 'start' })
+    // 'instant' overrides #main-content's CSS scroll-behavior:smooth so the
+    // ChunkIO (set up one rAF later) fires its initial callbacks after the
+    // scroll has landed, not mid-animation where scrollTop ≈ 0 causes it to
+    // evict the materialised target chunk.
+    verseEl.scrollIntoView({ block: 'start', behavior: 'instant' })
   }
   alignInContainer()
   requestAnimationFrame(() => {
