@@ -77,6 +77,37 @@ export function getTokenAt(x: number, y: number): TokenKey | null {
 }
 
 /**
+ * Convenience: walk up from `el` to the nearest ancestor with a valid
+ * `data-token-key` and return that key. Replaces the older
+ * `el.closest('[data-verse-key]')?.dataset.verseKey` pattern at the four
+ * verse-grain consumers (long-press, bookmark click, indicator,
+ * scroll-tracker — N19 migration).
+ */
+export function closestTokenKey(el: Element | null): TokenKey | null {
+  if (!el) { return null }
+  const node = (el as Element).closest('[data-token-key]')
+  if (!node) { return null }
+  const raw = node.getAttribute('data-token-key')
+  if (!raw || !parseTokenKey(raw)) { return null }
+  return raw as TokenKey
+}
+
+/**
+ * Strip `:wordIdx` from a token key, returning the verse-grain form
+ * (`surah:ayah`). Idempotent on verse-grain input. Returns null for
+ * malformed input.
+ *
+ * Used by gesture handlers that resolve a hit-test (potentially
+ * word-grain post-WBW) to the verse identity for IDB lookups keyed by
+ * verseKey (marks, bookmarks).
+ */
+export function tokenVerseKey(k: string): string | null {
+  const parsed = parseTokenKey(k)
+  if (!parsed) { return null }
+  return `${parsed.surah}:${parsed.ayah}`
+}
+
+/**
  * CSS selector matching every element belonging to a verse — at v2.0 a
  * single match (the verse container) but at v2.1+ also every per-word
  * span inside the verse. The audio verse-tick highlight uses this; do

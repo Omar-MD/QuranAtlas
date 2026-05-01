@@ -4,6 +4,8 @@ import {
   formatTokenKey,
   formatVerseTokenKey,
   verseTokenSelector,
+  closestTokenKey,
+  tokenVerseKey,
 } from '../../../src/core/tokenisable'
 
 describe('tokenisable', () => {
@@ -53,6 +55,73 @@ describe('tokenisable', () => {
       const sel = verseTokenSelector(2, 25)
       // Sanity: substring check on the raw selector must not include "2:255".
       expect(sel).not.toContain('2:255')
+    })
+  })
+
+  // Test fixtures below build DOM via createElement (no innerHTML) so the
+  // security hook stays clean even for static test markup.
+  function fixture(opts: {
+    outerTokenKey?: string
+    innerTokenKey?: string
+    innerClass?: string
+  }): { inner: HTMLElement, cleanup: () => void } {
+    const outer = document.createElement('div')
+    if (opts.outerTokenKey !== undefined) {
+      outer.setAttribute('data-token-key', opts.outerTokenKey)
+    }
+    const inner = document.createElement('span')
+    if (opts.innerTokenKey !== undefined) {
+      inner.setAttribute('data-token-key', opts.innerTokenKey)
+    }
+    if (opts.innerClass) { inner.className = opts.innerClass }
+    outer.appendChild(inner)
+    document.body.appendChild(outer)
+    return { inner, cleanup: () => { outer.remove() } }
+  }
+
+  describe('closestTokenKey', () => {
+    it('returns the data-token-key of the nearest ancestor', () => {
+      const { inner, cleanup } = fixture({ outerTokenKey: '2:255', innerClass: 'inner' })
+      expect(closestTokenKey(inner)).toBe('2:255')
+      cleanup()
+    })
+
+    it('returns null when no ancestor has data-token-key', () => {
+      const { inner, cleanup } = fixture({ innerClass: 'inner' })
+      expect(closestTokenKey(inner)).toBeNull()
+      cleanup()
+    })
+
+    it('returns null for null input', () => {
+      expect(closestTokenKey(null)).toBeNull()
+    })
+
+    it('rejects ancestors with malformed data-token-key', () => {
+      const { inner, cleanup } = fixture({ outerTokenKey: 'garbage', innerClass: 'inner' })
+      expect(closestTokenKey(inner)).toBeNull()
+      cleanup()
+    })
+
+    it('walks past nested data-token-key ancestors and returns the nearest', () => {
+      const { inner, cleanup } = fixture({ outerTokenKey: '2:255', innerTokenKey: '2:255:7' })
+      expect(closestTokenKey(inner)).toBe('2:255:7')
+      cleanup()
+    })
+  })
+
+  describe('tokenVerseKey', () => {
+    it('strips wordIdx from word-grain key', () => {
+      expect(tokenVerseKey('2:255:7')).toBe('2:255')
+    })
+
+    it('passes through verse-grain key unchanged', () => {
+      expect(tokenVerseKey('2:255')).toBe('2:255')
+    })
+
+    it('returns null for malformed input', () => {
+      expect(tokenVerseKey('garbage')).toBeNull()
+      expect(tokenVerseKey('')).toBeNull()
+      expect(tokenVerseKey('2:')).toBeNull()
     })
   })
 })
