@@ -73,7 +73,7 @@ Three zones:
 
 1. **Live preview band** at top — theme-true colors. Sūrat ar-Raḥmān 1–4 in active riwayah's glyphs. Arabic uses `.qa-verse-arabic`, translation uses `.qa-verse-translation` — same cascade as reader (font-size, line-height, word-spacing all match exactly). Translation row always rendered; visibility gated on `settings.translationVisible` — row keeps layout space when toggled off, preview height does not shift on toggle. ✕ close button floats top-right inside band.
 2. **Body** — three sections (Reading + Sources + Storage), content-sized (`flex: 0 0 auto`) with soft hairline gold-fade separator between adjacent sections. Body scrolls vertically when content overflows the available space (no per-section stretch — N21 added Storage so equal-flex balance no longer fits the modal/portrait viewport).
-   - **Reading** — Font size slider (5-step) + Reading flow slider (5-step coordinated knob). Reset-to-default pill in section header right edge, **always rendered** (disabled = idle when both knobs at `md`); flipping in/out of default never reflows slider rows. Preview band hard-locked at 42dvh portrait / 38dvh landscape / 240 px desktop modal — inner stage scrolls when verse content overflows.
+   - **Reading** — Font size slider (5-step) + Reading flow slider (5-step coordinated knob). Reset-to-default pill in section header right edge, **always rendered** (disabled = idle when both knobs at `md`); flipping in/out of default never reflows slider rows. Preview band hard-locked at 32dvh portrait / 180 px desktop modal (landscape uses the side-by-side override) — inner stage scrolls when verse content overflows.
    - **Sources** — Recitation source row (`[data-testid="src-row-recitation"]`) showing `RECITATION · Qālūn ʿan Nāfiʿ ›`; Translation dual-action row showing `TRANSLATION · Saheeh International › [toggle]`. Tapping source row opens centered picker popover. Toggle on Translation row controls `settings.translationVisible` independently.
 3. **Theme footer** — pill cluster of 4 theme swatches with mini Mushaf glyphs in each theme's palette + 38 px **night-mode moon ☾** pill. Italic serif "Theme" label anchors cluster left.
 
@@ -83,12 +83,14 @@ Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross
 
 ### Storage section — offline-selector (N21, 2026-05-01)
 
-Mounted between Sources and the Theme footer. Renders four accordion rows (`<details>` semantics) — Text, Audio (gated v2.0), Pages (gated v2.1), Search (gated v1.1). Available rows expand on tap to reveal a "Cache for offline use" checkbox + per-category byte size sourced from the verified manifest's `fileSizes` map. Footer shows live `usage / quota` from `navigator.storage.estimate()` and an Apply button.
+Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated v2.0), Pages (gated v2.1), Search (gated v1.1) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
+
+Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
 
 Apply gating:
 - Disabled when no diff vs `settings.offlineCategories`.
 - Disabled with a red "Need X MB more free space" message when sum-of-newly-checked exceeds available quota (audit Q4 — pre-flight refuse).
-- On click: writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer), then per-category `src/data/offline.ts::startCategoryDownload(cat)` for each available category.
+- On click: writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer), then per-category `src/data/offline.ts::startCategoryDownload(cat)` for each available category. Button flips to a solid gold `Saved ✓` for ~1.5 s after a successful write so the user has visible confirmation.
 
 Selector v1 commits additions only — uncheck + Apply records the new state but does not evict cache contents (eviction UX is a follow-up). Cache wins from prior precache passes are honored: SHA-256 verify on cached entries skips re-download for unchanged files. Closes audit P2.14 / R-11 / C-4 / CC-7.
 
@@ -224,3 +226,4 @@ Keys + sole writers:
 - **2026-04-25:** Typography subview retired — sliders inlined into Settings Reading section (D5).
 - **2026-04-27 (`248b927`):** font picker dropped — KFGQPC default per Riwayah is now hardwired (no user-facing font picker).
 - **2026-05-01 (N21):** single full-corpus "Cache for offline" UX retired. Replaced by per-feature offline-selector mounted in the new Storage section. Pre-N21 `src/data/offline.ts::startDownload` retained as a backward-compatible alias for `startCategoryDownload('text')`.
+- **2026-05-01:** Storage section's per-row `<details>` accordions retired in favor of one collapsible covering the whole section. Removed nested expand/collapse + bulky padding; rows are now inline (name + size + checkbox on a single line), Apply now gives `Saved ✓` feedback. Preview band tightened (42dvh → 32dvh portrait, 240 px → 180 px desktop) to free panel height.

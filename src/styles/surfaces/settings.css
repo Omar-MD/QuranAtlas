@@ -65,9 +65,9 @@
     /* Desktop modal caps total height to ~720px; preview is sized as a
        portion of the modal, not the viewport, so it never overruns. */
     .qa-sheet.qa-sheet--settings-fs .qa-settings-preview {
-      height: 240px;
-      min-height: 240px;
-      max-height: 240px;
+      height: 180px;
+      min-height: 180px;
+      max-height: 180px;
     }
   }
 
@@ -78,11 +78,11 @@
   .qa-settings-preview {
     background: var(--qa-surface-raised);
     color: var(--qa-text-primary);
-    padding: 1.6rem 1.25rem 1.45rem;
+    padding: 1.1rem 1.25rem 1rem;
     text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.4rem;
     border-bottom: 1px solid var(--qa-border-on-sheet);
     flex-shrink: 0;
     position: relative;
@@ -90,9 +90,9 @@
        of font-size / reading-flow combination. Inner content (.qa-settings-
        preview-stage) scrolls vertically when verse text overflows at xl
        sliders, so other settings elements never reflow. */
-    height: 42dvh;
-    min-height: 42dvh;
-    max-height: 42dvh;
+    height: 32dvh;
+    min-height: 32dvh;
+    max-height: 32dvh;
     overflow: hidden;
   }
 
