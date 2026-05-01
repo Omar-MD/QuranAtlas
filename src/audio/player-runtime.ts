@@ -19,11 +19,11 @@
 import { emit } from '../core/events'
 import { Events } from '../core/constants'
 import { logger } from '../core/logger'
-import { audioState, getOrCreateAudioElement, type VerseKey } from '../state/audio.svelte'
-import { settings } from '../state/settings.svelte'
+import { audioState, getOrCreateAudioElement, type VerseKey } from '../audio/state.svelte'
+import { settings } from '../settings/state.svelte'
 import { loadTiming, ayahAtMs, ayahStartMs, type SurahTiming } from './timing-loader'
 import { broadcastStarted, broadcastPaused, broadcastPosition } from './cross-tab'
-import { savePosition, loadMostRecent, loadPosition } from '../state/audio-position.svelte'
+import { savePosition, loadMostRecent, loadPosition } from '../audio/state-position.svelte'
 import {
   registerActionHandlers,
   setMetadata,

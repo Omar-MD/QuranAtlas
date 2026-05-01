@@ -4,10 +4,10 @@
    * is in (updates mid-surah when a juz boundary is crossed) and the percent
    * through that juz — computed from global verse index, not surah index.
    */
-  import { reader } from '../state/reader.svelte'
+  import { reader } from '../reader/state.svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
   import { juzProgress, type SurahCount } from '../data/juz'
-  import { settings } from '../state/settings.svelte'
+  import { settings } from '../settings/state.svelte'
   import { onMount } from 'svelte'
 
   let surahs = $state<SurahCount[]>([])

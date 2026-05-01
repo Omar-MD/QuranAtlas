@@ -62,7 +62,7 @@ vi.mock('../../../src/reader/global-position', () => ({
 vi.mock('../../../src/a11y/announcer', () => ({ announce: vi.fn() }))
 
 import CommandSheet from '../../../src/nav/CommandSheet.svelte'
-import { commandSheet } from '../../../src/state/command-sheet.svelte'
+import { commandSheet } from '../../../src/nav/state-command-sheet.svelte'
 import { initGlobalShortcuts } from '../../../src/nav/global-shortcuts'
 
 async function flush() {

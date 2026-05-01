@@ -6,8 +6,8 @@
 
 import { get, put } from '../core/db.js'
 import { logger } from '../core/logger.js'
-import { settings } from '../state/settings.svelte.ts'
-import { reader } from '../state/reader.svelte.ts'
+import { settings } from '../settings/state.svelte.ts'
+import { reader } from '../reader/state.svelte.ts'
 
 const DEFAULT = false
 

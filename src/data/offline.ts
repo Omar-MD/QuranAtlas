@@ -18,7 +18,7 @@ import {
   sumBytesForCategory,
   type Category,
 } from '../core/sw/route-defs'
-import { settings } from '../state/settings.svelte'
+import { settings } from '../settings/state.svelte'
 
 const QUOTA_WARN_THRESHOLD = 0.8
 const ACTIVATION_KEY = 'current'

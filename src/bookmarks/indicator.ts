@@ -15,7 +15,7 @@
  */
 
 import { getAllForRiwayah } from './store'
-import { settings } from '../state/settings.svelte'
+import { settings } from '../settings/state.svelte'
 import { on } from '../core/events'
 import { Events } from '../core/constants'
 import { tokenVerseKey } from '../core/tokenisable'

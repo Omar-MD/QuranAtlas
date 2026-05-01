@@ -12,11 +12,11 @@
    */
   import { onMount } from 'svelte'
   import { SvelteMap } from 'svelte/reactivity'
-  import { commandSheet } from '../state/command-sheet.svelte'
+  import { commandSheet } from '../nav/state-command-sheet.svelte'
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
   import { getSurahs, getSurah, type SurahMeta } from '../data/dataset'
-  import { settings } from '../state/settings.svelte'
+  import { settings } from '../settings/state.svelte'
   import { getMeaning } from '../data/surah-meanings'
   import { getAll as getAllMarks } from '../marks/store'
   import { getAllUsedTags, getSlotForTag } from '../marks/tags.js'

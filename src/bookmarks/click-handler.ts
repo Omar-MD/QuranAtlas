@@ -14,8 +14,8 @@
  */
 
 import { toggle } from './store'
-import { settings } from '../state/settings.svelte'
-import { tagSession } from '../state/tag-session.svelte'
+import { settings } from '../settings/state.svelte'
+import { tagSession } from '../tag/state.svelte'
 import { logger } from '../core/logger'
 import { closestTokenKey, tokenVerseKey } from '../core/tokenisable'
 import type { Riwayah } from '../core/db'

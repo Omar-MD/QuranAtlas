@@ -16,7 +16,7 @@
   import type { Mark } from '../marks/store'
   import { getSurah, getSurahs } from '../data/dataset'
   import { showUndoToast } from '../core/ui-bridge'
-  import { tagSession } from '../state/tag-session.svelte'
+  import { tagSession } from '../tag/state.svelte'
   import { tagSheetBridge } from './sheet-bridge'
   import { LAYER_GROUPS, LAYER_LABELS, LAYER_TO_GROUP } from '../data/tag-layers'
   import { on } from '../core/events'

@@ -20,7 +20,7 @@ import {
   type AudioRepeatMode,
   type AudioAutoScrollMode,
   type AudioLoopRange,
-} from '../state/settings.svelte'
+} from '../settings/state.svelte'
 
 const SPEED_OPTIONS: readonly AudioSpeed[] = [0.75, 1, 1.25, 1.5, 2] as const
 const REPEAT_MODES: readonly AudioRepeatMode[] = ['off', 'verse', 'range', 'surah'] as const

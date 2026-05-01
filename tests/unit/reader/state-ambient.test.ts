@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { ambientChrome } from '../../../src/state/ambient-chrome.svelte.ts'
+import { ambientChrome } from '../../../src/reader/state-ambient.svelte.ts'
 
 describe('state/ambient-chrome.svelte.ts', () => {
   beforeEach(() => {

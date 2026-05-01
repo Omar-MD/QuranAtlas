@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SurahMeta } from '../data/dataset'
   import { getMeaning } from '../data/surah-meanings'
-  import { settings } from '../state/settings.svelte'
+  import { settings } from '../settings/state.svelte'
 
   interface Props {
     surah: SurahMeta

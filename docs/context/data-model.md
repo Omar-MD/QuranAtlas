@@ -97,7 +97,7 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
 
 ## Cross-cutting rules
 
-> **Invariant — single global `<audio>` element.** Owned by `src/state/audio.svelte.ts::getOrCreateAudioElement()`. Multiple `<audio>` elements break iOS media-session binding and risk concurrent playback races. (See `listen` dossier §Invariants.)
+> **Invariant — single global `<audio>` element.** Owned by `src/audio/state.svelte.ts::getOrCreateAudioElement()`. Multiple `<audio>` elements break iOS media-session binding and risk concurrent playback races. (See `listen` dossier §Invariants.)
 
 > **Invariant — one writer per store.** Per-store sole writers live in each owning dossier's §Invariants. The store→owner index above points to them. For the `settings` shared scratchpad, the rule holds at **key** granularity — one writer per key, listed in the `configure` dossier's §Data table. **Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to the dossier's §Invariants in the same commit.**
 

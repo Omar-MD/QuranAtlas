@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { review } from '../../../src/state/review.svelte.ts'
+import { review } from '../../../src/review/state.svelte.ts'
 
 describe('state/review.svelte.ts', () => {
   beforeEach(() => {

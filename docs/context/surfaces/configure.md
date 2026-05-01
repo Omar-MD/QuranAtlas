@@ -54,6 +54,9 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/settings/panel-bridge.ts` | Settings Panel — overlay bridge + sole-writer/-reader data functions. |
 | `src/settings/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
 | `src/settings/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
+| `src/settings/state-last-surface.svelte.ts` | Sole writer for settings.lastSurface — the hash the launch-restore |
+| `src/settings/state-recent-surahs.svelte.ts` | Sole writer for `settings.recentSurahs`. Pre-fix App.svelte did its |
+| `src/settings/state.svelte.ts` | _(no leading comment)_ |
 | `src/settings/surah-header-visibility.ts` | Surah header visibility: persisted user preference for whether the in-reader |
 | `src/settings/theme.ts` | Theme management: load and apply user theme preferences. |
 <!-- AUTO-GENERATED:inventory END -->
@@ -158,9 +161,9 @@ Keys + sole writers:
 | `readerMargin` | `src/settings/reading-typography.ts` | step |
 | `verseSpacing` | `src/settings/reading-typography.ts` | step |
 | `surahHeaderHidden` | `src/settings/surah-header-visibility.ts` | `boolean` |
-| `currentPosition` | `src/state/reader.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
-| `lastSurface` | `src/state/last-surface.svelte.ts` | `string` (hash) |
-| `recentSurahs` | `src/state/recent-surahs.svelte.ts` | `number[]` (serialised, see `b997c76`) |
+| `currentPosition` | `src/reader/state.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
+| `lastSurface` | `src/settings/state-last-surface.svelte.ts` | `string` (hash) |
+| `recentSurahs` | `src/settings/state-recent-surahs.svelte.ts` | `number[]` (serialised, see `b997c76`) |
 | `onboardingComplete` | `src/onboarding/state.ts` | `boolean` |
 | `offlineCategories` | `src/settings/offline-categories.ts` | `OfflineCategoriesState` (per-category opt-in map; see `state/settings.svelte.ts`) |
 
@@ -170,6 +173,7 @@ Keys + sole writers:
 | Event | Constant | Sites |
 | --- | --- | --- |
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/settings/clear-data.ts:170` |
+| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/settings/state-recent-surahs.svelte.ts:26` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/settings/riwayah.ts:58`, `src/settings/riwayah.ts:74` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/settings/Panel.svelte:130` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/settings/Panel.svelte:113` |
@@ -192,7 +196,7 @@ Keys + sole writers:
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (11):**
+**Unit (12):**
 
 - `tests/unit/about/pwa-install.test.ts`
 - `tests/unit/settings/clear-data-confirm.test.ts`
@@ -203,6 +207,7 @@ Keys + sole writers:
 - `tests/unit/settings/reading-typography-line-height.test.ts`
 - `tests/unit/settings/reading-typography.test.ts`
 - `tests/unit/settings/riwayah.test.ts`
+- `tests/unit/settings/state.test.ts`
 - `tests/unit/settings/surah-header-visibility.test.ts`
 - `tests/unit/settings/theme.test.ts`
 

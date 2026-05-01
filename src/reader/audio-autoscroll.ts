@@ -10,7 +10,7 @@
 import { on } from '../core/events'
 import { Events } from '../core/constants'
 import { parseTokenKey } from '../core/tokenisable'
-import { settings } from '../state/settings.svelte'
+import { settings } from '../settings/state.svelte'
 
 const SMART_DEFER_MS = 5000
 const VIEWPORT_MARGIN_PX = 80

@@ -8,7 +8,7 @@ vi.mock('../../../src/core/db.js', () => ({
 }))
 vi.mock('../../../src/core/events.js', () => ({ emit: vi.fn() }))
 vi.mock('../../../src/core/logger.js', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
-vi.mock('../../../src/state/settings.svelte.ts', () => ({ settings: {} as Record<string, unknown> }))
+vi.mock('../../../src/settings/state.svelte.ts', () => ({ settings: {} as Record<string, unknown> }))
 
 beforeEach(() => { fakeStore.clear() })
 

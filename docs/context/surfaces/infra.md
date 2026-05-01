@@ -5,6 +5,7 @@ src_paths:
   - 'src/safety/**'
   - 'src/sw.js'
   - 'src/sw-handlers.js'
+  - 'src/core/sw/**'
 owns_stores:
   - datasetMeta
 test_paths:
@@ -41,12 +42,15 @@ No routes. Surface is invisible until something goes wrong (or update rolls out)
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
+| `src/core/sw/route-defs.ts` | Per-asset-class route definitions for the QuranAtlas service worker. |
+| `src/core/sw/strategies.ts` | Service-worker route registration. Pure data lives in `route-defs.ts`; |
 | `src/offline/dataset-updater.js` | Dataset update orchestrator for service worker activate. |
 | `src/offline/manifest-fetcher.js` | Fetch the dataset manifest. |
 | `src/offline/offline-selector.svelte` | Per-feature offline opt-in selector (N21). |
 | `src/offline/sha256-verifier.js` | SHA-256 verification for dataset file integrity. |
 | `src/offline/staging-cache.js` | Staging cache for dataset updates. |
 | `src/safety/input-validator.ts` | Input validation for navigation and tag parameters. |
+| `src/safety/state.svelte.ts` | _(no leading comment)_ |
 | `src/safety/sync.ts` | Cross-tab safety and synchronization module. |
 | `src/sw-handlers.js` | _(no leading comment)_ |
 | `src/sw.js` | Service worker for QuranAtlas. |
@@ -150,7 +154,7 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (9):**
+**Unit (10):**
 
 - `tests/unit/offline/dataset-updater.test.js`
 - `tests/unit/offline/manifest-fetcher.test.js`
@@ -159,6 +163,7 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 - `tests/unit/offline/staging-cache.test.js`
 - `tests/unit/safety/csp-headers.test.ts`
 - `tests/unit/safety/input-validator.test.js`
+- `tests/unit/safety/state.test.ts`
 - `tests/unit/safety/sync.test.js`
 - `tests/unit/sw/route-defs.test.ts`
 

@@ -39,7 +39,7 @@ vi.mock('../../../src/data/offline.ts', () => ({
 }))
 
 import OfflineSelector from '../../../src/offline/offline-selector.svelte'
-import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/state/settings.svelte.ts'
+import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/settings/state.svelte.ts'
 
 async function flush() { for (let i = 0; i < 6; i++) await Promise.resolve() }
 

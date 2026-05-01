@@ -11,7 +11,7 @@ import { initCrossTab } from './cross-tab'
 import { initAudioHighlight } from '../reader/audio-highlight'
 import { initAudioAutoScroll } from '../reader/audio-autoscroll'
 import { pauseFromCrossTab } from './player-runtime'
-import { audioState } from '../state/audio.svelte'
+import { audioState } from '../audio/state.svelte'
 
 export async function initAudio(): Promise<() => void> {
   await initAudioSettings()

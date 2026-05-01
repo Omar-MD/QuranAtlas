@@ -7,7 +7,7 @@
   import { onMount } from 'svelte'
   import { announce } from '../a11y/announcer'
   import BookmarksList from './BookmarksList.svelte'
-  import { settings } from '../state/settings.svelte'
+  import { settings } from '../settings/state.svelte'
   import { getAllForRiwayah } from './store'
   import { on } from '../core/events'
   import { Events } from '../core/constants'

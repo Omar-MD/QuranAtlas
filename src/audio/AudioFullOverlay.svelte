@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { audioState } from '../state/audio.svelte'
-  import { settings } from '../state/settings.svelte'
+  import { audioState } from '../audio/state.svelte'
+  import { settings } from '../settings/state.svelte'
   import { toggle, seek, prev, next, stop } from './player-runtime'
   import { setAudioFirstPlayHintShown } from '../settings/audio'
   import { audioPlayerBridge, type AudioOverlayAPI } from './player-bridge'

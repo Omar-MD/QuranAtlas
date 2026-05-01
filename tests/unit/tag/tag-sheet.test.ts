@@ -34,7 +34,7 @@ vi.mock('../../../src/core/ui-bridge', () => ({
 }))
 
 import TagSheet from '../../../src/tag/TagSheet.svelte'
-import { tagSession } from '../../../src/state/tag-session.svelte'
+import { tagSession } from '../../../src/tag/state.svelte'
 import { tagSheetBridge } from '../../../src/tag/sheet-bridge'
 import { save } from '../../../src/marks/store'
 

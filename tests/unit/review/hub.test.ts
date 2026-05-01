@@ -42,7 +42,7 @@ vi.mock('../../../src/marks/editor-bridge', () => ({ openEditor: vi.fn() }))
 vi.mock('../../../src/core/ui-bridge', () => ({ clearUndoToast: vi.fn() }))
 
 import Hub from '../../../src/review/Hub.svelte'
-import { review } from '../../../src/state/review.svelte'
+import { review } from '../../../src/review/state.svelte'
 import { openDB, del } from '../../../src/core/db'
 
 // Find element by selector + optional text predicate. Polls so async Svelte

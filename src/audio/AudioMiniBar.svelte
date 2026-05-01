@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { audioState } from '../state/audio.svelte'
+  import { audioState } from '../audio/state.svelte'
   import { toggle, stop } from './player-runtime'
   import { audioPlayerBridge } from './player-bridge'
 

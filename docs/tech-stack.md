@@ -52,7 +52,7 @@ Bun is faster for pure-JS paths but lacks jsdom (uses happy-dom), has native-add
 - **Runes** (`$state`, `$derived`, `$effect`) replace the prior hand-rolled reactivity without the virtual-DOM cost of React/Vue.
 - **Compile-time reactivity** — the compiler emits direct DOM updates; runtime is tiny.
 - **TypeScript across `.ts` + `.svelte`** — uniform type gate via `svelte-check`; catches drift between modules and Svelte props.
-- Component state per surface lives colocated in the `.svelte` file; cross-surface state is extracted to `src/state/*` runes modules (see `docs/context/module-graph.md`).
+- Component state per surface lives colocated in the `.svelte` file; cross-surface state lives in `src/<surface>/state*.svelte.ts` rune modules colocated with their owning surface (see `docs/context/module-graph.md`).
 
 ### vite-plugin-pwa + Workbox (not manual SW config)
 - **2.8M+ weekly downloads**, 4,100+ GitHub stars.

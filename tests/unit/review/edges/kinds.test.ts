@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { EDGE_KIND_SEEDS, inferDirectedFromKind } from '../../../src/edges/kinds'
+import { EDGE_KIND_SEEDS, inferDirectedFromKind } from '../../../../src/review/edges/kinds'
 
 describe('edges/kinds', () => {
   it('ships seed kinds from spec §4.13', () => {

@@ -10,9 +10,9 @@
   import { get, LAYER_NAMES } from '../core/db'
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
-  import { reader } from '../state/reader.svelte'
-  import { openCommandSheet } from './command-sheet-bridge'
-  import { openNavDrawer } from './nav-drawer-bridge'
+  import { reader } from '../reader/state.svelte'
+  import { openCommandSheet } from '../nav/command-sheet-bridge'
+  import { openNavDrawer } from '../nav/nav-drawer-bridge'
 
   type Tab = {
     id: 'read' | 'search' | 'review' | 'marks'

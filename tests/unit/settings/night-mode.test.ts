@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { del, openDB, put, get } from '../../../src/core/db.js'
-import { settings } from '../../../src/state/settings.svelte.ts'
+import { settings } from '../../../src/settings/state.svelte.ts'
 
 describe('night-mode', () => {
   beforeEach(async () => {

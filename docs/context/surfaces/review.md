@@ -2,13 +2,11 @@
 surface: review
 src_paths:
   - 'src/review/**'
-  - 'src/edges/**'
 owns_stores:
   - activationState
 test_paths:
   unit:
     - 'tests/unit/review/**'
-    - 'tests/unit/edges/**'
   e2e:
     - 'tests/e2e/journey-e-review*.spec.js'
 ---
@@ -34,11 +32,12 @@ test_paths:
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/edges/kinds.ts` | _(no leading comment)_ |
-| `src/edges/store.ts` | _(no leading comment)_ |
 | `src/review/Hub.svelte` | Props: layer + value are present when route is #/<layer>/:value (FVR) |
 | `src/review/ReviewCard.svelte` | _(no leading comment)_ |
+| `src/review/edges/kinds.ts` | _(no leading comment)_ |
+| `src/review/edges/store.ts` | _(no leading comment)_ |
 | `src/review/parse-layer-query.ts` | _(no leading comment)_ |
+| `src/review/state.svelte.ts` | _(no leading comment)_ |
 | `src/review/state.ts` | Review state persistence. |
 <!-- AUTO-GENERATED:inventory END -->
 
@@ -113,9 +112,9 @@ The review surface heavily reads `marks` (owned by `mark` dossier) via `getByLay
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `edges:deleted` | `Events.EDGES_DELETED` | `src/edges/store.ts:107` |
-| `edges:save-failed` | `Events.EDGES_SAVE_FAILED` | `src/edges/store.ts:68` |
-| `edges:saved` | `Events.EDGES_SAVED` | `src/edges/store.ts:63`, `src/edges/store.ts:95` |
+| `edges:deleted` | `Events.EDGES_DELETED` | `src/review/edges/store.ts:107` |
+| `edges:save-failed` | `Events.EDGES_SAVE_FAILED` | `src/review/edges/store.ts:68` |
+| `edges:saved` | `Events.EDGES_SAVED` | `src/review/edges/store.ts:63`, `src/review/edges/store.ts:95` |
 | `review:open` | `Events.REVIEW_OPEN` | `src/review/Hub.svelte:427`, `src/review/Hub.svelte:459` |
 <!-- AUTO-GENERATED:events-emit END -->
 
@@ -135,12 +134,13 @@ The review surface heavily reads `marks` (owned by `mark` dossier) via `getByLay
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (5):**
+**Unit (6):**
 
-- `tests/unit/edges/kinds.test.ts`
-- `tests/unit/edges/store.test.ts`
+- `tests/unit/review/edges/kinds.test.ts`
+- `tests/unit/review/edges/store.test.ts`
 - `tests/unit/review/hub.test.ts`
 - `tests/unit/review/parse-layer-query.test.ts`
+- `tests/unit/review/state-rune.test.ts`
 - `tests/unit/review/state.test.ts`
 
 **E2E (1):**

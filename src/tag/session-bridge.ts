@@ -8,7 +8,7 @@
  * `tagSession.sheetOpen` rune was retired 2026-05-01 (audit N22).
  */
 
-import { tagSession } from '../state/tag-session.svelte'
+import { tagSession } from '../tag/state.svelte'
 import { getByVerseKey } from '../marks/store'
 import { LAYER_NAMES } from '../core/db'
 import type { LayerName } from '../core/db'

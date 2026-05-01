@@ -32,7 +32,7 @@
 import { on, emit } from '../core/events'
 import { Events } from '../core/constants'
 import { logger } from '../core/logger'
-import { sync } from '../state/sync.svelte.ts'
+import { sync } from '../safety/state.svelte.ts'
 const syncState = { get: () => sync, set: (p: Partial<typeof sync>) => Object.assign(sync, p) }
 
 const CHANNEL_NAME = 'quran-atlas:sync'

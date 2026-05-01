@@ -18,7 +18,7 @@
 
 import { get, put } from '../core/db.js'
 import { logger } from '../core/logger.js'
-import { settings } from '../state/settings.svelte.ts'
+import { settings } from '../settings/state.svelte.ts'
 import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-overlay'
 
 // ── Overlay surface ─────────────────────────────────────────────────────────

@@ -1,10 +1,10 @@
-import { getDb } from '../core/db'
-import { emit } from '../core/events'
-import { Events } from '../core/constants'
-import { logger } from '../core/logger'
+import { getDb } from '../../core/db'
+import { emit } from '../../core/events'
+import { Events } from '../../core/constants'
+import { logger } from '../../core/logger'
 import { inferDirectedFromKind } from './kinds'
-import { broadcastEdgeChange } from '../safety/sync'
-import type { EdgeRecord } from '../core/db'
+import { broadcastEdgeChange } from '../../safety/sync'
+import type { EdgeRecord } from '../../core/db'
 
 const VERSE_KEY_RE = /^\d+:\d+(-\d+)?$/
 

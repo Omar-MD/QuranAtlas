@@ -2,8 +2,8 @@
   import { onMount, mount, unmount, type Component } from 'svelte'
   import { initBootstrap } from './app-bootstrap'
   import { onRouteChange } from './core/router'
-  import { trackRecentSurah } from './state/recent-surahs.svelte'
-  import { reader } from './state/reader.svelte'
+  import { trackRecentSurah } from './settings/state-recent-surahs.svelte'
+  import { reader } from './reader/state.svelte'
   import { refreshForSurah } from './marks/indicator'
 
   // Eager — visible at first paint or carrying boot-time runtime hooks.
@@ -11,8 +11,8 @@
   import SaveFailureToast from './core/save-failure-toast.svelte'
   import UpdateBanner from './core/UpdateBanner.svelte'
   import ClearDataConfirm from './settings/ClearDataConfirm.svelte'
-  import AmbientDock from './nav/AmbientDock.svelte'
-  import MarginHeader from './nav/MarginHeader.svelte'
+  import AmbientDock from './reader/AmbientDock.svelte'
+  import MarginHeader from './reader/MarginHeader.svelte'
   import AudioMiniBar from './audio/AudioMiniBar.svelte'
   import AudioFullOverlay from './audio/AudioFullOverlay.svelte'
 

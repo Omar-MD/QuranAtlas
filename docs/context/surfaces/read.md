@@ -2,19 +2,11 @@
 surface: read
 src_paths:
   - 'src/reader/**'
-  - 'src/nav/AmbientDock.svelte'
-  - 'src/nav/AmbientPill.svelte'
-  - 'src/nav/MarginHeader.svelte'
-  - 'src/nav/SurahProgress.svelte'
 owns_stores:
   - meta
 test_paths:
   unit:
     - 'tests/unit/reader/**'
-    - 'tests/unit/state/reader.test.ts'
-    - 'tests/unit/state/surah-header-visibility.test.ts'
-    - 'tests/unit/nav/MarginHeader-toggle.test.ts'
-    - 'tests/unit/nav/ambient-*.test.ts'
     - 'tests/unit/styles/font-tokens.test.js'
   e2e:
     - 'tests/e2e/journey-b-reader*.spec.js'
@@ -22,7 +14,7 @@ test_paths:
 
 # Surface: read
 
-> Reader chrome — verse rendering, ambient dock + pill + margin header, surah header + bismillah, cross-surah scroll, typography knobs, scroll-position persistence. NOT the marking flow (that's `mark` surface) — but excludes `reader/VerseTagPanel.svelte` which the `mark` dossier owns.
+> Reader chrome — verse rendering, ambient dock + pill + margin header, surah header + bismillah, cross-surah scroll, typography knobs, scroll-position persistence. NOT the marking flow (that's the `mark` surface).
 
 ## Reach
 
@@ -48,16 +40,15 @@ test_paths:
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/nav/AmbientDock.svelte` | Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav` |
-| `src/nav/AmbientPill.svelte` | On reader route: stays hidden until AMBIENT_SURFACE fires |
-| `src/nav/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout (2026-04-25): |
-| `src/nav/SurahProgress.svelte` | Tiny progress chip under surah title. Tracks the current juz the reader |
+| `src/reader/AmbientDock.svelte` | Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav` |
+| `src/reader/AmbientPill.svelte` | On reader route: stays hidden until AMBIENT_SURFACE fires |
 | `src/reader/EdgeIndicator.svelte` | EdgeIndicator — the pair of left/right fixed indicators that briefly flash |
+| `src/reader/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout (2026-04-25): |
 | `src/reader/PullToSwapIndicator.svelte` | PullToSwapIndicator — minimal Chrome-mobile-PTR-style circular progress |
 | `src/reader/Reader.svelte` | _(no leading comment)_ |
 | `src/reader/SurahHeader.svelte` | _(no leading comment)_ |
+| `src/reader/SurahProgress.svelte` | Tiny progress chip under surah title. Tracks the current juz the reader |
 | `src/reader/Verse.svelte` | Translation lookup role for cross-riwayah display. |
-| `src/reader/VerseTagPanel.svelte` | Inline fast-path tag panel. Rendered inside the active verse under the |
 | `src/reader/audio-autoscroll.ts` | Smart-defer auto-scroll: scroll the playing verse into view UNLESS the |
 | `src/reader/audio-highlight.ts` | Audio verse-tick highlight. Subscribes to `audio:verse-changed` and |
 | `src/reader/chunked-virtualiser.ts` | Chunked virtualiser — IntersectionObserver-driven recycler that mounts |
@@ -68,6 +59,8 @@ test_paths:
 | `src/reader/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
 | `src/reader/scroll-ancestor.ts` | Find the nearest scrolling ancestor of `el`. |
 | `src/reader/scroll-tracker.ts` | Scroll position tracking using IntersectionObserver. |
+| `src/reader/state-ambient.svelte.ts` | _(no leading comment)_ |
+| `src/reader/state.svelte.ts` | _(no leading comment)_ |
 | `src/reader/surah-swap.ts` | Cross-surah swap orchestration. |
 | `src/reader/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
 | `src/reader/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
@@ -166,7 +159,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/nav/AmbientDock.svelte:64`, `src/nav/AmbientPill.svelte:90`, `src/nav/MarginHeader.svelte:41`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/Reader.svelte:452`, `src/reader/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientDock.svelte:64`, `src/reader/AmbientPill.svelte:90`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/MarginHeader.svelte:41`, `src/reader/Reader.svelte:452`, `src/reader/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/reader/position.ts:28` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:50` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -174,10 +167,10 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/nav/AmbientPill.svelte:76`, `src/nav/MarginHeader.svelte:175` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientPill.svelte:76`, `src/reader/MarginHeader.svelte:175` |
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/reader/audio-autoscroll.ts:48`, `src/reader/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/reader/position.ts:156` |
-| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/nav/AmbientDock.svelte:86`, `src/nav/MarginHeader.svelte:174` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/reader/AmbientDock.svelte:86`, `src/reader/MarginHeader.svelte:174` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/reader/Reader.svelte:183` |
 <!-- AUTO-GENERATED:events-listen END -->
 
@@ -194,9 +187,9 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (12):**
+**Unit (13):**
 
-- `tests/unit/nav/MarginHeader-toggle.test.ts`
+- `tests/unit/reader/MarginHeader-toggle.test.ts`
 - `tests/unit/reader/SurahHeader.test.ts`
 - `tests/unit/reader/bismillah-translation.test.ts`
 - `tests/unit/reader/chunked-virtualiser.test.ts`
@@ -204,9 +197,10 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - `tests/unit/reader/global-position.test.ts`
 - `tests/unit/reader/render-helpers.test.ts`
 - `tests/unit/reader/scroll-tracker.test.ts`
+- `tests/unit/reader/state-ambient.test.ts`
+- `tests/unit/reader/state.test.ts`
 - `tests/unit/reader/surah-swap.test.ts`
 - `tests/unit/reader/translation-tokens.test.ts`
-- `tests/unit/state/reader.test.ts`
 - `tests/unit/styles/font-tokens.test.js`
 
 **E2E (1):**

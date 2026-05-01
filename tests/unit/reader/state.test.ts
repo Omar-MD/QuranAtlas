@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { reader } from '../../../src/state/reader.svelte.ts'
+import { reader } from '../../../src/reader/state.svelte.ts'
 
 describe('state/reader.svelte.ts', () => {
   beforeEach(() => {

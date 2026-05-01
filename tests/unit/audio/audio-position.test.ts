@@ -6,7 +6,7 @@ import {
   savePosition,
   removePosition,
   clearAllPositions,
-} from '../../../src/state/audio-position.svelte'
+} from '../../../src/audio/state-position.svelte'
 
 describe('audio-position store', () => {
   beforeEach(async () => {

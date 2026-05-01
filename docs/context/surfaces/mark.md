@@ -3,7 +3,6 @@ surface: mark
 src_paths:
   - 'src/marks/**'
   - 'src/tag/**'
-  - 'src/reader/VerseTagPanel.svelte'
 owns_stores:
   - marks
 test_paths:
@@ -40,17 +39,18 @@ Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side ver
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
+| `src/marks/VerseTagPanel.svelte` | Inline fast-path tag panel. Rendered inside the active verse under the |
 | `src/marks/editor-bridge.ts` | Imperative bridge for opening the mark editor from vanilla-JS consumers. |
 | `src/marks/indicator.ts` | Colored dot indicators on marked verses. |
 | `src/marks/long-press.ts` | Svelte action: long-press on a verse element → open mark editor. |
 | `src/marks/store.ts` | IDB CRUD for marks (v2 — 12-layer schema). |
 | `src/marks/tags.js` | Tag palette, seed tags, and color resolution. |
-| `src/reader/VerseTagPanel.svelte` | Inline fast-path tag panel. Rendered inside the active verse under the |
 | `src/tag/TagChip.svelte` | Quickbar chip. Distinct from `marks/TagChip.svelte` (which drives deep sheet). |
 | `src/tag/TagSheet.svelte` | Deep tagging sheet. |
 | `src/tag/VerseSpotlight.svelte` | Dims reader + draws attention to focused verse. Fixed scrim w/ a "hole" |
 | `src/tag/session-bridge.ts` | Imperative bridge to begin a fast-path tagging session from a verse tap. |
 | `src/tag/sheet-bridge.ts` | Bridge for the deep TagSheet overlay (`tag/TagSheet.svelte`). Migrated |
+| `src/tag/state.svelte.ts` | Tag-session state (runes). Holds the live state for a single tagging |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -58,7 +58,7 @@ Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side ver
 ### Fast-tag inline panel (primary entry)
 
 1. Trigger fires `beginFast(verseKey)` — verse gains active-state treatment (left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in verse head).
-2. `reader/VerseTagPanel.svelte` renders inline in the active verse below the translation: one row per layer group (Speech / Narrative / Themes / Entities), `#value` chips colored by layer hue, `+ add` affordance per group, `⛶` escalation top-right.
+2. `marks/VerseTagPanel.svelte` renders inline in the active verse below the translation: one row per layer group (Speech / Narrative / Themes / Entities), `#value` chips colored by layer hue, `+ add` affordance per group, `⛶` escalation top-right.
 3. Tap chip → toggle membership; selections debounce-save to `marks` store after 350 ms via `marks/store::save`.
 4. `+ add` swaps row to inline input. Input requires explicit `<prefix>:<value>` syntax; prefix autofills as user types (`s` → `speaker:`, `q` → `quoted:`, `d` in Entities → `divine:`). Aliases in `src/data/tag-layers.ts::LAYER_PREFIXES`. Empty value or unresolved prefix → red underline, commit refused. Enter commits, Escape cancels.
 5. Switch active verse: short-tap any other verse → `beginFast(newKey)` swaps target; panel re-renders inside the new active verse. Short-tap while session closed = no-op.

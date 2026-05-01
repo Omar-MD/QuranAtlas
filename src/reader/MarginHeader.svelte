@@ -15,13 +15,13 @@
   import { onMount } from 'svelte'
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
-  import { reader } from '../state/reader.svelte'
+  import { reader } from '../reader/state.svelte'
   import { getSurahs } from '../data/dataset'
-  import { openNavDrawer, toggleNavDrawer } from './nav-drawer-bridge'
+  import { openNavDrawer, toggleNavDrawer } from '../nav/nav-drawer-bridge'
   import { openSettingsSheet } from '../settings/panel-bridge'
   import { cycleTheme } from '../settings/theme'
   import { toggleSurahHeaderHidden } from '../settings/surah-header-visibility'
-  import { classifySwipe, clampSurah } from './swipe-gestures'
+  import { classifySwipe, clampSurah } from '../nav/swipe-gestures'
 
   const HIDE_DELTA = 36
   const SHOW_NEAR_TOP = 20

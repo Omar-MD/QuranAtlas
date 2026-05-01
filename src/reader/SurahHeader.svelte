@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { SurahMeta } from '../data/dataset'
   import { formatSurahMeta, formatArabicSurahName, shouldRenderBasmala } from './render-helpers'
-  import { reader } from '../state/reader.svelte'
-  import { settings } from '../state/settings.svelte'
-  import SurahProgress from '../nav/SurahProgress.svelte'
+  import { reader } from '../reader/state.svelte'
+  import { settings } from '../settings/state.svelte'
+  import SurahProgress from '../reader/SurahProgress.svelte'
 
   interface Props {
     surahNum: number

@@ -13,7 +13,7 @@ import { Events } from '../core/constants'
 import type { SurahMeta } from '../data/dataset'
 import { observeScroll, flushDebounce } from './scroll-tracker'
 import { scrollToVerse } from './verse-scroll'
-import { reader } from '../state/reader.svelte'
+import { reader } from '../reader/state.svelte'
 import { saveGlobalPosition, loadGlobalPosition } from './global-position'
 
 /**

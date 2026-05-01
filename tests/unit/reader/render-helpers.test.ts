@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { formatSurahMeta, formatArabicSurahName, shouldRenderBasmala } from '../../../src/reader/render-helpers.ts'
-import { settings } from '../../../src/state/settings.svelte.ts'
+import { settings } from '../../../src/settings/state.svelte.ts'
 import type { SurahMeta } from '../../../src/data/dataset.ts'
 
 const meta = (n: number, name: string, name_ar: string, hafs: number, warsh = hafs, qaloon = hafs): SurahMeta => ({

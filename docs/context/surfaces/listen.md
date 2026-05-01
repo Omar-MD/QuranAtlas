@@ -7,7 +7,6 @@ owns_stores:
 test_paths:
   unit:
     - 'tests/unit/audio/**'
-    - 'tests/unit/state/audio.test.ts'
   e2e:
     - 'tests/e2e/journey-h-audio*.spec.js'
     - 'tests/e2e/journey-j-audio*.spec.js'
@@ -40,6 +39,8 @@ test_paths:
 | `src/audio/media-session.ts` | navigator.mediaSession wiring. Lock-screen / Bluetooth headset / car |
 | `src/audio/player-bridge.ts` | Bridge for the full-overlay audio player. Open/close affordance lives |
 | `src/audio/player-runtime.ts` | Heart of the audio player: imperative play/pause/seek/setReciter against |
+| `src/audio/state-position.svelte.ts` | Sole writer for the `audioPosition` IDB store. Per data-model.md |
+| `src/audio/state.svelte.ts` | Sole writer for the audio runes + owner of the single global <audio> |
 | `src/audio/timing-loader.ts` | Loads + caches per-(reciter, surah) word-level timing JSON. Word-level |
 <!-- AUTO-GENERATED:inventory END -->
 

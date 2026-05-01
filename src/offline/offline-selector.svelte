@@ -9,11 +9,11 @@
    */
 
   import { onMount } from 'svelte'
-  import { settings } from '../state/settings.svelte.ts'
+  import { settings } from '../settings/state.svelte.ts'
   import {
     DEFAULT_OFFLINE_CATEGORIES,
     type OfflineCategoriesState,
-  } from '../state/settings.svelte.ts'
+  } from '../settings/state.svelte.ts'
   import { setOfflineCategories } from '../settings/offline-categories.ts'
   import {
     getCategoryManifest,

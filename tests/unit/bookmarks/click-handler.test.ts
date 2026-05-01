@@ -3,10 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('../../../src/bookmarks/store', () => ({
   toggle: vi.fn(async () => {}),
 }))
-vi.mock('../../../src/state/settings.svelte', () => ({
+vi.mock('../../../src/settings/state.svelte', () => ({
   settings: { riwayah: 'qaloon' },
 }))
-vi.mock('../../../src/state/tag-session.svelte', () => ({
+vi.mock('../../../src/tag/state.svelte', () => ({
   tagSession: { quickbarOpen: false },
 }))
 vi.mock('../../../src/core/logger', () => ({

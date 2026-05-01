@@ -11,7 +11,7 @@ import {
   DEFAULT_OFFLINE_CATEGORIES,
   type OfflineCategoriesState,
   settings,
-} from '../state/settings.svelte.ts'
+} from '../settings/state.svelte.ts'
 
 const KEY = 'offlineCategories'
 

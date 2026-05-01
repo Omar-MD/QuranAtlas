@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import 'fake-indexeddb/auto'
-import { createEdge, getById, getByVerse, deleteEdge, updateEdge } from '../../../src/edges/store'
+import { createEdge, getById, getByVerse, deleteEdge, updateEdge } from '../../../../src/review/edges/store'
 
 beforeEach(async () => {
-  const { deleteDB, openDB } = await import('../../../src/core/db')
+  const { deleteDB, openDB } = await import('../../../../src/core/db')
   try { await deleteDB() } catch { /* ignore */ }
   await openDB()
 })

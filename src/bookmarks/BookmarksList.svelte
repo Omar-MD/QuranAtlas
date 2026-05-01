@@ -12,7 +12,7 @@
    */
   import { onMount, onDestroy } from 'svelte'
   import { SvelteMap } from 'svelte/reactivity'
-  import { settings } from '../state/settings.svelte'
+  import { settings } from '../settings/state.svelte'
   import { getGroupedForRiwayah, del as delBookmark, type Bookmark } from './store'
   import { getSurahs, getSurah, type SurahMeta } from '../data/dataset'
   import { on, emit } from '../core/events'

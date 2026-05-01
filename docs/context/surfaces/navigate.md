@@ -1,14 +1,7 @@
 ---
 surface: navigate
 src_paths:
-  - 'src/nav/CommandSheet.svelte'
-  - 'src/nav/command-sheet-bridge.ts'
-  - 'src/nav/NavDrawer.svelte'
-  - 'src/nav/nav-drawer-bridge.ts'
-  - 'src/nav/EmptyRoute.svelte'
-  - 'src/nav/reader-actions.js'
-  - 'src/nav/shortcuts-sheet.js'
-  - 'src/nav/swipe-gestures.ts'
+  - 'src/nav/**'
   - 'src/surahs/**'
   - 'src/bookmarks/**'
 owns_stores:
@@ -56,12 +49,15 @@ test_paths:
 | `src/nav/EmptyRoute.svelte` | intentionally empty |
 | `src/nav/NavDrawer.svelte` | Mobile (<1180px): full-screen drawer with two top-level mode tabs: |
 | `src/nav/command-sheet-bridge.ts` | Bridge for the CommandSheet (⌘K) overlay. Migrated to |
+| `src/nav/global-shortcuts.ts` | Boot-mounted global keyboard shortcuts. Survives lazy-mount of overlay |
 | `src/nav/nav-drawer-bridge.ts` | Imperative bridge for the NavDrawer Svelte component. Migrated to |
 | `src/nav/reader-actions.js` | Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m). |
 | `src/nav/shortcuts-sheet.js` | Shortcuts cheatsheet — opened by `?` (also reachable from More → Shortcuts |
+| `src/nav/state-command-sheet.svelte.ts` | _(no leading comment)_ |
 | `src/nav/swipe-gestures.ts` | Pure swipe-classification helpers for MarginHeader gestures. |
 | `src/surahs/SurahList.svelte` | ---- data loaded on mount ---- |
 | `src/surahs/SurahRow.svelte` | _(no leading comment)_ |
+| `src/surahs/state.svelte.ts` | _(no leading comment)_ |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -214,14 +210,15 @@ _(no cross-surface reads detected)_
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (6):**
+**Unit (7):**
 
 - `tests/unit/bookmarks/click-handler.test.ts`
 - `tests/unit/bookmarks/store.test.ts`
-- `tests/unit/nav/MarginHeader-toggle.test.ts`
 - `tests/unit/nav/command-sheet.test.ts`
 - `tests/unit/nav/drawer.test.ts`
+- `tests/unit/nav/state-command-sheet.test.ts`
 - `tests/unit/nav/swipe-gestures.test.ts`
+- `tests/unit/surahs/state.test.ts`
 
 **E2E (1):**
 

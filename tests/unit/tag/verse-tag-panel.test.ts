@@ -14,8 +14,8 @@ vi.mock('../../../src/marks/store', () => ({
   save: vi.fn(async () => undefined),
 }))
 
-import VerseTagPanel from '../../../src/reader/VerseTagPanel.svelte'
-import { tagSession } from '../../../src/state/tag-session.svelte'
+import VerseTagPanel from '../../../src/marks/VerseTagPanel.svelte'
+import { tagSession } from '../../../src/tag/state.svelte'
 import { tagSheetBridge } from '../../../src/tag/sheet-bridge'
 
 async function flush() {

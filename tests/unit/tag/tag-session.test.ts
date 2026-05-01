@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { TagSessionState, tagSession } from '../../../src/state/tag-session.svelte'
+import { TagSessionState, tagSession } from '../../../src/tag/state.svelte'
 import { LAYER_NAMES } from '../../../src/core/db'
 
 describe('state/tag-session.svelte.ts', () => {

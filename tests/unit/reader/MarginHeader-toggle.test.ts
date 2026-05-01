@@ -1,8 +1,8 @@
 import { render, fireEvent } from '@testing-library/svelte'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import MarginHeader from '../../../src/nav/MarginHeader.svelte'
-import { reader } from '../../../src/state/reader.svelte.ts'
-import { settings } from '../../../src/state/settings.svelte.ts'
+import MarginHeader from '../../../src/reader/MarginHeader.svelte'
+import { reader } from '../../../src/reader/state.svelte.ts'
+import { settings } from '../../../src/settings/state.svelte.ts'
 
 // Real dataset uses `name_ar` (not `arabic`) — see public/dataset/surahs.json.
 // Mock here MUST mirror that shape so a regression like the 2026-04-26 bug

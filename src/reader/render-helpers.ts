@@ -7,7 +7,7 @@
  */
 
 import type { SurahMeta } from '../data/dataset'
-import { settings } from '../state/settings.svelte'
+import { settings } from '../settings/state.svelte'
 import type { Riwayah } from '../settings/riwayah'
 
 /**

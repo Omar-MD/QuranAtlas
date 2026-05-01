@@ -10,7 +10,7 @@
    */
 
   import { onMount } from 'svelte'
-  import { tagSession } from '../state/tag-session.svelte'
+  import { tagSession } from '../tag/state.svelte'
   import { tagSheetBridge } from '../tag/sheet-bridge'
   import { LAYER_GROUPS, LAYER_PREFIXES, LAYER_TO_GROUP, QUICK_PICKS, parseLayeredValue, autofillPrefix } from '../data/tag-layers'
   import type { LayerGroup } from '../data/tag-layers'

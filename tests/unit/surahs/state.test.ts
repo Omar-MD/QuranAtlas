@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { surahs } from '../../../src/state/surahs.svelte.ts'
+import { surahs } from '../../../src/surahs/state.svelte.ts'
 
 describe('state/surahs.svelte.ts', () => {
   beforeEach(() => {

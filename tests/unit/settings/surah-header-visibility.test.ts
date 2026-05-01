@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { del, openDB, put, get } from '../../../src/core/db.js'
-import { settings } from '../../../src/state/settings.svelte.ts'
-import { reader } from '../../../src/state/reader.svelte.ts'
+import { settings } from '../../../src/settings/state.svelte.ts'
+import { reader } from '../../../src/reader/state.svelte.ts'
 
 describe('surah-header-visibility', () => {
   beforeEach(async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { del, openDB, put } from '../../../src/core/db.js'
-import { settings } from '../../../src/state/settings.svelte.ts'
+import { settings } from '../../../src/settings/state.svelte.ts'
 
 const KEYS = ['lineSpacing', 'wordSpacing', 'readerMargin', 'verseSpacing'] as const
 const ATTRS = {

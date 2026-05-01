@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { commandSheet } from '../../../src/state/command-sheet.svelte.ts'
+import { commandSheet } from '../../../src/nav/state-command-sheet.svelte.ts'
 
 describe('state/command-sheet.svelte.ts', () => {
   beforeEach(() => {

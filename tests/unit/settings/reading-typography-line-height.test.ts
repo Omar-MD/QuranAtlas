@@ -5,7 +5,7 @@ vi.mock('../../../src/core/db.js', () => ({
   put: vi.fn(),
 }))
 vi.mock('../../../src/core/logger.js', () => ({ logger: { error: vi.fn() } }))
-vi.mock('../../../src/state/settings.svelte.ts', () => ({ settings: {} as Record<string, unknown> }))
+vi.mock('../../../src/settings/state.svelte.ts', () => ({ settings: {} as Record<string, unknown> }))
 vi.mock('../../../src/core/events.ts', () => ({ on: vi.fn(() => () => {}), emit: vi.fn() }))
 
 describe('lineHeightFor', () => {

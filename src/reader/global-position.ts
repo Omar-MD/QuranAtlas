@@ -9,7 +9,7 @@
  */
 
 import { get, put, del } from '../core/db'
-import { settings, type GlobalPosition } from '../state/settings.svelte'
+import { settings, type GlobalPosition } from '../settings/state.svelte'
 import { logger } from '../core/logger'
 
 const KEY = 'currentPosition'

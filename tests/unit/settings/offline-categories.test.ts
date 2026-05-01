@@ -12,7 +12,7 @@ vi.mock('../../../src/core/logger.js', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }))
 
-import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/state/settings.svelte'
+import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/settings/state.svelte'
 import {
   loadOfflineCategories,
   setOfflineCategories,

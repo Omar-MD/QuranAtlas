@@ -43,8 +43,8 @@ vi.mock('../../../src/core/db', async (orig) => {
 
 import NavDrawer from '../../../src/nav/NavDrawer.svelte'
 import { openNavDrawer } from '../../../src/nav/nav-drawer-bridge'
-import { surahs as surahsState } from '../../../src/state/surahs.svelte'
-import { settings } from '../../../src/state/settings.svelte'
+import { surahs as surahsState } from '../../../src/surahs/state.svelte'
+import { settings } from '../../../src/settings/state.svelte'
 import { Events } from '../../../src/core/constants'
 import { on, clear } from '../../../src/core/events'
 import { add as addBookmark } from '../../../src/bookmarks/store'

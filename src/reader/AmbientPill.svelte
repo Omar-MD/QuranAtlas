@@ -3,9 +3,9 @@
   import { getSurahs, type SurahMeta as DatasetSurahMeta } from '../data/dataset'
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
-  import { reader } from '../state/reader.svelte'
-  import { ambientChrome } from '../state/ambient-chrome.svelte'
-  import { openCommandSheet } from './command-sheet-bridge'
+  import { reader } from '../reader/state.svelte'
+  import { ambientChrome } from '../reader/state-ambient.svelte'
+  import { openCommandSheet } from '../nav/command-sheet-bridge'
 
   const AUTO_FADE_MS = 2800
 

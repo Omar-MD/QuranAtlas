@@ -10,14 +10,14 @@
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { LAYER_NAMES, type LayerName } from '../core/db'
-  import { persistLastSurface } from '../state/last-surface.svelte'
+  import { persistLastSurface } from '../settings/state-last-surface.svelte'
   import { logger } from '../core/logger'
   import { save as saveState, load as loadState, getDefaultState } from './state'
   import { parseLayerFromHash } from './parse-layer-query'
   import { clearUndoToast } from '../core/ui-bridge'
   import { validateLayerParam } from '../safety/input-validator'
   import { announce } from '../a11y/announcer'
-  import { review } from '../state/review.svelte'
+  import { review } from '../review/state.svelte'
   import { openEditor as _openEditor } from '../marks/editor-bridge'
 
   // Props: layer + value are present when route is #/<layer>/:value (FVR)

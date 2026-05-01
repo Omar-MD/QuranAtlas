@@ -33,7 +33,7 @@ vi.mock('../../../src/a11y/announcer.js', () => ({ announce: vi.fn() }))
 import Panel from '../../../src/settings/Panel.svelte'
 import { openSettingsSheet, closeSettingsSheet } from '../../../src/settings/panel-bridge.ts'
 import { del, get, openDB } from '../../../src/core/db.js'
-import { settings } from '../../../src/state/settings.svelte.ts'
+import { settings } from '../../../src/settings/state.svelte.ts'
 
 const FLOW_KEYS = ['theme', 'translationVisible', 'translationId', 'riwayah', 'fontSize',
                    'lineSpacing', 'wordSpacing', 'readerMargin', 'verseSpacing'] as const

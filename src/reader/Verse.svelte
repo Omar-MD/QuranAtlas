@@ -1,8 +1,8 @@
 <script lang="ts">
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
-  import { tagSession } from '../state/tag-session.svelte'
-  import VerseTagPanel from './VerseTagPanel.svelte'
+  import { tagSession } from '../tag/state.svelte'
+  import VerseTagPanel from '../marks/VerseTagPanel.svelte'
   import { parseTranslationTokens } from './translation-tokens'
 
   interface Props {

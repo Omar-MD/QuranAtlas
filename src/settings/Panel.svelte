@@ -4,7 +4,7 @@
   import { emit } from '../core/events.js'
   import { Events } from '../core/constants.js'
   import { logger } from '../core/logger.js'
-  import { settings } from '../state/settings.svelte.ts'
+  import { settings } from '../settings/state.svelte.ts'
   import { getThemeOptions, setTheme } from './theme.ts'
   import { getFontSizeOptions, setFontSize, resetFontSize } from './font-size.ts'
   import {

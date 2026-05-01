@@ -10,7 +10,7 @@
 import { getSurahs } from '../data/dataset.js'
 import { beginFast } from '../tag/session-bridge'
 import { announce } from '../a11y/announcer.js'
-import { reader } from '../state/reader.svelte'
+import { reader } from '../reader/state.svelte'
 
 let surahMetaCache = null
 

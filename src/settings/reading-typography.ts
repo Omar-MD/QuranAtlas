@@ -6,7 +6,7 @@
 
 import { get, put } from '../core/db.js'
 import { logger } from '../core/logger.js'
-import { settings } from '../state/settings.svelte.ts'
+import { settings } from '../settings/state.svelte.ts'
 import type { Riwayah } from './riwayah'
 import { on } from '../core/events.ts'
 import { Events } from '../core/constants'

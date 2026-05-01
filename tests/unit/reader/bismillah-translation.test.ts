@@ -1,8 +1,8 @@
 import { render } from '@testing-library/svelte'
 import { describe, it, expect, beforeEach } from 'vitest'
 import SurahHeader from '../../../src/reader/SurahHeader.svelte'
-import { reader } from '../../../src/state/reader.svelte.ts'
-import { settings } from '../../../src/state/settings.svelte.ts'
+import { reader } from '../../../src/reader/state.svelte.ts'
+import { settings } from '../../../src/settings/state.svelte.ts'
 import type { SurahMeta } from '../../../src/data/dataset.ts'
 
 const meta = (n: number, name: string, name_ar: string, count: number): SurahMeta => ({

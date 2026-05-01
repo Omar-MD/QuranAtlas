@@ -6,7 +6,7 @@ import {
   saveGlobalPosition,
   clearGlobalPosition,
 } from '../../../src/reader/global-position'
-import { settings } from '../../../src/state/settings.svelte'
+import { settings } from '../../../src/settings/state.svelte'
 
 describe('reader/global-position.ts', () => {
   beforeEach(async () => {

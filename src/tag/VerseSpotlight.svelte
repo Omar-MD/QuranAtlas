@@ -5,7 +5,7 @@
    * listener to re-align on scroll / resize.
    */
   import { onMount, onDestroy } from 'svelte'
-  import { tagSession } from '../state/tag-session.svelte'
+  import { tagSession } from '../tag/state.svelte'
 
   let rect = $state<{ top: number; bottom: number; left: number; right: number } | null>(null)
   let raf = 0
