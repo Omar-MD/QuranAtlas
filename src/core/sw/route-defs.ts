@@ -1,0 +1,179 @@
+/**
+ * Per-asset-class route definitions for the QuranAtlas service worker.
+ * Pure module — no workbox imports — so window-side code (offline-selector,
+ * data/offline.ts) can read the same table the SW uses for registration.
+ *
+ * Audit P2.14 / R-11 / C-4 / CC-7: single declarative source replaces the
+ * pre-N21 ad-hoc registerRoute calls inline in sw.js.
+ */
+
+import { CACHE_DATASET } from '../constants'
+
+export type Category = 'text' | 'audio' | 'pages' | 'search'
+
+/** Categories the offline-selector exposes. `null` route category = always-on. */
+export const CATEGORIES: readonly Category[] = ['text', 'audio', 'pages', 'search'] as const
+
+export type StrategyKind = 'NetworkFirst' | 'CacheFirst'
+
+export type RouteDef = {
+  /** Stable identifier — debug, tests. */
+  name: string
+  /** URL predicate. Same shape workbox accepts. */
+  match: (ctx: { url: URL }) => boolean
+  strategy: StrategyKind
+  /** Static cache name OR derive from the URL (per-reciter, per-riwayah). */
+  cacheName: string | ((url: URL) => string)
+  maxEntries: number
+  /** Days. Workbox uses seconds — multiplied at registration time. */
+  maxAgeDays: number
+  purgeOnQuotaError?: boolean
+  /** Selector category. `null` = always-on (e.g. fonts). */
+  category: Category | null
+  /** True for routes registered ahead of their consumer (mushaf-pages, search-index). */
+  roadmap?: boolean
+}
+
+const audioReciterFromUrl = (url: URL): string => {
+  // /dataset/audio/{reciter}/...   — extract {reciter} segment.
+  const parts = url.pathname.split('/')
+  return parts[3] || 'unknown'
+}
+
+const pagesRiwayahFromUrl = (url: URL): string => {
+  const parts = url.pathname.split('/')
+  return parts[3] || 'unknown'
+}
+
+export const ROUTE_DEFS: readonly RouteDef[] = [
+  {
+    name: 'text',
+    match: ({ url }) =>
+      url.pathname.startsWith('/dataset/') &&
+      !url.pathname.startsWith('/dataset/audio/') &&
+      !url.pathname.startsWith('/dataset/mushaf-pages/') &&
+      url.pathname !== '/dataset/search-index.json',
+    strategy: 'NetworkFirst',
+    cacheName: CACHE_DATASET,
+    maxEntries: 1000,
+    maxAgeDays: 365,
+    category: 'text',
+  },
+  {
+    name: 'audio-mp3',
+    match: ({ url }) => /^\/dataset\/audio\/[^/]+\/\d+\.mp3$/.test(url.pathname),
+    strategy: 'CacheFirst',
+    cacheName: (url) => `qa-audio-${audioReciterFromUrl(url)}-v1`,
+    maxEntries: 200,
+    maxAgeDays: 90,
+    purgeOnQuotaError: true,
+    category: 'audio',
+  },
+  {
+    name: 'audio-timing',
+    match: ({ url }) => /^\/dataset\/audio\/[^/]+\/timing\/\d+\.json$/.test(url.pathname),
+    strategy: 'CacheFirst',
+    cacheName: (url) => `qa-audio-timing-${audioReciterFromUrl(url)}-v1`,
+    maxEntries: 120,
+    maxAgeDays: 90,
+    purgeOnQuotaError: true,
+    category: 'audio',
+  },
+  {
+    name: 'audio-meta',
+    match: ({ url }) =>
+      url.pathname === '/dataset/audio/index.json' ||
+      /^\/dataset\/audio\/[^/]+\/manifest\.json$/.test(url.pathname),
+    strategy: 'NetworkFirst',
+    cacheName: 'qa-audio-meta-v1',
+    maxEntries: 32,
+    maxAgeDays: 7,
+    category: 'audio',
+  },
+  {
+    name: 'pages',
+    match: ({ url }) => /^\/dataset\/mushaf-pages\/[^/]+\/.+$/.test(url.pathname),
+    strategy: 'CacheFirst',
+    cacheName: (url) => `qa-pages-${pagesRiwayahFromUrl(url)}-v1`,
+    maxEntries: 700,
+    maxAgeDays: 365,
+    purgeOnQuotaError: true,
+    category: 'pages',
+    roadmap: true,
+  },
+  {
+    name: 'search',
+    match: ({ url }) => url.pathname === '/dataset/search-index.json',
+    strategy: 'CacheFirst',
+    cacheName: 'qa-search-v1',
+    maxEntries: 4,
+    maxAgeDays: 90,
+    category: 'search',
+    roadmap: true,
+  },
+  {
+    name: 'fonts',
+    match: ({ url }) => url.pathname.startsWith('/fonts/') && url.pathname.endsWith('.woff2'),
+    strategy: 'CacheFirst',
+    cacheName: 'qa-fonts-v1',
+    maxEntries: 10,
+    maxAgeDays: 365,
+    category: null,
+  },
+] as const
+
+/**
+ * Cache-name prefixes that activate-cleanup must preserve. Union of every
+ * static cacheName plus dynamic-cacheName prefixes (per-reciter, per-riwayah).
+ */
+export const CACHE_PREFIXES: readonly string[] = [
+  'workbox-precache',
+  CACHE_DATASET,
+  'qa-audio-',
+  'qa-fonts-',
+  'qa-pages-',
+  'qa-search-',
+] as const
+
+/** First matching route wins (table order). null when no route matches. */
+export function routeFor(url: URL): RouteDef | null {
+  for (const def of ROUTE_DEFS) {
+    if (def.match({ url })) return def
+  }
+  return null
+}
+
+export function categoryFor(url: URL): Category | null {
+  const def = routeFor(url)
+  return def ? def.category : null
+}
+
+export function cacheNameFor(url: URL): string | null {
+  const def = routeFor(url)
+  if (!def) return null
+  return typeof def.cacheName === 'function' ? def.cacheName(url) : def.cacheName
+}
+
+/**
+ * Sum bytes for every manifest entry whose URL routes to the given category.
+ * `manifest.fileSizes` is the additive map written by build-dataset.mjs in N21.
+ * Entries missing a size contribute 0 (legacy manifests degrade gracefully).
+ */
+export function sumBytesForCategory(
+  manifest: { files: Record<string, unknown>; fileSizes?: Record<string, number> },
+  category: Category,
+  origin = 'http://localhost'
+): { urls: string[]; totalBytes: number } {
+  const urls: string[] = []
+  let totalBytes = 0
+  const files = manifest.files || {}
+  const sizes = manifest.fileSizes || {}
+  for (const rel of Object.keys(files)) {
+    const url = new URL(`/dataset/${rel}`, origin)
+    if (categoryFor(url) === category) {
+      urls.push(`/dataset/${rel}`)
+      totalBytes += typeof sizes[rel] === 'number' ? sizes[rel] : 0
+    }
+  }
+  return { urls, totalBytes }
+}

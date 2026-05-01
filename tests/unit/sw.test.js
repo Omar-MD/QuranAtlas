@@ -15,6 +15,12 @@ vi.mock('workbox-precaching', () => ({
   precacheAndRoute,
 }))
 
+// N21: route registration moved to core/sw/strategies.ts. The shell test
+// asserts message + activate dispatch only — stub the aggregator.
+vi.mock('../../src/core/sw/strategies', () => ({
+  registerAll: vi.fn(),
+}))
+
 vi.mock('../../src/offline/dataset-updater.js', () => ({
   checkForUpdate,
   applyUpdate,
@@ -165,11 +171,14 @@ describe('sw.js shell wiring', () => {
     expect(cleanupStaleCaches).toHaveBeenCalledWith(
       expect.objectContaining({
         expectedCaches: expect.any(Set),
+        preservePrefixes: expect.any(Array),
       })
     )
 
-    const [{ expectedCaches }] = cleanupStaleCaches.mock.calls[0]
+    const [{ expectedCaches, preservePrefixes }] = cleanupStaleCaches.mock.calls[0]
     expect(expectedCaches).toEqual(new Set([CACHE_DATASET, STAGING_CACHE]))
+    // N21: preservePrefixes sourced from core/sw/route-defs::CACHE_PREFIXES.
+    expect(preservePrefixes).toEqual(expect.arrayContaining(['workbox-precache', 'qa-audio-', 'qa-fonts-']))
     expect(activateEvent.waitUntil).toHaveBeenCalledTimes(1)
     expect(activateEvent.waitUntil.mock.calls[0][0]).toBeInstanceOf(Promise)
   })

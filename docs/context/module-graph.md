@@ -78,6 +78,9 @@ graph LR
   src_nav --> src_state
   src_nav --> src_tag
   src_offline --> src_core
+  src_offline --> src_data
+  src_offline --> src_settings
+  src_offline --> src_state
   src_onboarding --> src_core
   src_onboarding --> src_data
   src_onboarding --> src_settings
@@ -100,6 +103,7 @@ graph LR
   src_settings --> src_a11y
   src_settings --> src_core
   src_settings --> src_data
+  src_settings --> src_offline
   src_settings --> src_safety
   src_settings --> src_state
   src_state --> src_core
@@ -158,7 +162,7 @@ graph LR
 ### `src/data`
 
 - **Imports from:** `src/core`, `src/settings`, `src/state`
-- **Imported by:** `src/bookmarks`, `src/core`, `src/nav`, `src/onboarding`, `src/reader`, `src/review`, `src/settings`, `src/state`, `src/surahs`, `src/tag`
+- **Imported by:** `src/bookmarks`, `src/core`, `src/nav`, `src/offline`, `src/onboarding`, `src/reader`, `src/review`, `src/settings`, `src/state`, `src/surahs`, `src/tag`
 
 ### `src/edges`
 
@@ -177,8 +181,8 @@ graph LR
 
 ### `src/offline`
 
-- **Imports from:** `src/core`
-- **Imported by:** `src`
+- **Imports from:** `src/core`, `src/data`, `src/settings`, `src/state`
+- **Imported by:** `src`, `src/settings`
 
 ### `src/onboarding`
 
@@ -202,13 +206,13 @@ graph LR
 
 ### `src/settings`
 
-- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/safety`, `src/state`
-- **Imported by:** `src`, `src/about`, `src/audio`, `src/data`, `src/nav`, `src/onboarding`, `src/reader`
+- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/offline`, `src/safety`, `src/state`
+- **Imported by:** `src`, `src/about`, `src/audio`, `src/data`, `src/nav`, `src/offline`, `src/onboarding`, `src/reader`
 
 ### `src/state`
 
 - **Imports from:** `src/core`, `src/data`
-- **Imported by:** `src`, `src/audio`, `src/bookmarks`, `src/core`, `src/data`, `src/nav`, `src/reader`, `src/review`, `src/safety`, `src/settings`, `src/surahs`, `src/tag`
+- **Imported by:** `src`, `src/audio`, `src/bookmarks`, `src/core`, `src/data`, `src/nav`, `src/offline`, `src/reader`, `src/review`, `src/safety`, `src/settings`, `src/surahs`, `src/tag`
 
 ### `src/surahs`
 

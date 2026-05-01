@@ -62,6 +62,10 @@ These are NOT permitted without an architecture-level decision (audit / brainsto
 - `*` (wildcard) anywhere — banned. Always enumerate origins.
 - A new third-party origin without privacy review.
 
+## N21 — offline selector (2026-05-01) widens nothing
+
+The per-asset-class SW partition + offline opt-in selector (audit P2.14 / R-11 / C-4 / CC-7) introduce no new outbound origins. Every category — text, audio, pages, search, fonts — is self-hosted under `/dataset/*` or `/fonts/*`; the existing `connect-src 'self'` line continues to cover them. The per-reciter and per-riwayah cache namespaces are name-only (Cache Storage entries); they do not generate new HTTP origins.
+
 ## Future widenings (sketches — not policy)
 
 Tracked in `docs/context/future-work.md`:

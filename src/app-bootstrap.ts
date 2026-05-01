@@ -17,6 +17,7 @@ import { initInstallListener } from './about/pwa-install'
 import { initTheme } from './settings/theme.ts'
 import { initFontSize } from './settings/font-size.ts'
 import { initRiwayah } from './settings/riwayah.ts'
+import { initOfflineCategories } from './settings/offline-categories.ts'
 import { initReadingTypography } from './settings/reading-typography.ts'
 import { initNightMode } from './settings/night-mode.ts'
 import { initSurahHeaderHidden } from './settings/surah-header-visibility.ts'
@@ -148,6 +149,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     await initReadingTypography()
     await initNightMode()
     await initSurahHeaderHidden()
+
+    // Offline categories rune (N21) — must precede `restoreActivationState`
+    // below so `getActivationState()` reads the loaded selector state. Cheap;
+    // a single IDB read.
+    await initOfflineCategories()
 
     // Audio (v2.0 milestone). Loads audio settings, wires cross-tab
     // gating, registers reader-highlight + auto-scroll subscribers.
@@ -321,6 +327,9 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     const offline = await import('./data/offline.js')
     offline.initInstallPrompt()
     await offline.checkStorageQuota()
+    // N21 wipe-and-re-opt-in migration: drop legacy 'cached' marker so
+    // selector renders empty when categories rune is also empty.
+    await offline.initOfflineMigration()
     await restoreActivationState(offline)
   } catch (error) {
     for (const fn of bootCleanups) { try { fn() } catch { /* ignore */ } }

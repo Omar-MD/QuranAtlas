@@ -116,4 +116,67 @@ test.describe('Journey H: Offline resilience', () => {
       await context.setOffline(false)
     }
   })
+
+  // -------------------------------------------------------------------------
+  // H2. Storage selector — per-feature offline opt-in (N21)
+  // @offline — only runs in the "Offline (Preview)" project
+  //
+  // Rule 8 criterion 7 — page reload + re-hydrate proves boot wires
+  // initOfflineMigration + initOfflineCategories into the real app shell.
+  // -------------------------------------------------------------------------
+
+  test('H2: Storage selector opts into text category and persists across reload @offline', async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await waitForServiceWorker(page)
+
+    // Open Settings via direct route (desktop @offline viewport).
+    await page.goto('/#/settings')
+
+    // Storage section is present + text row is available (text manifest entries exist).
+    const storageSection = page.locator('[data-testid="storage-section"]')
+    await expect(storageSection).toBeVisible({ timeout: 5_000 })
+    const textRow = page.locator('[data-testid="storage-row-text"]')
+    await expect(textRow).toBeVisible()
+
+    // Expand the text accordion row + check its checkbox.
+    await textRow.locator('summary').click()
+    const textCheck = page.locator('[data-testid="storage-check-text"]')
+    await expect(textCheck).toBeVisible()
+    await textCheck.check()
+
+    // Apply commits the selection.
+    const apply = page.locator('[data-testid="storage-apply"]')
+    await expect(apply).toBeEnabled()
+    await apply.click()
+
+    // After Apply, the selector persists the new state. Reload + re-mount
+    // the rune from IDB to prove the boot path wires it.
+    await page.reload()
+    await waitForReader(page)
+    await page.goto('/#/settings')
+
+    const persisted = await page.evaluate(async () => {
+      const db = await new Promise((resolve, reject) => {
+        const req = indexedDB.open('quranatlas')
+        req.onsuccess = () => resolve(req.result)
+        req.onerror = () => reject(req.error)
+      })
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction('settings', 'readonly')
+        const r = tx.objectStore('settings').get('offlineCategories')
+        r.onsuccess = () => resolve(r.result?.value ?? null)
+        r.onerror = () => reject(r.error)
+      })
+    })
+
+    expect(persisted).toBeTruthy()
+    expect(persisted.text).toBeDefined()
+    expect(persisted.text.hafs).toBe(true)
+    expect(persisted.text.warsh).toBe(true)
+    expect(persisted.text.qaloon).toBe(true)
+  })
 })

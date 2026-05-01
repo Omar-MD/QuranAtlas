@@ -1,20 +1,28 @@
 /**
- * PWA install lifecycle + corpus download orchestration.
- * Deep module: callers request "start download" or "cancel download" and react to events.
+ * PWA install lifecycle + per-category corpus download orchestration.
+ *
+ * Pre-N21 the API exposed a single `startDownload()` covering the whole corpus.
+ * N21 (2026-05-01, audit P2.14 / R-11 / C-4 / CC-7) split offline opt-in by
+ * category — see `core/sw/route-defs.ts` for the route table and
+ * `offline/offline-selector.svelte` for the UI. Callers request a category
+ * download; the SW caches into the per-asset-class namespace via the route
+ * table.
  */
 
-import { put, get } from '../core/db'
+import { put, get, del } from '../core/db'
 import { emit, on } from '../core/events'
 import { Events, Errors } from '../core/constants'
 import { logger } from '../core/logger'
-import { getManifestUrls } from './dataset'
+import {
+  ROUTE_DEFS,
+  sumBytesForCategory,
+  type Category,
+} from '../core/sw/route-defs'
+import { settings } from '../state/settings.svelte'
 
-// Minimum free space required for download (20 MB)
-// Corpus is ~5-10 MB; this provides buffer for growth
-const MIN_FREE_SPACE_BYTES = 20 * 1024 * 1024
 const QUOTA_WARN_THRESHOLD = 0.8
-
 const ACTIVATION_KEY = 'current'
+
 let currentMessageHandler: ((event: MessageEvent) => void) | null = null
 let pendingUrls: string[] | null = null
 let controllerChangeHandler: (() => void) | null = null
@@ -22,57 +30,120 @@ let _swTimeoutId: ReturnType<typeof setTimeout> | null = null
 
 export type ActivationStatus = 'none' | 'downloading' | 'cached'
 
-/**
- * Get the current activation state.
- */
+type ManifestShape = {
+  files: Record<string, unknown>
+  fileSizes?: Record<string, number>
+}
+
+let _manifestCache: ManifestShape | null = null
+
+async function fetchManifest(): Promise<ManifestShape> {
+  if (_manifestCache) return _manifestCache
+  const res = await fetch('/dataset/manifest.json')
+  if (!res.ok) throw new Error(`Failed to fetch manifest: ${res.status}`)
+  const json = (await res.json()) as ManifestShape
+  _manifestCache = json
+  return json
+}
+
+function isAnyCategoryCached(): boolean {
+  const c = settings.offlineCategories
+  if (!c) return false
+  if (c.text.hafs || c.text.warsh || c.text.qaloon) return true
+  if (Object.values(c.audio).some(Boolean)) return true
+  if (Object.values(c.pages).some(Boolean)) return true
+  if (c.search) return true
+  return false
+}
+
 export async function getActivationState(): Promise<ActivationStatus> {
   try {
     const record = await get('activationState', ACTIVATION_KEY)
-    return (record?.status as ActivationStatus) || 'none'
+    if (record?.status === 'downloading') return 'downloading'
+    if (isAnyCategoryCached()) return 'cached'
+    return 'none'
   } catch (error) {
-    logger.error('Failed to get activation state:', {
-      error,
-    })
+    logger.error('Failed to get activation state:', { error })
     return 'none'
   }
 }
 
-/**
- * Set the activation state.
- */
-async function setActivationState(status: ActivationStatus): Promise<void> {
-  await put('activationState', { id: ACTIVATION_KEY, status })
+async function setDownloading(): Promise<void> {
+  await put('activationState', { id: ACTIVATION_KEY, status: 'downloading' })
+}
+
+async function clearActivation(): Promise<void> {
+  try {
+    await del('activationState', ACTIVATION_KEY)
+  } catch {
+    /* del may not exist for IDBKeyRange in some envs; best-effort */
+  }
 }
 
 /**
- * Check storage quota and emit STORAGE_QUOTA_WARNING if usage >= 80%.
- * Safe to call repeatedly — a no-op when storage API is unavailable.
+ * Wipe-and-re-opt-in migration (N21, audit C-4). Pre-N21 the single
+ * `'current'` activationState record meant "user opted into the full corpus";
+ * post-N21, opt-in lives in `settings.offlineCategories` and the record only
+ * tracks in-flight downloads. On first boot after upgrade, drop any legacy
+ * `'cached'` marker so `getActivationState()` reports `'none'` and the
+ * selector renders empty for re-opt-in.
  */
-export async function checkStorageQuota(): Promise<void> {
-  if (!navigator.storage?.estimate) {
-    return
+export async function initOfflineMigration(): Promise<void> {
+  try {
+    const record = await get('activationState', ACTIVATION_KEY)
+    if (record?.status === 'cached' && !isAnyCategoryCached()) {
+      await clearActivation()
+    }
+  } catch (error) {
+    logger.warn('initOfflineMigration: read failed', { error })
   }
+}
+
+export async function checkStorageQuota(): Promise<void> {
+  if (!navigator.storage?.estimate) return
   try {
     const { usage, quota } = await navigator.storage.estimate()
     if (quota && usage !== undefined && usage / quota >= QUOTA_WARN_THRESHOLD) {
       emit(Events.STORAGE_QUOTA_WARNING, {})
     }
   } catch (error) {
-    logger.warn('Storage quota check failed:', {
-      error,
-    })
+    logger.warn('Storage quota check failed:', { error })
   }
 }
 
 /**
- * Send a message to the service worker controller, scheduling a single retry
- * after `timeoutMs` if no SW response arrives. Emits OFFLINE_SW_TIMEOUT if
- * both attempts time out.
+ * Sum bytes + collect URLs for one category from the dataset manifest.
+ * Routing rules live in `core/sw/route-defs.ts::ROUTE_DEFS`.
  */
-function postMessageWithTimeout(msg: { type: string; urls?: string[] }, timeoutMs = 10000): void {
-  if (!navigator.serviceWorker.controller) {
-    return
+export async function getCategoryManifest(
+  category: Category
+): Promise<{ urls: string[]; totalBytes: number }> {
+  const manifest = await fetchManifest()
+  return sumBytesForCategory(manifest, category, location.origin)
+}
+
+/** True if a category has at least one shipped asset in the current manifest. */
+export async function isCategoryAvailable(category: Category): Promise<boolean> {
+  const { urls } = await getCategoryManifest(category)
+  return urls.length > 0
+}
+
+/**
+ * Storage estimate the selector uses to decide whether a selection fits
+ * before starting a download (audit Q4 — pre-flight refuse).
+ */
+export async function getStorageBudget(): Promise<{ usage: number; quota: number; available: number } | null> {
+  if (!navigator.storage?.estimate) return null
+  try {
+    const { usage = 0, quota = 0 } = await navigator.storage.estimate()
+    return { usage, quota, available: Math.max(0, quota - usage) }
+  } catch {
+    return null
   }
+}
+
+function postMessageWithTimeout(msg: { type: string; urls?: string[] }, timeoutMs = 10000): void {
+  if (!navigator.serviceWorker.controller) return
 
   let retried = false
 
@@ -85,7 +156,6 @@ function postMessageWithTimeout(msg: { type: string; urls?: string[] }, timeoutM
         navigator.serviceWorker.controller.postMessage(msg)
         scheduleTimeout()
       } else if (pendingUrls) {
-        // Both attempts timed out with no SW response
         emit(Events.OFFLINE_SW_TIMEOUT, {})
       }
     }, timeoutMs)
@@ -103,53 +173,45 @@ function cancelSwTimeout(): void {
 }
 
 /**
- * Start downloading the corpus.
- * Emits offline:download-progress, offline:download-complete, offline:download-error.
+ * Download every asset belonging to a category. Routes the SW to the right
+ * cache via the route table — text → CACHE_DATASET, audio → per-reciter, etc.
+ * Pre-N21 single-corpus `startDownload()` is replaced by this; the boot path
+ * cancels in-flight downloads via `cancelDownload()` (unchanged).
  */
-export async function startDownload(): Promise<void> {
+export async function startCategoryDownload(category: Category): Promise<void> {
   const current = await getActivationState()
-  if (current === 'downloading' || current === 'cached') {
-    return
-  }
+  if (current === 'downloading') return
 
-  // Clean up any existing listener first to prevent leaks
   if (currentMessageHandler) {
     navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
     currentMessageHandler = null
   }
 
-  await setActivationState('downloading')
-
-  // Check storage quota - fail hard if we can't estimate, to avoid mid-download failures
+  let plan: { urls: string[]; totalBytes: number }
   try {
-    const estimate = await navigator.storage.estimate()
-    if (estimate.quota && estimate.usage !== undefined) {
-      const available = estimate.quota - estimate.usage
-      // Corpus is ~5-10 MB; require at least 20 MB free
-      if (available < MIN_FREE_SPACE_BYTES) {
-        emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: Errors.INSUFFICIENT_STORAGE })
-        await setActivationState('none')
-        return
-      }
-    }
-  } catch (error) {
-    // Storage estimate not available - log warning but proceed with download
-    logger.warn('Storage estimate unavailable, proceeding with download:', {
-      error,
-    })
-  }
-
-  // Get manifest URLs
-  let urls: string[]
-  try {
-    urls = await getManifestUrls()
+    plan = await getCategoryManifest(category)
   } catch (error) {
     emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: (error as Error).message })
-    await setActivationState('none')
     return
   }
 
-  // Listen for SW messages
+  if (plan.urls.length === 0) {
+    // Category has no assets in the current manifest (gated category, e.g.
+    // audio before reciter dataset ships) — succeed silently rather than
+    // emitting an error.
+    emit(Events.OFFLINE_DOWNLOAD_COMPLETE, {})
+    return
+  }
+
+  // Pre-flight quota gate (audit Q4).
+  const budget = await getStorageBudget()
+  if (budget && budget.available < plan.totalBytes) {
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: Errors.INSUFFICIENT_STORAGE })
+    return
+  }
+
+  await setDownloading()
+
   currentMessageHandler = async (event: MessageEvent) => {
     const { type, cached, total, error } = (event.data || {}) as {
       type?: string
@@ -163,7 +225,7 @@ export async function startDownload(): Promise<void> {
     }
     switch (type) {
       case 'DATASET_PROGRESS':
-        cancelSwTimeout() // SW responded — cancel retry timer
+        cancelSwTimeout()
         emit(Events.OFFLINE_DOWNLOAD_PROGRESS, { cached: cached ?? 0, total: total ?? 0 })
         break
       case 'DATASET_COMPLETE':
@@ -175,7 +237,7 @@ export async function startDownload(): Promise<void> {
         currentMessageHandler = null
         controllerChangeHandler = null
         pendingUrls = null
-        await setActivationState('cached')
+        await clearActivation()
         emit(Events.OFFLINE_DOWNLOAD_COMPLETE, {})
         break
       case 'DATASET_ERROR':
@@ -187,7 +249,7 @@ export async function startDownload(): Promise<void> {
         currentMessageHandler = null
         controllerChangeHandler = null
         pendingUrls = null
-        await setActivationState('none')
+        await clearActivation()
         emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: error ?? 'Unknown error' })
         break
       case 'DATASET_PENDING_CONFIRMATION':
@@ -224,14 +286,11 @@ export async function startDownload(): Promise<void> {
 
   navigator.serviceWorker.addEventListener('message', currentMessageHandler)
 
-  // Send CACHE_DATASET to SW with timeout + single retry
   if (navigator.serviceWorker.controller) {
-    pendingUrls = urls // Store for potential re-send on controller change or retry
-    postMessageWithTimeout({ type: 'CACHE_DATASET', urls })
+    pendingUrls = plan.urls
+    postMessageWithTimeout({ type: 'CACHE_DATASET', urls: plan.urls })
 
-    // Listen for controller changes (SW updates) during download
     controllerChangeHandler = () => {
-      // New SW is now controlling - re-send the cache request
       if (navigator.serviceWorker.controller && pendingUrls) {
         cancelSwTimeout()
         postMessageWithTimeout({ type: 'CACHE_DATASET', urls: pendingUrls })
@@ -239,46 +298,46 @@ export async function startDownload(): Promise<void> {
     }
     navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler)
   } else {
-    // Clear pendingUrls since SW isn't ready - we won't be re-sending
     pendingUrls = null
-    // SW not yet controlling this page — clean up and surface error
     navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
     currentMessageHandler = null
-    await setActivationState('none')
+    await clearActivation()
     emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: 'Service worker not ready' })
   }
 }
 
 /**
- * Cancel the current download.
+ * Backward-compatible alias for callers that historically requested a full
+ * corpus download. Now equivalent to `startCategoryDownload('text')`.
  */
+export async function startDownload(): Promise<void> {
+  return startCategoryDownload('text')
+}
+
 export async function cancelDownload(): Promise<void> {
-  // Remove the SW message listener if one is active
   if (currentMessageHandler) {
     navigator.serviceWorker.removeEventListener('message', currentMessageHandler)
     currentMessageHandler = null
   }
-  // Clean up controller change listener
   if (controllerChangeHandler) {
     navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler)
     controllerChangeHandler = null
   }
   cancelSwTimeout()
   pendingUrls = null
-  await setActivationState('none')
+  await clearActivation()
 }
 
-// Re-check quota after each download progress event
 on(Events.OFFLINE_DOWNLOAD_PROGRESS, () => { checkStorageQuota() })
+
+// Expose the pure routing surface for tests that need to assert which
+// category an URL belongs to without re-implementing the table.
+export { ROUTE_DEFS }
 
 // ── PWA Install Prompt ─────────────────────────────────────────────────
 
 let deferredPrompt: (Event & { prompt(): void; userChoice: Promise<{ outcome: string }> }) | null = null
 
-/**
- * Capture the beforeinstallprompt event.
- * Call once on app init.
- */
 export function initInstallPrompt(): void {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
@@ -292,22 +351,14 @@ export function initInstallPrompt(): void {
   })
 }
 
-/**
- * Trigger the install prompt. Returns true if prompt was shown.
- */
 export async function triggerInstall(): Promise<boolean> {
-  if (!deferredPrompt) {
-    return false
-  }
+  if (!deferredPrompt) return false
   deferredPrompt.prompt()
   const { outcome } = await deferredPrompt.userChoice
   deferredPrompt = null
   return outcome === 'accepted'
 }
 
-/**
- * Check if the app is running in standalone mode.
- */
 export function isStandalone(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches
     || (window.navigator as Navigator & { standalone?: boolean }).standalone === true

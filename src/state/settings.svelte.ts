@@ -13,6 +13,21 @@ export type AudioAutoScrollMode = 'smart' | 'always' | 'off'
 export type AudioRepeat = { mode: AudioRepeatMode; count?: number }
 export type AudioLoopRange = { from: string; to: string } | null
 
+// Offline-selector state (N21). Sole writer: src/settings/offline-categories.ts.
+export type OfflineCategoriesState = {
+  text: { hafs: boolean; warsh: boolean; qaloon: boolean }
+  audio: Record<string, boolean>   // reciter id → checked
+  pages: Record<string, boolean>   // riwayah id → checked
+  search: boolean
+}
+
+export const DEFAULT_OFFLINE_CATEGORIES: OfflineCategoriesState = {
+  text: { hafs: false, warsh: false, qaloon: false },
+  audio: {},
+  pages: {},
+  search: false,
+}
+
 export const settings = $state({
   theme: 'auto' as Theme,
   riwayah: 'qaloon' as Riwayah,
@@ -33,4 +48,5 @@ export const settings = $state({
   audioPrefetchNext: true,
   audioAutoScrollMode: 'smart' as AudioAutoScrollMode,
   audioFirstPlayHintShown: false,
+  offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } as OfflineCategoriesState,
 })

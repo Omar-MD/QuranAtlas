@@ -92,10 +92,10 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     // No standalone settings title element
     expect(document.querySelector('.qa-settings-title')).toBeNull()
 
-    // Two body sections in order: Reading, Sources
+    // Three body sections in order: Reading, Sources, Storage (Storage added N21)
     const sectionNames = [...document.querySelectorAll('.qa-settings-sect-name')]
       .map(el => el.textContent)
-    expect(sectionNames).toEqual(['Reading', 'Sources'])
+    expect(sectionNames).toEqual(['Reading', 'Sources', 'Storage'])
 
     // Theme footer present with 4 swatches + night moon
     const footer = document.querySelector('.qa-settings-footer')!

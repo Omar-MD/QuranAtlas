@@ -44,6 +44,7 @@ function applyDefaultRuntimeMocks() {
     getActivationState: vi.fn(() => Promise.resolve('none')),
     cancelDownload: vi.fn(),
     checkStorageQuota: vi.fn(() => Promise.resolve()),
+    initOfflineMigration: vi.fn(() => Promise.resolve()),
   }))
   vi.doMock('../../../src/a11y/announcer.js', () => ({
     announce: vi.fn(),
@@ -128,6 +129,12 @@ vi.mock('../../../src/data/offline.js', () => ({
   getActivationState: vi.fn(() => Promise.resolve('none')),
   cancelDownload: vi.fn(),
   checkStorageQuota: vi.fn(() => Promise.resolve()),
+  initOfflineMigration: vi.fn(() => Promise.resolve()),
+}))
+
+// N21 — initOfflineCategories writes through to IDB mock (no-op here).
+vi.mock('../../../src/settings/offline-categories.ts', () => ({
+  initOfflineCategories: vi.fn(() => Promise.resolve()),
 }))
 
 vi.mock('../../../src/reader/index.js', () => ({
@@ -269,6 +276,8 @@ describe('core/app.js error recovery', () => {
       initInstallPrompt: vi.fn(),
       getActivationState: vi.fn().mockResolvedValue('none'),
       cancelDownload: vi.fn().mockResolvedValue(),
+      checkStorageQuota: vi.fn().mockResolvedValue(),
+      initOfflineMigration: vi.fn().mockResolvedValue(),
     }))
     vi.doMock('../../../src/a11y/announcer.js', () => ({ announce: vi.fn() }))
 

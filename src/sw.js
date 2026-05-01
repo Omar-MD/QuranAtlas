@@ -2,19 +2,21 @@
  * Service worker for QuranAtlas.
  * Handles caching, dataset downloads, and update detection.
  *
+ * Per-asset-class routing lives in `core/sw/strategies.ts` (audit P2.14 / R-11
+ * / C-4 / CC-7, N21 2026-05-01). This file is now responsible only for
+ * precache, install/activate, and message dispatch.
+ *
  * Message types:
- * - CACHE_DATASET: Download full corpus
+ * - CACHE_DATASET: Download a list of URLs (selector / full corpus)
  * - APPLY_DATASET_UPDATE: User-confirmed update (major semver)
  * - SKIP_WAITING: Force SW activation
  * - PURGE_DATASET_CACHE: Clear corpus cache
  */
 
 import { precacheAndRoute } from 'workbox-precaching'
-import { registerRoute } from 'workbox-routing'
-import { NetworkFirst, CacheFirst } from 'workbox-strategies'
-import { CacheableResponsePlugin } from 'workbox-cacheable-response'
-import { ExpirationPlugin } from 'workbox-expiration'
 import { CACHE_DATASET } from './core/constants.js'
+import { registerAll } from './core/sw/strategies'
+import { CACHE_PREFIXES } from './core/sw/route-defs'
 import { checkForUpdate, applyUpdate } from './offline/dataset-updater.js'
 import { STAGING_CACHE } from './offline/staging-cache.js'
 import { verify } from './offline/sha256-verifier.js'
@@ -27,125 +29,12 @@ import {
 // Workbox injectManifest will populate this array
 precacheAndRoute(self.__WB_MANIFEST || [])
 
-// Cache dataset files with NetworkFirst so the reader works offline after a
-// single online visit.  Entries are stored in CACHE_DATASET
-// so no extra caches are created.
+// Per-asset-class routes (text · audio mp3/timing/meta · pages · search · fonts).
+// Single source: src/core/sw/route-defs.ts.
 //
 // NOTE: vite-plugin-pwa's `workbox.runtimeCaching` option is silently ignored
 // when using the 'injectManifest' strategy — routes must be registered here.
-// Stopgap cap of 1000 entries: the manifest currently lists ~459 files
-// (3 riwayat × 114 surahs + 114 saheeh splits + juz/surahs/provenance/
-// _verse-aliases/_verse-map/manifest). The earlier cap of 200 silently
-// LRU-evicted the offline corpus the moment a user read across all three
-// riwayat. Per-asset-class partition + per-feature offline opt-in selector
-// land in N21 (audit R-11, C-4); when that ships, audio/mushaf/search
-// move out of this cache and the cap can come down accordingly. Per-origin
-// quota dominates well before the entry count does.
-registerRoute(
-  ({ url }) =>
-    url.pathname.startsWith('/dataset/') &&
-    !url.pathname.startsWith('/dataset/audio/'),
-  new NetworkFirst({
-    cacheName: CACHE_DATASET,
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 1000, maxAgeSeconds: 60 * 60 * 24 * 365 }),
-    ],
-  })
-)
-
-// Audio asset partition (N21, audit C-4 / R-11). Audio files are
-// per-surah mp3s under `/dataset/audio/{reciter}/{NNN}.mp3` plus
-// word-level timing JSON at `/dataset/audio/{reciter}/timing/{NNN}.json`,
-// and a top-level reciter catalog at `/dataset/audio/index.json`.
-// Each reciter gets its own cache namespace so switching reciter cannot
-// LRU-evict another reciter's in-progress download. The audio dataset
-// itself ships with the v2.0 audio milestone — these routes scaffold
-// the SW so requests resolve correctly the moment audio data lands.
-//
-// RangeRequests support: <audio> elements progressively-fetch via
-// `Range:` headers. Workbox CacheFirst returns full cached responses;
-// modern browsers tolerate 200 OK on Range requests by reading the
-// requested slice from the full body. The dedicated `workbox-range-
-// requests` plugin (returns 206 Partial) lands when audio data ships
-// and its real-device behavior is verified.
-function audioReciterFromUrl(url) {
-  // /dataset/audio/{reciter}/...   — extract {reciter} segment.
-  const parts = url.pathname.split('/')
-  // ['', 'dataset', 'audio', '{reciter}', ...]
-  return parts[3] || 'unknown'
-}
-
-registerRoute(
-  ({ url }) => url.pathname.match(/^\/dataset\/audio\/[^/]+\/\d+\.mp3$/),
-  async (args) => {
-    const reciter = audioReciterFromUrl(args.url)
-    const strategy = new CacheFirst({
-      cacheName: `qa-audio-${reciter}-v1`,
-      plugins: [
-        new CacheableResponsePlugin({ statuses: [0, 200] }),
-        new ExpirationPlugin({
-          maxEntries: 200,
-          maxAgeSeconds: 60 * 60 * 24 * 90,
-          purgeOnQuotaError: true,
-        }),
-      ],
-    })
-    return strategy.handle(args)
-  }
-)
-
-registerRoute(
-  ({ url }) => url.pathname.match(/^\/dataset\/audio\/[^/]+\/timing\/\d+\.json$/),
-  async (args) => {
-    const reciter = audioReciterFromUrl(args.url)
-    const strategy = new CacheFirst({
-      cacheName: `qa-audio-timing-${reciter}-v1`,
-      plugins: [
-        new CacheableResponsePlugin({ statuses: [0, 200] }),
-        new ExpirationPlugin({
-          maxEntries: 120,
-          maxAgeSeconds: 60 * 60 * 24 * 90,
-          purgeOnQuotaError: true,
-        }),
-      ],
-    })
-    return strategy.handle(args)
-  }
-)
-
-registerRoute(
-  ({ url }) =>
-    url.pathname === '/dataset/audio/index.json' ||
-    url.pathname.match(/^\/dataset\/audio\/[^/]+\/manifest\.json$/),
-  new NetworkFirst({
-    cacheName: 'qa-audio-meta-v1',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({
-        maxEntries: 32,
-        maxAgeSeconds: 60 * 60 * 24 * 7,
-      }),
-    ],
-  })
-)
-
-// woff2 font files are content-addressed by version (KFGQPC v22, Newsreader,
-// Geist Mono); URLs are stable for the lifetime of the deploy. CacheFirst
-// avoids re-downloading on every visit. Only the active riwayah's font is
-// fetched on-demand by `core/font-loader.ts` (other-riwayah cuts arrive only
-// when the user switches), so this cache stays scoped to what the user
-// actually uses.
-registerRoute(
-  ({ url }) => url.pathname.startsWith('/fonts/') && url.pathname.endsWith('.woff2'),
-  new CacheFirst({
-    cacheName: 'qa-fonts-v1',
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 }),
-    ],
-  })
-)
+registerAll()
 
 self.addEventListener('install', (_event) => {
   // Skip the waiting state immediately so a new SW activates on the next
@@ -170,6 +59,7 @@ self.addEventListener('activate', (event) => {
       self.clients.claim(),
       cleanupStaleCaches({
         expectedCaches: new Set([CACHE_DATASET, STAGING_CACHE]),
+        preservePrefixes: CACHE_PREFIXES,
         cachesKeys: () => caches.keys(),
         cachesDelete: (name) => caches.delete(name),
       }).catch((error) => {

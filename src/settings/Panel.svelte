@@ -18,6 +18,7 @@
   import { getTranslations } from '../data/dataset.js'
   import { panelBridge, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
+  import OfflineSelector from '../offline/offline-selector.svelte'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
   type PickerKind = 'recitation' | 'translation' | null
@@ -376,6 +377,9 @@
           </button>
         </div>
       </section>
+
+      <!-- Storage section (N21) — per-feature offline opt-in selector. -->
+      <OfflineSelector />
     </div>
 
     <!-- Theme footer -->

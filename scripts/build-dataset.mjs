@@ -22,7 +22,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { mkdir, readFile, writeFile, readdir, rm } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, readdir, rm, stat } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -607,6 +607,7 @@ async function main() {
   // inputs (not shipped) and excluded from the manifest.
   const allFiles = await listFiles(DATASET_DIR)
   const files = {}
+  const fileSizes = {}
   for (const f of allFiles) {
     if (f.endsWith('manifest.json')) { continue }
     if (dirname(f) === RIWAYAT_DIR) { continue }
@@ -615,11 +616,13 @@ async function main() {
     if (rel === 'provenance.json') {
       const stable = JSON.stringify({ ...provenance, builtAt: '' })
       files[rel] = createHash('sha256').update(stable).digest('hex')
+      fileSizes[rel] = Buffer.byteLength(stable, 'utf8')
     } else {
       files[rel] = await sha256(f)
+      fileSizes[rel] = (await stat(f)).size
     }
   }
-  await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify({ packageVersion: PACKAGE_VERSION, builtAt: provenance.builtAt, files }), 'utf8')
+  await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify({ packageVersion: PACKAGE_VERSION, builtAt: provenance.builtAt, files, fileSizes }), 'utf8')
 
   console.log(`[build-dataset] done — wrote per-surah riwayat + translation files, surahs.json, juz.json, provenance.json, manifest.json`)
 }

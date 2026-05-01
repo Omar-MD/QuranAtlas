@@ -27,18 +27,22 @@ globalThis.caches.open = vi.fn().mockResolvedValue({
   addAll: vi.fn(),
 })
 
-// Mock fetch for manifest
+// Mock fetch for manifest. N21 manifest carries fileSizes alongside files;
+// keep both to test the new pre-flight quota path.
 globalThis.fetch = vi.fn().mockImplementation(async (url) => {
   if (url.includes('manifest.json')) {
     return {
       ok: true,
       json: async () => ({
-        files: { 'surah/001.json': 'abc', 'surah/002.json': 'def', 'surahs.json': 'ghi' },
+        files: { 'riwayat/hafs/001.json': 'abc', 'riwayat/hafs/002.json': 'def', 'surahs.json': 'ghi' },
+        fileSizes: { 'riwayat/hafs/001.json': 1500, 'riwayat/hafs/002.json': 1400, 'surahs.json': 800 },
       }),
     }
   }
   return { ok: true, json: async () => ({}) }
 })
+
+import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/state/settings.svelte.ts'
 
 describe('data/offline.js', () => {
   beforeEach(async () => {
@@ -48,6 +52,9 @@ describe('data/offline.js', () => {
     events.clear()
     // Reset activation state between tests
     await put('activationState', { id: 'current', status: 'none' })
+    // N21: cached/none distinction now lives in settings.offlineCategories.
+    // Reset it so each test starts from a fresh "no opt-in" state.
+    Object.assign(settings, { offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } })
   })
 
   describe('download state machine', () => {
@@ -80,11 +87,13 @@ describe('data/offline.js', () => {
       expect(progressFn).toHaveBeenCalledWith({ cached: 2, total: 3 })
     })
 
-    it('transitions to cached on DATASET_COMPLETE', async () => {
+    it('reports cached when offlineCategories has any opt-in (N21)', async () => {
       const { startDownload, getActivationState } = await import('../../../src/data/offline.js')
-      await startDownload()
 
-      // Simulate SW complete
+      // Simulate the selector setting the rune before kicking off a download.
+      settings.offlineCategories.text.hafs = true
+
+      await startDownload()
       const messageHandler = globalThis.navigator.serviceWorker.addEventListener.mock.calls.find(
         c => c[0] === 'message'
       )?.[1]
@@ -92,6 +101,8 @@ describe('data/offline.js', () => {
       await messageHandler({ data: { type: 'DATASET_COMPLETE' } })
 
       const state = await getActivationState()
+      // After DATASET_COMPLETE the activationState 'current' record is cleared;
+      // 'cached' is now derived from settings.offlineCategories opt-in.
       expect(state).toBe('cached')
     })
 

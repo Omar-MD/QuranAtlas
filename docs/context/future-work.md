@@ -223,7 +223,7 @@ When a user-visible release is scheduled:
 
 ### Audio sub-design (N30 — landed 2026-04-30)
 
-The audio architecture, IDB schema (`audioPosition` store, DB v6), runtime, cross-tab gating, mini-bar + full-overlay shells, reader verse-tick + smart-defer autoscroll, and SW per-reciter cache partition all landed 2026-04-30 against `docs/superpowers/specs/2026-04-30-audio-design.md` (the post-brainstorm spec that supersedes the gitignored skeleton). Remaining ship-blocking work tracked under §Audio recitation §v2 above. Companion items shipped 2026-05-01: full tokenisable contract (N19) — `data-token-key` is now the sole verse-identity DOM attr after consumer migration + `data-verse-key` drop; reader virtualisation (N20) — chunked recycler caps live verses at 60. WBW (`#9`) inherits both contracts ready-to-use.
+The audio architecture, IDB schema (`audioPosition` store, DB v6), runtime, cross-tab gating, mini-bar + full-overlay shells, reader verse-tick + smart-defer autoscroll, and SW per-reciter cache partition all landed 2026-04-30 against `docs/superpowers/specs/2026-04-30-audio-design.md` (the post-brainstorm spec that supersedes the gitignored skeleton). Remaining ship-blocking work tracked under §Audio recitation §v2 above. Companion items shipped 2026-05-01: full tokenisable contract (N19) — `data-token-key` is now the sole verse-identity DOM attr after consumer migration + `data-verse-key` drop; reader virtualisation (N20) — chunked recycler caps live verses at 60; SW route aggregator + offline opt-in selector (N21) — `core/sw/route-defs.ts` + `strategies.ts` + Settings Storage section, closing audit P2.14 / R-11 / C-4 / CC-7. WBW (`#9`) inherits all three contracts ready-to-use.
 
 ### Sync v2 sub-design + crypto threat model (N31 skeleton, audit C-8 / R-10)
 
@@ -253,22 +253,18 @@ Per memory `reference_quran_rendering_stress_test`: reader Arabic rendering chan
 
 Plan §8.2 listed a 4th e2e case (`B-Virt4: lineSpacing change preserves center-band verse @mobile`) — Settings-sheet keyboard-binding uncertainty made it brittle to author. Unit test for `invalidateHeightCache` already covers the cache-wipe logic; the missing e2e would catch the `scrollToVerse(anchorVerse)` re-anchor in real layout. Add when the next typography-touching change lands or when settings keyboard bindings get a stable test fixture.
 
-### `core/persistent-overlay.ts` factory + lazy mount (audit R-13 / CC-9 / N22 + N25)
+### N21 follow-ups (post-shipment, 2026-05-01)
 
-The factory landed 2026-04-30 alongside the audio milestone (audio player overlay = first new consumer). Six existing bridges (`core/ui-bridge`, `marks/editor-bridge`, `nav/command-sheet-bridge`, `nav/nav-drawer-bridge`, `settings/panel-bridge`, `tag/session-bridge`) are still hand-rolled and have NOT been migrated to the factory — that's the remaining N22 work. Each migration is mechanical: replace ~5 LOC of `register*()` + module-state with `createOverlayBridge<API>({ name })`, validate with eyeball check + existing tests. Land alongside the next overlay touch (e.g. tafsir bottom-sheet `#12`).
+The aggregator + offline-selector landed; residual roadmap items below ship alongside the consumers that exercise them:
 
-N25 (lazy-mount on first `open()`) is unaffected by the factory landing — it still requires per-overlay surgery in `App.svelte` and component-side import-on-demand. Worth ~10–15 KB gzip out of the entry bundle once all six existing overlays migrate. Schedule when the entry-bundle size becomes a real bottleneck (today: ~38 KB gzip, well under budget).
+- **Mushaf-pages route consumer** — `pages` row in `ROUTE_DEFS` is registered (cacheName `qa-pages-{riwayah}-v1`, CacheFirst); waits for page-image mushaf (`#14`) to ship dataset.
+- **Search-index route consumer** — `search` row in `ROUTE_DEFS` is registered (cacheName `qa-search-v1`, CacheFirst); waits for full-text search (Reading core §v1.1).
+- **Per-item selector granularity** — v1 selector commits one row per category (text / audio / pages / search). Per-riwayah text + per-reciter audio splits land when usage signals demand finer control.
+- **Cache eviction on uncheck (`PURGE_CATEGORY_ITEM`)** — selector v1 commits additions only; uncheck + Apply records the new state but does not free cache. Eviction UX (Settings → Storage → "Free up X MB") lands once category-level usage gets surfaced.
 
-### Per-asset-class SW partition + offline opt-in selector UI (audit R-11 / C-4 / N21)
+### Lazy-mount overlays (audit N25)
 
-The audio half of N21 landed 2026-04-30 directly in `src/sw.js` (per-reciter `qa-audio-{reciter}-v1` cache namespace, timing JSON cache, audio meta NetworkFirst route). The `cleanupStaleCaches` helper in `sw-handlers.js` was extended to preserve `qa-audio-*` and `qa-fonts-*` caches by prefix. The dedicated `core/sw/strategies.ts` aggregator module from the audit is unstarted — current routes live in-line in `sw.js`. Remaining N21 work:
-
-- **Mushaf-pages route** (`/dataset/mushaf-pages/{riwayah}/*` CacheFirst, content-addressed) — lands when page-image mushaf (`#14`) starts.
-- **Search-index route** — lands when full-text search (Reading core §v1.1) starts.
-- **`offline/offline-selector.svelte`** — per-feature opt-in UI with size estimates (Text · Audio per reciter · Pages per riwayah · Search index). Lands alongside Settings Storage section work.
-- **Move audio routes from `sw.js` to `core/sw/strategies.ts` aggregator** — refactor for clarity once 3+ asset-class routes co-exist; today (2 routes) inline is fine.
-
-Deferred to v1.2 (per audit ship sequence). The audio prefix has shipped early to unblock audio; mushaf + search ship under the same partition pattern when their work begins.
+The `core/persistent-overlay.ts` factory landed 2026-04-30 alongside the audio milestone. Six existing bridges (`core/ui-bridge`, `marks/editor-bridge`, `nav/command-sheet-bridge`, `nav/nav-drawer-bridge`, `settings/panel-bridge`, `tag/session-bridge`) are still hand-rolled and migrate mechanically (~5 LOC each) when their next surface touch lands. N25 lazy-mount on first `open()` requires per-overlay surgery in `App.svelte` + component-side import-on-demand; worth ~10–15 KB gzip out of the entry bundle once all six migrate. Schedule when the entry-bundle size becomes a real bottleneck (today: ~38 KB gzip, well under budget).
 
 ---
 

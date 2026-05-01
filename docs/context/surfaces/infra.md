@@ -43,6 +43,7 @@ No routes. Surface is invisible until something goes wrong (or update rolls out)
 | --- | --- |
 | `src/offline/dataset-updater.js` | Dataset update orchestrator for service worker activate. |
 | `src/offline/manifest-fetcher.js` | Fetch the dataset manifest. |
+| `src/offline/offline-selector.svelte` | Per-feature offline opt-in selector (N21). |
 | `src/offline/sha256-verifier.js` | SHA-256 verification for dataset file integrity. |
 | `src/offline/staging-cache.js` | Staging cache for dataset updates. |
 | `src/safety/input-validator.ts` | Input validation for navigation and tag parameters. |
@@ -94,9 +95,11 @@ IDB shared; no double-write.
 
 **Fail-closed manifest chain of trust** — `1acbfdf` shipped: SW refuses to serve cached responses if manifest signature chain fails to verify (R-01). Pre-2026-04-29, mismatches silently fell through to network.
 
-### Per-asset-class SW partition
+### Per-asset-class SW partition + offline opt-in selector (N21, 2026-05-01)
 
-Audio half landed 2026-04-30 (per-reciter `qa-audio-{reciter}-v1` cache + timing JSON cache + audio-meta NetworkFirst). `cleanupStaleCaches` in `sw-handlers.js` preserves `qa-audio-*` and `qa-fonts-*` by prefix. Mushaf-pages route + search-index route + dedicated `core/sw/strategies.ts` aggregator deferred (tracked in `future-work.md` §Infrastructure §"Per-asset-class SW partition").
+All SW route registrations now live in `src/core/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/core/sw/route-defs.ts`. Categories: text (`qa-dataset-v1`), audio mp3/timing/meta (per-reciter), pages (per-riwayah, roadmap), search-index (single asset, roadmap), fonts (always-on). `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
+
+The window-side companion is `src/offline/offline-selector.svelte` (mounted in Settings → Storage section, configure dossier). Per-feature opt-in: user checks Text / Audio / Pages / Search; selector pre-flights `navigator.storage.estimate()` and refuses Apply when the selection exceeds available quota (audit Q4). `src/data/offline.ts::startCategoryDownload(cat)` filters manifest URLs through `route-defs.ts::sumBytesForCategory()` and reuses the existing fail-closed manifest digest path. Closes audit P2.14 / R-11 / C-4 / CC-7.
 
 ### Generic sync envelope (post `a83c2a3`)
 
@@ -138,21 +141,26 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 - **Sole writer of `datasetMeta`: `src/offline/dataset-updater.js`** (or store-specific writer — see `data-model.md`).
 - **Cross-tab broadcast goes through `safety/sync.ts::broadcast` + `registerTopic`.** Don't open new BroadcastChannels directly — register a topic.
 - **`suppressNextVersionChange()` armed before `deleteDB()`** — ensures the same tab doesn't get its own clear-data banner.
-- **Per-asset-class cache prefixes preserved by `cleanupStaleCaches`:** `qa-audio-*`, `qa-fonts-*`. Adding a new asset class requires updating the preserve list.
+- **Every SW `registerRoute()` call lives in `src/core/sw/strategies.ts::registerAll()` (N21).** No inline route registrations in `sw.js`. Adding a new asset class = one entry in `route-defs.ts::ROUTE_DEFS` and (if it introduces a new cacheName prefix) one entry in `CACHE_PREFIXES`.
+- **Per-asset-class cache prefixes preserved by `cleanupStaleCaches`** sourced from `route-defs.ts::CACHE_PREFIXES` (passed as `preservePrefixes`) — never hardcoded.
+- **`route-defs.ts` is window-importable.** Workbox imports live only in `strategies.ts` (SW-only). Window code (offline-selector, data/offline.ts) reads the table for byte-sum + URL-filter helpers.
+- **`settings.offlineCategories` is the source of truth for "user opted into category X" (N21).** `getActivationState()` reports `'cached'` when any category is opted in; `'downloading'` while a `CACHE_DATASET` is in flight. Pre-N21 single `'cached'` marker on `activationState['current']` is wiped on first boot via `initOfflineMigration()`.
 - **`@offline` Playwright project is single carve-out for preview build.** Per Rule 8 / 6.6, dev server is default; SW only emits in production builds.
 
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (7):**
+**Unit (9):**
 
 - `tests/unit/offline/dataset-updater.test.js`
 - `tests/unit/offline/manifest-fetcher.test.js`
+- `tests/unit/offline/offline-selector.test.ts`
 - `tests/unit/offline/sha256-verifier.test.js`
 - `tests/unit/offline/staging-cache.test.js`
 - `tests/unit/safety/csp-headers.test.ts`
 - `tests/unit/safety/input-validator.test.js`
 - `tests/unit/safety/sync.test.js`
+- `tests/unit/sw/route-defs.test.ts`
 
 **E2E (3):**
 
@@ -165,3 +173,4 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 
 - **Pre-`1acbfdf`:** SW silently fell through to network on manifest chain-of-trust failure. Now fail-closed. See audit R-01.
 - **Pre-`a83c2a3`:** per-store sync logic was hand-rolled inside each store. Replaced by generic envelope (`registerTopic` + `broadcast`) — dissolved cycle (R-10, C-2, C-5, CC-4).
+- **Pre-N21 (2026-05-01):** per-asset-class routes were registered ad-hoc inline in `sw.js`. Replaced by declarative `ROUTE_DEFS` table in `core/sw/route-defs.ts` + `registerAll()` in `core/sw/strategies.ts`. The single full-corpus `startDownload()` is now `startCategoryDownload(category)` driven by the offline-selector. Closes audit P2.14 / R-11 / C-4 / CC-7.

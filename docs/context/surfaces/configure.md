@@ -16,7 +16,7 @@ test_paths:
 
 # Surface: configure
 
-> Settings sheet (full-screen mobile + tablet, modal desktop) + About page. Reading section (font size, reading flow), Sources section (recitation = riwayah, translation), Theme footer, night-mode toggle, clear-all-data on About footer. Future absorption: tafsir picker, export/import, clear-cache, offline-opt-in selector, audio settings surfaces, storage section.
+> Settings sheet (full-screen mobile + tablet, modal desktop) + About page. Reading section (font size, reading flow), Sources section (recitation = riwayah, translation), **Storage section (per-feature offline opt-in selector — N21)**, Theme footer, night-mode toggle, clear-all-data on About footer. Future absorption: tafsir picker, export/import, clear-cache, audio settings surfaces.
 
 ## Reach
 
@@ -50,6 +50,7 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/settings/clear-data.ts` | Clear data: confirmation flow and data deletion. |
 | `src/settings/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
 | `src/settings/night-mode.ts` | Night recitation mode: dim+warm overlay, composes over any theme. |
+| `src/settings/offline-categories.ts` | Offline categories preference: per-feature opt-in for the offline selector. |
 | `src/settings/panel-bridge.ts` | Settings Panel — overlay bridge + sole-writer/-reader data functions. |
 | `src/settings/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
 | `src/settings/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
@@ -76,6 +77,17 @@ Three zones (no scroll under default content):
 Every change updates live preview (font size, reading flow, theme palette, riwayah glyph swap when popover row picked).
 
 Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, re-renders reader with new Riwayah's text + font + line-height floor.
+
+### Storage section — offline-selector (N21, 2026-05-01)
+
+Mounted between Sources and the Theme footer. Renders four accordion rows (`<details>` semantics) — Text, Audio (gated v2.0), Pages (gated v2.1), Search (gated v1.1). Available rows expand on tap to reveal a "Cache for offline use" checkbox + per-category byte size sourced from the verified manifest's `fileSizes` map. Footer shows live `usage / quota` from `navigator.storage.estimate()` and an Apply button.
+
+Apply gating:
+- Disabled when no diff vs `settings.offlineCategories`.
+- Disabled with a red "Need X MB more free space" message when sum-of-newly-checked exceeds available quota (audit Q4 — pre-flight refuse).
+- On click: writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer), then per-category `src/data/offline.ts::startCategoryDownload(cat)` for each available category.
+
+Selector v1 commits additions only — uncheck + Apply records the new state but does not evict cache contents (eviction UX is a follow-up). Cache wins from prior precache passes are honored: SHA-256 verify on cached entries skips re-download for unchanged files. Closes audit P2.14 / R-11 / C-4 / CC-7.
 
 **Picker popover** (`[data-testid="settings-pop"]`): blurred + tinted scrim, parchment-gradient surface on light themes / deep-ink gradient on dark, gold hairline corner ornaments, italic serif "Choose a {Riwāyah / translation}" title + uppercase eyebrow key. Each row: name + italic sub-meta + opacity-0 gold check badge that lights when active. Hover/focus tints background. Backdrop tap, Esc, or row-tap dismisses. With popover open, Esc closes popover first; second Esc closes sheet.
 
@@ -150,6 +162,7 @@ Keys + sole writers:
 | `lastSurface` | `src/state/last-surface.svelte.ts` | `string` (hash) |
 | `recentSurahs` | `src/state/recent-surahs.svelte.ts` | `number[]` (serialised, see `b997c76`) |
 | `onboardingComplete` | `src/onboarding/state.ts` | `boolean` |
+| `offlineCategories` | `src/settings/offline-categories.ts` | `OfflineCategoriesState` (per-category opt-in map; see `state/settings.svelte.ts`) |
 
 ## Events
 
@@ -158,8 +171,8 @@ Keys + sole writers:
 | --- | --- | --- |
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/settings/clear-data.ts:170` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/settings/riwayah.ts:58`, `src/settings/riwayah.ts:74` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/settings/Panel.svelte:129` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/settings/Panel.svelte:112` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/settings/Panel.svelte:130` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/settings/Panel.svelte:113` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -173,16 +186,19 @@ Keys + sole writers:
 - **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity. Multi-writer leaks were closed in `b997c76` (`R-08, R-25, R-27, C-9`).
 - **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
 - **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/settings/panel.test.ts`).
+- **Settings sheet body is now three sections: Reading + Sources + Storage (N21).** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/settings/panel.test.ts`.
+- **Sole writer of `settings.offlineCategories`: `src/settings/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
 
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (10):**
+**Unit (11):**
 
 - `tests/unit/about/pwa-install.test.ts`
 - `tests/unit/settings/clear-data-confirm.test.ts`
 - `tests/unit/settings/font-size.test.ts`
 - `tests/unit/settings/night-mode.test.ts`
+- `tests/unit/settings/offline-categories.test.ts`
 - `tests/unit/settings/panel.test.ts`
 - `tests/unit/settings/reading-typography-line-height.test.ts`
 - `tests/unit/settings/reading-typography.test.ts`
@@ -202,3 +218,4 @@ Keys + sole writers:
 - **2026-04-25 (`0890a53`):** Clear-data row moved off Settings sheet bottom row, onto About footer.
 - **2026-04-25:** Typography subview retired — sliders inlined into Settings Reading section (D5).
 - **2026-04-27 (`248b927`):** font picker dropped — KFGQPC default per Riwayah is now hardwired (no user-facing font picker).
+- **2026-05-01 (N21):** single full-corpus "Cache for offline" UX retired. Replaced by per-feature offline-selector mounted in the new Storage section. Pre-N21 `src/data/offline.ts::startDownload` retained as a backward-compatible alias for `startCategoryDownload('text')`.
