@@ -14,6 +14,7 @@ Read before spelunking code — save first 30min grep:
 - **`docs/context/feature-map.md`** — auto-generated dossier index (surface → dossier file + purpose).
 - **`docs/context/glossary.md`** — single-source vocabulary dictionary.
 - **`docs/context/riwayat-dataset.md`** — KFGQPC dataset, font pairing, line-height floors, license caveats.
+- **`docs/context/csp-allowlist.md`** — per-feature CSP directive registry; new outbound origins must land here + in `public/_headers` in the same commit (regression guard at `tests/unit/safety/csp-headers.test.ts`).
 - **`docs/context/deprecated.md`** — cross-surface retirements graveyard. Per-surface deprecations live in dossier §Deprecated.
 - **`docs/context/future-work.md`** — agreed-but-unscheduled features, dataset roadmap, dropped ideas. Single home for deferred scope.
 

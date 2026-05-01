@@ -144,12 +144,13 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (6):**
+**Unit (7):**
 
 - `tests/unit/offline/dataset-updater.test.js`
 - `tests/unit/offline/manifest-fetcher.test.js`
 - `tests/unit/offline/sha256-verifier.test.js`
 - `tests/unit/offline/staging-cache.test.js`
+- `tests/unit/safety/csp-headers.test.ts`
 - `tests/unit/safety/input-validator.test.js`
 - `tests/unit/safety/sync.test.js`
 

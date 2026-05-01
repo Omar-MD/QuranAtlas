@@ -11,11 +11,6 @@
 # file actually exists on disk, the cite-check warns to remove the allowlist
 # row.
 
-# Rule 6.5 storageState reuse — planned-but-not-built; tracked in
-# future-work.md §Infrastructure §"tests/e2e/global-setup.ts + storageState reuse".
-tests/e2e/.auth/onboarded.json
-tests/e2e/global-setup.ts
-
 # Audio v2.0 ship-blocking work — planned spec; tracked in
 # future-work.md §Audio recitation §v2.
 tests/e2e/journey-h-audio.spec.js
