@@ -13,6 +13,8 @@
  * Returns a cleanup object so Svelte can call destroy() on unmount.
  */
 
+import { closestTokenKey, tokenVerseKey } from '../core/tokenisable'
+
 const LONG_PRESS_MS = 500
 const TOUCH_MOVE_THRESHOLD = 10
 
@@ -23,8 +25,8 @@ export function longPress(node: HTMLElement, onPress: (verseKey: string) => void
 
   function getVerseKey(target: EventTarget | null): string | null {
     if (!(target instanceof Element)) { return null }
-    const el = target.closest('[data-verse-key]') as HTMLElement | null
-    return el?.dataset['verseKey'] ?? null
+    const tk = closestTokenKey(target)
+    return tk ? tokenVerseKey(tk) : null
   }
 
   function onTouchStart(e: TouchEvent) {
@@ -133,8 +135,8 @@ export function setupTapGestures(
 
   function getVerseKey(target: EventTarget | null): string | null {
     if (!(target instanceof Element)) { return null }
-    const el = target.closest('[data-verse-key]') as HTMLElement | null
-    return el?.dataset['verseKey'] ?? null
+    const tk = closestTokenKey(target)
+    return tk ? tokenVerseKey(tk) : null
   }
 
   function onTouchStart(e: TouchEvent): void {
