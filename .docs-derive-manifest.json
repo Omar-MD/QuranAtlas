@@ -46,7 +46,7 @@
     "docs/context/surfaces/navigate.md:events-listen": "9cdda3c162b03226663cd843b33b481dfa6e061bceb89174f3bfa260b9251b3e",
     "docs/context/surfaces/onboard.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/onboard.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
-    "docs/context/surfaces/read.md:events-emit": "af5308176ac0bc2af2cc05c8c7f57c11bbe1cb018b458a5c0dcf44e44c788595",
+    "docs/context/surfaces/read.md:events-emit": "100944aa02494696f5778ae0c240ba1027452baee0d9f51d1925bcbe32638915",
     "docs/context/surfaces/read.md:events-listen": "3fe3620c87e51107568b82ac49624db2587eb3d1b51c33cbf9acd369607e6984",
     "docs/context/surfaces/review.md:events-emit": "babd719de6e91c7aa8592cd1ecb02739191810e47ab331765984435f176d70b0",
     "docs/context/surfaces/review.md:events-listen": "6a8d95f32cd21c50305b89360fce751c33351586170b755db4cd19f970132316",

@@ -159,7 +159,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientDock.svelte:64`, `src/reader/AmbientPill.svelte:90`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/MarginHeader.svelte:41`, `src/reader/Reader.svelte:452`, `src/reader/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientDock.svelte:64`, `src/reader/AmbientPill.svelte:90`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/MarginHeader.svelte:41`, `src/reader/Reader.svelte:495`, `src/reader/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/reader/position.ts:28` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:50` |
 <!-- AUTO-GENERATED:events-emit END -->
