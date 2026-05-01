@@ -207,7 +207,7 @@ test.describe('Journey C: Verse marking', () => {
     expect(mark.note).toBe('A test reflection note.')
 
     // Gold edge appears
-    const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
+    const verse = page.locator(`.qa-verse[data-token-key="${verseKey}"]`)
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
   })
 
@@ -221,7 +221,7 @@ test.describe('Journey C: Verse marking', () => {
     await waitForReader(page)
 
     const verseKey = '1:1'
-    const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
+    const verse = page.locator(`.qa-verse[data-token-key="${verseKey}"]`)
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
 
     await openTagSheetViaRightClick(page)
@@ -330,7 +330,7 @@ test.describe('Journey C: Verse marking', () => {
     expect(mark.audience).toContain('muminin')
 
     // Reopen — right-click → fast-tag → ⛶ → deep TagSheet
-    const verse = page.locator(`.qa-verse[data-verse-key="${verseKey}"]`)
+    const verse = page.locator(`.qa-verse[data-token-key="${verseKey}"]`)
     await expect(verse).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
     await verse.click({ button: 'right' })
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
@@ -364,7 +364,7 @@ test.describe('Journey C: desktop variants', () => {
 
   test('C1 desktop: TagSheet is a right-side panel, full-height', async ({ page }) => {
     // Post 2026-04-25: right-click → fast-tag panel; click ⛶ to escalate.
-    await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await page.locator('[data-token-key]').first().click({ button: 'right' })
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
     await page.locator('.qa-vtp-escalate').click()
     const sheet = page.locator('.qa-ts')
@@ -390,7 +390,7 @@ test.describe('Journey C: desktop variants', () => {
   })
 
   test('C1 desktop: four group sections visible', async ({ page }) => {
-    await page.locator('[data-verse-key]').first().click({ button: 'right' })
+    await page.locator('[data-token-key]').first().click({ button: 'right' })
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 10_000 })
     await page.locator('.qa-vtp-escalate').click()
     const sheet = page.locator('.qa-ts')

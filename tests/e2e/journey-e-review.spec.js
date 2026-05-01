@@ -308,7 +308,7 @@ test.describe('Journey E: desktop variants', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/#/s/1')
-    await expect(page.locator('[data-verse-key]').first()).toBeVisible({ timeout: 15_000 })
+    await expect(page.locator('[data-token-key]').first()).toBeVisible({ timeout: 15_000 })
   })
 
   test('E1 desktop: review hub renders 220px left rail + layer selector in rail', async ({ page }) => {

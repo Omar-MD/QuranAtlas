@@ -62,8 +62,8 @@ test('I1: Tab A saves mark on 1:5 → Tab B reader shows gold edge without reloa
     await waitForReader(pageB)
 
     // Ensure verse 1:5 is rendered in both tabs
-    const verse1_5_A = pageA.locator('.qa-verse[data-verse-key="1:5"]')
-    const verse1_5_B = pageB.locator('.qa-verse[data-verse-key="1:5"]')
+    const verse1_5_A = pageA.locator('.qa-verse[data-token-key="1:5"]')
+    const verse1_5_B = pageB.locator('.qa-verse[data-token-key="1:5"]')
     await expect(verse1_5_A).toBeVisible({ timeout: 5_000 })
     await expect(verse1_5_B).toBeVisible({ timeout: 5_000 })
 
@@ -120,7 +120,7 @@ test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor clos
     // scrollToVerse forces all chunks up to verse 255 into the DOM.
     await pageA.evaluate(() => { window.location.hash = '#/s/2/255' })
     // waitFor 'attached' tolerates the surah-1 → surah-2 DOM transition
-    await pageA.locator('.qa-verse[data-verse-key="2:255"]').waitFor({ state: 'attached', timeout: 10_000 })
+    await pageA.locator('.qa-verse[data-token-key="2:255"]').waitFor({ state: 'attached', timeout: 10_000 })
 
     // Tab B: same context, shared IDB; navigate in-app to surah 2/255 once stable
     await pageB.goto('/')
@@ -128,10 +128,10 @@ test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor clos
     // redirecting to the target verse (prevents the restore from overriding us).
     await pageB.waitForFunction(() => window.location.hash !== '' && window.location.hash !== '#/', { timeout: 8_000 })
     await pageB.evaluate(() => { window.location.hash = '#/s/2/255' })
-    await pageB.locator('.qa-verse[data-verse-key="2:255"]').waitFor({ state: 'attached', timeout: 10_000 })
+    await pageB.locator('.qa-verse[data-token-key="2:255"]').waitFor({ state: 'attached', timeout: 10_000 })
 
     // Tab A: open TagSheet for 2:255 via right-click → ⛶ (post 2026-04-25)
-    const verse_A = pageA.locator('.qa-verse[data-verse-key="2:255"]')
+    const verse_A = pageA.locator('.qa-verse[data-token-key="2:255"]')
     await expect(verse_A).toBeVisible({ timeout: 5_000 })
     await verse_A.click({ button: 'right' })
     await expect(pageA.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
@@ -141,7 +141,7 @@ test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor clos
     await expect(tagSheetA).toBeVisible({ timeout: 5_000 })
 
     // Tab B: open TagSheet for 2:255 via right-click → ⛶, then delete
-    const verse_B = pageB.locator('.qa-verse[data-verse-key="2:255"]')
+    const verse_B = pageB.locator('.qa-verse[data-token-key="2:255"]')
     await expect(verse_B).toBeVisible({ timeout: 5_000 })
     await verse_B.click({ button: 'right' })
     await expect(pageB.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
