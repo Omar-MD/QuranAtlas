@@ -272,7 +272,7 @@
         <div class="qa-onb-chips">
           {#each SAMPLE_CHIPS as chip (chip.label)}
             <span class="qa-onb-chip">
-              <span class="qa-onb-chip-dot" style="background-color: {chip.color}"></span>
+              <span class="qa-onb-chip-dot" data-chip={chip.label}></span>
               {chip.label}
             </span>
           {/each}

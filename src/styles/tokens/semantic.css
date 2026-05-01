@@ -56,6 +56,13 @@
     --qa-accent-hover:  var(--c-bronze-700);
     --qa-accent-soft:   var(--c-accent-soft-light);
 
+    /* --- Tag-slot colour (R-19c, 2026-05-01) ---------------------------- */
+    /* Default fallback. Per-slot values override at `[data-tag-slot=...]`
+       in surfaces/tag-slots.css; this declaration exists so the token
+       gate does not flag callers that consume the variable without a
+       slot attr present (no-tag-slot fallback = accent). */
+    --qa-tag-slot-color: var(--qa-accent);
+
     /* --- Selection + focus ---------------------------------------------- */
     --qa-selection-bg:     var(--c-selection-light);
     --qa-selection-text:   var(--qa-accent);

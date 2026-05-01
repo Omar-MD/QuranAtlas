@@ -24,6 +24,7 @@ vi.mock('../../../src/marks/store', () => ({
 
 vi.mock('../../../src/marks/tags', () => ({
   getColorForTag: vi.fn(() => '#fff'),
+  getSlotForTag: vi.fn(() => 'p0'),
 }))
 vi.mock('../../../src/data/dataset', () => ({
   getSurahs: vi.fn(async () => ([

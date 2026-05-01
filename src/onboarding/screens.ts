@@ -24,9 +24,14 @@ export const SHORTCUT_ROWS: ShortcutRow[] = [
   { keys: ['Long-press'], desc: 'Mark & tag a verse', gesture: true },
 ]
 
-/** Sample tag chips shown on screen 5 (Tags intro). */
-export const SAMPLE_CHIPS: Array<{ label: string; color: string }> = [
-  { label: 'mercy',    color: '#64a078' },
-  { label: 'patience', color: '#6e96b4' },
-  { label: 'tawakkul', color: '#b4826e' },
+/**
+ * Sample tag chips shown on screen 5 (Tags intro). The dot color for each
+ * chip is bound by CSS via `data-chip="<label>"` — see
+ * `.qa-onb-chip-dot[data-chip=...]` in `src/styles/surfaces/onboarding.css`.
+ * Adding a new chip without a matching CSS rule renders a transparent dot.
+ */
+export const SAMPLE_CHIPS: Array<{ label: string }> = [
+  { label: 'mercy'    },
+  { label: 'patience' },
+  { label: 'tawakkul' },
 ]

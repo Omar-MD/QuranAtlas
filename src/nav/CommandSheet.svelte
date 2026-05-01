@@ -19,7 +19,7 @@
   import { settings } from '../state/settings.svelte'
   import { getMeaning } from '../data/surah-meanings'
   import { getAll as getAllMarks } from '../marks/store'
-  import { getAllUsedTags, getColorForTag } from '../marks/tags.js'
+  import { getAllUsedTags, getSlotForTag } from '../marks/tags.js'
   import { setTheme } from '../settings/theme'
   import { setFontSize, loadFontSize, getFontSizeOptions } from '../settings/font-size'
   import { beginFast } from '../tag/session-bridge'
@@ -34,7 +34,7 @@
   type ResultItem = {
     kind: string
     glyph?: string
-    tagColor?: string
+    tagSlot?: string
     label: string
     meta?: string
     surah?: number
@@ -230,7 +230,7 @@
     const tagMatches = tagCache.filter(t => t.toLowerCase().includes(lower)).slice(0, MAX_TAGS)
     for (const t of tagMatches) {
       const count = markCache.filter(m => m._canon.threads.includes(t)).length
-      allItems.push({ kind: 'tag', tag: t, tagColor: getColorForTag(t), label: t, meta: `${count} mark${count === 1 ? '' : 's'}`, group: 'Tags' })
+      allItems.push({ kind: 'tag', tag: t, tagSlot: getSlotForTag(t), label: t, meta: `${count} mark${count === 1 ? '' : 's'}`, group: 'Tags' })
     }
 
     if (!nMatch) {
@@ -433,11 +433,11 @@
               >
                 <span
                   class="qa-cmd-item-glyph"
-                  class:qa-cmd-item-glyph--dot={!!item.tagColor}
+                  class:qa-cmd-item-glyph--dot={!!item.tagSlot}
                   aria-hidden="true"
-                  style={item.tagColor ? `--qa-cmd-dot: ${item.tagColor}` : undefined}
+                  data-tag-slot={item.tagSlot ?? null}
                 >
-                  {item.tagColor ? '' : (item.glyph ?? '')}
+                  {item.tagSlot ? '' : (item.glyph ?? '')}
                 </span>
                 <span class="qa-cmd-item-body">
                   <span class="qa-cmd-item-label">{item.label}</span>

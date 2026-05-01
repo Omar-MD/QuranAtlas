@@ -425,7 +425,7 @@
     width: 9px;
     height: 9px;
     border-radius: var(--qa-radius-circle);
-    background-color: var(--qa-cmd-dot, var(--qa-accent));
+    background-color: var(--qa-tag-slot-color, var(--qa-accent));
   }
 
   .qa-cmd-vcard {

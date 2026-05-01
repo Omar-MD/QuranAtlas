@@ -129,6 +129,7 @@
     height: 7px;
     border-radius: var(--qa-radius-circle);
     flex-shrink: 0;
+    background-color: var(--qa-tag-slot-color, var(--qa-accent));
   }
 
   /* ============================================================
@@ -221,6 +222,11 @@
   .qa-review-layer-seg {
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  .qa-review-seg--full {
+    width: 100%;
+    display: flex;
   }
 
   .qa-review-layer-seg::-webkit-scrollbar {
@@ -325,6 +331,7 @@
       height: 9px;
       border-radius: var(--qa-radius-circle);
       flex-shrink: 0;
+      background-color: var(--qa-tag-slot-color, var(--qa-accent));
     }
 
     .qa-review-rail-count {
@@ -374,6 +381,7 @@
       height: 8px;
       border-radius: var(--qa-radius-circle);
       flex-shrink: 0;
+      background-color: var(--qa-tag-slot-color, var(--qa-accent));
     }
 
     .qa-review-filter-bar .qa-review-filter-chip button {
@@ -456,6 +464,7 @@
     width: 9px;
     height: 9px;
     border-radius: var(--qa-radius-circle);
+    background-color: var(--qa-tag-slot-color, var(--qa-accent));
   }
 
   .qa-fvr-stats {
@@ -585,5 +594,6 @@
     width: 6px;
     height: 6px;
     border-radius: var(--qa-radius-circle);
+    background-color: var(--qa-tag-slot-color, var(--qa-accent));
   }
 }

@@ -12,7 +12,7 @@
   import { onMount } from 'svelte'
   import { tagSession } from '../state/tag-session.svelte'
   import { tagSheetBridge } from '../tag/sheet-bridge'
-  import { LAYER_GROUPS, LAYER_PREFIXES, QUICK_PICKS, hueForLayer, parseLayeredValue, autofillPrefix } from '../data/tag-layers'
+  import { LAYER_GROUPS, LAYER_PREFIXES, LAYER_TO_GROUP, QUICK_PICKS, parseLayeredValue, autofillPrefix } from '../data/tag-layers'
   import type { LayerGroup } from '../data/tag-layers'
   import { save } from '../marks/store'
   import type { LayerName } from '../core/db'
@@ -198,7 +198,7 @@
             type="button"
             class="qa-vtp-chip"
             class:qa-vtp-chip--on={on}
-            style:--qa-chip-hue={hueForLayer(p.layer)}
+            data-group={LAYER_TO_GROUP[p.layer]}
             aria-pressed={on}
             onclick={() => toggle(p.layer, p.value)}
           >
@@ -211,7 +211,7 @@
           <span
             class="qa-vtp-chip qa-vtp-chip--editing"
             class:qa-vtp-chip--error={addError}
-            style:--qa-chip-hue={hueForLayer((g.layers[0] as LayerName))}
+            data-group={LAYER_TO_GROUP[(g.layers[0] as LayerName)]}
             title={`Type ${g.layers.map(l => (LAYER_PREFIXES[l][0] ?? l) + ':…').join(' · ')}`}
           >
             <span class="qa-vtp-hash" aria-hidden="true">#</span>
@@ -233,7 +233,7 @@
           <button
             type="button"
             class="qa-vtp-add"
-            style:--qa-chip-hue={hueForLayer((g.layers[0] as LayerName))}
+            data-group={LAYER_TO_GROUP[(g.layers[0] as LayerName)]}
             onclick={() => { editingGroup = g.id; addValue = '' }}
           >
             <span class="qa-vtp-hash" aria-hidden="true">+</span>

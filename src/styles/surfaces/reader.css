@@ -623,7 +623,12 @@
   .qa-skeleton-line {
     height: 1rem;
     margin: 0.75rem 0;
+    width: 100%;
   }
+  .qa-skeleton-line--w80 { width: 80%; }
+  .qa-skeleton-line--w75 { width: 75%; }
+  .qa-skeleton-line--w60 { width: 60%; }
+  .qa-skeleton-line--w90 { width: 90%; }
 
   @media (prefers-reduced-motion: reduce) {
     .qa-skeleton {

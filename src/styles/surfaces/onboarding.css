@@ -314,6 +314,14 @@
     border-radius: var(--qa-radius-circle);
   }
 
+  /* Sample-chip colors are bound by `data-chip` attr; SAMPLE_CHIPS in
+     onboarding/screens.ts is the source of truth for both the label
+     and the bound color (R-19c, 2026-05-01 — moved off inline styles
+     for CSP `style-src` un-`unsafe-inline`-ing). */
+  .qa-onb-chip-dot[data-chip='mercy']    { background-color: #64a078; }
+  .qa-onb-chip-dot[data-chip='patience'] { background-color: #6e96b4; }
+  .qa-onb-chip-dot[data-chip='tawakkul'] { background-color: #b4826e; }
+
   .qa-onb-privacy {
     font-size: 0.75rem;
     color: var(--qa-text-on-sheet-dim);

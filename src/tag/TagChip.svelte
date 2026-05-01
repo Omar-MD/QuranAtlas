@@ -4,7 +4,7 @@
    * Quickbar chips are tap-to-toggle.
    */
   import type { LayerName } from '../core/db'
-  import { hueForLayer } from '../data/tag-layers'
+  import { LAYER_TO_GROUP } from '../data/tag-layers'
 
   interface Props {
     layer: LayerName
@@ -13,7 +13,6 @@
     ontoggle?: () => void
   }
   const { layer, value, on = false, ontoggle }: Props = $props()
-  const hue = $derived(hueForLayer(layer))
 </script>
 
 <button
@@ -22,8 +21,9 @@
   class:qa-tag-chip--on={on}
   onclick={ontoggle}
   aria-pressed={on}
+  data-group={LAYER_TO_GROUP[layer]}
 >
-  <span class="qa-tag-chip-dot" style:--qa-tag-chip-hue={hue}></span>
+  <span class="qa-tag-chip-dot"></span>
   {value}
 </button>
 

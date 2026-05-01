@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getColorForTag } from '../marks/tags'
+  import { getSlotForTag } from '../marks/tags'
   import type { Mark } from '../marks/store'
   import type { SurahMeta } from '../data/dataset'
   import { getSurah } from '../data/dataset'
@@ -78,7 +78,7 @@
         >
           <span
             class="qa-review-card-chip-dot"
-            style:background-color={getColorForTag(tag)}
+            data-tag-slot={getSlotForTag(tag)}
           ></span>
           {tag}
         </a>

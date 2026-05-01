@@ -427,12 +427,12 @@
 </script>
 
 {#if isLoading}
-  <div class="qa-skeleton qa-skeleton-line" style="width: 100%"></div>
-  <div class="qa-skeleton qa-skeleton-line" style="width: 80%"></div>
-  <div class="qa-skeleton qa-skeleton-line" style="width: 100%"></div>
-  <div class="qa-skeleton qa-skeleton-line" style="width: 60%"></div>
-  <div class="qa-skeleton qa-skeleton-line" style="width: 90%"></div>
-  <div class="qa-skeleton qa-skeleton-line" style="width: 75%"></div>
+  <div class="qa-skeleton qa-skeleton-line"></div>
+  <div class="qa-skeleton qa-skeleton-line qa-skeleton-line--w80"></div>
+  <div class="qa-skeleton qa-skeleton-line"></div>
+  <div class="qa-skeleton qa-skeleton-line qa-skeleton-line--w60"></div>
+  <div class="qa-skeleton qa-skeleton-line qa-skeleton-line--w90"></div>
+  <div class="qa-skeleton qa-skeleton-line qa-skeleton-line--w75"></div>
 {:else if loadError}
   <div class="qa-error-state">
     Failed to load Surah {surahNum}.<br />

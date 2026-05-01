@@ -4,7 +4,7 @@
   import ReviewCard from './ReviewCard.svelte'
   import { getAll, getByLayerCanonical, getAllCanonicalValues } from '../marks/store'
   import type { Mark } from '../marks/store'
-  import { getColorForTag } from '../marks/tags'
+  import { getSlotForTag } from '../marks/tags'
   import { getSurahs } from '../data/dataset'
   import type { SurahMeta } from '../data/dataset'
   import { emit, on } from '../core/events'
@@ -119,7 +119,7 @@
     return surahs.find(s => s.n === sNum)
   }
 
-  function computeRailBuckets(marks: Mark[], groupBy: string): { key: string; label: string; count: number; dotColor?: string }[] {
+  function computeRailBuckets(marks: Mark[], groupBy: string): { key: string; label: string; count: number; tagSlot?: string }[] {
     if (groupBy === 'surah') {
       const bySurah: Record<number, number> = {}
       for (const m of marks) {
@@ -156,7 +156,7 @@
     }
     return Object.entries(byVal)
       .sort((a, b) => b[1] - a[1])
-      .map(([val, count]) => ({ key: val, label: val, count, dotColor: getColorForTag(val) }))
+      .map(([val, count]) => ({ key: val, label: val, count, tagSlot: getSlotForTag(val) }))
   }
 
   // ── Derived display list ───────────────────────────────────────────────────
@@ -514,7 +514,7 @@
       <div class="qa-fvr-title-block">
         <div class="qa-fvr-label">{LAYER_LABELS[fvrLayer] ?? fvrLayer}</div>
         <h1 class="qa-fvr-title">
-          <span class="qa-fvr-dot" style:background-color={getColorForTag(fvrValue)}></span>
+          <span class="qa-fvr-dot" data-tag-slot={getSlotForTag(fvrValue)}></span>
           <span class="qa-fvr-name">{fvrValue}</span>
         </h1>
         <div class="qa-fvr-stats">
@@ -569,7 +569,7 @@
         {/each}
 
         <div class="qa-review-rail-section">Group by</div>
-        <div class="qa-review-seg" style="width:100%;display:flex">
+        <div class="qa-review-seg qa-review-seg--full">
           {#each [['surah', 'Surah'], ['flat', 'Date'], ['tag', 'Value']] as groupItem (groupItem[0])}
             <button
               type="button"
@@ -593,8 +593,8 @@
             class:qa-review-rail-row--on={isOn}
             onclick={() => { if (review.groupBy === 'tag') { toggleRailTag(bucket.key) } else { toggleRailGroup(bucket.key) } }}
           >
-            {#if bucket.dotColor}
-              <span class="qa-review-rail-dot" style:background-color={bucket.dotColor}></span>
+            {#if bucket.tagSlot}
+              <span class="qa-review-rail-dot" data-tag-slot={bucket.tagSlot}></span>
             {/if}
             <span>{bucket.label}</span>
             <span class="qa-review-rail-count">{bucket.count}</span>
@@ -610,7 +610,7 @@
             <span class="qa-review-filter-bar-label">Filtering by</span>
             {#each Array.from(railActiveTags) as tag (tag)}
               <span class="qa-review-filter-chip">
-                <span class="qa-review-filter-chip-dot" style:background-color={getColorForTag(tag)}></span>
+                <span class="qa-review-filter-chip-dot" data-tag-slot={getSlotForTag(tag)}></span>
                 {tag}
                 <button
                   type="button"
@@ -726,7 +726,7 @@
             data-value={val}
             onclick={() => handleValueChipClick(val)}
           >
-            <span class="qa-review-value-chip-dot" style:background-color={getColorForTag(val)}></span>
+            <span class="qa-review-value-chip-dot" data-tag-slot={getSlotForTag(val)}></span>
             {val}
           </button>
         {/each}

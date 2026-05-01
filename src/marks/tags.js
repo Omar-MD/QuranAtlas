@@ -87,6 +87,27 @@ export function getColorForTag(label) {
 }
 
 /**
+ * Resolve a stable CSS class-suffix for a tag label, used by `data-tag-slot`
+ * attributes to bind background colours via pre-declared CSS rules
+ * (`src/styles/surfaces/review.css` ~`.qa-tag-slot-*`). Eliminates the need
+ * for `style:background-color={...}` inline overrides — see audit R-19c
+ * (2026-05-01) for the unsafe-inline-removal rationale.
+ *
+ * Returns:
+ *   - `'sem-<label>'` for semantic tags (16 curated)
+ *   - `'p<N>'` for hashed palette slots (N ∈ 0..11)
+ *
+ * @param {string} label - lowercased tag label
+ * @returns {string} class-suffix
+ */
+export function getSlotForTag(label) {
+  if (SEMANTIC_TAG_LABELS.includes(label)) {
+    return `sem-${label}`
+  }
+  return `p${hashLabel(label)}`
+}
+
+/**
  * Get the seed tags array (used by editor on cold-start).
  * @returns {Array<{label: string, paletteSlot: number}>}
  */

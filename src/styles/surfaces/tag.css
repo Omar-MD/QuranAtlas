@@ -310,6 +310,7 @@
     height: 6px;
     border-radius: var(--qa-radius-circle);
     flex-shrink: 0;
+    background-color: var(--qa-chip-hue, var(--qa-accent));
   }
 
   .qa-ts-search-val {
@@ -329,10 +330,18 @@
      Group section — one per LayerGroup (Speech / Narrative / Themes /
      Entities), stacked in outer→inner reading order. Hue-accented left
      rail visually nests layer rows inside their containing group.
-     Component sets --qa-grp-hue via style:--qa-grp-hue={group.hueVar}.
-     Layer rows inside inherit the hue for their `#` glyph via
-     style:--qa-chip-hue={hueForLayer(layer)}.
+     Component emits `data-group="<id>"` on the section and
+     `data-group="<id>"` on each layer row; the rules below bind
+     --qa-grp-hue / --qa-chip-hue accordingly. (R-19c, 2026-05-01 —
+     migrated off Svelte `style:` directives so `style-src 'unsafe-inline'`
+     can drop. LAYER_GROUPS in src/data/tag-layers.ts is the source of
+     truth for the four ids: speech / narrative / themes / entities.)
      ---------------------------------------------------------------- */
+  [data-group='speech']    { --qa-grp-hue: var(--lh-speech);    --qa-chip-hue: var(--lh-speech);    }
+  [data-group='narrative'] { --qa-grp-hue: var(--lh-narrative); --qa-chip-hue: var(--lh-narrative); }
+  [data-group='themes']    { --qa-grp-hue: var(--lh-themes);    --qa-chip-hue: var(--lh-themes);    }
+  [data-group='entities']  { --qa-grp-hue: var(--lh-entities);  --qa-chip-hue: var(--lh-entities);  }
+
   .qa-ts-grp {
     position: relative;
     padding: 4px 0 6px 12px;
@@ -906,8 +915,9 @@
 
   /* ================================================================
      TagChip — single-layer quickbar chip (src/tag/TagChip.svelte).
-     Component sets --qa-tag-chip-hue via style:--qa-tag-chip-hue to
-     colour the dot; no !important escape hatch needed.
+     Component emits `data-group="<id>"` matching the chip's layer; the
+     [data-group] rules at the top of this file bind --qa-chip-hue, which
+     this rule's `.qa-tag-chip-dot` consumes. (R-19c, 2026-05-01.)
      ================================================================ */
   .qa-tag-chip {
     display: inline-flex;
@@ -929,7 +939,7 @@
     width: 5px;
     height: 5px;
     border-radius: var(--qa-radius-circle);
-    background-color: var(--qa-tag-chip-hue);
+    background-color: var(--qa-chip-hue, var(--qa-accent));
     opacity: 0.6;
   }
 

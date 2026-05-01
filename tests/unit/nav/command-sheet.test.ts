@@ -27,6 +27,7 @@ vi.mock('../../../src/marks/store', () => ({ getAll: vi.fn(async () => []) }))
 vi.mock('../../../src/marks/tags.js', () => ({
   getAllUsedTags: vi.fn(async () => []),
   getColorForTag: vi.fn(() => '#fff'),
+  getSlotForTag: vi.fn(() => 'p0'),
 }))
 vi.mock('../../../src/settings/theme', () => ({
   setTheme: vi.fn(async () => true),

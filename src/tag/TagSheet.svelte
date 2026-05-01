@@ -18,7 +18,7 @@
   import { showUndoToast } from '../core/ui-bridge'
   import { tagSession } from '../state/tag-session.svelte'
   import { tagSheetBridge } from './sheet-bridge'
-  import { LAYER_GROUPS, LAYER_LABELS, hueForLayer } from '../data/tag-layers'
+  import { LAYER_GROUPS, LAYER_LABELS, LAYER_TO_GROUP } from '../data/tag-layers'
   import { on } from '../core/events'
   import { Events } from '../core/constants'
 
@@ -241,7 +241,7 @@
                 class="qa-ts-search-row"
                 onmousedown={(e) => { e.preventDefault(); addFromGlobal(h) }}
               >
-                <span class="qa-ts-search-dot" style:background-color={hueForLayer(h.layer)}></span>
+                <span class="qa-ts-search-dot" data-group={LAYER_TO_GROUP[h.layer]}></span>
                 <span class="qa-ts-search-val">{h.value}</span>
                 <span class="qa-ts-search-lbl">{h.label}</span>
               </button>
@@ -252,14 +252,14 @@
 
       {#each LAYER_GROUPS as g (g.id)}
         {@const groupCount = g.layers.reduce((n, l) => n + tagSession.draft[l].length, 0)}
-        <section class="qa-ts-grp" style:--qa-grp-hue={g.hueVar}>
+        <section class="qa-ts-grp" data-group={g.id}>
           <header class="qa-ts-grp-hdr">
             <span class="qa-ts-grp-name">{g.name}</span>
             {#if groupCount > 0}<span class="qa-ts-grp-count">{groupCount}</span>{/if}
           </header>
           <div class="qa-ts-layers">
             {#each g.layers as layer (layer)}
-              <div class="qa-ts-layer" style:--qa-chip-hue={hueForLayer(layer)}>
+              <div class="qa-ts-layer" data-group={LAYER_TO_GROUP[layer]}>
                 <div class="qa-ts-lbl">{LAYER_LABELS[layer]}</div>
                 <div class="qa-ts-layer-body">
                   {#each tagSession.draft[layer] as v (v)}
