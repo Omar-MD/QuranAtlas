@@ -119,7 +119,14 @@ Run `time pnpm playwright test tests/e2e/<your-spec>.spec.js --reporter=line` lo
 
 **Why:** warnings rot. A single accepted warning trains the eye to skip output, and the next ten warnings hide in the noise. The audited 2026-04-26 build had two — an unused `eslint-disable no-console` and a dynamic-import that was statically imported elsewhere — both surviving because every prior commit treated them as someone else's problem. Treat the warning bar as `error`; if the bar were lower we would have caught the dynamic-import bundle bloat months earlier.
 
-**How to apply:** before `git add`, run `pnpm lint && pnpm check && pnpm build` and read every line of output. Any non-empty warning section gates the commit. If the warning is genuinely intractable (third-party tool emits a false positive that cannot be silenced cleanly), document the exception inline next to the offending code (`// rolldown bug #1234 — silenced via .browserslistrc`) AND in the PR description — never silently.
+**How to apply:** before `git add`, run these four steps in order and read every line of output:
+
+1. `pnpm docs:derive` — regenerates all auto-generated doc blocks (events, module-graph, feature-map, inventory, data, tests, cite-check). CI runs `docs:check` which fails on any hash mismatch; derive first so the check passes.
+2. `pnpm lint && pnpm check` — zero warnings allowed.
+3. `pnpm build` — zero warnings allowed.
+4. Re-read the `docs:derive` output for any `ERROR` lines (cite-check path mismatch, broken fence, etc.).
+
+Any non-empty warning section gates the commit. If the warning is genuinely intractable (third-party tool emits a false positive that cannot be silenced cleanly), document the exception inline next to the offending code (`// rolldown bug #1234 — silenced via .browserslistrc`) AND in the PR description — never silently.
 
 ### Rule 8 — Unit-first. E2E reserved for things only e2e can prove.
 
