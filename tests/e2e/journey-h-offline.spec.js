@@ -136,14 +136,17 @@ test.describe('Journey H: Offline resilience', () => {
     // Open Settings via direct route (desktop @offline viewport).
     await page.goto('/#/settings')
 
-    // Storage section is present + text row is available (text manifest entries exist).
+    // Storage section is present (collapsed by default — expand it first).
     const storageSection = page.locator('[data-testid="storage-section"]')
     await expect(storageSection).toBeVisible({ timeout: 5_000 })
+    const storageToggle = page.locator('[data-testid="storage-toggle"]')
+    await storageToggle.click()
+
+    // Text row is now visible (manifest entries exist for the text category).
     const textRow = page.locator('[data-testid="storage-row-text"]')
     await expect(textRow).toBeVisible()
 
-    // Expand the text accordion row + check its checkbox.
-    await textRow.locator('summary').click()
+    // Check the text checkbox (single collapsible — no per-row <summary>).
     const textCheck = page.locator('[data-testid="storage-check-text"]')
     await expect(textCheck).toBeVisible()
     await textCheck.check()
@@ -152,10 +155,10 @@ test.describe('Journey H: Offline resilience', () => {
     const apply = page.locator('[data-testid="storage-apply"]')
     await expect(apply).toBeEnabled()
     await apply.click()
-    // handleApply is async: busy=true → 'Caching…'; busy=false → 'Apply'.
+    // handleApply is async: busy=true → 'Saving…'; busy=false + saved=true → 'Saved ✓'.
     // Wait for both transitions so the IDB write + SW post complete before reload.
-    await expect(apply).toHaveText('Caching…', { timeout: 2_000 })
-    await expect(apply).toHaveText('Apply', { timeout: 10_000 })
+    await expect(apply).toHaveText('Saving…', { timeout: 2_000 })
+    await expect(apply).toHaveText('Saved ✓', { timeout: 10_000 })
 
     // After Apply, the selector persists the new state. Reload + re-mount
     // the rune from IDB to prove the boot path wires it.
