@@ -4,11 +4,11 @@
  * CLAUDE.md Rule 4: Long-press is the ONLY gesture for opening the mark editor.
  * No contextual menu, no action sheet, no preview popover.
  *
- * Usage (on a container with [data-verse-key] children):
+ * Usage (on a container with [data-token-key] children):
  *   <div use:longPress={openEditor}>…</div>
  *
- * Usage (on an individual element with data-verse-key):
- *   <article use:longPress={openEditor} data-verse-key="2:255">…</article>
+ * Usage (on an individual element with data-token-key):
+ *   <article use:longPress={openEditor} data-token-key="2:255">…</article>
  *
  * Returns a cleanup object so Svelte can call destroy() on unmount.
  */
@@ -114,7 +114,7 @@ export function setupLongPress(
  *                 since 2026-04-25; long-press now stays free for the OS)
  *
  * Touch double-tap detected via two ends within DOUBLE_TAP_MS on the same
- * `[data-verse-key]`. Desktop maps native `dblclick` and right-click
+ * `[data-token-key]`. Desktop maps native `dblclick` and right-click
  * `contextmenu` to onDouble for parity.
  */
 const DOUBLE_TAP_MS = 300

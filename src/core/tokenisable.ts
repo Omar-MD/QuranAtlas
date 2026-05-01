@@ -1,22 +1,16 @@
-// Sub-verse DOM contract (audit C-3 / R-06 / N19, narrow audio-driven
-// scope landed 2026-04-30). The reader DOM emits `data-token-key` on
-// every token-bearing element. Today (v2.0 audio) the only granularity
-// shipped is verse-grain — `data-token-key` matches `data-verse-key`
-// on the outer `.qa-verse` container. Future word-by-word translation
-// (#9), tajweed coloring (#11), and v2.1 word-karaoke audio render
-// per-word spans with `data-token-key="surah:ayah:wordIdx"` inside the
-// verse — at which point the prefix-match selector
-// `[data-token-key^="${surah}:${ayah}"]` selects the whole verse and
+// Sub-verse DOM contract (audit C-3 / R-06 / N19). The reader DOM emits
+// `data-token-key` on every token-bearing element. Today (post-N19) the
+// only granularity shipped is verse-grain — `.qa-verse` carries
+// `data-token-key="surah:ayah"`. Future word-by-word translation (#9),
+// tajweed coloring (#11), and v2.1 word-karaoke audio render per-word
+// spans with `data-token-key="surah:ayah:wordIdx"` inside the verse — at
+// which point the verseTokenSelector below selects the whole verse and
 // every word inside it uniformly.
 //
-// Audio's minimum requirement (per `docs/superpowers/specs/2026-04-30-
-// audio-design.md` §7.2) is verse-grain. The helpers here let the audio
-// reader-highlight subscribe to verse-changed events and apply a class
-// to every matching token element without caring whether the DOM is
-// verse-grain or word-grain. Existing verse-grain consumers (long-press,
-// click-handler, scroll-tracker, indicator) keep using `data-verse-key`
-// and are migrated to `data-token-key` only when their owning surface
-// gains a sub-verse-grain test (e.g. WBW gestures on individual words).
+// As of N19 (2026-05-01) all four verse-grain consumers (long-press,
+// bookmark click-handler, marks indicator, bookmarks indicator) read
+// `data-token-key` via closestTokenKey + tokenVerseKey. The legacy
+// `data-verse-key` alias was dropped in N20 (same day).
 
 export type TokenKey = `${number}:${number}` | `${number}:${number}:${number}`
 
@@ -80,8 +74,8 @@ export function getTokenAt(x: number, y: number): TokenKey | null {
  * Convenience: walk up from `el` to the nearest ancestor with a valid
  * `data-token-key` and return that key. Replaces the older
  * `el.closest('[data-verse-key]')?.dataset.verseKey` pattern at the four
- * verse-grain consumers (long-press, bookmark click, indicator,
- * scroll-tracker — N19 migration).
+ * verse-grain consumers (long-press, bookmark click, marks indicator,
+ * bookmarks indicator — N19 migration shipped 2026-05-01).
  */
 export function closestTokenKey(el: Element | null): TokenKey | null {
   if (!el) { return null }
