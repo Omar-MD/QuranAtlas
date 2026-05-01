@@ -223,7 +223,7 @@ When a user-visible release is scheduled:
 
 ### Audio sub-design (N30 — landed 2026-04-30)
 
-The audio architecture, IDB schema (`audioPosition` store, DB v6), runtime, cross-tab gating, mini-bar + full-overlay shells, reader verse-tick + smart-defer autoscroll, and SW per-reciter cache partition all landed 2026-04-30 against `docs/superpowers/specs/2026-04-30-audio-design.md` (the post-brainstorm spec that supersedes the gitignored skeleton). Remaining ship-blocking work tracked under §Audio recitation §v2 above. Companion items: `core/tokenisable.ts` shipped narrow audio scope (verse-grain DOM contract via `data-token-key` on `.qa-verse`); reader virtualisation (N20) + WBW migration of long-press / click-handler / scroll-tracker / indicator from `data-verse-key` to `data-token-key` remain deferred for WBW's own design pass.
+The audio architecture, IDB schema (`audioPosition` store, DB v6), runtime, cross-tab gating, mini-bar + full-overlay shells, reader verse-tick + smart-defer autoscroll, and SW per-reciter cache partition all landed 2026-04-30 against `docs/superpowers/specs/2026-04-30-audio-design.md` (the post-brainstorm spec that supersedes the gitignored skeleton). Remaining ship-blocking work tracked under §Audio recitation §v2 above. Companion items shipped 2026-05-01: full tokenisable contract (N19) — `data-token-key` is now the sole verse-identity DOM attr after consumer migration + `data-verse-key` drop; reader virtualisation (N20) — chunked recycler caps live verses at 60. WBW (`#9`) inherits both contracts ready-to-use.
 
 ### Sync v2 sub-design + crypto threat model (N31 skeleton, audit C-8 / R-10)
 
@@ -241,15 +241,17 @@ Deferred from N15. Building global-setup right requires choosing the canonical o
 
 `journey-d-settings.spec.js`'s 5 nested `beforeEach` blocks (audit R-28) collapse into the outer one as part of the same refactor — both are deferred together.
 
-### `core/tokenisable.ts` sub-verse contract + reader virtualisation (audit R-06 / R-22 / C-3)
+### Retire `data-verse-key` from `bookmarks/BookmarksList.svelte:256`
 
-Step 1 of the audit prescription landed 2026-04-30 in narrow audio-driven scope: `core/tokenisable.ts` exports `parseTokenKey`, `formatTokenKey`, `getTokenAt(x, y)`, and `verseTokenSelector(surah, ayah)`. `Verse.svelte` emits `data-token-key={verseKey}` alongside the existing `data-verse-key` so the contract is satisfied at verse grain without disturbing existing consumers. Audio's `reader/audio-highlight.ts` reads via `verseTokenSelector` — picks up word-level spans automatically when WBW lands.
+Bookmark list-row carries a `data-verse-key={b.verseKey}` attr that no code reads. Out of N19/N20 scope (review surface, not reader DOM contract). Cheap drop — single attribute removal + grep verify zero readers — alongside the next BookmarksList touch.
 
-Steps 2 and 3 are still deferred:
-- **Step 2** — migrate `marks/long-press.ts`, `bookmarks/click-handler.ts`, `reader/scroll-tracker.ts`, `marks/indicator.ts` from `data-verse-key` to `data-token-key`. Each consumer has a stable selector today; the migration is a search-and-replace plus updating tests. Land alongside WBW (`#9`) when sub-verse consumers actually need word-grain (today they only ever ask "which verse").
-- **Step 3** — reader virtualisation via IntersectionObserver recycling ±3 chunks (audit R-22). Caps DOM at ~150 verses; required before WBW lands or Al-Baqarah's 286 verses × 50–150 nodes hits 14k–40k DOM nodes.
+### Manual stress-test sweep deferred from N20 ship
 
-Order still matters: virtualise BEFORE the consumer migration = re-write twice (the consumer cache invalidation interacts with DOM recycling). Single brainstorm + plan pass before WBW (`#9`) starts.
+Per memory `reference_quran_rendering_stress_test`: reader Arabic rendering changed (chunk recycling, `mount()`/`unmount()` lifecycle). Walk 3 riwayat × 5 flow steps × 3 viewports against the canonical surah:verse picks before promoting `dev → staging → main`. Verify harakat clearance, line-height floors, no visible flash on chunk transitions. Block promotion on any visual anomaly.
+
+### Typography-anchor preservation e2e gap
+
+Plan §8.2 listed a 4th e2e case (`B-Virt4: lineSpacing change preserves center-band verse @mobile`) — Settings-sheet keyboard-binding uncertainty made it brittle to author. Unit test for `invalidateHeightCache` already covers the cache-wipe logic; the missing e2e would catch the `scrollToVerse(anchorVerse)` re-anchor in real layout. Add when the next typography-touching change lands or when settings keyboard bindings get a stable test fixture.
 
 ### `core/persistent-overlay.ts` factory + lazy mount (audit R-13 / CC-9 / N22 + N25)
 
