@@ -140,7 +140,7 @@ export function setupVirtualiser<V extends VerseLike>(
     setSpacer(slot, idx)
   }
 
-  function reconcile(): void {
+  function reconcile(opts: { sync?: boolean } = {}): void {
     if (destroyed) { return }
     const lo = Math.max(0, currentChunk - WINDOW_RADIUS)
     const hi = Math.min(totalChunks - 1, currentChunk + WINDOW_RADIUS)
@@ -150,13 +150,22 @@ export function setupVirtualiser<V extends VerseLike>(
       const inWindow = i >= lo && i <= hi
       if (inWindow) {
         if (slot.state === 'live') { continue }
-        setLoading(slot)
-        const idxCapture = i
-        requestAnimationFrame(() => {
-          if (destroyed) { return }
-          const s = slots[idxCapture]
-          if (s && s.state === 'loading') { setLive(s, idxCapture) }
-        })
+        if (opts.sync) {
+          // ensureVerseRendered / deep-link / warm-resume path: target chunk
+          // must exist in DOM synchronously so scrollToVerse's rAF retry
+          // finds it. Skip the skeleton loading state.
+          setLive(slot, i)
+        } else {
+          // Scroll-driven path: brief skeleton → live transition over one
+          // rAF gives the user a visual cue that content is appearing.
+          setLoading(slot)
+          const idxCapture = i
+          requestAnimationFrame(() => {
+            if (destroyed) { return }
+            const s = slots[idxCapture]
+            if (s && s.state === 'loading') { setLive(s, idxCapture) }
+          })
+        }
       } else if (slot.state === 'live') {
         evictToSpacer(slot, i)
       }
@@ -169,15 +178,17 @@ export function setupVirtualiser<V extends VerseLike>(
     }
   }
 
-  function setCurrentChunk(idx: number): void {
+  function setCurrentChunk(idx: number, opts: { sync?: boolean } = {}): void {
     const clamped = Math.max(0, Math.min(totalChunks - 1, idx))
     if (clamped === currentChunk && slots[clamped]?.state === 'live') { return }
     currentChunk = clamped
-    reconcile()
+    reconcile(opts)
   }
 
   function ensureVerseRendered(verseNum: number): void {
-    setCurrentChunk(chunkOf(verseNum))
+    // Sync materialise — caller (scrollToVerse / warm-resume) needs the
+    // verse element in the DOM by the next rAF.
+    setCurrentChunk(chunkOf(verseNum), { sync: true })
   }
 
   function invalidateHeightCache(): void {

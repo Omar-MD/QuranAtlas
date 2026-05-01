@@ -552,4 +552,90 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await page.keyboard.press('Escape')
     await expect(v1.locator('.qa-fn-popover')).toHaveCount(0)
   })
+
+  // -------------------------------------------------------------------------
+  // N20 — virtualisation regression guards
+  // -------------------------------------------------------------------------
+
+  test('B-Virt1: virtualiser caps live verses at <=60 (memory ceiling) @mobile', async ({ page }) => {
+    await page.goto('/#/s/2') // al-Baqarah, 286 verses
+    await page.waitForSelector('[data-token-key="2:1"]')
+    // Scroll deep into the surah.
+    await page.evaluate(() => {
+      const sc = document.getElementById('main-content')
+      if (sc) { sc.scrollTop = sc.scrollHeight * 0.6 }
+    })
+    // Wait two rAFs for the recycler to settle.
+    await page.evaluate(() => new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r(null)))))
+    const liveCount = await page.evaluate(() => document.querySelectorAll('.qa-verse').length)
+    expect(liveCount).toBeLessThanOrEqual(60)
+    expect(liveCount).toBeGreaterThan(0)
+  })
+
+  test('B-Virt2: deep-link to mid-surah verse materialises target chunk', async ({ page }) => {
+    await page.goto('/#/s/2/255')
+    await page.waitForSelector('[data-token-key="2:255"]')
+    // Wait for scrollToVerse's two-rAF alignment to settle.
+    await expect.poll(async () => {
+      return await page.evaluate(() => {
+        const el = document.querySelector('[data-token-key="2:255"]')
+        if (!el) { return false }
+        const rect = el.getBoundingClientRect()
+        return rect.top >= -200 && rect.top <= window.innerHeight + 200
+      })
+    }, { timeout: 3000 }).toBe(true)
+  })
+
+  test('B-Virt3: reload restores scroll position through virtualiser', async ({ page }) => {
+    await page.goto('/#/s/2')
+    await page.waitForSelector('[data-token-key="2:1"]')
+    // Scroll to verse 100 to drive the saved-position update.
+    await page.evaluate(() => {
+      const sc = document.getElementById('main-content')
+      if (sc) { sc.scrollTop = sc.scrollHeight * 0.35 }
+    })
+    // Poll IDB for the saved position via the IndexedDB API directly.
+    await expect.poll(async () => {
+      return await page.evaluate(() => {
+        return new Promise((resolve) => {
+          const open = indexedDB.open('quran-atlas')
+          open.onsuccess = () => {
+            const db = open.result
+            if (!db.objectStoreNames.contains('settings')) { resolve(null); return }
+            const tx = db.transaction('settings', 'readonly')
+            const req = tx.objectStore('settings').get('currentPosition')
+            req.onsuccess = () => resolve(req.result?.value ?? null)
+            req.onerror = () => resolve(null)
+          }
+          open.onerror = () => resolve(null)
+        })
+      })
+    }, { timeout: 5000 }).toMatchObject({ surah: 2 })
+
+    await page.reload()
+    await page.waitForSelector('[data-token-key="2:1"]')
+    // After reload the virtualiser should warm-mount the saved-position chunk;
+    // verify the verse is present in the DOM (in spacer or live state).
+    const present = await page.evaluate(() => {
+      // Pull saved verse from IDB to know the target.
+      return new Promise((resolve) => {
+        const open = indexedDB.open('quran-atlas')
+        open.onsuccess = () => {
+          const db = open.result
+          const tx = db.transaction('settings', 'readonly')
+          const req = tx.objectStore('settings').get('currentPosition')
+          req.onsuccess = () => {
+            const pos = req.result?.value
+            if (!pos) { resolve(false); return }
+            const el = document.querySelector(`[data-token-key="${pos.surah}:${pos.verse}"]`)
+            resolve(!!el)
+          }
+          req.onerror = () => resolve(false)
+        }
+        open.onerror = () => resolve(false)
+      })
+    })
+    expect(present).toBe(true)
+  })
 })
