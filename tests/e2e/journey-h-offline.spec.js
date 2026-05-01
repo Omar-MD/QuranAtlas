@@ -161,7 +161,7 @@ test.describe('Journey H: Offline resilience', () => {
 
     const persisted = await page.evaluate(async () => {
       const db = await new Promise((resolve, reject) => {
-        const req = indexedDB.open('quranatlas')
+        const req = indexedDB.open('quran-atlas')
         req.onsuccess = () => resolve(req.result)
         req.onerror = () => reject(req.error)
       })
