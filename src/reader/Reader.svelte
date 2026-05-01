@@ -390,6 +390,37 @@
         })
         cleanups.push(() => { virtualiser?.destroy(); virtualiser = null })
 
+        // Chunk-boundary IntersectionObserver: advances the virtualiser window
+        // as the user scrolls into adjacent spacer chunks. Without this wiring
+        // only chunk 0 (the first 20 verses) is ever live — setCurrentChunk is
+        // never called from the scroll path so the reader appears truncated.
+        const chunkRoot = document.getElementById('main-content')
+        if (chunkRoot) {
+          const chunkIO = new IntersectionObserver(
+            (entries) => {
+              for (const entry of entries) {
+                if (!entry.isIntersecting) { continue }
+                const idx = parseInt(
+                  (entry.target as HTMLElement).getAttribute('data-chunk') ?? '',
+                  10,
+                )
+                if (!isNaN(idx)) { virtualiser?.setCurrentChunk(idx) }
+              }
+            },
+            {
+              root: chunkRoot,
+              // Pre-load 300 px before the edge enters the viewport so the
+              // spacer→live transition is invisible at normal reading speed.
+              rootMargin: '300px 0px 300px 0px',
+              threshold: 0,
+            },
+          )
+          virtualiserContainer.querySelectorAll<HTMLElement>('[data-chunk]').forEach(
+            el => chunkIO.observe(el),
+          )
+          cleanups.push(() => chunkIO.disconnect())
+        }
+
         // Backward swap: virtualiser teleports window to last chunk; spacers
         // above preserve scrollHeight; anchor scrollTop to bottom; second-rAF
         // correction snaps if estimate drift miscomputed.
