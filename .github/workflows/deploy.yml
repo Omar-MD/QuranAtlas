@@ -44,6 +44,14 @@ jobs:
           version: 10.31.0
           run_install: false
 
+      # Wrangler 4.x requires Node >=22. CI / build paths still pin Node 20
+      # via the composite setup action; deploy upgrades locally so the bump
+      # doesn't cascade to test/build matrices.
+      - name: Setup Node.js (22 — wrangler requirement)
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '22'
+
       # Use pnpm dlx directly instead of cloudflare/wrangler-action, which is
       # still on Node 20 (no v4 released as of 2026-04-20). Direct invocation
       # keeps us on bumped action majors everywhere and uses the latest
