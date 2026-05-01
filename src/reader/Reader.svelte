@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, mount, unmount } from 'svelte'
   import Verse from './Verse.svelte'
   import SurahHeader from './SurahHeader.svelte'
   import EdgeIndicator from './EdgeIndicator.svelte'
@@ -14,10 +14,15 @@
   import { announce } from '../a11y/announcer'
   import { logger } from '../core/logger'
   import { clearUndoToast, clearUndoRecord } from '../core/ui-bridge'
-  import { setupChunkedAppend, CHUNK_SIZE } from './chunked-append'
+  import {
+    setupVirtualiser,
+    type VirtualiserHandle,
+    type MountVerse,
+  } from './chunked-virtualiser'
   import { initPositionTracking, teardownPositionTracking, savePosition } from './position'
   import { observeNewVerses } from './scroll-tracker'
   import { isValidSurahNum } from './render-helpers'
+  import { scrollToVerse } from './verse-scroll'
   import {
     nextSurah,
     prevSurah,
@@ -53,7 +58,14 @@
   const surahNum = $derived(parseInt(surahParam ?? '', 10))
   const targetVerse = $derived(ayahParam ? parseInt(ayahParam, 10) : null)
 
-  type VerseItem = { key: string; ar: string; en: string; translationRole: TranslationRole; primaryAyah?: number }
+  type VerseItem = {
+    aya_no: number
+    key: string
+    arabic: string
+    translation: string
+    translationRole: TranslationRole
+    primaryAyah?: number
+  }
 
   let surahData = $state<SurahPayload | null>(null)
   let surahMeta = $state<SurahMeta | null>(null)
@@ -63,13 +75,14 @@
   let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
   let translationVisible = $state(settings.translationVisible ?? true)
-  let verses = $state<VerseItem[]>([])
-  let renderedCount = $state(0)
   let isLoading = $state(true)
   let loadError = $state(false)
   let invalidVerseError = $state<string | null>(null)
 
   let container: HTMLElement | null = $state(null)
+  let virtualiserContainer: HTMLElement | null = $state(null)
+  let virtualiser: VirtualiserHandle | null = null
+  let anchorTimer: ReturnType<typeof setTimeout> | null = null
   let cleanups: Array<() => void> = []
 
   // Captured at mount: 'top' for forward swaps and fresh entry, 'bottom'
@@ -94,57 +107,44 @@
     }
   })
 
+  // Typography-change re-anchor: when the user drags a flow-step / font-size
+  // slider, live verses re-layout taller/shorter and spacer chunks (cached at
+  // the old heights) become wrong. Drop the height cache and re-anchor scroll
+  // on the current center-band verse via scrollToVerse → ensureVerseRendered.
+  // 50ms debounce coalesces slider drag bursts.
+  $effect(() => {
+    void settings.lineSpacing
+    void settings.wordSpacing
+    void settings.verseSpacing
+    void settings.readerMargin
+    void settings.fontSize
+    if (!virtualiser || !container) { return }
+    if (anchorTimer) { clearTimeout(anchorTimer) }
+    const anchorKey = reader.currentVerseKey
+    anchorTimer = setTimeout(() => {
+      anchorTimer = null
+      virtualiser?.invalidateHeightCache()
+      if (anchorKey && container) {
+        const parts = anchorKey.split(':')
+        const verse = parseInt(parts[1] ?? '1', 10)
+        if (Number.isFinite(verse)) {
+          scrollToVerse(container, verse, ensureVerseRendered)
+        }
+      }
+    }, 50)
+  })
+
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
 
-  /** Append up to CHUNK_SIZE more verses to the rendered list. */
-  function appendChunk() {
-    if (!surahData || renderedCount >= surahData.ayat.length) { return }
-    const nextEnd = Math.min(renderedCount + CHUNK_SIZE, surahData.ayat.length)
-    const firstNewVerseNum = renderedCount + 1
-    const newItems: VerseItem[] = []
-    for (let i = renderedCount; i < nextEnd; i++) {
-      const ayah = surahData.ayat[i]
-      const key = `${surahData.sura_no}:${ayah?.aya_no ?? (i + 1)}`
-      const roleInfo = translationRoleByVerse[key]
-      newItems.push({
-        key,
-        ar: ayah?.aya_text ?? '',
-        en: translationByVerse[key] ?? '',
-        translationRole: roleInfo?.role ?? 'identity',
-        primaryAyah: roleInfo?.primaryAyah,
-      })
-    }
-    verses = [...verses, ...newItems]
-    renderedCount = nextEnd
-
-    // Register the newly-appended verses with the scroll tracker so the
-    // center-band IntersectionObserver fires on them as the user scrolls
-    // past. Without this, only verses from the first chunk would ever update
-    // the saved position. Runs after Svelte flushes the new DOM nodes.
-    if (container) {
-      requestAnimationFrame(() => {
-        if (!container) { return }
-        const els: HTMLElement[] = []
-        for (let n = firstNewVerseNum; n <= nextEnd; n++) {
-          const el = container.querySelector<HTMLElement>(`[data-verse="${n}"]`)
-          if (el) { els.push(el) }
-        }
-        if (els.length > 0) { observeNewVerses(els) }
-      })
-    }
-  }
-
   /**
    * Ensure verse N is rendered — used as the callback from scrollToVerse
-   * when the target verse hasn't been loaded yet.
+   * when the target verse hasn't been materialised by the virtualiser yet.
+   * Delegates to the virtualiser, which slides its window to chunkOf(N).
    */
   function ensureVerseRendered(targetN: number) {
-    if (!surahData) { return }
-    while (renderedCount < targetN && renderedCount < surahData.ayat.length) {
-      appendChunk()
-    }
+    virtualiser?.ensureVerseRendered(targetN)
   }
 
   // ---------------------------------------------------------------------------
@@ -197,6 +197,7 @@
 
     return () => {
       offRiwayah()
+      if (anchorTimer) { clearTimeout(anchorTimer); anchorTimer = null }
       // Cleanup on unmount
       teardownPositionTracking()
       for (const fn of cleanups) { try { fn() } catch { /* ignore */ } }
@@ -324,11 +325,6 @@
       translationByVerse = map
       translationRoleByVerse = roleMap
 
-      // Render first chunk
-      verses = []
-      renderedCount = 0
-      appendChunk()
-
       // Reset scroll to top of the app-shell scroller. Browsers preserve
       // scrollTop across hash-route changes; without this, remounting the
       // reader with a shorter first-chunk document causes the browser to
@@ -341,21 +337,73 @@
 
       isLoading = false
 
-      // Let Svelte flush the first render, then set up position tracking + hooks
+      // Let Svelte flush the {#if} → main DOM, then bootstrap virtualiser +
+      // position tracking + hooks against the now-mounted container.
       requestAnimationFrame(() => {
-        if (!container) { return }
+        if (!container || !virtualiserContainer || !surahData) { return }
 
-        // Backward swap: expand all chunks then anchor scroll at the bottom
-        // so the user sees the previous surah's terminal verse.
+        // Build the per-verse model once; the virtualiser owns DOM
+        // lifecycle and slices per chunk.
+        const items: VerseItem[] = surahData.ayat.map((ayah) => {
+          const key = `${surahData!.sura_no}:${ayah.aya_no}`
+          const roleInfo = translationRoleByVerse[key]
+          return {
+            aya_no: ayah.aya_no,
+            key,
+            arabic: ayah.aya_text ?? '',
+            translation: translationByVerse[key] ?? '',
+            translationRole: roleInfo?.role ?? 'identity' as const,
+            primaryAyah: roleInfo?.primaryAyah,
+          }
+        })
+
+        const footnotes = translationPack?.footnotes ?? {}
+        const localTranslationVisible = translationVisible
+        const localRiwayah = (settings.riwayah ?? 'qaloon') as 'hafs' | 'warsh' | 'qaloon'
+
+        const mountVerse: MountVerse<VerseItem> = (target, v) => {
+          const instance = mount(Verse, {
+            target,
+            props: {
+              verseKey: v.key,
+              arabic: v.arabic,
+              translation: v.translation,
+              translationVisible: localTranslationVisible,
+              footnotes,
+              riwayah: localRiwayah,
+              translationRole: v.translationRole,
+              primaryAyah: v.primaryAyah,
+            },
+          })
+          return () => { void unmount(instance) }
+        }
+
+        virtualiser = setupVirtualiser<VerseItem>({
+          container: virtualiserContainer,
+          verses: items,
+          mountVerse,
+          onChunkLive: (_idx, verseEls) => {
+            observeNewVerses(verseEls)
+            // READER_VERSE_RENDERED still fires from inside <Verse>'s
+            // handleMount action; no need to re-emit here.
+          },
+        })
+        cleanups.push(() => { virtualiser?.destroy(); virtualiser = null })
+
+        // Backward swap: virtualiser teleports window to last chunk; spacers
+        // above preserve scrollHeight; anchor scrollTop to bottom; second-rAF
+        // correction snaps if estimate drift miscomputed.
         if (swapAnchor === 'bottom' && surahData) {
-          ensureVerseRendered(surahData.ayat.length)
+          const lastVerse = surahData.ayat.length
+          virtualiser.ensureVerseRendered(lastVerse)
           requestAnimationFrame(() => {
             if (shellScroller) {
               shellScroller.scrollTop = shellScroller.scrollHeight
+              requestAnimationFrame(() => {
+                if (shellScroller) { shellScroller.scrollTop = shellScroller.scrollHeight }
+              })
             }
-            if (surahData) {
-              void savePosition(surahNum, surahData.ayat.length)
-            }
+            void savePosition(surahNum, lastVerse)
           })
         }
 
@@ -372,9 +420,6 @@
           onInvalidVerseError: (msg) => { invalidVerseError = msg },
         })
         cleanups.push(...posCleanups)
-
-        // Set up chunked append scroll listener
-        cleanups.push(setupChunkedAppend(container, appendChunk))
 
         // Wire pull-to-swap gesture — Chrome-mobile-style circular indicator
         // drives a progress 0..1 that the user fills by pulling past the
@@ -468,19 +513,11 @@
 
     <SurahHeader {surahNum} meta={surahMeta} />
 
-    {#each verses as v (v.key)}
-      <Verse
-        verseKey={v.key}
-        arabic={v.ar}
-        translation={v.en}
-        footnotes={translationPack?.footnotes ?? {}}
-        {translationVisible}
-        translationRole={v.translationRole}
-        primaryAyah={v.primaryAyah}
-      />
-    {/each}
+    <!-- Virtualiser-owned region: chunked-virtualiser populates this div
+         with <div data-chunk={i}> children (live / loading / spacer). -->
+    <div bind:this={virtualiserContainer} data-virtualiser-region=""></div>
 
-    {#if renderedCount === (surahData?.ayat.length ?? 0) && nextMeta}
+    {#if nextMeta}
       <button
         type="button"
         class="qa-continue-next"
