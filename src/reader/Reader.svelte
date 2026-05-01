@@ -390,49 +390,6 @@
         })
         cleanups.push(() => { virtualiser?.destroy(); virtualiser = null })
 
-        // Chunk-boundary IntersectionObserver: advances the virtualiser window
-        // as the user scrolls into adjacent spacer chunks. Without this wiring
-        // only chunk 0 (the first 20 verses) is ever live — setCurrentChunk is
-        // never called from the scroll path so the reader appears truncated.
-        //
-        // Deferred one rAF: deep-link / warm-resume calls ensureVerseRendered
-        // (setCurrentChunk to the target chunk) inside the current rAF, then
-        // scrollToVerse queues its own rAF to call scrollIntoView. If the IO
-        // were set up here, its initial intersection check fires for chunk 0
-        // (viewport still at top) AFTER ensureVerseRendered, resetting the
-        // window and evicting the just-materialised target chunk. Deferring
-        // one rAF guarantees scrollIntoView runs first so the initial IO check
-        // fires for the correct (scrolled-to) chunk.
-        let deferredChunkIO: IntersectionObserver | null = null
-        cleanups.push(() => { deferredChunkIO?.disconnect(); deferredChunkIO = null })
-        requestAnimationFrame(() => {
-          if (!virtualiserContainer || !virtualiser) { return }
-          const chunkRoot = document.getElementById('main-content')
-          if (!chunkRoot) { return }
-          deferredChunkIO = new IntersectionObserver(
-            (entries) => {
-              for (const entry of entries) {
-                if (!entry.isIntersecting) { continue }
-                const idx = parseInt(
-                  (entry.target as HTMLElement).getAttribute('data-chunk') ?? '',
-                  10,
-                )
-                if (!isNaN(idx)) { virtualiser?.setCurrentChunk(idx) }
-              }
-            },
-            {
-              root: chunkRoot,
-              // Pre-load 300 px before the chunk edge enters the viewport so
-              // the spacer→live transition is invisible at normal reading speed.
-              rootMargin: '300px 0px 300px 0px',
-              threshold: 0,
-            },
-          )
-          virtualiserContainer.querySelectorAll<HTMLElement>('[data-chunk]').forEach(
-            el => deferredChunkIO!.observe(el),
-          )
-        })
-
         // Backward swap: virtualiser teleports window to last chunk; spacers
         // above preserve scrollHeight; anchor scrollTop to bottom; second-rAF
         // correction snaps if estimate drift miscomputed.
@@ -463,6 +420,46 @@
           onInvalidVerseError: (msg) => { invalidVerseError = msg },
         })
         cleanups.push(...posCleanups)
+
+        // Chunk-boundary IntersectionObserver: advances the virtualiser window
+        // as the user scrolls into adjacent spacer chunks. Without this wiring
+        // only chunk 0 (the first 20 verses) is ever live — setCurrentChunk is
+        // never called from the scroll path so the reader appears truncated.
+        //
+        // Placed after initPositionTracking so that any rAF queued by
+        // scrollToVerse (deep-link) or the backward-swap block fires first.
+        // If the IO were set up earlier, its initial intersection check fires
+        // for chunk 0 (viewport still at top) and evicts the chunk window that
+        // ensureVerseRendered just materialised synchronously.
+        let deferredChunkIO: IntersectionObserver | null = null
+        cleanups.push(() => { deferredChunkIO?.disconnect(); deferredChunkIO = null })
+        requestAnimationFrame(() => {
+          if (!virtualiserContainer || !virtualiser) { return }
+          const chunkRoot = document.getElementById('main-content')
+          if (!chunkRoot) { return }
+          deferredChunkIO = new IntersectionObserver(
+            (entries) => {
+              for (const entry of entries) {
+                if (!entry.isIntersecting) { continue }
+                const idx = parseInt(
+                  (entry.target as HTMLElement).getAttribute('data-chunk') ?? '',
+                  10,
+                )
+                if (!isNaN(idx)) { virtualiser?.setCurrentChunk(idx) }
+              }
+            },
+            {
+              root: chunkRoot,
+              // Pre-load 300 px before the chunk edge enters the viewport so
+              // the spacer→live transition is invisible at normal reading speed.
+              rootMargin: '300px 0px 300px 0px',
+              threshold: 0,
+            },
+          )
+          virtualiserContainer.querySelectorAll<HTMLElement>('[data-chunk]').forEach(
+            el => deferredChunkIO!.observe(el),
+          )
+        })
 
         // Wire pull-to-swap gesture — Chrome-mobile-style circular indicator
         // drives a progress 0..1 that the user fills by pulling past the
