@@ -85,6 +85,33 @@ describe('core/sw-update-poll', () => {
     expect(reg.update).toHaveBeenCalledTimes(1)
   })
 
+  it('debounces back-to-back polls within the 5-min floor (R-26)', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-01T00:00:00Z'))
+    try {
+      const reg = { update: vi.fn().mockResolvedValue(undefined) }
+      const doc = makeFakeDoc('visible')
+      const win = makeFakeWin()
+
+      startSwUpdatePolling(reg, { doc, win, setInterval: vi.fn() })
+
+      win.fire('focus')
+      expect(reg.update).toHaveBeenCalledTimes(1)
+
+      vi.advanceTimersByTime(60 * 1000)
+      win.fire('focus')
+      doc.fire('visibilitychange')
+      win.fire('focus')
+      expect(reg.update).toHaveBeenCalledTimes(1)
+
+      vi.advanceTimersByTime(5 * 60 * 1000)
+      win.fire('focus')
+      expect(reg.update).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('swallows reg.update() rejections without throwing', async () => {
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
     const reg = { update: vi.fn().mockRejectedValue(new Error('boom')) }
