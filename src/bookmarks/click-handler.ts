@@ -17,6 +17,7 @@ import { toggle } from './store'
 import { settings } from '../state/settings.svelte'
 import { tagSession } from '../state/tag-session.svelte'
 import { logger } from '../core/logger'
+import { closestTokenKey, tokenVerseKey } from '../core/tokenisable'
 import type { Riwayah } from '../core/db'
 
 let pointerHandler: ((e: PointerEvent) => void) | null = null
@@ -33,9 +34,8 @@ function tryToggleFrom(target: EventTarget | null): boolean {
   if (!el) { return false }
   const numEl = el.closest('.qa-verse-number') as HTMLElement | null
   if (!numEl) { return false }
-  const verseEl = numEl.closest('.qa-verse') as HTMLElement | null
-  if (!verseEl) { return false }
-  const verseKey = verseEl.getAttribute('data-verse-key')
+  const tk = closestTokenKey(numEl)
+  const verseKey = tk ? tokenVerseKey(tk) : null
   if (!verseKey) { return false }
 
   // Dedupe: pointerup → synthetic click on the same target both fire.
