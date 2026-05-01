@@ -144,12 +144,12 @@ _(no cross-surface reads detected)_
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/marks/indicator.ts:147` |
-| `marks:deleted` | `Events.MARKS_DELETED` | `src/marks/indicator.ts:111` |
-| `marks:saved` | `Events.MARKS_SAVED` | `src/marks/indicator.ts:98` |
-| `marks:undo` | `Events.MARKS_UNDO` | `src/marks/indicator.ts:117` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/marks/indicator.ts:94` |
-| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/marks/indicator.ts:130`, `src/tag/TagSheet.svelte:175` |
+| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/marks/indicator.ts:149` |
+| `marks:deleted` | `Events.MARKS_DELETED` | `src/marks/indicator.ts:113` |
+| `marks:saved` | `Events.MARKS_SAVED` | `src/marks/indicator.ts:100` |
+| `marks:undo` | `Events.MARKS_UNDO` | `src/marks/indicator.ts:119` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/marks/indicator.ts:96` |
+| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/marks/indicator.ts:132`, `src/tag/TagSheet.svelte:175` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -162,8 +162,10 @@ _(no cross-surface reads detected)_
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (6):**
+**Unit (8):**
 
+- `tests/unit/marks/indicator.test.ts`
+- `tests/unit/marks/long-press.test.ts`
 - `tests/unit/marks/store.test.js`
 - `tests/unit/marks/store.test.ts`
 - `tests/unit/marks/tags.test.js`

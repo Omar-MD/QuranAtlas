@@ -27,7 +27,7 @@ Use **layer** everywhere. The 12 layers are: `threads`, `subjects`, `audience`, 
 
 ## verseKey vs verseRef vs ayah
 
-- **verseKey.** The string `'<surah>:<ayah>'` (e.g. `'2:255'`). Length cap 12. Regex `/^\d+:\d+$/`. Used as IDB key, BroadcastChannel payload element, route parameter, DOM `data-verse-key`. Single source of truth.
+- **verseKey.** The string `'<surah>:<ayah>'` (e.g. `'2:255'`). Length cap 12. Regex `/^\d+:\d+$/`. Used as IDB key, BroadcastChannel payload element, route parameter. The DOM identity attribute is `data-token-key` (which also accepts the word-grain form `'<surah>:<ayah>:<wordIdx>'`); use `tokenVerseKey()` from `core/tokenisable.ts` to strip the word index when resolving to a verseKey for IDB lookup. Single source of truth.
 - **verseRef.** Forbidden. Don't introduce. (Some pre-2026 specs use it — grandfathered.)
 - **ayah.** A single verse — the user-facing concept. Use as the noun ("the third ayah of Sūrat al-Fātiḥa"); use **verseKey** for the identifier, **`aya_no`** only when echoing a dataset field (KFGQPC source).
 

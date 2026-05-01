@@ -196,13 +196,13 @@ _(no cross-surface reads detected)_
 | Event | Constant | Sites |
 | --- | --- | --- |
 | `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/bookmarks/pulse.ts:29` |
-| `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/bookmarks/BookmarksList.svelte:225`, `src/bookmarks/BookmarksPage.svelte:34`, `src/bookmarks/indicator.ts:84`, `src/surahs/SurahList.svelte:138` |
-| `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/bookmarks/BookmarksList.svelte:224`, `src/bookmarks/BookmarksPage.svelte:33`, `src/bookmarks/indicator.ts:77`, `src/surahs/SurahList.svelte:137` |
-| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/bookmarks/indicator.ts:105` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/bookmarks/indicator.ts:73` |
+| `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/bookmarks/BookmarksList.svelte:225`, `src/bookmarks/BookmarksPage.svelte:34`, `src/bookmarks/indicator.ts:86`, `src/surahs/SurahList.svelte:138` |
+| `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/bookmarks/BookmarksList.svelte:224`, `src/bookmarks/BookmarksPage.svelte:33`, `src/bookmarks/indicator.ts:79`, `src/surahs/SurahList.svelte:137` |
+| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/bookmarks/indicator.ts:107` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/bookmarks/indicator.ts:75` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/nav/NavDrawer.svelte:243`, `src/surahs/SurahList.svelte:141` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/bookmarks/BookmarksList.svelte:227`, `src/bookmarks/BookmarksPage.svelte:36`, `src/bookmarks/indicator.ts:100`, `src/surahs/SurahList.svelte:140` |
-| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/bookmarks/BookmarksList.svelte:226`, `src/bookmarks/BookmarksPage.svelte:35`, `src/bookmarks/indicator.ts:91`, `src/surahs/SurahList.svelte:139` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/bookmarks/BookmarksList.svelte:227`, `src/bookmarks/BookmarksPage.svelte:36`, `src/bookmarks/indicator.ts:102`, `src/surahs/SurahList.svelte:140` |
+| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/bookmarks/BookmarksList.svelte:226`, `src/bookmarks/BookmarksPage.svelte:35`, `src/bookmarks/indicator.ts:93`, `src/surahs/SurahList.svelte:139` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -214,8 +214,9 @@ _(no cross-surface reads detected)_
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (5):**
+**Unit (6):**
 
+- `tests/unit/bookmarks/click-handler.test.ts`
 - `tests/unit/bookmarks/store.test.ts`
 - `tests/unit/nav/MarginHeader-toggle.test.ts`
 - `tests/unit/nav/command-sheet.test.ts`

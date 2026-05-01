@@ -72,6 +72,7 @@
   }
 </script>
 
+<!-- N19 deprecation grace: data-verse-key retained for one release, dropped in N20 -->
 <div
   class="qa-verse"
   class:qa-verse--active={isActive}
