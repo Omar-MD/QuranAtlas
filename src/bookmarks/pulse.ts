@@ -14,7 +14,7 @@ const POLL_TIMEOUT_MS = 3000
 const PULSE_DURATION_MS = 1000
 
 function tryPulse(verseKey: string, deadline: number): void {
-  const el = document.querySelector<HTMLElement>(`[data-verse-key="${verseKey}"]`)
+  const el = document.querySelector<HTMLElement>(`[data-token-key="${verseKey}"]`)
   if (el) {
     el.classList.add('qa-verse--pulse')
     setTimeout(() => { el.classList.remove('qa-verse--pulse') }, PULSE_DURATION_MS)

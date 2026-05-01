@@ -18,6 +18,7 @@ import { getAllForRiwayah } from './store'
 import { settings } from '../state/settings.svelte'
 import { on } from '../core/events'
 import { Events } from '../core/constants'
+import { tokenVerseKey } from '../core/tokenisable'
 import type { Riwayah } from '../core/db'
 
 const BOOKMARK_CLASS = 'qa-verse--bookmarked-glyph'
@@ -49,8 +50,9 @@ function decorate(verseKey: string, element: HTMLElement): void {
 }
 
 function decorateAll(scope: ParentNode): void {
-  for (const el of scope.querySelectorAll<HTMLElement>('[data-verse-key]')) {
-    const vk = el.getAttribute('data-verse-key')
+  for (const el of scope.querySelectorAll<HTMLElement>('[data-token-key]')) {
+    const raw = el.getAttribute('data-token-key')
+    const vk = raw ? tokenVerseKey(raw) : null
     if (vk) { decorate(vk, el) }
   }
 }
@@ -77,14 +79,14 @@ export function initBookmarkIndicators(): () => void {
   const unsub2 = on(Events.BOOKMARKS_SAVED, ({ verseKey, riwayah }) => {
     if (riwayah !== cacheRiwayah) { return }
     cache?.add(verseKey)
-    const el = scope.querySelector<HTMLElement>(`[data-verse-key="${verseKey}"]`)
+    const el = scope.querySelector<HTMLElement>(`[data-token-key="${verseKey}"]`)
     if (el) { decorate(verseKey, el) }
   })
 
   const unsub3 = on(Events.BOOKMARKS_DELETED, ({ verseKey, riwayah }) => {
     if (riwayah !== cacheRiwayah) { return }
     cache?.delete(verseKey)
-    const el = scope.querySelector<HTMLElement>(`[data-verse-key="${verseKey}"]`)
+    const el = scope.querySelector<HTMLElement>(`[data-token-key="${verseKey}"]`)
     if (el) { decorate(verseKey, el) }
   })
 
@@ -92,7 +94,7 @@ export function initBookmarkIndicators(): () => void {
     if (riwayah !== cacheRiwayah) { return }
     await rebuildCache(riwayah)
     for (const vk of verseKeys) {
-      const el = scope.querySelector<HTMLElement>(`[data-verse-key="${vk}"]`)
+      const el = scope.querySelector<HTMLElement>(`[data-token-key="${vk}"]`)
       if (el) { decorate(vk, el) }
     }
   })

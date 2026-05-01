@@ -20,7 +20,7 @@
 
   function findVerse(): void {
     const k = tagSession.verseKey
-    target = k ? (document.querySelector(`.qa-verse[data-verse-key="${k}"]`) as HTMLElement | null) : null
+    target = k ? (document.querySelector(`.qa-verse[data-token-key="${k}"]`) as HTMLElement | null) : null
     if (ro) { ro.disconnect() }
     if (target && ro) { ro.observe(target) }
     measure()

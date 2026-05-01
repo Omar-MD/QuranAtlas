@@ -46,7 +46,7 @@
   let openFn = $state<string | null>(null)
 
   function handleMount(node: HTMLElement) {
-    const key = node.getAttribute('data-verse-key') ?? verseKey
+    const key = node.getAttribute('data-token-key') ?? verseKey
     emit(Events.READER_VERSE_RENDERED, { verseKey: key, element: node })
 
     let cleanupLp: (() => void) | undefined
