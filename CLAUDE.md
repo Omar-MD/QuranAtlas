@@ -95,6 +95,14 @@ E2e suite speed is a renewable budget — every careless spec spends it. Audit 2
 **6.1 — No fixed sleeps. Ever.**
 `page.waitForTimeout(N)`, `setTimeout(resolve, N)`, `await new Promise(r => setTimeout(r, N))` banned in test code. Replace with `await expect(locator).toHaveX(...)`, `await expect.poll(fn).toBe(...)`, `await expect(async () => { ... }).toPass({ timeout })`, or `page.waitForFunction(fn)` against the actual condition. Sleeps either over-pay (wasted ms × thousands of runs) or under-pay (flake). The only acceptable timing call is the `actionTimeout`-bound assertion. Carve-outs: (a) gesture fixtures simulating physical timing (`fixtures/chrome.js` double-tap interval) — keep ≤150ms; (b) long-press tests where the hold itself is the gesture — keep within ~30ms of the app's own threshold (e.g. 380ms when the app fires at 350ms). Document the threshold in a comment on the line.
 
+**Corollary — always drain async UI state before `page.reload()` or navigation.** After clicking a button that triggers async work (IDB writes, SW messages, network fetches), wait for a DOM signal that the async completed before calling `page.reload()` / `page.goto()`. Use the button's own state change as the signal — e.g. a "Saving…" → original-label transition means `busy` flipped back to false and the write is done. Never assume a click + immediate reload is race-free: the reload cancels in-flight microtasks and the IDB write is lost. Pattern:
+```js
+await btn.click()
+await expect(btn).toHaveText('Saving…', { timeout: 2_000 }) // busy=true
+await expect(btn).toHaveText('Save',    { timeout: 10_000 }) // busy=false = write done
+await page.reload()
+```
+
 **6.2 — Scope IDB resets to what the test actually mutates.**
 Default to `clearStore('settings')` (or whichever single store the test touches) over `clearAllData(page)`. Full DB drop forces app cold-boot + reader re-mount + 5 object stores recreated; tens of seconds wasted across the suite. Only reach for `clearAllData` when the test exercises cross-store invariants, onboarding flow, or clear-data UX itself. Add the scoped helper to `tests/e2e/fixtures/idb.js` if it does not yet exist — do not inline `page.evaluate(() => indexedDB.delete...)` in specs.
 

@@ -152,6 +152,10 @@ test.describe('Journey H: Offline resilience', () => {
     const apply = page.locator('[data-testid="storage-apply"]')
     await expect(apply).toBeEnabled()
     await apply.click()
+    // handleApply is async: busy=true → 'Caching…'; busy=false → 'Apply'.
+    // Wait for both transitions so the IDB write + SW post complete before reload.
+    await expect(apply).toHaveText('Caching…', { timeout: 2_000 })
+    await expect(apply).toHaveText('Apply', { timeout: 10_000 })
 
     // After Apply, the selector persists the new state. Reload + re-mount
     // the rune from IDB to prove the boot path wires it.
