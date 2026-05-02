@@ -19,6 +19,7 @@ Read these before changing behavior:
 - `docs/context/module-graph.md` — generated dependency graph
 - `docs/context/feature-map.md` — generated dossier index
 - `docs/context/glossary.md` — shared vocabulary
+- `docs/context/repo-structure.md` — directory ownership and where to look for app, data, scripts, docs, and tests
 - `docs/context/source-data-flow.md` — source formats, normalization rules, dataset build, and runtime data flow
 - `docs/context/csp-allowlist.md` — outbound-origin policy
 - `docs/context/implemented.md` — shipped surface inventory
