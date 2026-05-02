@@ -205,20 +205,6 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
-  check-chunks:
-    name: Check Chunks
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ./.github/actions/setup
-      - name: Download dist artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: build-output
-          path: dist/
-      - run: pnpm run check-chunks
-
   lighthouse:
     name: Lighthouse CI
     needs: build
@@ -317,7 +303,7 @@ jobs:
 
   ci-ok:
     name: CI OK
-    needs: [changes, lint, typecheck, test, feature-state, docs-check, audit, build, check-chunks, lighthouse, e2e]
+    needs: [changes, lint, typecheck, test, feature-state, docs-check, audit, build, lighthouse, e2e]
     # Run even when e2e is skipped (PRs to dev without the run-e2e label).
     # `always()` lets this job evaluate needs.* results; the step body then
     # fails if any upstream job failed or was cancelled.

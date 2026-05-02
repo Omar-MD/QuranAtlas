@@ -166,7 +166,7 @@ Minimum browser: Chrome 111, Safari 16.2, Firefox 113 (required for `color-mix()
 
 ## CI/CD
 
-CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. All jobs run in parallel except `check-chunks` and `lighthouse`, which consume the `dist/` artifact uploaded by `build` (no redundant rebuilds). Jobs:
+CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. `lighthouse` and `e2e` consume the `dist/` artifact uploaded by `build` (no redundant rebuilds). Jobs:
 
 | Job | Purpose |
 |---|---|
@@ -179,7 +179,6 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `st
 | `dataset-full` | `pnpm run build:dataset:full` on protected-branch pushes and PRs whose diff touches dataset sources, catalogs, generated dataset files, or dataset scripts |
 | `audit` | `pnpm audit --audit-level moderate` |
 | `build` | `pnpm run build`; uploads `dist/` artifact |
-| `check-chunks` | `pnpm run check-chunks` against uploaded `dist/` |
 | `lighthouse` | `lhci autorun` against uploaded `dist/` |
 | `e2e` | Full Playwright suite (11 specs) with `PLAYWRIGHT_INCLUDE_OFFLINE=1`, `PLAYWRIGHT_USE_PREVIEW=1`, `PLAYWRIGHT_SKIP_BUILD=1`. Depends on `build` and downloads its `dist/` artifact, then runs against a preview server (no dev-server compile path under workers=6). |
 | `ci-ok` | No-op aggregator — single required status check for branch protection |
