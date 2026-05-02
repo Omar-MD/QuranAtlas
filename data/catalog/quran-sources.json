@@ -1,0 +1,50 @@
+[
+  {
+    "id": "qaloon",
+    "type": "riwayah",
+    "label": "Qaloon an Nafi",
+    "language": "ar",
+    "providerId": "kfgqpc",
+    "licenseId": "kfgqpc-non-commercial",
+    "visibility": "baseline",
+    "default": true,
+    "sourceUrl": "data/normalized/quran/riwayat/qaloon.json",
+    "sourceChecksum": {
+      "algorithm": "sha256",
+      "value": "18465c40ebeec40a92eb98745c9b89796ac6e31f6e93988883dfb6602faaea95"
+    },
+    "outputPath": "riwayat/qaloon/{surah}.json"
+  },
+  {
+    "id": "hafs",
+    "type": "riwayah",
+    "label": "Hafs an Asim",
+    "language": "ar",
+    "providerId": "kfgqpc",
+    "licenseId": "kfgqpc-non-commercial",
+    "visibility": "optional",
+    "default": false,
+    "sourceUrl": "data/normalized/quran/riwayat/hafs.json",
+    "sourceChecksum": {
+      "algorithm": "sha256",
+      "value": "5d8bb91726e482839d0057633cb1973031e4d706fa9604eea5e08892f20ba140"
+    },
+    "outputPath": "riwayat/hafs/{surah}.json"
+  },
+  {
+    "id": "warsh",
+    "type": "riwayah",
+    "label": "Warsh an Nafi",
+    "language": "ar",
+    "providerId": "kfgqpc",
+    "licenseId": "kfgqpc-non-commercial",
+    "visibility": "optional",
+    "default": false,
+    "sourceUrl": "data/normalized/quran/riwayat/warsh.json",
+    "sourceChecksum": {
+      "algorithm": "sha256",
+      "value": "f05d0dc652fd46b38563cacb13242f76f80db4cc64d25873da0bce157253872f"
+    },
+    "outputPath": "riwayat/warsh/{surah}.json"
+  }
+]

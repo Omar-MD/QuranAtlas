@@ -35,16 +35,35 @@ describe('settings/offline-categories — sole writer', () => {
   it('normalizes a partial / malformed record to the default shape', async () => {
     getMock.mockResolvedValueOnce({ value: { text: { hafs: true }, audio: { alafasy: true, evil: 'yes' }, garbage: 1 } })
     const result = await loadOfflineCategories()
-    expect(result.text.hafs).toBe(true)
-    expect(result.text.warsh).toBe(false)
-    expect(result.text.qaloon).toBe(false)
+    expect(result.text.riwayat.hafs).toBe(true)
+    expect(result.text.riwayat.warsh).toBe(false)
+    expect(result.text.riwayat.qaloon).toBe(false)
     expect(result.audio).toEqual({ alafasy: true })
     expect(result.search).toBe(false)
   })
 
+  it('normalizes the source-aware text shape', async () => {
+    getMock.mockResolvedValueOnce({
+      value: {
+        text: {
+          riwayat: { qaloon: true, warsh: 'bad' },
+          translations: { saheeh: true },
+          tafsir: { muyassar: true },
+        },
+        audio: {},
+        pages: {},
+        search: false,
+      },
+    })
+    const result = await loadOfflineCategories()
+    expect(result.text.riwayat).toEqual({ qaloon: true })
+    expect(result.text.translations).toEqual({ saheeh: true })
+    expect(result.text.tafsir).toEqual({ muyassar: true })
+  })
+
   it('setOfflineCategories writes through to IDB and updates rune', async () => {
     const next = {
-      text: { hafs: true, warsh: false, qaloon: false },
+      text: { riwayat: { qaloon: true }, translations: { saheeh: true }, tafsir: { muyassar: true } },
       audio: {},
       pages: {},
       search: false,
@@ -58,8 +77,8 @@ describe('settings/offline-categories — sole writer', () => {
   it('initOfflineCategories hydrates the rune from IDB', async () => {
     getMock.mockResolvedValueOnce({ value: { text: { hafs: true, warsh: true, qaloon: false }, audio: {}, pages: {}, search: true } })
     await initOfflineCategories()
-    expect(settings.offlineCategories.text.hafs).toBe(true)
-    expect(settings.offlineCategories.text.warsh).toBe(true)
+    expect(settings.offlineCategories.text.riwayat.hafs).toBe(true)
+    expect(settings.offlineCategories.text.riwayat.warsh).toBe(true)
     expect(settings.offlineCategories.search).toBe(true)
   })
 })

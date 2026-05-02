@@ -85,6 +85,8 @@ Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross
 
 Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages (gated), Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
 
+The Text row represents the baseline text source set: Qaloon Arabic, Saheeh International translation, and Tafsir Muyassar data. The selector writes this as source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}`; older text riwayah booleans are migrated by `settings/offline-categories.ts`.
+
 Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
 
 Apply gating:
@@ -167,7 +169,7 @@ Keys + sole writers:
 | `lastSurface` | `src/settings/state-last-surface.svelte.ts` | `string` (hash) |
 | `recentSurahs` | `src/settings/state-recent-surahs.svelte.ts` | `number[]` |
 | `onboardingComplete` | `src/onboarding/state.ts` | `boolean` |
-| `offlineCategories` | `src/settings/offline-categories.ts` | `OfflineCategoriesState` (per-category opt-in map; see `state/settings.svelte.ts`) |
+| `offlineCategories` | `src/settings/offline-categories.ts` | `OfflineCategoriesState` (source-aware text opt-in plus audio/pages/search; see `state/settings.svelte.ts`) |
 
 ## Events
 
@@ -194,6 +196,7 @@ Keys + sole writers:
 - **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/settings/panel.test.ts`).
 - **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/settings/panel.test.ts`.
 - **Sole writer of `settings.offlineCategories`: `src/settings/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
+- **Text offline opt-in remains source-aware under one compact UI row.** The visible Text checkbox maps to the baseline Qaloon + Saheeh + Muyassar set; optional text bodies must be added through `indexes/sources.json` / manifest plumbing before they can affect byte estimates or download plans.
 
 ## Regression guards
 
@@ -218,4 +221,3 @@ Keys + sole writers:
 - `tests/e2e/journey-d-settings.spec.js`
 - `tests/e2e/journey-g-about.spec.js`
 <!-- AUTO-GENERATED:tests END -->
-

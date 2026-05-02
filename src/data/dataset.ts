@@ -45,6 +45,13 @@ export type TranslationEntry = {
   language: string
 }
 
+export type TafsirEntryMeta = {
+  id: string
+  name: string
+  language: string
+  availableInManifest: boolean
+}
+
 export type TranslationVerse = { key: string; text: string }
 
 export type TranslationPayload = {
@@ -54,6 +61,42 @@ export type TranslationPayload = {
   intro: string[]
   verses: TranslationVerse[]
   footnotes: Record<string, string>
+}
+
+export type TafsirEntry = {
+  id: string
+  startKey: string
+  endKey: string
+  ayahKeys: string[]
+  sourceGranularity: 'ayah' | 'range'
+  text: string
+}
+
+export type TafsirSurahPack = {
+  tafsirId: string
+  tafsirVersion: string
+  language: string
+  surahNo: number
+  entries: TafsirEntry[]
+}
+
+export type SourceIndexEntry = {
+  id: string
+  type: 'riwayah' | 'translation' | 'tafsir'
+  label: string
+  language: string | null
+  visibility: 'baseline' | 'optional' | 'internal'
+  default: boolean
+  availableInManifest: boolean
+  outputPath: string
+  sourceUrl: string
+}
+
+export type SourceIndex = {
+  version: number
+  profile: string
+  defaults: { riwayah: string; translation: string; tafsir: string }
+  sources: SourceIndexEntry[]
 }
 
 type ManifestJson = { files: Record<string, unknown> }
@@ -87,8 +130,13 @@ type ProvenanceJson = {
   corpus?: unknown
   riwayat?: ProvenanceRiwayahEntry[]
   translations?: ProvenanceTranslationEntry[]
+  tafsir?: unknown
   fonts?: unknown
 }
+
+const DEFAULT_RIWAYAH = 'qaloon'
+const DEFAULT_TRANSLATION = 'saheeh'
+const DEFAULT_TAFSIR = 'muyassar'
 
 /**
  * Network-first fetch with cache fallback.
@@ -157,7 +205,14 @@ export async function getSurah(n: number): Promise<SurahPayload> {
   const riwayah = await loadRiwayah()
   const padded = String(n).padStart(3, '0')
   const url = `${DATASET_BASE}/riwayat/${riwayah}/${padded}.json`
-  return fetchNetworkFirst(url) as Promise<SurahPayload>
+  try {
+    return await fetchNetworkFirst(url) as SurahPayload
+  } catch (error) {
+    if (riwayah !== DEFAULT_RIWAYAH && isMissingPackError(error)) {
+      return fetchNetworkFirst(`${DATASET_BASE}/riwayat/${DEFAULT_RIWAYAH}/${padded}.json`) as Promise<SurahPayload>
+    }
+    throw error
+  }
 }
 
 /** Get the 114-entry surahs metadata. */
@@ -198,12 +253,45 @@ export async function loadTranslationForSurah(translationId: string, surahNo: nu
   try {
     return await fetchNetworkFirst(url) as TranslationPayload
   } catch (e) {
-    // Translation pack absent for this id — the reader continues without
-    // translations rather than failing the surah load.
-    if (e instanceof Error && /404|Failed to fetch/.test(e.message)) {
-      return null
+    if (translationId !== DEFAULT_TRANSLATION && isMissingPackError(e)) {
+      return loadTranslationForSurah(DEFAULT_TRANSLATION, surahNo)
     }
+    if (isMissingPackError(e)) return null
     throw e
+  }
+}
+
+export async function getSourceIndex(): Promise<SourceIndex> {
+  return fetchNetworkFirst(`${DATASET_BASE}/indexes/sources.json`) as Promise<SourceIndex>
+}
+
+export async function getTafsirs(): Promise<TafsirEntryMeta[]> {
+  const index = await getSourceIndex()
+  return index.sources
+    .filter((entry) => entry.type === 'tafsir')
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.label,
+      language: entry.language ?? 'ar',
+      availableInManifest: entry.availableInManifest,
+    }))
+}
+
+export async function loadTafsirForSurah(tafsirId: string, surahNo: number): Promise<TafsirSurahPack | null> {
+  if (!tafsirId) { return null }
+  if (surahNo < 1 || surahNo > 114 || !Number.isInteger(surahNo)) {
+    throw new Error(`Invalid surah number: ${surahNo}`)
+  }
+  const padded = String(surahNo).padStart(3, '0')
+  const url = `${DATASET_BASE}/tafsir/${tafsirId}/${padded}.json`
+  try {
+    return await fetchNetworkFirst(url) as TafsirSurahPack
+  } catch (error) {
+    if (tafsirId !== DEFAULT_TAFSIR && isMissingPackError(error)) {
+      return loadTafsirForSurah(DEFAULT_TAFSIR, surahNo)
+    }
+    if (isMissingPackError(error)) return null
+    throw error
   }
 }
 
@@ -214,4 +302,8 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .split('-')[0] || 'translation'
+}
+
+function isMissingPackError(error: unknown): boolean {
+  return error instanceof Error && /404|Failed to fetch/.test(error.message)
 }

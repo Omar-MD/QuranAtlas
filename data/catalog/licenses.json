@@ -1,0 +1,20 @@
+[
+  {
+    "id": "kfgqpc-non-commercial",
+    "label": "KFGQPC personal, educational, non-commercial attribution",
+    "status": "restricted",
+    "url": "https://qurancomplex.gov.sa/en/techquran/dev/"
+  },
+  {
+    "id": "saheeh-non-commercial",
+    "label": "Saheeh International non-commercial distribution",
+    "status": "restricted",
+    "url": "https://saheehinternational.com/"
+  },
+  {
+    "id": "qul-resource",
+    "label": "QUL downloadable resource",
+    "status": "approved",
+    "url": "https://qul.tarteel.ai/resources"
+  }
+]

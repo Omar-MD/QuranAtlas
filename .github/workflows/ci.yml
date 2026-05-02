@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       e2e_relevant: ${{ steps.filter.outputs.e2e_relevant }}
+      dataset_relevant: ${{ steps.filter.outputs.dataset_relevant }}
       reason: ${{ steps.filter.outputs.reason }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -52,6 +53,7 @@ jobs:
           # New branch / first push / empty base — run e2e (no baseline).
           if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
             echo "e2e_relevant=true" >> "$GITHUB_OUTPUT"
+            echo "dataset_relevant=true" >> "$GITHUB_OUTPUT"
             echo "reason=no-baseline" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -59,6 +61,7 @@ jobs:
           CHANGED=$(git diff --name-only "$BASE" "$HEAD" || true)
           if [ -z "$CHANGED" ]; then
             echo "e2e_relevant=false" >> "$GITHUB_OUTPUT"
+            echo "dataset_relevant=false" >> "$GITHUB_OUTPUT"
             echo "reason=no-files-changed" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -94,6 +97,20 @@ jobs:
             echo "e2e_relevant=true" >> "$GITHUB_OUTPUT"
             FIRST=$(echo "$RELEVANT" | head -1)
             echo "reason=changed:${FIRST}" >> "$GITHUB_OUTPUT"
+          fi
+
+          DATASET_RELEVANT=$(echo "$CHANGED" | grep -E \
+            -e '^data/catalog/' \
+            -e '^data/normalized/' \
+            -e '^scripts/data/' \
+            -e '^public/dataset/' \
+            -e '^package\.json$' \
+            -e '^pnpm-lock\.yaml$' \
+            || true)
+          if [ -z "$DATASET_RELEVANT" ]; then
+            echo "dataset_relevant=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "dataset_relevant=true" >> "$GITHUB_OUTPUT"
           fi
 
   lint:
@@ -135,6 +152,34 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
       - run: pnpm run docs:check
+
+  dataset-catalog:
+    name: Dataset Catalog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - run: pnpm run check:source-catalog
+
+  dataset-baseline:
+    name: Dataset Baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - run: pnpm run check:dataset
+
+  dataset-full:
+    name: Dataset Full
+    needs: changes
+    if: >
+      github.event_name == 'push' ||
+      needs.changes.outputs.dataset_relevant == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - run: pnpm run build:dataset:full
 
 
   audit:

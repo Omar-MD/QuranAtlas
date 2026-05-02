@@ -278,7 +278,7 @@
       // to the corresponding Hafs ayah(s) via `_verse-aliases.json`. KFGQPC's
       // Madinah Mushaf is the authoritative scholarly source — splits are
       // encoded in the dataset itself, derived mechanically by
-      // `scripts/derive-verse-aliases.mjs`.
+      // `scripts/data/derive-verse-aliases.mjs`.
       //
       // Role per Madinan ayah:
       //   - identity: 1:1 alias (or surah without aliases) — show translation as-is

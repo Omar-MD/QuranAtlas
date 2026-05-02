@@ -38,9 +38,7 @@ tests/e2e/.auth/
 # Local editor state
 .vscode/*.local
 
-# AI agent workflow output (plans, specs, verification artifacts)
 .superpowers/
-docs/superpowers/
 .scratch/
 
 # Git worktrees

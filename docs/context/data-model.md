@@ -38,7 +38,8 @@ If you change a store's shape, indexes, key, or sole writer — update the **dos
 
 ## Static datasets (read-only, not in IDB)
 
-- `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-dataset.mjs` from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+- `public/dataset/riwayat/qaloon/{NNN}.json` (114 files) — **baseline reader corpus**, KFGQPC Uthmanic text for Qaloon v10. Hafs and Warsh normalized sources remain under `data/normalized/quran/riwayat/` for counts, translation-alignment validation, and the `full` dataset profile, but their per-surah bodies are not emitted by the baseline build. `surahs.json`, `juz.json`, `indexes/sources.json`, `manifest.json`, and `provenance.json` live alongside. Built by `scripts/data/build-dataset.mjs`; `pnpm build:dataset` runs `--profile=baseline` and is chained by `pnpm build`. Source formats, font pairing, normalization rules, and build/runtime boundaries live in `docs/context/source-data-flow.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+- `data/catalog/*.json` — QuranAtlas-owned source catalog: authorities, licenses, source records, verification rules, and generic fetch metadata. `scripts/data/source-catalog.mjs` validates provider/license/checksum/default-visibility/fetch rules, `scripts/data/fetch-source.mjs` refreshes normalized sources, and `scripts/data/build-dataset.mjs` emits the runtime subset to `public/dataset/indexes/sources.json`.
 
 ### Translation packs
 
@@ -53,16 +54,48 @@ If you change a store's shape, indexes, key, or sole writer — update the **dos
     footnotes: Record<string, string>, // keys '1'..'K' contiguous; markers in text are `[N]` tokens
   }
   ```
-- `data/raw/{id}.raw.json` — **monolithic source**, committed to git outside `public/`, produced by per-translation fetch scripts (`scripts/fetch-translation-saheeh.mjs`). Build-only input; never shipped to clients.
-- **Invariants (asserted by `scripts/build-dataset.mjs::buildTranslationSplits`):** 114 surahs present; per-surah verse count matches Hafs counting from `surahs.json`; verse keys are exactly `${surahNo}:${1..count}`; every `[N]` marker in verse text resolves to `footnotes[N]`; footnote keys are contiguous 1..K; every defined footnote is referenced at least once. Build hard-fails on any violation.
+- `data/normalized/translations/{id}.json` — **normalized monolithic source**, committed to git outside `public/`, produced by `scripts/data/fetch-source.mjs` from catalog fetch metadata. Saheeh starts from Quran DB JSON and is normalized into the same source shape used by the build. Build-only input; never shipped to clients.
+- **Invariants (asserted by `scripts/data/build-dataset.mjs::buildTranslationSplits`):** 114 surahs present; per-surah verse count matches Hafs counting from `surahs.json`; verse keys are exactly `${surahNo}:${1..count}`; every `[N]` marker in verse text resolves to `footnotes[N]`; footnote keys are contiguous 1..K; every defined footnote is referenced at least once. Build hard-fails on any violation.
 - **Markers:** `[N]` tokens in verse text are tokenised by `src/reader/translation-tokens.ts` and rendered as buttons by `Verse.svelte`. Translation strings stay byte-exact end-to-end (the build script does not normalize whitespace or punctuation) so license terms remain valid for redistribution.
 - **provenance.json `translations[]`** — one entry per shipped pack: `{ id, label, translator, language, version, ayatCount, footnoteCount, hasIntros, license, licenseUrl, source, sourceUrl, fetchedAt, primaryRiwayah, coverage }`. The Settings translation picker reads this list (via `src/data/dataset.ts::getTranslations`) so the UI never offers a pack the dataset does not contain.
 
+### Tafsir packs
+
+- `data/normalized/tafsir/muyassar.json` — committed normalized source derived from QUL Tafsir Muyassar resource 38. It preserves QUL grouped tafsir ranges as one canonical entry instead of duplicating text per ayah.
+- `public/dataset/tafsir/muyassar/{NNN}.json` (114 files) — baseline data/API tafsir pack consumed by `src/data/dataset.ts::loadTafsirForSurah(id, n)`. There is no reader tafsir UI yet. **Schema:**
+  ```ts
+  {
+    tafsirId: string,
+    tafsirVersion: string,
+    language: string,
+    surahNo: number,
+    entries: Array<{
+      id: string,
+      startKey: string,
+      endKey: string,
+      ayahKeys: string[],
+      sourceGranularity: 'ayah' | 'range',
+      text: string,
+    }>,
+  }
+  ```
+- **Invariants (asserted by `scripts/data/build-dataset.mjs::buildTafsirSplits`):** every entry has valid `S:A` keys; grouped QUL ranges keep their full `ayahKeys`; `sourceGranularity` is `range` when a single tafsir text spans more than one ayah.
+- **provenance.json `tafsir[]`** — one entry per shipped tafsir pack: `{ id, label, language, version, entryCount, rangeEntryCount, license, licenseUrl, source, sourceUrl, sourceChecksum, coverage }`.
+
+### Source index and profiles
+
+- `public/dataset/indexes/sources.json` — runtime source catalog index. It lists default sources (`qaloon`, `saheeh`, `muyassar`), baseline/optional visibility, same-origin output path templates, and whether each body is present in the current manifest. Optional Hafs and Warsh entries are discoverable here while their bodies are omitted from the baseline manifest.
+- Dataset profiles:
+  - `baseline`: emits Qaloon riwayah, Saheeh translation, Muyassar tafsir, core metadata, source index, manifest, provenance.
+  - `full`: emits every locally configured approved source.
+  - `catalog`: emits metadata/index files without text bodies.
+- Runtime guards in `src/data/dataset.ts`: saved riwayah/translation/tafsir ids that are absent from the baseline fall back to `qaloon`, `saheeh`, and `muyassar` respectively instead of failing the reader.
+
 #### Translation ↔ riwayah alignment
 
-Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan numbering) partition the same Quranic text differently. Hafs total 6236; Warsh / Qaloon 6214. A Hafs-numbered translation cannot 1:1 map to every Warsh / Qaloon ayah without explicit scholarly aliases — at split boundaries the same Quranic text is partitioned across different ayah counts. Note: count-equality across the three riwayat is **not** sufficient to imply identity boundaries (see `riwayat-dataset.md` § Challenges → "Boundary drift at equal counts" — 9 surahs have equal counts but internally drifted boundaries that resync via compensating splits).
+Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan numbering) partition the same Quranic text differently. Hafs total 6236; Warsh / Qaloon 6214. A Hafs-numbered translation cannot 1:1 map to every Warsh / Qaloon ayah without explicit scholarly aliases — at split boundaries the same Quranic text is partitioned across different ayah counts. Note: count-equality across the three riwayat is **not** sufficient to imply identity boundaries; the source-data-flow reference documents the equal-count boundary-drift cases and the alias derivation path.
 
-- `public/dataset/translations/_verse-aliases.json` — **per-ayah Hafs ↔ Warsh ↔ Qaloon equivalence table**, mechanically derived from KFGQPC by `scripts/derive-verse-aliases.mjs`. Schema:
+- `public/dataset/translations/_verse-aliases.json` — **per-ayah Hafs ↔ Warsh ↔ Qaloon equivalence table**, mechanically derived from KFGQPC by `scripts/data/derive-verse-aliases.mjs`. Schema:
   ```ts
   {
     _meta: { version: 1, description, generator, source, method, generatedAt },
@@ -85,11 +118,11 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
   Surah 1 is included for the Bismillah carve-out (Hafs 1:1 → `null` in Warsh / Qaloon).
   - **Runtime use**: `Reader.svelte::loadSurah` calls `src/data/verse-aliases.ts::loadVerseAliases()` once per session and `resolveTranslationFor(aliases, riwayah, surahNo, ayahNo)` per visible ayah. Roles: `identity` / `merged` / `primary` / `continuation` / `none`. See `read` dossier §Translation rendering.
   - **Coverage impact**: 100% across all three riwayat with aliases applied.
-  - **Validation**: `scripts/validate-translation-mapping.mjs` is the canonical checker.
+  - **Validation**: `scripts/data/validate-translation-mapping.mjs` is the canonical checker.
 
-- `public/dataset/translations/_verse-map.json` — **checks anchor**, not a scholarly per-ayah equivalence table. Sole writer: hand-curated; build hard-fails (`scripts/build-dataset.mjs::validateVerseMap`) when divergences drift from `surahs.json` count diffs.
+- `public/dataset/translations/_verse-map.json` — **checks anchor**, not a scholarly per-ayah equivalence table. Sole writer: hand-curated; build hard-fails (`scripts/data/build-dataset.mjs::validateVerseMap`) when divergences drift from `surahs.json` count diffs.
 
-- **Coverage block** (`provenance.translations[].coverage[riwayah]`) — `{ total, covered, missing, divergentSurahs }` per riwayah, computed by `scripts/build-dataset.mjs::computeTranslationCoverage`.
+- **Coverage block** (`provenance.translations[].coverage[riwayah]`) — `{ total, covered, missing, divergentSurahs }` per riwayah, computed by `scripts/data/build-dataset.mjs::computeTranslationCoverage`.
 - **Runtime guard**: `Reader.svelte::loadSurah` walks the active riwayah's ayat after building `translationByVerse` and emits `logger.warn('[translation-miss] …')` (dev-only) when the active riwayah ships an ayah index the Hafs-numbered translation has no key for.
 - **Regression guard**: `tests/unit/data/translation-riwayah-alignment.test.js`.
 

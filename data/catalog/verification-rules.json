@@ -1,0 +1,9 @@
+{
+  "allowedLicenseStatuses": ["approved", "restricted"],
+  "visibility": ["baseline", "optional", "internal"],
+  "defaults": {
+    "riwayah": "qaloon",
+    "translation": "saheeh",
+    "tafsir": "muyassar"
+  }
+}

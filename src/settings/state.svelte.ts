@@ -15,14 +15,18 @@ export type AudioLoopRange = { from: string; to: string } | null
 
 // Offline-selector state (N21). Sole writer: src/settings/offline-categories.ts.
 export type OfflineCategoriesState = {
-  text: { hafs: boolean; warsh: boolean; qaloon: boolean }
+  text: {
+    riwayat: Record<string, boolean>
+    translations: Record<string, boolean>
+    tafsir: Record<string, boolean>
+  }
   audio: Record<string, boolean>   // reciter id → checked
   pages: Record<string, boolean>   // riwayah id → checked
   search: boolean
 }
 
 export const DEFAULT_OFFLINE_CATEGORIES: OfflineCategoriesState = {
-  text: { hafs: false, warsh: false, qaloon: false },
+  text: { riwayat: {}, translations: {}, tafsir: {} },
   audio: {},
   pages: {},
   search: false,

@@ -15,13 +15,26 @@ const u = (path: string) => new URL(path, 'http://example.test')
 describe('ROUTE_DEFS table', () => {
   it('every route declares a category (null for always-on routes like fonts)', () => {
     for (const def of ROUTE_DEFS) {
-      expect(['text', 'audio', 'pages', 'search', null]).toContain(def.category)
+      expect([
+        'text-core',
+        'text-riwayah',
+        'text-translation',
+        'text-tafsir',
+        'text-index',
+        'audio',
+        'pages',
+        'search',
+        null,
+      ]).toContain(def.category)
     }
   })
 
-  it('text route excludes audio, mushaf-pages, search-index', () => {
-    expect(categoryFor(u('/dataset/riwayat/hafs/001.json'))).toBe('text')
-    expect(categoryFor(u('/dataset/surahs.json'))).toBe('text')
+  it('text routes are source-aware and exclude audio, mushaf-pages, search-index', () => {
+    expect(categoryFor(u('/dataset/riwayat/qaloon/001.json'))).toBe('text-riwayah')
+    expect(categoryFor(u('/dataset/translations/saheeh/001.json'))).toBe('text-translation')
+    expect(categoryFor(u('/dataset/tafsir/muyassar/001.json'))).toBe('text-tafsir')
+    expect(categoryFor(u('/dataset/indexes/sources.json'))).toBe('text-index')
+    expect(categoryFor(u('/dataset/surahs.json'))).toBe('text-core')
     expect(categoryFor(u('/dataset/audio/alafasy/001.mp3'))).toBe('audio')
     expect(categoryFor(u('/dataset/mushaf-pages/hafs/p001.png'))).toBe('pages')
     expect(categoryFor(u('/dataset/search-index.json'))).toBe('search')
@@ -42,8 +55,9 @@ describe('ROUTE_DEFS table', () => {
     expect(cacheNameFor(u('/dataset/audio/husary/001.mp3'))).toBe('qa-audio-husary-v1')
   })
 
-  it('text route uses CACHE_DATASET (existing constant — no rename)', () => {
+  it('source-aware text routes use CACHE_DATASET (existing constant — no rename)', () => {
     expect(cacheNameFor(u('/dataset/surahs.json'))).toBe(CACHE_DATASET)
+    expect(cacheNameFor(u('/dataset/tafsir/muyassar/001.json'))).toBe(CACHE_DATASET)
   })
 
   it('fonts route is always-on (category=null)', () => {
@@ -55,7 +69,7 @@ describe('ROUTE_DEFS table', () => {
   it('roadmap routes (pages, search) marked roadmap=true', () => {
     expect(ROUTE_DEFS.find(d => d.name === 'pages')?.roadmap).toBe(true)
     expect(ROUTE_DEFS.find(d => d.name === 'search')?.roadmap).toBe(true)
-    expect(ROUTE_DEFS.find(d => d.name === 'text')?.roadmap).toBeFalsy()
+    expect(ROUTE_DEFS.find(d => d.name === 'text-core')?.roadmap).toBeFalsy()
   })
 
   it('CACHE_PREFIXES catches every cacheName the table emits', () => {
@@ -90,16 +104,20 @@ describe('sumBytesForCategory', () => {
   const manifest = {
     files: {
       'riwayat/hafs/001.json': 'sha-a',
-      'riwayat/warsh/001.json': 'sha-b',
+      'translations/saheeh/001.json': 'sha-b',
       'surahs.json': 'sha-c',
+      'tafsir/muyassar/001.json': 'sha-g',
+      'indexes/sources.json': 'sha-h',
       'audio/alafasy/001.mp3': 'sha-d',
       'mushaf-pages/hafs/p001.png': 'sha-e',
       'search-index.json': 'sha-f',
     },
     fileSizes: {
       'riwayat/hafs/001.json': 1500,
-      'riwayat/warsh/001.json': 1400,
+      'translations/saheeh/001.json': 1400,
       'surahs.json': 800,
+      'tafsir/muyassar/001.json': 700,
+      'indexes/sources.json': 200,
       'audio/alafasy/001.mp3': 50_000_000,
       'mushaf-pages/hafs/p001.png': 80_000,
       'search-index.json': 1_000_000,
@@ -107,7 +125,7 @@ describe('sumBytesForCategory', () => {
   }
 
   it.each<[Category, number]>([
-    ['text',   1500 + 1400 + 800],
+    ['text',   1500 + 1400 + 800 + 700 + 200],
     ['audio',  50_000_000],
     ['pages',  80_000],
     ['search', 1_000_000],
@@ -120,7 +138,9 @@ describe('sumBytesForCategory', () => {
     const { urls } = sumBytesForCategory(manifest, 'text')
     expect(urls).toEqual(expect.arrayContaining([
       '/dataset/riwayat/hafs/001.json',
-      '/dataset/riwayat/warsh/001.json',
+      '/dataset/translations/saheeh/001.json',
+      '/dataset/tafsir/muyassar/001.json',
+      '/dataset/indexes/sources.json',
       '/dataset/surahs.json',
     ]))
     expect(urls).not.toEqual(expect.arrayContaining([

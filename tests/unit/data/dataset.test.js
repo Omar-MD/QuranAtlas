@@ -29,11 +29,12 @@ beforeAll(() => { globalThis.fetch = mockFetch })
 
 describe('data/dataset', () => {
   describe('getManifestUrls()', () => {
-    it('lists 342 per-surah riwayat files (114 × 3)', async () => {
+    it('lists 114 baseline riwayah files for Qaloon only', async () => {
       const { getManifestUrls } = await import('../../../src/data/dataset.ts')
       const urls = await getManifestUrls()
       const riwayat = urls.filter((u) => u.includes('/riwayat/'))
-      expect(riwayat.length).toBe(342)
+      expect(riwayat.length).toBe(114)
+      expect(riwayat.every((u) => u.includes('/riwayat/qaloon/'))).toBe(true)
     })
 
     it('includes the metadata files', async () => {
@@ -57,15 +58,12 @@ describe('data/dataset', () => {
       expect(data.ayat[0].aya_text).toContain('اِ۬لْحَمْدُ')
     })
 
-    it('respects active Riwayah for path resolution', async () => {
+    it('falls back to Qaloon when the saved Riwayah is absent from the baseline', async () => {
       mockedRiwayah = 'hafs'
       vi.resetModules() // re-import with fresh mock binding
       const { getSurah } = await import('../../../src/data/dataset.ts')
       const data = await getSurah(1)
-      expect(data.riwayah).toBe('hafs')
-      // line_start retained on Hafs only (audit R-24, 2026-04-29) for the
-      // v2.1 page-image mushaf renderer; Warsh/Qaloon ship without it.
-      expect(data.ayat[0]).toHaveProperty('line_start')
+      expect(data.riwayah).toBe('qaloon')
     })
 
     it('rejects out-of-range surah numbers', async () => {
@@ -110,14 +108,14 @@ describe('data/dataset', () => {
       expect(Array.isArray(pack.verses)).toBe(true)
       expect(pack.verses.length).toBeGreaterThan(0)
       expect(pack.verses[0].key).toBe('1:1')
-      // Saheeh ships footnotes for the bismillah verse — at least one should be present.
-      expect(Object.keys(pack.footnotes).length).toBeGreaterThan(0)
+      expect(pack.footnotes).toEqual({})
     })
 
     it('returns null for an absent translation pack (404)', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
       const pack = await loadTranslationForSurah('does-not-exist', 1)
-      expect(pack).toBeNull()
+      expect(pack).not.toBeNull()
+      expect(pack.translationId).toBe('saheeh')
     })
 
     it('rejects out-of-range surah numbers', async () => {
@@ -130,6 +128,39 @@ describe('data/dataset', () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
       const pack = await loadTranslationForSurah('', 1)
       expect(pack).toBeNull()
+    })
+  })
+
+  describe('getSourceIndex()', () => {
+    it('loads the source catalog index with default baseline ids', async () => {
+      const { getSourceIndex } = await import('../../../src/data/dataset.ts')
+      const index = await getSourceIndex()
+      expect(index.defaults).toMatchObject({
+        riwayah: 'qaloon',
+        translation: 'saheeh',
+        tafsir: 'muyassar',
+      })
+      expect(index.sources.some((s) => s.id === 'muyassar' && s.type === 'tafsir')).toBe(true)
+    })
+  })
+
+  describe('getTafsirs() / loadTafsirForSurah()', () => {
+    it('lists baseline tafsir packs from the source index', async () => {
+      const { getTafsirs } = await import('../../../src/data/dataset.ts')
+      const list = await getTafsirs()
+      expect(list.find((t) => t.id === 'muyassar')).toMatchObject({
+        id: 'muyassar',
+        name: 'Tafsir Muyassar',
+        language: 'ar',
+      })
+    })
+
+    it('loads grouped tafsir entries for one surah', async () => {
+      const { loadTafsirForSurah } = await import('../../../src/data/dataset.ts')
+      const pack = await loadTafsirForSurah('muyassar', 73)
+      expect(pack).not.toBeNull()
+      expect(pack.tafsirId).toBe('muyassar')
+      expect(pack.entries.some((e) => e.startKey === '73:1' && e.endKey === '73:4')).toBe(true)
     })
   })
 })

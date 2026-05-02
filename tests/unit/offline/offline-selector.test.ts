@@ -92,6 +92,11 @@ describe('offline-selector.svelte', () => {
     await flush()
 
     expect(setOfflineCategoriesMock).toHaveBeenCalledTimes(1)
+    expect(setOfflineCategoriesMock.mock.calls[0][0].text).toEqual({
+      riwayat: { qaloon: true },
+      translations: { saheeh: true },
+      tafsir: { muyassar: true },
+    })
     expect(startCategoryDownloadMock).toHaveBeenCalledWith('text')
   })
 

@@ -91,7 +91,7 @@ describe('data/offline.js', () => {
       const { startDownload, getActivationState } = await import('../../../src/data/offline.js')
 
       // Simulate the selector setting the rune before kicking off a download.
-      settings.offlineCategories.text.hafs = true
+      settings.offlineCategories.text.riwayat.qaloon = true
 
       await startDownload()
       const messageHandler = globalThis.navigator.serviceWorker.addEventListener.mock.calls.find(

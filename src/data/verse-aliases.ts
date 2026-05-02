@@ -7,7 +7,7 @@
  * `public/dataset/translations/_verse-aliases.json` and exposes a helper to
  * resolve the correct Hafs key(s) for a (riwayah, surahNo, ayahNo) tuple.
  *
- * Source: `scripts/derive-verse-aliases.mjs` aligns each surah's word
+ * Source: `scripts/data/derive-verse-aliases.mjs` aligns each surah's word
  * streams across riwayat and emits per-ayah aliases. KFGQPC's Madinah
  * Mushaf is the authoritative scholarly source — splits are encoded in the
  * dataset itself.

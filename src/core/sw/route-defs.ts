@@ -10,9 +10,18 @@
 import { CACHE_DATASET } from '../constants'
 
 export type Category = 'text' | 'audio' | 'pages' | 'search'
+export type TextCategory = 'text-core' | 'text-riwayah' | 'text-translation' | 'text-tafsir' | 'text-index'
+export type RouteCategory = Category | TextCategory
 
 /** Categories the offline-selector exposes. `null` route category = always-on. */
 export const CATEGORIES: readonly Category[] = ['text', 'audio', 'pages', 'search'] as const
+export const TEXT_ROUTE_CATEGORIES: readonly TextCategory[] = [
+  'text-core',
+  'text-riwayah',
+  'text-translation',
+  'text-tafsir',
+  'text-index',
+] as const
 
 export type StrategyKind = 'NetworkFirst' | 'CacheFirst'
 
@@ -29,7 +38,7 @@ export type RouteDef = {
   maxAgeDays: number
   purgeOnQuotaError?: boolean
   /** Selector category. `null` = always-on (e.g. fonts). */
-  category: Category | null
+  category: RouteCategory | null
   /** True for routes registered ahead of their consumer (mushaf-pages, search-index). */
   roadmap?: boolean
 }
@@ -47,17 +56,56 @@ const pagesRiwayahFromUrl = (url: URL): string => {
 
 export const ROUTE_DEFS: readonly RouteDef[] = [
   {
-    name: 'text',
-    match: ({ url }) =>
-      url.pathname.startsWith('/dataset/') &&
-      !url.pathname.startsWith('/dataset/audio/') &&
-      !url.pathname.startsWith('/dataset/mushaf-pages/') &&
-      url.pathname !== '/dataset/search-index.json',
+    name: 'text-riwayah',
+    match: ({ url }) => /^\/dataset\/riwayat\/[^/]+\/\d{3}\.json$/.test(url.pathname),
     strategy: 'NetworkFirst',
     cacheName: CACHE_DATASET,
-    maxEntries: 1000,
+    maxEntries: 140,
     maxAgeDays: 365,
-    category: 'text',
+    category: 'text-riwayah',
+  },
+  {
+    name: 'text-translation',
+    match: ({ url }) => /^\/dataset\/translations\/[^/]+\/\d{3}\.json$/.test(url.pathname),
+    strategy: 'NetworkFirst',
+    cacheName: CACHE_DATASET,
+    maxEntries: 140,
+    maxAgeDays: 365,
+    category: 'text-translation',
+  },
+  {
+    name: 'text-tafsir',
+    match: ({ url }) => /^\/dataset\/tafsir\/[^/]+\/\d{3}\.json$/.test(url.pathname),
+    strategy: 'NetworkFirst',
+    cacheName: CACHE_DATASET,
+    maxEntries: 140,
+    maxAgeDays: 365,
+    category: 'text-tafsir',
+  },
+  {
+    name: 'text-index',
+    match: ({ url }) =>
+      url.pathname === '/dataset/indexes/sources.json' ||
+      url.pathname === '/dataset/provenance.json' ||
+      url.pathname === '/dataset/manifest.json',
+    strategy: 'NetworkFirst',
+    cacheName: CACHE_DATASET,
+    maxEntries: 16,
+    maxAgeDays: 365,
+    category: 'text-index',
+  },
+  {
+    name: 'text-core',
+    match: ({ url }) =>
+      url.pathname === '/dataset/surahs.json' ||
+      url.pathname === '/dataset/juz.json' ||
+      url.pathname === '/dataset/translations/_verse-map.json' ||
+      url.pathname === '/dataset/translations/_verse-aliases.json',
+    strategy: 'NetworkFirst',
+    cacheName: CACHE_DATASET,
+    maxEntries: 16,
+    maxAgeDays: 365,
+    category: 'text-core',
   },
   {
     name: 'audio-mp3',
@@ -143,7 +191,7 @@ export function routeFor(url: URL): RouteDef | null {
   return null
 }
 
-export function categoryFor(url: URL): Category | null {
+export function categoryFor(url: URL): RouteCategory | null {
   const def = routeFor(url)
   return def ? def.category : null
 }
@@ -168,9 +216,13 @@ export function sumBytesForCategory(
   let totalBytes = 0
   const files = manifest.files || {}
   const sizes = manifest.fileSizes || {}
+  const wanted = category === 'text'
+    ? new Set<RouteCategory>(TEXT_ROUTE_CATEGORIES)
+    : new Set<RouteCategory>([category])
   for (const rel of Object.keys(files)) {
     const url = new URL(`/dataset/${rel}`, origin)
-    if (categoryFor(url) === category) {
+    const routedCategory = categoryFor(url)
+    if (routedCategory && wanted.has(routedCategory)) {
       urls.push(`/dataset/${rel}`)
       totalBytes += typeof sizes[rel] === 'number' ? sizes[rel] : 0
     }

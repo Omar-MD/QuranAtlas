@@ -99,7 +99,7 @@ Each verse renders Arabic on top + English translation directly below in flowing
 
 Toggle "Hide translation" (Settings or `t`) → translation block, all `[N]` markers, any open footnote panel disappear in one repaint via `settings.translationVisible` rune.
 
-**Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qaloon (Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/Qaloon ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
+**Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qaloon (Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/data/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/Qaloon ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
 
 ### Cross-surah infinite scroll
 
@@ -207,4 +207,3 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 
 - `tests/e2e/journey-b-reader.spec.js`
 <!-- AUTO-GENERATED:tests END -->
-

@@ -74,8 +74,11 @@ Defined in `package.json`:
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
 | `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && vite build`) |
-| `pnpm run build:dataset` | Split KFGQPC riwayat JSONs + each shipped translation `.raw.json` into per-surah files; regenerate `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` (`node scripts/build-dataset.mjs`). Runs offline against committed source files. |
-| `pnpm run fetch:translation:saheeh` | One-shot networked fetch of Saheeh International (Quran.com qdc translation 20) into `data/raw/saheeh.raw.json` (committed; outside `public/` so it's build-only and never shipped to clients). Re-run only when refreshing the upstream pack. |
+| `pnpm run build:dataset` | Baseline dataset build (`node scripts/data/build-dataset.mjs --profile=baseline`): emits Qaloon riwayah, Saheeh translation, Muyassar tafsir, source index, metadata, manifest, and provenance. Runs offline against committed normalized source files. |
+| `pnpm run build:dataset:baseline` | Explicit baseline dataset build. |
+| `pnpm run build:dataset:full` | Full local dataset build: emits every locally configured approved source. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
+| `pnpm run build:dataset:catalog` | Catalog/profile build without text bodies. |
+| `pnpm run fetch:source -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh` and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` with source pins under `scripts/data/pins/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm test` | Run Vitest in watch mode |
 | `pnpm run test:run` | Run Vitest once (CI-style) |
@@ -86,6 +89,9 @@ Defined in `package.json`:
 | `pnpm run lint:fix` | ESLint with `--fix` |
 | `pnpm run lint:css` | Stylelint over `src/styles/**/*.css` (config at `.stylelintrc.json`) |
 | `pnpm run check` | `svelte-check --tsconfig ./tsconfig.json` — type gate |
+| `pnpm run check:dataset` | Rebuild the baseline dataset as a CI/catalog integrity gate. |
+| `pnpm run check:licenses` | Validate source catalog providers, licenses, checksums, and default visibility. |
+| `pnpm run check:source-catalog` | Alias for `check:licenses`; used by CI's dataset catalog job. |
 | `pnpm run check:styles` | Run `check-theme-parity.mjs` + `check-token-usage.mjs` + `check-at-layer.mjs` (design-token gates) |
 | `pnpm run check-chunks` | Gzipped chunk-budget check (`scripts/check-chunks.js`, ≤150 KB per chunk) |
 | `pnpm run check-no-feature-state` | Assert feature modules don't hold top-level mutable state (`scripts/check-no-feature-state.js`) |
@@ -116,7 +122,7 @@ These used to be inlined in this file; they now live in `docs/context/`:
 
 Two layers:
 
-- **Unit tests (Vitest + jsdom + `fake-indexeddb/auto`)** — **40 files** under `tests/unit/` covering core, reader, marks, review, settings, nav, safety, data/offline, state modules, service worker handlers, and a console-guard. Runs in every CI job via `pnpm run test:run`.
+- **Unit tests (Vitest + jsdom + `fake-indexeddb/auto`)** — suites under `tests/unit/` covering core, reader, marks, review, settings, nav, safety, data/offline, dataset scripts/catalogs, state modules, service worker handlers, and a console-guard. Runs in every CI job via `pnpm run test:run`.
 - **E2E tests (Playwright)** — **12 specs** under `tests/e2e/`:
   - `journey-a-onboarding.spec.js` — first-run + session restore
   - `journey-b-reader.spec.js` — reader + ambient chrome
@@ -168,6 +174,9 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `st
 | `typecheck` | `pnpm run check` (svelte-check) |
 | `test` | `pnpm run test:run` (Vitest, 40 specs) |
 | `feature-state` | `pnpm run check-no-feature-state` |
+| `dataset-catalog` | `pnpm run check:source-catalog` |
+| `dataset-baseline` | `pnpm run check:dataset` |
+| `dataset-full` | `pnpm run build:dataset:full` on protected-branch pushes and PRs whose diff touches dataset sources, catalogs, generated dataset files, or dataset scripts |
 | `audit` | `pnpm audit --audit-level moderate` |
 | `build` | `pnpm run build`; uploads `dist/` artifact |
 | `check-chunks` | `pnpm run check-chunks` against uploaded `dist/` |

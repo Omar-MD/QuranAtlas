@@ -19,7 +19,7 @@ Read these before changing behavior:
 - `docs/context/module-graph.md` — generated dependency graph
 - `docs/context/feature-map.md` — generated dossier index
 - `docs/context/glossary.md` — shared vocabulary
-- `docs/context/riwayat-dataset.md` — dataset and font constraints
+- `docs/context/source-data-flow.md` — source formats, normalization rules, dataset build, and runtime data flow
 - `docs/context/csp-allowlist.md` — outbound-origin policy
 - `docs/context/implemented.md` — shipped surface inventory
 - `docs/context/roadmap.md` — deferred scope

@@ -49,7 +49,9 @@ async function fetchManifest(): Promise<ManifestShape> {
 function isAnyCategoryCached(): boolean {
   const c = settings.offlineCategories
   if (!c) return false
-  if (c.text.hafs || c.text.warsh || c.text.qaloon) return true
+  if (Object.values(c.text.riwayat).some(Boolean)) return true
+  if (Object.values(c.text.translations).some(Boolean)) return true
+  if (Object.values(c.text.tafsir).some(Boolean)) return true
   if (Object.values(c.audio).some(Boolean)) return true
   if (Object.values(c.pages).some(Boolean)) return true
   if (c.search) return true

@@ -19,23 +19,36 @@ function isPlainRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
+function booleanRecord(raw: unknown): Record<string, boolean> {
+  if (!isPlainRecord(raw)) return {}
+  return Object.fromEntries(
+    Object.entries(raw).filter(([, v]) => typeof v === 'boolean')
+  ) as Record<string, boolean>
+}
+
 function normalize(raw: unknown): OfflineCategoriesState {
   if (!isPlainRecord(raw)) return { ...DEFAULT_OFFLINE_CATEGORIES }
   const text = isPlainRecord(raw.text) ? raw.text : {}
   const audio = isPlainRecord(raw.audio) ? raw.audio : {}
   const pages = isPlainRecord(raw.pages) ? raw.pages : {}
+  const oldRiwayatText = {
+    hafs: text.hafs === true,
+    warsh: text.warsh === true,
+    qaloon: text.qaloon === true,
+  }
+  const sourceAwareText = {
+    riwayat: booleanRecord(text.riwayat),
+    translations: booleanRecord(text.translations),
+    tafsir: booleanRecord(text.tafsir),
+  }
+  const hasSourceAwareRiwayat = isPlainRecord(text.riwayat)
+  const riwayat = hasSourceAwareRiwayat
+    ? sourceAwareText.riwayat
+    : oldRiwayatText
   return {
-    text: {
-      hafs: text.hafs === true,
-      warsh: text.warsh === true,
-      qaloon: text.qaloon === true,
-    },
-    audio: Object.fromEntries(
-      Object.entries(audio).filter(([, v]) => typeof v === 'boolean')
-    ) as Record<string, boolean>,
-    pages: Object.fromEntries(
-      Object.entries(pages).filter(([, v]) => typeof v === 'boolean')
-    ) as Record<string, boolean>,
+    text: { ...sourceAwareText, riwayat },
+    audio: booleanRecord(audio),
+    pages: booleanRecord(pages),
     search: raw.search === true,
   }
 }
