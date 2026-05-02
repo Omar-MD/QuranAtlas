@@ -121,7 +121,7 @@ test.describe('Journey H: Offline resilience', () => {
   // H2. Storage selector — per-feature offline opt-in (N21)
   // @offline — only runs in the "Offline (Preview)" project
   //
-  // Rule 8 criterion 7 — page reload + re-hydrate proves boot wires
+  // E2E-only because reload + re-hydrate proves the real boot path wires
   // initOfflineMigration + initOfflineCategories into the real app shell.
   // -------------------------------------------------------------------------
 

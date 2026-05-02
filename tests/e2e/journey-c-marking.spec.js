@@ -23,7 +23,7 @@ import { test, expect } from '@playwright/test'
 import { seedMarks, getMarkFromIdb } from './fixtures/idb.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
-// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.  Each test gets a
+// Reuse the onboarded snapshot to skip per-test cold-boot setup. Each test gets a
 // fresh BrowserContext with the snapshot reloaded, so per-test marks state
 // is reset implicitly without `clearAllData`.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })

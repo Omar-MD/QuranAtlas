@@ -2,7 +2,7 @@
 
 Tools, versions, and reasoning. Architecture and module layout live in [`docs/context/`](context/).
 
-> **Kept fresh by CLAUDE.md Rule 2.** Any change to `package.json` scripts, dev tools, pinned versions, or CI gates must update this file in the same commit.
+> **Kept fresh by root `AGENTS.md`.** Any change to `package.json` scripts, dev tools, pinned versions, or CI gates must update this file in the same commit.
 
 ## Tooling
 
@@ -140,7 +140,7 @@ Playwright's `globalSetup` hook captures an onboarded `storageState` snapshot on
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 ```
 
-Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-test `markOnboardingComplete + clearAllData + cold-boot` needed, and the `marks`/`edges`/`bookmarks` stores are reset to the snapshot (empty) implicitly between tests. Onboarding-flow specs (`journey-a`) and SW/cross-tab carve-outs (`journey-h`, `journey-i`) opt OUT with `test.use({ storageState: { cookies: [], origins: [] } })`. See `CLAUDE.md` Rule 6.5.
+Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-test `markOnboardingComplete + clearAllData + cold-boot` needed, and the `marks`/`edges`/`bookmarks` stores are reset to the snapshot (empty) implicitly between tests. Onboarding-flow specs (`journey-a`) and SW/cross-tab carve-outs (`journey-h`, `journey-i`) opt OUT with `test.use({ storageState: { cookies: [], origins: [] } })`. See `tests/e2e/AGENTS.md`.
 
 ### Static checks
 - **ESLint** (strict mode, `typescript-eslint`, `eslint-plugin-svelte`) via `pnpm run lint`.

@@ -3,7 +3,7 @@
  * Persists/restores view mode, filters, sort, and grouping to IDB meta["review"].
  * Written on every state change (immediate, no debounce).
  *
- * SOLE WRITER: This module is the ONLY writer for meta['review'] (CLAUDE.md Rule 5).
+ * SOLE WRITER: this module is the only writer for meta['review'].
  *
  * Stored under the `meta` object store (DB v4+). Pre-v4 the record lived
  * in `positions['review']` with dummy surah/verse fields; the v4 schema

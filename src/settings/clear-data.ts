@@ -150,7 +150,7 @@ export async function clearAllData(): Promise<boolean> {
   }
 
   // Clear IndexedDB — suppress the versionchange banner since this tab initiated the deletion
-  // suppressNextVersionChange call preserved verbatim (see migration Rule 8.1)
+  // Keep the versionchange suppression order intact to avoid reload loops.
   suppressNextVersionChange()
   try {
     await deleteDB()

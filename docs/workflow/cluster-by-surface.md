@@ -1,6 +1,6 @@
 # Cluster-by-surface — workflow playbook
 
-Referenced by `CLAUDE.md` Rule 4. Read this before writing a multi-unit plan, dispatching subagents, or adding new Playwright specs.
+Referenced by root `AGENTS.md`. Read this before splitting work by surface, delegating by area, or adding Playwright specs.
 
 ## The unit
 
@@ -33,16 +33,16 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 
 1. **One unit per surface-cluster.** If two candidate units both touch `src/<same-feature>/`, collapse them.
 2. **A journey that spans surfaces is one unit, not two.** Example: I2 (mark deleted in Tab B while Tab A editor open) touches `src/marks/` AND `src/safety/sync.ts`. That's one unit — the coupling is the point.
-3. **Docs land with the unit.** Owning dossier's §Behavior + §Reach + §Invariants (Rule 1), plus `data-model.md` / `architecture.md` if cross-cutting (Rule 2), are part of the unit. `events.md` / `module-graph.md` / `feature-map.md` regenerate automatically (`pnpm docs:derive`) — no manual update. Not a separate task. Not a subagent handoff.
+3. **Docs land with the unit.** Owning dossier's §Behavior + §Reach + §Invariants (Rule 1), plus `data-model.md` / `architecture.md` if cross-cutting (Rule 2), are part of the unit. `events.md` / `module-graph.md` / `feature-map.md` regenerate automatically (`pnpm docs:derive`) — no manual update. Not a separate task. Not a delegated follow-up.
 4. **Tests land with the unit.** If the unit adds new behavior to a dossier, the matching Playwright spec (new or extended) is part of the same commit. If the surface already has its journey spec, extend the owning `journey-X-*.spec.js` — do not create a parallel spec.
 5. **Plan lifecycle.** Completed plans are deleted in the final commit, not archived. The lasting record lives in code + `git log` + `docs/context/`.
 
 ## Subagent dispatch rules
 
-1. **Default to main session.** A subagent is worth the coordination cost only when (a) the parent context would overflow, or (b) surfaces are truly independent with no shared files / selectors / events.
-2. **Parallel = distinct surfaces.** Max concurrent subagents = number of distinct surface-clusters, not number of bugs.
-3. **Never dispatch a subagent for a surface already loaded in main context.** You've paid for the reads; a subagent re-pays them.
-4. **One subagent per surface carries the whole cluster** — the source files, the owning journey spec, every bug/tweak/question for that surface. Not one subagent per bug.
+1. **Default to the main session.** Delegation is worth the coordination cost only when (a) the parent context would overflow, or (b) surfaces are truly independent with no shared files / selectors / events.
+2. **Parallel = distinct surfaces.** Max concurrent delegated work items = number of distinct surface-clusters, not number of bugs.
+3. **Do not delegate a surface already loaded in main context.** You've paid for the reads; delegation re-pays them.
+4. **One delegated worker per surface carries the whole cluster** — the source files, the owning journey spec, every bug/tweak/question for that surface. Not one worker per bug.
 5. **Sequencing over fan-out** when there's a data dependency (e.g. "cross-tab work needs long-press gesture fixed first"). Don't parallelise past a dependency.
 
 ## Testing rules
@@ -65,10 +65,10 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 
 | Smell | Fix |
 |---|---|
-| Two units / subagents touch the same `src/<feature>/` tree | Collapse to one unit |
+| Two units / delegated workers touch the same `src/<feature>/` tree | Collapse to one unit |
 | Plan has N units for N bugs on one surface | Collapse to one unit |
 | New spec file proposed for a covered journey | Extend the journey spec |
-| Dossier §Behavior update queued as a separate task or subagent | Fold into the surface's unit |
+| Dossier §Behavior update queued as a separate task or delegated worker | Fold into the surface's unit |
 | "Run full e2e suite" to verify a single-surface change | Run the one journey spec |
 | Playwright invoked with different specs within one cluster | Collapse to the owning spec |
 | Subagent spawned for work that fits in main context | Execute in main session |
@@ -107,5 +107,5 @@ Do the candidates share any file under src/<feature>/ ?
 ## What this playbook is not
 
 - Not a replacement for brainstorming / planning / TDD / verification skills. It's a clustering overlay on top of them.
-- Not a gate against legitimate fan-out — genuinely independent work across 3 surfaces absolutely should run 3 subagents in parallel.
+- Not a gate against legitimate fan-out — genuinely independent work across 3 surfaces can still run in parallel when the tool surface supports delegation.
 - Not a ban on iterative Playwright runs — re-run the same spec as often as you need within a cluster; what's banned is running *different* specs for each fix.

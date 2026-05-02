@@ -19,7 +19,7 @@ import { waitForReader, openSettingsSheet } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
-// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.  Per Rule 6.3 the 5
+// Reuse the onboarded snapshot to skip per-test cold-boot setup. The 5
 // nested beforeEach blocks below stay separate (different viewports) but
 // no longer carry redundant clearAllData + markOnboardingComplete pairs.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })

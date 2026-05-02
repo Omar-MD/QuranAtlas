@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// Cite-rot check. Greps backtick-fenced repo-relative paths in CLAUDE.md and
-// the load-bearing context docs, fails if any cited path does not exist on disk.
+// Cite-rot check. Greps backtick-fenced repo-relative paths in load-bearing
+// AGENTS.md files and the load-bearing context docs, fails if any cited path
+// does not exist on disk.
 //
-// Scope: CLAUDE.md, docs/context/**, docs/workflow/**, docs/tech-stack.md,
-// docs/product-info.md. Historical docs (docs/superpowers/{plans,specs,notes,
-// verification}, docs/audits/, docs/specs/) are point-in-time artifacts; their
-// cites are expected to drift and are NOT validated.
+// Scope: repo AGENTS.md files, docs/context/**, docs/workflow/**,
+// docs/tech-stack.md, docs/product-info.md. Historical docs
+// (docs/superpowers/{plans,specs,notes,verification}, docs/audits/,
+// docs/specs/) are point-in-time artifacts; their cites are expected to drift
+// and are NOT validated.
 
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
@@ -32,16 +34,15 @@ async function walk(dir, out = []) {
 
 async function loadBearingDocs() {
   const docs = join(REPO_ROOT, 'docs');
-  const out = [
-    join(REPO_ROOT, 'CLAUDE.md'),
-    join(docs, 'tech-stack.md'),
-    join(docs, 'product-info.md'),
-  ];
+  const out = [join(docs, 'tech-stack.md'), join(docs, 'product-info.md')];
+  await walk(REPO_ROOT, out);
   for (const sub of ['context', 'workflow']) {
     const dir = join(docs, sub);
     if (existsSync(dir)) await walk(dir, out);
   }
-  return out;
+  return out.filter((file, index) => (
+    file.endsWith('AGENTS.md') || file.startsWith(docs)
+  )).filter((file, index, all) => all.indexOf(file) === index);
 }
 
 // Paths under these prefixes are gitignored (or otherwise local-only). They
@@ -120,11 +121,6 @@ async function main() {
       const exists = existsSync(abs) && (() => { try { statSync(abs); return true; } catch { return false; } })();
       if (allowlist.has(path)) {
         allowlistHits.add(path);
-        if (exists) {
-          process.stderr.write(
-            `derive-cite-check: allowlist entry \`${path}\` now exists on disk — remove from scripts/docs/cite-check.allowlist\n`,
-          );
-        }
         continue;
       }
       if (!exists) {

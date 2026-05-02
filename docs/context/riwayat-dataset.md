@@ -1,6 +1,6 @@
 # Riwayat Dataset (KFGQPC) — Source of Truth
 
-**Scope.** This doc is the canonical reference for how the project handles Qur'anic text and its components: the three riwayat (qira'at), per-riwayah Arabic dataset, fonts, translation alignment across riwayat, and the validation/regression machinery that keeps it honest. Everything below — counts, file paths, normalization rules, alignment algorithm, validator scope — is load-bearing. Code disagreements with this doc are bugs in the code (Rule 2: update doc in same commit when behavior changes).
+**Scope.** This doc is the canonical reference for how the project handles Qur'anic text and its components: the three riwayat (qira'at), per-riwayah Arabic dataset, fonts, translation alignment across riwayat, and the validation/regression machinery that keeps it honest. Everything below — counts, file paths, normalization rules, alignment algorithm, validator scope — is load-bearing. Code disagreements with this doc are bugs in the code; update the doc in the same change when behavior changes.
 
 Authentic Qur'anic text sourced from the **King Fahd Glorious Qur'an Printing Complex (KFGQPC)** — official publisher of *Mushaf al-Madinah al-Nabawiyyah*. Three riwayat shipped:
 

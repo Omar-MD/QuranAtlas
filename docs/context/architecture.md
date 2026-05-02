@@ -12,7 +12,7 @@ One-page orientation for anyone (or any agent) walking into this codebase cold. 
 - **IndexedDB for all persistence** — DB name `quran-atlas`, version 6, 8 stores (see `data-model.md`). Every IDB access routes through `src/core/db.ts`. Store record shapes are declared as TS `interface`s re-exported via `StoreRecords` so the `put()` validator and callers share the same compile-time contract.
 - **Mitt for cross-module communication** — tiny pub/sub (`src/core/events.ts`). Event names centralised in `src/core/constants.ts::Events`. Payload typedefs live beside the enum.
 - **Service worker for offline** — `src/sw.js` + Workbox; the Quran corpus is cached in `CACHE_DATASET` and surahs load from cache first. The SW and `src/offline/` helpers stay vanilla JS by design.
-- **Testing** — Vitest + jsdom + `fake-indexeddb/auto` for units; Playwright journey specs (A–I) for E2E. Unit-first per `CLAUDE.md` Rule 8; e2e reserved for behavior only e2e can prove (real layout, gesture timing, SW lifecycle, cross-tab, axe-core a11y, multi-screen keyboard, real reload+rehydrate, perf budget, real router+hash navigation).
+- **Testing** — Vitest + jsdom + `fake-indexeddb/auto` for units; Playwright journey specs (A–I) for E2E. Default to unit tests; use e2e only for browser-only proof. See `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md`.
 
 ## Boot flow (`src/app.ts` → `src/App.svelte` → `src/app-bootstrap.ts`)
 

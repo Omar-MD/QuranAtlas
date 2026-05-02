@@ -4,7 +4,7 @@
  *
  * Persisted under settings key `'currentPosition'` as `{ surah, verse }`.
  *
- * SOLE WRITER for `settings.currentPosition` (CLAUDE.md Rule 5). All other
+ * SOLE WRITER for `settings.currentPosition`. All other
  * code reads via `loadGlobalPosition()`.
  */
 

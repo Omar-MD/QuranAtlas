@@ -45,7 +45,7 @@
     ayah?: string
     /** Hook: receives the reader container and returns a cleanup fn */
     initIndicators?: (container: HTMLElement) => () => void
-    /** Hook: receives the reader container and returns a cleanup fn (CLAUDE.md Rule 4) */
+    /** Hook: receives the reader container and returns a cleanup fn */
     setupLongPress?: (container: HTMLElement) => () => void
   }
 
@@ -575,4 +575,3 @@
     progress={pullState?.progress ?? 0}
   />
 {/if}
-

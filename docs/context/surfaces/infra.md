@@ -147,7 +147,7 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 - **Per-asset-class cache prefixes preserved by `cleanupStaleCaches`** sourced from `route-defs.ts::CACHE_PREFIXES` (passed as `preservePrefixes`) — never hardcoded.
 - **`route-defs.ts` is window-importable.** Workbox imports live only in `strategies.ts` (SW-only). Window code (offline-selector, data/offline.ts) reads the table for byte-sum + URL-filter helpers.
 - **`settings.offlineCategories` is the source of truth for "user opted into category X".** `getActivationState()` reports `'cached'` when any category is opted in; `'downloading'` while a `CACHE_DATASET` is in flight.
-- **`@offline` Playwright project is single carve-out for preview build.** Per Rule 8 / 6.6, dev server is default; SW only emits in production builds.
+- **`@offline` Playwright project is the single carve-out for the preview build.** The dev server is the default; the service worker only emits in production builds. See `tests/e2e/AGENTS.md`.
 
 ## Regression guards
 
@@ -171,4 +171,3 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 - `tests/e2e/journey-i-cross-tab.spec.js`
 - `tests/e2e/sw-integration.spec.js`
 <!-- AUTO-GENERATED:tests END -->
-

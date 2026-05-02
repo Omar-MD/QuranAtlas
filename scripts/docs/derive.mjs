@@ -16,6 +16,7 @@ const REPO_ROOT = join(__dirname, '..', '..');
 
 const args = process.argv.slice(2);
 const checkMode = args.includes('--check');
+const CHECK_PATHS = ['docs/', 'AGENTS.md', '.docs-derive-manifest.json'];
 
 // Each deriver: { name, script, mode: 'check-only' | 'writer' }
 // 'check-only' derivers run in both write and check modes (they only validate).
@@ -43,9 +44,9 @@ function run(cmd, cmdArgs, opts = {}) {
   });
 }
 
-async function gitDiffDirty() {
+async function gitStatusSnapshot() {
   return new Promise((resolve) => {
-    const child = spawn('git', ['status', '--porcelain', '--', 'docs/', 'CLAUDE.md', '.docs-derive-manifest.json'], {
+    const child = spawn('git', ['status', '--porcelain', '--', ...CHECK_PATHS], {
       cwd: REPO_ROOT,
     });
     let out = '';
@@ -57,6 +58,7 @@ async function gitDiffDirty() {
 
 async function main() {
   let failed = 0;
+  const before = checkMode ? await gitStatusSnapshot() : '';
 
   for (const d of derivers) {
     process.stdout.write(`\n— ${d.name} —\n`);
@@ -65,9 +67,11 @@ async function main() {
   }
 
   if (checkMode) {
-    const dirty = await gitDiffDirty();
-    if (dirty) {
-      process.stderr.write(`\nderive --check: docs are dirty after regeneration:\n${dirty}\n`);
+    const after = await gitStatusSnapshot();
+    if (after !== before) {
+      process.stderr.write(`\nderive --check: docs changed after regeneration:\n`);
+      process.stderr.write(`before:\n${before || '(clean)'}\n`);
+      process.stderr.write(`after:\n${after || '(clean)'}\n`);
       process.stderr.write('Run `pnpm docs:derive` and commit the result.\n');
       failed++;
     }

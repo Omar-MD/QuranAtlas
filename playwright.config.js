@@ -15,7 +15,7 @@ const OFFLINE_GREP = /@offline/
 // Mobile Chrome runs only specs explicitly tagged `@mobile` — viewport-agnostic
 // tests run on chromium once. Tag `@mobile` when a test asserts MarginHeader,
 // drawer swipe, gear double-tap, auto-hide on scroll, viewport-conditional
-// layout, or real touch-gesture timing. See CLAUDE.md Rule 6.4.
+// layout, or real touch-gesture timing. See tests/e2e/AGENTS.md.
 const MOBILE_GREP = /@mobile/
 
 // The Offline project requires a production build (for the service worker),
@@ -47,7 +47,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   // Captures an onboarded storageState once per suite run; specs opt in via
   // `test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })`.  See
-  // `tests/e2e/global-setup.ts` and CLAUDE.md Rule 6.5.
+  // `tests/e2e/global-setup.ts` and tests/e2e/AGENTS.md.
   globalSetup: './tests/e2e/global-setup.ts',
   outputDir: './test-output/traces',
   fullyParallel: true,

@@ -1,7 +1,7 @@
 /**
  * Svelte action: long-press on a verse element → open mark editor.
  *
- * CLAUDE.md Rule 4: Long-press is the ONLY gesture for opening the mark editor.
+ * Invariant: long-press is the only gesture for opening the mark editor.
  * No contextual menu, no action sheet, no preview popover.
  *
  * Usage (on a container with [data-token-key] children):
@@ -63,7 +63,7 @@ export function longPress(node: HTMLElement, onPress: (verseKey: string) => void
   }
 
   // Desktop: right-click (contextmenu) opens editor directly.
-  // Per CLAUDE.md Rule 4: no contextual menu — preventDefault prevents the
+  // No contextual menu here: preventDefault prevents the browser menu from
   // browser menu from appearing; the editor opens instead.
   function onContextMenu(e: MouseEvent) {
     const verseKey = getVerseKey(e.target)

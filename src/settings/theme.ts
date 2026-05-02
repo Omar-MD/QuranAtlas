@@ -11,7 +11,7 @@ const DEFAULT_THEME = 'light'
 const THEME_OPTIONS = ['light', 'sepia', 'dark', 'auto']
 const APPLIED_VARIANTS = ['light', 'sepia', 'dark']
 
-// prefers-color-scheme listener — preserved verbatim (see migration Rule 8.1)
+// Keep the prefers-color-scheme listener wiring stable across theme changes.
 let mediaQuery: MediaQueryList | null = null
 let mediaListener: (() => void) | null = null
 

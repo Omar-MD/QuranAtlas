@@ -1,7 +1,7 @@
 /**
  * Component tests for offline-selector.svelte (N21).
  *
- * Covers the unit-level concerns from Rule 8:
+ * Covers the unit-level concerns for offline selection:
  *   - Renders one accordion row per category (text · audio · pages · search).
  *   - Gated rows render their version label and contain no checkbox.
  *   - Toggling the text checkbox changes the pending state and updates the
@@ -13,7 +13,7 @@
  *     download for every category with manifest entries.
  *
  * Real layout / paint / SW lifecycle live in journey-h-offline.spec.js
- * (Rule 8 criteria 1, 3 — only e2e can prove those).
+ * Layout and service-worker lifecycle still require e2e coverage.
  */
 
 import { render, fireEvent } from '@testing-library/svelte'

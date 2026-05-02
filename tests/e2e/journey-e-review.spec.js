@@ -20,7 +20,7 @@ import { waitForReader } from './fixtures/chrome.js'
 import { scanA11y } from './fixtures/a11y.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
-// CLAUDE.md Rule 6.5 — skips per-test cold-boot setup.
+// Reuse the onboarded snapshot to skip per-test cold-boot setup.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 // Force mobile viewport so the review hub's filter/group controls
