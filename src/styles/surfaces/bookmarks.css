@@ -10,15 +10,11 @@
     width: 1em;
     height: 1.1em;
     vertical-align: -0.18em;
-    background-color: currentColor;
+    background-color: currentcolor;
     mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 3h12c.55 0 1 .45 1 1v17l-7-4-7 4V4c0-.55.45-1 1-1z'/></svg>");
     mask-repeat: no-repeat;
     mask-size: contain;
     mask-position: center;
-    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 3h12c.55 0 1 .45 1 1v17l-7-4-7 4V4c0-.55.45-1 1-1z'/></svg>");
-    -webkit-mask-repeat: no-repeat;
-    -webkit-mask-size: contain;
-    -webkit-mask-position: center;
   }
 
   .qa-bookmarks-list {
@@ -71,6 +67,7 @@
     position: relative;
     overflow: hidden;
     border-bottom: 1px solid var(--qa-border-subtle);
+
     /* Delete button paints in the right edge; row btn slides over it.
        Theme-aware terracotta — picks the parchment-palette danger fill in
        light/sepia, deeper terracotta in dark; cleaner against cream than
@@ -83,6 +80,7 @@
     align-items: center;
     gap: 12px;
     width: 100%;
+
     /* Opaque background so the delete button behind us is occluded until
        the user actually swipes. Tracks the surrounding surface so light/
        sepia/dark themes keep the row appearance consistent. */
@@ -93,6 +91,7 @@
     color: var(--qa-text-primary);
     text-align: left;
     cursor: pointer;
+
     /* iOS-style spring snap on touchend (when no inline transition: none
        is set). The cubic-bezier mirrors UIKit's standard ease curve. */
     transition: transform 240ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -135,6 +134,7 @@
     inset-block: 0;
     inset-inline-end: 0;
     width: 76px;
+
     /* Theme-aware terracotta fill — matches `.qa-bookmarks-row` background
        so they read as a single recessed surface during the swipe. */
     background: var(--qa-surface-danger, var(--qa-text-error));
@@ -149,6 +149,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
     /* Always positioned at the right edge; the row button slides left to
        reveal it. Inline `style="opacity: …"` from the component fades the
        button progressively in lock-step with the swipe; the resting opacity
@@ -196,7 +197,7 @@
       background: transparent;
       color: var(--qa-text-muted);
       border: 0;
-      font-size: 14px;
+      font-size: 0;
       font-weight: 500;
       padding: 4px 10px;
       border-radius: var(--qa-radius-sm, 6px);
@@ -204,15 +205,13 @@
       transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
     }
 
-    /* Replace the "Delete" string on desktop with an ✕ glyph via ::before;
-       hide the label so it does not bleed past the icon-sized button. */
+    /* Replace the "Delete" string with an ✕ glyph via ::before; the parent
+       sets font-size: 0 to hide the label so the icon-sized button stays tight. */
     .qa-bookmarks-row-del::before {
       content: '\2715';
       font-size: 14px;
       line-height: 1;
     }
-    .qa-bookmarks-row-del { font-size: 0; }
-    .qa-bookmarks-row-del::before { font-size: 14px; }
 
     .qa-bookmarks-row:hover .qa-bookmarks-row-del,
     .qa-bookmarks-row-del:focus-visible {

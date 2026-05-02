@@ -94,12 +94,12 @@ function ayaSurah(rec: any): number {
 
 `page` + `line_start` / `line_end` are the official Madinah mushaf coordinates **for that riwaya's mushaf** — Warsh and Qaloon use different page layouts than Hafs. Do not cross-reference page numbers across riwayat.
 
-### Per-surah output schema (post-R-24, 2026-05-01)
+### Per-surah output schema
 
 The build script (`scripts/build-dataset.mjs::splitMonolithIntoSurahs`) drops fields with no runtime consumer to shrink shipped payload. Per-ayah output fields:
 
 - **All three riwayat:** `jozz`, `page`, `aya_no`, `aya_text` (trailing ayah-number sigil stripped).
-- **Hafs only (kept for v2.1 page-image renderer, future-work.md #14):** `id`, `line_start`, `line_end`.
+- **Hafs only (kept for the page-image renderer in `roadmap.md`):** `id`, `line_start`, `line_end`.
 - **Dropped from output:** `aya_text_emlaey` (Hafs source field — was ~30% of Hafs payload, zero `src/` readers); `id` / `line_start` / `line_end` for Warsh / Qaloon (~16% per file). Total saving across the three riwayat: ~35%.
 
 If a future feature needs `aya_text_emlaey` (search normalisation, etc.) or non-Hafs `line_*` (cross-riwayah page renderer), reinstate the field in the splitter and bump `manifest.packageVersion`. Don't read it from sources at runtime — only the per-surah split files ship.
@@ -108,7 +108,7 @@ If a future feature needs `aya_text_emlaey` (search normalisation, etc.) or non-
 
 ## Fonts
 
-Each riwayah is paired with its own KFGQPC Uthmanic mushaf cut — the official KSA Madinah Mushaf hand, authored against that riwayah's orthography. **Cross-riwayah font reuse mis-renders combining marks** (using the Hafs cut on Warsh text was the bug behind the 2026-04-27 → 2026-04-28 churn): each cut's GPOS mark anchors are tuned to its own marks set (Warsh `U+06EC` small high rounded zero; Qaloon imala dot, naql signs; etc.). Amiri Quran (Khaled Hosny, OFL) is kept as the cross-riwayah fallback for engines or moments when KFGQPC isn't loaded.
+Each riwayah is paired with its own KFGQPC Uthmanic mushaf cut — the official KSA Madinah Mushaf hand, authored against that riwayah's orthography. **Cross-riwayah font reuse mis-renders combining marks**: each cut's GPOS mark anchors are tuned to its own marks set (Warsh `U+06EC` small high rounded zero; Qaloon imala dot, naql signs; etc.). Amiri Quran (Khaled Hosny, OFL) is kept as the cross-riwayah fallback for engines or moments when KFGQPC isn't loaded.
 
 ```
 public/fonts/kfgqpc-uthmanic-hafs/uthmanic_hafs_v22.woff2     ~107 KB  (Hafs)
@@ -145,7 +145,7 @@ Wired through tokens — `--ff-kfgqpc-{hafs,warsh,qaloon}` (defined in `src/styl
 
 KFGQPC Uthmanic fonts render across Chromium (Skia), WebKit (CoreGraphics — macOS Safari, iOS Safari, iOS Chrome, headless WebKit), and Firefox (Gecko) when each riwayah is paired with its own cut. Cross-riwayah font reuse (e.g. the Hafs cut on Warsh text) was the source of an earlier hollow-mark bug investigation — fixed by binding `[data-riwayah='hafs']` → `--ff-kfgqpc-hafs`, `'warsh'` → `--ff-kfgqpc-warsh`, `'qaloon'` → `--ff-kfgqpc-qaloon`. Amiri Quran sits in each token's font-family chain as the cross-riwayah fallback for engines or moments when KFGQPC isn't loaded. **Regression guard:** `tests/unit/styles/font-tokens.test.js` rejects any cross-riwayah font misuse.
 
-### Lazy font delivery (post-2026-04-29)
+### Lazy font delivery
 
 The three KFGQPC woff2 cuts are **not** in the SW precache manifest. `vite.config.js::injectManifest.globPatterns` lists `**/*.{js,css,html}` only — woff2 are explicitly excluded. The active-riwayah cut is fetched at boot by `src/core/font-loader.ts::loadArabicQuranFontProgrammatically(activeRiwayah)`, called from `src/app-bootstrap.ts` immediately after `initRiwayah()` resolves the user's saved choice. The other two cuts arrive only when the user switches via Settings — `loadArabicQuranFontProgrammatically` subscribes to the `SETTINGS_RIWAYAH_CHANGED` event and is idempotent per-riwayah.
 
@@ -222,7 +222,7 @@ Hafs viewer is always `identity` (translations match keys directly).
 
 ### Coverage stats (current build)
 
-- **60 surahs** carry alias tables in `_verse-aliases.json`. Up from 51 (pre-2026-04-29) — see § Challenges → "Boundary drift at equal counts".
+- **60 surahs** carry alias tables in `_verse-aliases.json`. See § Challenges → "Boundary drift at equal counts".
 - **53 surahs** align via word-stream (high confidence). **7 surahs** fall back to ayah-DP (qira'at-level word-count drift): **7, 27, 36, 40, 41, 56, 57**. All structurally valid.
 - The remaining 54 surahs have pure-identity alignment and need no alias.
 
@@ -268,7 +268,7 @@ This section is the war-story counterpart to the algorithms above. Future reader
 
 ### 1. KFGQPC fonts are riwayah-bound; cross-use mangles marks
 
-**Symptom (2026-04-27).** Warsh ayat rendered with hollow / displaced combining marks across Chromium and WebKit. Qaloon worse.
+**Symptom.** Warsh ayat rendered with hollow / displaced combining marks across Chromium and WebKit. Qaloon worse.
 
 **Cause.** `--qa-font-arabic` was bound to `--ff-kfgqpc-hafs` for all riwayat. The KFGQPC Hafs cut's GPOS mark anchors are tuned to Hafs's mark inventory only. Warsh-specific marks (`U+06EC` small high rounded zero, etc.) and Qaloon imala/naql signs have no anchor in the Hafs cut → engine fallback or `.notdef`.
 
@@ -278,7 +278,7 @@ This section is the war-story counterpart to the algorithms above. Future reader
 
 ### 2. Boundary drift at equal counts (the Al-A`raf bug)
 
-**Symptom (reported 2026-04-29).** When viewing Warsh, the translation shown for surah 7 ayah 1 was "Alif, Lām, Meem, Ṣād" — but Warsh ayah 1 actually contains "الٓمٓصٓ كِتَٰبٌ أُنزِلَ إِلَيۡكَ..." (the muqatta'at AND the start of the next clause merged). The correct full translation (Hafs ayah 1 + 2 concatenated) was missing.
+**Symptom.** When viewing Warsh, the translation shown for surah 7 ayah 1 was "Alif, Lām, Meem, Ṣād" — but Warsh ayah 1 actually contains "الٓمٓصٓ كِتَٰبٌ أُنزِلَ إِلَيۡكَ..." (the muqatta'at AND the start of the next clause merged). The correct full translation (Hafs ayah 1 + 2 concatenated) was missing.
 
 **Cause.** `derive-verse-aliases.mjs` skipped any surah where Hafs / Warsh / Qaloon counts were equal:
 
@@ -374,7 +374,7 @@ Update `docs/product-info.md` and the About page when wiring this dataset into a
 
 - `docs/context/data-model.md` — IDB stores. This dataset is read-only at build time; nothing about it is written to IDB unless a future surface caches it. Translation ↔ riwayah alignment schema lives there too.
 - `docs/context/architecture.md` — boot flow + asset pipeline.
-- `docs/context/future-work.md` — additional translation packs (Pickthall, Yusuf Ali, transliteration) deferred. Once added, each will need its own check-B network audit and per-pack `provenance.json::translations[]` entry.
+- `docs/context/roadmap.md` — additional translation packs (Pickthall, Yusuf Ali, transliteration) deferred. Once added, each will need its own check-B network audit and per-pack `provenance.json::translations[]` entry.
 - `scripts/derive-verse-aliases.mjs` — alias derivation source-of-truth.
 - `scripts/validate-translation-mapping.mjs` — three-mode validator. Run before any riwayah / translation dataset change.
 - `tests/unit/data/translation-riwayah-alignment.test.js` — count-divergence + boundary-drift regression guards.

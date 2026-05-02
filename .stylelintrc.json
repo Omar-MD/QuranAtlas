@@ -91,6 +91,12 @@
       "rules": {
         "selector-max-type": 1
       }
+    },
+    {
+      "files": ["src/styles/surfaces/reader.css", "src/styles/surfaces/settings.css"],
+      "rules": {
+        "property-no-vendor-prefix": null
+      }
     }
   ]
 }

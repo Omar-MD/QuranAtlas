@@ -71,7 +71,7 @@ test_paths:
 - Tablet+ (≥768 px): keyboard-shortcut footer hint (`⌘K`, `esc`) shown.
 - Desktop (≥1180 px): caps at 640 px wide.
 
-### Nav drawer (mobile, full-screen, restructured 2026-04-28)
+### Nav drawer (mobile, full-screen)
 
 Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs:
 
@@ -93,7 +93,7 @@ Desktop kebab path keeps narrow side-panel size but uses same tabbed component.
 - Tap row → `#/s/{n}`.
 - **Continue-reading card** at top: with search cleared and All filter active, shows last-read position. Tap → navigates to surah + verse. Reads from `settings.currentPosition` via `loadGlobalPosition`.
 
-### Bookmarks (riwayah-scoped, shipped 2026-04-28)
+### Bookmarks (riwayah-scoped)
 
 Verse-level. Single-tap toggle: tap verse number in reader → `bookmarks/store.ts::toggle(verseKey, riwayah)` writes / removes; emits `BOOKMARKS_SAVED` / `BOOKMARKS_DELETED`. Reader indicator (`bookmarks/indicator.ts`) updates gold left-edge.
 
@@ -225,7 +225,3 @@ _(no cross-surface reads detected)_
 - `tests/e2e/journey-f-navigation.spec.js`
 <!-- AUTO-GENERATED:tests END -->
 
-## Deprecated
-
-- **2026-04-28 restructure:** drawer was two-row Review + About list (left-slide narrow side panel). Replaced by full-screen tabbed surface on mobile.
-- **Pre-2026-04-25 (`cb4e3a2`):** `#/t/:tag` FVR route removed. Old route dispatched `Hub.svelte` with a `tag` prop and filtered the threads layer only. Replaced by `#/<layer>/:value` scheme. Pre-release — no users when removed. New canonical route for same content: `#/threads/mercy`.

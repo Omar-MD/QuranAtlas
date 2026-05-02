@@ -82,4 +82,34 @@
     cursor: pointer;
     font-weight: 500;
   }
+
+  /* ================================================================ save-failure toast */
+
+  .qa-save-failure-toast {
+    position: fixed;
+    bottom: max(env(safe-area-inset-bottom), 16px);
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(560px, calc(100vw - 32px));
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--qa-surface-raised);
+    color: var(--qa-text-primary);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+    z-index: 90;
+    font-size: 0.875rem;
+  }
+
+  .qa-save-failure-toast-dismiss {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 0 4px;
+  }
 }

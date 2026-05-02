@@ -87,9 +87,9 @@ Designed for keyboard-first readers. Full reference via `?` from any non-input c
 
 ## Roadmap
 
-QuranAtlas ships incrementally. Nothing is permanently "out of scope" — features the team has agreed on but hasn't built yet live in [`docs/context/future-work.md`](context/future-work.md) with horizon (v1.1 / v1.2 / v2+ / dataset), blockers, and dependency notes per item.
+QuranAtlas ships incrementally. Nothing is permanently "out of scope" — features the team has agreed on but hasn't built yet live in [`docs/context/roadmap.md`](context/roadmap.md), surface-grouped.
 
-Pipeline today (non-exhaustive — see `future-work.md` for the full list and ordering):
+Pipeline today (non-exhaustive — see `roadmap.md` for the full list):
 
 - **Reading core** — juz / hizb / rubʿ / ruku navigation; full-text Arabic + translation search; reading plan / khatm tracker / streak; page-break indicators.
 - **Memorization (hifz)** — per-verse memorization status flag, hide-drill / cover-text mode, spaced-repetition review queue.

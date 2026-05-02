@@ -43,7 +43,7 @@ Launch with clean IDB (or cleared data). 6 screens: 1) Welcome, 2) Theme, 3) Riw
 2. Screen 1 (Welcome): wordmark, blessing, **Begin** CTA, progress dot 1 lit. No dock, no pill.
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears.
 4. Pick theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Choose Riwayah): three radio cards — Ḥafṣ ʿan ʿĀṣim · Warsh ʿan Nāfiʿ · Qālūn ʿan Nāfiʿ. Default-selected: **Qālūn**. Tap **Continue** to persist + advance; tap **Skip** to leave default unchanged + advance. Persists `settings['riwayah']` (sole writer `settings/riwayah.ts`).
-5. Tap **Continue** → Screen 4 (Translation): options derived from dataset's `provenance.json` at render time — picker never surfaces options not present in corpus. Saheeh International ships as default English pack since 2026-04-27; when single shipped pack, screen shows it as non-interactive row + Continue advances immediately. Picker becomes interactive once second translation lands.
+5. Tap **Continue** → Screen 4 (Translation): options derived from dataset's `provenance.json` at render time — picker never surfaces options not present in corpus. With a single shipped pack (Saheeh International), screen shows it as non-interactive row + Continue advances immediately. Picker becomes interactive once second translation lands.
 6. Tap **Continue** → Screen 5 (Shortcuts): teaches core shortcuts in 9 curated rows: `/` search, `?` cheatsheet, `j`/`k`/`]`/`[` verse/surah nav, `m` mark, `t` translation toggle, `+`/`-`/`0` font, `g h` continue reading, double-tap gesture. Lede reminds users they can press `?` anywhere for full list. Desktop (≥1180 px): 2-col grid; mobile: stacks single-col. Tap **Continue** → Screen 6.
 7. Screen 6 (Tags intro): 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, route `#/s/1`, ambient chrome returns.
 
@@ -111,7 +111,3 @@ _(none)_
 - `tests/e2e/journey-a-onboarding.spec.js`
 <!-- AUTO-GENERATED:tests END -->
 
-## Deprecated
-
-- **2026-04-25:** Screen 4 used to be a multi-row interactive picker (Saheeh / Mustafa Khattab / etc.); shrunk to single non-interactive row when only one pack ships. Will become picker again when second pack lands.
-- **`417ded2` refactor (R-31):** `isComplete` extracted from `Onboarding.svelte` into standalone module (`onboarding/state.ts`). No behavior change — pure split for one-store-one-writer compliance.

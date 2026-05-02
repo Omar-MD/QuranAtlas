@@ -60,6 +60,7 @@
     color: var(--qa-text-muted);
     font-size: 0.85em;
   }
+
   .qa-surah-name::after {
     content: '\FD3E';   /* ornate left parenthesis ﴾ — wraps before name (RTL) */
     margin-inline-end: 0.35em;
@@ -173,6 +174,7 @@
   .qa-verse + .qa-verse {
     border-top: 0;
   }
+
   .qa-verse + .qa-verse::before {
     content: '';
     position: absolute;
@@ -234,6 +236,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
     /* Tap target: WCAG 2.5.8 (24px min) + Apple HIG (44px). Padding +
        negative margin keeps the hit zone generous (≥ 32px square) while
        the visual glyph stays where it was — surrounding layout is
@@ -282,7 +285,7 @@
     height: 0.95em;
     margin-inline-end: 4px;
     vertical-align: -0.12em;
-    background-color: currentColor;
+    background-color: currentcolor;
     mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 3h12c.55 0 1 .45 1 1v17l-7-4-7 4V4c0-.55.45-1 1-1z'/></svg>");
     mask-repeat: no-repeat;
     mask-size: contain;

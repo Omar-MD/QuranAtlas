@@ -178,10 +178,3 @@ _(no cross-surface reads detected)_
 - `tests/e2e/journey-c-marking.spec.js`
 <!-- AUTO-GENERATED:tests END -->
 
-## Deprecated
-
-- **2026-04-25:** retired `MarginHeader` fast-tag dot and desktop `TagModePill`. All four entry points (double-tap, right-click, `m`, F2) now route through `beginFast(verseKey)`.
-- **2026-04-25:** retired the "press same verse twice → exit" rule. Double-tap fires `onShort` on its first tap (which switches active verse), so a same-verse → exit rule fired spuriously. Exit now requires explicit `✕` (mobile) or Escape (desktop).
-- **2026-04-25 (mobile-nav-redesign):** double-tap previously opened the deep TagSheet directly; now opens fast-tag inline panel. Deep sheet only via `⛶` escalation or `⌘/Ctrl+Enter`.
-- **2026-04-20 → polish pass:** mark-level flags `hasQuestion` / `hasApplication` were briefly in the data-model spec but removed from UI + schema. Deferred to `future-work.md` §Tag/verse multi-layer §v2+ if usage data later shows demand.
-- **Pre-2026-04-25:** retired the legacy fast-tag bottom sheet; replaced by inline `VerseTagPanel.svelte`.

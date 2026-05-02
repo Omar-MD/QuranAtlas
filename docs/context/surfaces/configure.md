@@ -16,7 +16,7 @@ test_paths:
 
 # Surface: configure
 
-> Settings sheet (full-screen mobile + tablet, modal desktop) + About page. Reading section (font size, reading flow), Sources section (recitation = riwayah, translation), **Storage section (per-feature offline opt-in selector — N21)**, Theme footer, night-mode toggle, clear-all-data on About footer. Future absorption: tafsir picker, export/import, clear-cache, audio settings surfaces.
+> Settings sheet (full-screen mobile + tablet, modal desktop) + About page. Reading section (font size, reading flow), Sources section (recitation = riwayah, translation), Storage section (per-feature offline opt-in selector), Theme footer, night-mode toggle, clear-all-data on About footer.
 
 ## Reach
 
@@ -63,7 +63,7 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 
 ## Behavior
 
-### Settings sheet — v7 polish redesign 2026-04-29
+### Settings sheet
 
 **Mobile + tablet (<1180 px):** single-tap gear → Settings sheet takes over full viewport (`inset: 0`, safe-area insets all four edges, no border). Portrait: preview → body → footer. Landscape (`max-height ≤540 px and orientation: landscape`): side-by-side grid — preview = left rail (full height with theme-true bg), body + footer stack on right column with own scroll.
 
@@ -72,7 +72,7 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 Three zones:
 
 1. **Live preview band** at top — theme-true colors. Sūrat ar-Raḥmān 1–4 in active riwayah's glyphs. Arabic uses `.qa-verse-arabic`, translation uses `.qa-verse-translation` — same cascade as reader (font-size, line-height, word-spacing all match exactly). Translation row always rendered; visibility gated on `settings.translationVisible` — row keeps layout space when toggled off, preview height does not shift on toggle. ✕ close button floats top-right inside band.
-2. **Body** — three sections (Reading + Sources + Storage), content-sized (`flex: 0 0 auto`) with soft hairline gold-fade separator between adjacent sections. Body scrolls vertically when content overflows the available space (no per-section stretch — N21 added Storage so equal-flex balance no longer fits the modal/portrait viewport).
+2. **Body** — three sections (Reading + Sources + Storage), content-sized (`flex: 0 0 auto`) with soft hairline gold-fade separator between adjacent sections. Body scrolls vertically when content overflows the available space (no per-section stretch).
    - **Reading** — Font size slider (5-step) + Reading flow slider (5-step coordinated knob). Reset-to-default pill in section header right edge, **always rendered** (disabled = idle when both knobs at `md`); flipping in/out of default never reflows slider rows. Preview band hard-locked at 32dvh portrait / 180 px desktop modal (landscape uses the side-by-side override) — inner stage scrolls when verse content overflows.
    - **Sources** — Recitation source row (`[data-testid="src-row-recitation"]`) showing `RECITATION · Qālūn ʿan Nāfiʿ ›`; Translation dual-action row showing `TRANSLATION · Saheeh International › [toggle]`. Tapping source row opens centered picker popover. Toggle on Translation row controls `settings.translationVisible` independently.
 3. **Theme footer** — pill cluster of 4 theme swatches with mini Mushaf glyphs in each theme's palette + 38 px **night-mode moon ☾** pill. Italic serif "Theme" label anchors cluster left.
@@ -81,9 +81,9 @@ Every change updates live preview (font size, reading flow, theme palette, riway
 
 Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, re-renders reader with new Riwayah's text + font + line-height floor.
 
-### Storage section — offline-selector (N21, 2026-05-01)
+### Storage section — offline-selector
 
-Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated v2.0), Pages (gated v2.1), Search (gated v1.1) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
+Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages (gated), Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
 
 Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
 
@@ -92,7 +92,7 @@ Apply gating:
 - Disabled with a red "Need X MB more free space" message when sum-of-newly-checked exceeds available quota (audit Q4 — pre-flight refuse).
 - On click: writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer), then per-category `src/data/offline.ts::startCategoryDownload(cat)` for each available category. Button flips to a solid gold `Saved ✓` for ~1.5 s after a successful write so the user has visible confirmation.
 
-Selector v1 commits additions only — uncheck + Apply records the new state but does not evict cache contents (eviction UX is a follow-up). Cache wins from prior precache passes are honored: SHA-256 verify on cached entries skips re-download for unchanged files. Closes audit P2.14 / R-11 / C-4 / CC-7.
+Selector commits additions only — uncheck + Apply records the new state but does not evict cache contents. Cache wins from prior precache passes are honored: SHA-256 verify on cached entries skips re-download for unchanged files.
 
 **Picker popover** (`[data-testid="settings-pop"]`): blurred + tinted scrim, parchment-gradient surface on light themes / deep-ink gradient on dark, gold hairline corner ornaments, italic serif "Choose a {Riwāyah / translation}" title + uppercase eyebrow key. Each row: name + italic sub-meta + opacity-0 gold check badge that lights when active. Hover/focus tints background. Backdrop tap, Esc, or row-tap dismisses. With popover open, Esc closes popover first; second Esc closes sheet.
 
@@ -100,7 +100,7 @@ Dismissal: ✕ close button (inside preview), backdrop tap, Esc.
 
 ### Pick a translation
 
-Single shipped pack today (Saheeh International, default since 2026-04-27). Picker hidden — row shows toggle + subtitle only. When second pack lands, picker UI returns (deferred per `future-work.md` §Translation packs §Translation picker UI · M5).
+Single shipped pack today (Saheeh International). Picker hidden — row shows toggle + subtitle only. When second pack lands, picker UI returns.
 
 Toggle translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on rune re-renders with translation hidden/shown. Footnote markers (`[N]`) and any open inline footnote panels disappear with translation. Sticky preview at top of Settings sheet drops translation line in lockstep.
 
@@ -126,7 +126,7 @@ Renders: wordmark, mission, 54:17 Arabic blessing + translation, 2×2 stat grid 
 
 About with captured install prompt → tap **Install App** → `promptInstall()` runs browser install flow. On accept → button text becomes "Installed!" and disables; `OFFLINE_INSTALL_COMPLETE` fires (no UI listener today).
 
-### Clear all data (D4 — moved to About footer 2026-04-25)
+### Clear all data
 
 `#/about` → scroll to footer → tap **Clear all data** link → confirmation dialog appears.
 
@@ -165,7 +165,7 @@ Keys + sole writers:
 | `surahHeaderHidden` | `src/settings/surah-header-visibility.ts` | `boolean` |
 | `currentPosition` | `src/reader/state.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
 | `lastSurface` | `src/settings/state-last-surface.svelte.ts` | `string` (hash) |
-| `recentSurahs` | `src/settings/state-recent-surahs.svelte.ts` | `number[]` (serialised, see `b997c76`) |
+| `recentSurahs` | `src/settings/state-recent-surahs.svelte.ts` | `number[]` |
 | `onboardingComplete` | `src/onboarding/state.ts` | `boolean` |
 | `offlineCategories` | `src/settings/offline-categories.ts` | `OfflineCategoriesState` (per-category opt-in map; see `state/settings.svelte.ts`) |
 
@@ -189,10 +189,10 @@ Keys + sole writers:
 
 ## Invariants
 
-- **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity. Multi-writer leaks were closed in `b997c76` (`R-08, R-25, R-27, C-9`).
+- **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity.
 - **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
 - **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/settings/panel.test.ts`).
-- **Settings sheet body is now three sections: Reading + Sources + Storage (N21).** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/settings/panel.test.ts`.
+- **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/settings/panel.test.ts`.
 - **Sole writer of `settings.offlineCategories`: `src/settings/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
 
 ## Regression guards
@@ -219,11 +219,3 @@ Keys + sole writers:
 - `tests/e2e/journey-g-about.spec.js`
 <!-- AUTO-GENERATED:tests END -->
 
-## Deprecated
-
-- **2026-04-29 (`0622496`):** Settings sheet pre-v7 layout retired (Reading / Appearance / Recitation three-section). Replaced by balanced two-section body + footer rail + tap-to-popover source pickers.
-- **2026-04-25 (`0890a53`):** Clear-data row moved off Settings sheet bottom row, onto About footer.
-- **2026-04-25:** Typography subview retired — sliders inlined into Settings Reading section (D5).
-- **2026-04-27 (`248b927`):** font picker dropped — KFGQPC default per Riwayah is now hardwired (no user-facing font picker).
-- **2026-05-01 (N21):** single full-corpus "Cache for offline" UX retired. Replaced by per-feature offline-selector mounted in the new Storage section. Pre-N21 `src/data/offline.ts::startDownload` retained as a backward-compatible alias for `startCategoryDownload('text')`.
-- **2026-05-01:** Storage section's per-row `<details>` accordions retired in favor of one collapsible covering the whole section. Removed nested expand/collapse + bulky padding; rows are now inline (name + size + checkbox on a single line), Apply now gives `Saved ✓` feedback. Preview band tightened (42dvh → 32dvh portrait, 240 px → 180 px desktop) to free panel height.

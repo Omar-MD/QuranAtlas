@@ -1,6 +1,6 @@
 <script lang="ts">
   /**
-   * Mobile / tablet (<1180px) top navigation — single-row layout (2026-04-25):
+   * Mobile / tablet (<1180px) top navigation — single-row layout:
    *   [ ≡ ]            <Arabic surah name>                         [ ⚙ ]
    *                       AL-FATIHAH ▾
    *

@@ -16,10 +16,6 @@
     align-items: center;
     gap: 0.75rem;
     padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
-    /* Fully opaque accent fill — was --qa-accent-soft (~22% alpha) which
-       let scrolling page content bleed through. Updated 2026-04-28 to
-       guarantee the banner remains legible regardless of the surface
-       behind it, and to make the "Reload" call-to-action unmistakable. */
     background: var(--qa-accent);
     border-bottom: 2px solid var(--qa-accent-hover, var(--qa-accent));
     color: var(--qa-text-on-accent);
@@ -31,6 +27,7 @@
   .qa-update-banner-text {
     flex: 1;
     font-weight: 500;
+    color: var(--qa-text-on-accent);
   }
 
   .qa-update-banner-action {
@@ -77,7 +74,4 @@
     background: color-mix(in srgb, var(--qa-text-on-accent) 18%, transparent);
   }
 
-  .qa-update-banner-text {
-    color: var(--qa-text-on-accent);
-  }
 }

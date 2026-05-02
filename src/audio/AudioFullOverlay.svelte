@@ -65,66 +65,13 @@
         <span>{fmtMs(audioState.durationMs)}</span>
       </div>
       <div class="qa-audio-overlay-transport">
-        <button type="button" onclick={() => prev()} aria-label="Previous surah">⏮</button>
-        <button type="button" onclick={() => toggle()} aria-label={audioState.status === 'playing' ? 'Pause' : 'Play'}>
+        <button type="button" class="qa-audio-overlay-transport-btn" onclick={() => prev()} aria-label="Previous surah">⏮</button>
+        <button type="button" class="qa-audio-overlay-transport-btn" onclick={() => toggle()} aria-label={audioState.status === 'playing' ? 'Pause' : 'Play'}>
           {audioState.status === 'playing' ? '❙❙' : '▶'}
         </button>
-        <button type="button" onclick={() => next()} aria-label="Next surah">⏭</button>
-        <button type="button" onclick={() => stop()} aria-label="Stop">⏹</button>
+        <button type="button" class="qa-audio-overlay-transport-btn" onclick={() => next()} aria-label="Next surah">⏭</button>
+        <button type="button" class="qa-audio-overlay-transport-btn" onclick={() => stop()} aria-label="Stop">⏹</button>
       </div>
     </div>
   </div>
 {/if}
-
-<style>
-  .qa-audio-overlay {
-    position: fixed;
-    inset: 0;
-    background: var(--qa-surface, #0a0a0a);
-    color: var(--qa-text, #fff);
-    z-index: 60;
-    display: flex;
-    flex-direction: column;
-  }
-  .qa-audio-overlay-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--qa-border, rgba(255,255,255,0.1));
-  }
-  .qa-audio-overlay-title { margin: 0; font-size: 18px; }
-  .qa-audio-overlay-close {
-    background: transparent;
-    border: none;
-    color: inherit;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 8px;
-  }
-  .qa-audio-overlay-body { flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
-  .qa-audio-overlay-meta { text-align: center; }
-  .qa-audio-overlay-surah { font-size: 20px; font-weight: 600; }
-  .qa-audio-overlay-reciter { opacity: 0.7; margin-top: 4px; }
-  .qa-audio-overlay-verse { opacity: 0.5; margin-top: 4px; font-size: 14px; }
-  .qa-audio-overlay-scrub { width: 100%; }
-  .qa-audio-overlay-times { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.6; }
-  .qa-audio-overlay-transport {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-  }
-  .qa-audio-overlay-transport button {
-    background: var(--qa-surface-elev, #1a1a1a);
-    color: inherit;
-    border: 1px solid var(--qa-border, rgba(255,255,255,0.12));
-    border-radius: 12px;
-    width: 56px;
-    height: 56px;
-    font-size: 18px;
-    cursor: pointer;
-  }
-  .qa-audio-overlay-transport button:hover {
-    background: var(--qa-surface-hover, rgba(255,255,255,0.06));
-  }
-</style>

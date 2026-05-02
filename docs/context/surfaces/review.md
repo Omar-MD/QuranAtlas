@@ -13,7 +13,7 @@ test_paths:
 
 # Surface: review
 
-> Aggregations + filters over marks. Review hub (12-layer selector + group-by + value chips + flat card list), FVR (Filtered-Verse Review) deep-link layer-value pages. Future absorption: typo-merge review, orphan-edges filter, SRS queue, hifz dashboard, edge-clusters, atlas routes, semantic-graph view, compare mode, community/shared collections.
+> Aggregations + filters over marks. Review hub (12-layer selector + group-by + value chips + flat card list), FVR (Filtered-Verse Review) deep-link layer-value pages.
 
 ## Reach
 
@@ -128,7 +128,7 @@ The review surface heavily reads `marks` (owned by `mark` dossier) via `getByLay
 ## Invariants
 
 - **Cards are flat, unique, single-column.** Group-by changes the rail, never duplicates a card across buckets.
-- **`#/<layer>/:value` is the canonical FVR route.** Old `#/t/:tag` removed pre-release in commit `cb4e3a2`. Don't reintroduce a tag-only route.
+- **`#/<layer>/:value` is the canonical FVR route.** Don't reintroduce a tag-only route (legacy `#/t/:tag` was removed pre-release).
 - **Sole writer of `activationState['review']`: `review/Hub.svelte`** (or hub state module).
 
 ## Regression guards
@@ -148,6 +148,3 @@ The review surface heavily reads `marks` (owned by `mark` dossier) via `getByLay
 - `tests/e2e/journey-e-review.spec.js`
 <!-- AUTO-GENERATED:tests END -->
 
-## Deprecated
-
-- **Pre-release (`cb4e3a2`, `3fec509`):** `#/t/:tag` FVR route removed. Old route dispatched `Hub.svelte` with a `tag` prop and filtered the threads layer only. Replaced by `#/<layer>/:value` scheme. Canonical route for same content: `#/threads/mercy`.

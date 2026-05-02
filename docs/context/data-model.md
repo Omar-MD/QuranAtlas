@@ -38,7 +38,7 @@ If you change a store's shape, indexes, key, or sole writer — update the **dos
 
 ## Static datasets (read-only, not in IDB)
 
-- `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-dataset.mjs` (renamed from `build-riwayat.mjs` 2026-04-27) from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+- `public/dataset/riwayat/{hafs,warsh,qaloon}/{NNN}.json` (114 files per riwayah) — **active reader corpus**, KFGQPC Uthmanic text (Hafs v18, Warsh v10, Qaloon v10). `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` live alongside. Built by `scripts/build-dataset.mjs` from three monolithic source files; run via `pnpm build:dataset` (chained by `pnpm build`). Schema, font pairing, line-height floors, license caveats: see `docs/context/riwayat-dataset.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
 
 ### Translation packs
 

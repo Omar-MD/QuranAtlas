@@ -43,6 +43,7 @@ tests/e2e/.auth/
 # AI agent workflow output (plans, specs, verification artifacts)
 .superpowers/
 docs/superpowers/
+.scratch/
 
 # Git worktrees
 .worktrees/

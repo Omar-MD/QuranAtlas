@@ -14,7 +14,7 @@ test_paths:
 
 # Surface: listen
 
-> Audio recitation. Single global `<audio>` element + IDB position store + cross-tab gating + media-session + mini-bar + full-overlay + reader verse-tick highlight + smart-defer autoscroll. Architecture landed 2026-04-30. Future ship-blocking work (reciter dataset, settings UI surfaces, A-B loop, "Play from here" entry, e2e specs) tracked in `future-work.md` §Audio recitation §v2.
+> Audio recitation. Single global `<audio>` element + IDB position store + cross-tab gating + media-session + mini-bar + full-overlay + reader verse-tick highlight + smart-defer autoscroll. Future ship-blocking work (reciter dataset, settings UI surfaces, A-B loop, "Play from here" entry, e2e specs) tracked in `roadmap.md` §Listen.
 
 ## Reach
 
@@ -144,6 +144,3 @@ Sole writer: `src/audio/player-runtime.ts` (and `state/audio.svelte.ts` for cros
 _(none)_
 <!-- AUTO-GENERATED:tests END -->
 
-## Deprecated
-
-(none — surface landed 2026-04-30.)

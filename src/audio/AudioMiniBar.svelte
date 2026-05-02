@@ -65,38 +65,3 @@
     >×</button>
   </div>
 {/if}
-
-<style>
-  .qa-audio-minibar {
-    position: fixed;
-    inset: auto 0 var(--qa-bottom-nav-h, 56px) 0;
-    height: 56px;
-    background: var(--qa-surface-elev, #1a1a1a);
-    color: var(--qa-text, #fff);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    border-top: 1px solid var(--qa-border, rgba(255,255,255,0.1));
-    z-index: 40;
-    cursor: pointer;
-  }
-  .qa-audio-minibar:focus-visible { outline: 2px solid var(--qa-accent, #4af); outline-offset: -2px; }
-  .qa-audio-minibar-meta { flex: 1; min-width: 0; }
-  .qa-audio-minibar-surah { font-weight: 600; font-size: 14px; line-height: 1.2; }
-  .qa-audio-minibar-detail { font-size: 12px; opacity: 0.7; line-height: 1.2; }
-  .qa-audio-minibar-toggle,
-  .qa-audio-minibar-stop {
-    flex: 0 0 auto;
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: transparent;
-    color: inherit;
-    font-size: 18px;
-    cursor: pointer;
-    border-radius: 8px;
-  }
-  .qa-audio-minibar-toggle:hover,
-  .qa-audio-minibar-stop:hover { background: var(--qa-surface-hover, rgba(255,255,255,0.06)); }
-</style>

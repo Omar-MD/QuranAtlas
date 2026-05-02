@@ -43,7 +43,7 @@ test_paths:
 | `src/reader/AmbientDock.svelte` | Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav` |
 | `src/reader/AmbientPill.svelte` | On reader route: stays hidden until AMBIENT_SURFACE fires |
 | `src/reader/EdgeIndicator.svelte` | EdgeIndicator — the pair of left/right fixed indicators that briefly flash |
-| `src/reader/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout (2026-04-25): |
+| `src/reader/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout: |
 | `src/reader/PullToSwapIndicator.svelte` | PullToSwapIndicator — minimal Chrome-mobile-PTR-style circular progress |
 | `src/reader/Reader.svelte` | _(no leading comment)_ |
 | `src/reader/SurahHeader.svelte` | _(no leading comment)_ |
@@ -68,7 +68,7 @@ test_paths:
 
 ## Behavior
 
-### Surah header (post 2026-04-26)
+### Surah header
 
 Flat 2-column grid header, no card background, no ornament chrome:
 
@@ -110,7 +110,7 @@ Reader is single-surah; only one surah mounted at a time. Pull past edge swaps t
 3. Wrap: 114→1 forward, 1→114 backward.
 4. Native browser pull-to-refresh suppressed via `overscroll-behavior-y: contain` on `#main-content`. Wheel input on desktop accumulates the same way.
 5. Position persistence is single-global: each surah load overwrites `settings.currentPosition` to `(newN, 1)` or `(newN, lastVerse)` on backward; in-surah scroll center-band crossings also overwrite.
-6. **Within-surah scroll is virtualised** (N20, 2026-05-01) — only ±1 chunk (~60 verses) live in the DOM; chunks outside the window are inert height-preserving spacers (`data-chunk-state="spacer"`). Center-band IO drives the active chunk; eviction transitions are invisible to the user. Scroll-driven materialise transit through a brief skeleton state (one rAF); deep-link / warm-resume materialise synchronously so `scrollToVerse` finds the target.
+6. **Within-surah scroll is virtualised** — only ±1 chunk (~60 verses) live in the DOM; chunks outside the window are inert height-preserving spacers (`data-chunk-state="spacer"`). Center-band IO drives the active chunk; eviction transitions are invisible to the user. Scroll-driven materialise transit through a brief skeleton state (one rAF); deep-link / warm-resume materialise synchronously so `scrollToVerse` finds the target.
 
 ### Scroll position survives warm-resume (iOS lock / tab-hide)
 
@@ -178,9 +178,9 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 
 - **Reader text source = active Riwayah.** From `settings['riwayah']` (default Qālūn). Sole writer of `settings['riwayah']` is `settings/riwayah.ts`. Font follows via `--qa-font-arabic` cascade (set by `:root[data-riwayah=...]` overrides). Reader's reading-typography slider drives line-height; floor at `xs` step clears stacked harakat across all riwayat. Each `.qa-verse-arabic` carries `data-riwayah` mirroring active Riwayah.
 - **Each Riwayah pairs with its own KFGQPC Uthmanic mushaf cut.** Cross-Riwayah reuse mis-renders combining marks. Mapping: `hafs → KFGQPC Uthmanic Hafs v22`, `warsh → KFGQPC Uthmanic Warsh V21`, `qaloon → KFGQPC Uthmanic Qaloon V21`. Each token's font-family chain falls back to **Amiri Quran** (Khaled Hosny, OFL) when KFGQPC isn't loaded, then bare `serif`. No user-facing font picker. Wired through `--ff-kfgqpc-{riwayah}` (`src/styles/tokens/primitives.css`) → `--qa-font-arabic` (`src/styles/tokens/semantic.css`). Regression guard: `tests/unit/styles/font-tokens.test.js`.
-- **Hamburger drawer is the sole in-app entry to the full surah list (mobile, post 2026-04-25).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
+- **Hamburger drawer is the sole in-app entry to the full surah list (mobile).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
-- **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. `data-verse-key` was dropped in N20 (2026-05-01). New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
+- **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
 - **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/journey-b-reader.spec.js` B-Virt1/2/3 + `tests/unit/reader/chunked-virtualiser.test.ts`.
 - **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/journey-d-settings.spec.js` D3-bg.
 
@@ -208,13 +208,3 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - `tests/e2e/journey-b-reader.spec.js`
 <!-- AUTO-GENERATED:tests END -->
 
-## Deprecated
-
-- **2026-04-25 (`c297e61`):** MoreSheet retired. First-level dock-⋯ sheet held Settings · Review · Surah list · About · Clear data — replaced by NavDrawer (left-slide, two items: Review · About) + per-surface entry points.
-- **2026-04-25 (`daaff6b`):** MarginHeader two-row layout + fast-tag dot retired. Mobile/tablet header was ~108 px tall with row-1 surah-crumb pill + circular fast-tag dot + ⋮ kebab and row-2 Read · Review N · Marks · Threads tabs. Replaced by single-row layout (~52 px).
-- **2026-04-25 (`ba94d8d`):** TagModePill retired. Desktop-only top-right "Tag mode" toggle pill replaced by unified gesture model (right-click any verse).
-- **2026-04-25 `<commit-pending>`:** MarginHeader center-label tap → surah list and full-width Continue-to buttons retired. Center label was a button routing to `#/surahs`; replaced by non-interactive div (no chevron). Surah list reachable only via hamburger drawer or header swipe-down. Continue-to-prev/next buttons were full-width uppercase tracked-text rows (~46 px); replaced by single-line italic arrow + surah title (~22 px).
-- **2026-04-25 `<commit-pending>`:** NavDrawer two-row Review/About list retired. Replaced by full-screen tabbed surface (Surahs + Review tabs).
-- **Continue-arrow opacity reverted (2026-04-26):** tried `opacity: 0.4` for stronger recede but pushed contrast below WCAG 1.4.3 — reverted; recede now from small font + flush margin only.
-- **2026-05-01 `<commit-pending>` (N20):** `data-verse-key` DOM attribute on `.qa-verse` removed — verse identity DOM contract is now `data-token-key` (handles verse-grain + future word-grain uniformly). Migration landed across long-press, bookmark click-handler, marks indicator, bookmarks indicator, pulse, VerseSpotlight (PR N19); attribute dropped (PR N20).
-- **2026-05-01 `<commit-pending>` (N20):** `chunked-append.ts` retired. Monotonic chunk-append (CHUNK_SIZE=50, never recycled) replaced by `chunked-virtualiser.ts` recycler (20-ayat chunks, ±1 window, max 60 verses live).

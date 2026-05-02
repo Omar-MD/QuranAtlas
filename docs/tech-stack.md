@@ -48,8 +48,8 @@ Bun is faster for pure-JS paths but lacks jsdom (uses happy-dom), has native-add
 - **Single bundler for dev and prod** — no "works in dev, breaks in prod" drift.
 - **Largest plugin ecosystem** — 25M+ weekly downloads.
 
-### Svelte 5 + TypeScript (migrated from vanilla JS on `ff574be`, 2026-04-20)
-- **Runes** (`$state`, `$derived`, `$effect`) replace the prior hand-rolled reactivity without the virtual-DOM cost of React/Vue.
+### Svelte 5 + TypeScript
+- **Runes** (`$state`, `$derived`, `$effect`) replace hand-rolled reactivity without the virtual-DOM cost of React/Vue.
 - **Compile-time reactivity** — the compiler emits direct DOM updates; runtime is tiny.
 - **TypeScript across `.ts` + `.svelte`** — uniform type gate via `svelte-check`; catches drift between modules and Svelte props.
 - Component state per surface lives colocated in the `.svelte` file; cross-surface state lives in `src/<surface>/state*.svelte.ts` rune modules colocated with their owning surface (see `docs/context/module-graph.md`).
@@ -74,7 +74,7 @@ Defined in `package.json`:
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
 | `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && vite build`) |
-| `pnpm run build:dataset` | Split KFGQPC riwayat JSONs + each shipped translation `.raw.json` into per-surah files; regenerate `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` (`node scripts/build-dataset.mjs`). Renamed from `build-riwayat.mjs` 2026-04-27 when translations phase landed; runs offline against committed source files. |
+| `pnpm run build:dataset` | Split KFGQPC riwayat JSONs + each shipped translation `.raw.json` into per-surah files; regenerate `surahs.json`, `juz.json`, `manifest.json`, `provenance.json` (`node scripts/build-dataset.mjs`). Runs offline against committed source files. |
 | `pnpm run fetch:translation:saheeh` | One-shot networked fetch of Saheeh International (Quran.com qdc translation 20) into `data/raw/saheeh.raw.json` (committed; outside `public/` so it's build-only and never shipped to clients). Re-run only when refreshing the upstream pack. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm test` | Run Vitest in watch mode |
@@ -110,7 +110,7 @@ These used to be inlined in this file; they now live in `docs/context/`:
 - **IDB stores, keys, indexes, record shapes** → [`data-model.md`](context/data-model.md)
 - **Event bus catalog (emitters, listeners, payloads)** → [`events.md`](context/events.md)
 - **Feature inventory + routing table** → [`feature-map.md`](context/feature-map.md)
-- **End-to-end user journeys** → [`user-journeys.md`](context/user-journeys.md)
+- **What's live, what's on deck, what's broken** → [`implemented.md`](context/implemented.md), [`roadmap.md`](context/roadmap.md), [`open-issues.md`](context/open-issues.md)
 
 ## Testing strategy
 
@@ -132,7 +132,7 @@ Two layers:
 
 Locally, journey specs A–G, I, and performance run against the **Vite dev server**; journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW). In CI, all projects share a single preview server (`PLAYWRIGHT_USE_PREVIEW=1` + `PLAYWRIGHT_SKIP_BUILD=1`) — the e2e job depends on the Build job and reuses its `dist/` artifact rather than rebuilding.
 
-#### Suite setup: `tests/e2e/global-setup.ts` + `storageState` reuse (N15, 2026-04-30)
+#### Suite setup: `tests/e2e/global-setup.ts` + `storageState` reuse
 
 Playwright's `globalSetup` hook captures an onboarded `storageState` snapshot once per suite run into `tests/e2e/.auth/onboarded.json` (gitignored). The hook boots the app, marks `onboardingComplete=true` in IDB, navigates past onboarding, and writes the captured cookies + localStorage + IDB to disk. Every non-onboarding journey spec opts in via:
 
@@ -140,7 +140,7 @@ Playwright's `globalSetup` hook captures an onboarded `storageState` snapshot on
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 ```
 
-Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-test `markOnboardingComplete + clearAllData + cold-boot` needed, and the `marks`/`edges`/`bookmarks` stores are reset to the snapshot (empty) implicitly between tests. Onboarding-flow specs (`journey-a`) and SW/cross-tab carve-outs (`journey-h`, `journey-i`) opt OUT with `test.use({ storageState: { cookies: [], origins: [] } })`. See `CLAUDE.md` Rule 6.5 and the spec at `docs/superpowers/specs/2026-04-30-n15-global-setup-design.md`.
+Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-test `markOnboardingComplete + clearAllData + cold-boot` needed, and the `marks`/`edges`/`bookmarks` stores are reset to the snapshot (empty) implicitly between tests. Onboarding-flow specs (`journey-a`) and SW/cross-tab carve-outs (`journey-h`, `journey-i`) opt OUT with `test.use({ storageState: { cookies: [], origins: [] } })`. See `CLAUDE.md` Rule 6.5.
 
 ### Static checks
 - **ESLint** (strict mode, `typescript-eslint`, `eslint-plugin-svelte`) via `pnpm run lint`.
