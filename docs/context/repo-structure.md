@@ -8,7 +8,7 @@ This document explains how the repository is laid out and which directories are 
 .
 ├── .agents/           Repo-local Codex skills
 ├── .github/           CI workflows and GitHub automation
-├── data/              Build-only source data and source catalog
+├── data/              Build-only source data, taxonomy, and source catalog
 ├── docs/              Context docs, workflow docs, and generated inventories
 ├── patches/           Package-manager patches
 ├── public/            Static assets copied into builds
@@ -39,6 +39,7 @@ Build-only source data. Nothing here is read directly by the shipped app.
 
 - `data/catalog/`: QuranAtlas-owned source catalog, license metadata, authority records, verification rules, and fetch contracts
 - `data/normalized/`: committed normalized source files used by dataset builds
+- `data/taxonomy/`: curated taxonomies for build-time enrichment lanes (knowledge themes in Phase 01)
 
 For the full data pipeline, source formats, normalization rules, and build/runtime boundaries, see `docs/context/source-data-flow.md`.
 
@@ -46,7 +47,7 @@ For the full data pipeline, source formats, normalization rules, and build/runti
 
 Static assets that ship as part of the app artifact.
 
-- `public/dataset/`: runtime dataset emitted by the dataset build
+- `public/dataset/`: runtime dataset emitted by dataset builders (`build-dataset` + `build-knowledge-dataset`)
 - `public/fonts/`: Quran and UI fonts
 - `public/icons/`: app icons and related assets
 
@@ -56,7 +57,7 @@ Rule: `public/` is runtime-facing. `data/` is build-facing.
 
 Repository automation and maintenance scripts.
 
-- `scripts/data/`: dataset build, source fetch, source catalog validation, verse-alias derivation, and translation-mapping checks
+- `scripts/data/`: dataset builders, source fetch, source catalog validation, verse-alias derivation, translation-mapping checks
 - `scripts/docs/`: generated context-doc inventories and checks
 
 If a file under `docs/` is marked as auto-generated, `scripts/docs/` owns it.
@@ -104,6 +105,6 @@ When trying to understand the repo:
 ## Quick rules
 
 - `src/` and `docs/context/` are the primary human-maintained source of truth for app behavior.
-- `data/catalog/` and `data/normalized/` are the primary human-maintained source of truth for dataset inputs.
+- `data/catalog/`, `data/normalized/`, and `data/taxonomy/` are the primary human-maintained source of truth for build inputs.
 - `public/dataset/` is generated runtime output, even though it is committed.
 - `dist/`, `test-output/`, and `node_modules/` are never the place to understand intended behavior.

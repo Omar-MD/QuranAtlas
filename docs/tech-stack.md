@@ -73,11 +73,12 @@ Defined in `package.json`:
 | Command | Action |
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
-| `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && vite build`) |
+| `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && pnpm build:knowledge && vite build`) |
 | `pnpm run build:dataset` | Baseline dataset build (`node scripts/data/build-dataset.mjs --profile=baseline`): emits Qaloon riwayah, Saheeh translation, Muyassar tafsir, source index, metadata, manifest, and provenance. Runs offline against committed normalized source files. |
 | `pnpm run build:dataset:baseline` | Explicit baseline dataset build. |
 | `pnpm run build:dataset:full` | Full local dataset build: emits every locally configured approved source. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
 | `pnpm run build:dataset:catalog` | Catalog/profile build without text bodies. |
+| `pnpm run build:knowledge` | Knowledge Lane build (`node scripts/data/build-knowledge-dataset.mjs`): validates curated `data/taxonomy` + `data/normalized/knowledge` inputs and emits deterministic `public/dataset/knowledge/**` shards and indexes. |
 | `pnpm run fetch:source -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh` and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` with source pins under `scripts/data/pins/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm test` | Run Vitest in watch mode |
@@ -90,6 +91,7 @@ Defined in `package.json`:
 | `pnpm run lint:css` | Stylelint over `src/styles/**/*.css` (config at `.stylelintrc.json`) |
 | `pnpm run check` | `svelte-check --tsconfig ./tsconfig.json` — type gate |
 | `pnpm run check:dataset` | Rebuild the baseline dataset as a CI/catalog integrity gate. |
+| `pnpm run check:knowledge` | Validate Knowledge Lane inputs and model in `--check` mode without writing outputs. |
 | `pnpm run check:licenses` | Validate source catalog providers, licenses, checksums, and default visibility. |
 | `pnpm run check:source-catalog` | Alias for `check:licenses`; used by CI's dataset catalog job. |
 | `pnpm run check:styles` | Run `check-theme-parity.mjs` + `check-token-usage.mjs` + `check-at-layer.mjs` (design-token gates) |

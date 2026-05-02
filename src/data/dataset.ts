@@ -307,3 +307,12 @@ function slugify(text: string): string {
 function isMissingPackError(error: unknown): boolean {
   return error instanceof Error && /404|Failed to fetch/.test(error.message)
 }
+
+export {
+  clearKnowledgeDatasetCache,
+  getAyahKnowledge,
+  getPassageForAyah,
+  getThemesForAyah,
+  loadAyahKnowledgeForSurah,
+  loadPassagesForSurah,
+} from './knowledge-dataset'

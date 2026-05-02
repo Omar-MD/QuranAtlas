@@ -853,6 +853,9 @@ async function main() {
     if (dirname(f) === RIWAYAT_DIR) { continue }
     if (dirname(f) === TRANSLATIONS_DIR) { continue }
     const rel = relative(DATASET_DIR, f).replace(/\\/g, '/')
+    // Phase 01 knowledge lane ships through its own builder and is intentionally
+    // excluded from the dataset manifest until offline/update integration lands.
+    if (rel.startsWith('knowledge/')) { continue }
     if (rel === 'provenance.json') {
       const stable = JSON.stringify({ ...provenance, builtAt: '' })
       files[rel] = createHash('sha256').update(stable).digest('hex')

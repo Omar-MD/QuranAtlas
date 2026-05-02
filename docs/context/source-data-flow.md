@@ -4,14 +4,15 @@
 
 ## Pipeline
 
-The pipeline has four stages:
+The pipeline has five stages:
 
 1. `data/catalog/*.json` declares what sources exist, where they come from, which are default, which are optional, and how they must be fetched and validated.
 2. `scripts/data/fetch-source.mjs` converts upstream payloads into committed normalized source files under `data/normalized/**`.
-3. `scripts/data/build-dataset.mjs` validates those normalized sources and emits the runtime dataset under `public/dataset/**`.
-4. `src/data/dataset.ts`, the service worker, and offline settings consume only `/dataset/**` at runtime.
+3. `scripts/data/build-dataset.mjs` validates normalized text sources and emits the reader corpus under `public/dataset/**`.
+4. `scripts/data/build-knowledge-dataset.mjs` validates curated Knowledge Lane sources and emits knowledge artifacts under `public/dataset/knowledge/**`.
+5. `src/data/dataset.ts`, `src/data/knowledge-dataset.ts`, the service worker, and offline settings consume only `/dataset/**` at runtime.
 
-Important boundary: `data/catalog/**` and `data/normalized/**` are build-only. The app never reads them directly.
+Important boundary: `data/catalog/**`, `data/normalized/**`, and `data/taxonomy/**` are build-only. The app never reads them directly.
 
 ```mermaid
 flowchart TD
@@ -36,6 +37,9 @@ flowchart TD
         RiwayahSrc["data/normalized/quran/riwayat/{hafs,warsh,qaloon}.json"]
         TranslationSrc["data/normalized/translations/{id}.json"]
         TafsirSrc["data/normalized/tafsir/{id}.json"]
+        ThemeTaxonomy["data/taxonomy/themes.json"]
+        KnowledgePassagesSrc["data/normalized/knowledge/passages.json"]
+        KnowledgeAyahThemesSrc["data/normalized/knowledge/ayah-themes.json"]
         Pins["scripts/data/pins/*.sha256"]
     end
 
@@ -43,18 +47,23 @@ flowchart TD
         VerseAliases["scripts/data/derive-verse-aliases.mjs"]
         VerseMap["public/dataset/translations/_verse-map.json"]
         BuildDataset["scripts/data/build-dataset.mjs"]
+        BuildKnowledge["scripts/data/build-knowledge-dataset.mjs"]
         SourcesIndex["public/dataset/indexes/sources.json"]
         Surahs["public/dataset/surahs.json"]
         Juz["public/dataset/juz.json"]
         RiwayahOut["public/dataset/riwayat/{riwayah}/{NNN}.json"]
         TranslationOut["public/dataset/translations/{id}/{NNN}.json"]
         TafsirOut["public/dataset/tafsir/{id}/{NNN}.json"]
+        KnowledgeAyahOut["public/dataset/knowledge/ayah/{NNN}.json"]
+        KnowledgePassagesOut["public/dataset/knowledge/passages/{NNN}.json"]
+        KnowledgeIndexesOut["public/dataset/knowledge/indexes/*.json"]
         Provenance["public/dataset/provenance.json"]
         Manifest["public/dataset/manifest.json"]
     end
 
     subgraph Runtime["Runtime readers"]
         DatasetApi["src/data/dataset.ts"]
+        KnowledgeApi["src/data/knowledge-dataset.ts"]
         Reader["src/reader/Reader.svelte"]
         Settings["riwayah/translation pickers"]
         Offline["src/data/offline.ts + offline selector"]
@@ -85,6 +94,9 @@ flowchart TD
     TafsirSrc --> BuildDataset
     VerseAliases --> BuildDataset
     VerseMap --> BuildDataset
+    ThemeTaxonomy --> BuildKnowledge
+    KnowledgePassagesSrc --> BuildKnowledge
+    KnowledgeAyahThemesSrc --> BuildKnowledge
 
     BuildDataset --> SourcesIndex
     BuildDataset --> Surahs
@@ -94,6 +106,9 @@ flowchart TD
     BuildDataset --> TafsirOut
     BuildDataset --> Provenance
     BuildDataset --> Manifest
+    BuildKnowledge --> KnowledgeAyahOut
+    BuildKnowledge --> KnowledgePassagesOut
+    BuildKnowledge --> KnowledgeIndexesOut
 
     SourcesIndex --> DatasetApi
     Surahs --> DatasetApi
@@ -103,8 +118,12 @@ flowchart TD
     TafsirOut --> DatasetApi
     Provenance --> DatasetApi
     Manifest --> DatasetApi
+    KnowledgeAyahOut --> KnowledgeApi
+    KnowledgePassagesOut --> KnowledgeApi
+    KnowledgeIndexesOut --> KnowledgeApi
 
     DatasetApi --> Reader
+    KnowledgeApi --> Reader
     DatasetApi --> Settings
     Manifest --> Offline
     SourcesIndex --> Offline
@@ -208,6 +227,20 @@ Normalization in `scripts/data/fetch-source.mjs::normalizeQulTafsirEntries`:
 
 The output is a committed monolithic tafsir source under `data/normalized/tafsir/{id}.json`.
 
+### Knowledge Lane sources
+
+Knowledge Lane Phase 01 uses curated local sources only (no AI, embeddings, or generated claims):
+
+- taxonomy: `data/taxonomy/themes.json`
+- passages: `data/normalized/knowledge/passages.json`
+- ayah-level themes: `data/normalized/knowledge/ayah-themes.json`
+
+Validation and generation are handled by `scripts/data/build-knowledge-dataset.mjs`, which:
+
+- validates theme ids, ayah keys, passage ranges, and range overlap constraints
+- enforces approved-only runtime passage output
+- emits deterministic per-surah knowledge shards and indexes
+
 ## Build Outputs
 
 `scripts/data/build-dataset.mjs` consumes only committed normalized files, so the standard dataset build is offline.
@@ -228,6 +261,16 @@ Generated runtime files:
 - `public/dataset/indexes/sources.json`
 - `public/dataset/provenance.json`
 - `public/dataset/manifest.json`
+
+Knowledge lane runtime files (generated by `scripts/data/build-knowledge-dataset.mjs`):
+
+- `public/dataset/knowledge/ayah/{NNN}.json`
+- `public/dataset/knowledge/passages/{NNN}.json`
+- `public/dataset/knowledge/indexes/theme-to-ayah.json`
+- `public/dataset/knowledge/indexes/ayah-to-passage.json`
+- `public/dataset/knowledge/indexes/passage-to-ayah.json`
+
+Phase 01 carve-out: `scripts/data/build-dataset.mjs` intentionally excludes `knowledge/**` from `manifest.json` hashing until offline/update integration for the knowledge lane lands.
 
 Validation performed during build:
 
@@ -250,11 +293,20 @@ Validation performed during build:
 - `getTafsirs()`: derives tafsir entries from the source index
 - `loadTafsirForSurah(id, n)`: loads `/dataset/tafsir/{id}/{NNN}.json`
 
+`src/data/knowledge-dataset.ts` is the Phase 01 knowledge access layer:
+
+- `loadAyahKnowledgeForSurah(n)`: loads `/dataset/knowledge/ayah/{NNN}.json`
+- `loadPassagesForSurah(n)`: loads `/dataset/knowledge/passages/{NNN}.json`
+- `getAyahKnowledge(key)`: returns per-ayah knowledge row or `null`
+- `getThemesForAyah(key)`: returns zero-or-more theme rows
+- `getPassageForAyah(key)`: resolves the approved passage or `null`
+
 Fallback behavior is source-aware:
 
 - missing saved riwayah falls back to `qaloon`
 - missing saved translation falls back to `saheeh`
 - missing saved tafsir falls back to `muyassar`
+- missing knowledge files resolve to `null` / empty rows without breaking reader rendering
 
 `indexes/sources.json` may list optional sources whose bodies are absent from `manifest.json`. That is intentional. It allows runtime discovery and offline planning without inflating the baseline artifact.
 

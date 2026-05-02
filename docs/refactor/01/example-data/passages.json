@@ -1,0 +1,110 @@
+[
+  {
+    "id": "1:1-7",
+    "surah": 1,
+    "startKey": "1:1",
+    "endKey": "1:7",
+    "title": {
+      "en": "The servant's praise and plea for guidance"
+    },
+    "summary": {
+      "en": "Al-Fatihah teaches praise of Allah, exclusive worship, seeking help, and asking to be guided to the straight path."
+    },
+    "themes": ["allah", "worship", "guidance", "dua", "mercy"],
+    "roleInSurah": "dua",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "2:1-5",
+    "surah": 2,
+    "startKey": "2:1",
+    "endKey": "2:5",
+    "title": {
+      "en": "The qualities of those who receive guidance"
+    },
+    "summary": {
+      "en": "The opening passage describes the people who benefit from the Book: those with taqwa, faith in the unseen, prayer, giving, belief in revelation, and certainty in the Hereafter."
+    },
+    "themes": ["guidance", "taqwa", "iman", "revelation", "akhirah", "worship"],
+    "roleInSurah": "opening_classification",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "2:255-255",
+    "surah": 2,
+    "startKey": "2:255",
+    "endKey": "2:255",
+    "title": {
+      "en": "Allah's life, knowledge, authority, and preservation"
+    },
+    "summary": {
+      "en": "Ayat al-Kursi magnifies Allah's oneness, life, sustaining power, ownership, knowledge, authority, and preservation of the heavens and earth."
+    },
+    "themes": ["allah", "divine-power", "divine-knowledge", "tawakkul"],
+    "roleInSurah": "argument",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "112:1-4",
+    "surah": 112,
+    "startKey": "112:1",
+    "endKey": "112:4",
+    "title": {
+      "en": "Pure declaration of Allah's oneness"
+    },
+    "summary": {
+      "en": "Surah al-Ikhlas declares Allah's absolute oneness, self-sufficiency, and incomparability."
+    },
+    "themes": ["allah", "ikhlas", "divine-power"],
+    "roleInSurah": "argument",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "113:1-5",
+    "surah": 113,
+    "startKey": "113:1",
+    "endKey": "113:5",
+    "title": {
+      "en": "Seeking refuge from external harms"
+    },
+    "summary": {
+      "en": "Surah al-Falaq teaches the believer to seek Allah's protection from created evil, darkness, sorcery, and envy."
+    },
+    "themes": ["protection", "dua", "allah"],
+    "roleInSurah": "dua",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "114:1-6",
+    "surah": 114,
+    "startKey": "114:1",
+    "endKey": "114:6",
+    "title": {
+      "en": "Seeking refuge from whispers"
+    },
+    "summary": {
+      "en": "Surah an-Nas teaches the believer to seek refuge in Allah, Lord, King, and God of mankind, from the evil of whispering temptation."
+    },
+    "themes": ["protection", "dua", "allah", "worship"],
+    "roleInSurah": "dua",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  }
+]

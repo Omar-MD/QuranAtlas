@@ -1,0 +1,430 @@
+[
+  {
+    "ayahKey": "1:1",
+    "themes": [
+      {
+        "id": "mercy",
+        "weight": 0.97,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "worship",
+        "weight": 0.74,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "1:2",
+    "themes": [
+      {
+        "id": "worship",
+        "weight": 0.9,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "mercy",
+        "weight": 0.66,
+        "source": "curated",
+        "certainty": "medium"
+      }
+    ]
+  },
+  {
+    "ayahKey": "1:3",
+    "themes": [
+      {
+        "id": "mercy",
+        "weight": 0.99,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "1:4",
+    "themes": [
+      {
+        "id": "divine-sovereignty",
+        "weight": 0.95,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "1:5",
+    "themes": [
+      {
+        "id": "worship",
+        "weight": 0.93,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "iman",
+        "weight": 0.7,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "1:6",
+    "themes": [
+      {
+        "id": "guidance",
+        "weight": 0.98,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "1:7",
+    "themes": [
+      {
+        "id": "guidance",
+        "weight": 0.93,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "taqwa",
+        "weight": 0.69,
+        "source": "curated",
+        "certainty": "medium"
+      }
+    ]
+  },
+  {
+    "ayahKey": "2:1",
+    "themes": [
+      {
+        "id": "revelation",
+        "weight": 0.81,
+        "source": "curated",
+        "certainty": "medium"
+      }
+    ]
+  },
+  {
+    "ayahKey": "2:2",
+    "themes": [
+      {
+        "id": "guidance",
+        "weight": 0.95,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "taqwa",
+        "weight": 0.91,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "revelation",
+        "weight": 0.86,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "2:3",
+    "themes": [
+      {
+        "id": "iman",
+        "weight": 0.9,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "worship",
+        "weight": 0.84,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "taqwa",
+        "weight": 0.78,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "2:4",
+    "themes": [
+      {
+        "id": "revelation",
+        "weight": 0.9,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "iman",
+        "weight": 0.83,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "2:5",
+    "themes": [
+      {
+        "id": "guidance",
+        "weight": 0.92,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "iman",
+        "weight": 0.72,
+        "source": "curated",
+        "certainty": "medium"
+      }
+    ]
+  },
+  {
+    "ayahKey": "2:255",
+    "themes": [
+      {
+        "id": "tawhid",
+        "weight": 0.98,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "divine-sovereignty",
+        "weight": 0.95,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "divine-knowledge",
+        "weight": 0.93,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "112:1",
+    "themes": [
+      {
+        "id": "tawhid",
+        "weight": 0.99,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "112:2",
+    "themes": [
+      {
+        "id": "tawhid",
+        "weight": 0.96,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "divine-sovereignty",
+        "weight": 0.87,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "112:3",
+    "themes": [
+      {
+        "id": "tawhid",
+        "weight": 0.95,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "112:4",
+    "themes": [
+      {
+        "id": "tawhid",
+        "weight": 0.97,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "113:1",
+    "themes": [
+      {
+        "id": "refuge",
+        "weight": 0.96,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "113:2",
+    "themes": [
+      {
+        "id": "refuge",
+        "weight": 0.84,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "evil",
+        "weight": 0.79,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "113:3",
+    "themes": [
+      {
+        "id": "evil",
+        "weight": 0.88,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "refuge",
+        "weight": 0.82,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "113:4",
+    "themes": [
+      {
+        "id": "evil",
+        "weight": 0.87,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "refuge",
+        "weight": 0.8,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "113:5",
+    "themes": [
+      {
+        "id": "evil",
+        "weight": 0.89,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "refuge",
+        "weight": 0.81,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "114:1",
+    "themes": [
+      {
+        "id": "refuge",
+        "weight": 0.96,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "tawhid",
+        "weight": 0.73,
+        "source": "curated",
+        "certainty": "medium"
+      }
+    ]
+  },
+  {
+    "ayahKey": "114:2",
+    "themes": [
+      {
+        "id": "divine-sovereignty",
+        "weight": 0.91,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "tawhid",
+        "weight": 0.86,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "114:3",
+    "themes": [
+      {
+        "id": "tawhid",
+        "weight": 0.92,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "114:4",
+    "themes": [
+      {
+        "id": "evil",
+        "weight": 0.9,
+        "source": "curated",
+        "certainty": "high"
+      },
+      {
+        "id": "refuge",
+        "weight": 0.83,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "114:5",
+    "themes": [
+      {
+        "id": "evil",
+        "weight": 0.9,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  },
+  {
+    "ayahKey": "114:6",
+    "themes": [
+      {
+        "id": "evil",
+        "weight": 0.84,
+        "source": "curated",
+        "certainty": "high"
+      }
+    ]
+  }
+]

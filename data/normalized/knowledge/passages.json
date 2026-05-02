@@ -1,0 +1,135 @@
+[
+  {
+    "id": "1:1-7",
+    "surah": 1,
+    "startKey": "1:1",
+    "endKey": "1:7",
+    "title": {
+      "en": "Invocation, praise, and the request for guidance"
+    },
+    "summary": {
+      "en": "Al-Fatihah opens with devotion, praise, and a direct plea for steadfast guidance."
+    },
+    "themes": [
+      "guidance",
+      "worship",
+      "mercy"
+    ],
+    "roleInSurah": "opening",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "2:1-5",
+    "surah": 2,
+    "startKey": "2:1",
+    "endKey": "2:5",
+    "title": {
+      "en": "The qualities of those who receive guidance"
+    },
+    "summary": {
+      "en": "The opening passage describes the people who benefit from the Book."
+    },
+    "themes": [
+      "guidance",
+      "taqwa",
+      "iman",
+      "revelation"
+    ],
+    "roleInSurah": "opening_classification",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "2:255-255",
+    "surah": 2,
+    "startKey": "2:255",
+    "endKey": "2:255",
+    "title": {
+      "en": "Ayat al-Kursi"
+    },
+    "summary": {
+      "en": "A concentrated declaration of Allah's oneness, authority, and all-encompassing knowledge."
+    },
+    "themes": [
+      "tawhid",
+      "divine-sovereignty",
+      "divine-knowledge",
+      "guidance"
+    ],
+    "roleInSurah": "argument",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "112:1-4",
+    "surah": 112,
+    "startKey": "112:1",
+    "endKey": "112:4",
+    "title": {
+      "en": "The declaration of divine oneness"
+    },
+    "summary": {
+      "en": "Al-Ikhlas defines Allah's unique and incomparable reality."
+    },
+    "themes": [
+      "tawhid",
+      "worship"
+    ],
+    "roleInSurah": "conclusion",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "113:1-5",
+    "surah": 113,
+    "startKey": "113:1",
+    "endKey": "113:5",
+    "title": {
+      "en": "Seeking refuge from outward harms"
+    },
+    "summary": {
+      "en": "Al-Falaq teaches seeking Allah's protection from created harms and envy."
+    },
+    "themes": [
+      "refuge",
+      "mercy",
+      "evil"
+    ],
+    "roleInSurah": "dua",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  },
+  {
+    "id": "114:1-6",
+    "surah": 114,
+    "startKey": "114:1",
+    "endKey": "114:6",
+    "title": {
+      "en": "Seeking refuge from inward whispering"
+    },
+    "summary": {
+      "en": "An-Nas directs the believer to Allah's protection from deceptive whispering."
+    },
+    "themes": [
+      "refuge",
+      "tawhid",
+      "evil"
+    ],
+    "roleInSurah": "dua",
+    "source": {
+      "kind": "curated",
+      "reviewStatus": "approved"
+    }
+  }
+]

@@ -1,0 +1,177 @@
+[
+  {
+    "id": "guidance",
+    "label": {
+      "en": "Guidance",
+      "ar": "الهداية"
+    },
+    "parentId": null,
+    "aliases": [
+      "hidayah"
+    ],
+    "related": [
+      "taqwa",
+      "revelation"
+    ],
+    "description": "Allah guiding people to truth, clarity, obedience, and salvation."
+  },
+  {
+    "id": "taqwa",
+    "label": {
+      "en": "God-consciousness",
+      "ar": "التقوى"
+    },
+    "parentId": null,
+    "aliases": [
+      "god-fearing"
+    ],
+    "related": [
+      "guidance",
+      "iman"
+    ],
+    "description": "Guarding oneself through awareness of Allah and obedient restraint."
+  },
+  {
+    "id": "iman",
+    "label": {
+      "en": "Faith",
+      "ar": "الإيمان"
+    },
+    "parentId": null,
+    "aliases": [
+      "belief"
+    ],
+    "related": [
+      "taqwa",
+      "revelation"
+    ],
+    "description": "Belief in Allah, revelation, and the unseen with sincere trust."
+  },
+  {
+    "id": "revelation",
+    "label": {
+      "en": "Revelation",
+      "ar": "الوحي"
+    },
+    "parentId": null,
+    "aliases": [
+      "wahy"
+    ],
+    "related": [
+      "guidance",
+      "iman"
+    ],
+    "description": "Divine communication sent by Allah through scripture and messengers."
+  },
+  {
+    "id": "worship",
+    "label": {
+      "en": "Worship",
+      "ar": "العبادة"
+    },
+    "parentId": null,
+    "aliases": [
+      "ibadah"
+    ],
+    "related": [
+      "tawhid",
+      "guidance"
+    ],
+    "description": "Devotional servitude to Allah through prayer, reliance, and obedience."
+  },
+  {
+    "id": "mercy",
+    "label": {
+      "en": "Mercy",
+      "ar": "الرحمة"
+    },
+    "parentId": null,
+    "aliases": [
+      "rahmah"
+    ],
+    "related": [
+      "guidance",
+      "refuge"
+    ],
+    "description": "Allah's encompassing compassion, care, and forgiving generosity."
+  },
+  {
+    "id": "tawhid",
+    "label": {
+      "en": "Divine Oneness",
+      "ar": "التوحيد"
+    },
+    "parentId": null,
+    "aliases": [
+      "oneness of Allah"
+    ],
+    "related": [
+      "worship",
+      "divine-sovereignty"
+    ],
+    "description": "Affirming Allah's absolute uniqueness in lordship, worship, and names."
+  },
+  {
+    "id": "divine-sovereignty",
+    "label": {
+      "en": "Divine Sovereignty",
+      "ar": "الملك"
+    },
+    "parentId": null,
+    "aliases": [
+      "lordship"
+    ],
+    "related": [
+      "tawhid",
+      "divine-knowledge"
+    ],
+    "description": "Allah's complete authority, governance, and ownership over creation."
+  },
+  {
+    "id": "divine-knowledge",
+    "label": {
+      "en": "Divine Knowledge",
+      "ar": "العلم"
+    },
+    "parentId": null,
+    "aliases": [
+      "all-knowing"
+    ],
+    "related": [
+      "divine-sovereignty",
+      "guidance"
+    ],
+    "description": "Allah's perfect knowledge of all that was, is, and will be."
+  },
+  {
+    "id": "refuge",
+    "label": {
+      "en": "Seeking Refuge",
+      "ar": "الاستعاذة"
+    },
+    "parentId": null,
+    "aliases": [
+      "istiadha"
+    ],
+    "related": [
+      "mercy",
+      "evil"
+    ],
+    "description": "Turning to Allah for protection from harm seen and unseen."
+  },
+  {
+    "id": "evil",
+    "label": {
+      "en": "Evil and Harm",
+      "ar": "الشر"
+    },
+    "parentId": null,
+    "aliases": [
+      "harm"
+    ],
+    "related": [
+      "refuge"
+    ],
+    "description": "Sources of harm, envy, whispering, and corruption from which to seek protection."
+  }
+]

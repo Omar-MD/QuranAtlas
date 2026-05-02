@@ -1,0 +1,85 @@
+[
+  {
+    "ayahKey": "1:1",
+    "themes": [
+      { "id": "allah", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "mercy", "weight": 0.9, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "1:2",
+    "themes": [
+      { "id": "allah", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "worship", "weight": 0.75, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "1:5",
+    "themes": [
+      { "id": "worship", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "dua", "weight": 0.8, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "1:6",
+    "themes": [
+      { "id": "guidance", "weight": 1.0, "source": "curated", "certainty": "high" },
+      { "id": "dua", "weight": 0.9, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "2:2",
+    "themes": [
+      { "id": "revelation", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "guidance", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "taqwa", "weight": 0.85, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "2:3",
+    "themes": [
+      { "id": "iman", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "worship", "weight": 0.8, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "2:4",
+    "themes": [
+      { "id": "iman", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "revelation", "weight": 0.85, "source": "curated", "certainty": "high" },
+      { "id": "akhirah", "weight": 0.75, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "2:255",
+    "themes": [
+      { "id": "allah", "weight": 1.0, "source": "curated", "certainty": "high" },
+      { "id": "divine-power", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "divine-knowledge", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "tawakkul", "weight": 0.65, "source": "curated", "certainty": "medium" }
+    ]
+  },
+  {
+    "ayahKey": "112:1",
+    "themes": [
+      { "id": "allah", "weight": 1.0, "source": "curated", "certainty": "high" },
+      { "id": "ikhlas", "weight": 0.9, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "113:1",
+    "themes": [
+      { "id": "protection", "weight": 1.0, "source": "curated", "certainty": "high" },
+      { "id": "dua", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "allah", "weight": 0.75, "source": "curated", "certainty": "high" }
+    ]
+  },
+  {
+    "ayahKey": "114:1",
+    "themes": [
+      { "id": "protection", "weight": 1.0, "source": "curated", "certainty": "high" },
+      { "id": "dua", "weight": 0.95, "source": "curated", "certainty": "high" },
+      { "id": "allah", "weight": 0.85, "source": "curated", "certainty": "high" }
+    ]
+  }
+]
