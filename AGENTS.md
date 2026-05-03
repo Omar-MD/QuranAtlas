@@ -89,7 +89,16 @@ If the user asks for a PR and does not name a base branch, use `dev`.
 
 `dev` is the default integration branch for ordinary code changes. `staging` and `main` are promotion or hotfix targets only when explicitly requested.
 
-### 6. Verify at the right level
+### 6. Use existing commands and avoid unnecessary scripts
+
+Do not invent `pnpm` command names or add scripts just to make a one-off task feel tidy. Check `package.json`, `docs/tech-stack.md`, relevant scoped `AGENTS.md` files, and existing scripts before running project commands.
+
+- Prefer existing project scripts and direct standard tools (`rg`, targeted test commands, `node -e` for short read-only checks) over creating new automation.
+- Add or modify `package.json` scripts only when the workflow is repo-owned, repeatable, and useful beyond the current task.
+- Do not commit helper scripts for one-off inspection, migration, or verification work. Put temporary working notes or scratch scripts in `.scratch/` and do not commit them.
+- If the right command is unclear, or if a new script might not be durable project tooling, ask the user before creating or running it.
+
+### 7. Verify at the right level
 
 Before finishing, run the smallest verification set that matches the change:
 
@@ -99,7 +108,7 @@ Before finishing, run the smallest verification set that matches the change:
 
 Any warning from `pnpm build`, `pnpm lint`, or `pnpm check` is treated as a failure to fix, not noise to ignore.
 
-### 7. Docs and source comments describe current state only
+### 8. Docs and source comments describe current state only
 
 Do not leave revision logs, dates, commit SHAs, codenames, or progress notes in `docs/` or source comments.
 
