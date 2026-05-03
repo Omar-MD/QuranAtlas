@@ -170,7 +170,7 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `st
 | `audit` | `pnpm audit --audit-level moderate` |
 | `build` | `pnpm run build`; uploads `dist/` artifact |
 | `lighthouse` | `lhci autorun` against uploaded `dist/` |
-| `e2e` | `pnpm run test:e2e -- --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"` with `PLAYWRIGHT_INCLUDE_OFFLINE=1`, `PLAYWRIGHT_USE_PREVIEW=1`, `PLAYWRIGHT_SKIP_BUILD=1`. Depends on `build` and downloads its `dist/` artifact, then runs against a preview server (no dev-server compile path under workers=6). |
+| `e2e` | `pnpm test:e2e --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"` with `PLAYWRIGHT_INCLUDE_OFFLINE=1`, `PLAYWRIGHT_USE_PREVIEW=1`, `PLAYWRIGHT_SKIP_BUILD=1`. Depends on `build` and downloads its `dist/` artifact, then runs against a preview server (no dev-server compile path under workers=6). |
 | `ci-ok` | No-op aggregator — single required status check for branch protection |
 
 Deploy lives at `.github/workflows/deploy.yml` and observes CI via `workflow_run`: on CI success for a push to `dev`, `staging`, or `main`, the deploy job downloads the `dist/` artifact the CI run produced and runs `wrangler pages deploy` against the single Cloudflare Pages project `quranatlas`. Custom domains are bound per branch in the Cloudflare dashboard:

@@ -283,7 +283,7 @@ jobs:
       # list here so the offline-preview coverage stays included without
       # forcing any local-only project variants.
       - name: Run Playwright suite (non-visual)
-        run: pnpm run test:e2e -- --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"
+        run: pnpm test:e2e --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"
         env:
           PLAYWRIGHT_INCLUDE_OFFLINE: '1'
           PLAYWRIGHT_USE_PREVIEW: '1'
