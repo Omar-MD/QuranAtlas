@@ -21,6 +21,7 @@ describe('ROUTE_DEFS table', () => {
         'text-translation',
         'text-tafsir',
         'text-index',
+        'text-knowledge',
         'audio',
         'pages',
         'search',
@@ -35,6 +36,9 @@ describe('ROUTE_DEFS table', () => {
     expect(categoryFor(u('/dataset/tafsir/muyassar/001.json'))).toBe('text-tafsir')
     expect(categoryFor(u('/dataset/indexes/sources.json'))).toBe('text-index')
     expect(categoryFor(u('/dataset/surahs.json'))).toBe('text-core')
+    expect(categoryFor(u('/dataset/knowledge/ayah/002.json'))).toBe('text-knowledge')
+    expect(categoryFor(u('/dataset/knowledge/passages/002.json'))).toBe('text-knowledge')
+    expect(categoryFor(u('/dataset/knowledge/indexes/theme-to-ayah.json'))).toBe('text-knowledge')
     expect(categoryFor(u('/dataset/audio/alafasy/001.mp3'))).toBe('audio')
     expect(categoryFor(u('/dataset/mushaf-pages/hafs/p001.png'))).toBe('pages')
     expect(categoryFor(u('/dataset/search-index.json'))).toBe('search')
@@ -108,6 +112,9 @@ describe('sumBytesForCategory', () => {
       'surahs.json': 'sha-c',
       'tafsir/muyassar/001.json': 'sha-g',
       'indexes/sources.json': 'sha-h',
+      'knowledge/ayah/001.json': 'sha-i',
+      'knowledge/passages/001.json': 'sha-j',
+      'knowledge/indexes/theme-to-ayah.json': 'sha-k',
       'audio/alafasy/001.mp3': 'sha-d',
       'mushaf-pages/hafs/p001.png': 'sha-e',
       'search-index.json': 'sha-f',
@@ -118,6 +125,9 @@ describe('sumBytesForCategory', () => {
       'surahs.json': 800,
       'tafsir/muyassar/001.json': 700,
       'indexes/sources.json': 200,
+      'knowledge/ayah/001.json': 900,
+      'knowledge/passages/001.json': 600,
+      'knowledge/indexes/theme-to-ayah.json': 300,
       'audio/alafasy/001.mp3': 50_000_000,
       'mushaf-pages/hafs/p001.png': 80_000,
       'search-index.json': 1_000_000,
@@ -125,7 +135,7 @@ describe('sumBytesForCategory', () => {
   }
 
   it.each<[Category, number]>([
-    ['text',   1500 + 1400 + 800 + 700 + 200],
+    ['text',   1500 + 1400 + 800 + 700 + 200 + 900 + 600 + 300],
     ['audio',  50_000_000],
     ['pages',  80_000],
     ['search', 1_000_000],
@@ -142,6 +152,9 @@ describe('sumBytesForCategory', () => {
       '/dataset/tafsir/muyassar/001.json',
       '/dataset/indexes/sources.json',
       '/dataset/surahs.json',
+      '/dataset/knowledge/ayah/001.json',
+      '/dataset/knowledge/passages/001.json',
+      '/dataset/knowledge/indexes/theme-to-ayah.json',
     ]))
     expect(urls).not.toEqual(expect.arrayContaining([
       '/dataset/audio/alafasy/001.mp3',

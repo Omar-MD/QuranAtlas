@@ -34,8 +34,20 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
     return {
       ok: true,
       json: async () => ({
-        files: { 'riwayat/hafs/001.json': 'abc', 'riwayat/hafs/002.json': 'def', 'surahs.json': 'ghi' },
-        fileSizes: { 'riwayat/hafs/001.json': 1500, 'riwayat/hafs/002.json': 1400, 'surahs.json': 800 },
+        files: {
+          'riwayat/hafs/001.json': 'abc',
+          'riwayat/hafs/002.json': 'def',
+          'surahs.json': 'ghi',
+          'knowledge/ayah/001.json': 'jkl',
+          'knowledge/passages/001.json': 'mno',
+        },
+        fileSizes: {
+          'riwayat/hafs/001.json': 1500,
+          'riwayat/hafs/002.json': 1400,
+          'surahs.json': 800,
+          'knowledge/ayah/001.json': 900,
+          'knowledge/passages/001.json': 600,
+        },
       }),
     }
   }
@@ -104,6 +116,17 @@ describe('data/offline.js', () => {
       // After DATASET_COMPLETE the activationState 'current' record is cleared;
       // 'cached' is now derived from settings.offlineCategories opt-in.
       expect(state).toBe('cached')
+    })
+
+    it('includes knowledge shards in the text category manifest plan', async () => {
+      const { getCategoryManifest } = await import('../../../src/data/offline.js')
+      const plan = await getCategoryManifest('text')
+
+      expect(plan.urls).toEqual(expect.arrayContaining([
+        '/dataset/knowledge/ayah/001.json',
+        '/dataset/knowledge/passages/001.json',
+      ]))
+      expect(plan.totalBytes).toBe(1500 + 1400 + 800 + 900 + 600)
     })
 
     it('emits download-complete event on DATASET_COMPLETE', async () => {

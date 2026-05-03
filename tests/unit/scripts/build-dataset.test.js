@@ -1,5 +1,8 @@
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { splitRiwayah, computeSurahsMeta, AYAT_COUNTS, buildTranslationSplits } from '../../../scripts/data/build-dataset.mjs'
+import { splitRiwayah, computeSurahsMeta, AYAT_COUNTS, buildTranslationSplits, buildManifestPayload } from '../../../scripts/data/build-dataset.mjs'
 
 describe('splitRiwayah', () => {
   const sampleHafs = [
@@ -162,5 +165,55 @@ describe('buildTranslationSplits', () => {
       s.surahs['001'].footnotes = { '1': 'used', '2': 'orphan' }
     })
     expect(() => buildTranslationSplits(src, HAFS_TINY)).toThrow(/non-contiguous|never referenced/)
+  })
+})
+
+describe('buildManifestPayload', () => {
+  it('includes knowledge files in manifest hashes and byte sizes', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-manifest-'))
+    const provenance = {
+      packageVersion: 'test',
+      profile: 'baseline',
+      builtAt: '2026-05-03T00:00:00.000Z',
+      corpus: {},
+      riwayat: [],
+      translations: [],
+      tafsir: [],
+      fonts: {},
+    }
+
+    try {
+      await mkdir(join(root, 'knowledge', 'ayah'), { recursive: true })
+      await mkdir(join(root, 'knowledge', 'passages'), { recursive: true })
+      await mkdir(join(root, 'knowledge', 'indexes'), { recursive: true })
+      await mkdir(join(root, 'riwayat'), { recursive: true })
+      await mkdir(join(root, 'translations'), { recursive: true })
+      await writeFile(join(root, 'knowledge', 'ayah', '001.json'), '{"surah":1,"ayahs":[]}', 'utf8')
+      await writeFile(join(root, 'knowledge', 'passages', '001.json'), '{"surah":1,"passages":[]}', 'utf8')
+      await writeFile(join(root, 'knowledge', 'indexes', 'theme-to-ayah.json'), '{"guidance":["1:6"]}', 'utf8')
+      await writeFile(join(root, 'provenance.json'), JSON.stringify(provenance), 'utf8')
+      await writeFile(join(root, 'manifest.json'), '{"old":true}', 'utf8')
+      await writeFile(join(root, 'riwayat', 'source.json'), '{"buildOnly":true}', 'utf8')
+      await writeFile(join(root, 'translations', 'source.json'), '{"buildOnly":true}', 'utf8')
+
+      const manifest = await buildManifestPayload({
+        datasetDir: root,
+        riwayatDir: join(root, 'riwayat'),
+        translationsDir: join(root, 'translations'),
+        provenance,
+        packageVersion: 'test',
+        profileName: 'baseline',
+      })
+
+      expect(manifest.files).toHaveProperty('knowledge/ayah/001.json')
+      expect(manifest.files).toHaveProperty('knowledge/passages/001.json')
+      expect(manifest.files).toHaveProperty('knowledge/indexes/theme-to-ayah.json')
+      expect(manifest.fileSizes['knowledge/ayah/001.json']).toBeGreaterThan(0)
+      expect(manifest.files).not.toHaveProperty('manifest.json')
+      expect(manifest.files).not.toHaveProperty('riwayat/source.json')
+      expect(manifest.files).not.toHaveProperty('translations/source.json')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 })

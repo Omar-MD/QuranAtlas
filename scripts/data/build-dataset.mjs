@@ -567,6 +567,42 @@ async function listFiles(rootDir) {
   return out
 }
 
+export async function buildManifestPayload({
+  datasetDir = DATASET_DIR,
+  riwayatDir = RIWAYAT_DIR,
+  translationsDir = TRANSLATIONS_DIR,
+  provenance,
+  packageVersion = PACKAGE_VERSION,
+  profileName,
+}) {
+  const allFiles = await listFiles(datasetDir)
+  const files = {}
+  const fileSizes = {}
+
+  for (const f of allFiles) {
+    if (f.endsWith('manifest.json')) { continue }
+    if (dirname(f) === riwayatDir) { continue }
+    if (dirname(f) === translationsDir) { continue }
+    const rel = relative(datasetDir, f).replace(/\\/g, '/')
+    if (rel === 'provenance.json') {
+      const stable = JSON.stringify({ ...provenance, builtAt: '' })
+      files[rel] = createHash('sha256').update(stable).digest('hex')
+      fileSizes[rel] = Buffer.byteLength(stable, 'utf8')
+    } else {
+      files[rel] = await sha256(f)
+      fileSizes[rel] = (await stat(f)).size
+    }
+  }
+
+  return {
+    packageVersion,
+    profile: profileName,
+    builtAt: provenance.builtAt,
+    files,
+    fileSizes,
+  }
+}
+
 async function cleanPackDirs(parentDir, keepNames = []) {
   if (!existsSync(parentDir)) {
     await mkdir(parentDir, { recursive: true })
@@ -840,32 +876,11 @@ async function main() {
   }
   await writeFile(join(DATASET_DIR, 'provenance.json'), JSON.stringify(provenance), 'utf8')
 
-  // 7. manifest.json — sha256 of every shipped file under public/dataset/.
-  // provenance.json is hashed against a builtAt-stripped form so the manifest
-  // stays stable across no-op rebuilds (otherwise every re-run dirties git).
-  // Immediate children of riwayat/ and translations/ are monolithic source
-  // inputs (not shipped) and excluded from the manifest.
-  const allFiles = await listFiles(DATASET_DIR)
-  const files = {}
-  const fileSizes = {}
-  for (const f of allFiles) {
-    if (f.endsWith('manifest.json')) { continue }
-    if (dirname(f) === RIWAYAT_DIR) { continue }
-    if (dirname(f) === TRANSLATIONS_DIR) { continue }
-    const rel = relative(DATASET_DIR, f).replace(/\\/g, '/')
-    // Phase 01 knowledge lane ships through its own builder and is intentionally
-    // excluded from the dataset manifest until offline/update integration lands.
-    if (rel.startsWith('knowledge/')) { continue }
-    if (rel === 'provenance.json') {
-      const stable = JSON.stringify({ ...provenance, builtAt: '' })
-      files[rel] = createHash('sha256').update(stable).digest('hex')
-      fileSizes[rel] = Buffer.byteLength(stable, 'utf8')
-    } else {
-      files[rel] = await sha256(f)
-      fileSizes[rel] = (await stat(f)).size
-    }
-  }
-  await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify({ packageVersion: PACKAGE_VERSION, profile: profile.name, builtAt: provenance.builtAt, files, fileSizes }), 'utf8')
+  const manifest = await buildManifestPayload({
+    provenance,
+    profileName: profile.name,
+  })
+  await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
 
   console.log(`[build-dataset] done — wrote per-surah riwayat + translation files, surahs.json, juz.json, provenance.json, manifest.json`)
 }

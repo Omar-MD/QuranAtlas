@@ -92,6 +92,8 @@ test.describe('Journey H: Offline resilience', () => {
       // Step 3: reload — SW should serve the shell from cache
       await page.reload()
       await waitForReader(page)
+      await expect(page.locator('[data-knowledge-lane]').first()).toBeVisible({ timeout: 10_000 })
+      await expect(page.locator('.qa-verse-theme').filter({ hasText: 'guidance' }).first()).toBeVisible({ timeout: 10_000 })
 
       // Verify URL still shows reader route (may redirect to / if SW not active)
       // At minimum the reader content must load
@@ -182,8 +184,8 @@ test.describe('Journey H: Offline resilience', () => {
 
     expect(persisted).toBeTruthy()
     expect(persisted.text).toBeDefined()
-    expect(persisted.text.hafs).toBe(true)
-    expect(persisted.text.warsh).toBe(true)
-    expect(persisted.text.qaloon).toBe(true)
+    expect(persisted.text.riwayat.qaloon).toBe(true)
+    expect(persisted.text.translations.saheeh).toBe(true)
+    expect(persisted.text.tafsir.muyassar).toBe(true)
   })
 })

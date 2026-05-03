@@ -30,7 +30,17 @@ vi.mock('../../../src/settings/offline-categories.ts', () => ({
 
 vi.mock('../../../src/data/offline.ts', () => ({
   getCategoryManifest: vi.fn(async (cat: string) => {
-    if (cat === 'text') return { urls: ['/dataset/riwayat/hafs/001.json'], totalBytes: 1_500_000 }
+    if (cat === 'text') {
+      return {
+        urls: [
+          '/dataset/riwayat/qaloon/001.json',
+          '/dataset/translations/saheeh/001.json',
+          '/dataset/tafsir/muyassar/001.json',
+          '/dataset/knowledge/ayah/001.json',
+        ],
+        totalBytes: 1_800_000,
+      }
+    }
     return { urls: [], totalBytes: 0 }
   }),
   isCategoryAvailable: vi.fn(async (cat: string) => cat === 'text'),
@@ -66,6 +76,13 @@ describe('offline-selector.svelte', () => {
     expect(document.querySelector('[data-testid="storage-check-audio"]')).toBeNull()
     expect(document.querySelector('[data-testid="storage-check-pages"]')).toBeNull()
     expect(document.querySelector('[data-testid="storage-check-search"]')).toBeNull()
+  })
+
+  it('describes the Text row as including knowledge context without adding a fifth row', async () => {
+    render(OfflineSelector)
+    await flush()
+    expect(document.querySelectorAll('.qa-storage-row')).toHaveLength(4)
+    expect(document.querySelector('[data-testid="storage-row-text"]')?.textContent).toContain('Knowledge context')
   })
 
   it('Apply disabled at boot (no diff) and after toggling becomes enabled', async () => {

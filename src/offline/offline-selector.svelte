@@ -32,7 +32,7 @@
   }
 
   const ROWS: Row[] = [
-    { cat: 'text',   label: 'Text · baseline corpus', short: 'Text',   sub: 'Qālūn + Saheeh + Muyassar',             gatedAt: null   },
+    { cat: 'text',   label: 'Text · baseline corpus', short: 'Text',   sub: 'Qālūn + Saheeh + Muyassar + Knowledge context', gatedAt: null   },
     { cat: 'audio',  label: 'Audio · per reciter',  short: 'Audio',  sub: 'Recitation MP3s + word-timing JSON',    gatedAt: 'v2.0' },
     { cat: 'pages',  label: 'Pages · per riwāyah',  short: 'Pages',  sub: 'KFGQPC Mushaf page-image cuts',         gatedAt: 'v2.1' },
     { cat: 'search', label: 'Search index',         short: 'Search', sub: 'Full-text Arabic + translation search', gatedAt: 'v1.1' },

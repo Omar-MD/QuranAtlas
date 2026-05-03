@@ -92,7 +92,7 @@ If you change a store's shape, indexes, key, or sole writer — update the **dos
 - `public/dataset/knowledge/indexes/ayah-to-passage.json` — deterministic map of `ayahKey -> passageId`.
 - `public/dataset/knowledge/indexes/passage-to-ayah.json` — deterministic map of `passageId -> ayahKey[]`.
 - **Invariants (asserted by `scripts/data/build-knowledge-dataset.mjs`):** theme ids must exist in `data/taxonomy/themes.json`; ayah keys/ranges must be valid Hafs-keyed addresses; passage ranges must stay inside one surah and must not overlap in Phase 01; theme weights must be in `[0,1]`; only `source.reviewStatus === "approved"` passages are emitted to runtime files.
-- **Phase 01 manifest carve-out:** `scripts/data/build-dataset.mjs` excludes `knowledge/**` from `manifest.json` hashing until offline/update integration is implemented for the knowledge lane.
+- **Knowledge manifest inclusion:** `scripts/data/build-dataset.mjs` hashes `knowledge/**` outputs into `public/dataset/manifest.json` and records their byte sizes alongside the rest of the shipped dataset so the existing offline/update pipeline can verify and cache them under the Text category.
 
 ### Source index and profiles
 

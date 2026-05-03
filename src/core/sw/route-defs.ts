@@ -10,7 +10,13 @@
 import { CACHE_DATASET } from '../constants'
 
 export type Category = 'text' | 'audio' | 'pages' | 'search'
-export type TextCategory = 'text-core' | 'text-riwayah' | 'text-translation' | 'text-tafsir' | 'text-index'
+export type TextCategory =
+  | 'text-core'
+  | 'text-riwayah'
+  | 'text-translation'
+  | 'text-tafsir'
+  | 'text-index'
+  | 'text-knowledge'
 export type RouteCategory = Category | TextCategory
 
 /** Categories the offline-selector exposes. `null` route category = always-on. */
@@ -21,6 +27,7 @@ export const TEXT_ROUTE_CATEGORIES: readonly TextCategory[] = [
   'text-translation',
   'text-tafsir',
   'text-index',
+  'text-knowledge',
 ] as const
 
 export type StrategyKind = 'NetworkFirst' | 'CacheFirst'
@@ -106,6 +113,17 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     maxEntries: 16,
     maxAgeDays: 365,
     category: 'text-core',
+  },
+  {
+    name: 'text-knowledge',
+    match: ({ url }) =>
+      /^\/dataset\/knowledge\/(?:ayah|passages)\/\d{3}\.json$/.test(url.pathname) ||
+      /^\/dataset\/knowledge\/indexes\/[^/]+\.json$/.test(url.pathname),
+    strategy: 'NetworkFirst',
+    cacheName: CACHE_DATASET,
+    maxEntries: 260,
+    maxAgeDays: 365,
+    category: 'text-knowledge',
   },
   {
     name: 'audio-mp3',
