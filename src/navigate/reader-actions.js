@@ -8,7 +8,7 @@
  */
 
 import { getSurahs } from '../data/dataset.js'
-import { beginFast } from '../mark/tag/session-bridge'
+import { openTafsirPreview } from '../read/tafsir-bridge.ts'
 import { announce } from '../a11y/announcer.js'
 import { reader } from '../read/state.svelte'
 
@@ -103,9 +103,9 @@ export function prevSurah() {
   return true
 }
 
-export function markCurrent() {
+export function openCurrentTafsir() {
   const { surah, verse } = getCurrent()
   if (!surah) { return false }
-  void beginFast(`${surah}:${verse || 1}`)
+  void openTafsirPreview(`${surah}:${verse || 1}`)
   return true
 }

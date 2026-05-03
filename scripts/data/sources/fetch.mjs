@@ -39,6 +39,7 @@ function normalizeSourcePayload(source, payload) {
       language: source.language,
       translationVersion: source.fetch.version,
       sourceUrl: source.fetch.url,
+      allowMissingText: source.fetch.allowMissingText === true,
     })
   }
   if (source.fetch.provider === 'qul-tafsir') {

@@ -149,6 +149,26 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect(v1.locator('.qa-fn-popover')).toHaveCount(0)
   })
 
+  test('B-Tafsir: double-click verse opens inline tafsir and Expand opens the full sheet', async ({ page }) => {
+    const v1 = page.locator('.qa-verse[data-verse="1"]')
+    await expect(v1).toBeVisible()
+
+    await v1.locator('.qa-verse-body-summary').dblclick()
+
+    const preview = v1.locator('[data-tafsir-preview]')
+    await expect(preview).toBeVisible({ timeout: 5_000 })
+    await expect(preview.locator('.qa-tafsir-preview-select')).toBeVisible()
+
+    await preview.locator('.qa-tafsir-preview-expand').click()
+
+    const sheet = page.locator('.qa-tafsir-sheet')
+    await expect(sheet).toBeVisible({ timeout: 5_000 })
+    await expect(sheet.locator('.qa-tafsir-sheet-ref')).toContainText('1:1')
+
+    await sheet.locator('.qa-tafsir-sheet-close').click()
+    await expect(sheet).toHaveCount(0)
+  })
+
   // -------------------------------------------------------------------------
   // N20 — virtualisation regression guards
   // -------------------------------------------------------------------------

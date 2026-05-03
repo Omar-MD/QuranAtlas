@@ -28,35 +28,26 @@ import { initBookmarkIndicators } from './navigate/bookmarks/indicator'
 import { initBookmarkClickHandler } from './navigate/bookmarks/click-handler'
 import { initBookmarkPulse } from './navigate/bookmarks/pulse'
 import { setupTapGestures } from './mark/long-press'
-import { beginFast, openDeep } from './mark/tag/session-bridge'
-import { tagSession } from './mark/tag/state.svelte'
+import { openDeep } from './mark/tag/session-bridge'
 import { registerEditor } from './mark/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './navigate/nav-drawer-bridge'
 import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
 import { initAudio } from './listen/init'
 import { initGlobalShortcuts } from './navigate/global-shortcuts'
+import { openTafsirPreview } from './read/tafsir-bridge'
+import { tafsirState } from './read/tafsir-state.svelte'
 
 // Bind tap gestures to the reader container:
-//   short-tap   → only while fast-tag mode is open: switch the active verse
-//                 being tagged. Does NOT start a new session from an idle tap.
-//   double-tap  → open the fast-tag inline panel (replaces long-press since
-//                 2026-04-25 — long-press is reserved for OS-native gestures
-//                 like text selection and the iOS callout).
-// Deep editor reached only via ⛶ in VerseTagPanel + programmatic bridges.
+//   short-tap   → while tafsir preview is open, move it to the tapped verse.
+//   double-tap  → open tafsir preview for the tapped verse.
 function setupLongPress(container: HTMLElement): () => void {
   return setupTapGestures(container, {
     onShort: (vk) => {
-      if (tagSession.quickbarOpen) { void beginFast(vk) }
+      if (tafsirState.previewOpen) { void openTafsirPreview(vk) }
     },
     onDouble: (vk) => {
-      // Open fast-tag, or switch the active verse if another is already in
-      // session. The toggle-to-exit behavior of the old long-press contract
-      // doesn't translate to double-tap: a tap-then-double-tap on a *new*
-      // verse already calls onShort first (which switches the active verse),
-      // so a "same verse → exit" rule would fire spuriously. Mobile exits
-      // via the explicit ✕ in VerseTagPanel.
-      void beginFast(vk)
+      void openTafsirPreview(vk)
     },
   })
 }

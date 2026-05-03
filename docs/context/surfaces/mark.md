@@ -15,16 +15,12 @@ test_paths:
 
 # Surface: mark
 
-> Per-verse tagging. Fast-tag inline panel + deep TagSheet (12-layer editor) + marks IDB persistence + cross-tab sync.
+> Existing-mark editing and persistence. Review can still open the deep TagSheet for saved marks, but the Reader no longer creates new marks from its primary per-verse actions.
 
 ## Reach
 
 | Entry | Trigger | Result |
 | --- | --- | --- |
-| Reader, double-tap verse (touch) | gesture | `beginFast(verseKey)` → fast-tag inline panel |
-| Reader, right-click verse (desktop) | mouse | `beginFast(verseKey)` → fast-tag inline panel |
-| Reader, keyboard `m` on centered verse | keyboard | `beginFast(centerVerseKey)` → fast-tag inline panel |
-| Command sheet, "Mark this verse" (`F2`) | keyboard | `beginFast(activeVerseKey)` → fast-tag inline panel |
 | Fast-tag panel, `⛶` button | tap | `openDeep(verseKey)` → deep TagSheet |
 | Fast-tag panel, `⌘/Ctrl + Enter` | keyboard | `openDeep(verseKey)` → deep TagSheet |
 | Review hub row → "Edit mark" | tap | `editor-bridge::openEditor(verseKey)` → deep TagSheet |
@@ -55,7 +51,11 @@ Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side ver
 
 ## Behavior
 
-### Fast-tag inline panel (primary entry)
+### Fast-tag inline panel (legacy mark-entry surface)
+
+Reader no longer routes new per-verse actions into `beginFast(verseKey)`. The fast-tag panel remains in the codebase only as a legacy mark-entry/edit surface while Review still depends on the deep TagSheet and existing marks store.
+
+When `beginFast(verseKey)` is invoked by a remaining programmatic caller:
 
 1. Trigger fires `beginFast(verseKey)` — verse gains active-state treatment (left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in verse head).
 2. `marks/VerseTagPanel.svelte` renders inline in the active verse below the translation: one row per layer group (Speech / Narrative / Themes / Entities), `#value` chips colored by layer hue, `+ add` affordance per group, `⛶` escalation top-right.
@@ -154,7 +154,7 @@ _(no cross-surface reads detected)_
 
 ## Invariants
 
-- **Fast-tag panel is the sole per-verse action surface.** Double-tap, right-click, keyboard `m`, command sheet F2 all route through `beginFast(verseKey)`. Deep TagSheet reachable only via panel `⛶`, `⌘/Ctrl+Enter`, or programmatic bridges (`editor-bridge::openEditor`). **Do not** introduce contextual menu, multi-action sheet, or preview popover as alternative per-verse action surface. Verse-number tap (B3) surfaces edge indicators only — navigation affordance, not per-verse action — unaffected.
+- **Reader no longer creates new marks from its primary verse actions.** Double-tap, right-click, keyboard `m`, and the command-sheet verse action belong to the `read` surface's tafsir flow now. Existing marks, mark indicators, Review, and deep TagSheet editing remain valid and must keep working.
 - **`_canon` is computed inside `marks/store.ts::save()` only.** No external caller may populate `_canon`. Bypassing `store.ts` to write the IDB store directly will leave `_canon` stale, indexes wrong, indicators stale, peer tabs missing the change.
 - **Empty-mark guard.** A mark must carry ≥1 tag across the 12 layers to persist. `save()` rejects empty input with `EmptyMarkError` before any IDB touch — a note alone is not sufficient. UI guards Save at callsite so the error should never be user-visible. Exported helper: `hasAnyTag(input)`.
 - **Sole writer of `marks` store: `marks/store.ts`.** Anywhere else writing `marks` directly is a bug.

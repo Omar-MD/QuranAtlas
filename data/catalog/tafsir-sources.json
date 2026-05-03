@@ -3,9 +3,13 @@
     "id": "muyassar",
     "type": "tafsir",
     "label": "Tafsir Muyassar",
+    "displayLabel": "Tafsir Muyassar",
+    "role": "tafsir",
+    "trustTier": "default",
     "language": "ar",
     "providerId": "qul",
     "licenseId": "qul-resource",
+    "sourceProvider": "qul",
     "visibility": "baseline",
     "default": true,
     "sourceUrl": "https://qul.tarteel.ai/resources/tafsir/38",
@@ -16,6 +20,52 @@
       "resourceId": 38,
       "contentResourceId": 16,
       "normalizedPath": "data/normalized/tafsir/muyassar.json"
+    }
+  },
+  {
+    "id": "mukhtasar",
+    "type": "tafsir",
+    "label": "Al-Mukhtasar fi al-Tafsir",
+    "displayLabel": "Al-Mukhtasar fi al-Tafsir",
+    "role": "tafsir",
+    "trustTier": "selected-opt-in",
+    "language": "ar",
+    "providerId": "qul",
+    "licenseId": "qul-resource",
+    "sourceProvider": "qul",
+    "visibility": "optional",
+    "default": false,
+    "sourceUrl": "https://qul.tarteel.ai/resources/tafsir/251",
+    "outputPath": "tafsir/mukhtasar/{surah}.json",
+    "fetch": {
+      "provider": "qul-tafsir",
+      "resourceUrl": "https://qul.tarteel.ai/resources/tafsir/251",
+      "resourceId": 251,
+      "contentResourceId": 176,
+      "normalizedPath": "data/normalized/tafsir/mukhtasar.json"
+    }
+  },
+  {
+    "id": "saadi",
+    "type": "tafsir",
+    "label": "Tafsir al-Sa'di",
+    "displayLabel": "Tafsir al-Sa'di",
+    "role": "tafsir",
+    "trustTier": "selected-opt-in",
+    "language": "ar",
+    "providerId": "qul",
+    "licenseId": "qul-resource",
+    "sourceProvider": "qul",
+    "visibility": "optional",
+    "default": false,
+    "sourceUrl": "https://qul.tarteel.ai/resources/tafsir/24",
+    "outputPath": "tafsir/saadi/{surah}.json",
+    "fetch": {
+      "provider": "qul-tafsir",
+      "resourceUrl": "https://qul.tarteel.ai/resources/tafsir/24",
+      "resourceId": 24,
+      "contentResourceId": 14,
+      "normalizedPath": "data/normalized/tafsir/saadi.json"
     }
   }
 ]

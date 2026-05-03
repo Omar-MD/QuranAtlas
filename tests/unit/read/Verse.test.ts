@@ -5,8 +5,12 @@ vi.mock('../../../src/core/events', () => ({
   emit: vi.fn(),
 }))
 
-vi.mock('../../../src/mark/VerseTagPanel.svelte', () => ({
-  default: class MockVerseTagPanel {},
+vi.mock('../../../src/read/TafsirPreview.svelte', () => ({
+  default: class MockTafsirPreview {},
+}))
+
+vi.mock('../../../src/read/tafsir-state.svelte', () => ({
+  tafsirState: { activeVerseKey: null, previewOpen: false },
 }))
 
 import Verse from '../../../src/read/Verse.svelte'

@@ -45,12 +45,12 @@ vi.mock('../../../src/configure/font-size', () => ({
 vi.mock('../../../src/configure/panel-bridge', () => ({
   toggleTranslation: vi.fn(async () => true),
 }))
-vi.mock('../../../src/mark/tag/session-bridge', () => ({ beginFast: vi.fn() }))
+vi.mock('../../../src/read/tafsir-bridge.ts', () => ({ openTafsirPreview: vi.fn() }))
 vi.mock('../../../src/navigate/reader-actions.js', () => ({
   nextVerse: vi.fn(), prevVerse: vi.fn(),
   nextSurah: vi.fn(), prevSurah: vi.fn(),
   firstVerse: vi.fn(), lastVerse: vi.fn(),
-  markCurrent: vi.fn(),
+  openCurrentTafsir: vi.fn(),
 }))
 vi.mock('../../../src/navigate/shortcuts-sheet.js', () => ({
   openShortcutsSheet: vi.fn(),
@@ -120,7 +120,7 @@ describe('CommandSheet.svelte (F6 keyboard)', () => {
     await flush()
 
     // Type a verse ref so the result list has multiple items: "Open verse" /
-    // "Mark this verse" / "Copy reference".
+    // "Study this verse" / "Copy reference".
     const input = document.querySelector('.qa-cmd-input') as HTMLInputElement
     expect(input).not.toBeNull()
     await fireEvent.input(input, { target: { value: '2:255' } })
@@ -134,6 +134,9 @@ describe('CommandSheet.svelte (F6 keyboard)', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
     await flush()
     expect(commandSheet.focusIndex).toBe(1)
+
+    const items = [...document.querySelectorAll('.qa-cmd-item')].map((el) => el.textContent ?? '')
+    expect(items.some((text) => text.includes('Study this verse'))).toBe(true)
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
     await flush()

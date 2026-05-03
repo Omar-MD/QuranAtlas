@@ -23,6 +23,7 @@ Read these before changing behavior:
 - `docs/context/source-data-flow.md` — source formats, normalization rules, dataset build, and runtime data flow
 - `docs/context/csp-allowlist.md` — outbound-origin policy
 - `docs/context/implemented.md` — shipped surface inventory
+- `docs/context/future.md` — provisional future direction for data lanes, reflection, claims, and AI-assisted retrieval
 - `docs/context/roadmap.md` — deferred scope
 - `docs/context/open-issues.md` — known bugs and blocking debt
 
@@ -55,6 +56,7 @@ Internal refactors, tooling changes, type-only edits, and docs-only edits can sk
 - Route, surface, boot-flow, router, DAG, or cross-cutting behavior changes: update the owning dossier and/or `docs/context/architecture.md`.
 - Script, toolchain, pinned-version, or CI-gate changes: update `docs/tech-stack.md`.
 - User-facing feature scope or attribution changes: update `docs/product-info.md`.
+- Provisional future direction that is not yet committed ship scope goes in `docs/context/future.md`.
 - Future agreed scope goes in `docs/context/roadmap.md`.
 - Known bugs or blocking debt go in `docs/context/open-issues.md` and are removed when fixed.
 

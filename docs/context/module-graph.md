@@ -67,7 +67,6 @@ graph LR
   src_read --> src_configure
   src_read --> src_core
   src_read --> src_data
-  src_read --> src_mark
   src_read --> src_navigate
   src_review --> src_a11y
   src_review --> src_configure
@@ -124,7 +123,7 @@ graph LR
 ### `src/mark`
 
 - **Imports from:** `src/core`, `src/data`, `src/infra`
-- **Imported by:** `src`, `src/configure`, `src/navigate`, `src/read`, `src/review`
+- **Imported by:** `src`, `src/configure`, `src/navigate`, `src/review`
 
 ### `src/navigate`
 
@@ -138,7 +137,7 @@ graph LR
 
 ### `src/read`
 
-- **Imports from:** `src/a11y`, `src/configure`, `src/core`, `src/data`, `src/mark`, `src/navigate`
+- **Imports from:** `src/a11y`, `src/configure`, `src/core`, `src/data`, `src/navigate`
 - **Imported by:** `src`, `src/configure`, `src/listen`, `src/navigate`
 
 ### `src/review`

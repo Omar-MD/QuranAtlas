@@ -6,6 +6,7 @@ describe('state/settings.svelte.ts', () => {
     settings.theme = 'auto'
     settings.fontSize = 'md'
     settings.translationId = null
+    settings.tafsirId = 'muyassar'
     settings.translationVisible = true
     settings.surahHeaderHidden = false
   })
@@ -14,6 +15,7 @@ describe('state/settings.svelte.ts', () => {
     expect(settings.theme).toBe('auto')
     expect(settings.fontSize).toBe('md')
     expect(settings.translationId).toBeNull()
+    expect(settings.tafsirId).toBe('muyassar')
     expect(settings.translationVisible).toBe(true)
   })
 

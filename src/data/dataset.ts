@@ -43,6 +43,7 @@ export type TranslationEntry = {
   name: string
   subtitle: string
   language: string
+  availableInManifest: boolean
 }
 
 export type TafsirEntryMeta = {
@@ -84,7 +85,13 @@ export type SourceIndexEntry = {
   id: string
   type: 'riwayah' | 'translation' | 'tafsir'
   label: string
+  displayLabel?: string | null
+  role?: string | null
+  trustTier?: string | null
   language: string | null
+  translator?: string | null
+  sourceProvider?: string | null
+  licenseStatus?: string | null
   visibility: 'baseline' | 'optional' | 'internal'
   default: boolean
   availableInManifest: boolean
@@ -107,39 +114,6 @@ type DatasetManifestFile = {
 }
 
 type ManifestJson = { files: DatasetManifestFile[] }
-
-type ProvenanceRiwayahEntry = {
-  id: 'hafs' | 'warsh' | 'qaloon'
-  label: string
-  version: string
-  ayatCount: number
-  fontFamily: string
-  minLineHeight: number
-}
-
-type ProvenanceTranslationEntry = {
-  id?: string
-  label?: string
-  translator?: string
-  language?: string
-  version?: string
-  ayatCount?: number
-  footnoteCount?: number
-  hasIntros?: boolean
-  license?: string
-  licenseUrl?: string
-  source?: string
-  sourceUrl?: string
-  fetchedAt?: string
-}
-
-type ProvenanceJson = {
-  corpus?: unknown
-  riwayat?: ProvenanceRiwayahEntry[]
-  translations?: ProvenanceTranslationEntry[]
-  tafsir?: unknown
-  fonts?: unknown
-}
 
 const DEFAULT_RIWAYAH = 'qaloon'
 const DEFAULT_TRANSLATION = 'saheeh'
@@ -231,21 +205,36 @@ export async function getSurahs(): Promise<SurahMeta[]> {
   return fetchNetworkFirst(url) as Promise<SurahMeta[]>
 }
 
-/**
- * Get the list of translations actually present in the shipped dataset.
- * Sourced from provenance.json so the UI never offers options the corpus
- * does not contain.
- */
+/** Get the list of cataloged translation sources, including opt-in packs. */
 export async function getTranslations(): Promise<TranslationEntry[]> {
-  const provenance = await fetchNetworkFirst(`${DATASET_BASE}/provenance.json`) as ProvenanceJson
-  const entries = Array.isArray(provenance.translations) ? provenance.translations : []
-  return entries.map((entry) => {
-    const name = entry.label || 'Translation'
-    const id = entry.id || slugify(name)
-    const subtitle = entry.translator || entry.source || ''
-    const language = entry.language || 'en'
-    return { id, name, subtitle, language }
-  })
+  const index = await getSourceIndex()
+  return index.sources
+    .filter((entry) => entry.type === 'translation')
+    .map((entry) => {
+      const name = entry.displayLabel || entry.label || 'Translation'
+      const id = entry.id || slugify(name)
+      const subtitle = entry.translator || entry.sourceProvider || ''
+      const language = entry.language || 'en'
+      return {
+        id,
+        name,
+        subtitle,
+        language,
+        availableInManifest: entry.availableInManifest,
+      }
+    })
+}
+
+export async function getTafsirs(): Promise<TafsirEntryMeta[]> {
+  const index = await getSourceIndex()
+  return index.sources
+    .filter((entry) => entry.type === 'tafsir')
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.displayLabel || entry.label,
+      language: entry.language ?? 'ar',
+      availableInManifest: entry.availableInManifest,
+    }))
 }
 
 /**
@@ -275,17 +264,6 @@ export async function getSourceIndex(): Promise<SourceIndex> {
   return fetchNetworkFirst(`${DATASET_BASE}/indexes/sources.json`) as Promise<SourceIndex>
 }
 
-export async function getTafsirs(): Promise<TafsirEntryMeta[]> {
-  const index = await getSourceIndex()
-  return index.sources
-    .filter((entry) => entry.type === 'tafsir')
-    .map((entry) => ({
-      id: entry.id,
-      name: entry.label,
-      language: entry.language ?? 'ar',
-      availableInManifest: entry.availableInManifest,
-    }))
-}
 
 export async function loadTafsirForSurah(tafsirId: string, surahNo: number): Promise<TafsirSurahPack | null> {
   if (!tafsirId) { return null }

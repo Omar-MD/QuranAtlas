@@ -12,6 +12,12 @@
     "url": "https://saheehinternational.com/"
   },
   {
+    "id": "quran-db-upstream-restricted",
+    "label": "Quran DB upstream translation source requires source-specific review",
+    "status": "restricted",
+    "url": "https://github.com/faisalill/quran_db"
+  },
+  {
     "id": "qul-resource",
     "label": "QUL downloadable resource",
     "status": "approved",

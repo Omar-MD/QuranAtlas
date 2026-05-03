@@ -779,6 +779,63 @@
 }
 
 /* Surahs tab */
+.qa-nav-drawer-surah-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--qa-border-subtle);
+}
+
+.qa-nav-drawer-surah-rail-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.qa-nav-drawer-surah-rail-eyebrow {
+  font-family: var(--qa-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--qa-text-dim);
+}
+
+.qa-nav-drawer-surah-rail-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--qa-text-primary);
+}
+
+.qa-nav-drawer-rail-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--qa-border-subtle);
+  border-radius: var(--qa-radius-md);
+  background: var(--qa-surface-raised);
+  overflow: hidden;
+}
+
+.qa-nav-drawer-rail-switch-option {
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--qa-text-muted);
+  cursor: pointer;
+  font-family: var(--qa-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.qa-nav-drawer-rail-switch-option--on {
+  background: var(--qa-accent);
+  color: var(--qa-text-on-accent);
+  font-weight: 600;
+}
+
 .qa-nav-drawer-search {
   display: flex; align-items: center; gap: 8px;
   margin: 10px 14px 4px;
@@ -796,33 +853,11 @@
 }
 .qa-nav-drawer-search-input::placeholder { color: var(--qa-text-dim); }
 
-.qa-nav-drawer-pills {
-  display: flex; gap: 6px;
-  padding: 4px 14px 8px;
-}
-
 .qa-nav-drawer-search-hint {
   padding: 2px 16px 8px;
   font-size: 11px;
   color: var(--qa-text-muted);
   font-style: italic;
-}
-
-.qa-nav-drawer-pill {
-  padding: 5px 11px;
-  border-radius: 99px;
-  font-size: 11px;
-  background: var(--qa-surface-raised);
-  border: 1px solid var(--qa-border-subtle);
-  color: var(--qa-text-primary);
-  cursor: pointer;
-}
-
-.qa-nav-drawer-pill--on {
-  background: var(--qa-accent);
-  border-color: var(--qa-accent);
-  color: var(--qa-text-on-accent);
-  font-weight: 600;
 }
 
 .qa-nav-drawer-surah-list {

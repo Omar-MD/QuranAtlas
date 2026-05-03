@@ -96,6 +96,28 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     expect([...rows].some(r => r.textContent?.includes('Al-Fatihah'))).toBe(false)
   })
 
+  it('renders the compact header rail above search instead of a pill row', async () => {
+    await mountAndOpen('read', 'surahs')
+
+    const rail = document.querySelector('.qa-nav-drawer-surah-rail') as HTMLElement | null
+    expect(rail).not.toBeNull()
+    expect(rail!.textContent).toContain('Browse')
+    expect(rail!.textContent).toContain('Surahs')
+
+    const toggle = rail!.querySelector('.qa-nav-drawer-rail-switch') as HTMLElement | null
+    expect(toggle).not.toBeNull()
+    expect(toggle!.textContent).toContain('All')
+    expect(toggle!.textContent).toContain('Recent')
+    expect(toggle!.querySelector('.qa-nav-drawer-rail-switch-option--on')?.textContent).toContain('All')
+
+    const search = document.querySelector('.qa-nav-drawer-search') as HTMLElement | null
+    expect(search).not.toBeNull()
+    expect(rail!.compareDocumentPosition(search!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+
+    expect(document.querySelector('.qa-nav-drawer-pills')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-pill')).toBeNull()
+  })
+
   it('F-mobile-8: typing 2:255 does NOT auto-navigate; hint mentions Enter; Enter commits', async () => {
     let navigatedTo: { surah: number; verse: number } | null = null
     on(Events.NAVIGATION_NAVIGATE, (p: unknown) => { navigatedTo = p as typeof navigatedTo })

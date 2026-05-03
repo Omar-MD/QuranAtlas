@@ -26,6 +26,7 @@
   import { commandSheetBridge } from './navigate/command-sheet-bridge'
   import { navDrawerBridge } from './navigate/nav-drawer-bridge'
   import { tagSheetBridge } from './mark/tag/sheet-bridge'
+  import { tafsirSheetBridge } from './read/tafsir-bridge'
 
   let cleanups: Array<() => void> = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,6 +41,7 @@
   let commandSheetMounted = $state(false)
   let navDrawerMounted = $state(false)
   let tagSheetMounted = $state(false)
+  let tafsirSheetMounted = $state(false)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let UndoToastComp = $state<any>(null)
@@ -51,6 +53,8 @@
   let NavDrawerComp = $state<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let TagSheetComp = $state<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let TafsirSheetComp = $state<any>(null)
 
   $effect(() => {
     if (undoToastMounted && !UndoToastComp) {
@@ -75,6 +79,11 @@
   $effect(() => {
     if (tagSheetMounted && !TagSheetComp) {
       void import('./mark/tag/TagSheet.svelte').then(m => { TagSheetComp = m.default })
+    }
+  })
+  $effect(() => {
+    if (tafsirSheetMounted && !TafsirSheetComp) {
+      void import('./read/TafsirSheet.svelte').then(m => { TafsirSheetComp = m.default })
     }
   })
 
@@ -102,6 +111,7 @@
     commandSheetBridge.setMounter(() => { commandSheetMounted = true })
     navDrawerBridge.setMounter(() => { navDrawerMounted = true })
     tagSheetBridge.setMounter(() => { tagSheetMounted = true })
+    tafsirSheetBridge.setMounter(() => { tafsirSheetMounted = true })
 
     // Register the route-change handler BEFORE initBootstrap so that Svelte
     // component routes dispatched during bootstrap (e.g. the initial #/about
@@ -180,5 +190,6 @@
 {#if CommandSheetComp}<CommandSheetComp />{/if}
 {#if NavDrawerComp}<NavDrawerComp />{/if}
 {#if TagSheetComp}<TagSheetComp />{/if}
+{#if TafsirSheetComp}<TafsirSheetComp />{/if}
 
 <div class="qa-night-shift" aria-hidden="true"></div>

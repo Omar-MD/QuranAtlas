@@ -14,7 +14,7 @@ test_paths:
 
 # Surface: read
 
-> Reader chrome — verse rendering, ambient dock + pill + margin header, surah header + bismillah, cross-surah scroll, typography knobs, scroll-position persistence. NOT the marking flow (that's the `mark` surface).
+> Reader chrome — verse rendering, ambient dock + pill + margin header, surah header + bismillah, cross-surah scroll, typography knobs, scroll-position persistence, and inline/full tafsir study. NOT the mark-editing flow for existing marks (that's the `mark` surface).
 
 ## Reach
 
@@ -33,6 +33,9 @@ test_paths:
 | AmbientDock tap (desktop) | tap | open command sheet / Review / Marks |
 | Verse number tap | tap | edge indicators ~1.6 s + pill label updates |
 | Verse text block tap/click | tap / click | toggle that verse's meaning + knowledge lane |
+| Verse double-tap / double-click | gesture | open inline tafsir preview for that verse |
+| Verse right-click | mouse | open inline tafsir preview for that verse |
+| Keyboard `m` on centered verse | keyboard | open inline tafsir preview for that verse |
 | Reader body tap | tap | dock + pill fade in for ~3 s |
 | Visibility-restore | passive | restore `currentPosition` only when tracker fresh + scroller at top |
 
@@ -49,6 +52,8 @@ test_paths:
 | `src/read/Reader.svelte` | _(no leading comment)_ |
 | `src/read/SurahHeader.svelte` | _(no leading comment)_ |
 | `src/read/SurahProgress.svelte` | Tiny progress chip under surah title. Tracks the current juz the reader |
+| `src/read/TafsirPreview.svelte` | _(no leading comment)_ |
+| `src/read/TafsirSheet.svelte` | _(no leading comment)_ |
 | `src/read/Verse.svelte` | Translation lookup role for cross-riwayah display. |
 | `src/read/audio-autoscroll.ts` | Smart-defer auto-scroll: scroll the playing verse into view UNLESS the |
 | `src/read/audio-highlight.ts` | Audio verse-tick highlight. Subscribes to `audio:verse-changed` and |
@@ -63,6 +68,8 @@ test_paths:
 | `src/read/state-ambient.svelte.ts` | _(no leading comment)_ |
 | `src/read/state.svelte.ts` | _(no leading comment)_ |
 | `src/read/surah-swap.ts` | Cross-surah swap orchestration. |
+| `src/read/tafsir-bridge.ts` | _(no leading comment)_ |
+| `src/read/tafsir-state.svelte.ts` | _(no leading comment)_ |
 | `src/read/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
 | `src/read/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
 <!-- AUTO-GENERATED:inventory END -->
@@ -115,6 +122,18 @@ Theme chips + passage context stay collapsed with the verse and reveal only when
 
 If either knowledge shard is missing, invalid, or fetch-fails, the reader logs a recoverable warning and leaves the knowledge lane empty for that surah. Base verse rendering continues unchanged.
 
+### Tafsir study lane
+
+The Reader's primary per-verse study action is now tafsir, not new mark creation.
+
+1. Double-tap / double-click a verse, right-click a verse, press `m`, or choose the command-sheet verse action to open inline tafsir preview for that verse.
+2. The active verse gains the existing left-edge accent treatment and a compact `tafsir` head label. The preview mounts directly under that verse's Arabic / meaning stack, where the old fast-tag panel used to appear.
+3. Inline preview loads the saved tafsir source immediately. If the saved source body is unavailable in the current dataset profile, runtime falls back to `muyassar` without breaking the Reader.
+4. Preview header includes the source switcher plus an **Expand** action. Switching sources reloads the current surah's tafsir pack and keeps the preview anchored to the same active verse.
+5. Grouped tafsir ranges remain grouped. When a verse belongs to a range entry, the preview and full sheet show the shared reference range instead of duplicating the same text per ayah.
+6. **Expand** opens the full tafsir sheet overlay. That sheet replaces the old deep-tag escalation path for new Reader study actions; it shows the active source label, verse/range reference, Arabic tafsir text, and the same source picker.
+7. Missing tafsir data is a compact unavailable state inside the preview / sheet. Reader rendering and navigation continue normally.
+
 ### Cross-surah infinite scroll
 
 Reader is single-surah; only one surah mounted at a time. Pull past edge swaps to N+1 / N-1 with wrap (114 ↔ 1).
@@ -166,7 +185,7 @@ _(no cross-surface reads detected)_
 
 Last-read position + sticky-page state. Single global record; updated on every surah mount + center-band scroll crossing + warm-resume hide.
 
-Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `surahHeaderHidden`, `currentPosition`, `lastSurface`. (See `configure` dossier for `settings` store body.)
+Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `tafsirId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `surahHeaderHidden`, `currentPosition`, `lastSurface`. (See `configure` dossier for `settings` store body.)
 
 ## Events
 
@@ -196,6 +215,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
 - **Knowledge lane is optional and non-blocking.** Reader text render never waits on `dataset/knowledge/**`; missing or invalid ayah/passage shards leave verse theme/context metadata empty and do not introduce a new error surface.
 - **Meaning + knowledge are per-verse disclosures.** Arabic remains always visible; translation, theme chips, and passage summary mount only for verses the user explicitly opens. Closing a verse also closes any inline footnote open inside it.
+- **Reader tafsir is per-verse and source-switchable.** Inline preview and full sheet always read from `settings.tafsirId`, but runtime falls back to `muyassar` when the selected optional pack is absent from the active manifest.
 - **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
 - **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/read/chrome.spec.js` B-Virt1/2/3 + `tests/unit/read/chunked-virtualiser.test.ts`.
 - **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/configure/settings.spec.js` D3-bg.
@@ -203,7 +223,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (14):**
+**Unit (15):**
 
 - `tests/unit/read/MarginHeader-toggle.test.ts`
 - `tests/unit/read/SurahHeader.test.ts`
@@ -217,6 +237,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - `tests/unit/read/state-ambient.test.ts`
 - `tests/unit/read/state.test.ts`
 - `tests/unit/read/surah-swap.test.ts`
+- `tests/unit/read/tafsir-state.test.ts`
 - `tests/unit/read/translation-tokens.test.ts`
 - `tests/unit/styles/font-tokens.test.js`
 

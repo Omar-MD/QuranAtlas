@@ -194,6 +194,27 @@
     <a class="qa-sl-bookmarks-link" href="#/bookmarks"><span class="qa-icon-bookmark" aria-hidden="true"></span> Bookmarks</a>
   </header>
 
+  <div class="qa-sl-rail">
+    <div class="qa-sl-rail-copy">
+      <span class="qa-sl-rail-eyebrow">Browse</span>
+      <span class="qa-sl-rail-title">Surahs</span>
+    </div>
+
+    <div class="qa-sl-rail-switch" role="tablist" aria-label="Browse mode">
+      {#each FILTERS as f (f.key)}
+        <button
+          type="button"
+          class="qa-sl-rail-switch-option"
+          class:qa-sl-rail-switch-option--on={surahsState.filter === f.key}
+          role="tab"
+          aria-selected={surahsState.filter === f.key}
+          data-filter={f.key}
+          onclick={() => setFilter(f.key)}
+        >{f.label}</button>
+      {/each}
+    </div>
+  </div>
+
   <label class="qa-sl-search">
     <span class="qa-sl-search-icon" aria-hidden="true">&#x2315;</span>
     <input
@@ -208,20 +229,6 @@
     />
     <span class="qa-sl-search-kbd">&#x2318;K</span>
   </label>
-
-  <div class="qa-sl-seg" role="tablist">
-    {#each FILTERS as f (f.key)}
-      <button
-        type="button"
-        class="qa-sl-seg-item"
-        class:qa-sl-seg-item--on={surahsState.filter === f.key}
-        role="tab"
-        aria-selected={surahsState.filter === f.key}
-        data-filter={f.key}
-        onclick={() => setFilter(f.key)}
-      >{f.label}</button>
-    {/each}
-  </div>
 
   {#if hintText}
     <div class="qa-sl-hint">{hintText}</div>
@@ -251,4 +258,3 @@
     {/each}
   </ul>
 </div>
-

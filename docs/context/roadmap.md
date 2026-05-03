@@ -40,6 +40,14 @@ the active plan; when it ships, it moves to `implemented.md`.
 ## Tafsir
 
 - External tafsir packs.
+- Ordered recommended Arabic tafsir source list: Tafsir Ibn Kathir; Tafsir al-Tabari / Jami' al-Bayan; Tafsir al-Baghawi / Ma'alim al-Tanzil; Tafsir al-Sa'di / Taysir al-Karim al-Rahman; al-Mukhtasar fi al-Tafsir; al-Tafsir al-Muyassar; Tafsir al-Qurtubi; al-Muharrar al-Wajiz / Ibn Atiyyah; Adwa' al-Bayan / al-Shinqiti; al-Tahrir wa al-Tanwir / Ibn Ashur.
+
+## Tadabbur / study
+
+- Reader-facing Knowledge Lane UI — subtle passage context and ayah theme chips inside the existing interaction flow.
+- Reflection Lane prompts — one curated prompt first, optional more-lenses expansion.
+- Scholarly claims dataset — source-backed knowledge atoms for citations and guardrails.
+- Citation-first retrieval / AI study assist — lexical and chunked retrieval before any broader synthesis.
 
 ## Multi-layer marks
 
@@ -53,6 +61,8 @@ the active plan; when it ships, it moves to `implemented.md`.
 - Arabic roots — pre-computed 3-letter roots.
 - Muhkam / mutashabih classification.
 - Page-image rendering for authentic mushaf hands.
+
+Longer-range lane architecture, sequencing, and unresolved planning questions live in `future.md`.
 
 ## Infra
 

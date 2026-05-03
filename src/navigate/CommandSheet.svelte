@@ -22,7 +22,7 @@
   import { getAllUsedTags, getSlotForTag } from '../mark/tags.js'
   import { setTheme } from '../configure/theme'
   import { setFontSize, loadFontSize, getFontSizeOptions } from '../configure/font-size'
-  import { beginFast } from '../mark/tag/session-bridge'
+  import { openTafsirPreview } from '../read/tafsir-bridge.ts'
   import { get } from '../core/db'
   import { announce } from '../a11y/announcer'
   import { commandSheetBridge } from './command-sheet-bridge'
@@ -43,7 +43,7 @@
     href?: string
     shortcut?: string
     group: string
-    doMark?: { verseKey: string }
+    doTafsir?: { verseKey: string }
     doCopy?: string
     doCommand?: string
   }
@@ -208,7 +208,7 @@
 
     const items: ResultItem[] = [
       { kind: 'verse',  glyph: '\u21B5', surah: s, verse: v, label: 'Open verse',      meta: `Scroll reader to ${s}:${v}`, group: 'Verse' },
-      { kind: 'action', glyph: '\u2726', label: 'Mark this verse', meta: `Start fast-tag on ${s}:${v}`, doMark: { verseKey: `${s}:${v}` }, shortcut: 'M', group: 'Verse' },
+      { kind: 'action', glyph: '\u2726', label: 'Study this verse', meta: `Open tafsir for ${s}:${v}`, doTafsir: { verseKey: `${s}:${v}` }, shortcut: 'M', group: 'Verse' },
       { kind: 'action', glyph: '\u2398', label: 'Copy reference',  meta: `"${s}:${v}" to clipboard`,       doCopy: `${s}:${v}`, group: 'Verse' },
     ]
     return { items, card: { refLabel, ar, en } }
@@ -284,9 +284,9 @@
       close()
       return
     }
-    if (item.doMark) {
+    if (item.doTafsir) {
       close()
-      await beginFast(item.doMark.verseKey)
+      await openTafsirPreview(item.doTafsir.verseKey)
       return
     }
     if (item.doCommand === 'theme-dark')   { await setTheme('dark');   close(); return }
@@ -461,4 +461,3 @@
       <span class="qa-cmd-foot-group"><span class="qa-cmd-kbd">esc</span> <span>close</span></span>
     </div>
 </div>
-

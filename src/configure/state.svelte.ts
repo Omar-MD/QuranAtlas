@@ -1,4 +1,5 @@
 export type TranslationId = string | null
+export type TafsirId = string
 export type Theme = 'light' | 'sepia' | 'dark' | 'auto'
 export type FontSize = 'sm' | 'md' | 'lg' | 'xl'
 export type ReadingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -37,6 +38,7 @@ export const settings = $state({
   riwayah: 'qaloon' as Riwayah,
   fontSize: 'md' as FontSize,
   translationId: 'saheeh' as TranslationId,
+  tafsirId: 'muyassar' as TafsirId,
   translationVisible: true,
   lineSpacing: 'md' as ReadingStep,
   wordSpacing: 'md' as ReadingStep,

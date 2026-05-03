@@ -1,8 +1,8 @@
 <script lang="ts">
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
-  import { tagSession } from '../mark/tag/state.svelte'
-  import VerseTagPanel from '../mark/VerseTagPanel.svelte'
+  import { tafsirState } from './tafsir-state.svelte'
+  import TafsirPreview from './TafsirPreview.svelte'
   import { parseTranslationTokens } from './translation-tokens'
 
   interface Props {
@@ -44,7 +44,7 @@
 
   const verseNum = $derived(verseKey.split(':')[1] ?? '')
   const surahNum = $derived(verseKey.split(':')[0] ?? '')
-  const isActive = $derived(tagSession.verseKey === verseKey && tagSession.quickbarOpen)
+  const isActive = $derived(tafsirState.activeVerseKey === verseKey && tafsirState.previewOpen)
   const tokens = $derived(parseTranslationTokens(translation))
   const hasKnowledge = $derived(themes.length > 0 || !!passageSummary)
   const hasMeaning = $derived(
@@ -116,8 +116,8 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <span class="qa-verse-number" onclick={handleNumberTap} aria-label="Verse {surahNum}:{verseNum}">{verseNum}</span>
     {#if isActive}
-      <span class="qa-verse-tagging" aria-label="Tagging this verse">
-        <span class="qa-verse-tagging-dot" aria-hidden="true"></span>tagging
+      <span class="qa-verse-tagging" aria-label="Studying this verse">
+        <span class="qa-verse-tagging-dot" aria-hidden="true"></span>tafsir
       </span>
     {/if}
   </div>
@@ -200,6 +200,6 @@
     </div>
   {/if}
   {#if isActive}
-    <VerseTagPanel {verseKey} />
+    <TafsirPreview {verseKey} />
   {/if}
 </div>

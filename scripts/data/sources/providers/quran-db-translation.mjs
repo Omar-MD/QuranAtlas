@@ -7,6 +7,7 @@ function decodeHtmlEntities(text) {
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
+    .replace(/<\/?[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -46,10 +47,13 @@ export function normalizeQuranDbTranslation(source, options) {
       }
       const row = ayahs[String(ayahNo)]
       const text = row?.[options.field]
-      if (typeof text !== 'string' || !text.trim()) {
+      if ((typeof text !== 'string' || !text.trim()) && options.allowMissingText !== true) {
         throw new Error(`Quran DB surah ${surahNo}:${ayahNo} missing ${options.field}`)
       }
-      return { key: `${surahNo}:${ayahNo}`, text: decodeHtmlEntities(text) }
+      return {
+        key: `${surahNo}:${ayahNo}`,
+        text: typeof text === 'string' ? decodeHtmlEntities(text) : '',
+      }
     })
 
     surahs[PAD3(surahNo)] = {

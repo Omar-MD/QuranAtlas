@@ -124,6 +124,14 @@ vi.mock('../../../src/mark/tag/session-bridge', () => ({
   openDeep: vi.fn(() => Promise.resolve()),
 }))
 
+vi.mock('../../../src/read/tafsir-bridge', () => ({
+  openTafsirPreview: vi.fn(() => Promise.resolve()),
+}))
+
+vi.mock('../../../src/read/tafsir-state.svelte', () => ({
+  tafsirState: { previewOpen: false },
+}))
+
 vi.mock('../../../src/data/offline.js', () => ({
   initInstallPrompt: vi.fn(),
   getActivationState: vi.fn(() => Promise.resolve('none')),

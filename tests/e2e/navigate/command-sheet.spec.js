@@ -3,7 +3,7 @@
  *
  * Covers:
  *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
- *   F2. Arrow-down to "Mark this verse" row → Enter → mark editor opens
+ *   F2. Arrow-down to "Study this verse" row → Enter → inline tafsir opens
  *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/threads/mercy FVR
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
@@ -98,14 +98,10 @@ test.describe('Journey F: Navigation', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // F2. Mark a verse from command sheet
+  // F2. Study a verse from command sheet
   // ---------------------------------------------------------------------------
 
-  test('F2: verse preview → ArrowDown to "Mark this verse" → Enter opens fast-tag panel', async ({ page }) => {
-    // Open command sheet and type verse reference for the currently-loaded
-    // surah (reader is at #/s/1 from beforeEach). The fast-tag panel renders
-    // inside the visible Verse component, so the target verse must be in
-    // the rendered surah.
+  test('F2: verse preview → ArrowDown to "Study this verse" → Enter opens inline tafsir preview', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('1:1')
     await expect(page.locator('.qa-cmd-vcard')).toBeVisible({ timeout: 5_000 })
@@ -114,24 +110,22 @@ test.describe('Journey F: Navigation', () => {
     const firstActive = page.locator('.qa-cmd--active')
     await expect(firstActive.locator('.qa-cmd-item-label')).toHaveText('Open verse')
 
-    // Arrow down once → "Mark this verse" should become active
+    // Arrow down once → "Study this verse" should become active
     await page.keyboard.press('ArrowDown')
 
     const activeItem = page.locator('.qa-cmd--active')
     await expect(activeItem).toBeVisible()
     const activeLabel = activeItem.locator('.qa-cmd-item-label')
-    await expect(activeLabel).toHaveText('Mark this verse')
+    await expect(activeLabel).toHaveText('Study this verse')
 
-    // Press Enter → command sheet closes → fast-tag inline panel opens
-    // (post-2026-04-25 mobile-nav-redesign: was mark editor)
+    // Press Enter → command sheet closes → inline tafsir preview opens.
     await page.keyboard.press('Enter')
 
     const sheet = page.locator('.qa-cmd-sheet')
     await expect(sheet).toHaveClass(/qa-cmd--hidden/, { timeout: 5_000 })
 
-    // Fast-tag inline panel surfaces; deep TagSheet must NOT open
-    await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('.qa-ts')).toHaveCount(0)
+    await expect(page.locator('[data-tafsir-preview]')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.qa-tafsir-sheet')).toHaveCount(0)
   })
 
   // ---------------------------------------------------------------------------

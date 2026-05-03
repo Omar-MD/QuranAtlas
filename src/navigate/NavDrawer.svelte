@@ -5,9 +5,10 @@
    *   - Study  — Hub link + 12 grouped layer rows (was the legacy "Review" tab).
    *
    * Read sub-tabs:
-   *   - Surahs    — search + filter pills (All / ⏱ Recent) + scrolling surah
-   *                 list, auto-scrolled to and highlighting the currently-
-   *                 reading surah.
+   *   - Surahs    — compact header rail (Browse / Surahs + All | Recent
+   *                 switch) above search + scrolling surah list,
+   *                 auto-scrolled to and highlighting the currently-reading
+   *                 surah.
    *   - Bookmarks — verse-level list grouped by surah, swipe-left to delete.
    *                 Reading-mode entry replacing the legacy ★ Bookmarked pill.
    *
@@ -253,7 +254,7 @@
 
   const FILTERS = [
     { key: 'all' as const, label: 'All' },
-    { key: 'recent' as const, label: '⏱ Recent' },
+    { key: 'recent' as const, label: 'Recent' },
   ]
 </script>
 
@@ -334,6 +335,26 @@
 
       {#if activeSubTab === 'surahs'}
         <div class="qa-nav-drawer-tab-body">
+          <div class="qa-nav-drawer-surah-rail">
+            <div class="qa-nav-drawer-surah-rail-copy">
+              <span class="qa-nav-drawer-surah-rail-eyebrow">Browse</span>
+              <span class="qa-nav-drawer-surah-rail-title">Surahs</span>
+            </div>
+
+            <div class="qa-nav-drawer-rail-switch" role="tablist" aria-label="Browse mode">
+              {#each FILTERS as f (f.key)}
+                <button
+                  type="button"
+                  role="tab"
+                  class="qa-nav-drawer-rail-switch-option"
+                  class:qa-nav-drawer-rail-switch-option--on={surahsState.filter === f.key}
+                  aria-selected={surahsState.filter === f.key}
+                  onclick={() => setFilter(f.key)}
+                >{f.label}</button>
+              {/each}
+            </div>
+          </div>
+
           <label class="qa-nav-drawer-search">
             <span class="qa-nav-drawer-search-icon" aria-hidden="true">&#x2315;</span>
             <input
@@ -348,19 +369,6 @@
               onkeydown={handleSearchKeydown}
             />
           </label>
-
-          <div class="qa-nav-drawer-pills" role="tablist" aria-label="Filter">
-            {#each FILTERS as f (f.key)}
-              <button
-                type="button"
-                role="tab"
-                class="qa-nav-drawer-pill"
-                class:qa-nav-drawer-pill--on={surahsState.filter === f.key}
-                aria-selected={surahsState.filter === f.key}
-                onclick={() => setFilter(f.key)}
-              >{f.label}</button>
-            {/each}
-          </div>
 
           {#if searchHint}
             <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>

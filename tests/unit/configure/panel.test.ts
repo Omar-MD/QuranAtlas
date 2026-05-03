@@ -21,8 +21,19 @@
 import { render, fireEvent } from '@testing-library/svelte'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+vi.mock('../../../src/data/dataset.js', () => ({
+  getTranslations: vi.fn(async () => []),
+  getTafsirs: vi.fn(async () => [
+    { id: 'muyassar', name: 'Tafsir Muyassar' },
+    { id: 'mukhtasar', name: 'Al-Mukhtasar fi al-Tafsir' },
+  ]),
+}))
 vi.mock('../../../src/data/dataset.ts', () => ({
   getTranslations: vi.fn(async () => []),
+  getTafsirs: vi.fn(async () => [
+    { id: 'muyassar', name: 'Tafsir Muyassar' },
+    { id: 'mukhtasar', name: 'Al-Mukhtasar fi al-Tafsir' },
+  ]),
 }))
 vi.mock('../../../src/infra/safety/sync.ts', () => ({
   broadcastRiwayahChange: vi.fn(),
@@ -35,7 +46,7 @@ import { openSettingsSheet, closeSettingsSheet } from '../../../src/configure/pa
 import { del, get, openDB } from '../../../src/core/db.js'
 import { settings } from '../../../src/configure/state.svelte.ts'
 
-const FLOW_KEYS = ['theme', 'translationVisible', 'translationId', 'riwayah', 'fontSize',
+const FLOW_KEYS = ['theme', 'translationVisible', 'translationId', 'tafsirId', 'riwayah', 'fontSize',
                    'lineSpacing', 'wordSpacing', 'readerMargin', 'verseSpacing'] as const
 
 async function flush() {
@@ -63,6 +74,7 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
       riwayah: 'qaloon',
       fontSize: 'md',
       translationId: null,
+      tafsirId: 'muyassar',
       translationVisible: true,
       lineSpacing: 'md',
       wordSpacing: 'md',
@@ -189,6 +201,24 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     expect(transRow.textContent).toContain('Translation')
     expect(transRow.querySelector('[aria-label="Show translation"]')).not.toBeNull()
     expect(transRow.querySelector('.qa-settings-trans-chev')).not.toBeNull()
+  })
+
+  it('D2: Tafsir row appears in Sources and opens its source picker', async () => {
+    await mountAndOpen()
+    const tafsirRow = document.querySelector('[data-testid="src-row-tafsir"]') as HTMLButtonElement
+    expect(tafsirRow).not.toBeNull()
+    await vi.waitFor(() => {
+      expect(tafsirRow.textContent).toContain('Tafsir')
+      expect(tafsirRow.textContent).toContain('Tafsir Muyassar')
+    })
+
+    await fireEvent.click(tafsirRow)
+    await vi.waitFor(() => {
+      const pop = document.querySelector('[data-testid="settings-pop"]')
+      expect(pop).not.toBeNull()
+      expect(pop?.getAttribute('aria-label')).toBe('Choose Tafsir')
+      expect(pop?.textContent).toContain('Al-Mukhtasar fi al-Tafsir')
+    })
   })
 
   it('D2: chevron is disabled when only 1 translation; click does not open popover', async () => {

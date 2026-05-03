@@ -66,7 +66,7 @@ test_paths:
 
 - `⌘K` (mobile + desktop) or Search glyph in dock → command sheet opens.
 - Type verse-ref (`2:255`) → preview card renders (Arabic + English); "Open verse" row focused. Enter → `NAVIGATION_NAVIGATE { surah: 2, verse: 255 }` → `app-bootstrap.ts` routes to `#/s/2/255`.
-- ArrowDown past "Open verse" → "Mark this verse" row → Enter → close + `beginFast(verseKey)` → fast-tag inline panel (mark surface).
+- ArrowDown past "Open verse" → "Study this verse" row → Enter → close + open inline tafsir preview for that verse (read surface).
 - Tag search: type partial label (e.g. `mer`) → Tags group shows `mercy` with count badge → Enter → `#/threads/mercy` FVR (review surface).
 - Tablet+ (≥768 px): keyboard-shortcut footer hint (`⌘K`, `esc`) shown.
 - Desktop (≥1180 px): caps at 640 px wide.
@@ -76,7 +76,7 @@ test_paths:
 Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs:
 
 **Read mode** (default), two sub-tabs:
-- **Surahs** (default): search input + filter pills (All / ⏱ Recent) + scrolling surah list, auto-scrolled to and highlighting currently-reading surah. Each row: number badge + English name + Arabic surah title (`s.name_ar`, RTL, `--qa-font-arabic`) right-aligned.
+- **Surahs** (default): compact header rail above search. Left side shows `Browse` eyebrow + `Surahs` title; right side is a hard-edged two-state switch (`All | Recent`). Search input sits directly below the rail, followed by the scrolling surah list auto-scrolled to and highlighting currently-reading surah. Each row: number badge + English name + Arabic surah title (`s.name_ar`, RTL, `--qa-font-arabic`) right-aligned.
 - **Bookmarks**: verse-level rows grouped by surah (canonical order, ascending verse within section); each row: `surah:verse` ref + truncated Arabic snippet (RTL). Tap row → drawer closes, reader navigates, landing pulses 1 s. Swipe-left row → reveals Delete (mobile); desktop hover-`×`. Empty-state copy: "Tap a verse number in the reader to bookmark it." Bookmarks scope to active riwayah — switching riwayah surfaces a different set.
 
 **Study mode**: top **Hub** row (→ `#/review`) + 12 layer rows in 4 grouped sections (Speech / Narrative / Themes / Entities). Tap layer → `#/review?layer=<name>`.
@@ -89,7 +89,7 @@ Desktop kebab path keeps narrow side-panel size but uses same tabbed component.
 
 ### Surah directory (`#/surahs`, desktop ≥1180 px only)
 
-- 114 rows. Search input filters. Match `67` → 1 result, "Jumping to #67" eyebrow, Al-Mulk row (with gold left-edge if bookmarked).
+- 114 rows. Compact header rail above search mirrors the mobile drawer: `Browse` eyebrow + `Surahs` title on the left, `All | Recent` switch on the right. Search input filters below. Match `67` → 1 result, "Jumping to #67" eyebrow, Al-Mulk row (with gold left-edge if bookmarked).
 - Tap row → `#/s/{n}`.
 - **Continue-reading card** at top: with search cleared and All filter active, shows last-read position. Tap → navigates to surah + verse. Reads from `settings.currentPosition` via `loadGlobalPosition`.
 
@@ -126,7 +126,7 @@ Full in-app reference is the `?` cheatsheet. Summary:
 - `j` / `k` — next / previous verse
 - `]` / `[` — next / previous surah
 - `Home` / `End` — first / last verse
-- `m` — mark the centered verse
+- `m` — open tafsir for the centered verse
 - `t` — toggle translation visibility
 - `n` — toggle night-mode
 - `+` / `-` — bigger / smaller font
@@ -140,9 +140,9 @@ Full in-app reference is the `?` cheatsheet. Summary:
 - `Esc` — close
 
 **Gestures**
-- Double-tap a verse (touch) → fast-tag inline panel (parity with `m`)
-- Right-click a verse (desktop) → fast-tag inline panel
-- `⌘/Ctrl + Enter` from fast-tag → escalate to deep TagSheet
+- Double-tap a verse (touch) → inline tafsir preview (parity with `m`)
+- Right-click a verse (desktop) → inline tafsir preview
+- Expand from the inline tafsir preview → full tafsir sheet
 
 ## Data
 
@@ -183,7 +183,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/navigate/bookmarks/store.ts:59` |
 | `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/navigate/bookmarks/store.ts:42` |
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/store.ts:38` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:194`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:195`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:162` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:153` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -196,7 +196,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/BookmarksList.svelte:224`, `src/navigate/bookmarks/BookmarksPage.svelte:33`, `src/navigate/bookmarks/indicator.ts:79`, `src/navigate/surahs/SurahList.svelte:137` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/navigate/bookmarks/indicator.ts:107` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/navigate/bookmarks/indicator.ts:75` |
-| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/navigate/NavDrawer.svelte:243`, `src/navigate/surahs/SurahList.svelte:141` |
+| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/navigate/NavDrawer.svelte:244`, `src/navigate/surahs/SurahList.svelte:141` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/navigate/bookmarks/BookmarksList.svelte:227`, `src/navigate/bookmarks/BookmarksPage.svelte:36`, `src/navigate/bookmarks/indicator.ts:102`, `src/navigate/surahs/SurahList.svelte:140` |
 | `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/navigate/bookmarks/BookmarksList.svelte:226`, `src/navigate/bookmarks/BookmarksPage.svelte:35`, `src/navigate/bookmarks/indicator.ts:93`, `src/navigate/surahs/SurahList.svelte:139` |
 <!-- AUTO-GENERATED:events-listen END -->
@@ -210,13 +210,14 @@ _(no cross-surface reads detected)_
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (7):**
+**Unit (8):**
 
 - `tests/unit/navigate/bookmarks/click-handler.test.ts`
 - `tests/unit/navigate/bookmarks/store.test.ts`
 - `tests/unit/navigate/command-sheet.test.ts`
 - `tests/unit/navigate/drawer.test.ts`
 - `tests/unit/navigate/state-command-sheet.test.ts`
+- `tests/unit/navigate/surahs/list.test.ts`
 - `tests/unit/navigate/surahs/state.test.ts`
 - `tests/unit/navigate/swipe-gestures.test.ts`
 

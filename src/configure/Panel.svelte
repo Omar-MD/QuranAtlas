@@ -15,19 +15,23 @@
     type ReadingStep,
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
-  import { getTranslations } from '../data/dataset.js'
+  import { getTafsirs, getTranslations } from '../data/dataset.js'
   import { panelBridge, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
+  import { resolveSavedTafsirId, setTafsirId } from './tafsir.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
   import OfflineSelector from '../infra/offline/offline-selector.svelte'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string }
-  type PickerKind = 'recitation' | 'translation' | null
+  type TafsirEntry = { id: string; name: string }
+  type PickerKind = 'recitation' | 'translation' | 'tafsir' | null
 
   let open = $state(false)
   let picker = $state<PickerKind>(null)
 
   let translations = $state<TranslationEntry[]>([])
   let translationId = $state<string | null>(null)
+  let tafsirs = $state<TafsirEntry[]>([])
+  let tafsirId = $state('muyassar')
 
   const themeOptions = getThemeOptions()
   const fontOptions = getFontSizeOptions()
@@ -64,16 +68,19 @@
 
   async function loadSheetData() {
     try {
-      const [loadedTranslations, visibleRec] = await Promise.all([
+      const [loadedTranslations, loadedTafsirs, visibleRec] = await Promise.all([
         loadTranslations(),
+        loadTafsirs(),
         get('settings', 'translationVisible'),
       ])
       translations = loadedTranslations
+      tafsirs = loadedTafsirs
       const visible = visibleRec?.value as boolean | undefined
       if (visible !== undefined) {
         Object.assign(settings, { translationVisible: visible })
       }
       translationId = await resolveCurrentTranslationId(loadedTranslations)
+      tafsirId = await resolveCurrentTafsirId(loadedTafsirs)
       const r = await loadRiwayah()
       ;(settings as Record<string, unknown>).riwayah = r
     } catch (error) {
@@ -90,6 +97,15 @@
     }
   }
 
+  async function loadTafsirs(): Promise<TafsirEntry[]> {
+    try {
+      return await getTafsirs() as TafsirEntry[]
+    } catch (error) {
+      logger.error('Failed to load tafsir sources', { error })
+      return []
+    }
+  }
+
   async function resolveCurrentTranslationId(
     availableTranslations: TranslationEntry[]
   ): Promise<string | null> {
@@ -101,6 +117,12 @@
       await setTranslationId(fallback)
     }
     return fallback
+  }
+
+  async function resolveCurrentTafsirId(availableTafsirs: TafsirEntry[]): Promise<string> {
+    const fallback = availableTafsirs[0]?.id ?? 'muyassar'
+    const resolved = await resolveSavedTafsirId(availableTafsirs.map(t => t.id))
+    return resolved || fallback
   }
 
   let _escHandler: ((e: KeyboardEvent) => void) | null = null
@@ -190,9 +212,18 @@
     picker = null
   }
 
+  async function handleTafsirChoice(opt: TafsirEntry) {
+    await setTafsirId(opt.id)
+    tafsirId = opt.id
+    picker = null
+  }
+
   function openRecitation() { picker = 'recitation' }
   function openTranslationPicker() {
     if (translations.length > 1) { picker = 'translation' }
+  }
+  function openTafsirPicker() {
+    if (tafsirs.length > 1) { picker = 'tafsir' }
   }
   function closePicker() { picker = null }
 
@@ -213,6 +244,11 @@
     translations.find(t => t.id === translationId)?.name
       ?? translations[0]?.name
       ?? 'English'
+  )
+  const currentTafsirName = $derived(
+    tafsirs.find(t => t.id === tafsirId)?.name
+      ?? tafsirs[0]?.name
+      ?? 'Tafsir'
   )
 </script>
 
@@ -376,6 +412,17 @@
             <span class="qa-settings-switch-knob"></span>
           </button>
         </div>
+
+        <button
+          type="button"
+          class="qa-settings-src-row"
+          onclick={openTafsirPicker}
+          data-testid="src-row-tafsir"
+        >
+          <span class="qa-settings-src-key">Tafsir</span>
+          <span class="qa-settings-src-val">{currentTafsirName}</span>
+          <span class="qa-settings-src-chev" aria-hidden="true">›</span>
+        </button>
       </section>
 
       <!-- Storage section (N21) — per-feature offline opt-in selector. -->
@@ -423,15 +470,25 @@
         class="qa-settings-pop"
         role="dialog"
         aria-modal="true"
-        aria-label={picker === 'recitation' ? 'Choose Recitation' : 'Choose Translation'}
+        aria-label={
+          picker === 'recitation'
+            ? 'Choose Recitation'
+            : picker === 'translation'
+              ? 'Choose Translation'
+              : 'Choose Tafsir'
+        }
         data-testid="settings-pop"
       >
         <header class="qa-settings-pop-head">
           <span class="qa-settings-pop-eye">
-            {picker === 'recitation' ? 'Choose a Riwāyah' : 'Choose a translation'}
+            {picker === 'recitation'
+              ? 'Choose a Riwāyah'
+              : picker === 'translation'
+                ? 'Choose a translation'
+                : 'Choose a tafsir'}
           </span>
           <span class="qa-settings-pop-key">
-            {picker === 'recitation' ? 'Recitation' : 'Translation'}
+            {picker === 'recitation' ? 'Recitation' : picker === 'translation' ? 'Translation' : 'Tafsir'}
           </span>
         </header>
         <div class="qa-settings-pop-list">
@@ -450,7 +507,7 @@
                 <span class="qa-settings-pop-check" aria-hidden="true">✓</span>
               </button>
             {/each}
-          {:else}
+          {:else if picker === 'translation'}
             {#each translations as opt (opt.id)}
               <button
                 type="button"
@@ -463,6 +520,20 @@
                   {#if opt.subtitle}
                     <span class="qa-settings-pop-sub">{opt.subtitle}</span>
                   {/if}
+                </span>
+                <span class="qa-settings-pop-check" aria-hidden="true">✓</span>
+              </button>
+            {/each}
+          {:else}
+            {#each tafsirs as opt (opt.id)}
+              <button
+                type="button"
+                class="qa-settings-pop-row"
+                class:qa-settings-pop-row--act={opt.id === tafsirId}
+                onclick={() => handleTafsirChoice(opt)}
+              >
+                <span class="qa-settings-pop-body">
+                  <span class="qa-settings-pop-name">{opt.name}</span>
                 </span>
                 <span class="qa-settings-pop-check" aria-hidden="true">✓</span>
               </button>

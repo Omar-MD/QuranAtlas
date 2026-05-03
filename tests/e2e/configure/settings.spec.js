@@ -47,6 +47,25 @@ test.describe('Journey D: Settings & appearance', () => {
     expect(violations).toEqual([])
   })
 
+  test('D2: Tafsir source row opens picker and updates the selected label', async ({ page }) => {
+    await openSettingsSheet(page)
+
+    const tafsirRow = page.getByTestId('src-row-tafsir')
+    await expect(tafsirRow).toBeVisible()
+    await tafsirRow.click()
+
+    const picker = page.getByTestId('settings-pop')
+    await expect(picker).toBeVisible({ timeout: 5_000 })
+    await expect(picker).toHaveAttribute('aria-label', 'Choose Tafsir')
+
+    const mukhtasar = picker.locator('.qa-settings-pop-row').filter({ hasText: 'Al-Mukhtasar fi al-Tafsir' })
+    await expect(mukhtasar).toBeVisible()
+    await mukhtasar.click()
+
+    await expect(picker).toHaveCount(0)
+    await expect(tafsirRow).toContainText('Al-Mukhtasar fi al-Tafsir')
+  })
+
   // D3-bg: <html> background matches <body> background under every theme so
   // that mobile-landscape safe-area gutters do not leak the UA default white.
   // <meta name="theme-color"> tracks --qa-surface-app so PWA chrome retints.

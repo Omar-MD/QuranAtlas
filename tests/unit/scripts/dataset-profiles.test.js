@@ -17,8 +17,17 @@ describe('dataset build profiles', () => {
   it('full emits every locally configured approved source', () => {
     const full = getDatasetProfile('full')
     expect(full.riwayat).toEqual(expect.arrayContaining(['hafs', 'warsh', 'qaloon']))
-    expect(full.translations).toEqual(expect.arrayContaining(['saheeh']))
-    expect(full.tafsir).toEqual(expect.arrayContaining(['muyassar']))
+    expect(full.translations).toEqual(expect.arrayContaining([
+      'saheeh',
+      'bridges',
+      'clear-quran',
+      'abdel-haleem',
+    ]))
+    expect(full.tafsir).toEqual(expect.arrayContaining([
+      'muyassar',
+      'mukhtasar',
+      'saadi',
+    ]))
   })
 
   it('catalog emits metadata and indexes without text bodies', () => {

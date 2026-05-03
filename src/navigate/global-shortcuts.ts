@@ -28,7 +28,7 @@ import {
   prevSurah as readerPrevSurah,
   firstVerse as readerFirstVerse,
   lastVerse as readerLastVerse,
-  markCurrent as readerMarkCurrent,
+  openCurrentTafsir as readerOpenCurrentTafsir,
 } from './reader-actions.js'
 
 let gChordTimer: ReturnType<typeof setTimeout> | null = null
@@ -114,7 +114,7 @@ function handleGlobalKeydown(e: KeyboardEvent): void {
     case '[': e.preventDefault(); readerPrevSurah(); return
     case 'Home': e.preventDefault(); readerFirstVerse(); return
     case 'End':  e.preventDefault(); readerLastVerse();  return
-    case 'm': case 'M': e.preventDefault(); readerMarkCurrent(); return
+    case 'm': case 'M': e.preventDefault(); readerOpenCurrentTafsir(); return
     case 't': case 'T': e.preventDefault(); void toggleTranslation(); return
     case 'd': case 'D': e.preventDefault(); void cycleTheme(); return
     case 'n': case 'N':

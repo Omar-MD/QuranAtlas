@@ -151,7 +151,7 @@ Each source record carries:
 
 - identity: `id`, `type`, `label`, `language`
 - governance: `providerId`, `licenseId`, `visibility`, `default`
-- runtime metadata: `outputPath`, `sourceUrl`
+- runtime metadata: `outputPath`, `sourceUrl`, QuranAtlas-owned `displayLabel`, `role`, `trustTier`, `sourceProvider`, `translator`
 - fetch contract: `fetch.provider`, `fetch.normalizedPath`, plus provider-specific fields
 
 `scripts/data/source-catalog.mjs` fails the pipeline when required provider, license, output path, visibility, or fetch metadata is missing or invalid.
@@ -197,6 +197,7 @@ Normalization in `scripts/data/fetch-source.mjs::normalizeQuranDbTranslation`:
 - validates that surah keys are numeric and ayah keys are contiguous from `1`
 - reads only the configured field from catalog fetch metadata
 - decodes HTML entities and collapses whitespace
+- strips upstream HTML tags after entity decode; `allowMissingText: true` is available only for explicitly catalogued source exceptions such as Bridges' empty Surah 79 rows
 - emits the QuranAtlas monolithic normalized shape:
   - `translationId`
   - `translationVersion`
@@ -255,6 +256,13 @@ Profiles:
 - `baseline`: emits `qaloon`, `saheeh`, `muyassar`, plus metadata files
 - `full`: emits every locally configured approved source body
 - `catalog`: emits metadata/index files without text bodies
+
+Selected optional packs for this phase:
+
+- translations: `bridges`, `clear-quran`, `abdel-haleem`
+- tafsir: `mukhtasar`, `saadi`
+
+Only the defaults (`saheeh`, `muyassar`) are present in the baseline app bundle. The optional packs stay discoverable through `indexes/sources.json` and become downloadable bodies only in non-baseline profiles or future opt-in download flows.
 
 Generated runtime files:
 

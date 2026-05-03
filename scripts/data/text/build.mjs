@@ -60,6 +60,39 @@ const SHIPPED_TRANSLATIONS = [
     source: 'Quran DB translation: Umm Muhammad (Sahih International)',
     sourceUrl: 'https://raw.githubusercontent.com/faisalill/quran_db/main/ummmuhammadsahihinternational.json',
   },
+  {
+    id: 'bridges',
+    normalizedFile: 'bridges.json',
+    label: 'Bridges',
+    translator: 'Fadel Soliman',
+    language: 'en',
+    license: 'Quran DB upstream translation source',
+    licenseUrl: 'https://github.com/faisalill/quran_db',
+    source: 'Quran DB translation: Bridges',
+    sourceUrl: 'https://raw.githubusercontent.com/faisalill/quran_db/main/bridges.json',
+  },
+  {
+    id: 'clear-quran',
+    normalizedFile: 'clear-quran.json',
+    label: 'The Clear Quran',
+    translator: 'Mustafa Khattab',
+    language: 'en',
+    license: 'Quran DB upstream translation source',
+    licenseUrl: 'https://github.com/faisalill/quran_db',
+    source: 'Quran DB translation: Mustafa Khattab 2018',
+    sourceUrl: 'https://raw.githubusercontent.com/faisalill/quran_db/main/mustafakhattab2018.json',
+  },
+  {
+    id: 'abdel-haleem',
+    normalizedFile: 'abdel-haleem.json',
+    label: 'M.A.S. Abdel Haleem',
+    translator: 'M.A.S. Abdel Haleem',
+    language: 'en',
+    license: 'Quran DB upstream translation source',
+    licenseUrl: 'https://github.com/faisalill/quran_db',
+    source: 'Quran DB translation: Abdel Haleem',
+    sourceUrl: 'https://raw.githubusercontent.com/faisalill/quran_db/main/abdelhaleem.json',
+  },
 ]
 
 const SHIPPED_TAFSIR = [
@@ -72,6 +105,26 @@ const SHIPPED_TAFSIR = [
     licenseUrl: 'https://qul.tarteel.ai/resources/tafsir/38',
     source: 'QUL tafsir resource 38',
     sourceUrl: 'https://qul.tarteel.ai/resources/tafsir/38',
+  },
+  {
+    id: 'mukhtasar',
+    normalizedFile: 'mukhtasar.json',
+    label: 'Al-Mukhtasar fi al-Tafsir',
+    language: 'ar',
+    license: 'QUL downloadable resource',
+    licenseUrl: 'https://qul.tarteel.ai/resources/tafsir/251',
+    source: 'QUL tafsir resource 251',
+    sourceUrl: 'https://qul.tarteel.ai/resources/tafsir/251',
+  },
+  {
+    id: 'saadi',
+    normalizedFile: 'saadi.json',
+    label: "Tafsir al-Sa'di",
+    language: 'ar',
+    license: 'QUL downloadable resource',
+    licenseUrl: 'https://qul.tarteel.ai/resources/tafsir/24',
+    source: 'QUL tafsir resource 24',
+    sourceUrl: 'https://qul.tarteel.ai/resources/tafsir/24',
   },
 ]
 
@@ -560,7 +613,13 @@ function buildSourceIndex(catalog, profile) {
       id: source.id,
       type: source.type,
       label: source.label,
+      displayLabel: source.displayLabel ?? source.label,
+      role: source.role ?? source.type,
+      trustTier: source.trustTier ?? null,
       language: source.language ?? null,
+      translator: source.translator ?? null,
+      sourceProvider: source.sourceProvider ?? null,
+      licenseStatus: licensesById(catalog).get(source.licenseId)?.status ?? null,
       visibility: source.visibility,
       default: source.default === true,
       availableInManifest: emitted.has(`${source.type}:${source.id}`),
@@ -568,6 +627,10 @@ function buildSourceIndex(catalog, profile) {
       sourceUrl: source.sourceUrl,
     })),
   }
+}
+
+function licensesById(catalog) {
+  return new Map((Array.isArray(catalog.licenses) ? catalog.licenses : []).map((license) => [license.id, license]))
 }
 
 export async function main() {
@@ -672,7 +735,7 @@ export async function main() {
   const translationProvenance = []
   const hafsCounts = perRiwayahCounts.hafs.slice() // 114-entry array, matches surah index
   await cleanPackDirs(TRANSLATIONS_DIR, ['_verse-map.json', '_verse-aliases.json'])
-  for (const t of SHIPPED_TRANSLATIONS) {
+  for (const t of SHIPPED_TRANSLATIONS.filter((entry) => profile.translations.includes(entry.id))) {
     const rawPath = join(NORMALIZED_TRANSLATIONS_DIR, t.normalizedFile)
     if (!existsSync(rawPath)) {
       throw new Error(`Missing translation source: ${rawPath} (run \`pnpm run data:fetch -- translation:${t.id}\`)`)
@@ -682,12 +745,10 @@ export async function main() {
       throw new Error(`translation source ${rawPath} has translationId=${raw.translationId}, expected ${t.id}`)
     }
     const { perSurah, totals } = buildTranslationSplits(raw, hafsCounts)
-    if (profile.translations.includes(t.id)) {
-      const outDir = join(TRANSLATIONS_DIR, t.id)
-      await mkdir(outDir, { recursive: true })
-      for (const [key, payload] of Object.entries(perSurah)) {
-        await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
-      }
+    const outDir = join(TRANSLATIONS_DIR, t.id)
+    await mkdir(outDir, { recursive: true })
+    for (const [key, payload] of Object.entries(perSurah)) {
+      await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
     }
     console.log(`[build-dataset] translation ${t.id}: 114 surahs, ${totals.verses} verses, ${totals.footnotes} footnotes`)
 
@@ -730,7 +791,7 @@ export async function main() {
   // 5b. tafsir — split committed normalized source packs.
   const tafsirProvenance = []
   await cleanPackDirs(TAFSIR_DIR)
-  for (const t of SHIPPED_TAFSIR) {
+  for (const t of SHIPPED_TAFSIR.filter((entry) => profile.tafsir.includes(entry.id))) {
     const normalizedPath = join(NORMALIZED_TAFSIR_DIR, t.normalizedFile)
     if (!existsSync(normalizedPath)) {
       throw new Error(`Missing normalized tafsir source: ${normalizedPath}`)
@@ -740,20 +801,18 @@ export async function main() {
       throw new Error(`tafsir source ${normalizedPath} has tafsirId=${normalized.tafsirId}, expected ${t.id}`)
     }
     const perSurah = buildTafsirSplits(normalized)
-    if (profile.tafsir.includes(t.id)) {
-      const outDir = join(TAFSIR_DIR, t.id)
-      await mkdir(outDir, { recursive: true })
-      for (let n = 1; n <= 114; n++) {
-        const key = pad3(n)
-        const payload = perSurah[key] ?? {
-          tafsirId: t.id,
-          tafsirVersion: normalized.tafsirVersion,
-          language: normalized.language,
-          surahNo: n,
-          entries: [],
-        }
-        await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
+    const outDir = join(TAFSIR_DIR, t.id)
+    await mkdir(outDir, { recursive: true })
+    for (let n = 1; n <= 114; n++) {
+      const key = pad3(n)
+      const payload = perSurah[key] ?? {
+        tafsirId: t.id,
+        tafsirVersion: normalized.tafsirVersion,
+        language: normalized.language,
+        surahNo: n,
+        entries: [],
       }
+      await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
     }
     const rangeCount = normalized.entries.filter((entry) => entry.sourceGranularity === 'range').length
     tafsirProvenance.push({

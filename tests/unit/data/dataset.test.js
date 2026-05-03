@@ -107,16 +107,34 @@ describe('data/dataset', () => {
   })
 
   describe('getTranslations()', () => {
-    it('lists each shipped pack with id, label, translator, language', async () => {
+    it('lists default and opt-in translation sources from the source index', async () => {
       const { getTranslations } = await import('../../../src/data/dataset.ts')
       const list = await getTranslations()
       expect(Array.isArray(list)).toBe(true)
-      expect(list.length).toBeGreaterThanOrEqual(1)
+      expect(list.length).toBeGreaterThanOrEqual(4)
       const saheeh = list.find((t) => t.id === 'saheeh')
       expect(saheeh).toBeDefined()
       expect(saheeh.name).toBe('Saheeh International')
-      expect(saheeh.subtitle).toBe('Saheeh International')
+      expect(saheeh.availableInManifest).toBe(true)
       expect(saheeh.language).toBe('en')
+      expect(list.find((t) => t.id === 'bridges')).toMatchObject({
+        id: 'bridges',
+        name: 'Bridges',
+        language: 'en',
+        availableInManifest: false,
+      })
+      expect(list.find((t) => t.id === 'clear-quran')).toMatchObject({
+        id: 'clear-quran',
+        name: 'The Clear Quran',
+        language: 'en',
+        availableInManifest: false,
+      })
+      expect(list.find((t) => t.id === 'abdel-haleem')).toMatchObject({
+        id: 'abdel-haleem',
+        name: 'M.A.S. Abdel Haleem',
+        language: 'en',
+        availableInManifest: false,
+      })
     })
   })
 
@@ -167,13 +185,26 @@ describe('data/dataset', () => {
   })
 
   describe('getTafsirs() / loadTafsirForSurah()', () => {
-    it('lists baseline tafsir packs from the source index', async () => {
+    it('lists default and opt-in tafsir packs from the source index', async () => {
       const { getTafsirs } = await import('../../../src/data/dataset.ts')
       const list = await getTafsirs()
       expect(list.find((t) => t.id === 'muyassar')).toMatchObject({
         id: 'muyassar',
         name: 'Tafsir Muyassar',
         language: 'ar',
+        availableInManifest: true,
+      })
+      expect(list.find((t) => t.id === 'mukhtasar')).toMatchObject({
+        id: 'mukhtasar',
+        name: 'Al-Mukhtasar fi al-Tafsir',
+        language: 'ar',
+        availableInManifest: false,
+      })
+      expect(list.find((t) => t.id === 'saadi')).toMatchObject({
+        id: 'saadi',
+        name: "Tafsir al-Sa'di",
+        language: 'ar',
+        availableInManifest: false,
       })
     })
 
@@ -183,6 +214,13 @@ describe('data/dataset', () => {
       expect(pack).not.toBeNull()
       expect(pack.tafsirId).toBe('muyassar')
       expect(pack.entries.some((e) => e.startKey === '73:1' && e.endKey === '73:4')).toBe(true)
+    })
+
+    it('falls back to Muyassar when a saved optional tafsir pack is absent from the baseline manifest', async () => {
+      const { loadTafsirForSurah } = await import('../../../src/data/dataset.ts')
+      const pack = await loadTafsirForSurah('mukhtasar', 73)
+      expect(pack).not.toBeNull()
+      expect(pack.tafsirId).toBe('muyassar')
     })
   })
 })
