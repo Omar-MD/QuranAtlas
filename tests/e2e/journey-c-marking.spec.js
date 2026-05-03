@@ -157,8 +157,8 @@ test.describe('Journey C: Verse marking', () => {
   // tests/unit/tag/verse-tag-panel.test.ts (Phase 2 bucket 2, 2026-04-26).
 
   test('C: double-tap on a different verse switches the active verse, panel stays open', async ({ page }) => {
-    const firstVerse = page.locator('.qa-verse').nth(0)
-    const secondVerse = page.locator('.qa-verse').nth(1)
+    const verses = page.locator('.qa-verse')
+    const firstVerse = verses.nth(0)
     await doubleTap(firstVerse)
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 5_000 })
 
@@ -167,6 +167,8 @@ test.describe('Journey C: Verse marking', () => {
     // retired with the gesture switch since a double-tap fires onShort on its
     // first tap (already switching the active verse), making "same verse →
     // exit" fire spuriously. Mobile exits via the ✕ button only.
+    const secondVerse = verses.nth(1)
+    await expect(secondVerse).toBeVisible({ timeout: 5_000 })
     await doubleTap(secondVerse)
     await expect(page.locator('.qa-vtp')).toBeVisible({ timeout: 3_000 })
   })

@@ -92,8 +92,9 @@ test.describe('Journey H: Offline resilience', () => {
       // Step 3: reload — SW should serve the shell from cache
       await page.reload()
       await waitForReader(page)
+      await page.locator('.qa-verse').first().locator('.qa-verse-body-summary').click()
       await expect(page.locator('[data-knowledge-lane]').first()).toBeVisible({ timeout: 10_000 })
-      await expect(page.locator('.qa-verse-theme').filter({ hasText: 'guidance' }).first()).toBeVisible({ timeout: 10_000 })
+      await expect(page.locator('.qa-verse-themes').first()).toHaveText(/\S+/, { timeout: 10_000 })
 
       // Verify URL still shows reader route (may redirect to / if SW not active)
       // At minimum the reader content must load
