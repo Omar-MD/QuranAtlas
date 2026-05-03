@@ -122,7 +122,7 @@ jobs:
       - run: pnpm run lint
 
   typecheck:
-    name: Type Check
+    name: Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -279,12 +279,11 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
 
-      # Visual regression baselines live under tests/e2e/visual/*-darwin.png.
-      # CI runs on linux and produces non-matching snapshots (font/AA diffs
-      # exceed the 5% threshold), so we exclude the `visual` project here and
-      # keep it as a local pre-merge gate via `pnpm test:e2e:visual`.
+      # CI runs against the repo's Playwright script and narrows the project
+      # list here so the offline-preview coverage stays included without
+      # forcing any local-only project variants.
       - name: Run Playwright suite (non-visual)
-        run: pnpm exec playwright test --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"
+        run: pnpm run test:e2e -- --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"
         env:
           PLAYWRIGHT_INCLUDE_OFFLINE: '1'
           PLAYWRIGHT_USE_PREVIEW: '1'

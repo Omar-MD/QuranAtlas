@@ -183,6 +183,25 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     )
   })
 
+  test('B3: verse meaning and theme stay collapsed until the verse is opened', async ({ page }) => {
+    await page.goto('/#/s/2/255')
+    await waitForReader(page)
+
+    const verse = page.locator('.qa-verse[data-token-key="2:255"]')
+    await expect(verse).toBeVisible({ timeout: 5_000 })
+
+    await expect(verse.locator('.qa-verse-translation')).toHaveCount(0)
+    await expect(verse.locator('.qa-verse-knowledge')).toHaveCount(0)
+
+    await verse.locator('.qa-verse-body-summary').click()
+
+    await expect(verse.locator('.qa-verse-translation')).toHaveText(/.+/)
+    await expect(verse.locator('.qa-verse-themes')).toContainText('tawhid')
+    await expect(verse.locator('.qa-verse-context')).toContainText(
+      "Allah's oneness, authority, and all-encompassing knowledge"
+    )
+  })
+
   // -------------------------------------------------------------------------
   // B4. Non-reader routes keep primary nav visible
   // -------------------------------------------------------------------------
@@ -515,6 +534,9 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   test('B-Translation: shipped translation renders; footnote disclosure works when markers are present', async ({ page }) => {
     const v1 = page.locator('.qa-verse[data-verse="1"]')
     await expect(v1).toBeVisible()
+
+    await expect(v1.locator('.qa-verse-translation')).toHaveCount(0)
+    await v1.locator('.qa-verse-body-summary').click()
 
     const translation = v1.locator('.qa-verse-translation')
     await expect(translation).toBeVisible()

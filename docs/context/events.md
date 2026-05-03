@@ -51,7 +51,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.OFFLINE_INSTALL_COMPLETE` | `offline:install-complete` | `src/data/offline.ts:352` | _(none)_ |
 | `Events.OFFLINE_SW_TIMEOUT` | `offline:sw-timeout` | `src/data/offline.ts:161` | _(none)_ |
 | `Events.READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `src/reader/position.ts:28` | `src/core/save-failure-toast.svelte:35` |
-| `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/reader/Verse.svelte:54` | `src/bookmarks/indicator.ts:75`<br>`src/marks/indicator.ts:96` |
+| `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/reader/Verse.svelte:62` | `src/bookmarks/indicator.ts:75`<br>`src/marks/indicator.ts:96` |
 | `Events.REVIEW_FILTER` | `review:filter` | _(none)_ | _(none)_ |
 | `Events.REVIEW_OPEN` | `review:open` | `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459` | _(none)_ |
 | `Events.ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `src/core/router.ts:148` | `src/app-bootstrap.ts:210` |

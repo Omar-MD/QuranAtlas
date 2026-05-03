@@ -32,6 +32,7 @@ test_paths:
 | MarginHeader gear double-tap (mobile, ≤300 ms) | gesture | cycle theme (parity with keyboard `d`) |
 | AmbientDock tap (desktop) | tap | open command sheet / Review / Marks |
 | Verse number tap | tap | edge indicators ~1.6 s + pill label updates |
+| Verse text block tap/click | tap / click | toggle that verse's meaning + knowledge lane |
 | Reader body tap | tap | dock + pill fade in for ~3 s |
 | Visibility-restore | passive | restore `currentPosition` only when tracker fresh + scroller at top |
 
@@ -95,9 +96,9 @@ Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3
 
 ### Translation rendering
 
-Each verse renders Arabic on top + English translation directly below in flowing single-line block. When a shipped translation pack contains inline `[N]` markers, they render as bracketed footnote buttons coloured in accent hue. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
+Each verse renders Arabic immediately. The verse's English meaning stays collapsed by default and mounts only after the user opens that verse's text block. When a shipped translation pack contains inline `[N]` markers, they render as bracketed footnote buttons coloured in accent hue. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
 
-Toggle "Hide translation" (Settings or `t`) → translation block, any `[N]` markers present in the active pack, and any open footnote panel disappear in one repaint via `settings.translationVisible` rune.
+Tap / click the same verse again → collapse its meaning lane and close any open footnote panel for that verse. Toggle "Hide translation" (Settings or `t`) keeps the meaning lane unavailable globally via `settings.translationVisible` rune, even when a verse is opened.
 
 **Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qaloon (Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/data/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/Qaloon ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
 
@@ -105,10 +106,12 @@ Toggle "Hide translation" (Settings or `t`) → translation block, any `[N]` mar
 
 After the base reader payload (Arabic text, translation, aliases, settings) succeeds, `Reader.svelte` starts two optional side-loads for `public/dataset/knowledge/ayah/{surah}.json` and `public/dataset/knowledge/passages/{surah}.json`. These knowledge fetches are not part of the blocking `Promise.all(...)` path, do not create a second skeleton/loading phase, and do not change route, gesture, or scroll-entry behavior.
 
-When knowledge data exists, each tagged verse can render quiet metadata directly under the Arabic/translation stack:
+When knowledge data exists, each tagged verse can render quiet metadata directly under the Arabic/meaning stack:
 
 - theme chips from the ayah knowledge shard
 - one passage-context line from the passage summary when that verse's `passageId` resolves to a loaded passage shard
+
+Theme chips + passage context stay collapsed with the verse and reveal only when that verse is opened.
 
 If either knowledge shard is missing, invalid, or fetch-fails, the reader logs a recoverable warning and leaves the knowledge lane empty for that surah. Base verse rendering continues unchanged.
 
@@ -172,7 +175,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 | --- | --- | --- |
 | `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientDock.svelte:64`, `src/reader/AmbientPill.svelte:90`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/MarginHeader.svelte:41`, `src/reader/Reader.svelte:617`, `src/reader/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/reader/position.ts:28` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:54` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -192,6 +195,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **Hamburger drawer is the sole in-app entry to the full surah list (mobile).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
 - **Knowledge lane is optional and non-blocking.** Reader text render never waits on `dataset/knowledge/**`; missing or invalid ayah/passage shards leave verse theme/context metadata empty and do not introduce a new error surface.
+- **Meaning + knowledge are per-verse disclosures.** Arabic remains always visible; translation, theme chips, and passage summary mount only for verses the user explicitly opens. Closing a verse also closes any inline footnote open inside it.
 - **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
 - **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/journey-b-reader.spec.js` B-Virt1/2/3 + `tests/unit/reader/chunked-virtualiser.test.ts`.
 - **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/journey-d-settings.spec.js` D3-bg.
@@ -199,10 +203,11 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (13):**
+**Unit (14):**
 
 - `tests/unit/reader/MarginHeader-toggle.test.ts`
 - `tests/unit/reader/SurahHeader.test.ts`
+- `tests/unit/reader/Verse.test.ts`
 - `tests/unit/reader/bismillah-translation.test.ts`
 - `tests/unit/reader/chunked-virtualiser.test.ts`
 - `tests/unit/reader/font-reshape.test.ts`
