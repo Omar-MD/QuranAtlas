@@ -15,18 +15,17 @@ test_paths:
 
 # Surface: mark
 
-> Existing-mark editing and persistence. Review can still open the deep TagSheet for saved marks, but the Reader no longer creates new marks from its primary per-verse actions.
+> Existing-mark editing and persistence. Review opens the deep TagSheet for saved marks, but the Reader no longer creates new marks from its primary per-verse actions.
 
 ## Reach
 
 | Entry | Trigger | Result |
 | --- | --- | --- |
-| Fast-tag panel, `⛶` button | tap | `openDeep(verseKey)` → deep TagSheet |
-| Fast-tag panel, `⌘/Ctrl + Enter` | keyboard | `openDeep(verseKey)` → deep TagSheet |
-| Review hub row → "Edit mark" | tap | `editor-bridge::openEditor(verseKey)` → deep TagSheet |
+| Review hub row | tap | `editor-bridge::openEditor(verseKey)` → deep TagSheet |
+| Existing programmatic caller | passive | `openDeep(verseKey)` / `openEditor(verseKey)` → deep TagSheet |
 | App boot → state restore | passive | hydrate marks indicators across visible reader |
 
-Routes: no own route; surface mounts inside `Reader.svelte` (fast-tag panel) and as a global overlay (TagSheet) bridged via `tag/session-bridge.ts`.
+Routes: no own route; deep TagSheet is a global overlay bridged via `tag/session-bridge.ts` / `editor-bridge.ts`.
 
 Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side vertical panel ≥1180 px.
 
@@ -51,26 +50,13 @@ Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side ver
 
 ## Behavior
 
-### Fast-tag inline panel (legacy mark-entry surface)
-
-Reader no longer routes new per-verse actions into `beginFast(verseKey)`. The fast-tag panel remains in the codebase only as a legacy mark-entry/edit surface while Review still depends on the deep TagSheet and existing marks store.
-
-When `beginFast(verseKey)` is invoked by a remaining programmatic caller:
-
-1. Trigger fires `beginFast(verseKey)` — verse gains active-state treatment (left-edge accent bracket, inset hairline ring, parchment-bright verse key, "tagging" dot-dim label in verse head).
-2. `marks/VerseTagPanel.svelte` renders inline in the active verse below the translation: one row per layer group (Speech / Narrative / Themes / Entities), `#value` chips colored by layer hue, `+ add` affordance per group, `⛶` escalation top-right.
-3. Tap chip → toggle membership; selections debounce-save to `marks` store after 350 ms via `marks/store::save`.
-4. `+ add` swaps row to inline input. Input requires explicit `<prefix>:<value>` syntax; prefix autofills as user types (`s` → `speaker:`, `q` → `quoted:`, `d` in Entities → `divine:`). Aliases in `src/data/tag-layers.ts::LAYER_PREFIXES`. Empty value or unresolved prefix → red underline, commit refused. Enter commits, Escape cancels.
-5. Switch active verse: short-tap any other verse → `beginFast(newKey)` swaps target; panel re-renders inside the new active verse. Short-tap while session closed = no-op.
-6. Exit: tap `✕` (mobile, sole exit affordance — no Esc on touch); press Escape (desktop). Both paths call `tagSession.end()` → state resets, panel unmounts.
-
 ### Deep TagSheet (escalation)
 
-- Reachable only from fast-tag `⛶` button, `⌘/Ctrl+Enter` keyboard shortcut, or programmatic bridges (Review hub via `editor-bridge::openEditor`).
+- Reachable from Review hub rows and programmatic bridges (`editor-bridge::openEditor`, `tag/session-bridge::openDeep`).
 - Mobile (<1180 px): full-screen sheet, sticky header + footer, safe-area insets, tap-collapsible verse-preview card (chevron).
 - Desktop (≥1180 px): right-side panel, `min(560px, 44vw)`, same chevron preview-collapse.
 - Header: "Mark verse" only (no `verseKey · SURAH` subline; ref lives on preview card).
-- Body: no tab switcher. Four layer groups stack outer→inner: Speech (speaker, audience, quotedSpeaker, form) → Narrative (mode, tone) → Themes (threads, subjects) → Entities (events, people, places, divineNames). Each group has hue-colored left rail nesting its rows. Hashtag-style chips (`#value` with `#` colored by layer hue) match fast-tag visual; tap chip to remove; underline combobox per row for type-to-create with seed suggestions.
+- Body: no tab switcher. Four layer groups stack outer→inner: Speech (speaker, audience, quotedSpeaker, form) → Narrative (mode, tone) → Themes (threads, subjects) → Entities (events, people, places, divineNames). Each group has hue-colored left rail nesting its rows. Hashtag-style chips (`#value` with `#` colored by layer hue); tap chip to remove; underline combobox per row for type-to-create with seed suggestions.
 - Delete: button renders only for existing marks. First tap → inline confirm row (`Delete this mark? [Keep] [Delete]`). Second tap on solid red → commit + undo toast. Closing sheet resets pending confirm.
 
 ### Save / persistence
@@ -173,8 +159,7 @@ _(no cross-surface reads detected)_
 - `tests/unit/mark/tag/verse-tag-panel.test.ts`
 - `tests/unit/mark/tags.test.js`
 
-**E2E (2):**
+**E2E (1):**
 
-- `tests/e2e/mark/fast-tag.spec.js`
 - `tests/e2e/mark/tag-sheet.spec.js`
 <!-- AUTO-GENERATED:tests END -->

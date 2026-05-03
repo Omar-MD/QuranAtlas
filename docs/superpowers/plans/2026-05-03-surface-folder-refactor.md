@@ -100,7 +100,6 @@ tests/e2e/
     virtualiser.spec.js
     performance.spec.js
   mark/
-    fast-tag.spec.js
     tag-sheet.spec.js
   review/
     hub.spec.js
@@ -152,7 +151,7 @@ No `listen/audio.spec.js` is created in this refactor because no current audio e
 | tests/e2e/journey-a-onboarding.spec.js | `tests/e2e/onboard/first-run.spec.js`, `tests/e2e/onboard/session-restore.spec.js` |
 | tests/e2e/journey-b-reader.spec.js | `tests/e2e/read/chrome.spec.js`, `tests/e2e/read/cross-surah.spec.js`, `tests/e2e/read/text-sources.spec.js`, `tests/e2e/read/virtualiser.spec.js` |
 | tests/e2e/performance-budgets.spec.js | `tests/e2e/read/performance.spec.js` |
-| tests/e2e/journey-c-marking.spec.js | `tests/e2e/mark/fast-tag.spec.js`, `tests/e2e/mark/tag-sheet.spec.js` |
+| tests/e2e/journey-c-marking.spec.js | `tests/e2e/mark/tag-sheet.spec.js` |
 | tests/e2e/journey-d-settings.spec.js | `tests/e2e/configure/settings.spec.js`, `tests/e2e/configure/typography.spec.js`, `tests/e2e/configure/night-mode.spec.js` |
 | tests/e2e/journey-g-about.spec.js | `tests/e2e/configure/about.spec.js` |
 | tests/e2e/journey-e-review.spec.js | `tests/e2e/review/hub.spec.js`, `tests/e2e/review/fvr.spec.js` |
@@ -582,16 +581,6 @@ Move `performance-budgets.spec.js` to `tests/e2e/read/performance.spec.js`.
 
 - [ ] **Step 4: Split mark tests**
 
-Create `tests/e2e/mark/fast-tag.spec.js` with:
-
-```text
-C1: double-tap opens fast-tag inline panel, not TagSheet
-C1: right-click opens fast-tag inline panel, not TagSheet
-C: keyboard m on centered verse opens fast-tag panel, not TagSheet
-C: double-tap on a different verse switches the active verse, panel stays open
-C6: right-click and double-tap each open ONLY the fast-tag panel
-```
-
 Create `tests/e2e/mark/tag-sheet.spec.js` with:
 
 ```text
@@ -731,7 +720,7 @@ Expected: no stale source paths or old journey filename references remain. Updat
 Run:
 
 ```bash
-pnpm exec playwright test tests/e2e/read/chrome.spec.js tests/e2e/mark/fast-tag.spec.js tests/e2e/navigate/command-sheet.spec.js tests/e2e/configure/settings.spec.js --reporter=line
+pnpm exec playwright test tests/e2e/read/chrome.spec.js tests/e2e/mark/tag-sheet.spec.js tests/e2e/navigate/command-sheet.spec.js tests/e2e/configure/settings.spec.js --reporter=line
 ```
 
 Expected: passes under the default dev-server projects.
