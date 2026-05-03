@@ -70,6 +70,7 @@ const SHIPPED_TRANSLATIONS = [
     licenseUrl: 'https://github.com/faisalill/quran_db',
     source: 'Quran DB translation: Bridges',
     sourceUrl: 'https://raw.githubusercontent.com/faisalill/quran_db/main/bridges.json',
+    allowMissingText: true,
   },
   {
     id: 'clear-quran',
@@ -285,7 +286,7 @@ export function computeSurahsMeta(namesEn, namesAr, perRiwayahCounts) {
  */
 const MARKER_RE = /\[(\d+)\]/g
 
-export function buildTranslationSplits(rawSource, expectedHafsCounts) {
+export function buildTranslationSplits(rawSource, expectedHafsCounts, options = {}) {
   if (!rawSource || typeof rawSource !== 'object' || !rawSource.surahs) {
     throw new Error('translation raw source missing `surahs`')
   }
@@ -311,7 +312,10 @@ export function buildTranslationSplits(rawSource, expectedHafsCounts) {
       if (src.verses[i].key !== expectedKey) {
         throw new Error(`translation surah ${key} verse[${i}].key=${src.verses[i].key} expected ${expectedKey}`)
       }
-      if (typeof src.verses[i].text !== 'string' || !src.verses[i].text) {
+      if (typeof src.verses[i].text !== 'string') {
+        throw new Error(`translation surah ${key} verse[${i}] missing text`)
+      }
+      if (!src.verses[i].text && options.allowMissingText !== true) {
         throw new Error(`translation surah ${key} verse[${i}] missing text`)
       }
     }
@@ -744,7 +748,9 @@ export async function main() {
     if (raw.translationId !== t.id) {
       throw new Error(`translation source ${rawPath} has translationId=${raw.translationId}, expected ${t.id}`)
     }
-    const { perSurah, totals } = buildTranslationSplits(raw, hafsCounts)
+    const { perSurah, totals } = buildTranslationSplits(raw, hafsCounts, {
+      allowMissingText: t.allowMissingText === true,
+    })
     const outDir = join(TRANSLATIONS_DIR, t.id)
     await mkdir(outDir, { recursive: true })
     for (const [key, payload] of Object.entries(perSurah)) {
