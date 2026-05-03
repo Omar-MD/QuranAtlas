@@ -6,7 +6,7 @@
  * derivations of the same hue family (≥4.5:1 contrast on #ffffff / #f3e8cf).
  *
  * Labels here are the curated seed set. Unknown labels (user-created custom tags)
- * fall through to the hash-based palette in src/marks/tags.js — see getColorForTag.
+ * fall through to the hash-based palette in src/mark/tags.js — see getColorForTag.
  */
 
 export const SEMANTIC_TAG_COLORS: Record<string, { light: string; dark: string }> = {

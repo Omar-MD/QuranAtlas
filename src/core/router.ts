@@ -9,7 +9,7 @@
 import { emit } from './events'
 import { Events } from './constants'
 import { logger } from './logger'
-import { persistLastSurface } from '../settings/state-last-surface.svelte'
+import { persistLastSurface } from '../configure/state-last-surface.svelte'
 
 export type RouteParams = Record<string, string>
 

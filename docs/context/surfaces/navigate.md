@@ -1,18 +1,18 @@
 ---
 surface: navigate
 src_paths:
-  - 'src/nav/**'
-  - 'src/surahs/**'
-  - 'src/bookmarks/**'
+  - 'src/navigate/**'
+  - 'src/navigate/surahs/**'
+  - 'src/navigate/bookmarks/**'
 owns_stores:
   - bookmarks
 test_paths:
   unit:
-    - 'tests/unit/nav/**'
-    - 'tests/unit/surahs/**'
-    - 'tests/unit/bookmarks/**'
+    - 'tests/unit/navigate/**'
+    - 'tests/unit/navigate/surahs/**'
+    - 'tests/unit/navigate/bookmarks/**'
   e2e:
-    - 'tests/e2e/journey-f-navigation*.spec.js'
+    - 'tests/e2e/navigate/*.spec.js'
 ---
 
 # Surface: navigate
@@ -39,25 +39,25 @@ test_paths:
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/bookmarks/BookmarksList.svelte` | Shared bookmark list — renders grouped-by-surah verse rows for the active |
-| `src/bookmarks/BookmarksPage.svelte` | Desktop /bookmarks page — verse-level list grouped by surah. |
-| `src/bookmarks/click-handler.ts` | Document-level pointer handler that toggles a bookmark when the user |
-| `src/bookmarks/indicator.ts` | Bookmark verse-id glyph indicator. |
-| `src/bookmarks/pulse.ts` | Pulse-highlight a verse on bookmark-jump landing. |
-| `src/bookmarks/store.ts` | IDB CRUD for bookmarks (DB v5). |
-| `src/nav/CommandSheet.svelte` | Module-level re-export so callers can do: |
-| `src/nav/EmptyRoute.svelte` | intentionally empty |
-| `src/nav/NavDrawer.svelte` | Mobile (<1180px): full-screen drawer with two top-level mode tabs: |
-| `src/nav/command-sheet-bridge.ts` | Bridge for the CommandSheet (⌘K) overlay. Migrated to |
-| `src/nav/global-shortcuts.ts` | Boot-mounted global keyboard shortcuts. Survives lazy-mount of overlay |
-| `src/nav/nav-drawer-bridge.ts` | Imperative bridge for the NavDrawer Svelte component. Migrated to |
-| `src/nav/reader-actions.js` | Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m). |
-| `src/nav/shortcuts-sheet.js` | Shortcuts cheatsheet — opened by `?` (also reachable from More → Shortcuts |
-| `src/nav/state-command-sheet.svelte.ts` | _(no leading comment)_ |
-| `src/nav/swipe-gestures.ts` | Pure swipe-classification helpers for MarginHeader gestures. |
-| `src/surahs/SurahList.svelte` | ---- data loaded on mount ---- |
-| `src/surahs/SurahRow.svelte` | _(no leading comment)_ |
-| `src/surahs/state.svelte.ts` | _(no leading comment)_ |
+| `src/navigate/CommandSheet.svelte` | Module-level re-export so callers can do: |
+| `src/navigate/EmptyRoute.svelte` | intentionally empty |
+| `src/navigate/NavDrawer.svelte` | Mobile (<1180px): full-screen drawer with two top-level mode tabs: |
+| `src/navigate/bookmarks/BookmarksList.svelte` | Shared bookmark list — renders grouped-by-surah verse rows for the active |
+| `src/navigate/bookmarks/BookmarksPage.svelte` | Desktop /bookmarks page — verse-level list grouped by surah. |
+| `src/navigate/bookmarks/click-handler.ts` | Document-level pointer handler that toggles a bookmark when the user |
+| `src/navigate/bookmarks/indicator.ts` | Bookmark verse-id glyph indicator. |
+| `src/navigate/bookmarks/pulse.ts` | Pulse-highlight a verse on bookmark-jump landing. |
+| `src/navigate/bookmarks/store.ts` | IDB CRUD for bookmarks (DB v5). |
+| `src/navigate/command-sheet-bridge.ts` | Bridge for the CommandSheet (⌘K) overlay. Migrated to |
+| `src/navigate/global-shortcuts.ts` | Boot-mounted global keyboard shortcuts. Survives lazy-mount of overlay |
+| `src/navigate/nav-drawer-bridge.ts` | Imperative bridge for the NavDrawer Svelte component. Migrated to |
+| `src/navigate/reader-actions.js` | Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m). |
+| `src/navigate/shortcuts-sheet.js` | Shortcuts cheatsheet — opened by `?` (also reachable from More → Shortcuts |
+| `src/navigate/state-command-sheet.svelte.ts` | _(no leading comment)_ |
+| `src/navigate/surahs/SurahList.svelte` | ---- data loaded on mount ---- |
+| `src/navigate/surahs/SurahRow.svelte` | _(no leading comment)_ |
+| `src/navigate/surahs/state.svelte.ts` | _(no leading comment)_ |
+| `src/navigate/swipe-gestures.ts` | Pure swipe-classification helpers for MarginHeader gestures. |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -158,7 +158,7 @@ _(no cross-surface reads detected)_
 
 - **keyPath:** `id` (string, format `<riwayah>:<surah>:<verse>` — riwayah-scoped).
 - **Indexes:** `by-riwayah` on `riwayah`, `by-updated` on `updatedAt`.
-- **Sole writer:** `src/bookmarks/store.ts`.
+- **Sole writer:** `src/navigate/bookmarks/store.ts`.
 - **Riwayah scoping:** the same verse-key bookmarked under Hafs vs Warsh are separate records. Switching riwayah surfaces a different set in the drawer Bookmarks tab.
 
 ```ts
@@ -179,26 +179,26 @@ _(no cross-surface reads detected)_
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/bookmarks/BookmarksList.svelte:104` |
-| `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/bookmarks/store.ts:59` |
-| `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/bookmarks/store.ts:42` |
-| `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/bookmarks/store.ts:38` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/bookmarks/BookmarksList.svelte:106`, `src/nav/CommandSheet.svelte:303`, `src/nav/CommandSheet.svelte:305`, `src/nav/NavDrawer.svelte:194`, `src/surahs/SurahList.svelte:167` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/nav/shortcuts-sheet.js:162` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/nav/shortcuts-sheet.js:153` |
+| `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/navigate/bookmarks/BookmarksList.svelte:104` |
+| `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/navigate/bookmarks/store.ts:59` |
+| `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/navigate/bookmarks/store.ts:42` |
+| `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/store.ts:38` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:194`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:162` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:153` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/bookmarks/pulse.ts:29` |
-| `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/bookmarks/BookmarksList.svelte:225`, `src/bookmarks/BookmarksPage.svelte:34`, `src/bookmarks/indicator.ts:86`, `src/surahs/SurahList.svelte:138` |
-| `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/bookmarks/BookmarksList.svelte:224`, `src/bookmarks/BookmarksPage.svelte:33`, `src/bookmarks/indicator.ts:79`, `src/surahs/SurahList.svelte:137` |
-| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/bookmarks/indicator.ts:107` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/bookmarks/indicator.ts:75` |
-| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/nav/NavDrawer.svelte:243`, `src/surahs/SurahList.svelte:141` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/bookmarks/BookmarksList.svelte:227`, `src/bookmarks/BookmarksPage.svelte:36`, `src/bookmarks/indicator.ts:102`, `src/surahs/SurahList.svelte:140` |
-| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/bookmarks/BookmarksList.svelte:226`, `src/bookmarks/BookmarksPage.svelte:35`, `src/bookmarks/indicator.ts:93`, `src/surahs/SurahList.svelte:139` |
+| `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/navigate/bookmarks/pulse.ts:29` |
+| `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/navigate/bookmarks/BookmarksList.svelte:225`, `src/navigate/bookmarks/BookmarksPage.svelte:34`, `src/navigate/bookmarks/indicator.ts:86`, `src/navigate/surahs/SurahList.svelte:138` |
+| `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/BookmarksList.svelte:224`, `src/navigate/bookmarks/BookmarksPage.svelte:33`, `src/navigate/bookmarks/indicator.ts:79`, `src/navigate/surahs/SurahList.svelte:137` |
+| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/navigate/bookmarks/indicator.ts:107` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/navigate/bookmarks/indicator.ts:75` |
+| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/navigate/NavDrawer.svelte:243`, `src/navigate/surahs/SurahList.svelte:141` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/navigate/bookmarks/BookmarksList.svelte:227`, `src/navigate/bookmarks/BookmarksPage.svelte:36`, `src/navigate/bookmarks/indicator.ts:102`, `src/navigate/surahs/SurahList.svelte:140` |
+| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/navigate/bookmarks/BookmarksList.svelte:226`, `src/navigate/bookmarks/BookmarksPage.svelte:35`, `src/navigate/bookmarks/indicator.ts:93`, `src/navigate/surahs/SurahList.svelte:139` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -212,16 +212,17 @@ _(no cross-surface reads detected)_
 <!-- AUTO-GENERATED:tests START -->
 **Unit (7):**
 
-- `tests/unit/bookmarks/click-handler.test.ts`
-- `tests/unit/bookmarks/store.test.ts`
-- `tests/unit/nav/command-sheet.test.ts`
-- `tests/unit/nav/drawer.test.ts`
-- `tests/unit/nav/state-command-sheet.test.ts`
-- `tests/unit/nav/swipe-gestures.test.ts`
-- `tests/unit/surahs/state.test.ts`
+- `tests/unit/navigate/bookmarks/click-handler.test.ts`
+- `tests/unit/navigate/bookmarks/store.test.ts`
+- `tests/unit/navigate/command-sheet.test.ts`
+- `tests/unit/navigate/drawer.test.ts`
+- `tests/unit/navigate/state-command-sheet.test.ts`
+- `tests/unit/navigate/surahs/state.test.ts`
+- `tests/unit/navigate/swipe-gestures.test.ts`
 
-**E2E (1):**
+**E2E (3):**
 
-- `tests/e2e/journey-f-navigation.spec.js`
+- `tests/e2e/navigate/command-sheet.spec.js`
+- `tests/e2e/navigate/drawer.spec.js`
+- `tests/e2e/navigate/surahs.spec.js`
 <!-- AUTO-GENERATED:tests END -->
-

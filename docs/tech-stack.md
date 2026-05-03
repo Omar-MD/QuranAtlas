@@ -15,7 +15,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | Language | **TypeScript** | `^6.0.3` | Type gate across all feature modules |
 | Type check | **svelte-check** | `^4.4.6` | TypeScript + Svelte type-only pass (`pnpm run check`) |
 | PWA | **vite-plugin-pwa** | `^1.2.0` (patched — see `patches/`) | Workbox integration, manifest generation, `injectManifest` mode |
-| Service worker | **Workbox** (`workbox-*`) | `^7.4.0` | Runtime caching strategies used by `src/sw.js` |
+| Service worker | **Workbox** (`workbox-*`) | `^7.4.0` | Runtime caching strategies used by `src/infra/service-worker/sw.js` |
 | Event bus | **mitt** | `^3.0.1` | Tiny (~200B) pub/sub (sole runtime `dependencies` entry) |
 | Logger | custom | — | Dev-only console wrapper, zero-cost in production (`src/core/logger.ts`) |
 | Test runner | **Vitest** | `^4.1.2` | Unit + integration, Vite-native (+ `@vitest/coverage-v8` `^4.1.2`) |
@@ -56,7 +56,7 @@ Bun is faster for pure-JS paths but lacks jsdom (uses happy-dom), has native-add
 
 ### vite-plugin-pwa + Workbox (not manual SW config)
 - **2.8M+ weekly downloads**, 4,100+ GitHub stars.
-- **`injectManifest` mode** — supports our custom `src/sw.js` with dataset-cache handlers and runtime caches.
+- **`injectManifest` mode** — supports our custom `src/infra/service-worker/sw.js` with dataset-cache handlers and runtime caches.
 - Handles offline fallbacks and update notifications.
 - **Patched** via `patches/vite-plugin-pwa@1.2.0.patch` (applied by pnpm's `patchedDependencies`).
 

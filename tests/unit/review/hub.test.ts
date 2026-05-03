@@ -11,7 +11,7 @@
 import { render, fireEvent } from '@testing-library/svelte'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-vi.mock('../../../src/marks/store', () => ({
+vi.mock('../../../src/mark/store', () => ({
   getAll: vi.fn(async () => ([
     { verseKey: '1:1',   threads: ['mercy', 'faith'],     subjects: [], audience: [], speaker: [], quotedSpeaker: [], mode: [], form: [], tone: [], people: [], places: [], events: [], divineNames: [], _canon: { threads: ['mercy', 'faith'] }, note: '', updatedAt: 4, createdAt: 4 },
     { verseKey: '2:255', threads: ['mercy'],              subjects: [], audience: [], speaker: [], quotedSpeaker: [], mode: [], form: [], tone: [], people: [], places: [], events: [], divineNames: [], _canon: { threads: ['mercy'] },          note: '', updatedAt: 3, createdAt: 3 },
@@ -22,7 +22,7 @@ vi.mock('../../../src/marks/store', () => ({
   getAllCanonicalValues: vi.fn(async () => ['mercy', 'faith', 'reflection']),
 }))
 
-vi.mock('../../../src/marks/tags', () => ({
+vi.mock('../../../src/mark/tags', () => ({
   getColorForTag: vi.fn(() => '#fff'),
   getSlotForTag: vi.fn(() => 'p0'),
 }))
@@ -34,11 +34,11 @@ vi.mock('../../../src/data/dataset', () => ({
     { n: 112, name: 'Al-Ikhlas',  counts: { hafs: 4,   warsh: 4,   qaloon: 4   } },
   ])),
 }))
-vi.mock('../../../src/safety/input-validator', () => ({
+vi.mock('../../../src/infra/safety/input-validator', () => ({
   validateLayerParam: vi.fn(() => ({ valid: false })),
 }))
 vi.mock('../../../src/a11y/announcer', () => ({ announce: vi.fn() }))
-vi.mock('../../../src/marks/editor-bridge', () => ({ openEditor: vi.fn() }))
+vi.mock('../../../src/mark/editor-bridge', () => ({ openEditor: vi.fn() }))
 vi.mock('../../../src/core/ui-bridge', () => ({ clearUndoToast: vi.fn() }))
 
 import Hub from '../../../src/review/Hub.svelte'

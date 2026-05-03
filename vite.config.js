@@ -33,7 +33,7 @@ export default defineConfig({
     svelte(),
     VitePWA({
       strategies: 'injectManifest',
-      srcDir: 'src',
+      srcDir: 'src/infra/service-worker',
       filename: 'sw.js',
       registerType: 'prompt',
       injectRegister: false,
@@ -63,7 +63,7 @@ export default defineConfig({
        // top-level `injectManifest` and inside src/sw.js respectively.
        //
        // Fonts (woff2) deliberately EXCLUDED from precache — they're handled
-       // by a CacheFirst runtime route in src/sw.js. Single-riwayah users
+       // by a CacheFirst runtime route in src/infra/service-worker/sw.js. Single-riwayah users
        // would otherwise pay ~180 KB up-front for the two unused KFGQPC
        // riwayah cuts. The active riwayah's woff2 is fetched at boot by
        // `core/font-loader.ts` (which keys off the hydrated `settings.riwayah`)
@@ -107,15 +107,15 @@ export default defineConfig({
         // here for static-import clusters.
         //
         // Audit R-23 (2026-04-29) found the prior table referenced four
-        // files that no longer exist (src/reader/index.js, src/nav/index.js,
-        // src/review/hub.js, src/settings/index.js); those rules silently
+        // files that no longer exist (src/read/index.js, src/navigate/index.js,
+        // src/review/hub.js, src/configure/index.js); those rules silently
         // no-op'd. Bootstrap-chunk experiment landed ~2 KB gzip MORE in
         // total eager (chunk wrapper overhead vs. the boot code's tight
         // coupling to entry), so we skip that for now and revisit when
         // audio + sync land and there's a clearer eager-vs-lazy boundary.
         manualChunks(id) {
-          if (id.includes('src/marks/')) { return 'marks' }
-          if (id.includes('src/about/About.svelte') || id.includes('src/about/pwa-install')) { return 'about' }
+          if (id.includes('src/mark/')) { return 'mark' }
+          if (id.includes('src/configure/about/About.svelte') || id.includes('src/configure/about/pwa-install')) { return 'about' }
         }
       }
     }

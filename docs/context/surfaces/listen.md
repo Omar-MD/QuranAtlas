@@ -1,15 +1,14 @@
 ---
 surface: listen
 src_paths:
-  - 'src/audio/**'
+  - 'src/listen/**'
 owns_stores:
   - audioPosition
 test_paths:
   unit:
-    - 'tests/unit/audio/**'
+    - 'tests/unit/listen/**'
   e2e:
-    - 'tests/e2e/journey-h-audio*.spec.js'
-    - 'tests/e2e/journey-j-audio*.spec.js'
+    - 'tests/e2e/listen/*.spec.js'
 ---
 
 # Surface: listen
@@ -32,16 +31,16 @@ test_paths:
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/audio/AudioFullOverlay.svelte` | _(no leading comment)_ |
-| `src/audio/AudioMiniBar.svelte` | _(no leading comment)_ |
-| `src/audio/cross-tab.ts` | Cross-tab playback gating + position sync. Newest-press-wins via |
-| `src/audio/init.ts` | Audio init: wires settings load, cross-tab gating, reader integration. |
-| `src/audio/media-session.ts` | navigator.mediaSession wiring. Lock-screen / Bluetooth headset / car |
-| `src/audio/player-bridge.ts` | Bridge for the full-overlay audio player. Open/close affordance lives |
-| `src/audio/player-runtime.ts` | Heart of the audio player: imperative play/pause/seek/setReciter against |
-| `src/audio/state-position.svelte.ts` | Sole writer for the `audioPosition` IDB store. Per data-model.md |
-| `src/audio/state.svelte.ts` | Sole writer for the audio runes + owner of the single global <audio> |
-| `src/audio/timing-loader.ts` | Loads + caches per-(reciter, surah) word-level timing JSON. Word-level |
+| `src/listen/AudioFullOverlay.svelte` | _(no leading comment)_ |
+| `src/listen/AudioMiniBar.svelte` | _(no leading comment)_ |
+| `src/listen/cross-tab.ts` | Cross-tab playback gating + position sync. Newest-press-wins via |
+| `src/listen/init.ts` | Audio init: wires settings load, cross-tab gating, reader integration. |
+| `src/listen/media-session.ts` | navigator.mediaSession wiring. Lock-screen / Bluetooth headset / car |
+| `src/listen/player-bridge.ts` | Bridge for the full-overlay audio player. Open/close affordance lives |
+| `src/listen/player-runtime.ts` | Heart of the audio player: imperative play/pause/seek/setReciter against |
+| `src/listen/state-position.svelte.ts` | Sole writer for the `audioPosition` IDB store. Per data-model.md |
+| `src/listen/state.svelte.ts` | Sole writer for the audio runes + owner of the single global <audio> |
+| `src/listen/timing-loader.ts` | Loads + caches per-(reciter, surah) word-level timing JSON. Word-level |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -103,18 +102,18 @@ DB v6. Per (reciter, surah) playback position record + `lastPlayedAt` timestamp.
 }
 ```
 
-Sole writer: `src/audio/player-runtime.ts` (and `state/audio.svelte.ts` for cross-tab pause).
+Sole writer: `src/listen/player-runtime.ts` (and `state/audio.svelte.ts` for cross-tab pause).
 
 ## Events
 
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `audio:ended` | `Events.AUDIO_ENDED` | `src/audio/player-runtime.ts:116` |
-| `audio:error` | `Events.AUDIO_ERROR` | `src/audio/player-runtime.ts:121`, `src/audio/player-runtime.ts:161`, `src/audio/player-runtime.ts:168` |
-| `audio:paused` | `Events.AUDIO_PAUSED` | `src/audio/player-runtime.ts:109` |
-| `audio:started` | `Events.AUDIO_STARTED` | `src/audio/player-runtime.ts:103` |
-| `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/audio/player-runtime.ts:79` |
+| `audio:ended` | `Events.AUDIO_ENDED` | `src/listen/player-runtime.ts:116` |
+| `audio:error` | `Events.AUDIO_ERROR` | `src/listen/player-runtime.ts:121`, `src/listen/player-runtime.ts:161`, `src/listen/player-runtime.ts:168` |
+| `audio:paused` | `Events.AUDIO_PAUSED` | `src/listen/player-runtime.ts:109` |
+| `audio:started` | `Events.AUDIO_STARTED` | `src/listen/player-runtime.ts:103` |
+| `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/listen/player-runtime.ts:79` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -135,12 +134,11 @@ Sole writer: `src/audio/player-runtime.ts` (and `state/audio.svelte.ts` for cros
 <!-- AUTO-GENERATED:tests START -->
 **Unit (3):**
 
-- `tests/unit/audio/audio-position.test.ts`
-- `tests/unit/audio/cross-tab.test.ts`
-- `tests/unit/audio/timing-loader.test.ts`
+- `tests/unit/listen/audio-position.test.ts`
+- `tests/unit/listen/cross-tab.test.ts`
+- `tests/unit/listen/timing-loader.test.ts`
 
 **E2E (0):**
 
 _(none)_
 <!-- AUTO-GENERATED:tests END -->
-

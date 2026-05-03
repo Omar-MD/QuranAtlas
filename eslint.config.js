@@ -3,7 +3,7 @@ import sveltePlugin from 'eslint-plugin-svelte'
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'src/sw.js', 'src/sw-handlers.js', 'src/offline/**']
+    ignores: ['dist/**', 'node_modules/**', 'src/infra/service-worker/sw.js', 'src/infra/service-worker/sw-handlers.js', 'src/infra/offline/**']
   },
   // JS files (existing rules)
   {

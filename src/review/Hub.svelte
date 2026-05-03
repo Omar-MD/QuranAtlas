@@ -2,23 +2,23 @@
   import { onMount } from 'svelte'
   import { SvelteSet } from 'svelte/reactivity'
   import ReviewCard from './ReviewCard.svelte'
-  import { getAll, getByLayerCanonical, getAllCanonicalValues } from '../marks/store'
-  import type { Mark } from '../marks/store'
-  import { getSlotForTag } from '../marks/tags'
+  import { getAll, getByLayerCanonical, getAllCanonicalValues } from '../mark/store'
+  import type { Mark } from '../mark/store'
+  import { getSlotForTag } from '../mark/tags'
   import { getSurahs } from '../data/dataset'
   import type { SurahMeta } from '../data/dataset'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { LAYER_NAMES, type LayerName } from '../core/db'
-  import { persistLastSurface } from '../settings/state-last-surface.svelte'
+  import { persistLastSurface } from '../configure/state-last-surface.svelte'
   import { logger } from '../core/logger'
   import { save as saveState, load as loadState, getDefaultState } from './state'
   import { parseLayerFromHash } from './parse-layer-query'
   import { clearUndoToast } from '../core/ui-bridge'
-  import { validateLayerParam } from '../safety/input-validator'
+  import { validateLayerParam } from '../infra/safety/input-validator'
   import { announce } from '../a11y/announcer'
   import { review } from '../review/state.svelte'
-  import { openEditor as _openEditor } from '../marks/editor-bridge'
+  import { openEditor as _openEditor } from '../mark/editor-bridge'
 
   // Props: layer + value are present when route is #/<layer>/:value (FVR)
   // tag is the legacy prop from #/t/:tag — handled as threads layer for backward compat
@@ -779,4 +779,3 @@
     </div>
   {/if}
 {/if}
-

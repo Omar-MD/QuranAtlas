@@ -54,7 +54,7 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
   return { ok: true, json: async () => ({}) }
 })
 
-import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/settings/state.svelte.ts'
+import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/configure/state.svelte.ts'
 
 describe('data/offline.js', () => {
   beforeEach(async () => {

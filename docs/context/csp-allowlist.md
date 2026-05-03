@@ -2,7 +2,7 @@
 
 Per-feature registry for **outbound** CSP directives — `connect-src`, `script-src`, `style-src`, `font-src`, `img-src`, `media-src`. Without an attribution registry, a future feature can quietly widen the policy and the next reviewer will not know which line is load-bearing for which feature.
 
-The deployed policy lives in `public/_headers` and is enforced by Cloudflare Pages. **Adding or widening a directive requires (a) an entry in this doc and (b) an `_headers` edit in the same commit.** The unit test at `tests/unit/safety/csp-headers.test.ts` parses both and rejects drift.
+The deployed policy lives in `public/_headers` and is enforced by Cloudflare Pages. **Adding or widening a directive requires (a) an entry in this doc and (b) an `_headers` edit in the same commit.** The unit test at `tests/unit/infra/safety/csp-headers.test.ts` parses both and rejects drift.
 
 ## Current policy
 
@@ -48,7 +48,7 @@ When a feature needs to connect, embed, or load from a new origin:
 1. **Justify it.** Is the asset truly third-party? Self-host if reasonable (fonts, icons, scripts). Self-hosting also dodges third-party privacy + integrity risks.
 2. **Add a row** to the registry above with the source feature + reason.
 3. **Edit `public/_headers`** in the same commit. Place the new origin in the directive's value list.
-4. **Update the test.** `tests/unit/safety/csp-headers.test.ts` parses both this doc + `_headers`. If they drift, CI fails. Update the expected map there too.
+4. **Update the test.** `tests/unit/infra/safety/csp-headers.test.ts` parses both this doc + `_headers`. If they drift, CI fails. Update the expected map there too.
 5. **PR description.** Call out the directive change explicitly — security reviewers will look here.
 
 ## Forbidden directives

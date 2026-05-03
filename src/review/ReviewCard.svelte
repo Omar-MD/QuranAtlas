@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { getSlotForTag } from '../marks/tags'
-  import type { Mark } from '../marks/store'
+  import { getSlotForTag } from '../mark/tags'
+  import type { Mark } from '../mark/store'
   import type { SurahMeta } from '../data/dataset'
   import { getSurah } from '../data/dataset'
   import { onMount } from 'svelte'
@@ -86,4 +86,3 @@
     </div>
   {/if}
 </article>
-

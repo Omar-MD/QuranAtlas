@@ -8,7 +8,7 @@ test_paths:
   unit:
     - 'tests/unit/review/**'
   e2e:
-    - 'tests/e2e/journey-e-review*.spec.js'
+    - 'tests/e2e/review/*.spec.js'
 ---
 
 # Surface: review
@@ -143,8 +143,8 @@ The review surface heavily reads `marks` (owned by `mark` dossier) via `getByLay
 - `tests/unit/review/state-rune.test.ts`
 - `tests/unit/review/state.test.ts`
 
-**E2E (1):**
+**E2E (2):**
 
-- `tests/e2e/journey-e-review.spec.js`
+- `tests/e2e/review/fvr.spec.js`
+- `tests/e2e/review/hub.spec.js`
 <!-- AUTO-GENERATED:tests END -->
-

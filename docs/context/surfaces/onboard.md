@@ -1,12 +1,12 @@
 ---
 surface: onboard
 src_paths:
-  - 'src/onboarding/**'
+  - 'src/onboard/**'
 test_paths:
   unit:
-    - 'tests/unit/onboarding/**'
+    - 'tests/unit/onboard/**'
   e2e:
-    - 'tests/e2e/journey-a-onboarding*.spec.js'
+    - 'tests/e2e/onboard/*.spec.js'
 ---
 
 # Surface: onboard
@@ -27,10 +27,10 @@ Routes: `#/onboarding`. No other entry — once `onboardingComplete = true`, the
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/onboarding/Onboarding.svelte` | Onboarding — 6-screen first-run flow. |
-| `src/onboarding/OnboardingScreen.svelte` | OnboardingScreen — single-screen shell. |
-| `src/onboarding/screens.ts` | Onboarding screen data types. |
-| `src/onboarding/state.ts` | Module-level helpers callable without mounting Onboarding.svelte. |
+| `src/onboard/Onboarding.svelte` | Onboarding — 6-screen first-run flow. |
+| `src/onboard/OnboardingScreen.svelte` | OnboardingScreen — single-screen shell. |
+| `src/onboard/screens.ts` | Onboarding screen data types. |
+| `src/onboard/state.ts` | Module-level helpers callable without mounting Onboarding.svelte. |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -76,7 +76,7 @@ _(none)_
 _(no cross-surface reads detected)_
 <!-- AUTO-GENERATED:data-read END -->
 
-`onboard` writes `settings.onboardingComplete` (sole writer: `src/onboarding/state.ts`) on completion or skip. Reads + sets several other `settings` keys via the configure-surface writers (theme, riwayah, translationId — these remain `configure`'s sole-writer responsibility; onboarding calls those writers, doesn't bypass them).
+`onboard` writes `settings.onboardingComplete` (sole writer: `src/onboard/state.ts`) on completion or skip. Reads + sets several other `settings` keys via the configure-surface writers (theme, riwayah, translationId — these remain `configure`'s sole-writer responsibility; onboarding calls those writers, doesn't bypass them).
 
 ## Events
 
@@ -94,7 +94,7 @@ _(no cross-surface reads detected)_
 
 ## Invariants
 
-- **Sole writer of `settings.onboardingComplete`: `src/onboarding/state.ts`.**
+- **Sole writer of `settings.onboardingComplete`: `src/onboard/state.ts`.**
 - **Default Riwayah on first run: Qālūn** (not Hafs). Picker pre-selects Qālūn radio.
 - **Translation picker derives options from `provenance.json` at render time** — never hardcoded list.
 - **Once `onboardingComplete = true`, the surface is unreachable** until Clear-data fully resets IDB.
@@ -106,8 +106,8 @@ _(no cross-surface reads detected)_
 
 _(none)_
 
-**E2E (1):**
+**E2E (2):**
 
-- `tests/e2e/journey-a-onboarding.spec.js`
+- `tests/e2e/onboard/first-run.spec.js`
+- `tests/e2e/onboard/session-restore.spec.js`
 <!-- AUTO-GENERATED:tests END -->
-

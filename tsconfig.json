@@ -13,5 +13,5 @@
     "types": ["vite/client"]
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts"],
-  "exclude": ["src/sw.js", "src/sw-handlers.js", "src/offline/**", "node_modules"]
+  "exclude": ["src/infra/service-worker/sw.js", "src/infra/service-worker/sw-handlers.js", "src/infra/offline/**", "node_modules"]
 }

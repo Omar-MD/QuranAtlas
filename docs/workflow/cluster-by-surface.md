@@ -4,18 +4,18 @@ Referenced by root `AGENTS.md`. Read this before splitting work by surface, dele
 
 ## The unit
 
-A **surface** is a user-visible region with a documented dossier and a Playwright spec. The table below is the canonical surface → dossier / spec map; the surface → *source files* mapping is not duplicated here because each dossier's frontmatter `src_paths` already owns it (Rule 1 keeps it fresh — `pnpm run docs` regenerates the auto Inventory block from the globs).
+A **surface** is a user-visible region with a documented dossier and one owning Playwright spec folder. The table below is the canonical surface → dossier / spec map; the surface → *source files* mapping is not duplicated here because each dossier's frontmatter `src_paths` already owns it (Rule 1 keeps it fresh — `pnpm run docs` regenerates the auto Inventory block from the globs).
 
 | Surface | Dossier | Spec |
 |---|---|---|
-| `read` (reader + ambient chrome + cross-surah scroll + typography) | `docs/context/surfaces/read.md` | `journey-b-reader.spec.js` |
-| `mark` (fast-tag panel + deep TagSheet) | `docs/context/surfaces/mark.md` | `journey-c-marking.spec.js` |
-| `review` (Review hub + FVR; future: SRS, graph, compare) | `docs/context/surfaces/review.md` | `journey-e-review.spec.js` |
-| `navigate` (command sheet + drawer + surah list + bookmarks) | `docs/context/surfaces/navigate.md` | `journey-f-navigation.spec.js` |
-| `listen` (audio recitation) | `docs/context/surfaces/listen.md` | `journey-h-audio.spec.js` *(planned)* |
-| `configure` (Settings sheet + About) | `docs/context/surfaces/configure.md` | `journey-d-settings.spec.js` + `journey-g-about.spec.js` |
-| `onboard` (first-run wizard + session restore) | `docs/context/surfaces/onboard.md` | `journey-a-onboarding.spec.js` |
-| `infra` (SW + cross-tab + manifest) | `docs/context/surfaces/infra.md` | `journey-h-offline.spec.js` + `journey-i-cross-tab.spec.js` + `sw-integration.spec.js` |
+| `read` (reader + ambient chrome + cross-surah scroll + typography) | `docs/context/surfaces/read.md` | `tests/e2e/read/*.spec.js` |
+| `mark` (fast-tag panel + deep TagSheet) | `docs/context/surfaces/mark.md` | `tests/e2e/mark/*.spec.js` |
+| `review` (Review hub + FVR; future: SRS, graph, compare) | `docs/context/surfaces/review.md` | `tests/e2e/review/*.spec.js` |
+| `navigate` (command sheet + drawer + surah list + bookmarks) | `docs/context/surfaces/navigate.md` | `tests/e2e/navigate/*.spec.js` |
+| `listen` (audio recitation) | `docs/context/surfaces/listen.md` | `tests/e2e/listen/*.spec.js` *(planned)* |
+| `configure` (Settings sheet + About) | `docs/context/surfaces/configure.md` | `tests/e2e/configure/*.spec.js` |
+| `onboard` (first-run wizard + session restore) | `docs/context/surfaces/onboard.md` | `tests/e2e/onboard/*.spec.js` |
+| `infra` (SW + cross-tab + manifest) | `docs/context/surfaces/infra.md` | `tests/e2e/infra/*.spec.js` |
 
 The **unit of work** is a surface, or a contiguous cluster of surfaces that share source files or invariants. A single bug is never a unit.
 
@@ -32,9 +32,9 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 ## Planning rules
 
 1. **One unit per surface-cluster.** If two candidate units both touch `src/<same-feature>/`, collapse them.
-2. **A journey that spans surfaces is one unit, not two.** Example: I2 (mark deleted in Tab B while Tab A editor open) touches `src/marks/` AND `src/safety/sync.ts`. That's one unit — the coupling is the point.
+2. **A journey that spans surfaces is one unit, not two.** Example: I2 (mark deleted in Tab B while Tab A editor open) touches `src/mark/` AND `src/infra/safety/sync.ts`. That's one unit — the coupling is the point.
 3. **Docs land with the unit.** Owning dossier's §Behavior + §Reach + §Invariants (Rule 1), plus `data-model.md` / `architecture.md` if cross-cutting (Rule 2), are part of the unit. `events.md` / `module-graph.md` / `feature-map.md` regenerate automatically (`pnpm run docs`) — no manual update. Not a separate task. Not a delegated follow-up.
-4. **Tests land with the unit.** If the unit adds new behavior to a dossier, the matching Playwright spec (new or extended) is part of the same commit. If the surface already has its journey spec, extend the owning `journey-X-*.spec.js` — do not create a parallel spec.
+4. **Tests land with the unit.** If the unit adds new behavior to a dossier, the matching Playwright spec is part of the same commit. Extend the owning surface folder and reuse an existing spec there when the concern already has a natural home.
 5. **Plan lifecycle.** Completed plans are deleted in the final commit, not archived. The lasting record lives in code + `git log` + `docs/context/`.
 
 ## Subagent dispatch rules
@@ -47,8 +47,8 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 
 ## Testing rules
 
-1. **Journey spec is canonical.** The spec at `tests/e2e/journey-X-*.spec.js` is the *only* e2e home for its surface(s). Extend it; do not create a new spec file for a covered journey.
-2. **New spec file iff new dossier.** A new `surfaces/<surface>.md` is the sole trigger for a new spec file.
+1. **Surface folder is canonical.** The folder at `tests/e2e/<surface>/` is the e2e home for that surface. Add or extend specs there; do not create a parallel folder.
+2. **New top-level e2e folder iff new dossier.** A new `surfaces/<surface>.md` is the sole trigger for a new top-level e2e folder.
 3. **One spec per cluster during verification.** Run the surface's journey spec at the real viewport. Don't run the full suite to verify a single-surface change.
 4. **Flake reproduction = `--repeat-each=N --workers=M` on the one spec.** Not the whole suite.
 5. **Tag-scoped projects are not extra specs.** `@a11y`, `@desktop`, `@keyboard`, `@reduced-motion`, `@offline` are assertions inside the owning journey spec — not separate files.
@@ -67,7 +67,7 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 |---|---|
 | Two units / delegated workers touch the same `src/<feature>/` tree | Collapse to one unit |
 | Plan has N units for N bugs on one surface | Collapse to one unit |
-| New spec file proposed for a covered journey | Extend the journey spec |
+| New spec file proposed outside an existing surface folder | Extend the owning surface folder |
 | Dossier §Behavior update queued as a separate task or delegated worker | Fold into the surface's unit |
 | "Run full e2e suite" to verify a single-surface change | Run the one journey spec |
 | Playwright invoked with different specs within one cluster | Collapse to the owning spec |

@@ -6,36 +6,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Imports from JS modules — types will be added in a later migration task
 import { openDB, get, LAYER_NAMES } from './core/db.js'
-import { loadGlobalPosition } from './reader/global-position'
-import { reshapeArabicVerses, reshapeAddedNodes } from './reader/font-reshape'
+import { loadGlobalPosition } from './read/global-position'
+import { reshapeArabicVerses, reshapeAddedNodes } from './read/font-reshape'
 import * as router from './core/router.js'
 import { emit, on } from './core/events.js'
 import { Events } from './core/constants.js'
 import { logger } from './core/logger.js'
-import { init as initSafetySync, suppressNextVersionChange } from './safety/sync.js'
-import { initInstallListener } from './about/pwa-install'
-import { initTheme } from './settings/theme.ts'
-import { initFontSize } from './settings/font-size.ts'
-import { initRiwayah } from './settings/riwayah.ts'
-import { initOfflineCategories } from './settings/offline-categories.ts'
-import { initReadingTypography } from './settings/reading-typography.ts'
-import { initNightMode } from './settings/night-mode.ts'
-import { initSurahHeaderHidden } from './settings/surah-header-visibility.ts'
-import { openSettingsSheet } from './settings/panel-bridge.ts'
-import { initReaderActions } from './nav/reader-actions.js'
-import { initIndicators } from './marks/indicator'
-import { initBookmarkIndicators } from './bookmarks/indicator'
-import { initBookmarkClickHandler } from './bookmarks/click-handler'
-import { initBookmarkPulse } from './bookmarks/pulse'
-import { setupTapGestures } from './marks/long-press'
-import { beginFast, openDeep } from './tag/session-bridge'
-import { tagSession } from './tag/state.svelte'
-import { registerEditor } from './marks/editor-bridge'
+import { init as initSafetySync, suppressNextVersionChange } from './infra/safety/sync.js'
+import { initInstallListener } from './configure/about/pwa-install'
+import { initTheme } from './configure/theme.ts'
+import { initFontSize } from './configure/font-size.ts'
+import { initRiwayah } from './configure/riwayah.ts'
+import { initOfflineCategories } from './configure/offline-categories.ts'
+import { initReadingTypography } from './configure/reading-typography.ts'
+import { initNightMode } from './configure/night-mode.ts'
+import { initSurahHeaderHidden } from './configure/surah-header-visibility.ts'
+import { openSettingsSheet } from './configure/panel-bridge.ts'
+import { initReaderActions } from './navigate/reader-actions.js'
+import { initIndicators } from './mark/indicator'
+import { initBookmarkIndicators } from './navigate/bookmarks/indicator'
+import { initBookmarkClickHandler } from './navigate/bookmarks/click-handler'
+import { initBookmarkPulse } from './navigate/bookmarks/pulse'
+import { setupTapGestures } from './mark/long-press'
+import { beginFast, openDeep } from './mark/tag/session-bridge'
+import { tagSession } from './mark/tag/state.svelte'
+import { registerEditor } from './mark/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
-import { openNavDrawer } from './nav/nav-drawer-bridge'
+import { openNavDrawer } from './navigate/nav-drawer-bridge'
 import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
-import { initAudio } from './audio/init'
-import { initGlobalShortcuts } from './nav/global-shortcuts'
+import { initAudio } from './listen/init'
+import { initGlobalShortcuts } from './navigate/global-shortcuts'
 
 // Bind tap gestures to the reader container:
 //   short-tap   → only while fast-tag mode is open: switch the active verse
@@ -108,7 +108,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
   // here we only do the iOS-defense reshape observer setup that doesn't
   // depend on a specific riwayah.
   if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
-    // Reshape logic + reasoning live in src/reader/font-reshape.ts. The
+    // Reshape logic + reasoning live in src/read/font-reshape.ts. The
     // observer scopes work to mutation.addedNodes — re-walking the whole
     // document on every chunk-append turned Al-Baqarah's render into
     // ~1700 forced reflows (audit R-04, 2026-04-29).
@@ -210,11 +210,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     pushCleanup(bootCleanups, on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
 
     // Register Phase 1 routes — Reader.svelte receives surah/ayah params + hook props
-    router.register('#/s/:surah', async () => (await import('./reader/Reader.svelte')).default, {
+    router.register('#/s/:surah', async () => (await import('./read/Reader.svelte')).default, {
       initIndicators,
       setupLongPress,
     })
-    router.register('#/s/:surah/:ayah', async () => (await import('./reader/Reader.svelte')).default, {
+    router.register('#/s/:surah/:ayah', async () => (await import('./read/Reader.svelte')).default, {
       initIndicators,
       setupLongPress,
     })
@@ -232,7 +232,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
         router.navigate(prev, { replace: true })
       },
     }))
-    router.register('#/about', async () => (await import('./about/About.svelte')).default)
+    router.register('#/about', async () => (await import('./configure/about/About.svelte')).default)
     // FVR: #/<layer>/:value — one route per layer (replaces legacy #/t/:tag)
     for (const layerName of LAYER_NAMES) {
       router.register(
@@ -253,9 +253,9 @@ export async function initBootstrap(): Promise<Array<() => void>> {
           : '#/s/1'
         history.replaceState(null, '', last)
         queueMicrotask(() => { openNavDrawer('read') })
-        return (await import('./nav/EmptyRoute.svelte')).default
+        return (await import('./navigate/EmptyRoute.svelte')).default
       }
-      return (await import('./surahs/SurahList.svelte')).default
+      return (await import('./navigate/surahs/SurahList.svelte')).default
     })
     router.register('#/bookmarks', async () => {
       const isMobile = window.matchMedia('(max-width: 1179px)').matches
@@ -270,11 +270,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
           : '#/s/1'
         history.replaceState(null, '', last)
         queueMicrotask(() => { openNavDrawer('read', 'bookmarks') })
-        return (await import('./nav/EmptyRoute.svelte')).default
+        return (await import('./navigate/EmptyRoute.svelte')).default
       }
-      return (await import('./bookmarks/BookmarksPage.svelte')).default
+      return (await import('./navigate/bookmarks/BookmarksPage.svelte')).default
     })
-    router.register('#/onboarding', async () => (await import('./onboarding/Onboarding.svelte')).default)
+    router.register('#/onboarding', async () => (await import('./onboard/Onboarding.svelte')).default)
 
     // Bookmarks: global click toggle (verse-id tap), indicator cache + glyph
     // decoration, and pulse-on-jump landing. All three are app-wide and live
@@ -362,7 +362,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
  * Handle launch restore: navigate to last-read position or default surah.
  */
 async function handleLaunchRestore() {
-  const { isComplete } = await import('./onboarding/state')
+  const { isComplete } = await import('./onboard/state')
   const done = await isComplete()
   if (!done) {
     logger.info('First-run: onboarding')

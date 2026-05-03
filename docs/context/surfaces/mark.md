@@ -1,16 +1,16 @@
 ---
 surface: mark
 src_paths:
-  - 'src/marks/**'
-  - 'src/tag/**'
+  - 'src/mark/**'
+  - 'src/mark/tag/**'
 owns_stores:
   - marks
 test_paths:
   unit:
-    - 'tests/unit/marks/**'
-    - 'tests/unit/tag/**'
+    - 'tests/unit/mark/**'
+    - 'tests/unit/mark/tag/**'
   e2e:
-    - 'tests/e2e/journey-c-marking*.spec.js'
+    - 'tests/e2e/mark/*.spec.js'
 ---
 
 # Surface: mark
@@ -39,18 +39,18 @@ Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side ver
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/marks/VerseTagPanel.svelte` | Inline fast-path tag panel. Rendered inside the active verse under the |
-| `src/marks/editor-bridge.ts` | Imperative bridge for opening the mark editor from vanilla-JS consumers. |
-| `src/marks/indicator.ts` | Colored dot indicators on marked verses. |
-| `src/marks/long-press.ts` | Svelte action: long-press on a verse element → open mark editor. |
-| `src/marks/store.ts` | IDB CRUD for marks (v2 — 12-layer schema). |
-| `src/marks/tags.js` | Tag palette, seed tags, and color resolution. |
-| `src/tag/TagChip.svelte` | Quickbar chip. Distinct from `marks/TagChip.svelte` (which drives deep sheet). |
-| `src/tag/TagSheet.svelte` | Deep tagging sheet. |
-| `src/tag/VerseSpotlight.svelte` | Dims reader + draws attention to focused verse. Fixed scrim w/ a "hole" |
-| `src/tag/session-bridge.ts` | Imperative bridge to begin a fast-path tagging session from a verse tap. |
-| `src/tag/sheet-bridge.ts` | Bridge for the deep TagSheet overlay (`tag/TagSheet.svelte`). Migrated |
-| `src/tag/state.svelte.ts` | Tag-session state (runes). Holds the live state for a single tagging |
+| `src/mark/VerseTagPanel.svelte` | Inline fast-path tag panel. Rendered inside the active verse under the |
+| `src/mark/editor-bridge.ts` | Imperative bridge for opening the mark editor from vanilla-JS consumers. |
+| `src/mark/indicator.ts` | Colored dot indicators on marked verses. |
+| `src/mark/long-press.ts` | Svelte action: long-press on a verse element → open mark editor. |
+| `src/mark/store.ts` | IDB CRUD for marks (v2 — 12-layer schema). |
+| `src/mark/tag/TagChip.svelte` | Quickbar chip. Distinct from `marks/TagChip.svelte` (which drives deep sheet). |
+| `src/mark/tag/TagSheet.svelte` | Deep tagging sheet. |
+| `src/mark/tag/VerseSpotlight.svelte` | Dims reader + draws attention to focused verse. Fixed scrim w/ a "hole" |
+| `src/mark/tag/session-bridge.ts` | Imperative bridge to begin a fast-path tagging session from a verse tap. |
+| `src/mark/tag/sheet-bridge.ts` | Bridge for the deep TagSheet overlay (`tag/TagSheet.svelte`). Migrated |
+| `src/mark/tag/state.svelte.ts` | Tag-session state (runes). Holds the live state for a single tagging |
+| `src/mark/tags.js` | Tag palette, seed tags, and color resolution. |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -107,7 +107,7 @@ _(no cross-surface reads detected)_
 - **DB_VERSION:** 2 (v1 → v2 dropped and recreated; no migration; pre-release).
 - **Indexes:** `by-canon-{threads,subjects,audience,speaker,quotedSpeaker,mode,form,tone,people,places,events,divineNames}` on each `_canon.<layer>` (multiEntry); `by-updated` on `updatedAt`.
 - **Validated fields (all required):** `verseKey: string`, 12 layer fields (`string[]`), `_canon: Record<LayerName, string[]>`, `note: string`, `createdAt: number`, `updatedAt: number`. Types in `src/core/db/types.ts` (`MarkRecord`, `LayerName`, `LAYER_NAMES`).
-- **Sole writer:** `src/marks/store.ts`. External callers NEVER populate `_canon` — it is computed inside the writer.
+- **Sole writer:** `src/mark/store.ts`. External callers NEVER populate `_canon` — it is computed inside the writer.
 
 ```ts
 {
@@ -136,20 +136,20 @@ _(no cross-surface reads detected)_
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `marks:deleted` | `Events.MARKS_DELETED` | `src/marks/store.ts:113` |
-| `marks:save-failed` | `Events.MARKS_SAVE_FAILED` | `src/marks/store.ts:95` |
-| `marks:saved` | `Events.MARKS_SAVED` | `src/marks/store.ts:88` |
+| `marks:deleted` | `Events.MARKS_DELETED` | `src/mark/store.ts:113` |
+| `marks:save-failed` | `Events.MARKS_SAVE_FAILED` | `src/mark/store.ts:95` |
+| `marks:saved` | `Events.MARKS_SAVED` | `src/mark/store.ts:88` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/marks/indicator.ts:149` |
-| `marks:deleted` | `Events.MARKS_DELETED` | `src/marks/indicator.ts:113` |
-| `marks:saved` | `Events.MARKS_SAVED` | `src/marks/indicator.ts:100` |
-| `marks:undo` | `Events.MARKS_UNDO` | `src/marks/indicator.ts:119` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/marks/indicator.ts:96` |
-| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/marks/indicator.ts:132`, `src/tag/TagSheet.svelte:175` |
+| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/mark/indicator.ts:149` |
+| `marks:deleted` | `Events.MARKS_DELETED` | `src/mark/indicator.ts:113` |
+| `marks:saved` | `Events.MARKS_SAVED` | `src/mark/indicator.ts:100` |
+| `marks:undo` | `Events.MARKS_UNDO` | `src/mark/indicator.ts:119` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/mark/indicator.ts:96` |
+| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/mark/indicator.ts:132`, `src/mark/tag/TagSheet.svelte:175` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -164,17 +164,17 @@ _(no cross-surface reads detected)_
 <!-- AUTO-GENERATED:tests START -->
 **Unit (8):**
 
-- `tests/unit/marks/indicator.test.ts`
-- `tests/unit/marks/long-press.test.ts`
-- `tests/unit/marks/store.test.js`
-- `tests/unit/marks/store.test.ts`
-- `tests/unit/marks/tags.test.js`
-- `tests/unit/tag/tag-session.test.ts`
-- `tests/unit/tag/tag-sheet.test.ts`
-- `tests/unit/tag/verse-tag-panel.test.ts`
+- `tests/unit/mark/indicator.test.ts`
+- `tests/unit/mark/long-press.test.ts`
+- `tests/unit/mark/store.test.js`
+- `tests/unit/mark/store.test.ts`
+- `tests/unit/mark/tag/tag-session.test.ts`
+- `tests/unit/mark/tag/tag-sheet.test.ts`
+- `tests/unit/mark/tag/verse-tag-panel.test.ts`
+- `tests/unit/mark/tags.test.js`
 
-**E2E (1):**
+**E2E (2):**
 
-- `tests/e2e/journey-c-marking.spec.js`
+- `tests/e2e/mark/fast-tag.spec.js`
+- `tests/e2e/mark/tag-sheet.spec.js`
 <!-- AUTO-GENERATED:tests END -->
-

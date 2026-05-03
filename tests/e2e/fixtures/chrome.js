@@ -98,7 +98,7 @@ export async function openCommandSheet(page) {
  * (mobile-nav-redesign 2026-04-25 — long-press was retired so OS-native
  * gestures like text selection / iOS callouts could surface unblocked).
  *
- * The gesture code in src/marks/long-press.ts listens for touchstart/touchend,
+ * The gesture code in src/mark/long-press.ts listens for touchstart/touchend,
  * not mousedown/pointerdown, so mouse.down() doesn't trigger it. Scrolls the
  * element into view first so elementFromPoint returns the correct target.
  */

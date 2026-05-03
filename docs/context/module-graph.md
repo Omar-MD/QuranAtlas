@@ -2,7 +2,7 @@
 
 > AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm run docs` to regenerate.
 
-Top-level src directories: **19**.
+Top-level src directories: **13**.
 
 ## Mermaid (top-level)
 
@@ -12,102 +12,69 @@ graph LR
   src["src"]
   src_App_svelte["src/App.svelte"]
   src_a11y["src/a11y"]
-  src_about["src/about"]
-  src_audio["src/audio"]
-  src_bookmarks["src/bookmarks"]
+  src_configure["src/configure"]
   src_core["src/core"]
   src_data["src/data"]
-  src_marks["src/marks"]
-  src_nav["src/nav"]
-  src_offline["src/offline"]
-  src_onboarding["src/onboarding"]
-  src_reader["src/reader"]
+  src_infra["src/infra"]
+  src_listen["src/listen"]
+  src_mark["src/mark"]
+  src_navigate["src/navigate"]
+  src_onboard["src/onboard"]
+  src_read["src/read"]
   src_review["src/review"]
-  src_safety["src/safety"]
-  src_settings["src/settings"]
-  src_surahs["src/surahs"]
-  src_sw_handlers_js["src/sw-handlers.js"]
-  src_tag["src/tag"]
   src --> src_App_svelte
-  src --> src_about
-  src --> src_audio
-  src --> src_bookmarks
+  src --> src_configure
   src --> src_core
-  src --> src_marks
-  src --> src_nav
-  src --> src_offline
-  src --> src_reader
-  src --> src_safety
-  src --> src_settings
-  src --> src_sw_handlers_js
-  src --> src_tag
-  src_about --> src_a11y
-  src_about --> src_marks
-  src_about --> src_settings
-  src_audio --> src_core
-  src_audio --> src_reader
-  src_audio --> src_safety
-  src_audio --> src_settings
-  src_bookmarks --> src_a11y
-  src_bookmarks --> src_core
-  src_bookmarks --> src_data
-  src_bookmarks --> src_safety
-  src_bookmarks --> src_settings
-  src_bookmarks --> src_tag
+  src --> src_infra
+  src --> src_listen
+  src --> src_mark
+  src --> src_navigate
+  src --> src_read
+  src_configure --> src_a11y
+  src_configure --> src_core
+  src_configure --> src_data
+  src_configure --> src_infra
+  src_configure --> src_mark
+  src_configure --> src_read
   src_core --> src
   src_core --> src_a11y
+  src_core --> src_configure
   src_core --> src_data
-  src_core --> src_settings
+  src_data --> src_configure
   src_data --> src_core
-  src_data --> src_settings
-  src_marks --> src_core
-  src_marks --> src_data
-  src_marks --> src_safety
-  src_marks --> src_tag
-  src_nav --> src_a11y
-  src_nav --> src_bookmarks
-  src_nav --> src_core
-  src_nav --> src_data
-  src_nav --> src_marks
-  src_nav --> src_reader
-  src_nav --> src_settings
-  src_nav --> src_surahs
-  src_nav --> src_tag
-  src_offline --> src_core
-  src_offline --> src_data
-  src_offline --> src_settings
-  src_onboarding --> src_core
-  src_onboarding --> src_data
-  src_onboarding --> src_settings
-  src_reader --> src_a11y
-  src_reader --> src_core
-  src_reader --> src_data
-  src_reader --> src_marks
-  src_reader --> src_nav
-  src_reader --> src_settings
-  src_reader --> src_tag
+  src_data --> src_infra
+  src_infra --> src_configure
+  src_infra --> src_core
+  src_infra --> src_data
+  src_listen --> src_configure
+  src_listen --> src_core
+  src_listen --> src_infra
+  src_listen --> src_read
+  src_mark --> src_core
+  src_mark --> src_data
+  src_mark --> src_infra
+  src_navigate --> src_a11y
+  src_navigate --> src_configure
+  src_navigate --> src_core
+  src_navigate --> src_data
+  src_navigate --> src_infra
+  src_navigate --> src_mark
+  src_navigate --> src_read
+  src_onboard --> src_configure
+  src_onboard --> src_core
+  src_onboard --> src_data
+  src_read --> src_a11y
+  src_read --> src_configure
+  src_read --> src_core
+  src_read --> src_data
+  src_read --> src_mark
+  src_read --> src_navigate
   src_review --> src_a11y
+  src_review --> src_configure
   src_review --> src_core
   src_review --> src_data
-  src_review --> src_marks
-  src_review --> src_safety
-  src_review --> src_settings
-  src_safety --> src_core
-  src_settings --> src_a11y
-  src_settings --> src_core
-  src_settings --> src_data
-  src_settings --> src_offline
-  src_settings --> src_reader
-  src_settings --> src_safety
-  src_surahs --> src_a11y
-  src_surahs --> src_bookmarks
-  src_surahs --> src_core
-  src_surahs --> src_data
-  src_surahs --> src_reader
-  src_surahs --> src_settings
-  src_tag --> src_core
-  src_tag --> src_data
-  src_tag --> src_marks
+  src_review --> src_infra
+  src_review --> src_mark
 ```
 <!-- AUTO-GENERATED:mermaid END -->
 
@@ -116,7 +83,7 @@ graph LR
 <!-- AUTO-GENERATED:dirs START -->
 ### `src`
 
-- **Imports from:** `src/App.svelte`, `src/about`, `src/audio`, `src/bookmarks`, `src/core`, `src/marks`, `src/nav`, `src/offline`, `src/reader`, `src/safety`, `src/settings`, `src/sw-handlers.js`, `src/tag`
+- **Imports from:** `src/App.svelte`, `src/configure`, `src/core`, `src/infra`, `src/listen`, `src/mark`, `src/navigate`, `src/read`
 - **Imported by:** `src/core`
 
 ### `src/App.svelte`
@@ -127,86 +94,56 @@ graph LR
 ### `src/a11y`
 
 - **Imports from:** _(none)_
-- **Imported by:** `src/about`, `src/bookmarks`, `src/core`, `src/nav`, `src/reader`, `src/review`, `src/settings`, `src/surahs`
+- **Imported by:** `src/configure`, `src/core`, `src/navigate`, `src/read`, `src/review`
 
-### `src/about`
+### `src/configure`
 
-- **Imports from:** `src/a11y`, `src/marks`, `src/settings`
-- **Imported by:** `src`
-
-### `src/audio`
-
-- **Imports from:** `src/core`, `src/reader`, `src/safety`, `src/settings`
-- **Imported by:** `src`
-
-### `src/bookmarks`
-
-- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/safety`, `src/settings`, `src/tag`
-- **Imported by:** `src`, `src/nav`, `src/surahs`
+- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/infra`, `src/mark`, `src/read`
+- **Imported by:** `src`, `src/core`, `src/data`, `src/infra`, `src/listen`, `src/navigate`, `src/onboard`, `src/read`, `src/review`
 
 ### `src/core`
 
-- **Imports from:** `src`, `src/a11y`, `src/data`, `src/settings`
-- **Imported by:** `src`, `src/audio`, `src/bookmarks`, `src/data`, `src/marks`, `src/nav`, `src/offline`, `src/onboarding`, `src/reader`, `src/review`, `src/safety`, `src/settings`, `src/surahs`, `src/tag`
+- **Imports from:** `src`, `src/a11y`, `src/configure`, `src/data`
+- **Imported by:** `src`, `src/configure`, `src/data`, `src/infra`, `src/listen`, `src/mark`, `src/navigate`, `src/onboard`, `src/read`, `src/review`
 
 ### `src/data`
 
-- **Imports from:** `src/core`, `src/settings`
-- **Imported by:** `src/bookmarks`, `src/core`, `src/marks`, `src/nav`, `src/offline`, `src/onboarding`, `src/reader`, `src/review`, `src/settings`, `src/surahs`, `src/tag`
+- **Imports from:** `src/configure`, `src/core`, `src/infra`
+- **Imported by:** `src/configure`, `src/core`, `src/infra`, `src/mark`, `src/navigate`, `src/onboard`, `src/read`, `src/review`
 
-### `src/marks`
+### `src/infra`
 
-- **Imports from:** `src/core`, `src/data`, `src/safety`, `src/tag`
-- **Imported by:** `src`, `src/about`, `src/nav`, `src/reader`, `src/review`, `src/tag`
+- **Imports from:** `src/configure`, `src/core`, `src/data`
+- **Imported by:** `src`, `src/configure`, `src/data`, `src/listen`, `src/mark`, `src/navigate`, `src/review`
 
-### `src/nav`
+### `src/listen`
 
-- **Imports from:** `src/a11y`, `src/bookmarks`, `src/core`, `src/data`, `src/marks`, `src/reader`, `src/settings`, `src/surahs`, `src/tag`
-- **Imported by:** `src`, `src/reader`
+- **Imports from:** `src/configure`, `src/core`, `src/infra`, `src/read`
+- **Imported by:** `src`
 
-### `src/offline`
+### `src/mark`
 
-- **Imports from:** `src/core`, `src/data`, `src/settings`
-- **Imported by:** `src`, `src/settings`
+- **Imports from:** `src/core`, `src/data`, `src/infra`
+- **Imported by:** `src`, `src/configure`, `src/navigate`, `src/read`, `src/review`
 
-### `src/onboarding`
+### `src/navigate`
 
-- **Imports from:** `src/core`, `src/data`, `src/settings`
+- **Imports from:** `src/a11y`, `src/configure`, `src/core`, `src/data`, `src/infra`, `src/mark`, `src/read`
+- **Imported by:** `src`, `src/read`
+
+### `src/onboard`
+
+- **Imports from:** `src/configure`, `src/core`, `src/data`
 - **Imported by:** _(none)_
 
-### `src/reader`
+### `src/read`
 
-- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/marks`, `src/nav`, `src/settings`, `src/tag`
-- **Imported by:** `src`, `src/audio`, `src/nav`, `src/settings`, `src/surahs`
+- **Imports from:** `src/a11y`, `src/configure`, `src/core`, `src/data`, `src/mark`, `src/navigate`
+- **Imported by:** `src`, `src/configure`, `src/listen`, `src/navigate`
 
 ### `src/review`
 
-- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/marks`, `src/safety`, `src/settings`
+- **Imports from:** `src/a11y`, `src/configure`, `src/core`, `src/data`, `src/infra`, `src/mark`
 - **Imported by:** _(none)_
-
-### `src/safety`
-
-- **Imports from:** `src/core`
-- **Imported by:** `src`, `src/audio`, `src/bookmarks`, `src/marks`, `src/review`, `src/settings`
-
-### `src/settings`
-
-- **Imports from:** `src/a11y`, `src/core`, `src/data`, `src/offline`, `src/reader`, `src/safety`
-- **Imported by:** `src`, `src/about`, `src/audio`, `src/bookmarks`, `src/core`, `src/data`, `src/nav`, `src/offline`, `src/onboarding`, `src/reader`, `src/review`, `src/surahs`
-
-### `src/surahs`
-
-- **Imports from:** `src/a11y`, `src/bookmarks`, `src/core`, `src/data`, `src/reader`, `src/settings`
-- **Imported by:** `src/nav`
-
-### `src/sw-handlers.js`
-
-- **Imports from:** _(none)_
-- **Imported by:** `src`
-
-### `src/tag`
-
-- **Imports from:** `src/core`, `src/data`, `src/marks`
-- **Imported by:** `src`, `src/bookmarks`, `src/marks`, `src/nav`, `src/reader`
 
 <!-- AUTO-GENERATED:dirs END -->

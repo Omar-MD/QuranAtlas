@@ -58,7 +58,7 @@ If you change a store's shape, indexes, key, or sole writer — update the **dos
   ```
 - `data/normalized/translations/{id}.json` — **normalized monolithic source**, committed to git outside `public/`, produced by `scripts/data/fetch-source.mjs` from catalog fetch metadata. Saheeh starts from Quran DB JSON and is normalized into the same source shape used by the build. Build-only input; never shipped to clients.
 - **Invariants (asserted by `scripts/data/build-dataset.mjs::buildTranslationSplits`):** 114 surahs present; per-surah verse count matches Hafs counting from `surahs.json`; verse keys are exactly `${surahNo}:${1..count}`; every `[N]` marker in verse text resolves to `footnotes[N]`; footnote keys are contiguous 1..K; every defined footnote is referenced at least once. Build hard-fails on any violation.
-- **Markers:** `[N]` tokens in verse text are tokenised by `src/reader/translation-tokens.ts` and rendered as buttons by `Verse.svelte`. Translation strings stay byte-exact end-to-end (the build script does not normalize whitespace or punctuation) so license terms remain valid for redistribution.
+- **Markers:** `[N]` tokens in verse text are tokenised by `src/read/translation-tokens.ts` and rendered as buttons by `Verse.svelte`. Translation strings stay byte-exact end-to-end (the build script does not normalize whitespace or punctuation) so license terms remain valid for redistribution.
 - **provenance.json `translations[]`** — one entry per shipped pack: `{ id, label, translator, language, version, ayatCount, footnoteCount, hasIntros, license, licenseUrl, source, sourceUrl, fetchedAt, primaryRiwayah, coverage }`. The Settings translation picker reads this list (via `src/data/dataset.ts::getTranslations`) so the UI never offers a pack the dataset does not contain.
 
 ### Tafsir packs
@@ -143,14 +143,14 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
 
 ## Cross-cutting rules
 
-> **Invariant — single global `<audio>` element.** Owned by `src/audio/state.svelte.ts::getOrCreateAudioElement()`. Multiple `<audio>` elements break iOS media-session binding and risk concurrent playback races. (See `listen` dossier §Invariants.)
+> **Invariant — single global `<audio>` element.** Owned by `src/listen/state.svelte.ts::getOrCreateAudioElement()`. Multiple `<audio>` elements break iOS media-session binding and risk concurrent playback races. (See `listen` dossier §Invariants.)
 
 > **Invariant — one writer per store.** Per-store sole writers live in each owning dossier's §Invariants. The store→owner index above points to them. For the `settings` shared scratchpad, the rule holds at **key** granularity — one writer per key, listed in the `configure` dossier's §Data table. **Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to the dossier's §Invariants in the same commit.**
 
 - **All writes go through `src/core/db::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
-- **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `src/safety/sync.ts` shows the reload banner; `src/settings/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
+- **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `src/infra/safety/sync.ts` shows the reload banner; `src/configure/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
 - **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `src/core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
-- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Edge writes broadcast `'edges:changed'` → `SYNC_EDGES_UPDATED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `meta`, extend `src/safety/sync.ts` (see `infra` dossier §Generic sync envelope).
+- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Edge writes broadcast `'edges:changed'` → `SYNC_EDGES_UPDATED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `meta`, extend `src/infra/safety/sync.ts` (see `infra` dossier §Generic sync envelope).
 
 ---
 
@@ -160,5 +160,5 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qaloon (Madinan number
 2. Add a `@typedef` JSDoc comment + a required-fields entry to `_shapes` in `validateWrite`. Add optional-but-type-checked fields to `_optionalTypes` if applicable.
 3. If the store needs an index, create it inside the same migration block.
 4. **Pick the owning dossier** in `docs/context/surfaces/`. Add `owns_stores: [<store-name>]` to its frontmatter. Add a `### \`<store>\` store body` section under §Data with keyPath, indexes, record shape, writers, and typical queries.
-5. Consider whether writes should cross tabs (broadcast via `src/safety/sync.ts::registerTopic` + `broadcast`) and whether they should emit a public event.
+5. Consider whether writes should cross tabs (broadcast via `src/infra/safety/sync.ts::registerTopic` + `broadcast`) and whether they should emit a public event.
 6. Run `pnpm run docs` — the store→owner index above re-renders.

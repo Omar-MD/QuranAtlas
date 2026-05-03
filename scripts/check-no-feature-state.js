@@ -7,28 +7,14 @@ import { join } from 'node:path'
 
 const ROOT = 'src'
 const ALLOW_LIST = new Set([
-  // Deferred browser install prompt ref
-  'src/about/pwa-install.ts',
-  // BroadcastChannel handlers and banner DOM ref
-  'src/safety/sync.js',
   // Screen-reader live-region DOM element ref
   'src/a11y/announcer.js',
-  // DOM element refs for ambient pill
-  'src/nav/ambient-pill.js',
-  // DOM element refs for more-sheet
-  'src/nav/more-sheet.js',
   // Surah meta cache and handler refs for reader actions
-  'src/nav/reader-actions.js',
-  // DOM element refs and handler refs for command sheet
-  'src/nav/command-sheet.js',
+  'src/navigate/reader-actions.js',
   // DOM element refs for shortcuts sheet
-  'src/nav/shortcuts-sheet.js',
-  // Scroll target and handler refs for ambient dock
-  'src/nav/ambient-dock.js',
-  // SW message handler and pending URL refs
-  'src/data/offline.js',
+  'src/navigate/shortcuts-sheet.js',
 ])
-const SKIP_DIRS = new Set(['state', 'core', 'offline'])
+const SKIP_DIRS = new Set(['state', 'core', 'offline', 'service-worker'])
 const SKIP_FILES = new Set(['sw.js', 'sw-handlers.js'])
 
 const offenders = []

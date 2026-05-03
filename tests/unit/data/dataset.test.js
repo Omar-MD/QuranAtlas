@@ -7,7 +7,7 @@ const DATASET_PATH = join(process.cwd(), 'public', 'dataset')
 // Mock loadRiwayah BEFORE importing dataset module — controls which Riwayah
 // path getSurah resolves to.
 let mockedRiwayah = 'qaloon'
-vi.mock('../../../src/settings/riwayah.ts', () => ({
+vi.mock('../../../src/configure/riwayah.ts', () => ({
   loadRiwayah: vi.fn(async () => mockedRiwayah),
 }))
 

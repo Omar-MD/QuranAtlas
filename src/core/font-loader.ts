@@ -27,7 +27,7 @@
  */
 
 import { logger } from './logger.js'
-import type { Riwayah } from '../settings/state.svelte'
+import type { Riwayah } from '../configure/state.svelte'
 
 const ARABIC_RANGE = 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF'
 

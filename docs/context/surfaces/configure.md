@@ -1,17 +1,16 @@
 ---
 surface: configure
 src_paths:
-  - 'src/settings/**'
-  - 'src/about/**'
+  - 'src/configure/**'
+  - 'src/configure/about/**'
 owns_stores:
   - settings
 test_paths:
   unit:
-    - 'tests/unit/settings/**'
-    - 'tests/unit/about/**'
+    - 'tests/unit/configure/**'
+    - 'tests/unit/configure/about/**'
   e2e:
-    - 'tests/e2e/journey-d-settings*.spec.js'
-    - 'tests/e2e/journey-g-about*.spec.js'
+    - 'tests/e2e/configure/*.spec.js'
 ---
 
 # Surface: configure
@@ -42,23 +41,23 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/about/About.svelte` | _(no leading comment)_ |
-| `src/about/pwa-install.ts` | PWA install prompt management. |
-| `src/settings/ClearDataConfirm.svelte` | Focus the input after the DOM updates |
-| `src/settings/Panel.svelte` | _(no leading comment)_ |
-| `src/settings/audio.ts` | Sole writer for all `settings.audio*` keys. Mirrors the riwayah / theme |
-| `src/settings/clear-data.ts` | Clear data: confirmation flow and data deletion. |
-| `src/settings/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
-| `src/settings/night-mode.ts` | Night recitation mode: dim+warm overlay, composes over any theme. |
-| `src/settings/offline-categories.ts` | Offline categories preference: per-feature opt-in for the offline selector. |
-| `src/settings/panel-bridge.ts` | Settings Panel — overlay bridge + sole-writer/-reader data functions. |
-| `src/settings/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
-| `src/settings/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
-| `src/settings/state-last-surface.svelte.ts` | Sole writer for settings.lastSurface — the hash the launch-restore |
-| `src/settings/state-recent-surahs.svelte.ts` | Sole writer for `settings.recentSurahs`. Pre-fix App.svelte did its |
-| `src/settings/state.svelte.ts` | _(no leading comment)_ |
-| `src/settings/surah-header-visibility.ts` | Surah header visibility: persisted user preference for whether the in-reader |
-| `src/settings/theme.ts` | Theme management: load and apply user theme preferences. |
+| `src/configure/ClearDataConfirm.svelte` | Focus the input after the DOM updates |
+| `src/configure/Panel.svelte` | _(no leading comment)_ |
+| `src/configure/about/About.svelte` | _(no leading comment)_ |
+| `src/configure/about/pwa-install.ts` | PWA install prompt management. |
+| `src/configure/audio.ts` | Sole writer for all `settings.audio*` keys. Mirrors the riwayah / theme |
+| `src/configure/clear-data.ts` | Clear data: confirmation flow and data deletion. |
+| `src/configure/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
+| `src/configure/night-mode.ts` | Night recitation mode: dim+warm overlay, composes over any theme. |
+| `src/configure/offline-categories.ts` | Offline categories preference: per-feature opt-in for the offline selector. |
+| `src/configure/panel-bridge.ts` | Settings Panel — overlay bridge + sole-writer/-reader data functions. |
+| `src/configure/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
+| `src/configure/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
+| `src/configure/state-last-surface.svelte.ts` | Sole writer for settings.lastSurface — the hash the launch-restore |
+| `src/configure/state-recent-surahs.svelte.ts` | Sole writer for `settings.recentSurahs`. Pre-fix App.svelte did its |
+| `src/configure/state.svelte.ts` | _(no leading comment)_ |
+| `src/configure/surah-header-visibility.ts` | Surah header visibility: persisted user preference for whether the in-reader |
+| `src/configure/theme.ts` | Theme management: load and apply user theme preferences. |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -154,48 +153,48 @@ Keys + sole writers:
 
 | Key | Sole writer | Type |
 | --- | --- | --- |
-| `theme` | `src/settings/theme.ts` | `'light' \| 'sepia' \| 'dark' \| 'auto'` |
-| `nightMode` | `src/settings/night-mode.ts` | `boolean` |
-| `riwayah` | `src/settings/riwayah.ts` | `'hafs' \| 'warsh' \| 'qaloon'` |
-| `translationId` | `src/settings/panel-bridge.ts` | `string` |
-| `translationVisible` | `src/settings/panel-bridge.ts` | `boolean` |
-| `fontSize` | `src/settings/font-size.ts` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` |
-| `lineSpacing` | `src/settings/reading-typography.ts` | step |
-| `wordSpacing` | `src/settings/reading-typography.ts` | step |
-| `readerMargin` | `src/settings/reading-typography.ts` | step |
-| `verseSpacing` | `src/settings/reading-typography.ts` | step |
-| `surahHeaderHidden` | `src/settings/surah-header-visibility.ts` | `boolean` |
-| `currentPosition` | `src/reader/state.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
-| `lastSurface` | `src/settings/state-last-surface.svelte.ts` | `string` (hash) |
-| `recentSurahs` | `src/settings/state-recent-surahs.svelte.ts` | `number[]` |
-| `onboardingComplete` | `src/onboarding/state.ts` | `boolean` |
-| `offlineCategories` | `src/settings/offline-categories.ts` | `OfflineCategoriesState` (source-aware text opt-in plus audio/pages/search; see `state/settings.svelte.ts`) |
+| `theme` | `src/configure/theme.ts` | `'light' \| 'sepia' \| 'dark' \| 'auto'` |
+| `nightMode` | `src/configure/night-mode.ts` | `boolean` |
+| `riwayah` | `src/configure/riwayah.ts` | `'hafs' \| 'warsh' \| 'qaloon'` |
+| `translationId` | `src/configure/panel-bridge.ts` | `string` |
+| `translationVisible` | `src/configure/panel-bridge.ts` | `boolean` |
+| `fontSize` | `src/configure/font-size.ts` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` |
+| `lineSpacing` | `src/configure/reading-typography.ts` | step |
+| `wordSpacing` | `src/configure/reading-typography.ts` | step |
+| `readerMargin` | `src/configure/reading-typography.ts` | step |
+| `verseSpacing` | `src/configure/reading-typography.ts` | step |
+| `surahHeaderHidden` | `src/configure/surah-header-visibility.ts` | `boolean` |
+| `currentPosition` | `src/read/state.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
+| `lastSurface` | `src/configure/state-last-surface.svelte.ts` | `string` (hash) |
+| `recentSurahs` | `src/configure/state-recent-surahs.svelte.ts` | `number[]` |
+| `onboardingComplete` | `src/onboard/state.ts` | `boolean` |
+| `offlineCategories` | `src/configure/offline-categories.ts` | `OfflineCategoriesState` (source-aware text opt-in plus audio/pages/search; see `state/settings.svelte.ts`) |
 
 ## Events
 
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/settings/clear-data.ts:170` |
-| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/settings/state-recent-surahs.svelte.ts:26` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/settings/riwayah.ts:58`, `src/settings/riwayah.ts:74` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/settings/Panel.svelte:130` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/settings/Panel.svelte:113` |
+| `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
+| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:58`, `src/configure/riwayah.ts:74` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:130` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:113` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/settings/reading-typography.ts:133` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/reading-typography.ts:133` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
 
 - **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity.
 - **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
-- **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/settings/panel.test.ts`).
-- **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/settings/panel.test.ts`.
-- **Sole writer of `settings.offlineCategories`: `src/settings/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
+- **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/configure/panel.test.ts`).
+- **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/configure/panel.test.ts`.
+- **Sole writer of `settings.offlineCategories`: `src/configure/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
 - **Text offline opt-in remains source-aware under one compact UI row.** The visible Text checkbox maps to the baseline Qaloon + Saheeh + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional text bodies must still be added through `indexes/sources.json` / manifest plumbing before they can affect byte estimates or download plans.
 
 ## Regression guards
@@ -203,21 +202,23 @@ Keys + sole writers:
 <!-- AUTO-GENERATED:tests START -->
 **Unit (12):**
 
-- `tests/unit/about/pwa-install.test.ts`
-- `tests/unit/settings/clear-data-confirm.test.ts`
-- `tests/unit/settings/font-size.test.ts`
-- `tests/unit/settings/night-mode.test.ts`
-- `tests/unit/settings/offline-categories.test.ts`
-- `tests/unit/settings/panel.test.ts`
-- `tests/unit/settings/reading-typography-line-height.test.ts`
-- `tests/unit/settings/reading-typography.test.ts`
-- `tests/unit/settings/riwayah.test.ts`
-- `tests/unit/settings/state.test.ts`
-- `tests/unit/settings/surah-header-visibility.test.ts`
-- `tests/unit/settings/theme.test.ts`
+- `tests/unit/configure/about/pwa-install.test.ts`
+- `tests/unit/configure/clear-data-confirm.test.ts`
+- `tests/unit/configure/font-size.test.ts`
+- `tests/unit/configure/night-mode.test.ts`
+- `tests/unit/configure/offline-categories.test.ts`
+- `tests/unit/configure/panel.test.ts`
+- `tests/unit/configure/reading-typography-line-height.test.ts`
+- `tests/unit/configure/reading-typography.test.ts`
+- `tests/unit/configure/riwayah.test.ts`
+- `tests/unit/configure/state.test.ts`
+- `tests/unit/configure/surah-header-visibility.test.ts`
+- `tests/unit/configure/theme.test.ts`
 
-**E2E (2):**
+**E2E (4):**
 
-- `tests/e2e/journey-d-settings.spec.js`
-- `tests/e2e/journey-g-about.spec.js`
+- `tests/e2e/configure/about.spec.js`
+- `tests/e2e/configure/night-mode.spec.js`
+- `tests/e2e/configure/settings.spec.js`
+- `tests/e2e/configure/typography.spec.js`
 <!-- AUTO-GENERATED:tests END -->

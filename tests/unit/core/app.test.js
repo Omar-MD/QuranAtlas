@@ -12,11 +12,11 @@ function createAppShell() {
 }
 
 function applyDefaultRuntimeMocks() {
-  vi.doMock('../../../src/onboarding/state', () => ({
+  vi.doMock('../../../src/onboard/state', () => ({
     isComplete: vi.fn(() => Promise.resolve(true)),
     markComplete: vi.fn(() => Promise.resolve()),
   }))
-  vi.doMock('../../../src/onboarding/Onboarding.svelte', () => ({
+  vi.doMock('../../../src/onboard/Onboarding.svelte', () => ({
     default: vi.fn(),
   }))
   vi.doMock('../../../src/core/db.js', () => ({
@@ -28,12 +28,12 @@ function applyDefaultRuntimeMocks() {
       'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
     ],
   }))
-  vi.doMock('../../../src/reader/global-position', () => ({
+  vi.doMock('../../../src/read/global-position', () => ({
     loadGlobalPosition: vi.fn(() => Promise.resolve(null)),
     saveGlobalPosition: vi.fn(() => Promise.resolve()),
     clearGlobalPosition: vi.fn(() => Promise.resolve()),
   }))
-  vi.doMock('../../../src/nav/command-sheet.js', () => ({
+  vi.doMock('../../../src/navigate/command-sheet.js', () => ({
     initCommandSheet: vi.fn(() => Promise.resolve()),
     openCommandSheet: vi.fn(),
     closeCommandSheet: vi.fn(),
@@ -71,28 +71,28 @@ vi.mock('../../../src/core/db.js', () => ({
   ],
 }))
 
-vi.mock('../../../src/reader/global-position', () => ({
+vi.mock('../../../src/read/global-position', () => ({
   loadGlobalPosition: vi.fn(() => Promise.resolve(null)),
   saveGlobalPosition: vi.fn(() => Promise.resolve()),
   clearGlobalPosition: vi.fn(() => Promise.resolve()),
 }))
 
-vi.mock('../../../src/nav/command-sheet.js', () => ({
+vi.mock('../../../src/navigate/command-sheet.js', () => ({
   initCommandSheet: vi.fn(() => Promise.resolve()),
   openCommandSheet: vi.fn(),
   closeCommandSheet: vi.fn(),
   destroyCommandSheet: vi.fn(),
 }))
 
-vi.mock('../../../src/settings/theme.js', () => ({
+vi.mock('../../../src/configure/theme.js', () => ({
   initTheme: vi.fn(() => Promise.resolve()),
 }))
 
-vi.mock('../../../src/about/pwa-install.js', () => ({
+vi.mock('../../../src/configure/about/pwa-install.js', () => ({
   initInstallListener: vi.fn(),
 }))
 
-vi.mock('../../../src/safety/sync.js', () => ({
+vi.mock('../../../src/infra/safety/sync.js', () => ({
   init: vi.fn(() => vi.fn()),
   suppressNextVersionChange: vi.fn(),
   registerTopic: vi.fn(() => vi.fn()),
@@ -103,23 +103,23 @@ vi.mock('../../../src/safety/sync.js', () => ({
   broadcastRiwayahChange: vi.fn(),
 }))
 
-vi.mock('../../../src/marks/indicator', () => ({
+vi.mock('../../../src/mark/indicator', () => ({
   initIndicators: vi.fn(() => vi.fn()),
   init: vi.fn(() => vi.fn()), // legacy alias
 }))
 
-vi.mock('../../../src/marks/editor-bridge', () => ({
+vi.mock('../../../src/mark/editor-bridge', () => ({
   openEditor: vi.fn(),
   registerEditor: vi.fn(),
 }))
 
-vi.mock('../../../src/marks/long-press', () => ({
+vi.mock('../../../src/mark/long-press', () => ({
   longPress: vi.fn(),
   setupLongPress: vi.fn(() => vi.fn()),
   setupTapGestures: vi.fn(() => vi.fn()),
 }))
 
-vi.mock('../../../src/tag/session-bridge', () => ({
+vi.mock('../../../src/mark/tag/session-bridge', () => ({
   beginFast: vi.fn(() => Promise.resolve()),
   openDeep: vi.fn(() => Promise.resolve()),
 }))
@@ -133,11 +133,11 @@ vi.mock('../../../src/data/offline.js', () => ({
 }))
 
 // N21 — initOfflineCategories writes through to IDB mock (no-op here).
-vi.mock('../../../src/settings/offline-categories.ts', () => ({
+vi.mock('../../../src/configure/offline-categories.ts', () => ({
   initOfflineCategories: vi.fn(() => Promise.resolve()),
 }))
 
-vi.mock('../../../src/reader/index.js', () => ({
+vi.mock('../../../src/read/index.js', () => ({
   init: vi.fn(),
 }))
 
@@ -145,24 +145,24 @@ vi.mock('../../../src/review/hub.js', () => ({
   init: vi.fn(),
 }))
 
-vi.mock('../../../src/about/index.js', () => ({
+vi.mock('../../../src/configure/about/index.js', () => ({
   init: vi.fn(),
 }))
 
-vi.mock('../../../src/settings/font-size.js', () => ({
+vi.mock('../../../src/configure/font-size.js', () => ({
   initFontSize: vi.fn(() => Promise.resolve()),
 }))
-vi.mock('../../../src/settings/panel.js', () => ({
+vi.mock('../../../src/configure/panel.js', () => ({
   initSettingsPanel: vi.fn(() => Promise.resolve()),
   openSettingsSheet: vi.fn(),
 }))
-vi.mock('../../../src/nav/ambient-dock.js', () => ({
+vi.mock('../../../src/navigate/ambient-dock.js', () => ({
   initAmbientDock: vi.fn(() => Promise.resolve()),
 }))
-vi.mock('../../../src/nav/ambient-pill.js', () => ({
+vi.mock('../../../src/navigate/ambient-pill.js', () => ({
   initAmbientPill: vi.fn(() => Promise.resolve()),
 }))
-vi.mock('../../../src/nav/reader-actions.js', () => ({
+vi.mock('../../../src/navigate/reader-actions.js', () => ({
   initReaderActions: vi.fn(() => Promise.resolve()),
 }))
 
@@ -266,12 +266,12 @@ describe('core/app.js error recovery', () => {
         'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
       ],
     }))
-    vi.doMock('../../../src/reader/global-position', () => ({
+    vi.doMock('../../../src/read/global-position', () => ({
       loadGlobalPosition: vi.fn().mockResolvedValue(null),
       saveGlobalPosition: vi.fn().mockResolvedValue(),
       clearGlobalPosition: vi.fn().mockResolvedValue(),
     }))
-    vi.doMock('../../../src/nav/command-sheet.js', () => ({ initCommandSheet: vi.fn().mockResolvedValue(), openCommandSheet: vi.fn(), closeCommandSheet: vi.fn(), destroyCommandSheet: vi.fn() }))
+    vi.doMock('../../../src/navigate/command-sheet.js', () => ({ initCommandSheet: vi.fn().mockResolvedValue(), openCommandSheet: vi.fn(), closeCommandSheet: vi.fn(), destroyCommandSheet: vi.fn() }))
     vi.doMock('../../../src/data/offline.js', () => ({
       initInstallPrompt: vi.fn(),
       getActivationState: vi.fn().mockResolvedValue('none'),
@@ -335,7 +335,7 @@ describe('core/app.js error recovery', () => {
 
     const db = await import('../../../src/core/db.js')
     db.get.mockResolvedValue(null)
-    const gp = await import('../../../src/reader/global-position')
+    const gp = await import('../../../src/read/global-position')
     gp.loadGlobalPosition.mockResolvedValue({ surah: 2, verse: 255 })
 
     const events = await import('../../../src/core/events.js')
@@ -361,7 +361,7 @@ describe('core/app.js error recovery', () => {
 
     const db = await import('../../../src/core/db.js')
     db.get.mockResolvedValue(null)
-    const gp = await import('../../../src/reader/global-position')
+    const gp = await import('../../../src/read/global-position')
     gp.loadGlobalPosition.mockResolvedValue(null)
 
     const events = await import('../../../src/core/events.js')

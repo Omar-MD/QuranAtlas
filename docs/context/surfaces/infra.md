@@ -1,22 +1,23 @@
 ---
 surface: infra
 src_paths:
-  - 'src/offline/**'
-  - 'src/safety/**'
-  - 'src/sw.js'
-  - 'src/sw-handlers.js'
-  - 'src/core/sw/**'
+  - 'src/infra/offline/**'
+  - 'src/infra/safety/**'
+  - 'src/infra/service-worker/sw.js'
+  - 'src/infra/service-worker/sw-handlers.js'
+  - 'src/infra/sw/**'
 owns_stores:
   - datasetMeta
 test_paths:
   unit:
-    - 'tests/unit/offline/**'
-    - 'tests/unit/safety/**'
-    - 'tests/unit/sw/**'
+    - 'tests/unit/infra/offline/**'
+    - 'tests/unit/infra/safety/**'
+    - 'tests/unit/infra/service-worker/**'
+    - 'tests/unit/infra/sw/**'
   e2e:
-    - 'tests/e2e/sw-integration.spec.js'
-    - 'tests/e2e/journey-h-offline*.spec.js'
-    - 'tests/e2e/journey-i-cross-tab*.spec.js'
+    - 'tests/e2e/infra/service-worker.spec.js'
+    - 'tests/e2e/infra/offline.spec.js'
+    - 'tests/e2e/infra/cross-tab.spec.js'
 ---
 
 # Surface: infra
@@ -42,18 +43,18 @@ No routes. Surface is invisible until something goes wrong (or update rolls out)
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/core/sw/route-defs.ts` | Per-asset-class route definitions for the QuranAtlas service worker. |
-| `src/core/sw/strategies.ts` | Service-worker route registration. Pure data lives in `route-defs.ts`; |
-| `src/offline/dataset-updater.js` | Dataset update orchestrator for service worker activate. |
-| `src/offline/manifest-fetcher.js` | Fetch the dataset manifest. |
-| `src/offline/offline-selector.svelte` | Per-feature offline opt-in selector. |
-| `src/offline/sha256-verifier.js` | SHA-256 verification for dataset file integrity. |
-| `src/offline/staging-cache.js` | Staging cache for dataset updates. |
-| `src/safety/input-validator.ts` | Input validation for navigation and tag parameters. |
-| `src/safety/state.svelte.ts` | _(no leading comment)_ |
-| `src/safety/sync.ts` | Cross-tab safety and synchronization module. |
-| `src/sw-handlers.js` | _(no leading comment)_ |
-| `src/sw.js` | Service worker for QuranAtlas. |
+| `src/infra/offline/dataset-updater.js` | Dataset update orchestrator for service worker activate. |
+| `src/infra/offline/manifest-fetcher.js` | Fetch the dataset manifest. |
+| `src/infra/offline/offline-selector.svelte` | Per-feature offline opt-in selector. |
+| `src/infra/offline/sha256-verifier.js` | SHA-256 verification for dataset file integrity. |
+| `src/infra/offline/staging-cache.js` | Staging cache for dataset updates. |
+| `src/infra/safety/input-validator.ts` | Input validation for navigation and tag parameters. |
+| `src/infra/safety/state.svelte.ts` | _(no leading comment)_ |
+| `src/infra/safety/sync.ts` | Cross-tab safety and synchronization module. |
+| `src/infra/service-worker/sw-handlers.js` | _(no leading comment)_ |
+| `src/infra/service-worker/sw.js` | Service worker for QuranAtlas. |
+| `src/infra/sw/route-defs.ts` | Per-asset-class route definitions for the QuranAtlas service worker. |
+| `src/infra/sw/strategies.ts` | Service-worker route registration. Pure data lives in `route-defs.ts`; |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -99,9 +100,9 @@ IDB shared; no double-write.
 
 ### Per-asset-class SW partition + offline opt-in selector
 
-All SW route registrations live in `src/core/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/core/sw/route-defs.ts`. Runtime selector categories remain compact (`text`, `audio`, `pages`, `search`), but dataset text routes are source-aware underneath: `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index` all share `qa-dataset-v1`. Audio mp3/timing/meta routes cache per-reciter, pages cache per-riwayah (roadmap), search-index is a single roadmap asset, and fonts are always-on. `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
+All SW route registrations live in `src/infra/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/infra/sw/route-defs.ts`. Runtime selector categories remain compact (`text`, `audio`, `pages`, `search`), but dataset text routes are source-aware underneath: `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index` all share `qa-dataset-v1`. Audio mp3/timing/meta routes cache per-reciter, pages cache per-riwayah (roadmap), search-index is a single roadmap asset, and fonts are always-on. `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
 
-The window-side companion is `src/offline/offline-selector.svelte` (mounted in Settings → Storage section, configure dossier). Per-feature opt-in: user checks Text / Audio / Pages / Search; selector pre-flights `navigator.storage.estimate()` and refuses Apply when the selection exceeds available quota. The Text row maps to the baseline source set (`qaloon`, `saheeh`, `muyassar`) through `settings.offlineCategories.text.{riwayat,translations,tafsir}`. Knowledge Lane files under `/dataset/knowledge/**` route as `text-knowledge`, share `CACHE_DATASET`, and are included in the existing Text offline row. The top-level selector category remains `text`; `text-knowledge` is an internal route class used for byte summing, service-worker matching, and cache cleanup. `src/data/offline.ts::startCategoryDownload(cat)` filters manifest URLs through `route-defs.ts::sumBytesForCategory()` and reuses the fail-closed manifest digest path; optional packs listed in `indexes/sources.json` do not affect the Text byte estimate until their bodies are present in the manifest.
+The window-side companion is `src/infra/offline/offline-selector.svelte` (mounted in Settings → Storage section, configure dossier). Per-feature opt-in: user checks Text / Audio / Pages / Search; selector pre-flights `navigator.storage.estimate()` and refuses Apply when the selection exceeds available quota. The Text row maps to the baseline source set (`qaloon`, `saheeh`, `muyassar`) through `settings.offlineCategories.text.{riwayat,translations,tafsir}`. Knowledge Lane files under `/dataset/knowledge/**` route as `text-knowledge`, share `CACHE_DATASET`, and are included in the existing Text offline row. The top-level selector category remains `text`; `text-knowledge` is an internal route class used for byte summing, service-worker matching, and cache cleanup. `src/data/offline.ts::startCategoryDownload(cat)` filters manifest URLs through `route-defs.ts::sumBytesForCategory()` and reuses the fail-closed manifest digest path; optional packs listed in `indexes/sources.json` do not affect the Text byte estimate until their bodies are present in the manifest.
 
 ### Generic sync envelope
 
@@ -119,31 +120,31 @@ _(no cross-surface reads detected)_
 
 ### `datasetMeta` store body
 
-Manifest version, signature, applied-at timestamp, per-asset-class cache versions. Sole writer: `src/offline/dataset-updater.js` (or equivalent — see `data-model.md` §Cross-cutting rules).
+Manifest version, signature, applied-at timestamp, per-asset-class cache versions. Sole writer: `src/infra/offline/dataset-updater.js` (or equivalent — see `data-model.md` §Cross-cutting rules).
 
 ## Events
 
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/safety/sync.ts:276` |
-| `sync:edges-updated` | `Events.SYNC_EDGES_UPDATED` | `src/safety/sync.ts:264` |
-| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/safety/sync.ts:256` |
+| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/infra/safety/sync.ts:276` |
+| `sync:edges-updated` | `Events.SYNC_EDGES_UPDATED` | `src/infra/safety/sync.ts:264` |
+| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/infra/safety/sync.ts:256` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `db:version-change` | `Events.DB_VERSION_CHANGE` | `src/safety/sync.ts:102` |
+| `db:version-change` | `Events.DB_VERSION_CHANGE` | `src/infra/safety/sync.ts:102` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
 
 - **SW fails closed on manifest chain-of-trust check.** Refuse to serve cached responses on signature failure.
-- **Sole writer of `datasetMeta`: `src/offline/dataset-updater.js`** (or store-specific writer — see `data-model.md`).
+- **Sole writer of `datasetMeta`: `src/infra/offline/dataset-updater.js`** (or store-specific writer — see `data-model.md`).
 - **Cross-tab broadcast goes through `safety/sync.ts::broadcast` + `registerTopic`.** Don't open new BroadcastChannels directly — register a topic.
 - **`suppressNextVersionChange()` armed before `deleteDB()`** — ensures the same tab doesn't get its own clear-data banner.
-- **Every SW `registerRoute()` call lives in `src/core/sw/strategies.ts::registerAll()`.** No inline route registrations in `sw.js`. Adding a new asset class = one entry in `route-defs.ts::ROUTE_DEFS` and (if it introduces a new cacheName prefix) one entry in `CACHE_PREFIXES`.
+- **Every SW `registerRoute()` call lives in `src/infra/sw/strategies.ts::registerAll()`.** No inline route registrations in `sw.js`. Adding a new asset class = one entry in `route-defs.ts::ROUTE_DEFS` and (if it introduces a new cacheName prefix) one entry in `CACHE_PREFIXES`.
 - **Per-asset-class cache prefixes preserved by `cleanupStaleCaches`** sourced from `route-defs.ts::CACHE_PREFIXES` (passed as `preservePrefixes`) — never hardcoded.
 - **`route-defs.ts` is window-importable.** Workbox imports live only in `strategies.ts` (SW-only). Window code (offline-selector, data/offline.ts) reads the table for byte-sum + URL-filter helpers.
 - **`settings.offlineCategories` is the source of truth for "user opted into category X".** Text opt-in is source-aware (`text.riwayat`, `text.translations`, `text.tafsir`) with a migration from the former `{ hafs, warsh, qaloon }` text shape. `text-knowledge` has no separate persisted toggle; it is bundled into the Text plan when present in `manifest.json`. `getActivationState()` reports `'cached'` when any category is opted in; `'downloading'` while a `CACHE_DATASET` is in flight.
@@ -152,22 +153,24 @@ Manifest version, signature, applied-at timestamp, per-asset-class cache version
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (10):**
+**Unit (12):**
 
-- `tests/unit/offline/dataset-updater.test.js`
-- `tests/unit/offline/manifest-fetcher.test.js`
-- `tests/unit/offline/offline-selector.test.ts`
-- `tests/unit/offline/sha256-verifier.test.js`
-- `tests/unit/offline/staging-cache.test.js`
-- `tests/unit/safety/csp-headers.test.ts`
-- `tests/unit/safety/input-validator.test.js`
-- `tests/unit/safety/state.test.ts`
-- `tests/unit/safety/sync.test.js`
-- `tests/unit/sw/route-defs.test.ts`
+- `tests/unit/infra/offline/dataset-updater.test.js`
+- `tests/unit/infra/offline/manifest-fetcher.test.js`
+- `tests/unit/infra/offline/offline-selector.test.ts`
+- `tests/unit/infra/offline/sha256-verifier.test.js`
+- `tests/unit/infra/offline/staging-cache.test.js`
+- `tests/unit/infra/safety/csp-headers.test.ts`
+- `tests/unit/infra/safety/input-validator.test.js`
+- `tests/unit/infra/safety/state.test.ts`
+- `tests/unit/infra/safety/sync.test.js`
+- `tests/unit/infra/service-worker/sw-handlers.test.js`
+- `tests/unit/infra/service-worker/sw.test.js`
+- `tests/unit/infra/sw/route-defs.test.ts`
 
 **E2E (3):**
 
-- `tests/e2e/journey-h-offline.spec.js`
-- `tests/e2e/journey-i-cross-tab.spec.js`
-- `tests/e2e/sw-integration.spec.js`
+- `tests/e2e/infra/cross-tab.spec.js`
+- `tests/e2e/infra/offline.spec.js`
+- `tests/e2e/infra/service-worker.spec.js`
 <!-- AUTO-GENERATED:tests END -->

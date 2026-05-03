@@ -3,7 +3,7 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { get, openDB, put } from '../../../src/core/db.js'
-import { del, getAll, save } from '../../../src/marks/store.js'
+import { del, getAll, save } from '../../../src/mark/store.js'
 
 const MARK_MUTATION_BUDGET_MS = 200
 const POSITION_SAVE_BUDGET_MS = 50

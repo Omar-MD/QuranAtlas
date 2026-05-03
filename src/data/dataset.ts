@@ -4,7 +4,7 @@
  */
 
 import { CACHE_DATASET } from '../core/constants'
-import { loadRiwayah } from '../settings/riwayah'
+import { loadRiwayah } from '../configure/riwayah'
 
 const DATASET_BASE = '/dataset'
 const FETCH_TIMEOUT_MS = 3000

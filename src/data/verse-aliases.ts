@@ -19,7 +19,7 @@
  */
 
 import { CACHE_DATASET } from '../core/constants'
-import type { Riwayah } from '../settings/state.svelte'
+import type { Riwayah } from '../configure/state.svelte'
 
 const ALIASES_URL = '/dataset/translations/_verse-aliases.json'
 const FETCH_TIMEOUT_MS = 3000

@@ -1,15 +1,15 @@
 ---
 surface: read
 src_paths:
-  - 'src/reader/**'
+  - 'src/read/**'
 owns_stores:
   - meta
 test_paths:
   unit:
-    - 'tests/unit/reader/**'
+    - 'tests/unit/read/**'
     - 'tests/unit/styles/font-tokens.test.js'
   e2e:
-    - 'tests/e2e/journey-b-reader*.spec.js'
+    - 'tests/e2e/read/*.spec.js'
 ---
 
 # Surface: read
@@ -41,30 +41,30 @@ test_paths:
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/reader/AmbientDock.svelte` | Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav` |
-| `src/reader/AmbientPill.svelte` | On reader route: stays hidden until AMBIENT_SURFACE fires |
-| `src/reader/EdgeIndicator.svelte` | EdgeIndicator — the pair of left/right fixed indicators that briefly flash |
-| `src/reader/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout: |
-| `src/reader/PullToSwapIndicator.svelte` | PullToSwapIndicator — minimal Chrome-mobile-PTR-style circular progress |
-| `src/reader/Reader.svelte` | _(no leading comment)_ |
-| `src/reader/SurahHeader.svelte` | _(no leading comment)_ |
-| `src/reader/SurahProgress.svelte` | Tiny progress chip under surah title. Tracks the current juz the reader |
-| `src/reader/Verse.svelte` | Translation lookup role for cross-riwayah display. |
-| `src/reader/audio-autoscroll.ts` | Smart-defer auto-scroll: scroll the playing verse into view UNLESS the |
-| `src/reader/audio-highlight.ts` | Audio verse-tick highlight. Subscribes to `audio:verse-changed` and |
-| `src/reader/chunked-virtualiser.ts` | Chunked virtualiser — IntersectionObserver-driven recycler that mounts |
-| `src/reader/edge-indicators.ts` | Verse-tap edge indicators — lazily-created left/right visual cues that |
-| `src/reader/font-reshape.ts` | iOS Safari paints the reader DOM with a fallback font when verses mount |
-| `src/reader/global-position.ts` | Global reading position — single record (current surah + verse) that |
-| `src/reader/position.ts` | Reader position tracking — observes scroll, persists last-read verse to |
-| `src/reader/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
-| `src/reader/scroll-ancestor.ts` | Find the nearest scrolling ancestor of `el`. |
-| `src/reader/scroll-tracker.ts` | Scroll position tracking using IntersectionObserver. |
-| `src/reader/state-ambient.svelte.ts` | _(no leading comment)_ |
-| `src/reader/state.svelte.ts` | _(no leading comment)_ |
-| `src/reader/surah-swap.ts` | Cross-surah swap orchestration. |
-| `src/reader/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
-| `src/reader/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
+| `src/read/AmbientDock.svelte` | Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav` |
+| `src/read/AmbientPill.svelte` | On reader route: stays hidden until AMBIENT_SURFACE fires |
+| `src/read/EdgeIndicator.svelte` | EdgeIndicator — the pair of left/right fixed indicators that briefly flash |
+| `src/read/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout: |
+| `src/read/PullToSwapIndicator.svelte` | PullToSwapIndicator — minimal Chrome-mobile-PTR-style circular progress |
+| `src/read/Reader.svelte` | _(no leading comment)_ |
+| `src/read/SurahHeader.svelte` | _(no leading comment)_ |
+| `src/read/SurahProgress.svelte` | Tiny progress chip under surah title. Tracks the current juz the reader |
+| `src/read/Verse.svelte` | Translation lookup role for cross-riwayah display. |
+| `src/read/audio-autoscroll.ts` | Smart-defer auto-scroll: scroll the playing verse into view UNLESS the |
+| `src/read/audio-highlight.ts` | Audio verse-tick highlight. Subscribes to `audio:verse-changed` and |
+| `src/read/chunked-virtualiser.ts` | Chunked virtualiser — IntersectionObserver-driven recycler that mounts |
+| `src/read/edge-indicators.ts` | Verse-tap edge indicators — lazily-created left/right visual cues that |
+| `src/read/font-reshape.ts` | iOS Safari paints the reader DOM with a fallback font when verses mount |
+| `src/read/global-position.ts` | Global reading position — single record (current surah + verse) that |
+| `src/read/position.ts` | Reader position tracking — observes scroll, persists last-read verse to |
+| `src/read/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
+| `src/read/scroll-ancestor.ts` | Find the nearest scrolling ancestor of `el`. |
+| `src/read/scroll-tracker.ts` | Scroll position tracking using IntersectionObserver. |
+| `src/read/state-ambient.svelte.ts` | _(no leading comment)_ |
+| `src/read/state.svelte.ts` | _(no leading comment)_ |
+| `src/read/surah-swap.ts` | Cross-surah swap orchestration. |
+| `src/read/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
+| `src/read/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -173,19 +173,19 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientDock.svelte:64`, `src/reader/AmbientPill.svelte:90`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/MarginHeader.svelte:41`, `src/reader/Reader.svelte:617`, `src/reader/edge-indicators.ts:62` |
-| `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/reader/position.ts:28` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:41`, `src/read/Reader.svelte:617`, `src/read/edge-indicators.ts:62` |
+| `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:28` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientPill.svelte:76`, `src/reader/MarginHeader.svelte:175` |
-| `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/reader/audio-autoscroll.ts:48`, `src/reader/audio-highlight.ts:32` |
-| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/reader/position.ts:156` |
-| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/reader/AmbientDock.svelte:86`, `src/reader/MarginHeader.svelte:174` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/reader/Reader.svelte:395` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:76`, `src/read/MarginHeader.svelte:175` |
+| `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
+| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:156` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:86`, `src/read/MarginHeader.svelte:174` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:395` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -197,30 +197,34 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **Knowledge lane is optional and non-blocking.** Reader text render never waits on `dataset/knowledge/**`; missing or invalid ayah/passage shards leave verse theme/context metadata empty and do not introduce a new error surface.
 - **Meaning + knowledge are per-verse disclosures.** Arabic remains always visible; translation, theme chips, and passage summary mount only for verses the user explicitly opens. Closing a verse also closes any inline footnote open inside it.
 - **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
-- **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/journey-b-reader.spec.js` B-Virt1/2/3 + `tests/unit/reader/chunked-virtualiser.test.ts`.
-- **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/journey-d-settings.spec.js` D3-bg.
+- **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/read/chrome.spec.js` B-Virt1/2/3 + `tests/unit/read/chunked-virtualiser.test.ts`.
+- **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/configure/settings.spec.js` D3-bg.
 
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
 **Unit (14):**
 
-- `tests/unit/reader/MarginHeader-toggle.test.ts`
-- `tests/unit/reader/SurahHeader.test.ts`
-- `tests/unit/reader/Verse.test.ts`
-- `tests/unit/reader/bismillah-translation.test.ts`
-- `tests/unit/reader/chunked-virtualiser.test.ts`
-- `tests/unit/reader/font-reshape.test.ts`
-- `tests/unit/reader/global-position.test.ts`
-- `tests/unit/reader/render-helpers.test.ts`
-- `tests/unit/reader/scroll-tracker.test.ts`
-- `tests/unit/reader/state-ambient.test.ts`
-- `tests/unit/reader/state.test.ts`
-- `tests/unit/reader/surah-swap.test.ts`
-- `tests/unit/reader/translation-tokens.test.ts`
+- `tests/unit/read/MarginHeader-toggle.test.ts`
+- `tests/unit/read/SurahHeader.test.ts`
+- `tests/unit/read/Verse.test.ts`
+- `tests/unit/read/bismillah-translation.test.ts`
+- `tests/unit/read/chunked-virtualiser.test.ts`
+- `tests/unit/read/font-reshape.test.ts`
+- `tests/unit/read/global-position.test.ts`
+- `tests/unit/read/render-helpers.test.ts`
+- `tests/unit/read/scroll-tracker.test.ts`
+- `tests/unit/read/state-ambient.test.ts`
+- `tests/unit/read/state.test.ts`
+- `tests/unit/read/surah-swap.test.ts`
+- `tests/unit/read/translation-tokens.test.ts`
 - `tests/unit/styles/font-tokens.test.js`
 
-**E2E (1):**
+**E2E (5):**
 
-- `tests/e2e/journey-b-reader.spec.js`
+- `tests/e2e/read/chrome.spec.js`
+- `tests/e2e/read/cross-surah.spec.js`
+- `tests/e2e/read/performance.spec.js`
+- `tests/e2e/read/text-sources.spec.js`
+- `tests/e2e/read/virtualiser.spec.js`
 <!-- AUTO-GENERATED:tests END -->

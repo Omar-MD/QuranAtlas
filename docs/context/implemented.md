@@ -6,7 +6,7 @@ and data shapes live in `surfaces/<name>.md`.
 ## Read
 
 - Multi-riwayah corpus (Hafs / Warsh / Qaloon, KFGQPC Uthmanic) — `src/data/dataset.ts`.
-- Translation overlay — Saheeh International default; inline footnote panels render when a shipped pack includes `[N]` markers (`src/reader/translation-tokens.ts`).
+- Translation overlay — Saheeh International default; inline footnote panels render when a shipped pack includes `[N]` markers (`src/read/translation-tokens.ts`).
 - Translation-riwayah alignment via per-ayah Hafs↔Warsh↔Qaloon equivalence table (`public/dataset/translations/_verse-aliases.json`).
 - Typography — 5-step font-size + 5-step reading-flow sliders, reset-to-default pill.
 - Surah header + bismillah — collapsible per-user preference.
@@ -81,8 +81,8 @@ and data shapes live in `surfaces/<name>.md`.
 - Service worker — Workbox, manifest-pinned dataset (SHA-256 chain, fail-closed).
 - Generic sync envelope — `safety/sync.ts::registerTopic` + `broadcast`; topics for marks / edges / bookmarks / riwayah.
 - Persistent-overlay factory — `src/core/persistent-overlay.ts`.
-- SW route aggregator — `src/core/sw/route-defs.ts` + `strategies.ts`; per-asset-class cache partitions; `cleanupStaleCaches` preserves prefixes from `CACHE_PREFIXES`.
-- Per-feature offline opt-in — `src/offline/offline-selector.svelte` + `src/data/offline.ts::startCategoryDownload`.
-- CSP allowlist registry — `csp-allowlist.md` + `public/_headers` (regression guard `tests/unit/safety/csp-headers.test.ts`).
+- SW route aggregator — `src/infra/sw/route-defs.ts` + `strategies.ts`; per-asset-class cache partitions; `cleanupStaleCaches` preserves prefixes from `CACHE_PREFIXES`.
+- Per-feature offline opt-in — `src/infra/offline/offline-selector.svelte` + `src/data/offline.ts::startCategoryDownload`.
+- CSP allowlist registry — `csp-allowlist.md` + `public/_headers` (regression guard `tests/unit/infra/safety/csp-headers.test.ts`).
 - Update banner — `controllerchange` → `APP_UPDATE_AVAILABLE` → `UpdateBanner.svelte`.
 - Cross-tab clear-data banner — `versionchange` → "Data was cleared in another tab".

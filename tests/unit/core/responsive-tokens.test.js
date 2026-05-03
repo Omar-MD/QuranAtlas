@@ -111,8 +111,8 @@ describe('styles — responsive breakpoint tokens', () => {
   })
 
   // NOTE: .qa-mark-body 2-col grid and flex-column left/right layout were
-  // co-located in src/marks/Editor.svelte <style>. The deep editor was
-  // migrated to src/tag/TagSheet.svelte (audit R-30, 2026-04-29) — those
+  // co-located in src/mark/Editor.svelte <style>. The deep editor was
+  // migrated to src/mark/tag/TagSheet.svelte (audit R-30, 2026-04-29) — those
   // theme.css assertions are no longer relevant.
 
   /* .qa-cmd-sheet/.qa-cmd-foot responsive rules now live in nav/CommandSheet.svelte <style> */

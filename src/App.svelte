@@ -2,19 +2,19 @@
   import { onMount, mount, unmount, type Component } from 'svelte'
   import { initBootstrap } from './app-bootstrap'
   import { onRouteChange } from './core/router'
-  import { trackRecentSurah } from './settings/state-recent-surahs.svelte'
-  import { reader } from './reader/state.svelte'
-  import { refreshForSurah } from './marks/indicator'
+  import { trackRecentSurah } from './configure/state-recent-surahs.svelte'
+  import { reader } from './read/state.svelte'
+  import { refreshForSurah } from './mark/indicator'
 
   // Eager — visible at first paint or carrying boot-time runtime hooks.
   import QuotaBanner from './core/quota-banner.svelte'
   import SaveFailureToast from './core/save-failure-toast.svelte'
   import UpdateBanner from './core/UpdateBanner.svelte'
-  import ClearDataConfirm from './settings/ClearDataConfirm.svelte'
-  import AmbientDock from './reader/AmbientDock.svelte'
-  import MarginHeader from './reader/MarginHeader.svelte'
-  import AudioMiniBar from './audio/AudioMiniBar.svelte'
-  import AudioFullOverlay from './audio/AudioFullOverlay.svelte'
+  import ClearDataConfirm from './configure/ClearDataConfirm.svelte'
+  import AmbientDock from './read/AmbientDock.svelte'
+  import MarginHeader from './read/MarginHeader.svelte'
+  import AudioMiniBar from './listen/AudioMiniBar.svelte'
+  import AudioFullOverlay from './listen/AudioFullOverlay.svelte'
 
   // Lazy-mounted overlays (audit N25, 2026-05-01). First api.<method>()
   // call from the matching bridge fires `setMounter`, which flips the
@@ -22,10 +22,10 @@
   // owning component. Subsequent opens reuse the loaded chunk + the
   // factory's pending-call queue replays the first call after register.
   import { undoToastBridge } from './core/ui-bridge'
-  import { panelBridge } from './settings/panel-bridge'
-  import { commandSheetBridge } from './nav/command-sheet-bridge'
-  import { navDrawerBridge } from './nav/nav-drawer-bridge'
-  import { tagSheetBridge } from './tag/sheet-bridge'
+  import { panelBridge } from './configure/panel-bridge'
+  import { commandSheetBridge } from './navigate/command-sheet-bridge'
+  import { navDrawerBridge } from './navigate/nav-drawer-bridge'
+  import { tagSheetBridge } from './mark/tag/sheet-bridge'
 
   let cleanups: Array<() => void> = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,22 +59,22 @@
   })
   $effect(() => {
     if (panelMounted && !PanelComp) {
-      void import('./settings/Panel.svelte').then(m => { PanelComp = m.default })
+      void import('./configure/Panel.svelte').then(m => { PanelComp = m.default })
     }
   })
   $effect(() => {
     if (commandSheetMounted && !CommandSheetComp) {
-      void import('./nav/CommandSheet.svelte').then(m => { CommandSheetComp = m.default })
+      void import('./navigate/CommandSheet.svelte').then(m => { CommandSheetComp = m.default })
     }
   })
   $effect(() => {
     if (navDrawerMounted && !NavDrawerComp) {
-      void import('./nav/NavDrawer.svelte').then(m => { NavDrawerComp = m.default })
+      void import('./navigate/NavDrawer.svelte').then(m => { NavDrawerComp = m.default })
     }
   })
   $effect(() => {
     if (tagSheetMounted && !TagSheetComp) {
-      void import('./tag/TagSheet.svelte').then(m => { TagSheetComp = m.default })
+      void import('./mark/tag/TagSheet.svelte').then(m => { TagSheetComp = m.default })
     }
   })
 

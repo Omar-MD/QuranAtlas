@@ -20,7 +20,7 @@ If a test does not need one of those, it belongs under `tests/unit/`.
 
 ## Scope
 
-- Extend the owning `journey-*.spec.js` file for the surface instead of creating a new spec file unless the surface has no current journey owner.
+- Keep specs under the owning `tests/e2e/<surface>/` folder and extend an existing file there when the concern already has a natural home.
 - Treat suite wall time as a budget. Optimize setup duplication before trimming assertions.
 
 ## Performance rules
@@ -80,10 +80,10 @@ Use the dev server unless the assertion specifically requires the production bui
 
 ## Timing check for new e2e work
 
-For a materially expanded journey spec, time the spec locally:
+For a materially expanded surface spec, time the spec locally:
 
 ```bash
-time pnpm playwright test tests/e2e/<journey-file>.spec.js --reporter=line
+time pnpm playwright test tests/e2e/<surface>/<spec-file>.spec.js --reporter=line
 ```
 
 If the added coverage materially increases wall time, shrink setup or explain why the browser-only coverage is worth it.

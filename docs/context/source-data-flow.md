@@ -64,7 +64,7 @@ flowchart TD
     subgraph Runtime["Runtime readers"]
         DatasetApi["src/data/dataset.ts"]
         KnowledgeApi["src/data/knowledge-dataset.ts"]
-        Reader["src/reader/Reader.svelte"]
+        Reader["src/read/Reader.svelte"]
         Settings["riwayah/translation pickers"]
         Offline["src/data/offline.ts + offline selector"]
         SW["service worker route categories"]
@@ -340,7 +340,7 @@ This is what allows a Hafs-keyed translation to render correctly against Warsh a
 
 Offline caching and byte estimates are driven by the built dataset, not by normalized sources.
 
-- route definitions live in `src/core/sw/route-defs.ts`
+- route definitions live in `src/infra/sw/route-defs.ts`
 - text routes are split into `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index`
 - offline selector state stores source-aware text selections under `settings.offlineCategories.text.{riwayat,translations,tafsir}`
 
