@@ -101,6 +101,17 @@ Toggle "Hide translation" (Settings or `t`) → translation block, any `[N]` mar
 
 **Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qaloon (Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/data/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/Qaloon ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
 
+### Knowledge lane
+
+After the base reader payload (Arabic text, translation, aliases, settings) succeeds, `Reader.svelte` starts two optional side-loads for `public/dataset/knowledge/ayah/{surah}.json` and `public/dataset/knowledge/passages/{surah}.json`. These knowledge fetches are not part of the blocking `Promise.all(...)` path, do not create a second skeleton/loading phase, and do not change route, gesture, or scroll-entry behavior.
+
+When knowledge data exists, each tagged verse can render quiet metadata directly under the Arabic/translation stack:
+
+- theme chips from the ayah knowledge shard
+- one passage-context line from the passage summary when that verse's `passageId` resolves to a loaded passage shard
+
+If either knowledge shard is missing, invalid, or fetch-fails, the reader logs a recoverable warning and leaves the knowledge lane empty for that surah. Base verse rendering continues unchanged.
+
 ### Cross-surah infinite scroll
 
 Reader is single-surah; only one surah mounted at a time. Pull past edge swaps to N+1 / N-1 with wrap (114 ↔ 1).
@@ -159,9 +170,9 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientDock.svelte:64`, `src/reader/AmbientPill.svelte:90`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/MarginHeader.svelte:41`, `src/reader/Reader.svelte:492`, `src/reader/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/reader/AmbientDock.svelte:64`, `src/reader/AmbientPill.svelte:90`, `src/reader/EdgeIndicator.svelte:42`, `src/reader/MarginHeader.svelte:41`, `src/reader/Reader.svelte:617`, `src/reader/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/reader/position.ts:28` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:50` |
+| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/reader/Verse.svelte:54` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -171,7 +182,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/reader/audio-autoscroll.ts:48`, `src/reader/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/reader/position.ts:156` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/reader/AmbientDock.svelte:86`, `src/reader/MarginHeader.svelte:174` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/reader/Reader.svelte:183` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/reader/Reader.svelte:395` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -180,6 +191,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **Each Riwayah pairs with its own KFGQPC Uthmanic mushaf cut.** Cross-Riwayah reuse mis-renders combining marks. Mapping: `hafs → KFGQPC Uthmanic Hafs v22`, `warsh → KFGQPC Uthmanic Warsh V21`, `qaloon → KFGQPC Uthmanic Qaloon V21`. Each token's font-family chain falls back to **Amiri Quran** (Khaled Hosny, OFL) when KFGQPC isn't loaded, then bare `serif`. No user-facing font picker. Wired through `--ff-kfgqpc-{riwayah}` (`src/styles/tokens/primitives.css`) → `--qa-font-arabic` (`src/styles/tokens/semantic.css`). Regression guard: `tests/unit/styles/font-tokens.test.js`.
 - **Hamburger drawer is the sole in-app entry to the full surah list (mobile).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
+- **Knowledge lane is optional and non-blocking.** Reader text render never waits on `dataset/knowledge/**`; missing or invalid ayah/passage shards leave verse theme/context metadata empty and do not introduce a new error surface.
 - **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
 - **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/journey-b-reader.spec.js` B-Virt1/2/3 + `tests/unit/reader/chunked-virtualiser.test.ts`.
 - **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/journey-d-settings.spec.js` D3-bg.

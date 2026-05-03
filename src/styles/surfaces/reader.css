@@ -458,6 +458,40 @@
     outline-offset: 1px;
   }
 
+  .qa-verse-knowledge {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.65rem;
+  }
+
+  .qa-verse-themes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .qa-verse-theme {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.16rem 0.48rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--qa-accent) 10%, transparent);
+    color: var(--qa-text-muted);
+    font-family: var(--qa-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    text-transform: lowercase;
+  }
+
+  .qa-verse-context {
+    color: var(--qa-text-muted);
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.88);
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
   /* Surah end marker */
   .qa-surah-end {
     text-align: center;

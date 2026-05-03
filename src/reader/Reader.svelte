@@ -7,6 +7,7 @@
   import { settings } from '../settings/state.svelte'
   import { getSurah, getSurahs, loadTranslationForSurah } from '../data/dataset'
   import type { SurahPayload, SurahMeta, TranslationPayload } from '../data/dataset'
+  import { loadAyahKnowledgeForSurah, loadPassagesForSurah, type AyahKnowledgeEntry, type KnowledgePassage } from '../data/knowledge-dataset'
   import { loadVerseAliases, resolveTranslationFor, type VerseAliases, type TranslationRole } from '../data/verse-aliases'
   import { get } from '../core/db'
   import { emit, on } from '../core/events'
@@ -65,6 +66,8 @@
     translation: string
     translationRole: TranslationRole
     primaryAyah?: number
+    themes: string[]
+    passageSummary?: string
   }
 
   let surahData = $state<SurahPayload | null>(null)
@@ -72,6 +75,8 @@
   let translationPack = $state<TranslationPayload | null>(null)
   let translationByVerse = $state<Record<string, string>>({})
   let translationRoleByVerse = $state<Record<string, { role: TranslationRole, primaryAyah?: number }>>({})
+  let ayahKnowledgeByKey = $state<Record<string, AyahKnowledgeEntry>>({})
+  let passagesById = $state<Record<string, KnowledgePassage>>({})
   let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
   let translationVisible = $state(settings.translationVisible ?? true)
@@ -82,8 +87,11 @@
   let container: HTMLElement | null = $state(null)
   let virtualiserContainer: HTMLElement | null = $state(null)
   let virtualiser: VirtualiserHandle | null = null
+  let chunkObserver: IntersectionObserver | null = null
+  let chunkObserverFrame: number | null = null
   let anchorTimer: ReturnType<typeof setTimeout> | null = null
   let cleanups: Array<() => void> = []
+  let knowledgeLoadId = 0
 
   // Captured at mount: 'top' for forward swaps and fresh entry, 'bottom'
   // for backward swaps so the user emerges from the previous surah's end.
@@ -147,6 +155,210 @@
     virtualiser?.ensureVerseRendered(targetN)
   }
 
+  function resetKnowledgeState() {
+    ayahKnowledgeByKey = {}
+    passagesById = {}
+  }
+
+  function getVerseThemes(key: string): string[] {
+    const entry = ayahKnowledgeByKey[key]
+    return entry ? entry.themes.map(theme => theme.id) : []
+  }
+
+  function getVersePassageSummary(key: string): string | undefined {
+    const passageId = ayahKnowledgeByKey[key]?.passageId
+    if (!passageId) {
+      return undefined
+    }
+    return passagesById[passageId]?.summary?.en ?? undefined
+  }
+
+  function buildVerseItems(data: SurahPayload): VerseItem[] {
+    return data.ayat.map((ayah) => {
+      const key = `${data.sura_no}:${ayah.aya_no}`
+      const roleInfo = translationRoleByVerse[key]
+      return {
+        aya_no: ayah.aya_no,
+        key,
+        arabic: ayah.aya_text ?? '',
+        translation: translationByVerse[key] ?? '',
+        translationRole: roleInfo?.role ?? 'identity' as const,
+        primaryAyah: roleInfo?.primaryAyah,
+        themes: getVerseThemes(key),
+        passageSummary: getVersePassageSummary(key),
+      }
+    })
+  }
+
+  function teardownVirtualiserMount() {
+    if (chunkObserverFrame !== null) {
+      cancelAnimationFrame(chunkObserverFrame)
+      chunkObserverFrame = null
+    }
+    if (chunkObserver) {
+      chunkObserver.disconnect()
+      chunkObserver = null
+    }
+    virtualiser?.destroy()
+    virtualiser = null
+  }
+
+  function mountVirtualisedVerses(
+    data: SurahPayload,
+    opts: {
+      footnotes: Record<string, string>
+      translationVisible: boolean
+      riwayah: 'hafs' | 'warsh' | 'qaloon'
+      restoreVerse?: number | null
+      applyBottomSwapAnchor?: boolean
+    },
+  ) {
+    if (!container || !virtualiserContainer) {
+      return
+    }
+
+    teardownVirtualiserMount()
+
+    const items = buildVerseItems(data)
+    const mountVerse: MountVerse<VerseItem> = (target, v) => {
+      const instance = mount(Verse, {
+        target,
+        props: {
+          verseKey: v.key,
+          arabic: v.arabic,
+          translation: v.translation,
+          translationVisible: opts.translationVisible,
+          footnotes: opts.footnotes,
+          riwayah: opts.riwayah,
+          translationRole: v.translationRole,
+          primaryAyah: v.primaryAyah,
+          themes: v.themes,
+          passageSummary: v.passageSummary,
+        },
+      })
+      return () => { void unmount(instance) }
+    }
+
+    virtualiser = setupVirtualiser<VerseItem>({
+      container: virtualiserContainer,
+      verses: items,
+      mountVerse,
+      onChunkLive: (_idx, verseEls) => {
+        observeNewVerses(verseEls)
+      },
+    })
+
+    const shellScroller = document.getElementById('main-content')
+
+    if (opts.applyBottomSwapAnchor) {
+      const lastVerse = data.ayat.length
+      virtualiser.ensureVerseRendered(lastVerse)
+      requestAnimationFrame(() => {
+        if (shellScroller) {
+          shellScroller.scrollTop = shellScroller.scrollHeight
+          requestAnimationFrame(() => {
+            if (shellScroller) { shellScroller.scrollTop = shellScroller.scrollHeight }
+          })
+        }
+        void savePosition(surahNum, lastVerse)
+      })
+    } else if (opts.restoreVerse && opts.restoreVerse > 1) {
+      virtualiser.ensureVerseRendered(opts.restoreVerse)
+      requestAnimationFrame(() => {
+        if (container) {
+          scrollToVerse(container, opts.restoreVerse ?? 1, ensureVerseRendered)
+        }
+      })
+    }
+
+    chunkObserverFrame = requestAnimationFrame(() => {
+      chunkObserverFrame = null
+      if (!virtualiserContainer || !virtualiser) { return }
+      const chunkRoot = document.getElementById('main-content')
+      if (!chunkRoot) { return }
+      chunkObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) { continue }
+            const idx = parseInt(
+              (entry.target as HTMLElement).getAttribute('data-chunk') ?? '',
+              10,
+            )
+            if (!isNaN(idx)) { virtualiser?.setCurrentChunk(idx) }
+          }
+        },
+        {
+          root: chunkRoot,
+          rootMargin: '300px 0px 300px 0px',
+          threshold: 0,
+        },
+      )
+      virtualiserContainer.querySelectorAll<HTMLElement>('[data-chunk]').forEach(
+        el => chunkObserver?.observe(el),
+      )
+    })
+  }
+
+  async function loadKnowledgeSidecars(
+    knowledgeRequest: number,
+    requestedSurah: number,
+    footnotes: Record<string, string>,
+    localTranslationVisible: boolean,
+    localRiwayah: 'hafs' | 'warsh' | 'qaloon',
+  ) {
+    const [ayahResult, passageResult] = await Promise.allSettled([
+      loadAyahKnowledgeForSurah(requestedSurah),
+      loadPassagesForSurah(requestedSurah),
+    ])
+
+    if (knowledgeRequest !== knowledgeLoadId || reader.currentSurahNum !== requestedSurah || !surahData) {
+      return
+    }
+
+    let nextAyahKnowledgeByKey: Record<string, AyahKnowledgeEntry> = {}
+    let nextPassagesById: Record<string, KnowledgePassage> = {}
+
+    if (ayahResult.status === 'fulfilled' && ayahResult.value) {
+      nextAyahKnowledgeByKey = Object.fromEntries(
+        ayahResult.value.ayahs.map(entry => [entry.key, entry]),
+      )
+    } else {
+      logger.warn('Reader knowledge ayah shard unavailable', {
+        surah: requestedSurah,
+        reason: ayahResult.status === 'rejected' ? ayahResult.reason : 'missing-or-invalid',
+      })
+    }
+
+    if (passageResult.status === 'fulfilled' && passageResult.value) {
+      nextPassagesById = Object.fromEntries(
+        passageResult.value.passages.map(passage => [passage.id, passage]),
+      )
+    } else {
+      logger.warn('Reader knowledge passage shard unavailable', {
+        surah: requestedSurah,
+        reason: passageResult.status === 'rejected' ? passageResult.reason : 'missing-or-invalid',
+      })
+    }
+
+    ayahKnowledgeByKey = nextAyahKnowledgeByKey
+    passagesById = nextPassagesById
+
+    if (Object.keys(nextAyahKnowledgeByKey).length === 0 && Object.keys(nextPassagesById).length === 0) {
+      return
+    }
+
+    const restoreVerse = reader.currentVerseKey?.startsWith(`${requestedSurah}:`)
+      ? parseInt(reader.currentVerseKey.split(':')[1] ?? '1', 10)
+      : null
+
+    mountVirtualisedVerses(surahData, {
+      footnotes,
+      translationVisible: localTranslationVisible,
+      riwayah: localRiwayah,
+      restoreVerse: Number.isFinite(restoreVerse) ? restoreVerse : null,
+    })
+  }
+
   // ---------------------------------------------------------------------------
   // Mount / load
   // ---------------------------------------------------------------------------
@@ -199,6 +411,7 @@
       offRiwayah()
       if (anchorTimer) { clearTimeout(anchorTimer); anchorTimer = null }
       // Cleanup on unmount
+      teardownVirtualiserMount()
       teardownPositionTracking()
       for (const fn of cleanups) { try { fn() } catch { /* ignore */ } }
       cleanups = []
@@ -211,8 +424,15 @@
   })
 
   async function loadSurah() {
+    const knowledgeRequest = ++knowledgeLoadId
+    teardownVirtualiserMount()
+    teardownPositionTracking()
+    for (const fn of cleanups) { try { fn() } catch { /* ignore */ } }
+    cleanups = []
     isLoading = true
     loadError = false
+    invalidVerseError = null
+    resetKnowledgeState()
 
     const timeoutId = setTimeout(() => {
       if (isLoading) {
@@ -342,70 +562,15 @@
       requestAnimationFrame(() => {
         if (!container || !virtualiserContainer || !surahData) { return }
 
-        // Build the per-verse model once; the virtualiser owns DOM
-        // lifecycle and slices per chunk.
-        const items: VerseItem[] = surahData.ayat.map((ayah) => {
-          const key = `${surahData!.sura_no}:${ayah.aya_no}`
-          const roleInfo = translationRoleByVerse[key]
-          return {
-            aya_no: ayah.aya_no,
-            key,
-            arabic: ayah.aya_text ?? '',
-            translation: translationByVerse[key] ?? '',
-            translationRole: roleInfo?.role ?? 'identity' as const,
-            primaryAyah: roleInfo?.primaryAyah,
-          }
-        })
-
         const footnotes = translationPack?.footnotes ?? {}
         const localTranslationVisible = translationVisible
         const localRiwayah = (settings.riwayah ?? 'qaloon') as 'hafs' | 'warsh' | 'qaloon'
-
-        const mountVerse: MountVerse<VerseItem> = (target, v) => {
-          const instance = mount(Verse, {
-            target,
-            props: {
-              verseKey: v.key,
-              arabic: v.arabic,
-              translation: v.translation,
-              translationVisible: localTranslationVisible,
-              footnotes,
-              riwayah: localRiwayah,
-              translationRole: v.translationRole,
-              primaryAyah: v.primaryAyah,
-            },
-          })
-          return () => { void unmount(instance) }
-        }
-
-        virtualiser = setupVirtualiser<VerseItem>({
-          container: virtualiserContainer,
-          verses: items,
-          mountVerse,
-          onChunkLive: (_idx, verseEls) => {
-            observeNewVerses(verseEls)
-            // READER_VERSE_RENDERED still fires from inside <Verse>'s
-            // handleMount action; no need to re-emit here.
-          },
+        mountVirtualisedVerses(surahData, {
+          footnotes,
+          translationVisible: localTranslationVisible,
+          riwayah: localRiwayah,
+          applyBottomSwapAnchor: swapAnchor === 'bottom',
         })
-        cleanups.push(() => { virtualiser?.destroy(); virtualiser = null })
-
-        // Backward swap: virtualiser teleports window to last chunk; spacers
-        // above preserve scrollHeight; anchor scrollTop to bottom; second-rAF
-        // correction snaps if estimate drift miscomputed.
-        if (swapAnchor === 'bottom' && surahData) {
-          const lastVerse = surahData.ayat.length
-          virtualiser.ensureVerseRendered(lastVerse)
-          requestAnimationFrame(() => {
-            if (shellScroller) {
-              shellScroller.scrollTop = shellScroller.scrollHeight
-              requestAnimationFrame(() => {
-                if (shellScroller) { shellScroller.scrollTop = shellScroller.scrollHeight }
-              })
-            }
-            void savePosition(surahNum, lastVerse)
-          })
-        }
 
         const posCleanups = initPositionTracking({
           mainContent: container,
@@ -420,46 +585,6 @@
           onInvalidVerseError: (msg) => { invalidVerseError = msg },
         })
         cleanups.push(...posCleanups)
-
-        // Chunk-boundary IntersectionObserver: advances the virtualiser window
-        // as the user scrolls into adjacent spacer chunks. Without this wiring
-        // only chunk 0 (the first 20 verses) is ever live — setCurrentChunk is
-        // never called from the scroll path so the reader appears truncated.
-        //
-        // Placed after initPositionTracking so that any rAF queued by
-        // scrollToVerse (deep-link) or the backward-swap block fires first.
-        // If the IO were set up earlier, its initial intersection check fires
-        // for chunk 0 (viewport still at top) and evicts the chunk window that
-        // ensureVerseRendered just materialised synchronously.
-        let deferredChunkIO: IntersectionObserver | null = null
-        cleanups.push(() => { deferredChunkIO?.disconnect(); deferredChunkIO = null })
-        requestAnimationFrame(() => {
-          if (!virtualiserContainer || !virtualiser) { return }
-          const chunkRoot = document.getElementById('main-content')
-          if (!chunkRoot) { return }
-          deferredChunkIO = new IntersectionObserver(
-            (entries) => {
-              for (const entry of entries) {
-                if (!entry.isIntersecting) { continue }
-                const idx = parseInt(
-                  (entry.target as HTMLElement).getAttribute('data-chunk') ?? '',
-                  10,
-                )
-                if (!isNaN(idx)) { virtualiser?.setCurrentChunk(idx) }
-              }
-            },
-            {
-              root: chunkRoot,
-              // Pre-load 300 px before the chunk edge enters the viewport so
-              // the spacer→live transition is invisible at normal reading speed.
-              rootMargin: '300px 0px 300px 0px',
-              threshold: 0,
-            },
-          )
-          virtualiserContainer.querySelectorAll<HTMLElement>('[data-chunk]').forEach(
-            el => deferredChunkIO!.observe(el),
-          )
-        })
 
         // Wire pull-to-swap gesture — Chrome-mobile-style circular indicator
         // drives a progress 0..1 that the user fills by pulling past the
@@ -496,6 +621,14 @@
 
         const name = surahMeta?.name ?? `Surah ${surahNum}`
         announce(`${name} loaded, ${surahData?.ayat.length ?? 0} verses`)
+
+        void loadKnowledgeSidecars(
+          knowledgeRequest,
+          surahNum,
+          footnotes,
+          localTranslationVisible,
+          localRiwayah,
+        )
       })
     } catch {
       clearTimeout(timeoutId)
@@ -505,8 +638,6 @@
   }
 
   function handleRetry() {
-    for (const fn of cleanups) { try { fn() } catch { /* ignore */ } }
-    cleanups = []
     void loadSurah()
   }
 </script>

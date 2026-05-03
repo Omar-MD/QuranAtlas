@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -22,6 +22,26 @@ function mockDatasetFetch(url) {
 function mockMissingKnowledgeFetch(url) {
   const asString = String(url)
   if (asString.startsWith(KNOWLEDGE_BASE)) {
+    return Promise.resolve({ ok: false, status: 404 })
+  }
+  return mockDatasetFetch(url)
+}
+
+function mockInvalidAyahKnowledgeFetch(url) {
+  const asString = String(url)
+  if (asString === `${KNOWLEDGE_BASE}/ayah/002.json`) {
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ surah: 2, version: 'test', ayahs: {} }),
+    })
+  }
+  return mockDatasetFetch(url)
+}
+
+function mockMissingPassageShardFetch(url) {
+  const asString = String(url)
+  if (asString === `${KNOWLEDGE_BASE}/passages/002.json`) {
     return Promise.resolve({ ok: false, status: 404 })
   }
   return mockDatasetFetch(url)
@@ -86,5 +106,64 @@ describe('data/knowledge-dataset', () => {
     await expect(module.getAyahKnowledge('1:1')).resolves.toBeNull()
     await expect(module.getThemesForAyah('1:1')).resolves.toEqual([])
     await expect(module.getPassageForAyah('1:1')).resolves.toBeNull()
+  })
+
+  it('reuses cached payloads across repeated surah loads', async () => {
+    const fetchSpy = vi.fn(mockDatasetFetch)
+    globalThis.fetch = fetchSpy
+    const module = await loadKnowledgeModule()
+
+    const firstAyahPayload = await module.loadAyahKnowledgeForSurah(2)
+    const secondAyahPayload = await module.loadAyahKnowledgeForSurah(2)
+    const firstPassagePayload = await module.loadPassagesForSurah(2)
+    const secondPassagePayload = await module.loadPassagesForSurah(2)
+
+    expect(firstAyahPayload).toBe(secondAyahPayload)
+    expect(firstPassagePayload).toBe(secondPassagePayload)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(fetchSpy).toHaveBeenNthCalledWith(1, '/dataset/knowledge/ayah/002.json', expect.any(Object))
+    expect(fetchSpy).toHaveBeenNthCalledWith(2, '/dataset/knowledge/passages/002.json', expect.any(Object))
+  })
+
+  it('refetches knowledge payloads after clearing the cache', async () => {
+    const fetchSpy = vi.fn(mockDatasetFetch)
+    globalThis.fetch = fetchSpy
+    const module = await loadKnowledgeModule()
+
+    const firstAyahPayload = await module.loadAyahKnowledgeForSurah(2)
+    const firstPassagePayload = await module.loadPassagesForSurah(2)
+
+    module.clearKnowledgeDatasetCache()
+
+    const secondAyahPayload = await module.loadAyahKnowledgeForSurah(2)
+    const secondPassagePayload = await module.loadPassagesForSurah(2)
+
+    expect(fetchSpy).toHaveBeenCalledTimes(4)
+    expect(secondAyahPayload).toEqual(firstAyahPayload)
+    expect(secondPassagePayload).toEqual(firstPassagePayload)
+  })
+
+  it('returns null for invalid payload shapes', async () => {
+    globalThis.fetch = mockInvalidAyahKnowledgeFetch
+    const module = await loadKnowledgeModule()
+    module.clearKnowledgeDatasetCache()
+
+    await expect(module.loadAyahKnowledgeForSurah(2)).resolves.toBeNull()
+    await expect(module.getAyahKnowledge('2:2')).resolves.toBeNull()
+    await expect(module.getThemesForAyah('2:2')).resolves.toEqual([])
+  })
+
+  it('returns null when ayah knowledge exists but the passage shard is absent', async () => {
+    globalThis.fetch = mockMissingPassageShardFetch
+    const module = await loadKnowledgeModule()
+    module.clearKnowledgeDatasetCache()
+
+    const ayah = await module.getAyahKnowledge('2:2')
+
+    expect(ayah).toMatchObject({
+      key: '2:2',
+      passageId: '2:1-5',
+    })
+    await expect(module.getPassageForAyah('2:2')).resolves.toBeNull()
   })
 })

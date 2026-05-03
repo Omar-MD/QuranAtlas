@@ -13,7 +13,7 @@ Orphan listen (listened, never emitted): **0**.
 <!-- AUTO-GENERATED:catalog START -->
 | Constant | Event name | Emit sites | Listen sites |
 | --- | --- | --- | --- |
-| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/reader/AmbientDock.svelte:64`<br>`src/reader/AmbientPill.svelte:90`<br>`src/reader/EdgeIndicator.svelte:42`<br>`src/reader/MarginHeader.svelte:41`<br>`src/reader/Reader.svelte:492`<br>`src/reader/edge-indicators.ts:62` | `src/reader/AmbientPill.svelte:76`<br>`src/reader/MarginHeader.svelte:175` |
+| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/reader/AmbientDock.svelte:64`<br>`src/reader/AmbientPill.svelte:90`<br>`src/reader/EdgeIndicator.svelte:42`<br>`src/reader/MarginHeader.svelte:41`<br>`src/reader/Reader.svelte:617`<br>`src/reader/edge-indicators.ts:62` | `src/reader/AmbientPill.svelte:76`<br>`src/reader/MarginHeader.svelte:175` |
 | `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:340`<br>`src/app-bootstrap.ts:434` | `src/core/save-failure-toast.svelte:41` |
 | `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:495` | _(none)_ |
 | `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:413`<br>`src/app-bootstrap.ts:424` | `src/core/UpdateBanner.svelte:19` |
@@ -51,7 +51,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.OFFLINE_INSTALL_COMPLETE` | `offline:install-complete` | `src/data/offline.ts:352` | _(none)_ |
 | `Events.OFFLINE_SW_TIMEOUT` | `offline:sw-timeout` | `src/data/offline.ts:161` | _(none)_ |
 | `Events.READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `src/reader/position.ts:28` | `src/core/save-failure-toast.svelte:35` |
-| `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/reader/Verse.svelte:50` | `src/bookmarks/indicator.ts:75`<br>`src/marks/indicator.ts:96` |
+| `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/reader/Verse.svelte:54` | `src/bookmarks/indicator.ts:75`<br>`src/marks/indicator.ts:96` |
 | `Events.REVIEW_FILTER` | `review:filter` | _(none)_ | _(none)_ |
 | `Events.REVIEW_OPEN` | `review:open` | `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459` | _(none)_ |
 | `Events.ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `src/core/router.ts:148` | `src/app-bootstrap.ts:210` |
@@ -59,7 +59,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:44` |
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/settings/clear-data.ts:170` | _(none)_ |
 | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/settings/state-recent-surahs.svelte.ts:26` | `src/nav/NavDrawer.svelte:243`<br>`src/surahs/SurahList.svelte:141` |
-| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/settings/riwayah.ts:58`<br>`src/settings/riwayah.ts:74` | `src/app-bootstrap.ts:181`<br>`src/bookmarks/BookmarksList.svelte:227`<br>`src/bookmarks/BookmarksPage.svelte:36`<br>`src/bookmarks/indicator.ts:102`<br>`src/reader/Reader.svelte:183`<br>`src/settings/reading-typography.ts:133`<br>`src/surahs/SurahList.svelte:140` |
+| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/settings/riwayah.ts:58`<br>`src/settings/riwayah.ts:74` | `src/app-bootstrap.ts:181`<br>`src/bookmarks/BookmarksList.svelte:227`<br>`src/bookmarks/BookmarksPage.svelte:36`<br>`src/bookmarks/indicator.ts:102`<br>`src/reader/Reader.svelte:395`<br>`src/settings/reading-typography.ts:133`<br>`src/surahs/SurahList.svelte:140` |
 | `Events.SHEET_CLOSED` | `sheet:closed` | `src/nav/shortcuts-sheet.js:162`<br>`src/settings/Panel.svelte:130` | _(none)_ |
 | `Events.SHEET_OPENED` | `sheet:opened` | `src/nav/shortcuts-sheet.js:153`<br>`src/settings/Panel.svelte:113` | _(none)_ |
 | `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:109` | `src/core/quota-banner.svelte:18` |

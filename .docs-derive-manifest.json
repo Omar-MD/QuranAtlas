@@ -46,8 +46,8 @@
     "docs/context/surfaces/navigate.md:events-listen": "9cdda3c162b03226663cd843b33b481dfa6e061bceb89174f3bfa260b9251b3e",
     "docs/context/surfaces/onboard.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/onboard.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
-    "docs/context/surfaces/read.md:events-emit": "98ebf05a17fcc3e3b24fbdaa522ccf5b853103216d334fec34b8458f7f57b1c3",
-    "docs/context/surfaces/read.md:events-listen": "3fe3620c87e51107568b82ac49624db2587eb3d1b51c33cbf9acd369607e6984",
+    "docs/context/surfaces/read.md:events-emit": "08208fe9ba510346969836b29a57a9d1fc50cd9f1185cd1b883f7e589031ac50",
+    "docs/context/surfaces/read.md:events-listen": "1a63602ed26381681cf88e5a64b6856786e29c96b5f13cd763c42d64fca89bb5",
     "docs/context/surfaces/review.md:events-emit": "babd719de6e91c7aa8592cd1ecb02739191810e47ab331765984435f176d70b0",
     "docs/context/surfaces/review.md:events-listen": "6a8d95f32cd21c50305b89360fce751c33351586170b755db4cd19f970132316",
     "docs/context/data-model.md:store-owner-index": "f237f48c74bc4157db26ed8c8f1f300270f7a37241e7a9524e2a2d96ae3b3aee"

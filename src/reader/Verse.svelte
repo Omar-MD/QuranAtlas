@@ -23,6 +23,8 @@
     /** When `translationRole === 'continuation'`, the Madinan ayah index of
      * the primary (first) half of the split. Used to render the marker. */
     primaryAyah?: number
+    themes?: string[]
+    passageSummary?: string
   }
 
   const {
@@ -36,6 +38,8 @@
     onNumberTap,
     translationRole = 'identity',
     primaryAyah,
+    themes = [],
+    passageSummary,
   }: Props = $props()
 
   const verseNum = $derived(verseKey.split(':')[1] ?? '')
@@ -69,6 +73,10 @@
       openFn = null
       e.stopPropagation()
     }
+  }
+
+  function formatThemeLabel(theme: string) {
+    return theme.split('-').join(' ')
   }
 </script>
 
@@ -144,8 +152,21 @@
       >×</button>
     </div>
   {/if}
+  {#if themes.length > 0 || passageSummary}
+    <div class="qa-verse-knowledge" data-knowledge-lane="">
+      {#if themes.length > 0}
+        <div class="qa-verse-themes" aria-label="Verse themes">
+          {#each themes as theme (theme)}
+            <span class="qa-verse-theme">{formatThemeLabel(theme)}</span>
+          {/each}
+        </div>
+      {/if}
+      {#if passageSummary}
+        <div class="qa-verse-context">{passageSummary}</div>
+      {/if}
+    </div>
+  {/if}
   {#if isActive}
     <VerseTagPanel {verseKey} />
   {/if}
 </div>
-
