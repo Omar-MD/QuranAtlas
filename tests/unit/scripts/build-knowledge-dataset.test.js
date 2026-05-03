@@ -62,6 +62,16 @@ describe('build-knowledge-dataset', () => {
     })).toThrow(/unknown theme id/i)
   })
 
+  it('fails when ayah-themes include an unsupported source value', () => {
+    const seed = loadSeedData()
+    const broken = clone(seed)
+    broken.ayahThemes[0].themes[0].source = 'ai-generated'
+    expect(() => buildKnowledgeArtifacts({
+      ...broken,
+      surahAyahCounts,
+    })).toThrow(/source/i)
+  })
+
   it('fails when passages overlap in the same surah', () => {
     const seed = loadSeedData()
     const broken = clone(seed)

@@ -1,6 +1,6 @@
 # Module graph
 
-> AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm docs:derive` to regenerate.
+> AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm run docs` to regenerate.
 
 Top-level src directories: **19**.
 

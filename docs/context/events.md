@@ -1,6 +1,6 @@
 # Events catalog
 
-> AUTO-GENERATED from `src/core/constants.ts` (Events map) + `emit(Events.X)` / `on(Events.X)` call sites across `src/**`. Run `pnpm docs:derive` to regenerate. Manual edits below the next paragraph are preserved (write them outside the auto-generated table).
+> AUTO-GENERATED from `src/core/constants.ts` (Events map) + `emit(Events.X)` / `on(Events.X)` call sites across `src/**`. Run `pnpm run docs` to regenerate. Manual edits below the next paragraph are preserved (write them outside the auto-generated table).
 
 Total events declared: **53**. Live emits: **51**. Live listeners: **29**.
 

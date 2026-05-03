@@ -4,7 +4,7 @@ Referenced by root `AGENTS.md`. Read this before splitting work by surface, dele
 
 ## The unit
 
-A **surface** is a user-visible region with a documented dossier and a Playwright spec. The table below is the canonical surface → dossier / spec map; the surface → *source files* mapping is not duplicated here because each dossier's frontmatter `src_paths` already owns it (Rule 1 keeps it fresh — `pnpm docs:derive` regenerates the auto Inventory block from the globs).
+A **surface** is a user-visible region with a documented dossier and a Playwright spec. The table below is the canonical surface → dossier / spec map; the surface → *source files* mapping is not duplicated here because each dossier's frontmatter `src_paths` already owns it (Rule 1 keeps it fresh — `pnpm run docs` regenerates the auto Inventory block from the globs).
 
 | Surface | Dossier | Spec |
 |---|---|---|
@@ -19,7 +19,7 @@ A **surface** is a user-visible region with a documented dossier and a Playwrigh
 
 The **unit of work** is a surface, or a contiguous cluster of surfaces that share source files or invariants. A single bug is never a unit.
 
-When you need the surface → source-files mapping for a unit, open the matching dossier — its §Inventory section is the auto-generated file list (regenerate with `pnpm docs:derive` if stale). Surfaces routinely reach across multiple `src/<feature>/` dirs — that's expected, and that cross-surface reach is exactly what makes the surface a cluster, not a single dir.
+When you need the surface → source-files mapping for a unit, open the matching dossier — its §Inventory section is the auto-generated file list (regenerate with `pnpm run docs` if stale). Surfaces routinely reach across multiple `src/<feature>/` dirs — that's expected, and that cross-surface reach is exactly what makes the surface a cluster, not a single dir.
 
 ## Brainstorming rules
 
@@ -33,7 +33,7 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 
 1. **One unit per surface-cluster.** If two candidate units both touch `src/<same-feature>/`, collapse them.
 2. **A journey that spans surfaces is one unit, not two.** Example: I2 (mark deleted in Tab B while Tab A editor open) touches `src/marks/` AND `src/safety/sync.ts`. That's one unit — the coupling is the point.
-3. **Docs land with the unit.** Owning dossier's §Behavior + §Reach + §Invariants (Rule 1), plus `data-model.md` / `architecture.md` if cross-cutting (Rule 2), are part of the unit. `events.md` / `module-graph.md` / `feature-map.md` regenerate automatically (`pnpm docs:derive`) — no manual update. Not a separate task. Not a delegated follow-up.
+3. **Docs land with the unit.** Owning dossier's §Behavior + §Reach + §Invariants (Rule 1), plus `data-model.md` / `architecture.md` if cross-cutting (Rule 2), are part of the unit. `events.md` / `module-graph.md` / `feature-map.md` regenerate automatically (`pnpm run docs`) — no manual update. Not a separate task. Not a delegated follow-up.
 4. **Tests land with the unit.** If the unit adds new behavior to a dossier, the matching Playwright spec (new or extended) is part of the same commit. If the surface already has its journey spec, extend the owning `journey-X-*.spec.js` — do not create a parallel spec.
 5. **Plan lifecycle.** Completed plans are deleted in the final commit, not archived. The lasting record lives in code + `git log` + `docs/context/`.
 
@@ -87,7 +87,7 @@ These changes don't map to a single UI surface. Treat each as its own cluster wi
 | Safety / sync (versionchange, BroadcastChannel) | `docs/context/surfaces/infra.md` §Cross-tab coherence | `infra` + `mark` (I1/I2 marks change), `configure` (I3 clear-data) |
 | Theme tokens (not per-surface selectors) | `docs/context/architecture.md` §Stack + `src/styles/tokens/semantic.css` `:root` / `[data-theme]` blocks | `read` (auto theme), `configure` (theme swap), `@a11y` across surfaces |
 | Runes state modules | `docs/context/module-graph.md` (auto-gen) | Every dossier that imports the changed state slice |
-| Chunk budgets | `docs/tech-stack.md` §scripts | Build + `pnpm run check-chunks`; no journey spec needed |
+| Chunk budgets | `docs/tech-stack.md` §scripts | Build + `pnpm run validate`; no journey spec needed |
 | Service worker / offline | `docs/context/surfaces/infra.md` + `docs/context/architecture.md` §Boot flow | `infra` — `PLAYWRIGHT_INCLUDE_OFFLINE=1`, preview server, production build |
 
 For virtual surfaces: still one cluster, still one plan unit, but verification runs the batch of affected journey specs — as one Playwright invocation, not N.

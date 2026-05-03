@@ -60,7 +60,7 @@ async function main() {
 
   let out = '';
   out += '# Module graph\n\n';
-  out += '> AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm docs:derive` to regenerate.\n\n';
+  out += '> AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm run docs` to regenerate.\n\n';
   out += `Top-level src directories: **${dirs.length}**.\n\n`;
 
   out += '## Mermaid (top-level)\n\n';

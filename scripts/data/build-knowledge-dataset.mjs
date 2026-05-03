@@ -23,20 +23,8 @@ const KNOWLEDGE_INDEXES_DIR = join(KNOWLEDGE_OUTPUT_DIR, 'indexes')
 
 const THEME_ID_RE = /^[a-z][a-z0-9-]*$/
 const REVIEW_STATUSES = new Set(['draft', 'approved', 'deprecated'])
-const ROLE_IN_SURAH_VALUES = new Set([
-  'opening',
-  'opening_classification',
-  'narrative',
-  'command',
-  'warning',
-  'promise',
-  'argument',
-  'dua',
-  'conclusion',
-  'transition',
-  'unknown',
-])
 const CERTAINTY_VALUES = new Set(['high', 'medium', 'low'])
+const AYAH_THEME_SOURCES = new Set(['curated'])
 
 export const KNOWLEDGE_VERSION = 'knowledge-v1'
 
@@ -173,8 +161,7 @@ function validatePassages(passages, themeById, surahAyahCounts) {
 
     ensure(isRecord(passage.title) && typeof passage.title.en === 'string' && passage.title.en.trim().length > 0, `passage "${passage.id}" missing title.en`)
     ensure(isRecord(passage.summary) && typeof passage.summary.en === 'string' && passage.summary.en.trim().length > 0, `passage "${passage.id}" missing summary.en`)
-    ensure(typeof passage.roleInSurah === 'string' && passage.roleInSurah.length > 0, `passage "${passage.id}" missing roleInSurah`)
-    ensure(ROLE_IN_SURAH_VALUES.has(passage.roleInSurah), `passage "${passage.id}" has unsupported roleInSurah "${passage.roleInSurah}"`)
+    ensure(typeof passage.roleInSurah === 'string' && passage.roleInSurah.trim().length > 0, `passage "${passage.id}" missing roleInSurah`)
 
     ensure(Array.isArray(passage.themes), `passage "${passage.id}" themes must be an array`)
     ensure(passage.themes.length > 0, `passage "${passage.id}" themes must not be empty`)
@@ -184,7 +171,6 @@ function validatePassages(passages, themeById, surahAyahCounts) {
     }
 
     ensure(isRecord(passage.source), `passage "${passage.id}" source is required`)
-    ensure(typeof passage.source.kind === 'string' && passage.source.kind.length > 0, `passage "${passage.id}" source.kind is required`)
     ensure(typeof passage.source.reviewStatus === 'string', `passage "${passage.id}" source.reviewStatus is required`)
     ensure(REVIEW_STATUSES.has(passage.source.reviewStatus), `passage "${passage.id}" has invalid reviewStatus "${passage.source.reviewStatus}"`)
 
@@ -200,7 +186,6 @@ function validatePassages(passages, themeById, surahAyahCounts) {
       themes: [...passage.themes],
       roleInSurah: passage.roleInSurah,
       source: {
-        kind: passage.source.kind,
         reviewStatus: passage.source.reviewStatus,
       },
     })
@@ -240,7 +225,7 @@ function validateAyahThemes(ayahThemes, themeById, surahAyahCounts) {
 
       ensure(typeof theme.weight === 'number' && Number.isFinite(theme.weight), `ayah-themes "${row.ayahKey}" theme "${theme.id}" weight must be a number`)
       ensure(theme.weight >= 0 && theme.weight <= 1, `ayah-themes "${row.ayahKey}" theme "${theme.id}" weight must be between 0 and 1`)
-      ensure(typeof theme.source === 'string' && theme.source.length > 0, `ayah-themes "${row.ayahKey}" theme "${theme.id}" source is required`)
+      ensure(typeof theme.source === 'string' && AYAH_THEME_SOURCES.has(theme.source), `ayah-themes "${row.ayahKey}" theme "${theme.id}" source must be one of: ${[...AYAH_THEME_SOURCES].join(', ')}`)
       ensure(typeof theme.certainty === 'string' && CERTAINTY_VALUES.has(theme.certainty), `ayah-themes "${row.ayahKey}" theme "${theme.id}" certainty must be one of: high, medium, low`)
 
       return {

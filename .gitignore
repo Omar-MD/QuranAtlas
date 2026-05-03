@@ -39,7 +39,7 @@ tests/e2e/.auth/
 .vscode/*.local
 
 .superpowers/
-.scratch/
+scratch/
 
 # Git worktrees
 .worktrees/

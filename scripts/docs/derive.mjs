@@ -72,7 +72,7 @@ async function main() {
       process.stderr.write(`\nderive --check: docs changed after regeneration:\n`);
       process.stderr.write(`before:\n${before || '(clean)'}\n`);
       process.stderr.write(`after:\n${after || '(clean)'}\n`);
-      process.stderr.write('Run `pnpm docs:derive` and commit the result.\n');
+      process.stderr.write('Run `pnpm run docs` and commit the result.\n');
       failed++;
     }
   }

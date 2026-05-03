@@ -73,40 +73,29 @@ Defined in `package.json`:
 | Command | Action |
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
-| `pnpm run build` | Build production bundle into `dist/` (`pnpm build:dataset && pnpm build:knowledge && vite build`) |
-| `pnpm run build:dataset` | Baseline dataset build (`node scripts/data/build-dataset.mjs --profile=baseline`): emits Qaloon riwayah, Saheeh translation, Muyassar tafsir, source index, metadata, manifest, and provenance. Runs offline against committed normalized source files. |
-| `pnpm run build:dataset:baseline` | Explicit baseline dataset build. |
-| `pnpm run build:dataset:full` | Full local dataset build: emits every locally configured approved source. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
-| `pnpm run build:dataset:catalog` | Catalog/profile build without text bodies. |
-| `pnpm run build:knowledge` | Knowledge Lane build (`node scripts/data/build-knowledge-dataset.mjs`): validates curated `data/taxonomy` + `data/normalized/knowledge` inputs and emits deterministic `public/dataset/knowledge/**` shards and indexes. |
-| `pnpm run fetch:source -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh` and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` with source pins under `scripts/data/pins/`. |
+| `pnpm run build` | Build production bundle into `dist/` (`pnpm run data -- build && vite build`) |
+| `pnpm run data -- build` | Grouped baseline data build: emits Qaloon riwayah, Saheeh translation, Muyassar tafsir, source index, metadata, manifest, provenance, and Phase 01 knowledge shards. Runs offline against committed normalized source files. |
+| `pnpm run data -- build --profile=full` | Full local data build: emits every locally configured approved source plus Phase 01 knowledge shards. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
+| `pnpm run data -- build --profile=catalog` | Catalog/profile build without text bodies. |
+| `pnpm run data -- check` | Grouped data check: validates source catalog plus baseline text and knowledge builds. |
+| `pnpm run data -- aliases` | Rebuild `_verse-aliases.json` from riwayah sources. |
+| `pnpm run data:fetch -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh` and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` with source pins under `scripts/data/pins/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
-| `pnpm test` | Run Vitest in watch mode |
-| `pnpm run test:run` | Run Vitest once (CI-style) |
-| `pnpm run test:coverage` | Run Vitest with v8 coverage |
+| `pnpm run test` | Run Vitest once (CI-style) |
 | `pnpm run test:e2e` | Run the full Playwright suite (all journey specs A–I + performance + SW integration) |
-| `pnpm run test:e2e:sw` | Run just the SW-integration spec against a production preview build (`PLAYWRIGHT_USE_PREVIEW=1`) |
-| `pnpm run lint` | ESLint over `src/` |
-| `pnpm run lint:fix` | ESLint with `--fix` |
-| `pnpm run lint:css` | Stylelint over `src/styles/**/*.css` (config at `.stylelintrc.json`) |
-| `pnpm run check` | `svelte-check --tsconfig ./tsconfig.json` — type gate |
-| `pnpm run check:dataset` | Rebuild the baseline dataset as a CI/catalog integrity gate. |
-| `pnpm run check:knowledge` | Validate Knowledge Lane inputs and model in `--check` mode without writing outputs. |
-| `pnpm run check:licenses` | Validate source catalog providers, licenses, checksums, and default visibility. |
-| `pnpm run check:source-catalog` | Alias for `check:licenses`; used by CI's dataset catalog job. |
-| `pnpm run check:styles` | Run `check-theme-parity.mjs` + `check-token-usage.mjs` + `check-at-layer.mjs` (design-token gates) |
-| `pnpm run check-chunks` | Gzipped chunk-budget check (`scripts/check-chunks.js`, ≤150 KB per chunk) |
-| `pnpm run check-no-feature-state` | Assert feature modules don't hold top-level mutable state (`scripts/check-no-feature-state.js`) |
+| `pnpm run lint` | ESLint over `src/` plus Stylelint over `src/styles/**/*.css` |
+| `pnpm run check` | Static validation gate: lint + token/style-structure checks + `svelte-check` |
+| `pnpm run docs` | Regenerate context-doc inventories and event/module indexes |
+| `pnpm run docs:check` | Assert generated docs are up to date |
 | `pnpm run lighthouse` | Build + Lighthouse CI (`lhci autorun --config=.lighthouserc.cjs`) |
 | `pnpm run clean` | Remove `dist` and `test-output` |
-| `pnpm run mcp:cleanup` | Remove `test-output` (for MCP browser sessions) |
-| **`pnpm run validate`** | Composite gate: `lint` → `lint:css` → `check:styles` → `check` → `test:run` → `build` → `check-chunks`. Run before pushing. |
+| **`pnpm run validate`** | Composite gate: `check` → feature-state guard → `test` → `build` → chunk budget → `docs:check`. Run before pushing. |
 
 The `packageManager` field pins `pnpm@10.31.0` exactly. Commands also run under `npx` (e.g. `npx vitest run`), but pnpm is the canonical path.
 
 ### Optional environment variables
 - `PLAYWRIGHT_INCLUDE_OFFLINE=1` — includes the `@offline` project (otherwise skipped locally; always included in CI). See `playwright.config.js`.
-- `PLAYWRIGHT_USE_PREVIEW=1` — run Playwright against a production preview build instead of the dev server. Used by `test:e2e:sw` and by CI (vite's on-demand compile under workers=6 on the 2-core runner serialised past the 25 s `waitForReader` timeout). When set, the `Offline (Preview)` project reuses the same preview server instead of spawning a second build.
+- `PLAYWRIGHT_USE_PREVIEW=1` — run Playwright against a production preview build instead of the dev server. Used for SW/offline specs and by CI (vite's on-demand compile under workers=6 on the 2-core runner serialised past the 25 s `waitForReader` timeout). When set, the `Offline (Preview)` project reuses the same preview server instead of spawning a second build.
 - `PLAYWRIGHT_SKIP_BUILD=1` — assume `dist/` already exists; skip the prebuild step inside the preview webServer command. CI sets this after downloading the `dist/` artifact from the Build job, avoiding a redundant rebuild.
 
 ## Architecture and internals
@@ -124,7 +113,7 @@ These used to be inlined in this file; they now live in `docs/context/`:
 
 Two layers:
 
-- **Unit tests (Vitest + jsdom + `fake-indexeddb/auto`)** — suites under `tests/unit/` covering core, reader, marks, review, settings, nav, safety, data/offline, dataset scripts/catalogs, state modules, service worker handlers, and a console-guard. Runs in every CI job via `pnpm run test:run`.
+- **Unit tests (Vitest + jsdom + `fake-indexeddb/auto`)** — suites under `tests/unit/` covering core, reader, marks, review, settings, nav, safety, data/offline, dataset scripts/catalogs, state modules, service worker handlers, and a console-guard. Runs in every CI job via `pnpm run test`.
 - **E2E tests (Playwright)** — **12 specs** under `tests/e2e/`:
   - `journey-a-onboarding.spec.js` — first-run + session restore
   - `journey-b-reader.spec.js` — reader + ambient chrome
@@ -151,18 +140,17 @@ test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-test `markOnboardingComplete + clearAllData + cold-boot` needed, and the `marks`/`edges`/`bookmarks` stores are reset to the snapshot (empty) implicitly between tests. Onboarding-flow specs (`journey-a`) and SW/cross-tab carve-outs (`journey-h`, `journey-i`) opt OUT with `test.use({ storageState: { cookies: [], origins: [] } })`. See `tests/e2e/AGENTS.md`.
 
 ### Static checks
-- **ESLint** (strict mode, `typescript-eslint`, `eslint-plugin-svelte`) via `pnpm run lint`.
-- **Stylelint** (`stylelint-config-standard`) via `pnpm run lint:css` — enforces selector grammar + custom-property prefixes under `src/styles/`.
+- **ESLint + Stylelint** via `pnpm run lint`.
 - **svelte-check** type gate via `pnpm run check`.
-- **Design-token gates** via `pnpm run check:styles`:
+- **Design-token gates** inside `pnpm run check`:
   - `check-theme-parity.mjs` — every token in a theme override must exist in `:root`.
   - `check-token-usage.mjs` — every `var(--qa-*)` must resolve to a declared token (global or file-local/scoped).
   - `check-at-layer.mjs` — no bare rules outside `@layer` (except `reset.css` / `base.css` / `index.css`).
-- **Gzipped-chunk budget** via `pnpm run check-chunks` (≤150 KB per chunk).
-- **Feature-state guard** via `pnpm run check-no-feature-state` (blocks top-level mutable state in feature modules).
+- **Gzipped-chunk budget** via `scripts/check-chunks.js` during `pnpm run validate` (≤150 KB per chunk).
+- **Feature-state guard** via `scripts/check-no-feature-state.js` during `pnpm run validate` (blocks top-level mutable state in feature modules).
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).
 
-Composite gate: `pnpm run validate` runs lint → lint:css → check:styles → check → test:run → build → check-chunks.
+Composite gate: `pnpm run validate` runs check → feature-state → test → build → check-chunks → docs:check.
 
 Minimum browser: Chrome 111, Safari 16.2, Firefox 113 (required for `color-mix()` in `semantic.css`).
 
@@ -173,12 +161,12 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `st
 | Job | Purpose |
 |---|---|
 | `lint` | `pnpm run lint` |
-| `typecheck` | `pnpm run check` (svelte-check) |
-| `test` | `pnpm run test:run` (Vitest, 40 specs) |
-| `feature-state` | `pnpm run check-no-feature-state` |
-| `dataset-catalog` | `pnpm run check:source-catalog` |
-| `dataset-baseline` | `pnpm run check:dataset` |
-| `dataset-full` | `pnpm run build:dataset:full` on protected-branch pushes and PRs whose diff touches dataset sources, catalogs, generated dataset files, or dataset scripts |
+| `typecheck` | `pnpm run check` (static validation gate) |
+| `test` | `pnpm run test` (Vitest) |
+| `feature-state` | `node scripts/check-no-feature-state.js` |
+| `dataset-catalog` | `pnpm run data -- check` |
+| `dataset-baseline` | `pnpm run data -- build` |
+| `dataset-full` | `pnpm run data -- build --profile=full` on protected-branch pushes and PRs whose diff touches dataset sources, catalogs, generated dataset files, or dataset scripts |
 | `audit` | `pnpm audit --audit-level moderate` |
 | `build` | `pnpm run build`; uploads `dist/` artifact |
 | `lighthouse` | `lhci autorun` against uploaded `dist/` |

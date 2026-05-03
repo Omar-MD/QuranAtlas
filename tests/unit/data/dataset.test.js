@@ -25,6 +25,18 @@ function mockFetch(url) {
   }
 }
 
+function mockFetchWithHtmlFallback(url) {
+  const asString = String(url)
+  if (asString.includes('/riwayat/hafs/')) {
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new Error(`Unexpected token '<' in JSON at position 0 for ${asString}`)),
+    })
+  }
+  return mockFetch(url)
+}
+
 beforeAll(() => { globalThis.fetch = mockFetch })
 
 describe('data/dataset', () => {
@@ -64,6 +76,16 @@ describe('data/dataset', () => {
       const { getSurah } = await import('../../../src/data/dataset.ts')
       const data = await getSurah(1)
       expect(data.riwayah).toBe('qaloon')
+    })
+
+    it('falls back to Qaloon when a missing non-default pack resolves to HTML instead of JSON', async () => {
+      mockedRiwayah = 'hafs'
+      globalThis.fetch = mockFetchWithHtmlFallback
+      vi.resetModules()
+      const { getSurah } = await import('../../../src/data/dataset.ts')
+      const data = await getSurah(1)
+      expect(data.riwayah).toBe('qaloon')
+      globalThis.fetch = mockFetch
     })
 
     it('rejects out-of-range surah numbers', async () => {

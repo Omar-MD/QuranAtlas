@@ -28,7 +28,7 @@ Read these before changing behavior:
 
 If docs and code disagree, code wins. Update the docs in the same change.
 
-Auto-generated fence blocks (`<!-- AUTO-GENERATED:* START --> ... END`) are owned by `scripts/docs/derive-*.mjs`. Do not hand-edit them; rerun `pnpm docs:derive`.
+Auto-generated fence blocks (`<!-- AUTO-GENERATED:* START --> ... END`) are owned by `scripts/docs/derive-*.mjs`. Do not hand-edit them; rerun `pnpm run docs`.
 
 Surface and data invariants live in the owning dossier, not in this root file.
 
@@ -51,7 +51,7 @@ Internal refactors, tooling changes, type-only edits, and docs-only edits can sk
 ### 2. Update the relevant context doc when its subject changes
 
 - Data-store ownership, shape, keyPath, indexes, or sole-writer rules: update the owning dossier `Data` section and `docs/context/data-model.md` when cross-cutting.
-- Event wiring or module-graph changes: rerun `pnpm docs:derive`; no manual edit to generated inventories.
+- Event wiring or module-graph changes: rerun `pnpm run docs`; no manual edit to generated inventories.
 - Route, surface, boot-flow, router, DAG, or cross-cutting behavior changes: update the owning dossier and/or `docs/context/architecture.md`.
 - Script, toolchain, pinned-version, or CI-gate changes: update `docs/tech-stack.md`.
 - User-facing feature scope or attribution changes: update `docs/product-info.md`.
@@ -93,7 +93,7 @@ If the user asks for a PR and does not name a base branch, use `dev`.
 
 Before finishing, run the smallest verification set that matches the change:
 
-- Docs / AGENTS / generated-context changes: `pnpm docs:derive` and `pnpm docs:check`
+- Docs / AGENTS / generated-context changes: `pnpm run docs` and `pnpm run docs:check`
 - Code, shared behavior, build, or config changes: `pnpm validate`
 - E2E-only work: follow `tests/e2e/AGENTS.md` for targeted timing and placement rules, then run broader verification when shared behavior changed
 

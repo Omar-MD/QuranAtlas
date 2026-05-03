@@ -135,7 +135,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
-      - run: pnpm run test:run
+      - run: pnpm run test
 
   feature-state:
     name: Feature-State Guard
@@ -143,7 +143,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
-      - run: pnpm run check-no-feature-state
+      - run: node scripts/check-no-feature-state.js
 
   docs-check:
     name: Docs Derive Check
@@ -154,12 +154,12 @@ jobs:
       - run: pnpm run docs:check
 
   dataset-catalog:
-    name: Dataset Catalog
+    name: Dataset Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
-      - run: pnpm run check:source-catalog
+      - run: pnpm run data -- check
 
   dataset-baseline:
     name: Dataset Baseline
@@ -167,7 +167,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
-      - run: pnpm run check:dataset
+      - run: pnpm run data -- build
 
   dataset-full:
     name: Dataset Full
@@ -179,7 +179,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
-      - run: pnpm run build:dataset:full
+      - run: pnpm run data -- build --profile=full
 
 
   audit:

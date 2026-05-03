@@ -208,7 +208,7 @@ export async function getSurah(n: number): Promise<SurahPayload> {
   try {
     return await fetchNetworkFirst(url) as SurahPayload
   } catch (error) {
-    if (riwayah !== DEFAULT_RIWAYAH && isMissingPackError(error)) {
+    if (riwayah !== DEFAULT_RIWAYAH && isUnavailablePackError(error)) {
       return fetchNetworkFirst(`${DATASET_BASE}/riwayat/${DEFAULT_RIWAYAH}/${padded}.json`) as Promise<SurahPayload>
     }
     throw error
@@ -253,10 +253,10 @@ export async function loadTranslationForSurah(translationId: string, surahNo: nu
   try {
     return await fetchNetworkFirst(url) as TranslationPayload
   } catch (e) {
-    if (translationId !== DEFAULT_TRANSLATION && isMissingPackError(e)) {
+    if (translationId !== DEFAULT_TRANSLATION && isUnavailablePackError(e)) {
       return loadTranslationForSurah(DEFAULT_TRANSLATION, surahNo)
     }
-    if (isMissingPackError(e)) return null
+    if (isUnavailablePackError(e)) return null
     throw e
   }
 }
@@ -287,10 +287,10 @@ export async function loadTafsirForSurah(tafsirId: string, surahNo: number): Pro
   try {
     return await fetchNetworkFirst(url) as TafsirSurahPack
   } catch (error) {
-    if (tafsirId !== DEFAULT_TAFSIR && isMissingPackError(error)) {
+    if (tafsirId !== DEFAULT_TAFSIR && isUnavailablePackError(error)) {
       return loadTafsirForSurah(DEFAULT_TAFSIR, surahNo)
     }
-    if (isMissingPackError(error)) return null
+    if (isUnavailablePackError(error)) return null
     throw error
   }
 }
@@ -304,8 +304,11 @@ function slugify(text: string): string {
     .split('-')[0] || 'translation'
 }
 
-function isMissingPackError(error: unknown): boolean {
-  return error instanceof Error && /404|Failed to fetch/.test(error.message)
+function isUnavailablePackError(error: unknown): boolean {
+  return (
+    error instanceof Error
+    && /404|Failed to fetch|Invalid JSON in network response/.test(error.message)
+  )
 }
 
 export {

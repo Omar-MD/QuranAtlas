@@ -95,9 +95,9 @@ Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3
 
 ### Translation rendering
 
-Each verse renders Arabic on top + English translation directly below in flowing single-line block. Footnote refs appear as bracketed numbers (`[1]`, `[2]`, …) coloured in accent hue, sequential per surah. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
+Each verse renders Arabic on top + English translation directly below in flowing single-line block. When a shipped translation pack contains inline `[N]` markers, they render as bracketed footnote buttons coloured in accent hue. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
 
-Toggle "Hide translation" (Settings or `t`) → translation block, all `[N]` markers, any open footnote panel disappear in one repaint via `settings.translationVisible` rune.
+Toggle "Hide translation" (Settings or `t`) → translation block, any `[N]` markers present in the active pack, and any open footnote panel disappear in one repaint via `settings.translationVisible` rune.
 
 **Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qaloon (Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/data/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/Qaloon ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
 

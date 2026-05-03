@@ -104,7 +104,7 @@ Dismissal: ✕ close button (inside preview), backdrop tap, Esc.
 
 Single shipped pack today (Saheeh International). Picker hidden — row shows toggle + subtitle only. When second pack lands, picker UI returns.
 
-Toggle translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on rune re-renders with translation hidden/shown. Footnote markers (`[N]`) and any open inline footnote panels disappear with translation. Sticky preview at top of Settings sheet drops translation line in lockstep.
+Toggle translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on rune re-renders with translation hidden/shown. Any footnote markers (`[N]`) present in the active pack and any open inline footnote panels disappear with translation. Sticky preview at top of Settings sheet drops translation line in lockstep.
 
 ### Theme swap
 

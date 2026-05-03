@@ -1,6 +1,6 @@
 # Feature map
 
-> AUTO-GENERATED index of surface dossiers. Each dossier owns its own surface inventory + behavior + invariants. Run `pnpm docs:derive` to regenerate.
+> AUTO-GENERATED index of surface dossiers. Each dossier owns its own surface inventory + behavior + invariants. Run `pnpm run docs` to regenerate.
 
 <!-- AUTO-GENERATED:dossier-index START -->
 | Surface | Dossier | Purpose |

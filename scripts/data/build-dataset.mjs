@@ -15,7 +15,7 @@
  *   public/dataset/manifest.json                      (sha256 per shipped file)
  *   public/dataset/provenance.json                    (corpus + Riwayah + translations + font metadata)
  *
- * Run via: pnpm build:dataset
+ * Run via: pnpm run data -- build
  *
  * Source files are produced by scripts/data/fetch-source.mjs and committed so this
  * build runs offline.
@@ -698,7 +698,7 @@ async function main() {
   // Qaloon equivalence table, mechanically derived from KFGQPC by
   // scripts/data/derive-verse-aliases.mjs).
   if (!existsSync(VERSE_ALIASES_PATH)) {
-    throw new Error(`Missing ${relative(REPO_ROOT, VERSE_ALIASES_PATH)} — run \`pnpm build:verse-aliases\``)
+    throw new Error(`Missing ${relative(REPO_ROOT, VERSE_ALIASES_PATH)} — run \`pnpm run data -- aliases\``)
   }
   const verseAliases = JSON.parse(await readFile(VERSE_ALIASES_PATH, 'utf8'))
   const vaResult = validateVerseAliases(verseAliases, surahsMeta)
@@ -716,7 +716,7 @@ async function main() {
   for (const t of SHIPPED_TRANSLATIONS) {
     const rawPath = join(NORMALIZED_TRANSLATIONS_DIR, t.normalizedFile)
     if (!existsSync(rawPath)) {
-      throw new Error(`Missing translation source: ${rawPath} (run \`pnpm fetch:source translation:${t.id}\`)`)
+      throw new Error(`Missing translation source: ${rawPath} (run \`pnpm run data:fetch -- translation:${t.id}\`)`)
     }
     const raw = JSON.parse(await readFile(rawPath, 'utf8'))
     if (raw.translationId !== t.id) {

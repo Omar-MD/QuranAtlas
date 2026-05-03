@@ -37,7 +37,7 @@ async function main() {
 
   let out = '';
   out += '# Events catalog\n\n';
-  out += '> AUTO-GENERATED from `src/core/constants.ts` (Events map) + `emit(Events.X)` / `on(Events.X)` call sites across `src/**`. Run `pnpm docs:derive` to regenerate. Manual edits below the next paragraph are preserved (write them outside the auto-generated table).\n\n';
+  out += '> AUTO-GENERATED from `src/core/constants.ts` (Events map) + `emit(Events.X)` / `on(Events.X)` call sites across `src/**`. Run `pnpm run docs` to regenerate. Manual edits below the next paragraph are preserved (write them outside the auto-generated table).\n\n';
   out += `Total events declared: **${events.size}**. Live emits: **${emits.size}**. Live listeners: **${listens.size}**.\n\n`;
   out += `Dead (declared but neither emitted nor listened): **${dead.length}**.\n`;
   out += `Orphan emit (emitted, never listened): **${orphanEmit.length}**.\n`;

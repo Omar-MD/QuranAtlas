@@ -350,9 +350,9 @@ Only files present in `manifest.json` contribute to baseline download size. Opti
 
 Key checks:
 
-- `pnpm run check:source-catalog`: validates source catalog integrity and policy
-- `pnpm run build:dataset`: rebuilds the baseline runtime dataset
-- `pnpm run build:dataset:full`: emits all approved local source bodies
+- `pnpm run data -- check`: validates source catalog integrity plus baseline text and knowledge builds
+- `pnpm run data -- build`: rebuilds the baseline runtime dataset
+- `pnpm run data -- build --profile=full`: emits all approved local source bodies
 - `node scripts/data/validate-translation-mapping.mjs --check=A|B|C`: translation-alignment and source-audit checks
 
 When changing fetch adapters, normalized source schema, build outputs, or runtime dataset loading, update this doc in the same change.

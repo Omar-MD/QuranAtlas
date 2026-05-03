@@ -30,7 +30,7 @@ async function main() {
 
   let out = '';
   out += '# Feature map\n\n';
-  out += '> AUTO-GENERATED index of surface dossiers. Each dossier owns its own surface inventory + behavior + invariants. Run `pnpm docs:derive` to regenerate.\n\n';
+  out += '> AUTO-GENERATED index of surface dossiers. Each dossier owns its own surface inventory + behavior + invariants. Run `pnpm run docs` to regenerate.\n\n';
   out += '<!-- AUTO-GENERATED:dossier-index START -->\n';
   out += '| Surface | Dossier | Purpose |\n';
   out += '| --- | --- | --- |\n';

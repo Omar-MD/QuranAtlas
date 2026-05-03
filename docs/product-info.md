@@ -17,7 +17,7 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 ### Reading experience
 
 - Continuous verse-interleaved layout. Arabic (Uthmani script, Amiri Quran by Khaled Hosny) on top of each verse with the English translation directly below.
-- **English translation: Saheeh International** (free for non-commercial distribution by the Saheeh International Foundation). All 6,236 verses plus 1,903 inline footnotes — tap a `[N]` marker in any verse to disclose the footnote text. Translation visibility toggles on/off and persists across sessions.
+- **English translation: Saheeh International** (free for non-commercial distribution by the Saheeh International Foundation). All 6,236 verses ship in the current committed pack. Translation visibility toggles on/off and persists across sessions.
 - **Riwayah picker.** Three transmissions ship: Ḥafṣ ʿan ʿĀṣim, Warsh ʿan Nāfiʿ, Qālūn ʿan Nāfiʿ. Default Qālūn. Choose at first launch (onboarding screen 3) or change anytime in Settings → Reading. All three Riwayat render in the same Amiri Quran face — the Riwayah text data drives the orthographic differences (small high seen `U+06EC` for Warsh/Qaloon, alif waslah, riwaya-specific marks).
 - Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — and flips live when the OS changes.
 - Adjustable font size (slider in Settings, live preview); keyboard bindings (`⌘↑` / `⌘↓` / `0`) for quick changes.
