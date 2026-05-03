@@ -7,8 +7,13 @@
 
   const entry = $derived(getActiveTafsirEntry())
   const sourceLabel = $derived(
-    tafsirState.available.find((item) => item.id === (tafsirState.pack?.tafsirId ?? tafsirState.selectedId))?.name
+    tafsirState.available.find((item) => item.id === tafsirState.selectedId)?.name
       ?? 'Tafsir'
+  )
+  const fallbackLabel = $derived(
+    tafsirState.available.find((item) => item.id === tafsirState.fallbackId)?.name
+      ?? tafsirState.fallbackId
+      ?? null
   )
 
   function close(): void {
@@ -59,7 +64,7 @@
       <div class="qa-tafsir-sheet-source">{sourceLabel}</div>
       <select
         class="qa-tafsir-preview-select"
-        value={tafsirState.pack?.tafsirId ?? tafsirState.selectedId}
+        value={tafsirState.selectedId}
         onchange={handleSourceChange}
         aria-label="Choose tafsir source"
       >
@@ -74,6 +79,9 @@
     {:else if tafsirState.unavailable || !entry}
       <div class="qa-tafsir-sheet-state">Tafsir unavailable for this verse.</div>
     {:else}
+      {#if fallbackLabel}
+        <div class="qa-tafsir-sheet-state">Showing {fallbackLabel} on this device.</div>
+      {/if}
       <div class="qa-tafsir-sheet-body" dir="rtl" lang="ar">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
         {@html entry.text}

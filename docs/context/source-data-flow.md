@@ -19,7 +19,7 @@ flowchart TD
     subgraph Upstream["Upstream authorities"]
         KFGQPC["KFGQPC riwayah corpora"]
         QDB["Quran DB translation JSON"]
-        QUL["QUL tafsir API/resources"]
+        QUL["QUL translation/tafsir API/resources"]
     end
 
     subgraph Catalog["Catalog and policy"]
@@ -197,7 +197,7 @@ Normalization in `scripts/data/fetch-source.mjs::normalizeQuranDbTranslation`:
 - validates that surah keys are numeric and ayah keys are contiguous from `1`
 - reads only the configured field from catalog fetch metadata
 - decodes HTML entities and collapses whitespace
-- strips upstream HTML tags after entity decode; `allowMissingText: true` is available only for explicitly catalogued source exceptions such as Bridges' empty Surah 79 rows
+- strips upstream HTML tags after entity decode; missing translation text is a hard failure
 - emits the QuranAtlas monolithic normalized shape:
   - `translationId`
   - `translationVersion`
@@ -209,6 +209,20 @@ Normalization in `scripts/data/fetch-source.mjs::normalizeQuranDbTranslation`:
 - initializes `intro: []` and `footnotes: {}`
 
 The normalized translation remains Hafs-keyed. It is not re-keyed per riwayah.
+
+### QUL translation source
+
+Bridges uses QUL resource 179 because the Quran DB Bridges file is incomplete. The catalog record stores both QUL ids: `resourceId` for the public resource page and `contentResourceId` for the `api/v1/translations/{id}/by_range.json` API.
+
+Normalization in `scripts/data/fetch-source.mjs::normalizeQulTranslationRows`:
+
+- fetches all 114 Hafs-keyed surah ranges from QUL's translation `by_range.json` endpoint
+- preserves authored translation text while stripping non-footnote HTML tags to plain text
+- converts QUL `<sup foot_note=ID>N</sup>` markers into QuranAtlas `[N]` markers local to each surah
+- resolves each upstream footnote id through QUL's `foot_notes/{id}` endpoint
+- emits the same normalized monolithic shape as Quran DB translation sources, with populated `footnotes` maps when the source has footnotes
+
+The normalized QUL translation remains Hafs-keyed. It is not re-keyed per riwayah.
 
 ### QUL tafsir source
 
@@ -253,7 +267,7 @@ Validation and generation are handled by `scripts/data/knowledge/build.mjs`, whi
 
 Profiles:
 
-- `baseline`: emits `qaloon`, `saheeh`, `muyassar`, plus metadata files
+- `baseline`: emits `qaloon`, `bridges`, `muyassar`, plus metadata files
 - `full`: emits every locally configured approved source body
 - `catalog`: emits metadata/index files without text bodies
 
@@ -262,7 +276,7 @@ Selected optional packs for this phase:
 - translations: `bridges`, `clear-quran`, `abdel-haleem`
 - tafsir: `mukhtasar`, `saadi`
 
-Only the defaults (`saheeh`, `muyassar`) are present in the baseline app bundle. The optional packs stay discoverable through `indexes/sources.json` and become downloadable bodies only in non-baseline profiles or future opt-in download flows.
+Only the defaults (`bridges`, `muyassar`) are present in the baseline app bundle. The optional packs stay discoverable through `indexes/sources.json` and become downloadable bodies only in non-baseline profiles or future opt-in download flows.
 
 Generated runtime files:
 
@@ -317,7 +331,7 @@ Validation performed during build:
 Fallback behavior is source-aware:
 
 - missing saved riwayah falls back to `qaloon`
-- missing saved translation falls back to `saheeh`
+- missing saved translation falls back to `bridges`
 - missing saved tafsir falls back to `muyassar`
 - missing knowledge files resolve to `null` / empty rows without breaking reader rendering
 

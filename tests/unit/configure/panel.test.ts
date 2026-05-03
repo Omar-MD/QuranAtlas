@@ -21,15 +21,19 @@
 import { render, fireEvent } from '@testing-library/svelte'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+let translationOptions = [
+  { id: 'bridges', name: 'Bridges', subtitle: 'Baseline' },
+]
+
 vi.mock('../../../src/data/dataset.js', () => ({
-  getTranslations: vi.fn(async () => []),
+  getTranslations: vi.fn(async () => translationOptions),
   getTafsirs: vi.fn(async () => [
     { id: 'muyassar', name: 'Tafsir Muyassar' },
     { id: 'mukhtasar', name: 'Al-Mukhtasar fi al-Tafsir' },
   ]),
 }))
 vi.mock('../../../src/data/dataset.ts', () => ({
-  getTranslations: vi.fn(async () => []),
+  getTranslations: vi.fn(async () => translationOptions),
   getTafsirs: vi.fn(async () => [
     { id: 'muyassar', name: 'Tafsir Muyassar' },
     { id: 'mukhtasar', name: 'Al-Mukhtasar fi al-Tafsir' },
@@ -66,6 +70,9 @@ async function mountAndOpen() {
 describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
   beforeEach(async () => {
     await openDB()
+    translationOptions = [
+      { id: 'bridges', name: 'Bridges', subtitle: 'Baseline' },
+    ]
     for (const k of FLOW_KEYS) {
       try { await del('settings', k) } catch { /* ignore */ }
     }
@@ -73,7 +80,7 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
       theme: 'auto',
       riwayah: 'qaloon',
       fontSize: 'md',
-      translationId: null,
+      translationId: 'bridges',
       tafsirId: 'muyassar',
       translationVisible: true,
       lineSpacing: 'md',
@@ -228,6 +235,36 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     await fireEvent.click(chev)
     await flush()
     expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
+  })
+
+  it('D2: choosing a translation updates the source row label and persists the selection', async () => {
+    translationOptions = [
+      { id: 'bridges', name: 'Bridges', subtitle: 'Baseline' },
+      { id: 'clear-quran', name: 'The Clear Quran', subtitle: 'Mustafa Khattab' },
+    ]
+    await mountAndOpen()
+
+    const row = document.querySelector('[data-testid="src-row-translation"]') as HTMLButtonElement
+    await vi.waitFor(() => {
+      expect(row.textContent).toContain('Bridges')
+    })
+
+    await fireEvent.click(row)
+    await vi.waitFor(() => {
+      const pop = document.querySelector('[data-testid="settings-pop"]')
+      expect(pop?.getAttribute('aria-label')).toBe('Choose Translation')
+    })
+
+    const clear = [...document.querySelectorAll('.qa-settings-pop-row')]
+      .find(el => el.textContent?.includes('The Clear Quran')) as HTMLButtonElement
+    await fireEvent.click(clear)
+
+    await vi.waitFor(async () => {
+      expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
+      expect(row.textContent).toContain('The Clear Quran')
+      const rec = await get('settings', 'translationId') as { value: string } | undefined
+      expect(rec?.value).toBe('clear-quran')
+    })
   })
 
   it('D2: toggle translation switch → IDB write + rune flip', async () => {

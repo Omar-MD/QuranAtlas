@@ -116,7 +116,7 @@ type DatasetManifestFile = {
 type ManifestJson = { files: DatasetManifestFile[] }
 
 const DEFAULT_RIWAYAH = 'qaloon'
-const DEFAULT_TRANSLATION = 'saheeh'
+const DEFAULT_TRANSLATION = 'bridges'
 const DEFAULT_TAFSIR = 'muyassar'
 
 /**

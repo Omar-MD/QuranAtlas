@@ -68,4 +68,15 @@ describe('source catalog validation', () => {
     }
     expect(validateSourceCatalog(catalog).errors).toContain('source qaloon fetch missing normalizedPath')
   })
+
+  it('requires QUL translation fetch metadata to identify resource and content ids', () => {
+    const catalog = baseCatalog()
+    catalog.sources[0].fetch = {
+      provider: 'qul-translation',
+      normalizedPath: 'data/normalized/translations/bridges.json',
+      resourceUrl: 'https://qul.tarteel.ai/resources/translation/179',
+      resourceId: 179,
+    }
+    expect(validateSourceCatalog(catalog).errors).toContain('source qaloon fetch missing contentResourceId')
+  })
 })

@@ -47,7 +47,7 @@ describe('settings/offline-categories — sole writer', () => {
       value: {
         text: {
           riwayat: { qaloon: true, warsh: 'bad' },
-          translations: { saheeh: true },
+          translations: { bridges: true },
           tafsir: { muyassar: true },
         },
         audio: {},
@@ -57,13 +57,13 @@ describe('settings/offline-categories — sole writer', () => {
     })
     const result = await loadOfflineCategories()
     expect(result.text.riwayat).toEqual({ qaloon: true })
-    expect(result.text.translations).toEqual({ saheeh: true })
+    expect(result.text.translations).toEqual({ bridges: true })
     expect(result.text.tafsir).toEqual({ muyassar: true })
   })
 
   it('setOfflineCategories writes through to IDB and updates rune', async () => {
     const next = {
-      text: { riwayat: { qaloon: true }, translations: { saheeh: true }, tafsir: { muyassar: true } },
+      text: { riwayat: { qaloon: true }, translations: { bridges: true }, tafsir: { muyassar: true } },
       audio: {},
       pages: {},
       search: false,

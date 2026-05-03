@@ -31,7 +31,6 @@ const sourceRiwayat = Object.fromEntries(
     JSON.parse(readFileSync(join(process.cwd(), 'data', 'normalized', 'quran', 'riwayat', `${riwayah}.json`), 'utf8')),
   ]),
 )
-
 function resolveHafsKeysForTest(riwayah, surahNo, ayahNo) {
   if (riwayah === 'hafs') { return [`${surahNo}:${ayahNo}`] }
   const surahAliases = verseAliases.aliases[String(surahNo)]

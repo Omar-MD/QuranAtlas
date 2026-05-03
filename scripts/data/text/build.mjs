@@ -66,11 +66,10 @@ const SHIPPED_TRANSLATIONS = [
     label: 'Bridges',
     translator: 'Fadel Soliman',
     language: 'en',
-    license: 'Quran DB upstream translation source',
-    licenseUrl: 'https://github.com/faisalill/quran_db',
-    source: 'Quran DB translation: Bridges',
-    sourceUrl: 'https://raw.githubusercontent.com/faisalill/quran_db/main/bridges.json',
-    allowMissingText: true,
+    license: 'QUL downloadable resource',
+    licenseUrl: 'https://qul.tarteel.ai/resources/translation/179',
+    source: 'QUL translation resource 179',
+    sourceUrl: 'https://qul.tarteel.ai/resources/translation/179',
   },
   {
     id: 'clear-quran',
@@ -132,7 +131,7 @@ const SHIPPED_TAFSIR = [
 export const AYAT_COUNTS = { hafs: 6236, warsh: 6214, qaloon: 6214 }
 export const RIWAYAT = ['hafs', 'warsh', 'qaloon']
 export const DEFAULT_RIWAYAH = 'qaloon'
-export const DEFAULT_TRANSLATION = 'saheeh'
+export const DEFAULT_TRANSLATION = 'bridges'
 export const DEFAULT_TAFSIR = 'muyassar'
 
 const DATASET_PROFILES = {

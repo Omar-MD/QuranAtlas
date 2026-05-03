@@ -2,6 +2,7 @@
 
 export * from './sources/fetch.mjs'
 export { normalizeQuranDbTranslation } from './sources/providers/quran-db-translation.mjs'
+export { normalizeQulTranslationRows } from './sources/providers/qul-translation.mjs'
 export { normalizeQulTafsirEntries } from './sources/providers/qul-tafsir.mjs'
 
 import { fileURLToPath } from 'node:url'

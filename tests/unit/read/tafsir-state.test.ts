@@ -76,6 +76,18 @@ describe('read/tafsir-state.svelte.ts', () => {
 
     expect(savedTafsirId).toBe('mukhtasar')
     expect(state.tafsirState.pack?.tafsirId).toBe('muyassar')
-    expect(state.tafsirState.selectedId).toBe('muyassar')
+    expect(state.tafsirState.selectedId).toBe('mukhtasar')
+    expect(state.tafsirState.fallbackId).toBe('muyassar')
+  })
+
+  it('syncs the active preview source from settings without clobbering the selected id on fallback', async () => {
+    const state = await import('../../../src/read/tafsir-state.svelte.ts')
+
+    await state.openTafsirPreview('2:255')
+    await state.syncTafsirSourceFromSettings('mukhtasar')
+
+    expect(state.tafsirState.selectedId).toBe('mukhtasar')
+    expect(state.tafsirState.pack?.tafsirId).toBe('muyassar')
+    expect(state.tafsirState.fallbackId).toBe('muyassar')
   })
 })

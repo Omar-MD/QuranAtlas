@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { normalizeQulTafsirEntries, normalizeQuranDbTranslation } from '../../../scripts/data/fetch-source.mjs'
+import { normalizeQulTafsirEntries, normalizeQulTranslationRows, normalizeQuranDbTranslation } from '../../../scripts/data/fetch-source.mjs'
 
 describe('Quran DB Saheeh normalization', () => {
   it('converts Quran DB surah JSON into the committed translation source schema', () => {
@@ -92,5 +92,63 @@ describe('QUL tafsir normalization', () => {
         text: 'single ayah',
       },
     ])
+  })
+})
+
+describe('QUL translation normalization', () => {
+  it('normalizes QUL footnote-tag translations into per-surah text and footnotes', () => {
+    const normalized = normalizeQulTranslationRows([
+      {
+        verse_key: '79:1',
+        text: 'By those who snatch violently<sup foot_note=356291>1</sup> .',
+      },
+      {
+        verse_key: '79:2',
+        text: 'and those who draw out gently.',
+      },
+      {
+        verse_key: '79:3',
+        text: 'and those who glide swiftly<sup foot_note="356292">2</sup>.',
+      },
+    ], {
+      id: 'bridges',
+      translationVersion: 'qul-resource-test',
+      language: 'en',
+      label: 'Bridges',
+      author: 'Fadel Soliman',
+      sourceUrl: 'https://qul.tarteel.ai/resources/translation/179',
+      resourceId: 179,
+      contentResourceId: 149,
+      footnotesById: {
+        '356291': 'Al-Alousi and other exegetes mentioned that these are angels.',
+        '356292': 'Another authored Bridges footnote.',
+      },
+    })
+
+    expect(normalized).toMatchObject({
+      translationId: 'bridges',
+      translationVersion: 'qul-resource-test',
+      source: {
+        provider: 'Quranic Universal Library',
+        name: 'Bridges',
+        author: 'Fadel Soliman',
+        resourceId: 179,
+        contentResourceId: 149,
+      },
+      counts: {
+        surahs: 1,
+        verses: 3,
+        footnotes: 2,
+      },
+    })
+    expect(normalized.surahs['079'].verses).toEqual([
+      { key: '79:1', text: 'By those who snatch violently[1].' },
+      { key: '79:2', text: 'and those who draw out gently.' },
+      { key: '79:3', text: 'and those who glide swiftly[2].' },
+    ])
+    expect(normalized.surahs['079'].footnotes).toEqual({
+      '1': 'Al-Alousi and other exegetes mentioned that these are angels.',
+      '2': 'Another authored Bridges footnote.',
+    })
   })
 })

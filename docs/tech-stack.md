@@ -74,12 +74,12 @@ Defined in `package.json`:
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
 | `pnpm run build` | Build production bundle into `dist/` (`pnpm run data -- build && vite build`) |
-| `pnpm run data -- build` | Grouped baseline data build: `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, and `scripts/data/manifest/inventory.mjs` to emit Qaloon riwayah, Saheeh translation, Muyassar tafsir, source index, metadata, manifest, provenance, and Phase 01 knowledge shards. Runs offline against committed normalized source files. |
+| `pnpm run data -- build` | Grouped baseline data build: `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, and `scripts/data/manifest/inventory.mjs` to emit Qaloon riwayah, Bridges translation, Muyassar tafsir, source index, metadata, manifest, provenance, and Phase 01 knowledge shards. Runs offline against committed normalized source files. |
 | `pnpm run data -- build --profile=full` | Full local data build: emits every locally configured approved source plus Phase 01 knowledge shards. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
 | `pnpm run data -- build --profile=catalog` | Catalog/profile build without text bodies. |
 | `pnpm run data -- check` | Grouped data check: validates source catalog plus baseline text and knowledge builds. |
 | `pnpm run data -- aliases` | Rebuild `_verse-aliases.json` from riwayah sources. |
-| `pnpm run data:fetch -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh` and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` through provider adapters in `scripts/data/sources/providers/`. |
+| `pnpm run data:fetch -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh`, QUL translations such as `translation:bridges`, and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` through provider adapters in `scripts/data/sources/providers/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm run test` | Run Vitest once (CI-style) |
 | `pnpm run test:e2e` | Run the full Playwright suite (all journey specs A–I + performance + SW integration) |

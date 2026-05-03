@@ -186,7 +186,7 @@ test.describe('Journey H: Offline resilience', () => {
     expect(persisted).toBeTruthy()
     expect(persisted.text).toBeDefined()
     expect(persisted.text.riwayat.qaloon).toBe(true)
-    expect(persisted.text.translations.saheeh).toBe(true)
+    expect(persisted.text.translations.bridges).toBe(true)
     expect(persisted.text.tafsir.muyassar).toBe(true)
   })
 })

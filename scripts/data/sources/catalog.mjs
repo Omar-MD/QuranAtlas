@@ -91,6 +91,17 @@ export function validateSourceCatalog(catalog) {
             errors.push(`source ${source.id} fetch missing field`)
           }
         }
+        if (source.fetch.provider === 'qul-translation') {
+          if (!Number.isInteger(source.fetch.resourceId)) {
+            errors.push(`source ${source.id} fetch missing resourceId`)
+          }
+          if (!Number.isInteger(source.fetch.contentResourceId)) {
+            errors.push(`source ${source.id} fetch missing contentResourceId`)
+          }
+          if (typeof source.fetch.resourceUrl !== 'string' || !source.fetch.resourceUrl) {
+            errors.push(`source ${source.id} fetch missing resourceUrl`)
+          }
+        }
         if (source.fetch.provider === 'qul-tafsir') {
           if (!Number.isInteger(source.fetch.resourceId)) {
             errors.push(`source ${source.id} fetch missing resourceId`)

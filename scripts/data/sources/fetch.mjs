@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { writeJson, readJson } from '../lib/json.mjs'
 import { loadSourceCatalog, validateSourceCatalog } from './catalog.mjs'
 import { normalizeQuranDbTranslation } from './providers/quran-db-translation.mjs'
+import { fetchQulTranslationSource, normalizeQulTranslationRows } from './providers/qul-translation.mjs'
 import { fetchQulTafsirSource, normalizeQulTafsirEntries } from './providers/qul-tafsir.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -25,6 +26,7 @@ async function fetchJson(url) {
 async function fetchSourcePayload(source, inputPath) {
   if (inputPath) return readJson(inputPath)
   if (source.fetch.provider === 'quran-db-translation') return fetchJson(source.fetch.url)
+  if (source.fetch.provider === 'qul-translation') return fetchQulTranslationSource(source.fetch)
   if (source.fetch.provider === 'qul-tafsir') return fetchQulTafsirSource(source.fetch)
   throw new Error(`Unsupported fetch provider: ${source.fetch.provider}`)
 }
@@ -40,6 +42,21 @@ function normalizeSourcePayload(source, payload) {
       translationVersion: source.fetch.version,
       sourceUrl: source.fetch.url,
       allowMissingText: source.fetch.allowMissingText === true,
+    })
+  }
+  if (source.fetch.provider === 'qul-translation') {
+    const rows = Array.isArray(payload) ? payload : payload.rows
+    const footnotesById = Array.isArray(payload) ? {} : payload.footnotesById
+    return normalizeQulTranslationRows(rows, {
+      id: source.id,
+      label: source.label,
+      author: source.fetch.author,
+      language: source.language,
+      translationVersion: source.fetch.version,
+      sourceUrl: source.fetch.resourceUrl,
+      resourceId: source.fetch.resourceId,
+      contentResourceId: source.fetch.contentResourceId,
+      footnotesById,
     })
   }
   if (source.fetch.provider === 'qul-tafsir') {

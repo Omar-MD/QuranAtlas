@@ -13,7 +13,7 @@ Orphan listen (listened, never emitted): **0**.
 <!-- AUTO-GENERATED:catalog START -->
 | Constant | Event name | Emit sites | Listen sites |
 | --- | --- | --- | --- |
-| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/read/AmbientDock.svelte:64`<br>`src/read/AmbientPill.svelte:90`<br>`src/read/EdgeIndicator.svelte:42`<br>`src/read/MarginHeader.svelte:41`<br>`src/read/Reader.svelte:617`<br>`src/read/edge-indicators.ts:62` | `src/read/AmbientPill.svelte:76`<br>`src/read/MarginHeader.svelte:175` |
+| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/read/AmbientDock.svelte:64`<br>`src/read/AmbientPill.svelte:90`<br>`src/read/EdgeIndicator.svelte:42`<br>`src/read/MarginHeader.svelte:41`<br>`src/read/Reader.svelte:671`<br>`src/read/edge-indicators.ts:62` | `src/read/AmbientPill.svelte:76`<br>`src/read/MarginHeader.svelte:175` |
 | `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:331`<br>`src/app-bootstrap.ts:425` | `src/core/save-failure-toast.svelte:41` |
 | `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:486` | _(none)_ |
 | `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:404`<br>`src/app-bootstrap.ts:415` | `src/core/UpdateBanner.svelte:19` |
@@ -59,7 +59,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:44` |
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/configure/clear-data.ts:170` | _(none)_ |
 | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/configure/state-recent-surahs.svelte.ts:26` | `src/navigate/NavDrawer.svelte:244`<br>`src/navigate/surahs/SurahList.svelte:141` |
-| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/configure/riwayah.ts:58`<br>`src/configure/riwayah.ts:74` | `src/app-bootstrap.ts:172`<br>`src/configure/reading-typography.ts:133`<br>`src/navigate/bookmarks/BookmarksList.svelte:227`<br>`src/navigate/bookmarks/BookmarksPage.svelte:36`<br>`src/navigate/bookmarks/indicator.ts:102`<br>`src/navigate/surahs/SurahList.svelte:140`<br>`src/read/Reader.svelte:395` |
+| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/configure/riwayah.ts:58`<br>`src/configure/riwayah.ts:74` | `src/app-bootstrap.ts:172`<br>`src/configure/reading-typography.ts:133`<br>`src/navigate/bookmarks/BookmarksList.svelte:227`<br>`src/navigate/bookmarks/BookmarksPage.svelte:36`<br>`src/navigate/bookmarks/indicator.ts:102`<br>`src/navigate/surahs/SurahList.svelte:140`<br>`src/read/Reader.svelte:504` |
 | `Events.SHEET_CLOSED` | `sheet:closed` | `src/configure/Panel.svelte:152`<br>`src/navigate/shortcuts-sheet.js:162` | _(none)_ |
 | `Events.SHEET_OPENED` | `sheet:opened` | `src/configure/Panel.svelte:135`<br>`src/navigate/shortcuts-sheet.js:153` | _(none)_ |
 | `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:113` | `src/core/quota-banner.svelte:18` |

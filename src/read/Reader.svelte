@@ -34,6 +34,7 @@
     type PullState,
   } from './surah-swap'
   import PullToSwapIndicator from './PullToSwapIndicator.svelte'
+  import { syncTafsirSourceFromSettings } from './tafsir-state.svelte'
 
   // ---------------------------------------------------------------------------
   // Props — route params + hooks injected from app-bootstrap.ts
@@ -75,11 +76,13 @@
   let translationPack = $state<TranslationPayload | null>(null)
   let translationByVerse = $state<Record<string, string>>({})
   let translationRoleByVerse = $state<Record<string, { role: TranslationRole, primaryAyah?: number }>>({})
+  let verseAliases = $state<VerseAliases | null>(null)
   let ayahKnowledgeByKey = $state<Record<string, AyahKnowledgeEntry>>({})
   let passagesById = $state<Record<string, KnowledgePassage>>({})
   let allSurahs = $state<SurahMeta[]>([])
   // translationVisible is also initialised from IDB in loadSurah() so we can't use $derived
   let translationVisible = $state(settings.translationVisible ?? true)
+  let activeTranslationId = $state(settings.translationId ?? 'bridges')
   let isLoading = $state(true)
   let loadError = $state(false)
   let invalidVerseError = $state<string | null>(null)
@@ -90,6 +93,7 @@
   let chunkObserver: IntersectionObserver | null = null
   let chunkObserverFrame: number | null = null
   let anchorTimer: ReturnType<typeof setTimeout> | null = null
+  let translationRefreshToken = 0
   let cleanups: Array<() => void> = []
   let knowledgeLoadId = 0
 
@@ -113,6 +117,29 @@
     if (settings.translationVisible !== null) {
       translationVisible = settings.translationVisible
     }
+  })
+
+  $effect(() => {
+    const nextVisible = settings.translationVisible
+    if (nextVisible === null || !surahData || isLoading || translationVisible === nextVisible) {
+      return
+    }
+    translationVisible = nextVisible
+    refreshMountedVerses()
+  })
+
+  $effect(() => {
+    const nextTranslationId = settings.translationId ?? 'bridges'
+    if (!surahData || isLoading || nextTranslationId === activeTranslationId) {
+      return
+    }
+    const token = ++translationRefreshToken
+    void syncTranslationSelection(nextTranslationId, token)
+  })
+
+  $effect(() => {
+    const nextTafsirId = settings.tafsirId ?? 'muyassar'
+    void syncTafsirSourceFromSettings(nextTafsirId)
   })
 
   // Typography-change re-anchor: when the user drags a flow-step / font-size
@@ -158,6 +185,100 @@
   function resetKnowledgeState() {
     ayahKnowledgeByKey = {}
     passagesById = {}
+  }
+
+  function getRestoreVerse(): number | null {
+    const key = reader.currentVerseKey
+    if (!key || !key.startsWith(`${surahNum}:`)) {
+      return null
+    }
+    const value = parseInt(key.split(':')[1] ?? '1', 10)
+    return Number.isFinite(value) ? value : null
+  }
+
+  function currentRiwayah(): 'hafs' | 'warsh' | 'qaloon' {
+    return (settings.riwayah ?? 'qaloon') as 'hafs' | 'warsh' | 'qaloon'
+  }
+
+  function currentFootnotes(): Record<string, string> {
+    return translationPack?.footnotes ?? {}
+  }
+
+  function buildTranslationState(
+    data: SurahPayload,
+    resolvedPack: TranslationPayload | null,
+    aliases: VerseAliases | null,
+    translationId: string,
+  ): {
+    map: Record<string, string>
+    roleMap: Record<string, { role: TranslationRole, primaryAyah?: number }>
+  } {
+    const hafsMap: Record<string, string> = {}
+    if (resolvedPack) {
+      for (const v of resolvedPack.verses) { hafsMap[v.key] = v.text }
+    }
+    const map: Record<string, string> = {}
+    const roleMap: Record<string, { role: TranslationRole, primaryAyah?: number }> = {}
+    if (resolvedPack && data.ayat?.length) {
+      const missing: string[] = []
+      for (const ayah of data.ayat) {
+        const riwayahKey = `${data.sura_no}:${ayah.aya_no}`
+        const resolution = resolveTranslationFor(aliases, data.riwayah, data.sura_no, ayah.aya_no)
+        roleMap[riwayahKey] = { role: resolution.role, primaryAyah: resolution.primaryAyah }
+        if (resolution.role === 'continuation') {
+          map[riwayahKey] = ''
+        } else if (resolution.role === 'none') {
+          map[riwayahKey] = ''
+          missing.push(riwayahKey)
+        } else {
+          const parts = resolution.hafsKeys.map((k) => hafsMap[k] ?? '').filter(Boolean)
+          if (parts.length === 0) {
+            missing.push(riwayahKey)
+            map[riwayahKey] = ''
+          } else {
+            map[riwayahKey] = parts.join(' ')
+          }
+        }
+      }
+      if (missing.length > 0) {
+        logger.warn(
+          `[translation-miss] riwayah=${data.riwayah} translation=${translationId} `
+          + `surah=${data.sura_no} missing=${missing.length} keys=${missing.slice(0, 5).join(',')}`
+          + (missing.length > 5 ? `…+${missing.length - 5}` : ''),
+        )
+      }
+    }
+    return { map, roleMap }
+  }
+
+  function refreshMountedVerses(opts: { applyBottomSwapAnchor?: boolean } = {}) {
+    if (!surahData) {
+      return
+    }
+    mountVirtualisedVerses(surahData, {
+      footnotes: currentFootnotes(),
+      translationVisible,
+      riwayah: currentRiwayah(),
+      restoreVerse: opts.applyBottomSwapAnchor ? null : getRestoreVerse(),
+      applyBottomSwapAnchor: opts.applyBottomSwapAnchor === true,
+    })
+  }
+
+  async function syncTranslationSelection(nextTranslationId: string, token: number): Promise<void> {
+    const pack = await loadTranslationForSurah(nextTranslationId, surahNum).catch(() => null)
+    if (
+      token !== translationRefreshToken
+      || !surahData
+      || reader.currentSurahNum !== surahNum
+    ) {
+      return
+    }
+    translationPack = pack
+    activeTranslationId = nextTranslationId
+    const nextState = buildTranslationState(surahData, pack, verseAliases, nextTranslationId)
+    translationByVerse = nextState.map
+    translationRoleByVerse = nextState.roleMap
+    refreshMountedVerses()
   }
 
   function getVerseThemes(key: string): string[] {
@@ -302,9 +423,6 @@
   async function loadKnowledgeSidecars(
     knowledgeRequest: number,
     requestedSurah: number,
-    footnotes: Record<string, string>,
-    localTranslationVisible: boolean,
-    localRiwayah: 'hafs' | 'warsh' | 'qaloon',
   ) {
     const [ayahResult, passageResult] = await Promise.allSettled([
       loadAyahKnowledgeForSurah(requestedSurah),
@@ -347,16 +465,7 @@
       return
     }
 
-    const restoreVerse = reader.currentVerseKey?.startsWith(`${requestedSurah}:`)
-      ? parseInt(reader.currentVerseKey.split(':')[1] ?? '1', 10)
-      : null
-
-    mountVirtualisedVerses(surahData, {
-      footnotes,
-      translationVisible: localTranslationVisible,
-      riwayah: localRiwayah,
-      restoreVerse: Number.isFinite(restoreVerse) ? restoreVerse : null,
-    })
+    refreshMountedVerses()
   }
 
   // ---------------------------------------------------------------------------
@@ -444,7 +553,7 @@
     try {
       performance.mark('reader:fetch-start')
 
-      const [data, surahs, transVisible, transId, pack, verseAliases] = await Promise.all([
+      const [data, surahs, transVisible, transId, pack, resolvedVerseAliases] = await Promise.all([
         getSurah(surahNum),
         getSurahs(),
         get('settings', 'translationVisible').then((r) => {
@@ -453,11 +562,11 @@
         }),
         get('settings', 'translationId').then((r) => {
           const v = r?.value
-          return typeof v === 'string' && v ? v : (settings.translationId ?? 'saheeh')
+          return typeof v === 'string' && v ? v : (settings.translationId ?? 'bridges')
         }),
         // Optimistically fetch the default pack while we resolve the user's
         // saved id; if the saved id differs, a second fetch follows below.
-        loadTranslationForSurah(settings.translationId ?? 'saheeh', surahNum).catch(() => null),
+        loadTranslationForSurah(settings.translationId ?? 'bridges', surahNum).catch(() => null),
         // Cross-riwayah verse-equivalence aliases. Hafs viewer always
         // resolves identity (translations are Hafs-keyed) and never reads
         // the table, so skip the ~170 KB fetch in that path. Lazy-loaded
@@ -484,66 +593,19 @@
 
       // Resolve translation pack — re-fetch if the user's saved id differs
       // from the optimistic fetch's id.
-      const optimisticId = settings.translationId ?? 'saheeh'
+      const optimisticId = settings.translationId ?? 'bridges'
       let resolvedPack = pack
       if (transId !== optimisticId) {
         resolvedPack = await loadTranslationForSurah(transId, surahNum).catch(() => null)
       }
       settings.translationId = transId
       translationPack = resolvedPack
+      activeTranslationId = transId
+      verseAliases = resolvedVerseAliases
 
-      // Build the per-verse translation map keyed by the active riwayah's
-      // (surah, ayah) tuples. Translations ship Hafs-keyed (Kufan numbering);
-      // for Warsh / Qaloon (Madinan numbering) we resolve each riwayah ayah
-      // to the corresponding Hafs ayah(s) via `_verse-aliases.json`. KFGQPC's
-      // Madinah Mushaf is the authoritative scholarly source — splits are
-      // encoded in the dataset itself, derived mechanically by
-      // `scripts/data/derive-verse-aliases.mjs`.
-      //
-      // Role per Madinan ayah:
-      //   - identity: 1:1 alias (or surah without aliases) — show translation as-is
-      //   - merged:   multiple Hafs ayat → this Madinan ayah; concat their texts
-      //   - primary:  this Madinan ayah is the FIRST half of a Hafs split — show full translation
-      //   - continuation: subsequent half — show "↑ continued" marker, no translation
-      //   - none:    no Hafs equivalent (e.g. Warsh / Qaloon's surah-1 first ayah)
-      const hafsMap: Record<string, string> = {}
-      if (resolvedPack) {
-        for (const v of resolvedPack.verses) { hafsMap[v.key] = v.text }
-      }
-      const map: Record<string, string> = {}
-      const roleMap: Record<string, { role: TranslationRole, primaryAyah?: number }> = {}
-      if (resolvedPack && data?.ayat?.length) {
-        const missing: string[] = []
-        for (const ayah of data.ayat) {
-          const riwayahKey = `${data.sura_no}:${ayah.aya_no}`
-          const resolution = resolveTranslationFor(verseAliases, data.riwayah, data.sura_no, ayah.aya_no)
-          roleMap[riwayahKey] = { role: resolution.role, primaryAyah: resolution.primaryAyah }
-          if (resolution.role === 'continuation') {
-            // Translation lives on the primary ayah; this one shows the marker.
-            map[riwayahKey] = ''
-          } else if (resolution.role === 'none') {
-            map[riwayahKey] = ''
-            missing.push(riwayahKey)
-          } else {
-            const parts = resolution.hafsKeys.map((k) => hafsMap[k] ?? '').filter(Boolean)
-            if (parts.length === 0) {
-              missing.push(riwayahKey)
-              map[riwayahKey] = ''
-            } else {
-              map[riwayahKey] = parts.join(' ')
-            }
-          }
-        }
-        if (missing.length > 0) {
-          logger.warn(
-            `[translation-miss] riwayah=${data.riwayah} translation=${transId} `
-            + `surah=${data.sura_no} missing=${missing.length} keys=${missing.slice(0, 5).join(',')}`
-            + (missing.length > 5 ? `…+${missing.length - 5}` : ''),
-          )
-        }
-      }
-      translationByVerse = map
-      translationRoleByVerse = roleMap
+      const nextTranslationState = buildTranslationState(data, resolvedPack, resolvedVerseAliases, transId)
+      translationByVerse = nextTranslationState.map
+      translationRoleByVerse = nextTranslationState.roleMap
 
       // Reset scroll to top of the app-shell scroller. Browsers preserve
       // scrollTop across hash-route changes; without this, remounting the
@@ -562,15 +624,7 @@
       requestAnimationFrame(() => {
         if (!container || !virtualiserContainer || !surahData) { return }
 
-        const footnotes = translationPack?.footnotes ?? {}
-        const localTranslationVisible = translationVisible
-        const localRiwayah = (settings.riwayah ?? 'qaloon') as 'hafs' | 'warsh' | 'qaloon'
-        mountVirtualisedVerses(surahData, {
-          footnotes,
-          translationVisible: localTranslationVisible,
-          riwayah: localRiwayah,
-          applyBottomSwapAnchor: swapAnchor === 'bottom',
-        })
+        refreshMountedVerses({ applyBottomSwapAnchor: swapAnchor === 'bottom' })
 
         const posCleanups = initPositionTracking({
           mainContent: container,
@@ -625,9 +679,6 @@
         void loadKnowledgeSidecars(
           knowledgeRequest,
           surahNum,
-          footnotes,
-          localTranslationVisible,
-          localRiwayah,
         )
       })
     } catch {

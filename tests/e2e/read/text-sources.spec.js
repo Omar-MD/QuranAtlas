@@ -103,13 +103,15 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   })
 
   // -------------------------------------------------------------------------
-  // B-Translation: shipped translation pack renders; footnotes are optional
+  // B-Translation: shipped translation pack renders; Bridges footnotes disclose
   // -------------------------------------------------------------------------
-  // Real layout / paint criterion (Rule 9 §1): the translation content mounts
-  // inside the live reader DOM tree; if the shipped pack contains footnote
-  // markers, the disclosure stack must still work end-to-end.
+  // Real layout / paint criterion (Rule 9 §1): the translation content and
+  // footnote disclosure mount inside the live reader DOM tree.
 
-  test('B-Translation: shipped translation renders; footnote disclosure works when markers are present', async ({ page }) => {
+  test('B-Translation: shipped Bridges translation renders and footnote disclosure works', async ({ page }) => {
+    await page.goto('/#/s/79/1')
+    await waitForReader(page)
+
     const v1 = page.locator('.qa-verse[data-verse="1"]')
     await expect(v1).toBeVisible()
 
@@ -117,16 +119,20 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await v1.locator('.qa-verse-body-summary').click()
 
     const translation = v1.locator('.qa-verse-translation')
+    if (await translation.count() === 0) {
+      await openSettingsSheet(page)
+      const toggle = page.getByRole('switch', { name: 'Show translation' })
+      await expect(toggle).toHaveAttribute('aria-checked', 'false')
+      await toggle.click()
+      await page.keyboard.press('Escape')
+    }
     await expect(translation).toBeVisible()
     const translationText = (await translation.textContent()) ?? ''
     expect(translationText.trim().length).toBeGreaterThan(10)
+    expect(translationText).toContain('By those who snatch violently')
 
     const markers = v1.locator('button.qa-fn-marker')
-    const markerCount = await markers.count()
-    if (markerCount === 0) {
-      await expect(v1.locator('.qa-fn-popover')).toHaveCount(0)
-      return
-    }
+    await expect(markers.first()).toBeVisible()
 
     const firstMarker = markers.first()
     await expect(firstMarker).toHaveAttribute('aria-expanded', 'false')
@@ -136,7 +142,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     const panel = v1.locator('.qa-fn-popover')
     await expect(panel).toBeVisible()
     const panelText = (await panel.textContent()) ?? ''
-    expect(panelText.length).toBeGreaterThan(5)
+    expect(panelText).toContain('angels snatching the souls')
 
     await panel.locator('.qa-fn-popover-close').click()
     await expect(panel).toHaveCount(0)
@@ -158,8 +164,10 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     const preview = v1.locator('[data-tafsir-preview]')
     await expect(preview).toBeVisible({ timeout: 5_000 })
     await expect(preview.locator('.qa-tafsir-preview-select')).toBeVisible()
+    await expect(preview.getByRole('button', { name: 'Close tafsir preview' })).toBeVisible()
+    await expect(preview.getByRole('button', { name: 'Expand tafsir' })).toBeVisible()
 
-    await preview.locator('.qa-tafsir-preview-expand').click()
+    await preview.getByRole('button', { name: 'Expand tafsir' }).click()
 
     const sheet = page.locator('.qa-tafsir-sheet')
     await expect(sheet).toBeVisible({ timeout: 5_000 })
@@ -169,7 +177,70 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect(sheet).toHaveCount(0)
   })
 
+  test('B-SettingsSync: Settings updates the mounted reader translation visibility and active tafsir source selection', async ({ page }) => {
+    const v1 = page.locator('.qa-verse[data-verse="1"]')
+    await expect(v1).toBeVisible()
+    await v1.locator('.qa-verse-body-summary').click()
+
+    const translation = v1.locator('.qa-verse-translation')
+    await expect(translation).toBeVisible()
+
+    await v1.locator('.qa-verse-body-summary').dblclick()
+    const preview = v1.locator('[data-tafsir-preview]')
+    await expect(preview).toBeVisible({ timeout: 5_000 })
+    await expect(preview.locator('.qa-tafsir-preview-select')).toHaveValue('muyassar')
+
+    await openSettingsSheet(page)
+    await page.getByRole('switch', { name: 'Show translation' }).click()
+
+    const tafsirRow = page.getByTestId('src-row-tafsir')
+    await tafsirRow.click()
+    await page.locator('.qa-settings-pop-row').filter({ hasText: 'Al-Mukhtasar fi al-Tafsir' }).click()
+    await expect(tafsirRow).toContainText('Al-Mukhtasar fi al-Tafsir')
+
+    await page.keyboard.press('Escape')
+
+    await expect(async () => {
+      await expect(translation).toHaveCount(0)
+    }).toPass({ timeout: 5_000 })
+
+    await expect(preview.locator('.qa-tafsir-preview-select')).toHaveValue('mukhtasar')
+  })
+
   // -------------------------------------------------------------------------
   // N20 — virtualisation regression guards
   // -------------------------------------------------------------------------
+})
+
+test.describe('Journey B: Reader tafsir sheet mobile @mobile', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+  })
+
+  test('B-TafsirMobile: expanded tafsir opens as a full-screen mobile sheet', async ({ page }) => {
+    const v1 = page.locator('.qa-verse[data-verse="1"]')
+    await expect(v1).toBeVisible()
+
+    await v1.locator('.qa-verse-body-summary').dblclick()
+    const preview = v1.locator('[data-tafsir-preview]')
+    await expect(preview).toBeVisible({ timeout: 5_000 })
+
+    await preview.getByRole('button', { name: 'Expand tafsir' }).click()
+
+    const sheet = page.locator('.qa-tafsir-sheet')
+    await expect(sheet).toBeVisible({ timeout: 5_000 })
+
+    const rect = await sheet.evaluate((el) => {
+      const { top, left, right, bottom } = el.getBoundingClientRect()
+      return { top, left, right, bottom }
+    })
+
+    expect(rect.top).toBe(0)
+    expect(rect.left).toBe(0)
+    expect(rect.right).toBe(390)
+    expect(rect.bottom).toBe(844)
+  })
 })

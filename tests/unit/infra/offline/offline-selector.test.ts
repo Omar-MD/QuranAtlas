@@ -34,7 +34,7 @@ vi.mock('../../../../src/data/offline.ts', () => ({
       return {
         urls: [
           '/dataset/riwayat/qaloon/001.json',
-          '/dataset/translations/saheeh/001.json',
+          '/dataset/translations/bridges/001.json',
           '/dataset/tafsir/muyassar/001.json',
           '/dataset/knowledge/ayah/001.json',
         ],
@@ -111,7 +111,7 @@ describe('offline-selector.svelte', () => {
     expect(setOfflineCategoriesMock).toHaveBeenCalledTimes(1)
     expect(setOfflineCategoriesMock.mock.calls[0][0].text).toEqual({
       riwayat: { qaloon: true },
-      translations: { saheeh: true },
+      translations: { bridges: true },
       tafsir: { muyassar: true },
     })
     expect(startCategoryDownloadMock).toHaveBeenCalledWith('text')

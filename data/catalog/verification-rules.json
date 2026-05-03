@@ -3,7 +3,7 @@
   "visibility": ["baseline", "optional", "internal"],
   "defaults": {
     "riwayah": "qaloon",
-    "translation": "saheeh",
+    "translation": "bridges",
     "tafsir": "muyassar"
   }
 }

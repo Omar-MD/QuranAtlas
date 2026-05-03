@@ -6,7 +6,7 @@ and data shapes live in `surfaces/<name>.md`.
 ## Read
 
 - Multi-riwayah corpus (Hafs / Warsh / Qaloon, KFGQPC Uthmanic) — `src/data/dataset.ts`.
-- Translation overlay — Saheeh International default; inline footnote panels render when a shipped pack includes `[N]` markers (`src/read/translation-tokens.ts`).
+- Translation overlay — Bridges default; inline footnote panels render when a shipped pack includes `[N]` markers (`src/read/translation-tokens.ts`).
 - Translation-riwayah alignment via per-ayah Hafs↔Warsh↔Qaloon equivalence table (`public/dataset/translations/_verse-aliases.json`).
 - Typography — 5-step font-size + 5-step reading-flow sliders, reset-to-default pill.
 - Surah header + bismillah — collapsible per-user preference.

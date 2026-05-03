@@ -37,7 +37,7 @@ export const settings = $state({
   theme: 'auto' as Theme,
   riwayah: 'qaloon' as Riwayah,
   fontSize: 'md' as FontSize,
-  translationId: 'saheeh' as TranslationId,
+  translationId: 'bridges' as TranslationId,
   tafsirId: 'muyassar' as TafsirId,
   translationVisible: true,
   lineSpacing: 'md' as ReadingStep,

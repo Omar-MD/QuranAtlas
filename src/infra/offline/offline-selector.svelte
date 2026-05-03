@@ -32,7 +32,7 @@
   }
 
   const ROWS: Row[] = [
-    { cat: 'text',   label: 'Text · baseline corpus', short: 'Text',   sub: 'Qālūn + Saheeh + Muyassar + Knowledge context', gatedAt: null   },
+    { cat: 'text',   label: 'Text · baseline corpus', short: 'Text',   sub: 'Qālūn + Bridges + Muyassar + Knowledge context', gatedAt: null   },
     { cat: 'audio',  label: 'Audio · per reciter',  short: 'Audio',  sub: 'Recitation MP3s + word-timing JSON',    gatedAt: 'v2.0' },
     { cat: 'pages',  label: 'Pages · per riwāyah',  short: 'Pages',  sub: 'KFGQPC Mushaf page-image cuts',         gatedAt: 'v2.1' },
     { cat: 'search', label: 'Search index',         short: 'Search', sub: 'Full-text Arabic + translation search', gatedAt: 'v1.1' },
@@ -60,7 +60,7 @@
   function isCategoryChecked(cat: Category): boolean {
     if (cat === 'text') {
       const t = pending.text
-      return t.riwayat.qaloon === true && t.translations.saheeh === true && t.tafsir.muyassar === true
+      return t.riwayat.qaloon === true && t.translations.bridges === true && t.tafsir.muyassar === true
     }
     if (cat === 'search') return pending.search
     const map = cat === 'audio' ? pending.audio : pending.pages
@@ -71,7 +71,7 @@
     const next = structuredClone($state.snapshot(pending))
     if (cat === 'text') {
       next.text = checked
-        ? { riwayat: { qaloon: true }, translations: { saheeh: true }, tafsir: { muyassar: true } }
+        ? { riwayat: { qaloon: true }, translations: { bridges: true }, tafsir: { muyassar: true } }
         : { riwayat: {}, translations: {}, tafsir: {} }
     } else if (cat === 'search') {
       next.search = checked
@@ -88,7 +88,7 @@
     if (!state) return false
     if (cat === 'text') {
       return state.text.riwayat.qaloon === true
-        && state.text.translations.saheeh === true
+        && state.text.translations.bridges === true
         && state.text.tafsir.muyassar === true
     }
     if (cat === 'search') return state.search

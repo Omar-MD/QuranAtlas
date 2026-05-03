@@ -112,16 +112,22 @@ describe('data/dataset', () => {
       const list = await getTranslations()
       expect(Array.isArray(list)).toBe(true)
       expect(list.length).toBeGreaterThanOrEqual(4)
-      const saheeh = list.find((t) => t.id === 'saheeh')
-      expect(saheeh).toBeDefined()
-      expect(saheeh.name).toBe('Saheeh International')
-      expect(saheeh.availableInManifest).toBe(true)
-      expect(saheeh.language).toBe('en')
-      expect(list.find((t) => t.id === 'bridges')).toMatchObject({
+      const bridges = list.find((t) => t.id === 'bridges')
+      expect(bridges).toBeDefined()
+      expect(bridges.name).toBe('Bridges')
+      expect(bridges.availableInManifest).toBe(true)
+      expect(bridges.language).toBe('en')
+      expect(list.find((t) => t.id === 'saheeh')).toMatchObject({
+        id: 'saheeh',
+        name: 'Saheeh International',
+        language: 'en',
+        availableInManifest: false,
+      })
+      expect(bridges).toMatchObject({
         id: 'bridges',
         name: 'Bridges',
         language: 'en',
-        availableInManifest: false,
+        availableInManifest: true,
       })
       expect(list.find((t) => t.id === 'clear-quran')).toMatchObject({
         id: 'clear-quran',
@@ -141,27 +147,29 @@ describe('data/dataset', () => {
   describe('loadTranslationForSurah()', () => {
     it('returns the per-surah pack for a shipped translation', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
-      const pack = await loadTranslationForSurah('saheeh', 1)
+      const pack = await loadTranslationForSurah('bridges', 1)
       expect(pack).not.toBeNull()
-      expect(pack.translationId).toBe('saheeh')
+      expect(pack.translationId).toBe('bridges')
       expect(pack.surahNo).toBe(1)
       expect(Array.isArray(pack.verses)).toBe(true)
       expect(pack.verses.length).toBeGreaterThan(0)
       expect(pack.verses[0].key).toBe('1:1')
-      expect(pack.footnotes).toEqual({})
+      expect(pack.footnotes).toMatchObject({
+        '1': expect.stringContaining('King of the Day of Recompense'),
+      })
     })
 
     it('returns null for an absent translation pack (404)', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
       const pack = await loadTranslationForSurah('does-not-exist', 1)
       expect(pack).not.toBeNull()
-      expect(pack.translationId).toBe('saheeh')
+      expect(pack.translationId).toBe('bridges')
     })
 
     it('rejects out-of-range surah numbers', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
-      await expect(loadTranslationForSurah('saheeh', 0)).rejects.toThrow()
-      await expect(loadTranslationForSurah('saheeh', 115)).rejects.toThrow()
+      await expect(loadTranslationForSurah('bridges', 0)).rejects.toThrow()
+      await expect(loadTranslationForSurah('bridges', 115)).rejects.toThrow()
     })
 
     it('returns null for an empty id', async () => {
@@ -177,7 +185,7 @@ describe('data/dataset', () => {
       const index = await getSourceIndex()
       expect(index.defaults).toMatchObject({
         riwayah: 'qaloon',
-        translation: 'saheeh',
+        translation: 'bridges',
         tafsir: 'muyassar',
       })
       expect(index.sources.some((s) => s.id === 'muyassar' && s.type === 'tafsir')).toBe(true)

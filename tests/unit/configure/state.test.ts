@@ -5,7 +5,7 @@ describe('state/settings.svelte.ts', () => {
   beforeEach(() => {
     settings.theme = 'auto'
     settings.fontSize = 'md'
-    settings.translationId = null
+    settings.translationId = 'bridges'
     settings.tafsirId = 'muyassar'
     settings.translationVisible = true
     settings.surahHeaderHidden = false
@@ -14,7 +14,7 @@ describe('state/settings.svelte.ts', () => {
   it('has correct initial state', () => {
     expect(settings.theme).toBe('auto')
     expect(settings.fontSize).toBe('md')
-    expect(settings.translationId).toBeNull()
+    expect(settings.translationId).toBe('bridges')
     expect(settings.tafsirId).toBe('muyassar')
     expect(settings.translationVisible).toBe(true)
   })

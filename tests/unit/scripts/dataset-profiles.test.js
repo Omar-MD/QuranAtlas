@@ -9,7 +9,7 @@ describe('dataset build profiles', () => {
     expect(getDatasetProfile('baseline')).toMatchObject({
       name: 'baseline',
       riwayat: ['qaloon'],
-      translations: ['saheeh'],
+      translations: ['bridges'],
       tafsir: ['muyassar'],
     })
   })
@@ -18,8 +18,8 @@ describe('dataset build profiles', () => {
     const full = getDatasetProfile('full')
     expect(full.riwayat).toEqual(expect.arrayContaining(['hafs', 'warsh', 'qaloon']))
     expect(full.translations).toEqual(expect.arrayContaining([
-      'saheeh',
       'bridges',
+      'saheeh',
       'clear-quran',
       'abdel-haleem',
     ]))

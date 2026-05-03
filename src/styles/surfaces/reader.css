@@ -578,8 +578,14 @@
     min-width: min(220px, 60vw);
   }
 
+  .qa-tafsir-preview-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
   .qa-tafsir-preview-select,
-  .qa-tafsir-preview-expand,
+  .qa-tafsir-preview-action,
   .qa-tafsir-sheet-close {
     min-height: 36px;
     border-radius: var(--qa-radius-sm);
@@ -593,11 +599,20 @@
     font: inherit;
   }
 
-  .qa-tafsir-preview-expand,
+  .qa-tafsir-preview-action,
   .qa-tafsir-sheet-close {
-    padding: 0 0.85rem;
+    min-width: 36px;
+    padding: 0 0.7rem;
     font-size: var(--qa-text-size-ui);
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .qa-tafsir-preview-action--expand {
+    font-family: var(--qa-font-mono);
+    letter-spacing: 0;
   }
 
   .qa-tafsir-preview-state,
@@ -635,6 +650,22 @@
     overflow: auto;
     display: grid;
     gap: 1rem;
+  }
+
+  @media (max-width: 767px) {
+    .qa-tafsir-sheet {
+      inset: 0;
+      width: auto;
+      max-height: none;
+      padding:
+        max(0.9rem, env(safe-area-inset-top))
+        max(0.9rem, env(safe-area-inset-right))
+        max(0.9rem, env(safe-area-inset-bottom))
+        max(0.9rem, env(safe-area-inset-left));
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
   }
 
   @media (min-width: 960px) {

@@ -74,7 +74,7 @@ Three zones:
 1. **Live preview band** at top — theme-true colors. Sūrat ar-Raḥmān 1–4 in active riwayah's glyphs. Arabic uses `.qa-verse-arabic`, translation uses `.qa-verse-translation` — same cascade as reader (font-size, line-height, word-spacing all match exactly). Translation row always rendered; visibility gated on `settings.translationVisible` — row keeps layout space when toggled off, preview height does not shift on toggle. ✕ close button floats top-right inside band.
 2. **Body** — three sections (Reading + Sources + Storage), content-sized (`flex: 0 0 auto`) with soft hairline gold-fade separator between adjacent sections. Body scrolls vertically when content overflows the available space (no per-section stretch).
    - **Reading** — Font size slider (5-step) + Reading flow slider (5-step coordinated knob). Reset-to-default pill in section header right edge, **always rendered** (disabled = idle when both knobs at `md`); flipping in/out of default never reflows slider rows. Preview band hard-locked at 32dvh portrait / 180 px desktop modal (landscape uses the side-by-side override) — inner stage scrolls when verse content overflows.
-   - **Sources** — Recitation source row (`[data-testid="src-row-recitation"]`) showing `RECITATION · Qālūn ʿan Nāfiʿ ›`; Translation dual-action row showing `TRANSLATION · {selected source} › [toggle]`; Tafsir source row (`[data-testid="src-row-tafsir"]`) showing `TAFSIR · {selected source} ›`. Tapping a source row opens the centered picker popover. The Translation row's toggle still controls `settings.translationVisible` independently.
+   - **Sources** — Recitation source row (`[data-testid="src-row-recitation"]`) showing `RECITATION · Qālūn ʿan Nāfiʿ ›`; Translation dual-action row showing `TRANSLATION · {selected source} › [toggle]`; Tafsir source row (`[data-testid="src-row-tafsir"]`) showing `TAFSIR · {selected source} ›`. Tapping a source row opens the centered picker popover. The Translation row's toggle still controls `settings.translationVisible` independently, and source/toggle changes must propagate to the mounted Reader without requiring a route reload.
 3. **Theme footer** — pill cluster of 4 theme swatches with mini Mushaf glyphs in each theme's palette + 38 px **night-mode moon ☾** pill. Italic serif "Theme" label anchors cluster left.
 
 Every change updates live preview (font size, reading flow, theme palette, riwayah glyph swap when popover row picked).
@@ -85,7 +85,7 @@ Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross
 
 Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages (gated), Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
 
-The Text row represents the baseline reader source set: Qaloon Arabic, Saheeh International translation, Tafsir Muyassar data, and shipped Knowledge Lane context. The selector writes this as source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
+The Text row represents the baseline reader source set: Qaloon Arabic, Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. The selector writes this as source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
 
 Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
 
@@ -102,13 +102,17 @@ Dismissal: ✕ close button (inside preview), backdrop tap, Esc.
 
 ### Pick a translation
 
-Toggle translation-visibility switch → `settings.translationVisible` rune updates → reader's `$effect` on rune re-renders with translation hidden/shown. Any footnote markers (`[N]`) present in the active pack and any open inline footnote panels disappear with translation. Sticky preview at top of Settings sheet drops translation line in lockstep.
+Toggle translation-visibility switch → `settings.translationVisible` rune updates → the mounted reader re-renders with translation hidden/shown. Any footnote markers (`[N]`) present in the active pack and any open inline footnote panels disappear with translation. Sticky preview at top of Settings sheet drops translation line in lockstep.
 
-The shipped source index exposes four selectable English sources in this phase: Saheeh International (default baseline), Bridges, The Clear Quran, and M.A.S. Abdel Haleem. Only the default body is present in the baseline manifest; the others remain opt-in dataset packs.
+The shipped source index exposes four selectable English sources in this phase: Bridges (default baseline), Saheeh International, The Clear Quran, and M.A.S. Abdel Haleem. Only the default body is present in the baseline manifest; the others remain opt-in dataset packs.
+
+When the selected translation body is available in the current runtime dataset, the mounted Reader switches to it immediately while staying on the same surah.
 
 ### Pick a tafsir source
 
 The Settings Sources section owns the saved tafsir preference under `settings.tafsirId`. The picker exposes al-Tafsir al-Muyassar (default baseline), al-Mukhtasar fi al-Tafsir, and Tafsir al-Sa'di from the runtime source index. Optional packs remain selectable even when their bodies are not in the current baseline manifest; the Reader falls back to `muyassar` at runtime when a selected optional tafsir pack is unavailable.
+
+If an inline tafsir preview or the full tafsir sheet is already open, changing the saved tafsir source from Settings updates that active Reader study view in place.
 
 ### Theme swap
 
@@ -202,7 +206,7 @@ Keys + sole writers:
 - **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/configure/panel.test.ts`.
 - **Saved tafsir preference is source metadata, not body availability.** Settings can persist an optional tafsir id from `indexes/sources.json` even when its pack is absent from the active baseline manifest; Reader load is responsible for the soft fallback to `muyassar`.
 - **Sole writer of `settings.offlineCategories`: `src/configure/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
-- **Text offline opt-in remains source-aware under one compact UI row.** The visible Text checkbox maps to the baseline Qaloon + Saheeh + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional text bodies must still be added through `indexes/sources.json` / manifest plumbing before they can affect byte estimates or download plans.
+- **Text offline opt-in remains source-aware under one compact UI row.** The visible Text checkbox maps to the baseline Qaloon + Bridges + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional text bodies must still be added through `indexes/sources.json` / manifest plumbing before they can affect byte estimates or download plans.
 
 ## Regression guards
 
