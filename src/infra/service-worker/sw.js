@@ -19,7 +19,6 @@ import { registerAll } from '../sw/strategies'
 import { CACHE_PREFIXES } from '../sw/route-defs'
 import { checkForUpdate, applyUpdate } from '../offline/dataset-updater.js'
 import { STAGING_CACHE } from '../offline/staging-cache.js'
-import { verify } from '../offline/sha256-verifier.js'
 import {
   cleanupStaleCaches,
   handleCacheDataset,
@@ -99,8 +98,6 @@ self.addEventListener('message', (event) => {
             cacheOpen: (name) => caches.open(name),
             clientsMatchAll: () => self.clients.matchAll(),
             fetchFn: (url, options) => fetch(url, options),
-            verifyFn: verify,
-            expectedManifestDigest: typeof __MANIFEST_DIGEST__ !== 'undefined' ? __MANIFEST_DIGEST__ : null,
           },
           urls
         )

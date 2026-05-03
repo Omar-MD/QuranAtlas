@@ -27,27 +27,29 @@ globalThis.caches.open = vi.fn().mockResolvedValue({
   addAll: vi.fn(),
 })
 
-// Mock fetch for manifest. N21 manifest carries fileSizes alongside files;
-// keep both to test the new pre-flight quota path.
+// Mock fetch for manifest inventory entries with per-file bytes so the
+// pre-flight quota path can sum category totals.
 globalThis.fetch = vi.fn().mockImplementation(async (url) => {
   if (url.includes('manifest.json')) {
     return {
       ok: true,
       json: async () => ({
-        files: {
-          'riwayat/hafs/001.json': 'abc',
-          'riwayat/hafs/002.json': 'def',
-          'surahs.json': 'ghi',
-          'knowledge/ayah/001.json': 'jkl',
-          'knowledge/passages/001.json': 'mno',
+        packageVersion: '2.1.0',
+        profile: 'baseline',
+        builtAt: '2026-05-03T00:00:00.000Z',
+        lanes: {
+          text: { enabled: true, files: 3, bytes: 3700 },
+          knowledge: { enabled: true, files: 2, bytes: 1500 },
+          reflection: { enabled: false, files: 0, bytes: 0 },
+          search: { enabled: false, files: 0, bytes: 0 },
         },
-        fileSizes: {
-          'riwayat/hafs/001.json': 1500,
-          'riwayat/hafs/002.json': 1400,
-          'surahs.json': 800,
-          'knowledge/ayah/001.json': 900,
-          'knowledge/passages/001.json': 600,
-        },
+        files: [
+          { path: 'riwayat/hafs/001.json', lane: 'text', category: 'text-riwayah', bytes: 1500 },
+          { path: 'riwayat/hafs/002.json', lane: 'text', category: 'text-riwayah', bytes: 1400 },
+          { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 800 },
+          { path: 'knowledge/ayah/001.json', lane: 'knowledge', category: 'knowledge-ayah', bytes: 900 },
+          { path: 'knowledge/passages/001.json', lane: 'knowledge', category: 'knowledge-passages', bytes: 600 },
+        ],
       }),
     }
   }

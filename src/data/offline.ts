@@ -31,8 +31,12 @@ let _swTimeoutId: ReturnType<typeof setTimeout> | null = null
 export type ActivationStatus = 'none' | 'downloading' | 'cached'
 
 type ManifestShape = {
-  files: Record<string, unknown>
-  fileSizes?: Record<string, number>
+  files: Array<{
+    path: string
+    lane: 'text' | 'knowledge' | 'reflection' | 'search'
+    category: string
+    bytes?: number
+  }>
 }
 
 let _manifestCache: ManifestShape | null = null

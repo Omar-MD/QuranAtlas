@@ -92,6 +92,5 @@ describe('QUL tafsir normalization', () => {
         text: 'single ayah',
       },
     ])
-    expect(normalized.sourceChecksum).toMatchObject({ algorithm: 'sha256' })
   })
 })

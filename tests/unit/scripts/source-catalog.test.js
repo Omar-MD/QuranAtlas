@@ -27,7 +27,6 @@ const baseCatalog = () => ({
       visibility: 'baseline',
       default: true,
       sourceUrl: 'https://example.test/qaloon.json',
-      sourceChecksum: { algorithm: 'sha256', value: 'a'.repeat(64) },
       outputPath: 'riwayat/qaloon/{surah}.json',
     },
   ],
@@ -50,10 +49,9 @@ describe('source catalog validation', () => {
     expect(validateSourceCatalog(catalog).errors).toContain('source qaloon uses disallowed license status disallowed')
   })
 
-  it('fails when a source is missing a sha256 checksum', () => {
+  it('accepts sources without checksum metadata', () => {
     const catalog = baseCatalog()
-    delete catalog.sources[0].sourceChecksum
-    expect(validateSourceCatalog(catalog).errors).toContain('source qaloon missing sourceChecksum')
+    expect(validateSourceCatalog(catalog).errors).toEqual([])
   })
 
   it('fails when a default source is not baseline-visible', () => {
@@ -67,7 +65,6 @@ describe('source catalog validation', () => {
     catalog.sources[0].fetch = {
       provider: 'quran-db-translation',
       url: 'https://example.test/qaloon.json',
-      pinPath: 'scripts/data/pins/qaloon.sha256',
     }
     expect(validateSourceCatalog(catalog).errors).toContain('source qaloon fetch missing normalizedPath')
   })

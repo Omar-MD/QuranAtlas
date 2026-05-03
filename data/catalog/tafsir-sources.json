@@ -9,18 +9,13 @@
     "visibility": "baseline",
     "default": true,
     "sourceUrl": "https://qul.tarteel.ai/resources/tafsir/38",
-    "sourceChecksum": {
-      "algorithm": "sha256",
-      "value": "e18dc16bcb5c9b3ef68e9c791a89d09e954a5480ffaa68780786fac901f99379"
-    },
     "outputPath": "tafsir/muyassar/{surah}.json",
     "fetch": {
       "provider": "qul-tafsir",
       "resourceUrl": "https://qul.tarteel.ai/resources/tafsir/38",
       "resourceId": 38,
       "contentResourceId": 16,
-      "normalizedPath": "data/normalized/tafsir/muyassar.json",
-      "pinPath": "scripts/data/pins/tafsir-muyassar.sha256"
+      "normalizedPath": "data/normalized/tafsir/muyassar.json"
     }
   }
 ]

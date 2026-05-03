@@ -99,7 +99,14 @@ export type SourceIndex = {
   sources: SourceIndexEntry[]
 }
 
-type ManifestJson = { files: Record<string, unknown> }
+type DatasetManifestFile = {
+  path: string
+  lane: 'text' | 'knowledge' | 'reflection' | 'search'
+  category: string
+  bytes: number
+}
+
+type ManifestJson = { files: DatasetManifestFile[] }
 
 type ProvenanceRiwayahEntry = {
   id: 'hafs' | 'warsh' | 'qaloon'
@@ -194,7 +201,10 @@ export async function getManifestUrls(): Promise<string[]> {
     throw new Error(`Failed to fetch manifest: ${res.status}`)
   }
   const manifest = await res.json() as ManifestJson
-  return Object.keys(manifest.files).map(f => `${DATASET_BASE}/${f}`)
+  if (!Array.isArray(manifest.files)) {
+    throw new Error('Invalid dataset manifest: files must be an inventory array')
+  }
+  return manifest.files.map((file) => `${DATASET_BASE}/${file.path}`)
 }
 
 /** Get a single surah by number, in the active Riwayah. */

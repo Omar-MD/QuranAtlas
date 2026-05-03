@@ -27,11 +27,11 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.BOOKMARKS_SAVED` | `bookmarks:saved` | `src/navigate/bookmarks/store.ts:38` | `src/navigate/bookmarks/BookmarksList.svelte:224`<br>`src/navigate/bookmarks/BookmarksPage.svelte:33`<br>`src/navigate/bookmarks/indicator.ts:79`<br>`src/navigate/surahs/SurahList.svelte:137` |
 | `Events.BOOKMARKS_SAVE_FAILED` | `bookmarks:save-failed` | `src/navigate/bookmarks/store.ts:42` | `src/core/save-failure-toast.svelte:29` |
 | `Events.BOOKMARK_JUMP_LANDED` | `bookmark:jump-landed` | `src/navigate/bookmarks/BookmarksList.svelte:104` | `src/navigate/bookmarks/pulse.ts:29` |
-| `Events.DATASET_APPLIED` | `dataset:applied` | `src/data/offline.ts:266` | _(none)_ |
-| `Events.DATASET_DOWNLOAD_PROGRESS` | `dataset:download-progress` | `src/data/offline.ts:281` | _(none)_ |
-| `Events.DATASET_PENDING_CONFIRMATION` | `dataset:pending-confirmation` | `src/data/offline.ts:259` | _(none)_ |
-| `Events.DATASET_UPDATE_AVAILABLE` | `dataset:update-available` | `src/data/offline.ts:274` | _(none)_ |
-| `Events.DATASET_UPDATE_FAILED` | `dataset:update-failed` | `src/data/offline.ts:271` | _(none)_ |
+| `Events.DATASET_APPLIED` | `dataset:applied` | `src/data/offline.ts:270` | _(none)_ |
+| `Events.DATASET_DOWNLOAD_PROGRESS` | `dataset:download-progress` | `src/data/offline.ts:285` | _(none)_ |
+| `Events.DATASET_PENDING_CONFIRMATION` | `dataset:pending-confirmation` | `src/data/offline.ts:263` | _(none)_ |
+| `Events.DATASET_UPDATE_AVAILABLE` | `dataset:update-available` | `src/data/offline.ts:278` | _(none)_ |
+| `Events.DATASET_UPDATE_FAILED` | `dataset:update-failed` | `src/data/offline.ts:275` | _(none)_ |
 | `Events.DB_DELETE_BLOCKED` | `db:delete-blocked` | `src/core/db/connection.ts:52`<br>`src/core/db/connection.ts:89` | `src/core/save-failure-toast.svelte:38` |
 | `Events.DB_QUOTA_EXCEEDED` | `db:quota-exceeded` | `src/core/db/connection.ts:126` | `src/core/quota-banner.svelte:12` |
 | `Events.DB_VERSION_CHANGE` | `db:version-change` | `src/core/db/connection.ts:39` | `src/infra/safety/sync.ts:102` |
@@ -44,12 +44,12 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.MARKS_SAVE_FAILED` | `marks:save-failed` | `src/mark/store.ts:95` | `src/core/save-failure-toast.svelte:26` |
 | `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:41` | `src/mark/indicator.ts:119` |
 | `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/navigate/CommandSheet.svelte:303`<br>`src/navigate/CommandSheet.svelte:305`<br>`src/navigate/NavDrawer.svelte:194`<br>`src/navigate/bookmarks/BookmarksList.svelte:106`<br>`src/navigate/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:302` |
-| `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:204`<br>`src/data/offline.ts:243` | _(none)_ |
-| `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:196`<br>`src/data/offline.ts:211`<br>`src/data/offline.ts:255`<br>`src/data/offline.ts:307` | _(none)_ |
-| `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:231` | `src/data/offline.ts:333` |
-| `Events.OFFLINE_INSTALL_AVAILABLE` | `offline:install-available` | `src/data/offline.ts:347` | _(none)_ |
-| `Events.OFFLINE_INSTALL_COMPLETE` | `offline:install-complete` | `src/data/offline.ts:352` | _(none)_ |
-| `Events.OFFLINE_SW_TIMEOUT` | `offline:sw-timeout` | `src/data/offline.ts:161` | _(none)_ |
+| `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:208`<br>`src/data/offline.ts:247` | _(none)_ |
+| `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:200`<br>`src/data/offline.ts:215`<br>`src/data/offline.ts:259`<br>`src/data/offline.ts:311` | _(none)_ |
+| `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:235` | `src/data/offline.ts:337` |
+| `Events.OFFLINE_INSTALL_AVAILABLE` | `offline:install-available` | `src/data/offline.ts:351` | _(none)_ |
+| `Events.OFFLINE_INSTALL_COMPLETE` | `offline:install-complete` | `src/data/offline.ts:356` | _(none)_ |
+| `Events.OFFLINE_SW_TIMEOUT` | `offline:sw-timeout` | `src/data/offline.ts:165` | _(none)_ |
 | `Events.READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `src/read/position.ts:28` | `src/core/save-failure-toast.svelte:35` |
 | `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/read/Verse.svelte:62` | `src/mark/indicator.ts:96`<br>`src/navigate/bookmarks/indicator.ts:75` |
 | `Events.REVIEW_FILTER` | `review:filter` | _(none)_ | _(none)_ |
@@ -62,7 +62,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/configure/riwayah.ts:58`<br>`src/configure/riwayah.ts:74` | `src/app-bootstrap.ts:181`<br>`src/configure/reading-typography.ts:133`<br>`src/navigate/bookmarks/BookmarksList.svelte:227`<br>`src/navigate/bookmarks/BookmarksPage.svelte:36`<br>`src/navigate/bookmarks/indicator.ts:102`<br>`src/navigate/surahs/SurahList.svelte:140`<br>`src/read/Reader.svelte:395` |
 | `Events.SHEET_CLOSED` | `sheet:closed` | `src/configure/Panel.svelte:130`<br>`src/navigate/shortcuts-sheet.js:162` | _(none)_ |
 | `Events.SHEET_OPENED` | `sheet:opened` | `src/configure/Panel.svelte:113`<br>`src/navigate/shortcuts-sheet.js:153` | _(none)_ |
-| `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:109` | `src/core/quota-banner.svelte:18` |
+| `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:113` | `src/core/quota-banner.svelte:18` |
 | `Events.SYNC_BOOKMARKS_UPDATED` | `sync:bookmarks-updated` | `src/infra/safety/sync.ts:276` | `src/navigate/bookmarks/BookmarksList.svelte:226`<br>`src/navigate/bookmarks/BookmarksPage.svelte:35`<br>`src/navigate/bookmarks/indicator.ts:93`<br>`src/navigate/surahs/SurahList.svelte:139` |
 | `Events.SYNC_EDGES_UPDATED` | `sync:edges-updated` | `src/infra/safety/sync.ts:264` | _(none)_ |
 | `Events.SYNC_UPDATE_RECEIVED` | `sync:update-received` | `src/infra/safety/sync.ts:256` | `src/mark/indicator.ts:132`<br>`src/mark/tag/TagSheet.svelte:175`<br>`src/review/Hub.svelte:461` |
@@ -85,18 +85,18 @@ Declared in `Events` but neither emitted nor listened. Candidate for deletion.
 - `Events.AUDIO_ERROR` (`audio:error`) — emitted at `src/listen/player-runtime.ts:121`<br>`src/listen/player-runtime.ts:161`<br>`src/listen/player-runtime.ts:168`
 - `Events.AUDIO_PAUSED` (`audio:paused`) — emitted at `src/listen/player-runtime.ts:109`
 - `Events.AUDIO_STARTED` (`audio:started`) — emitted at `src/listen/player-runtime.ts:103`
-- `Events.DATASET_APPLIED` (`dataset:applied`) — emitted at `src/data/offline.ts:266`
-- `Events.DATASET_DOWNLOAD_PROGRESS` (`dataset:download-progress`) — emitted at `src/data/offline.ts:281`
-- `Events.DATASET_PENDING_CONFIRMATION` (`dataset:pending-confirmation`) — emitted at `src/data/offline.ts:259`
-- `Events.DATASET_UPDATE_AVAILABLE` (`dataset:update-available`) — emitted at `src/data/offline.ts:274`
-- `Events.DATASET_UPDATE_FAILED` (`dataset:update-failed`) — emitted at `src/data/offline.ts:271`
+- `Events.DATASET_APPLIED` (`dataset:applied`) — emitted at `src/data/offline.ts:270`
+- `Events.DATASET_DOWNLOAD_PROGRESS` (`dataset:download-progress`) — emitted at `src/data/offline.ts:285`
+- `Events.DATASET_PENDING_CONFIRMATION` (`dataset:pending-confirmation`) — emitted at `src/data/offline.ts:263`
+- `Events.DATASET_UPDATE_AVAILABLE` (`dataset:update-available`) — emitted at `src/data/offline.ts:278`
+- `Events.DATASET_UPDATE_FAILED` (`dataset:update-failed`) — emitted at `src/data/offline.ts:275`
 - `Events.EDGES_DELETED` (`edges:deleted`) — emitted at `src/review/edges/store.ts:107`
 - `Events.EDGES_SAVED` (`edges:saved`) — emitted at `src/review/edges/store.ts:63`<br>`src/review/edges/store.ts:95`
-- `Events.OFFLINE_DOWNLOAD_COMPLETE` (`offline:download-complete`) — emitted at `src/data/offline.ts:204`<br>`src/data/offline.ts:243`
-- `Events.OFFLINE_DOWNLOAD_ERROR` (`offline:download-error`) — emitted at `src/data/offline.ts:196`<br>`src/data/offline.ts:211`<br>`src/data/offline.ts:255`<br>`src/data/offline.ts:307`
-- `Events.OFFLINE_INSTALL_AVAILABLE` (`offline:install-available`) — emitted at `src/data/offline.ts:347`
-- `Events.OFFLINE_INSTALL_COMPLETE` (`offline:install-complete`) — emitted at `src/data/offline.ts:352`
-- `Events.OFFLINE_SW_TIMEOUT` (`offline:sw-timeout`) — emitted at `src/data/offline.ts:161`
+- `Events.OFFLINE_DOWNLOAD_COMPLETE` (`offline:download-complete`) — emitted at `src/data/offline.ts:208`<br>`src/data/offline.ts:247`
+- `Events.OFFLINE_DOWNLOAD_ERROR` (`offline:download-error`) — emitted at `src/data/offline.ts:200`<br>`src/data/offline.ts:215`<br>`src/data/offline.ts:259`<br>`src/data/offline.ts:311`
+- `Events.OFFLINE_INSTALL_AVAILABLE` (`offline:install-available`) — emitted at `src/data/offline.ts:351`
+- `Events.OFFLINE_INSTALL_COMPLETE` (`offline:install-complete`) — emitted at `src/data/offline.ts:356`
+- `Events.OFFLINE_SW_TIMEOUT` (`offline:sw-timeout`) — emitted at `src/data/offline.ts:165`
 - `Events.REVIEW_OPEN` (`review:open`) — emitted at `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459`
 - `Events.SETTINGS_DATA_CLEARED` (`settings:data-cleared`) — emitted at `src/configure/clear-data.ts:170`
 - `Events.SHEET_CLOSED` (`sheet:closed`) — emitted at `src/configure/Panel.svelte:130`<br>`src/navigate/shortcuts-sheet.js:162`

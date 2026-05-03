@@ -8,7 +8,7 @@ const TIMEOUT_MS = 10000
 
 /**
  * Fetch and parse /dataset/manifest.json.
- * @returns {Promise<{ packageVersion: string, files: Array<{ url: string, sha256: string }> }>}
+ * @returns {Promise<{ packageVersion: string, files: Array<{ path: string, lane: string, category: string, bytes: number }> }>}
  * @throws {Error} on network error, timeout, or non-200 response
  */
 export async function fetchManifest() {

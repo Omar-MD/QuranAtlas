@@ -222,27 +222,23 @@ export function cacheNameFor(url: URL): string | null {
 
 /**
  * Sum bytes for every manifest entry whose URL routes to the given category.
- * `manifest.fileSizes` is the additive map written by build-dataset.mjs in N21.
- * Entries missing a size contribute 0 (legacy manifests degrade gracefully).
+ * Inventory manifests carry bytes on each file entry.
  */
 export function sumBytesForCategory(
-  manifest: { files: Record<string, unknown>; fileSizes?: Record<string, number> },
+  manifest: { files: Array<{ path: string; lane: string; category: string; bytes?: number }> },
   category: Category,
   origin = 'http://localhost'
 ): { urls: string[]; totalBytes: number } {
   const urls: string[] = []
   let totalBytes = 0
-  const files = manifest.files || {}
-  const sizes = manifest.fileSizes || {}
-  const wanted = category === 'text'
-    ? new Set<RouteCategory>(TEXT_ROUTE_CATEGORIES)
-    : new Set<RouteCategory>([category])
-  for (const rel of Object.keys(files)) {
-    const url = new URL(`/dataset/${rel}`, origin)
-    const routedCategory = categoryFor(url)
-    if (routedCategory && wanted.has(routedCategory)) {
-      urls.push(`/dataset/${rel}`)
-      totalBytes += typeof sizes[rel] === 'number' ? sizes[rel] : 0
+  for (const file of manifest.files) {
+    const include =
+      (category === 'text' && (file.lane === 'text' || file.lane === 'knowledge')) ||
+      (category === 'search' && file.lane === 'search') ||
+      ((category === 'audio' || category === 'pages') && categoryFor(new URL(`/dataset/${file.path}`, origin)) === category)
+    if (include) {
+      urls.push(`/dataset/${file.path}`)
+      totalBytes += typeof file.bytes === 'number' ? file.bytes : 0
     }
   }
   return { urls, totalBytes }

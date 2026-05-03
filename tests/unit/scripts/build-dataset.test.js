@@ -169,7 +169,7 @@ describe('buildTranslationSplits', () => {
 })
 
 describe('buildManifestPayload', () => {
-  it('includes knowledge files in manifest hashes and byte sizes', async () => {
+  it('emits manifest inventory entries with lane summaries', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-manifest-'))
     const provenance = {
       packageVersion: 'test',
@@ -205,13 +205,50 @@ describe('buildManifestPayload', () => {
         profileName: 'baseline',
       })
 
-      expect(manifest.files).toHaveProperty('knowledge/ayah/001.json')
-      expect(manifest.files).toHaveProperty('knowledge/passages/001.json')
-      expect(manifest.files).toHaveProperty('knowledge/indexes/theme-to-ayah.json')
-      expect(manifest.fileSizes['knowledge/ayah/001.json']).toBeGreaterThan(0)
-      expect(manifest.files).not.toHaveProperty('manifest.json')
-      expect(manifest.files).not.toHaveProperty('riwayat/source.json')
-      expect(manifest.files).not.toHaveProperty('translations/source.json')
+      expect(Array.isArray(manifest.files)).toBe(true)
+      expect(manifest.files).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          path: 'knowledge/ayah/001.json',
+          lane: 'knowledge',
+          category: 'knowledge-ayah',
+          bytes: expect.any(Number),
+        }),
+        expect.objectContaining({
+          path: 'knowledge/passages/001.json',
+          lane: 'knowledge',
+          category: 'knowledge-passages',
+          bytes: expect.any(Number),
+        }),
+        expect.objectContaining({
+          path: 'knowledge/indexes/theme-to-ayah.json',
+          lane: 'knowledge',
+          category: 'knowledge-index',
+          bytes: expect.any(Number),
+        }),
+      ]))
+      expect(manifest.files.find((entry) => entry.path === 'manifest.json')).toBeUndefined()
+      expect(manifest.files.find((entry) => entry.path === 'riwayat/source.json')).toBeUndefined()
+      expect(manifest.files.find((entry) => entry.path === 'translations/source.json')).toBeUndefined()
+      expect(manifest.lanes.text).toEqual(expect.objectContaining({
+        enabled: true,
+        files: 1,
+        bytes: expect.any(Number),
+      }))
+      expect(manifest.lanes.knowledge).toEqual(expect.objectContaining({
+        enabled: true,
+        files: 3,
+        bytes: expect.any(Number),
+      }))
+      expect(manifest.lanes.reflection).toEqual(expect.objectContaining({
+        enabled: false,
+        files: 0,
+        bytes: 0,
+      }))
+      expect(manifest.lanes.search).toEqual(expect.objectContaining({
+        enabled: false,
+        files: 0,
+        bytes: 0,
+      }))
     } finally {
       await rm(root, { recursive: true, force: true })
     }

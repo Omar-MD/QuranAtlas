@@ -6,7 +6,6 @@ import { STAGING_CACHE } from '../../../../src/infra/offline/staging-cache.js'
 const precacheAndRoute = vi.fn()
 const checkForUpdate = vi.fn()
 const applyUpdate = vi.fn()
-const verify = vi.fn()
 const cleanupStaleCaches = vi.fn()
 const handleCacheDataset = vi.fn()
 const handlePurgeCache = vi.fn()
@@ -24,10 +23,6 @@ vi.mock('../../../../src/infra/sw/strategies', () => ({
 vi.mock('../../../../src/infra/offline/dataset-updater.js', () => ({
   checkForUpdate,
   applyUpdate,
-}))
-
-vi.mock('../../../../src/infra/offline/sha256-verifier.js', () => ({
-  verify,
 }))
 
 vi.mock('../../../../src/infra/service-worker/sw-handlers.js', () => ({
@@ -86,7 +81,6 @@ describe('sw.js shell wiring', () => {
 
     checkForUpdate.mockResolvedValue(undefined)
     applyUpdate.mockResolvedValue(undefined)
-    verify.mockResolvedValue(true)
     cleanupStaleCaches.mockResolvedValue(undefined)
     handleCacheDataset.mockResolvedValue(undefined)
     handlePurgeCache.mockResolvedValue(undefined)
@@ -126,7 +120,6 @@ describe('sw.js shell wiring', () => {
     expect(handleCacheDataset).toHaveBeenCalledWith(
       expect.objectContaining({
         cacheName: CACHE_DATASET,
-        verifyFn: verify,
       }),
       ['/dataset/surah/001.json']
     )

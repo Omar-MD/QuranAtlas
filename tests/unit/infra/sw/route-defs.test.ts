@@ -106,38 +106,23 @@ describe('ROUTE_DEFS table', () => {
 
 describe('sumBytesForCategory', () => {
   const manifest = {
-    files: {
-      'riwayat/hafs/001.json': 'sha-a',
-      'translations/saheeh/001.json': 'sha-b',
-      'surahs.json': 'sha-c',
-      'tafsir/muyassar/001.json': 'sha-g',
-      'indexes/sources.json': 'sha-h',
-      'knowledge/ayah/001.json': 'sha-i',
-      'knowledge/passages/001.json': 'sha-j',
-      'knowledge/indexes/theme-to-ayah.json': 'sha-k',
-      'audio/alafasy/001.mp3': 'sha-d',
-      'mushaf-pages/hafs/p001.png': 'sha-e',
-      'search-index.json': 'sha-f',
-    },
-    fileSizes: {
-      'riwayat/hafs/001.json': 1500,
-      'translations/saheeh/001.json': 1400,
-      'surahs.json': 800,
-      'tafsir/muyassar/001.json': 700,
-      'indexes/sources.json': 200,
-      'knowledge/ayah/001.json': 900,
-      'knowledge/passages/001.json': 600,
-      'knowledge/indexes/theme-to-ayah.json': 300,
-      'audio/alafasy/001.mp3': 50_000_000,
-      'mushaf-pages/hafs/p001.png': 80_000,
-      'search-index.json': 1_000_000,
-    },
+    files: [
+      { path: 'riwayat/hafs/001.json', lane: 'text', category: 'text-riwayah', bytes: 1500 },
+      { path: 'translations/saheeh/001.json', lane: 'text', category: 'text-translation', bytes: 1400 },
+      { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 800 },
+      { path: 'tafsir/muyassar/001.json', lane: 'text', category: 'text-tafsir', bytes: 700 },
+      { path: 'indexes/sources.json', lane: 'text', category: 'text-index', bytes: 200 },
+      { path: 'knowledge/ayah/001.json', lane: 'knowledge', category: 'knowledge-ayah', bytes: 900 },
+      { path: 'knowledge/passages/001.json', lane: 'knowledge', category: 'knowledge-passages', bytes: 600 },
+      { path: 'knowledge/indexes/theme-to-ayah.json', lane: 'knowledge', category: 'knowledge-index', bytes: 300 },
+      { path: 'search-index.json', lane: 'search', category: 'search-index', bytes: 1_000_000 },
+    ],
   }
 
   it.each<[Category, number]>([
     ['text',   1500 + 1400 + 800 + 700 + 200 + 900 + 600 + 300],
-    ['audio',  50_000_000],
-    ['pages',  80_000],
+    ['audio',  0],
+    ['pages',  0],
     ['search', 1_000_000],
   ])('sums bytes for category %s', (cat, expected) => {
     const { totalBytes } = sumBytesForCategory(manifest, cat)
@@ -161,9 +146,9 @@ describe('sumBytesForCategory', () => {
     ]))
   })
 
-  it('degrades gracefully when fileSizes missing (legacy manifest)', () => {
-    const legacy = { files: manifest.files }
-    const { urls, totalBytes } = sumBytesForCategory(legacy, 'text')
+  it('treats missing entry bytes as zero', () => {
+    const manifestWithoutBytes = { files: manifest.files.map(({ bytes, ...entry }) => entry) }
+    const { urls, totalBytes } = sumBytesForCategory(manifestWithoutBytes, 'text')
     expect(totalBytes).toBe(0)
     expect(urls.length).toBeGreaterThan(0)
   })

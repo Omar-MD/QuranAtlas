@@ -9,9 +9,15 @@ describe('manifest-fetcher.js', () => {
   it('returns parsed manifest on successful fetch', async () => {
     const manifest = {
       packageVersion: '1.1.0',
-      files: [
-        { url: '/dataset/surah-1.json', sha256: 'abc123' },
-      ],
+      profile: 'baseline',
+      builtAt: '2026-05-03T00:00:00.000Z',
+      lanes: {
+        text: { enabled: true, files: 1, bytes: 123 },
+        knowledge: { enabled: false, files: 0, bytes: 0 },
+        reflection: { enabled: false, files: 0, bytes: 0 },
+        search: { enabled: false, files: 0, bytes: 0 },
+      },
+      files: [{ path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 123 }],
     }
 
     globalThis.fetch = vi.fn().mockResolvedValue({

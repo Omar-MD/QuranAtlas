@@ -1,11 +1,10 @@
 /**
  * Dataset update orchestrator for service worker activate.
- * Manages check, download, verify, and apply lifecycle.
+ * Manages check, download, stage, and apply lifecycle.
  */
 
 import { CACHE_DATASET } from '../../core/constants.js'
 import { fetchManifest } from './manifest-fetcher.js'
-import { verify } from './sha256-verifier.js'
 import { stageFile, getStagedResponse, deleteStaging, copyToLive } from './staging-cache.js'
 import { DB_NAME, DB_VERSION } from '../../core/db/migrations.js'
 
@@ -109,6 +108,13 @@ function parseMajor(version) {
   return parseInt(String(version || '').split('.')[0], 10) || 0
 }
 
+function manifestFilesToUrls(manifest) {
+  if (!Array.isArray(manifest.files)) {
+    throw new Error('Invalid dataset manifest: files must be an inventory array')
+  }
+  return manifest.files.map((file) => `/dataset/${file.path}`)
+}
+
 export async function checkForUpdate() {
   try {
     const meta = await idbGet('datasetMeta', DATASET_META_ID)
@@ -130,13 +136,7 @@ export async function checkForUpdate() {
 
     const isMajor = parseMajor(manifest.packageVersion) > parseMajor(meta.version)
     const targetVersion = manifest.packageVersion
-    // manifest.files is { "riwayat/hafs/001.json": "sha256hex", ... } (build-riwayat.mjs format)
-    const filesToDownload = manifest.files && typeof manifest.files === 'object' && !Array.isArray(manifest.files)
-      ? Object.entries(manifest.files).map(([filename, sha256]) => ({
-          url: `/dataset/${filename}`,
-          sha256,
-        }))
-      : []
+    const filesToDownload = manifestFilesToUrls(manifest)
 
     await postToClients('DATASET_UPDATE_AVAILABLE', {
       from: meta.version,
@@ -148,31 +148,27 @@ export async function checkForUpdate() {
     const liveCache = await caches.open(CACHE_DATASET)
 
     let downloaded = 0
-    for (const file of filesToDownload) {
-      const staged = await getStagedResponse(file.url)
+    for (const url of filesToDownload) {
+      const staged = await getStagedResponse(url)
       if (staged) {
         downloaded++
         continue
       }
 
-      const liveResponse = await liveCache.match(file.url)
+      const liveResponse = await liveCache.match(url)
       if (liveResponse) {
-        const liveBuffer = await liveResponse.clone().arrayBuffer()
-        const liveMatches = await verify(liveBuffer, file.sha256)
-        if (liveMatches) {
-          downloaded++
-          await setState({
-            status: 'downloading',
-            version: targetVersion,
-            progress: filesToDownload.length ? downloaded / filesToDownload.length : 1,
-          })
-          continue
-        }
+        downloaded++
+        await setState({
+          status: 'downloading',
+          version: targetVersion,
+          progress: filesToDownload.length ? downloaded / filesToDownload.length : 1,
+        })
+        continue
       }
 
       let response
       try {
-        response = await fetch(file.url)
+        response = await fetch(url)
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
         }
@@ -182,19 +178,7 @@ export async function checkForUpdate() {
         return
       }
 
-      const buffer = await response.clone().arrayBuffer()
-      const valid = await verify(buffer, file.sha256)
-      if (!valid) {
-        await setState({
-          status: 'failed',
-          version: targetVersion,
-          error: `SHA-256 mismatch for ${file.url}`,
-        })
-        await deleteStaging()
-        return
-      }
-
-      await stageFile(file.url, response)
+      await stageFile(url, response)
       downloaded++
       await setState({
         status: 'downloading',
@@ -202,8 +186,6 @@ export async function checkForUpdate() {
         progress: filesToDownload.length ? downloaded / filesToDownload.length : 1,
       })
     }
-
-    await setState({ status: 'verifying', version: targetVersion })
 
     if (isMajor) {
       await setState({

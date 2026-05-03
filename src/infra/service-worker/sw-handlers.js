@@ -26,24 +26,7 @@ function withTimeout(promise, timeoutMs, errorMessage) {
   })
 }
 
-async function deleteCachedEntry(cache, url) {
-  try {
-    await cache.delete(url)
-  } catch (error) {
-    console.warn('handleCacheDataset: failed to delete cached entry', url, error.message)
-  }
-}
-
-// Returns the {url → sha256} map only when the fetched manifest body itself
-// hashes to expectedManifestDigest (the digest baked into the bundle at
-// build time). Any failure — fetch error, timeout, !ok response, missing
-// or mismatched expected digest, malformed JSON — returns null, which
-// callers MUST treat as fail-closed (do not write anything to cache).
-async function getHashMap(fetchFn, verifyFn, expectedManifestDigest) {
-  if (!expectedManifestDigest) {
-    return null
-  }
-
+async function getManifestMembers(fetchFn) {
   let manifestResponse
   try {
     manifestResponse = await withTimeout(
@@ -59,23 +42,6 @@ async function getHashMap(fetchFn, verifyFn, expectedManifestDigest) {
     return null
   }
 
-  let manifestBuffer
-  try {
-    manifestBuffer = await manifestResponse.clone().arrayBuffer()
-  } catch {
-    return null
-  }
-
-  let manifestValid
-  try {
-    manifestValid = await verifyFn(manifestBuffer, expectedManifestDigest)
-  } catch {
-    return null
-  }
-  if (!manifestValid) {
-    return null
-  }
-
   let manifest
   try {
     manifest = await manifestResponse.json()
@@ -83,15 +49,18 @@ async function getHashMap(fetchFn, verifyFn, expectedManifestDigest) {
     return null
   }
 
-  if (!manifest.files || typeof manifest.files !== 'object' || Array.isArray(manifest.files)) {
+  if (!Array.isArray(manifest.files)) {
     return null
   }
 
-  const hashMap = {}
-  for (const [filename, sha256] of Object.entries(manifest.files)) {
-    hashMap[`/dataset/${filename}`] = sha256
+  const members = new Set()
+  for (const file of manifest.files) {
+    if (!file || typeof file.path !== 'string' || !file.path) {
+      return null
+    }
+    members.add(`/dataset/${file.path}`)
   }
-  return hashMap
+  return members
 }
 
 export async function fetchWithRetry(url, fetchFn, attempt = 0) {
@@ -118,64 +87,38 @@ export async function handleCacheDataset(deps, urls) {
     cacheOpen,
     clientsMatchAll,
     fetchFn,
-    verifyFn,
-    expectedManifestDigest,
   } = deps
 
   const cache = await cacheOpen(cacheName)
   const clients = await clientsMatchAll()
-  const hashMap = await getHashMap(fetchFn, verifyFn, expectedManifestDigest)
+  const manifestMembers = await getManifestMembers(fetchFn)
 
-  if (!hashMap) {
+  if (!manifestMembers) {
     postToAll(clients, 'DATASET_ERROR', {
       url: '/dataset/manifest.json',
-      error: 'manifest verification failed: aborting cache (chain of trust broken)',
+      error: 'manifest unavailable: aborting cache',
     })
     return
   }
 
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i]
-    const expectedHash = hashMap[url]
-
-    if (!expectedHash) {
+    if (!manifestMembers.has(url)) {
       postToAll(clients, 'DATASET_ERROR', {
         url,
-        error: 'url not listed in verified manifest: aborting cache',
+        error: 'url not listed in manifest: aborting cache',
       })
       return
     }
 
     const cached = await cache.match(url)
     if (cached) {
-      let valid = false
-      try {
-        const buffer = await cached.clone().arrayBuffer()
-        valid = await verifyFn(buffer, expectedHash)
-      } catch (error) {
-        console.warn('handleCacheDataset: cached verification failed, re-downloading', url, error.message)
-      }
-
-      if (valid) {
-        postToAll(clients, 'DATASET_PROGRESS', { cached: i + 1, total: urls.length })
-        continue
-      }
-
-      await deleteCachedEntry(cache, url)
+      postToAll(clients, 'DATASET_PROGRESS', { cached: i + 1, total: urls.length })
+      continue
     }
 
     try {
       const response = await fetchWithRetry(url, fetchFn)
-      const buffer = await response.clone().arrayBuffer()
-      const valid = await verifyFn(buffer, expectedHash)
-      if (!valid) {
-        postToAll(clients, 'DATASET_ERROR', {
-          url,
-          error: 'SHA-256 mismatch: file may be corrupted in transit',
-        })
-        return
-      }
-
       await cache.put(url, response)
     } catch (error) {
       postToAll(clients, 'DATASET_ERROR', { url, error: error.message })

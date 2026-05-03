@@ -9,10 +9,6 @@
     "visibility": "baseline",
     "default": true,
     "sourceUrl": "https://raw.githubusercontent.com/faisalill/quran_db/main/ummmuhammadsahihinternational.json",
-    "sourceChecksum": {
-      "algorithm": "sha256",
-      "value": "4490cec2c2c62a2485b2bcb9bb8a7667445e3dddc23752092d6067bd86a0d446"
-    },
     "outputPath": "translations/saheeh/{surah}.json",
     "fetch": {
       "provider": "quran-db-translation",
@@ -20,8 +16,7 @@
       "field": "Umm Muhammad (Sahih International)",
       "author": "Umm Muhammad",
       "version": "quran-db-main",
-      "normalizedPath": "data/normalized/translations/saheeh.json",
-      "pinPath": "scripts/data/pins/translation-saheeh.sha256"
+      "normalizedPath": "data/normalized/translations/saheeh.json"
     }
   }
 ]

@@ -61,29 +61,23 @@ describe('dataset-updater.js', () => {
   })
 
   describe('checkForUpdate() — patch bump (auto-apply)', () => {
-    it('transitions through downloading → verifying → applying → idle', async () => {
+    it('downloads listed files, stages them, and auto-applies patch updates', async () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
       await put('activationState', { id: 'current', status: 'idle' })
-
-      const fileContent = 'updated surah data'
-      const encoder = new TextEncoder()
-      const data = encoder.encode(fileContent)
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-      const hashArray = new Uint8Array(hashBuffer)
-      let sha256 = ''
-      for (const b of hashArray) { sha256 += b.toString(16).padStart(2, '0') }
 
       fetchMock
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({
             packageVersion: '1.0.1',
-            files: { 'surah/001.json': sha256 },
+            files: [
+              { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 123 },
+            ],
           }),
         })
         .mockResolvedValueOnce({
           ok: true,
-          arrayBuffer: () => Promise.resolve(data.buffer),
+          text: () => Promise.resolve('updated surah data'),
           clone() { return this },
         })
 
@@ -103,25 +97,19 @@ describe('dataset-updater.js', () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
       await put('activationState', { id: 'current', status: 'idle' })
 
-      const fileContent = 'new schema data'
-      const encoder = new TextEncoder()
-      const data = encoder.encode(fileContent)
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-      const hashArray = new Uint8Array(hashBuffer)
-      let sha256 = ''
-      for (const b of hashArray) { sha256 += b.toString(16).padStart(2, '0') }
-
       fetchMock
         .mockResolvedValueOnce({
           ok: true,
           json: () => Promise.resolve({
             packageVersion: '2.0.0',
-            files: { 'surah/001.json': sha256 },
+            files: [
+              { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 123 },
+            ],
           }),
         })
         .mockResolvedValueOnce({
           ok: true,
-          arrayBuffer: () => Promise.resolve(data.buffer),
+          text: () => Promise.resolve('new schema data'),
           clone() { return this },
         })
 
@@ -170,8 +158,8 @@ describe('dataset-updater.js', () => {
     })
   })
 
-  describe('SHA-256 verification failure', () => {
-    it('transitions to failed state on hash mismatch', async () => {
+  describe('manifest membership', () => {
+    it('downloads only manifest-listed files', async () => {
       await put('datasetMeta', { id: 'current', version: '1.0.0' })
       await put('activationState', { id: 'current', status: 'idle' })
 
@@ -180,21 +168,20 @@ describe('dataset-updater.js', () => {
           ok: true,
           json: () => Promise.resolve({
             packageVersion: '1.0.1',
-            files: { 'surah/001.json': 'badhash' },
+            files: [
+              { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 123 },
+            ],
           }),
         })
         .mockResolvedValueOnce({
           ok: true,
-          arrayBuffer: () => Promise.resolve(new TextEncoder().encode('data').buffer),
           clone() { return this },
+          text: () => Promise.resolve('data'),
         })
 
       await updater.checkForUpdate()
 
-      const state = await get('activationState', 'current')
-      expect(state.status).toBe('failed')
-      expect(state.error).toContain('SHA-256 mismatch')
-      expect(state).not.toHaveProperty('state')
+      expect(fetchMock).toHaveBeenNthCalledWith(2, '/dataset/surahs.json')
     })
   })
 
@@ -207,10 +194,9 @@ describe('dataset-updater.js', () => {
         ok: true,
         json: async () => ({
           packageVersion: '1.0.1',
-          files: {},
+          files: [],
         }),
         clone() { return this },
-        arrayBuffer: async () => new ArrayBuffer(0),
       })
 
       await updater.checkForUpdate()
@@ -218,7 +204,7 @@ describe('dataset-updater.js', () => {
       const record = await get('activationState', 'current')
       expect(record).not.toHaveProperty('state')
       expect(record.status).not.toBe('cached')
-      expect(['idle', 'downloading', 'verifying', 'pending-confirmation', 'applying', 'failed'])
+      expect(['idle', 'downloading', 'pending-confirmation', 'applying', 'failed'])
         .toContain(record.status)
     })
   })
