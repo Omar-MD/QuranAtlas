@@ -24,18 +24,29 @@
   import { settings } from '../configure/state.svelte'
   import { surahs as surahsState } from './surahs/state.svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
+  import type { SurahCount } from '../data/juz'
   import { getMeaning } from '../data/surah-meanings'
   import { loadRecentSurahs } from '../configure/state-recent-surahs.svelte'
   import { LAYER_GROUPS, LAYER_LABELS } from '../data/tag-layers'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import BookmarksList from './bookmarks/BookmarksList.svelte'
+  import DailyWirdCard from '../read/wird/DailyWirdCard.svelte'
+  import WirdDetail, { type SetupPayload } from '../read/wird/WirdDetail.svelte'
+  import JuzList from './JuzList.svelte'
+  import { createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../read/wird/progress'
+  import { clearWirdPlan, saveWirdPlan } from '../read/wird/store'
+  import type { QuranRef } from '../read/wird/types'
 
   const RECENT_SURAHS_CAP = 7
 
   let isOpen = $state(false)
   let activeTab = $state<DrawerTab>('read')
-  let activeSubTab = $state<ReadSubTab>('surahs')
+  type ReadDestination = 'browse' | 'bookmarks'
+  type BrowseMode = 'surah' | 'juz'
+  let readDestination = $state<ReadDestination>('browse')
+  let browseMode = $state<BrowseMode>('surah')
+  let showingWirdDetail = $state(false)
 
   let allSurahs = $state<SurahMeta[]>([])
   let recentSurahs = $state<number[]>([])
@@ -49,6 +60,16 @@
   const currentSurahN = $derived<number | null>(
     reader.currentSurahNum ?? settings.currentPosition?.surah ?? null
   )
+  const surahCounts = $derived<SurahCount[]>(
+    allSurahs.map((surah) => ({
+      n: surah.n,
+      count: surah.counts[settings.riwayah] ?? surah.counts.qaloon,
+    })),
+  )
+  const currentRef = $derived<QuranRef | null>(
+    settings.currentPosition ? { surah: settings.currentPosition.surah, verse: settings.currentPosition.verse } : null,
+  )
+  const wirdSummary = $derived(deriveWirdSummary(settings.wirdPlan ?? null, surahCounts, getLocalDayKey()))
 
   type ParsedQuery =
     | { kind: 'empty' }
@@ -117,7 +138,9 @@
 
   async function open(tab?: DrawerTab, subTab?: ReadSubTab): Promise<void> {
     activeTab = tab ?? 'read'
-    activeSubTab = subTab ?? 'surahs'
+    readDestination = subTab === 'bookmarks' ? 'bookmarks' : 'browse'
+    browseMode = 'surah'
+    showingWirdDetail = false
     isOpen = true
     surahsState.filter = 'all'
     surahsState.searchQuery = ''
@@ -131,7 +154,7 @@
     await loadRecents()
 
     await tick()
-    if (activeTab === 'read' && activeSubTab === 'surahs') { scrollToCurrentSurah() }
+    if (activeTab === 'read' && readDestination === 'browse' && browseMode === 'surah') { scrollToCurrentSurah() }
   }
   function close(): void { isOpen = false }
   function toggle(tab?: DrawerTab): void {
@@ -158,14 +181,9 @@
 
   function setTab(t: DrawerTab): void {
     activeTab = t
-    if (t === 'read' && activeSubTab === 'surahs') {
+    if (t === 'read' && readDestination === 'browse' && browseMode === 'surah') {
       void tick().then(scrollToCurrentSurah)
     }
-  }
-
-  function setSubTab(s: ReadSubTab): void {
-    activeSubTab = s
-    if (s === 'surahs') { void tick().then(scrollToCurrentSurah) }
   }
 
   function go(href: string): void {
@@ -177,6 +195,56 @@
   function goSurah(n: number): void { go(`#/s/${n}`) }
   function goReviewHub(): void { go('#/review') }
   function goReviewLayer(layer: string): void { go(`#/review?layer=${layer}`) }
+  function openWirdDetail(): void { showingWirdDetail = true }
+  function closeWirdDetail(): void { showingWirdDetail = false }
+
+  function continueWird(): void {
+    const ref = wirdSummary.nextRef
+    if (!ref) { return }
+    emit(Events.NAVIGATION_NAVIGATE, { surah: ref.surah, verse: ref.verse })
+    close()
+  }
+
+  async function createOrUpdateWird(payload: SetupPayload): Promise<void> {
+    const today = getLocalDayKey()
+    const startRef = payload.startMode === 'beginning' || !settings.currentPosition
+      ? { surah: 1, verse: 1 }
+      : { surah: settings.currentPosition.surah, verse: settings.currentPosition.verse }
+    const last = surahCounts[surahCounts.length - 1]
+    if (!last) { return }
+    const endRef = { surah: last.n, verse: last.count }
+    let targetEndOn = payload.targetEndOn
+    if (!targetEndOn && payload.targetDays !== null) {
+      const date = new Date(`${today}T00:00:00`)
+      date.setDate(date.getDate() + payload.targetDays - 1)
+      targetEndOn = getLocalDayKey(date)
+    }
+    if (!targetEndOn) { return }
+
+    const plan = createWirdPlan({
+      startRef,
+      endRef,
+      targetEndOn,
+      startedOn: today,
+      unit: payload.unit,
+      reminder: {
+        enabled: payload.reminderEnabled,
+        time: payload.reminderTime,
+        browserNotifications: payload.browserNotifications ? 'granted' : 'default',
+      },
+    }, surahCounts, today)
+
+    if (settings.wirdPlan) {
+      plan.id = settings.wirdPlan.id
+      plan.history = settings.wirdPlan.history
+      plan.progress.completedThroughRef = settings.wirdPlan.progress.completedThroughRef
+      plan.progress.lastReadRef = settings.wirdPlan.progress.lastReadRef
+      plan.progress.nextRef = settings.wirdPlan.progress.nextRef
+    }
+
+    await saveWirdPlan(plan)
+    showingWirdDetail = false
+  }
 
   function setFilter(f: 'all' | 'recent'): void {
     surahsState.filter = f
@@ -286,6 +354,24 @@
         <span class="qa-nav-drawer-wordmark-text">QuranAtlas</span>
         <span class="qa-nav-drawer-info" aria-hidden="true">about</span>
       </button>
+      <div class="qa-nav-drawer-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'read'}
+          class="qa-nav-drawer-tab"
+          class:qa-nav-drawer-tab--on={activeTab === 'read'}
+          onclick={() => setTab('read')}
+        >Read</button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'study'}
+          class="qa-nav-drawer-tab"
+          class:qa-nav-drawer-tab--on={activeTab === 'study'}
+          onclick={() => setTab('study')}
+        >Study</button>
+      </div>
       <button
         type="button"
         class="qa-nav-drawer-close"
@@ -294,112 +380,138 @@
       >&#x2715;</button>
     </div>
 
-    <div class="qa-nav-drawer-tabs" role="tablist">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeTab === 'read'}
-        class="qa-nav-drawer-tab"
-        class:qa-nav-drawer-tab--on={activeTab === 'read'}
-        onclick={() => setTab('read')}
-      >Read</button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeTab === 'study'}
-        class="qa-nav-drawer-tab"
-        class:qa-nav-drawer-tab--on={activeTab === 'study'}
-        onclick={() => setTab('study')}
-      >Study</button>
-    </div>
-
     {#if activeTab === 'read'}
-      <div class="qa-nav-drawer-subtabs" role="tablist" aria-label="Reading mode">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeSubTab === 'surahs'}
-          class="qa-nav-drawer-subtab"
-          class:qa-nav-drawer-subtab--on={activeSubTab === 'surahs'}
-          onclick={() => setSubTab('surahs')}
-        >Surahs</button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeSubTab === 'bookmarks'}
-          class="qa-nav-drawer-subtab"
-          class:qa-nav-drawer-subtab--on={activeSubTab === 'bookmarks'}
-          onclick={() => setSubTab('bookmarks')}
-        >Bookmarks</button>
-      </div>
+      {#if showingWirdDetail}
+        <WirdDetail
+          summary={wirdSummary}
+          currentPosition={settings.currentPosition}
+          onBack={closeWirdDetail}
+          onCreate={(payload) => { void createOrUpdateWird(payload) }}
+          onContinue={continueWird}
+          onReset={() => { void clearWirdPlan(); closeWirdDetail() }}
+          onRequestBrowserNotifications={() => {}}
+        />
+      {:else}
+        <div class="qa-nav-drawer-read">
+          <DailyWirdCard summary={wirdSummary} onOpen={openWirdDetail} />
+          <div class="qa-nav-drawer-dest-switch" role="tablist" aria-label="Read destination">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={readDestination === 'browse'}
+              class:qa-nav-drawer-dest--on={readDestination === 'browse'}
+              onclick={() => { readDestination = 'browse' }}
+            >Browse</button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={readDestination === 'bookmarks'}
+              class:qa-nav-drawer-dest--on={readDestination === 'bookmarks'}
+              onclick={() => { readDestination = 'bookmarks' }}
+            >Bookmarks</button>
+          </div>
 
-      {#if activeSubTab === 'surahs'}
-        <div class="qa-nav-drawer-tab-body">
+          {#if readDestination === 'browse'}
+            <div class="qa-nav-drawer-tab-body">
           <div class="qa-nav-drawer-surah-rail">
             <div class="qa-nav-drawer-surah-rail-copy">
               <span class="qa-nav-drawer-surah-rail-eyebrow">Browse</span>
-              <span class="qa-nav-drawer-surah-rail-title">Surahs</span>
+                  <span class="qa-nav-drawer-surah-rail-title">{browseMode === 'surah' ? 'Surahs' : 'Juz'}</span>
             </div>
 
             <div class="qa-nav-drawer-rail-switch" role="tablist" aria-label="Browse mode">
-              {#each FILTERS as f (f.key)}
                 <button
                   type="button"
                   role="tab"
+                      data-testid="browse-mode-surah"
                   class="qa-nav-drawer-rail-switch-option"
-                  class:qa-nav-drawer-rail-switch-option--on={surahsState.filter === f.key}
-                  aria-selected={surahsState.filter === f.key}
-                  onclick={() => setFilter(f.key)}
-                >{f.label}</button>
-              {/each}
+                      class:qa-nav-drawer-rail-switch-option--on={browseMode === 'surah'}
+                      aria-selected={browseMode === 'surah'}
+                      onclick={() => { browseMode = 'surah'; void tick().then(scrollToCurrentSurah) }}
+                    >Surah</button>
+                    <button
+                      type="button"
+                      role="tab"
+                      data-testid="browse-mode-juz"
+                      class="qa-nav-drawer-rail-switch-option"
+                      class:qa-nav-drawer-rail-switch-option--on={browseMode === 'juz'}
+                      aria-selected={browseMode === 'juz'}
+                      onclick={() => { browseMode = 'juz' }}
+                    >Juz</button>
             </div>
           </div>
+              {#if browseMode === 'surah'}
+                <div class="qa-nav-drawer-surah-legacy">
+                  <div class="qa-nav-drawer-rail-switch" role="tablist" aria-label="Surah filter">
+                    {#each FILTERS as f (f.key)}
+                      <button
+                        type="button"
+                        role="tab"
+                        class="qa-nav-drawer-rail-switch-option"
+                        class:qa-nav-drawer-rail-switch-option--on={surahsState.filter === f.key}
+                        aria-selected={surahsState.filter === f.key}
+                        onclick={() => setFilter(f.key)}
+                      >{f.label}</button>
+                    {/each}
+                  </div>
 
-          <label class="qa-nav-drawer-search">
-            <span class="qa-nav-drawer-search-icon" aria-hidden="true">&#x2315;</span>
-            <input
-              type="search"
-              class="qa-nav-drawer-search-input"
-              placeholder="Search surah or 2:255"
-              aria-label="Search surah by name, number, or verse reference"
-              autocomplete="off"
-              maxlength={20}
-              value={surahsState.searchQuery}
-              oninput={handleSearchInput}
-              onkeydown={handleSearchKeydown}
-            />
-          </label>
+                  <label class="qa-nav-drawer-search">
+                    <span class="qa-nav-drawer-search-icon" aria-hidden="true">&#x2315;</span>
+                    <input
+                      type="search"
+                      class="qa-nav-drawer-search-input"
+                      placeholder="Search surah or 2:255"
+                      aria-label="Search surah by name, number, or verse reference"
+                      autocomplete="off"
+                      maxlength={20}
+                      value={surahsState.searchQuery}
+                      oninput={handleSearchInput}
+                      onkeydown={handleSearchKeydown}
+                    />
+                  </label>
 
-          {#if searchHint}
-            <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
+                  {#if searchHint}
+                    <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
+                  {/if}
+
+                  <ul class="qa-nav-drawer-surah-list" bind:this={listEl}>
+                    {#each visibleItems as s (s.n)}
+                      <li
+                        class="qa-nav-drawer-surah-row"
+                        class:qa-nav-drawer-surah-row--current={s.n === currentSurahN}
+                        data-surah={s.n}
+                      >
+                        <button
+                          type="button"
+                          class="qa-nav-drawer-surah-btn"
+                          onclick={() => { if (!commitRefJump()) { goSurah(s.n) } }}
+                          aria-label={parsedQuery.kind === 'ref' && parsedQuery.surah === s.n
+                            ? `Open ${s.name} verse ${parsedQuery.verse}`
+                            : `Open ${s.name}`}
+                        >
+                          <span class="qa-nav-drawer-surah-num">{s.n}</span>
+                          <span class="qa-nav-drawer-surah-name">{s.name}</span>
+                          <span class="qa-nav-drawer-surah-ar" dir="rtl" lang="ar">{s.name_ar}</span>
+                        </button>
+                      </li>
+                    {/each}
+                  </ul>
+                </div>
+              {:else}
+                <JuzList
+                  counts={surahCounts}
+                  names={allSurahs}
+                  currentRef={currentRef}
+                  wirdRef={wirdSummary.nextRef}
+                  onNavigate={(ref) => { emit(Events.NAVIGATION_NAVIGATE, { surah: ref.surah, verse: ref.verse }); close() }}
+                />
+              {/if}
+            </div>
+          {:else}
+            <div class="qa-nav-drawer-tab-body qa-nav-drawer-bookmarks-body">
+              <BookmarksList onNavigate={() => close()} />
+            </div>
           {/if}
-
-          <ul class="qa-nav-drawer-surah-list" bind:this={listEl}>
-            {#each visibleItems as s (s.n)}
-              <li
-                class="qa-nav-drawer-surah-row"
-                class:qa-nav-drawer-surah-row--current={s.n === currentSurahN}
-                data-surah={s.n}
-              >
-                <button
-                  type="button"
-                  class="qa-nav-drawer-surah-btn"
-                  onclick={() => { if (!commitRefJump()) { goSurah(s.n) } }}
-                  aria-label={parsedQuery.kind === 'ref' && parsedQuery.surah === s.n
-                    ? `Open ${s.name} verse ${parsedQuery.verse}`
-                    : `Open ${s.name}`}
-                >
-                  <span class="qa-nav-drawer-surah-num">{s.n}</span>
-                  <span class="qa-nav-drawer-surah-name">{s.name}</span>
-                  <span class="qa-nav-drawer-surah-ar" dir="rtl" lang="ar">{s.name_ar}</span>
-                </button>
-              </li>
-            {/each}
-          </ul>
-        </div>
-      {:else}
-        <div class="qa-nav-drawer-tab-body qa-nav-drawer-bookmarks-body">
-          <BookmarksList onNavigate={() => close()} />
         </div>
       {/if}
     {:else}
