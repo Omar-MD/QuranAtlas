@@ -1,4 +1,5 @@
 import { getTafsirs, loadTafsirForSurah, type TafsirEntry, type TafsirEntryMeta, type TafsirSurahPack } from '../data/dataset'
+import { startSourceAssetDownload } from '../data/offline-client'
 import { settings } from '../configure/state.svelte'
 import { loadTafsirId, resolveSavedTafsirId, setTafsirId } from '../configure/tafsir'
 
@@ -79,6 +80,14 @@ export function closeTafsirPreview(): void {
 }
 
 export async function selectTafsirSource(id: string): Promise<void> {
+  const source = tafsirState.available.find((entry) => entry.id === id)
+  if (source?.availableInManifest === false) {
+    const ok = await startSourceAssetDownload('tafsir', id)
+    if (!ok) {
+      tafsirState.unavailable = true
+      return
+    }
+  }
   await setTafsirId(id)
   tafsirState.selectedId = id
   if (tafsirState.activeVerseKey) {

@@ -103,9 +103,9 @@ Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3
 
 ### Translation rendering
 
-Each verse renders Arabic immediately. The verse's English meaning stays collapsed by default and mounts only after the user opens that verse's text block. When a shipped translation pack contains inline `[N]` markers, they render as bracketed footnote buttons coloured in accent hue. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
+Each verse renders Arabic immediately. When `settings.translationVisible` is on, the active translation renders under every mounted verse without requiring a verse click. When a shipped translation pack contains inline `[N]` markers, they render as bracketed footnote buttons coloured in accent hue. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
 
-Tap / click the same verse again → collapse its meaning lane and close any open footnote panel for that verse. Toggle "Hide translation" (Settings or `t`) keeps the meaning lane unavailable globally via `settings.translationVisible` rune, even when a verse is opened.
+Tap / click a verse toggles only the verse's knowledge lane (theme chips + passage summary). Translation visibility is global-only through Settings or `t`; turning it off hides all translation rows and any open inline footnote panels.
 
 **Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qaloon (Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/data/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/Qaloon ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
 
@@ -128,10 +128,10 @@ The Reader's primary per-verse study action is now tafsir, not new mark creation
 
 1. Double-tap / double-click a verse, right-click a verse, press `m`, or choose the command-sheet verse action to open inline tafsir preview for that verse.
 2. The active verse gains the existing left-edge accent treatment and a compact `tafsir` head label. The preview mounts directly under that verse's Arabic / meaning stack, where the old fast-tag panel used to appear.
-3. Inline preview loads the saved tafsir source immediately. If the saved source body is unavailable in the current dataset profile, runtime falls back to `muyassar` without breaking the Reader.
+3. Inline preview loads the saved tafsir source immediately. Optional tafsir bodies are fetched on demand from the same-origin dataset assets when selected; if a selected body is genuinely unavailable, runtime falls back to `muyassar` without breaking the Reader.
 4. Preview header includes the source switcher plus compact close (`×`) and **Expand** (`[]`) actions. Switching sources reloads the current surah's tafsir pack and keeps the preview anchored to the same active verse.
 5. Grouped tafsir ranges remain grouped. When a verse belongs to a range entry, the preview and full sheet show the shared reference range instead of duplicating the same text per ayah.
-6. **Expand** opens the full tafsir sheet overlay. On phone-sized viewports it takes over the full screen; on tablet and desktop it stays a bounded overlay. It replaces the old deep-tag escalation path for new Reader study actions and shows the active source label, verse/range reference, Arabic tafsir text, and the same source picker.
+6. **Expand** opens the full tafsir sheet overlay. On phone-sized viewports it takes over the full screen and keeps a visible close control pinned in the sheet header; on tablet and desktop it stays a bounded overlay. It replaces the old deep-tag escalation path for new Reader study actions and shows the active source label, verse/range reference, Arabic tafsir text, and the same source picker.
 7. Missing tafsir data is a compact unavailable state inside the preview / sheet. Reader rendering and navigation continue normally.
 
 ### Cross-surah infinite scroll
@@ -192,7 +192,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:41`, `src/read/Reader.svelte:671`, `src/read/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:41`, `src/read/Reader.svelte:663`, `src/read/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:28` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -204,7 +204,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:156` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:86`, `src/read/MarginHeader.svelte:174` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:504` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:496` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -214,8 +214,8 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **Hamburger drawer is the sole in-app entry to the full surah list (mobile).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
 - **Knowledge lane is optional and non-blocking.** Reader text render never waits on `dataset/knowledge/**`; missing or invalid ayah/passage shards leave verse theme/context metadata empty and do not introduce a new error surface.
-- **Meaning + knowledge are per-verse disclosures.** Arabic remains always visible; translation, theme chips, and passage summary mount only for verses the user explicitly opens. Closing a verse also closes any inline footnote open inside it.
-- **Reader tafsir is per-verse and source-switchable.** Inline preview and full sheet always read from `settings.tafsirId`, but runtime falls back to `muyassar` when the selected optional pack is absent from the active manifest.
+- **Knowledge is the per-verse disclosure.** Arabic remains always visible. Translation rows are controlled only by `settings.translationVisible`; verse clicks reveal/collapse theme chips and passage summary.
+- **Reader tafsir is per-verse and source-switchable.** Inline preview and full sheet read from `settings.tafsirId`; optional packs are same-origin on-demand assets outside the baseline manifest, and runtime falls back to `muyassar` only when the selected body cannot be fetched.
 - **Mounted Reader verse content must stay live with Settings.** While the reader stays on the same surah, changing `settings.translationVisible`, `settings.translationId`, or `settings.tafsirId` must refresh the mounted verse tree / active tafsir preview without requiring a route reload.
 - **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
 - **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/read/chrome.spec.js` B-Virt1/2/3 + `tests/unit/read/chunked-virtualiser.test.ts`.

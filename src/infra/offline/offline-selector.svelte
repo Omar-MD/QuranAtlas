@@ -18,10 +18,24 @@
   import { setOfflineCategories } from '../../configure/offline-categories.ts'
   import {
     getCategoryManifest,
+    getSourceAssetManifest,
     getStorageBudget,
+    removeCategoryDownload,
+    removeSourceAssetDownload,
     startCategoryDownload,
-  } from '../../data/offline.ts'
+    startSourceAssetDownload,
+  } from '../../data/offline-client.ts'
+  import { getTafsirs, getTranslations } from '../../data/dataset.ts'
   import type { Category } from '../sw/route-defs'
+
+  type SourceKind = 'translation' | 'tafsir'
+  type SourceOption = {
+    id: string
+    name: string
+    kind: SourceKind
+    availableInManifest: boolean
+    bytes: number
+  }
 
   type Row = {
     cat: Category
@@ -41,6 +55,7 @@
   let open = $state(false)
   let bytesByCat = $state<Record<Category, number>>({ text: 0, audio: 0, pages: 0, search: 0 })
   let availableByCat = $state<Record<Category, boolean>>({ text: false, audio: false, pages: false, search: false })
+  let textSources = $state<SourceOption[]>([])
   let pending = $state<OfflineCategoriesState>(
     structuredClone($state.snapshot(settings.offlineCategories ?? DEFAULT_OFFLINE_CATEGORIES))
   )
@@ -65,6 +80,29 @@
     if (cat === 'search') return pending.search
     const map = cat === 'audio' ? pending.audio : pending.pages
     return Object.values(map).some(Boolean)
+  }
+
+  function isSourceChecked(kind: SourceKind, id: string): boolean {
+    const map = kind === 'translation' ? pending.text.translations : pending.text.tafsir
+    return map[id] === true
+  }
+
+  function isSourceCheckedIn(state: OfflineCategoriesState | undefined, kind: SourceKind, id: string): boolean {
+    if (!state) return false
+    const map = kind === 'translation' ? state.text.translations : state.text.tafsir
+    return map[id] === true
+  }
+
+  function setSourceChecked(kind: SourceKind, id: string, checked: boolean): void {
+    const next = structuredClone($state.snapshot(pending))
+    const map = kind === 'translation' ? next.text.translations : next.text.tafsir
+    if (checked) {
+      map[id] = true
+    } else {
+      delete map[id]
+    }
+    pending = next
+    saved = false
   }
 
   function setCategoryChecked(cat: Category, checked: boolean): void {
@@ -102,10 +140,18 @@
       const nowChecked = isCategoryChecked(r.cat)
       return nowChecked && !wasChecked ? sum + bytesByCat[r.cat] : sum
     }, 0)
+    + textSources.reduce((sum, source) => {
+      const wasChecked = isSourceCheckedIn(settings.offlineCategories, source.kind, source.id)
+      const nowChecked = isSourceChecked(source.kind, source.id)
+      return nowChecked && !wasChecked ? sum + source.bytes : sum
+    }, 0)
   )
 
   const hasDiff = $derived(
     ROWS.some(r => isCategoryCheckedIn(settings.offlineCategories, r.cat) !== isCategoryChecked(r.cat))
+    || textSources.some(source =>
+      isSourceCheckedIn(settings.offlineCategories, source.kind, source.id) !== isSourceChecked(source.kind, source.id)
+    )
   )
 
   const quotaShortfall = $derived(
@@ -133,12 +179,42 @@
     }
   }
 
+  async function refreshTextSources(): Promise<void> {
+    const [translations, tafsirs] = await Promise.all([
+      getTranslations().catch(() => []),
+      getTafsirs().catch(() => []),
+    ])
+    const next: SourceOption[] = []
+    for (const entry of translations) {
+      const asset = await getSourceAssetManifest('translation', entry.id).catch(() => ({ totalBytes: 0 }))
+      next.push({
+        id: entry.id,
+        name: entry.name,
+        kind: 'translation',
+        availableInManifest: entry.availableInManifest,
+        bytes: asset.totalBytes,
+      })
+    }
+    for (const entry of tafsirs) {
+      const asset = await getSourceAssetManifest('tafsir', entry.id).catch(() => ({ totalBytes: 0 }))
+      next.push({
+        id: entry.id,
+        name: entry.name,
+        kind: 'tafsir',
+        availableInManifest: entry.availableInManifest,
+        bytes: asset.totalBytes,
+      })
+    }
+    textSources = next
+  }
+
   async function refreshBudget(): Promise<void> {
     storageBudget = await getStorageBudget()
   }
 
   onMount(() => {
     refreshBytes()
+    refreshTextSources()
     refreshBudget()
   })
 
@@ -149,14 +225,35 @@
     saved = false
     busy = true
     try {
-      await setOfflineCategories(pending)
+      const current = $state.snapshot(settings.offlineCategories)
       const toDownload: Category[] = []
+      const toRemove: Category[] = []
       for (const r of ROWS) {
         if (isCategoryChecked(r.cat) && availableByCat[r.cat]) toDownload.push(r.cat)
+        if (!isCategoryChecked(r.cat) && isCategoryCheckedIn(current, r.cat)) toRemove.push(r.cat)
       }
+      const sourcesToDownload = textSources.filter(
+        source => isSourceChecked(source.kind, source.id)
+          && !isSourceCheckedIn(current, source.kind, source.id)
+          && source.bytes > 0
+      )
+      const sourcesToRemove = textSources.filter(
+        source => !isSourceChecked(source.kind, source.id)
+          && isSourceCheckedIn(current, source.kind, source.id)
+      )
       for (const cat of toDownload) {
         await startCategoryDownload(cat)
       }
+      for (const source of sourcesToDownload) {
+        await startSourceAssetDownload(source.kind, source.id)
+      }
+      for (const source of sourcesToRemove) {
+        await removeSourceAssetDownload(source.kind, source.id)
+      }
+      for (const cat of toRemove) {
+        await removeCategoryDownload(cat)
+      }
+      await setOfflineCategories(pending)
       await refreshBudget()
       saved = true
       setTimeout(() => { saved = false }, 1500)
@@ -227,6 +324,27 @@
           </li>
         {/each}
       </ul>
+
+      {#if textSources.length > 0}
+        <div class="qa-storage-source-list" data-testid="storage-source-list">
+          {#each textSources as source (`${source.kind}:${source.id}`)}
+            <label class="qa-storage-source-row" data-testid="storage-source-{source.kind}-{source.id}">
+              <span class="qa-storage-source-main">
+                <span class="qa-storage-source-kind">{source.kind === 'translation' ? 'Translation' : 'Tafsir'}</span>
+                <span class="qa-storage-source-name">{source.name}</span>
+              </span>
+              <span class="qa-storage-row-size">{fmt(source.bytes)}</span>
+              <input
+                class="qa-storage-check"
+                type="checkbox"
+                checked={isSourceChecked(source.kind, source.id)}
+                onchange={(e) => setSourceChecked(source.kind, source.id, (e.currentTarget as HTMLInputElement).checked)}
+                data-testid="storage-source-check-{source.kind}-{source.id}"
+              />
+            </label>
+          {/each}
+        </div>
+      {/if}
 
       <div class="qa-storage-footer">
         <button

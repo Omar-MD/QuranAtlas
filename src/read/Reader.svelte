@@ -112,14 +112,6 @@
   // ---------------------------------------------------------------------------
 
   $effect(() => {
-    // Only sync if the value has been loaded (not null) to avoid overwriting the
-    // IDB-fetched value during initial mount.
-    if (settings.translationVisible !== null) {
-      translationVisible = settings.translationVisible
-    }
-  })
-
-  $effect(() => {
     const nextVisible = settings.translationVisible
     if (nextVisible === null || !surahData || isLoading || translationVisible === nextVisible) {
       return

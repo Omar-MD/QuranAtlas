@@ -16,19 +16,22 @@
  * Layout and service-worker lifecycle still require e2e coverage.
  */
 
-import { render, fireEvent } from '@testing-library/svelte'
+import { render, fireEvent, waitFor } from '@testing-library/svelte'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 const setOfflineCategoriesMock = vi.fn(async (next) => {
   Object.assign(settings, { offlineCategories: next })
 })
 const startCategoryDownloadMock = vi.fn(async () => {})
+const startSourceAssetDownloadMock = vi.fn(async () => true)
+const removeSourceAssetDownloadMock = vi.fn(async () => {})
+const removeCategoryDownloadMock = vi.fn(async () => {})
 
 vi.mock('../../../../src/configure/offline-categories.ts', () => ({
   setOfflineCategories: (...args: unknown[]) => setOfflineCategoriesMock(...args),
 }))
 
-vi.mock('../../../../src/data/offline.ts', () => ({
+vi.mock('../../../../src/data/offline-client.ts', () => ({
   getCategoryManifest: vi.fn(async (cat: string) => {
     if (cat === 'text') {
       return {
@@ -43,9 +46,27 @@ vi.mock('../../../../src/data/offline.ts', () => ({
     }
     return { urls: [], totalBytes: 0 }
   }),
+  getSourceAssetManifest: vi.fn(async (kind: string, id: string) => ({
+    urls: [`/dataset/${kind === 'translation' ? 'translations' : 'tafsir'}/${id}/001.json`],
+    totalBytes: id === 'mukhtasar' ? 1_200_000 : 900_000,
+  })),
   isCategoryAvailable: vi.fn(async (cat: string) => cat === 'text'),
   startCategoryDownload: (...args: unknown[]) => startCategoryDownloadMock(...args),
+  startSourceAssetDownload: (...args: unknown[]) => startSourceAssetDownloadMock(...args),
+  removeSourceAssetDownload: (...args: unknown[]) => removeSourceAssetDownloadMock(...args),
+  removeCategoryDownload: (...args: unknown[]) => removeCategoryDownloadMock(...args),
   getStorageBudget: vi.fn(async () => ({ usage: 1_000_000, quota: 100_000_000, available: 99_000_000 })),
+}))
+
+vi.mock('../../../../src/data/dataset.ts', () => ({
+  getTranslations: vi.fn(async () => [
+    { id: 'bridges', name: 'Bridges', availableInManifest: true },
+    { id: 'saheeh', name: 'Saheeh International', availableInManifest: false },
+  ]),
+  getTafsirs: vi.fn(async () => [
+    { id: 'muyassar', name: 'Tafsir Muyassar', availableInManifest: true },
+    { id: 'mukhtasar', name: 'Al-Mukhtasar fi al-Tafsir', availableInManifest: false },
+  ]),
 }))
 
 import OfflineSelector from '../../../../src/infra/offline/offline-selector.svelte'
@@ -57,6 +78,9 @@ describe('offline-selector.svelte', () => {
   beforeEach(() => {
     setOfflineCategoriesMock.mockClear()
     startCategoryDownloadMock.mockClear()
+    startSourceAssetDownloadMock.mockClear()
+    removeSourceAssetDownloadMock.mockClear()
+    removeCategoryDownloadMock.mockClear()
     Object.assign(settings, { offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } })
   })
 
@@ -72,7 +96,9 @@ describe('offline-selector.svelte', () => {
   it('gated rows lack a checkbox; only available rows render one', async () => {
     render(OfflineSelector)
     await flush()
-    expect(document.querySelector('[data-testid="storage-check-text"]')).not.toBeNull()
+    await waitFor(() => {
+      expect(document.querySelector('[data-testid="storage-check-text"]')).not.toBeNull()
+    })
     expect(document.querySelector('[data-testid="storage-check-audio"]')).toBeNull()
     expect(document.querySelector('[data-testid="storage-check-pages"]')).toBeNull()
     expect(document.querySelector('[data-testid="storage-check-search"]')).toBeNull()
@@ -85,13 +111,26 @@ describe('offline-selector.svelte', () => {
     expect(document.querySelector('[data-testid="storage-row-text"]')?.textContent).toContain('Knowledge context')
   })
 
+  it('renders source-aware translation and tafsir cache controls', async () => {
+    render(OfflineSelector)
+    await flush()
+    await waitFor(() => {
+      expect(document.querySelector('[data-testid="storage-source-check-translation-saheeh"]')).not.toBeNull()
+      expect(document.querySelector('[data-testid="storage-source-check-tafsir-mukhtasar"]')).not.toBeNull()
+    })
+  })
+
   it('Apply disabled at boot (no diff) and after toggling becomes enabled', async () => {
     render(OfflineSelector)
     await flush()
     const apply = document.querySelector('[data-testid="storage-apply"]') as HTMLButtonElement
     expect(apply.disabled).toBe(true)
 
-    const checkbox = document.querySelector('[data-testid="storage-check-text"]') as HTMLInputElement
+    const checkbox = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-check-text"]') as HTMLInputElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
     await fireEvent.click(checkbox)
     await flush()
     expect(apply.disabled).toBe(false)
@@ -100,15 +139,23 @@ describe('offline-selector.svelte', () => {
   it('Apply commits via setOfflineCategories and dispatches download for the toggled category', async () => {
     render(OfflineSelector)
     await flush()
-    const checkbox = document.querySelector('[data-testid="storage-check-text"]') as HTMLInputElement
+    const checkbox = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-check-text"]') as HTMLInputElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
     await fireEvent.click(checkbox)
     await flush()
 
     const apply = document.querySelector('[data-testid="storage-apply"]') as HTMLButtonElement
+    await waitFor(() => {
+      expect(apply.disabled).toBe(false)
+    })
     await fireEvent.click(apply)
-    await flush()
 
-    expect(setOfflineCategoriesMock).toHaveBeenCalledTimes(1)
+    await waitFor(() => {
+      expect(setOfflineCategoriesMock).toHaveBeenCalledTimes(1)
+    })
     expect(setOfflineCategoriesMock.mock.calls[0][0].text).toEqual({
       riwayat: { qaloon: true },
       translations: { bridges: true },
@@ -117,19 +164,47 @@ describe('offline-selector.svelte', () => {
     expect(startCategoryDownloadMock).toHaveBeenCalledWith('text')
   })
 
+  it('Apply caches selected optional source packs and records them source-aware', async () => {
+    render(OfflineSelector)
+    const checkbox = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-source-check-tafsir-mukhtasar"]') as HTMLInputElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
+    await fireEvent.click(checkbox)
+    await flush()
+
+    const apply = document.querySelector('[data-testid="storage-apply"]') as HTMLButtonElement
+    await waitFor(() => {
+      expect(apply.disabled).toBe(false)
+    })
+    await fireEvent.click(apply)
+
+    await waitFor(() => {
+      expect(startSourceAssetDownloadMock).toHaveBeenCalledWith('tafsir', 'mukhtasar')
+    })
+    expect(setOfflineCategoriesMock.mock.calls[0][0].text.tafsir.mukhtasar).toBe(true)
+  })
+
   it('refuses Apply pre-flight when selection exceeds available quota (Q4)', async () => {
-    const offlineMod = await import('../../../../src/data/offline.ts')
+    const offlineMod = await import('../../../../src/data/offline-client.ts')
     ;(offlineMod.getStorageBudget as unknown as { mockResolvedValueOnce: (v: unknown) => void })
       .mockResolvedValueOnce({ usage: 0, quota: 1_000_000, available: 1_000 })
 
     render(OfflineSelector)
     await flush()
-    const checkbox = document.querySelector('[data-testid="storage-check-text"]') as HTMLInputElement
+    const checkbox = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-check-text"]') as HTMLInputElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
     await fireEvent.click(checkbox)
     await flush()
 
     const apply = document.querySelector('[data-testid="storage-apply"]') as HTMLButtonElement
-    expect(apply.disabled).toBe(true)
-    expect(document.querySelector('[data-testid="storage-quota-err"]')).not.toBeNull()
+    await waitFor(() => {
+      expect(apply.disabled).toBe(true)
+      expect(document.querySelector('[data-testid="storage-quota-err"]')).not.toBeNull()
+    })
   })
 })

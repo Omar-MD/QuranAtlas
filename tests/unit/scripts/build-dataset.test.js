@@ -187,14 +187,20 @@ describe('buildManifestPayload', () => {
       await mkdir(join(root, 'knowledge', 'passages'), { recursive: true })
       await mkdir(join(root, 'knowledge', 'indexes'), { recursive: true })
       await mkdir(join(root, 'riwayat'), { recursive: true })
-      await mkdir(join(root, 'translations'), { recursive: true })
+      await mkdir(join(root, 'translations', 'bridges'), { recursive: true })
+      await mkdir(join(root, 'translations', 'saheeh'), { recursive: true })
+      await mkdir(join(root, 'tafsir', 'muyassar'), { recursive: true })
+      await mkdir(join(root, 'tafsir', 'mukhtasar'), { recursive: true })
       await writeFile(join(root, 'knowledge', 'ayah', '001.json'), '{"surah":1,"ayahs":[]}', 'utf8')
       await writeFile(join(root, 'knowledge', 'passages', '001.json'), '{"surah":1,"passages":[]}', 'utf8')
       await writeFile(join(root, 'knowledge', 'indexes', 'theme-to-ayah.json'), '{"guidance":["1:6"]}', 'utf8')
       await writeFile(join(root, 'provenance.json'), JSON.stringify(provenance), 'utf8')
       await writeFile(join(root, 'manifest.json'), '{"old":true}', 'utf8')
       await writeFile(join(root, 'riwayat', 'source.json'), '{"buildOnly":true}', 'utf8')
-      await writeFile(join(root, 'translations', 'source.json'), '{"buildOnly":true}', 'utf8')
+      await writeFile(join(root, 'translations', 'bridges', '001.json'), '{"text":"default"}', 'utf8')
+      await writeFile(join(root, 'translations', 'saheeh', '001.json'), '{"text":"optional"}', 'utf8')
+      await writeFile(join(root, 'tafsir', 'muyassar', '001.json'), '{"text":"default"}', 'utf8')
+      await writeFile(join(root, 'tafsir', 'mukhtasar', '001.json'), '{"text":"optional"}', 'utf8')
 
       const manifest = await buildManifestPayload({
         datasetDir: root,
@@ -203,6 +209,7 @@ describe('buildManifestPayload', () => {
         provenance,
         packageVersion: 'test',
         profileName: 'baseline',
+        manifestTextSources: new Set(['bridges', 'muyassar']),
       })
 
       expect(Array.isArray(manifest.files)).toBe(true)
@@ -228,10 +235,13 @@ describe('buildManifestPayload', () => {
       ]))
       expect(manifest.files.find((entry) => entry.path === 'manifest.json')).toBeUndefined()
       expect(manifest.files.find((entry) => entry.path === 'riwayat/source.json')).toBeUndefined()
-      expect(manifest.files.find((entry) => entry.path === 'translations/source.json')).toBeUndefined()
+      expect(manifest.files.find((entry) => entry.path === 'translations/bridges/001.json')).toBeDefined()
+      expect(manifest.files.find((entry) => entry.path === 'tafsir/muyassar/001.json')).toBeDefined()
+      expect(manifest.files.find((entry) => entry.path === 'translations/saheeh/001.json')).toBeUndefined()
+      expect(manifest.files.find((entry) => entry.path === 'tafsir/mukhtasar/001.json')).toBeUndefined()
       expect(manifest.lanes.text).toEqual(expect.objectContaining({
         enabled: true,
-        files: 1,
+        files: 3,
         bytes: expect.any(Number),
       }))
       expect(manifest.lanes.knowledge).toEqual(expect.objectContaining({

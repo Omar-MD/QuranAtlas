@@ -749,6 +749,13 @@
     padding: 0.4rem 0;
   }
 
+  .qa-settings-pop-error {
+    margin: 0.65rem 0.25rem 0.15rem;
+    color: var(--qa-text-danger);
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
   .qa-settings-pop-row {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -763,6 +770,11 @@
     text-align: left;
     width: 100%;
     transition: background-color var(--qa-transition-base);
+  }
+
+  .qa-settings-pop-row:disabled {
+    cursor: wait;
+    opacity: 0.72;
   }
 
   .qa-settings-pop-row:hover,
@@ -982,6 +994,48 @@
     height: 15px;
     cursor: pointer;
     flex-shrink: 0;
+  }
+
+  .qa-storage-source-list {
+    margin-top: 0.55rem;
+    display: grid;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 16%, transparent);
+    border-radius: var(--qa-radius-sm);
+    overflow: hidden;
+  }
+
+  .qa-storage-source-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.45rem 0.7rem;
+    cursor: pointer;
+  }
+
+  .qa-storage-source-row + .qa-storage-source-row {
+    border-top: 1px solid color-mix(in srgb, var(--qa-accent) 12%, transparent);
+  }
+
+  .qa-storage-source-main {
+    min-width: 0;
+    display: grid;
+    gap: 0.05rem;
+  }
+
+  .qa-storage-source-kind {
+    color: var(--qa-text-on-sheet-dim);
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .qa-storage-source-name {
+    color: var(--qa-text-on-sheet);
+    font-size: 0.74rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .qa-storage-footer {

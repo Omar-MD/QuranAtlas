@@ -35,6 +35,7 @@ describe('ROUTE_DEFS table', () => {
     expect(categoryFor(u('/dataset/translations/saheeh/001.json'))).toBe('text-translation')
     expect(categoryFor(u('/dataset/tafsir/muyassar/001.json'))).toBe('text-tafsir')
     expect(categoryFor(u('/dataset/indexes/sources.json'))).toBe('text-index')
+    expect(categoryFor(u('/dataset/indexes/source-assets.json'))).toBe('text-index')
     expect(categoryFor(u('/dataset/surahs.json'))).toBe('text-core')
     expect(categoryFor(u('/dataset/knowledge/ayah/002.json'))).toBe('text-knowledge')
     expect(categoryFor(u('/dataset/knowledge/passages/002.json'))).toBe('text-knowledge')

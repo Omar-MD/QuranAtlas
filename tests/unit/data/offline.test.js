@@ -22,6 +22,7 @@ const cachedUrls = new Set()
 globalThis.caches.open = vi.fn().mockResolvedValue({
   match: vi.fn().mockResolvedValue(undefined),
   put: vi.fn().mockResolvedValue(undefined),
+  delete: vi.fn().mockResolvedValue(true),
   keys: vi.fn().mockResolvedValue([]),
   add: vi.fn().mockImplementation(async (url) => { cachedUrls.add(url) }),
   addAll: vi.fn(),
@@ -30,6 +31,30 @@ globalThis.caches.open = vi.fn().mockResolvedValue({
 // Mock fetch for manifest inventory entries with per-file bytes so the
 // pre-flight quota path can sum category totals.
 globalThis.fetch = vi.fn().mockImplementation(async (url) => {
+  if (url.includes('source-assets.json')) {
+    return {
+      ok: true,
+      json: async () => ({
+        version: 1,
+        translations: [
+          {
+            id: 'saheeh',
+            type: 'translation',
+            totalBytes: 42,
+            files: [{ path: 'translations/saheeh/001.json', bytes: 42 }],
+          },
+        ],
+        tafsir: [
+          {
+            id: 'mukhtasar',
+            type: 'tafsir',
+            totalBytes: 64,
+            files: [{ path: 'tafsir/mukhtasar/001.json', bytes: 64 }],
+          },
+        ],
+      }),
+    }
+  }
   if (url.includes('manifest.json')) {
     return {
       ok: true,
@@ -129,6 +154,14 @@ describe('data/offline.js', () => {
         '/dataset/knowledge/passages/001.json',
       ]))
       expect(plan.totalBytes).toBe(1500 + 1400 + 800 + 900 + 600)
+    })
+
+    it('plans source-specific optional pack downloads outside the baseline manifest', async () => {
+      const { getSourceAssetManifest } = await import('../../../src/data/offline.js')
+      const plan = await getSourceAssetManifest('tafsir', 'mukhtasar')
+
+      expect(plan.urls).toEqual(['/dataset/tafsir/mukhtasar/001.json'])
+      expect(plan.totalBytes).toBe(64)
     })
 
     it('emits download-complete event on DATASET_COMPLETE', async () => {

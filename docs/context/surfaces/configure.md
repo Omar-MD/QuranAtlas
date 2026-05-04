@@ -83,18 +83,18 @@ Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross
 
 ### Storage section — offline-selector
 
-Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages (gated), Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
+Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages (gated), Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. A source-aware list under the rows exposes translation and tafsir packs so users can keep or remove individual optional text packs from cache. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
 
-The Text row represents the baseline reader source set: Qaloon Arabic, Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. The selector writes this as source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
+The Text row represents the baseline reader source set: Qaloon Arabic, Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. Optional translation and tafsir rows use `public/dataset/indexes/source-assets.json` for byte estimates and same-origin file plans without adding those bodies to the baseline manifest. The selector writes source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
 
 Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
 
 Apply gating:
 - Disabled when no diff vs `settings.offlineCategories`.
 - Disabled with a red "Need X MB more free space" message when sum-of-newly-checked exceeds available quota (audit Q4 — pre-flight refuse).
-- On click: writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer), then per-category `src/data/offline.ts::startCategoryDownload(cat)` for each available category. Button flips to a solid gold `Saved ✓` for ~1.5 s after a successful write so the user has visible confirmation.
+- On click: downloads newly checked category/source plans, removes unchecked cached source/category plans, then writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer). Button flips to a solid gold `Saved ✓` for ~1.5 s after a successful write so the user has visible confirmation.
 
-Selector commits additions only — uncheck + Apply records the new state but does not evict cache contents. Cache wins from prior precache passes are honored: SHA-256 verify on cached entries skips re-download for unchanged files.
+Uncheck + Apply removes the matching cached URLs when Cache Storage is available. Cache wins from prior precache passes are honored by network/cache strategy on subsequent reads.
 
 **Picker popover** (`[data-testid="settings-pop"]`): blurred + tinted scrim, parchment-gradient surface on light themes / deep-ink gradient on dark, gold hairline corner ornaments, italic serif "Choose a {Riwāyah / translation / tafsir}" title + uppercase eyebrow key. Each row: name + italic sub-meta when available + opacity-0 gold check badge that lights when active. Hover/focus tints background. Backdrop tap, Esc, or row-tap dismisses. With popover open, Esc closes popover first; second Esc closes sheet.
 
@@ -104,13 +104,13 @@ Dismissal: ✕ close button (inside preview), backdrop tap, Esc.
 
 Toggle translation-visibility switch → `settings.translationVisible` rune updates → the mounted reader re-renders with translation hidden/shown. Any footnote markers (`[N]`) present in the active pack and any open inline footnote panels disappear with translation. Sticky preview at top of Settings sheet drops translation line in lockstep.
 
-The shipped source index exposes four selectable English sources in this phase: Bridges (default baseline), Saheeh International, The Clear Quran, and M.A.S. Abdel Haleem. Only the default body is present in the baseline manifest; the others remain opt-in dataset packs.
+The shipped source index exposes four selectable English sources in this phase: Bridges (default baseline), Saheeh International, The Clear Quran, and M.A.S. Abdel Haleem. Only the default body is present in the baseline manifest; the others are same-origin opt-in dataset packs listed in `indexes/source-assets.json`.
 
-When the selected translation body is available in the current runtime dataset, the mounted Reader switches to it immediately while staying on the same surah.
+When a non-default translation is selected, Settings pre-flights storage, downloads its pack when Cache Storage is available, saves `settings.translationId`, and the mounted Reader switches to it immediately while staying on the same surah. If storage is insufficient or the pack cannot be fetched, the picker stays open and shows a compact error.
 
 ### Pick a tafsir source
 
-The Settings Sources section owns the saved tafsir preference under `settings.tafsirId`. The picker exposes al-Tafsir al-Muyassar (default baseline), al-Mukhtasar fi al-Tafsir, and Tafsir al-Sa'di from the runtime source index. Optional packs remain selectable even when their bodies are not in the current baseline manifest; the Reader falls back to `muyassar` at runtime when a selected optional tafsir pack is unavailable.
+The Settings Sources section owns the saved tafsir preference under `settings.tafsirId`. The picker exposes al-Tafsir al-Muyassar (default baseline), al-Mukhtasar fi al-Tafsir, and Tafsir al-Sa'di from the runtime source index. Optional packs are not in the baseline manifest but are present as same-origin opt-in assets. Selecting one pre-flights storage and downloads the pack when Cache Storage is available; Reader falls back to `muyassar` only when a selected optional tafsir pack cannot be fetched.
 
 If an inline tafsir preview or the full tafsir sheet is already open, changing the saved tafsir source from Settings updates that active Reader study view in place.
 
@@ -188,8 +188,8 @@ Keys + sole writers:
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:58`, `src/configure/riwayah.ts:74` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:152` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:135` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:155` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:138` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -204,9 +204,9 @@ Keys + sole writers:
 - **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
 - **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/configure/panel.test.ts`).
 - **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/configure/panel.test.ts`.
-- **Saved tafsir preference is source metadata, not body availability.** Settings can persist an optional tafsir id from `indexes/sources.json` even when its pack is absent from the active baseline manifest; Reader load is responsible for the soft fallback to `muyassar`.
+- **Saved tafsir preference is source metadata, not manifest membership.** Settings can persist an optional tafsir id from `indexes/sources.json`; optional body availability is planned by `indexes/source-assets.json`, and Reader load is responsible for the soft fallback to `muyassar` only when the body fetch fails.
 - **Sole writer of `settings.offlineCategories`: `src/configure/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
-- **Text offline opt-in remains source-aware under one compact UI row.** The visible Text checkbox maps to the baseline Qaloon + Bridges + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional text bodies must still be added through `indexes/sources.json` / manifest plumbing before they can affect byte estimates or download plans.
+- **Text offline opt-in remains source-aware.** The visible Text checkbox maps to the baseline Qaloon + Bridges + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional translation and tafsir rows are controlled by `settings.offlineCategories.text.translations` / `.tafsir` and planned from `indexes/source-assets.json`, not from the baseline manifest.
 
 ## Regression guards
 

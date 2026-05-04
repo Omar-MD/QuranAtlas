@@ -16,7 +16,20 @@ vi.mock('../../../src/read/tafsir-state.svelte', () => ({
 import Verse from '../../../src/read/Verse.svelte'
 
 describe('reader/Verse.svelte', () => {
-  it('keeps meaning and knowledge collapsed until the verse body is activated', async () => {
+  it('renders translation whenever the global translation setting is enabled', () => {
+    const { queryByText } = render(Verse, {
+      props: {
+        verseKey: '2:255',
+        arabic: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ',
+        translation: 'Allah - there is no deity except Him.',
+        translationVisible: true,
+      },
+    })
+
+    expect(queryByText('Allah - there is no deity except Him.')).not.toBeNull()
+  })
+
+  it('keeps knowledge collapsed until the verse body is activated', async () => {
     const { container, queryByText } = render(Verse, {
       props: {
         verseKey: '2:255',
@@ -28,7 +41,7 @@ describe('reader/Verse.svelte', () => {
       },
     })
 
-    expect(queryByText('Allah - there is no deity except Him.')).toBeNull()
+    expect(queryByText('Allah - there is no deity except Him.')).not.toBeNull()
     expect(queryByText('divine guidance')).toBeNull()
     expect(queryByText('A passage about Allah’s absolute sovereignty.')).toBeNull()
 

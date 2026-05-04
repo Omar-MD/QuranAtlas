@@ -15,8 +15,8 @@ describe('read/tafsir-state.svelte.ts', () => {
       loadTafsirForSurah: vi.fn(async (id: string) => {
         if (id === 'mukhtasar') {
           return {
-            tafsirId: 'muyassar',
-            tafsirVersion: 'fallback-pack',
+            tafsirId: 'mukhtasar',
+            tafsirVersion: 'optional-pack',
             language: 'ar',
             surahNo: 2,
             entries: [{
@@ -25,7 +25,7 @@ describe('read/tafsir-state.svelte.ts', () => {
               endKey: '2:255',
               ayahKeys: ['2:255'],
               sourceGranularity: 'ayah',
-              text: '<p>Fallback tafsir</p>',
+              text: '<p>Optional tafsir</p>',
             }],
           }
         }
@@ -54,6 +54,10 @@ describe('read/tafsir-state.svelte.ts', () => {
       }),
       setTafsirId: vi.fn(async (id: string) => { savedTafsirId = id }),
     }))
+
+    vi.doMock('../../../src/data/offline-client', () => ({
+      startSourceAssetDownload: vi.fn(async () => true),
+    }))
   })
 
   it('opens inline tafsir preview and resolves grouped ranges for the active verse', async () => {
@@ -68,26 +72,26 @@ describe('read/tafsir-state.svelte.ts', () => {
     expect(state.formatTafsirRange(state.getActiveTafsirEntry())).toBe('2:255-257')
   })
 
-  it('updates selected source and accepts runtime fallback back to Muyassar', async () => {
+  it('updates selected source and loads the optional tafsir pack on demand', async () => {
     const state = await import('../../../src/read/tafsir-state.svelte.ts')
 
     await state.openTafsirPreview('2:255')
     await state.selectTafsirSource('mukhtasar')
 
     expect(savedTafsirId).toBe('mukhtasar')
-    expect(state.tafsirState.pack?.tafsirId).toBe('muyassar')
+    expect(state.tafsirState.pack?.tafsirId).toBe('mukhtasar')
     expect(state.tafsirState.selectedId).toBe('mukhtasar')
-    expect(state.tafsirState.fallbackId).toBe('muyassar')
+    expect(state.tafsirState.fallbackId).toBeNull()
   })
 
-  it('syncs the active preview source from settings without clobbering the selected id on fallback', async () => {
+  it('syncs the active preview source from settings without clobbering the selected id', async () => {
     const state = await import('../../../src/read/tafsir-state.svelte.ts')
 
     await state.openTafsirPreview('2:255')
     await state.syncTafsirSourceFromSettings('mukhtasar')
 
     expect(state.tafsirState.selectedId).toBe('mukhtasar')
-    expect(state.tafsirState.pack?.tafsirId).toBe('muyassar')
-    expect(state.tafsirState.fallbackId).toBe('muyassar')
+    expect(state.tafsirState.pack?.tafsirId).toBe('mukhtasar')
+    expect(state.tafsirState.fallbackId).toBeNull()
   })
 })

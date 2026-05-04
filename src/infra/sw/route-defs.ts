@@ -93,6 +93,7 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     name: 'text-index',
     match: ({ url }) =>
       url.pathname === '/dataset/indexes/sources.json' ||
+      url.pathname === '/dataset/indexes/source-assets.json' ||
       url.pathname === '/dataset/provenance.json' ||
       url.pathname === '/dataset/manifest.json',
     strategy: 'NetworkFirst',

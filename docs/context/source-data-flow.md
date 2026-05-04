@@ -49,6 +49,7 @@ flowchart TD
         KnowledgeBuild["scripts/data/knowledge/build.mjs"]
         ManifestBuild["scripts/data/manifest/inventory.mjs"]
         SourcesIndex["public/dataset/indexes/sources.json"]
+        SourceAssets["public/dataset/indexes/source-assets.json"]
         Surahs["public/dataset/surahs.json"]
         Juz["public/dataset/juz.json"]
         RiwayahOut["public/dataset/riwayat/{riwayah}/{NNN}.json"]
@@ -97,6 +98,7 @@ flowchart TD
     KnowledgeAyahThemesSrc --> KnowledgeBuild
 
     TextBuild --> SourcesIndex
+    TextBuild --> SourceAssets
     TextBuild --> Surahs
     TextBuild --> Juz
     TextBuild --> RiwayahOut
@@ -107,6 +109,7 @@ flowchart TD
     KnowledgeBuild --> KnowledgePassagesOut
     KnowledgeBuild --> KnowledgeIndexesOut
     SourcesIndex --> ManifestBuild
+    SourceAssets --> ManifestBuild
     Surahs --> ManifestBuild
     Juz --> ManifestBuild
     RiwayahOut --> ManifestBuild
@@ -119,6 +122,7 @@ flowchart TD
     ManifestBuild --> Manifest
 
     SourcesIndex --> DatasetApi
+    SourceAssets --> Offline
     Surahs --> DatasetApi
     Juz --> DatasetApi
     RiwayahOut --> DatasetApi
@@ -263,20 +267,20 @@ Validation and generation are handled by `scripts/data/knowledge/build.mjs`, whi
 
 ## Build Outputs
 
-`scripts/data/text/build.mjs` consumes only committed normalized files, so the standard dataset build is offline. `scripts/data/manifest/inventory.mjs` then inventories the shipped files into `manifest.json`.
+`scripts/data/text/build.mjs` consumes only committed normalized files, so the standard dataset build is offline. It emits selectable translation/tafsir pack files and writes `indexes/source-assets.json` with byte totals for source-level downloads. `scripts/data/manifest/inventory.mjs` then inventories only the active profile's baseline/update files into `manifest.json`.
 
 Profiles:
 
-- `baseline`: emits `qaloon`, `bridges`, `muyassar`, plus metadata files
+- `baseline`: emits `qaloon`, `bridges`, `muyassar`, metadata files, and same-origin optional translation/tafsir pack files that are excluded from `manifest.json`
 - `full`: emits every locally configured approved source body
 - `catalog`: emits metadata/index files without text bodies
 
-Selected optional packs for this phase:
+Selectable packs for this phase:
 
-- translations: `bridges`, `clear-quran`, `abdel-haleem`
-- tafsir: `mukhtasar`, `saadi`
+- translations: `bridges` default plus optional `saheeh`, `clear-quran`, `abdel-haleem`
+- tafsir: `muyassar` default plus optional `mukhtasar`, `saadi`
 
-Only the defaults (`bridges`, `muyassar`) are present in the baseline app bundle. The optional packs stay discoverable through `indexes/sources.json` and become downloadable bodies only in non-baseline profiles or future opt-in download flows.
+Only the defaults (`bridges`, `muyassar`) are present in the baseline manifest / offline text plan. Optional packs stay discoverable through `indexes/sources.json`, are byte-planned by `indexes/source-assets.json`, and are fetched/cached on demand when the user selects or keeps them.
 
 Generated runtime files:
 
@@ -286,6 +290,7 @@ Generated runtime files:
 - `public/dataset/surahs.json`
 - `public/dataset/juz.json`
 - `public/dataset/indexes/sources.json`
+- `public/dataset/indexes/source-assets.json`
 - `public/dataset/provenance.json`
 - `public/dataset/manifest.json`
 
@@ -319,6 +324,7 @@ Validation performed during build:
 - `getSourceIndex()`: loads `/dataset/indexes/sources.json`
 - `getTafsirs()`: derives tafsir entries from the source index
 - `loadTafsirForSurah(id, n)`: loads `/dataset/tafsir/{id}/{NNN}.json`
+- `src/data/offline.ts::getSourceAssetManifest(kind, id)`: loads `/dataset/indexes/source-assets.json`
 
 `src/data/knowledge-dataset.ts` is the Phase 01 knowledge access layer:
 
@@ -331,11 +337,11 @@ Validation performed during build:
 Fallback behavior is source-aware:
 
 - missing saved riwayah falls back to `qaloon`
-- missing saved translation falls back to `bridges`
-- missing saved tafsir falls back to `muyassar`
+- missing saved translation falls back to `bridges` only when its same-origin pack fetch fails
+- missing saved tafsir falls back to `muyassar` only when its same-origin pack fetch fails
 - missing knowledge files resolve to `null` / empty rows without breaking reader rendering
 
-`indexes/sources.json` may list optional sources whose bodies are absent from `manifest.json`. That is intentional. It allows runtime discovery and offline planning without inflating the baseline artifact.
+`indexes/sources.json` may list optional sources whose bodies are absent from `manifest.json`. That is intentional. Optional body files can still be present on the same origin and indexed by `indexes/source-assets.json`, which allows runtime discovery, byte pre-flight, on-demand caching, and removal without inflating the baseline manifest or first-load precache.
 
 ## Translation Alignment Across Riwayat
 
@@ -371,7 +377,7 @@ Offline caching and byte estimates are driven by the built dataset, not by norma
 - text routes are split into `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index`
 - offline selector state stores source-aware text selections under `settings.offlineCategories.text.{riwayat,translations,tafsir}`
 
-Only files present in `manifest.json` contribute to baseline download size. Optional entries listed in `indexes/sources.json` stay metadata-only until their bodies are emitted by a build profile.
+Only files present in `manifest.json` contribute to baseline download/update size. Optional translation and tafsir bodies are not manifest members in the baseline profile; `src/data/offline.ts::startSourceAssetDownload()` uses `indexes/source-assets.json` to pre-flight quota and cache/remove those files directly in `CACHE_DATASET` when the user selects or keeps them.
 
 ## Verification
 

@@ -28,6 +28,21 @@ import { scanA11y } from '../fixtures/a11y.js'
 // Reuse the onboarded snapshot to skip per-test cold-boot setup.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
+async function ensureTranslation(page, sourceName = 'Bridges') {
+  await openSettingsSheet(page)
+  const toggle = page.getByRole('switch', { name: 'Show translation' })
+  if ((await toggle.getAttribute('aria-checked')) === 'false') {
+    await toggle.click()
+  }
+  const row = page.getByTestId('src-row-translation')
+  if (!((await row.textContent()) ?? '').includes(sourceName)) {
+    await row.click()
+    await page.locator('.qa-settings-pop-row').filter({ hasText: sourceName }).click()
+    await expect(row).toContainText(sourceName)
+  }
+  await page.keyboard.press('Escape')
+}
+
 test.describe('Journey B: Reader & ambient chrome', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/#/s/1')
@@ -111,12 +126,10 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   test('B-Translation: shipped Bridges translation renders and footnote disclosure works', async ({ page }) => {
     await page.goto('/#/s/79/1')
     await waitForReader(page)
+    await ensureTranslation(page, 'Bridges')
 
     const v1 = page.locator('.qa-verse[data-verse="1"]')
     await expect(v1).toBeVisible()
-
-    await expect(v1.locator('.qa-verse-translation')).toHaveCount(0)
-    await v1.locator('.qa-verse-body-summary').click()
 
     const translation = v1.locator('.qa-verse-translation')
     if (await translation.count() === 0) {
@@ -180,7 +193,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   test('B-SettingsSync: Settings updates the mounted reader translation visibility and active tafsir source selection', async ({ page }) => {
     const v1 = page.locator('.qa-verse[data-verse="1"]')
     await expect(v1).toBeVisible()
-    await v1.locator('.qa-verse-body-summary').click()
+    await ensureTranslation(page, 'Bridges')
 
     const translation = v1.locator('.qa-verse-translation')
     await expect(translation).toBeVisible()
@@ -205,6 +218,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     }).toPass({ timeout: 5_000 })
 
     await expect(preview.locator('.qa-tafsir-preview-select')).toHaveValue('mukhtasar')
+    await expect(preview.locator('.qa-tafsir-preview-source')).toContainText('Al-Mukhtasar fi al-Tafsir')
+    await expect(preview.locator('.qa-tafsir-preview-state')).toHaveCount(0)
   })
 
   // -------------------------------------------------------------------------
@@ -242,5 +257,8 @@ test.describe('Journey B: Reader tafsir sheet mobile @mobile', () => {
     expect(rect.left).toBe(0)
     expect(rect.right).toBe(390)
     expect(rect.bottom).toBe(844)
+
+    await sheet.getByRole('button', { name: 'Close tafsir' }).click()
+    await expect(sheet).toHaveCount(0)
   })
 })

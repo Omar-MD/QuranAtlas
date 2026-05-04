@@ -166,6 +166,13 @@ describe('data/dataset', () => {
       expect(pack.translationId).toBe('bridges')
     })
 
+    it('loads an optional translation pack on demand when its asset files exist outside the baseline manifest', async () => {
+      const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
+      const pack = await loadTranslationForSurah('saheeh', 1)
+      expect(pack).not.toBeNull()
+      expect(pack.translationId).toBe('saheeh')
+    })
+
     it('rejects out-of-range surah numbers', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
       await expect(loadTranslationForSurah('bridges', 0)).rejects.toThrow()
@@ -224,11 +231,11 @@ describe('data/dataset', () => {
       expect(pack.entries.some((e) => e.startKey === '73:1' && e.endKey === '73:4')).toBe(true)
     })
 
-    it('falls back to Muyassar when a saved optional tafsir pack is absent from the baseline manifest', async () => {
+    it('loads an optional tafsir pack on demand when its asset files exist outside the baseline manifest', async () => {
       const { loadTafsirForSurah } = await import('../../../src/data/dataset.ts')
       const pack = await loadTafsirForSurah('mukhtasar', 73)
       expect(pack).not.toBeNull()
-      expect(pack.tafsirId).toBe('muyassar')
+      expect(pack.tafsirId).toBe('mukhtasar')
     })
   })
 })

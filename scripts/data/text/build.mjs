@@ -8,7 +8,8 @@
  *
  * Emits:
  *   public/dataset/riwayat/{name}/{NNN}.json          (per selected profile)
- *   public/dataset/translations/{id}/{NNN}.json       (114 per shipped translation)
+ *   public/dataset/translations/{id}/{NNN}.json       (114 per selectable translation)
+ *   public/dataset/tafsir/{id}/{NNN}.json             (114 per selectable tafsir)
  *   public/dataset/surahs.json                        (114 entries, per-Riwayah counts)
  *   public/dataset/juz.json                           (30 entries)
  *   public/dataset/manifest.json                      (inventory per shipped file)
@@ -20,7 +21,7 @@
  * build runs offline.
  */
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -153,6 +154,50 @@ const DATASET_PROFILES = {
     translations: [],
     tafsir: [],
   },
+}
+
+function emittedSourceIdsForProfile(profile) {
+  return profile.name === 'catalog'
+    ? { translations: [], tafsir: [] }
+    : {
+        translations: SHIPPED_TRANSLATIONS.map((t) => t.id),
+        tafsir: SHIPPED_TAFSIR.map((t) => t.id),
+      }
+}
+
+async function collectSourceAssetGroup(kind, sourceId, baseDir) {
+  const files = []
+  let totalBytes = 0
+  for (let n = 1; n <= 114; n++) {
+    const filename = `${pad3(n)}.json`
+    const fullPath = join(baseDir, sourceId, filename)
+    const bytes = (await stat(fullPath)).size
+    const path = `${kind}/${sourceId}/${filename}`
+    files.push({ path, bytes })
+    totalBytes += bytes
+  }
+  return {
+    id: sourceId,
+    type: kind === 'translations' ? 'translation' : 'tafsir',
+    totalBytes,
+    files,
+  }
+}
+
+async function writeSourceAssetIndex({ translationIds, tafsirIds }) {
+  const translations = []
+  const tafsir = []
+  for (const id of translationIds) {
+    translations.push(await collectSourceAssetGroup('translations', id, TRANSLATIONS_DIR))
+  }
+  for (const id of tafsirIds) {
+    tafsir.push(await collectSourceAssetGroup('tafsir', id, TAFSIR_DIR))
+  }
+  await writeFile(
+    join(INDEXES_DIR, 'source-assets.json'),
+    JSON.stringify({ version: 1, translations, tafsir }),
+    'utf8',
+  )
 }
 
 export function getDatasetProfile(name = 'baseline') {
@@ -638,6 +683,7 @@ function licensesById(catalog) {
 
 export async function main() {
   const profile = getDatasetProfile(parseProfileArg())
+  const emittedSources = emittedSourceIdsForProfile(profile)
   console.log(`[build-dataset] starting profile=${profile.name}`)
 
   const sourceCatalog = await loadSourceCatalog()
@@ -738,7 +784,7 @@ export async function main() {
   const translationProvenance = []
   const hafsCounts = perRiwayahCounts.hafs.slice() // 114-entry array, matches surah index
   await cleanPackDirs(TRANSLATIONS_DIR, ['_verse-map.json', '_verse-aliases.json'])
-  for (const t of SHIPPED_TRANSLATIONS.filter((entry) => profile.translations.includes(entry.id))) {
+  for (const t of SHIPPED_TRANSLATIONS.filter((entry) => emittedSources.translations.includes(entry.id))) {
     const rawPath = join(NORMALIZED_TRANSLATIONS_DIR, t.normalizedFile)
     if (!existsSync(rawPath)) {
       throw new Error(`Missing translation source: ${rawPath} (run \`pnpm run data:fetch -- translation:${t.id}\`)`)
@@ -796,7 +842,7 @@ export async function main() {
   // 5b. tafsir — split committed normalized source packs.
   const tafsirProvenance = []
   await cleanPackDirs(TAFSIR_DIR)
-  for (const t of SHIPPED_TAFSIR.filter((entry) => profile.tafsir.includes(entry.id))) {
+  for (const t of SHIPPED_TAFSIR.filter((entry) => emittedSources.tafsir.includes(entry.id))) {
     const normalizedPath = join(NORMALIZED_TAFSIR_DIR, t.normalizedFile)
     if (!existsSync(normalizedPath)) {
       throw new Error(`Missing normalized tafsir source: ${normalizedPath}`)
@@ -836,6 +882,11 @@ export async function main() {
     console.log(`[build-dataset] tafsir ${t.id}: ${normalized.entries.length} entries (${rangeCount} ranges)`)
   }
 
+  await writeSourceAssetIndex({
+    translationIds: emittedSources.translations,
+    tafsirIds: emittedSources.tafsir,
+  })
+
   // 6. provenance.json
   const provenance = {
     packageVersion: PACKAGE_VERSION,
@@ -869,6 +920,7 @@ export async function main() {
     provenance,
     packageVersion: PACKAGE_VERSION,
     profileName: profile.name,
+    manifestTextSources: new Set([...profile.translations, ...profile.tafsir]),
   })
   await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
 

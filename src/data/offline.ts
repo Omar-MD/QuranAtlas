@@ -11,7 +11,7 @@
 
 import { put, get, del } from '../core/db'
 import { emit, on } from '../core/events'
-import { Events, Errors } from '../core/constants'
+import { CACHE_DATASET, Events, Errors } from '../core/constants'
 import { logger } from '../core/logger'
 import {
   ROUTE_DEFS,
@@ -40,6 +40,20 @@ type ManifestShape = {
 }
 
 let _manifestCache: ManifestShape | null = null
+type SourceAssetKind = 'translation' | 'tafsir'
+type SourceAssetGroup = {
+  id: string
+  type: SourceAssetKind
+  totalBytes: number
+  files: Array<{ path: string; bytes?: number }>
+}
+type SourceAssetsShape = {
+  version: number
+  translations: SourceAssetGroup[]
+  tafsir: SourceAssetGroup[]
+}
+
+let _sourceAssetsCache: SourceAssetsShape | null = null
 
 async function fetchManifest(): Promise<ManifestShape> {
   if (_manifestCache) return _manifestCache
@@ -47,6 +61,15 @@ async function fetchManifest(): Promise<ManifestShape> {
   if (!res.ok) throw new Error(`Failed to fetch manifest: ${res.status}`)
   const json = (await res.json()) as ManifestShape
   _manifestCache = json
+  return json
+}
+
+async function fetchSourceAssets(): Promise<SourceAssetsShape> {
+  if (_sourceAssetsCache) return _sourceAssetsCache
+  const res = await fetch('/dataset/indexes/source-assets.json')
+  if (!res.ok) throw new Error(`Failed to fetch source asset index: ${res.status}`)
+  const json = (await res.json()) as SourceAssetsShape
+  _sourceAssetsCache = json
   return json
 }
 
@@ -128,6 +151,20 @@ export async function getCategoryManifest(
   return sumBytesForCategory(manifest, category, location.origin)
 }
 
+export async function getSourceAssetManifest(
+  kind: SourceAssetKind,
+  id: string,
+): Promise<{ urls: string[]; totalBytes: number }> {
+  const assets = await fetchSourceAssets()
+  const list = kind === 'translation' ? assets.translations : assets.tafsir
+  const group = list.find((entry) => entry.id === id)
+  if (!group) return { urls: [], totalBytes: 0 }
+  return {
+    urls: group.files.map((file) => `/dataset/${file.path}`),
+    totalBytes: group.totalBytes,
+  }
+}
+
 /** True if a category has at least one shipped asset in the current manifest. */
 export async function isCategoryAvailable(category: Category): Promise<boolean> {
   const { urls } = await getCategoryManifest(category)
@@ -146,6 +183,11 @@ export async function getStorageBudget(): Promise<{ usage: number; quota: number
   } catch {
     return null
   }
+}
+
+export async function hasStorageForBytes(bytes: number): Promise<boolean> {
+  const budget = await getStorageBudget()
+  return !budget || budget.available >= bytes
 }
 
 function postMessageWithTimeout(msg: { type: string; urls?: string[] }, timeoutMs = 10000): void {
@@ -310,6 +352,34 @@ export async function startCategoryDownload(category: Category): Promise<void> {
     await clearActivation()
     emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: 'Service worker not ready' })
   }
+}
+
+export async function removeCategoryDownload(category: Category): Promise<void> {
+  const plan = await getCategoryManifest(category)
+  if (plan.urls.length === 0 || typeof caches === 'undefined') return
+  const cache = await caches.open(CACHE_DATASET)
+  await Promise.all(plan.urls.map((url) => cache.delete(url)))
+}
+
+export async function startSourceAssetDownload(kind: SourceAssetKind, id: string): Promise<boolean> {
+  const plan = await getSourceAssetManifest(kind, id)
+  if (plan.urls.length === 0) return false
+  if (!(await hasStorageForBytes(plan.totalBytes))) return false
+  if (typeof caches === 'undefined') return true
+  const cache = await caches.open(CACHE_DATASET)
+  await Promise.all(plan.urls.map(async (url) => {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
+    await cache.put(url, response)
+  }))
+  return true
+}
+
+export async function removeSourceAssetDownload(kind: SourceAssetKind, id: string): Promise<void> {
+  const plan = await getSourceAssetManifest(kind, id)
+  if (plan.urls.length === 0 || typeof caches === 'undefined') return
+  const cache = await caches.open(CACHE_DATASET)
+  await Promise.all(plan.urls.map((url) => cache.delete(url)))
 }
 
 /**

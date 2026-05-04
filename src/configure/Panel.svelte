@@ -16,13 +16,14 @@
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
   import { getTafsirs, getTranslations } from '../data/dataset.js'
+  import { startSourceAssetDownload } from '../data/offline-client.ts'
   import { panelBridge, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
   import { resolveSavedTafsirId, setTafsirId } from './tafsir.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
   import OfflineSelector from '../infra/offline/offline-selector.svelte'
 
-  type TranslationEntry = { id: string; name: string; subtitle?: string }
-  type TafsirEntry = { id: string; name: string }
+  type TranslationEntry = { id: string; name: string; subtitle?: string; availableInManifest?: boolean }
+  type TafsirEntry = { id: string; name: string; availableInManifest?: boolean }
   type PickerKind = 'recitation' | 'translation' | 'tafsir' | null
 
   let open = $state(false)
@@ -32,6 +33,8 @@
   let translationId = $state<string | null>(null)
   let tafsirs = $state<TafsirEntry[]>([])
   let tafsirId = $state('muyassar')
+  let sourceBusy = $state<string | null>(null)
+  let sourceError = $state<string | null>(null)
 
   const themeOptions = getThemeOptions()
   const fontOptions = getFontSizeOptions()
@@ -207,12 +210,44 @@
   }
 
   async function handleTranslationChoice(opt: TranslationEntry) {
+    sourceError = null
+    sourceBusy = opt.id
+    try {
+      if (opt.availableInManifest === false) {
+        const ok = await startSourceAssetDownload('translation', opt.id)
+        if (!ok) {
+          sourceError = 'Not enough storage for this translation.'
+          return
+        }
+      }
+    } catch {
+      sourceError = 'Could not download this translation.'
+      return
+    } finally {
+      sourceBusy = null
+    }
     await setTranslationId(opt.id)
     translationId = opt.id
     picker = null
   }
 
   async function handleTafsirChoice(opt: TafsirEntry) {
+    sourceError = null
+    sourceBusy = opt.id
+    try {
+      if (opt.availableInManifest === false) {
+        const ok = await startSourceAssetDownload('tafsir', opt.id)
+        if (!ok) {
+          sourceError = 'Not enough storage for this tafsir.'
+          return
+        }
+      }
+    } catch {
+      sourceError = 'Could not download this tafsir.'
+      return
+    } finally {
+      sourceBusy = null
+    }
     await setTafsirId(opt.id)
     tafsirId = opt.id
     picker = null
@@ -491,6 +526,9 @@
             {picker === 'recitation' ? 'Recitation' : picker === 'translation' ? 'Translation' : 'Tafsir'}
           </span>
         </header>
+        {#if sourceError}
+          <p class="qa-settings-pop-error" role="alert">{sourceError}</p>
+        {/if}
         <div class="qa-settings-pop-list">
           {#if picker === 'recitation'}
             {#each riwayahOptions as opt (opt)}
@@ -513,6 +551,7 @@
                 type="button"
                 class="qa-settings-pop-row"
                 class:qa-settings-pop-row--act={opt.id === translationId}
+                disabled={sourceBusy !== null}
                 onclick={() => handleTranslationChoice(opt)}
               >
                 <span class="qa-settings-pop-body">
@@ -521,7 +560,7 @@
                     <span class="qa-settings-pop-sub">{opt.subtitle}</span>
                   {/if}
                 </span>
-                <span class="qa-settings-pop-check" aria-hidden="true">✓</span>
+                <span class="qa-settings-pop-check" aria-hidden="true">{sourceBusy === opt.id ? '…' : '✓'}</span>
               </button>
             {/each}
           {:else}
@@ -530,12 +569,13 @@
                 type="button"
                 class="qa-settings-pop-row"
                 class:qa-settings-pop-row--act={opt.id === tafsirId}
+                disabled={sourceBusy !== null}
                 onclick={() => handleTafsirChoice(opt)}
               >
                 <span class="qa-settings-pop-body">
                   <span class="qa-settings-pop-name">{opt.name}</span>
                 </span>
-                <span class="qa-settings-pop-check" aria-hidden="true">✓</span>
+                <span class="qa-settings-pop-check" aria-hidden="true">{sourceBusy === opt.id ? '…' : '✓'}</span>
               </button>
             {/each}
           {/if}

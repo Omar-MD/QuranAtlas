@@ -24,6 +24,9 @@ function classifyDatasetFile(path) {
   if (path === 'indexes/sources.json' || path === 'provenance.json') {
     return { lane: 'text', category: 'text-index' }
   }
+  if (path === 'indexes/source-assets.json') {
+    return { lane: 'text', category: 'text-index' }
+  }
   if (path.startsWith('knowledge/ayah/')) {
     return { lane: 'knowledge', category: 'knowledge-ayah' }
   }
@@ -65,6 +68,7 @@ export async function buildManifestPayload({
   provenance,
   packageVersion,
   profileName,
+  manifestTextSources = null,
 }) {
   const allFiles = await listFiles(datasetDir)
   const files = []
@@ -74,6 +78,15 @@ export async function buildManifestPayload({
     if (dirname(fullPath) === riwayatDir) continue
     if (dirname(fullPath) === translationsDir) continue
     const path = relative(datasetDir, fullPath).replace(/\\/g, '/')
+    if (
+      manifestTextSources
+      && (
+        (path.startsWith('translations/') && !path.startsWith('translations/_') && !manifestTextSources.has(path.split('/')[1]))
+        || (path.startsWith('tafsir/') && !manifestTextSources.has(path.split('/')[1]))
+      )
+    ) {
+      continue
+    }
     const { lane, category } = classifyDatasetFile(path)
     files.push({
       path,

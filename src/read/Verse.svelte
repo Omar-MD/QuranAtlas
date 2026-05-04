@@ -52,7 +52,7 @@
     translationRole !== 'none' &&
     (translationRole === 'continuation' || translation.trim().length > 0)
   )
-  const canRevealDetails = $derived(hasMeaning || hasKnowledge)
+  const canRevealDetails = $derived(hasKnowledge)
 
   let openFn = $state<string | null>(null)
   let detailsVisible = $state(false)
@@ -84,8 +84,7 @@
     }
   }
 
-  function handleSummaryClick(e: MouseEvent) {
-    e.preventDefault()
+  function handleSummaryClick() {
     toggleDetails()
   }
 
@@ -121,84 +120,84 @@
       </span>
     {/if}
   </div>
-  {#if canRevealDetails}
-    <details class="qa-verse-body qa-verse-body--details" open={detailsVisible}>
-      <summary class="qa-verse-body-summary" onclick={handleSummaryClick}>
-        <div class="qa-verse-arabic" dir="rtl" data-riwayah={riwayah}>{arabic}</div>
-      </summary>
-      {#if detailsVisible && hasMeaning}
-        {#if translationRole === 'continuation'}
-          <div
-            class="qa-verse-translation qa-verse-translation--continuation"
-            class:qa-hide-translation={!translationVisible}
-            data-translation=""
-            data-translation-role="continuation"
-            role="presentation"
-            aria-label="Translation continued from verse {primaryAyah}"
-          >
-            <span class="qa-verse-continuation-marker" aria-hidden="true">↑</span>
-            <span class="qa-verse-continuation-text">continued from verse {primaryAyah}</span>
-          </div>
-        {:else}
-          <div
-            class="qa-verse-translation"
-            class:qa-hide-translation={!translationVisible}
-            data-translation=""
-            data-translation-role={translationRole}
-            onkeydown={handleFootnoteKey}
-            role="presentation"
-          >
-            {#each tokens as t, i (i)}
-              {#if t.type === 'text'}{t.value}{:else}<button
-                  type="button"
-                  class="qa-fn-marker"
-                  data-fn={t.idx}
-                  aria-expanded={openFn === t.idx}
-                  aria-controls="fn-{verseKey}-{t.idx}"
-                  aria-label="Footnote {t.idx}"
-                  onclick={() => toggleFootnote(t.idx)}
-                >{t.idx}</button>{/if}
+  <div
+    class="qa-verse-body"
+    class:qa-verse-body--details={canRevealDetails}
+    data-details-visible={detailsVisible}
+  >
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div class="qa-verse-body-summary" onclick={handleSummaryClick}>
+      <div class="qa-verse-arabic" dir="rtl" data-riwayah={riwayah}>{arabic}</div>
+    </div>
+    {#if hasMeaning}
+      {#if translationRole === 'continuation'}
+        <div
+          class="qa-verse-translation qa-verse-translation--continuation"
+          class:qa-hide-translation={!translationVisible}
+          data-translation=""
+          data-translation-role="continuation"
+          role="presentation"
+          aria-label="Translation continued from verse {primaryAyah}"
+        >
+          <span class="qa-verse-continuation-marker" aria-hidden="true">↑</span>
+          <span class="qa-verse-continuation-text">continued from verse {primaryAyah}</span>
+        </div>
+      {:else}
+        <div
+          class="qa-verse-translation"
+          class:qa-hide-translation={!translationVisible}
+          data-translation=""
+          data-translation-role={translationRole}
+          onkeydown={handleFootnoteKey}
+          role="presentation"
+        >
+          {#each tokens as t, i (i)}
+            {#if t.type === 'text'}{t.value}{:else}<button
+                type="button"
+                class="qa-fn-marker"
+                data-fn={t.idx}
+                aria-expanded={openFn === t.idx}
+                aria-controls="fn-{verseKey}-{t.idx}"
+                aria-label="Footnote {t.idx}"
+                onclick={() => toggleFootnote(t.idx)}
+              >{t.idx}</button>{/if}
+          {/each}
+        </div>
+      {/if}
+    {/if}
+    {#if translationVisible && openFn !== null && footnotes[openFn]}
+      <div
+        class="qa-fn-popover"
+        id="fn-{verseKey}-{openFn}"
+        role="note"
+        data-footnote=""
+      >
+        <span class="qa-fn-popover-num" aria-hidden="true">[{openFn}]</span>
+        <span class="qa-fn-popover-text">{footnotes[openFn]}</span>
+        <button
+          type="button"
+          class="qa-fn-popover-close"
+          aria-label="Close footnote"
+          onclick={() => { openFn = null }}
+        >×</button>
+      </div>
+    {/if}
+    {#if detailsVisible && hasKnowledge}
+      <div class="qa-verse-knowledge" data-knowledge-lane="">
+        {#if themes.length > 0}
+          <div class="qa-verse-themes" aria-label="Verse themes">
+            {#each themes as theme (theme)}
+              <span class="qa-verse-theme">{formatThemeLabel(theme)}</span>
             {/each}
           </div>
         {/if}
-      {/if}
-      {#if detailsVisible && translationVisible && openFn !== null && footnotes[openFn]}
-        <div
-          class="qa-fn-popover"
-          id="fn-{verseKey}-{openFn}"
-          role="note"
-          data-footnote=""
-        >
-          <span class="qa-fn-popover-num" aria-hidden="true">[{openFn}]</span>
-          <span class="qa-fn-popover-text">{footnotes[openFn]}</span>
-          <button
-            type="button"
-            class="qa-fn-popover-close"
-            aria-label="Close footnote"
-            onclick={() => { openFn = null }}
-          >×</button>
-        </div>
-      {/if}
-      {#if detailsVisible && hasKnowledge}
-        <div class="qa-verse-knowledge" data-knowledge-lane="">
-          {#if themes.length > 0}
-            <div class="qa-verse-themes" aria-label="Verse themes">
-              {#each themes as theme (theme)}
-                <span class="qa-verse-theme">{formatThemeLabel(theme)}</span>
-              {/each}
-            </div>
-          {/if}
-          {#if passageSummary}
-            <div class="qa-verse-context">{passageSummary}</div>
-          {/if}
-        </div>
-      {/if}
-    </details>
-  {:else}
-    <div class="qa-verse-body">
-      <div class="qa-verse-arabic" dir="rtl" data-riwayah={riwayah}>{arabic}</div>
-    </div>
-  {/if}
+        {#if passageSummary}
+          <div class="qa-verse-context">{passageSummary}</div>
+        {/if}
+      </div>
+    {/if}
+  </div>
   {#if isActive}
     <TafsirPreview {verseKey} />
   {/if}
