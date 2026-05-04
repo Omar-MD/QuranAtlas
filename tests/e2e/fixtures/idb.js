@@ -183,6 +183,20 @@ export async function readSetting(page, key) {
   }), key)
 }
 
+export async function writeSetting(page, key, value) {
+  await page.evaluate(({ key: settingKey, value: settingValue }) => new Promise((resolve, reject) => {
+    const open = indexedDB.open('quran-atlas')
+    open.onsuccess = () => {
+      const db = open.result
+      const tx = db.transaction('settings', 'readwrite')
+      tx.objectStore('settings').put({ key: settingKey, value: settingValue })
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject(tx.error) }
+    }
+    open.onerror = () => reject(open.error)
+  }), { key, value })
+}
+
 /**
  * Read a mark record from IDB by verseKey.  Returns undefined if not found.
  */

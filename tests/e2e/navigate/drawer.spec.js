@@ -18,7 +18,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { seedMarks } from '../fixtures/idb.js'
+import { seedMarks, writeSetting } from '../fixtures/idb.js'
 import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -102,5 +102,79 @@ test.describe('Journey F: Navigation', () => {
     await expect(page.locator('.qa-nav-drawer')).toBeVisible({ timeout: 4_000 })
     // Hash should be replaced (not on #/surahs)
     await page.waitForFunction(() => !window.location.hash.startsWith('#/surahs'), { timeout: 4_000 })
+  })
+
+  test('F-mobile-5: reader drawer top bar and Daily Wird card fit on a 320px phone @mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 })
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    const drawer = page.locator('.qa-nav-drawer')
+    await expect(drawer).toBeVisible()
+    await expect(page.locator('[data-testid="wird-card"]')).toBeVisible()
+
+    const overflow = await page.evaluate(() => {
+      const root = document.querySelector('.qa-nav-drawer')
+      const header = document.querySelector('.qa-nav-drawer-hdr')
+      if (!root || !header) { return true }
+      return header.scrollWidth > root.clientWidth || root.scrollWidth > window.innerWidth
+    })
+    expect(overflow).toBe(false)
+
+    const closeBox = await page.locator('.qa-nav-drawer-close').boundingBox()
+    const tabBox = await page.locator('.qa-nav-drawer-hdr .qa-nav-drawer-tabs').boundingBox()
+    expect(closeBox.width).toBeGreaterThanOrEqual(44)
+    expect(closeBox.height).toBeGreaterThanOrEqual(44)
+    expect(tabBox.height).toBeGreaterThanOrEqual(44)
+
+    await expect(page.locator('.qa-nav-drawer-surah-row, .qa-juz-row').first()).toBeVisible()
+  })
+
+  test('F-mobile-6: Browse switches between Surah and Juz, and Juz navigation lands in reader @mobile', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    await page.getByTestId('browse-mode-juz').click()
+    await expect(page.locator('.qa-juz-row')).toHaveCount(30)
+    await page.locator('[data-juz="2"] .qa-juz-row-btn').click()
+
+    await expect(page).toHaveURL(/#\/s\/2\/142$/)
+    await waitForReader(page)
+  })
+
+  test('F-mobile-7: seeded Daily Wird opens detail and Continue routes to nextRef @mobile', async ({ page }) => {
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await writeSetting(page, 'wirdPlan', {
+      id: 'wird-e2e',
+      startRef: { surah: 2, verse: 1 },
+      endRef: { surah: 2, verse: 20 },
+      targetDays: 2,
+      targetEndOn: '2026-05-05',
+      startedOn: '2026-05-04',
+      unit: 'verse',
+      reminder: { enabled: true, time: '08:00', browserNotifications: 'default' },
+      progress: {
+        lastReadRef: { surah: 2, verse: 1 },
+        nextRef: { surah: 2, verse: 8 },
+        dayKey: '2026-05-04',
+        todayStartRef: { surah: 2, verse: 1 },
+        todayEndRef: { surah: 2, verse: 10 },
+        completedThroughRef: { surah: 2, verse: 7 },
+      },
+      history: [],
+    })
+
+    await page.reload()
+    await waitForReader(page)
+    await page.locator('.qa-mh-hamburger').click()
+    await page.getByTestId('wird-card').click()
+    await expect(page.getByTestId('wird-detail-title')).toBeVisible()
+    await page.getByTestId('wird-continue').click()
+
+    await expect(page).toHaveURL(/#\/s\/2\/8$/)
+    await waitForReader(page)
   })
 })
