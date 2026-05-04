@@ -43,7 +43,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.MARKS_SAVED` | `marks:saved` | `src/mark/store.ts:88` | `src/mark/indicator.ts:100` |
 | `Events.MARKS_SAVE_FAILED` | `marks:save-failed` | `src/mark/store.ts:95` | `src/core/save-failure-toast.svelte:26` |
 | `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:41` | `src/mark/indicator.ts:119` |
-| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/navigate/CommandSheet.svelte:303`<br>`src/navigate/CommandSheet.svelte:305`<br>`src/navigate/NavDrawer.svelte:205`<br>`src/navigate/NavDrawer.svelte:264`<br>`src/navigate/NavDrawer.svelte:507`<br>`src/navigate/bookmarks/BookmarksList.svelte:106`<br>`src/navigate/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:293` |
+| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/navigate/CommandSheet.svelte:303`<br>`src/navigate/CommandSheet.svelte:305`<br>`src/navigate/NavDrawer.svelte:205`<br>`src/navigate/NavDrawer.svelte:264`<br>`src/navigate/NavDrawer.svelte:509`<br>`src/navigate/bookmarks/BookmarksList.svelte:106`<br>`src/navigate/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:293` |
 | `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:250`<br>`src/data/offline.ts:289` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:242`<br>`src/data/offline.ts:257`<br>`src/data/offline.ts:301`<br>`src/data/offline.ts:353` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:277` | `src/data/offline.ts:407` |

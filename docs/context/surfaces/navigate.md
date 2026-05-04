@@ -78,15 +78,17 @@ Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs.
 
 Header carries tappable QuranAtlas wordmark, squared `Read | Study` mode switch, and separate close button.
 
-**Read mode** starts with a compact Daily Wird card, then a hard-edged `Browse | Bookmarks` destination switch.
+**Read mode** starts with a compact Daily Wird card, then a compact segmented `Browse | Bookmarks` destination switch. The selected destination uses the accent fill; the unselected destination stays muted on the raised rail.
 
 `Browse` contains a `Surah | Juz` switch. Surah mode keeps search, `All | Recent`, current-surah highlight, and the existing surah rows. Juz mode hides search and `All | Recent`, renders 30 Juz rows, marks the Juz containing the current reader position, and routes row taps to the Juz start reference.
 
 `Bookmarks` keeps the existing riwayah-scoped grouped bookmark list.
 
+Daily Wird detail opens in-drawer. Without a plan, the creator uses Settings-style raised sections for completion target, display unit, start point, and reminder; each option exposes selected/unselected state through pressed semantics and visible accent styling. With a plan, the detail shows today range, remaining work, Continue, Edit, and Reset controls.
+
 **Study mode**: top **Hub** row (→ `#/review`) + 12 layer rows in 4 grouped sections (Speech / Narrative / Themes / Entities). Tap layer → `#/review?layer=<name>`.
 
-`✕` closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state local; not persisted. Header controls, sub-tabs, the All/Recent switch, and search field keep comfortable touch targets on mobile.
+`✕` closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state local; not persisted. Header controls, browse-mode controls, the All/Recent switch, and search field keep comfortable touch targets on mobile; the Read destination switch stays visually compact while preserving selected-state clarity.
 
 Desktop kebab path keeps narrow side-panel size but uses same tabbed component.
 
@@ -186,7 +188,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/navigate/bookmarks/store.ts:59` |
 | `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/navigate/bookmarks/store.ts:42` |
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/store.ts:38` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:205`, `src/navigate/NavDrawer.svelte:264`, `src/navigate/NavDrawer.svelte:507`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:205`, `src/navigate/NavDrawer.svelte:264`, `src/navigate/NavDrawer.svelte:509`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:162` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:153` |
 <!-- AUTO-GENERATED:events-emit END -->

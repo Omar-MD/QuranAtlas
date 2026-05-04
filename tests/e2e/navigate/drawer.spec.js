@@ -26,6 +26,19 @@ import { scanA11y } from '../fixtures/a11y.js'
 // Reuse the onboarded snapshot to skip per-test cold-boot setup.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
+async function controlPaint(locator) {
+  return locator.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    const box = el.getBoundingClientRect()
+    return {
+      backgroundColor: cs.backgroundColor,
+      borderColor: cs.borderColor,
+      color: cs.color,
+      height: box.height,
+    }
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Shared setup
 // ---------------------------------------------------------------------------
@@ -64,9 +77,9 @@ test.describe('Journey F: Navigation', () => {
     const drawer = page.locator('.qa-nav-drawer')
     await expect(drawer).toBeVisible()
 
-    // Read tab is on by default; Surahs sub-tab is on by default
+    // Read tab is on by default; Surah browse mode is on by default
     await expect(page.locator('.qa-nav-drawer-tab--on')).toHaveText(/Read/i)
-    await expect(page.locator('.qa-nav-drawer-subtab--on')).toHaveText(/Surahs/i)
+    await expect(page.getByTestId('browse-mode-surah')).toHaveAttribute('aria-selected', 'true')
 
     // Current surah (18 — Al-Kahf) is highlighted
     const currentRow = page.locator('.qa-nav-drawer-surah-row--current')
@@ -129,6 +142,75 @@ test.describe('Journey F: Navigation', () => {
     expect(tabBox.height).toBeGreaterThanOrEqual(44)
 
     await expect(page.locator('.qa-nav-drawer-surah-row, .qa-juz-row').first()).toBeVisible()
+  })
+
+  test('F-mobile-5b: Read destination switch is compact and shows selected versus unselected state @mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 })
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    const browse = page.locator('.qa-nav-drawer-dest-switch button', { hasText: 'Browse' })
+    const bookmarks = page.locator('.qa-nav-drawer-dest-switch button', { hasText: 'Bookmarks' })
+    await expect(browse).toHaveAttribute('aria-selected', 'true')
+    await expect(bookmarks).toHaveAttribute('aria-selected', 'false')
+
+    const browseOn = await controlPaint(browse)
+    const bookmarksOff = await controlPaint(bookmarks)
+    expect(browseOn.height).toBeLessThanOrEqual(38)
+    expect(bookmarksOff.height).toBeLessThanOrEqual(38)
+    expect(browseOn.backgroundColor).not.toBe(bookmarksOff.backgroundColor)
+    expect(browseOn.color).not.toBe(bookmarksOff.color)
+
+    await bookmarks.click()
+    await expect(bookmarks).toHaveAttribute('aria-selected', 'true')
+    const browseOff = await controlPaint(browse)
+    const bookmarksOn = await controlPaint(bookmarks)
+    expect(bookmarksOn.backgroundColor).not.toBe(browseOff.backgroundColor)
+    expect(bookmarksOn.color).not.toBe(browseOff.color)
+  })
+
+  test('F-mobile-5c: Wird creator uses Settings-style selected and unselected controls @mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/#/s/18')
+    await waitForReader(page)
+
+    await page.locator('.qa-mh-hamburger').click()
+    await page.getByTestId('wird-card').click()
+    await expect(page.getByTestId('wird-detail-title')).toBeVisible()
+
+    const setup = page.locator('.qa-wird-setup')
+    await expect(setup).toBeVisible()
+    const setupPaint = await setup.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return {
+        backgroundColor: cs.backgroundColor,
+        borderColor: cs.borderColor,
+        radius: cs.borderRadius,
+      }
+    })
+    expect(setupPaint.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+    expect(setupPaint.borderColor).not.toBe('rgba(0, 0, 0, 0)')
+    expect(parseFloat(setupPaint.radius)).toBeGreaterThanOrEqual(8)
+
+    const thirtyDays = page.getByTestId('wird-target-30')
+    const ninetyDays = page.getByTestId('wird-target-90')
+    await thirtyDays.click()
+    await expect(thirtyDays).toHaveAttribute('aria-pressed', 'true')
+    await expect(ninetyDays).toHaveAttribute('aria-pressed', 'false')
+    const thirtyOn = await controlPaint(thirtyDays)
+    const ninetyOff = await controlPaint(ninetyDays)
+    expect(thirtyOn.backgroundColor).not.toBe(ninetyOff.backgroundColor)
+    expect(thirtyOn.borderColor).not.toBe(ninetyOff.borderColor)
+
+    const currentStart = page.locator('.qa-wird-start button', { hasText: 'Current position' })
+    const beginningStart = page.locator('.qa-wird-start button', { hasText: 'Beginning' })
+    await expect(currentStart).toHaveAttribute('aria-pressed', 'true')
+    await expect(beginningStart).toHaveAttribute('aria-pressed', 'false')
+    const currentOn = await controlPaint(currentStart)
+    const beginningOff = await controlPaint(beginningStart)
+    expect(currentOn.backgroundColor).not.toBe(beginningOff.backgroundColor)
+    expect(currentOn.borderColor).not.toBe(beginningOff.borderColor)
   })
 
   test('F-mobile-6: Browse switches between Surah and Juz, and Juz navigation lands in reader @mobile', async ({ page }) => {

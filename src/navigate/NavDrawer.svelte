@@ -400,6 +400,7 @@
               type="button"
               role="tab"
               aria-selected={readDestination === 'browse'}
+              class="qa-nav-drawer-dest"
               class:qa-nav-drawer-dest--on={readDestination === 'browse'}
               onclick={() => { readDestination = 'browse' }}
             >Browse</button>
@@ -407,6 +408,7 @@
               type="button"
               role="tab"
               aria-selected={readDestination === 'bookmarks'}
+              class="qa-nav-drawer-dest"
               class:qa-nav-drawer-dest--on={readDestination === 'bookmarks'}
               onclick={() => { readDestination = 'bookmarks' }}
             >Bookmarks</button>
