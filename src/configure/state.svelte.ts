@@ -1,3 +1,5 @@
+import type { WirdPlan } from '../read/wird/types'
+
 export type TranslationId = string | null
 export type TafsirId = string
 export type Theme = 'light' | 'sepia' | 'dark' | 'auto'
@@ -47,6 +49,7 @@ export const settings = $state({
   nightMode: false,
   surahHeaderHidden: false,
   currentPosition: null as GlobalPosition,
+  wirdPlan: null as WirdPlan | null,
   audioReciter: null as string | null,
   audioSpeed: 1 as AudioSpeed,
   audioRepeat: { mode: 'off' as AudioRepeatMode } as AudioRepeat,

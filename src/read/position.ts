@@ -15,6 +15,7 @@ import { observeScroll, flushDebounce } from './scroll-tracker'
 import { scrollToVerse } from './verse-scroll'
 import { reader } from './state.svelte'
 import { saveGlobalPosition, loadGlobalPosition } from './global-position'
+import { advanceWirdFromReaderPosition } from './wird/store'
 
 /**
  * Save reading position to IDB via the global-position writer.
@@ -24,6 +25,7 @@ export async function savePosition(surahNum: number, verse: number): Promise<voi
     await saveGlobalPosition(surahNum, verse)
     reader.currentSurahNum = surahNum
     reader.currentVerseKey = `${surahNum}:${verse}`
+    void advanceWirdFromReaderPosition(surahNum, verse)
   } catch (error) {
     emit(Events.READER_POSITION_SAVE_FAILED, {
       error: error instanceof Error ? error.message : String(error),
