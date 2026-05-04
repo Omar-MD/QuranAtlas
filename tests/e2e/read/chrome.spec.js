@@ -183,14 +183,14 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     )
   })
 
-  test('B3: verse meaning and theme stay collapsed until the verse is opened', async ({ page }) => {
+  test('B3: translation stays visible while meaning and theme stay collapsed until the verse is opened', async ({ page }) => {
     await page.goto('/#/s/2/255')
     await waitForReader(page)
 
     const verse = page.locator('.qa-verse[data-token-key="2:255"]')
     await expect(verse).toBeVisible({ timeout: 5_000 })
 
-    await expect(verse.locator('.qa-verse-translation')).toHaveCount(0)
+    await expect(verse.locator('.qa-verse-translation')).toHaveText(/.+/)
     await expect(verse.locator('.qa-verse-knowledge')).toHaveCount(0)
 
     await verse.locator('.qa-verse-body-summary').click()
