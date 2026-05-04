@@ -35,7 +35,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.DB_DELETE_BLOCKED` | `db:delete-blocked` | `src/core/db/connection.ts:52`<br>`src/core/db/connection.ts:89` | `src/core/save-failure-toast.svelte:38` |
 | `Events.DB_QUOTA_EXCEEDED` | `db:quota-exceeded` | `src/core/db/connection.ts:126` | `src/core/quota-banner.svelte:12` |
 | `Events.DB_VERSION_CHANGE` | `db:version-change` | `src/core/db/connection.ts:39` | `src/infra/safety/sync.ts:102` |
-| `Events.DB_VISIBILITY_VISIBLE` | `db:visibility-visible` | `src/core/db/connection.ts:64` | `src/mark/indicator.ts:149`<br>`src/navigate/bookmarks/indicator.ts:107`<br>`src/read/position.ts:156`<br>`src/review/Hub.svelte:465` |
+| `Events.DB_VISIBILITY_VISIBLE` | `db:visibility-visible` | `src/core/db/connection.ts:64` | `src/mark/indicator.ts:149`<br>`src/navigate/bookmarks/indicator.ts:107`<br>`src/read/position.ts:158`<br>`src/review/Hub.svelte:465` |
 | `Events.EDGES_DELETED` | `edges:deleted` | `src/review/edges/store.ts:107` | _(none)_ |
 | `Events.EDGES_SAVED` | `edges:saved` | `src/review/edges/store.ts:63`<br>`src/review/edges/store.ts:95` | _(none)_ |
 | `Events.EDGES_SAVE_FAILED` | `edges:save-failed` | `src/review/edges/store.ts:68` | `src/core/save-failure-toast.svelte:32` |
@@ -43,14 +43,14 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.MARKS_SAVED` | `marks:saved` | `src/mark/store.ts:88` | `src/mark/indicator.ts:100` |
 | `Events.MARKS_SAVE_FAILED` | `marks:save-failed` | `src/mark/store.ts:95` | `src/core/save-failure-toast.svelte:26` |
 | `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:41` | `src/mark/indicator.ts:119` |
-| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/navigate/CommandSheet.svelte:303`<br>`src/navigate/CommandSheet.svelte:305`<br>`src/navigate/NavDrawer.svelte:195`<br>`src/navigate/bookmarks/BookmarksList.svelte:106`<br>`src/navigate/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:293` |
+| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/navigate/CommandSheet.svelte:303`<br>`src/navigate/CommandSheet.svelte:305`<br>`src/navigate/NavDrawer.svelte:205`<br>`src/navigate/NavDrawer.svelte:264`<br>`src/navigate/NavDrawer.svelte:507`<br>`src/navigate/bookmarks/BookmarksList.svelte:106`<br>`src/navigate/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:293` |
 | `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:250`<br>`src/data/offline.ts:289` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:242`<br>`src/data/offline.ts:257`<br>`src/data/offline.ts:301`<br>`src/data/offline.ts:353` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:277` | `src/data/offline.ts:407` |
 | `Events.OFFLINE_INSTALL_AVAILABLE` | `offline:install-available` | `src/data/offline.ts:421` | _(none)_ |
 | `Events.OFFLINE_INSTALL_COMPLETE` | `offline:install-complete` | `src/data/offline.ts:426` | _(none)_ |
 | `Events.OFFLINE_SW_TIMEOUT` | `offline:sw-timeout` | `src/data/offline.ts:207` | _(none)_ |
-| `Events.READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `src/read/position.ts:28` | `src/core/save-failure-toast.svelte:35` |
+| `Events.READER_POSITION_SAVE_FAILED` | `reader:position-save-failed` | `src/read/position.ts:30` | `src/core/save-failure-toast.svelte:35` |
 | `Events.READER_VERSE_RENDERED` | `reader:verse-rendered` | `src/read/Verse.svelte:62` | `src/mark/indicator.ts:96`<br>`src/navigate/bookmarks/indicator.ts:75` |
 | `Events.REVIEW_FILTER` | `review:filter` | _(none)_ | _(none)_ |
 | `Events.REVIEW_OPEN` | `review:open` | `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459` | _(none)_ |
@@ -58,7 +58,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.ROUTER_ROUTE_CHANGE` | `router:route-change` | `src/core/router.ts:173`<br>`src/core/router.ts:191` | `src/mark/tag/TagSheet.svelte:179`<br>`src/read/AmbientDock.svelte:86`<br>`src/read/MarginHeader.svelte:176` |
 | `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:44` |
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/configure/clear-data.ts:170` | _(none)_ |
-| `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/configure/state-recent-surahs.svelte.ts:26` | `src/navigate/NavDrawer.svelte:244`<br>`src/navigate/surahs/SurahList.svelte:141` |
+| `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/configure/state-recent-surahs.svelte.ts:26` | `src/navigate/NavDrawer.svelte:313`<br>`src/navigate/surahs/SurahList.svelte:141` |
 | `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/configure/riwayah.ts:58`<br>`src/configure/riwayah.ts:74` | `src/app-bootstrap.ts:172`<br>`src/configure/reading-typography.ts:133`<br>`src/navigate/bookmarks/BookmarksList.svelte:227`<br>`src/navigate/bookmarks/BookmarksPage.svelte:36`<br>`src/navigate/bookmarks/indicator.ts:102`<br>`src/navigate/surahs/SurahList.svelte:140`<br>`src/read/Reader.svelte:496` |
 | `Events.SHEET_CLOSED` | `sheet:closed` | `src/configure/Panel.svelte:155`<br>`src/navigate/shortcuts-sheet.js:162` | _(none)_ |
 | `Events.SHEET_OPENED` | `sheet:opened` | `src/configure/Panel.svelte:138`<br>`src/navigate/shortcuts-sheet.js:153` | _(none)_ |

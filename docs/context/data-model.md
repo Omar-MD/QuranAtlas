@@ -32,7 +32,7 @@ Each dossier carries:
 - Record-shape TS snippet
 - Typical queries
 
-If you change a store's shape, indexes, key, or sole writer — update the **dossier**, then re-run `pnpm run docs` so the index here picks up any owner shift.
+If you change a store's shape, indexes, key, or sole writer — update the **dossier**, then re-run `pnpm run docs` so the index here picks up any owner shift. Within the shared `settings` store, `settings.wirdPlan` is a read-surface-owned key whose sole writer lives in `src/read/wird/store.ts`, even though the store itself remains configure-owned.
 
 ---
 

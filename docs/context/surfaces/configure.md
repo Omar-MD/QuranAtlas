@@ -175,6 +175,7 @@ Keys + sole writers:
 | `verseSpacing` | `src/configure/reading-typography.ts` | step |
 | `surahHeaderHidden` | `src/configure/surah-header-visibility.ts` | `boolean` |
 | `currentPosition` | `src/read/state.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
+| `wirdPlan` | `src/read/wird/store.ts` | `WirdPlan \| null` |
 | `lastSurface` | `src/configure/state-last-surface.svelte.ts` | `string` (hash) |
 | `recentSurahs` | `src/configure/state-recent-surahs.svelte.ts` | `number[]` |
 | `onboardingComplete` | `src/onboard/state.ts` | `boolean` |
@@ -201,6 +202,7 @@ Keys + sole writers:
 ## Invariants
 
 - **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity.
+- **Sole writer of `settings.wirdPlan`: `src/read/wird/store.ts`.** The settings store remains key-value; Daily Wird owns only this key and does not change the settings objectStore schema.
 - **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
 - **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/configure/panel.test.ts`).
 - **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/configure/panel.test.ts`.

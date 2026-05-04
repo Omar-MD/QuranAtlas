@@ -41,6 +41,7 @@ test_paths:
 | --- | --- |
 | `src/navigate/CommandSheet.svelte` | Module-level re-export so callers can do: |
 | `src/navigate/EmptyRoute.svelte` | intentionally empty |
+| `src/navigate/JuzList.svelte` | _(no leading comment)_ |
 | `src/navigate/NavDrawer.svelte` | Mobile (<1180px): full-screen drawer with two top-level mode tabs: |
 | `src/navigate/bookmarks/BookmarksList.svelte` | Shared bookmark list — renders grouped-by-surah verse rows for the active |
 | `src/navigate/bookmarks/BookmarksPage.svelte` | Desktop /bookmarks page — verse-level list grouped by surah. |
@@ -73,15 +74,17 @@ test_paths:
 
 ### Nav drawer (mobile, full-screen)
 
-Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs:
+Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs.
 
-**Read mode** (default), two sub-tabs:
-- **Surahs** (default): compact header rail above search. Left side shows `Browse` eyebrow + `Surahs` title; right side is a hard-edged two-state switch (`All | Recent`). Search input sits directly below the rail, followed by the scrolling surah list auto-scrolled to and highlighting currently-reading surah. Each row: number badge + English name + Arabic surah title (`s.name_ar`, RTL, `--qa-font-arabic`) right-aligned.
-- **Bookmarks**: verse-level rows grouped by surah (canonical order, ascending verse within section); each row: `surah:verse` ref + truncated Arabic snippet (RTL). Tap row → drawer closes, reader navigates, landing pulses 1 s. Swipe-left row → reveals Delete (mobile); desktop hover-`×`. Empty-state copy: "Tap a verse number in the reader to bookmark it." Bookmarks scope to active riwayah — switching riwayah surfaces a different set.
+Header carries tappable QuranAtlas wordmark, squared `Read | Study` mode switch, and separate close button.
+
+**Read mode** starts with a compact Daily Wird card, then a hard-edged `Browse | Bookmarks` destination switch.
+
+`Browse` contains a `Surah | Juz` switch. Surah mode keeps search, `All | Recent`, current-surah highlight, and the existing surah rows. Juz mode hides search and `All | Recent`, renders 30 Juz rows, marks the Juz containing the current reader position, and routes row taps to the Juz start reference.
+
+`Bookmarks` keeps the existing riwayah-scoped grouped bookmark list.
 
 **Study mode**: top **Hub** row (→ `#/review`) + 12 layer rows in 4 grouped sections (Speech / Narrative / Themes / Entities). Tap layer → `#/review?layer=<name>`.
-
-Header carries tappable QuranAtlas wordmark + ⓘ icon → `#/about`.
 
 `✕` closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state local; not persisted. Header controls, sub-tabs, the All/Recent switch, and search field keep comfortable touch targets on mobile.
 
@@ -183,7 +186,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/navigate/bookmarks/store.ts:59` |
 | `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/navigate/bookmarks/store.ts:42` |
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/store.ts:38` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:195`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:205`, `src/navigate/NavDrawer.svelte:264`, `src/navigate/NavDrawer.svelte:507`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:162` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:153` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -196,7 +199,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/BookmarksList.svelte:224`, `src/navigate/bookmarks/BookmarksPage.svelte:33`, `src/navigate/bookmarks/indicator.ts:79`, `src/navigate/surahs/SurahList.svelte:137` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/navigate/bookmarks/indicator.ts:107` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/navigate/bookmarks/indicator.ts:75` |
-| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/navigate/NavDrawer.svelte:244`, `src/navigate/surahs/SurahList.svelte:141` |
+| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/navigate/NavDrawer.svelte:313`, `src/navigate/surahs/SurahList.svelte:141` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/navigate/bookmarks/BookmarksList.svelte:227`, `src/navigate/bookmarks/BookmarksPage.svelte:36`, `src/navigate/bookmarks/indicator.ts:102`, `src/navigate/surahs/SurahList.svelte:140` |
 | `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/navigate/bookmarks/BookmarksList.svelte:226`, `src/navigate/bookmarks/BookmarksPage.svelte:35`, `src/navigate/bookmarks/indicator.ts:93`, `src/navigate/surahs/SurahList.svelte:139` |
 <!-- AUTO-GENERATED:events-listen END -->
