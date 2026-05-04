@@ -19,6 +19,7 @@
    * styling on desktop keeps the narrow side-panel look (see nav.css).
    */
   import { onMount, onDestroy, tick } from 'svelte'
+  import { SvelteDate } from 'svelte/reactivity'
   import { navDrawerBridge, type DrawerTab, type ReadSubTab } from './nav-drawer-bridge'
   import { reader } from '../read/state.svelte'
   import { settings } from '../configure/state.svelte'
@@ -215,7 +216,7 @@
     const endRef = { surah: last.n, verse: last.count }
     let targetEndOn = payload.targetEndOn
     if (!targetEndOn && payload.targetDays !== null) {
-      const date = new Date(`${today}T00:00:00`)
+      const date = new SvelteDate(`${today}T00:00:00`)
       date.setDate(date.getDate() + payload.targetDays - 1)
       targetEndOn = getLocalDayKey(date)
     }

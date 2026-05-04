@@ -11,7 +11,7 @@
     onNavigate: (ref: QuranRef) => void
   }
 
-  let { counts, names, currentRef, wirdRef, onNavigate }: Props = $props()
+  const { counts, names, currentRef, wirdRef, onNavigate }: Props = $props()
   const rows = $derived<JuzRow[]>(getJuzRows(counts))
   const currentJuz = $derived(currentRef ? findJuzForRef(currentRef, counts) : null)
   const wirdJuz = $derived(wirdRef ? findJuzForRef(wirdRef, counts) : null)

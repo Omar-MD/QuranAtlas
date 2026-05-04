@@ -6,7 +6,7 @@
     onOpen: () => void
   }
 
-  let { summary, onOpen }: Props = $props()
+  const { summary, onOpen }: Props = $props()
 
   const nextLabel = $derived(summary.nextRef ? `${summary.nextRef.surah}:${summary.nextRef.verse}` : '')
   const title = $derived.by(() => {

@@ -22,7 +22,7 @@
     onRequestBrowserNotifications: () => void
   }
 
-  let {
+  const {
     summary,
     currentPosition,
     onBack,
@@ -107,7 +107,7 @@
       {/if}
 
       <div class="qa-wird-units" role="group" aria-label="Display unit">
-        {#each ['juz', 'hizb', 'page', 'verse'] as key}
+        {#each ['juz', 'hizb', 'page', 'verse'] as key (key)}
           <button type="button" aria-pressed={unit === key} class:qa-wird-option--on={unit === key} onclick={() => { unit = key as WirdUnit }}>{key}</button>
         {/each}
       </div>
