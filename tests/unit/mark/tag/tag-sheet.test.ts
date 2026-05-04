@@ -37,6 +37,8 @@ import TagSheet from '../../../../src/mark/tag/TagSheet.svelte'
 import { tagSession } from '../../../../src/mark/tag/state.svelte'
 import { tagSheetBridge } from '../../../../src/mark/tag/sheet-bridge'
 import { save } from '../../../../src/mark/store'
+import { emit } from '../../../../src/core/events'
+import { Events } from '../../../../src/core/constants'
 
 const saveMock = vi.mocked(save)
 
@@ -66,6 +68,17 @@ describe('TagSheet.svelte (C1 / C2 / C3 / save)', () => {
     expect(document.querySelector('.qa-ts')).not.toBeNull()
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flush()
+
+    expect(document.querySelector('.qa-ts')).toBeNull()
+    expect(tagSheetBridge.isOpen()).toBe(false)
+  })
+
+  it('C1 route change: open sheet closes before the next surface renders', async () => {
+    await mountAndOpen()
+    expect(document.querySelector('.qa-ts')).not.toBeNull()
+
+    emit(Events.ROUTER_ROUTE_CHANGE, { hash: '#/about' })
     await flush()
 
     expect(document.querySelector('.qa-ts')).toBeNull()

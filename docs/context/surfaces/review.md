@@ -45,7 +45,7 @@ test_paths:
 
 ### Open the review hub
 
-`#/review` → Hub renders: 12-layer selector segment (Thread active by default), group-by segment (Value / Surah / Date), value chips for active layer, sort dropdown, surah filter dropdown, mark cards for first 30 results.
+`#/review` → Hub renders: 12-layer selector segment (Thread active by default), group-by segment (Value / Surah / Date), value chips for active layer, sort dropdown, surah filter dropdown, mark cards for first 30 results. On mobile, all layer controls remain directly visible in the controls panel rather than hiding behind horizontal overflow.
 
 ### Switch layer + value chip
 

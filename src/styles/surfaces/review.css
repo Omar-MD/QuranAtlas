@@ -110,7 +110,7 @@
     cursor: pointer;
     font: inherit;
     font-size: var(--qa-text-size-meta);
-    min-height: 32px;
+    min-height: 44px;
     transition: background-color var(--qa-transition-fast), box-shadow var(--qa-transition-fast);
   }
 
@@ -220,8 +220,13 @@
   }
 
   .qa-review-layer-seg {
-    overflow-x: auto;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 6px;
+    padding: 6px;
+    border-radius: var(--qa-radius-lg);
+    overflow: visible;
   }
 
   .qa-review-seg--full {
@@ -235,6 +240,7 @@
 
   .qa-review-seg-item {
     padding: 5px 12px;
+    min-height: 44px;
     border: none;
     border-radius: var(--qa-radius-pill);
     background: transparent;

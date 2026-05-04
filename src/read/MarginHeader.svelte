@@ -31,9 +31,11 @@
   let lastTop = 0
   let surahName = $state('')
   let surahArabicName = $state('')
+  let currentHash = $state(typeof window !== 'undefined' ? window.location.hash : '')
   const currentSurahNum = $derived(reader.currentSurahNum)
 
   const labelHasSurah = $derived(currentSurahNum != null)
+  const onOnboardingRoute = $derived((currentHash || '').startsWith('#/onboarding'))
 
   function isReaderRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
 
@@ -171,7 +173,10 @@
       }).catch(() => { /* ignore */ })
     }
     refreshSurahName()
-    const unsubRoute = on(Events.ROUTER_ROUTE_CHANGE, refreshSurahName)
+    const unsubRoute = on(Events.ROUTER_ROUTE_CHANGE, ({ hash }) => {
+      currentHash = hash
+      refreshSurahName()
+    })
     const unsubSurface = on(Events.AMBIENT_SURFACE, () => { hidden = false })
 
     const main = document.getElementById('main-content')
@@ -194,6 +199,7 @@
   })
 </script>
 
+{#if !onOnboardingRoute}
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <header
   class="qa-mh"
@@ -245,3 +251,4 @@
     </svg>
   </button>
 </header>
+{/if}

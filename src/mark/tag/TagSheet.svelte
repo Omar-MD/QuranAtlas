@@ -176,9 +176,13 @@
       if (!isOpen || !verseKey) { return }
       if (Array.isArray(verseKeys) && verseKeys.includes(verseKey)) { onclose() }
     })
+    const unsubRoute = on(Events.ROUTER_ROUTE_CHANGE, () => {
+      if (isOpen) { onclose() }
+    })
     return () => {
       window.removeEventListener('keydown', onKey)
       unsubSync()
+      unsubRoute()
       tagSheetBridge.unregister()
     }
   })
@@ -342,4 +346,3 @@
     </footer>
   </aside>
 {/if}
-

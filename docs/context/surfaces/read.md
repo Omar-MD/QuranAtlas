@@ -93,7 +93,7 @@ Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush ag
 
 **Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list via ⋯ → drawer, command sheet, or `G+S`.
 
-**Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px); right settings gear ⚙ (48 px tap target, 26 px icon). Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. `#main-content` reserves ~60 px top padding.
+**Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px); right settings gear ⚙ (48 px tap target, 26 px icon). Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. It does not render during first-run onboarding. `#main-content` reserves ~60 px top padding.
 
 **Tablet+ (≥768 px):** AmbientDock items grow 38×38 → 42×42 for iPad tap targets.
 
@@ -192,7 +192,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:41`, `src/read/Reader.svelte:663`, `src/read/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:43`, `src/read/Reader.svelte:663`, `src/read/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:28` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -200,10 +200,10 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:76`, `src/read/MarginHeader.svelte:175` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:76`, `src/read/MarginHeader.svelte:180` |
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:156` |
-| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:86`, `src/read/MarginHeader.svelte:174` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:86`, `src/read/MarginHeader.svelte:176` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:496` |
 <!-- AUTO-GENERATED:events-listen END -->
 

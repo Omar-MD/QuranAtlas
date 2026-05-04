@@ -83,7 +83,7 @@ Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs:
 
 Header carries tappable QuranAtlas wordmark + ⓘ icon → `#/about`.
 
-`✕` closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state local; not persisted.
+`✕` closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state local; not persisted. Header controls, sub-tabs, the All/Recent switch, and search field keep comfortable touch targets on mobile.
 
 Desktop kebab path keeps narrow side-panel size but uses same tabbed component.
 

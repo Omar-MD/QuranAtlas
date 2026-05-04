@@ -106,8 +106,8 @@
   }
 
   .qa-ts-close {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--qa-radius-circle);
     border: none;
     background: transparent;
@@ -121,8 +121,8 @@
 
   @media (min-width: 1180px) {
     .qa-ts-close {
-      width: 28px;
-      height: 28px;
+      width: 36px;
+      height: 36px;
     }
   }
 

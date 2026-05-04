@@ -57,6 +57,7 @@ Viewport-conditional: deep TagSheet renders full-screen <1180 px, right-side ver
 - Desktop (≥1180 px): right-side panel, `min(560px, 44vw)`, same chevron preview-collapse.
 - Header: "Mark verse" only (no `verseKey · SURAH` subline; ref lives on preview card).
 - Body: no tab switcher. Four layer groups stack outer→inner: Speech (speaker, audience, quotedSpeaker, form) → Narrative (mode, tone) → Themes (threads, subjects) → Entities (events, people, places, divineNames). Each group has hue-colored left rail nesting its rows. Hashtag-style chips (`#value` with `#` colored by layer hue); tap chip to remove; underline combobox per row for type-to-create with seed suggestions.
+- Route changes close the deep TagSheet before the next surface renders so the editor cannot cover unrelated pages.
 - Delete: button renders only for existing marks. First tap → inline confirm row (`Delete this mark? [Keep] [Delete]`). Second tap on solid red → commit + undo toast. Closing sheet resets pending confirm.
 
 ### Save / persistence
@@ -135,6 +136,7 @@ _(no cross-surface reads detected)_
 | `marks:saved` | `Events.MARKS_SAVED` | `src/mark/indicator.ts:100` |
 | `marks:undo` | `Events.MARKS_UNDO` | `src/mark/indicator.ts:119` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/mark/indicator.ts:96` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/mark/tag/TagSheet.svelte:179` |
 | `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/mark/indicator.ts:132`, `src/mark/tag/TagSheet.svelte:175` |
 <!-- AUTO-GENERATED:events-listen END -->
 

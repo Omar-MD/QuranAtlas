@@ -689,6 +689,7 @@
 .qa-nav-drawer-wordmark {
   display: inline-flex; align-items: baseline; gap: 6px;
   background: transparent; border: 0; padding: 6px 4px;
+  min-height: 44px;
   cursor: pointer; color: var(--qa-text-primary);
   font-weight: 600; letter-spacing: 0.04em;
   font-size: 15px;
@@ -710,7 +711,7 @@
 
 .qa-nav-drawer-close {
   background: transparent; border: 0; font-size: 18px; line-height: 1;
-  width: 36px; height: 36px; cursor: pointer;
+  width: 44px; height: 44px; cursor: pointer;
   color: var(--qa-text-primary);
 }
 
@@ -722,6 +723,7 @@
 
 .qa-nav-drawer-tab {
   flex: 1; padding: 12px 0;
+  min-height: 44px;
   font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
   background: transparent; border: 0;
   color: var(--qa-text-muted);
@@ -763,6 +765,7 @@
 .qa-nav-drawer-subtab {
   flex: 1;
   padding: 6px 10px;
+  min-height: 44px;
   border-radius: 999px;
   font-size: 11px;
   background: var(--qa-surface-raised);
@@ -820,6 +823,7 @@
 
 .qa-nav-drawer-rail-switch-option {
   padding: 9px 12px;
+  min-height: 44px;
   border: 0;
   background: transparent;
   color: var(--qa-text-muted);
@@ -840,6 +844,7 @@
   display: flex; align-items: center; gap: 8px;
   margin: 10px 14px 4px;
   padding: 9px 12px;
+  min-height: 44px;
   background: var(--qa-surface-raised);
   border: 1px solid var(--qa-border-subtle);
   border-radius: 8px;
@@ -940,6 +945,7 @@
   width: 100%;
   background: transparent; border: 0;
   padding: 11px 18px;
+  min-height: 44px;
   font: inherit; color: var(--qa-text-primary);
   text-align: left; cursor: pointer;
 }

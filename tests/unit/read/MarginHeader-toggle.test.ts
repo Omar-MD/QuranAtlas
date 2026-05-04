@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import MarginHeader from '../../../src/read/MarginHeader.svelte'
 import { reader } from '../../../src/read/state.svelte.ts'
 import { settings } from '../../../src/configure/state.svelte.ts'
+import { emit } from '../../../src/core/events'
+import { Events } from '../../../src/core/constants'
 
 // Real dataset uses `name_ar` (not `arabic`) — see public/dataset/surahs.json.
 // Mock here MUST mirror that shape so a regression like the 2026-04-26 bug
@@ -70,6 +72,18 @@ describe('MarginHeader.svelte — surah label tap toggles surah header visibilit
     await fireEvent.click(label)
     await flush()
     expect(reader.surahHeaderHidden).toBe(false)
+  })
+
+  it('does not render mobile chrome on the onboarding route', async () => {
+    window.location.hash = '#/onboarding'
+    const { container } = render(MarginHeader)
+    await flush()
+    expect(container.querySelector('.qa-mh')).toBeNull()
+
+    window.location.hash = '#/s/2'
+    emit(Events.ROUTER_ROUTE_CHANGE, { hash: '#/s/2' })
+    await flush()
+    expect(container.querySelector('.qa-mh')).not.toBeNull()
   })
 
   it('keyboard Enter on focused label toggles visibility', async () => {

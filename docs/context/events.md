@@ -13,7 +13,7 @@ Orphan listen (listened, never emitted): **0**.
 <!-- AUTO-GENERATED:catalog START -->
 | Constant | Event name | Emit sites | Listen sites |
 | --- | --- | --- | --- |
-| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/read/AmbientDock.svelte:64`<br>`src/read/AmbientPill.svelte:90`<br>`src/read/EdgeIndicator.svelte:42`<br>`src/read/MarginHeader.svelte:41`<br>`src/read/Reader.svelte:663`<br>`src/read/edge-indicators.ts:62` | `src/read/AmbientPill.svelte:76`<br>`src/read/MarginHeader.svelte:175` |
+| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/read/AmbientDock.svelte:64`<br>`src/read/AmbientPill.svelte:90`<br>`src/read/EdgeIndicator.svelte:42`<br>`src/read/MarginHeader.svelte:43`<br>`src/read/Reader.svelte:663`<br>`src/read/edge-indicators.ts:62` | `src/read/AmbientPill.svelte:76`<br>`src/read/MarginHeader.svelte:180` |
 | `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:331`<br>`src/app-bootstrap.ts:425` | `src/core/save-failure-toast.svelte:41` |
 | `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:486` | _(none)_ |
 | `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:404`<br>`src/app-bootstrap.ts:415` | `src/core/UpdateBanner.svelte:19` |
@@ -55,7 +55,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.REVIEW_FILTER` | `review:filter` | _(none)_ | _(none)_ |
 | `Events.REVIEW_OPEN` | `review:open` | `src/review/Hub.svelte:427`<br>`src/review/Hub.svelte:459` | _(none)_ |
 | `Events.ROUTER_LAUNCH_RESTORE` | `router:launch-restore` | `src/core/router.ts:148` | `src/app-bootstrap.ts:201` |
-| `Events.ROUTER_ROUTE_CHANGE` | `router:route-change` | `src/core/router.ts:173`<br>`src/core/router.ts:191` | `src/read/AmbientDock.svelte:86`<br>`src/read/MarginHeader.svelte:174` |
+| `Events.ROUTER_ROUTE_CHANGE` | `router:route-change` | `src/core/router.ts:173`<br>`src/core/router.ts:191` | `src/mark/tag/TagSheet.svelte:179`<br>`src/read/AmbientDock.svelte:86`<br>`src/read/MarginHeader.svelte:176` |
 | `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:44` |
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/configure/clear-data.ts:170` | _(none)_ |
 | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/configure/state-recent-surahs.svelte.ts:26` | `src/navigate/NavDrawer.svelte:244`<br>`src/navigate/surahs/SurahList.svelte:141` |
