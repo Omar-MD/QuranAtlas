@@ -236,7 +236,12 @@
 
 <div class="qa-bookmarks-list" data-bookmarks-list="">
   {#if !loaded}
-    <div class="qa-bookmarks-empty" aria-live="polite">Loading…</div>
+    <div class="qa-bookmarks-loading" aria-live="polite">
+      <span>Loading...</span>
+      <span class="qa-bookmarks-skeleton-row"></span>
+      <span class="qa-bookmarks-skeleton-row"></span>
+      <span class="qa-bookmarks-skeleton-row"></span>
+    </div>
   {:else if grouped.size === 0}
     <div class="qa-bookmarks-empty" data-bookmarks-empty="">
       Tap a verse number in the reader to bookmark it.
@@ -267,6 +272,7 @@
               >
                 <span class="qa-bookmarks-row-ref">{b.verseKey}</span>
                 <span class="qa-bookmarks-row-ar" dir="rtl" lang="ar" data-riwayah={b.riwayah}>{snippets.get(b.verseKey) ?? ''}</span>
+                <span class="qa-bookmarks-row-chev" aria-hidden="true">&#x203A;</span>
               </button>
               <button
                 type="button"

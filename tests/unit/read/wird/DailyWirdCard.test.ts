@@ -15,10 +15,16 @@ const active: WirdSummary = {
 }
 
 describe('DailyWirdCard', () => {
-  it('renders active plan progress as an accessible button card', () => {
+  it('renders active plan progress as a locked ledger button card', () => {
     render(DailyWirdCard, { props: { summary: active, onOpen: vi.fn() } })
     const card = document.querySelector('[data-testid="wird-card"]') as HTMLButtonElement
     expect(card).not.toBeNull()
+    expect(card.querySelector('.qa-wird-card-status-badge')).not.toBeNull()
+    expect(card.querySelector('.qa-wird-card-status-badge [data-icon="wird-book"]')).not.toBeNull()
+    expect(card.querySelector('.qa-wird-card-kicker')?.textContent).toContain('Today')
+    expect(card.querySelector('.qa-wird-card-line')?.textContent).toContain('2:12')
+    expect(card.querySelector('.qa-wird-card-meter')).not.toBeNull()
+    expect(card.querySelector('.qa-wird-card-reminder-row')?.textContent).toContain('Reminder')
     expect(card.textContent).toContain('Today')
     expect(card.textContent).toContain('2:12')
     const bar = document.querySelector('[role="progressbar"]') as HTMLElement
@@ -44,6 +50,7 @@ describe('DailyWirdCard', () => {
       },
     })
     expect(document.body.textContent).toContain('Start daily wird')
+    expect(document.querySelector('.qa-wird-card-status-badge')).not.toBeNull()
     expect(document.querySelector('[role="progressbar"]')).toBeNull()
   })
 

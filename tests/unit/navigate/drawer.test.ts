@@ -100,73 +100,80 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     expect([...rows].some(r => r.textContent?.includes('Al-Fatihah'))).toBe(false)
   })
 
-  it('renders the compact header rail above search instead of a pill row', async () => {
+  it('renders Surah, Juz, and Bookmarks as peer Read sources', async () => {
     await mountAndOpen('read', 'surahs')
 
-    const rail = document.querySelector('.qa-nav-drawer-surah-rail') as HTMLElement | null
-    expect(rail).not.toBeNull()
-    expect(rail!.textContent).toContain('Browse')
-    expect(rail!.textContent).toContain('Surahs')
+    const source = document.querySelector('.qa-nav-drawer-source-tabs') as HTMLElement | null
+    expect(source).not.toBeNull()
+    expect(source!.textContent).toContain('Surah')
+    expect(source!.textContent).toContain('Juz')
+    expect(source!.textContent).toContain('Bookmarks')
+    expect(source!.querySelector('[data-testid="read-source-surah"]')).toHaveAttribute('aria-selected', 'true')
+    expect(source!.querySelector('[data-testid="read-source-juz"]')).toHaveAttribute('aria-selected', 'false')
+    expect(source!.querySelector('[data-testid="read-source-bookmarks"]')).toHaveAttribute('aria-selected', 'false')
 
-    const toggle = rail!.querySelector('.qa-nav-drawer-rail-switch') as HTMLElement | null
-    expect(toggle).not.toBeNull()
-    expect(toggle!.textContent).toContain('Surah')
-    expect(toggle!.textContent).toContain('Juz')
-    expect(toggle!.querySelector('.qa-nav-drawer-rail-switch-option--on')?.textContent).toContain('Surah')
-
-    const legacyFilter = document.querySelector('.qa-nav-drawer-surah-legacy .qa-nav-drawer-rail-switch') as HTMLElement | null
-    expect(legacyFilter).not.toBeNull()
-    expect(legacyFilter!.textContent).toContain('All')
-    expect(legacyFilter!.textContent).toContain('Recent')
-    expect(legacyFilter!.querySelector('.qa-nav-drawer-rail-switch-option--on')?.textContent).toContain('All')
-
-    const search = document.querySelector('.qa-nav-drawer-search') as HTMLElement | null
-    expect(search).not.toBeNull()
-    expect(rail!.compareDocumentPosition(search!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-
-    expect(document.querySelector('.qa-nav-drawer-pills')).toBeNull()
-    expect(document.querySelector('.qa-nav-drawer-pill')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-dest-switch')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-surah-rail')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-surah-rail-tool')).toBeNull()
   })
 
-  it('renders Read | Study inside the top bar beside the wordmark and close control', async () => {
+  it('renders the locked two-tier mobile header chrome', async () => {
     await mountAndOpen('read', 'surahs')
     const header = document.querySelector('.qa-nav-drawer-hdr') as HTMLElement
     expect(header).not.toBeNull()
-    expect(header.querySelector('.qa-nav-drawer-wordmark')?.textContent).toContain('QuranAtlas')
-    expect(header.querySelector('.qa-nav-drawer-tabs')?.textContent).toContain('Read')
-    expect(header.querySelector('.qa-nav-drawer-tabs')?.textContent).toContain('Study')
-    expect(header.querySelector('.qa-nav-drawer-close')).not.toBeNull()
+    const productRow = header.querySelector('.qa-nav-drawer-product-row') as HTMLElement | null
+    const modeRail = header.querySelector('.qa-nav-drawer-mode-rail') as HTMLElement | null
+    expect(productRow).not.toBeNull()
+    expect(modeRail).not.toBeNull()
+    expect(productRow!.querySelector('.qa-nav-drawer-logo-svg')).not.toBeNull()
+    expect(productRow!.querySelector('.qa-nav-drawer-logo-mark')).toBeNull()
+    expect(productRow!.querySelector('.qa-nav-drawer-wordmark-text')?.textContent).toBe('QuranAtlas')
+    expect(productRow!.querySelector('.qa-nav-drawer-about [data-icon="info"]')).not.toBeNull()
+    expect(productRow!.querySelector('.qa-nav-drawer-close [data-icon="close"]')).not.toBeNull()
+    expect(modeRail!.querySelector('.qa-nav-drawer-tabs')?.textContent).toContain('Read')
+    expect(modeRail!.querySelector('.qa-nav-drawer-tabs')?.textContent).toContain('Study')
+    expect(modeRail!.querySelector('[data-icon="read-book"]')).not.toBeNull()
+    expect(modeRail!.querySelector('[data-icon="study-cap"]')).not.toBeNull()
+    expect(modeRail!.querySelector('.qa-nav-drawer-tab-icon')?.textContent?.trim()).toBe('')
+    expect(productRow!.compareDocumentPosition(modeRail!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(header.nextElementSibling?.classList.contains('qa-nav-drawer-tabs')).toBe(false)
   })
 
-  it('puts the Daily Wird card before Browse and Bookmarks in Read mode', async () => {
+  it('places the Daily Wird card before the peer source controls in Read mode', async () => {
     await mountAndOpen('read', 'surahs')
     const card = document.querySelector('[data-testid="wird-card"]') as HTMLElement
-    const switcher = document.querySelector('.qa-nav-drawer-dest-switch') as HTMLElement
+    const source = document.querySelector('.qa-nav-drawer-source-tabs') as HTMLElement
     expect(card).not.toBeNull()
-    expect(switcher).not.toBeNull()
-    expect(card.compareDocumentPosition(switcher)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
-    expect(switcher.textContent).toContain('Browse')
-    expect(switcher.textContent).toContain('Bookmarks')
+    expect(source).not.toBeNull()
+    expect(card.compareDocumentPosition(source)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 
-  it('switches Browse between Surah and Juz without closing the drawer', async () => {
+  it('keeps search and All/Recent controls Surah-only', async () => {
     await mountAndOpen('read', 'surahs')
-    await fireEvent.click(document.querySelector('[data-testid="browse-mode-juz"]')!)
+
+    expect(document.querySelector('.qa-nav-drawer-search-input')).not.toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-source-filter')?.textContent).toContain('All')
+    expect(document.querySelector('.qa-nav-drawer-source-filter')?.textContent).toContain('Recent')
+
+    await fireEvent.click(document.querySelector('[data-testid="read-source-juz"]')!)
     await flush()
     expect(document.querySelector('.qa-nav-drawer')).not.toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-search-input')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-source-filter')).toBeNull()
     expect(document.querySelectorAll('.qa-juz-row').length).toBe(30)
-    expect(document.querySelector('.qa-nav-drawer-search')).toBeNull()
-    await fireEvent.click(document.querySelector('[data-testid="browse-mode-surah"]')!)
-    await flush()
-    expect(document.querySelector('.qa-nav-drawer-search')).not.toBeNull()
+
+    await fireEvent.click(document.querySelector('[data-testid="read-source-bookmarks"]')!)
+    await deepFlush()
+    expect(document.querySelector('.qa-nav-drawer-search-input')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-source-filter')).toBeNull()
+    expect(document.querySelector('[data-bookmarks-list]')).not.toBeNull()
   })
 
   it('emits navigation when a Juz row is tapped', async () => {
     let navigatedTo: { surah: number; verse: number } | null = null
     on(Events.NAVIGATION_NAVIGATE, (p: unknown) => { navigatedTo = p as typeof navigatedTo })
     await mountAndOpen('read', 'surahs')
-    await fireEvent.click(document.querySelector('[data-testid="browse-mode-juz"]')!)
+    await fireEvent.click(document.querySelector('[data-testid="read-source-juz"]')!)
     await fireEvent.click(document.querySelector('[data-juz="2"] .qa-juz-row-btn')!)
     expect(navigatedTo).toEqual({ surah: 2, verse: 142 })
     expect(document.querySelector('.qa-nav-drawer')).toBeNull()
@@ -201,6 +208,35 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     await fireEvent.click(document.querySelector('[data-testid="wird-card"]')!)
     await fireEvent.click(document.querySelector('[data-testid="wird-continue"]')!)
     expect(navigatedTo).toEqual({ surah: 2, verse: 8 })
+  })
+
+  it('renders Daily Wird remaining text in the selected unit instead of falling back to verses', async () => {
+    Object.assign(settings, {
+      wirdPlan: {
+        id: 'wird-juz-unit',
+        startRef: { surah: 1, verse: 1 },
+        endRef: { surah: 3, verse: 200 },
+        targetDays: 2,
+        targetEndOn: '2026-05-05',
+        startedOn: '2026-05-04',
+        unit: 'juz',
+        reminder: { enabled: false, time: '08:00', browserNotifications: 'default' },
+        progress: {
+          lastReadRef: { surah: 1, verse: 1 },
+          nextRef: { surah: 1, verse: 1 },
+          dayKey: '2026-05-04',
+          todayStartRef: { surah: 1, verse: 1 },
+          todayEndRef: { surah: 2, verse: 247 },
+          completedThroughRef: null,
+        },
+        history: [],
+      },
+    })
+
+    await mountAndOpen('read', 'surahs')
+    const card = document.querySelector('[data-testid="wird-card"]') as HTMLElement
+    expect(card.textContent).toMatch(/\b4 ajza left\b/)
+    expect(card.textContent).not.toMatch(/\b493 ajza left\b/)
   })
 
   it('F-mobile-8: typing 2:255 does NOT auto-navigate; hint mentions Enter; Enter commits', async () => {
@@ -241,6 +277,74 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     }
     expect(document.querySelector('[data-surah="67"] .qa-nav-drawer-surah-ar')!.textContent)
       .toContain('المُلك')
+  })
+
+  it('renders Surah no-results as text-only state', async () => {
+    await mountAndOpen('read', 'surahs')
+    const search = document.querySelector('.qa-nav-drawer-search-input') as HTMLInputElement
+    await fireEvent.input(search, { target: { value: 'not-a-surah' } })
+    await flush()
+
+    expect(document.querySelectorAll('.qa-nav-drawer-surah-row').length).toBe(0)
+    const state = document.querySelector('.qa-nav-drawer-list-state') as HTMLElement | null
+    expect(state).not.toBeNull()
+    expect(state!.textContent).toContain('No surahs match your search.')
+    expect(state!.querySelector('svg')).toBeNull()
+  })
+
+  it('renders Juz rows with chevrons and text markers only', async () => {
+    Object.assign(settings, {
+      currentPosition: { surah: 2, verse: 150 },
+      wirdPlan: {
+        id: 'wird-juz-marker',
+        startRef: { surah: 1, verse: 1 },
+        endRef: { surah: 3, verse: 200 },
+        targetDays: 2,
+        targetEndOn: '2026-05-05',
+        startedOn: '2026-05-04',
+        unit: 'verse',
+        reminder: { enabled: false, time: '08:00', browserNotifications: 'default' },
+        progress: {
+          lastReadRef: { surah: 2, verse: 250 },
+          nextRef: { surah: 2, verse: 253 },
+          dayKey: '2026-05-04',
+          todayStartRef: { surah: 2, verse: 253 },
+          todayEndRef: { surah: 3, verse: 20 },
+          completedThroughRef: { surah: 2, verse: 252 },
+        },
+        history: [],
+      },
+    })
+    await mountAndOpen('read', 'surahs')
+    await fireEvent.click(document.querySelector('[data-testid="read-source-juz"]')!)
+    await flush()
+
+    const current = document.querySelector('.qa-juz-row--current') as HTMLElement | null
+    const wird = document.querySelector('.qa-juz-row--wird') as HTMLElement | null
+    expect(current).not.toBeNull()
+    expect(current!.textContent).toContain('Current')
+    expect(wird).not.toBeNull()
+    expect(wird!.textContent).toContain('Wird')
+    expect(document.querySelector('.qa-juz-chev')).not.toBeNull()
+    expect(document.querySelector('.qa-juz-row svg')).toBeNull()
+  })
+
+  it('renders bookmark group headers with count badge only and row chevrons', async () => {
+    await addBookmark('2:255', 'qaloon')
+    await addBookmark('2:286', 'qaloon')
+    await mountAndOpen('read', 'bookmarks')
+    await deepFlush()
+
+    const header = document.querySelector('.qa-bookmarks-section-hdr') as HTMLElement | null
+    expect(header).not.toBeNull()
+    expect(header!.textContent).toContain('Al-Baqarah')
+    expect(header!.querySelector('.qa-bookmarks-section-count')?.textContent).toContain('2')
+    expect(header!.querySelector('svg')).toBeNull()
+    expect(header!.querySelector('.qa-bookmarks-row-chev')).toBeNull()
+
+    const row = document.querySelector('.qa-bookmarks-row-btn') as HTMLElement | null
+    expect(row).not.toBeNull()
+    expect(row!.querySelector('.qa-bookmarks-row-chev')).not.toBeNull()
   })
 
   it('F-mobile-9: typing 255 (out of surah-index range) lists only surahs with ≥ 255 verses', async () => {

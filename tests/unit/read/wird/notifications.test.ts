@@ -21,7 +21,7 @@ describe('wird notification helpers', () => {
     expect(getBrowserNotificationState()).toBe('default')
   })
 
-  it('requests permission only for default state', async () => {
+  it('requests permission for default state but not for granted state', async () => {
     const requestPermission = vi.fn(async () => 'granted')
     Object.defineProperty(globalThis, 'Notification', {
       value: { permission: 'default', requestPermission },
@@ -31,10 +31,21 @@ describe('wird notification helpers', () => {
     expect(requestPermission).toHaveBeenCalledTimes(1)
 
     Object.defineProperty(globalThis, 'Notification', {
+      value: { permission: 'granted', requestPermission },
+      configurable: true,
+    })
+    await expect(requestBrowserNotifications()).resolves.toBe('granted')
+    expect(requestPermission).toHaveBeenCalledTimes(1)
+  })
+
+  it('requests permission again when the stored state is denied', async () => {
+    const requestPermission = vi.fn(async () => 'granted')
+    Object.defineProperty(globalThis, 'Notification', {
       value: { permission: 'denied', requestPermission },
       configurable: true,
     })
-    await expect(requestBrowserNotifications()).resolves.toBe('denied')
+
+    await expect(requestBrowserNotifications()).resolves.toBe('granted')
     expect(requestPermission).toHaveBeenCalledTimes(1)
   })
 })

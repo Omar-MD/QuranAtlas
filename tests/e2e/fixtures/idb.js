@@ -265,3 +265,37 @@ export async function seedMarks(page, marks) {
     }
   }))()`)
 }
+
+export async function seedBookmarks(page, records) {
+  await page.evaluate(({ rows, dbName, dbVersion, applySchemaSource }) => new Promise((resolve, reject) => {
+    const open = indexedDB.open(dbName, dbVersion)
+    open.onsuccess = () => {
+      const db = open.result
+      const tx = db.transaction('bookmarks', 'readwrite')
+      const store = tx.objectStore('bookmarks')
+      const now = Date.now()
+      for (const row of rows) {
+        const [surahRaw] = row.verseKey.split(':')
+        store.put({
+          riwayah: row.riwayah ?? 'qaloon',
+          verseKey: row.verseKey,
+          surah: Number(surahRaw),
+          createdAt: now,
+        })
+      }
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject(tx.error) }
+    }
+    open.onerror = () => reject(open.error)
+    open.onupgradeneeded = (event) => {
+      const db = event.target.result
+      // eslint-disable-next-line no-new-func
+      new Function('db', applySchemaSource)(db)
+    }
+  }), {
+    rows: records,
+    dbName: DB_NAME,
+    dbVersion: DB_VERSION,
+    applySchemaSource: `${applySchema.toString()}\nreturn applySchema(db)`,
+  })
+}

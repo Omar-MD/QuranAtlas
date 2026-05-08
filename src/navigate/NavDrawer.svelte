@@ -4,13 +4,11 @@
    *   - Read   — Surahs (default) and Bookmarks sub-tabs.
    *   - Study  — Hub link + 12 grouped layer rows (was the legacy "Review" tab).
    *
-   * Read sub-tabs:
-   *   - Surahs    — compact header rail (Browse / Surahs + All | Recent
-   *                 switch) above search + scrolling surah list,
-   *                 auto-scrolled to and highlighting the currently-reading
-   *                 surah.
+   * Read sources:
+   *   - Surah     — search + All/Recent above the list, auto-scrolled to and
+   *                 highlighting the currently-reading surah.
+   *   - Juz       — 30 Juz rows with current/Wird markers.
    *   - Bookmarks — verse-level list grouped by surah, swipe-left to delete.
-   *                 Reading-mode entry replacing the legacy ★ Bookmarked pill.
    *
    * Header: tappable QuranAtlas wordmark (+ ⓘ) → #/about. ✕ closes.
    * No footer — drawer ends with the last list/menu row.
@@ -35,18 +33,18 @@
   import DailyWirdCard from '../read/wird/DailyWirdCard.svelte'
   import WirdDetail, { type SetupPayload } from '../read/wird/WirdDetail.svelte'
   import JuzList from './JuzList.svelte'
+  import { createWirdBoundaries } from '../read/wird/metadata'
+  import { requestBrowserNotifications } from '../read/wird/notifications'
   import { createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../read/wird/progress'
   import { clearWirdPlan, saveWirdPlan } from '../read/wird/store'
-  import type { QuranRef } from '../read/wird/types'
+  import type { BrowserNotificationState, QuranRef } from '../read/wird/types'
 
   const RECENT_SURAHS_CAP = 7
 
   let isOpen = $state(false)
   let activeTab = $state<DrawerTab>('read')
-  type ReadDestination = 'browse' | 'bookmarks'
-  type BrowseMode = 'surah' | 'juz'
-  let readDestination = $state<ReadDestination>('browse')
-  let browseMode = $state<BrowseMode>('surah')
+  type ReadSource = 'surah' | 'juz' | 'bookmarks'
+  let readSource = $state<ReadSource>('surah')
   let showingWirdDetail = $state(false)
 
   let allSurahs = $state<SurahMeta[]>([])
@@ -70,7 +68,8 @@
   const currentRef = $derived<QuranRef | null>(
     settings.currentPosition ? { surah: settings.currentPosition.surah, verse: settings.currentPosition.verse } : null,
   )
-  const wirdSummary = $derived(deriveWirdSummary(settings.wirdPlan ?? null, surahCounts, getLocalDayKey()))
+  const wirdBoundaries = $derived(createWirdBoundaries(surahCounts))
+  const wirdSummary = $derived(deriveWirdSummary(settings.wirdPlan ?? null, surahCounts, wirdBoundaries, getLocalDayKey()))
 
   type ParsedQuery =
     | { kind: 'empty' }
@@ -139,8 +138,7 @@
 
   async function open(tab?: DrawerTab, subTab?: ReadSubTab): Promise<void> {
     activeTab = tab ?? 'read'
-    readDestination = subTab === 'bookmarks' ? 'bookmarks' : 'browse'
-    browseMode = 'surah'
+    readSource = subTab === 'bookmarks' ? 'bookmarks' : 'surah'
     showingWirdDetail = false
     isOpen = true
     surahsState.filter = 'all'
@@ -155,7 +153,7 @@
     await loadRecents()
 
     await tick()
-    if (activeTab === 'read' && readDestination === 'browse' && browseMode === 'surah') { scrollToCurrentSurah() }
+    if (activeTab === 'read' && readSource === 'surah') { scrollToCurrentSurah() }
   }
   function close(): void { isOpen = false }
   function toggle(tab?: DrawerTab): void {
@@ -177,12 +175,21 @@
     const cur = currentSurahN
     if (!cur) { return }
     const row = listEl.querySelector<HTMLElement>(`[data-surah="${cur}"]`)
-    if (row) { row.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior }) }
+    if (!row) { return }
+    const rows = Array.from(listEl.querySelectorAll<HTMLElement>('.qa-nav-drawer-surah-row'))
+    const currentIndex = rows.indexOf(row)
+    const firstIndex = Math.max(0, currentIndex - 4)
+    const firstRow = rows[firstIndex]
+    if (firstRow) {
+      listEl.scrollTop = firstRow.offsetTop - listEl.offsetTop
+      return
+    }
+    row.scrollIntoView({ block: 'center', behavior: 'instant' as ScrollBehavior })
   }
 
   function setTab(t: DrawerTab): void {
     activeTab = t
-    if (t === 'read' && readDestination === 'browse' && browseMode === 'surah') {
+    if (t === 'read' && readSource === 'surah') {
       void tick().then(scrollToCurrentSurah)
     }
   }
@@ -231,7 +238,7 @@
       reminder: {
         enabled: payload.reminderEnabled,
         time: payload.reminderTime,
-        browserNotifications: payload.browserNotifications ? 'granted' : 'default',
+        browserNotifications: payload.browserNotifications,
       },
     }, surahCounts, today)
 
@@ -247,11 +254,27 @@
     showingWirdDetail = false
   }
 
+  async function requestWirdBrowserNotifications(): Promise<BrowserNotificationState> {
+    const state = await requestBrowserNotifications()
+    if (settings.wirdPlan && settings.wirdPlan.reminder.browserNotifications !== state) {
+      await saveWirdPlan({
+        ...settings.wirdPlan,
+        reminder: {
+          ...settings.wirdPlan.reminder,
+          browserNotifications: state,
+        },
+      })
+    }
+    return state
+  }
+
   function setFilter(f: 'all' | 'recent'): void {
+    if (readSource !== 'surah') { return }
     surahsState.filter = f
   }
 
   function handleSearchInput(e: Event): void {
+    if (readSource !== 'surah') { return }
     const input = e.target as HTMLInputElement
     surahsState.searchQuery = input.value
   }
@@ -267,6 +290,7 @@
   }
 
   function handleSearchKeydown(e: KeyboardEvent): void {
+    if (readSource !== 'surah') { return }
     if (e.key === 'Enter') {
       if (commitRefJump()) { e.preventDefault(); return }
       if (visibleItems.length === 1 && visibleItems[0]) {
@@ -321,6 +345,11 @@
     navDrawerBridge.unregister()
   })
 
+  function setReadSource(source: ReadSource): void {
+    readSource = source
+    if (source === 'surah') { void tick().then(scrollToCurrentSurah) }
+  }
+
   const FILTERS = [
     { key: 'all' as const, label: 'All' },
     { key: 'recent' as const, label: 'Recent' },
@@ -346,39 +375,86 @@
     onkeydown={handleKeydown}
   >
     <div class="qa-nav-drawer-hdr">
-      <button
-        type="button"
-        class="qa-nav-drawer-wordmark"
-        aria-label="About QuranAtlas"
-        onclick={goAbout}
-      >
-        <span class="qa-nav-drawer-wordmark-text">QuranAtlas</span>
-        <span class="qa-nav-drawer-info" aria-hidden="true">about</span>
-      </button>
-      <div class="qa-nav-drawer-tabs" role="tablist">
+      <div class="qa-nav-drawer-product-row">
         <button
           type="button"
-          role="tab"
-          aria-selected={activeTab === 'read'}
-          class="qa-nav-drawer-tab"
-          class:qa-nav-drawer-tab--on={activeTab === 'read'}
-          onclick={() => setTab('read')}
-        >Read</button>
+          class="qa-nav-drawer-wordmark"
+          aria-label="About QuranAtlas"
+          onclick={goAbout}
+        >
+          <span class="qa-nav-drawer-logo" aria-hidden="true">
+            <svg class="qa-nav-drawer-logo-svg" data-icon="brand-rosette" viewBox="0 0 48 48" fill="none">
+              <path d="M24 4.5l4.1 5.2 6.6-1.1 1.6 6.4 6.2 2.6-2.9 6 2.9 6-6.2 2.6-1.6 6.4-6.6-1.1L24 43.5l-4.1-5.2-6.6 1.1-1.6-6.4-6.2-2.6 2.9-6-2.9-6 6.2-2.6 1.6-6.4 6.6 1.1L24 4.5Z" />
+              <circle cx="24" cy="24" r="12.2" />
+              <circle cx="24" cy="24" r="6.2" />
+              <path d="M24 16.8v14.4M20.4 21.2c2.4-1.2 4.8-1.2 7.2 0" />
+            </svg>
+          </span>
+          <span class="qa-nav-drawer-wordmark-text">QuranAtlas</span>
+        </button>
         <button
           type="button"
-          role="tab"
-          aria-selected={activeTab === 'study'}
-          class="qa-nav-drawer-tab"
-          class:qa-nav-drawer-tab--on={activeTab === 'study'}
-          onclick={() => setTab('study')}
-        >Study</button>
+          class="qa-nav-drawer-about"
+          aria-label="About QuranAtlas"
+          onclick={goAbout}
+        >
+          <span aria-hidden="true">
+            <svg data-icon="info" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 10.6v5.6" />
+              <path d="M12 7.7h.01" />
+            </svg>
+          </span>
+        </button>
+        <button
+          type="button"
+          class="qa-nav-drawer-close"
+          aria-label="Close"
+          onclick={close}
+        >
+          <svg data-icon="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12" />
+            <path d="M18 6L6 18" />
+          </svg>
+        </button>
       </div>
-      <button
-        type="button"
-        class="qa-nav-drawer-close"
-        aria-label="Close"
-        onclick={close}
-      >&#x2715;</button>
+      <div class="qa-nav-drawer-mode-rail">
+        <div class="qa-nav-drawer-tabs" role="tablist" aria-label="Drawer mode">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'read'}
+            class="qa-nav-drawer-tab"
+            class:qa-nav-drawer-tab--on={activeTab === 'read'}
+            onclick={() => setTab('read')}
+          >
+            <span class="qa-nav-drawer-tab-icon" aria-hidden="true">
+              <svg data-icon="read-book" viewBox="0 0 24 24" fill="none">
+                <path d="M5.8 5.8h4.6c1.4 0 2.6 1.1 2.6 2.6v9.8c0-1.2-1.1-2.1-2.6-2.1H5.8V5.8Z" />
+                <path d="M18.2 5.8h-4.6c-1.4 0-2.6 1.1-2.6 2.6v9.8c0-1.2 1.1-2.1 2.6-2.1h4.6V5.8Z" />
+              </svg>
+            </span>
+            <span>Read</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'study'}
+            class="qa-nav-drawer-tab"
+            class:qa-nav-drawer-tab--on={activeTab === 'study'}
+            onclick={() => setTab('study')}
+          >
+            <span class="qa-nav-drawer-tab-icon" aria-hidden="true">
+              <svg data-icon="study-cap" viewBox="0 0 24 24" fill="none">
+                <path d="M3.8 9.2 12 5.4l8.2 3.8L12 13 3.8 9.2Z" />
+                <path d="M7.3 11.1v4.1c1.5 1.3 3.1 2 4.7 2s3.2-.7 4.7-2v-4.1" />
+                <path d="M20.2 9.2v5.1" />
+              </svg>
+            </span>
+            <span>Study</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     {#if activeTab === 'read'}
@@ -390,93 +466,88 @@
           onCreate={(payload) => { void createOrUpdateWird(payload) }}
           onContinue={continueWird}
           onReset={() => { void clearWirdPlan(); closeWirdDetail() }}
-          onRequestBrowserNotifications={() => {}}
+          onRequestBrowserNotifications={requestWirdBrowserNotifications}
         />
       {:else}
         <div class="qa-nav-drawer-read">
           <DailyWirdCard summary={wirdSummary} onOpen={openWirdDetail} />
-          <div class="qa-nav-drawer-dest-switch" role="tablist" aria-label="Read destination">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={readDestination === 'browse'}
-              class="qa-nav-drawer-dest"
-              class:qa-nav-drawer-dest--on={readDestination === 'browse'}
-              onclick={() => { readDestination = 'browse' }}
-            >Browse</button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={readDestination === 'bookmarks'}
-              class="qa-nav-drawer-dest"
-              class:qa-nav-drawer-dest--on={readDestination === 'bookmarks'}
-              onclick={() => { readDestination = 'bookmarks' }}
-            >Bookmarks</button>
-          </div>
 
-          {#if readDestination === 'browse'}
-            <div class="qa-nav-drawer-tab-body">
-          <div class="qa-nav-drawer-surah-rail">
-            <div class="qa-nav-drawer-surah-rail-copy">
-              <span class="qa-nav-drawer-surah-rail-eyebrow">Browse</span>
-                  <span class="qa-nav-drawer-surah-rail-title">{browseMode === 'surah' ? 'Surahs' : 'Juz'}</span>
+          <div class="qa-nav-drawer-source-panel">
+            <div class="qa-nav-drawer-source-tabs" role="tablist" aria-label="Read source">
+              <button
+                type="button"
+                role="tab"
+                data-testid="read-source-surah"
+                aria-selected={readSource === 'surah'}
+                class="qa-nav-drawer-source-tab"
+                class:qa-nav-drawer-source-tab--on={readSource === 'surah'}
+                onclick={() => setReadSource('surah')}
+              >Surah</button>
+              <button
+                type="button"
+                role="tab"
+                data-testid="read-source-juz"
+                aria-selected={readSource === 'juz'}
+                class="qa-nav-drawer-source-tab"
+                class:qa-nav-drawer-source-tab--on={readSource === 'juz'}
+                onclick={() => setReadSource('juz')}
+              >Juz</button>
+              <button
+                type="button"
+                role="tab"
+                data-testid="read-source-bookmarks"
+                aria-selected={readSource === 'bookmarks'}
+                class="qa-nav-drawer-source-tab"
+                class:qa-nav-drawer-source-tab--on={readSource === 'bookmarks'}
+                onclick={() => setReadSource('bookmarks')}
+              >Bookmarks</button>
             </div>
 
-            <div class="qa-nav-drawer-rail-switch" role="tablist" aria-label="Browse mode">
-                <button
-                  type="button"
-                  role="tab"
-                      data-testid="browse-mode-surah"
-                  class="qa-nav-drawer-rail-switch-option"
-                      class:qa-nav-drawer-rail-switch-option--on={browseMode === 'surah'}
-                      aria-selected={browseMode === 'surah'}
-                      onclick={() => { browseMode = 'surah'; void tick().then(scrollToCurrentSurah) }}
-                    >Surah</button>
+            {#if readSource === 'surah'}
+              <div class="qa-nav-drawer-source-tools" aria-label="Surah controls">
+                <label class="qa-nav-drawer-source-search qa-nav-drawer-search">
+                  <span class="qa-nav-drawer-search-icon" aria-hidden="true">&#x2315;</span>
+                  <input
+                    type="search"
+                    class="qa-nav-drawer-search-input"
+                    placeholder="Search..."
+                    aria-label="Search surah by name, number, or verse reference"
+                    autocomplete="off"
+                    maxlength={20}
+                    value={surahsState.searchQuery}
+                    oninput={handleSearchInput}
+                    onkeydown={handleSearchKeydown}
+                  />
+                </label>
+
+                <div class="qa-nav-drawer-source-filter" role="tablist" aria-label="Surah filter">
+                  {#each FILTERS as f (f.key)}
                     <button
                       type="button"
                       role="tab"
-                      data-testid="browse-mode-juz"
-                      class="qa-nav-drawer-rail-switch-option"
-                      class:qa-nav-drawer-rail-switch-option--on={browseMode === 'juz'}
-                      aria-selected={browseMode === 'juz'}
-                      onclick={() => { browseMode = 'juz' }}
-                    >Juz</button>
-            </div>
+                      class="qa-nav-drawer-filter-option"
+                      class:qa-nav-drawer-filter-option--on={surahsState.filter === f.key}
+                      aria-selected={surahsState.filter === f.key}
+                      onclick={() => setFilter(f.key)}
+                    >{f.label}</button>
+                  {/each}
+                </div>
+              </div>
+            {/if}
           </div>
-              {#if browseMode === 'surah'}
-                <div class="qa-nav-drawer-surah-legacy">
-                  <div class="qa-nav-drawer-rail-switch" role="tablist" aria-label="Surah filter">
-                    {#each FILTERS as f (f.key)}
-                      <button
-                        type="button"
-                        role="tab"
-                        class="qa-nav-drawer-rail-switch-option"
-                        class:qa-nav-drawer-rail-switch-option--on={surahsState.filter === f.key}
-                        aria-selected={surahsState.filter === f.key}
-                        onclick={() => setFilter(f.key)}
-                      >{f.label}</button>
-                    {/each}
-                  </div>
 
-                  <label class="qa-nav-drawer-search">
-                    <span class="qa-nav-drawer-search-icon" aria-hidden="true">&#x2315;</span>
-                    <input
-                      type="search"
-                      class="qa-nav-drawer-search-input"
-                      placeholder="Search surah or 2:255"
-                      aria-label="Search surah by name, number, or verse reference"
-                      autocomplete="off"
-                      maxlength={20}
-                      value={surahsState.searchQuery}
-                      oninput={handleSearchInput}
-                      onkeydown={handleSearchKeydown}
-                    />
-                  </label>
+          {#if searchHint && readSource === 'surah'}
+            <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
+          {/if}
 
-                  {#if searchHint}
-                    <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
-                  {/if}
-
+          <div class="qa-nav-drawer-tab-body">
+            {#if readSource === 'surah'}
+              <div class="qa-nav-drawer-surah-legacy">
+                {#if !loaded}
+                  <div class="qa-nav-drawer-list-state" aria-live="polite">Loading...</div>
+                {:else if visibleItems.length === 0}
+                  <div class="qa-nav-drawer-list-state" role="status">No surahs match your search.</div>
+                {:else}
                   <ul class="qa-nav-drawer-surah-list" bind:this={listEl}>
                     {#each visibleItems as s (s.n)}
                       <li
@@ -493,28 +564,34 @@
                             : `Open ${s.name}`}
                         >
                           <span class="qa-nav-drawer-surah-num">{s.n}</span>
-                          <span class="qa-nav-drawer-surah-name">{s.name}</span>
+                          <span class="qa-nav-drawer-surah-copy">
+                            <span class="qa-nav-drawer-surah-name">{s.name}</span>
+                            <span class="qa-nav-drawer-surah-meta">
+                              <span class="qa-nav-drawer-surah-meta-type">Surah &#x2022; </span>{s.counts[settings.riwayah]} verses
+                            </span>
+                          </span>
                           <span class="qa-nav-drawer-surah-ar" dir="rtl" lang="ar">{s.name_ar}</span>
+                          <span class="qa-nav-drawer-surah-chev" aria-hidden="true">&#x203A;</span>
                         </button>
                       </li>
                     {/each}
                   </ul>
-                </div>
-              {:else}
-                <JuzList
-                  counts={surahCounts}
-                  names={allSurahs}
-                  currentRef={currentRef}
-                  wirdRef={wirdSummary.nextRef}
-                  onNavigate={(ref) => { emit(Events.NAVIGATION_NAVIGATE, { surah: ref.surah, verse: ref.verse }); close() }}
-                />
-              {/if}
-            </div>
-          {:else}
-            <div class="qa-nav-drawer-tab-body qa-nav-drawer-bookmarks-body">
-              <BookmarksList onNavigate={() => close()} />
-            </div>
-          {/if}
+                {/if}
+              </div>
+            {:else if readSource === 'juz'}
+              <JuzList
+                counts={surahCounts}
+                names={allSurahs}
+                currentRef={currentRef}
+                wirdRef={wirdSummary.nextRef}
+                onNavigate={(ref) => { emit(Events.NAVIGATION_NAVIGATE, { surah: ref.surah, verse: ref.verse }); close() }}
+              />
+            {:else}
+              <div class="qa-nav-drawer-bookmarks-body">
+                <BookmarksList onNavigate={() => close()} />
+              </div>
+            {/if}
+          </div>
         </div>
       {/if}
     {:else}

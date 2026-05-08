@@ -134,8 +134,36 @@ describe('WirdDetail', () => {
     expect(onReset).toHaveBeenCalledTimes(1)
   })
 
-  it('shows browser notification request only when reminders are enabled and permission is default', async () => {
-    const onRequestBrowserNotifications = vi.fn()
+  it('requests browser notifications from the setup flow and submits the granted state', async () => {
+    const onRequestBrowserNotifications = vi.fn(async () => 'granted')
+    const onCreate = vi.fn()
+    render(WirdDetail, {
+      props: {
+        summary: noPlan,
+        currentPosition: { surah: 2, verse: 1 },
+        onBack: vi.fn(),
+        onCreate,
+        onContinue: vi.fn(),
+        onReset: vi.fn(),
+        onRequestBrowserNotifications,
+      },
+    })
+
+    await fireEvent.click(document.querySelector('.qa-wird-reminder input')!)
+    await fireEvent.click(document.querySelector('[data-testid="wird-enable-browser-notifications"]')!)
+    expect(onRequestBrowserNotifications).toHaveBeenCalledTimes(1)
+    expect(document.body.textContent).toContain('Browser notifications enabled')
+
+    await fireEvent.click(document.querySelector('[data-testid="wird-target-30"]')!)
+    await fireEvent.click(document.querySelector('[data-testid="wird-create"]')!)
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({
+      browserNotifications: 'granted',
+      reminderEnabled: true,
+    }))
+  })
+
+  it('shows browser notification request when permission is default', async () => {
+    const onRequestBrowserNotifications = vi.fn(async () => 'denied')
     render(WirdDetail, {
       props: {
         summary: {
@@ -161,5 +189,40 @@ describe('WirdDetail', () => {
     expect(document.querySelector('[data-testid="wird-enable-browser-notifications"]')).not.toBeNull()
     await fireEvent.click(document.querySelector('[data-testid="wird-enable-browser-notifications"]')!)
     expect(onRequestBrowserNotifications).toHaveBeenCalledTimes(1)
+  })
+
+  it('allows another browser notification request when permission is denied', async () => {
+    const onRequestBrowserNotifications = vi.fn(async () => 'granted')
+    render(WirdDetail, {
+      props: {
+        summary: {
+          state: 'active',
+          plan: {
+            ...activePlan,
+            reminder: { enabled: true, time: '08:00', browserNotifications: 'denied' },
+          },
+          percent: 25,
+          todayPercent: 50,
+          nextRef: { surah: 2, verse: 10 },
+          todayRangeLabel: '2:1-2:20',
+          remainingLabel: '40 verses left',
+          reminderLabel: 'Reminder 08:00',
+        } satisfies WirdSummary,
+        currentPosition: null,
+        onBack: vi.fn(),
+        onCreate: vi.fn(),
+        onContinue: vi.fn(),
+        onReset: vi.fn(),
+        onRequestBrowserNotifications,
+      },
+    })
+
+    await fireEvent.click(document.querySelector('[data-testid="wird-edit"]')!)
+    expect(document.body.textContent).toContain('Blocked in browser settings')
+    const request = document.querySelector('[data-testid="wird-enable-browser-notifications"]')
+    expect(request).not.toBeNull()
+    await fireEvent.click(request!)
+    expect(onRequestBrowserNotifications).toHaveBeenCalledTimes(1)
+    expect(document.body.textContent).toContain('Browser notifications enabled')
   })
 })

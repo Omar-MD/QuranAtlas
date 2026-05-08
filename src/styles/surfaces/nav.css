@@ -662,7 +662,9 @@
 .qa-nav-drawer {
   position: fixed;
   inset: 0;
-  background: var(--qa-surface-app);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--qa-surface-raised) 28%, transparent), transparent 220px),
+    var(--qa-surface-app);
   color: var(--qa-text-primary);
   display: flex; flex-direction: column;
   z-index: 100;
@@ -681,25 +683,65 @@
 }
 
 .qa-nav-drawer-hdr {
+  display: flex;
+  flex-direction: column;
+  min-height: 98px;
+  padding: 0;
+  background: var(--qa-nav-header-surface);
+  border-bottom: 1px solid var(--qa-nav-row-separator);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--qa-surface-raised) 62%, transparent);
+}
+
+.qa-nav-drawer-product-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 44px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 44px 44px;
+  gap: 6px;
   align-items: center;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--qa-border-subtle);
+  min-height: 62px;
+  padding: 8px 12px 6px;
 }
 
 .qa-nav-drawer-wordmark {
-  display: inline-flex; align-items: baseline; gap: 6px;
-  background: transparent; border: 0; padding: 6px 4px;
-  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   min-width: 0;
-  cursor: pointer; color: var(--qa-text-primary);
-  font-weight: 600; letter-spacing: 0.04em;
-  font-size: 15px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--qa-text-primary);
+  cursor: pointer;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.36rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.qa-nav-drawer-logo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--qa-accent);
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 6%));
+}
+
+.qa-nav-drawer-logo-svg {
+  inline-size: 40px;
+  block-size: 40px;
+  stroke: currentcolor;
+  stroke-width: 1.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .qa-nav-drawer-wordmark-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -711,42 +753,122 @@
   border-radius: 4px;
 }
 
-.qa-nav-drawer-info {
-  color: var(--qa-text-muted);
-  font-size: 12px;
-  font-style: italic;
-  font-weight: 400;
-  letter-spacing: 0;
+.qa-nav-drawer-about,
+.qa-nav-drawer-close {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--qa-text-primary);
+  cursor: pointer;
+}
+
+.qa-nav-drawer-about span {
+  display: grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  border: 1px solid var(--qa-nav-control-border);
+  border-radius: var(--qa-radius-circle);
+  background: color-mix(in srgb, var(--qa-surface-raised) 88%, transparent);
+  color: var(--qa-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: var(--qa-nav-shadow-control);
+}
+
+.qa-nav-drawer-about svg {
+  inline-size: 20px;
+  block-size: 20px;
+  stroke: currentcolor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .qa-nav-drawer-close {
-  background: transparent; border: 0; font-size: 18px; line-height: 1;
-  width: 44px; height: 44px; cursor: pointer;
-  color: var(--qa-text-primary);
+  border-radius: var(--qa-radius-circle);
+}
+
+.qa-nav-drawer-close svg {
+  inline-size: 34px;
+  block-size: 34px;
+  padding: 6px;
+  border: 1px solid var(--qa-nav-control-border);
+  border-radius: var(--qa-radius-circle);
+  background: color-mix(in srgb, var(--qa-surface-raised) 88%, transparent);
+  box-shadow: var(--qa-nav-shadow-control);
 }
 
 /* Tabs */
+.qa-nav-drawer-mode-rail {
+  border-top: 1px solid var(--qa-nav-row-separator);
+}
+
 .qa-nav-drawer-tabs {
-  display: flex;
-  border: 1px solid var(--qa-border-subtle);
-  border-radius: var(--qa-radius-sm);
-  overflow: hidden;
-  min-width: 132px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
 }
 
 .qa-nav-drawer-tab {
-  flex: 1; padding: 0 12px;
-  min-height: 44px;
-  font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 0;
+  font-size: 0.88rem;
+  text-transform: none;
+  letter-spacing: 0;
   background: transparent; border: 0;
-  color: var(--qa-text-muted);
+  color: var(--qa-text-primary);
   cursor: pointer;
 }
 
 .qa-nav-drawer-tab--on {
-  color: var(--qa-text-on-accent);
-  background: var(--qa-accent);
+  color: var(--qa-accent);
+  background: transparent;
   font-weight: 600;
+}
+
+.qa-nav-drawer-tab--on::after {
+  content: "";
+  position: absolute;
+  inset-inline: 18%;
+  bottom: 0;
+  height: 2px;
+  border-radius: var(--qa-radius-pill);
+  background: var(--qa-accent);
+}
+
+.qa-nav-drawer-tab-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 17px;
+  block-size: 17px;
+  color: currentcolor;
+}
+
+.qa-nav-drawer-tab-icon svg {
+  inline-size: 17px;
+  block-size: 17px;
+  stroke: currentcolor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .qa-nav-drawer-tab-body {
@@ -774,30 +896,113 @@
 }
 
 .qa-wird-card {
-  margin: 10px 14px 8px;
-  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 10px 14px 12px;
+  padding: 0;
   min-height: 88px;
-  border: 1px solid var(--qa-border-subtle);
+  border: 1px solid var(--qa-nav-row-border);
   border-radius: var(--qa-radius-md);
-  background: var(--qa-surface-raised);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--qa-accent) 6%, transparent), transparent 52%),
+    var(--qa-nav-row-surface);
   color: var(--qa-text-primary);
   text-align: start;
+  box-shadow: var(--qa-nav-shadow-row);
+  overflow: hidden;
 }
 
-.qa-wird-card-top,
-.qa-wird-card-main,
-.qa-wird-card-sub {
-  display: flex;
+.qa-wird-card-main {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
-  gap: 8px;
+  min-width: 0;
+  padding: 12px 10px 11px 13px;
+}
+
+.qa-wird-card--setup .qa-wird-card-main {
+  min-height: 84px;
+}
+
+.qa-wird-card-status-badge {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 1px solid color-mix(in srgb, var(--qa-accent) 44%, transparent);
+  border-radius: var(--qa-radius-circle);
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--qa-accent) 18%, transparent), transparent 58%),
+    var(--qa-nav-badge-surface);
+  color: var(--qa-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--qa-surface-raised) 58%, transparent);
+}
+
+.qa-wird-card-status-badge svg {
+  inline-size: 20px;
+  block-size: 20px;
+  stroke: currentcolor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.qa-wird-card--complete .qa-wird-card-status-badge {
+  color: var(--qa-accent);
+  border-color: color-mix(in srgb, var(--qa-accent) 48%, transparent);
+  background: color-mix(in srgb, var(--qa-accent) 18%, var(--qa-nav-badge-surface));
+}
+
+.qa-wird-card--setup .qa-wird-card-status-badge {
+  position: relative;
+}
+
+.qa-wird-card--setup .qa-wird-card-status-badge::after {
+  content: "+";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  inline-size: 14px;
+  block-size: 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--qa-accent) 42%, var(--qa-surface-raised));
+  border-radius: var(--qa-radius-circle);
+  background: var(--qa-nav-row-surface);
+  color: var(--qa-accent);
+  font: 700 0.65rem/1 var(--qa-font-ui);
+}
+
+.qa-wird-card-copy,
+.qa-wird-card-head,
+.qa-wird-card-line,
+.qa-wird-card-meta {
+  display: flex;
   min-width: 0;
 }
 
-.qa-wird-card-top {
-  justify-content: space-between;
+.qa-wird-card-copy {
+  flex-direction: column;
+  gap: 3px;
 }
 
-.qa-wird-card-title,
+.qa-wird-card-head,
+.qa-wird-card-line,
+.qa-wird-card-meta {
+  align-items: baseline;
+  gap: 7px;
+}
+
+.qa-wird-card-head {
+  justify-content: flex-start;
+}
+
+.qa-wird-card-kicker,
 .qa-wird-card-ref,
 .qa-wird-card-pct,
 .qa-juz-num,
@@ -808,66 +1013,140 @@
   text-transform: uppercase;
 }
 
-.qa-wird-card-title,
+.qa-juz-num,
+.qa-juz-ref {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.qa-juz-num {
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.qa-juz-ref {
+  color: var(--qa-text-muted);
+  font-size: 0.72rem;
+}
+
+.qa-wird-card-kicker,
 .qa-wird-card-ref {
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
+}
+
+.qa-wird-card-kicker {
+  color: var(--qa-text-primary);
+  font-weight: 700;
+  text-transform: none;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.12;
 }
 
 .qa-wird-card-pct {
+  position: relative;
+  z-index: 1;
   color: var(--qa-accent);
+  font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
 }
 
-.qa-wird-card-bar {
-  display: block;
-  block-size: 3px;
-  margin: 8px 0;
+.qa-wird-card-range {
+  min-width: 0;
   overflow: hidden;
-  border-radius: var(--qa-radius-hairline);
-  background: color-mix(in srgb, var(--qa-accent) 16%, transparent);
-}
-
-.qa-wird-card-bar i {
-  display: block;
-  block-size: 100%;
-  background: var(--qa-accent);
-}
-
-.qa-nav-drawer-dest-switch {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  margin: 0 14px 8px;
-  padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--qa-accent) 24%, transparent);
-  border-radius: var(--qa-radius-pill);
-  background: color-mix(in srgb, var(--qa-accent) 5%, var(--qa-surface-raised));
-  box-shadow: inset 0 1px 2px rgb(0 0 0 / 5%);
-}
-
-.qa-nav-drawer-dest {
-  min-height: 34px;
-  border: 1px solid transparent;
-  border-radius: var(--qa-radius-pill);
-  background: transparent;
-  color: var(--qa-text-muted);
-  cursor: pointer;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--qa-text-primary);
   font-family: var(--qa-font-mono);
-  font-size: 0.64rem;
+  font-size: 0.78rem;
   font-weight: 650;
-  letter-spacing: 0.12em;
+}
+
+.qa-wird-card--setup .qa-wird-card-range {
+  white-space: normal;
+  color: var(--qa-text-muted);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.qa-wird-card-meta,
+.qa-wird-card-reminder {
+  color: var(--qa-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+.qa-wird-card-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 52px;
+  color: var(--qa-text-primary);
+}
+
+.qa-wird-card-meter {
+  inline-size: 42px;
+  block-size: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--qa-accent) var(--qa-wird-card-progress), color-mix(in srgb, var(--qa-accent) 14%, transparent) 0),
+    var(--qa-surface-raised);
+  position: relative;
+}
+
+.qa-wird-card-meter::before {
+  content: none;
+}
+
+.qa-wird-card-meter::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--qa-surface-raised);
+}
+
+.qa-wird-card-chev {
+  font-size: 1.45rem;
   line-height: 1;
-  text-transform: uppercase;
+  color: var(--qa-text-primary);
 }
 
-.qa-nav-drawer-dest-switch .qa-nav-drawer-dest--on {
-  border-color: var(--qa-accent);
-  background: var(--qa-accent);
-  color: var(--qa-text-on-accent);
-  box-shadow: 0 3px 8px rgb(60 35 5 / 18%);
+.qa-wird-card-reminder-row,
+.qa-wird-card-setup-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 7px 12px 8px 48px;
+  border-top: 1px solid var(--qa-nav-row-separator);
+  color: var(--qa-text-muted);
+  font-size: 0.75rem;
 }
 
-.qa-nav-drawer-dest:focus-visible,
+.qa-wird-card-reminder-icon {
+  color: var(--qa-accent);
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.qa-wird-card-setup-note {
+  display: block;
+  padding-top: 0;
+  border-top: 0;
+  font-size: 0.76rem;
+}
+
+.qa-nav-drawer-about:focus-visible,
+.qa-nav-drawer-close:focus-visible,
+.qa-nav-drawer-source-tab:focus-visible,
+.qa-nav-drawer-filter-option:focus-visible,
 .qa-wird-option:focus-visible,
 .qa-wird-back:focus-visible,
 .qa-wird-primary:focus-visible,
@@ -887,9 +1166,9 @@
 }
 
 .qa-wird-option {
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid color-mix(in srgb, var(--qa-accent) 18%, transparent);
-  border-radius: var(--qa-radius-sm);
+  border-radius: var(--qa-radius-pill);
   background: color-mix(in srgb, var(--qa-accent) 4%, var(--qa-surface-app));
   color: var(--qa-text-on-sheet);
   cursor: pointer;
@@ -910,14 +1189,11 @@
 
 .qa-wird-targets .qa-wird-option--on,
 .qa-wird-units .qa-wird-option--on,
-.qa-wird-start .qa-wird-option--on,
-.qa-nav-drawer-rail-switch-option--on {
-  border-color: var(--qa-accent);
-  background: var(--qa-accent);
-  color: var(--qa-text-on-accent);
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--qa-accent) 16%, transparent),
-    0 4px 10px rgb(60 35 5 / 20%);
+.qa-wird-start .qa-wird-option--on {
+  border-color: color-mix(in srgb, var(--qa-accent) 42%, transparent);
+  background: color-mix(in srgb, var(--qa-accent) 14%, var(--qa-surface-raised));
+  color: var(--qa-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qa-accent) 10%, transparent);
 }
 
 .qa-wird-start .qa-wird-option {
@@ -937,103 +1213,183 @@
   opacity: 0.76;
 }
 
-/* Surahs tab */
-.qa-nav-drawer-surah-rail {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  padding: 12px 14px 10px;
-  border-bottom: 1px solid var(--qa-border-subtle);
-}
-
-.qa-nav-drawer-surah-rail-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.qa-nav-drawer-surah-rail-eyebrow {
-  font-family: var(--qa-font-mono);
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--qa-text-dim);
-}
-
-.qa-nav-drawer-surah-rail-title {
-  font-size: 1.125rem;
-  font-weight: 600;
+.qa-nav-drawer-search {
+  gap: 8px;
+  padding: 0 12px;
   color: var(--qa-text-primary);
 }
 
-.qa-nav-drawer-rail-switch {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border: 1px solid var(--qa-border-subtle);
-  border-radius: var(--qa-radius-md);
-  background: var(--qa-surface-raised);
-  overflow: hidden;
-}
-
-.qa-nav-drawer-rail-switch-option {
-  padding: 9px 12px;
-  min-height: 44px;
-  border: 0;
-  background: transparent;
-  color: var(--qa-text-muted);
-  cursor: pointer;
-  font-family: var(--qa-font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.qa-nav-drawer-rail-switch-option--on {
-  background: var(--qa-accent);
-  color: var(--qa-text-on-accent);
-  font-weight: 600;
-}
-
-.qa-nav-drawer-search {
-  display: flex; align-items: center; gap: 8px;
-  margin: 10px 14px 4px;
-  padding: 9px 12px;
-  min-height: 44px;
-  background: var(--qa-surface-raised);
-  border: 1px solid var(--qa-border-subtle);
-  border-radius: 8px;
-}
 .qa-nav-drawer-search-icon { color: var(--qa-text-muted); font-size: 14px; }
 
 .qa-nav-drawer-search-input {
+  min-width: 0;
   flex: 1;
   background: transparent; border: 0; outline: 0;
-  font-family: inherit; font-size: 14px; color: var(--qa-text-primary);
+  font-family: inherit; font-size: 0.93rem; color: var(--qa-text-primary);
 }
 .qa-nav-drawer-search-input::placeholder { color: var(--qa-text-dim); }
 
+.qa-nav-drawer-source-panel {
+  margin: 0 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.qa-nav-drawer-source-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--qa-nav-control-border);
+  border-radius: var(--qa-radius-md);
+  background: var(--qa-nav-control-surface);
+  overflow: hidden;
+  box-shadow: var(--qa-nav-shadow-control);
+}
+
+.qa-nav-drawer-source-tabs:has(+ .qa-nav-drawer-source-tools) {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.qa-nav-drawer-source-tab,
+.qa-nav-drawer-filter-option {
+  position: relative;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--qa-radius-sm);
+  background: transparent;
+  color: var(--qa-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.qa-nav-drawer-source-tab {
+  min-height: 42px;
+  border: 0;
+  border-radius: 0;
+}
+
+.qa-nav-drawer-source-tab + .qa-nav-drawer-source-tab {
+  border-inline-start: 1px solid var(--qa-nav-row-separator);
+}
+
+.qa-nav-drawer-source-tab--on,
+.qa-nav-drawer-filter-option--on {
+  border-color: var(--qa-nav-control-border);
+  background: color-mix(in srgb, var(--qa-nav-control-selected-surface) 72%, transparent);
+  color: var(--qa-nav-control-selected-text);
+}
+
+.qa-nav-drawer-source-tab--on::after {
+  content: "";
+  position: absolute;
+  inset-inline: 10%;
+  bottom: 0;
+  height: 2px;
+  border-radius: var(--qa-radius-pill);
+  background: var(--qa-accent);
+}
+
+.qa-nav-drawer-filter-option--on {
+  border-color: var(--qa-accent);
+  background: var(--qa-accent);
+  color: var(--qa-text-on-accent);
+}
+
+.qa-nav-drawer-source-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  min-height: 42px;
+  border: 1px solid var(--qa-nav-control-border);
+  border-top: 0;
+  border-radius: var(--qa-radius-md);
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  overflow: hidden;
+  background: var(--qa-nav-control-surface);
+  box-shadow: var(--qa-nav-shadow-control);
+}
+
+.qa-nav-drawer-source-search {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.qa-nav-drawer-source-filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-left: 1px solid var(--qa-nav-row-separator);
+}
+
 .qa-nav-drawer-search-hint {
-  padding: 2px 16px 8px;
+  padding: 0 16px 7px;
   font-size: 11px;
   color: var(--qa-text-muted);
   font-style: italic;
 }
 
+.qa-nav-drawer-list-state {
+  margin: 0 14px 14px;
+  min-height: 132px;
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid var(--qa-nav-row-border);
+  border-radius: var(--qa-radius-md);
+  background: var(--qa-nav-row-surface);
+  color: var(--qa-text-muted);
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .qa-nav-drawer-surah-list {
-  flex: 1; overflow-y: auto;
-  list-style: none; margin: 0; padding: 0;
+  flex: 1; min-height: 0; overflow-y: auto;
+  list-style: none; margin: 0; padding: 0 14px 14px;
   overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.qa-nav-drawer-surah-row {
-  border-left: 2px solid transparent;
+.qa-nav-drawer-surah-legacy {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.qa-nav-drawer-surah-row--current {
-  background: var(--qa-accent-soft);
-  border-left-color: var(--qa-accent);
+.qa-nav-drawer-surah-row,
+.qa-juz-row {
+  flex: 0 0 auto;
+  border: 1px solid var(--qa-nav-row-border);
+  border-radius: var(--qa-radius-md);
+  overflow: hidden;
+  background: var(--qa-nav-row-surface);
+  box-shadow: inset 0 -1px var(--qa-nav-row-separator);
+}
+
+.qa-nav-drawer-surah-row--current,
+.qa-juz-row--current {
+  background: var(--qa-nav-current-bg);
+  border-color: var(--qa-nav-row-border);
+  box-shadow:
+    inset 3px 0 var(--qa-nav-current-spine),
+    var(--qa-nav-shadow-row);
 }
 
 .qa-juz-list {
@@ -1042,27 +1398,21 @@
   overflow-y: auto;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 14px 14px;
   overscroll-behavior: contain;
-}
-
-.qa-juz-row {
-  border-left: 2px solid transparent;
-}
-
-.qa-juz-row--current {
-  border-left-color: var(--qa-accent);
-  background: var(--qa-accent-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .qa-juz-row-btn {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: 48px 42px minmax(0, 1fr) auto auto 16px;
   gap: 8px;
   align-items: center;
   width: 100%;
-  min-height: 48px;
-  padding: 10px 14px;
+  min-height: 58px;
+  padding: 8px 10px;
   border: 0;
   background: transparent;
   color: var(--qa-text-primary);
@@ -1079,6 +1429,8 @@
 .qa-juz-ar {
   color: var(--qa-text-muted);
   font-family: var(--qa-font-arabic);
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 .qa-wird-detail {
@@ -1127,12 +1479,12 @@
 .qa-wird-current {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 1rem;
+  gap: 0.72rem;
+  padding: 0.84rem;
   border: 1px solid color-mix(in srgb, var(--qa-accent) 22%, transparent);
-  border-radius: var(--qa-radius-lg);
+  border-radius: var(--qa-radius-md);
   background: var(--qa-surface-raised);
-  box-shadow: 0 10px 28px rgb(0 0 0 / 8%);
+  box-shadow: 0 8px 18px rgb(0 0 0 / 6%);
 }
 
 .qa-wird-setup-intro {
@@ -1199,9 +1551,9 @@
 
 .qa-wird-input {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid color-mix(in srgb, var(--qa-accent) 22%, transparent);
-  border-radius: var(--qa-radius-sm);
+  border-radius: var(--qa-radius-pill);
   background: color-mix(in srgb, var(--qa-accent) 4%, var(--qa-surface-app));
   color: var(--qa-text-primary);
   font: inherit;
@@ -1246,7 +1598,7 @@
 .qa-wird-primary {
   position: sticky;
   bottom: calc(8px + env(safe-area-inset-bottom));
-  min-height: 46px;
+  min-height: 42px;
   border: 1px solid var(--qa-accent);
   border-radius: var(--qa-radius-pill);
   background: var(--qa-accent);
@@ -1268,7 +1620,7 @@
 
 .qa-wird-secondary,
 .qa-wird-danger {
-  min-height: 44px;
+  min-height: 40px;
   border-radius: var(--qa-radius-pill);
   cursor: pointer;
   font: inherit;
@@ -1289,39 +1641,111 @@
 }
 
 @media (max-width: 359px) {
-  .qa-nav-drawer-info,
-  .qa-juz-ar {
-    display: none;
-  }
-
   .qa-nav-drawer-hdr {
-    grid-template-columns: minmax(0, 1fr) auto 44px;
-    gap: 6px;
-    padding-inline: 10px;
+    min-height: 88px;
   }
 
-  .qa-nav-drawer-tabs {
-    min-width: 120px;
-  }
-
-  .qa-nav-drawer-tab {
+  .qa-nav-drawer-product-row {
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    gap: 2px;
+    min-height: 54px;
     padding-inline: 8px;
   }
 
-  .qa-nav-drawer-surah-rail {
-    grid-template-columns: 1fr;
+  .qa-nav-drawer-logo {
+    flex-basis: 32px;
+    inline-size: 32px;
+    block-size: 32px;
   }
 
-  .qa-nav-drawer-rail-switch {
-    width: 100%;
+  .qa-nav-drawer-logo-svg {
+    inline-size: 32px;
+    block-size: 32px;
+  }
+
+  .qa-nav-drawer-wordmark {
+    gap: 6px;
+    font-size: 0.92rem;
+  }
+
+  .qa-nav-drawer-about,
+  .qa-nav-drawer-close {
+    inline-size: 44px;
+  }
+
+  .qa-nav-drawer-tabs {
+    padding-inline: 8px;
+  }
+
+  .qa-nav-drawer-tab {
+    padding-inline: 7px;
+  }
+
+  .qa-wird-card,
+  .qa-nav-drawer-source-panel,
+  .qa-nav-drawer-surah-list,
+  .qa-juz-list {
+    margin-inline: 10px;
+    padding-inline: 0;
   }
 
   .qa-wird-card {
-    margin-inline: 10px;
+    min-height: 78px;
   }
 
-  .qa-nav-drawer-dest-switch {
-    margin-inline: 10px;
+  .qa-wird-card-main {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px 8px 9px 10px;
+  }
+
+  .qa-wird-card-status-badge {
+    inline-size: 34px;
+    block-size: 34px;
+  }
+
+  .qa-wird-card-meter {
+    inline-size: 36px;
+    block-size: 36px;
+  }
+
+  .qa-wird-card-range {
+    font-size: 0.74rem;
+  }
+
+  .qa-wird-card-reminder-row,
+  .qa-wird-card-setup-note {
+    padding-inline-start: 42px;
+  }
+
+  .qa-nav-drawer-source-tools {
+    grid-template-columns: minmax(0, 1fr) 112px;
+  }
+
+  .qa-nav-drawer-source-filter {
+    border-left: 1px solid var(--qa-nav-row-separator);
+    border-top: 0;
+  }
+
+  .qa-nav-drawer-surah-btn {
+    grid-template-columns: 30px minmax(0, 1fr) 16px;
+    min-height: 74px;
+    padding-block: 7px;
+    row-gap: 0;
+  }
+
+  .qa-nav-drawer-surah-ar {
+    grid-column: 2;
+    justify-self: start;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .qa-nav-drawer-surah-chev {
+    grid-column: 3;
+    grid-row: 1 / span 2;
   }
 
   .qa-wird-start {
@@ -1329,45 +1753,131 @@
   }
 
   .qa-juz-row-btn {
-    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-columns: auto auto minmax(0, 1fr) 16px;
+    min-height: 68px;
+    row-gap: 1px;
+  }
+
+  .qa-juz-name {
+    grid-column: 3;
+  }
+
+  .qa-juz-ar {
+    display: block;
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: start;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .qa-juz-marker {
+    grid-column: 3;
+    justify-self: start;
+  }
+
+  .qa-juz-chev {
+    grid-column: 4;
+    grid-row: 1 / span 2;
   }
 }
 
 .qa-nav-drawer-surah-row--current .qa-nav-drawer-surah-num {
-  background: var(--qa-accent);
-  color: var(--qa-text-on-accent);
+  color: var(--qa-accent);
 }
 
 .qa-nav-drawer-surah-row--current .qa-nav-drawer-surah-name {
-  font-weight: 600;
+  color: var(--qa-accent);
+  font-weight: 500;
 }
 
 .qa-nav-drawer-surah-btn {
-  display: flex; align-items: center; gap: 10px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) minmax(56px, auto) 16px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  background: transparent; border: 0;
-  padding: 11px 14px;
-  font: inherit; color: var(--qa-text-primary);
-  text-align: left; cursor: pointer;
+  min-height: 60px;
+  padding: 8px 8px 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--qa-text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
 .qa-nav-drawer-surah-num {
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  background: var(--qa-surface-raised);
-  border: 1px solid var(--qa-border-subtle);
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600;
-  flex-shrink: 0;
+  color: var(--qa-text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
-.qa-nav-drawer-surah-name { flex: 1; font-size: 13.5px; }
+
+.qa-nav-drawer-surah-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.qa-nav-drawer-surah-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  line-height: 1.15;
+}
+
+.qa-nav-drawer-surah-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--qa-text-muted);
+  font-family: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.qa-nav-drawer-surah-meta-type {
+  display: none;
+}
+
 .qa-nav-drawer-surah-star { color: var(--qa-accent); font-size: 11px; }
 
 .qa-nav-drawer-surah-ar {
   color: var(--qa-text-muted);
   font-family: var(--qa-font-arabic);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.qa-juz-chev,
+.qa-nav-drawer-surah-chev {
+  color: var(--qa-text-muted);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.qa-juz-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 7px;
+  border-radius: var(--qa-radius-pill);
+  background: var(--qa-nav-badge-surface);
+  color: var(--qa-nav-badge-text);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* Review tab */

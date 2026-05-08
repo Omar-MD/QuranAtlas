@@ -72,6 +72,26 @@
     --qa-focus-ring-width: var(--fp-ring-width);
     --qa-focus-ring-offset: var(--fp-ring-offset);
 
+    /* --- Nav drawer ------------------------------------------------------- */
+    --qa-nav-header-surface: color-mix(in srgb, var(--qa-surface-raised) 62%, var(--qa-surface-app));
+    --qa-nav-row-surface: color-mix(in srgb, var(--qa-surface-raised) 88%, var(--qa-surface-app));
+    --qa-nav-row-surface-hover: color-mix(in srgb, var(--qa-accent) 5%, var(--qa-nav-row-surface));
+    --qa-nav-row-border: color-mix(in srgb, var(--qa-border-subtle) 82%, var(--qa-accent));
+    --qa-nav-row-separator: color-mix(in srgb, var(--qa-border-subtle) 70%, transparent);
+    --qa-nav-current-bg: color-mix(in srgb, var(--qa-accent) 10%, var(--qa-surface-raised));
+    --qa-nav-current-spine: var(--qa-accent);
+    --qa-nav-control-surface: color-mix(in srgb, var(--qa-surface-raised) 84%, var(--qa-surface-app));
+    --qa-nav-control-selected-surface: color-mix(in srgb, var(--qa-accent) 13%, var(--qa-surface-raised));
+    --qa-nav-control-selected-text: var(--qa-accent);
+    --qa-nav-control-border: color-mix(in srgb, var(--qa-border-subtle) 84%, var(--qa-accent));
+    --qa-nav-badge-surface: color-mix(in srgb, var(--qa-accent) 14%, var(--qa-surface-raised));
+    --qa-nav-badge-text: var(--qa-text-primary);
+    --qa-nav-skeleton-surface: color-mix(in srgb, var(--qa-surface-skeleton) 72%, var(--qa-surface-raised));
+    --qa-nav-delete-surface: color-mix(in srgb, var(--qa-surface-danger) 86%, var(--qa-surface-raised));
+    --qa-nav-delete-text: var(--qa-text-on-accent);
+    --qa-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 6%);
+    --qa-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 4%);
+
     /* --- Scrim ----------------------------------------------------------- */
     --qa-scrim: var(--c-scrim-light);
 
@@ -232,6 +252,24 @@
     --qa-text-error:         #7a3520;
     --qa-surface-toast:      var(--c-ink-800);
     --qa-text-on-toast:      var(--c-sepia-50);
+    --qa-nav-header-surface: color-mix(in srgb, var(--qa-surface-raised) 70%, var(--qa-surface-app));
+    --qa-nav-row-surface: color-mix(in srgb, var(--qa-surface-raised) 90%, var(--qa-surface-app));
+    --qa-nav-row-surface-hover: color-mix(in srgb, var(--qa-accent) 6%, var(--qa-nav-row-surface));
+    --qa-nav-row-border: color-mix(in srgb, var(--qa-border-default) 76%, var(--qa-accent));
+    --qa-nav-row-separator: color-mix(in srgb, var(--qa-border-default) 62%, transparent);
+    --qa-nav-current-bg: color-mix(in srgb, var(--qa-accent) 11%, var(--qa-surface-raised));
+    --qa-nav-current-spine: var(--qa-accent);
+    --qa-nav-control-surface: color-mix(in srgb, var(--qa-surface-raised) 86%, var(--qa-surface-app));
+    --qa-nav-control-selected-surface: color-mix(in srgb, var(--qa-accent) 14%, var(--qa-surface-raised));
+    --qa-nav-control-selected-text: var(--qa-accent);
+    --qa-nav-control-border: color-mix(in srgb, var(--qa-border-default) 76%, var(--qa-accent));
+    --qa-nav-badge-surface: color-mix(in srgb, var(--qa-accent) 15%, var(--qa-surface-raised));
+    --qa-nav-badge-text: var(--qa-text-primary);
+    --qa-nav-skeleton-surface: color-mix(in srgb, var(--qa-surface-skeleton) 68%, var(--qa-surface-raised));
+    --qa-nav-delete-surface: color-mix(in srgb, var(--qa-surface-danger) 82%, var(--qa-surface-raised));
+    --qa-nav-delete-text: var(--qa-text-on-accent);
+    --qa-nav-shadow-row: 0 4px 14px rgb(64 43 18 / 7%);
+    --qa-nav-shadow-control: 0 8px 18px rgb(64 43 18 / 5%);
   }
 
   /* --------------------- DARK theme ---------------------- */
@@ -270,6 +308,24 @@
     --qa-scrim:              var(--c-scrim-dark);
     --qa-elevation-lg:       var(--sh-dark-lg);
     --qa-selection-bg:       var(--qa-accent-soft);
+    --qa-nav-header-surface: color-mix(in srgb, var(--qa-surface-raised) 72%, var(--qa-surface-sheet));
+    --qa-nav-row-surface: color-mix(in srgb, var(--qa-surface-raised) 78%, var(--qa-surface-app));
+    --qa-nav-row-surface-hover: color-mix(in srgb, var(--qa-accent) 9%, var(--qa-nav-row-surface));
+    --qa-nav-row-border: color-mix(in srgb, var(--qa-border-subtle) 72%, var(--qa-accent));
+    --qa-nav-row-separator: color-mix(in srgb, var(--qa-border-subtle) 80%, transparent);
+    --qa-nav-current-bg: color-mix(in srgb, var(--qa-accent) 16%, var(--qa-surface-raised));
+    --qa-nav-current-spine: var(--qa-accent);
+    --qa-nav-control-surface: color-mix(in srgb, var(--qa-surface-raised) 82%, var(--qa-surface-app));
+    --qa-nav-control-selected-surface: color-mix(in srgb, var(--qa-accent) 20%, var(--qa-surface-raised));
+    --qa-nav-control-selected-text: var(--qa-accent);
+    --qa-nav-control-border: color-mix(in srgb, var(--qa-border-subtle) 72%, var(--qa-accent));
+    --qa-nav-badge-surface: color-mix(in srgb, var(--qa-accent) 22%, var(--qa-surface-raised));
+    --qa-nav-badge-text: var(--qa-text-primary);
+    --qa-nav-skeleton-surface: color-mix(in srgb, var(--qa-surface-skeleton) 76%, var(--qa-surface-raised));
+    --qa-nav-delete-surface: color-mix(in srgb, var(--qa-surface-danger) 68%, var(--qa-surface-raised));
+    --qa-nav-delete-text: var(--qa-text-primary);
+    --qa-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 28%);
+    --qa-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 24%);
     --qa-tag-0:  var(--c-tag-dark-0);
     --qa-tag-1:  var(--c-tag-dark-1);
     --qa-tag-2:  var(--c-tag-dark-2);

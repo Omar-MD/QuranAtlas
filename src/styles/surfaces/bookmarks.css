@@ -24,28 +24,44 @@
     padding: 0;
   }
 
-  .qa-bookmarks-empty {
-    padding: 28px 22px;
+  .qa-bookmarks-empty,
+  .qa-bookmarks-loading {
+    margin: 0 14px 14px;
+    min-height: 132px;
+    display: grid;
+    align-content: center;
+    gap: 9px;
+    padding: 16px;
+    border: 1px solid var(--qa-nav-row-border);
+    border-radius: var(--qa-radius-md);
+    background: var(--qa-nav-row-surface);
     color: var(--qa-text-muted);
-    font-size: 13px;
     text-align: center;
-    line-height: 1.5;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .qa-bookmarks-skeleton-row {
+    display: block;
+    min-height: 11px;
+    border-radius: var(--qa-radius-pill);
+    background: var(--qa-nav-skeleton-surface);
   }
 
   .qa-bookmarks-section + .qa-bookmarks-section {
-    border-top: 1px solid var(--qa-border-subtle);
+    border-top: 1px solid var(--qa-nav-row-separator);
   }
 
   .qa-bookmarks-section-hdr {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 18px 6px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    padding: 9px 14px 6px;
+    font-size: 0.82rem;
+    text-transform: none;
+    letter-spacing: 0;
     color: var(--qa-text-muted);
-    background: var(--qa-surface-raised);
+    background: transparent;
   }
 
   .qa-bookmarks-section-name {
@@ -54,39 +70,52 @@
 
   .qa-bookmarks-section-count {
     font-feature-settings: 'tnum';
-    color: var(--qa-text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 22px;
+    padding: 0 7px;
+    border-radius: var(--qa-radius-pill);
+    background: var(--qa-nav-badge-surface);
+    color: var(--qa-nav-badge-text);
+    font-family: var(--qa-font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
   }
 
   .qa-bookmarks-rows {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .qa-bookmarks-row {
     position: relative;
     overflow: hidden;
-    border-bottom: 1px solid var(--qa-border-subtle);
-
-    /* Delete button paints in the right edge; row btn slides over it.
-       Theme-aware terracotta — picks the parchment-palette danger fill in
-       light/sepia, deeper terracotta in dark; cleaner against cream than
-       the raw browser red. */
-    background: var(--qa-surface-danger, var(--qa-text-error));
+    border: 1px solid var(--qa-nav-row-border);
+    border-radius: var(--qa-radius-md);
+    background: var(--qa-nav-delete-surface);
+    box-shadow: inset 0 -1px var(--qa-nav-row-separator);
   }
 
   .qa-bookmarks-row-btn {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 16px;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
 
     /* Opaque background so the delete button behind us is occluded until
        the user actually swipes. Tracks the surrounding surface so light/
        sepia/dark themes keep the row appearance consistent. */
-    background: var(--qa-surface-app);
+    min-height: 54px;
+    background: var(--qa-nav-row-surface);
     border: 0;
-    padding: 11px 14px;
+    padding: 8px 10px;
     font: inherit;
     color: var(--qa-text-primary);
     text-align: left;
@@ -102,7 +131,7 @@
 
   .qa-bookmarks-row-btn:hover,
   .qa-bookmarks-row-btn:focus-visible {
-    background: var(--qa-surface-raised);
+    background: var(--qa-nav-row-surface-hover);
     outline: none;
   }
 
@@ -110,23 +139,28 @@
     flex-shrink: 0;
     min-width: 48px;
     font-family: var(--qa-font-mono);
-    font-size: 11px;
-    letter-spacing: 0.06em;
+    font-size: 0.78rem;
+    letter-spacing: 0;
     color: var(--qa-accent);
     font-weight: 700;
   }
 
   .qa-bookmarks-row-ar {
-    flex: 1;
     text-align: right;
     color: var(--qa-text-primary);
     font-family: var(--qa-font-arabic);
-    font-size: 17px;
-    line-height: 1.6;
+    font-size: 1rem;
+    line-height: 1.45;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     direction: rtl;
+  }
+
+  .qa-bookmarks-row-chev {
+    color: var(--qa-text-muted);
+    font-size: 1.15rem;
+    line-height: 1;
   }
 
   .qa-bookmarks-row-del {
@@ -137,8 +171,8 @@
 
     /* Theme-aware terracotta fill — matches `.qa-bookmarks-row` background
        so they read as a single recessed surface during the swipe. */
-    background: var(--qa-surface-danger, var(--qa-text-error));
-    color: #fff;
+    background: var(--qa-nav-delete-surface);
+    color: var(--qa-nav-delete-text);
     border: 0;
     border-inline-start: 1px solid color-mix(in srgb, #000 18%, transparent);
     font: inherit;
@@ -163,13 +197,13 @@
 
   .qa-bookmarks-row-del:hover,
   .qa-bookmarks-row-del:focus-visible {
-    background: color-mix(in srgb, var(--qa-surface-danger, var(--qa-text-error)) 86%, #000);
+    background: color-mix(in srgb, var(--qa-nav-delete-surface) 86%, #000);
     box-shadow: inset 2px 0 0 0 color-mix(in srgb, #fff 30%, transparent);
     outline: none;
   }
 
   .qa-bookmarks-row-del:active {
-    background: color-mix(in srgb, var(--qa-surface-danger, var(--qa-text-error)) 78%, #000);
+    background: color-mix(in srgb, var(--qa-nav-delete-surface) 78%, #000);
   }
 
   .qa-bookmarks-row--swiped .qa-bookmarks-row-btn {

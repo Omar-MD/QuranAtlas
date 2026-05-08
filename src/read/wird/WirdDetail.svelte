@@ -9,7 +9,7 @@
     startMode: 'current' | 'beginning'
     reminderEnabled: boolean
     reminderTime: string
-    browserNotifications: boolean
+    browserNotifications: BrowserNotificationState
   }
 
   type Props = {
@@ -19,7 +19,7 @@
     onCreate: (payload: SetupPayload) => void
     onContinue: () => void
     onReset: () => void
-    onRequestBrowserNotifications: () => void
+    onRequestBrowserNotifications: () => BrowserNotificationState | Promise<BrowserNotificationState>
   }
 
   const {
@@ -39,14 +39,14 @@
   let startMode = $state<'current' | 'beginning'>('current')
   let reminderEnabled = $state(false)
   let reminderTime = $state('08:00')
-  let browserNotifications = $state(false)
+  let requestedNotificationState = $state<BrowserNotificationState | null>(null)
   let confirmingReset = $state(false)
   let editing = $state(false)
 
   const currentRefLabel = $derived(currentPosition ? `${currentPosition.surah}:${currentPosition.verse}` : '1:1')
   const activePlan = $derived(summary.plan)
   const currentNotificationState = $derived<BrowserNotificationState>(
-    activePlan?.reminder.browserNotifications ?? 'default',
+    requestedNotificationState ?? activePlan?.reminder.browserNotifications ?? 'default',
   )
   const canCreate = $derived(
     (targetMode === 'preset' ? targetDays !== null : targetEndOn.length > 0)
@@ -57,7 +57,7 @@
     unit = plan.unit
     reminderEnabled = plan.reminder.enabled
     reminderTime = plan.reminder.time
-    browserNotifications = plan.reminder.browserNotifications === 'granted'
+    requestedNotificationState = plan.reminder.browserNotifications
     targetMode = 'custom'
     targetDays = null
     targetEndOn = plan.targetEndOn
@@ -77,8 +77,13 @@
       startMode,
       reminderEnabled,
       reminderTime,
-      browserNotifications,
+      browserNotifications: currentNotificationState,
     })
+  }
+
+  async function requestNotifications(): Promise<void> {
+    const state = await onRequestBrowserNotifications()
+    requestedNotificationState = state
   }
 </script>
 
@@ -155,12 +160,20 @@
             <p class="qa-wird-note">Browser notifications enabled</p>
           {:else if currentNotificationState === 'denied'}
             <p class="qa-wird-note">Blocked in browser settings</p>
+            <button
+              type="button"
+              class="qa-wird-secondary"
+              data-testid="wird-enable-browser-notifications"
+              onclick={() => { void requestNotifications() }}
+            >
+              Request again
+            </button>
           {:else}
             <button
               type="button"
               class="qa-wird-secondary"
               data-testid="wird-enable-browser-notifications"
-              onclick={onRequestBrowserNotifications}
+              onclick={() => { void requestNotifications() }}
             >
               Enable browser notifications
             </button>

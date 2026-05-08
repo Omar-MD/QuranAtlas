@@ -43,6 +43,7 @@
         {#if row.n === wirdJuz}
           <span class="qa-juz-marker qa-juz-marker--wird">Wird</span>
         {/if}
+        <span class="qa-juz-chev" aria-hidden="true">&#x203A;</span>
       </button>
     </li>
   {/each}

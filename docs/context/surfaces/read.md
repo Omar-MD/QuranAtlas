@@ -187,6 +187,10 @@ Reader position saves advance the plan only when the saved reference is inside t
 
 `Continue Wird` navigates to `progress.nextRef`; ordinary `settings.currentPosition` remains the source of truth for normal resume.
 
+The mobile drawer summary card is a single ledger-style tappable surface above the Read source controls; without a plan it invites plan creation, and with a plan it reflects plan state and routes to the in-drawer detail without writing progress from render alone.
+
+Daily Wird summary text respects the selected display unit. Juz and Hizb plans derive remaining counts from Quran boundary metadata instead of falling back to raw verse counts. Browser notification permission is requested only from the reminder permission control; granted/denied/default/unsupported is stored on the plan reminder state. Denied state can be requested again from the same control, though the browser may keep returning denied until the user changes site settings.
+
 ## Data
 
 <!-- AUTO-GENERATED:data-owned START -->
@@ -232,7 +236,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - **Knowledge lane is optional and non-blocking.** Reader text render never waits on `dataset/knowledge/**`; missing or invalid ayah/passage shards leave verse theme/context metadata empty and do not introduce a new error surface.
 - **Knowledge is the per-verse disclosure.** Arabic remains always visible. Translation rows are controlled only by `settings.translationVisible`; verse clicks reveal/collapse theme chips and passage summary.
 - **Reader tafsir is per-verse and source-switchable.** Inline preview and full sheet read from `settings.tafsirId`; optional packs are same-origin on-demand assets outside the baseline manifest, and runtime falls back to `muyassar` only when the selected body cannot be fetched.
-- **Daily Wird progress is passive to drawer render.** The drawer can read `settings.wirdPlan`, but only the read surface writer under `src/read/wird/` writes plan state. Rendering the drawer must not advance progress.
+- **Daily Wird progress is passive to drawer render.** The drawer can read `settings.wirdPlan` and update reminder browser-permission state through `src/read/wird/` helpers, but only the read surface writer under `src/read/wird/` writes plan progress. Rendering the drawer must not advance progress.
 - **Mounted Reader verse content must stay live with Settings.** While the reader stays on the same surah, changing `settings.translationVisible`, `settings.translationId`, or `settings.tafsirId` must refresh the mounted verse tree / active tafsir preview without requiring a route reload.
 - **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
 - **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/read/chrome.spec.js` B-Virt1/2/3 + `tests/unit/read/chunked-virtualiser.test.ts`.
