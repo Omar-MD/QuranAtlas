@@ -118,11 +118,11 @@ test.describe('Journey G: About', () => {
     // Two top-level mode tabs: Read (default) · Study (post 2026-04-28 restructure).
     await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Read' })).toBeVisible()
     await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Study' })).toBeVisible()
-    // Read mode now exposes Browse · Bookmarks, with Surah · Juz nested under Browse.
-    await expect(drawer.locator('.qa-nav-drawer-dest-switch', { hasText: 'Browse' })).toBeVisible()
-    await expect(drawer.locator('.qa-nav-drawer-dest-switch', { hasText: 'Bookmarks' })).toBeVisible()
-    await expect(drawer.locator('[data-testid="browse-mode-surah"]')).toBeVisible()
-    await expect(drawer.locator('[data-testid="browse-mode-juz"]')).toBeVisible()
+    // Read mode exposes Surah, Juz, and Bookmarks as peer source tabs.
+    await expect(drawer.getByTestId('read-source-surah')).toBeVisible()
+    await expect(drawer.getByTestId('read-source-juz')).toBeVisible()
+    await expect(drawer.getByTestId('read-source-bookmarks')).toBeVisible()
+    await expect(drawer.getByTestId('read-source-surah')).toHaveAttribute('aria-selected', 'true')
 
     // Wordmark with ⓘ icon = About entry
     await expect(drawer.locator('.qa-nav-drawer-wordmark')).toBeVisible()
