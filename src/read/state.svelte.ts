@@ -1,9 +1,13 @@
 import type { SurahPayload } from '../data/dataset'
 
+export type ReaderMode = 'verse' | 'mushaf'
+
 export class ReaderState {
   currentSurah = $state<SurahPayload | null>(null)
   currentSurahNum = $state<number | null>(null)
   currentVerseKey = $state<string | null>(null)
+  currentMushafPage = $state<number | null>(null)
+  readerMode = $state<ReaderMode>('verse')
   fontMultiplier = $state(1.0)
   translationVisible = $state(true)
   scrollY = $state(0)

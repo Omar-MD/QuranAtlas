@@ -6,6 +6,8 @@ describe('state/reader.svelte.ts', () => {
     reader.currentSurah = null
     reader.currentSurahNum = null
     reader.currentVerseKey = null
+    reader.currentMushafPage = null
+    reader.readerMode = 'verse'
     reader.fontMultiplier = 1.0
     reader.translationVisible = true
     reader.scrollY = 0
@@ -20,6 +22,8 @@ describe('state/reader.svelte.ts', () => {
     expect(reader.currentSurah).toBeNull()
     expect(reader.currentSurahNum).toBeNull()
     expect(reader.currentVerseKey).toBeNull()
+    expect(reader.currentMushafPage).toBeNull()
+    expect(reader.readerMode).toBe('verse')
     expect(reader.fontMultiplier).toBe(1.0)
     expect(reader.translationVisible).toBe(true)
     expect(reader.scrollY).toBe(0)
@@ -31,7 +35,11 @@ describe('state/reader.svelte.ts', () => {
 
   it('fields are directly assignable', () => {
     reader.currentVerseKey = '2:255'
+    reader.readerMode = 'mushaf'
+    reader.currentMushafPage = 42
     expect(reader.currentVerseKey).toBe('2:255')
+    expect(reader.readerMode).toBe('mushaf')
+    expect(reader.currentMushafPage).toBe(42)
     expect(reader.fontMultiplier).toBe(1.0) // untouched
   })
 
