@@ -3,10 +3,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { quranWsPagePdfUrl } from './build.mjs'
+import { assertSafeSvg, quranWsPagePdfUrl } from './build.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -72,8 +72,21 @@ async function convertPdfToSvg(pdfPath, svgPath) {
     throw new Error(`pdftocairo failed while converting ${pdfPath}`)
   }
   const svg = await readFile(svgPath, 'utf8')
-  if (!svg.includes('<svg')) {
+  try {
+    assertSafeSvg(basename(svgPath), svg)
+  } catch {
     throw new Error(`pdftocairo did not produce an SVG document: ${svgPath}`)
+  }
+}
+
+export async function hasReusableSvgDocument(path) {
+  if (!existsSync(path)) return false
+  const svg = await readFile(path, 'utf8').catch(() => '')
+  try {
+    assertSafeSvg(basename(path), svg)
+    return true
+  } catch {
+    return false
   }
 }
 
@@ -96,6 +109,7 @@ export async function main(argv = process.argv.slice(2)) {
   for (const page of pages) {
     const pdfPath = join(pdfDir, `${pad3(page)}.pdf`)
     const svgPath = join(svgDir, `${pad3(page)}.svg`)
+    if (await hasReusableSvgDocument(svgPath)) continue
     if (!existsSync(pdfPath)) {
       await download(quranWsPagePdfUrl(sourceSlug, page), pdfPath)
     }

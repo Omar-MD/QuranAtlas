@@ -6,11 +6,13 @@ import { describe, expect, it } from 'vitest'
 import {
   derivePageMappings,
   firstVerseByPage,
+  optimizeSvgForDataset,
   quranWsPagePdfUrl,
   riwayatForProfile,
   validateSvgPageSet,
   writeMushafManifest,
 } from '../../../scripts/data/mushaf-pages/build.mjs'
+import { hasReusableSvgDocument } from '../../../scripts/data/mushaf-pages/import.mjs'
 import { buildManifestPayload } from '../../../scripts/data/manifest/inventory.mjs'
 
 describe('mushaf page dataset builder', () => {
@@ -115,6 +117,63 @@ describe('mushaf page dataset builder', () => {
 
     await writeFile(join(dir, '001.svg'), '<?xml-stylesheet href="https://example.com/a.css"?><svg></svg>')
     await expect(validateSvgPageSet(dir, 1)).rejects.toThrow(/unsafe SVG/)
+
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('allows same-document SVG url references emitted by pdftocairo', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-'))
+    const dir = join(root, 'pages')
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, '001.svg'), `
+      <svg xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <clipPath id="clip-0"><path d="M 0 0 L 1 1"/></clipPath>
+        </defs>
+        <g clip-path="url(#clip-0)"><path d="M 0 0 L 1 1"/></g>
+      </svg>
+    `)
+
+    await expect(validateSvgPageSet(dir, 1)).resolves.toHaveLength(1)
+
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('optimizes exported SVGs without removing same-document references', () => {
+    const source = `<?xml version="1.0" encoding="UTF-8"?>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10.123456 20.987654">
+        <defs>
+          <clipPath id="clip-0">
+            <path d="M 1.234567 2.345678 L 3.456789 4.567891"/>
+          </clipPath>
+        </defs>
+        <g clip-path="url(#clip-0)">
+          <path d="M 5.555555 6.666666 L 7.777777 8.888888"/>
+        </g>
+      </svg>`
+
+    const optimized = optimizeSvgForDataset(source)
+
+    expect(optimized.length).toBeLessThan(source.length)
+    expect(optimized).not.toContain('<?xml')
+    expect(optimized).toContain('url(#clip-0)')
+    expect(optimized).toContain('10.12')
+    expect(optimized).toContain('1.23')
+  })
+
+  it('reuses only safe existing SVG imports', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-'))
+    const good = join(root, 'good.svg')
+    const unsafe = join(root, 'unsafe.svg')
+    const invalid = join(root, 'invalid.svg')
+    await writeFile(good, '<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    await writeFile(unsafe, '<svg><script>alert(1)</script></svg>')
+    await writeFile(invalid, '<html><svg></svg></html>')
+
+    await expect(hasReusableSvgDocument(good)).resolves.toBe(true)
+    await expect(hasReusableSvgDocument(unsafe)).resolves.toBe(false)
+    await expect(hasReusableSvgDocument(invalid)).resolves.toBe(false)
+    await expect(hasReusableSvgDocument(join(root, 'missing.svg'))).resolves.toBe(false)
 
     await rm(root, { recursive: true, force: true })
   })

@@ -38,6 +38,14 @@ function response(body: unknown, status = 200): Response {
   } as Response
 }
 
+function responseJsonError(error: Error, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => { throw error },
+  } as Response
+}
+
 function mockManifestFetch(body: unknown = manifest, status = 200): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn(async () => response(body, status))
   vi.stubGlobal('fetch', fetchMock)
@@ -116,6 +124,22 @@ describe('mushaf-pages dataset loader', () => {
       code: 'MUSHAF_PACK_UNAVAILABLE',
       riwayah: 'hafs',
       status: 404,
+    })
+  })
+
+  it('treats non-JSON app-shell responses as unavailable optional packs', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => responseJsonError(new SyntaxError('Unexpected token <'))))
+    const { getMushafPackAvailability, resolveMushafPage } = await importLoader()
+
+    await expect(getMushafPackAvailability('hafs')).resolves.toMatchObject({
+      riwayah: 'hafs',
+      available: false,
+      manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+    })
+    await expect(resolveMushafPage({ riwayah: 'hafs', page: 42 })).rejects.toMatchObject({
+      code: 'MUSHAF_PACK_UNAVAILABLE',
+      riwayah: 'hafs',
+      status: 200,
     })
   })
 

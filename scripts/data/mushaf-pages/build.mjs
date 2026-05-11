@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -74,6 +74,24 @@ export function quranWsPagePdfUrl(sourceSlug, page) {
   return `https://pdf.quran.ws/pdfs/${sourceSlug}/page/quran-${sourceSlug}-page-${page}.pdf`
 }
 
+function compactNumberLiteral(value) {
+  const rounded = Number.parseFloat(value).toFixed(2)
+  return (rounded === '-0.00' ? '0' : rounded).replace(/\.?0+$/, '')
+}
+
+export function optimizeSvgForDataset(text) {
+  return String(text)
+    .replace(/^\uFEFF/, '')
+    .replace(/<\?xml[^>]*>\s*/i, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/>\s+</g, '><')
+    .replace(/[\t\r\n]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/-?\d+\.\d{3,}/g, compactNumberLiteral)
+    .replace(/\s+(?=[/>])/g, '')
+    .trim()
+}
+
 export function riwayatForProfile(profile = 'baseline') {
   const riwayat = PROFILE_RIWAYAT[profile]
   if (!riwayat) throw new Error(`Unsupported Mushaf page profile: ${profile}`)
@@ -105,7 +123,7 @@ export function firstVerseByPage(ayat) {
   return derivePageMappings(ayat).firstVerse
 }
 
-function assertSafeSvg(filename, text) {
+export function assertSafeSvg(filename, text) {
   const decoded = decodeHtmlEntities(text)
   const cssNormalized = normalizeCssEscapes(decoded)
   if (/<!DOCTYPE\b/i.test(decoded) || /<!ENTITY\b/i.test(decoded) || /<\?xml-stylesheet\b/i.test(decoded)) {
@@ -124,7 +142,7 @@ function assertSafeSvg(filename, text) {
     }
   }
 
-  if (/\son[a-z]+\s*=/i.test(decoded) || /@import\b/i.test(cssNormalized) || /\burl\s*\(/i.test(cssNormalized)) {
+  if (/\son[a-z]+\s*=/i.test(decoded) || /@import\b/i.test(cssNormalized) || hasUnsafeCssUrlReference(cssNormalized)) {
     throw new Error(`Mushaf page ${filename} contains unsafe SVG content`)
   }
 
@@ -137,6 +155,16 @@ function assertSafeSvg(filename, text) {
 
 function localName(name) {
   return String(name ?? '').split(':').pop().toLowerCase()
+}
+
+function hasUnsafeCssUrlReference(value) {
+  for (const match of String(value).matchAll(/\burl\s*\(\s*(?:(["'])(.*?)\1|([^)]*?))\s*\)/gis)) {
+    const raw = (match[2] ?? match[3] ?? '').trim()
+    if (!/^#[A-Za-z_][\w:.-]*$/.test(raw)) {
+      return true
+    }
+  }
+  return false
 }
 
 function decodeHtmlEntities(value) {
@@ -262,7 +290,10 @@ async function buildRiwayah(riwayah, catalog, { check = false, missing = 'error'
   const outDir = join(OUT_ROOT, riwayah)
   await mkdir(join(outDir, 'pages'), { recursive: true })
   for (const sourceFile of sourceFiles) {
-    await cp(sourceFile, join(outDir, 'pages', basename(sourceFile)))
+    const filename = basename(sourceFile)
+    const optimized = optimizeSvgForDataset(await readFile(sourceFile, 'utf8'))
+    assertSafeSvg(filename, optimized)
+    await writeFile(join(outDir, 'pages', filename), optimized, 'utf8')
   }
   await writeMushafManifest({
     outDir,

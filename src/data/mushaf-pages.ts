@@ -193,7 +193,16 @@ export async function loadMushafManifest(riwayah: Riwayah): Promise<MushafManife
     if (!response.ok) {
       throw new MushafPackUnavailableError(riwayah, response.status)
     }
-    return assertManifest(await response.json(), riwayah)
+    let raw: unknown
+    try {
+      raw = await response.json()
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new MushafPackUnavailableError(riwayah, response.status)
+      }
+      throw error
+    }
+    return assertManifest(raw, riwayah)
   }).catch((error) => {
     manifestPromises.delete(riwayah)
     throw error
