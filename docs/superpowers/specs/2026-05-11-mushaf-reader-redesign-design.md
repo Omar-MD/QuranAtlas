@@ -14,7 +14,7 @@ This redesign also fixes riwayah asset handling. Qaloon remains the default base
 - The page sits inside a visible sheet/card treatment with background, border radius, and shadow. That makes Mushaf mode feel like a preview instead of the primary reader.
 - The current bottom controls are too large and visually heavy for a reading surface.
 - Page progression does not communicate the original Mushaf direction clearly. Reading should advance right-to-left: page 1 begins at the right side of the book, and later pages move leftward through the Mushaf.
-- Dark mode cannot keep the original black-on-light SVG unchanged. Mushaf ink must be theme-aware while remaining sharp.
+- Light, sepia, and dark modes cannot share an unchanged black-on-light SVG treatment. Mushaf ink, ornament, and ground treatment must be theme-aware in every app theme while remaining sharp.
 - Riwayah switching is unreliable when optional Hafs or Warsh text/page packs are absent. The app must expose install state, prevent broken switches, and allow users to install optional riwayat.
 
 ## Chosen Direction
@@ -26,9 +26,10 @@ Use the "recolored ink with night-paper softness" direction:
 - The Mushaf page is no longer a card.
 - The page fills the available reader viewport, constrained only by the page aspect ratio, safe areas, and the mobile header or desktop rail.
 - The rendered page keeps crisp quran.ws vector paths. Do not rasterize, blur, screenshot, or use image-generated Mushaf text.
-- Theme styling recolors the SVG ink, separators, ornaments, and page-background layer through QuranAtlas tokens.
+- Theme styling recolors the SVG ink, separators, ornaments, and page-background layer through QuranAtlas tokens in light, sepia, and dark themes.
 - Dark mode uses light ink over the app reading surface with a subtle night-paper warmth, not a flat CSS inversion.
-- Sepia and light themes keep a warmer paper/ink relationship while still using the same geometry and layout.
+- Sepia mode is a first-class Mushaf theme, not a light-theme fallback. It should use warm sepia paper/ground, darker warm ink, and compatible ornament tones while preserving the same SVG geometry and sharpness.
+- Light mode keeps a clean warm paper/ink relationship while using the same geometry and layout.
 
 ### Navigation Direction
 
@@ -88,7 +89,7 @@ Mushaf mode owns the whole reader viewport.
 
 ## Theme-Aware SVG Rendering
 
-The theme-aware renderer must keep text sharp.
+The theme-aware renderer must keep text sharp and must support light, sepia, and dark as first-class render states.
 
 - Runtime renders real SVG paths from `/dataset/mushaf-pages/{riwayah}/pages/{NNN}.svg`.
 - Build-time sanitization remains the integrity gate for source SVG content.
@@ -98,8 +99,9 @@ The theme-aware renderer must keep text sharp.
   - secondary ornament/border ink
   - page ground or transparent ground
   - active navigation accent
+- Each app theme must provide explicit Mushaf token values. Sepia may not inherit light-theme ink/ground values if that creates a black-on-light page that visually ignores the sepia surface.
 - The renderer must not use bitmap canvas extraction, CSS blur, low-resolution previews, or generated placeholder text.
-- The `<img>` path may remain as a fallback for unsupported inline rendering states, but fallback cannot be the dark-mode primary path.
+- The `<img>` path may remain as a fallback for unsupported inline rendering states, but fallback cannot be the primary path for dark or sepia mode.
 - Theme changes while Mushaf mode is mounted should update ink colors without refetching the page when possible.
 
 ## Navigation Behavior
@@ -234,6 +236,7 @@ E2E tests:
 - left-edge tap advances; right-edge tap returns
 - page chip jump routes to the requested page
 - dark mode renders light theme-aware Mushaf ink with sharp SVG text
+- sepia mode renders warm theme-aware Mushaf ink and ground treatment with sharp SVG text
 - installable Hafs/Warsh path allows package install and then riwayah switch
 - unavailable optional package cannot break the active reader
 
