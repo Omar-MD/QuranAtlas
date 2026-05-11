@@ -69,7 +69,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(htmlAttr).toBe('qaloon')
   })
 
-  test('B-Riwayah2: switching Riwayah to Ḥafṣ updates html[data-riwayah] and reloads text', async ({ page }) => {
+  test('B-Riwayah2: switching to unavailable Ḥafṣ updates html[data-riwayah] and shows install prompt', async ({ page }) => {
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
 
@@ -88,19 +88,13 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       expect(attr).toBe('hafs')
     }).toPass({ timeout: 3_000 })
 
-    // Close settings; the reader listens to SETTINGS_RIWAYAH_CHANGED and
-    // reloads from the Hafs dataset in-place.
+    // Close settings; clean baseline support is Qaloon-only, so missing
+    // Hafs text must prompt install instead of falling back silently.
     await page.keyboard.press('Escape')
-
-    // Wait for the reader to re-render with the new dataset
-    await expect(async () => {
-      const newText = await firstAyah.textContent()
-      // Hafs and Qaloon differ — Hafs ayah 1 is the Basmala;
-      // Qaloon starts with "اِ۬لْحَمْدُ". At least one of them
-      // must differ to confirm the reader reloaded.
-      expect(newText).not.toBe(null)
-      expect(newText).not.toBe('')
-    }).toPass({ timeout: 5_000 })
+    const installPrompt = page.locator('.qa-riwayah-install-prompt')
+    await expect(installPrompt).toBeVisible({ timeout: 5_000 })
+    await expect(installPrompt).toContainText('hafs text is not installed yet.')
+    await expect(page.locator('.qa-verse-arabic')).toHaveCount(0)
 
     // html[data-riwayah] is still hafs after settings close
     const htmlAttr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
@@ -115,6 +109,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       expect(attr).toBe('qaloon')
     }).toPass({ timeout: 3_000 })
     await page.keyboard.press('Escape')
+    await waitForReader(page)
+    await expect(page.locator('.qa-verse-arabic').first()).toHaveAttribute('data-riwayah', 'qaloon')
   })
 
   // -------------------------------------------------------------------------
