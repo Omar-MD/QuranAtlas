@@ -1,3 +1,4 @@
+import { cacheNameFor } from '../../infra/sw/route-defs'
 import { displayViewBoxForMushafPage, parseViewBox, viewBoxText as serializeViewBox } from './sizing'
 import type { InlineMushafSvg } from './types'
 
@@ -36,9 +37,24 @@ export async function loadInlineMushafSvg(
     throw new Error(`Invalid Mushaf asset URL: ${assetUrl}`)
   }
 
-  const response = await fetch(decodedPath, { signal })
-  if (!response.ok) throw new Error(`Failed to load Mushaf page SVG: ${response.status}`)
-  return prepareInlineMushafSvg(await response.text())
+  const response = await fetch(decodedPath, { signal }).catch(() => null)
+  if (response?.ok) {
+    return prepareInlineMushafSvg(await response.text())
+  }
+
+  const cached = await cachedSvgResponse(decodedPath).catch(() => null)
+  if (cached?.ok) return prepareInlineMushafSvg(await cached.text())
+
+  throw new Error(`Failed to load Mushaf page SVG: ${response?.status ?? 'offline'}`)
+}
+
+async function cachedSvgResponse(path: string): Promise<Response | null> {
+  if (typeof caches === 'undefined') return null
+  const absolute = new URL(path, location.origin)
+  const cacheName = cacheNameFor(absolute)
+  if (!cacheName) return null
+  const cache = await caches.open(cacheName)
+  return (await cache.match(absolute.href)) || (await cache.match(path)) || null
 }
 
 export function prepareInlineMushafSvg(text: string): InlineMushafSvg {

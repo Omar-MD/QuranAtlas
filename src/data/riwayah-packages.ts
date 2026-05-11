@@ -194,12 +194,12 @@ export async function getRiwayahPackageStatus(riwayah: Riwayah): Promise<Riwayah
 
 export async function isRiwayahUsable(riwayah: Riwayah): Promise<boolean> {
   const status = await getRiwayahPackageStatus(riwayah)
-  if (status.kind !== 'installed') return false
-  if (riwayah === 'qaloon' && typeof navigator !== 'undefined' && navigator.onLine === false) {
-    const entry = await getRiwayahPackageEntry(riwayah)
-    return entry ? allPlannedUrlsCached(entry) : false
-  }
   return status.kind === 'installed'
+}
+
+export async function isRiwayahPackageFullyCached(riwayah: Riwayah): Promise<boolean> {
+  const entry = await getRiwayahPackageEntry(riwayah)
+  return entry ? allPlannedUrlsCached(entry) : false
 }
 
 export function clearRiwayahPackageCacheForTests(): void {

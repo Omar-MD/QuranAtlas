@@ -105,18 +105,10 @@ describe('riwayah package index', () => {
     await expect(isRiwayahUsable('qaloon')).resolves.toBe(true)
   })
 
-  it('requires cached Qaloon package URLs when the browser is offline', async () => {
+  it('keeps baseline Qaloon usable while offline', async () => {
     vi.stubGlobal('navigator', { onLine: false })
-    const { isRiwayahUsable, clearRiwayahPackageCacheForTests } = await importLoader()
+    const { isRiwayahUsable } = await importLoader()
 
-    await expect(isRiwayahUsable('qaloon')).resolves.toBe(false)
-
-    installCache([
-      '/dataset/riwayat/qaloon/001.json',
-      '/dataset/mushaf-pages/qaloon/manifest.json',
-      '/dataset/mushaf-pages/qaloon/pages/001.svg',
-    ])
-    clearRiwayahPackageCacheForTests()
     await expect(isRiwayahUsable('qaloon')).resolves.toBe(true)
   })
 

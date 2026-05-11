@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { SvelteMap } from 'svelte/reactivity'
   import { riwayahInstallIntent, settings, type Riwayah } from '../../configure/state.svelte'
   import { setRiwayah } from '../../configure/riwayah'
   import { Events } from '../../core/constants'
@@ -36,6 +37,7 @@
   const { page = '1' }: Props = $props()
 
   const inlineSvgCache: Array<[string, InlineMushafSvg]> = []
+  const inlineSvgRequests = new SvelteMap<string, Promise<InlineMushafSvg>>()
   const INLINE_SVG_CACHE_LIMIT = 8
 
   let routePage = $state(1)
@@ -78,7 +80,15 @@
   async function loadCachedInlineSvg(assetUrl: string, signal?: AbortSignal): Promise<InlineMushafSvg> {
     const cached = inlineSvgCache.find(([cachedUrl]) => cachedUrl === assetUrl)?.[1]
     if (cached) return cached
-    return rememberInlineSvg(assetUrl, await loadInlineMushafSvg(assetUrl, signal))
+    const existing = inlineSvgRequests.get(assetUrl)
+    if (existing) return existing
+    const request = loadInlineMushafSvg(assetUrl, signal)
+      .then((svg) => rememberInlineSvg(assetUrl, svg))
+      .finally(() => {
+        inlineSvgRequests.delete(assetUrl)
+      })
+    inlineSvgRequests.set(assetUrl, request)
+    return request
   }
 
   function assetUrlForPage(current: MushafResolvedPage, pageNumber: number): string {
@@ -137,7 +147,9 @@
 
       const controller = new AbortController()
       svgAbort = controller
-      const svg = await loadCachedInlineSvg(next.assetUrl, controller.signal)
+      const svgRequest = loadCachedInlineSvg(next.assetUrl, controller.signal)
+      prefetchAdjacentPages(next)
+      const svg = await svgRequest
       if (!isActiveRequest(id)) return
       if (svg.viewBoxText !== next.viewBoxText) {
         throw new Error('Mushaf page SVG viewBox does not match the page manifest')
@@ -145,7 +157,6 @@
       inlineSvg = svg
       measureLayout()
       resetMainScroll()
-      prefetchAdjacentPages(next)
     } catch (err) {
       if (!isActiveRequest(id)) return
       if (!hasResolvedMetadata) resolved = null

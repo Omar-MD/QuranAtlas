@@ -1,3 +1,4 @@
+import { CACHE_DATASET } from '../core/constants'
 import type { Riwayah } from '../configure/state.svelte'
 import { clampMushafPage } from '../read/mushaf/navigation'
 import { parseViewBox } from '../read/mushaf/sizing'
@@ -37,6 +38,18 @@ export class MushafPackUnavailableError extends Error {
 
 function manifestUrl(riwayah: Riwayah): string {
   return `${BASE}/${riwayah}/manifest.json`
+}
+
+async function cachedResponse(url: string): Promise<Response | null> {
+  if (typeof caches === 'undefined') return null
+  const cache = await caches.open(CACHE_DATASET)
+  return (await cache.match(url)) || (await cache.match(new URL(url, location.origin).href)) || null
+}
+
+async function cacheResponse(url: string, response: Response): Promise<void> {
+  if (typeof caches === 'undefined') return
+  const cache = await caches.open(CACHE_DATASET)
+  await cache.put(url, response)
 }
 
 function pad3(page: number): string {
@@ -210,10 +223,12 @@ export async function loadMushafManifest(riwayah: Riwayah): Promise<MushafManife
   const existing = manifestPromises.get(riwayah)
   if (existing) return existing
 
-  const promise = fetch(manifestUrl(riwayah)).then(async (response) => {
+  const url = manifestUrl(riwayah)
+  const readResponse = async (response: Response): Promise<MushafManifest> => {
     if (!response.ok) {
       throw new MushafPackUnavailableError(riwayah, response.status)
     }
+    const cacheCopy = typeof response.clone === 'function' ? response.clone() : null
     let raw: unknown
     try {
       raw = await response.json()
@@ -223,8 +238,14 @@ export async function loadMushafManifest(riwayah: Riwayah): Promise<MushafManife
       }
       throw error
     }
-    return assertManifest(raw, riwayah)
-  }).catch((error) => {
+    const manifest = assertManifest(raw, riwayah)
+    if (cacheCopy) await cacheResponse(url, cacheCopy).catch(() => undefined)
+    return manifest
+  }
+
+  const promise = fetch(url).then(readResponse).catch(async (error) => {
+    const cached = await cachedResponse(url).catch(() => null)
+    if (cached) return readResponse(cached)
     manifestPromises.delete(riwayah)
     throw error
   })
@@ -299,6 +320,7 @@ export async function pageForVerse({
 async function assertRenderableRiwayah(riwayah: Riwayah): Promise<void> {
   try {
     if (!(await isRiwayahUsable(riwayah))) {
+      if (riwayah === 'qaloon' && typeof navigator !== 'undefined' && navigator.onLine === false) return
       throw new MushafPackUnavailableError(riwayah)
     }
   } catch (error) {

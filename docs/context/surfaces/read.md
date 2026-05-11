@@ -232,7 +232,7 @@ Last-read position + sticky-page state. Single global record; updated on every s
 
 Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `tafsirId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `mushafViewMode`, `surahHeaderHidden`, `currentPosition`, `lastSurface`, `wirdPlan`. (See `configure` dossier for `settings` store body.)
 
-Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count, SVG asset paths, per-page `viewBox`, first visible verse refs, and `verseToPage` mode-switch mapping. The fetched page SVG is same-origin validated, parsed, descendant-sanitized, and serialized before inline rendering. Verse mode reads `/dataset/manifest.json` before loading `riwayat/{riwayah}/{surah}.json` so missing optional Hafs/Warsh text packs surface as install prompts instead of fallback text.
+Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count, SVG asset paths, per-page `viewBox`, first visible verse refs, and `verseToPage` mode-switch mapping. The fetched page SVG is same-origin validated, parsed, descendant-sanitized, and serialized before inline rendering. Dataset and Mushaf manifest/SVG fetches warm Cache Storage when online and fall back to those entries when offline. Verse mode reads `/dataset/manifest.json` before loading `riwayat/{riwayah}/{surah}.json` so missing optional Hafs/Warsh text packs surface as install prompts instead of fallback text.
 
 ## Events
 
@@ -251,13 +251,13 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:158` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:104`, `src/read/MarginHeader.svelte:185` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:354` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:365` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
 
 - **Reader text source = active Riwayah.** From `settings['riwayah']` (default Qālūn). Sole writer of `settings['riwayah']` is `settings/riwayah.ts`. Font follows via `--qa-font-arabic` cascade (set by `:root[data-riwayah=...]` overrides). Reader's reading-typography slider drives line-height; floor at `xs` step clears stacked harakat across all riwayat. Each `.qa-verse-arabic` carries `data-riwayah` mirroring active Riwayah.
-- **Missing active Riwayah packs prompt installation.** Qaloon is baseline. Hafs/Warsh text or page packs are optional/full-profile assets; if the active pack is absent from the built manifest, Reader/MushafReader must show an install prompt and must not silently render Qaloon text or pages under a Hafs/Warsh UI state.
+- **Missing active Riwayah packs prompt installation.** Qaloon is baseline and remains the active riwayah while offline; a missing concrete Qaloon text/page cache entry fails at the resource load instead of changing the active riwayah. Hafs/Warsh text or page packs are optional/full-profile assets; if the active pack is absent from the built manifest, Reader/MushafReader must show an install prompt and must not silently render Qaloon text or pages under a Hafs/Warsh UI state.
 - **Mushaf route is page-only and position-neutral.** `#/m/:page` does not encode riwayah and does not mutate `settings.currentPosition`. The active manifest's `pageCount` is authoritative for clamping/canonicalization.
 - **Mushaf canvas is page-only.** Mushaf mode does not render verse overlays, translation rows, or tafsir inside the SVG page canvas; opening verse mode uses the page manifest's first visible verse reference.
 - **Mushaf view mode is a document-view preference.** `settings.mushafViewMode` stores only `auto`, `fit-page`, or `fit-width`; Auto resolves from viewport shape at render time so mobile can prioritize readable width while desktop can keep a full-page document view.

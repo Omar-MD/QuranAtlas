@@ -10,7 +10,7 @@ import { loadGlobalPosition } from './read/global-position'
 import { reshapeArabicVerses, reshapeAddedNodes } from './read/font-reshape'
 import * as router from './core/router.js'
 import { emit, on } from './core/events.js'
-import { Events } from './core/constants.js'
+import { CACHE_DATASET, Events } from './core/constants.js'
 import { logger } from './core/logger.js'
 import { init as initSafetySync, suppressNextVersionChange } from './infra/safety/sync.js'
 import { initInstallListener } from './configure/about/pwa-install'
@@ -186,6 +186,15 @@ export async function initBootstrap(): Promise<Array<() => void>> {
       link.crossOrigin = 'anonymous'
       link.href = `/dataset/riwayat/${activeRiwayah}/001.json`
       document.head.appendChild(link)
+    }
+    if (typeof caches !== 'undefined') {
+      void fetch('/dataset/manifest.json')
+        .then(async (response) => {
+          if (!response.ok) return
+          const cache = await caches.open(CACHE_DATASET)
+          await cache.put('/dataset/manifest.json', response.clone())
+        })
+        .catch(() => { /* offline/cache warm-up is best-effort */ })
     }
 
     // Expose version-change suppression so E2E clearAllData can prevent the

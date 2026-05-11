@@ -17,7 +17,7 @@
 import { test, expect } from '@playwright/test'
 import { waitForReader, openSettingsSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
-import { readSetting } from '../fixtures/idb.js'
+import { readSetting, writeSetting } from '../fixtures/idb.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
 // Reuse the onboarded snapshot to skip per-test cold-boot setup. The 5
@@ -116,38 +116,43 @@ test.describe('Journey D: Settings & appearance', () => {
     await expect(tafsirRow).toContainText('Al-Mukhtasar fi al-Tafsir')
   })
 
-  test('D2-riwayah: unavailable optional package cannot change the active recitation', async ({ page }) => {
-    await routeRiwayahPackages(page, { hafsAvailable: false })
-    await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.goto('/#/s/1')
-    await waitForReader(page)
-    await openSettingsSheet(page)
-    await page.getByTestId('src-row-recitation').click()
+  test.describe('D2-riwayah package mocks', () => {
+    test.use({ serviceWorkers: 'block' })
 
-    const picker = page.getByTestId('settings-pop')
-    const hafs = picker.getByTestId('riwayah-row-hafs')
-    await expect(hafs).toContainText('Unavailable')
-    await expect(hafs).toBeDisabled()
-    await expect.poll(() => readSetting(page, 'riwayah')).not.toBe('hafs')
-  })
+    test('D2-riwayah: unavailable optional package cannot change the active recitation', async ({ page }) => {
+      await routeRiwayahPackages(page, { hafsAvailable: false })
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await page.goto('/#/s/1')
+      await waitForReader(page)
+      await openSettingsSheet(page)
+      await page.getByTestId('src-row-recitation').click()
 
-  test('D2-riwayah: failed install keeps Qālūn active and exposes retry state', async ({ page }) => {
-    await routeRiwayahPackages(page, { hafsAvailable: true })
-    await page.route('**/dataset/riwayat/hafs/001.json', route => route.fulfill({ status: 503, body: 'unavailable' }))
-    await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.goto('/#/s/1')
-    await waitForReader(page)
+      const picker = page.getByTestId('settings-pop')
+      const hafs = picker.getByTestId('riwayah-row-hafs')
+      await expect(hafs).toContainText('Unavailable')
+      await expect(hafs).toBeDisabled()
+      await expect.poll(() => readSetting(page, 'riwayah')).not.toBe('hafs')
+    })
 
-    await openSettingsSheet(page)
-    await page.getByTestId('src-row-recitation').click()
-    const picker = page.getByTestId('settings-pop')
-    const hafs = picker.getByTestId('riwayah-row-hafs')
-    await expect(hafs).toContainText('Install')
-    await hafs.click()
+    test('D2-riwayah: failed install keeps Qālūn active and exposes retry state', async ({ page }) => {
+      await routeRiwayahPackages(page, { hafsAvailable: true })
+      await page.route('**/dataset/riwayat/hafs/001.json', route => route.fulfill({ status: 503, body: 'unavailable' }))
+      await writeSetting(page, 'riwayah', 'qaloon')
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await page.goto('/#/s/1')
+      await waitForReader(page)
 
-    await expect(hafs).toContainText('Retry', { timeout: 10_000 })
-    await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))).toBe('qaloon')
-    await expect(page.getByTestId('src-row-recitation')).toContainText('Qālūn')
+      await openSettingsSheet(page)
+      await page.getByTestId('src-row-recitation').click()
+      const picker = page.getByTestId('settings-pop')
+      const hafs = picker.getByTestId('riwayah-row-hafs')
+      await expect(hafs).toContainText('Install')
+      await hafs.click()
+
+      await expect(hafs).toContainText('Retry', { timeout: 10_000 })
+      await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))).toBe('qaloon')
+      await expect(page.getByTestId('src-row-recitation')).toContainText('Qālūn')
+    })
   })
 
   // D3-bg: <html> background matches <body> background under every theme so

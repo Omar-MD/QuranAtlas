@@ -29,6 +29,7 @@ import {
 } from '../configure/riwayah'
 import {
   cacheNamesForRiwayahPackage,
+  isRiwayahPackageFullyCached,
   planRiwayahPackageInstall,
 } from './riwayah-packages'
 
@@ -528,8 +529,11 @@ export async function removeRiwayahPackage(riwayah: Riwayah): Promise<void> {
   if (riwayah === 'qaloon') throw new Error('Qaloon is the baseline package and cannot be removed.')
   if (settings.riwayah === riwayah) {
     const qaloonStatus = await refreshRiwayahPackageStatus('qaloon')
-    if (qaloonStatus.kind !== 'installed') {
-      throw new Error('Cannot remove the active package because Qaloon is not verified usable.')
+    const offlineQaloonReady = typeof navigator !== 'undefined' && navigator.onLine === false
+      ? await isRiwayahPackageFullyCached('qaloon').catch(() => false)
+      : true
+    if (qaloonStatus.kind !== 'installed' || !offlineQaloonReady) {
+      throw new Error('Cannot remove the active package because Qaloon could not be activated.')
     }
     const switched = await setRiwayah('qaloon')
     if (!switched) {

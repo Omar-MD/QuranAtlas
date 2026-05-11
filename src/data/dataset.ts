@@ -152,7 +152,16 @@ async function fetchNetworkFirst(url: string): Promise<unknown> {
       throw new Error(`Failed to fetch ${url}: ${res.status}`)
     }
     try {
-      return await res.json()
+      const cacheCopy = typeof res.clone === 'function' ? res.clone() : null
+      const payload = await res.json()
+      try {
+        if (!cacheCopy) return payload
+        const cache = await caches.open(CACHE_DATASET)
+        await cache.put(url, cacheCopy)
+      } catch {
+        // Cache Storage may be unavailable in private or test contexts.
+      }
+      return payload
     } catch {
       // Corrupted network response — delete any stale cache entry and re-throw
       try {
