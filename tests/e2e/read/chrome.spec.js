@@ -45,10 +45,12 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       // Desktop: left rail always visible, no auto-fade
       const rail = page.locator('#bottom-nav .qa-rail-top')
       await expect(rail).toBeVisible()
-      const readTab = page.locator('.qa-rail-item[data-tab="read"]')
-      await expect(readTab).toBeVisible()
-      // Read tab should be active on a reader route
-      await expect(readTab).toHaveClass(/qa-rail-item--active/)
+      const verseTab = page.locator('.qa-rail-item[data-tab="verse"]')
+      const mushafTab = page.locator('.qa-rail-item[data-tab="mushaf"]')
+      await expect(verseTab).toBeVisible()
+      await expect(mushafTab).toBeVisible()
+      // Verse tab should be active on a verse-reader route.
+      await expect(verseTab).toHaveClass(/qa-rail-item--active/)
     } else {
       // Mobile: MarginHeader single-row layout (2026-04-25 redesign)
       const header = page.locator('header.qa-mh')
@@ -344,6 +346,95 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       const el = document.getElementById('main-content')
       return el?.scrollTop ?? 0
     }), { timeout: 2_500, intervals: [200, 400, 600, 800] }).toBeGreaterThan(1000)
+  })
+
+  // -------------------------------------------------------------------------
+  // B-Mushaf. Page-image reader mode
+  // -------------------------------------------------------------------------
+
+  test('B-Mushaf: desktop rail switches between Verse and Mushaf modes @desktop', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(!isDesktop, 'desktop rail only')
+
+    await page.goto('/#/s/2/255')
+    await waitForReader(page)
+    await page.locator('.qa-rail-item[data-tab="mushaf"]').click()
+    await expect(page).toHaveURL(/#\/m\/\d+$/)
+    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-rail-item[data-tab="mushaf"]')).toHaveClass(/qa-rail-item--active/)
+
+    await page.locator('.qa-rail-item[data-tab="verse"]').click()
+    await expect(page).toHaveURL(/#\/s\//)
+    await waitForReader(page)
+  })
+
+  test('B-Mushaf: page controls update hash and boundaries hold', async ({ page }) => {
+    await page.goto('/#/m/1')
+    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: 'Previous page' })).toBeDisabled()
+
+    await page.getByRole('button', { name: 'Next page' }).click()
+    await expect(page).toHaveURL(/#\/m\/2$/)
+
+    await page.locator('.qa-mushaf-scrubber').evaluate((el) => {
+      el.value = '42'
+      el.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await expect(page).toHaveURL(/#\/m\/42$/)
+  })
+
+  test('B-Mushaf: invalid page route clamps to the manifest boundary', async ({ page }) => {
+    await page.goto('/#/m/999')
+    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page).toHaveURL(/#\/m\/604$/)
+  })
+
+  test('B-Mushaf: unavailable active riwayah shows install prompt instead of fallback page @desktop', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(!isDesktop, 'desktop settings prompt check')
+
+    await page.goto('/#/settings')
+    await page.locator('.qa-settings-src-row').filter({ hasText: 'Recitation' }).click()
+    await page.locator('.qa-settings-pop-row').filter({ hasText: 'Ḥafṣ' }).click()
+    await page.locator('.qa-settings-close').click()
+    await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0)
+
+    await page.goto('/#/m/42')
+    await expect(page.getByRole('button', { name: 'Install text and pages' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-mushaf-page-img')).toHaveCount(0)
+  })
+
+  test('B-Mushaf: mobile page fits below the margin header without overlap @mobile', async ({ page }, testInfo) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'mobile header overlap check')
+
+    await page.goto('/#/m/42')
+    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+
+    const metrics = await page.evaluate(() => {
+      const header = document.querySelector('.qa-mh')?.getBoundingClientRect()
+      const image = document.querySelector('.qa-mushaf-page-img')?.getBoundingClientRect()
+      const controls = document.querySelector('.qa-mushaf-controls')?.getBoundingClientRect()
+      if (!header || !image || !controls) {
+        return null
+      }
+      return {
+        headerBottom: header.bottom,
+        imageTop: image.top,
+        imageBottom: image.bottom,
+        controlsTop: controls.top,
+        controlsBottom: controls.bottom,
+        viewportHeight: window.innerHeight,
+        bodyOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      }
+    })
+    expect(metrics).not.toBeNull()
+    expect(metrics.imageTop).toBeGreaterThanOrEqual(metrics.headerBottom - 1)
+    expect(metrics.controlsTop).toBeGreaterThanOrEqual(metrics.imageBottom - 1)
+    expect(metrics.controlsBottom).toBeLessThanOrEqual(metrics.viewportHeight)
+    expect(metrics.bodyOverflow).toBe(false)
+
+    await page.screenshot({ path: testInfo.outputPath('mushaf-mobile-page.png'), fullPage: true })
   })
 
   // -------------------------------------------------------------------------

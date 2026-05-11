@@ -15,7 +15,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, readSetting } from '../fixtures/idb.js'
 import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
 
 // Rule 6.2 carve-out: SW lifecycle exercises cross-store cache invariants and
@@ -55,6 +55,96 @@ async function waitForServiceWorker(page) {
         setTimeout(resolve, 10_000)
       })
     }
+  })
+}
+
+async function clickStorageApply(page) {
+  const apply = page.getByTestId('storage-apply')
+  await expect(apply).toBeEnabled()
+  await apply.click()
+}
+
+async function useSingleMushafPageDownloadPlan(page, pageNumber = 42) {
+  const padded = String(pageNumber).padStart(3, '0')
+
+  await page.addInitScript(({ paddedPage }) => {
+    const originalFetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const response = await originalFetch(input, init)
+      const rawUrl =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input instanceof Request
+              ? input.url
+              : response.url
+      const url = new URL(rawUrl, window.location.href)
+      if (url.pathname !== '/dataset/manifest.json') return response
+
+      const manifest = await response.clone().json()
+      const keep = new Set([
+        'mushaf-pages/qaloon/manifest.json',
+        `mushaf-pages/qaloon/pages/${paddedPage}.svg`,
+      ])
+      const files = manifest.files.filter((file) => file.lane !== 'pages' || keep.has(file.path))
+      const pageFiles = files.filter((file) => file.lane === 'pages')
+      const pageBytes = pageFiles.reduce((sum, file) => sum + (typeof file.bytes === 'number' ? file.bytes : 0), 0)
+      const headers = new Headers(response.headers)
+      headers.set('content-type', 'application/json')
+      headers.delete('content-length')
+
+      return new Response(JSON.stringify({
+        ...manifest,
+        lanes: {
+          ...manifest.lanes,
+          pages: {
+            enabled: pageFiles.length > 0,
+            files: pageFiles.length,
+            bytes: pageBytes,
+          },
+        },
+        files,
+      }), {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      })
+    }
+  }, { paddedPage: padded })
+}
+
+async function waitForQaloonPageOptIn(page, expected) {
+  await expect(async () => {
+    const value = await readSetting(page, 'offlineCategories')
+    expect(value?.pages?.qaloon === true).toBe(expected)
+  }).toPass({ timeout: 10_000 })
+}
+
+async function waitForCachedQaloonPage(page, pageNumber) {
+  const pagePath = `/dataset/mushaf-pages/qaloon/pages/${String(pageNumber).padStart(3, '0')}.svg`
+  await expect(async () => {
+    const cached = await page.evaluate(async (path) => {
+      if (!('caches' in window)) return false
+      const absolute = new URL(path, location.origin).href
+      const keys = await caches.keys()
+      for (const key of keys) {
+        if (!key.startsWith('qa-pages-qaloon-')) continue
+        const cache = await caches.open(key)
+        if (await cache.match(absolute)) return true
+        if (await cache.match(path)) return true
+      }
+      return false
+    }, pagePath)
+    expect(cached).toBe(true)
+  }).toPass({ timeout: 20_000 })
+}
+
+async function clearQaloonPageCaches(page) {
+  await page.evaluate(async () => {
+    if (!('caches' in window)) return
+    const keys = await caches.keys()
+    await Promise.all(keys.filter((key) => key.startsWith('qa-pages-qaloon-')).map((key) => caches.delete(key)))
   })
 }
 
@@ -188,5 +278,46 @@ test.describe('Journey H: Offline resilience', () => {
     expect(persisted.text.riwayat.qaloon).toBe(true)
     expect(persisted.text.translations.bridges).toBe(true)
     expect(persisted.text.tafsir.muyassar).toBe(true)
+  })
+
+  test('H3: Storage selector caches Qaloon pages for offline Mushaf reload @offline', async ({ page, context }) => {
+    test.setTimeout(60_000)
+
+    await useSingleMushafPageDownloadPlan(page, 42)
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await waitForServiceWorker(page)
+    await clearQaloonPageCaches(page)
+
+    await page.goto('/#/settings')
+    const storageSection = page.locator('[data-testid="storage-section"]')
+    await expect(storageSection).toBeVisible({ timeout: 5_000 })
+    await page.locator('[data-testid="storage-toggle"]').click()
+
+    const pageCheck = page.getByTestId('storage-page-check-qaloon')
+    await expect(pageCheck).toBeVisible({ timeout: 10_000 })
+    if (await pageCheck.isChecked()) {
+      await pageCheck.uncheck()
+      await clickStorageApply(page)
+      await waitForQaloonPageOptIn(page, false)
+    }
+    await pageCheck.check()
+    await clickStorageApply(page)
+    await waitForQaloonPageOptIn(page, true)
+    await waitForCachedQaloonPage(page, 42)
+
+    await page.goto('/#/m/42')
+    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+
+    await context.setOffline(true)
+    try {
+      await page.reload()
+      await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    } finally {
+      await context.setOffline(false)
+    }
   })
 })

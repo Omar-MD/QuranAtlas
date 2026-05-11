@@ -94,7 +94,7 @@ Pipeline today (non-exhaustive — see `roadmap.md` for the full list):
 - **Reading core** — juz / hizb / rubʿ / ruku navigation; full-text Arabic + translation search; reading plan / khatm tracker / streak; page-break indicators.
 - **Memorization (hifz)** — per-verse memorization status flag, hide-drill / cover-text mode, spaced-repetition review queue.
 - **Audio recitation** — playback, reciter picker, verse loop / repeat (single largest v2 milestone).
-- **Page-based Mushaf layout** — page-break indicators (lightweight) and full page-image rendering (asset pipeline).
+- **Page-based Mushaf layout** — lightweight page-break indicators and print-style refinements.
 - **Language aids** — word-by-word translation, transliteration, tajweed coloring.
 - **Translation expansion** — translation picker UI (gated on a second shipped pack), per-surah intros, additional translations, external tafsir packs.
 - **Sharing, export, sync** — copy verse to clipboard, share verse, marks + bookmarks export / import, multi-device sync, community / shared collections.

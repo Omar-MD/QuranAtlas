@@ -60,7 +60,6 @@ the active plan; when it ships, it moves to `implemented.md`.
 - Revelation context (Makki / Madani, era, asbab).
 - Arabic roots — pre-computed 3-letter roots.
 - Muhkam / mutashabih classification.
-- Page-image rendering for authentic mushaf hands.
 
 Longer-range lane architecture, sequencing, and unresolved planning questions live in `future.md`.
 

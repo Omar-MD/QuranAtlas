@@ -13,6 +13,7 @@ and data shapes live in `surfaces/<name>.md`.
 - Cross-surah swap — pull-past-edge / continue link with 114↔1 wrap.
 - Reader virtualisation — chunked recycler, ±1 chunk window (max 60 verses live).
 - Token-key DOM contract — `data-token-key` is the sole verse-identity attr.
+- Mushaf page reading — `#/m/:page` renders active-riwayah quran.ws-derived page SVGs with Verse/Mushaf chrome switching, route clamping, mobile drawer continuation, and Qaloon page-pack offline caching.
 - Ambient chrome — desktop AmbientDock, mobile MarginHeader auto-hide on scroll.
 - Position persistence — `meta` store; warm-resume only restores when scroller at top.
 
@@ -82,7 +83,7 @@ and data shapes live in `surfaces/<name>.md`.
 - Generic sync envelope — `safety/sync.ts::registerTopic` + `broadcast`; topics for marks / edges / bookmarks / riwayah.
 - Persistent-overlay factory — `src/core/persistent-overlay.ts`.
 - SW route aggregator — `src/infra/sw/route-defs.ts` + `strategies.ts`; per-asset-class cache partitions; `cleanupStaleCaches` preserves prefixes from `CACHE_PREFIXES`.
-- Per-feature offline opt-in — `src/infra/offline/offline-selector.svelte` + `src/data/offline.ts::startCategoryDownload`.
+- Per-feature offline opt-in — `src/infra/offline/offline-selector.svelte` + `src/data/offline.ts::startCategoryDownload`; Mushaf pages use per-riwayah page helpers and `qa-pages-{riwayah}-v1` caches.
 - CSP allowlist registry — `csp-allowlist.md` + `public/_headers` (regression guard `tests/unit/infra/safety/csp-headers.test.ts`).
 - Update banner — `controllerchange` → `APP_UPDATE_AVAILABLE` → `UpdateBanner.svelte`.
 - Cross-tab clear-data banner — `versionchange` → "Data was cleared in another tab".

@@ -324,6 +324,26 @@ test.describe('Journey F: Navigation', () => {
     expect(juzOn.color).not.toBe(surahOff.color)
   })
 
+  test('F-mobile-Mushaf: drawer mode switch opens Mushaf and returns to Verse @mobile', async ({ page }) => {
+    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
+    test.skip(isDesktop, 'mobile drawer switch')
+
+    await page.goto('/#/s/2/255')
+    await waitForReader(page)
+    await page.locator('.qa-mh-hamburger').click()
+    await expect(page.getByTestId('reader-mode-switch')).toBeVisible()
+
+    await page.getByTestId('reader-mode-mushaf').click()
+    await expect(page).toHaveURL(/#\/m\/\d+$/)
+    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+
+    await page.locator('.qa-mh-hamburger').click()
+    await expect(page.getByTestId('mushaf-drawer-page')).toContainText(/Page/)
+    await page.getByTestId('reader-mode-verse').click()
+    await expect(page).toHaveURL(/#\/s\/\d+\/\d+$/)
+    await waitForReader(page)
+  })
+
   test('F-mobile-visual: drawer redesign captures theme screenshots without overflow @mobile', async ({ page }, testInfo) => {
     await writeSetting(page, 'wirdPlan', {
       id: 'wird-visual',
