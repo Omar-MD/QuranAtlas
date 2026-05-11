@@ -209,6 +209,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
       initIndicators,
       setupLongPress,
     })
+    router.register('#/m/:page', async () => (await import('./read/mushaf/MushafReader.svelte')).default)
 
     // Register Phase 2 routes
     router.register('#/review', async () => (await import('./review/Hub.svelte')).default)

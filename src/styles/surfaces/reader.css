@@ -873,6 +873,122 @@
   .qa-skeleton-line--w60 { width: 60%; }
   .qa-skeleton-line--w90 { width: 90%; }
 
+  .qa-riwayah-install-prompt,
+  .qa-mushaf-page-state {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    padding: 1rem;
+    background: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
+    border-radius: var(--qa-radius-lg);
+    color: var(--qa-text-on-sheet);
+  }
+
+  .qa-riwayah-install-actions,
+  .qa-mushaf-page-state-actions,
+  .qa-mushaf-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .qa-mushaf-reader {
+    min-height: calc(100dvh - 32px);
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    place-items: center;
+    padding: calc(64px + env(safe-area-inset-top)) 0.75rem 1rem;
+  }
+
+  .qa-mushaf-page-wrap {
+    width: min(100%, 760px);
+    max-height: calc(100dvh - 220px);
+    display: grid;
+    place-items: center;
+  }
+
+  .qa-mushaf-page-img,
+  .qa-mushaf-page-skeleton,
+  .qa-mushaf-page-state {
+    width: min(100%, 760px);
+    aspect-ratio: 0.68;
+    border-radius: var(--qa-radius-lg);
+  }
+
+  .qa-mushaf-page-img {
+    max-height: calc(100dvh - 220px);
+    object-fit: contain;
+    background: var(--qa-surface-sheet);
+    box-shadow: var(--qa-shadow-sheet);
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  .qa-mushaf-page-skeleton {
+    background:
+      linear-gradient(90deg, transparent, color-mix(in srgb, var(--qa-text-muted) 8%, transparent), transparent),
+      var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
+  }
+
+  .qa-mushaf-controls {
+    width: min(100%, 760px);
+    padding: 0.5rem;
+    border: 1px solid var(--qa-border-on-sheet);
+    border-radius: var(--qa-radius-lg);
+    background: color-mix(in srgb, var(--qa-surface-sheet) 92%, transparent);
+  }
+
+  .qa-mushaf-control-btn,
+  .qa-mushaf-state-btn {
+    min-width: 38px;
+    min-height: 38px;
+    border: 1px solid var(--qa-border-on-sheet);
+    border-radius: var(--qa-radius-md);
+    background: var(--qa-surface-sheet);
+    color: var(--qa-text-on-sheet);
+  }
+
+  .qa-mushaf-control-btn:disabled {
+    opacity: 0.45;
+  }
+
+  .qa-mushaf-page-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--qa-text-on-sheet);
+    font-size: var(--qa-text-size-ui);
+  }
+
+  .qa-mushaf-page-input {
+    width: 4.5rem;
+    min-height: 36px;
+    text-align: center;
+    border: 1px solid var(--qa-border-on-sheet);
+    border-radius: var(--qa-radius-sm);
+    background: var(--qa-surface-app);
+    color: var(--qa-text-primary);
+  }
+
+  .qa-mushaf-scrubber {
+    flex: 1 1 180px;
+    min-width: 150px;
+  }
+
+  @media (min-width: 1180px) {
+    .qa-mushaf-reader {
+      min-height: calc(100dvh - 32px);
+      padding-top: 1rem;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .qa-skeleton {
       animation: none;

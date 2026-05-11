@@ -5,11 +5,12 @@
   import EdgeIndicator from './EdgeIndicator.svelte'
   import { reader } from './state.svelte'
   import { settings } from '../configure/state.svelte'
-  import { getSurah, getSurahs, loadTranslationForSurah } from '../data/dataset'
+  import { getSurah, getSurahs, loadTranslationForSurah, RiwayahPackUnavailableError } from '../data/dataset'
   import type { SurahPayload, SurahMeta, TranslationPayload } from '../data/dataset'
   import { loadAyahKnowledgeForSurah, loadPassagesForSurah, type AyahKnowledgeEntry, type KnowledgePassage } from '../data/knowledge-dataset'
   import { loadVerseAliases, resolveTranslationFor, type VerseAliases, type TranslationRole } from '../data/verse-aliases'
   import { get } from '../core/db'
+  import { navigate } from '../core/router'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
@@ -85,6 +86,7 @@
   let activeTranslationId = $state(settings.translationId ?? 'bridges')
   let isLoading = $state(true)
   let loadError = $state(false)
+  let installPrompt = $state<{ riwayah: string } | null>(null)
   let invalidVerseError = $state<string | null>(null)
 
   let container: HTMLElement | null = $state(null)
@@ -96,6 +98,7 @@
   let translationRefreshToken = 0
   let cleanups: Array<() => void> = []
   let knowledgeLoadId = 0
+  let surahLoadId = 0
 
   // Captured at mount: 'top' for forward swaps and fresh entry, 'bottom'
   // for backward swaps so the user emerges from the previous surah's end.
@@ -190,6 +193,14 @@
 
   function currentRiwayah(): 'hafs' | 'warsh' | 'qaloon' {
     return (settings.riwayah ?? 'qaloon') as 'hafs' | 'warsh' | 'qaloon'
+  }
+
+  function isActiveSurahLoad(loadId: number, riwayah: 'hafs' | 'warsh' | 'qaloon'): boolean {
+    return (
+      loadId === surahLoadId
+      && reader.currentSurahNum === surahNum
+      && currentRiwayah() === riwayah
+    )
   }
 
   function currentFootnotes(): Record<string, string> {
@@ -476,6 +487,8 @@
     swapAnchor = consumeSwapAnchor()
 
     // Update shared reader state
+    reader.readerMode = 'verse'
+    reader.currentMushafPage = null
     reader.currentSurahNum = surahNum
     const initialVerse = ayahParam ? parseInt(ayahParam, 10) : 1
     const initialVerseSafe = Number.isFinite(initialVerse) ? initialVerse : 1
@@ -496,7 +509,8 @@
     const offRiwayah = on(Events.SETTINGS_RIWAYAH_CHANGED, async () => {
       const anchorKey = reader.currentVerseKey
       const anchorAya = anchorKey ? parseInt(anchorKey.split(':')[1] ?? '1', 10) : 1
-      await loadSurah()
+      const applied = await loadSurah()
+      if (!applied) { return }
       const ayatList = surahData?.ayat ?? []
       const lastAya = ayatList.length > 0 ? (ayatList[ayatList.length - 1]?.aya_no ?? 1) : 1
       const safeAya = Math.min(anchorAya, lastAya)
@@ -510,6 +524,8 @@
 
     return () => {
       offRiwayah()
+      surahLoadId += 1
+      knowledgeLoadId += 1
       if (anchorTimer) { clearTimeout(anchorTimer); anchorTimer = null }
       // Cleanup on unmount
       teardownVirtualiserMount()
@@ -524,7 +540,9 @@
     }
   })
 
-  async function loadSurah() {
+  async function loadSurah(): Promise<boolean> {
+    const loadRequest = ++surahLoadId
+    const requestedRiwayah = currentRiwayah()
     const knowledgeRequest = ++knowledgeLoadId
     teardownVirtualiserMount()
     teardownPositionTracking()
@@ -532,11 +550,12 @@
     cleanups = []
     isLoading = true
     loadError = false
+    installPrompt = null
     invalidVerseError = null
     resetKnowledgeState()
 
     const timeoutId = setTimeout(() => {
-      if (isLoading) {
+      if (isActiveSurahLoad(loadRequest, requestedRiwayah) && isLoading) {
         loadError = true
         isLoading = false
       }
@@ -572,7 +591,7 @@
       clearTimeout(timeoutId)
 
       // Navigation guard — if surahNum changed while we were loading, abort
-      if (reader.currentSurahNum !== surahNum) { return }
+      if (!isActiveSurahLoad(loadRequest, requestedRiwayah)) { return false }
 
       performance.mark('reader:fetch-end')
       performance.measure('reader:surah-fetch', 'reader:fetch-start', 'reader:fetch-end')
@@ -590,6 +609,7 @@
       if (transId !== optimisticId) {
         resolvedPack = await loadTranslationForSurah(transId, surahNum).catch(() => null)
       }
+      if (!isActiveSurahLoad(loadRequest, requestedRiwayah)) { return false }
       settings.translationId = transId
       translationPack = resolvedPack
       activeTranslationId = transId
@@ -614,6 +634,7 @@
       // Let Svelte flush the {#if} → main DOM, then bootstrap virtualiser +
       // position tracking + hooks against the now-mounted container.
       requestAnimationFrame(() => {
+        if (!isActiveSurahLoad(loadRequest, requestedRiwayah)) { return }
         if (!container || !virtualiserContainer || !surahData) { return }
 
         refreshMountedVerses({ applyBottomSwapAnchor: swapAnchor === 'bottom' })
@@ -673,15 +694,27 @@
           surahNum,
         )
       })
-    } catch {
+      return true
+    } catch (err) {
       clearTimeout(timeoutId)
-      loadError = true
+      if (!isActiveSurahLoad(loadRequest, requestedRiwayah)) { return false }
+      if (err instanceof RiwayahPackUnavailableError) {
+        installPrompt = { riwayah: err.riwayah }
+        loadError = false
+      } else {
+        loadError = true
+      }
       isLoading = false
+      return false
     }
   }
 
   function handleRetry() {
     void loadSurah()
+  }
+
+  function openInstallPrompt() {
+    navigate('#/settings')
   }
 </script>
 
@@ -696,6 +729,14 @@
   <div class="qa-error-state">
     Failed to load Surah {surahNum}.<br />
     <button class="qa-retry-btn" onclick={handleRetry}>Retry</button>
+  </div>
+{:else if installPrompt}
+  <div class="qa-riwayah-install-prompt" role="status">
+    <p>{installPrompt.riwayah} text is not installed yet.</p>
+    <div class="qa-riwayah-install-actions">
+      <button class="qa-retry-btn" type="button" onclick={openInstallPrompt}>Open Settings</button>
+      <button class="qa-retry-btn" type="button" onclick={handleRetry}>Retry</button>
+    </div>
   </div>
 {:else if surahMeta && surahData}
   <div

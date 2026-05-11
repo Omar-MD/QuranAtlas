@@ -54,6 +54,11 @@
     display: none;
   }
 
+  #main-content:has(.qa-mushaf-reader) {
+    max-width: none;
+    width: 100%;
+  }
+
   #bottom-nav {
     display: none;
   }
@@ -118,6 +123,11 @@
     /* Reader column cap — `:has()` selectors restricted to this file per spec. */
     #main-content:has(.qa-verse) {
       max-width: 1080px;
+    }
+
+    #main-content:has(.qa-mushaf-reader) {
+      max-width: none;
+      width: 100%;
     }
 
     /* About page column — wider than Reader cap for stat-grid + body-split. */

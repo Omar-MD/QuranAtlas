@@ -5,6 +5,7 @@
 
 import { CACHE_DATASET } from '../core/constants'
 import { loadRiwayah } from '../configure/riwayah'
+import type { Riwayah } from '../configure/state.svelte'
 
 const DATASET_BASE = '/dataset'
 const FETCH_TIMEOUT_MS = 3000
@@ -115,9 +116,23 @@ type DatasetManifestFile = {
 
 type ManifestJson = { files: DatasetManifestFile[] }
 
-const DEFAULT_RIWAYAH = 'qaloon'
 const DEFAULT_TRANSLATION = 'bridges'
 const DEFAULT_TAFSIR = 'muyassar'
+
+export type RiwayahTextAvailability = {
+  riwayah: Riwayah
+  available: boolean
+  manifestUrl: string
+}
+
+export class RiwayahPackUnavailableError extends Error {
+  code = 'RIWAYAH_PACK_UNAVAILABLE' as const
+
+  constructor(public riwayah: Riwayah) {
+    super(`Riwayah text pack is not available for ${riwayah}`)
+    this.name = 'RiwayahPackUnavailableError'
+  }
+}
 
 /**
  * Network-first fetch with cache fallback.
@@ -170,15 +185,17 @@ async function fetchNetworkFirst(url: string): Promise<unknown> {
 
 /** Get the full list of dataset URLs from manifest.json. */
 export async function getManifestUrls(): Promise<string[]> {
-  const res = await fetch(`${DATASET_BASE}/manifest.json`)
-  if (!res.ok) {
-    throw new Error(`Failed to fetch manifest: ${res.status}`)
-  }
-  const manifest = await res.json() as ManifestJson
-  if (!Array.isArray(manifest.files)) {
-    throw new Error('Invalid dataset manifest: files must be an inventory array')
-  }
+  const manifest = await loadDatasetManifest()
   return manifest.files.map((file) => `${DATASET_BASE}/${file.path}`)
+}
+
+export async function getRiwayahTextAvailability(riwayah: Riwayah): Promise<RiwayahTextAvailability> {
+  const manifest = await loadDatasetManifest()
+  return {
+    riwayah,
+    available: manifest.files.some((file) => file.path.startsWith(`riwayat/${riwayah}/`)),
+    manifestUrl: `${DATASET_BASE}/manifest.json`,
+  }
 }
 
 /** Get a single surah by number, in the active Riwayah. */
@@ -187,16 +204,13 @@ export async function getSurah(n: number): Promise<SurahPayload> {
     throw new Error(`Invalid surah number: ${n}`)
   }
   const riwayah = await loadRiwayah()
+  const availability = await getRiwayahTextAvailability(riwayah)
+  if (!availability.available) {
+    throw new RiwayahPackUnavailableError(riwayah)
+  }
   const padded = String(n).padStart(3, '0')
   const url = `${DATASET_BASE}/riwayat/${riwayah}/${padded}.json`
-  try {
-    return await fetchNetworkFirst(url) as SurahPayload
-  } catch (error) {
-    if (riwayah !== DEFAULT_RIWAYAH && isUnavailablePackError(error)) {
-      return fetchNetworkFirst(`${DATASET_BASE}/riwayat/${DEFAULT_RIWAYAH}/${padded}.json`) as Promise<SurahPayload>
-    }
-    throw error
-  }
+  return fetchNetworkFirst(url) as Promise<SurahPayload>
 }
 
 /** Get the 114-entry surahs metadata. */
@@ -290,6 +304,14 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .split('-')[0] || 'translation'
+}
+
+async function loadDatasetManifest(): Promise<ManifestJson> {
+  const manifest = await fetchNetworkFirst(`${DATASET_BASE}/manifest.json`) as ManifestJson
+  if (!Array.isArray(manifest.files)) {
+    throw new Error('Invalid dataset manifest: files must be an inventory array')
+  }
+  return manifest
 }
 
 function isUnavailablePackError(error: unknown): boolean {

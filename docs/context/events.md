@@ -13,10 +13,10 @@ Orphan listen (listened, never emitted): **0**.
 <!-- AUTO-GENERATED:catalog START -->
 | Constant | Event name | Emit sites | Listen sites |
 | --- | --- | --- | --- |
-| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/read/AmbientDock.svelte:64`<br>`src/read/AmbientPill.svelte:90`<br>`src/read/EdgeIndicator.svelte:42`<br>`src/read/MarginHeader.svelte:43`<br>`src/read/Reader.svelte:663`<br>`src/read/edge-indicators.ts:62` | `src/read/AmbientPill.svelte:76`<br>`src/read/MarginHeader.svelte:180` |
-| `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:331`<br>`src/app-bootstrap.ts:425` | `src/core/save-failure-toast.svelte:41` |
-| `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:486` | _(none)_ |
-| `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:404`<br>`src/app-bootstrap.ts:415` | `src/core/UpdateBanner.svelte:19` |
+| `Events.AMBIENT_SURFACE` | `ambient:surface` | `src/read/AmbientDock.svelte:64`<br>`src/read/AmbientPill.svelte:90`<br>`src/read/EdgeIndicator.svelte:42`<br>`src/read/MarginHeader.svelte:43`<br>`src/read/Reader.svelte:668`<br>`src/read/edge-indicators.ts:62` | `src/read/AmbientPill.svelte:76`<br>`src/read/MarginHeader.svelte:180` |
+| `Events.APP_INIT_ERROR` | `app:init-error` | `src/app-bootstrap.ts:332`<br>`src/app-bootstrap.ts:426` | `src/core/save-failure-toast.svelte:41` |
+| `Events.APP_READY_FOR_DOWNLOAD` | `app:ready-for-download` | `src/app-bootstrap.ts:487` | _(none)_ |
+| `Events.APP_UPDATE_AVAILABLE` | `app:update-available` | `src/app-bootstrap.ts:405`<br>`src/app-bootstrap.ts:416` | `src/core/UpdateBanner.svelte:19` |
 | `Events.AUDIO_ENDED` | `audio:ended` | `src/listen/player-runtime.ts:116` | _(none)_ |
 | `Events.AUDIO_ERROR` | `audio:error` | `src/listen/player-runtime.ts:121`<br>`src/listen/player-runtime.ts:161`<br>`src/listen/player-runtime.ts:168` | _(none)_ |
 | `Events.AUDIO_PAUSED` | `audio:paused` | `src/listen/player-runtime.ts:109` | _(none)_ |
@@ -43,7 +43,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.MARKS_SAVED` | `marks:saved` | `src/mark/store.ts:88` | `src/mark/indicator.ts:100` |
 | `Events.MARKS_SAVE_FAILED` | `marks:save-failed` | `src/mark/store.ts:95` | `src/core/save-failure-toast.svelte:26` |
 | `Events.MARKS_UNDO` | `marks:undo` | `src/core/ui.svelte:41` | `src/mark/indicator.ts:119` |
-| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/navigate/CommandSheet.svelte:303`<br>`src/navigate/CommandSheet.svelte:305`<br>`src/navigate/NavDrawer.svelte:212`<br>`src/navigate/NavDrawer.svelte:287`<br>`src/navigate/NavDrawer.svelte:587`<br>`src/navigate/bookmarks/BookmarksList.svelte:106`<br>`src/navigate/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:293` |
+| `Events.NAVIGATION_NAVIGATE` | `navigation:navigate` | `src/navigate/CommandSheet.svelte:303`<br>`src/navigate/CommandSheet.svelte:305`<br>`src/navigate/NavDrawer.svelte:212`<br>`src/navigate/NavDrawer.svelte:287`<br>`src/navigate/NavDrawer.svelte:587`<br>`src/navigate/bookmarks/BookmarksList.svelte:106`<br>`src/navigate/surahs/SurahList.svelte:167` | `src/app-bootstrap.ts:294` |
 | `Events.OFFLINE_DOWNLOAD_COMPLETE` | `offline:download-complete` | `src/data/offline.ts:250`<br>`src/data/offline.ts:289` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_ERROR` | `offline:download-error` | `src/data/offline.ts:242`<br>`src/data/offline.ts:257`<br>`src/data/offline.ts:301`<br>`src/data/offline.ts:353` | _(none)_ |
 | `Events.OFFLINE_DOWNLOAD_PROGRESS` | `offline:download-progress` | `src/data/offline.ts:277` | `src/data/offline.ts:407` |
@@ -59,7 +59,7 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.ROUTER_ROUTE_ERROR` | `router:route-error` | `src/core/router.ts:169`<br>`src/core/router.ts:187`<br>`src/core/router.ts:199` | `src/core/save-failure-toast.svelte:44` |
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/configure/clear-data.ts:170` | _(none)_ |
 | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/configure/state-recent-surahs.svelte.ts:26` | `src/navigate/NavDrawer.svelte:337`<br>`src/navigate/surahs/SurahList.svelte:141` |
-| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/configure/riwayah.ts:58`<br>`src/configure/riwayah.ts:74` | `src/app-bootstrap.ts:172`<br>`src/configure/reading-typography.ts:133`<br>`src/navigate/bookmarks/BookmarksList.svelte:227`<br>`src/navigate/bookmarks/BookmarksPage.svelte:36`<br>`src/navigate/bookmarks/indicator.ts:102`<br>`src/navigate/surahs/SurahList.svelte:140`<br>`src/read/Reader.svelte:496` |
+| `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/configure/riwayah.ts:58`<br>`src/configure/riwayah.ts:74` | `src/app-bootstrap.ts:172`<br>`src/configure/reading-typography.ts:133`<br>`src/navigate/bookmarks/BookmarksList.svelte:227`<br>`src/navigate/bookmarks/BookmarksPage.svelte:36`<br>`src/navigate/bookmarks/indicator.ts:102`<br>`src/navigate/surahs/SurahList.svelte:140`<br>`src/read/Reader.svelte:500`<br>`src/read/mushaf/MushafReader.svelte:95` |
 | `Events.SHEET_CLOSED` | `sheet:closed` | `src/configure/Panel.svelte:155`<br>`src/navigate/shortcuts-sheet.js:162` | _(none)_ |
 | `Events.SHEET_OPENED` | `sheet:opened` | `src/configure/Panel.svelte:138`<br>`src/navigate/shortcuts-sheet.js:153` | _(none)_ |
 | `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:136` | `src/core/quota-banner.svelte:18` |
@@ -80,7 +80,7 @@ Declared in `Events` but neither emitted nor listened. Candidate for deletion.
 ## Orphan emits (no listener)
 
 <!-- AUTO-GENERATED:orphan-emit START -->
-- `Events.APP_READY_FOR_DOWNLOAD` (`app:ready-for-download`) — emitted at `src/app-bootstrap.ts:486`
+- `Events.APP_READY_FOR_DOWNLOAD` (`app:ready-for-download`) — emitted at `src/app-bootstrap.ts:487`
 - `Events.AUDIO_ENDED` (`audio:ended`) — emitted at `src/listen/player-runtime.ts:116`
 - `Events.AUDIO_ERROR` (`audio:error`) — emitted at `src/listen/player-runtime.ts:121`<br>`src/listen/player-runtime.ts:161`<br>`src/listen/player-runtime.ts:168`
 - `Events.AUDIO_PAUSED` (`audio:paused`) — emitted at `src/listen/player-runtime.ts:109`

@@ -239,6 +239,10 @@ describe('core/app.js init order', () => {
         setupLongPress: expect.any(Function),
       })
     )
+    expect(router.register).toHaveBeenCalledWith(
+      '#/m/:page',
+      expect.any(Function)
+    )
     // #/review is a Svelte component route — no hooks object
     expect(router.register).toHaveBeenCalledWith(
       '#/review',

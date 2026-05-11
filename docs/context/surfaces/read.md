@@ -22,6 +22,7 @@ test_paths:
 | --- | --- | --- |
 | Hash route `#/s/:n` | URL | Reader mounts surah n at top |
 | Hash route `#/s/:n/:v` | URL | Reader mounts surah n, scrolls to verse v |
+| Hash route `#/m/:page` | URL | Mushaf reader mounts the active-riwayah page |
 | Hash route `#/` (default) | URL | redirects to `lastSurface` (last-read) |
 | Pull-to-swap past edge | gesture | swap to next/prev surah with wrap (114↔1) |
 | Click `↑ <prev>` / `<next> ↓` link | tap | swap to prev/next surah |
@@ -62,6 +63,12 @@ test_paths:
 | `src/read/edge-indicators.ts` | Verse-tap edge indicators — lazily-created left/right visual cues that |
 | `src/read/font-reshape.ts` | iOS Safari paints the reader DOM with a fallback font when verses mount |
 | `src/read/global-position.ts` | Global reading position — single record (current surah + verse) that |
+| `src/read/mushaf/MushafControls.svelte` | _(no leading comment)_ |
+| `src/read/mushaf/MushafPage.svelte` | _(no leading comment)_ |
+| `src/read/mushaf/MushafReader.svelte` | _(no leading comment)_ |
+| `src/read/mushaf/mode-switch.ts` | _(no leading comment)_ |
+| `src/read/mushaf/navigation.ts` | _(no leading comment)_ |
+| `src/read/mushaf/types.ts` | _(no leading comment)_ |
 | `src/read/position.ts` | Reader position tracking — observes scroll, persists last-read verse to |
 | `src/read/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
 | `src/read/scroll-ancestor.ts` | Find the nearest scrolling ancestor of `el`. |
@@ -83,6 +90,17 @@ test_paths:
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
+
+### Reader modes
+
+The read surface has two sibling modes:
+
+- **Verse mode** (`#/s/:surah/:ayah?`) mounts `Reader.svelte`, sets `reader.readerMode = 'verse'`, clears `reader.currentMushafPage`, and owns verse scroll/translation/tafsir behavior. If the active `settings.riwayah` text pack is missing from `/dataset/manifest.json`, the reader shows a compact install prompt with Settings + Retry actions and does not render fallback Qaloon ayat under the selected Hafs/Warsh UI state.
+- **Mushaf mode** (`#/m/:page`) mounts `MushafReader.svelte`, sets `reader.readerMode = 'mushaf'`, sets `reader.currentMushafPage`, and clears verse-specific reader state. The route has no riwayah param: the active `settings.riwayah` selects `/dataset/mushaf-pages/{riwayah}/manifest.json` and the SVG page asset for the current route page.
+
+Mushaf mode renders one same-origin SVG page at a time with previous/next, numeric page, and scrubber controls. Invalid or out-of-range page params resolve against the active manifest page count and canonicalize through `router.navigate(pageHref(clamped), { replace: true })`, so route events and `lastSurface` see the canonical `#/m/:page` hash. Changing `settings.riwayah` while mounted reloads the same page number against the new active page manifest.
+
+Missing active-riwayah page packs render an install prompt rather than silently falling back to Qaloon pages. SVG asset failures stay inside the page component as retry/open-verse states; offline-missing image errors identify that the page is not cached locally.
 
 ### Surah header
 
@@ -207,12 +225,14 @@ Last-read position + sticky-page state. Single global record; updated on every s
 
 Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `tafsirId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `surahHeaderHidden`, `currentPosition`, `lastSurface`, `wirdPlan`. (See `configure` dossier for `settings` store body.)
 
+Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count, SVG asset paths, first visible verse refs, and `verseToPage` mode-switch mapping. Verse mode reads `/dataset/manifest.json` before loading `riwayat/{riwayah}/{surah}.json` so missing optional Hafs/Warsh text packs surface as install prompts instead of fallback text.
+
 ## Events
 
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:43`, `src/read/Reader.svelte:663`, `src/read/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:43`, `src/read/Reader.svelte:668`, `src/read/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:30` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -224,12 +244,15 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:158` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:86`, `src/read/MarginHeader.svelte:176` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:496` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:500`, `src/read/mushaf/MushafReader.svelte:95` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
 
 - **Reader text source = active Riwayah.** From `settings['riwayah']` (default Qālūn). Sole writer of `settings['riwayah']` is `settings/riwayah.ts`. Font follows via `--qa-font-arabic` cascade (set by `:root[data-riwayah=...]` overrides). Reader's reading-typography slider drives line-height; floor at `xs` step clears stacked harakat across all riwayat. Each `.qa-verse-arabic` carries `data-riwayah` mirroring active Riwayah.
+- **Missing active Riwayah packs prompt installation.** Qaloon is baseline. Hafs/Warsh text or page packs are optional/full-profile assets; if the active pack is absent from the built manifest, Reader/MushafReader must show an install prompt and must not silently render Qaloon text or pages under a Hafs/Warsh UI state.
+- **Mushaf route is page-only and position-neutral.** `#/m/:page` does not encode riwayah and does not mutate `settings.currentPosition`. The active manifest's `pageCount` is authoritative for clamping/canonicalization.
+- **Mushaf canvas is page-only.** Mushaf mode does not render verse overlays, translation rows, or tafsir inside the SVG page canvas; opening verse mode uses the page manifest's first visible verse reference.
 - **Each Riwayah pairs with its own KFGQPC Uthmanic mushaf cut.** Cross-Riwayah reuse mis-renders combining marks. Mapping: `hafs → KFGQPC Uthmanic Hafs v22`, `warsh → KFGQPC Uthmanic Warsh V21`, `qaloon → KFGQPC Uthmanic Qaloon V21`. Each token's font-family chain falls back to **Amiri Quran** (Khaled Hosny, OFL) when KFGQPC isn't loaded, then bare `serif`. No user-facing font picker. Wired through `--ff-kfgqpc-{riwayah}` (`src/styles/tokens/primitives.css`) → `--qa-font-arabic` (`src/styles/tokens/semantic.css`). Regression guard: `tests/unit/styles/font-tokens.test.js`.
 - **Hamburger drawer is the sole in-app entry to the full surah list (mobile).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
@@ -245,7 +268,7 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (21):**
+**Unit (24):**
 
 - `tests/unit/read/MarginHeader-toggle.test.ts`
 - `tests/unit/read/SurahHeader.test.ts`
@@ -255,6 +278,9 @@ Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisib
 - `tests/unit/read/chunked-virtualiser.test.ts`
 - `tests/unit/read/font-reshape.test.ts`
 - `tests/unit/read/global-position.test.ts`
+- `tests/unit/read/mushaf/mode-switch.test.ts`
+- `tests/unit/read/mushaf/navigation.test.ts`
+- `tests/unit/read/mushaf/reader.test.ts`
 - `tests/unit/read/render-helpers.test.ts`
 - `tests/unit/read/scroll-tracker.test.ts`
 - `tests/unit/read/state-ambient.test.ts`

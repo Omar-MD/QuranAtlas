@@ -70,21 +70,26 @@ describe('data/dataset', () => {
       expect(data.ayat[0].aya_text).toContain('اِ۬لْحَمْدُ')
     })
 
-    it('falls back to Qaloon when the saved Riwayah is absent from the baseline', async () => {
+    it('throws an unavailable-pack error when the saved Riwayah is absent from the baseline', async () => {
       mockedRiwayah = 'hafs'
       vi.resetModules() // re-import with fresh mock binding
-      const { getSurah } = await import('../../../src/data/dataset.ts')
-      const data = await getSurah(1)
-      expect(data.riwayah).toBe('qaloon')
+      const { getSurah, RiwayahPackUnavailableError } = await import('../../../src/data/dataset.ts')
+      await expect(getSurah(1)).rejects.toMatchObject({
+        code: 'RIWAYAH_PACK_UNAVAILABLE',
+        riwayah: 'hafs',
+      })
+      await expect(getSurah(1)).rejects.toBeInstanceOf(RiwayahPackUnavailableError)
     })
 
-    it('falls back to Qaloon when a missing non-default pack resolves to HTML instead of JSON', async () => {
+    it('throws before fetching a missing non-default pack that would resolve to HTML', async () => {
       mockedRiwayah = 'hafs'
       globalThis.fetch = mockFetchWithHtmlFallback
       vi.resetModules()
       const { getSurah } = await import('../../../src/data/dataset.ts')
-      const data = await getSurah(1)
-      expect(data.riwayah).toBe('qaloon')
+      await expect(getSurah(1)).rejects.toMatchObject({
+        code: 'RIWAYAH_PACK_UNAVAILABLE',
+        riwayah: 'hafs',
+      })
       globalThis.fetch = mockFetch
     })
 
@@ -93,6 +98,28 @@ describe('data/dataset', () => {
       await expect(getSurah(0)).rejects.toThrow()
       await expect(getSurah(115)).rejects.toThrow()
       await expect(getSurah(1.5)).rejects.toThrow()
+    })
+  })
+
+  describe('getRiwayahTextAvailability()', () => {
+    it('reports Qaloon text as available from the dataset manifest', async () => {
+      const { getRiwayahTextAvailability } = await import('../../../src/data/dataset.ts')
+      await expect(getRiwayahTextAvailability('qaloon')).resolves.toMatchObject({
+        riwayah: 'qaloon',
+        available: true,
+      })
+    })
+
+    it('reports optional text packs as unavailable when omitted from the manifest', async () => {
+      const { getRiwayahTextAvailability } = await import('../../../src/data/dataset.ts')
+      await expect(getRiwayahTextAvailability('hafs')).resolves.toMatchObject({
+        riwayah: 'hafs',
+        available: false,
+      })
+      await expect(getRiwayahTextAvailability('warsh')).resolves.toMatchObject({
+        riwayah: 'warsh',
+        available: false,
+      })
     })
   })
 
