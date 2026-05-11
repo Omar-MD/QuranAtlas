@@ -5,6 +5,7 @@ import * as events from '../../../src/core/events.js'
 
 // Mock serviceWorker
 const mockPostMessage = vi.fn()
+const cacheStores = new Map()
 globalThis.navigator.serviceWorker = {
   ready: Promise.resolve({ active: {} }),
   controller: { postMessage: mockPostMessage },
@@ -19,20 +20,26 @@ globalThis.navigator.storage = {
 
 // Mock caches for download
 const cachedUrls = new Set()
-globalThis.caches.open = vi.fn().mockResolvedValue({
-  match: vi.fn().mockResolvedValue(undefined),
-  put: vi.fn().mockResolvedValue(undefined),
-  delete: vi.fn().mockResolvedValue(true),
-  keys: vi.fn().mockResolvedValue([]),
-  add: vi.fn().mockImplementation(async (url) => { cachedUrls.add(url) }),
-  addAll: vi.fn(),
+globalThis.caches.open = vi.fn().mockImplementation(async (name) => {
+  if (!cacheStores.has(name)) {
+    cacheStores.set(name, {
+      match: vi.fn().mockResolvedValue(undefined),
+      put: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(true),
+      keys: vi.fn().mockResolvedValue([]),
+      add: vi.fn().mockImplementation(async (url) => { cachedUrls.add(url) }),
+      addAll: vi.fn(),
+    })
+  }
+  return cacheStores.get(name)
 })
+globalThis.caches.delete = vi.fn().mockResolvedValue(true)
 
 // Mock fetch for manifest inventory entries with per-file bytes so the
 // pre-flight quota path can sum category totals.
 globalThis.fetch = vi.fn().mockImplementation(async (url) => {
   if (url.includes('source-assets.json')) {
-    return {
+    const response = {
       ok: true,
       json: async () => ({
         version: 1,
@@ -54,9 +61,11 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
         ],
       }),
     }
+    response.clone = () => response
+    return response
   }
   if (url.includes('manifest.json')) {
-    return {
+    const response = {
       ok: true,
       json: async () => ({
         packageVersion: '2.1.0',
@@ -74,11 +83,20 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
           { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 800 },
           { path: 'knowledge/ayah/001.json', lane: 'knowledge', category: 'knowledge-ayah', bytes: 900 },
           { path: 'knowledge/passages/001.json', lane: 'knowledge', category: 'knowledge-passages', bytes: 600 },
+          { path: 'mushaf-pages/qaloon/manifest.json', lane: 'pages', category: 'pages', bytes: 300 },
+          { path: 'mushaf-pages/qaloon/pages/001.svg', lane: 'pages', category: 'pages', bytes: 80_000 },
+          { path: 'mushaf-pages/qaloon/pages/002.svg', lane: 'pages', category: 'pages', bytes: 81_000 },
+          { path: 'mushaf-pages/warsh/manifest.json', lane: 'pages', category: 'pages', bytes: 350 },
+          { path: 'mushaf-pages/warsh/pages/001.svg', lane: 'pages', category: 'pages', bytes: 82_000 },
         ],
       }),
     }
+    response.clone = () => response
+    return response
   }
-  return { ok: true, json: async () => ({}) }
+  const response = { ok: true, json: async () => ({}) }
+  response.clone = () => response
+  return response
 })
 
 import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/configure/state.svelte.ts'
@@ -89,6 +107,7 @@ describe('data/offline.js', () => {
     mockPostMessage.mockClear()
     vi.clearAllMocks()
     events.clear()
+    cacheStores.clear()
     // Reset activation state between tests
     await put('activationState', { id: 'current', status: 'none' })
     // N21: cached/none distinction now lives in settings.offlineCategories.
@@ -162,6 +181,76 @@ describe('data/offline.js', () => {
 
       expect(plan.urls).toEqual(['/dataset/tafsir/mukhtasar/001.json'])
       expect(plan.totalBytes).toBe(64)
+    })
+
+    it('plans page assets per riwayah from the manifest', async () => {
+      const { getPageAssetManifest } = await import('../../../src/data/offline.js')
+      const plan = await getPageAssetManifest('qaloon')
+
+      expect(plan.urls).toEqual([
+        '/dataset/mushaf-pages/qaloon/manifest.json',
+        '/dataset/mushaf-pages/qaloon/pages/001.svg',
+        '/dataset/mushaf-pages/qaloon/pages/002.svg',
+      ])
+      expect(plan.totalBytes).toBe(300 + 80_000 + 81_000)
+    })
+
+    it('caches page assets into the route-derived per-riwayah cache', async () => {
+      const { startPageAssetDownload } = await import('../../../src/data/offline.js')
+      const progressFn = vi.fn()
+      const completeFn = vi.fn()
+      events.on('offline:download-progress', progressFn)
+      events.on('offline:download-complete', completeFn)
+
+      await startPageAssetDownload('qaloon')
+
+      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-qaloon-v1')
+      expect(globalThis.caches.open).not.toHaveBeenCalledWith('qa-dataset-v1')
+      const pageCache = cacheStores.get('qa-pages-qaloon-v1')
+      expect(pageCache.put).toHaveBeenCalledWith(
+        expect.stringContaining('/dataset/mushaf-pages/qaloon/pages/001.svg'),
+        expect.any(Object),
+      )
+      expect(progressFn).toHaveBeenLastCalledWith({ cached: 3, total: 3 })
+      expect(completeFn).toHaveBeenCalledWith({})
+    })
+
+    it('removes page assets from the route-derived per-riwayah cache', async () => {
+      const { removePageAssetDownload } = await import('../../../src/data/offline.js')
+
+      await removePageAssetDownload('warsh')
+
+      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-warsh-v1')
+      const pageCache = cacheStores.get('qa-pages-warsh-v1')
+      expect(pageCache.delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/warsh/manifest.json'))
+      expect(pageCache.delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/warsh/pages/001.svg'))
+    })
+
+    it('removes a stale page pack cache even when the current manifest has no files for it', async () => {
+      const { removePageAssetDownload } = await import('../../../src/data/offline.js')
+
+      await removePageAssetDownload('hafs')
+
+      expect(globalThis.caches.delete).toHaveBeenCalledWith('qa-pages-hafs-v1')
+    })
+
+    it('emits insufficient-storage error for page downloads that exceed quota', async () => {
+      globalThis.navigator.storage.estimate.mockResolvedValueOnce({ quota: 100, usage: 99 })
+      const { startPageAssetDownload } = await import('../../../src/data/offline.js')
+      const errorFn = vi.fn()
+      events.on('offline:download-error', errorFn)
+
+      await expect(startPageAssetDownload('qaloon')).resolves.toBe(false)
+
+      expect(errorFn).toHaveBeenCalledWith({ error: 'insufficient storage' })
+      expect(globalThis.caches.open).not.toHaveBeenCalled()
+    })
+
+    it('rejects generic page category downloads and removals', async () => {
+      const { startCategoryDownload, removeCategoryDownload } = await import('../../../src/data/offline.js')
+
+      await expect(startCategoryDownload('pages')).rejects.toThrow(/startPageAssetDownload/)
+      await expect(removeCategoryDownload('pages')).rejects.toThrow(/removePageAssetDownload/)
     })
 
     it('emits download-complete event on DATASET_COMPLETE', async () => {

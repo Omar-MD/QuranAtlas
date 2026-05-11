@@ -15,10 +15,11 @@ import { CACHE_DATASET, Events, Errors } from '../core/constants'
 import { logger } from '../core/logger'
 import {
   ROUTE_DEFS,
+  cacheNameFor,
   sumBytesForCategory,
   type Category,
 } from '../infra/sw/route-defs'
-import { settings } from '../configure/state.svelte'
+import { settings, type Riwayah } from '../configure/state.svelte'
 
 const QUOTA_WARN_THRESHOLD = 0.8
 const ACTIVATION_KEY = 'current'
@@ -151,6 +152,24 @@ export async function getCategoryManifest(
   return sumBytesForCategory(manifest, category, location.origin)
 }
 
+export async function getPageAssetManifest(
+  riwayah: Riwayah,
+): Promise<{ urls: string[]; totalBytes: number }> {
+  const manifest = await fetchManifest()
+  const prefix = `mushaf-pages/${riwayah}/`
+  const urls: string[] = []
+  let totalBytes = 0
+  for (const file of manifest.files) {
+    if (!file.path.startsWith(prefix)) continue
+    const url = new URL(`/dataset/${file.path}`, location.origin)
+    if (cacheNameFor(url)?.startsWith(`qa-pages-${riwayah}-`)) {
+      urls.push(`/dataset/${file.path}`)
+      totalBytes += typeof file.bytes === 'number' ? file.bytes : 0
+    }
+  }
+  return { urls, totalBytes }
+}
+
 export async function getSourceAssetManifest(
   kind: SourceAssetKind,
   id: string,
@@ -227,6 +246,10 @@ function cancelSwTimeout(): void {
  * cancels in-flight downloads via `cancelDownload()` (unchanged).
  */
 export async function startCategoryDownload(category: Category): Promise<void> {
+  if (category === 'pages') {
+    throw new Error('Use startPageAssetDownload(riwayah) for Mushaf page assets.')
+  }
+
   const current = await getActivationState()
   if (current === 'downloading') return
 
@@ -355,10 +378,62 @@ export async function startCategoryDownload(category: Category): Promise<void> {
 }
 
 export async function removeCategoryDownload(category: Category): Promise<void> {
+  if (category === 'pages') {
+    throw new Error('Use removePageAssetDownload(riwayah) for Mushaf page assets.')
+  }
+
   const plan = await getCategoryManifest(category)
   if (plan.urls.length === 0 || typeof caches === 'undefined') return
   const cache = await caches.open(CACHE_DATASET)
   await Promise.all(plan.urls.map((url) => cache.delete(url)))
+}
+
+export async function startPageAssetDownload(riwayah: Riwayah): Promise<boolean> {
+  const plan = await getPageAssetManifest(riwayah)
+  if (plan.urls.length === 0) return false
+  if (!(await hasStorageForBytes(plan.totalBytes))) {
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: Errors.INSUFFICIENT_STORAGE })
+    return false
+  }
+  await setDownloading()
+  if (typeof caches === 'undefined') {
+    await clearActivation()
+    return false
+  }
+  try {
+    for (let i = 0; i < plan.urls.length; i += 1) {
+      const url = plan.urls[i]!
+      const absolute = new URL(url, location.origin)
+      const cacheName = cacheNameFor(absolute)
+      if (!cacheName) throw new Error(`No page cache route for ${url}`)
+      const cache = await caches.open(cacheName)
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
+      await cache.put(absolute.href, response.clone())
+      emit(Events.OFFLINE_DOWNLOAD_PROGRESS, { cached: i + 1, total: plan.urls.length })
+    }
+    emit(Events.OFFLINE_DOWNLOAD_COMPLETE, {})
+  } finally {
+    await clearActivation()
+  }
+  return true
+}
+
+export async function removePageAssetDownload(riwayah: Riwayah): Promise<void> {
+  const plan = await getPageAssetManifest(riwayah)
+  if (typeof caches === 'undefined') return
+  if (plan.urls.length === 0) {
+    const cacheName = cacheNameFor(new URL(`/dataset/mushaf-pages/${riwayah}/manifest.json`, location.origin))
+    if (cacheName) await caches.delete(cacheName)
+    return
+  }
+  await Promise.all(plan.urls.map(async (url) => {
+    const absolute = new URL(url, location.origin)
+    const cacheName = cacheNameFor(absolute)
+    if (!cacheName) return
+    const cache = await caches.open(cacheName)
+    await cache.delete(absolute.href)
+  }))
 }
 
 export async function startSourceAssetDownload(kind: SourceAssetKind, id: string): Promise<boolean> {

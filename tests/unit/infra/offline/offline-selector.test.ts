@@ -24,8 +24,10 @@ const setOfflineCategoriesMock = vi.fn(async (next) => {
 })
 const startCategoryDownloadMock = vi.fn(async () => {})
 const startSourceAssetDownloadMock = vi.fn(async () => true)
+const startPageAssetDownloadMock = vi.fn(async () => true)
 const removeSourceAssetDownloadMock = vi.fn(async () => {})
 const removeCategoryDownloadMock = vi.fn(async () => {})
+const removePageAssetDownloadMock = vi.fn(async () => {})
 
 vi.mock('../../../../src/configure/offline-categories.ts', () => ({
   setOfflineCategories: (...args: unknown[]) => setOfflineCategoriesMock(...args),
@@ -50,11 +52,25 @@ vi.mock('../../../../src/data/offline-client.ts', () => ({
     urls: [`/dataset/${kind === 'translation' ? 'translations' : 'tafsir'}/${id}/001.json`],
     totalBytes: id === 'mukhtasar' ? 1_200_000 : 900_000,
   })),
+  getPageAssetManifest: vi.fn(async (riwayah: string) => {
+    if (riwayah === 'qaloon') {
+      return {
+        urls: [
+          '/dataset/mushaf-pages/qaloon/manifest.json',
+          '/dataset/mushaf-pages/qaloon/pages/001.svg',
+        ],
+        totalBytes: 2_400_000,
+      }
+    }
+    return { urls: [], totalBytes: 0 }
+  }),
   isCategoryAvailable: vi.fn(async (cat: string) => cat === 'text'),
   startCategoryDownload: (...args: unknown[]) => startCategoryDownloadMock(...args),
   startSourceAssetDownload: (...args: unknown[]) => startSourceAssetDownloadMock(...args),
+  startPageAssetDownload: (...args: unknown[]) => startPageAssetDownloadMock(...args),
   removeSourceAssetDownload: (...args: unknown[]) => removeSourceAssetDownloadMock(...args),
   removeCategoryDownload: (...args: unknown[]) => removeCategoryDownloadMock(...args),
+  removePageAssetDownload: (...args: unknown[]) => removePageAssetDownloadMock(...args),
   getStorageBudget: vi.fn(async () => ({ usage: 1_000_000, quota: 100_000_000, available: 99_000_000 })),
 }))
 
@@ -75,12 +91,28 @@ import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../../src/configure/
 async function flush() { for (let i = 0; i < 6; i++) await Promise.resolve() }
 
 describe('offline-selector.svelte', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    const offlineMod = await import('../../../../src/data/offline-client.ts')
+    vi.mocked(offlineMod.getPageAssetManifest).mockImplementation(async (riwayah: string) => {
+      if (riwayah === 'qaloon') {
+        return {
+          urls: [
+            '/dataset/mushaf-pages/qaloon/manifest.json',
+            '/dataset/mushaf-pages/qaloon/pages/001.svg',
+          ],
+          totalBytes: 2_400_000,
+        }
+      }
+      return { urls: [], totalBytes: 0 }
+    })
+    vi.mocked(offlineMod.getStorageBudget).mockResolvedValue({ usage: 1_000_000, quota: 100_000_000, available: 99_000_000 })
     setOfflineCategoriesMock.mockClear()
     startCategoryDownloadMock.mockClear()
     startSourceAssetDownloadMock.mockClear()
+    startPageAssetDownloadMock.mockClear()
     removeSourceAssetDownloadMock.mockClear()
     removeCategoryDownloadMock.mockClear()
+    removePageAssetDownloadMock.mockClear()
     Object.assign(settings, { offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } })
   })
 
@@ -117,6 +149,45 @@ describe('offline-selector.svelte', () => {
     await waitFor(() => {
       expect(document.querySelector('[data-testid="storage-source-check-translation-saheeh"]')).not.toBeNull()
       expect(document.querySelector('[data-testid="storage-source-check-tafsir-mukhtasar"]')).not.toBeNull()
+    })
+  })
+
+  it('renders per-riwayah page controls for available packs and stale opt-ins', async () => {
+    Object.assign(settings, {
+      offlineCategories: {
+        ...DEFAULT_OFFLINE_CATEGORIES,
+        text: { riwayat: {}, translations: {}, tafsir: {} },
+        pages: { hafs: true },
+      },
+    })
+
+    render(OfflineSelector)
+    await flush()
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-testid="storage-page-check-qaloon"]')).not.toBeNull()
+      expect(document.querySelector('[data-testid="storage-page-check-hafs"]')).not.toBeNull()
+    })
+    expect(document.querySelector('[data-testid="storage-page-check-warsh"]')).toBeNull()
+  })
+
+  it('renders optional Hafs and Warsh page controls when their artifacts are present', async () => {
+    const offlineMod = await import('../../../../src/data/offline-client.ts')
+    vi.mocked(offlineMod.getPageAssetManifest).mockImplementation(async (riwayah: string) => ({
+      urls: [
+        `/dataset/mushaf-pages/${riwayah}/manifest.json`,
+        `/dataset/mushaf-pages/${riwayah}/pages/001.svg`,
+      ],
+      totalBytes: 2_400_000,
+    }))
+
+    render(OfflineSelector)
+    await flush()
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-testid="storage-page-check-qaloon"]')).not.toBeNull()
+      expect(document.querySelector('[data-testid="storage-page-check-hafs"]')).not.toBeNull()
+      expect(document.querySelector('[data-testid="storage-page-check-warsh"]')).not.toBeNull()
     })
   })
 
@@ -184,6 +255,60 @@ describe('offline-selector.svelte', () => {
       expect(startSourceAssetDownloadMock).toHaveBeenCalledWith('tafsir', 'mukhtasar')
     })
     expect(setOfflineCategoriesMock.mock.calls[0][0].text.tafsir.mukhtasar).toBe(true)
+  })
+
+  it('Apply uses page helpers for per-riwayah Pages packs', async () => {
+    render(OfflineSelector)
+    const checkbox = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-page-check-qaloon"]') as HTMLInputElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
+    await fireEvent.click(checkbox)
+    await flush()
+
+    const apply = document.querySelector('[data-testid="storage-apply"]') as HTMLButtonElement
+    await waitFor(() => {
+      expect(apply.disabled).toBe(false)
+    })
+    await fireEvent.click(apply)
+
+    await waitFor(() => {
+      expect(startPageAssetDownloadMock).toHaveBeenCalledWith('qaloon')
+    })
+    expect(startCategoryDownloadMock).not.toHaveBeenCalledWith('pages')
+    expect(setOfflineCategoriesMock.mock.calls[0][0].pages).toEqual({ qaloon: true })
+  })
+
+  it('downloads page packs before generic service-worker categories', async () => {
+    render(OfflineSelector)
+    const textCheckbox = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-check-text"]') as HTMLInputElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
+    const pageCheckbox = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-page-check-qaloon"]') as HTMLInputElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
+
+    await fireEvent.click(textCheckbox)
+    await fireEvent.click(pageCheckbox)
+    await flush()
+
+    const apply = document.querySelector('[data-testid="storage-apply"]') as HTMLButtonElement
+    await waitFor(() => {
+      expect(apply.disabled).toBe(false)
+    })
+    await fireEvent.click(apply)
+
+    await waitFor(() => {
+      expect(startPageAssetDownloadMock).toHaveBeenCalledWith('qaloon')
+      expect(startCategoryDownloadMock).toHaveBeenCalledWith('text')
+    })
+    expect(startPageAssetDownloadMock.mock.invocationCallOrder[0]!)
+      .toBeLessThan(startCategoryDownloadMock.mock.invocationCallOrder[0]!)
   })
 
   it('refuses Apply pre-flight when selection exceeds available quota (Q4)', async () => {

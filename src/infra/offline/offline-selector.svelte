@@ -18,15 +18,19 @@
   import { setOfflineCategories } from '../../configure/offline-categories.ts'
   import {
     getCategoryManifest,
+    getPageAssetManifest,
     getSourceAssetManifest,
     getStorageBudget,
     removeCategoryDownload,
+    removePageAssetDownload,
     removeSourceAssetDownload,
     startCategoryDownload,
+    startPageAssetDownload,
     startSourceAssetDownload,
   } from '../../data/offline-client.ts'
   import { getTafsirs, getTranslations } from '../../data/dataset.ts'
   import type { Category } from '../sw/route-defs'
+  import type { Riwayah } from '../../configure/state.svelte.ts'
 
   type SourceKind = 'translation' | 'tafsir'
   type SourceOption = {
@@ -35,6 +39,12 @@
     kind: SourceKind
     availableInManifest: boolean
     bytes: number
+  }
+  type PagePackOption = {
+    id: Riwayah
+    label: string
+    bytes: number
+    available: boolean
   }
 
   type Row = {
@@ -51,11 +61,18 @@
     { cat: 'pages',  label: 'Pages · per riwāyah',  short: 'Pages',  sub: 'KFGQPC Mushaf page-image cuts',         gatedAt: 'v2.1' },
     { cat: 'search', label: 'Search index',         short: 'Search', sub: 'Full-text Arabic + translation search', gatedAt: 'v1.1' },
   ]
+  const GENERIC_ROWS = ROWS.filter((row) => row.cat !== 'pages')
+  const PAGE_PACKS: Array<{ id: Riwayah; label: string }> = [
+    { id: 'qaloon', label: 'Qālūn pages' },
+    { id: 'hafs', label: 'Ḥafṣ pages' },
+    { id: 'warsh', label: 'Warsh pages' },
+  ]
 
   let open = $state(false)
   let bytesByCat = $state<Record<Category, number>>({ text: 0, audio: 0, pages: 0, search: 0 })
   let availableByCat = $state<Record<Category, boolean>>({ text: false, audio: false, pages: false, search: false })
   let textSources = $state<SourceOption[]>([])
+  let pagePacks = $state<PagePackOption[]>([])
   let pending = $state<OfflineCategoriesState>(
     structuredClone($state.snapshot(settings.offlineCategories ?? DEFAULT_OFFLINE_CATEGORIES))
   )
@@ -78,6 +95,7 @@
       return t.riwayat.qaloon === true && t.translations.bridges === true && t.tafsir.muyassar === true
     }
     if (cat === 'search') return pending.search
+    if (cat === 'pages') return Object.values(pending.pages).some(Boolean)
     const map = cat === 'audio' ? pending.audio : pending.pages
     return Object.values(map).some(Boolean)
   }
@@ -93,6 +111,14 @@
     return map[id] === true
   }
 
+  function isPageChecked(riwayah: Riwayah): boolean {
+    return pending.pages[riwayah] === true
+  }
+
+  function isPageCheckedIn(state: OfflineCategoriesState | undefined, riwayah: Riwayah): boolean {
+    return state?.pages[riwayah] === true
+  }
+
   function setSourceChecked(kind: SourceKind, id: string, checked: boolean): void {
     const next = structuredClone($state.snapshot(pending))
     const map = kind === 'translation' ? next.text.translations : next.text.tafsir
@@ -100,6 +126,17 @@
       map[id] = true
     } else {
       delete map[id]
+    }
+    pending = next
+    saved = false
+  }
+
+  function setPageChecked(riwayah: Riwayah, checked: boolean): void {
+    const next = structuredClone($state.snapshot(pending))
+    if (checked) {
+      next.pages[riwayah] = true
+    } else {
+      delete next.pages[riwayah]
     }
     pending = next
     saved = false
@@ -116,7 +153,7 @@
     } else if (cat === 'audio') {
       next.audio = checked ? { _all: true } : {}
     } else if (cat === 'pages') {
-      next.pages = checked ? { _all: true } : {}
+      next.pages = {}
     }
     pending = next
     saved = false
@@ -130,12 +167,13 @@
         && state.text.tafsir.muyassar === true
     }
     if (cat === 'search') return state.search
+    if (cat === 'pages') return Object.values(state.pages).some(Boolean)
     const map = cat === 'audio' ? state.audio : state.pages
     return Object.values(map).some(Boolean)
   }
 
   const totalNewBytes = $derived(
-    ROWS.reduce((sum, r) => {
+    GENERIC_ROWS.reduce((sum, r) => {
       const wasChecked = isCategoryCheckedIn(settings.offlineCategories, r.cat)
       const nowChecked = isCategoryChecked(r.cat)
       return nowChecked && !wasChecked ? sum + bytesByCat[r.cat] : sum
@@ -145,12 +183,20 @@
       const nowChecked = isSourceChecked(source.kind, source.id)
       return nowChecked && !wasChecked ? sum + source.bytes : sum
     }, 0)
+    + pagePacks.reduce((sum, pack) => {
+      const wasChecked = isPageCheckedIn(settings.offlineCategories, pack.id)
+      const nowChecked = isPageChecked(pack.id)
+      return nowChecked && !wasChecked ? sum + pack.bytes : sum
+    }, 0)
   )
 
   const hasDiff = $derived(
-    ROWS.some(r => isCategoryCheckedIn(settings.offlineCategories, r.cat) !== isCategoryChecked(r.cat))
+    GENERIC_ROWS.some(r => isCategoryCheckedIn(settings.offlineCategories, r.cat) !== isCategoryChecked(r.cat))
     || textSources.some(source =>
       isSourceCheckedIn(settings.offlineCategories, source.kind, source.id) !== isSourceChecked(source.kind, source.id)
+    )
+    || pagePacks.some(pack =>
+      isPageCheckedIn(settings.offlineCategories, pack.id) !== isPageChecked(pack.id)
     )
   )
 
@@ -167,7 +213,7 @@
   )
 
   async function refreshBytes(): Promise<void> {
-    for (const cat of ['text', 'audio', 'pages', 'search'] as Category[]) {
+    for (const cat of ['text', 'audio', 'search'] as Category[]) {
       try {
         const { totalBytes } = await getCategoryManifest(cat)
         bytesByCat[cat] = totalBytes
@@ -177,6 +223,21 @@
         availableByCat[cat] = false
       }
     }
+  }
+
+  async function refreshPagePacks(): Promise<void> {
+    const currentPages = $state.snapshot(settings.offlineCategories)?.pages ?? {}
+    const next: PagePackOption[] = []
+    for (const pack of PAGE_PACKS) {
+      const manifest = await getPageAssetManifest(pack.id).catch(() => ({ urls: [], totalBytes: 0 }))
+      const available = manifest.urls.length > 0
+      if (available || currentPages[pack.id] === true) {
+        next.push({ ...pack, available, bytes: manifest.totalBytes })
+      }
+    }
+    pagePacks = next
+    bytesByCat.pages = next.reduce((sum, pack) => sum + pack.bytes, 0)
+    availableByCat.pages = next.some((pack) => pack.available)
   }
 
   async function refreshTextSources(): Promise<void> {
@@ -214,6 +275,7 @@
 
   onMount(() => {
     refreshBytes()
+    refreshPagePacks()
     refreshTextSources()
     refreshBudget()
   })
@@ -228,10 +290,19 @@
       const current = $state.snapshot(settings.offlineCategories)
       const toDownload: Category[] = []
       const toRemove: Category[] = []
-      for (const r of ROWS) {
+      for (const r of GENERIC_ROWS) {
         if (isCategoryChecked(r.cat) && availableByCat[r.cat]) toDownload.push(r.cat)
         if (!isCategoryChecked(r.cat) && isCategoryCheckedIn(current, r.cat)) toRemove.push(r.cat)
       }
+      const pagesToDownload = pagePacks.filter(
+        pack => isPageChecked(pack.id)
+          && !isPageCheckedIn(current, pack.id)
+          && pack.available
+      )
+      const pagesToRemove = pagePacks.filter(
+        pack => !isPageChecked(pack.id)
+          && isPageCheckedIn(current, pack.id)
+      )
       const sourcesToDownload = textSources.filter(
         source => isSourceChecked(source.kind, source.id)
           && !isSourceCheckedIn(current, source.kind, source.id)
@@ -241,6 +312,9 @@
         source => !isSourceChecked(source.kind, source.id)
           && isSourceCheckedIn(current, source.kind, source.id)
       )
+      for (const pack of pagesToDownload) {
+        await startPageAssetDownload(pack.id)
+      }
       for (const cat of toDownload) {
         await startCategoryDownload(cat)
       }
@@ -252,6 +326,9 @@
       }
       for (const cat of toRemove) {
         await removeCategoryDownload(cat)
+      }
+      for (const pack of pagesToRemove) {
+        await removePageAssetDownload(pack.id)
       }
       await setOfflineCategories(pending)
       await refreshBudget()
@@ -301,14 +378,16 @@
     >
       <ul class="qa-storage-rows" role="list">
         {#each ROWS as row (row.cat)}
-          {@const gated = !availableByCat[row.cat]}
+          {@const gated = row.cat === 'pages' || !availableByCat[row.cat]}
           <li class="qa-storage-row" class:qa-storage-row--gated={gated} data-testid="storage-row-{row.cat}">
             <div class="qa-storage-row-main">
               <span class="qa-storage-row-label">{row.label}</span>
               <span class="qa-storage-row-sub">{row.sub}</span>
             </div>
             {#if gated}
-              <span class="qa-storage-row-gated" data-testid="storage-row-gated-{row.cat}">{row.gatedAt}</span>
+              <span class="qa-storage-row-gated" data-testid="storage-row-gated-{row.cat}">
+                {row.cat === 'pages' && pagePacks.length > 0 ? `${pagePacks.length} pack${pagePacks.length === 1 ? '' : 's'}` : row.gatedAt}
+              </span>
             {:else}
               <label class="qa-storage-checkrow" data-testid="storage-checkrow-{row.cat}">
                 <span class="qa-storage-row-size">{fmt(bytesByCat[row.cat])}</span>
@@ -324,6 +403,27 @@
           </li>
         {/each}
       </ul>
+
+      {#if pagePacks.length > 0}
+        <div class="qa-storage-source-list" data-testid="storage-page-list">
+          {#each pagePacks as pack (pack.id)}
+            <label class="qa-storage-source-row" data-testid="storage-page-{pack.id}">
+              <span class="qa-storage-source-main">
+                <span class="qa-storage-source-kind">Pages</span>
+                <span class="qa-storage-source-name">{pack.label}</span>
+              </span>
+              <span class="qa-storage-row-size">{pack.available ? fmt(pack.bytes) : 'Not in manifest'}</span>
+              <input
+                class="qa-storage-check"
+                type="checkbox"
+                checked={isPageChecked(pack.id)}
+                onchange={(e) => setPageChecked(pack.id, (e.currentTarget as HTMLInputElement).checked)}
+                data-testid="storage-page-check-{pack.id}"
+              />
+            </label>
+          {/each}
+        </div>
+      {/if}
 
       {#if textSources.length > 0}
         <div class="qa-storage-source-list" data-testid="storage-source-list">

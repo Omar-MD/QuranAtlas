@@ -61,6 +61,19 @@ describe('settings/offline-categories — sole writer', () => {
     expect(result.text.tafsir).toEqual({ muyassar: true })
   })
 
+  it('normalizes legacy pages _all opt-in to Qaloon pages', async () => {
+    getMock.mockResolvedValueOnce({
+      value: {
+        text: { riwayat: { qaloon: true }, translations: {}, tafsir: {} },
+        audio: {},
+        pages: { _all: true, hafs: true },
+        search: false,
+      },
+    })
+    const result = await loadOfflineCategories()
+    expect(result.pages).toEqual({ qaloon: true })
+  })
+
   it('setOfflineCategories writes through to IDB and updates rune', async () => {
     const next = {
       text: { riwayat: { qaloon: true }, translations: { bridges: true }, tafsir: { muyassar: true } },

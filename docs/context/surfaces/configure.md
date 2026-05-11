@@ -83,16 +83,16 @@ Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross
 
 ### Storage section — offline-selector
 
-Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages (gated), Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. A source-aware list under the rows exposes translation and tafsir packs so users can keep or remove individual optional text packs from cache. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
+Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages, Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. The Pages row opens into per-riwayah page-pack controls for available Mushaf page packs plus any previously checked stale opt-ins. A source-aware list under the rows exposes translation and tafsir packs so users can keep or remove individual optional text packs from cache. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
 
-The Text row represents the baseline reader source set: Qaloon Arabic, Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. Optional translation and tafsir rows use `public/dataset/indexes/source-assets.json` for byte estimates and same-origin file plans without adding those bodies to the baseline manifest. The selector writes source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
+The Text row represents the baseline reader source set: Qaloon Arabic, Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. Optional translation and tafsir rows use `public/dataset/indexes/source-assets.json` for byte estimates and same-origin file plans without adding those bodies to the baseline manifest. The selector writes source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}` and per-riwayah page state under `settings.offlineCategories.pages.{riwayah}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
 
 Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
 
 Apply gating:
 - Disabled when no diff vs `settings.offlineCategories`.
 - Disabled with a red "Need X MB more free space" message when sum-of-newly-checked exceeds available quota (audit Q4 — pre-flight refuse).
-- On click: downloads newly checked category/source plans, removes unchecked cached source/category plans, then writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer). Button flips to a solid gold `Saved ✓` for ~1.5 s after a successful write so the user has visible confirmation.
+- On click: downloads newly checked category/source/page plans, removes unchecked cached source/category/page plans, then writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer). Button flips to a solid gold `Saved ✓` for ~1.5 s after a successful write so the user has visible confirmation.
 
 Uncheck + Apply removes the matching cached URLs when Cache Storage is available. Cache wins from prior precache passes are honored by network/cache strategy on subsequent reads.
 
@@ -209,6 +209,7 @@ Keys + sole writers:
 - **Saved tafsir preference is source metadata, not manifest membership.** Settings can persist an optional tafsir id from `indexes/sources.json`; optional body availability is planned by `indexes/source-assets.json`, and Reader load is responsible for the soft fallback to `muyassar` only when the body fetch fails.
 - **Sole writer of `settings.offlineCategories`: `src/configure/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
 - **Text offline opt-in remains source-aware.** The visible Text checkbox maps to the baseline Qaloon + Bridges + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional translation and tafsir rows are controlled by `settings.offlineCategories.text.translations` / `.tafsir` and planned from `indexes/source-assets.json`, not from the baseline manifest.
+- **Pages offline opt-in is per-riwayah.** The selector stores Qaloon/Hafs/Warsh page choices under `settings.offlineCategories.pages`; `src/configure/offline-categories.ts`, the sole writer, normalizes the legacy `{ _all: true }` shape to `{ qaloon: true }`. Page apply actions call page-specific cache helpers instead of the generic category download path.
 
 ## Regression guards
 

@@ -45,10 +45,14 @@ function normalize(raw: unknown): OfflineCategoriesState {
   const riwayat = hasSourceAwareRiwayat
     ? sourceAwareText.riwayat
     : oldRiwayatText
+  const pagesRecord = booleanRecord(pages)
+  const normalizedPages = pagesRecord._all === true
+    ? { qaloon: true }
+    : pagesRecord
   return {
     text: { ...sourceAwareText, riwayat },
     audio: booleanRecord(audio),
-    pages: booleanRecord(pages),
+    pages: normalizedPages,
     search: raw.search === true,
   }
 }
