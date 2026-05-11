@@ -18,6 +18,8 @@ import { test, expect } from '@playwright/test'
 import { clearAllData, markOnboardingComplete, readSetting } from '../fixtures/idb.js'
 import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
 
+const DATASET_CACHE = 'quran-dataset-v2'
+
 // Rule 6.2 carve-out: SW lifecycle exercises cross-store cache invariants and
 // must boot from a fully fresh state.  Opt OUT of the onboarded storageState
 // every other journey spec uses; rely on `clearAllData + markOnboardingComplete`
@@ -30,11 +32,15 @@ test.use({ storageState: { cookies: [], origins: [] } })
  * install.  We send SKIP_WAITING to promote it, then wait for controller.
  */
 async function waitForServiceWorker(page) {
-  await page.evaluate(async () => {
-    if (!('serviceWorker' in navigator)) return
+  const isSupported = await page.evaluate(() => 'serviceWorker' in navigator)
+  expect(isSupported).toBe(true)
 
-    const reg = await navigator.serviceWorker.getRegistration('/')
-    if (!reg) return
+  await page.evaluate(async () => {
+    const reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((resolve) => setTimeout(() => resolve(null), 15_000)),
+    ])
+    if (!reg) throw new Error('service worker registration was not ready')
 
     // Promote waiting/installing SW so it can take control immediately
     const sw = reg.waiting || reg.installing
@@ -56,6 +62,36 @@ async function waitForServiceWorker(page) {
       })
     }
   })
+
+  if (!(await page.evaluate(() => Boolean(navigator.serviceWorker.controller)))) {
+    await page.reload({ waitUntil: 'domcontentloaded' })
+  }
+
+  await expect(async () => {
+    const controlled = await page.evaluate(async () => {
+      if (navigator.serviceWorker.controller) return true
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((resolve) => setTimeout(() => resolve(null), 2_000)),
+      ])
+      if (reg) {
+        const sw = reg.waiting || reg.installing
+        if (sw) sw.postMessage({ type: 'SKIP_WAITING' })
+      }
+      if (!navigator.serviceWorker.controller) {
+        await new Promise((resolve) => {
+          const onControllerChange = () => {
+            navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange)
+            resolve()
+          }
+          navigator.serviceWorker.addEventListener('controllerchange', onControllerChange)
+          setTimeout(resolve, 1_000)
+        })
+      }
+      return Boolean(navigator.serviceWorker.controller)
+    })
+    expect(controlled).toBe(true)
+  }).toPass({ timeout: 15_000 })
 }
 
 async function clickStorageApply(page) {
@@ -140,6 +176,24 @@ async function waitForCachedQaloonPage(page, pageNumber) {
   }).toPass({ timeout: 20_000 })
 }
 
+async function waitForCachedDatasetUrls(page, paths) {
+  await expect(async () => {
+    const missing = await page.evaluate(async ({ cacheName, requiredPaths }) => {
+      if (!('caches' in window)) return requiredPaths
+      const cache = await caches.open(cacheName)
+      const origin = window.location.origin
+      const misses = []
+      for (const path of requiredPaths) {
+        const absolute = new URL(path, origin).href
+        const cached = await cache.match(absolute) || await cache.match(path)
+        if (!cached) misses.push(path)
+      }
+      return misses
+    }, { cacheName: DATASET_CACHE, requiredPaths: paths })
+    expect(missing).toEqual([])
+  }).toPass({ timeout: 20_000 })
+}
+
 async function clearQaloonPageCaches(page) {
   await page.evaluate(async () => {
     if (!('caches' in window)) return
@@ -168,12 +222,20 @@ test.describe('Journey H: Offline resilience', () => {
     // never intercepts fetches, so dataset responses are never cached.
     await waitForServiceWorker(page)
 
-    // Navigate again so the dataset fetch goes through the now-active SW and
-    // lands in the workbox runtime cache ('quran-dataset-v1').  Without this
-    // second trip, the first dataset load happened before the SW was controlling
-    // and the cache is empty for the offline reload.
-    await page.goto('/#/s/1')
+    // Reload the current reader route so the dataset fetch goes through the
+    // now-active SW and lands in the runtime cache. A same-URL hash goto does
+    // not remount the app, so it can leave the cache empty.
+    await page.reload({ waitUntil: 'domcontentloaded' })
     await waitForReader(page)
+    await waitForCachedDatasetUrls(page, [
+      '/dataset/manifest.json',
+      '/dataset/surahs.json',
+      '/dataset/riwayat/qaloon/001.json',
+      '/dataset/translations/bridges/001.json',
+      '/dataset/translations/_verse-aliases.json',
+      '/dataset/knowledge/ayah/001.json',
+      '/dataset/knowledge/passages/001.json',
+    ])
 
     // Step 2: go offline
     await context.setOffline(true)
