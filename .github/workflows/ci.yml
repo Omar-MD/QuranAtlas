@@ -196,6 +196,21 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
+      - name: Cache Mushaf page import artifacts
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            .scratch/mushaf-pages/pdfs/qaloon
+            data/normalized/mushaf-pages/qaloon/pages
+          key: mushaf-pages-qaloon-${{ runner.os }}-${{ hashFiles('data/catalog/mushaf-pages.json', 'data/normalized/quran/riwayat/qaloon.json', 'scripts/data/mushaf-pages/import.mjs', 'scripts/data/mushaf-pages/build.mjs') }}
+      - name: Install Mushaf page converter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+      - name: Generate release Mushaf page pack
+        run: |
+          pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604
+          pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
       - run: pnpm run build
       - name: Upload dist artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

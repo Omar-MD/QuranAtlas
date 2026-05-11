@@ -16,7 +16,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | Type check | **svelte-check** | `^4.4.6` | TypeScript + Svelte type-only pass (`pnpm run check`) |
 | PWA | **vite-plugin-pwa** | `^1.2.0` (patched — see `patches/`) | Workbox integration, manifest generation, `injectManifest` mode |
 | Service worker | **Workbox** (`workbox-*`) | `^7.4.0` | Runtime caching strategies used by `src/infra/service-worker/sw.js` |
-| Optional page import | **Poppler `pdftocairo`** | external system tool | Converts quran.ws page PDFs to generated SVG artifacts for Mushaf page release/local packs; not required for normal app builds |
+| Optional page import | **Poppler `pdftocairo`** | external system tool | Converts quran.ws page PDFs to generated SVG artifacts for Mushaf page release/local packs; required by CI's release artifact build, not by normal local app builds |
 | Event bus | **mitt** | `^3.0.1` | Tiny (~200B) pub/sub (sole runtime `dependencies` entry) |
 | Logger | custom | — | Dev-only console wrapper, zero-cost in production (`src/core/logger.ts`) |
 | Test runner | **Vitest** | `^4.1.2` | Unit + integration, Vite-native (+ `@vitest/coverage-v8` `^4.1.2`) |
@@ -82,7 +82,7 @@ Defined in `package.json`:
 | `pnpm run data -- build --profile=catalog` | Catalog/profile build without text bodies. |
 | `pnpm run data -- check` | Grouped data check: validates source catalog plus baseline text, knowledge, and available Mushaf page artifacts without fetching quran.ws. |
 | `pnpm run data -- aliases` | Rebuild `_verse-aliases.json` from riwayah sources. |
-| `pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604` | Optional release/local artifact import: downloads quran.ws page PDFs to `.scratch/` and converts them to generated SVG inputs with Poppler `pdftocairo`. |
+| `pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604` | Release/local artifact import: downloads quran.ws page PDFs to `.scratch/` and converts them to generated SVG inputs with Poppler `pdftocairo`. CI runs this in the `build` job before packaging `dist/`, with PDFs and normalized SVGs restored from an Actions cache when available. Existing SVG inputs are treated as reusable generated artifacts and are not reconverted unless missing or invalid. |
 | `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon` | Strict Mushaf page artifact build for release packaging; fails if the required local page SVG pack is absent or unsafe. |
 | `pnpm run data:fetch -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh`, QUL translations such as `translation:bridges`, and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` through provider adapters in `scripts/data/sources/providers/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
@@ -161,7 +161,7 @@ Minimum browser: Chrome 111, Safari 16.2, Firefox 113 (required for `color-mix()
 
 ## CI/CD
 
-CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. `lighthouse` and `e2e` consume the `dist/` artifact uploaded by `build` (no redundant rebuilds). Jobs:
+CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. The `build` job restores cached Qaloon Mushaf page PDFs / normalized SVG inputs, installs Poppler, imports any missing baseline Qaloon artifacts, strictly builds the generated page pack, then runs the normal production build before uploading `dist/`. `lighthouse` and `e2e` consume that artifact (no redundant rebuilds). Dataset check/build jobs remain clean-checkout tolerant and do not require generated page SVGs. Jobs:
 
 | Job | Purpose |
 |---|---|
@@ -173,7 +173,7 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `st
 | `dataset-baseline` | `pnpm run data -- build` |
 | `dataset-full` | `pnpm run data -- build --profile=full` on protected-branch pushes and PRs whose diff touches dataset sources, catalogs, generated dataset files, or dataset scripts |
 | `audit` | `pnpm audit --audit-level moderate` |
-| `build` | `pnpm run build`; uploads `dist/` artifact |
+| `build` | Installs Poppler, runs `pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604`, runs `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon`, then `pnpm run build`; uploads `dist/` artifact with the release Qaloon page pack |
 | `lighthouse` | `lhci autorun` against uploaded `dist/` |
 | `e2e` | `pnpm test:e2e --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"` with `PLAYWRIGHT_INCLUDE_OFFLINE=1`, `PLAYWRIGHT_USE_PREVIEW=1`, `PLAYWRIGHT_SKIP_BUILD=1`. Depends on `build` and downloads its `dist/` artifact, then runs against a preview server (no dev-server compile path under workers=6). |
 | `ci-ok` | No-op aggregator — single required status check for branch protection |
