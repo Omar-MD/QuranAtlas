@@ -24,6 +24,21 @@ function main(argv = process.argv.slice(2)) {
   const normalizedArgv = argv[0] === '--' ? argv.slice(1) : argv
   const [command = 'build'] = normalizedArgv
 
+  if (command === 'mushaf-pages') {
+    const [subcommand = 'build', ...rest] = normalizedArgv.slice(1)
+    if (subcommand === 'import') {
+      run('mushaf-pages/import.mjs', rest)
+      return
+    }
+    if (subcommand === 'build') {
+      run('mushaf-pages/build.mjs', rest)
+      return
+    }
+    console.error(`Unknown mushaf-pages command: ${subcommand}`)
+    console.error('Usage: pnpm run data -- mushaf-pages [import|build] [--profile=baseline|full] [--riwayah=qaloon] [--pages=1-604]')
+    process.exit(1)
+  }
+
   if (command === 'aliases') {
     run('derive-verse-aliases.mjs')
     return
@@ -31,22 +46,24 @@ function main(argv = process.argv.slice(2)) {
 
   if (command === 'check') {
     run('source-catalog.mjs')
-    run('build-dataset.mjs', ['--profile=baseline'])
-    run('build-knowledge-dataset.mjs', ['--check'])
+    run('text/build.mjs', ['--profile=baseline'])
+    run('knowledge/build.mjs', ['--check'])
+    run('mushaf-pages/build.mjs', ['--profile=baseline', '--check'])
     return
   }
 
   if (command === 'build') {
     const profile = parseProfile(normalizedArgv.slice(1))
-    run('build-dataset.mjs', [`--profile=${profile}`])
+    run('text/build.mjs', [`--profile=${profile}`])
     if (profile !== 'catalog') {
-      run('build-knowledge-dataset.mjs')
+      run('knowledge/build.mjs')
+      run('mushaf-pages/build.mjs', [`--profile=${profile}`])
     }
     return
   }
 
   console.error(`Unknown data command: ${command}`)
-  console.error('Usage: pnpm run data -- [build|check|aliases] [--profile=baseline|full|catalog]')
+  console.error('Usage: pnpm run data -- [build|check|aliases|mushaf-pages] [--profile=baseline|full|catalog]')
   process.exit(1)
 }
 

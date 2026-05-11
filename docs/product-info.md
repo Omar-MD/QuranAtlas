@@ -18,7 +18,7 @@ This is the product overview. For implementation detail, see `docs/context/` (ar
 
 - Continuous verse-interleaved layout. Arabic (Uthmani script, Amiri Quran by Khaled Hosny) on top of each verse with the English translation directly below.
 - **English translation: Bridges** (QUL translation resource). The baseline app bundle ships the current committed Bridges pack with authored footnotes. Translation visibility toggles on/off and persists across sessions.
-- **Riwayah picker.** Three transmissions ship: Ḥafṣ ʿan ʿĀṣim, Warsh ʿan Nāfiʿ, Qālūn ʿan Nāfiʿ. Default Qālūn. Choose at first launch (onboarding screen 3) or change anytime in Settings → Reading. All three Riwayat render in the same Amiri Quran face — the Riwayah text data drives the orthographic differences (small high seen `U+06EC` for Warsh/Qaloon, alif waslah, riwaya-specific marks).
+- **Riwayah picker.** Qālūn ʿan Nāfiʿ is the baseline transmission. Ḥafṣ ʿan ʿĀṣim and Warsh ʿan Nāfiʿ can be shipped as optional/full-profile packs. Default Qālūn. Choose at first launch (onboarding screen 3) or change anytime in Settings → Reading. Riwayat render in the same Amiri Quran face — the Riwayah text data drives the orthographic differences (small high seen `U+06EC` for Warsh/Qaloon, alif waslah, riwaya-specific marks).
 - Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — and flips live when the OS changes.
 - Adjustable font size (slider in Settings, live preview); keyboard bindings (`⌘↑` / `⌘↓` / `0`) for quick changes.
 - Chunked rendering so long surahs like Al-Baqarah stay responsive.
@@ -70,7 +70,7 @@ Designed for keyboard-first readers. Full reference via `?` from any non-input c
 - Wordmark + mission ("Read, reflect, remember.")
 - Qur'an 54:17 blessing in Arabic + translation.
 - 2×2 stat grid: Marks · Tags · Surahs · % Qur'an tagged.
-- Attribution: Qur'an text (Hafs, Warsh, Qaloon riwayat) from King Fahd Glorious Qur'an Printing Complex (KFGQPC), Madinah; Amiri + Amiri Quran fonts by Khaled Hosny; Svelte, Vite, Workbox.
+- Attribution: Qur'an text (Hafs, Warsh, Qaloon riwayat) from King Fahd Glorious Qur'an Printing Complex (KFGQPC), Madinah; quran.ws page PDFs for generated Mushaf page assets; Amiri + Amiri Quran fonts by Khaled Hosny; Svelte, Vite, Workbox.
 - Install-app CTA (when the browser's install prompt is available) and the app version.
 
 ### Offline

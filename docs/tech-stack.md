@@ -16,6 +16,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | Type check | **svelte-check** | `^4.4.6` | TypeScript + Svelte type-only pass (`pnpm run check`) |
 | PWA | **vite-plugin-pwa** | `^1.2.0` (patched — see `patches/`) | Workbox integration, manifest generation, `injectManifest` mode |
 | Service worker | **Workbox** (`workbox-*`) | `^7.4.0` | Runtime caching strategies used by `src/infra/service-worker/sw.js` |
+| Optional page import | **Poppler `pdftocairo`** | external system tool | Converts quran.ws page PDFs to generated SVG artifacts for Mushaf page release/local packs; not required for normal app builds |
 | Event bus | **mitt** | `^3.0.1` | Tiny (~200B) pub/sub (sole runtime `dependencies` entry) |
 | Logger | custom | — | Dev-only console wrapper, zero-cost in production (`src/core/logger.ts`) |
 | Test runner | **Vitest** | `^4.1.2` | Unit + integration, Vite-native (+ `@vitest/coverage-v8` `^4.1.2`) |
@@ -76,11 +77,13 @@ Defined in `package.json`:
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
 | `pnpm run build` | Build production bundle into `dist/` (`pnpm run data -- build && vite build`) |
-| `pnpm run data -- build` | Grouped baseline data build: `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, and `scripts/data/manifest/inventory.mjs` to emit Qaloon riwayah, Bridges translation, Muyassar tafsir, source index, metadata, manifest, provenance, and Phase 01 knowledge shards. Runs offline against committed normalized source files. |
-| `pnpm run data -- build --profile=full` | Full local data build: emits every locally configured approved source plus Phase 01 knowledge shards. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
+| `pnpm run data -- build` | Grouped baseline data build: `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, `scripts/data/mushaf-pages/build.mjs`, and `scripts/data/manifest/inventory.mjs` to emit Qaloon riwayah, Bridges translation, Muyassar tafsir, source index, metadata, manifest, provenance, Phase 01 knowledge shards, and a Qaloon page pack when local page artifacts are present. Runs offline against committed normalized text sources plus optional generated page artifacts. |
+| `pnpm run data -- build --profile=full` | Full local data build: emits every locally configured approved text source, Phase 01 knowledge shards, and available Hafs/Warsh/Qaloon page packs. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
 | `pnpm run data -- build --profile=catalog` | Catalog/profile build without text bodies. |
-| `pnpm run data -- check` | Grouped data check: validates source catalog plus baseline text and knowledge builds. |
+| `pnpm run data -- check` | Grouped data check: validates source catalog plus baseline text, knowledge, and available Mushaf page artifacts without fetching quran.ws. |
 | `pnpm run data -- aliases` | Rebuild `_verse-aliases.json` from riwayah sources. |
+| `pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604` | Optional release/local artifact import: downloads quran.ws page PDFs to `.scratch/` and converts them to generated SVG inputs with Poppler `pdftocairo`. |
+| `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon` | Strict Mushaf page artifact build for release packaging; fails if the required local page SVG pack is absent or unsafe. |
 | `pnpm run data:fetch -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh`, QUL translations such as `translation:bridges`, and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` through provider adapters in `scripts/data/sources/providers/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
 | `pnpm run test` | Run Vitest once (CI-style) |

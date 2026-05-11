@@ -41,7 +41,7 @@ describe('ROUTE_DEFS table', () => {
     expect(categoryFor(u('/dataset/knowledge/passages/002.json'))).toBe('text-knowledge')
     expect(categoryFor(u('/dataset/knowledge/indexes/theme-to-ayah.json'))).toBe('text-knowledge')
     expect(categoryFor(u('/dataset/audio/alafasy/001.mp3'))).toBe('audio')
-    expect(categoryFor(u('/dataset/mushaf-pages/hafs/p001.png'))).toBe('pages')
+    expect(categoryFor(u('/dataset/mushaf-pages/hafs/pages/001.svg'))).toBe('pages')
     expect(categoryFor(u('/dataset/search-index.json'))).toBe('search')
   })
 
@@ -71,8 +71,11 @@ describe('ROUTE_DEFS table', () => {
     expect(def?.category).toBeNull()
   })
 
-  it('roadmap routes (pages, search) marked roadmap=true', () => {
-    expect(ROUTE_DEFS.find(d => d.name === 'pages')?.roadmap).toBe(true)
+  it('pages routes are active ship routes', () => {
+    expect(ROUTE_DEFS.find(d => d.name === 'pages')?.roadmap).toBeFalsy()
+  })
+
+  it('roadmap routes keep only future route markers', () => {
     expect(ROUTE_DEFS.find(d => d.name === 'search')?.roadmap).toBe(true)
     expect(ROUTE_DEFS.find(d => d.name === 'text-core')?.roadmap).toBeFalsy()
   })
@@ -81,7 +84,7 @@ describe('ROUTE_DEFS table', () => {
     const samples: { url: URL; expectedPrefix: string }[] = [
       { url: u('/dataset/surahs.json'), expectedPrefix: CACHE_DATASET },
       { url: u('/dataset/audio/alafasy/001.mp3'), expectedPrefix: 'qa-audio-' },
-      { url: u('/dataset/mushaf-pages/hafs/p001.png'), expectedPrefix: 'qa-pages-' },
+      { url: u('/dataset/mushaf-pages/hafs/pages/001.svg'), expectedPrefix: 'qa-pages-' },
       { url: u('/dataset/search-index.json'), expectedPrefix: 'qa-search-' },
       { url: u('/fonts/hafs.woff2'), expectedPrefix: 'qa-fonts-' },
     ]
@@ -116,6 +119,7 @@ describe('sumBytesForCategory', () => {
       { path: 'knowledge/ayah/001.json', lane: 'knowledge', category: 'knowledge-ayah', bytes: 900 },
       { path: 'knowledge/passages/001.json', lane: 'knowledge', category: 'knowledge-passages', bytes: 600 },
       { path: 'knowledge/indexes/theme-to-ayah.json', lane: 'knowledge', category: 'knowledge-index', bytes: 300 },
+      { path: 'mushaf-pages/qaloon/pages/001.svg', lane: 'pages', category: 'pages', bytes: 80_000 },
       { path: 'search-index.json', lane: 'search', category: 'search-index', bytes: 1_000_000 },
     ],
   }
@@ -123,7 +127,7 @@ describe('sumBytesForCategory', () => {
   it.each<[Category, number]>([
     ['text',   1500 + 1400 + 800 + 700 + 200 + 900 + 600 + 300],
     ['audio',  0],
-    ['pages',  0],
+    ['pages',  80_000],
     ['search', 1_000_000],
   ])('sums bytes for category %s', (cat, expected) => {
     const { totalBytes } = sumBytesForCategory(manifest, cat)

@@ -46,7 +46,7 @@ export type RouteDef = {
   purgeOnQuotaError?: boolean
   /** Selector category. `null` = always-on (e.g. fonts). */
   category: RouteCategory | null
-  /** True for routes registered ahead of their consumer (mushaf-pages, search-index). */
+  /** True for routes registered ahead of their consumer (for example search-index). */
   roadmap?: boolean
 }
 
@@ -166,7 +166,6 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     maxAgeDays: 365,
     purgeOnQuotaError: true,
     category: 'pages',
-    roadmap: true,
   },
   {
     name: 'search',

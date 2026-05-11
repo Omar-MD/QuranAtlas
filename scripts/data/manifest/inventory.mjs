@@ -3,7 +3,7 @@ import { dirname, relative } from 'node:path'
 
 import { listFiles } from '../lib/fs.mjs'
 
-const LANE_KEYS = ['text', 'knowledge', 'reflection', 'search']
+const LANE_KEYS = ['text', 'knowledge', 'reflection', 'search', 'pages']
 
 function classifyDatasetFile(path) {
   if (path.startsWith('riwayat/')) {
@@ -35,6 +35,9 @@ function classifyDatasetFile(path) {
   }
   if (path.startsWith('knowledge/indexes/')) {
     return { lane: 'knowledge', category: 'knowledge-index' }
+  }
+  if (path.startsWith('mushaf-pages/')) {
+    return { lane: 'pages', category: 'pages' }
   }
   if (path.startsWith('reflection/prompts/')) {
     return { lane: 'reflection', category: 'reflection-prompts' }
@@ -74,10 +77,13 @@ export async function buildManifestPayload({
   const files = []
 
   for (const fullPath of allFiles) {
-    if (fullPath.endsWith('manifest.json')) continue
+    const path = relative(datasetDir, fullPath).replace(/\\/g, '/')
+    if (path === 'manifest.json') continue
     if (dirname(fullPath) === riwayatDir) continue
     if (dirname(fullPath) === translationsDir) continue
-    const path = relative(datasetDir, fullPath).replace(/\\/g, '/')
+    if (profileName === 'catalog' && path.startsWith('mushaf-pages/')) {
+      continue
+    }
     if (
       manifestTextSources
       && (

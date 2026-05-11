@@ -108,7 +108,7 @@ export type SourceIndex = {
 
 type DatasetManifestFile = {
   path: string
-  lane: 'text' | 'knowledge' | 'reflection' | 'search'
+  lane: 'text' | 'knowledge' | 'reflection' | 'search' | 'pages'
   category: string
   bytes: number
 }

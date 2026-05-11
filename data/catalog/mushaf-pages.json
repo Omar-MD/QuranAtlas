@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "provider": "quran.ws",
+  "usage": "free",
+  "attribution": "Mushaf page PDFs from quran.ws, converted to same-origin SVG assets for QuranAtlas.",
+  "pageCount": 604,
+  "sourceBaseUrl": "https://pdf.quran.ws/",
+  "riwayat": {
+    "hafs": {
+      "sourceSlug": "hafs",
+      "sourcePageUrlPattern": "https://pdf.quran.ws/pdfs/hafs/page/quran-hafs-page-{page}.pdf"
+    },
+    "warsh": {
+      "sourceSlug": "warsh",
+      "sourcePageUrlPattern": "https://pdf.quran.ws/pdfs/warsh/page/quran-warsh-page-{page}.pdf"
+    },
+    "qaloon": {
+      "sourceSlug": "qalun",
+      "sourcePageUrlPattern": "https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-{page}.pdf"
+    }
+  }
+}

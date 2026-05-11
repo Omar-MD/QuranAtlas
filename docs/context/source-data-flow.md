@@ -1,18 +1,20 @@
 # Source Data Flow
 
-**Scope.** This is the single deep reference for the QuranAtlas text-data pipeline: source authorities, catalog policy, upstream source formats, normalization rules, build outputs, runtime consumption, and validation boundaries. Client code disagreements with this doc are bugs; build-time disagreements mean the scripts or catalog have drifted.
+**Scope.** This is the single deep reference for the QuranAtlas source-data pipeline: source authorities, catalog policy, upstream source formats, normalization rules, build outputs, runtime consumption, and validation boundaries. Client code disagreements with this doc are bugs; build-time disagreements mean the scripts or catalog have drifted.
 
 ## Pipeline
 
-The pipeline has five stages:
+The pipeline has six stages:
 
 1. `data/catalog/*.json` declares what sources exist, where they come from, which are default, which are optional, and how they must be fetched and validated.
-2. `scripts/data/sources/fetch.mjs` converts upstream payloads into committed normalized source files under `data/normalized/**`, using provider adapters under `scripts/data/sources/providers/`.
+2. `scripts/data/sources/fetch.mjs` converts upstream payloads into committed normalized source files under `data/normalized/**`, using provider adapters under `scripts/data/sources/providers/`. Mushaf page assets are the exception: `scripts/data/mushaf-pages/import.mjs` optionally downloads quran.ws PDFs into `.scratch/` and converts them to generated local SVG inputs under `data/normalized/mushaf-pages/**`.
 3. `scripts/data/text/build.mjs` validates normalized text sources and emits the reader corpus under `public/dataset/**`.
 4. `scripts/data/knowledge/build.mjs` validates curated Knowledge Lane sources and emits knowledge artifacts under `public/dataset/knowledge/**`.
-5. `scripts/data/manifest/inventory.mjs`, `src/data/dataset.ts`, `src/data/knowledge-dataset.ts`, the service worker, and offline settings consume only `/dataset/**` at runtime, with `manifest.json` now carrying lane summaries plus per-file inventory entries.
+5. `scripts/data/mushaf-pages/build.mjs` validates available generated SVG page packs and emits `public/dataset/mushaf-pages/**` plus per-riwayah page manifests.
+6. `scripts/data/manifest/inventory.mjs`, `src/data/dataset.ts`, `src/data/knowledge-dataset.ts`, the service worker, and offline settings consume only `/dataset/**` at runtime, with `manifest.json` carrying lane summaries plus per-file inventory entries.
 
 Important boundary: `data/catalog/**`, `data/normalized/**`, and `data/taxonomy/**` are build-only. The app never reads them directly.
+The browser never fetches quran.ws; quran.ws is used only by the optional import tool.
 
 ```mermaid
 flowchart TD
@@ -20,6 +22,7 @@ flowchart TD
         KFGQPC["KFGQPC riwayah corpora"]
         QDB["Quran DB translation JSON"]
         QUL["QUL translation/tafsir API/resources"]
+        QuranWs["quran.ws page PDFs"]
     end
 
     subgraph Catalog["Catalog and policy"]
@@ -29,6 +32,7 @@ flowchart TD
         QuranSources["data/catalog/quran-sources.json"]
         TranslationSources["data/catalog/translation-sources.json"]
         TafsirSources["data/catalog/tafsir-sources.json"]
+        MushafPageCatalog["data/catalog/mushaf-pages.json"]
         CatalogValidator["scripts/data/sources/catalog.mjs"]
     end
 
@@ -40,6 +44,7 @@ flowchart TD
         ThemeTaxonomy["data/taxonomy/themes.json"]
         KnowledgePassagesSrc["data/normalized/knowledge/passages.json"]
         KnowledgeAyahThemesSrc["data/normalized/knowledge/ayah-themes.json"]
+        MushafPageSrc["data/normalized/mushaf-pages/{riwayah}/pages/{NNN}.svg"]
     end
 
     subgraph Build["Offline dataset build"]
@@ -47,6 +52,7 @@ flowchart TD
         VerseMap["public/dataset/translations/_verse-map.json"]
         TextBuild["scripts/data/text/build.mjs"]
         KnowledgeBuild["scripts/data/knowledge/build.mjs"]
+        MushafPageBuild["scripts/data/mushaf-pages/build.mjs"]
         ManifestBuild["scripts/data/manifest/inventory.mjs"]
         SourcesIndex["public/dataset/indexes/sources.json"]
         SourceAssets["public/dataset/indexes/source-assets.json"]
@@ -58,6 +64,7 @@ flowchart TD
         KnowledgeAyahOut["public/dataset/knowledge/ayah/{NNN}.json"]
         KnowledgePassagesOut["public/dataset/knowledge/passages/{NNN}.json"]
         KnowledgeIndexesOut["public/dataset/knowledge/indexes/*.json"]
+        MushafPageOut["public/dataset/mushaf-pages/{riwayah}/**"]
         Provenance["public/dataset/provenance.json"]
         Manifest["public/dataset/manifest.json"]
     end
@@ -77,9 +84,11 @@ flowchart TD
     QuranSources --> CatalogValidator
     TranslationSources --> CatalogValidator
     TafsirSources --> CatalogValidator
+    MushafPageCatalog --> MushafPageBuild
 
     QDB --> Fetcher
     QUL --> Fetcher
+    QuranWs --> MushafPageSrc
     TranslationSources --> Fetcher
     TafsirSources --> Fetcher
     CatalogValidator --> Fetcher
@@ -96,6 +105,7 @@ flowchart TD
     ThemeTaxonomy --> KnowledgeBuild
     KnowledgePassagesSrc --> KnowledgeBuild
     KnowledgeAyahThemesSrc --> KnowledgeBuild
+    MushafPageSrc --> MushafPageBuild
 
     TextBuild --> SourcesIndex
     TextBuild --> SourceAssets
@@ -108,6 +118,7 @@ flowchart TD
     KnowledgeBuild --> KnowledgeAyahOut
     KnowledgeBuild --> KnowledgePassagesOut
     KnowledgeBuild --> KnowledgeIndexesOut
+    MushafPageBuild --> MushafPageOut
     SourcesIndex --> ManifestBuild
     SourceAssets --> ManifestBuild
     Surahs --> ManifestBuild
@@ -118,6 +129,7 @@ flowchart TD
     KnowledgeAyahOut --> ManifestBuild
     KnowledgePassagesOut --> ManifestBuild
     KnowledgeIndexesOut --> ManifestBuild
+    MushafPageOut --> ManifestBuild
     Provenance --> ManifestBuild
     ManifestBuild --> Manifest
 
@@ -138,6 +150,7 @@ flowchart TD
     KnowledgeApi --> Reader
     DatasetApi --> Settings
     Manifest --> Offline
+    MushafPageOut --> SW
     SourcesIndex --> Offline
     Manifest --> SW
 ```
@@ -150,6 +163,7 @@ flowchart TD
 - `licenses.json`: license records and approval status.
 - `verification-rules.json`: allowed license statuses, allowed visibility values, and default source ids.
 - `quran-sources.json`, `translation-sources.json`, `tafsir-sources.json`: individual source records.
+- `mushaf-pages.json`: quran.ws page-asset policy, page count, riwayah slug mapping, and source PDF URL patterns.
 
 Each source record carries:
 
@@ -251,6 +265,18 @@ Normalization in `scripts/data/fetch-source.mjs::normalizeQulTafsirEntries`:
 - sorts entries by ayah order
 The output is a committed monolithic tafsir source under `data/normalized/tafsir/{id}.json`.
 
+### quran.ws Mushaf page source
+
+Mushaf page assets use quran.ws vector page PDFs as upstream release inputs. The catalog maps:
+
+- QuranAtlas `hafs` → quran.ws `hafs`
+- QuranAtlas `warsh` → quran.ws `warsh`
+- QuranAtlas `qaloon` → quran.ws `qalun`
+
+`scripts/data/mushaf-pages/import.mjs` is an optional release/local tool. It downloads PDFs to `.scratch/mushaf-pages/pdfs/{riwayah}/` and converts each page with Poppler `pdftocairo` into `data/normalized/mushaf-pages/{riwayah}/pages/{NNN}.svg`. Those SVG inputs are generated artifacts and are gitignored by default.
+
+`scripts/data/mushaf-pages/build.mjs` does not fetch quran.ws. It validates any available local SVG pack before emitting same-origin runtime assets. Unsafe SVG content is rejected, including scripts, `foreignObject`, inline event handlers, CSS imports, CSS `url(...)`, and external, `data:`, or `javascript:` hrefs.
+
 ### Knowledge Lane sources
 
 Knowledge Lane Phase 01 uses curated local sources only (no AI, embeddings, or generated claims):
@@ -267,13 +293,13 @@ Validation and generation are handled by `scripts/data/knowledge/build.mjs`, whi
 
 ## Build Outputs
 
-`scripts/data/text/build.mjs` consumes only committed normalized files, so the standard dataset build is offline. It emits selectable translation/tafsir pack files and writes `indexes/source-assets.json` with byte totals for source-level downloads. `scripts/data/manifest/inventory.mjs` then inventories only the active profile's baseline/update files into `manifest.json`.
+`scripts/data/text/build.mjs` consumes only committed normalized files, so the standard text dataset build is offline. It emits selectable translation/tafsir pack files and writes `indexes/source-assets.json` with byte totals for source-level downloads. `scripts/data/mushaf-pages/build.mjs` consumes only generated local SVG page artifacts and skips absent packs in clean checkouts. `scripts/data/manifest/inventory.mjs` then inventories only the active profile's baseline/update files into `manifest.json`.
 
 Profiles:
 
-- `baseline`: emits `qaloon`, `bridges`, `muyassar`, metadata files, and same-origin optional translation/tafsir pack files that are excluded from `manifest.json`
-- `full`: emits every locally configured approved source body
-- `catalog`: emits metadata/index files without text bodies
+- `baseline`: emits `qaloon`, `bridges`, `muyassar`, metadata files, same-origin optional translation/tafsir pack files that are excluded from `manifest.json`, and the Qaloon page pack when the complete generated Qaloon SVG range is present
+- `full`: emits every locally configured approved text source body and every available page pack for Hafs, Warsh, and Qaloon
+- `catalog`: emits metadata/index files without text bodies or page bodies
 
 Selectable packs for this phase:
 
@@ -287,6 +313,8 @@ Generated runtime files:
 - `public/dataset/riwayat/{riwayah}/{NNN}.json`
 - `public/dataset/translations/{id}/{NNN}.json`
 - `public/dataset/tafsir/{id}/{NNN}.json`
+- `public/dataset/mushaf-pages/{riwayah}/manifest.json`
+- `public/dataset/mushaf-pages/{riwayah}/pages/{NNN}.svg`
 - `public/dataset/surahs.json`
 - `public/dataset/juz.json`
 - `public/dataset/indexes/sources.json`
@@ -304,6 +332,8 @@ Knowledge lane runtime files (generated by `scripts/data/build-knowledge-dataset
 
 Knowledge artifacts are emitted by `scripts/data/knowledge/build.mjs` and then inventoried by `scripts/data/manifest/inventory.mjs` into `public/dataset/manifest.json`, so the existing offline/update pipeline can cache them as part of the Text category without changing reader boot.
 
+Mushaf page artifacts are emitted by `scripts/data/mushaf-pages/build.mjs` and inventoried as the `pages` manifest lane with category `pages`. Baseline product support is Qaloon-only; Hafs and Warsh page packs are optional full-profile/release artifacts.
+
 Validation performed during build:
 
 - riwayah ayah totals match expected corpus totals
@@ -312,6 +342,7 @@ Validation performed during build:
 - translation footnote markers and footnote maps are internally consistent
 - tafsir entries have valid ayah keys and preserve grouped ranges
 - `_verse-map.json` and `_verse-aliases.json` remain aligned with the riwayah corpus
+- Mushaf page packs contain every page `001.svg` through `604.svg`, have a first-verse mapping for every page, map spanning ayat to their start page for verse-to-page navigation, and contain only safe same-origin SVG content
 
 ## Runtime Consumption
 
@@ -325,6 +356,7 @@ Validation performed during build:
 - `getTafsirs()`: derives tafsir entries from the source index
 - `loadTafsirForSurah(id, n)`: loads `/dataset/tafsir/{id}/{NNN}.json`
 - `src/data/offline.ts::getSourceAssetManifest(kind, id)`: loads `/dataset/indexes/source-assets.json`
+- Mushaf page runtime modules read only `/dataset/mushaf-pages/{riwayah}/manifest.json` and `/dataset/mushaf-pages/{riwayah}/pages/{NNN}.svg`
 
 `src/data/knowledge-dataset.ts` is the Phase 01 knowledge access layer:
 
@@ -340,6 +372,7 @@ Fallback behavior is source-aware:
 - missing saved translation falls back to `bridges` only when its same-origin pack fetch fails
 - missing saved tafsir falls back to `muyassar` only when its same-origin pack fetch fails
 - missing knowledge files resolve to `null` / empty rows without breaking reader rendering
+- missing Mushaf page packs are a pack-availability state for the read surface, not a fallback to quran.ws
 
 `indexes/sources.json` may list optional sources whose bodies are absent from `manifest.json`. That is intentional. Optional body files can still be present on the same origin and indexed by `indexes/source-assets.json`, which allows runtime discovery, byte pre-flight, on-demand caching, and removal without inflating the baseline manifest or first-load precache.
 
@@ -375,17 +408,20 @@ Offline caching and byte estimates are driven by the built dataset, not by norma
 
 - route definitions live in `src/infra/sw/route-defs.ts`
 - text routes are split into `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index`
+- page routes match `/dataset/mushaf-pages/{riwayah}/...`, cache with `CacheFirst`, and use per-riwayah cache names (`qa-pages-{riwayah}-v1`)
 - offline selector state stores source-aware text selections under `settings.offlineCategories.text.{riwayat,translations,tafsir}`
 
 Only files present in `manifest.json` contribute to baseline download/update size. Optional translation and tafsir bodies are not manifest members in the baseline profile; `src/data/offline.ts::startSourceAssetDownload()` uses `indexes/source-assets.json` to pre-flight quota and cache/remove those files directly in `CACHE_DATASET` when the user selects or keeps them.
+Page files contribute to the `pages` lane only when the generated same-origin page pack exists in the current profile output.
 
 ## Verification
 
 Key checks:
 
-- `pnpm run data -- check`: validates source catalog integrity plus baseline text and knowledge builds
-- `pnpm run data -- build`: rebuilds the baseline runtime dataset
-- `pnpm run data -- build --profile=full`: emits all approved local source bodies
+- `pnpm run data -- check`: validates source catalog integrity plus baseline text, knowledge, and any available local Mushaf page artifacts
+- `pnpm run data -- build`: rebuilds the baseline runtime dataset and skips absent local Mushaf page artifacts with a warning
+- `pnpm run data -- build --profile=full`: emits all approved local text source bodies and all available generated Mushaf page packs
+- `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon`: strict Qaloon page-pack validation/release build
 - `node scripts/data/validate-translation-mapping.mjs --check=A|B|C`: translation-alignment and source-audit checks
 
 When changing fetch adapters, normalized source schema, build outputs, or runtime dataset loading, update this doc in the same change.

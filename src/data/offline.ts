@@ -33,7 +33,7 @@ export type ActivationStatus = 'none' | 'downloading' | 'cached'
 type ManifestShape = {
   files: Array<{
     path: string
-    lane: 'text' | 'knowledge' | 'reflection' | 'search'
+    lane: 'text' | 'knowledge' | 'reflection' | 'search' | 'pages'
     category: string
     bytes?: number
   }>
