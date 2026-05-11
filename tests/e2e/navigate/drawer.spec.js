@@ -19,7 +19,7 @@
 
 import { test, expect } from '@playwright/test'
 import { seedBookmarks, seedMarks, writeSetting } from '../fixtures/idb.js'
-import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
+import { waitForReader, openCommandSheet, openNavDrawer } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
@@ -330,14 +330,14 @@ test.describe('Journey F: Navigation', () => {
 
     await page.goto('/#/s/2/255')
     await waitForReader(page)
-    await page.locator('.qa-mh-hamburger').click()
+    await openNavDrawer(page)
     await expect(page.getByTestId('reader-mode-switch')).toBeVisible()
 
     await page.getByTestId('reader-mode-mushaf').click()
     await expect(page).toHaveURL(/#\/m\/\d+$/)
     await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
 
-    await page.locator('.qa-mh-hamburger').click()
+    await openNavDrawer(page)
     await expect(page.getByTestId('mushaf-drawer-page')).toContainText(/Page/)
     await page.getByTestId('reader-mode-verse').click()
     await expect(page).toHaveURL(/#\/s\/\d+\/\d+$/)
