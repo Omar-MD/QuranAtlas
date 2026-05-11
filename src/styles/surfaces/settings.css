@@ -1148,4 +1148,9 @@
     border-color: var(--qa-accent);
     opacity: 1;
   }
+
+  .qa-storage-apply--inline {
+    min-height: 34px;
+    padding-inline: 0.75rem;
+  }
 }

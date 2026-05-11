@@ -49,6 +49,7 @@ function main(argv = process.argv.slice(2)) {
     run('text/build.mjs', ['--profile=baseline'])
     run('knowledge/build.mjs', ['--check'])
     run('mushaf-pages/build.mjs', ['--profile=baseline', '--check'])
+    run('riwayah-packages/build.mjs', ['--profile=baseline', '--check'])
     return
   }
 
@@ -58,6 +59,7 @@ function main(argv = process.argv.slice(2)) {
     if (profile !== 'catalog') {
       run('knowledge/build.mjs')
       run('mushaf-pages/build.mjs', [`--profile=${profile}`])
+      run('riwayah-packages/build.mjs', [`--profile=${profile}`])
     }
     return
   }

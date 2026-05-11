@@ -1,74 +1,151 @@
 <script lang="ts">
+  import { onMount, tick } from 'svelte'
+  import type { MushafPhysicalAction } from './navigation'
+
   type Props = {
     page: number
     pageCount: number
+    placement?: 'bottom-center' | 'below-page' | 'inside-safe-bottom'
+    onAction: (action: MushafPhysicalAction) => void
     onNavigate: (page: number) => void
+    onJumpOpenChange?: (open: boolean) => void
   }
 
-  const { page, pageCount, onNavigate }: Props = $props()
+  const {
+    page,
+    pageCount,
+    placement = 'bottom-center',
+    onAction,
+    onNavigate,
+    onJumpOpenChange,
+  }: Props = $props()
 
-  function go(next: number): void {
-    onNavigate(Math.min(pageCount, Math.max(1, next)))
+  let jumpOpen = $state(false)
+  let draft = $state('')
+  let chip = $state<HTMLButtonElement | null>(null)
+  let input = $state<HTMLInputElement | null>(null)
+  let root = $state<HTMLDivElement | null>(null)
+
+  function clampPage(value: number): number {
+    return Math.min(pageCount, Math.max(1, value))
   }
 
-  function commitValue(value: string): void {
-    const next = Number.parseInt(value, 10)
-    if (Number.isInteger(next)) go(next)
+  function setJumpOpen(open: boolean): void {
+    if (jumpOpen === open) return
+    jumpOpen = open
+    onJumpOpenChange?.(open)
   }
 
-  function onInput(e: Event): void {
-    const input = e.currentTarget as HTMLInputElement
-    commitValue(input.value)
+  async function openJump(): Promise<void> {
+    draft = String(page)
+    setJumpOpen(true)
+    await tick()
+    input?.focus()
+    input?.select()
   }
 
-  function onPageKeydown(e: KeyboardEvent): void {
-    if (e.key !== 'Enter') return
-    commitValue((e.currentTarget as HTMLInputElement).value)
+  function closeJump({ restoreFocus = true } = {}): void {
+    setJumpOpen(false)
+    draft = String(page)
+    if (restoreFocus) void tick().then(() => chip?.focus())
   }
+
+  function commitJump(): void {
+    const next = Number.parseInt(draft, 10)
+    if (Number.isInteger(next)) onNavigate(clampPage(next))
+    closeJump({ restoreFocus: true })
+  }
+
+  function handleChipKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    void openJump()
+  }
+
+  function handleInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      commitJump()
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      closeJump({ restoreFocus: true })
+    }
+  }
+
+  function handleEdge(action: MushafPhysicalAction): void {
+    if (jumpOpen) return
+    onAction(action)
+  }
+
+  $effect(() => {
+    if (!jumpOpen) draft = String(page)
+  })
+
+  onMount(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!jumpOpen || !root) return
+      const target = event.target
+      if (target instanceof Node && root.contains(target)) return
+      closeJump({ restoreFocus: false })
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  })
 </script>
 
-<div class="qa-mushaf-controls" aria-label="Mushaf page controls">
-  <button
-    type="button"
-    class="qa-mushaf-control-btn"
-    aria-label="Previous page"
-    disabled={page <= 1}
-    onclick={() => go(page - 1)}
-  >
-    <span aria-hidden="true">‹</span>
-  </button>
-  <label class="qa-mushaf-page-field">
-    <span class="qa-mushaf-page-label">Page</span>
-    <input
-      class="qa-mushaf-page-input"
-      type="number"
-      min="1"
-      max={pageCount}
-      value={page}
-      aria-label="Mushaf page number"
-      inputmode="numeric"
-      onchange={onInput}
-      onblur={onInput}
-      onkeydown={onPageKeydown}
-    />
-    <span class="qa-mushaf-page-total">of {pageCount}</span>
-  </label>
-  <input
-    class="qa-mushaf-scrubber"
-    type="range"
-    min="1"
-    max={pageCount}
-    value={page}
-    aria-label="Mushaf page scrubber"
-    onchange={onInput}
-  />
-  <button
-    type="button"
-    class="qa-mushaf-control-btn"
-    aria-label="Next page"
-    disabled={page >= pageCount}
-    onclick={() => go(page + 1)}
-  >
-    <span aria-hidden="true">›</span>
-  </button>
+<div
+  bind:this={root}
+  class="qa-mushaf-controls qa-mushaf-controls--{placement}"
+  aria-label="Mushaf page controls"
+>
+  {#if !jumpOpen}
+    <button
+      type="button"
+      class="qa-mushaf-edge qa-mushaf-edge--left"
+      data-mushaf-edge="left"
+      aria-label="Advance Mushaf page"
+      disabled={page >= pageCount}
+      onclick={() => handleEdge('towardEnd')}
+    >
+      <span aria-hidden="true">‹</span>
+    </button>
+    <button
+      type="button"
+      class="qa-mushaf-edge qa-mushaf-edge--right"
+      data-mushaf-edge="right"
+      aria-label="Return to previous Mushaf page"
+      disabled={page <= 1}
+      onclick={() => handleEdge('towardStart')}
+    >
+      <span aria-hidden="true">›</span>
+    </button>
+  {/if}
+
+  <div class="qa-mushaf-chip-wrap">
+    <button
+      bind:this={chip}
+      type="button"
+      class="qa-mushaf-page-chip"
+      aria-label={`Jump from Mushaf page ${page} of ${pageCount}`}
+      aria-expanded={jumpOpen}
+      onclick={() => { void openJump() }}
+      onkeydown={handleChipKeydown}
+    >
+      {page} / {pageCount}
+    </button>
+    {#if jumpOpen}
+      <input
+        bind:this={input}
+        class="qa-mushaf-page-jump"
+        type="number"
+        inputmode="numeric"
+        min="1"
+        max={pageCount}
+        aria-label="Mushaf page number"
+        value={draft}
+        oninput={(event) => { draft = (event.currentTarget as HTMLInputElement).value }}
+        onkeydown={handleInputKeydown}
+      />
+    {/if}
+  </div>
 </div>

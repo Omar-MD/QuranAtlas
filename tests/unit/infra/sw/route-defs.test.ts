@@ -36,6 +36,7 @@ describe('ROUTE_DEFS table', () => {
     expect(categoryFor(u('/dataset/tafsir/muyassar/001.json'))).toBe('text-tafsir')
     expect(categoryFor(u('/dataset/indexes/sources.json'))).toBe('text-index')
     expect(categoryFor(u('/dataset/indexes/source-assets.json'))).toBe('text-index')
+    expect(categoryFor(u('/dataset/indexes/riwayah-packages.json'))).toBe('text-index')
     expect(categoryFor(u('/dataset/surahs.json'))).toBe('text-core')
     expect(categoryFor(u('/dataset/knowledge/ayah/002.json'))).toBe('text-knowledge')
     expect(categoryFor(u('/dataset/knowledge/passages/002.json'))).toBe('text-knowledge')
@@ -63,6 +64,7 @@ describe('ROUTE_DEFS table', () => {
   it('source-aware text routes use CACHE_DATASET (existing constant — no rename)', () => {
     expect(cacheNameFor(u('/dataset/surahs.json'))).toBe(CACHE_DATASET)
     expect(cacheNameFor(u('/dataset/tafsir/muyassar/001.json'))).toBe(CACHE_DATASET)
+    expect(cacheNameFor(u('/dataset/indexes/riwayah-packages.json'))).toBe(CACHE_DATASET)
   })
 
   it('fonts route is always-on (category=null)', () => {
@@ -116,6 +118,7 @@ describe('sumBytesForCategory', () => {
       { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 800 },
       { path: 'tafsir/muyassar/001.json', lane: 'text', category: 'text-tafsir', bytes: 700 },
       { path: 'indexes/sources.json', lane: 'text', category: 'text-index', bytes: 200 },
+      { path: 'indexes/riwayah-packages.json', lane: 'text', category: 'text-index', bytes: 250 },
       { path: 'knowledge/ayah/001.json', lane: 'knowledge', category: 'knowledge-ayah', bytes: 900 },
       { path: 'knowledge/passages/001.json', lane: 'knowledge', category: 'knowledge-passages', bytes: 600 },
       { path: 'knowledge/indexes/theme-to-ayah.json', lane: 'knowledge', category: 'knowledge-index', bytes: 300 },
@@ -125,7 +128,7 @@ describe('sumBytesForCategory', () => {
   }
 
   it.each<[Category, number]>([
-    ['text',   1500 + 1400 + 800 + 700 + 200 + 900 + 600 + 300],
+    ['text',   1500 + 1400 + 800 + 700 + 200 + 250 + 900 + 600 + 300],
     ['audio',  0],
     ['pages',  80_000],
     ['search', 1_000_000],
@@ -141,6 +144,7 @@ describe('sumBytesForCategory', () => {
       '/dataset/translations/saheeh/001.json',
       '/dataset/tafsir/muyassar/001.json',
       '/dataset/indexes/sources.json',
+      '/dataset/indexes/riwayah-packages.json',
       '/dataset/surahs.json',
       '/dataset/knowledge/ayah/001.json',
       '/dataset/knowledge/passages/001.json',

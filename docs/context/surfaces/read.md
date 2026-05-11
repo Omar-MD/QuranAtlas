@@ -68,6 +68,8 @@ test_paths:
 | `src/read/mushaf/MushafReader.svelte` | _(no leading comment)_ |
 | `src/read/mushaf/mode-switch.ts` | _(no leading comment)_ |
 | `src/read/mushaf/navigation.ts` | _(no leading comment)_ |
+| `src/read/mushaf/sizing.ts` | _(no leading comment)_ |
+| `src/read/mushaf/svg-page.ts` | _(no leading comment)_ |
 | `src/read/mushaf/types.ts` | _(no leading comment)_ |
 | `src/read/position.ts` | Reader position tracking — observes scroll, persists last-read verse to |
 | `src/read/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
@@ -95,12 +97,16 @@ test_paths:
 
 The read surface has two sibling modes:
 
-- **Verse mode** (`#/s/:surah/:ayah?`) mounts `Reader.svelte`, sets `reader.readerMode = 'verse'`, clears `reader.currentMushafPage`, and owns verse scroll/translation/tafsir behavior. If the active `settings.riwayah` text pack is missing from `/dataset/manifest.json`, the reader shows a compact install prompt with Settings + Retry actions and does not render fallback Qaloon ayat under the selected Hafs/Warsh UI state.
+- **Verse mode** (`#/s/:surah/:ayah?`) mounts `Reader.svelte`, sets `reader.readerMode = 'verse'`, clears `reader.currentMushafPage`, and owns verse scroll/translation/tafsir behavior. If the active optional `settings.riwayah` is not usable according to `/dataset/indexes/riwayah-packages.json` plus local cache membership, the reader shows a compact install prompt with Settings + Retry actions and does not render fallback Qaloon ayat under the selected Hafs/Warsh UI state.
 - **Mushaf mode** (`#/m/:page`) mounts `MushafReader.svelte`, sets `reader.readerMode = 'mushaf'`, sets `reader.currentMushafPage`, and clears verse-specific reader state. The route has no riwayah param: the active `settings.riwayah` selects `/dataset/mushaf-pages/{riwayah}/manifest.json` and the SVG page asset for the current route page.
 
-Mushaf mode renders one same-origin SVG page at a time with previous/next, numeric page, and scrubber controls. Invalid or out-of-range page params resolve against the active manifest page count and canonicalize through `router.navigate(pageHref(clamped), { replace: true })`, so route events and `lastSurface` see the canonical `#/m/:page` hash. Changing `settings.riwayah` while mounted reloads the same page number against the new active page manifest.
+Mushaf mode renders one same-origin, sanitized inline SVG page at a time as a single labeled image. The ready state is full-viewport and unframed: no page card, visible sheet, shadow, footer row, or scrubber. Page size is measured from `#main-content`, subtracts only overlapping mobile header chrome once, and fits the active SVG `viewBox` into that rectangle; the manifest `viewBox` is the first-render sizing contract and the fetched SVG must match it before rendering. After a page is visible, the reader warms adjacent sanitized SVG markup in memory for ordinary page turns; stale prefetches are aborted and failures never replace the visible page.
 
-Missing active-riwayah page packs render an install prompt rather than silently falling back to Qaloon pages. SVG asset failures stay inside the page component as retry/open-verse states; offline-missing image errors identify that the page is not cached locally.
+Mushaf navigation follows physical right-to-left page progression. Tapping the left edge, swiping left, or pressing `ArrowLeft` advances toward the end of the Mushaf (`+1`). Tapping the right edge, swiping right, or pressing `ArrowRight` returns toward the start (`-1`). `Home` routes to page 1 and `End` routes to the final manifest page. The compact page chip is the only persistent visible control; activating it opens a numeric jump input that clamps to `1..pageCount`, commits on Enter, cancels on Escape, restores chip focus, and suppresses edge zones/swipes while open.
+
+Invalid or out-of-range page params resolve against the active manifest page count and canonicalize through `router.navigate(pageHref(clamped), { replace: true })`, so route events and `lastSurface` see the canonical `#/m/:page` hash. Changing `settings.riwayah` while mounted reloads the same page number against the new active page manifest. Theme changes recolor the inline SVG through Mushaf tokens without refetching the page. Runtime fetches stay under `/dataset/**`; quran.ws is build-time attribution/import input only.
+
+Missing active-riwayah page packs render an install prompt rather than silently falling back to Qaloon pages. The prompt names the active missing riwayah and offers package install, stay on the current usable riwayah, open Settings, retry, and Open Verse mode only when the active riwayah is verified usable for text. Stale Hafs/Warsh settings remain visible as the missing active choice until the user installs, retries, or switches; the page component must not render Qaloon pages behind that label. SVG asset failures stay inside the page component as retry/open-verse states; no error state silently loads another riwayah page.
 
 ### Surah header
 
@@ -225,7 +231,7 @@ Last-read position + sticky-page state. Single global record; updated on every s
 
 Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `tafsirId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `surahHeaderHidden`, `currentPosition`, `lastSurface`, `wirdPlan`. (See `configure` dossier for `settings` store body.)
 
-Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count, SVG asset paths, first visible verse refs, and `verseToPage` mode-switch mapping. Verse mode reads `/dataset/manifest.json` before loading `riwayat/{riwayah}/{surah}.json` so missing optional Hafs/Warsh text packs surface as install prompts instead of fallback text.
+Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count, SVG asset paths, per-page `viewBox`, first visible verse refs, and `verseToPage` mode-switch mapping. The fetched page SVG is same-origin validated, parsed, descendant-sanitized, and serialized before inline rendering. Verse mode reads `/dataset/manifest.json` before loading `riwayat/{riwayah}/{surah}.json` so missing optional Hafs/Warsh text packs surface as install prompts instead of fallback text.
 
 ## Events
 
@@ -244,7 +250,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:158` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:104`, `src/read/MarginHeader.svelte:185` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:99` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:319` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -268,7 +274,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (25):**
+**Unit (27):**
 
 - `tests/unit/read/AmbientDock.test.ts`
 - `tests/unit/read/MarginHeader-toggle.test.ts`
@@ -282,6 +288,8 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 - `tests/unit/read/mushaf/mode-switch.test.ts`
 - `tests/unit/read/mushaf/navigation.test.ts`
 - `tests/unit/read/mushaf/reader.test.ts`
+- `tests/unit/read/mushaf/sizing.test.ts`
+- `tests/unit/read/mushaf/svg-page.test.ts`
 - `tests/unit/read/render-helpers.test.ts`
 - `tests/unit/read/scroll-tracker.test.ts`
 - `tests/unit/read/state-ambient.test.ts`

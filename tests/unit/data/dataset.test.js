@@ -25,6 +25,14 @@ function mockFetch(url) {
   }
 }
 
+function responseWithJson(body, status = 200) {
+  return Promise.resolve({
+    ok: status >= 200 && status < 300,
+    status,
+    json: () => Promise.resolve(body),
+  })
+}
+
 function mockFetchWithHtmlFallback(url) {
   const asString = String(url)
   if (asString.includes('/riwayat/hafs/')) {
@@ -90,6 +98,34 @@ describe('data/dataset', () => {
         code: 'RIWAYAH_PACK_UNAVAILABLE',
         riwayah: 'hafs',
       })
+      globalThis.fetch = mockFetch
+    })
+
+    it('does not trust legacy manifest membership when the optional package index fails', async () => {
+      mockedRiwayah = 'hafs'
+      const fetchMock = vi.fn(async (url) => {
+        const asString = String(url)
+        if (asString.includes('/indexes/riwayah-packages.json')) {
+          return { ok: false, status: 500 }
+        }
+        if (asString.endsWith('/manifest.json')) {
+          return responseWithJson({
+            version: 1,
+            profile: 'baseline',
+            files: [{ path: 'riwayat/hafs/001.json', lane: 'text', category: 'text-riwayah', bytes: 1 }],
+          })
+        }
+        return responseWithJson({ riwayah: 'hafs', sura_no: 1, ayat: [] })
+      })
+      globalThis.fetch = fetchMock
+      vi.resetModules()
+      const { getSurah } = await import('../../../src/data/dataset.ts')
+
+      await expect(getSurah(1)).rejects.toMatchObject({
+        code: 'RIWAYAH_PACK_UNAVAILABLE',
+        riwayah: 'hafs',
+      })
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/dataset/riwayat/hafs/'))).toBe(false)
       globalThis.fetch = mockFetch
     })
 

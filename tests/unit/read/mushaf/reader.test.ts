@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/svelte'
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { mount, unmount } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -65,8 +65,11 @@ function makeResolvedPage(riwayah: string, page: number) {
   return {
     page: safePage,
     pageCount: 604,
+    riwayahLabel: riwayah === 'qaloon' ? 'Qālūn ʿan Nāfiʿ' : riwayah,
     assetPath: `pages/${pad3(safePage)}.svg`,
     assetUrl: `/dataset/mushaf-pages/${riwayah}/pages/${pad3(safePage)}.svg`,
+    viewBox: { minX: 0, minY: 0, width: 900, height: 1379.25 },
+    viewBoxText: '0 0 900 1379.25',
     bytes: 1,
     firstVerse: { surah: safePage === 604 ? 114 : 2, verse: safePage === 604 ? 1 : 255 },
     sourcePdfUrl: `https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-${safePage}.pdf`,
@@ -87,11 +90,25 @@ async function flush(): Promise<void> {
   for (let i = 0; i < 5; i += 1) await Promise.resolve()
 }
 
+function pageSvg(viewBox = '0 0 900 1379.25'): string {
+  return `<svg viewBox="${viewBox}"><path d="M0 0" fill="var(--qa-mushaf-ink)"/></svg>`
+}
+
+function responseText(body: string, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    text: async () => body,
+  } as Response
+}
+
 describe('MushafReader', () => {
   beforeEach(async () => {
     document.body.innerHTML = '<main id="main-content"></main>'
     window.history.replaceState(null, '', '#/s/1')
+    vi.unstubAllGlobals()
     vi.clearAllMocks()
+    vi.stubGlobal('fetch', vi.fn(async () => responseText(pageSvg())))
 
     mushafMocks.resolveMushafPage.mockImplementation(async ({ riwayah, page }) => makeResolvedPage(riwayah, page))
     mushafMocks.loadMushafManifest.mockImplementation(async (riwayah: string) => ({
@@ -105,6 +122,7 @@ describe('MushafReader', () => {
         {
           page: 42,
           assetPath: 'pages/042.svg',
+          viewBox: '0 0 900 1379.25',
           bytes: 1,
           sourcePdfUrl: 'https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-42.pdf',
           firstVerse: { surah: 2, verse: 255 },
@@ -133,13 +151,14 @@ describe('MushafReader', () => {
     const view = render(MushafReader, { props: { page: '1' } })
 
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAttribute('src', expect.stringContaining('/pages/001.svg'))
+      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAttribute('data-page', '1')
     })
+    expect(document.querySelector('.qa-mushaf-page-img')).toBeNull()
 
     await view.rerender({ page: '2' })
 
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toHaveAttribute('src', expect.stringContaining('/pages/002.svg'))
+      expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toHaveAttribute('data-page', '2')
     })
   })
 
@@ -152,14 +171,14 @@ describe('MushafReader', () => {
     render(MushafReader, { props: { page: '1' } })
 
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAttribute('src', expect.stringContaining('/qaloon/pages/001.svg'))
+      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAccessibleName(/Qālūn/)
     })
 
     settings.riwayah = 'hafs'
     emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: 'qaloon', to: 'hafs' })
 
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAttribute('src', expect.stringContaining('/hafs/pages/001.svg'))
+      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAccessibleName(/hafs/)
     })
   })
 
@@ -198,12 +217,12 @@ describe('MushafReader', () => {
 
     router.navigate('#/m/1')
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAttribute('src', expect.stringContaining('/pages/001.svg'))
+      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAttribute('data-page', '1')
     })
 
     router.navigate('#/m/2')
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toHaveAttribute('src', expect.stringContaining('/pages/002.svg'))
+      expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toHaveAttribute('data-page', '2')
     })
 
     if (mounted) await unmount(mounted)
@@ -255,6 +274,86 @@ describe('MushafReader', () => {
     await flush()
 
     expect(navigateSpy).not.toHaveBeenCalledWith('#/m/604', { replace: true })
+  })
+
+  it('renders an asset error when the fetched inline SVG viewBox mismatches the manifest', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => responseText(pageSvg('0 0 100 100'))))
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '1' } })
+
+    await waitFor(() => {
+      expect(screen.getByText(/viewBox does not match/)).toBeInTheDocument()
+    })
+    expect(screen.queryByRole('img')).toBeNull()
+  })
+
+  it('uses inline SVG instead of img in the ready path', async () => {
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '1' } })
+
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toBeInTheDocument()
+    })
+    expect(document.querySelector('img')).toBeNull()
+    expect(document.querySelector('.qa-mushaf-svg')).not.toBeNull()
+    expect(document.querySelector('.qa-mushaf-svg path[tabindex]')).toBeNull()
+  })
+
+  it('maps overlay edge zones to physical Mushaf page actions', async () => {
+    const router = await import('../../../../src/core/router')
+    const navigateSpy = vi.spyOn(router, 'navigate')
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    const view = render(MushafReader, { props: { page: '1' } })
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: 'Return to previous Mushaf page' })).toBeDisabled()
+    await fireEvent.click(screen.getByRole('button', { name: 'Advance Mushaf page' }))
+    expect(navigateSpy).toHaveBeenCalledWith('#/m/2')
+
+    await view.rerender({ page: '2' })
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toBeInTheDocument())
+    await fireEvent.click(screen.getByRole('button', { name: 'Return to previous Mushaf page' }))
+    expect(navigateSpy).toHaveBeenCalledWith('#/m/1')
+  })
+
+  it('opens, clamps, commits, cancels, and restores focus for the page chip', async () => {
+    const router = await import('../../../../src/core/router')
+    const navigateSpy = vi.spyOn(router, 'navigate')
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '2' } })
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toBeInTheDocument())
+
+    const chip = screen.getByRole('button', { name: /Jump from Mushaf page 2/ })
+    await fireEvent.keyDown(chip, { key: 'Enter' })
+    const input = screen.getByRole('spinbutton', { name: 'Mushaf page number' })
+    await fireEvent.input(input, { target: { value: '999' } })
+    await fireEvent.keyDown(input, { key: 'Enter' })
+    expect(navigateSpy).toHaveBeenCalledWith('#/m/604')
+
+    await fireEvent.click(chip)
+    expect(screen.queryByRole('button', { name: 'Advance Mushaf page' })).toBeNull()
+    const cancelInput = screen.getByRole('spinbutton', { name: 'Mushaf page number' })
+    await fireEvent.keyDown(cancelInput, { key: 'Escape' })
+    await waitFor(() => expect(document.activeElement).toBe(chip))
+  })
+
+  it('maps ArrowLeft and ArrowRight to physical Mushaf actions', async () => {
+    const router = await import('../../../../src/core/router')
+    const navigateSpy = vi.spyOn(router, 'navigate')
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    const view = render(MushafReader, { props: { page: '1' } })
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toBeInTheDocument())
+    await fireEvent.keyDown(document, { key: 'ArrowLeft' })
+    expect(navigateSpy).toHaveBeenCalledWith('#/m/2')
+
+    await view.rerender({ page: '2' })
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toBeInTheDocument())
+    await fireEvent.keyDown(document, { key: 'ArrowRight' })
+    expect(navigateSpy).toHaveBeenCalledWith('#/m/1')
   })
 })
 

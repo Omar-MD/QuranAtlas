@@ -2,6 +2,8 @@ import type { MushafManifest, QuranRef } from './types'
 
 export const MIN_MUSHAF_PAGE = 1
 
+export type MushafPhysicalAction = 'towardEnd' | 'towardStart'
+
 export function parseMushafPageParam(raw: unknown): number | null {
   if (typeof raw === 'number') {
     return Number.isInteger(raw) && raw >= MIN_MUSHAF_PAGE ? raw : null
@@ -21,6 +23,32 @@ export function clampMushafPage(page: number, pageCount: number): number {
   }
   if (!Number.isInteger(page)) return MIN_MUSHAF_PAGE
   return Math.min(pageCount, Math.max(MIN_MUSHAF_PAGE, page))
+}
+
+export function deltaForMushafAction(action: MushafPhysicalAction): 1 | -1 {
+  return action === 'towardEnd' ? 1 : -1
+}
+
+export function pageForMushafAction(
+  page: number,
+  pageCount: number,
+  action: MushafPhysicalAction,
+): number {
+  return clampMushafPage(page + deltaForMushafAction(action), pageCount)
+}
+
+export function actionForMushafSwipe(deltaX: number): MushafPhysicalAction | null {
+  if (deltaX < 0) return 'towardEnd'
+  if (deltaX > 0) return 'towardStart'
+  return null
+}
+
+export function actionForMushafKey(key: string): MushafPhysicalAction | 'first' | 'last' | null {
+  if (key === 'ArrowLeft') return 'towardEnd'
+  if (key === 'ArrowRight') return 'towardStart'
+  if (key === 'Home') return 'first'
+  if (key === 'End') return 'last'
+  return null
 }
 
 export function pageHref(page: number): string {

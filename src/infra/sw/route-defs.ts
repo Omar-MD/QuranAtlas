@@ -7,7 +7,7 @@
  * pre-N21 ad-hoc registerRoute calls inline in sw.js.
  */
 
-import { CACHE_DATASET } from '../../core/constants'
+import { CACHE_DATASET, DATASET_RIWAYAH_PACKAGES_PATH } from '../../core/constants'
 
 export type Category = 'text' | 'audio' | 'pages' | 'search'
 export type TextCategory =
@@ -94,6 +94,7 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     match: ({ url }) =>
       url.pathname === '/dataset/indexes/sources.json' ||
       url.pathname === '/dataset/indexes/source-assets.json' ||
+      url.pathname === DATASET_RIWAYAH_PACKAGES_PATH ||
       url.pathname === '/dataset/provenance.json' ||
       url.pathname === '/dataset/manifest.json',
     strategy: 'NetworkFirst',

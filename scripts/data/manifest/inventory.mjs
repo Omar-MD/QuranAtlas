@@ -21,7 +21,7 @@ function classifyDatasetFile(path) {
   if (path === 'surahs.json' || path === 'juz.json') {
     return { lane: 'text', category: 'text-core' }
   }
-  if (path === 'indexes/sources.json' || path === 'provenance.json') {
+  if (path === 'indexes/sources.json' || path === 'indexes/riwayah-packages.json' || path === 'provenance.json') {
     return { lane: 'text', category: 'text-index' }
   }
   if (path === 'indexes/source-assets.json') {

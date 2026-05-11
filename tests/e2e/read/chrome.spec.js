@@ -23,10 +23,67 @@
 import { test, expect } from '@playwright/test'
 import { waitForReader, surfaceDock, openSettingsSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
+import { readSetting, writeSetting } from '../fixtures/idb.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
 // Reuse the onboarded snapshot to skip per-test cold-boot setup.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
+
+async function mushafLayoutMetrics(page) {
+  return page.evaluate(() => {
+    const main = document.getElementById('main-content')
+    const figure = document.querySelector('.qa-mushaf-page-figure')
+    const svg = document.querySelector('.qa-mushaf-svg')
+    const controls = document.querySelector('.qa-mushaf-controls')
+    if (!main || !figure || !svg || !controls) return null
+
+    const mainRect = main.getBoundingClientRect()
+    const figureRect = figure.getBoundingClientRect()
+    const header = document.querySelector('.qa-mh')?.getBoundingClientRect()
+    const headerOverlap = header && header.bottom > mainRect.top && header.top < mainRect.bottom && window.innerWidth < 1180
+      ? Math.max(0, Math.min(header.bottom, mainRect.bottom) - mainRect.top)
+      : 0
+    const viewBox = svg.getAttribute('viewBox')?.trim().split(/\s+/).map(Number) ?? []
+    const margin = 12
+    const available = {
+      width: Math.max(0, mainRect.width - margin * 2),
+      height: Math.max(0, mainRect.height - headerOverlap - margin * 2),
+    }
+    const scale = Math.min(available.width / viewBox[2], available.height / viewBox[3])
+    const expectedWidth = viewBox[2] * scale
+    const expectedHeight = viewBox[3] * scale
+    const expected = {
+      width: expectedWidth,
+      height: expectedHeight,
+      x: mainRect.left + margin + ((available.width - expectedWidth) / 2),
+      y: mainRect.top + headerOverlap + margin + ((available.height - expectedHeight) / 2),
+    }
+    const ancestorFrames = []
+    let node = figure
+    while (node && node !== document.body) {
+      const style = getComputedStyle(node)
+      ancestorFrames.push({
+        boxShadow: style.boxShadow,
+        borderTopWidth: style.borderTopWidth,
+      })
+      if (node.classList?.contains('qa-mushaf-reader')) break
+      node = node.parentElement
+    }
+    return {
+      actual: {
+        width: figureRect.width,
+        height: figureRect.height,
+        x: figureRect.left,
+        y: figureRect.top,
+        bottom: figureRect.bottom,
+      },
+      expected,
+      mainBottom: mainRect.bottom,
+      controlsPosition: getComputedStyle(controls).position,
+      ancestorFrames,
+    }
+  })
+}
 
 test.describe('Journey B: Reader & ambient chrome', () => {
   test.beforeEach(async ({ page }) => {
@@ -198,6 +255,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await verse.locator('.qa-verse-body-summary').click()
 
     await expect(verse.locator('.qa-verse-translation')).toHaveText(/.+/)
+    await expect(verse.locator('.qa-verse-knowledge')).toBeVisible({ timeout: 10_000 })
     await expect(verse.locator('.qa-verse-themes')).toContainText('tawhid')
     await expect(verse.locator('.qa-verse-context')).toContainText(
       "Allah's oneness, authority, and all-encompassing knowledge"
@@ -360,7 +418,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await waitForReader(page)
     await page.locator('.qa-rail-item[data-tab="mushaf"]').click()
     await expect(page).toHaveURL(/#\/m\/\d+$/)
-    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
     await expect(page.locator('.qa-rail-item[data-tab="mushaf"]')).toHaveClass(/qa-rail-item--active/)
 
     await page.locator('.qa-rail-item[data-tab="verse"]').click()
@@ -370,22 +428,30 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
   test('B-Mushaf: page controls update hash and boundaries hold', async ({ page }) => {
     await page.goto('/#/m/1')
-    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Previous page' })).toBeDisabled()
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: 'Return to previous Mushaf page' })).toBeDisabled()
+    await expect(page.locator('.qa-mushaf-scrubber')).toHaveCount(0)
 
-    await page.getByRole('button', { name: 'Next page' }).click()
+    await page.getByRole('button', { name: 'Advance Mushaf page' }).click()
     await expect(page).toHaveURL(/#\/m\/2$/)
 
-    await page.locator('.qa-mushaf-scrubber').evaluate((el) => {
-      el.value = '42'
-      el.dispatchEvent(new Event('change', { bubbles: true }))
-    })
+    await page.getByRole('button', { name: /Jump from Mushaf page 2/ }).click()
+    await page.getByRole('spinbutton', { name: 'Mushaf page number' }).fill('42')
+    await page.getByRole('spinbutton', { name: 'Mushaf page number' }).press('Enter')
+    await expect(page).toHaveURL(/#\/m\/42$/)
+    await expect(page.locator('.qa-mushaf-page-figure[data-page="42"]')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('spinbutton', { name: 'Mushaf page number' })).toHaveCount(0)
+
+    await page.keyboard.press('ArrowLeft')
+    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page.locator('.qa-mushaf-page-figure[data-page="43"]')).toBeVisible({ timeout: 10_000 })
+    await page.keyboard.press('ArrowRight')
     await expect(page).toHaveURL(/#\/m\/42$/)
   })
 
   test('B-Mushaf: invalid page route clamps to the manifest boundary', async ({ page }) => {
     await page.goto('/#/m/999')
-    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
     await expect(page).toHaveURL(/#\/m\/604$/)
   })
 
@@ -393,15 +459,48 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(!isDesktop, 'desktop settings prompt check')
 
-    await page.goto('/#/settings')
-    await page.locator('.qa-settings-src-row').filter({ hasText: 'Recitation' }).click()
-    await page.locator('.qa-settings-pop-row').filter({ hasText: 'Ḥafṣ' }).click()
-    await page.locator('.qa-settings-close').click()
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0)
-
+    await writeSetting(page, 'riwayah', 'hafs')
+    await page.reload()
     await page.goto('/#/m/42')
     await expect(page.getByRole('button', { name: 'Install text and pages' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.qa-mushaf-page-img')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Stay on current usable riwayah' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+    await expect(page.locator('.qa-mushaf-page-figure')).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Stay on current usable riwayah' }).click()
+    await expect.poll(() => readSetting(page, 'riwayah')).toBe('qaloon')
+  })
+
+  test('B-Mushaf: measured page layout is unframed across mobile and desktop viewports', async ({ page }) => {
+    for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 1000 }]) {
+      await page.setViewportSize(viewport)
+      await expect.poll(() => page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }))).toEqual(viewport)
+      await page.goto('/#/m/1')
+      await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
+
+      await expect.poll(async () => {
+        const metrics = await mushafLayoutMetrics(page)
+        if (!metrics) return Number.POSITIVE_INFINITY
+        return Math.max(
+          Math.abs(metrics.actual.width - metrics.expected.width),
+          Math.abs(metrics.actual.height - metrics.expected.height),
+          Math.abs(metrics.actual.x - metrics.expected.x),
+          Math.abs(metrics.actual.y - metrics.expected.y),
+        )
+      }).toBeLessThanOrEqual(2)
+
+      const metrics = await mushafLayoutMetrics(page)
+      expect(metrics).not.toBeNull()
+      expect(metrics.actual.bottom).toBeGreaterThan(metrics.mainBottom - 220)
+      expect(metrics.controlsPosition).toBe('absolute')
+      if (metrics.expected.width > 760) {
+        expect(metrics.actual.width).toBeGreaterThan(760)
+      }
+      for (const frame of metrics.ancestorFrames) {
+        expect(frame.boxShadow).toBe('none')
+        expect(Number.parseFloat(frame.borderTopWidth)).toBe(0)
+      }
+    }
   })
 
   test('B-Mushaf: mobile page fits below the margin header without overlap @mobile', async ({ page }, testInfo) => {
@@ -409,32 +508,83 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     test.skip(isDesktop, 'mobile header overlap check')
 
     await page.goto('/#/m/42')
-    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
 
     const metrics = await page.evaluate(() => {
       const header = document.querySelector('.qa-mh')?.getBoundingClientRect()
-      const image = document.querySelector('.qa-mushaf-page-img')?.getBoundingClientRect()
-      const controls = document.querySelector('.qa-mushaf-controls')?.getBoundingClientRect()
-      if (!header || !image || !controls) {
+      const figure = document.querySelector('.qa-mushaf-page-figure')?.getBoundingClientRect()
+      const chip = document.querySelector('.qa-mushaf-page-chip')?.getBoundingClientRect()
+      if (!header || !figure || !chip) {
         return null
       }
       return {
         headerBottom: header.bottom,
-        imageTop: image.top,
-        imageBottom: image.bottom,
-        controlsTop: controls.top,
-        controlsBottom: controls.bottom,
+        figureTop: figure.top,
+        figureBottom: figure.bottom,
+        chipTop: chip.top,
+        chipBottom: chip.bottom,
         viewportHeight: window.innerHeight,
         bodyOverflow: document.documentElement.scrollWidth > window.innerWidth,
       }
     })
     expect(metrics).not.toBeNull()
-    expect(metrics.imageTop).toBeGreaterThanOrEqual(metrics.headerBottom - 1)
-    expect(metrics.controlsTop).toBeGreaterThanOrEqual(metrics.imageBottom - 1)
-    expect(metrics.controlsBottom).toBeLessThanOrEqual(metrics.viewportHeight)
+    expect(metrics.figureTop).toBeGreaterThanOrEqual(metrics.headerBottom - 1)
+    expect(metrics.chipBottom).toBeLessThanOrEqual(metrics.viewportHeight)
     expect(metrics.bodyOverflow).toBe(false)
 
     await page.screenshot({ path: testInfo.outputPath('mushaf-mobile-page.png'), fullPage: true })
+  })
+
+  test('B-Mushaf: inline SVG themes and controls stay accessible @a11y', async ({ page }, testInfo) => {
+    await page.goto('/#/m/2')
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-mushaf-page-img')).toHaveCount(0)
+
+    const tokenSamples = []
+    for (const theme of ['light', 'sepia', 'dark']) {
+      await page.evaluate((nextTheme) => {
+        document.documentElement.setAttribute('data-theme', nextTheme)
+      }, theme)
+      await page.screenshot({ path: testInfo.outputPath(`mushaf-${theme}.png`), fullPage: true })
+      tokenSamples.push(await page.evaluate(() => {
+        const root = getComputedStyle(document.documentElement)
+        const svg = document.querySelector('.qa-mushaf-svg')
+        const svgStyle = svg ? getComputedStyle(svg) : null
+        return {
+          ground: root.getPropertyValue('--qa-mushaf-ground').trim(),
+          ink: root.getPropertyValue('--qa-mushaf-ink').trim(),
+          ornament: root.getPropertyValue('--qa-mushaf-ornament').trim(),
+          accent: root.getPropertyValue('--qa-mushaf-accent').trim(),
+          filter: svgStyle?.filter,
+          imageRendering: svgStyle?.imageRendering,
+        }
+      }))
+    }
+
+    expect(new Set(tokenSamples.map(sample => sample.ground)).size).toBe(3)
+    expect(new Set(tokenSamples.map(sample => sample.ink)).size).toBe(3)
+    expect(new Set(tokenSamples.map(sample => sample.ornament)).size).toBe(3)
+    for (const sample of tokenSamples) {
+      expect(sample.filter).toBe('none')
+      expect(sample.imageRendering).not.toBe('pixelated')
+    }
+
+    const violations = await scanA11y(page)
+    expect(violations).toEqual([])
+
+    const labels = []
+    for (let i = 0; i < 12; i += 1) {
+      await page.keyboard.press('Tab')
+      labels.push(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? ''))
+    }
+    expect(labels).toContain('Advance Mushaf page')
+    expect(labels).toContain('Return to previous Mushaf page')
+    expect(labels.some(label => label.startsWith('Jump from Mushaf page'))).toBe(true)
+
+    await page.getByRole('button', { name: /Jump from Mushaf page/ }).press('Enter')
+    await expect(page.getByRole('spinbutton', { name: 'Mushaf page number' })).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('button', { name: /Jump from Mushaf page/ })).toBeFocused()
   })
 
   // -------------------------------------------------------------------------

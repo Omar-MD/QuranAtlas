@@ -335,7 +335,7 @@ test.describe('Journey F: Navigation', () => {
 
     await page.getByTestId('reader-mode-mushaf').click()
     await expect(page).toHaveURL(/#\/m\/\d+$/)
-    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
 
     await openNavDrawer(page)
     await expect(page.getByTestId('mushaf-drawer-page')).toContainText(/Page/)

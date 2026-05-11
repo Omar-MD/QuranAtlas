@@ -21,11 +21,15 @@
     getPageAssetManifest,
     getSourceAssetManifest,
     getStorageBudget,
+    planRiwayahPackageInstall,
+    refreshRiwayahPackageStatus,
     removeCategoryDownload,
     removePageAssetDownload,
+    removeRiwayahPackage,
     removeSourceAssetDownload,
     startCategoryDownload,
     startPageAssetDownload,
+    startRiwayahPackageInstall,
     startSourceAssetDownload,
   } from '../../data/offline-client.ts'
   import { getTafsirs, getTranslations } from '../../data/dataset.ts'
@@ -45,6 +49,15 @@
     label: string
     bytes: number
     available: boolean
+  }
+  type PackageOption = {
+    id: Riwayah
+    label: string
+    bytes: number
+    status: string
+    unavailable: boolean
+    removable: boolean
+    installable: boolean
   }
 
   type Row = {
@@ -67,17 +80,24 @@
     { id: 'hafs', label: 'Ḥafṣ pages' },
     { id: 'warsh', label: 'Warsh pages' },
   ]
+  const RIWAYAH_PACKAGES: Array<{ id: Riwayah; label: string }> = [
+    { id: 'qaloon', label: 'Qālūn package' },
+    { id: 'hafs', label: 'Ḥafṣ package' },
+    { id: 'warsh', label: 'Warsh package' },
+  ]
 
   let open = $state(false)
   let bytesByCat = $state<Record<Category, number>>({ text: 0, audio: 0, pages: 0, search: 0 })
   let availableByCat = $state<Record<Category, boolean>>({ text: false, audio: false, pages: false, search: false })
   let textSources = $state<SourceOption[]>([])
   let pagePacks = $state<PagePackOption[]>([])
+  let riwayahPackages = $state<PackageOption[]>([])
   let pending = $state<OfflineCategoriesState>(
     structuredClone($state.snapshot(settings.offlineCategories ?? DEFAULT_OFFLINE_CATEGORIES))
   )
   let storageBudget = $state<{ usage: number; quota: number; available: number } | null>(null)
   let busy  = $state(false)
+  let packageBusy = $state<Riwayah | null>(null)
   let saved = $state(false)
   let errorMsg = $state<string | null>(null)
 
@@ -240,6 +260,25 @@
     availableByCat.pages = next.some((pack) => pack.available)
   }
 
+  async function refreshRiwayahPackages(): Promise<void> {
+    const next: PackageOption[] = []
+    for (const pack of RIWAYAH_PACKAGES) {
+      const [status, plan] = await Promise.all([
+        refreshRiwayahPackageStatus(pack.id).catch(() => ({ kind: 'unavailable' as const, riwayah: pack.id })),
+        planRiwayahPackageInstall(pack.id).catch(() => ({ urls: [], totalBytes: 0 })),
+      ])
+      next.push({
+        ...pack,
+        bytes: plan.totalBytes,
+        status: status.kind,
+        unavailable: status.kind === 'unavailable',
+        removable: pack.id !== 'qaloon' && status.kind === 'installed',
+        installable: status.kind === 'installable' || status.kind === 'error',
+      })
+    }
+    riwayahPackages = next
+  }
+
   async function refreshTextSources(): Promise<void> {
     const [translations, tafsirs] = await Promise.all([
       getTranslations().catch(() => []),
@@ -276,9 +315,41 @@
   onMount(() => {
     refreshBytes()
     refreshPagePacks()
+    refreshRiwayahPackages()
     refreshTextSources()
     refreshBudget()
   })
+
+  async function handlePackageInstall(riwayah: Riwayah): Promise<void> {
+    if (packageBusy) return
+    errorMsg = null
+    packageBusy = riwayah
+    try {
+      const ok = await startRiwayahPackageInstall(riwayah)
+      if (!ok) errorMsg = `Could not install ${riwayah} package.`
+      await refreshRiwayahPackages()
+      await refreshBudget()
+    } catch (error) {
+      errorMsg = (error as Error).message ?? 'Failed to install package'
+    } finally {
+      packageBusy = null
+    }
+  }
+
+  async function handlePackageRemove(riwayah: Riwayah): Promise<void> {
+    if (packageBusy) return
+    errorMsg = null
+    packageBusy = riwayah
+    try {
+      await removeRiwayahPackage(riwayah)
+      await refreshRiwayahPackages()
+      await refreshBudget()
+    } catch (error) {
+      errorMsg = (error as Error).message ?? 'Failed to remove package'
+    } finally {
+      packageBusy = null
+    }
+  }
 
   async function handleApply(): Promise<void> {
     if (!hasDiff || busy) return
@@ -403,6 +474,41 @@
           </li>
         {/each}
       </ul>
+
+      {#if riwayahPackages.length > 0}
+        <div class="qa-storage-source-list" data-testid="storage-package-list">
+          {#each riwayahPackages as pack (pack.id)}
+            <div class="qa-storage-source-row" data-testid="storage-package-{pack.id}">
+              <span class="qa-storage-source-main">
+                <span class="qa-storage-source-kind">Riwayah</span>
+                <span class="qa-storage-source-name">{pack.label}</span>
+              </span>
+              <span class="qa-storage-row-size">
+                {pack.unavailable ? 'Unavailable' : fmt(pack.bytes)}
+              </span>
+              {#if pack.installable}
+                <button
+                  type="button"
+                  class="qa-storage-apply qa-storage-apply--inline"
+                  disabled={packageBusy !== null}
+                  onclick={() => handlePackageInstall(pack.id)}
+                  data-testid="storage-package-install-{pack.id}"
+                >{packageBusy === pack.id ? 'Installing…' : 'Install'}</button>
+              {:else if pack.removable}
+                <button
+                  type="button"
+                  class="qa-storage-apply qa-storage-apply--inline"
+                  disabled={packageBusy !== null}
+                  onclick={() => handlePackageRemove(pack.id)}
+                  data-testid="storage-package-remove-{pack.id}"
+                >{packageBusy === pack.id ? 'Removing…' : 'Remove'}</button>
+              {:else}
+                <span class="qa-storage-row-gated">{pack.status === 'installed' ? 'Installed' : 'Unavailable'}</span>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
 
       {#if pagePacks.length > 0}
         <div class="qa-storage-source-list" data-testid="storage-page-list">

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  actionForMushafKey,
+  actionForMushafSwipe,
   clampMushafPage,
+  deltaForMushafAction,
   firstVerseForPage,
+  pageForMushafAction,
   pageFromAyahRecord,
   pageHref,
   parseMushafPageParam,
@@ -26,6 +30,7 @@ const manifest: MushafManifest = {
     {
       page: 1,
       assetPath: 'pages/001.svg',
+      viewBox: '0 0 900 1379.25',
       bytes: 1000,
       sourcePdfUrl: 'https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-1.pdf',
       firstVerse: { surah: 1, verse: 1 },
@@ -33,6 +38,7 @@ const manifest: MushafManifest = {
     {
       page: 2,
       assetPath: 'pages/002.svg',
+      viewBox: '0 0 900 1379.25',
       bytes: 1200,
       sourcePdfUrl: 'https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-2.pdf',
       firstVerse: { surah: 2, verse: 255 },
@@ -81,5 +87,31 @@ describe('mushaf navigation helpers', () => {
     expect(ref).toEqual({ surah: 2, verse: 255 })
     expect(ref).not.toBe(manifest.pages[1]?.firstVerse)
     expect(() => firstVerseForPage(manifest, 604)).toThrow(/manifest has no page 604/i)
+  })
+
+  it('maps physical swipe direction to Mushaf actions', () => {
+    expect(actionForMushafSwipe(-12)).toBe('towardEnd')
+    expect(actionForMushafSwipe(12)).toBe('towardStart')
+    expect(actionForMushafSwipe(0)).toBeNull()
+  })
+
+  it('represents physical edge tap semantics through Mushaf action deltas', () => {
+    expect(deltaForMushafAction('towardEnd')).toBe(1)
+    expect(deltaForMushafAction('towardStart')).toBe(-1)
+    expect(pageForMushafAction(10, 604, 'towardEnd')).toBe(11)
+    expect(pageForMushafAction(10, 604, 'towardStart')).toBe(9)
+  })
+
+  it('maps physical keyboard direction to Mushaf actions', () => {
+    expect(actionForMushafKey('ArrowLeft')).toBe('towardEnd')
+    expect(actionForMushafKey('ArrowRight')).toBe('towardStart')
+    expect(actionForMushafKey('Home')).toBe('first')
+    expect(actionForMushafKey('End')).toBe('last')
+    expect(actionForMushafKey('ArrowUp')).toBeNull()
+  })
+
+  it('clamps physical page actions to Mushaf bounds', () => {
+    expect(pageForMushafAction(1, 604, 'towardStart')).toBe(1)
+    expect(pageForMushafAction(604, 604, 'towardEnd')).toBe(604)
   })
 })

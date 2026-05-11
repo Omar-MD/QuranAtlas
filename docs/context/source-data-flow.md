@@ -4,14 +4,15 @@
 
 ## Pipeline
 
-The pipeline has six stages:
+The pipeline has seven stages:
 
 1. `data/catalog/*.json` declares what sources exist, where they come from, which are default, which are optional, and how they must be fetched and validated.
 2. `scripts/data/sources/fetch.mjs` converts upstream payloads into committed normalized source files under `data/normalized/**`, using provider adapters under `scripts/data/sources/providers/`. Mushaf page assets are the exception: `scripts/data/mushaf-pages/import.mjs` optionally downloads quran.ws PDFs into `.scratch/` and converts them to generated local SVG inputs under `data/normalized/mushaf-pages/**`.
 3. `scripts/data/text/build.mjs` validates normalized text sources and emits the reader corpus under `public/dataset/**`.
 4. `scripts/data/knowledge/build.mjs` validates curated Knowledge Lane sources and emits knowledge artifacts under `public/dataset/knowledge/**`.
 5. `scripts/data/mushaf-pages/build.mjs` validates available generated SVG page packs and emits `public/dataset/mushaf-pages/**` plus per-riwayah page manifests.
-6. `scripts/data/manifest/inventory.mjs`, `src/data/dataset.ts`, `src/data/knowledge-dataset.ts`, the service worker, and offline settings consume only `/dataset/**` at runtime, with `manifest.json` carrying lane summaries plus per-file inventory entries.
+6. `scripts/data/riwayah-packages/build.mjs` summarizes same-origin text/page package availability into `public/dataset/indexes/riwayah-packages.json`.
+7. `scripts/data/manifest/inventory.mjs`, `src/data/dataset.ts`, `src/data/knowledge-dataset.ts`, the service worker, and offline settings consume only `/dataset/**` at runtime, with `manifest.json` carrying lane summaries plus per-file inventory entries.
 
 Important boundary: `data/catalog/**`, `data/normalized/**`, and `data/taxonomy/**` are build-only. The app never reads them directly.
 The browser never fetches quran.ws; quran.ws is used only by the optional import tool.
@@ -33,6 +34,7 @@ flowchart TD
         TranslationSources["data/catalog/translation-sources.json"]
         TafsirSources["data/catalog/tafsir-sources.json"]
         MushafPageCatalog["data/catalog/mushaf-pages.json"]
+        RiwayahPackageCatalog["data/catalog/riwayah-packages.json"]
         CatalogValidator["scripts/data/sources/catalog.mjs"]
     end
 
@@ -53,9 +55,11 @@ flowchart TD
         TextBuild["scripts/data/text/build.mjs"]
         KnowledgeBuild["scripts/data/knowledge/build.mjs"]
         MushafPageBuild["scripts/data/mushaf-pages/build.mjs"]
+        RiwayahPackageBuild["scripts/data/riwayah-packages/build.mjs"]
         ManifestBuild["scripts/data/manifest/inventory.mjs"]
         SourcesIndex["public/dataset/indexes/sources.json"]
         SourceAssets["public/dataset/indexes/source-assets.json"]
+        RiwayahPackages["public/dataset/indexes/riwayah-packages.json"]
         Surahs["public/dataset/surahs.json"]
         Juz["public/dataset/juz.json"]
         RiwayahOut["public/dataset/riwayat/{riwayah}/{NNN}.json"]
@@ -85,6 +89,7 @@ flowchart TD
     TranslationSources --> CatalogValidator
     TafsirSources --> CatalogValidator
     MushafPageCatalog --> MushafPageBuild
+    RiwayahPackageCatalog --> RiwayahPackageBuild
 
     QDB --> Fetcher
     QUL --> Fetcher
@@ -119,8 +124,12 @@ flowchart TD
     KnowledgeBuild --> KnowledgePassagesOut
     KnowledgeBuild --> KnowledgeIndexesOut
     MushafPageBuild --> MushafPageOut
+    TextBuild --> RiwayahPackageBuild
+    MushafPageBuild --> RiwayahPackageBuild
+    RiwayahPackageBuild --> RiwayahPackages
     SourcesIndex --> ManifestBuild
     SourceAssets --> ManifestBuild
+    RiwayahPackages --> ManifestBuild
     Surahs --> ManifestBuild
     Juz --> ManifestBuild
     RiwayahOut --> ManifestBuild
@@ -135,6 +144,8 @@ flowchart TD
 
     SourcesIndex --> DatasetApi
     SourceAssets --> Offline
+    RiwayahPackages --> DatasetApi
+    RiwayahPackages --> Offline
     Surahs --> DatasetApi
     Juz --> DatasetApi
     RiwayahOut --> DatasetApi
@@ -152,6 +163,7 @@ flowchart TD
     Manifest --> Offline
     MushafPageOut --> SW
     SourcesIndex --> Offline
+    RiwayahPackages --> SW
     Manifest --> SW
 ```
 
@@ -164,6 +176,7 @@ flowchart TD
 - `verification-rules.json`: allowed license statuses, allowed visibility values, and default source ids.
 - `quran-sources.json`, `translation-sources.json`, `tafsir-sources.json`: individual source records.
 - `mushaf-pages.json`: quran.ws page-asset policy, page count, riwayah slug mapping, and source PDF URL patterns.
+- `riwayah-packages.json`: baseline/default riwayah policy for the generated package index; Qaloon is non-optional, Hafs and Warsh are optional.
 
 Each source record carries:
 
@@ -275,7 +288,7 @@ Mushaf page assets use quran.ws vector page PDFs as upstream release inputs. The
 
 `scripts/data/mushaf-pages/import.mjs` is an optional release/local tool. It downloads PDFs to `.scratch/mushaf-pages/pdfs/{riwayah}/` and converts each page with Poppler `pdftocairo` into `data/normalized/mushaf-pages/{riwayah}/pages/{NNN}.svg`. Those SVG inputs are generated artifacts and are gitignored by default.
 
-`scripts/data/mushaf-pages/build.mjs` does not fetch quran.ws. It validates any available local SVG pack before emitting same-origin runtime assets. Unsafe SVG content is rejected, including scripts, `foreignObject`, inline event handlers, CSS imports, CSS `url(...)`, and external, `data:`, or `javascript:` hrefs.
+`scripts/data/mushaf-pages/build.mjs` does not fetch quran.ws. It validates any available local SVG pack before emitting same-origin runtime assets. Unsafe SVG content is rejected, including scripts, `foreignObject`, inline event handlers, CSS imports, CSS `url(...)`, and external, `data:`, or `javascript:` hrefs. Emitted page SVGs are tokenized at build time by rewriting classified source `fill` and `stroke` colors to Mushaf CSS variables while preserving viewBox, path geometry, element order, IDs, same-document references, clipping, transforms, and opacity.
 
 ### Knowledge Lane sources
 
@@ -293,7 +306,7 @@ Validation and generation are handled by `scripts/data/knowledge/build.mjs`, whi
 
 ## Build Outputs
 
-`scripts/data/text/build.mjs` consumes only committed normalized files, so the standard text dataset build is offline. It emits selectable translation/tafsir pack files and writes `indexes/source-assets.json` with byte totals for source-level downloads. `scripts/data/mushaf-pages/build.mjs` consumes only generated local SVG page artifacts and skips absent packs in clean checkouts. `scripts/data/manifest/inventory.mjs` then inventories only the active profile's baseline/update files into `manifest.json`.
+`scripts/data/text/build.mjs` consumes only committed normalized files, so the standard text dataset build is offline. It emits selectable translation/tafsir pack files and writes `indexes/source-assets.json` with byte totals for source-level downloads. `scripts/data/mushaf-pages/build.mjs` consumes only generated local SVG page artifacts and skips absent packs in clean checkouts. `scripts/data/riwayah-packages/build.mjs` then writes `indexes/riwayah-packages.json` from the built text/page outputs and refreshes `manifest.json` so the package index is a manifest member.
 
 Profiles:
 
@@ -319,6 +332,7 @@ Generated runtime files:
 - `public/dataset/juz.json`
 - `public/dataset/indexes/sources.json`
 - `public/dataset/indexes/source-assets.json`
+- `public/dataset/indexes/riwayah-packages.json`
 - `public/dataset/provenance.json`
 - `public/dataset/manifest.json`
 
@@ -342,7 +356,7 @@ Validation performed during build:
 - translation footnote markers and footnote maps are internally consistent
 - tafsir entries have valid ayah keys and preserve grouped ranges
 - `_verse-map.json` and `_verse-aliases.json` remain aligned with the riwayah corpus
-- Mushaf page packs contain every page `001.svg` through `604.svg`, have a first-verse mapping for every page, map spanning ayat to their start page for verse-to-page navigation, and contain only safe same-origin SVG content
+- Mushaf page packs contain every page `001.svg` through `604.svg`, have a first-verse mapping and viewBox for every page, map spanning ayat to their start page for verse-to-page navigation, and contain only safe same-origin tokenized SVG content
 
 ## Runtime Consumption
 
@@ -366,15 +380,17 @@ Validation performed during build:
 - `getThemesForAyah(key)`: returns zero-or-more theme rows
 - `getPassageForAyah(key)`: resolves the approved passage or `null`
 
-Fallback behavior is source-aware:
+Fallback and package behavior is source-aware:
 
-- missing saved riwayah falls back to `qaloon`
+- missing or unusable active Hafs/Warsh text throws a promptable riwayah package error; it does not fall back to Qaloon
 - missing saved translation falls back to `bridges` only when its same-origin pack fetch fails
 - missing saved tafsir falls back to `muyassar` only when its same-origin pack fetch fails
 - missing knowledge files resolve to `null` / empty rows without breaking reader rendering
 - missing Mushaf page packs are a pack-availability state for the read surface, not a fallback to quran.ws
 
 `indexes/sources.json` may list optional sources whose bodies are absent from `manifest.json`. That is intentional. Optional body files can still be present on the same origin and indexed by `indexes/source-assets.json`, which allows runtime discovery, byte pre-flight, on-demand caching, and removal without inflating the baseline manifest or first-load precache.
+
+`indexes/riwayah-packages.json` is the runtime package gate for recitation text plus Mushaf pages. It lists complete same-origin text URLs and page manifest/SVG URLs when a riwayah package is available. Qaloon is baseline-installed when those artifacts are present in the shipped dataset. Hafs and Warsh can be installable from the index but are usable only when cache verification finds every text URL in `CACHE_DATASET` and every page URL in `qa-pages-{riwayah}-v1`.
 
 ## Translation Alignment Across Riwayat
 
@@ -408,6 +424,7 @@ Offline caching and byte estimates are driven by the built dataset, not by norma
 
 - route definitions live in `src/infra/sw/route-defs.ts`
 - text routes are split into `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index`
+- `indexes/riwayah-packages.json` is a `text-index` route and is cached in `CACHE_DATASET`
 - page routes match `/dataset/mushaf-pages/{riwayah}/...`, cache with `CacheFirst`, and use per-riwayah cache names (`qa-pages-{riwayah}-v1`)
 - offline selector state stores source-aware text selections under `settings.offlineCategories.text.{riwayat,translations,tafsir}`
 

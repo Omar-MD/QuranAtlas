@@ -409,9 +409,10 @@ test.describe('Journey A: First run & session restore', () => {
     // Three radio cards: Ḥafṣ, Warsh, Qālūn
     await expect(page.locator('.qa-onb-r')).toHaveCount(3)
 
-    // Switch to Ḥafṣ
+    // Optional riwayat are not usable until their package is installed, so a
+    // fresh baseline onboarding flow keeps Qālūn selected.
     await page.locator('.qa-onb-r', { hasText: 'Ḥafṣ' }).click()
-    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Ḥafṣ')
+    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Qālūn')
 
     // Continue advances away from the Riwayah screen
     await page.locator('.qa-onb-cta--primary').click()

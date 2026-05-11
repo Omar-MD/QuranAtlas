@@ -22,10 +22,11 @@ globalThis.navigator.storage = {
 const cachedUrls = new Set()
 globalThis.caches.open = vi.fn().mockImplementation(async (name) => {
   if (!cacheStores.has(name)) {
+    const stored = new Map()
     cacheStores.set(name, {
-      match: vi.fn().mockResolvedValue(undefined),
-      put: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(true),
+      match: vi.fn().mockImplementation(async (url) => stored.get(url) ?? stored.get(String(url))),
+      put: vi.fn().mockImplementation(async (url, response) => { stored.set(url, response) }),
+      delete: vi.fn().mockImplementation(async (url) => stored.delete(url)),
       keys: vi.fn().mockResolvedValue([]),
       add: vi.fn().mockImplementation(async (url) => { cachedUrls.add(url) }),
       addAll: vi.fn(),
@@ -38,6 +39,58 @@ globalThis.caches.delete = vi.fn().mockResolvedValue(true)
 // Mock fetch for manifest inventory entries with per-file bytes so the
 // pre-flight quota path can sum category totals.
 globalThis.fetch = vi.fn().mockImplementation(async (url) => {
+  if (url.includes('riwayah-packages.json')) {
+    const response = {
+      ok: true,
+      json: async () => ({
+        version: 1,
+        defaultRiwayah: 'qaloon',
+        packages: [
+          {
+            riwayah: 'hafs',
+            optional: true,
+            available: true,
+            text: { urls: ['/dataset/riwayat/hafs/001.json'], totalBytes: 1500, available: true },
+            pages: {
+              manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+              urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
+              totalBytes: 80_300,
+              available: true,
+            },
+            totalBytes: 81_800,
+          },
+          {
+            riwayah: 'warsh',
+            optional: true,
+            available: true,
+            text: { urls: ['/dataset/riwayat/warsh/001.json'], totalBytes: 1400, available: true },
+            pages: {
+              manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json',
+              urls: ['/dataset/mushaf-pages/warsh/pages/001.svg'],
+              totalBytes: 82_350,
+              available: true,
+            },
+            totalBytes: 83_750,
+          },
+          {
+            riwayah: 'qaloon',
+            optional: false,
+            available: true,
+            text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 1400, available: true },
+            pages: {
+              manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
+              urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+              totalBytes: 80_300,
+              available: true,
+            },
+            totalBytes: 81_700,
+          },
+        ],
+      }),
+    }
+    response.clone = () => response
+    return response
+  }
   if (url.includes('source-assets.json')) {
     const response = {
       ok: true,
@@ -81,6 +134,7 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
           { path: 'riwayat/hafs/001.json', lane: 'text', category: 'text-riwayah', bytes: 1500 },
           { path: 'riwayat/hafs/002.json', lane: 'text', category: 'text-riwayah', bytes: 1400 },
           { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 800 },
+          { path: 'indexes/riwayah-packages.json', lane: 'text', category: 'text-index', bytes: 250 },
           { path: 'knowledge/ayah/001.json', lane: 'knowledge', category: 'knowledge-ayah', bytes: 900 },
           { path: 'knowledge/passages/001.json', lane: 'knowledge', category: 'knowledge-passages', bytes: 600 },
           { path: 'mushaf-pages/qaloon/manifest.json', lane: 'pages', category: 'pages', bytes: 300 },
@@ -99,7 +153,12 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
   return response
 })
 
-import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../src/configure/state.svelte.ts'
+import {
+  settings,
+  riwayahInstallIntent,
+  riwayahPackageState,
+  DEFAULT_OFFLINE_CATEGORIES,
+} from '../../../src/configure/state.svelte.ts'
 
 describe('data/offline.js', () => {
   beforeEach(async () => {
@@ -113,6 +172,15 @@ describe('data/offline.js', () => {
     // N21: cached/none distinction now lives in settings.offlineCategories.
     // Reset it so each test starts from a fresh "no opt-in" state.
     Object.assign(settings, { offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } })
+    settings.riwayah = 'qaloon'
+    Object.defineProperty(globalThis.navigator, 'onLine', { value: true, configurable: true })
+    riwayahInstallIntent.requested = null
+    riwayahInstallIntent.previousUsable = 'qaloon'
+    riwayahPackageState.hafs = null
+    riwayahPackageState.warsh = null
+    riwayahPackageState.qaloon = null
+    const { clearRiwayahPackageCacheForTests } = await import('../../../src/data/riwayah-packages.ts')
+    clearRiwayahPackageCacheForTests()
   })
 
   describe('download state machine', () => {
@@ -169,10 +237,11 @@ describe('data/offline.js', () => {
       const plan = await getCategoryManifest('text')
 
       expect(plan.urls).toEqual(expect.arrayContaining([
+        '/dataset/indexes/riwayah-packages.json',
         '/dataset/knowledge/ayah/001.json',
         '/dataset/knowledge/passages/001.json',
       ]))
-      expect(plan.totalBytes).toBe(1500 + 1400 + 800 + 900 + 600)
+      expect(plan.totalBytes).toBe(1500 + 1400 + 800 + 250 + 900 + 600)
     })
 
     it('plans source-specific optional pack downloads outside the baseline manifest', async () => {
@@ -251,6 +320,128 @@ describe('data/offline.js', () => {
 
       await expect(startCategoryDownload('pages')).rejects.toThrow(/startPageAssetDownload/)
       await expect(removeCategoryDownload('pages')).rejects.toThrow(/removePageAssetDownload/)
+    })
+
+    it('installs a riwayah package by caching text and pages before switching', async () => {
+      const { startRiwayahPackageInstall } = await import('../../../src/data/offline.js')
+      const progressFn = vi.fn()
+      events.on('offline:riwayah-package-progress', progressFn)
+
+      const ok = await startRiwayahPackageInstall('hafs')
+
+      expect(ok).toBe(true)
+      expect(globalThis.caches.open).toHaveBeenCalledWith('quran-dataset-v2')
+      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-hafs-v1')
+      expect(cacheStores.get('quran-dataset-v2').put).toHaveBeenCalledWith(
+        expect.stringContaining('/dataset/riwayat/hafs/001.json'),
+        expect.any(Object),
+      )
+      expect(cacheStores.get('qa-pages-hafs-v1').put).toHaveBeenCalledWith(
+        expect.stringContaining('/dataset/mushaf-pages/hafs/pages/001.svg'),
+        expect.any(Object),
+      )
+      expect(settings.riwayah).toBe('hafs')
+      expect(riwayahInstallIntent.previousUsable).toBe('hafs')
+      expect(riwayahPackageState.hafs.kind).toBe('installed')
+      expect(progressFn).toHaveBeenLastCalledWith({ riwayah: 'hafs', cached: 3, total: 3 })
+    })
+
+    it('keeps active riwayah and previous usable unchanged when package install fails', async () => {
+      globalThis.fetch.mockImplementationOnce(async () => ({
+        ok: true,
+        json: async () => ({
+          version: 1,
+          defaultRiwayah: 'qaloon',
+          packages: [
+            {
+              riwayah: 'hafs',
+              optional: true,
+              available: true,
+              text: { urls: ['/dataset/riwayat/hafs/001.json'], totalBytes: 10, available: true },
+              pages: {
+                manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+                urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
+                totalBytes: 20,
+                available: true,
+              },
+              totalBytes: 30,
+            },
+            {
+              riwayah: 'warsh',
+              optional: true,
+              available: false,
+              text: { urls: [], totalBytes: 0, available: false },
+              pages: { manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json', urls: [], totalBytes: 0, available: false },
+              totalBytes: 0,
+            },
+            {
+              riwayah: 'qaloon',
+              optional: false,
+              available: true,
+              text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 10, available: true },
+              pages: {
+                manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
+                urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+                totalBytes: 20,
+                available: true,
+              },
+              totalBytes: 30,
+            },
+          ],
+        }),
+      })).mockImplementationOnce(async () => ({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+        clone() { return this },
+      }))
+      const { clearRiwayahPackageCacheForTests } = await import('../../../src/data/riwayah-packages.ts')
+      clearRiwayahPackageCacheForTests()
+      const { startRiwayahPackageInstall } = await import('../../../src/data/offline.js')
+
+      const ok = await startRiwayahPackageInstall('hafs')
+
+      expect(ok).toBe(false)
+      expect(settings.riwayah).toBe('qaloon')
+      expect(riwayahInstallIntent.previousUsable).toBe('qaloon')
+      expect(riwayahPackageState.hafs.kind).toBe('error')
+    })
+
+    it('retry clears package error and restarts install', async () => {
+      const { retryRiwayahPackageInstall } = await import('../../../src/data/offline.js')
+      riwayahPackageState.hafs = { kind: 'error', riwayah: 'hafs', message: 'failed', totalBytes: 3 }
+
+      await expect(retryRiwayahPackageInstall('hafs')).resolves.toBe(true)
+
+      expect(settings.riwayah).toBe('hafs')
+      expect(riwayahPackageState.hafs.kind).toBe('installed')
+    })
+
+    it('removes optional package text and page caches', async () => {
+      const { startRiwayahPackageInstall, removeRiwayahPackage } = await import('../../../src/data/offline.js')
+      await startRiwayahPackageInstall('hafs')
+
+      await removeRiwayahPackage('hafs')
+
+      expect(cacheStores.get('quran-dataset-v2').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/riwayat/hafs/001.json'))
+      expect(cacheStores.get('qa-pages-hafs-v1').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/hafs/manifest.json'))
+      expect(cacheStores.get('qa-pages-hafs-v1').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/hafs/pages/001.svg'))
+    })
+
+    it('refuses to remove Qaloon package', async () => {
+      const { removeRiwayahPackage } = await import('../../../src/data/offline.js')
+
+      await expect(removeRiwayahPackage('qaloon')).rejects.toThrow(/Qaloon/)
+    })
+
+    it('refuses active optional removal when offline Qaloon package is not cached', async () => {
+      const { startRiwayahPackageInstall, removeRiwayahPackage } = await import('../../../src/data/offline.js')
+      await startRiwayahPackageInstall('hafs')
+      Object.defineProperty(globalThis.navigator, 'onLine', { value: false, configurable: true })
+
+      await expect(removeRiwayahPackage('hafs')).rejects.toThrow(/Qaloon could not be activated/)
+      expect(settings.riwayah).toBe('hafs')
+      expect(riwayahPackageState.hafs.kind).toBe('installed')
     })
 
     it('emits download-complete event on DATASET_COMPLETE', async () => {

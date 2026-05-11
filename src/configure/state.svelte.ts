@@ -1,4 +1,5 @@
 import type { WirdPlan } from '../read/wird/types'
+import type { RiwayahPackageStatus } from '../data/riwayah-packages'
 
 export type TranslationId = string | null
 export type TafsirId = string
@@ -6,6 +7,11 @@ export type Theme = 'light' | 'sepia' | 'dark' | 'auto'
 export type FontSize = 'sm' | 'md' | 'lg' | 'xl'
 export type ReadingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
+export type RiwayahInstallState = Record<Riwayah, RiwayahPackageStatus | null>
+export type RiwayahInstallIntent = {
+  requested: Riwayah | null
+  previousUsable: Riwayah
+}
 
 export type GlobalPosition = { surah: number; verse: number } | null
 
@@ -58,4 +64,15 @@ export const settings = $state({
   audioAutoScrollMode: 'smart' as AudioAutoScrollMode,
   audioFirstPlayHintShown: false,
   offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } as OfflineCategoriesState,
+})
+
+export const riwayahPackageState = $state<RiwayahInstallState>({
+  hafs: null,
+  warsh: null,
+  qaloon: null,
+})
+
+export const riwayahInstallIntent = $state<RiwayahInstallIntent>({
+  requested: null,
+  previousUsable: 'qaloon',
 })

@@ -3,6 +3,7 @@
  */
 
 export const CACHE_DATASET = 'quran-dataset-v2'
+export const DATASET_RIWAYAH_PACKAGES_PATH = '/dataset/indexes/riwayah-packages.json'
 
 // ---------------------------------------------------------------------------
 // Event payload types — one per Events constant.
@@ -21,6 +22,8 @@ export const Events = {
   OFFLINE_DOWNLOAD_PROGRESS: 'offline:download-progress',
   OFFLINE_DOWNLOAD_COMPLETE: 'offline:download-complete',
   OFFLINE_DOWNLOAD_ERROR: 'offline:download-error',
+  OFFLINE_RIWAYAH_PACKAGE_PROGRESS: 'offline:riwayah-package-progress',
+  OFFLINE_RIWAYAH_PACKAGE_ERROR: 'offline:riwayah-package-error',
   OFFLINE_INSTALL_AVAILABLE: 'offline:install-available',
   OFFLINE_INSTALL_COMPLETE: 'offline:install-complete',
   APP_INIT_ERROR: 'app:init-error',
@@ -79,6 +82,8 @@ export type EventPayloads = {
   'offline:download-progress': { cached: number; total: number }
   'offline:download-complete': Record<string, never>
   'offline:download-error': { error: string | Error }
+  'offline:riwayah-package-progress': { riwayah: 'hafs' | 'warsh' | 'qaloon'; cached: number; total: number }
+  'offline:riwayah-package-error': { riwayah: 'hafs' | 'warsh' | 'qaloon'; error: string | Error }
   'offline:install-available': Record<string, never>
   'offline:install-complete': Record<string, never>
   'app:init-error': { error: Error; context?: string }

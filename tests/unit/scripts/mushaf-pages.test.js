@@ -12,8 +12,21 @@ import {
   validateSvgPageSet,
   writeMushafManifest,
 } from '../../../scripts/data/mushaf-pages/build.mjs'
+import {
+  MUSHAF_COLOR_TOKENS,
+  assertThemeableSvgIntegrity,
+  themeMushafSvg,
+} from '../../../scripts/data/mushaf-pages/theme-svg.mjs'
 import { hasReusableSvgDocument } from '../../../scripts/data/mushaf-pages/import.mjs'
 import { buildManifestPayload } from '../../../scripts/data/manifest/inventory.mjs'
+
+const TEST_COLOR_MAP = {
+  '#000000': 'ink',
+  '#231f20': 'ink',
+  '#ffffff': 'ground',
+  '#7a5b28': 'ornament',
+  '#9a6b2f': 'accent',
+}
 
 describe('mushaf page dataset builder', () => {
   it('builds quran.ws page PDF URLs with the source slug', () => {
@@ -161,6 +174,72 @@ describe('mushaf page dataset builder', () => {
     expect(optimized).toContain('1.23')
   })
 
+  it('tokenizes theme colors while preserving SVG geometry and references', () => {
+    const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20">
+      <defs><clipPath id="clip-0"><path d="M 0 0 L 1 1" fill="#000000"/></clipPath></defs>
+      <g id="page" clip-path="url(#clip-0)" opacity="0.7" transform="translate(1 2)">
+        <path d="M 1 2 L 3 4" fill="#000000" fill-rule="evenodd"/>
+        <path d="M 5 6 L 7 8" style="fill: #ffffff; stroke: #7a5b28; opacity: 0.5"/>
+        <path d="M 8 9 L 9 10" stroke="#9a6b2f"/>
+      </g>
+    </svg>`
+
+    const themed = themeMushafSvg(source, { filename: '001.svg', colorMap: TEST_COLOR_MAP })
+
+    expect(themed.match(/<path\b/g)).toHaveLength(source.match(/<path\b/g).length)
+    expect(themed).toContain('viewBox="0 0 10 20"')
+    expect(themed).toContain('d="M 1 2 L 3 4"')
+    expect(themed).toContain('d="M 5 6 L 7 8"')
+    expect(themed).toContain('fill-rule="evenodd"')
+    expect(themed).toContain('clip-path="url(#clip-0)"')
+    expect(themed).toContain('opacity="0.7"')
+    expect(themed).toContain('transform="translate(1 2)"')
+    expect(themed).toContain(`fill="${MUSHAF_COLOR_TOKENS.ink}"`)
+    expect(themed).toContain(`fill="${MUSHAF_COLOR_TOKENS.ground}"`)
+    expect(themed).toContain(`stroke="${MUSHAF_COLOR_TOKENS.ornament}"`)
+    expect(themed).toContain(`stroke="${MUSHAF_COLOR_TOKENS.accent}"`)
+    expect(themed).toContain('style="opacity: 0.5"')
+    expect(themed).not.toMatch(/#(?:000000|ffffff|7a5b28|9a6b2f)/i)
+    expect(() => assertThemeableSvgIntegrity(source, themed, '001.svg')).not.toThrow()
+  })
+
+  it('normalizes source CSS percentage colors before token classification', () => {
+    const themed = themeMushafSvg('<svg viewBox="0 0 1 1"><path fill="rgb(100%, 100%, 100%)"/><path fill="rgb(13.725281%, 12.156677%, 12.548828%)"/></svg>', {
+      filename: '001.svg',
+      colorMap: TEST_COLOR_MAP,
+    })
+
+    expect(themed).toContain(`fill="${MUSHAF_COLOR_TOKENS.ground}"`)
+    expect(themed).toContain(`fill="${MUSHAF_COLOR_TOKENS.ink}"`)
+  })
+
+  it('rejects unclassified colors, unsafe attributes, and remote SVG references while tokenizing', () => {
+    expect(() => themeMushafSvg('<svg viewBox="0 0 1 1"><path fill="#123456"/></svg>', {
+      filename: '001.svg',
+      colorMap: TEST_COLOR_MAP,
+    })).toThrow(/Unclassified Mushaf SVG color/)
+
+    expect(() => themeMushafSvg('<svg viewBox="0 0 1 1"><path onclick="alert(1)" fill="#000000"/></svg>', {
+      filename: '001.svg',
+      colorMap: TEST_COLOR_MAP,
+    })).toThrow(/unsafe SVG/)
+
+    expect(() => themeMushafSvg('<svg viewBox="0 0 1 1"><image href="https://example.com/page.png"/></svg>', {
+      filename: '001.svg',
+      colorMap: TEST_COLOR_MAP,
+    })).toThrow(/unsafe SVG/)
+
+    expect(() => themeMushafSvg('<svg viewBox="0 0 1 1"><style>.a{fill:#123456}</style><path class="a" d="M0 0"/></svg>', {
+      filename: '001.svg',
+      colorMap: TEST_COLOR_MAP,
+    })).toThrow(/unsafe SVG/)
+
+    expect(() => themeMushafSvg('<svg viewBox="0 0 1 1"><animate attributeName="href" to="https://example.com"/></svg>', {
+      filename: '001.svg',
+      colorMap: TEST_COLOR_MAP,
+    })).toThrow(/unsafe SVG/)
+  })
+
   it('reuses only safe existing SVG imports', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-'))
     const good = join(root, 'good.svg')
@@ -178,12 +257,16 @@ describe('mushaf page dataset builder', () => {
     await rm(root, { recursive: true, force: true })
   })
 
-  it('writes a manifest with page bytes, source PDF URLs, and first verse references', async () => {
+  it('writes a manifest with page bytes, viewBoxes, source PDF URLs, and first verse references', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-'))
     const out = join(root, 'public', 'dataset', 'mushaf-pages', 'qaloon')
     const pages = join(out, 'pages')
     await mkdir(pages, { recursive: true })
-    await writeFile(join(pages, '001.svg'), '<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    const themedSvg = themeMushafSvg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20"><path fill="#000000"/></svg>', {
+      filename: '001.svg',
+      colorMap: TEST_COLOR_MAP,
+    })
+    await writeFile(join(pages, '001.svg'), themedSvg)
 
     const manifestPath = await writeMushafManifest({
       outDir: out,
@@ -192,6 +275,7 @@ describe('mushaf page dataset builder', () => {
       pageCount: 1,
       firstVerse: new Map([[1, { surah: 1, verse: 1 }]]),
       verseToPage: { '1:1': 1 },
+      pageViewBoxes: new Map([[1, '0 0 10 20']]),
     })
 
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
@@ -200,10 +284,12 @@ describe('mushaf page dataset builder', () => {
     expect(manifest.pages[0]).toMatchObject({
       page: 1,
       assetPath: 'pages/001.svg',
+      viewBox: '0 0 10 20',
       sourcePdfUrl: 'https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-1.pdf',
       firstVerse: { surah: 1, verse: 1 },
     })
     expect(manifest.pages[0].bytes).toBeGreaterThan(0)
+    expect(themedSvg).toContain(`viewBox="${manifest.pages[0].viewBox}"`)
     expect(manifest.verseToPage).toEqual({ '1:1': 1 })
 
     await rm(root, { recursive: true, force: true })

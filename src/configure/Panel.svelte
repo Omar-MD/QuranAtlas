@@ -4,7 +4,7 @@
   import { emit } from '../core/events.js'
   import { Events } from '../core/constants.js'
   import { logger } from '../core/logger.js'
-  import { settings } from './state.svelte.ts'
+  import { riwayahPackageState, settings } from './state.svelte.ts'
   import { getThemeOptions, setTheme } from './theme.ts'
   import { getFontSizeOptions, setFontSize, resetFontSize } from './font-size.ts'
   import {
@@ -16,7 +16,12 @@
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
   import { getTafsirs, getTranslations } from '../data/dataset.js'
-  import { startSourceAssetDownload } from '../data/offline-client.ts'
+  import {
+    refreshRiwayahPackageStatus,
+    retryRiwayahPackageInstall,
+    startRiwayahPackageInstall,
+    startSourceAssetDownload,
+  } from '../data/offline-client.ts'
   import { panelBridge, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
   import { resolveSavedTafsirId, setTafsirId } from './tafsir.ts'
   import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
@@ -35,6 +40,7 @@
   let tafsirId = $state('muyassar')
   let sourceBusy = $state<string | null>(null)
   let sourceError = $state<string | null>(null)
+  let riwayahBusy = $state<Riwayah | null>(null)
 
   const themeOptions = getThemeOptions()
   const fontOptions = getFontSizeOptions()
@@ -69,6 +75,14 @@
 
   const currentRiwayah = $derived<Riwayah>((settings.riwayah as Riwayah | undefined) ?? 'qaloon')
 
+  const fmtBytes = (bytes: number): string => {
+    if (bytes <= 0) return ''
+    const mb = bytes / (1024 * 1024)
+    if (mb < 1) return `${(bytes / 1024).toFixed(0)} KB`
+    if (mb < 1024) return `${mb.toFixed(1)} MB`
+    return `${(mb / 1024).toFixed(1)} GB`
+  }
+
   async function loadSheetData() {
     try {
       const [loadedTranslations, loadedTafsirs, visibleRec] = await Promise.all([
@@ -86,9 +100,22 @@
       tafsirId = await resolveCurrentTafsirId(loadedTafsirs)
       const r = await loadRiwayah()
       ;(settings as Record<string, unknown>).riwayah = r
+      await refreshRiwayahStatuses()
     } catch (error) {
       logger.error('Failed to load settings sheet data', { error })
     }
+  }
+
+  async function refreshRiwayahStatuses(): Promise<void> {
+    await Promise.all(
+      riwayahOptions.map(async (riwayah) => {
+        try {
+          riwayahPackageState[riwayah] = await refreshRiwayahPackageStatus(riwayah)
+        } catch {
+          riwayahPackageState[riwayah] = { kind: 'unavailable', riwayah }
+        }
+      }),
+    )
   }
 
   async function loadTranslations(): Promise<TranslationEntry[]> {
@@ -204,9 +231,54 @@
     }
   }
 
+  function riwayahStatusLabel(r: Riwayah): string {
+    const status = riwayahPackageState[r]
+    if (!status) return 'Checking'
+    switch (status.kind) {
+      case 'installed':
+        return 'Installed'
+      case 'installable':
+        return `Install ${fmtBytes(status.totalBytes)}`
+      case 'installing':
+        return `Installing ${status.cached} / ${status.total}`
+      case 'unavailable':
+        return 'Unavailable'
+      case 'error':
+        return `Retry${status.message ? ` · ${status.message}` : ''}`
+    }
+  }
+
+  function riwayahRowDisabled(r: Riwayah): boolean {
+    const status = riwayahPackageState[r]
+    return riwayahBusy !== null
+      || !status
+      || status.kind === 'installing'
+      || status.kind === 'unavailable'
+  }
+
   async function handleRiwayah(r: Riwayah) {
-    await setRiwayah(r)
-    picker = null
+    const status = riwayahPackageState[r]
+    if (!status || status.kind === 'installing' || status.kind === 'unavailable') return
+    riwayahBusy = r
+    sourceError = null
+    try {
+      if (status.kind === 'installed') {
+        if (await setRiwayah(r)) picker = null
+        return
+      }
+      const ok = status.kind === 'error'
+        ? await retryRiwayahPackageInstall(r)
+        : await startRiwayahPackageInstall(r)
+      if (ok) {
+        await refreshRiwayahStatuses()
+        picker = null
+      }
+    } catch (error) {
+      sourceError = error instanceof Error ? error.message : 'Could not update recitation package.'
+      await refreshRiwayahStatuses()
+    } finally {
+      riwayahBusy = null
+    }
   }
 
   async function handleTranslationChoice(opt: TranslationEntry) {
@@ -536,13 +608,21 @@
                 type="button"
                 class="qa-settings-pop-row"
                 class:qa-settings-pop-row--act={settings.riwayah === opt}
+                class:qa-settings-pop-row--disabled={riwayahRowDisabled(opt)}
+                disabled={riwayahRowDisabled(opt)}
                 onclick={() => handleRiwayah(opt)}
+                data-testid="riwayah-row-{opt}"
               >
                 <span class="qa-settings-pop-body">
                   <span class="qa-settings-pop-name">{RIWAYAH_LABELS[opt].label}</span>
                   <span class="qa-settings-pop-sub">{RIWAYAH_LABELS[opt].sub}</span>
+                  <span class="qa-settings-pop-sub" data-testid="riwayah-row-state-{opt}">
+                    {riwayahStatusLabel(opt)}
+                  </span>
                 </span>
-                <span class="qa-settings-pop-check" aria-hidden="true">✓</span>
+                <span class="qa-settings-pop-check" aria-hidden="true">
+                  {riwayahBusy === opt ? '…' : settings.riwayah === opt ? '✓' : ''}
+                </span>
               </button>
             {/each}
           {:else if picker === 'translation'}

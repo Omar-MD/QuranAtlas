@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "defaultRiwayah": "qaloon",
+  "baselineRiwayah": "qaloon",
+  "riwayat": {
+    "qaloon": { "optional": false },
+    "hafs": { "optional": true },
+    "warsh": { "optional": true }
+  }
+}

@@ -25,6 +25,8 @@ const setOfflineCategoriesMock = vi.fn(async (next) => {
 const startCategoryDownloadMock = vi.fn(async () => {})
 const startSourceAssetDownloadMock = vi.fn(async () => true)
 const startPageAssetDownloadMock = vi.fn(async () => true)
+const startRiwayahPackageInstallMock = vi.fn(async () => true)
+const removeRiwayahPackageMock = vi.fn(async () => {})
 const removeSourceAssetDownloadMock = vi.fn(async () => {})
 const removeCategoryDownloadMock = vi.fn(async () => {})
 const removePageAssetDownloadMock = vi.fn(async () => {})
@@ -64,10 +66,22 @@ vi.mock('../../../../src/data/offline-client.ts', () => ({
     }
     return { urls: [], totalBytes: 0 }
   }),
+  planRiwayahPackageInstall: vi.fn(async (riwayah: string) => {
+    if (riwayah === 'hafs') return { riwayah, urls: ['/dataset/riwayat/hafs/001.json', '/dataset/mushaf-pages/hafs/pages/001.svg'], totalBytes: 3_300_000 }
+    if (riwayah === 'warsh') return { riwayah, urls: [], totalBytes: 0 }
+    return { riwayah, urls: ['/dataset/riwayat/qaloon/001.json', '/dataset/mushaf-pages/qaloon/pages/001.svg'], totalBytes: 2_800_000 }
+  }),
+  refreshRiwayahPackageStatus: vi.fn(async (riwayah: string) => {
+    if (riwayah === 'warsh') return { kind: 'unavailable', riwayah }
+    if (riwayah === 'hafs') return { kind: 'installable', riwayah, totalBytes: 3_300_000 }
+    return { kind: 'installed', riwayah, totalBytes: 2_800_000 }
+  }),
   isCategoryAvailable: vi.fn(async (cat: string) => cat === 'text'),
   startCategoryDownload: (...args: unknown[]) => startCategoryDownloadMock(...args),
   startSourceAssetDownload: (...args: unknown[]) => startSourceAssetDownloadMock(...args),
   startPageAssetDownload: (...args: unknown[]) => startPageAssetDownloadMock(...args),
+  startRiwayahPackageInstall: (...args: unknown[]) => startRiwayahPackageInstallMock(...args),
+  removeRiwayahPackage: (...args: unknown[]) => removeRiwayahPackageMock(...args),
   removeSourceAssetDownload: (...args: unknown[]) => removeSourceAssetDownloadMock(...args),
   removeCategoryDownload: (...args: unknown[]) => removeCategoryDownloadMock(...args),
   removePageAssetDownload: (...args: unknown[]) => removePageAssetDownloadMock(...args),
@@ -105,11 +119,18 @@ describe('offline-selector.svelte', () => {
       }
       return { urls: [], totalBytes: 0 }
     })
+    vi.mocked(offlineMod.refreshRiwayahPackageStatus).mockImplementation(async (riwayah: string) => {
+      if (riwayah === 'warsh') return { kind: 'unavailable', riwayah }
+      if (riwayah === 'hafs') return { kind: 'installable', riwayah, totalBytes: 3_300_000 }
+      return { kind: 'installed', riwayah, totalBytes: 2_800_000 }
+    })
     vi.mocked(offlineMod.getStorageBudget).mockResolvedValue({ usage: 1_000_000, quota: 100_000_000, available: 99_000_000 })
     setOfflineCategoriesMock.mockClear()
     startCategoryDownloadMock.mockClear()
     startSourceAssetDownloadMock.mockClear()
     startPageAssetDownloadMock.mockClear()
+    startRiwayahPackageInstallMock.mockClear()
+    removeRiwayahPackageMock.mockClear()
     removeSourceAssetDownloadMock.mockClear()
     removeCategoryDownloadMock.mockClear()
     removePageAssetDownloadMock.mockClear()
@@ -278,6 +299,57 @@ describe('offline-selector.svelte', () => {
     })
     expect(startCategoryDownloadMock).not.toHaveBeenCalledWith('pages')
     expect(setOfflineCategoriesMock.mock.calls[0][0].pages).toEqual({ qaloon: true })
+  })
+
+  it('renders riwayah package entries with combined text and page byte plans', async () => {
+    render(OfflineSelector)
+    await flush()
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-testid="storage-package-hafs"]')?.textContent).toContain('Ḥafṣ package')
+      expect(document.querySelector('[data-testid="storage-package-hafs"]')?.textContent).toContain('3.1 MB')
+      expect(document.querySelector('[data-testid="storage-package-warsh"]')?.textContent).toContain('Unavailable')
+    })
+  })
+
+  it('installing a riwayah package calls package install helper instead of page-only helper', async () => {
+    render(OfflineSelector)
+    await flush()
+
+    const install = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-package-install-hafs"]') as HTMLButtonElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
+    await fireEvent.click(install)
+
+    await waitFor(() => {
+      expect(startRiwayahPackageInstallMock).toHaveBeenCalledWith('hafs')
+    })
+    expect(startPageAssetDownloadMock).not.toHaveBeenCalledWith('hafs')
+  })
+
+  it('removing an installed optional riwayah package calls package remove helper', async () => {
+    const offlineMod = await import('../../../../src/data/offline-client.ts')
+    vi.mocked(offlineMod.refreshRiwayahPackageStatus).mockImplementation(async (riwayah: string) => {
+      if (riwayah === 'hafs') return { kind: 'installed', riwayah, totalBytes: 3_300_000 }
+      if (riwayah === 'warsh') return { kind: 'unavailable', riwayah }
+      return { kind: 'installed', riwayah, totalBytes: 2_800_000 }
+    })
+
+    render(OfflineSelector)
+    await flush()
+
+    const remove = await waitFor(() => {
+      const el = document.querySelector('[data-testid="storage-package-remove-hafs"]') as HTMLButtonElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
+    await fireEvent.click(remove)
+
+    await waitFor(() => {
+      expect(removeRiwayahPackageMock).toHaveBeenCalledWith('hafs')
+    })
   })
 
   it('downloads page packs before generic service-worker categories', async () => {

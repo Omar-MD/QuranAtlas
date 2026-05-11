@@ -57,6 +57,8 @@
   #main-content:has(.qa-mushaf-reader) {
     max-width: none;
     width: 100%;
+    padding: 0;
+    overflow: hidden;
   }
 
   #bottom-nav {
@@ -128,6 +130,8 @@
     #main-content:has(.qa-mushaf-reader) {
       max-width: none;
       width: 100%;
+      padding: 0;
+      overflow: hidden;
     }
 
     /* About page column — wider than Reader cap for stat-grid + body-split. */

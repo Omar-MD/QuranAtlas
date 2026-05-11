@@ -6,6 +6,7 @@
 import { CACHE_DATASET } from '../core/constants'
 import { loadRiwayah } from '../configure/riwayah'
 import type { Riwayah } from '../configure/state.svelte'
+import { getRiwayahPackageEntry, isRiwayahUsable } from './riwayah-packages'
 
 const DATASET_BASE = '/dataset'
 const FETCH_TIMEOUT_MS = 3000
@@ -127,6 +128,8 @@ export type RiwayahTextAvailability = {
 
 export class RiwayahPackUnavailableError extends Error {
   code = 'RIWAYAH_PACK_UNAVAILABLE' as const
+  promptable = true as const
+  packageType = 'text' as const
 
   constructor(public riwayah: Riwayah) {
     super(`Riwayah text pack is not available for ${riwayah}`)
@@ -190,6 +193,19 @@ export async function getManifestUrls(): Promise<string[]> {
 }
 
 export async function getRiwayahTextAvailability(riwayah: Riwayah): Promise<RiwayahTextAvailability> {
+  try {
+    const entry = await getRiwayahPackageEntry(riwayah)
+    if (entry) {
+      return {
+        riwayah,
+        available: entry.text.available,
+        manifestUrl: `${DATASET_BASE}/manifest.json`,
+      }
+    }
+  } catch {
+    // Older cached deployments may not have the package index yet; keep the
+    // manifest path as a compatibility fallback.
+  }
   const manifest = await loadDatasetManifest()
   return {
     riwayah,
@@ -204,8 +220,17 @@ export async function getSurah(n: number): Promise<SurahPayload> {
     throw new Error(`Invalid surah number: ${n}`)
   }
   const riwayah = await loadRiwayah()
-  const availability = await getRiwayahTextAvailability(riwayah)
-  if (!availability.available) {
+  let usable = false
+  try {
+    usable = await isRiwayahUsable(riwayah)
+  } catch {
+    if (riwayah !== 'qaloon') {
+      throw new RiwayahPackUnavailableError(riwayah)
+    }
+    const availability = await getRiwayahTextAvailability(riwayah)
+    usable = availability.available
+  }
+  if (!usable) {
     throw new RiwayahPackUnavailableError(riwayah)
   }
   const padded = String(n).padStart(3, '0')

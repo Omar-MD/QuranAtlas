@@ -18,6 +18,16 @@ export async function getPageAssetManifest(riwayah: Riwayah) {
   return offline.getPageAssetManifest(riwayah)
 }
 
+export async function planRiwayahPackageInstall(riwayah: Riwayah) {
+  const packages = await import('./riwayah-packages')
+  return packages.planRiwayahPackageInstall(riwayah)
+}
+
+export async function refreshRiwayahPackageStatus(riwayah: Riwayah) {
+  const riwayahSettings = await import('../configure/riwayah')
+  return riwayahSettings.refreshRiwayahPackageStatus(riwayah)
+}
+
 export async function getStorageBudget() {
   const offline = await import('./offline')
   return offline.getStorageBudget()
@@ -38,6 +48,11 @@ export async function removePageAssetDownload(riwayah: Riwayah) {
   return offline.removePageAssetDownload(riwayah)
 }
 
+export async function removeRiwayahPackage(riwayah: Riwayah) {
+  const offline = await import('./offline')
+  return offline.removeRiwayahPackage(riwayah)
+}
+
 export async function startCategoryDownload(category: Category) {
   const offline = await import('./offline')
   return offline.startCategoryDownload(category)
@@ -51,4 +66,14 @@ export async function startSourceAssetDownload(kind: SourceAssetKind, id: string
 export async function startPageAssetDownload(riwayah: Riwayah) {
   const offline = await import('./offline')
   return offline.startPageAssetDownload(riwayah)
+}
+
+export async function startRiwayahPackageInstall(riwayah: Riwayah) {
+  const offline = await import('./offline')
+  return offline.startRiwayahPackageInstall(riwayah)
+}
+
+export async function retryRiwayahPackageInstall(riwayah: Riwayah) {
+  const offline = await import('./offline')
+  return offline.retryRiwayahPackageInstall(riwayah)
 }

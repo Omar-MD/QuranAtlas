@@ -5,6 +5,11 @@
   "attribution": "Mushaf page PDFs from quran.ws, converted to same-origin SVG assets for QuranAtlas.",
   "pageCount": 604,
   "sourceBaseUrl": "https://pdf.quran.ws/",
+  "themeColorMap": {
+    "#ffffff": "ground",
+    "#000000": "ink",
+    "#231f20": "ink"
+  },
   "riwayat": {
     "hafs": {
       "sourceSlug": "hafs",

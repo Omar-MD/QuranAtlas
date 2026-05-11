@@ -6,6 +6,10 @@ import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildManifestPayload } from '../manifest/inventory.mjs'
+import {
+  assertThemeableSvgIntegrity,
+  themeMushafSvg,
+} from './theme-svg.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -153,6 +157,12 @@ export function assertSafeSvg(filename, text) {
   }
 }
 
+export function viewBoxForThemedPage(text, filename) {
+  const match = String(text).match(/\sviewBox=(["'])(.*?)\1/i)
+  if (!match) throw new Error(`Mushaf page ${filename} is missing viewBox`)
+  return match[2].trim()
+}
+
 function localName(name) {
   return String(name ?? '').split(':').pop().toLowerCase()
 }
@@ -219,15 +229,18 @@ export async function validateSvgPageSet(pagesDir, pageCount, { missing = 'error
   return files
 }
 
-export async function writeMushafManifest({ outDir, riwayah, sourceSlug, pageCount, firstVerse, verseToPage }) {
+export async function writeMushafManifest({ outDir, riwayah, sourceSlug, pageCount, firstVerse, verseToPage, pageViewBoxes }) {
   const pages = []
   for (let page = 1; page <= pageCount; page += 1) {
     const filename = `${pad3(page)}.svg`
     const first = firstVerse.get(page)
     if (!first) throw new Error(`No first verse mapping for Mushaf page ${page}`)
+    const viewBox = pageViewBoxes?.get(page)
+    if (!viewBox) throw new Error(`No viewBox mapping for Mushaf page ${page}`)
     pages.push({
       page,
       assetPath: `pages/${filename}`,
+      viewBox,
       bytes: (await stat(join(outDir, 'pages', filename))).size,
       sourcePdfUrl: quranWsPagePdfUrl(sourceSlug, page),
       firstVerse: first,
@@ -254,6 +267,9 @@ async function loadCatalog() {
   const catalog = await readJson(CATALOG_PATH)
   ensure(catalog.provider === 'quran.ws', 'Mushaf page catalog provider must be quran.ws')
   ensure(Number.isInteger(catalog.pageCount) && catalog.pageCount > 0, 'Mushaf page catalog pageCount must be a positive integer')
+  ensure(catalog.themeColorMap && typeof catalog.themeColorMap === 'object', 'Mushaf page catalog missing themeColorMap')
+  ensure(catalog.themeColorMap['#ffffff'] === 'ground', 'Mushaf page catalog must map #ffffff to ground')
+  ensure(catalog.themeColorMap['#000000'] === 'ink', 'Mushaf page catalog must map #000000 to ink')
   for (const riwayah of RIWAYAT) {
     ensure(catalog.riwayat?.[riwayah]?.sourceSlug, `Mushaf page catalog missing sourceSlug for ${riwayah}`)
   }
@@ -289,11 +305,16 @@ async function buildRiwayah(riwayah, catalog, { check = false, missing = 'error'
 
   const outDir = join(OUT_ROOT, riwayah)
   await mkdir(join(outDir, 'pages'), { recursive: true })
+  const pageViewBoxes = new Map()
   for (const sourceFile of sourceFiles) {
     const filename = basename(sourceFile)
-    const optimized = optimizeSvgForDataset(await readFile(sourceFile, 'utf8'))
-    assertSafeSvg(filename, optimized)
-    await writeFile(join(outDir, 'pages', filename), optimized, 'utf8')
+    const source = await readFile(sourceFile, 'utf8')
+    const optimized = optimizeSvgForDataset(source)
+    const themed = themeMushafSvg(optimized, { filename, colorMap: catalog.themeColorMap })
+    assertThemeableSvgIntegrity(optimized, themed, filename)
+    assertSafeSvg(filename, themed)
+    pageViewBoxes.set(Number.parseInt(filename, 10), viewBoxForThemedPage(themed, filename))
+    await writeFile(join(outDir, 'pages', filename), themed, 'utf8')
   }
   await writeMushafManifest({
     outDir,
@@ -302,6 +323,7 @@ async function buildRiwayah(riwayah, catalog, { check = false, missing = 'error'
     pageCount,
     firstVerse: mappings.firstVerse,
     verseToPage: mappings.verseToPage,
+    pageViewBoxes,
   })
   console.log(`[mushaf-pages] wrote ${riwayah}: ${pageCount} pages`)
   return true

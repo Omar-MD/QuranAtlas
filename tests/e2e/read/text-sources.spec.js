@@ -69,47 +69,22 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(htmlAttr).toBe('qaloon')
   })
 
-  test('B-Riwayah2: switching to unavailable Ḥafṣ updates html[data-riwayah] and shows install prompt', async ({ page }) => {
+  test('B-Riwayah2: unavailable Ḥafṣ cannot replace the active Qālūn reader', async ({ page }) => {
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
 
-    // Switch to Hafs via Settings sheet Recitation popover.
-    // Post 2026-04-29 v7: tap the Recitation source row → popover opens
-    // with 3 riwayah rows; clicking one writes IDB + closes popover.
     await openSettingsSheet(page)
     await page.getByTestId('src-row-recitation').click()
     const hafsBtn = page.locator('.qa-settings-pop-row').filter({ hasText: 'Ḥafṣ' })
     await expect(hafsBtn).toBeVisible({ timeout: 5_000 })
-    await hafsBtn.click()
+    await expect(hafsBtn).toContainText('Unavailable')
+    await expect(hafsBtn).toBeDisabled()
 
-    // html[data-riwayah] must update synchronously after the click
-    await expect(async () => {
-      const attr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
-      expect(attr).toBe('hafs')
-    }).toPass({ timeout: 3_000 })
-
-    // Close settings; clean baseline support is Qaloon-only, so missing
-    // Hafs text must prompt install instead of falling back silently.
     await page.keyboard.press('Escape')
-    const installPrompt = page.locator('.qa-riwayah-install-prompt')
-    await expect(installPrompt).toBeVisible({ timeout: 5_000 })
-    await expect(installPrompt).toContainText('hafs text is not installed yet.')
-    await expect(page.locator('.qa-verse-arabic')).toHaveCount(0)
 
-    // html[data-riwayah] is still hafs after settings close
     const htmlAttr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
-    expect(htmlAttr).toBe('hafs')
-
-    // Restore Qālūn so other tests get the default
-    await openSettingsSheet(page)
-    await page.getByTestId('src-row-recitation').click()
-    await page.locator('.qa-settings-pop-row').filter({ hasText: 'Qālūn' }).click()
-    await expect(async () => {
-      const attr = await page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))
-      expect(attr).toBe('qaloon')
-    }).toPass({ timeout: 3_000 })
-    await page.keyboard.press('Escape')
-    await waitForReader(page)
+    expect(htmlAttr).toBe('qaloon')
+    await expect(page.locator('.qa-riwayah-install-prompt')).toHaveCount(0)
     await expect(page.locator('.qa-verse-arabic').first()).toHaveAttribute('data-riwayah', 'qaloon')
   })
 

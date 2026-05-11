@@ -24,6 +24,7 @@ vi.mock('../../../../src/data/mushaf-pages', () => ({
       {
         page: 42,
         assetPath: 'pages/042.svg',
+        viewBox: '0 0 900 1379.25',
         bytes: 1,
         sourcePdfUrl: 'https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-42.pdf',
         firstVerse: { surah: 2, verse: 255 },

@@ -15,10 +15,31 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { clearAllData, markOnboardingComplete, readSetting } from '../fixtures/idb.js'
 import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
 
 const DATASET_CACHE = 'quran-dataset-v2'
+const HAFS_SURAH_1 = (() => {
+  const rows = JSON.parse(readFileSync(new URL('../../../data/normalized/quran/riwayat/hafs.json', import.meta.url), 'utf8'))
+    .filter((row) => row.sora === 1)
+  return {
+    riwayah: 'hafs',
+    version: 'test',
+    sura_no: 1,
+    sura_name_ar: 'الفاتحة',
+    sura_name_en: 'Al-Fatihah',
+    ayat: rows.map((row) => ({
+      id: row.id,
+      jozz: row.jozz,
+      page: String(row.page),
+      line_start: row.line_start,
+      line_end: row.line_end,
+      aya_no: row.aya_no,
+      aya_text: row.aya_text,
+    })),
+  }
+})()
 
 // Rule 6.2 carve-out: SW lifecycle exercises cross-store cache invariants and
 // must boot from a fully fresh state.  Opt OUT of the onboarded storageState
@@ -202,6 +223,81 @@ async function clearQaloonPageCaches(page) {
   })
 }
 
+async function useTinyHafsPackage(page) {
+  await page.route('**/dataset/indexes/riwayah-packages.json', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        version: 1,
+        defaultRiwayah: 'qaloon',
+        packages: [
+          {
+            riwayah: 'hafs',
+            optional: true,
+            available: true,
+            text: { urls: ['/dataset/riwayat/hafs/001.json'], totalBytes: 128, available: true },
+            pages: {
+              manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+              urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
+              totalBytes: 256,
+              available: true,
+            },
+            totalBytes: 384,
+          },
+          {
+            riwayah: 'warsh',
+            optional: true,
+            available: false,
+            text: { urls: [], totalBytes: 0, available: false },
+            pages: { manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json', urls: [], totalBytes: 0, available: false },
+            totalBytes: 0,
+          },
+          {
+            riwayah: 'qaloon',
+            optional: false,
+            available: true,
+            text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 128, available: true },
+            pages: {
+              manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
+              urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+              totalBytes: 256,
+              available: true,
+            },
+            totalBytes: 384,
+          },
+        ],
+      }),
+    })
+  })
+  await page.route('**/dataset/riwayat/hafs/001.json', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify(HAFS_SURAH_1),
+  }))
+  await page.route('**/dataset/mushaf-pages/hafs/manifest.json', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      version: 1,
+      riwayah: 'hafs',
+      sourceSlug: 'hafs',
+      pageCount: 1,
+      attribution: { provider: 'quran.ws', sourceUrl: 'https://pdf.quran.ws/pdfs/hafs/page/quran-hafs-page-1.pdf' },
+      verseToPage: { '1:1': 1 },
+      pages: [{
+        page: 1,
+        assetPath: 'pages/001.svg',
+        viewBox: '0 0 10 10',
+        bytes: 64,
+        sourcePdfUrl: 'https://pdf.quran.ws/pdfs/hafs/page/quran-hafs-page-1.pdf',
+        firstVerse: { surah: 1, verse: 1 },
+      }],
+    }),
+  }))
+  await page.route('**/dataset/mushaf-pages/hafs/pages/001.svg', route => route.fulfill({
+    contentType: 'image/svg+xml',
+    body: '<svg viewBox="0 0 10 10"><path d="M1 1h8v8H1z" fill="var(--qa-mushaf-ink)"/></svg>',
+  }))
+}
+
 test.describe('Journey H: Offline resilience', () => {
   // -------------------------------------------------------------------------
   // H1. Reload offline — reader and command sheet load from cache
@@ -372,14 +468,45 @@ test.describe('Journey H: Offline resilience', () => {
     await waitForCachedQaloonPage(page, 42)
 
     await page.goto('/#/m/42')
-    await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
 
     await context.setOffline(true)
     try {
       await page.reload()
-      await expect(page.locator('.qa-mushaf-page-img')).toBeVisible({ timeout: 10_000 })
+      await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
     } finally {
       await context.setOffline(false)
     }
+  })
+
+  test('H4: riwayah package install caches Hafs text and pages @offline', async ({ page }) => {
+    await useTinyHafsPackage(page)
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await waitForServiceWorker(page)
+
+    await page.goto('/#/settings')
+    await expect(page.getByTestId('storage-section')).toBeVisible({ timeout: 5_000 })
+    await page.getByTestId('storage-toggle').click()
+
+    const hafsPackage = page.getByTestId('storage-package-hafs')
+    await expect(hafsPackage).toBeVisible({ timeout: 10_000 })
+    await expect(hafsPackage).toContainText(/Install/)
+    await page.getByTestId('storage-package-install-hafs').click()
+
+    await expect(page.getByTestId('storage-package-remove-hafs')).toBeVisible({ timeout: 10_000 })
+    await expect.poll(() => readSetting(page, 'riwayah')).toBe('hafs')
+    await expect.poll(async () => page.evaluate(async () => {
+      const cache = await caches.open('qa-pages-hafs-v1')
+      return (await cache.keys()).map((request) => request.url).sort()
+    })).toEqual(expect.arrayContaining([
+      expect.stringContaining('/dataset/mushaf-pages/hafs/manifest.json'),
+      expect.stringContaining('/dataset/mushaf-pages/hafs/pages/001.svg'),
+    ]))
+    await page.keyboard.press('Escape')
+    await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))).toBe('hafs')
   })
 })

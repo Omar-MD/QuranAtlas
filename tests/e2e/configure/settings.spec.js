@@ -17,6 +17,7 @@
 import { test, expect } from '@playwright/test'
 import { waitForReader, openSettingsSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
+import { readSetting } from '../fixtures/idb.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
 // Reuse the onboarded snapshot to skip per-test cold-boot setup. The 5
@@ -24,12 +25,61 @@ import { scanA11y } from '../fixtures/a11y.js'
 // no longer carry redundant clearAllData + markOnboardingComplete pairs.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
+async function routeRiwayahPackages(page, { hafsAvailable = false } = {}) {
+  await page.route('**/dataset/indexes/riwayah-packages.json', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        version: 1,
+        defaultRiwayah: 'qaloon',
+        packages: [
+          {
+            riwayah: 'qaloon',
+            optional: false,
+            available: true,
+            text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 128, available: true },
+            pages: {
+              manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
+              urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+              totalBytes: 256,
+              available: true,
+            },
+            totalBytes: 384,
+          },
+          {
+            riwayah: 'hafs',
+            optional: true,
+            available: hafsAvailable,
+            text: { urls: hafsAvailable ? ['/dataset/riwayat/hafs/001.json'] : [], totalBytes: hafsAvailable ? 128 : 0, available: hafsAvailable },
+            pages: {
+              manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+              urls: hafsAvailable ? ['/dataset/mushaf-pages/hafs/pages/001.svg'] : [],
+              totalBytes: hafsAvailable ? 256 : 0,
+              available: hafsAvailable,
+            },
+            totalBytes: hafsAvailable ? 384 : 0,
+          },
+          {
+            riwayah: 'warsh',
+            optional: true,
+            available: false,
+            text: { urls: [], totalBytes: 0, available: false },
+            pages: { manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json', urls: [], totalBytes: 0, available: false },
+            totalBytes: 0,
+          },
+        ],
+      }),
+    })
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Shared setup
 // ---------------------------------------------------------------------------
 
 test.describe('Journey D: Settings & appearance', () => {
   test.beforeEach(async ({ page }) => {
+    await page.reload({ waitUntil: 'domcontentloaded' })
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -64,6 +114,40 @@ test.describe('Journey D: Settings & appearance', () => {
 
     await expect(picker).toHaveCount(0)
     await expect(tafsirRow).toContainText('Al-Mukhtasar fi al-Tafsir')
+  })
+
+  test('D2-riwayah: unavailable optional package cannot change the active recitation', async ({ page }) => {
+    await routeRiwayahPackages(page, { hafsAvailable: false })
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await openSettingsSheet(page)
+    await page.getByTestId('src-row-recitation').click()
+
+    const picker = page.getByTestId('settings-pop')
+    const hafs = picker.getByTestId('riwayah-row-hafs')
+    await expect(hafs).toContainText('Unavailable')
+    await expect(hafs).toBeDisabled()
+    await expect.poll(() => readSetting(page, 'riwayah')).not.toBe('hafs')
+  })
+
+  test('D2-riwayah: failed install keeps Qālūn active and exposes retry state', async ({ page }) => {
+    await routeRiwayahPackages(page, { hafsAvailable: true })
+    await page.route('**/dataset/riwayat/hafs/001.json', route => route.fulfill({ status: 503, body: 'unavailable' }))
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await openSettingsSheet(page)
+    await page.getByTestId('src-row-recitation').click()
+    const picker = page.getByTestId('settings-pop')
+    const hafs = picker.getByTestId('riwayah-row-hafs')
+    await expect(hafs).toContainText('Install')
+    await hafs.click()
+
+    await expect(hafs).toContainText('Retry', { timeout: 10_000 })
+    await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))).toBe('qaloon')
+    await expect(page.getByTestId('src-row-recitation')).toContainText('Qālūn')
   })
 
   // D3-bg: <html> background matches <body> background under every theme so

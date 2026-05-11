@@ -24,6 +24,21 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 let translationOptions = [
   { id: 'bridges', name: 'Bridges', subtitle: 'Baseline' },
 ]
+let packageStatuses: Record<string, { kind: string; riwayah: string; totalBytes?: number; cached?: number; total?: number; message?: string }> = {
+  hafs: { kind: 'installed', riwayah: 'hafs', totalBytes: 1 },
+  warsh: { kind: 'installed', riwayah: 'warsh', totalBytes: 1 },
+  qaloon: { kind: 'installed', riwayah: 'qaloon', totalBytes: 1 },
+}
+const startRiwayahPackageInstallMock = vi.fn(async (riwayah: string) => {
+  packageStatuses[riwayah] = { kind: 'installed', riwayah, totalBytes: 1 }
+  settings.riwayah = riwayah as typeof settings.riwayah
+  return true
+})
+const retryRiwayahPackageInstallMock = vi.fn(async (riwayah: string) => {
+  packageStatuses[riwayah] = { kind: 'installed', riwayah, totalBytes: 1 }
+  settings.riwayah = riwayah as typeof settings.riwayah
+  return true
+})
 
 vi.mock('../../../src/data/dataset.js', () => ({
   getTranslations: vi.fn(async () => translationOptions),
@@ -38,6 +53,27 @@ vi.mock('../../../src/data/dataset.ts', () => ({
     { id: 'muyassar', name: 'Tafsir Muyassar' },
     { id: 'mukhtasar', name: 'Al-Mukhtasar fi al-Tafsir' },
   ]),
+}))
+vi.mock('../../../src/data/riwayah-packages', () => ({
+  isRiwayahUsable: vi.fn(async (riwayah: string) => packageStatuses[riwayah]?.kind === 'installed'),
+  getRiwayahPackageStatus: vi.fn(async (riwayah: string) => packageStatuses[riwayah] ?? { kind: 'unavailable', riwayah }),
+}))
+vi.mock('../../../src/data/offline-client.ts', () => ({
+  getCategoryManifest: vi.fn(async (cat: string) => cat === 'text' ? { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 1000 } : { urls: [], totalBytes: 0 }),
+  getSourceAssetManifest: vi.fn(async () => ({ urls: [], totalBytes: 0 })),
+  getPageAssetManifest: vi.fn(async (riwayah: string) => riwayah === 'qaloon' ? { urls: ['/dataset/mushaf-pages/qaloon/manifest.json'], totalBytes: 1000 } : { urls: [], totalBytes: 0 }),
+  getStorageBudget: vi.fn(async () => ({ usage: 0, quota: 100_000, available: 100_000 })),
+  removeCategoryDownload: vi.fn(async () => {}),
+  removeSourceAssetDownload: vi.fn(async () => {}),
+  removePageAssetDownload: vi.fn(async () => {}),
+  startCategoryDownload: vi.fn(async () => {}),
+  startSourceAssetDownload: vi.fn(async () => true),
+  startPageAssetDownload: vi.fn(async () => true),
+  planRiwayahPackageInstall: vi.fn(async (riwayah: string) => ({ riwayah, urls: [], totalBytes: packageStatuses[riwayah]?.totalBytes ?? 0 })),
+  startRiwayahPackageInstall: (...args: unknown[]) => startRiwayahPackageInstallMock(...args),
+  removeRiwayahPackage: vi.fn(async () => {}),
+  retryRiwayahPackageInstall: (...args: unknown[]) => retryRiwayahPackageInstallMock(...args),
+  refreshRiwayahPackageStatus: vi.fn(async (riwayah: string) => packageStatuses[riwayah] ?? { kind: 'unavailable', riwayah }),
 }))
 vi.mock('../../../src/infra/safety/sync.ts', () => ({
   broadcastRiwayahChange: vi.fn(),
@@ -73,6 +109,13 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     translationOptions = [
       { id: 'bridges', name: 'Bridges', subtitle: 'Baseline' },
     ]
+    packageStatuses = {
+      hafs: { kind: 'installed', riwayah: 'hafs', totalBytes: 1 },
+      warsh: { kind: 'installed', riwayah: 'warsh', totalBytes: 1 },
+      qaloon: { kind: 'installed', riwayah: 'qaloon', totalBytes: 1 },
+    }
+    startRiwayahPackageInstallMock.mockClear()
+    retryRiwayahPackageInstallMock.mockClear()
     for (const k of FLOW_KEYS) {
       try { await del('settings', k) } catch { /* ignore */ }
     }
@@ -180,6 +223,78 @@ describe('Panel.svelte (2026-04-29 v7 redesign)', () => {
     expect(document.querySelector('[data-testid="settings-pop"]')).toBeNull()
     // Riwayah unchanged
     expect(settings.riwayah).toBe('qaloon')
+  })
+
+  it('D7: recitation picker exposes installed, installable, installing, unavailable, and error row states', async () => {
+    packageStatuses = {
+      qaloon: { kind: 'installed', riwayah: 'qaloon', totalBytes: 1 },
+      hafs: { kind: 'installable', riwayah: 'hafs', totalBytes: 81_800 },
+      warsh: { kind: 'unavailable', riwayah: 'warsh' },
+    }
+    await mountAndOpen()
+    await fireEvent.click(document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement)
+
+    await vi.waitFor(() => {
+      expect(document.querySelector('[data-testid="riwayah-row-qaloon"]')?.textContent).toMatch(/Installed/)
+      expect(document.querySelector('[data-testid="riwayah-row-hafs"]')?.textContent).toMatch(/Install/)
+      expect(document.querySelector('[data-testid="riwayah-row-hafs"]')?.textContent).toMatch(/80 KB|79\.9 KB/)
+      expect(document.querySelector('[data-testid="riwayah-row-warsh"]')?.textContent).toMatch(/Unavailable/)
+    })
+    expect((document.querySelector('[data-testid="riwayah-row-warsh"]') as HTMLButtonElement).disabled).toBe(true)
+
+    packageStatuses.hafs = { kind: 'installing', riwayah: 'hafs', cached: 1, total: 3 }
+    closeSettingsSheet()
+    await mountAndOpen()
+    await fireEvent.click(document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement)
+    await vi.waitFor(() => {
+      expect(document.querySelector('[data-testid="riwayah-row-hafs"]')?.textContent).toContain('Installing 1 / 3')
+    })
+    expect((document.querySelector('[data-testid="riwayah-row-hafs"]') as HTMLButtonElement).disabled).toBe(true)
+
+    packageStatuses.hafs = { kind: 'error', riwayah: 'hafs', message: 'failed', totalBytes: 81_800 }
+    closeSettingsSheet()
+    await mountAndOpen()
+    await fireEvent.click(document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement)
+    await vi.waitFor(() => {
+      expect(document.querySelector('[data-testid="riwayah-row-hafs"]')?.textContent).toMatch(/Retry/)
+    })
+  })
+
+  it('D7: installable riwayah installs without changing the active row until success', async () => {
+    packageStatuses.hafs = { kind: 'installable', riwayah: 'hafs', totalBytes: 81_800 }
+    await mountAndOpen()
+    await fireEvent.click(document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement)
+
+    const hafs = await vi.waitFor(() => {
+      const el = document.querySelector('[data-testid="riwayah-row-hafs"]') as HTMLButtonElement | null
+      expect(el).not.toBeNull()
+      expect(el!.textContent).toMatch(/Install/)
+      expect(el!.disabled).toBe(false)
+      return el!
+    })
+    await fireEvent.click(hafs)
+
+    await vi.waitFor(() => {
+      expect(startRiwayahPackageInstallMock).toHaveBeenCalledWith('hafs')
+    })
+  })
+
+  it('D7: unavailable riwayah cannot persist a broken setting', async () => {
+    packageStatuses.warsh = { kind: 'unavailable', riwayah: 'warsh' }
+    await mountAndOpen()
+    await fireEvent.click(document.querySelector('[data-testid="src-row-recitation"]') as HTMLButtonElement)
+
+    const warsh = await vi.waitFor(() => {
+      const el = document.querySelector('[data-testid="riwayah-row-warsh"]') as HTMLButtonElement | null
+      expect(el).not.toBeNull()
+      return el!
+    })
+    await fireEvent.click(warsh)
+
+    await flush()
+    expect(settings.riwayah).toBe('qaloon')
+    const rec = await get('settings', 'riwayah') as { value: string } | undefined
+    expect(rec?.value).not.toBe('warsh')
   })
 
   it('D8: Escape with picker open closes picker first, sheet stays open', async () => {

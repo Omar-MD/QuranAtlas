@@ -20,6 +20,17 @@ import {
   type Category,
 } from '../infra/sw/route-defs'
 import { settings, type Riwayah } from '../configure/state.svelte'
+import {
+  beginRiwayahInstall,
+  completeRiwayahInstall,
+  failRiwayahInstall,
+  refreshRiwayahPackageStatus,
+  setRiwayah,
+} from '../configure/riwayah'
+import {
+  cacheNamesForRiwayahPackage,
+  planRiwayahPackageInstall,
+} from './riwayah-packages'
 
 const QUOTA_WARN_THRESHOLD = 0.8
 const ACTIVATION_KEY = 'current'
@@ -434,6 +445,114 @@ export async function removePageAssetDownload(riwayah: Riwayah): Promise<void> {
     const cache = await caches.open(cacheName)
     await cache.delete(absolute.href)
   }))
+}
+
+function responseUrlForCache(url: string): string {
+  return new URL(url, location.origin).href
+}
+
+async function cachePackageUrl(riwayah: Riwayah, url: string, response: Response): Promise<void> {
+  const absolute = new URL(url, location.origin)
+  const packageCaches = cacheNamesForRiwayahPackage(riwayah)
+  const cacheName = cacheNameFor(absolute)
+  if (!cacheName) throw new Error(`No package cache route for ${url}`)
+  const expectedPageCache = packageCaches.pages
+  const expectedTextCache = packageCaches.text
+  if (cacheName !== expectedTextCache && cacheName !== expectedPageCache) {
+    throw new Error(`Unexpected package cache route for ${url}`)
+  }
+  const cache = await caches.open(cacheName)
+  await cache.put(responseUrlForCache(url), response.clone())
+  await cache.put(url, response.clone())
+}
+
+export async function startRiwayahPackageInstall(riwayah: Riwayah): Promise<boolean> {
+  const plan = await planRiwayahPackageInstall(riwayah)
+  if (plan.urls.length === 0) {
+    failRiwayahInstall(riwayah, 'This riwayah package is unavailable in this build.')
+    emit(Events.OFFLINE_RIWAYAH_PACKAGE_ERROR, { riwayah, error: 'This riwayah package is unavailable in this build.' })
+    return false
+  }
+  const budget = await getStorageBudget()
+  if (budget && budget.available < plan.totalBytes) {
+    failRiwayahInstall(riwayah, Errors.INSUFFICIENT_STORAGE)
+    emit(Events.OFFLINE_RIWAYAH_PACKAGE_ERROR, { riwayah, error: Errors.INSUFFICIENT_STORAGE })
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: Errors.INSUFFICIENT_STORAGE })
+    return false
+  }
+  if (typeof caches === 'undefined') {
+    failRiwayahInstall(riwayah, 'Cache Storage is unavailable.')
+    emit(Events.OFFLINE_RIWAYAH_PACKAGE_ERROR, { riwayah, error: 'Cache Storage is unavailable.' })
+    return false
+  }
+
+  if (!beginRiwayahInstall(riwayah)) return false
+  const previousActive = settings.riwayah
+  await setDownloading()
+  try {
+    for (let i = 0; i < plan.urls.length; i += 1) {
+      const url = plan.urls[i]!
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
+      await cachePackageUrl(riwayah, url, response)
+      const payload = { riwayah, cached: i + 1, total: plan.urls.length }
+      emit(Events.OFFLINE_RIWAYAH_PACKAGE_PROGRESS, payload)
+      emit(Events.OFFLINE_DOWNLOAD_PROGRESS, { cached: i + 1, total: plan.urls.length })
+    }
+    const applied = await completeRiwayahInstall(riwayah)
+    if (!applied) {
+      throw new Error(`Installed ${riwayah} package could not be verified.`)
+    }
+    emit(Events.OFFLINE_DOWNLOAD_COMPLETE, {})
+    return true
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    failRiwayahInstall(riwayah, message)
+    if (settings.riwayah !== previousActive) {
+      await setRiwayah(previousActive)
+    }
+    emit(Events.OFFLINE_RIWAYAH_PACKAGE_ERROR, { riwayah, error: message })
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: message })
+    return false
+  } finally {
+    await clearActivation()
+  }
+}
+
+export async function retryRiwayahPackageInstall(riwayah: Riwayah): Promise<boolean> {
+  await refreshRiwayahPackageStatus(riwayah).catch(() => undefined)
+  return startRiwayahPackageInstall(riwayah)
+}
+
+export async function removeRiwayahPackage(riwayah: Riwayah): Promise<void> {
+  if (riwayah === 'qaloon') throw new Error('Qaloon is the baseline package and cannot be removed.')
+  if (settings.riwayah === riwayah) {
+    const qaloonStatus = await refreshRiwayahPackageStatus('qaloon')
+    if (qaloonStatus.kind !== 'installed') {
+      throw new Error('Cannot remove the active package because Qaloon is not verified usable.')
+    }
+    const switched = await setRiwayah('qaloon')
+    if (!switched) {
+      throw new Error('Cannot remove the active package because Qaloon could not be activated.')
+    }
+  }
+
+  const plan = await planRiwayahPackageInstall(riwayah)
+  if (typeof caches !== 'undefined') {
+    const cacheNames = cacheNamesForRiwayahPackage(riwayah)
+    for (const url of plan.urls) {
+      const absolute = new URL(url, location.origin)
+      const cacheName = cacheNameFor(absolute)
+      if (!cacheName) continue
+      const cache = await caches.open(cacheName)
+      await cache.delete(responseUrlForCache(url))
+      await cache.delete(url)
+    }
+    if (plan.urls.length === 0) {
+      await caches.delete(cacheNames.pages)
+    }
+  }
+  await refreshRiwayahPackageStatus(riwayah)
 }
 
 export async function startSourceAssetDownload(kind: SourceAssetKind, id: string): Promise<boolean> {

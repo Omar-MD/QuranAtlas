@@ -79,13 +79,19 @@ Three zones:
 
 Every change updates live preview (font size, reading flow, theme palette, riwayah glyph swap when popover row picked).
 
-Switching riwayah via popover emits `SETTINGS_RIWAYAH_CHANGED`, broadcasts cross-tab via `safety/sync.ts::broadcastRiwayahChange`, re-renders reader with new Riwayah's text + font + line-height floor.
+Switching riwayah via popover is gated by the runtime package index. Qaloon is the baseline and remains usable when its shipped text and page package are available. Optional Hafs and Warsh can be selected only after `src/data/riwayah-packages.ts` verifies that every planned text URL is in `CACHE_DATASET` and every planned page URL is in that riwayah's `qa-pages-{riwayah}-v1` cache. Online package availability alone leaves the row installable, not usable. A rejected switch returns `false`, leaves `settings.riwayah` unchanged, and does not apply DOM state, write IDB, emit `SETTINGS_RIWAYAH_CHANGED`, or broadcast cross-tab.
+
+The recitation picker exposes the package state on each row. Installed rows switch immediately. Installable rows show the package byte estimate and start the install flow instead of switching. Installing rows show cached/total progress and disable switching. Unavailable rows are disabled. Error rows offer retry. The current active row remains visibly active until the install verifies and `setRiwayah(requested)` succeeds.
+
+Package install progress lives outside `settings.riwayah`: `src/configure/state.svelte.ts::riwayahPackageState` holds runtime package status by riwayah, and `riwayahInstallIntent` records the requested optional package plus the previous usable riwayah. Failed installs clear the request or mark an error while preserving both `settings.riwayah` and `previousUsable`.
 
 ### Storage section — offline-selector
 
 Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N of 4 cached ›` (gold accent). Tap-to-expand reveals four inline category rows — Text, Audio (gated), Pages, Search (gated) — each carrying name + sub-label. Available rows show byte size + checkbox; gated rows show their version label only. The Pages row opens into per-riwayah page-pack controls for available Mushaf page packs plus any previously checked stale opt-ins. A source-aware list under the rows exposes translation and tafsir packs so users can keep or remove individual optional text packs from cache. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
 
 The Text row represents the baseline reader source set: Qaloon Arabic, Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. Optional translation and tafsir rows use `public/dataset/indexes/source-assets.json` for byte estimates and same-origin file plans without adding those bodies to the baseline manifest. The selector writes source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}` and per-riwayah page state under `settings.offlineCategories.pages.{riwayah}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
+
+Storage also lists riwayah package entries. Each package row plans text plus page bytes from `indexes/riwayah-packages.json`, installs optional Hafs/Warsh directly, and removes optional installed packages directly. Removing an active optional riwayah first switches to verified Qaloon; if Qaloon cannot be verified usable, removal is refused and the cached package is left intact.
 
 Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
 
@@ -181,6 +187,8 @@ Keys + sole writers:
 | `onboardingComplete` | `src/onboard/state.ts` | `boolean` |
 | `offlineCategories` | `src/configure/offline-categories.ts` | `OfflineCategoriesState` (source-aware text opt-in plus audio/pages/search; see `state/settings.svelte.ts`) |
 
+Riwayah package status and install intent are in-memory runtime state, not `settings` keys. They are intentionally separate from the persisted active riwayah so an optional package can be installable, installing, or errored without becoming the rendered corpus.
+
 ## Events
 
 <!-- AUTO-GENERATED:events-emit START -->
@@ -188,9 +196,9 @@ Keys + sole writers:
 | --- | --- | --- |
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:58`, `src/configure/riwayah.ts:74` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:155` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:138` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:74`, `src/configure/riwayah.ts:127` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:182` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:165` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -210,6 +218,8 @@ Keys + sole writers:
 - **Sole writer of `settings.offlineCategories`: `src/configure/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
 - **Text offline opt-in remains source-aware.** The visible Text checkbox maps to the baseline Qaloon + Bridges + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional translation and tafsir rows are controlled by `settings.offlineCategories.text.translations` / `.tafsir` and planned from `indexes/source-assets.json`, not from the baseline manifest.
 - **Pages offline opt-in is per-riwayah.** The selector stores Qaloon/Hafs/Warsh page choices under `settings.offlineCategories.pages`; `src/configure/offline-categories.ts`, the sole writer, normalizes the legacy `{ _all: true }` shape to `{ qaloon: true }`. Page apply actions call page-specific cache helpers instead of the generic category download path.
+- **Optional riwayat are usable only after local package verification.** `settings.riwayah` may persist Hafs or Warsh only when the package helper reports `installed`; Qaloon availability does not make another riwayah usable.
+- **Install intent is not the active riwayah.** `riwayahInstallIntent.requested` and `previousUsable` guide install/prompt flows without changing `settings.riwayah` until `setRiwayah(requested)` succeeds.
 
 ## Regression guards
 

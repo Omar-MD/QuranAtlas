@@ -1,5 +1,7 @@
 import type { Riwayah } from '../configure/state.svelte'
 import { clampMushafPage } from '../read/mushaf/navigation'
+import { parseViewBox } from '../read/mushaf/sizing'
+import { isRiwayahUsable } from './riwayah-packages'
 import type {
   MushafManifest,
   MushafManifestPage,
@@ -16,9 +18,16 @@ const SOURCE_SLUG_BY_RIWAYAH: Record<Riwayah, QuranWsSourceSlug> = {
   warsh: 'warsh',
   qaloon: 'qalun',
 }
+const RIWAYAH_LABELS: Record<Riwayah, string> = {
+  hafs: 'Ḥafṣ ʿan ʿĀṣim',
+  warsh: 'Warsh ʿan Nāfiʿ',
+  qaloon: 'Qālūn ʿan Nāfiʿ',
+}
 
 export class MushafPackUnavailableError extends Error {
   code = 'MUSHAF_PACK_UNAVAILABLE' as const
+  promptable = true as const
+  packageType = 'pages' as const
 
   constructor(public riwayah: Riwayah, public status?: number) {
     super(`Mushaf page pack is not available for ${riwayah}`)
@@ -84,6 +93,10 @@ function assertPage(raw: unknown, index: number): MushafManifestPage {
 
   const pageNumber = page as number
   const assetPath = assertAssetPath(raw.assetPath, pageNumber)
+  if (typeof raw.viewBox !== 'string') {
+    throw new Error(`Invalid Mushaf viewBox at page ${pageNumber}`)
+  }
+  parseViewBox(raw.viewBox)
 
   if (!Number.isInteger(raw.bytes) || (raw.bytes as number) <= 0) {
     throw new Error(`Invalid Mushaf byte count at page ${pageNumber}`)
@@ -98,6 +111,7 @@ function assertPage(raw: unknown, index: number): MushafManifestPage {
   return {
     page: pageNumber,
     assetPath,
+    viewBox: raw.viewBox.trim(),
     bytes: raw.bytes as number,
     ...(typeof raw.hash === 'string' ? { hash: raw.hash } : {}),
     sourcePdfUrl: raw.sourcePdfUrl,
@@ -164,6 +178,13 @@ function assertManifest(raw: unknown, expectedRiwayah: Riwayah): MushafManifest 
       throw new Error('Mushaf manifest pages must be contiguous from page 1')
     }
   })
+  const firstRatio = ratioForViewBox(pages[0]!.viewBox)
+  for (const page of pages) {
+    const ratio = ratioForViewBox(page.viewBox)
+    if (Math.abs(ratio - firstRatio) > 0.001) {
+      throw new Error(`Mushaf manifest page ${page.page} has an unexpected viewBox aspect ratio`)
+    }
+  }
 
   return {
     version: 1,
@@ -233,6 +254,7 @@ export async function resolveMushafPage({
   riwayah: Riwayah
   page: number
 }): Promise<MushafResolvedPage> {
+  await assertRenderableRiwayah(riwayah)
   const manifest = await loadMushafManifest(riwayah)
   const clampedPage = clampMushafPage(page, manifest.pageCount)
   const entry = manifest.pages.find((candidate) => candidate.page === clampedPage)
@@ -243,13 +265,21 @@ export async function resolveMushafPage({
   return {
     page: clampedPage,
     pageCount: manifest.pageCount,
+    riwayahLabel: RIWAYAH_LABELS[riwayah],
     assetPath: entry.assetPath,
     assetUrl: `${BASE}/${riwayah}/${entry.assetPath}`,
+    viewBox: parseViewBox(entry.viewBox),
+    viewBoxText: entry.viewBox,
     bytes: entry.bytes,
     ...(entry.hash ? { hash: entry.hash } : {}),
     firstVerse: { surah: entry.firstVerse.surah, verse: entry.firstVerse.verse },
     sourcePdfUrl: entry.sourcePdfUrl,
   }
+}
+
+function ratioForViewBox(viewBox: string): number {
+  const parsed = parseViewBox(viewBox)
+  return parsed.width / parsed.height
 }
 
 export async function pageForVerse({
@@ -261,6 +291,18 @@ export async function pageForVerse({
   surah: number
   verse: number
 }): Promise<number | null> {
+  await assertRenderableRiwayah(riwayah)
   const manifest = await loadMushafManifest(riwayah)
   return manifest.verseToPage[`${surah}:${verse}`] ?? null
+}
+
+async function assertRenderableRiwayah(riwayah: Riwayah): Promise<void> {
+  try {
+    if (!(await isRiwayahUsable(riwayah))) {
+      throw new MushafPackUnavailableError(riwayah)
+    }
+  } catch (error) {
+    if (error instanceof MushafPackUnavailableError) throw error
+    if (riwayah !== 'qaloon') throw new MushafPackUnavailableError(riwayah)
+  }
 }
