@@ -44,19 +44,29 @@ async function mushafLayoutMetrics(page) {
       ? Math.max(0, Math.min(header.bottom, mainRect.bottom) - mainRect.top)
       : 0
     const viewBox = svg.getAttribute('viewBox')?.trim().split(/\s+/).map(Number) ?? []
-    const margin = 12
+    const margin = 0
     const available = {
       width: Math.max(0, mainRect.width - margin * 2),
       height: Math.max(0, mainRect.height - headerOverlap - margin * 2),
     }
-    const scale = Math.min(available.width / viewBox[2], available.height / viewBox[3])
+    const resolvedMode = window.innerWidth < 768 || (window.innerWidth < 1180 && window.innerHeight >= window.innerWidth)
+      ? 'fit-width'
+      : 'fit-page'
+    const controlsClearance = resolvedMode === 'fit-page' ? 56 : 0
+    const layoutAvailable = {
+      width: available.width,
+      height: Math.max(0, available.height - controlsClearance),
+    }
+    const scale = resolvedMode === 'fit-width'
+      ? layoutAvailable.width / viewBox[2]
+      : Math.min(layoutAvailable.width / viewBox[2], layoutAvailable.height / viewBox[3])
     const expectedWidth = viewBox[2] * scale
     const expectedHeight = viewBox[3] * scale
     const expected = {
       width: expectedWidth,
       height: expectedHeight,
-      x: mainRect.left + margin + ((available.width - expectedWidth) / 2),
-      y: mainRect.top + headerOverlap + margin + ((available.height - expectedHeight) / 2),
+      x: mainRect.left + margin + (resolvedMode === 'fit-width' ? 0 : ((available.width - expectedWidth) / 2)),
+      y: mainRect.top + headerOverlap + margin,
     }
     const ancestorFrames = []
     let node = figure
@@ -78,7 +88,12 @@ async function mushafLayoutMetrics(page) {
         bottom: figureRect.bottom,
       },
       expected,
+      available,
+      controlsClearance,
+      resolvedMode,
       mainBottom: mainRect.bottom,
+      mainScrollHeight: main.scrollHeight,
+      mainClientHeight: main.clientHeight,
       controlsPosition: getComputedStyle(controls).position,
       ancestorFrames,
     }
@@ -460,8 +475,9 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     test.skip(!isDesktop, 'desktop settings prompt check')
 
     await writeSetting(page, 'riwayah', 'hafs')
-    await page.reload()
     await page.goto('/#/m/42')
+    await page.reload()
+    await expect(page).toHaveURL(/#\/m\/42$/)
     await expect(page.getByRole('button', { name: 'Install text and pages' })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Stay on current usable riwayah' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
@@ -491,10 +507,17 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
       const metrics = await mushafLayoutMetrics(page)
       expect(metrics).not.toBeNull()
-      expect(metrics.actual.bottom).toBeGreaterThan(metrics.mainBottom - 220)
-      expect(metrics.controlsPosition).toBe('absolute')
-      if (metrics.expected.width > 760) {
-        expect(metrics.actual.width).toBeGreaterThan(760)
+      expect(metrics.actual.width).toBeGreaterThanOrEqual(metrics.expected.width - 2)
+      expect(metrics.controlsPosition).toBe('fixed')
+      if (metrics.resolvedMode === 'fit-width') {
+        expect(metrics.actual.width).toBeGreaterThanOrEqual(metrics.available.width - 2)
+        if (metrics.expected.height > metrics.available.height + 2) {
+          expect(metrics.actual.bottom).toBeGreaterThan(metrics.mainBottom)
+          expect(metrics.mainScrollHeight).toBeGreaterThan(metrics.mainClientHeight)
+        }
+      } else {
+        expect(metrics.actual.bottom).toBeLessThanOrEqual(metrics.mainBottom - metrics.controlsClearance + 2)
+        expect(metrics.mainScrollHeight).toBeLessThanOrEqual(metrics.mainClientHeight + 2)
       }
       for (const frame of metrics.ancestorFrames) {
         expect(frame.boxShadow).toBe('none')
@@ -536,7 +559,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   })
 
   test('B-Mushaf: inline SVG themes and controls stay accessible @a11y', async ({ page }, testInfo) => {
-    await page.goto('/#/m/2')
+    await page.goto('/#/m/294')
     await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
     await expect(page.locator('.qa-mushaf-page-img')).toHaveCount(0)
 
@@ -549,12 +572,19 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       tokenSamples.push(await page.evaluate(() => {
         const root = getComputedStyle(document.documentElement)
         const svg = document.querySelector('.qa-mushaf-svg')
+        const groundPath = document.querySelector('.qa-mushaf-svg [fill="var(--qa-mushaf-ground)"]')
+        const inkPath = document.querySelector('.qa-mushaf-svg [fill="var(--qa-mushaf-ink)"]')
         const svgStyle = svg ? getComputedStyle(svg) : null
+        const readerStyle = getComputedStyle(document.querySelector('.qa-mushaf-reader'))
+        const figureStyle = getComputedStyle(document.querySelector('.qa-mushaf-page-figure'))
         return {
-          ground: root.getPropertyValue('--qa-mushaf-ground').trim(),
-          ink: root.getPropertyValue('--qa-mushaf-ink').trim(),
+          appSurface: root.getPropertyValue('--qa-surface-app').trim(),
+          ground: getComputedStyle(groundPath).fill,
+          ink: getComputedStyle(inkPath).fill,
           ornament: root.getPropertyValue('--qa-mushaf-ornament').trim(),
           accent: root.getPropertyValue('--qa-mushaf-accent').trim(),
+          readerBackground: readerStyle.backgroundColor,
+          figureBackground: figureStyle.backgroundColor,
           filter: svgStyle?.filter,
           imageRendering: svgStyle?.imageRendering,
         }
@@ -565,6 +595,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(new Set(tokenSamples.map(sample => sample.ink)).size).toBe(3)
     expect(new Set(tokenSamples.map(sample => sample.ornament)).size).toBe(3)
     for (const sample of tokenSamples) {
+      expect(sample.ground).toBe(sample.readerBackground)
+      expect(sample.ground).toBe(sample.figureBackground)
       expect(sample.filter).toBe('none')
       expect(sample.imageRendering).not.toBe('pixelated')
     }

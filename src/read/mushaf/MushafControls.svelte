@@ -1,13 +1,16 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
+  import type { MushafViewMode } from '../../configure/state.svelte'
   import type { MushafPhysicalAction } from './navigation'
 
   type Props = {
     page: number
     pageCount: number
     placement?: 'bottom-center' | 'below-page' | 'inside-safe-bottom'
+    viewMode?: MushafViewMode
     onAction: (action: MushafPhysicalAction) => void
     onNavigate: (page: number) => void
+    onViewModeChange?: (mode: MushafViewMode) => void
     onJumpOpenChange?: (open: boolean) => void
   }
 
@@ -15,8 +18,10 @@
     page,
     pageCount,
     placement = 'bottom-center',
+    viewMode = 'auto',
     onAction,
     onNavigate,
+    onViewModeChange,
     onJumpOpenChange,
   }: Props = $props()
 
@@ -51,7 +56,7 @@
   }
 
   function commitJump(): void {
-    const next = Number.parseInt(draft, 10)
+    const next = Number.parseInt(input?.value ?? draft, 10)
     if (Number.isInteger(next)) onNavigate(clampPage(next))
     closeJump({ restoreFocus: true })
   }
@@ -75,6 +80,11 @@
   function handleEdge(action: MushafPhysicalAction): void {
     if (jumpOpen) return
     onAction(action)
+  }
+
+  function setViewMode(mode: MushafViewMode): void {
+    if (mode === viewMode) return
+    onViewModeChange?.(mode)
   }
 
   $effect(() => {
@@ -122,6 +132,32 @@
   {/if}
 
   <div class="qa-mushaf-chip-wrap">
+    <div class="qa-mushaf-view-mode" role="group" aria-label="Mushaf view mode">
+      <button
+        type="button"
+        class="qa-mushaf-view-mode-btn"
+        class:qa-mushaf-view-mode-btn--active={viewMode === 'auto'}
+        aria-pressed={viewMode === 'auto'}
+        aria-label="Choose automatic Mushaf page fit"
+        onclick={() => setViewMode('auto')}
+      >Auto</button>
+      <button
+        type="button"
+        class="qa-mushaf-view-mode-btn"
+        class:qa-mushaf-view-mode-btn--active={viewMode === 'fit-page'}
+        aria-pressed={viewMode === 'fit-page'}
+        aria-label="Fit full Mushaf page"
+        onclick={() => setViewMode('fit-page')}
+      >Page</button>
+      <button
+        type="button"
+        class="qa-mushaf-view-mode-btn"
+        class:qa-mushaf-view-mode-btn--active={viewMode === 'fit-width'}
+        aria-pressed={viewMode === 'fit-width'}
+        aria-label="Fit Mushaf page to width"
+        onclick={() => setViewMode('fit-width')}
+      >Width</button>
+    </div>
     <button
       bind:this={chip}
       type="button"

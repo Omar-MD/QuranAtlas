@@ -179,6 +179,7 @@ Keys + sole writers:
 | `wordSpacing` | `src/configure/reading-typography.ts` | step |
 | `readerMargin` | `src/configure/reading-typography.ts` | step |
 | `verseSpacing` | `src/configure/reading-typography.ts` | step |
+| `mushafViewMode` | `src/read/mushaf/view-mode.ts` | `'auto' \| 'fit-page' \| 'fit-width'` |
 | `surahHeaderHidden` | `src/configure/surah-header-visibility.ts` | `boolean` |
 | `currentPosition` | `src/read/state.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
 | `wirdPlan` | `src/read/wird/store.ts` | `WirdPlan \| null` |
@@ -210,6 +211,7 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 ## Invariants
 
 - **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity.
+- **Mushaf view mode is owned by the read surface.** The Settings store persists `mushafViewMode`, but the sole writer is `src/read/mushaf/view-mode.ts` because the visible control lives in Mushaf page chrome, not the Settings sheet.
 - **Sole writer of `settings.wirdPlan`: `src/read/wird/store.ts`.** The settings store remains key-value; Daily Wird owns only this key and does not change the settings objectStore schema.
 - **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
 - **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/configure/panel.test.ts`).

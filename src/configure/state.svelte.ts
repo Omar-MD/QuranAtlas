@@ -6,6 +6,7 @@ export type TafsirId = string
 export type Theme = 'light' | 'sepia' | 'dark' | 'auto'
 export type FontSize = 'sm' | 'md' | 'lg' | 'xl'
 export type ReadingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export type MushafViewMode = 'auto' | 'fit-page' | 'fit-width'
 export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
 export type RiwayahInstallState = Record<Riwayah, RiwayahPackageStatus | null>
 export type RiwayahInstallIntent = {
@@ -52,6 +53,7 @@ export const settings = $state({
   wordSpacing: 'md' as ReadingStep,
   readerMargin: 'md' as ReadingStep,
   verseSpacing: 'md' as ReadingStep,
+  mushafViewMode: 'auto' as MushafViewMode,
   nightMode: false,
   surahHeaderHidden: false,
   currentPosition: null as GlobalPosition,

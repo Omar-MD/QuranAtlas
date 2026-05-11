@@ -71,6 +71,7 @@ test_paths:
 | `src/read/mushaf/sizing.ts` | _(no leading comment)_ |
 | `src/read/mushaf/svg-page.ts` | _(no leading comment)_ |
 | `src/read/mushaf/types.ts` | _(no leading comment)_ |
+| `src/read/mushaf/view-mode.ts` | _(no leading comment)_ |
 | `src/read/position.ts` | Reader position tracking — observes scroll, persists last-read verse to |
 | `src/read/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
 | `src/read/scroll-ancestor.ts` | Find the nearest scrolling ancestor of `el`. |
@@ -100,11 +101,11 @@ The read surface has two sibling modes:
 - **Verse mode** (`#/s/:surah/:ayah?`) mounts `Reader.svelte`, sets `reader.readerMode = 'verse'`, clears `reader.currentMushafPage`, and owns verse scroll/translation/tafsir behavior. If the active optional `settings.riwayah` is not usable according to `/dataset/indexes/riwayah-packages.json` plus local cache membership, the reader shows a compact install prompt with Settings + Retry actions and does not render fallback Qaloon ayat under the selected Hafs/Warsh UI state.
 - **Mushaf mode** (`#/m/:page`) mounts `MushafReader.svelte`, sets `reader.readerMode = 'mushaf'`, sets `reader.currentMushafPage`, and clears verse-specific reader state. The route has no riwayah param: the active `settings.riwayah` selects `/dataset/mushaf-pages/{riwayah}/manifest.json` and the SVG page asset for the current route page.
 
-Mushaf mode renders one same-origin, sanitized inline SVG page at a time as a single labeled image. The ready state is full-viewport and unframed: no page card, visible sheet, shadow, footer row, or scrubber. Page size is measured from `#main-content`, subtracts only overlapping mobile header chrome once, and fits the active SVG `viewBox` into that rectangle; the manifest `viewBox` is the first-render sizing contract and the fetched SVG must match it before rendering. After a page is visible, the reader warms adjacent sanitized SVG markup in memory for ordinary page turns; stale prefetches are aborted and failures never replace the visible page.
+Mushaf mode renders one same-origin, sanitized inline SVG page at a time as a single labeled image. The ready state is unframed: no page card, visible sheet, shadow, footer row, or scrubber. Page size is measured from `#main-content` and subtracts only overlapping mobile header chrome once. The persisted Mushaf view mode defaults to Auto: phone widths and portrait tablet widths fill the available content width and let `#main-content` scroll vertically when the page exceeds the viewport; landscape tablet and desktop widths fit the full page into the viewport for PDF/document-reader ergonomics. The pinned mode control can override Auto with Fit page or Fit width. Quran.ws page SVGs keep their manifest `viewBox` as the fetch-validation contract, then use a conservative display crop for the printable page gutter so the source margin does not consume reading space. After a page is visible, the reader warms adjacent sanitized SVG markup in memory for ordinary page turns; stale prefetches are aborted and failures never replace the visible page.
 
-Mushaf navigation follows physical right-to-left page progression. Tapping the left edge, swiping left, or pressing `ArrowLeft` advances toward the end of the Mushaf (`+1`). Tapping the right edge, swiping right, or pressing `ArrowRight` returns toward the start (`-1`). `Home` routes to page 1 and `End` routes to the final manifest page. The compact page chip is the only persistent visible control; activating it opens a numeric jump input that clamps to `1..pageCount`, commits on Enter, cancels on Escape, restores chip focus, and suppresses edge zones/swipes while open.
+Mushaf navigation follows physical right-to-left page progression. Tapping the left edge, swiping left, or pressing `ArrowLeft` advances toward the end of the Mushaf (`+1`). Tapping the right edge, swiping right, or pressing `ArrowRight` returns toward the start (`-1`). `Home` routes to page 1 and `End` routes to the final manifest page. The compact page chip plus Auto/Page/Width segmented mode control are the only persistent visible controls; activating the chip opens a numeric jump input that clamps to `1..pageCount`, commits the current input value on Enter, cancels on Escape, restores chip focus, and suppresses edge zones/swipes while open.
 
-Invalid or out-of-range page params resolve against the active manifest page count and canonicalize through `router.navigate(pageHref(clamped), { replace: true })`, so route events and `lastSurface` see the canonical `#/m/:page` hash. Changing `settings.riwayah` while mounted reloads the same page number against the new active page manifest. Theme changes recolor the inline SVG through Mushaf tokens without refetching the page. Runtime fetches stay under `/dataset/**`; quran.ws is build-time attribution/import input only.
+Invalid or out-of-range page params resolve against the active manifest page count and canonicalize through `router.navigate(pageHref(clamped), { replace: true })`, so route events and `lastSurface` see the canonical `#/m/:page` hash. Changing `settings.riwayah` while mounted reloads the same page number against the new active page manifest. Theme changes recolor the inline SVG through Mushaf tokens without refetching the page, including stale/raw quran.ws black and white paint values normalized at runtime; the Mushaf page ground resolves to the app surface in light, sepia, and dark. Runtime fetches stay under `/dataset/**`; quran.ws is build-time attribution/import input only.
 
 Missing active-riwayah page packs render an install prompt rather than silently falling back to Qaloon pages. The prompt names the active missing riwayah and offers package install, stay on the current usable riwayah, open Settings, retry, and Open Verse mode only when the active riwayah is verified usable for text. Stale Hafs/Warsh settings remain visible as the missing active choice until the user installs, retries, or switches; the page component must not render Qaloon pages behind that label. SVG asset failures stay inside the page component as retry/open-verse states; no error state silently loads another riwayah page.
 
@@ -229,7 +230,7 @@ _(no cross-surface reads detected)_
 
 Last-read position + sticky-page state. Single global record; updated on every surah mount + center-band scroll crossing + warm-resume hide.
 
-Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `tafsirId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `surahHeaderHidden`, `currentPosition`, `lastSurface`, `wirdPlan`. (See `configure` dossier for `settings` store body.)
+Settings keys read by reader: `riwayah`, `theme`, `nightMode`, `translationVisible`, `translationId`, `tafsirId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `mushafViewMode`, `surahHeaderHidden`, `currentPosition`, `lastSurface`, `wirdPlan`. (See `configure` dossier for `settings` store body.)
 
 Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count, SVG asset paths, per-page `viewBox`, first visible verse refs, and `verseToPage` mode-switch mapping. The fetched page SVG is same-origin validated, parsed, descendant-sanitized, and serialized before inline rendering. Verse mode reads `/dataset/manifest.json` before loading `riwayat/{riwayah}/{surah}.json` so missing optional Hafs/Warsh text packs surface as install prompts instead of fallback text.
 
@@ -250,7 +251,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:158` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:104`, `src/read/MarginHeader.svelte:185` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:319` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:354` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -259,6 +260,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 - **Missing active Riwayah packs prompt installation.** Qaloon is baseline. Hafs/Warsh text or page packs are optional/full-profile assets; if the active pack is absent from the built manifest, Reader/MushafReader must show an install prompt and must not silently render Qaloon text or pages under a Hafs/Warsh UI state.
 - **Mushaf route is page-only and position-neutral.** `#/m/:page` does not encode riwayah and does not mutate `settings.currentPosition`. The active manifest's `pageCount` is authoritative for clamping/canonicalization.
 - **Mushaf canvas is page-only.** Mushaf mode does not render verse overlays, translation rows, or tafsir inside the SVG page canvas; opening verse mode uses the page manifest's first visible verse reference.
+- **Mushaf view mode is a document-view preference.** `settings.mushafViewMode` stores only `auto`, `fit-page`, or `fit-width`; Auto resolves from viewport shape at render time so mobile can prioritize readable width while desktop can keep a full-page document view.
 - **Each Riwayah pairs with its own KFGQPC Uthmanic mushaf cut.** Cross-Riwayah reuse mis-renders combining marks. Mapping: `hafs → KFGQPC Uthmanic Hafs v22`, `warsh → KFGQPC Uthmanic Warsh V21`, `qaloon → KFGQPC Uthmanic Qaloon V21`. Each token's font-family chain falls back to **Amiri Quran** (Khaled Hosny, OFL) when KFGQPC isn't loaded, then bare `serif`. No user-facing font picker. Wired through `--ff-kfgqpc-{riwayah}` (`src/styles/tokens/primitives.css`) → `--qa-font-arabic` (`src/styles/tokens/semantic.css`). Regression guard: `tests/unit/styles/font-tokens.test.js`.
 - **Hamburger drawer is the sole in-app entry to the full surah list (mobile).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
 - **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
@@ -274,7 +276,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (27):**
+**Unit (28):**
 
 - `tests/unit/read/AmbientDock.test.ts`
 - `tests/unit/read/MarginHeader-toggle.test.ts`
@@ -290,6 +292,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 - `tests/unit/read/mushaf/reader.test.ts`
 - `tests/unit/read/mushaf/sizing.test.ts`
 - `tests/unit/read/mushaf/svg-page.test.ts`
+- `tests/unit/read/mushaf/view-mode.test.ts`
 - `tests/unit/read/render-helpers.test.ts`
 - `tests/unit/read/scroll-tracker.test.ts`
 - `tests/unit/read/state-ambient.test.ts`

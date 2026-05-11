@@ -898,9 +898,10 @@
 
   .qa-mushaf-reader {
     position: relative;
-    min-height: 100dvh;
-    overflow: hidden;
+    min-height: max(100dvh, var(--qa-mushaf-reader-height, 100dvh));
+    overflow: visible;
     touch-action: pan-y;
+    background: var(--qa-surface-app);
   }
 
   .qa-mushaf-page-wrap {
@@ -927,6 +928,7 @@
     user-select: none;
     touch-action: manipulation;
     pointer-events: auto;
+    background: var(--qa-mushaf-ground);
     transition: opacity 140ms ease-out, transform 140ms ease-out;
     will-change: opacity, transform;
   }
@@ -958,7 +960,7 @@
   }
 
   .qa-mushaf-controls {
-    position: absolute;
+    position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 3;
@@ -985,6 +987,7 @@
   }
 
   .qa-mushaf-edge:focus-visible,
+  .qa-mushaf-view-mode-btn:focus-visible,
   .qa-mushaf-page-chip:focus-visible,
   .qa-mushaf-page-jump:focus-visible {
     outline: 2px solid var(--qa-mushaf-accent);
@@ -1005,6 +1008,36 @@
     gap: 0.375rem;
     transform: translateX(-50%);
     pointer-events: auto;
+  }
+
+  .qa-mushaf-view-mode {
+    display: inline-grid;
+    grid-template-columns: repeat(3, minmax(44px, auto));
+    align-items: center;
+    min-height: 38px;
+    padding: 2px;
+    border: 1px solid var(--qa-border-on-sheet);
+    border-radius: var(--qa-radius-sm);
+    background: color-mix(in srgb, var(--qa-surface-sheet) 86%, transparent);
+    box-shadow: var(--qa-shadow-sm);
+  }
+
+  .qa-mushaf-view-mode-btn {
+    min-width: 44px;
+    min-height: 32px;
+    padding: 0 0.5rem;
+    border: 0;
+    border-radius: calc(var(--qa-radius-sm) - 2px);
+    background: transparent;
+    color: var(--qa-text-on-sheet-dim);
+    font-family: var(--qa-font-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+  }
+
+  .qa-mushaf-view-mode-btn--active {
+    background: color-mix(in srgb, var(--qa-mushaf-accent) 18%, var(--qa-surface-sheet));
+    color: var(--qa-text-on-sheet);
   }
 
   .qa-mushaf-controls--below-page .qa-mushaf-chip-wrap {

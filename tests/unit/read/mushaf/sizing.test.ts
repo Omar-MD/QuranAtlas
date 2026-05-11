@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   choosePageChipPlacement,
+  displayViewBoxForMushafPage,
+  fitViewBoxToWidth,
   fitViewBoxIntoRect,
   parseViewBox,
+  resolveMushafLayoutMode,
+  viewBoxText,
 } from '../../../../src/read/mushaf/sizing'
 
 describe('mushaf sizing helpers', () => {
@@ -40,6 +44,66 @@ describe('mushaf sizing helpers', () => {
 
     expect(fit.width).toBeGreaterThan(760)
     expect(fit.height).toBe(1500)
+  })
+
+  it('fits a Mushaf page to the full available width even when height overflows', () => {
+    const fit = fitViewBoxToWidth(parseViewBox('0 0 900 1379.25'), 1440)
+
+    expect(fit).toEqual({
+      width: 1440,
+      height: 2206.8,
+      scale: 1.6,
+      x: 0,
+      y: 0,
+    })
+  })
+
+  it('uses a conservative display crop for quran.ws page geometry', () => {
+    expect(displayViewBoxForMushafPage(parseViewBox('0 0 900 1379.25'))).toEqual({
+      minX: 60,
+      minY: 60,
+      width: 790,
+      height: 1270,
+    })
+    expect(displayViewBoxForMushafPage(parseViewBox('0 0 10 20'))).toEqual({
+      minX: 0,
+      minY: 0,
+      width: 10,
+      height: 20,
+    })
+  })
+
+  it('serializes SVG viewBox values', () => {
+    expect(viewBoxText({ minX: 60, minY: 60, width: 790, height: 1270 })).toBe('60 60 790 1270')
+  })
+
+  it('resolves automatic Mushaf layout mode by viewport like a responsive document reader', () => {
+    expect(resolveMushafLayoutMode('auto', { width: 390, height: 844 })).toBe('fit-width')
+    expect(resolveMushafLayoutMode('auto', { width: 1024, height: 1366 })).toBe('fit-width')
+    expect(resolveMushafLayoutMode('auto', { width: 1024, height: 768 })).toBe('fit-page')
+    expect(resolveMushafLayoutMode('auto', { width: 1440, height: 1000 })).toBe('fit-page')
+  })
+
+  it('uses explicit Mushaf layout mode overrides regardless of viewport', () => {
+    expect(resolveMushafLayoutMode('fit-page', { width: 390, height: 844 })).toBe('fit-page')
+    expect(resolveMushafLayoutMode('fit-width', { width: 1440, height: 1000 })).toBe('fit-width')
+  })
+
+  it('returns a zero width fit when the available width is unavailable', () => {
+    expect(fitViewBoxToWidth(parseViewBox('0 0 500 1000'), 0)).toEqual({
+      width: 0,
+      height: 0,
+      scale: 0,
+      x: 0,
+      y: 0,
+    })
+    expect(fitViewBoxToWidth(parseViewBox('0 0 500 1000'), Number.NaN)).toEqual({
+      width: 0,
+      height: 0,
+      scale: 0,
+      x: 0,
+      y: 0,
+    })
   })
 
   it('returns a zero fit when available size is unavailable', () => {

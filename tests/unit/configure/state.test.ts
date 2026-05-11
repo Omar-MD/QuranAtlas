@@ -9,6 +9,7 @@ describe('state/settings.svelte.ts', () => {
     settings.tafsirId = 'muyassar'
     settings.translationVisible = true
     settings.surahHeaderHidden = false
+    settings.mushafViewMode = 'auto'
   })
 
   it('has correct initial state', () => {
@@ -17,6 +18,7 @@ describe('state/settings.svelte.ts', () => {
     expect(settings.translationId).toBe('bridges')
     expect(settings.tafsirId).toBe('muyassar')
     expect(settings.translationVisible).toBe(true)
+    expect(settings.mushafViewMode).toBe('auto')
   })
 
   it('fields are directly assignable', () => {
@@ -39,5 +41,10 @@ describe('state/settings.svelte.ts', () => {
   it('surahHeaderHidden is directly assignable', () => {
     settings.surahHeaderHidden = true
     expect(settings.surahHeaderHidden).toBe(true)
+  })
+
+  it('mushafViewMode is directly assignable', () => {
+    settings.mushafViewMode = 'fit-page'
+    expect(settings.mushafViewMode).toBe('fit-page')
   })
 })

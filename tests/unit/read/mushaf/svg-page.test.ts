@@ -47,6 +47,26 @@ describe('mushaf inline SVG helpers', () => {
     expect(svg.markup).not.toContain('aria-label')
   })
 
+  it('rewrites raw quran.ws page colors to theme tokens at runtime', () => {
+    const svg = prepareInlineMushafSvg(
+      '<svg viewBox="0 0 10 20"><path d="M0 0h10v20H0z" fill="rgb(100%, 100%, 100%)"/><path d="M1 1" fill="#231f20"/><path d="M2 2" fill="#000"/></svg>',
+    )
+
+    expect(svg.markup).toContain('fill="var(--qa-mushaf-ground)"')
+    expect(svg.markup.match(/fill="var\(--qa-mushaf-ink\)"/g) ?? []).toHaveLength(2)
+    expect(svg.markup).not.toContain('rgb(')
+    expect(svg.markup).not.toContain('#231f20')
+    expect(svg.markup).not.toContain('#000')
+  })
+
+  it('crops quran.ws page geometry for display while preserving the source viewBox for manifest validation', () => {
+    const svg = prepareInlineMushafSvg('<svg viewBox="0 0 900 1379.25"><path d="M0 0" fill="#000"/></svg>')
+
+    expect(svg.viewBoxText).toBe('0 0 900 1379.25')
+    expect(svg.viewBox).toEqual({ minX: 60, minY: 60, width: 790, height: 1270 })
+    expect(svg.markup).toContain('viewBox="60 60 790 1270"')
+  })
+
   it('rejects missing viewBox and unsafe SVG content', () => {
     expect(() => prepareInlineMushafSvg('<svg><path d="M0 0"/></svg>')).toThrow(/missing viewBox/)
     expect(() => prepareInlineMushafSvg('<svg viewBox="0 0 1 1"><script /></svg>')).toThrow(/unsafe content/)

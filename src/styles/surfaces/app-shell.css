@@ -58,7 +58,7 @@
     max-width: none;
     width: 100%;
     padding: 0;
-    overflow: hidden;
+    overflow: hidden auto;
   }
 
   #bottom-nav {
@@ -131,7 +131,7 @@
       max-width: none;
       width: 100%;
       padding: 0;
-      overflow: hidden;
+      overflow: hidden auto;
     }
 
     /* About page column — wider than Reader cap for stat-grid + body-split. */

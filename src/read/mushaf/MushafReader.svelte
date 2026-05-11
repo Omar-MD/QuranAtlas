@@ -20,8 +20,16 @@
     parseMushafPageParam,
     type MushafPhysicalAction,
   } from './navigation'
-  import { choosePageChipPlacement, fitViewBoxIntoRect, type ChipPlacement, type SvgViewBox } from './sizing'
+  import {
+    choosePageChipPlacement,
+    fitViewBoxIntoRect,
+    fitViewBoxToWidth,
+    resolveMushafLayoutMode,
+    type ChipPlacement,
+    type SvgViewBox,
+  } from './sizing'
   import { loadInlineMushafSvg } from './svg-page'
+  import { setMushafViewMode } from './view-mode'
   import type { InlineMushafSvg, MushafResolvedPage } from './types'
 
   type Props = { page?: string }
@@ -136,6 +144,7 @@
       }
       inlineSvg = svg
       measureLayout()
+      resetMainScroll()
       prefetchAdjacentPages(next)
     } catch (err) {
       if (!isActiveRequest(id)) return
@@ -179,17 +188,29 @@
     const headerOverlap = header && header.bottom > rect.top && header.top < rect.bottom && window.innerWidth < 1180
       ? Math.max(0, Math.min(header.bottom, rect.bottom) - rect.top)
       : 0
-    const margin = 12
-    const available = {
+    const margin = 0
+    const fullAvailable = {
       width: Math.max(0, rect.width - margin * 2),
       height: Math.max(0, rect.height - headerOverlap - margin * 2),
     }
-    const fit = fitViewBoxIntoRect(viewBox, available)
+    const resolvedLayoutMode = resolveMushafLayoutMode(settings.mushafViewMode, {
+      width: viewportWidth,
+      height: viewportHeight,
+    })
+    const controlsClearance = resolvedLayoutMode === 'fit-page' ? 56 : 0
+    const available = {
+      width: fullAvailable.width,
+      height: Math.max(0, fullAvailable.height - controlsClearance),
+    }
+    const fit = resolvedLayoutMode === 'fit-width'
+      ? fitViewBoxToWidth(viewBox, available.width)
+      : fitViewBoxIntoRect(viewBox, available)
     layoutStyle = [
       `--qa-mushaf-page-width:${fit.width}px`,
       `--qa-mushaf-page-height:${fit.height}px`,
       `--qa-mushaf-page-x:${margin + fit.x}px`,
       `--qa-mushaf-page-y:${headerOverlap + margin + fit.y}px`,
+      `--qa-mushaf-reader-height:${Math.max(rect.height, headerOverlap + margin * 2 + fit.height + controlsClearance)}px`,
       `--qa-mushaf-viewbox-ratio:${viewBox.width / viewBox.height}`,
     ].join(';')
     chipPlacement = choosePageChipPlacement({
@@ -198,6 +219,20 @@
       chip: { width: 112, height: 40 },
       margin,
     })
+  }
+
+  async function updateViewMode(mode: typeof settings.mushafViewMode): Promise<void> {
+    if (await setMushafViewMode(mode)) {
+      measureLayout()
+    }
+  }
+
+  function resetMainScroll(): void {
+    const main = document.getElementById('main-content')
+    if (main) {
+      main.scrollTop = 0
+      main.scrollLeft = 0
+    }
   }
 
   function navigateByAction(action: MushafPhysicalAction): void {
@@ -366,8 +401,10 @@
       page={resolved.page}
       pageCount={resolved.pageCount}
       placement={chipPlacement}
+      viewMode={settings.mushafViewMode}
       onAction={navigateByAction}
       onNavigate={navigateToPage}
+      onViewModeChange={(mode) => { void updateViewMode(mode) }}
       onJumpOpenChange={(open) => { jumpOpen = open }}
     />
   {/if}

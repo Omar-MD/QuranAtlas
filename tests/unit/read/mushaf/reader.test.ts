@@ -137,6 +137,7 @@ describe('MushafReader', () => {
     const { reader } = await import('../../../../src/read/state.svelte')
     settings.riwayah = 'qaloon'
     settings.currentPosition = { surah: 2, verse: 255 }
+    settings.mushafViewMode = 'auto'
     reader.readerMode = 'verse'
     reader.currentMushafPage = null
   })
@@ -301,6 +302,120 @@ describe('MushafReader', () => {
     expect(document.querySelector('.qa-mushaf-svg path[tabindex]')).toBeNull()
   })
 
+  it('measures Mushaf pages against the full main-content rectangle without fixed insets', async () => {
+    const main = document.getElementById('main-content')!
+    const { settings } = await import('../../../../src/configure/state.svelte')
+    settings.mushafViewMode = 'fit-width'
+    main.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 900,
+      bottom: 1379.25,
+      width: 900,
+      height: 1379.25,
+      toJSON: () => ({}),
+    }) as DOMRect
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '1' } })
+
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toBeInTheDocument())
+    const readerElement = document.querySelector<HTMLElement>('.qa-mushaf-reader')!
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-width')).toBe('900px')
+    expect(Number.parseFloat(readerElement.style.getPropertyValue('--qa-mushaf-page-height'))).toBeCloseTo(1446.84)
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-x')).toBe('0px')
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-y')).toBe('0px')
+  })
+
+  it('keeps Mushaf pages width-filled instead of shrinking to the viewport height', async () => {
+    const main = document.getElementById('main-content')!
+    const { settings } = await import('../../../../src/configure/state.svelte')
+    settings.mushafViewMode = 'fit-width'
+    main.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 900,
+      bottom: 1000,
+      width: 900,
+      height: 1000,
+      toJSON: () => ({}),
+    }) as DOMRect
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '1' } })
+
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toBeInTheDocument())
+    const readerElement = document.querySelector<HTMLElement>('.qa-mushaf-reader')!
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-width')).toBe('900px')
+    expect(Number.parseFloat(readerElement.style.getPropertyValue('--qa-mushaf-page-height'))).toBeCloseTo(1446.84)
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-x')).toBe('0px')
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-y')).toBe('0px')
+    expect(Number.parseFloat(readerElement.style.getPropertyValue('--qa-mushaf-reader-height'))).toBeCloseTo(1446.84)
+  })
+
+  it('defaults automatic Mushaf layout to fit-page on desktop viewports', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1000 })
+    const main = document.getElementById('main-content')!
+    main.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 1440,
+      bottom: 1000,
+      width: 1440,
+      height: 1000,
+      toJSON: () => ({}),
+    }) as DOMRect
+    const { settings } = await import('../../../../src/configure/state.svelte')
+    settings.mushafViewMode = 'auto'
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '1' } })
+
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toBeInTheDocument())
+    const readerElement = document.querySelector<HTMLElement>('.qa-mushaf-reader')!
+    expect(Number.parseFloat(readerElement.style.getPropertyValue('--qa-mushaf-page-width'))).toBeCloseTo(587.21)
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-y')).toBe('0px')
+    expect(Number.parseFloat(readerElement.style.getPropertyValue('--qa-mushaf-reader-height'))).toBeCloseTo(1000)
+  })
+
+  it('persists an explicit Mushaf fit-width override from the controls', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1000 })
+    const main = document.getElementById('main-content')!
+    main.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 1440,
+      bottom: 1000,
+      width: 1440,
+      height: 1000,
+      toJSON: () => ({}),
+    }) as DOMRect
+    const db = await import('../../../../src/core/db')
+    const { settings } = await import('../../../../src/configure/state.svelte')
+    settings.mushafViewMode = 'auto'
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '1' } })
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toBeInTheDocument())
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Fit Mushaf page to width' }))
+
+    await waitFor(() => expect(settings.mushafViewMode).toBe('fit-width'))
+    await expect(db.get('settings', 'mushafViewMode')).resolves.toMatchObject({ value: 'fit-width' })
+    const readerElement = document.querySelector<HTMLElement>('.qa-mushaf-reader')!
+    expect(readerElement.style.getPropertyValue('--qa-mushaf-page-width')).toBe('1440px')
+  })
+
   it('maps overlay edge zones to physical Mushaf page actions', async () => {
     const router = await import('../../../../src/core/router')
     const navigateSpy = vi.spyOn(router, 'navigate')
@@ -338,6 +453,22 @@ describe('MushafReader', () => {
     const cancelInput = screen.getByRole('spinbutton', { name: 'Mushaf page number' })
     await fireEvent.keyDown(cancelInput, { key: 'Escape' })
     await waitFor(() => expect(document.activeElement).toBe(chip))
+  })
+
+  it('commits the current page jump input value even when component state has not observed input yet', async () => {
+    const router = await import('../../../../src/core/router')
+    const navigateSpy = vi.spyOn(router, 'navigate')
+    const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
+
+    render(MushafReader, { props: { page: '2' } })
+    await waitFor(() => expect(screen.getByRole('img', { name: /Mushaf page 2/ })).toBeInTheDocument())
+
+    await fireEvent.click(screen.getByRole('button', { name: /Jump from Mushaf page 2/ }))
+    const input = screen.getByRole<HTMLInputElement>('spinbutton', { name: 'Mushaf page number' })
+    input.value = '294'
+    await fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(navigateSpy).toHaveBeenCalledWith('#/m/294')
   })
 
   it('maps ArrowLeft and ArrowRight to physical Mushaf actions', async () => {

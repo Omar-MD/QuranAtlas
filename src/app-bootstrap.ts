@@ -21,6 +21,7 @@ import { initOfflineCategories } from './configure/offline-categories.ts'
 import { initReadingTypography } from './configure/reading-typography.ts'
 import { initNightMode } from './configure/night-mode.ts'
 import { initSurahHeaderHidden } from './configure/surah-header-visibility.ts'
+import { initMushafViewMode } from './read/mushaf/view-mode.ts'
 import { openSettingsSheet } from './configure/panel-bridge.ts'
 import { initReaderActions } from './navigate/reader-actions.js'
 import { initIndicators } from './mark/indicator'
@@ -138,6 +139,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     await initFontSize()
     const activeRiwayah = await initRiwayah()
     await initReadingTypography()
+    await initMushafViewMode()
     await initNightMode()
     await initSurahHeaderHidden()
 

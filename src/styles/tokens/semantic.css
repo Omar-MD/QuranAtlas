@@ -93,7 +93,7 @@
     --qa-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 4%);
 
     /* --- Mushaf page SVG ----------------------------------------------- */
-    --qa-mushaf-ground:   #fbf7ee;
+    --qa-mushaf-ground:   var(--qa-surface-app);
     --qa-mushaf-ink:      #17120b;
     --qa-mushaf-ornament: #7a5b28;
     --qa-mushaf-accent:   var(--qa-accent);
@@ -276,7 +276,7 @@
     --qa-nav-delete-text: var(--qa-text-on-accent);
     --qa-nav-shadow-row: 0 4px 14px rgb(64 43 18 / 7%);
     --qa-nav-shadow-control: 0 8px 18px rgb(64 43 18 / 5%);
-    --qa-mushaf-ground: #efe0bf;
+    --qa-mushaf-ground: var(--qa-surface-app);
     --qa-mushaf-ink: #2d2113;
     --qa-mushaf-ornament: #80602b;
     --qa-mushaf-accent: #9a6b2f;
@@ -336,7 +336,7 @@
     --qa-nav-delete-text: var(--qa-text-primary);
     --qa-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 28%);
     --qa-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 24%);
-    --qa-mushaf-ground: #16130f;
+    --qa-mushaf-ground: var(--qa-surface-app);
     --qa-mushaf-ink: #eee2c8;
     --qa-mushaf-ornament: #c6a15a;
     --qa-mushaf-accent: #d2ad62;

@@ -1,4 +1,4 @@
-import { parseViewBox } from './sizing'
+import { displayViewBoxForMushafPage, parseViewBox, viewBoxText as serializeViewBox } from './sizing'
 import type { InlineMushafSvg } from './types'
 
 const MUSHAF_PAGE_ASSET_RE = /^\/dataset\/mushaf-pages\/(hafs|warsh|qaloon)\/pages\/\d{3}\.svg$/
@@ -10,6 +10,12 @@ const URL_ATTRS = new Set([
   'stroke',
 ])
 const FRAGMENT_ONLY_ATTRS = new Set(['href', 'xlink:href', 'src'])
+const COLORLESS_VALUES = new Set(['none', 'transparent', 'inherit', 'currentcolor'])
+const RUNTIME_COLOR_TOKENS: Record<string, string> = {
+  '#ffffff': 'var(--qa-mushaf-ground)',
+  '#000000': 'var(--qa-mushaf-ink)',
+  '#231f20': 'var(--qa-mushaf-ink)',
+}
 
 export async function loadInlineMushafSvg(
   assetUrl: string,
@@ -52,7 +58,8 @@ export function prepareInlineMushafSvg(text: string): InlineMushafSvg {
 
   const viewBoxText = root.getAttribute('viewBox')?.trim()
   if (!viewBoxText) throw new Error('Mushaf page SVG is missing viewBox')
-  const viewBox = parseViewBox(viewBoxText)
+  const sourceViewBox = parseViewBox(viewBoxText)
+  const viewBox = displayViewBoxForMushafPage(sourceViewBox)
 
   root.removeAttribute('tabindex')
   root.removeAttribute('role')
@@ -60,6 +67,7 @@ export function prepareInlineMushafSvg(text: string): InlineMushafSvg {
   root.classList.add('qa-mushaf-svg')
   root.setAttribute('aria-hidden', 'true')
   root.setAttribute('focusable', 'false')
+  root.setAttribute('viewBox', serializeViewBox(viewBox))
 
   for (const node of Array.from(root.querySelectorAll('title, desc'))) {
     node.remove()
@@ -69,6 +77,7 @@ export function prepareInlineMushafSvg(text: string): InlineMushafSvg {
     element.removeAttribute('tabindex')
     element.removeAttribute('role')
     removeAriaAttributes(element)
+    rewriteRuntimePaintAttributes(element)
   }
 
   const focusable = Array.from(root.querySelectorAll('*')).find(isFocusableSvgDescendant)
@@ -111,7 +120,7 @@ function validateInlineStyle(value: string): void {
 function validateUrlAttribute(value: string): void {
   const trimmed = value.trim()
   if (!/\burl\s*\(/i.test(value)) {
-    if (trimmed.startsWith('#')) validateUrlReference(trimmed)
+    if (trimmed.startsWith('#') && !isHexColorLiteral(trimmed)) validateUrlReference(trimmed)
     else if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|data:|\/|\.{1,2}\/)/i.test(trimmed)) {
       throw new Error('Mushaf page SVG contains unsafe content')
     }
@@ -122,10 +131,57 @@ function validateUrlAttribute(value: string): void {
   }
 }
 
+function isHexColorLiteral(value: string): boolean {
+  return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)
+}
+
 function validateUrlReference(value: string): void {
   if (!/^#[A-Za-z_][\w:.-]*$/.test(value)) {
     throw new Error('Mushaf page SVG contains unsafe content')
   }
+}
+
+function rewriteRuntimePaintAttributes(element: Element): void {
+  for (const attrName of ['fill', 'stroke']) {
+    const value = element.getAttribute(attrName)
+    if (value === null) continue
+    element.setAttribute(attrName, runtimePaintValue(value))
+  }
+}
+
+function runtimePaintValue(value: string): string {
+  const trimmed = value.trim()
+  if (trimmed.startsWith('var(--qa-mushaf-')) return trimmed
+  const normalized = normalizeColorLiteral(trimmed)
+  if (COLORLESS_VALUES.has(normalized) || /^url\(\s*#[A-Za-z_][\w:.-]*\s*\)$/i.test(normalized)) {
+    return trimmed
+  }
+  return RUNTIME_COLOR_TOKENS[normalized] ?? trimmed
+}
+
+function normalizeColorLiteral(value: string): string {
+  const lower = value.trim().toLowerCase()
+  const shortHex = lower.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/)
+  if (shortHex) return `#${shortHex[1]}${shortHex[1]}${shortHex[2]}${shortHex[2]}${shortHex[3]}${shortHex[3]}`
+  if (/^#[0-9a-f]{6}$/.test(lower)) return lower
+
+  const rgb = lower.match(/^rgba?\(\s*(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*[,/]\s*(?:1|100%))?\s*\)$/)
+  if (rgb) {
+    const parts = rgb.slice(1, 4).map((part) => Number.parseInt(part, 10))
+    if (parts.every((part) => part >= 0 && part <= 255)) {
+      return `#${parts.map((part) => part.toString(16).padStart(2, '0')).join('')}`
+    }
+  }
+
+  const percentRgb = lower.match(/^rgba?\(\s*(\d+(?:\.\d+)?)%(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)%(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)%(?:\s*[,/]\s*(?:1|100%))?\s*\)$/)
+  if (percentRgb) {
+    const parts = percentRgb.slice(1, 4).map((part) => Math.round((Number.parseFloat(part) / 100) * 255))
+    if (parts.every((part) => part >= 0 && part <= 255)) {
+      return `#${parts.map((part) => part.toString(16).padStart(2, '0')).join('')}`
+    }
+  }
+
+  return lower
 }
 
 function removeAriaAttributes(element: Element): void {
