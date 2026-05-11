@@ -168,7 +168,7 @@ export async function buildRiwayahPackageIndex({ profile = 'baseline', check = f
 
   const qaloon = packages.find((entry) => entry.riwayah === 'qaloon')
   if (profile === 'baseline') {
-    ensure(qaloon?.available, 'Baseline dataset must include complete Qaloon text and page assets')
+    ensure(qaloon?.text.available, 'Baseline dataset must include complete Qaloon text assets')
   }
 
   const index = {
