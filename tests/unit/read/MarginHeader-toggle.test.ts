@@ -36,6 +36,7 @@ describe('MarginHeader.svelte — surah label tap toggles surah header visibilit
 
   afterEach(() => {
     reader.currentSurahNum = null
+    reader.currentMushafPage = null
     reader.surahHeaderHidden = false
     settings.surahHeaderHidden = false
   })
@@ -60,6 +61,23 @@ describe('MarginHeader.svelte — surah label tap toggles surah header visibilit
     await flush()
     const label = container.querySelector('.qa-mh-label') as HTMLElement
     await fireEvent.click(label)
+    await flush()
+    expect(reader.surahHeaderHidden).toBe(false)
+  })
+
+  it('Mushaf page label is not exposed as an inactive button', async () => {
+    window.location.hash = '#/m/42'
+    reader.currentMushafPage = 42
+    const { container } = render(MarginHeader)
+    await flush()
+    const label = container.querySelector('.qa-mh-label') as HTMLElement
+
+    expect(label.textContent).toContain('Page 42')
+    expect(label.getAttribute('role')).toBeNull()
+    expect(label.getAttribute('tabindex')).toBeNull()
+
+    await fireEvent.click(label)
+    await fireEvent.keyDown(label, { key: 'Enter' })
     await flush()
     expect(reader.surahHeaderHidden).toBe(false)
   })

@@ -15,17 +15,21 @@
   import { openNavDrawer } from '../navigate/nav-drawer-bridge'
 
   type Tab = {
-    id: 'read' | 'search' | 'review' | 'marks'
+    id: 'verse' | 'mushaf' | 'search' | 'review' | 'marks'
     label: string
     matches: (h: string) => boolean
   }
 
-  let lastSurahHref = $state('#/s/1')
+  let lastVerseHref = $state('#/s/1')
+  let lastMushafHref = $state('#/m/1')
   let currentHash = $state(typeof window !== 'undefined' ? window.location.hash || '' : '')
   let footer: HTMLElement | null = null
+  let hasSeenVerseHref = false
+  let hasSeenMushafHref = false
 
   const TABS: Tab[] = [
-    { id: 'read',   label: 'Read',   matches: (h) => h.startsWith('#/s/') },
+    { id: 'verse',  label: 'Verse mode',  matches: (h) => h.startsWith('#/s/') },
+    { id: 'mushaf', label: 'Mushaf mode', matches: (h) => h.startsWith('#/m/') },
     { id: 'search', label: 'Search', matches: () => false },
     { id: 'review', label: 'Review', matches: (h) => h.startsWith('#/review') || LAYER_NAMES.some(ln => h.startsWith(`#/${ln}/`)) },
     { id: 'marks',  label: 'Marks',  matches: () => false },
@@ -39,16 +43,31 @@
     return v ? `${s} : ${v}` : `${s}`
   })
 
-  function isReaderRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
+  function isReaderRoute(h: string): boolean { return (h || '').startsWith('#/s/') || (h || '').startsWith('#/m/') }
   function isOnboardingRoute(h: string): boolean { return (h || '').startsWith('#/onboarding') }
+  function rememberReaderHref(hash: string, { onlyIfUnset = false }: { onlyIfUnset?: boolean } = {}): void {
+    if (/^#\/s\/\d+(?:\/\d+)?$/.test(hash)) {
+      if (!onlyIfUnset || !hasSeenVerseHref) {
+        lastVerseHref = hash
+      }
+      hasSeenVerseHref = true
+    } else if (/^#\/m\/\d+$/.test(hash)) {
+      if (!onlyIfUnset || !hasSeenMushafHref) {
+        lastMushafHref = hash
+      }
+      hasSeenMushafHref = true
+    }
+  }
 
   function applyRoutePersistence(hash: string): void {
+    rememberReaderHref(hash)
     if (!footer) { return }
     footer.classList.toggle('qa-dock--hidden', isOnboardingRoute(hash))
   }
 
   function getHref(id: Tab['id']): string {
-    if (id === 'read')   { return lastSurahHref }
+    if (id === 'verse')  { return lastVerseHref }
+    if (id === 'mushaf') { return lastMushafHref }
     if (id === 'review') { return '#/review' }
     if (id === 'marks')  { return '#/review' }
     return '#'
@@ -68,14 +87,13 @@
   onMount(() => {
     footer = document.getElementById('bottom-nav')
 
-    get('settings', 'lastSurface').then((rec) => {
-      const val = typeof rec?.value === 'string' ? rec.value : ''
-      const m = val.match(/^#\/s\/(\d+)/)
-      if (m && m[1]) { lastSurahHref = `#/s/${m[1]}` }
-    }).catch(() => { /* ignore */ })
-
     currentHash = window.location.hash || ''
     applyRoutePersistence(currentHash)
+
+    get('settings', 'lastSurface').then((rec) => {
+      const val = typeof rec?.value === 'string' ? rec.value : ''
+      rememberReaderHref(val, { onlyIfUnset: true })
+    }).catch(() => { /* ignore */ })
 
     const onHashChange = () => {
       currentHash = window.location.hash || ''
@@ -83,8 +101,8 @@
     }
     window.addEventListener('hashchange', onHashChange)
 
-    const unsubRoute = on(Events.ROUTER_ROUTE_CHANGE, () => {
-      currentHash = window.location.hash || ''
+    const unsubRoute = on(Events.ROUTER_ROUTE_CHANGE, (payload) => {
+      currentHash = (payload as { hash?: string } | undefined)?.hash ?? window.location.hash ?? ''
       applyRoutePersistence(currentHash)
     })
 
@@ -107,7 +125,14 @@
       href={getHref(tab.id)}
       onclick={(e) => handleClick(e, tab.id)}
     >
-      {#if tab.id === 'read'}
+      {#if tab.id === 'verse'}
+        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 2.8 21 6.8 17 10.8"/>
+          <path d="M3 11a5 5 0 0 1 5-5h13"/>
+          <path d="M7 21.2 3 17.2 7 13.2"/>
+          <path d="M21 13a5 5 0 0 1-5 5H3"/>
+        </svg>
+      {:else if tab.id === 'mushaf'}
         <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 4h7a3 3 0 0 1 3 3v13"/>
           <path d="M20 4h-7a3 3 0 0 0-3 3v13"/>
@@ -153,4 +178,3 @@
     </svg>
   </button>
 </div>
-

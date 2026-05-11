@@ -544,6 +544,10 @@
     overflow: hidden;
   }
 
+  .qa-mh-label--static {
+    cursor: default;
+  }
+
   .qa-mh-label:focus-visible {
     outline: 2px solid var(--qa-accent);
     outline-offset: 2px;
@@ -576,6 +580,17 @@
     font-weight: 600;
     letter-spacing: 0.04em;
     font-size: 17px;
+  }
+
+  .qa-mh-page-label {
+    color: var(--qa-text-on-sheet);
+    font-family: var(--qa-font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
   }
 
   @media (min-width: 1180px) {
@@ -1146,6 +1161,8 @@
 .qa-nav-drawer-about:focus-visible,
 .qa-nav-drawer-close:focus-visible,
 .qa-nav-drawer-source-tab:focus-visible,
+.qa-nav-drawer-reader-mode-btn:focus-visible,
+.qa-nav-drawer-page-action:focus-visible,
 .qa-nav-drawer-filter-option:focus-visible,
 .qa-wird-option:focus-visible,
 .qa-wird-back:focus-visible,
@@ -1234,6 +1251,144 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+.qa-nav-drawer-reader-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 44px;
+  margin: 0 14px 10px;
+  border: 1px solid var(--qa-nav-control-border);
+  border-radius: var(--qa-radius-md);
+  background: var(--qa-nav-control-surface);
+  overflow: hidden;
+  box-shadow: var(--qa-nav-shadow-control);
+}
+
+.qa-nav-drawer-reader-mode-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 42px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--qa-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.qa-nav-drawer-reader-mode-btn + .qa-nav-drawer-reader-mode-btn {
+  border-inline-start: 1px solid var(--qa-nav-row-separator);
+}
+
+.qa-nav-drawer-reader-mode-btn--on {
+  background: color-mix(in srgb, var(--qa-nav-control-selected-surface) 72%, transparent);
+  color: var(--qa-nav-control-selected-text);
+}
+
+.qa-nav-drawer-reader-mode-btn--on::after {
+  content: "";
+  position: absolute;
+  inset-inline: 14%;
+  bottom: 0;
+  height: 2px;
+  border-radius: var(--qa-radius-pill);
+  background: var(--qa-accent);
+}
+
+.qa-nav-drawer-reader-mode-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 17px;
+  block-size: 17px;
+  color: currentcolor;
+}
+
+.qa-nav-drawer-reader-mode-icon svg {
+  inline-size: 17px;
+  block-size: 17px;
+  stroke: currentcolor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.qa-nav-drawer-page-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 14px 12px;
+  padding: 12px;
+  border: 1px solid var(--qa-nav-row-border);
+  border-radius: var(--qa-radius-md);
+  background: var(--qa-nav-row-surface);
+  box-shadow: var(--qa-nav-shadow-row);
+}
+
+.qa-nav-drawer-page-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.qa-nav-drawer-page-kicker {
+  color: var(--qa-text-muted);
+  font-family: var(--qa-font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.qa-nav-drawer-page-title {
+  color: var(--qa-text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.qa-nav-drawer-page-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.qa-nav-drawer-page-action {
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid var(--qa-nav-control-border);
+  border-radius: var(--qa-radius-pill);
+  background: var(--qa-nav-control-surface);
+  color: var(--qa-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.qa-nav-drawer-page-action--primary {
+  border-color: var(--qa-accent);
+  background: var(--qa-accent);
+  color: var(--qa-text-on-accent);
+}
+
+.qa-nav-drawer-page-action:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.qa-nav-drawer-page-body {
+  flex: 1;
+  min-height: 0;
 }
 
 .qa-nav-drawer-source-tabs {
@@ -1682,6 +1837,8 @@
   }
 
   .qa-wird-card,
+  .qa-nav-drawer-reader-mode,
+  .qa-nav-drawer-page-controls,
   .qa-nav-drawer-source-panel,
   .qa-nav-drawer-surah-list,
   .qa-juz-list {

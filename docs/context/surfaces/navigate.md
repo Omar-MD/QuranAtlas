@@ -33,6 +33,7 @@ test_paths:
 | Hash `#/surahs` (mobile <1180 px) | URL | hard-redirect to `lastSurface` + open drawer |
 | Verse number tap → bookmark toggle | tap | save/delete bookmark for verseKey at active riwayah |
 | Bookmark row tap (drawer Bookmarks tab) | tap | drawer closes, reader navigates to verse, landing pulses 1 s |
+| Read drawer mode switch | tap | bridges between the active verse route and Mushaf page route |
 
 ## Inventory
 
@@ -78,9 +79,11 @@ Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs.
 
 Header uses the locked mobile chrome: a product row with tappable QuranAtlas wordmark, About icon button, and separate Close button, followed by the `Read | Study` mode rail.
 
-**Read mode** uses the ledger drawer layout: an elevated Daily Wird card with progress/chevron affordance, then a peer source control for `Surah | Juz | Bookmarks`. The selected source uses a muted accent fill plus bronze underline; unselected sources remain muted on the shared rail.
+**Read mode** uses the ledger drawer layout: an elevated Daily Wird card with progress/chevron affordance, then a `Verse | Mushaf` reader-mode switch, then the peer source control for `Surah | Juz | Bookmarks` when Verse mode is active. The selected source uses a muted accent fill plus bronze underline; unselected sources remain muted on the shared rail.
 
 `Surah` shows search plus `All | Recent`, keeps current-surah highlight, and renders ledger-style surah rows with number, English name, verse count, Arabic name, and chevron. `Juz` removes Surah-only search/filter controls, renders 30 Juz rows, marks the Juz containing the current reader position, marks the Juz containing the active Daily Wird next reference, and routes row taps to the Juz start reference. `Bookmarks` renders the existing riwayah-scoped grouped bookmark list with static group headers, count badges, verse references, truncated Arabic snippets, tap-to-jump rows, and swipe-left Delete.
+
+When the active route is Mushaf (`#/m/:page`), the drawer marks Mushaf mode active, shows a compact Page N continuation surface with previous, open, and next page actions, and hides the `Surah | Juz | Bookmarks` source controls. The mode active state follows hash changes while the drawer remains mounted.
 
 Daily Wird detail opens in-drawer. Without a plan, the summary card invites creating a plan and the creator uses Settings-style sections for completion target, display unit, start point, and reminder; each option exposes selected/unselected state through pressed semantics and visible accent styling. With a plan, the detail shows today range, remaining work, Continue, Edit, and Reset controls. When the reminder browser-notification action is tapped, the drawer requests browser permission from that same user gesture and reflects the resulting permission state before the plan is saved. If the saved state is denied, the drawer still exposes a request-again action; browsers that require site-settings changes may return denied immediately.
 
@@ -186,7 +189,7 @@ _(no cross-surface reads detected)_
 | `bookmarks:deleted` | `Events.BOOKMARKS_DELETED` | `src/navigate/bookmarks/store.ts:59` |
 | `bookmarks:save-failed` | `Events.BOOKMARKS_SAVE_FAILED` | `src/navigate/bookmarks/store.ts:42` |
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/store.ts:38` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:212`, `src/navigate/NavDrawer.svelte:287`, `src/navigate/NavDrawer.svelte:587`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:303`, `src/navigate/CommandSheet.svelte:305`, `src/navigate/NavDrawer.svelte:252`, `src/navigate/NavDrawer.svelte:327`, `src/navigate/NavDrawer.svelte:713`, `src/navigate/bookmarks/BookmarksList.svelte:106`, `src/navigate/surahs/SurahList.svelte:167` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:162` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:153` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -199,7 +202,8 @@ _(no cross-surface reads detected)_
 | `bookmarks:saved` | `Events.BOOKMARKS_SAVED` | `src/navigate/bookmarks/BookmarksList.svelte:224`, `src/navigate/bookmarks/BookmarksPage.svelte:33`, `src/navigate/bookmarks/indicator.ts:79`, `src/navigate/surahs/SurahList.svelte:137` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/navigate/bookmarks/indicator.ts:107` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/navigate/bookmarks/indicator.ts:75` |
-| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/navigate/NavDrawer.svelte:337`, `src/navigate/surahs/SurahList.svelte:141` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/navigate/NavDrawer.svelte:382` |
+| `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/navigate/NavDrawer.svelte:379`, `src/navigate/surahs/SurahList.svelte:141` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/navigate/bookmarks/BookmarksList.svelte:227`, `src/navigate/bookmarks/BookmarksPage.svelte:36`, `src/navigate/bookmarks/indicator.ts:102`, `src/navigate/surahs/SurahList.svelte:140` |
 | `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/navigate/bookmarks/BookmarksList.svelte:226`, `src/navigate/bookmarks/BookmarksPage.svelte:35`, `src/navigate/bookmarks/indicator.ts:93`, `src/navigate/surahs/SurahList.svelte:139` |
 <!-- AUTO-GENERATED:events-listen END -->
@@ -207,7 +211,7 @@ _(no cross-surface reads detected)_
 ## Invariants
 
 - **Hamburger drawer is the sole mobile in-app entry to the full surah list.** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. (Mirror of `read` dossier invariant.)
-- **Read source controls are peer-owned.** The drawer Read mode exposes `Surah | Juz | Bookmarks` as peer sources. Search and `All | Recent` belong only to Surah; Juz and Bookmarks must not show disabled or decorative Surah controls.
+- **Read source controls are Verse-mode only and peer-owned.** The drawer Read mode exposes `Surah | Juz | Bookmarks` as peer sources only while the reader mode is Verse. Search and `All | Recent` belong only to Surah; Juz, Bookmarks, and Mushaf page continuation must not show disabled or decorative Surah controls.
 - **Sole writer of `bookmarks` store: `bookmarks/store.ts`.** Anywhere else writing `bookmarks` directly is a bug.
 - **Bookmarks scope to active riwayah.** ID format `<riwayah>:<surah>:<verse>` — switching riwayah surfaces a different set.
 

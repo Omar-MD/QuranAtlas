@@ -44,6 +44,15 @@ vi.mock('../../../src/core/db', async (orig) => {
   const actual = await orig<typeof import('../../../src/core/db')>()
   return { ...actual, get: vi.fn(async () => undefined) }
 })
+vi.mock('../../../src/core/router', () => ({
+  navigate: vi.fn((hash: string) => {
+    window.location.hash = hash
+  }),
+}))
+vi.mock('../../../src/read/mushaf/mode-switch', () => ({
+  mushafHrefForCurrentVerse: vi.fn(async () => '#/m/42'),
+  verseHrefForMushafPage: vi.fn(async () => '#/s/2/255'),
+}))
 
 import NavDrawer from '../../../src/navigate/NavDrawer.svelte'
 import { openNavDrawer } from '../../../src/navigate/nav-drawer-bridge'
@@ -53,6 +62,8 @@ import { Events } from '../../../src/core/constants'
 import { on, clear } from '../../../src/core/events'
 import { add as addBookmark } from '../../../src/navigate/bookmarks/store'
 import { deleteDB, openDB } from '../../../src/core/db'
+import { navigate } from '../../../src/core/router'
+import { mushafHrefForCurrentVerse, verseHrefForMushafPage } from '../../../src/read/mushaf/mode-switch'
 
 async function flush() {
   for (let i = 0; i < 8; i++) { await Promise.resolve() }
@@ -77,7 +88,11 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   beforeEach(async () => {
     Object.assign(surahsState, { searchQuery: '', filter: 'all' })
     Object.assign(settings, { riwayah: 'qaloon', currentPosition: null })
+    window.location.hash = '#/s/1'
     clear()
+    vi.mocked(navigate).mockClear()
+    vi.mocked(mushafHrefForCurrentVerse).mockResolvedValue('#/m/42')
+    vi.mocked(verseHrefForMushafPage).mockResolvedValue('#/s/2/255')
     try { await deleteDB() } catch { /* fresh */ }
     await openDB()
   })
@@ -146,6 +161,97 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     expect(card).not.toBeNull()
     expect(source).not.toBeNull()
     expect(card.compareDocumentPosition(source)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('places the reader mode switch above Read source controls', async () => {
+    await mountAndOpen('read', 'surahs')
+    const modeSwitch = document.querySelector('[data-testid="reader-mode-switch"]') as HTMLElement | null
+    const source = document.querySelector('.qa-nav-drawer-source-panel') as HTMLElement | null
+
+    expect(modeSwitch).not.toBeNull()
+    expect(modeSwitch!.querySelector('[data-testid="reader-mode-verse"]')).toHaveAttribute('aria-pressed', 'true')
+    expect(modeSwitch!.querySelector('[data-testid="reader-mode-mushaf"]')).toHaveAttribute('aria-pressed', 'false')
+    expect(source).not.toBeNull()
+    expect(modeSwitch!.compareDocumentPosition(source!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it('shows page continuation controls on a Mushaf route and hides verse source controls', async () => {
+    window.location.hash = '#/m/42'
+    await mountAndOpen('read', 'surahs')
+
+    const modeSwitch = document.querySelector('[data-testid="reader-mode-switch"]') as HTMLElement | null
+    expect(modeSwitch).not.toBeNull()
+    expect(modeSwitch!.querySelector('[data-testid="reader-mode-verse"]')).toHaveAttribute('aria-pressed', 'false')
+    expect(modeSwitch!.querySelector('[data-testid="reader-mode-mushaf"]')).toHaveAttribute('aria-pressed', 'true')
+
+    const pageControls = document.querySelector('[data-testid="mushaf-drawer-page"]') as HTMLElement | null
+    expect(pageControls).not.toBeNull()
+    expect(pageControls!.textContent).toContain('Page 42')
+    expect(pageControls!.querySelector('[data-testid="mushaf-prev-page"]')).not.toBeNull()
+    expect(pageControls!.querySelector('[data-testid="mushaf-next-page"]')).not.toBeNull()
+    expect(pageControls!.querySelector('[data-testid="mushaf-open-page"]')).not.toBeNull()
+
+    expect(document.querySelector('.qa-nav-drawer-source-panel')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-search-input')).toBeNull()
+    expect(document.querySelector('.qa-nav-drawer-source-filter')).toBeNull()
+  })
+
+  it('updates drawer reader mode active state after hashchange while mounted', async () => {
+    window.location.hash = '#/s/2'
+    await mountAndOpen('read', 'surahs')
+
+    expect(document.querySelector('[data-testid="reader-mode-verse"]')).toHaveAttribute('aria-pressed', 'true')
+    expect(document.querySelector('[data-testid="reader-mode-mushaf"]')).toHaveAttribute('aria-pressed', 'false')
+
+    window.location.hash = '#/m/86'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    await flush()
+
+    expect(document.querySelector('[data-testid="reader-mode-verse"]')).toHaveAttribute('aria-pressed', 'false')
+    expect(document.querySelector('[data-testid="reader-mode-mushaf"]')).toHaveAttribute('aria-pressed', 'true')
+    expect(document.querySelector('[data-testid="mushaf-drawer-page"]')?.textContent).toContain('Page 86')
+  })
+
+  it('routes reader mode switches through Mushaf page helpers', async () => {
+    window.location.hash = '#/s/2/255'
+    await mountAndOpen('read', 'surahs')
+
+    await fireEvent.click(document.querySelector('[data-testid="reader-mode-mushaf"]')!)
+    await flush()
+    expect(mushafHrefForCurrentVerse).toHaveBeenCalled()
+    expect(navigate).toHaveBeenLastCalledWith('#/m/42')
+    expect(document.querySelector('.qa-nav-drawer')).toBeNull()
+
+    window.location.hash = '#/m/42'
+    openNavDrawer('read', 'surahs')
+    await flush()
+
+    await fireEvent.click(document.querySelector('[data-testid="reader-mode-verse"]')!)
+    await flush()
+    expect(verseHrefForMushafPage).toHaveBeenCalledWith(42)
+    expect(navigate).toHaveBeenLastCalledWith('#/s/2/255')
+    expect(document.querySelector('.qa-nav-drawer')).toBeNull()
+  })
+
+  it('cancels stale async reader mode switches after the route changes', async () => {
+    let resolveHref!: (href: string) => void
+    vi.mocked(mushafHrefForCurrentVerse).mockImplementationOnce(() => new Promise((resolve) => {
+      resolveHref = resolve
+    }))
+
+    window.location.hash = '#/s/2/255'
+    await mountAndOpen('read', 'surahs')
+    await fireEvent.click(document.querySelector('[data-testid="reader-mode-mushaf"]')!)
+    await flush()
+
+    window.location.hash = '#/review'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    await flush()
+    resolveHref('#/m/42')
+    await flush()
+
+    expect(navigate).not.toHaveBeenCalled()
+    expect(window.location.hash).toBe('#/review')
   })
 
   it('keeps search and All/Recent controls Surah-only', async () => {

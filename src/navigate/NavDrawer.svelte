@@ -23,12 +23,15 @@
   import { settings } from '../configure/state.svelte'
   import { surahs as surahsState } from './surahs/state.svelte'
   import { getSurahs, type SurahMeta } from '../data/dataset'
+  import { navigate } from '../core/router'
   import type { SurahCount } from '../data/juz'
   import { getMeaning } from '../data/surah-meanings'
   import { loadRecentSurahs } from '../configure/state-recent-surahs.svelte'
   import { LAYER_GROUPS, LAYER_LABELS } from '../data/tag-layers'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
+  import { mushafHrefForCurrentVerse, verseHrefForMushafPage } from '../read/mushaf/mode-switch'
+  import { pageHref, parseMushafPageParam } from '../read/mushaf/navigation'
   import BookmarksList from './bookmarks/BookmarksList.svelte'
   import DailyWirdCard from '../read/wird/DailyWirdCard.svelte'
   import WirdDetail, { type SetupPayload } from '../read/wird/WirdDetail.svelte'
@@ -40,18 +43,22 @@
   import type { BrowserNotificationState, QuranRef } from '../read/wird/types'
 
   const RECENT_SURAHS_CAP = 7
+  const MUSHAF_PAGE_COUNT = 604
 
   let isOpen = $state(false)
   let activeTab = $state<DrawerTab>('read')
+  type ReaderMode = 'verse' | 'mushaf'
   type ReadSource = 'surah' | 'juz' | 'bookmarks'
   let readSource = $state<ReadSource>('surah')
   let showingWirdDetail = $state(false)
+  let currentHash = $state(typeof window !== 'undefined' ? window.location.hash || '' : '')
 
   let allSurahs = $state<SurahMeta[]>([])
   let recentSurahs = $state<number[]>([])
   let loaded = $state(false)
 
   let listEl: HTMLElement | null = $state(null)
+  let modeSwitchRequestId = 0
 
   // Reader unmounts on non-reader routes (About, Review, …) and clears
   // reader.currentSurahNum, so falling back to settings.currentPosition
@@ -68,6 +75,14 @@
   const currentRef = $derived<QuranRef | null>(
     settings.currentPosition ? { surah: settings.currentPosition.surah, verse: settings.currentPosition.verse } : null,
   )
+  const onMushafRoute = $derived((currentHash || '').startsWith('#/m/'))
+  const readerMode = $derived<ReaderMode>(onMushafRoute ? 'mushaf' : 'verse')
+  const activeMushafPage = $derived.by(() => {
+    const fromRoute = onMushafRoute
+      ? parseMushafPageParam((currentHash || '').replace('#/m/', ''))
+      : null
+    return fromRoute ?? reader.currentMushafPage ?? 1
+  })
   const wirdBoundaries = $derived(createWirdBoundaries(surahCounts))
   const wirdSummary = $derived(deriveWirdSummary(settings.wirdPlan ?? null, surahCounts, wirdBoundaries, getLocalDayKey()))
 
@@ -140,6 +155,7 @@
     activeTab = tab ?? 'read'
     readSource = subTab === 'bookmarks' ? 'bookmarks' : 'surah'
     showingWirdDetail = false
+    currentHash = window.location.hash || ''
     isOpen = true
     surahsState.filter = 'all'
     surahsState.searchQuery = ''
@@ -201,10 +217,34 @@
 
   function goAbout(): void { go('#/about') }
   function goSurah(n: number): void { go(`#/s/${n}`) }
+  function goMushafPage(page: number): void {
+    const clamped = Math.min(MUSHAF_PAGE_COUNT, Math.max(1, page))
+    close()
+    navigate(pageHref(clamped))
+  }
   function goReviewHub(): void { go('#/review') }
   function goReviewLayer(layer: string): void { go(`#/review?layer=${layer}`) }
   function openWirdDetail(): void { showingWirdDetail = true }
   function closeWirdDetail(): void { showingWirdDetail = false }
+  function syncHash(hash: string): void {
+    currentHash = hash
+  }
+
+  async function switchReaderMode(mode: ReaderMode): Promise<void> {
+    if (mode === readerMode) { return }
+    const startHash = window.location.hash || currentHash || ''
+    const startMode = readerMode
+    const requestId = ++modeSwitchRequestId
+    close()
+    const nextHref = mode === 'mushaf'
+      ? await mushafHrefForCurrentVerse()
+      : await verseHrefForMushafPage(activeMushafPage)
+    if (requestId !== modeSwitchRequestId) { return }
+    if ((window.location.hash || '') !== startHash || readerMode !== startMode) {
+      return
+    }
+    navigate(nextHref)
+  }
 
   function continueWird(): void {
     const ref = wirdSummary.nextRef
@@ -327,9 +367,11 @@
   }
 
   let recentsUnsub: (() => void) | null = null
+  let routeUnsub: (() => void) | null = null
 
   onMount(() => {
     navDrawerBridge.register({ open, close, toggle, isOpen: () => isOpen })
+    syncHash(window.location.hash || '')
     // Live-update the Recent list while the drawer is open — App.svelte's
     // trackRecentSurah emits this after each successful IDB write. Without
     // the listener, opening the drawer once + navigating to a new surah +
@@ -337,11 +379,22 @@
     recentsUnsub = on(Events.SETTINGS_RECENT_SURAHS_UPDATED, ({ surahs }) => {
       recentSurahs = surahs.slice(0, RECENT_SURAHS_CAP)
     })
+    routeUnsub = on(Events.ROUTER_ROUTE_CHANGE, (payload) => {
+      syncHash((payload as { hash?: string } | undefined)?.hash ?? window.location.hash ?? '')
+    })
+    const onHashChange = () => syncHash(window.location.hash || '')
+    window.addEventListener('hashchange', onHashChange)
+    return () => {
+      window.removeEventListener('hashchange', onHashChange)
+    }
   })
 
   onDestroy(() => {
+    modeSwitchRequestId += 1
     recentsUnsub?.()
     recentsUnsub = null
+    routeUnsub?.()
+    routeUnsub = null
     navDrawerBridge.unregister()
   })
 
@@ -472,36 +525,107 @@
         <div class="qa-nav-drawer-read">
           <DailyWirdCard summary={wirdSummary} onOpen={openWirdDetail} />
 
-          <div class="qa-nav-drawer-source-panel">
-            <div class="qa-nav-drawer-source-tabs" role="tablist" aria-label="Read source">
-              <button
-                type="button"
-                role="tab"
-                data-testid="read-source-surah"
-                aria-selected={readSource === 'surah'}
-                class="qa-nav-drawer-source-tab"
-                class:qa-nav-drawer-source-tab--on={readSource === 'surah'}
-                onclick={() => setReadSource('surah')}
-              >Surah</button>
-              <button
-                type="button"
-                role="tab"
-                data-testid="read-source-juz"
-                aria-selected={readSource === 'juz'}
-                class="qa-nav-drawer-source-tab"
-                class:qa-nav-drawer-source-tab--on={readSource === 'juz'}
-                onclick={() => setReadSource('juz')}
-              >Juz</button>
-              <button
-                type="button"
-                role="tab"
-                data-testid="read-source-bookmarks"
-                aria-selected={readSource === 'bookmarks'}
-                class="qa-nav-drawer-source-tab"
-                class:qa-nav-drawer-source-tab--on={readSource === 'bookmarks'}
-                onclick={() => setReadSource('bookmarks')}
-              >Bookmarks</button>
+          <div class="qa-nav-drawer-reader-mode" data-testid="reader-mode-switch" aria-label="Reader mode">
+            <button
+              type="button"
+              data-testid="reader-mode-verse"
+              aria-pressed={readerMode === 'verse'}
+              class="qa-nav-drawer-reader-mode-btn"
+              class:qa-nav-drawer-reader-mode-btn--on={readerMode === 'verse'}
+              onclick={() => { void switchReaderMode('verse') }}
+            >
+              <span class="qa-nav-drawer-reader-mode-icon" aria-hidden="true">
+                <svg data-icon="mode-verse" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 4h7a3 3 0 0 1 3 3v13"/>
+                  <path d="M20 4h-7a3 3 0 0 0-3 3v13"/>
+                  <path d="M4 4v13a2 2 0 0 0 2 2h6"/>
+                  <path d="M20 4v13a2 2 0 0 1-2 2h-6"/>
+                </svg>
+              </span>
+              <span>Verse</span>
+            </button>
+            <button
+              type="button"
+              data-testid="reader-mode-mushaf"
+              aria-pressed={readerMode === 'mushaf'}
+              class="qa-nav-drawer-reader-mode-btn"
+              class:qa-nav-drawer-reader-mode-btn--on={readerMode === 'mushaf'}
+              onclick={() => { void switchReaderMode('mushaf') }}
+            >
+              <span class="qa-nav-drawer-reader-mode-icon" aria-hidden="true">
+                <svg data-icon="mode-mushaf" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 4h14v16H5z"/>
+                  <path d="M8 8h8"/>
+                  <path d="M8 12h8"/>
+                  <path d="M8 16h5"/>
+                </svg>
+              </span>
+              <span>Mushaf</span>
+            </button>
+          </div>
+
+          {#if readerMode === 'mushaf'}
+            <div class="qa-nav-drawer-page-controls" data-testid="mushaf-drawer-page" aria-label="Mushaf page controls">
+              <div class="qa-nav-drawer-page-summary">
+                <span class="qa-nav-drawer-page-kicker">Mushaf</span>
+                <span class="qa-nav-drawer-page-title">Page {activeMushafPage}</span>
+              </div>
+              <div class="qa-nav-drawer-page-actions">
+                <button
+                  type="button"
+                  data-testid="mushaf-prev-page"
+                  class="qa-nav-drawer-page-action"
+                  aria-label="Previous Mushaf page"
+                  disabled={activeMushafPage <= 1}
+                  onclick={() => goMushafPage(activeMushafPage - 1)}
+                >Prev</button>
+                <button
+                  type="button"
+                  data-testid="mushaf-open-page"
+                  class="qa-nav-drawer-page-action qa-nav-drawer-page-action--primary"
+                  onclick={() => goMushafPage(activeMushafPage)}
+                >Open</button>
+                <button
+                  type="button"
+                  data-testid="mushaf-next-page"
+                  class="qa-nav-drawer-page-action"
+                  aria-label="Next Mushaf page"
+                  disabled={activeMushafPage >= MUSHAF_PAGE_COUNT}
+                  onclick={() => goMushafPage(activeMushafPage + 1)}
+                >Next</button>
+              </div>
             </div>
+          {:else}
+            <div class="qa-nav-drawer-source-panel">
+              <div class="qa-nav-drawer-source-tabs" role="tablist" aria-label="Read source">
+                <button
+                  type="button"
+                  role="tab"
+                  data-testid="read-source-surah"
+                  aria-selected={readSource === 'surah'}
+                  class="qa-nav-drawer-source-tab"
+                  class:qa-nav-drawer-source-tab--on={readSource === 'surah'}
+                  onclick={() => setReadSource('surah')}
+                >Surah</button>
+                <button
+                  type="button"
+                  role="tab"
+                  data-testid="read-source-juz"
+                  aria-selected={readSource === 'juz'}
+                  class="qa-nav-drawer-source-tab"
+                  class:qa-nav-drawer-source-tab--on={readSource === 'juz'}
+                  onclick={() => setReadSource('juz')}
+                >Juz</button>
+                <button
+                  type="button"
+                  role="tab"
+                  data-testid="read-source-bookmarks"
+                  aria-selected={readSource === 'bookmarks'}
+                  class="qa-nav-drawer-source-tab"
+                  class:qa-nav-drawer-source-tab--on={readSource === 'bookmarks'}
+                  onclick={() => setReadSource('bookmarks')}
+                >Bookmarks</button>
+              </div>
 
             {#if readSource === 'surah'}
               <div class="qa-nav-drawer-source-tools" aria-label="Surah controls">
@@ -534,14 +658,16 @@
                 </div>
               </div>
             {/if}
-          </div>
-
-          {#if searchHint && readSource === 'surah'}
-            <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
+            </div>
           {/if}
 
-          <div class="qa-nav-drawer-tab-body">
-            {#if readSource === 'surah'}
+          {#if readerMode === 'verse'}
+            {#if searchHint && readSource === 'surah'}
+              <div class="qa-nav-drawer-search-hint" role="status">{searchHint}</div>
+            {/if}
+
+            <div class="qa-nav-drawer-tab-body">
+              {#if readSource === 'surah'}
               <div class="qa-nav-drawer-surah-legacy">
                 {#if !loaded}
                   <div class="qa-nav-drawer-list-state" aria-live="polite">Loading...</div>
@@ -591,7 +717,8 @@
                 <BookmarksList onNavigate={() => close()} />
               </div>
             {/if}
-          </div>
+            </div>
+          {/if}
         </div>
       {/if}
     {:else}

@@ -27,11 +27,11 @@ test_paths:
 | Pull-to-swap past edge | gesture | swap to next/prev surah with wrap (114↔1) |
 | Click `↑ <prev>` / `<next> ↓` link | tap | swap to prev/next surah |
 | MarginHeader hamburger swipe-down (mobile) | gesture | `openNavDrawer('read')` |
-| MarginHeader center label tap (mobile) | tap | toggle `surahHeaderHidden` |
-| MarginHeader label swipe left/right (mobile) | gesture | next/prev surah (clamped 1–114) |
+| MarginHeader center label tap on `#/s/*` (mobile) | tap | toggle `surahHeaderHidden` |
+| MarginHeader label swipe left/right on `#/s/*` (mobile) | gesture | next/prev surah (clamped 1–114) |
 | MarginHeader gear single tap (mobile) | tap | open Settings sheet (debounced 300 ms) |
 | MarginHeader gear double-tap (mobile, ≤300 ms) | gesture | cycle theme (parity with keyboard `d`) |
-| AmbientDock tap (desktop) | tap | open command sheet / Review / Marks |
+| AmbientDock tap (desktop) | tap | switch latest Verse/Mushaf reader route, open command sheet, Review, or Marks |
 | Verse number tap | tap | edge indicators ~1.6 s + pill label updates |
 | Verse text block tap/click | tap / click | toggle that verse's meaning + knowledge lane |
 | Verse double-tap / double-click | gesture | open inline tafsir preview for that verse |
@@ -117,9 +117,9 @@ Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush ag
 
 ### Ambient chrome
 
-**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 4 icon tabs (Read / Search / Review / Marks). Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list via ⋯ → drawer, command sheet, or `G+S`.
+**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + 5 icon tabs (Verse / Mushaf / Search / Review / Marks). Verse and Mushaf keep separate latest hashes from the current route, router route-change events, and `settings.lastSurface`, so switching modes returns to the latest known `#/s/...` or `#/m/...` route. Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list via ⋯ → drawer, command sheet, or `G+S`.
 
-**Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px); right settings gear ⚙ (48 px tap target, 26 px icon). Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. It does not render during first-run onboarding. `#main-content` reserves ~60 px top padding.
+**Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px) on Verse routes and `Page N` on Mushaf routes; right settings gear ⚙ (48 px tap target, 26 px icon). The center label toggles surah chrome only on `#/s/*`; Mushaf routes keep the same header shape but do not toggle the surah header or swipe between surahs. Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. It does not render during first-run onboarding. `#main-content` reserves ~60 px top padding.
 
 **Tablet+ (≥768 px):** AmbientDock items grow 38×38 → 42×42 for iPad tap targets.
 
@@ -232,7 +232,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:64`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:43`, `src/read/Reader.svelte:668`, `src/read/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:83`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:52`, `src/read/Reader.svelte:684`, `src/read/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:30` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -240,11 +240,11 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:76`, `src/read/MarginHeader.svelte:180` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:76`, `src/read/MarginHeader.svelte:194` |
 | `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:158` |
-| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:86`, `src/read/MarginHeader.svelte:176` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:500`, `src/read/mushaf/MushafReader.svelte:95` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:104`, `src/read/MarginHeader.svelte:185` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:99` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -268,8 +268,9 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (24):**
+**Unit (25):**
 
+- `tests/unit/read/AmbientDock.test.ts`
 - `tests/unit/read/MarginHeader-toggle.test.ts`
 - `tests/unit/read/SurahHeader.test.ts`
 - `tests/unit/read/TafsirPreview.test.ts`

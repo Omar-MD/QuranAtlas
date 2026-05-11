@@ -34,10 +34,19 @@
   let currentHash = $state(typeof window !== 'undefined' ? window.location.hash : '')
   const currentSurahNum = $derived(reader.currentSurahNum)
 
-  const labelHasSurah = $derived(currentSurahNum != null)
+  const currentMushafPage = $derived.by(() => {
+    const page = reader.currentMushafPage
+    if (page !== null) { return page }
+    const match = (currentHash || '').match(/^#\/m\/(\d+)$/)
+    return match ? Number.parseInt(match[1] ?? '1', 10) : null
+  })
+  const onMushafRoute = $derived((currentHash || '').startsWith('#/m/'))
+  const labelHasPage = $derived(onMushafRoute && currentMushafPage != null)
+  const labelHasSurah = $derived(!onMushafRoute && currentSurahNum != null)
+  const labelIsInteractive = $derived(labelHasSurah && isVerseRoute(currentHash))
   const onOnboardingRoute = $derived((currentHash || '').startsWith('#/onboarding'))
 
-  function isReaderRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
+  function isVerseRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
 
   function openDrawer(): void {
     emit(Events.AMBIENT_SURFACE, { reason: 'margin-header' })
@@ -58,7 +67,7 @@
   }
   function onLabelTouchEnd(e: TouchEvent): void {
     const t = e.changedTouches[0]
-    if (!t || !labelHasSurah) { return }
+    if (!t || !labelHasSurah || !isVerseRoute(window.location.hash)) { return }
     const dir = classifySwipe({
       dx: t.clientX - labelTouchX0,
       dy: t.clientY - labelTouchY0,
@@ -86,20 +95,20 @@
     // Mouse + keyboard share onLabelClick / onLabelKeyDown below; this branch
     // covers the touch path. preventDefault stops the synthetic click that
     // some browsers fire after touchend, which would otherwise double-toggle.
-    if (isReaderRoute(window.location.hash)) {
+    if (isVerseRoute(window.location.hash)) {
       void toggleSurahHeaderHidden()
       e.preventDefault()
     }
   }
 
   function onLabelClick(): void {
-    if (!isReaderRoute(window.location.hash) || !labelHasSurah) { return }
+    if (!isVerseRoute(window.location.hash) || !labelHasSurah) { return }
     void toggleSurahHeaderHidden()
   }
 
   function onLabelKeyDown(e: KeyboardEvent): void {
     if (e.key !== 'Enter' && e.key !== ' ') { return }
-    if (!isReaderRoute(window.location.hash) || !labelHasSurah) { return }
+    if (!isVerseRoute(window.location.hash) || !labelHasSurah) { return }
     e.preventDefault()
     void toggleSurahHeaderHidden()
   }
@@ -177,13 +186,18 @@
       currentHash = hash
       refreshSurahName()
     })
+    const onHashChange = () => {
+      currentHash = window.location.hash || ''
+      refreshSurahName()
+    }
+    window.addEventListener('hashchange', onHashChange)
     const unsubSurface = on(Events.AMBIENT_SURFACE, () => { hidden = false })
 
     const main = document.getElementById('main-content')
     const onScroll = () => {
       const top = main?.scrollTop ?? 0
       const delta = top - lastTop
-      if (!isReaderRoute(window.location.hash)) { hidden = false; return }
+      if (!isVerseRoute(window.location.hash)) { hidden = false; return }
       if (top < SHOW_NEAR_TOP) { hidden = false }
       else if (delta > HIDE_DELTA) { hidden = true; lastTop = top }
       else if (delta < -HIDE_DELTA) { hidden = false; lastTop = top }
@@ -193,6 +207,7 @@
     return () => {
       unsubRoute()
       unsubSurface()
+      window.removeEventListener('hashchange', onHashChange)
       main?.removeEventListener('scroll', onScroll)
       if (settingsTapTimer) { clearTimeout(settingsTapTimer); settingsTapTimer = null }
     }
@@ -221,22 +236,31 @@
     </svg>
   </button>
 
-  <div
-    class="qa-mh-label"
-    role="button"
-    tabindex="0"
-    aria-label={labelHasSurah ? `Toggle surah header for ${surahName}` : 'QuranAtlas'}
-    ontouchstart={onLabelTouchStart}
-    ontouchend={onLabelTouchEnd}
-    onclick={onLabelClick}
-    onkeydown={onLabelKeyDown}
-  >
-    {#if labelHasSurah}
+  {#if labelIsInteractive}
+    <div
+      class="qa-mh-label"
+      role="button"
+      tabindex="0"
+      aria-label={`Toggle surah header for ${surahName}`}
+      ontouchstart={onLabelTouchStart}
+      ontouchend={onLabelTouchEnd}
+      onclick={onLabelClick}
+      onkeydown={onLabelKeyDown}
+    >
       <span class="qa-mh-label-ar" dir="rtl" lang="ar">{surahArabicName}</span>
-    {:else}
-      <span class="qa-mh-wordmark">QuranAtlas</span>
-    {/if}
-  </div>
+    </div>
+  {:else}
+    <div
+      class="qa-mh-label qa-mh-label--static"
+      aria-label={labelHasPage ? `Mushaf page ${currentMushafPage}` : 'QuranAtlas'}
+    >
+      {#if labelHasPage}
+        <span class="qa-mh-page-label">Page {currentMushafPage}</span>
+      {:else}
+        <span class="qa-mh-wordmark">QuranAtlas</span>
+      {/if}
+    </div>
+  {/if}
 
   <button
     type="button"
