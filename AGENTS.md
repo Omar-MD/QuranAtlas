@@ -2,127 +2,42 @@
 
 Project instructions auto-loaded by Codex in this repo.
 
-Repo-local Codex skills live in `.agents/skills/`.
-Scoped instructions live closer to the work:
+## Route
 
-- `tests/e2e/AGENTS.md` — Playwright placement and performance rules
-- `tests/unit/AGENTS.md` — unit-test defaults and component-test guidance
-- `.agents/skills/*/SKILL.md` — repo-local workflows for surface clustering, cleanup-surface handling, testing, UI work, audits, and product-surface assumptions
+- Use `.agents/skills/quranatlas-workflow/SKILL.md` for QuranAtlas implementation, refactors, tests, docs, data contracts, context docs, product-scope cleanup, repo-local skills, and verification planning.
+- Use `.agents/skills/quranatlas-ui-workflow/SKILL.md` for UI, layout, styling, responsive behavior, screenshots, or visual polish when visual judgment or browser proof matters.
+- Use `.agents/skills/quranatlas-audit/SKILL.md` only for explicit audits, health checks, readiness reviews, or product/codebase quality reviews.
+- Use `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md` before adding, moving, or materially changing tests.
+- For library, framework, SDK, API, CLI, or cloud-service questions, use the inherited Context7/`ctx7` docs workflow first (`library` then `docs`); do not answer from memory when docs can be fetched. Resume QuranAtlas workflow only if the answer leads to repo behavior, code, tests, or docs changes.
 
-## Context docs
+## Source Of Truth
 
-Read these before changing behavior:
+- Prefer local repo state and history: `git status`, `git diff`, `git show`, `git log`, `git blame`, the working tree, untracked files, and `docs/`.
+- Do not treat GitHub or other remote state as authoritative for active local work unless the task asks about PRs, CI, remote branches, or hosted metadata.
+- Read only the context docs selected by the workflow: the owning surface dossier for behavior changes, and the relevant canonical doc for cross-cutting architecture, data, source-data, product, or tooling changes.
+- If docs and code disagree, code wins; update docs in the same change.
 
-- `docs/context/surfaces/<surface>.md` — owning dossier for a user-visible surface
-- `docs/context/architecture.md` — boot flow, router, init graph, cross-cutting patterns
-- `docs/context/data-model.md` — store ownership, sole-writer rules, data invariants
-- `docs/context/events.md` — generated emit/listen catalog
-- `docs/context/module-graph.md` — generated dependency graph
-- `docs/context/feature-map.md` — generated dossier index
-- `docs/context/glossary.md` — shared vocabulary
-- `docs/context/repo-structure.md` — directory ownership and where to look for app, data, scripts, docs, and tests
-- `docs/context/source-data-flow.md` — source formats, normalization rules, dataset build, and runtime data flow
-- `docs/context/csp-allowlist.md` — outbound-origin policy
-- `docs/context/implemented.md` — shipped surface inventory
-- `docs/context/future.md` — provisional future direction for asset lanes, retrieval readiness, curated metadata expansion, and separately decided future personal annotations
-- `docs/context/roadmap.md` — deferred scope
-- `docs/context/open-issues.md` — known bugs and blocking debt
+## Hard Rules
 
-If docs and code disagree, code wins. Update the docs in the same change.
+- Never hand-edit auto-generated context fences (`<!-- AUTO-GENERATED:* START --> ... END`); rerun `pnpm run docs`.
+- Keep docs and source comments current-state only. Do not leave progress logs, codenames, dates, commit SHAs, or revision notes unless they are data or load-bearing invariants.
+- Do not invent project commands or committed one-off scripts. Check `package.json`, `docs/tech-stack.md`, and scoped AGENTS files first.
+- When `package.json` scripts, dev tools, pinned versions, or CI gates change, update `docs/tech-stack.md` in the same change.
 
-Auto-generated fence blocks (`<!-- AUTO-GENERATED:* START --> ... END`) are owned by `scripts/docs/derive-*.mjs`. Do not hand-edit them; rerun `pnpm run docs`.
+## Git Defaults
 
-Surface and data invariants live in the owning dossier, not in this root file.
+- Do not push, merge, or open a PR unless explicitly asked.
+- If asked for a PR and no base branch is named, use `dev`.
+- `dev` is the default integration branch for ordinary code changes. Use `staging` or `main` only when explicitly requested.
+- Put temporary working notes or scratch scripts in `.scratch/`; do not commit them.
 
-## Rules
+## Verification
 
-### 1. Update the owning surface dossier with every UI change
+Verify at the smallest level that proves the change.
 
-Any change that alters user-visible behavior must update the matching `docs/context/surfaces/<surface>.md` in the same change.
-
-Update:
-
-- `Behavior` for changed flows, controls, shortcuts, and gestures
-- `Reach` for changed entry points or navigation paths
-- `Invariants` for new load-bearing guardrails
-
-Keep behavior steps surface-level. Do not document pixel trivia, hover states, or animation timing there.
-
-Internal refactors, tooling changes, type-only edits, and docs-only edits can skip behavior updates, but still fall under rule 2 if they change a context doc's subject.
-
-### 2. Update the relevant context doc when its subject changes
-
-- Data-store ownership, shape, keyPath, indexes, or sole-writer rules: update the owning dossier `Data` section and `docs/context/data-model.md` when cross-cutting.
-- Event wiring or module-graph changes: rerun `pnpm run docs`; no manual edit to generated inventories.
-- Route, surface, boot-flow, router, DAG, or cross-cutting behavior changes: update the owning dossier and/or `docs/context/architecture.md`.
-- Script, toolchain, pinned-version, or CI-gate changes: update `docs/tech-stack.md`.
-- User-facing feature scope or attribution changes: update `docs/product-info.md`.
-- Provisional future direction that is not yet committed ship scope goes in `docs/context/future.md`.
-- Future agreed scope goes in `docs/context/roadmap.md`.
-- Known bugs or blocking debt go in `docs/context/open-issues.md` and are removed when fixed.
-
-### 3. Use local sources first for repo state and history
-
-For questions about this repo's current state, history, or in-progress work, prefer local sources:
-
-- `git status`, `git diff`, `git show`, `git log`, `git blame`
-- the working tree, untracked files, and everything under `docs/`
-
-Do not treat GitHub remote state as authoritative for active local work unless the task explicitly asks for PRs, CI, remote branches, or hosted metadata.
-
-### 4. Cluster work by surface
-
-Use the user-visible surface as the default unit of work. Before splitting work, adding Playwright specs, or delegating by area, use `.agents/skills/quranatlas-workflow/SKILL.md`.
-
-Default shape:
-
-- one unit of work = one surface or contiguous surface cluster
-- extend the owning journey spec instead of spawning a new e2e spec file when the surface already has one
-- fold dossier updates into the same unit, not a follow-up task
-
-### 5. Safe git defaults
-
-Unless the user explicitly asks otherwise:
-
-- do not push
-- do not open a PR
-- do not merge
-
-If the user asks for a PR and does not name a base branch, use `dev`.
-
-`dev` is the default integration branch for ordinary code changes. `staging` and `main` are promotion or hotfix targets only when explicitly requested.
-
-### 6. Use existing commands and avoid unnecessary scripts
-
-Do not invent `pnpm` command names or add scripts just to make a one-off task feel tidy. Check `package.json`, `docs/tech-stack.md`, relevant scoped `AGENTS.md` files, and existing scripts before running project commands.
-
-- Prefer existing project scripts and direct standard tools (`rg`, targeted test commands, `node -e` for short read-only checks) over creating new automation.
-- Add or modify `package.json` scripts only when the workflow is repo-owned, repeatable, and useful beyond the current task.
-- Do not commit helper scripts for one-off inspection, migration, or verification work. Put temporary working notes or scratch scripts in `.scratch/` and do not commit them.
-- If the right command is unclear, or if a new script might not be durable project tooling, ask the user before creating or running it.
-
-### 7. Verify at the right level
-
-Before finishing, run the smallest verification set that matches the change:
-
-- Docs / AGENTS / generated-context changes: `pnpm run docs` and `pnpm run docs:check`
-- Code, shared behavior, build, or config changes: `pnpm validate`
-- E2E-only work: follow `tests/e2e/AGENTS.md` for targeted timing and placement rules, then run broader verification when shared behavior changed
-
-Any warning from `pnpm build`, `pnpm lint`, or `pnpm check` is treated as a failure to fix, not noise to ignore.
-
-### 8. Docs and source comments describe current state only
-
-Do not leave revision logs, dates, commit SHAs, codenames, or progress notes in `docs/` or source comments.
-
-Put change narrative in the commit message. Put temporary working notes in `.scratch/` and do not commit them.
-
-Carve-outs:
-
-- historical wording inside an invariant is allowed when the past shape is itself load-bearing
-- auto-generated fence blocks are exempt
-- machine-emitted data files can contain dates as data
-
-## Workflow
-
-Scripts, tooling, and stack details live in `docs/tech-stack.md`.
+- Read-only analysis: no project verification required.
+- Docs, AGENTS, or skills only: run `pnpm run docs:check` and `git diff --check`; run `pnpm run docs` first when generated context may need regeneration.
+- Narrow code changes: run the relevant targeted test, plus `pnpm run check` when types, lint, Svelte, or styles can be affected.
+- Data, source-catalog, source-data-flow, or dataset-script changes: run the relevant `pnpm run data -- check` or `pnpm run data -- build` profile; also run `pnpm run validate` when app/runtime/build output or release behavior can be affected.
+- Shared behavior, config, build, service-worker, or release-sensitive changes: run `pnpm run validate`.
+- E2E-only changes: follow `tests/e2e/AGENTS.md`; run the owning spec first, then broader gates only when shared behavior changed.

@@ -10,8 +10,8 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 ## Route First
 
 - UI styling, layout, responsive behavior, visual polish, screenshots, or frontend state work: also use `quranatlas-ui-workflow`.
-- Explicit audit, health check, readiness review, or structured assessment: use `quranatlas-audit`.
-- Library/framework/API/CLI/cloud-service docs: follow root `AGENTS.md` Context7 rules first; return here if repo behavior changes.
+- Explicit product/codebase audit, health check, readiness review, or deploy-readiness assessment: use `quranatlas-audit`.
+- Library/framework/API/CLI/cloud-service docs: follow the inherited Context7/`ctx7` docs workflow first (`library` then `docs`); return here if repo behavior changes.
 - Pure product/workflow docs, context docs, tests, refactors, app behavior, data contracts, or skill maintenance: continue here.
 
 ## Required Reads
@@ -19,6 +19,7 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 - Start with `AGENTS.md` and `docs/context/repo-structure.md`.
 - For behavior changes, read the owning `docs/context/surfaces/<surface>.md`.
 - For cross-cutting changes, read the canonical context doc: `architecture.md`, `data-model.md`, `source-data-flow.md`, or `docs/tech-stack.md`.
+- For product scope, attribution, shipped/future/deferred scope, or known bugs/blocking debt, read and update `docs/product-info.md`, `docs/context/implemented.md`, `docs/context/future.md`, `docs/context/roadmap.md`, or `docs/context/open-issues.md` as applicable.
 - For tests, read `tests/unit/AGENTS.md` or `tests/e2e/AGENTS.md` before placing new coverage.
 
 ## Surface Clustering
@@ -41,8 +42,11 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 
 ## Verification
 
-- Docs, skills, AGENTS, or generated-context-only changes: `pnpm run docs`, `pnpm run docs:check`, and `git diff --check`.
-- Code, shared behavior, config, build, or cross-surface changes: `pnpm run validate`.
+- Read-only analysis: no project verification required.
+- Docs, skills, AGENTS, or generated-context-only changes: run `pnpm run docs:check` and `git diff --check`; run `pnpm run docs` first when generated context may need regeneration.
+- Narrow code changes: run the relevant targeted test, plus `pnpm run check` when types, lint, Svelte, or styles can be affected.
+- Data, source-catalog, source-data-flow, or dataset-script changes: run the relevant `pnpm run data -- check` or `pnpm run data -- build` profile; also run `pnpm run validate` when app/runtime/build output or release behavior can be affected.
+- Shared behavior, config, build, service-worker, or release-sensitive changes: `pnpm run validate`.
 - E2E-only changes: run the owning journey spec per `tests/e2e/AGENTS.md`, then broader gates only when shared behavior changed.
 - Treat warnings from build, lint, check, or docs checks as failures to resolve.
 
