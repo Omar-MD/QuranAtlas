@@ -62,12 +62,8 @@ These are NOT permitted without an architecture-level decision (audit / brainsto
 - `*` (wildcard) anywhere — banned. Always enumerate origins.
 - A new third-party origin without privacy review.
 
-## Future widenings (sketches — not policy)
+## Future widenings
 
-Tracked in `roadmap.md`:
+No future widening is pre-approved. Any new third-party origin requires an architecture-level decision, a registry row, a matching `public/_headers` edit, and a unit-test update in the same change.
 
-- **Audio (reciter dataset).** May require `connect-src https://<reciter-cdn>` if reciter audio cannot be self-hosted. Prefer self-hosting under `/dataset/audio/{reciter-id}/` to avoid CSP widening + third-party privacy risk.
-- **Multi-device sync.** Will require `connect-src https://<sync-endpoint>` for cross-device push. Endpoint must be first-party (own subdomain) — third-party sync hosts disallowed by the privacy posture.
-- **Page-image renderer.** May require `img-src` widening if KFGQPC page raster comes from a third-party CDN. Prefer self-hosting.
-
-In every case, the widening lands as a registry row + `_headers` edit + the test update, with the PR description spelling out the privacy + integrity trade-off.
+Removed product scope such as audio reciter CDNs, user-facing sync endpoints, accounts, community, export/import, or shared collections is not a reason to widen CSP.

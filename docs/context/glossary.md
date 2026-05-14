@@ -8,10 +8,10 @@ If a doc, comment, or commit message disagrees with an entry below, fix the doc 
 
 ## mark vs tag
 
-- **Mark.** A persisted record on a single verse. Lives in the `marks` IDB store. One mark per `verseKey`. The record carries a 12-layer tag taxonomy plus a `note`.
-- **Tag.** A *value* inside one of the 12 layers of a mark — e.g. the string `"mercy"` inside `mark.threads`. Plural-form fields like `mark.subjects` hold multiple tags. Tags have user-facing UI (`tag/TagSheet.svelte`, `tag/TagChip.svelte`) but no IDB store of their own.
+- **Mark.** Removed-scope implementation vocabulary for a persisted record on a single verse. Lives in the `marks` IDB store while that code remains. One mark per `verseKey`. The record carries a 12-layer tag taxonomy plus a `note`.
+- **Tag.** Removed-scope implementation vocabulary for a value inside one of the 12 layers of a mark — e.g. the string `"mercy"` inside `mark.threads`. Plural-form fields like `mark.subjects` hold multiple tags. Tags have UI (`tag/TagSheet.svelte`, `tag/TagChip.svelte`) but no IDB store of their own.
 
-**Rule of thumb:** "Mark this verse" → write a Mark. "Pick a tag" → choose a string within a layer.
+Current product doctrine does not use marks or tags as v1 value. Future user-authored tags belong to a separately approved personal layer, not curated QuranAtlas metadata.
 
 The deep editor lives at `tag/TagSheet.svelte`; per-verse mark CRUD lives at `marks/store.ts`.
 
@@ -31,15 +31,34 @@ Use **layer** everywhere. The 12 layers are: `threads`, `subjects`, `audience`, 
 - **verseRef.** Forbidden. Don't introduce.
 - **ayah.** A single verse — the user-facing concept. Use as the noun ("the third ayah of Sūrat al-Fātiḥa"); use **verseKey** for the identifier, **`aya_no`** only when echoing a dataset field (KFGQPC source).
 
+## Reader First
+
+Reader First is QuranAtlas's v1 product doctrine: complete offline-first Verse and Mushaf reading, reader preferences, bookmarks, saved position, Daily Wird, search/navigation, and reader-attached curated metadata. Study, storage, and future retrieval work serve reading rather than becoming separate v1 products.
+
+## curated metadata vs personal layer
+
+Curated metadata is QuranAtlas-authored or source-backed reader enrichment: tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani and revelation/asbab metadata, and juz/hizb/rub/ruku/page metadata. The future personal layer is user-authored meanings, tags, comments, notes, and edges. Keep the two separate in docs, data naming, and product decisions.
+
+## asset pack terms
+
+- **Asset pack.** A coherent set of files for one source type, such as qira'ah/riwayah text, translation, tafsir, curated metadata, Mushaf pages, or search indexes.
+- **Active pack.** The single selected pack for a source type. The reader must render the active pack only after it is verified usable.
+- **Baseline pack.** The pack shipped with the baseline app bundle. Qalun is the baseline qira'ah/riwayah pack.
+- **Optional pack.** A discoverable pack that must install before activation. Catalog availability is not usability.
+
+## Qalun and runtime `qaloon`
+
+Use Qalun in product prose. Existing runtime keys, paths, and TypeScript unions may continue to use `qaloon`. Upstream source slugs such as `qalun` may appear only when documenting provider mappings.
+
 ## riwayah vs riwayat vs reciter
 
 Pin the meanings to avoid audio-side collisions:
 
 - **Riwayah.** Singular. A *textual* transmission of the Qur'an. Three of them ship today: `'hafs'`, `'warsh'`, `'qaloon'` (canonical list at `core/db/types.ts::Riwayah`). The reader is parameterised by riwayah, the dataset is split by riwayah, the active KFGQPC font is keyed off riwayah.
 - **Riwayat.** Plural. Used in directory paths (`public/dataset/riwayat/{name}/`) and prose contexts ("supports three riwayat"). Never used as an identifier or runtime variable name.
-- **Reciter.** A *voice*: a person reciting one of the textual transmissions. Husary recites Hafs; Al-Minshawi recites Hafs; etc. **A reciter is not a riwayah.** Audio uses `audio/{reciter-id}/{NNN}.mp3` and `settings.activeReciter` (string) — separate from `settings.riwayah`.
+- **Reciter.** Removed-scope implementation vocabulary for a voice: a person reciting one of the textual transmissions. A reciter is not a riwayah. Any remaining audio code is cleanup inventory and must stay separate from `settings.riwayah`.
 
-**Forbidden conflations:** `qira'a` (which is technically a different concept from riwayah but is sometimes used loosely upstream), `recitation` as an identifier (use `reciter` for the voice, `riwayah` for the text). Don't let an audio fetch script read `settings.riwayah` to pick which reciter file to download — those are different settings.
+**Forbidden conflations:** `qira'a` (which is technically a different concept from riwayah but is sometimes used loosely upstream), `recitation` as an identifier for text source (use `riwayah` for the text). Do not let removed-scope audio vocabulary drive reader source naming.
 
 ## surface vs route vs view
 

@@ -17,6 +17,12 @@ The pipeline has seven stages:
 Important boundary: `data/catalog/**`, `data/normalized/**`, and `data/taxonomy/**` are build-only. The app never reads them directly.
 The browser never fetches quran.ws; quran.ws is used only by the optional import tool.
 
+Qalun is the baseline product qira'ah/riwayah pack. Existing runtime keys and paths continue to use `qaloon`; upstream source slugs such as `qalun` appear only in source-provider mapping context. Product prose should not present Qalun and `qaloon` as separate packs.
+
+Every optional qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf page, and search/index asset follows install-before-activate semantics. Availability in a source catalog or package index is not usability; a pack becomes usable only after the runtime verifies local install state for every required file.
+
+The runtime trust boundary is manifest membership plus build-time validation and local install-state verification. Per-file digest verification is not a current product claim.
+
 ```mermaid
 flowchart TD
     subgraph Upstream["Upstream authorities"]
@@ -380,17 +386,16 @@ Validation performed during build:
 - `getThemesForAyah(key)`: returns zero-or-more theme rows
 - `getPassageForAyah(key)`: resolves the approved passage or `null`
 
-Fallback and package behavior is source-aware:
+Package behavior is source-aware:
 
 - missing or unusable active Hafs/Warsh text throws a promptable riwayah package error; it does not fall back to Qaloon
-- missing saved translation falls back to `bridges` only when its same-origin pack fetch fails
-- missing saved tafsir falls back to `muyassar` only when its same-origin pack fetch fails
+- missing saved translation or tafsir shows an unavailable/install/switch state or explicitly changes the active setting to a verified baseline before baseline content renders under a baseline label
 - missing knowledge files resolve to `null` / empty rows without breaking reader rendering
 - missing Mushaf page packs are a pack-availability state for the read surface, not a fallback to quran.ws
 
 `indexes/sources.json` may list optional sources whose bodies are absent from `manifest.json`. That is intentional. Optional body files can still be present on the same origin and indexed by `indexes/source-assets.json`, which allows runtime discovery, byte pre-flight, on-demand caching, and removal without inflating the baseline manifest or first-load precache.
 
-`indexes/riwayah-packages.json` is the runtime package gate for recitation text plus Mushaf pages. It lists complete same-origin text URLs and page manifest/SVG URLs when a riwayah package is available. Qaloon is baseline-installed when those artifacts are present in the shipped dataset. Hafs and Warsh can be installable from the index but are usable only when cache verification finds every text URL in `CACHE_DATASET` and every page URL in `qa-pages-{riwayah}-v1`.
+`indexes/riwayah-packages.json` is the runtime package gate for qira'ah/riwayah text plus Mushaf pages. It lists complete same-origin text URLs and page manifest/SVG URLs when a riwayah package is available. Qalun is baseline-installed when those artifacts are present in the shipped dataset; the runtime key remains `qaloon`. Hafs and Warsh can be installable from the index but are usable only when cache verification finds every text URL in `CACHE_DATASET` and every page URL in `qa-pages-{riwayah}-v1`.
 
 ## Translation Alignment Across Riwayat
 
