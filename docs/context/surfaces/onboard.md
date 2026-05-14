@@ -11,7 +11,7 @@ test_paths:
 
 # Surface: onboard
 
-> First-run wizard + session-restore decision. 6 screens (Welcome → Theme → Riwayah → Translation → Shortcuts → Tags-intro). Sets `settings.onboardingComplete` then routes to `#/s/1`. On warm boot, when `onboardingComplete` is set, the router restores `settings.lastSurface` instead.
+> First-run wizard + session-restore decision. Reading setup screens cover Welcome, Theme, Riwayah, Translation, Shortcuts, and Start Reading. Sets `settings.onboardingComplete` then routes to `#/s/1`. On warm boot, when `onboardingComplete` is set, the router restores `settings.lastSurface` instead.
 
 ## Reach
 
