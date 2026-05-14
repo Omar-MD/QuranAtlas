@@ -3,6 +3,12 @@
 Known bugs, edge cases, and blocking debt. Resolve and delete the entry —
 do not leave a "we know" record after fixing. Lasting record lives in code + git.
 
+## Product-scope cleanup debt
+
+- **Remove audio product/code surface** — audio/listen is removed product scope. Later source cleanup should remove or quarantine audio UI, route/cache assumptions, `audioPosition` persistence, and reader audio hooks without weakening reader behavior.
+- **Remove personal marks/tags/review/edges product/code surface** — personal marks, tags, notes, review, and edges are removed product scope. Later source cleanup should preserve bookmarks as reading continuity while removing or quarantining mark/review/edge implementation.
+- **Align onboarding and shortcut copy with Reader First** — remove mark/tag-first tutorial and shortcut wording from user-facing copy when source cleanup or UI copy work reaches those surfaces.
+
 ## Performance
 
 - **`reshape()` MutationObserver walks every chunk-appended node** — `src/app-bootstrap.ts:117-118` triggers per-node reshape via `font-reshape.ts::reshapeAddedNodes`. Hot path during long-surah scroll; one-line fix to scope to the appended chunk root.

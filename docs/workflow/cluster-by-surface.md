@@ -9,15 +9,17 @@ A **surface** is a user-visible region with a documented dossier and one owning 
 | Surface | Dossier | Spec |
 |---|---|---|
 | `read` (reader + ambient chrome + cross-surah scroll + typography) | `docs/context/surfaces/read.md` | `tests/e2e/read/*.spec.js` |
-| `mark` (fast-tag panel + deep TagSheet) | `docs/context/surfaces/mark.md` | `tests/e2e/mark/*.spec.js` |
-| `review` (Review hub + FVR; future: SRS, graph, compare) | `docs/context/surfaces/review.md` | `tests/e2e/review/*.spec.js` |
+| `mark` (removed personal-layer implementation/cleanup scope) | `docs/context/surfaces/mark.md` | `tests/e2e/mark/*.spec.js` |
+| `review` (removed personal-layer implementation/cleanup scope) | `docs/context/surfaces/review.md` | `tests/e2e/review/*.spec.js` |
 | `navigate` (command sheet + drawer + surah list + bookmarks) | `docs/context/surfaces/navigate.md` | `tests/e2e/navigate/*.spec.js` |
-| `listen` (audio recitation) | `docs/context/surfaces/listen.md` | `tests/e2e/listen/*.spec.js` *(planned)* |
+| `listen` (removed audio implementation/cleanup scope) | `docs/context/surfaces/listen.md` | `tests/e2e/listen/*.spec.js` *(cleanup only if retained)* |
 | `configure` (Settings sheet + About) | `docs/context/surfaces/configure.md` | `tests/e2e/configure/*.spec.js` |
 | `onboard` (first-run wizard + session restore) | `docs/context/surfaces/onboard.md` | `tests/e2e/onboard/*.spec.js` |
 | `infra` (SW + cross-tab + manifest) | `docs/context/surfaces/infra.md` | `tests/e2e/infra/*.spec.js` |
 
 The **unit of work** is a surface, or a contiguous cluster of surfaces that share source files or invariants. A single bug is never a unit.
+
+Removed-scope implementation surfaces still count as surface clusters while their code exists. Use their dossiers and tests only for cleanup, regression containment, or source removal work; do not treat them as active product expansion lanes.
 
 When you need the surface → source-files mapping for a unit, open the matching dossier — its §Inventory section is the auto-generated file list (regenerate with `pnpm run docs` if stale). Surfaces routinely reach across multiple `src/<feature>/` dirs — that's expected, and that cross-surface reach is exactly what makes the surface a cluster, not a single dir.
 
@@ -32,7 +34,7 @@ Applies to any UI, theme, layout, or design brainstorm — whether initiated exp
 ## Planning rules
 
 1. **One unit per surface-cluster.** If two candidate units both touch `src/<same-feature>/`, collapse them.
-2. **A journey that spans surfaces is one unit, not two.** Example: I2 (mark deleted in Tab B while Tab A editor open) touches `src/mark/` AND `src/infra/safety/sync.ts`. That's one unit — the coupling is the point.
+2. **A journey that spans surfaces is one unit, not two.** Example: cleanup or regression containment for a mark deleted in Tab B while Tab A editor is open touches `src/mark/` AND `src/infra/safety/sync.ts`. That's one unit — the coupling is the point.
 3. **Docs land with the unit.** Owning dossier's §Behavior + §Reach + §Invariants (Rule 1), plus `data-model.md` / `architecture.md` if cross-cutting (Rule 2), are part of the unit. `events.md` / `module-graph.md` / `feature-map.md` regenerate automatically (`pnpm run docs`) — no manual update. Not a separate task. Not a delegated follow-up.
 4. **Tests land with the unit.** If the unit adds new behavior to a dossier, the matching Playwright spec is part of the same commit. Extend the owning surface folder and reuse an existing spec there when the concern already has a natural home.
 5. **Plan lifecycle.** Completed plans are deleted in the final commit, not archived. The lasting record lives in code + `git log` + `docs/context/`.
@@ -84,7 +86,7 @@ These changes don't map to a single UI surface. Treat each as its own cluster wi
 | IDB schema / store contracts | `docs/context/data-model.md` (cross-cutting rules) + owning dossier §Data | Every dossier whose surface reads/writes the changed store |
 | Event bus | `docs/context/events.md` (auto-gen catalog) + each dossier's §Events block | Every dossier whose §Events emit/listen block touches the changed event |
 | Router / launch-restore / `lastSurface` | `docs/context/architecture.md` §Router | `onboard` (launch-restore), `navigate` + `read` (any surface that writes `lastSurface`) |
-| Safety / sync (versionchange, BroadcastChannel) | `docs/context/surfaces/infra.md` §Cross-tab coherence | `infra` + `mark` (I1/I2 marks change), `configure` (I3 clear-data) |
+| Safety / sync (versionchange, BroadcastChannel) | `docs/context/surfaces/infra.md` §Cross-tab coherence | `infra` + cleanup surfaces that still use BroadcastChannel, `configure` (clear-data) |
 | Theme tokens (not per-surface selectors) | `docs/context/architecture.md` §Stack + `src/styles/tokens/semantic.css` `:root` / `[data-theme]` blocks | `read` (auto theme), `configure` (theme swap), `@a11y` across surfaces |
 | Runes state modules | `docs/context/module-graph.md` (auto-gen) | Every dossier that imports the changed state slice |
 | Chunk budgets | `docs/tech-stack.md` §scripts | Build + `pnpm run validate`; no journey spec needed |

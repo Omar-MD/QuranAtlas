@@ -22,6 +22,7 @@ This repo treats context docs as load-bearing.
 - Store ownership and data invariants: `docs/context/data-model.md`
 - Tooling and CI gates: `docs/tech-stack.md`
 - Product scope and attribution: `docs/product-info.md`
+- Product-scope and surface-ownership wording: `docs/workflow/cluster-by-surface.md`, `AGENTS.md`, and `.agents/skills/*.md`
 
 ## Current-state rule
 

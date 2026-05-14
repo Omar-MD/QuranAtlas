@@ -14,7 +14,7 @@ Good unit-test targets in this repo include:
 - IndexedDB reads and writes through fake IndexedDB
 - router parsing and redirect logic
 - single-component keyboard handlers
-- settings, marks, review, tag, drawer, command-sheet, and similar feature logic
+- settings, drawer, command-sheet, bookmarks, reader, and similar feature logic; marks/review/tag logic only for cleanup or regression containment while that implementation remains
 
 ## Style
 

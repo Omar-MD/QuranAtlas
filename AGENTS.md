@@ -7,6 +7,8 @@ Scoped instructions live closer to the work:
 
 - `tests/e2e/AGENTS.md` — Playwright placement and performance rules
 - `tests/unit/AGENTS.md` — unit-test defaults and component-test guidance
+- `docs/workflow/cluster-by-surface.md` — surface clustering, cleanup-surface handling, and e2e placement workflow
+- `.agents/skills/*.md` — repo-local workflows that can encode product-surface assumptions
 
 ## Context docs
 
@@ -23,7 +25,7 @@ Read these before changing behavior:
 - `docs/context/source-data-flow.md` — source formats, normalization rules, dataset build, and runtime data flow
 - `docs/context/csp-allowlist.md` — outbound-origin policy
 - `docs/context/implemented.md` — shipped surface inventory
-- `docs/context/future.md` — provisional future direction for data lanes, reflection, claims, and AI-assisted retrieval
+- `docs/context/future.md` — provisional future direction for asset lanes, retrieval readiness, curated metadata expansion, and separately decided future personal annotations
 - `docs/context/roadmap.md` — deferred scope
 - `docs/context/open-issues.md` — known bugs and blocking debt
 

@@ -1,11 +1,13 @@
 ---
 name: quranatlas-surface-workflow
-description: Work on QuranAtlas by user-visible surface instead of by file. Use whenever a request changes behavior in reader, marking, review, navigation, listening, onboarding, configuration, or infra surfaces.
+description: Work on QuranAtlas by user-visible surface instead of by file. Use whenever a request changes behavior in reader, navigation, onboarding, configuration, infra, or removed-scope cleanup surfaces.
 ---
 
 # QuranAtlas Surface Workflow
 
 Use this skill when the task changes app behavior.
+
+Reader First surfaces are read, navigate, configure, onboard, and infra. Mark, review, and listen are removed-scope implementation surfaces; use their dossiers for cleanup, regression containment, or source removal work, not new product expansion.
 
 ## Workflow
 

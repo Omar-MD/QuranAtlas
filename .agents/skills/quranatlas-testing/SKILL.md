@@ -28,3 +28,4 @@ Use the repo's scoped instructions first:
 
 - Avoid `clearAllData()` when a single-store reset proves the behavior.
 - Prefer the dev server unless the assertion requires the production service worker.
+- Do not add new mark/review/listen product coverage unless the task is cleanup, regression containment for existing implementation, or source removal. Bookmarks remain active navigation/read continuity coverage.

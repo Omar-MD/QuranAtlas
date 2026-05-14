@@ -11,6 +11,10 @@ This skill is for explicit audit requests only.
 
 1. Read `docs/product-info.md`, `docs/tech-stack.md`, and the relevant surface dossiers.
 2. Evaluate at least these dimensions:
+   - Reader First product baseline: complete Verse/Mushaf reading, bookmarks, saved position, Daily Wird, search/navigation, reader preferences, and curated reader-attached metadata
+   - one-active-pack and install-before-activate semantics for qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf pages, and search/index assets
+   - removed-scope boundaries: audio and personal marks/tags/notes/review/edges are not product scope except bookmarks
+   - AI scope boundary: infrastructure/retrieval readiness only; no assistant, chat, agent, synthesis UI, or current-roadmap reflection-prompt product
    - architecture
    - functional correctness
    - reliability
