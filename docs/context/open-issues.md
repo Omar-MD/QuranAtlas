@@ -22,5 +22,5 @@ do not leave a "we know" record after fixing. Lasting record lives in code + git
 
 ## Edge cases
 
-- **Translation ↔ riwayah alignment** — Hafs-keyed translations need `_verse-aliases.json` for Warsh / Qaloon. 7 surahs (7, 27, 36, 40, 41, 56, 57) require `'ayah-dp'` alignment method, not `'word-stream'` (`src/data/verse-aliases.ts`).
+- **Translation ↔ riwayah alignment** — Hafs-keyed translations need `_verse-aliases.json` for Warsh / Qalun (`qaloon`). 7 surahs (7, 27, 36, 40, 41, 56, 57) require `'ayah-dp'` alignment method, not `'word-stream'` (`src/data/verse-aliases.ts`).
 - **Reader Arabic stress-test sweep** — 3 riwayat × 5 flow steps × 3 viewports per `reference_quran_rendering_stress_test` memory. Run before promoting reader changes from `dev → staging → main`.

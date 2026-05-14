@@ -9,7 +9,7 @@ This file inventories code that exists today. It is not the product roadmap. Sec
 
 - Multi-riwayah corpus (Hafs / Warsh / Qalun product scope; runtime `qaloon`, KFGQPC Uthmanic) — `src/data/dataset.ts`.
 - Translation overlay — Bridges default; inline footnote panels render when a shipped pack includes `[N]` markers (`src/read/translation-tokens.ts`).
-- Translation-riwayah alignment via per-ayah Hafs↔Warsh↔Qaloon equivalence table (`public/dataset/translations/_verse-aliases.json`).
+- Translation-riwayah alignment via per-ayah Hafs↔Warsh↔Qalun (`qaloon`) equivalence table (`public/dataset/translations/_verse-aliases.json`).
 - Typography — 5-step font-size + 5-step reading-flow sliders, reset-to-default pill.
 - Surah header + bismillah — collapsible per-user preference.
 - Cross-surah swap — pull-past-edge / continue link with 114↔1 wrap.
@@ -30,7 +30,7 @@ This file inventories code that exists today. It is not the product roadmap. Sec
 
 ## Review (removed product scope pending cleanup)
 
-- `#/review` hub — 12-layer selector + group-by (Value / Surah / Date) + value chips + flat card list.
+- `#/review` hub — removed-scope implementation inventory for 12-layer selector + group-by (Value / Surah / Date) + value chips + flat card list.
 - `#/<layer>/:value` filtered-verse review (FVR) deep-link route.
 - Activation state — last-viewed mark per filter persists across reload (`activationState` store).
 - Multi-value OR filter on desktop ≥1180 px.
@@ -39,8 +39,8 @@ This file inventories code that exists today. It is not the product roadmap. Sec
 ## Navigate
 
 - Hash router — lazy-loaded modules, param sanitisation.
-- Hamburger drawer (mobile) — full-screen, Surahs + Bookmarks + Study tabs; sole entry to full surah list on mobile.
-- Command sheet `⌘K` — refs / surahs / tags resolve, inline verse preview.
+- Hamburger drawer (mobile) — full-screen, Surahs + Bookmarks + removed-scope Study tab while legacy code remains; sole entry to full surah list on mobile.
+- Command sheet `⌘K` — refs / surahs resolve, inline verse preview; legacy tag results remain removed-scope implementation inventory pending cleanup.
 - Surah directory `#/surahs` — desktop ≥1180 px standalone; mobile redirects to drawer.
 - Bookmarks — single-tap toggle, riwayah-scoped (`bookmarks` store, ID `<riwayah>:<surah>:<verse>`).
 - Bookmark jump pulse animation on landing.
@@ -71,7 +71,7 @@ This file inventories code that exists today. It is not the product roadmap. Sec
 
 ## Onboard
 
-- 6-screen first-run flow — Welcome / Theme / Riwayah / Translation / Shortcuts / Tags-intro.
+- 6-screen first-run flow — Welcome / Theme / Riwayah / Translation / Shortcuts / legacy Tags-intro copy pending Reader First cleanup.
 - Default Riwayah on first run = Qālūn.
 - Translation picker derived from `provenance.json` at render time.
 - Once `onboardingComplete = true`, surface unreachable until Clear-data.

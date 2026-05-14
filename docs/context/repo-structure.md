@@ -67,7 +67,7 @@ If a file under `docs/` is marked as auto-generated, `scripts/docs/` owns it.
 Load-bearing documentation about the current system.
 
 - `docs/context/`: architecture, data model, source-data flow, surface dossiers, generated indexes
-- `docs/workflow/`: engineering workflow guidance for this repo
+- `.agents/skills/`: repo-local engineering workflows, including surface clustering and verification guidance
 
 Use the docs this way:
 

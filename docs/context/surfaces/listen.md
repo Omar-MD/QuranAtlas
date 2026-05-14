@@ -20,7 +20,7 @@ test_paths:
 | Entry | Trigger | Result |
 | --- | --- | --- |
 | Removed-scope Settings reciter picker | tap | open reciter list while implementation remains |
-| (Future) Reader long-press menu → "Play from here" | gesture | start playback at long-pressed verse |
+| Removed-scope long-press playback hook | legacy/unshipped implementation note | cleanup inventory only; not a product promise |
 | Mini-bar tap | tap | open `AudioFullOverlay` via `audioPlayerBridge.api.open()` |
 | Full overlay close button | tap | collapse to mini-bar |
 | Lock-screen / Bluetooth media controls | hardware | drive `player-runtime.ts::resume / pause / next / prev / seekto` |
@@ -126,7 +126,7 @@ Sole writer: `src/listen/player-runtime.ts` (and `state/audio.svelte.ts` for cro
 
 - **`AudioMiniBar` visible iff `audioState.status !== 'idle'`.** No ambient audio on cold boot.
 - **Single global `<audio>` element owned by `state/audio.svelte.ts::getOrCreateAudioElement()` — never duplicated.**
-- **Verse highlight uses `[data-token-key^="{S}:{V}"]`,** not `data-verse-key` (audio's contract is verse-grain via `core/tokenisable.ts`; picks up word-level spans automatically when WBW lands).
+- **Verse highlight uses `[data-token-key^="{S}:{V}"]`,** not `data-verse-key` (audio's contract is verse-grain via `core/tokenisable.ts`; it also matches word-grain spans if they exist).
 - **Track metadata updates on surah-change or reciter-change only,** never per-verse. Per-verse updates flicker lock-screen on iOS Safari.
 
 ## Regression guards

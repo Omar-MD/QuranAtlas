@@ -77,7 +77,7 @@ test_paths:
 
 Hamburger or swipe-down opens full-screen drawer. Two top-level mode tabs.
 
-Header uses the locked mobile chrome: a product row with tappable QuranAtlas wordmark, About icon button, and separate Close button, followed by the `Read | Study` mode rail.
+Header uses the locked mobile chrome: a product row with tappable QuranAtlas wordmark, About icon button, and separate Close button, followed by the `Read` rail plus removed-scope `Study` rail while legacy code remains.
 
 **Read mode** uses the ledger drawer layout: an elevated Daily Wird card with progress/chevron affordance, then a `Verse | Mushaf` reader-mode switch, then the peer source control for `Surah | Juz | Bookmarks` when Verse mode is active. The selected source uses a muted accent fill plus bronze underline; unselected sources remain muted on the shared rail.
 
@@ -87,7 +87,7 @@ When the active route is Mushaf (`#/m/:page`), the drawer marks Mushaf mode acti
 
 Daily Wird detail opens in-drawer. Without a plan, the summary card invites creating a plan and the creator uses Settings-style sections for completion target, display unit, start point, and reminder; each option exposes selected/unselected state through pressed semantics and visible accent styling. With a plan, the detail shows today range, remaining work, Continue, Edit, and Reset controls. When the reminder browser-notification action is tapped, the drawer requests browser permission from that same user gesture and reflects the resulting permission state before the plan is saved. If the saved state is denied, the drawer still exposes a request-again action; browsers that require site-settings changes may return denied immediately.
 
-**Study mode**: top **Hub** row (→ `#/review`) + 12 layer rows in 4 grouped sections (Speech / Narrative / Themes / Entities). Tap layer → `#/review?layer=<name>`.
+**Study mode** is removed-scope personal-layer implementation inventory while legacy code remains: top **Hub** row (→ `#/review`) + 12 layer rows in 4 grouped sections (Speech / Narrative / Themes / Entities). Tap layer → `#/review?layer=<name>`.
 
 `✕` closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state local; not persisted. Header controls and the peer source rail keep comfortable touch targets on mobile; the Read source switch stays visually compact while preserving selected-state clarity.
 
@@ -119,12 +119,12 @@ Full in-app reference is the `?` cheatsheet. Summary:
 - `/` — open command sheet
 - `⌘K` / `Ctrl+K` — open command sheet (alias)
 - `?` — open shortcut cheatsheet
-- `Esc` — close sheet · back from FVR
+- `Esc` — close sheet · back from removed-scope FVR
 
 **Go to** (g-chord)
 - `g h` — home / continue reading
 - `g s` — surah list
-- `g r` — review hub
+- `g r` — removed-scope review hub while legacy code remains
 - `g a` — about
 - `g p` — preferences (settings)
 

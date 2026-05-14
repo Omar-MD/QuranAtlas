@@ -77,8 +77,8 @@ Defined in `package.json`:
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
 | `pnpm run build` | Build production bundle into `dist/` (`pnpm run data -- build && vite build`) |
-| `pnpm run data -- build` | Grouped baseline data build: `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, `scripts/data/mushaf-pages/build.mjs`, `scripts/data/riwayah-packages/build.mjs`, and `scripts/data/manifest/inventory.mjs` to emit Qaloon riwayah, Bridges translation, Muyassar tafsir, source indexes, riwayah package index, metadata, manifest, provenance, Phase 01 knowledge shards, and a Qaloon page pack when local page artifacts are present. Runs offline against committed normalized text sources plus optional generated page artifacts. |
-| `pnpm run data -- build --profile=full` | Full local data build: emits every locally configured approved text source, Phase 01 knowledge shards, and available Hafs/Warsh/Qaloon page packs. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
+| `pnpm run data -- build` | Grouped baseline data build: `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, `scripts/data/mushaf-pages/build.mjs`, `scripts/data/riwayah-packages/build.mjs`, and `scripts/data/manifest/inventory.mjs` to emit Qalun (runtime `qaloon`) riwayah, Bridges translation, Muyassar tafsir, source indexes, riwayah package index, metadata, manifest, provenance, Phase 01 knowledge shards, and a Qalun (`qaloon`) page pack when local page artifacts are present. Runs offline against committed normalized text sources plus optional generated page artifacts. |
+| `pnpm run data -- build --profile=full` | Full local data build: emits every locally configured approved text source, Phase 01 knowledge shards, and available Hafs/Warsh/Qalun (`qaloon`) page packs. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
 | `pnpm run data -- build --profile=catalog` | Catalog/profile build without text bodies. |
 | `pnpm run data -- check` | Grouped data check: validates source catalog plus baseline text, knowledge, and available Mushaf page artifacts without fetching quran.ws. |
 | `pnpm run data -- aliases` | Rebuild `_verse-aliases.json` from riwayah sources. |
@@ -118,21 +118,10 @@ These used to be inlined in this file; they now live in `docs/context/`:
 
 Two layers:
 
-- **Unit tests (Vitest + jsdom + `fake-indexeddb/auto`)** — suites under `tests/unit/` covering core, reader, marks, review, settings, nav, safety, data/offline, dataset scripts/catalogs, state modules, service worker handlers, and a console-guard. Runs in every CI job via `pnpm run test`.
-- **E2E tests (Playwright)** — **12 specs** under `tests/e2e/`:
-  - `journey-a-onboarding.spec.js` — first-run + session restore
-  - `journey-b-reader.spec.js` — reader + ambient chrome
-  - `journey-c-marking.spec.js` — mark editor
-  - `journey-d-settings.spec.js` — settings sheet, theme, clear-data
-  - `journey-e-review.spec.js` — review hub + FVR
-  - `journey-f-navigation.spec.js` — command sheet + surah directory
-  - `journey-g-about.spec.js` — about + shortcuts + PWA install
-  - `journey-h-offline.spec.js` — offline activation (`@offline` project, preview build)
-  - `journey-i-cross-tab.spec.js` — cross-tab sync
-  - `performance-budgets.spec.js` — initial render budgets
-  - `sw-integration.spec.js` — SW cache + runtime caching (preview build only)
+- **Unit tests (Vitest + jsdom + `fake-indexeddb/auto`)** — suites under `tests/unit/` covering core, Reader First surfaces, settings/nav/safety/data/offline, dataset scripts/catalogs, state modules, service worker handlers, and a console-guard. Mark/review/listen tests are removed-scope implementation regression coverage while that code remains. Runs in every CI job via `pnpm run test`.
+- **E2E tests (Playwright)** — specs under `tests/e2e/` are clustered by surface: `onboard`, `read`, `configure`, `navigate`, and `infra` for active Reader First behavior; `mark` and `review` are removed-scope cleanup/regression placement while that implementation remains.
 
-Locally, journey specs A–G, I, and performance run against the **Vite dev server**; journey H + `sw-integration` run against the **Vite preview server** (production build required for the SW). In CI, all projects share a single preview server (`PLAYWRIGHT_USE_PREVIEW=1` + `PLAYWRIGHT_SKIP_BUILD=1`) — the e2e job depends on the Build job and reuses its `dist/` artifact rather than rebuilding.
+Locally, ordinary Playwright specs run against the **Vite dev server**; offline/service-worker specs run against the **Vite preview server** (production build required for the SW). In CI, all projects share a single preview server (`PLAYWRIGHT_USE_PREVIEW=1` + `PLAYWRIGHT_SKIP_BUILD=1`) — the e2e job depends on the Build job and reuses its `dist/` artifact rather than rebuilding.
 
 #### Suite setup: `tests/e2e/global-setup.ts` + `storageState` reuse
 
@@ -161,7 +150,7 @@ Minimum browser: Chrome 111, Safari 16.2, Firefox 113 (required for `color-mix()
 
 ## CI/CD
 
-CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. The `build` job restores cached Qaloon Mushaf page PDFs / normalized SVG inputs, installs Poppler, imports any missing baseline Qaloon artifacts, strictly builds the generated page pack, then runs the normal production build before uploading `dist/`. `lighthouse` and `e2e` consume that artifact (no redundant rebuilds). Dataset check/build jobs remain clean-checkout tolerant and do not require generated page SVGs. Jobs:
+CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `staging`. Jobs share a composite setup action (`.github/actions/setup/action.yml`) that pins `pnpm@10.31.0` + Node 20 and restores a lockfile-keyed cache. The `build` job restores cached Qalun (`qaloon`) Mushaf page PDFs / normalized SVG inputs, installs Poppler, imports any missing baseline Qalun (`qaloon`) artifacts, strictly builds the generated page pack, then runs the normal production build before uploading `dist/`. `lighthouse` and `e2e` consume that artifact (no redundant rebuilds). Dataset check/build jobs remain clean-checkout tolerant and do not require generated page SVGs. Jobs:
 
 | Job | Purpose |
 |---|---|
@@ -173,7 +162,7 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, `st
 | `dataset-baseline` | `pnpm run data -- build` |
 | `dataset-full` | `pnpm run data -- build --profile=full` on protected-branch pushes and PRs whose diff touches dataset sources, catalogs, generated dataset files, or dataset scripts |
 | `audit` | `pnpm audit --audit-level moderate` |
-| `build` | Installs Poppler, runs `pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604`, runs `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon`, then `pnpm run build`; uploads `dist/` artifact with the release Qaloon page pack |
+| `build` | Installs Poppler, runs `pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604`, runs `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon`, then `pnpm run build`; uploads `dist/` artifact with the release Qalun (`qaloon`) page pack |
 | `lighthouse` | `lhci autorun` against uploaded `dist/` |
 | `e2e` | `pnpm test:e2e --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"` with `PLAYWRIGHT_INCLUDE_OFFLINE=1`, `PLAYWRIGHT_USE_PREVIEW=1`, `PLAYWRIGHT_SKIP_BUILD=1`. Depends on `build` and downloads its `dist/` artifact, then runs against a preview server (no dev-server compile path under workers=6). |
 | `ci-ok` | No-op aggregator — single required status check for branch protection |

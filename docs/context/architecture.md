@@ -25,7 +25,7 @@ Vite's entry is `src/app.ts`, which imports `App.svelte` and calls `mount(App, {
    - `openDB()` — opens/creates the IDB (`onupgradeneeded` creates stores + indexes).
    - `initSafetySync()` — must run immediately after `openDB()` so the `DB_VERSION_CHANGE` listener is registered before any versionchange can fire (from another tab or E2E suppress hatch). If this runs later, a `suppressNextVersionChange()` call can leak its flag into a later real versionchange and silently suppress the reload banner.
    - `initTheme()` + `initFontSize()` — apply persisted theme/font *before* router dispatch so there's no flash.
-   - `initRiwayah()` — reads `settings['riwayah']` (sole writer `settings/riwayah.ts`, default `'qaloon'`) and sets `data-riwayah` on `<html>` so font-family + line-height CSS rules fire before the reader mounts. Runs after `initFontSize()` and before `initReadingTypography()` — typography needs to know the active Riwayah to clamp its line-height floor correctly. It also initializes the in-memory riwayah package install intent: the previous usable riwayah is the saved riwayah when the package helper verifies it, otherwise verified Qaloon.
+   - `initRiwayah()` — reads `settings['riwayah']` (sole writer `settings/riwayah.ts`, default `'qaloon'`) and sets `data-riwayah` on `<html>` so font-family + line-height CSS rules fire before the reader mounts. Runs after `initFontSize()` and before `initReadingTypography()` — typography needs to know the active Riwayah to clamp its line-height floor correctly. It also initializes the in-memory riwayah package install intent: the previous usable riwayah is the saved riwayah when the package helper verifies it, otherwise verified Qalun (`qaloon`).
    - Registers route handlers (see below), then calls `router.init()` to dispatch the current hash.
    - Initializes reader keyboard actions (`initReaderActions`).
    - Wires global subscribers: `NAVIGATION_NAVIGATE` → router.
@@ -37,7 +37,7 @@ On any boot failure the `catch` block renders a minimal error card with a Retry 
 
 ## Router (`src/core/router.ts`)
 
-- Pure hash routing; patterns use `:param` placeholders (`#/s/:surah/:ayah`, `#/t/:tag`).
+- Pure hash routing; patterns use `:param` placeholders (`#/s/:surah/:ayah`, `#/<layer>/:value`).
 - `register(pattern, loader, hooks)` stores a dynamic import loader. The module is fetched lazily on first match.
 - Each route module exports `async init(params, hooks) → cleanup?`. The returned function (if any) is invoked by the router before the next route mounts.
 - **Param sanitization** — `sanitizeParams()` rejects any value containing HTML tags, `javascript:` / `data:` / `vbscript:` schemes, inline event handlers, `://`, or values >100 chars. Rejected routes hit `ROUTER_ROUTE_ERROR` and show the not-found card.
@@ -50,8 +50,8 @@ On any boot failure the `catch` block renders a minimal error card with a Retry 
 | `#/s/:surah` | `reader/Reader.svelte` | Surah reader |
 | `#/s/:surah/:ayah` | `reader/Reader.svelte` | Surah reader jumping to verse |
 | `#/m/:page` | `reader/mushaf/MushafReader.svelte` | Mushaf page reader for the active riwayah |
-| `#/review` | `review/Hub.svelte` | All-marks hub |
-| `#/t/:tag` | `review/Hub.svelte` | Filtered-verse-review (FVR) |
+| `#/review` | `review/Hub.svelte` | Removed-scope all-marks hub implementation inventory |
+| `#/<layer>/:value` | `review/Hub.svelte` | Removed-scope filtered-verse-review implementation inventory |
 | `#/surahs` | `surahs/SurahList.svelte` | Surah directory |
 | `#/about` | `about/About.svelte` | About page |
 | `#/onboarding` | `onboarding/Onboarding.svelte` | First-run flow |

@@ -355,49 +355,26 @@ Add cleanup debt for removed branches:
 
 Existing performance, schema, and validation issues should remain unless fixed.
 
-### `docs/workflow/cluster-by-surface.md`
-
-Keep the workflow useful for current implementation ownership without preserving
-removed product promises:
-
-- Reword `listen` as removed audio implementation/cleanup scope, not an active
-  or planned product surface.
-- Reword `mark` and `review` as removed personal-layer implementation/cleanup
-  scope, except bookmarks where navigation/read continuity owns the active
-  product behavior.
-- Remove future SRS, graph, compare, or audio e2e implications unless they are
-  explicitly framed as historical implementation cleanup.
-- Keep clustering rules for reader, navigation, configure, infra, onboard, and
-  any cleanup unit that still touches removed implementation surfaces.
-
-### `.agents/skills/*.md`
+### `.agents/skills/*/SKILL.md`
 
 Review repo-local skills for product-scope drift and update only the affected
 manual prose:
 
-- `quranatlas-surface-workflow`: keep the surface-first workflow, but do not
-  describe marking, review, or listening as active product surfaces except for
-  cleanup work; keep reader, navigation, onboarding, configuration, and infra as
-  active surface clusters.
-- `quranatlas-product-audit`: make Reader First, one-active-pack invariants,
-  removed audio/personal-layer scope, and AI infrastructure-vs-UI separation
-  part of the audit baseline.
-- `quranatlas-testing`: keep placement guidance, but remove examples that imply
-  new mark/review/listen product coverage unless they are cleanup tests for
-  existing implementation.
-- `quranatlas-docs-maintenance`: keep the ownership map current if product scope
-  or context-doc ownership wording changes.
-- `quranatlas-ui-design-workflow`: update only if it contains product-surface
-  examples that contradict Reader First; do not broaden UI scope.
+- `quranatlas-workflow`: keep surface-first workflow, docs ownership, testing
+  placement, and verification guidance together; do not describe marking,
+  review, or listening as active product surfaces except for cleanup work.
+- `quranatlas-audit`: make Reader First, one-active-pack invariants, removed
+  audio/personal-layer scope, and AI infrastructure-vs-UI separation part of the
+  audit baseline.
+- `quranatlas-ui-workflow`: update only if it contains product-surface examples
+  that contradict Reader First; do not broaden UI scope.
 
 ### `AGENTS.md` and scoped `AGENTS.md` files
 
 Keep agent instructions aligned with the rewritten context docs:
 
-- Root `AGENTS.md` should mention every load-bearing context/workflow doc that
-  must be checked for product-scope changes, including
-  `docs/workflow/cluster-by-surface.md` and repo-local skills when their
-  instructions encode product-surface assumptions.
+- Root `AGENTS.md` should mention every load-bearing context doc and repo-local
+  skill that must be checked for product-scope changes.
 - Root `AGENTS.md` should describe `future.md` as provisional future direction
   for asset lanes, retrieval readiness, and separately decided future personal
   annotations; it must not make reflection prompts sound like active roadmap.

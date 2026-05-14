@@ -7,8 +7,7 @@ Scoped instructions live closer to the work:
 
 - `tests/e2e/AGENTS.md` — Playwright placement and performance rules
 - `tests/unit/AGENTS.md` — unit-test defaults and component-test guidance
-- `docs/workflow/cluster-by-surface.md` — surface clustering, cleanup-surface handling, and e2e placement workflow
-- `.agents/skills/*.md` — repo-local workflows that can encode product-surface assumptions
+- `.agents/skills/*/SKILL.md` — repo-local workflows for surface clustering, cleanup-surface handling, testing, UI work, audits, and product-surface assumptions
 
 ## Context docs
 
@@ -73,7 +72,7 @@ Do not treat GitHub remote state as authoritative for active local work unless t
 
 ### 4. Cluster work by surface
 
-Use the user-visible surface as the default unit of work. Before splitting work, adding Playwright specs, or delegating by area, read `docs/workflow/cluster-by-surface.md`.
+Use the user-visible surface as the default unit of work. Before splitting work, adding Playwright specs, or delegating by area, use `.agents/skills/quranatlas-workflow/SKILL.md`.
 
 Default shape:
 
