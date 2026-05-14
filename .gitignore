@@ -45,6 +45,13 @@ tests/e2e/.auth/
 .superpowers/
 scratch/
 
+# Project superpowers docs are source-controlled
+!docs/superpowers/
+!docs/superpowers/specs/
+!docs/superpowers/specs/**/*.md
+!docs/superpowers/plans/
+!docs/superpowers/plans/**/*.md
+
 # Git worktrees
 .worktrees/
 
