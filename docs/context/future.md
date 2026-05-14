@@ -1,89 +1,55 @@
 # Future Direction
 
-Provisional future direction that is useful context for planning, but is not yet a shipped capability. Move items from here into `roadmap.md` once they become agreed ship scope.
+Provisional future direction that is useful context for planning, but is not yet shipped capability or agreed roadmap scope. Move items from here into `roadmap.md` only after a product decision.
 
 ## Current baseline
 
-QuranAtlas already ships the text lane and the first Knowledge Lane seam:
+QuranAtlas already ships a Reader First runtime shape:
 
 - runtime reads only `/dataset/**`
 - text rendering stays independent from optional enrichment lanes
-- `src/data/knowledge-dataset.ts` loads lazily and can fail without breaking reader boot
+- qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf page, and search/index assets can share one install-before-activate rule
+- `src/data/knowledge-dataset.ts` loads curated knowledge lazily and can fail without breaking reader boot
 
 Future work should extend those boundaries rather than replace them.
 
-## Target lane model
+## Asset pipeline quality
 
-### Text lane
+Future reader and retrieval work depends on source assets that are clean, provenance-rich, validated, versioned, and indexable. The pipeline should preserve source provenance, build-time structural validation, manifest membership, byte planning, and install-state checks for every shipped or optional pack.
 
-Canonical reader content:
+Runtime code should consume built files under `/dataset/**`. `data/catalog/**`, `data/normalized/**`, and `data/taxonomy/**` stay build-only.
 
-- Arabic riwayat
-- translations
-- tafsir display text
-- surah and juz metadata
-- verse aliases
-- provenance and manifest inventory
+## Curated metadata expansion
 
-This lane stays deterministic, fast, and offline-safe.
-
-### Knowledge lane
-
-Structured understanding around ayat and passages beyond the current shipped phase:
+Curated QuranAtlas metadata is distinct from user-authored personal annotations. Possible future curated expansion includes:
 
 - richer ayah themes
 - passage structure and role-in-surah context
+- Arabic roots
 - concepts and divine names
 - cross-references and rhetorical features
-- scholarly claims in a later phase
+- scholarly claims after source and review rules are defined
 
-The reader may be enriched by this lane, but must not depend on it for baseline rendering.
+Reader boot must not require optional curated metadata files. Missing optional metadata should leave enhancement UI absent or unavailable while Arabic text remains readable.
 
-### Reflection lane
+## Retrieval and AI readiness
 
-Curated tadabbur guidance intended to stay narrow and reader-adjacent:
+Future retrieval infrastructure may include lexical indexes, chunked tafsir and claims retrieval, citation/provenance maps, and optional vector or embedding indexes. This work should ground future answers in structured retrieval and citations.
 
-- prompt lenses
-- per-ayah or per-range prompts
-- difficulty tags
-- suggested actions, du'a prompts, or small journaling scaffolds
+No AI assistant, chat, agent, synthesis UI, or generated-answer product is current scope.
 
-The default interaction stays lightweight: one prompt first, optional deeper expansion, no separate top-level surface required.
+## Future personal layer
 
-### Search / AI lane
+Future user-authored data must stay separate from QuranAtlas curated metadata. A later personal layer may include:
 
-Retrieval-first support for search and AI-assisted study:
+- user meanings
+- user tags
+- comments
+- notes
+- edges or layer systems
 
-- lexical indexes
-- chunked tafsir / claims retrieval
-- citation and provenance maps
-- optional vector or embedding indexes later
+Bookmarks remain current reading-continuity data and are not part of this future annotation layer.
 
-This lane should ground answers in structured retrieval rather than raw source dumping.
+## Deferred language and display aids
 
-## Runtime and offline guardrails
-
-- Client runtime continues to consume only built files under `/dataset/**`; `data/catalog/**`, `data/normalized/**`, and `data/taxonomy/**` stay build-only.
-- Reader boot must not require knowledge, reflection, search, or AI files.
-- Knowledge and reflection load lazily after text is already usable.
-- Missing optional lane files degrade gracefully: no fatal boot failure, reader still works, enhancement UI simply stays absent or unavailable.
-- Manifest and offline planning should remain lane-aware so future shipped assets are represented consistently in inventory, service-worker routing, and storage estimates.
-
-## Expected sequencing
-
-The current preferred order is:
-
-1. deepen the reader-facing Knowledge Lane UI on top of the existing runtime seam
-2. add curated Reflection Lane prompts inside the existing ayah interaction flow
-3. add claim extraction and source-backed knowledge atoms
-4. add retrieval and AI-assisted study with citations
-
-## Open planning questions
-
-These are still planning decisions, not settled product scope:
-
-- which surahs should remain the pilot set for future curated knowledge and reflection data
-- whether reflection enters from the ayah menu, bottom sheet, or another subtle action in the existing interaction flow
-- whether user-saved reflections are local-only at first
-- whether AI is offline, server-side, or hybrid
-- whether every AI answer must require citations and refusal guardrails for unsupported legal or creedal conclusions
+Transliteration display, word-by-word translation, and tajweed coloring remain deferred. Transliteration may still support search/indexing before any reader display feature is approved.

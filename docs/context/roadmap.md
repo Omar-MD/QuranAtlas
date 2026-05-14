@@ -1,70 +1,77 @@
 # Roadmap
 
-Features agreed but not yet shipped. When work starts the entry moves into
-the active plan; when it ships, it moves to `implemented.md`.
+Agreed future work that supports the Reader First product promise. When work starts the entry moves into the active plan; when it ships, it moves to `implemented.md`.
 
-## Read
+## V1 Reader Completion
 
-- Juz / hizb / rubʿ / ruku navigation — static metadata tables, jump-to in command sheet + drawer.
-- Full-text Arabic + translation search — index built at precache time.
-- Reading plan / khatm tracker / streak — new `readingPlan` IDB store.
-- Page-break indicators (Hafs first) — KFGQPC per-verse page numbers.
+- Complete Verse and Mushaf reading modes around Hafs, Qalun, and Warsh.
+- Bookmarks and saved reading position as reading-continuity primitives.
+- Reading preferences: themes, typography, line spacing, word spacing, margins, and related reader comfort controls.
+- Daily Wird goal, reminder, and progress inside the reader-continuity flow.
+- Page-break indicators and metadata-backed page/juz/hizb/rub/ruku awareness where they strengthen reading.
 
-## Memorize
+## V1 Asset Packs and Pipeline
 
-- Per-verse memorization status flag (`none | learning | memorized | review`).
-- Hide-drill / cover-text mode — blur Arabic or translation, tap-to-reveal.
-- Spaced-repetition review queue (SRS).
+- One active qira'ah/riwayah pack at a time: Hafs, Qalun, or Warsh.
+- One active translation pack, one active tafsir pack, and one active curated metadata pack at a time.
+- Optional packs install before activation and become usable only after local install state is verified.
+- Mushaf pages are tied to the active qira'ah/riwayah and require matching page assets.
+- Asset indexes support byte planning, offline caching, provenance, manifest membership, and future retrieval boundaries.
 
-## Listen (audio polish)
+## V1 Search and Navigation
 
-- Reciter dataset acquisition pipeline — forced-alignment for word-level timing.
-- Reader long-press / double-tap "Play from here" entry.
-- Settings UI — reciter picker, speed/repeat defaults, per-reciter storage row.
-- A-B loop UX + Repeat-N drill UI.
-- Audio brand artwork PNG assets (`public/icons/audio-art-{96,256,512}.png`).
-- `journey-h-audio.spec.js` e2e (`@offline` project).
+- Search over Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
+- Surah and Juz navigation as first-class reader paths.
+- Hizb, rub, ruku, and page data remain metadata until separately promoted to visible controls.
+- Reader mode switching between Verse and Mushaf.
 
-## Language aids
+## V1 Curated Metadata
 
-- Word-by-word translation — per-verse `words` field.
-- Transliteration — translation-pack-like store.
-- Tajweed coloring — KFGQPC tajweed-marked corpus.
+- Tafsir as the primary reader-attached study text.
+- Verse themes, short curated meanings or summaries, and passage grouping/context.
+- Makki/Madani classification and source-backed revelation/asbab metadata.
+- Juz, hizb, rub, ruku, and page metadata as reader/navigation metadata.
 
-## Share / sync
+## Future AI/Retrieval Infrastructure
 
-- Copy verse + share (Web Share API).
-- Marks + bookmarks export / import (JSON).
-- Multi-device sync — E2E-encrypted, account-less.
+- Provenance-rich, versioned source assets.
+- Citation-first retrieval indexes and boundaries.
+- Scholarly claims datasets when sourcing and review rules are defined.
+- Optional embedding/vector indexes as infrastructure only.
 
-## Tafsir
+This lane is infrastructure and retrieval readiness. It is not an AI assistant, chat, agent, synthesis UI, or answer-generation product.
 
-- External tafsir packs.
-- Ordered recommended Arabic tafsir source list: Tafsir Ibn Kathir; Tafsir al-Tabari / Jami' al-Bayan; Tafsir al-Baghawi / Ma'alim al-Tanzil; Tafsir al-Sa'di / Taysir al-Karim al-Rahman; al-Mukhtasar fi al-Tafsir; al-Tafsir al-Muyassar; Tafsir al-Qurtubi; al-Muharrar al-Wajiz / Ibn Atiyyah; Adwa' al-Bayan / al-Shinqiti; al-Tahrir wa al-Tanwir / Ibn Ashur.
+## Deferred Language Aids
 
-## Tadabbur / study
+- Transliteration display.
+- Word-by-word translation.
+- Tajweed coloring.
 
-- Reader-facing Knowledge Lane UI — subtle passage context and ayah theme chips inside the existing interaction flow.
-- Reflection Lane prompts — one curated prompt first, optional more-lenses expansion.
-- Scholarly claims dataset — source-backed knowledge atoms for citations and guardrails.
-- Citation-first retrieval / AI study assist — lexical and chunked retrieval before any broader synthesis.
+Transliteration may support search and indexing before it becomes a display aid.
 
-## Multi-layer marks
+## Curated Metadata Backlog
 
-- User-personal alias overrides.
-- Edge creation UI + layer-overlap auto-suggest.
-- Per-edge-kind reflection prompt.
+- Arabic roots.
+- Concepts.
+- Divine names.
+- Cross-references.
 
-## Dataset enrichment
+These are not v1 scope unless separately promoted with clear reader value and source rules.
 
-- Revelation context (Makki / Madani, era, asbab).
-- Arabic roots — pre-computed 3-letter roots.
-- Muhkam / mutashabih classification.
+## Removed Scope
 
-Longer-range lane architecture, sequencing, and unresolved planning questions live in `future.md`.
+- Audio and recitation playback.
+- Personal marks, tags, notes, comments, review, and edges, except bookmarks.
+- Copy, share, export, import, user-facing sync, accounts, community, and shared collections.
+- Streaks and standalone khatm tracker product branches.
+- AI assistant, chat, agent, synthesis UI, and current-roadmap reflection prompts.
+- Multiple translations side by side.
+- Qira'at beyond Hafs, Qalun, and Warsh.
+
+Future personal annotations are not a roadmap lane. They belong only in `future.md` as a separate possible personal layer outside current product scope.
 
 ## Infra
 
-- Versioned `_shapes` + cursor-walk back-fill (before v1.0 launch).
+- Versioned `_shapes` and cursor-walk backfill before first user-visible release.
 - Remove `'unsafe-inline'` from `style-src`.
-- Lazy-mount overlays.
+- Lazy-mount overlays where it reduces boot cost without weakening reader reliability.

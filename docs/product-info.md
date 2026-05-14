@@ -1,106 +1,70 @@
 # QuranAtlas
 
-**Read, reflect, remember.**
+**Reader First.**
 
-QuranAtlas is a distraction-free, offline-first Qur'an reading app. It offers continuous verse-interleaved reading with Arabic (Uthmani) and English translation, personal verse marks with custom tags, and ambient navigation that gets out of the way while you read.
+QuranAtlas is an offline-first Qur'an reader centered on complete Verse and Mushaf reading. The v1 promise is reading continuity: reliable Arabic text, one active translation, one active tafsir, curated reader-attached metadata, bookmarks, saved position, Daily Wird, Surah/Juz navigation, powerful search, and reader preferences that make long sessions comfortable.
 
-This is the product overview. For implementation detail, see `docs/context/` (architecture, feature-map, module-graph, events, data-model, user-journeys).
+This is the product overview. For implementation detail, see `docs/context/` and the surface dossiers under `docs/context/surfaces/`.
 
 ## Who is it for?
 
 - Muslims who want a focused, uncluttered way to read the Qur'an on their phone or laptop.
-- Readers who need reliable offline access — commutes, travel, prayer times with no signal.
-- Students who mark verses by theme (mercy, patience, tawakkul, etc.) and revisit them grouped by tag.
+- Readers who need reliable offline access during commutes, travel, prayer times, or low-connectivity moments.
+- Students and regular readers who want tafsir and curated context attached to the reading flow without leaving the reader.
 
-## What you get
+## V1 product promise
 
-### Reading experience
+### Complete reading modes
 
-- Continuous verse-interleaved layout. Arabic (Uthmani script, Amiri Quran by Khaled Hosny) on top of each verse with the English translation directly below.
-- **English translation: Bridges** (QUL translation resource). The baseline app bundle ships the current committed Bridges pack with authored footnotes. Translation visibility toggles on/off and persists across sessions.
-- **Riwayah picker.** Qālūn ʿan Nāfiʿ is the baseline transmission. Ḥafṣ ʿan ʿĀṣim and Warsh ʿan Nāfiʿ can be shipped as optional/full-profile packs. Default Qālūn. Choose at first launch (onboarding screen 3) or change anytime in Settings → Reading. Riwayat render in the same Amiri Quran face — the Riwayah text data drives the orthographic differences (small high seen `U+06EC` for Warsh/Qaloon, alif waslah, riwaya-specific marks).
-- Four themes: **Light**, **Sepia**, **Dark**, **Auto**. Auto follows `prefers-color-scheme` — light during the day, dark at night — and flips live when the OS changes.
-- Adjustable font size (slider in Settings, live preview); keyboard bindings (`⌘↑` / `⌘↓` / `0`) for quick changes.
-- Chunked rendering so long surahs like Al-Baqarah stay responsive.
-- Session restore: close the app and return later — lands back on the last-read verse.
-- **Desktop layout (≥1180px)**: centered reader column with verses stacked Arabic-over-English; mark editor opens as a centered verse-hero modal; review hub gets a sticky 220px left rail.
+- **Verse reader** for continuous ayah-by-ayah reading with Arabic text, optional translation display, tafsir access, curated metadata, cross-surah movement, and saved position.
+- **Mushaf reader** for page-based reading tied to the active qira'ah/riwayah page assets.
+- **Bookmarks** for reading continuity. Bookmarks are not part of the future personal annotation layer.
+- **Daily Wird** for reader-adjacent goal, reminder, and progress inside the continuity flow.
 
-### Navigation
+### Source and asset packs
 
-- **Ambient dock** (floating bottom pill, 4 glyphs: Read · Search · Review · More). On the reader it fades away; tap the page to surface it. On other pages it stays pinned.
-- **Ambient pill** (floating top pill) on the reader, showing the current `{surah}:{verse} · Name` and a ⌘K hint.
-- **Command sheet** (⌘K or the Search glyph) — unified search across surahs, verses, tags, marks, and commands. Type a ref like `2:255` to jump straight to the verse; type `mer` to deep-link to all verses tagged `mercy`.
-- **Surah directory** (`#/surahs`) — all 114 surahs with name, meaning, type, verse count; search by name/number/ref; filter by All / Bookmarked / Recent; continue-reading card at top.
-- **Deep links** — every verse is addressable via `#/s/{surah}/{ayah}`; every tag via `#/t/{tag}`.
+- **Qira'ah/riwayah scope:** Hafs, Qalun, and Warsh only. Qalun is the baseline reader pack. Runtime keys and existing file paths may still use `qaloon`.
+- **One active pack per source type:** one qira'ah/riwayah, one translation, one tafsir, and one curated metadata pack at a time.
+- **Install before activate:** optional qira'ah/riwayah, translation, tafsir, metadata, Mushaf page, and search/index packs become usable only after local install state is verified.
+- **No silent pack fallback:** if a selected pack is missing, stale, or unavailable, the app must show an unavailable/install/switch state or explicitly change the active setting to a verified baseline.
+- **Offline-first assets:** shipped and optional packs carry provenance, build-time validation, manifest membership, byte planning, and install-state checks.
 
-### Marks, tags, and review
+### Reading controls
 
-- **One action surface per verse: the mark editor.** Reachable by long-press, right-click, the keyboard shortcut `m`, or "Mark this verse" from the command sheet. No contextual menu, no multi-action popover — every trigger lands on the same editor sheet.
-- Multi-tag selection with a visible "Selected" strip (count + clear-all + × chips) above the tag library.
-- **16 seed tags** plus **create-your-own** tags inline (type a new label → `+ create "taqwa"` chip → confirm). Each tag gets a deterministic color.
-- Free-text **note** per mark.
-- Delete with inline confirm + **undo toast** — miss-taps are recoverable for a few seconds.
-- **Review hub** (`#/review`) — every mark with a three-segment grouping pill (Tag / Surah / Date), tag + surah filters, sort, and "load more" pagination. Cards render as a **flat deduped list** — a mark with multiple tags appears once; tags act as filters, not as groupers that duplicate the card.
-- **FVR — Filtered-Verse Review** (`#/t/{tag}`) — open all verses carrying a single tag with a compact centered header (color dot, tag name, verse/surah counts). Shareable as a link.
-- **Cross-tab coherence** — mark writes broadcast to other open tabs via BroadcastChannel; Clear Data in another tab prompts the live tab to reload. Everything stays consistent across browser windows.
+- Themes, typography, line spacing, word spacing, reader margins, and related reader comfort controls.
+- Surah and Juz navigation, with hizb, rub, ruku, and page data treated as metadata until promoted to first-class controls.
+- Search over Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
+- Page-break indicators and Mushaf page navigation where matching assets exist.
 
-### First-run onboarding
+### Curated study inside reading
 
-- **Six-screen walkthrough** on first launch: Welcome → Theme pick → Riwayah pick → Translation pick → Shortcuts primer → Tags intro.
-- Progress dots; Skip available from screen 2 onward.
-- Completes to Al-Fatihah or the surah directory.
+Study exists where it strengthens reading. V1 curated metadata includes tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani classification, source-backed revelation/asbab metadata, and juz/hizb/rub/ruku/page metadata. Curated metadata appears inside reading, search, and navigation flows rather than as a separate research product.
 
-### Settings
+Arabic roots, concepts, divine names, and cross-references remain curated metadata backlog unless separately promoted.
 
-- Bottom sheet (mobile: tap gear ⚙ in `MarginHeader`; desktop: `G`+`P` shortcut or command sheet "Preferences").
-- Theme swatches, Riwayah three-swatch picker, font slider with live preview, translation toggle, Clear-all-data link.
-- Clear data wipes IDB and restarts onboarding — nothing leaves the device.
+### AI readiness
 
-### Keyboard shortcuts
+QuranAtlas is preparing its asset pipeline for future retrieval and citation-first AI by keeping sources clean, provenance-rich, validated, versioned, and indexable. No AI assistant, chat, agent, synthesis UI, or reflection-prompt product is in current v1 scope.
 
-Designed for keyboard-first readers. Full reference via `?` from any non-input context.
+## Out of current product scope
 
-- **Universal**: `/` or `⌘K` command sheet · `?` cheatsheet · `Esc` close sheet / back from FVR.
-- **"Go to" chords**: `g h` continue reading · `g s` surah list · `g r` review hub · `g a` about · `g p` preferences.
-- **Reader** (on `#/s/*`): `j`/`k` next/prev verse · `]`/`[` next/prev surah · `Home`/`End` first/last verse · `m` mark the centered verse · `t` toggle translation · `+`/`-`/`0` font size · `d` cycle theme.
-- **Command sheet**: `↑`/`↓` move · `Tab`/`Shift+Tab` next/prev group · `Enter` activate.
+- Audio and recitation playback.
+- Personal marks, tags, notes, comments, review, and edges, except bookmarks.
+- Copy, share, export, import, user-facing sync, accounts, community, or shared collections.
+- Streaks and standalone khatm tracker product branches.
+- Multiple translations side by side.
+- Qira'at beyond Hafs, Qalun, and Warsh.
+- Transliteration display, word-by-word translation, and tajweed coloring.
 
-### About
+Existing implementation for removed branches may remain until a later source cleanup, but it is not the v1 product promise.
 
-- Wordmark + mission ("Read, reflect, remember.")
-- Qur'an 54:17 blessing in Arabic + translation.
-- 2×2 stat grid: Marks · Tags · Surahs · % Qur'an tagged.
-- Attribution: Qur'an text (Hafs, Warsh, Qaloon riwayat) from King Fahd Glorious Qur'an Printing Complex (KFGQPC), Madinah; quran.ws page PDFs for generated Mushaf page assets; Amiri + Amiri Quran fonts by Khaled Hosny; Svelte, Vite, Workbox.
-- Install-app CTA (when the browser's install prompt is available) and the app version.
+## Privacy
 
-### Offline
-
-- Service worker caches the full Qur'an corpus (all 114 surahs, 6,236 verses) on first online use.
-- Subsequent launches work fully offline — reader, command sheet, marks, review hub, everything.
-- Dataset updates are fetched in the background, verified by SHA-256, and promoted atomically.
-- PWA install: add to home screen for a full-screen, native-feeling experience.
-
-### Privacy
-
-- Everything lives in IndexedDB on the user's device.
-- No sync, no tracking, no analytics, no backend. Clearing data is one tap and wipes everything.
-
-## Roadmap
-
-QuranAtlas ships incrementally. Nothing is permanently "out of scope" — features the team has agreed on but hasn't built yet live in [`docs/context/roadmap.md`](context/roadmap.md), surface-grouped.
-
-Pipeline today (non-exhaustive — see `roadmap.md` for the full list):
-
-- **Reading core** — juz / hizb / rubʿ / ruku navigation; full-text Arabic + translation search; reading plan / khatm tracker / streak; page-break indicators.
-- **Memorization (hifz)** — per-verse memorization status flag, hide-drill / cover-text mode, spaced-repetition review queue.
-- **Audio recitation** — playback, reciter picker, verse loop / repeat (single largest v2 milestone).
-- **Page-based Mushaf layout** — lightweight page-break indicators and print-style refinements.
-- **Language aids** — word-by-word translation, transliteration, tajweed coloring.
-- **Translation expansion** — translation picker UI (gated on a second shipped pack), per-surah intros, additional translations, external tafsir packs.
-- **Sharing, export, sync** — copy verse to clipboard, share verse, marks + bookmarks export / import, multi-device sync, community / shared collections.
+QuranAtlas is local-first. Current persistence lives in IndexedDB and Cache Storage on the user's device. Same-device and cross-tab coherence are technical infrastructure, not user-facing sync, accounts, or community.
 
 ## Learn more
 
-- User-facing end-to-end flows: [`docs/context/surfaces/<surface>.md`](context/user-journeys.md)
+- Current implementation inventory: [`docs/context/implemented.md`](context/implemented.md)
 - Codebase orientation: [`docs/context/architecture.md`](context/architecture.md)
-- All context docs: [`docs/context/`](context/)
+- Product roadmap: [`docs/context/roadmap.md`](context/roadmap.md)
+- Future direction: [`docs/context/future.md`](context/future.md)
