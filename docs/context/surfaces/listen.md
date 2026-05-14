@@ -13,13 +13,13 @@ test_paths:
 
 # Surface: listen
 
-> Audio recitation. Single global `<audio>` element + IDB position store + cross-tab gating + media-session + mini-bar + full-overlay + reader verse-tick highlight + smart-defer autoscroll. Future ship-blocking work (reciter dataset, settings UI surfaces, A-B loop, "Play from here" entry, e2e specs) tracked in `roadmap.md` §Listen.
+> Removed product scope pending source cleanup. This dossier documents audio implementation that currently exists so cleanup can be done safely. Do not use it as a roadmap, v2 promise, or active product surface.
 
 ## Reach
 
 | Entry | Trigger | Result |
 | --- | --- | --- |
-| (Future) Settings → Sources reciter picker | tap | open reciter list |
+| Removed-scope Settings reciter picker | tap | open reciter list while implementation remains |
 | (Future) Reader long-press menu → "Play from here" | gesture | start playback at long-pressed verse |
 | Mini-bar tap | tap | open `AudioFullOverlay` via `audioPlayerBridge.api.open()` |
 | Full overlay close button | tap | collapse to mini-bar |
@@ -48,7 +48,7 @@ test_paths:
 ### Resume recent playback (J1)
 
 1. Mini-bar hidden (status `idle`) until user explicitly resumes — no ambient audio on cold boot.
-2. User opens audio entry (future Settings UI / command-sheet entry) → `play()` no-target → `loadMostRecent()` returns surah / reciter / verse / position-ms → `<audio>` loads `/dataset/audio/{reciter}/{NNN}.mp3`, seeks, plays.
+2. User opens an existing audio entry while implementation remains → `play()` no-target → `loadMostRecent()` returns surah / reciter / verse / position-ms → `<audio>` loads `/dataset/audio/{reciter}/{NNN}.mp3`, seeks, plays.
 3. Mini-bar surfaces at bottom of reader showing surah, reciter, verse.
 4. Reader's currently-playing verse gains `.qa-verse-active` background tint via `[data-token-key^="{S}:{V}"]` selector.
 

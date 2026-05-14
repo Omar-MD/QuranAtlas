@@ -15,7 +15,7 @@ test_paths:
 
 # Surface: mark
 
-> Existing-mark editing and persistence. Review opens the deep TagSheet for saved marks, but the Reader no longer creates new marks from its primary per-verse actions.
+> Removed personal-layer implementation pending source cleanup. This dossier documents existing mark/tag code, persistence, and tests so cleanup can be done safely. Personal marks, user tags, notes, and tag review are not current product scope.
 
 ## Reach
 
@@ -142,7 +142,7 @@ _(no cross-surface reads detected)_
 
 ## Invariants
 
-- **Reader no longer creates new marks from its primary verse actions.** Double-tap, right-click, keyboard `m`, and the command-sheet verse action belong to the `read` surface's tafsir flow now. Existing marks, mark indicators, Review, and deep TagSheet editing remain valid and must keep working.
+- **Reader verse actions belong to tafsir.** Double-tap, right-click, keyboard `m`, and the command-sheet verse action belong to the `read` surface's tafsir flow now. Existing implementation should remain understandable and regression-contained until source cleanup removes or quarantines it. New Reader First work should not add product behavior here.
 - **`_canon` is computed inside `marks/store.ts::save()` only.** No external caller may populate `_canon`. Bypassing `store.ts` to write the IDB store directly will leave `_canon` stale, indexes wrong, indicators stale, peer tabs missing the change.
 - **Empty-mark guard.** A mark must carry ≥1 tag across the 12 layers to persist. `save()` rejects empty input with `EmptyMarkError` before any IDB touch — a note alone is not sufficient. UI guards Save at callsite so the error should never be user-visible. Exported helper: `hasAnyTag(input)`.
 - **Sole writer of `marks` store: `marks/store.ts`.** Anywhere else writing `marks` directly is a bug.

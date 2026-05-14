@@ -17,7 +17,7 @@ test_paths:
 
 # Surface: navigate
 
-> Cross-surface navigation. Command sheet (⌘K), nav drawer (mobile full-screen tabbed), surah directory (desktop standalone, mobile via drawer), bookmarks (Reading mode + drawer Bookmarks tab), keyboard shortcuts.
+> Reader navigation — command sheet, nav drawer, Surah/Juz browsing, bookmarks, reader mode switching, shortcuts, search entry, and Daily Wird entry points. Tag/review navigation is existing removed-scope implementation pending cleanup, not active product value.
 
 ## Reach
 
@@ -69,7 +69,7 @@ test_paths:
 - `⌘K` (mobile + desktop) or Search glyph in dock → command sheet opens.
 - Type verse-ref (`2:255`) → preview card renders (Arabic + English); "Open verse" row focused. Enter → `NAVIGATION_NAVIGATE { surah: 2, verse: 255 }` → `app-bootstrap.ts` routes to `#/s/2/255`.
 - ArrowDown past "Open verse" → "Study this verse" row → Enter → close + open inline tafsir preview for that verse (read surface).
-- Tag search: type partial label (e.g. `mer`) → Tags group shows `mercy` with count badge → Enter → `#/threads/mercy` FVR (review surface).
+- Tag/review results may appear only while the removed personal-layer implementation remains. They are implementation inventory pending cleanup, not Reader First product navigation.
 - Tablet+ (≥768 px): keyboard-shortcut footer hint (`⌘K`, `esc`) shown.
 - Desktop (≥1180 px): caps at 640 px wide.
 
@@ -214,6 +214,7 @@ _(no cross-surface reads detected)_
 - **Read source controls are Verse-mode only and peer-owned.** The drawer Read mode exposes `Surah | Juz | Bookmarks` as peer sources only while the reader mode is Verse. Search and `All | Recent` belong only to Surah; Juz, Bookmarks, and Mushaf page continuation must not show disabled or decorative Surah controls.
 - **Sole writer of `bookmarks` store: `bookmarks/store.ts`.** Anywhere else writing `bookmarks` directly is a bug.
 - **Bookmarks scope to active riwayah.** ID format `<riwayah>:<surah>:<verse>` — switching riwayah surfaces a different set.
+- **Bookmarks remain Reader First navigation.** Bookmarks are reading-continuity data, not personal study annotations.
 
 ## Regression guards
 

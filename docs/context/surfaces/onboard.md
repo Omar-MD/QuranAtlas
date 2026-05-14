@@ -37,15 +37,15 @@ Routes: `#/onboarding`. No other entry — once `onboardingComplete = true`, the
 
 ### First-run flow (A1)
 
-Launch with clean IDB (or cleared data). 6 screens: 1) Welcome, 2) Theme, 3) Riwayah, 4) Translation, 5) Shortcuts, 6) Tags intro + final CTAs.
+Launch with clean IDB (or cleared data). The onboarding promise is reading setup: welcome, theme, qira'ah/riwayah, translation, tafsir or reader source awareness when present, core navigation/search shortcuts, reading preferences, offline expectations, and Daily Wird entry. It must not introduce marks/tags/review as v1 product value.
 
 1. Boot → `handleLaunchRestore` checks `settings.onboardingComplete`, finds nothing → navigates `#/onboarding`.
 2. Screen 1 (Welcome): wordmark, blessing, **Begin** CTA, progress dot 1 lit. No dock, no pill, no MarginHeader chrome.
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears with a comfortable mobile hit area.
 4. Pick theme (e.g. Dark) → applied live → tap **Continue** → Screen 3 (Choose Riwayah): three radio cards — Ḥafṣ ʿan ʿĀṣim · Warsh ʿan Nāfiʿ · Qālūn ʿan Nāfiʿ. Default-selected: **Qālūn**. Tap **Continue** to persist + advance; tap **Skip** to leave default unchanged + advance. Persists `settings['riwayah']` (sole writer `settings/riwayah.ts`).
 5. Tap **Continue** → Screen 4 (Translation): options derived from dataset's `provenance.json` at render time — picker never surfaces options not present in corpus. With a single shipped pack (Bridges), screen shows it as non-interactive row + Continue advances immediately. Picker becomes interactive once second translation lands.
-6. Tap **Continue** → Screen 5 (Shortcuts): teaches core shortcuts in 9 curated rows: `/` search, `?` cheatsheet, `j`/`k`/`]`/`[` verse/surah nav, `m` mark, `t` translation toggle, `+`/`-`/`0` font, `g h` continue reading, double-tap gesture. Lede reminds users they can press `?` anywhere for full list. Desktop (≥1180 px): 2-col grid; mobile: stacks single-col. Tap **Continue** → Screen 6.
-7. Screen 6 (Tags intro): 2:286 verse preview with 3 sample chips, privacy note. Tap **Open Al-Fatihah** → `settings.onboardingComplete = true`, route `#/s/1`, ambient chrome returns.
+6. Tap **Continue** → Screen 5 (Shortcuts): teaches core shortcuts in curated rows: `/` search, `?` cheatsheet, `j`/`k`/`]`/`[` verse/surah nav, `m` tafsir, `t` translation toggle, `+`/`-`/`0` font, `g h` continue reading, double-tap gesture. Lede reminds users they can press `?` anywhere for full list. Desktop (≥1180 px): 2-col grid; mobile: stacks single-col. Tap **Continue** → Screen 6.
+7. Screen 6 (Start reading): reinforces Verse/Mushaf reading, search/navigation, bookmarks, Daily Wird, and offline-ready reader assets. Tap **Open Al-Fatihah** to set `settings.onboardingComplete = true`, route `#/s/1`, and restore ambient chrome.
 
 **Alt paths:**
 - Any screen from 2 onward → tap **Skip** → same completion write, land on `#/s/1`.

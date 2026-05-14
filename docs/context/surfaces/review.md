@@ -13,7 +13,7 @@ test_paths:
 
 # Surface: review
 
-> Aggregations + filters over marks. Review hub (12-layer selector + group-by + value chips + flat card list), FVR (Filtered-Verse Review) deep-link layer-value pages.
+> Removed personal-layer implementation pending source cleanup. This dossier documents review/FVR/edges code that currently exists. Future personal annotations belong only in `docs/context/future.md` until separately approved and must stay separate from curated QuranAtlas metadata.
 
 ## Reach
 

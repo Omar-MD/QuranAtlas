@@ -22,7 +22,7 @@ test_paths:
 
 # Surface: infra
 
-> Cross-cutting non-UI invariants. Service worker (offline reload, update banner, manifest-membership caching, per-asset-class cache partitions), cross-tab coherence (BroadcastChannel + IDB versionchange), dataset manifest fetch + apply, future sync v2.
+> Cross-cutting Reader First infrastructure. Service worker, offline asset-pack handling, install-state verification, manifest membership, byte planning, provenance, build-time validation, cross-tab safety, and update/clear-data banners. Audio cache routes are removed product scope pending source cleanup.
 
 User-facing exposure: update banner (toast/popover when new build rolls out) + clear-data confirmation cross-tab banner. No standalone UI.
 
@@ -73,7 +73,7 @@ When a new build rolls out + SW activates: `controllerchange` fires → `app-boo
 
 ### Cross-tab coherence
 
-Backed by `safety/sync.ts` + native `BroadcastChannel('qa-sync')`. Generic envelope: `registerTopic` + `broadcast`.
+Backed by `safety/sync.ts` + native `BroadcastChannel('qa-sync')`. Generic envelope: `registerTopic` + `broadcast`. Cross-tab coherence is technical safety for open tabs on the same device. It is not user-facing sync, accounts, community, export/import, or shared collections.
 
 **Marks change (I1):**
 1. Tab A double-taps 1:5 → saves mark → `broadcastMarkChange(['1:5'])` fires.
@@ -103,13 +103,13 @@ Window-side package installation is owned by `src/data/offline.ts`. It plans pac
 
 ### Per-asset-class SW partition + offline opt-in selector
 
-All SW route registrations live in `src/infra/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/infra/sw/route-defs.ts`. Runtime selector categories remain compact (`text`, `audio`, `pages`, `search`), but dataset text routes are source-aware underneath: `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index` all share `quran-dataset-v2`. Audio mp3/timing/meta routes cache per-reciter, pages cache per-riwayah, search-index is a single roadmap asset, and fonts are always-on. `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
+All SW route registrations live in `src/infra/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/infra/sw/route-defs.ts`. Runtime selector categories remain compact (`text`, `pages`, `search`, plus removed-scope audio while code remains), but dataset text routes are source-aware underneath: `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index` all share `quran-dataset-v2`. Audio mp3/timing/meta routes are removed product scope pending source cleanup, pages cache per-riwayah, search-index is a reader asset lane, and fonts are always-on. `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
 
 The window-side companion is `src/infra/offline/offline-selector.svelte` (mounted in Settings → Storage section, configure dossier). Per-feature opt-in: user checks Text / Audio / per-riwayah Pages / Search; selector pre-flights `navigator.storage.estimate()` and refuses Apply when the selection exceeds available quota. Baseline page availability is Qaloon-only unless the manifest includes a fuller artifact profile. Unavailable unchecked Hafs/Warsh page packs are hidden; unavailable previously checked packs stay visible so stale opt-ins can be removed. The Text row maps to the baseline source set (`qaloon`, `bridges`, `muyassar`) through `settings.offlineCategories.text.{riwayat,translations,tafsir}`. Optional translation and tafsir rows read byte plans from `indexes/source-assets.json`, can be cached on demand, and can be removed from Cache Storage by uncheck + Apply. Knowledge Lane files under `/dataset/knowledge/**` still route as `text-knowledge`, share `CACHE_DATASET`, and are included in the existing Text offline row. The top-level selector category remains `text`; `text-knowledge` is an internal route class used for byte summing, service-worker matching, and cache cleanup. `src/data/offline.ts::startCategoryDownload(cat)` filters manifest inventory entries through `route-defs.ts::sumBytesForCategory()`, while `startSourceAssetDownload(kind, id)` filters optional source packs through `indexes/source-assets.json`. Generic `startCategoryDownload('pages')` and `removeCategoryDownload('pages')` throw so callers use `startPageAssetDownload(riwayah)` / `removePageAssetDownload(riwayah)`.
 
 ### Generic sync envelope
 
-`safety/sync.ts::registerTopic` + `broadcast` — each store/feature plugs in by registering a topic name. No per-store deprecation churn when multi-device sync arrives.
+`safety/sync.ts::registerTopic` + `broadcast` — each store/feature plugs in by registering a topic name. This same-device envelope is technical infrastructure, not user-facing sync or multi-device product scope.
 
 ## Data
 
@@ -154,7 +154,7 @@ Current dataset package version for the applied runtime corpus. Sole writer: `sr
 - **Per-asset-class cache prefixes preserved by `cleanupStaleCaches`** sourced from `route-defs.ts::CACHE_PREFIXES` (passed as `preservePrefixes`) — never hardcoded.
 - **`route-defs.ts` is window-importable.** Workbox imports live only in `strategies.ts` (SW-only). Window code (offline-selector, data/offline.ts) reads the table for byte-sum + URL-filter helpers.
 - **`settings.offlineCategories` is the source of truth for "user opted into category/source X".** Text opt-in is source-aware (`text.riwayat`, `text.translations`, `text.tafsir`) with a migration from the former `{ hafs, warsh, qaloon }` text shape. Pages opt-in is source-aware by riwayah, with the former `{ _all: true }` pages shape normalized to `{ qaloon: true }`. Optional translation and tafsir source rows write the same text maps. `text-knowledge` has no separate persisted toggle; it is bundled into the Text plan when present in `manifest.json`. `getActivationState()` reports `'cached'` when any category/source/page is opted in; `'downloading'` while a `CACHE_DATASET` category download is in flight.
-- **Build-time validation, not runtime SHA checks, is the integrity gate.** The lane builders must hard-fail on structural or product drift before `manifest.json` is emitted.
+- **Build-time validation is the integrity gate.** The lane builders must hard-fail on structural or product drift before `manifest.json` is emitted; per-file digest checks are not current product scope.
 - **`@offline` Playwright project is the single carve-out for the preview build.** The dev server is the default; the service worker only emits in production builds. See `tests/e2e/AGENTS.md`.
 
 ## Regression guards
