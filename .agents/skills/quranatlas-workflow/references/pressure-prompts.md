@@ -14,25 +14,85 @@ Wrong behavior to catch: edits `src/reader` directly without reading the dossier
 
 ## 2. UI Redesign
 
-Prompt: "Polish the navigation drawer on mobile and show me screenshots."
+Prompt: "Redesign the mobile navigation drawer header and implement only that component."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, and brainstorming before creative changes.
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen` if generating directions.
 
-Expected behavior: reads the navigate dossier and current drawer source/styles; establishes a design direction; uses existing tokens/components; captures mobile and desktop screenshots; critiques screenshots before completion.
+Expected behavior: identifies navigate/drawer header as the active component; defines state/viewport matrix; creates or selects a component reference plus intent note; implements focused tasks with screenshot comparison after each; proves mobile and relevant desktop/tablet integration.
 
-Wrong behavior to catch: starts with placeholder mockups, skips browser proof, or documents pixel trivia in dossiers.
+Wrong behavior to catch: makes a full drawer restyle, implements from a composite moodboard, skips reference commit, or does one final screenshot only.
 
-## 3. Docs-Only Context Update
+## 3. Mobile Drawer Header Direction
+
+Prompt: "Give the mobile drawer header a calmer visual direction, then implement only the header."
+
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, `imagegen`.
+
+Expected behavior: generates component/state options, chooses one, commits `docs/ui-references/navigate/drawer-header.mobile.png` and `.md`, then implements only header structure/spacing/type/state tasks with per-task comparisons.
+
+Wrong behavior to catch: changes drawer actions, route list, or settings affordances; keeps rejected options without a tradeoff; treats generated Arabic as proof.
+
+## 4. Surah Progress Directions
+
+Prompt: "Create three Surah progress visual directions, choose one, commit the reference, and implement that one."
+
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, `imagegen`.
+
+Expected behavior: makes component-state references, selects one source of truth with intent note, implements one progress component variant, and proves responsive/theme fit.
+
+Wrong behavior to catch: implements all three, uses a full-screen board as the source of truth, or skips token/accessibility constraints.
+
+## 5. Settings Source Selector Row
+
+Prompt: "Polish only the Settings sheet source selector row; leave the rest of the sheet alone."
+
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, and brainstorming if the visual direction changes.
+
+Expected behavior: treats the selector row as the active component; targets one aspect per task; compares screenshots after each focused change; proves sheet containment and touch targets.
+
+Wrong behavior to catch: opportunistic full-sheet restyle, new settings behavior, broad token churn, or only desktop proof.
+
+## 6. Drawer Actions Existing Reference
+
+Prompt: "Implement the drawer actions component from the existing committed reference."
+
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`.
+
+Expected behavior: uses the committed reference image and intent note as the visual source of truth; does not regenerate directions; implements actions only; compares every focused task against the reference.
+
+Wrong behavior to catch: redesigns the component, edits unrelated drawer pieces, or lets the reference override accessibility/real interaction behavior.
+
+## 7. Reader Toolbar Compact State
+
+Prompt: "Tighten the compact reader toolbar state and show phone plus desktop proof."
+
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, and brainstorming if changing direction.
+
+Expected behavior: scopes to compact toolbar state; checks overlap, touch targets, text/icon fit, sticky/header cases, and unframed Mushaf invariants; captures phone and desktop screenshots.
+
+Wrong behavior to catch: restyles the whole reader, misses compact state, ignores desktop, or relies on screenshots without measured overlap/overflow checks.
+
+## 8. Onboarding Language Selector
+
+Prompt: "Redesign the onboarding language selector with multiple focused tasks and compare after each task."
+
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen` if proposing directions.
+
+Expected behavior: commits a selected component/state reference and intent note; implements focused passes such as structure, spacing, selected state, mobile fit, and theme parity; compares after every pass.
+
+Wrong behavior to catch: one-shot implementation, full onboarding restyle, skipped responsive tiers, or rationale-heavy dossier updates.
+
+## 9. Docs-Only Context Update
 
 Prompt: "Update the context docs to reflect the new dataset source pipeline."
 
 Expected skills: `quranatlas-workflow`.
 
-Expected behavior: identifies `docs/context/source-data-flow.md` and possibly `docs/tech-stack.md` as owners; avoids hand-editing generated fences; runs `pnpm run docs`, `pnpm run docs:check`, and `git diff --check`.
+Expected behavior: identifies `docs/context/source-data-flow.md` and possibly `docs/tech-stack.md` as owners; avoids hand-editing generated fences; runs `pnpm run docs` first only if generated context may need regeneration; always runs `pnpm run docs:check` and `git diff --check`; does not add data checks unless source/data files changed.
 
-Wrong behavior to catch: runs app validation instead of docs checks, edits generated blocks manually, or leaves progress notes in docs.
+Wrong behavior to catch: runs app validation or data checks for docs-only edits, edits generated blocks manually, or leaves progress notes in docs.
 
-## 4. Data Contract Change
+## 10. Data Contract Change
 
 Prompt: "Add a new persisted setting for the Mushaf page zoom."
 
@@ -42,7 +102,7 @@ Expected behavior: reads `docs/context/data-model.md`, configure/read dossiers, 
 
 Wrong behavior to catch: writes directly to the `settings` god-bag without typed/validated contract updates or skips dossier/data-model docs.
 
-## 5. Removed-Scope Cleanup
+## 11. Removed-Scope Cleanup
 
 Prompt: "Remove the old audio mini bar code that still blocks validation."
 
@@ -52,7 +112,7 @@ Expected behavior: treats listen/audio as removed-scope cleanup only; reads `doc
 
 Wrong behavior to catch: adds new audio UX, new listen product coverage, or treats listen as active roadmap scope.
 
-## 6. Explicit Product Audit
+## 12. Explicit Product Audit
 
 Prompt: "Run a QuranAtlas readiness audit before I deploy."
 
@@ -62,11 +122,11 @@ Expected behavior: reads product info, tech stack, implemented/open issues, and 
 
 Wrong behavior to catch: starts implementing fixes, gives generic advice, or omits Reader First and removed-scope boundaries.
 
-## 7. Library/API Question During Repo Work
+## 13. Library/API Question During Repo Work
 
 Prompt: "How should we use the latest Svelte 5 event syntax in this component?"
 
-Expected skills: root Context7 rule first; `quranatlas-workflow` only if a repo behavior or implementation change follows.
+Expected skills: `find-docs`/root Context7 rule first; `quranatlas-workflow` only if a repo behavior or implementation change follows.
 
 Expected behavior: runs `npx ctx7@latest library "Svelte" "<full question>"`, then `npx ctx7@latest docs <id> "<full question>"`; applies QuranAtlas workflow if editing code.
 

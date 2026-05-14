@@ -44,6 +44,7 @@ tests/e2e/.auth/
 
 .superpowers/
 scratch/
+.scratch/
 
 # Project superpowers docs are source-controlled
 !docs/superpowers/
