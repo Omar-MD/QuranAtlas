@@ -32,10 +32,18 @@ Those docs establish the following current-state expectations:
   features.
 - One pack is active per asset type, optional packs install before activation,
   and the app must not silently fall back behind an unavailable selection.
+- Search is a v1 reader path over Arabic text, translations,
+  transliteration/index data, tafsir, and curated metadata, with result-to-reader
+  handoff.
 - Curated metadata belongs inside reading, search, and navigation flows rather
-  than as a separate study branch.
+  than as a separate study branch, and it must stay source-backed and
+  provenance-aware.
 - Audio, personal marks/tags/review, and related user-facing branches are
   removed from current product scope.
+- Streaks, standalone khatm tracking, copy/share/export/import, user-facing
+  sync, accounts, community, shared collections, transliteration display,
+  word-by-word translation, tajweed coloring, reflection prompts, and
+  synthesis-style AI UI remain out of current scope.
 
 The current `src/` tree still contains removed-scope product areas, especially
 `src/listen/`, `src/mark/`, and `src/review/`, plus legacy references inside
@@ -101,10 +109,15 @@ introducing a small number of strong shared domains:
   - `src/packs`
   - `src/continuity`
   - `src/metadata`
+  - `src/search` or a search contract owned by `navigate`
   - `src/reader-nav` or equivalent navigation domain folded into `navigate`
 
 Exact folder names can change in planning if a better local fit emerges, but
-the ownership boundaries should stay the same.
+the ownership boundaries should stay the same. If any of these become new
+top-level directories, the implementation plan must also make them first-class
+documented ownership units with context docs, test ownership, and docs-generation
+support. If that overhead is not justified, they should be folded into existing
+layers such as `src/data`, `src/infra`, or active surface-owned subdomains.
 
 ### Surface responsibilities
 
@@ -134,7 +147,9 @@ targets:
 - search entry points and result-to-reader handoff
 
 `navigate` should not own the business rules for pack activation or metadata
-loading contracts.
+loading contracts. If search stays under `navigate` initially, `navigate` owns
+search UI, query entry, and result handoff, while `packs` and `metadata` own the
+asset-state and data-contract decisions behind those results.
 
 #### `configure`
 
@@ -147,7 +162,8 @@ options:
 - current-scope reader settings
 
 `configure` should consume shared domain APIs instead of implementing fallback
-or validation policy itself.
+or validation policy itself. Settings pack controls and storage/install controls
+must use the same pack-state contract as reader boot and onboarding.
 
 #### `onboard`
 
@@ -161,6 +177,9 @@ decisions only:
 - first-run guidance for current reader features
 
 Legacy onboarding content for removed-scope product branches should be deleted.
+Riwayah and source choices in onboarding must use the same pack-state contract
+as Settings, so uninstalled optional packs are shown as installable or
+unavailable rather than failing silently.
 
 ### Shared domain responsibilities
 
@@ -174,10 +193,34 @@ This domain should become the authoritative home for source-pack behavior:
 - baseline fallback policy
 - availability versus usability state
 - active pack resolution for riwayah, translation, tafsir, curated metadata,
-  Mushaf pages, and later search assets where needed
+  Mushaf pages, and search/index assets where needed
 
 This is the most important extraction because the roadmap now depends on pack
 correctness across multiple surfaces.
+
+The domain should expose typed pack outcomes instead of boolean success or
+implicit fallback. The implementation plan should define exact names, but the
+minimum states are:
+
+- `usable`: the selected pack is locally verified and can render
+- `installable`: the pack is available but not yet locally usable
+- `missing`: required local files are absent
+- `stale`: local files or manifest membership do not match the required version
+- `unavailable`: the pack cannot currently be installed or used
+- `switched-to-baseline`: the app explicitly changed active selection to a
+  verified baseline before rendering baseline content
+
+The boundary should separate policy from mechanics:
+
+- `packs` owns selected-pack usability, activation decisions, and result states.
+- `src/data` owns runtime dataset fetch contracts.
+- `src/data/offline.ts` and `src/infra` own cache/install mechanics and service
+  worker behavior.
+- `configure` and `onboard` own UI over the pack-state contract.
+
+Existing silent fallback behavior must be removed as pack APIs are introduced.
+The app must never render a verified baseline while the UI still labels an
+unavailable pack as active.
 
 #### `continuity`
 
@@ -190,7 +233,14 @@ This domain should own reading continuity behavior:
 - resume-reading rules
 
 These features belong together because they serve the same product promise:
-continuity in reading, not general user annotation.
+continuity in reading, not general user annotation. Daily Wird remains
+reader-continuity only; it must not grow into streaks, standalone khatm
+tracking, accounts, social reminders, or user-facing sync.
+
+The continuity domain should initially own pure persistence/domain APIs and
+route handoff rules. UI components can remain in their active surfaces unless a
+move clearly simplifies ownership. Any extraction must preserve the repo's
+one-writer-per-store and one-writer-per-settings-key invariants.
 
 #### `metadata`
 
@@ -206,6 +256,32 @@ This domain should own curated metadata contracts and loading:
 
 Optional metadata should remain additive. Reader boot must stay healthy when
 optional metadata is absent.
+
+Metadata contracts must be runtime-only and source-backed. App code should
+consume built `/dataset/**` outputs and must not import build-only `data/**`
+inputs. Provenance, source attribution, and build-time validation remain
+required guardrails for metadata that appears in reading, navigation, or search.
+Scholarly claims datasets remain future infrastructure unless sourcing and
+review rules are separately approved.
+
+#### `search`
+
+Search is a v1 reader path and needs a protected contract even if the full
+implementation lands in later work. The refactor should decide an interim owner
+before metadata or pack extraction changes search inputs.
+
+The search contract should cover:
+
+- Arabic Qur'an text
+- translations
+- transliteration/index data
+- tafsir
+- curated metadata
+- result-to-reader handoff
+- search/index asset install-state and pack compatibility
+
+Search UI can live in `navigate`, but search/index pack usability should follow
+the same install-before-activate model as other source assets.
 
 #### `reader-nav`
 
@@ -247,9 +323,58 @@ Legacy code should not be preserved simply because it exists. If a piece of
 infrastructure still serves active Reader First scope, keep it and sever the
 legacy-specific behavior. Otherwise, delete it.
 
+Removed-scope deletion must start by severing active dependencies. Current
+reader behavior may still rely on helpers that live in removed-scope modules,
+such as verse tap gestures, bookmark coordination, route restoration, boot
+listeners, or overlay wiring. Those active behaviors should move into active
+ownership before the removed directories are deleted.
+
+The route-removal plan must include a route matrix for:
+
+- `#/review`
+- `#/<layer>/:value`
+- `#/threads/*`
+- drawer links
+- command-sheet entries
+- keyboard shortcuts
+- persisted `settings.lastSurface`
+
+For each entry, the plan should state whether the route redirects to an active
+reader destination, lands on the not-found card, or is stripped from reachable
+UI entirely.
+
 ## Migration Phases
 
-### Phase 1: Product-scope cleanup
+### Phase 0: Current-state sync and characterization
+
+Before deleting or moving source, capture the current active Reader First
+behavior that must survive the refactor.
+
+Primary outcomes:
+
+- generated context docs are current enough to guide implementation
+- active hooks currently living in removed-scope modules are inventoried
+- bookmark, saved-position, Daily Wird, Verse/Mushaf, onboarding, and
+  pack-selection behavior have targeted characterization coverage where needed
+- known docs/source drift that would mislead implementation is corrected or
+  explicitly listed in the implementation plan
+
+### Phase 1a: Sever active dependencies from removed scope
+
+Move active reader behavior out of removed-scope modules before removing visible
+legacy features.
+
+Primary outcomes:
+
+- verse tap and double-tap behavior used for active tafsir/reader interactions
+  is owned by `read` or another active layer
+- bookmark toggle coordination no longer imports mark/tag state
+- boot no longer initializes removed-scope audio, mark, or review listeners for
+  active reader behavior
+- active Verse/Mushaf reader boot, tafsir gestures, and bookmark toggles still
+  pass targeted tests
+
+### Phase 1b: Product-scope cleanup
 
 Remove visible and reachable removed-scope behavior first.
 
@@ -263,7 +388,9 @@ Primary outcomes:
 
 This phase may temporarily leave some unused internals in place if active-scope
 cleanup is still in progress, but the running app should already reflect the
-current product roadmap.
+current product roadmap. Its exit criteria must include proof that Verse,
+Mushaf, search entry, bookmarks, saved position, onboarding, and configuration
+flows still work.
 
 ### Phase 2: Domain extraction
 
@@ -300,11 +427,16 @@ Delete leftover internal scaffolding once active surfaces no longer rely on it.
 
 Primary outcomes:
 
-- removed-scope stores are deleted from IndexedDB contracts and migrations where
-  appropriate
+- removed-scope stores are deleted from IndexedDB contracts and migrations
+  through a named storage migration task
 - removed-scope sync topics, event constants, and helpers are gone
 - dead CSS, overlays, bridges, and helper modules are removed
 - current docs reflect the final ownership model
+
+Store deletion must be explicit. The implementation plan should define the
+before/after storage contract, DB version decision, `deleteObjectStore` order,
+type and validation cleanup, fixture updates, generated-doc regeneration, and
+whether data loss is acceptable under the repo's pre-release posture.
 
 ## Ownership Rules
 
@@ -322,6 +454,8 @@ Applied examples:
 - `onboard` should not duplicate pack availability logic
 - `navigate` should not hardcode metadata loading policy
 - `metadata` should not become a separate user-facing product branch
+- `search` should not bypass pack-state or metadata contracts to make an
+  uninstalled source appear searchable
 
 ## Data Flow Rules
 
@@ -333,6 +467,10 @@ Where roadmap rules matter, surfaces should consume pack/domain APIs rather than
 reading source availability ad hoc. Active-source resolution, install-state
 checks, and fallback rules belong to shared domain code.
 
+Pack-state APIs should be tested with per-asset vectors for riwayah,
+translation, tafsir, curated metadata, Mushaf pages, and search/index assets:
+usable, installable, missing, stale, unavailable, and explicit baseline switch.
+
 ### Continuity state
 
 Bookmarks, saved position, Daily Wird, and resume-reading behavior should flow
@@ -342,7 +480,8 @@ through a dedicated continuity domain, then into active surfaces.
 
 Curated metadata should flow into reading and navigation as optional enrichment.
 Its absence should remove or disable enhancement UI rather than destabilize core
-reading.
+reading. Metadata used in search should carry the same provenance and optional
+failure semantics as metadata shown in the reader.
 
 ## Failure Handling Rules
 
@@ -352,6 +491,9 @@ The refactor should preserve the product promise under failure.
   explicit unavailable/install/switch state
 - the app must not silently render a verified baseline while keeping an
   unavailable pack selected in UI state
+- fallback is valid only as an explicit state transition: the app either shows
+  unavailable/install/switch UI or updates the active setting to a verified
+  baseline before rendering baseline content
 - if optional metadata is unavailable, the reader should remain usable and the
   enhancement UI should become absent or unavailable
 - baseline readable Qur'an text should remain the stability anchor wherever the
@@ -364,39 +506,23 @@ The refactor should preserve the product promise under failure.
 Verification should track the migration phases rather than wait for a final
 big-bang pass.
 
-### Cleanup phases
+### Phase exit gates
 
-Verify:
+Each implementation phase should name exact commands and owning tests before
+work starts. The minimum gates are:
 
-- removed routes are unreachable
-- removed navigation and command affordances are gone
-- onboarding and settings no longer reference removed-scope features
+| Phase | Verification gate |
+| --- | --- |
+| Phase 0 | `pnpm run docs:check`, `git diff --check`, targeted characterization tests added for touched behavior |
+| Phase 1a | targeted Vitest for reader boot, tafsir tap/double-tap behavior, bookmark toggles, and any moved helper modules; `pnpm run check` |
+| Phase 1b | targeted route/unit tests for removed routes and `settings.lastSurface`; selected Playwright restore/navigation coverage for removed routes and active reader landing; `pnpm run check` |
+| Phase 2 | targeted pack, continuity, metadata, and search contract tests; `pnpm run check`; `pnpm run docs:check` when ownership docs change |
+| Phase 3 | targeted reader, navigation, configure, and onboarding tests for affected flows; selected Playwright specs for Verse/Mushaf/bookmark/onboarding journeys; `pnpm run check` |
+| Phase 4 | DB migration/validation/type tests, sync-topic tests, generated docs via `pnpm run docs` when inventories change, `pnpm run validate`, and selected Playwright coverage for launch/restore |
 
-### Domain extraction phases
-
-Verify:
-
-- pack activation and install-state behavior
-- baseline fallback behavior
-- continuity persistence behavior
-- metadata-loading contracts and optional failure handling
-
-These should lean heavily on targeted unit coverage.
-
-### Surface simplification phases
-
-Verify:
-
-- Verse and Mushaf reading journeys
-- mode switching
-- bookmarks and saved position
-- Daily Wird continuity behavior
-- onboarding and configuration flows affected by extracted domains
-
-### Final integration verification
-
-Once shared behavior and infra have shifted enough, run the broader project
-gates required by repo policy for the touched surfaces and shared modules.
+`pnpm run validate` is not a substitute for selected Playwright e2e coverage.
+The implementation plan should list the exact `pnpm run test -- <file>` and
+`pnpm run test:e2e -- <spec>` commands that prove each phase.
 
 ## Acceptance Criteria
 
@@ -404,8 +530,14 @@ The refactor is successful when the following statements are true:
 
 - the running product exposes only current Reader First scope
 - removed-scope audio, mark, and review branches are no longer reachable
+- no active entrypoint imports from `src/listen`, `src/mark`, or `src/review`
+- no drawer, command-sheet, onboarding, settings, or shortcut affordance points
+  to removed-scope features
 - active top-level surfaces are easy to map to the product docs
 - pack activation/install behavior is owned consistently across the app
+- no surface-local duplicate pack fallback logic remains
+- search has an explicit owner and contract for v1 source types and
+  result-to-reader handoff
 - continuity behavior has a clear home separate from rendering concerns
 - curated metadata is attached to reading/navigation rather than floating as a
   separate product branch
@@ -420,6 +552,12 @@ This refactor should not expand the roadmap. It is not an excuse to add:
 - new AI/chat/agent features
 - new personal annotation systems
 - audio restoration
+- copy/share/export/import, accounts, community, shared collections, or
+  user-facing sync
+- streaks or standalone khatm tracking
+- transliteration display, word-by-word translation, or tajweed coloring
+- reflection prompts
+- AI assistant, chat, agent, synthesis UI, or answer-generation UI
 - multiple simultaneous translations
 - qira'at beyond Hafs, Qalun, and Warsh
 
@@ -430,14 +568,19 @@ the roadmap now depends on shared invariants.
 
 The next planning step should make explicit decisions about:
 
-- exact target folder/module names for the shared domains
-- the safest order for deleting removed-scope routes, overlays, and stores
-- which current files migrate into `packs`, `continuity`, and `metadata`
-- whether search contracts belong under `navigate`, `packs`, or a small
-  separate search domain
-- whether `reader-nav` deserves its own folder or should stay inside
-  `navigate`
-- which verification commands and targeted test files map to each migration
+- exact target folder/module names for the shared domains, including whether new
+  top-level domains are worth their documentation/test ownership overhead
+- the active-dependency severing order for tap gestures, bookmark coordination,
+  boot listeners, overlays, and route restore behavior
+- the route matrix and expected redirect/not-found behavior for every
+  removed-scope route, shortcut, command result, drawer link, and persisted
+  surface
+- the explicit storage migration plan for removed stores, DB versioning,
+  validation/types, sync topics, fixtures, and generated docs
+- which current files migrate into `packs`, `continuity`, `metadata`, and the
+  search contract
+- whether `reader-nav` deserves its own folder or should stay inside `navigate`
+- the exact verification commands and targeted test files for each migration
   phase
 
 Those are implementation-planning questions, not design blockers.
