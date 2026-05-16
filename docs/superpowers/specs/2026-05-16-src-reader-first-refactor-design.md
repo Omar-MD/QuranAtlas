@@ -113,11 +113,14 @@ introducing a small number of strong shared domains:
   - `src/reader-nav` or equivalent navigation domain folded into `navigate`
 
 Exact folder names can change in planning if a better local fit emerges, but
-the ownership boundaries should stay the same. If any of these become new
-top-level directories, the implementation plan must also make them first-class
-documented ownership units with context docs, test ownership, and docs-generation
-support. If that overhead is not justified, they should be folded into existing
-layers such as `src/data`, `src/infra`, or active surface-owned subdomains.
+the ownership boundaries should stay the same. New top-level domains must earn
+their own directories: they should have multiple active callers or remove
+duplicated policy that would otherwise keep leaking across surfaces. If any of
+these become new top-level directories, the implementation plan must also make
+them first-class documented ownership units with context docs, test ownership,
+and docs-generation support. If that overhead is not justified, they should be
+folded into existing layers such as `src/data`, `src/infra`, `src/read`, or
+`src/navigate`.
 
 ### Surface responsibilities
 
@@ -199,16 +202,19 @@ This is the most important extraction because the roadmap now depends on pack
 correctness across multiple surfaces.
 
 The domain should expose typed pack outcomes instead of boolean success or
-implicit fallback. The implementation plan should define exact names, but the
-minimum states are:
+implicit fallback. The implementation plan should define exact names and should
+reuse existing states where they already fit. The minimum semantic outcomes are:
 
 - `usable`: the selected pack is locally verified and can render
 - `installable`: the pack is available but not yet locally usable
-- `missing`: required local files are absent
-- `stale`: local files or manifest membership do not match the required version
+- `missing`: required local files are absent, when the asset type can detect
+  file-level absence
+- `stale`: local files or manifest membership do not match the required version,
+  when the asset type has version/member checks
 - `unavailable`: the pack cannot currently be installed or used
 - `switched-to-baseline`: the app explicitly changed active selection to a
-  verified baseline before rendering baseline content
+  verified baseline before rendering baseline content, where the asset type has
+  an approved baseline transition
 
 The boundary should separate policy from mechanics:
 
@@ -267,8 +273,10 @@ review rules are separately approved.
 #### `search`
 
 Search is a v1 reader path and needs a protected contract even if the full
-implementation lands in later work. The refactor should decide an interim owner
-before metadata or pack extraction changes search inputs.
+implementation lands in later work. This refactor should decide an interim
+owner, remove removed-scope search results, and preserve query-to-result-to-reader
+handoff. It should not attempt to implement the full multi-source search/index
+architecture unless that work is separately planned.
 
 The search contract should cover:
 
@@ -329,10 +337,11 @@ such as verse tap gestures, bookmark coordination, route restoration, boot
 listeners, or overlay wiring. Those active behaviors should move into active
 ownership before the removed directories are deleted.
 
-The route-removal plan must include a route matrix for:
+The route-removal plan must include a removed-route matrix for:
 
 - `#/review`
-- `#/<layer>/:value`
+- exact legacy layer routes, enumerated by slug rather than a broad
+  `#/<layer>/:value` pattern
 - `#/threads/*`
 - drawer links
 - command-sheet entries
@@ -342,6 +351,22 @@ The route-removal plan must include a route matrix for:
 For each entry, the plan should state whether the route redirects to an active
 reader destination, lands on the not-found card, or is stripped from reachable
 UI entirely.
+
+The same plan must include an active-route preserve list so cleanup does not
+accidentally catch Reader First routes. At minimum this includes:
+
+- `#/s/:surah`
+- `#/s/:surah/:ayah`
+- `#/m/:page`
+- `#/surahs`
+- `#/bookmarks`
+- Juz navigation routes or drawer states
+- search result routes or handoffs
+- valid launch-restore destinations
+
+Persisted route cleanup also needs a `settings.lastSurface` normalization
+policy for removed destinations such as `#/review`, `#/threads/*`, and legacy
+layer routes before those routes are deleted.
 
 ## Migration Phases
 
@@ -358,6 +383,15 @@ Primary outcomes:
   pack-selection behavior have targeted characterization coverage where needed
 - known docs/source drift that would mislead implementation is corrected or
   explicitly listed in the implementation plan
+- current `pnpm run check` / `pnpm run validate` blockers are identified, and
+  either restored to green or listed as explicit preconditions before later
+  phase gates rely on them
+- store inventory is reconciled from `src/core/db/migrations.js`,
+  `src/core/db/validate.ts`, `src/core/db/types.ts`, generated context docs, and
+  all known store readers/writers before storage planning starts
+- Daily Wird inventory is reconciled: the implementation plan must state whether
+  existing `src/read/wird` logic remains behind a continuity adapter or moves
+  into a continuity domain while preserving the sole writer for `wirdPlan`
 
 ### Phase 1a: Sever active dependencies from removed scope
 
@@ -382,6 +416,8 @@ Primary outcomes:
 
 - no user-facing audio, mark, or review surface remains reachable
 - no active navigation or command affordance points into removed scope
+- other out-of-current-scope affordances, including copy/share/export/import,
+  are removed or explicitly reclassified before they remain visible
 - onboarding no longer introduces removed-scope concepts
 - settings and storage UI no longer imply support for removed-scope packs or
   features
@@ -401,6 +437,8 @@ Primary outcomes:
 - pack rules are owned in one place
 - continuity ownership is separated from reader rendering
 - curated metadata contracts are explicit
+- search interim ownership and contract are resolved before metadata or pack API
+  extraction changes search inputs
 - surfaces depend on domain APIs rather than reimplementing policies
 
 This phase should prefer narrow adapters and incremental extraction over a
@@ -430,6 +468,9 @@ Primary outcomes:
 - removed-scope stores are deleted from IndexedDB contracts and migrations
   through a named storage migration task
 - removed-scope sync topics, event constants, and helpers are gone
+- active code has no remaining tag, audio, mark, or review support helpers
+  outside the removed top-level directories unless they are deliberately
+  reclassified as Reader First infrastructure
 - dead CSS, overlays, bridges, and helper modules are removed
 - current docs reflect the final ownership model
 
@@ -469,7 +510,8 @@ checks, and fallback rules belong to shared domain code.
 
 Pack-state APIs should be tested with per-asset vectors for riwayah,
 translation, tafsir, curated metadata, Mushaf pages, and search/index assets:
-usable, installable, missing, stale, unavailable, and explicit baseline switch.
+usable, installable, unavailable, and any asset-specific missing, stale, or
+explicit baseline-switch states defined in the implementation plan.
 
 ### Continuity state
 
@@ -513,9 +555,9 @@ work starts. The minimum gates are:
 
 | Phase | Verification gate |
 | --- | --- |
-| Phase 0 | `pnpm run docs:check`, `git diff --check`, targeted characterization tests added for touched behavior |
-| Phase 1a | targeted Vitest for reader boot, tafsir tap/double-tap behavior, bookmark toggles, and any moved helper modules; `pnpm run check` |
-| Phase 1b | targeted route/unit tests for removed routes and `settings.lastSurface`; selected Playwright restore/navigation coverage for removed routes and active reader landing; `pnpm run check` |
+| Phase 0 | `pnpm run docs:check`, `git diff --check`, current `pnpm run check` / `pnpm run validate` blockers inventoried or resolved, targeted characterization tests added for touched behavior |
+| Phase 1a | targeted Vitest for reader boot, tafsir tap/double-tap behavior, bookmark toggles, and any moved helper modules; import/dependency guard proving active surfaces no longer depend on `listen`, `mark`, or `review` except explicit cleanup shims; `pnpm run check` once Phase 0 has restored that gate |
+| Phase 1b | targeted route/unit tests for removed routes, active-route preservation, and `settings.lastSurface` normalization; selected Playwright restore/navigation coverage for removed routes and active reader landing; `pnpm run check` once Phase 0 has restored that gate |
 | Phase 2 | targeted pack, continuity, metadata, and search contract tests; `pnpm run check`; `pnpm run docs:check` when ownership docs change |
 | Phase 3 | targeted reader, navigation, configure, and onboarding tests for affected flows; selected Playwright specs for Verse/Mushaf/bookmark/onboarding journeys; `pnpm run check` |
 | Phase 4 | DB migration/validation/type tests, sync-topic tests, generated docs via `pnpm run docs` when inventories change, `pnpm run validate`, and selected Playwright coverage for launch/restore |
@@ -534,10 +576,13 @@ The refactor is successful when the following statements are true:
 - no drawer, command-sheet, onboarding, settings, or shortcut affordance points
   to removed-scope features
 - active top-level surfaces are easy to map to the product docs
+- core Reader First journeys still work: Surah/Juz navigation, Verse/Mushaf
+  switching, page navigation, reading preferences, Daily Wird continue/progress,
+  saved-position restore, bookmarks, and search result landing
 - pack activation/install behavior is owned consistently across the app
 - no surface-local duplicate pack fallback logic remains
-- search has an explicit owner and contract for v1 source types and
-  result-to-reader handoff
+- search has an explicit interim owner, removed-scope results are gone, and
+  query-to-result-to-reader handoff still works
 - continuity behavior has a clear home separate from rendering concerns
 - curated metadata is attached to reading/navigation rather than floating as a
   separate product branch
@@ -569,16 +614,20 @@ the roadmap now depends on shared invariants.
 The next planning step should make explicit decisions about:
 
 - exact target folder/module names for the shared domains, including whether new
-  top-level domains are worth their documentation/test ownership overhead
+  top-level domains have enough active callers or duplicated policy to justify
+  their documentation/test ownership overhead
+- the Phase 0 drift ledger, including docs/source/test drift, current check
+  blockers, Daily Wird inventory, and store ownership mismatches
 - the active-dependency severing order for tap gestures, bookmark coordination,
   boot listeners, overlays, and route restore behavior
-- the route matrix and expected redirect/not-found behavior for every
-  removed-scope route, shortcut, command result, drawer link, and persisted
-  surface
+- the removed-route matrix, active-route preserve list, and expected
+  redirect/not-found/normalization behavior for every removed-scope route,
+  shortcut, command result, drawer link, and persisted surface
 - the explicit storage migration plan for removed stores, DB versioning,
   validation/types, sync topics, fixtures, and generated docs
 - which current files migrate into `packs`, `continuity`, `metadata`, and the
-  search contract
+  search contract, with full multi-source search/index implementation deferred
+  unless separately planned
 - whether `reader-nav` deserves its own folder or should stay inside `navigate`
 - the exact verification commands and targeted test files for each migration
   phase
