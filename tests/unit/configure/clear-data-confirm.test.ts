@@ -48,8 +48,9 @@ describe('ClearDataConfirm.svelte (D4)', () => {
 
     await fireEvent.input(input!, { target: { value: 'DELETE' } })
 
-    const confirmBtn = document.querySelector<HTMLButtonElement>('.qa-mark-btn--danger-primary')!
+    const confirmBtn = document.querySelector<HTMLButtonElement>('.qa-modal-btn--danger')!
     expect(confirmBtn.disabled).toBe(false)
+    expect(confirmBtn.className).not.toContain('qa-mark-btn')
 
     await fireEvent.click(confirmBtn)
 
@@ -64,8 +65,9 @@ describe('ClearDataConfirm.svelte (D4)', () => {
     const promise = showClearDataConfirmation()
     await flush()
 
-    const cancelBtn = document.querySelector<HTMLButtonElement>('.qa-mark-btn--ghost')!
+    const cancelBtn = document.querySelector<HTMLButtonElement>('.qa-modal-btn--ghost')!
     expect(cancelBtn).not.toBeNull()
+    expect(cancelBtn.className).not.toContain('qa-mark-btn')
     await fireEvent.click(cancelBtn)
 
     await expect(promise).resolves.toBe(false)
@@ -96,7 +98,7 @@ describe('ClearDataConfirm.svelte (D4)', () => {
     await flush()
 
     const input = document.querySelector<HTMLInputElement>('.qa-input-confirm')!
-    const confirmBtn = document.querySelector<HTMLButtonElement>('.qa-mark-btn--danger-primary')!
+    const confirmBtn = document.querySelector<HTMLButtonElement>('.qa-modal-btn--danger')!
 
     await fireEvent.input(input, { target: { value: 'delete' } })
     expect(confirmBtn.disabled).toBe(true)
@@ -108,7 +110,26 @@ describe('ClearDataConfirm.svelte (D4)', () => {
     expect(confirmBtn.disabled).toBe(false)
 
     // Cancel so the promise resolves and the test exits cleanly.
-    const cancelBtn = document.querySelector<HTMLButtonElement>('.qa-mark-btn--ghost')!
+    const cancelBtn = document.querySelector<HTMLButtonElement>('.qa-modal-btn--ghost')!
+    await fireEvent.click(cancelBtn)
+    await expect(promise).resolves.toBe(false)
+  })
+
+  it('D4 copy: describes reader-first saved data without removed-scope claims', async () => {
+    render(ClearDataConfirm)
+    await flush()
+
+    const promise = showClearDataConfirmation()
+    await flush()
+
+    expect(document.body.textContent).toContain(
+      'This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any older local QuranAtlas data still stored on this device. This action cannot be undone.',
+    )
+    expect(document.body.textContent).not.toMatch(/\bmarks\b/i)
+    expect(document.body.textContent).not.toMatch(/\breview\b/i)
+    expect(document.body.textContent).not.toMatch(/\baudio\b/i)
+
+    const cancelBtn = document.querySelector<HTMLButtonElement>('.qa-modal-btn--ghost')!
     await fireEvent.click(cancelBtn)
     await expect(promise).resolves.toBe(false)
   })

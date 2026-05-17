@@ -5,7 +5,7 @@
 // ⌘K can open the (lazy-mounted) command sheet on first keystroke.
 //
 // Handlers cover: ⌘K open command sheet, /, ?, g-chord nav (g h, g s,
-// g r, g a, g p), reader hotkeys (j, k, ], [, Home, End, m, t, d, n, +,
+// g a, g p), reader hotkeys (j, k, ], [, Home, End, m, t, d, n, +,
 // -, 0).
 //
 // Sheet-internal handlers (Esc, Tab, Arrow, Enter) STAY inside
@@ -19,8 +19,10 @@ import { cycleTheme } from '../configure/theme'
 import { toggleNightMode } from '../configure/night-mode'
 import { setFontSize, loadFontSize, getFontSizeOptions, resetFontSize } from '../configure/font-size'
 import { toggleTranslation } from '../configure/panel-bridge'
+import { settings } from '../configure/state.svelte'
 import { announce } from '../a11y/announcer'
-import { loadGlobalPosition } from '../read/global-position'
+import { loadGlobalPosition } from '../continuity/position'
+import type { Riwayah } from '../packs/riwayah'
 import {
   nextVerse as readerNextVerse,
   prevVerse as readerPrevVerse,
@@ -50,7 +52,7 @@ function clearChord(): void {
 
 async function gotoHome(): Promise<void> {
   try {
-    const pos = await loadGlobalPosition()
+    const pos = await loadGlobalPosition((settings.riwayah ?? 'qaloon') as Riwayah)
     if (pos?.surah) {
       window.location.hash = (pos.verse ?? 0) > 1 ? `#/s/${pos.surah}/${pos.verse}` : `#/s/${pos.surah}`
       return
@@ -99,7 +101,6 @@ function handleGlobalKeydown(e: KeyboardEvent): void {
     const k = e.key.toLowerCase()
     if (k === 'h') { e.preventDefault(); clearChord(); void gotoHome(); return }
     if (k === 's') { e.preventDefault(); clearChord(); window.location.hash = '#/surahs'; return }
-    if (k === 'r') { e.preventDefault(); clearChord(); window.location.hash = '#/review'; return }
     if (k === 'a') { e.preventDefault(); clearChord(); window.location.hash = '#/about'; return }
     if (k === 'p') { e.preventDefault(); clearChord(); window.location.hash = '#/settings'; return }
     clearChord()

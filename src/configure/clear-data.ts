@@ -49,7 +49,7 @@ async function _legacyShowClearDataConfirmation(): Promise<boolean> {
   title.textContent = 'Clear All Data?'
 
   const message = document.createElement('p')
-  message.textContent = 'This will permanently delete all saved reading positions, marks, and settings. This action cannot be undone.'
+  message.textContent = 'This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any older local QuranAtlas data still stored on this device. This action cannot be undone.'
 
   const warning = document.createElement('p')
   warning.id = 'clear-warning'
@@ -66,11 +66,11 @@ async function _legacyShowClearDataConfirmation(): Promise<boolean> {
   actions.className = 'qa-modal-actions'
 
   const cancelBtn = document.createElement('button')
-  cancelBtn.className = 'qa-mark-btn qa-mark-btn--ghost'
+  cancelBtn.className = 'qa-modal-btn qa-modal-btn--ghost'
   cancelBtn.textContent = 'Cancel'
 
   const confirmBtn = document.createElement('button')
-  confirmBtn.className = 'qa-mark-btn qa-mark-btn--danger-primary'
+  confirmBtn.className = 'qa-modal-btn qa-modal-btn--danger'
   confirmBtn.textContent = 'Clear All Data'
   confirmBtn.disabled = true
   confirmBtn.setAttribute('aria-describedby', 'clear-warning')

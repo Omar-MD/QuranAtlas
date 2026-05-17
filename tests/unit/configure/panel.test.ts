@@ -54,10 +54,42 @@ vi.mock('../../../src/data/dataset.ts', () => ({
     { id: 'mukhtasar', name: 'Al-Mukhtasar fi al-Tafsir' },
   ]),
 }))
-vi.mock('../../../src/data/riwayah-packages', () => ({
-  isRiwayahUsable: vi.fn(async (riwayah: string) => packageStatuses[riwayah]?.kind === 'installed'),
-  getRiwayahPackageStatus: vi.fn(async (riwayah: string) => packageStatuses[riwayah] ?? { kind: 'unavailable', riwayah }),
-}))
+vi.mock('../../../src/packs/riwayah', async () => {
+  const { put, get } = await import('../../../src/core/db.js')
+  const { emit } = await import('../../../src/core/events.js')
+  return {
+    DEFAULT_RIWAYAH: 'qaloon',
+    getRiwayahOptions: vi.fn(() => ['hafs', 'warsh', 'qaloon']),
+    getRiwayahLabels: vi.fn((riwayah: string) => ({
+      productShort: riwayah === 'hafs' ? 'Ḥafṣ' : riwayah === 'warsh' ? 'Warsh' : 'Qalun',
+      productFull: riwayah === 'hafs'
+        ? 'Ḥafṣ ʿan ʿĀṣim'
+        : riwayah === 'warsh'
+          ? 'Warsh ʿan Nafiʿ'
+          : 'Qalun ʿan Nafiʿ',
+      runtimeShort: riwayah === 'qaloon' ? 'Qālūn' : riwayah,
+      runtimeFull: riwayah === 'qaloon' ? 'Qālūn ʿan Nāfiʿ' : riwayah,
+      subtitle: 'test subtitle',
+      verseCount: riwayah === 'hafs' ? 6236 : 6214,
+      sourceSlug: riwayah === 'qaloon' ? 'qalun' : riwayah,
+    })),
+    isRiwayah: vi.fn((value: string) => ['hafs', 'warsh', 'qaloon'].includes(value)),
+    isRiwayahUsable: vi.fn(async (riwayah: string) => packageStatuses[riwayah]?.kind === 'installed'),
+    getRiwayahPackageStatus: vi.fn(async (riwayah: string) => packageStatuses[riwayah] ?? { kind: 'unavailable', riwayah }),
+    loadRiwayah: vi.fn(async () => ((await get('settings', 'riwayah'))?.value ?? settings.riwayah ?? 'qaloon')),
+    persistRiwayahSelection: vi.fn(async (riwayah: string) => {
+      if (!['hafs', 'warsh', 'qaloon'].includes(riwayah)) return null
+      if (packageStatuses[riwayah]?.kind !== 'installed') return null
+      const previous = ((await get('settings', 'riwayah'))?.value ?? settings.riwayah ?? 'qaloon') as string
+      await put('settings', { key: 'riwayah', value: riwayah })
+      settings.riwayah = riwayah as typeof settings.riwayah
+      if (previous !== riwayah) {
+        emit('settings:riwayah-changed', { from: previous, to: riwayah })
+      }
+      return { changed: previous !== riwayah, previous }
+    }),
+  }
+})
 vi.mock('../../../src/data/offline-client.ts', () => ({
   getCategoryManifest: vi.fn(async (cat: string) => cat === 'text' ? { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 1000 } : { urls: [], totalBytes: 0 }),
   getSourceAssetManifest: vi.fn(async () => ({ urls: [], totalBytes: 0 })),

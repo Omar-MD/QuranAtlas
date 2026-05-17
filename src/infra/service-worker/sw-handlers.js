@@ -140,7 +140,7 @@ export async function cleanupStaleCaches(deps) {
   // partitions). Names in `expectedCaches` are also preserved. Default to a
   // minimal allowlist if `preservePrefixes` was not passed (back-compat for
   // tests).
-  const prefixes = preservePrefixes ?? ['workbox-precache', 'qa-audio-', 'qa-fonts-']
+  const prefixes = preservePrefixes ?? ['workbox-precache', 'qa-fonts-', 'qa-pages-', 'qa-search-']
   const isPreserved = (name) =>
     prefixes.some((p) => name.startsWith(p)) || expectedCaches.has(name)
 

@@ -15,7 +15,7 @@ test_paths:
 
 # Surface: configure
 
-> Settings sheet and About page for Reader First preferences: theme, typography, qira'ah/riwayah source, translation, tafsir, curated metadata/storage packs, offline install state, night mode, and clear-all-data. Audio is removed product scope pending source cleanup.
+> Settings sheet and About page for Reader First preferences: theme, typography, qira'ah/riwayah source, translation, tafsir, curated metadata/storage packs, offline install state, night mode, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup.
 
 ## Reach
 
@@ -45,15 +45,15 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/configure/Panel.svelte` | _(no leading comment)_ |
 | `src/configure/about/About.svelte` | _(no leading comment)_ |
 | `src/configure/about/pwa-install.ts` | PWA install prompt management. |
-| `src/configure/audio.ts` | Sole writer for all `settings.audio*` keys. Mirrors the riwayah / theme |
 | `src/configure/clear-data.ts` | Clear data: confirmation flow and data deletion. |
 | `src/configure/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
 | `src/configure/night-mode.ts` | Night recitation mode: dim+warm overlay, composes over any theme. |
 | `src/configure/offline-categories.ts` | Offline categories preference: per-feature opt-in for the offline selector. |
+| `src/configure/offline-selector.svelte` | Per-feature offline opt-in selector. |
 | `src/configure/panel-bridge.ts` | Settings Panel — overlay bridge + sole-writer/-reader data functions. |
 | `src/configure/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
 | `src/configure/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
-| `src/configure/state-last-surface.svelte.ts` | Sole writer for settings.lastSurface — the hash the launch-restore |
+| `src/configure/state-last-surface.svelte.ts` | _(no leading comment)_ |
 | `src/configure/state-recent-surahs.svelte.ts` | Sole writer for `settings.recentSurahs`. Pre-fix App.svelte did its |
 | `src/configure/state.svelte.ts` | _(no leading comment)_ |
 | `src/configure/surah-header-visibility.ts` | Surah header visibility: persisted user preference for whether the in-reader |
@@ -79,15 +79,15 @@ Three zones:
 
 Every change updates live preview (font size, reading flow, theme palette, riwayah glyph swap when popover row picked).
 
-Switching riwayah via popover is gated by the runtime package index. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Concrete text/page fetches decide whether a specific offline resource is present. Optional Hafs and Warsh can be selected only after `src/data/riwayah-packages.ts` verifies that every planned text URL is in `CACHE_DATASET` and every planned page URL is in that riwayah's `qa-pages-{riwayah}-v1` cache. Online package availability alone leaves the row installable, not usable. A rejected switch returns `false`, leaves `settings.riwayah` unchanged, and does not apply DOM state, write IDB, emit `SETTINGS_RIWAYAH_CHANGED`, or broadcast cross-tab.
+Switching riwayah via popover is gated by the pack domain. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Concrete text/page fetches decide whether a specific offline resource is present. Optional Hafs and Warsh can be selected only after `src/packs/riwayah.ts` verifies that every planned text URL is in `CACHE_DATASET` and every planned page URL is in that riwayah's `qa-pages-{riwayah}-v1` cache. Online package availability alone leaves the row installable, not usable. A rejected switch returns `false`, leaves `settings.riwayah` unchanged, and does not apply DOM state, write IDB, emit `SETTINGS_RIWAYAH_CHANGED`, or broadcast cross-tab.
 
-The recitation picker exposes the package state on each row. Installed rows switch immediately. Installable rows show the package byte estimate and start the install flow instead of switching. Installing rows show cached/total progress and disable switching. Unavailable rows are disabled. Error rows offer retry. The current active row remains visibly active until the install verifies and `setRiwayah(requested)` succeeds.
+The recitation picker exposes the package state on each row. Installed rows switch immediately. Installable rows show the package byte estimate and start the install flow instead of switching. Installing rows show cached/total progress and disable switching. Unavailable rows are disabled. Error rows offer retry. The current active row remains visibly active until the install verifies and `setRiwayah(requested)` succeeds. The same policy applies to other source rows: selection labels do not move early just because a pack is download-capable.
 
 Package install progress lives outside `settings.riwayah`: `src/configure/state.svelte.ts::riwayahPackageState` holds runtime package status by riwayah, and `riwayahInstallIntent` records the requested optional package plus the previous usable riwayah. Failed installs clear the request or mark an error while preserving both `settings.riwayah` and `previousUsable`.
 
 ### Storage section — offline-selector
 
-Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N cached ›` (gold accent). Tap-to-expand reveals Text, Pages, Search, and source-aware optional pack rows. Audio rows are removed product scope pending source cleanup and must not be documented as a future source category. Available rows show byte size + checkbox; gated rows show their version label only. The Pages row opens into per-riwayah page-pack controls for available Mushaf page packs plus any previously checked stale opt-ins. A source-aware list under the rows exposes translation and tafsir packs so users can keep or remove individual optional text packs from cache. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
+Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N cached ›` (gold accent). Tap-to-expand reveals the active reader-first rows: Text, Pages, Search, plus source-aware optional pack rows. Legacy removed-scope media opt-ins are dropped during normalization so hidden state does not linger once the rows are gone. Available rows show byte size + checkbox; gated rows show their version label only. The Pages row opens into per-riwayah page-pack controls for available Mushaf page packs plus any previously checked stale opt-ins. A source-aware list under the rows exposes translation and tafsir packs so users can keep or remove individual optional text packs from cache. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
 
 The Text row represents the baseline reader source set: Qalun Arabic (runtime key `qaloon`), Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. Optional translation and tafsir rows use `public/dataset/indexes/source-assets.json` for byte estimates and same-origin file plans without adding those bodies to the baseline manifest. The selector writes source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}` and per-riwayah page state under `settings.offlineCategories.pages.{riwayah}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
 
@@ -136,7 +136,7 @@ Independent toggle below theme swatches. Drives `data-night-mode="on"` on `<html
 
 Mobile (<1180 px): tap hamburger ≡ → drawer → tap ⓘ icon (or wordmark). Desktop (≥1180 px): tap ⋯ on AmbientDock → drawer → About.
 
-Renders: wordmark, mission, 54:17 Arabic blessing + translation, Reader First stats plus any legacy Marks/Tags stats while removed-scope implementation remains, attribution list, PWA install button (if install prompt captured), version line, **Clear all data** link in footer.
+Renders: wordmark, mission, 54:17 Arabic blessing + translation, attribution list, PWA install button (if install prompt captured), version line, **Clear all data** link in footer. About no longer reads mark data or presents removed-scope marks/tags/review stats.
 
 ### Install PWA
 
@@ -145,6 +145,8 @@ About with captured install prompt → tap **Install App** → `promptInstall()`
 ### Clear all data
 
 `#/about` → scroll to footer → tap **Clear all data** link → confirmation dialog appears.
+
+Dialog copy stays reader-first while accurately covering old local data: saved reading positions, bookmarks, offline downloads, settings, and any older local QuranAtlas data still stored on the device.
 
 Type `DELETE`, tap red **Clear All Data** → `safety/sync.js::suppressNextVersionChange()` arms, then `deleteDB()` runs → DB gone → page reloads → first-run onboarding (A1) starts fresh.
 
@@ -186,7 +188,7 @@ Keys + sole writers:
 | `lastSurface` | `src/configure/state-last-surface.svelte.ts` | `string` (hash) |
 | `recentSurahs` | `src/configure/state-recent-surahs.svelte.ts` | `number[]` |
 | `onboardingComplete` | `src/onboard/state.ts` | `boolean` |
-| `offlineCategories` | `src/configure/offline-categories.ts` | `OfflineCategoriesState` (source-aware text/pages/search opt-in plus legacy audio state while cleanup remains; see `state/settings.svelte.ts`) |
+| `offlineCategories` | `src/configure/offline-categories.ts` | `OfflineCategoriesState` (source-aware text/pages/search opt-in; legacy audio values are dropped during normalization so removed-scope state does not survive invisibly) |
 
 Riwayah package status and install intent are in-memory runtime state, not `settings` keys. They are intentionally separate from the persisted active riwayah so an optional package can be installable, installing, or errored without becoming the rendered corpus.
 
@@ -197,9 +199,9 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 | --- | --- | --- |
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:74`, `src/configure/riwayah.ts:127` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:182` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:165` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:55` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:195` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:178` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -227,8 +229,9 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (12):**
+**Unit (14):**
 
+- `tests/unit/configure/about/About.test.ts`
 - `tests/unit/configure/about/pwa-install.test.ts`
 - `tests/unit/configure/clear-data-confirm.test.ts`
 - `tests/unit/configure/font-size.test.ts`
@@ -238,6 +241,7 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 - `tests/unit/configure/reading-typography-line-height.test.ts`
 - `tests/unit/configure/reading-typography.test.ts`
 - `tests/unit/configure/riwayah.test.ts`
+- `tests/unit/configure/state-last-surface.test.ts`
 - `tests/unit/configure/state.test.ts`
 - `tests/unit/configure/surah-header-visibility.test.ts`
 - `tests/unit/configure/theme.test.ts`

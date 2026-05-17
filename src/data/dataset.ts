@@ -4,8 +4,7 @@
  */
 
 import { CACHE_DATASET } from '../core/constants'
-import { loadRiwayah } from '../configure/riwayah'
-import type { Riwayah } from '../configure/state.svelte'
+import { loadRiwayah, type Riwayah } from '../packs/riwayah'
 import { getRiwayahPackageEntry, isRiwayahUsable } from './riwayah-packages'
 
 const DATASET_BASE = '/dataset'

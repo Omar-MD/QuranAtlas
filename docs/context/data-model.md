@@ -2,9 +2,11 @@
 
 IDB is the single source of client-side truth in QuranAtlas. This file documents the **cross-cutting rules** that hold across every store, the canonical store-→-owner-dossier index, and the static datasets shipped outside IDB. **Per-store record shapes, indexes, and write invariants live in the owning surface dossier** (`docs/context/surfaces/<surface>.md` §Data) — see the index below.
 
-The DB is `quran-atlas`, version 6, defined in `src/core/db/`. Schema changes live in `src/core/db/migrations.js::applySchema`.
+The DB is `quran-atlas`, version 7, defined in `src/core/db/`. Schema changes live in `src/core/db/migrations.js::applySchema`.
 
 **Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `src/core/db/validate.ts`. Validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously.
+
+**Domain ownership rule.** Human-facing surface dossiers still own the user contract for persisted data, but shared Reader First runtime ownership now lives in `src/continuity/**`, `src/packs/**`, and `src/metadata/**`. Those domain/data modules must stay surface-neutral; surfaces consume them rather than the domains importing `src/read/**`, `src/navigate/**`, `src/configure/**`, or `src/onboard/**`.
 
 **Compile-time contract.** Per-store record shapes are also encoded as TypeScript `interface`s and exported as the `StoreRecords` map from `src/core/db/types.ts`. `put<K>(store: K, record: StoreRecords[K])` makes the compiler refuse a write whose shape doesn't match the declared store. Runtime `validateWrite` is still the last-line defence (and carries the SW-side shape union for `activationState`); the TS types catch most drift in advance.
 
@@ -15,12 +17,9 @@ The DB is `quran-atlas`, version 6, defined in `src/core/db/`. Schema changes li
 <!-- AUTO-GENERATED:store-owner-index START -->
 | Store | Owner dossier |
 | --- | --- |
-| `activationState` | [`review`](surfaces/review.md) |
-| `audioPosition` | [`listen`](surfaces/listen.md) |
+| `activationState` | [`infra`](surfaces/infra.md) |
 | `bookmarks` | [`navigate`](surfaces/navigate.md) |
 | `datasetMeta` | [`infra`](surfaces/infra.md) |
-| `marks` | [`mark`](surfaces/mark.md) |
-| `meta` | [`read`](surfaces/read.md) |
 | `settings` | [`configure`](surfaces/configure.md) |
 <!-- AUTO-GENERATED:store-owner-index END -->
 
@@ -34,7 +33,7 @@ Each dossier carries:
 
 If you change a store's shape, indexes, key, or sole writer — update the **dossier**, then re-run `pnpm run docs` so the index here picks up any owner shift. Within the shared `settings` store, `settings.wirdPlan` is a read-surface-owned key whose sole writer lives in `src/read/wird/store.ts`, even though the store itself remains configure-owned.
 
-Some stores document implementation that exists pending later source cleanup. `bookmarks` remains active reading-continuity data. `marks`, `activationState`, `edges`, and `audioPosition` describe current code and persistence contracts only; they are removed product scope unless a later cleanup or product decision changes that status.
+`bookmarks` remains active reading-continuity data. `activationState` remains active install/update state. Removed-scope stores (`meta`, `marks`, `edges`, `audioPosition`) were deleted in v7.
 
 ---
 
@@ -179,14 +178,12 @@ Translations ship Hafs-keyed (Kufan numbering); Warsh and Qalun (runtime `qaloon
 
 ## Cross-cutting rules
 
-> **Removed-scope implementation invariant — single global `<audio>` element.** Owned by `src/listen/state.svelte.ts::getOrCreateAudioElement()` while the audio code remains. Multiple `<audio>` elements break iOS media-session binding and risk concurrent playback races. This documents current implementation pending source cleanup, not active product scope. (See `listen` dossier §Invariants.)
-
 > **Invariant — one writer per store.** Per-store sole writers live in each owning dossier's §Invariants. The store→owner index above points to them. For the `settings` shared scratchpad, the rule holds at **key** granularity — one writer per key, listed in the `configure` dossier's §Data table. **Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to the dossier's §Invariants in the same commit.**
 
 - **All writes go through `src/core/db::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
 - **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `src/infra/safety/sync.ts` shows the reload banner; `src/configure/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
 - **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `src/core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
-- **Cross-tab coherence**: mark writes broadcast a `'marks:changed'` BroadcastChannel message → `SYNC_UPDATE_RECEIVED` on receipt. Edge writes broadcast `'edges:changed'` → `SYNC_EDGES_UPDATED` on receipt. Other stores don't broadcast — if you add cross-tab writes for `settings` or `meta`, extend `src/infra/safety/sync.ts` (see `infra` dossier §Generic sync envelope).
+- **Cross-tab coherence**: bookmark writes broadcast a `'bookmarks:changed'` BroadcastChannel message → `SYNC_BOOKMARKS_UPDATED` on receipt. Riwayah changes also broadcast across tabs through the same sync layer.
 
 ---
 

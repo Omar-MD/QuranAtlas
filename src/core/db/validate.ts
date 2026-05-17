@@ -20,32 +20,11 @@
  */
 const _shapes: Record<string, Record<string, string>> = {
   settings: { key: 'string', value: 'any' },
-  meta: { id: 'string' },
-  marks: {
-    verseKey: 'string',
-    threads: 'string[]', subjects: 'string[]', audience: 'string[]',
-    speaker: 'string[]', quotedSpeaker: 'string[]',
-    mode: 'string[]', form: 'string[]', tone: 'string[]',
-    people: 'string[]', places: 'string[]', events: 'string[]', divineNames: 'string[]',
-    _canon: 'any',
-    note: 'string',
-    createdAt: 'number',
-    updatedAt: 'number',
-  },
   activationState: { id: 'string', status: 'string' },
   datasetMeta: { id: 'string' },
-  edges: {
-    id: 'string', from: 'string', to: 'string',
-    kind: 'string', _canonKind: 'string', directed: 'boolean',
-    note: 'string', createdAt: 'number', updatedAt: 'number',
-  },
   bookmarks: {
     riwayah: 'string', verseKey: 'string',
     surah: 'number', createdAt: 'number',
-  },
-  audioPosition: {
-    id: 'string', reciter: 'string', surah: 'number',
-    ayah: 'number', ms: 'number', lastPlayedAt: 'number',
   },
 }
 
@@ -54,6 +33,12 @@ const _shapes: Record<string, Record<string, string>> = {
  * If a field appears in the record but with the wrong type, the write is rejected.
  */
 const _optionalTypes: Record<string, Record<string, string>> = {
+  activationState: {
+    version: 'string',
+    progress: 'number',
+    error: 'string',
+    stagedAt: 'number',
+  },
 }
 
 function _typeOf(v: unknown): string {
@@ -70,24 +55,9 @@ function _typeOf(v: unknown): string {
 // fits, but tight enough that a crafted import can't dump megabytes
 // per record.
 const STRING_CAPS: Record<string, Record<string, number>> = {
-  marks: {
-    verseKey: 12,        // 'NNN:NNN' max
-    note: 500,           // matches the editor's UI cap
-  },
-  edges: {
-    id: 64,
-    from: 12, to: 12,
-    kind: 64, _canonKind: 64,
-    note: 500,
-  },
   bookmarks: {
     riwayah: 8, verseKey: 12,
   },
-  audioPosition: {
-    id: 96,        // `${reciter}:${surah}` — reciter id <= 80 + ':' + surah <= 3
-    reciter: 80,
-  },
-  meta: { id: 64 },
   activationState: { id: 64, status: 32 },
   datasetMeta: { id: 64 },
   settings: { key: 64 },
@@ -96,6 +66,15 @@ const STRING_CAPS: Record<string, Record<string, number>> = {
 const ARRAY_CAPS = { perArray: 256, perElement: 64 }
 
 const RIWAYAH_ENUM = new Set(['hafs', 'warsh', 'qaloon'])
+const ACTIVATION_STATUS_ENUM = new Set([
+  'none',
+  'idle',
+  'downloading',
+  'cached',
+  'pending-confirmation',
+  'applying',
+  'failed',
+])
 
 const PROTOTYPE_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
 
@@ -136,6 +115,16 @@ function checkEnums(storeName: string, rec: Record<string, unknown>): void {
   if (storeName === 'bookmarks') {
     if (typeof rec.riwayah !== 'string' || !RIWAYAH_ENUM.has(rec.riwayah)) {
       throw new Error(`bookmarks.riwayah: expected 'hafs' | 'warsh' | 'qaloon', got ${JSON.stringify(rec.riwayah)}`)
+    }
+  }
+  if (storeName === 'activationState') {
+    if (rec.id !== 'current') {
+      throw new Error(`activationState.id: expected 'current', got ${JSON.stringify(rec.id)}`)
+    }
+    if (typeof rec.status !== 'string' || !ACTIVATION_STATUS_ENUM.has(rec.status)) {
+      throw new Error(
+        `activationState.status: expected ${JSON.stringify([...ACTIVATION_STATUS_ENUM])}, got ${JSON.stringify(rec.status)}`,
+      )
     }
   }
 }

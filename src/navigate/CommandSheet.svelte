@@ -7,7 +7,7 @@
 <script lang="ts">
   /**
    * CommandSheet — ⌘K overlay, single unified search.
-   * Groups: Surahs · Verses · Tags · Marks · Commands.
+   * Groups: Recent · Surahs · Verse · Commands.
    * Direct-ref input (e.g. 2:255) promotes a verse preview card.
    */
   import { onMount } from 'svelte'
@@ -18,37 +18,35 @@
   import { getSurahs, getSurah, type SurahMeta } from '../data/dataset'
   import { settings } from '../configure/state.svelte'
   import { getMeaning } from '../data/surah-meanings'
-  import { getAll as getAllMarks } from '../mark/store'
-  import { getAllUsedTags, getSlotForTag } from '../mark/tags.js'
   import { setTheme } from '../configure/theme'
   import { setFontSize, loadFontSize, getFontSizeOptions } from '../configure/font-size'
   import { openTafsirPreview } from '../read/tafsir-bridge.ts'
   import { get } from '../core/db'
   import { announce } from '../a11y/announcer'
   import { commandSheetBridge } from './command-sheet-bridge'
+  import {
+    SEARCH_RESULT_GROUP_LABELS,
+    SEARCH_RESULT_GROUP_ORDER,
+    type SearchResultGroup,
+  } from './search-contract'
 
   const MAX_SURAH = 6
-  const MAX_TAGS = 5
-  const MAX_MARKS = 4
 
   type ResultItem = {
     kind: string
     glyph?: string
-    tagSlot?: string
     label: string
     meta?: string
     surah?: number
     verse?: number
-    tag?: string
     href?: string
     shortcut?: string
-    group: string
+    group: SearchResultGroup
     doTafsir?: { verseKey: string }
-    doCopy?: string
     doCommand?: string
   }
 
-  type GroupedItems = { title: string; items: ResultItem[] }
+  type GroupedItems = { key: SearchResultGroup; title: string; items: ResultItem[] }
 
   type VerseCard = {
     refLabel: string
@@ -65,16 +63,20 @@
   let _renderGen = 0
 
   let surahCache: SurahMeta[] = []
-  let markCache: Awaited<ReturnType<typeof getAllMarks>> = []
-  let tagCache: string[] = []
 
   const groups = $derived.by<GroupedItems[]>(() => {
-    const map = new SvelteMap<string, ResultItem[]>()
+    const map = new SvelteMap<SearchResultGroup, ResultItem[]>()
     for (const item of flatItems) {
       if (!map.has(item.group)) { map.set(item.group, []) }
       map.get(item.group)!.push(item)
     }
-    return Array.from(map.entries()).map(([title, items]) => ({ title, items }))
+    return SEARCH_RESULT_GROUP_ORDER
+      .filter((key) => map.has(key))
+      .map((key) => ({
+        key,
+        title: SEARCH_RESULT_GROUP_LABELS[key],
+        items: map.get(key) ?? [],
+      }))
   })
 
   // ── Public API ────────────────────────────────────────────────────────────
@@ -88,13 +90,6 @@
     verseCard = null
     await Promise.resolve()
     inputEl?.focus()
-    try {
-      markCache = await getAllMarks()
-      tagCache = await getAllUsedTags()
-    } catch {
-      markCache = []
-      tagCache = []
-    }
     await doRender()
   }
 
@@ -159,30 +154,16 @@
           items.push({
             kind: 'verse', glyph: '\uD83D\uDCD6', surah: s, verse: v,
             label: `${meta.name}${v > 1 ? ` \u00B7 verse ${v}` : ''}`,
-            meta: 'Continue reading', group: 'Recent',
+            meta: 'Continue reading', group: 'verse',
           })
         }
       }
     } catch { /* ignore */ }
 
-    const recentMarks = markCache.slice().sort((a, b) => ((b.updatedAt ?? 0) - (a.updatedAt ?? 0)))
-    for (const mk of recentMarks.slice(0, 2)) {
-      const parts = mk.verseKey.split(':')
-      const s = parseInt(parts[0] ?? '0', 10)
-      const v = parseInt(parts[1] ?? '0', 10)
-      const meta = surahCache.find(x => x.n === s)
-      items.push({
-        kind: 'verse', glyph: `${s}:`, surah: s, verse: v,
-        label: `${s}:${v}${meta ? ` \u00B7 ${meta.name}` : ''}`,
-        meta: mk._canon.threads.slice(0, 3).join(', '), group: 'Recent',
-      })
-    }
-
     const jumps: ResultItem[] = [
-      { kind: 'action', glyph: '\u2726', label: 'Review hub',        meta: 'All your marks',             href: '#/review',   shortcut: 'G R', group: 'Jump to' },
-      { kind: 'action', glyph: '\u2630', label: 'Browse all surahs', meta: '114 surahs',                 href: '#/surahs',   shortcut: 'G S', group: 'Jump to' },
-      { kind: 'action', glyph: '\u24D8', label: 'About',             meta: 'Credits · version',          href: '#/about',    shortcut: 'G A', group: 'Jump to' },
-      { kind: 'action', glyph: '\u2699', label: 'Preferences',       meta: 'Theme · font · translation', href: '#/settings', shortcut: 'G P', group: 'Jump to' },
+      { kind: 'action', glyph: '\u2630', label: 'Browse all surahs', meta: '114 surahs',                 href: '#/surahs',   shortcut: 'G S', group: 'command' },
+      { kind: 'action', glyph: '\u24D8', label: 'About',             meta: 'Credits · version',          href: '#/about',    shortcut: 'G A', group: 'command' },
+      { kind: 'action', glyph: '\u2699', label: 'Preferences',       meta: 'Theme · font · translation', href: '#/settings', shortcut: 'G P', group: 'command' },
     ]
     return [...items, ...jumps]
   }
@@ -207,9 +188,8 @@
     }
 
     const items: ResultItem[] = [
-      { kind: 'verse',  glyph: '\u21B5', surah: s, verse: v, label: 'Open verse',      meta: `Scroll reader to ${s}:${v}`, group: 'Verse' },
-      { kind: 'action', glyph: '\u2726', label: 'Study this verse', meta: `Open tafsir for ${s}:${v}`, doTafsir: { verseKey: `${s}:${v}` }, shortcut: 'M', group: 'Verse' },
-      { kind: 'action', glyph: '\u2398', label: 'Copy reference',  meta: `"${s}:${v}" to clipboard`,       doCopy: `${s}:${v}`, group: 'Verse' },
+      { kind: 'verse',  glyph: '\u21B5', surah: s, verse: v, label: 'Open verse',      meta: `Scroll reader to ${s}:${v}`, group: 'verse' },
+      { kind: 'action', glyph: '\u2726', label: 'Study this verse', meta: `Open tafsir for ${s}:${v}`, doTafsir: { verseKey: `${s}:${v}` }, shortcut: 'M', group: 'tafsir-study' },
     ]
     return { items, card: { refLabel, ar, en } }
   }
@@ -224,13 +204,7 @@
     if (nMatch) {
       const n = parseInt(nMatch[1] ?? '0', 10)
       const meta = surahCache.find(x => x.n === n)
-      if (meta) { allItems.push({ ...surahItem(meta), group: 'Surahs' }) }
-    }
-
-    const tagMatches = tagCache.filter(t => t.toLowerCase().includes(lower)).slice(0, MAX_TAGS)
-    for (const t of tagMatches) {
-      const count = markCache.filter(m => m._canon.threads.includes(t)).length
-      allItems.push({ kind: 'tag', tag: t, tagSlot: getSlotForTag(t), label: t, meta: `${count} mark${count === 1 ? '' : 's'}`, group: 'Tags' })
+      if (meta) { allItems.push({ ...surahItem(meta), group: 'surah' }) }
     }
 
     if (!nMatch) {
@@ -239,23 +213,11 @@
         const meaning = (getMeaning(s.n) || '').toLowerCase()
         return name.includes(lower) || meaning.includes(lower)
       }).slice(0, MAX_SURAH)
-      for (const s of surahMatches) { allItems.push({ ...surahItem(s), group: 'Surahs' }) }
-    }
-
-    const markMatches = markCache.filter(m => {
-      if (m.verseKey.includes(lower)) { return true }
-      return m._canon.threads.some(t => t.toLowerCase().includes(lower))
-    }).slice(0, MAX_MARKS)
-    for (const m of markMatches) {
-      const parts = m.verseKey.split(':')
-      const s = parseInt(parts[0] ?? '0', 10)
-      const v = parseInt(parts[1] ?? '0', 10)
-      const meta = surahCache.find(x => x.n === s)
-      allItems.push({ kind: 'verse', glyph: '\u2726', surah: s, verse: v, label: `${m.verseKey}${meta ? ` \u00B7 ${meta.name}` : ''}`, meta: m._canon.threads.join(', '), group: 'Marks' })
+      for (const s of surahMatches) { allItems.push({ ...surahItem(s), group: 'surah' }) }
     }
 
     const commands = buildCommands(lower)
-    for (const c of commands) { allItems.push({ ...c, group: 'Commands' }) }
+    for (const c of commands) { allItems.push({ ...c, group: 'command' }) }
 
     return allItems
   }
@@ -279,11 +241,6 @@
   // ── Activation ────────────────────────────────────────────────────────────
 
   async function activate(item: ResultItem): Promise<void> {
-    if (item.doCopy) {
-      try { await navigator.clipboard.writeText(item.doCopy) } catch { /* ignore */ }
-      close()
-      return
-    }
     if (item.doTafsir) {
       close()
       await openTafsirPreview(item.doTafsir.verseKey)
@@ -297,9 +254,7 @@
     if (item.doCommand === 'font-down')    { await bumpFont(-1);       close(); return }
 
     close()
-    if (item.kind === 'tag' && item.tag) {
-      window.location.hash = `#/threads/${encodeURIComponent(item.tag)}`
-    } else if (item.kind === 'surah' && item.surah != null) {
+    if (item.kind === 'surah' && item.surah != null) {
       emit(Events.NAVIGATION_NAVIGATE, { surah: item.surah })
     } else if (item.kind === 'verse' && item.surah != null) {
       emit(Events.NAVIGATION_NAVIGATE, { surah: item.surah, verse: item.verse })
@@ -393,8 +348,8 @@
         bind:value={query}
         type="search"
         class="qa-cmd-input"
-        placeholder="Search surah, verse, tag, or command"
-        aria-label="Search surah, verse, tag, or command"
+        placeholder="Search surah, verse, or command"
+        aria-label="Search surah, verse, or command"
         autocomplete="off"
         maxlength="80"
         oninput={() => { void doRender() }}
@@ -414,13 +369,13 @@
       {#if flatItems.length === 0 && query.trim() !== '' && !verseCard}
         <div class="qa-cmd-empty">No matches</div>
       {:else}
-        {#each groups as group (group.title)}
+        {#each groups as group (group.key)}
           <div class="qa-cmd-group">
             <div class="qa-cmd-group-head">
               <span>{group.title}</span>
               <span class="qa-cmd-group-count">{group.items.length}</span>
             </div>
-            {#each group.items as item (item.kind + (item.label ?? '') + (item.surah ?? '') + (item.verse ?? '') + (item.tag ?? '') + (item.doCommand ?? ''))}
+            {#each group.items as item (item.kind + (item.label ?? '') + (item.surah ?? '') + (item.verse ?? '') + (item.doCommand ?? ''))}
               {@const globalIdx = flatItems.indexOf(item)}
               <button
                 type="button"
@@ -433,11 +388,9 @@
               >
                 <span
                   class="qa-cmd-item-glyph"
-                  class:qa-cmd-item-glyph--dot={!!item.tagSlot}
                   aria-hidden="true"
-                  data-tag-slot={item.tagSlot ?? null}
                 >
-                  {item.tagSlot ? '' : (item.glyph ?? '')}
+                  {item.glyph ?? ''}
                 </span>
                 <span class="qa-cmd-item-body">
                   <span class="qa-cmd-item-label">{item.label}</span>

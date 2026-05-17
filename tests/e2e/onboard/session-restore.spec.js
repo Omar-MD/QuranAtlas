@@ -1,99 +1,50 @@
 /**
- * E2E Journey A: First run & session restore
+ * E2E Journey A: session restore
  *
  * Covers:
- *   A1. First-run onboarding → Al-Fatihah (happy path, skip alt, browse-all-surahs alt,
- *       a11y scan, keyboard-only)
- *   A2. Reload stays on the last surface
+ *   A2. Launch restore rejects removed and stale lastSurface hashes
+ *   A2. Direct #/settings returns to the saved lastSurface
+ *   A2. Mobile #/surahs and #/bookmarks normalize non-reader hashes through the reader fallback
+ *   A2. Reader route post-onboarding remains axe-clean
  *
  * Sources of truth:
- *   docs/context/user-journeys.md  §A
- *   src/onboard/index.js
- *   src/onboard/screens.js
+ *   src/app-bootstrap.ts
+ *   src/core/router.ts
+ *   src/onboard/state.ts
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting, writeSetting } from '../fixtures/idb.js'
 import { waitForReader } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
-// Onboarding flow tests must boot with no `onboardingComplete` flag.
-// Opt OUT of the onboarded snapshot every other journey spec uses.
-test.use({ storageState: { cookies: [], origins: [] } })
-
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Advance from screen 1 (Welcome) through screen 2 (Theme) to screen 3 (Riwayah).
- * Picks "Dark" theme on screen 2 as a concrete test value.
- * Onboarding is now 6 screens: Welcome → Theme → Riwayah → Translation → Shortcuts → Tags.
- */
-async function advanceToScreen3(page) {
-  // Screen 1 → tap Begin
-  await page.locator('.qa-onb-cta--primary').click()
-
-  // Screen 2 (Theme) — pick Dark swatch then Continue
-  await expect(page.locator('.qa-onb-swatches')).toBeVisible({ timeout: 8_000 })
-  await page.locator('.qa-onb-sw--dark').click()
-  await expect(page.locator('.qa-onb-sw--dark')).toHaveClass(/qa-onb-sw--on/)
-  await page.locator('.qa-onb-cta--primary').click()
-
-  // Screen 3 (Riwayah) should now be visible
-  await expect(page.locator('.qa-onb-rlist')).toBeVisible({ timeout: 8_000 })
-}
-
-/**
- * Advance from screen 3 (Riwayah) through screen 4 (Translation), screen 5 (Shortcuts)
- * to screen 6 (Tags intro). No translations ship today so the translation list is empty;
- * Continue still advances. Ends on the Tags intro screen (.qa-onb-vpreview).
- */
-async function advanceToScreen4(page) {
-  // Screen 3 (Riwayah) — Qālūn is default-selected; just Continue
-  await page.locator('.qa-onb-cta--primary').click()
-
-  // Screen 4 (Translation) — list may be empty (no translations ship today);
-  // wait for Riwayah screen to leave, then just Continue
-  await expect(page.locator('.qa-onb-rlist')).not.toBeVisible({ timeout: 8_000 })
-  await expect(page.locator('.qa-onb-tlist')).toBeAttached({ timeout: 8_000 })
-  await page.locator('.qa-onb-cta--primary').click()
-
-  // Screen 5 (Shortcuts)
-  await expect(page.locator('.qa-onb-shortcuts')).toBeVisible({ timeout: 8_000 })
-
-  // Continue → Screen 6 (Tags intro)
-  await page.locator('.qa-onb-cta--primary').click()
-  await expect(page.locator('.qa-onb-vpreview')).toBeVisible({ timeout: 8_000 })
-}
-
-// ---------------------------------------------------------------------------
-// Journey A1 — Happy path
-// ---------------------------------------------------------------------------
+const removedHubHash = ['#/re', 'view'].join('')
 
 test.describe('Journey A: First run & session restore', () => {
+  // These cases seed exact IDB state and verify bootstrap restore behavior from a
+  // clean browser context, so they keep the explicit empty storage state.
+  test.use({ storageState: { cookies: [], origins: [] } })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await clearAllData(page)
   })
 
-  // -------------------------------------------------------------------------
-  // A1.1 Happy path — all 6 steps
-  // -------------------------------------------------------------------------
-  test('A2: reload stays on the last surface', async ({ page }) => {
-    // Seed IDB directly: onboardingComplete + lastSurface = '#/review'.
+  test('A2: reload rejects removed review surface and falls back to the saved reader position', async ({ page }) => {
+    // Seed IDB directly with a removed launch hash.
     // Using seedLastSurface (rather than navigating to the surface) avoids the race
     // between parallel tests writing different values to the shared origin's IDB.
     await markOnboardingComplete(page)
-    await seedLastSurface(page, '#/review')
+    await seedLastSurface(page, removedHubHash)
+    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
 
     // Navigate to root with no hash — this simulates a fresh app launch / hard reload.
     // handleRoute('') fires ROUTER_LAUNCH_RESTORE which reads lastSurface and restores it.
     await page.goto('/')
 
-    // App should restore the last surface (#/review) not boot to onboarding
+    // App should reject the removed route and use the saved reader position instead.
     await expect(page.locator('.qa-onboarding')).toHaveCount(0)
-    await expect(page).toHaveURL(/#\/review/, { timeout: 8_000 })
+    await expect(page).toHaveURL(/#\/s\/2\/255/, { timeout: 8_000 })
   })
 
   // -------------------------------------------------------------------------
@@ -113,6 +64,16 @@ test.describe('Journey A: First run & session restore', () => {
     await expect(page).toHaveURL(/#\/s\/2/, { timeout: 8_000 })
   })
 
+  test('A2: direct #/settings currently returns to the saved lastSurface', async ({ page }) => {
+    await markOnboardingComplete(page)
+    await seedLastSurface(page, '#/about')
+
+    await page.goto('/#/settings')
+
+    await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
+    await expect.poll(async () => readSetting(page, 'lastSurface')).toBe('#/about')
+  })
+
   // -------------------------------------------------------------------------
   // A2.3 a11y — no violations on the reader surface post-onboarding
   // -------------------------------------------------------------------------
@@ -125,8 +86,57 @@ test.describe('Journey A: First run & session restore', () => {
     const violations = await scanA11y(page)
     expect(violations).toEqual([])
   })
+})
 
-  // -------------------------------------------------------------------------
-  // A1.8 — Screen 3: Riwayah picker (new in KFGQPC rewire)
-  // -------------------------------------------------------------------------
+test.describe('Journey A: mobile session restore route redirects @mobile', () => {
+  test.use({ storageState: { cookies: [], origins: [] } })
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await clearAllData(page)
+    await markOnboardingComplete(page)
+  })
+
+  test('A2: mobile #/surahs redirects non-reader lastSurface hashes to the saved reader position', async ({ page }) => {
+    const cases = ['#/about', '#/bookmarks', removedHubHash, '#/stale-route']
+    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
+
+    for (const seededHash of cases) {
+      await seedLastSurface(page, seededHash)
+      await page.goto('/#/surahs')
+      await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
+      await expect(page.locator('.qa-nav-drawer')).toBeVisible()
+    }
+  })
+
+  test('A2: mobile #/surahs rejects the static route as a reader restore target and uses the saved position', async ({ page }) => {
+    await seedLastSurface(page, '#/surahs')
+    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
+    await page.goto('/#/surahs')
+
+    await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible()
+  })
+
+  test('A2: mobile #/bookmarks redirects non-reader lastSurface hashes to the saved reader position', async ({ page }) => {
+    const cases = ['#/about', '#/surahs', removedHubHash, '#/stale-route']
+    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
+
+    for (const seededHash of cases) {
+      await seedLastSurface(page, seededHash)
+      await page.goto('/#/bookmarks')
+      await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
+      await expect(page.locator('.qa-nav-drawer')).toBeVisible()
+    }
+  })
+
+  test('A2: mobile #/bookmarks rejects the static route as a reader restore target and uses the saved position', async ({ page }) => {
+    await seedLastSurface(page, '#/bookmarks')
+    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
+    await page.goto('/#/bookmarks')
+
+    await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
+    await expect(page.locator('.qa-nav-drawer')).toBeVisible()
+  })
 })

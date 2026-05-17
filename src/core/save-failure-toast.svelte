@@ -23,14 +23,8 @@
 
   $effect(() => {
     const unsubs: Array<() => void> = []
-    unsubs.push(on(Events.MARKS_SAVE_FAILED, () => {
-      show("Couldn't save tag. Please try again.")
-    }))
     unsubs.push(on(Events.BOOKMARKS_SAVE_FAILED, () => {
       show("Couldn't save bookmark. Please try again.")
-    }))
-    unsubs.push(on(Events.EDGES_SAVE_FAILED, () => {
-      show("Couldn't save edge. Please try again.")
     }))
     unsubs.push(on(Events.READER_POSITION_SAVE_FAILED, () => {
       show("Couldn't save reading position.")

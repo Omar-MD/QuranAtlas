@@ -1,8 +1,7 @@
 <script lang="ts">
   /**
-   * Mobile (<1180px): full-screen drawer with two top-level mode tabs:
-   *   - Read   — Surahs (default) and Bookmarks sub-tabs.
-   *   - Study  — Hub link + 12 grouped layer rows (was the legacy "Review" tab).
+   * Mobile (<1180px): full-screen drawer focused on reading continuity:
+   *   - Read   — Surahs (default), Juz, and Bookmarks.
    *
    * Read sources:
    *   - Surah     — search + All/Recent above the list, auto-scrolled to and
@@ -27,7 +26,6 @@
   import type { SurahCount } from '../data/juz'
   import { getMeaning } from '../data/surah-meanings'
   import { loadRecentSurahs } from '../configure/state-recent-surahs.svelte'
-  import { LAYER_GROUPS, LAYER_LABELS } from '../data/tag-layers'
   import { emit, on } from '../core/events'
   import { Events } from '../core/constants'
   import { mushafHrefForCurrentVerse, verseHrefForMushafPage } from '../read/mushaf/mode-switch'
@@ -57,6 +55,7 @@
   let recentSurahs = $state<number[]>([])
   let loaded = $state(false)
 
+  let drawerEl: HTMLElement | null = $state(null)
   let listEl: HTMLElement | null = $state(null)
   let modeSwitchRequestId = 0
 
@@ -153,7 +152,7 @@
 
   async function open(tab?: DrawerTab, subTab?: ReadSubTab): Promise<void> {
     activeTab = tab ?? 'read'
-    readSource = subTab === 'bookmarks' ? 'bookmarks' : 'surah'
+    readSource = subTab ?? 'surah'
     showingWirdDetail = false
     currentHash = window.location.hash || ''
     isOpen = true
@@ -169,6 +168,7 @@
     await loadRecents()
 
     await tick()
+    drawerEl?.focus()
     if (activeTab === 'read' && readSource === 'surah') { scrollToCurrentSurah() }
   }
   function close(): void { isOpen = false }
@@ -222,8 +222,6 @@
     close()
     navigate(pageHref(clamped))
   }
-  function goReviewHub(): void { go('#/review') }
-  function goReviewLayer(layer: string): void { go(`#/review?layer=${layer}`) }
   function openWirdDetail(): void { showingWirdDetail = true }
   function closeWirdDetail(): void { showingWirdDetail = false }
   function syncHash(hash: string): void {
@@ -344,6 +342,21 @@
     if (e.key === 'Escape') { close() }
   }
 
+  $effect(() => {
+    if (!isOpen) { return }
+
+    const onDocumentKeydown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') { return }
+      e.preventDefault()
+      close()
+    }
+
+    document.addEventListener('keydown', onDocumentKeydown)
+    return () => {
+      document.removeEventListener('keydown', onDocumentKeydown)
+    }
+  })
+
   let touchStartX = 0
   let touchStartY = 0
   function onTouchStart(e: TouchEvent): void {
@@ -418,6 +431,7 @@
   ></button>
   <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
   <aside
+    bind:this={drawerEl}
     class="qa-nav-drawer"
     role="dialog"
     aria-modal="true"
@@ -489,29 +503,11 @@
             </span>
             <span>Read</span>
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'study'}
-            class="qa-nav-drawer-tab"
-            class:qa-nav-drawer-tab--on={activeTab === 'study'}
-            onclick={() => setTab('study')}
-          >
-            <span class="qa-nav-drawer-tab-icon" aria-hidden="true">
-              <svg data-icon="study-cap" viewBox="0 0 24 24" fill="none">
-                <path d="M3.8 9.2 12 5.4l8.2 3.8L12 13 3.8 9.2Z" />
-                <path d="M7.3 11.1v4.1c1.5 1.3 3.1 2 4.7 2s3.2-.7 4.7-2v-4.1" />
-                <path d="M20.2 9.2v5.1" />
-              </svg>
-            </span>
-            <span>Study</span>
-          </button>
         </div>
       </div>
     </div>
 
-    {#if activeTab === 'read'}
-      {#if showingWirdDetail}
+    {#if showingWirdDetail}
         <WirdDetail
           summary={wirdSummary}
           currentPosition={settings.currentPosition}
@@ -521,7 +517,7 @@
           onReset={() => { void clearWirdPlan(); closeWirdDetail() }}
           onRequestBrowserNotifications={requestWirdBrowserNotifications}
         />
-      {:else}
+    {:else}
         <div class="qa-nav-drawer-read">
           <DailyWirdCard summary={wirdSummary} onOpen={openWirdDetail} />
 
@@ -720,35 +716,6 @@
             </div>
           {/if}
         </div>
-      {/if}
-    {:else}
-      <div class="qa-nav-drawer-tab-body qa-nav-drawer-review-body">
-        <button
-          type="button"
-          class="qa-nav-drawer-hub-row"
-          onclick={goReviewHub}
-        >
-          <span class="qa-nav-drawer-hub-icon" aria-hidden="true">&#x25CE;</span>
-          <span class="qa-nav-drawer-hub-name">Hub &mdash; all marks</span>
-          <span class="qa-nav-drawer-chev" aria-hidden="true">&#x203A;</span>
-        </button>
-
-        {#each LAYER_GROUPS as group (group.id)}
-          <div class="qa-nav-drawer-group-hdr">{group.name}</div>
-          {#each group.layers as layerName (layerName)}
-            <button
-              type="button"
-              class="qa-nav-drawer-layer-row"
-              data-layer={layerName}
-              onclick={() => goReviewLayer(layerName)}
-            >
-              <span class="qa-nav-drawer-layer-dot qa-nav-drawer-layer-dot--{group.id}" aria-hidden="true"></span>
-              <span class="qa-nav-drawer-layer-name">{LAYER_LABELS[layerName]}</span>
-              <span class="qa-nav-drawer-chev" aria-hidden="true">&#x203A;</span>
-            </button>
-          {/each}
-        {/each}
-      </div>
     {/if}
   </aside>
 {/if}

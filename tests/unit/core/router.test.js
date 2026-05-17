@@ -37,27 +37,29 @@ describe('core/router.js', () => {
     const { register, navigate } = await import('../../../src/core/router.js')
     const mockInit = vi.fn()
     const hooks = { openEditor: vi.fn() }
-    register('#/review', () => Promise.resolve({ init: mockInit }), hooks)
+    register('#/about', () => Promise.resolve({ init: mockInit }), hooks)
 
-    navigate('#/review')
+    navigate('#/about')
 
     await vi.waitFor(() => {
       expect(mockInit).toHaveBeenCalledWith({}, hooks)
     }, { timeout: 100 })
   })
 
-  it('emits router:launch-restore on empty hash', async () => {
+  it.each(['', '#', '#/'])('emits router:launch-restore on root hash %s', async (hash) => {
     const restoreFn = vi.fn()
     events.on('router:launch-restore', restoreFn)
 
     const { init } = await import('../../../src/core/router.js')
-    window.location.hash = ''
-    init()
+    window.location.hash = hash
+    const cleanup = init()
 
     // Wait for async handleRoute to complete
     await vi.waitFor(() => {
       expect(restoreFn).toHaveBeenCalledWith({})
     }, { timeout: 100 })
+
+    cleanup()
   })
 
   it('navigate with replace uses replaceState', async () => {
@@ -121,13 +123,13 @@ describe('core/router.js', () => {
     const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
     const { register, navigate } = await import('../../../src/core/router.js')
 
-    register('#/review', () => Promise.resolve({ init: vi.fn().mockRejectedValue(new Error('boom')) }))
+    register('#/about', () => Promise.resolve({ init: vi.fn().mockRejectedValue(new Error('boom')) }))
 
-    navigate('#/review')
+    navigate('#/about')
 
     await vi.waitFor(() => {
       const context = findLogContext(errorSpy, 'Route failed:')
-      expect(context).toMatchObject({ route: '#/review' })
+      expect(context).toMatchObject({ route: '#/about' })
       expect(context.error).toBeInstanceOf(Error)
       expect(context.error.message).toBe('boom')
     }, { timeout: 100 })

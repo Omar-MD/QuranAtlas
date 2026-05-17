@@ -1,20 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../../../../src/navigate/bookmarks/store', () => ({
+vi.mock('../../../../src/continuity/bookmarks/store', () => ({
   toggle: vi.fn(async () => {}),
 }))
 vi.mock('../../../../src/configure/state.svelte', () => ({
   settings: { riwayah: 'qaloon' },
-}))
-vi.mock('../../../../src/mark/tag/state.svelte', () => ({
-  tagSession: { quickbarOpen: false },
 }))
 vi.mock('../../../../src/core/logger', () => ({
   logger: { error: vi.fn() },
 }))
 
 import { initBookmarkClickHandler } from '../../../../src/navigate/bookmarks/click-handler'
-import { toggle } from '../../../../src/navigate/bookmarks/store'
+import { toggle } from '../../../../src/continuity/bookmarks/store'
 
 function makeVerseFixture(opts: {
   outerTokenKey?: string
@@ -64,6 +61,23 @@ describe('bookmarks/click-handler', () => {
     await Promise.resolve()
     // Bookmark IDB key is verse-grain; wordIdx must be stripped.
     expect(toggle).toHaveBeenCalledWith('2:255', 'qaloon')
+    cleanupHandler()
+    cleanup()
+  })
+
+  it('dedupes pointerup followed by click on the same verse number', async () => {
+    const { num, cleanup } = makeVerseFixture({ outerTokenKey: '2:255' })
+    cleanupHandler = initBookmarkClickHandler()
+    vi.useFakeTimers()
+
+    num.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerType: 'touch' }))
+    num.dispatchEvent(new MouseEvent('click', { bubbles: true, button: 0 }))
+    await Promise.resolve()
+
+    expect(toggle).toHaveBeenCalledTimes(1)
+    expect(toggle).toHaveBeenCalledWith('2:255', 'qaloon')
+
+    vi.useRealTimers()
     cleanupHandler()
     cleanup()
   })

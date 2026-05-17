@@ -1,49 +1,7 @@
-// Pure type declarations + the LAYER_NAMES enum constant. Imported by
-// type-only consumers (safety/input-validator.ts, tag/session-bridge.ts,
-// data/tag-layers.ts, bookmarks/indicator.ts, etc.) so they don't pull
-// the IDB connection runtime through TypeScript erasure (audit C-2 /
-// CC-2 / R-07, 2026-04-29).
-
-export type LayerName =
-  | 'threads' | 'subjects' | 'audience' | 'speaker' | 'quotedSpeaker'
-  | 'mode' | 'form' | 'tone' | 'people' | 'places' | 'events' | 'divineNames'
-
-export const LAYER_NAMES: LayerName[] = [
-  'threads', 'subjects', 'audience', 'speaker', 'quotedSpeaker',
-  'mode', 'form', 'tone', 'people', 'places', 'events', 'divineNames',
-]
-
-export interface MarkRecord {
-  verseKey: string
-  threads: string[]
-  subjects: string[]
-  audience: string[]
-  speaker: string[]
-  quotedSpeaker: string[]
-  mode: string[]
-  form: string[]
-  tone: string[]
-  people: string[]
-  places: string[]
-  events: string[]
-  divineNames: string[]
-  _canon: Record<LayerName, string[]>
-  note: string
-  createdAt: number
-  updatedAt: number
-}
-
-export interface EdgeRecord {
-  id: string
-  from: string
-  to: string
-  kind: string
-  _canonKind: string
-  directed: boolean
-  note: string
-  createdAt: number
-  updatedAt: number
-}
+// Pure type declarations for active IndexedDB records and shared runtime
+// contracts. Keeping this file closure-free avoids pulling the DB
+// connection runtime through type-only imports (audit C-2 / CC-2 / R-07,
+// 2026-04-29).
 
 export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
 
@@ -54,25 +12,29 @@ export interface BookmarkRecord {
   createdAt: number
 }
 
-export interface AudioPositionRecord {
-  /** Composite primary key `${reciter}:${surah}`. */
-  id: string
-  reciter: string
-  surah: number
-  ayah: number
-  ms: number
-  lastPlayedAt: number
+export type ActivationStatus =
+  | 'none'
+  | 'idle'
+  | 'downloading'
+  | 'cached'
+  | 'pending-confirmation'
+  | 'applying'
+  | 'failed'
+
+export interface ActivationStateRecord {
+  id: 'current'
+  status: ActivationStatus
+  version?: string
+  progress?: number
+  error?: string
+  stagedAt?: number
 }
 
 export type StoreRecords = {
   settings: { key: string; value: unknown }
-  meta: { id: string; [k: string]: unknown }
-  marks: MarkRecord
-  activationState: { id: string; status: string; [k: string]: unknown }
+  activationState: ActivationStateRecord
   datasetMeta: { id: string; version?: string; [k: string]: unknown }
-  edges: EdgeRecord
   bookmarks: BookmarkRecord
-  audioPosition: AudioPositionRecord
 }
 
 export type StoreName = keyof StoreRecords

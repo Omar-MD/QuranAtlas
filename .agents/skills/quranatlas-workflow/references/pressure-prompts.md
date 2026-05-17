@@ -16,11 +16,11 @@ Wrong behavior to catch: edits `src/reader` directly without reading the dossier
 
 Prompt: "Redesign the mobile navigation drawer header and implement only that component."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen` if generating directions.
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen` for any new visual direction.
 
-Expected behavior: identifies navigate/drawer header as the active component; defines state/viewport matrix; creates or selects a component reference plus intent note; implements focused tasks with screenshot comparison after each; proves mobile and relevant desktop/tablet integration.
+Expected behavior: identifies navigate/drawer header as the active component; defines state/viewport matrix; creates or selects a component reference plus intent note; uses Playwright MCP when available, or states the browser-proof fallback, for iteration-time inspection and screenshot comparison after each focused task; proves mobile and relevant desktop/tablet integration; uses `quranatlas-workflow` and `tests/e2e/AGENTS.md` for any checked-in Playwright coverage decision.
 
-Wrong behavior to catch: makes a full drawer restyle, implements from a composite moodboard, skips reference commit, or does one final screenshot only.
+Wrong behavior to catch: makes a full drawer restyle, treats `imagegen` as optional for a new visual direction, implements from a composite moodboard, skips reference commit, assumes Playwright MCP without naming a fallback, or does one final screenshot only.
 
 ## 3. Mobile Drawer Header Direction
 
@@ -28,7 +28,7 @@ Prompt: "Give the mobile drawer header a calmer visual direction, then implement
 
 Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, `imagegen`.
 
-Expected behavior: generates component/state options, chooses one, commits `docs/ui-references/navigate/drawer-header.mobile.png` and `.md`, then implements only header structure/spacing/type/state tasks with per-task comparisons.
+Expected behavior: generates component/state options, chooses one, commits `docs/ui-references/navigate/drawer-header.mobile.png` and `.md`, then implements only header structure/spacing/type/state tasks with Playwright MCP comparison after each task when available, or an explicit fallback when it is not.
 
 Wrong behavior to catch: changes drawer actions, route list, or settings affordances; keeps rejected options without a tradeoff; treats generated Arabic as proof.
 
@@ -38,9 +38,9 @@ Prompt: "Create three Surah progress visual directions, choose one, commit the r
 
 Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, `imagegen`.
 
-Expected behavior: makes component-state references, selects one source of truth with intent note, implements one progress component variant, and proves responsive/theme fit.
+Expected behavior: makes component-state references, selects one source of truth with intent note, implements one progress component variant, compares focused tasks with Playwright MCP or a stated fallback, and proves responsive/theme fit.
 
-Wrong behavior to catch: implements all three, uses a full-screen board as the source of truth, or skips token/accessibility constraints.
+Wrong behavior to catch: implements all three, invents extra implementation commits beyond the requested reference commit, uses a full-screen board as the source of truth, assumes Playwright MCP without naming a fallback, or skips token/accessibility constraints.
 
 ## 5. Settings Source Selector Row
 
@@ -48,9 +48,9 @@ Prompt: "Polish only the Settings sheet source selector row; leave the rest of t
 
 Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, and brainstorming if the visual direction changes.
 
-Expected behavior: treats the selector row as the active component; targets one aspect per task; compares screenshots after each focused change; proves sheet containment and touch targets.
+Expected behavior: treats the selector row as the active component; decides whether this is existing-direction polish or a new visual direction; targets one aspect per task; compares screenshots after each focused change with Playwright MCP or a stated fallback; proves sheet containment and touch targets.
 
-Wrong behavior to catch: opportunistic full-sheet restyle, new settings behavior, broad token churn, or only desktop proof.
+Wrong behavior to catch: opportunistic full-sheet restyle, new settings behavior, broad token churn, assumes Playwright MCP without naming a fallback, or only desktop proof.
 
 ## 6. Drawer Actions Existing Reference
 
@@ -58,9 +58,9 @@ Prompt: "Implement the drawer actions component from the existing committed refe
 
 Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`.
 
-Expected behavior: uses the committed reference image and intent note as the visual source of truth; does not regenerate directions; implements actions only; compares every focused task against the reference.
+Expected behavior: uses the committed reference image and intent note as the visual source of truth; does not regenerate directions; implements actions only; compares every focused task against the reference with Playwright MCP or a stated fallback; does not confuse test-output artifacts with the committed reference.
 
-Wrong behavior to catch: redesigns the component, edits unrelated drawer pieces, or lets the reference override accessibility/real interaction behavior.
+Wrong behavior to catch: redesigns the component, edits unrelated drawer pieces, assumes Playwright MCP without naming a fallback, or lets the reference override accessibility/real interaction behavior.
 
 ## 7. Reader Toolbar Compact State
 
@@ -68,19 +68,19 @@ Prompt: "Tighten the compact reader toolbar state and show phone plus desktop pr
 
 Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, and brainstorming if changing direction.
 
-Expected behavior: scopes to compact toolbar state; checks overlap, touch targets, text/icon fit, sticky/header cases, and unframed Mushaf invariants; captures phone and desktop screenshots.
+Expected behavior: scopes to compact toolbar state; checks overlap, touch targets, text/icon fit, sticky/header cases, and unframed Mushaf invariants; captures phone plus desktop screenshots and adds a real development-time tablet-sized pass whenever the toolbar can differ at the tablet breakpoint.
 
-Wrong behavior to catch: restyles the whole reader, misses compact state, ignores desktop, or relies on screenshots without measured overlap/overflow checks.
+Wrong behavior to catch: restyles the whole reader, misses compact state, assumes Playwright MCP without naming a fallback, ignores desktop, or relies on screenshots without measured overlap/overflow checks.
 
 ## 8. Onboarding Language Selector
 
 Prompt: "Redesign the onboarding language selector with multiple focused tasks and compare after each task."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen` if proposing directions.
+Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen`.
 
-Expected behavior: commits a selected component/state reference and intent note; implements focused passes such as structure, spacing, selected state, mobile fit, and theme parity; compares after every pass.
+Expected behavior: commits a selected component/state reference and intent note; implements focused passes such as structure, spacing, selected state, mobile fit, and theme parity; compares after every pass with Playwright MCP or a stated fallback and adds development-time tablet proof when the selector layout changes across tiers.
 
-Wrong behavior to catch: one-shot implementation, full onboarding restyle, skipped responsive tiers, or rationale-heavy dossier updates.
+Wrong behavior to catch: treats `imagegen` as optional for a redesign, assumes Playwright MCP without naming a fallback, one-shot implementation, full onboarding restyle, skipped responsive tiers, or rationale-heavy dossier updates.
 
 ## 9. Docs-Only Context Update
 

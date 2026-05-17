@@ -10,17 +10,23 @@
    * Screen 3: Riwayah picker
    * Screen 4: Translation picker
    * Screen 5: Keyboard shortcuts
-   * Screen 6: Tags intro + finish CTAs
+   * Screen 6: Start reading + finish CTAs
    */
 
   import { onMount } from 'svelte'
   import { getTranslations } from '../data/dataset'
   import { setTheme, loadTheme, getThemeOptions } from '../configure/theme.js'
-  import { setRiwayah, loadRiwayah, getRiwayahOptions, type Riwayah } from '../configure/riwayah'
+  import { setRiwayah, loadRiwayah } from '../configure/riwayah'
   import { logger } from '../core/logger.js'
-  import { SHORTCUT_ROWS, SAMPLE_CHIPS } from './screens'
+  import { SHORTCUT_ROWS, START_READING_ROWS } from './screens'
   import OnboardingScreen from './OnboardingScreen.svelte'
   import type { TranslationEntry } from '../data/dataset'
+  import {
+    getRiwayahLabels,
+    getRiwayahOptions,
+    isRiwayahUsable,
+    type Riwayah,
+  } from '../packs/riwayah'
 
   // ── component state ───────────────────────────────────────────────────────
 
@@ -34,14 +40,20 @@
   // Screen 3 — riwayah
   const riwayahOptions = getRiwayahOptions()
   let selectedRiwayah = $state<Riwayah>('qaloon')
+  let usableRiwayah = $state<Record<Riwayah, boolean>>({
+    hafs: false,
+    warsh: false,
+    qaloon: true,
+  })
 
   const RIWAYAH_CARDS: Record<Riwayah, { label: string; ayatLabel: string; description: string }> = {
-    hafs:   { label: 'Ḥafṣ ʿan ʿĀṣim',   ayatLabel: '6236 ayāt', description: 'The most widespread reading worldwide.' },
-    warsh:  { label: 'Warsh ʿan Nāfiʿ',  ayatLabel: '6214 ayāt', description: 'Read across the Maghreb and West Africa.' },
-    qaloon: { label: 'Qālūn ʿan Nāfiʿ',  ayatLabel: '6214 ayāt', description: 'Read in Libya, Tunisia, and parts of Mauritania.' },
+    hafs:   { label: getRiwayahLabels('hafs').productFull, ayatLabel: '6236 ayāt', description: 'The most widespread reading worldwide.' },
+    warsh:  { label: getRiwayahLabels('warsh').productFull, ayatLabel: '6214 ayāt', description: 'Read across the Maghreb and West Africa.' },
+    qaloon: { label: getRiwayahLabels('qaloon').productFull, ayatLabel: '6214 ayāt', description: 'Read in Libya, Tunisia, and parts of Mauritania.' },
   }
 
   async function pickRiwayah(r: Riwayah) {
+    if (!usableRiwayah[r]) { return }
     if (await setRiwayah(r)) { selectedRiwayah = r }
   }
 
@@ -57,6 +69,16 @@
 
     // Load persisted riwayah for screen 3
     selectedRiwayah = await loadRiwayah()
+    try {
+      const nextUsable = Object.fromEntries(
+        await Promise.all(
+          riwayahOptions.map(async (riwayah) => [riwayah, await isRiwayahUsable(riwayah)] as const),
+        ),
+      ) as Record<Riwayah, boolean>
+      usableRiwayah = nextUsable
+    } catch (error) {
+      logger.warn('Failed to load riwayah availability for onboarding', { error })
+    }
 
     // Load translation options for screen 4
     try {
@@ -177,15 +199,22 @@
           <button
             type="button"
             class="qa-onb-r{selectedRiwayah === opt ? ' qa-onb-r--on' : ''}"
+            class:qa-onb-r--disabled={!usableRiwayah[opt]}
             role="radio"
             aria-checked={selectedRiwayah === opt}
+            aria-disabled={!usableRiwayah[opt]}
+            disabled={!usableRiwayah[opt]}
             onclick={() => pickRiwayah(opt)}
           >
             <span class="qa-onb-r-radio"></span>
             <span class="qa-onb-r-body">
               <span class="qa-onb-r-name">{RIWAYAH_CARDS[opt].label}</span>
               <span class="qa-onb-r-meta">{RIWAYAH_CARDS[opt].ayatLabel}</span>
-              <span class="qa-onb-r-desc">{RIWAYAH_CARDS[opt].description}</span>
+              <span class="qa-onb-r-desc">
+                {usableRiwayah[opt]
+                  ? RIWAYAH_CARDS[opt].description
+                  : 'Install this recitation later from Settings before making it active.'}
+              </span>
             </span>
           </button>
         {/each}
@@ -213,6 +242,9 @@
           <button
             type="button"
             class="qa-onb-t{opt.id === selectedTranslationId ? ' qa-onb-t--on' : ''}"
+            class:qa-onb-t--disabled={translationOptions.length < 2}
+            aria-disabled={translationOptions.length < 2}
+            disabled={translationOptions.length < 2}
             onclick={() => pickTranslation(opt.id)}
           >
             <span class="qa-onb-t-radio"></span>
@@ -256,31 +288,31 @@
     </OnboardingScreen>
 
   {:else if screen === 6}
-    <!-- ── Screen 6: Tags intro ────────────────────────────────────────── -->
+    <!-- ── Screen 6: Start reading ─────────────────────────────────────── -->
     <OnboardingScreen {screen} total={TOTAL} onSkip={skip}>
       <h1 class="qa-onb-headline">
-        Mark what <span class="qa-onb-gold">speaks</span> to you.
+        Start with what <span class="qa-onb-gold">matters</span>.
       </h1>
       <p class="qa-onb-lede">
-        Long-press any verse to save it with a tag &mdash; mercy, patience, reflection &mdash; and revisit it later grouped by theme.
+        QuranAtlas keeps reading focused: verse and Mushaf reading, tafsir on demand, bookmarks, and offline-ready source packs.
       </p>
 
       <div class="qa-onb-vpreview">
-        <div class="qa-onb-vref">2:286 &middot; Al-Baqarah</div>
-        <div class="qa-onb-var" dir="rtl">لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا</div>
-        <div class="qa-onb-ven">&ldquo;Allah does not burden a soul beyond what it can bear.&rdquo;</div>
+        <div class="qa-onb-vref">Reader First</div>
+        <div class="qa-onb-var" dir="rtl">اقْرَأْ وَتَدَبَّرْ وَاحْفَظْ مَوْضِعَكَ</div>
+        <div class="qa-onb-ven">&ldquo;Read, reflect, and come back exactly where you left off.&rdquo;</div>
         <div class="qa-onb-chips">
-          {#each SAMPLE_CHIPS as chip (chip.label)}
+          {#each START_READING_ROWS as row (row.label)}
             <span class="qa-onb-chip">
-              <span class="qa-onb-chip-dot" data-chip={chip.label}></span>
-              {chip.label}
+              <span class="qa-onb-chip-dot" data-chip={row.tone}></span>
+              {row.label}
             </span>
           {/each}
         </div>
       </div>
 
       <div class="qa-onb-privacy">
-        Your marks live on this device. Private by default &mdash; nothing synced, nothing tracked.
+        Bookmarks and last-read position stay on this device unless you clear data. Optional packs install before they become active.
       </div>
 
       <div class="qa-onb-cta-row">
@@ -290,4 +322,3 @@
     </OnboardingScreen>
   {/if}
 </div>
-

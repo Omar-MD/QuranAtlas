@@ -27,7 +27,7 @@ export function openDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result
-      applySchema(db)
+      applySchema(db, request.transaction)
     }
 
     request.onsuccess = (event) => {

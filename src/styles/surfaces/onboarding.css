@@ -211,6 +211,12 @@
     box-shadow: inset 0 0 0 1px var(--qa-selection-ring);
   }
 
+  .qa-onb-t--disabled,
+  .qa-onb-r--disabled {
+    opacity: 0.68;
+    cursor: not-allowed;
+  }
+
   .qa-onb-t-radio,
   .qa-onb-r-radio {
     width: 14px;
@@ -316,13 +322,10 @@
     border-radius: var(--qa-radius-circle);
   }
 
-  /* Sample-chip colors are bound by `data-chip` attr; SAMPLE_CHIPS in
-     onboarding/screens.ts is the source of truth for both the label
-     and the bound color (R-19c, 2026-05-01 — moved off inline styles
-     for CSP `style-src` un-`unsafe-inline`-ing). */
-  .qa-onb-chip-dot[data-chip='mercy']    { background-color: #64a078; }
-  .qa-onb-chip-dot[data-chip='patience'] { background-color: #6e96b4; }
-  .qa-onb-chip-dot[data-chip='tawakkul'] { background-color: #b4826e; }
+  /* Finish-screen chip tones are bound by `data-chip` attr. */
+  .qa-onb-chip-dot[data-chip='gold'] { background-color: #b4826e; }
+  .qa-onb-chip-dot[data-chip='sage'] { background-color: #64a078; }
+  .qa-onb-chip-dot[data-chip='ink']  { background-color: #6e96b4; }
 
   .qa-onb-privacy {
     font-size: 0.75rem;

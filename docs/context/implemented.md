@@ -3,89 +3,48 @@
 What QuranAtlas does today. Surface-grouped overview; per-surface invariants
 and data shapes live in `surfaces/<name>.md`.
 
-This file inventories code that exists today. It is not the product roadmap. Sections marked as removed product scope describe implementation pending a later source cleanup.
-
 ## Read
 
-- Multi-riwayah corpus (Hafs / Warsh / Qalun product scope; runtime `qaloon`, KFGQPC Uthmanic) — `src/data/dataset.ts`.
-- Translation overlay — Bridges default; inline footnote panels render when a shipped pack includes `[N]` markers (`src/read/translation-tokens.ts`).
-- Translation-riwayah alignment via per-ayah Hafs↔Warsh↔Qalun (`qaloon`) equivalence table (`public/dataset/translations/_verse-aliases.json`).
-- Typography — 5-step font-size + 5-step reading-flow sliders, reset-to-default pill.
-- Surah header + bismillah — collapsible per-user preference.
-- Cross-surah swap — pull-past-edge / continue link with 114↔1 wrap.
-- Reader virtualisation — chunked recycler, ±1 chunk window (max 60 verses live).
-- Token-key DOM contract — `data-token-key` is the sole verse-identity attr.
-- Mushaf page reading — `#/m/:page` renders active-riwayah quran.ws-derived page SVGs with Verse/Mushaf chrome switching, route clamping, mobile drawer continuation, and Qalun page-pack offline caching.
-- Ambient chrome — desktop AmbientDock, mobile MarginHeader auto-hide on scroll.
-- Position persistence — `meta` store; warm-resume only restores when scroller at top.
-
-## Mark (removed product scope pending cleanup)
-
-- Fast-tag inline panel — double-tap (touch) / right-click (desktop) / `m` keyboard sole entries.
-- Deep TagSheet — escalation via panel `⛶`, `⌘/Ctrl+Enter`, or programmatic bridge.
-- 12-layer schema — Speech / Narrative / Themes / Entities groups; `_canon` computed inside `marks/store.ts::save()` only.
-- Empty-mark guard — ≥1 tag across the 12 layers required to persist.
-- Cross-tab mark sync via BroadcastChannel.
-- Delete with undo toast.
-
-## Review (removed product scope pending cleanup)
-
-- `#/review` hub — removed-scope implementation inventory for 12-layer selector + group-by (Value / Surah / Date) + value chips + flat card list.
-- `#/<layer>/:value` filtered-verse review (FVR) deep-link route.
-- Activation state — last-viewed mark per filter persists across reload (`activationState` store).
-- Multi-value OR filter on desktop ≥1180 px.
-- Edges store (`edges` IDB store) — verse-to-verse relationships scaffold.
+- Verse reader routes `#/s/:surah` and `#/s/:surah/:ayah`.
+- Mushaf page reader route `#/m/:page` for the active riwayah.
+- Reader-first continuity restore through validated `lastSurface` and
+  `currentPosition`.
+- Qalun baseline corpus with optional Hafs and Warsh packs.
+- Translation overlay, tafsir preview/sheet, and curated knowledge lane.
+- Reader typography controls, ambient chrome, and Daily Wird.
 
 ## Navigate
 
-- Hash router — lazy-loaded modules, param sanitisation.
-- Hamburger drawer (mobile) — full-screen, Surahs + Bookmarks + removed-scope Study tab while legacy code remains; sole entry to full surah list on mobile.
-- Command sheet `⌘K` — refs / surahs resolve, inline verse preview; legacy tag results remain removed-scope implementation inventory pending cleanup.
-- Surah directory `#/surahs` — desktop ≥1180 px standalone; mobile redirects to drawer.
-- Bookmarks — single-tap toggle, riwayah-scoped (`bookmarks` store, ID `<riwayah>:<surah>:<verse>`).
-- Bookmark jump pulse animation on landing.
-- Keyboard shortcuts — `j`/`k`/`[`/`]`, `g`-chord nav, `?` cheatsheet, `+`/`-`/`0` font, `t`/`n`/`d`/`m` reader.
-
-## Listen (removed product scope pending cleanup)
-
-- Audio architecture — single global `<audio>` (`audio/state.svelte.ts::getOrCreateAudioElement`).
-- IDB `audioPosition` store — per-(reciter, surah) position + lastPlayedAt.
-- Cross-tab playback gate — newest-press-wins via BroadcastChannel.
-- Media-session metadata — lock-screen / Bluetooth / car controls; updates on surah/reciter change only.
-- Mini-bar + full-overlay UI shells.
-- Reader verse-tick highlight (via `data-token-key^="{S}:{V}"` selector).
-- Smart-defer auto-scroll — yields to manual scroll for 5 s.
-- SW per-reciter cache partition (CacheFirst).
-- Audio is removed product scope. This section remains as implementation inventory until source cleanup removes or quarantines it.
+- Command sheet for verse/surah navigation and study handoff.
+- Mobile nav drawer with Surahs, Juz, and Bookmarks.
+- Desktop `#/surahs` and `#/bookmarks` surfaces.
+- Riwayah-scoped bookmarks with cross-tab sync and landing pulse.
+- Reader keyboard shortcuts and shortcuts sheet.
 
 ## Configure
 
-- Settings sheet — full-viewport (mobile + tablet) / centered modal (desktop).
-- Three sections: Reading (font size, reading flow) · Sources (qira'ah/riwayah, translation, tafsir, storage) · Storage (offline opt-in selector) + Theme footer.
-- Live preview band — Sūrat ar-Raḥmān 1–4 in active riwayah, theme-true colors.
-- Theme — Light / Sepia / Dark / Auto; `<meta theme-color>` retints.
-- Night-mode overlay — composes over any base theme.
-- Storage — source-aware offline opt-in for text, pages, search, and optional reader packs with quota pre-flight. Audio entries are removed-scope implementation while code remains.
-- One writer per `settings` key.
-- Clear-all-data link on About footer.
+- Settings sheet for theme, reading typography, sources, and storage.
+- Offline controls for text, pages, search, and optional source packs.
+- About page with clear-data flow.
+- Qalun-first onboarding and source selection.
 
 ## Onboard
 
-- 6-screen first-run flow — Welcome / Theme / Riwayah / Translation / Shortcuts / legacy Tags-intro copy pending Reader First cleanup.
-- Default Riwayah on first run = Qālūn.
-- Translation picker derived from `provenance.json` at render time.
-- Once `onboardingComplete = true`, surface unreachable until Clear-data.
+- Reader-first first-run flow.
+- Theme, riwayah, translation, shortcuts, and finish screens.
+- `onboardingComplete` gates launch restore and default entry.
 
 ## Infra
 
-- IDB `quran-atlas` v6 — 8 stores: `settings`, `meta`, `marks`, `activationState`, `datasetMeta`, `edges`, `bookmarks`, `audioPosition`.
-- Write gate — `src/core/db/validate.ts::validateWrite()` checks field presence + types.
-- Compile-time `StoreRecords` map — `src/core/db/types.ts`.
-- Service worker — Workbox, manifest membership, build-time validation, and install-state checks.
-- Generic sync envelope — `safety/sync.ts::registerTopic` + `broadcast`; topics for marks / edges / bookmarks / riwayah.
-- Persistent-overlay factory — `src/core/persistent-overlay.ts`.
-- SW route aggregator — `src/infra/sw/route-defs.ts` + `strategies.ts`; per-asset-class cache partitions; `cleanupStaleCaches` preserves prefixes from `CACHE_PREFIXES`.
-- Per-feature offline opt-in — `src/infra/offline/offline-selector.svelte` + `src/data/offline.ts::startCategoryDownload`; Mushaf pages use per-riwayah page helpers and `qa-pages-{riwayah}-v1` caches.
-- CSP allowlist registry — `csp-allowlist.md` + `public/_headers` (regression guard `tests/unit/infra/safety/csp-headers.test.ts`).
-- Update banner — `controllerchange` → `APP_UPDATE_AVAILABLE` → `UpdateBanner.svelte`.
-- Cross-tab clear-data banner — `versionchange` → "Data was cleared in another tab".
+- IDB `quran-atlas` v7 with active stores: `settings`, `activationState`,
+  `datasetMeta`, and `bookmarks`.
+- Store validation through `src/core/db/validate.ts`.
+- Service worker and offline/update lifecycle.
+- Cross-tab bookmark sync and clear-data/update safety banner.
+- Generated dataset manifests, provenance, and package metadata.
+
+## Removed scope
+
+- Audio/listen runtime is deleted.
+- Personal marks/tags/review/edges runtime is deleted.
+- Legacy removed-scope tests were deleted with the source cleanup.

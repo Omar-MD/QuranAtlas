@@ -102,18 +102,8 @@ describe('styles — responsive breakpoint tokens', () => {
     expect(sheetHit, 'no 720px block should still target .qa-sheet').toBeUndefined()
   })
 
-  it('at desktop, .qa-sheet--mark widens to 820px', () => {
-    const blocks = [...THEME_CSS.matchAll(/@media\s*\(\s*min-width:\s*1180px\s*\)\s*\{([\s\S]*?)\n\}/g)]
-    const hit = blocks.find(b =>
-      /\.qa-sheet\.qa-sheet--mark[^{]*\{[^}]*width:\s*min\(820px,\s*calc\(100vw\s*-\s*48px\)\)/.test(b[1])
-    )
-    expect(hit, 'expected .qa-sheet--mark to widen to 820px at desktop').toBeDefined()
-  })
-
-  // NOTE: .qa-mark-body 2-col grid and flex-column left/right layout were
-  // co-located in src/mark/Editor.svelte <style>. The deep editor was
-  // migrated to src/mark/tag/TagSheet.svelte (audit R-30, 2026-04-29) — those
-  // theme.css assertions are no longer relevant.
+  // Removed-scope mark sheet assertions were deleted with the Reader First
+  // source cleanup. The shared sheet chrome remains covered above.
 
   /* .qa-cmd-sheet/.qa-cmd-foot responsive rules now live in nav/CommandSheet.svelte <style> */
 

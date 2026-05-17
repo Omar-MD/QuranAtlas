@@ -28,7 +28,7 @@ test.use({ storageState: { cookies: [], origins: [] } })
 /**
  * Advance from screen 1 (Welcome) through screen 2 (Theme) to screen 3 (Riwayah).
  * Picks "Dark" theme on screen 2 as a concrete test value.
- * Onboarding is now 6 screens: Welcome → Theme → Riwayah → Translation → Shortcuts → Tags.
+ * Onboarding is now 6 screens: Welcome → Theme → Riwayah → Translation → Shortcuts → Start reading.
  */
 async function advanceToScreen3(page) {
   // Screen 1 → tap Begin
@@ -46,23 +46,22 @@ async function advanceToScreen3(page) {
 
 /**
  * Advance from screen 3 (Riwayah) through screen 4 (Translation), screen 5 (Shortcuts)
- * to screen 6 (Tags intro). No translations ship today so the translation list is empty;
- * Continue still advances. Ends on the Tags intro screen (.qa-onb-vpreview).
+ * to screen 6 (Start reading). The baseline Bridges row is visible on screen 4,
+ * then Continue advances. Ends on the finish screen (.qa-onb-vpreview).
  */
 async function advanceToScreen4(page) {
-  // Screen 3 (Riwayah) — Qālūn is default-selected; just Continue
+  // Screen 3 (Riwayah) — Qalun is default-selected; just Continue
   await page.locator('.qa-onb-cta--primary').click()
 
-  // Screen 4 (Translation) — list may be empty (no translations ship today);
-  // wait for Riwayah screen to leave, then just Continue
+  // Screen 4 (Translation) — baseline Bridges row is visible.
   await expect(page.locator('.qa-onb-rlist')).not.toBeVisible({ timeout: 8_000 })
-  await expect(page.locator('.qa-onb-tlist')).toBeAttached({ timeout: 8_000 })
+  await expect(page.locator('.qa-onb-tlist')).toContainText('Bridges', { timeout: 8_000 })
   await page.locator('.qa-onb-cta--primary').click()
 
   // Screen 5 (Shortcuts)
   await expect(page.locator('.qa-onb-shortcuts')).toBeVisible({ timeout: 8_000 })
 
-  // Continue → Screen 6 (Tags intro)
+  // Continue → Screen 6 (Start reading)
   await page.locator('.qa-onb-cta--primary').click()
   await expect(page.locator('.qa-onb-vpreview')).toBeVisible({ timeout: 8_000 })
 }
@@ -128,18 +127,18 @@ test.describe('Journey A: First run & session restore', () => {
 
     await page.locator('.qa-onb-cta--primary').click()
 
-    // Screen 3 (Riwayah): radio cards for Ḥafṣ / Warsh / Qālūn; Qālūn is default
+    // Screen 3 (Riwayah): radio cards for Ḥafṣ / Warsh / Qalun; Qalun is default
     await expect(page.locator('.qa-onb-rlist')).toBeVisible({ timeout: 8_000 })
-    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Qālūn')
+    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Qalun')
+    await expect(page.locator('.qa-onb-r', { hasText: 'Ḥafṣ' })).toBeDisabled()
+    await expect(page.locator('.qa-onb-r', { hasText: 'Warsh' })).toBeDisabled()
 
     // Step 5: Continue → Screen 4 (Translation)
     await page.locator('.qa-onb-cta--primary').click()
 
-    // Screen 4 (Translation): Riwayah screen is gone; translation headline is visible.
-    // No translations ship today so .qa-onb-tlist may be empty/zero-height — assert it
-    // exists in DOM rather than visible.
+    // Screen 4 (Translation): Riwayah screen is gone and the Bridges baseline row is visible.
     await expect(page.locator('.qa-onb-rlist')).not.toBeVisible({ timeout: 8_000 })
-    await expect(page.locator('.qa-onb-tlist')).toBeAttached({ timeout: 8_000 })
+    await expect(page.locator('.qa-onb-tlist')).toContainText('Bridges', { timeout: 8_000 })
 
     // Step 6: Continue → Screen 5 (Shortcuts)
     await page.locator('.qa-onb-cta--primary').click()
@@ -150,10 +149,13 @@ test.describe('Journey A: First run & session restore', () => {
 
     await page.locator('.qa-onb-cta--primary').click()
 
-    // Screen 6 (Tags intro): verse preview, 3 sample chips, privacy note
+    // Screen 6 (Start reading): reader-first preview, 3 finish chips, privacy note
     await expect(page.locator('.qa-onb-vpreview')).toBeVisible({ timeout: 8_000 })
     await expect(page.locator('.qa-onb-chips')).toBeVisible()
     await expect(page.locator('.qa-onb-chip')).toHaveCount(3)
+    await expect(page.locator('.qa-onb-vpreview')).toContainText('Reader First')
+    await expect(page.locator('.qa-onb-vpreview')).toContainText('Verse & Mushaf')
+    await expect(page.locator('.qa-onb-vpreview')).not.toContainText('mercy')
     await expect(page.locator('.qa-onb-privacy')).toBeVisible()
 
     // Step 7: Tap "Open Al-Fatihah" → completes onboarding, lands on #/s/1
@@ -212,10 +214,10 @@ test.describe('Journey A: First run & session restore', () => {
   })
 
   // -------------------------------------------------------------------------
-  // A1.4 Alt path — "Browse all surahs" from screen 4 lands on #/surahs
+  // A1.4 Alt path — "Browse all surahs" from screen 6 lands on #/surahs
   // -------------------------------------------------------------------------
 
-  test('A1: alt path — Browse all surahs from screen 4 opens drawer (mobile) or surah list (desktop) @mobile', async ({ page }) => {
+  test('A1: alt path — Browse all surahs from screen 6 opens drawer (mobile) or surah list (desktop) @mobile', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 8_000 })
 
@@ -319,7 +321,9 @@ test.describe('Journey A: First run & session restore', () => {
     await expect(page.locator('.qa-onb-rlist')).toBeVisible({ timeout: 8_000 })
 
     // --- Screen 3 (Riwayah) ---
-    // Qālūn is default-selected; just Tab to Continue and press Enter.
+    // Qalun is default-selected and optional riwayat stay disabled until installed.
+    await expect(page.locator('.qa-onb-r', { hasText: 'Ḥafṣ' })).toBeDisabled()
+    await expect(page.locator('.qa-onb-r', { hasText: 'Warsh' })).toBeDisabled()
 
     // Tab to Continue
     continueFocused = false
@@ -332,13 +336,12 @@ test.describe('Journey A: First run & session restore', () => {
     }
     expect(continueFocused).toBe(true)
     await page.keyboard.press('Enter')
-    // Screen 4 (Translation): .qa-onb-tlist may be empty/zero-height; just confirm
-    // Riwayah screen is gone and translation screen is attached.
+    // Screen 4 (Translation): Riwayah screen is gone and Bridges is visible.
     await expect(page.locator('.qa-onb-rlist')).not.toBeVisible({ timeout: 8_000 })
-    await expect(page.locator('.qa-onb-tlist')).toBeAttached({ timeout: 8_000 })
+    await expect(page.locator('.qa-onb-tlist')).toContainText('Bridges', { timeout: 8_000 })
 
     // --- Screen 4 (Translation) ---
-    // No translations ship today; list is empty. Tab to Continue and press Enter.
+    // Bridges ships in the baseline build. Tab to Continue and press Enter.
     continueFocused = false
     for (let i = 0; i < 6 && !continueFocused; i++) {
       await page.keyboard.press('Tab')
@@ -365,7 +368,7 @@ test.describe('Journey A: First run & session restore', () => {
     await page.keyboard.press('Enter')
     await expect(page.locator('.qa-onb-vpreview')).toBeVisible({ timeout: 8_000 })
 
-    // --- Screen 6 (Tags intro) ---
+    // --- Screen 6 (Start reading) ---
     // Tab to primary CTA "Open Al-Fatihah"
     continueFocused = false
     for (let i = 0; i < 6 && !continueFocused; i++) {
@@ -391,7 +394,7 @@ test.describe('Journey A: First run & session restore', () => {
   // A2.1 Reload restores the last surface
   // -------------------------------------------------------------------------
 
-  test('A1: onboarding screen 3 — Choose Riwayah, Qālūn default', async ({ page }) => {
+  test('A1: onboarding screen 3 — Choose Riwayah, Qalun default', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 8_000 })
 
@@ -403,16 +406,18 @@ test.describe('Journey A: First run & session restore', () => {
     // Screen 3: Riwayah
     await expect(page.locator('.qa-onb-rlist')).toBeVisible({ timeout: 8_000 })
 
-    // Qālūn is default-selected
-    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Qālūn')
+    // Qalun is default-selected
+    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Qalun')
+    await expect(page.locator('.qa-onb-r', { hasText: 'Ḥafṣ' })).toBeDisabled()
+    await expect(page.locator('.qa-onb-r', { hasText: 'Warsh' })).toBeDisabled()
 
-    // Three radio cards: Ḥafṣ, Warsh, Qālūn
+    // Three radio cards: Ḥafṣ, Warsh, Qalun
     await expect(page.locator('.qa-onb-r')).toHaveCount(3)
 
     // Optional riwayat are not usable until their package is installed, so a
-    // fresh baseline onboarding flow keeps Qālūn selected.
-    await page.locator('.qa-onb-r', { hasText: 'Ḥafṣ' }).click()
-    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Qālūn')
+    // fresh baseline onboarding flow keeps Qalun selected and disables Hafs.
+    await expect(page.locator('.qa-onb-r', { hasText: 'Ḥafṣ' })).toBeDisabled()
+    await expect(page.locator('.qa-onb-r[aria-checked="true"]')).toContainText('Qalun')
 
     // Continue advances away from the Riwayah screen
     await page.locator('.qa-onb-cta--primary').click()

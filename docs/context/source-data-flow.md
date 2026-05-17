@@ -23,6 +23,8 @@ Every optional qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf pa
 
 The runtime trust boundary is manifest membership plus build-time validation and local install-state verification. Per-file digest verification is not a current product claim.
 
+Runtime ownership follows the same Reader First domain rule as the rest of `src/`: pack/source availability policy belongs in `src/packs/**`, continuity/restore rules belong in `src/continuity/**`, optional curated metadata adapters belong in `src/metadata/**`, and user-facing surfaces consume those helpers instead of inverting the dependency back into `src/read/**`, `src/navigate/**`, `src/configure/**`, or `src/onboard/**`.
+
 ```mermaid
 flowchart TD
     subgraph Upstream["Upstream authorities"]

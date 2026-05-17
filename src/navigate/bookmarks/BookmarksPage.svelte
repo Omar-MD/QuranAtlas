@@ -8,7 +8,7 @@
   import { announce } from '../../a11y/announcer'
   import BookmarksList from './BookmarksList.svelte'
   import { settings } from '../../configure/state.svelte'
-  import { getAllForRiwayah } from './store'
+  import { getAllForRiwayah } from '../../continuity/bookmarks/store'
   import { on } from '../../core/events'
   import { Events } from '../../core/constants'
   import type { Riwayah } from '../../core/db'

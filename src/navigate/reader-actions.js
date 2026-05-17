@@ -11,6 +11,7 @@ import { getSurahs } from '../data/dataset.js'
 import { openTafsirPreview } from '../read/tafsir-bridge.ts'
 import { announce } from '../a11y/announcer.js'
 import { reader } from '../read/state.svelte'
+import { settings } from '../configure/state.svelte'
 
 let surahMetaCache = null
 
@@ -32,7 +33,9 @@ function getCurrent() {
 
 function getSurahCount(n) {
   const meta = (surahMetaCache || []).find(s => s.n === n)
-  return meta?.count ?? null
+  if (!meta) { return null }
+  const riwayah = settings.riwayah ?? 'qaloon'
+  return meta?.counts?.[riwayah] ?? meta?.count ?? null
 }
 
 function scrollToVerseInDOM(verseNum) {

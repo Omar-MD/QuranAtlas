@@ -68,7 +68,7 @@
       tabindex="-1"
     >
       <h2 id="clear-data-title">Clear All Data?</h2>
-      <p>This will permanently delete all saved reading positions, marks, and settings. This action cannot be undone.</p>
+      <p>This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any older local QuranAtlas data still stored on this device. This action cannot be undone.</p>
       <p id="clear-warning" class="qa-warning-text">Type DELETE to confirm:</p>
       <input
         bind:this={inputEl}
@@ -81,12 +81,12 @@
       <div class="qa-modal-actions">
         <button
           type="button"
-          class="qa-mark-btn qa-mark-btn--ghost"
+          class="qa-modal-btn qa-modal-btn--ghost"
           onclick={cancel}
         >Cancel</button>
         <button
           type="button"
-          class="qa-mark-btn qa-mark-btn--danger-primary"
+          class="qa-modal-btn qa-modal-btn--danger"
           disabled={!canConfirm}
           aria-describedby="clear-warning"
           onclick={confirm}

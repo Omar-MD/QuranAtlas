@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { settings } from '../../../../src/configure/state.svelte'
 import { reader } from '../../../../src/read/state.svelte'
 
-vi.mock('../../../../src/data/mushaf-pages', () => ({
+vi.mock('../../../../src/packs/mushaf-pages', () => ({
   getMushafPackAvailability: vi.fn(async (riwayah: string) => ({
     riwayah,
     available: riwayah !== 'warsh',

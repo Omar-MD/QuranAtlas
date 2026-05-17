@@ -14,7 +14,7 @@
  * - Riwayah switch invalidates + reloads the cache (different bookmark set).
  */
 
-import { getAllForRiwayah } from './store'
+import { getAllForRiwayah } from '../../continuity/bookmarks/store'
 import { settings } from '../../configure/state.svelte'
 import { on } from '../../core/events'
 import { Events } from '../../core/constants'
@@ -57,6 +57,11 @@ function decorateAll(scope: ParentNode): void {
   }
 }
 
+export async function refreshBookmarkIndicatorsForSurah(_surahNum: number, scope: ParentNode = document): Promise<void> {
+  await rebuildCache(activeRiwayah())
+  decorateAll(scope)
+}
+
 /**
  * Public: synchronous read used by the click-handler optimistic toggle path.
  */
@@ -70,7 +75,7 @@ export function isBookmarkedSync(verseKey: string): boolean {
  */
 export function initBookmarkIndicators(): () => void {
   const scope: ParentNode = document
-  void rebuildCache(activeRiwayah()).then(() => decorateAll(scope))
+  void refreshBookmarkIndicatorsForSurah(0, scope)
 
   const unsub1 = on(Events.READER_VERSE_RENDERED, ({ verseKey, element }) => {
     decorate(verseKey, element)

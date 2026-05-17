@@ -134,7 +134,7 @@ test.describe('Journey D: Settings & appearance', () => {
       await expect.poll(() => readSetting(page, 'riwayah')).not.toBe('hafs')
     })
 
-    test('D2-riwayah: failed install keeps Qālūn active and exposes retry state', async ({ page }) => {
+    test('D2-riwayah: failed install keeps Qalun active and exposes retry state', async ({ page }) => {
       await routeRiwayahPackages(page, { hafsAvailable: true })
       await page.route('**/dataset/riwayat/hafs/001.json', route => route.fulfill({ status: 503, body: 'unavailable' }))
       await writeSetting(page, 'riwayah', 'qaloon')
@@ -151,7 +151,7 @@ test.describe('Journey D: Settings & appearance', () => {
 
       await expect(hafs).toContainText('Retry', { timeout: 10_000 })
       await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))).toBe('qaloon')
-      await expect(page.getByTestId('src-row-recitation')).toContainText('Qālūn')
+      await expect(page.getByTestId('src-row-recitation')).toContainText('Qalun')
     })
   })
 
@@ -211,13 +211,14 @@ test.describe('Journey D: Settings & appearance', () => {
 
     // Title reads "Clear All Data?"
     await expect(modal.locator('h2')).toHaveText('Clear All Data?')
+    await expect(modal).toContainText('This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any older local QuranAtlas data still stored on this device. This action cannot be undone.')
 
     // Confirm button starts disabled
-    const confirmBtn = modal.locator('.qa-mark-btn--danger-primary')
+    const confirmBtn = modal.locator('.qa-modal-btn--danger')
     await expect(confirmBtn).toBeDisabled()
 
     // Cancel button is visible
-    const cancelVisible = modal.locator('.qa-mark-btn--ghost')
+    const cancelVisible = modal.locator('.qa-modal-btn--ghost')
     await expect(cancelVisible).toBeVisible()
 
     // Type DELETE in the confirmation input

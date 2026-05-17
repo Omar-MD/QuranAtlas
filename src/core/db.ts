@@ -3,7 +3,7 @@
 // validation + types) was split 2026-04-29 per audit R-07 / C-2 / CC-2.
 //
 // New layout:
-//   core/db/types.ts        — pure types + LAYER_NAMES
+//   core/db/types.ts        — pure record + shared runtime types
 //   core/db/migrations.js   — DB_NAME, DB_VERSION, applySchema (closure-free)
 //   core/db/validate.ts     — _shapes table + validateWrite
 //   core/db/connection.ts   — open/close, get/put/del, version handlers
@@ -15,16 +15,13 @@
 // land in those areas.
 
 export type {
-  LayerName,
-  MarkRecord,
-  EdgeRecord,
   Riwayah,
   BookmarkRecord,
-  AudioPositionRecord,
+  ActivationStatus,
+  ActivationStateRecord,
   StoreRecords,
   StoreName,
 } from './db/types'
-export { LAYER_NAMES } from './db/types'
 
 export { DB_NAME, DB_VERSION, applySchema } from './db/migrations.js'
 

@@ -1,12 +1,12 @@
 /**
- * Component tests for NavDrawer.svelte — top tabs Read · Study; Read sub-tabs
- * Surahs · Bookmarks. Ports F-mobile-2/6/8/9 to unit and adds bookmark coverage:
+ * Component tests for NavDrawer.svelte — reader-first drawer with a single
+ * Read mode and peer Surah · Juz · Bookmarks sources.
  *
- *   F-mobile-2: switch to Study tab → Hub row + 12 layer rows
- *   F-mobile-6: search filters in-drawer surah list (free-text)
+ *   F-mobile-1: reader-first header chrome keeps About + Close controls
+ *   F-mobile-6: search filters the Surah source list (free-text)
  *   F-mobile-8: typing 2:255 does NOT auto-navigate; hint mentions Enter
  *   F-mobile-9: typing 255 lists only surahs with at least 255 verses
- *   F-bookmarks-1: Read>Bookmarks sub-tab renders empty-state when no bookmarks
+ *   F-bookmarks-1: Read>Bookmarks renders empty-state when nothing is saved
  *   F-bookmarks-2: Read>Bookmarks lists grouped rows by surah after seed
  */
 
@@ -76,7 +76,7 @@ async function deepFlush() {
   }
 }
 
-async function mountAndOpen(tab: 'read' | 'study' = 'read', subTab?: 'surahs' | 'bookmarks') {
+async function mountAndOpen(tab: 'read' = 'read', subTab?: 'surah' | 'juz' | 'bookmarks') {
   render(NavDrawer)
   await flush()
   openNavDrawer(tab, subTab)
@@ -97,14 +97,8 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     await openDB()
   })
 
-  it('F-mobile-2: Study tab renders Hub row + 12 layer rows', async () => {
-    await mountAndOpen('study')
-    expect(document.querySelector('.qa-nav-drawer-hub-row')).not.toBeNull()
-    expect(document.querySelectorAll('.qa-nav-drawer-layer-row').length).toBe(12)
-  })
-
   it('F-mobile-6: typing free text in Read>Surahs filters the surah list', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     const search = document.querySelector('.qa-nav-drawer-search-input') as HTMLInputElement
     expect(search).not.toBeNull()
     await fireEvent.input(search, { target: { value: 'mulk' } })
@@ -116,7 +110,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   })
 
   it('renders Surah, Juz, and Bookmarks as peer Read sources', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     const source = document.querySelector('.qa-nav-drawer-source-tabs') as HTMLElement | null
     expect(source).not.toBeNull()
@@ -133,7 +127,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   })
 
   it('renders the locked two-tier mobile header chrome', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     const header = document.querySelector('.qa-nav-drawer-hdr') as HTMLElement
     expect(header).not.toBeNull()
     const productRow = header.querySelector('.qa-nav-drawer-product-row') as HTMLElement | null
@@ -146,16 +140,35 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     expect(productRow!.querySelector('.qa-nav-drawer-about [data-icon="info"]')).not.toBeNull()
     expect(productRow!.querySelector('.qa-nav-drawer-close [data-icon="close"]')).not.toBeNull()
     expect(modeRail!.querySelector('.qa-nav-drawer-tabs')?.textContent).toContain('Read')
-    expect(modeRail!.querySelector('.qa-nav-drawer-tabs')?.textContent).toContain('Study')
     expect(modeRail!.querySelector('[data-icon="read-book"]')).not.toBeNull()
-    expect(modeRail!.querySelector('[data-icon="study-cap"]')).not.toBeNull()
+    expect(modeRail!.querySelectorAll('.qa-nav-drawer-tab')).toHaveLength(1)
+    expect(modeRail!.textContent).not.toContain('Study')
     expect(modeRail!.querySelector('.qa-nav-drawer-tab-icon')?.textContent?.trim()).toBe('')
     expect(productRow!.compareDocumentPosition(modeRail!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(header.nextElementSibling?.classList.contains('qa-nav-drawer-tabs')).toBe(false)
   })
 
+  it('closes on Escape from the common document-level key flow', async () => {
+    await mountAndOpen('read', 'surah')
+    expect(document.querySelector('.qa-nav-drawer')).not.toBeNull()
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flush()
+
+    expect(document.querySelector('.qa-nav-drawer')).toBeNull()
+  })
+
+  it('opens directly on the Juz source when the bridge requests it', async () => {
+    await mountAndOpen('read', 'juz')
+
+    expect(document.querySelector('[data-testid="read-source-juz"]')).toHaveAttribute('aria-selected', 'true')
+    expect(document.querySelector('[data-testid="read-source-surah"]')).toHaveAttribute('aria-selected', 'false')
+    expect(document.querySelector('.qa-nav-drawer-search-input')).toBeNull()
+    expect(document.querySelectorAll('.qa-juz-row')).toHaveLength(30)
+  })
+
   it('places the Daily Wird card before the peer source controls in Read mode', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     const card = document.querySelector('[data-testid="wird-card"]') as HTMLElement
     const source = document.querySelector('.qa-nav-drawer-source-tabs') as HTMLElement
     expect(card).not.toBeNull()
@@ -164,7 +177,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   })
 
   it('places the reader mode switch above Read source controls', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     const modeSwitch = document.querySelector('[data-testid="reader-mode-switch"]') as HTMLElement | null
     const source = document.querySelector('.qa-nav-drawer-source-panel') as HTMLElement | null
 
@@ -177,7 +190,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
 
   it('shows page continuation controls on a Mushaf route and hides verse source controls', async () => {
     window.location.hash = '#/m/42'
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     const modeSwitch = document.querySelector('[data-testid="reader-mode-switch"]') as HTMLElement | null
     expect(modeSwitch).not.toBeNull()
@@ -198,7 +211,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
 
   it('updates drawer reader mode active state after hashchange while mounted', async () => {
     window.location.hash = '#/s/2'
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     expect(document.querySelector('[data-testid="reader-mode-verse"]')).toHaveAttribute('aria-pressed', 'true')
     expect(document.querySelector('[data-testid="reader-mode-mushaf"]')).toHaveAttribute('aria-pressed', 'false')
@@ -214,7 +227,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
 
   it('routes reader mode switches through Mushaf page helpers', async () => {
     window.location.hash = '#/s/2/255'
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     await fireEvent.click(document.querySelector('[data-testid="reader-mode-mushaf"]')!)
     await flush()
@@ -223,7 +236,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     expect(document.querySelector('.qa-nav-drawer')).toBeNull()
 
     window.location.hash = '#/m/42'
-    openNavDrawer('read', 'surahs')
+    openNavDrawer('read', 'surah')
     await flush()
 
     await fireEvent.click(document.querySelector('[data-testid="reader-mode-verse"]')!)
@@ -240,22 +253,22 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     }))
 
     window.location.hash = '#/s/2/255'
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     await fireEvent.click(document.querySelector('[data-testid="reader-mode-mushaf"]')!)
     await flush()
 
-    window.location.hash = '#/review'
+    window.location.hash = '#/about'
     window.dispatchEvent(new HashChangeEvent('hashchange'))
     await flush()
     resolveHref('#/m/42')
     await flush()
 
     expect(navigate).not.toHaveBeenCalled()
-    expect(window.location.hash).toBe('#/review')
+    expect(window.location.hash).toBe('#/about')
   })
 
   it('keeps search and All/Recent controls Surah-only', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     expect(document.querySelector('.qa-nav-drawer-search-input')).not.toBeNull()
     expect(document.querySelector('.qa-nav-drawer-source-filter')?.textContent).toContain('All')
@@ -278,7 +291,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   it('emits navigation when a Juz row is tapped', async () => {
     let navigatedTo: { surah: number; verse: number } | null = null
     on(Events.NAVIGATION_NAVIGATE, (p: unknown) => { navigatedTo = p as typeof navigatedTo })
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     await fireEvent.click(document.querySelector('[data-testid="read-source-juz"]')!)
     await fireEvent.click(document.querySelector('[data-juz="2"] .qa-juz-row-btn')!)
     expect(navigatedTo).toEqual({ surah: 2, verse: 142 })
@@ -310,7 +323,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     let navigatedTo: { surah: number; verse: number } | null = null
     on(Events.NAVIGATION_NAVIGATE, (p: unknown) => { navigatedTo = p as typeof navigatedTo })
 
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     await fireEvent.click(document.querySelector('[data-testid="wird-card"]')!)
     await fireEvent.click(document.querySelector('[data-testid="wird-continue"]')!)
     expect(navigatedTo).toEqual({ surah: 2, verse: 8 })
@@ -339,7 +352,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
       },
     })
 
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     const card = document.querySelector('[data-testid="wird-card"]') as HTMLElement
     expect(card.textContent).toMatch(/\b4 ajza left\b/)
     expect(card.textContent).not.toMatch(/\b493 ajza left\b/)
@@ -349,7 +362,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
     let navigatedTo: { surah: number; verse: number } | null = null
     on(Events.NAVIGATION_NAVIGATE, (p: unknown) => { navigatedTo = p as typeof navigatedTo })
 
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     const search = document.querySelector('.qa-nav-drawer-search-input') as HTMLInputElement
     await fireEvent.input(search, { target: { value: '2:255' } })
@@ -370,7 +383,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   })
 
   it('renders the Arabic surah name (name_ar) on every row', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     const rows = document.querySelectorAll('.qa-nav-drawer-surah-row')
     expect(rows.length).toBeGreaterThan(0)
@@ -386,7 +399,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   })
 
   it('renders Surah no-results as text-only state', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     const search = document.querySelector('.qa-nav-drawer-search-input') as HTMLInputElement
     await fireEvent.input(search, { target: { value: 'not-a-surah' } })
     await flush()
@@ -421,7 +434,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
         history: [],
       },
     })
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
     await fireEvent.click(document.querySelector('[data-testid="read-source-juz"]')!)
     await flush()
 
@@ -454,7 +467,7 @@ describe('NavDrawer.svelte (F-mobile)', () => {
   })
 
   it('F-mobile-9: typing 255 (out of surah-index range) lists only surahs with ≥ 255 verses', async () => {
-    await mountAndOpen('read', 'surahs')
+    await mountAndOpen('read', 'surah')
 
     const search = document.querySelector('.qa-nav-drawer-search-input') as HTMLInputElement
     await fireEvent.input(search, { target: { value: '255' } })

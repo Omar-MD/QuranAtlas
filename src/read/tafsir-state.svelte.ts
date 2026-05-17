@@ -1,4 +1,10 @@
-import { getTafsirs, loadTafsirForSurah, type TafsirEntry, type TafsirEntryMeta, type TafsirSurahPack } from '../data/dataset'
+import {
+  loadTafsirMetadataForSurah,
+  loadTafsirSources,
+  type TafsirEntry,
+  type TafsirEntryMeta,
+  type TafsirSurahPack,
+} from '../metadata/tafsir'
 import { startSourceAssetDownload } from '../data/offline-client'
 import { settings } from '../configure/state.svelte'
 import { loadTafsirId, resolveSavedTafsirId, setTafsirId } from '../configure/tafsir'
@@ -10,6 +16,7 @@ class TafsirState {
   activeVerseKey = $state<string | null>(null)
   available = $state<TafsirEntryMeta[]>([])
   selectedId = $state<string>(DEFAULT_TAFSIR_ID)
+  status = $state<'available' | 'empty' | 'missing' | 'stale' | 'unavailable'>('available')
   fallbackId = $state<string | null>(null)
   currentSurahNo = $state<number | null>(null)
   pack = $state<TafsirSurahPack | null>(null)
@@ -20,10 +27,11 @@ class TafsirState {
 export const tafsirState = new TafsirState()
 
 let sourceListPromise: Promise<TafsirEntryMeta[]> | null = null
+let activeLoadToken = 0
 
 async function ensureSourceList(): Promise<TafsirEntryMeta[]> {
   if (!sourceListPromise) {
-    sourceListPromise = getTafsirs().catch(() => [])
+    sourceListPromise = loadTafsirSources().catch(() => [])
   }
   const list = await sourceListPromise
   tafsirState.available = list
@@ -38,6 +46,7 @@ async function ensureSourceList(): Promise<TafsirEntryMeta[]> {
 }
 
 async function loadPackFor(verseKey: string, requestedId?: string): Promise<void> {
+  const loadToken = ++activeLoadToken
   const [surahStr] = verseKey.split(':')
   const surahNo = parseInt(surahStr ?? '0', 10)
   if (!Number.isFinite(surahNo) || surahNo < 1) { return }
@@ -51,18 +60,26 @@ async function loadPackFor(verseKey: string, requestedId?: string): Promise<void
   tafsirState.unavailable = false
   tafsirState.currentSurahNo = surahNo
   try {
-    const pack = await loadTafsirForSurah(targetId, surahNo)
-    tafsirState.pack = pack
-    tafsirState.unavailable = !pack
-    if (pack?.tafsirId && pack.tafsirId !== targetId) {
-      tafsirState.fallbackId = pack.tafsirId
+    const result = await loadTafsirMetadataForSurah(targetId, surahNo)
+    if (loadToken !== activeLoadToken || tafsirState.activeVerseKey !== verseKey) {
+      return
     }
+    tafsirState.status = result.state
+    tafsirState.pack = result.pack
+    tafsirState.unavailable = result.state === 'unavailable'
+    tafsirState.fallbackId = result.fallbackId
   } catch {
+    if (loadToken !== activeLoadToken || tafsirState.activeVerseKey !== verseKey) {
+      return
+    }
+    tafsirState.status = 'unavailable'
     tafsirState.pack = null
     tafsirState.unavailable = true
     tafsirState.fallbackId = null
   } finally {
-    tafsirState.loading = false
+    if (loadToken === activeLoadToken) {
+      tafsirState.loading = false
+    }
   }
 }
 
@@ -73,8 +90,10 @@ export async function openTafsirPreview(verseKey: string): Promise<void> {
 }
 
 export function closeTafsirPreview(): void {
+  activeLoadToken += 1
   tafsirState.previewOpen = false
   tafsirState.activeVerseKey = null
+  tafsirState.status = 'available'
   tafsirState.unavailable = false
   tafsirState.fallbackId = null
 }

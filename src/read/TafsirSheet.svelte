@@ -15,6 +15,20 @@
       ?? tafsirState.fallbackId
       ?? null
   )
+  const statusMessage = $derived.by(() => {
+    switch (tafsirState.status) {
+      case 'empty':
+        return 'This tafsir has no entry for this verse.'
+      case 'stale':
+        return fallbackLabel
+          ? `Showing ${fallbackLabel} while the requested tafsir pack is incomplete on this device.`
+          : 'This tafsir pack looks incomplete on this device.'
+      case 'unavailable':
+        return 'Tafsir unavailable for this verse.'
+      default:
+        return null
+    }
+  })
 
   function close(): void {
     isOpen = false
@@ -77,10 +91,12 @@
     {#if tafsirState.loading}
       <div class="qa-tafsir-sheet-state">Loading tafsir…</div>
     {:else if tafsirState.unavailable || !entry}
-      <div class="qa-tafsir-sheet-state">Tafsir unavailable for this verse.</div>
+      <div class="qa-tafsir-sheet-state">{statusMessage ?? 'Tafsir unavailable for this verse.'}</div>
     {:else}
-      {#if fallbackLabel}
+      {#if tafsirState.status === 'missing' && fallbackLabel}
         <div class="qa-tafsir-sheet-state">Showing {fallbackLabel} on this device.</div>
+      {:else if tafsirState.status === 'stale' && fallbackLabel}
+        <div class="qa-tafsir-sheet-state">{statusMessage}</div>
       {/if}
       <div class="qa-tafsir-sheet-body" dir="rtl" lang="ar">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->

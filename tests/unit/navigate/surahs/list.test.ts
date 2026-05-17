@@ -12,7 +12,7 @@ vi.mock('../../../../src/data/surah-meanings', () => ({
   getMeaning: vi.fn(() => null),
 }))
 
-vi.mock('../../../../src/navigate/bookmarks/store', () => ({
+vi.mock('../../../../src/continuity/bookmarks/store', () => ({
   getAllForRiwayah: vi.fn(async () => []),
 }))
 
@@ -20,7 +20,7 @@ vi.mock('../../../../src/configure/state-recent-surahs.svelte', () => ({
   loadRecentSurahs: vi.fn(async () => [2, 1]),
 }))
 
-vi.mock('../../../../src/read/global-position', () => ({
+vi.mock('../../../../src/continuity/position', () => ({
   loadGlobalPosition: vi.fn(async () => null),
 }))
 

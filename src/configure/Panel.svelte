@@ -16,6 +16,7 @@
   } from './reading-typography.ts'
   import { toggleNightMode } from './night-mode.ts'
   import { getTafsirs, getTranslations } from '../data/dataset.js'
+  import { getRiwayahLabels, getRiwayahOptions, type Riwayah } from '../packs/riwayah'
   import {
     refreshRiwayahPackageStatus,
     retryRiwayahPackageInstall,
@@ -24,8 +25,8 @@
   } from '../data/offline-client.ts'
   import { panelBridge, setTranslationVisible, setTranslationId, loadTranslationId } from './panel-bridge.ts'
   import { resolveSavedTafsirId, setTafsirId } from './tafsir.ts'
-  import { getRiwayahOptions, loadRiwayah, setRiwayah, type Riwayah } from './riwayah.ts'
-  import OfflineSelector from '../infra/offline/offline-selector.svelte'
+  import { loadRiwayah, setRiwayah } from './riwayah.ts'
+  import OfflineSelector from './offline-selector.svelte'
 
   type TranslationEntry = { id: string; name: string; subtitle?: string; availableInManifest?: boolean }
   type TafsirEntry = { id: string; name: string; availableInManifest?: boolean }
@@ -48,9 +49,21 @@
   const riwayahOptions = getRiwayahOptions()
 
   const RIWAYAH_LABELS: Record<Riwayah, { label: string; sub: string; full: string }> = {
-    hafs:   { label: 'Ḥafṣ',   sub: 'ʿan ʿĀṣim · 6236 ayāt', full: 'Ḥafṣ ʿan ʿĀṣim' },
-    warsh:  { label: 'Warsh',  sub: 'ʿan Nāfiʿ · 6214 ayāt', full: 'Warsh ʿan Nāfiʿ' },
-    qaloon: { label: 'Qālūn',  sub: 'ʿan Nāfiʿ · 6214 ayāt', full: 'Qālūn ʿan Nāfiʿ' },
+    hafs: {
+      label: getRiwayahLabels('hafs').productShort,
+      sub: getRiwayahLabels('hafs').subtitle,
+      full: getRiwayahLabels('hafs').productFull,
+    },
+    warsh: {
+      label: getRiwayahLabels('warsh').productShort,
+      sub: getRiwayahLabels('warsh').subtitle,
+      full: getRiwayahLabels('warsh').productFull,
+    },
+    qaloon: {
+      label: getRiwayahLabels('qaloon').productShort,
+      sub: getRiwayahLabels('qaloon').subtitle,
+      full: getRiwayahLabels('qaloon').productFull,
+    },
   }
 
   const THEME_META: Record<string, { label: string; sub: string }> = {

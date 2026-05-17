@@ -22,7 +22,6 @@ describe('ROUTE_DEFS table', () => {
         'text-tafsir',
         'text-index',
         'text-knowledge',
-        'audio',
         'pages',
         'search',
         null,
@@ -30,7 +29,7 @@ describe('ROUTE_DEFS table', () => {
     }
   })
 
-  it('text routes are source-aware and exclude audio, mushaf-pages, search-index', () => {
+  it('text routes are source-aware and exclude removed audio routes plus mushaf-pages/search-index', () => {
     expect(categoryFor(u('/dataset/riwayat/qaloon/001.json'))).toBe('text-riwayah')
     expect(categoryFor(u('/dataset/translations/saheeh/001.json'))).toBe('text-translation')
     expect(categoryFor(u('/dataset/tafsir/muyassar/001.json'))).toBe('text-tafsir')
@@ -41,24 +40,17 @@ describe('ROUTE_DEFS table', () => {
     expect(categoryFor(u('/dataset/knowledge/ayah/002.json'))).toBe('text-knowledge')
     expect(categoryFor(u('/dataset/knowledge/passages/002.json'))).toBe('text-knowledge')
     expect(categoryFor(u('/dataset/knowledge/indexes/theme-to-ayah.json'))).toBe('text-knowledge')
-    expect(categoryFor(u('/dataset/audio/alafasy/001.mp3'))).toBe('audio')
+    expect(categoryFor(u('/dataset/audio/alafasy/001.mp3'))).toBeNull()
     expect(categoryFor(u('/dataset/mushaf-pages/hafs/pages/001.svg'))).toBe('pages')
     expect(categoryFor(u('/dataset/search-index.json'))).toBe('search')
   })
 
-  it('audio routes split into mp3, timing, meta — all category=audio', () => {
-    expect(categoryFor(u('/dataset/audio/alafasy/001.mp3'))).toBe('audio')
-    expect(categoryFor(u('/dataset/audio/alafasy/timing/001.json'))).toBe('audio')
-    expect(categoryFor(u('/dataset/audio/index.json'))).toBe('audio')
-    expect(categoryFor(u('/dataset/audio/alafasy/manifest.json'))).toBe('audio')
-  })
-
-  it('per-reciter cacheName is a function that derives the reciter segment', () => {
-    const def = routeFor(u('/dataset/audio/alafasy/001.mp3'))
-    expect(def?.name).toBe('audio-mp3')
-    expect(typeof def?.cacheName).toBe('function')
-    expect(cacheNameFor(u('/dataset/audio/alafasy/001.mp3'))).toBe('qa-audio-alafasy-v1')
-    expect(cacheNameFor(u('/dataset/audio/husary/001.mp3'))).toBe('qa-audio-husary-v1')
+  it('removed audio URLs no longer produce route matches or cache names', () => {
+    expect(routeFor(u('/dataset/audio/alafasy/001.mp3'))).toBeNull()
+    expect(routeFor(u('/dataset/audio/alafasy/timing/001.json'))).toBeNull()
+    expect(routeFor(u('/dataset/audio/index.json'))).toBeNull()
+    expect(routeFor(u('/dataset/audio/alafasy/manifest.json'))).toBeNull()
+    expect(cacheNameFor(u('/dataset/audio/alafasy/001.mp3'))).toBeNull()
   })
 
   it('source-aware text routes use CACHE_DATASET (existing constant — no rename)', () => {
@@ -85,7 +77,6 @@ describe('ROUTE_DEFS table', () => {
   it('CACHE_PREFIXES catches every cacheName the table emits', () => {
     const samples: { url: URL; expectedPrefix: string }[] = [
       { url: u('/dataset/surahs.json'), expectedPrefix: CACHE_DATASET },
-      { url: u('/dataset/audio/alafasy/001.mp3'), expectedPrefix: 'qa-audio-' },
       { url: u('/dataset/mushaf-pages/hafs/pages/001.svg'), expectedPrefix: 'qa-pages-' },
       { url: u('/dataset/search-index.json'), expectedPrefix: 'qa-search-' },
       { url: u('/fonts/hafs.woff2'), expectedPrefix: 'qa-fonts-' },
@@ -99,8 +90,8 @@ describe('ROUTE_DEFS table', () => {
   })
 
   it('first matching route wins — table order disambiguates overlap', () => {
-    // /dataset/audio/index.json should match audio-meta, NOT text.
-    expect(routeFor(u('/dataset/audio/index.json'))?.name).toBe('audio-meta')
+    // source-assets/riwayah-packages are index routes, not generic text-core.
+    expect(routeFor(u('/dataset/indexes/source-assets.json'))?.name).toBe('text-index')
   })
 
   it('returns null for unmatched URLs', () => {
@@ -129,7 +120,6 @@ describe('sumBytesForCategory', () => {
 
   it.each<[Category, number]>([
     ['text',   1500 + 1400 + 800 + 700 + 200 + 250 + 900 + 600 + 300],
-    ['audio',  0],
     ['pages',  80_000],
     ['search', 1_000_000],
   ])('sums bytes for category %s', (cat, expected) => {

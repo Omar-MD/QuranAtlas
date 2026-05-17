@@ -9,7 +9,7 @@
 
 import { CACHE_DATASET, DATASET_RIWAYAH_PACKAGES_PATH } from '../../core/constants'
 
-export type Category = 'text' | 'audio' | 'pages' | 'search'
+export type Category = 'text' | 'pages' | 'search'
 export type TextCategory =
   | 'text-core'
   | 'text-riwayah'
@@ -20,7 +20,7 @@ export type TextCategory =
 export type RouteCategory = Category | TextCategory
 
 /** Categories the offline-selector exposes. `null` route category = always-on. */
-export const CATEGORIES: readonly Category[] = ['text', 'audio', 'pages', 'search'] as const
+export const CATEGORIES: readonly Category[] = ['text', 'pages', 'search'] as const
 export const TEXT_ROUTE_CATEGORIES: readonly TextCategory[] = [
   'text-core',
   'text-riwayah',
@@ -38,7 +38,7 @@ export type RouteDef = {
   /** URL predicate. Same shape workbox accepts. */
   match: (ctx: { url: URL }) => boolean
   strategy: StrategyKind
-  /** Static cache name OR derive from the URL (per-reciter, per-riwayah). */
+  /** Static cache name OR derive from the URL (for per-riwayah asset groups). */
   cacheName: string | ((url: URL) => string)
   maxEntries: number
   /** Days. Workbox uses seconds — multiplied at registration time. */
@@ -48,12 +48,6 @@ export type RouteDef = {
   category: RouteCategory | null
   /** True for routes registered ahead of their consumer (for example search-index). */
   roadmap?: boolean
-}
-
-const audioReciterFromUrl = (url: URL): string => {
-  // /dataset/audio/{reciter}/...   — extract {reciter} segment.
-  const parts = url.pathname.split('/')
-  return parts[3] || 'unknown'
 }
 
 const pagesRiwayahFromUrl = (url: URL): string => {
@@ -128,37 +122,6 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     category: 'text-knowledge',
   },
   {
-    name: 'audio-mp3',
-    match: ({ url }) => /^\/dataset\/audio\/[^/]+\/\d+\.mp3$/.test(url.pathname),
-    strategy: 'CacheFirst',
-    cacheName: (url) => `qa-audio-${audioReciterFromUrl(url)}-v1`,
-    maxEntries: 200,
-    maxAgeDays: 90,
-    purgeOnQuotaError: true,
-    category: 'audio',
-  },
-  {
-    name: 'audio-timing',
-    match: ({ url }) => /^\/dataset\/audio\/[^/]+\/timing\/\d+\.json$/.test(url.pathname),
-    strategy: 'CacheFirst',
-    cacheName: (url) => `qa-audio-timing-${audioReciterFromUrl(url)}-v1`,
-    maxEntries: 120,
-    maxAgeDays: 90,
-    purgeOnQuotaError: true,
-    category: 'audio',
-  },
-  {
-    name: 'audio-meta',
-    match: ({ url }) =>
-      url.pathname === '/dataset/audio/index.json' ||
-      /^\/dataset\/audio\/[^/]+\/manifest\.json$/.test(url.pathname),
-    strategy: 'NetworkFirst',
-    cacheName: 'qa-audio-meta-v1',
-    maxEntries: 32,
-    maxAgeDays: 7,
-    category: 'audio',
-  },
-  {
     name: 'pages',
     match: ({ url }) => /^\/dataset\/mushaf-pages\/[^/]+\/.+$/.test(url.pathname),
     strategy: 'CacheFirst',
@@ -191,12 +154,11 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
 
 /**
  * Cache-name prefixes that activate-cleanup must preserve. Union of every
- * static cacheName plus dynamic-cacheName prefixes (per-reciter, per-riwayah).
+ * static cacheName plus dynamic-cacheName prefixes for active asset groups.
  */
 export const CACHE_PREFIXES: readonly string[] = [
   'workbox-precache',
   CACHE_DATASET,
-  'qa-audio-',
   'qa-fonts-',
   'qa-pages-',
   'qa-search-',
@@ -236,7 +198,7 @@ export function sumBytesForCategory(
     const include =
       (category === 'text' && (file.lane === 'text' || file.lane === 'knowledge')) ||
       (category === 'search' && file.lane === 'search') ||
-      ((category === 'audio' || category === 'pages') && categoryFor(new URL(`/dataset/${file.path}`, origin)) === category)
+      (category === 'pages' && categoryFor(new URL(`/dataset/${file.path}`, origin)) === category)
     if (include) {
       urls.push(`/dataset/${file.path}`)
       totalBytes += typeof file.bytes === 'number' ? file.bytes : 0

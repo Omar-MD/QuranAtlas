@@ -4,7 +4,7 @@
  * Pre-N21 the API exposed a single `startDownload()` covering the whole corpus.
  * N21 (2026-05-01, audit P2.14 / R-11 / C-4 / CC-7) split offline opt-in by
  * category — see `core/sw/route-defs.ts` for the route table and
- * `offline/offline-selector.svelte` for the UI. Callers request a category
+ * `configure/offline-selector.svelte` for the UI. Callers request a category
  * download; the SW caches into the per-asset-class namespace via the route
  * table.
  */
@@ -19,19 +19,21 @@ import {
   sumBytesForCategory,
   type Category,
 } from '../infra/sw/route-defs'
-import { settings, type Riwayah } from '../configure/state.svelte'
 import {
   beginRiwayahInstall,
   completeRiwayahInstall,
   failRiwayahInstall,
+  loadRiwayah,
+  persistRiwayahSelection,
   refreshRiwayahPackageStatus,
-  setRiwayah,
-} from '../configure/riwayah'
+} from '../packs/riwayah'
 import {
   cacheNamesForRiwayahPackage,
   isRiwayahPackageFullyCached,
   planRiwayahPackageInstall,
 } from './riwayah-packages'
+import type { Riwayah } from '../packs/riwayah'
+import { loadOfflineCategories } from '../continuity/offline-categories'
 
 const QUOTA_WARN_THRESHOLD = 0.8
 const ACTIVATION_KEY = 'current'
@@ -86,13 +88,12 @@ async function fetchSourceAssets(): Promise<SourceAssetsShape> {
   return json
 }
 
-function isAnyCategoryCached(): boolean {
-  const c = settings.offlineCategories
+async function isAnyCategoryCached(): Promise<boolean> {
+  const c = await loadOfflineCategories()
   if (!c) return false
   if (Object.values(c.text.riwayat).some(Boolean)) return true
   if (Object.values(c.text.translations).some(Boolean)) return true
   if (Object.values(c.text.tafsir).some(Boolean)) return true
-  if (Object.values(c.audio).some(Boolean)) return true
   if (Object.values(c.pages).some(Boolean)) return true
   if (c.search) return true
   return false
@@ -102,7 +103,7 @@ export async function getActivationState(): Promise<ActivationStatus> {
   try {
     const record = await get('activationState', ACTIVATION_KEY)
     if (record?.status === 'downloading') return 'downloading'
-    if (isAnyCategoryCached()) return 'cached'
+    if (await isAnyCategoryCached()) return 'cached'
     return 'none'
   } catch (error) {
     logger.error('Failed to get activation state:', { error })
@@ -133,7 +134,7 @@ async function clearActivation(): Promise<void> {
 export async function initOfflineMigration(): Promise<void> {
   try {
     const record = await get('activationState', ACTIVATION_KEY)
-    if (record?.status === 'cached' && !isAnyCategoryCached()) {
+    if (record?.status === 'cached' && !(await isAnyCategoryCached())) {
       await clearActivation()
     }
   } catch (error) {
@@ -253,7 +254,7 @@ function cancelSwTimeout(): void {
 
 /**
  * Download every asset belonging to a category. Routes the SW to the right
- * cache via the route table — text → CACHE_DATASET, audio → per-reciter, etc.
+ * cache via the route table — text → CACHE_DATASET, pages → per-riwayah, etc.
  * Pre-N21 single-corpus `startDownload()` is replaced by this; the boot path
  * cancels in-flight downloads via `cancelDownload()` (unchanged).
  */
@@ -279,9 +280,8 @@ export async function startCategoryDownload(category: Category): Promise<void> {
   }
 
   if (plan.urls.length === 0) {
-    // Category has no assets in the current manifest (gated category, e.g.
-    // audio before reciter dataset ships) — succeed silently rather than
-    // emitting an error.
+    // Category has no assets in the current manifest (for example a gated
+    // reader-first lane) — succeed silently rather than emitting an error.
     emit(Events.OFFLINE_DOWNLOAD_COMPLETE, {})
     return
   }
@@ -488,7 +488,7 @@ export async function startRiwayahPackageInstall(riwayah: Riwayah): Promise<bool
   }
 
   if (!beginRiwayahInstall(riwayah)) return false
-  const previousActive = settings.riwayah
+  const previousActive = await loadRiwayah()
   await setDownloading()
   try {
     for (let i = 0; i < plan.urls.length; i += 1) {
@@ -509,8 +509,8 @@ export async function startRiwayahPackageInstall(riwayah: Riwayah): Promise<bool
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     failRiwayahInstall(riwayah, message)
-    if (settings.riwayah !== previousActive) {
-      await setRiwayah(previousActive)
+    if ((await loadRiwayah()) !== previousActive) {
+      await persistRiwayahSelection(previousActive)
     }
     emit(Events.OFFLINE_RIWAYAH_PACKAGE_ERROR, { riwayah, error: message })
     emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: message })
@@ -527,7 +527,7 @@ export async function retryRiwayahPackageInstall(riwayah: Riwayah): Promise<bool
 
 export async function removeRiwayahPackage(riwayah: Riwayah): Promise<void> {
   if (riwayah === 'qaloon') throw new Error('Qaloon is the baseline package and cannot be removed.')
-  if (settings.riwayah === riwayah) {
+  if ((await loadRiwayah()) === riwayah) {
     const qaloonStatus = await refreshRiwayahPackageStatus('qaloon')
     const offlineQaloonReady = typeof navigator !== 'undefined' && navigator.onLine === false
       ? await isRiwayahPackageFullyCached('qaloon').catch(() => false)
@@ -535,7 +535,7 @@ export async function removeRiwayahPackage(riwayah: Riwayah): Promise<void> {
     if (qaloonStatus.kind !== 'installed' || !offlineQaloonReady) {
       throw new Error('Cannot remove the active package because Qaloon could not be activated.')
     }
-    const switched = await setRiwayah('qaloon')
+    const switched = await persistRiwayahSelection('qaloon')
     if (!switched) {
       throw new Error('Cannot remove the active package because Qaloon could not be activated.')
     }

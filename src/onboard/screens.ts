@@ -11,27 +11,24 @@ export type ShortcutRow = {
   gesture?: boolean
 }
 
-/** Curated keyboard shortcut rows shown on screen 4. */
+/** Curated keyboard shortcut rows shown on the shortcuts screen. */
 export const SHORTCUT_ROWS: ShortcutRow[] = [
-  { keys: ['/'],          desc: 'Search verses, tags, surahs' },
+  { keys: ['/'],          desc: 'Search verses, surahs, and commands' },
   { keys: ['?'],          desc: 'Show every shortcut' },
   { keys: ['j'],          desc: 'Next verse',   aux: ['k', 'previous'] },
   { keys: [']'],          desc: 'Next surah',   aux: ['[', 'previous'] },
-  { keys: ['m'],          desc: 'Mark the centered verse' },
+  { keys: ['m'],          desc: 'Open tafsir for the centered verse' },
   { keys: ['t'],          desc: 'Toggle translation' },
   { keys: ['+'],          desc: 'Bigger font',  aux: ['-', 'smaller', '0', 'reset'] },
   { keys: ['g', 'h'],     desc: 'Continue reading' },
-  { keys: ['Long-press'], desc: 'Mark & tag a verse', gesture: true },
 ]
 
 /**
- * Sample tag chips shown on screen 5 (Tags intro). The dot color for each
- * chip is bound by CSS via `data-chip="<label>"` — see
- * `.qa-onb-chip-dot[data-chip=...]` in `src/styles/surfaces/onboarding.css`.
- * Adding a new chip without a matching CSS rule renders a transparent dot.
+ * Finish-screen chips shown on the start-reading screen.
+ * The dot tone is bound by CSS via `data-chip="<tone>"`.
  */
-export const SAMPLE_CHIPS: Array<{ label: string }> = [
-  { label: 'mercy'    },
-  { label: 'patience' },
-  { label: 'tawakkul' },
+export const START_READING_ROWS: Array<{ label: string, tone: string }> = [
+  { label: 'Verse & Mushaf', tone: 'gold' },
+  { label: 'Bookmarks', tone: 'sage' },
+  { label: 'Offline-ready', tone: 'ink' },
 ]

@@ -2,7 +2,7 @@
  * Component tests for offline-selector.svelte (N21).
  *
  * Covers the unit-level concerns for offline selection:
- *   - Renders one accordion row per category (text · audio · pages · search).
+ *   - Renders one accordion row per active reader-first category (text · pages · search).
  *   - Gated rows render their version label and contain no checkbox.
  *   - Toggling the text checkbox changes the pending state and updates the
  *     header byte total.
@@ -99,8 +99,8 @@ vi.mock('../../../../src/data/dataset.ts', () => ({
   ]),
 }))
 
-import OfflineSelector from '../../../../src/infra/offline/offline-selector.svelte'
-import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../../src/configure/state.svelte.ts'
+import OfflineSelector from '../../../../src/configure/offline-selector.svelte'
+import { settings, DEFAULT_OFFLINE_CATEGORIES } from '../../../../src/core/settings.svelte'
 
 async function flush() { for (let i = 0; i < 6; i++) await Promise.resolve() }
 
@@ -134,34 +134,34 @@ describe('offline-selector.svelte', () => {
     removeSourceAssetDownloadMock.mockClear()
     removeCategoryDownloadMock.mockClear()
     removePageAssetDownloadMock.mockClear()
-    Object.assign(settings, { offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } })
+    Object.assign(settings, { offlineCategories: structuredClone(DEFAULT_OFFLINE_CATEGORIES) })
   })
 
-  it('renders four accordion rows — text + 3 gated', async () => {
+  it('renders three accordion rows for active reader-first storage categories', async () => {
     render(OfflineSelector)
     await flush()
     expect(document.querySelector('[data-testid="storage-row-text"]')).not.toBeNull()
-    expect(document.querySelector('[data-testid="storage-row-audio"]')).not.toBeNull()
     expect(document.querySelector('[data-testid="storage-row-pages"]')).not.toBeNull()
     expect(document.querySelector('[data-testid="storage-row-search"]')).not.toBeNull()
+    expect(document.querySelector('[data-testid="storage-row-audio"]')).toBeNull()
   })
 
-  it('gated rows lack a checkbox; only available rows render one', async () => {
+  it('gated rows lack a checkbox; only active available rows render one', async () => {
     render(OfflineSelector)
     await flush()
     await waitFor(() => {
       expect(document.querySelector('[data-testid="storage-check-text"]')).not.toBeNull()
     })
-    expect(document.querySelector('[data-testid="storage-check-audio"]')).toBeNull()
     expect(document.querySelector('[data-testid="storage-check-pages"]')).toBeNull()
     expect(document.querySelector('[data-testid="storage-check-search"]')).toBeNull()
   })
 
-  it('describes the Text row as including knowledge context without adding a fifth row', async () => {
+  it('describes the Text row as including Qalun knowledge context without an audio row', async () => {
     render(OfflineSelector)
     await flush()
-    expect(document.querySelectorAll('.qa-storage-row')).toHaveLength(4)
-    expect(document.querySelector('[data-testid="storage-row-text"]')?.textContent).toContain('Knowledge context')
+    expect(document.querySelectorAll('.qa-storage-row')).toHaveLength(3)
+    expect(document.querySelector('[data-testid="storage-row-text"]')?.textContent).toContain('Qalun + Bridges + Muyassar + Knowledge context')
+    expect(document.querySelector('[data-testid="storage-row-text"]')?.textContent).not.toContain('Qālūn')
   })
 
   it('renders source-aware translation and tafsir cache controls', async () => {
@@ -176,9 +176,9 @@ describe('offline-selector.svelte', () => {
   it('renders per-riwayah page controls for available packs and stale opt-ins', async () => {
     Object.assign(settings, {
       offlineCategories: {
-        ...DEFAULT_OFFLINE_CATEGORIES,
         text: { riwayat: {}, translations: {}, tafsir: {} },
         pages: { hafs: true },
+        search: false,
       },
     })
 
@@ -210,6 +210,18 @@ describe('offline-selector.svelte', () => {
       expect(document.querySelector('[data-testid="storage-page-check-hafs"]')).not.toBeNull()
       expect(document.querySelector('[data-testid="storage-page-check-warsh"]')).not.toBeNull()
     })
+  })
+
+  it('uses Qalun labels for baseline page and package rows', async () => {
+    render(OfflineSelector)
+    await flush()
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-testid="storage-page-qaloon"]')?.textContent).toContain('Qalun pages')
+      expect(document.querySelector('[data-testid="storage-package-qaloon"]')?.textContent).toContain('Qalun package')
+    })
+    expect(document.querySelector('[data-testid="storage-page-qaloon"]')?.textContent).not.toContain('Qālūn')
+    expect(document.querySelector('[data-testid="storage-package-qaloon"]')?.textContent).not.toContain('Qālūn')
   })
 
   it('Apply disabled at boot (no diff) and after toggling becomes enabled', async () => {
@@ -253,6 +265,7 @@ describe('offline-selector.svelte', () => {
       translations: { bridges: true },
       tafsir: { muyassar: true },
     })
+    expect(setOfflineCategoriesMock.mock.calls[0][0]).not.toHaveProperty('audio')
     expect(startCategoryDownloadMock).toHaveBeenCalledWith('text')
   })
 

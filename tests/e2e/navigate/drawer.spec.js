@@ -3,8 +3,8 @@
  *
  * Covers:
  *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
- *   F2. Arrow-down to "Mark this verse" row → Enter → mark editor opens
- *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/threads/mercy FVR
+ *   F2. Drawer stays reader-first with Read-only mode rail
+ *   F3. Wordmark routes to About
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
  *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
@@ -18,7 +18,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { seedBookmarks, seedMarks, writeSetting } from '../fixtures/idb.js'
+import { seedBookmarks, writeSetting } from '../fixtures/idb.js'
 import { waitForReader, openCommandSheet, openNavDrawer } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -108,13 +108,8 @@ async function captureDrawerVisual(page, testInfo, { width, theme, source }) {
 
 test.describe('Journey F: Navigation', () => {
   test.beforeEach(async ({ page }) => {
-    // Wait for app boot to settle before seeding so launch-restore
-    // IDB reads cannot race with the seed write.
     await page.goto('/')
     await waitForReader(page)
-    await seedMarks(page, [
-      { verseKey: '2:255', tags: ['mercy'], note: '' },
-    ])
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -232,13 +227,13 @@ test.describe('Journey F: Navigation', () => {
     }
   })
 
-  test('F-mobile-2: tapping layer row in Study tab routes to #/review?layer=<name>', async ({ page }) => {
+  test('F-mobile-2: drawer keeps a single Read mode rail and omits Study mode', async ({ page }) => {
     await page.goto('/#/s/1')
     await waitForReader(page)
     await page.locator('.qa-mh-hamburger').click()
-    await page.locator('.qa-nav-drawer-tab', { hasText: 'Study' }).click()
-    await page.locator('.qa-nav-drawer-layer-row[data-layer="people"]').click()
-    await expect(page).toHaveURL(/#\/review\?layer=people$/)
+    await expect(page.locator('.qa-nav-drawer-tab', { hasText: 'Read' })).toBeVisible()
+    await expect(page.locator('.qa-nav-drawer-tab', { hasText: 'Study' })).toHaveCount(0)
+    await expect(page.locator('.qa-nav-drawer-layer-row')).toHaveCount(0)
   })
 
   test('F-mobile-3: wordmark in drawer routes to #/about', async ({ page }) => {
@@ -443,7 +438,8 @@ test.describe('Journey F: Navigation', () => {
     await page.locator('[data-juz="2"] .qa-juz-row-btn').click()
 
     await expect(page).toHaveURL(/#\/s\/2\/142$/)
-    await waitForReader(page)
+    await expect(page.locator('.qa-nav-drawer')).toBeHidden()
+    await expect(page.locator('.qa-verse[data-verse="142"]').first()).toBeVisible({ timeout: 25_000 })
   })
 
   test('F-mobile-7: seeded Daily Wird opens detail and Continue routes to nextRef @mobile', async ({ page }) => {

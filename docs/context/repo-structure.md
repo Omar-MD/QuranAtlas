@@ -28,6 +28,9 @@ Application code lives here.
 
 - `src/core/`: cross-cutting runtime primitives such as router, db, events, constants, and service-worker route definitions
 - `src/data/`: runtime dataset access, source-index access, aliases, and offline dataset helpers
+- `src/packs/`: install-before-activate pack policy, riwayah package resolution, and source-asset availability contracts
+- `src/continuity/`: launch restore, saved-position validation, and reader continuity state such as bookmarks
+- `src/metadata/`: optional metadata adapters that preserve reader behavior across available, missing, stale, and offline states
 - `src/styles/`: global design system, tokens, and per-surface CSS
 - `src/<surface>/`: user-visible surfaces and feature modules
 
@@ -67,6 +70,7 @@ If a file under `docs/` is marked as auto-generated, `scripts/docs/` owns it.
 Load-bearing documentation about the current system.
 
 - `docs/context/`: architecture, data model, source-data flow, surface dossiers, generated indexes
+- `docs/ui-references/`: committed component reference images and intent notes for creative UI work
 - `.agents/skills/`: repo-local engineering workflows, including surface clustering and verification guidance
 
 Use the docs this way:
@@ -104,7 +108,7 @@ When trying to understand the repo:
 
 ## Quick rules
 
-- `src/` and `docs/context/` are the primary human-maintained source of truth for app behavior.
+- `src/` and `docs/context/` are the primary human-maintained source of truth for app behavior; `docs/ui-references/` is the committed visual-intent source of truth for creative UI component work.
 - `data/catalog/`, `data/normalized/`, and `data/taxonomy/` are the primary human-maintained source of truth for build inputs.
 - `public/dataset/` is generated runtime output, even though it is committed.
 - `dist/`, `test-output/`, and `node_modules/` are never the place to understand intended behavior.

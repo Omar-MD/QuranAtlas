@@ -58,17 +58,14 @@ export default defineConfig({
           }
         ]
       },
-      // With strategies: 'injectManifest' the `workbox.*` keys are silently
-       // ignored — `globPatterns` and `runtimeCaching` must live under
-       // top-level `injectManifest` and inside src/sw.js respectively.
-       //
-       // Fonts (woff2) deliberately EXCLUDED from precache — they're handled
-       // by a CacheFirst runtime route in src/infra/service-worker/sw.js. Single-riwayah users
-       // would otherwise pay ~180 KB up-front for the two unused KFGQPC
-       // riwayah cuts. The active riwayah's woff2 is fetched at boot by
-       // `core/font-loader.ts` (which keys off the hydrated `settings.riwayah`)
-       // and cached for the deploy lifetime; other-riwayah cuts arrive only
-       // when the user switches via Settings.
+      // Production injectManifest builds take their runtime routes from
+      // src/infra/service-worker/sw.js; this top-level Workbox block is kept
+      // only because vite-plugin-pwa still reads it for the dev SW path when
+      // devOptions.enabled is true.
+      //
+      // Fonts (woff2) deliberately stay out of precache. A CacheFirst runtime
+      // route in src/infra/service-worker/sw.js serves the active riwayah's
+      // font without forcing single-riwayah users to download the unused cuts.
       injectManifest: {
         globPatterns: ['**/*.{js,css,html}']
       },
@@ -98,6 +95,11 @@ export default defineConfig({
   ],
   build: {
     target: 'es2020',
+    rolldownOptions: {
+      checks: {
+        pluginTimings: false
+      }
+    },
     rollupOptions: {
       output: {
         // Manual chunks split static-import clusters out of the entry chunk

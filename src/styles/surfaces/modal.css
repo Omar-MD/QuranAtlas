@@ -75,4 +75,32 @@
     gap: 0.75rem;
     justify-content: flex-end;
   }
+
+  .qa-modal-btn {
+    padding: 9px 14px;
+    border-radius: var(--qa-radius-lg);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--qa-text-on-sheet);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .qa-modal-btn--ghost {
+    border-color: var(--qa-border-on-sheet);
+    color: var(--qa-text-on-sheet);
+  }
+
+  .qa-modal-btn--danger {
+    background-color: var(--qa-danger-bg);
+    color: #fff;
+    border-color: var(--qa-danger-border);
+  }
+
+  .qa-modal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }

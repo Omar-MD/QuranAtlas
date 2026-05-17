@@ -2,18 +2,18 @@
  * E2E Journey I: Cross-tab synchronisation
  *
  * Covers:
- *   I1. Existing mark deleted in Tab A → gold edge clears in Tab B without reload
- *   I2. Mark deleted in Tab B while Tab A has editor open → editor closes silently
+ *   I1. Bookmark saved in Tab A → bookmark glyph appears in Tab B without reload
+ *   I2. Bookmark deleted in Tab B → bookmark glyph clears in Tab A without reload
  *   I3. Clear Data in Tab B → Tab A shows "Update Required" reload banner
  *
  * Sources of truth:
  *   docs/context/user-journeys.md  §I
  *   src/infra/safety/sync.js              (BroadcastChannel + versionchange banner)
- *   src/mark/store.js              (broadcastMarkChange on save/delete)
+ *   src/continuity/bookmarks/store.ts      (broadcastBookmarkChange on save/delete)
  *   src/core/db.js                  (onversionchange → DB_VERSION_CHANGE)
  *
  * Cross-tab setup: all tests use TWO PAGES within ONE BrowserContext so that:
- *   - Both pages share the same IndexedDB origin (required for I1/I2 mark reads
+ *   - Both pages share the same IndexedDB origin (required for I1/I2 bookmark reads
  *     and for I3's onversionchange to fire on Tab A when Tab B deletes the DB).
  *   - BroadcastChannel messages DO propagate between pages in the same context
  *     in Playwright's Chromium (verified; the channel name 'quran-atlas:sync'
@@ -21,7 +21,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedMarks } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, seedBookmarks } from '../fixtures/idb.js'
 import { waitForReader } from '../fixtures/chrome.js'
 
 // Rule 6.2 carve-out: cross-tab IDB versionchange + BroadcastChannel tests
@@ -45,76 +45,63 @@ async function setupPage(page, route = '/#/s/1') {
 }
 
 // ---------------------------------------------------------------------------
-// Journey I1: Another tab deletes an existing mark → Tab B clears gold edge
+// Journey I1: Another tab saves a bookmark → Tab B decorates the same verse
 // ---------------------------------------------------------------------------
 
-test('I1: Tab A deletes existing mark on 1:5 → Tab B reader clears gold edge without reload', async ({ browser }) => {
+test('I1: Tab A bookmarks 1:5 → Tab B reader shows the bookmark glyph without reload', async ({ browser }) => {
   const ctx = await browser.newContext()
   const pageA = await ctx.newPage()
   const pageB = await ctx.newPage()
 
   try {
     await setupPage(pageA, '/#/s/1')
-    await seedMarks(pageA, [{ verseKey: '1:5', tags: ['mercy'], note: 'cross-tab mark' }])
-    await pageA.reload()
-    await waitForReader(pageA)
-
-    await pageB.goto('/#/s/1')
-    await waitForReader(pageB)
+    await setupPage(pageB, '/#/s/1')
 
     const verse1_5_A = pageA.locator('.qa-verse[data-token-key="1:5"]')
     const verse1_5_B = pageB.locator('.qa-verse[data-token-key="1:5"]')
+    const verse1_5_Number_A = verse1_5_A.locator('.qa-verse-number')
     await expect(verse1_5_A).toBeVisible({ timeout: 5_000 })
     await expect(verse1_5_B).toBeVisible({ timeout: 5_000 })
-    await expect(verse1_5_A).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
-    await expect(verse1_5_B).toHaveClass(/qa-verse--bookmarked/, { timeout: 5_000 })
+    await expect(verse1_5_A).not.toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 5_000 })
+    await expect(verse1_5_B).not.toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 5_000 })
 
-    await pageA.goto('/#/review')
-    await pageA.locator('.qa-review-card[data-mark="1:5"]').click()
-    const tagSheet = pageA.locator('.qa-ts')
-    await expect(tagSheet).toBeVisible({ timeout: 5_000 })
-    await pageA.locator('.qa-ts-btn--danger').click()
-    await pageA.locator('.qa-ts-btn--danger-primary').click()
-    await expect(tagSheet).not.toBeVisible({ timeout: 5_000 })
-    await pageA.goto('/#/s/1')
-    await waitForReader(pageA)
-    await expect(pageA.locator('.qa-verse[data-token-key="1:5"]')).not.toHaveClass(/qa-verse--bookmarked/, { timeout: 8_000 })
-    await expect(verse1_5_B).not.toHaveClass(/qa-verse--bookmarked/, { timeout: 8_000 })
+    await verse1_5_Number_A.dispatchEvent('click')
+    await waitForReader(pageB)
+
+    await expect(verse1_5_A).toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
+    await expect(verse1_5_B).toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
   } finally {
     await ctx.close()
   }
 })
 
 // ---------------------------------------------------------------------------
-// Journey I2: Mark deleted in Tab B while Tab A has editor open → editor closes
+// Journey I2: Another tab deletes an existing bookmark → Tab A clears the glyph
 // ---------------------------------------------------------------------------
 
-test('I2: mark deleted in Tab B while Tab A editor is open → Tab A editor closes silently', async ({ browser }) => {
+test('I2: Tab B removes an existing bookmark on 2:255 → Tab A reader clears the glyph without reload', async ({ browser }) => {
   const ctx = await browser.newContext()
   const pageA = await ctx.newPage()
   const pageB = await ctx.newPage()
 
   try {
-    await setupPage(pageA, '/#/s/1')
-    await seedMarks(pageA, [{ verseKey: '2:255', tags: ['faith'], note: '' }])
+    await setupPage(pageA, '/#/s/2/255')
+    await seedBookmarks(pageA, [{ verseKey: '2:255', riwayah: 'qaloon' }])
+    await pageA.reload()
+    await waitForReader(pageA)
 
-    await pageA.goto('/#/review')
-    await expect(pageA.locator('.qa-review-card[data-mark="2:255"]')).toBeVisible({ timeout: 10_000 })
-    await pageA.locator('.qa-review-card[data-mark="2:255"]').click()
-    const tagSheetA = pageA.locator('.qa-ts')
-    await expect(tagSheetA).toBeVisible({ timeout: 5_000 })
+    await pageB.goto('/#/s/2/255')
+    await waitForReader(pageB)
 
-    await pageB.goto('/#/review')
-    await expect(pageB.locator('.qa-review-card[data-mark="2:255"]')).toBeVisible({ timeout: 10_000 })
-    await pageB.locator('.qa-review-card[data-mark="2:255"]').click()
-    const tagSheetB = pageB.locator('.qa-ts')
-    await expect(tagSheetB).toBeVisible({ timeout: 5_000 })
+    const verse2_255_A = pageA.locator('.qa-verse[data-token-key="2:255"]')
+    const verse2_255_B = pageB.locator('.qa-verse[data-token-key="2:255"]')
+    await expect(verse2_255_A).toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
+    await expect(verse2_255_B).toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
 
-    await pageB.locator('.qa-ts-btn--danger').click()
-    await pageB.locator('.qa-ts-btn--danger-primary').click()
-    await expect(tagSheetB).not.toBeVisible({ timeout: 5_000 })
+    await verse2_255_B.locator('.qa-verse-number').click({ force: true })
 
-    await expect(tagSheetA).not.toBeVisible({ timeout: 8_000 })
+    await expect(verse2_255_B).not.toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
+    await expect(verse2_255_A).not.toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
   } finally {
     await ctx.close()
   }

@@ -171,7 +171,8 @@ describe('sw.js shell wiring', () => {
     const [{ expectedCaches, preservePrefixes }] = cleanupStaleCaches.mock.calls[0]
     expect(expectedCaches).toEqual(new Set([CACHE_DATASET, STAGING_CACHE]))
     // N21: preservePrefixes sourced from core/sw/route-defs::CACHE_PREFIXES.
-    expect(preservePrefixes).toEqual(expect.arrayContaining(['workbox-precache', 'qa-audio-', 'qa-fonts-']))
+    expect(preservePrefixes).toEqual(expect.arrayContaining(['workbox-precache', 'qa-pages-', 'qa-fonts-']))
+    expect(preservePrefixes).not.toContain('qa-audio-')
     expect(activateEvent.waitUntil).toHaveBeenCalledTimes(1)
     expect(activateEvent.waitUntil.mock.calls[0][0]).toBeInstanceOf(Promise)
   })

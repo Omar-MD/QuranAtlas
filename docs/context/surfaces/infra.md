@@ -7,6 +7,7 @@ src_paths:
   - 'src/infra/service-worker/sw-handlers.js'
   - 'src/infra/sw/**'
 owns_stores:
+  - activationState
   - datasetMeta
 test_paths:
   unit:
@@ -45,9 +46,8 @@ No routes. Surface is invisible until something goes wrong (or update rolls out)
 | --- | --- |
 | `src/infra/offline/dataset-updater.js` | Dataset update orchestrator for service worker activate. |
 | `src/infra/offline/manifest-fetcher.js` | Fetch the dataset manifest. |
-| `src/infra/offline/offline-selector.svelte` | Per-feature offline opt-in selector. |
 | `src/infra/offline/staging-cache.js` | Staging cache for dataset updates. |
-| `src/infra/safety/input-validator.ts` | Input validation for navigation and tag parameters. |
+| `src/infra/safety/input-validator.ts` | Input validation for active navigation input. |
 | `src/infra/safety/state.svelte.ts` | _(no leading comment)_ |
 | `src/infra/safety/sync.ts` | Cross-tab safety and synchronization module. |
 | `src/infra/service-worker/sw-handlers.js` | _(no leading comment)_ |
@@ -103,9 +103,9 @@ Window-side package installation is owned by `src/data/offline.ts`. It plans pac
 
 ### Per-asset-class SW partition + offline opt-in selector
 
-All SW route registrations live in `src/infra/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/infra/sw/route-defs.ts`. Runtime selector categories remain compact (`text`, `pages`, `search`, plus removed-scope audio while code remains), but dataset text routes are source-aware underneath: `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index` all share `quran-dataset-v2`. Audio mp3/timing/meta routes are removed product scope pending source cleanup, pages cache per-riwayah, search-index is a reader asset lane, and fonts are always-on. `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
+All SW route registrations live in `src/infra/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/infra/sw/route-defs.ts`. Runtime selector categories remain compact (`text`, `pages`, `search` in active UI), but dataset text routes are source-aware underneath: `text-core`, `text-riwayah`, `text-translation`, `text-tafsir`, and `text-index` all share `quran-dataset-v2`. Pages cache per-riwayah, search-index is a reader asset lane, and fonts are always-on. `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
 
-The window-side companion is `src/infra/offline/offline-selector.svelte` (mounted in Settings → Storage section, configure dossier). Reader First opt-in rows are Text / per-riwayah Pages / Search plus source-aware optional reader packs; the selector pre-flights `navigator.storage.estimate()` and refuses Apply when the selection exceeds available quota. Any audio category still present in implementation state is removed-scope cleanup inventory, not a user-facing source category or future roadmap item. Baseline page availability is Qalun-only; the runtime/package key remains `qaloon`. Unavailable unchecked Hafs/Warsh page packs are hidden; unavailable previously checked packs stay visible so stale opt-ins can be removed. The Text row maps to the baseline source set (`qaloon`, `bridges`, `muyassar`) through `settings.offlineCategories.text.{riwayat,translations,tafsir}`. Optional translation and tafsir rows read byte plans from `indexes/source-assets.json`, can be cached on demand, and can be removed from Cache Storage by uncheck + Apply. Knowledge Lane files under `/dataset/knowledge/**` still route as `text-knowledge`, share `CACHE_DATASET`, and are included in the existing Text offline row. The top-level selector category remains `text`; `text-knowledge` is an internal route class used for byte summing, service-worker matching, and cache cleanup. `src/data/offline.ts::startCategoryDownload(cat)` filters manifest inventory entries through `route-defs.ts::sumBytesForCategory()`, while `startSourceAssetDownload(kind, id)` filters optional source packs through `indexes/source-assets.json`. Generic `startCategoryDownload('pages')` and `removeCategoryDownload('pages')` throw so callers use `startPageAssetDownload(riwayah)` / `removePageAssetDownload(riwayah)`.
+The window-side companion is `src/configure/offline-selector.svelte` (mounted in Settings → Storage section, configure dossier). Reader First opt-in rows are Text / per-riwayah Pages / Search plus source-aware optional reader packs; the selector pre-flights `navigator.storage.estimate()` and refuses Apply when the selection exceeds available quota. Legacy removed-scope media opt-ins are dropped during normalization and ignored by `getActivationState()` so hidden state does not linger invisibly or keep the reader-first cache summary stuck on `cached`. Baseline page availability is Qalun-only; the runtime/package key remains `qaloon`. Unavailable unchecked Hafs/Warsh page packs are hidden; unavailable previously checked packs stay visible so stale opt-ins can be removed. The Text row maps to the baseline source set (`qaloon`, `bridges`, `muyassar`) through `settings.offlineCategories.text.{riwayat,translations,tafsir}`. Optional translation and tafsir rows read byte plans from `indexes/source-assets.json`, can be cached on demand, and can be removed from Cache Storage by uncheck + Apply. Knowledge Lane files under `/dataset/knowledge/**` still route as `text-knowledge`, share `CACHE_DATASET`, and are included in the existing Text offline row. The top-level selector category remains `text`; `text-knowledge` is an internal route class used for byte summing, service-worker matching, and cache cleanup. `src/data/offline.ts::startCategoryDownload(cat)` filters manifest inventory entries through `route-defs.ts::sumBytesForCategory()`, while `startSourceAssetDownload(kind, id)` filters optional source packs through `indexes/source-assets.json`. Generic `startCategoryDownload('pages')` and `removeCategoryDownload('pages')` throw so callers use `startPageAssetDownload(riwayah)` / `removePageAssetDownload(riwayah)`.
 
 ### Generic sync envelope
 
@@ -114,6 +114,7 @@ The window-side companion is `src/infra/offline/offline-selector.svelte` (mounte
 ## Data
 
 <!-- AUTO-GENERATED:data-owned START -->
+- `activationState`
 - `datasetMeta`
 <!-- AUTO-GENERATED:data-owned END -->
 
@@ -130,15 +131,13 @@ Current dataset package version for the applied runtime corpus. Sole writer: `sr
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/infra/safety/sync.ts:276` |
-| `sync:edges-updated` | `Events.SYNC_EDGES_UPDATED` | `src/infra/safety/sync.ts:264` |
-| `sync:update-received` | `Events.SYNC_UPDATE_RECEIVED` | `src/infra/safety/sync.ts:256` |
+| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/infra/safety/sync.ts:203` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `db:version-change` | `Events.DB_VERSION_CHANGE` | `src/infra/safety/sync.ts:102` |
+| `db:version-change` | `Events.DB_VERSION_CHANGE` | `src/infra/safety/sync.ts:90` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -160,14 +159,13 @@ Current dataset package version for the applied runtime corpus. Sole writer: `sr
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (11):**
+**Unit (10):**
 
 - `tests/unit/infra/offline/dataset-updater.test.js`
 - `tests/unit/infra/offline/manifest-fetcher.test.js`
 - `tests/unit/infra/offline/offline-selector.test.ts`
 - `tests/unit/infra/offline/staging-cache.test.js`
 - `tests/unit/infra/safety/csp-headers.test.ts`
-- `tests/unit/infra/safety/input-validator.test.js`
 - `tests/unit/infra/safety/state.test.ts`
 - `tests/unit/infra/safety/sync.test.js`
 - `tests/unit/infra/service-worker/sw-handlers.test.js`

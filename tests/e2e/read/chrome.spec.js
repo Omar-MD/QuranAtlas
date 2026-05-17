@@ -283,7 +283,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
   test('B4: non-reader routes keep primary nav visible @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
-    for (const route of ['#/surahs', '#/review', '#/about']) {
+    for (const route of ['#/surahs', '#/bookmarks', '#/about']) {
       await page.goto(`/${route}`)
       if (isDesktop) {
         const moreBtn = page.locator('[data-tab="more"]:visible').first()

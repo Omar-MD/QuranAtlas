@@ -7,7 +7,7 @@
    */
 
   import { onMount } from 'svelte'
-  import { get, LAYER_NAMES } from '../core/db'
+  import { get } from '../core/db'
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
   import { reader } from './state.svelte'
@@ -15,7 +15,7 @@
   import { openNavDrawer } from '../navigate/nav-drawer-bridge'
 
   type Tab = {
-    id: 'verse' | 'mushaf' | 'search' | 'review' | 'marks'
+    id: 'verse' | 'mushaf' | 'search'
     label: string
     matches: (h: string) => boolean
   }
@@ -31,8 +31,6 @@
     { id: 'verse',  label: 'Verse mode',  matches: (h) => h.startsWith('#/s/') },
     { id: 'mushaf', label: 'Mushaf mode', matches: (h) => h.startsWith('#/m/') },
     { id: 'search', label: 'Search', matches: () => false },
-    { id: 'review', label: 'Review', matches: (h) => h.startsWith('#/review') || LAYER_NAMES.some(ln => h.startsWith(`#/${ln}/`)) },
-    { id: 'marks',  label: 'Marks',  matches: () => false },
   ]
 
   const crumbText = $derived.by(() => {
@@ -68,8 +66,6 @@
   function getHref(id: Tab['id']): string {
     if (id === 'verse')  { return lastVerseHref }
     if (id === 'mushaf') { return lastMushafHref }
-    if (id === 'review') { return '#/review' }
-    if (id === 'marks')  { return '#/review' }
     return '#'
   }
 
@@ -143,14 +139,6 @@
         <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="10.5" cy="10.5" r="6"/>
           <line x1="15" y1="15" x2="20" y2="20"/>
-        </svg>
-      {:else if tab.id === 'review'}
-        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polygon points="12 3 14.5 9.5 21 10 16 14.5 17.5 21 12 17.5 6.5 21 8 14.5 3 10 9.5 9.5 12 3"/>
-        </svg>
-      {:else if tab.id === 'marks'}
-        <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M6 3h12v18l-6-4.5L6 21z"/>
         </svg>
       {/if}
       <span class="qa-rail-tip">{tab.label}</span>

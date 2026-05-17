@@ -1,5 +1,5 @@
 import type { Category } from '../infra/sw/route-defs'
-import type { Riwayah } from '../configure/state.svelte'
+import type { Riwayah } from '../packs/riwayah'
 
 type SourceAssetKind = 'translation' | 'tafsir'
 
@@ -24,8 +24,8 @@ export async function planRiwayahPackageInstall(riwayah: Riwayah) {
 }
 
 export async function refreshRiwayahPackageStatus(riwayah: Riwayah) {
-  const riwayahSettings = await import('../configure/riwayah')
-  return riwayahSettings.refreshRiwayahPackageStatus(riwayah)
+  const riwayahPacks = await import('../packs/riwayah')
+  return riwayahPacks.getRiwayahPackageStatus(riwayah)
 }
 
 export async function getStorageBudget() {

@@ -7,7 +7,6 @@ const { getMock } = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../src/core/db', () => ({
-  LAYER_NAMES: ['theme'],
   get: getMock,
 }))
 vi.mock('../../../src/navigate/command-sheet-bridge', () => ({
@@ -46,5 +45,13 @@ describe('AmbientDock.svelte', () => {
 
     expect(document.querySelector('[data-tab="mushaf"]')?.getAttribute('href')).toBe('#/m/42')
     expect(document.querySelector('[data-tab="verse"]')?.getAttribute('href')).toBe('#/s/2/255')
+  })
+
+  it('keeps the desktop rail scoped to verse, mushaf, search, and more', async () => {
+    render(AmbientDock)
+    await flush()
+
+    const tabs = [...document.querySelectorAll('[data-tab]')].map((el) => el.getAttribute('data-tab'))
+    expect(tabs).toEqual(['verse', 'mushaf', 'search', 'more'])
   })
 })

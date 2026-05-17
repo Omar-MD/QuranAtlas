@@ -1,38 +1,12 @@
 /**
- * Input validation for navigation and tag parameters.
+ * Input validation for active navigation input.
  * Permitted cross-module import (safety exception).
  */
-
-import { LAYER_NAMES, type LayerName } from '../../core/db'
-import { canonicalize } from '../../core/normalize'
-
-const LAYER_SET = new Set<string>(LAYER_NAMES)
-
-export function validateLayerParam(layer: string, value: string):
-  | { valid: true; layer: LayerName; canonical: string }
-  | { valid: false; reason: string }
-{
-  if (!LAYER_SET.has(layer)) {
-    return { valid: false, reason: `unknown layer: ${layer}` }
-  }
-  if (!value || value.length > 50) {
-    return { valid: false, reason: 'empty or overlong value' }
-  }
-  const canonical = canonicalize(value)
-  if (!canonical) {
-    return { valid: false, reason: 'value empty after canonicalization' }
-  }
-  return { valid: true, layer: layer as LayerName, canonical }
-}
 
 export type SurahEntry = { n: number; name: string; count: number }
 
 export type ParseNavResult =
   | { valid: true; surah: number; verse?: number }
-  | { valid: false; error: string }
-
-export type ValidateTagResult =
-  | { valid: true; label: string }
   | { valid: false; error: string }
 
 /**
@@ -130,58 +104,4 @@ function findSurahByName(query: string, surahs: SurahEntry[]): SurahEntry | null
   }
 
   return null
-}
-
-/**
- * Validate and normalize a tag label.
- */
-export function validateTagLabel(raw: string): ValidateTagResult {
-  if (!raw || typeof raw !== 'string') {
-    return { valid: false, error: 'Tag label is required' }
-  }
-
-  // Check for control characters before trimming (trim removes whitespace)
-  if (/[\x00-\x1f\x7f]/.test(raw)) {
-    return { valid: false, error: 'Tag label contains invalid characters' }
-  }
-
-  const trimmed = raw.trim()
-  if (!trimmed) {
-    return { valid: false, error: 'Tag label is required' }
-  }
-
-  if (trimmed.length > 50) {
-    return { valid: false, error: 'Tag label must be 50 characters or less' }
-  }
-
-  return { valid: true, label: trimmed.toLowerCase() }
-}
-
-/**
- * Validate and normalize a tag parameter from a URL deep link.
- * Lowercases, trims, collapses internal whitespace, rejects control chars.
- */
-export function validateTagParam(raw: string): ValidateTagResult {
-  if (!raw || typeof raw !== 'string') {
-    return { valid: false, error: 'Tag parameter is required' }
-  }
-
-  // Check for control characters (U+0000-001F, U+007F-009F)
-  if (/[\x00-\x1f\x7f-\x9f]/.test(raw)) {
-    return { valid: false, error: 'Tag contains invalid characters' }
-  }
-
-  const trimmed = raw.trim()
-  if (!trimmed) {
-    return { valid: false, error: 'Tag parameter is required' }
-  }
-
-  // Collapse internal whitespace
-  const collapsed = trimmed.replace(/\s+/g, ' ')
-
-  if (collapsed.length > 50) {
-    return { valid: false, error: 'Tag must be 50 characters or less' }
-  }
-
-  return { valid: true, label: collapsed.toLowerCase() }
 }

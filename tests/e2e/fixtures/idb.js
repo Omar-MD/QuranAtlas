@@ -17,7 +17,7 @@ import { applySchema, DB_NAME, DB_VERSION } from '../../../src/core/db/migration
  */
 const _APPLY_SCHEMA_SRC = `
   const _applySchema = ${applySchema.toString()}
-  _applySchema(db)
+  _applySchema(db, tx)
 `
 
 /**
@@ -64,7 +64,7 @@ export async function clearAllData(page) {
  * invariants, the onboarding boot flow, or the clear-data UX itself.
  *
  * @param {import('@playwright/test').Page} page
- * @param {'settings'|'marks'|'edges'|'meta'|'activationState'|'datasetMeta'|'bookmarks'} storeName
+ * @param {'settings'|'meta'|'activationState'|'datasetMeta'|'bookmarks'} storeName
  */
 export async function clearStore(page, storeName) {
   const nameJson = JSON.stringify(storeName)
@@ -99,6 +99,7 @@ export async function markOnboardingComplete(page) {
     open.onerror = () => reject(open.error)
     open.onupgradeneeded = (event) => {
       const db = event.target.result
+      const tx = open.transaction
       ${_APPLY_SCHEMA_SRC}
     }
   }))()`)
@@ -110,7 +111,7 @@ export async function markOnboardingComplete(page) {
  * app navigation (which races with parallel tests sharing the same origin).
  *
  * @param {import('@playwright/test').Page} page
- * @param {string} surface  — e.g. '#/review' or '#/s/2'
+ * @param {string} surface  — e.g. '#/about' or '#/s/2'
  */
 export async function seedLastSurface(page, surface) {
   // page.evaluate(expressionString) executes in the browser; the surface value is
@@ -128,6 +129,7 @@ export async function seedLastSurface(page, surface) {
     open.onerror = () => reject(open.error)
     open.onupgradeneeded = (event) => {
       const db = event.target.result
+      const tx = open.transaction
       ${_APPLY_SCHEMA_SRC}
     }
   }))()`)
@@ -139,7 +141,7 @@ export async function seedLastSurface(page, surface) {
  * before calling page.reload() — prevents A2-style race conditions.
  *
  * @param {import('@playwright/test').Page} page
- * @param {string} expected  — e.g. '#/review'
+ * @param {string} expected  — e.g. '#/about'
  * @param {number} [timeout] — ms, default 8000
  */
 export async function waitForLastSurface(page, expected, timeout = 8_000) {
@@ -197,84 +199,16 @@ export async function writeSetting(page, key, value) {
   }), { key, value })
 }
 
-/**
- * Read a mark record from IDB by verseKey.  Returns undefined if not found.
- */
-export async function getMarkFromIdb(page, verseKey) {
-  return page.evaluate((vk) => new Promise((resolve, reject) => {
-    const open = indexedDB.open('quran-atlas')
-    open.onsuccess = () => {
-      const db = open.result
-      if (!db.objectStoreNames.contains('marks')) { resolve(undefined); db.close(); return }
-      const tx = db.transaction('marks', 'readonly')
-      const req = tx.objectStore('marks').get(vk)
-      req.onsuccess = () => { resolve(req.result); db.close() }
-      req.onerror = () => { resolve(undefined); db.close() }
-    }
-    open.onerror = () => reject(open.error)
-  }), verseKey)
-}
-
-/**
- * Seed one or more marks using the v2 12-layer schema.
- * Each mark is { verseKey, threads?, subjects?, audience?, speaker?,
- * quotedSpeaker?, mode?, form?, tone?, people?, places?, events?,
- * divineNames?, note? }.
- * For backward compat, a top-level `tags` array is mapped into `threads`.
- */
-export async function seedMarks(page, marks) {
-  // JSON-embed the records array so it is safe to splice into an expression string.
-  const recordsJson = JSON.stringify(marks)
-  await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const LAYER_NAMES = [
-      'threads','subjects','audience','speaker','quotedSpeaker',
-      'mode','form','tone','people','places','events','divineNames',
-    ]
-    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${DB_VERSION})
-    open.onsuccess = () => {
-      const db = open.result
-      const tx = db.transaction('marks', 'readwrite')
-      const store = tx.objectStore('marks')
-      const now = Date.now()
-      for (const r of ${recordsJson}) {
-        const threads = r.threads || r.tags || []
-        const layers = {}
-        for (const l of LAYER_NAMES) {
-          layers[l] = l === 'threads' ? threads : (r[l] || [])
-        }
-        const _canon = {}
-        for (const l of LAYER_NAMES) {
-          _canon[l] = layers[l].map(t => t.toLowerCase().normalize('NFC').replace(/[\\s\\-]+/g, '-').replace(/[^a-z0-9\\-'\\u0600-\\u06ff]/g, ''))
-        }
-        store.put({
-          verseKey: r.verseKey,
-          ...layers,
-          _canon,
-          note: r.note || '',
-          createdAt: now,
-          updatedAt: now,
-        })
-      }
-      tx.oncomplete = () => { db.close(); resolve() }
-      tx.onerror = () => reject(tx.error)
-    }
-    open.onerror = () => reject(open.error)
-    open.onupgradeneeded = (event) => {
-      const db = event.target.result
-      ${_APPLY_SCHEMA_SRC}
-    }
-  }))()`)
-}
-
 export async function seedBookmarks(page, records) {
-  await page.evaluate(({ rows, dbName, dbVersion, applySchemaSource }) => new Promise((resolve, reject) => {
-    const open = indexedDB.open(dbName, dbVersion)
+  const recordsJson = JSON.stringify(records)
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
+    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${DB_VERSION})
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction('bookmarks', 'readwrite')
       const store = tx.objectStore('bookmarks')
       const now = Date.now()
-      for (const row of rows) {
+      for (const row of ${recordsJson}) {
         const [surahRaw] = row.verseKey.split(':')
         store.put({
           riwayah: row.riwayah ?? 'qaloon',
@@ -289,13 +223,8 @@ export async function seedBookmarks(page, records) {
     open.onerror = () => reject(open.error)
     open.onupgradeneeded = (event) => {
       const db = event.target.result
-      // eslint-disable-next-line no-new-func
-      new Function('db', applySchemaSource)(db)
+      const tx = open.transaction
+      ${_APPLY_SCHEMA_SRC}
     }
-  }), {
-    rows: records,
-    dbName: DB_NAME,
-    dbVersion: DB_VERSION,
-    applySchemaSource: `${applySchema.toString()}\nreturn applySchema(db)`,
-  })
+  }))()`)
 }

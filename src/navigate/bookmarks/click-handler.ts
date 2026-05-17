@@ -13,9 +13,8 @@
  * (which provides the visual tap feedback on the same target).
  */
 
-import { toggle } from './store'
+import { toggle } from '../../continuity/bookmarks/store'
 import { settings } from '../../configure/state.svelte'
-import { tagSession } from '../../mark/tag/state.svelte'
 import { logger } from '../../core/logger'
 import { closestTokenKey, tokenVerseKey } from '../../core/tokenisable'
 import type { Riwayah } from '../../core/db'
@@ -45,10 +44,6 @@ function tryToggleFrom(target: EventTarget | null): boolean {
   const lastFired = lastFiredRaw ? parseInt(lastFiredRaw, 10) : 0
   if (now - lastFired < DEDUPE_WINDOW_MS) { return false }
   numEl.dataset['bmFired'] = String(now)
-
-  // Skip bookmark toggle while the fast-tag panel is open — the same tap
-  // is consumed by setupTapGestures' onShort to switch the active verse.
-  if (tagSession.quickbarOpen) { return false }
 
   void toggle(verseKey, activeRiwayah()).catch((err) => {
     logger.error('Bookmark toggle failed:', { verseKey, error: err })

@@ -28,7 +28,7 @@ import {
 // Workbox injectManifest will populate this array
 precacheAndRoute(self.__WB_MANIFEST || [])
 
-// Per-asset-class routes (text · audio mp3/timing/meta · pages · search · fonts).
+// Per-asset-class routes (text · pages · search · fonts).
 // Single source: src/infra/sw/route-defs.ts.
 //
 // NOTE: vite-plugin-pwa's `workbox.runtimeCaching` option is silently ignored

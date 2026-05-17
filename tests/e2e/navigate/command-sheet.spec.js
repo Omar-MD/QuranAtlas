@@ -4,7 +4,7 @@
  * Covers:
  *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
  *   F2. Arrow-down to "Study this verse" row → Enter → inline tafsir opens
- *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/threads/mercy FVR
+ *   F3. Removed tag search stays absent from the reader-first command sheet
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
  *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
@@ -18,7 +18,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { seedMarks } from '../fixtures/idb.js'
 import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -32,13 +31,8 @@ test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 test.describe('Journey F: Navigation', () => {
   test.beforeEach(async ({ page }) => {
-    // Wait for app boot to settle before seeding so launch-restore
-    // IDB reads cannot race with the seed write.
     await page.goto('/')
     await waitForReader(page)
-    await seedMarks(page, [
-      { verseKey: '2:255', tags: ['mercy'], note: '' },
-    ])
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -129,42 +123,16 @@ test.describe('Journey F: Navigation', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // F3. Tag search → FVR
+  // F3. Removed tag search stays absent
   // ---------------------------------------------------------------------------
 
-  test('F3: type "mer" → Tags group shows "mercy" with count badge → Enter → #/threads/mercy FVR', async ({ page }) => {
+  test('F3: type "mer" keeps removed tag search out of the command sheet', async ({ page }) => {
     await openCommandSheet(page)
     await page.locator('.qa-cmd-input').fill('mer')
 
-    // Wait for Tags group to appear in results
-    const tagsGroup = page.locator('.qa-cmd-group').filter({ hasText: 'Tags' })
-    await expect(tagsGroup).toBeVisible({ timeout: 5_000 })
-
-    // The group should contain "mercy"
-    const mercyItem = tagsGroup.locator('.qa-cmd-item').filter({ hasText: 'mercy' })
-    await expect(mercyItem).toBeVisible()
-
-    // Count badge on the group header should be present (at least "1")
-    const countBadge = tagsGroup.locator('.qa-cmd-group-count')
-    await expect(countBadge).toBeVisible()
-    const countText = await countBadge.textContent()
-    expect(parseInt(countText, 10)).toBeGreaterThanOrEqual(1)
-
-    // "mercy" item should be active (first result) or can navigate to it
-    // Press Enter to activate the first item
-    await page.keyboard.press('Enter')
-
-    // Should navigate to the tag FVR route
-    await expect(page).toHaveURL(/#\/threads\/mercy/, { timeout: 8_000 })
-
-    // FVR header block should render
-    const fvrHeader = page.locator('.qa-fvr-header')
-    await expect(fvrHeader).toBeVisible({ timeout: 5_000 })
-
-    // Tag name in FVR should be "mercy"
-    const fvrName = fvrHeader.locator('.qa-fvr-name')
-    await expect(fvrName).toBeVisible()
-    await expect(fvrName).toHaveText('mercy')
+    await expect(page.locator('.qa-cmd-group').filter({ hasText: 'Tags' })).toHaveCount(0)
+    await expect(page.locator('.qa-cmd-sheet')).not.toContainText('mercy')
+    await expect(page).not.toHaveURL(/#\/threads\//)
   })
 
   // ---------------------------------------------------------------------------

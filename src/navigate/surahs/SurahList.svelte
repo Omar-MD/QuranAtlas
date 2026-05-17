@@ -3,9 +3,9 @@
   import { getSurahs, type SurahMeta } from '../../data/dataset'
   import { getMeaning } from '../../data/surah-meanings'
   import { settings } from '../../configure/state.svelte'
-  import { getAllForRiwayah as getAllBookmarks } from '../bookmarks/store'
+  import { getAllForRiwayah as getAllBookmarks } from '../../continuity/bookmarks/store'
   import { loadRecentSurahs } from '../../configure/state-recent-surahs.svelte'
-  import { loadGlobalPosition } from '../../read/global-position'
+  import { loadGlobalPosition } from '../../continuity/position'
   import { emit, on } from '../../core/events'
   import { Events } from '../../core/constants'
   import { announce } from '../../a11y/announcer'
@@ -112,7 +112,7 @@
     void (async () => {
       const [fetchedSurahs, lastPosition, recentList] = await Promise.all([
         getSurahs(),
-        loadGlobalPosition().catch(() => null),
+        loadGlobalPosition((settings.riwayah ?? 'qaloon') as Riwayah).catch(() => null),
         loadRecentSurahs(),
       ])
 

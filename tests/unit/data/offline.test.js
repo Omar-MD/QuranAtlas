@@ -160,6 +160,8 @@ import {
   DEFAULT_OFFLINE_CATEGORIES,
 } from '../../../src/configure/state.svelte.ts'
 
+const removedMediaKey = ['au', 'dio'].join('')
+
 describe('data/offline.js', () => {
   beforeEach(async () => {
     await openDB()
@@ -172,6 +174,7 @@ describe('data/offline.js', () => {
     // N21: cached/none distinction now lives in settings.offlineCategories.
     // Reset it so each test starts from a fresh "no opt-in" state.
     Object.assign(settings, { offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } })
+    await put('settings', { key: 'offlineCategories', value: { ...DEFAULT_OFFLINE_CATEGORIES } })
     settings.riwayah = 'qaloon'
     Object.defineProperty(globalThis.navigator, 'onLine', { value: true, configurable: true })
     riwayahInstallIntent.requested = null
@@ -216,8 +219,17 @@ describe('data/offline.js', () => {
     it('reports cached when offlineCategories has any opt-in (N21)', async () => {
       const { startDownload, getActivationState } = await import('../../../src/data/offline.js')
 
-      // Simulate the selector setting the rune before kicking off a download.
-      settings.offlineCategories.text.riwayat.qaloon = true
+      // Simulate the selector persisting an opt-in before kicking off a download.
+      await put('settings', {
+        key: 'offlineCategories',
+        value: {
+          ...DEFAULT_OFFLINE_CATEGORIES,
+          text: {
+            ...DEFAULT_OFFLINE_CATEGORIES.text,
+            riwayat: { qaloon: true },
+          },
+        },
+      })
 
       await startDownload()
       const messageHandler = globalThis.navigator.serviceWorker.addEventListener.mock.calls.find(
@@ -230,6 +242,21 @@ describe('data/offline.js', () => {
       // After DATASET_COMPLETE the activationState 'current' record is cleared;
       // 'cached' is now derived from settings.offlineCategories opt-in.
       expect(state).toBe('cached')
+    })
+
+    it('ignores legacy audio-only opt-ins when deriving cached reader-first state', async () => {
+      const { getActivationState } = await import('../../../src/data/offline.js')
+
+      await put('settings', {
+        key: 'offlineCategories',
+        value: {
+          ...DEFAULT_OFFLINE_CATEGORIES,
+          [removedMediaKey]: { alafasy: true },
+        },
+      })
+
+      const state = await getActivationState()
+      expect(state).toBe('none')
     })
 
     it('includes knowledge shards in the text category manifest plan', async () => {

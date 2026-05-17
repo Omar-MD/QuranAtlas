@@ -4,7 +4,7 @@
   import { onRouteChange } from './core/router'
   import { trackRecentSurah } from './configure/state-recent-surahs.svelte'
   import { reader } from './read/state.svelte'
-  import { refreshForSurah } from './mark/indicator'
+  import { refreshBookmarkIndicatorsForSurah } from './navigate/bookmarks/indicator'
 
   // Eager — visible at first paint or carrying boot-time runtime hooks.
   import QuotaBanner from './core/quota-banner.svelte'
@@ -13,19 +13,15 @@
   import ClearDataConfirm from './configure/ClearDataConfirm.svelte'
   import AmbientDock from './read/AmbientDock.svelte'
   import MarginHeader from './read/MarginHeader.svelte'
-  import AudioMiniBar from './listen/AudioMiniBar.svelte'
-  import AudioFullOverlay from './listen/AudioFullOverlay.svelte'
 
   // Lazy-mounted overlays (audit N25, 2026-05-01). First api.<method>()
   // call from the matching bridge fires `setMounter`, which flips the
   // *Mounted flag below; the $effect block then dynamically imports the
   // owning component. Subsequent opens reuse the loaded chunk + the
   // factory's pending-call queue replays the first call after register.
-  import { undoToastBridge } from './core/ui-bridge'
   import { panelBridge } from './configure/panel-bridge'
   import { commandSheetBridge } from './navigate/command-sheet-bridge'
   import { navDrawerBridge } from './navigate/nav-drawer-bridge'
-  import { tagSheetBridge } from './mark/tag/sheet-bridge'
   import { tafsirSheetBridge } from './read/tafsir-bridge'
 
   let cleanups: Array<() => void> = []
@@ -36,15 +32,11 @@
   // The flag is flipped by the bridge's mounter; the $effect kicks the
   // dynamic import; the resolved default lands on the *Comp slot which the
   // {#if} block in the template renders.
-  let undoToastMounted = $state(false)
   let panelMounted = $state(false)
   let commandSheetMounted = $state(false)
   let navDrawerMounted = $state(false)
-  let tagSheetMounted = $state(false)
   let tafsirSheetMounted = $state(false)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let UndoToastComp = $state<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let PanelComp = $state<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,15 +44,8 @@
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let NavDrawerComp = $state<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let TagSheetComp = $state<any>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let TafsirSheetComp = $state<any>(null)
 
-  $effect(() => {
-    if (undoToastMounted && !UndoToastComp) {
-      void import('./core/ui.svelte').then(m => { UndoToastComp = m.default })
-    }
-  })
   $effect(() => {
     if (panelMounted && !PanelComp) {
       void import('./configure/Panel.svelte').then(m => { PanelComp = m.default })
@@ -77,11 +62,6 @@
     }
   })
   $effect(() => {
-    if (tagSheetMounted && !TagSheetComp) {
-      void import('./mark/tag/TagSheet.svelte').then(m => { TagSheetComp = m.default })
-    }
-  })
-  $effect(() => {
     if (tafsirSheetMounted && !TafsirSheetComp) {
       void import('./read/TafsirSheet.svelte').then(m => { TafsirSheetComp = m.default })
     }
@@ -92,7 +72,7 @@
   $effect(() => {
     const surah = reader.currentSurahNum
     if (!surah) { return }
-    void refreshForSurah(surah)
+    void refreshBookmarkIndicatorsForSurah(surah)
     void trackRecentSurah(surah)
   })
 
@@ -106,11 +86,9 @@
     // Wire lazy-mount triggers BEFORE initBootstrap so any boot-time
     // bridge call (e.g. #/settings route on first launch → openSettingsSheet)
     // can trigger the import path through the bridge's pending-call queue.
-    undoToastBridge.setMounter(() => { undoToastMounted = true })
     panelBridge.setMounter(() => { panelMounted = true })
     commandSheetBridge.setMounter(() => { commandSheetMounted = true })
     navDrawerBridge.setMounter(() => { navDrawerMounted = true })
-    tagSheetBridge.setMounter(() => { tagSheetMounted = true })
     tafsirSheetBridge.setMounter(() => { tafsirSheetMounted = true })
 
     // Register the route-change handler BEFORE initBootstrap so that Svelte
@@ -177,19 +155,15 @@
 <SaveFailureToast />
 <UpdateBanner />
 <ClearDataConfirm />
-<AudioMiniBar />
-<AudioFullOverlay />
 
 <!-- Lazy-mounted overlays — first bridge.api.<method>() flips the mount
      flag, which kicks the dynamic import, which renders the component
      here. Pending-call queue inside the factory replays the first call.
      Svelte 5 runes mode renders dynamic components by default; the
      PascalCase tag binds to the $state-tracked slot. -->
-{#if UndoToastComp}<UndoToastComp />{/if}
 {#if PanelComp}<PanelComp />{/if}
 {#if CommandSheetComp}<CommandSheetComp />{/if}
 {#if NavDrawerComp}<NavDrawerComp />{/if}
-{#if TagSheetComp}<TagSheetComp />{/if}
 {#if TafsirSheetComp}<TafsirSheetComp />{/if}
 
 <div class="qa-night-shift" aria-hidden="true"></div>

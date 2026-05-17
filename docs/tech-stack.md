@@ -9,8 +9,8 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | Layer | Tool | Version (pinned) | Purpose |
 |---|---|---|---|
 | Package manager | **pnpm** | `10.31.0` (via `packageManager` in `package.json`) | Fast, disk-efficient, strict dependency isolation |
-| Build tool | **Vite** | `^8.0.5` | Dev server, HMR, production bundling (Rolldown-powered) |
-| UI framework | **Svelte** | `^5.55.4` | Runes-based reactivity; components compile to tight vanilla JS |
+| Build tool | **Vite** | `^8.0.10` | Dev server, HMR, production bundling (Rolldown-powered) |
+| UI framework | **Svelte** | `^5.55.5` | Runes-based reactivity; components compile to tight vanilla JS |
 | Svelte ↔ Vite | **@sveltejs/vite-plugin-svelte** | `^7.0.0` | Svelte integration for Vite's module graph |
 | Language | **TypeScript** | `^6.0.3` | Type gate across all feature modules |
 | Type check | **svelte-check** | `^4.4.6` | TypeScript + Svelte type-only pass (`pnpm run check`) |
@@ -19,14 +19,14 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | Optional page import | **Poppler `pdftocairo`** | external system tool | Converts quran.ws page PDFs to generated SVG artifacts for Mushaf page release/local packs; required by CI's release artifact build, not by normal local app builds |
 | Event bus | **mitt** | `^3.0.1` | Tiny (~200B) pub/sub (sole runtime `dependencies` entry) |
 | Logger | custom | — | Dev-only console wrapper, zero-cost in production (`src/core/logger.ts`) |
-| Test runner | **Vitest** | `^4.1.2` | Unit + integration, Vite-native (+ `@vitest/coverage-v8` `^4.1.2`) |
+| Test runner | **Vitest** | `^4.1.5` | Unit + integration, Vite-native (+ `@vitest/coverage-v8` `^4.1.5`) |
 | E2E | **Playwright** | `^1.59.1` | Cross-browser end-to-end; runs journey specs A–I |
 | a11y assertions | **@axe-core/playwright** | `^4.11.2` | Drives the `@a11y`-tagged assertions inside each journey spec |
 | Component tests | **@testing-library/svelte** | `^5.3.1` | Svelte-5-aware component unit tests |
-| DOM env | **jsdom** | `^29.0.1` | Browser-like environment for Vitest |
+| DOM env | **jsdom** | `^29.1.0` | Browser-like environment for Vitest |
 | IDB polyfill | **fake-indexeddb** | `^6.2.5` | IndexedDB for Vitest runs (auto-registered) |
-| Linter | **ESLint** | `^10.2.0` (+ `typescript-eslint` `^8.58.2`, `eslint-plugin-svelte` `^3.17.0`) | Code quality, strict mode |
-| CSS linter | **Stylelint** | `^17.8.0` (+ `stylelint-config-standard` `^40.0.0`) | Selector grammar + custom-property prefix discipline under `src/styles/` |
+| Linter | **ESLint** | `^10.2.1` (+ `@typescript-eslint/parser` `^8.59.1`, `typescript-eslint` `^8.59.1`, `eslint-plugin-svelte` `^3.17.1`) | Code quality, strict mode |
+| CSS linter | **Stylelint** | `^17.9.1` (+ `stylelint-config-standard` `^40.0.0`) | Selector grammar + custom-property prefix discipline under `src/styles/` |
 | Perf gate | **Lighthouse CI** | `@lhci/cli ^0.15.1` | Performance / a11y / best-practices regression guard |
 | Deploy | **cloudflare/wrangler-action** | `v3` | Runs `wrangler pages deploy` in CI using the artifact built by CI (no rebuild in deploy) |
 
@@ -50,6 +50,7 @@ Bun is faster for pure-JS paths but lacks jsdom (uses happy-dom), has native-add
 - **Instant HMR** (~20 ms) via ESM-native dev server.
 - **Single bundler for dev and prod** — no "works in dev, breaks in prod" drift.
 - **Largest plugin ecosystem** — 25M+ weekly downloads.
+- Production builds suppress Rolldown's advisory `checks.pluginTimings` warning in `vite.config.js` so `pnpm run build` and `pnpm run validate` stay focused on actionable failures.
 
 ### Svelte 5 + TypeScript
 - **Runes** (`$state`, `$derived`, `$effect`) replace hand-rolled reactivity without the virtual-DOM cost of React/Vue.
@@ -60,6 +61,7 @@ Bun is faster for pure-JS paths but lacks jsdom (uses happy-dom), has native-add
 ### vite-plugin-pwa + Workbox (not manual SW config)
 - **2.8M+ weekly downloads**, 4,100+ GitHub stars.
 - **`injectManifest` mode** — supports our custom `src/infra/service-worker/sw.js` with dataset-cache handlers and runtime caches.
+- In production, runtime routes come from the custom service worker; the top-level `workbox.runtimeCaching` config is retained for vite-plugin-pwa's dev-service-worker path when `devOptions.enabled` is on.
 - Handles offline fallbacks and update notifications.
 - **Patched** via `patches/vite-plugin-pwa@1.2.0.patch` (applied by pnpm's `patchedDependencies`).
 

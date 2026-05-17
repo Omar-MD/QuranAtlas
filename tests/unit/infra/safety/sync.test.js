@@ -40,119 +40,60 @@ describe('safety/sync.js', () => {
     sync.init()
   })
 
-  describe('broadcastMarkChange()', () => {
+  describe('broadcastBookmarkChange()', () => {
     it('posts message with correct payload on the channel', () => {
-      sync.broadcastMarkChange(['2:255'])
+      sync.broadcastBookmarkChange(['2:255'], 'qaloon')
 
       const channel = MockBroadcastChannel.instances[0]
       expect(channel.postMessage).toHaveBeenCalledWith({
-        topic: 'marks',
-        payload: { verseKeys: ['2:255'] },
+        topic: 'bookmarks',
+        payload: { verseKeys: ['2:255'], riwayah: 'qaloon' },
       })
     })
 
     it('posts message with multiple verseKeys for bulk operations', () => {
-      sync.broadcastMarkChange(['2:255', '3:1', '3:2'])
+      sync.broadcastBookmarkChange(['2:255', '3:1', '3:2'], 'warsh')
 
       const channel = MockBroadcastChannel.instances[0]
       expect(channel.postMessage).toHaveBeenCalledWith({
-        topic: 'marks',
-        payload: { verseKeys: ['2:255', '3:1', '3:2'] },
+        topic: 'bookmarks',
+        payload: { verseKeys: ['2:255', '3:1', '3:2'], riwayah: 'warsh' },
       })
     })
   })
 
-  describe('broadcastEdgeChange()', () => {
-    it('posts message with correct payload on the channel', () => {
-      sync.broadcastEdgeChange(['e1'])
-
-      const channel = MockBroadcastChannel.instances[0]
-      expect(channel.postMessage).toHaveBeenCalledWith({
-        topic: 'edges',
-        payload: { edgeIds: ['e1'] },
-      })
-    })
-
-    it('posts message with multiple edgeIds for bulk operations', () => {
-      sync.broadcastEdgeChange(['e1', 'e2', 'e3'])
-
-      const channel = MockBroadcastChannel.instances[0]
-      expect(channel.postMessage).toHaveBeenCalledWith({
-        topic: 'edges',
-        payload: { edgeIds: ['e1', 'e2', 'e3'] },
-      })
+  describe('removed scope wrappers', () => {
+    it('drops mark and edge sync wrappers from the public API', () => {
+      expect(sync.broadcastMarkChange).toBeUndefined()
+      expect(sync.broadcastEdgeChange).toBeUndefined()
+      expect(sync.onMarkChange).toBeUndefined()
     })
   })
 
-  describe('onMarkChange()', () => {
-    it('fires callback when incoming message received', () => {
-      const callback = vi.fn()
-      sync.onMarkChange(callback)
-
-      // Simulate incoming BroadcastChannel message
-      const channel = MockBroadcastChannel.instances[0]
-      channel.onmessage({ data: { type: 'marks:changed', verseKeys: ['2:255'] } })
-
-      expect(callback).toHaveBeenCalledWith({ verseKeys: ['2:255'] })
-    })
-
-    it('ignores messages with unknown type', () => {
-      const callback = vi.fn()
-      sync.onMarkChange(callback)
-
-      const channel = MockBroadcastChannel.instances[0]
-      channel.onmessage({ data: { type: 'unknown:event', verseKeys: ['2:255'] } })
-
-      expect(callback).not.toHaveBeenCalled()
-    })
-
-    it('logs handler errors and still notifies remaining handlers and the event bus', async () => {
-      const badHandler = vi.fn(() => {
-        throw new Error('boom')
-      })
-      const goodHandler = vi.fn()
-      const updateReceived = vi.fn()
-      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
+  describe('bookmarks:changed message handling', () => {
+    it('fires SYNC_BOOKMARKS_UPDATED when bookmarks:changed message received', async () => {
+      const syncBookmarksUpdated = vi.fn()
       const { on } = await import('../../../../src/core/events.js')
 
-      sync.onMarkChange(badHandler)
-      sync.onMarkChange(goodHandler)
-      on('sync:update-received', updateReceived)
+      on(Events.SYNC_BOOKMARKS_UPDATED, syncBookmarksUpdated)
+
+      const channel = MockBroadcastChannel.instances[0]
+      channel.onmessage({ data: { type: 'bookmarks:changed', verseKeys: ['2:255'], riwayah: 'qaloon' } })
+
+      expect(syncBookmarksUpdated).toHaveBeenCalledWith({ verseKeys: ['2:255'], riwayah: 'qaloon' })
+    })
+
+    it('ignores legacy marks and edges messages once those topics are removed', async () => {
+      const syncBookmarksUpdated = vi.fn()
+      const { on } = await import('../../../../src/core/events.js')
+
+      on(Events.SYNC_BOOKMARKS_UPDATED, syncBookmarksUpdated)
 
       const channel = MockBroadcastChannel.instances[0]
       channel.onmessage({ data: { type: 'marks:changed', verseKeys: ['2:255'] } })
-
-      expect(goodHandler).toHaveBeenCalledWith({ verseKeys: ['2:255'] })
-      expect(updateReceived).toHaveBeenCalledWith({ verseKeys: ['2:255'] })
-      expect(errorSpy).toHaveBeenCalledWith('Sync handler error:', {
-        error: expect.any(Error),
-      })
-    })
-  })
-
-  describe('edges:changed message handling', () => {
-    it('fires SYNC_EDGES_UPDATED event when edges:changed message received', async () => {
-      const syncEdgesUpdated = vi.fn()
-      const { on } = await import('../../../../src/core/events.js')
-
-      on(Events.SYNC_EDGES_UPDATED, syncEdgesUpdated)
-
-      const channel = MockBroadcastChannel.instances[0]
       channel.onmessage({ data: { type: 'edges:changed', edgeIds: ['e1'] } })
 
-      expect(syncEdgesUpdated).toHaveBeenCalledWith({ edgeIds: ['e1'] })
-    })
-
-    it('fires SYNC_EDGES_UPDATED with multiple edgeIds', async () => {
-      const syncEdgesUpdated = vi.fn()
-      const { on } = await import('../../../../src/core/events.js')
-
-      on(Events.SYNC_EDGES_UPDATED, syncEdgesUpdated)
-
-      const channel = MockBroadcastChannel.instances[0]
-      channel.onmessage({ data: { type: 'edges:changed', edgeIds: ['e1', 'e2', 'e3'] } })
-
-      expect(syncEdgesUpdated).toHaveBeenCalledWith({ edgeIds: ['e1', 'e2', 'e3'] })
+      expect(syncBookmarksUpdated).not.toHaveBeenCalled()
     })
   })
 
@@ -233,7 +174,7 @@ describe('safety/sync.js', () => {
   })
 
   describe('no BroadcastChannel support', () => {
-    it('broadcastMarkChange is a no-op when BroadcastChannel unavailable', async () => {
+    it('broadcastBookmarkChange is a no-op when BroadcastChannel unavailable', async () => {
       sync.reset()
 
       const original = globalThis.BroadcastChannel
@@ -242,7 +183,7 @@ describe('safety/sync.js', () => {
       // Re-init without BroadcastChannel
       sync.init()
       // Should not throw
-      expect(() => sync.broadcastMarkChange(['2:255'])).not.toThrow()
+      expect(() => sync.broadcastBookmarkChange(['2:255'], 'qaloon')).not.toThrow()
 
       globalThis.BroadcastChannel = original
     })

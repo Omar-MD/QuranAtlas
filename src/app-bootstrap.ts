@@ -5,8 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Imports from JS modules — types will be added in a later migration task
-import { openDB, get, LAYER_NAMES } from './core/db.js'
-import { loadGlobalPosition } from './read/global-position'
+import { openDB, get } from './core/db.js'
+import { loadGlobalPosition } from './continuity/position'
 import { reshapeArabicVerses, reshapeAddedNodes } from './read/font-reshape'
 import * as router from './core/router.js'
 import { emit, on } from './core/events.js'
@@ -24,26 +24,25 @@ import { initSurahHeaderHidden } from './configure/surah-header-visibility.ts'
 import { initMushafViewMode } from './read/mushaf/view-mode.ts'
 import { openSettingsSheet } from './configure/panel-bridge.ts'
 import { initReaderActions } from './navigate/reader-actions.js'
-import { initIndicators } from './mark/indicator'
 import { initBookmarkIndicators } from './navigate/bookmarks/indicator'
 import { initBookmarkClickHandler } from './navigate/bookmarks/click-handler'
 import { initBookmarkPulse } from './navigate/bookmarks/pulse'
-import { setupTapGestures } from './mark/long-press'
-import { openDeep } from './mark/tag/session-bridge'
-import { registerEditor } from './mark/editor-bridge'
 import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './navigate/nav-drawer-bridge'
 import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
-import { initAudio } from './listen/init'
 import { initGlobalShortcuts } from './navigate/global-shortcuts'
 import { openTafsirPreview } from './read/tafsir-bridge'
 import { tafsirState } from './read/tafsir-state.svelte'
+import { setupVerseTafsirGestures } from './read/verse-tap-gestures'
+import { settings } from './configure/state.svelte'
+import { resolveLaunchableTarget, resolveReaderTarget } from './continuity/launch-targets'
+import { resolveSavedPositionTarget } from './continuity/position'
 
-// Bind tap gestures to the reader container:
+// Bind verse gestures to the reader container:
 //   short-tap   → while tafsir preview is open, move it to the tapped verse.
 //   double-tap  → open tafsir preview for the tapped verse.
-function setupLongPress(container: HTMLElement): () => void {
-  return setupTapGestures(container, {
+function setupReaderTafsirGestures(container: HTMLElement): () => void {
+  return setupVerseTafsirGestures(container, {
     onShort: (vk) => {
       if (tafsirState.previewOpen) { void openTafsirPreview(vk) }
     },
@@ -61,6 +60,19 @@ function pushCleanup(arr: Array<() => void>, fn: any): void {
   if (typeof fn === 'function') {
     arr.push(fn as () => void)
   }
+}
+
+async function resolveSavedReaderTarget(): Promise<string | null> {
+  const activeRiwayah = settings.riwayah ?? 'qaloon'
+  return resolveSavedPositionTarget(await loadGlobalPosition(activeRiwayah), activeRiwayah)
+}
+
+async function resolveFallbackReaderTarget(lastSurface: unknown): Promise<string> {
+  const readerTarget = await resolveReaderTarget(lastSurface, settings.riwayah ?? 'qaloon')
+  if (readerTarget) {
+    return readerTarget
+  }
+  return (await resolveSavedReaderTarget()) ?? '#/s/1'
 }
 
 /**
@@ -81,10 +93,6 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     'color:#b08040;font-weight:600',
     `(built ${__BUILD_TIME__})`
   )
-
-  // Route `openEditor` calls (long-press, command-sheet, review) to the
-  // TagSheet deep path. TagSheet subscribes to tagSession.sheetOpen.
-  registerEditor((vk) => { void openDeep(vk) })
 
   // Programmatic font kickoff (iOS WebKit defense-in-depth — Apple Dev Forum
   // 671608). The hidden divs in index.html cover the render-tree-side route;
@@ -148,14 +156,6 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // a single IDB read.
     await initOfflineCategories()
 
-    // Audio (v2.0 milestone). Loads audio settings, wires cross-tab
-    // gating, registers reader-highlight + auto-scroll subscribers.
-    // Runs after initRiwayah so the active riwayah is in scope; audio
-    // dataset URLs themselves don't depend on riwayah today (per spec)
-    // but future per-riwayah reciter filtering (e.g. Warsh-only reciters
-    // in Warsh mode) plugs in here.
-    pushCleanup(bootCleanups, await initAudio())
-
     // Active-riwayah KFGQPC font kickoff — fetch only the cut the user is
     // actually viewing. CSS Font Loading API call primes the family name;
     // programmatic FontFace construction (font-loader.ts) bypasses iOS
@@ -213,37 +213,26 @@ export async function initBootstrap(): Promise<Array<() => void>> {
 
     // Register Phase 1 routes — Reader.svelte receives surah/ayah params + hook props
     router.register('#/s/:surah', async () => (await import('./read/Reader.svelte')).default, {
-      initIndicators,
-      setupLongPress,
+      setupVerseTafsirGestures: setupReaderTafsirGestures,
     })
     router.register('#/s/:surah/:ayah', async () => (await import('./read/Reader.svelte')).default, {
-      initIndicators,
-      setupLongPress,
+      setupVerseTafsirGestures: setupReaderTafsirGestures,
     })
     router.register('#/m/:page', async () => (await import('./read/mushaf/MushafReader.svelte')).default)
-
-    // Register Phase 2 routes
-    router.register('#/review', async () => (await import('./review/Hub.svelte')).default)
 
     // Register Phase 3 routes
     router.register('#/settings', () => Promise.resolve({
       async init() {
         openSettingsSheet()
         const last = await get('settings', 'lastSurface')
-        const prevVal = last?.value
-        const prev = typeof prevVal === 'string' && prevVal && prevVal !== '#/settings' ? prevVal : '#/s/1'
+        const prevVal = typeof last?.value === 'string' ? last.value : null
+        const prev = (await resolveLaunchableTarget(prevVal, settings.riwayah ?? 'qaloon'))
+          ?? (await resolveSavedReaderTarget())
+          ?? '#/s/1'
         router.navigate(prev, { replace: true })
       },
     }))
     router.register('#/about', async () => (await import('./configure/about/About.svelte')).default)
-    // FVR: #/<layer>/:value — one route per layer (replaces legacy #/t/:tag)
-    for (const layerName of LAYER_NAMES) {
-      router.register(
-        `#/${layerName}/:value`,
-        async () => (await import('./review/Hub.svelte')).default,
-        { layer: layerName },
-      )
-    }
     router.register('#/surahs', async () => {
       const isMobile = window.matchMedia('(max-width: 1179px)').matches
       if (isMobile) {
@@ -251,11 +240,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
         // drawer on Surahs tab. The replaceState avoids a back-stack entry that
         // would loop the user through #/surahs again on Back.
         const lastRec = await get('settings', 'lastSurface').catch(() => undefined)
-        const last = (typeof lastRec?.value === 'string' && lastRec.value && lastRec.value !== '#/surahs')
-          ? lastRec.value
-          : '#/s/1'
-        history.replaceState(null, '', last)
-        queueMicrotask(() => { openNavDrawer('read') })
+        const last = await resolveFallbackReaderTarget(lastRec?.value)
+        queueMicrotask(() => {
+          router.navigate(last, { replace: true })
+          openNavDrawer('read')
+        })
         return (await import('./navigate/EmptyRoute.svelte')).default
       }
       return (await import('./navigate/surahs/SurahList.svelte')).default
@@ -268,11 +257,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
         // the last reader surface so the drawer overlays the reader, not a
         // blank shell.
         const lastRec = await get('settings', 'lastSurface').catch(() => undefined)
-        const last = (typeof lastRec?.value === 'string' && lastRec.value && lastRec.value !== '#/bookmarks')
-          ? lastRec.value
-          : '#/s/1'
-        history.replaceState(null, '', last)
-        queueMicrotask(() => { openNavDrawer('read', 'bookmarks') })
+        const last = await resolveFallbackReaderTarget(lastRec?.value)
+        queueMicrotask(() => {
+          router.navigate(last, { replace: true })
+          openNavDrawer('read', 'bookmarks')
+        })
         return (await import('./navigate/EmptyRoute.svelte')).default
       }
       return (await import('./navigate/bookmarks/BookmarksPage.svelte')).default
@@ -373,16 +362,16 @@ async function handleLaunchRestore() {
     return
   }
   const lastSurface = await get('settings', 'lastSurface')
-  const lastSurfaceVal = typeof lastSurface?.value === 'string' ? lastSurface.value : null
-  if (lastSurfaceVal && lastSurfaceVal !== '#/onboarding') {
+  const lastSurfaceVal = await resolveLaunchableTarget(lastSurface?.value, settings.riwayah ?? 'qaloon')
+  if (lastSurfaceVal) {
     logger.info('Session restore: lastSurface', { surface: lastSurfaceVal })
     router.navigate(lastSurfaceVal, { replace: true })
     return
   }
-  const position = await loadGlobalPosition()
-  if (position) {
-    logger.info('Session restore: global position', { surah: position.surah, verse: position.verse })
-    router.navigate(`#/s/${position.surah}/${position.verse}`, { replace: true })
+  const positionTarget = await resolveSavedReaderTarget()
+  if (positionTarget) {
+    logger.info('Session restore: global position', { target: positionTarget })
+    router.navigate(positionTarget, { replace: true })
   } else {
     logger.info('Session restore: default surah 1')
     router.navigate('#/s/1', { replace: true })

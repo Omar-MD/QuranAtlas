@@ -2,8 +2,6 @@
 surface: read
 src_paths:
   - 'src/read/**'
-owns_stores:
-  - meta
 test_paths:
   unit:
     - 'tests/unit/read/**'
@@ -14,7 +12,7 @@ test_paths:
 
 # Surface: read
 
-> Reader First core — Verse reader, Mushaf reader, ambient reader chrome, reader typography, saved position, bookmarks integration, tafsir, curated metadata display, page indicators, cross-surah scroll, and Daily Wird. Personal annotation creation is removed product scope pending source cleanup; existing mark indicators are implementation inventory only while the code remains.
+> Reader First core — Verse reader, Mushaf reader, ambient reader chrome, reader typography, bookmarks integration, tafsir, curated metadata display, page indicators, cross-surah scroll, and Daily Wird. Pack availability, continuity validation, and optional-metadata policy now live in `src/packs/**`, `src/continuity/**`, and `src/metadata/**`; the read surface consumes those domains while staying focused on rendering and interaction.
 
 ## Reach
 
@@ -31,7 +29,7 @@ test_paths:
 | MarginHeader label swipe left/right on `#/s/*` (mobile) | gesture | next/prev surah (clamped 1–114) |
 | MarginHeader gear single tap (mobile) | tap | open Settings sheet (debounced 300 ms) |
 | MarginHeader gear double-tap (mobile, ≤300 ms) | gesture | cycle theme (parity with keyboard `d`) |
-| AmbientDock tap (desktop) | tap | switch latest Verse/Mushaf reader route, open command sheet, Review, or Marks |
+| AmbientDock tap (desktop) | tap | switch latest Verse/Mushaf reader route or open command sheet |
 | Verse number tap | tap | edge indicators ~1.6 s + pill label updates |
 | Verse text block tap/click | tap / click | toggle that verse's meaning + knowledge lane |
 | Verse double-tap / double-click | gesture | open inline tafsir preview for that verse |
@@ -57,12 +55,10 @@ test_paths:
 | `src/read/TafsirPreview.svelte` | _(no leading comment)_ |
 | `src/read/TafsirSheet.svelte` | _(no leading comment)_ |
 | `src/read/Verse.svelte` | Translation lookup role for cross-riwayah display. |
-| `src/read/audio-autoscroll.ts` | Smart-defer auto-scroll: scroll the playing verse into view UNLESS the |
-| `src/read/audio-highlight.ts` | Audio verse-tick highlight. Subscribes to `audio:verse-changed` and |
 | `src/read/chunked-virtualiser.ts` | Chunked virtualiser — IntersectionObserver-driven recycler that mounts |
 | `src/read/edge-indicators.ts` | Verse-tap edge indicators — lazily-created left/right visual cues that |
 | `src/read/font-reshape.ts` | iOS Safari paints the reader DOM with a fallback font when verses mount |
-| `src/read/global-position.ts` | Global reading position — single record (current surah + verse) that |
+| `src/read/global-position.ts` | _(no leading comment)_ |
 | `src/read/mushaf/MushafControls.svelte` | _(no leading comment)_ |
 | `src/read/mushaf/MushafPage.svelte` | _(no leading comment)_ |
 | `src/read/mushaf/MushafReader.svelte` | _(no leading comment)_ |
@@ -83,6 +79,7 @@ test_paths:
 | `src/read/tafsir-state.svelte.ts` | _(no leading comment)_ |
 | `src/read/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
 | `src/read/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
+| `src/read/verse-tap-gestures.ts` | _(no leading comment)_ |
 | `src/read/wird/DailyWirdCard.svelte` | _(no leading comment)_ |
 | `src/read/wird/WirdDetail.svelte` | _(no leading comment)_ |
 | `src/read/wird/metadata.ts` | _(no leading comment)_ |
@@ -124,7 +121,7 @@ Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush ag
 
 ### Ambient chrome
 
-**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + Reader First tabs (Verse / Mushaf / Search) plus removed-scope Review / Marks tabs while legacy implementation remains. Verse and Mushaf keep separate latest hashes from the current route, router route-change events, and `settings.lastSurface`, so switching modes returns to the latest known `#/s/...` or `#/m/...` route. Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list via ⋯ → drawer, command sheet, or `G+S`.
+**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + Reader First tabs (Verse / Mushaf / Search). Verse and Mushaf keep separate latest hashes from the current route, router route-change events, and `settings.lastSurface`, so switching modes returns to the latest known `#/s/...` or `#/m/...` route. Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list via ⋯ → drawer, command sheet, or `G+S`.
 
 **Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px) on Verse routes and `Page N` on Mushaf routes; right settings gear ⚙ (48 px tap target, 26 px icon). The center label toggles surah chrome only on `#/s/*`; Mushaf routes keep the same header shape but do not toggle the surah header or swipe between surahs. Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. It does not render during first-run onboarding. `#main-content` reserves ~60 px top padding.
 
@@ -132,7 +129,7 @@ Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush ag
 
 ### Ambient pill
 
-Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3 s showing `{surah}:{verse} · {Name}` + `⌘K` hint. Verse-number tap updates pill label. Hidden on non-reader routes (`#/surahs`, `#/review`, `#/about`, etc.).
+Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3 s showing `{surah}:{verse} · {Name}` + `⌘K` hint. Verse-number tap updates pill label. Hidden on non-reader routes (`#/surahs`, `#/bookmarks`, `#/about`, etc.).
 
 ### Translation rendering
 
@@ -153,7 +150,7 @@ When knowledge data exists, each tagged verse can render quiet metadata directly
 
 Theme chips + passage context stay collapsed with the verse and reveal only when that verse is opened.
 
-If either knowledge shard is missing, invalid, or fetch-fails, the reader logs a recoverable warning and leaves the knowledge lane empty for that surah. Base verse rendering continues unchanged.
+If either knowledge shard is missing, invalid, stale, or fetch-fails, the reader consumes the `src/metadata/knowledge.ts` state, logs a recoverable warning, and leaves the knowledge lane empty for that surah. Base verse rendering continues unchanged.
 
 ### Tafsir study lane
 
@@ -161,7 +158,7 @@ The Reader's primary per-verse study action is tafsir, not personal annotation.
 
 1. Double-tap / double-click a verse, right-click a verse, press `m`, or choose the command-sheet verse action to open inline tafsir preview for that verse.
 2. The active verse gains the existing left-edge accent treatment and a compact `tafsir` head label. The preview mounts directly under that verse's Arabic / meaning stack, where the old fast-tag panel used to appear.
-3. Inline preview loads the saved tafsir source immediately. Optional tafsir bodies are fetched on demand from the same-origin dataset assets when selected. If a selected tafsir body is unavailable, the preview or sheet shows an unavailable state or the active tafsir setting changes to a verified baseline before baseline tafsir is rendered under a baseline label.
+3. Inline preview loads the saved tafsir source immediately. Optional tafsir bodies are fetched on demand from the same-origin dataset assets when selected. `src/metadata/tafsir.ts` owns the unavailable/missing/stale/fallback contract; if a selected tafsir body is unavailable, the preview or sheet shows the appropriate degraded state or the active tafsir setting changes to a verified baseline before baseline tafsir is rendered under a baseline label.
 4. Preview header includes the source switcher plus compact close (`×`) and **Expand** (`[]`) actions. Switching sources reloads the current surah's tafsir pack and keeps the preview anchored to the same active verse.
 5. Grouped tafsir ranges remain grouped. When a verse belongs to a range entry, the preview and full sheet show the shared reference range instead of duplicating the same text per ayah.
 6. **Expand** opens the full tafsir sheet overlay. On phone-sized viewports it takes over the full screen and keeps a visible close control pinned in the sheet header; on tablet and desktop it stays a bounded overlay. It replaces the old deep-tag escalation path for new Reader study actions and shows the active source label, verse/range reference, Arabic tafsir text, and the same source picker.
@@ -219,7 +216,7 @@ Daily Wird summary text respects the selected display unit. Juz and Hizb plans d
 ## Data
 
 <!-- AUTO-GENERATED:data-owned START -->
-- `meta`
+_(none)_
 <!-- AUTO-GENERATED:data-owned END -->
 
 <!-- AUTO-GENERATED:data-read START -->
@@ -239,8 +236,8 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:83`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:52`, `src/read/Reader.svelte:684`, `src/read/edge-indicators.ts:62` |
-| `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:30` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:79`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:52`, `src/read/Reader.svelte:667`, `src/read/edge-indicators.ts:62` |
+| `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:33` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
 
@@ -248,10 +245,9 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 | Event | Constant | Sites |
 | --- | --- | --- |
 | `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:76`, `src/read/MarginHeader.svelte:194` |
-| `audio:verse-changed` | `Events.AUDIO_VERSE_CHANGED` | `src/read/audio-autoscroll.ts:48`, `src/read/audio-highlight.ts:32` |
-| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:158` |
-| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:104`, `src/read/MarginHeader.svelte:185` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:509`, `src/read/mushaf/MushafReader.svelte:365` |
+| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:161` |
+| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:100`, `src/read/MarginHeader.svelte:185` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:499`, `src/read/mushaf/MushafReader.svelte:365` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -278,7 +274,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (28):**
+**Unit (29):**
 
 - `tests/unit/read/AmbientDock.test.ts`
 - `tests/unit/read/MarginHeader-toggle.test.ts`
@@ -302,6 +298,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/manifest.json` for page count
 - `tests/unit/read/surah-swap.test.ts`
 - `tests/unit/read/tafsir-state.test.ts`
 - `tests/unit/read/translation-tokens.test.ts`
+- `tests/unit/read/verse-tap-gestures.test.ts`
 - `tests/unit/read/wird/DailyWirdCard.test.ts`
 - `tests/unit/read/wird/WirdDetail.test.ts`
 - `tests/unit/read/wird/notifications.test.ts`

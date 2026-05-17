@@ -9,7 +9,7 @@
 import { emit } from './events'
 import { Events } from './constants'
 import { logger } from './logger'
-import { persistLastSurface } from '../configure/state-last-surface.svelte'
+import { persistLastSurface } from '../continuity/last-surface'
 
 export type RouteParams = Record<string, string>
 
@@ -204,7 +204,7 @@ async function handleRoute(hash: string): Promise<void> {
   }
 }
 
-// persistLastSurface lives in state/last-surface.svelte.ts so router +
+// persistLastSurface lives in continuity/last-surface.ts so router +
 // review/Hub.svelte share a sole-writer path (audit R-08 / R-25 / CC-3).
 
 /**

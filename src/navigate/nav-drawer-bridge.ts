@@ -7,8 +7,8 @@
 
 import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-overlay'
 
-export type DrawerTab = 'read' | 'study'
-export type ReadSubTab = 'surahs' | 'bookmarks'
+export type DrawerTab = 'read'
+export type ReadSubTab = 'surah' | 'juz' | 'bookmarks'
 
 export interface NavDrawerAPI extends BaseOverlayAPI {
   open(tab?: DrawerTab, subTab?: ReadSubTab): void

@@ -15,14 +15,14 @@
 //   - Calls the mounter once (idempotent across the lazy-import window).
 //   - Queues the call onto a pending-call queue.
 //   - On `register(api)`, drains the queue in arrival order.
-// Eager-mount consumers (audio currently) skip `setMounter` entirely —
+// Eager-mount consumers skip `setMounter` entirely —
 // the mounter trigger is opt-in and inert when unused.
 
 import { logger } from './logger.js'
 
 // `open` is deliberately NOT on the base — its signature varies per overlay
-// (UndoToast: open(opts); NavDrawer: open(tab?, subTab?); TagSheet:
-// open(verseKey); Settings/CommandSheet/Audio: open()). Forcing a base
+// (status toast: open(opts); NavDrawer: open(tab?, subTab?); verse sheet:
+// open(verseKey); Settings/CommandSheet/Tafsir: open()). Forcing a base
 // shape would either bivariantly weaken the type or block strict-mode
 // declarations. close + isOpen ARE universal: every overlay supports
 // imperative dismissal + open-state interrogation.

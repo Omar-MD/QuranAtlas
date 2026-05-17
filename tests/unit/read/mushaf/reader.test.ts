@@ -37,10 +37,14 @@ const datasetMocks = vi.hoisted(() => {
   }
 })
 
-vi.mock('../../../../src/data/mushaf-pages', () => ({
+vi.mock('../../../../src/packs/mushaf-pages', () => ({
   MushafPackUnavailableError: mushafMocks.MushafPackUnavailableError,
   resolveMushafPage: mushafMocks.resolveMushafPage,
   loadMushafManifest: mushafMocks.loadMushafManifest,
+}))
+
+vi.mock('../../../../src/packs/riwayah', () => ({
+  isRiwayahUsable: vi.fn(async () => true),
 }))
 
 vi.mock('../../../../src/data/dataset', () => ({

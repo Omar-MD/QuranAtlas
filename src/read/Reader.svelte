@@ -7,7 +7,7 @@
   import { settings } from '../configure/state.svelte'
   import { getSurah, getSurahs, loadTranslationForSurah, RiwayahPackUnavailableError } from '../data/dataset'
   import type { SurahPayload, SurahMeta, TranslationPayload } from '../data/dataset'
-  import { loadAyahKnowledgeForSurah, loadPassagesForSurah, type AyahKnowledgeEntry, type KnowledgePassage } from '../data/knowledge-dataset'
+  import { loadKnowledgeMetadataForSurah, type AyahKnowledgeEntry, type KnowledgePassage } from '../metadata/knowledge'
   import { loadVerseAliases, resolveTranslationFor, type VerseAliases, type TranslationRole } from '../data/verse-aliases'
   import { get } from '../core/db'
   import { navigate } from '../core/router'
@@ -15,7 +15,6 @@
   import { Events } from '../core/constants'
   import { announce } from '../a11y/announcer'
   import { logger } from '../core/logger'
-  import { clearUndoToast, clearUndoRecord } from '../core/ui-bridge'
   import {
     setupVirtualiser,
     type VirtualiserHandle,
@@ -47,12 +46,10 @@
     /** Ayah number as string (from route param :ayah, optional) */
     ayah?: string
     /** Hook: receives the reader container and returns a cleanup fn */
-    initIndicators?: (container: HTMLElement) => () => void
-    /** Hook: receives the reader container and returns a cleanup fn */
-    setupLongPress?: (container: HTMLElement) => () => void
+    setupVerseTafsirGestures?: (container: HTMLElement) => () => void
   }
 
-  const { surah: surahParam, ayah: ayahParam, initIndicators, setupLongPress }: Props = $props()
+  const { surah: surahParam, ayah: ayahParam, setupVerseTafsirGestures }: Props = $props()
 
   // ---------------------------------------------------------------------------
   // Local state
@@ -427,9 +424,8 @@
     knowledgeRequest: number,
     requestedSurah: number,
   ) {
-    const [ayahResult, passageResult] = await Promise.allSettled([
-      loadAyahKnowledgeForSurah(requestedSurah),
-      loadPassagesForSurah(requestedSurah),
+    const metadataResult = await Promise.allSettled([
+      loadKnowledgeMetadataForSurah(requestedSurah),
     ])
 
     if (knowledgeRequest !== knowledgeLoadId || reader.currentSurahNum !== requestedSurah || !surahData) {
@@ -439,25 +435,19 @@
     let nextAyahKnowledgeByKey: Record<string, AyahKnowledgeEntry> = {}
     let nextPassagesById: Record<string, KnowledgePassage> = {}
 
-    if (ayahResult.status === 'fulfilled' && ayahResult.value) {
-      nextAyahKnowledgeByKey = Object.fromEntries(
-        ayahResult.value.ayahs.map(entry => [entry.key, entry]),
-      )
+    if (metadataResult[0]?.status === 'fulfilled') {
+      nextAyahKnowledgeByKey = metadataResult[0].value.ayahsByKey
+      nextPassagesById = metadataResult[0].value.passagesById
+      if (metadataResult[0].value.state !== 'available' && metadataResult[0].value.state !== 'empty') {
+        logger.warn('Reader knowledge metadata degraded', {
+          surah: requestedSurah,
+          state: metadataResult[0].value.state,
+        })
+      }
     } else {
-      logger.warn('Reader knowledge ayah shard unavailable', {
+      logger.warn('Reader knowledge metadata unavailable', {
         surah: requestedSurah,
-        reason: ayahResult.status === 'rejected' ? ayahResult.reason : 'missing-or-invalid',
-      })
-    }
-
-    if (passageResult.status === 'fulfilled' && passageResult.value) {
-      nextPassagesById = Object.fromEntries(
-        passageResult.value.passages.map(passage => [passage.id, passage]),
-      )
-    } else {
-      logger.warn('Reader knowledge passage shard unavailable', {
-        surah: requestedSurah,
-        reason: passageResult.status === 'rejected' ? passageResult.reason : 'missing-or-invalid',
+        reason: metadataResult[0]?.status === 'rejected' ? metadataResult[0].reason : 'missing-or-invalid',
       })
     }
 
@@ -532,8 +522,6 @@
       teardownPositionTracking()
       for (const fn of cleanups) { try { fn() } catch { /* ignore */ } }
       cleanups = []
-      clearUndoToast()
-      clearUndoRecord()
       reader.currentSurahNum = null
       reader.currentVerseKey = null
       reader.currentSurah = null
@@ -670,14 +658,9 @@
           }))
         }
 
-        // Wire hooks (indicators + long-press). initIndicators handles its own
-        // initial mark-cache load + decoration now that READER_SURAH_LOADED is gone.
-        if (initIndicators) {
-          const cleanup = initIndicators(container)
-          cleanups.push(cleanup)
-        }
-        if (setupLongPress) {
-          const cleanup = setupLongPress(container)
+        // Wire reader-local gestures after the container mounts.
+        if (setupVerseTafsirGestures) {
+          const cleanup = setupVerseTafsirGestures(container)
           cleanups.push(cleanup)
         }
 

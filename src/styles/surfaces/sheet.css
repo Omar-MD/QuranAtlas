@@ -1,9 +1,7 @@
 /**
  * sheet — shared bottom-sheet chrome: backdrop, container, grip, header,
- * body, rows, mark-editor sheet modifier (now driven by tag/TagSheet.svelte),
- * shortcuts cheatsheet.
- * Consumers: settings/Panel.svelte, tag/TagSheet.svelte
- * (via .qa-sheet--mark modifier + :global() interior rules).
+ * body, rows, shortcuts cheatsheet.
+ * Consumers: settings/Panel.svelte, navigate/shortcuts-sheet.js.
  *
  * Context-scoped token inheritance root. Descendants of .qa-sheet read
  * --qa-text-primary / --qa-text-muted / --qa-text-dim / --qa-border-default
@@ -162,19 +160,6 @@
   .qa-sheet-row--danger .qa-sheet-row-icon,
   .qa-sheet-row--danger .qa-sheet-row-label {
     color: var(--qa-text-danger);
-  }
-
-  .qa-sheet--mark {
-    max-height: 86%;
-  }
-
-  @media (min-width: 1180px) {
-    .qa-sheet.qa-sheet--mark {
-      width: min(820px, calc(100vw - 48px));
-      max-height: min(760px, 86vh);
-      border-radius: var(--qa-radius-modal);
-      animation: qa-modal-scale-in var(--qa-transition-base) forwards;
-    }
   }
 
   .qa-sc-body {

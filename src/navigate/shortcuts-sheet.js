@@ -18,7 +18,7 @@ const GROUPS = [
       { keys: ['/'],                 desc: 'Open command sheet' },
       { keys: ['\u2318', 'K'],       desc: 'Open command sheet (alias)', mac: true },
       { keys: ['?'],                 desc: 'Show this shortcut list' },
-      { keys: ['Esc'],               desc: 'Close sheet · back from FVR' },
+      { keys: ['Esc'],               desc: 'Close the current sheet' },
     ],
   },
   {
@@ -26,7 +26,6 @@ const GROUPS = [
     rows: [
       { keys: ['g', 'h'], desc: 'Home (continue reading)' },
       { keys: ['g', 's'], desc: 'Surah list' },
-      { keys: ['g', 'r'], desc: 'Review hub' },
       { keys: ['g', 'a'], desc: 'About' },
       { keys: ['g', 'p'], desc: 'Preferences (settings)' },
     ],
@@ -40,13 +39,12 @@ const GROUPS = [
       { keys: ['['],       desc: 'Previous surah' },
       { keys: ['Home'],    desc: 'First verse' },
       { keys: ['End'],     desc: 'Last verse' },
-      { keys: ['m'],       desc: 'Mark current verse' },
+      { keys: ['m'],       desc: 'Open tafsir for current verse' },
       { keys: ['t'],       desc: 'Toggle translation' },
       { keys: ['+'],       desc: 'Bigger font' },
       { keys: ['-'],       desc: 'Smaller font' },
       { keys: ['0'],       desc: 'Reset font size' },
       { keys: ['d'],       desc: 'Cycle theme' },
-      { keys: ['Long-press'], desc: 'Mark a verse (touch)', gesture: true },
     ],
   },
   {

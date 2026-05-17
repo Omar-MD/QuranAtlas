@@ -3,8 +3,9 @@
  *
  * Covers:
  *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
- *   F2. Arrow-down to "Mark this verse" row → Enter → mark editor opens
- *   F3. Tag search (type "mer") → Tags group shows "mercy" → Enter → #/threads/mercy FVR
+ *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
+ *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
+ *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
  *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
@@ -18,7 +19,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { seedMarks } from '../fixtures/idb.js'
 import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -32,13 +32,8 @@ test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 test.describe('Journey F: Navigation', () => {
   test.beforeEach(async ({ page }) => {
-    // Wait for app boot to settle before seeding so launch-restore
-    // IDB reads cannot race with the seed write.
     await page.goto('/')
     await waitForReader(page)
-    await seedMarks(page, [
-      { verseKey: '2:255', tags: ['mercy'], note: '' },
-    ])
     await page.goto('/#/s/1')
     await waitForReader(page)
   })

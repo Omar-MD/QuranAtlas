@@ -1,9 +1,8 @@
 /**
  * Cross-tab safety and synchronization module.
  * Handles BroadcastChannel topic dispatch + IDB versionchange reload banner.
- * Permitted cross-module import (safety exception).
  *
- * Topic-dispatch model (audit R-10 / C-2 / C-5 / CC-4, 2026-04-29):
+ * Topic-dispatch model:
  * sync.ts owns no feature knowledge — it routes incoming envelopes to
  * handlers registered via `registerTopic(topic, fn)`. Each feature
  * registers its own handler at boot (e.g. settings/riwayah.ts:initRiwayah
@@ -12,20 +11,11 @@
  * `import { applyRiwayah }` direction; settings/riwayah.ts still imports
  * the outgoing `broadcast*` helpers (one-way dependency).
  *
- * Per-feature `broadcast*Change` wrappers stay as thin convenience
- * functions over the generic `broadcast(topic, payload)` so existing
- * call sites don't churn. Future audio/sync v2 work should add a single
- * registerTopic call rather than another bespoke message type.
- *
  * Public API:
  * - init() — set up channel + versionchange listener; returns cleanup function
  * - registerTopic(topic, fn) — feature handler for incoming messages
  * - broadcast(topic, payload) — generic outgoing broadcast
- * - broadcastMarkChange / broadcastEdgeChange / broadcastBookmarkChange /
- *   broadcastRiwayahChange — back-compat wrappers
- * - onMarkChange(callback) — legacy handler registry for marks (kept
- *   alive because marks/store consumes it directly; new code should
- *   prefer registerTopic('marks', …))
+ * - broadcastBookmarkChange / broadcastRiwayahChange — thin convenience wrappers
  * - reset() — full reset for testing
  */
 
@@ -37,12 +27,10 @@ const syncState = { get: () => sync, set: (p: Partial<typeof sync>) => Object.as
 
 const CHANNEL_NAME = 'quran-atlas:sync'
 
-type MarkChangeHandler = (data: { verseKeys: string[] }) => void
 type Riwayah = 'hafs' | 'warsh' | 'qaloon'
 
 type TopicHandler = (payload: unknown) => void
 
-let markChangeHandlers: MarkChangeHandler[] = []
 let topicHandlers: Map<string, TopicHandler> = new Map()
 let bannerElement: HTMLElement | null = null
 let unsubVersionChange: (() => void) | null = null
@@ -106,34 +94,14 @@ export function init(): () => void {
 
 /**
  * Per-topic outgoing wrappers. Thin convenience over `broadcast()` so
- * call sites don't churn. Only call after IDB transaction oncomplete
- * (or, for riwayah, after the IDB put succeeds).
+ * call sites don't churn. Only call after the IDB write succeeds.
  */
-export function broadcastMarkChange(verseKeys: string[]): void {
-  broadcast('marks', { verseKeys })
-}
-
-export function broadcastEdgeChange(edgeIds: string[]): void {
-  broadcast('edges', { edgeIds })
-}
-
 export function broadcastBookmarkChange(verseKeys: string[], riwayah: Riwayah): void {
   broadcast('bookmarks', { verseKeys, riwayah })
 }
 
 export function broadcastRiwayahChange(next: Riwayah): void {
   broadcast('settings.riwayah', { value: next })
-}
-
-/**
- * Register a handler for incoming mark changes from other tabs.
- * Returns an unsubscribe function.
- */
-export function onMarkChange(callback: MarkChangeHandler): () => void {
-  markChangeHandlers.push(callback)
-  return () => {
-    markChangeHandlers = markChangeHandlers.filter(h => h !== callback)
-  }
 }
 
 /**
@@ -155,16 +123,15 @@ function destroy(): void {
  * Handle incoming BroadcastChannel messages. Dumb dispatcher: looks up
  * the handler registered for `topic` and calls it with `payload`.
  *
- * Built-in topics ('marks', 'edges', 'bookmarks') wire default handlers
- * during init() so the existing event-bus contracts (SYNC_UPDATE_RECEIVED
- * etc.) keep firing without each consumer needing to registerTopic.
- * Feature-owned topics like 'settings.riwayah' register from their own
- * init module — that is what dissolves the import cycle.
+ * Built-in bookmarks handling keeps the existing event-bus contract
+ * without each consumer needing to registerTopic. Feature-owned topics
+ * like 'settings.riwayah' register from their own init module — that is
+ * what dissolves the import cycle.
  *
- * Pre-fix message envelopes used { type: 'marks:changed', verseKeys, … }
- * with one shape per topic. The new envelope is { topic, payload }; we
- * still accept the legacy shape for one release in case a peer tab on
- * an older bundle is sending it.
+ * Pre-fix message envelopes used { type: 'bookmarks:changed', verseKeys, … }.
+ * The new envelope is { topic, payload }; we still accept the legacy
+ * bookmarks + riwayah shapes for one release in case a peer tab on an
+ * older bundle is sending them.
  */
 function handleChannelMessage(event: MessageEvent): void {
   const data = event.data
@@ -180,14 +147,6 @@ function handleChannelMessage(event: MessageEvent): void {
   } else if (typeof (data as { type?: unknown }).type === 'string') {
     const legacyType = (data as { type: string }).type
     switch (legacyType) {
-      case 'marks:changed':
-        topic = 'marks'
-        payload = { verseKeys: (data as { verseKeys?: string[] }).verseKeys }
-        break
-      case 'edges:changed':
-        topic = 'edges'
-        payload = { edgeIds: (data as { edgeIds?: string[] }).edgeIds }
-        break
       case 'bookmarks:changed':
         topic = 'bookmarks'
         payload = { verseKeys: (data as { verseKeys?: string[] }).verseKeys, riwayah: (data as { riwayah?: string }).riwayah }
@@ -214,15 +173,13 @@ function handleChannelMessage(event: MessageEvent): void {
   }
 }
 
-// Per-element validation for inbound BroadcastChannel arrays. Audit
-// R-21 (2026-04-29): a peer tab on a hostile bundle could post arrays
-// with arbitrary element shapes (proto-pollution payloads, unbounded
-// strings). Cap element count + verse-key shape + edge-id shape so a
-// downstream consumer that spreads the array can't be poisoned.
+// Per-element validation for inbound BroadcastChannel arrays. A peer tab
+// on a hostile bundle could post arrays with arbitrary element shapes
+// (proto-pollution payloads, unbounded strings). Cap element count +
+// verse-key shape so a downstream consumer that spreads the array can't
+// be poisoned.
 const VERSE_KEY_RE = /^\d+:\d+$/
-const EDGE_ID_RE = /^[a-zA-Z0-9_-]+$/
 const MAX_VERSE_KEYS = 10_000   // a single broadcast > 10k keys is hostile
-const MAX_EDGE_IDS = 10_000
 
 function validVerseKeys(arr: unknown): arr is string[] {
   if (!Array.isArray(arr)) return false
@@ -230,39 +187,9 @@ function validVerseKeys(arr: unknown): arr is string[] {
   return arr.every((k) => typeof k === 'string' && k.length <= 12 && VERSE_KEY_RE.test(k))
 }
 
-function validEdgeIds(arr: unknown): arr is string[] {
-  if (!Array.isArray(arr)) return false
-  if (arr.length > MAX_EDGE_IDS) return false
-  return arr.every((id) => typeof id === 'string' && id.length <= 64 && EDGE_ID_RE.test(id))
-}
-
-// Default in-tree handlers for marks / edges / bookmarks. Feature-owned
-// topics (settings.riwayah, future audio, etc.) registerTopic from their
-// own init modules.
+// Default in-tree handlers for bookmarks. Feature-owned topics
+// (settings.riwayah, etc.) registerTopic from their own init modules.
 function registerCoreTopicHandlers(): void {
-  registerTopic('marks', (payload) => {
-    const p = (payload || {}) as { verseKeys?: unknown }
-    if (!validVerseKeys(p.verseKeys)) {
-      logger.warn('Sync rejected marks payload: invalid verseKeys array')
-      return
-    }
-    for (const handler of markChangeHandlers) {
-      try {
-        handler({ verseKeys: p.verseKeys })
-      } catch (error) {
-        logger.error('Sync handler error:', { error })
-      }
-    }
-    emit(Events.SYNC_UPDATE_RECEIVED, { verseKeys: p.verseKeys })
-  })
-  registerTopic('edges', (payload) => {
-    const p = (payload || {}) as { edgeIds?: unknown }
-    if (!validEdgeIds(p.edgeIds)) {
-      logger.warn('Sync rejected edges payload: invalid edgeIds array')
-      return
-    }
-    emit(Events.SYNC_EDGES_UPDATED, { edgeIds: p.edgeIds })
-  })
   registerTopic('bookmarks', (payload) => {
     const p = (payload || {}) as { verseKeys?: unknown; riwayah?: string }
     if (!validVerseKeys(p.verseKeys)) {
@@ -366,7 +293,6 @@ export function removeBanner(): void {
  */
 export function reset(): void {
   removeBanner()
-  markChangeHandlers = []
   topicHandlers = new Map()
   suppressVersionChangeBanner = false
   const channel = syncState.get().broadcastChannel as BroadcastChannel | null

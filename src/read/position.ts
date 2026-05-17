@@ -2,8 +2,8 @@
  * Reader position tracking — observes scroll, persists last-read verse to
  * the global position record, and scrolls to the target verse on load.
  *
- * Persistence is delegated to `./global-position.ts` (sole writer for
- * `settings.currentPosition`). Per-surah persistence was retired in DB v4
+ * Persistence is delegated to `../continuity/position` and mirrored into the
+ * active settings rune. Per-surah persistence was retired in DB v4
  * (cross-surah infinite scroll 2026-04-25): only one surah's position is
  * tracked at a time.
  */
@@ -11,10 +11,12 @@
 import { emit, on } from '../core/events'
 import { Events } from '../core/constants'
 import type { SurahMeta } from '../data/dataset'
+import type { Riwayah } from '../packs/riwayah'
+import { settings } from '../configure/state.svelte'
 import { observeScroll, flushDebounce } from './scroll-tracker'
 import { scrollToVerse } from './verse-scroll'
 import { reader } from './state.svelte'
-import { saveGlobalPosition, loadGlobalPosition } from './global-position'
+import { saveGlobalPosition, loadGlobalPosition } from '../continuity/position'
 import { advanceWirdFromReaderPosition } from './wird/store'
 
 /**
@@ -23,6 +25,7 @@ import { advanceWirdFromReaderPosition } from './wird/store'
 export async function savePosition(surahNum: number, verse: number): Promise<void> {
   try {
     await saveGlobalPosition(surahNum, verse)
+    settings.currentPosition = { surah: surahNum, verse }
     reader.currentSurahNum = surahNum
     reader.currentVerseKey = `${surahNum}:${verse}`
     void advanceWirdFromReaderPosition(surahNum, verse)
@@ -160,7 +163,7 @@ export function initPositionTracking(opts: PositionTrackingOptions): Array<() =>
     if (lastTrackedVerse !== null) { return }
     const scrollerEl = scrollHost
     if (scrollerEl && scrollerEl.scrollTop > 4) { return }
-    const position = await loadGlobalPosition()
+    const position = await loadGlobalPosition((settings.riwayah ?? 'qaloon') as Riwayah)
     if (position && position.surah === currentSurahNum && position.verse > 1) {
       graceUntil = Date.now() + GRACE_MS
       scrollToVerse(mainContent, position.verse, ensureVerseRendered)

@@ -270,12 +270,31 @@ describe('sw-handlers.js', () => {
       const cachesDelete = vi.fn(async () => true)
       await cleanupStaleCaches({
         expectedCaches: new Set(['quran-dataset-v1']),
-        preservePrefixes: ['workbox-precache', 'qa-audio-'],
-        cachesKeys: async () => ['workbox-precache-v1', 'qa-audio-test-v1', 'old-cache'],
+        preservePrefixes: ['workbox-precache', 'qa-pages-'],
+        cachesKeys: async () => ['workbox-precache-v1', 'qa-pages-qaloon-v1', 'old-cache'],
         cachesDelete,
       })
 
       expect(cachesDelete).toHaveBeenCalledTimes(1)
+      expect(cachesDelete).toHaveBeenCalledWith('old-cache')
+    })
+
+    it('defaults to preserving reader-first cache prefixes without audio caches', async () => {
+      const cachesDelete = vi.fn(async () => true)
+      await cleanupStaleCaches({
+        expectedCaches: new Set(['quran-dataset-v1']),
+        cachesKeys: async () => [
+          'workbox-precache-v1',
+          'qa-pages-qaloon-v1',
+          'qa-fonts-v1',
+          'qa-audio-meta-v1',
+          'old-cache',
+        ],
+        cachesDelete,
+      })
+
+      expect(cachesDelete).toHaveBeenCalledTimes(2)
+      expect(cachesDelete).toHaveBeenCalledWith('qa-audio-meta-v1')
       expect(cachesDelete).toHaveBeenCalledWith('old-cache')
     })
   })

@@ -195,6 +195,27 @@ describe('mushaf-pages dataset loader', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
+  it('clears rejected cached manifest reads so a later retry can recover', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(null, 500))
+      .mockResolvedValueOnce(response({ ...manifest, riwayah: 'hafs', sourceSlug: 'hafs' }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('caches', {
+      open: vi.fn(async () => ({
+        match: vi
+          .fn()
+          .mockResolvedValueOnce(responseJsonError(new SyntaxError('bad cached json')))
+          .mockResolvedValueOnce(null),
+      })),
+    })
+    const { loadMushafManifest } = await importLoader()
+
+    await expect(loadMushafManifest('hafs')).rejects.toThrow()
+    await expect(loadMushafManifest('hafs')).resolves.toMatchObject({ riwayah: 'hafs' })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('returns pack availability without falling back to Qaloon', async () => {
     const fetchMock = mockManifestFetch({ ...manifest, riwayah: 'warsh', sourceSlug: 'warsh' })
     const { getMushafPackAvailability } = await importLoader()

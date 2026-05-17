@@ -14,7 +14,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { seedMarks } from '../fixtures/idb.js'
 import { waitForReader, openMoreSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -28,14 +27,8 @@ test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 test.describe('Journey G: About', () => {
   test.beforeEach(async ({ page }) => {
-    // Wait for app boot to settle before seeding so launch-restore
-    // IDB reads cannot race with the seed write.
     await page.goto('/')
     await waitForReader(page)
-    await seedMarks(page, [
-      { verseKey: '1:1', tags: ['mercy'], note: '' },
-      { verseKey: '2:255', tags: ['mercy', 'faith'], note: '' },
-    ])
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
@@ -62,37 +55,16 @@ test.describe('Journey G: About', () => {
     const blessingWrap = page.locator('.qa-about-blessing-wrap')
     await expect(blessingWrap).toBeVisible()
 
-    // Stat grid — 4 cells present
-    const statGrid = page.locator('.qa-about-stat-grid')
-    await expect(statGrid).toBeVisible()
-
-    const statCells = page.locator('.qa-about-stat-cell')
-    await expect(statCells).toHaveCount(4)
-
-    // Every cell has both a value and a label
-    for (let i = 0; i < 4; i++) {
-      const cell = statCells.nth(i)
-      await expect(cell.locator('.qa-about-stat-value')).toBeVisible()
-      await expect(cell.locator('.qa-about-stat-label')).toBeVisible()
-    }
-
-    // Stat labels match expected order: Marks, Tags, Surahs, % Qur'an
-    const labels = page.locator('.qa-about-stat-label')
-    await expect(labels.nth(0)).toHaveText('Marks')
-    await expect(labels.nth(1)).toHaveText('Tags')
-    await expect(labels.nth(2)).toHaveText('Surahs')
-    await expect(labels.nth(3)).toContainText('%')
-
-    // Seeded marks → stat values should be non-zero numerics
-    const marksValue = page.locator('.qa-about-stat-value').nth(0)
-    await expect(async () => {
-      const text = await marksValue.textContent()
-      expect(parseInt(text, 10)).toBeGreaterThanOrEqual(1)
-    }).toPass({ timeout: 5_000 })
+    // Reader-first About no longer exposes removed-scope marks/tags stats.
+    await expect(page.locator('.qa-about-stat-grid')).toHaveCount(0)
+    await expect(page.getByText('Marks')).toHaveCount(0)
+    await expect(page.getByText('Tags')).toHaveCount(0)
 
     // Attribution list visible
     const attrList = page.locator('.qa-about-attr-list')
     await expect(attrList).toBeVisible()
+    await expect(attrList).toContainText('Qalun riwayat')
+    await expect(attrList).not.toContainText('Qaloon')
     const attrItems = attrList.locator('li')
     const attrCount = await attrItems.count()
     expect(attrCount).toBeGreaterThanOrEqual(1)
@@ -104,7 +76,7 @@ test.describe('Journey G: About', () => {
     expect(vText).toMatch(/^v/)
   })
 
-  test('G: hamburger drawer opens with Read+Study tabs and wordmark→About @mobile', async ({ page }) => {
+  test('G: hamburger drawer opens with the Read rail and wordmark→About @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'drawer hamburger is mobile-only; desktop ambient dock has its own kebab')
 
@@ -115,9 +87,9 @@ test.describe('Journey G: About', () => {
     const drawer = page.locator('.qa-nav-drawer')
     await expect(drawer).toBeVisible({ timeout: 3_000 })
 
-    // Two top-level mode tabs: Read (default) · Study (post 2026-04-28 restructure).
+    // Single reader-first mode rail: Read only.
     await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Read' })).toBeVisible()
-    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Study' })).toBeVisible()
+    await expect(drawer.locator('.qa-nav-drawer-tab', { hasText: 'Study' })).toHaveCount(0)
     // Read mode exposes Surah, Juz, and Bookmarks as peer source tabs.
     await expect(drawer.getByTestId('read-source-surah')).toBeVisible()
     await expect(drawer.getByTestId('read-source-juz')).toBeVisible()
@@ -304,7 +276,7 @@ test.describe('Journey G: About', () => {
 // ---------------------------------------------------------------------------
 // Journey G — desktop variants (≥1180px viewport)
 //
-// About page: 4-across stat grid, 2-col body split.
+// About page: no legacy stats grid, 2-col body split.
 // ---------------------------------------------------------------------------
 
 test.describe('Journey G: desktop variants', () => {
@@ -316,14 +288,8 @@ test.describe('Journey G: desktop variants', () => {
     await page.goto('/#/about')
   })
 
-  test('G1 desktop: stats render 4-across; body splits into 2 columns', async ({ page }) => {
-    await expect(page.locator('.qa-about-stat-grid')).toBeVisible()
-
-    const statCols = await page.locator('.qa-about-stat-grid').evaluate(
-      el => getComputedStyle(el).gridTemplateColumns
-    )
-    expect(statCols.split(' ').length).toBe(4)
-
+  test('G1 desktop: removed-scope stats stay absent; body still splits into 2 columns', async ({ page }) => {
+    await expect(page.locator('.qa-about-stat-grid')).toHaveCount(0)
     await expect(page.locator('.qa-about-body-split')).toHaveCount(1)
   })
 })

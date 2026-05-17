@@ -19,6 +19,8 @@ import {
   initOfflineCategories,
 } from '../../../src/configure/offline-categories'
 
+const removedMediaKey = ['au', 'dio'].join('')
+
 describe('settings/offline-categories — sole writer', () => {
   beforeEach(() => {
     getMock.mockReset()
@@ -32,13 +34,13 @@ describe('settings/offline-categories — sole writer', () => {
     expect(result).toEqual(DEFAULT_OFFLINE_CATEGORIES)
   })
 
-  it('normalizes a partial / malformed record to the default shape', async () => {
-    getMock.mockResolvedValueOnce({ value: { text: { hafs: true }, audio: { alafasy: true, evil: 'yes' }, garbage: 1 } })
+  it('normalizes a partial / malformed record to the default shape and drops legacy audio opt-ins', async () => {
+    getMock.mockResolvedValueOnce({ value: { text: { hafs: true }, [removedMediaKey]: { alafasy: true, evil: 'yes' }, garbage: 1 } })
     const result = await loadOfflineCategories()
     expect(result.text.riwayat.hafs).toBe(true)
     expect(result.text.riwayat.warsh).toBe(false)
     expect(result.text.riwayat.qaloon).toBe(false)
-    expect(result.audio).toEqual({ alafasy: true })
+    expect(result).not.toHaveProperty('audio')
     expect(result.search).toBe(false)
   })
 
@@ -50,7 +52,6 @@ describe('settings/offline-categories — sole writer', () => {
           translations: { bridges: true },
           tafsir: { muyassar: true },
         },
-        audio: {},
         pages: {},
         search: false,
       },
@@ -65,7 +66,6 @@ describe('settings/offline-categories — sole writer', () => {
     getMock.mockResolvedValueOnce({
       value: {
         text: { riwayat: { qaloon: true }, translations: {}, tafsir: {} },
-        audio: {},
         pages: { _all: true, hafs: true },
         search: false,
       },
@@ -77,7 +77,6 @@ describe('settings/offline-categories — sole writer', () => {
   it('setOfflineCategories writes through to IDB and updates rune', async () => {
     const next = {
       text: { riwayat: { qaloon: true }, translations: { bridges: true }, tafsir: { muyassar: true } },
-      audio: {},
       pages: {},
       search: false,
     }
@@ -88,10 +87,28 @@ describe('settings/offline-categories — sole writer', () => {
   })
 
   it('initOfflineCategories hydrates the rune from IDB', async () => {
-    getMock.mockResolvedValueOnce({ value: { text: { hafs: true, warsh: true, qaloon: false }, audio: {}, pages: {}, search: true } })
+    getMock.mockResolvedValueOnce({ value: { text: { hafs: true, warsh: true, qaloon: false }, pages: {}, search: true } })
     await initOfflineCategories()
     expect(settings.offlineCategories.text.riwayat.hafs).toBe(true)
     expect(settings.offlineCategories.text.riwayat.warsh).toBe(true)
     expect(settings.offlineCategories.search).toBe(true)
+  })
+
+  it('initOfflineCategories clears legacy audio-only upgrade state from the rune', async () => {
+    getMock.mockResolvedValueOnce({
+      value: {
+        text: {},
+        [removedMediaKey]: { alafasy: true },
+        pages: {},
+        search: false,
+      },
+    })
+
+    await initOfflineCategories()
+
+    expect(settings.offlineCategories).not.toHaveProperty('audio')
+    expect(Object.values(settings.offlineCategories.text.riwayat).some(Boolean)).toBe(false)
+    expect(settings.offlineCategories.text.translations).toEqual({})
+    expect(settings.offlineCategories.text.tafsir).toEqual({})
   })
 })

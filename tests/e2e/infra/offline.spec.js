@@ -171,14 +171,14 @@ async function useSingleMushafPageDownloadPlan(page, pageNumber = 42) {
   }, { paddedPage: padded })
 }
 
-async function waitForQaloonPageOptIn(page, expected) {
+async function waitForQalunPageOptIn(page, expected) {
   await expect(async () => {
     const value = await readSetting(page, 'offlineCategories')
     expect(value?.pages?.qaloon === true).toBe(expected)
   }).toPass({ timeout: 10_000 })
 }
 
-async function waitForCachedQaloonPage(page, pageNumber) {
+async function waitForCachedQalunPage(page, pageNumber) {
   const pagePath = `/dataset/mushaf-pages/qaloon/pages/${String(pageNumber).padStart(3, '0')}.svg`
   await expect(async () => {
     const cached = await page.evaluate(async (path) => {
@@ -215,7 +215,7 @@ async function waitForCachedDatasetUrls(page, paths) {
   }).toPass({ timeout: 20_000 })
 }
 
-async function clearQaloonPageCaches(page) {
+async function clearQalunPageCaches(page) {
   await page.evaluate(async () => {
     if (!('caches' in window)) return
     const keys = await caches.keys()
@@ -396,6 +396,8 @@ test.describe('Journey H: Offline resilience', () => {
     // Text row is now visible (manifest entries exist for the text category).
     const textRow = page.locator('[data-testid="storage-row-text"]')
     await expect(textRow).toBeVisible()
+    await expect(textRow).toContainText('Qalun')
+    await expect(page.locator('[data-testid="storage-row-audio"]')).toHaveCount(0)
 
     // Check the text checkbox (single collapsible — no per-row <summary>).
     const textCheck = page.locator('[data-testid="storage-check-text"]')
@@ -438,7 +440,7 @@ test.describe('Journey H: Offline resilience', () => {
     expect(persisted.text.tafsir.muyassar).toBe(true)
   })
 
-  test('H3: Storage selector caches Qaloon pages for offline Mushaf reload @offline', async ({ page, context }) => {
+  test('H3: Storage selector caches Qalun pages for offline Mushaf reload @offline', async ({ page, context }) => {
     test.setTimeout(60_000)
 
     await useSingleMushafPageDownloadPlan(page, 42)
@@ -448,7 +450,7 @@ test.describe('Journey H: Offline resilience', () => {
     await page.goto('/#/s/1')
     await waitForReader(page)
     await waitForServiceWorker(page)
-    await clearQaloonPageCaches(page)
+    await clearQalunPageCaches(page)
 
     await page.goto('/#/settings')
     const storageSection = page.locator('[data-testid="storage-section"]')
@@ -460,12 +462,12 @@ test.describe('Journey H: Offline resilience', () => {
     if (await pageCheck.isChecked()) {
       await pageCheck.uncheck()
       await clickStorageApply(page)
-      await waitForQaloonPageOptIn(page, false)
+      await waitForQalunPageOptIn(page, false)
     }
     await pageCheck.check()
     await clickStorageApply(page)
-    await waitForQaloonPageOptIn(page, true)
-    await waitForCachedQaloonPage(page, 42)
+    await waitForQalunPageOptIn(page, true)
+    await waitForCachedQalunPage(page, 42)
 
     await page.goto('/#/m/42')
     await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })

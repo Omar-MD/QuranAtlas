@@ -1,5 +1,5 @@
 import { settings } from '../../configure/state.svelte'
-import { getMushafPackAvailability, loadMushafManifest, pageForVerse } from '../../data/mushaf-pages'
+import { getMushafPackAvailability, loadMushafManifest, pageForVerse } from '../../packs/mushaf-pages'
 import { reader } from '../state.svelte'
 import { firstVerseForPage, pageFromAyahRecord, pageHref, verseHref } from './navigation'
 
