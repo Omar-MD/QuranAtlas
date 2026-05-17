@@ -83,6 +83,8 @@ Every implementation task below commits only after its local proof passes.
 **Files:**
 - Create: data/catalog/quran-text-assets.json
 - Create: data/catalog/mushaf-assets.json
+- Modify: `data/catalog/authorities.json`
+- Modify: `data/catalog/licenses.json`
 - Modify: `docs/context/source-data-flow.md`
 - Modify: `docs/context/data-model.md`
 - Test: `tests/unit/scripts/build-dataset.test.js`
@@ -254,7 +256,7 @@ Extend `scripts/data/source-catalog.mjs` or the existing catalog validation help
 
 - a default points at a missing asset;
 - a slug is unstable or duplicated within its riwayah;
-- provider/license IDs are absent from the relevant catalog authority;
+- provider/license IDs are absent from `data/catalog/authorities.json` or `data/catalog/licenses.json`;
 - text output templates do not match `quran-text/{riwayah}/{textStyleId}/{surah}.json`;
 - Mushaf page count or quran.ws source identity drifts from the catalog.
 
@@ -269,8 +271,9 @@ Expected: PASS after the new catalogs are accepted by the same data-validation b
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
-git add data/catalog/quran-text-assets.json data/catalog/mushaf-assets.json scripts/data/source-catalog.mjs tests/unit/scripts/build-dataset.test.js tests/unit/scripts/mushaf-pages.test.js docs/context/source-data-flow.md docs/context/data-model.md docs/context
+git add data/catalog/quran-text-assets.json data/catalog/mushaf-assets.json data/catalog/authorities.json data/catalog/licenses.json scripts/data/source-catalog.mjs tests/unit/scripts/build-dataset.test.js tests/unit/scripts/mushaf-pages.test.js docs/context/source-data-flow.md docs/context/data-model.md docs/context
 git commit -m "feat(data): add variant asset catalogs"
 ```
 
@@ -387,6 +390,8 @@ and add manifest fields:
 }
 ```
 
+During migration, also keep writing the legacy files at `mushaf-pages/{riwayah}/manifest.json` and `mushaf-pages/{riwayah}/pages/{NNN}.svg` until Task 5 switches every runtime consumer. The compatibility `riwayah-packages.json` facade must point only at files that exist for old consumers.
+
 - [ ] **Step 6: Write `indexes/mushaf-assets.json`**
 
 After page output, write:
@@ -416,7 +421,7 @@ url.pathname === '/dataset/indexes/text-assets.json' ||
 url.pathname === '/dataset/indexes/mushaf-assets.json'
 ```
 
-Increase `text-riwayah.maxEntries` to at least `420` so multiple 114-file variants can be verified without immediate eviction.
+Make cache expiration coherent for every route sharing `CACHE_DATASET`. Either use one safe `maxEntries` value across `text-riwayah`, `text-translation`, `text-tafsir`, `text-index`, `text-core`, and `text-knowledge`, split the categories into separate cache names, or remove `maxEntries` for the shared dataset cache. Add a route-def invariant test that fails when one cache name is reused with contradictory expiration caps.
 
 In `src/infra/sw/route-defs.ts`, update matches:
 
@@ -449,6 +454,7 @@ Add tests proving:
 
 ```ts
 expect(cacheNameFor(new URL('/dataset/mushaf-pages/qaloon/manifest.json', origin))).toBe('qa-pages-qaloon-v1')
+expect(cacheNameFor(new URL('/dataset/mushaf-pages/qaloon/pages/001.svg', origin))).toBe('qa-pages-qaloon-v1')
 expect(cacheNameFor(new URL('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json', origin))).toBe('qa-pages-qaloon-qalun-quran-ws-v1-v1')
 ```
 
@@ -462,11 +468,24 @@ Run: `pnpm vitest run tests/unit/scripts/build-dataset.test.js tests/unit/script
 
 Expected: PASS.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 11: Run generated dataset gates**
+
+Run: `pnpm run data -- build`
+
+Expected: public/dataset/indexes/text-assets.json, public/dataset/indexes/mushaf-assets.json, `public/dataset/indexes/riwayah-packages.json`, and `public/dataset/manifest.json` are regenerated and internally consistent.
+
+Run: `pnpm run data -- check`
+
+Expected: PASS.
+
+Inspect and stage the generated index/manifest/facade files together with the builder changes.
+
+- [ ] **Step 12: Commit**
 
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
 git add scripts/data/text/build.mjs scripts/data/mushaf-pages/build.mjs scripts/data/manifest/inventory.mjs scripts/data/riwayah-packages/build.mjs src/core/constants.ts src/infra/sw/route-defs.ts tests/unit/scripts/build-dataset.test.js tests/unit/scripts/mushaf-pages.test.js tests/unit/data/riwayah-packages.test.ts tests/unit/infra/sw/route-defs.test.ts public/dataset
 git commit -m "feat(data): emit variant asset indexes"
@@ -631,6 +650,7 @@ git commit -m "feat(packs): add variant asset loaders"
 - Test: `tests/unit/configure/state.test.ts`
 - Test: `tests/unit/configure/night-mode.test.ts`
 - Test: `tests/unit/configure/riwayah.test.ts`
+- Test: `tests/unit/infra/safety/sync.test.js`
 
 - [ ] **Step 1: Write failing settings migration tests**
 
@@ -713,6 +733,8 @@ The helper must not emit, broadcast, set DOM attributes, or mutate the Svelte st
 
 Update the settings-change event/cross-tab payload in `src/core/constants.ts` and `src/infra/safety/sync.ts` so other tabs can apply all three active axes together. Keep a riwayah-only compatibility payload only when all existing listeners have been updated in the same task.
 
+Add failing tests in `tests/unit/infra/safety/sync.test.js` for bundled settings payload broadcast/receive, invalid payload rejection, legacy riwayah-only compatibility when retained, and no broadcast when the atomic bundle transaction fails.
+
 - [ ] **Step 5: Add axis APIs that delegate to the bundle writer**
 
 Create src/configure/quran-text-style.ts with `initQuranTextStyle()`, `setQuranTextStyleId(id)`, and `loadQuranTextStyleId()`. Create src/configure/mushaf-edition.ts with matching edition functions. Both modules validate compatibility with current `settings.riwayah` and verified usability, then call `setActiveVariantBundle()` with the unchanged sibling axes instead of writing IDB directly.
@@ -750,7 +772,7 @@ In `src/app-bootstrap.ts`, normalize/load the full active bundle before reader r
 
 - [ ] **Step 9: Run settings tests**
 
-Run: `pnpm vitest run tests/unit/configure/state.test.ts tests/unit/configure/night-mode.test.ts tests/unit/configure/riwayah.test.ts`
+Run: `pnpm vitest run tests/unit/configure/state.test.ts tests/unit/configure/night-mode.test.ts tests/unit/configure/riwayah.test.ts tests/unit/infra/safety/sync.test.js`
 
 Expected: PASS.
 
@@ -759,8 +781,9 @@ Expected: PASS.
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
-git add src/core/settings.svelte.ts src/configure/variant-bundle.ts src/configure/quran-text-style.ts src/configure/mushaf-edition.ts src/configure/night-mode.ts src/configure/riwayah.ts src/app-bootstrap.ts tests/unit/configure/state.test.ts tests/unit/configure/night-mode.test.ts tests/unit/configure/riwayah.test.ts docs/context/surfaces/configure.md docs/context/data-model.md docs/context
+git add src/core/settings.svelte.ts src/configure/variant-bundle.ts src/configure/quran-text-style.ts src/configure/mushaf-edition.ts src/configure/night-mode.ts src/configure/riwayah.ts src/app-bootstrap.ts src/core/constants.ts src/infra/safety/sync.ts tests/unit/configure/state.test.ts tests/unit/configure/night-mode.test.ts tests/unit/configure/riwayah.test.ts tests/unit/infra/safety/sync.test.js docs/context/surfaces/configure.md docs/context/data-model.md docs/context
 git commit -m "feat(configure): add variant settings migration"
 ```
 
@@ -771,6 +794,7 @@ git commit -m "feat(configure): add variant settings migration"
 - Modify: `src/data/mushaf-pages.ts`
 - Modify: `src/packs/mushaf-pages.ts`
 - Modify: `src/read/mushaf/types.ts`
+- Modify: `src/read/mushaf/mode-switch.ts`
 - Modify: `src/read/mushaf/MushafReader.svelte`
 - Modify: `src/read/Reader.svelte`
 - Modify: `docs/context/surfaces/read.md`
@@ -822,6 +846,8 @@ function manifestUrl(riwayah: Riwayah, mushafEditionId: string): string {
 
 The manifest validator checks `raw.riwayah === expectedRiwayah` and `raw.mushafEditionId === expectedMushafEditionId`.
 
+Update every Mushaf resolver call site to pass or read `settings.mushafEditionId`, including `src/read/mushaf/mode-switch.ts`, `getMushafPackAvailability`, `pageForVerse`, and `loadMushafManifest`.
+
 - [ ] **Step 5: Update reader error copy and install prompts**
 
 Keep prompts anchored to the active missing asset. Do not render Qalun text/pages under a non-Qalun selected label.
@@ -837,8 +863,9 @@ Expected: PASS.
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
-git add src/data/dataset.ts src/data/mushaf-pages.ts src/packs/mushaf-pages.ts src/read/mushaf/types.ts src/read/mushaf/MushafReader.svelte src/read/Reader.svelte tests/unit/data/dataset.test.js tests/unit/data/mushaf-pages.test.ts tests/unit/read/mushaf/reader.test.ts docs/context/surfaces/read.md docs/context
+git add src/data/dataset.ts src/data/mushaf-pages.ts src/packs/mushaf-pages.ts src/read/mushaf/types.ts src/read/mushaf/mode-switch.ts src/read/mushaf/MushafReader.svelte src/read/Reader.svelte tests/unit/data/dataset.test.js tests/unit/data/mushaf-pages.test.ts tests/unit/read/mushaf/reader.test.ts docs/context/surfaces/read.md docs/context
 git commit -m "feat(read): resolve Quran assets by active variants"
 ```
 
@@ -913,6 +940,8 @@ export async function removeMushafAsset(riwayah: Riwayah, mushafEditionId: strin
 
 Install writes concrete `files[].url` into their route-derived caches, emits progress, and verifies every file after write. Install does not change active settings.
 
+`removeTextAsset()` and `removeMushafAsset()` must reject active optional assets at the operation layer, not only in the row view model. Deleting an active optional text style or Mushaf edition leaves IDB, Svelte settings, DOM riwayah, and Cache Storage unchanged and returns or throws the exact reason `Switch to another compatible asset before deleting.` Remove legacy auto-switch-before-delete behavior from this path.
+
 - [ ] **Step 4: Remove activation from all install paths**
 
 Rewrite existing/facade `startRiwayahPackageInstall()` so it caches and verifies only. It must not call `completeRiwayahInstall()` if that function persists `settings.riwayah`, must not emit `SETTINGS_RIWAYAH_CHANGED`, and must not write `riwayah`, `quranTextStyleId`, or `mushafEditionId`.
@@ -972,6 +1001,7 @@ Expected: PASS.
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
 git add src/data/offline.ts src/packs/text-assets.ts src/packs/mushaf-assets.ts src/configure/assets/asset-view-model.ts src/infra/sw/route-defs.ts tests/unit/data/offline.test.js tests/unit/infra/offline/offline-selector.test.ts tests/unit/infra/sw/route-defs.test.ts docs/context/surfaces/infra.md
 git commit -m "feat(assets): add variant asset operations"
@@ -1080,7 +1110,7 @@ openSettingsSheet(onMushafRoute ? 'mushaf' : 'verse')
 </section>
 ```
 
-After this shell step, capture proof with Playwright MCP or CLI at `390x844`, `768x1024`, and `1280x800`. Check focus trap, Escape close, restored focus, no horizontal overflow, no header/action overlap, and right-sidebar desktop shape against `settings-shell.mobile` and `settings-sidebar.desktop`.
+After this shell step, capture proof with Playwright MCP or CLI at `390x844`, `768x1024`, and `1280x800`. Check focus trap, Escape close, restored focus, no horizontal overflow, no header/action overlap, and right-sidebar desktop shape against `settings-shell.mobile` and `settings-sidebar.desktop`. Also run `page.emulateMedia({ reducedMotion: 'reduce' })` and verify essential state does not depend on animation completion.
 
 - [ ] **Step 7: Create shared Theme/Night controls**
 
@@ -1106,6 +1136,8 @@ Escape closes picker first. Second Escape closes settings. Picker rows expose in
 
 After this step, capture picker-open proof for compatible, incompatible, installing, unavailable, and active-delete-disabled rows. Verify disabled descriptions use `aria-describedby`.
 
+Manage Assets must close with focus restoration suppressed, for example `close({ restoreFocus: false })`, then the `#/assets` route focuses its page heading or Back control on mount. Do not restore focus to the reader gear or desktop Settings opener immediately before navigation.
+
 - [ ] **Step 11: Update desktop `#/settings` behavior**
 
 In `src/app-bootstrap.ts`, update `#/settings` so desktop opens the redesigned right sidebar, infers mode from the current route or last reader route, restores/replaces back to the reader route, and never shows the old centered modal. Add tests that `#/settings` from `#/m/10` opens Mushaf Settings and from `#/s/2` opens Verse Settings.
@@ -1121,6 +1153,7 @@ Expected: PASS.
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
 git add src/configure/settings src/configure/Panel.svelte src/configure/panel-bridge.ts src/app-bootstrap.ts src/read/MarginHeader.svelte src/styles/surfaces/settings.css tests/unit/configure/panel.test.ts tests/unit/read/MarginHeader-toggle.test.ts docs/context/surfaces/configure.md docs/context
 git commit -m "feat(configure): add mode-aware settings panels"
@@ -1164,6 +1197,8 @@ expect(screen.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('hr
 
 Add route/history tests proving Manage Assets from a reader route pushes `#/assets`, browser Back returns to that reader route, reload does not persist assets as `lastSurface`, and Back does not loop between `#/assets` and `#/settings`.
 
+Add focus tests proving Manage Assets suppresses settings-opener focus restoration and the `#/assets` heading or Back control receives focus on mount.
+
 - [ ] **Step 3: Run failing route tests**
 
 Run: `pnpm vitest run tests/unit/configure/state-last-surface.test.ts tests/unit/continuity/launch-targets.test.ts tests/unit/configure/panel.test.ts`
@@ -1178,7 +1213,11 @@ In `src/app-bootstrap.ts`:
 router.register('#/assets', async () => (await import('./configure/assets/AssetManagement.svelte')).default)
 ```
 
-- [ ] **Step 5: Exclude route from persistence and restore**
+- [ ] **Step 5: Move storage/install CTAs to assets**
+
+Update `src/core/quota-banner.svelte`, reader missing-asset prompts, and Mushaf missing-asset prompts so storage and missing-asset recovery route to `#/assets` or open the relevant asset picker with a clear fallback. Add route tests for the quota banner CTA and reader/Mushaf missing-asset prompts.
+
+- [ ] **Step 6: Exclude route from persistence and restore**
 
 In `src/continuity/last-surface.ts`:
 
@@ -1188,7 +1227,7 @@ const SKIP_PERSIST_PREFIXES = ['#/onboarding', '#/settings', '#/assets']
 
 Keep `#/assets` out of `STATIC_LAUNCHABLE_ROUTES` in `src/continuity/launch-targets.ts`.
 
-- [ ] **Step 6: Implement mobile route**
+- [ ] **Step 7: Implement mobile route**
 
 `AssetManagement.svelte` mobile layout:
 
@@ -1198,31 +1237,32 @@ Keep `#/assets` out of `STATIC_LAUNCHABLE_ROUTES` in `src/continuity/launch-targ
 - Sections: Quran Text Styles, Mushaf Editions, Translations, Tafsir.
 - Rows from `asset-view-model.ts`.
 
-After the mobile route shell and first row state are implemented, capture `390x844`, `320x568`, and `768x1024` proof before adding desktop tables. Compare against `asset-management.mobile`, `asset-row-states.mobile`, and `asset-status-live-region.mobile`; verify no horizontal overflow, 44px touch targets, visible disabled reason text, and live-region node placement.
+After the mobile route shell and first row state are implemented, capture `390x844`, `320x568`, and `768x1024` proof before adding desktop tables. Compare against `asset-management.mobile`, `asset-row-states.mobile`, and `asset-status-live-region.mobile`; verify no horizontal overflow, 44px touch targets, visible disabled reason text, live-region node placement, and reduced-motion behavior with `page.emulateMedia({ reducedMotion: 'reduce' })`.
 
-- [ ] **Step 7: Implement desktop route**
+- [ ] **Step 8: Implement desktop route**
 
 Desktop layout is two-pane operational UI: left summary/navigation, right grouped tables. Do not nest cards inside cards.
 
 After desktop tables are implemented, capture `1440x900` proof and compare to `asset-management.desktop` and `asset-table-states.desktop`. Verify table actions do not wrap incoherently at `1280x800`.
 
-- [ ] **Step 8: Add route styles**
+- [ ] **Step 9: Add route styles**
 
 Import src/styles/surfaces/assets.css in `src/styles/index.css`. Use QuranAtlas tokens, 8px or smaller radius, 44px touch targets, no decorative blobs or marketing hero treatment.
 
-- [ ] **Step 9: Run route tests**
+- [ ] **Step 10: Run route tests**
 
 Run: `pnpm vitest run tests/unit/configure/state-last-surface.test.ts tests/unit/continuity/launch-targets.test.ts tests/unit/configure/panel.test.ts`
 
 Expected: PASS.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
-git add src/configure/assets/AssetManagement.svelte src/app-bootstrap.ts src/continuity/last-surface.ts src/continuity/launch-targets.ts src/styles/index.css src/styles/surfaces/assets.css tests/unit/configure/state-last-surface.test.ts tests/unit/continuity/launch-targets.test.ts tests/unit/configure/panel.test.ts docs/context/surfaces/configure.md docs/context/architecture.md
+git add src/configure/assets/AssetManagement.svelte src/app-bootstrap.ts src/continuity/last-surface.ts src/continuity/launch-targets.ts src/core/quota-banner.svelte src/read/Reader.svelte src/read/mushaf/MushafReader.svelte src/styles/index.css src/styles/surfaces/assets.css tests/unit/configure/state-last-surface.test.ts tests/unit/continuity/launch-targets.test.ts tests/unit/configure/panel.test.ts docs/context/surfaces/configure.md docs/context/architecture.md docs/context
 git commit -m "feat(configure): add asset management route"
 ```
 
@@ -1233,6 +1273,7 @@ git commit -m "feat(configure): add asset management route"
 - Modify: `src/app-bootstrap.ts`
 - Modify: `src/read/AmbientDock.svelte`
 - Modify: `src/read/AmbientPill.svelte`
+- Modify: `src/onboard/screens.ts`
 - Modify: `src/navigate/global-shortcuts.ts`
 - Modify: `src/navigate/NavDrawer.svelte`
 - Delete: `src/navigate/CommandSheet.svelte`
@@ -1240,6 +1281,12 @@ git commit -m "feat(configure): add asset management route"
 - Delete: `src/navigate/state-command-sheet.svelte.ts`
 - Delete: `src/navigate/search-contract.ts`
 - Modify: `src/navigate/shortcuts-sheet.js`
+- Modify: `docs/product-info.md`
+- Modify: `docs/context/implemented.md`
+- Modify: `docs/context/feature-map.md`
+- Modify: `docs/context/architecture.md`
+- Modify: `docs/context/surfaces/infra.md`
+- Modify: `docs/context/surfaces/onboard.md`
 - Modify: `docs/context/surfaces/navigate.md`
 - Modify: `docs/context/surfaces/read.md`
 - Test: `tests/unit/navigate/command-sheet.test.ts`
@@ -1265,10 +1312,10 @@ E2E should no longer expect `Cmd/Ctrl+K`, `/`, or Search rail to open command/se
 Before deleting files, run:
 
 ```bash
-rg -n "CommandSheet|commandSheet|command-sheet|openCommandSheet|closeCommandSheet|state-command-sheet|search-contract|⌘K|Ctrl\\+K|Command sheet|Search" src tests docs/context
+rg -n "CommandSheet|commandSheet|command-sheet|openCommandSheet|closeCommandSheet|state-command-sheet|search-contract|Cmd\\+K|⌘K|Ctrl\\+K|quick.?jump|open command|qa-cmd|cmd-sheet|cmd-results|cmd-foot|#/settings|Search over|Search verses|Preferences|Command sheet|Search" src tests docs .agents
 ```
 
-Every hit must be removed, rewritten to non-command behavior, or retained only when it documents removed historical state in a spec file. Include `src/read/AmbientPill.svelte`, `tests/e2e/fixtures/chrome.js`, `tests/e2e/infra/offline.spec.js`, `tests/e2e/navigate/surahs.spec.js`, and shortcut docs in the review.
+Every hit must be removed, rewritten to non-command behavior, or retained only when it is clearly future-only roadmap text outside current UI promises. Include `src/read/AmbientPill.svelte`, `src/onboard/screens.ts`, `src/styles/surfaces/nav.css`, `tests/e2e/fixtures/chrome.js`, `tests/e2e/infra/offline.spec.js`, `tests/e2e/navigate/surahs.spec.js`, `docs/product-info.md`, and shortcut docs in the review.
 
 - [ ] **Step 3: Run failing navigation tests**
 
@@ -1298,15 +1345,21 @@ Settings opens `openSettingsSheet(reader.readerMode === 'mushaf' ? 'mushaf' : 'v
 
 In `src/read/AmbientPill.svelte`, remove `openCommandSheet`, click/keyboard command opening, and the `⌘K` hint. Keep the ambient pill as read-position feedback only.
 
-- [ ] **Step 8: Delete command files and tests**
+- [ ] **Step 8: Delete command files, CSS, and replace tests**
 
-Delete the command component, bridge, state module, and search contract. Delete or rewrite command-specific tests so they no longer assert removed product scope.
+Delete the command component, bridge, state module, search contract, and `.qa-cmd-*` CSS from `src/styles/surfaces/nav.css`. Replace command tests with absence/no-op tests for `Cmd/Ctrl+K`, `/`, `g p`, Search rail affordances, command docs copy, and retained direct shortcuts such as `g h`, `g s`, `g a`, `?`, and reader hotkeys.
 
 - [ ] **Step 9: Run navigation tests**
 
 Run: `pnpm vitest run tests/unit/read/AmbientDock.test.ts tests/unit/read/state-ambient.test.ts tests/unit/navigate/reader-actions.test.js tests/unit/navigate/drawer.test.ts tests/unit/core/reader-first-import-guards.test.ts`
 
 Run: `pnpm playwright test tests/e2e/navigate/drawer.spec.js tests/e2e/navigate/surahs.spec.js tests/e2e/read/chrome.spec.js --project=chromium --reporter=line`
+
+Run the post-removal inventory again:
+
+```bash
+rg -n "CommandSheet|commandSheet|command-sheet|openCommandSheet|closeCommandSheet|state-command-sheet|search-contract|Cmd\\+K|⌘K|Ctrl\\+K|quick.?jump|open command|qa-cmd|cmd-sheet|cmd-results|cmd-foot|Search over|Search verses|Command sheet" src tests docs .agents
+```
 
 Expected: PASS.
 
@@ -1315,8 +1368,9 @@ Expected: PASS.
 ```bash
 pnpm run docs
 pnpm run docs:check
+pnpm run check
 git diff --check
-git add -A src/App.svelte src/app-bootstrap.ts src/read/AmbientDock.svelte src/read/AmbientPill.svelte src/navigate docs/context/surfaces/navigate.md docs/context/surfaces/read.md docs/context tests/unit tests/e2e
+git add -A src/App.svelte src/app-bootstrap.ts src/read/AmbientDock.svelte src/read/AmbientPill.svelte src/onboard/screens.ts src/navigate src/styles/surfaces/nav.css docs/product-info.md docs/context tests/unit tests/e2e
 git commit -m "feat(navigate): remove command sheet search entry"
 ```
 
@@ -1361,8 +1415,12 @@ Also cover direct entry and history:
 await page.goto('/#/assets')
 await expect(page.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
 await page.goto('/#/s/1')
+await page.getByLabel('Open settings').click()
+await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
 await page.getByRole('button', { name: 'Manage Assets' }).click()
+await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeHidden()
 await expect(page).toHaveURL(/#\/assets$/)
+await expect.poll(() => page.evaluate(() => document.activeElement?.matches('h1, [data-testid="assets-back"]'))).toBe(true)
 await page.goBack()
 await expect(page).toHaveURL(/#\/s\/1$/)
 ```
@@ -1385,8 +1443,18 @@ Screenshot states:
 - Verse Settings and Mushaf Settings at `390x844`, `320x568`, `768x1024`, `1280x800`.
 - `#/assets` at `390x844`, `320x568`, `768x1024`, `1440x900`.
 - Light, sepia, dark, and Night overlay placement.
+- Reduced motion for Verse Settings, Mushaf Settings, nested picker, and `#/assets` using `page.emulateMedia({ reducedMotion: 'reduce' })`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Run every modified E2E spec**
+
+Run:
+
+```bash
+pnpm playwright test tests/e2e/configure/settings.spec.js tests/e2e/read/chrome.spec.js tests/e2e/navigate/drawer.spec.js --project=chromium --reporter=line
+PLAYWRIGHT_INCLUDE_OFFLINE=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm playwright test tests/e2e/infra/offline.spec.js --project="Offline (Preview)" --reporter=line
+```
+
+- [ ] **Step 7: Commit**
 
 ```bash
 pnpm run docs
