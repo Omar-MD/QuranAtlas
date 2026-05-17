@@ -10,7 +10,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 |---|---|---|---|
 | Package manager | **pnpm** | `10.31.0` (via `packageManager` in `package.json`) | Fast, disk-efficient, strict dependency isolation |
 | Build tool | **Vite** | `^8.0.10` | Dev server, HMR, production bundling (Rolldown-powered) |
-| UI framework | **Svelte** | `^5.55.5` | Runes-based reactivity; components compile to tight vanilla JS |
+| UI framework | **Svelte** | `^5.55.7` | Runes-based reactivity; components compile to tight vanilla JS |
 | Svelte ↔ Vite | **@sveltejs/vite-plugin-svelte** | `^7.0.0` | Svelte integration for Vite's module graph |
 | Language | **TypeScript** | `^6.0.3` | Type gate across all feature modules |
 | Type check | **svelte-check** | `^4.4.6` | TypeScript + Svelte type-only pass (`pnpm run check`) |
