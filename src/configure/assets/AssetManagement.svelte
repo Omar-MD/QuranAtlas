@@ -194,7 +194,7 @@
   onMount(() => {
     try { sessionStorage.removeItem('qa-assets-can-go-back') } catch { /* ignore */ }
     void refreshRows('Asset state ready.')
-    void tick().then(() => heading?.focus())
+    void tick().then(() => heading?.focus({ preventScroll: true }))
   })
 </script>
 
