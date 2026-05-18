@@ -142,7 +142,8 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // into a later (real) versionchange and silencing the reload banner.
     pushCleanup(bootCleanups, initSafetySync())
 
-    // Apply saved theme + font size before router dispatches first route
+    // Apply saved display settings and normalize the active variant bundle
+    // before router dispatches the first reader route.
     await initTheme()
     await initFontSize()
     const activeRiwayah = await initRiwayah()

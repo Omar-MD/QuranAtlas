@@ -5,48 +5,57 @@
 
 import { get, put } from '../core/db.js'
 import { logger } from '../core/logger.js'
-import { settings } from './state.svelte.ts'
+import { settings, type NightMode } from './state.svelte.ts'
 
-const DEFAULT = false
+const DEFAULT: NightMode = 'off'
 
-export function applyNightMode(on: boolean): void {
-  if (on) {
+export function applyNightMode(mode: NightMode | boolean): void {
+  const normalized = normalizeNightMode(mode)
+  if (normalized === 'on') {
     document.documentElement.setAttribute('data-night-mode', 'on')
   } else {
     document.documentElement.removeAttribute('data-night-mode')
   }
 }
 
-export async function loadNightMode(): Promise<boolean> {
+export function normalizeNightMode(value: unknown): NightMode {
+  if (value === true) return 'on'
+  if (value === false || value == null) return 'off'
+  if (value === 'off' || value === 'on' || value === 'auto') return value
+  return 'off'
+}
+
+export async function loadNightMode(): Promise<NightMode> {
   try {
     const rec = await get('settings', 'nightMode')
     const raw = (rec as { value?: unknown } | undefined)?.value
-    return typeof raw === 'boolean' ? raw : DEFAULT
+    return normalizeNightMode(raw)
   } catch (error) {
     logger.error('Failed to load night mode', { error })
     return DEFAULT
   }
 }
 
-export async function setNightMode(on: boolean): Promise<boolean> {
-  applyNightMode(on)
-  Object.assign(settings, { nightMode: on })
+export async function setNightMode(mode: NightMode): Promise<boolean> {
+  const normalized = normalizeNightMode(mode)
+  applyNightMode(normalized)
+  Object.assign(settings, { nightMode: normalized })
   try {
-    await put('settings', { key: 'nightMode', value: on })
+    await put('settings', { key: 'nightMode', value: normalized })
   } catch (error) {
-    logger.error('Failed to save night mode', { on, error })
+    logger.error('Failed to save night mode', { mode: normalized, error })
   }
   return true
 }
 
-export async function toggleNightMode(): Promise<boolean> {
-  const next = !settings.nightMode
+export async function toggleNightMode(): Promise<NightMode> {
+  const next: NightMode = normalizeNightMode(settings.nightMode) === 'on' ? 'off' : 'on'
   await setNightMode(next)
   return next
 }
 
 export async function initNightMode(): Promise<void> {
-  const on = await loadNightMode()
-  applyNightMode(on)
-  Object.assign(settings, { nightMode: on })
+  const mode = await loadNightMode()
+  applyNightMode(mode)
+  Object.assign(settings, { nightMode: mode })
 }

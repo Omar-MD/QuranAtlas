@@ -28,6 +28,11 @@ const syncState = { get: () => sync, set: (p: Partial<typeof sync>) => Object.as
 const CHANNEL_NAME = 'quran-atlas:sync'
 
 type Riwayah = 'hafs' | 'warsh' | 'qaloon'
+type ActiveVariantBundlePayload = {
+  riwayah: Riwayah
+  quranTextStyleId: string
+  mushafEditionId: string
+}
 
 type TopicHandler = (payload: unknown) => void
 
@@ -104,6 +109,10 @@ export function broadcastRiwayahChange(next: Riwayah): void {
   broadcast('settings.riwayah', { value: next })
 }
 
+export function broadcastActiveVariantBundle(bundle: ActiveVariantBundlePayload): void {
+  broadcast('settings.riwayah', bundle)
+}
+
 /**
  * Close the channel and clean up all listeners.
  */
@@ -166,11 +175,32 @@ function handleChannelMessage(event: MessageEvent): void {
   if (!handler) {
     return
   }
+  if (topic === 'settings.riwayah' && !validSettingsRiwayahPayload(payload)) {
+    logger.warn('Sync rejected settings.riwayah payload: invalid active variant bundle')
+    return
+  }
   try {
     handler(payload)
   } catch (error) {
     logger.error('Sync topic handler error:', { topic, error })
   }
+}
+
+const VARIANT_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/
+
+function isRiwayah(value: unknown): value is Riwayah {
+  return value === 'hafs' || value === 'warsh' || value === 'qaloon'
+}
+
+function validSettingsRiwayahPayload(payload: unknown): boolean {
+  if (!payload || typeof payload !== 'object') return false
+  const p = payload as { value?: unknown; riwayah?: unknown; quranTextStyleId?: unknown; mushafEditionId?: unknown }
+  if (p.value !== undefined) return isRiwayah(p.value)
+  return isRiwayah(p.riwayah)
+    && typeof p.quranTextStyleId === 'string'
+    && VARIANT_ID_RE.test(p.quranTextStyleId)
+    && typeof p.mushafEditionId === 'string'
+    && VARIANT_ID_RE.test(p.mushafEditionId)
 }
 
 // Per-element validation for inbound BroadcastChannel arrays. A peer tab

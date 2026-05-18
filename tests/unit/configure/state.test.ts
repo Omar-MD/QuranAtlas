@@ -10,6 +10,9 @@ describe('state/settings.svelte.ts', () => {
     settings.translationVisible = true
     settings.surahHeaderHidden = false
     settings.mushafViewMode = 'auto'
+    settings.quranTextStyleId = 'uthmani-kfgqpc-v1'
+    settings.mushafEditionId = 'qalun-quran-ws-v1'
+    settings.nightMode = 'off'
   })
 
   it('has correct initial state', () => {
@@ -19,6 +22,9 @@ describe('state/settings.svelte.ts', () => {
     expect(settings.tafsirId).toBe('muyassar')
     expect(settings.translationVisible).toBe(true)
     expect(settings.mushafViewMode).toBe('auto')
+    expect(settings.quranTextStyleId).toBe('uthmani-kfgqpc-v1')
+    expect(settings.mushafEditionId).toBe('qalun-quran-ws-v1')
+    expect(settings.nightMode).toBe('off')
   })
 
   it('fields are directly assignable', () => {

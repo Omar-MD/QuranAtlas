@@ -9,6 +9,7 @@ export type Theme = 'light' | 'sepia' | 'dark' | 'auto'
 export type FontSize = 'sm' | 'md' | 'lg' | 'xl'
 export type ReadingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type MushafViewMode = 'auto' | 'fit-page' | 'fit-width'
+export type NightMode = 'off' | 'on' | 'auto'
 export type RiwayahInstallState = Record<Riwayah, RiwayahPackageStatus | null>
 export type RiwayahInstallIntent = {
   requested: Riwayah | null
@@ -46,7 +47,9 @@ export const settings = $state({
   readerMargin: 'md' as ReadingStep,
   verseSpacing: 'md' as ReadingStep,
   mushafViewMode: 'auto' as MushafViewMode,
-  nightMode: false,
+  quranTextStyleId: 'uthmani-kfgqpc-v1',
+  mushafEditionId: 'qalun-quran-ws-v1',
+  nightMode: 'off' as NightMode,
   surahHeaderHidden: false,
   currentPosition: null as GlobalPosition,
   wirdPlan: null as WirdPlan | null,

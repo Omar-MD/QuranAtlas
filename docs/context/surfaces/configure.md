@@ -47,10 +47,12 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/configure/about/pwa-install.ts` | PWA install prompt management. |
 | `src/configure/clear-data.ts` | Clear data: confirmation flow and data deletion. |
 | `src/configure/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
+| `src/configure/mushaf-edition.ts` | _(no leading comment)_ |
 | `src/configure/night-mode.ts` | Night recitation mode: dim+warm overlay, composes over any theme. |
 | `src/configure/offline-categories.ts` | Offline categories preference: per-feature opt-in for the offline selector. |
 | `src/configure/offline-selector.svelte` | Per-feature offline opt-in selector. |
 | `src/configure/panel-bridge.ts` | Settings Panel — overlay bridge + sole-writer/-reader data functions. |
+| `src/configure/quran-text-style.ts` | _(no leading comment)_ |
 | `src/configure/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
 | `src/configure/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
 | `src/configure/state-last-surface.svelte.ts` | _(no leading comment)_ |
@@ -59,6 +61,7 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/configure/surah-header-visibility.ts` | Surah header visibility: persisted user preference for whether the in-reader |
 | `src/configure/tafsir.ts` | _(no leading comment)_ |
 | `src/configure/theme.ts` | Theme management: load and apply user theme preferences. |
+| `src/configure/variant-bundle.ts` | _(no leading comment)_ |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
@@ -79,7 +82,7 @@ Three zones:
 
 Every change updates live preview (font size, reading flow, theme palette, riwayah glyph swap when popover row picked).
 
-Switching riwayah via popover is gated by the pack domain. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Concrete text/page fetches decide whether a specific offline resource is present. Optional Hafs and Warsh can be selected only after `src/packs/riwayah.ts` verifies that every planned text URL is in `CACHE_DATASET` and every planned page URL is in that riwayah's `qa-pages-{riwayah}-v1` cache. Online package availability alone leaves the row installable, not usable. A rejected switch returns `false`, leaves `settings.riwayah` unchanged, and does not apply DOM state, write IDB, emit `SETTINGS_RIWAYAH_CHANGED`, or broadcast cross-tab.
+Switching riwayah via popover is gated by the variant-asset domain. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Active recitation state is the atomic bundle `settings.riwayah` + `settings.quranTextStyleId` + `settings.mushafEditionId`, written only by `src/configure/variant-bundle.ts`. A riwayah switch chooses that riwayah's default Quran text style and Mushaf edition, validates both assets are usable, then writes all three keys in one IDB transaction before mutating runes, applying DOM state, emitting `SETTINGS_RIWAYAH_CHANGED`, or broadcasting cross-tab. A rejected switch returns `false` and leaves all three active keys unchanged.
 
 The recitation picker exposes the package state on each row. Installed rows switch immediately. Installable rows show the package byte estimate and start the install flow instead of switching. Installing rows show cached/total progress and disable switching. Unavailable rows are disabled. Error rows offer retry. The current active row remains visibly active until the install verifies and `setRiwayah(requested)` succeeds. The same policy applies to other source rows: selection labels do not move early just because a pack is download-capable.
 
@@ -130,7 +133,7 @@ Settings sheet's sticky preview band keeps fixed warm-bronze dark background reg
 
 ### Night recitation mode
 
-Independent toggle below theme swatches. Drives `data-night-mode="on"` on `<html>` (sole writer `settings/night-mode.ts`); overlays dim+warm tint via persistent `.qa-night-shift` element (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, `mix-blend-mode: multiply`). Composes with any base theme. Reachable from Appearance row or via global `n` reader shortcut (announced via `a11y/announcer`). Persists in `settings.nightMode` (boolean).
+Independent toggle below theme swatches. Drives `data-night-mode="on"` on `<html>` (sole writer `settings/night-mode.ts`); overlays dim+warm tint via persistent `.qa-night-shift` element (mounted in `App.svelte`, styled in `styles/surfaces/night-shift.css`, `mix-blend-mode: multiply`). Composes with any base theme. Reachable from Appearance row or via global `n` reader shortcut (announced via `a11y/announcer`). Persists in `settings.nightMode` as `'off' | 'on' | 'auto'`; legacy boolean values migrate on load (`true` → `'on'`, `false` → `'off'`).
 
 ### About page
 
@@ -171,8 +174,10 @@ Keys + sole writers:
 | Key | Sole writer | Type |
 | --- | --- | --- |
 | `theme` | `src/configure/theme.ts` | `'light' \| 'sepia' \| 'dark' \| 'auto'` |
-| `nightMode` | `src/configure/night-mode.ts` | `boolean` |
-| `riwayah` | `src/configure/riwayah.ts` | `'hafs' \| 'warsh' \| 'qaloon'` |
+| `nightMode` | `src/configure/night-mode.ts` | `'off' \| 'on' \| 'auto'` |
+| `riwayah` | `src/configure/variant-bundle.ts` | `'hafs' \| 'warsh' \| 'qaloon'` |
+| `quranTextStyleId` | `src/configure/variant-bundle.ts` | variant id string |
+| `mushafEditionId` | `src/configure/variant-bundle.ts` | variant id string |
 | `translationId` | `src/configure/panel-bridge.ts` | `string` |
 | `tafsirId` | `src/configure/tafsir.ts` | `string` |
 | `translationVisible` | `src/configure/panel-bridge.ts` | `boolean` |
@@ -190,7 +195,7 @@ Keys + sole writers:
 | `onboardingComplete` | `src/onboard/state.ts` | `boolean` |
 | `offlineCategories` | `src/configure/offline-categories.ts` | `OfflineCategoriesState` (source-aware text/pages/search opt-in; legacy audio values are dropped during normalization so removed-scope state does not survive invisibly) |
 
-Riwayah package status and install intent are in-memory runtime state, not `settings` keys. They are intentionally separate from the persisted active riwayah so an optional package can be installable, installing, or errored without becoming the rendered corpus.
+Riwayah package status and install intent are in-memory runtime state, not `settings` keys. They are intentionally separate from the persisted active bundle so an optional asset can be installable, installing, or errored without becoming rendered content.
 
 ## Events
 
@@ -199,7 +204,7 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 | --- | --- | --- |
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:55` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:68`, `src/configure/variant-bundle.ts:66` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:195` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:178` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -212,7 +217,7 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 
 ## Invariants
 
-- **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity.
+- **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity. The active variant keys (`riwayah`, `quranTextStyleId`, `mushafEditionId`) are intentionally co-owned by `src/configure/variant-bundle.ts` so they can be validated, written, applied, and broadcast as one bundle.
 - **Mushaf view mode is owned by the read surface.** The Settings store persists `mushafViewMode`, but the sole writer is `src/read/mushaf/view-mode.ts` because the visible control lives in Mushaf page chrome, not the Settings sheet.
 - **Sole writer of `settings.wirdPlan`: `src/read/wird/store.ts`.** The settings store remains key-value; Daily Wird owns only this key and does not change the settings objectStore schema.
 - **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
@@ -223,13 +228,13 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 - **Sole writer of `settings.offlineCategories`: `src/configure/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
 - **Text offline opt-in remains source-aware.** The visible Text checkbox maps to the baseline Qalun + Bridges + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional translation and tafsir rows are controlled by `settings.offlineCategories.text.translations` / `.tafsir` and planned from `indexes/source-assets.json`, not from the baseline manifest.
 - **Pages offline opt-in is per-riwayah.** The selector stores Qalun/Hafs/Warsh page choices under `settings.offlineCategories.pages`; `src/configure/offline-categories.ts`, the sole writer, normalizes the legacy `{ _all: true }` shape to `{ qaloon: true }`. Page apply actions call page-specific cache helpers instead of the generic category download path.
-- **Optional riwayat are usable only after local package verification.** `settings.riwayah` may persist Hafs or Warsh only when the package helper reports `installed`; Qalun (`qaloon`) availability does not make another riwayah usable.
-- **Install intent is not the active riwayah.** `riwayahInstallIntent.requested` and `previousUsable` guide install/prompt flows without changing `settings.riwayah` until `setRiwayah(requested)` succeeds.
+- **Optional variant assets are usable only after local asset verification.** The active bundle may persist Hafs or Warsh only when both the selected Quran text style and Mushaf edition helpers report usable. Qalun (`qaloon`) availability does not make another riwayah usable.
+- **Install intent is not the active bundle.** `riwayahInstallIntent.requested` and `previousUsable` guide install/prompt flows without changing the active variant bundle until `setRiwayah(requested)` succeeds.
 
 ## Regression guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (14):**
+**Unit (15):**
 
 - `tests/unit/configure/about/About.test.ts`
 - `tests/unit/configure/about/pwa-install.test.ts`
@@ -245,6 +250,7 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 - `tests/unit/configure/state.test.ts`
 - `tests/unit/configure/surah-header-visibility.test.ts`
 - `tests/unit/configure/theme.test.ts`
+- `tests/unit/configure/variant-bundle.test.ts`
 
 **E2E (4):**
 

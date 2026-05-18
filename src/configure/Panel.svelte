@@ -570,9 +570,9 @@
       <button
         type="button"
         class="qa-settings-tf-night"
-        class:qa-settings-tf-night--on={settings.nightMode}
+        class:qa-settings-tf-night--on={settings.nightMode === 'on'}
         role="switch"
-        aria-checked={settings.nightMode}
+        aria-checked={settings.nightMode === 'on'}
         aria-label="Night mode"
         onclick={handleNightMode}
         data-testid="night-mode-switch"

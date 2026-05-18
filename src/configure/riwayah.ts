@@ -15,15 +15,17 @@ import {
   isRiwayah,
   isRiwayahUsable,
   loadRiwayah,
-  persistRiwayahSelection,
   refreshRiwayahPackageStatus,
   type Riwayah,
 } from '../packs/riwayah'
+import { defaultTextStyleForRiwayah } from '../packs/text-assets'
+import { defaultMushafEditionForRiwayah } from '../packs/mushaf-assets'
 import {
   riwayahInstallIntent,
   settings,
 } from './state.svelte.ts'
 import { registerTopic } from '../infra/safety/sync'
+import { initActiveVariantBundle, setActiveVariantBundle, type ActiveVariantBundle } from './variant-bundle'
 
 export type { Riwayah }
 export { getRiwayahOptions, loadRiwayah }
@@ -35,9 +37,36 @@ export {
 }
 
 export async function setRiwayah(next: Riwayah): Promise<boolean> {
-  const result = await persistRiwayahSelection(next)
-  if (!result) return false
-  return true
+  if (!isRiwayah(next)) return false
+  const [quranTextStyleId, mushafEditionId] = await Promise.all([
+    defaultTextStyleForRiwayah(next),
+    defaultMushafEditionForRiwayah(next),
+  ])
+  return setActiveVariantBundle({ riwayah: next, quranTextStyleId, mushafEditionId })
+}
+
+function isBundlePayload(payload: unknown): payload is ActiveVariantBundle {
+  const bundle = payload as Partial<ActiveVariantBundle> | null
+  return !!bundle
+    && isRiwayah(bundle.riwayah)
+    && typeof bundle.quranTextStyleId === 'string'
+    && typeof bundle.mushafEditionId === 'string'
+}
+
+function applySyncedBundle(next: ActiveVariantBundle): void {
+  const previous = (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-riwayah') : null) as Riwayah | null
+  if (
+    settings.riwayah === next.riwayah
+    && settings.quranTextStyleId === next.quranTextStyleId
+    && settings.mushafEditionId === next.mushafEditionId
+  ) {
+    return
+  }
+  Object.assign(settings, next)
+  applyRiwayah(next.riwayah)
+  if (previous !== next.riwayah) {
+    emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: (previous ?? DEFAULT_RIWAYAH), to: next.riwayah })
+  }
 }
 
 export async function initRiwayah(): Promise<Riwayah> {
@@ -45,19 +74,22 @@ export async function initRiwayah(): Promise<Riwayah> {
   // applyRiwayah / event-emit on incoming messages — sync.ts no longer
   // imports from this module, breaking the audit CC-4 cycle (2026-04-29).
   registerTopic('settings.riwayah', (payload) => {
+    if (isBundlePayload(payload)) {
+      applySyncedBundle(payload)
+      return
+    }
     const v = (payload || {}) as { value?: unknown }
     if (!isRiwayah(v.value)) { return }
-    const next = v.value
-    const prev = (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-riwayah') : null) as Riwayah | null
-    if (prev === next) { return }
-    applyRiwayah(next)
-    ;(settings as Record<string, unknown>).riwayah = next
-    emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: (prev ?? DEFAULT_RIWAYAH), to: next })
+    applySyncedBundle({
+      riwayah: v.value,
+      quranTextStyleId: settings.quranTextStyleId,
+      mushafEditionId: settings.mushafEditionId,
+    })
   })
-  const r = await loadRiwayah()
+  const bundle = await initActiveVariantBundle()
   try {
-    if (await isRiwayahUsable(r)) {
-      riwayahInstallIntent.previousUsable = r
+    if (await isRiwayahUsable(bundle.riwayah)) {
+      riwayahInstallIntent.previousUsable = bundle.riwayah
     } else if (await isRiwayahUsable(DEFAULT_RIWAYAH)) {
       riwayahInstallIntent.previousUsable = DEFAULT_RIWAYAH
     }
@@ -65,7 +97,5 @@ export async function initRiwayah(): Promise<Riwayah> {
     // Package index may be absent in old cached builds or test harnesses; the
     // active setting still loads, but optional persistence remains gated.
   }
-  applyRiwayah(r)
-  ;(settings as Record<string, unknown>).riwayah = r
-  return r
+  return bundle.riwayah
 }

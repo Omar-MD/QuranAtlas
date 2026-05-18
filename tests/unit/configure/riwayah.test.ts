@@ -16,6 +16,43 @@ vi.mock('../../../src/core/db.js', () => ({
 vi.mock('../../../src/core/events.js', () => ({ emit: vi.fn() }))
 vi.mock('../../../src/core/logger.js', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }))
 vi.mock('../../../src/configure/state.svelte.ts', () => mockState)
+vi.mock('../../../src/packs/text-assets', () => ({
+  defaultTextStyleForRiwayah: vi.fn(async () => 'uthmani-kfgqpc-v1'),
+}))
+vi.mock('../../../src/packs/mushaf-assets', () => ({
+  defaultMushafEditionForRiwayah: vi.fn(async (riwayah: string) => (
+    riwayah === 'hafs' ? 'hafs-quran-ws-v1'
+      : riwayah === 'warsh' ? 'warsh-quran-ws-v1'
+        : 'qalun-quran-ws-v1'
+  )),
+}))
+vi.mock('../../../src/configure/variant-bundle', async () => {
+  const { emit } = await import('../../../src/core/events.js')
+  return {
+    initActiveVariantBundle: vi.fn(async () => {
+      const riwayah = typeof fakeStore.get('riwayah') === 'string' ? fakeStore.get('riwayah') as string : 'qaloon'
+      const bundle = {
+        riwayah,
+        quranTextStyleId: typeof fakeStore.get('quranTextStyleId') === 'string' ? fakeStore.get('quranTextStyleId') as string : 'uthmani-kfgqpc-v1',
+        mushafEditionId: typeof fakeStore.get('mushafEditionId') === 'string' ? fakeStore.get('mushafEditionId') as string : riwayah === 'hafs' ? 'hafs-quran-ws-v1' : 'qalun-quran-ws-v1',
+      }
+      Object.assign(mockState.settings, bundle)
+      return bundle
+    }),
+    setActiveVariantBundle: vi.fn(async (bundle: { riwayah: string; quranTextStyleId: string; mushafEditionId: string }) => {
+      if (!usableRiwayah.has(bundle.riwayah)) return false
+      const previous = typeof fakeStore.get('riwayah') === 'string' ? fakeStore.get('riwayah') as string : 'qaloon'
+      fakeStore.set('riwayah', bundle.riwayah)
+      fakeStore.set('quranTextStyleId', bundle.quranTextStyleId)
+      fakeStore.set('mushafEditionId', bundle.mushafEditionId)
+      Object.assign(mockState.settings, bundle)
+      if (previous !== bundle.riwayah) {
+        emit('settings:riwayah-changed', { from: previous, to: bundle.riwayah })
+      }
+      return true
+    }),
+  }
+})
 vi.mock('../../../src/packs/riwayah', async () => {
   const { emit } = await import('../../../src/core/events.js')
   return {
@@ -87,9 +124,17 @@ describe('riwayah settings', () => {
 
   it('setRiwayah persists value + emits SETTINGS_RIWAYAH_CHANGED', async () => {
     const { setRiwayah } = await import('../../../src/configure/riwayah')
+    const { setActiveVariantBundle } = await import('../../../src/configure/variant-bundle')
     const { emit } = await import('../../../src/core/events.js')
     await setRiwayah('hafs')
     expect(fakeStore.get('riwayah')).toBe('hafs')
+    expect(fakeStore.get('quranTextStyleId')).toBe('uthmani-kfgqpc-v1')
+    expect(fakeStore.get('mushafEditionId')).toBe('hafs-quran-ws-v1')
+    expect(setActiveVariantBundle).toHaveBeenCalledWith({
+      riwayah: 'hafs',
+      quranTextStyleId: 'uthmani-kfgqpc-v1',
+      mushafEditionId: 'hafs-quran-ws-v1',
+    })
     expect(emit).toHaveBeenCalledWith('settings:riwayah-changed', { from: 'qaloon', to: 'hafs' })
   })
 
@@ -135,5 +180,23 @@ describe('riwayah settings', () => {
     riwayahTopicHandler?.({ value: 'warsh' })
 
     expect(settings.riwayah).toBe('warsh')
+  })
+
+  it('sync topic applies bundled active variant axes', async () => {
+    const { initRiwayah } = await import('../../../src/configure/riwayah')
+    const { settings } = await import('../../../src/configure/state.svelte.ts')
+
+    await initRiwayah()
+    riwayahTopicHandler?.({
+      riwayah: 'hafs',
+      quranTextStyleId: 'uthmani-kfgqpc-v1',
+      mushafEditionId: 'hafs-quran-ws-v1',
+    })
+
+    expect(settings).toMatchObject({
+      riwayah: 'hafs',
+      quranTextStyleId: 'uthmani-kfgqpc-v1',
+      mushafEditionId: 'hafs-quran-ws-v1',
+    })
   })
 })

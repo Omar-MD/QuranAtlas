@@ -120,7 +120,7 @@ function handleGlobalKeydown(e: KeyboardEvent): void {
     case 'd': case 'D': e.preventDefault(); void cycleTheme(); return
     case 'n': case 'N':
       e.preventDefault()
-      void toggleNightMode().then((on) => announce(on ? 'Night mode on' : 'Night mode off'))
+      void toggleNightMode().then((mode) => announce(mode === 'on' ? 'Night mode on' : 'Night mode off'))
       return
     case '+': case '=': e.preventDefault(); void bumpFont(+1); return
     case '-': case '_': e.preventDefault(); void bumpFont(-1); return

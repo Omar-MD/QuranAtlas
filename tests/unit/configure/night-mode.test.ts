@@ -7,7 +7,7 @@ describe('night-mode', () => {
     await openDB()
     try { await del('settings', 'nightMode') } catch { /* ignore */ }
     document.documentElement.removeAttribute('data-night-mode')
-    settings.nightMode = false
+    settings.nightMode = 'off'
   })
 
   it('applyNightMode(true) sets data-night-mode="on"', async () => {
@@ -23,45 +23,52 @@ describe('night-mode', () => {
     expect(document.documentElement.hasAttribute('data-night-mode')).toBe(false)
   })
 
-  it('loadNightMode returns false on fresh install', async () => {
+  it('loadNightMode returns off on fresh install', async () => {
     const { loadNightMode } = await import('../../../src/configure/night-mode.ts')
-    expect(await loadNightMode()).toBe(false)
+    expect(await loadNightMode()).toBe('off')
   })
 
-  it('loadNightMode returns saved boolean', async () => {
+  it('loadNightMode migrates saved booleans', async () => {
     await put('settings', { key: 'nightMode', value: true })
     const { loadNightMode } = await import('../../../src/configure/night-mode.ts')
-    expect(await loadNightMode()).toBe(true)
+    expect(await loadNightMode()).toBe('on')
+
+    await put('settings', { key: 'nightMode', value: false })
+    expect(await loadNightMode()).toBe('off')
   })
 
-  it('loadNightMode falls back to false for non-boolean stored value', async () => {
+  it('loadNightMode returns saved string modes and falls back to off for invalid values', async () => {
     await put('settings', { key: 'nightMode', value: 'on' })
     const { loadNightMode } = await import('../../../src/configure/night-mode.ts')
-    expect(await loadNightMode()).toBe(false)
+    expect(await loadNightMode()).toBe('on')
+    await put('settings', { key: 'nightMode', value: 'auto' })
+    expect(await loadNightMode()).toBe('auto')
+    await put('settings', { key: 'nightMode', value: 'invalid' })
+    expect(await loadNightMode()).toBe('off')
   })
 
-  it('setNightMode(true) writes IDB, applies attribute, mutates rune', async () => {
+  it('setNightMode("on") writes IDB, applies attribute, mutates rune', async () => {
     const { setNightMode } = await import('../../../src/configure/night-mode.ts')
-    await setNightMode(true)
-    expect(settings.nightMode).toBe(true)
+    await setNightMode('on')
+    expect(settings.nightMode).toBe('on')
     expect(document.documentElement.getAttribute('data-night-mode')).toBe('on')
-    const stored = await get('settings', 'nightMode') as { value: boolean } | undefined
-    expect(stored?.value).toBe(true)
+    const stored = await get('settings', 'nightMode') as { value: string } | undefined
+    expect(stored?.value).toBe('on')
   })
 
-  it('toggleNightMode flips state and returns the new value', async () => {
+  it('toggleNightMode cycles off to on and back to off', async () => {
     const { toggleNightMode } = await import('../../../src/configure/night-mode.ts')
-    expect(await toggleNightMode()).toBe(true)
-    expect(settings.nightMode).toBe(true)
-    expect(await toggleNightMode()).toBe(false)
-    expect(settings.nightMode).toBe(false)
+    expect(await toggleNightMode()).toBe('on')
+    expect(settings.nightMode).toBe('on')
+    expect(await toggleNightMode()).toBe('off')
+    expect(settings.nightMode).toBe('off')
   })
 
   it('initNightMode hydrates rune + applies attribute from IDB', async () => {
     await put('settings', { key: 'nightMode', value: true })
     const { initNightMode } = await import('../../../src/configure/night-mode.ts')
     await initNightMode()
-    expect(settings.nightMode).toBe(true)
+    expect(settings.nightMode).toBe('on')
     expect(document.documentElement.getAttribute('data-night-mode')).toBe('on')
   })
 })

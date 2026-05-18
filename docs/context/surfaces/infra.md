@@ -131,13 +131,13 @@ Current dataset package version for the applied runtime corpus. Sole writer: `sr
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/infra/safety/sync.ts:203` |
+| `sync:bookmarks-updated` | `Events.SYNC_BOOKMARKS_UPDATED` | `src/infra/safety/sync.ts:233` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `db:version-change` | `Events.DB_VERSION_CHANGE` | `src/infra/safety/sync.ts:90` |
+| `db:version-change` | `Events.DB_VERSION_CHANGE` | `src/infra/safety/sync.ts:95` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants

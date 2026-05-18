@@ -62,6 +62,44 @@ describe('safety/sync.js', () => {
     })
   })
 
+  describe('broadcastActiveVariantBundle()', () => {
+    it('posts bundled active variant settings on the channel', () => {
+      sync.broadcastActiveVariantBundle({
+        riwayah: 'hafs',
+        quranTextStyleId: 'uthmani-kfgqpc-v1',
+        mushafEditionId: 'hafs-quran-ws-v1',
+      })
+
+      const channel = MockBroadcastChannel.instances[0]
+      expect(channel.postMessage).toHaveBeenCalledWith({
+        topic: 'settings.riwayah',
+        payload: {
+          riwayah: 'hafs',
+          quranTextStyleId: 'uthmani-kfgqpc-v1',
+          mushafEditionId: 'hafs-quran-ws-v1',
+        },
+      })
+    })
+
+    it('rejects invalid bundled settings payloads before handlers see them', () => {
+      const handler = vi.fn()
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+      sync.registerTopic('settings.riwayah', handler)
+
+      const channel = MockBroadcastChannel.instances[0]
+      channel.onmessage({
+        data: {
+          topic: 'settings.riwayah',
+          payload: { riwayah: 'hafs', quranTextStyleId: '../bad', mushafEditionId: 'hafs-quran-ws-v1' },
+        },
+      })
+
+      expect(handler).not.toHaveBeenCalled()
+      expect(warnSpy).toHaveBeenCalledWith('Sync rejected settings.riwayah payload: invalid active variant bundle')
+      warnSpy.mockRestore()
+    })
+  })
+
   describe('removed scope wrappers', () => {
     it('drops mark and edge sync wrappers from the public API', () => {
       expect(sync.broadcastMarkChange).toBeUndefined()
