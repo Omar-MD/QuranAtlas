@@ -28,6 +28,34 @@ const TEST_COLOR_MAP = {
   '#9a6b2f': 'accent',
 }
 
+async function readCatalogJson(name) {
+  return JSON.parse(await readFile(join(process.cwd(), 'data', 'catalog', name), 'utf8'))
+}
+
+describe('mushaf asset catalog', () => {
+  it('exposes stable edition variants with compatible defaults', async () => {
+    const mushafCatalog = await readCatalogJson('mushaf-assets.json')
+
+    expect(mushafCatalog.defaults.qaloon).toBe('qalun-quran-ws-v1')
+    expect(mushafCatalog.assets).toContainEqual(expect.objectContaining({
+      riwayah: 'qaloon',
+      mushafEditionId: 'qalun-quran-ws-v1',
+      visibility: 'baseline',
+      shipped: true,
+    }))
+
+    for (const asset of mushafCatalog.assets) {
+      expect(asset.mushafEditionId).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/)
+      expect(asset.pageCount).toBe(604)
+      expect(asset.providerId).toBe('quran-ws')
+      expect(asset.licenseId).toBe('quran-ws-free-use')
+    }
+    for (const [riwayah, mushafEditionId] of Object.entries(mushafCatalog.defaults)) {
+      expect(mushafCatalog.assets.some((asset) => asset.riwayah === riwayah && asset.mushafEditionId === mushafEditionId)).toBe(true)
+    }
+  })
+})
+
 describe('mushaf page dataset builder', () => {
   it('builds quran.ws page PDF URLs with the source slug', () => {
     expect(quranWsPagePdfUrl('qalun', 42)).toBe('https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-42.pdf')

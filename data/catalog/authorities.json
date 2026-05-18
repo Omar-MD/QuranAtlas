@@ -13,5 +13,10 @@
     "id": "qul",
     "label": "Quranic Universal Library",
     "url": "https://qul.tarteel.ai/resources"
+  },
+  {
+    "id": "quran-ws",
+    "label": "Quran.ws",
+    "url": "https://quran.ws"
   }
 ]

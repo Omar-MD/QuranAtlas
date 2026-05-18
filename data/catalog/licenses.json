@@ -22,5 +22,17 @@
     "label": "QUL downloadable resource",
     "status": "approved",
     "url": "https://qul.tarteel.ai/resources"
+  },
+  {
+    "id": "kfgqpc-quran-text",
+    "label": "KFGQPC Quran text source",
+    "status": "restricted",
+    "url": "https://qurancomplex.gov.sa/en/techquran/dev/"
+  },
+  {
+    "id": "quran-ws-free-use",
+    "label": "Quran.ws page assets free use",
+    "status": "approved",
+    "url": "https://quran.ws"
   }
 ]

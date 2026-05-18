@@ -6,7 +6,7 @@
 
 The pipeline has seven stages:
 
-1. `data/catalog/*.json` declares what sources exist, where they come from, which are default, which are optional, and how they must be fetched and validated.
+1. `data/catalog/*.json` declares what sources and variant assets exist, where they come from, which are default, which are optional, and how they must be fetched and validated.
 2. `scripts/data/sources/fetch.mjs` converts upstream payloads into committed normalized source files under `data/normalized/**`, using provider adapters under `scripts/data/sources/providers/`. Mushaf page assets are the exception: `scripts/data/mushaf-pages/import.mjs` optionally downloads quran.ws PDFs into `.scratch/` and converts them to generated local SVG inputs under `data/normalized/mushaf-pages/**`.
 3. `scripts/data/text/build.mjs` validates normalized text sources and emits the reader corpus under `public/dataset/**`.
 4. `scripts/data/knowledge/build.mjs` validates curated Knowledge Lane sources and emits knowledge artifacts under `public/dataset/knowledge/**`.
@@ -42,6 +42,8 @@ flowchart TD
         TranslationSources["data/catalog/translation-sources.json"]
         TafsirSources["data/catalog/tafsir-sources.json"]
         MushafPageCatalog["data/catalog/mushaf-pages.json"]
+        QuranTextAssets["data/catalog/quran-text-assets.json"]
+        MushafAssets["data/catalog/mushaf-assets.json"]
         RiwayahPackageCatalog["data/catalog/riwayah-packages.json"]
         CatalogValidator["scripts/data/sources/catalog.mjs"]
     end
@@ -97,6 +99,8 @@ flowchart TD
     TranslationSources --> CatalogValidator
     TafsirSources --> CatalogValidator
     MushafPageCatalog --> MushafPageBuild
+    QuranTextAssets --> CatalogValidator
+    MushafAssets --> CatalogValidator
     RiwayahPackageCatalog --> RiwayahPackageBuild
 
     QDB --> Fetcher
@@ -184,6 +188,8 @@ flowchart TD
 - `verification-rules.json`: allowed license statuses, allowed visibility values, and default source ids.
 - `quran-sources.json`, `translation-sources.json`, `tafsir-sources.json`: individual source records.
 - `mushaf-pages.json`: quran.ws page-asset policy, page count, riwayah slug mapping, and source PDF URL patterns.
+- `quran-text-assets.json`: build-time variant contract for Quran text-style assets per riwayah. It records compatible defaults, provider/license identity, stable text-style ids, visibility, shipped status, provenance, and output templates under `quran-text/{riwayah}/{textStyleId}/{surah}.json`.
+- `mushaf-assets.json`: build-time variant contract for Mushaf edition assets per riwayah. It records compatible defaults, quran.ws edition ids, provider/license identity, source slugs, page count, visibility, shipped status, and provenance.
 - `riwayah-packages.json`: baseline/default riwayah policy for the generated package index; Qalun (runtime `qaloon`) is non-optional, Hafs and Warsh are optional.
 
 Each source record carries:
@@ -193,7 +199,7 @@ Each source record carries:
 - runtime metadata: `outputPath`, `sourceUrl`, QuranAtlas-owned `displayLabel`, `role`, `trustTier`, `sourceProvider`, `translator`
 - fetch contract: `fetch.provider`, `fetch.normalizedPath`, plus provider-specific fields
 
-`scripts/data/source-catalog.mjs` fails the pipeline when required provider, license, output path, visibility, or fetch metadata is missing or invalid.
+`scripts/data/source-catalog.mjs` fails the pipeline when required provider, license, output path, visibility, fetch metadata, asset defaults, variant slugs, text output templates, Mushaf page counts, or quran.ws Mushaf source identity are missing or invalid.
 
 ## Upstream Source Formats And Normalization
 

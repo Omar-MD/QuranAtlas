@@ -15,21 +15,33 @@ const SOURCE_FILES = [
   'tafsir-sources.json',
 ]
 
+const RIWAYAH_SOURCE_SLUGS = {
+  qaloon: 'qalun',
+  hafs: 'hafs',
+  warsh: 'warsh',
+}
+
+const VERSIONED_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/
+
 function isRecord(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 export async function loadSourceCatalog(catalogDir = CATALOG_DIR) {
-  const [authorities, licenses, verificationRules, ...sourceGroups] = await Promise.all([
+  const [authorities, licenses, verificationRules, quranTextAssets, mushafAssets, ...sourceGroups] = await Promise.all([
     readJson(join(catalogDir, 'authorities.json')),
     readJson(join(catalogDir, 'licenses.json')),
     readJson(join(catalogDir, 'verification-rules.json')),
+    readJson(join(catalogDir, 'quran-text-assets.json')),
+    readJson(join(catalogDir, 'mushaf-assets.json')),
     ...SOURCE_FILES.map((name) => readJson(join(catalogDir, name))),
   ])
   return {
     authorities,
     licenses,
     verificationRules,
+    quranTextAssets,
+    mushafAssets,
     sources: sourceGroups.flatMap((group) => Array.isArray(group) ? group : []),
   }
 }
@@ -117,7 +129,115 @@ export function validateSourceCatalog(catalog) {
     }
   }
 
+  validateQuranTextAssets(catalog.quranTextAssets, { errors, authorityIds, licenseById, allowedVisibility })
+  validateMushafAssets(catalog.mushafAssets, { errors, authorityIds, licenseById, allowedVisibility })
+
   return { ok: errors.length === 0, errors }
+}
+
+function validateQuranTextAssets(textCatalog, context) {
+  if (textCatalog === undefined) return
+  const assets = Array.isArray(textCatalog?.assets) ? textCatalog.assets : []
+  const defaults = isRecord(textCatalog?.defaults) ? textCatalog.defaults : {}
+  const seenByRiwayah = new Set()
+  const assetKeys = new Set()
+
+  for (const asset of assets) {
+    const riwayah = asset?.riwayah
+    const textStyleId = asset?.textStyleId
+    const key = `${riwayah}/${textStyleId}`
+    if (!isRecord(asset) || typeof riwayah !== 'string' || typeof textStyleId !== 'string') {
+      context.errors.push('text asset missing riwayah or textStyleId')
+      continue
+    }
+
+    if (!VERSIONED_SLUG_PATTERN.test(textStyleId)) {
+      context.errors.push(`text asset ${key} has invalid textStyleId ${textStyleId}`)
+    }
+    const duplicateKey = `${riwayah}:${textStyleId}`
+    if (seenByRiwayah.has(duplicateKey)) {
+      context.errors.push(`text asset ${key} is duplicated within ${riwayah}`)
+    }
+    seenByRiwayah.add(duplicateKey)
+    assetKeys.add(duplicateKey)
+
+    if (!context.authorityIds.has(asset.providerId)) {
+      context.errors.push(`text asset ${key} references missing provider ${asset.providerId}`)
+    }
+    if (!context.licenseById.has(asset.licenseId)) {
+      context.errors.push(`text asset ${key} references missing license ${asset.licenseId}`)
+    }
+    if (!context.allowedVisibility.has(asset.visibility)) {
+      context.errors.push(`text asset ${key} has invalid visibility ${asset.visibility}`)
+    }
+
+    const expectedTemplate = `quran-text/${riwayah}/${textStyleId}/{surah}.json`
+    if (asset.outputPathTemplate !== expectedTemplate) {
+      context.errors.push(`text asset ${key} outputPathTemplate must be ${expectedTemplate}`)
+    }
+  }
+
+  for (const [riwayah, textStyleId] of Object.entries(defaults)) {
+    if (!assetKeys.has(`${riwayah}:${textStyleId}`)) {
+      context.errors.push(`text asset default ${riwayah} references missing text style ${textStyleId}`)
+    }
+  }
+}
+
+function validateMushafAssets(mushafCatalog, context) {
+  if (mushafCatalog === undefined) return
+  const assets = Array.isArray(mushafCatalog?.assets) ? mushafCatalog.assets : []
+  const defaults = isRecord(mushafCatalog?.defaults) ? mushafCatalog.defaults : {}
+  const seenByRiwayah = new Set()
+  const assetKeys = new Set()
+
+  for (const asset of assets) {
+    const riwayah = asset?.riwayah
+    const mushafEditionId = asset?.mushafEditionId
+    const key = `${riwayah}/${mushafEditionId}`
+    if (!isRecord(asset) || typeof riwayah !== 'string' || typeof mushafEditionId !== 'string') {
+      context.errors.push('mushaf asset missing riwayah or mushafEditionId')
+      continue
+    }
+
+    if (!VERSIONED_SLUG_PATTERN.test(mushafEditionId)) {
+      context.errors.push(`mushaf asset ${key} has invalid mushafEditionId ${mushafEditionId}`)
+    }
+    const duplicateKey = `${riwayah}:${mushafEditionId}`
+    if (seenByRiwayah.has(duplicateKey)) {
+      context.errors.push(`mushaf asset ${key} is duplicated within ${riwayah}`)
+    }
+    seenByRiwayah.add(duplicateKey)
+    assetKeys.add(duplicateKey)
+
+    if (asset.pageCount !== 604) {
+      context.errors.push(`mushaf asset ${key} pageCount must be 604`)
+    }
+    if (asset.providerId !== 'quran-ws') {
+      context.errors.push(`mushaf asset ${key} providerId must be quran-ws`)
+    } else if (!context.authorityIds.has(asset.providerId)) {
+      context.errors.push(`mushaf asset ${key} references missing provider ${asset.providerId}`)
+    }
+    if (asset.licenseId !== 'quran-ws-free-use') {
+      context.errors.push(`mushaf asset ${key} licenseId must be quran-ws-free-use`)
+    } else if (!context.licenseById.has(asset.licenseId)) {
+      context.errors.push(`mushaf asset ${key} references missing license ${asset.licenseId}`)
+    }
+    if (!context.allowedVisibility.has(asset.visibility)) {
+      context.errors.push(`mushaf asset ${key} has invalid visibility ${asset.visibility}`)
+    }
+
+    const expectedSlug = RIWAYAH_SOURCE_SLUGS[riwayah]
+    if (expectedSlug && asset.sourceSlug !== expectedSlug) {
+      context.errors.push(`mushaf asset ${key} sourceSlug must be ${expectedSlug}`)
+    }
+  }
+
+  for (const [riwayah, mushafEditionId] of Object.entries(defaults)) {
+    if (!assetKeys.has(`${riwayah}:${mushafEditionId}`)) {
+      context.errors.push(`mushaf asset default ${riwayah} references missing edition ${mushafEditionId}`)
+    }
+  }
 }
 
 export async function main() {

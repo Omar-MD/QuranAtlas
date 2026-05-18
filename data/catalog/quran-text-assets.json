@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "defaults": {
+    "qaloon": "uthmani-kfgqpc-v1",
+    "hafs": "uthmani-kfgqpc-v1",
+    "warsh": "uthmani-kfgqpc-v1"
+  },
+  "assets": [
+    {
+      "riwayah": "qaloon",
+      "textStyleId": "uthmani-kfgqpc-v1",
+      "label": "Uthmani KFGQPC",
+      "scriptFamily": "uthmani",
+      "providerId": "kfgqpc",
+      "licenseId": "kfgqpc-quran-text",
+      "visibility": "baseline",
+      "shipped": true,
+      "outputPathTemplate": "quran-text/qaloon/uthmani-kfgqpc-v1/{surah}.json",
+      "provenance": { "source": "KFGQPC Qalun v10" }
+    },
+    {
+      "riwayah": "hafs",
+      "textStyleId": "uthmani-kfgqpc-v1",
+      "label": "Uthmani KFGQPC",
+      "scriptFamily": "uthmani",
+      "providerId": "kfgqpc",
+      "licenseId": "kfgqpc-quran-text",
+      "visibility": "optional",
+      "shipped": false,
+      "outputPathTemplate": "quran-text/hafs/uthmani-kfgqpc-v1/{surah}.json",
+      "provenance": { "source": "KFGQPC Hafs v18" }
+    },
+    {
+      "riwayah": "warsh",
+      "textStyleId": "uthmani-kfgqpc-v1",
+      "label": "Uthmani KFGQPC",
+      "scriptFamily": "uthmani",
+      "providerId": "kfgqpc",
+      "licenseId": "kfgqpc-quran-text",
+      "visibility": "optional",
+      "shipped": false,
+      "outputPathTemplate": "quran-text/warsh/uthmani-kfgqpc-v1/{surah}.json",
+      "provenance": { "source": "KFGQPC Warsh v10" }
+    }
+  ]
+}

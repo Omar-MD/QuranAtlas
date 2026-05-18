@@ -79,4 +79,63 @@ describe('source catalog validation', () => {
     }
     expect(validateSourceCatalog(catalog).errors).toContain('source qaloon fetch missing contentResourceId')
   })
+
+  it('validates Quran text asset defaults, slugs, templates, and catalog references', () => {
+    const catalog = baseCatalog()
+    catalog.quranTextAssets = {
+      defaults: { qaloon: 'missing-style-v1' },
+      assets: [
+        {
+          riwayah: 'qaloon',
+          textStyleId: 'bad_style',
+          providerId: 'missing-provider',
+          licenseId: 'missing-license',
+          outputPathTemplate: 'quran-text/qaloon/bad_style.json',
+        },
+      ],
+    }
+
+    expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
+      'text asset default qaloon references missing text style missing-style-v1',
+      'text asset qaloon/bad_style has invalid textStyleId bad_style',
+      'text asset qaloon/bad_style references missing provider missing-provider',
+      'text asset qaloon/bad_style references missing license missing-license',
+      'text asset qaloon/bad_style outputPathTemplate must be quran-text/qaloon/bad_style/{surah}.json',
+    ]))
+  })
+
+  it('validates Mushaf asset defaults, edition slugs, quran.ws identity, and duplicate editions', () => {
+    const catalog = baseCatalog()
+    catalog.mushafAssets = {
+      defaults: { qaloon: 'missing-edition-v1' },
+      assets: [
+        {
+          riwayah: 'qaloon',
+          mushafEditionId: 'bad_edition',
+          providerId: 'qul',
+          licenseId: 'qul-open',
+          sourceSlug: 'qaloon',
+          pageCount: 603,
+        },
+        {
+          riwayah: 'qaloon',
+          mushafEditionId: 'bad_edition',
+          providerId: 'qul',
+          licenseId: 'qul-open',
+          sourceSlug: 'qaloon',
+          pageCount: 603,
+        },
+      ],
+    }
+
+    expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
+      'mushaf asset default qaloon references missing edition missing-edition-v1',
+      'mushaf asset qaloon/bad_edition has invalid mushafEditionId bad_edition',
+      'mushaf asset qaloon/bad_edition pageCount must be 604',
+      'mushaf asset qaloon/bad_edition providerId must be quran-ws',
+      'mushaf asset qaloon/bad_edition licenseId must be quran-ws-free-use',
+      'mushaf asset qaloon/bad_edition sourceSlug must be qalun',
+      'mushaf asset qaloon/bad_edition is duplicated within qaloon',
+    ]))
+  })
 })

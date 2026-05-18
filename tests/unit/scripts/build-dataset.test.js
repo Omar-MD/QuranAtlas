@@ -1,8 +1,36 @@
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { splitRiwayah, computeSurahsMeta, AYAT_COUNTS, buildTranslationSplits, buildManifestPayload } from '../../../scripts/data/build-dataset.mjs'
+
+async function readCatalogJson(name) {
+  return JSON.parse(await readFile(join(process.cwd(), 'data', 'catalog', name), 'utf8'))
+}
+
+describe('quran text asset catalog', () => {
+  it('exposes stable text-style variants with compatible defaults', async () => {
+    const textCatalog = await readCatalogJson('quran-text-assets.json')
+
+    expect(textCatalog.defaults.qaloon).toBe('uthmani-kfgqpc-v1')
+    expect(textCatalog.assets).toContainEqual(expect.objectContaining({
+      riwayah: 'qaloon',
+      textStyleId: 'uthmani-kfgqpc-v1',
+      visibility: 'baseline',
+      shipped: true,
+    }))
+
+    for (const asset of textCatalog.assets) {
+      expect(asset.textStyleId).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/)
+      expect(asset.outputPathTemplate).toBe(`quran-text/${asset.riwayah}/${asset.textStyleId}/{surah}.json`)
+      expect(['kfgqpc']).toContain(asset.providerId)
+      expect(asset.licenseId).toBeTruthy()
+    }
+    for (const [riwayah, textStyleId] of Object.entries(textCatalog.defaults)) {
+      expect(textCatalog.assets.some((asset) => asset.riwayah === riwayah && asset.textStyleId === textStyleId)).toBe(true)
+    }
+  })
+})
 
 describe('splitRiwayah', () => {
   const sampleHafs = [
