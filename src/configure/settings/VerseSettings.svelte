@@ -2,7 +2,7 @@
   import NestedAssetPicker from './NestedAssetPicker.svelte'
   import { getTafsirs, getTranslations } from '../../data/dataset'
   import { loadTextAssetIndex } from '../../packs/text-assets'
-  import { getRiwayahLabels, getRiwayahOptions, type Riwayah } from '../../packs/riwayah'
+  import { getRiwayahLabels, getRiwayahOptions, isRiwayahUsable, type Riwayah } from '../../packs/riwayah'
   import { setFontSize, getFontSizeOptions } from '../font-size'
   import {
     getReadingFlowStep,
@@ -57,16 +57,18 @@
     await setReadingFlow(next)
   }
 
-  function riwayahRows(): PickerRow[] {
-    return getRiwayahOptions().map((riwayah) => {
+  async function riwayahRows(): Promise<PickerRow[]> {
+    return Promise.all(getRiwayahOptions().map(async (riwayah) => {
       const labels = getRiwayahLabels(riwayah)
+      const usable = await isRiwayahUsable(riwayah)
       return {
         id: riwayah,
         label: labels.productShort,
-        meta: labels.subtitle,
+        meta: usable ? labels.subtitle : `${labels.subtitle} · Unavailable`,
         active: settings.riwayah === riwayah,
+        disabled: !usable,
       }
-    })
+    }))
   }
 
   async function textRows(): Promise<PickerRow[]> {
@@ -103,7 +105,7 @@
   async function openPicker(kind: Exclude<PickerKind, null>): Promise<void> {
     picker = kind
     try {
-      pickerRows = kind === 'riwayah' ? riwayahRows()
+      pickerRows = kind === 'riwayah' ? await riwayahRows()
         : kind === 'text' ? await textRows()
         : kind === 'translation' ? await translationRows()
         : await tafsirRows()
@@ -164,13 +166,20 @@
 
 <div class="qa-settings-section">
   <h3 class="qa-settings-section-title">Sources</h3>
-  <button type="button" class="qa-settings-row" onclick={() => { void openPicker('riwayah') }}><span>Active Riwayah</span><strong class="qa-settings-row-value">{settings.riwayah}</strong></button>
+  <button type="button" class="qa-settings-row" data-testid="src-row-recitation" onclick={() => { void openPicker('riwayah') }}><span>Active Riwayah</span><strong class="qa-settings-row-value">{settings.riwayah}</strong></button>
   <button type="button" class="qa-settings-row" onclick={() => { void openPicker('text') }}><span>Quran Text Style</span><strong class="qa-settings-row-value">{settings.quranTextStyleId}</strong></button>
-  <button type="button" class="qa-settings-row" onclick={() => { void openPicker('translation') }}><span>Translation Source</span><strong class="qa-settings-row-value">{settings.translationId}</strong></button>
-  <button type="button" class="qa-settings-row" onclick={() => { void setTranslationVisible(!settings.translationVisible) }}>
+  <button type="button" class="qa-settings-row" data-testid="src-row-translation" onclick={() => { void openPicker('translation') }}><span>Translation Source</span><strong class="qa-settings-row-value">{settings.translationId}</strong></button>
+  <button
+    type="button"
+    class="qa-settings-row"
+    role="switch"
+    aria-label="Show translation"
+    aria-checked={settings.translationVisible}
+    onclick={() => { void setTranslationVisible(!settings.translationVisible) }}
+  >
     <span>Show Translation</span><strong class="qa-settings-row-value">{settings.translationVisible ? 'On' : 'Off'}</strong>
   </button>
-  <button type="button" class="qa-settings-row" onclick={() => { void openPicker('tafsir') }}><span>Tafsir Source</span><strong class="qa-settings-row-value">{settings.tafsirId}</strong></button>
+  <button type="button" class="qa-settings-row" data-testid="src-row-tafsir" onclick={() => { void openPicker('tafsir') }}><span>Tafsir Source</span><strong class="qa-settings-row-value">{settings.tafsirId}</strong></button>
 </div>
 
 {#if picker}

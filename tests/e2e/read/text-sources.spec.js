@@ -29,16 +29,19 @@ import { scanA11y } from '../fixtures/a11y.js'
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 async function ensureTranslation(page, sourceName = 'Bridges') {
+  const sourceId = sourceName === 'Bridges' ? 'bridges' : sourceName.toLowerCase()
   await openSettingsSheet(page)
   const toggle = page.getByRole('switch', { name: 'Show translation' })
   if ((await toggle.getAttribute('aria-checked')) === 'false') {
     await toggle.click()
   }
   const row = page.getByTestId('src-row-translation')
-  if (!((await row.textContent()) ?? '').includes(sourceName)) {
+  if (!((await row.textContent()) ?? '').includes(sourceId)) {
     await row.click()
-    await page.locator('.qa-settings-pop-row').filter({ hasText: sourceName }).click()
-    await expect(row).toContainText(sourceName)
+    await page.getByRole('dialog', { name: 'Choose Translation Source' })
+      .getByRole('button', { name: new RegExp(sourceName) })
+      .click()
+    await expect(row).toContainText(sourceId)
   }
   await page.keyboard.press('Escape')
 }
@@ -75,7 +78,8 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
     await openSettingsSheet(page)
     await page.getByTestId('src-row-recitation').click()
-    const hafsBtn = page.locator('.qa-settings-pop-row').filter({ hasText: 'Ḥafṣ' })
+    const hafsBtn = page.getByRole('dialog', { name: 'Choose Active Riwayah' })
+      .getByRole('button', { name: /Ḥafṣ/ })
     await expect(hafsBtn).toBeVisible({ timeout: 5_000 })
     await expect(hafsBtn).toContainText('Unavailable')
     await expect(hafsBtn).toBeDisabled()
@@ -179,8 +183,10 @@ test.describe('Journey B: Reader & ambient chrome', () => {
 
     const tafsirRow = page.getByTestId('src-row-tafsir')
     await tafsirRow.click()
-    await page.locator('.qa-settings-pop-row').filter({ hasText: 'Al-Mukhtasar fi al-Tafsir' }).click()
-    await expect(tafsirRow).toContainText('Al-Mukhtasar fi al-Tafsir')
+    await page.getByRole('dialog', { name: 'Choose Tafsir Source' })
+      .getByRole('button', { name: /Al-Mukhtasar fi al-Tafsir/ })
+      .click()
+    await expect(tafsirRow).toContainText('mukhtasar')
 
     await page.keyboard.press('Escape')
 

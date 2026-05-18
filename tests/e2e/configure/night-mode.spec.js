@@ -41,14 +41,16 @@ test.describe('Journey D: Settings & appearance', () => {
   // ported to tests/unit/configure/panel.test.ts (Phase 2 bucket 1, 2026-04-26).
   // -------------------------------------------------------------------------
 
-  test('D6: settings switch toggles data-night-mode + overlay opacity', async ({ page }) => {
+  test('D6: settings control toggles data-night-mode + overlay opacity', async ({ page }) => {
     await openSettingsSheet(page)
-    const sw = page.getByTestId('night-mode-switch')
-    await expect(sw).toBeVisible()
-    await expect(sw).toHaveAttribute('aria-checked', 'false')
+    const nightMode = page.getByRole('group', { name: 'Night mode' })
+    const off = nightMode.getByRole('button', { name: 'Off' })
+    const on = nightMode.getByRole('button', { name: 'On' })
+    await expect(off).toHaveAttribute('aria-pressed', 'true')
+    await expect(on).toHaveAttribute('aria-pressed', 'false')
 
-    await sw.click()
-    await expect(sw).toHaveAttribute('aria-checked', 'true')
+    await on.click()
+    await expect(on).toHaveAttribute('aria-pressed', 'true')
     expect(await page.evaluate(() => document.documentElement.getAttribute('data-night-mode'))).toBe('on')
     await expect(async () => {
       const opacity = await page.locator('.qa-night-shift').evaluate(
@@ -57,8 +59,8 @@ test.describe('Journey D: Settings & appearance', () => {
       expect(opacity).toBeGreaterThan(0)
     }).toPass({ timeout: 3_000 })
 
-    await sw.click()
-    await expect(sw).toHaveAttribute('aria-checked', 'false')
+    await off.click()
+    await expect(off).toHaveAttribute('aria-pressed', 'true')
     expect(await page.evaluate(() => document.documentElement.hasAttribute('data-night-mode'))).toBe(false)
   })
 

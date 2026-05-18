@@ -20,6 +20,8 @@ import { scanA11y } from '../fixtures/a11y.js'
 
 const removedHubHash = ['#/re', 'view'].join('')
 
+test.describe.configure({ mode: 'serial' })
+
 test.describe('Journey A: First run & session restore', () => {
   // These cases seed exact IDB state and verify bootstrap restore behavior from a
   // clean browser context, so they keep the explicit empty storage state.
@@ -100,9 +102,9 @@ test.describe('Journey A: mobile session restore route redirects @mobile', () =>
 
   test('A2: mobile #/surahs redirects non-reader lastSurface hashes to the saved reader position', async ({ page }) => {
     const cases = ['#/about', '#/bookmarks', removedHubHash, '#/stale-route']
-    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
 
     for (const seededHash of cases) {
+      await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
       await seedLastSurface(page, seededHash)
       await page.goto('/#/surahs')
       await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
@@ -121,9 +123,9 @@ test.describe('Journey A: mobile session restore route redirects @mobile', () =>
 
   test('A2: mobile #/bookmarks redirects non-reader lastSurface hashes to the saved reader position', async ({ page }) => {
     const cases = ['#/about', '#/surahs', removedHubHash, '#/stale-route']
-    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
 
     for (const seededHash of cases) {
+      await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
       await seedLastSurface(page, seededHash)
       await page.goto('/#/bookmarks')
       await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')

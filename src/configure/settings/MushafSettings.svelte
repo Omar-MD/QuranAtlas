@@ -1,7 +1,7 @@
 <script lang="ts">
   import NestedAssetPicker from './NestedAssetPicker.svelte'
   import { loadMushafAssetIndex } from '../../packs/mushaf-assets'
-  import { getRiwayahLabels, getRiwayahOptions, type Riwayah } from '../../packs/riwayah'
+  import { getRiwayahLabels, getRiwayahOptions, isRiwayahUsable, type Riwayah } from '../../packs/riwayah'
   import { setMushafEditionId } from '../mushaf-edition'
   import { setRiwayah } from '../riwayah'
   import { settings } from '../state.svelte'
@@ -18,16 +18,18 @@
   let picker = $state<PickerKind>(null)
   let pickerRows = $state<PickerRow[]>([])
 
-  function riwayahRows(): PickerRow[] {
-    return getRiwayahOptions().map((riwayah) => {
+  async function riwayahRows(): Promise<PickerRow[]> {
+    return Promise.all(getRiwayahOptions().map(async (riwayah) => {
       const labels = getRiwayahLabels(riwayah)
+      const usable = await isRiwayahUsable(riwayah)
       return {
         id: riwayah,
         label: labels.productShort,
-        meta: labels.subtitle,
+        meta: usable ? labels.subtitle : `${labels.subtitle} · Unavailable`,
         active: settings.riwayah === riwayah,
+        disabled: !usable,
       }
-    })
+    }))
   }
 
   async function mushafRows(): Promise<PickerRow[]> {
@@ -45,7 +47,7 @@
   async function openPicker(kind: Exclude<PickerKind, null>): Promise<void> {
     picker = kind
     try {
-      pickerRows = kind === 'riwayah' ? riwayahRows() : await mushafRows()
+      pickerRows = kind === 'riwayah' ? await riwayahRows() : await mushafRows()
     } catch {
       pickerRows = []
     }
@@ -70,7 +72,7 @@
 
 <div class="qa-settings-section">
   <h3 class="qa-settings-section-title">Mushaf</h3>
-  <button type="button" class="qa-settings-row" onclick={() => { void openPicker('riwayah') }}><span>Active Riwayah</span><strong class="qa-settings-row-value">{settings.riwayah}</strong></button>
+  <button type="button" class="qa-settings-row" data-testid="src-row-recitation" onclick={() => { void openPicker('riwayah') }}><span>Active Riwayah</span><strong class="qa-settings-row-value">{settings.riwayah}</strong></button>
   <button type="button" class="qa-settings-row" onclick={() => { void openPicker('mushaf') }}><span>Mushaf Edition</span><strong class="qa-settings-row-value">{settings.mushafEditionId}</strong></button>
 </div>
 
