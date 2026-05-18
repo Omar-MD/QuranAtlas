@@ -35,6 +35,7 @@ describe('MarginHeader.svelte — surah label tap toggles surah header visibilit
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     reader.currentSurahNum = null
     reader.currentMushafPage = null
     reader.surahHeaderHidden = false
@@ -125,6 +126,28 @@ describe('MarginHeader.svelte — surah label tap toggles surah header visibilit
     await flush()
     const ar = container.querySelector('.qa-mh-label-ar')
     expect(ar?.textContent?.trim()).toBe('البَقَرَة')
+  })
+
+  it('opens Verse Settings from the gear on verse routes', async () => {
+    vi.useFakeTimers()
+    const panel = await import('../../../src/configure/panel-bridge')
+    const { container } = render(MarginHeader)
+    await flush()
+    await fireEvent.click(container.querySelector('.qa-mh-settings') as HTMLElement)
+    await vi.advanceTimersByTimeAsync(301)
+    expect(panel.openSettingsSheet).toHaveBeenCalledWith('verse')
+  })
+
+  it('opens Mushaf Settings from the gear on Mushaf routes', async () => {
+    vi.useFakeTimers()
+    window.location.hash = '#/m/42'
+    reader.currentMushafPage = 42
+    const panel = await import('../../../src/configure/panel-bridge')
+    const { container } = render(MarginHeader)
+    await flush()
+    await fireEvent.click(container.querySelector('.qa-mh-settings') as HTMLElement)
+    await vi.advanceTimersByTimeAsync(301)
+    expect(panel.openSettingsSheet).toHaveBeenCalledWith('mushaf')
   })
 
   it('swipe-left on label navigates next surah and does NOT toggle visibility (regression guard)', async () => {

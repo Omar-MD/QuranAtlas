@@ -64,6 +64,9 @@ describe('mushaf asset index output', () => {
   it('emits edition-aware page assets and manifest inventory entries', async () => {
     const mushafAssets = await readDatasetJson('indexes/mushaf-assets.json')
     expect(mushafAssets.defaults.qaloon).toBe('qalun-quran-ws-v1')
+    for (const [riwayah, mushafEditionId] of Object.entries(mushafAssets.defaults)) {
+      expect(mushafAssets.assets.some((asset) => asset.riwayah === riwayah && asset.mushafEditionId === mushafEditionId)).toBe(true)
+    }
     const qaloonMushaf = mushafAssets.assets.find((asset) => asset.riwayah === 'qaloon' && asset.mushafEditionId === 'qalun-quran-ws-v1')
     expect(qaloonMushaf.manifestUrl).toBe('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json')
     expect(qaloonMushaf.files).toHaveLength(605)
@@ -71,6 +74,17 @@ describe('mushaf asset index output', () => {
 
     const manifest = await readDatasetJson('manifest.json')
     expect(manifest.files.some((file) => file.path === 'indexes/mushaf-assets.json')).toBe(true)
+  })
+
+  it('keeps optional package page fallbacks on stable edition URLs when baseline omits optional page bodies', async () => {
+    const packages = await readDatasetJson('indexes/riwayah-packages.json')
+    const hafs = packages.packages.find((entry) => entry.riwayah === 'hafs')
+    const warsh = packages.packages.find((entry) => entry.riwayah === 'warsh')
+
+    expect(hafs.pages.available).toBe(false)
+    expect(hafs.pages.manifestUrl).toBe('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json')
+    expect(warsh.pages.available).toBe(false)
+    expect(warsh.pages.manifestUrl).toBe('/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json')
   })
 })
 

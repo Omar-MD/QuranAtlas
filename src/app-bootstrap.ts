@@ -224,9 +224,9 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // Register Phase 3 routes
     router.register('#/settings', () => Promise.resolve({
       async init() {
-        openSettingsSheet()
         const last = await get('settings', 'lastSurface')
         const prevVal = typeof last?.value === 'string' ? last.value : null
+        openSettingsSheet(prevVal?.startsWith('#/m/') ? 'mushaf' : 'verse')
         const prev = (await resolveLaunchableTarget(prevVal, settings.riwayah ?? 'qaloon'))
           ?? (await resolveSavedReaderTarget())
           ?? '#/s/1'

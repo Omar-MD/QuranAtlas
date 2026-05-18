@@ -27,7 +27,7 @@ test_paths:
 | MarginHeader hamburger swipe-down (mobile) | gesture | `openNavDrawer('read')` |
 | MarginHeader center label tap on `#/s/*` (mobile) | tap | toggle `surahHeaderHidden` |
 | MarginHeader label swipe left/right on `#/s/*` (mobile) | gesture | next/prev surah (clamped 1–114) |
-| MarginHeader gear single tap (mobile) | tap | open Settings sheet (debounced 300 ms) |
+| MarginHeader gear single tap (mobile) | tap | open Verse Settings on `#/s/*`, Mushaf Settings on `#/m/*` (debounced 300 ms) |
 | MarginHeader gear double-tap (mobile, ≤300 ms) | gesture | cycle theme (parity with keyboard `d`) |
 | AmbientDock tap (desktop) | tap | switch latest Verse/Mushaf reader route or open command sheet |
 | Verse number tap | tap | edge indicators ~1.6 s + pill label updates |

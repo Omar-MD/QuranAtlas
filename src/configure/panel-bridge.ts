@@ -23,15 +23,17 @@ import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-ove
 
 // ── Overlay surface ─────────────────────────────────────────────────────────
 
+export type SettingsMode = 'verse' | 'mushaf'
+
 export interface PanelOverlayAPI extends BaseOverlayAPI {
-  open(): void
+  open(mode?: SettingsMode): void
   close(): void
   isOpen(): boolean
 }
 
 export const panelBridge = createOverlayBridge<PanelOverlayAPI>({ name: 'settings-panel' })
 
-export const openSettingsSheet = (): void => panelBridge.api.open()
+export const openSettingsSheet = (mode?: SettingsMode): void => panelBridge.api.open(mode)
 export const closeSettingsSheet = (): void => panelBridge.api.close()
 
 // ── Data: settings.translationVisible (sole writer) ─────────────────────────

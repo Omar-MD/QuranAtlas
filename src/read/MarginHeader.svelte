@@ -146,7 +146,7 @@
 
   function commitSingleTap(): void {
     settingsTapTimer = null
-    openSettingsSheet()
+    openSettingsSheet(onMushafRoute ? 'mushaf' : 'verse')
   }
 
   function onSettingsTap(): void {

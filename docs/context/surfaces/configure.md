@@ -15,16 +15,16 @@ test_paths:
 
 # Surface: configure
 
-> Settings sheet and About page for Reader First preferences: theme, typography, qira'ah/riwayah source, translation, tafsir, curated metadata/storage packs, offline install state, night mode, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup.
+> Mode-aware Verse Settings, Mushaf Settings, and About page for Reader First preferences: theme, night mode, typography, qira'ah/riwayah source, translation, tafsir, active Quran text style, active Mushaf edition, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup.
 
 ## Reach
 
 | Entry | Trigger | Result |
 | --- | --- | --- |
-| Settings gear ⚙ on MarginHeader (mobile) | single tap | open Settings sheet (full viewport) |
+| Settings gear ⚙ on MarginHeader (mobile) | single tap | open Verse Settings on `#/s/*`, Mushaf Settings on `#/m/*` |
 | Settings gear double-tap (mobile, ≤300 ms) | gesture | cycle theme without opening sheet |
-| `G` then `P` (desktop) | keyboard | `#/settings` → Settings modal |
-| `⌘K` → "Preferences" → Enter | keyboard | `#/settings` |
+| `G` then `P` (desktop) | keyboard | `#/settings` → settings shell inferred from previous reader route |
+| `⌘K` → "Preferences" → Enter | keyboard | `#/settings` → settings shell inferred from previous reader route |
 | Drawer header ⓘ icon | tap | `#/about` |
 | AmbientDock ⋯ → drawer → About | tap | `#/about` |
 | `⌘↑` / `Ctrl+↑` | keyboard | bump font size up (works outside the sheet; guarded against focused inputs) |
@@ -34,7 +34,7 @@ test_paths:
 | `d` (reader) | keyboard | cycle theme |
 | About footer "Clear all data" link | tap | confirmation dialog |
 
-Routes: `#/settings` (desktop), `#/about` (all viewports).
+Routes: `#/settings` (transient settings opener), `#/about` (all viewports).
 
 ## Inventory
 
@@ -56,6 +56,11 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/configure/quran-text-style.ts` | _(no leading comment)_ |
 | `src/configure/reading-typography.ts` | Reading typography preferences: line spacing, word spacing, reader margin. |
 | `src/configure/riwayah.ts` | Riwayah preference: which Qur'anic transmission the reader displays. |
+| `src/configure/settings/MushafSettings.svelte` | _(no leading comment)_ |
+| `src/configure/settings/NestedAssetPicker.svelte` | _(no leading comment)_ |
+| `src/configure/settings/SettingsShell.svelte` | _(no leading comment)_ |
+| `src/configure/settings/ThemeNightControls.svelte` | _(no leading comment)_ |
+| `src/configure/settings/VerseSettings.svelte` | _(no leading comment)_ |
 | `src/configure/state-last-surface.svelte.ts` | _(no leading comment)_ |
 | `src/configure/state-recent-surahs.svelte.ts` | Sole writer for `settings.recentSurahs`. Pre-fix App.svelte did its |
 | `src/configure/state.svelte.ts` | _(no leading comment)_ |
@@ -67,21 +72,32 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 
 ## Behavior
 
-### Settings sheet
+### Settings shells
 
-**Mobile + tablet (<1180 px):** single-tap gear → Settings sheet takes over full viewport (`inset: 0`, safe-area insets all four edges, no border). Portrait: preview → body → footer. Landscape (`max-height ≤540 px and orientation: landscape`): side-by-side grid — preview = left rail (full height with theme-true bg), body + footer stack on right column with own scroll.
+The settings overlay is mode-aware. `openSettingsSheet('verse')` renders Verse Settings; `openSettingsSheet('mushaf')` renders Mushaf Settings. The mobile MarginHeader passes the current reader mode directly. `#/settings` is a transient compatibility route: app bootstrap opens the shell inferred from the previous reader hash, then restores that previous hash.
 
-**Desktop (≥1180 px):** `#/settings` (e.g. via `G`+`P` or command-sheet "Preferences") opens as centered modal (~440 px, max-height 720 px). Same component, narrower frame.
+**Mobile + tablet (<1180 px):** the shell takes the full viewport with safe-area padding, a parchment surface, sticky header, scrollable body, and footer controls. Verse and Mushaf settings share the same header, row density, footer, backdrop dismissal, and focus restoration.
 
-Three zones:
+**Desktop (≥1180 px):** the shell opens as a right-side reader-adjacent sidebar. Reader content remains visible to the left; the old centered preferences modal is no longer the desktop settings shape.
 
-1. **Live preview band** at top — theme-true colors. Sūrat ar-Raḥmān 1–4 in active riwayah's glyphs. Arabic uses `.qa-verse-arabic`, translation uses `.qa-verse-translation` — same cascade as reader (font-size, line-height, word-spacing all match exactly). Translation row always rendered; visibility gated on `settings.translationVisible` — row keeps layout space when toggled off, preview height does not shift on toggle. ✕ close button floats top-right inside band.
-2. **Body** — three sections (Reading + Sources + Storage), content-sized (`flex: 0 0 auto`) with soft hairline gold-fade separator between adjacent sections. Body scrolls vertically when content overflows the available space (no per-section stretch).
-   - **Reading** — Font size slider (5-step) + Reading flow slider (5-step coordinated knob). Reset-to-default pill in section header right edge, **always rendered** (disabled = idle when both knobs at `md`); flipping in/out of default never reflows slider rows. Preview band hard-locked at 32dvh portrait / 180 px desktop modal, with a shorter portrait cap on low-height phones and the side-by-side landscape override — inner stage scrolls when verse content overflows.
-   - **Sources** — Qira'ah/riwayah source row (`[data-testid="src-row-recitation"]` may remain as a runtime/test id) showing `QIRA'AH/RIWAYAH · Qalun ʿan Nafiʿ ›`; Translation dual-action row showing `TRANSLATION · {selected source} › [toggle]`; Tafsir source row (`[data-testid="src-row-tafsir"]`) showing `TAFSIR · {selected source} ›`; curated metadata/storage pack state when present. Tapping a source row opens the centered picker popover. The Translation row's toggle still controls `settings.translationVisible` independently, and source/toggle changes must propagate to the mounted Reader without requiring a route reload.
-3. **Theme footer** — pill cluster of 4 theme swatches with mini Mushaf glyphs in each theme's palette + 38 px **night-mode moon ☾** pill. Italic serif "Theme" label anchors cluster left.
+Shared shell zones:
 
-Every change updates live preview (font size, reading flow, theme palette, riwayah glyph swap when popover row picked).
+1. **Header** — title (`Verse Settings` or `Mushaf Settings`), concise subtitle, and close button. Backdrop tap, close, or Esc dismisses and restores focus to the opener unless the footer navigates away.
+2. **Body** — mode-specific preview and controls. Rows use stable heights and open the nested asset picker for source/asset choices.
+3. **Footer** — shared Theme and Night Mode controls plus a Manage Assets action. Manage Assets closes the shell without focus restore and routes to `#/assets`.
+
+Verse Settings contains:
+
+- **Verse preview** — Arabic sample using the live reader Arabic cascade and optional translation line gated by `settings.translationVisible`.
+- **Reading** — Font Size writes through `src/configure/font-size.ts::setFontSize`; Reading Flow writes all four reading typography dimensions through `src/configure/reading-typography.ts::setReadingFlow`.
+- **Sources** — Active Riwayah, Quran Text Style, Translation Source, Show Translation, and Tafsir Source. Riwayah changes use the atomic active variant bundle; text style changes require a usable compatible text asset; translation visibility writes through `setTranslationVisible`.
+
+Mushaf Settings contains:
+
+- **Mushaf preview** — an unframed page-like preview, distinct from the Verse typography preview.
+- **Mushaf** — Active Riwayah and Mushaf Edition rows. Mushaf edition changes require a usable compatible Mushaf asset and preserve the active text style.
+
+The nested picker is a small dialog within the shell. It lists compatible rows for the active mode, marks the current row, and closes after a successful row choice. Esc closes the shell while no nested picker-specific key trap is active.
 
 Switching riwayah via popover is gated by the variant-asset domain. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Active recitation state is the atomic bundle `settings.riwayah` + `settings.quranTextStyleId` + `settings.mushafEditionId`, written only by `src/configure/variant-bundle.ts`. A riwayah switch chooses that riwayah's default Quran text style and Mushaf edition, validates both assets are usable, then writes all three keys in one IDB transaction before mutating runes, applying DOM state, emitting `SETTINGS_RIWAYAH_CHANGED`, or broadcasting cross-tab. A rejected switch returns `false` and leaves all three active keys unchanged.
 
@@ -89,26 +105,7 @@ The recitation picker exposes the package state on each row. Installed rows swit
 
 Package install progress lives outside `settings.riwayah`: `src/configure/state.svelte.ts::riwayahPackageState` holds runtime package status by riwayah, and `riwayahInstallIntent` records the requested optional package plus the previous usable riwayah. Failed installs clear the request or mark an error while preserving both `settings.riwayah` and `previousUsable`.
 
-### Storage section — offline-selector
-
-Mounted between Sources and the Theme footer as a single collapsible accordion (default closed). Header summary shows either `Cache content for offline use ›` (none cached) or `N cached ›` (gold accent). Tap-to-expand reveals the active reader-first rows: Text, Pages, Search, plus source-aware optional pack rows. Legacy removed-scope media opt-ins are dropped during normalization so hidden state does not linger once the rows are gone. Available rows show byte size + checkbox; gated rows show their version label only. The Pages row opens into per-riwayah page-pack controls for available Mushaf page packs plus any previously checked stale opt-ins. A source-aware list under the rows exposes translation and tafsir packs so users can keep or remove individual optional text packs from cache. Footer underneath has live `usage / quota` from `navigator.storage.estimate()` plus an Apply CTA.
-
-The Text row represents the baseline reader source set: Qalun Arabic (runtime key `qaloon`), Bridges translation, Tafsir Muyassar data, and shipped Knowledge Lane context. Optional translation and tafsir rows use `public/dataset/indexes/source-assets.json` for byte estimates and same-origin file plans without adding those bodies to the baseline manifest. The selector writes source-aware state under `settings.offlineCategories.text.{riwayat,translations,tafsir}` and per-riwayah page state under `settings.offlineCategories.pages.{riwayah}`; knowledge has no separate persisted toggle in this phase because it is bundled into the Text download plan when present in `manifest.json`.
-
-Storage also lists riwayah package entries. Each package row plans text plus page bytes from `indexes/riwayah-packages.json`, installs optional Hafs/Warsh directly, and removes optional installed packages directly. Removing an active optional riwayah first switches to verified Qalun (`qaloon`); if Qalun (`qaloon`) cannot be verified usable, removal is refused and the cached package is left intact.
-
-Expand/collapse animates via CSS `grid-template-rows: 0fr → 1fr` so the panel doesn't measure heights in JS — the Theme footer's bounding box stays put on toggle (no rebound). Inside the body's scroll region; long expansion just adds scrollable content, no chrome reflow.
-
-Apply gating:
-- Disabled when no diff vs `settings.offlineCategories`.
-- Disabled with a red "Need X MB more free space" message when sum-of-newly-checked exceeds available quota (audit Q4 — pre-flight refuse).
-- On click: downloads newly checked category/source/page plans, removes unchecked cached source/category/page plans, then writes `settings.offlineCategories` via `settings/offline-categories.ts::setOfflineCategories` (sole writer). Button flips to a solid gold `Saved ✓` for ~1.5 s after a successful write so the user has visible confirmation.
-
-Uncheck + Apply removes the matching cached URLs when Cache Storage is available. Cache wins from prior precache passes are honored by network/cache strategy on subsequent reads.
-
-**Picker popover** (`[data-testid="settings-pop"]`): blurred + tinted scrim, parchment-gradient surface on light themes / deep-ink gradient on dark, gold hairline corner ornaments, italic serif "Choose a {Riwāyah / translation / tafsir}" title + uppercase eyebrow key. Each row: name + italic sub-meta when available + opacity-0 gold check badge that lights when active. Hover/focus tints background. Backdrop tap, Esc, or row-tap dismisses. With popover open, Esc closes popover first; second Esc closes sheet.
-
-Dismissal: ✕ close button (inside preview), backdrop tap, Esc.
+The old in-panel Storage accordion is no longer mounted in the settings shell. Offline install, verify, set-active, and delete controls move to the dedicated asset-management route.
 
 ### Pick a translation
 
@@ -206,8 +203,8 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:68`, `src/configure/variant-bundle.ts:66` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:195` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:178` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:37` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:29` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -221,14 +218,12 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 - **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity. The active variant keys (`riwayah`, `quranTextStyleId`, `mushafEditionId`) are intentionally co-owned by `src/configure/variant-bundle.ts` so they can be validated, written, applied, and broadcast as one bundle.
 - **Mushaf view mode is owned by the read surface.** The Settings store persists `mushafViewMode`, but the sole writer is `src/read/mushaf/view-mode.ts` because the visible control lives in Mushaf page chrome, not the Settings sheet.
 - **Sole writer of `settings.wirdPlan`: `src/read/wird/store.ts`.** The settings store remains key-value; Daily Wird owns only this key and does not change the settings objectStore schema.
-- **Settings sheet sticky preview band keeps fixed warm-bronze dark bg regardless of theme.** Constant reference frame — do not retint with active theme.
-- **Reset-to-default pill always rendered.** Disabled when both Reading-section knobs at `md`. Flipping in/out of default never reflows the slider rows (regression guard in `tests/unit/configure/panel.test.ts`).
-- **Settings sheet body is three sections: Reading + Sources + Storage.** Storage section sits between Sources and the Theme footer. Order is regression-guarded in `tests/unit/configure/panel.test.ts`.
+- **Settings shell is mode-aware.** Verse Settings may show typography, translation, tafsir, and Quran text-style controls; Mushaf Settings may show Mushaf page source and edition controls. Mushaf Settings must not render Verse typography or Storage rows.
+- **Settings shell restores focus on dismissal.** Manage Assets is the exception because it closes the shell and routes away.
+- **Verse typography controls use existing sole writers.** Font Size calls `setFontSize`; Reading Flow calls `setReadingFlow` so all reading-flow dimensions remain coordinated.
 - **Saved tafsir preference is source metadata, not manifest membership.** Settings can persist an optional tafsir id from `indexes/sources.json`; optional body availability is planned by `indexes/source-assets.json`, and Reader load is responsible for unavailable/install/switch handling when the body fetch fails.
 - **Source rows expose install state before activation.** Optional qira'ah/riwayah, translation, tafsir, curated metadata, page, and search/index packs are installable before they are usable. The selected label must not change to a pack that has not verified local install state.
-- **Sole writer of `settings.offlineCategories`: `src/configure/offline-categories.ts`** — the selector calls `setOfflineCategories(next)` and never writes IDB raw.
-- **Text offline opt-in remains source-aware.** The visible Text checkbox maps to the baseline Qalun + Bridges + Muyassar set and also caches `text-knowledge` manifest entries when they exist. Optional translation and tafsir rows are controlled by `settings.offlineCategories.text.translations` / `.tafsir` and planned from `indexes/source-assets.json`, not from the baseline manifest.
-- **Pages offline opt-in is per-riwayah.** The selector stores Qalun/Hafs/Warsh page choices under `settings.offlineCategories.pages`; `src/configure/offline-categories.ts`, the sole writer, normalizes the legacy `{ _all: true }` shape to `{ qaloon: true }`. Page apply actions call page-specific cache helpers instead of the generic category download path.
+- **Asset management owns offline controls.** The legacy `settings.offlineCategories` normalizer remains for old data, but the mode-aware settings shell does not mount `offline-selector.svelte`.
 - **Optional variant assets are usable only after local asset verification.** The active bundle may persist Hafs or Warsh only when both the selected Quran text style and Mushaf edition helpers report usable. Qalun (`qaloon`) availability does not make another riwayah usable.
 - **Install intent is not the active bundle.** `riwayahInstallIntent.requested` and `previousUsable` guide install/prompt flows without changing the active variant bundle until `setRiwayah(requested)` succeeds.
 

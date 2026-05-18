@@ -1,9 +1,7 @@
 {
   "version": 1,
   "defaults": {
-    "qaloon": "qalun-quran-ws-v1",
-    "hafs": "hafs-quran-ws-v1",
-    "warsh": "warsh-quran-ws-v1"
+    "qaloon": "qalun-quran-ws-v1"
   },
   "assets": [
     {

@@ -16,6 +16,11 @@ const TEXT_ASSETS_PATH = join(DATASET_DIR, 'indexes', 'text-assets.json')
 const MUSHAF_ASSETS_PATH = join(DATASET_DIR, 'indexes', 'mushaf-assets.json')
 const RIWAYAT = ['qaloon', 'hafs', 'warsh']
 const SURAH_COUNT = 114
+const DEFAULT_MUSHAF_EDITIONS = {
+  qaloon: 'qalun-quran-ws-v1',
+  hafs: 'hafs-quran-ws-v1',
+  warsh: 'warsh-quran-ws-v1',
+}
 
 function argValue(argv, name, fallback = null) {
   const flag = argv.find((arg) => arg.startsWith(`--${name}=`))
@@ -87,13 +92,13 @@ async function textAssetsFor(riwayah, textAssetIndex) {
 }
 
 async function pageAssetsFor(riwayah, mushafAssetIndex) {
-  const mushafEditionId = mushafAssetIndex.defaults[riwayah]
+  const mushafEditionId = mushafAssetIndex.defaults[riwayah] ?? DEFAULT_MUSHAF_EDITIONS[riwayah]
   const asset = mushafAssetIndex.assets.find((entry) => entry.riwayah === riwayah && entry.mushafEditionId === mushafEditionId)
   const files = Array.isArray(asset?.files) ? asset.files : []
   const urls = files.map((file) => file.url)
   const available = typeof asset?.manifestUrl === 'string' && files.length === 605 && (await urlsExist(urls))
   return {
-    manifestUrl: asset?.manifestUrl ?? datasetUrl(`mushaf-pages/${riwayah}/${mushafEditionId ?? 'missing'}/manifest.json`),
+    manifestUrl: asset?.manifestUrl ?? datasetUrl(`mushaf-pages/${riwayah}/${mushafEditionId}/manifest.json`),
     urls: available ? urls.filter((url) => url !== asset.manifestUrl) : [],
     totalBytes: available ? asset.totalBytes : 0,
     available,

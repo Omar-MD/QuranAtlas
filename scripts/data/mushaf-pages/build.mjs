@@ -386,10 +386,16 @@ async function buildRiwayah(riwayah, catalog, assetCatalog, { check = false, mis
 }
 
 async function writeMushafAssetIndex(resolvedAssets, assetCatalog) {
+  const emittedKeys = new Set(resolvedAssets.map((asset) => `${asset.riwayah}:${asset.mushafEditionId}`))
+  const defaults = Object.fromEntries(
+    Object.entries(assetCatalog.defaults).filter(([riwayah, mushafEditionId]) => (
+      emittedKeys.has(`${riwayah}:${mushafEditionId}`)
+    )),
+  )
   await mkdir(join(DATASET_DIR, 'indexes'), { recursive: true })
   await writeJson(join(DATASET_DIR, 'indexes', 'mushaf-assets.json'), {
     version: 1,
-    defaults: assetCatalog.defaults,
+    defaults,
     assets: resolvedAssets,
   })
 }
