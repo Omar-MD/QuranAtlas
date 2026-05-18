@@ -29,19 +29,18 @@ import { scanA11y } from '../fixtures/a11y.js'
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
 
 async function ensureTranslation(page, sourceName = 'Bridges') {
-  const sourceId = sourceName === 'Bridges' ? 'bridges' : sourceName.toLowerCase()
   await openSettingsSheet(page)
   const toggle = page.getByRole('switch', { name: 'Show translation' })
   if ((await toggle.getAttribute('aria-checked')) === 'false') {
     await toggle.click()
   }
   const row = page.getByTestId('src-row-translation')
-  if (!((await row.textContent()) ?? '').includes(sourceId)) {
+  if (!((await row.textContent()) ?? '').includes(sourceName)) {
     await row.click()
     await page.getByRole('dialog', { name: 'Choose Translation Source' })
       .getByRole('button', { name: new RegExp(sourceName) })
       .click()
-    await expect(row).toContainText(sourceId)
+    await expect(row).toContainText(sourceName)
   }
   await page.keyboard.press('Escape')
 }
@@ -186,7 +185,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await page.getByRole('dialog', { name: 'Choose Tafsir Source' })
       .getByRole('button', { name: /Al-Mukhtasar fi al-Tafsir/ })
       .click()
-    await expect(tafsirRow).toContainText('mukhtasar')
+    await expect(tafsirRow).toContainText('Mukhtasar')
 
     await page.keyboard.press('Escape')
 
