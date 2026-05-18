@@ -14,8 +14,8 @@ const packageIndex = {
         available: true,
       },
       pages: {
-        manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
-        urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+        manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+        urls: ['/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg'],
         totalBytes: 200,
         available: true,
       },
@@ -31,8 +31,8 @@ const packageIndex = {
         available: true,
       },
       pages: {
-        manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
-        urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
+        manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+        urls: ['/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'],
         totalBytes: 220,
         available: true,
       },
@@ -48,7 +48,7 @@ const packageIndex = {
         available: false,
       },
       pages: {
-        manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json',
+        manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
         urls: [],
         totalBytes: 0,
         available: false,
@@ -179,8 +179,10 @@ function installCache(cachedUrls: string[] = []): void {
 
 async function importLoader() {
   const packs = await import('../../../src/packs/riwayah')
+  const assets = await import('../../../src/packs/mushaf-assets')
   const mod = await import('../../../src/packs/mushaf-pages')
   packs.clearRiwayahPackCacheForTests()
+  assets.clearMushafAssetIndexCacheForTests()
   mod.clearMushafManifestCache()
   return mod
 }
@@ -195,6 +197,7 @@ describe('pack-domain mushaf page policy', () => {
 
   it('classifies the baseline page pack as usable when the manifest is loadable', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
       if (url.includes('riwayah-packages.json')) return response(packageIndex)
       return response(manifest)
     }))
@@ -204,12 +207,13 @@ describe('pack-domain mushaf page policy', () => {
       kind: 'usable',
       riwayah: 'qaloon',
       reason: 'baseline',
-      manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
     })
   })
 
   it('classifies an uncached optional page pack as installable before manifest fetch', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
       if (url.includes('riwayah-packages.json')) return response(packageIndex)
       return response({ ...manifest, riwayah: 'hafs', sourceSlug: 'hafs' })
     }))
@@ -219,12 +223,13 @@ describe('pack-domain mushaf page policy', () => {
       kind: 'installable',
       riwayah: 'hafs',
       reason: 'not-cached',
-      manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
     })
   })
 
   it('maps removed optional page packs to a missing result', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
       if (url.includes('riwayah-packages.json')) return response(packageIndex)
       return response(null, 404)
     }))
@@ -234,12 +239,13 @@ describe('pack-domain mushaf page policy', () => {
       kind: 'missing',
       riwayah: 'warsh',
       reason: 'missing',
-      manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
     })
   })
 
   it('can resolve a missing optional page pack back to baseline policy when requested', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
       if (url.includes('riwayah-packages.json')) return response(packageIndex)
       return response(manifest)
     }))
@@ -256,12 +262,13 @@ describe('pack-domain mushaf page policy', () => {
   it('maps invalid manifests to a security-rejected result', async () => {
     installCache([
       '/dataset/riwayat/hafs/001.json',
-      '/dataset/mushaf-pages/hafs/manifest.json',
-      '/dataset/mushaf-pages/hafs/pages/001.svg',
+      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg',
     ])
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
       if (url.includes('riwayah-packages.json')) return response(packageIndex)
-      return response({ ...manifest, riwayah: 'hafs', sourceSlug: 'qalun' })
+      return response({ ...manifest, riwayah: 'hafs', mushafEditionId: 'hafs-quran-ws-v1', sourceSlug: 'qalun' })
     }))
     const { getMushafPagePackResult } = await importLoader()
 
@@ -269,7 +276,7 @@ describe('pack-domain mushaf page policy', () => {
       kind: 'unavailable',
       riwayah: 'hafs',
       reason: 'security-rejected',
-      manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
     })
   })
 })

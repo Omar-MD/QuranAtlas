@@ -283,13 +283,12 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     performance.mark('router:resolve')
     performance.measure('app:router-init', 'db:open', 'router:resolve')
 
-    // Settings panel, CommandSheet, AmbientDock, AmbientPill, NavDrawer are all
-    // now mounted as components in App.svelte — no init calls needed here.
+    // Settings panel, AmbientDock, AmbientPill, NavDrawer are mounted as
+    // components in App.svelte — no init calls needed here.
     pushCleanup(bootCleanups, await initReaderActions())
 
-    // Global keyboard shortcuts (⌘K, /, ?, g-chord nav, reader hotkeys).
-    // Lives outside any overlay component so it survives lazy-mount of the
-    // command sheet (audit N22 / N25, 2026-05-01).
+    // Global keyboard shortcuts (?, g-chord nav, reader hotkeys).
+    // Lives outside overlay components so it survives lazy-mount boundaries.
     pushCleanup(bootCleanups, initGlobalShortcuts())
 
     // Handle navigation events from command sheet

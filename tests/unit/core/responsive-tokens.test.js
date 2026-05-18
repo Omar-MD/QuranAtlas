@@ -105,7 +105,7 @@ describe('styles — responsive breakpoint tokens', () => {
   // Removed-scope mark sheet assertions were deleted with the Reader First
   // source cleanup. The shared sheet chrome remains covered above.
 
-  /* .qa-cmd-sheet/.qa-cmd-foot responsive rules now live in nav/CommandSheet.svelte <style> */
+  /* Retired overlay responsive rules remain absent from shared tokens. */
 
   it('onboarding landscape guard: max-height: 500px shrinks .qa-onb-page', () => {
     // Onboarding CSS lives in src/styles/surfaces/onboarding.css (PR 6 migration).

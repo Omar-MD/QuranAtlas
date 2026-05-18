@@ -26,7 +26,7 @@ import {
   persistRiwayahSelection,
   refreshRiwayahPackageStatus,
 } from '../packs/riwayah'
-import { settings, riwayahInstallIntent } from '../configure/state.svelte'
+import { settings, riwayahInstallIntent } from '../core/settings.svelte'
 import { getTextAsset } from '../packs/text-assets'
 import { getMushafAsset } from '../packs/mushaf-assets'
 import type { TextAsset, MushafAsset } from '../packs/asset-types'
@@ -528,7 +528,7 @@ export async function installMushafAsset(riwayah: Riwayah, mushafEditionId: stri
   return installConcreteAsset(asset)
 }
 
-function assertCanRemoveTextAsset(asset: TextAsset): void {
+async function assertCanRemoveTextAsset(asset: TextAsset): Promise<void> {
   if (
     settings.riwayah === asset.riwayah
     && settings.quranTextStyleId === asset.textStyleId
@@ -538,7 +538,7 @@ function assertCanRemoveTextAsset(asset: TextAsset): void {
   }
 }
 
-function assertCanRemoveMushafAsset(asset: MushafAsset): void {
+async function assertCanRemoveMushafAsset(asset: MushafAsset): Promise<void> {
   if (
     settings.riwayah === asset.riwayah
     && settings.mushafEditionId === asset.mushafEditionId
@@ -551,14 +551,14 @@ function assertCanRemoveMushafAsset(asset: MushafAsset): void {
 export async function removeTextAsset(riwayah: Riwayah, textStyleId: string): Promise<void> {
   const asset = await getTextAsset(riwayah, textStyleId)
   if (!asset) return
-  assertCanRemoveTextAsset(asset)
+  await assertCanRemoveTextAsset(asset)
   await Promise.all(asset.files.map((file) => deleteAssetUrl(file.url)))
 }
 
 export async function removeMushafAsset(riwayah: Riwayah, mushafEditionId: string): Promise<void> {
   const asset = await getMushafAsset(riwayah, mushafEditionId)
   if (!asset) return
-  assertCanRemoveMushafAsset(asset)
+  await assertCanRemoveMushafAsset(asset)
   await Promise.all(asset.files.map((file) => deleteAssetUrl(file.url)))
   if (asset.files.length === 0 && typeof caches !== 'undefined') {
     const cacheName = cacheNameFor(new URL(`/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/manifest.json`, location.origin))

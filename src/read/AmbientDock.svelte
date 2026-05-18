@@ -11,11 +11,11 @@
   import { on, emit } from '../core/events'
   import { Events } from '../core/constants'
   import { reader } from './state.svelte'
-  import { openCommandSheet } from '../navigate/command-sheet-bridge'
+  import { openSettingsSheet } from '../configure/panel-bridge'
   import { openNavDrawer } from '../navigate/nav-drawer-bridge'
 
   type Tab = {
-    id: 'verse' | 'mushaf' | 'search'
+    id: 'verse' | 'mushaf' | 'settings'
     label: string
     matches: (h: string) => boolean
   }
@@ -30,7 +30,7 @@
   const TABS: Tab[] = [
     { id: 'verse',  label: 'Verse mode',  matches: (h) => h.startsWith('#/s/') },
     { id: 'mushaf', label: 'Mushaf mode', matches: (h) => h.startsWith('#/m/') },
-    { id: 'search', label: 'Search', matches: () => false },
+    { id: 'settings', label: 'Settings', matches: () => false },
   ]
 
   const crumbText = $derived.by(() => {
@@ -70,9 +70,9 @@
   }
 
   function handleClick(e: MouseEvent, id: Tab['id']): void {
-    if (id === 'search') {
+    if (id === 'settings') {
       e.preventDefault()
-      openCommandSheet()
+      openSettingsSheet(reader.readerMode === 'mushaf' ? 'mushaf' : 'verse')
       return
     }
     if (isReaderRoute(window.location.hash)) {
@@ -135,10 +135,10 @@
           <path d="M4 4v13a2 2 0 0 0 2 2h6"/>
           <path d="M20 4v13a2 2 0 0 1-2 2h-6"/>
         </svg>
-      {:else if tab.id === 'search'}
+      {:else if tab.id === 'settings'}
         <svg class="qa-rail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="10.5" cy="10.5" r="6"/>
-          <line x1="15" y1="15" x2="20" y2="20"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.07a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 0 1 0-4h.07A1.7 1.7 0 0 0 4.6 8a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 3.6 1.7 1.7 0 0 0 10 2.07V2a2 2 0 1 1 4 0v.07a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 8c.13.5.52.9 1.03 1.03H21a2 2 0 0 1 0 4h-.07A1.7 1.7 0 0 0 19.4 15Z"/>
         </svg>
       {/if}
       <span class="qa-rail-tip">{tab.label}</span>

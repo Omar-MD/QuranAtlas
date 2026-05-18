@@ -29,7 +29,7 @@ test_paths:
 | MarginHeader label swipe left/right on `#/s/*` (mobile) | gesture | next/prev surah (clamped 1–114) |
 | MarginHeader gear single tap (mobile) | tap | open Verse Settings on `#/s/*`, Mushaf Settings on `#/m/*` (debounced 300 ms) |
 | MarginHeader gear double-tap (mobile, ≤300 ms) | gesture | cycle theme (parity with keyboard `d`) |
-| AmbientDock tap (desktop) | tap | switch latest Verse/Mushaf reader route or open command sheet |
+| AmbientDock tap (desktop) | tap | switch latest Verse/Mushaf reader route or open Settings |
 | Verse number tap | tap | edge indicators ~1.6 s + pill label updates |
 | Verse text block tap/click | tap / click | toggle that verse's meaning + knowledge lane |
 | Verse double-tap / double-click | gesture | open inline tafsir preview for that verse |
@@ -121,7 +121,7 @@ Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush ag
 
 ### Ambient chrome
 
-**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + Reader First tabs (Verse / Mushaf / Search). Verse and Mushaf keep separate latest hashes from the current route, router route-change events, and `settings.lastSurface`, so switching modes returns to the latest known `#/s/...` or `#/m/...` route. Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list via ⋯ → drawer, command sheet, or `G+S`.
+**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + Reader First tabs (Verse / Mushaf / Settings). Verse and Mushaf keep separate latest hashes from the current route, router route-change events, and `settings.lastSurface`, so switching modes returns to the latest known `#/s/...` or `#/m/...` route. Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list is available via ⋯ → drawer or `G+S`.
 
 **Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px) on Verse routes and `Page N` on Mushaf routes; right settings gear ⚙ (48 px tap target, 26 px icon). The center label toggles surah chrome only on `#/s/*`; Mushaf routes keep the same header shape but do not toggle the surah header or swipe between surahs. Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. It does not render during first-run onboarding. `#main-content` reserves ~60 px top padding.
 
@@ -129,7 +129,7 @@ Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush ag
 
 ### Ambient pill
 
-Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3 s showing `{surah}:{verse} · {Name}` + `⌘K` hint. Verse-number tap updates pill label. Hidden on non-reader routes (`#/surahs`, `#/bookmarks`, `#/about`, etc.).
+Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3 s showing `{surah}:{verse} · {Name}`. Verse-number tap updates pill label. Hidden on non-reader routes (`#/surahs`, `#/bookmarks`, `#/about`, etc.).
 
 ### Translation rendering
 
@@ -156,7 +156,7 @@ If either knowledge shard is missing, invalid, stale, or fetch-fails, the reader
 
 The Reader's primary per-verse study action is tafsir, not personal annotation.
 
-1. Double-tap / double-click a verse, right-click a verse, press `m`, or choose the command-sheet verse action to open inline tafsir preview for that verse.
+1. Double-tap / double-click a verse, right-click a verse, or press `m` to open inline tafsir preview for that verse.
 2. The active verse gains the existing left-edge accent treatment and a compact `tafsir` head label. The preview mounts directly under that verse's Arabic / meaning stack, where the old fast-tag panel used to appear.
 3. Inline preview loads the saved tafsir source immediately. Optional tafsir bodies are fetched on demand from the same-origin dataset assets when selected. `src/metadata/tafsir.ts` owns the unavailable/missing/stale/fallback contract; if a selected tafsir body is unavailable, the preview or sheet shows the appropriate degraded state or the active tafsir setting changes to a verified baseline before baseline tafsir is rendered under a baseline label.
 4. Preview header includes the source switcher plus compact close (`×`) and **Expand** (`[]`) actions. Switching sources reloads the current surah's tafsir pack and keeps the preview anchored to the same active verse.
@@ -236,7 +236,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.js
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:79`, `src/read/AmbientPill.svelte:90`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:53`, `src/read/Reader.svelte:667`, `src/read/edge-indicators.ts:62` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:79`, `src/read/AmbientPill.svelte:89`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:53`, `src/read/Reader.svelte:667`, `src/read/edge-indicators.ts:62` |
 | `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:33` |
 | `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:62` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -244,7 +244,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.js
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:76`, `src/read/MarginHeader.svelte:195` |
+| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:75`, `src/read/MarginHeader.svelte:195` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:161` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:100`, `src/read/MarginHeader.svelte:186` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:499`, `src/read/mushaf/MushafReader.svelte:369` |

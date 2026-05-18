@@ -139,8 +139,7 @@ export async function defaultMushafEditionForRiwayah(riwayah: Riwayah): Promise<
   assertRiwayah(riwayah, 'Mushaf asset riwayah')
   const index = await loadMushafAssetIndex()
   const id = index.defaults[riwayah]
-  if (!id) throw new Error(`Mushaf asset default missing for ${riwayah}`)
-  return id
+  return id ?? index.defaults.qaloon ?? 'qalun-quran-ws-v1'
 }
 
 async function cacheHasIndexedUrl(url: string): Promise<boolean> {

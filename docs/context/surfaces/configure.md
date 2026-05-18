@@ -26,8 +26,6 @@ test_paths:
 | Manage Assets in Settings | tap | close Settings and route to `#/assets` |
 | Storage/quota banner CTA | tap | route to `#/assets` |
 | Missing reader asset prompt | tap | route to `#/assets` |
-| `G` then `P` (desktop) | keyboard | `#/settings` → settings shell inferred from previous reader route |
-| `⌘K` → "Preferences" → Enter | keyboard | `#/settings` → settings shell inferred from previous reader route |
 | Drawer header ⓘ icon | tap | `#/about` |
 | AmbientDock ⋯ → drawer → About | tap | `#/about` |
 | `⌘↑` / `Ctrl+↑` | keyboard | bump font size up (works outside the sheet; guarded against focused inputs) |

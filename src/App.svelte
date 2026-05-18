@@ -20,7 +20,6 @@
   // owning component. Subsequent opens reuse the loaded chunk + the
   // factory's pending-call queue replays the first call after register.
   import { panelBridge } from './configure/panel-bridge'
-  import { commandSheetBridge } from './navigate/command-sheet-bridge'
   import { navDrawerBridge } from './navigate/nav-drawer-bridge'
   import { tafsirSheetBridge } from './read/tafsir-bridge'
 
@@ -33,14 +32,11 @@
   // dynamic import; the resolved default lands on the *Comp slot which the
   // {#if} block in the template renders.
   let panelMounted = $state(false)
-  let commandSheetMounted = $state(false)
   let navDrawerMounted = $state(false)
   let tafsirSheetMounted = $state(false)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let PanelComp = $state<any>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let CommandSheetComp = $state<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let NavDrawerComp = $state<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,11 +45,6 @@
   $effect(() => {
     if (panelMounted && !PanelComp) {
       void import('./configure/Panel.svelte').then(m => { PanelComp = m.default })
-    }
-  })
-  $effect(() => {
-    if (commandSheetMounted && !CommandSheetComp) {
-      void import('./navigate/CommandSheet.svelte').then(m => { CommandSheetComp = m.default })
     }
   })
   $effect(() => {
@@ -87,7 +78,6 @@
     // bridge call (e.g. #/settings route on first launch → openSettingsSheet)
     // can trigger the import path through the bridge's pending-call queue.
     panelBridge.setMounter(() => { panelMounted = true })
-    commandSheetBridge.setMounter(() => { commandSheetMounted = true })
     navDrawerBridge.setMounter(() => { navDrawerMounted = true })
     tafsirSheetBridge.setMounter(() => { tafsirSheetMounted = true })
 
@@ -162,7 +152,6 @@
      Svelte 5 runes mode renders dynamic components by default; the
      PascalCase tag binds to the $state-tracked slot. -->
 {#if PanelComp}<PanelComp />{/if}
-{#if CommandSheetComp}<CommandSheetComp />{/if}
 {#if NavDrawerComp}<NavDrawerComp />{/if}
 {#if TafsirSheetComp}<TafsirSheetComp />{/if}
 

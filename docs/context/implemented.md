@@ -15,7 +15,6 @@ and data shapes live in `surfaces/<name>.md`.
 
 ## Navigate
 
-- Command sheet for verse/surah navigation and study handoff.
 - Mobile nav drawer with Surahs, Juz, and Bookmarks.
 - Desktop `#/surahs` and `#/bookmarks` surfaces.
 - Riwayah-scoped bookmarks with cross-tab sync and landing pulse.

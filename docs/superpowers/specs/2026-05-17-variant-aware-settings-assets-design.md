@@ -123,9 +123,9 @@ Asset Management groups:
 
 Command Sheet removal:
 
-- Delete component, bridge, lazy mount, `Cmd/Ctrl+K`, `/`, `g p`, command docs/tests.
-- Remove desktop rail Search entry and all command-style search/quick-jump promises from current docs.
-- Keep direct reader/navigation shortcuts that do not depend on Command Sheet only if explicitly tested and documented.
+- Delete component, bridge, lazy mount, modifier-K, `/`, `g p`, command docs/tests.
+- Remove desktop rail Search entry and all command-style fast-navigation promises from current docs.
+- Keep direct reader/navigation shortcuts that do not depend on the retired overlay only if explicitly tested and documented.
 
 ## Accessibility
 
@@ -142,7 +142,7 @@ Command Sheet removal:
 - Add settings normalization and variant-aware resolver/status helpers.
 - Switch Verse and Mushaf runtime resolution to new axes.
 - Build Verse Settings, Mushaf Settings, and `#/assets`.
-- Remove Command Sheet and Search/quick-jump docs in the final cleanup phase.
+- Remove retired overlay and Search fast-navigation docs in the final cleanup phase.
 - Regenerate docs/inventories and update `source-data-flow`, `data-model`, `configure`, `read`, `navigate`, `infra`, and product docs.
 
 ## Test Plan
@@ -153,4 +153,3 @@ Command Sheet removal:
 - Route tests for `#/assets` skip-persistence, direct-entry fallback, and Back behavior.
 - E2E only where browser proof is needed: gear opens correct mode panel, `#/assets` a11y, and `@offline` old-cache/new-cache install/delete behavior.
 - Final verification: `pnpm run data -- build`, `pnpm run docs`, `pnpm run docs:check`, and `pnpm run validate`.
-

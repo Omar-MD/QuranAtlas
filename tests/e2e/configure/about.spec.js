@@ -257,15 +257,14 @@ test.describe('Journey G: About', () => {
     const titleEl = shortcutsSheet.locator('.qa-sheet-title')
     await expect(titleEl).toHaveText('Keyboard shortcuts')
 
-    // Step 2: verify 4 section groups are present (Universal · Go to · Reader · Command sheet)
+    // Step 2: verify 3 section groups are present (Universal · Go to · Reader)
     const groups = shortcutsSheet.locator('.qa-sc-group')
-    await expect(groups).toHaveCount(4)
+    await expect(groups).toHaveCount(3)
 
     const groupTitles = shortcutsSheet.locator('.qa-sc-group-title')
     await expect(groupTitles.nth(0)).toHaveText('Universal')
     await expect(groupTitles.nth(1)).toHaveText('Go to')
     await expect(groupTitles.nth(2)).toHaveText('Reader')
-    await expect(groupTitles.nth(3)).toHaveText('Command sheet')
 
     // Step 3: close via Esc → sheet is removed from DOM
     await page.keyboard.press('Escape')

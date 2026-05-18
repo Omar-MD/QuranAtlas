@@ -13,7 +13,6 @@ export type ShortcutRow = {
 
 /** Curated keyboard shortcut rows shown on the shortcuts screen. */
 export const SHORTCUT_ROWS: ShortcutRow[] = [
-  { keys: ['/'],          desc: 'Search verses, surahs, and commands' },
   { keys: ['?'],          desc: 'Show every shortcut' },
   { keys: ['j'],          desc: 'Next verse',   aux: ['k', 'previous'] },
   { keys: [']'],          desc: 'Next surah',   aux: ['[', 'previous'] },

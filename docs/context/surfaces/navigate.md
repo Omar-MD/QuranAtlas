@@ -17,13 +17,12 @@ test_paths:
 
 # Surface: navigate
 
-> Reader navigation — command sheet, nav drawer, Surah/Juz browsing, bookmarks, reader mode switching, shortcuts, search entry, and Daily Wird entry points. Search grouping stays surface-owned in `src/navigate/search-contract.ts`, while bookmark persistence and resume validation are consumed from `src/continuity/**`.
+> Reader navigation — nav drawer, Surah/Juz browsing, bookmarks, reader mode switching, shortcuts, and Daily Wird entry points. Bookmark persistence and resume validation are consumed from `src/continuity/**`.
 
 ## Reach
 
 | Entry | Trigger | Result |
 | --- | --- | --- |
-| `⌘K` / Search glyph in dock | keyboard / tap | open command sheet |
 | Hamburger ≡ on MarginHeader (mobile) | tap | open nav drawer |
 | MarginHeader swipe-down (mobile) | gesture | `openNavDrawer('read')` |
 | AmbientDock ⋯ (desktop) | tap | open nav drawer |
@@ -40,7 +39,6 @@ test_paths:
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/navigate/CommandSheet.svelte` | Module-level re-export so callers can do: |
 | `src/navigate/EmptyRoute.svelte` | intentionally empty |
 | `src/navigate/JuzList.svelte` | _(no leading comment)_ |
 | `src/navigate/NavDrawer.svelte` | Mobile (<1180px): full-screen drawer focused on reading continuity: |
@@ -50,13 +48,10 @@ test_paths:
 | `src/navigate/bookmarks/indicator.ts` | Bookmark verse-id glyph indicator. |
 | `src/navigate/bookmarks/pulse.ts` | Pulse-highlight a verse on bookmark-jump landing. |
 | `src/navigate/bookmarks/store.ts` | _(no leading comment)_ |
-| `src/navigate/command-sheet-bridge.ts` | Bridge for the CommandSheet (⌘K) overlay. Migrated to |
 | `src/navigate/global-shortcuts.ts` | Boot-mounted global keyboard shortcuts. Survives lazy-mount of overlay |
 | `src/navigate/nav-drawer-bridge.ts` | Imperative bridge for the NavDrawer Svelte component. Migrated to |
 | `src/navigate/reader-actions.js` | Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m). |
-| `src/navigate/search-contract.ts` | _(no leading comment)_ |
-| `src/navigate/shortcuts-sheet.js` | Shortcuts cheatsheet — opened by `?` (also reachable from More → Shortcuts |
-| `src/navigate/state-command-sheet.svelte.ts` | _(no leading comment)_ |
+| `src/navigate/shortcuts-sheet.js` | Shortcuts cheatsheet opened by `?`. Grouped by Universal · Go-to · Reader, |
 | `src/navigate/surahs/SurahList.svelte` | ---- data loaded on mount ---- |
 | `src/navigate/surahs/SurahRow.svelte` | _(no leading comment)_ |
 | `src/navigate/surahs/state.svelte.ts` | _(no leading comment)_ |
@@ -64,16 +59,6 @@ test_paths:
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
-
-### Command sheet
-
-- `⌘K` (mobile + desktop) or Search glyph in dock → command sheet opens.
-- Allowed command-sheet result groups are owned by `src/navigate/search-contract.ts`; the shipped Reader First contract is limited to the ordered groups `surah`, `verse`, `tafsir-study`, and `command`.
-- Type verse-ref (`2:255`) → preview card renders (Arabic + English); "Open verse" row focused. Enter → `NAVIGATION_NAVIGATE { surah: 2, verse: 255 }` → `app-bootstrap.ts` routes to `#/s/2/255`.
-- ArrowDown past "Open verse" → "Study this verse" row → Enter → close + open inline tafsir preview for that verse (read surface).
-- Removed tag/review result groups are absent from the Reader First command sheet.
-- Tablet+ (≥768 px): keyboard-shortcut footer hint (`⌘K`, `esc`) shown.
-- Desktop (≥1180 px): caps at 640 px wide.
 
 ### Nav drawer (mobile, full-screen)
 
@@ -109,15 +94,13 @@ Pulse animation (`bookmarks/pulse.ts`) — landing-flash on jumped-to verse fire
 
 ### Shortcut cheatsheet (`?`)
 
-Press `?` → bottom sheet slides up titled "Keyboard shortcuts". Lists every binding grouped into 4 sections: Universal, Go to, Reader, Command sheet — plus double-tap gesture row. Backdrop tap, `×`, Esc → close. No persistence.
+Press `?` → bottom sheet slides up titled "Keyboard shortcuts". Lists every active binding grouped into Universal, Go to, and Reader sections, plus gesture rows. Backdrop tap, `×`, Esc → close. No persistence.
 
 ### Global keyboard reference
 
 Full in-app reference is the `?` cheatsheet. Summary:
 
 **Universal**
-- `/` — open command sheet
-- `⌘K` / `Ctrl+K` — open command sheet (alias)
 - `?` — open shortcut cheatsheet
 - `Esc` — close sheet
 
@@ -125,7 +108,6 @@ Full in-app reference is the `?` cheatsheet. Summary:
 - `g h` — home / continue reading
 - `g s` — surah list
 - `g a` — about
-- `g p` — preferences (settings)
 
 **Reader** (only on `#/s/*`, blocked when a text input is focused)
 - `j` / `k` — next / previous verse
@@ -137,12 +119,6 @@ Full in-app reference is the `?` cheatsheet. Summary:
 - `+` / `-` — bigger / smaller font
 - `0` — reset font size to default
 - `d` — cycle theme (light → sepia → dark → auto)
-
-**Command sheet** (while open)
-- `↑` / `↓` — move selection
-- `Tab` / `Shift+Tab` — next / previous result group
-- `Enter` — activate
-- `Esc` — close
 
 **Gestures**
 - Double-tap a verse (touch) → inline tafsir preview (parity with `m`)
@@ -185,9 +161,9 @@ _(no cross-surface reads detected)_
 | Event | Constant | Sites |
 | --- | --- | --- |
 | `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/navigate/bookmarks/BookmarksList.svelte:108` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/CommandSheet.svelte:258`, `src/navigate/CommandSheet.svelte:260`, `src/navigate/NavDrawer.svelte:250`, `src/navigate/NavDrawer.svelte:325`, `src/navigate/NavDrawer.svelte:709`, `src/navigate/bookmarks/BookmarksList.svelte:110`, `src/navigate/surahs/SurahList.svelte:167` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:160` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:151` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/NavDrawer.svelte:250`, `src/navigate/NavDrawer.svelte:325`, `src/navigate/NavDrawer.svelte:709`, `src/navigate/bookmarks/BookmarksList.svelte:110`, `src/navigate/surahs/SurahList.svelte:167` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:146` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:137` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
@@ -220,17 +196,17 @@ _(no cross-surface reads detected)_
 - `tests/unit/navigate/bookmarks/click-handler.test.ts`
 - `tests/unit/navigate/bookmarks/indicator.test.ts`
 - `tests/unit/navigate/bookmarks/store.test.ts`
-- `tests/unit/navigate/command-sheet.test.ts`
 - `tests/unit/navigate/drawer.test.ts`
 - `tests/unit/navigate/reader-actions.test.js`
-- `tests/unit/navigate/state-command-sheet.test.ts`
+- `tests/unit/navigate/retired-entry-state.test.ts`
+- `tests/unit/navigate/retired-entry.test.ts`
 - `tests/unit/navigate/surahs/list.test.ts`
 - `tests/unit/navigate/surahs/state.test.ts`
 - `tests/unit/navigate/swipe-gestures.test.ts`
 
 **E2E (3):**
 
-- `tests/e2e/navigate/command-sheet.spec.js`
 - `tests/e2e/navigate/drawer.spec.js`
+- `tests/e2e/navigate/retired-entry.spec.js`
 - `tests/e2e/navigate/surahs.spec.js`
 <!-- AUTO-GENERATED:tests END -->

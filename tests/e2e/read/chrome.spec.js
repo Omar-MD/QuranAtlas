@@ -308,10 +308,10 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   test('B6: auto theme swatch follows OS color-scheme change', async ({ page }) => {
     await openSettingsSheet(page)
 
-    const autoSwatch = page.locator('.qa-settings-tf-dot--auto')
+    const autoSwatch = page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Auto' })
     await expect(autoSwatch).toBeVisible()
     await autoSwatch.click()
-    await expect(autoSwatch).toHaveClass(/qa-settings-tf-dot--act/, { timeout: 3_000 })
+    await expect(autoSwatch).toHaveAttribute('aria-pressed', 'true', { timeout: 3_000 })
 
     await expect(async () => {
       const pref = await page.evaluate(() =>

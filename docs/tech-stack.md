@@ -194,7 +194,7 @@ Required repo secrets: `CLOUDFLARE_API_TOKEN` (scopes: `Cloudflare Pages:Edit`, 
 9. Service worker registration (production only).
 10. `offline.initInstallPrompt()` + activation-state restore.
 
-Persistent overlays (`CommandSheet`, `MoreSheet`, `AmbientDock`, `AmbientPill`, `QuotaBanner`, `Editor`, `Panel`, `ClearDataConfirm`, `UndoToast`) are **Svelte components mounted once in `App.svelte`**, not imperative `init()` modules — they expose `open*` / `close*` APIs through bridge modules (`settings/panel-bridge.ts`, `marks/editor-bridge.ts`) rather than being composed by bootstrap.
+Persistent overlays (`MoreSheet`, `AmbientDock`, `AmbientPill`, `QuotaBanner`, `Editor`, `Panel`, `ClearDataConfirm`, `UndoToast`) are **Svelte components mounted once in `App.svelte`**, not imperative `init()` modules — they expose `open*` / `close*` APIs through bridge modules (`settings/panel-bridge.ts`, `marks/editor-bridge.ts`) rather than being composed by bootstrap.
 
 Route modules (`reader/Reader.svelte`, `review/Hub.svelte`, `surahs/SurahList.svelte`, `about/About.svelte`, `onboarding/Onboarding.svelte`) are loaded lazily on first route match; the router invokes their cleanup before mounting the next route.
 

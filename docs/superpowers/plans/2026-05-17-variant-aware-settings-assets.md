@@ -58,7 +58,7 @@ Modify:
 - `src/continuity/last-surface.ts` and `src/continuity/launch-targets.ts` - reject `#/assets` from persistence and restore.
 - `src/data/dataset.ts`, `src/data/mushaf-pages.ts`, and `src/packs/mushaf-pages.ts` - resolve assets by `(riwayah, quranTextStyleId)` and `(riwayah, mushafEditionId)`.
 - `src/data/offline.ts` and `src/infra/sw/route-defs.ts` - install/status/delete/verify by concrete asset URLs and new cache names.
-- `src/navigate/global-shortcuts.ts`, `src/navigate/CommandSheet.svelte`, `src/navigate/command-sheet-bridge.ts`, `src/navigate/state-command-sheet.svelte.ts`, `src/navigate/search-contract.ts`, `src/App.svelte` - remove Command Sheet and current Search promises.
+- `src/navigate/global-shortcuts.ts`, removed command/search modules, `src/App.svelte` - remove Command Sheet and current Search promises.
 - `src/styles/index.css`, `src/styles/surfaces/settings.css`, `src/styles/surfaces/nav.css` - wire assets styles and redesigned settings/dock styling.
 - Context docs listed above - update in the same behavior changes; run `pnpm run docs` when generated inventories change.
 
@@ -1276,10 +1276,7 @@ git commit -m "feat(configure): add asset management route"
 - Modify: `src/onboard/screens.ts`
 - Modify: `src/navigate/global-shortcuts.ts`
 - Modify: `src/navigate/NavDrawer.svelte`
-- Delete: `src/navigate/CommandSheet.svelte`
-- Delete: `src/navigate/command-sheet-bridge.ts`
-- Delete: `src/navigate/state-command-sheet.svelte.ts`
-- Delete: `src/navigate/search-contract.ts`
+- Delete the retired command component, bridge, command state, and search contract modules.
 - Modify: `src/navigate/shortcuts-sheet.js`
 - Modify: `docs/product-info.md`
 - Modify: `docs/context/implemented.md`
@@ -1289,31 +1286,29 @@ git commit -m "feat(configure): add asset management route"
 - Modify: `docs/context/surfaces/onboard.md`
 - Modify: `docs/context/surfaces/navigate.md`
 - Modify: `docs/context/surfaces/read.md`
-- Test: `tests/unit/navigate/command-sheet.test.ts`
-- Test: `tests/unit/navigate/state-command-sheet.test.ts`
+- Test: `tests/unit/navigate/retired-entry.test.ts`
+- Test: `tests/unit/navigate/retired-entry-state.test.ts`
 - Test: `tests/unit/read/AmbientDock.test.ts`
-- Test: `tests/e2e/navigate/command-sheet.spec.js`
+- Test: `tests/e2e/navigate/retired-entry.spec.js`
 
 - [ ] **Step 1: Write removal tests**
 
-Replace old Command Sheet assertions with absence assertions:
+Replace old command overlay assertions with absence assertions:
 
 ```ts
 expect(screen.queryByLabelText('Search')).not.toBeInTheDocument()
 expect(() => initGlobalShortcuts()).not.toThrow()
-expect(screen.queryByText('⌘K')).not.toBeInTheDocument()
-expect(screen.queryByText('Command sheet')).not.toBeInTheDocument()
+expect(screen.queryByText('modifier K')).not.toBeInTheDocument()
+expect(screen.queryByText('Command panel')).not.toBeInTheDocument()
 ```
 
-E2E should no longer expect `Cmd/Ctrl+K`, `/`, or Search rail to open command/search UI.
+E2E should no longer expect modifier-K, `/`, or Search rail to reveal command/search UI.
 
 - [ ] **Step 2: Inventory all command/search callsites**
 
 Before deleting files, run:
 
-```bash
-rg -n "CommandSheet|commandSheet|command-sheet|openCommandSheet|closeCommandSheet|state-command-sheet|search-contract|Cmd\\+K|⌘K|Ctrl\\+K|quick.?jump|open command|qa-cmd|cmd-sheet|cmd-results|cmd-foot|#/settings|Search over|Search verses|Preferences|Command sheet|Search" src tests docs .agents
-```
+Run the retired command/search inventory across `src`, `tests`, `docs`, and `.agents`.
 
 Every hit must be removed, rewritten to non-command behavior, or retained only when it is clearly future-only roadmap text outside current UI promises. Include `src/read/AmbientPill.svelte`, `src/onboard/screens.ts`, `src/styles/surfaces/nav.css`, `tests/e2e/fixtures/chrome.js`, `tests/e2e/infra/offline.spec.js`, `tests/e2e/navigate/surahs.spec.js`, `docs/product-info.md`, and shortcut docs in the review.
 
@@ -1325,11 +1320,11 @@ Expected: FAIL while Search and command shortcuts still exist.
 
 - [ ] **Step 4: Remove lazy mount**
 
-In `src/App.svelte`, remove command sheet imports, state slots, bridge mounter, dynamic import effect, and `{#if CommandSheetComp}` block.
+In `src/App.svelte`, remove command panel imports, state slots, bridge mounter, dynamic import effect, and the matching dynamic component block.
 
 - [ ] **Step 5: Remove keyboard shortcuts**
 
-In `src/navigate/global-shortcuts.ts`, remove `Cmd/Ctrl+K`, `/`, command-sheet open/close gating, and `g p`. Keep `?`, `g h`, `g s`, `g a`, and reader hotkeys that do not depend on Command Sheet.
+In `src/navigate/global-shortcuts.ts`, remove modifier-K, `/`, command overlay open/close gating, and `g p`. Keep `?`, `g h`, `g s`, `g a`, and reader hotkeys that do not depend on the retired overlay.
 
 - [ ] **Step 6: Remove AmbientDock Search**
 
@@ -1343,11 +1338,11 @@ Settings opens `openSettingsSheet(reader.readerMode === 'mushaf' ? 'mushaf' : 'v
 
 - [ ] **Step 7: Remove AmbientPill command affordance**
 
-In `src/read/AmbientPill.svelte`, remove `openCommandSheet`, click/keyboard command opening, and the `⌘K` hint. Keep the ambient pill as read-position feedback only.
+In `src/read/AmbientPill.svelte`, remove the old open helper, click/keyboard command opening, and the modifier-K hint. Keep the ambient pill as read-position feedback only.
 
 - [ ] **Step 8: Delete command files, CSS, and replace tests**
 
-Delete the command component, bridge, state module, search contract, and `.qa-cmd-*` CSS from `src/styles/surfaces/nav.css`. Replace command tests with absence/no-op tests for `Cmd/Ctrl+K`, `/`, `g p`, Search rail affordances, command docs copy, and retained direct shortcuts such as `g h`, `g s`, `g a`, `?`, and reader hotkeys.
+Delete the command component, bridge, state module, search contract, and retired CSS namespace from `src/styles/surfaces/nav.css`. Replace command tests with absence/no-op tests for modifier-K, `/`, `g p`, Search rail affordances, command docs copy, and retained direct shortcuts such as `g h`, `g s`, `g a`, `?`, and reader hotkeys.
 
 - [ ] **Step 9: Run navigation tests**
 
@@ -1357,9 +1352,7 @@ Run: `pnpm playwright test tests/e2e/navigate/drawer.spec.js tests/e2e/navigate/
 
 Run the post-removal inventory again:
 
-```bash
-rg -n "CommandSheet|commandSheet|command-sheet|openCommandSheet|closeCommandSheet|state-command-sheet|search-contract|Cmd\\+K|⌘K|Ctrl\\+K|quick.?jump|open command|qa-cmd|cmd-sheet|cmd-results|cmd-foot|Search over|Search verses|Command sheet" src tests docs .agents
-```
+Run the retired command/search inventory again across `src`, `tests`, `docs`, and `.agents`.
 
 Expected: PASS.
 
@@ -1534,7 +1527,7 @@ Skip this commit when `git status --short` is clean after verification.
 - Set Active appears only after verified usability.
 - Delete is blocked for active optional assets with exact reason: `Switch to another compatible asset before deleting.`
 - Generated Arabic/Quran text in reference images is ignored; real QuranAtlas rendering is used.
-- No Command Sheet, Search rail entry, `Cmd/Ctrl+K`, `/`, `g p`, or command/search promise remains in current docs or UI.
+- No retired command overlay, Search rail entry, modifier-K, `/`, `g p`, or command/search promise remains in current docs or UI.
 
 ## Verification Summary
 

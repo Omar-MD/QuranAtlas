@@ -5,7 +5,6 @@
   import { Events } from '../core/constants'
   import { reader } from './state.svelte'
   import { ambientChrome } from './state-ambient.svelte'
-  import { openCommandSheet } from '../navigate/command-sheet-bridge'
 
   const AUTO_FADE_MS = 2800
 
@@ -84,7 +83,7 @@
     const readerTapHandler = (e: MouseEvent) => {
       if (!isReaderRoute(window.location.hash)) { return }
       const target = e.target as HTMLElement
-      if (target.closest('.qa-pill-ref, #bottom-nav, .qa-cmd-sheet, .qa-cmd-scrim, .qa-sheet-backdrop, .qa-sheet')) {
+      if (target.closest('.qa-pill-ref, #bottom-nav, .qa-sheet-backdrop, .qa-sheet')) {
         return
       }
       emit(Events.AMBIENT_SURFACE, { reason: 'tap' })
@@ -106,15 +105,7 @@
 <div
   class="qa-pill-ref"
   class:qa-pill-ref--hidden={hidden}
-  role="button"
-  tabindex="0"
-  aria-label="Current reading position — press Cmd+K to open command sheet"
-  onclick={() => openCommandSheet()}
-  onkeydown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCommandSheet() }
-  }}
+  aria-label="Current reading position"
 >
   <span class="qa-pill-ref-text">{pillLabel}</span>
-  <span class="qa-pill-ref-hint">\u2318K</span>
 </div>
-

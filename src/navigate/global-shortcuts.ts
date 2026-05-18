@@ -1,19 +1,10 @@
 // Boot-mounted global keyboard shortcuts. Survives lazy-mount of overlay
-// components (CommandSheet, NavDrawer, Panel, etc.) — the listener is
-// registered on `document` by app-bootstrap and never torn down. Audit
-// N22 (2026-05-01) extracted this from CommandSheet.svelte's onMount so
-// ⌘K can open the (lazy-mounted) command sheet on first keystroke.
+// components (NavDrawer, Panel, etc.) because the listener is registered on
+// `document` by app-bootstrap and never torn down.
 //
-// Handlers cover: ⌘K open command sheet, /, ?, g-chord nav (g h, g s,
-// g a, g p), reader hotkeys (j, k, ], [, Home, End, m, t, d, n, +,
-// -, 0).
-//
-// Sheet-internal handlers (Esc, Tab, Arrow, Enter) STAY inside
-// CommandSheet.svelte — they only matter while the sheet is open and
-// tear down with it. While the sheet is open we exit early here so we
-// don't double-handle.
+// Handlers cover: ?, g-chord nav (g h, g s, g a), reader hotkeys
+// (j, k, ], [, Home, End, m, t, d, n, +, -, 0).
 
-import { commandSheetBridge, openCommandSheet, closeCommandSheet } from './command-sheet-bridge'
 import { openShortcutsSheet, isShortcutsSheetOpen } from './shortcuts-sheet.js'
 import { cycleTheme } from '../configure/theme'
 import { toggleNightMode } from '../configure/night-mode'
@@ -72,23 +63,11 @@ async function bumpFont(dir: number): Promise<void> {
 }
 
 function handleGlobalKeydown(e: KeyboardEvent): void {
-  const isK = e.key === 'k' || e.key === 'K'
-  if (isK && (e.metaKey || e.ctrlKey)) {
-    e.preventDefault()
-    if (commandSheetBridge.isOpen()) { closeCommandSheet() } else { openCommandSheet() }
-    return
-  }
-
   if (isShortcutsSheetOpen()) { return }
-
-  // While the command sheet is open, all key handling stays inside
-  // CommandSheet.svelte — exit early so we don't double-handle Esc/Tab/Arrow/Enter.
-  if (commandSheetBridge.isOpen()) { return }
 
   if (isTextEntry(e.target)) { return }
   if (e.metaKey || e.ctrlKey || e.altKey) { return }
 
-  if (e.key === '/') { e.preventDefault(); openCommandSheet(); return }
   if (e.key === '?') { e.preventDefault(); openShortcutsSheet(); return }
 
   if (e.key === 'g' || e.key === 'G') {
@@ -102,7 +81,6 @@ function handleGlobalKeydown(e: KeyboardEvent): void {
     if (k === 'h') { e.preventDefault(); clearChord(); void gotoHome(); return }
     if (k === 's') { e.preventDefault(); clearChord(); window.location.hash = '#/surahs'; return }
     if (k === 'a') { e.preventDefault(); clearChord(); window.location.hash = '#/about'; return }
-    if (k === 'p') { e.preventDefault(); clearChord(); window.location.hash = '#/settings'; return }
     clearChord()
   }
 

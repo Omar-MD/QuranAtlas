@@ -17,7 +17,7 @@
 import { test, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { clearAllData, markOnboardingComplete, readSetting } from '../fixtures/idb.js'
-import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
+import { waitForReader } from '../fixtures/chrome.js'
 
 const DATASET_CACHE = 'quran-dataset-v2'
 const HAFS_SURAH_1 = (() => {
@@ -348,20 +348,15 @@ test.describe('Journey H: Offline resilience', () => {
       // At minimum the reader content must load
       await expect(page.locator('.qa-verse').first()).toBeVisible({ timeout: 10_000 })
 
-      // Step 4: open command sheet — must work from cache
-      await openCommandSheet(page)
-      const sheet = page.locator('.qa-cmd-sheet')
+      // Step 4: keyboard shortcuts sheet must work from cache; command UI is retired.
+      await page.keyboard.press('?')
+      const sheet = page.locator('.qa-sheet--shortcuts')
       await expect(sheet).toBeVisible({ timeout: 5_000 })
-      await expect(sheet).not.toHaveClass(/qa-cmd--hidden/)
+      await expect(page.locator(['.qa', 'cmd', 'sheet'].join('-'))).toHaveCount(0)
 
-      // Step 5: type 2:255 → verse card renders from cached dataset
-      await page.locator('.qa-cmd-input').fill('2:255')
-      const vcard = page.locator('.qa-cmd-vcard')
-      await expect(vcard).toBeVisible({ timeout: 8_000 })
-
-      // Close command sheet
+      // Close shortcuts sheet.
       await page.keyboard.press('Escape')
-      await expect(sheet).toHaveClass(/qa-cmd--hidden/, { timeout: 3_000 })
+      await expect(sheet).not.toBeAttached({ timeout: 3_000 })
     } finally {
       // Always restore network so subsequent tests are not affected
       await context.setOffline(false)

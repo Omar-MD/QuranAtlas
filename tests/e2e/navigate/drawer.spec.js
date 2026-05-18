@@ -1,17 +1,14 @@
 /**
- * E2E Journey F: Navigation (command sheet, surah list, keyboard)
+ * E2E Journey F: Navigation (drawer, surah list, keyboard)
  *
  * Covers:
- *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
  *   F2. Drawer stays reader-first with Read-only mode rail
  *   F3. Wordmark routes to About
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
- *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
  *
  * Sources of truth:
  *   docs/context/user-journeys.md  §F
- *   src/navigate/command-sheet.js
  *   src/navigate/surahs/list.js
  *   src/navigate/ambient-pill.js
  *   src/navigate/ambient-dock.js
@@ -19,7 +16,7 @@
 
 import { test, expect } from '@playwright/test'
 import { seedBookmarks, writeSetting } from '../fixtures/idb.js'
-import { waitForReader, openCommandSheet, openNavDrawer } from '../fixtures/chrome.js'
+import { waitForReader, openNavDrawer } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
@@ -113,10 +110,6 @@ test.describe('Journey F: Navigation', () => {
     await page.goto('/#/s/1')
     await waitForReader(page)
   })
-
-  // ---------------------------------------------------------------------------
-  // F1. Command sheet direct verse-ref
-  // ---------------------------------------------------------------------------
 
   test.beforeEach(async ({ page }, testInfo) => {
     const vp = testInfo.project.use.viewport

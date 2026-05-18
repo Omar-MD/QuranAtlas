@@ -4,7 +4,7 @@
  */
 
 import { CACHE_DATASET } from '../core/constants'
-import { settings } from '../configure/state.svelte'
+import { settings } from '../core/settings.svelte'
 import type { Riwayah } from '../packs/riwayah'
 import { getTextAsset, canUseTextAsset } from '../packs/text-assets'
 import { getRiwayahPackageEntry } from './riwayah-packages'

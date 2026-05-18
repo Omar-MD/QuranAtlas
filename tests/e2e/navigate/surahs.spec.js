@@ -1,25 +1,21 @@
 /**
- * E2E Journey F: Navigation (command sheet, surah list, keyboard)
+ * E2E Journey F: Navigation (surah list, keyboard)
  *
  * Covers:
- *   F1. Command sheet direct verse-ref (2:255) → reader at #/s/2/255 + a11y scan
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
- *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
  *   F4. Surah directory — 114 rows, search "67" → eyebrow + Al-Mulk row → tap → #/s/67
  *   F5. Continue-reading card — visible at top after visiting a surah; tap navigates
- *   F6. Keyboard navigation — pill→Enter opens sheet; arrow nav; Esc closes; G then S
  *
  * Sources of truth:
  *   docs/context/user-journeys.md  §F
- *   src/navigate/command-sheet.js
  *   src/navigate/surahs/list.js
  *   src/navigate/ambient-pill.js
  *   src/navigate/ambient-dock.js
  */
 
 import { test, expect } from '@playwright/test'
-import { waitForReader, openCommandSheet } from '../fixtures/chrome.js'
+import { waitForReader } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
@@ -38,25 +34,8 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  // ---------------------------------------------------------------------------
-  // F1. Command sheet direct verse-ref
-  // ---------------------------------------------------------------------------
-
-  test('F4: Search entry → #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
-    // Desktop exposes a Search tab in the left rail; the command sheet (⌘K)
-    // is the canonical cross-viewport keyboard entry to reach "Browse all
-    // surahs".  (Mobile MarginHeader crumb routes straight to `#/surahs`.)
-    await openCommandSheet(page)
-    const cmdSheet = page.locator('.qa-cmd-sheet')
-    await expect(cmdSheet).toBeVisible({ timeout: 5_000 })
-
-    // Close command sheet and navigate directly to surahs route
-    // (The Search tab opens command sheet; "Browse all surahs" action is inside)
-    // Navigate to surahs via command sheet "Browse all surahs"
-    // Wait for empty-state "Browse all surahs" item in the Jump to group
-    const browseItem = page.locator('.qa-cmd-item').filter({ hasText: 'Browse all surahs' })
-    await expect(browseItem).toBeVisible({ timeout: 5_000 })
-    await browseItem.click()
+  test('F4: #/surahs renders 114 rows; search "67" → eyebrow + Al-Mulk row', async ({ page }) => {
+    await page.goto('/#/surahs')
 
     // Surah list page should render
     const surahListPage = page.locator('.qa-surah-list-page')
@@ -146,12 +125,7 @@ test.describe('Journey F: Navigation', () => {
     await expect(page.locator('.qa-sl-continue')).toHaveCount(0, { timeout: 3_000 })
   })
 
-  // ---------------------------------------------------------------------------
-  // F6. Keyboard navigation @keyboard
-  // ---------------------------------------------------------------------------
-
-  // F6 ⌘K open/close, ArrowUp/Down focus, Escape close, G→S chord ported to
-  // tests/unit/navigate/command-sheet.test.ts (Phase 2 bucket 4, 2026-04-26).
+  // Keyboard shortcut coverage lives in the retired-entry unit coverage.
 })
 
 // ---------------------------------------------------------------------------

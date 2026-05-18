@@ -2,7 +2,7 @@
 // imperative-API pattern that 6 surfaces hand-rolled before this factory
 // landed (audit R-13 / CC-9 / N22). Each bridge follows the same shape:
 //   1. The persistent Svelte component registers its API in onMount.
-//   2. Non-component callers (router, command-sheet, gesture handlers,
+//   2. Non-component callers (router, gesture handlers,
 //      cross-tab sync handlers, settings, etc.) import the bridge and
 //      call `bridge.api.<method>()`.
 //   3. The bridge tracks open/closed state so consumers can poll
@@ -22,7 +22,7 @@ import { logger } from './logger.js'
 
 // `open` is deliberately NOT on the base — its signature varies per overlay
 // (status toast: open(opts); NavDrawer: open(tab?, subTab?); verse sheet:
-// open(verseKey); Settings/CommandSheet/Tafsir: open()). Forcing a base
+// open(verseKey); Settings/Tafsir: open()). Forcing a base
 // shape would either bivariantly weaken the type or block strict-mode
 // declarations. close + isOpen ARE universal: every overlay supports
 // imperative dismissal + open-state interrogation.

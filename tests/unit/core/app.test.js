@@ -42,12 +42,6 @@ function applyDefaultRuntimeMocks() {
       position?.surah ? `#/s/${position.surah}/${position.verse}` : null
     )),
   }))
-  vi.doMock('../../../src/navigate/command-sheet.js', () => ({
-    initCommandSheet: vi.fn(() => Promise.resolve()),
-    openCommandSheet: vi.fn(),
-    closeCommandSheet: vi.fn(),
-    destroyCommandSheet: vi.fn(),
-  }))
   vi.doMock('../../../src/data/dataset', () => ({
     getSurahs: vi.fn(async () => ([
       { n: 1, counts: { hafs: 7, warsh: 7, qaloon: 7 } },
@@ -107,12 +101,6 @@ vi.mock('../../../src/data/dataset', () => ({
   ])),
 }))
 
-vi.mock('../../../src/navigate/command-sheet.js', () => ({
-  initCommandSheet: vi.fn(() => Promise.resolve()),
-  openCommandSheet: vi.fn(),
-  closeCommandSheet: vi.fn(),
-  destroyCommandSheet: vi.fn(),
-}))
 
 vi.mock('../../../src/configure/theme.js', () => ({
   initTheme: vi.fn(() => Promise.resolve()),
@@ -395,7 +383,6 @@ describe('core/app.js error recovery', () => {
         position?.surah ? `#/s/${position.surah}/${position.verse}` : null
       )),
     }))
-    vi.doMock('../../../src/navigate/command-sheet.js', () => ({ initCommandSheet: vi.fn().mockResolvedValue(), openCommandSheet: vi.fn(), closeCommandSheet: vi.fn(), destroyCommandSheet: vi.fn() }))
     vi.doMock('../../../src/data/offline.js', () => ({
       initInstallPrompt: vi.fn(),
       getActivationState: vi.fn().mockResolvedValue('none'),

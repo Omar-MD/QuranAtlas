@@ -20,7 +20,7 @@ Agreed future work that supports the Reader First product promise. When work sta
 
 ## V1 Search and Navigation
 
-- Search over Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
+- Planned full-text retrieval across Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
 - Surah and Juz navigation as first-class reader paths.
 - Hizb, rub, ruku, and page data remain metadata until separately promoted to visible controls.
 - Reader mode switching between Verse and Mushaf.

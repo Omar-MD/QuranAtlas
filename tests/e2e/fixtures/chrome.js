@@ -77,19 +77,11 @@ export async function openSettingsSheet(page) {
     await expect(gear).toBeVisible({ timeout: 5_000 })
     await gear.click()
   }
-  const sheet = page.locator('.qa-sheet--settings')
+  const sheet = page.locator('.qa-settings-shell')
   await expect(sheet).toBeVisible()
   await sheet.evaluate(el =>
     Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished))
   )
-}
-
-/**
- * Open the Command sheet via ⌘K.
- */
-export async function openCommandSheet(page) {
-  await page.keyboard.press('Meta+k') // Mac; Playwright aliases Meta→Ctrl on other OS
-  await expect(page.locator('.qa-cmd-sheet')).toBeVisible()
 }
 
 /**

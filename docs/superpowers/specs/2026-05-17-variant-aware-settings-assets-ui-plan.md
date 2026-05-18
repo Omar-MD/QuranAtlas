@@ -25,13 +25,13 @@ Selected component references for implementation:
 
 Adjacent `.md` intent notes define accepted traits, forbidden traits, token expectations, responsive differences, and non-goals. The component references are the implementation source of truth for hierarchy, density, rhythm, material feel, and emphasis. The assembly references remain useful for signed-off composition and page-level relationships but are not authoritative for row labels, state copy, actions, desktop settings shape, or generated placeholder details. Generated Arabic/Quran text is never source content or rendering proof; real implementation must use QuranAtlas tokens, real Quran/Mushaf rendering, and the current surface contracts.
 
-This plan and the component intent notes are the redesign authority until implementation updates the surface dossiers. Existing `configure`, `read`, and `navigate` dossiers still describe the old all-purpose settings sheet, centered desktop modal, storage accordion, and command-sheet paths; treat those as current-state context to be changed, not as design authority for this redesign.
+This plan and the component intent notes are the redesign authority until implementation updates the surface dossiers. Existing `configure`, `read`, and `navigate` dossiers still describe the old all-purpose settings sheet, centered desktop modal, storage accordion, and retired command paths; treat those as current-state context to be changed, not as design authority for this redesign.
 
 ## Ownership
 
 - `configure` owns Verse Settings, Mushaf Settings, settings persistence controls, source/asset pickers, and the `#/assets` Asset Management page.
-- `read` owns the reader gear entry, reader-mode detection, restored focus to the opener, and the desktop AmbientDock Settings entry after Command Sheet removal.
-- `navigate` owns removal of Command Sheet, command/search keyboard shortcuts, Search rail entry, command docs, and related tests.
+- `read` owns the reader gear entry, reader-mode detection, restored focus to the opener, and the desktop AmbientDock Settings entry after retired overlay removal.
+- `navigate` owns removal of the retired overlay, command/search keyboard shortcuts, Search rail entry, command docs, and related tests.
 - `packs`, `data`, and `infra` own variant-aware install/status/delete truth. UI may display status but must not infer installed state from old cache names or `offlineCategories`.
 
 Implementation must read and update `docs/context/surfaces/configure.md`, `docs/context/surfaces/read.md`, and `docs/context/surfaces/navigate.md` in the same change as the behavior lands. Asset-state implementation must also inspect the relevant `src/packs/**`, `src/data/**`, and `src/infra/**` contracts before wiring status, install, verify, set-active, or delete behavior.

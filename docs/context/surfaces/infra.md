@@ -63,7 +63,7 @@ No routes. Surface is invisible until something goes wrong (or update rolls out)
 With service worker active and dataset cached:
 
 1. DevTools → Network → Offline.
-2. Reload → reader still loads (shell + dataset served from cache); command sheet still works; `⌘K → 2:255` → preview renders from cache.
+2. Reload → reader still loads (shell + dataset served from cache); the `?` shortcuts sheet still opens from cached shell assets.
 
 All major surfaces degrade gracefully. Reads from IDB + SW cache; no new persistence.
 

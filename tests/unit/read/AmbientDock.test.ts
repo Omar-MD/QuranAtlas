@@ -9,8 +9,8 @@ const { getMock } = vi.hoisted(() => ({
 vi.mock('../../../src/core/db', () => ({
   get: getMock,
 }))
-vi.mock('../../../src/navigate/command-sheet-bridge', () => ({
-  openCommandSheet: vi.fn(),
+vi.mock('../../../src/configure/panel-bridge', () => ({
+  openSettingsSheet: vi.fn(),
 }))
 vi.mock('../../../src/navigate/nav-drawer-bridge', () => ({
   openNavDrawer: vi.fn(),
@@ -47,11 +47,12 @@ describe('AmbientDock.svelte', () => {
     expect(document.querySelector('[data-tab="verse"]')?.getAttribute('href')).toBe('#/s/2/255')
   })
 
-  it('keeps the desktop rail scoped to verse, mushaf, search, and more', async () => {
+  it('keeps the desktop rail scoped to verse, mushaf, settings, and more', async () => {
     render(AmbientDock)
     await flush()
 
     const tabs = [...document.querySelectorAll('[data-tab]')].map((el) => el.getAttribute('data-tab'))
-    expect(tabs).toEqual(['verse', 'mushaf', 'search', 'more'])
+    expect(tabs).toEqual(['verse', 'mushaf', 'settings', 'more'])
+    expect(document.querySelector('[aria-label="Search"]')).toBeNull()
   })
 })

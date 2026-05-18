@@ -33,7 +33,7 @@ This is the product overview. For implementation detail, see `docs/context/` and
 
 - Themes, typography, line spacing, word spacing, reader margins, and related reader comfort controls.
 - Surah and Juz navigation, with hizb, rub, ruku, and page data treated as metadata until promoted to first-class controls.
-- Search over Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
+- Planned full-text retrieval across Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
 - Page-break indicators and Mushaf page navigation where matching assets exist.
 
 ### Curated study inside reading

@@ -68,12 +68,12 @@ The store is namespaced informally — sub-features prefix when there's a collis
 
 ## bridge
 
-A persistent-overlay pattern used by `nav/CommandSheet.svelte`, `settings/Panel.svelte`, `read/TafsirSheet.svelte`, and similar components. The pattern:
+A persistent-overlay pattern used by `settings/Panel.svelte`, `read/TafsirSheet.svelte`, and similar components. The pattern:
 
 - The Svelte component, mounted persistently in `App.svelte`, calls `register*({ open, close })` in `onMount`.
 - Imperative callers (vanilla JS, command sheet, keyboard handlers) import the module-level `open*()` / `close*()` functions and call them.
 
-The active reader-first overlay bridges (Settings Panel, CommandSheet, NavDrawer, TafsirSheet) are produced by `core/persistent-overlay.ts::createOverlayBridge<API>()`. "Bridge" is synonymous with "overlay registered with `createOverlayBridge`". The factory's `setMounter` + pending-call queue handles the chicken-and-egg between boot-time bridge calls and lazy-mounted components. New persistent overlays MUST use the factory; hand-rolled bridges are forbidden.
+The active reader-first overlay bridges (Settings Panel, NavDrawer, TafsirSheet) are produced by `core/persistent-overlay.ts::createOverlayBridge<API>()`. "Bridge" is synonymous with "overlay registered with `createOverlayBridge`". The factory's `setMounter` + pending-call queue handles the chicken-and-egg between boot-time bridge calls and lazy-mounted components. New persistent overlays MUST use the factory; hand-rolled bridges are forbidden.
 
 ## sole writer
 

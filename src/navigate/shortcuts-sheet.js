@@ -1,6 +1,5 @@
 /**
- * Shortcuts cheatsheet — opened by `?` (also reachable from More → Shortcuts
- * if ever wired). Grouped by Universal · Go-to · Reader · Command sheet,
+ * Shortcuts cheatsheet opened by `?`. Grouped by Universal · Go-to · Reader,
  * so users can learn progressively. Escape or backdrop click dismisses.
  */
 
@@ -15,8 +14,6 @@ const GROUPS = [
   {
     title: 'Universal',
     rows: [
-      { keys: ['/'],                 desc: 'Open command sheet' },
-      { keys: ['\u2318', 'K'],       desc: 'Open command sheet (alias)', mac: true },
       { keys: ['?'],                 desc: 'Show this shortcut list' },
       { keys: ['Esc'],               desc: 'Close the current sheet' },
     ],
@@ -27,7 +24,6 @@ const GROUPS = [
       { keys: ['g', 'h'], desc: 'Home (continue reading)' },
       { keys: ['g', 's'], desc: 'Surah list' },
       { keys: ['g', 'a'], desc: 'About' },
-      { keys: ['g', 'p'], desc: 'Preferences (settings)' },
     ],
   },
   {
@@ -45,15 +41,6 @@ const GROUPS = [
       { keys: ['-'],       desc: 'Smaller font' },
       { keys: ['0'],       desc: 'Reset font size' },
       { keys: ['d'],       desc: 'Cycle theme' },
-    ],
-  },
-  {
-    title: 'Command sheet',
-    rows: [
-      { keys: ['\u2191', '\u2193'], desc: 'Move selection' },
-      { keys: ['Tab'],              desc: 'Next result group' },
-      { keys: ['\u21B5'],           desc: 'Activate' },
-      { keys: ['Esc'],              desc: 'Close' },
     ],
   },
 ]
@@ -80,7 +67,6 @@ function renderGroup(g) {
   const list = document.createElement('div')
   list.className = 'qa-sc-list'
   for (const r of g.rows) {
-    // Hide the ⌘K row on non-Mac — Ctrl+K is already listed implicitly (same binding).
     if (r.mac && !isMac()) { continue }
 
     const row = document.createElement('div')
