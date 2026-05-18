@@ -106,4 +106,16 @@ describe('mode-aware settings panel', () => {
     expect(settings.readerMargin).toBe('sm')
     expect(settings.verseSpacing).toBe('sm')
   })
+
+  it('renders Verse Settings rows with the dedicated ledger control grammar', async () => {
+    await mountAndOpen('verse')
+
+    expect(screen.getByLabelText('Font Size').closest('.qa-settings-slider')).not.toBeNull()
+    expect(screen.getByLabelText('Reading Flow').closest('.qa-settings-slider')).not.toBeNull()
+    expect(screen.getByRole('button', { name: /Active Riwayah/i }).closest('.qa-settings-src-row')).not.toBeNull()
+    expect(screen.getByRole('button', { name: /Quran Text Style/i }).closest('.qa-settings-src-row')).not.toBeNull()
+    expect(screen.getAllByRole('button', { name: /Translation Source/i })[0]?.closest('.qa-settings-trans-row')).not.toBeNull()
+    expect(screen.getByRole('switch', { name: 'Show translation' }).closest('.qa-settings-switch')).not.toBeNull()
+    expect(screen.getByRole('button', { name: /Tafsir Source/i }).closest('.qa-settings-src-row')).not.toBeNull()
+  })
 })

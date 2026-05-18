@@ -13,10 +13,6 @@
   let restoreOnClose = true
 
   const title = $derived(mode === 'mushaf' ? 'Mushaf Settings' : 'Verse Settings')
-  const subtitle = $derived(mode === 'mushaf'
-    ? 'Page source, edition, and display comfort.'
-    : 'Text, translation, tafsir, and reading comfort.')
-
   function inferredMode(): SettingsMode {
     return typeof window !== 'undefined' && window.location.hash.startsWith('#/m/') ? 'mushaf' : 'verse'
   }
@@ -61,7 +57,7 @@
 </script>
 
 {#if open}
-  <SettingsShell {title} {subtitle} close={closePanel}>
+  <SettingsShell {title} close={closePanel}>
     {#if mode === 'mushaf'}
       <MushafSettings />
     {:else}

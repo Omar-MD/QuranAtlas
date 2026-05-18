@@ -109,7 +109,7 @@ test.describe('Journey D: Settings & appearance', () => {
     await mukhtasar.click()
 
     await expect(picker).toHaveCount(0)
-    await expect(tafsirRow).toContainText('mukhtasar')
+    await expect(tafsirRow).toContainText(/mukhtasar/i)
   })
 
   // D3-bg: <html> background matches <body> background under every theme so

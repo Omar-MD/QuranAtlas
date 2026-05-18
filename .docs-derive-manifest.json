@@ -35,7 +35,7 @@
     "docs/context/surfaces/onboard.md:tests": "3d55e451928a0f5dacf21c9831efa56c51e13c123f27ae915f6d206d252c3483",
     "docs/context/surfaces/read.md:tests": "a76e61b6666eeb59a65874e076bc43dc9e3dffdbf4d208018895b5a0a65bae14",
     "docs/context/surfaces/review.md:tests": "d79d70ae4648df9f87796753f288b10f117e9bed3733a5f01cc329c250e30422",
-    "docs/context/surfaces/configure.md:events-emit": "e0d066217d12bcc5a158db9b793a2802b2b549f5a479353e5dc0c6cc072c4fcf",
+    "docs/context/surfaces/configure.md:events-emit": "dfb5331702a9e6012cc4dfa8d39ebcb52ce2009904bf2857147c553ef5d0b226",
     "docs/context/surfaces/configure.md:events-listen": "0a701d8f91adf2192ed52894373029b0872d71428bf3c8ede4140dee532bc4c0",
     "docs/context/surfaces/infra.md:events-emit": "eb38a6ce12add6ebed703982d9273c1e33433cd4d9407dc5922c426a45be5e40",
     "docs/context/surfaces/infra.md:events-listen": "1e973a6e292ecb193631e752a88726a124cd5703d2d6c01cb9d8f86a4a10e656",

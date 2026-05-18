@@ -14,33 +14,50 @@
     { id: 'on', label: 'On' },
     { id: 'auto', label: 'Auto' },
   ]
+
+  function themeBoxClass(themeId: typeof themes[number]['id']): string {
+    return `qa-settings-theme-swatch qa-settings-theme-swatch--${themeId}`
+  }
 </script>
 
 <div class="qa-settings-theme-night" aria-label="Theme and night mode">
-  <div class="qa-settings-control-group" role="group" aria-label="Theme">
-    {#each themes as theme (theme.id)}
-      <button
-        type="button"
-        class="qa-settings-choice"
-        class:qa-settings-choice--active={settings.theme === theme.id}
-        aria-pressed={settings.theme === theme.id}
-        onclick={() => { void setTheme(theme.id) }}
-      >
-        {theme.label}
-      </button>
-    {/each}
+  <div class="qa-settings-theme-panel">
+    <h3 class="qa-settings-theme-night-title">Theme</h3>
+    <div class="qa-settings-theme-grid" role="group" aria-label="Theme">
+      {#each themes as theme (theme.id)}
+        <button
+          type="button"
+          class="qa-settings-theme-option"
+          class:qa-settings-theme-option--active={settings.theme === theme.id}
+          aria-pressed={settings.theme === theme.id}
+          onclick={() => { void setTheme(theme.id) }}
+        >
+          <span class={themeBoxClass(theme.id)} aria-hidden="true">
+            {#if theme.id === 'auto'}
+              <span class="qa-settings-theme-auto-sun">☼</span>
+              <span class="qa-settings-theme-auto-moon">☾</span>
+            {/if}
+          </span>
+          <span class="qa-settings-theme-option-label">{theme.label}</span>
+        </button>
+      {/each}
+    </div>
   </div>
-  <div class="qa-settings-control-group" role="group" aria-label="Night mode">
-    {#each nightModes as mode (mode.id)}
-      <button
-        type="button"
-        class="qa-settings-choice"
-        class:qa-settings-choice--active={settings.nightMode === mode.id}
-        aria-pressed={settings.nightMode === mode.id}
-        onclick={() => { void setNightMode(mode.id) }}
-      >
-        {mode.label}
-      </button>
-    {/each}
+
+  <div class="qa-settings-night-panel">
+    <h3 class="qa-settings-theme-night-title">Night Mode</h3>
+    <div class="qa-settings-night-group" role="group" aria-label="Night mode">
+      {#each nightModes as mode (mode.id)}
+        <button
+          type="button"
+          class="qa-settings-night-choice"
+          class:qa-settings-night-choice--active={settings.nightMode === mode.id}
+          aria-pressed={settings.nightMode === mode.id}
+          onclick={() => { void setNightMode(mode.id) }}
+        >
+          {mode.label}
+        </button>
+      {/each}
+    </div>
   </div>
 </div>

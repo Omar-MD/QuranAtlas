@@ -47,8 +47,8 @@ Orphan listen (listened, never emitted): **0**.
 | `Events.SETTINGS_DATA_CLEARED` | `settings:data-cleared` | `src/configure/clear-data.ts:170` | _(none)_ |
 | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `settings:recent-surahs-updated` | `src/configure/state-recent-surahs.svelte.ts:26` | `src/navigate/NavDrawer.svelte:392`<br>`src/navigate/surahs/SurahList.svelte:141` |
 | `Events.SETTINGS_RIWAYAH_CHANGED` | `settings:riwayah-changed` | `src/configure/riwayah.ts:68`<br>`src/configure/variant-bundle.ts:66`<br>`src/packs/riwayah.ts:181` | `src/app-bootstrap.ts:175`<br>`src/configure/reading-typography.ts:133`<br>`src/navigate/bookmarks/BookmarksList.svelte:231`<br>`src/navigate/bookmarks/BookmarksPage.svelte:36`<br>`src/navigate/bookmarks/indicator.ts:107`<br>`src/navigate/surahs/SurahList.svelte:140`<br>`src/read/Reader.svelte:499`<br>`src/read/mushaf/MushafReader.svelte:370` |
-| `Events.SHEET_CLOSED` | `sheet:closed` | `src/configure/Panel.svelte:37`<br>`src/navigate/shortcuts-sheet.js:146` | _(none)_ |
-| `Events.SHEET_OPENED` | `sheet:opened` | `src/configure/Panel.svelte:29`<br>`src/navigate/shortcuts-sheet.js:137` | _(none)_ |
+| `Events.SHEET_CLOSED` | `sheet:closed` | `src/configure/Panel.svelte:33`<br>`src/navigate/shortcuts-sheet.js:146` | _(none)_ |
+| `Events.SHEET_OPENED` | `sheet:opened` | `src/configure/Panel.svelte:25`<br>`src/navigate/shortcuts-sheet.js:137` | _(none)_ |
 | `Events.STORAGE_QUOTA_WARNING` | `storage:quota-warning` | `src/data/offline.ts:158` | `src/core/quota-banner.svelte:18` |
 | `Events.SYNC_BOOKMARKS_UPDATED` | `sync:bookmarks-updated` | `src/infra/safety/sync.ts:233` | `src/navigate/bookmarks/BookmarksList.svelte:230`<br>`src/navigate/bookmarks/BookmarksPage.svelte:35`<br>`src/navigate/bookmarks/indicator.ts:98`<br>`src/navigate/surahs/SurahList.svelte:139` |
 <!-- AUTO-GENERATED:catalog END -->
@@ -70,7 +70,7 @@ Orphan listen (listened, never emitted): **0**.
 - `Events.OFFLINE_RIWAYAH_PACKAGE_PROGRESS` (`offline:riwayah-package-progress`) — emitted at `src/data/offline.ts:632`
 - `Events.OFFLINE_SW_TIMEOUT` (`offline:sw-timeout`) — emitted at `src/data/offline.ts:262`
 - `Events.SETTINGS_DATA_CLEARED` (`settings:data-cleared`) — emitted at `src/configure/clear-data.ts:170`
-- `Events.SHEET_CLOSED` (`sheet:closed`) — emitted at `src/configure/Panel.svelte:37`<br>`src/navigate/shortcuts-sheet.js:146`
-- `Events.SHEET_OPENED` (`sheet:opened`) — emitted at `src/configure/Panel.svelte:29`<br>`src/navigate/shortcuts-sheet.js:137`
+- `Events.SHEET_CLOSED` (`sheet:closed`) — emitted at `src/configure/Panel.svelte:33`<br>`src/navigate/shortcuts-sheet.js:146`
+- `Events.SHEET_OPENED` (`sheet:opened`) — emitted at `src/configure/Panel.svelte:25`<br>`src/navigate/shortcuts-sheet.js:137`
 <!-- AUTO-GENERATED:orphan-emit END -->
 

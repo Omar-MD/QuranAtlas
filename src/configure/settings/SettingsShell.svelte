@@ -5,12 +5,11 @@
 
   interface Props {
     title: string
-    subtitle: string
     close: (options?: CloseOptions) => void
     children?: import('svelte').Snippet
   }
 
-  const { title, subtitle, close, children }: Props = $props()
+  const { title, close, children }: Props = $props()
 
   function goAssets(): void {
     close({ restoreFocus: false })
@@ -23,16 +22,19 @@
 <div
   role="dialog"
   aria-modal="true"
-  aria-labelledby="qa-settings-title"
+  aria-label={title}
   class="qa-settings-shell"
   tabindex="-1"
 >
   <header class="qa-settings-shell-head">
-    <div>
-      <h2 id="qa-settings-title" class="qa-settings-shell-title">{title}</h2>
-      <p class="qa-settings-shell-subtitle">{subtitle}</p>
-    </div>
-    <button type="button" class="qa-settings-shell-close" aria-label="Close settings" onclick={() => close()}>x</button>
+    <button type="button" class="qa-settings-shell-done" onclick={() => close()}>Done</button>
+    <h2 id="qa-settings-title" class="qa-settings-shell-title">Settings</h2>
+    <button type="button" class="qa-settings-shell-close" aria-label="Close settings" onclick={() => close()}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="qa-settings-shell-close-icon">
+        <path d="M6 6 18 18" />
+        <path d="M18 6 6 18" />
+      </svg>
+    </button>
   </header>
 
   <div class="qa-settings-shell-body">

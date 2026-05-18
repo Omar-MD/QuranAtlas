@@ -217,8 +217,8 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
 | `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:68`, `src/configure/variant-bundle.ts:66` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:37` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:29` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:33` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:25` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->

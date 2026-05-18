@@ -38,21 +38,33 @@
     overflow: hidden;
   }
 
-  .qa-settings-shell-head,
-  .qa-settings-shell-foot {
-    padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem;
-    border-bottom: 1px solid var(--qa-border-on-sheet);
+  .qa-settings-shell-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    padding:
+      max(1.3rem, calc(env(safe-area-inset-top) + 1.45rem))
+      1.05rem
+      1.05rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
+    position: relative;
   }
 
-  .qa-settings-shell-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
+  .qa-settings-shell-head::before {
+    content: '';
+    position: absolute;
+    top: max(0.6rem, calc(env(safe-area-inset-top) + 0.3rem));
+    left: 50%;
+    width: 2.7rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: color-mix(in srgb, var(--qa-accent) 30%, transparent);
+    opacity: 0.55;
   }
 
   .qa-settings-shell-title,
-  .qa-settings-shell-subtitle,
   .qa-settings-section-title,
   .qa-settings-preview-eye,
   .qa-settings-preview-ar,
@@ -61,25 +73,52 @@
   }
 
   .qa-settings-shell-title {
-    font-size: 1.35rem;
-    line-height: 1.15;
-    font-weight: 650;
-    color: var(--qa-text-primary);
+    justify-self: center;
+    font-family: Newsreader, Georgia, serif;
+    font-size: clamp(1.98rem, 7.1vw, 2.45rem);
+    line-height: 1;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: color-mix(in srgb, var(--qa-text-primary) 94%, #120d06);
+    text-align: center;
   }
 
-  .qa-settings-shell-subtitle {
-    margin-top: 0.25rem;
-    color: var(--qa-text-muted);
-    font-size: 0.9rem;
+  .qa-settings-shell-done,
+  .qa-settings-shell-close {
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: color-mix(in srgb, var(--qa-accent) 78%, var(--qa-text-primary));
+  }
+
+  .qa-settings-shell-done {
+    justify-self: start;
+    padding: 0;
+    font-family: Newsreader, Georgia, serif;
+    font-size: 1.08rem;
+    line-height: 1;
+    font-weight: 400;
   }
 
   .qa-settings-shell-close {
-    width: 42px;
-    height: 42px;
+    justify-self: end;
+    width: 3.7rem;
+    height: 3.7rem;
     border-radius: var(--qa-radius-circle);
-    border: 1px solid var(--qa-border-on-sheet);
-    background: var(--qa-surface-raised);
-    color: var(--qa-text-primary);
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 38%, var(--qa-border-on-sheet));
+    background: color-mix(in srgb, var(--qa-surface-app) 96%, white 4%);
+    display: grid;
+    place-items: center;
+    padding: 0;
+  }
+
+  .qa-settings-shell-close-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    stroke: currentcolor;
+    stroke-width: 1.45;
+    stroke-linecap: round;
+    fill: none;
   }
 
   .qa-settings-shell-body {
@@ -89,11 +128,13 @@
   }
 
   .qa-settings-shell-foot {
-    padding: 0.85rem 1rem max(1rem, env(safe-area-inset-bottom));
-    border-top: 1px solid var(--qa-border-on-sheet);
+    padding: 1rem 1rem max(1rem, calc(env(safe-area-inset-bottom) + 0.35rem));
+    border-top: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
     border-bottom: 0;
     display: grid;
-    gap: 0.75rem;
+    gap: 0.9rem;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--qa-surface-app) 96%, white 4%), var(--qa-surface-app));
   }
 
   .qa-settings-preview--mushaf {
@@ -152,37 +193,167 @@
 
   .qa-settings-theme-night {
     display: grid;
-    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.9fr);
+    gap: 0.9rem;
+    align-items: start;
   }
 
-  .qa-settings-control-group {
+  .qa-settings-theme-panel,
+  .qa-settings-night-panel {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.4rem;
+    gap: 0.65rem;
   }
 
-  .qa-settings-control-group[aria-label="Night mode"] {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .qa-settings-night-panel {
+    padding-left: 0.9rem;
+    border-left: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
   }
 
-  .qa-settings-choice,
-  .qa-settings-manage-assets {
-    min-height: 40px;
-    border: 1px solid var(--qa-border-on-sheet);
-    border-radius: var(--qa-radius-sm);
-    background: var(--qa-surface-raised);
+  .qa-settings-theme-night-title {
+    margin: 0;
+    font-family: Newsreader, Georgia, serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     color: var(--qa-text-primary);
   }
 
-  .qa-settings-choice--active {
+  .qa-settings-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .qa-settings-theme-option {
+    display: grid;
+    gap: 0.32rem;
+    justify-items: center;
+    border: 0;
+    background: transparent;
+    color: var(--qa-text-primary);
+    padding: 0;
+  }
+
+  .qa-settings-theme-swatch {
+    width: 100%;
+    aspect-ratio: 0.88;
+    min-height: 3.5rem;
+    border-radius: 0.85rem;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 20%, var(--qa-border-on-sheet));
+    background: var(--qa-surface-raised);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 24%);
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .qa-settings-theme-swatch--light {
+    background: linear-gradient(180deg, #fbf8f0, #f7eedb);
+  }
+
+  .qa-settings-theme-swatch--sepia {
+    background: linear-gradient(180deg, #f4e7cb, #ead7b1);
+  }
+
+  .qa-settings-theme-swatch--dark {
+    background: linear-gradient(180deg, #2d2a24, #181611);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+  }
+
+  .qa-settings-theme-swatch--auto {
+    background:
+      linear-gradient(90deg, #fbf8f0 0 48%, #171511 48% 100%);
+  }
+
+  .qa-settings-theme-auto-sun,
+  .qa-settings-theme-auto-moon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .qa-settings-theme-auto-sun {
+    left: 18%;
+    color: #82611d;
+  }
+
+  .qa-settings-theme-auto-moon {
+    right: 18%;
+    color: #dbc285;
+  }
+
+  .qa-settings-theme-option-label {
+    font-family: Newsreader, Georgia, serif;
+    font-size: 0.76rem;
+    color: color-mix(in srgb, var(--qa-text-primary) 88%, var(--qa-accent));
+  }
+
+  .qa-settings-theme-option--active .qa-settings-theme-swatch {
     border-color: var(--qa-accent);
-    color: var(--qa-accent);
-    box-shadow: inset 0 0 0 1px var(--qa-accent);
+    box-shadow:
+      inset 0 0 0 1px var(--qa-accent),
+      0 0 0 1px color-mix(in srgb, var(--qa-accent) 18%, transparent);
+  }
+
+  .qa-settings-theme-option--active .qa-settings-theme-swatch::after {
+    content: '•';
+    position: absolute;
+    right: 0.45rem;
+    bottom: 0.35rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: var(--qa-accent);
+    color: var(--qa-surface-app);
+    font-size: 1rem;
+    line-height: 0.8;
+  }
+
+  .qa-settings-night-group {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 28%, var(--qa-border-on-sheet));
+    border-radius: 0.95rem;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--qa-surface-raised) 92%, white 8%);
+  }
+
+  .qa-settings-night-choice {
+    min-height: 4.1rem;
+    border: 0;
+    border-right: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
+    background: transparent;
+    color: var(--qa-text-primary);
+    font-family: Newsreader, Georgia, serif;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .qa-settings-night-choice:last-child {
+    border-right: 0;
+  }
+
+  .qa-settings-night-choice--active {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--qa-accent) 85%, #c09131), color-mix(in srgb, var(--qa-accent) 92%, #8f6312));
+    color: var(--qa-surface-app);
   }
 
   .qa-settings-manage-assets {
-    width: 100%;
-    font-weight: 650;
+    justify-self: center;
+    width: min(100%, 15rem);
+    min-height: 2.35rem;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
+    border-radius: 999px;
+    background: transparent;
+    color: color-mix(in srgb, var(--qa-text-primary) 82%, var(--qa-accent));
+    font-family: Newsreader, Georgia, serif;
+    font-size: 0.88rem;
+    font-weight: 500;
   }
 
   .qa-settings-picker {
@@ -294,9 +465,9 @@
        of font-size / reading-flow combination. Inner content (.qa-settings-
        preview-stage) scrolls vertically when verse text overflows at xl
        sliders, so other settings elements never reflow. */
-    height: 32dvh;
-    min-height: 32dvh;
-    max-height: 32dvh;
+    height: clamp(150px, 24dvh, 216px);
+    min-height: clamp(150px, 24dvh, 216px);
+    max-height: clamp(150px, 24dvh, 216px);
     overflow: hidden;
   }
 
@@ -307,20 +478,7 @@
     flex-direction: column;
     justify-content: flex-start;
     gap: 0.55rem;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--qa-accent) 45%, transparent) transparent;
-    -ms-overflow-style: none;
-  }
-
-  .qa-settings-preview-stage::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .qa-settings-preview-stage::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--qa-accent) 45%, transparent);
-    border-radius: var(--qa-radius-pill);
+    overflow: hidden;
   }
 
   .qa-settings-preview::after {
@@ -494,10 +652,10 @@
   .qa-settings-body {
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    padding: 1.2rem 1.3rem 1rem;
+    padding: 0.95rem 1.3rem 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 0.9rem;
+    gap: 0.72rem;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
   }
@@ -506,7 +664,7 @@
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.62rem;
     min-height: 0;
   }
 
@@ -518,6 +676,7 @@
       color-mix(in srgb, var(--qa-accent) 25%, transparent),
       transparent) 1;
     padding-top: 0.85rem;
+    margin-top: 0.1rem;
   }
 
   .qa-settings-sect-hdr {
@@ -687,7 +846,7 @@
 
   .qa-settings-src-row {
     display: grid;
-    grid-template-columns: 6rem 1fr auto;
+    grid-template-columns: 7.5rem 1fr auto;
     align-items: center;
     gap: 0.7rem;
     width: 100%;
@@ -706,6 +865,7 @@
     letter-spacing: 0.08em;
     font-weight: 600;
     color: var(--qa-text-on-sheet-muted);
+    line-height: 1.3;
   }
 
   .qa-settings-src-val {
@@ -726,7 +886,7 @@
   /* Translation dual-action row */
   .qa-settings-trans-row {
     display: grid;
-    grid-template-columns: 6rem 1fr auto auto;
+    grid-template-columns: 7.5rem 1fr auto auto;
     align-items: center;
     gap: 0.55rem;
     padding: 0.55rem 0;
