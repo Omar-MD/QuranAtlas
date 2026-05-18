@@ -33,9 +33,10 @@ describe('mushaf inline SVG helpers', () => {
     const fetchMock = vi.fn(async () => response(safeSvg))
     vi.stubGlobal('fetch', fetchMock)
 
-    const svg = await loadInlineMushafSvg('/dataset/mushaf-pages/qaloon/pages/001.svg')
+    const pageUrl = '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg'
+    const svg = await loadInlineMushafSvg(pageUrl)
 
-    expect(fetchMock).toHaveBeenCalledWith('/dataset/mushaf-pages/qaloon/pages/001.svg', { signal: undefined })
+    expect(fetchMock).toHaveBeenCalledWith(pageUrl, { signal: undefined })
     expect(svg.viewBox).toEqual({ minX: 0, minY: 0, width: 10, height: 20 })
     expect(svg.viewBoxText).toBe('0 0 10 20')
     expect(svg.markup).toContain('class="qa-mushaf-svg"')
