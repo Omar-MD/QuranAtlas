@@ -209,7 +209,7 @@
     {:else}
       <a class="qa-assets-back" data-testid="assets-back" href="#/s/1">Back to Reader</a>
     {/if}
-    <div>
+    <div class="qa-assets-heading-block">
       <h1 id="qa-assets-title" class="qa-assets-title" bind:this={heading} tabindex="-1">Asset Management</h1>
       <p class="qa-assets-subtitle">Install, verify, activate, and remove reader assets.</p>
     </div>

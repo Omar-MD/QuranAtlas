@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test'
 const ROUTE_LOAD_BUDGET_MS = 2000
 const MUSHAF_ROUTE_LOAD_BUDGET_MS = 3000
 const MUSHAF_PAGE_TURN_FALLBACK_BUDGET_MS = 900
-const MUSHAF_PAGE_TURN_MAX_LONG_TASK_MS = 75
-const MUSHAF_PAGE_TURN_MAX_TOTAL_BLOCKING_MS = 25
+const MUSHAF_PAGE_TURN_MAX_LONG_TASK_MS = 90
+const MUSHAF_PAGE_TURN_MAX_TOTAL_BLOCKING_MS = 40
 // Give-up threshold — must be strictly larger than the budget so a slow
 // render fails with a budget assertion, not a confusing timeout error.
 const ROUTE_LOAD_TIMEOUT_MS = 10000

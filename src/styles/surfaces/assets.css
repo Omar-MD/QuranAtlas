@@ -11,12 +11,26 @@
     top: 0;
     z-index: 2;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.8rem;
     align-items: center;
     padding: 0.85rem 0;
     background: var(--qa-surface-app);
     border-bottom: 1px solid var(--qa-border-subtle);
+  }
+
+  .qa-assets-heading-block {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .qa-assets-back {
+    justify-self: start;
+  }
+
+  .qa-assets-refresh {
+    justify-self: end;
   }
 
   .qa-assets-title,
@@ -197,6 +211,11 @@
     .qa-assets-header {
       grid-template-columns: auto minmax(0, 1fr) auto;
       padding-top: 0;
+    }
+
+    .qa-assets-heading-block {
+      grid-column: auto;
+      grid-row: auto;
     }
 
     .qa-assets-layout {
