@@ -21,6 +21,7 @@ export type MushafManifestPage = {
 export type MushafManifest = {
   version: 1
   riwayah: Riwayah
+  mushafEditionId: string
   sourceSlug: QuranWsSourceSlug
   pageCount: number
   attribution: {
@@ -32,6 +33,8 @@ export type MushafManifest = {
 }
 
 export type MushafResolvedPage = {
+  riwayah: Riwayah
+  mushafEditionId: string
   page: number
   pageCount: number
   riwayahLabel: string
@@ -61,6 +64,7 @@ export type MushafPageLoadState =
 
 export type MushafPackAvailability = {
   riwayah: Riwayah
+  mushafEditionId: string
   available: boolean
   manifestUrl: string
 }

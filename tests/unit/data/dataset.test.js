@@ -1,15 +1,9 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { settings } from '../../../src/configure/state.svelte.ts'
 
 const DATASET_PATH = join(process.cwd(), 'public', 'dataset')
-
-// Mock loadRiwayah BEFORE importing dataset module — controls which Riwayah
-// path getSurah resolves to.
-let mockedRiwayah = 'qaloon'
-vi.mock('../../../src/packs/riwayah.ts', () => ({
-  loadRiwayah: vi.fn(async () => mockedRiwayah),
-}))
 
 function mockFetch(url) {
   const filePath = join(DATASET_PATH, String(url).replace('/dataset/', ''))
@@ -35,7 +29,7 @@ function responseWithJson(body, status = 200) {
 
 function mockFetchWithHtmlFallback(url) {
   const asString = String(url)
-  if (asString.includes('/riwayat/hafs/')) {
+  if (asString.includes('/quran-text/hafs/')) {
     return Promise.resolve({
       ok: true,
       status: 200,
@@ -48,6 +42,13 @@ function mockFetchWithHtmlFallback(url) {
 beforeAll(() => { globalThis.fetch = mockFetch })
 
 describe('data/dataset', () => {
+  beforeEach(async () => {
+    settings.riwayah = 'qaloon'
+    settings.quranTextStyleId = 'uthmani-kfgqpc-v1'
+    const { clearTextAssetIndexCacheForTests } = await import('../../../src/packs/text-assets.ts')
+    clearTextAssetIndexCacheForTests()
+  })
+
   describe('getManifestUrls()', () => {
     it('lists 114 baseline riwayah files for Qaloon only', async () => {
       const { getManifestUrls } = await import('../../../src/data/dataset.ts')
@@ -67,8 +68,9 @@ describe('data/dataset', () => {
   })
 
   describe('getSurah(n)', () => {
-    it('fetches /dataset/riwayat/qaloon/001.json by default and returns SurahPayload', async () => {
-      mockedRiwayah = 'qaloon'
+    it('fetches the active Quran text-style asset by default and returns SurahPayload', async () => {
+      const fetchSpy = vi.fn(mockFetch)
+      globalThis.fetch = fetchSpy
       const { getSurah } = await import('../../../src/data/dataset.ts')
       const data = await getSurah(1)
       expect(data.riwayah).toBe('qaloon')
@@ -76,11 +78,12 @@ describe('data/dataset', () => {
       expect(Array.isArray(data.ayat)).toBe(true)
       expect(data.ayat.length).toBeGreaterThan(0)
       expect(data.ayat[0].aya_text).toContain('اِ۬لْحَمْدُ')
+      expect(fetchSpy).toHaveBeenCalledWith('/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json', expect.anything())
+      globalThis.fetch = mockFetch
     })
 
     it('throws an unavailable-pack error when the saved Riwayah is absent from the baseline', async () => {
-      mockedRiwayah = 'hafs'
-      vi.resetModules() // re-import with fresh mock binding
+      settings.riwayah = 'hafs'
       const { getSurah, RiwayahPackUnavailableError } = await import('../../../src/data/dataset.ts')
       await expect(getSurah(1)).rejects.toMatchObject({
         code: 'RIWAYAH_PACK_UNAVAILABLE',
@@ -90,9 +93,8 @@ describe('data/dataset', () => {
     })
 
     it('throws before fetching a missing non-default pack that would resolve to HTML', async () => {
-      mockedRiwayah = 'hafs'
+      settings.riwayah = 'hafs'
       globalThis.fetch = mockFetchWithHtmlFallback
-      vi.resetModules()
       const { getSurah } = await import('../../../src/data/dataset.ts')
       await expect(getSurah(1)).rejects.toMatchObject({
         code: 'RIWAYAH_PACK_UNAVAILABLE',
@@ -102,10 +104,10 @@ describe('data/dataset', () => {
     })
 
     it('does not trust legacy manifest membership when the optional package index fails', async () => {
-      mockedRiwayah = 'hafs'
+      settings.riwayah = 'hafs'
       const fetchMock = vi.fn(async (url) => {
         const asString = String(url)
-        if (asString.includes('/indexes/riwayah-packages.json')) {
+        if (asString.includes('/indexes/text-assets.json')) {
           return { ok: false, status: 500 }
         }
         if (asString.endsWith('/manifest.json')) {
@@ -118,14 +120,13 @@ describe('data/dataset', () => {
         return responseWithJson({ riwayah: 'hafs', sura_no: 1, ayat: [] })
       })
       globalThis.fetch = fetchMock
-      vi.resetModules()
       const { getSurah } = await import('../../../src/data/dataset.ts')
 
       await expect(getSurah(1)).rejects.toMatchObject({
         code: 'RIWAYAH_PACK_UNAVAILABLE',
         riwayah: 'hafs',
       })
-      expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/dataset/riwayat/hafs/'))).toBe(false)
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes('/dataset/quran-text/hafs/'))).toBe(false)
       globalThis.fetch = mockFetch
     })
 
@@ -146,15 +147,15 @@ describe('data/dataset', () => {
       })
     })
 
-    it('reports optional text packs as unavailable when omitted from the manifest', async () => {
+    it('reports optional text assets as available when the compatibility package index exposes them', async () => {
       const { getRiwayahTextAvailability } = await import('../../../src/data/dataset.ts')
       await expect(getRiwayahTextAvailability('hafs')).resolves.toMatchObject({
         riwayah: 'hafs',
-        available: false,
+        available: true,
       })
       await expect(getRiwayahTextAvailability('warsh')).resolves.toMatchObject({
         riwayah: 'warsh',
-        available: false,
+        available: true,
       })
     })
   })

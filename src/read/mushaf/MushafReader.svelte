@@ -131,7 +131,11 @@
     let hasResolvedMetadata = false
 
     try {
-      const next = await resolveMushafPage({ riwayah: settings.riwayah, page: routePage })
+      const next = await resolveMushafPage({
+        riwayah: settings.riwayah,
+        mushafEditionId: settings.mushafEditionId,
+        page: routePage,
+      })
       if (!isActiveRequest(id)) return
       const currentHash = window.location.hash
       if (next.page !== routePage || (currentHash.startsWith('#/m/') && currentHash !== pageHref(next.page))) {

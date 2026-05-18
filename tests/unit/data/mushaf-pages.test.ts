@@ -5,6 +5,7 @@ import type { MushafManifest } from '../../../src/read/mushaf/types'
 const manifest: MushafManifest = {
   version: 1,
   riwayah: 'qaloon',
+  mushafEditionId: 'qalun-quran-ws-v1',
   sourceSlug: 'qalun',
   pageCount: 2,
   attribution: { provider: 'quran.ws', sourceUrl: 'https://pdf.quran.ws/' },
@@ -48,8 +49,42 @@ function responseJsonError(error: Error, status = 200): Response {
   } as Response
 }
 
+function mushafAssetIndex(): unknown {
+  return {
+    version: 1,
+    defaults: {
+      qaloon: 'qalun-quran-ws-v1',
+      hafs: 'hafs-quran-ws-v1',
+      warsh: 'warsh-quran-ws-v1',
+    },
+    assets: [
+      ['qaloon', 'qalun-quran-ws-v1'],
+      ['hafs', 'hafs-quran-ws-v1'],
+      ['warsh', 'warsh-quran-ws-v1'],
+    ].map(([riwayah, mushafEditionId]) => ({
+      riwayah,
+      mushafEditionId,
+      label: mushafEditionId,
+      tradition: riwayah === 'qaloon' ? 'qalun' : riwayah,
+      providerId: 'quran-ws',
+      licenseId: 'quran-ws-free-use',
+      visibility: riwayah === 'qaloon' ? 'baseline' : 'optional',
+      shipped: true,
+      manifestUrl: `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/manifest.json`,
+      files: [
+        { url: `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/manifest.json`, bytes: 100 },
+      ],
+      totalBytes: 100,
+      pageCount: 2,
+      provenance: {},
+    })),
+  }
+}
+
 function mockManifestFetch(body: unknown = manifest, status = 200): ReturnType<typeof vi.fn> {
-  const fetchMock = vi.fn(async () => response(body, status))
+  const fetchMock = vi.fn(async (url: string) => (
+    url.includes('mushaf-assets.json') ? response(mushafAssetIndex()) : response(body, status)
+  ))
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
@@ -59,6 +94,8 @@ async function importLoader() {
   const packages = await import('../../../src/data/riwayah-packages')
   mod.clearMushafManifestCache()
   packages.clearRiwayahPackageCacheForTests()
+  const assets = await import('../../../src/packs/mushaf-assets')
+  assets.clearMushafAssetIndexCacheForTests()
   return mod
 }
 
@@ -78,7 +115,7 @@ describe('mushaf-pages dataset loader', () => {
     expect(first.pageCount).toBe(2)
     expect(second).toBe(first)
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(fetchMock).toHaveBeenCalledWith('/dataset/mushaf-pages/qaloon/manifest.json')
+    expect(fetchMock).toHaveBeenCalledWith('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json')
   })
 
   it('resolves a page to same-origin SVG asset URL', async () => {
@@ -92,7 +129,7 @@ describe('mushaf-pages dataset loader', () => {
       pageCount: 2,
       riwayahLabel: 'Qālūn ʿan Nāfiʿ',
       assetPath: 'pages/002.svg',
-      assetUrl: '/dataset/mushaf-pages/qaloon/pages/002.svg',
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg',
       viewBoxText: '0 0 900 1379.25',
       viewBox: { minX: 0, minY: 0, width: 900, height: 1379.25 },
       bytes: 1200,
@@ -125,7 +162,7 @@ describe('mushaf-pages dataset loader', () => {
     await expect(getMushafPackAvailability('hafs')).resolves.toMatchObject({
       riwayah: 'hafs',
       available: false,
-      manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
     })
     await expect(resolveMushafPage({ riwayah: 'hafs', page: 42 })).rejects.toMatchObject({
       code: 'MUSHAF_PACK_UNAVAILABLE',
@@ -135,13 +172,17 @@ describe('mushaf-pages dataset loader', () => {
   })
 
   it('treats non-JSON app-shell responses as unavailable optional packs', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => responseJsonError(new SyntaxError('Unexpected token <'))))
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => (
+      url.includes('mushaf-assets.json')
+        ? response(mushafAssetIndex())
+        : responseJsonError(new SyntaxError('Unexpected token <'))
+    )))
     const { getMushafPackAvailability, resolveMushafPage } = await importLoader()
 
     await expect(getMushafPackAvailability('hafs')).resolves.toMatchObject({
       riwayah: 'hafs',
       available: false,
-      manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
     })
     await expect(resolveMushafPage({ riwayah: 'hafs', page: 42 })).rejects.toMatchObject({
       code: 'MUSHAF_PACK_UNAVAILABLE',
@@ -152,8 +193,8 @@ describe('mushaf-pages dataset loader', () => {
 
   it('does not render optional pages when the package index cannot be trusted', async () => {
     const fetchMock = vi.fn(async (url: string) => {
-      if (url.includes('riwayah-packages.json')) return response(null, 500)
-      return response({ ...manifest, riwayah: 'hafs', sourceSlug: 'hafs' })
+      if (url.includes('mushaf-assets.json')) return response(null, 500)
+      return response({ ...manifest, riwayah: 'hafs', mushafEditionId: 'hafs-quran-ws-v1', sourceSlug: 'hafs' })
     })
     vi.stubGlobal('fetch', fetchMock)
     const { resolveMushafPage } = await importLoader()
@@ -163,14 +204,16 @@ describe('mushaf-pages dataset loader', () => {
       promptable: true,
       riwayah: 'hafs',
     })
-    expect(fetchMock).not.toHaveBeenCalledWith('/dataset/mushaf-pages/hafs/manifest.json')
+    expect(fetchMock).not.toHaveBeenCalledWith('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json')
   })
 
   it('clears cached unavailable-pack failures after availability checks', async () => {
-    const fetchMock = vi
+    const manifestFetches = vi
       .fn()
       .mockResolvedValueOnce(response(null, 404))
-      .mockResolvedValueOnce(response({ ...manifest, riwayah: 'hafs', sourceSlug: 'hafs' }))
+      .mockResolvedValueOnce(response({ ...manifest, riwayah: 'hafs', mushafEditionId: 'hafs-quran-ws-v1', sourceSlug: 'hafs' }))
+    const fetchMock = vi
+      .fn(async (url: string) => url.includes('mushaf-assets.json') ? response(mushafAssetIndex()) : manifestFetches(url))
     vi.stubGlobal('fetch', fetchMock)
     const { getMushafPackAvailability, loadMushafManifest } = await importLoader()
 
@@ -180,10 +223,12 @@ describe('mushaf-pages dataset loader', () => {
   })
 
   it('clears cached failures after direct manifest loads', async () => {
-    const fetchMock = vi
+    const manifestFetches = vi
       .fn()
       .mockResolvedValueOnce(response(null, 404))
-      .mockResolvedValueOnce(response({ ...manifest, riwayah: 'hafs', sourceSlug: 'hafs' }))
+      .mockResolvedValueOnce(response({ ...manifest, riwayah: 'hafs', mushafEditionId: 'hafs-quran-ws-v1', sourceSlug: 'hafs' }))
+    const fetchMock = vi
+      .fn(async (url: string) => url.includes('mushaf-assets.json') ? response(mushafAssetIndex()) : manifestFetches(url))
     vi.stubGlobal('fetch', fetchMock)
     const { loadMushafManifest } = await importLoader()
 
@@ -196,10 +241,12 @@ describe('mushaf-pages dataset loader', () => {
   })
 
   it('clears rejected cached manifest reads so a later retry can recover', async () => {
-    const fetchMock = vi
+    const manifestFetches = vi
       .fn()
       .mockResolvedValueOnce(response(null, 500))
-      .mockResolvedValueOnce(response({ ...manifest, riwayah: 'hafs', sourceSlug: 'hafs' }))
+      .mockResolvedValueOnce(response({ ...manifest, riwayah: 'hafs', mushafEditionId: 'hafs-quran-ws-v1', sourceSlug: 'hafs' }))
+    const fetchMock = vi
+      .fn(async (url: string) => url.includes('mushaf-assets.json') ? response(mushafAssetIndex()) : manifestFetches(url))
     vi.stubGlobal('fetch', fetchMock)
     vi.stubGlobal('caches', {
       open: vi.fn(async () => ({
@@ -217,22 +264,28 @@ describe('mushaf-pages dataset loader', () => {
   })
 
   it('returns pack availability without falling back to Qaloon', async () => {
-    const fetchMock = mockManifestFetch({ ...manifest, riwayah: 'warsh', sourceSlug: 'warsh' })
+    const fetchMock = mockManifestFetch({ ...manifest, riwayah: 'warsh', mushafEditionId: 'warsh-quran-ws-v1', sourceSlug: 'warsh' })
     const { getMushafPackAvailability } = await importLoader()
 
     await expect(getMushafPackAvailability('warsh')).resolves.toEqual({
       riwayah: 'warsh',
+      mushafEditionId: 'warsh-quran-ws-v1',
       available: true,
-      manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
     })
-    expect(fetchMock).toHaveBeenCalledWith('/dataset/mushaf-pages/warsh/manifest.json')
+    expect(fetchMock).toHaveBeenCalledWith('/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json')
   })
 
-  it('rejects manifests with mismatched riwayah or quran.ws source slug', async () => {
+  it('rejects manifests with mismatched riwayah, edition id, or quran.ws source slug', async () => {
     mockManifestFetch({ ...manifest, riwayah: 'qaloon', sourceSlug: 'warsh' })
     const { loadMushafManifest } = await importLoader()
 
     await expect(loadMushafManifest('qaloon')).rejects.toThrow(/source slug/i)
+
+    mockManifestFetch({ ...manifest, mushafEditionId: 'other-quran-ws-v1' })
+    const { clearMushafManifestCache } = await import('../../../src/data/mushaf-pages')
+    clearMushafManifestCache()
+    await expect(loadMushafManifest('qaloon')).rejects.toThrow(/edition/i)
   })
 
   it('rejects manifest paths that escape the pages folder', async () => {

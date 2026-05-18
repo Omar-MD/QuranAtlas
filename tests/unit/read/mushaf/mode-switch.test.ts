@@ -5,8 +5,9 @@ import { reader } from '../../../../src/read/state.svelte'
 vi.mock('../../../../src/packs/mushaf-pages', () => ({
   getMushafPackAvailability: vi.fn(async (riwayah: string) => ({
     riwayah,
+    mushafEditionId: riwayah === 'hafs' ? 'hafs-quran-ws-v1' : riwayah === 'warsh' ? 'warsh-quran-ws-v1' : 'qalun-quran-ws-v1',
     available: riwayah !== 'warsh',
-    manifestUrl: `/dataset/mushaf-pages/${riwayah}/manifest.json`,
+    manifestUrl: `/dataset/mushaf-pages/${riwayah}/${riwayah === 'hafs' ? 'hafs-quran-ws-v1' : riwayah === 'warsh' ? 'warsh-quran-ws-v1' : 'qalun-quran-ws-v1'}/manifest.json`,
   })),
   pageForVerse: vi.fn(async ({ riwayah, surah, verse }) => {
     if (riwayah === 'hafs' && surah === 2 && verse === 255) return 43
@@ -16,6 +17,7 @@ vi.mock('../../../../src/packs/mushaf-pages', () => ({
   loadMushafManifest: vi.fn(async () => ({
     version: 1,
     riwayah: 'qaloon',
+    mushafEditionId: 'qalun-quran-ws-v1',
     sourceSlug: 'qalun',
     pageCount: 604,
     attribution: { provider: 'quran.ws', sourceUrl: 'https://pdf.quran.ws/' },
@@ -36,6 +38,7 @@ vi.mock('../../../../src/packs/mushaf-pages', () => ({
 describe('mushaf mode switch helpers', () => {
   beforeEach(() => {
     settings.riwayah = 'qaloon'
+    settings.mushafEditionId = 'qalun-quran-ws-v1'
     settings.currentPosition = { surah: 2, verse: 255 }
     reader.currentSurahNum = 2
     reader.currentVerseKey = '2:255'
@@ -57,18 +60,21 @@ describe('mushaf mode switch helpers', () => {
 
   it('uses the active settings riwayah when its page pack is available', async () => {
     settings.riwayah = 'hafs'
+    settings.mushafEditionId = 'hafs-quran-ws-v1'
     const { mushafHrefForCurrentVerse } = await import('../../../../src/read/mushaf/mode-switch')
     await expect(mushafHrefForCurrentVerse()).resolves.toBe('#/m/43')
   })
 
   it('does not derive a page from another riwayah when the active page pack is unavailable', async () => {
     settings.riwayah = 'warsh'
+    settings.mushafEditionId = 'warsh-quran-ws-v1'
     const { mushafHrefForCurrentVerse } = await import('../../../../src/read/mushaf/mode-switch')
     await expect(mushafHrefForCurrentVerse()).resolves.toBe('#/m/1')
   })
 
   it('uses the loaded active corpus page metadata when the active page pack is unavailable', async () => {
     settings.riwayah = 'warsh'
+    settings.mushafEditionId = 'warsh-quran-ws-v1'
     reader.currentSurah = {
       riwayah: 'warsh',
       version: 'test',

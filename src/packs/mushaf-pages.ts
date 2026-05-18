@@ -17,12 +17,20 @@ import {
   type PackReason,
   type Riwayah,
 } from './riwayah'
+import { canUseMushafAsset, getMushafAsset } from './mushaf-assets'
 
 const BASE = '/dataset/mushaf-pages'
-const manifestPromises = new Map<Riwayah, Promise<MushafManifest>>()
+const manifestPromises = new Map<string, Promise<MushafManifest>>()
+
+const DEFAULT_MUSHAF_EDITION_BY_RIWAYAH: Record<Riwayah, string> = {
+  hafs: 'hafs-quran-ws-v1',
+  warsh: 'warsh-quran-ws-v1',
+  qaloon: 'qalun-quran-ws-v1',
+}
 
 type MushafPagePackResultBase = {
   riwayah: Riwayah
+  mushafEditionId: string
   totalBytes: number
   optional: boolean
   manifestUrl: string
@@ -46,22 +54,36 @@ export class MushafPackUnavailableError extends Error {
   promptable = true as const
   packageType = 'pages' as const
 
-  constructor(public riwayah: Riwayah, public status?: number) {
-    super(`Mushaf page pack is not available for ${riwayah}`)
+  constructor(public riwayah: Riwayah, public status?: number, public mushafEditionId = DEFAULT_MUSHAF_EDITION_BY_RIWAYAH[riwayah]) {
+    super(`Mushaf page pack is not available for ${riwayah}/${mushafEditionId}`)
     this.name = 'MushafPackUnavailableError'
   }
 }
 
-function manifestUrl(riwayah: Riwayah): string {
-  return `${BASE}/${riwayah}/manifest.json`
+function manifestKey(riwayah: Riwayah, mushafEditionId: string): string {
+  return `${riwayah}/${mushafEditionId}`
 }
 
-function baseResult(riwayah: Riwayah, totalBytes = 0, optional = riwayah !== DEFAULT_RIWAYAH): MushafPagePackResultBase {
+function editionForRiwayah(riwayah: Riwayah, mushafEditionId?: string): string {
+  return mushafEditionId ?? DEFAULT_MUSHAF_EDITION_BY_RIWAYAH[riwayah]
+}
+
+function manifestUrl(riwayah: Riwayah, mushafEditionId = editionForRiwayah(riwayah)): string {
+  return `${BASE}/${riwayah}/${mushafEditionId}/manifest.json`
+}
+
+function baseResult(
+  riwayah: Riwayah,
+  mushafEditionId = editionForRiwayah(riwayah),
+  totalBytes = 0,
+  optional = riwayah !== DEFAULT_RIWAYAH,
+): MushafPagePackResultBase {
   return {
     riwayah,
+    mushafEditionId,
     totalBytes,
     optional,
-    manifestUrl: manifestUrl(riwayah),
+    manifestUrl: manifestUrl(riwayah, mushafEditionId),
   }
 }
 
@@ -168,7 +190,7 @@ function assertVerseToPage(raw: unknown, pageCount: number): Record<string, numb
   return verseToPage
 }
 
-function assertManifest(raw: unknown, expectedRiwayah: Riwayah): MushafManifest {
+function assertManifest(raw: unknown, expectedRiwayah: Riwayah, expectedMushafEditionId: string): MushafManifest {
   if (!isRecord(raw)) throw new Error('Invalid Mushaf manifest')
 
   if (raw.version !== 1) {
@@ -176,6 +198,9 @@ function assertManifest(raw: unknown, expectedRiwayah: Riwayah): MushafManifest 
   }
   if (raw.riwayah !== expectedRiwayah) {
     throw new Error(`Mushaf manifest riwayah mismatch: ${String(raw.riwayah)}`)
+  }
+  if (raw.mushafEditionId !== expectedMushafEditionId) {
+    throw new Error(`Mushaf manifest edition mismatch: ${String(raw.mushafEditionId)}`)
   }
   assertRiwayah(raw.riwayah, 'Mushaf riwayah')
 
@@ -217,6 +242,7 @@ function assertManifest(raw: unknown, expectedRiwayah: Riwayah): MushafManifest 
   return {
     version: 1,
     riwayah: raw.riwayah,
+    mushafEditionId: raw.mushafEditionId as string,
     sourceSlug: raw.sourceSlug as QuranWsSourceSlug,
     pageCount,
     attribution: {
@@ -237,16 +263,17 @@ export function clearMushafManifestCache(): void {
   manifestPromises.clear()
 }
 
-export async function loadMushafManifest(riwayah: Riwayah): Promise<MushafManifest> {
+export async function loadMushafManifest(riwayah: Riwayah, mushafEditionId = editionForRiwayah(riwayah)): Promise<MushafManifest> {
   assertRiwayah(riwayah, 'Mushaf riwayah')
 
-  const existing = manifestPromises.get(riwayah)
+  const key = manifestKey(riwayah, mushafEditionId)
+  const existing = manifestPromises.get(key)
   if (existing) return existing
 
-  const url = manifestUrl(riwayah)
+  const url = manifestUrl(riwayah, mushafEditionId)
   const readResponse = async (response: Response): Promise<MushafManifest> => {
     if (!response.ok) {
-      throw new MushafPackUnavailableError(riwayah, response.status)
+      throw new MushafPackUnavailableError(riwayah, response.status, mushafEditionId)
     }
     const cacheCopy = typeof response.clone === 'function' ? response.clone() : null
     let raw: unknown
@@ -254,11 +281,11 @@ export async function loadMushafManifest(riwayah: Riwayah): Promise<MushafManife
       raw = await response.json()
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new MushafPackUnavailableError(riwayah, response.status)
+        throw new MushafPackUnavailableError(riwayah, response.status, mushafEditionId)
       }
       throw error
     }
-    const manifest = assertManifest(raw, riwayah)
+    const manifest = assertManifest(raw, riwayah, mushafEditionId)
     if (cacheCopy) await cacheResponse(url, cacheCopy).catch(() => undefined)
     return manifest
   }
@@ -268,26 +295,26 @@ export async function loadMushafManifest(riwayah: Riwayah): Promise<MushafManife
       const cached = await cachedResponse(url).catch(() => null)
       if (cached) return await readResponse(cached)
     } catch {
-      manifestPromises.delete(riwayah)
+      manifestPromises.delete(key)
       throw error
     }
-    manifestPromises.delete(riwayah)
+    manifestPromises.delete(key)
     throw error
   })
-  manifestPromises.set(riwayah, promise)
+  manifestPromises.set(key, promise)
   return promise
 }
 
-export async function getMushafPackAvailability(riwayah: Riwayah): Promise<MushafPackAvailability> {
+export async function getMushafPackAvailability(riwayah: Riwayah, mushafEditionId = editionForRiwayah(riwayah)): Promise<MushafPackAvailability> {
   assertRiwayah(riwayah, 'Mushaf riwayah')
 
   try {
-    await loadMushafManifest(riwayah)
-    return { riwayah, available: true, manifestUrl: manifestUrl(riwayah) }
+    await loadMushafManifest(riwayah, mushafEditionId)
+    return { riwayah, mushafEditionId, available: true, manifestUrl: manifestUrl(riwayah, mushafEditionId) }
   } catch (error) {
     if (error instanceof MushafPackUnavailableError) {
-      manifestPromises.delete(riwayah)
-      return { riwayah, available: false, manifestUrl: manifestUrl(riwayah) }
+      manifestPromises.delete(manifestKey(riwayah, mushafEditionId))
+      return { riwayah, mushafEditionId, available: false, manifestUrl: manifestUrl(riwayah, mushafEditionId) }
     }
     throw error
   }
@@ -295,13 +322,14 @@ export async function getMushafPackAvailability(riwayah: Riwayah): Promise<Musha
 
 export async function getMushafPagePackResult(
   riwayah: Riwayah,
-  options: { fallbackToBaseline?: boolean; installBlocked?: 'quota-refused'; missingReason?: 'missing' | 'removed' } = {},
+  options: { mushafEditionId?: string; fallbackToBaseline?: boolean; installBlocked?: 'quota-refused'; missingReason?: 'missing' | 'removed' } = {},
 ): Promise<MushafPagePackResult> {
+  const mushafEditionId = editionForRiwayah(riwayah, options.mushafEditionId)
   const packResult = await getRiwayahPackResult(riwayah, {
     installBlocked: options.installBlocked,
     missingReason: options.missingReason,
   })
-  const initial = baseResult(riwayah, packResult.totalBytes, packResult.optional)
+  const initial = baseResult(riwayah, mushafEditionId, packResult.totalBytes, packResult.optional)
   if (packResult.kind === 'installable') {
     return { ...initial, kind: 'installable', reason: packResult.reason }
   }
@@ -315,17 +343,19 @@ export async function getMushafPagePackResult(
     return { ...initial, kind: 'unavailable', reason: packResult.reason }
   }
   if (packResult.kind === 'switched-to-baseline') {
+    const fallbackMushafEditionId = editionForRiwayah(packResult.fallbackRiwayah)
     return {
       ...initial,
       kind: 'switched-to-baseline',
       reason: packResult.reason,
       fallbackRiwayah: packResult.fallbackRiwayah,
-      fallbackManifestUrl: manifestUrl(packResult.fallbackRiwayah),
+      fallbackManifestUrl: manifestUrl(packResult.fallbackRiwayah, fallbackMushafEditionId),
     }
   }
 
   try {
-    await loadMushafManifest(riwayah)
+    await assertRenderableMushafAsset(riwayah, mushafEditionId)
+    await loadMushafManifest(riwayah, mushafEditionId)
     return { ...initial, kind: 'usable', reason: packResult.reason }
   } catch (error) {
     const reason = reasonFromManifestError(error)
@@ -338,31 +368,35 @@ export async function getMushafPagePackResult(
 
 export async function resolveMushafPagePack(
   riwayah: Riwayah,
-  options: { fallbackToBaseline?: boolean; installBlocked?: 'quota-refused'; missingReason?: 'missing' | 'removed' } = {},
+  options: { mushafEditionId?: string; fallbackToBaseline?: boolean; installBlocked?: 'quota-refused'; missingReason?: 'missing' | 'removed' } = {},
 ): Promise<MushafPagePackResult> {
+  const mushafEditionId = editionForRiwayah(riwayah, options.mushafEditionId)
   const result = await getMushafPagePackResult(riwayah, options)
   if (!options.fallbackToBaseline || riwayah === DEFAULT_RIWAYAH) return result
   if (result.kind === 'installable' || result.kind === 'stale' || result.kind === 'usable') return result
   const baseline = await getMushafPagePackResult(DEFAULT_RIWAYAH)
   if (baseline.kind !== 'usable') return result
+  const fallbackMushafEditionId = editionForRiwayah(DEFAULT_RIWAYAH)
   return {
-    ...baseResult(riwayah, result.totalBytes, result.optional),
+    ...baseResult(riwayah, mushafEditionId, result.totalBytes, result.optional),
     kind: 'switched-to-baseline',
     reason: result.reason,
     fallbackRiwayah: DEFAULT_RIWAYAH,
-    fallbackManifestUrl: manifestUrl(DEFAULT_RIWAYAH),
+    fallbackManifestUrl: manifestUrl(DEFAULT_RIWAYAH, fallbackMushafEditionId),
   }
 }
 
 export async function resolveMushafPage({
   riwayah,
+  mushafEditionId = editionForRiwayah(riwayah),
   page,
 }: {
   riwayah: Riwayah
+  mushafEditionId?: string
   page: number
 }): Promise<MushafResolvedPage> {
-  await assertRenderableRiwayah(riwayah)
-  const manifest = await loadMushafManifest(riwayah)
+  await assertRenderableMushafAsset(riwayah, mushafEditionId)
+  const manifest = await loadMushafManifest(riwayah, mushafEditionId)
   const clampedPage = clampMushafPage(page, manifest.pageCount)
   const entry = manifest.pages.find((candidate) => candidate.page === clampedPage)
   if (!entry) {
@@ -370,11 +404,13 @@ export async function resolveMushafPage({
   }
 
   return {
+    riwayah,
+    mushafEditionId,
     page: clampedPage,
     pageCount: manifest.pageCount,
     riwayahLabel: getRiwayahLabels(riwayah).runtimeFull,
     assetPath: entry.assetPath,
-    assetUrl: `${BASE}/${riwayah}/${entry.assetPath}`,
+    assetUrl: `${BASE}/${riwayah}/${mushafEditionId}/${entry.assetPath}`,
     viewBox: parseViewBox(entry.viewBox),
     viewBoxText: entry.viewBox,
     bytes: entry.bytes,
@@ -391,21 +427,30 @@ function ratioForViewBox(viewBox: string): number {
 
 export async function pageForVerse({
   riwayah,
+  mushafEditionId = editionForRiwayah(riwayah),
   surah,
   verse,
 }: {
   riwayah: Riwayah
+  mushafEditionId?: string
   surah: number
   verse: number
 }): Promise<number | null> {
-  await assertRenderableRiwayah(riwayah)
-  const manifest = await loadMushafManifest(riwayah)
+  await assertRenderableMushafAsset(riwayah, mushafEditionId)
+  const manifest = await loadMushafManifest(riwayah, mushafEditionId)
   return manifest.verseToPage[`${surah}:${verse}`] ?? null
 }
 
-async function assertRenderableRiwayah(riwayah: Riwayah): Promise<void> {
-  const result = await getRiwayahPackResult(riwayah)
-  if (result.kind === 'usable') return
-  if (riwayah === DEFAULT_RIWAYAH) return
-  throw new MushafPackUnavailableError(riwayah)
+async function assertRenderableMushafAsset(riwayah: Riwayah, mushafEditionId: string): Promise<void> {
+  let asset = null
+  try {
+    asset = await getMushafAsset(riwayah, mushafEditionId)
+  } catch {
+    throw new MushafPackUnavailableError(riwayah, undefined, mushafEditionId)
+  }
+  if (!asset) throw new MushafPackUnavailableError(riwayah, undefined, mushafEditionId)
+  if (asset.shipped) return
+  if (!(await canUseMushafAsset(riwayah, mushafEditionId))) {
+    throw new MushafPackUnavailableError(riwayah, undefined, mushafEditionId)
+  }
 }

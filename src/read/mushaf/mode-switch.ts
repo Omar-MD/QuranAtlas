@@ -17,7 +17,7 @@ export async function mushafHrefForCurrentVerse(): Promise<string> {
   const verseNum = current?.verse ?? persisted?.verse
   if (!surahNum || !verseNum) return pageHref(1)
 
-  const active = await getMushafPackAvailability(settings.riwayah)
+  const active = await getMushafPackAvailability(settings.riwayah, settings.mushafEditionId)
   if (!active.available) {
     const loadedActiveSurah = reader.currentSurah?.riwayah === settings.riwayah
       && reader.currentSurah.sura_no === surahNum
@@ -29,7 +29,12 @@ export async function mushafHrefForCurrentVerse(): Promise<string> {
   }
 
   try {
-    const page = await pageForVerse({ riwayah: settings.riwayah, surah: surahNum, verse: verseNum })
+    const page = await pageForVerse({
+      riwayah: settings.riwayah,
+      mushafEditionId: settings.mushafEditionId,
+      surah: surahNum,
+      verse: verseNum,
+    })
     return pageHref(page ?? 1)
   } catch {
     return pageHref(1)
@@ -38,7 +43,7 @@ export async function mushafHrefForCurrentVerse(): Promise<string> {
 
 export async function verseHrefForMushafPage(page: number): Promise<string> {
   try {
-    const manifest = await loadMushafManifest(settings.riwayah)
+    const manifest = await loadMushafManifest(settings.riwayah, settings.mushafEditionId)
     return verseHref(firstVerseForPage(manifest, page))
   } catch {
     const fallback = settings.currentPosition

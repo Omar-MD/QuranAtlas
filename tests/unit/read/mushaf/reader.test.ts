@@ -66,12 +66,19 @@ function pad3(value: number): string {
 
 function makeResolvedPage(riwayah: string, page: number) {
   const safePage = Math.min(604, Math.max(1, page))
+  const mushafEditionId = riwayah === 'hafs'
+    ? 'hafs-quran-ws-v1'
+    : riwayah === 'warsh'
+      ? 'warsh-quran-ws-v1'
+      : 'qalun-quran-ws-v1'
   return {
+    riwayah,
+    mushafEditionId,
     page: safePage,
     pageCount: 604,
     riwayahLabel: riwayah === 'qaloon' ? 'Qālūn ʿan Nāfiʿ' : riwayah,
     assetPath: `pages/${pad3(safePage)}.svg`,
-    assetUrl: `/dataset/mushaf-pages/${riwayah}/pages/${pad3(safePage)}.svg`,
+    assetUrl: `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/pages/${pad3(safePage)}.svg`,
     viewBox: { minX: 0, minY: 0, width: 900, height: 1379.25 },
     viewBoxText: '0 0 900 1379.25',
     bytes: 1,
@@ -115,9 +122,10 @@ describe('MushafReader', () => {
     vi.stubGlobal('fetch', vi.fn(async () => responseText(pageSvg())))
 
     mushafMocks.resolveMushafPage.mockImplementation(async ({ riwayah, page }) => makeResolvedPage(riwayah, page))
-    mushafMocks.loadMushafManifest.mockImplementation(async (riwayah: string) => ({
+    mushafMocks.loadMushafManifest.mockImplementation(async (riwayah: string, mushafEditionId = 'qalun-quran-ws-v1') => ({
       version: 1,
       riwayah,
+      mushafEditionId,
       sourceSlug: riwayah === 'qaloon' ? 'qalun' : riwayah,
       pageCount: 604,
       attribution: { provider: 'quran.ws', sourceUrl: 'https://pdf.quran.ws/' },
@@ -140,6 +148,7 @@ describe('MushafReader', () => {
     const { settings } = await import('../../../../src/configure/state.svelte')
     const { reader } = await import('../../../../src/read/state.svelte')
     settings.riwayah = 'qaloon'
+    settings.mushafEditionId = 'qalun-quran-ws-v1'
     settings.currentPosition = { surah: 2, verse: 255 }
     settings.mushafViewMode = 'auto'
     reader.readerMode = 'verse'
@@ -180,6 +189,7 @@ describe('MushafReader', () => {
     })
 
     settings.riwayah = 'hafs'
+    settings.mushafEditionId = 'hafs-quran-ws-v1'
     emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: 'qaloon', to: 'hafs' })
 
     await waitFor(() => {
@@ -191,6 +201,7 @@ describe('MushafReader', () => {
     const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
     const { settings } = await import('../../../../src/configure/state.svelte')
     settings.riwayah = 'warsh'
+    settings.mushafEditionId = 'warsh-quran-ws-v1'
     mushafMocks.resolveMushafPage.mockRejectedValue(new mushafMocks.MushafPackUnavailableError('warsh'))
 
     render(MushafReader, { props: { page: '1' } })
@@ -199,7 +210,11 @@ describe('MushafReader', () => {
       expect(screen.getByText('warsh pages are not installed yet.')).toBeInTheDocument()
     })
     expect(screen.queryByRole('img')).toBeNull()
-    expect(mushafMocks.resolveMushafPage).toHaveBeenCalledWith({ riwayah: 'warsh', page: 1 })
+    expect(mushafMocks.resolveMushafPage).toHaveBeenCalledWith({
+      riwayah: 'warsh',
+      mushafEditionId: 'warsh-quran-ws-v1',
+      page: 1,
+    })
   })
 
   it('renders page 2 when navigating through the current router from page 1', async () => {

@@ -4,8 +4,10 @@
  */
 
 import { CACHE_DATASET } from '../core/constants'
-import { loadRiwayah, type Riwayah } from '../packs/riwayah'
-import { getRiwayahPackageEntry, isRiwayahUsable } from './riwayah-packages'
+import { settings } from '../configure/state.svelte'
+import type { Riwayah } from '../packs/riwayah'
+import { getTextAsset, canUseTextAsset } from '../packs/text-assets'
+import { getRiwayahPackageEntry } from './riwayah-packages'
 
 const DATASET_BASE = '/dataset'
 const FETCH_TIMEOUT_MS = 3000
@@ -136,6 +138,20 @@ export class RiwayahPackUnavailableError extends Error {
   }
 }
 
+async function assertRenderableTextAsset(riwayah: Riwayah, textStyleId: string): Promise<void> {
+  let asset = null
+  try {
+    asset = await getTextAsset(riwayah, textStyleId)
+  } catch {
+    throw new RiwayahPackUnavailableError(riwayah)
+  }
+  if (!asset) throw new RiwayahPackUnavailableError(riwayah)
+  if (asset.shipped) return
+  if (!(await canUseTextAsset(riwayah, textStyleId))) {
+    throw new RiwayahPackUnavailableError(riwayah)
+  }
+}
+
 /**
  * Network-first fetch with cache fallback.
  * Tries network with 3s timeout, then falls back to cache.
@@ -227,22 +243,11 @@ export async function getSurah(n: number): Promise<SurahPayload> {
   if (n < 1 || n > 114 || !Number.isInteger(n)) {
     throw new Error(`Invalid surah number: ${n}`)
   }
-  const riwayah = await loadRiwayah()
-  let usable = false
-  try {
-    usable = await isRiwayahUsable(riwayah)
-  } catch {
-    if (riwayah !== 'qaloon') {
-      throw new RiwayahPackUnavailableError(riwayah)
-    }
-    const availability = await getRiwayahTextAvailability(riwayah)
-    usable = availability.available
-  }
-  if (!usable) {
-    throw new RiwayahPackUnavailableError(riwayah)
-  }
+  const riwayah = settings.riwayah
+  const quranTextStyleId = settings.quranTextStyleId
+  await assertRenderableTextAsset(riwayah, quranTextStyleId)
   const padded = String(n).padStart(3, '0')
-  const url = `${DATASET_BASE}/riwayat/${riwayah}/${padded}.json`
+  const url = `${DATASET_BASE}/quran-text/${riwayah}/${quranTextStyleId}/${padded}.json`
   return fetchNetworkFirst(url) as Promise<SurahPayload>
 }
 

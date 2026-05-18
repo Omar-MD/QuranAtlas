@@ -2,7 +2,7 @@ import { cacheNameFor } from '../../infra/sw/route-defs'
 import { displayViewBoxForMushafPage, parseViewBox, viewBoxText as serializeViewBox } from './sizing'
 import type { InlineMushafSvg } from './types'
 
-const MUSHAF_PAGE_ASSET_RE = /^\/dataset\/mushaf-pages\/(hafs|warsh|qaloon)\/pages\/\d{3}\.svg$/
+const MUSHAF_PAGE_ASSET_RE = /^\/dataset\/mushaf-pages\/(hafs|warsh|qaloon)\/[a-z0-9]+(?:-[a-z0-9]+)*-v\d+\/pages\/\d{3}\.svg$/
 const URL_ATTRS = new Set([
   'clip-path',
   'mask',
