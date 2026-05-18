@@ -311,6 +311,8 @@ describe('data/offline.js', () => {
     riwayahPackageState.qaloon = null
     const { clearRiwayahPackageCacheForTests } = await import('../../../src/data/riwayah-packages.ts')
     clearRiwayahPackageCacheForTests()
+    const { clearSourceAssetIndexCacheForTests } = await import('../../../src/data/offline.js')
+    clearSourceAssetIndexCacheForTests()
     const { clearTextAssetIndexCacheForTests } = await import('../../../src/packs/text-assets.ts')
     const { clearMushafAssetIndexCacheForTests } = await import('../../../src/packs/mushaf-assets.ts')
     clearTextAssetIndexCacheForTests()
@@ -408,6 +410,14 @@ describe('data/offline.js', () => {
 
       expect(plan.urls).toEqual(['/dataset/tafsir/mukhtasar/001.json'])
       expect(plan.totalBytes).toBe(64)
+    })
+
+    it('reports source-specific optional pack status from cache verification', async () => {
+      const { getSourceAssetStatus, startSourceAssetDownload } = await import('../../../src/data/offline.js')
+
+      await expect(getSourceAssetStatus('translation', 'saheeh')).resolves.toBe('installable')
+      await expect(startSourceAssetDownload('translation', 'saheeh')).resolves.toBe(true)
+      await expect(getSourceAssetStatus('translation', 'saheeh')).resolves.toBe('installed')
     })
 
     it('plans page assets per riwayah from the manifest', async () => {
@@ -529,6 +539,19 @@ describe('data/offline.js', () => {
 
       expect(settings.riwayah).toBe('hafs')
       expect(settings.quranTextStyleId).toBe('uthmani-kfgqpc-v1')
+      expect(cache.delete).not.toHaveBeenCalled()
+    })
+
+    it('refuses to delete an active optional source asset without mutating cache or settings', async () => {
+      const { startSourceAssetDownload, removeSourceAssetDownload } = await import('../../../src/data/offline.js')
+      await startSourceAssetDownload('translation', 'saheeh')
+      const cache = cacheStores.get('quran-dataset-v2')
+      vi.clearAllMocks()
+      settings.translationId = 'saheeh'
+
+      await expect(removeSourceAssetDownload('translation', 'saheeh')).rejects.toThrow('Switch to another compatible asset before deleting.')
+
+      expect(settings.translationId).toBe('saheeh')
       expect(cache.delete).not.toHaveBeenCalled()
     })
 

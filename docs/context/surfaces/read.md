@@ -104,7 +104,7 @@ Mushaf navigation follows physical right-to-left page progression. Tapping the l
 
 Invalid or out-of-range page params resolve against the active manifest page count and canonicalize through `router.navigate(pageHref(clamped), { replace: true })`, so route events and `lastSurface` see the canonical `#/m/:page` hash. Changing `settings.riwayah` while mounted reloads the same page number against that riwayah's active Mushaf edition. Manifest validation rejects both riwayah mismatches and `mushafEditionId` mismatches before any page renders. Theme changes recolor the inline SVG through Mushaf tokens without refetching the page, including stale/raw quran.ws black and white paint values normalized at runtime; the Mushaf page ground resolves to the app surface in light, sepia, and dark. Runtime fetches stay under `/dataset/**`; quran.ws is build-time attribution/import input only.
 
-Missing active-riwayah page packs render an install prompt rather than loading Qalun pages under another selected label. The prompt names the active missing riwayah and offers package install, stay on the current usable riwayah, open Settings, retry, and Open Verse mode only when the active riwayah is verified usable for text. Stale Hafs/Warsh settings remain visible as the missing active choice until the user installs, retries, or switches; the page component must not render Qalun pages behind that label. SVG asset failures stay inside the page component as retry/open-verse states; no error state loads another riwayah page implicitly.
+Missing active-riwayah page packs render an install prompt rather than loading Qalun pages under another selected label. The prompt names the active missing riwayah and offers package install, stay on the current usable riwayah, Manage Assets (`#/assets`), retry, and Open Verse mode only when the active riwayah is verified usable for text. Stale Hafs/Warsh settings remain visible as the missing active choice until the user installs, retries, or switches; the page component must not render Qalun pages behind that label. SVG asset failures stay inside the page component as retry/open-verse states; no error state loads another riwayah page implicitly.
 
 ### Surah header
 
@@ -247,7 +247,7 @@ Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.js
 | `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:75`, `src/read/MarginHeader.svelte:195` |
 | `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:161` |
 | `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:100`, `src/read/MarginHeader.svelte:186` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:499`, `src/read/mushaf/MushafReader.svelte:369` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:499`, `src/read/mushaf/MushafReader.svelte:370` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants

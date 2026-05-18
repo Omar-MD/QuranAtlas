@@ -99,11 +99,9 @@ Mushaf Settings contains:
 - **Mushaf preview** — an unframed page-like preview, distinct from the Verse typography preview.
 - **Mushaf** — Active Riwayah and Mushaf Edition rows. Mushaf edition changes require a usable compatible Mushaf asset and preserve the active text style.
 
-The nested picker is a small dialog within the shell. It lists compatible rows for the active mode, marks the current row, and closes after a successful row choice. Esc closes the shell while no nested picker-specific key trap is active.
+The nested picker is a small dialog within the shell. It lists compatible rows for the active mode, marks the current row, focuses itself on open, and closes after a successful row choice. Esc closes the nested picker first; a second Esc closes the parent Settings shell and restores focus to the original opener.
 
-Switching riwayah via popover is gated by the variant-asset domain. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Active recitation state is the atomic bundle `settings.riwayah` + `settings.quranTextStyleId` + `settings.mushafEditionId`, written only by `src/configure/variant-bundle.ts`. A riwayah switch chooses that riwayah's default Quran text style and Mushaf edition, validates both assets are usable, then writes all three keys in one IDB transaction before mutating runes, applying DOM state, emitting `SETTINGS_RIWAYAH_CHANGED`, or broadcasting cross-tab. A rejected switch returns `false` and leaves all three active keys unchanged.
-
-The recitation picker exposes the package state on each row. Installed rows switch immediately. Installable rows show the package byte estimate and start the install flow instead of switching. Installing rows show cached/total progress and disable switching. Unavailable rows are disabled. Error rows offer retry. The current active row remains visibly active until the install verifies and `setRiwayah(requested)` succeeds. The same policy applies to other source rows: selection labels do not move early just because a pack is download-capable.
+Switching riwayah from Settings is gated by the variant-asset domain. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Active recitation state is the atomic bundle `settings.riwayah` + `settings.quranTextStyleId` + `settings.mushafEditionId`, written only by `src/configure/variant-bundle.ts`. A riwayah switch chooses that riwayah's default Quran text style and Mushaf edition, validates both assets are usable, then writes all three keys in one IDB transaction before mutating runes, applying DOM state, emitting `SETTINGS_RIWAYAH_CHANGED`, or broadcasting cross-tab. A rejected switch returns `false` and leaves all three active keys unchanged. Install, verify, retry, and delete states for optional assets live on the Asset Management route, not in the nested Settings picker.
 
 Package install progress lives outside `settings.riwayah`: `src/configure/state.svelte.ts::riwayahPackageState` holds runtime package status by riwayah, and `riwayahInstallIntent` records the requested optional package plus the previous usable riwayah. Failed installs clear the request or mark an error while preserving both `settings.riwayah` and `previousUsable`.
 
@@ -120,7 +118,7 @@ Desktop uses a two-pane operational layout: left section navigation, right group
 Actions:
 
 - Text and Mushaf rows install/delete via concrete variant asset helpers in `src/data/offline.ts`; Set Active writes through `setQuranTextStyleId` or `setMushafEditionId`.
-- Translation and tafsir rows install/delete via source asset helpers and set active through their settings writers.
+- Translation and tafsir rows derive install state from `indexes/source-assets.json` plus Cache Storage membership, install/delete via source asset helpers, and set active through their settings writers only after local verification.
 - Shipped rows never show Install. Active rows show Active and block Delete where deletion would remove the active optional asset.
 
 ### Pick a translation
@@ -129,11 +127,11 @@ Toggle translation-visibility switch → `settings.translationVisible` rune upda
 
 The shipped source index exposes four selectable English sources in this phase: Bridges (default baseline), Saheeh International, The Clear Quran, and M.A.S. Abdel Haleem. Only the default body is present in the baseline manifest; the others are same-origin opt-in dataset packs listed in `indexes/source-assets.json`.
 
-When a non-default translation is selected, Settings pre-flights storage, downloads its pack when Cache Storage is available, saves `settings.translationId`, and the mounted Reader switches to it immediately while staying on the same surah. If storage is insufficient or the pack cannot be fetched, the picker stays open and shows a compact error.
+When a non-default translation is installed and verified from Asset Management, Set Active saves `settings.translationId` and the mounted Reader switches to it immediately while staying on the same surah. If a selected translation body later cannot be fetched, Reader falls back to the default translation for that surah.
 
 ### Pick a tafsir source
 
-The Settings Sources section owns the saved tafsir preference under `settings.tafsirId`. The picker exposes al-Tafsir al-Muyassar (default baseline), al-Mukhtasar fi al-Tafsir, and Tafsir al-Sa'di from the runtime source index. Optional packs are not in the baseline manifest but are present as same-origin opt-in assets. Selecting one pre-flights storage and downloads the pack when Cache Storage is available. If a selected tafsir pack cannot be verified usable, Reader surfaces unavailable/install/switch state or explicitly switches to a verified baseline before baseline tafsir renders.
+The Settings Sources section owns the saved tafsir preference under `settings.tafsirId`. The picker exposes al-Tafsir al-Muyassar (default baseline), al-Mukhtasar fi al-Tafsir, and Tafsir al-Sa'di from the runtime source index. Optional packs are not in the baseline manifest but are present as same-origin opt-in assets. Asset Management installs and verifies optional tafsir packs before Set Active writes `settings.tafsirId`. If a selected tafsir pack cannot be verified usable, Reader surfaces unavailable/install/switch state or explicitly switches to a verified baseline before baseline tafsir renders.
 
 If an inline tafsir preview or the full tafsir sheet is already open, changing the saved tafsir source from Settings updates that active Reader study view in place.
 

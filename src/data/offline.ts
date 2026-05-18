@@ -29,7 +29,7 @@ import {
 import { settings, riwayahInstallIntent } from '../core/settings.svelte'
 import { getTextAsset } from '../packs/text-assets'
 import { getMushafAsset } from '../packs/mushaf-assets'
-import type { TextAsset, MushafAsset } from '../packs/asset-types'
+import type { AssetStatusKind, TextAsset, MushafAsset } from '../packs/asset-types'
 import {
   cacheNamesForRiwayahPackage,
   isRiwayahPackageFullyCached,
@@ -73,6 +73,10 @@ type SourceAssetsShape = {
 }
 
 let _sourceAssetsCache: SourceAssetsShape | null = null
+
+export function clearSourceAssetIndexCacheForTests(): void {
+  _sourceAssetsCache = null
+}
 
 async function fetchManifest(): Promise<ManifestShape> {
   if (_manifestCache) return _manifestCache
@@ -199,6 +203,21 @@ export async function getSourceAssetManifest(
     urls: group.files.map((file) => `/dataset/${file.path}`),
     totalBytes: group.totalBytes,
   }
+}
+
+export async function getSourceAssetStatus(
+  kind: SourceAssetKind,
+  id: string,
+): Promise<AssetStatusKind> {
+  const plan = await getSourceAssetManifest(kind, id)
+  if (plan.urls.length === 0) return 'unavailable'
+  let cached = 0
+  for (const url of plan.urls) {
+    if (await cacheHasUrl(url)) cached += 1
+  }
+  if (cached === plan.urls.length) return 'installed'
+  if (cached > 0) return 'incomplete'
+  return 'installable'
 }
 
 /** True if a category has at least one shipped asset in the current manifest. */
@@ -677,20 +696,28 @@ export async function startSourceAssetDownload(kind: SourceAssetKind, id: string
   if (plan.urls.length === 0) return false
   if (!(await hasStorageForBytes(plan.totalBytes))) return false
   if (typeof caches === 'undefined') return true
-  const cache = await caches.open(CACHE_DATASET)
   await Promise.all(plan.urls.map(async (url) => {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
-    await cache.put(url, response)
+    await cacheAssetUrl(url, response)
   }))
   return true
+}
+
+async function assertCanRemoveSourceAsset(kind: SourceAssetKind, id: string): Promise<void> {
+  if (kind === 'translation' && settings.translationId === id) {
+    throw new Error(ACTIVE_DELETE_DISABLED_REASON)
+  }
+  if (kind === 'tafsir' && settings.tafsirId === id) {
+    throw new Error(ACTIVE_DELETE_DISABLED_REASON)
+  }
 }
 
 export async function removeSourceAssetDownload(kind: SourceAssetKind, id: string): Promise<void> {
   const plan = await getSourceAssetManifest(kind, id)
   if (plan.urls.length === 0 || typeof caches === 'undefined') return
-  const cache = await caches.open(CACHE_DATASET)
-  await Promise.all(plan.urls.map((url) => cache.delete(url)))
+  await assertCanRemoveSourceAsset(kind, id)
+  await Promise.all(plan.urls.map((url) => deleteAssetUrl(url)))
 }
 
 /**

@@ -7,6 +7,7 @@
     removeMushafAsset,
     removeSourceAssetDownload,
     removeTextAsset,
+    getSourceAssetStatus,
     startSourceAssetDownload,
   } from '../../data/offline'
   import { loadMushafAssetIndex, getMushafAssetStatus } from '../../packs/mushaf-assets'
@@ -20,7 +21,7 @@
   import { assetRowView, type AssetRowGroup, type AssetRowView } from './asset-view-model'
 
   interface Props {
-    historyCanGoBack?: boolean
+    historyCanGoBack?: boolean | null
   }
 
   type RowKind = 'text' | 'mushaf' | 'translation' | 'tafsir'
@@ -37,12 +38,17 @@
     rows: RouteRow[]
   }
 
-  const { historyCanGoBack = typeof history !== 'undefined' && history.length > 1 }: Props = $props()
+  const { historyCanGoBack = null }: Props = $props()
 
   let heading: HTMLHeadingElement | null = $state(null)
   let sections = $state<Section[]>([])
   let loading = $state(true)
   let statusMessage = $state('Checking local asset state.')
+  const canGoBack = $derived.by(() => {
+    if (typeof historyCanGoBack === 'boolean') return historyCanGoBack
+    if (typeof sessionStorage === 'undefined') return false
+    return sessionStorage.getItem('qa-assets-can-go-back') === '1'
+  })
 
   function fmtBytes(bytes: number | undefined): string {
     if (!bytes || bytes <= 0) return 'Size pending'
@@ -100,12 +106,12 @@
       riwayah: asset.riwayah,
     })))
 
-    const translationRows = translations.map((translation): RouteRow => ({
+    const translationRows = await Promise.all(translations.map(async (translation): Promise<RouteRow> => ({
       ...assetRowView({
         id: translation.id,
         group: 'translation',
         label: translation.name,
-        status: translation.availableInManifest ? 'shipped' : 'installable',
+        status: translation.availableInManifest ? 'shipped' : await getSourceAssetStatus('translation', translation.id),
         active: settings.translationId === translation.id,
         compatible: true,
         shipped: translation.availableInManifest === true,
@@ -113,14 +119,14 @@
       kind: 'translation',
       meta: translation.subtitle ?? 'English translation',
       sizeText: translation.availableInManifest ? 'Included' : 'Optional pack',
-    }))
+    })))
 
-    const tafsirRows = tafsirs.map((tafsir): RouteRow => ({
+    const tafsirRows = await Promise.all(tafsirs.map(async (tafsir): Promise<RouteRow> => ({
       ...assetRowView({
         id: tafsir.id,
         group: 'tafsir',
         label: tafsir.name,
-        status: tafsir.availableInManifest ? 'shipped' : 'installable',
+        status: tafsir.availableInManifest ? 'shipped' : await getSourceAssetStatus('tafsir', tafsir.id),
         active: settings.tafsirId === tafsir.id,
         compatible: true,
         shipped: tafsir.availableInManifest === true,
@@ -128,7 +134,7 @@
       kind: 'tafsir',
       meta: 'Tafsir source',
       sizeText: tafsir.availableInManifest ? 'Included' : 'Optional pack',
-    }))
+    })))
 
     return [
       { id: 'quran-text', title: 'Quran Text Styles', rows: textRows },
@@ -186,6 +192,7 @@
   }
 
   onMount(() => {
+    try { sessionStorage.removeItem('qa-assets-can-go-back') } catch { /* ignore */ }
     void refreshRows('Asset state ready.')
     void tick().then(() => heading?.focus())
   })
@@ -197,10 +204,10 @@
 
 <main class="qa-assets-page" aria-labelledby="qa-assets-title">
   <header class="qa-assets-header">
-    {#if historyCanGoBack}
-      <button type="button" class="qa-assets-back" onclick={goBack}>Back</button>
+    {#if canGoBack}
+      <button type="button" class="qa-assets-back" data-testid="assets-back" onclick={goBack}>Back</button>
     {:else}
-      <a class="qa-assets-back" href="#/s/1">Back to Reader</a>
+      <a class="qa-assets-back" data-testid="assets-back" href="#/s/1">Back to Reader</a>
     {/if}
     <div>
       <h1 id="qa-assets-title" class="qa-assets-title" bind:this={heading} tabindex="-1">Asset Management</h1>

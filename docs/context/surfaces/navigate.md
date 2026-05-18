@@ -96,6 +96,8 @@ Pulse animation (`bookmarks/pulse.ts`) — landing-flash on jumped-to verse fire
 
 Press `?` → bottom sheet slides up titled "Keyboard shortcuts". Lists every active binding grouped into Universal, Go to, and Reader sections, plus gesture rows. Backdrop tap, `×`, Esc → close. No persistence.
 
+The retired command/search sheet has no drawer, dock, keyboard, or boot mount entry. Navigation search lives in the Surah/Juz drawer controls; global keyboard help is the shortcuts sheet only.
+
 ### Global keyboard reference
 
 Full in-app reference is the `?` cheatsheet. Summary:

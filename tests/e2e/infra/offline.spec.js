@@ -15,31 +15,10 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { readFileSync } from 'node:fs'
-import { clearAllData, markOnboardingComplete, readSetting } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, readSetting, writeSetting } from '../fixtures/idb.js'
 import { waitForReader } from '../fixtures/chrome.js'
 
 const DATASET_CACHE = 'quran-dataset-v2'
-const HAFS_SURAH_1 = (() => {
-  const rows = JSON.parse(readFileSync(new URL('../../../data/normalized/quran/riwayat/hafs.json', import.meta.url), 'utf8'))
-    .filter((row) => row.sora === 1)
-  return {
-    riwayah: 'hafs',
-    version: 'test',
-    sura_no: 1,
-    sura_name_ar: 'الفاتحة',
-    sura_name_en: 'Al-Fatihah',
-    ayat: rows.map((row) => ({
-      id: row.id,
-      jozz: row.jozz,
-      page: String(row.page),
-      line_start: row.line_start,
-      line_end: row.line_end,
-      aya_no: row.aya_no,
-      aya_text: row.aya_text,
-    })),
-  }
-})()
 
 // Rule 6.2 carve-out: SW lifecycle exercises cross-store cache invariants and
 // must boot from a fully fresh state.  Opt OUT of the onboarded storageState
@@ -115,12 +94,6 @@ async function waitForServiceWorker(page) {
   }).toPass({ timeout: 15_000 })
 }
 
-async function clickStorageApply(page) {
-  const apply = page.getByTestId('storage-apply')
-  await expect(apply).toBeEnabled()
-  await apply.click()
-}
-
 async function useSingleMushafPageDownloadPlan(page, pageNumber = 42) {
   const padded = String(pageNumber).padStart(3, '0')
 
@@ -141,8 +114,8 @@ async function useSingleMushafPageDownloadPlan(page, pageNumber = 42) {
 
       const manifest = await response.clone().json()
       const keep = new Set([
-        'mushaf-pages/qaloon/manifest.json',
-        `mushaf-pages/qaloon/pages/${paddedPage}.svg`,
+        'mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+        `mushaf-pages/qaloon/qalun-quran-ws-v1/pages/${paddedPage}.svg`,
       ])
       const files = manifest.files.filter((file) => file.lane !== 'pages' || keep.has(file.path))
       const pageFiles = files.filter((file) => file.lane === 'pages')
@@ -171,15 +144,8 @@ async function useSingleMushafPageDownloadPlan(page, pageNumber = 42) {
   }, { paddedPage: padded })
 }
 
-async function waitForQalunPageOptIn(page, expected) {
-  await expect(async () => {
-    const value = await readSetting(page, 'offlineCategories')
-    expect(value?.pages?.qaloon === true).toBe(expected)
-  }).toPass({ timeout: 10_000 })
-}
-
 async function waitForCachedQalunPage(page, pageNumber) {
-  const pagePath = `/dataset/mushaf-pages/qaloon/pages/${String(pageNumber).padStart(3, '0')}.svg`
+  const pagePath = `/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/${String(pageNumber).padStart(3, '0')}.svg`
   await expect(async () => {
     const cached = await page.evaluate(async (path) => {
       if (!('caches' in window)) return false
@@ -223,88 +189,24 @@ async function clearQalunPageCaches(page) {
   })
 }
 
-async function useTinyHafsPackage(page) {
-  await page.route('**/dataset/indexes/riwayah-packages.json', async (route) => {
-    await route.fulfill({
-      contentType: 'application/json',
-      body: JSON.stringify({
-        version: 1,
-        defaultRiwayah: 'qaloon',
-        packages: [
-          {
-            riwayah: 'hafs',
-            optional: true,
-            available: true,
-            text: { urls: ['/dataset/riwayat/hafs/001.json'], totalBytes: 128, available: true },
-            pages: {
-              manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
-              urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
-              totalBytes: 256,
-              available: true,
-            },
-            totalBytes: 384,
-          },
-          {
-            riwayah: 'warsh',
-            optional: true,
-            available: false,
-            text: { urls: [], totalBytes: 0, available: false },
-            pages: { manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json', urls: [], totalBytes: 0, available: false },
-            totalBytes: 0,
-          },
-          {
-            riwayah: 'qaloon',
-            optional: false,
-            available: true,
-            text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 128, available: true },
-            pages: {
-              manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
-              urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
-              totalBytes: 256,
-              available: true,
-            },
-            totalBytes: 384,
-          },
-        ],
-      }),
-    })
-  })
-  await page.route('**/dataset/riwayat/hafs/001.json', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify(HAFS_SURAH_1),
-  }))
-  await page.route('**/dataset/mushaf-pages/hafs/manifest.json', route => route.fulfill({
-    contentType: 'application/json',
-    body: JSON.stringify({
-      version: 1,
-      riwayah: 'hafs',
-      sourceSlug: 'hafs',
-      pageCount: 1,
-      attribution: { provider: 'quran.ws', sourceUrl: 'https://pdf.quran.ws/pdfs/hafs/page/quran-hafs-page-1.pdf' },
-      verseToPage: { '1:1': 1 },
-      pages: [{
-        page: 1,
-        assetPath: 'pages/001.svg',
-        viewBox: '0 0 10 10',
-        bytes: 64,
-        sourcePdfUrl: 'https://pdf.quran.ws/pdfs/hafs/page/quran-hafs-page-1.pdf',
-        firstVerse: { surah: 1, verse: 1 },
-      }],
-    }),
-  }))
-  await page.route('**/dataset/mushaf-pages/hafs/pages/001.svg', route => route.fulfill({
-    contentType: 'image/svg+xml',
-    body: '<svg viewBox="0 0 10 10"><path d="M1 1h8v8H1z" fill="var(--qa-mushaf-ink)"/></svg>',
-  }))
+async function cacheDatasetPath(page, path, body = '{}') {
+  await page.evaluate(async ({ cacheName, path: datasetPath, bodyText }) => {
+    if (!('caches' in window)) return
+    const cache = await caches.open(cacheName)
+    const absolute = new URL(datasetPath, location.origin).href
+    const response = new Response(bodyText, { headers: { 'content-type': 'application/json' } })
+    await cache.put(datasetPath, response.clone())
+    await cache.put(absolute, response.clone())
+  }, { cacheName: DATASET_CACHE, path, bodyText: body })
 }
 
 test.describe('Journey H: Offline resilience', () => {
   // -------------------------------------------------------------------------
-  // H1. Reload offline — reader and command sheet load from cache
+  // H1. Reload offline — reader and shortcuts sheet load from cache
   // @offline — only runs in the "Offline (Preview)" project
   // -------------------------------------------------------------------------
 
-  test('H1: reload offline serves reader + command sheet from cache @offline', async ({ page, context }) => {
+  test('H1: reload offline serves reader + shortcuts sheet from cache @offline', async ({ page, context }) => {
     // Step 1: load the app online — lets SW register and cache the shell
     await page.goto('/')
     await clearAllData(page)
@@ -326,7 +228,7 @@ test.describe('Journey H: Offline resilience', () => {
     await waitForCachedDatasetUrls(page, [
       '/dataset/manifest.json',
       '/dataset/surahs.json',
-      '/dataset/riwayat/qaloon/001.json',
+      '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json',
       '/dataset/translations/bridges/001.json',
       '/dataset/translations/_verse-aliases.json',
       '/dataset/knowledge/ayah/001.json',
@@ -371,7 +273,7 @@ test.describe('Journey H: Offline resilience', () => {
   // initOfflineMigration + initOfflineCategories into the real app shell.
   // -------------------------------------------------------------------------
 
-  test('H2: Storage selector opts into text category and persists across reload @offline', async ({ page }) => {
+  test('H2: asset route renders under the production service worker @offline', async ({ page }) => {
     await page.goto('/')
     await clearAllData(page)
     await markOnboardingComplete(page)
@@ -379,63 +281,14 @@ test.describe('Journey H: Offline resilience', () => {
     await waitForReader(page)
     await waitForServiceWorker(page)
 
-    // Open Settings via direct route (desktop @offline viewport).
-    await page.goto('/#/settings')
-
-    // Storage section is present (collapsed by default — expand it first).
-    const storageSection = page.locator('[data-testid="storage-section"]')
-    await expect(storageSection).toBeVisible({ timeout: 5_000 })
-    const storageToggle = page.locator('[data-testid="storage-toggle"]')
-    await storageToggle.click()
-
-    // Text row is now visible (manifest entries exist for the text category).
-    const textRow = page.locator('[data-testid="storage-row-text"]')
-    await expect(textRow).toBeVisible()
-    await expect(textRow).toContainText('Qalun')
-    await expect(page.locator('[data-testid="storage-row-audio"]')).toHaveCount(0)
-
-    // Check the text checkbox (single collapsible — no per-row <summary>).
-    const textCheck = page.locator('[data-testid="storage-check-text"]')
-    await expect(textCheck).toBeVisible()
-    await textCheck.check()
-
-    // Apply commits the selection.
-    const apply = page.locator('[data-testid="storage-apply"]')
-    await expect(apply).toBeEnabled()
-    await apply.click()
-    // handleApply is async: busy=true → 'Saving…'; busy=false + saved=true → 'Saved ✓'.
-    // Wait for both transitions so the IDB write + SW post complete before reload.
-    await expect(apply).toHaveText('Saving…', { timeout: 2_000 })
-    await expect(apply).toHaveText('Saved ✓', { timeout: 10_000 })
-
-    // After Apply, the selector persists the new state. Reload + re-mount
-    // the rune from IDB to prove the boot path wires it.
-    await page.reload()
-    await waitForReader(page)
-    await page.goto('/#/settings')
-
-    const persisted = await page.evaluate(async () => {
-      const db = await new Promise((resolve, reject) => {
-        const req = indexedDB.open('quran-atlas')
-        req.onsuccess = () => resolve(req.result)
-        req.onerror = () => reject(req.error)
-      })
-      return await new Promise((resolve, reject) => {
-        const tx = db.transaction('settings', 'readonly')
-        const r = tx.objectStore('settings').get('offlineCategories')
-        r.onsuccess = () => resolve(r.result?.value ?? null)
-        r.onerror = () => reject(r.error)
-      })
-    })
-
-    expect(persisted).toBeTruthy()
-    expect(persisted.text).toBeDefined()
-    expect(persisted.text.riwayat.qaloon).toBe(true)
-    expect(persisted.text.translations.bridges).toBe(true)
-    expect(persisted.text.tafsir.muyassar).toBe(true)
+    await page.goto('/#/assets')
+    await expect(page.getByRole('heading', { name: 'Asset Management' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('status')).toContainText('Asset state ready.')
+    await expect(page.getByRole('table', { name: 'Quran Text Styles' })).toBeVisible()
+    await expect(page.getByRole('table', { name: 'Mushaf Editions' })).toBeVisible()
   })
 
-  test('H3: Storage selector caches Qalun pages for offline Mushaf reload @offline', async ({ page, context }) => {
+  test('H3: cached Qalun page survives offline Mushaf reload @offline', async ({ page, context }) => {
     test.setTimeout(60_000)
 
     await useSingleMushafPageDownloadPlan(page, 42)
@@ -447,25 +300,9 @@ test.describe('Journey H: Offline resilience', () => {
     await waitForServiceWorker(page)
     await clearQalunPageCaches(page)
 
-    await page.goto('/#/settings')
-    const storageSection = page.locator('[data-testid="storage-section"]')
-    await expect(storageSection).toBeVisible({ timeout: 5_000 })
-    await page.locator('[data-testid="storage-toggle"]').click()
-
-    const pageCheck = page.getByTestId('storage-page-check-qaloon')
-    await expect(pageCheck).toBeVisible({ timeout: 10_000 })
-    if (await pageCheck.isChecked()) {
-      await pageCheck.uncheck()
-      await clickStorageApply(page)
-      await waitForQalunPageOptIn(page, false)
-    }
-    await pageCheck.check()
-    await clickStorageApply(page)
-    await waitForQalunPageOptIn(page, true)
-    await waitForCachedQalunPage(page, 42)
-
     await page.goto('/#/m/42')
     await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
+    await waitForCachedQalunPage(page, 42)
 
     await context.setOffline(true)
     try {
@@ -476,34 +313,33 @@ test.describe('Journey H: Offline resilience', () => {
     }
   })
 
-  test('H4: riwayah package install caches Hafs text and pages @offline', async ({ page }) => {
-    await useTinyHafsPackage(page)
+  test('H4: asset route verifies optional source packs before activation and blocks active delete @offline', async ({ page }) => {
+    test.setTimeout(60_000)
+
     await page.goto('/')
     await clearAllData(page)
     await markOnboardingComplete(page)
+    await writeSetting(page, 'translationId', 'bridges')
     await page.goto('/#/s/1')
     await waitForReader(page)
     await waitForServiceWorker(page)
 
-    await page.goto('/#/settings')
-    await expect(page.getByTestId('storage-section')).toBeVisible({ timeout: 5_000 })
-    await page.getByTestId('storage-toggle').click()
+    await cacheDatasetPath(page, '/dataset/translations/saheeh/001.json', '{"translationId":"saheeh","surahNo":1,"verses":[]}')
+    await page.goto('/#/assets')
 
-    const hafsPackage = page.getByTestId('storage-package-hafs')
-    await expect(hafsPackage).toBeVisible({ timeout: 10_000 })
-    await expect(hafsPackage).toContainText(/Install/)
-    await page.getByTestId('storage-package-install-hafs').click()
+    const row = page.locator('.qa-asset-row').filter({ hasText: 'Saheeh International' })
+    await expect(row).toBeVisible({ timeout: 10_000 })
+    await expect(row.locator('.qa-asset-status-chip')).toHaveText('incomplete')
+    await expect(row.getByRole('button', { name: /Reinstall Saheeh International/ })).toBeVisible()
 
-    await expect(page.getByTestId('storage-package-remove-hafs')).toBeVisible({ timeout: 10_000 })
-    await expect.poll(() => readSetting(page, 'riwayah')).toBe('hafs')
-    await expect.poll(async () => page.evaluate(async () => {
-      const cache = await caches.open('qa-pages-hafs-v1')
-      return (await cache.keys()).map((request) => request.url).sort()
-    })).toEqual(expect.arrayContaining([
-      expect.stringContaining('/dataset/mushaf-pages/hafs/manifest.json'),
-      expect.stringContaining('/dataset/mushaf-pages/hafs/pages/001.svg'),
-    ]))
-    await page.keyboard.press('Escape')
-    await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))).toBe('hafs')
+    await row.getByRole('button', { name: /Reinstall Saheeh International/ }).click()
+    await expect(row.getByRole('button', { name: /Set Active Saheeh International/ })).toBeVisible({ timeout: 20_000 })
+    await expect.poll(() => readSetting(page, 'translationId')).toBe('bridges')
+
+    await row.getByRole('button', { name: /Set Active Saheeh International/ }).click()
+    await expect(row.getByRole('button', { name: /Active Saheeh International/ })).toBeDisabled({ timeout: 10_000 })
+    await expect.poll(() => readSetting(page, 'translationId')).toBe('saheeh')
+    await expect(row.getByText('Switch to another compatible asset before deleting.')).toBeVisible()
+    await expect(row.getByRole('button', { name: 'Delete' })).toBeDisabled()
   })
 })

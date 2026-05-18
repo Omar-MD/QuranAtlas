@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount, tick } from 'svelte'
+
   interface PickerRow {
     id: string
     label: string
@@ -15,9 +17,29 @@
   }
 
   const { title, rows = [], close, choose }: Props = $props()
+  let root: HTMLDivElement | null = $state(null)
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Escape') return
+    event.preventDefault()
+    event.stopPropagation()
+    close()
+  }
+
+  onMount(() => {
+    void tick().then(() => root?.focus())
+  })
 </script>
 
-<div class="qa-settings-picker" role="dialog" aria-modal="true" aria-label={title}>
+<div
+  class="qa-settings-picker"
+  role="dialog"
+  aria-modal="true"
+  aria-label={title}
+  tabindex="-1"
+  bind:this={root}
+  onkeydown={handleKeydown}
+>
   <header class="qa-settings-picker-head">
     <h3>{title}</h3>
     <button type="button" aria-label="Close picker" onclick={close}>x</button>

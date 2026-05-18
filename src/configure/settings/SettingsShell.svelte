@@ -14,6 +14,7 @@
 
   function goAssets(): void {
     close({ restoreFocus: false })
+    try { sessionStorage.setItem('qa-assets-can-go-back', '1') } catch { /* ignore */ }
     window.location.hash = '#/assets'
   }
 </script>

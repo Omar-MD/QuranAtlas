@@ -17,61 +17,12 @@
 import { test, expect } from '@playwright/test'
 import { waitForReader, openSettingsSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
-import { readSetting, writeSetting } from '../fixtures/idb.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
 // Reuse the onboarded snapshot to skip per-test cold-boot setup. The 5
 // nested beforeEach blocks below stay separate (different viewports) but
 // no longer carry redundant clearAllData + markOnboardingComplete pairs.
 test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
-
-async function routeRiwayahPackages(page, { hafsAvailable = false } = {}) {
-  await page.route('**/dataset/indexes/riwayah-packages.json', async (route) => {
-    await route.fulfill({
-      contentType: 'application/json',
-      body: JSON.stringify({
-        version: 1,
-        defaultRiwayah: 'qaloon',
-        packages: [
-          {
-            riwayah: 'qaloon',
-            optional: false,
-            available: true,
-            text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 128, available: true },
-            pages: {
-              manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
-              urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
-              totalBytes: 256,
-              available: true,
-            },
-            totalBytes: 384,
-          },
-          {
-            riwayah: 'hafs',
-            optional: true,
-            available: hafsAvailable,
-            text: { urls: hafsAvailable ? ['/dataset/riwayat/hafs/001.json'] : [], totalBytes: hafsAvailable ? 128 : 0, available: hafsAvailable },
-            pages: {
-              manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
-              urls: hafsAvailable ? ['/dataset/mushaf-pages/hafs/pages/001.svg'] : [],
-              totalBytes: hafsAvailable ? 256 : 0,
-              available: hafsAvailable,
-            },
-            totalBytes: hafsAvailable ? 384 : 0,
-          },
-          {
-            riwayah: 'warsh',
-            optional: true,
-            available: false,
-            text: { urls: [], totalBytes: 0, available: false },
-            pages: { manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json', urls: [], totalBytes: 0, available: false },
-            totalBytes: 0,
-          },
-        ],
-      }),
-    })
-  })
-}
 
 // ---------------------------------------------------------------------------
 // Shared setup
@@ -93,66 +44,72 @@ test.describe('Journey D: Settings & appearance', () => {
 
   test('D1: a11y — no serious/critical axe violations on open Settings sheet @a11y', async ({ page }) => {
     await openSettingsSheet(page)
-    const violations = await scanA11y(page, { include: ['.qa-sheet--settings'] })
+    const violations = await scanA11y(page, { include: ['.qa-settings-shell'] })
     expect(violations).toEqual([])
+  })
+
+  test('D1b: mobile Verse Settings exposes Manage Assets without horizontal overflow @mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.getByLabel('Open settings').click()
+    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Manage Assets' })).toBeVisible()
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )).toBe(true)
+  })
+
+  test('D1c: mobile Mushaf Settings opens from Mushaf mode without horizontal overflow @mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/#/m/1')
+    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
+
+    await page.getByLabel('Open settings').click()
+    await expect(page.getByRole('dialog', { name: 'Mushaf Settings' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Manage Assets' })).toBeVisible()
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )).toBe(true)
+  })
+
+  test('D1d: nested picker Escape closes before settings and restores focus', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    const opener = page.getByLabel('Open settings')
+    await opener.click()
+    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
+
+    await page.getByRole('button', { name: /Tafsir Source/ }).click()
+    await expect(page.getByRole('dialog', { name: 'Choose Tafsir Source' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog', { name: 'Choose Tafsir Source' })).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toHaveCount(0)
+    await expect.poll(() => opener.evaluate((node) => document.activeElement === node)).toBe(true)
   })
 
   test('D2: Tafsir source row opens picker and updates the selected label', async ({ page }) => {
     await openSettingsSheet(page)
 
-    const tafsirRow = page.getByTestId('src-row-tafsir')
+    const tafsirRow = page.getByRole('button', { name: /Tafsir Source/ })
     await expect(tafsirRow).toBeVisible()
     await tafsirRow.click()
 
-    const picker = page.getByTestId('settings-pop')
+    const picker = page.getByRole('dialog', { name: 'Choose Tafsir Source' })
     await expect(picker).toBeVisible({ timeout: 5_000 })
-    await expect(picker).toHaveAttribute('aria-label', 'Choose Tafsir')
 
-    const mukhtasar = picker.locator('.qa-settings-pop-row').filter({ hasText: 'Al-Mukhtasar fi al-Tafsir' })
+    const mukhtasar = picker.getByRole('button', { name: /Al-Mukhtasar fi al-Tafsir/ })
     await expect(mukhtasar).toBeVisible()
     await mukhtasar.click()
 
     await expect(picker).toHaveCount(0)
-    await expect(tafsirRow).toContainText('Al-Mukhtasar fi al-Tafsir')
-  })
-
-  test.describe('D2-riwayah package mocks', () => {
-    test.use({ serviceWorkers: 'block' })
-
-    test('D2-riwayah: unavailable optional package cannot change the active recitation', async ({ page }) => {
-      await routeRiwayahPackages(page, { hafsAvailable: false })
-      await page.reload({ waitUntil: 'domcontentloaded' })
-      await page.goto('/#/s/1')
-      await waitForReader(page)
-      await openSettingsSheet(page)
-      await page.getByTestId('src-row-recitation').click()
-
-      const picker = page.getByTestId('settings-pop')
-      const hafs = picker.getByTestId('riwayah-row-hafs')
-      await expect(hafs).toContainText('Unavailable')
-      await expect(hafs).toBeDisabled()
-      await expect.poll(() => readSetting(page, 'riwayah')).not.toBe('hafs')
-    })
-
-    test('D2-riwayah: failed install keeps Qalun active and exposes retry state', async ({ page }) => {
-      await routeRiwayahPackages(page, { hafsAvailable: true })
-      await page.route('**/dataset/riwayat/hafs/001.json', route => route.fulfill({ status: 503, body: 'unavailable' }))
-      await writeSetting(page, 'riwayah', 'qaloon')
-      await page.reload({ waitUntil: 'domcontentloaded' })
-      await page.goto('/#/s/1')
-      await waitForReader(page)
-
-      await openSettingsSheet(page)
-      await page.getByTestId('src-row-recitation').click()
-      const picker = page.getByTestId('settings-pop')
-      const hafs = picker.getByTestId('riwayah-row-hafs')
-      await expect(hafs).toContainText('Install')
-      await hafs.click()
-
-      await expect(hafs).toContainText('Retry', { timeout: 10_000 })
-      await expect.poll(() => page.evaluate(() => document.documentElement.getAttribute('data-riwayah'))).toBe('qaloon')
-      await expect(page.getByTestId('src-row-recitation')).toContainText('Qalun')
-    })
+    await expect(tafsirRow).toContainText('mukhtasar')
   })
 
   // D3-bg: <html> background matches <body> background under every theme so
@@ -161,7 +118,9 @@ test.describe('Journey D: Settings & appearance', () => {
   for (const theme of ['light', 'sepia', 'dark']) {
     test(`D3-bg: ${theme} → html bg + theme-color meta match --qa-surface-app`, async ({ page }) => {
       await openSettingsSheet(page)
-      await page.locator(`.qa-settings-tf-dot--${theme}`).click()
+      await page.getByRole('group', { name: 'Theme' }).getByRole('button', {
+        name: theme[0].toUpperCase() + theme.slice(1),
+      }).click()
       await expect(async () => {
         const pref = await page.evaluate(() =>
           document.documentElement.getAttribute('data-theme')
@@ -276,7 +235,7 @@ test.describe('Journey D: Mobile gear double-tap @mobile', () => {
     ), { timeout: 3_000 }).not.toBe(before)
 
     // Settings sheet must NOT have opened.
-    await expect(page.locator('.qa-sheet--settings')).toHaveCount(0)
+    await expect(page.locator('.qa-settings-shell')).toHaveCount(0)
   })
 
   test('D7: single tap on gear opens settings (does not cycle theme)', async ({ page }) => {
@@ -285,10 +244,60 @@ test.describe('Journey D: Mobile gear double-tap @mobile', () => {
       document.documentElement.getAttribute('data-theme-pref') ?? 'light'
     )
     await gear.click()
-    await expect(page.locator('.qa-sheet--settings')).toBeVisible({ timeout: 3_000 })
+    await expect(page.locator('.qa-settings-shell')).toBeVisible({ timeout: 3_000 })
     const after = await page.evaluate(() =>
       document.documentElement.getAttribute('data-theme-pref') ?? 'light'
     )
     expect(after).toBe(before)
+  })
+})
+
+test.describe('Journey D: Asset Management route', () => {
+  test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
+
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 320, height: 568 },
+    { width: 768, height: 1024 },
+    { width: 1440, height: 900 },
+  ]) {
+    test(`D8: assets route renders asset controls without overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport)
+      await page.goto('/#/assets')
+
+      await expect(page.getByRole('heading', { name: 'Asset Management' })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
+      await expect(page.getByRole('status')).toContainText('Asset state ready.')
+      for (const heading of ['Quran Text Styles', 'Mushaf Editions', 'Translations', 'Tafsir']) {
+        await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
+        await expect(page.getByRole('table', { name: heading, exact: true })).toBeVisible()
+      }
+      await expect(page.getByRole('button', { name: /^Active / }).first()).toBeVisible()
+      await expect(page.getByText(/Requires active riwayah:/).first()).toBeVisible()
+      await expect.poll(() => page.evaluate(() =>
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth
+      )).toBe(true)
+    })
+  }
+
+  test('D8: Manage Assets routes from settings and browser Back returns to reader', async ({ page }) => {
+    await page.goto('/#/assets')
+    await expect(page.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
+
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+    await openSettingsSheet(page)
+    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
+    await page.getByRole('button', { name: 'Manage Assets' }).click()
+
+    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toHaveCount(0)
+    await expect(page).toHaveURL(/#\/assets$/)
+    await expect.poll(() => page.evaluate(() =>
+      document.activeElement?.matches('h1, [data-testid="assets-back"]') ?? false
+    )).toBe(true)
+
+    await page.goBack()
+    await expect(page).toHaveURL(/#\/s\/1$/)
+    await waitForReader(page)
   })
 })

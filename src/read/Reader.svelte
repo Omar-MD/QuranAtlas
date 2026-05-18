@@ -697,6 +697,7 @@
   }
 
   function openInstallPrompt() {
+    try { sessionStorage.setItem('qa-assets-can-go-back', '1') } catch { /* ignore */ }
     navigate('#/assets')
   }
 </script>
