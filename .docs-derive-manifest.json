@@ -2,7 +2,7 @@
   "_comment": "SHA-256 hashes of AUTO-GENERATED fence blocks. Maintained by scripts/docs/derive.mjs. Do not hand-edit.",
   "version": 1,
   "blocks": {
-    "docs/context/surfaces/configure.md:inventory": "a0fc2290cb5558d06dcdbf5f2934d2b944a7771c106c49f0b7d5d73d4bebdf67",
+    "docs/context/surfaces/configure.md:inventory": "dd65fd30f89b69d5d91520a04bb6af75deca1aa0b14091729dba2815abd91639",
     "docs/context/surfaces/infra.md:inventory": "5f27f59e23f438df1658c581255f2b1cb117f35dafad760e7daaecbf339a165b",
     "docs/context/surfaces/listen.md:inventory": "05a50c16041c0582a80129764f9e43fdf7bb9b37c526a1083d8110b94faf27c9",
     "docs/context/surfaces/mark.md:inventory": "05a50c16041c0582a80129764f9e43fdf7bb9b37c526a1083d8110b94faf27c9",
@@ -47,8 +47,8 @@
     "docs/context/surfaces/navigate.md:events-listen": "34168907454291f5db8a400ee1e64cf10c6e35f5e2892862ebbac058fd413d85",
     "docs/context/surfaces/onboard.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/onboard.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
-    "docs/context/surfaces/read.md:events-emit": "19c558ef034e6e5682baab5e6b76c4b96afe7e63c25dc3f7cb3ffb87102fd966",
-    "docs/context/surfaces/read.md:events-listen": "59b8e4dfc6c2a92082e2ff9fc780529eac5ecad9e794177e2aab101da88a4983",
+    "docs/context/surfaces/read.md:events-emit": "70aa8667d144b89fd1245d20cd2259fde25fdfe598a3736c7cda01765c3beb73",
+    "docs/context/surfaces/read.md:events-listen": "232cff1ad707428e42453bab3cacdc5cced892ba48ac7e49983d2350324443cc",
     "docs/context/surfaces/review.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/review.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0"
   }

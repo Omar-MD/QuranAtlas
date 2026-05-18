@@ -326,7 +326,7 @@
   }
 
   function openInstallPrompt(): void {
-    navigate('#/settings')
+    navigate('#/assets')
   }
 
   async function installMissingPack(): Promise<void> {

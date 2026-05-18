@@ -42,7 +42,7 @@ On any boot failure the `catch` block renders a minimal error card with a Retry 
 - `register(pattern, loader, hooks)` stores a dynamic import loader. The module is fetched lazily on first match.
 - Each route module exports `async init(params, hooks) → cleanup?`. The returned function (if any) is invoked by the router before the next route mounts.
 - **Param sanitization** — `sanitizeParams()` rejects any value containing HTML tags, `javascript:` / `data:` / `vbscript:` schemes, inline event handlers, `://`, or values >100 chars. Rejected routes hit `ROUTER_ROUTE_ERROR` and show the not-found card.
-- After a successful mount, the router writes `settings.lastSurface` so reload lands back on the same surface. Writes are skipped for `#/onboarding` because launch-restore explicitly rejects it as a target — persisting it would be wasted I/O and an in-flight write racing with a test fixture's seeded `lastSurface` would surface as flaky launch-restore.
+- After a successful mount, the router writes `settings.lastSurface` so reload lands back on the same surface. Writes are skipped for `#/onboarding`, `#/settings`, and `#/assets` because launch-restore explicitly rejects those transient or operational targets.
 
 ### Route table
 
@@ -56,6 +56,7 @@ On any boot failure the `catch` block renders a minimal error card with a Retry 
 | `#/about` | `about/About.svelte` | About page |
 | `#/onboarding` | `onboarding/Onboarding.svelte` | First-run flow |
 | `#/settings` | *(inline stub)* | Opens settings sheet over last surface |
+| `#/assets` | `configure/assets/AssetManagement.svelte` | Install, verify, activate, and remove local reader assets |
 
 Every route above is a Svelte 5 component loaded lazily via dynamic import.
 
@@ -66,7 +67,7 @@ The read surface owns both Verse and Mushaf modes. Verse routes encode surah/aya
 Empty hash triggers `ROUTER_LAUNCH_RESTORE`. The handler in `app-bootstrap.ts` walks a cascade:
 
 1. Onboarding not complete → `#/onboarding`
-2. Valid launchable `settings.lastSurface` set → navigate there
+2. Valid launchable `settings.lastSurface` set → navigate there (`#/assets` is not launchable)
 3. Validated `settings.currentPosition` → `#/s/:surah/:verse`
 4. Otherwise → `#/s/1`
 

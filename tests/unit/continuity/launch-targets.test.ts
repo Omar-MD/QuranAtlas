@@ -33,6 +33,8 @@ describe('continuity/launch-targets', () => {
     await expect(resolveLaunchableTarget('#/surahs?x=1', 'qaloon')).resolves.toBeNull()
     await expect(resolveLaunchableTarget('#/settings', 'qaloon')).resolves.toBeNull()
     await expect(resolveLaunchableTarget('#/settings/extra', 'qaloon')).resolves.toBeNull()
+    await expect(resolveLaunchableTarget('#/assets', 'qaloon')).resolves.toBeNull()
+    await expect(resolveLaunchableTarget('#/assets/extra', 'qaloon')).resolves.toBeNull()
     await expect(resolveLaunchableTarget('#/s/2/+1', 'qaloon')).resolves.toBeNull()
     await expect(resolveLaunchableTarget('#/s/2/1.5', 'qaloon')).resolves.toBeNull()
     await expect(resolveLaunchableTarget('#/m/0', 'qaloon')).resolves.toBeNull()

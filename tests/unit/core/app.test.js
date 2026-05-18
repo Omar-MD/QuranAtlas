@@ -117,6 +117,27 @@ vi.mock('../../../src/navigate/command-sheet.js', () => ({
 vi.mock('../../../src/configure/theme.js', () => ({
   initTheme: vi.fn(() => Promise.resolve()),
 }))
+vi.mock('../../../src/configure/theme.ts', () => ({
+  initTheme: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/configure/font-size.ts', () => ({
+  initFontSize: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/configure/riwayah.ts', () => ({
+  initRiwayah: vi.fn(() => Promise.resolve('qaloon')),
+}))
+vi.mock('../../../src/configure/reading-typography.ts', () => ({
+  initReadingTypography: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/configure/night-mode.ts', () => ({
+  initNightMode: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/configure/surah-header-visibility.ts', () => ({
+  initSurahHeaderHidden: vi.fn(() => Promise.resolve()),
+}))
+vi.mock('../../../src/read/mushaf/view-mode.ts', () => ({
+  initMushafViewMode: vi.fn(() => Promise.resolve()),
+}))
 
 vi.mock('../../../src/configure/about/pwa-install.js', () => ({
   initInstallListener: vi.fn(),
@@ -309,6 +330,10 @@ describe('core/app.js init order', () => {
     )
     expect(router.register).toHaveBeenCalledWith(
       '#/settings',
+      expect.any(Function)
+    )
+    expect(router.register).toHaveBeenCalledWith(
+      '#/assets',
       expect.any(Function)
     )
     expect(router.register).toHaveBeenCalledWith(

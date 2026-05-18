@@ -45,6 +45,7 @@
   const labelHasSurah = $derived(!onMushafRoute && currentSurahNum != null)
   const labelIsInteractive = $derived(labelHasSurah && isVerseRoute(currentHash))
   const onOnboardingRoute = $derived((currentHash || '').startsWith('#/onboarding'))
+  const onAssetsRoute = $derived((currentHash || '').startsWith('#/assets'))
 
   function isVerseRoute(h: string): boolean { return (h || '').startsWith('#/s/') }
 
@@ -214,7 +215,7 @@
   })
 </script>
 
-{#if !onOnboardingRoute}
+{#if !onOnboardingRoute && !onAssetsRoute}
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <header
   class="qa-mh"

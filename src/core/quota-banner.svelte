@@ -13,7 +13,7 @@
       // Non-dismissible — always show (replace any existing warning banner)
       dismissible = false
       visible = true
-      announce('Storage is running low. Visit Settings to free up space.')
+      announce('Storage is running low. Open Asset Management to free up space.')
     })
     const unsub2 = on(Events.STORAGE_QUOTA_WARNING, async () => {
       if (visible) return
@@ -23,7 +23,7 @@
       } catch { /* still show */ }
       dismissible = true
       visible = true
-      announce('Storage is running low. Visit Settings to free up space.')
+      announce('Storage is running low. Open Asset Management to free up space.')
     })
     return () => { unsub1(); unsub2() }
   })
@@ -37,7 +37,7 @@
 {#if visible}
   <div class="qa-quota-banner" role="alert" aria-live="assertive">
     <span>Storage is running low. </span>
-    <a href="#/settings" class="qa-quota-banner-link">Free up space in Settings.</a>
+    <a href="#/assets" class="qa-quota-banner-link">Free up space in Asset Management.</a>
     {#if dismissible}
       <button class="qa-quota-banner-dismiss" onclick={handleDismiss}>Don't show again</button>
     {/if}

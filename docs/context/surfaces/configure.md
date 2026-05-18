@@ -15,7 +15,7 @@ test_paths:
 
 # Surface: configure
 
-> Mode-aware Verse Settings, Mushaf Settings, and About page for Reader First preferences: theme, night mode, typography, qira'ah/riwayah source, translation, tafsir, active Quran text style, active Mushaf edition, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup.
+> Mode-aware Verse Settings, Mushaf Settings, Asset Management, and About page for Reader First preferences: theme, night mode, typography, qira'ah/riwayah source, translation, tafsir, active Quran text style, active Mushaf edition, install state, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup.
 
 ## Reach
 
@@ -23,6 +23,9 @@ test_paths:
 | --- | --- | --- |
 | Settings gear ⚙ on MarginHeader (mobile) | single tap | open Verse Settings on `#/s/*`, Mushaf Settings on `#/m/*` |
 | Settings gear double-tap (mobile, ≤300 ms) | gesture | cycle theme without opening sheet |
+| Manage Assets in Settings | tap | close Settings and route to `#/assets` |
+| Storage/quota banner CTA | tap | route to `#/assets` |
+| Missing reader asset prompt | tap | route to `#/assets` |
 | `G` then `P` (desktop) | keyboard | `#/settings` → settings shell inferred from previous reader route |
 | `⌘K` → "Preferences" → Enter | keyboard | `#/settings` → settings shell inferred from previous reader route |
 | Drawer header ⓘ icon | tap | `#/about` |
@@ -34,7 +37,7 @@ test_paths:
 | `d` (reader) | keyboard | cycle theme |
 | About footer "Clear all data" link | tap | confirmation dialog |
 
-Routes: `#/settings` (transient settings opener), `#/about` (all viewports).
+Routes: `#/settings` (transient settings opener), `#/assets` (all viewports), `#/about` (all viewports).
 
 ## Inventory
 
@@ -45,6 +48,7 @@ Routes: `#/settings` (transient settings opener), `#/about` (all viewports).
 | `src/configure/Panel.svelte` | _(no leading comment)_ |
 | `src/configure/about/About.svelte` | _(no leading comment)_ |
 | `src/configure/about/pwa-install.ts` | PWA install prompt management. |
+| `src/configure/assets/AssetManagement.svelte` | _(no leading comment)_ |
 | `src/configure/assets/asset-view-model.ts` | _(no leading comment)_ |
 | `src/configure/clear-data.ts` | Clear data: confirmation flow and data deletion. |
 | `src/configure/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
@@ -106,6 +110,20 @@ The recitation picker exposes the package state on each row. Installed rows swit
 Package install progress lives outside `settings.riwayah`: `src/configure/state.svelte.ts::riwayahPackageState` holds runtime package status by riwayah, and `riwayahInstallIntent` records the requested optional package plus the previous usable riwayah. Failed installs clear the request or mark an error while preserving both `settings.riwayah` and `previousUsable`.
 
 The old in-panel Storage accordion is no longer mounted in the settings shell. Offline install, verify, set-active, and delete controls move to the dedicated asset-management route.
+
+### Asset Management route
+
+`#/assets` is a real route, but it is excluded from `settings.lastSurface` persistence and launch restore. Direct entry renders a `Back to Reader` link to `#/s/1`; entry from another route can use browser history. On mount the page focuses the `Asset Management` heading so Manage Assets navigation does not restore focus to the settings opener.
+
+Mobile and tablet use a single dense column: sticky Back/Verify header, active variant summary, polite route-level status region, then grouped rows for Quran Text Styles, Mushaf Editions, Translations, and Tafsir. Mobile MarginHeader is hidden on this route so the asset page owns the header chrome. Rows expose status, compatibility reason, size, primary action, and Delete when relevant.
+
+Desktop uses a two-pane operational layout: left section navigation, right grouped asset tables. AmbientDock remains visible. `src/configure/assets/asset-view-model.ts` owns row action labels and blocked-delete copy, including the active optional delete reason `Switch to another compatible asset before deleting.`
+
+Actions:
+
+- Text and Mushaf rows install/delete via concrete variant asset helpers in `src/data/offline.ts`; Set Active writes through `setQuranTextStyleId` or `setMushafEditionId`.
+- Translation and tafsir rows install/delete via source asset helpers and set active through their settings writers.
+- Shipped rows never show Install. Active rows show Active and block Delete where deletion would remove the active optional asset.
 
 ### Pick a translation
 

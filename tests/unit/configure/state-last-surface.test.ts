@@ -21,11 +21,14 @@ describe('configure/state-last-surface', () => {
     expect(put).toHaveBeenCalledWith('settings', { key: 'lastSurface', value: '#/about' })
   })
 
-  it('skips onboarding and settings hashes plus settings variants', async () => {
+  it('skips onboarding, settings, and assets hashes plus route variants', async () => {
     await persistLastSurface('#/onboarding')
     await persistLastSurface('#/settings')
     await persistLastSurface('#/settings?x=1')
     await persistLastSurface('#/settings/extra')
+    await persistLastSurface('#/assets')
+    await persistLastSurface('#/assets?x=1')
+    await persistLastSurface('#/assets/extra')
 
     expect(put).not.toHaveBeenCalled()
   })

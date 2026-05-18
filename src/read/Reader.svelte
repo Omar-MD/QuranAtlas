@@ -697,7 +697,7 @@
   }
 
   function openInstallPrompt() {
-    navigate('#/settings')
+    navigate('#/assets')
   }
 </script>
 
@@ -717,7 +717,7 @@
   <div class="qa-riwayah-install-prompt" role="status">
     <p>{installPrompt.riwayah} text is not installed yet.</p>
     <div class="qa-riwayah-install-actions">
-      <button class="qa-retry-btn" type="button" onclick={openInstallPrompt}>Open Settings</button>
+      <button class="qa-retry-btn" type="button" onclick={openInstallPrompt}>Open Asset Management</button>
       <button class="qa-retry-btn" type="button" onclick={handleRetry}>Retry</button>
     </div>
   </div>

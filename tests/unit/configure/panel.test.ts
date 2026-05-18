@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import Panel from '../../../src/configure/Panel.svelte'
+import AssetManagement from '../../../src/configure/assets/AssetManagement.svelte'
 import { openSettingsSheet } from '../../../src/configure/panel-bridge'
 import { settings } from '../../../src/configure/state.svelte'
 
@@ -68,6 +69,28 @@ describe('mode-aware settings panel', () => {
     await flush()
     expect(screen.queryByRole('dialog', { name: 'Verse Settings' })).not.toBeInTheDocument()
     expect(window.location.hash).toBe('#/assets')
+  })
+
+  it('Manage Assets suppresses settings opener focus restoration', async () => {
+    const opener = document.createElement('button')
+    opener.textContent = 'Reader settings'
+    document.body.appendChild(opener)
+    opener.focus()
+    await mountAndOpen('verse')
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Manage Assets' }))
+    await flush()
+
+    expect(document.activeElement).not.toBe(opener)
+    opener.remove()
+  })
+
+  it('direct asset management entry exposes reader fallback and focuses the page heading', async () => {
+    render(AssetManagement, { props: { historyCanGoBack: false } })
+    await flush()
+
+    expect(screen.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
+    expect(screen.getByRole('heading', { name: 'Asset Management' })).toHaveFocus()
   })
 
   it('writes verse typography controls through the settings writers', async () => {

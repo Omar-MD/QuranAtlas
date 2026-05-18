@@ -233,6 +233,7 @@ export async function initBootstrap(): Promise<Array<() => void>> {
         router.navigate(prev, { replace: true })
       },
     }))
+    router.register('#/assets', async () => (await import('./configure/assets/AssetManagement.svelte')).default)
     router.register('#/about', async () => (await import('./configure/about/About.svelte')).default)
     router.register('#/surahs', async () => {
       const isMobile = window.matchMedia('(max-width: 1179px)').matches

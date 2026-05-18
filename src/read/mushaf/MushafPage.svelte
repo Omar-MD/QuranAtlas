@@ -58,7 +58,7 @@
           <button type="button" class="qa-mushaf-state-btn" onclick={onStayCurrentUsable}>Stay on current usable riwayah</button>
         {/if}
         {#if installPrompt && onOpenSettings}
-          <button type="button" class="qa-mushaf-state-btn" onclick={onOpenSettings}>Open Settings</button>
+          <button type="button" class="qa-mushaf-state-btn" onclick={onOpenSettings}>Open Asset Management</button>
         {/if}
         <button type="button" class="qa-mushaf-state-btn" onclick={onRetry}>Retry</button>
         {#if verseModeAvailable}

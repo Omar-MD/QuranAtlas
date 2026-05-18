@@ -5,7 +5,7 @@
 <!-- AUTO-GENERATED:dossier-index START -->
 | Surface | Dossier | Purpose |
 | --- | --- | --- |
-| **configure** | [`surfaces/configure.md`](surfaces/configure.md) | Mode-aware Verse Settings, Mushaf Settings, and About page for Reader First preferences: theme, night mode, typography, qira'ah/riwayah source, translation, tafsir, active Quran text style, active Mushaf edition, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup. |
+| **configure** | [`surfaces/configure.md`](surfaces/configure.md) | Mode-aware Verse Settings, Mushaf Settings, Asset Management, and About page for Reader First preferences: theme, night mode, typography, qira'ah/riwayah source, translation, tafsir, active Quran text style, active Mushaf edition, install state, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup. |
 | **infra** | [`surfaces/infra.md`](surfaces/infra.md) | Cross-cutting Reader First infrastructure. Service worker, offline asset-pack handling, install-state verification, manifest membership, byte planning, provenance, build-time validation, cross-tab safety, and update/clear-data banners. Audio cache routes are removed product scope pending source cleanup. |
 | **listen** | [`surfaces/listen.md`](surfaces/listen.md) | Surface: listen |
 | **mark** | [`surfaces/mark.md`](surfaces/mark.md) | Surface: mark |
