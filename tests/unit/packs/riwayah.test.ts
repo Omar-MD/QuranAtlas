@@ -58,6 +58,62 @@ const packageIndex = {
   ],
 } as const
 
+const textAssetIndex = {
+  version: 1,
+  defaults: {
+    qaloon: 'uthmani-kfgqpc-v1',
+    hafs: 'uthmani-kfgqpc-v1',
+    warsh: 'uthmani-kfgqpc-v1',
+  },
+  assets: [
+    {
+      riwayah: 'qaloon',
+      textStyleId: 'uthmani-kfgqpc-v1',
+      label: 'Uthmani KFGQPC',
+      scriptFamily: 'uthmani',
+      providerId: 'kfgqpc',
+      licenseId: 'kfgqpc-quran-text',
+      visibility: 'baseline',
+      shipped: true,
+      files: [{ url: '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json', bytes: 100 }],
+      totalBytes: 100,
+      ayahCount: 6214,
+      outputPathTemplate: 'quran-text/qaloon/uthmani-kfgqpc-v1/{surah}.json',
+      provenance: { source: 'test' },
+    },
+    {
+      riwayah: 'hafs',
+      textStyleId: 'uthmani-kfgqpc-v1',
+      label: 'Uthmani KFGQPC',
+      scriptFamily: 'uthmani',
+      providerId: 'kfgqpc',
+      licenseId: 'kfgqpc-quran-text',
+      visibility: 'optional',
+      shipped: false,
+      files: [{ url: '/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json', bytes: 110 }],
+      totalBytes: 110,
+      ayahCount: 6236,
+      outputPathTemplate: 'quran-text/hafs/uthmani-kfgqpc-v1/{surah}.json',
+      provenance: { source: 'test' },
+    },
+    {
+      riwayah: 'warsh',
+      textStyleId: 'uthmani-kfgqpc-v1',
+      label: 'Uthmani KFGQPC',
+      scriptFamily: 'uthmani',
+      providerId: 'kfgqpc',
+      licenseId: 'kfgqpc-quran-text',
+      visibility: 'optional',
+      shipped: false,
+      files: [{ url: '/dataset/quran-text/warsh/uthmani-kfgqpc-v1/001.json', bytes: 110 }],
+      totalBytes: 110,
+      ayahCount: 6214,
+      outputPathTemplate: 'quran-text/warsh/uthmani-kfgqpc-v1/{surah}.json',
+      provenance: { source: 'test' },
+    },
+  ],
+} as const
+
 function response(body: unknown, status = 200): Response {
   return {
     ok: status >= 200 && status < 300,
@@ -184,5 +240,61 @@ describe('pack-domain riwayah policy', () => {
       riwayah: 'hafs',
       reason: 'security-rejected',
     })
+  })
+})
+
+describe('text asset loader', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    vi.stubGlobal('location', new URL('https://quranatlas.test/'))
+    vi.stubGlobal('fetch', vi.fn(async () => response(textAssetIndex)))
+    installCache()
+  })
+
+  it('loads defaults and resolves compatible text assets', async () => {
+    const mod = await import('../../../src/packs/text-assets')
+    mod.clearTextAssetIndexCacheForTests()
+
+    await expect(mod.loadTextAssetIndex()).resolves.toMatchObject({
+      defaults: { qaloon: 'uthmani-kfgqpc-v1' },
+    })
+    await expect(mod.getTextAsset('qaloon', 'uthmani-kfgqpc-v1')).resolves.toMatchObject({
+      riwayah: 'qaloon',
+      textStyleId: 'uthmani-kfgqpc-v1',
+    })
+    await expect(mod.defaultTextStyleForRiwayah('qaloon')).resolves.toBe('uthmani-kfgqpc-v1')
+    await expect(mod.canUseTextAsset('qaloon', 'uthmani-kfgqpc-v1')).resolves.toBe(true)
+  })
+
+  it('reports installable, installed, and incompatible text asset states', async () => {
+    const mod = await import('../../../src/packs/text-assets')
+    mod.clearTextAssetIndexCacheForTests()
+
+    await expect(mod.getTextAssetStatus('hafs', 'uthmani-kfgqpc-v1')).resolves.toBe('installable')
+    installCache(['/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'])
+    mod.clearTextAssetIndexCacheForTests()
+    await expect(mod.getTextAssetStatus('hafs', 'uthmani-kfgqpc-v1')).resolves.toBe('installed')
+    await expect(mod.getTextAssetStatus('warsh', 'missing-v1')).resolves.toBe('incompatible')
+  })
+
+  it('rejects indexes with non-dataset URLs or missing defaults', async () => {
+    const mod = await import('../../../src/packs/text-assets')
+    mod.clearTextAssetIndexCacheForTests()
+    vi.stubGlobal('fetch', vi.fn(async () => response({
+      ...textAssetIndex,
+      assets: [{
+        ...textAssetIndex.assets[0],
+        files: [{ url: 'https://cdn.example.test/quran-text/qaloon/001.json', bytes: 100 }],
+      }],
+    })))
+    await expect(mod.loadTextAssetIndex()).rejects.toThrow(/same-origin dataset URL/)
+
+    mod.clearTextAssetIndexCacheForTests()
+    vi.stubGlobal('fetch', vi.fn(async () => response({
+      ...textAssetIndex,
+      defaults: { qaloon: 'missing-v1' },
+    })))
+    await expect(mod.loadTextAssetIndex()).rejects.toThrow(/default.*missing/i)
   })
 })
