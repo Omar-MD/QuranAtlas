@@ -2,7 +2,7 @@
   "_comment": "SHA-256 hashes of AUTO-GENERATED fence blocks. Maintained by scripts/docs/derive.mjs. Do not hand-edit.",
   "version": 1,
   "blocks": {
-    "docs/context/surfaces/configure.md:inventory": "7f9c30429f361f8e85413b83fe552434c5eba8b5348f688efe193aaf482f3a65",
+    "docs/context/surfaces/configure.md:inventory": "238946f4d9c93055bb963b96f7d05887f297e9cd0c4f50a6c1eb1baf9364bf06",
     "docs/context/surfaces/infra.md:inventory": "5f27f59e23f438df1658c581255f2b1cb117f35dafad760e7daaecbf339a165b",
     "docs/context/surfaces/listen.md:inventory": "05a50c16041c0582a80129764f9e43fdf7bb9b37c526a1083d8110b94faf27c9",
     "docs/context/surfaces/mark.md:inventory": "05a50c16041c0582a80129764f9e43fdf7bb9b37c526a1083d8110b94faf27c9",
@@ -28,7 +28,7 @@
     "docs/context/surfaces/review.md:data-read": "ec17b62494212085767a8413d464b7f28471a80005ed7eba9f993f1f98c8a66f",
     "docs/context/data-model.md:store-owner-index": "04d1a825ab57f6a7d28632cf1bab7551fc47d463efcc052afd0a5025e7436c7d",
     "docs/context/surfaces/configure.md:tests": "0913b9d6eda655f233a973ff52638d45f8e2b3dd0ec109308a910a9822957d19",
-    "docs/context/surfaces/infra.md:tests": "be1ecc6a7000432c32bc922923f25e7e5bf085d977a6b861d0d62ae230482a7d",
+    "docs/context/surfaces/infra.md:tests": "6ab276dc2b4853fab416fb6414655be294358259a4d5dd2e52e7529fce36ced5",
     "docs/context/surfaces/listen.md:tests": "d79d70ae4648df9f87796753f288b10f117e9bed3733a5f01cc329c250e30422",
     "docs/context/surfaces/mark.md:tests": "d79d70ae4648df9f87796753f288b10f117e9bed3733a5f01cc329c250e30422",
     "docs/context/surfaces/navigate.md:tests": "55db48706a905ad7fdc6590826edb0ac4ec3b2bceaac12a5d99f01f4bea5fba3",

@@ -50,10 +50,10 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
             riwayah: 'hafs',
             optional: true,
             available: true,
-            text: { urls: ['/dataset/riwayat/hafs/001.json'], totalBytes: 1500, available: true },
+            text: { urls: ['/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'], totalBytes: 1500, available: true },
             pages: {
-              manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
-              urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
+              manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+              urls: ['/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'],
               totalBytes: 80_300,
               available: true,
             },
@@ -63,10 +63,10 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
             riwayah: 'warsh',
             optional: true,
             available: true,
-            text: { urls: ['/dataset/riwayat/warsh/001.json'], totalBytes: 1400, available: true },
+            text: { urls: ['/dataset/quran-text/warsh/uthmani-kfgqpc-v1/001.json'], totalBytes: 1400, available: true },
             pages: {
-              manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json',
-              urls: ['/dataset/mushaf-pages/warsh/pages/001.svg'],
+              manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
+              urls: ['/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/pages/001.svg'],
               totalBytes: 82_350,
               available: true,
             },
@@ -76,10 +76,10 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
             riwayah: 'qaloon',
             optional: false,
             available: true,
-            text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 1400, available: true },
+            text: { urls: ['/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json'], totalBytes: 1400, available: true },
             pages: {
-              manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
-              urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+              manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+              urls: ['/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg'],
               totalBytes: 80_300,
               available: true,
             },
@@ -117,6 +117,131 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
     response.clone = () => response
     return response
   }
+  if (url.includes('text-assets.json')) {
+    const response = {
+      ok: true,
+      json: async () => ({
+        version: 1,
+        defaults: { qaloon: 'uthmani-kfgqpc-v1', hafs: 'uthmani-kfgqpc-v1', warsh: 'uthmani-kfgqpc-v1' },
+        assets: [
+          {
+            riwayah: 'qaloon',
+            textStyleId: 'uthmani-kfgqpc-v1',
+            label: 'Qalun text',
+            scriptFamily: 'uthmani',
+            providerId: 'kfgqpc',
+            licenseId: 'kfgqpc-quran-text',
+            visibility: 'baseline',
+            shipped: true,
+            outputPathTemplate: 'quran-text/qaloon/uthmani-kfgqpc-v1/{surah}.json',
+            files: [{ url: '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json', bytes: 1400 }],
+            totalBytes: 1400,
+            ayahCount: 7,
+            provenance: {},
+          },
+          {
+            riwayah: 'hafs',
+            textStyleId: 'uthmani-kfgqpc-v1',
+            label: 'Hafs text',
+            scriptFamily: 'uthmani',
+            providerId: 'kfgqpc',
+            licenseId: 'kfgqpc-quran-text',
+            visibility: 'optional',
+            shipped: false,
+            outputPathTemplate: 'quran-text/hafs/uthmani-kfgqpc-v1/{surah}.json',
+            files: [{ url: '/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json', bytes: 1500 }],
+            totalBytes: 1500,
+            ayahCount: 7,
+            provenance: {},
+          },
+          {
+            riwayah: 'warsh',
+            textStyleId: 'uthmani-kfgqpc-v1',
+            label: 'Warsh text',
+            scriptFamily: 'uthmani',
+            providerId: 'kfgqpc',
+            licenseId: 'kfgqpc-quran-text',
+            visibility: 'optional',
+            shipped: false,
+            outputPathTemplate: 'quran-text/warsh/uthmani-kfgqpc-v1/{surah}.json',
+            files: [{ url: '/dataset/quran-text/warsh/uthmani-kfgqpc-v1/001.json', bytes: 1400 }],
+            totalBytes: 1400,
+            ayahCount: 7,
+            provenance: {},
+          },
+        ],
+      }),
+    }
+    response.clone = () => response
+    return response
+  }
+  if (url.includes('mushaf-assets.json')) {
+    const response = {
+      ok: true,
+      json: async () => ({
+        version: 1,
+        defaults: { qaloon: 'qalun-quran-ws-v1', hafs: 'hafs-quran-ws-v1', warsh: 'warsh-quran-ws-v1' },
+        assets: [
+          {
+            riwayah: 'qaloon',
+            mushafEditionId: 'qalun-quran-ws-v1',
+            label: 'Qalun pages',
+            tradition: 'qalun',
+            providerId: 'quran-ws',
+            licenseId: 'quran-ws-free-use',
+            visibility: 'baseline',
+            shipped: true,
+            manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+            files: [
+              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json', bytes: 300 },
+              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg', bytes: 80_000 },
+            ],
+            totalBytes: 80_300,
+            pageCount: 604,
+            provenance: {},
+          },
+          {
+            riwayah: 'hafs',
+            mushafEditionId: 'hafs-quran-ws-v1',
+            label: 'Hafs pages',
+            tradition: 'hafs',
+            providerId: 'quran-ws',
+            licenseId: 'quran-ws-free-use',
+            visibility: 'optional',
+            shipped: false,
+            manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+            files: [
+              { url: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json', bytes: 300 },
+              { url: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg', bytes: 80_000 },
+            ],
+            totalBytes: 80_300,
+            pageCount: 604,
+            provenance: {},
+          },
+          {
+            riwayah: 'warsh',
+            mushafEditionId: 'warsh-quran-ws-v1',
+            label: 'Warsh pages',
+            tradition: 'warsh',
+            providerId: 'quran-ws',
+            licenseId: 'quran-ws-free-use',
+            visibility: 'optional',
+            shipped: false,
+            manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
+            files: [
+              { url: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json', bytes: 350 },
+              { url: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/pages/001.svg', bytes: 82_000 },
+            ],
+            totalBytes: 82_350,
+            pageCount: 604,
+            provenance: {},
+          },
+        ],
+      }),
+    }
+    response.clone = () => response
+    return response
+  }
   if (url.includes('manifest.json')) {
     const response = {
       ok: true,
@@ -137,11 +262,11 @@ globalThis.fetch = vi.fn().mockImplementation(async (url) => {
           { path: 'indexes/riwayah-packages.json', lane: 'text', category: 'text-index', bytes: 250 },
           { path: 'knowledge/ayah/001.json', lane: 'knowledge', category: 'knowledge-ayah', bytes: 900 },
           { path: 'knowledge/passages/001.json', lane: 'knowledge', category: 'knowledge-passages', bytes: 600 },
-          { path: 'mushaf-pages/qaloon/manifest.json', lane: 'pages', category: 'pages', bytes: 300 },
-          { path: 'mushaf-pages/qaloon/pages/001.svg', lane: 'pages', category: 'pages', bytes: 80_000 },
-          { path: 'mushaf-pages/qaloon/pages/002.svg', lane: 'pages', category: 'pages', bytes: 81_000 },
-          { path: 'mushaf-pages/warsh/manifest.json', lane: 'pages', category: 'pages', bytes: 350 },
-          { path: 'mushaf-pages/warsh/pages/001.svg', lane: 'pages', category: 'pages', bytes: 82_000 },
+          { path: 'mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json', lane: 'pages', category: 'pages', bytes: 300 },
+          { path: 'mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg', lane: 'pages', category: 'pages', bytes: 80_000 },
+          { path: 'mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg', lane: 'pages', category: 'pages', bytes: 81_000 },
+          { path: 'mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json', lane: 'pages', category: 'pages', bytes: 350 },
+          { path: 'mushaf-pages/warsh/warsh-quran-ws-v1/pages/001.svg', lane: 'pages', category: 'pages', bytes: 82_000 },
         ],
       }),
     }
@@ -176,6 +301,8 @@ describe('data/offline.js', () => {
     Object.assign(settings, { offlineCategories: { ...DEFAULT_OFFLINE_CATEGORIES } })
     await put('settings', { key: 'offlineCategories', value: { ...DEFAULT_OFFLINE_CATEGORIES } })
     settings.riwayah = 'qaloon'
+    settings.quranTextStyleId = 'uthmani-kfgqpc-v1'
+    settings.mushafEditionId = 'qalun-quran-ws-v1'
     Object.defineProperty(globalThis.navigator, 'onLine', { value: true, configurable: true })
     riwayahInstallIntent.requested = null
     riwayahInstallIntent.previousUsable = 'qaloon'
@@ -184,6 +311,10 @@ describe('data/offline.js', () => {
     riwayahPackageState.qaloon = null
     const { clearRiwayahPackageCacheForTests } = await import('../../../src/data/riwayah-packages.ts')
     clearRiwayahPackageCacheForTests()
+    const { clearTextAssetIndexCacheForTests } = await import('../../../src/packs/text-assets.ts')
+    const { clearMushafAssetIndexCacheForTests } = await import('../../../src/packs/mushaf-assets.ts')
+    clearTextAssetIndexCacheForTests()
+    clearMushafAssetIndexCacheForTests()
   })
 
   describe('download state machine', () => {
@@ -284,9 +415,9 @@ describe('data/offline.js', () => {
       const plan = await getPageAssetManifest('qaloon')
 
       expect(plan.urls).toEqual([
-        '/dataset/mushaf-pages/qaloon/manifest.json',
-        '/dataset/mushaf-pages/qaloon/pages/001.svg',
-        '/dataset/mushaf-pages/qaloon/pages/002.svg',
+        '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+        '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg',
+        '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg',
       ])
       expect(plan.totalBytes).toBe(300 + 80_000 + 81_000)
     })
@@ -300,11 +431,11 @@ describe('data/offline.js', () => {
 
       await startPageAssetDownload('qaloon')
 
-      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-qaloon-v1')
+      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-qaloon-qalun-quran-ws-v1-v1')
       expect(globalThis.caches.open).not.toHaveBeenCalledWith('qa-dataset-v1')
-      const pageCache = cacheStores.get('qa-pages-qaloon-v1')
+      const pageCache = cacheStores.get('qa-pages-qaloon-qalun-quran-ws-v1-v1')
       expect(pageCache.put).toHaveBeenCalledWith(
-        expect.stringContaining('/dataset/mushaf-pages/qaloon/pages/001.svg'),
+        expect.stringContaining('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg'),
         expect.any(Object),
       )
       expect(progressFn).toHaveBeenLastCalledWith({ cached: 3, total: 3 })
@@ -316,10 +447,10 @@ describe('data/offline.js', () => {
 
       await removePageAssetDownload('warsh')
 
-      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-warsh-v1')
-      const pageCache = cacheStores.get('qa-pages-warsh-v1')
-      expect(pageCache.delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/warsh/manifest.json'))
-      expect(pageCache.delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/warsh/pages/001.svg'))
+      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-warsh-warsh-quran-ws-v1-v1')
+      const pageCache = cacheStores.get('qa-pages-warsh-warsh-quran-ws-v1-v1')
+      expect(pageCache.delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json'))
+      expect(pageCache.delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/pages/001.svg'))
     })
 
     it('removes a stale page pack cache even when the current manifest has no files for it', async () => {
@@ -349,28 +480,83 @@ describe('data/offline.js', () => {
       await expect(removeCategoryDownload('pages')).rejects.toThrow(/removePageAssetDownload/)
     })
 
-    it('installs a riwayah package by caching text and pages before switching', async () => {
+    it('installs concrete text assets without changing the active bundle', async () => {
+      const { installTextAsset } = await import('../../../src/data/offline.js')
+      const completeFn = vi.fn()
+      events.on('offline:download-complete', completeFn)
+
+      await expect(installTextAsset('hafs', 'uthmani-kfgqpc-v1')).resolves.toBe(true)
+
+      expect(globalThis.caches.open).toHaveBeenCalledWith('quran-dataset-v2')
+      expect(cacheStores.get('quran-dataset-v2').put).toHaveBeenCalledWith(
+        expect.stringContaining('/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'),
+        expect.any(Object),
+      )
+      expect(settings).toMatchObject({
+        riwayah: 'qaloon',
+        quranTextStyleId: 'uthmani-kfgqpc-v1',
+        mushafEditionId: 'qalun-quran-ws-v1',
+      })
+      expect(completeFn).toHaveBeenCalledWith({})
+    })
+
+    it('installs concrete Mushaf assets into the edition cache', async () => {
+      const { installMushafAsset } = await import('../../../src/data/offline.js')
+
+      await expect(installMushafAsset('hafs', 'hafs-quran-ws-v1')).resolves.toBe(true)
+
+      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-hafs-hafs-quran-ws-v1-v1')
+      expect(cacheStores.get('qa-pages-hafs-hafs-quran-ws-v1-v1').put).toHaveBeenCalledWith(
+        expect.stringContaining('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json'),
+        expect.any(Object),
+      )
+      expect(cacheStores.get('qa-pages-hafs-hafs-quran-ws-v1-v1').put).toHaveBeenCalledWith(
+        expect.stringContaining('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'),
+        expect.any(Object),
+      )
+      expect(settings.riwayah).toBe('qaloon')
+    })
+
+    it('refuses to delete an active optional concrete asset without mutating cache or settings', async () => {
+      const { installTextAsset, removeTextAsset } = await import('../../../src/data/offline.js')
+      await installTextAsset('hafs', 'uthmani-kfgqpc-v1')
+      const cache = cacheStores.get('quran-dataset-v2')
+      vi.clearAllMocks()
+      settings.riwayah = 'hafs'
+      settings.quranTextStyleId = 'uthmani-kfgqpc-v1'
+
+      await expect(removeTextAsset('hafs', 'uthmani-kfgqpc-v1')).rejects.toThrow('Switch to another compatible asset before deleting.')
+
+      expect(settings.riwayah).toBe('hafs')
+      expect(settings.quranTextStyleId).toBe('uthmani-kfgqpc-v1')
+      expect(cache.delete).not.toHaveBeenCalled()
+    })
+
+    it('installs a riwayah package by caching text and pages without switching active settings', async () => {
       const { startRiwayahPackageInstall } = await import('../../../src/data/offline.js')
       const progressFn = vi.fn()
+      const riwayahChangedFn = vi.fn()
       events.on('offline:riwayah-package-progress', progressFn)
+      events.on('settings:riwayah-changed', riwayahChangedFn)
 
       const ok = await startRiwayahPackageInstall('hafs')
 
       expect(ok).toBe(true)
       expect(globalThis.caches.open).toHaveBeenCalledWith('quran-dataset-v2')
-      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-hafs-v1')
+      expect(globalThis.caches.open).toHaveBeenCalledWith('qa-pages-hafs-hafs-quran-ws-v1-v1')
       expect(cacheStores.get('quran-dataset-v2').put).toHaveBeenCalledWith(
-        expect.stringContaining('/dataset/riwayat/hafs/001.json'),
+        expect.stringContaining('/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'),
         expect.any(Object),
       )
-      expect(cacheStores.get('qa-pages-hafs-v1').put).toHaveBeenCalledWith(
-        expect.stringContaining('/dataset/mushaf-pages/hafs/pages/001.svg'),
+      expect(cacheStores.get('qa-pages-hafs-hafs-quran-ws-v1-v1').put).toHaveBeenCalledWith(
+        expect.stringContaining('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'),
         expect.any(Object),
       )
-      expect(settings.riwayah).toBe('hafs')
-      expect(riwayahInstallIntent.previousUsable).toBe('hafs')
+      expect(settings.riwayah).toBe('qaloon')
+      expect(riwayahInstallIntent.previousUsable).toBe('qaloon')
       expect(riwayahPackageState.hafs.kind).toBe('installed')
       expect(progressFn).toHaveBeenLastCalledWith({ riwayah: 'hafs', cached: 3, total: 3 })
+      expect(riwayahChangedFn).not.toHaveBeenCalled()
     })
 
     it('keeps active riwayah and previous usable unchanged when package install fails', async () => {
@@ -384,10 +570,10 @@ describe('data/offline.js', () => {
               riwayah: 'hafs',
               optional: true,
               available: true,
-              text: { urls: ['/dataset/riwayat/hafs/001.json'], totalBytes: 10, available: true },
+              text: { urls: ['/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'], totalBytes: 10, available: true },
               pages: {
-                manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
-                urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
+                manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+                urls: ['/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'],
                 totalBytes: 20,
                 available: true,
               },
@@ -405,10 +591,10 @@ describe('data/offline.js', () => {
               riwayah: 'qaloon',
               optional: false,
               available: true,
-              text: { urls: ['/dataset/riwayat/qaloon/001.json'], totalBytes: 10, available: true },
+              text: { urls: ['/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json'], totalBytes: 10, available: true },
               pages: {
-                manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
-                urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+                manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+                urls: ['/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg'],
                 totalBytes: 20,
                 available: true,
               },
@@ -440,7 +626,7 @@ describe('data/offline.js', () => {
 
       await expect(retryRiwayahPackageInstall('hafs')).resolves.toBe(true)
 
-      expect(settings.riwayah).toBe('hafs')
+      expect(settings.riwayah).toBe('qaloon')
       expect(riwayahPackageState.hafs.kind).toBe('installed')
     })
 
@@ -450,9 +636,9 @@ describe('data/offline.js', () => {
 
       await removeRiwayahPackage('hafs')
 
-      expect(cacheStores.get('quran-dataset-v2').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/riwayat/hafs/001.json'))
-      expect(cacheStores.get('qa-pages-hafs-v1').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/hafs/manifest.json'))
-      expect(cacheStores.get('qa-pages-hafs-v1').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/hafs/pages/001.svg'))
+      expect(cacheStores.get('quran-dataset-v2').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'))
+      expect(cacheStores.get('qa-pages-hafs-hafs-quran-ws-v1-v1').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json'))
+      expect(cacheStores.get('qa-pages-hafs-hafs-quran-ws-v1-v1').delete).toHaveBeenCalledWith(expect.stringContaining('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'))
     })
 
     it('refuses to remove Qaloon package', async () => {
@@ -461,14 +647,19 @@ describe('data/offline.js', () => {
       await expect(removeRiwayahPackage('qaloon')).rejects.toThrow(/Qaloon/)
     })
 
-    it('refuses active optional removal when offline Qaloon package is not cached', async () => {
-      const { startRiwayahPackageInstall, removeRiwayahPackage } = await import('../../../src/data/offline.js')
-      await startRiwayahPackageInstall('hafs')
-      Object.defineProperty(globalThis.navigator, 'onLine', { value: false, configurable: true })
+    it('refuses active optional concrete Mushaf asset removal before touching the edition cache', async () => {
+      const { installMushafAsset, removeMushafAsset } = await import('../../../src/data/offline.js')
+      await installMushafAsset('hafs', 'hafs-quran-ws-v1')
+      const cache = cacheStores.get('qa-pages-hafs-hafs-quran-ws-v1-v1')
+      vi.clearAllMocks()
+      settings.riwayah = 'hafs'
+      settings.mushafEditionId = 'hafs-quran-ws-v1'
 
-      await expect(removeRiwayahPackage('hafs')).rejects.toThrow(/Qaloon could not be activated/)
+      await expect(removeMushafAsset('hafs', 'hafs-quran-ws-v1')).rejects.toThrow('Switch to another compatible asset before deleting.')
+
       expect(settings.riwayah).toBe('hafs')
-      expect(riwayahPackageState.hafs.kind).toBe('installed')
+      expect(settings.mushafEditionId).toBe('hafs-quran-ws-v1')
+      expect(cache.delete).not.toHaveBeenCalled()
     })
 
     it('emits download-complete event on DATASET_COMPLETE', async () => {

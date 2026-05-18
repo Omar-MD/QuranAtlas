@@ -21,12 +21,15 @@ import {
 } from '../infra/sw/route-defs'
 import {
   beginRiwayahInstall,
-  completeRiwayahInstall,
   failRiwayahInstall,
   loadRiwayah,
   persistRiwayahSelection,
   refreshRiwayahPackageStatus,
 } from '../packs/riwayah'
+import { settings, riwayahInstallIntent } from '../configure/state.svelte'
+import { getTextAsset } from '../packs/text-assets'
+import { getMushafAsset } from '../packs/mushaf-assets'
+import type { TextAsset, MushafAsset } from '../packs/asset-types'
 import {
   cacheNamesForRiwayahPackage,
   isRiwayahPackageFullyCached,
@@ -37,6 +40,7 @@ import { loadOfflineCategories } from '../continuity/offline-categories'
 
 const QUOTA_WARN_THRESHOLD = 0.8
 const ACTIVATION_KEY = 'current'
+const ACTIVE_DELETE_DISABLED_REASON = 'Switch to another compatible asset before deleting.'
 
 let currentMessageHandler: ((event: MessageEvent) => void) | null = null
 let pendingUrls: string[] | null = null
@@ -452,6 +456,116 @@ function responseUrlForCache(url: string): string {
   return new URL(url, location.origin).href
 }
 
+async function cacheHasUrl(url: string): Promise<boolean> {
+  if (typeof caches === 'undefined') return false
+  const absolute = new URL(url, location.origin)
+  const cacheName = cacheNameFor(absolute)
+  if (!cacheName) return false
+  const cache = await caches.open(cacheName)
+  return Boolean((await cache.match(responseUrlForCache(url))) || (await cache.match(url)))
+}
+
+async function cacheAssetUrl(url: string, response: Response): Promise<void> {
+  const absolute = new URL(url, location.origin)
+  const cacheName = cacheNameFor(absolute)
+  if (!cacheName) throw new Error(`No asset cache route for ${url}`)
+  const cache = await caches.open(cacheName)
+  await cache.put(responseUrlForCache(url), response.clone())
+  await cache.put(url, response.clone())
+}
+
+async function deleteAssetUrl(url: string): Promise<void> {
+  if (typeof caches === 'undefined') return
+  const absolute = new URL(url, location.origin)
+  const cacheName = cacheNameFor(absolute)
+  if (!cacheName) return
+  const cache = await caches.open(cacheName)
+  await cache.delete(responseUrlForCache(url))
+  await cache.delete(url)
+}
+
+async function installConcreteAsset(asset: TextAsset | MushafAsset): Promise<boolean> {
+  if (asset.files.length === 0) return false
+  if (!(await hasStorageForBytes(asset.totalBytes))) {
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: Errors.INSUFFICIENT_STORAGE })
+    return false
+  }
+  if (typeof caches === 'undefined') return false
+  await setDownloading()
+  try {
+    for (let i = 0; i < asset.files.length; i += 1) {
+      const file = asset.files[i]!
+      const response = await fetch(file.url)
+      if (!response.ok) throw new Error(`Failed to fetch ${file.url}: ${response.status}`)
+      await cacheAssetUrl(file.url, response)
+      emit(Events.OFFLINE_DOWNLOAD_PROGRESS, { cached: i + 1, total: asset.files.length })
+    }
+    for (const file of asset.files) {
+      if (!(await cacheHasUrl(file.url))) {
+        throw new Error(`Failed to verify cached asset ${file.url}`)
+      }
+    }
+    emit(Events.OFFLINE_DOWNLOAD_COMPLETE, {})
+    return true
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: message })
+    return false
+  } finally {
+    await clearActivation()
+  }
+}
+
+export async function installTextAsset(riwayah: Riwayah, textStyleId: string): Promise<boolean> {
+  const asset = await getTextAsset(riwayah, textStyleId)
+  if (!asset) return false
+  return installConcreteAsset(asset)
+}
+
+export async function installMushafAsset(riwayah: Riwayah, mushafEditionId: string): Promise<boolean> {
+  const asset = await getMushafAsset(riwayah, mushafEditionId)
+  if (!asset) return false
+  return installConcreteAsset(asset)
+}
+
+function assertCanRemoveTextAsset(asset: TextAsset): void {
+  if (
+    settings.riwayah === asset.riwayah
+    && settings.quranTextStyleId === asset.textStyleId
+    && !asset.shipped
+  ) {
+    throw new Error(ACTIVE_DELETE_DISABLED_REASON)
+  }
+}
+
+function assertCanRemoveMushafAsset(asset: MushafAsset): void {
+  if (
+    settings.riwayah === asset.riwayah
+    && settings.mushafEditionId === asset.mushafEditionId
+    && !asset.shipped
+  ) {
+    throw new Error(ACTIVE_DELETE_DISABLED_REASON)
+  }
+}
+
+export async function removeTextAsset(riwayah: Riwayah, textStyleId: string): Promise<void> {
+  const asset = await getTextAsset(riwayah, textStyleId)
+  if (!asset) return
+  assertCanRemoveTextAsset(asset)
+  await Promise.all(asset.files.map((file) => deleteAssetUrl(file.url)))
+}
+
+export async function removeMushafAsset(riwayah: Riwayah, mushafEditionId: string): Promise<void> {
+  const asset = await getMushafAsset(riwayah, mushafEditionId)
+  if (!asset) return
+  assertCanRemoveMushafAsset(asset)
+  await Promise.all(asset.files.map((file) => deleteAssetUrl(file.url)))
+  if (asset.files.length === 0 && typeof caches !== 'undefined') {
+    const cacheName = cacheNameFor(new URL(`/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/manifest.json`, location.origin))
+    if (cacheName) await caches.delete(cacheName)
+  }
+}
+
 async function cachePackageUrl(riwayah: Riwayah, url: string, response: Response): Promise<void> {
   const absolute = new URL(url, location.origin)
   const packageCaches = cacheNamesForRiwayahPackage(riwayah)
@@ -488,7 +602,6 @@ export async function startRiwayahPackageInstall(riwayah: Riwayah): Promise<bool
   }
 
   if (!beginRiwayahInstall(riwayah)) return false
-  const previousActive = await loadRiwayah()
   await setDownloading()
   try {
     for (let i = 0; i < plan.urls.length; i += 1) {
@@ -500,18 +613,18 @@ export async function startRiwayahPackageInstall(riwayah: Riwayah): Promise<bool
       emit(Events.OFFLINE_RIWAYAH_PACKAGE_PROGRESS, payload)
       emit(Events.OFFLINE_DOWNLOAD_PROGRESS, { cached: i + 1, total: plan.urls.length })
     }
-    const applied = await completeRiwayahInstall(riwayah)
-    if (!applied) {
+    const status = await refreshRiwayahPackageStatus(riwayah)
+    if (status.kind !== 'installed') {
       throw new Error(`Installed ${riwayah} package could not be verified.`)
+    }
+    if (riwayahInstallIntent.requested === riwayah) {
+      riwayahInstallIntent.requested = null
     }
     emit(Events.OFFLINE_DOWNLOAD_COMPLETE, {})
     return true
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     failRiwayahInstall(riwayah, message)
-    if ((await loadRiwayah()) !== previousActive) {
-      await persistRiwayahSelection(previousActive)
-    }
     emit(Events.OFFLINE_RIWAYAH_PACKAGE_ERROR, { riwayah, error: message })
     emit(Events.OFFLINE_DOWNLOAD_ERROR, { error: message })
     return false

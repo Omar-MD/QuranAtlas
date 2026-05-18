@@ -45,6 +45,7 @@ Routes: `#/settings` (desktop), `#/about` (all viewports).
 | `src/configure/Panel.svelte` | _(no leading comment)_ |
 | `src/configure/about/About.svelte` | _(no leading comment)_ |
 | `src/configure/about/pwa-install.ts` | PWA install prompt management. |
+| `src/configure/assets/asset-view-model.ts` | _(no leading comment)_ |
 | `src/configure/clear-data.ts` | Clear data: confirmation flow and data deletion. |
 | `src/configure/font-size.ts` | Font size preference: persisted in IDB settings store, applied via data-font-size |
 | `src/configure/mushaf-edition.ts` | _(no leading comment)_ |
