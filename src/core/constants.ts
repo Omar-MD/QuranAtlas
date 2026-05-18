@@ -4,6 +4,8 @@
 
 export const CACHE_DATASET = 'quran-dataset-v2'
 export const DATASET_RIWAYAH_PACKAGES_PATH = '/dataset/indexes/riwayah-packages.json'
+export const DATASET_TEXT_ASSETS_PATH = '/dataset/indexes/text-assets.json'
+export const DATASET_MUSHAF_ASSETS_PATH = '/dataset/indexes/mushaf-assets.json'
 
 // ---------------------------------------------------------------------------
 // Event payload types — one per Events constant.

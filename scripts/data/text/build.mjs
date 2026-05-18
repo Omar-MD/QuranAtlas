@@ -38,6 +38,7 @@ const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riway
 const NORMALIZED_TRANSLATIONS_DIR = join(REPO_ROOT, 'data', 'normalized', 'translations')
 const NORMALIZED_TAFSIR_DIR = join(REPO_ROOT, 'data', 'normalized', 'tafsir')
 const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')                            // shipped output (per-surah split files)
+const QURAN_TEXT_DIR = join(DATASET_DIR, 'quran-text')
 const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
 const TAFSIR_DIR = join(DATASET_DIR, 'tafsir')
 const INDEXES_DIR = join(DATASET_DIR, 'indexes')
@@ -196,6 +197,45 @@ async function writeSourceAssetIndex({ translationIds, tafsirIds }) {
   await writeFile(
     join(INDEXES_DIR, 'source-assets.json'),
     JSON.stringify({ version: 1, translations, tafsir }),
+    'utf8',
+  )
+}
+
+async function writeTextStyleSplits({ riwayah, textStyleId, perSurah }) {
+  const outDir = join(QURAN_TEXT_DIR, riwayah, textStyleId)
+  await mkdir(outDir, { recursive: true })
+  const files = []
+  let totalBytes = 0
+  for (const [surah, payload] of Object.entries(perSurah).sort(([a], [b]) => a.localeCompare(b))) {
+    const path = join(outDir, `${surah}.json`)
+    await writeFile(path, JSON.stringify(payload), 'utf8')
+    const bytes = (await stat(path)).size
+    files.push({ url: `/dataset/quran-text/${riwayah}/${textStyleId}/${surah}.json`, bytes })
+    totalBytes += bytes
+  }
+  return { files, totalBytes }
+}
+
+async function writeTextAssetIndex(textCatalog, splits) {
+  const resolvedTextAssets = []
+  for (const asset of textCatalog.assets ?? []) {
+    const perSurah = splits[asset.riwayah]
+    if (!perSurah) throw new Error(`Text asset references unknown riwayah ${asset.riwayah}`)
+    const { files, totalBytes } = await writeTextStyleSplits({
+      riwayah: asset.riwayah,
+      textStyleId: asset.textStyleId,
+      perSurah,
+    })
+    resolvedTextAssets.push({
+      ...asset,
+      files,
+      totalBytes,
+      ayahCount: AYAT_COUNTS[asset.riwayah],
+    })
+  }
+  await writeFile(
+    join(INDEXES_DIR, 'text-assets.json'),
+    JSON.stringify({ version: 1, defaults: textCatalog.defaults, assets: resolvedTextAssets }, null, 2) + '\n',
     'utf8',
   )
 }
@@ -712,6 +752,7 @@ export async function main() {
   // 2. Wipe + emit per-surah split files
   const splits = {}
   await cleanPackDirs(RIWAYAT_DIR)
+  await cleanPackDirs(QURAN_TEXT_DIR)
   for (const r of RIWAYAT) {
     splits[r] = splitRiwayah(r, sources[r])
     if (Object.keys(splits[r]).length !== 114) {
@@ -734,6 +775,8 @@ export async function main() {
       throw new Error(`${r} split total ${total}, expected ${AYAT_COUNTS[r]}`)
     }
   }
+
+  await writeTextAssetIndex(sourceCatalog.quranTextAssets, splits)
 
   // 3. surahs.json (names from Qaloon — same Arabic across Riwayat)
   const namesEn = []

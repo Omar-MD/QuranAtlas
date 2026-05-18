@@ -32,6 +32,10 @@ async function readCatalogJson(name) {
   return JSON.parse(await readFile(join(process.cwd(), 'data', 'catalog', name), 'utf8'))
 }
 
+async function readDatasetJson(path) {
+  return JSON.parse(await readFile(join(process.cwd(), 'public', 'dataset', path), 'utf8'))
+}
+
 describe('mushaf asset catalog', () => {
   it('exposes stable edition variants with compatible defaults', async () => {
     const mushafCatalog = await readCatalogJson('mushaf-assets.json')
@@ -53,6 +57,20 @@ describe('mushaf asset catalog', () => {
     for (const [riwayah, mushafEditionId] of Object.entries(mushafCatalog.defaults)) {
       expect(mushafCatalog.assets.some((asset) => asset.riwayah === riwayah && asset.mushafEditionId === mushafEditionId)).toBe(true)
     }
+  })
+})
+
+describe('mushaf asset index output', () => {
+  it('emits edition-aware page assets and manifest inventory entries', async () => {
+    const mushafAssets = await readDatasetJson('indexes/mushaf-assets.json')
+    expect(mushafAssets.defaults.qaloon).toBe('qalun-quran-ws-v1')
+    const qaloonMushaf = mushafAssets.assets.find((asset) => asset.riwayah === 'qaloon' && asset.mushafEditionId === 'qalun-quran-ws-v1')
+    expect(qaloonMushaf.manifestUrl).toBe('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json')
+    expect(qaloonMushaf.files).toHaveLength(605)
+    expect(qaloonMushaf.files.reduce((sum, file) => sum + file.bytes, 0)).toBe(qaloonMushaf.totalBytes)
+
+    const manifest = await readDatasetJson('manifest.json')
+    expect(manifest.files.some((file) => file.path === 'indexes/mushaf-assets.json')).toBe(true)
   })
 })
 

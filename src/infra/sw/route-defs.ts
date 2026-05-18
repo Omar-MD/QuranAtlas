@@ -7,7 +7,7 @@
  * pre-N21 ad-hoc registerRoute calls inline in sw.js.
  */
 
-import { CACHE_DATASET, DATASET_RIWAYAH_PACKAGES_PATH } from '../../core/constants'
+import { CACHE_DATASET, DATASET_MUSHAF_ASSETS_PATH, DATASET_RIWAYAH_PACKAGES_PATH, DATASET_TEXT_ASSETS_PATH } from '../../core/constants'
 
 export type Category = 'text' | 'pages' | 'search'
 export type TextCategory =
@@ -50,18 +50,27 @@ export type RouteDef = {
   roadmap?: boolean
 }
 
-const pagesRiwayahFromUrl = (url: URL): string => {
+const pagesKeyFromUrl = (url: URL): string => {
+  const parts = url.pathname.split('/')
+  return `${parts[3] || 'unknown'}-${parts[4] || 'unknown'}`
+}
+
+const legacyPagesRiwayahFromUrl = (url: URL): string => {
   const parts = url.pathname.split('/')
   return parts[3] || 'unknown'
 }
 
+const DATASET_CACHE_MAX_ENTRIES = 700
+
 export const ROUTE_DEFS: readonly RouteDef[] = [
   {
     name: 'text-riwayah',
-    match: ({ url }) => /^\/dataset\/riwayat\/[^/]+\/\d{3}\.json$/.test(url.pathname),
+    match: ({ url }) =>
+      /^\/dataset\/riwayat\/[^/]+\/\d{3}\.json$/.test(url.pathname) ||
+      /^\/dataset\/quran-text\/[^/]+\/[^/]+\/\d{3}\.json$/.test(url.pathname),
     strategy: 'NetworkFirst',
     cacheName: CACHE_DATASET,
-    maxEntries: 140,
+    maxEntries: DATASET_CACHE_MAX_ENTRIES,
     maxAgeDays: 365,
     category: 'text-riwayah',
   },
@@ -70,7 +79,7 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     match: ({ url }) => /^\/dataset\/translations\/[^/]+\/\d{3}\.json$/.test(url.pathname),
     strategy: 'NetworkFirst',
     cacheName: CACHE_DATASET,
-    maxEntries: 140,
+    maxEntries: DATASET_CACHE_MAX_ENTRIES,
     maxAgeDays: 365,
     category: 'text-translation',
   },
@@ -79,7 +88,7 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     match: ({ url }) => /^\/dataset\/tafsir\/[^/]+\/\d{3}\.json$/.test(url.pathname),
     strategy: 'NetworkFirst',
     cacheName: CACHE_DATASET,
-    maxEntries: 140,
+    maxEntries: DATASET_CACHE_MAX_ENTRIES,
     maxAgeDays: 365,
     category: 'text-tafsir',
   },
@@ -88,12 +97,14 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     match: ({ url }) =>
       url.pathname === '/dataset/indexes/sources.json' ||
       url.pathname === '/dataset/indexes/source-assets.json' ||
+      url.pathname === DATASET_TEXT_ASSETS_PATH ||
+      url.pathname === DATASET_MUSHAF_ASSETS_PATH ||
       url.pathname === DATASET_RIWAYAH_PACKAGES_PATH ||
       url.pathname === '/dataset/provenance.json' ||
       url.pathname === '/dataset/manifest.json',
     strategy: 'NetworkFirst',
     cacheName: CACHE_DATASET,
-    maxEntries: 16,
+    maxEntries: DATASET_CACHE_MAX_ENTRIES,
     maxAgeDays: 365,
     category: 'text-index',
   },
@@ -106,7 +117,7 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
       url.pathname === '/dataset/translations/_verse-aliases.json',
     strategy: 'NetworkFirst',
     cacheName: CACHE_DATASET,
-    maxEntries: 16,
+    maxEntries: DATASET_CACHE_MAX_ENTRIES,
     maxAgeDays: 365,
     category: 'text-core',
   },
@@ -117,15 +128,25 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
       /^\/dataset\/knowledge\/indexes\/[^/]+\.json$/.test(url.pathname),
     strategy: 'NetworkFirst',
     cacheName: CACHE_DATASET,
-    maxEntries: 260,
+    maxEntries: DATASET_CACHE_MAX_ENTRIES,
     maxAgeDays: 365,
     category: 'text-knowledge',
   },
   {
-    name: 'pages',
-    match: ({ url }) => /^\/dataset\/mushaf-pages\/[^/]+\/.+$/.test(url.pathname),
+    name: 'pages-legacy',
+    match: ({ url }) => /^\/dataset\/mushaf-pages\/[^/]+\/(?:manifest\.json|pages\/\d{3}\.svg)$/.test(url.pathname),
     strategy: 'CacheFirst',
-    cacheName: (url) => `qa-pages-${pagesRiwayahFromUrl(url)}-v1`,
+    cacheName: (url) => `qa-pages-${legacyPagesRiwayahFromUrl(url)}-v1`,
+    maxEntries: 700,
+    maxAgeDays: 365,
+    purgeOnQuotaError: true,
+    category: 'pages',
+  },
+  {
+    name: 'pages',
+    match: ({ url }) => /^\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/.+$/.test(url.pathname),
+    strategy: 'CacheFirst',
+    cacheName: (url) => `qa-pages-${pagesKeyFromUrl(url)}-v1`,
     maxEntries: 700,
     maxAgeDays: 365,
     purgeOnQuotaError: true,

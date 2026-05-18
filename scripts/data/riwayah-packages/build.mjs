@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -12,6 +12,8 @@ const REPO_ROOT = join(__dirname, '..', '..', '..')
 const CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'riwayah-packages.json')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const OUT_PATH = join(DATASET_DIR, 'indexes', 'riwayah-packages.json')
+const TEXT_ASSETS_PATH = join(DATASET_DIR, 'indexes', 'text-assets.json')
+const MUSHAF_ASSETS_PATH = join(DATASET_DIR, 'indexes', 'mushaf-assets.json')
 const RIWAYAT = ['qaloon', 'hafs', 'warsh']
 const SURAH_COUNT = 114
 
@@ -24,21 +26,18 @@ function ensure(condition, message) {
   if (!condition) throw new Error(message)
 }
 
-function pad3(value) {
-  return String(value).padStart(3, '0')
-}
-
 async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'))
-}
-
-async function fileBytes(path) {
-  return (await stat(path)).size
 }
 
 function datasetUrl(path) {
   ensure(!path.includes('..') && !path.includes('://'), `Invalid dataset path: ${path}`)
   return `/dataset/${path}`
+}
+
+function datasetRelPathFromUrl(url) {
+  ensure(typeof url === 'string' && url.startsWith('/dataset/') && !url.includes('..') && !url.includes('://'), `Invalid dataset URL: ${url}`)
+  return url.slice('/dataset/'.length)
 }
 
 async function loadCatalog() {
@@ -52,72 +51,58 @@ async function loadCatalog() {
   return catalog
 }
 
-async function textAssetsFor(riwayah) {
-  const urls = []
-  let totalBytes = 0
-  for (let surah = 1; surah <= SURAH_COUNT; surah += 1) {
-    const relPath = `riwayat/${riwayah}/${pad3(surah)}.json`
-    const fullPath = join(DATASET_DIR, relPath)
-    if (!existsSync(fullPath)) {
-      return { urls: [], totalBytes: 0, available: false }
-    }
-    urls.push(datasetUrl(relPath))
-    totalBytes += await fileBytes(fullPath)
-  }
-  return { urls, totalBytes, available: true }
+async function loadTextAssetIndex() {
+  const index = await readJson(TEXT_ASSETS_PATH)
+  ensure(index.version === 1, 'Text asset index version must be 1')
+  ensure(index.defaults && typeof index.defaults === 'object', 'Text asset index missing defaults')
+  ensure(Array.isArray(index.assets), 'Text asset index assets must be an array')
+  return index
 }
 
-async function pageAssetsFor(riwayah) {
-  const manifestRelPath = `mushaf-pages/${riwayah}/manifest.json`
-  const manifestPath = join(DATASET_DIR, manifestRelPath)
-  if (!existsSync(manifestPath)) {
-    return {
-      manifestUrl: datasetUrl(manifestRelPath),
-      urls: [],
-      totalBytes: 0,
-      available: false,
-    }
-  }
+async function loadMushafAssetIndex() {
+  const index = await readJson(MUSHAF_ASSETS_PATH)
+  ensure(index.version === 1, 'Mushaf asset index version must be 1')
+  ensure(index.defaults && typeof index.defaults === 'object', 'Mushaf asset index missing defaults')
+  ensure(Array.isArray(index.assets), 'Mushaf asset index assets must be an array')
+  return index
+}
 
-  const manifest = await readJson(manifestPath)
-  ensure(manifest.version === 1, `Mushaf page manifest for ${riwayah} must be version 1`)
-  ensure(manifest.riwayah === riwayah, `Mushaf page manifest riwayah mismatch for ${riwayah}`)
-  ensure(Number.isInteger(manifest.pageCount) && manifest.pageCount > 0, `Invalid Mushaf page count for ${riwayah}`)
-  ensure(Array.isArray(manifest.pages), `Mushaf page manifest pages missing for ${riwayah}`)
-  ensure(manifest.pages.length === manifest.pageCount, `Mushaf page manifest incomplete for ${riwayah}`)
-
-  const urls = []
-  let totalBytes = await fileBytes(manifestPath)
-  for (let index = 0; index < manifest.pages.length; index += 1) {
-    const page = manifest.pages[index]
-    const expectedPage = index + 1
-    ensure(page.page === expectedPage, `Mushaf page manifest is not contiguous for ${riwayah}`)
-    ensure(page.assetPath === `pages/${pad3(expectedPage)}.svg`, `Invalid Mushaf page asset path for ${riwayah} page ${expectedPage}`)
-    const relPath = `mushaf-pages/${riwayah}/${page.assetPath}`
+async function urlsExist(urls) {
+  for (const url of urls) {
+    const relPath = datasetRelPathFromUrl(url)
     const fullPath = join(DATASET_DIR, relPath)
     if (!existsSync(fullPath)) {
-      return {
-        manifestUrl: datasetUrl(manifestRelPath),
-        urls: [],
-        totalBytes: 0,
-        available: false,
-      }
+      return false
     }
-    urls.push(datasetUrl(relPath))
-    totalBytes += await fileBytes(fullPath)
   }
+  return true
+}
 
+async function textAssetsFor(riwayah, textAssetIndex) {
+  const textStyleId = textAssetIndex.defaults[riwayah]
+  const asset = textAssetIndex.assets.find((entry) => entry.riwayah === riwayah && entry.textStyleId === textStyleId)
+  const urls = Array.isArray(asset?.files) ? asset.files.map((file) => file.url) : []
+  const available = urls.length === SURAH_COUNT && (await urlsExist(urls))
+  return { urls: available ? urls : [], totalBytes: available ? asset.totalBytes : 0, available }
+}
+
+async function pageAssetsFor(riwayah, mushafAssetIndex) {
+  const mushafEditionId = mushafAssetIndex.defaults[riwayah]
+  const asset = mushafAssetIndex.assets.find((entry) => entry.riwayah === riwayah && entry.mushafEditionId === mushafEditionId)
+  const files = Array.isArray(asset?.files) ? asset.files : []
+  const urls = files.map((file) => file.url)
+  const available = typeof asset?.manifestUrl === 'string' && files.length === 605 && (await urlsExist(urls))
   return {
-    manifestUrl: datasetUrl(manifestRelPath),
-    urls,
-    totalBytes,
-    available: true,
+    manifestUrl: asset?.manifestUrl ?? datasetUrl(`mushaf-pages/${riwayah}/${mushafEditionId ?? 'missing'}/manifest.json`),
+    urls: available ? urls.filter((url) => url !== asset.manifestUrl) : [],
+    totalBytes: available ? asset.totalBytes : 0,
+    available,
   }
 }
 
-async function packageFor(riwayah, catalog) {
-  const text = await textAssetsFor(riwayah)
-  const pages = await pageAssetsFor(riwayah)
+async function packageFor(riwayah, catalog, textAssetIndex, mushafAssetIndex) {
+  const text = await textAssetsFor(riwayah, textAssetIndex)
+  const pages = await pageAssetsFor(riwayah, mushafAssetIndex)
   const available = text.available && pages.available
   return {
     riwayah,
@@ -161,9 +146,11 @@ async function refreshDatasetManifest(profileName) {
 
 export async function buildRiwayahPackageIndex({ profile = 'baseline', check = false } = {}) {
   const catalog = await loadCatalog()
+  const textAssetIndex = await loadTextAssetIndex()
+  const mushafAssetIndex = await loadMushafAssetIndex()
   const packages = []
   for (const riwayah of RIWAYAT) {
-    packages.push(await packageFor(riwayah, catalog))
+    packages.push(await packageFor(riwayah, catalog, textAssetIndex, mushafAssetIndex))
   }
 
   const qaloon = packages.find((entry) => entry.riwayah === 'qaloon')

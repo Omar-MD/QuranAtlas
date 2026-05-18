@@ -328,9 +328,14 @@ export async function getRiwayahPackageEntry(riwayah: Riwayah): Promise<RiwayahP
 }
 
 export function cacheNamesForRiwayahPackage(riwayah: Riwayah): { text: string; pages: string } {
+  const editionByRiwayah: Record<Riwayah, string> = {
+    qaloon: 'qalun-quran-ws-v1',
+    hafs: 'hafs-quran-ws-v1',
+    warsh: 'warsh-quran-ws-v1',
+  }
   return {
     text: CACHE_DATASET,
-    pages: `qa-pages-${riwayah}-v1`,
+    pages: `qa-pages-${riwayah}-${editionByRiwayah[riwayah]}-v1`,
   }
 }
 

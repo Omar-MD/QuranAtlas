@@ -1,0 +1,1432 @@
+{
+  "version": 1,
+  "defaults": {
+    "qaloon": "uthmani-kfgqpc-v1",
+    "hafs": "uthmani-kfgqpc-v1",
+    "warsh": "uthmani-kfgqpc-v1"
+  },
+  "assets": [
+    {
+      "riwayah": "qaloon",
+      "textStyleId": "uthmani-kfgqpc-v1",
+      "label": "Uthmani KFGQPC",
+      "scriptFamily": "uthmani",
+      "providerId": "kfgqpc",
+      "licenseId": "kfgqpc-quran-text",
+      "visibility": "baseline",
+      "shipped": true,
+      "outputPathTemplate": "quran-text/qaloon/uthmani-kfgqpc-v1/{surah}.json",
+      "provenance": {
+        "source": "KFGQPC Qalun v10"
+      },
+      "files": [
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json",
+          "bytes": 966
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/002.json",
+          "bytes": 123514
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/003.json",
+          "bytes": 72455
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/004.json",
+          "bytes": 76047
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/005.json",
+          "bytes": 56865
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/006.json",
+          "bytes": 61781
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/007.json",
+          "bytes": 70150
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/008.json",
+          "bytes": 26485
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/009.json",
+          "bytes": 52798
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/010.json",
+          "bytes": 37491
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/011.json",
+          "bytes": 38805
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/012.json",
+          "bytes": 36249
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/013.json",
+          "bytes": 17365
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/014.json",
+          "bytes": 17641
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/015.json",
+          "bytes": 17013
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/016.json",
+          "bytes": 39156
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/017.json",
+          "bytes": 33186
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/018.json",
+          "bytes": 32560
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/019.json",
+          "bytes": 21617
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/020.json",
+          "bytes": 29574
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/021.json",
+          "bytes": 26640
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/022.json",
+          "bytes": 26337
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/023.json",
+          "bytes": 24612
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/024.json",
+          "bytes": 27189
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/025.json",
+          "bytes": 19835
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/026.json",
+          "bytes": 34846
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/027.json",
+          "bytes": 24952
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/028.json",
+          "bytes": 29332
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/029.json",
+          "bytes": 21610
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/030.json",
+          "bytes": 17646
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/031.json",
+          "bytes": 11011
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/032.json",
+          "bytes": 8105
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/033.json",
+          "bytes": 27599
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/034.json",
+          "bytes": 17726
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/035.json",
+          "bytes": 15979
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/036.json",
+          "bytes": 16875
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/037.json",
+          "bytes": 25488
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/038.json",
+          "bytes": 17261
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/039.json",
+          "bytes": 24230
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/040.json",
+          "bytes": 25713
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/041.json",
+          "bytes": 16738
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/042.json",
+          "bytes": 17476
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/043.json",
+          "bytes": 19626
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/044.json",
+          "bytes": 9054
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/045.json",
+          "bytes": 10660
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/046.json",
+          "bytes": 12876
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/047.json",
+          "bytes": 12203
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/048.json",
+          "bytes": 11927
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/049.json",
+          "bytes": 7416
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/050.json",
+          "bytes": 8681
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/051.json",
+          "bytes": 9490
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/052.json",
+          "bytes": 7959
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/053.json",
+          "bytes": 9297
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/054.json",
+          "bytes": 9092
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/055.json",
+          "bytes": 10993
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/056.json",
+          "bytes": 12303
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/057.json",
+          "bytes": 12042
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/058.json",
+          "bytes": 9689
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/059.json",
+          "bytes": 9527
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/060.json",
+          "bytes": 7220
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/061.json",
+          "bytes": 4792
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/062.json",
+          "bytes": 3865
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/063.json",
+          "bytes": 4046
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/064.json",
+          "bytes": 5553
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/065.json",
+          "bytes": 5881
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/066.json",
+          "bytes": 5314
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/067.json",
+          "bytes": 7306
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/068.json",
+          "bytes": 8048
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/069.json",
+          "bytes": 7390
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/070.json",
+          "bytes": 6290
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/071.json",
+          "bytes": 5532
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/072.json",
+          "bytes": 6189
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/073.json",
+          "bytes": 4541
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/074.json",
+          "bytes": 7219
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/075.json",
+          "bytes": 5003
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/076.json",
+          "bytes": 6054
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/077.json",
+          "bytes": 6109
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/078.json",
+          "bytes": 5293
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/079.json",
+          "bytes": 5645
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/080.json",
+          "bytes": 4605
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/081.json",
+          "bytes": 3384
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/082.json",
+          "bytes": 2455
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/083.json",
+          "bytes": 5019
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/084.json",
+          "bytes": 3219
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/085.json",
+          "bytes": 3162
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/086.json",
+          "bytes": 2026
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/087.json",
+          "bytes": 2336
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/088.json",
+          "bytes": 3003
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/089.json",
+          "bytes": 4140
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/090.json",
+          "bytes": 2540
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/091.json",
+          "bytes": 1853
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/092.json",
+          "bytes": 2480
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/093.json",
+          "bytes": 1366
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/094.json",
+          "bytes": 937
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/095.json",
+          "bytes": 1158
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/096.json",
+          "bytes": 2338
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/097.json",
+          "bytes": 855
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/098.json",
+          "bytes": 2230
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/099.json",
+          "bytes": 1229
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/100.json",
+          "bytes": 1375
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/101.json",
+          "bytes": 1276
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/102.json",
+          "bytes": 1054
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/103.json",
+          "bytes": 556
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/104.json",
+          "bytes": 1152
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/105.json",
+          "bytes": 759
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/106.json",
+          "bytes": 679
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/107.json",
+          "bytes": 883
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/108.json",
+          "bytes": 457
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/109.json",
+          "bytes": 806
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/110.json",
+          "bytes": 601
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/111.json",
+          "bytes": 706
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/112.json",
+          "bytes": 535
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/113.json",
+          "bytes": 670
+        },
+        {
+          "url": "/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/114.json",
+          "bytes": 749
+        }
+      ],
+      "totalBytes": 1701636,
+      "ayahCount": 6214
+    },
+    {
+      "riwayah": "hafs",
+      "textStyleId": "uthmani-kfgqpc-v1",
+      "label": "Uthmani KFGQPC",
+      "scriptFamily": "uthmani",
+      "providerId": "kfgqpc",
+      "licenseId": "kfgqpc-quran-text",
+      "visibility": "optional",
+      "shipped": false,
+      "outputPathTemplate": "quran-text/hafs/uthmani-kfgqpc-v1/{surah}.json",
+      "provenance": {
+        "source": "KFGQPC Hafs v18"
+      },
+      "files": [
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json",
+          "bytes": 1229
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/002.json",
+          "bytes": 130026
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/003.json",
+          "bytes": 77161
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/004.json",
+          "bytes": 80168
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/005.json",
+          "bytes": 59311
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/006.json",
+          "bytes": 66129
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/007.json",
+          "bytes": 76049
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/008.json",
+          "bytes": 28329
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/009.json",
+          "bytes": 55744
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/010.json",
+          "bytes": 40385
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/011.json",
+          "bytes": 42690
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/012.json",
+          "bytes": 39484
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/013.json",
+          "bytes": 18308
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/014.json",
+          "bytes": 18934
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/015.json",
+          "bytes": 20227
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/016.json",
+          "bytes": 42889
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/017.json",
+          "bytes": 36556
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/018.json",
+          "bytes": 36192
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/019.json",
+          "bytes": 24642
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/020.json",
+          "bytes": 33968
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/021.json",
+          "bytes": 30252
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/022.json",
+          "bytes": 28330
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/023.json",
+          "bytes": 28376
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/024.json",
+          "bytes": 28895
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/025.json",
+          "bytes": 22207
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/026.json",
+          "bytes": 42444
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/027.json",
+          "bytes": 27609
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/028.json",
+          "bytes": 31814
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/029.json",
+          "bytes": 23403
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/030.json",
+          "bytes": 19394
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/031.json",
+          "bytes": 11850
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/032.json",
+          "bytes": 9004
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/033.json",
+          "bytes": 29397
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/034.json",
+          "bytes": 19317
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/035.json",
+          "bytes": 17061
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/036.json",
+          "bytes": 19591
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/037.json",
+          "bytes": 31480
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/038.json",
+          "bytes": 20174
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/039.json",
+          "bytes": 26367
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/040.json",
+          "bytes": 28044
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/041.json",
+          "bytes": 18431
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/042.json",
+          "bytes": 18938
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/043.json",
+          "bytes": 22463
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/044.json",
+          "bytes": 11145
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/045.json",
+          "bytes": 11731
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/046.json",
+          "bytes": 13937
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/047.json",
+          "bytes": 13255
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/048.json",
+          "bytes": 12627
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/049.json",
+          "bytes": 7863
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/050.json",
+          "bytes": 10106
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/051.json",
+          "bytes": 11498
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/052.json",
+          "bytes": 9721
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/053.json",
+          "bytes": 11367
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/054.json",
+          "bytes": 10917
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/055.json",
+          "bytes": 13635
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/056.json",
+          "bytes": 15386
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/057.json",
+          "bytes": 12795
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/058.json",
+          "bytes": 10282
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/059.json",
+          "bytes": 10039
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/060.json",
+          "bytes": 7535
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/061.json",
+          "bytes": 5168
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/062.json",
+          "bytes": 4116
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/063.json",
+          "bytes": 4333
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/064.json",
+          "bytes": 6047
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/065.json",
+          "bytes": 6127
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/066.json",
+          "bytes": 5593
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/067.json",
+          "bytes": 8133
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/068.json",
+          "bytes": 9804
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/069.json",
+          "bytes": 9149
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/070.json",
+          "bytes": 7839
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/071.json",
+          "bytes": 6372
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/072.json",
+          "bytes": 7054
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/073.json",
+          "bytes": 5261
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/074.json",
+          "bytes": 9222
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/075.json",
+          "bytes": 6396
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/076.json",
+          "bytes": 7083
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/077.json",
+          "bytes": 7834
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/078.json",
+          "bytes": 6664
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/079.json",
+          "bytes": 7275
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/080.json",
+          "bytes": 6081
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/081.json",
+          "bytes": 4360
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/082.json",
+          "bytes": 3092
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/083.json",
+          "bytes": 6254
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/084.json",
+          "bytes": 4100
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/085.json",
+          "bytes": 3867
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/086.json",
+          "bytes": 2590
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/087.json",
+          "bytes": 2974
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/088.json",
+          "bytes": 3912
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/089.json",
+          "bytes": 5069
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/090.json",
+          "bytes": 3235
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/091.json",
+          "bytes": 2382
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/092.json",
+          "bytes": 3228
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/093.json",
+          "bytes": 1753
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/094.json",
+          "bytes": 1215
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/095.json",
+          "bytes": 1416
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/096.json",
+          "bytes": 2954
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/097.json",
+          "bytes": 1007
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/098.json",
+          "bytes": 2452
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/099.json",
+          "bytes": 1440
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/100.json",
+          "bytes": 1759
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/101.json",
+          "bytes": 1686
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/102.json",
+          "bytes": 1330
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/103.json",
+          "bytes": 652
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/104.json",
+          "bytes": 1459
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/105.json",
+          "bytes": 939
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/106.json",
+          "bytes": 762
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/107.json",
+          "bytes": 1173
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/108.json",
+          "bytes": 557
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/109.json",
+          "bytes": 1026
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/110.json",
+          "bytes": 694
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/111.json",
+          "bytes": 886
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/112.json",
+          "bytes": 657
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/113.json",
+          "bytes": 834
+        },
+        {
+          "url": "/dataset/quran-text/hafs/uthmani-kfgqpc-v1/114.json",
+          "bytes": 945
+        }
+      ],
+      "totalBytes": 1885311,
+      "ayahCount": 6236
+    },
+    {
+      "riwayah": "warsh",
+      "textStyleId": "uthmani-kfgqpc-v1",
+      "label": "Uthmani KFGQPC",
+      "scriptFamily": "uthmani",
+      "providerId": "kfgqpc",
+      "licenseId": "kfgqpc-quran-text",
+      "visibility": "optional",
+      "shipped": false,
+      "outputPathTemplate": "quran-text/warsh/uthmani-kfgqpc-v1/{surah}.json",
+      "provenance": {
+        "source": "KFGQPC Warsh v10"
+      },
+      "files": [
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/001.json",
+          "bytes": 965
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/002.json",
+          "bytes": 124064
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/003.json",
+          "bytes": 72672
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/004.json",
+          "bytes": 76357
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/005.json",
+          "bytes": 57154
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/006.json",
+          "bytes": 62056
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/007.json",
+          "bytes": 70510
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/008.json",
+          "bytes": 26595
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/009.json",
+          "bytes": 53006
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/010.json",
+          "bytes": 37659
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/011.json",
+          "bytes": 39070
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/012.json",
+          "bytes": 36368
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/013.json",
+          "bytes": 17382
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/014.json",
+          "bytes": 17702
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/015.json",
+          "bytes": 17080
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/016.json",
+          "bytes": 39238
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/017.json",
+          "bytes": 33329
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/018.json",
+          "bytes": 32761
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/019.json",
+          "bytes": 21695
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/020.json",
+          "bytes": 29719
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/021.json",
+          "bytes": 26801
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/022.json",
+          "bytes": 26396
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/023.json",
+          "bytes": 24702
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/024.json",
+          "bytes": 27243
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/025.json",
+          "bytes": 19880
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/026.json",
+          "bytes": 34969
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/027.json",
+          "bytes": 25032
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/028.json",
+          "bytes": 29478
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/029.json",
+          "bytes": 21680
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/030.json",
+          "bytes": 17679
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/031.json",
+          "bytes": 11025
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/032.json",
+          "bytes": 8122
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/033.json",
+          "bytes": 27663
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/034.json",
+          "bytes": 17808
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/035.json",
+          "bytes": 16025
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/036.json",
+          "bytes": 16974
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/037.json",
+          "bytes": 25554
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/038.json",
+          "bytes": 17295
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/039.json",
+          "bytes": 24279
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/040.json",
+          "bytes": 25817
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/041.json",
+          "bytes": 16832
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/042.json",
+          "bytes": 17534
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/043.json",
+          "bytes": 19669
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/044.json",
+          "bytes": 9078
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/045.json",
+          "bytes": 10680
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/046.json",
+          "bytes": 12959
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/047.json",
+          "bytes": 12302
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/048.json",
+          "bytes": 11913
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/049.json",
+          "bytes": 7434
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/050.json",
+          "bytes": 8693
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/051.json",
+          "bytes": 9522
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/052.json",
+          "bytes": 7988
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/053.json",
+          "bytes": 9313
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/054.json",
+          "bytes": 9161
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/055.json",
+          "bytes": 10991
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/056.json",
+          "bytes": 12341
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/057.json",
+          "bytes": 12058
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/058.json",
+          "bytes": 9735
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/059.json",
+          "bytes": 9563
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/060.json",
+          "bytes": 7310
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/061.json",
+          "bytes": 4806
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/062.json",
+          "bytes": 3881
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/063.json",
+          "bytes": 4078
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/064.json",
+          "bytes": 5548
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/065.json",
+          "bytes": 5874
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/066.json",
+          "bytes": 5336
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/067.json",
+          "bytes": 7341
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/068.json",
+          "bytes": 8096
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/069.json",
+          "bytes": 7397
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/070.json",
+          "bytes": 6311
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/071.json",
+          "bytes": 5565
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/072.json",
+          "bytes": 6211
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/073.json",
+          "bytes": 4557
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/074.json",
+          "bytes": 7256
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/075.json",
+          "bytes": 5010
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/076.json",
+          "bytes": 6059
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/077.json",
+          "bytes": 6111
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/078.json",
+          "bytes": 5305
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/079.json",
+          "bytes": 5662
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/080.json",
+          "bytes": 4617
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/081.json",
+          "bytes": 3395
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/082.json",
+          "bytes": 2460
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/083.json",
+          "bytes": 5040
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/084.json",
+          "bytes": 3230
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/085.json",
+          "bytes": 3153
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/086.json",
+          "bytes": 2025
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/087.json",
+          "bytes": 2333
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/088.json",
+          "bytes": 3004
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/089.json",
+          "bytes": 4146
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/090.json",
+          "bytes": 2550
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/091.json",
+          "bytes": 1854
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/092.json",
+          "bytes": 2479
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/093.json",
+          "bytes": 1365
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/094.json",
+          "bytes": 942
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/095.json",
+          "bytes": 1161
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/096.json",
+          "bytes": 2351
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/097.json",
+          "bytes": 859
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/098.json",
+          "bytes": 2234
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/099.json",
+          "bytes": 1223
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/100.json",
+          "bytes": 1372
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/101.json",
+          "bytes": 1278
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/102.json",
+          "bytes": 1054
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/103.json",
+          "bytes": 553
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/104.json",
+          "bytes": 1153
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/105.json",
+          "bytes": 755
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/106.json",
+          "bytes": 681
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/107.json",
+          "bytes": 883
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/108.json",
+          "bytes": 457
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/109.json",
+          "bytes": 819
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/110.json",
+          "bytes": 598
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/111.json",
+          "bytes": 709
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/112.json",
+          "bytes": 533
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/113.json",
+          "bytes": 669
+        },
+        {
+          "url": "/dataset/quran-text/warsh/uthmani-kfgqpc-v1/114.json",
+          "bytes": 749
+        }
+      ],
+      "totalBytes": 1707968,
+      "ayahCount": 6214
+    }
+  ]
+}

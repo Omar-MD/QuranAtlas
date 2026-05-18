@@ -9,13 +9,13 @@ const packageIndex = {
       optional: false,
       available: true,
       text: {
-        urls: ['/dataset/riwayat/qaloon/001.json'],
+        urls: ['/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json'],
         totalBytes: 100,
         available: true,
       },
       pages: {
-        manifestUrl: '/dataset/mushaf-pages/qaloon/manifest.json',
-        urls: ['/dataset/mushaf-pages/qaloon/pages/001.svg'],
+        manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+        urls: ['/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg'],
         totalBytes: 200,
         available: true,
       },
@@ -26,13 +26,13 @@ const packageIndex = {
       optional: true,
       available: true,
       text: {
-        urls: ['/dataset/riwayat/hafs/001.json'],
+        urls: ['/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'],
         totalBytes: 110,
         available: true,
       },
       pages: {
-        manifestUrl: '/dataset/mushaf-pages/hafs/manifest.json',
-        urls: ['/dataset/mushaf-pages/hafs/pages/001.svg'],
+        manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+        urls: ['/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'],
         totalBytes: 220,
         available: true,
       },
@@ -48,7 +48,7 @@ const packageIndex = {
         available: false,
       },
       pages: {
-        manifestUrl: '/dataset/mushaf-pages/warsh/manifest.json',
+        manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
         urls: [],
         totalBytes: 0,
         available: false,
@@ -125,9 +125,9 @@ describe('riwayah package index', () => {
 
   it('does not make Hafs usable until every planned text and page URL is cached', async () => {
     installCache([
-      '/dataset/riwayat/hafs/001.json',
-      '/dataset/mushaf-pages/hafs/manifest.json',
-      '/dataset/mushaf-pages/hafs/pages/001.svg',
+      '/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json',
+      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg',
     ])
     const { getRiwayahPackageStatus, isRiwayahUsable } = await importLoader()
 
@@ -187,15 +187,15 @@ describe('riwayah package index', () => {
     await expect(planRiwayahPackageInstall('hafs')).resolves.toEqual({
       riwayah: 'hafs',
       urls: [
-        '/dataset/riwayat/hafs/001.json',
-        '/dataset/mushaf-pages/hafs/manifest.json',
-        '/dataset/mushaf-pages/hafs/pages/001.svg',
+        '/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json',
+        '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+        '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg',
       ],
       totalBytes: 330,
     })
     expect(cacheNamesForRiwayahPackage('hafs')).toEqual({
       text: 'quran-dataset-v2',
-      pages: 'qa-pages-hafs-v1',
+      pages: 'qa-pages-hafs-hafs-quran-ws-v1-v1',
     })
   })
 })

@@ -8,6 +8,10 @@ async function readCatalogJson(name) {
   return JSON.parse(await readFile(join(process.cwd(), 'data', 'catalog', name), 'utf8'))
 }
 
+async function readDatasetJson(path) {
+  return JSON.parse(await readFile(join(process.cwd(), 'public', 'dataset', path), 'utf8'))
+}
+
 describe('quran text asset catalog', () => {
   it('exposes stable text-style variants with compatible defaults', async () => {
     const textCatalog = await readCatalogJson('quran-text-assets.json')
@@ -29,6 +33,30 @@ describe('quran text asset catalog', () => {
     for (const [riwayah, textStyleId] of Object.entries(textCatalog.defaults)) {
       expect(textCatalog.assets.some((asset) => asset.riwayah === riwayah && asset.textStyleId === textStyleId)).toBe(true)
     }
+  })
+})
+
+describe('quran text asset index output', () => {
+  it('emits concrete text asset files and manifest inventory entries', async () => {
+    const textAssets = await readDatasetJson('indexes/text-assets.json')
+    expect(textAssets).toMatchObject({
+      version: 1,
+      defaults: { qaloon: 'uthmani-kfgqpc-v1' },
+    })
+    const qaloonText = textAssets.assets.find((asset) => asset.riwayah === 'qaloon' && asset.textStyleId === 'uthmani-kfgqpc-v1')
+    expect(qaloonText).toMatchObject({
+      riwayah: 'qaloon',
+      textStyleId: 'uthmani-kfgqpc-v1',
+      ayahCount: 6214,
+      outputPathTemplate: 'quran-text/qaloon/uthmani-kfgqpc-v1/{surah}.json',
+    })
+    expect(qaloonText.files).toHaveLength(114)
+    expect(qaloonText.files.reduce((sum, file) => sum + file.bytes, 0)).toBe(qaloonText.totalBytes)
+    expect(qaloonText.files[0].url).toBe('/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json')
+
+    const manifest = await readDatasetJson('manifest.json')
+    expect(manifest.files.some((file) => file.path === 'indexes/text-assets.json')).toBe(true)
+    expect(manifest.files.some((file) => file.path === 'quran-text/qaloon/uthmani-kfgqpc-v1/001.json')).toBe(true)
   })
 })
 

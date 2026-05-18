@@ -8,10 +8,10 @@ The pipeline has seven stages:
 
 1. `data/catalog/*.json` declares what sources and variant assets exist, where they come from, which are default, which are optional, and how they must be fetched and validated.
 2. `scripts/data/sources/fetch.mjs` converts upstream payloads into committed normalized source files under `data/normalized/**`, using provider adapters under `scripts/data/sources/providers/`. Mushaf page assets are the exception: `scripts/data/mushaf-pages/import.mjs` optionally downloads quran.ws PDFs into `.scratch/` and converts them to generated local SVG inputs under `data/normalized/mushaf-pages/**`.
-3. `scripts/data/text/build.mjs` validates normalized text sources and emits the reader corpus under `public/dataset/**`.
+3. `scripts/data/text/build.mjs` validates normalized text sources and emits the reader corpus plus Quran text-style asset indexes under `public/dataset/**`.
 4. `scripts/data/knowledge/build.mjs` validates curated Knowledge Lane sources and emits knowledge artifacts under `public/dataset/knowledge/**`.
-5. `scripts/data/mushaf-pages/build.mjs` validates available generated SVG page packs and emits `public/dataset/mushaf-pages/**` plus per-riwayah page manifests.
-6. `scripts/data/riwayah-packages/build.mjs` summarizes same-origin text/page package availability into `public/dataset/indexes/riwayah-packages.json`.
+5. `scripts/data/mushaf-pages/build.mjs` validates available generated SVG page packs and emits `public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/**`, legacy per-riwayah compatibility paths, and `indexes/mushaf-assets.json`.
+6. `scripts/data/riwayah-packages/build.mjs` summarizes same-origin text/page package availability from `indexes/text-assets.json` and `indexes/mushaf-assets.json` into the temporary compatibility facade at `public/dataset/indexes/riwayah-packages.json`.
 7. `scripts/data/manifest/inventory.mjs`, `src/data/dataset.ts`, `src/data/knowledge-dataset.ts`, the service worker, and offline settings consume only `/dataset/**` at runtime, with `manifest.json` carrying lane summaries plus per-file inventory entries.
 
 Important boundary: `data/catalog/**`, `data/normalized/**`, and `data/taxonomy/**` are build-only. The app never reads them directly.
@@ -73,12 +73,15 @@ flowchart TD
         Surahs["public/dataset/surahs.json"]
         Juz["public/dataset/juz.json"]
         RiwayahOut["public/dataset/riwayat/{riwayah}/{NNN}.json"]
+        QuranTextOut["public/dataset/quran-text/{riwayah}/{textStyleId}/{NNN}.json"]
+        TextAssetIndex["public/dataset/indexes/text-assets.json"]
         TranslationOut["public/dataset/translations/{id}/{NNN}.json"]
         TafsirOut["public/dataset/tafsir/{id}/{NNN}.json"]
         KnowledgeAyahOut["public/dataset/knowledge/ayah/{NNN}.json"]
         KnowledgePassagesOut["public/dataset/knowledge/passages/{NNN}.json"]
         KnowledgeIndexesOut["public/dataset/knowledge/indexes/*.json"]
-        MushafPageOut["public/dataset/mushaf-pages/{riwayah}/**"]
+        MushafPageOut["public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/**"]
+        MushafAssetIndex["public/dataset/indexes/mushaf-assets.json"]
         Provenance["public/dataset/provenance.json"]
         Manifest["public/dataset/manifest.json"]
     end
@@ -129,6 +132,8 @@ flowchart TD
     TextBuild --> Surahs
     TextBuild --> Juz
     TextBuild --> RiwayahOut
+    TextBuild --> QuranTextOut
+    TextBuild --> TextAssetIndex
     TextBuild --> TranslationOut
     TextBuild --> TafsirOut
     TextBuild --> Provenance
@@ -136,8 +141,9 @@ flowchart TD
     KnowledgeBuild --> KnowledgePassagesOut
     KnowledgeBuild --> KnowledgeIndexesOut
     MushafPageBuild --> MushafPageOut
-    TextBuild --> RiwayahPackageBuild
-    MushafPageBuild --> RiwayahPackageBuild
+    MushafPageBuild --> MushafAssetIndex
+    TextAssetIndex --> RiwayahPackageBuild
+    MushafAssetIndex --> RiwayahPackageBuild
     RiwayahPackageBuild --> RiwayahPackages
     SourcesIndex --> ManifestBuild
     SourceAssets --> ManifestBuild
@@ -145,22 +151,28 @@ flowchart TD
     Surahs --> ManifestBuild
     Juz --> ManifestBuild
     RiwayahOut --> ManifestBuild
+    QuranTextOut --> ManifestBuild
+    TextAssetIndex --> ManifestBuild
     TranslationOut --> ManifestBuild
     TafsirOut --> ManifestBuild
     KnowledgeAyahOut --> ManifestBuild
     KnowledgePassagesOut --> ManifestBuild
     KnowledgeIndexesOut --> ManifestBuild
     MushafPageOut --> ManifestBuild
+    MushafAssetIndex --> ManifestBuild
     Provenance --> ManifestBuild
     ManifestBuild --> Manifest
 
     SourcesIndex --> DatasetApi
     SourceAssets --> Offline
+    TextAssetIndex --> DatasetApi
+    MushafAssetIndex --> DatasetApi
     RiwayahPackages --> DatasetApi
     RiwayahPackages --> Offline
     Surahs --> DatasetApi
     Juz --> DatasetApi
     RiwayahOut --> DatasetApi
+    QuranTextOut --> DatasetApi
     TranslationOut --> DatasetApi
     TafsirOut --> DatasetApi
     Provenance --> DatasetApi
@@ -174,6 +186,7 @@ flowchart TD
     DatasetApi --> Settings
     Manifest --> Offline
     MushafPageOut --> SW
+    QuranTextOut --> SW
     SourcesIndex --> Offline
     RiwayahPackages --> SW
     Manifest --> SW

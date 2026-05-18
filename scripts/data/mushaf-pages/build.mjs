@@ -14,6 +14,7 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
 const CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-pages.json')
+const ASSET_CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-assets.json')
 const NORMALIZED_DIR = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages')
 const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
@@ -229,7 +230,18 @@ export async function validateSvgPageSet(pagesDir, pageCount, { missing = 'error
   return files
 }
 
-export async function writeMushafManifest({ outDir, riwayah, sourceSlug, pageCount, firstVerse, verseToPage, pageViewBoxes }) {
+export async function writeMushafManifest({
+  outDir,
+  riwayah,
+  sourceSlug,
+  pageCount,
+  firstVerse,
+  verseToPage,
+  pageViewBoxes,
+  mushafEditionId = null,
+  editionLabel = null,
+  editionVersion = null,
+}) {
   const pages = []
   for (let page = 1; page <= pageCount; page += 1) {
     const filename = `${pad3(page)}.svg`
@@ -251,6 +263,9 @@ export async function writeMushafManifest({ outDir, riwayah, sourceSlug, pageCou
   await writeJson(path, {
     version: 1,
     riwayah,
+    ...(mushafEditionId ? { mushafEditionId } : {}),
+    ...(editionLabel ? { editionLabel } : {}),
+    ...(editionVersion ? { editionVersion } : {}),
     sourceSlug,
     pageCount,
     attribution: {
@@ -276,6 +291,14 @@ async function loadCatalog() {
   return catalog
 }
 
+async function loadAssetCatalog() {
+  const catalog = await readJson(ASSET_CATALOG_PATH)
+  ensure(catalog.version === 1, 'Mushaf asset catalog version must be 1')
+  ensure(catalog.defaults && typeof catalog.defaults === 'object', 'Mushaf asset catalog missing defaults')
+  ensure(Array.isArray(catalog.assets), 'Mushaf asset catalog assets must be an array')
+  return catalog
+}
+
 async function deriveRiwayahMappings(riwayah, pageCount) {
   const sourcePath = join(RIWAYAT_SOURCE_DIR, `${riwayah}.json`)
   const ayat = await readJson(sourcePath)
@@ -288,9 +311,12 @@ async function deriveRiwayahMappings(riwayah, pageCount) {
   return mappings
 }
 
-async function buildRiwayah(riwayah, catalog, { check = false, missing = 'error' } = {}) {
+async function buildRiwayah(riwayah, catalog, assetCatalog, { check = false, missing = 'error' } = {}) {
   validateRiwayahId(riwayah)
-  const sourceSlug = catalog.riwayat[riwayah].sourceSlug
+  const mushafEditionId = assetCatalog.defaults[riwayah]
+  const asset = assetCatalog.assets.find((entry) => entry.riwayah === riwayah && entry.mushafEditionId === mushafEditionId)
+  ensure(asset, `Mushaf asset catalog missing default asset for ${riwayah}`)
+  const sourceSlug = asset.sourceSlug ?? catalog.riwayat[riwayah].sourceSlug
   const pageCount = catalog.pageCount
   const sourcePagesDir = join(NORMALIZED_DIR, riwayah, 'pages')
   const sourceFiles = await validateSvgPageSet(sourcePagesDir, pageCount, { missing })
@@ -303,8 +329,10 @@ async function buildRiwayah(riwayah, catalog, { check = false, missing = 'error'
   const mappings = await deriveRiwayahMappings(riwayah, pageCount)
   if (check) return true
 
-  const outDir = join(OUT_ROOT, riwayah)
+  const outDir = join(OUT_ROOT, riwayah, asset.mushafEditionId)
+  const legacyOutDir = join(OUT_ROOT, riwayah)
   await mkdir(join(outDir, 'pages'), { recursive: true })
+  await mkdir(join(legacyOutDir, 'pages'), { recursive: true })
   const pageViewBoxes = new Map()
   for (const sourceFile of sourceFiles) {
     const filename = basename(sourceFile)
@@ -315,9 +343,22 @@ async function buildRiwayah(riwayah, catalog, { check = false, missing = 'error'
     assertSafeSvg(filename, themed)
     pageViewBoxes.set(Number.parseInt(filename, 10), viewBoxForThemedPage(themed, filename))
     await writeFile(join(outDir, 'pages', filename), themed, 'utf8')
+    await writeFile(join(legacyOutDir, 'pages', filename), themed, 'utf8')
   }
   await writeMushafManifest({
     outDir,
+    riwayah,
+    mushafEditionId: asset.mushafEditionId,
+    editionLabel: asset.label,
+    editionVersion: 'v1',
+    sourceSlug,
+    pageCount,
+    firstVerse: mappings.firstVerse,
+    verseToPage: mappings.verseToPage,
+    pageViewBoxes,
+  })
+  await writeMushafManifest({
+    outDir: legacyOutDir,
     riwayah,
     sourceSlug,
     pageCount,
@@ -326,7 +367,31 @@ async function buildRiwayah(riwayah, catalog, { check = false, missing = 'error'
     pageViewBoxes,
   })
   console.log(`[mushaf-pages] wrote ${riwayah}: ${pageCount} pages`)
-  return true
+  const manifestUrl = `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`
+  const files = [{ url: manifestUrl, bytes: (await stat(join(outDir, 'manifest.json'))).size }]
+  let totalBytes = files[0].bytes
+  for (let page = 1; page <= pageCount; page += 1) {
+    const filename = `${pad3(page)}.svg`
+    const bytes = (await stat(join(outDir, 'pages', filename))).size
+    files.push({ url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`, bytes })
+    totalBytes += bytes
+  }
+  return {
+    ...asset,
+    manifestUrl,
+    files,
+    totalBytes,
+    pageCount,
+  }
+}
+
+async function writeMushafAssetIndex(resolvedAssets, assetCatalog) {
+  await mkdir(join(DATASET_DIR, 'indexes'), { recursive: true })
+  await writeJson(join(DATASET_DIR, 'indexes', 'mushaf-assets.json'), {
+    version: 1,
+    defaults: assetCatalog.defaults,
+    assets: resolvedAssets,
+  })
 }
 
 async function manifestTextSourcesFromCurrentManifest() {
@@ -378,18 +443,22 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const catalog = await loadCatalog()
+  const assetCatalog = await loadAssetCatalog()
   if (!check) {
     await rm(OUT_ROOT, { recursive: true, force: true })
   }
 
+  const resolvedAssets = []
   for (const riwayah of selectedRiwayat) {
-    await buildRiwayah(riwayah, catalog, {
+    const resolved = await buildRiwayah(riwayah, catalog, assetCatalog, {
       check,
       missing: requiredRiwayat.has(riwayah) ? 'error' : 'skip',
     })
+    if (resolved && typeof resolved === 'object') resolvedAssets.push(resolved)
   }
 
   if (!check) {
+    await writeMushafAssetIndex(resolvedAssets, assetCatalog)
     await refreshDatasetManifest(profile)
   }
 }

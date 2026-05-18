@@ -9,6 +9,9 @@ function classifyDatasetFile(path) {
   if (path.startsWith('riwayat/')) {
     return { lane: 'text', category: 'text-riwayah' }
   }
+  if (path.startsWith('quran-text/')) {
+    return { lane: 'text', category: 'text-riwayah' }
+  }
   if (path.startsWith('translations/') && !path.startsWith('translations/_')) {
     return { lane: 'text', category: 'text-translation' }
   }
@@ -21,7 +24,13 @@ function classifyDatasetFile(path) {
   if (path === 'surahs.json' || path === 'juz.json') {
     return { lane: 'text', category: 'text-core' }
   }
-  if (path === 'indexes/sources.json' || path === 'indexes/riwayah-packages.json' || path === 'provenance.json') {
+  if (
+    path === 'indexes/sources.json' ||
+    path === 'indexes/riwayah-packages.json' ||
+    path === 'indexes/text-assets.json' ||
+    path === 'indexes/mushaf-assets.json' ||
+    path === 'provenance.json'
+  ) {
     return { lane: 'text', category: 'text-index' }
   }
   if (path === 'indexes/source-assets.json') {
