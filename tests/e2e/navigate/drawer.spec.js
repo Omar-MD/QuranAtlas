@@ -332,7 +332,7 @@ test.describe('Journey F: Navigation', () => {
     await waitForReader(page)
   })
 
-  test('F-mobile-visual: drawer redesign captures theme screenshots without overflow @mobile', async ({ page }, testInfo) => {
+  test('F-mobile-visual: drawer captures theme screenshots without overflow @mobile', async ({ page }, testInfo) => {
     await writeSetting(page, 'wirdPlan', {
       id: 'wird-visual',
       startRef: { surah: 2, verse: 1 },

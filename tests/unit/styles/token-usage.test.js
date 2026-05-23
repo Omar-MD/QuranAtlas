@@ -1,5 +1,8 @@
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { describe, it, expect } from 'vitest'
-import { checkTokenUsage } from '../../../scripts/check-token-usage.mjs'
+import { checkTokenUsage, listStyleCheckFiles } from '../../../scripts/check-token-usage.mjs'
 
 describe('token usage', () => {
   it('flags var(--qa-...) reference not declared in token CSS or file-local scope', () => {
@@ -39,5 +42,13 @@ describe('token usage', () => {
     const { errors } = checkTokenUsage({ semantic, surfaceFiles })
     expect(errors).toHaveLength(1)
     expect(errors[0]).toMatch(/--qa-missing/)
+  })
+
+  it('discovers nested surface css files for checking', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'qa-token-usage-'))
+    mkdirSync(join(repoRoot, 'src/styles/surfaces/read'), { recursive: true })
+    writeFileSync(join(repoRoot, 'src/styles/surfaces/read/ambient-dock.css'), '.qa-read-ambient-dock {}')
+
+    expect(listStyleCheckFiles(repoRoot)).toContain('src/styles/surfaces/read/ambient-dock.css')
   })
 })

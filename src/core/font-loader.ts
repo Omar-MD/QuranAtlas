@@ -18,8 +18,8 @@
  * declarations stay in place as the canonical source for non-iOS
  * browsers.
  *
- * **Lazy by riwayah** (post-2026-04-29): only the user's active riwayah
- * cut is fetched at boot. Other-riwayah cuts are loaded on demand when
+ * **Lazy by riwayah:** only the user's active riwayah cut is fetched at boot.
+ * Other-riwayah cuts are loaded on demand when
  * the Settings sheet swaps riwayah (`SETTINGS_RIWAYAH_CHANGED`). This
  * cuts ~180 KB from the up-front payload for single-riwayah users (~85 %
  * of installs). The CacheFirst SW route at `/fonts/*.woff2` keeps each

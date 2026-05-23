@@ -195,7 +195,7 @@
     }
   }
 
-  /* Clear-data link migrated from Settings sheet (2026-04-25 mobile-nav redesign). */
+  /* Clear-data link moved out of Settings sheet so it remains reachable from About. */
   .qa-about-clear-section {
     margin-top: 32px;
     padding-top: 16px;

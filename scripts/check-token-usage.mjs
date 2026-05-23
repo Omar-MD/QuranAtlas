@@ -6,12 +6,13 @@
  * verify the token is declared in src/styles/tokens/semantic.css.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve, relative } from 'node:path'
 
 function walk(dir, exts) {
   const out = []
+  if (!existsSync(dir)) return out
   for (const entry of readdirSync(dir)) {
     if (entry === 'node_modules' || entry === 'dist' || entry.startsWith('.')) continue
     const full = `${dir}/${entry}`
@@ -20,6 +21,12 @@ function walk(dir, exts) {
     else if (exts.some(e => full.endsWith(e))) out.push(full)
   }
   return out
+}
+
+export function listStyleCheckFiles(repoRoot) {
+  return walk(resolve(repoRoot, 'src/styles'), ['.css'])
+    .map((path) => relative(repoRoot, path))
+    .sort()
 }
 
 export function checkTokenUsage({ semantic, surfaceFiles }) {
@@ -88,7 +95,7 @@ if (isMain) {
     'src/styles/tokens/semantic.css',
   ].map(p => readFileSync(resolve(repoRoot, p), 'utf8')).join('\n')
 
-  const cssFiles = walk(resolve(repoRoot, 'src/styles/surfaces'), ['.css'])
+  const cssFiles = listStyleCheckFiles(repoRoot).map((path) => resolve(repoRoot, path))
   const svelteFiles = walk(resolve(repoRoot, 'src'), ['.svelte'])
 
   const surfaceFiles = [

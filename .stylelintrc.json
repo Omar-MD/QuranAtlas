@@ -40,7 +40,11 @@
       }
     },
     {
-      "files": ["src/styles/surfaces/sheet.css", "src/styles/surfaces/modal.css"],
+      "files": [
+        "src/styles/patterns/**/*.css",
+        "src/styles/surfaces/**/sheet.css",
+        "src/styles/surfaces/**/modal.css"
+      ],
       "rules": {
         "property-no-vendor-prefix": null,
         "declaration-block-no-duplicate-properties": null,
@@ -48,7 +52,7 @@
       }
     },
     {
-      "files": ["src/styles/surfaces/app-shell.css"],
+      "files": ["src/styles/surfaces/**/app-shell.css"],
       "rules": {
         "selector-max-id": 1,
         "selector-max-universal": 1,
@@ -57,21 +61,21 @@
       }
     },
     {
-      "files": ["src/styles/surfaces/about.css"],
+      "files": ["src/styles/surfaces/**/about.css"],
       "rules": {
         "selector-max-type": 1,
         "font-family-name-quotes": null
       }
     },
     {
-      "files": ["src/styles/surfaces/nav.css"],
+      "files": ["src/styles/surfaces/**/nav.css"],
       "rules": {
         "selector-max-type": 1,
         "selector-no-qualifying-type": null
       }
     },
     {
-      "files": ["src/styles/surfaces/tag.css"],
+      "files": ["src/styles/surfaces/**/tag.css"],
       "rules": {
         "selector-max-type": 1,
         "selector-max-universal": 1,
@@ -80,20 +84,20 @@
       }
     },
     {
-      "files": ["src/styles/surfaces/review.css"],
+      "files": ["src/styles/surfaces/**/review.css"],
       "rules": {
         "selector-max-type": 1,
         "selector-max-compound-selectors": 3
       }
     },
     {
-      "files": ["src/styles/surfaces/toast.css"],
+      "files": ["src/styles/surfaces/**/toast.css"],
       "rules": {
         "selector-max-type": 1
       }
     },
     {
-      "files": ["src/styles/surfaces/reader.css", "src/styles/surfaces/settings.css"],
+      "files": ["src/styles/surfaces/**/reader.css", "src/styles/surfaces/**/settings.css"],
       "rules": {
         "property-no-vendor-prefix": null
       }

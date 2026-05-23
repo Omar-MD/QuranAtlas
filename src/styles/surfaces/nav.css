@@ -3,11 +3,11 @@
  * MarginHeader (mobile sticky header), SurahProgress (pill within margin
  * header), NavDrawer (left-slide right pill).
  *
- * Consumers: src/nav/{AmbientDock,AmbientPill,MarginHeader,SurahProgress,
- * NavDrawer}.svelte.
+ * Consumers: src/read/{AmbientDock,AmbientPill,MarginHeader,SurahProgress}.svelte
+ * and src/navigate/NavDrawer.svelte.
  *
- * Z-index literals preserved (specific layering relative to scrim/pill/sheet
- * contexts predates the semantic z-tier; refactor-not-redesign).
+ * Z-index literals preserved because these layers still map to distinct scrim,
+ * pill, and sheet relationships ahead of the semantic z-tier cleanup.
  */
 @layer surfaces {
   /* ================================================================ dock */
@@ -188,7 +188,7 @@
   }
 
   /* ================================================================ margin header
-     Single-row mobile/tablet top nav (2026-04-25 redesign).
+     Single-row mobile/tablet top nav.
      Layout: [≡] · bilingual surah label · [⚙]
   */
 

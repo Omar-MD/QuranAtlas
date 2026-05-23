@@ -7,7 +7,7 @@
  * rules regardless of specificity — catastrophic for the cascade model.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve, relative } from 'node:path'
 
@@ -47,6 +47,7 @@ export function checkAtLayer(css, fileName) {
 
 function walk(dir, exts) {
   const out = []
+  if (!existsSync(dir)) return out
   for (const entry of readdirSync(dir)) {
     const full = `${dir}/${entry}`
     const s = statSync(full)
@@ -56,13 +57,19 @@ function walk(dir, exts) {
   return out
 }
 
+export function listStyleCheckFiles(repoRoot) {
+  return walk(resolve(repoRoot, 'src/styles'), ['.css'])
+    .map((path) => relative(repoRoot, path))
+    .sort()
+}
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const isMain = process.argv[1] === __filename
 
 if (isMain) {
   const repoRoot = resolve(__dirname, '..')
-  const cssFiles = walk(resolve(repoRoot, 'src/styles'), ['.css'])
+  const cssFiles = listStyleCheckFiles(repoRoot).map((path) => resolve(repoRoot, path))
   let anyError = false
   for (const path of cssFiles) {
     const rel = relative(repoRoot, path)

@@ -124,7 +124,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
       // Verse tab should be active on a verse-reader route.
       await expect(verseTab).toHaveClass(/qa-rail-item--active/)
     } else {
-      // Mobile: MarginHeader single-row layout (2026-04-25 redesign)
+      // Mobile: MarginHeader single-row layout.
       const header = page.locator('header.qa-mh')
       await expect(header).toBeVisible()
       await expect(header).not.toHaveClass(/qa-mh--hidden/)
@@ -134,7 +134,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     }
   })
 
-  test('B1: mobile margin header is a single row, ≤ 60 px tall (post-redesign) @mobile', async ({ page }) => {
+  test('B1: mobile margin header is a single row, <= 60 px tall @mobile', async ({ page }) => {
     const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
     test.skip(isDesktop, 'desktop uses ambient rail, not margin header')
 

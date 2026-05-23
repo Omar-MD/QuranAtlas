@@ -45,7 +45,7 @@ export async function surfaceDock(page) {
 }
 
 /**
- * Open the nav drawer (replaces MoreSheet 2026-04-25).
+ * Open the nav drawer.
  * Desktop (≥1180px): ⋯ kebab on AmbientDock rail.
  * Mobile  (<1180px): ≡ hamburger on MarginHeader.
  */
@@ -66,7 +66,7 @@ export const openMoreSheet = openNavDrawer
 /**
  * Open the Settings sheet.
  * Desktop (≥1180px): navigate to #/settings (router opens the sheet).
- * Mobile  (<1180px): MarginHeader gear icon (post-2026-04-25 redesign).
+ * Mobile  (<1180px): MarginHeader gear icon.
  */
 export async function openSettingsSheet(page) {
   const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
@@ -86,9 +86,8 @@ export async function openSettingsSheet(page) {
 
 /**
  * Simulate a double-tap by dispatching two TouchEvent pairs ~120ms apart.
- * Replaces the long-press gesture for opening the fast-tag panel
- * (mobile-nav-redesign 2026-04-25 — long-press was retired so OS-native
- * gestures like text selection / iOS callouts could surface unblocked).
+ * Replaces the retired long-press gesture for opening the fast-tag panel so
+ * OS-native gestures like text selection and iOS callouts remain available.
  *
  * The gesture code in src/mark/long-press.ts listens for touchstart/touchend,
  * not mousedown/pointerdown, so mouse.down() doesn't trigger it. Scrolls the
