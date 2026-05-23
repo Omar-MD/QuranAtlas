@@ -23,6 +23,7 @@ Read these before editing:
 - `src/styles/surfaces/reader-virtualiser.css`
 - `src/styles/surfaces/reading-typography.css`
 - `src/styles/surfaces/assets.css`
+- `src/styles/surfaces/about.css`
 - `src/styles/surfaces/onboarding.css`
 - `src/styles/surfaces/sheet.css`
 - `src/styles/surfaces/modal.css`
@@ -32,6 +33,8 @@ Read these before editing:
 - `docs/context/surfaces/configure.md`
 - `docs/context/surfaces/onboard.md`
 - `DESIGN.md`
+- `docs/context/architecture.md`
+- `docs/context/repo-structure.md`
 
 ## File Structure
 
@@ -51,6 +54,8 @@ Create CSS partials only when rules move into them:
 Modify:
 
 - `src/styles/index.css`
+- `docs/context/architecture.md`
+- `docs/context/repo-structure.md`
 - source flat CSS files while shrinking or deleting them after moves.
 
 Create local only:
@@ -72,16 +77,18 @@ entry point: src/styles/index.css only
 comments: keep only when current and not misleading after move
 ```
 
-For each moved block, append a ledger row:
+Before every commit in this plan, run `git status --short` and stage only files changed by that task. The commands below name the expected task-owned paths; remove unchanged paths and do not stage unrelated dirty files.
+
+Move complete CSS rules with enclosing `@media`, `@supports`, and other at-rule context intact. Do not extract a selector out of its current at-rule wrapper. For each moved rule group, append a ledger row:
 
 ```text
-original_file    original_order    destination_file    selector_or_block_label    declaration_hash
+original_file    source_span    original_order    destination_file    selector_or_block_label    at_rule_context    moved_rule_hash
 ```
 
-Generate hashes with:
+Generate the hash from the actual moved rule text:
 
 ```bash
-printf '%s' 'selector { color: var(--qa-color-text); }' | shasum -a 256 | cut -d' ' -f1
+printf '%s' "$MOVED_RULE_TEXT" | shasum -a 256 | cut -d' ' -f1
 ```
 
 ## Task 1: Preflight And Ledger Setup
@@ -94,11 +101,14 @@ printf '%s' 'selector { color: var(--qa-color-text); }' | shasum -a 256 | cut -d
 Run:
 
 ```bash
+test -f scripts/check-style-entry.mjs
+test -f tests/unit/styles/style-entry.test.js
+node -e "const pkg=require('./package.json'); if (!pkg.scripts.check.includes('check-style-entry.mjs')) process.exit(1)"
 pnpm run check
 git status --short --branch
 ```
 
-Expected: `pnpm run check` passes and no unrelated dirty files are present.
+Expected: Spec 01 artifacts exist, `pnpm run check` passes, and no unrelated dirty files are present. Stop if any prerequisite is missing; do not recreate check infrastructure in this plan.
 
 - [ ] **Step 2: Save import report**
 
@@ -107,7 +117,7 @@ Run:
 ```bash
 mkdir -p .scratch/agentic-ui-refactor
 node scripts/check-style-entry.mjs --report > .scratch/agentic-ui-refactor/02-style-entry-before.txt
-printf 'original_file\toriginal_order\tdestination_file\tselector_or_block_label\tdeclaration_hash\n' > .scratch/agentic-ui-refactor/02-css-split-ledger.tsv
+printf 'original_file\tsource_span\toriginal_order\tdestination_file\tselector_or_block_label\tat_rule_context\tmoved_rule_hash\n' > .scratch/agentic-ui-refactor/02-css-split-ledger.tsv
 ```
 
 Expected: report and ledger exist locally and are untracked.
@@ -118,6 +128,8 @@ Expected: report and ledger exist locally and are untracked.
 - Create: `src/styles/patterns/sheet.css`
 - Create: `src/styles/patterns/modal.css`
 - Create: `src/styles/patterns/toast.css`
+- Create: `src/styles/patterns/form-controls.css` when shared controls exist.
+- Create: `src/styles/surfaces/overlays/save-failure-toast.css` when `.qa-save-failure-toast*` rules exist.
 - Modify: `src/styles/surfaces/sheet.css`
 - Modify: `src/styles/surfaces/modal.css`
 - Modify: `src/styles/surfaces/toast.css`
@@ -133,13 +145,13 @@ Expected destination header:
 @layer surfaces {
 ```
 
-- [ ] **Step 2: Move modal rules**
+- [ ] **Step 2: Move modal and shared form-control rules**
 
-Move every selector block from `src/styles/surfaces/modal.css` into `src/styles/patterns/modal.css` with unchanged declarations and ledger rows.
+Move modal-shell selector blocks from `src/styles/surfaces/modal.css` into `src/styles/patterns/modal.css` with unchanged declarations and ledger rows. If shared controls such as `.qa-input` or `.qa-warning-text` are present, move those complete rule groups into `src/styles/patterns/form-controls.css` and import that file at the same source slot after `modal.css`.
 
-- [ ] **Step 3: Move toast rules**
+- [ ] **Step 3: Split generic toast and save-failure overlay rules**
 
-Move every selector block from `src/styles/surfaces/toast.css` into `src/styles/patterns/toast.css` with unchanged declarations and ledger rows.
+Move generic reusable toast rules from `src/styles/surfaces/toast.css` into `src/styles/patterns/toast.css`. Move `.qa-save-failure-toast*` overlay rules into `src/styles/surfaces/overlays/save-failure-toast.css`. Preserve the original toast source slot by importing `patterns/toast.css` before `surfaces/overlays/save-failure-toast.css`.
 
 - [ ] **Step 4: Update imports in place**
 
@@ -155,6 +167,7 @@ with:
 ```css
 @import url('./patterns/modal.css');
 @import url('./patterns/sheet.css');
+@import url('./patterns/form-controls.css');
 ```
 
 Replace:
@@ -167,6 +180,7 @@ with:
 
 ```css
 @import url('./patterns/toast.css');
+@import url('./surfaces/overlays/save-failure-toast.css');
 ```
 
 Keep relative order unchanged.
@@ -186,6 +200,7 @@ Expected: PASS.
 Run:
 
 ```bash
+git status --short
 git add src/styles/index.css src/styles/patterns src/styles/surfaces/sheet.css src/styles/surfaces/modal.css src/styles/surfaces/toast.css
 git commit -m "refactor(ui): move shared pattern css"
 ```
@@ -211,19 +226,19 @@ Expected: commit succeeds.
 
 - [ ] **Step 1: Move AmbientDock rules**
 
-Move `.qa-dock-*` and related desktop dock blocks from `nav.css` to `src/styles/surfaces/read/ambient-dock.css`. Preserve declarations exactly and add ledger rows.
+Move current desktop rail/dock selectors from `nav.css` to `src/styles/surfaces/read/ambient-dock.css`. Current selector families include `.qa-rail-*`; if `.qa-dock-*` already exists by the time this plan runs, move that family too. Preserve declarations exactly and add ledger rows.
 
 - [ ] **Step 2: Move AmbientPill rules**
 
-Move `.qa-ambient-pill*` and related floating pill blocks to `src/styles/surfaces/read/ambient-pill.css`.
+Move current floating pill selectors from `nav.css` to `src/styles/surfaces/read/ambient-pill.css`. Current selector families include `.qa-pill-ref*`; if `.qa-ambient-pill*` already exists by the time this plan runs, move that family too.
 
 - [ ] **Step 3: Move MarginHeader rules**
 
-Move `.qa-margin-header*` and mobile/tablet top-header blocks to `src/styles/surfaces/read/margin-header.css`.
+Move current mobile/tablet header selectors from `nav.css` to `src/styles/surfaces/read/margin-header.css`. Current selector families include `.qa-mh*`; if `.qa-margin-header*` already exists by the time this plan runs, move that family too.
 
 - [ ] **Step 4: Move SurahProgress rules**
 
-Move `.qa-surah-progress*` and progress chip blocks to `src/styles/surfaces/read/surah-progress.css`.
+Move current progress chip selectors from `nav.css` to `src/styles/surfaces/read/surah-progress.css`. Current selector families include `.qa-surah-progress*` and `.qa-sp-*`.
 
 - [ ] **Step 5: Move drawer shell rules**
 
@@ -242,7 +257,21 @@ mushaf rows -> drawer-mushaf.css
 shortcuts sheet -> shortcuts-sheet.css
 ```
 
-- [ ] **Step 7: Update `src/styles/index.css` imports**
+- [ ] **Step 7: Move Daily Wird presentation from `nav.css`**
+
+Move `.qa-wird-*` internal card presentation from `nav.css` to `src/styles/surfaces/read/wird.css`. Keep only navigate-owned drawer placement wrappers in navigate CSS, such as a drawer slot that constrains where the card appears.
+
+- [ ] **Step 8: Inventory every remaining `nav.css` selector**
+
+Run:
+
+```bash
+rg -n "^\\s*(?:\\.|@media|@supports)" src/styles/surfaces/nav.css
+```
+
+Expected: every remaining rule is mapped to one of these outcomes before the `nav.css` import is removed: moved to a read partial, moved to a navigate partial, moved to a clearly named removed-scope quarantine partial, or left in a documented transitional stub with an owner and removal condition.
+
+- [ ] **Step 9: Update `src/styles/index.css` imports**
 
 Replace the single `nav.css` import with the new read and navigate imports in the same original position.
 
@@ -253,6 +282,7 @@ Expected order:
 @import url('./surfaces/read/ambient-pill.css');
 @import url('./surfaces/read/margin-header.css');
 @import url('./surfaces/read/surah-progress.css');
+@import url('./surfaces/read/wird.css');
 @import url('./surfaces/navigate/drawer-shell.css');
 @import url('./surfaces/navigate/drawer-read-source.css');
 @import url('./surfaces/navigate/drawer-lists.css');
@@ -262,7 +292,7 @@ Expected order:
 @import url('./surfaces/navigate/shortcuts-sheet.css');
 ```
 
-- [ ] **Step 8: Verify read/navigate split**
+- [ ] **Step 10: Verify read/navigate split**
 
 Run:
 
@@ -274,11 +304,12 @@ pnpm playwright test tests/e2e/navigate/drawer.spec.js --project=chromium --repo
 
 Expected: all pass.
 
-- [ ] **Step 9: Commit read/navigate split**
+- [ ] **Step 11: Commit read/navigate split**
 
 Run:
 
 ```bash
+git status --short
 git add src/styles/index.css src/styles/surfaces/nav.css src/styles/surfaces/read src/styles/surfaces/navigate
 git commit -m "refactor(ui): split read and navigate chrome css"
 ```
@@ -326,11 +357,7 @@ Move Mushaf reader, page, controls, and SVG-page selectors into `mushaf.css`.
 
 Move `reading-typography.css` content into `typography.css` and `reader-virtualiser.css` content into `virtualiser.css`.
 
-- [ ] **Step 7: Move Daily Wird presentation**
-
-Move `.qa-wird-*` selector blocks into `wird.css`.
-
-- [ ] **Step 8: Update `src/styles/index.css` imports**
+- [ ] **Step 7: Update `src/styles/index.css` imports**
 
 Replace reader imports with:
 
@@ -341,12 +368,11 @@ Replace reader imports with:
 @import url('./surfaces/read/continuity.css');
 @import url('./surfaces/read/mushaf.css');
 @import url('./surfaces/read/states.css');
-@import url('./surfaces/read/typography.css');
 @import url('./surfaces/read/virtualiser.css');
-@import url('./surfaces/read/wird.css');
+@import url('./surfaces/read/typography.css');
 ```
 
-- [ ] **Step 9: Verify reader split**
+- [ ] **Step 8: Verify reader split**
 
 Run:
 
@@ -358,11 +384,12 @@ pnpm playwright test tests/e2e/read/chrome.spec.js --project=chromium --reporter
 
 Expected: all pass.
 
-- [ ] **Step 10: Commit reader split**
+- [ ] **Step 9: Commit reader split**
 
 Run:
 
 ```bash
+git status --short
 git add src/styles/index.css src/styles/surfaces/read src/styles/surfaces/reader.css src/styles/surfaces/reader-virtualiser.css src/styles/surfaces/reading-typography.css
 git commit -m "refactor(ui): split reader css partials"
 ```
@@ -379,7 +406,10 @@ Expected: commit succeeds.
 - Create: `src/styles/surfaces/overlays/quota-banner.css`
 - Create: `src/styles/surfaces/overlays/update-banner.css`
 - Create: `src/styles/surfaces/overlays/night-shift.css`
-- Modify: existing flat configure/page/onboard/overlay CSS files
+- Modify: `src/styles/surfaces/settings.css`
+- Modify: `src/styles/surfaces/assets.css`
+- Modify: `src/styles/surfaces/about.css`
+- Modify: existing flat page/onboard/overlay CSS files
 - Modify: `src/styles/index.css`
 
 - [ ] **Step 1: Split settings and asset CSS**
@@ -399,7 +429,7 @@ clear-data.css
 about.css
 ```
 
-Preserve current declaration order through import order.
+Preserve current declaration order through import order. Keep `about.css` in the original early `about.css` source slot from `src/styles/index.css`; do not move About after settings just because it is configure-owned.
 
 - [ ] **Step 2: Split onboarding CSS**
 
@@ -433,6 +463,21 @@ src/styles/surfaces/night-shift.css -> src/styles/surfaces/overlays/night-shift.
 
 Replace the corresponding flat imports in `src/styles/index.css` with nested imports in the same relative positions.
 
+Use this current source-slot map:
+
+```text
+quota-banner.css slot -> overlays/quota-banner.css
+update-banner.css slot -> overlays/update-banner.css
+about.css slot -> configure/about.css
+onboarding.css slot -> onboard/* imports
+surahs.css slot -> pages/surahs.css
+bookmarks.css slot -> pages/bookmarks.css
+settings.css slot -> configure/settings-* and configure/control partials
+assets.css slot -> configure/asset-management.css and configure/offline-selector.css
+night-shift.css slot -> overlays/night-shift.css
+toast.css slot -> patterns/toast.css plus overlays/save-failure-toast.css
+```
+
 - [ ] **Step 5: Verify configure/onboard split**
 
 Run:
@@ -451,6 +496,7 @@ Expected: all pass.
 Run:
 
 ```bash
+git status --short
 git add src/styles/index.css src/styles/surfaces/configure src/styles/surfaces/onboard src/styles/surfaces/pages src/styles/surfaces/overlays src/styles/surfaces/settings.css src/styles/surfaces/assets.css src/styles/surfaces/about.css src/styles/surfaces/onboarding.css src/styles/surfaces/surahs.css src/styles/surfaces/bookmarks.css src/styles/surfaces/quota-banner.css src/styles/surfaces/update-banner.css src/styles/surfaces/night-shift.css
 git commit -m "refactor(ui): split configure and route css"
 ```
@@ -491,6 +537,7 @@ Run:
 ```bash
 pnpm run check
 git diff --check
+pnpm run docs:check
 ```
 
 Expected: PASS.
@@ -501,21 +548,26 @@ Use Playwright or the in-app browser to inspect:
 
 ```text
 read mobile
+read tablet
 read desktop
 configure settings mobile
+configure settings tablet
 configure settings desktop
 navigate drawer mobile
+navigate drawer tablet
 navigate drawer desktop
 onboard mobile
+onboard tablet
 ```
 
-Expected: no visible regression against current accepted UI states.
+Expected: no visible regression against the named current accepted UI states. Include any known awkward cases: `320x568`, short drawer/settings/onboarding viewports, and focus rings when moved selectors affect controls.
 
 - [ ] **Step 5: Commit final report note if needed**
 
 If no source edits remain, do not create a commit. If a final import-order correction was needed, run:
 
 ```bash
+git status --short
 git add src/styles/index.css src/styles
 git commit -m "refactor(ui): finalize css import order"
 ```

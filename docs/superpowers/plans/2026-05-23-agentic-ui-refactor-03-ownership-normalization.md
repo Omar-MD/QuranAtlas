@@ -14,8 +14,13 @@
 
 Read these before editing:
 
+- `AGENTS.md`
+- `.agents/skills/quranatlas-workflow/SKILL.md`
+- `.agents/skills/quranatlas-ui-workflow/SKILL.md`
 - `docs/superpowers/specs/2026-05-22-agentic-ui-refactor-03-ownership-normalization-spec.md`
 - `docs/superpowers/plans/2026-05-23-agentic-ui-refactor-02-css-partial-split.md`
+- `docs/context/repo-structure.md`
+- `DESIGN.md`
 - `src/read/AmbientDock.svelte`
 - `src/read/AmbientPill.svelte`
 - `src/read/MarginHeader.svelte`
@@ -31,6 +36,8 @@ Read these before editing:
 - `src/onboard/OnboardingScreen.svelte`
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
+
+Required workflow before edits: use `quranatlas-workflow`, `quranatlas-ui-workflow`, and the mandatory `frontend-design` companion for UI-facing ownership changes. Each narrow, non-redesign pass must name one accepted current UI state as its active reference source.
 
 ## File Structure
 
@@ -53,6 +60,37 @@ Optional create:
 - `src/onboard/screens/ShortcutsStep.svelte`
 - `src/onboard/screens/StartStep.svelte`
 
+## Task 0: Dependency Gate
+
+**Files:**
+- Create local only: `.scratch/agentic-ui-refactor/03-selector-liveness-after.txt`
+
+- [ ] **Step 1: Verify prior plans have landed**
+
+Run:
+
+```bash
+test -f scripts/check-style-entry.mjs
+test -f scripts/check-selector-liveness.mjs
+test -d src/styles/surfaces/read
+test -d src/styles/surfaces/navigate
+node scripts/check-style-entry.mjs --report > /tmp/qa-style-entry-plan03.txt
+pnpm run check
+git status --short --branch
+```
+
+Expected: Spec/Plans 01 and 02 artifacts exist, nested partials are imported exactly once, `pnpm run check` passes, and no unrelated dirty files are present. Stop if any prerequisite is missing; do not recreate the CSS split in this plan.
+
+- [ ] **Step 2: Ensure scratch output directory exists**
+
+Run:
+
+```bash
+mkdir -p .scratch/agentic-ui-refactor
+```
+
+Expected: local scratch directory exists and remains ignored.
+
 ## Task 1: Normalize Read Chrome Ownership
 
 **Files:**
@@ -74,7 +112,7 @@ Optional create:
 Run:
 
 ```bash
-rg -n "qa-(dock|ambient-pill|margin-header|surah-progress)|src/navigate|src/nav/" src/read src/styles/surfaces/read tests docs/context/surfaces/read.md
+rg -n "qa-(rail|dock|pill-ref|ambient-pill|mh|margin-header|surah-progress|sp)|src/navigate|src/nav|src/reader" src/read src/styles/surfaces/read tests docs/context/surfaces/read.md
 ```
 
 Expected: list of read chrome selectors and any stale ownership comments.
@@ -110,7 +148,22 @@ pnpm run check
 
 Expected: all pass.
 
-- [ ] **Step 5: Regenerate docs if inventories changed**
+- [ ] **Step 5: Browser-proof read chrome**
+
+Use Playwright, the in-app browser, or another browser-proof path to inspect the active current UI state at:
+
+```text
+mobile 375x812
+mobile awkward 320x568
+tablet 768x1024
+desktop 1280x900
+light, sepia, and dark theme where chrome colors changed
+focus rings for rail/header buttons when selectors changed
+```
+
+Expected: no overlap, clipping, hidden controls, horizontal overflow, or theme drift.
+
+- [ ] **Step 6: Regenerate docs if inventories changed**
 
 Run:
 
@@ -121,16 +174,17 @@ pnpm run docs:check
 
 Expected: docs generated cleanly.
 
-- [ ] **Step 6: Commit read chrome normalization**
+- [ ] **Step 7: Commit read chrome normalization**
 
 Run:
 
 ```bash
-git add src/read src/styles/surfaces/read tests/unit/read tests/e2e/read docs/context/surfaces/read.md docs/context
+git status --short
+git add src/read/AmbientDock.svelte src/read/AmbientPill.svelte src/read/MarginHeader.svelte src/read/SurahProgress.svelte src/styles/surfaces/read/ambient-dock.css src/styles/surfaces/read/ambient-pill.css src/styles/surfaces/read/margin-header.css src/styles/surfaces/read/surah-progress.css tests/unit/read/AmbientDock.test.ts tests/unit/read/MarginHeader-toggle.test.ts tests/e2e/read/chrome.spec.js docs/context/surfaces/read.md
 git commit -m "refactor(read): normalize chrome style ownership"
 ```
 
-Expected: commit succeeds.
+Expected: commit succeeds. Stage only exact files that changed; leave unrelated dirty files alone.
 
 ## Task 2: Normalize Daily Wird Cross-Surface Ownership
 
@@ -184,12 +238,19 @@ pnpm run docs:check
 
 Expected: all pass.
 
-- [ ] **Step 5: Commit Wird ownership**
+- [ ] **Step 5: Browser-proof drawer/Wird placement**
+
+Inspect mobile, tablet, and desktop drawer states with Daily Wird present. Include a short-height drawer viewport and a focus walk through the card and drawer controls.
+
+Expected: card presentation remains read-owned, drawer placement remains stable, and no text clips.
+
+- [ ] **Step 6: Commit Wird ownership**
 
 Run:
 
 ```bash
-git add src/read/wird src/navigate/NavDrawer.svelte src/styles/surfaces/read/wird.css src/styles/surfaces/navigate tests/unit/read/wird tests/unit/navigate docs/context/surfaces/read.md docs/context/surfaces/navigate.md
+git status --short
+git add src/read/wird/DailyWirdCard.svelte src/navigate/NavDrawer.svelte src/styles/surfaces/read/wird.css src/styles/surfaces/navigate/drawer-shell.css tests/unit/read/wird/DailyWirdCard.test.ts tests/unit/navigate/drawer.test.ts docs/context/surfaces/read.md docs/context/surfaces/navigate.md
 git commit -m "refactor(read): keep wird presentation read-owned"
 ```
 
@@ -222,7 +283,24 @@ rg -n "qa-settings|qa-verse-settings|qa-mushaf-settings|qa-theme-night|qa-asset-
 
 Expected: row grammar differences are visible.
 
-- [ ] **Step 2: Define one row grammar**
+- [ ] **Step 2: Map current row families before renaming**
+
+Classify actual settings rows into:
+
+```text
+sliders
+switches
+segmented choices
+source/asset rows
+picker rows
+preview rows
+theme/night controls
+status/error rows
+```
+
+For each family, preserve `role`, `aria-*`, `disabled`, visible non-color state markers, and keyboard behavior. Only introduce modifiers that correspond to a reachable state in the current UI.
+
+- [ ] **Step 3: Define one row grammar**
 
 Use this grammar for equivalent controls:
 
@@ -250,11 +328,11 @@ qa-mushaf-settings-*
 
 when they are not the same control family.
 
-- [ ] **Step 3: Rename one component family at a time**
+- [ ] **Step 4: Rename one component family at a time**
 
 For each row grammar rename, update Svelte and CSS together. Preserve behavior and declarations unless the selector name changes.
 
-- [ ] **Step 4: Update tests and docs**
+- [ ] **Step 5: Update tests and docs**
 
 Update selectors in:
 
@@ -264,7 +342,7 @@ tests/e2e/configure/settings.spec.js
 docs/context/surfaces/configure.md
 ```
 
-- [ ] **Step 5: Verify settings**
+- [ ] **Step 6: Verify settings**
 
 Run:
 
@@ -277,12 +355,19 @@ pnpm run docs:check
 
 Expected: all pass.
 
-- [ ] **Step 6: Commit settings grammar**
+- [ ] **Step 7: Browser-proof settings**
+
+Inspect Verse Settings and Mushaf Settings at mobile `375x812`, awkward mobile `320x568`, tablet `768x1024`, and desktop `1280x900`. Include long labels, disabled/error/missing states when reachable, focus rings, and light/sepia/dark themes when tokens changed.
+
+Expected: rows keep stable touch targets, no clipped labels, and state meaning remains visible without relying on color alone.
+
+- [ ] **Step 8: Commit settings grammar**
 
 Run:
 
 ```bash
-git add src/configure/settings src/styles/surfaces/configure tests/unit/configure tests/e2e/configure docs/context/surfaces/configure.md
+git status --short
+git add src/configure/settings/SettingsShell.svelte src/configure/settings/VerseSettings.svelte src/configure/settings/MushafSettings.svelte src/configure/settings/NestedAssetPicker.svelte src/configure/settings/ThemeNightControls.svelte src/styles/surfaces/configure/settings-shell.css src/styles/surfaces/configure/verse-settings.css src/styles/surfaces/configure/mushaf-settings.css src/styles/surfaces/configure/nested-asset-picker.css src/styles/surfaces/configure/theme-night-controls.css tests/unit/configure/panel.test.ts tests/e2e/configure/settings.spec.js docs/context/surfaces/configure.md
 git commit -m "refactor(configure): normalize settings row grammar"
 ```
 
@@ -305,9 +390,19 @@ wc -l src/onboard/Onboarding.svelte
 rg -n "<OnboardingScreen|screen\\.id|qa-onb" src/onboard/Onboarding.svelte src/styles/surfaces/onboard
 ```
 
-Extract only if the screen bodies are large enough that separate files improve searchable ownership.
+Extract only if the screen bodies are large enough that separate files improve searchable ownership and existing e2e coverage already proves first-run and restore behavior.
 
-- [ ] **Step 2: If extracting, create screen components**
+- [ ] **Step 2: Run onboarding behavior tests before extraction**
+
+Run:
+
+```bash
+pnpm playwright test tests/e2e/onboard/first-run.spec.js tests/e2e/onboard/session-restore.spec.js --project=chromium --reporter=line
+```
+
+Expected: PASS before extraction. Skip extraction if this baseline does not pass.
+
+- [ ] **Step 3: If extracting, create screen components**
 
 Create only the components that correspond to real screens:
 
@@ -322,28 +417,37 @@ src/onboard/screens/StartStep.svelte
 
 Each component receives props and callbacks from `Onboarding.svelte`; state ownership remains in `src/onboard/state.ts` and the parent flow.
 
-- [ ] **Step 3: If not extracting, document the decision in handoff**
+- [ ] **Step 4: If not extracting, document the decision in handoff**
 
 No source change is required when extraction would add ceremony without improving ownership.
 
-- [ ] **Step 4: Verify onboarding**
+- [ ] **Step 5: Verify onboarding**
 
 Run:
 
 ```bash
-pnpm playwright test tests/e2e/onboard/first-run.spec.js --project=chromium --reporter=line
+pnpm playwright test tests/e2e/onboard/first-run.spec.js tests/e2e/onboard/session-restore.spec.js --project=chromium --reporter=line
 pnpm run check
+pnpm run docs
 pnpm run docs:check
 ```
 
 Expected: all pass.
 
-- [ ] **Step 5: Commit onboarding extraction if source changed**
+- [ ] **Step 6: Browser-proof onboarding**
+
+Inspect the onboarding flow at mobile `375x812`, awkward mobile `320x568`, tablet `768x1024`, and desktop `1280x900`. Include long labels and focus rings.
+
+Expected: flow, density, and restoration behavior stay unchanged.
+
+- [ ] **Step 7: Commit onboarding extraction if source changed**
 
 Run:
 
 ```bash
-git add src/onboard src/styles/surfaces/onboard tests/e2e/onboard docs/context/surfaces/onboard.md
+git status --short
+git add src/onboard/Onboarding.svelte src/onboard/OnboardingScreen.svelte src/onboard/screens src/styles/surfaces/onboard tests/e2e/onboard/first-run.spec.js tests/e2e/onboard/session-restore.spec.js docs/context/surfaces/onboard.md
+# Add exact generated docs from `git status --short` if `pnpm run docs` changed inventories.
 git commit -m "refactor(onboard): clarify screen ownership"
 ```
 
@@ -359,6 +463,8 @@ Expected: commit succeeds if files changed; skip commit if no extraction happene
 Run:
 
 ```bash
+mkdir -p .scratch/agentic-ui-refactor
+test -f scripts/check-selector-liveness.mjs
 node scripts/check-selector-liveness.mjs --advisory > .scratch/agentic-ui-refactor/03-selector-liveness-after.txt
 ```
 
