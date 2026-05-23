@@ -31,7 +31,10 @@ Application code lives here.
 - `src/packs/`: install-before-activate pack policy, riwayah package resolution, and source-asset availability contracts
 - `src/continuity/`: launch restore, saved-position validation, and reader continuity state such as bookmarks
 - `src/metadata/`: optional metadata adapters that preserve reader behavior across available, missing, stale, and offline states
-- `src/styles/`: global design system, tokens, and per-surface CSS
+- `src/styles/`: single-entry global design system rooted at `src/styles/index.css`
+- `src/styles/tokens/`: primitive and semantic design tokens
+- `src/styles/patterns/`: reusable shared patterns such as sheets, modals, toasts, and form controls
+- `src/styles/surfaces/`: component-cluster and surface-owned styles
 - `src/<surface>/`: user-visible surfaces and feature modules
 
 Surface directories are the primary unit of app behavior. Their deeper behavior and ownership rules are documented in `docs/context/surfaces/*.md`.
@@ -70,6 +73,7 @@ If a file under `docs/` is marked as auto-generated, `scripts/docs/` owns it.
 Load-bearing documentation about the current system.
 
 - `docs/context/`: architecture, data model, source-data flow, surface dossiers, generated indexes
+- `docs/context/style-map.md`: component-to-source, style, reference, and proof map for UI work
 - `docs/ui-references/`: committed component reference images and intent notes for creative UI work
 - `.agents/skills/`: repo-local engineering workflows, including surface clustering and verification guidance
 
@@ -104,7 +108,8 @@ When trying to understand the repo:
 2. Read `docs/context/repo-structure.md` for directory ownership.
 3. Read `docs/context/source-data-flow.md` for source-data and dataset build flow.
 4. Follow `docs/context/feature-map.md` into the relevant `docs/context/surfaces/*.md`.
-5. Open the owning `src/<surface>/` directory once you know which surface owns the behavior.
+5. Use `docs/context/style-map.md` when the task is visual or selector-related.
+6. Open the owning `src/<surface>/` directory once you know which surface owns the behavior.
 
 ## Quick rules
 

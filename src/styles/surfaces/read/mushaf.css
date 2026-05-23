@@ -1,5 +1,6 @@
 /**
  * Reader content styles split from src/styles/surfaces/reader.css.
+ * qa-design-literal-allow motion: Mushaf chip and control transitions remain local until read-motion tokens expand.
  */
 
 @layer surfaces {
@@ -60,6 +61,10 @@
       linear-gradient(90deg, transparent, color-mix(in srgb, var(--qa-text-muted) 8%, transparent), transparent),
       var(--qa-surface-sheet);
     border-radius: var(--qa-radius-sm);
+  }
+
+  .qa-mushaf-page-skeleton--svg {
+    background-size: 200% 100%;
   }
 
   .qa-mushaf-page-state {

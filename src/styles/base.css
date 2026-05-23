@@ -4,6 +4,7 @@
 
    @font-face lives here (external CSS), NOT inlined in <head>. Inline @font-face
    in index.html \3c style> caused iOS Safari to fall through to a fallback for
+   qa-design-literal-allow motion: base interaction timing still uses a single global literal pending token backfill.
    .qa-verse-arabic verses (the font was loaded per `document.fonts`, but the
    render tree painted with a fallback that lacked Quranic combining marks
    — dagger alif, sukun stacks). External @font-face round-trips through

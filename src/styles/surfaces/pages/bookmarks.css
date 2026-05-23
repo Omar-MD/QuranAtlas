@@ -1,5 +1,8 @@
 /**
  * Bookmarks page styles moved from flat surfaces.
+ * qa-design-literal-allow color: swipe affordance colors remain file-local until destructive-state tokens are expanded.
+ * qa-design-literal-allow motion: bookmark row swipe and reveal timings stay file-local while the gesture model is unchanged.
+ * qa-design-literal-allow radius: bookmark swipe affordances still use local corner values pending token extraction.
  */
 
 @layer surfaces {

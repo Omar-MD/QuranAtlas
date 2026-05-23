@@ -8,6 +8,8 @@
  *
  * Z-index literals preserved because these layers still map to distinct scrim,
  * pill, and sheet relationships ahead of the semantic z-tier cleanup.
+ * qa-design-literal-allow motion: margin-header reveal timing remains tuned locally against reader scroll behavior.
+ * qa-design-literal-allow radius: header focus and chip rounding still use local values pending token extraction.
  */
 
 @layer surfaces {

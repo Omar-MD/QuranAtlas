@@ -1,5 +1,6 @@
 /**
  * Night-shift overlay styles moved from flat surfaces.
+ * qa-design-literal-allow color: the warm night-shift tint is intentionally fixed and not theme-derived.
  */
 
 @layer surfaces {

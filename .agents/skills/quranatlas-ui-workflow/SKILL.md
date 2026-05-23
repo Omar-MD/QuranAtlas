@@ -16,6 +16,7 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 - Use whatever browser-proof path is available for development-time inspection, responsive checks, focus walkthroughs, and screenshot capture while iterating. Playwright MCP is optional, not required.
 - Any request for a new visual direction, redesign direction, or multiple visual options must use `frontend-design`, `superpowers:brainstorming`, and `imagegen` before implementation.
 - Read root `DESIGN.md` before UI redesign, refactor, iteration, visual review, component-reference work, or image generation. It is the QuranAtlas product style guide.
+- Read `docs/context/style-map.md` and the owning surface dossier before editing so the active component, source file, CSS partial, and proof coverage are explicit.
 
 ## Hard Rules
 
@@ -65,8 +66,8 @@ For creative UI work, commit a stable component reference before implementation:
 1. Split the design into components.
 2. Generate visual options per component/state with `imagegen`, not full-screen mixed moodboards.
 3. Select one reference before implementation.
-4. Commit it under `docs/ui-references/<surface>/<component>.<state-or-variant>.png`.
-5. Add the adjacent intent note `docs/ui-references/<surface>/<component>.<state-or-variant>.md`.
+4. Commit it under `docs/ui-references/<surface>/<component>/<state>.<viewport>[.<theme>].png`.
+5. Add the adjacent intent note `docs/ui-references/<surface>/<component>/<state>.<viewport>[.<theme>].md`.
 
 The intent note must briefly state:
 
@@ -79,7 +80,7 @@ The intent note must briefly state:
 
 The committed reference image plus intent note is the component visual source of truth for hierarchy, density, rhythm, material feel, and emphasis. It does not override QuranAtlas tokens, accessibility, real Quran text rendering, interaction behavior, or responsive constraints.
 
-If `docs/ui-references/<surface>/` does not exist yet, create it as part of the work. Do not leave the workflow depending on an implied directory that is absent from the repo.
+If `docs/ui-references/<surface>/<component>/` does not exist yet, create it as part of the work. Do not leave the workflow depending on an implied directory that is absent from the repo.
 
 Do not require a new committed reference for narrow fit fixes, bug fixes, token corrections, or polish that preserves the existing visual direction. In those cases, choose one accepted current UI state as the active reference source, use nearby components and the surface dossier only as supporting constraints, and still capture browser proof for the changed state.
 
@@ -140,8 +141,8 @@ Add awkward checks when relevant:
 
 If a component intentionally differs by viewport, commit separate references, for example:
 
-- `docs/ui-references/navigate/drawer-header.mobile.png`.
-- `docs/ui-references/navigate/drawer-header.desktop.png`.
+- `docs/ui-references/navigate/nav-drawer-header/read.mobile.light.png`.
+- `docs/ui-references/read/mushaf-page/ready.tablet-portrait.light.png`.
 
 ## Proof And Completion
 

@@ -6,7 +6,7 @@ describe('check-ui-references', () => {
     const result = checkUiReferences({
       files: [
         {
-          path: 'docs/ui-references/read/verse-row.default.mobile.png',
+          path: 'docs/ui-references/read/verse-row/default.mobile.light.png',
           content: null,
         },
       ],
@@ -20,7 +20,7 @@ describe('check-ui-references', () => {
     const result = checkUiReferences({
       files: [
         {
-          path: 'docs/ui-references/read/verse-row.default.mobile.md',
+          path: 'docs/ui-references/read/verse-row/default.mobile.light.md',
           content: '## Component\nVerse row',
         },
       ],
@@ -34,11 +34,11 @@ describe('check-ui-references', () => {
     const result = checkUiReferences({
       files: [
         {
-          path: 'docs/ui-references/read/verse-row.default.mobile.png',
+          path: 'docs/ui-references/read/verse-row/default.mobile.light.png',
           content: null,
         },
         {
-          path: 'docs/ui-references/read/verse-row.default.mobile.md',
+          path: 'docs/ui-references/read/verse-row/default.mobile.light.md',
           content: '## Component\nVerse row',
         },
       ],
@@ -71,6 +71,20 @@ describe('check-ui-references', () => {
     })
 
     expect(result.ok).toBe(true)
+  })
+
+  it('fails flat reference paths outside the taxonomy', () => {
+    const result = checkUiReferences({
+      files: [
+        {
+          path: 'docs/ui-references/configure/asset-management.mobile.png',
+          content: null,
+        },
+      ],
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.findings.some((f) => f.code === 'invalid-path')).toBe(true)
   })
 
   it('fails stray system files', () => {

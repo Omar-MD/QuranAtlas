@@ -19,6 +19,8 @@ test_paths:
     - 'tests/e2e/infra/service-worker.spec.js'
     - 'tests/e2e/infra/offline.spec.js'
     - 'tests/e2e/infra/cross-tab.spec.js'
+style_paths:
+  - 'src/styles/surfaces/overlays/**'
 ---
 
 # Surface: infra
@@ -26,6 +28,18 @@ test_paths:
 > Cross-cutting Reader First infrastructure. Service worker, offline asset-pack handling, install-state verification, manifest membership, byte planning, provenance, build-time validation, cross-tab safety, and update/clear-data banners. Audio cache routes are removed product scope pending source cleanup.
 
 User-facing exposure: update banner (toast/popover when new build rolls out) + clear-data confirmation cross-tab banner. No standalone UI.
+
+## Style Inventory
+
+<!-- AUTO-GENERATED:style-inventory START -->
+| Path | Role |
+| --- | --- |
+| `src/styles/surfaces/overlays/night-shift.css` | Night-shift overlay styles moved from flat surfaces. |
+| `src/styles/surfaces/overlays/quota-banner.css` | Quota banner overlay styles moved from flat surfaces. |
+| `src/styles/surfaces/overlays/save-failure-toast.css` | Save-failure toast overlay rules moved from src/styles/surfaces/toast.css. |
+| `src/styles/surfaces/overlays/sync-banner.css` | _(no leading comment)_ |
+| `src/styles/surfaces/overlays/update-banner.css` | Update banner overlay styles moved from flat surfaces. |
+<!-- AUTO-GENERATED:style-inventory END -->
 
 ## Reach
 

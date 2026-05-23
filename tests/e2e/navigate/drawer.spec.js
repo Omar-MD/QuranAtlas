@@ -432,6 +432,7 @@ test.describe('Journey F: Navigation', () => {
 
     await expect(page).toHaveURL(/#\/s\/2\/142$/)
     await expect(page.locator('.qa-nav-drawer')).toBeHidden()
+    await waitForReader(page)
     await expect(page.locator('.qa-verse[data-verse="142"]').first()).toBeVisible({ timeout: 25_000 })
   })
 

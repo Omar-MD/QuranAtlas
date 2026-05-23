@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "lint": "eslint src/ && stylelint 'src/styles/**/*.css'",
-    "check": "pnpm run lint && node scripts/check-theme-parity.mjs && node scripts/check-token-usage.mjs && node scripts/check-at-layer.mjs && node scripts/check-style-entry.mjs && node scripts/check-ui-references.mjs && node scripts/check-selector-liveness.mjs --advisory && node scripts/check-primitive-token-consumption.mjs --advisory && node scripts/check-design-literals.mjs --advisory && node scripts/check-no-svelte-style.mjs && svelte-check --tsconfig ./tsconfig.json",
+    "check": "pnpm run lint && node scripts/check-theme-parity.mjs && node scripts/check-token-usage.mjs && node scripts/check-at-layer.mjs && node scripts/check-style-entry.mjs && node scripts/check-ui-references.mjs && node scripts/check-selector-liveness.mjs && node scripts/check-primitive-token-consumption.mjs && node scripts/check-design-literals.mjs && node scripts/check-no-svelte-style.mjs && svelte-check --tsconfig ./tsconfig.json",
     "docs": "node scripts/docs/derive.mjs",
     "docs:check": "node scripts/docs/derive.mjs --check",
     "lighthouse": "pnpm run build && lhci autorun --config=.lighthouserc.cjs",

@@ -22,7 +22,7 @@
     top: 0;
   }
 
-  .qa-visually-hidden {
+  .qa-sr-only {
     position: absolute;
     width: 1px;
     height: 1px;

@@ -8,6 +8,8 @@
  *
  * Z-index literals preserved because these layers still map to distinct scrim,
  * pill, and sheet relationships ahead of the semantic z-tier cleanup.
+ * qa-design-literal-allow motion: drawer enter timing remains a local tuning constant shared with current e2e layout proof.
+ * qa-design-literal-allow radius: focus outline rounding is still a local affordance value pending tokenization.
  */
 
 @layer surfaces {
@@ -240,10 +242,8 @@
   flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;
 }
 
-.qa-nav-drawer-review-body {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: block;
+.qa-drawer-wird-slot {
+  padding: 10px 14px 12px;
 }
 
 .qa-nav-drawer-bookmarks-body {

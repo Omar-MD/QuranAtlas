@@ -7,6 +7,8 @@ test_paths:
     - 'tests/unit/onboard/**'
   e2e:
     - 'tests/e2e/onboard/*.spec.js'
+style_paths:
+  - 'src/styles/surfaces/onboard/**'
 ---
 
 # Surface: onboard
@@ -39,6 +41,8 @@ Routes: `#/onboarding`. No other entry — once `onboardingComplete = true`, the
 
 Launch with clean IDB (or cleared data). The onboarding promise is reading setup: welcome, theme, qira'ah/riwayah, translation, tafsir or reader source awareness when present, core navigation/search shortcuts, reading preferences, offline expectations, and Daily Wird entry. It must not introduce marks/tags/review as v1 product value.
 
+Current ownership stays inline: `src/onboard/Onboarding.svelte` keeps the six screen bodies together, while `OnboardingScreen.svelte` owns the shared shell. The flow now uses explicit Svelte class directives for selected and disabled states instead of embedded string fragments, which keeps selector ownership legible without splitting each screen into a separate component yet.
+
 1. Boot → `handleLaunchRestore` checks `settings.onboardingComplete`, finds nothing → navigates `#/onboarding`.
 2. Screen 1 (Welcome): wordmark, blessing, **Begin** CTA, progress dot 1 lit. No dock, no pill, no MarginHeader chrome.
 3. Tap **Begin** → Screen 2 (Theme): 4 swatches (Light / Sepia / Dark / Auto), Skip button appears with a comfortable mobile hit area.
@@ -52,6 +56,14 @@ Launch with clean IDB (or cleared data). The onboarding promise is reading setup
 - Screen 6 → tap **Browse all surahs** → completion write, land on `#/surahs`.
 
 **Landscape phone / short viewport** (height <500 px): page drops `72vh` min-height, top-aligns content with reduced hero padding so no content clips off-screen.
+
+## Style Inventory
+
+<!-- AUTO-GENERATED:style-inventory START -->
+| Path | Role |
+| --- | --- |
+| `src/styles/surfaces/onboard/shell.css` | Onboarding shell styles moved from flat surfaces. |
+<!-- AUTO-GENERATED:style-inventory END -->
 
 ### Reload stays on last surface (A2)
 

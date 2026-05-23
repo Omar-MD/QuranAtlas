@@ -1,5 +1,6 @@
 /**
  * Shared modal pattern rules moved from src/styles/surfaces/modal.css.
+ * qa-design-literal-allow color: modal confirm input keeps an explicit white fill until the sheet/input token merge lands.
  */
 
 @layer surfaces {

@@ -87,14 +87,22 @@ test('I2: Tab B removes an existing bookmark on 2:255 → Tab A reader clears th
   try {
     await setupPage(pageA, '/#/s/2/255')
     await seedBookmarks(pageA, [{ verseKey: '2:255', riwayah: 'qaloon' }])
-    await pageA.reload()
+    await pageA.reload({ waitUntil: 'domcontentloaded' })
     await waitForReader(pageA)
+    if (!/#\/s\/2\/255$/.test(pageA.url())) {
+      await pageA.goto('/#/s/2/255')
+      await waitForReader(pageA)
+    }
 
     await pageB.goto('/#/s/2/255')
     await waitForReader(pageB)
 
     const verse2_255_A = pageA.locator('.qa-verse[data-token-key="2:255"]')
     const verse2_255_B = pageB.locator('.qa-verse[data-token-key="2:255"]')
+    await expect(pageA).toHaveURL(/#\/s\/2\/255/, { timeout: 8_000 })
+    await expect(pageB).toHaveURL(/#\/s\/2\/255/, { timeout: 8_000 })
+    await expect(verse2_255_A).toBeVisible({ timeout: 8_000 })
+    await expect(verse2_255_B).toBeVisible({ timeout: 8_000 })
     await expect(verse2_255_A).toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
     await expect(verse2_255_B).toHaveClass(/qa-verse--bookmarked-glyph/, { timeout: 8_000 })
 

@@ -8,6 +8,8 @@ test_paths:
     - 'tests/unit/styles/font-tokens.test.js'
   e2e:
     - 'tests/e2e/read/*.spec.js'
+style_paths:
+  - 'src/styles/surfaces/read/**'
 ---
 
 # Surface: read
@@ -80,7 +82,7 @@ test_paths:
 | `src/read/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
 | `src/read/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
 | `src/read/verse-tap-gestures.ts` | _(no leading comment)_ |
-| `src/read/wird/DailyWirdCard.svelte` | _(no leading comment)_ |
+| `src/read/wird/DailyWirdCard.svelte` | Read owns Daily Wird card presentation. |
 | `src/read/wird/WirdDetail.svelte` | _(no leading comment)_ |
 | `src/read/wird/metadata.ts` | _(no leading comment)_ |
 | `src/read/wird/notifications.ts` | _(no leading comment)_ |
@@ -205,6 +207,8 @@ Scroll down → dock hides; scroll back near top → dock surfaces.
 
 The Reader owns Daily Wird progress. One active plan can exist at `settings.wirdPlan`.
 
+`NavDrawer.svelte` renders `DailyWirdCard`, but read owns the card source and presentation styles in `src/read/wird/**` and `src/styles/surfaces/read/wird.css`; navigate owns only the drawer placement wrapper.
+
 Reader position saves advance the plan only when the saved reference is inside the plan range. Progress is monotonic: backward scrolling does not reduce `completedThroughRef`. Missed days recompute the current daily assignment from remaining verses and remaining calendar days through `targetEndOn`.
 
 `Continue Wird` navigates to `progress.nextRef`; ordinary `settings.currentPosition` remains the source of truth for normal resume.
@@ -212,6 +216,26 @@ Reader position saves advance the plan only when the saved reference is inside t
 The mobile drawer summary card is a single ledger-style tappable surface above the Read source controls; without a plan it invites plan creation, and with a plan it reflects plan state and routes to the in-drawer detail without writing progress from render alone.
 
 Daily Wird summary text respects the selected display unit. Juz and Hizb plans derive remaining counts from Quran boundary metadata instead of falling back to raw verse counts. Browser notification permission is requested only from the reminder permission control; granted/denied/default/unsupported is stored on the plan reminder state. Denied state can be requested again from the same control, though the browser may keep returning denied until the user changes site settings.
+
+## Style Inventory
+
+<!-- AUTO-GENERATED:style-inventory START -->
+| Path | Role |
+| --- | --- |
+| `src/styles/surfaces/read/ambient-dock.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| `src/styles/surfaces/read/ambient-pill.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| `src/styles/surfaces/read/continuity.css` | Reader content styles split from src/styles/surfaces/reader.css. |
+| `src/styles/surfaces/read/margin-header.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| `src/styles/surfaces/read/mushaf.css` | Reader content styles split from src/styles/surfaces/reader.css. |
+| `src/styles/surfaces/read/states.css` | Reader content styles split from src/styles/surfaces/reader.css. |
+| `src/styles/surfaces/read/surah-header.css` | Reader content styles split from src/styles/surfaces/reader.css. |
+| `src/styles/surfaces/read/surah-progress.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| `src/styles/surfaces/read/tafsir.css` | Reader content styles split from src/styles/surfaces/reader.css. |
+| `src/styles/surfaces/read/typography.css` | Reader typography styles moved from flat surfaces. |
+| `src/styles/surfaces/read/verse.css` | Reader content styles split from src/styles/surfaces/reader.css. |
+| `src/styles/surfaces/read/virtualiser.css` | Reader virtualiser styles moved from flat surfaces. |
+| `src/styles/surfaces/read/wird.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+<!-- AUTO-GENERATED:style-inventory END -->
 
 ## Data
 

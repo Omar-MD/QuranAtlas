@@ -1,5 +1,7 @@
 /**
  * Reader content styles split from src/styles/surfaces/reader.css.
+ * qa-design-literal-allow motion: pull-to-swap and edge-indicator timings remain local until continuity motion tokens exist.
+ * qa-design-literal-allow radius: continuity micro-indicators still use local hairline rounding values.
  */
 
 @layer surfaces {

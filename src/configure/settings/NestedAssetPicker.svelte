@@ -48,13 +48,15 @@
     {#each rows as row (row.id)}
       <button
         type="button"
-        class="qa-settings-picker-row"
+        class="qa-settings-picker-row qa-settings-row"
         class:qa-settings-picker-row--active={row.active}
+        class:qa-settings-row--active={row.active}
+        class:qa-settings-row--disabled={row.disabled}
         disabled={row.disabled}
         onclick={() => choose?.(row.id)}
       >
-        <span>{row.label}</span>
-        {#if row.meta}<small>{row.meta}</small>{/if}
+        <span class="qa-settings-row-label">{row.label}</span>
+        {#if row.meta}<small class="qa-settings-row-meta">{row.meta}</small>{/if}
       </button>
     {/each}
   </div>

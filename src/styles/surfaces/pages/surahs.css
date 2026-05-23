@@ -1,5 +1,6 @@
 /**
  * Surah list page styles moved from flat surfaces.
+ * qa-design-literal-allow radius: compact result pills still use a local radius literal pending page token extraction.
  */
 
 @layer surfaces {

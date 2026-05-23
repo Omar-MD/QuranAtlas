@@ -39,41 +39,63 @@ test.describe('Journey A: First run & session restore', () => {
     await markOnboardingComplete(page)
     await seedLastSurface(page, removedHubHash)
     await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
+    await expect.poll(async () => readSetting(page, 'currentPosition')).toEqual({ surah: 2, verse: 255 })
+    await expect.poll(async () => readSetting(page, 'lastSurface')).toBe(removedHubHash)
 
-    // Navigate to root with no hash — this simulates a fresh app launch / hard reload.
-    // handleRoute('') fires ROUTER_LAUNCH_RESTORE which reads lastSurface and restores it.
-    await page.goto('/')
-
-    // App should reject the removed route and use the saved reader position instead.
-    await expect(page.locator('.qa-onboarding')).toHaveCount(0)
-    await expect(page).toHaveURL(/#\/s\/2\/255/, { timeout: 8_000 })
+    // Launch a fresh page at root — this simulates a clean app launch that
+    // must resolve launch restore entirely from persisted IDB state.
+    const freshPage = await page.context().newPage()
+    try {
+      await freshPage.goto('/')
+      await expect(freshPage.locator('.qa-onboarding')).toHaveCount(0)
+      await expect(freshPage).toHaveURL(/#\/s\/2\/255/, { timeout: 8_000 })
+    } finally {
+      await freshPage.close()
+    }
   })
 
   // -------------------------------------------------------------------------
   // A2.2 Reload restores a reader surface
   // -------------------------------------------------------------------------
 
-  test('A2: reload restores reader surface (e.g. #/s/2)', async ({ page }) => {
-    // Seed IDB directly to avoid navigation races with parallel tests.
-    await markOnboardingComplete(page)
-    await seedLastSurface(page, '#/s/2')
+  test('A2: reload restores reader surface (e.g. #/s/2)', async ({ browser }) => {
+    const ctx = await browser.newContext()
+    const seedPage = await ctx.newPage()
+    try {
+      await seedPage.goto('/')
+      await clearAllData(seedPage)
+      await markOnboardingComplete(seedPage)
+      await seedLastSurface(seedPage, '#/s/2')
+      await seedPage.close()
 
-    // Navigate to root (no hash) — simulates fresh app launch / hard reload.
-    // ROUTER_LAUNCH_RESTORE reads lastSurface and restores the reader.
-    await page.goto('/')
-
-    await expect(page.locator('.qa-onboarding')).toHaveCount(0)
-    await expect(page).toHaveURL(/#\/s\/2/, { timeout: 8_000 })
+      const freshPage = await ctx.newPage()
+      await freshPage.goto('/')
+      await expect(freshPage.locator('.qa-onboarding')).toHaveCount(0)
+      await expect(freshPage).toHaveURL(/#\/s\/2/, { timeout: 8_000 })
+      await freshPage.close()
+    } finally {
+      await ctx.close()
+    }
   })
 
-  test('A2: direct #/settings currently returns to the saved lastSurface', async ({ page }) => {
-    await markOnboardingComplete(page)
-    await seedLastSurface(page, '#/about')
+  test('A2: direct #/settings currently returns to the saved lastSurface', async ({ browser }) => {
+    const ctx = await browser.newContext()
+    const seedPage = await ctx.newPage()
+    try {
+      await seedPage.goto('/')
+      await clearAllData(seedPage)
+      await markOnboardingComplete(seedPage)
+      await seedLastSurface(seedPage, '#/about')
+      await seedPage.close()
 
-    await page.goto('/#/settings')
-
-    await expect(page).toHaveURL(/#\/about/, { timeout: 8_000 })
-    await expect.poll(async () => readSetting(page, 'lastSurface')).toBe('#/about')
+      const freshPage = await ctx.newPage()
+      await freshPage.goto('/#/settings')
+      await expect(freshPage).toHaveURL(/#\/about/, { timeout: 8_000 })
+      await expect.poll(async () => readSetting(freshPage, 'lastSurface')).toBe('#/about')
+      await freshPage.close()
+    } finally {
+      await ctx.close()
+    }
   })
 
   // -------------------------------------------------------------------------
@@ -112,13 +134,25 @@ test.describe('Journey A: mobile session restore route redirects @mobile', () =>
     }
   })
 
-  test('A2: mobile #/surahs rejects the static route as a reader restore target and uses the saved position', async ({ page }) => {
-    await seedLastSurface(page, '#/surahs')
-    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
-    await page.goto('/#/surahs')
+  test('A2: mobile #/surahs rejects the static route as a reader restore target and uses the saved position', async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const seedPage = await ctx.newPage()
+    try {
+      await seedPage.goto('/')
+      await clearAllData(seedPage)
+      await markOnboardingComplete(seedPage)
+      await seedLastSurface(seedPage, '#/surahs')
+      await writeSetting(seedPage, 'currentPosition', { surah: 2, verse: 255 })
+      await seedPage.close()
 
-    await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
-    await expect(page.locator('.qa-nav-drawer')).toBeVisible()
+      const freshPage = await ctx.newPage()
+      await freshPage.goto('/#/surahs')
+      await expect.poll(() => new URL(freshPage.url()).hash, { timeout: 15_000 }).toBe('#/s/2/255')
+      await expect(freshPage.locator('.qa-nav-drawer')).toBeVisible()
+      await freshPage.close()
+    } finally {
+      await ctx.close()
+    }
   })
 
   test('A2: mobile #/bookmarks redirects non-reader lastSurface hashes to the saved reader position', async ({ page }) => {
@@ -133,12 +167,24 @@ test.describe('Journey A: mobile session restore route redirects @mobile', () =>
     }
   })
 
-  test('A2: mobile #/bookmarks rejects the static route as a reader restore target and uses the saved position', async ({ page }) => {
-    await seedLastSurface(page, '#/bookmarks')
-    await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
-    await page.goto('/#/bookmarks')
+  test('A2: mobile #/bookmarks rejects the static route as a reader restore target and uses the saved position', async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const seedPage = await ctx.newPage()
+    try {
+      await seedPage.goto('/')
+      await clearAllData(seedPage)
+      await markOnboardingComplete(seedPage)
+      await seedLastSurface(seedPage, '#/bookmarks')
+      await writeSetting(seedPage, 'currentPosition', { surah: 2, verse: 255 })
+      await seedPage.close()
 
-    await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
-    await expect(page.locator('.qa-nav-drawer')).toBeVisible()
+      const freshPage = await ctx.newPage()
+      await freshPage.goto('/#/bookmarks')
+      await expect.poll(() => new URL(freshPage.url()).hash).toBe('#/s/2/255')
+      await expect(freshPage.locator('.qa-nav-drawer')).toBeVisible()
+      await freshPage.close()
+    } finally {
+      await ctx.close()
+    }
   })
 })

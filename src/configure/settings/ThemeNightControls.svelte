@@ -15,14 +15,11 @@
     { id: 'auto', label: 'Auto', icon: 'A↺' },
   ]
 
-  function themeBoxClass(themeId: typeof themes[number]['id']): string {
-    return `qa-settings-theme-swatch qa-settings-theme-swatch--${themeId}`
-  }
 </script>
 
 <div class="qa-settings-theme-night" aria-label="Theme and night mode">
   <div class="qa-settings-theme-panel">
-    <h3 class="qa-settings-theme-night-title">Theme</h3>
+    <h3 class="qa-settings-theme-night-title qa-settings-row-label">Theme</h3>
     <div class="qa-settings-theme-grid" role="group" aria-label="Theme">
       {#each themes as theme (theme.id)}
         <button
@@ -33,7 +30,14 @@
           onclick={() => { void setTheme(theme.id) }}
         >
           <span class="qa-settings-theme-card">
-            <span class={themeBoxClass(theme.id)} aria-hidden="true">
+            <span
+              class="qa-settings-theme-swatch"
+              class:qa-settings-theme-swatch--light={theme.id === 'light'}
+              class:qa-settings-theme-swatch--sepia={theme.id === 'sepia'}
+              class:qa-settings-theme-swatch--dark={theme.id === 'dark'}
+              class:qa-settings-theme-swatch--auto={theme.id === 'auto'}
+              aria-hidden="true"
+            >
               {#if theme.id === 'auto'}
                 <span class="qa-settings-theme-auto-sun">☼</span>
                 <span class="qa-settings-theme-auto-moon">☾</span>
@@ -50,7 +54,7 @@
   </div>
 
   <div class="qa-settings-night-panel">
-    <h3 class="qa-settings-theme-night-title">Night Mode</h3>
+    <h3 class="qa-settings-theme-night-title qa-settings-row-label">Night Mode</h3>
     <div class="qa-settings-night-group" role="group" aria-label="Night mode">
       {#each nightModes as mode (mode.id)}
         <button

@@ -298,6 +298,13 @@ test.describe('Journey H: Offline resilience', () => {
     await page.goto('/#/s/1')
     await waitForReader(page)
     await waitForServiceWorker(page)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await waitForReader(page)
+    await waitForCachedDatasetUrls(page, [
+      '/dataset/manifest.json',
+      '/dataset/surahs.json',
+      '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json',
+    ])
     await clearQalunPageCaches(page)
 
     await page.goto('/#/m/42')

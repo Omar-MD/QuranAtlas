@@ -8,11 +8,11 @@ export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 const DEFAULT_ALLOWLIST = [
   {
-    pattern: '^qa-onb-sw--',
-    owner: 'onboard',
-    category: 'dynamic-class',
-    reason: 'Theme swatch modifiers are runtime-generated.',
-    removeWhen: 'Onboarding swatches move to explicit enum mapping.',
+    pattern: '^qa-pages-$',
+    owner: 'infra',
+    category: 'cache-key-prefix',
+    reason: 'Offline cache names reuse the qa- prefix but are not CSS classes.',
+    removeWhen: 'Selector liveness stops scanning cache-key strings as class references.',
   },
   {
     pattern: '^qa-mushaf-controls--below-page$',
@@ -21,13 +21,58 @@ const DEFAULT_ALLOWLIST = [
     reason: 'Placement modifier is toggled at runtime.',
     removeWhen: 'Mushaf controls consolidate to explicit mode classes.',
   },
+  {
+    pattern: '^qa-mushaf-controls--inside-safe-bottom$',
+    owner: 'read',
+    category: 'dynamic-class',
+    reason: 'Placement modifier is toggled at runtime.',
+    removeWhen: 'Mushaf controls consolidate to explicit mode classes.',
+  },
+  {
+    pattern: '^qa-(settings-title|settings-reading|settings-sources|storage-hdr|about-version-sha|offline-banner)$',
+    owner: 'configure',
+    category: 'dom-id',
+    reason: 'These qa-* strings are DOM ids, not CSS classes.',
+    removeWhen: 'Selector liveness distinguishes ids from class references.',
+  },
+  {
+    pattern: '^qa-(assets-can-go-back|input-confirm)$',
+    owner: 'configure',
+    category: 'non-style-hook',
+    reason: 'These qa-* strings are storage or test hooks, not visual selectors.',
+    removeWhen: 'Selector liveness distinguishes non-style qa-* hooks from class references.',
+  },
+  {
+    pattern: '^qa-sc-kbd--gesture$',
+    owner: 'navigate',
+    category: 'dynamic-class',
+    reason: 'Shortcuts sheet gesture tokens are concatenated in imperative DOM assembly.',
+    removeWhen: 'Selector liveness parses concatenated className expressions.',
+  },
+  {
+    pattern: '^qa-settings$',
+    owner: 'configure',
+    category: 'selector-query',
+    reason: 'This qa-* string is used as a DOM query anchor, not as a class definition.',
+    removeWhen: 'Selector liveness distinguishes query-selector strings from class references.',
+  },
+  {
+    pattern: '^qa-(search-v1|fonts-v1)$',
+    owner: 'infra',
+    category: 'cache-key',
+    reason: 'Service-worker cache names reuse the qa- prefix but are not CSS classes.',
+    removeWhen: 'Selector liveness stops scanning cache-key strings as class references.',
+  },
 ]
 
 const CLASS_RE = /\.((?:qa-[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?))/gi
 const STATIC_CLASS_RE = /class\s*=\s*["'`]{1}([^"'`]+)["'`]{1}/g
+const CLASSNAME_RE = /className\s*=\s*["'`]([^"'`]+)["'`]/g
+const CLASSLIST_RE = /classList\.(?:add|remove|toggle)\(([^)]+)\)/g
 const DIRECTIVE_RE = /class:((?:qa-[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?))/gi
 const STRING_CLASS_RE = /['"`]((?:qa-[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?))['"`]/gi
 const DYNAMIC_CLASS_RE = /qa-[a-z0-9-]*\$\{/gi
+const TOKEN_RE = /qa-[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?/gi
 
 function walk(dir, exts) {
   const out = []
@@ -44,6 +89,12 @@ function walk(dir, exts) {
 function addTokenMatches(set, content, regex, mapper = (match) => match[1]) {
   for (const match of content.matchAll(regex)) {
     set.add(mapper(match))
+  }
+}
+
+function addClassTokens(set, raw) {
+  for (const token of raw.match(TOKEN_RE) ?? []) {
+    set.add(token)
   }
 }
 
@@ -78,9 +129,13 @@ function extractCodeReferences(codeFiles) {
     addTokenMatches(references, file.content, DIRECTIVE_RE)
     addTokenMatches(references, file.content, STRING_CLASS_RE)
     for (const match of file.content.matchAll(STATIC_CLASS_RE)) {
-      for (const token of match[1].split(/\s+/).filter(Boolean)) {
-        if (token.startsWith('qa-')) references.add(token)
-      }
+      addClassTokens(references, match[1])
+    }
+    for (const match of file.content.matchAll(CLASSNAME_RE)) {
+      addClassTokens(references, match[1])
+    }
+    for (const match of file.content.matchAll(CLASSLIST_RE)) {
+      addClassTokens(references, match[1])
     }
     for (const match of file.content.matchAll(DYNAMIC_CLASS_RE)) {
       uncertain.add(match[0].replace(/\$\{$/, ''))

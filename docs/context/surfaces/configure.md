@@ -11,6 +11,9 @@ test_paths:
     - 'tests/unit/configure/about/**'
   e2e:
     - 'tests/e2e/configure/*.spec.js'
+style_paths:
+  - 'src/styles/surfaces/configure/**'
+  - 'src/styles/surfaces/overlays/night-shift.css'
 ---
 
 # Surface: configure
@@ -88,6 +91,8 @@ Shared shell zones:
 2. **Body** — mode-specific preview and controls. Rows use stable heights and open the nested asset picker for source/asset choices.
 3. **Footer** — shared Theme and Night Mode controls plus a Manage Assets action. Manage Assets closes the shell without focus restore and routes to `#/assets`.
 
+Equivalent settings rows now share a hyphenated row grammar across Verse, Mushaf, and nested picker states: `qa-settings-row`, `qa-settings-row-label`, `qa-settings-row-control`, `qa-settings-row-meta`, plus state modifiers such as `qa-settings-row--active`, `qa-settings-row--disabled`, `qa-settings-row--picker`, `qa-settings-row--slider`, and `qa-settings-row--switch`. Variant-specific classes remain only where the control family genuinely differs.
+
 Verse Settings contains:
 
 - **Verse preview** — Arabic sample using the live reader Arabic cascade and optional translation line gated by `settings.translationVisible`.
@@ -106,6 +111,17 @@ Switching riwayah from Settings is gated by the variant-asset domain. Qalun is t
 Package install progress lives outside `settings.riwayah`: `src/configure/state.svelte.ts::riwayahPackageState` holds runtime package status by riwayah, and `riwayahInstallIntent` records the requested optional package plus the previous usable riwayah. Failed installs clear the request or mark an error while preserving both `settings.riwayah` and `previousUsable`.
 
 The old in-panel Storage accordion is no longer mounted in the settings shell. Offline install, verify, set-active, and delete controls move to the dedicated asset-management route.
+
+## Style Inventory
+
+<!-- AUTO-GENERATED:style-inventory START -->
+| Path | Role |
+| --- | --- |
+| `src/styles/surfaces/configure/about.css` | About/configure styles moved from flat surfaces. |
+| `src/styles/surfaces/configure/asset-management.css` | Asset management styles moved from flat surfaces. |
+| `src/styles/surfaces/configure/settings-shell.css` | Settings shell styles moved from flat surfaces. |
+| `src/styles/surfaces/overlays/night-shift.css` | Night-shift overlay styles moved from flat surfaces. |
+<!-- AUTO-GENERATED:style-inventory END -->
 
 ### Asset Management route
 

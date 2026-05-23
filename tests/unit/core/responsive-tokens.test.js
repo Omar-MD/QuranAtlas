@@ -4,15 +4,16 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-// Tokens now split across primitives.css + semantic.css; surface rules live
-// under surfaces/. _legacy.css was retired in PR 13 final cleanup.
+// Tokens now split across primitives.css + semantic.css. Shared sheet/modal
+// rules live under patterns/, while app-specific responsive surfaces live in
+// nested surfaces/ directories.
 const PRIMITIVES_CSS = readFileSync(resolve(__dirname, '../../../src/styles/tokens/primitives.css'), 'utf8')
 const SEMANTIC_CSS = readFileSync(resolve(__dirname, '../../../src/styles/tokens/semantic.css'), 'utf8')
-const SHEET_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/sheet.css'), 'utf8')
-const MODAL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/modal.css'), 'utf8')
+const SHEET_CSS = readFileSync(resolve(__dirname, '../../../src/styles/patterns/sheet.css'), 'utf8')
+const MODAL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/patterns/modal.css'), 'utf8')
 const APP_SHELL_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/app-shell.css'), 'utf8')
-const ABOUT_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/about.css'), 'utf8')
-const ONBOARDING_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/onboarding.css'), 'utf8')
+const ABOUT_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/configure/about.css'), 'utf8')
+const ONBOARDING_CSS = readFileSync(resolve(__dirname, '../../../src/styles/surfaces/onboard/shell.css'), 'utf8')
 const THEME_CSS = `${PRIMITIVES_CSS}\n${SEMANTIC_CSS}\n${SHEET_CSS}\n${MODAL_CSS}\n${APP_SHELL_CSS}\n${ABOUT_CSS}\n${ONBOARDING_CSS}`
 
 describe('styles — responsive breakpoint tokens', () => {
@@ -108,7 +109,7 @@ describe('styles — responsive breakpoint tokens', () => {
   /* Retired overlay responsive rules remain absent from shared tokens. */
 
   it('onboarding landscape guard: max-height: 500px shrinks .qa-onb-page', () => {
-    // Onboarding CSS lives in src/styles/surfaces/onboarding.css (PR 6 migration).
+    // Onboarding CSS now lives in src/styles/surfaces/onboard/shell.css.
     const blocks = [...ONBOARDING_CSS.matchAll(/@media\s*\(\s*max-height:\s*500px\s*\)\s*\{([\s\S]*?)\n    \}\s*\n  \}/g)]
     const hit = blocks.find(b =>
       /\.qa-onb-page\s*\{[^}]*min-height:\s*100%/.test(b[1]) &&

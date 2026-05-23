@@ -6,7 +6,7 @@
      tokens      — :root primitive + semantic custom properties
      base        — html/body/a/::selection/focus-visible/scrollbar defaults
      animations  — all @keyframes (globally named qa-*)
-     utilities   — a11y helpers (.qa-visually-hidden, .qa-skip-link)
+     utilities   — a11y helpers (.qa-sr-only, .qa-skip-link)
      surfaces    — per-surface component CSS
      overrides   — escape hatch; empty by default; justify each entry
 
@@ -27,6 +27,7 @@
 @import url('./utilities.css');
 @import url('./surfaces/overlays/quota-banner.css');
 @import url('./surfaces/overlays/update-banner.css');
+@import url('./surfaces/overlays/sync-banner.css');
 @import url('./patterns/modal.css');
 @import url('./patterns/sheet.css');
 @import url('./surfaces/app-shell.css');

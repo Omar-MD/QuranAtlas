@@ -1,4 +1,8 @@
 <script lang="ts">
+  /**
+   * Read owns Daily Wird card presentation.
+   * Navigate may place the card inside the drawer, but spacing wrappers stay navigate-owned.
+   */
   import type { WirdSummary } from './types'
 
   type Props = {

@@ -16,6 +16,21 @@ const REQUIRED_FIELDS = [
   'Non-goals',
 ]
 
+const ALLOWED_VIEWPORTS = new Set([
+  'mobile',
+  'mobile-320',
+  'tablet-portrait',
+  'tablet-landscape',
+  'desktop',
+])
+
+const ALLOWED_THEMES = new Set([
+  'light',
+  'sepia',
+  'dark',
+  'night',
+])
+
 const DEFAULT_ALLOWLIST = [
   {
     path: 'docs/ui-references/README.md',
@@ -45,6 +60,13 @@ function isAllowlisted(path, allowlist) {
   ))
 }
 
+function parseReferencePath(path) {
+  const match = path.match(/^docs\/ui-references\/([^/]+)\/([^/]+)\/([^.]+)\.([^.]+)(?:\.([^.]+))?\.(png|md)$/)
+  if (!match) { return null }
+  const [, surface, component, state, viewport, theme] = match
+  return { surface, component, state, viewport, theme }
+}
+
 export function checkUiReferences({ files, allowlist = [] } = {}) {
   const mergedAllowlist = [...DEFAULT_ALLOWLIST, ...allowlist]
   const findings = []
@@ -62,12 +84,62 @@ export function checkUiReferences({ files, allowlist = [] } = {}) {
     }
 
     if (file.path.endsWith('.png')) {
+      const parsed = parseReferencePath(file.path)
+      if (!parsed) {
+        findings.push({
+          code: 'invalid-path',
+          path: file.path,
+          message: `[ui-references] ${file.path} must use docs/ui-references/<surface>/<component>/<state>.<viewport>[.<theme>].png`,
+        })
+        continue
+      }
+      if (!ALLOWED_VIEWPORTS.has(parsed.viewport)) {
+        findings.push({
+          code: 'invalid-viewport',
+          path: file.path,
+          message: `[ui-references] ${file.path} uses unsupported viewport "${parsed.viewport}"`,
+        })
+        continue
+      }
+      if (parsed.theme && !ALLOWED_THEMES.has(parsed.theme)) {
+        findings.push({
+          code: 'invalid-theme',
+          path: file.path,
+          message: `[ui-references] ${file.path} uses unsupported theme "${parsed.theme}"`,
+        })
+        continue
+      }
       pngs.add(file.path.replace(/\.png$/, ''))
       continue
     }
 
     if (file.path.endsWith('.md')) {
       if (isAllowlisted(file.path, mergedAllowlist)) continue
+      const parsed = parseReferencePath(file.path)
+      if (!parsed) {
+        findings.push({
+          code: 'invalid-path',
+          path: file.path,
+          message: `[ui-references] ${file.path} must use docs/ui-references/<surface>/<component>/<state>.<viewport>[.<theme>].md`,
+        })
+        continue
+      }
+      if (!ALLOWED_VIEWPORTS.has(parsed.viewport)) {
+        findings.push({
+          code: 'invalid-viewport',
+          path: file.path,
+          message: `[ui-references] ${file.path} uses unsupported viewport "${parsed.viewport}"`,
+        })
+        continue
+      }
+      if (parsed.theme && !ALLOWED_THEMES.has(parsed.theme)) {
+        findings.push({
+          code: 'invalid-theme',
+          path: file.path,
+          message: `[ui-references] ${file.path} uses unsupported theme "${parsed.theme}"`,
+        })
+        continue
+      }
       notes.set(file.path.replace(/\.md$/, ''), file)
     }
   }

@@ -1,0 +1,50 @@
+@layer surfaces {
+  .qa-sync-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--qa-z-overlay) + 1);
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgb(0 0 0 / 52%);
+  }
+
+  .qa-sync-banner {
+    width: min(28rem, 100%);
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.1rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 24%, var(--qa-border-on-sheet));
+    border-radius: var(--qa-radius-md);
+    background: var(--qa-surface-sheet);
+    color: var(--qa-text-on-sheet);
+    box-shadow: var(--qa-elevation-sheet);
+  }
+
+  .qa-sync-title,
+  .qa-sync-message {
+    margin: 0;
+  }
+
+  .qa-sync-title {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .qa-sync-message {
+    color: var(--qa-text-on-sheet-muted);
+    line-height: 1.45;
+  }
+
+  .qa-sync-reload-btn {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 24%, var(--qa-border-on-sheet));
+    border-radius: var(--qa-radius-pill);
+    background: var(--qa-accent);
+    color: var(--qa-text-on-accent);
+    font: inherit;
+    font-weight: 600;
+  }
+}

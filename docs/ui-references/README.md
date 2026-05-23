@@ -2,23 +2,59 @@
 
 Committed component reference images and adjacent intent notes live here for creative QuranAtlas UI work.
 
-Use this directory when the UI workflow asks for a visual source of truth before implementation:
+Use this directory when the UI workflow asks for a visual source of truth before implementation.
 
-- `docs/ui-references/<surface>/<component>.<state-or-variant>.png`
-- `docs/ui-references/<surface>/<component>.<state-or-variant>.md`
+## Path Taxonomy
 
-These files are for committed design intent, not generated test artifacts. Keep them focused on individual components and states, not full-screen composite mockups.
+Use this path shape for committed references:
 
-Intent notes should stay short and current-state only. Include the component/state/viewport, accepted traits, forbidden traits, token expectations, responsive differences, and non-goals. Do not store transient implementation screenshots here unless they are the selected reference.
+- `docs/ui-references/<surface>/<component>/<state>.<viewport>[.<theme>].png`
+- `docs/ui-references/<surface>/<component>/<state>.<viewport>[.<theme>].md`
 
-## Grandfathered Flat Pairs
+Allowed viewport labels:
 
-These current flat pairs remain valid until the component-directory migration in
-Agentic UI Refactor Plan 05.
+- `mobile`
+- `mobile-320`
+- `tablet-portrait`
+- `tablet-landscape`
+- `desktop`
 
-| Current path | Owner | Removal condition |
-| --- | --- | --- |
-| `docs/ui-references/configure/asset-management.desktop.png` + `.md` | `configure` | Migrate during Agentic UI Refactor Plan 05 visual reference migration. |
-| `docs/ui-references/configure/asset-management.mobile.png` + `.md` | `configure` | Migrate during Agentic UI Refactor Plan 05 visual reference migration. |
-| `docs/ui-references/configure/asset-status-live-region.mobile.png` + `.md` | `configure` | Migrate during Agentic UI Refactor Plan 05 visual reference migration. |
-| `docs/ui-references/configure/asset-table-states.desktop.png` + `.md` | `configure` | Migrate during Agentic UI Refactor Plan 05 visual reference migration. |
+Allowed theme labels:
+
+- `light`
+- `sepia`
+- `dark`
+- `night`
+
+Theme labels are optional unless hierarchy, material feel, or contrast differ in a way the image needs to lock down.
+
+## Reference Types
+
+- `Component reference`: one active component in one named state.
+- `Assembly reference`: a route or surface assembly when the design concern is the composition, not a single subpart.
+- `State matrix note`: a short intent note that names the states a reference does and does not cover.
+- `Proof screenshot`: transient capture made during implementation or tests. Proof belongs in `test-output/` or review context, not here.
+
+These files are for committed visual intent, not generated test artifacts. Keep them focused on current accepted UI states, not full-screen composite moodboards or discarded experiments.
+
+## Pairing And Note Rules
+
+- Every committed image must have a same-basename `.md` intent note.
+- Every non-allowlisted intent note must have a same-basename image.
+- Intent notes must include these headings:
+  - `## Component`
+  - `## State and viewport`
+  - `## Accepted visual traits`
+  - `## Forbidden traits`
+  - `## Token expectations`
+  - `## Responsive differences`
+  - `## Non-goals`
+- Notes stay current-state only. Do not include progress logs, dates, SHAs, or rejected-option history.
+
+## Workflow Rules
+
+- One implementation pass gets one active reference source at a time.
+- `DESIGN.md` is product-style context, not the active component reference.
+- Use a committed reference for creative direction work.
+- For narrow bug fixes or token cleanup, one accepted current UI state can be the active reference source.
+- `test-output/` screenshots, Playwright artifacts, and ad hoc browser captures are not source of truth unless they are explicitly promoted into this directory with a note.

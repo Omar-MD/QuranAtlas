@@ -144,9 +144,9 @@ Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-te
   - `check-at-layer.mjs` — no bare rules outside `@layer` (except `reset.css` / `base.css` / `index.css`).
   - `check-style-entry.mjs` — blocking check for stale, duplicate, or missing `src/styles/index.css` imports across shipped CSS partials.
   - `check-ui-references.mjs` — blocking check for committed UI-reference image/note pairing plus required intent-note fields.
-  - `check-selector-liveness.mjs --advisory` — advisory scan for `.qa-*` classes that drift between CSS ownership and code references.
-  - `check-primitive-token-consumption.mjs --advisory` — advisory scan for primitive token consumption outside `src/styles/tokens/**`.
-  - `check-design-literals.mjs --advisory` — advisory scan for hardcoded color, motion, and radius design literals outside token files.
+  - `check-selector-liveness.mjs` — blocking scan for `.qa-*` classes that drift between CSS ownership and code references, with explicit allowlists for dynamic or non-style qa-prefixed hooks.
+  - `check-primitive-token-consumption.mjs` — blocking scan for primitive token consumption outside `src/styles/tokens/**`.
+  - `check-design-literals.mjs` — blocking scan for hardcoded color, motion, and radius design literals outside token files unless the file carries an explicit local allow comment.
 - **Gzipped-chunk budget** via `scripts/check-chunks.js` during `pnpm run validate` (≤150 KB per chunk).
 - **Feature-state guard** via `scripts/check-no-feature-state.js` during `pnpm run validate` (blocks top-level mutable state in feature modules).
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).

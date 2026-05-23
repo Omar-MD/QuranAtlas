@@ -168,7 +168,12 @@
         {#each themeOptions as opt (opt)}
           <button
             type="button"
-            class="qa-onb-sw qa-onb-sw--{opt}{currentTheme === opt ? ' qa-onb-sw--on' : ''}"
+            class="qa-onb-sw"
+            class:qa-onb-sw--light={opt === 'light'}
+            class:qa-onb-sw--sepia={opt === 'sepia'}
+            class:qa-onb-sw--dark={opt === 'dark'}
+            class:qa-onb-sw--auto={opt === 'auto'}
+            class:qa-onb-sw--on={currentTheme === opt}
             onclick={() => pickTheme(opt)}
           >
             <span class="qa-onb-sw-chip" dir="rtl">
@@ -198,7 +203,8 @@
         {#each riwayahOptions as opt (opt)}
           <button
             type="button"
-            class="qa-onb-r{selectedRiwayah === opt ? ' qa-onb-r--on' : ''}"
+            class="qa-onb-r"
+            class:qa-onb-r--on={selectedRiwayah === opt}
             class:qa-onb-r--disabled={!usableRiwayah[opt]}
             role="radio"
             aria-checked={selectedRiwayah === opt}
@@ -241,7 +247,8 @@
         {#each translationOptions as opt (opt.id)}
           <button
             type="button"
-            class="qa-onb-t{opt.id === selectedTranslationId ? ' qa-onb-t--on' : ''}"
+            class="qa-onb-t"
+            class:qa-onb-t--on={opt.id === selectedTranslationId}
             class:qa-onb-t--disabled={translationOptions.length < 2}
             aria-disabled={translationOptions.length < 2}
             disabled={translationOptions.length < 2}
@@ -274,7 +281,7 @@
           <div class="qa-onb-shortcut-row">
             <div class="qa-onb-shortcut-keys">
               {#each row.keys as key (key)}
-                <kbd class="qa-onb-kbd{row.gesture ? ' qa-onb-kbd--gesture' : ''}">{key}</kbd>
+                <kbd class="qa-onb-kbd" class:qa-onb-kbd--gesture={row.gesture}>{key}</kbd>
               {/each}
             </div>
             <span class="qa-onb-shortcut-desc">{row.desc}</span>

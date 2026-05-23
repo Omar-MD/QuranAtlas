@@ -8,6 +8,7 @@
  *
  * Z-index literals preserved because these layers still map to distinct scrim,
  * pill, and sheet relationships ahead of the semantic z-tier cleanup.
+ * qa-design-literal-allow color: ambient-pill parchment highlight is intentionally fixed for current chrome contrast.
  */
 
 @layer surfaces {

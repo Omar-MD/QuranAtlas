@@ -1,5 +1,7 @@
 /**
  * Onboarding shell styles moved from flat surfaces.
+ * qa-design-literal-allow color: onboarding swatches and start chips intentionally preview fixed theme and tone samples.
+ * qa-design-literal-allow radius: onboarding keyboard and chip geometry still uses local values pending shared onboarding tokens.
  */
 
 @layer surfaces {
@@ -257,7 +259,7 @@
   }
 
   .qa-onb-r-meta {
-    font-size: var(--fs-xs, 0.6875rem);
+    font-size: var(--qa-text-size-meta, 0.6875rem);
     color: var(--qa-text-on-sheet-dim);
   }
 

@@ -8,7 +8,7 @@
     "docs/context/surfaces/mark.md:inventory": "05a50c16041c0582a80129764f9e43fdf7bb9b37c526a1083d8110b94faf27c9",
     "docs/context/surfaces/navigate.md:inventory": "2fad38ca522383fd9595512aa03dcb9cd609a8ac38a0c46464231e8c1681e99e",
     "docs/context/surfaces/onboard.md:inventory": "c67ff6e2e9beb8d0c45d66b78de7eef5539df1e1995868db0e9e00cba23ce08e",
-    "docs/context/surfaces/read.md:inventory": "6649fbb5360c3afd524ac626b232d6965426a14d8a267ccfa156c601313e86b6",
+    "docs/context/surfaces/read.md:inventory": "8d900b2e4dad1f5a69e4f4ca79736deb71273daa584a76364b570e5785708ee1",
     "docs/context/surfaces/review.md:inventory": "05a50c16041c0582a80129764f9e43fdf7bb9b37c526a1083d8110b94faf27c9",
     "docs/context/surfaces/configure.md:data-owned": "fec34f04eaa4235e59ba76d9fd8546ce9d13d6a214125c1ef8a1c5464b370137",
     "docs/context/surfaces/configure.md:data-read": "ec17b62494212085767a8413d464b7f28471a80005ed7eba9f993f1f98c8a66f",
@@ -43,13 +43,18 @@
     "docs/context/surfaces/listen.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/mark.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/mark.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
-    "docs/context/surfaces/navigate.md:events-emit": "f37ea2c81fb78f8fc7c3b5ede0e3c55c670cc45fc2267bc34e9ec47e092de5a5",
+    "docs/context/surfaces/navigate.md:events-emit": "af6370fe3254793dfee4f6dd83793410f381d9d94af188ccd89ce02df9313a97",
     "docs/context/surfaces/navigate.md:events-listen": "34168907454291f5db8a400ee1e64cf10c6e35f5e2892862ebbac058fd413d85",
     "docs/context/surfaces/onboard.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/onboard.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/read.md:events-emit": "bbef0ed72ca4b115d3eed53470c060cdf85b6b69f572ce45779485471fcd69f7",
     "docs/context/surfaces/read.md:events-listen": "070e64babc594d779d75b85568a7551c5dddc3d175a615fdf9b2c1e6bf9e88ef",
     "docs/context/surfaces/review.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
-    "docs/context/surfaces/review.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0"
+    "docs/context/surfaces/review.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
+    "docs/context/surfaces/configure.md:style-inventory": "43c7e9c133b57f436f78b31f158be150af4202698a80329dd3778fe1848b32cd",
+    "docs/context/surfaces/infra.md:style-inventory": "37260c012522efeac2802b7fadfc9aa8b4579bc8dc793fb1083814e95c5463ce",
+    "docs/context/surfaces/navigate.md:style-inventory": "c1a46f5a4b2d5857e3129b5e0664c36eb8932370bc6244dba4ec307fd9b17558",
+    "docs/context/surfaces/onboard.md:style-inventory": "a01bb8c865695e337049ba63734412c03bdf4a10b28d4e8e372f8d51c5e62e3d",
+    "docs/context/surfaces/read.md:style-inventory": "e735f47f4a18bc252ff824836442bf6b7dbf21b6a657904c717b6edd95496052"
   }
 }

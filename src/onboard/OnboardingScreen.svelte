@@ -24,7 +24,7 @@
 
   <div class="qa-onb-dots" aria-hidden="true">
     {#each Array.from({ length: total }, (_, i) => i + 1) as dotN (dotN)}
-      <span class="qa-onb-dot{dotN === screen ? ' qa-onb-dot--on' : ''}"></span>
+      <span class="qa-onb-dot" class:qa-onb-dot--on={dotN === screen}></span>
     {/each}
   </div>
 </div>

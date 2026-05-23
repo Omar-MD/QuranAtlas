@@ -72,8 +72,8 @@
 
 <div class="qa-settings-section">
   <h3 class="qa-settings-section-title">Mushaf</h3>
-  <button type="button" class="qa-settings-row" data-testid="src-row-recitation" onclick={() => { void openPicker('riwayah') }}><span>Active Riwayah</span><strong class="qa-settings-row-value">{settings.riwayah}</strong></button>
-  <button type="button" class="qa-settings-row" onclick={() => { void openPicker('mushaf') }}><span>Mushaf Edition</span><strong class="qa-settings-row-value">{settings.mushafEditionId}</strong></button>
+  <button type="button" class="qa-settings-row qa-settings-row--picker" data-testid="src-row-recitation" onclick={() => { void openPicker('riwayah') }}><span class="qa-settings-row-label">Active Riwayah</span><strong class="qa-settings-row-value qa-settings-row-control">{settings.riwayah}</strong></button>
+  <button type="button" class="qa-settings-row qa-settings-row--picker" onclick={() => { void openPicker('mushaf') }}><span class="qa-settings-row-label">Mushaf Edition</span><strong class="qa-settings-row-value qa-settings-row-control">{settings.mushafEditionId}</strong></button>
 </div>
 
 {#if picker}

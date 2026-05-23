@@ -40,11 +40,16 @@ describe('check-selector-liveness', () => {
 
   it('allows dynamic patterns only with full allowlist metadata', () => {
     const result = runSelectorLivenessCheck({
-      cssFiles: [],
+      cssFiles: [
+        {
+          path: 'src/styles/surfaces/onboard/swatches.css',
+          content: '.qa-onb-sw {}',
+        },
+      ],
       codeFiles: [
         {
           path: 'src/onboard/Swatches.svelte',
-          content: "const className = `qa-onb-sw--${theme}`",
+          content: '<div class=\"qa-onb-sw\"></div>\\nconst className = `qa-onb-sw--${theme}`',
         },
       ],
       allowlist: [

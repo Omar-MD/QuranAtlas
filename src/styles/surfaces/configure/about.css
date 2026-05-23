@@ -51,38 +51,6 @@
     line-height: 1.6;
   }
 
-  .qa-about-stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin: 2rem 0;
-  }
-
-  .qa-about-stat-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem 1rem;
-    background-color: var(--qa-surface-sheet);
-    border: 1px solid var(--qa-border-on-sheet);
-    border-radius: var(--qa-radius-xl);
-    gap: 0.25rem;
-  }
-
-  .qa-about-stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--qa-accent);
-    line-height: 1;
-  }
-
-  .qa-about-stat-label {
-    font-size: var(--qa-text-size-meta);
-    color: var(--qa-text-on-sheet-muted);
-    text-align: center;
-  }
-
   .qa-about-version-line {
     font-size: var(--qa-text-size-meta);
     color: var(--qa-text-on-sheet-dim);
@@ -161,11 +129,6 @@
       max-width: 720px;
       margin: 0 auto 2rem;
       padding: 1.75rem 1.5rem;
-    }
-
-    .qa-about-stat-grid {
-      grid-template-columns: repeat(4, 1fr);
-      margin: 2rem 0 2.5rem;
     }
 
     .qa-about-body-split {

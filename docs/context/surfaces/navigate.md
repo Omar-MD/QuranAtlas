@@ -13,6 +13,8 @@ test_paths:
     - 'tests/unit/navigate/bookmarks/**'
   e2e:
     - 'tests/e2e/navigate/*.spec.js'
+style_paths:
+  - 'src/styles/surfaces/navigate/**'
 ---
 
 # Surface: navigate
@@ -68,6 +70,8 @@ Header uses the locked mobile chrome: a product row with tappable QuranAtlas wor
 
 **Read mode** uses the ledger drawer layout: an elevated Daily Wird card with progress/chevron affordance, then a `Verse | Mushaf` reader-mode switch, then the peer source control for `Surah | Juz | Bookmarks` when Verse mode is active. The selected source uses a muted accent fill plus bronze underline; unselected sources remain muted on the shared rail.
 
+`NavDrawer.svelte` renders `DailyWirdCard`, but navigate owns only drawer placement through the local slot wrapper; read remains the owner of the card source and presentation styles.
+
 `Surah` shows search plus `All | Recent`, keeps current-surah highlight, and renders ledger-style surah rows with number, English name, verse count, Arabic name, and chevron. `Juz` removes Surah-only search/filter controls, renders 30 Juz rows, marks the Juz containing the current reader position, marks the Juz containing the active Daily Wird next reference, and routes row taps to the Juz start reference. `Bookmarks` renders the existing riwayah-scoped grouped bookmark list with static group headers, count badges, verse references, truncated Arabic snippets, tap-to-jump rows, and swipe-left Delete.
 
 When the active route is Mushaf (`#/m/:page`), the drawer marks Mushaf mode active, shows a compact Page N continuation surface with previous, open, and next page actions, and hides the `Surah | Juz | Bookmarks` source controls. The mode active state follows hash changes while the drawer remains mounted.
@@ -77,6 +81,17 @@ Daily Wird detail opens in-drawer. Without a plan, the summary card invites crea
 `✕` closes; backdrop tap, swipe-left, Esc also dismiss. Drawer state local; not persisted. Header controls and the peer source rail keep comfortable touch targets on mobile; the Read source switch stays visually compact while preserving selected-state clarity.
 
 Desktop kebab path keeps narrow side-panel size but uses same tabbed component.
+
+## Style Inventory
+
+<!-- AUTO-GENERATED:style-inventory START -->
+| Path | Role |
+| --- | --- |
+| `src/styles/surfaces/navigate/drawer-lists.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| `src/styles/surfaces/navigate/drawer-read-source.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| `src/styles/surfaces/navigate/drawer-shell.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| `src/styles/surfaces/navigate/shortcuts-sheet.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+<!-- AUTO-GENERATED:style-inventory END -->
 
 ### Surah directory (`#/surahs`, desktop ≥1180 px only)
 
@@ -163,7 +178,7 @@ _(no cross-surface reads detected)_
 | Event | Constant | Sites |
 | --- | --- | --- |
 | `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/navigate/bookmarks/BookmarksList.svelte:108` |
-| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/NavDrawer.svelte:250`, `src/navigate/NavDrawer.svelte:325`, `src/navigate/NavDrawer.svelte:709`, `src/navigate/bookmarks/BookmarksList.svelte:110`, `src/navigate/surahs/SurahList.svelte:167` |
+| `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/NavDrawer.svelte:250`, `src/navigate/NavDrawer.svelte:325`, `src/navigate/NavDrawer.svelte:711`, `src/navigate/bookmarks/BookmarksList.svelte:110`, `src/navigate/surahs/SurahList.svelte:167` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:146` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:137` |
 <!-- AUTO-GENERATED:events-emit END -->

@@ -158,10 +158,10 @@
       <h3 id="qa-settings-reading" class="qa-settings-sect-name">Reading</h3>
     </div>
 
-    <label class="qa-settings-slider">
-      <span class="qa-settings-slider-row">
-        <span class="qa-settings-slider-label">Font Size</span>
-        <span class="qa-settings-slider-value">{fontSizeValue}</span>
+    <label class="qa-settings-slider qa-settings-row qa-settings-row--slider">
+      <span class="qa-settings-slider-row qa-settings-row-meta">
+        <span class="qa-settings-slider-label qa-settings-row-label">Font Size</span>
+        <span class="qa-settings-slider-value qa-settings-row-control">{fontSizeValue}</span>
       </span>
       <span class="qa-settings-slider-track-row">
         <span class="qa-settings-slider-min" aria-hidden="true">A</span>
@@ -178,10 +178,10 @@
       </span>
     </label>
 
-    <label class="qa-settings-slider">
-      <span class="qa-settings-slider-row">
-        <span class="qa-settings-slider-label">Reading Flow</span>
-        <span class="qa-settings-slider-value">{readingFlowValue}</span>
+    <label class="qa-settings-slider qa-settings-row qa-settings-row--slider">
+      <span class="qa-settings-slider-row qa-settings-row-meta">
+        <span class="qa-settings-slider-label qa-settings-row-label">Reading Flow</span>
+        <span class="qa-settings-slider-value qa-settings-row-control">{readingFlowValue}</span>
       </span>
       <span class="qa-settings-slider-track-row">
         <span class="qa-settings-slider-min" aria-hidden="true">-</span>
@@ -206,30 +206,30 @@
 
     <button
       type="button"
-      class="qa-settings-src-row"
+      class="qa-settings-row qa-settings-row--picker qa-settings-src-row"
       data-testid="src-row-recitation"
       onclick={() => { void openPicker('riwayah') }}
     >
-      <span class="qa-settings-src-key">Active Riwayah</span>
-      <span class="qa-settings-src-val">{activeRiwayahLabel}</span>
+      <span class="qa-settings-src-key qa-settings-row-label">Active Riwayah</span>
+      <span class="qa-settings-src-val qa-settings-row-control">{activeRiwayahLabel}</span>
       <span class="qa-settings-src-chev" aria-hidden="true">›</span>
     </button>
 
     <button
       type="button"
-      class="qa-settings-src-row"
+      class="qa-settings-row qa-settings-row--picker qa-settings-src-row"
       onclick={() => { void openPicker('text') }}
     >
-      <span class="qa-settings-src-key">Quran Text Style</span>
-      <span class="qa-settings-src-val">{quranTextStyleLabel}</span>
+      <span class="qa-settings-src-key qa-settings-row-label">Quran Text Style</span>
+      <span class="qa-settings-src-val qa-settings-row-control">{quranTextStyleLabel}</span>
       <span class="qa-settings-src-chev" aria-hidden="true">›</span>
     </button>
 
-    <div class="qa-settings-trans-row" data-testid="src-row-translation">
-      <span class="qa-settings-src-key">Translation Source</span>
+    <div class="qa-settings-row qa-settings-row--switch qa-settings-trans-row" data-testid="src-row-translation">
+      <span class="qa-settings-src-key qa-settings-row-label">Translation Source</span>
       <button
         type="button"
-        class="qa-settings-trans-name"
+        class="qa-settings-trans-name qa-settings-row-control"
         aria-label={`Translation Source: ${translationLabel}`}
         onclick={() => { void openPicker('translation') }}
       >
@@ -258,12 +258,12 @@
 
     <button
       type="button"
-      class="qa-settings-src-row"
+      class="qa-settings-row qa-settings-row--picker qa-settings-src-row"
       data-testid="src-row-tafsir"
       onclick={() => { void openPicker('tafsir') }}
     >
-      <span class="qa-settings-src-key">Tafsir Source</span>
-      <span class="qa-settings-src-val">{tafsirLabel}</span>
+      <span class="qa-settings-src-key qa-settings-row-label">Tafsir Source</span>
+      <span class="qa-settings-src-val qa-settings-row-control">{tafsirLabel}</span>
       <span class="qa-settings-src-chev" aria-hidden="true">›</span>
     </button>
   </section>

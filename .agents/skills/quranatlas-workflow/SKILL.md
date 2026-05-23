@@ -18,6 +18,7 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 
 - Start with `AGENTS.md` and `docs/context/repo-structure.md`.
 - For behavior changes, read the owning `docs/context/surfaces/<surface>.md`.
+- For visual or selector ownership changes, also read `docs/context/style-map.md`.
 - For cross-cutting changes, read the canonical context doc: `architecture.md`, `data-model.md`, `source-data-flow.md`, or `docs/tech-stack.md`.
 - For product scope, attribution, shipped/future/deferred scope, or known bugs/blocking debt, read and update `docs/product-info.md`, `docs/context/implemented.md`, `docs/context/future.md`, `docs/context/roadmap.md`, or `docs/context/open-issues.md` as applicable.
 - For tests, read `tests/unit/AGENTS.md` or `tests/e2e/AGENTS.md` before placing new coverage.
@@ -30,7 +31,7 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 - Default to main-session work. Delegate only when surfaces are truly independent and do not share files, selectors, events, stores, or state.
 - Active Reader First surfaces are read, navigate, configure, onboard, and infra.
 - Mark, review, and listen are removed-scope implementation surfaces. Touch them only for cleanup, regression containment, or source removal; bookmarks remain active navigation/read continuity.
-- Use the owning dossier's inventory for the surface to source-file map; regenerate with `pnpm run docs` if stale.
+- Use the owning dossier's inventory for the surface to source-file map; use `docs/context/style-map.md` for component-to-style ownership; regenerate with `pnpm run docs` if either looks stale.
 
 ## Core Rules
 

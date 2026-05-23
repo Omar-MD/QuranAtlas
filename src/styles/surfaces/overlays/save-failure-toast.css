@@ -1,5 +1,6 @@
 /**
  * Save-failure toast overlay rules moved from src/styles/surfaces/toast.css.
+ * qa-design-literal-allow radius: toast corner radius stays local until toast tokens are extracted.
  */
 
 @layer surfaces {

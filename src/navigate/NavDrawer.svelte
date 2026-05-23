@@ -519,7 +519,9 @@
         />
     {:else}
         <div class="qa-nav-drawer-read">
-          <DailyWirdCard summary={wirdSummary} onOpen={openWirdDetail} />
+          <div class="qa-drawer-wird-slot">
+            <DailyWirdCard summary={wirdSummary} onOpen={openWirdDetail} />
+          </div>
 
           <div class="qa-nav-drawer-reader-mode" data-testid="reader-mode-switch" aria-label="Reader mode">
             <button

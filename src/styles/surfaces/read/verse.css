@@ -1,5 +1,7 @@
 /**
  * Reader content styles split from src/styles/surfaces/reader.css.
+ * qa-design-literal-allow motion: verse reveal and accent animations remain local while reader interaction timing is still being tuned.
+ * qa-design-literal-allow radius: footnote and verse affordance rounding still uses local geometry pending token extraction.
  */
 
 @layer surfaces {
@@ -177,6 +179,10 @@
     border: 1.5px solid var(--qa-accent);
   }
 
+  .qa-verse-body {
+    display: block;
+  }
+
   .qa-verse-body--details {
     margin: 0;
   }
@@ -261,6 +267,10 @@
     font-size: 0.95em;
   }
 
+  .qa-verse-continuation-text {
+    color: currentcolor;
+  }
+
   /* Footnote marker — superscript button inside translation text. Click toggles
      the inline footnote panel for the verse. Sized down + colored to read as a
      reference mark, not a UI control. */
@@ -290,6 +300,10 @@
     color: var(--qa-accent-hover);
     outline: 2px solid var(--qa-accent);
     outline-offset: 1px;
+  }
+
+  .qa-fn-popover-text {
+    display: block;
   }
 
   .qa-fn-marker[aria-expanded="true"] {
