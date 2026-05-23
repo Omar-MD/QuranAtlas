@@ -40,13 +40,13 @@
 
   .qa-settings-shell-head {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(5rem, 1fr) minmax(0, auto) minmax(5rem, 1fr);
     align-items: center;
     gap: 0.75rem;
     padding:
-      max(1.3rem, calc(env(safe-area-inset-top) + 1.45rem))
-      1.05rem
-      1.05rem;
+      max(1.2rem, calc(env(safe-area-inset-top) + 1.3rem))
+      1rem
+      1rem;
     border-bottom: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
     position: relative;
   }
@@ -75,12 +75,13 @@
   .qa-settings-shell-title {
     justify-self: center;
     font-family: Newsreader, Georgia, serif;
-    font-size: clamp(1.98rem, 7.1vw, 2.45rem);
-    line-height: 1;
+    font-size: clamp(1.7rem, 7.1vw, 2.25rem);
+    line-height: 1.04;
     font-weight: 400;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     color: color-mix(in srgb, var(--qa-text-primary) 94%, #120d06);
     text-align: center;
+    max-width: 100%;
   }
 
   .qa-settings-shell-done,
@@ -95,15 +96,15 @@
     justify-self: start;
     padding: 0;
     font-family: Newsreader, Georgia, serif;
-    font-size: 1.08rem;
+    font-size: 1rem;
     line-height: 1;
     font-weight: 400;
   }
 
   .qa-settings-shell-close {
     justify-self: end;
-    width: 3.7rem;
-    height: 3.7rem;
+    width: 3.35rem;
+    height: 3.35rem;
     border-radius: var(--qa-radius-circle);
     border: 1px solid color-mix(in srgb, var(--qa-accent) 38%, var(--qa-border-on-sheet));
     background: color-mix(in srgb, var(--qa-surface-app) 96%, white 4%);
@@ -127,14 +128,24 @@
     padding: 0 1rem 1rem;
   }
 
+  .qa-settings-shell-body-inner,
+  .qa-settings-shell-foot-inner {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
   .qa-settings-shell-foot {
     padding: 1rem 1rem max(1rem, calc(env(safe-area-inset-bottom) + 0.35rem));
     border-top: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
     border-bottom: 0;
-    display: grid;
-    gap: 0.9rem;
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--qa-surface-app) 96%, white 4%), var(--qa-surface-app));
+  }
+
+  .qa-settings-shell-foot-inner {
+    display: grid;
+    gap: 0.9rem;
   }
 
   .qa-settings-preview--mushaf {
@@ -212,36 +223,45 @@
   .qa-settings-theme-night-title {
     margin: 0;
     font-family: Newsreader, Georgia, serif;
-    font-size: 0.92rem;
+    font-size: 0.98rem;
     font-weight: 500;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     color: var(--qa-text-primary);
   }
 
   .qa-settings-theme-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.55rem;
+    gap: 0.5rem;
   }
 
   .qa-settings-theme-option {
-    display: grid;
-    gap: 0.32rem;
-    justify-items: center;
+    display: block;
     border: 0;
     background: transparent;
     color: var(--qa-text-primary);
     padding: 0;
   }
 
+  .qa-settings-theme-card {
+    min-height: 5.2rem;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 22%, var(--qa-border-on-sheet));
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--qa-surface-raised) 88%, white 12%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 28%);
+    padding: 0.72rem 0.4rem 0.46rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.42rem;
+    position: relative;
+  }
+
   .qa-settings-theme-swatch {
     width: 100%;
-    aspect-ratio: 0.88;
-    min-height: 3.5rem;
-    border-radius: 0.85rem;
-    border: 1px solid color-mix(in srgb, var(--qa-accent) 20%, var(--qa-border-on-sheet));
-    background: var(--qa-surface-raised);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 24%);
+    max-width: 3.45rem;
+    aspect-ratio: 1;
+    border-radius: 0.82rem;
+    border: 1px solid color-mix(in srgb, var(--qa-accent) 26%, var(--qa-border-on-sheet));
     display: grid;
     place-items: center;
     position: relative;
@@ -271,7 +291,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     line-height: 1;
   }
 
@@ -287,31 +307,36 @@
 
   .qa-settings-theme-option-label {
     font-family: Newsreader, Georgia, serif;
-    font-size: 0.76rem;
-    color: color-mix(in srgb, var(--qa-text-primary) 88%, var(--qa-accent));
+    font-size: 0.88rem;
+    line-height: 1;
+    color: color-mix(in srgb, var(--qa-text-primary) 90%, var(--qa-accent));
+  }
+
+  .qa-settings-theme-option--active .qa-settings-theme-card {
+    border-color: color-mix(in srgb, var(--qa-accent) 90%, #8d6318);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--qa-accent) 90%, #8d6318),
+      0 0 0 1px color-mix(in srgb, var(--qa-accent) 16%, transparent);
   }
 
   .qa-settings-theme-option--active .qa-settings-theme-swatch {
-    border-color: var(--qa-accent);
-    box-shadow:
-      inset 0 0 0 1px var(--qa-accent),
-      0 0 0 1px color-mix(in srgb, var(--qa-accent) 18%, transparent);
+    border-color: color-mix(in srgb, var(--qa-accent) 78%, #8d6318);
   }
 
-  .qa-settings-theme-option--active .qa-settings-theme-swatch::after {
-    content: '•';
+  .qa-settings-theme-check {
     position: absolute;
-    right: 0.45rem;
-    bottom: 0.35rem;
-    width: 1rem;
-    height: 1rem;
+    top: 0.34rem;
+    right: 0.34rem;
+    width: 1.1rem;
+    height: 1.1rem;
     border-radius: 999px;
     display: grid;
     place-items: center;
     background: var(--qa-accent);
     color: var(--qa-surface-app);
-    font-size: 1rem;
-    line-height: 0.8;
+    font-size: 0.88rem;
+    line-height: 1;
+    font-weight: 700;
   }
 
   .qa-settings-night-group {
@@ -324,23 +349,38 @@
   }
 
   .qa-settings-night-choice {
-    min-height: 4.1rem;
+    min-height: 4.3rem;
     border: 0;
     border-right: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
     background: transparent;
     color: var(--qa-text-primary);
-    font-family: Newsreader, Georgia, serif;
-    font-size: 1rem;
-    font-weight: 500;
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.24rem;
+    padding: 0.4rem 0.25rem;
   }
 
   .qa-settings-night-choice:last-child {
     border-right: 0;
   }
 
+  .qa-settings-night-choice-icon {
+    font-size: 1.18rem;
+    line-height: 1;
+  }
+
+  .qa-settings-night-choice-label {
+    font-family: Newsreader, Georgia, serif;
+    font-size: 0.98rem;
+    line-height: 1;
+    font-weight: 500;
+  }
+
   .qa-settings-night-choice--active {
     background: linear-gradient(180deg, color-mix(in srgb, var(--qa-accent) 85%, #c09131), color-mix(in srgb, var(--qa-accent) 92%, #8f6312));
     color: var(--qa-surface-app);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
   }
 
   .qa-settings-manage-assets {
@@ -354,6 +394,24 @@
     font-family: Newsreader, Georgia, serif;
     font-size: 0.88rem;
     font-weight: 500;
+  }
+
+  @media (max-width: 359px) {
+    .qa-settings-theme-night {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.75rem;
+    }
+
+    .qa-settings-night-panel {
+      padding-left: 0;
+      padding-top: 0.75rem;
+      border-left: 0;
+      border-top: 1px solid color-mix(in srgb, var(--qa-accent) 18%, var(--qa-border-on-sheet));
+    }
+
+    .qa-settings-theme-grid {
+      gap: 0.4rem;
+    }
   }
 
   .qa-settings-picker {
@@ -386,9 +444,33 @@
   @media (min-width: 1180px) {
     .qa-settings-shell {
       left: auto;
-      width: min(420px, calc(100vw - 48px));
+      width: min(440px, calc(100vw - 48px));
       border-left: 1px solid var(--qa-border-on-sheet);
       box-shadow: -16px 0 36px rgb(0 0 0 / 14%);
+    }
+
+    .qa-settings-shell-head {
+      padding-top: max(1rem, calc(env(safe-area-inset-top) + 1rem));
+      padding-bottom: 0.9rem;
+    }
+
+    .qa-settings-shell-title {
+      font-size: 1.72rem;
+      line-height: 1.02;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .qa-settings-shell-head,
+    .qa-settings-shell-body,
+    .qa-settings-shell-foot {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+
+    .qa-settings-shell-body-inner,
+    .qa-settings-shell-foot-inner {
+      max-width: 43rem;
     }
   }
 

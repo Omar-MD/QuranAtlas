@@ -40,6 +40,7 @@ describe('mode-aware settings panel', () => {
     await mountAndOpen('verse')
 
     expect(screen.getByRole('dialog', { name: 'Verse Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Verse Settings' })).toBeInTheDocument()
     expect(screen.getByText('Quran Text Style')).toBeInTheDocument()
     expect(screen.queryByText('Mushaf Edition')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Manage Assets' })).toBeInTheDocument()
@@ -49,6 +50,7 @@ describe('mode-aware settings panel', () => {
     await mountAndOpen('mushaf')
 
     expect(screen.getByRole('dialog', { name: 'Mushaf Settings' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Mushaf Settings' })).toBeInTheDocument()
     expect(screen.getByText('Mushaf Edition')).toBeInTheDocument()
     expect(screen.queryByText('Font Size')).not.toBeInTheDocument()
     expect(screen.queryByText('Reset')).not.toBeInTheDocument()

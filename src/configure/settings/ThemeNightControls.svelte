@@ -9,10 +9,10 @@
     { id: 'dark', label: 'Dark' },
     { id: 'auto', label: 'Auto' },
   ] as const
-  const nightModes: Array<{ id: NightMode; label: string }> = [
-    { id: 'off', label: 'Off' },
-    { id: 'on', label: 'On' },
-    { id: 'auto', label: 'Auto' },
+  const nightModes: Array<{ id: NightMode; label: string; icon: string }> = [
+    { id: 'off', label: 'Off', icon: '☼' },
+    { id: 'on', label: 'On', icon: '☾✦' },
+    { id: 'auto', label: 'Auto', icon: 'A↺' },
   ]
 
   function themeBoxClass(themeId: typeof themes[number]['id']): string {
@@ -32,13 +32,18 @@
           aria-pressed={settings.theme === theme.id}
           onclick={() => { void setTheme(theme.id) }}
         >
-          <span class={themeBoxClass(theme.id)} aria-hidden="true">
-            {#if theme.id === 'auto'}
-              <span class="qa-settings-theme-auto-sun">☼</span>
-              <span class="qa-settings-theme-auto-moon">☾</span>
+          <span class="qa-settings-theme-card">
+            <span class={themeBoxClass(theme.id)} aria-hidden="true">
+              {#if theme.id === 'auto'}
+                <span class="qa-settings-theme-auto-sun">☼</span>
+                <span class="qa-settings-theme-auto-moon">☾</span>
+              {/if}
+            </span>
+            {#if settings.theme === theme.id}
+              <span class="qa-settings-theme-check" aria-hidden="true">✓</span>
             {/if}
+            <span class="qa-settings-theme-option-label">{theme.label}</span>
           </span>
-          <span class="qa-settings-theme-option-label">{theme.label}</span>
         </button>
       {/each}
     </div>
@@ -55,7 +60,8 @@
           aria-pressed={settings.nightMode === mode.id}
           onclick={() => { void setNightMode(mode.id) }}
         >
-          {mode.label}
+          <span class="qa-settings-night-choice-icon" aria-hidden="true">{mode.icon}</span>
+          <span class="qa-settings-night-choice-label">{mode.label}</span>
         </button>
       {/each}
     </div>

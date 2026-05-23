@@ -61,10 +61,25 @@ test.describe('Journey D: Settings & appearance', () => {
     )).toBe(true)
   })
 
+  test('D1b-short: short mobile Verse Settings keeps theme and night controls contained at 320x568 @mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 })
+    await page.goto('/#/s/1')
+    await waitForReader(page)
+
+    await page.getByLabel('Open settings').click()
+    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Theme' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Night Mode' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Manage Assets' })).toBeVisible()
+    await expect.poll(() => page.evaluate(() =>
+      document.documentElement.scrollWidth <= document.documentElement.clientWidth
+    )).toBe(true)
+  })
+
   test('D1c: mobile Mushaf Settings opens from Mushaf mode without horizontal overflow @mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/#/m/1')
-    await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByLabel('Open settings')).toBeVisible({ timeout: 10_000 })
 
     await page.getByLabel('Open settings').click()
     await expect(page.getByRole('dialog', { name: 'Mushaf Settings' })).toBeVisible()

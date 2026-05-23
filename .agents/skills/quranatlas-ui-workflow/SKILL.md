@@ -15,10 +15,12 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 - Use `imagegen` for creative visual suggestions, new visual directions, or major visual redesign decisions.
 - Use whatever browser-proof path is available for development-time inspection, responsive checks, focus walkthroughs, and screenshot capture while iterating. Playwright MCP is optional, not required.
 - Any request for a new visual direction, redesign direction, or multiple visual options must use `frontend-design`, `superpowers:brainstorming`, and `imagegen` before implementation.
+- Read root `DESIGN.md` before UI redesign, refactor, iteration, visual review, component-reference work, or image generation. It is the QuranAtlas product style guide.
 
 ## Hard Rules
 
 - `frontend-design` is a mandatory companion skill for every UI-facing use of `quranatlas-ui-workflow`. If this workflow is selected and `frontend-design` is not also selected, the workflow was not followed.
+- `DESIGN.md` must be used as product-style context for every UI-facing pass. It is a style guide, not the single active component reference source.
 - Implementation must name exactly one active reference source at a time: either one committed component reference plus intent note, or one existing accepted UI state for narrow non-directional fixes. Zero active references and multiple active references both violate the workflow.
 - One implementation loop owns one active component, one active reference source, and one visual concern at a time. Surrounding components may supply constraints, but they do not become active references until the current loop is complete and visually proven.
 - A focused task is not complete until the component is re-rendered, compared against the same active reference source, and mismatches are fixed. Do not start the next focused task first.
@@ -32,20 +34,22 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 
 ## UI Protocol
 
-1. Identify the surface, active component, states, themes, and viewport tiers.
-2. Decide whether this is creative direction work, existing-direction polish, or a non-visual behavior fix.
-3. Invoke `frontend-design` before implementation work begins, even for polish or salvage passes, so the component craft pass is explicit.
-4. For creative direction work, create or select a committed `docs/ui-references/...` image plus intent note before implementation.
-5. Select and name exactly one active reference source for the pass. Treat any other references as out of scope until this component is complete.
-6. Implement one component and one visual concern at a time.
-7. Re-render after each focused task, compare against the same single active reference source, and fix mismatches before moving on to the next focused task.
-8. Capture responsive proof for applicable tiers, with real tablet-sized development proof when tablet behavior can differ.
-9. Use `quranatlas-workflow` and `tests/e2e/AGENTS.md` for any durable Playwright test decision.
+1. Read `DESIGN.md` for product style constraints.
+2. Identify the surface, active component, states, themes, and viewport tiers.
+3. Decide whether this is creative direction work, existing-direction polish, structural refactor work, or a non-visual behavior fix.
+4. Invoke `frontend-design` before implementation work begins, even for polish or salvage passes, so the component craft pass is explicit.
+5. For creative direction work, create or select a committed `docs/ui-references/...` image plus intent note before implementation.
+6. Select and name exactly one active reference source for the pass. Treat `DESIGN.md` as supporting style context, not as the active component reference. Treat any other references as out of scope until this component is complete.
+7. Implement one component and one visual concern at a time.
+8. Re-render after each focused task, compare against the same single active reference source, and fix mismatches before moving on to the next focused task.
+9. Capture responsive proof for applicable tiers, with real tablet-sized development proof when tablet behavior can differ.
+10. Use `quranatlas-workflow` and `tests/e2e/AGENTS.md` for any durable Playwright test decision.
 
 ## Visual Direction Gate
 
 Before implementation, identify:
 
+- The relevant `DESIGN.md` constraints for the pass.
 - Owning surface and active component.
 - The single active reference source for this pass.
 - User task, tone, density, and state matrix.
@@ -85,7 +89,8 @@ Even in those narrow-fix cases, keep exactly one active reference source at a ti
 
 - Generated references must answer what should be implemented differently.
 - Prefer component-state references over fantasy app composites.
-- Prompts must include QuranAtlas constraints: Reader First, calm dense product UI, parchment/bronze/ink feel, Arabic/Mushaf as primary content.
+- Prompts must use `DESIGN.md` as product-style context and include QuranAtlas constraints: Reader First, calm dense product UI, parchment/bronze/ink feel, semantic-token mapping, and real app surface constraints.
+- For Arabic/Mushaf regions, prompts must use real app screenshots, committed Mushaf/reference assets, or abstract non-readable glyph blocks. Do not ask imagegen to generate readable Quran, Quran-like Arabic, ayah text, surah names, decorative calligraphy, tajweed marks, or religious inscriptions.
 - Ban blobs, purple gradients, nested card stacks, marketing heroes, fake decorative calligraphy, and religious moodboard atmospherics.
 - Generated Quran/Arabic text is never source content or rendering proof.
 - Do not keep rejected options unless documenting a real tradeoff.
