@@ -91,7 +91,7 @@ Defined in `package.json`:
 | `pnpm run test` | Run Vitest once (CI-style) |
 | `pnpm run test:e2e` | Run the full Playwright suite (all journey specs A–I + performance + SW integration) |
 | `pnpm run lint` | ESLint over `src/` plus Stylelint over `src/styles/**/*.css` |
-| `pnpm run check` | Static validation gate: lint + token/style-structure checks + `svelte-check` |
+| `pnpm run check` | Static validation gate: lint + token/style-structure checks + UI refactor safety checks + `svelte-check` |
 | `pnpm run docs` | Regenerate context-doc inventories and event/module indexes |
 | `pnpm run docs:check` | Assert generated docs are up to date |
 | `pnpm run lighthouse` | Build + Lighthouse CI (`lhci autorun --config=.lighthouserc.cjs`) |
@@ -142,6 +142,11 @@ Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-te
   - `check-theme-parity.mjs` — every token in a theme override must exist in `:root`.
   - `check-token-usage.mjs` — every `var(--qa-*)` must resolve to a declared token (global or file-local/scoped).
   - `check-at-layer.mjs` — no bare rules outside `@layer` (except `reset.css` / `base.css` / `index.css`).
+  - `check-style-entry.mjs` — blocking check for stale, duplicate, or missing `src/styles/index.css` imports across shipped CSS partials.
+  - `check-ui-references.mjs` — blocking check for committed UI-reference image/note pairing plus required intent-note fields.
+  - `check-selector-liveness.mjs --advisory` — advisory scan for `.qa-*` classes that drift between CSS ownership and code references.
+  - `check-primitive-token-consumption.mjs --advisory` — advisory scan for primitive token consumption outside `src/styles/tokens/**`.
+  - `check-design-literals.mjs --advisory` — advisory scan for hardcoded color, motion, and radius design literals outside token files.
 - **Gzipped-chunk budget** via `scripts/check-chunks.js` during `pnpm run validate` (≤150 KB per chunk).
 - **Feature-state guard** via `scripts/check-no-feature-state.js` during `pnpm run validate` (blocks top-level mutable state in feature modules).
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).
