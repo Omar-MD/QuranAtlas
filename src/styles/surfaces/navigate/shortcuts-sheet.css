@@ -1,0 +1,69 @@
+/**
+ * nav — AmbientDock (desktop left rail), AmbientPill (floating top pill),
+ * MarginHeader (mobile sticky header), SurahProgress (pill within margin
+ * header), NavDrawer (left-slide right pill).
+ *
+ * Consumers: src/read/{AmbientDock,AmbientPill,MarginHeader,SurahProgress}.svelte
+ * and src/navigate/NavDrawer.svelte.
+ *
+ * Z-index literals preserved because these layers still map to distinct scrim,
+ * pill, and sheet relationships ahead of the semantic z-tier cleanup.
+ */
+
+@layer surfaces {
+/* Review tab */
+.qa-nav-drawer-hub-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  background: var(--qa-surface-raised);
+  border: 0;
+  border-bottom: 1px solid var(--qa-border-subtle);
+  padding: 13px 18px;
+  font: inherit; color: var(--qa-text-primary);
+  text-align: left; cursor: pointer;
+  font-weight: 600;
+}
+.qa-nav-drawer-hub-icon { font-size: 15px; color: var(--qa-accent); }
+.qa-nav-drawer-hub-name { flex: 1; font-size: 14px; }
+
+.qa-nav-drawer-group-hdr {
+  padding: 11px 18px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--qa-text-muted);
+}
+
+.qa-nav-drawer-layer-row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  background: transparent; border: 0;
+  padding: 11px 18px;
+  min-height: 44px;
+  font: inherit; color: var(--qa-text-primary);
+  text-align: left; cursor: pointer;
+}
+
+.qa-nav-drawer-layer-row:hover,
+.qa-nav-drawer-layer-row:focus-visible {
+  background: var(--qa-surface-raised);
+  outline: none;
+}
+.qa-nav-drawer-layer-name { flex: 1; font-size: 13.5px; }
+
+.qa-nav-drawer-layer-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.qa-nav-drawer-layer-dot--speech    { background: var(--lh-speech); }
+.qa-nav-drawer-layer-dot--narrative { background: var(--lh-narrative); }
+.qa-nav-drawer-layer-dot--themes    { background: var(--lh-themes); }
+.qa-nav-drawer-layer-dot--entities  { background: var(--lh-entities); }
+
+.qa-nav-drawer-chev { color: var(--qa-text-muted); font-size: 14px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qa-nav-drawer { animation: none; }
+  }
+
+}

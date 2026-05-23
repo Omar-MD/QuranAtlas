@@ -1,10 +1,7 @@
 /**
- * modal — shared centered-modal chrome: backdrop, container, actions row,
- * plus the .qa-input field variant and .qa-warning-text used in modal bodies.
- * Consumers: settings/ClearDataConfirm.svelte, settings/clear-data.ts.
- *
- * Context-scoped token inheritance root (mirrors .qa-sheet overrides).
+ * Shared modal pattern rules moved from src/styles/surfaces/modal.css.
  */
+
 @layer surfaces {
   .qa-modal,
   .qa-modal-backdrop {
@@ -103,4 +100,5 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
 }

@@ -1,0 +1,66 @@
+/**
+ * Reader content styles split from src/styles/surfaces/reader.css.
+ */
+
+@layer surfaces {
+  /* Invalid verse error */
+  .qa-invalid-verse-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    background-color: var(--qa-surface-error);
+    border: 1px solid var(--qa-border-error);
+    color: var(--qa-text-error);
+    border-radius: var(--qa-radius-md);
+    font-size: var(--qa-text-size-ui);
+  }
+
+  /* Loading skeleton */
+  .qa-skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--qa-surface-skeleton) 0%,
+      color-mix(in srgb, var(--qa-surface-skeleton) 60%, transparent) 50%,
+      var(--qa-surface-skeleton) 100%
+    );
+    background-size: 200% 100%;
+    border-radius: var(--qa-radius-xs);
+    animation: qa-skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+
+  .qa-skeleton-line {
+    height: 1rem;
+    margin: 0.75rem 0;
+    width: 100%;
+  }
+  .qa-skeleton-line--w80 { width: 80%; }
+  .qa-skeleton-line--w75 { width: 75%; }
+  .qa-skeleton-line--w60 { width: 60%; }
+  .qa-skeleton-line--w90 { width: 90%; }
+
+  .qa-riwayah-install-prompt,
+  .qa-mushaf-page-state {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    text-align: center;
+    padding: 1rem;
+    background: var(--qa-surface-sheet);
+    border: 1px solid var(--qa-border-on-sheet);
+    border-radius: var(--qa-radius-lg);
+    color: var(--qa-text-on-sheet);
+  }
+
+  .qa-riwayah-install-actions,
+  .qa-mushaf-page-state-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+}

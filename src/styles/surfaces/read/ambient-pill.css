@@ -1,0 +1,60 @@
+/**
+ * nav — AmbientDock (desktop left rail), AmbientPill (floating top pill),
+ * MarginHeader (mobile sticky header), SurahProgress (pill within margin
+ * header), NavDrawer (left-slide right pill).
+ *
+ * Consumers: src/read/{AmbientDock,AmbientPill,MarginHeader,SurahProgress}.svelte
+ * and src/navigate/NavDrawer.svelte.
+ *
+ * Z-index literals preserved because these layers still map to distinct scrim,
+ * pill, and sheet relationships ahead of the semantic z-tier cleanup.
+ */
+
+@layer surfaces {
+  /* ================================================================ pill */
+
+  .qa-pill-ref {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: var(--qa-radius-pill);
+    background-color: color-mix(in srgb, var(--qa-surface-sheet) 92%, transparent);
+    color: var(--qa-text-on-sheet);
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--qa-accent-soft);
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 14%);
+    z-index: 99;
+    transition: transform var(--qa-transition-base), visibility 0s linear 0s;
+  }
+
+  html[data-theme="dark"] .qa-pill-ref {
+    background-color: rgb(20 18 12 / 92%);
+    color: #e8e3c9;
+  }
+
+  .qa-pill-ref:focus-visible {
+    outline: var(--qa-focus-ring-width) solid var(--qa-focus-ring);
+    outline-offset: var(--qa-focus-ring-offset);
+  }
+
+  .qa-pill-ref--hidden {
+    visibility: hidden;
+    transform: translateX(-50%) translateY(-10px);
+    pointer-events: none;
+    transition: transform var(--qa-transition-base), visibility 0s linear 0.22s;
+  }
+
+  .qa-pill-ref-text {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+}

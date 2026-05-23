@@ -52,6 +52,21 @@
       }
     },
     {
+      "files": ["src/styles/surfaces/read/**/*.css", "src/styles/surfaces/navigate/**/*.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "selector-no-qualifying-type": null,
+        "property-no-vendor-prefix": null
+      }
+    },
+    {
+      "files": ["src/styles/surfaces/configure/**/*.css"],
+      "rules": {
+        "selector-max-type": 1,
+        "property-no-vendor-prefix": null
+      }
+    },
+    {
       "files": ["src/styles/surfaces/**/app-shell.css"],
       "rules": {
         "selector-max-id": 1,

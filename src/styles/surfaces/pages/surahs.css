@@ -1,7 +1,7 @@
 /**
- * surahs — surah list page + row.
- * Consumers: src/surahs/SurahList.svelte, src/surahs/SurahRow.svelte.
+ * Surah list page styles moved from flat surfaces.
  */
+
 @layer surfaces {
   .qa-surah-list-page {
     max-width: 720px;
@@ -341,4 +341,5 @@
       grid-column: 1 / -1;
     }
   }
+
 }

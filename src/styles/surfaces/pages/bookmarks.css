@@ -1,8 +1,7 @@
 /**
- * bookmarks — BookmarksList component (drawer Read sub-tab + desktop /bookmarks page).
- *
- * Consumers: src/bookmarks/{BookmarksList,BookmarksPage}.svelte.
+ * Bookmarks page styles moved from flat surfaces.
  */
+
 @layer surfaces {
   /* Reusable filled-bookmark glyph (mask-image inherits currentColor). */
   .qa-icon-bookmark {
@@ -317,4 +316,5 @@
     background: var(--qa-surface-raised);
     outline: none;
   }
+
 }

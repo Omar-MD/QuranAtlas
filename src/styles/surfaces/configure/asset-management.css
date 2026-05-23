@@ -1,3 +1,7 @@
+/**
+ * Asset management styles moved from flat surfaces.
+ */
+
 @layer surfaces {
   .qa-assets-page {
     min-height: 100dvh;
@@ -257,4 +261,5 @@
       flex-wrap: nowrap;
     }
   }
+
 }

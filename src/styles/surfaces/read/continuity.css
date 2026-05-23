@@ -1,0 +1,144 @@
+/**
+ * Reader content styles split from src/styles/surfaces/reader.css.
+ */
+
+@layer surfaces {
+  /* Surah end marker */
+  .qa-surah-end {
+    text-align: center;
+    padding: 2rem 0 1rem;
+    color: var(--qa-text-muted);
+    font-size: var(--qa-text-size-meta);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Cross-surah continuation links — minimal arrow + italic surah title.
+     Pull-to-swap is the primary touch affordance (see .qa-pull-indicator);
+     these links are the click/keyboard fallback. ~22px tall vs the ~46px
+     full-width banner they replaced 2026-04-25. */
+  .qa-continue-prev,
+  .qa-continue-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 2px auto;
+    padding: 4px 8px;
+    border: 0;
+    background: transparent;
+    color: var(--qa-text-muted);
+    font-family: inherit;
+    font-size: var(--qa-text-size-meta);
+    cursor: pointer;
+    transition: color var(--qa-transition-base);
+  }
+
+  .qa-continue-arrow {
+    font-size: 12px;
+  }
+
+  .qa-continue-title {
+    font-style: italic;
+    font-size: 0.7rem;
+  }
+
+  .qa-continue-prev:hover,
+  .qa-continue-next:hover,
+  .qa-continue-prev:focus-visible,
+  .qa-continue-next:focus-visible {
+    color: var(--qa-accent);
+    outline: none;
+  }
+
+  /* Pull-to-swap indicator — minimal Chrome-mobile-PTR-style ring with a
+     chevron, anchored to the top (backward) or bottom (forward) edge.
+     Driven by `reader/surah-swap.ts::setupPullToSwap`; commits the swap
+     when the arc completes. No background, no shadow — pure mark. */
+  .qa-pull-indicator {
+    position: fixed;
+    left: 50%;
+    transform: translate(-50%, 0);
+    width: 32px;
+    height: 32px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 60;
+    transition: opacity 120ms ease;
+  }
+
+  .qa-pull-indicator.qa-pull-top {
+    top: calc(env(safe-area-inset-top) + 70px);
+  }
+
+  .qa-pull-indicator.qa-pull-bottom {
+    bottom: calc(env(safe-area-inset-bottom) + 100px);
+  }
+
+  .qa-pull-indicator.qa-pull-visible {
+    opacity: 1;
+  }
+
+  .qa-pull-svg {
+    display: block;
+  }
+
+  .qa-pull-track {
+    stroke: var(--qa-border-subtle);
+  }
+
+  .qa-pull-arc {
+    stroke: var(--qa-text-muted);
+    transition: stroke-dashoffset 60ms linear, stroke 120ms ease;
+  }
+
+  .qa-pull-indicator.qa-pull-filled .qa-pull-arc {
+    stroke: var(--qa-accent);
+  }
+
+  .qa-pull-chevron {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--qa-text-muted);
+    font-size: 0.85rem;
+    line-height: 1;
+    transition: color 120ms ease;
+  }
+
+  .qa-pull-indicator.qa-pull-filled .qa-pull-chevron {
+    color: var(--qa-accent);
+  }
+
+
+  /* Edge indicators — body-appended imperative nodes (edge-indicators.ts). */
+  .qa-edge-indicator {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 36px;
+    background-color: var(--qa-accent);
+    opacity: 0;
+    border-radius: var(--qa-radius-hairline);
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity var(--qa-transition-base), top var(--qa-transition-base);
+  }
+
+  .qa-edge-indicator--left {
+    left: 0;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .qa-edge-indicator--right {
+    right: 0;
+    border-radius: 2px 0 0 2px;
+  }
+
+  .qa-edge-indicator--visible {
+    opacity: 0.7;
+  }
+
+}

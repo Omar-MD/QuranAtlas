@@ -1,20 +1,7 @@
 /**
- * settings — Settings sheet chrome (v7, 2026-04-29).
- *
- * Three-zone full-screen layout (mobile + tablet, <1180px):
- *   1. Live preview band (covers top, ✕ floats inside, theme-true colors)
- *   2. Body — Reading + Sources sections, both flex:1 (balanced)
- *   3. Footer — theme swatch pill + night-mode moon
- *
- * Modal popover (Recitation / Translation pickers): themed via tokens,
- * gold corner ornaments, italic serif title.
- *
- * Theme-swatch hexes (#fbf8f0 / #3d2e14 / #f3e8cf / #6b4a16 / #0e0e0c /
- * #a89968) are intentional literals — they demo the *other* themes from
- * the current one and would defeat the preview if tokenised.
- *
- * Consumer: src/settings/Panel.svelte
+ * Settings shell styles moved from flat surfaces.
  */
+
 @layer surfaces {
   .qa-settings-backdrop {
     position: fixed;
@@ -1600,4 +1587,5 @@
     min-height: 34px;
     padding-inline: 0.75rem;
   }
+
 }

@@ -1,11 +1,7 @@
 /**
- * onboarding — walkthrough slides: hero, headline/lede, theme swatches,
- * translation picker, verse preview, dots, CTAs, shortcut grid.
- * Consumer: src/onboard/Onboarding.svelte.
- *
- * Theme-swatch hex codes preserved as literals (they demonstrate theme bg/fg
- * colors and must render identically regardless of active theme).
+ * Onboarding shell styles moved from flat surfaces.
  */
+
 @layer surfaces {
   .qa-onboarding {
     max-width: 420px;
@@ -513,4 +509,5 @@
       gap: 14px;
     }
   }
+
 }

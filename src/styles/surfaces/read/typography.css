@@ -1,3 +1,7 @@
+/**
+ * Reader typography styles moved from flat surfaces.
+ */
+
 @layer surfaces {
   /* ==========================================================================
      Reading typography — user-tunable controls
@@ -66,4 +70,5 @@
     [data-reader-margin="lg"] { --qa-verse-pad-x: 36px; }
     [data-reader-margin="xl"] { --qa-verse-pad-x: 52px; }
   }
+
 }

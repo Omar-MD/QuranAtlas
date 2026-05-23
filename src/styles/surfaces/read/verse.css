@@ -1,0 +1,376 @@
+/**
+ * Reader content styles split from src/styles/surfaces/reader.css.
+ */
+
+@layer surfaces {
+  /* Verse container.
+     `--qa-verse-pad-x` and `--qa-verse-pad-y` are the user-tunable tiers,
+     written by reading-typography.css under [data-reader-margin] (mobile)
+     and [data-verse-spacing]. The +6px on padding-left reserves room for
+     the 14px-wide .qa-verse-accent rail without crowding the text. */
+  .qa-verse {
+    position: relative;
+    padding:
+      var(--qa-verse-pad-y, 1.125rem)
+      var(--qa-verse-pad-x, 24px)
+      var(--qa-verse-pad-y, 1.125rem)
+      calc(var(--qa-verse-pad-x, 24px) + 6px);
+    content-visibility: auto;
+    contain-intrinsic-size: 0 200px;
+    transition: background-color var(--qa-transition-base);
+  }
+
+  /* Verse-to-verse seam — was a hard 1px border-top across the full verse
+     width which read as "panels detached." Replaced with a softly fading
+     hairline that's transparent at the column edges and barely-there in
+     the middle — enough to register a beat between verses but light
+     enough to feel like a single flowing passage. */
+  .qa-verse + .qa-verse {
+    border-top: 0;
+  }
+
+  .qa-verse + .qa-verse::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      color-mix(in srgb, var(--qa-text-muted) 14%, transparent) 50%,
+      transparent 100%
+    );
+  }
+
+  .qa-verse.qa-verse--active {
+    background: color-mix(in srgb, var(--qa-text-primary) 4%, transparent);
+    border-radius: var(--qa-radius-2xl);
+    box-shadow: inset 0 0 0 1px var(--qa-border-on-sheet);
+    content-visibility: visible;
+
+    /* Prevents bounce when chips wrap to an extra line during selection toggles */
+    contain-intrinsic-size: auto 260px;
+    transition: none;
+  }
+
+  @media (hover: hover) {
+    .qa-verse {
+      transition: background-color var(--qa-transition-base);
+    }
+
+    .qa-verse:hover {
+      background-color: var(--qa-surface-verse-hover);
+      border-radius: var(--qa-radius-2xl);
+    }
+  }
+
+  .qa-verse-accent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 14px;
+    border: 3px solid var(--qa-accent);
+    border-right: none;
+    border-radius: 14px 0 0 14px;
+    pointer-events: none;
+  }
+
+  .qa-verse-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .qa-verse-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Tap target: WCAG 2.5.8 (24px min) + Apple HIG (44px). Padding +
+       negative margin keeps the hit zone generous (≥ 32px square) while
+       the visual glyph stays where it was — surrounding layout is
+       unaffected. */
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px 10px;
+    margin: -6px -10px;
+    border: none;
+    border-radius: var(--qa-radius-sm, 6px);
+    background: transparent;
+    color: var(--qa-text-on-sheet-dim);
+    font-family: var(--qa-font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .qa-verse-number:active {
+    background: color-mix(in srgb, var(--qa-accent) 12%, transparent);
+  }
+
+  .qa-verse--active .qa-verse-number {
+    color: var(--qa-text-on-sheet);
+    font-weight: 700;
+  }
+
+  .qa-verse--bookmarked-glyph .qa-verse-number {
+    color: var(--qa-accent);
+    font-weight: 700;
+  }
+
+  /* Filled-bookmark glyph: SVG mask so the color tracks `currentColor`
+     across themes + night mode. The path is a classic
+     rectangle-with-bottom-notch bookmark shape (24×24 viewBox). */
+  .qa-verse--bookmarked-glyph .qa-verse-number::before {
+    content: '';
+    display: inline-block;
+    width: 0.85em;
+    height: 0.95em;
+    margin-inline-end: 4px;
+    vertical-align: -0.12em;
+    background-color: currentcolor;
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 3h12c.55 0 1 .45 1 1v17l-7-4-7 4V4c0-.55.45-1 1-1z'/></svg>");
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    mask-position: center;
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 3h12c.55 0 1 .45 1 1v17l-7-4-7 4V4c0-.55.45-1 1-1z'/></svg>");
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    -webkit-mask-position: center;
+  }
+
+  .qa-verse--pulse {
+    animation: qa-verse-pulse 1000ms ease-out 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qa-verse--pulse { animation: none; }
+  }
+
+  .qa-verse-tagging {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--qa-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    color: var(--qa-text-on-sheet-dim);
+    font-weight: 500;
+  }
+
+  .qa-verse-tagging-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--qa-radius-circle);
+    background: transparent;
+    border: 1.5px solid var(--qa-accent);
+  }
+
+  .qa-verse-body--details {
+    margin: 0;
+  }
+
+  .qa-verse-body-summary {
+    list-style: none;
+  }
+
+  .qa-verse-body-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .qa-verse-body--details,
+  .qa-verse-body-summary {
+    display: block;
+  }
+
+  .qa-verse-body--details > .qa-verse-body-summary {
+    cursor: pointer;
+  }
+
+  .qa-verse-body-summary:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--qa-accent) 55%, transparent);
+    outline-offset: 6px;
+    border-radius: 10px;
+  }
+
+  /* Arabic + translation text blocks */
+  .qa-verse-arabic {
+    font-family: var(--qa-font-arabic);
+    font-size: calc(var(--qa-text-size-arabic) * var(--qa-font-size-base));
+    direction: rtl;
+    text-align: start;
+    color: var(--qa-text-arabic);
+    margin-bottom: 0.875rem;
+
+    /* The KFGQPC family ships contextual marks, ligatures, kerning AND
+       mark/mkmk positioning. Setting font-feature-settings to an explicit
+       list (even a permissive one with "liga", "calt", "kern", "rlig" all
+       on) caused iOS Safari to drop the default `mark` and `mkmk`
+       features off the font's GPOS table — so combining marks (sukun
+       stacks, dagger alif U+0670, small high seen U+06EC) collapsed to
+       base position and the verse looked like it had been rendered in a
+       fallback font without Quranic marks. text-rendering:
+       optimizelegibility implies all OpenType features are enabled by
+       default in WebKit, so the explicit list was redundant on top and
+       harmful on iOS. */
+    text-rendering: optimizelegibility;
+  }
+
+  .qa-verse-translation {
+    font-family: var(--qa-font-translation);
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base));
+    color: var(--qa-text-primary);
+    direction: ltr;
+    text-align: left;
+    padding-top: 0.25rem;
+    text-wrap: pretty;
+  }
+
+  .qa-verse-translation.qa-hide-translation {
+    display: none;
+  }
+
+  /* Continuation marker — used when a Madinan ayah is the second+ half of a
+     Hafs split. The full translation lives on the primary (first) half;
+     this marker tells the user the translation is shared with the previous
+     verse, rather than rendering blank. Smaller + dimmed so it reads as
+     metadata, not content. */
+  .qa-verse-translation--continuation {
+    color: var(--qa-text-muted);
+    font-style: italic;
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.875);
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+  }
+
+  .qa-verse-continuation-marker {
+    color: var(--qa-accent);
+    font-style: normal;
+    font-size: 0.95em;
+  }
+
+  /* Footnote marker — superscript button inside translation text. Click toggles
+     the inline footnote panel for the verse. Sized down + colored to read as a
+     reference mark, not a UI control. */
+  .qa-fn-marker {
+    display: inline;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0 0.1em;
+    margin: 0;
+    font: inherit;
+    font-size: 0.7em;
+    line-height: 1;
+    vertical-align: super;
+    color: var(--qa-accent);
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.15em;
+    border-radius: 2px;
+  }
+
+  .qa-fn-marker::before { content: '['; }
+  .qa-fn-marker::after  { content: ']'; }
+
+  .qa-fn-marker:hover,
+  .qa-fn-marker:focus-visible {
+    color: var(--qa-accent-hover);
+    outline: 2px solid var(--qa-accent);
+    outline-offset: 1px;
+  }
+
+  .qa-fn-marker[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--qa-accent) 12%, transparent);
+  }
+
+  /* Inline footnote panel — appears below the verse translation while open.
+     One panel per verse at most. */
+  .qa-fn-popover {
+    margin: 0.4rem 0 0.2rem 0.5rem;
+    padding: 0.55rem 2rem 0.55rem 0.7rem;
+    border-left: 2px solid var(--qa-accent);
+    background: color-mix(in srgb, var(--qa-accent) 6%, transparent);
+    color: var(--qa-text-primary);
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.92);
+    line-height: 1.5;
+    border-radius: 4px;
+    position: relative;
+    text-wrap: pretty;
+  }
+
+  .qa-fn-popover-num {
+    font-weight: 600;
+    margin-right: 0.4em;
+    color: var(--qa-accent);
+  }
+
+  .qa-fn-popover-close {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.3rem;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0.15rem 0.4rem;
+    color: var(--qa-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+
+  .qa-fn-popover-close:hover,
+  .qa-fn-popover-close:focus-visible {
+    color: var(--qa-text-primary);
+    outline: 2px solid var(--qa-accent);
+    outline-offset: 1px;
+  }
+
+  .qa-verse-knowledge {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 0.65rem;
+  }
+
+  .qa-verse-themes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .qa-verse-theme {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.16rem 0.48rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--qa-accent) 10%, transparent);
+    color: var(--qa-text-muted);
+    font-family: var(--qa-font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    text-transform: lowercase;
+  }
+
+  .qa-verse-context {
+    color: var(--qa-text-muted);
+    font-size: calc(var(--qa-text-size-translation) * var(--qa-font-size-base) * 0.88);
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+}

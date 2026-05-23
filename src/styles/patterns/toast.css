@@ -1,0 +1,23 @@
+/**
+ * Shared toast pattern rules moved from src/styles/surfaces/toast.css.
+ */
+
+@layer surfaces {
+  .qa-error-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--qa-text-muted);
+  }
+
+  .qa-retry-btn {
+    margin-top: 1rem;
+    background: var(--qa-surface-raised);
+    color: var(--qa-text-primary);
+    border: 1px solid var(--qa-border-default);
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--qa-radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+}

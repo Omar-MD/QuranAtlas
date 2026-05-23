@@ -1,3 +1,7 @@
+/**
+ * Night-shift overlay styles moved from flat surfaces.
+ */
+
 @layer surfaces {
   /* ==========================================================================
      Night recitation mode — dim+warm overlay
@@ -25,4 +29,5 @@
   [data-night-mode="on"] .qa-night-shift {
     opacity: 0.28;
   }
+
 }

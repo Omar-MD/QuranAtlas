@@ -1,3 +1,7 @@
+/**
+ * Update banner overlay styles moved from flat surfaces.
+ */
+
 @layer surfaces {
   /* ==========================================================================
      update-banner — new build rolled out, prompt user to reload.

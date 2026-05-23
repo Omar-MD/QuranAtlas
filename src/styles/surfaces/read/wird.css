@@ -1,0 +1,334 @@
+/**
+ * nav — AmbientDock (desktop left rail), AmbientPill (floating top pill),
+ * MarginHeader (mobile sticky header), SurahProgress (pill within margin
+ * header), NavDrawer (left-slide right pill).
+ *
+ * Consumers: src/read/{AmbientDock,AmbientPill,MarginHeader,SurahProgress}.svelte
+ * and src/navigate/NavDrawer.svelte.
+ *
+ * Z-index literals preserved because these layers still map to distinct scrim,
+ * pill, and sheet relationships ahead of the semantic z-tier cleanup.
+ */
+
+@layer surfaces {
+.qa-wird-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 10px 14px 12px;
+  padding: 0;
+  min-height: 88px;
+  border: 1px solid var(--qa-nav-row-border);
+  border-radius: var(--qa-radius-md);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--qa-accent) 6%, transparent), transparent 52%),
+    var(--qa-nav-row-surface);
+  color: var(--qa-text-primary);
+  text-align: start;
+  box-shadow: var(--qa-nav-shadow-row);
+  overflow: hidden;
+}
+
+.qa-wird-card-main {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 10px 11px 13px;
+}
+
+.qa-wird-card--setup .qa-wird-card-main {
+  min-height: 84px;
+}
+
+.qa-wird-card-status-badge {
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 1px solid color-mix(in srgb, var(--qa-accent) 44%, transparent);
+  border-radius: var(--qa-radius-circle);
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--qa-accent) 18%, transparent), transparent 58%),
+    var(--qa-nav-badge-surface);
+  color: var(--qa-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--qa-surface-raised) 58%, transparent);
+}
+
+.qa-wird-card-status-badge svg {
+  inline-size: 20px;
+  block-size: 20px;
+  stroke: currentcolor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.qa-wird-card--complete .qa-wird-card-status-badge {
+  color: var(--qa-accent);
+  border-color: color-mix(in srgb, var(--qa-accent) 48%, transparent);
+  background: color-mix(in srgb, var(--qa-accent) 18%, var(--qa-nav-badge-surface));
+}
+
+.qa-wird-card--setup .qa-wird-card-status-badge {
+  position: relative;
+}
+
+.qa-wird-card--setup .qa-wird-card-status-badge::after {
+  content: "+";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  inline-size: 14px;
+  block-size: 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--qa-accent) 42%, var(--qa-surface-raised));
+  border-radius: var(--qa-radius-circle);
+  background: var(--qa-nav-row-surface);
+  color: var(--qa-accent);
+  font: 700 0.65rem/1 var(--qa-font-ui);
+}
+
+.qa-wird-card-copy,
+.qa-wird-card-head,
+.qa-wird-card-line,
+.qa-wird-card-meta {
+  display: flex;
+  min-width: 0;
+}
+
+.qa-wird-card-copy {
+  flex-direction: column;
+  gap: 3px;
+}
+
+.qa-wird-card-head,
+.qa-wird-card-line,
+.qa-wird-card-meta {
+  align-items: baseline;
+  gap: 7px;
+}
+
+.qa-wird-card-head {
+  justify-content: flex-start;
+}
+
+.qa-wird-card-kicker,
+.qa-wird-card-ref,
+.qa-wird-card-pct,
+.qa-juz-num,
+.qa-juz-ref,
+.qa-juz-marker {
+  font-family: var(--qa-font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+}
+
+.qa-juz-num,
+.qa-juz-ref {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.qa-juz-num {
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.qa-juz-ref {
+  color: var(--qa-text-muted);
+  font-size: 0.72rem;
+}
+
+.qa-wird-card-kicker,
+.qa-wird-card-ref {
+  letter-spacing: 0;
+}
+
+.qa-wird-card-kicker {
+  color: var(--qa-text-primary);
+  font-weight: 700;
+  text-transform: none;
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.12;
+}
+
+.qa-wird-card-pct {
+  position: relative;
+  z-index: 1;
+  color: var(--qa-accent);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.qa-wird-card-range {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--qa-text-primary);
+  font-family: var(--qa-font-mono);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.qa-wird-card--setup .qa-wird-card-range {
+  white-space: normal;
+  color: var(--qa-text-muted);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.qa-wird-card-meta,
+.qa-wird-card-reminder {
+  color: var(--qa-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+.qa-wird-card-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 52px;
+  color: var(--qa-text-primary);
+}
+
+.qa-wird-card-meter {
+  inline-size: 42px;
+  block-size: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--qa-accent) var(--qa-wird-card-progress), color-mix(in srgb, var(--qa-accent) 14%, transparent) 0),
+    var(--qa-surface-raised);
+  position: relative;
+}
+
+.qa-wird-card-meter::before {
+  content: none;
+}
+
+.qa-wird-card-meter::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--qa-surface-raised);
+}
+
+.qa-wird-card-chev {
+  font-size: 1.45rem;
+  line-height: 1;
+  color: var(--qa-text-primary);
+}
+
+.qa-wird-card-reminder-row,
+.qa-wird-card-setup-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 7px 12px 8px 48px;
+  border-top: 1px solid var(--qa-nav-row-separator);
+  color: var(--qa-text-muted);
+  font-size: 0.75rem;
+}
+
+.qa-wird-card-reminder-icon {
+  color: var(--qa-accent);
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.qa-wird-card-setup-note {
+  display: block;
+  padding-top: 0;
+  border-top: 0;
+  font-size: 0.76rem;
+}
+
+.qa-nav-drawer-about:focus-visible,
+.qa-nav-drawer-close:focus-visible,
+.qa-nav-drawer-source-tab:focus-visible,
+.qa-nav-drawer-reader-mode-btn:focus-visible,
+.qa-nav-drawer-page-action:focus-visible,
+.qa-nav-drawer-filter-option:focus-visible,
+.qa-wird-option:focus-visible,
+.qa-wird-back:focus-visible,
+.qa-wird-primary:focus-visible,
+.qa-wird-secondary:focus-visible,
+.qa-wird-danger:focus-visible,
+.qa-wird-input:focus-visible {
+  outline: 2px solid var(--qa-accent);
+  outline-offset: 2px;
+}
+
+.qa-wird-targets,
+.qa-wird-units,
+.qa-wird-start {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.qa-wird-option {
+  min-height: 40px;
+  border: 1px solid color-mix(in srgb, var(--qa-accent) 18%, transparent);
+  border-radius: var(--qa-radius-pill);
+  background: color-mix(in srgb, var(--qa-accent) 4%, var(--qa-surface-app));
+  color: var(--qa-text-on-sheet);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition:
+    background-color var(--qa-transition-base),
+    border-color var(--qa-transition-base),
+    color var(--qa-transition-base),
+    transform 0.15s ease;
+}
+
+.qa-wird-option:hover {
+  border-color: color-mix(in srgb, var(--qa-accent) 40%, transparent);
+  transform: translateY(-1px);
+}
+
+.qa-wird-targets .qa-wird-option--on,
+.qa-wird-units .qa-wird-option--on,
+.qa-wird-start .qa-wird-option--on {
+  border-color: color-mix(in srgb, var(--qa-accent) 42%, transparent);
+  background: color-mix(in srgb, var(--qa-accent) 14%, var(--qa-surface-raised));
+  color: var(--qa-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qa-accent) 10%, transparent);
+}
+
+.qa-wird-start .qa-wird-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 0.58rem 0.7rem;
+  text-align: start;
+}
+
+.qa-wird-option-ref {
+  font-family: var(--qa-font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  opacity: 0.76;
+}
+
+}

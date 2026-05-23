@@ -1,7 +1,7 @@
 /**
- * quota-banner — storage-low warning banner (fixed, top of viewport).
- * Rendered by src/core/quota-banner.svelte. Mounted persistently in App.svelte.
+ * Quota banner overlay styles moved from flat surfaces.
  */
+
 @layer surfaces {
   .qa-quota-banner {
     position: fixed;
@@ -51,4 +51,5 @@
   .qa-quota-banner-dismiss:focus-visible {
     background: color-mix(in srgb, var(--qa-text-error) 8%, transparent);
   }
+
 }

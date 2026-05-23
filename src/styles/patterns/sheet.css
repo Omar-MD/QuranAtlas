@@ -1,12 +1,7 @@
 /**
- * sheet — shared bottom-sheet chrome: backdrop, container, grip, header,
- * body, rows, shortcuts cheatsheet.
- * Consumers: settings/Panel.svelte, navigate/shortcuts-sheet.js.
- *
- * Context-scoped token inheritance root. Descendants of .qa-sheet read
- * --qa-text-primary / --qa-text-muted / --qa-text-dim / --qa-border-default
- * resolved to their -on-sheet variants without branching in consumer CSS.
+ * Shared sheet pattern rules moved from src/styles/surfaces/sheet.css.
  */
+
 @layer surfaces {
   .qa-sheet,
   .qa-sheet-backdrop {
@@ -235,4 +230,5 @@
       font-size: 0.9375rem;
     }
   }
+
 }

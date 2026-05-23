@@ -1,13 +1,7 @@
 /**
- * about — standalone About page: heading, mission, blessing card, stats grid,
- * attribution list, install CTA, version line. Page-level surface (not inside
- * sheet context), but blessing/stats "cards" consume the on-sheet palette
- * (`--qa-surface-sheet`, `--qa-border-on-sheet`, `--qa-text-on-sheet*`) —
- * they're parchment panels sitting on page bg.
- *
- * Consumer: src/about/About.svelte. Desktop Reader-column `:has()` rule for
- * about page lives in app-shell.css (spec: `:has()` restricted there).
+ * About/configure styles moved from flat surfaces.
  */
+
 @layer surfaces {
   .qa-about-heading {
     font-size: 1.75rem;
@@ -215,4 +209,5 @@
   .qa-about-clear-data:hover {
     opacity: 0.85;
   }
+
 }

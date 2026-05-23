@@ -1,28 +1,8 @@
 /**
- * toast — generic error-state and save-failure chrome.
- *
- * `.qa-error-state` + `.qa-retry-btn` are used both by imperative DOM
- * injection (src/app-bootstrap.ts, src/core/router.ts) and by
- * src/reader/Reader.svelte during surah fetch failures.
+ * Save-failure toast overlay rules moved from src/styles/surfaces/toast.css.
  */
+
 @layer surfaces {
-  .qa-error-state {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--qa-text-muted);
-  }
-
-  .qa-retry-btn {
-    margin-top: 1rem;
-    background: var(--qa-surface-raised);
-    color: var(--qa-text-primary);
-    border: 1px solid var(--qa-border-default);
-    padding: 0.5rem 1.25rem;
-    border-radius: var(--qa-radius-sm);
-    cursor: pointer;
-    font-weight: 500;
-  }
-
   /* ================================================================ save-failure toast */
 
   .qa-save-failure-toast {
@@ -52,4 +32,5 @@
     line-height: 1;
     padding: 0 4px;
   }
+
 }
