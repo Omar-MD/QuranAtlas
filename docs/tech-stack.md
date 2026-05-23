@@ -32,7 +32,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 
 `lightningcss` ships as a transitive dep of Vite; it is **not** explicitly configured for CSS transforms in this project (Vite's default CSS pipeline applies). No direct dependency.
 
-`pnpm.overrides` pins patched transitive dependency ranges used by CI audit gates, including `serialize-javascript`, `@babel/plugin-transform-modules-systemjs`, `basic-ftp`, `fast-uri`, `ip-address`, `tmp`, `uuid`, and `postcss`. Keep those overrides narrow and remove them when upstream direct dependencies resolve to patched versions without help.
+`pnpm.overrides` pins patched transitive dependency ranges used by CI audit gates, including `serialize-javascript`, `@babel/plugin-transform-modules-systemjs`, `basic-ftp`, `fast-uri`, `ip-address`, `tmp`, `uuid`, `postcss`, `brace-expansion`, `ws`, and `qs`. Keep those overrides narrow and remove them when upstream direct dependencies resolve to patched versions without help.
 
 ## Why these choices
 
