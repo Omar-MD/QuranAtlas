@@ -18,6 +18,11 @@ const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const TOP_LEVEL_DIRS = ['src', 'tests', 'docs', 'scripts', 'public', 'patches', 'data'];
 const ROOT_FILES_RE = /^[A-Z][A-Z0-9_-]*\.md$|^package\.json$|^tsconfig.*\.json$|^vite\.config\.[jt]s$|^vitest\.config\.[jt]s$|^playwright\.config\.[jt]s$/;
+const NON_LOAD_BEARING_DOC_PREFIXES = [
+  'docs/superpowers/',
+  'docs/audits/',
+  'docs/specs/',
+];
 
 const CITE_RE = /`([^`\n]+)`/g;
 
@@ -42,7 +47,10 @@ async function loadBearingDocs() {
   }
   return out.filter((file, index) => (
     file.endsWith('AGENTS.md') || file.startsWith(docs)
-  )).filter((file, index, all) => all.indexOf(file) === index);
+  )).filter((file) => {
+    const rel = relative(REPO_ROOT, file);
+    return !NON_LOAD_BEARING_DOC_PREFIXES.some((prefix) => rel.startsWith(prefix));
+  }).filter((file, index, all) => all.indexOf(file) === index);
 }
 
 // Paths under these prefixes are gitignored (or otherwise local-only). They
