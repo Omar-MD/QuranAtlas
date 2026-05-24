@@ -4,6 +4,8 @@
 
 - Master spec:
   `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- Refined by child spec:
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08a-mushaf-install-on-demand-asset-strategy-spec.md`
 - Depends on child specs:
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-00-stack-docs-verification-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-01-react-app-shell-and-dual-build-spec.md`
@@ -54,6 +56,8 @@ In scope:
 - Define offline UI state contracts that registered React components must use.
 - Define dataset/source verification gates for any changed data or release
   behavior.
+- Define generic asset-pack lifecycle primitives that child spec 08A narrows for
+  React Mushaf page packs.
 
 Out of scope:
 
@@ -276,5 +280,7 @@ Expected result:
 ## Handoff
 
 Child specs `09` through `14` must consume these pack, DB, cache, and runtime
-boundary contracts. Child spec `11 Search And Index Parity` must extend this
-architecture for search/index packs before search UI can activate indexes.
+boundary contracts. Child spec `08A Mushaf Install-On-Demand Asset Strategy`
+must be treated as the controlling refinement for React Mushaf page packs. Child
+spec `11 Search And Index Parity` must extend this architecture for search/index
+packs before search UI can activate indexes.

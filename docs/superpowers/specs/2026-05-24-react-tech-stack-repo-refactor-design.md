@@ -720,51 +720,57 @@ Minimum child specs:
    quota behavior, offline UI state contracts, existing IDB v7 compatibility, and
    data/source-pack verification gates.
 
-10. **09 Reader Surface Parity**
-   Rebuild Verse and Mushaf reader surfaces, reader chrome, reader settings
-   entry points, reader comfort controls, and large-surface virtualization where
-   needed. Preserve hash routes, translation/riwayah alias rendering, reader
-   typography, and no-silent-fallback source states.
+10. **08A Mushaf Install-On-Demand Asset Strategy**
+    Refine child spec 08 for React-only Mushaf page handling: no Mushaf page SVG
+    bodies in the React app artifact, edition-aware paths only, no legacy page
+    support, service-worker-owned asset-pack installs, and split app/asset-pack
+    shipping.
 
-11. **10 Navigation, Settings, And Onboarding Parity**
+11. **09 Reader Surface Parity**
+    Rebuild Verse and Mushaf reader surfaces, reader chrome, reader settings
+    entry points, reader comfort controls, and large-surface virtualization where
+    needed. Preserve hash routes, translation/riwayah alias rendering, reader
+    typography, and no-silent-fallback source states.
+
+12. **10 Navigation, Settings, And Onboarding Parity**
     Rebuild Surah/Juz/bookmark navigation, settings, source/storage controls,
     and onboarding against v1 product scope, including atomic recitation bundle
     activation and install-before-activate source selection.
 
-12. **11 Search And Index Parity**
+13. **11 Search And Index Parity**
     Build full-text search across Arabic text, translations, transliteration or
     index data where shipped, tafsir, and curated metadata. Search/index packs
     must follow install-before-activate, offline unavailable states, and golden
     proof.
 
-13. **12 Curated Metadata Parity**
+14. **12 Curated Metadata Parity**
     Rebuild curated reader-attached metadata lanes that are in v1 scope, using
     existing build/runtime dataset boundaries and explicit unavailable states.
 
-14. **13 Continuity And Bookmarks Parity**
+15. **13 Continuity And Bookmarks Parity**
     Preserve onboarding-gated launch restore, valid `lastSurface`, saved
     position fallback, riwayah-scoped bookmarks, landing pulse, route exclusions,
     reload behavior, and cross-tab bookmark coherence.
 
-15. **14 Daily Wird Parity**
+16. **14 Daily Wird Parity**
     Rebuild Daily Wird as reader-adjacent continuity, including `settings.wirdPlan`
     ownership, progress persistence, reader integration, and focused tests.
 
-16. **15 Golden Routes And Accessibility Gates**
+17. **15 Golden Routes And Accessibility Gates**
     Complete Playwright golden routes, app-level a11y proof, keyboard/focus
     journeys, responsive proof, and Svelte-reference parity checks.
 
-17. **16 Cutover Readiness**
+18. **16 Cutover Readiness**
     Prove parity gates, define rollback, document staging/dev soak policy,
     confirm CI/deploy artifact routing, and prepare docs/skill updates without
     removing Svelte.
 
-18. **17 Production Entry Flip With Svelte Retained**
+19. **17 Production Entry Flip With Svelte Retained**
     Flip the production entry only after readiness approval, keep Svelte source
     and dependencies available for rollback, update `docs/tech-stack.md`, docs,
     scripts, and CI/deploy routing, then run full validation.
 
-19. **18 Svelte Removal**
+20. **18 Svelte Removal**
     Remove Svelte-only source, dependencies, scripts, generated context entries,
     and skills only after the React production flip has soaked successfully and a
     rollback path is documented.
