@@ -26,13 +26,14 @@ must update this master spec if they discover a decision here is wrong.
   behavior primitives.
 - Reader performance strategy: TanStack Virtual where large reader surfaces need
   virtualization.
-- Storage strategy: Dexie for IndexedDB, Cache Storage for immutable
-  URL-addressed assets, OPFS where large binary packs need file-like access.
+- Storage strategy: Dexie over the existing `quran-atlas` IndexedDB contract
+  during dual-build, Cache Storage for URL-addressed app and dataset assets,
+  and OPFS only where a child spec proves a non-URL binary/index access need.
 - Offline strategy: Workbox / VitePWA with explicit app-shell precache and
   user-triggered reader asset packs.
 - Verification strategy: Storybook for component and product-pattern proof;
-  Playwright golden routes for app-level parity, responsive behavior, and
-  offline journeys.
+  Playwright golden routes for app-level parity, responsive behavior, keyboard
+  and focus journeys, and offline/service-worker journeys.
 - Visual regression strategy: provider-neutral gate at the master level, with a
   blocker child spec to select and wire the provider.
 
@@ -73,6 +74,13 @@ The verification applies at minimum to:
 The master spec records product and architecture intent. It is not an API
 reference.
 
+Child specs must use Context7 first for library, framework, SDK, API, CLI, or
+cloud-service details. If Context7 is quota-blocked, the child spec must record
+that failure and stop until the user can authenticate or provide a higher-limit
+key. If Context7 lacks coverage or is otherwise unavailable after the required
+retry, the child spec must record the failure and the official-doc fallback
+source in its decision appendix; it must not silently answer from memory.
+
 ## Product Scope
 
 The React rebuild targets v1 product promise parity.
@@ -91,7 +99,9 @@ In scope:
 - Qira'ah/riwayah packs: Hafs, Qalun, and Warsh.
 - One active translation, one active tafsir, and one active curated metadata
   pack.
-- Search/index readiness where it is part of the v1 architecture.
+- Full-text search across Arabic Qur'an text, translations, transliteration or
+  index data where shipped, tafsir, and curated metadata, with install-before-
+  activate search/index packs.
 - Service worker, install, update, and offline flows.
 - IndexedDB persistence model.
 - Design system, component registry, and page recipes.
@@ -107,11 +117,27 @@ Out of scope for the React parity target:
 - AI assistant, chat, synthesis UI, or reflection-prompt product branches.
 - Multiple translations side by side.
 - Qira'at beyond Hafs, Qalun, and Warsh.
-- Display transliteration, word-by-word translation, and tajweed coloring.
+- Display transliteration as a reader-visible text lane, word-by-word
+  translation, and tajweed coloring.
 
-Existing removed-scope source may remain during the parallel rebuild unless it
-blocks shared tooling, verification, or cutover. It must not be rebuilt into
-`src-react` unless a later approved product spec changes scope.
+Removed-scope branches must not be rebuilt into `src-react`. If any legacy
+audio/listen, marks/tags/notes/review/edges remnants are discovered, treat them
+only as cleanup or regression context and reconcile `docs/context/implemented.md`
+if code and docs disagree.
+
+Product/data invariants:
+
+- Product prose uses Qalun; runtime ids and existing paths use `qaloon`.
+  Qalun and `qaloon` must not become separate packs.
+- The active recitation bundle is atomic: `settings.riwayah`,
+  `settings.quranTextStyleId`, and `settings.mushafEditionId` change together
+  through the owning settings writer.
+- Hafs and Warsh become usable only after compatible text and Mushaf assets
+  verify locally; missing optional assets must show an install/unavailable/switch
+  state or explicitly change settings to a verified baseline.
+- Translation packs remain Hafs-keyed. React reader parity must use the existing
+  `_verse-aliases.json` role resolution for Warsh and Qalun (`qaloon`) before
+  rendering translations.
 
 ## Repository Shape
 
@@ -142,7 +168,6 @@ src-react/
   data/
   offline/
   storage/
-  test/
 ```
 
 Shared, framework-neutral inputs remain outside `src-react`:
@@ -157,17 +182,44 @@ docs/
 tests/
 ```
 
+React tests do not live under `src-react/test/` unless a later child spec
+explicitly updates repo-structure docs, CI filters, docs derivation, and scoped
+test instructions. By default, React unit and component tests live under
+`tests/unit/**`; browser-only journeys, golden routes, service-worker proof, and
+layout assertions live under `tests/e2e/<surface>/**`.
+
 Rules:
 
 - React code must not import Svelte modules.
 - Svelte code must not import React modules.
 - Shared runtime code may be extracted only when both apps need it and the
   interface is stable, typed, and framework-neutral.
+- Child spec 01 must define the framework-neutral runtime location and import
+  rules before sharing code. React and Svelte may consume that neutral layer, but
+  neither app tree may import the other app tree.
 - Svelte remains the canonical shipped app until React passes v1 parity gates.
 - React must have its own dev, build, preview, and verification paths while the
   dual-build period is active.
+- During dual-build, Svelte remains `pnpm run build -> dist/` and the only
+  deployable artifact. React must use explicit non-deploy paths such as
+  `dev:react`, `build:react -> dist-react/`, and `preview:react`; CI must not
+  feed `dist-react/` to deploy until the cutover child spec flips production.
+- React service-worker scope, cache names, preview ports, output directories,
+  and generated manifests must be isolated from the shipped Svelte app during
+  the dual-build period.
+- Existing `pnpm run dev`, `pnpm run build`, `pnpm run preview`, and
+  `pnpm run validate` behavior must remain Svelte-shipping compatible until the
+  approved cutover spec changes them.
 - Production entry flips only after React v1 parity gates pass.
-- Svelte source removal happens only after cutover and cleanup gates pass.
+- Svelte source and dependency removal happens only after a separate post-flip
+  cleanup gate passes.
+
+React routing must preserve the current public hash route contract through
+parity, including `#/s/:surah`, `#/s/:surah/:ayah`, `#/m/:page`, `#/surahs`,
+`#/bookmarks`, `#/settings`, `#/assets`, `#/about`, `#/onboarding`, empty-hash
+launch restore, `lastSurface` exclusions, and saved-position fallback. Any route
+model change requires an approved migration plan and updates to architecture
+docs, continuity tests, and golden routes.
 
 ## Target Stack
 
@@ -181,7 +233,7 @@ vite-plugin-pwa / Workbox
 Tailwind CSS v4
 Radix UI primitives
 copied-owned shadcn/ui-style components
-class-variance-authority or tailwind-variants
+class-variance-authority
 TanStack Virtual
 Dexie
 Storybook
@@ -200,7 +252,7 @@ for agents, and deterministic generation.
 The React design system is a controlled generation environment. Agents should
 instantiate QuranAtlas design grammar, not invent UI.
 
-Source-of-truth order:
+Generation and proof order:
 
 ```text
 Semantic tokens
@@ -208,31 +260,42 @@ Typed component primitives
 Product-specific reader/source/offline components
 Page recipes
 Component registry
-Storybook examples
+Storybook examples and interaction proof
+Committed visual references and intent notes where visual direction is involved
 Visual + accessibility + interaction tests
 Agent instructions
 ```
 
 Storybook is the verification layer, not the source of truth. The source of
-truth is code: tokens, component APIs, recipes, and registry metadata.
+truth is code: tokens, component APIs, recipes, and registry metadata, plus
+committed visual references and intent notes where visual direction is involved.
+For creative visual direction, committed `docs/ui-references/...` images plus
+their intent notes are the visual-intent reference. Transient screenshots,
+Storybook snapshots, and visual-regression provider artifacts are proof evidence,
+not design source of truth.
 
 Hard rules:
 
 - Tailwind v4 is allowed inside owned design-system and product components
-  only.
+  only, and Tailwind theme values must resolve to QuranAtlas semantic tokens.
+- Built-in Tailwind palettes, direct primitive-token consumption, arbitrary
+  values, one-off shadows/radii/motion, and inline styles are forbidden unless
+  covered by an explicit measured-reader-layout allowlist and static check.
 - Feature and page code should compose typed components and recipes.
 - shadcn/ui-style components are copied into the repo and owned by QuranAtlas.
 - Radix is the behavior layer for dialogs, popovers, menus, tabs, tooltips,
   switches, sliders, and focus-sensitive primitives.
 - Feature code must not build custom dialogs, popovers, menus, tabs, tooltips,
   switches, sliders, or focus traps.
-- Raw arbitrary styling, raw hex colors, one-off shadows, custom spacing,
-  custom typography, and inline design styles are forbidden except for measured
-  reader layout values.
+- Raw arbitrary styling, raw hex colors, custom spacing, custom typography, and
+  inline design styles are forbidden except for measured reader layout values
+  covered by the allowlist.
 - Direct Radix imports are allowed only inside owned design-system behavior
   components.
 - New component variants require token, story, test, registry, and documentation
   updates.
+- `class-variance-authority` is the default variant helper. Replacing it requires
+  child-spec rationale, Context7 verification, and a registry/check update.
 
 Component maturity ladder:
 
@@ -270,6 +333,11 @@ Each registry entry must document:
 The registry is an agent-facing map of what can be composed. Agents should
 search the registry before creating or modifying UI.
 
+The registry must have a versioned JSON schema, stable sorted component ids, and
+a validation check that proves each entry matches exported components, allowed
+variants, stories, tests, docs, accessibility expectations, and visual proof
+references. Advisory registry text without drift checks is not sufficient.
+
 ## Reader-Specific Components
 
 The React design system must include product-specific reader primitives rather
@@ -287,7 +355,6 @@ Required reader components include:
 - `ReaderFocusMode`
 - `ReaderProgressRail`
 - `ReaderSettingsPanel`
-- `AnnotationPopover` only if a later product spec reintroduces annotations
 
 Required source/offline components include:
 
@@ -300,14 +367,14 @@ Required source/offline components include:
 - `OfflineStatusBanner`
 - `StorageUsagePanel`
 - `ReaderAssetGate`
-- `SearchWithinQuran` only when search implementation begins
+- `SearchWithinQuran`
 
-Required page recipes include:
+Required page or embedded-surface recipes include:
 
 - `SourceSelectionPageRecipe`
 - `ReaderPageRecipe`
 - `AssetManagementPageRecipe`
-- `AssetDownloadsPageRecipe`
+- `AssetInstallPanelRecipe`
 - `SettingsPageRecipe`
 - `SearchPageRecipe`
 - `OnboardingPageRecipe`
@@ -321,9 +388,10 @@ The React design system must define semantic tokens for:
 - app canvas, surfaces, borders, text, accents, focus, and danger states;
 - reader page background, margins, body text, muted text, selection, and
   controls;
-- highlight and annotation-compatible namespaces, even if annotations remain
-  out of scope;
-- offline warning, storage danger, download progress, and cache state;
+- bookmark, tafsir, curated metadata, reader selection, and reader status
+  namespaces;
+- offline warning, storage danger, install progress, active pack, and cache
+  state;
 - spacing, radius, typography, motion, shadow, and z-index.
 
 Reader-specific tokens must exist because generic tokens produce generic UI.
@@ -338,39 +406,66 @@ Caching split:
 | Asset type | Strategy |
 | --- | --- |
 | App shell: HTML, JS, CSS, icons, fonts | Precache |
-| Reader content/assets | User-triggered download packs |
-| Previously opened assets | Runtime cache |
-| Metadata, search, download state | IndexedDB via Dexie |
-| Large binary packs | OPFS or Cache Storage, chosen per access pattern |
+| URL-addressed reader dataset, text, Mushaf page, source, and search assets | Cache Storage with user-triggered install packs |
+| Previously opened URL-addressed assets | Runtime cache |
+| Settings, dataset metadata, activation/install state, and continuity | IndexedDB via Dexie over the existing DB contract |
+| Non-URL large binary/index artifacts | OPFS only after an explicit child-spec contract |
 
 Rules:
 
 - Do not precache all reader assets during service worker install.
 - Asset packs must be manifest-driven, versioned, provenance-rich,
   byte-planned, and install-before-activate.
+- During dual-build, React storage must remain compatible with the existing
+  `quran-atlas` IndexedDB v7 stores, settings keys, record shapes, and
+  one-writer-per-store/key ownership rules. React must not bump schema or run a
+  migration that breaks the shipped Svelte app before cutover.
+- React runtime may consume only same-origin `/dataset/**` outputs. `data/`,
+  `data/catalog/`, `data/normalized/`, `data/taxonomy/`, and upstream providers
+  such as quran.ws are build-only and must never be fetched by the browser.
+- Optional packs are planned from generated indexes such as
+  `indexes/source-assets.json`, `indexes/text-assets.json`,
+  `indexes/mushaf-assets.json`, `indexes/riwayah-packages.json`, and manifest
+  inventory, then verified through local install state before activation.
 - No silent fallback: missing, stale, unavailable, or offline-only packs must
   produce explicit UI states or an intentional setting change.
 - Service worker logic owns app-shell and runtime network/cache strategy.
-- Storage modules own IndexedDB, Cache Storage, and OPFS contracts.
+- Cache Storage remains the default for same-origin URL-addressed assets. OPFS
+  may be introduced only for non-URL large binary or index artifacts with
+  fallback, manifest, quota, and service-worker interaction rules.
+- Storage modules own IndexedDB, Cache Storage, and any OPFS contracts.
 - UI components consume typed asset state rather than inventing labels.
 
-Canonical asset state vocabulary:
+Canonical pack status vocabulary:
 
 ```ts
-type AssetState =
-  | "not-downloaded"
+type PackStatus =
+  | "not-installed"
   | "queued"
-  | "downloading"
-  | "downloaded"
+  | "installing"
+  | "installed"
+  | "verifying"
+  | "verified"
+  | "active"
+  | "incomplete"
+  | "incompatible"
+  | "stale"
   | "failed"
   | "update-available"
   | "storage-full"
   | "unavailable-offline";
 ```
 
-Components must not create competing labels such as "saved", "cached",
-"installed", "available", or "offline-ready" unless a child spec explicitly
-changes the vocabulary and updates all callers.
+Pack status is separate from active selection. Download/cache presence does not
+mean the pack is usable; only verified installed assets may be activated by the
+owning settings writer. User-facing copy may say "download" where appropriate,
+but the underlying state must preserve install, verify, activate, stale,
+unavailable, and failure distinctions.
+
+Continuity parity must preserve onboarding-gated launch restore, valid
+`lastSurface`, fallback to `settings.currentPosition`, riwayah-scoped bookmarks
+with cross-tab sync, Daily Wird `settings.wirdPlan`, and exclusion of
+operational routes such as `#/assets` from launch restore.
 
 ## Verification Gates
 
@@ -389,6 +484,9 @@ Required layers:
 - Offline/service-worker journeys.
 - Visual regression gate.
 - Bundle/chunk budget.
+- Data/source-pack checks when source catalogs, dataset builders,
+  `public/dataset/**`, asset-pack manifests, source-data flow, or release dataset
+  behavior changes.
 - Docs and generated-context checks.
 
 Storybook owns:
@@ -410,6 +508,22 @@ Playwright owns:
 - golden screens;
 - parity proof against the Svelte reference until cutover.
 
+An early baseline task must freeze the Svelte reference for parity comparison:
+approved routes, fixtures/storage state, viewport matrix, themes, data profile,
+fonts/assets, screenshot or assertion update policy, and which differences are
+product-accepted rather than regressions.
+
+Every changed UI component must prove the QuranAtlas viewport tiers: mobile
+`<768`, tablet `768-1179`, and desktop `>=1180`. Add awkward-state proof where
+relevant, including `320x568`, `768x1024`, mobile landscape, short sheets, long
+labels, dense ayah content, expanded panels, focus rings, safe-area insets, and
+sticky-header/control overlap.
+
+Any child spec touching source catalogs, dataset builders, `public/dataset/**`,
+asset-pack manifests, source-data flow, or release dataset behavior must run the
+relevant `pnpm run data -- check` or `pnpm run data -- build` profile, plus
+`pnpm run validate` when app/runtime/release behavior is affected.
+
 ## Golden Screens
 
 React parity requires golden proof for at least:
@@ -417,24 +531,29 @@ React parity requires golden proof for at least:
 - source selection baseline;
 - source selection optional pack unavailable;
 - asset management populated;
-- asset pack not downloaded;
-- asset pack downloaded;
+- asset pack not installed;
+- asset pack installed and verified;
+- active pack unavailable or stale;
 - reader clean mode;
 - reader toolbar visible;
 - reader settings panel;
-- asset downloads active;
-- asset downloads error;
+- asset install active;
+- asset install error;
 - offline mode;
 - storage almost full;
-- search results when search is implemented;
+- search results;
+- search offline/index unavailable;
 - mobile reader;
 - tablet reader;
 - desktop reader;
 - dark-mode reader;
 - sepia reader.
 
-Golden screens may live as Storybook page stories, Playwright screenshot routes,
-or both. Child specs must choose the exact proof location for each screen.
+Golden proof must reference committed `docs/ui-references/<surface>/<component>/`
+intent where visual direction is involved. Storybook stories demonstrate
+component states, and Playwright golden routes prove app-level behavior with
+checked-in assertions or baselines. Transient artifacts do not replace committed
+visual references or durable regression checks.
 
 ## Accessibility Requirements
 
@@ -448,13 +567,19 @@ Minimum requirements:
 - ARIA names for icon-only controls;
 - reduced motion support;
 - sufficient contrast;
-- screen-reader labels for progress and download state;
+- screen-reader labels for progress and install state;
 - no keyboard traps;
 - no hover-only required controls;
 - touch targets appropriate for mobile reader use.
 
 Radix primitive behavior must not be bypassed unless a child spec explains the
 replacement behavior and tests it.
+
+Accessibility gates must include automated axe checks on fully rendered
+Playwright routes, Storybook interaction/a11y checks for primitives, keyboard and
+focus-order journeys for sheets, drawers, menus, and reader chrome, live-region
+or status assertions for install/download progress, and measured touch-target
+checks against the QuranAtlas minimum target token.
 
 ## CI And Static Enforcement
 
@@ -481,7 +606,9 @@ Static checks should reject:
 
 - raw hex colors outside token files;
 - inline color styles;
-- arbitrary Tailwind values outside allowed design-system/product files;
+- built-in Tailwind palettes, direct primitive-token consumption, arbitrary
+  Tailwind values, and one-off design literals outside the measured reader
+  layout allowlist;
 - direct Radix imports outside owned behavior components;
 - raw button/input/dialog usage in feature/page code where a design-system
   component exists;
@@ -489,6 +616,10 @@ Static checks should reject:
 - components without stories;
 - stories missing required default, loading, error, mobile, and relevant offline
   states.
+- registry entries that drift from exported components, variants, stories, tests,
+  docs, accessibility expectations, or proof references.
+- React build outputs, service-worker scopes, or cache names that collide with
+  the shipped Svelte app before cutover.
 
 ## Agent Instructions And Skills
 
@@ -500,6 +631,13 @@ Required instruction surfaces:
 - root `AGENTS.md`;
 - `.agents/skills/quranatlas-workflow/SKILL.md`;
 - `.agents/skills/quranatlas-ui-workflow/SKILL.md`;
+- `DESIGN.md`;
+- `docs/context/repo-structure.md`;
+- `docs/context/architecture.md`;
+- `docs/context/style-map.md`;
+- relevant `docs/context/surfaces/*.md`;
+- `docs/ui-references/` conventions;
+- `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md`;
 - React design-system docs under `src-react/design-system/docs/`;
 - component registry.
 
@@ -516,71 +654,120 @@ These workflows may be implemented as repo-local skills, docs, or both. The
 important invariant is that agents know where to look, what to compose, what is
 forbidden, and what proof is required.
 
+Every child spec that changes repo shape, package scripts, dev tools, pinned
+versions, CI gates, app architecture, generated context, or agent workflow must
+update the owning context docs and run the required docs generation/checks in
+the same change.
+
 ## Child Spec Index
 
 The implementation must be split into focused child specs. Each child spec
 should finish, verify, and commit before the next dependent spec starts.
+Each child spec must include parent/dependency prerequisites, required reads,
+allowed files/directories, forbidden changes, deliverables, acceptance criteria,
+targeted verification commands, docs updates, rollback or failure handling, and
+next-spec handoff notes.
 
 Minimum child specs:
 
-1. **00 Stack And Docs Verification**  
+1. **00 Stack And Docs Verification**
    Verify React, Vite, VitePWA/Workbox, Tailwind v4, Radix, shadcn/ui,
    TanStack Virtual, Dexie, Storybook, Playwright, and visual regression options
-   through Context7 or official docs. Produce a current-docs decision appendix.
+   through the repo Context7 workflow first (`library` then `docs`). Produce a
+   current-docs decision appendix, including any documented Context7 fallback.
 
-2. **01 React App Shell And Dual Build**  
+2. **01 React App Shell And Dual Build**
    Create the `src-react` app shell, independent Vite entry, routing skeleton,
-   provider structure, and dual dev/build/preview scripts while Svelte remains
-   shipped.
+   provider structure, non-deploy React dev/build/preview scripts, isolated
+   `dist-react/` output, isolated service-worker/cache scope, and
+   framework-neutral runtime-sharing rules while Svelte remains shipped.
 
-3. **02 Tokens And Tailwind v4 Design System**  
+3. **02 Svelte Reference Baseline**
+   Freeze the current Svelte reference routes, fixtures/storage state, viewport
+   matrix, themes, data profile, fonts/assets, screenshot or assertion update
+   policy, and accepted product differences for later React parity comparisons.
+
+4. **03 Tokens And Tailwind v4 Design System**
    Define semantic tokens, Tailwind v4 constraints, token exports, token checks,
-   and reader-specific token namespaces.
+   reader-specific token namespaces, measured reader-layout allowlists, and
+   static rejection of palette/literal/arbitrary-value drift.
 
-4. **03 Owned shadcn/Radix Component Layer**  
+5. **04 Storybook And Component Test Harness**
+   Wire Storybook, interaction tests, accessibility checks, viewport/theme
+   states, component test placement under `tests/unit/**`, and story requirements
+   before component specs require stories.
+
+6. **05 Visual Regression Provider Selection**
+   Blocker-grade spec. Select Chromatic, Percy, Argos, Playwright screenshots,
+   Loki, or another approved provider; evaluate Quran/Mushaf screenshot privacy
+   and retention, self-hosted/offline viability, deterministic fonts/assets, CI
+   cost and flake profile, branch review policy, and review workflow. Provider
+   snapshots are regression evidence only, not visual source of truth.
+
+7. **06 Owned shadcn/Radix Component Layer**
    Add copied-owned UI and behavior components with narrow typed APIs, tests,
    stories, accessibility expectations, and no direct feature-code Radix usage.
 
-5. **04 Component Registry And Agent Rules**  
-   Add `component-registry.json`, agent docs, forbidden-pattern checks, and
-   usage examples for primitives, product components, and page recipes.
+8. **07 Component Registry And Agent Rules**
+   Add the versioned `component-registry.json` schema, validation check, initial
+   primitive and behavior entries, agent docs, forbidden-pattern checks, and
+   usage examples. Later product-component and page-recipe specs must extend the
+   registry in the same change that adds those components.
 
-6. **05 Storybook And Component Test Harness**  
-   Wire Storybook, interaction tests, accessibility checks, viewport/theme
-   states, and component/product-pattern story coverage.
-
-7. **06 Visual Regression Provider Selection**  
-   Blocker-grade spec. Select Chromatic, Percy, Argos, Playwright screenshots,
-   Loki, or another approved provider; wire the chosen gate; define review
-   policy. React UI work cannot graduate beyond local proof until this is
-   complete.
-
-8. **07 Offline Storage And Asset Pack Architecture**  
+9. **08 Offline Storage And Asset Pack Architecture**
    Define Dexie stores, Cache Storage and OPFS boundaries, service-worker
    strategy, asset-pack lifecycle, manifest contracts, install-before-activate,
-   quota behavior, and offline UI state contracts.
+   quota behavior, offline UI state contracts, existing IDB v7 compatibility, and
+   data/source-pack verification gates.
 
-9. **08 Reader Surface Parity**  
+10. **09 Reader Surface Parity**
    Rebuild Verse and Mushaf reader surfaces, reader chrome, reader settings
    entry points, reader comfort controls, and large-surface virtualization where
-   needed.
+   needed. Preserve hash routes, translation/riwayah alias rendering, reader
+   typography, and no-silent-fallback source states.
 
-10. **09 Navigation, Settings, And Onboarding Parity**  
+11. **10 Navigation, Settings, And Onboarding Parity**
     Rebuild Surah/Juz/bookmark navigation, settings, source/storage controls,
-    and onboarding against v1 product scope.
+    and onboarding against v1 product scope, including atomic recitation bundle
+    activation and install-before-activate source selection.
 
-11. **10 Search, Metadata, And Continuity Parity**  
-    Rebuild search/index readiness where implemented, curated metadata lanes,
-    bookmarks, saved position, Daily Wird, and reader continuity flows.
+12. **11 Search And Index Parity**
+    Build full-text search across Arabic text, translations, transliteration or
+    index data where shipped, tafsir, and curated metadata. Search/index packs
+    must follow install-before-activate, offline unavailable states, and golden
+    proof.
 
-12. **11 Golden Routes And Accessibility Gates**  
+13. **12 Curated Metadata Parity**
+    Rebuild curated reader-attached metadata lanes that are in v1 scope, using
+    existing build/runtime dataset boundaries and explicit unavailable states.
+
+14. **13 Continuity And Bookmarks Parity**
+    Preserve onboarding-gated launch restore, valid `lastSurface`, saved
+    position fallback, riwayah-scoped bookmarks, landing pulse, route exclusions,
+    reload behavior, and cross-tab bookmark coherence.
+
+15. **14 Daily Wird Parity**
+    Rebuild Daily Wird as reader-adjacent continuity, including `settings.wirdPlan`
+    ownership, progress persistence, reader integration, and focused tests.
+
+16. **15 Golden Routes And Accessibility Gates**
     Complete Playwright golden routes, app-level a11y proof, keyboard/focus
     journeys, responsive proof, and Svelte-reference parity checks.
 
-13. **12 Production Cutover And Svelte Removal**  
-    Flip production entry only after parity gates pass, update `docs/tech-stack.md`,
-    remove Svelte-only source and dependencies, update docs and skills, and run
-    full validation.
+17. **16 Cutover Readiness**
+    Prove parity gates, define rollback, document staging/dev soak policy,
+    confirm CI/deploy artifact routing, and prepare docs/skill updates without
+    removing Svelte.
+
+18. **17 Production Entry Flip With Svelte Retained**
+    Flip the production entry only after readiness approval, keep Svelte source
+    and dependencies available for rollback, update `docs/tech-stack.md`, docs,
+    scripts, and CI/deploy routing, then run full validation.
+
+19. **18 Svelte Removal**
+    Remove Svelte-only source, dependencies, scripts, generated context entries,
+    and skills only after the React production flip has soaked successfully and a
+    rollback path is documented.
 
 ## Parity Gate
 
@@ -588,13 +775,20 @@ React reaches parity only when:
 
 - all in-scope v1 product surfaces exist in `src-react`;
 - asset and offline flows match the product promise;
+- search and search/index offline states meet the v1 product promise or
+  product docs explicitly defer search before parity is claimed;
+- React preserves the existing `quran-atlas` IDB contract, route contract,
+  launch restore, bookmarks, and Daily Wird continuity behavior through cutover;
 - no removed-scope product branch is rebuilt by accident;
 - Storybook component/product-pattern coverage exists for required states;
 - Playwright golden routes cover required app states and viewports;
 - accessibility gates pass;
 - visual regression gate is wired and passing;
-- dual-build scripts prove React and Svelte can coexist until cutover;
-- production cutover plan is approved;
+- Svelte-reference baseline comparisons are resolved or intentionally accepted;
+- dual-build scripts prove React and Svelte can coexist without build output,
+  service-worker, cache, route, storage, or deploy-artifact collisions;
+- cutover readiness, production flip, rollback, and post-flip Svelte removal are
+  approved as separate gates;
 - documentation, AGENTS instructions, and repo-local workflows reflect the new
   React source of truth.
 
@@ -606,6 +800,9 @@ React reaches parity only when:
 - The spec defines v1 product promise parity as the scope boundary.
 - The spec captures design-system, offline, storage, verification, and agent
   determinism requirements.
+- The spec requires child specs to be executable with prerequisites, allowed
+  files, forbidden changes, deliverables, verification, docs updates, rollback,
+  and handoff notes.
 - The spec includes a child-spec index with visual regression provider
   selection as a blocker task.
 - The spec avoids changing current stack docs until implementation changes make
