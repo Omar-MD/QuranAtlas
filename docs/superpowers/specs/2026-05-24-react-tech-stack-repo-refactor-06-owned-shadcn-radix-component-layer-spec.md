@@ -216,13 +216,16 @@ config, or static checks change, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
+pnpm run test:react
 pnpm run test:storybook:react
 ```
 
 Expected result:
 
 - React component tests and Storybook tests pass.
+- React static/type gates pass for delivered components.
 - Direct-Radix-import and design-literal checks pass.
 - React build remains isolated to `dist-react/`.
 - Existing Svelte verification remains unchanged.

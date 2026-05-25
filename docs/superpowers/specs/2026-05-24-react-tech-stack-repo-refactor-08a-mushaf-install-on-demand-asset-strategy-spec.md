@@ -6,6 +6,10 @@
   `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
 - Refines child spec:
   `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08-offline-storage-asset-pack-architecture-spec.md`
+- Depends on child specs:
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-00-stack-docs-verification-spec.md`
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-01-react-app-shell-and-dual-build-spec.md`
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08-offline-storage-asset-pack-architecture-spec.md`
 
 ## Purpose
 
@@ -40,7 +44,10 @@ direction during the design discussion for this spec.
   - Workbox cache plugins include cacheability, expiration, and quota-related
     behavior.
 - Command:
-  `npx ctx7@latest docs /websites/vite-pwa-org_netlify_app "How does vite-plugin-pwa injectManifest configure a custom service worker, app-shell precache, and dev service worker testing in Vite?"`
+  `npx ctx7@latest library "vite-plugin-pwa" "How does vite-plugin-pwa injectManifest configure a custom service worker, app-shell precache, and dev service worker testing in Vite?"`
+- Selected library id: `/vite-pwa/vite-plugin-pwa`
+- Command:
+  `npx ctx7@latest docs /vite-pwa/vite-plugin-pwa "How does vite-plugin-pwa injectManifest configure a custom service worker, app-shell precache, and dev service worker testing in Vite?"`
 - Current-doc facts used:
   - vite-plugin-pwa `injectManifest` compiles a custom service worker and
     injects the precache manifest.
@@ -49,6 +56,24 @@ direction during the design discussion for this spec.
 Exact React service-worker code, VitePWA configuration, or Workbox strategy
 options still require fresh Context7 verification at implementation time if the
 implementation changes API-level details.
+
+## Required Reads
+
+- `AGENTS.md`
+- `docs/context/repo-structure.md`
+- `docs/product-info.md`
+- `docs/context/architecture.md`
+- `docs/context/data-model.md`
+- `docs/context/source-data-flow.md`
+- `docs/context/surfaces/read.md`
+- `docs/context/surfaces/configure.md`
+- `docs/context/surfaces/infra.md`
+- `docs/tech-stack.md`
+- `package.json`
+- `tests/unit/AGENTS.md`
+- `tests/e2e/AGENTS.md`
+- Parent master spec
+- Child specs `00`, `01`, and `08`
 
 ## Scope
 
@@ -59,6 +84,8 @@ In scope:
   requirements for Mushaf page packs.
 - Dataset and asset-pack contract requirements that React consumes.
 - Removal of legacy Mushaf page path support from the React contract.
+- React app-shell public asset strategy needed to keep Mushaf page bodies out of
+  `dist-react/`.
 - Verification gates that prove the React app artifact stays small and does not
   include Mushaf page bodies.
 
@@ -70,6 +97,42 @@ Out of scope:
 - Preserving compatibility with old Mushaf page paths in React.
 - Treating Svelte-era shipped Mushaf assets as React app-shell assets.
 - Fetching upstream providers or build-only `data/**` paths at runtime.
+
+## Allowed Files And Directories
+
+Allowed create:
+
+- React Mushaf asset-pack contracts under `src-react/packs/**`,
+  `src-react/offline/**`, `src-react/storage/**`, or equivalent paths from child
+  spec `01`.
+- React service-worker installer protocol files under the React build tree.
+- React fixture indexes and tiny fixture packs for unit/e2e proof.
+- Durable React asset checks under `scripts/`.
+- Unit tests under `tests/unit/**`.
+- Browser proof under `tests/e2e/read/**`, `tests/e2e/configure/**`, and
+  `tests/e2e/infra/**`.
+- Asset-pack pipeline docs or planning appendices under `docs/superpowers/specs/`.
+
+Allowed modify:
+
+- React Vite/VitePWA/service-worker config only for the React build path.
+- React package scripts, including `check:react-mushaf-assets`.
+- Dataset builders, manifest inventory, and source-data docs only when the
+  change is explicitly an asset-pack contract change and runs the data gate.
+- `docs/tech-stack.md`, `docs/context/source-data-flow.md`,
+  `docs/context/data-model.md`, `docs/context/surfaces/read.md`, and
+  `docs/context/surfaces/configure.md` when React asset contracts change current
+  docs. Current-state docs must keep Svelte legacy compatibility accurate until
+  a later removal/migration spec deletes it.
+
+Forbidden modify:
+
+- Existing Svelte app behavior, service-worker routes, cache names, or deploy
+  artifact.
+- Shared Svelte legacy Mushaf compatibility routes or generated compatibility
+  outputs unless a separate data migration/removal spec owns the deletion.
+- Hand-editing generated `public/dataset/**`.
+- Production deploy routing before child spec `17`.
 
 ## Diagnosis From Current Reference Implementation
 
@@ -119,6 +182,21 @@ React has two separate deliverables:
 - The React asset-pack artifact set, published same-origin for install on
   demand.
 
+React production after cutover keeps the same split:
+
+- app shell artifact, deployed as the app entry;
+- asset-pack publish root, deployed under same-origin `/dataset/**`.
+
+CI/deploy specs must upload, download, validate, and publish both artifact
+classes. Keeping `dist/` as the app deploy path is acceptable only if the
+asset-pack publish root is also deployed to the same origin.
+
+React Vite config must not use the repository `public/` directory as an
+unfiltered public directory. If it did, current `public/dataset/mushaf-pages/**`
+would be copied into `dist-react/`. The React build must use a React-scoped
+public directory or an explicit allowlist copy step for shell assets and tiny
+indexes.
+
 The React app artifact must include:
 
 - app shell files;
@@ -163,8 +241,10 @@ paths:
 /dataset/mushaf-pages/{riwayah}/pages/{page}.svg
 ```
 
-The React build and data checks must fail if a React asset index, install plan,
-or service-worker route includes a legacy Mushaf page URL.
+The React build and data checks must fail if a React-only asset index, install
+plan, route table, or service-worker route includes a legacy Mushaf page URL.
+Shared Svelte-era legacy routes and compatibility dataset outputs remain allowed
+until a separate data migration/removal spec owns their deletion.
 
 Cache names must also be edition-aware. React page-pack caches must include a
 React-specific prefix, riwayah id, Mushaf edition id, and pack version. Cache
@@ -211,7 +291,9 @@ The window may:
 - show storage estimates;
 - request install, resume, cancel, verify, purge, or repair;
 - receive progress events;
-- persist verified install metadata through the approved React storage layer.
+- persist only validator-compatible install metadata through the approved React
+  storage layer, or derive status from Cache Storage and generated indexes until
+  a migration spec creates a durable per-pack store.
 
 The window must not:
 
@@ -229,7 +311,7 @@ The installer protocol must support:
 - retry and resume for incomplete packs;
 - quota preflight where browser APIs allow it;
 - mid-install quota failure handling;
-- verification before installed state is persisted;
+- verification before verified/usable state is persisted;
 - deletion of incomplete staged entries after failed installs where possible;
 - purge of stale React pack caches when indexes remove or replace a pack.
 
@@ -266,6 +348,7 @@ Required lifecycle:
 not-installed
   -> queued
   -> installing
+  -> installed
   -> verifying
   -> verified
   -> active
@@ -375,6 +458,21 @@ Implementation must proceed in this order:
 
 The Svelte app is not updated as part of this rollout.
 
+## Deliverables
+
+- React Mushaf path, cache-name, pack-index, and status contracts.
+- React app-shell public asset strategy proving Mushaf SVG bodies are not copied
+  into `dist-react/`.
+- React service-worker installer protocol with install, resume, cancel, verify,
+  purge, quota, and stale-cache behavior.
+- Fixture asset indexes and tiny fixture packs for unit/e2e proof.
+- Durable `check:react-mushaf-assets` or equivalent script that rejects legacy
+  React Mushaf paths and page SVG bodies in the React app artifact.
+- Release asset-pack validation gate for edition-aware manifests, byte counts,
+  page files, and same-origin URLs.
+- Updated source-data, data-model, read/configure/infra, tech-stack, and
+  cutover docs where React asset-pack current behavior changes.
+
 ## Acceptance Criteria
 
 - The React app artifact contains zero Mushaf page SVG bodies.
@@ -388,6 +486,8 @@ The Svelte app is not updated as part of this rollout.
 - Same-origin `/dataset/**` remains the only runtime asset boundary.
 - Svelte service-worker scope, cache names, runtime code, and deploy artifact are
   untouched by this spec.
+- Any docs that mention legacy Mushaf page paths distinguish current Svelte
+  compatibility from React's edition-aware-only contract.
 
 ## Verification
 
@@ -401,6 +501,13 @@ git diff --check
 Implementation touching React service-worker, build tooling, package scripts, or
 runtime code must also run the React gates defined by the parent specs.
 
+Implementation touching React Mushaf paths, install plans, app output, or asset
+checks must run the concrete asset gate introduced by this spec, for example:
+
+```bash
+pnpm run check:react-mushaf-assets
+```
+
 Implementation touching generated asset indexes, asset-pack manifests,
 source-data flow, or release dataset behavior must run the relevant data gate,
 for example:
@@ -409,9 +516,29 @@ for example:
 pnpm run data -- check
 ```
 
+Implementation touching release page packs must also run:
+
+```bash
+pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
+```
+
 Before any cutover or release packaging change, a gate must prove that
 `dist-react/` contains no Mushaf page SVG bodies and that published asset packs
 contain only currently supported edition-aware paths.
+
+## Rollback And Failure Handling
+
+- If the React build copies Mushaf page bodies into `dist-react/`, stop and fix
+  the React public asset strategy before adding reader UI.
+- If legacy-path rejection also blocks current Svelte compatibility outputs,
+  scope the check to React-only indexes/routes/install plans.
+- If persistent pack metadata cannot fit the existing v7 validators, derive it
+  from Cache Storage/indexes or create a separate DB migration spec; do not
+  widen existing stores inside this spec.
+- If the service-worker installer cannot make partial installs distinguishable,
+  keep packs in `incomplete` or `failed` state and block activation.
+- If same-origin asset-pack deployment cannot be proven, child specs `16` and
+  `17` must not approve or execute cutover.
 
 ## Handoff
 

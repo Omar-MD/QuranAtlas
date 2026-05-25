@@ -47,11 +47,13 @@ Out of scope:
 ## Required Reads
 
 - `AGENTS.md`
+- `docs/context/repo-structure.md`
 - `docs/product-info.md`
 - `docs/context/data-model.md`
 - `docs/context/surfaces/read.md`
 - `docs/context/surfaces/navigate.md`
 - `docs/context/surfaces/configure.md`
+- `docs/tech-stack.md`
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Parent master spec
@@ -92,6 +94,10 @@ React must preserve:
   reminder preference;
 - progress monotonicity: backward scrolling does not reduce completed progress;
 - missed-day recomputation from remaining verses and remaining calendar days;
+- drawer card/detail render is read-only and must not advance completed
+  progress;
+- Juz/Hizb display-unit summaries derive remaining counts from Quran boundary
+  metadata, not raw verse counts alone;
 - Continue routes to the active plan's next unread reference;
 - ordinary `settings.currentPosition` remains normal resume source;
 - reminder permission requested only from a user gesture;
@@ -133,6 +139,8 @@ mobile drawer, desktop drawer, and reduced-motion states.
 
 - Plan data persists in `settings.wirdPlan`.
 - Reader progress updates are monotonic and scoped to the active plan range.
+- Drawer/card/detail render does not advance progress.
+- Juz/Hizb display-unit summaries use boundary metadata.
 - Continue routes to the next unread reference.
 - Drawer card reflects no-plan, in-progress, today-complete, and plan-complete
   states.
@@ -144,6 +152,7 @@ mobile drawer, desktop drawer, and reduced-motion states.
 Run targeted Daily Wird tests, plus:
 
 ```bash
+pnpm run test:react -- tests/unit/read tests/unit/navigate
 pnpm run docs:check
 git diff --check
 ```
@@ -151,13 +160,14 @@ git diff --check
 Run owning e2e specs where browser behavior is touched:
 
 ```bash
-pnpm exec playwright test tests/e2e/read tests/e2e/navigate --reporter=line
+pnpm run test:e2e:react -- tests/e2e/read tests/e2e/navigate --reporter=line
 ```
 
 If app runtime or storage behavior changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
 ```
 

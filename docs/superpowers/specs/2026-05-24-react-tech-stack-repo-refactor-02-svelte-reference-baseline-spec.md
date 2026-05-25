@@ -40,6 +40,7 @@ Out of scope:
 ## Required Reads
 
 - `AGENTS.md`
+- `docs/context/repo-structure.md`
 - `docs/product-info.md`
 - `docs/context/implemented.md`
 - `docs/context/architecture.md`
@@ -78,7 +79,18 @@ Forbidden modify:
 
 ## Baseline Matrix
 
-Routes:
+The baseline must be a named route-state fixture matrix, not separate route and
+state lists that can be satisfied independently. Each fixture must record:
+
+- fixture id;
+- route;
+- seeded storage/network/asset state;
+- viewport coverage;
+- theme and night-mode coverage;
+- proof owner;
+- accepted-difference status.
+
+Routes that need fixture coverage:
 
 - Empty hash launch restore.
 - `#/onboarding`.
@@ -121,7 +133,24 @@ Themes:
 - Light.
 - Sepia.
 - Dark.
+- Night recitation mode `off`, `on`, and `auto`, composed over at least reader,
+  settings shell, drawer, and Mushaf proof.
 - Reduced motion where motion-sensitive behavior is present.
+
+Required fixture families:
+
+- reader happy path, translation visible/hidden, tafsir preview/sheet open, and
+  live settings update while mounted;
+- Mushaf ready state, missing pack, stale pack, page jump, and view-mode change;
+- navigation drawer with Surah, Juz, populated bookmarks, and mobile redirect
+  behavior;
+- Verse Settings and Mushaf Settings over a reader surface;
+- onboarding first screen, source choice, completion, and unreachable-after-
+  completion state;
+- Asset Management not-installed, installing, verified, active delete-blocked,
+  storage-full, and failed rows;
+- Daily Wird no-plan, active-plan, detail, continue, reminder, and reset states;
+- search results and unavailable index states when search is introduced.
 
 ## Reference Rules
 
@@ -151,6 +180,9 @@ Themes:
 - Every route and state in the baseline matrix has a named proof owner:
   Playwright route, committed UI reference, existing unit suite, or documented
   manual baseline note.
+- Route-state fixtures cannot be counted by route alone; each fixture records
+  the seed state, viewport/theme/night-mode coverage, proof owner, and accepted
+  difference status.
 - The baseline covers mobile, tablet, desktop, and at least one awkward small
   mobile viewport.
 - The baseline includes storage/offline states, not only happy-path reader

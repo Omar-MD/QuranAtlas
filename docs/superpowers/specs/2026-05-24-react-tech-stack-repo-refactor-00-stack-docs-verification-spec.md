@@ -81,8 +81,11 @@ npx ctx7@latest docs <library-id> "<full question>"
 Pick versioned library ids when the `library` output exposes a version matching
 the repo or the intended child spec. Record the selected library id, query,
 retrieval result, and implementation-relevant facts. If Context7 is quota
-blocked or unavailable, record the exact failure and the official-doc fallback
-source; do not silently fall back to memory.
+blocked, record the exact failure and stop until the user can run
+`npx ctx7@latest login` or configure `CONTEXT7_API_KEY`; do not use an
+official-doc fallback for quota failures. If Context7 lacks coverage or remains
+unavailable after the required non-quota retry, record the exact failure and the
+official-doc fallback source; do not silently fall back to memory.
 
 Minimum verification matrix:
 
@@ -366,7 +369,7 @@ Use concise paraphrase. Do not paste large external-doc excerpts.
 
 - Every technology in the verification matrix has a Context7 `library` result
   and a Context7 `docs` result, or an explicit documented fallback after a
-  Context7 quota or availability failure.
+  non-quota Context7 coverage or availability failure.
 - The appendix records the selected library id and version where available.
 - The appendix distinguishes official documentation facts from QuranAtlas
   decisions.

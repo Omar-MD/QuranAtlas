@@ -48,6 +48,9 @@ In scope:
 - Define story requirements for primitives, product components, page recipes,
   offline states, loading states, error states, long text, and reduced motion.
 - Define component-test placement under `tests/unit/**`.
+- Add a React unit/component test command named `test:react`, including
+  `.test.tsx` coverage and React Testing Library or an equivalent
+  current-docs-verified harness.
 
 Out of scope:
 
@@ -151,6 +154,8 @@ include relevant offline, long-text, empty, and error states.
 - Unit/component test placement remains under `tests/unit/**`.
 - Storybook artifacts are described as proof evidence, not visual source of
   truth.
+- React `.tsx` unit/component tests run through a stable command and include a
+  negative/positive harness fixture so later specs can target it.
 
 ## Verification
 
@@ -159,6 +164,7 @@ names should be stable and documented, for example:
 
 ```bash
 pnpm run storybook:react -- --ci
+pnpm run test:react
 pnpm run test:storybook:react
 pnpm run docs:check
 git diff --check
@@ -173,6 +179,7 @@ pnpm run check
 Expected result:
 
 - Storybook starts or builds in CI mode.
+- React unit/component harness passes and includes `.test.tsx` files.
 - Storybook/component tests pass.
 - Accessibility story checks pass or report only documented per-story disables.
 - Existing Svelte verification remains unchanged.

@@ -122,8 +122,9 @@ Examples of retained paths:
 Run full validation:
 
 ```bash
-pnpm run validate
 pnpm run docs
+pnpm run validate
+pnpm run validate:react
 pnpm run docs:check
 git diff --check
 ```

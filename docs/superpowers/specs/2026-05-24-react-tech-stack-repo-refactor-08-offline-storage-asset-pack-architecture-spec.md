@@ -43,10 +43,11 @@ code, or OPFS APIs, fetch those current docs through Context7 first.
 In scope:
 
 - Define React access to the existing `quran-atlas` IndexedDB v7 contract.
-- Define React Dexie schema declarations that mirror current store names,
-  key paths, indexes, and record shapes without bumping DB version during
-  dual-build.
-- Define one-writer-per-store/key ownership for React modules.
+- Define React Dexie schema declarations, if Dexie is used, that mirror current
+  store names, key paths, indexes, and record shapes without bumping DB version
+  during dual-build.
+- Define one-writer-per-store/key ownership for React modules, including
+  framework-neutral writer/validator/event wrappers for existing stores.
 - Define Cache Storage usage for same-origin `/dataset/**`, app-shell, fonts,
   icons, text, Mushaf pages, source packs, and search/index packs.
 - Define OPFS as unavailable unless a later child spec proves a non-URL binary
@@ -72,6 +73,7 @@ Out of scope:
 ## Required Reads
 
 - `AGENTS.md`
+- `docs/context/repo-structure.md`
 - `docs/context/architecture.md`
 - `docs/context/data-model.md`
 - `docs/context/source-data-flow.md`
@@ -133,9 +135,15 @@ breaks the shipped Svelte app. Any schema change requires a separate migration
 spec, updates to data-model docs, generated context, unit tests, cross-tab tests,
 and a rollback path.
 
-Settings key ownership must remain one writer per key. The active recitation
+Settings key ownership must remain one writer per key. The active reader asset
 bundle remains atomic: `settings.riwayah`, `settings.quranTextStyleId`, and
 `settings.mushafEditionId` change together through the owning settings writer.
+
+React must not bypass QuranAtlas storage guards. Writes to `settings`,
+`bookmarks`, `activationState`, and `datasetMeta` must go through shared
+framework-neutral writers or exact validator/event wrappers that preserve the
+current runtime validation, quota handling, cross-tab updates, and surface
+events. Raw `Dexie.table(...).put()` is forbidden for these stores.
 
 ## Asset-Pack Lifecycle
 
@@ -163,6 +171,13 @@ Install, verify, and activate are separate phases. Cache presence is not
 activation. User-facing copy may use "download" where clearer, but internal
 state must preserve install, verify, activate, stale, unavailable, and failure
 distinctions.
+
+During dual-build, this status vocabulary must not be persisted as a new shape
+inside existing v7 stores. It is derived from generated indexes, Cache Storage,
+and validator-compatible records. If persistent per-pack install metadata is
+needed beyond existing validators, stop and create a separate DB migration spec
+with a new store or compatible shape, version-bump plan, generated docs,
+cross-tab tests, and rollback.
 
 Activation rules:
 
@@ -215,6 +230,8 @@ index artifact needs file-like access that Cache Storage cannot provide.
 - React storage architecture modules or docs.
 - Dexie schema mirror for the existing IDB contract, if implementation reaches
   storage code.
+- Framework-neutral storage writer wrappers or adapters that preserve current
+  validation and event behavior.
 - Pack status types and lifecycle helpers.
 - Cache planning helpers for same-origin asset indexes.
 - React service-worker isolation plan or implementation.
@@ -226,7 +243,10 @@ index artifact needs file-like access that Cache Storage cannot provide.
 ## Acceptance Criteria
 
 - React does not bump the `quran-atlas` DB version during dual-build.
-- React can read/write only through declared store/key ownership.
+- React can read/write only through declared store/key ownership and approved
+  writer/validator/event wrappers.
+- React does not persist rich pack statuses into existing v7 stores unless a
+  separate migration spec owns the schema change.
 - Svelte can still open and use the DB after React code has run.
 - React service-worker scope and cache names do not collide with Svelte.
 - Asset install does not activate a pack as a side effect.
@@ -248,6 +268,7 @@ changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
 ```
 

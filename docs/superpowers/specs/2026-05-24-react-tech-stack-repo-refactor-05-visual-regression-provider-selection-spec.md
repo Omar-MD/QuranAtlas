@@ -60,6 +60,7 @@ Out of scope:
 
 - `AGENTS.md`
 - `DESIGN.md`
+- `docs/context/repo-structure.md`
 - `docs/context/style-map.md`
 - `docs/ui-references/**` conventions from
   `.agents/skills/quranatlas-ui-workflow/SKILL.md`
@@ -164,6 +165,10 @@ The selected provider must:
 - The provider can cover Storybook component states and Playwright app routes, or
   the spec explains the split.
 - The selected gate does not feed any React artifact to deploy before cutover.
+- A temporary local-proof-only path may unblock early component work only if it
+  has a named command, baseline update policy, and removal/promotion condition;
+  it cannot satisfy cutover readiness unless promoted to the durable selected
+  visual-regression strategy.
 - `docs/tech-stack.md` is updated if provider tooling, scripts, or CI gates are
   added.
 
@@ -212,5 +217,7 @@ Expected result:
 
 Child spec `06 Owned shadcn/Radix Component Layer` may graduate UI primitives
 only after this spec selects the provider or explicitly approves a temporary
-local-proof-only path. Later reader and page-recipe specs must add provider
-coverage through the selected workflow.
+local-proof-only path with a promotion/removal condition. Later reader and
+page-recipe specs must add provider coverage through the selected workflow, and
+child spec `16` must not accept temporary local proof as the readiness visual
+gate.

@@ -129,9 +129,10 @@ Product/data invariants:
 
 - Product prose uses Qalun; runtime ids and existing paths use `qaloon`.
   Qalun and `qaloon` must not become separate packs.
-- The active recitation bundle is atomic: `settings.riwayah`,
+- The active reader asset bundle is atomic: `settings.riwayah`,
   `settings.quranTextStyleId`, and `settings.mushafEditionId` change together
-  through the owning settings writer.
+  through the owning settings writer. This is a text/Mushaf asset bundle, not
+  audio or playback scope.
 - Hafs and Warsh become usable only after compatible text and Mushaf assets
   verify locally; missing optional assets must show an install/unavailable/switch
   state or explicitly change settings to a verified baseline.
@@ -204,6 +205,12 @@ Rules:
   deployable artifact. React must use explicit non-deploy paths such as
   `dev:react`, `build:react -> dist-react/`, and `preview:react`; CI must not
   feed `dist-react/` to deploy until the cutover child spec flips production.
+- React Vite config must not use the repository `public/` directory as an
+  unfiltered `publicDir` during dual-build, because that would copy current
+  `public/dataset/**` page bodies into `dist-react/`. React must use an
+  allowlisted app-shell public asset path or an explicit copy step for shell
+  assets, tiny boot metadata, and approved indexes. Full reader asset packs are
+  published separately under same-origin `/dataset/**`.
 - React service-worker scope, cache names, preview ports, output directories,
   and generated manifests must be isolated from the shipped Svelte app during
   the dual-build period.
@@ -420,6 +427,11 @@ Rules:
   `quran-atlas` IndexedDB v7 stores, settings keys, record shapes, and
   one-writer-per-store/key ownership rules. React must not bump schema or run a
   migration that breaks the shipped Svelte app before cutover.
+- During dual-build, rich React pack statuses are state-machine vocabulary, not
+  permission to persist new shapes into existing v7 stores. React may persist
+  only validator-compatible records through the approved storage writers; any
+  new per-pack metadata store, schema shape, or DB version requires a separate
+  migration spec with docs, tests, cross-tab proof, and rollback.
 - React runtime may consume only same-origin `/dataset/**` outputs. `data/`,
   `data/catalog/`, `data/normalized/`, `data/taxonomy/`, and upstream providers
   such as quran.ws are build-only and must never be fetched by the browser.
@@ -474,9 +486,10 @@ Verification must scale from component proof to app parity.
 Required layers:
 
 - Context7 stack verification before child specs lock API or tooling details.
-- Typecheck.
-- Lint.
-- Unit tests.
+- React-specific typecheck through `check:react` or the composite React gate.
+- React-specific lint/static checks through `check:react` or the composite React
+  gate.
+- React unit/component tests through `test:react` or the composite React gate.
 - Component tests.
 - Storybook stories and interaction tests.
 - Accessibility checks.
@@ -484,6 +497,13 @@ Required layers:
 - Offline/service-worker journeys.
 - Visual regression gate.
 - Bundle/chunk budget.
+- React e2e must run through a React-specific Playwright config and script such
+  as `test:e2e:react` that targets `dev:react`/`preview:react` and
+  `dist-react/`; raw current Playwright commands can false-pass against Svelte
+  during dual-build.
+- A composite `validate:react` gate must exist before cutover readiness and
+  must include React static checks, registry/token checks, unit/component tests,
+  Storybook tests, `build:react`, React e2e, visual regression, and docs checks.
 - Data/source-pack checks when source catalogs, dataset builders,
   `public/dataset/**`, asset-pack manifests, source-data flow, or release dataset
   behavior changes.
@@ -548,6 +568,14 @@ React parity requires golden proof for at least:
 - desktop reader;
 - dark-mode reader;
 - sepia reader.
+
+Golden proof must be expressed as named route-state fixtures, not independent
+route and state lists. Each fixture must record route, seed state, viewport and
+theme/night-mode coverage, proof owner, required assertions, and accepted
+difference status. Required coverage includes populated bookmarks, Juz rows,
+both Verse and Mushaf settings modes, onboarding inner screens, Daily Wird
+detail/continue flows, search unavailable/results states, and night recitation
+mode `off`, `on`, and `auto` on reader/settings/drawer proof.
 
 Golden proof must reference committed `docs/ui-references/<surface>/<component>/`
 intent where visual direction is involved. Storybook stories demonstrate
@@ -620,6 +648,10 @@ Static checks should reject:
   docs, accessibility expectations, or proof references.
 - React build outputs, service-worker scopes, or cache names that collide with
   the shipped Svelte app before cutover.
+- React/Svelte cross-tree imports, except through explicitly documented
+  framework-neutral shared directories with typed interfaces and tests.
+- React app-shell builds that copy Mushaf page SVG bodies or legacy Mushaf page
+  paths into `dist-react/`.
 
 ## Agent Instructions And Skills
 
@@ -667,6 +699,10 @@ Each child spec must include parent/dependency prerequisites, required reads,
 allowed files/directories, forbidden changes, deliverables, acceptance criteria,
 targeted verification commands, docs updates, rollback or failure handling, and
 next-spec handoff notes.
+Every child spec's required reads must include `AGENTS.md` and
+`docs/context/repo-structure.md`; specs that add or change scripts, packages,
+CI, verification commands, or tool configuration must also read `package.json`
+and `docs/tech-stack.md`.
 
 Minimum child specs:
 
@@ -679,8 +715,10 @@ Minimum child specs:
 2. **01 React App Shell And Dual Build**
    Create the `src-react` app shell, independent Vite entry, routing skeleton,
    provider structure, non-deploy React dev/build/preview scripts, isolated
-   `dist-react/` output, isolated service-worker/cache scope, and
-   framework-neutral runtime-sharing rules while Svelte remains shipped.
+   `dist-react/` output, isolated app-shell public asset strategy, React
+   `check:react` and `test:e2e:react` gates, import-boundary checks, isolated
+   service-worker/cache scope, and framework-neutral runtime-sharing rules while
+   Svelte remains shipped.
 
 3. **02 Svelte Reference Baseline**
    Freeze the current Svelte reference routes, fixtures/storage state, viewport
@@ -723,7 +761,8 @@ Minimum child specs:
 10. **08A Mushaf Install-On-Demand Asset Strategy**
     Refine child spec 08 for React-only Mushaf page handling: no Mushaf page SVG
     bodies in the React app artifact, edition-aware paths only, no legacy page
-    support, service-worker-owned asset-pack installs, and split app/asset-pack
+    support in React route/install plans, service-worker-owned asset-pack
+    installs, executable asset-size/path checks, and split app/asset-pack
     shipping.
 
 11. **09 Reader Surface Parity**
@@ -734,14 +773,17 @@ Minimum child specs:
 
 12. **10 Navigation, Settings, And Onboarding Parity**
     Rebuild Surah/Juz/bookmark navigation, settings, source/storage controls,
-    and onboarding against v1 product scope, including atomic recitation bundle
+    and onboarding against v1 product scope, including atomic reader asset bundle
     activation and install-before-activate source selection.
 
 13. **11 Search And Index Parity**
     Build full-text search across Arabic text, translations, transliteration or
     index data where shipped, tafsir, and curated metadata. Search/index packs
-    must follow install-before-activate, offline unavailable states, and golden
-    proof.
+    must follow install-before-activate, offline unavailable states, exact
+    search artifact URL/cache contracts, translation alias resolution, and
+    golden proof. If curated metadata implementation is still owned by child
+    spec 12, this spec defines extension hooks and child spec 12 adds metadata
+    corpus/index proof.
 
 14. **12 Curated Metadata Parity**
     Rebuild curated reader-attached metadata lanes that are in v1 scope, using
@@ -762,13 +804,16 @@ Minimum child specs:
 
 18. **16 Cutover Readiness**
     Prove parity gates, define rollback, document staging/dev soak policy,
-    confirm CI/deploy artifact routing, and prepare docs/skill updates without
-    removing Svelte.
+    confirm CI/deploy artifact routing for both the React app artifact and
+    same-origin asset-pack artifact set, and prepare docs/skill updates without
+    removing Svelte. Search is the only deferrable parity lane unless this
+    master spec and affected child specs are amended in the same change.
 
 19. **17 Production Entry Flip With Svelte Retained**
     Flip the production entry only after readiness approval, keep Svelte source
     and dependencies available for rollback, update `docs/tech-stack.md`, docs,
-    scripts, and CI/deploy routing, then run full validation.
+    scripts, React service-worker migration/rollback choreography, and CI/deploy
+    routing for app and asset-pack artifacts, then run full validation.
 
 20. **18 Svelte Removal**
     Remove Svelte-only source, dependencies, scripts, generated context entries,

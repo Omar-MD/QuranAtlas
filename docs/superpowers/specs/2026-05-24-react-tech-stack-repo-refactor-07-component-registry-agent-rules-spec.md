@@ -38,6 +38,8 @@ In scope:
 - Add forbidden-pattern checks for direct primitive bypasses that can be checked
   reliably at this stage.
 - Define how later product component and page recipe specs extend the registry.
+- Establish or extend the composite non-deploy React verification command
+  `validate:react`.
 
 Out of scope:
 
@@ -158,6 +160,21 @@ React gate does not exist yet, add an interim command such as
 `pnpm run check:react-registry` and state which later child spec makes it part of
 the full React validation gate.
 
+By the end of this spec, a composite `pnpm run validate:react` must exist. The
+composite gate must include, at minimum:
+
+- `check:react`;
+- token/design literal checks from child spec `03`;
+- registry validation;
+- `test:react`;
+- `test:storybook:react`;
+- `build:react`;
+- `docs:check`.
+
+Child spec `15` must add React e2e and visual regression to the same composite
+gate before readiness. Any CI job added for React before cutover must be
+non-deploy and must never upload `dist-react/` to the deploy workflow.
+
 Forbidden-pattern checks should cover:
 
 - direct Radix imports outside `src-react/components/ui/**` behavior wrappers;
@@ -171,6 +188,8 @@ Forbidden-pattern checks should cover:
 - Versioned component registry file.
 - Registry schema or typed validator.
 - Registry validation command.
+- Composite React validation command, with child spec `15` responsible for the
+  final e2e/visual additions.
 - Initial entries for child spec `06` components.
 - Agent-facing component workflow docs.
 - Updated root/repo-local instructions where appropriate.
@@ -184,6 +203,8 @@ Forbidden-pattern checks should cover:
   exemption is present.
 - Registry validation fails on unsorted or duplicate component ids.
 - Direct Radix imports outside owned wrappers are blocked by a durable check.
+- `validate:react` prevents later React code from relying on current
+  Svelte-only `validate`.
 - Agent docs point future UI work to the registry before component creation.
 - Current Svelte app remains the shipped source of truth until cutover docs say
   otherwise.
@@ -202,6 +223,8 @@ tooling changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
+pnpm run validate:react
 pnpm run build:react
 ```
 
@@ -209,6 +232,8 @@ Expected result:
 
 - Registry check passes for real entries.
 - Registry negative fixtures fail when run by their unit tests.
+- Composite React validation passes; child spec `15` later extends it with
+  e2e/visual gates before readiness.
 - Existing Svelte checks remain unchanged.
 - Docs checks are clean.
 

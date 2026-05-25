@@ -13,8 +13,10 @@
 
 Build full-text search and index parity for the React app across Arabic Quran
 text, translations, transliteration or index data where shipped, tafsir, and
-curated metadata. Search must be offline-first, install-before-activate, and
-explicit about missing or unavailable indexes.
+curated metadata extension hooks. Search must be offline-first,
+install-before-activate, and explicit about missing or unavailable indexes.
+Child spec `12` owns adding the approved curated metadata corpus/index content
+to the search framework unless this spec implements those adapters first.
 
 ## Current Docs Requirement
 
@@ -48,6 +50,7 @@ Out of scope:
 ## Required Reads
 
 - `AGENTS.md`
+- `docs/context/repo-structure.md`
 - `docs/product-info.md`
 - `docs/context/architecture.md`
 - `docs/context/data-model.md`
@@ -56,6 +59,7 @@ Out of scope:
 - `docs/context/surfaces/navigate.md`
 - `docs/context/surfaces/configure.md`
 - `docs/context/surfaces/infra.md`
+- `docs/tech-stack.md`
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Parent master spec
@@ -71,6 +75,8 @@ Allowed create:
 - `src-react/offline/search/**`
 - `scripts/data/search/**` only if search-index build output is introduced
 - `public/dataset/search/**` only through dataset build scripts, not hand edits
+- `docs/context/surfaces/search.md` only if this spec creates a new top-level
+  search e2e surface.
 - Unit tests under `tests/unit/**`
 - E2E tests under `tests/e2e/navigate/**`, `tests/e2e/read/**`, or a new
   `tests/e2e/search/**` only if a new search surface dossier is also created
@@ -81,6 +87,8 @@ Allowed modify:
 - Manifest inventory and route definitions for search index assets.
 - Asset Management route for search/index pack install state.
 - Component registry and page recipes for search UI.
+- Continuity/route docs when a new `#/search` route or search overlay affects
+  launch restore or `lastSurface`.
 
 Forbidden modify:
 
@@ -105,6 +113,17 @@ Search results must identify source lane, reference, snippet, match reason, and
 pack availability. If a selected source pack is unavailable, the UI must say so
 instead of silently searching a different baseline pack.
 
+Translation search must preserve the existing Hafs-keyed translation alignment
+contract. Index artifacts or result adapters must store the source Hafs
+reference and resolve the active-riwayah display/navigation reference through
+the same `_verse-aliases.json` roles used by Reader: identity, merged, primary,
+continuation, and none. Tests must cover Hafs, Warsh, and Qalun (`qaloon`),
+including DP-aligned surahs 7, 27, 36, 40, 41, 56, and 57.
+
+If curated metadata lanes are not implemented until child spec `12`, this spec
+must create the search corpus extension contract, unavailable state, and tests
+that prove adding metadata later cannot search unavailable packs as if installed.
+
 ## Index Pack Contract
 
 Search/index packs must follow child spec `08`:
@@ -119,6 +138,20 @@ Search/index packs must follow child spec `08`:
 
 Large non-URL index artifacts may use OPFS only after a documented decision
 appendix proves Cache Storage is insufficient.
+
+This spec must choose and document the search index URL schema before
+implementation. Acceptable shapes include a versioned pack manifest plus shards,
+for example:
+
+```text
+/dataset/search/{packId}/manifest.json
+/dataset/search/{packId}/shards/{shardId}.json
+```
+
+or a deliberately retained single-file index such as
+`/dataset/search-index.json`. The chosen schema must update manifest inventory,
+service-worker route matching, cache names, install plans, and tests in the same
+change.
 
 ## UI Contract
 
@@ -156,7 +189,11 @@ after this spec defines their route and state ownership.
 - Offline search works only when required index packs are installed.
 - Missing search/index packs show explicit unavailable/install states.
 - Search result navigation preserves reader route contract.
+- Translation search references use `_verse-aliases.json` for Warsh and Qalun
+  (`qaloon`) result display/navigation.
 - Search index build/runtime boundaries are documented and checked.
+- Search index URL schema, manifest membership, service-worker route matching,
+  and cache naming are defined before UI consumes indexes.
 - Product docs are updated if search is intentionally deferred before parity.
 
 ## Verification
@@ -164,6 +201,7 @@ after this spec defines their route and state ownership.
 Run targeted search unit tests and dataset checks when index builders change:
 
 ```bash
+pnpm run test:react -- tests/unit/search
 pnpm run docs:check
 git diff --check
 ```
@@ -178,8 +216,9 @@ If app runtime, route, or offline behavior changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
-pnpm exec playwright test tests/e2e/read tests/e2e/navigate --reporter=line
+pnpm run test:e2e:react -- tests/e2e/read tests/e2e/navigate --reporter=line
 ```
 
 Expected result:

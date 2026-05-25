@@ -9,6 +9,7 @@
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-06-owned-shadcn-radix-component-layer-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-07-component-registry-agent-rules-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08-offline-storage-asset-pack-architecture-spec.md`
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08a-mushaf-install-on-demand-asset-strategy-spec.md`
 
 ## Purpose
 
@@ -50,8 +51,9 @@ In scope:
 - Render active verified riwayah/text-style and Mushaf edition assets only.
 - Resolve Hafs-keyed translations through `_verse-aliases.json` for Warsh and
   Qalun (`qaloon`).
-- Render active translation, tafsir preview/sheet, and curated knowledge lane
-  states that are already in v1 scope.
+- Render active translation and tafsir preview/sheet.
+- Define reader-attached metadata slots and unavailable/empty states; child spec
+  `12` owns full curated metadata adapter/component parity.
 - Rebuild reader chrome, reader settings entry points, edge indicators, mode
   switching, typography controls, and reader comfort controls.
 - Use TanStack Virtual where long reader surfaces need virtualization.
@@ -70,6 +72,7 @@ Out of scope:
 
 - `AGENTS.md`
 - `DESIGN.md`
+- `docs/context/repo-structure.md`
 - `docs/context/architecture.md`
 - `docs/context/data-model.md`
 - `docs/context/source-data-flow.md`
@@ -81,7 +84,7 @@ Out of scope:
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Parent master spec
-- Child specs `02`, `06`, `07`, and `08`
+- Child specs `02`, `06`, `07`, `08`, and `08A`
 
 ## Allowed Files And Directories
 
@@ -125,17 +128,29 @@ Verse mode must preserve:
 - no silent fallback from Hafs/Warsh to Qalun;
 - translation alias roles: identity, merged, primary, continuation, none;
 - tafsir source unavailable states;
-- knowledge lane optional behavior that does not block base rendering;
+- metadata slot optional behavior that does not block base rendering;
 - bismillah and surah header behavior;
 - reader typography and spacing controls;
 - cross-surah next/previous behavior;
 - edge indicators, ambient reader chrome, and focus/keyboard behavior.
+- live settings updates while mounted: toggling translation visibility,
+  switching translation, and switching tafsir source must update the visible
+  reader or open tafsir preview/sheet without a route reload.
+- verse identity DOM contract: verse rows/numbers expose the tokenized verse key
+  needed by bookmark toggles, landing pulse, gestures, and decorators through
+  `data-token-key`. New verse-grain readers must resolve through this contract,
+  not legacy `data-verse-key` assumptions.
 
 Mushaf mode must preserve:
 
 - `#/m/:page` route;
 - active riwayah and Mushaf edition selection from settings;
 - manifest validation before SVG page render;
+- edition-aware paths only:
+  `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/...`;
+- React legacy Mushaf page paths rejected in route code, install plans, and
+  service-worker rules;
+- edition-aware React page-pack cache names;
 - same-origin sanitized SVG page loading;
 - no Qalun page fallback under a stale Hafs/Warsh label;
 - page count clamping and route replacement;
@@ -143,6 +158,12 @@ Mushaf mode must preserve:
 - Auto, Fit page, and Fit width view modes;
 - page jump input behavior and focus restore;
 - adjacent-page warmup that never replaces the visible page on failure.
+
+Mushaf ready-state visual proof must assert the current QuranAtlas contract:
+the page is unframed, with no card, sheet, shadow, footer, or scrubber added
+around the SVG; visible ready controls are limited to the page chip and
+Auto/Fit page/Fit width control. Page-jump focus must restore correctly, and
+edge/swipe behavior must be suppressed while the page-jump input is active.
 
 ## Virtualization Contract
 
@@ -199,7 +220,11 @@ desktop, light, sepia, dark, and reduced-motion states where relevant.
 - React reader renders only verified active assets or explicit unavailable
   states.
 - Warsh and Qalun (`qaloon`) translation display uses `_verse-aliases.json`.
-- Mushaf page route and SVG rendering preserve the existing product contract.
+- Mushaf page route and SVG rendering use edition-aware React paths only and
+  reject legacy React page paths.
+- Reader live settings updates are covered without route reload.
+- Verse identity DOM contract supports bookmarks, landing pulse, and gestures.
+- Mushaf ready-state visual and focus invariants are covered.
 - Virtualization does not break deep links, scroll restore, focus, or
   accessibility.
 - Reader components are registered, tested, storied, and visually proved.
@@ -211,6 +236,7 @@ Run targeted unit/component tests and Storybook tests introduced by the
 implementation, plus:
 
 ```bash
+pnpm run test:react -- tests/unit/read
 pnpm run docs:check
 git diff --check
 ```
@@ -218,14 +244,21 @@ git diff --check
 Run the owning e2e specs for browser-only proof, for example:
 
 ```bash
-pnpm exec playwright test tests/e2e/read --reporter=line
+pnpm run test:e2e:react -- tests/e2e/read --reporter=line
 ```
 
 If React route, build, storage, or service-worker code changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
+```
+
+If Mushaf path, cache, or app artifact checks are touched, also run:
+
+```bash
+pnpm run check:react-mushaf-assets
 ```
 
 Expected result:

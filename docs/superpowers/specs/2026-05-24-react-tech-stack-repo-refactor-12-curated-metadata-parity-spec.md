@@ -46,11 +46,13 @@ Out of scope:
 ## Required Reads
 
 - `AGENTS.md`
+- `docs/context/repo-structure.md`
 - `docs/product-info.md`
 - `docs/context/source-data-flow.md`
 - `docs/context/data-model.md`
 - `docs/context/surfaces/read.md`
 - `docs/context/surfaces/infra.md`
+- `docs/tech-stack.md`
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Parent master spec
@@ -110,6 +112,8 @@ the owning surface dossier, and run the relevant data checks.
 - React metadata adapters and reader-attached metadata components for approved v1
   lanes.
 - Search/navigation metadata hooks where those lanes are in scope.
+- Search corpus/index extension for approved metadata lanes through the contract
+  from child spec `11`.
 - Registered metadata components with stories, tests, accessibility proof, and
   visual proof.
 - Explicit available, empty, missing, stale, invalid, offline, and unavailable
@@ -122,6 +126,8 @@ the owning surface dossier, and run the relevant data checks.
 - Reader text renders even when optional metadata is missing or invalid.
 - Metadata unavailable states are explicit where user-visible.
 - Search and navigation consume only verified metadata indexes.
+- Metadata search integration extends child spec `11` without searching
+  unavailable metadata packs as if installed.
 - Metadata components are registered, tested, storied, and visually proved.
 - Product docs match the metadata lanes actually promised for React parity.
 - Removed-scope annotation/review branches are absent.
@@ -131,6 +137,7 @@ the owning surface dossier, and run the relevant data checks.
 Run targeted metadata tests, plus:
 
 ```bash
+pnpm run test:react -- tests/unit
 pnpm run docs:check
 git diff --check
 ```
@@ -145,6 +152,7 @@ If app runtime behavior changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
 ```
 

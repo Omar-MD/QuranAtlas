@@ -8,6 +8,7 @@
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08-offline-storage-asset-pack-architecture-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-09-reader-surface-parity-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-10-navigation-settings-onboarding-parity-spec.md`
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-11-search-index-parity-spec.md`
 
 ## Purpose
 
@@ -46,6 +47,7 @@ Out of scope:
 ## Required Reads
 
 - `AGENTS.md`
+- `docs/context/repo-structure.md`
 - `docs/context/architecture.md`
 - `docs/context/data-model.md`
 - `docs/context/events.md`
@@ -54,10 +56,11 @@ Out of scope:
 - `docs/context/surfaces/configure.md`
 - `docs/context/surfaces/onboard.md`
 - `docs/context/surfaces/infra.md`
+- `docs/tech-stack.md`
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Parent master spec
-- Child specs `08`, `09`, and `10`
+- Child specs `08`, `09`, `10`, and `11`
 
 ## Allowed Files And Directories
 
@@ -96,6 +99,8 @@ Excluded operational routes must not become launch surfaces:
 - `#/onboarding`;
 - `#/settings`;
 - `#/assets`;
+- search routes or overlays introduced by child spec `11`, unless explicitly
+  approved as launchable in continuity docs and tests;
 - any temporary modal, sheet, or install route introduced later.
 
 ## Bookmark Contract
@@ -106,6 +111,8 @@ Bookmarks remain reading-continuity data:
 - key format: active riwayah plus verse key;
 - Hafs, Warsh, and Qalun (`qaloon`) bookmarks are separate records;
 - verse-number toggle is the primary reader action;
+- bookmark toggles, landing pulse, and gesture/decorator integrations use the
+  reader `data-token-key` verse identity DOM contract from child spec `09`;
 - grouped lists show only active-riwayah bookmarks;
 - bookmark jumps route to the verse and pulse the landing target;
 - cross-tab updates refresh indicators and lists.
@@ -138,6 +145,7 @@ Bookmarks must not become notes, tags, comments, or review cards.
 Run targeted continuity tests, plus:
 
 ```bash
+pnpm run test:react -- tests/unit/read tests/unit/navigate tests/unit/infra
 pnpm run docs:check
 git diff --check
 ```
@@ -145,13 +153,14 @@ git diff --check
 Run owning e2e specs for browser-only proof:
 
 ```bash
-pnpm exec playwright test tests/e2e/onboard tests/e2e/navigate tests/e2e/infra --reporter=line
+pnpm run test:e2e:react -- tests/e2e/read tests/e2e/onboard tests/e2e/navigate tests/e2e/infra --reporter=line
 ```
 
 If router, storage, or app bootstrap behavior changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
 ```
 

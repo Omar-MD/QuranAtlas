@@ -7,6 +7,7 @@
 - Depends on child specs:
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-02-svelte-reference-baseline-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-05-visual-regression-provider-selection-spec.md`
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08a-mushaf-install-on-demand-asset-strategy-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-09-reader-surface-parity-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-10-navigation-settings-onboarding-parity-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-11-search-index-parity-spec.md`
@@ -62,6 +63,7 @@ Out of scope:
 
 - `AGENTS.md`
 - `DESIGN.md`
+- `docs/context/repo-structure.md`
 - `docs/context/style-map.md`
 - `docs/ui-references/README.md`
 - `docs/context/architecture.md`
@@ -70,11 +72,22 @@ Out of scope:
 - `docs/context/surfaces/configure.md`
 - `docs/context/surfaces/onboard.md`
 - `docs/context/surfaces/infra.md`
+- `docs/tech-stack.md`
 - `tests/e2e/AGENTS.md`
 - Parent master spec
-- Child specs `02`, `05`, and `09` through `14`
+- Child specs `02`, `05`, `08A`, and `09` through `14`
 
 ## Golden Route Matrix
+
+The golden matrix must be named route-state fixtures. Each fixture records:
+
+- fixture id;
+- route or overlay entry;
+- seed state and installed/offline asset state;
+- viewport and theme/night-mode coverage;
+- proof owner;
+- visual, accessibility, keyboard/focus, and parity assertions;
+- accepted-difference status.
 
 Cover at least:
 
@@ -93,6 +106,9 @@ Cover at least:
 - asset pack not installed, installed/verified, stale/unavailable, installing,
   and failed states;
 - offline mode with app shell and installed assets.
+- Mushaf ready state with no added frame/card/sheet/shadow/footer/scrubber,
+  page chip plus Auto/Fit page/Fit width controls, page-jump focus restore, and
+  edge/swipe suppression while jump input is active.
 
 Viewports:
 
@@ -108,6 +124,8 @@ Themes:
 - light;
 - sepia;
 - dark;
+- night recitation mode `off`, `on`, and `auto`, at least on reader, settings
+  shell, drawer, and Mushaf fixtures;
 - reduced motion where behavior is motion-sensitive.
 
 ## Accessibility Contract
@@ -168,6 +186,9 @@ Forbidden modify:
 - Accessibility scans and keyboard/focus journeys pass.
 - Visual regression gate is wired and passing or explicitly approved as a
   temporary local-only gate by child spec `05`.
+- Any temporary local-only visual gate from child spec `05` is promoted to the
+  durable selected strategy before child spec `16`; it cannot satisfy cutover
+  readiness as a temporary exception.
 - Svelte-reference differences are resolved or documented as accepted v1
   product differences.
 - React output remains non-deploy during this spec.
@@ -177,6 +198,7 @@ Forbidden modify:
 Run the React golden route command introduced by implementation, for example:
 
 ```bash
+pnpm run validate:react
 pnpm run test:e2e:react
 pnpm run visual:react
 pnpm run docs:check
@@ -188,6 +210,7 @@ run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
 ```
 

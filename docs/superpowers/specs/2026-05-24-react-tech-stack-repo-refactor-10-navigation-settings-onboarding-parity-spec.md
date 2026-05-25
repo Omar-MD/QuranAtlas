@@ -8,6 +8,7 @@
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-02-svelte-reference-baseline-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-07-component-registry-agent-rules-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08-offline-storage-asset-pack-architecture-spec.md`
+  - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-08a-mushaf-install-on-demand-asset-strategy-spec.md`
   - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-09-reader-surface-parity-spec.md`
 
 ## Purpose
@@ -37,7 +38,7 @@ In scope:
 - Rebuild About route `#/about`.
 - Rebuild first-run onboarding route `#/onboarding`.
 - Preserve transient `#/settings` behavior.
-- Preserve atomic recitation bundle activation.
+- Preserve atomic reader asset bundle activation.
 - Preserve install-before-activate for optional riwayah, text, Mushaf,
   translation, tafsir, metadata, and search/index packs.
 - Add registry entries, stories, tests, visual proof, and e2e coverage.
@@ -55,6 +56,7 @@ Out of scope:
 
 - `AGENTS.md`
 - `DESIGN.md`
+- `docs/context/repo-structure.md`
 - `docs/product-info.md`
 - `docs/context/architecture.md`
 - `docs/context/data-model.md`
@@ -65,10 +67,11 @@ Out of scope:
 - `docs/context/surfaces/onboard.md`
 - `docs/context/surfaces/read.md`
 - `docs/context/surfaces/infra.md`
+- `docs/tech-stack.md`
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Parent master spec
-- Child specs `02`, `07`, `08`, and `09`
+- Child specs `02`, `07`, `08`, `08A`, and `09`
 
 ## Allowed Files And Directories
 
@@ -128,7 +131,7 @@ React settings must preserve:
 - theme, night mode, translation visibility, typography, and reader comfort
   controls through their sole writers;
 - nested asset pickers for compatible source choices;
-- active recitation bundle writes as one atomic unit;
+- active reader asset bundle writes as one atomic unit;
 - `#/assets` excluded from launch restore and `lastSurface`;
 - install, reinstall, verify, set active, and delete actions per asset row;
 - blocked delete for active optional assets;
@@ -197,6 +200,7 @@ Register and prove:
 Run targeted unit/component tests and Storybook tests, plus:
 
 ```bash
+pnpm run test:react -- tests/unit/navigate tests/unit/configure
 pnpm run docs:check
 git diff --check
 ```
@@ -204,7 +208,7 @@ git diff --check
 Run owning e2e specs:
 
 ```bash
-pnpm exec playwright test tests/e2e/navigate tests/e2e/configure tests/e2e/onboard --reporter=line
+pnpm run test:e2e:react -- tests/e2e/navigate tests/e2e/configure tests/e2e/onboard --reporter=line
 ```
 
 If React router, settings storage, source-pack behavior, or build tooling
@@ -212,6 +216,7 @@ changes, also run:
 
 ```bash
 pnpm run check
+pnpm run check:react
 pnpm run build:react
 ```
 

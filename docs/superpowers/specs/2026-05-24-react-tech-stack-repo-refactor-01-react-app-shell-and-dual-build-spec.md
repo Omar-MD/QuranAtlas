@@ -27,6 +27,8 @@ spec.
 - Current-doc facts used:
   - Vite build output can be isolated with `vite build --outDir <dir>`.
   - Vite config can set a custom project `root`.
+  - Vite `publicDir` controls copied public assets and can be isolated from the
+    repository default.
   - Vite supports multiple HTML entries through `build.rolldownOptions.input`.
   - Vite preview can be given an explicit port with `vite preview --port <port>`.
 - Command:
@@ -56,6 +58,14 @@ In scope:
   `dist-react/`.
 - Add non-deploy React scripts such as `dev:react`, `build:react`, and
   `preview:react`.
+- Add React static gates named `typecheck:react`, `lint:react`, and
+  `check:react`, or extend existing commands while still preserving these React
+  script names, so `src-react/**/*.ts?(x)` is covered without changing current
+  Svelte behavior.
+- Add a React-specific Playwright config and `test:e2e:react` script that
+  targets `dev:react`/`preview:react` and `dist-react/` so later e2e proof
+  cannot accidentally run against Svelte.
+- Add a durable import-boundary check for React/Svelte cross-tree imports.
 - Reserve an isolated preview port for React.
 - Establish a framework-neutral runtime-sharing rule, even if no shared runtime
   extraction happens in this child spec.
@@ -80,6 +90,9 @@ Out of scope:
 - `docs/context/architecture.md`
 - `docs/tech-stack.md`
 - `package.json`
+- `tsconfig.json`
+- `eslint.config.js`
+- `playwright.config.js`
 - `.github/workflows/ci.yml`
 - `.github/workflows/deploy.yml`
 - Parent master spec
@@ -124,15 +137,30 @@ config file or a mode/env branch, but it must be obvious from scripts and docs
 which path is non-deploy. The React preview server must use a port that does not
 collide with the Svelte preview server.
 
+React must not copy the repository `public/` directory wholesale into
+`dist-react/`. The React build must use a React-scoped public directory or an
+explicit allowlist copy step for app-shell assets, essential fonts/icons, tiny
+boot metadata, and approved indexes. Mushaf page SVG bodies and legacy Mushaf
+page directories must stay out of the React app artifact; child spec `08A` owns
+the later asset-pack publication details.
+
 React and Svelte must not import each other. Any shared runtime code must first
 move into a framework-neutral location with typed interfaces, docs updates, and
 tests proving both app trees can consume it without importing user-facing
 surfaces.
 
+Cross-tree import rules must be executable, for example through ESLint
+`no-restricted-imports` or a durable custom check with negative fixtures. A
+manual `git diff` inspection is not enough.
+
 ## Deliverables
 
 - `src-react/` exists with a minimal app shell and clearly named subdirectories.
 - Non-deploy React scripts exist and build into `dist-react/`.
+- React static gates exist for typecheck, lint/static checks, and import
+  boundaries.
+- React e2e config and `test:e2e:react` script exist and target the React server
+  and `dist-react/` output.
 - Current Svelte scripts remain behaviorally unchanged.
 - Docs identify `dist/` as the only deployable artifact until cutover.
 - Docs identify `dist-react/` as local/CI proof only until cutover.
@@ -144,8 +172,14 @@ surfaces.
 - Running the existing Svelte build path still produces `dist/`.
 - Running the React build path produces `dist-react/`.
 - Existing deploy workflow still consumes only `dist/`.
-- `git diff` shows no React import from `src/**` Svelte modules and no Svelte
-  import from `src-react/**`.
+- The import-boundary check fails React imports from Svelte app trees and Svelte
+  imports from React app trees, except for explicitly documented
+  framework-neutral shared directories.
+- React static gates cover `src-react/**/*.ts?(x)`.
+- React e2e smoke proof runs through `test:e2e:react`, not the current Svelte
+  Playwright config.
+- React output does not contain Mushaf page SVG bodies copied from
+  `public/dataset/mushaf-pages/**`.
 - Any new package, script, or CI gate is reflected in `docs/tech-stack.md`.
 - Any new repo shape is reflected in `docs/context/repo-structure.md`.
 - Generated context docs are up to date if doc generation touches inventories.
@@ -157,6 +191,8 @@ Run the smallest proof commands that match the implementation:
 ```bash
 pnpm run build
 pnpm run build:react
+pnpm run check:react
+pnpm run test:e2e:react
 pnpm run docs:check
 git diff --check
 ```
@@ -172,6 +208,7 @@ Expected result:
 
 - Existing `pnpm run build` still succeeds and writes `dist/`.
 - React build succeeds and writes `dist-react/`.
+- React static and e2e smoke gates pass against the React app path.
 - `pnpm run docs:check` reports `derive: all clean`.
 - `git diff --check` exits with no whitespace errors.
 
