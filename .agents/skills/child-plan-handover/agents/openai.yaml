@@ -1,0 +1,4 @@
+interface:
+  display_name: "Child Plan Handover"
+  short_description: "Coordinate child-plan handovers"
+  default_prompt: "Use $child-plan-handover before executing this child plan from the master spec."
