@@ -1,5 +1,7 @@
 import type { Category } from '../infra/sw/route-defs'
 import type { Riwayah } from '../packs/riwayah'
+import { getRiwayahPackageStatus } from '../packs/riwayah'
+import { planRiwayahPackageInstall as planRiwayahPackageInstallFromIndex } from './riwayah-packages'
 
 type SourceAssetKind = 'translation' | 'tafsir'
 
@@ -19,13 +21,11 @@ export async function getPageAssetManifest(riwayah: Riwayah) {
 }
 
 export async function planRiwayahPackageInstall(riwayah: Riwayah) {
-  const packages = await import('./riwayah-packages')
-  return packages.planRiwayahPackageInstall(riwayah)
+  return planRiwayahPackageInstallFromIndex(riwayah)
 }
 
 export async function refreshRiwayahPackageStatus(riwayah: Riwayah) {
-  const riwayahPacks = await import('../packs/riwayah')
-  return riwayahPacks.getRiwayahPackageStatus(riwayah)
+  return getRiwayahPackageStatus(riwayah)
 }
 
 export async function getStorageBudget() {

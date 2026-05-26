@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import 'fake-indexeddb/auto'
+import { cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 
 function formatConsoleArg(value) {
@@ -49,6 +50,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  cleanup()
   vi.restoreAllMocks()
 })
 
@@ -60,6 +62,14 @@ if (typeof globalThis.BroadcastChannel === 'undefined') {
       this.postMessage = () => {}
       this.close = () => {}
     }
+  }
+}
+
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
   }
 }
 

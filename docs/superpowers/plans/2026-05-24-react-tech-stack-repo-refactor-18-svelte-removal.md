@@ -37,6 +37,7 @@ Read these before editing:
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Master spec `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- Shared handoff log `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - Child spec/plan `17` and its production flip commit/evidence
 
 ## Dependency Gates

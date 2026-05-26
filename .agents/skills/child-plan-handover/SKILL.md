@@ -15,10 +15,33 @@ Before editing product code, read:
 
 - The master spec or parent plan.
 - The current child plan.
-- Any implementation log, completion notes, PR notes, commit messages, or sibling-plan summaries named by the master spec.
+- The shared handoff log named by the master spec or parent plan.
+- Any completion notes, PR notes, commit messages, or sibling-plan summaries named by the master spec.
 - `git status` and relevant diffs so unrelated dirty work is not mistaken for prior completion.
 
-If the handover trail is missing, say so explicitly and infer only from evidence in the repo.
+If the master spec names no shared log, say so explicitly and use the nearest
+coordination artifact only as a fallback. Do not invent per-agent or per-plan
+handoff files unless the master spec explicitly splits the logs.
+
+## Shared Handoff Log
+
+Prefer one constant log per master-spec track. The master spec or parent plan
+should name the path, for example:
+
+```text
+Shared handoff log:
+docs/superpowers/plans/<master-slug>-handoff-log.md
+```
+
+When a shared log exists:
+
+- read it before reconciling the current child plan;
+- append or update the entry for the current child plan before handing over;
+- record blockers there immediately instead of leaving them only in chat;
+- keep sibling-plan summaries in that log unless the master spec names a
+  different artifact;
+- include exact validation commands and results so later agents can trust the
+  trail without reading chat history.
 
 ## Reconcile Before Work
 
@@ -38,13 +61,13 @@ If the plan cannot be updated safely because the master spec is unclear or contr
 
 - Keep work inside the current child plan unless the reconciliation step justifies a scoped plan update.
 - Preserve unrelated dirty files and stage only explicit paths you changed.
-- Record newly discovered blockers immediately in the plan or designated log instead of leaving them only in chat.
+- Record newly discovered blockers immediately in the shared handoff log and, when relevant, the current plan.
 - If a validation, dependency, or architecture choice differs from the master spec, record the reason and the new expected downstream impact.
 - Use the repo's normal implementation, testing, review, and verification skills after this handover check.
 
 ## Completion Summary
 
-Before handing over, update the child plan, implementation log, or nearest coordination artifact with:
+Before handing over, update the shared handoff log with:
 
 - Status: complete, partial, blocked, or retired.
 - Summary: what landed and which plan items it satisfies.

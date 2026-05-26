@@ -12,6 +12,17 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | Build tool | **Vite** | `^8.0.10` | Dev server, HMR, production bundling (Rolldown-powered) |
 | UI framework | **Svelte** | `^5.55.7` | Runes-based reactivity; components compile to tight vanilla JS |
 | Svelte ↔ Vite | **@sveltejs/vite-plugin-svelte** | `^7.0.0` | Svelte integration for Vite's module graph |
+| React | **React** + **React DOM** | `^19.2.6` | Isolated preview app under `src-react/**`; not shipped until cutover |
+| React ↔ Vite | **@vitejs/plugin-react** | `^6.0.2` | React-only Vite integration in `vite.react.config.js` |
+| React styling authoring | **Tailwind CSS v4** + `@tailwindcss/vite` | `^4.3.0` | React-only utility authoring mapped to QuranAtlas semantic tokens; scoped to `vite.react.config.js` during dual-build |
+| React behavior primitives | **Radix UI React primitives** | accordion `^1.2.12`, checkbox `^1.3.3`, dialog `^1.1.15`, dropdown menu `^2.1.16`, popover `^1.1.15`, progress `^1.1.8`, select `^2.2.6`, slider `^1.3.6`, slot `^1.2.4`, switch `^1.2.6`, tabs `^1.1.13`, toast `^1.2.15`, tooltip `^1.2.8` | Internal implementation detail of `src-react/components/ui/**`; direct Radix imports are forbidden outside the owned UI layer |
+| React owned component helpers | **class-variance-authority**, **clsx**, **tailwind-merge**, **lucide-react** | `class-variance-authority ^0.7.1`; `clsx ^2.1.1`; `tailwind-merge ^3.6.0`; `lucide-react ^1.16.0` | Owned shadcn-style component APIs, class composition, and icons for React-only UI primitives |
+| React design checks | custom Node scripts | n/a | `pnpm run check:react:design` rejects raw palettes, unapproved arbitrary values, primitive-token consumption, and inline color drift in `src-react/**` |
+| React Storybook | **Storybook React/Vite** + `@vitest/browser-playwright` | `storybook ^10.4.1`; `@vitest/browser-playwright 4.1.5` | React component development/proof surface, scoped to `src-react/**` and `storybook-static-react/` |
+| React component tests | **@testing-library/react** + Vitest | `@testing-library/react ^16.3.2` | TSX unit/component tests under `tests/unit/**`, run by `pnpm run test:react` |
+| React visual regression | local Playwright screenshot baselines | `@playwright/test ^1.59.1` | Regression evidence for React stories/routes; not visual source of truth |
+| React offline storage | **Dexie** | `^4.4.2` | React-only mirror of the existing `quran-atlas` IndexedDB v7 stores; no schema bump during dual-build |
+| React reader virtualization | **TanStack Virtual** | `^3.13.26` | React-only long reader list virtualization with measured rows and overscan for Wave 09 reader parity |
 | Language | **TypeScript** | `^6.0.3` | Type gate across all feature modules |
 | Type check | **svelte-check** | `^4.4.6` | TypeScript + Svelte type-only pass (`pnpm run check`) |
 | PWA | **vite-plugin-pwa** | `^1.2.0` (patched — see `patches/`) | Workbox integration, manifest generation, `injectManifest` mode |
@@ -78,7 +89,9 @@ Defined in `package.json`:
 | Command | Action |
 |---|---|
 | `pnpm run dev` | Start the Vite dev server (`vite`) |
+| `pnpm run dev:react` | Start the isolated React preview app on port 5174. Non-deploy during dual-build. |
 | `pnpm run build` | Build production bundle into `dist/` (`pnpm run data -- build && vite build`) |
+| `pnpm run build:react` | Build the isolated React app into `dist-react/`. This artifact is proof-only until cutover and is not deployed. |
 | `pnpm run data -- build` | Grouped baseline data build: `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, `scripts/data/mushaf-pages/build.mjs`, `scripts/data/riwayah-packages/build.mjs`, and `scripts/data/manifest/inventory.mjs` to emit Qalun (runtime `qaloon`) riwayah, Bridges translation, Muyassar tafsir, source indexes, riwayah package index, metadata, manifest, provenance, Phase 01 knowledge shards, and a Qalun (`qaloon`) page pack when local page artifacts are present. Runs offline against committed normalized text sources plus optional generated page artifacts. |
 | `pnpm run data -- build --profile=full` | Full local data build: emits every locally configured approved text source, Phase 01 knowledge shards, and available Hafs/Warsh/Qalun (`qaloon`) page packs. Used as a heavier CI guard for dataset-source/catalog/script changes and protected-branch pushes. |
 | `pnpm run data -- build --profile=catalog` | Catalog/profile build without text bodies. |
@@ -88,10 +101,29 @@ Defined in `package.json`:
 | `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon` | Strict Mushaf page artifact build for release packaging; fails if the required local page SVG pack is absent or unsafe. |
 | `pnpm run data:fetch -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh`, QUL translations such as `translation:bridges`, and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` through provider adapters in `scripts/data/sources/providers/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
+| `pnpm run preview:react` | Serve `dist-react/` on port 4175. |
 | `pnpm run test` | Run Vitest once (CI-style) |
+| `pnpm run test:react` | Run React TSX unit/component tests. |
 | `pnpm run test:e2e` | Run the full Playwright suite (all journey specs A–I + performance + SW integration) |
+| `pnpm run test:e2e:react` | Run React-only Playwright smoke, golden route, accessibility, and non-preview route specs against the React dev server. Offline preview proof is skipped unless `PLAYWRIGHT_INCLUDE_OFFLINE=1` is set. |
+| `pnpm run test:e2e:react:golden` | Run the Wave 15 React golden route fixtures. |
+| `pnpm run test:e2e:react:a11y` | Run the Wave 15 React axe, overflow, touch-target, and keyboard/focus coverage carried by the golden fixtures. |
+| `pnpm run test:e2e:react:offline` | Build-dependent React preview proof for service-worker/app-shell offline reloads on port 4175. Run after `pnpm run build:react`. |
+| `pnpm run visual:react` | Run the selected React visual regression gate. Provider screenshots are regression evidence only and do not replace `docs/ui-references/**`. |
+| `pnpm run storybook:react` | Start React Storybook on port 6007. |
+| `pnpm run build:storybook:react` | Build React Storybook into `storybook-static-react/`. |
+| `pnpm run test:storybook:react` | Run React Storybook interaction/component tests. |
 | `pnpm run lint` | ESLint over `src/` plus Stylelint over `src/styles/**/*.css` |
+| `pnpm run lint:react` | Lint the React tree, React e2e specs, all `tests/unit/react-*` suites, and React-specific config files. |
+| `pnpm run typecheck:react` | Run TypeScript over `src-react/**/*.ts?(x)` only. |
 | `pnpm run check` | Static validation gate: lint + token/style-structure checks + UI refactor safety checks + `svelte-check` |
+| `pnpm run check:react:design` | Run React-only design literal and Tailwind drift checks. |
+| `pnpm run check:react:radix` | Reject direct Radix imports outside `src-react/components/ui/**`. |
+| `pnpm run check:react-registry` | Validate the React component registry shape, sorted ids, and referenced story/test/export paths. |
+| `pnpm run check:react-ui-patterns` | Reject raw React controls in feature code when an owned UI primitive exists. |
+| `pnpm run check:react-mushaf-assets` | Reject legacy React Mushaf paths and SVG page bodies in `dist-react/`, and validate edition-aware Mushaf indexes when present. |
+| `pnpm run check:react` | Run React typecheck, lint, import-boundary, design, and Radix-boundary checks. |
+| `pnpm run validate:react` | Composite non-deploy React gate: static checks, registry/pattern/Mushaf checks, React unit/component tests, proof-only React build, React golden/a11y/offline e2e, visual regression, Storybook build/test, and docs check. |
 | `pnpm run docs` | Regenerate context-doc inventories and event/module indexes |
 | `pnpm run docs:check` | Assert generated docs are up to date |
 | `pnpm run lighthouse` | Build + Lighthouse CI (`lhci autorun --config=.lighthouserc.cjs`) |
@@ -147,6 +179,12 @@ Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-te
   - `check-selector-liveness.mjs` — blocking scan for `.qa-*` classes that drift between CSS ownership and code references, with explicit allowlists for dynamic or non-style qa-prefixed hooks.
   - `check-primitive-token-consumption.mjs` — blocking scan for primitive token consumption outside `src/styles/tokens/**`.
   - `check-design-literals.mjs` — blocking scan for hardcoded color, motion, and radius design literals outside token files unless the file carries an explicit local allow comment.
+- **React-only gates** inside `pnpm run validate:react`:
+  - `check-react-radix-boundaries.mjs` — direct Radix imports are allowed only in `src-react/components/ui/**`.
+  - `check-react-component-registry.mjs` — registry entries must be sorted and point at existing exports, stories, and tests.
+  - `check-react-ui-forbidden-patterns.mjs` — raw controls are blocked in React feature code when owned UI primitives exist.
+  - `check-react-mushaf-assets.mjs` and `check-react-mushaf-indexes.mjs` — React must use edition-aware Mushaf pack contracts and must not ship page SVG bodies in `dist-react/`.
+  - React Playwright golden/a11y/offline commands — prove routed preview surfaces, accessible rendering, viewport containment, and service-worker preview reloads without deploying React.
 - **Gzipped-chunk budget** via `scripts/check-chunks.js` during `pnpm run validate` (≤150 KB per chunk).
 - **Feature-state guard** via `scripts/check-no-feature-state.js` during `pnpm run validate` (blocks top-level mutable state in feature modules).
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).

@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://quranatlas.local/schemas/react-component-registry.schema.json",
+  "title": "QuranAtlas React Component Registry",
+  "type": "object",
+  "required": ["schemaVersion", "components"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/component" }
+    }
+  },
+  "$defs": {
+    "component": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "maturity",
+        "exportPath",
+        "namedExport",
+        "allowedVariants",
+        "allowedSizes",
+        "slots",
+        "dependencies",
+        "tokenNamespaces",
+        "stories",
+        "tests",
+        "accessibility",
+        "visualProof",
+        "owner",
+        "allowedConsumers",
+        "forbiddenUses"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "name": { "type": "string", "minLength": 1 },
+        "maturity": { "enum": ["primitive", "behavior", "product", "page-recipe"] },
+        "exportPath": { "type": "string", "pattern": "^src-react/" },
+        "namedExport": { "type": "string", "minLength": 1 },
+        "allowedVariants": { "type": "array", "items": { "type": "string" } },
+        "allowedSizes": { "type": "array", "items": { "type": "string" } },
+        "slots": { "type": "array", "items": { "type": "string" } },
+        "dependencies": {
+          "type": "object",
+          "required": ["radix", "icons"],
+          "additionalProperties": false,
+          "properties": {
+            "radix": { "type": "array", "items": { "type": "string" } },
+            "icons": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "tokenNamespaces": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "stories": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["path", "states"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string" },
+              "states": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+            }
+          }
+        },
+        "tests": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["path", "behaviors"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string" },
+              "behaviors": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+            }
+          }
+        },
+        "accessibility": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "visualProof": {
+          "type": "object",
+          "required": ["status", "references"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "enum": ["required", "covered", "deferred-not-visual"] },
+            "references": { "type": "array", "items": { "type": "string" } },
+            "reason": { "type": "string" },
+            "removalCondition": { "type": "string" }
+          }
+        },
+        "owner": {
+          "type": "object",
+          "required": ["surface", "package"],
+          "additionalProperties": false,
+          "properties": {
+            "surface": { "type": "string" },
+            "package": { "type": "string" }
+          }
+        },
+        "allowedConsumers": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "forbiddenUses": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "replacement": { "type": "string" }
+      }
+    }
+  }
+}

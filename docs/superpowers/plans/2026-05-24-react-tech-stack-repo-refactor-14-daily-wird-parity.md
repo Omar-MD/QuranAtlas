@@ -47,6 +47,7 @@ Before implementing each Daily Wird component, read `DESIGN.md`, use the Wave 2 
 
 **Files:**
 - Read: required docs and Wave 09/10/13 outputs.
+- Read: `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`.
 
 - [ ] **Step 1: Confirm dependencies**
 

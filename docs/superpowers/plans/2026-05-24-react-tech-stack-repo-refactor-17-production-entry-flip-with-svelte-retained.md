@@ -37,6 +37,7 @@ Read these before editing:
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - Master spec `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- Shared handoff log `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - Child specs/plans `08A`, `16`, and Wave 16 readiness evidence
 
 ## Dependency Gates

@@ -7,6 +7,7 @@ This document explains how the repository is laid out and which directories are 
 ```text
 .
 ├── .agents/           Repo-local Codex skills
+├── .storybook/        React Storybook configuration during dual-build
 ├── .github/           CI workflows and GitHub automation
 ├── data/              Build-only source data, taxonomy, and source catalog
 ├── docs/              Context docs, workflow docs, and generated inventories
@@ -14,8 +15,11 @@ This document explains how the repository is laid out and which directories are 
 ├── public/            Static assets copied into builds
 ├── scripts/           Build, dataset, and docs scripts
 ├── src/               Application source
+├── src-react/         Isolated future React app source during dual-build
 ├── tests/             Unit, e2e, and fixtures
 ├── dist/              Built app output
+├── dist-react/        Proof-only React build output during dual-build
+├── storybook-static-react/ Generated React Storybook output
 ├── test-output/       Playwright output and traces
 └── node_modules/      Installed dependencies
 ```
@@ -38,6 +42,30 @@ Application code lives here.
 - `src/<surface>/`: user-visible surfaces and feature modules
 
 Surface directories are the primary unit of app behavior. Their deeper behavior and ownership rules are documented in `docs/context/surfaces/*.md`.
+
+### `src-react/`
+
+Isolated future React app code lives here during the dual-build period.
+
+- `src-react/`: isolated future React app tree. It must not import Svelte app modules under `src/**`.
+- `src-react/components/ui/`: owned React UI primitives and Radix-backed behavior wrappers. Feature code imports from this barrel instead of importing Radix directly.
+- `src-react/design-system/`: React-only token, Tailwind theme, registry, recipe, and design-system docs. It does not replace `src/styles/**` until cutover.
+- `src-react/design-system/registry/`: machine-readable component registry, schema, and registry maintenance notes.
+- `src-react/storage/`: Dexie mirror of the existing `quran-atlas` IndexedDB v7 stores plus React-only writer facades.
+- `src-react/offline/`: React-only asset-pack status, Cache Storage planning, quota, UI-state, and service-worker message contracts.
+- `src-react/data/`: React runtime dataset URL boundary helpers for same-origin `/dataset/**` access.
+- `src-react/metadata/`: React reader-attached metadata adapters for optional knowledge and search integration.
+- `src-react/search/`: React preview search shard schema, query, alias, and pack helpers.
+- `src-react/continuity/`: React preview launch restore, current-position, bookmarks, and Daily Wird helpers against the existing v7 stores.
+- `src-react/packs/`: React-only pack contracts, including edition-aware Mushaf install-on-demand helpers.
+- React tests remain under `tests/unit/**` and `tests/e2e/**`, not under `src-react/test/`.
+- React builds write to `dist-react/`, a proof-only output that is not a deploy artifact until an approved cutover plan changes production routing.
+
+### `.storybook/`
+
+React Storybook configuration lives here during the dual-build period. Stories
+are sourced from `src-react/**` only, and Storybook output is proof evidence, not
+the visual source of truth.
 
 ### `data/`
 
@@ -97,6 +125,8 @@ Verification code and fixtures.
 These directories are outputs, not places to hand-maintain system behavior:
 
 - `dist/`: built application output
+- `dist-react/`: proof-only React build output during dual-build. It is not a deploy artifact until an approved cutover plan changes production routing.
+- `storybook-static-react/`: generated React Storybook output, not committed and not deployed.
 - `test-output/`: Playwright reports and traces
 - `node_modules/`: installed packages
 

@@ -32,6 +32,7 @@ Read these before editing:
 - `.github/workflows/deploy.yml`
 - `tests/e2e/AGENTS.md`
 - Master spec `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- Shared handoff log `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - Child specs and implementation plans `00` through `15`, including `08A`
 
 ## Dependency Gates

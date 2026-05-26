@@ -26,6 +26,7 @@ Read these before editing:
 - `tests/e2e/AGENTS.md`
 - `docs/ui-references/README.md` and relevant `docs/ui-references/**` notes
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-00-stack-docs-verification-spec.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-02-svelte-reference-baseline-spec.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-04-storybook-component-test-harness-spec.md`

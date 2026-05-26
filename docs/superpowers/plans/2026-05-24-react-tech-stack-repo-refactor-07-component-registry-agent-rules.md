@@ -28,6 +28,7 @@ Read these before editing:
 - `src-react/design-system/docs/story-requirements.md`
 - `tests/unit/AGENTS.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-03-tokens-tailwind-design-system-spec.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-04-storybook-component-test-harness-spec.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-06-owned-shadcn-radix-component-layer-spec.md`

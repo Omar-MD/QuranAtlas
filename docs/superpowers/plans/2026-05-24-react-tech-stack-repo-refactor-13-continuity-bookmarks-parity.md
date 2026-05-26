@@ -46,6 +46,7 @@ Before implementing bookmark or continuity-visible UI, read `DESIGN.md`, use the
 
 **Files:**
 - Read: required docs, including `docs/context/events.md`, and Wave 08/09/10/11 outputs.
+- Read: `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`.
 
 - [ ] **Step 1: Confirm dependency outputs**
 

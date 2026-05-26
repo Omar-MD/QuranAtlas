@@ -28,6 +28,7 @@ Read these before editing:
 - `scripts/check-primitive-token-consumption.mjs`
 - `scripts/check-token-usage.mjs`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-00-stack-docs-verification-spec.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-01-react-app-shell-and-dual-build-spec.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-03-tokens-tailwind-design-system-spec.md`

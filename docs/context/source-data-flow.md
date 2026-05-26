@@ -23,6 +23,16 @@ Every optional qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf pa
 
 The runtime trust boundary is manifest membership plus build-time validation and local install-state verification. Per-file digest verification is not a current product claim.
 
+React refactor code uses the same runtime trust boundary through
+`src-react/data/runtime-boundary.ts`, `src-react/offline/**`, and
+`src-react/packs/**`. Those modules define same-origin `/dataset/**` URL guards,
+generic Cache Storage install plans, service-worker message contracts, and
+edition-aware Mushaf pack contracts for future React surfaces. They are
+React-only contracts during dual-build; they do not alter the shipped Svelte
+service worker or the production `dist/` artifact. The React preview build emits
+an isolated app-shell service worker into `dist-react/` only for proof commands;
+same-origin dataset and Mushaf page bodies remain outside the React app shell.
+
 Runtime ownership follows the same Reader First domain rule as the rest of `src/`: pack/source availability policy belongs in `src/packs/**`, continuity/restore rules belong in `src/continuity/**`, optional curated metadata adapters belong in `src/metadata/**`, and user-facing surfaces consume those helpers instead of inverting the dependency back into `src/read/**`, `src/navigate/**`, `src/configure/**`, or `src/onboard/**`.
 
 ```mermaid
@@ -397,7 +407,9 @@ Validation performed during build:
 - `getTafsirs()`: derives tafsir entries from the source index
 - `loadTafsirForSurah(id, n)`: loads `/dataset/tafsir/{id}/{NNN}.json`
 - `src/data/offline.ts::getSourceAssetManifest(kind, id)`: loads `/dataset/indexes/source-assets.json`
-- Mushaf page runtime modules read only `/dataset/mushaf-pages/{riwayah}/manifest.json` and `/dataset/mushaf-pages/{riwayah}/pages/{NNN}.svg`
+- Current shipped Svelte Mushaf page runtime modules may read legacy compatibility paths while the migration is in progress.
+- React Mushaf modules must use only edition-aware paths: `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json` and `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/pages/{NNN}.svg`.
+- React builds must not copy Mushaf page SVG bodies into `dist-react/`; page packs are installed on demand through service-worker-owned asset-pack contracts.
 
 `src/data/knowledge-dataset.ts` is the Phase 01 knowledge access layer:
 

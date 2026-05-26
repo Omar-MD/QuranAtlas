@@ -25,6 +25,7 @@ Read these before editing:
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-00-stack-docs-verification-spec.md`
 
 ## File Structure

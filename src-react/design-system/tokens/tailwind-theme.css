@@ -1,0 +1,17 @@
+@import 'tailwindcss' prefix(qar);
+
+@theme {
+  --color-canvas: var(--qa-react-canvas);
+  --color-surface: var(--qa-react-surface);
+  --color-border: var(--qa-react-border);
+  --color-text: var(--qa-react-text);
+  --color-muted: var(--qa-react-text-muted);
+  --color-accent: var(--qa-react-accent);
+  --color-accent-strong: var(--qa-react-accent-strong);
+  --color-focus: var(--qa-react-focus);
+  --color-danger: var(--qa-react-danger);
+  --radius-control: var(--qa-react-radius-control);
+  --radius-surface: var(--qa-react-radius-surface);
+  --font-ui: var(--qa-react-font-ui);
+  --font-arabic: var(--qa-react-font-arabic);
+}

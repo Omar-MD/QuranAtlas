@@ -30,6 +30,7 @@ Read these before editing:
 - `docs/context/surfaces/infra.md`
 - `tests/e2e/AGENTS.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-02-svelte-reference-baseline-spec.md`
 
 ## File Structure

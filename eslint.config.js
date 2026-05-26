@@ -62,6 +62,18 @@ export default [
   },
   // TS files (plain .ts only — .svelte.ts files are handled by the Svelte plugin below)
   ...tseslint.configs.recommended.map(c => ({ ...c, files: ['src/**/*.ts'] })),
+  ...tseslint.configs.recommended.map(c => ({
+    ...c,
+    files: [
+      'src-react/**/*.{ts,tsx}',
+      'tests/e2e/**/*.ts',
+      'tests/unit/react-*/**/*.{ts,tsx}',
+      '.storybook/**/*.{ts,tsx}',
+      'vitest.react.config.ts',
+      'vitest.storybook.react.config.ts',
+      'vitest.workspace.ts',
+    ],
+  })),
   // Svelte files (.svelte and .svelte.ts — uses svelte-eslint-parser with TS embedded)
   ...sveltePlugin.configs['flat/recommended'],
   {

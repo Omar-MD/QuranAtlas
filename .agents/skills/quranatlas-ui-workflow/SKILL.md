@@ -17,6 +17,7 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 - Any request for a new visual direction, redesign direction, or multiple visual options must use `frontend-design`, `superpowers:brainstorming`, and `imagegen` before implementation.
 - Read root `DESIGN.md` before UI redesign, refactor, iteration, visual review, component-reference work, or image generation. It is the QuranAtlas product style guide.
 - Read `docs/context/style-map.md` and the owning surface dossier before editing so the active component, source file, CSS partial, and proof coverage are explicit.
+- For React UI work, read `src-react/design-system/registry/component-registry.json` and compose approved primitives from `src-react/components/ui` before adding or styling new React feature components.
 
 ## Hard Rules
 
@@ -36,7 +37,7 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 ## UI Protocol
 
 1. Read `DESIGN.md` for product style constraints.
-2. Identify the surface, active component, states, themes, and viewport tiers.
+2. Identify the surface, active component, states, themes, and viewport tiers. For React UI, identify the registry entry or add/update one in the same change.
 3. Decide whether this is creative direction work, existing-direction polish, structural refactor work, or a non-visual behavior fix.
 4. Invoke `frontend-design` before implementation work begins, even for polish or salvage passes, so the component craft pass is explicit.
 5. For creative direction work, create or select a committed `docs/ui-references/...` image plus intent note before implementation.

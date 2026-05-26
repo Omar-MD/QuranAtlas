@@ -34,6 +34,7 @@ Read these before editing:
 - `package.json`
 - `playwright.react.config.js`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-15-golden-routes-accessibility-gates-spec.md`
 - Wave plans `02`, `05`, `08A`, and `09` through `14`
 

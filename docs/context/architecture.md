@@ -90,6 +90,13 @@ The full event catalog — who emits, who listens, payload shapes, dead events, 
 - `onversionchange` closes the connection and emits `DB_VERSION_CHANGE` so `safety/sync.ts` can show the reload banner.
 - A `visibilitychange` listener (attached once) emits `DB_VISIBILITY_VISIBLE` so reader / hub / indicators can re-sync state when the tab comes back.
 
+During the React dual-build, `src-react/storage/**` may open the same
+`quran-atlas` database with Dexie only as a v7 schema mirror. It declares the
+existing `settings`, `activationState`, `datasetMeta`, and `bookmarks` stores
+without adding stores or bumping the version. React writer facades must preserve
+install-before-activate semantics and avoid persisting rich transient pack state
+into existing v7 stores unless a later migration spec changes the schema.
+
 ## Canonicalization pipeline
 
 Tag labels across all 12 layers go through `core/normalize.ts::canonicalize()`
@@ -145,3 +152,32 @@ Three Git branches map to three Cloudflare Pages deployments on a single project
 - `dev` → preview → `dev.quranatlas.org`
 
 Flow: merge (or direct push to `dev`) triggers `.github/workflows/ci.yml`; on green CI, `.github/workflows/deploy.yml` fires via `workflow_run` and runs `wrangler pages deploy dist --branch=<branch>`. The `dist/` artifact uploaded by CI's `build` job is the exact bundle that ships — deploy never rebuilds. Cloudflare's build container is never invoked; custom domains are bound per branch in the CF dashboard. See `docs/tech-stack.md` §CI/CD for the full job matrix.
+
+## Dual-Build React Preview
+
+During the React rebuild, the shipped app remains the Svelte app under `src/**`.
+React lives under `src-react/**`, builds with `vite.react.config.js`, and writes
+to `dist-react/` through explicit `*:react` scripts. `dist/` remains the only
+deployable artifact until a cutover spec changes production entry routing.
+Neither app tree may import the other; shared runtime code must live in a
+framework-neutral location with typed interfaces and tests.
+
+React UI composition goes through the owned `src-react/components/ui/**` layer.
+Radix primitives are implementation details of that layer and are blocked in
+feature code by `pnpm run check:react:radix`; the component registry under
+`src-react/design-system/registry/**` records approved exports, states, tests,
+accessibility expectations, and visual proof. React offline contracts under
+`src-react/offline/**` and `src-react/packs/**` define Cache Storage plans and
+service-worker messages. The React Vite config also emits an isolated
+proof-only preview service worker into `dist-react/` for Wave 15 offline
+reload proof; it does not change the shipped Svelte service worker, production
+cache names, or deploy artifact routing.
+
+The React preview now mounts proof routes for Verse reader, Mushaf reader,
+navigation/bookmarks, settings/assets/about, onboarding, and search through
+`src-react/app/router/routes.ts` and `src-react/app/routes/**`. Reader parity
+modules under `src-react/components/reader/**`, `src-react/data/**`,
+`src-react/metadata/**`, `src-react/search/**`, and
+`src-react/continuity/**` are dual-build implementations: they prove route,
+component, storage, alias, metadata, bookmark, and Daily Wird contracts without
+flipping production routing away from Svelte.

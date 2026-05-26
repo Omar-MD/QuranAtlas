@@ -686,6 +686,20 @@ These workflows may be implemented as repo-local skills, docs, or both. The
 important invariant is that agents know where to look, what to compose, what is
 forbidden, and what proof is required.
 
+## Shared Handoff Log
+
+All React refactor child plans use one coordination log:
+
+```text
+docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md
+```
+
+Agents must read this log before starting any child plan and update it before
+handing over. The log is the shared record for completed work, divergence,
+blockers, validation results, dependency intake, files changed, commits, and the
+next-agent note. Child plans must not create separate per-agent or per-plan
+handoff logs unless this master spec is amended to name a split log explicitly.
+
 Every child spec that changes repo shape, package scripts, dev tools, pinned
 versions, CI gates, app architecture, generated context, or agent workflow must
 update the owning context docs and run the required docs generation/checks in
@@ -700,9 +714,10 @@ allowed files/directories, forbidden changes, deliverables, acceptance criteria,
 targeted verification commands, docs updates, rollback or failure handling, and
 next-spec handoff notes.
 Every child spec's required reads must include `AGENTS.md` and
-`docs/context/repo-structure.md`; specs that add or change scripts, packages,
-CI, verification commands, or tool configuration must also read `package.json`
-and `docs/tech-stack.md`.
+`docs/context/repo-structure.md`; every child plan's required context must
+include the shared handoff log. Specs that add or change scripts, packages, CI,
+verification commands, or tool configuration must also read `package.json` and
+`docs/tech-stack.md`.
 
 Minimum child specs:
 

@@ -48,6 +48,7 @@ Before implementing each search component, read `DESIGN.md`, use the Wave 2 regi
 
 **Files:**
 - Read: required docs from the spec and Wave 08/09/10 outputs.
+- Read: `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`.
 
 - [ ] **Step 1: Confirm dependency waves**
 

@@ -1,0 +1,22 @@
+@layer qa-react-reset, qa-react-tokens, qa-react-base, qa-react-components;
+
+@import './tokens/primitives.css';
+@import './tokens/semantic.css';
+@import './tokens/tailwind-theme.css';
+
+@layer qa-react-base {
+  :root {
+    font-family: var(--qa-react-font-ui);
+    color: var(--qa-react-text);
+    background: var(--qa-react-canvas);
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}

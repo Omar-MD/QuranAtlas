@@ -59,6 +59,7 @@ Before implementing each navigation, settings, asset, or onboarding component, r
 
 **Files:**
 - Read: required docs listed in the spec, including `docs/product-info.md`.
+- Read: `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`.
 
 - [ ] **Step 1: Confirm reader and offline dependencies exist**
 

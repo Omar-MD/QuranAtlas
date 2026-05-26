@@ -1,0 +1,39 @@
+@layer qa-react-tokens {
+  :root {
+    --qa-react-canvas: var(--qar-color-parchment-50);
+    --qa-react-surface: var(--qar-color-parchment-100);
+    --qa-react-border: color-mix(in srgb, var(--qar-color-ink-700) 22%, transparent);
+    --qa-react-text: var(--qar-color-ink-900);
+    --qa-react-text-muted: var(--qar-color-ink-700);
+    --qa-react-accent: var(--qar-color-bronze-600);
+    --qa-react-accent-strong: var(--qar-color-bronze-500);
+    --qa-react-focus: var(--qar-color-bronze-500);
+    --qa-react-danger: var(--qar-color-danger-600);
+    --qa-react-reader-page: var(--qa-react-canvas);
+    --qa-react-reader-text: var(--qa-react-text);
+    --qa-react-reader-muted: var(--qa-react-text-muted);
+    --qa-react-reader-selection: color-mix(in srgb, var(--qa-react-accent) 22%, transparent);
+    --qa-react-offline-warning: #806100;
+    --qa-react-storage-danger: var(--qa-react-danger);
+    --qa-react-radius-control: var(--qar-radius-2);
+    --qa-react-radius-surface: var(--qar-radius-3);
+    --qa-react-space-control-x: var(--qar-space-3);
+    --qa-react-space-control-y: var(--qar-space-2);
+    --qa-react-font-ui: var(--qar-font-ui);
+    --qa-react-font-arabic: var(--qar-font-arabic);
+    --qa-react-transition-fast: var(--qar-motion-fast) var(--qar-ease-standard);
+  }
+
+  html[data-theme='sepia'] {
+    --qa-react-canvas: #f3e6ce;
+    --qa-react-surface: #ead8b9;
+  }
+
+  html[data-theme='dark'] {
+    --qa-react-canvas: #181511;
+    --qa-react-surface: #24201a;
+    --qa-react-text: #f8f2e7;
+    --qa-react-text-muted: #c9bba8;
+    --qa-react-border: color-mix(in srgb, #f8f2e7 18%, transparent);
+  }
+}

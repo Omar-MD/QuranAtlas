@@ -23,6 +23,7 @@ Project instructions auto-loaded by Codex in this repo.
 - Keep docs and source comments current-state only. Do not leave progress logs, codenames, dates, commit SHAs, or revision notes unless they are data or load-bearing invariants.
 - Do not invent project commands or committed one-off scripts. Check `package.json`, `docs/tech-stack.md`, and scoped AGENTS files first.
 - When `package.json` scripts, dev tools, pinned versions, or CI gates change, update `docs/tech-stack.md` in the same change.
+- For React UI work, check `src-react/design-system/registry/component-registry.json` first and compose approved components from `src-react/components/ui`; direct Radix imports outside that owned layer are forbidden.
 
 ## Git Defaults
 

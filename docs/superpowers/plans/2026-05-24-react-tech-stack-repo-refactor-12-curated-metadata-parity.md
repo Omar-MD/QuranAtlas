@@ -41,6 +41,7 @@ Before implementing each metadata component, read `DESIGN.md`, use the Wave 2 re
 
 **Files:**
 - Read: required docs and Wave 08/09/11 outputs.
+- Read: `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`.
 
 - [ ] **Step 1: Confirm dependencies exist**
 

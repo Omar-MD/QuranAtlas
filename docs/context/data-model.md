@@ -53,6 +53,16 @@ If you change a store's shape, indexes, key, or sole writer — update the **dos
 
 Qira'ah/riwayah, Quran text style, Mushaf edition, translation, tafsir, curated metadata, Mushaf page, and search/index assets use one-active-pack semantics. The active recitation bundle persists as `settings.riwayah`, `settings.quranTextStyleId`, and `settings.mushafEditionId`; `src/configure/variant-bundle.ts` is the atomic writer for those three settings keys. Optional pack availability in `indexes/text-assets.json`, `indexes/mushaf-assets.json`, `indexes/sources.json`, `indexes/source-assets.json`, or `indexes/riwayah-packages.json` is not enough for rendering; install-state verification decides usability.
 
+During the React dual-build, `src-react/storage/schema.ts` mirrors the existing
+`quran-atlas` v7 schema for React-only proofs. It does not add stores, change
+key paths, or bump the DB version. `src-react/storage/settings-writer.ts` is the
+React facade for atomically writing the active reader asset bundle keys; rich
+pack lifecycle states remain derived from Cache Storage/index verification and
+are not persisted into new IDB stores in this wave.
+React Daily Wird proof code persists only the existing `settings.wirdPlan` key
+through `src-react/continuity/wird/store.ts`; React bookmark proof code uses the
+existing compound `bookmarks` key `[riwayah, verseKey]`.
+
 ### Translation packs
 
 - `public/dataset/translations/{id}/{NNN}.json` (114 files per shipped translation) — per-surah translation pack consumed by `Reader.svelte` via `src/data/dataset.ts::loadTranslationForSurah(id, n)`. **Schema:**

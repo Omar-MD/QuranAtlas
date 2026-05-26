@@ -57,6 +57,7 @@ Create or modify these files during implementation:
 
 **Files:**
 - Read: `AGENTS.md`
+- Read: `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - Read: `DESIGN.md`
 - Read: `docs/context/repo-structure.md`
 - Read: `docs/context/architecture.md`
