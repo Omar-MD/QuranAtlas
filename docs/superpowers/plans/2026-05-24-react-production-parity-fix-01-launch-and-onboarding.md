@@ -13,6 +13,7 @@
 Read:
 
 - `docs/superpowers/specs/2026-05-24-react-production-parity-fix-master-spec.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `docs/context/surfaces/onboard.md`
 - `docs/context/surfaces/configure.md`
 - `docs/context/surfaces/read.md`
@@ -64,6 +65,76 @@ Tests:
 - `docs/context/surfaces/onboard.md` if React proof ownership or current dual-build behavior is documented
 - `docs/context/style-map.md` if proof ownership changes
 
+## Readiness Refinement
+
+- Execute only after Plan 00 has landed enough harness support to compare clean-launch/onboarding behavior against Svelte.
+- Test-first checkpoint: write the launch/onboarding unit and production-target e2e assertions, run them against the current React build, and confirm they fail on the launch bypass/static onboarding behavior before editing app code.
+- Svelte-vs-React comparison covers launch routing, `settings.onboardingComplete`, ambient chrome absence during onboarding, final route, and reload restore; the only accepted difference is the shortened React onboarding content below.
+- Production-target verification must use `pnpm run build`, `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react`, and the Plan 00 strict preview harness, not the React dev server.
+- CSS/React styling enforcement: inspect the registry first, use approved `src-react/components/ui` primitives and `qar:` semantic-token utilities, update stories/registry for touched onboarding states, and keep route files as containers.
+- Responsive/style proof must use `320x568`, `375x812`, `768x1024`, and `1280x900`, plus computed-style/CSS-variable assertions that touched `qar:` utilities resolve through `--qa-react-*` semantic tokens for canvas, surface, text, muted text, border, focus, accent, selected, disabled, and danger states where present.
+- Docs updates must land with behavior/proof ownership changes in `docs/context/surfaces/onboard.md` and `docs/context/style-map.md`; generated fences require `pnpm run docs`.
+- Before implementation, use `.agents/skills/child-plan-handover/SKILL.md` to reconcile this plan against `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`, current `git status`, and any newer sibling-plan entries.
+
+## Implementation Task Plan
+
+### Task 1: Launch Restore Contract
+
+**Files:**
+- Modify: `src-react/continuity/launch-restore.ts`
+- Modify: `src-react/continuity/last-surface.ts`
+- Modify: `src-react/app/App.tsx`
+- Modify: `src-react/app/router/routes.ts`
+- Test: `tests/unit/react-continuity/continuity-wave3.test.ts`
+- Test: `tests/unit/react-shell/routes.test.ts`
+
+- [x] Write failing unit coverage for clean storage returning `#/onboarding`, onboarded empty-hash restore returning the last valid reader route, and invalid last-surface fallback.
+- [x] Implement `useLaunchRestore` or equivalent route-container hook so storage reads and route normalization stay out of presentational components.
+- [x] Remove or update tests that encode clean empty-hash as `#/s/1`.
+- [x] Run:
+
+```bash
+pnpm exec vitest run tests/unit/react-continuity tests/unit/react-shell --config vitest.react.config.ts
+```
+
+### Task 2: Two-Step React Onboarding Flow
+
+**Files:**
+- Modify: `src-react/app/routes/onboarding/OnboardingRoute.tsx`
+- Modify: React storage writers for `settings.onboardingComplete`, `settings.riwayah`, and `settings.translationId`
+- Modify: registry/story files named by the current onboarding registry entry
+- Test: `tests/e2e/onboard/react-golden.spec.ts`
+
+- [x] Write failing component/e2e coverage that React onboarding exposes only Riwayah and Translation choices and writes all completion state only on final completion.
+- [x] Include measured responsive and token-resolved style checks at `320x568`, `375x812`, `768x1024`, and `1280x900` for source rows, selected/disabled states, focus rings, and primary/secondary actions.
+- [x] Implement a controlled `useOnboardingFlow` reducer with `riwayah` and `translation` steps, loading/error/disabled states, and focus movement to the current step heading.
+- [x] Use available source metadata through existing React data/storage facades; do not hardcode source lists unless the current metadata boundary already does so and the test names that limitation.
+- [x] Update stories and registry states for loading, unavailable, selected, disabled, focus-visible, mobile, tablet, desktop, light, sepia, and dark.
+
+### Task 3: Production Comparison And Docs
+
+**Files:**
+- Modify: `tests/e2e/onboard/react-golden.spec.ts`
+- Modify: `tests/e2e/navigate/react-golden.spec.ts`
+- Modify: `docs/context/surfaces/onboard.md` only if behavior/proof ownership changes
+- Modify: `docs/context/style-map.md` only if proof ownership changes
+
+- [x] Add production-target e2e proof for clean launch, onboarding completion, reload restore, ambient chrome absence, keyboard traversal, and touch targets.
+- [x] Run:
+
+```bash
+pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
+pnpm run test:e2e:react:golden -- --grep "launch-fresh-onboarding|launch-restore-reader"
+pnpm run check:react
+pnpm run check:react-registry
+pnpm run check:react-ui-patterns
+pnpm run build:storybook:react
+pnpm run test:storybook:react
+pnpm run docs:check
+git diff --check
+```
+
 ## Intentional Difference
 
 React onboarding must carry only:
@@ -101,21 +172,21 @@ Expected before implementation: tests fail on the current React launch bypass an
 
 ## Implementation Steps
 
-- [ ] Discover exact Svelte launch restore semantics from `src/onboard/state.ts`, `src/App.svelte`, and last-surface writer behavior. Record any uncertainty in the test comments or implementation notes, not in product docs.
-- [ ] Implement React launch gating around `settings.onboardingComplete`.
-- [ ] Ensure `#/onboarding` is reachable only for clean/incomplete setup unless direct route behavior must mirror Svelte. If Svelte behavior is stricter, follow Svelte.
-- [ ] Replace the single-card React onboarding with the controlled two-step Riwayah and Translation flow.
-- [ ] Use real available Riwayah and Translation metadata. If React lacks the metadata loader, add a discovery step and use the same data boundary as Plan 02/05 rather than hardcoded product lists.
-- [ ] Persist completion and selected options through shared React storage facades.
-- [ ] Hide React reader chrome/header during onboarding if Svelte hides ambient chrome.
-- [ ] Remove tests that encode empty hash as `#/s/1` for a clean browser.
+- [x] Discover exact Svelte launch restore semantics from `src/onboard/state.ts`, `src/App.svelte`, and last-surface writer behavior. Record any uncertainty in the test comments or implementation notes, not in product docs.
+- [x] Implement React launch gating around `settings.onboardingComplete`.
+- [x] Ensure `#/onboarding` is reachable only for clean/incomplete setup unless direct route behavior must mirror Svelte. If Svelte behavior is stricter, follow Svelte.
+- [x] Replace the single-card React onboarding with the controlled two-step Riwayah and Translation flow.
+- [x] Use real available Riwayah and Translation metadata. If React lacks the metadata loader, add a discovery step and use the same data boundary as Plan 02/05 rather than hardcoded product lists.
+- [x] Persist completion and selected options through shared React storage facades.
+- [x] Hide React reader chrome/header during onboarding if Svelte hides ambient chrome.
+- [x] Remove tests that encode empty hash as `#/s/1` for a clean browser.
 
 ## Commands
 
 ```bash
 pnpm exec vitest run tests/unit/react-continuity tests/unit/react-shell --config vitest.react.config.ts
-VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
 pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
 pnpm run test:e2e:react:golden -- --grep "launch-fresh-onboarding|launch-restore-reader"
 pnpm run check:react
 pnpm run check:react-registry

@@ -5,7 +5,70 @@
 @import './tokens/tailwind-theme.css';
 
 @layer qa-react-base {
+  @font-face {
+    font-family: Newsreader;
+    src: url('../../public/fonts/newsreader/Newsreader-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: Newsreader;
+    src: url('../../public/fonts/newsreader/Newsreader-Italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: 'Geist Mono';
+    src: url('../../public/fonts/geist-mono/GeistMono-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Geist Mono';
+    src: url('../../public/fonts/geist-mono/GeistMono-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'KFGQPC Uthmanic Hafs';
+    src: url('../../public/fonts/kfgqpc-uthmanic-hafs/uthmanic_hafs_v22.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  }
+
+  @font-face {
+    font-family: 'KFGQPC Uthmanic Warsh';
+    src: url('../../public/fonts/kfgqpc-uthmanic-warsh/UthmanicWarsh_V21.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  }
+
+  @font-face {
+    font-family: 'KFGQPC Uthmanic Qaloon';
+    src: url('../../public/fonts/kfgqpc-uthmanic-qaloon/UthmanicQaloun_V21.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+  }
+
   :root {
+    --qa-react-verse-pad-x: 24px;
+    --qa-react-verse-pad-y: 1.125rem;
     font-family: var(--qa-react-font-ui);
     color: var(--qa-react-text);
     background: var(--qa-react-canvas);
@@ -18,5 +81,468 @@
 
   * {
     box-sizing: border-box;
+  }
+}
+
+@layer components {
+  [data-verse-spacing='xs'] { --qa-react-verse-pad-y: 0.5rem; }
+  [data-verse-spacing='sm'] { --qa-react-verse-pad-y: 0.875rem; }
+  [data-verse-spacing='md'] { --qa-react-verse-pad-y: 1.125rem; }
+  [data-verse-spacing='lg'] { --qa-react-verse-pad-y: 1.625rem; }
+  [data-verse-spacing='xl'] { --qa-react-verse-pad-y: 2.25rem; }
+
+  .qar-reader-verse-surface {
+    width: 100%;
+    max-width: 1080px;
+    margin-inline: auto;
+  }
+
+  .qar-reader-continue {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px !important;
+    min-height: 44px !important;
+    margin: 2px auto !important;
+    padding: 6px 12px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--qa-react-text-muted) !important;
+    font-family: inherit !important;
+    font-size: 0.95rem !important;
+    font-weight: 400 !important;
+    line-height: 1.2 !important;
+    transition: color var(--qa-react-transition-fast);
+  }
+
+  .qar-reader-continue:hover,
+  .qar-reader-continue:focus-visible {
+    background: transparent !important;
+    color: var(--qa-react-accent) !important;
+  }
+
+  .qar-reader-continue-arrow {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .qar-reader-continue-title {
+    font-size: 0.85rem;
+    font-style: italic;
+    line-height: 1.2;
+  }
+
+  .qar-reader-chrome {
+    grid-template-columns: 3rem 1fr 3rem;
+  }
+
+  .qar-reader-chrome-title {
+    letter-spacing: 0.14em;
+  }
+
+  .qar-react-mushaf-page-surface {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+    min-height: calc(100vh - 3.5rem);
+    min-height: calc(100dvh - 3.5rem);
+    padding:
+      clamp(0.5rem, 1.8dvh, 0.875rem)
+      clamp(0.625rem, 2.8vw, 1.5rem)
+      max(1rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+  }
+
+  .qar-react-mushaf-page-stage {
+    position: relative;
+    width: min(100%, calc((100dvh - 4.875rem) * var(--qa-react-mushaf-page-ratio)));
+    margin: 0 auto;
+    aspect-ratio: var(--qa-react-mushaf-page-ratio);
+  }
+
+  .qar-react-mushaf-page-frame {
+    display: grid;
+    place-items: stretch;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--qa-react-mushaf-ground);
+    touch-action: pan-y;
+    animation: qar-react-mushaf-page-enter var(--qa-react-transition-fast) both;
+    will-change: opacity, transform;
+  }
+
+  [data-mushaf-transition-direction='previous'] .qar-react-mushaf-page-frame {
+    animation-name: qar-react-mushaf-page-enter-previous;
+  }
+
+  .qar-react-mushaf-page-fit {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .qar-react-mushaf-edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: clamp(4rem, 22%, 10rem);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .qar-react-mushaf-edge--left {
+    left: 0;
+  }
+
+  .qar-react-mushaf-edge--right {
+    right: 0;
+  }
+
+  .qar-react-mushaf-edge:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--qa-react-focus);
+    outline-offset: -4px;
+    background: color-mix(in srgb, var(--qa-react-accent) 8%, transparent);
+  }
+
+  .qar-react-mushaf-edge:disabled {
+    pointer-events: none;
+  }
+
+  .qar-reader-surah-header {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 1.25rem;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto 0.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .qar-reader-surah-meta-col {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 0.375rem;
+    text-align: left;
+  }
+
+  .qar-reader-surah-meta {
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .qar-reader-surah-name {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    margin: 0;
+    color: var(--qa-react-accent);
+    font-family: 'Scheherazade New', 'Noto Naskh Arabic', var(--qa-react-font-arabic);
+    font-size: clamp(2.125rem, 4.6vw + 1rem, 2.875rem);
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: right;
+    text-rendering: optimizelegibility;
+  }
+
+  .qar-reader-surah-ornament {
+    margin-inline: 0.35em;
+    color: var(--qa-react-text-muted);
+    font-size: 0.85em;
+  }
+
+  .qar-reader-basmala {
+    container-type: inline-size;
+    display: grid;
+    justify-items: center;
+    gap: 1.25rem;
+    margin: 0.5rem auto 1rem;
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .qar-reader-basmala-text {
+    display: block;
+    max-width: 100%;
+    color: var(--qa-react-text);
+    direction: rtl;
+    font-family: 'Scheherazade New', 'Noto Naskh Arabic', var(--qa-react-font-arabic);
+    font-size: clamp(1.375rem, 7.6cqi, 4.5rem);
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: center;
+    text-rendering: optimizelegibility;
+  }
+
+  .qar-reader-basmala-translation {
+    max-width: 36ch;
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    font-family: var(--qa-react-font-translation);
+    font-size: 0.875rem;
+    font-style: italic;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .qa-react-mushaf-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: var(--qa-react-mushaf-ink);
+  }
+
+  @keyframes qar-react-mushaf-page-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(18px, 0, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes qar-react-mushaf-page-enter-previous {
+    from {
+      opacity: 0;
+      transform: translate3d(-18px, 0, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  [data-mushaf-view-mode='width'] .qar-react-mushaf-page-stage {
+    width: 100%;
+  }
+
+  [data-mushaf-view-mode='page'] .qar-react-mushaf-page-stage {
+    width: min(100%, calc((100dvh - 9.5rem) * var(--qa-react-mushaf-page-ratio)));
+  }
+
+  @media (max-width: 767px) {
+    .qar-react-mushaf-page-stage {
+      width: 100%;
+    }
+  }
+
+  @media (min-width: 1180px) {
+    .qar-react-mushaf-page-stage {
+      width: min(100%, calc((100dvh - 9.5rem) * var(--qa-react-mushaf-page-ratio)));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .qar-reader-basmala {
+      padding: 1rem 0.75rem 1.5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qar-react-mushaf-page-frame {
+      animation: none;
+      will-change: auto;
+    }
+  }
+
+  .qar-reader-verse {
+    position: relative;
+    display: grid;
+    gap: 0.75rem;
+    padding:
+      var(--qa-react-verse-pad-y, 1.125rem)
+      var(--qa-react-verse-pad-x, 24px)
+      var(--qa-react-verse-pad-y, 1.125rem)
+      calc(var(--qa-react-verse-pad-x, 24px) + 6px);
+    transition: background-color var(--qa-react-transition-fast);
+  }
+
+  .qar-reader-verse--divided::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in srgb, var(--qa-react-text-muted) 14%, transparent),
+      transparent
+    );
+  }
+
+  .qar-reader-verse[data-selected='true'] {
+    border-radius: var(--qa-react-radius-surface);
+    background: color-mix(in srgb, var(--qa-react-text) 4%, transparent);
+    box-shadow: inset 0 0 0 1px var(--qa-react-border);
+  }
+
+  @media (hover: hover) {
+    .qar-reader-verse:hover {
+      border-radius: var(--qa-react-radius-surface);
+      background: var(--qa-react-surface);
+    }
+  }
+
+  .qar-reader-verse-line {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .qar-reader-verse-arabic {
+    flex: 1;
+    margin: 0;
+    font-family: var(--qa-react-font-arabic);
+    font-size: 1.875rem;
+    line-height: 2;
+    text-align: right;
+    text-rendering: optimizelegibility;
+  }
+
+  .qar-reader-verse-translation {
+    width: 100%;
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    direction: ltr;
+    font-family: var(--qa-react-font-translation);
+    font-size: 1rem;
+    line-height: 1.625;
+    text-align: left;
+    text-wrap: pretty;
+  }
+
+  .qar-reader-verse-continuation {
+    font-size: 0.875rem;
+    font-style: italic;
+  }
+
+  .qar-reader-fn-marker {
+    display: inline !important;
+    min-height: 0 !important;
+    padding: 0 0.1em !important;
+    border: 0 !important;
+    border-radius: 2px !important;
+    background: transparent !important;
+    color: var(--qa-react-accent) !important;
+    font-family: var(--qa-react-font-translation) !important;
+    font-size: 0.7em !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    text-decoration: underline dotted !important;
+    text-underline-offset: 0.15em;
+    vertical-align: super;
+  }
+
+  .qar-reader-fn-marker:hover,
+  .qar-reader-fn-marker:focus-visible,
+  .qar-reader-fn-marker[aria-expanded='true'] {
+    color: var(--qa-react-accent-strong) !important;
+  }
+
+  .qar-reader-fn-marker[aria-expanded='true'] {
+    background: color-mix(in srgb, var(--qa-react-accent) 12%, transparent) !important;
+  }
+
+  .qar-reader-fn-panel {
+    position: relative;
+    margin: 0.25rem 0 0.25rem 0.5rem;
+    padding: 0.55rem 2.5rem 0.55rem 0.75rem;
+    border-left: 2px solid var(--qa-react-accent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--qa-react-accent) 6%, transparent);
+    color: var(--qa-react-text);
+    font-family: var(--qa-react-font-translation);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  .qar-reader-fn-panel-number {
+    margin-right: 0.4em;
+    color: var(--qa-react-accent);
+    font-weight: 600;
+  }
+
+  .qar-reader-fn-close {
+    position: absolute !important;
+    top: 0.2rem !important;
+    right: 0.3rem !important;
+    min-height: 0 !important;
+    padding: 0.15rem 0.4rem !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: var(--qa-react-text-muted) !important;
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+  }
+
+  .qar-reader-fn-close:hover,
+  .qar-reader-fn-close:focus-visible {
+    color: var(--qa-react-text) !important;
+  }
+
+  @media (max-width: 380px) {
+    .qar-reader-surah-header {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      row-gap: 0.5rem;
+    }
+
+    .qar-reader-surah-meta-col,
+    .qar-reader-surah-name {
+      grid-column: 1;
+      grid-row: auto;
+      text-align: center;
+    }
+
+    .qar-reader-surah-meta-col {
+      align-items: center;
+    }
+  }
+
+  @media (max-width: 767px) {
+    [data-reader-margin='xs'] { --qa-react-verse-pad-x: 6px; }
+    [data-reader-margin='sm'] { --qa-react-verse-pad-x: 14px; }
+    [data-reader-margin='md'] { --qa-react-verse-pad-x: 24px; }
+    [data-reader-margin='lg'] { --qa-react-verse-pad-x: 36px; }
+    [data-reader-margin='xl'] { --qa-react-verse-pad-x: 52px; }
+  }
+
+  @media (min-width: 768px) and (max-width: 1179px) {
+    [data-reader-margin='xs'] .qar-reader-verse-surface { max-width: 1100px; }
+    [data-reader-margin='sm'] .qar-reader-verse-surface { max-width: 900px; }
+    [data-reader-margin='md'] .qar-reader-verse-surface { max-width: 800px; }
+    [data-reader-margin='lg'] .qar-reader-verse-surface { max-width: 700px; }
+    [data-reader-margin='xl'] .qar-reader-verse-surface { max-width: 600px; }
+  }
+
+  @media (min-width: 1180px) {
+    [data-reader-margin='xs'] .qar-reader-verse-surface { max-width: 1320px; }
+    [data-reader-margin='sm'] .qar-reader-verse-surface { max-width: 1200px; }
+    [data-reader-margin='md'] .qar-reader-verse-surface { max-width: 1080px; }
+    [data-reader-margin='lg'] .qar-reader-verse-surface { max-width: 940px; }
+    [data-reader-margin='xl'] .qar-reader-verse-surface { max-width: 820px; }
   }
 }

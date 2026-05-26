@@ -2,8 +2,8 @@ import type { Riwayah } from '../storage/types'
 
 export type VerseAlias = {
   hafs: number
-  warsh: number[]
-  qaloon: number[]
+  warsh: number | number[] | null
+  qaloon: number | number[] | null
 }
 
 export type VerseAliases = Record<string, VerseAlias[]>
@@ -13,8 +13,8 @@ export type TranslationResolution =
   | { role: 'continuation'; sourceKey: string; text: null }
   | { role: 'none'; sourceKey: null; text: null }
 
-export async function loadVerseAliases(fetcher: typeof fetch = fetch): Promise<{ aliases: VerseAliases }> {
-  const response = await fetcher('/dataset/translations/_verse-aliases.json')
+export async function loadVerseAliases(fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<{ aliases: VerseAliases }> {
+  const response = await fetcher('/dataset/translations/_verse-aliases.json', { signal })
   if (!response.ok) return { aliases: {} }
   return response.json() as Promise<{ aliases: VerseAliases }>
 }
@@ -36,19 +36,31 @@ export function resolveTranslationFor({
   if (riwayah === 'hafs' && translations[identityKey]) {
     return { role: 'identity', sourceKey: identityKey, text: translations[identityKey] }
   }
-  const matched = aliases[String(surah)]?.find((alias) => getAliasVerses(alias, riwayah).includes(verse))
-  if (!matched) {
+  const matches = (aliases[String(surah)] ?? [])
+    .map((alias) => ({ alias, verses: getAliasVerses(alias, riwayah) }))
+    .filter((entry) => entry.verses.includes(verse))
+
+  if (matches.length === 0) {
     const text = translations[identityKey]
     return text ? { role: 'identity', sourceKey: identityKey, text } : { role: 'none', sourceKey: null, text: null }
   }
-  const sourceKey = `${surah}:${matched.hafs}`
+
+  if (matches.length > 1) {
+    const sourceKey = matches.map((entry) => `${surah}:${entry.alias.hafs}`).join(',')
+    const text = matches.map((entry) => translations[`${surah}:${entry.alias.hafs}`]).filter(Boolean).join(' ')
+    return text ? { role: 'merged', sourceKey, text } : { role: 'none', sourceKey: null, text: null }
+  }
+
+  const matched = matches[0]!
+  const sourceKey = `${surah}:${matched.alias.hafs}`
   const text = translations[sourceKey] ?? null
-  const activeVerses = getAliasVerses(matched, riwayah)
-  if (activeVerses[0] !== verse) return { role: 'continuation', sourceKey, text: null }
+  if (matched.verses[0] !== verse) return { role: 'continuation', sourceKey, text: null }
   if (!text) return { role: 'none', sourceKey: null, text: null }
-  return { role: activeVerses.length > 1 ? 'primary' : 'identity', sourceKey, text }
+  return { role: matched.verses.length > 1 ? 'primary' : 'identity', sourceKey, text }
 }
 
 export function getAliasVerses(alias: VerseAlias, riwayah: Riwayah): number[] {
-  return riwayah === 'hafs' ? [alias.hafs] : alias[riwayah]
+  const value = riwayah === 'hafs' ? alias.hafs : alias[riwayah]
+  if (value === null || value === undefined) return []
+  return Array.isArray(value) ? value : [value]
 }

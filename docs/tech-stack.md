@@ -22,7 +22,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | React component tests | **@testing-library/react** + Vitest | `@testing-library/react ^16.3.2` | TSX unit/component tests under `tests/unit/**`, run by `pnpm run test:react` |
 | React visual regression | local Playwright screenshot baselines | `@playwright/test ^1.59.1` | Regression evidence for React stories/routes; not visual source of truth |
 | React offline storage | **Dexie** | `^4.4.2` | React-only mirror of the existing `quran-atlas` IndexedDB v7 stores; no schema bump during dual-build |
-| React reader virtualization | **TanStack Virtual** | `^3.13.26` | React-only long reader list virtualization with measured rows and overscan for Wave 09 reader parity |
+| React reader list rendering | **TanStack Virtual** | `^3.13.26` | Available dependency from the React parity track; the current React verse reader renders the single-surah list into normal document scroll to match the Svelte scrolling contract until measured virtualization is reintroduced safely |
 | Language | **TypeScript** | `^6.0.3` | Type gate across all feature modules |
 | Type check | **svelte-check** | `^4.4.6` | TypeScript + Svelte type-only pass (`pnpm run check`) |
 | PWA | **vite-plugin-pwa** | `^1.2.0` (patched — see `patches/`) | Workbox integration, manifest generation, `injectManifest` mode |
@@ -101,14 +101,14 @@ Defined in `package.json`:
 | `pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon` | Strict Mushaf page artifact build for release packaging; fails if the required local page SVG pack is absent or unsafe. |
 | `pnpm run data:fetch -- <type>:<id>` | Generic catalog-driven source fetcher (`scripts/data/fetch-source.mjs`). Supports Quran DB translations such as `translation:saheeh`, QUL translations such as `translation:bridges`, and QUL tafsir such as `tafsir:muyassar`, writing normalized JSON under `data/normalized/**` through provider adapters in `scripts/data/sources/providers/`. |
 | `pnpm run preview` | Serve the built bundle (`vite preview --strictPort`) |
-| `pnpm run preview:react` | Serve `dist-react/` on port 4175. |
+| `pnpm run preview:react` | Serve `dist-react/` on port 4175; `vite.react.config.js` also serves the root `public/dataset/**` tree at same-origin `/dataset/**` for React parity proof without copying dataset bodies into `dist-react/`. React font faces import the shared `public/fonts/**` assets through the React design-system CSS so preview/build typography matches the Svelte app. |
 | `pnpm run test` | Run Vitest once (CI-style) |
 | `pnpm run test:react` | Run React TSX unit/component tests. |
 | `pnpm run test:e2e` | Run the full Playwright suite (all journey specs A–I + performance + SW integration) |
-| `pnpm run test:e2e:react` | Run React-only Playwright smoke, golden route, accessibility, and non-preview route specs against the React dev server. Offline preview proof is skipped unless `PLAYWRIGHT_INCLUDE_OFFLINE=1` is set. |
-| `pnpm run test:e2e:react:golden` | Run the Wave 15 React golden route fixtures. |
-| `pnpm run test:e2e:react:a11y` | Run the Wave 15 React axe, overflow, touch-target, and keyboard/focus coverage carried by the golden fixtures. |
-| `pnpm run test:e2e:react:offline` | Build-dependent React preview proof for service-worker/app-shell offline reloads on port 4175. Run after `pnpm run build:react`. |
+| `pnpm run test:e2e:react` | Build Svelte `dist/` and production-target React `dist-react/`, serve both on strict preview ports, then run the React parity Playwright suite against production artifacts. |
+| `pnpm run test:e2e:react:golden` | Build Svelte + production-target React, then run Svelte-vs-React golden route parity fixtures. These assertions intentionally fail while later parity-fix plans still own missing React behavior. |
+| `pnpm run test:e2e:react:a11y` | Build Svelte + production-target React, then run the React axe, overflow, touch-target, and keyboard/focus coverage carried by the golden parity fixtures. |
+| `pnpm run test:e2e:react:offline` | Build Svelte + production-target React, then run preview service-worker/offline proof with network, console, and dataset-failure guards. |
 | `pnpm run visual:react` | Run the selected React visual regression gate. Provider screenshots are regression evidence only and do not replace `docs/ui-references/**`. |
 | `pnpm run storybook:react` | Start React Storybook on port 6007. |
 | `pnpm run build:storybook:react` | Build React Storybook into `storybook-static-react/`. |
@@ -184,7 +184,7 @@ Each test gets a fresh `BrowserContext` with the snapshot reloaded — no per-te
   - `check-react-component-registry.mjs` — registry entries must be sorted and point at existing exports, stories, and tests.
   - `check-react-ui-forbidden-patterns.mjs` — raw controls are blocked in React feature code when owned UI primitives exist.
   - `check-react-mushaf-assets.mjs` and `check-react-mushaf-indexes.mjs` — React must use edition-aware Mushaf pack contracts and must not ship page SVG bodies in `dist-react/`.
-  - React Playwright golden/a11y/offline commands — prove routed preview surfaces, accessible rendering, viewport containment, and service-worker preview reloads without deploying React.
+  - React Playwright golden/a11y/offline commands — build and serve Svelte plus production-target React artifacts, then prove or intentionally fail route parity, accessibility basics, viewport containment, and service-worker/offline dataset behavior without deploying React.
 - **Gzipped-chunk budget** via `scripts/check-chunks.js` during `pnpm run validate` (≤150 KB per chunk).
 - **Feature-state guard** via `scripts/check-no-feature-state.js` during `pnpm run validate` (blocks top-level mutable state in feature modules).
 - **Lighthouse CI** via `pnpm run lighthouse` (performance / a11y / best-practices regression guard).

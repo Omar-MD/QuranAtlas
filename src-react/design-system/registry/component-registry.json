@@ -892,7 +892,22 @@
         {
           "path": "src-react/components/reader/reader.stories.tsx",
           "states": [
-            "default"
+            "default",
+            "ready",
+            "loading",
+            "unavailable",
+            "error",
+            "fit-page",
+            "fit-width",
+            "jump-input",
+            "focus-visible",
+            "mobile",
+            "tablet",
+            "desktop",
+            "light",
+            "sepia",
+            "dark",
+            "night"
           ]
         }
       ],
@@ -1010,7 +1025,11 @@
         {
           "path": "src-react/components/settings/settings.stories.tsx",
           "states": [
-            "default"
+            "riwayah",
+            "translation",
+            "loading",
+            "disabled-source",
+            "selected-source"
           ]
         }
       ],
@@ -1019,6 +1038,13 @@
           "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
           "behaviors": [
             "wave 3 parity"
+          ]
+        },
+        {
+          "path": "tests/unit/react-navigate/onboarding-flow.test.ts",
+          "behaviors": [
+            "two-step flow",
+            "disabled source protection"
           ]
         }
       ],
@@ -1222,6 +1248,89 @@
       ],
       "forbiddenUses": [
         "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "reader-verse-surface",
+      "name": "ReaderVerseSurface",
+      "maturity": "product",
+      "exportPath": "src-react/components/reader/ReaderVerseSurface.tsx",
+      "namedExport": "ReaderVerseSurface",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "header",
+        "basmala",
+        "verse-list"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src-react/components/reader/reader.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "unavailable",
+            "selected",
+            "footnote-open",
+            "mobile",
+            "tablet",
+            "desktop",
+            "light",
+            "sepia",
+            "dark"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "dataset-backed Al-Fatihah",
+            "basmala",
+            "footnotes",
+            "selection",
+            "Tafsir exclusion"
+          ]
+        },
+        {
+          "path": "tests/e2e/read/react-golden.spec.ts",
+          "behaviors": [
+            "production reader corpus parity",
+            "responsive reader proof"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic main content via ReaderPageShell",
+        "named footnote buttons",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src-react/components/reader/reader.stories.tsx",
+          "tests/e2e/read/react-golden.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src-react/components/reader"
+      },
+      "allowedConsumers": [
+        "src-react/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Svelte read components or CSS partials."
       ]
     },
     {
@@ -1965,11 +2074,18 @@
       "exportPath": "src-react/components/reader/VerseBlock.tsx",
       "namedExport": "VerseBlock",
       "allowedVariants": [
-        "default"
+        "default",
+        "selected",
+        "translation-hidden",
+        "continuation"
       ],
       "allowedSizes": [],
       "slots": [
-        "root"
+        "root",
+        "arabic",
+        "translation",
+        "footnote",
+        "metadata"
       ],
       "dependencies": {
         "radix": [],
@@ -1984,7 +2100,15 @@
         {
           "path": "src-react/components/reader/reader.stories.tsx",
           "states": [
-            "default"
+            "default",
+            "selected",
+            "footnote-open",
+            "long-text",
+            "dense-ayah",
+            "focus-visible",
+            "light",
+            "sepia",
+            "dark"
           ]
         }
       ],
@@ -1992,7 +2116,10 @@
         {
           "path": "tests/unit/react-read/reader-wave3.test.tsx",
           "behaviors": [
-            "wave 3 parity"
+            "wave 3 parity",
+            "footnote disclosure",
+            "verse selection",
+            "Tafsir exclusion"
           ]
         }
       ],

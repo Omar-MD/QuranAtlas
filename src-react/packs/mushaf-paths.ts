@@ -17,7 +17,18 @@ export function mushafPageUrl({ riwayah, mushafEditionId }: MushafPackIdentity, 
 }
 
 function mushafPathname(url: string): string {
-  return new URL(url, 'https://quranatlas.local').pathname
+  const parsed = new URL(url, 'https://quranatlas.local')
+  if (parsed.origin !== 'https://quranatlas.local') {
+    throw new Error(`React Mushaf URLs must be same-origin dataset paths: ${url}`)
+  }
+  let pathname = parsed.pathname
+  try {
+    pathname = decodeURIComponent(pathname)
+  } catch {
+    throw new Error(`Invalid React Mushaf URL: ${url}`)
+  }
+  if (pathname.includes('..')) throw new Error(`Invalid React Mushaf URL: ${url}`)
+  return pathname
 }
 
 export function isLegacyMushafPageUrl(url: string): boolean {

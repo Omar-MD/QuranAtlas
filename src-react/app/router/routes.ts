@@ -1,5 +1,6 @@
 export const REACT_ROUTES = {
   home: '#/s/1',
+  launch: '#/',
   onboarding: '#/onboarding',
   surah: (surah: number, ayah?: number) => ayah ? `#/s/${surah}/${ayah}` : `#/s/${surah}`,
   mushaf: (page: number) => `#/m/${page}`,
@@ -12,10 +13,11 @@ export const REACT_ROUTES = {
 } as const
 
 export function getInitialReactHash(hash = window.location.hash): string {
-  return hash || REACT_ROUTES.home
+  return hash || REACT_ROUTES.launch
 }
 
 export type ReactRouteMatch =
+  | { type: 'launch' }
   | { type: 'reader'; surah: number; ayah?: number }
   | { type: 'mushaf'; page: number }
   | { type: 'surahs' }
@@ -31,8 +33,9 @@ function clampPositive(value: number, fallback: number): number {
 }
 
 export function matchReactRoute(hash = getInitialReactHash()): ReactRouteMatch {
-  const normalized = hash || REACT_ROUTES.home
+  const normalized = hash || REACT_ROUTES.launch
   const routePath = normalized.split('?')[0] ?? normalized
+  if (routePath === REACT_ROUTES.launch || routePath === '#') return { type: 'launch' }
   const surahMatch = /^#\/s\/(\d{1,3})(?:\/(\d{1,3}))?$/.exec(routePath)
   if (surahMatch) {
     return {

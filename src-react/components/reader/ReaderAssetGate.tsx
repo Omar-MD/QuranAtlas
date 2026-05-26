@@ -4,7 +4,7 @@ import { Button } from '../ui'
 
 export type ReaderAssetState = 'ready' | 'missing' | 'stale' | 'installing' | 'error'
 
-export function ReaderAssetGate({ children, label, state = 'ready' }: { children: ReactNode; label: string; state?: ReaderAssetState }) {
+export function ReaderAssetGate({ children, label, state = 'ready' }: { children?: ReactNode; label: string; state?: ReaderAssetState }) {
   if (state === 'ready') return <>{children}</>
   const message = state === 'missing'
     ? `${label} page pack is not installed.`

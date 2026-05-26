@@ -14,4 +14,6 @@
   --radius-surface: var(--qa-react-radius-surface);
   --font-ui: var(--qa-react-font-ui);
   --font-arabic: var(--qa-react-font-arabic);
+  --font-translation: var(--qa-react-font-translation);
+  --font-mono: var(--qa-react-font-mono);
 }

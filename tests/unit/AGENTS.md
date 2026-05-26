@@ -25,7 +25,7 @@ Good unit-test targets in this repo include:
 
 ## Component recipe
 
-Use the existing test stack:
+Use the existing Svelte test stack:
 
 - `@testing-library/svelte`
 - `vitest`
@@ -43,3 +43,7 @@ vi.mock('../../../src/data/dataset', () => ({
 ```
 
 If a test starts depending on real layout, service workers, or reload/hydration semantics, stop and move that slice to e2e instead of stretching the unit harness.
+
+## React dual-build carve-out
+
+React-only tests under `tests/unit/react-*` use the React test stack documented in `docs/tech-stack.md`: `@testing-library/react`, `vitest.react.config.ts`, and the React design-system/registry checks. Keep the same placement rules from this file, but do not use `@testing-library/svelte` for React TSX components.

@@ -1,15 +1,27 @@
-import { useState } from 'react'
-
 import { Button } from '../ui'
 
-export function TranslationFootnote({ marker, text }: { marker: string; text: string }) {
-  const [open, setOpen] = useState(false)
+export function TranslationFootnote({
+  controlsId,
+  marker,
+  onToggle,
+  open,
+}: {
+  controlsId?: string
+  marker: string
+  onToggle: () => void
+  open: boolean
+}) {
   return (
-    <span className="qar:inline-grid qar:gap-1">
-      <Button aria-expanded={open} onClick={() => setOpen((value) => !value)} size="sm" variant="ghost">
-        [{marker}]
-      </Button>
-      {open && <span className="qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-2 qar:text-sm qar:text-muted">{text}</span>}
-    </span>
+    <Button
+      aria-controls={controlsId}
+      aria-expanded={open}
+      aria-label={`Footnote ${marker}`}
+      className="qar-reader-fn-marker"
+      onClick={onToggle}
+      size="sm"
+      variant="ghost"
+    >
+      [{marker}]
+    </Button>
   )
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveLaunchRoute, shouldPersistLastSurface } from '../../../src-react/continuity/launch-restore'
+import { loadLaunchRouteFromDb, resolveLaunchRoute, shouldPersistLastSurface } from '../../../src-react/continuity/launch-restore'
 import { createBookmarkSyncMessage } from '../../../src-react/continuity/bookmarks/sync'
 
 describe('React continuity parity', () => {
@@ -22,6 +22,21 @@ describe('React continuity parity', () => {
   it('falls back to currentPosition then Al-Fatihah', () => {
     expect(resolveLaunchRoute({ onboardingComplete: true, lastSurface: '#/assets', currentPosition: { surah: 2, verse: 255 } })).toBe('#/s/2/255')
     expect(resolveLaunchRoute({ onboardingComplete: true })).toBe('#/s/1')
+  })
+
+  it('reads launch state from the React settings store', async () => {
+    const settings = {
+      get: async (key: string) => {
+        const records: Record<string, { value: unknown }> = {
+          onboardingComplete: { value: true },
+          lastSurface: { value: '#/m/8' },
+          currentPosition: { value: { surah: 2, verse: 255 } },
+        }
+        return records[key] ?? undefined
+      },
+    }
+
+    await expect(loadLaunchRouteFromDb({ settings })).resolves.toBe('#/m/8')
   })
 
   it('creates scoped bookmark sync messages', () => {

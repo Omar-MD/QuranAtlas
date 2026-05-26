@@ -1,10 +1,9 @@
 # React Tech Stack Repo Refactor Handoff Log
 
-This is the single coordination log for the React refactor child plans named by
-`docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`.
-Agents must read it before starting any related child plan and update it before
-handing over. Do not create per-agent or per-plan handoff logs unless the master
-spec is amended to name a split log explicitly.
+This is the single coordination log for the React refactor and React production
+parity work. Keep entries current-state focused and concise. Do not duplicate
+completed historical waves here unless they affect the active production parity
+track.
 
 Each entry should include:
 
@@ -19,255 +18,295 @@ Each entry should include:
 - Next-agent note: the shortest useful warning or starting point for the next
   child plan.
 
-## 2026-05-25 - Shared Handoff Log Policy Setup
+## 2026-05-26 - React Production Parity Fix 00 Wave 1
 
 - Status: complete.
-- Summary: established this shared handoff log as the canonical React refactor
-  coordination artifact; updated the reusable child-plan handover skill to
-  require master-spec-declared shared logs; updated the React refactor master
-  spec and child plans so related agents can discover this file before work.
-- Divergence: none from product scope; process clarified from flexible
-  "nearest coordination artifact" language to one constant log for this master
-  track.
-- Blockers and follow-ups: Plan `00` execution in the parent thread was
-  interrupted before completion; do not treat that chat as a completed Plan `00`
-  handoff. The next Plan `00` agent should reconcile from repo state and this
-  log.
-- Tests and validation: `pnpm run docs:check` passed with `derive: all clean`;
-  `git diff --check` passed.
+- Summary: completed Plan 00 by converting React golden/offline proof from
+  React-only route smoke checks into production-target Svelte-vs-React parity
+  harness work. React parity Playwright commands now build Svelte `dist/` and
+  production-target React `dist-react/`, serve both on strict preview ports,
+  and assert a React production deploy-target marker before route checks.
+  Golden assertions now fail on named audit classes for clean launch,
+  dataset-backed Al-Fatihah, real Mushaf SVG, Surah row count, seeded
+  bookmarks, settings route restoration, asset groups, About copy/clear-data,
+  search route contract, Daily Wird seed effects, and offline dataset request
+  failures. Boundary and registry gates now have focused unit coverage and
+  reject Svelte style imports, Svelte `qa-*` styling classes in React feature
+  code, missing named exports, and covered visual proof without references.
+- Divergence: this wave intentionally did not fix React product behavior; Plan
+  00 is harness-only, so the new parity e2e assertions are expected to fail
+  until later child plans repair the owned surfaces.
+- Blockers and follow-ups: none for Plan 00. The full golden and offline
+  suites intentionally remain red on downstream product parity issues until
+  later behavior plans close their owned `RPA-*` failures.
+- Tests and validation: `pnpm run test:e2e:react:golden -- --grep
+  "reader-surah-start phone-small" --reporter=line` rebuilt both targets but
+  failed with Playwright argument forwarding (`No tests found`); reran the
+  built artifacts directly with `env -u NO_COLOR PLAYWRIGHT_REACT_PARITY=1
+  PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --config
+  playwright.react.config.js tests/e2e/read/react-golden.spec.ts --grep
+  "reader-surah-start phone-small" --reporter=line`, which failed as expected
+  on `RPA-002` (`verse-1:7` missing). `env -u NO_COLOR
+  PLAYWRIGHT_INCLUDE_OFFLINE=1 PLAYWRIGHT_REACT_PARITY=1
+  PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --config
+  playwright.react.config.js tests/e2e/infra/react-offline.spec.ts
+  --reporter=line` failed as expected on `RPA-010` request/console guards for
+  offline dataset failures. `pnpm exec vitest run tests/unit/react-registry
+  --config vitest.react.config.ts` passed with 3 files / 9 tests. `pnpm run
+  check:react-registry`, `pnpm run check:react-ui-patterns`, and `pnpm run
+  check:react` passed. Completion reconciliation reran the full
+  `pnpm run test:e2e:react:golden` command: production builds succeeded, the
+  harness ran 37 tests, 12 passed, and 25 failed with named downstream parity
+  messages for `RPA-002`, `RPA-003`, `RPA-004`, `RPA-005`, `RPA-006`,
+  `RPA-008`, and `RPA-009`. `pnpm run test:e2e:react:offline` built both
+  targets and failed as expected on required offline dataset request failures
+  for `RPA-010`.
 - Dependency intake: none.
-- Files changed and commits: `.agents/skills/child-plan-handover/SKILL.md`;
-  `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-design.md`;
-  `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`;
-  React refactor child plans `00` through `18`, including `08A`, under
-  `docs/superpowers/plans/`. No commit yet.
-- Next-agent note: use this file for every React refactor child-plan summary.
+- Files changed and commits: `package.json`; `playwright.react.config.js`;
+  `vite.react.config.js`; `scripts/check-react-boundaries.mjs`;
+  `scripts/check-react-component-registry.mjs`;
+  `tests/e2e/fixtures/react-golden-routes.ts`;
+  `tests/e2e/fixtures/react-offline.ts`;
+  `tests/e2e/read/react-golden.spec.ts`;
+  `tests/e2e/navigate/react-golden.spec.ts`;
+  `tests/e2e/configure/react-golden.spec.ts`;
+  `tests/e2e/onboard/react-golden.spec.ts`;
+  `tests/e2e/infra/react-offline.spec.ts`;
+  `tests/unit/react-registry/check-react-boundaries.test.mjs`;
+  `tests/unit/react-registry/check-react-component-registry.test.mjs`;
+  `docs/tech-stack.md`; this handoff log. No commit yet.
+- Next-agent note: generated `dist-react/` and dataset manifest/provenance
+  changes from the verification build were reverted because they are proof
+  outputs, not source edits. The new parity e2e suites are red by design until
+  the downstream React behavior plans close their RPA issues.
 
-## 2026-05-25 - Plan 01 React App Shell And Dual Build
+## 2026-05-26 - React Production Parity Fix 01 Wave 1
 
 - Status: complete.
-- Summary: added isolated React preview scaffold under `src-react/**`, React-only Vite/TypeScript/Playwright configs, non-deploy `*:react` package scripts, a React/Svelte import-boundary scanner, React shell smoke e2e coverage, and docs for the dual-build boundary.
-- Divergence: none from the plan.
-- Blockers and follow-ups: later plans should keep `dist-react/` proof-only and avoid copying root `public/` into React output.
-- Tests and validation: `node scripts/check-react-boundaries.mjs` passed; `pnpm run build:react` passed; `pnpm run check:react` passed; `pnpm run test:e2e:react` passed with 1 test; `pnpm run build` passed and wrote `dist/`; `pnpm run check` passed; `pnpm run docs:check` passed with `derive: all clean`; `test ! -e dist-react/dataset/mushaf-pages && git diff --check` passed.
-- Dependency intake: added `react` `^19.2.6`, `react-dom` `^19.2.6`, `@vitejs/plugin-react` `^6.0.2`, `@types/react` `^19.2.15`, and `@types/react-dom` `^19.2.3`. Existing `vite-plugin-pwa` peer warning against Vite 8 remains.
-- Files changed and commits: `package.json`; `pnpm-lock.yaml`; `eslint.config.js`; `vite.react.config.js`; `tsconfig.react.json`; `playwright.react.config.js`; `scripts/check-react-boundaries.mjs`; `src-react/index.html`; `src-react/app/App.tsx`; `src-react/app/main.tsx`; `src-react/app/providers/AppProviders.tsx`; `src-react/app/router/routes.ts`; `src-react/styles/index.css`; `src-react/public/.gitkeep`; `tests/e2e/react-shell/smoke.spec.ts`; `docs/tech-stack.md`; `docs/context/repo-structure.md`; `docs/context/architecture.md`; this handoff log. No commit yet.
-- Next-agent note: Plan 02 can treat the Svelte app as unchanged by Plan 01; do not stage generated `dist-react/` output.
-
-## 2026-05-25 - Plan 02 Svelte Reference Baseline
-
-- Status: complete.
-- Summary: added the Svelte reference baseline appendix with dataset profile, route-state fixture matrix, storage seeding rules, viewport/theme coverage, accepted-difference policy, and reference update policy.
-- Divergence: none from the plan. No e2e helper was added because `tests/e2e/fixtures/idb.js` already exposes `seedBookmarks` for populated bookmark rows.
-- Blockers and follow-ups: missing-pack, failed-asset, and Daily Wird drawer route states are named manual baseline notes until later surface plans add narrower durable helpers or app-level browser routes.
-- Tests and validation: proof-owner path check passed with no missing concrete `tests/**` or `docs/ui-references/**` paths; `pnpm run docs:check` passed with `derive: all clean`; `git diff --check` passed; `git diff --name-only -- src public/dataset test-output` produced no output.
+- Summary: completed Plan 01 for `RPA-001` and
+  `RPA-007`. React clean launch now has an explicit `#/` launch route, gates
+  incomplete storage to `#/onboarding`, restores valid last reader surfaces
+  only after onboarding completion, and persists launchable surfaces back to
+  `settings.lastSurface`. React onboarding is now a controlled two-step
+  Riwayah plus Translation flow backed by runtime source metadata, with
+  disabled unavailable sources, focus handoff between steps, atomic completion
+  writes for `settings.onboardingComplete`, `settings.riwayah`, and
+  `settings.translationId`, hidden ambient shell chrome during onboarding,
+  44px onboarding touch targets, and production golden proof through `#/s/1`
+  across 320, 375, 768, and 1280 px widths.
+- Divergence: React intentionally keeps the shortened onboarding contract from
+  the child plan and does not port Svelte theme, shortcuts, reading preference,
+  offline expectation, Daily Wird, or later onboarding screens. The route
+  canonicalization updates `window.history` without feeding the restored hash
+  back into React state, preventing a redundant onboarding remount and aborted
+  source-index request during clean launch.
+- Blockers and follow-ups: none for Plan 01. Broader React parity still
+  remains red on later RPA issues such as reader corpus, Mushaf assets,
+  navigation depth, settings overlays, search, Daily Wird, and offline final
+  gates.
+- Tests and validation: red checkpoint first failed on missing
+  `loadLaunchRouteFromDb`, `writeOnboardingCompletion`, `onboarding-flow`, and
+  the old clean-hash `#/s/1` expectation. Final validation passed:
+  `pnpm exec vitest run tests/unit/react-continuity tests/unit/react-shell
+  tests/unit/react-storage tests/unit/react-navigate --config
+  vitest.react.config.ts`; `pnpm run check:react`; `pnpm run
+  check:react-registry`; `pnpm run check:react-ui-patterns`; `pnpm run
+  build`; `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react`;
+  `env -u NO_COLOR PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm
+  exec playwright test --config playwright.react.config.js
+  tests/e2e/onboard/react-golden.spec.ts
+  tests/e2e/navigate/react-golden.spec.ts --grep
+  "launch-fresh-onboarding|launch-restore-reader" --reporter=line`; `pnpm run
+  build:storybook:react`; `pnpm run test:storybook:react`; and `pnpm run
+  docs:check`. The first Storybook test run failed during Vite optimizer
+  reload after dependency optimization; the immediate rerun passed with 9 files
+  / 13 tests. Completion reconciliation expanded the launch/onboarding golden
+  proof to include keyboard traversal, no partial writes before final
+  completion, tokenized selected/disabled state checks, touch targets, reload
+  restore after completion, and tablet/desktop widths; the targeted
+  production slice passed 6/6 tests.
 - Dependency intake: none.
-- Files changed and commits: `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-02-svelte-reference-baseline-appendix.md`; this handoff log. No commit yet.
-- Next-agent note: Plan 03 can use the appendix fixture ids as the frozen Svelte parity reference; do not treat manual notes as accepted React differences.
-
-## 2026-05-25 - Plan 03 Tokens And Tailwind v4 Design System
-
-- Status: complete.
-- Summary: added React-only primitive and semantic token files, a prefixed Tailwind v4 theme, the React design-system CSS entry, token usage docs, a measured-layout allowlist, a React-only design literal scanner, scanner unit coverage, and wired Tailwind only into `vite.react.config.js`.
-- Divergence: added `tests/unit/**/*.test.mjs` to `vitest.config.js` so the planned `.test.mjs` unit fixture under `tests/unit/**` is discovered by Vitest.
-- Blockers and follow-ups: none for Plan 03. Later component plans must keep Tailwind usage behind the `qar:` prefix and semantic token theme.
-- Tests and validation: `pnpm run check:react:design` passed; `pnpm exec vitest run tests/unit/react-design-system/check-react-design-literals.test.mjs` passed with 2 tests; `pnpm run check:react` passed; `pnpm run build:react` passed; `pnpm run check` passed; `pnpm run docs:check && git diff --check && ( ! rg -n "@tailwindcss/vite|tailwindcss" vite.config.js src/styles )` passed.
-- Dependency intake: added `tailwindcss` `^4.3.0` and `@tailwindcss/vite` `^4.3.0`. Existing `vite-plugin-pwa` peer warning against Vite 8 remains.
-- Files changed and commits: `package.json`; `pnpm-lock.yaml`; `vite.react.config.js`; `vitest.config.js`; `src-react/app/App.tsx`; `src-react/app/main.tsx`; `src-react/design-system/**`; `scripts/check-react-design-literals.mjs`; `tests/unit/react-design-system/check-react-design-literals.test.mjs`; deleted `src-react/styles/index.css`; `docs/tech-stack.md`; `docs/context/repo-structure.md`; this handoff log. No commit yet.
-- Next-agent note: Plan 04 should import `src-react/design-system/index.css` for Storybook preview and can rely on `pnpm run check:react` to include the React design scanner.
-
-## 2026-05-25 - Plan 04 Storybook And Component Test Harness
-
-- Status: complete.
-- Summary: added React Storybook config, theme/viewport/reduced-motion preview globals, Storybook Vitest browser-test project, React TSX Vitest config, React Testing Library shell test, React shell story, and story coverage rules.
-- Divergence: did not keep `@storybook/test` because the current package is `8.6.15` and peers on Storybook 8 while current Storybook packages are `10.4.1`; Storybook 10 testing is wired through `@storybook/addon-vitest` and `@vitest/browser-playwright` instead. Added Storybook-only Vite filtering to remove the shipped Svelte PWA plugin and explicitly add Tailwind, so Storybook does not build a service worker or inherit deploy app behavior.
-- Blockers and follow-ups: none. Storybook build output is generated and was removed after verification.
-- Tests and validation: `pnpm run test:react` passed with 1 test; `pnpm run build:storybook:react` passed without warnings after Storybook-only Vite tuning; `pnpm run test:storybook:react` passed with 1 browser story test; `pnpm run check:react` passed; `pnpm run check` passed; `pnpm run docs:check` passed with `derive: all clean`; `git diff --check` passed; `git status --short storybook-static-react test-output` produced no output after cleanup.
-- Dependency intake: added `storybook` `^10.4.1`, `@storybook/react` `10.4.1`, `@storybook/react-vite` `^10.4.1`, `@storybook/addon-a11y` `^10.4.1`, `@storybook/addon-vitest` `^10.4.1`, `@testing-library/react` `^16.3.2`, `@testing-library/user-event` `^14.6.1`, and `@vitest/browser-playwright` `4.1.5`. Existing `vite-plugin-pwa` peer warning against Vite 8 remains.
-- Files changed and commits: `package.json`; `pnpm-lock.yaml`; `eslint.config.js`; `.storybook/main.ts`; `.storybook/preview.tsx`; `.storybook/vitest.setup.ts`; `vitest.react.config.ts`; `vitest.workspace.ts`; `src-react/app/App.stories.tsx`; `src-react/design-system/docs/story-requirements.md`; `tests/unit/react-shell/App.test.tsx`; `docs/tech-stack.md`; `docs/context/repo-structure.md`; this handoff log. No commit yet.
-- Next-agent note: Plan 05 can use both `pnpm run build:storybook:react` and Playwright route coverage as candidate screenshot sources; Storybook is proof evidence only, not the visual source of truth.
-
-## 2026-05-25 - Plan 05 Visual Regression Provider Selection
-
-- Status: complete.
-- Summary: selected local Playwright screenshot baselines, documented provider comparison and privacy/baseline/update policies, added a React visual Playwright config, route screenshot spec, baseline README, stable `visual:react` script, initial desktop/mobile React shell baselines, and cleaned up two ineffective dynamic imports so the final Svelte build log is warning-free.
-- Divergence: Context7 search for `Percy` matched an unrelated TypeScript compiler, so `BrowserStack Percy` was used and resolved to `/websites/browserstack`. The first attempted baseline generation used `pnpm run visual:react -- --update-snapshots`, which Playwright interpreted incorrectly; the successful baseline update command was `pnpm exec playwright test --config playwright.visual.react.config.js --update-snapshots`.
-- Blockers and follow-ups: hosted providers remain blocked until Quran/Mushaf screenshot upload scope, privacy, retention, and deletion policy are explicitly approved.
-- Tests and validation: Context7 `library` and `docs` were run for Chromatic, BrowserStack Percy, Argos, Loki, and Playwright; `pnpm exec playwright test --config playwright.visual.react.config.js --update-snapshots` created two baselines and passed; `pnpm run visual:react` passed with 2 tests; `pnpm run test:e2e:react` passed with 1 test; `pnpm exec vitest run tests/unit/data/riwayah-packages.test.ts tests/unit/infra/offline/offline-selector.test.ts tests/unit/read/tafsir-state.test.ts` passed with 28 tests; `pnpm run build` passed without warnings; `pnpm run check` passed; `pnpm run check:react` passed after adding React visual spec lint coverage; `pnpm run docs:check` passed with `derive: all clean`; `git diff --check` passed; `! rg -n "dist-react|visual:react|storybook-static-react" .github/workflows/deploy.yml` passed.
-- Dependency intake: none.
-- Files changed and commits: `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-05-visual-regression-provider-decision.md`; `package.json`; `playwright.react.config.js`; `playwright.visual.react.config.js`; `src/data/offline-client.ts`; `tests/e2e/react-visual/shell.spec.ts`; `tests/e2e/react-visual/README.md`; `tests/e2e/react-visual/__screenshots__/shell.spec.ts-snapshots/react-shell-visual-desktop-darwin.png`; `tests/e2e/react-visual/__screenshots__/shell.spec.ts-snapshots/react-shell-visual-mobile-darwin.png`; `eslint.config.js`; `docs/tech-stack.md`; this handoff log. No commit yet.
-- Next-agent note: child spec 06 can graduate component primitives with local Playwright visual coverage first; do not enable hosted visual uploads without updating the decision doc.
-
-## 2026-05-25 - Plan 06 Owned shadcn/Radix Component Layer
-
-- Status: complete.
-- Summary: added the React-owned UI layer under `src-react/components/ui/**`, `components.json`, class composition helper, Button/IconButton/form/feedback/tooltip/overlay/menu/disclosure components, stories, component tests, and Radix-boundary enforcement.
-- Divergence: `SegmentedControl` is an owned tablist implementation instead of a Radix Tabs wrapper because Radix Tabs requires matching tab panels; Storybook axe caught dangling `aria-controls` when it was used as a panel-less segmented control.
-- Blockers and follow-ups: none. Future React feature code must import from `src-react/components/ui` and may not import Radix directly.
-- Tests and validation: Context7 Radix/shadcn docs commands completed; `pnpm exec vitest run tests/unit/react-components tests/unit/react-registry tests/unit/react-storage tests/unit/react-offline tests/unit/react-packs --config vitest.react.config.ts` passed with 26 tests; `pnpm run check:react` passed; `pnpm run validate:react` passed with 29 React tests and `build:react`; `pnpm run build:storybook:react` passed; `pnpm run test:storybook:react` passed; `pnpm run visual:react` passed with 2 tests. Final full-repo validation is recorded in the Plan 08A entry.
-- Dependency intake: added Radix React primitive packages, `@radix-ui/react-slot`, `class-variance-authority`, `clsx`, `tailwind-merge`, and `lucide-react`.
-- Files changed and commits: `components.json`; `package.json`; `pnpm-lock.yaml`; `src-react/components/ui/**`; `src-react/design-system/utils/cn.ts`; `src-react/design-system/docs/components.md`; `scripts/check-react-radix-boundaries.mjs`; `tests/unit/react-components/**`; `docs/tech-stack.md`; `docs/context/repo-structure.md`; `docs/context/architecture.md`; `.agents/skills/quranatlas-ui-workflow/SKILL.md`; `AGENTS.md`; this handoff log. No commit yet.
-- Next-agent note: the owned component layer is intentionally small; add variants only when a later product surface needs them and update the registry in the same change.
-
-## 2026-05-25 - Plan 07 Component Registry And Agent Rules
-
-- Status: complete.
-- Summary: added the registry schema, initial component registry entries for Plan 06 exports, registry README, agent component workflow doc, registry validator, raw React UI pattern scanner, tests, `validate:react`, and agent-facing pointers to the registry.
-- Divergence: none from product scope; `SegmentedControl` registry dependencies reflect its owned implementation rather than Radix Tabs after the Storybook a11y finding.
-- Blockers and follow-ups: none.
-- Tests and validation: `pnpm run check:react-registry` passed; `pnpm run check:react-ui-patterns` passed; registry and pattern tests passed as part of the React unit suite; `pnpm run validate:react` passed. Final full-repo validation is recorded in the Plan 08A entry.
-- Dependency intake: none beyond Plan 06 packages.
-- Files changed and commits: `src-react/design-system/registry/**`; `src-react/design-system/docs/agent-component-workflow.md`; `scripts/check-react-component-registry.mjs`; `scripts/check-react-ui-forbidden-patterns.mjs`; `tests/unit/react-registry/**`; `package.json`; `docs/tech-stack.md`; `docs/context/repo-structure.md`; `AGENTS.md`; `.agents/skills/quranatlas-ui-workflow/SKILL.md`; this handoff log. No commit yet.
-- Next-agent note: later product components and page recipes should extend `component-registry.json` in the same change that adds the component.
-
-## 2026-05-25 - Plan 08 Offline Storage And Asset Pack Architecture
-
-- Status: complete.
-- Summary: added React-only Dexie v7 schema mirror, storage types, DB open/close helpers, reader asset bundle writer facade, storage error helpers, generic asset-pack status/lifecycle, Cache Storage plan helpers, React cache names, quota mapping, service-worker message contracts, UI-state mapping, and same-origin `/dataset/**` runtime URL guard.
-- Divergence: Workbox/VitePWA Context7 docs were not fetched in this execution because no React service-worker implementation, VitePWA config, or Workbox strategy code was written; this plan delivered typed contracts and validators only.
-- Blockers and follow-ups: no new IDB stores or service-worker behavior landed. Later installer implementation must keep install, verify, and activate separate.
-- Tests and validation: `pnpm exec vitest run tests/unit/react-storage tests/unit/react-offline --config vitest.react.config.ts` passed as part of the focused React suite; `pnpm run validate:react` passed. Final full-repo validation is recorded in the Plan 08A entry.
-- Dependency intake: added `dexie` `^4.4.2`.
-- Files changed and commits: `src-react/storage/**`; `src-react/offline/**`; `src-react/data/runtime-boundary.ts`; `tests/unit/react-storage/**`; `tests/unit/react-offline/**`; `package.json`; `pnpm-lock.yaml`; `docs/tech-stack.md`; `docs/context/repo-structure.md`; `docs/context/architecture.md`; `docs/context/data-model.md`; `docs/context/source-data-flow.md`; this handoff log. No commit yet.
-- Next-agent note: React storage is a mirror of the existing v7 contract only; do not persist rich pack lifecycle state without an explicit schema migration plan.
-
-## 2026-05-25 - Plan 08A Mushaf Install-On-Demand Asset Strategy
-
-- Status: complete.
-- Summary: added React-only edition-aware Mushaf path, index, cache-name, fixture, install-plan, service-worker protocol helpers, static asset/index scanners, package scripts, and tests. React rejects legacy Mushaf paths and checks `dist-react/` for page SVG bodies.
-- Divergence: the index checker accepts the current generated `public/dataset/indexes/mushaf-assets.json` shape (`assets[]` with `files[]`) as well as future React pack-shaped `packs[]`, while enforcing edition-aware URLs for both.
-- Blockers and follow-ups: no React service-worker installer code exists yet; later implementation must use the message contracts here and keep page bodies out of the app shell.
-- Tests and validation: `pnpm run check:react-mushaf-assets` passed; Mushaf path/install-plan/scanner tests passed as part of the focused React suite; `pnpm run validate:react` passed; `pnpm run build:storybook:react` passed; `pnpm run test:storybook:react` passed; `pnpm run visual:react` passed with 2 tests; `pnpm run validate` passed with 127 Vitest files / 919 tests, production build, chunk checks, and docs check; `git diff --check` passed.
-- Dependency intake: none beyond Plan 08.
-- Files changed and commits: `src-react/packs/**`; `src-react/offline/mushaf-service-worker-protocol.ts`; `scripts/check-react-mushaf-assets.mjs`; `scripts/check-react-mushaf-indexes.mjs`; `tests/unit/react-packs/**`; `package.json`; `docs/tech-stack.md`; `docs/context/repo-structure.md`; `docs/context/source-data-flow.md`; this handoff log. No commit yet.
-- Next-agent note: React Mushaf URLs are edition-aware only: `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/...`; legacy per-riwayah paths remain Svelte compatibility only until a later migration/removal plan owns deletion.
-
-## 2026-05-26 - Wave 3 Plans 09-14 React Parity
-
-- Status: complete.
-- Summary: implemented React preview routes and product modules for Wave 09
-  through Wave 14: Verse reader, Mushaf asset gate/page viewer, reader chrome,
-  reader data and translation alias adapters, metadata lanes, navigation drawer
-  and lists, settings/assets/onboarding routes, search schema/query/alias
-  helpers, continuity launch restore/current position/bookmark helpers, and
-  Daily Wird progress/store/components. The React app now renders routed
-  preview surfaces instead of only the placeholder shell while Svelte remains
-  the shipped production app.
-- Divergence: React e2e proof remains under the existing React Playwright
-  `tests/e2e/react-shell/**` project instead of adding separate top-level
-  `read`, `navigate`, `configure`, and `search` React projects. Search landed
-  as an owned runtime shard schema/query path with preview seed data; no
-  generated `/dataset/search/**` output or data-build command was added in this
-  wave. The React service-worker installer remains contract-only from Waves 08
-  and 08A.
-- Blockers and follow-ups: Wave 15 should add golden route/a11y/focus coverage
-  over these routed React surfaces. Before cutover, search needs real generated
-  shard output and install verification if it is kept in required parity scope.
-- Tests and validation: Context7 `library` and `docs` completed for TanStack
-  Virtual; `pnpm exec vitest run tests/unit/react-read tests/unit/react-navigate
-  tests/unit/react-search tests/unit/react-metadata tests/unit/react-continuity
-  tests/unit/react-wird --config vitest.react.config.ts` passed with 6 files /
-  18 tests; `pnpm run validate:react` passed with React registry/pattern/Mushaf
-  gates, 20 React test files / 47 tests, and `build:react`; `pnpm run
-  test:e2e:react` passed with 2 tests; `pnpm exec playwright test --config
-  playwright.visual.react.config.js --update-snapshots` regenerated desktop and
-  mobile React shell baselines; `pnpm run visual:react` passed with 2 tests.
-  In-app browser proof covered `#/s/1/1` at 375x812, `#/settings` at 768x1024,
-  and `#/search` at 1280x900 with no horizontal overflow. Final full-repo
-  validation is recorded in the conversation outcome.
-- Dependency intake: added `@tanstack/react-virtual` `3.13.26`.
-- Files changed and commits: `package.json`; `pnpm-lock.yaml`;
-  `src-react/app/App.tsx`; `src-react/app/router/routes.ts`;
-  `src-react/app/routes/**`; `src-react/components/reader/**`;
-  `src-react/components/navigation/**`; `src-react/components/settings/**`;
-  `src-react/components/sources/**`; `src-react/components/offline/**`;
-  `src-react/components/search/**`; `src-react/continuity/**`;
-  `src-react/data/reader-corpus.ts`; `src-react/data/verse-aliases.ts`;
-  `src-react/metadata/**`; `src-react/search/**`;
-  `src-react/offline/search/search-pack.ts`; `src-react/design-system/recipes/**`;
+- Files changed and commits: `src-react/app/App.tsx`;
+  `src-react/app/router/routes.ts`;
+  `src-react/app/routes/onboarding/OnboardingRoute.tsx`;
+  `src-react/app/routes/onboarding/onboarding-flow.ts`;
+  `src-react/continuity/launch-restore.ts`;
+  `src-react/continuity/last-surface.ts`;
+  `src-react/data/source-index.ts`;
+  `src-react/storage/settings-writer.ts`;
+  `src-react/storage/types.ts`;
+  `src-react/components/settings/settings.stories.tsx`;
   `src-react/design-system/registry/component-registry.json`;
-  `tests/unit/react-read/**`; `tests/unit/react-navigate/**`;
-  `tests/unit/react-search/**`; `tests/unit/react-metadata/**`;
-  `tests/unit/react-continuity/**`; `tests/unit/react-wird/**`;
-  `tests/e2e/react-shell/wave3.spec.ts`;
-  `tests/e2e/react-visual/__screenshots__/shell.spec.ts-snapshots/*.png`;
-  `docs/tech-stack.md`; `docs/context/architecture.md`;
-  `docs/context/data-model.md`; `docs/context/repo-structure.md`;
-  `docs/context/style-map.md`; this handoff log. No commit yet.
-- Next-agent note: start Wave 15 from the React routes now present in
-  `src-react/app/routes/**`; keep production deploy routing on Svelte until
-  the cutover plans explicitly flip it.
-
-## 2026-05-26 - Plan 15 Golden Routes And Accessibility Gates
-
-- Status: complete.
-- Summary: added the React golden route fixture matrix, route-owned React
-  Playwright specs for read/configure/navigate/onboard surfaces, React a11y and
-  offline helpers, explicit React preview offline service-worker proof, query
-  hash route matching, empty-hash hash normalization, touch-target and heading
-  accessibility fixes, stable Wave 15 e2e scripts, and the Wave 15 appendix.
-  `validate:react` now includes React static checks, registry/pattern/Mushaf
-  checks, React unit/component tests, build, golden/a11y e2e, offline preview
-  proof, visual regression, Storybook build/test, and docs check.
-- Divergence: React offline proof required adding an isolated proof-only
-  VitePWA service worker in `dist-react/` because earlier waves only delivered
-  contracts. This does not alter Svelte production routing or the production
-  service worker. The route fixture for first-run onboarding uses explicit
-  `#/onboarding` because React does not yet implement persisted first-run
-  onboarding gating.
-- Blockers and follow-ups: generated production search shards and installed
-  search-pack proof remain a cutover decision if search stays required parity.
-  React production entry remains unapproved and unflipped.
-- Tests and validation: Context7 `library` and `docs` completed for
-  `vite-plugin-pwa`; `pnpm exec vitest run tests/unit/react-shell/routes.test.ts
-  --config vitest.react.config.ts` failed before the query-route fix and passed
-  after it; `pnpm run check:react` passed; `pnpm run test:react` passed with 21
-  files / 48 tests; `pnpm run test:e2e:react:golden` passed with 35 tests;
-  `pnpm run test:e2e:react:a11y` passed with 35 tests; `pnpm run
-  test:e2e:react:offline` passed with 1 test after `build:react`; `pnpm run
-  visual:react` passed with 2 tests after updating the selected local
-  baselines; `pnpm run validate:react` passed with 37 React e2e passes and one
-  offline-in-dev skip; `pnpm run validate` passed with 130 Vitest files / 927
-  tests, Svelte production build, chunk checks, and docs check; `git diff
-  --check` passed.
-- Dependency intake: none. `vite-plugin-pwa` was already present; React now uses
-  it in `vite.react.config.js` for proof-only preview service-worker output.
-- Files changed and commits: `package.json`; `eslint.config.js`;
-  `vite.react.config.js`; `vitest.storybook.react.config.ts`;
-  `playwright.react.config.js`; `src-react/app/App.tsx`;
-  `src-react/app/router/routes.ts`; `src-react/components/ui/button.tsx`;
-  `src-react/components/reader/wird/DailyWirdCard.tsx`;
-  `src-react/data/reader-corpus.ts`; `tests/e2e/fixtures/react-*.ts`;
-  `tests/e2e/{read,configure,navigate,onboard,infra}/react-*.spec.ts`;
+  `tests/unit/react-continuity/continuity-wave3.test.ts`;
   `tests/unit/react-shell/routes.test.ts`;
-  `tests/e2e/react-visual/__screenshots__/shell.spec.ts-snapshots/*.png`;
-  `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-15-golden-routes-accessibility-gates-appendix.md`;
-  `docs/tech-stack.md`; `docs/context/architecture.md`;
-  `docs/context/source-data-flow.md`; `docs/context/style-map.md`; this handoff
-  log. No commit yet.
-- Next-agent note: use `pnpm run validate:react` for the complete React proof
-  gate. Use `pnpm run test:e2e:react:offline` only after `pnpm run build:react`;
-  default dev-server e2e intentionally skips the preview-only offline test.
+  `tests/unit/react-storage/db-schema.test.ts`;
+  `tests/unit/react-navigate/navigation-wave3.test.tsx`;
+  `tests/unit/react-navigate/onboarding-flow.test.ts`;
+  `tests/e2e/onboard/react-golden.spec.ts`; this handoff log. No commit yet.
+- Next-agent note: start the next wave from Plan 02 reader corpus and verse
+  interactions; avoid expanding onboarding beyond the intentional two-step
+  React contract.
 
-## 2026-05-26 - Plan 16 Cutover Readiness
+## 2026-05-26 - React Production Parity Fix 02 Wave 1
 
 - Status: complete.
-- Summary: added
-  `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-16-cutover-readiness-evidence.md`
-  with child-wave readiness, command evidence, artifact routing readiness,
-  rollback plan, soak policy, and Wave 17 handoff. The evidence explicitly keeps
-  React non-production and marks production flip approval as not approved.
-- Divergence: none from the plan; this wave remained evidence/docs-only beyond
-  consuming the Wave 15 validation evidence.
-- Blockers and follow-ups: Wave 17 is blocked until the user/stakeholder
-  explicitly approves the production entry flip based on the readiness evidence.
-  Wave 18 is blocked until after a successful Wave 17 production flip, soak, and
-  explicit Svelte-removal approval.
-- Tests and validation: same final validation as Plan 15: `pnpm run
-  validate:react` passed; `pnpm run validate` passed; `git diff --check` passed.
+- Summary: completed Plan 02 for `RPA-002`. React Verse reader now loads the
+  real variant-aware Quran corpus from
+  `/dataset/quran-text/{riwayah}/{quranTextStyleId}/{surah}.json`, defaults to
+  `uthmani-kfgqpc-v1`, resolves Bridges translations through the Hafs-keyed
+  alias table for Qalun/Warsh, renders Surah 1 with seven dataset-backed
+  verses, Basmala, Svelte-matched KFGQPC/Newsreader typography, faded verse
+  dividers, the centered intrinsic Surah title header, Svelte reader column
+  caps and verse padding variables, block-level translation footnotes,
+  end-positioned verse numbers, full-width LTR translation rows, Svelte-style
+  previous/next Surah quick navigation chevrons from `/dataset/surahs.json`,
+  verse selection, optional knowledge metadata, and current-position writes.
+  Silent React preview fallback verses were removed and missing required text
+  now surfaces explicit unavailable or error states. React still intentionally
+  omits Tafsir preview and sheet UI.
+- Divergence: added a React Vite dev/preview middleware that serves the root
+  `public/dataset/**` and `public/fonts/**` trees at same-origin paths for
+  parity proof. React list rendering now uses normal document scroll instead
+  of the nested virtual scroller because the virtual container could lock or
+  jump in long-reader routes; the component name remains `VirtualVerseList`
+  until later cleanup or safe measured virtualization work.
+- Blockers and follow-ups: none for Plan 02. Plan 03 still owns Mushaf real
+  asset loading; Plan 04 still owns drawer, Surah/Juz lists, and bookmark
+  persistence UI; Plan 06 still owns Daily Wird rendering.
+- Tests and validation: red checkpoint failed as expected on the old
+  `/dataset/quran-text/qaloon/uthmani/001.json` path, fallback preview verses,
+  missing unavailable state, and missing Basmala/full Al-Fatihah render.
+  Final validation passed: `pnpm exec vitest run tests/unit/react-read
+  tests/unit/react-metadata --config vitest.react.config.ts`; `pnpm run
+  check:react`; `pnpm run check:react-registry`; `pnpm run
+  check:react-ui-patterns`; `pnpm run build`; `VITE_QURANATLAS_DEPLOY_TARGET=production
+  pnpm run build:react`; direct production parity slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 REACT_PARITY_PORT=4287
+  SVELTE_PARITY_PORT=4286 pnpm exec playwright test --config
+  playwright.react.config.js tests/e2e/read/react-golden.spec.ts --grep
+  "reader-surah-start|reader-ayah-deeplink" --reporter=line` passed 6/6;
+  `pnpm run build:storybook:react`; `pnpm run test:storybook:react`; `pnpm run
+  docs:check`; and `git diff --check`. The package-script form `pnpm run
+  test:e2e:react:golden -- --grep "reader-surah-start|reader-ayah-deeplink"
+  --reporter=line` rebuilt both targets but failed with Playwright argument
+  forwarding (`No tests found`), so the equivalent direct Playwright command
+  above was used after the successful builds. Follow-up polish validation
+  passed: `pnpm exec vitest run tests/unit/react-read/reader-wave3.test.tsx
+  --config vitest.react.config.ts`; `pnpm run check:react`;
+  `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react`; direct
+  production parity slice `env -u NO_COLOR PLAYWRIGHT_REACT_PARITY=1
+  PLAYWRIGHT_USE_PREVIEW=1 REACT_PARITY_PORT=4289 SVELTE_PARITY_PORT=4288
+  pnpm exec playwright test --config playwright.react.config.js
+  tests/e2e/read/react-golden.spec.ts --grep
+  "reader-surah-start|reader-ayah-deeplink" --reporter=line` passed 6/6;
+  `pnpm run docs:check`; and `git diff --check`. Surah-header and reader
+  spacing enforcement reran the targeted red/green proof with
+  `reader-surah-start phone-standard` failing before the CSS layer fix and
+  passing after it, then reran the same direct production parity slice on ports
+  4290/4291 with 6/6 passing. The quick-navigation follow-up added a red
+  unit proof for missing previous/next controls, then reran
+  `pnpm exec vitest run tests/unit/react-read/reader-wave3.test.tsx --config
+  vitest.react.config.ts`, `pnpm run check:react`,
+  `pnpm run check:react-registry`, `pnpm run check:react-ui-patterns`,
+  `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react`, and the
+  same direct reader production parity slice on ports 4290/4291 with 6/6
+  passing.
 - Dependency intake: none.
-- Files changed and commits:
-  `docs/superpowers/specs/2026-05-24-react-tech-stack-repo-refactor-16-cutover-readiness-evidence.md`;
+- Files changed and commits: `vite.react.config.js`; `docs/tech-stack.md`;
+  `docs/context/surfaces/read.md`; `docs/context/style-map.md`;
+  `src-react/data/reader-corpus.ts`; `src-react/data/verse-aliases.ts`;
+  `src-react/data/surah-index.ts`;
+  `src-react/metadata/knowledge.ts`; `src-react/app/routes/read/ReaderRoute.tsx`;
+  `src-react/components/reader/ReaderVerseSurface.tsx`;
+  `src-react/components/reader/SurahContinuityButton.tsx`;
+  `src-react/components/reader/VirtualVerseList.tsx`;
+  `src-react/components/reader/VerseBlock.tsx`;
+  `src-react/components/reader/TranslationFootnote.tsx`;
+  `src-react/components/reader/useReaderPositionSync.ts`;
+  `src-react/components/reader/useVerseInteractionReducer.ts`;
+  `src-react/components/reader/reader.stories.tsx`;
+  `src-react/design-system/registry/component-registry.json`;
+  `tests/unit/react-read/reader-wave3.test.tsx`;
+  `tests/e2e/read/react-golden.spec.ts`;
+  `docs/superpowers/plans/2026-05-24-react-production-parity-fix-02-reader-corpus-and-verse-interactions.md`;
   this handoff log. No commit yet.
-- Next-agent note: do not start Wave 17 from this repo state without explicit
-  approval text or an approved artifact changing `Approval status: not approved`.
+- Next-agent note: start Plan 03 from the real Mushaf asset path/index
+  contract. The React reader corpus is now dataset-backed, so downstream
+  navigation/settings/offline tests should not rely on generic reader landmark
+  checks or preview fallback text. Do not reintroduce a nested reader scroll
+  container without viewport proof for long Surahs and ayah deeplinks.
+
+## 2026-05-26 - React Production Parity Fix 03 Wave 1
+
+- Status: complete.
+- Summary: completed Plan 03 for `RPA-003`. React Mushaf now loads the active
+  edition-aware page pack through `src-react/packs/mushaf-page-asset.ts`,
+  checks `indexes/mushaf-assets.json` membership before manifest/page fetches,
+  validates manifest riwayah/edition/page identity, sanitizes inline SVG
+  markup, rewrites quran.ws black/white paint into React Mushaf semantic
+  tokens, and renders the page through a pure `MushafPageViewer` with
+  Auto/Page/Width controls and a clamped jump chip. The old production
+  placeholder SVG label is gone from ready states, and missing active page
+  packs show an explicit asset gate without loading Qalun under another active
+  label.
+- Divergence: used direct Node/Vite/Vitest/Playwright commands because this
+  desktop shell had no `pnpm` executable on PATH. The commands are equivalent
+  to the package scripts' underlying tools. React route proof performs the
+  index-membership check before manifest fetch, avoiding expected 404 console
+  noise for missing optional page packs.
+- Blockers and follow-ups: none for Plan 03. Plan 05 still owns full settings
+  and asset-management install/activate UI. Plan 09 still owns broad offline
+  reload/cache proof.
+- Tests and validation: red checkpoint failed on missing
+  `src-react/packs/mushaf-page-asset`, external URL acceptance, missing
+  riwayah/edition index validation, and placeholder route behavior. Final
+  validation passed with bundled Node PATH: `vitest run tests/unit/react-packs
+  tests/unit/react-read/reader-wave3.test.tsx --config vitest.react.config.ts`
+  (5 files / 22 tests); `vitest run tests/unit/react-packs
+  tests/unit/react-read/reader-wave3.test.tsx
+  tests/unit/react-components/ui-components.test.tsx --config
+  vitest.react.config.ts` (6 files / 28 tests); `tsc --project
+  tsconfig.react.json --noEmit`; React ESLint command from `lint:react`;
+  `node scripts/check-react-boundaries.mjs`; `node
+  scripts/check-react-design-literals.mjs`; `node
+  scripts/check-react-radix-boundaries.mjs`; `node
+  scripts/check-react-component-registry.mjs`; `node
+  scripts/check-react-ui-forbidden-patterns.mjs`; `node
+  scripts/check-react-mushaf-assets.mjs`; `node
+  scripts/check-react-mushaf-indexes.mjs`; `node scripts/data/cli.mjs build`;
+  `vite build`; `VITE_QURANATLAS_DEPLOY_TARGET=production vite build --config
+  vite.react.config.js`; direct production parity slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 REACT_PARITY_PORT=4289
+  SVELTE_PARITY_PORT=4286 playwright test --config
+  playwright.react.config.js tests/e2e/read/react-golden.spec.ts --grep
+  "mushaf-ready|mushaf-missing-pack" --reporter=line` (6/6 passed);
+  `storybook build --config-dir .storybook --output-dir
+  storybook-static-react`; `vitest run --config
+  vitest.storybook.react.config.ts` (9 files / 18 tests); `node
+  scripts/docs/derive.mjs --check`; and `git diff --check`.
+- Dependency intake: none.
+- Files changed and commits: `src-react/app/routes/read/MushafRoute.tsx`;
+  `src-react/components/reader/MushafPageViewer.tsx`;
+  `src-react/components/reader/ReaderAssetGate.tsx`;
+  `src-react/components/reader/reader.stories.tsx`;
+  `src-react/components/ui/form-controls.tsx`;
+  `src-react/design-system/index.css`;
+  `src-react/design-system/tokens/semantic.css`;
+  `src-react/design-system/registry/component-registry.json`;
+  `src-react/packs/mushaf-index.ts`;
+  `src-react/packs/mushaf-paths.ts`;
+  `src-react/packs/mushaf-page-asset.ts`;
+  `tests/unit/react-packs/mushaf-paths.test.ts`;
+  `tests/unit/react-packs/mushaf-install-plan.test.ts`;
+  `tests/unit/react-read/reader-wave3.test.tsx`;
+  `tests/e2e/fixtures/react-golden-routes.ts`;
+  `tests/e2e/read/react-golden.spec.ts`;
+  `docs/context/surfaces/read.md`;
+  `docs/context/surfaces/infra.md`;
+  `docs/context/style-map.md`;
+  `docs/superpowers/plans/2026-05-24-react-production-parity-fix-03-mushaf-real-assets.md`;
+  this handoff log. No commit yet.
+- Next-agent note: start Plan 04 from real navigation/bookmark data. The React
+  Mushaf route now depends on `indexes/mushaf-assets.json` before manifest
+  fetches; missing optional page-pack tests should assert index membership and
+  absence of fallback page requests, not expected manifest 404s.

@@ -18,6 +18,7 @@ Read:
 - `docs/context/data-model.md`
 - `docs/context/source-data-flow.md`
 - `docs/superpowers/specs/2026-05-24-react-production-parity-fix-master-spec.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
 - `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 
@@ -77,6 +78,77 @@ Tests:
 - `docs/context/style-map.md`
 - `docs/tech-stack.md` only if scripts/tooling change
 
+## Readiness Refinement
+
+- Execute only after Plans 00, 01, 02, and 03 so launch, reader, and asset path contracts exist.
+- Test-first checkpoint: write persistence, transient route, asset-index/cache, no-preview, and responsive assertions, run them against the current React production-target build, and confirm failures on standalone/local/static behavior before app edits.
+- Svelte-vs-React comparison covers `#/settings` route restore, mode-aware shell behavior, persisted settings effects on reader, asset row derivation, install/verify/delete/set-active state, and the intentional absence of live verse/Mushaf previews in React.
+- Production-target verification must build and serve both artifacts through the Plan 00 harness; Storybook and component tests support state coverage but do not replace route parity.
+- CSS/React styling enforcement: inspect registry first, extend owned Sheet/Dialog/settings/asset-row variants before feature styling, use `qar:` semantic-token utilities only, update stories/registry/tests, and never import/copy Svelte CSS or `.qa-*` classes.
+- Responsive/style proof must use `320x568`, `375x812`, `768x1024`, and `1280x900`, plus computed-style/CSS-variable assertions that settings and asset-row `qar:` utilities resolve through `--qa-react-*` semantic tokens for canvas, surface, text, muted text, border, focus, accent, selected, disabled, warning, and danger states.
+- Docs updates must land in `docs/context/surfaces/configure.md`, `docs/context/surfaces/infra.md` for cache behavior, `docs/context/style-map.md` for proof ownership, and `docs/tech-stack.md` for script/tooling changes.
+- Before implementation, use `.agents/skills/child-plan-handover/SKILL.md` to reconcile this plan against `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`, current `git status`, and any newer sibling-plan entries.
+
+## Implementation Task Plan
+
+### Task 1: Settings Route Restore And Persistent Form State
+
+**Files:**
+- Modify: `src-react/app/routes/settings/SettingsRoute.tsx`
+- Modify: `src-react/components/settings/SettingsShell.tsx`
+- Modify: `src-react/components/settings/VerseSettings.tsx`
+- Modify: `src-react/components/settings/MushafSettings.tsx`
+- Modify: `src-react/components/settings/SourcePicker.tsx`
+- Modify: `src-react/storage/**`
+- Test: `tests/unit/react-storage/**`
+- Test: `tests/e2e/configure/react-golden.spec.ts`
+
+- [ ] Write failing tests for `#/settings` transient restore, settings not becoming `lastSurface`, persisted toggles/sliders/source choices, and absence of live verse/Mushaf preview panes.
+- [ ] Implement `useSettingsForm` or equivalent provider/reducer initialized from storage with dirty, loading, error, compatibility failure, commit, reset, close, focus trap, Escape/outside close, body scroll lock, and focus return states.
+- [ ] Use only storage facades and active bundle writer for persisted settings; route files stay containers.
+
+### Task 2: Asset Index And Cache-Backed Management
+
+**Files:**
+- Modify: `src-react/app/routes/settings/AssetsRoute.tsx`
+- Modify: `src-react/components/offline/AssetManagementPage.tsx`
+- Modify: `src-react/components/sources/AssetRow.tsx`
+- Modify: `src-react/offline/**`
+- Modify: `src-react/packs/**`
+- Test: `tests/unit/react-offline/**`
+
+- [ ] Write failing tests that rows derive from `text-assets.json`, `mushaf-assets.json`, `source-assets.json`, and Cache Storage membership instead of static labels.
+- [ ] Implement `useAssetIndexes` and `useOfflineAssetState` or equivalents; components must not call `caches` directly.
+- [ ] Enforce install/verify-before-activate, block active optional deletes before cache mutation, block overlapping contradictory actions per asset, and validate same-origin `/dataset/**` URLs.
+- [ ] Implement Back to Reader and Manage Assets transitions to match Svelte.
+
+### Task 3: Settings And Asset UI Proof
+
+**Files:**
+- Modify: settings/offline/source stories and registry entries
+- Modify: `tests/e2e/configure/react-golden.spec.ts`
+- Modify: `docs/context/surfaces/configure.md` if behavior/proof ownership changes
+- Modify: `docs/context/surfaces/infra.md` if cache behavior changes
+- Modify: `docs/context/style-map.md` if proof ownership changes
+
+- [ ] Extend owned Sheet/Dialog/settings-row/asset-row variants before feature styling and update stories for settings shell, source picker, asset rows, and asset management states.
+- [ ] Add responsive and token-resolved e2e checks for `320x568`, `375x812`, `768x1024`, and `1280x900`: footer reachability, sticky header/footer overlap, body scroll lock, row label wrapping, action button touch targets, semantic state colors, and no horizontal overflow.
+- [ ] Run:
+
+```bash
+pnpm exec vitest run tests/unit/react-storage tests/unit/react-offline tests/unit/react-navigate --config vitest.react.config.ts
+pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
+pnpm run test:e2e:react:golden -- --grep "settings-over-reader|assets-state-matrix"
+pnpm run check:react
+pnpm run check:react-registry
+pnpm run check:react-ui-patterns
+pnpm run build:storybook:react
+pnpm run test:storybook:react
+pnpm run docs:check
+git diff --check
+```
+
 ## Intentional Difference
 
 React Settings must not carry Svelte live verse preview or Mushaf page preview. Tests should assert that settings remain operational without those preview panes.
@@ -127,8 +199,8 @@ Expected before implementation: tests fail because settings are standalone/local
 
 ```bash
 pnpm exec vitest run tests/unit/react-storage tests/unit/react-offline tests/unit/react-navigate --config vitest.react.config.ts
-VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
 pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
 pnpm run test:e2e:react:golden -- --grep "settings-over-reader|assets-state-matrix"
 pnpm run check:react
 pnpm run check:react-registry

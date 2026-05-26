@@ -1,4 +1,12 @@
+import { useEffect, useState } from 'react'
+
+import { openReactDb, type QuranAtlasReactDb } from '../storage/db'
+import type { SettingRecord } from '../storage/types'
+
 export type SavedPosition = { surah: number; verse: number }
+export type LaunchRestoreState =
+  | { status: 'loading'; hash: string; sourceHash: string }
+  | { status: 'ready'; hash: string; sourceHash: string }
 
 const EXCLUDED = new Set(['#/onboarding', '#/settings', '#/assets', '#/search'])
 
@@ -27,4 +35,83 @@ export function resolveLaunchRoute({
   if (lastSurface && shouldPersistLastSurface(lastSurface)) return lastSurface
   if (currentPosition) return `#/s/${currentPosition.surah}/${currentPosition.verse}`
   return '#/s/1'
+}
+
+export function isLaunchHash(hash: string): boolean {
+  return hash === '' || hash === '#' || hash === '#/'
+}
+
+function asBoolean(value: unknown): boolean {
+  return value === true
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function asSavedPosition(value: unknown): SavedPosition | undefined {
+  if (!value || typeof value !== 'object') return undefined
+  const candidate = value as Partial<SavedPosition>
+  const { surah, verse } = candidate
+  if (!Number.isFinite(surah) || !Number.isFinite(verse)) return undefined
+  return { surah: Math.floor(surah as number), verse: Math.floor(verse as number) }
+}
+
+export type LaunchSettingsReader = {
+  settings: {
+    get: (key: string) => Promise<SettingRecord | undefined>
+  }
+}
+
+async function readSetting(db: LaunchSettingsReader, key: string): Promise<unknown> {
+  return (await db.settings.get(key))?.value
+}
+
+export async function loadLaunchRouteFromDb(db: LaunchSettingsReader): Promise<string> {
+  const [onboardingComplete, lastSurface, currentPosition] = await Promise.all([
+    readSetting(db, 'onboardingComplete'),
+    readSetting(db, 'lastSurface'),
+    readSetting(db, 'currentPosition'),
+  ])
+
+  return resolveLaunchRoute({
+    onboardingComplete: asBoolean(onboardingComplete),
+    lastSurface: asString(lastSurface),
+    currentPosition: asSavedPosition(currentPosition),
+  })
+}
+
+export async function resolveHashWithLaunchState(db: LaunchSettingsReader, hash: string): Promise<string> {
+  const onboardingComplete = asBoolean(await readSetting(db, 'onboardingComplete'))
+  if (!onboardingComplete) return '#/onboarding'
+  if (hash === '#/onboarding' || isLaunchHash(hash)) return loadLaunchRouteFromDb(db)
+  return hash
+}
+
+export function useLaunchRestore(hash: string): LaunchRestoreState {
+  const [state, setState] = useState<LaunchRestoreState>(() => ({
+    status: 'loading',
+    hash,
+    sourceHash: hash,
+  }))
+
+  useEffect(() => {
+    let active = true
+    async function resolve() {
+      const db: QuranAtlasReactDb = await openReactDb()
+      const resolvedHash = await resolveHashWithLaunchState(db, hash)
+      if (active) setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+    }
+
+    setState({ status: 'loading', hash, sourceHash: hash })
+    void resolve().catch(() => {
+      if (active) setState({ status: 'ready', hash: isLaunchHash(hash) ? '#/onboarding' : hash, sourceHash: hash })
+    })
+
+    return () => {
+      active = false
+    }
+  }, [hash])
+
+  return state
 }

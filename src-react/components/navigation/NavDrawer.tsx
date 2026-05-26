@@ -3,6 +3,7 @@ import { BookmarksList } from './BookmarksList'
 import { JuzList } from './JuzList'
 import { SurahList } from './SurahList'
 import { DailyWirdCard } from '../reader/wird/DailyWirdCard'
+import { MushafModeControl } from '../reader/MushafModeControl'
 
 export function NavDrawer({
   currentLabel,
@@ -34,6 +35,7 @@ export function NavDrawer({
         value={mode}
       />
       <DailyWirdCard counts={[{ n: 1, count: 7 }]} plan={null} />
+      {mode === 'mushaf' && <MushafModeControl />}
       {mode === 'verse' && (
         <div className="qar:grid qar:gap-3">
           <div className="qar:flex qar:flex-wrap qar:gap-2">

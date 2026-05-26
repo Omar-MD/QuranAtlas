@@ -1,21 +1,37 @@
-import { BookOpen, Menu, Settings } from 'lucide-react'
+import { Menu, Settings } from 'lucide-react'
 
 import { IconButton, SegmentedControl } from '../ui'
 
-export function ReaderChrome({ currentLabel, mode }: { currentLabel: string; mode: 'verse' | 'mushaf' }) {
+export type ReaderMode = 'verse' | 'mushaf'
+
+export function ReaderChrome({
+  currentLabel,
+  mode,
+  onOpenNavigation,
+  onOpenSettings,
+  onModeChange,
+}: {
+  currentLabel: string
+  mode: ReaderMode
+  onOpenNavigation?: () => void
+  onOpenSettings?: () => void
+  onModeChange?: (mode: ReaderMode) => void
+}) {
   return (
-    <nav className="qar:flex qar:items-center qar:justify-between qar:gap-3 qar:border-b qar:border-border qar:bg-surface qar:px-4 qar:py-2" aria-label="Reader chrome">
-      <IconButton label="Open navigation"><Menu aria-hidden="true" size={18} /></IconButton>
-      <div className="qar:grid qar:justify-items-center qar:gap-1">
-        <span className="qar:text-xs qar:text-muted">QuranAtlas</span>
-        <span className="qar:text-sm qar:text-muted">{currentLabel}</span>
-        <SegmentedControl
-          label="Reader mode"
-          options={[{ label: 'Verse', value: 'verse' }, { label: 'Mushaf', value: 'mushaf' }]}
-          value={mode}
-        />
+    <nav className="qar-reader-chrome qar:grid qar:min-h-14 qar:items-center qar:border-b qar:border-border qar:bg-surface qar:px-2" aria-label="Reader chrome">
+      <IconButton className="qar:min-h-12 qar:min-w-12 qar:border-transparent qar:bg-transparent" label="Open navigation" onClick={onOpenNavigation}><Menu aria-hidden="true" size={26} /></IconButton>
+      <div className="qar:grid qar:justify-items-center qar:gap-1 qar:self-center">
+        <span className="qar-reader-chrome-title qar:text-sm qar:font-semibold qar:text-text">{currentLabel}</span>
+        {mode === 'verse' && (
+          <SegmentedControl
+            label="Reader mode"
+            onValueChange={(value) => onModeChange?.(value as ReaderMode)}
+            options={[{ label: 'Verse', value: 'verse' }, { label: 'Mushaf', value: 'mushaf' }]}
+            value={mode}
+          />
+        )}
       </div>
-      <IconButton label="Open settings">{mode === 'verse' ? <Settings aria-hidden="true" size={18} /> : <BookOpen aria-hidden="true" size={18} />}</IconButton>
+      <IconButton className="qar:min-h-12 qar:min-w-12 qar:border-transparent qar:bg-transparent" label="Open settings" onClick={onOpenSettings}><Settings aria-hidden="true" size={26} /></IconButton>
     </nav>
   )
 }

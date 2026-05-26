@@ -13,6 +13,10 @@
     --qa-react-reader-text: var(--qa-react-text);
     --qa-react-reader-muted: var(--qa-react-text-muted);
     --qa-react-reader-selection: color-mix(in srgb, var(--qa-react-accent) 22%, transparent);
+    --qa-react-mushaf-ground: var(--qa-react-canvas);
+    --qa-react-mushaf-ink: var(--qa-react-text);
+    --qa-react-mushaf-border: var(--qa-react-border);
+    --qa-react-mushaf-accent: var(--qa-react-accent);
     --qa-react-offline-warning: #806100;
     --qa-react-storage-danger: var(--qa-react-danger);
     --qa-react-radius-control: var(--qar-radius-2);
@@ -21,7 +25,21 @@
     --qa-react-space-control-y: var(--qar-space-2);
     --qa-react-font-ui: var(--qar-font-ui);
     --qa-react-font-arabic: var(--qar-font-arabic);
+    --qa-react-font-translation: var(--qar-font-translation);
+    --qa-react-font-mono: var(--qar-font-mono);
     --qa-react-transition-fast: var(--qar-motion-fast) var(--qar-ease-standard);
+  }
+
+  :root[data-riwayah='hafs'] {
+    --qa-react-font-arabic: var(--ff-kfgqpc-hafs);
+  }
+
+  :root[data-riwayah='warsh'] {
+    --qa-react-font-arabic: var(--ff-kfgqpc-warsh);
+  }
+
+  :root[data-riwayah='qaloon'] {
+    --qa-react-font-arabic: var(--ff-kfgqpc-qaloon);
   }
 
   html[data-theme='sepia'] {

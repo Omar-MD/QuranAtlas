@@ -14,8 +14,13 @@
     --qar-space-6: 1.5rem;
     --qar-radius-2: 0.5rem;
     --qar-radius-3: 0.75rem;
-    --qar-font-ui: Inter, ui-sans-serif, system-ui, sans-serif;
-    --qar-font-arabic: var(--qa-font-arabic, serif);
+    --qar-font-ui: system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
+    --qar-font-arabic: var(--ff-kfgqpc-qaloon);
+    --qar-font-translation: 'Newsreader', georgia, serif;
+    --qar-font-mono: 'Geist Mono', ui-monospace, menlo, monospace;
+    --ff-kfgqpc-hafs: 'KFGQPC Uthmanic Hafs', 'Noto Naskh Arabic', serif;
+    --ff-kfgqpc-warsh: 'KFGQPC Uthmanic Warsh', 'Noto Naskh Arabic', serif;
+    --ff-kfgqpc-qaloon: 'KFGQPC Uthmanic Qaloon', 'Noto Naskh Arabic', serif;
     --qar-motion-fast: 120ms;
     --qar-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   }

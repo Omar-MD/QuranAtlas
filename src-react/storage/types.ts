@@ -3,6 +3,8 @@ export type SettingsKey =
   | 'theme'
   | 'fontSize'
   | 'riwayah'
+  | 'translationId'
+  | 'translationVisible'
   | 'quranTextStyleId'
   | 'mushafEditionId'
   | 'currentPosition'

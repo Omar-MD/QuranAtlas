@@ -8,12 +8,15 @@ type AyahKnowledgeRow = {
 
 type PassageRow = {
   id: string
-  summary?: string
-  title?: string
+  summary?: string | { en?: string }
+  title?: string | { en?: string }
 }
 
-async function fetchJson<T>(url: string, fetcher: typeof fetch): Promise<T | null> {
-  const response = await fetcher(url)
+type AyahKnowledgePayload = AyahKnowledgeRow[] | { ayahs?: AyahKnowledgeRow[] }
+type PassagePayload = PassageRow[] | { passages?: PassageRow[] }
+
+async function fetchJson<T>(url: string, fetcher: typeof fetch, signal?: AbortSignal): Promise<T | null> {
+  const response = await fetcher(url, { signal })
   if (response.status === 404) return null
   if (!response.ok) throw new Error(`metadata ${response.status}`)
   return response.json() as Promise<T>
@@ -24,13 +27,28 @@ function normalizeTheme(theme: string | { id: string; label?: string }) {
   return { id: theme.id, label: theme.label ?? theme.id }
 }
 
-export async function loadKnowledgeForSurah(surah: number, fetcher: typeof fetch = fetch): Promise<SurahMetadataResult> {
+function localizedText(value: string | { en?: string } | undefined): string | null {
+  if (!value) return null
+  return typeof value === 'string' ? value : value.en ?? null
+}
+
+function normalizeAyahRows(payload: AyahKnowledgePayload | null): AyahKnowledgeRow[] | null {
+  if (!payload) return null
+  return Array.isArray(payload) ? payload : payload.ayahs ?? []
+}
+
+function normalizePassageRows(payload: PassagePayload | null): PassageRow[] {
+  if (!payload) return []
+  return Array.isArray(payload) ? payload : payload.passages ?? []
+}
+
+export async function loadKnowledgeForSurah(surah: number, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<SurahMetadataResult> {
   const padded = String(surah).padStart(3, '0')
   try {
-    const ayahRows = await fetchJson<AyahKnowledgeRow[]>(`/dataset/knowledge/ayah/${padded}.json`, fetcher)
+    const ayahRows = normalizeAyahRows(await fetchJson<AyahKnowledgePayload>(`/dataset/knowledge/ayah/${padded}.json`, fetcher, signal))
     if (!ayahRows) return { state: 'missing', rows: new Map() }
-    const passageRows = await fetchJson<PassageRow[]>(`/dataset/knowledge/passages/${padded}.json`, fetcher)
-    const passages = new Map((passageRows ?? []).map((row) => [row.id, row.summary ?? row.title ?? null]))
+    const passageRows = normalizePassageRows(await fetchJson<PassagePayload>(`/dataset/knowledge/passages/${padded}.json`, fetcher, signal))
+    const passages = new Map(passageRows.map((row) => [row.id, localizedText(row.summary) ?? localizedText(row.title)]))
     const rows = new Map<string, VerseMetadata>()
     for (const row of ayahRows) {
       rows.set(row.key, {

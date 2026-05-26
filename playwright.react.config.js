@@ -2,8 +2,34 @@ import { defineConfig, devices } from '@playwright/test'
 
 const REACT_PORT = 5174
 const REACT_PREVIEW_PORT = 4175
+const SVELTE_PARITY_PORT = Number(process.env.SVELTE_PARITY_PORT ?? 4180)
+const REACT_PARITY_PORT = Number(process.env.REACT_PARITY_PORT ?? 4181)
 const usePreview = process.env.PLAYWRIGHT_USE_PREVIEW === '1'
-const REACT_BASE_URL = `http://127.0.0.1:${usePreview ? REACT_PREVIEW_PORT : REACT_PORT}`
+const useParityPreview = process.env.PLAYWRIGHT_REACT_PARITY === '1'
+const REACT_BASE_URL = `http://127.0.0.1:${useParityPreview ? REACT_PARITY_PORT : usePreview ? REACT_PREVIEW_PORT : REACT_PORT}`
+const SVELTE_BASE_URL = `http://127.0.0.1:${SVELTE_PARITY_PORT}`
+
+const webServer = useParityPreview
+  ? [
+      {
+        command: `env -u NO_COLOR pnpm exec vite preview --host 127.0.0.1 --port ${SVELTE_PARITY_PORT} --strictPort`,
+        url: SVELTE_BASE_URL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 60_000,
+      },
+      {
+        command: `env -u NO_COLOR pnpm exec vite preview --config vite.react.config.js --host 127.0.0.1 --port ${REACT_PARITY_PORT} --strictPort`,
+        url: REACT_BASE_URL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 60_000,
+      },
+    ]
+  : {
+      command: usePreview ? 'env -u NO_COLOR pnpm run preview:react' : 'env -u NO_COLOR pnpm run dev:react',
+      url: REACT_BASE_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    }
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -31,10 +57,5 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: usePreview ? 'env -u NO_COLOR pnpm run preview:react' : 'env -u NO_COLOR pnpm run dev:react',
-    url: REACT_BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer,
 })

@@ -4,7 +4,7 @@
 
 **Goal:** Fix `RPA-006` by deciding and implementing the search route contract consistently with the Svelte oracle or an explicit product-scope change.
 
-**Depends on:** Plan 00. The default recovery path is to align React to current Svelte not-found behavior. If search is promoted instead, split promotion into a separate pre-09 plan that depends on Plans 02 and 05 and owns generated search data plus offline proof; Plan 09 validates promoted search but is not a prerequisite.
+**Depends on:** Plans 00 through 06. The default recovery path is to align React to current Svelte not-found behavior. If search is promoted instead, split promotion into a separate pre-09 plan that depends on Plans 02 and 05 and owns generated search data plus offline proof; Plan 09 validates promoted search but is not a prerequisite.
 
 ## Required Context
 
@@ -17,6 +17,8 @@ Read:
 - `docs/context/future.md`
 - `docs/superpowers/specs/2026-05-24-react-production-parity-audit.md`
 - `docs/superpowers/specs/2026-05-24-react-production-parity-fix-master-spec.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
+- `tests/unit/AGENTS.md`
 - `tests/e2e/AGENTS.md`
 
 ## Files To Inspect
@@ -54,11 +56,77 @@ Minimal alignment option:
 - `tests/unit/react-search/**`
 - `tests/e2e/read/react-golden.spec.ts`
 - `tests/e2e/fixtures/react-golden-routes.ts`
+- `src-react/design-system/registry/component-registry.json` if search registry entries imply shipped production parity
+- `src-react/components/search/search.stories.tsx` or the current search story file if stories imply shipped production parity
+- `docs/context/style-map.md` if React proof ownership changes
 - `docs/context/implemented.md` or `docs/context/future.md` if current product scope docs change
 
 Promotion option:
 
 - All minimal files plus `src-react/search/**`, `src-react/offline/search/**`, data/index build files, source-data docs, and offline proof files named by the discovery step.
+
+## Readiness Refinement
+
+- Execute after Plans 00 through 06. The default recovery path is contract alignment with current Svelte not-found behavior; search promotion must stop here and become a separate pre-09 plan.
+- Test-first checkpoint: write the route-contract assertions for the selected decision, run them against the current React production-target build, and confirm they fail on fake preview search before app edits.
+- Svelte-vs-React comparison covers `#/search`, query-hash variants, visible not-found/unsupported state for alignment, and absence of preview shard result text in production-target React.
+- Production-target verification must build and serve both artifacts through Plan 00. If search is promoted in a separate plan, that plan must add Svelte baseline behavior, generated data, offline proof, and source-data validation before React parity is claimed.
+- CSS/React styling enforcement for the default alignment path is mostly removal/quarantine: ensure no production-target search UI stories/registry entries imply shipped parity. If promotion is split out, that new plan must inspect the registry, use owned primitives, `qar:` utilities, Storybook/registry proof, and no Svelte CSS/classes.
+- Docs updates must make the chosen product contract explicit in `docs/context/implemented.md`, `docs/context/future.md`, and relevant surface/source-data docs when scope changes.
+- Before implementation, use `.agents/skills/child-plan-handover/SKILL.md` to reconcile this plan against `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`, current `git status`, and any newer sibling-plan entries.
+
+## Implementation Task Plan
+
+### Task 1: Route Contract Decision And Failing Tests
+
+**Files:**
+- Modify: `tests/unit/react-shell/routes.test.ts`
+- Modify: `tests/unit/react-search/search-wave3.test.ts`
+- Modify: `tests/e2e/read/react-golden.spec.ts`
+- Modify: `tests/e2e/fixtures/react-golden-routes.ts`
+
+- [ ] Record the chosen decision in the implementing change. Default: align React `#/search` and `#/search?q=...` with current Svelte not-found behavior.
+- [ ] Write failing unit and e2e assertions for the chosen route contract and absence of preview shard result text.
+- [ ] Run the targeted tests before app edits and confirm failure on fake preview search behavior.
+
+### Task 2: Default Alignment Implementation
+
+**Files:**
+- Modify: `src-react/app/router/routes.ts`
+- Modify or remove: `src-react/app/routes/search/SearchRoute.tsx`
+- Modify or quarantine: `src-react/components/search/**`
+- Modify or quarantine: `src-react/search/**`
+- Modify or quarantine: `src-react/offline/search/search-pack.ts`
+
+- [ ] Remove production-target React search preview route behavior or map it to the same unsupported/not-found route behavior as Svelte.
+- [ ] Quarantine `PREVIEW_SHARD` so it cannot satisfy production-target parity tests.
+- [ ] Remove production-target search story/registry implications of shipped parity unless the route remains as a non-production story only.
+- [ ] Update `component-registry.json`, search stories, and `docs/context/style-map.md` when default alignment removes or downgrades search proof ownership; stale registry rows must not claim product visual proof is covered for a non-shipped route.
+- [ ] If the decision is promotion instead, stop this plan and create a separate pre-09 promotion plan that includes Svelte baseline behavior, generated data, offline proof, and source-data validation.
+
+### Task 3: Documentation And Verification
+
+**Files:**
+- Modify: `docs/context/implemented.md` or `docs/context/future.md` if product scope docs change
+- Modify: relevant surface/source-data docs only if scope changes
+- Modify: `docs/tech-stack.md` only if scripts/build tooling change
+
+- [ ] Make the chosen search contract explicit in current-state docs when scope changes.
+- [ ] Run:
+
+```bash
+pnpm exec vitest run tests/unit/react-search tests/unit/react-shell --config vitest.react.config.ts
+pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
+pnpm run test:e2e:react:golden -- --grep "search"
+pnpm run check:react
+pnpm run check:react-registry
+pnpm run check:react-ui-patterns
+pnpm run build:storybook:react
+pnpm run test:storybook:react
+pnpm run docs:check
+git diff --check
+```
 
 ## Required Decision
 
@@ -98,10 +166,14 @@ Expected before implementation: tests fail because React shows fake preview sear
 
 ```bash
 pnpm exec vitest run tests/unit/react-search tests/unit/react-shell --config vitest.react.config.ts
-VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
 pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
 pnpm run test:e2e:react:golden -- --grep "search"
 pnpm run check:react
+pnpm run check:react-registry
+pnpm run check:react-ui-patterns
+pnpm run build:storybook:react
+pnpm run test:storybook:react
 pnpm run docs:check
 git diff --check
 ```

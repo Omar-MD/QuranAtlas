@@ -17,6 +17,8 @@ The parity oracle is the current working Svelte app:
 
 Ignore `DESIGN.md` for expected behavior in this effort. It is later, unproven direction and must not redirect parity work.
 
+For UI craft, `DESIGN.md` may be read only as supporting product-style context. Its Svelte-era rule that all styling belongs in `src/styles/**` does not override this recovery spec's React-only styling contract: React parity styling belongs in `src-react/design-system/**`, owned React components, and `qar:` utilities backed by `--qa-react-*` semantic tokens.
+
 React parity must be proven against a production-target React build:
 
 ```bash
@@ -168,6 +170,12 @@ Selector policy for parity tests:
 9. Plan 09 performs production-target PWA/offline parity and the final blocker gate. It depends on Plans 00 through 08.
 
 ## Child Plans
+
+Shared handoff log:
+
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
+
+Every child-plan executor must read the shared handoff log with `.agents/skills/child-plan-handover/SKILL.md` before app-code work. If the log records completed work, divergence, blockers, dependency intake, or validation evidence that changes a child plan, update the child plan first and record the reconciliation in the same log.
 
 - `docs/superpowers/plans/2026-05-24-react-production-parity-fix-00-harness-and-false-positive-gates.md`
 - `docs/superpowers/plans/2026-05-24-react-production-parity-fix-01-launch-and-onboarding.md`

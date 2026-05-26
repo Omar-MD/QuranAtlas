@@ -32,4 +32,14 @@ describe('check-react-component-registry', () => {
     delete invalid.namedExport
     expect(validateRegistryData({ schemaVersion: 1, components: [invalid, baseComponent] }, { checkFiles: false })).toContain('components[0] missing required field namedExport')
   })
+
+  it('rejects registry entries whose named export is absent', () => {
+    const invalid = { ...baseComponent, namedExport: 'MissingButtonExport' }
+    expect(validateRegistryData({ schemaVersion: 1, components: [invalid] })).toContain('button: namedExport MissingButtonExport was not found in src-react/components/ui/button.tsx')
+  })
+
+  it('rejects covered visual proof without concrete references', () => {
+    const invalid = { ...baseComponent, visualProof: { status: 'covered', references: [] } }
+    expect(validateRegistryData({ schemaVersion: 1, components: [invalid] }, { checkFiles: false })).toContain('button: covered visualProof requires at least one reference')
+  })
 })

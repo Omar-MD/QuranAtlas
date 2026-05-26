@@ -23,6 +23,8 @@ Read:
 - `docs/context/surfaces/infra.md`
 - `docs/superpowers/specs/2026-05-24-react-production-parity-audit.md`
 - `docs/superpowers/specs/2026-05-24-react-production-parity-fix-master-spec.md`
+- `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`
+- `docs/tech-stack.md`
 - `tests/e2e/AGENTS.md`
 - `tests/unit/AGENTS.md`
 - `package.json`
@@ -60,6 +62,97 @@ Read:
 
 Do not modify application source in this plan except for minimal test-only IDs if a later implementation plan explicitly approves them.
 
+## Readiness Refinement
+
+- This plan is ready to execute first and must remain harness-only: no React product behavior fixes belong here.
+- Treat Svelte `src/**`, `src/styles/**`, and the built Svelte preview as the oracle. `DESIGN.md` is not expected behavior for any parity assertion.
+- Add the test-first checkpoint to each new parity fixture: write or tighten the assertion, run it against the current audited production-target React build, confirm it fails for the named `RPA-*` reason, then continue with harness code.
+- Production-target proof must build and serve both artifacts on strict, separate ports before Playwright runs; dev-server React, Storybook, or screenshots alone cannot satisfy this plan.
+- Svelte-vs-React comparison must be explicit in fixture naming, seed setup, route selection, request manifests, and failure messages.
+- CSS/React styling enforcement starts here by hardening import-boundary and registry checks before UI plans proceed: React and Storybook must not import `src/styles/**`, Svelte `.qa-*` classes, or Svelte CSS partials.
+- Docs updates are limited to `docs/tech-stack.md` for script/tooling changes and `docs/context/style-map.md` for proof ownership changes; generated fences require `pnpm run docs`.
+- Before implementation, use `.agents/skills/child-plan-handover/SKILL.md` to reconcile this plan against `docs/superpowers/plans/2026-05-24-react-tech-stack-repo-refactor-handoff-log.md`, current `git status`, and any newer sibling-plan entries.
+
+## Implementation Task Plan
+
+### Task 1: Production Parity Harness Preflight
+
+**Files:**
+- Modify: `playwright.react.config.js`
+- Modify: `tests/e2e/fixtures/react-golden-routes.ts`
+- Modify: `tests/e2e/fixtures/react-a11y.ts`
+- Modify: `tests/e2e/fixtures/react-offline.ts`
+
+- [x] Add test-side target metadata for strict Svelte and React preview URLs, expected build directories, and a React production deploy-target marker.
+- [x] Add a failing preflight assertion that rejects React dev-server output or stale `dist-react/` output before route assertions run.
+- [x] Run:
+
+```bash
+pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
+pnpm run test:e2e:react:golden
+```
+
+Expected before later plans: route parity tests fail for audited React behavior, not for missing harness setup.
+
+### Task 2: Storage, Cache, And Network Guard Fixtures
+
+**Files:**
+- Modify: `tests/e2e/fixtures/react-golden-routes.ts`
+- Modify: `tests/e2e/fixtures/react-offline.ts`
+- Modify: `tests/e2e/infra/react-offline.spec.ts`
+
+- [x] Add per-target cleanup helpers for service workers, Cache Storage, IndexedDB, local storage, and session storage.
+- [x] Add seeded-state helpers for onboarded settings, bookmarks, Daily Wird, and real cache entries; each seed must prove rendered output differs from the no-seed baseline.
+- [x] Add request/console/page-error guards with per-route expected request manifests for required URLs, optional URLs, allowed aborts, and expected rendered provenance.
+- [x] Run:
+
+```bash
+pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
+pnpm run test:e2e:react:offline
+```
+
+Expected before later plans: offline proof fails on required dataset failures instead of passing on app-shell landmarks.
+
+### Task 3: Replace False-Positive Route Assertions
+
+**Files:**
+- Modify: `tests/e2e/read/react-golden.spec.ts`
+- Modify: `tests/e2e/navigate/react-golden.spec.ts`
+- Modify: `tests/e2e/configure/react-golden.spec.ts`
+- Modify: `tests/e2e/onboard/react-golden.spec.ts`
+
+- [x] Convert generic landmark checks into audit-tied Svelte-vs-React assertions for launch, reader corpus, Mushaf asset, bookmarks, settings route restore, and offline fallback masking.
+- [x] Keep intentional non-carry-over assertions explicit: no React Tafsir UI, no settings preview panes, shortened onboarding.
+- [x] Verify the new assertions fail against the audited React state with named `RPA-*` failure messages.
+
+### Task 4: Boundary And Registry Gates
+
+**Files:**
+- Modify: `scripts/check-react-boundaries.mjs`
+- Modify: `scripts/check-react-component-registry.mjs`
+- Test: existing or new focused unit tests under `tests/unit/react-registry/**`
+- Modify: `package.json` and `docs/tech-stack.md` only if script names change
+
+- [x] Harden React/Svelte CSS import detection for `src-react/**/*.css`, `.storybook/**/*`, deep relative imports, and direct `src/styles/**` references.
+- [x] Harden registry validation for existing exports, stories, tests, accessibility, and visual proof references; product entries must not mark visual proof as covered unless stories or referenced proof cover the required default/loading/error/empty/long-text/focus-visible/reduced-motion/mobile/tablet/desktop/light/sepia/dark states for that component's reachable states.
+- [x] If `check:react` continues to invoke `scripts/check-react-boundaries.mjs`, update `docs/tech-stack.md` so the checker is documented with the other React-only gates; if the checker is replaced by an existing documented gate, remove the stale file reference from this plan and the package script in the same change.
+- [x] Update `docs/tech-stack.md` when Plan 00 changes `test:e2e:react:golden`, `test:e2e:react:offline`, or `validate:react` from React-only route proof into production-target Svelte-vs-React parity proof.
+- [x] Run:
+
+```bash
+pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
+pnpm run test:e2e:react:golden
+pnpm run test:e2e:react:offline
+pnpm run check:react
+pnpm run check:react-registry
+pnpm run check:react-ui-patterns
+pnpm run docs:check
+git diff --check
+```
+
 ## Tests To Write First
 
 1. Add or rewrite a launch parity test that clears both targets and expects React `/` to behave like Svelte clean launch. Expected before Plan 01: fail because React normalizes to `#/s/1`.
@@ -86,14 +179,14 @@ Do not modify application source in this plan except for minimal test-only IDs i
 
 ## Implementation Steps
 
-- [ ] Add a parity fixture layer that can serve both Svelte and React production previews. Prefer extending existing Playwright config over inventing one-off scripts.
-- [ ] Add helpers to clear IndexedDB, Cache Storage, service workers, local storage, and session storage per target.
-- [ ] Add helpers to seed onboarded state, bookmarks, Daily Wird, and asset-cache state through existing test fixture patterns.
-- [ ] Add a console/network guard that fails on page errors, console errors, failed HTTP responses, and failed requests unless the test explicitly lists an expected failure.
-- [ ] Add a negative required-dataset test that forces a required 404 and proves React renders unavailable/error state instead of fallback content.
-- [ ] Replace React-only landmark assertions with route-specific parity assertions tied to the audit issues.
-- [ ] Keep intentional non-carry-over differences explicit: no React Tafsir mode/sheet, no settings preview panes, shortened onboarding.
-- [ ] If new scripts are required, add stable names to `package.json` and document them in `docs/tech-stack.md`.
+- [x] Add a parity fixture layer that can serve both Svelte and React production previews. Prefer extending existing Playwright config over inventing one-off scripts.
+- [x] Add helpers to clear IndexedDB, Cache Storage, service workers, local storage, and session storage per target.
+- [x] Add helpers to seed onboarded state, bookmarks, Daily Wird, and asset-cache state through existing test fixture patterns.
+- [x] Add a console/network guard that fails on page errors, console errors, failed HTTP responses, and failed requests unless the test explicitly lists an expected failure.
+- [x] Add a negative required-dataset test that forces a required 404 and proves React renders unavailable/error state instead of fallback content.
+- [x] Replace React-only landmark assertions with route-specific parity assertions tied to the audit issues.
+- [x] Keep intentional non-carry-over differences explicit: no React Tafsir mode/sheet, no settings preview panes, shortened onboarding.
+- [x] If new scripts are required, add stable names to `package.json` and document them in `docs/tech-stack.md`.
 
 ## Commands
 
@@ -111,6 +204,10 @@ Expected before later fix plans: the new parity assertions fail on `RPA-001`, `R
 Run after harness changes:
 
 ```bash
+pnpm run build
+VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react
+pnpm run test:e2e:react:golden
+pnpm run test:e2e:react:offline
 pnpm run check:react
 pnpm run check:react-registry
 pnpm run check:react-ui-patterns
