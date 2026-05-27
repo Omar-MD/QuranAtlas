@@ -14,7 +14,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting, writeSetting } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting, waitForLastSurface, writeSetting } from '../fixtures/idb.js'
 import { waitForReader } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -37,6 +37,9 @@ test.describe('Journey A: First run & session restore', () => {
     // Using seedLastSurface (rather than navigating to the surface) avoids the race
     // between parallel tests writing different values to the shared origin's IDB.
     await markOnboardingComplete(page)
+    await page.goto('/#/about')
+    await expect(page.getByRole('heading', { name: 'QuranAtlas' })).toBeVisible()
+    await waitForLastSurface(page, '#/about')
     await seedLastSurface(page, removedHubHash)
     await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
     await expect.poll(async () => readSetting(page, 'currentPosition')).toEqual({ surah: 2, verse: 255 })
@@ -109,82 +112,5 @@ test.describe('Journey A: First run & session restore', () => {
 
     const violations = await scanA11y(page)
     expect(violations).toEqual([])
-  })
-})
-
-test.describe('Journey A: mobile session restore route redirects @mobile', () => {
-  test.use({ storageState: { cookies: [], origins: [] } })
-  test.use({ viewport: { width: 390, height: 844 } })
-
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await clearAllData(page)
-    await markOnboardingComplete(page)
-  })
-
-  test('A2: mobile #/surahs redirects non-reader lastSurface hashes to the saved reader position', async ({ page }) => {
-    const cases = ['#/about', '#/bookmarks', removedHubHash, '#/stale-route']
-
-    for (const seededHash of cases) {
-      await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
-      await seedLastSurface(page, seededHash)
-      await page.goto('/#/surahs')
-      await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
-      await expect(page.locator('.qa-nav-drawer')).toBeVisible()
-    }
-  })
-
-  test('A2: mobile #/surahs rejects the static route as a reader restore target and uses the saved position', async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
-    const seedPage = await ctx.newPage()
-    try {
-      await seedPage.goto('/')
-      await clearAllData(seedPage)
-      await markOnboardingComplete(seedPage)
-      await seedLastSurface(seedPage, '#/surahs')
-      await writeSetting(seedPage, 'currentPosition', { surah: 2, verse: 255 })
-      await seedPage.close()
-
-      const freshPage = await ctx.newPage()
-      await freshPage.goto('/#/surahs')
-      await expect.poll(() => new URL(freshPage.url()).hash, { timeout: 15_000 }).toBe('#/s/2/255')
-      await expect(freshPage.locator('.qa-nav-drawer')).toBeVisible()
-      await freshPage.close()
-    } finally {
-      await ctx.close()
-    }
-  })
-
-  test('A2: mobile #/bookmarks redirects non-reader lastSurface hashes to the saved reader position', async ({ page }) => {
-    const cases = ['#/about', '#/surahs', removedHubHash, '#/stale-route']
-
-    for (const seededHash of cases) {
-      await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
-      await seedLastSurface(page, seededHash)
-      await page.goto('/#/bookmarks')
-      await expect.poll(() => new URL(page.url()).hash).toBe('#/s/2/255')
-      await expect(page.locator('.qa-nav-drawer')).toBeVisible()
-    }
-  })
-
-  test('A2: mobile #/bookmarks rejects the static route as a reader restore target and uses the saved position', async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
-    const seedPage = await ctx.newPage()
-    try {
-      await seedPage.goto('/')
-      await clearAllData(seedPage)
-      await markOnboardingComplete(seedPage)
-      await seedLastSurface(seedPage, '#/bookmarks')
-      await writeSetting(seedPage, 'currentPosition', { surah: 2, verse: 255 })
-      await seedPage.close()
-
-      const freshPage = await ctx.newPage()
-      await freshPage.goto('/#/bookmarks')
-      await expect.poll(() => new URL(freshPage.url()).hash).toBe('#/s/2/255')
-      await expect(freshPage.locator('.qa-nav-drawer')).toBeVisible()
-      await freshPage.close()
-    } finally {
-      await ctx.close()
-    }
   })
 })

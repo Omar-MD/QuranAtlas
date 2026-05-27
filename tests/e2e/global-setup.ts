@@ -1,6 +1,6 @@
 // Playwright `globalSetup` hook: runs once before the suite. Boots the app,
-// marks onboarding complete in IDB, reloads, captures cookies + localStorage
-// + IDB into a JSON snapshot at `tests/e2e/.auth/onboarded.json`. Specs opt
+// captures cookies + localStorage + IDB into a JSON snapshot at
+// `tests/e2e/.auth/onboarded.json`. Specs opt
 // in via `test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })` to
 // skip per-test cold-boot setup.
 //
@@ -15,8 +15,6 @@ import { mkdirSync } from 'node:fs'
 // Pin to the canonical version constants — never hard-code. If migrations.js
 // bumps DB_VERSION and this import lags, every spec breaks at boot, surfaced
 // fast.
-import { DB_NAME, DB_VERSION } from '../../src/core/db/migrations.js'
-
 const HERE = dirname(fileURLToPath(import.meta.url))
 const STATE_PATH = resolve(HERE, '.auth/onboarded.json')
 
@@ -28,39 +26,17 @@ export default async function globalSetup(config: FullConfig) {
   const context = await browser.newContext({ baseURL })
   const page = await context.newPage()
 
-  // Boot once — fresh fixture lands on the onboarding screen.  Wait for the
-  // onboarding root to attach so we know the app has opened the IDB at
-  // DB_VERSION via connection.ts.
+  // Boot once. Fresh fixture now shows the launch splash and enters the
+  // default reader automatically; wait for a verse so IDB/cache reset and
+  // launch restore have completed before capturing the reusable state.
   await page.goto('/')
   await page
-    .locator('.qa-onboarding')
+    .locator('.qa-verse')
     .first()
-    .waitFor({ state: 'attached', timeout: 25_000 })
-
-  // Same-version attach to the DB the app already opened, write
-  // onboardingComplete, close.  No version downgrade, no upgrade fired.
-  await page.evaluate(
-    async ({ name, version }) => {
-      const db = await new Promise<IDBDatabase>((res, rej) => {
-        const r = indexedDB.open(name, version)
-        r.onsuccess = () => res(r.result)
-        r.onerror = () => rej(r.error)
-      })
-      const tx = db.transaction('settings', 'readwrite')
-      tx.objectStore('settings').put({
-        key: 'onboardingComplete',
-        value: true,
-      })
-      await new Promise<void>((r) => (tx.oncomplete = () => r()))
-      db.close()
-    },
-    { name: DB_NAME, version: DB_VERSION },
-  )
+    .waitFor({ state: 'visible', timeout: 25_000 })
 
   // Re-navigate to root (NOT reload) so the hash clears and the router's
-  // LAUNCH_RESTORE handler fires — that's the path that reads
-  // onboardingComplete.  A plain reload would keep `#/onboarding` in the URL
-  // and the hash-route would re-mount the onboarding component regardless.
+  // LAUNCH_RESTORE handler fires from the captured state.
   await page.goto('/')
   await page
     .locator('.qa-verse')

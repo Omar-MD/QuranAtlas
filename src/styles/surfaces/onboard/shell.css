@@ -5,6 +5,57 @@
  */
 
 @layer surfaces {
+  .qa-launch-splash {
+    position: fixed;
+    inset: 0;
+    z-index: var(--qa-z-overlay);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    padding: max(var(--qa-space-6), env(safe-area-inset-top)) var(--qa-space-6) max(var(--qa-space-6), env(safe-area-inset-bottom));
+    background:
+      radial-gradient(circle at center, color-mix(in srgb, var(--qa-accent) 10%, transparent), transparent 48%),
+      var(--qa-surface-app);
+    color: var(--qa-text-primary);
+    text-align: center;
+  }
+
+  .qa-launch-splash-mark {
+    display: grid;
+    place-items: center;
+    min-width: min(72vw, 18rem);
+    min-height: var(--qa-touch-min);
+    margin-bottom: var(--qa-space-5);
+    border-block: 1px solid color-mix(in srgb, var(--qa-border-accent) 56%, transparent);
+    color: var(--qa-accent);
+    font-family: var(--qa-font-arabic);
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  .qa-launch-splash-title {
+    margin: 0;
+    color: var(--qa-text-primary);
+    font-size: var(--qa-text-size-ui);
+    font-weight: 600;
+    line-height: var(--qa-line-height-ui);
+  }
+
+  .qa-launch-splash-subtitle {
+    margin: var(--qa-space-2) 0 0;
+    color: var(--qa-text-muted);
+    font-size: var(--qa-text-size-meta);
+    line-height: var(--qa-line-height-ui);
+  }
+
+  @media (min-width: 768px) {
+    .qa-launch-splash-mark {
+      font-size: 2.625rem;
+    }
+  }
+
   .qa-onboarding {
     max-width: 420px;
     margin: 0 auto;

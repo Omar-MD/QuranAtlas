@@ -3,6 +3,8 @@
 
 import { applySchema, DB_NAME, DB_VERSION } from '../../../src/core/db/migrations.js'
 
+const MVP_ASSET_CONTRACT_ID = 'mvp-default-assets-qaloon-bridges-v1'
+
 /**
  * The schema-applier source text injected verbatim into each
  * `page.evaluate` expression string. Derived from the production
@@ -93,6 +95,12 @@ export async function markOnboardingComplete(page) {
       const db = open.result
       const tx = db.transaction('settings', 'readwrite')
       tx.objectStore('settings').put({ key: 'onboardingComplete', value: true })
+      tx.objectStore('settings').put({ key: 'mvpAssetContractId', value: ${JSON.stringify(MVP_ASSET_CONTRACT_ID)} })
+      tx.objectStore('settings').put({ key: 'riwayah', value: 'qaloon' })
+      tx.objectStore('settings').put({ key: 'quranTextStyleId', value: 'uthmani-kfgqpc-v1' })
+      tx.objectStore('settings').put({ key: 'mushafEditionId', value: 'qalun-quran-ws-v1' })
+      tx.objectStore('settings').put({ key: 'translationId', value: 'bridges' })
+      tx.objectStore('settings').put({ key: 'translationVisible', value: true })
       tx.oncomplete = () => { db.close(); resolve() }
       tx.onerror = () => reject(tx.error)
     }

@@ -13,6 +13,7 @@
   import ClearDataConfirm from './configure/ClearDataConfirm.svelte'
   import AmbientDock from './read/AmbientDock.svelte'
   import MarginHeader from './read/MarginHeader.svelte'
+  import LaunchSplash from './launch/LaunchSplash.svelte'
 
   // Lazy-mounted overlays (audit N25, 2026-05-01). First api.<method>()
   // call from the matching bridge fires `setMounter`, which flips the
@@ -34,6 +35,7 @@
   let panelMounted = $state(false)
   let navDrawerMounted = $state(false)
   let tafsirSheetMounted = $state(false)
+  let launchSplashVisible = $state(true)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let PanelComp = $state<any>(null)
@@ -73,6 +75,7 @@
 
   onMount(() => {
     let mounted = true
+    let splashTimer: ReturnType<typeof setTimeout> | null = null
 
     // Wire lazy-mount triggers BEFORE initBootstrap so any boot-time
     // bridge call (e.g. #/settings route on first launch → openSettingsSheet)
@@ -119,11 +122,21 @@
     initBootstrap().then((result) => {
       if (mounted) {
         cleanups = result ?? []
+        splashTimer = setTimeout(() => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (mounted) {
+                launchSplashVisible = false
+              }
+            })
+          })
+        }, 250)
       }
     })
 
     return () => {
       mounted = false
+      if (splashTimer) { clearTimeout(splashTimer) }
       if (currentInstance) { unmount(currentInstance); currentInstance = null }
       cleanups.forEach(c => c())
     }
@@ -145,6 +158,7 @@
 <SaveFailureToast />
 <UpdateBanner />
 <ClearDataConfirm />
+<LaunchSplash visible={launchSplashVisible} />
 
 <!-- Lazy-mounted overlays — first bridge.api.<method>() flips the mount
      flag, which kicks the dynamic import, which renders the component

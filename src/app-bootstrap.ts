@@ -37,6 +37,7 @@ import { setupVerseTafsirGestures } from './read/verse-tap-gestures'
 import { settings } from './configure/state.svelte'
 import { resolveLaunchableTarget, resolveReaderTarget } from './continuity/launch-targets'
 import { resolveSavedPositionTarget } from './continuity/position'
+import { DEFAULT_READER_ASSET_PROFILE } from '../shared/reader-assets/default-profile'
 
 // Bind verse gestures to the reader container:
 //   short-tap   → while tafsir preview is open, move it to the tapped verse.
@@ -63,7 +64,7 @@ function pushCleanup(arr: Array<() => void>, fn: any): void {
 }
 
 async function resolveSavedReaderTarget(): Promise<string | null> {
-  const activeRiwayah = settings.riwayah ?? 'qaloon'
+  const activeRiwayah = settings.riwayah ?? DEFAULT_READER_ASSET_PROFILE.riwayah
   return resolveSavedPositionTarget(await loadGlobalPosition(activeRiwayah), activeRiwayah)
 }
 
@@ -71,6 +72,16 @@ async function resolveFallbackReaderTarget(lastSurface: unknown): Promise<string
   const readerTarget = await resolveReaderTarget(lastSurface, settings.riwayah ?? 'qaloon')
   if (readerTarget) {
     return readerTarget
+  }
+  return (await resolveSavedReaderTarget()) ?? '#/s/1'
+}
+
+async function resolveLaunchTargetAfterReset(): Promise<string> {
+  const activeRiwayah = settings.riwayah ?? DEFAULT_READER_ASSET_PROFILE.riwayah
+  const lastSurface = await get('settings', 'lastSurface')
+  const lastSurfaceVal = await resolveLaunchableTarget(lastSurface?.value, activeRiwayah)
+  if (lastSurfaceVal) {
+    return lastSurfaceVal
   }
   return (await resolveSavedReaderTarget()) ?? '#/s/1'
 }
@@ -271,7 +282,11 @@ export async function initBootstrap(): Promise<Array<() => void>> {
       }
       return (await import('./navigate/bookmarks/BookmarksPage.svelte')).default
     })
-    router.register('#/onboarding', async () => (await import('./onboard/Onboarding.svelte')).default)
+    router.register('#/onboarding', () => Promise.resolve({
+      async init() {
+        router.navigate(await resolveLaunchTargetAfterReset(), { replace: true })
+      },
+    }))
 
     // Bookmarks: global click toggle (verse-id tap), indicator cache + glyph
     // decoration, and pulse-on-jump landing. All three are app-wide and live
@@ -358,28 +373,9 @@ export async function initBootstrap(): Promise<Array<() => void>> {
  * Handle launch restore: navigate to last-read position or default surah.
  */
 async function handleLaunchRestore() {
-  const { isComplete } = await import('./onboard/state')
-  const done = await isComplete()
-  if (!done) {
-    logger.info('First-run: onboarding')
-    router.navigate('#/onboarding', { replace: true })
-    return
-  }
-  const lastSurface = await get('settings', 'lastSurface')
-  const lastSurfaceVal = await resolveLaunchableTarget(lastSurface?.value, settings.riwayah ?? 'qaloon')
-  if (lastSurfaceVal) {
-    logger.info('Session restore: lastSurface', { surface: lastSurfaceVal })
-    router.navigate(lastSurfaceVal, { replace: true })
-    return
-  }
-  const positionTarget = await resolveSavedReaderTarget()
-  if (positionTarget) {
-    logger.info('Session restore: global position', { target: positionTarget })
-    router.navigate(positionTarget, { replace: true })
-  } else {
-    logger.info('Session restore: default surah 1')
-    router.navigate('#/s/1', { replace: true })
-  }
+  const target = await resolveLaunchTargetAfterReset()
+  logger.info('Session restore: reader target', { target })
+  router.navigate(target, { replace: true })
 }
 
 /**
