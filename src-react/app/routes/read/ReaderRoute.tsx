@@ -9,9 +9,9 @@ import type { Riwayah } from '../../../storage/types'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import { ReaderVerseSurface } from '../../../components/reader/ReaderVerseSurface'
 import { consumeReactReaderAnchor } from '../../../components/reader/SurahContinuityButton'
+import { resolveMushafHrefForVerseRef, resolveMushafHrefForVerseRoute } from '../../../components/reader/reader-mode-routing'
 import { useReaderPositionSync } from '../../../components/reader/useReaderPositionSync'
 import { useVerseInteractionReducer } from '../../../components/reader/useVerseInteractionReducer'
-import { REACT_ROUTES } from '../../router/routes'
 
 type ReaderSettings = {
   quranTextStyleId: string
@@ -71,7 +71,7 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
   const [metadata, setMetadata] = useState<Map<string, VerseMetadata>>(new Map())
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const { selectedVerseKey, selectVerse } = useVerseInteractionReducer()
-  const syncPosition = useReaderPositionSync(corpus)
+  const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -121,10 +121,19 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
 
   return (
     <ReaderPageShell
-      label={`Surah ${surah}`}
+      label={corpus.status === 'ready' ? corpus.surah.nameArabic : `Surah ${surah}`}
       mode="verse"
       onModeChange={(nextMode) => {
-        if (nextMode === 'mushaf') window.location.hash = REACT_ROUTES.mushaf(1)
+        if (nextMode === 'mushaf') {
+          const currentPosition = getCurrentPosition()
+          const hrefPromise = currentPosition?.surah === surah
+            ? resolveMushafHrefForVerseRef(currentPosition)
+            : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
+          void hrefPromise
+            .then((href) => {
+              window.location.hash = href
+            })
+        }
       }}
     >
       <ReaderVerseSurface

@@ -1,18 +1,36 @@
 @layer qa-react-tokens {
   :root {
-    --qa-react-canvas: var(--qar-color-parchment-50);
-    --qa-react-surface: var(--qar-color-parchment-100);
-    --qa-react-border: color-mix(in srgb, var(--qar-color-ink-700) 22%, transparent);
-    --qa-react-text: var(--qar-color-ink-900);
-    --qa-react-text-muted: var(--qar-color-ink-700);
-    --qa-react-accent: var(--qar-color-bronze-600);
-    --qa-react-accent-strong: var(--qar-color-bronze-500);
-    --qa-react-focus: var(--qar-color-bronze-500);
+    --qa-react-canvas: #fbf8f0;
+    --qa-react-surface: #f8f2e4;
+    --qa-react-sheet: #faf1d8;
+    --qa-react-border: #f1e9d3;
+    --qa-react-text: #2d2820;
+    --qa-react-text-muted: #5a4d38;
+    --qa-react-accent: #78592e;
+    --qa-react-accent-strong: #5e3a18;
+    --qa-react-focus: #78592e;
+    --qa-react-text-on-accent: #faf1d8;
     --qa-react-danger: var(--qar-color-danger-600);
     --qa-react-reader-page: var(--qa-react-canvas);
     --qa-react-reader-text: var(--qa-react-text);
     --qa-react-reader-muted: var(--qa-react-text-muted);
     --qa-react-reader-selection: color-mix(in srgb, var(--qa-react-accent) 22%, transparent);
+    --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 62%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 88%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 5%, var(--qa-react-nav-row-surface));
+    --qa-react-nav-row-border: color-mix(in srgb, var(--qa-react-border) 82%, var(--qa-react-accent));
+    --qa-react-nav-row-separator: color-mix(in srgb, var(--qa-react-border) 70%, transparent);
+    --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 10%, var(--qa-react-surface));
+    --qa-react-nav-current-spine: var(--qa-react-accent);
+    --qa-react-nav-control-surface: color-mix(in srgb, var(--qa-react-surface) 84%, var(--qa-react-canvas));
+    --qa-react-nav-control-selected-surface: color-mix(in srgb, var(--qa-react-accent) 13%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 9%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-text: var(--qa-react-accent);
+    --qa-react-nav-control-border: color-mix(in srgb, var(--qa-react-border) 84%, var(--qa-react-accent));
+    --qa-react-nav-badge-surface: color-mix(in srgb, var(--qa-react-accent) 14%, var(--qa-react-surface));
+    --qa-react-nav-badge-text: var(--qa-react-text);
+    --qa-react-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 6%);
+    --qa-react-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 4%);
     --qa-react-mushaf-ground: var(--qa-react-canvas);
     --qa-react-mushaf-ink: var(--qa-react-text);
     --qa-react-mushaf-border: var(--qa-react-border);
@@ -21,6 +39,8 @@
     --qa-react-storage-danger: var(--qa-react-danger);
     --qa-react-radius-control: var(--qar-radius-2);
     --qa-react-radius-surface: var(--qar-radius-3);
+    --qa-react-radius-pill: 999px;
+    --qa-react-radius-circle: 999px;
     --qa-react-space-control-x: var(--qar-space-3);
     --qa-react-space-control-y: var(--qar-space-2);
     --qa-react-font-ui: var(--qar-font-ui);
@@ -43,15 +63,47 @@
   }
 
   html[data-theme='sepia'] {
-    --qa-react-canvas: #f3e6ce;
-    --qa-react-surface: #ead8b9;
+    --qa-react-canvas: #f7ebd0;
+    --qa-react-surface: #f4e6c4;
+    --qa-react-border: #d9c595;
+    --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 70%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 90%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 6%, var(--qa-react-nav-row-surface));
+    --qa-react-nav-row-border: color-mix(in srgb, var(--qa-react-border) 76%, var(--qa-react-accent));
+    --qa-react-nav-row-separator: color-mix(in srgb, var(--qa-react-border) 62%, transparent);
+    --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 11%, var(--qa-react-surface));
+    --qa-react-nav-control-surface: color-mix(in srgb, var(--qa-react-surface) 86%, var(--qa-react-canvas));
+    --qa-react-nav-control-selected-surface: color-mix(in srgb, var(--qa-react-accent) 14%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 10%, var(--qa-react-surface));
+    --qa-react-nav-control-border: color-mix(in srgb, var(--qa-react-border) 76%, var(--qa-react-accent));
+    --qa-react-nav-badge-surface: color-mix(in srgb, var(--qa-react-accent) 15%, var(--qa-react-surface));
+    --qa-react-nav-shadow-row: 0 4px 14px rgb(64 43 18 / 7%);
+    --qa-react-nav-shadow-control: 0 8px 18px rgb(64 43 18 / 5%);
   }
 
   html[data-theme='dark'] {
-    --qa-react-canvas: #181511;
-    --qa-react-surface: #24201a;
-    --qa-react-text: #f8f2e7;
-    --qa-react-text-muted: #c9bba8;
-    --qa-react-border: color-mix(in srgb, #f8f2e7 18%, transparent);
+    --qa-react-canvas: #0f1215;
+    --qa-react-surface: #181c21;
+    --qa-react-sheet: #14181c;
+    --qa-react-text: #dcdcdc;
+    --qa-react-text-muted: #a3a3a3;
+    --qa-react-border: #1d2328;
+    --qa-react-accent: #d4a253;
+    --qa-react-accent-strong: #e4b882;
+    --qa-react-focus: #d4a253;
+    --qa-react-text-on-accent: #15110a;
+    --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 72%, var(--qa-react-sheet));
+    --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 78%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 9%, var(--qa-react-nav-row-surface));
+    --qa-react-nav-row-border: color-mix(in srgb, var(--qa-react-border) 72%, var(--qa-react-accent));
+    --qa-react-nav-row-separator: color-mix(in srgb, var(--qa-react-border) 80%, transparent);
+    --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 16%, var(--qa-react-surface));
+    --qa-react-nav-control-surface: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-canvas));
+    --qa-react-nav-control-selected-surface: color-mix(in srgb, var(--qa-react-accent) 20%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 14%, var(--qa-react-surface));
+    --qa-react-nav-control-border: color-mix(in srgb, var(--qa-react-border) 72%, var(--qa-react-accent));
+    --qa-react-nav-badge-surface: color-mix(in srgb, var(--qa-react-accent) 22%, var(--qa-react-surface));
+    --qa-react-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 28%);
+    --qa-react-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 24%);
   }
 }

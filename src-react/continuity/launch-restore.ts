@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { openReactDb, type QuranAtlasReactDb } from '../storage/db'
 import type { SettingRecord } from '../storage/types'
@@ -94,18 +94,30 @@ export function useLaunchRestore(hash: string): LaunchRestoreState {
     hash,
     sourceHash: hash,
   }))
+  const hasResolvedOnceRef = useRef(false)
 
   useEffect(() => {
     let active = true
+    const canKeepReady = hasResolvedOnceRef.current && !isLaunchHash(hash) && hash !== '#/onboarding'
+
     async function resolve() {
       const db: QuranAtlasReactDb = await openReactDb()
       const resolvedHash = await resolveHashWithLaunchState(db, hash)
-      if (active) setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+      if (active) {
+        hasResolvedOnceRef.current = true
+        setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+      }
     }
 
-    setState({ status: 'loading', hash, sourceHash: hash })
+    setState((current) => {
+      if (canKeepReady && current.status === 'ready') return { status: 'ready', hash, sourceHash: hash }
+      return { status: 'loading', hash, sourceHash: hash }
+    })
     void resolve().catch(() => {
-      if (active) setState({ status: 'ready', hash: isLaunchHash(hash) ? '#/onboarding' : hash, sourceHash: hash })
+      if (active) {
+        hasResolvedOnceRef.current = true
+        setState({ status: 'ready', hash: isLaunchHash(hash) ? '#/onboarding' : hash, sourceHash: hash })
+      }
     })
 
     return () => {

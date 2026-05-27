@@ -180,4 +180,8 @@ modules under `src-react/components/reader/**`, `src-react/data/**`,
 `src-react/metadata/**`, `src-react/search/**`, and
 `src-react/continuity/**` are dual-build implementations: they prove route,
 component, storage, alias, metadata, bookmark, and Daily Wird contracts without
-flipping production routing away from Svelte.
+flipping production routing away from Svelte. React launch restore resolves the
+initial launch/onboarding decision through IndexedDB, then keeps already
+resolved explicit reader hashes mounted during later internal route changes
+while the async onboarding guard revalidates; reader page turns must not remount
+and lose transient chrome or reading-position state.

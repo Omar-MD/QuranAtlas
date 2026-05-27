@@ -808,6 +808,67 @@
       ]
     },
     {
+      "id": "juz-list",
+      "name": "JuzList",
+      "maturity": "product",
+      "exportPath": "src-react/components/navigation/JuzList.tsx",
+      "namedExport": "JuzList",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src-react/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "error"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "real 30-row boundary data",
+            "route start references"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic list region",
+        "keyboard reachable row actions",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src-react/components/navigation/navigation.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src-react/components/navigation"
+      },
+      "allowedConsumers": [
+        "src-react/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
       "id": "metadata-lane",
       "name": "MetadataLane",
       "maturity": "product",
@@ -1758,6 +1819,67 @@
       ],
       "forbiddenUses": [
         "Do not use unlabeled loading indicators."
+      ]
+    },
+    {
+      "id": "surah-list",
+      "name": "SurahList",
+      "maturity": "product",
+      "exportPath": "src-react/components/navigation/SurahList.tsx",
+      "namedExport": "SurahList",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src-react/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "error"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "real 114-row metadata",
+            "riwayah-specific verse counts"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic list region",
+        "keyboard reachable row actions",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src-react/components/navigation/navigation.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src-react/components/navigation"
+      },
+      "allowedConsumers": [
+        "src-react/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
       ]
     },
     {

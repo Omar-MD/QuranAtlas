@@ -4,7 +4,7 @@ import { SurahList } from '../../../components/navigation/SurahList'
 export function SurahsRoute() {
   return (
     <NavigationPageRecipe title="Surahs">
-      <SurahList />
+      <SurahList onNavigate={(hash) => { window.location.hash = hash }} />
     </NavigationPageRecipe>
   )
 }

@@ -5,6 +5,7 @@ import type { ReaderAssetState } from '../../../components/reader/ReaderAssetGat
 import { ReaderAssetGate } from '../../../components/reader/ReaderAssetGate'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import type { MushafViewMode } from '../../../components/reader/MushafModeControl'
+import { resolveVerseHrefForMushafPage } from '../../../components/reader/reader-mode-routing'
 import {
   loadMushafPageAsset,
   type MushafReadyPageAssetState,
@@ -27,8 +28,17 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   const [visiblePage, setVisiblePage] = useState<MushafReadyPageAssetState | null>(null)
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'previous'>('next')
   const [viewMode, setViewMode] = useState<MushafViewMode>('auto')
+  const [chromeVisible, setChromeVisible] = useState(true)
   const requestId = useRef(0)
+  const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
+
+  useEffect(() => {
+    if (routePageRef.current !== page) {
+      setChromeVisible(false)
+      routePageRef.current = page
+    }
+  }, [page])
 
   useEffect(() => {
     if (assetState !== 'ready') return
@@ -62,20 +72,34 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
 
   return (
     <ReaderPageShell
+      chromeVisible={chromeVisible}
       label={`Page ${page}`}
       mode="mushaf"
+      onChromeVisibleChange={setChromeVisible}
       onModeChange={(nextMode) => {
-        if (nextMode === 'verse') window.location.hash = REACT_ROUTES.surah(1)
+        if (nextMode === 'verse') {
+          const visibleRef = visiblePage?.resolved.firstVerse
+          if (visibleRef) {
+            window.location.hash = REACT_ROUTES.surah(visibleRef.surah, visibleRef.verse)
+            return
+          }
+          void resolveVerseHrefForMushafPage(page).then((href) => {
+            window.location.hash = href
+          })
+        }
       }}
     >
       {assetState !== 'ready' ? (
         <ReaderAssetGate label="Qalun" state={assetState} />
       ) : visiblePage ? (
         <MushafPageViewer
+          chromeVisible={chromeVisible}
           inlineSvg={visiblePage.inlineSvg}
           onNavigate={(nextPage) => {
+            setChromeVisible(false)
             window.location.hash = REACT_ROUTES.mushaf(nextPage)
           }}
+          onToggleChrome={(visible) => setChromeVisible(visible)}
           onViewModeChange={setViewMode}
           resolved={visiblePage.resolved}
           transitionDirection={transitionDirection}

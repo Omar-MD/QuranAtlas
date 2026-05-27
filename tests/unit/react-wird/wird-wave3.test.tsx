@@ -28,7 +28,9 @@ describe('React Daily Wird parity', () => {
 
   it('renders the reader-adjacent no-plan card', () => {
     render(<DailyWirdCard plan={null} counts={counts} />)
-    expect(screen.getByText('Daily Wird')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /create plan/i })).toBeInTheDocument()
+    const card = screen.getByRole('button', { name: /start daily wird/i })
+    expect(card).toHaveClass('qar-react-wird-card')
+    expect(screen.getByText('Create a plan to build a consistent rhythm.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /create plan/i })).toBeNull()
   })
 })

@@ -27,6 +27,8 @@ export type MushafResolvedPage = {
   firstVerse: { surah: number; verse: number }
 }
 
+export type QuranRef = { surah: number; verse: number }
+
 export type MushafPageAssetState =
   | { status: 'loading' }
   | { status: 'ready'; inlineSvg: ReactInlineMushafSvg; resolved: MushafResolvedPage }
@@ -40,15 +42,16 @@ type MushafManifestPage = {
   page: number
   assetPath: string
   viewBox: string
-  firstVerse: { surah: number; verse: number }
+  firstVerse: QuranRef
 }
 
-type MushafManifest = {
+export type MushafManifest = {
   version: 1
   riwayah: Riwayah
   mushafEditionId: string
   pageCount: number
   pages: MushafManifestPage[]
+  verseToPage: Record<string, number>
 }
 
 type MushafAssetIndex = {
@@ -103,8 +106,7 @@ export async function loadMushafPageAsset({
         mushafEditionId,
       }
     }
-    const manifestUrl = mushafManifestUrl({ riwayah, mushafEditionId })
-    const manifest = await fetchJson<MushafManifest>(fetcher, manifestUrl, signal)
+    const manifest = await loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal })
     const resolved = resolveMushafPage(manifest, { mushafEditionId, page, riwayah })
     const svgText = await fetchText(fetcher, resolved.assetUrl, signal)
     const inlineSvg = prepareReactInlineMushafSvg(svgText)
@@ -119,6 +121,36 @@ export async function loadMushafPageAsset({
     }
     return { status: 'error', error: error instanceof Error ? error : new Error('Mushaf page unavailable') }
   }
+}
+
+export async function loadMushafManifest({
+  fetcher = fetch,
+  mushafEditionId,
+  riwayah,
+  signal,
+}: {
+  fetcher?: typeof fetch
+  mushafEditionId: string
+  riwayah: Riwayah
+  signal?: AbortSignal
+}): Promise<MushafManifest> {
+  const manifestUrl = mushafManifestUrl({ riwayah, mushafEditionId })
+  const manifest = await fetchJson<MushafManifest>(fetcher, manifestUrl, signal)
+  assertMushafManifest(manifest, { mushafEditionId, riwayah })
+  return manifest
+}
+
+export function pageForVerseInMushafManifest(manifest: MushafManifest, ref: QuranRef): number | null {
+  const page = manifest.verseToPage?.[`${ref.surah}:${ref.verse}`]
+  if (!Number.isInteger(page) || page < 1 || page > manifest.pageCount) return null
+  return page
+}
+
+export function firstVerseForMushafPage(manifest: MushafManifest, page: number): QuranRef {
+  const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(page)))
+  const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
+  if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
+  return { surah: pageEntry.firstVerse.surah, verse: pageEntry.firstVerse.verse }
 }
 
 function hasIndexedMushafAsset(
@@ -176,10 +208,7 @@ function resolveMushafPage(
   manifest: MushafManifest,
   expected: { riwayah: Riwayah; mushafEditionId: string; page: number },
 ): MushafResolvedPage {
-  if (manifest.version !== 1) throw new Error('Unsupported Mushaf manifest version')
-  if (manifest.riwayah !== expected.riwayah) throw new Error('Mushaf manifest riwayah mismatch')
-  if (manifest.mushafEditionId !== expected.mushafEditionId) throw new Error('Mushaf manifest edition mismatch')
-  if (!Number.isInteger(manifest.pageCount) || manifest.pageCount < 1) throw new Error('Invalid Mushaf page count')
+  assertMushafManifest(manifest, expected)
 
   const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(expected.page)))
   const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
@@ -199,6 +228,17 @@ function resolveMushafPage(
     viewBoxText: pageEntry.viewBox.trim(),
     firstVerse: pageEntry.firstVerse,
   }
+}
+
+function assertMushafManifest(
+  manifest: MushafManifest,
+  expected: { riwayah: Riwayah; mushafEditionId: string },
+): void {
+  if (manifest.version !== 1) throw new Error('Unsupported Mushaf manifest version')
+  if (manifest.riwayah !== expected.riwayah) throw new Error('Mushaf manifest riwayah mismatch')
+  if (manifest.mushafEditionId !== expected.mushafEditionId) throw new Error('Mushaf manifest edition mismatch')
+  if (!Number.isInteger(manifest.pageCount) || manifest.pageCount < 1) throw new Error('Invalid Mushaf page count')
+  if (!manifest.verseToPage || typeof manifest.verseToPage !== 'object') throw new Error('Invalid Mushaf verse-to-page map')
 }
 
 async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {

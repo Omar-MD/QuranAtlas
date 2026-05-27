@@ -99,11 +99,15 @@ Desktop kebab path keeps narrow side-panel size but uses same tabbed component.
 - Tap row → `#/s/{n}`.
 - **Continue-reading card** at top: with search cleared and All filter active, shows last-read position. Tap → navigates to surah + verse. Reads from `settings.currentPosition` via `loadGlobalPosition`.
 
+During the React dual-build parity track, `src-react/components/navigation/NavDrawer.tsx` keeps `Surah | Juz | Bookmarks` as peer source tabs in local drawer state for both Verse and Mushaf reader routes. It does not own the Verse/Mushaf reader-mode switch; `ReaderChrome` renders that switch as a compact reader-surface header icon outside the drawer. Switching to Juz or Bookmarks does not navigate to `#/surahs`; only row actions navigate. The drawer uses the Svelte mobile shell/header palette and layout: rosette wordmark, About and Close icon buttons, Read rail, Daily Wird row card, Surah search plus `All | Recent`, and full-row Surah/Juz buttons with chevrons. Visible `Open`, `Continue`, `Create plan`, `Continue Wird`, and Mushaf view-mode controls do not appear in the drawer list surface. The drawer is height-bound and scrollable on phone viewports so lower Juz rows remain reachable. `src-react/components/navigation/SurahList.tsx` loads all 114 rows from `/dataset/surahs.json` through the React dataset boundary and renders active-riwayah verse counts, current-surah highlighting, and recent filtering from the shared settings store. `src-react/components/navigation/JuzList.tsx` loads `/dataset/juz.json`, normalizes the Svelte-equivalent 30 start references, marks the current Juz when the current reader position is known, and routes rows to `#/s/{surah}/{verse}` in Verse mode or the matching `#/m/{page}` from the active Mushaf manifest in Mushaf mode. `src-react/app/routes/navigation/SurahsRoute.tsx` is the desktop route container and keeps persistence, route mutation, and async data loading outside row presentation.
+
 ### Bookmarks (riwayah-scoped)
 
 Verse-level. Single-tap toggle: tap verse number in reader → `src/continuity/bookmarks/store.ts::toggle(verseKey, riwayah)` writes / removes; emits `BOOKMARKS_SAVED` / `BOOKMARKS_DELETED`. Reader indicator (`bookmarks/indicator.ts`) updates gold left-edge.
 
 Drawer Bookmarks tab is the read surface (above). Empty-state when no bookmarks exist for active riwayah.
+
+During the React dual-build parity track, `src-react/continuity/bookmarks/store.ts` is the React facade over the shared v7 `bookmarks` store. It reads only the active `settings.riwayah`, sorts rows by Surah and verse, and deletes by the compound `[riwayah, verseKey]` key. `src-react/app/routes/navigation/BookmarksRoute.tsx` and `ReaderPageShell` consume that facade through `useBookmarks`; `BookmarksList` remains presentational and receives row, jump, and delete callbacks.
 
 Pulse animation (`bookmarks/pulse.ts`) — landing-flash on jumped-to verse fires `BOOKMARK_JUMP_LANDED`.
 
@@ -200,7 +204,8 @@ _(no cross-surface reads detected)_
 ## Invariants
 
 - **Hamburger drawer is the sole mobile in-app entry to the full surah list.** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. (Mirror of `read` dossier invariant.)
-- **Read source controls are Verse-mode only and peer-owned.** The drawer Read mode exposes `Surah | Juz | Bookmarks` as peer sources only while the reader mode is Verse. Search and `All | Recent` belong only to Surah; Juz, Bookmarks, and Mushaf page continuation must not show disabled or decorative Surah controls.
+- **Read source controls are peer-owned.** In the Svelte drawer, `Surah | Juz | Bookmarks` are shown while reader mode is Verse. In the React parity drawer, the same source controls are available from both Verse and Mushaf reader routes. Search and `All | Recent` belong only to Surah; Juz and Bookmarks must not show disabled or decorative Surah controls.
+- **React drawer navigation is route-stable.** React `NavDrawer` exposes Surah, Juz, and Bookmarks in both Verse and Mushaf routes; Surah/Juz/bookmark row actions emit verse routes in Verse mode and resolve the same references to active Mushaf pages in Mushaf mode. The Verse/Mushaf switch is a compact `ReaderChrome` header icon so the drawer can match the Svelte navigation shell without adding mode controls, Mushaf view controls, or extra action buttons to the navbar.
 - **Sole writer of `bookmarks` store: `bookmarks/store.ts`.** Anywhere else writing `bookmarks` directly is a bug.
 - **Bookmarks scope to active riwayah.** ID format `<riwayah>:<surah>:<verse>` — switching riwayah surfaces a different set.
 - **Bookmarks remain Reader First navigation.** Bookmarks are reading-continuity data, not personal study annotations.

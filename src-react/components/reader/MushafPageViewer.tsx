@@ -5,8 +5,10 @@ import { Button } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
 
 export type MushafPageViewerProps = {
+  chromeVisible?: boolean
   inlineSvg: ReactInlineMushafSvg
   onNavigate?: (page: number) => void
+  onToggleChrome?: (visible: boolean) => void
   onViewModeChange?: (mode: MushafViewMode) => void
   resolved: MushafResolvedPage
   transitionDirection?: 'next' | 'previous'
@@ -14,8 +16,10 @@ export type MushafPageViewerProps = {
 }
 
 export function MushafPageViewer({
+  chromeVisible = true,
   inlineSvg,
   onNavigate,
+  onToggleChrome,
   resolved,
   transitionDirection = 'next',
   viewMode = 'auto',
@@ -77,6 +81,17 @@ export function MushafPageViewer({
           />
         </div>
         <Button
+          aria-label="Toggle reader chrome"
+          aria-pressed={chromeVisible}
+          className="qar-react-mushaf-center-toggle"
+          onClick={() => onToggleChrome?.(!chromeVisible)}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
+          <span className="qar:sr-only">Toggle reader chrome</span>
+        </Button>
+        <Button
           aria-label="Advance Mushaf page from left edge"
           className="qar-react-mushaf-edge qar-react-mushaf-edge--left"
           disabled={resolved.page >= resolved.pageCount}
@@ -98,6 +113,9 @@ export function MushafPageViewer({
         >
           <span className="qar:sr-only">Previous page</span>
         </Button>
+      </div>
+      <div className="qar-react-mushaf-page-counter" aria-label={`Mushaf page ${resolved.page} of ${resolved.pageCount}`}>
+        {resolved.page} / {resolved.pageCount}
       </div>
     </section>
   )

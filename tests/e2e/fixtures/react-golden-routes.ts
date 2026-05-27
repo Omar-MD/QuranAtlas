@@ -167,6 +167,33 @@ export async function seedTargetState(page: Page, target: ParityTargetId, seed: 
   await page.goto('about:blank')
 }
 
+export async function seedReactBookmarks(page: Page, records: Array<{ riwayah?: string; verseKey: string }>) {
+  await page.evaluate(
+    ({ dbName, rows }) => new Promise<void>((resolve, reject) => {
+      const open = indexedDB.open(dbName)
+      open.onsuccess = () => {
+        const db = open.result
+        const tx = db.transaction('bookmarks', 'readwrite')
+        const store = tx.objectStore('bookmarks')
+        const now = Date.now()
+        for (const row of rows) {
+          const [surahRaw] = row.verseKey.split(':')
+          store.put({
+            riwayah: row.riwayah ?? 'qaloon',
+            verseKey: row.verseKey,
+            surah: Number(surahRaw),
+            createdAt: now,
+          })
+        }
+        tx.oncomplete = () => { db.close(); resolve() }
+        tx.onerror = () => { db.close(); reject(tx.error) }
+      }
+      open.onerror = () => reject(open.error)
+    }),
+    { dbName: DB_NAME, rows: records },
+  )
+}
+
 export async function withSeededTargets(page: Page, seed: string) {
   await seedTargetState(page, 'svelte', seed)
   await seedTargetState(page, 'react', seed)

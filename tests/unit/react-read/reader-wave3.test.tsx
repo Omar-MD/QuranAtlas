@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ReaderRoute } from '../../../src-react/app/routes/read/ReaderRoute'
 import { MushafRoute } from '../../../src-react/app/routes/read/MushafRoute'
 import { ReaderChrome } from '../../../src-react/components/reader/ReaderChrome'
+import { ReaderPageShell } from '../../../src-react/components/reader/ReaderPageShell'
 import { MushafPageViewer } from '../../../src-react/components/reader/MushafPageViewer'
 import {
   loadMushafPageAsset,
@@ -40,6 +41,30 @@ const qaloonFatihah = {
     { jozz: 1, page: '1', aya_no: 6, aya_text: 'صِرَٰطَ اَ۬لذِينَ أَنْعَمْتَ عَلَيْهِمْ' },
     { jozz: 1, page: '1', aya_no: 7, aya_text: 'غَيْرِ اِ۬لْمَغْضُوبِ عَلَيْهِمْ وَلَا اَ۬لضَّآلِّينَۖ' },
   ],
+}
+
+const qaloonBaqarah = {
+  riwayah: 'qaloon',
+  version: '10',
+  sura_no: 2,
+  sura_name_ar: 'البَقَرَة',
+  sura_name_en: 'Al-Baqarah',
+  ayat: Array.from({ length: 120 }, (_, index) => {
+    const verse = index + 1
+    return { jozz: verse < 94 ? 1 : 2, page: verse < 94 ? '2' : '15', aya_no: verse, aya_text: `آية ${verse}` }
+  }),
+}
+
+const bridgesBaqarah = {
+  translationId: 'bridges',
+  translationVersion: 'qul-resource-179',
+  surahNo: 2,
+  intro: [],
+  verses: Array.from({ length: 120 }, (_, index) => {
+    const verse = index + 1
+    return { key: `2:${verse}`, text: `Translation ${verse}` }
+  }),
+  footnotes: {},
 }
 
 const bridgesFatihah = {
@@ -92,6 +117,20 @@ function readerFetchFixture() {
   })
 }
 
+function baqarahReaderFetchFixture() {
+  return vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input)
+    if (url === '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/002.json') return jsonResponse(qaloonBaqarah)
+    if (url === '/dataset/translations/bridges/002.json') return jsonResponse(bridgesBaqarah)
+    if (url === '/dataset/translations/_verse-aliases.json') return jsonResponse({ aliases: {} })
+    if (url === '/dataset/surahs.json') return jsonResponse(surahIndex)
+    if (url === '/dataset/knowledge/ayah/002.json') return jsonResponse({ surah: 2, version: 'knowledge-v1', ayahs: [] })
+    if (url === '/dataset/knowledge/passages/002.json') return jsonResponse({ surah: 2, version: 'knowledge-v1', passages: [] })
+    if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+    return jsonResponse({}, { ok: false, status: 404 })
+  })
+}
+
 const mushafManifest = {
   version: 1,
   riwayah: 'qaloon',
@@ -99,7 +138,7 @@ const mushafManifest = {
   sourceSlug: 'qalun',
   pageCount: 604,
   attribution: { provider: 'quran.ws', sourceUrl: 'https://pdf.quran.ws/qalun.pdf' },
-  verseToPage: { '1:1': 1 },
+  verseToPage: { '1:1': 1, '2:1': 2, '2:94': 15, '2:255': 42 },
   pages: [
     {
       page: 1,
@@ -109,7 +148,39 @@ const mushafManifest = {
       sourcePdfUrl: 'https://pdf.quran.ws/qalun/001.pdf',
       firstVerse: { surah: 1, verse: 1 },
     },
+    {
+      page: 42,
+      assetPath: 'pages/042.svg',
+      viewBox: '0 0 120 180',
+      bytes: 1120,
+      sourcePdfUrl: 'https://pdf.quran.ws/qalun/042.pdf',
+      firstVerse: { surah: 2, verse: 251 },
+    },
   ],
+}
+
+function placeVerseAtViewportCenter(verseKey: string) {
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 })
+  const center = 400
+  for (const element of document.querySelectorAll<HTMLElement>('[data-token-key]')) {
+    const key = element.dataset.tokenKey
+    const isVisible = key === verseKey
+    const top = isVisible ? center - 50 : 2000
+    Object.defineProperty(element, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        bottom: top + 100,
+        height: 100,
+        left: 0,
+        right: 360,
+        toJSON: () => ({}),
+        top,
+        width: 360,
+        x: 0,
+        y: top,
+      }),
+    })
+  }
 }
 
 const realMushafSvg = '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="#fff"/><path d="M10 10h100v160H10z" fill="#000"/></svg>'
@@ -147,6 +218,45 @@ function mushafFetchFixture() {
 }
 
 describe('React reader parity', () => {
+  function setWindowScrollY(value: number) {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value })
+    Object.defineProperty(document.documentElement, 'scrollTop', { configurable: true, value })
+  }
+
+  it('renders reader chrome without a center surah/page title action', () => {
+    render(<ReaderChrome mode="verse" onOpenNavigation={vi.fn()} onOpenSettings={vi.fn()} />)
+
+    const nav = screen.getByRole('navigation', { name: 'Primary navigation' })
+    expect(nav).toHaveClass('qar-reader-chrome')
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveClass('qar-reader-chrome-icon')
+    expect(screen.queryByRole('button', { name: /Toggle surah header/i })).toBeNull()
+    expect(screen.queryByText('الفَاتِحة')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Open settings' })).toHaveClass('qar-reader-chrome-icon')
+    expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
+  })
+
+  it('autohides Verse reader chrome on scroll down and reveals it on scroll up', () => {
+    setWindowScrollY(0)
+    render(
+      <ReaderPageShell label="الفَاتِحة" mode="verse">
+        <div />
+      </ReaderPageShell>,
+    )
+
+    const nav = screen.getByRole('navigation', { name: 'Primary navigation' })
+    expect(nav).toHaveAttribute('data-visible', 'true')
+
+    setWindowScrollY(96)
+    fireEvent.scroll(window)
+
+    expect(nav).toHaveAttribute('data-visible', 'false')
+
+    setWindowScrollY(40)
+    fireEvent.scroll(window)
+
+    expect(nav).toHaveAttribute('data-visible', 'true')
+  })
+
   it('resolves continuation translation aliases without duplicating text', () => {
     const aliases = { '7': [{ hafs: 2, warsh: [2, 3], qaloon: [2, 3] }] }
     expect(resolveTranslationFor({ surah: 7, verse: 3, riwayah: 'qaloon', translations: { '7:2': 'guidance' }, aliases })).toEqual({
@@ -185,7 +295,7 @@ describe('React reader parity', () => {
     vi.stubGlobal('fetch', readerFetchFixture())
     render(<ReaderRoute surah={1} ayah={1} />)
     expect(await screen.findByRole('main', { name: /verse reader/i })).toBeInTheDocument()
-    expect(screen.getByText('Surah 1')).toBeInTheDocument()
+    expect(await screen.findByText(/Surah 1 · 7 verses/i)).toBeInTheDocument()
     expect(await screen.findByLabelText('بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ')).toBeInTheDocument()
     expect(screen.getByTestId('verse-1:1')).toHaveAttribute('data-token-key', '1:1')
     expect(await screen.findByTestId('verse-1:7')).toBeInTheDocument()
@@ -301,23 +411,63 @@ describe('React reader parity', () => {
     expect(screen.getByText(/page pack is not installed/i)).toBeInTheDocument()
   })
 
-  it('routes the reader mode toggle between Verse and Mushaf modes', () => {
+  it('renders reader mode switching as a compact header icon instead of fixed page tabs', () => {
     const onModeChange = vi.fn()
-    render(<ReaderChrome currentLabel="Surah 1" mode="verse" onModeChange={onModeChange} />)
+    render(<ReaderChrome mode="verse" onModeChange={onModeChange} />)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Mushaf' }))
-
+    expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Mushaf' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf mode' }))
     expect(onModeChange).toHaveBeenCalledWith('mushaf')
+    expect(screen.getByRole('button', { name: 'Switch to Mushaf mode' })).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('switches from the Verse route to the Mushaf route from the reader chrome', () => {
-    vi.stubGlobal('fetch', readerFetchFixture())
-    window.location.hash = '#/s/1'
+  it('switches from the Verse route to the Mushaf page containing the active verse', async () => {
+    const readerFetch = readerFetchFixture()
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      return readerFetch(input)
+    }))
+    window.location.hash = '#/s/2/255'
 
-    render(<ReaderRoute surah={1} />)
-    fireEvent.click(screen.getByRole('tab', { name: 'Mushaf' }))
+    render(<ReaderRoute surah={2} ayah={255} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf mode' }))
 
-    expect(window.location.hash).toBe('#/m/1')
+    await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
+    vi.unstubAllGlobals()
+  })
+
+  it('switches from a scrolled Verse reader position to the matching Mushaf page', async () => {
+    vi.stubGlobal('fetch', baqarahReaderFetchFixture())
+    window.location.hash = '#/s/2'
+
+    render(<ReaderRoute surah={2} />)
+    expect(await screen.findByTestId('verse-2:94')).toBeInTheDocument()
+
+    placeVerseAtViewportCenter('2:94')
+    fireEvent.scroll(window)
+    await waitFor(async () => {
+      expect((await (await openReactDb()).settings.get('currentPosition'))?.value).toEqual({ surah: 2, verse: 94 })
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf mode' }))
+
+    await waitFor(() => expect(window.location.hash).toBe('#/m/15'))
+    vi.unstubAllGlobals()
+  })
+
+  it('switches from a Mushaf page to the first verse on that page', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/42'
+
+    render(<MushafRoute page={42} assetState="missing" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Verse mode' }))
+
+    await waitFor(() => expect(window.location.hash).toBe('#/s/2/251'))
     vi.unstubAllGlobals()
   })
 
@@ -326,9 +476,22 @@ describe('React reader parity', () => {
 
     render(<MushafRoute page={1} assetState="missing" />)
 
-    expect(screen.getByText('Page 1')).toBeInTheDocument()
-    expect(screen.queryByRole('tab', { name: 'Verse' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('tab', { name: 'Mushaf' })).not.toBeInTheDocument()
+    const chrome = screen.getByRole('navigation', { name: 'Primary navigation' })
+    expect(within(chrome).queryByText('Page 1')).not.toBeInTheDocument()
+    expect(within(chrome).queryByRole('tab', { name: 'Verse' })).not.toBeInTheDocument()
+    expect(within(chrome).queryByRole('tab', { name: 'Mushaf' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
+    expect(within(chrome).getByRole('button', { name: 'Switch to Verse mode' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('hides Mushaf chrome after the page route changes', async () => {
+    const { rerender } = render(<MushafRoute page={1} assetState="missing" />)
+    const chrome = screen.getByRole('navigation', { name: 'Primary navigation' })
+    expect(chrome).toHaveAttribute('data-visible', 'true')
+
+    rerender(<MushafRoute page={2} assetState="missing" />)
+
+    await waitFor(() => expect(chrome).toHaveAttribute('data-visible', 'false'))
   })
 
   it('sanitizes real Mushaf SVG markup and rejects unsafe SVG before injection', () => {
@@ -462,15 +625,21 @@ describe('React reader parity', () => {
     vi.unstubAllGlobals()
   })
 
-  it('opens Mushaf navbar controls from the reader chrome instead of rendering fit controls on the page', async () => {
+  it('opens the same Surah, Juz, and Bookmarks drawer from the Mushaf reader chrome', async () => {
     vi.stubGlobal('fetch', mushafFetchFixture())
     render(<MushafRoute page={1} />)
 
     expect(await screen.findByRole('img', { name: /mushaf page 1, qalun/i })).toBeInTheDocument()
     expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
-    expect(screen.getByRole('complementary', { name: 'Navigation drawer' })).toBeInTheDocument()
-    expect(screen.getByRole('tablist', { name: 'Mushaf view mode' })).toBeInTheDocument()
+    expect(document.querySelector('.qar-react-nav-drawer-overlay')).not.toBeNull()
+    const drawer = screen.getByRole('dialog', { name: 'Navigation' })
+    expect(drawer).toBeInTheDocument()
+    expect(within(drawer).queryByRole('tablist', { name: 'Mushaf view mode' })).toBeNull()
+    expect(within(drawer).getByRole('tablist', { name: 'Read source' })).toBeInTheDocument()
+    expect(within(drawer).getByRole('tab', { name: 'Surah' })).toHaveAttribute('aria-selected', 'true')
+    expect(within(drawer).getByRole('tab', { name: 'Juz' })).toHaveAttribute('aria-selected', 'false')
+    expect(within(drawer).getByRole('tab', { name: 'Bookmarks' })).toHaveAttribute('aria-selected', 'false')
     vi.unstubAllGlobals()
   })
 
@@ -508,6 +677,34 @@ describe('React reader parity', () => {
     fireEvent.touchStart(page, { touches: [{ clientX: 120, clientY: 240 }] })
     fireEvent.touchEnd(page, { changedTouches: [{ clientX: 320, clientY: 238 }] })
     expect(onNavigate).toHaveBeenLastCalledWith(1)
+  })
+
+  it('renders the Mushaf page count at the bottom center and toggles chrome from the page center', () => {
+    const onToggleChrome = vi.fn()
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+
+    render(
+      <MushafPageViewer
+        chromeVisible
+        inlineSvg={inlineSvg}
+        onToggleChrome={onToggleChrome}
+        resolved={{
+          assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+          firstVerse: { surah: 2, verse: 251 },
+          manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+          mushafEditionId: 'qalun-quran-ws-v1',
+          page: 42,
+          pageCount: 604,
+          riwayah: 'qaloon',
+          riwayahLabel: 'Qalun',
+        }}
+      />,
+    )
+
+    expect(screen.getByLabelText('Mushaf page 42 of 604')).toHaveClass('qar-react-mushaf-page-counter')
+    expect(screen.getByText('42 / 604')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle reader chrome' }))
+    expect(onToggleChrome).toHaveBeenCalledWith(false)
   })
 
   it('keeps the React Mushaf SVG and its visible page frame on the same fitted box', () => {

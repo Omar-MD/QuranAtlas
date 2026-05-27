@@ -1,27 +1,126 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 import { writeCurrentPosition } from '../../continuity/current-position'
 import type { ReaderCorpusState } from '../../data/reader-corpus'
 import { openReactDb } from '../../storage/db'
+
+type ReaderPosition = { surah: number; verse: number }
+
+const SCROLL_PERSIST_DELAY_MS = 500
 
 async function persistPosition(surah: number, verse: number): Promise<void> {
   const db = await openReactDb()
   await writeCurrentPosition(db, { surah, verse })
 }
 
+function parseVerseKey(verseKey: string): ReaderPosition | null {
+  const [surahPart, versePart] = verseKey.split(':')
+  const surah = Number.parseInt(surahPart ?? '', 10)
+  const verse = Number.parseInt(versePart ?? '', 10)
+  if (!Number.isInteger(surah) || !Number.isInteger(verse) || surah < 1 || verse < 1) return null
+  return { surah, verse }
+}
+
+function positionKey(position: ReaderPosition): string {
+  return `${position.surah}:${position.verse}`
+}
+
+function findCenteredVersePosition(surah: number): ReaderPosition | null {
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+  if (!viewportHeight) return null
+  const centerY = viewportHeight / 2
+  let closest: { distance: number; position: ReaderPosition } | null = null
+
+  for (const element of document.querySelectorAll<HTMLElement>('.qar-reader-verse[data-token-key]')) {
+    const position = parseVerseKey(element.dataset.tokenKey ?? '')
+    if (!position || position.surah !== surah) continue
+    const rect = element.getBoundingClientRect()
+    if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
+
+    const distance = rect.top <= centerY && rect.bottom >= centerY
+      ? 0
+      : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
+    if (!closest || distance < closest.distance) closest = { distance, position }
+    if (distance === 0) break
+  }
+
+  return closest?.position ?? null
+}
+
 export function useReaderPositionSync(corpus: ReaderCorpusState) {
+  const latestPositionRef = useRef<ReaderPosition | null>(null)
+  const lastPersistedKeyRef = useRef<string | null>(null)
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const commitPosition = useCallback((position: ReaderPosition, persistMode: 'deferred' | 'immediate') => {
+    latestPositionRef.current = position
+    const key = positionKey(position)
+
+    const runPersist = () => {
+      if (lastPersistedKeyRef.current === key) return
+      lastPersistedKeyRef.current = key
+      void persistPosition(position.surah, position.verse)
+    }
+
+    if (persistMode === 'immediate') {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+      runPersist()
+      return
+    }
+
+    if (lastPersistedKeyRef.current === key) return
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+    persistTimerRef.current = setTimeout(() => {
+      persistTimerRef.current = null
+      runPersist()
+    }, SCROLL_PERSIST_DELAY_MS)
+  }, [])
+
   useEffect(() => {
     if (corpus.status !== 'ready') return
     const firstVerse = corpus.verses[0]
     if (!firstVerse) return
-    void persistPosition(firstVerse.surah, firstVerse.verse)
-  }, [corpus])
+    const surahNumber = corpus.surah.number
+    commitPosition({ surah: firstVerse.surah, verse: firstVerse.verse }, 'immediate')
 
-  return useCallback((verseKey: string) => {
-    const [surahPart, versePart] = verseKey.split(':')
-    const surah = Number.parseInt(surahPart ?? '', 10)
-    const verse = Number.parseInt(versePart ?? '', 10)
-    if (!Number.isInteger(surah) || !Number.isInteger(verse)) return
-    void persistPosition(surah, verse)
-  }, [])
+    function syncVisibleVerse() {
+      const visiblePosition = findCenteredVersePosition(surahNumber)
+      if (visiblePosition) commitPosition(visiblePosition, 'deferred')
+    }
+
+    window.addEventListener('scroll', syncVisibleVerse, { passive: true })
+    document.addEventListener('scroll', syncVisibleVerse, { capture: true, passive: true })
+    return () => {
+      window.removeEventListener('scroll', syncVisibleVerse)
+      document.removeEventListener('scroll', syncVisibleVerse, { capture: true })
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+        const position = latestPositionRef.current
+        if (position) void persistPosition(position.surah, position.verse)
+      }
+    }
+  }, [commitPosition, corpus])
+
+  const syncPosition = useCallback((verseKey: string) => {
+    const position = parseVerseKey(verseKey)
+    if (!position) return
+    commitPosition(position, 'immediate')
+  }, [commitPosition])
+
+  const getCurrentPosition = useCallback(() => {
+    if (corpus.status === 'ready') {
+      const visiblePosition = findCenteredVersePosition(corpus.surah.number)
+      if (visiblePosition) {
+        commitPosition(visiblePosition, 'deferred')
+        return visiblePosition
+      }
+    }
+    return latestPositionRef.current
+  }, [commitPosition, corpus])
+
+  return { getCurrentPosition, syncPosition }
 }

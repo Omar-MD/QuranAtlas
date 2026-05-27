@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 
 import { NavDrawer } from './NavDrawer'
+import { BookmarksList } from './BookmarksList'
+import { JuzList } from './JuzList'
 import { SurahList } from './SurahList'
 
 const meta = {
@@ -18,4 +20,18 @@ export const DrawerVerse: Story = {
 
 export const Surahs: Story = {
   render: () => <SurahList />,
+}
+
+export const Juz: Story = {
+  render: () => <JuzList />,
+}
+
+export const BookmarksPopulated: Story = {
+  render: () => (
+    <BookmarksList
+      bookmarks={[{ createdAt: 1, riwayah: 'qaloon', surah: 1, verseKey: '1:1' }]}
+      onDeleteBookmark={fn()}
+      onNavigate={fn()}
+    />
+  ),
 }

@@ -1,37 +1,49 @@
-import { Menu, Settings } from 'lucide-react'
+import { BookOpenText, FileText, Menu, Settings } from 'lucide-react'
 
-import { IconButton, SegmentedControl } from '../ui'
+import { cn } from '../../design-system/utils/cn'
+import { IconButton } from '../ui'
 
 export type ReaderMode = 'verse' | 'mushaf'
 
 export function ReaderChrome({
-  currentLabel,
   mode,
+  onModeChange,
   onOpenNavigation,
   onOpenSettings,
-  onModeChange,
+  visible = true,
 }: {
-  currentLabel: string
   mode: ReaderMode
   onOpenNavigation?: () => void
   onOpenSettings?: () => void
   onModeChange?: (mode: ReaderMode) => void
+  visible?: boolean
 }) {
   return (
-    <nav className="qar-reader-chrome qar:grid qar:min-h-14 qar:items-center qar:border-b qar:border-border qar:bg-surface qar:px-2" aria-label="Reader chrome">
-      <IconButton className="qar:min-h-12 qar:min-w-12 qar:border-transparent qar:bg-transparent" label="Open navigation" onClick={onOpenNavigation}><Menu aria-hidden="true" size={26} /></IconButton>
-      <div className="qar:grid qar:justify-items-center qar:gap-1 qar:self-center">
-        <span className="qar-reader-chrome-title qar:text-sm qar:font-semibold qar:text-text">{currentLabel}</span>
-        {mode === 'verse' && (
-          <SegmentedControl
-            label="Reader mode"
-            onValueChange={(value) => onModeChange?.(value as ReaderMode)}
-            options={[{ label: 'Verse', value: 'verse' }, { label: 'Mushaf', value: 'mushaf' }]}
-            value={mode}
-          />
-        )}
-      </div>
-      <IconButton className="qar:min-h-12 qar:min-w-12 qar:border-transparent qar:bg-transparent" label="Open settings" onClick={onOpenSettings}><Settings aria-hidden="true" size={26} /></IconButton>
+    <nav
+      className={cn('qar-reader-chrome', !visible && 'qar-reader-chrome--hidden')}
+      aria-label="Primary navigation"
+      data-visible={visible ? 'true' : 'false'}
+    >
+      <IconButton className="qar-reader-chrome-icon" id="reader-navigation-trigger" label="Open navigation" onClick={onOpenNavigation}>
+        <Menu aria-hidden="true" size={26} strokeWidth={1.8} />
+      </IconButton>
+      <div className="qar-reader-chrome-spacer" aria-hidden="true" />
+      {onModeChange && (
+        <IconButton
+          aria-pressed={mode === 'mushaf'}
+          className="qar-reader-chrome-mode-toggle"
+          data-reader-mode={mode}
+          label={mode === 'verse' ? 'Switch to Mushaf mode' : 'Switch to Verse mode'}
+          onClick={() => onModeChange(mode === 'verse' ? 'mushaf' : 'verse')}
+        >
+          <span className="qar-reader-chrome-mode-glyph" aria-hidden="true">
+            {mode === 'verse' ? <BookOpenText size={20} strokeWidth={1.7} /> : <FileText size={20} strokeWidth={1.75} />}
+          </span>
+        </IconButton>
+      )}
+      <IconButton className="qar-reader-chrome-icon" label="Open settings" onClick={onOpenSettings}>
+        <Settings aria-hidden="true" size={26} strokeWidth={1.6} />
+      </IconButton>
     </nav>
   )
 }

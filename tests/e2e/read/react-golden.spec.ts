@@ -179,18 +179,22 @@ for (const fixture of readFixtures) {
         await expect(pageImage, 'RPA-003: React must render a real edition-aware Mushaf SVG page.').toBeVisible()
         const svg = pageImage.locator('svg')
         await expect(svg).toBeVisible()
-        await expect(svg).toHaveAttribute('viewBox', /0 0 \d+(\.\d+)? \d+(\.\d+)?/)
-        await expect(page.getByRole('tab', { name: /auto/i })).toBeVisible()
-        await expect(page.getByRole('tab', { name: /page/i })).toBeVisible()
-        await expect(page.getByRole('tab', { name: /width/i })).toBeVisible()
+        await expect(svg).toHaveAttribute('viewBox', /^-?\d+(\.\d+)?\s+-?\d+(\.\d+)?\s+\d+(\.\d+)?\s+\d+(\.\d+)?$/)
+        await expect(page.getByRole('tab', { name: /auto/i })).toHaveCount(0)
+        await expect(page.getByRole('tab', { name: /page/i })).toHaveCount(0)
+        await expect(page.getByRole('tab', { name: /width/i })).toHaveCount(0)
+        const pageCounter = page.getByLabel('Mushaf page 1 of 604')
+        await expect(pageCounter).toBeVisible()
+        await expect(pageCounter).toContainText('1 / 604')
         const layout = await pageImage.evaluate((element) => {
           const box = element.getBoundingClientRect()
           const svgBox = element.querySelector('svg')?.getBoundingClientRect()
-          const controlsBox = document.querySelector('[aria-label="Mushaf page controls"]')?.getBoundingClientRect()
+          const counterBox = document.querySelector('[aria-label="Mushaf page 1 of 604"]')?.getBoundingClientRect()
           const root = getComputedStyle(document.documentElement)
           const svgStyle = getComputedStyle(element.querySelector('svg') ?? element)
           return {
-            controlGap: controlsBox ? controlsBox.top - box.bottom : 0,
+            counterBottomGap: counterBox ? window.innerHeight - counterBox.bottom : 0,
+            counterCenterOffset: counterBox ? Math.abs((counterBox.left + counterBox.width / 2) - window.innerWidth / 2) : 999,
             height: box.height,
             svgHeight: svgBox?.height ?? 0,
             svgWidth: svgBox?.width ?? 0,
@@ -209,14 +213,19 @@ for (const fixture of readFixtures) {
         expect(layout.height).toBeGreaterThan(300)
         expect(layout.svgWidth).toBeGreaterThan(200)
         expect(layout.svgHeight).toBeGreaterThan(300)
-        expect(layout.controlGap).toBeGreaterThanOrEqual(-1)
+        expect(layout.counterBottomGap).toBeGreaterThanOrEqual(8)
+        expect(layout.counterCenterOffset).toBeLessThanOrEqual(2)
         expect(layout.svgDisplay).toBe('block')
-        const jump = page.getByRole('button', { name: /Jump from Mushaf page 1 of 604/i })
-        await jump.click()
-        await expect(page.getByRole('spinbutton', { name: 'Mushaf page number' })).toBeFocused()
-        await page.getByRole('spinbutton', { name: 'Mushaf page number' }).fill('999')
-        await page.getByRole('spinbutton', { name: 'Mushaf page number' }).press('Enter')
-        await expect(page).toHaveURL(/#\/m\/604$/)
+        const chrome = page.getByRole('navigation', { name: 'Primary navigation' })
+        await expect(chrome).toHaveAttribute('data-visible', 'true')
+        await page.getByRole('button', { name: 'Toggle reader chrome' }).click()
+        await expect(chrome).toHaveAttribute('data-visible', 'false')
+        await page.getByRole('button', { name: 'Toggle reader chrome' }).click()
+        await expect(chrome).toHaveAttribute('data-visible', 'true')
+        await page.getByRole('button', { name: 'Advance Mushaf page from left edge' }).click()
+        await expect(page).toHaveURL(/#\/m\/2$/)
+        await expect(chrome).toHaveAttribute('data-visible', 'false')
+        await expect(page.getByLabel('Mushaf page 2 of 604')).toContainText('2 / 604')
       }
 
       if (fixture.id === 'mushaf-missing-pack') {

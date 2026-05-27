@@ -4,7 +4,7 @@ import * as SliderPrimitive from '@radix-ui/react-slider'
 import * as SwitchPrimitive from '@radix-ui/react-switch'
 import { Check, ChevronDown } from 'lucide-react'
 import { forwardRef, useState } from 'react'
-import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 
@@ -12,12 +12,18 @@ const fieldClass =
   'qar:min-h-10 qar:w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:px-3 qar:py-2 qar:font-ui qar:text-sm qar:text-text qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:opacity-55'
 const labelClass = 'qar:grid qar:gap-1 qar:text-sm qar:text-muted'
 
-export type InputProps = InputHTMLAttributes<HTMLInputElement> & { label: string }
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, className, id, ...props }, ref) {
+export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> & {
+  hideLabel?: boolean
+  label: string
+  labelClassName?: string
+  prefix?: ReactNode
+}
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ hideLabel = false, label, labelClassName, className, id, prefix, ...props }, ref) {
   const inputId = id ?? `qa-input-${label.replace(/\W+/g, '-').toLowerCase()}`
   return (
-    <label className={labelClass} htmlFor={inputId}>
-      <span>{label}</span>
+    <label className={cn(labelClass, labelClassName)} htmlFor={inputId}>
+      <span className={hideLabel ? 'qar:sr-only' : undefined}>{label}</span>
+      {prefix}
       <input className={cn(fieldClass, className)} id={inputId} ref={ref} {...props} />
     </label>
   )

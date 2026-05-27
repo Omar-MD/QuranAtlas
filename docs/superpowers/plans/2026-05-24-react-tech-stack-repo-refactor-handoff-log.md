@@ -310,3 +310,103 @@ Each entry should include:
   Mushaf route now depends on `indexes/mushaf-assets.json` before manifest
   fetches; missing optional page-pack tests should assert index membership and
   absence of fallback page requests, not expected manifest 404s.
+
+## 2026-05-27 - React Production Parity Fix 04 Wave 1
+
+- Status: complete.
+- Summary: completed Plan 04 for `RPA-004`. React navigation now loads all 114
+  Surah rows from `/dataset/surahs.json`, renders active-riwayah verse counts,
+  loads the 30 Juz start references from `/dataset/juz.json`, routes Juz rows
+  to their Svelte-equivalent start refs, and reads/deletes riwayah-scoped
+  bookmarks through the shared v7 `bookmarks` store facade. The reader chrome
+  now opens a reducer-owned navigation drawer with Escape / outside /
+  close-button dismissal, focus return, close-on-navigation behavior,
+  and seeded bookmark rows in the drawer. Navigation stories and the React
+  registry now cover `nav-drawer`, `surah-list`, `juz-list`, and
+  `bookmarks-list`. A follow-up repair aligned the React mobile reader chrome
+  with the requested reader-chrome behavior: one fixed row with hamburger,
+  compact Verse/Mushaf mode icon, settings gear, no center Surah/Page title
+  action, Verse scroll-down autohide / scroll-up reveal, and a content Surah
+  header that always stays rendered. Mushaf mode now hides the top chrome after
+  page movement, toggles it from the center page hit-zone, and renders the page
+  count as a bottom-center chip instead of a top-center header label. The drawer
+  keeps the same Svelte-styled Surah/Juz/Bookmarks source rail in both Verse and
+  Mushaf routes, and the scrollable phone drawer keeps lower Juz rows reachable
+  before routing row actions such as Juz 29 to `#/s/67/1` in Verse mode or the
+  matching Mushaf page in Mushaf mode. Reader mode switching resolves the
+  current reader location through the active Mushaf manifest `verseToPage` map:
+  explicit ayah links, the centered visible verse while scrolling, and persisted
+  current position all map to the matching Mushaf page. Mushaf pages resolve back
+  to their manifest `firstVerse`.
+  React launch restore also keeps already-resolved reader hashes mounted during
+  internal route changes so Mushaf page turns do not reset local chrome state
+  before the async onboarding guard finishes revalidating the hash.
+- Divergence: package-script Playwright argument forwarding remains the same
+  known issue from earlier plans, so the targeted golden slice used the direct
+  Playwright command with explicit preview ports. The in-app browser initially
+  showed a stale service-worker cached React bundle; after completing
+  onboarding in the browser, the running React preview proved `#/surahs`
+  renders 114 rows from the current app.
+- Blockers and follow-ups: none for Plan 04. Plan 06 can now consume real
+  drawer/navigation slots for Daily Wird; Plan 09 can rely on seeded bookmarks
+  changing React output.
+- Tests and validation: red checkpoint first failed on the missing
+  `nav-drawer-controller` and `juz-index` modules and on unsorted bookmark
+  reads; the follow-up red checkpoint failed because the old React chrome tabs
+  were still expected and because Juz 29 was outside the phone drawer viewport.
+  The scroll-progress red checkpoint failed with scrolled `#/s/2` verse 94
+  switching to `#/m/2` instead of `#/m/15`, matching the reported reader-progress
+  loss. Final validation passed: `pnpm exec vitest run
+  tests/unit/react-continuity/continuity-wave3.test.ts
+  tests/unit/react-read/reader-wave3.test.tsx
+  tests/unit/react-navigate/navigation-wave3.test.tsx --config
+  vitest.react.config.ts` (3 files / 42 tests); `pnpm run test:react` (23 files
+  / 91 tests);
+  `pnpm run check:react`; `pnpm run check:react-registry`;
+  `pnpm run check:react-ui-patterns`;
+  `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react`; and
+  production parity slice `env -u NO_COLOR PLAYWRIGHT_REACT_PARITY=1
+  PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --config
+  playwright.react.config.js tests/e2e/navigate/react-golden.spec.ts --grep
+  "launch-restore-reader phone-standard" --reporter=line` (1/1 passed);
+  production parity slice `env -u NO_COLOR PLAYWRIGHT_REACT_PARITY=1
+  PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --config
+  playwright.react.config.js tests/e2e/read/react-golden.spec.ts --grep
+  "mushaf-ready phone-standard" --reporter=line` (1/1 passed);
+  `pnpm run docs:check`; and `git diff --check`. Live dev-server browser proof
+  against `http://127.0.0.1:5175/` verified scrolled `#/s/2` verse 94 switches
+  to `#/m/15`, explicit `#/s/2/255` switches to `#/m/42`, `#/m/42` switches back
+  to `#/s/2/251`, the 56 px single-row header keeps 48 px icon tap targets, no
+  reader-mode tablist appears in chrome, Juz 29 routes to `#/s/67/1`, and a
+  Mushaf page turn from `#/m/42` to `#/m/43` hides the top chrome while the
+  bottom-center counter updates to `43 / 604`.
+- Dependency intake: none.
+- Files changed and commits: `src-react/app/routes/navigation/BookmarksRoute.tsx`;
+  `src-react/app/routes/navigation/SurahsRoute.tsx`;
+  `src-react/components/navigation/BookmarksList.tsx`;
+  `src-react/components/navigation/JuzList.tsx`;
+  `src-react/components/navigation/NavDrawer.tsx`;
+  `src-react/components/navigation/SurahList.tsx`;
+  `src-react/components/navigation/nav-drawer-controller.ts`;
+  `src-react/components/navigation/navigation.stories.tsx`;
+  `src-react/components/reader/ReaderChrome.tsx`;
+  `src-react/components/reader/ReaderPageShell.tsx`;
+  `src-react/components/reader/MushafPageViewer.tsx`;
+  `src-react/components/reader/ReaderVerseSurface.tsx`;
+  `src-react/continuity/bookmarks/store.ts`;
+  `src-react/continuity/bookmarks/use-bookmarks.ts`;
+  `src-react/continuity/launch-restore.ts`;
+  `src-react/data/juz-index.ts`;
+  `src-react/app/routes/read/ReaderRoute.tsx`;
+  `src-react/design-system/registry/component-registry.json`;
+  `tests/e2e/read/react-golden.spec.ts`;
+  `tests/e2e/navigate/react-golden.spec.ts`;
+  `tests/unit/react-continuity/continuity-wave3.test.ts`;
+  `tests/unit/react-navigate/navigation-wave3.test.tsx`;
+  `tests/unit/react-read/reader-wave3.test.tsx`; `docs/context/surfaces/read.md`;
+  `docs/context/surfaces/navigate.md`; `docs/context/architecture.md`;
+  `docs/context/style-map.md`; this handoff log. No commit yet.
+- Next-agent note: start Plan 05 from settings and asset management. The React
+  navigation route and drawer now use real Surah/Juz/bookmark data; do not
+  reintroduce hardcoded navigation rows or direct route-component IndexedDB
+  writes for bookmarks.

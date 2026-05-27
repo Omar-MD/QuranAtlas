@@ -9,6 +9,7 @@ export type ReaderVerseSurfaceProps = {
   metadata?: Map<string, VerseMetadata>
   onSelectVerse?: (verseKey: string) => void
   selectedVerseKey?: string | null
+  surahHeaderHidden?: boolean
   surahIndex?: ReaderSurahIndexEntry[]
 }
 
@@ -23,6 +24,7 @@ export function ReaderVerseSurface({
   metadata = new Map(),
   onSelectVerse,
   selectedVerseKey = null,
+  surahHeaderHidden = false,
   surahIndex = [],
 }: ReaderVerseSurfaceProps) {
   if (corpus.status === 'loading' || corpus.status === 'idle') {
@@ -61,23 +63,25 @@ export function ReaderVerseSurface({
       {previousSurah && (
         <SurahContinuityButton currentSurah={readyCorpus.surah.number} direction="previous" target={previousSurah} />
       )}
-      <header
-        aria-label={`Surah ${readyCorpus.surah.number} header`}
-        className="qar-reader-surah-header"
-        data-surah-header="true"
-      >
-        <div className="qar-reader-surah-meta-col">
-          <p className="qar-reader-surah-meta">
-            Surah {readyCorpus.surah.number} · {readyCorpus.surah.verseCount} verses
-          </p>
-          <p className="qar:m-0 qar:text-sm qar:text-muted">{readyCorpus.surah.nameEnglish}</p>
-        </div>
-        <h1 className="qar-reader-surah-name" dir="rtl" lang="ar">
-          <span className="qar-reader-surah-ornament" aria-hidden="true">﴿</span>
-          {readyCorpus.surah.nameArabic}
-          <span className="qar-reader-surah-ornament" aria-hidden="true">﴾</span>
-        </h1>
-      </header>
+      {!surahHeaderHidden && (
+        <header
+          aria-label={`Surah ${readyCorpus.surah.number} header`}
+          className="qar-reader-surah-header"
+          data-surah-header="true"
+        >
+          <div className="qar-reader-surah-meta-col">
+            <p className="qar-reader-surah-meta">
+              Surah {readyCorpus.surah.number} · {readyCorpus.surah.verseCount} verses
+            </p>
+            <p className="qar:m-0 qar:text-sm qar:text-muted">{readyCorpus.surah.nameEnglish}</p>
+          </div>
+          <h1 className="qar-reader-surah-name" dir="rtl" lang="ar">
+            <span className="qar-reader-surah-ornament" aria-hidden="true">﴿</span>
+            {readyCorpus.surah.nameArabic}
+            <span className="qar-reader-surah-ornament" aria-hidden="true">﴾</span>
+          </h1>
+        </header>
+      )}
       {shouldRenderBasmala(readyCorpus) && (
         <section className="qar-reader-basmala" aria-label="Basmala">
           <span className="qar-reader-basmala-text" dir="rtl" lang="ar" aria-label="بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ" role="img">﷽</span>
