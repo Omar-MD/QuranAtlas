@@ -14,6 +14,7 @@ This document explains how the repository is laid out and which directories are 
 ├── patches/           Package-manager patches
 ├── public/            Static assets copied into builds
 ├── scripts/           Build, dataset, and docs scripts
+├── shared/            Framework-neutral contracts shared by Svelte, React, and scripts
 ├── src/               Application source
 ├── src-react/         Isolated future React app source during dual-build
 ├── tests/             Unit, e2e, and fixtures
@@ -60,6 +61,13 @@ Isolated future React app code lives here during the dual-build period.
 - `src-react/packs/`: React-only pack contracts, including edition-aware Mushaf install-on-demand helpers.
 - React tests remain under `tests/unit/**` and `tests/e2e/**`, not under `src-react/test/`.
 - React builds write to `dist-react/`, a proof-only output that is not a deploy artifact until an approved cutover plan changes production routing.
+
+### `shared/`
+
+Framework-neutral TypeScript and JSON contracts live here. Code under
+`shared/` may be imported by both `src/**` and `src-react/**`, and build scripts
+may read JSON contracts directly when they need runtime/data parity. The
+directory is included in both Svelte and React lint/type gates.
 
 ### `.storybook/`
 

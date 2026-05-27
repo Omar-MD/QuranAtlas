@@ -36,7 +36,7 @@ Tools, versions, and reasoning. Architecture and module layout live in [`docs/co
 | Component tests | **@testing-library/svelte** | `^5.3.1` | Svelte-5-aware component unit tests |
 | DOM env | **jsdom** | `^29.1.0` | Browser-like environment for Vitest |
 | IDB polyfill | **fake-indexeddb** | `^6.2.5` | IndexedDB for Vitest runs (auto-registered) |
-| Linter | **ESLint** | `^10.2.1` (+ `@typescript-eslint/parser` `^8.59.1`, `typescript-eslint` `^8.59.1`, `eslint-plugin-svelte` `^3.17.1`) | Code quality, strict mode |
+| Linter | **ESLint** | `^10.2.1` (+ `@typescript-eslint/parser` `^8.59.1`, `typescript-eslint` `^8.59.1`, `eslint-plugin-svelte` `^3.17.1`) | Code quality and strict mode across app code plus shared framework-neutral contracts |
 | CSS linter | **Stylelint** | `^17.9.1` (+ `stylelint-config-standard` `^40.0.0`) | Selector grammar + custom-property prefix discipline under `src/styles/` |
 | Perf gate | **Lighthouse CI** | `@lhci/cli ^0.15.1` | Performance / a11y / best-practices regression guard |
 | Deploy | **cloudflare/wrangler-action** | `v3` | Runs `wrangler pages deploy` in CI using the artifact built by CI (no rebuild in deploy) |
@@ -113,9 +113,9 @@ Defined in `package.json`:
 | `pnpm run storybook:react` | Start React Storybook on port 6007. |
 | `pnpm run build:storybook:react` | Build React Storybook into `storybook-static-react/`. |
 | `pnpm run test:storybook:react` | Run React Storybook interaction/component tests. |
-| `pnpm run lint` | ESLint over `src/` plus Stylelint over `src/styles/**/*.css` |
-| `pnpm run lint:react` | Lint the React tree, React e2e specs, all `tests/unit/react-*` suites, and React-specific config files. |
-| `pnpm run typecheck:react` | Run TypeScript over `src-react/**/*.ts?(x)` only. |
+| `pnpm run lint` | ESLint over `src/` and `shared/` plus Stylelint over `src/styles/**/*.css` |
+| `pnpm run lint:react` | Lint the React tree, `shared/`, React e2e specs, all `tests/unit/react-*` suites, and React-specific config files. |
+| `pnpm run typecheck:react` | Run TypeScript over `src-react/**/*.ts?(x)` and `shared/**/*.ts`. |
 | `pnpm run check` | Static validation gate: lint + token/style-structure checks + UI refactor safety checks + `svelte-check` |
 | `pnpm run check:react:design` | Run React-only design literal and Tailwind drift checks. |
 | `pnpm run check:react:radix` | Reject direct Radix imports outside `src-react/components/ui/**`. |

@@ -17,6 +17,6 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src-react/**/*.ts", "src-react/**/*.tsx", "vite.react.config.js"],
+  "include": ["src-react/**/*.ts", "src-react/**/*.tsx", "shared/**/*.ts", "vite.react.config.js"],
   "exclude": ["node_modules", "dist", "dist-react"]
 }

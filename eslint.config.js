@@ -61,7 +61,7 @@ export default [
     }
   },
   // TS files (plain .ts only — .svelte.ts files are handled by the Svelte plugin below)
-  ...tseslint.configs.recommended.map(c => ({ ...c, files: ['src/**/*.ts'] })),
+  ...tseslint.configs.recommended.map(c => ({ ...c, files: ['src/**/*.ts', 'shared/**/*.ts'] })),
   ...tseslint.configs.recommended.map(c => ({
     ...c,
     files: [
