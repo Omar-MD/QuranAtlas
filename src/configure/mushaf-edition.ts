@@ -1,21 +1,19 @@
 import { get, put } from '../core/db.js'
 import { settings } from './state.svelte.ts'
-import { canUseMushafAsset, defaultMushafEditionForRiwayah } from '../packs/mushaf-assets'
-import { setActiveVariantBundle } from './variant-bundle'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../shared/reader-assets/default-profile'
 
 export async function loadMushafEditionId(): Promise<string> {
   const rec = await get('settings', 'mushafEditionId').catch(() => undefined)
   const raw = (rec as { value?: unknown } | undefined)?.value
-  return typeof raw === 'string' ? raw : defaultMushafEditionForRiwayah(settings.riwayah)
+  return raw === DEFAULT_READER_ASSET_PROFILE.mushafEditionId
+    ? raw
+    : DEFAULT_READER_ASSET_PROFILE.mushafEditionId
 }
 
 export async function setMushafEditionId(mushafEditionId: string): Promise<boolean> {
-  if (!(await canUseMushafAsset(settings.riwayah, mushafEditionId))) return false
-  return setActiveVariantBundle({
-    riwayah: settings.riwayah,
-    quranTextStyleId: settings.quranTextStyleId,
-    mushafEditionId,
-  })
+  if (mushafEditionId !== DEFAULT_READER_ASSET_PROFILE.mushafEditionId) return false
+  Object.assign(settings, { mushafEditionId })
+  return true
 }
 
 export async function initMushafEdition(): Promise<string> {

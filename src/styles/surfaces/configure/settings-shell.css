@@ -54,7 +54,6 @@
   }
 
   .qa-settings-shell-title,
-  .qa-settings-section-title,
   .qa-settings-preview-eye,
   .qa-settings-preview-ar,
   .qa-settings-preview-tr {
@@ -159,19 +158,6 @@
     border-bottom: 1px solid color-mix(in srgb, var(--qa-text-primary) 38%, transparent);
   }
 
-  .qa-settings-section {
-    padding: 1rem 0;
-    border-top: 1px solid var(--qa-border-on-sheet);
-  }
-
-  .qa-settings-section-title {
-    font-size: 0.76rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--qa-text-muted);
-    margin-bottom: 0.6rem;
-  }
-
   .qa-settings-row {
     min-height: 48px;
     width: 100%;
@@ -217,17 +203,9 @@
     border-color: color-mix(in srgb, var(--qa-accent) 32%, var(--qa-border-on-sheet));
   }
 
-  .qa-settings-row--picker {
-    cursor: pointer;
-  }
-
   .qa-settings-row--slider,
   .qa-settings-row--switch {
     justify-content: normal;
-  }
-
-  .qa-settings-row-value {
-    max-width: 55%;
   }
 
   .qa-settings-theme-night {
@@ -661,7 +639,6 @@
 
     .qa-settings-slider { gap: 0.25rem; }
 
-    .qa-settings-src-row,
     .qa-settings-trans-row {
       padding: 0.35rem 0;
       min-height: 38px;
@@ -824,23 +801,8 @@
   }
 
   /* ============================================================
-     Source rows — Recitation + Translation (dual-action)
+     Source rows — fixed translation display
      ============================================================ */
-
-  .qa-settings-src-row {
-    display: grid;
-    grid-template-columns: 7.5rem 1fr auto;
-    align-items: center;
-    gap: 0.7rem;
-    width: 100%;
-    padding: 0.55rem 0;
-    border: none;
-    background: transparent;
-    color: var(--qa-text-on-sheet);
-    cursor: pointer;
-    text-align: left;
-    min-height: 44px;
-  }
 
   .qa-settings-src-key {
     font-size: 0.66rem;
@@ -861,57 +823,15 @@
     white-space: nowrap;
   }
 
-  .qa-settings-src-chev {
-    font-size: 1rem;
-    color: var(--qa-text-on-sheet-dim);
-  }
-
-  /* Translation dual-action row */
   .qa-settings-trans-row {
     display: grid;
-    grid-template-columns: 7.5rem 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(5.5rem, auto) auto;
     align-items: center;
     gap: 0.55rem;
     padding: 0.55rem 0;
     min-height: 44px;
   }
 
-  .qa-settings-trans-name {
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--qa-text-on-sheet);
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border: none;
-    background: transparent;
-    text-align: left;
-    padding: 0;
-    min-height: 44px;
-    cursor: pointer;
-  }
-
-  .qa-settings-trans-chev {
-    font-size: 1rem;
-    color: var(--qa-text-on-sheet-dim);
-    border: none;
-    background: transparent;
-    width: 44px;
-    min-width: 36px;
-    min-height: 44px;
-    padding: 0 0.55rem 0 0;
-    cursor: pointer;
-    border-right: 1px solid color-mix(in srgb, var(--qa-accent) 22%, transparent);
-    line-height: 1;
-  }
-
-  .qa-settings-trans-chev:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-
-  /* Translation toggle (sits in dual-action row) */
   .qa-settings-switch {
     width: 52px;
     height: 44px;

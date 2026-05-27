@@ -18,6 +18,7 @@ vi.mock('../../../src/core/logger.js', () => ({ logger: { error: vi.fn(), warn: 
 vi.mock('../../../src/configure/state.svelte.ts', () => mockState)
 vi.mock('../../../src/packs/text-assets', () => ({
   defaultTextStyleForRiwayah: vi.fn(async () => 'uthmani-kfgqpc-v1'),
+  canUseTextAsset: vi.fn(async () => true),
 }))
 vi.mock('../../../src/packs/mushaf-assets', () => ({
   defaultMushafEditionForRiwayah: vi.fn(async (riwayah: string) => (
@@ -25,6 +26,7 @@ vi.mock('../../../src/packs/mushaf-assets', () => ({
       : riwayah === 'warsh' ? 'warsh-quran-ws-v1'
         : 'qalun-quran-ws-v1'
   )),
+  canUseMushafAsset: vi.fn(async () => true),
 }))
 vi.mock('../../../src/configure/variant-bundle', async () => {
   const { emit } = await import('../../../src/core/events.js')
@@ -122,20 +124,15 @@ describe('riwayah settings', () => {
     expect(await loadRiwayah()).toBe('qaloon')
   })
 
-  it('setRiwayah persists value + emits SETTINGS_RIWAYAH_CHANGED', async () => {
+  it('setRiwayah accepts the default profile without rewriting storage', async () => {
     const { setRiwayah } = await import('../../../src/configure/riwayah')
     const { setActiveVariantBundle } = await import('../../../src/configure/variant-bundle')
     const { emit } = await import('../../../src/core/events.js')
-    await setRiwayah('hafs')
-    expect(fakeStore.get('riwayah')).toBe('hafs')
-    expect(fakeStore.get('quranTextStyleId')).toBe('uthmani-kfgqpc-v1')
-    expect(fakeStore.get('mushafEditionId')).toBe('hafs-quran-ws-v1')
-    expect(setActiveVariantBundle).toHaveBeenCalledWith({
-      riwayah: 'hafs',
-      quranTextStyleId: 'uthmani-kfgqpc-v1',
-      mushafEditionId: 'hafs-quran-ws-v1',
-    })
-    expect(emit).toHaveBeenCalledWith('settings:riwayah-changed', { from: 'qaloon', to: 'hafs' })
+
+    await expect(setRiwayah('qaloon')).resolves.toBe(true)
+    expect(fakeStore.has('riwayah')).toBe(false)
+    expect(setActiveVariantBundle).not.toHaveBeenCalled()
+    expect(emit).not.toHaveBeenCalled()
   })
 
   it('setRiwayah rejects unknown values', async () => {
@@ -143,13 +140,28 @@ describe('riwayah settings', () => {
     expect(await setRiwayah('xyz' as never)).toBe(false)
   })
 
-  it('setRiwayah rejects unusable riwayat without persisting or emitting', async () => {
-    usableRiwayah = new Set(['qaloon'])
+  it('source writers reject unsupported legacy profile values without persisting or mutating state', async () => {
     const { setRiwayah } = await import('../../../src/configure/riwayah')
+    const { setQuranTextStyleId } = await import('../../../src/configure/quran-text-style')
+    const { setMushafEditionId } = await import('../../../src/configure/mushaf-edition')
+    const { setTranslationId } = await import('../../../src/configure/panel-bridge')
     const { emit } = await import('../../../src/core/events.js')
 
-    expect(await setRiwayah('hafs')).toBe(false)
+    await expect(setRiwayah('hafs')).resolves.toBe(false)
+    await expect(setQuranTextStyleId('hafs-uthmani-kfgqpc-v1')).resolves.toBe(false)
+    await expect(setMushafEditionId('hafs-quran-ws-v1')).resolves.toBe(false)
+    await setTranslationId('saheeh')
+
     expect(fakeStore.has('riwayah')).toBe(false)
+    expect(fakeStore.has('quranTextStyleId')).toBe(false)
+    expect(fakeStore.has('mushafEditionId')).toBe(false)
+    expect(fakeStore.get('translationId')).toBe('bridges')
+    expect(mockState.settings).not.toMatchObject({
+      riwayah: 'hafs',
+      quranTextStyleId: 'hafs-uthmani-kfgqpc-v1',
+      mushafEditionId: 'hafs-quran-ws-v1',
+      translationId: 'saheeh',
+    })
     expect(emit).not.toHaveBeenCalled()
   })
 
@@ -179,10 +191,10 @@ describe('riwayah settings', () => {
     await initRiwayah()
     riwayahTopicHandler?.({ value: 'warsh' })
 
-    expect(settings.riwayah).toBe('warsh')
+    expect(settings.riwayah).toBe('qaloon')
   })
 
-  it('sync topic applies bundled active variant axes', async () => {
+  it('sync topic ignores bundled legacy variant axes', async () => {
     const { initRiwayah } = await import('../../../src/configure/riwayah')
     const { settings } = await import('../../../src/configure/state.svelte.ts')
 
@@ -194,9 +206,9 @@ describe('riwayah settings', () => {
     })
 
     expect(settings).toMatchObject({
-      riwayah: 'hafs',
+      riwayah: 'qaloon',
       quranTextStyleId: 'uthmani-kfgqpc-v1',
-      mushafEditionId: 'hafs-quran-ws-v1',
+      mushafEditionId: 'qalun-quran-ws-v1',
     })
   })
 })

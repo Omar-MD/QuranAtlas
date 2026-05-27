@@ -18,14 +18,13 @@ import {
   refreshRiwayahPackageStatus,
   type Riwayah,
 } from '../packs/riwayah'
-import { defaultTextStyleForRiwayah } from '../packs/text-assets'
-import { defaultMushafEditionForRiwayah } from '../packs/mushaf-assets'
 import {
   riwayahInstallIntent,
   settings,
 } from './state.svelte.ts'
 import { registerTopic } from '../infra/safety/sync'
-import { initActiveVariantBundle, setActiveVariantBundle, type ActiveVariantBundle } from './variant-bundle'
+import { initActiveVariantBundle, type ActiveVariantBundle } from './variant-bundle'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../shared/reader-assets/default-profile'
 
 export type { Riwayah }
 export { getRiwayahOptions, loadRiwayah }
@@ -37,12 +36,7 @@ export {
 }
 
 export async function setRiwayah(next: Riwayah): Promise<boolean> {
-  if (!isRiwayah(next)) return false
-  const [quranTextStyleId, mushafEditionId] = await Promise.all([
-    defaultTextStyleForRiwayah(next),
-    defaultMushafEditionForRiwayah(next),
-  ])
-  return setActiveVariantBundle({ riwayah: next, quranTextStyleId, mushafEditionId })
+  return next === DEFAULT_READER_ASSET_PROFILE.riwayah
 }
 
 function isBundlePayload(payload: unknown): payload is ActiveVariantBundle {
@@ -54,6 +48,7 @@ function isBundlePayload(payload: unknown): payload is ActiveVariantBundle {
 }
 
 function applySyncedBundle(next: ActiveVariantBundle): void {
+  if (!isDefaultVariantBundle(next)) return
   const previous = (typeof document !== 'undefined' ? document.documentElement.getAttribute('data-riwayah') : null) as Riwayah | null
   if (
     settings.riwayah === next.riwayah
@@ -67,6 +62,12 @@ function applySyncedBundle(next: ActiveVariantBundle): void {
   if (previous !== next.riwayah) {
     emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: (previous ?? DEFAULT_RIWAYAH), to: next.riwayah })
   }
+}
+
+function isDefaultVariantBundle(bundle: ActiveVariantBundle): boolean {
+  return bundle.riwayah === DEFAULT_READER_ASSET_PROFILE.riwayah
+    && bundle.quranTextStyleId === DEFAULT_READER_ASSET_PROFILE.quranTextStyleId
+    && bundle.mushafEditionId === DEFAULT_READER_ASSET_PROFILE.mushafEditionId
 }
 
 export async function initRiwayah(): Promise<Riwayah> {

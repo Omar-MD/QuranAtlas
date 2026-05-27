@@ -20,6 +20,7 @@ import { get, put } from '../core/db.js'
 import { logger } from '../core/logger.js'
 import { settings } from './state.svelte.ts'
 import { createOverlayBridge, type BaseOverlayAPI } from '../core/persistent-overlay'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../shared/reader-assets/default-profile'
 
 // ── Overlay surface ─────────────────────────────────────────────────────────
 
@@ -79,13 +80,16 @@ export async function toggleTranslation(): Promise<boolean | null> {
  * onboarding/Onboarding.svelte's translation picker (audit CC-3).
  */
 export async function setTranslationId(id: string): Promise<void> {
+  const resolved = id === DEFAULT_READER_ASSET_PROFILE.translationId
+    ? id
+    : DEFAULT_READER_ASSET_PROFILE.translationId
   try {
-    await put('settings', { key: 'translationId', value: id })
+    await put('settings', { key: 'translationId', value: resolved })
   } catch (error) {
     logger.error('Failed to write translationId', { id, error })
     return
   }
-  Object.assign(settings, { translationId: id })
+  Object.assign(settings, { translationId: resolved })
 }
 
 /**
@@ -95,8 +99,10 @@ export async function setTranslationId(id: string): Promise<void> {
 export async function loadTranslationId(): Promise<string | null> {
   try {
     const rec = await get('settings', 'translationId')
-    return typeof rec?.value === 'string' ? rec.value : null
+    return rec?.value === DEFAULT_READER_ASSET_PROFILE.translationId
+      ? rec.value
+      : DEFAULT_READER_ASSET_PROFILE.translationId
   } catch {
-    return null
+    return DEFAULT_READER_ASSET_PROFILE.translationId
   }
 }

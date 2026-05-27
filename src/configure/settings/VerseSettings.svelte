@@ -1,8 +1,4 @@
 <script lang="ts">
-  import NestedAssetPicker from './NestedAssetPicker.svelte'
-  import { getTafsirs, getTranslations } from '../../data/dataset'
-  import { loadTextAssetIndex } from '../../packs/text-assets'
-  import { getRiwayahLabels, getRiwayahOptions, isRiwayahUsable, type Riwayah } from '../../packs/riwayah'
   import { setFontSize, getFontSizeOptions } from '../font-size'
   import {
     getReadingFlowStep,
@@ -10,26 +6,11 @@
     setReadingFlow,
     type ReadingStep,
   } from '../reading-typography'
-  import { setRiwayah } from '../riwayah'
-  import { setQuranTextStyleId } from '../quran-text-style'
   import { settings } from '../state.svelte'
-  import { setTranslationId, setTranslationVisible } from '../panel-bridge'
-  import { setTafsirId } from '../tafsir'
-
-  type PickerKind = 'riwayah' | 'text' | 'translation' | 'tafsir' | null
-  type PickerRow = {
-    id: string
-    label: string
-    meta?: string
-    active?: boolean
-    disabled?: boolean
-  }
+  import { setTranslationVisible } from '../panel-bridge'
 
   const fontOptions = getFontSizeOptions()
   const readingOptions = getReadingOptions()
-
-  let picker = $state<PickerKind>(null)
-  let pickerRows = $state<PickerRow[]>([])
 
   const readingFlowStep = $derived<ReadingStep>(
     getReadingFlowStep({
@@ -64,84 +45,8 @@
     await setReadingFlow(next)
   }
 
-  async function riwayahRows(): Promise<PickerRow[]> {
-    return Promise.all(getRiwayahOptions().map(async (riwayah) => {
-      const labels = getRiwayahLabels(riwayah)
-      const usable = await isRiwayahUsable(riwayah)
-      return {
-        id: riwayah,
-        label: labels.productShort,
-        meta: usable ? labels.subtitle : `${labels.subtitle} · Unavailable`,
-        active: settings.riwayah === riwayah,
-        disabled: !usable,
-      }
-    }))
-  }
-
-  async function textRows(): Promise<PickerRow[]> {
-    const index = await loadTextAssetIndex()
-    return index.assets
-      .filter((asset) => asset.riwayah === settings.riwayah)
-      .map((asset) => ({
-        id: asset.textStyleId,
-        label: asset.label,
-        meta: asset.scriptFamily,
-        active: settings.quranTextStyleId === asset.textStyleId,
-      }))
-  }
-
-  async function translationRows(): Promise<PickerRow[]> {
-    const translations = await getTranslations() as Array<{ id: string; name: string; subtitle?: string }>
-    return translations.map((translation) => ({
-      id: translation.id,
-      label: translation.name,
-      meta: translation.subtitle,
-      active: settings.translationId === translation.id,
-    }))
-  }
-
-  async function tafsirRows(): Promise<PickerRow[]> {
-    const tafsirs = await getTafsirs() as Array<{ id: string; name: string }>
-    return tafsirs.map((tafsir) => ({
-      id: tafsir.id,
-      label: tafsir.name,
-      active: settings.tafsirId === tafsir.id,
-    }))
-  }
-
-  async function openPicker(kind: Exclude<PickerKind, null>): Promise<void> {
-    picker = kind
-    try {
-      pickerRows = kind === 'riwayah' ? await riwayahRows()
-        : kind === 'text' ? await textRows()
-        : kind === 'translation' ? await translationRows()
-        : await tafsirRows()
-    } catch {
-      pickerRows = []
-    }
-  }
-
-  async function chooseAsset(id: string): Promise<void> {
-    if (picker === 'riwayah') await setRiwayah(id as Riwayah)
-    if (picker === 'text') await setQuranTextStyleId(id)
-    if (picker === 'translation') await setTranslationId(id)
-    if (picker === 'tafsir') await setTafsirId(id)
-    picker = null
-  }
-
-  const pickerTitle = $derived(
-    picker === 'riwayah' ? 'Choose Active Riwayah'
-      : picker === 'text' ? 'Choose Quran Text Style'
-      : picker === 'translation' ? 'Choose Translation Source'
-      : 'Choose Tafsir Source',
-  )
-
   const fontSizeValue = $derived(humanizeId(settings.fontSize))
   const readingFlowValue = $derived(humanizeId(readingFlowStep))
-  const activeRiwayahLabel = $derived(getRiwayahLabels(settings.riwayah).productShort)
-  const quranTextStyleLabel = $derived(humanizeId(settings.quranTextStyleId))
-  const translationLabel = $derived(humanizeId(settings.translationId))
-  const tafsirLabel = $derived(humanizeId(settings.tafsirId))
 </script>
 
 <div class="qa-settings-preview qa-settings-preview--verse" data-testid="settings-preview">
@@ -199,50 +104,14 @@
     </label>
   </section>
 
-  <section class="qa-settings-sect" aria-labelledby="qa-settings-sources">
+  <section class="qa-settings-sect" aria-labelledby="settings-display">
     <div class="qa-settings-sect-hdr">
-      <h3 id="qa-settings-sources" class="qa-settings-sect-name">Sources</h3>
+      <h3 id="settings-display" class="qa-settings-sect-name">Display</h3>
     </div>
 
-    <button
-      type="button"
-      class="qa-settings-row qa-settings-row--picker qa-settings-src-row"
-      data-testid="src-row-recitation"
-      onclick={() => { void openPicker('riwayah') }}
-    >
-      <span class="qa-settings-src-key qa-settings-row-label">Active Riwayah</span>
-      <span class="qa-settings-src-val qa-settings-row-control">{activeRiwayahLabel}</span>
-      <span class="qa-settings-src-chev" aria-hidden="true">›</span>
-    </button>
-
-    <button
-      type="button"
-      class="qa-settings-row qa-settings-row--picker qa-settings-src-row"
-      onclick={() => { void openPicker('text') }}
-    >
-      <span class="qa-settings-src-key qa-settings-row-label">Quran Text Style</span>
-      <span class="qa-settings-src-val qa-settings-row-control">{quranTextStyleLabel}</span>
-      <span class="qa-settings-src-chev" aria-hidden="true">›</span>
-    </button>
-
     <div class="qa-settings-row qa-settings-row--switch qa-settings-trans-row" data-testid="src-row-translation">
-      <span class="qa-settings-src-key qa-settings-row-label">Translation Source</span>
-      <button
-        type="button"
-        class="qa-settings-trans-name qa-settings-row-control"
-        aria-label={`Translation Source: ${translationLabel}`}
-        onclick={() => { void openPicker('translation') }}
-      >
-        {translationLabel}
-      </button>
-      <button
-        type="button"
-        class="qa-settings-trans-chev"
-        aria-label="Translation Source"
-        onclick={() => { void openPicker('translation') }}
-      >
-        ›
-      </button>
+      <span class="qa-settings-src-key qa-settings-row-label">Bridges Translation</span>
+      <span class="qa-settings-src-val qa-settings-row-control">Reader line</span>
       <button
         type="button"
         class="qa-settings-switch"
@@ -255,25 +124,5 @@
         <span class="qa-settings-switch-knob"></span>
       </button>
     </div>
-
-    <button
-      type="button"
-      class="qa-settings-row qa-settings-row--picker qa-settings-src-row"
-      data-testid="src-row-tafsir"
-      onclick={() => { void openPicker('tafsir') }}
-    >
-      <span class="qa-settings-src-key qa-settings-row-label">Tafsir Source</span>
-      <span class="qa-settings-src-val qa-settings-row-control">{tafsirLabel}</span>
-      <span class="qa-settings-src-chev" aria-hidden="true">›</span>
-    </button>
   </section>
 </div>
-
-{#if picker}
-  <NestedAssetPicker
-    title={pickerTitle}
-    rows={pickerRows}
-    close={() => { picker = null }}
-    choose={(id) => { void chooseAsset(id) }}
-  />
-{/if}

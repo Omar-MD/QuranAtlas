@@ -89,42 +89,38 @@ test.describe('Journey D: Settings & appearance', () => {
     )).toBe(true)
   })
 
-  test('D1d: nested picker Escape closes before settings and restores focus', async ({ page }) => {
+  test('D1d: Verse Settings removes source pickers but keeps translation toggle reachable', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/#/s/1')
     await waitForReader(page)
 
     const opener = page.getByLabel('Open settings')
     await opener.click()
-    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
+    const settings = page.getByRole('dialog', { name: 'Verse Settings' })
+    await expect(settings).toBeVisible()
+    for (const label of ['Active Riwayah', 'Quran Text Style', 'Translation Source', 'Tafsir Source', 'Mushaf Edition']) {
+      await expect(settings.getByText(label, { exact: true })).toHaveCount(0)
+    }
 
-    await page.getByRole('button', { name: /Tafsir Source/ }).click()
-    await expect(page.getByRole('dialog', { name: 'Choose Tafsir Source' })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog', { name: 'Choose Tafsir Source' })).toHaveCount(0)
-    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toBeVisible()
+    const translationSwitch = settings.getByRole('switch', { name: 'Show translation' })
+    await expect(translationSwitch).toBeVisible()
+    await translationSwitch.focus()
+    await expect.poll(() => translationSwitch.evaluate((node) => document.activeElement === node)).toBe(true)
 
     await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog', { name: 'Verse Settings' })).toHaveCount(0)
+    await expect(settings).toHaveCount(0)
     await expect.poll(() => opener.evaluate((node) => document.activeElement === node)).toBe(true)
   })
 
-  test('D2: Tafsir source row opens picker and updates the selected label', async ({ page }) => {
+  test('D2: translation visibility toggle keeps Bridges as the fixed source', async ({ page }) => {
     await openSettingsSheet(page)
 
-    const tafsirRow = page.getByRole('button', { name: /Tafsir Source/ })
-    await expect(tafsirRow).toBeVisible()
-    await tafsirRow.click()
-
-    const picker = page.getByRole('dialog', { name: 'Choose Tafsir Source' })
-    await expect(picker).toBeVisible({ timeout: 5_000 })
-
-    const mukhtasar = picker.getByRole('button', { name: /Al-Mukhtasar fi al-Tafsir/ })
-    await expect(mukhtasar).toBeVisible()
-    await mukhtasar.click()
-
-    await expect(picker).toHaveCount(0)
-    await expect(tafsirRow).toContainText(/mukhtasar/i)
+    const settings = page.getByRole('dialog', { name: 'Verse Settings' })
+    await expect(settings.getByText('Bridges Translation')).toBeVisible()
+    await expect(settings.getByText('Reader line')).toBeVisible()
+    await settings.getByRole('switch', { name: 'Show translation' }).click()
+    await expect(settings.getByRole('switch', { name: 'Show translation' })).toHaveAttribute('aria-checked', 'false')
+    await expect(settings.getByText('Bridges Translation')).toBeVisible()
   })
 
   // D3-bg: <html> background matches <body> background under every theme so
@@ -167,7 +163,7 @@ test.describe('Journey D: Settings & appearance', () => {
   // D4. Clear all data
   // -------------------------------------------------------------------------
 
-  test('D4: Clear data → type DELETE → confirm → page reloads → onboarding restarts', async ({ page }) => {
+  test('D4: Clear data → type DELETE → confirm → page reloads → default reader restarts', async ({ page }) => {
     // Post-2026-04-25: Clear-data lives on About page footer.
     await page.goto('/#/about')
     await expect(page.locator('.qa-about-heading')).toBeVisible({ timeout: 5_000 })
@@ -208,8 +204,9 @@ test.describe('Journey D: Settings & appearance', () => {
     await confirmBtn.click()
     await reloadPromise
 
-    // After reload, first-run onboarding (A1) should start fresh
-    await expect(page.locator('.qa-onboarding')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByTestId('launch-splash')).toBeVisible({ timeout: 10_000 })
+    await waitForReader(page)
+    await expect(page).toHaveURL(/#\/s\/1/)
   })
 
   // D4 cancel / Escape / disabled-until-DELETE ported to
@@ -282,7 +279,7 @@ test.describe('Journey D: Asset Management route', () => {
 
       await expect(page.getByRole('heading', { name: 'Asset Management' })).toBeVisible()
       await expect(page.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
-      await expect(page.getByRole('status')).toContainText('Asset state ready.')
+      await expect(page.locator('.qa-assets-status')).toContainText('Asset state ready.')
       for (const heading of ['Quran Text Styles', 'Mushaf Editions', 'Translations', 'Tafsir']) {
         await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
         await expect(page.getByRole('table', { name: heading, exact: true })).toBeVisible()

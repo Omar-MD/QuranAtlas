@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/svelte'
+import { fireEvent, render, screen, within } from '@testing-library/svelte'
 import { beforeEach, describe, expect, it } from 'vitest'
 import Panel from '../../../src/configure/Panel.svelte'
 import AssetManagement from '../../../src/configure/assets/AssetManagement.svelte'
@@ -36,22 +36,32 @@ describe('mode-aware settings panel', () => {
     window.location.hash = '#/s/1'
   })
 
-  it('opens Verse Settings with text-style controls and Manage Assets', async () => {
+  it('opens Verse Settings with reader controls and Manage Assets', async () => {
     await mountAndOpen('verse')
 
-    expect(screen.getByRole('dialog', { name: 'Verse Settings' })).toBeInTheDocument()
+    const settingsRegion = screen.getByRole('dialog', { name: 'Verse Settings' })
+    expect(settingsRegion).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Verse Settings' })).toBeInTheDocument()
-    expect(screen.getByText('Quran Text Style')).toBeInTheDocument()
-    expect(screen.queryByText('Mushaf Edition')).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Active Riwayah/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Quran Text Style/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Translation Source/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Tafsir Source/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Mushaf Edition/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).getByRole('switch', { name: /show translation/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Manage Assets' })).toBeInTheDocument()
   })
 
-  it('opens Mushaf Settings without verse typography/storage rows', async () => {
+  it('opens Mushaf Settings without source picker rows', async () => {
     await mountAndOpen('mushaf')
 
-    expect(screen.getByRole('dialog', { name: 'Mushaf Settings' })).toBeInTheDocument()
+    const settingsRegion = screen.getByRole('dialog', { name: 'Mushaf Settings' })
+    expect(settingsRegion).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Mushaf Settings' })).toBeInTheDocument()
-    expect(screen.getByText('Mushaf Edition')).toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Active Riwayah/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Quran Text Style/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Translation Source/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Tafsir Source/i)).not.toBeInTheDocument()
+    expect(within(settingsRegion).queryByText(/Mushaf Edition/i)).not.toBeInTheDocument()
     expect(screen.queryByText('Font Size')).not.toBeInTheDocument()
     expect(screen.queryByText('Reset')).not.toBeInTheDocument()
     expect(screen.queryByText('Storage')).not.toBeInTheDocument()
@@ -114,10 +124,7 @@ describe('mode-aware settings panel', () => {
 
     expect(screen.getByLabelText('Font Size').closest('.qa-settings-slider')).not.toBeNull()
     expect(screen.getByLabelText('Reading Flow').closest('.qa-settings-slider')).not.toBeNull()
-    expect(screen.getByRole('button', { name: /Active Riwayah/i }).closest('.qa-settings-src-row')).not.toBeNull()
-    expect(screen.getByRole('button', { name: /Quran Text Style/i }).closest('.qa-settings-src-row')).not.toBeNull()
-    expect(screen.getAllByRole('button', { name: /Translation Source/i })[0]?.closest('.qa-settings-trans-row')).not.toBeNull()
+    expect(screen.getByText('Bridges Translation').closest('.qa-settings-trans-row')).not.toBeNull()
     expect(screen.getByRole('switch', { name: 'Show translation' }).closest('.qa-settings-switch')).not.toBeNull()
-    expect(screen.getByRole('button', { name: /Tafsir Source/i }).closest('.qa-settings-src-row')).not.toBeNull()
   })
 })
