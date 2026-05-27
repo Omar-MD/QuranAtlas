@@ -142,6 +142,9 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // into a later (real) versionchange and silencing the reload banner.
     pushCleanup(bootCleanups, initSafetySync())
 
+    const { ensureMvpAssetContractReset } = await import('./launch/asset-contract-reset')
+    await ensureMvpAssetContractReset()
+
     // Apply saved display settings and normalize the active variant bundle
     // before router dispatches the first reader route.
     await initTheme()

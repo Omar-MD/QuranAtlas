@@ -30,6 +30,7 @@ export { validateWrite } from './db/validate'
 export {
   openDB,
   getDb,
+  closeDB,
   deleteDB,
   get,
   put,

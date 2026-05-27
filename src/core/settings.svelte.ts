@@ -1,5 +1,6 @@
 import type { WirdPlan } from '../read/wird/types'
 import type { Riwayah, RiwayahPackageStatus } from '../packs/riwayah'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../shared/reader-assets/default-profile'
 
 export type { Riwayah } from '../packs/riwayah'
 
@@ -37,9 +38,9 @@ export const DEFAULT_OFFLINE_CATEGORIES: OfflineCategoriesState = {
 
 export const settings = $state({
   theme: 'auto' as Theme,
-  riwayah: 'qaloon' as Riwayah,
+  riwayah: DEFAULT_READER_ASSET_PROFILE.riwayah as Riwayah,
   fontSize: 'md' as FontSize,
-  translationId: 'bridges' as TranslationId,
+  translationId: DEFAULT_READER_ASSET_PROFILE.translationId as TranslationId,
   tafsirId: 'muyassar' as TafsirId,
   translationVisible: true,
   lineSpacing: 'md' as ReadingStep,
@@ -47,8 +48,8 @@ export const settings = $state({
   readerMargin: 'md' as ReadingStep,
   verseSpacing: 'md' as ReadingStep,
   mushafViewMode: 'auto' as MushafViewMode,
-  quranTextStyleId: 'uthmani-kfgqpc-v1',
-  mushafEditionId: 'qalun-quran-ws-v1',
+  quranTextStyleId: DEFAULT_READER_ASSET_PROFILE.quranTextStyleId,
+  mushafEditionId: DEFAULT_READER_ASSET_PROFILE.mushafEditionId,
   nightMode: 'off' as NightMode,
   surahHeaderHidden: false,
   currentPosition: null as GlobalPosition,

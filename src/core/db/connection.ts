@@ -73,7 +73,14 @@ export async function getDb(): Promise<IDBDatabase> {
   return openDB()
 }
 
+export function closeDB(): void {
+  dbRef?.close()
+  dbPromise = null
+  dbRef = null
+}
+
 export function deleteDB(): Promise<void> {
+  closeDB()
   return new Promise((resolve, reject) => {
     const request = indexedDB.deleteDatabase(DB_NAME)
     request.onsuccess = () => {

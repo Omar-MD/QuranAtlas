@@ -31,8 +31,13 @@ function applyDefaultRuntimeMocks() {
   }))
   vi.doMock('../../../src/core/db.js', () => ({
     openDB: vi.fn(() => Promise.resolve()),
+    closeDB: vi.fn(),
+    deleteDB: vi.fn(() => Promise.resolve()),
     get: vi.fn(() => Promise.resolve(null)),
     put: vi.fn(() => Promise.resolve()),
+  }))
+  vi.doMock('../../../src/launch/asset-contract-reset', () => ({
+    ensureMvpAssetContractReset: vi.fn(() => Promise.resolve({ resetApplied: false, contractId: 'mvp-default-assets-qaloon-bridges-v1' })),
   }))
   vi.doMock('../../../src/continuity/position', () => ({
     loadGlobalPosition: vi.fn(() => Promise.resolve(null)),
@@ -80,8 +85,14 @@ vi.mock('../../../src/core/router.js', () => ({
 
 vi.mock('../../../src/core/db.js', () => ({
   openDB: vi.fn(() => Promise.resolve()),
+  closeDB: vi.fn(),
+  deleteDB: vi.fn(() => Promise.resolve()),
   get: vi.fn(() => Promise.resolve(null)),
   put: vi.fn(() => Promise.resolve()),
+}))
+
+vi.mock('../../../src/launch/asset-contract-reset', () => ({
+  ensureMvpAssetContractReset: vi.fn(() => Promise.resolve({ resetApplied: false, contractId: 'mvp-default-assets-qaloon-bridges-v1' })),
 }))
 
 vi.mock('../../../src/continuity/position', () => ({
