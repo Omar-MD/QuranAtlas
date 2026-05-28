@@ -1,6 +1,6 @@
 import { assertRuntimeDatasetUrl } from '../data/runtime-boundary'
 
-export type AssetPackKind = 'translation' | 'tafsir' | 'metadata' | 'mushaf-pages' | 'search-index'
+export type AssetPackKind = 'translation' | 'metadata' | 'mushaf-pages' | 'search-index'
 
 export type AssetIndexEntry = {
   packId: string

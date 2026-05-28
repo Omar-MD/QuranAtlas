@@ -73,9 +73,7 @@ type LoadMushafPageAssetOptions = {
 }
 
 const RIWAYAH_LABELS: Record<Riwayah, string> = {
-  hafs: 'Hafs',
-  qaloon: 'Qalun',
-  warsh: 'Warsh',
+  qaloon: 'Qaloon',
 }
 
 const COLOR_TOKENS: Record<string, string> = {

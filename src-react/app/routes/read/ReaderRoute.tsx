@@ -34,7 +34,7 @@ const DEFAULT_READER_SETTINGS: ReaderSettings = {
 }
 
 function asRiwayah(value: unknown): Riwayah | null {
-  return value === 'hafs' || value === 'warsh' || value === 'qaloon' ? value : null
+  return value === 'qaloon' ? value : null
 }
 
 function asReaderSpacingStep(value: unknown): ReaderSpacingStep | null {

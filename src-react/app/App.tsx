@@ -9,6 +9,7 @@ import { ReaderRoute } from './routes/read/ReaderRoute'
 import { SearchRoute } from './routes/search/SearchRoute'
 import { SettingsRoute } from './routes/settings/SettingsRoute'
 import { SurahsRoute } from './routes/navigation/SurahsRoute'
+import { LaunchSplash } from '../components/launch/LaunchSplash'
 import { isReactProductionDeployment } from './deploy-target'
 import { getInitialReactHash, matchReactRoute } from './router/routes'
 import { shouldPersistLastSurface, useLaunchRestore } from '../continuity/launch-restore'
@@ -65,9 +66,7 @@ export function App() {
         </header>
       )}
       {launchRestore.status === 'loading' && (
-        <main className="qar:grid qar:gap-3 qar:px-5 qar:py-6" aria-label="Launch restore">
-          <p className="qar:m-0 qar:text-sm qar:text-muted" role="status">Restoring reader state</p>
-        </main>
+        <LaunchSplash />
       )}
       {launchRestore.status === 'ready' && route.type === 'reader' && <ReaderRoute ayah={route.ayah} surah={route.surah} />}
       {launchRestore.status === 'ready' && route.type === 'mushaf' && <MushafRoute page={route.page} />}

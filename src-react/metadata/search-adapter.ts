@@ -9,7 +9,7 @@ export function metadataToSearchEntries(rows: Iterable<VerseMetadata>): SearchEn
       ? [{
           id: `metadata:${row.verseKey}`,
           lane: 'metadata' as const,
-          sourceRiwayah: 'hafs' as const,
+          sourceRiwayah: 'qaloon' as const,
           sourceRef: { surah, verse },
           text,
         }]

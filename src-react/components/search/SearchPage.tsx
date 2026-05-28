@@ -10,8 +10,8 @@ const PREVIEW_SHARD: SearchShard = {
   id: 'preview',
   generatedAt: '2026-05-25T00:00:00.000Z',
   entries: [
-    { id: 'translation:1:1', lane: 'translation', sourceRiwayah: 'hafs', sourceRef: { surah: 1, verse: 1 }, text: 'Most Compassionate Most Merciful' },
-    { id: 'metadata:67:1', lane: 'metadata', sourceRiwayah: 'hafs', sourceRef: { surah: 67, verse: 1 }, text: 'sovereignty creation accountability' },
+    { id: 'translation:1:1', lane: 'translation', sourceRiwayah: 'qaloon', sourceRef: { surah: 1, verse: 1 }, text: 'Most Compassionate Most Merciful' },
+    { id: 'metadata:67:1', lane: 'metadata', sourceRiwayah: 'qaloon', sourceRef: { surah: 67, verse: 1 }, text: 'sovereignty creation accountability' },
   ],
 }
 

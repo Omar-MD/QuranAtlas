@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { expectAxeClean, expectMinTouchTarget, expectNoHorizontalOverflow } from '../fixtures/react-a11y'
+import { expectAxeClean, expectNoHorizontalOverflow } from '../fixtures/react-a11y'
 import {
   expectNoGuardFailures,
   expectReactProductionPreflight,
@@ -28,17 +28,18 @@ for (const fixture of configureFixtures) {
       await expectAxeClean(page)
 
       if (fixture.id === 'settings-over-reader') {
-        await expect(page, 'RPA-005: #/settings must restore the reader route and open mode-aware settings over it.').toHaveURL(/#\/s\/1$/)
-        await expect(page.getByRole('heading', { name: /verse settings|settings/i })).toBeVisible()
+        await expect(page, 'RPA-005: #/settings opens the simplified MVP settings surface.').toHaveURL(/#\/settings$/)
+        await expect(page.getByRole('heading', { name: /settings/i })).toBeVisible()
         await expect(page.getByLabel('Reader assets')).toBeVisible()
+        await expect(page.getByRole('heading', { name: /mushaf edition|choose riwayah|choose translation/i })).toHaveCount(0)
       }
 
       if (fixture.id === 'assets-state-matrix') {
         await expect(page.getByRole('heading', { name: 'Assets' })).toBeVisible()
-        await expect(page.getByRole('heading', { name: /Quran Text Styles/i }), 'RPA-005: asset rows must be grouped from real text indexes.').toBeVisible()
-        await expect(page.getByRole('heading', { name: /Mushaf Editions/i }), 'RPA-005: Mushaf asset rows must be grouped from real indexes.').toBeVisible()
-        await expect(page.getByRole('heading', { name: /Translations/i }), 'RPA-005: translation asset rows must come from source indexes.').toBeVisible()
-        await expectMinTouchTarget(page.getByRole('button', { name: 'Manage' }).first())
+        await expect(page.getByText('Qaloon Text + Font'), 'RPA-005: text and font assets are included by the default contract.').toBeVisible()
+        await expect(page.getByText('Qaloon Mushaf'), 'RPA-005: Mushaf assets are included by the default contract.').toBeVisible()
+        await expect(page.getByText('Bridges Translation'), 'RPA-005: translation assets are included by the default contract.').toBeVisible()
+        await expect(page.getByRole('button', { name: /manage|install|delete|verify|set active|switch|retry/i })).toHaveCount(0)
       }
 
       if (fixture.id === 'about-page') {

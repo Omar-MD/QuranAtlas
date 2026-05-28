@@ -6,6 +6,7 @@ import { SurahList } from '../../../src-react/components/navigation/SurahList'
 import { navDrawerReducer } from '../../../src-react/components/navigation/nav-drawer-controller'
 import { SettingsRoute } from '../../../src-react/app/routes/settings/SettingsRoute'
 import { OnboardingRoute } from '../../../src-react/app/routes/onboarding/OnboardingRoute'
+import { AssetManagementPage } from '../../../src-react/components/offline/AssetManagementPage'
 import { buildJuzRows } from '../../../src-react/data/juz-index'
 import { loadReaderSurahIndex } from '../../../src-react/data/surah-index'
 
@@ -125,11 +126,21 @@ describe('React navigation, settings, and onboarding parity', () => {
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
     expect(screen.getByRole('tablist', { name: 'Mushaf view mode' })).toBeInTheDocument()
     expect(screen.getByText('Reader assets')).toBeInTheDocument()
+    expect(screen.queryByText(/mushaf edition/i)).not.toBeInTheDocument()
 
     render(<OnboardingRoute />)
-    expect(screen.getByRole('heading', { name: /choose riwayah/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /qaloon/i })).toBeInTheDocument()
+    expect(screen.queryByText(/choose riwayah/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/opening al-fatihah/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /open al-fatihah/i })).toBeNull()
+  })
+
+  it('renders React asset management as read-only default inventory', () => {
+    render(<AssetManagementPage />)
+
+    expect(screen.getByText('Qaloon Text + Font')).toBeInTheDocument()
+    expect(screen.getByText('Qaloon Mushaf')).toBeInTheDocument()
+    expect(screen.getByText('Bridges Translation')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /install|delete|verify|set active|switch|retry/i })).not.toBeInTheDocument()
   })
 
   it('loads all 114 Surah rows from the real metadata boundary', async () => {

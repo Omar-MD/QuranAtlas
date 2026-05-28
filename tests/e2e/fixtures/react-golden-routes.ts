@@ -103,8 +103,9 @@ export async function seedTargetState(page: Page, target: ParityTargetId, seed: 
   }
 
   const seedJson = JSON.stringify(seed)
+  const nativeDbVersion = target === 'react' ? DB_VERSION * 10 : DB_VERSION
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${DB_VERSION})
+    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${nativeDbVersion})
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction(['settings', 'bookmarks'], 'readwrite')

@@ -16,7 +16,7 @@ export type SettingRecord = {
   value: unknown
 }
 
-export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
+export type Riwayah = 'qaloon'
 export type ActivationStatus = 'none' | 'idle' | 'downloading' | 'cached' | 'pending-confirmation' | 'applying' | 'failed'
 
 export type ActivationStateRecord = {

@@ -85,7 +85,7 @@ export function NavDrawer({
 
   if (!open) return null
   return (
-    <aside
+    <div
       aria-label="Navigation"
       aria-modal="true"
       className="qar-react-nav-drawer"
@@ -161,7 +161,7 @@ export function NavDrawer({
         {readSource === 'juz' && <JuzList currentRef={currentPosition} onNavigate={navigateForReaderMode} rows={juzRows} />}
         {readSource === 'bookmarks' && <BookmarksList bookmarks={bookmarks} onDeleteBookmark={onDeleteBookmark} onNavigate={navigateForReaderMode} />}
       </div>
-    </aside>
+    </div>
   )
 }
 

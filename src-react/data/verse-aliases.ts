@@ -33,7 +33,7 @@ export function resolveTranslationFor({
   verse: number
 }): TranslationResolution {
   const identityKey = `${surah}:${verse}`
-  if (riwayah === 'hafs' && translations[identityKey]) {
+  if (translations[identityKey]) {
     return { role: 'identity', sourceKey: identityKey, text: translations[identityKey] }
   }
   const matches = (aliases[String(surah)] ?? [])
@@ -60,7 +60,7 @@ export function resolveTranslationFor({
 }
 
 export function getAliasVerses(alias: VerseAlias, riwayah: Riwayah): number[] {
-  const value = riwayah === 'hafs' ? alias.hafs : alias[riwayah]
+  const value = alias[riwayah]
   if (value === null || value === undefined) return []
   return Array.isArray(value) ? value : [value]
 }

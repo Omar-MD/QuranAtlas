@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { openReactDb, type QuranAtlasReactDb } from '../storage/db'
 import type { SettingRecord } from '../storage/types'
+import { ensureReactMvpAssetContractReset } from '../launch/asset-contract-reset'
 
 export type SavedPosition = { surah: number; verse: number }
 export type LaunchRestoreState =
@@ -25,13 +26,11 @@ export function shouldPersistLastSurface(hash: string): boolean {
 export function resolveLaunchRoute({
   currentPosition,
   lastSurface,
-  onboardingComplete,
 }: {
   currentPosition?: SavedPosition
   lastSurface?: string
-  onboardingComplete: boolean
+  onboardingComplete?: boolean
 }): string {
-  if (!onboardingComplete) return '#/onboarding'
   if (lastSurface && shouldPersistLastSurface(lastSurface)) return lastSurface
   if (currentPosition) return `#/s/${currentPosition.surah}/${currentPosition.verse}`
   return '#/s/1'
@@ -39,10 +38,6 @@ export function resolveLaunchRoute({
 
 export function isLaunchHash(hash: string): boolean {
   return hash === '' || hash === '#' || hash === '#/'
-}
-
-function asBoolean(value: unknown): boolean {
-  return value === true
 }
 
 function asString(value: unknown): string | undefined {
@@ -68,22 +63,18 @@ async function readSetting(db: LaunchSettingsReader, key: string): Promise<unkno
 }
 
 export async function loadLaunchRouteFromDb(db: LaunchSettingsReader): Promise<string> {
-  const [onboardingComplete, lastSurface, currentPosition] = await Promise.all([
-    readSetting(db, 'onboardingComplete'),
+  const [lastSurface, currentPosition] = await Promise.all([
     readSetting(db, 'lastSurface'),
     readSetting(db, 'currentPosition'),
   ])
 
   return resolveLaunchRoute({
-    onboardingComplete: asBoolean(onboardingComplete),
     lastSurface: asString(lastSurface),
     currentPosition: asSavedPosition(currentPosition),
   })
 }
 
 export async function resolveHashWithLaunchState(db: LaunchSettingsReader, hash: string): Promise<string> {
-  const onboardingComplete = asBoolean(await readSetting(db, 'onboardingComplete'))
-  if (!onboardingComplete) return '#/onboarding'
   if (hash === '#/onboarding' || isLaunchHash(hash)) return loadLaunchRouteFromDb(db)
   return hash
 }
@@ -101,6 +92,7 @@ export function useLaunchRestore(hash: string): LaunchRestoreState {
     const canKeepReady = hasResolvedOnceRef.current && !isLaunchHash(hash) && hash !== '#/onboarding'
 
     async function resolve() {
+      await ensureReactMvpAssetContractReset()
       const db: QuranAtlasReactDb = await openReactDb()
       const resolvedHash = await resolveHashWithLaunchState(db, hash)
       if (active) {
@@ -116,7 +108,7 @@ export function useLaunchRestore(hash: string): LaunchRestoreState {
     void resolve().catch(() => {
       if (active) {
         hasResolvedOnceRef.current = true
-        setState({ status: 'ready', hash: isLaunchHash(hash) ? '#/onboarding' : hash, sourceHash: hash })
+        setState({ status: 'ready', hash: isLaunchHash(hash) || hash === '#/onboarding' ? '#/s/1' : hash, sourceHash: hash })
       }
     })
 

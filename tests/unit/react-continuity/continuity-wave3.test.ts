@@ -18,8 +18,8 @@ async function resetReactDb() {
 }
 
 describe('React continuity parity', () => {
-  it('routes incomplete onboarding first', () => {
-    expect(resolveLaunchRoute({ onboardingComplete: false, lastSurface: '#/s/2', currentPosition: { surah: 3, verse: 4 } })).toBe('#/onboarding')
+  it('ignores legacy onboarding state and restores reader surfaces directly', () => {
+    expect(resolveLaunchRoute({ onboardingComplete: false, lastSurface: '#/s/2', currentPosition: { surah: 3, verse: 4 } })).toBe('#/s/2')
   })
 
   it('uses valid launchable lastSurface before saved position', () => {
@@ -56,7 +56,7 @@ describe('React continuity parity', () => {
   it('keeps resolved reader hashes ready across internal route changes', async () => {
     await resetReactDb()
     const db = await openReactDb()
-    await db.settings.put({ key: 'onboardingComplete', value: true })
+    await db.settings.put({ key: 'onboardingComplete', value: false })
 
     try {
       const { result, rerender } = renderHook(({ hash }: { hash: string }) => useLaunchRestore(hash), {

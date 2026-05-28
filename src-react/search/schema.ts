@@ -1,6 +1,6 @@
 import type { Riwayah } from '../storage/types'
 
-export type SearchLane = 'arabic' | 'translation' | 'tafsir' | 'metadata'
+export type SearchLane = 'arabic' | 'translation' | 'metadata'
 
 export type SearchRef = {
   surah: number

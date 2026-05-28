@@ -15,7 +15,7 @@ export type ReaderVerseSurfaceProps = {
 
 function shouldRenderBasmala(corpus: Extract<ReaderCorpusState, { status: 'ready' }>): boolean {
   if (corpus.surah.number === 9) return false
-  if (corpus.surah.number === 1) return corpus.riwayah !== 'hafs'
+  if (corpus.surah.number === 1) return true
   return true
 }
 

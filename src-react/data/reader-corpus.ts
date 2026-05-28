@@ -117,7 +117,7 @@ export async function loadReaderSurah(
     const [payload, translation, aliases] = await Promise.all([
       fetchJson<QuranTextPayload>(fetcher, url, options.signal),
       loadTranslation(surah, translationId, fetcher, options.signal),
-      riwayah === 'hafs' ? Promise.resolve({ aliases: {} }) : loadVerseAliases(fetcher, options.signal),
+      loadVerseAliases(fetcher, options.signal),
     ])
     assertQuranTextPayload(payload, surah)
     const translationMap = Object.fromEntries((translation?.verses ?? []).map((verse) => [verse.key, verse.text]))
