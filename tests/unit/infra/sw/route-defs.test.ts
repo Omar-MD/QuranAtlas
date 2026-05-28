@@ -19,7 +19,6 @@ describe('ROUTE_DEFS table', () => {
         'text-core',
         'text-riwayah',
         'text-translation',
-        'text-tafsir',
         'text-index',
         'text-knowledge',
         'pages',
@@ -32,8 +31,9 @@ describe('ROUTE_DEFS table', () => {
   it('text routes are source-aware and exclude removed audio routes plus mushaf-pages/search-index', () => {
     expect(categoryFor(u('/dataset/riwayat/qaloon/001.json'))).toBe('text-riwayah')
     expect(categoryFor(u('/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json'))).toBe('text-riwayah')
-    expect(categoryFor(u('/dataset/translations/saheeh/001.json'))).toBe('text-translation')
-    expect(categoryFor(u('/dataset/tafsir/muyassar/001.json'))).toBe('text-tafsir')
+    expect(categoryFor(u('/dataset/translations/bridges/001.json'))).toBe('text-translation')
+    expect(categoryFor(u('/dataset/tafsir/muyassar/001.json'))).toBeNull()
+    expect(ROUTE_DEFS.map((def) => def.category)).not.toContain('text-tafsir')
     expect(categoryFor(u('/dataset/indexes/sources.json'))).toBe('text-index')
     expect(categoryFor(u('/dataset/indexes/source-assets.json'))).toBe('text-index')
     expect(categoryFor(u('/dataset/indexes/riwayah-packages.json'))).toBe('text-index')
@@ -59,7 +59,7 @@ describe('ROUTE_DEFS table', () => {
 
   it('source-aware text routes use CACHE_DATASET (existing constant — no rename)', () => {
     expect(cacheNameFor(u('/dataset/surahs.json'))).toBe(CACHE_DATASET)
-    expect(cacheNameFor(u('/dataset/tafsir/muyassar/001.json'))).toBe(CACHE_DATASET)
+    expect(cacheNameFor(u('/dataset/tafsir/muyassar/001.json'))).toBeNull()
     expect(cacheNameFor(u('/dataset/indexes/riwayah-packages.json'))).toBe(CACHE_DATASET)
     expect(cacheNameFor(u('/dataset/indexes/text-assets.json'))).toBe(CACHE_DATASET)
   })
@@ -130,9 +130,8 @@ describe('sumBytesForCategory', () => {
     files: [
       { path: 'riwayat/hafs/001.json', lane: 'text', category: 'text-riwayah', bytes: 1500 },
       { path: 'quran-text/qaloon/uthmani-kfgqpc-v1/001.json', lane: 'text', category: 'text-riwayah', bytes: 1600 },
-      { path: 'translations/saheeh/001.json', lane: 'text', category: 'text-translation', bytes: 1400 },
+      { path: 'translations/bridges/001.json', lane: 'text', category: 'text-translation', bytes: 1400 },
       { path: 'surahs.json', lane: 'text', category: 'text-core', bytes: 800 },
-      { path: 'tafsir/muyassar/001.json', lane: 'text', category: 'text-tafsir', bytes: 700 },
       { path: 'indexes/sources.json', lane: 'text', category: 'text-index', bytes: 200 },
       { path: 'indexes/riwayah-packages.json', lane: 'text', category: 'text-index', bytes: 250 },
       { path: 'indexes/text-assets.json', lane: 'text', category: 'text-index', bytes: 260 },
@@ -147,7 +146,7 @@ describe('sumBytesForCategory', () => {
   }
 
   it.each<[Category, number]>([
-    ['text',   1500 + 1600 + 1400 + 800 + 700 + 200 + 250 + 260 + 270 + 900 + 600 + 300],
+    ['text',   1500 + 1600 + 1400 + 800 + 200 + 250 + 260 + 270 + 900 + 600 + 300],
     ['pages',  80_000 + 90_000],
     ['search', 1_000_000],
   ])('sums bytes for category %s', (cat, expected) => {
@@ -160,8 +159,7 @@ describe('sumBytesForCategory', () => {
     expect(urls).toEqual(expect.arrayContaining([
       '/dataset/riwayat/hafs/001.json',
       '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json',
-      '/dataset/translations/saheeh/001.json',
-      '/dataset/tafsir/muyassar/001.json',
+      '/dataset/translations/bridges/001.json',
       '/dataset/indexes/sources.json',
       '/dataset/indexes/riwayah-packages.json',
       '/dataset/indexes/text-assets.json',
@@ -173,6 +171,7 @@ describe('sumBytesForCategory', () => {
     ]))
     expect(urls).not.toEqual(expect.arrayContaining([
       '/dataset/audio/alafasy/001.mp3',
+      '/dataset/tafsir/muyassar/001.json',
     ]))
   })
 

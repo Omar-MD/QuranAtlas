@@ -67,15 +67,15 @@ export type EventPayloads = {
   'offline:download-progress': { cached: number; total: number }
   'offline:download-complete': Record<string, never>
   'offline:download-error': { error: string | Error }
-  'offline:riwayah-package-progress': { riwayah: 'hafs' | 'warsh' | 'qaloon'; cached: number; total: number }
-  'offline:riwayah-package-error': { riwayah: 'hafs' | 'warsh' | 'qaloon'; error: string | Error }
+  'offline:riwayah-package-progress': { riwayah: 'qaloon'; cached: number; total: number }
+  'offline:riwayah-package-error': { riwayah: 'qaloon'; error: string | Error }
   'offline:install-available': Record<string, never>
   'offline:install-complete': Record<string, never>
   'app:init-error': { error: Error; context?: string }
   'app:ready-for-download': Record<string, never>
   'app:update-available': Record<string, never>
   'settings:data-cleared': Record<string, never>
-  'settings:riwayah-changed': { from: 'hafs' | 'warsh' | 'qaloon'; to: 'hafs' | 'warsh' | 'qaloon' }
+  'settings:riwayah-changed': { from: 'qaloon'; to: 'qaloon' }
   'reader:verse-rendered': { verseKey: string; element: HTMLElement }
   'ambient:surface': { reason?: string }
   'dataset:update-available': { from: string; to: string }
@@ -87,10 +87,10 @@ export type EventPayloads = {
   'offline:sw-timeout': Record<string, never>
   'sheet:opened': { name: string }
   'sheet:closed': { name: string }
-  'bookmarks:saved': { verseKey: string; riwayah: 'hafs' | 'warsh' | 'qaloon' }
-  'bookmarks:deleted': { verseKey: string; riwayah: 'hafs' | 'warsh' | 'qaloon' }
-  'bookmarks:save-failed': { verseKey: string; riwayah: 'hafs' | 'warsh' | 'qaloon'; error: string }
-  'sync:bookmarks-updated': { verseKeys: string[]; riwayah: 'hafs' | 'warsh' | 'qaloon' }
+  'bookmarks:saved': { verseKey: string; riwayah: 'qaloon' }
+  'bookmarks:deleted': { verseKey: string; riwayah: 'qaloon' }
+  'bookmarks:save-failed': { verseKey: string; riwayah: 'qaloon'; error: string }
+  'sync:bookmarks-updated': { verseKeys: string[]; riwayah: 'qaloon' }
   'bookmark:jump-landed': { verseKey: string }
   'settings:recent-surahs-updated': { surahs: number[] }
 }

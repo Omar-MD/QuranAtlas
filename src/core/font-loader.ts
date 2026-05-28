@@ -32,8 +32,6 @@ import type { Riwayah } from '../packs/riwayah'
 const ARABIC_RANGE = 'U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF'
 
 const FONT_SOURCES: Record<Riwayah, { family: string, url: string }> = {
-  hafs:   { family: 'KFGQPC Uthmanic Hafs',   url: '/fonts/kfgqpc-uthmanic-hafs/uthmanic_hafs_v22.woff2' },
-  warsh:  { family: 'KFGQPC Uthmanic Warsh',  url: '/fonts/kfgqpc-uthmanic-warsh/UthmanicWarsh_V21.woff2' },
   qaloon: { family: 'KFGQPC Uthmanic Qaloon', url: '/fonts/kfgqpc-uthmanic-qaloon/UthmanicQaloun_V21.woff2' },
 }
 

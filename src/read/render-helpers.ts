@@ -13,18 +13,15 @@ import type { Riwayah } from '../configure/riwayah'
 /**
  * Whether to render a standalone basmala block before the first verse.
  *
- * Quranic conventions differ across the riwayat for Al-Fātiḥah:
- *  - **Hafs**: counts the basmala AS ayah 1 (it IS in the dataset as verse 1).
- *    Rendering a standalone block would double it. Skip.
- *  - **Warsh + Qaloon**: do NOT count the basmala as an ayah (their ayah 1 is
- *    `اِ۬لْحَمْدُ لِلهِ...`), but tradition still displays the basmala above the
- *    surah text. Render the standalone block.
+ * Qaloon does not count the basmala as an ayah in Al-Fātiḥah, but tradition
+ * still displays it above the surah text.
  *  - **Surah 9 (At-Tawbah)**: no basmala in any riwayah.
  *  - **All other surahs**: render the basmala block in every riwayah.
  */
 export function shouldRenderBasmala(surahNum: number, riwayah: Riwayah = settings.riwayah): boolean {
+  void riwayah
   if (surahNum === 9) { return false }
-  if (surahNum === 1) { return riwayah !== 'hafs' }
+  if (surahNum === 1) { return true }
   return true
 }
 

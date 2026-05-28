@@ -3,7 +3,7 @@ import type { Riwayah } from '../packs/riwayah'
 import { getRiwayahPackageStatus } from '../packs/riwayah'
 import { planRiwayahPackageInstall as planRiwayahPackageInstallFromIndex } from './riwayah-packages'
 
-type SourceAssetKind = 'translation' | 'tafsir'
+type SourceAssetKind = 'translation'
 
 export async function getCategoryManifest(category: Category) {
   const offline = await import('./offline')
@@ -38,11 +38,6 @@ export async function removeCategoryDownload(category: Category) {
   return offline.removeCategoryDownload(category)
 }
 
-export async function removeSourceAssetDownload(kind: SourceAssetKind, id: string) {
-  const offline = await import('./offline')
-  return offline.removeSourceAssetDownload(kind, id)
-}
-
 export async function removePageAssetDownload(riwayah: Riwayah) {
   const offline = await import('./offline')
   return offline.removePageAssetDownload(riwayah)
@@ -56,11 +51,6 @@ export async function removeRiwayahPackage(riwayah: Riwayah) {
 export async function startCategoryDownload(category: Category) {
   const offline = await import('./offline')
   return offline.startCategoryDownload(category)
-}
-
-export async function startSourceAssetDownload(kind: SourceAssetKind, id: string) {
-  const offline = await import('./offline')
-  return offline.startSourceAssetDownload(kind, id)
 }
 
 export async function startPageAssetDownload(riwayah: Riwayah) {

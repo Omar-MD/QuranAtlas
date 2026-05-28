@@ -10,7 +10,7 @@
   import { Events } from '../../core/constants'
   import { announce } from '../../a11y/announcer'
   import { surahs as surahsState } from './state.svelte'
-  import type { Riwayah } from '../../core/db'
+  import type { Riwayah } from '../../packs/riwayah'
   import SurahRow from './SurahRow.svelte'
 
   // ---- data loaded on mount ----

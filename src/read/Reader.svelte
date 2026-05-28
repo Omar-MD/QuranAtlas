@@ -9,6 +9,7 @@
   import type { SurahPayload, SurahMeta, TranslationPayload } from '../data/dataset'
   import { loadKnowledgeMetadataForSurah, type AyahKnowledgeEntry, type KnowledgePassage } from '../metadata/knowledge'
   import { loadVerseAliases, resolveTranslationFor, type VerseAliases, type TranslationRole } from '../data/verse-aliases'
+  import type { Riwayah } from '../packs/riwayah'
   import { get } from '../core/db'
   import { navigate } from '../core/router'
   import { emit, on } from '../core/events'
@@ -180,11 +181,11 @@
     return Number.isFinite(value) ? value : null
   }
 
-  function currentRiwayah(): 'hafs' | 'warsh' | 'qaloon' {
-    return (settings.riwayah ?? 'qaloon') as 'hafs' | 'warsh' | 'qaloon'
+  function currentRiwayah(): Riwayah {
+    return settings.riwayah ?? 'qaloon'
   }
 
-  function isActiveSurahLoad(loadId: number, riwayah: 'hafs' | 'warsh' | 'qaloon'): boolean {
+  function isActiveSurahLoad(loadId: number, riwayah: Riwayah): boolean {
     return (
       loadId === surahLoadId
       && reader.currentSurahNum === surahNum
@@ -215,7 +216,7 @@
       const missing: string[] = []
       for (const ayah of data.ayat) {
         const riwayahKey = `${data.sura_no}:${ayah.aya_no}`
-        const resolution = resolveTranslationFor(aliases, data.riwayah, data.sura_no, ayah.aya_no)
+        const resolution = resolveTranslationFor(aliases, data.riwayah as Riwayah, data.sura_no, ayah.aya_no)
         roleMap[riwayahKey] = { role: resolution.role, primaryAyah: resolution.primaryAyah }
         if (resolution.role === 'continuation') {
           map[riwayahKey] = ''
@@ -321,7 +322,7 @@
     opts: {
       footnotes: Record<string, string>
       translationVisible: boolean
-      riwayah: 'hafs' | 'warsh' | 'qaloon'
+      riwayah: Riwayah
       restoreVerse?: number | null
       applyBottomSwapAnchor?: boolean
     },
@@ -558,14 +559,7 @@
         // Optimistically fetch the default pack while we resolve the user's
         // saved id; if the saved id differs, a second fetch follows below.
         loadTranslationForSurah(settings.translationId ?? 'bridges', surahNum).catch(() => null),
-        // Cross-riwayah verse-equivalence aliases. Hafs viewer always
-        // resolves identity (translations are Hafs-keyed) and never reads
-        // the table, so skip the ~170 KB fetch in that path. Lazy-loaded
-        // on the first switch to Warsh / Qaloon by `loadVerseAliases`'s
-        // own caching layer.
-        settings.riwayah === 'hafs'
-          ? Promise.resolve(null) as Promise<VerseAliases | null>
-          : loadVerseAliases().catch(() => null) as Promise<VerseAliases | null>,
+        loadVerseAliases().catch(() => null) as Promise<VerseAliases | null>,
       ])
 
       clearTimeout(timeoutId)

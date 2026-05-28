@@ -161,8 +161,6 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     // tolerable (CSS @font-face + Amiri Quran fallback both still active).
     if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
       const familyMap: Record<typeof activeRiwayah, string> = {
-        hafs: 'KFGQPC Uthmanic Hafs',
-        warsh: 'KFGQPC Uthmanic Warsh',
         qaloon: 'KFGQPC Uthmanic Qaloon',
       }
       void document.fonts.load(`16px "${familyMap[activeRiwayah]}"`, 'ا').catch(() => { /* ignore */ })

@@ -21,6 +21,7 @@ import {
 } from '../infra/sw/route-defs'
 import {
   beginRiwayahInstall,
+  assertRiwayah,
   failRiwayahInstall,
   loadRiwayah,
   persistRiwayahSelection,
@@ -59,7 +60,7 @@ type ManifestShape = {
 }
 
 let _manifestCache: ManifestShape | null = null
-type SourceAssetKind = 'translation' | 'tafsir'
+type SourceAssetKind = 'translation'
 type SourceAssetGroup = {
   id: string
   type: SourceAssetKind
@@ -69,7 +70,6 @@ type SourceAssetGroup = {
 type SourceAssetsShape = {
   version: number
   translations: SourceAssetGroup[]
-  tafsir: SourceAssetGroup[]
 }
 
 let _sourceAssetsCache: SourceAssetsShape | null = null
@@ -101,7 +101,6 @@ async function isAnyCategoryCached(): Promise<boolean> {
   if (!c) return false
   if (Object.values(c.text.riwayat).some(Boolean)) return true
   if (Object.values(c.text.translations).some(Boolean)) return true
-  if (Object.values(c.text.tafsir).some(Boolean)) return true
   if (Object.values(c.pages).some(Boolean)) return true
   if (c.search) return true
   return false
@@ -176,6 +175,7 @@ export async function getCategoryManifest(
 export async function getPageAssetManifest(
   riwayah: Riwayah,
 ): Promise<{ urls: string[]; totalBytes: number }> {
+  assertRiwayah(riwayah, 'page asset riwayah')
   const manifest = await fetchManifest()
   const prefix = `mushaf-pages/${riwayah}/`
   const urls: string[] = []
@@ -196,8 +196,7 @@ export async function getSourceAssetManifest(
   id: string,
 ): Promise<{ urls: string[]; totalBytes: number }> {
   const assets = await fetchSourceAssets()
-  const list = kind === 'translation' ? assets.translations : assets.tafsir
-  const group = list.find((entry) => entry.id === id)
+  const group = assets.translations.find((entry) => entry.id === id)
   if (!group) return { urls: [], totalBytes: 0 }
   return {
     urls: group.files.map((file) => `/dataset/${file.path}`),
@@ -536,13 +535,13 @@ async function installConcreteAsset(asset: TextAsset | MushafAsset): Promise<boo
 }
 
 export async function installTextAsset(riwayah: Riwayah, textStyleId: string): Promise<boolean> {
-  const asset = await getTextAsset(riwayah, textStyleId)
+  const asset = await getTextAsset(riwayah, textStyleId).catch(() => null)
   if (!asset) return false
   return installConcreteAsset(asset)
 }
 
 export async function installMushafAsset(riwayah: Riwayah, mushafEditionId: string): Promise<boolean> {
-  const asset = await getMushafAsset(riwayah, mushafEditionId)
+  const asset = await getMushafAsset(riwayah, mushafEditionId).catch(() => null)
   if (!asset) return false
   return installConcreteAsset(asset)
 }
@@ -601,7 +600,7 @@ async function cachePackageUrl(riwayah: Riwayah, url: string, response: Response
 }
 
 export async function startRiwayahPackageInstall(riwayah: Riwayah): Promise<boolean> {
-  const plan = await planRiwayahPackageInstall(riwayah)
+  const plan = await planRiwayahPackageInstall(riwayah).catch(() => ({ riwayah, urls: [], totalBytes: 0 }))
   if (plan.urls.length === 0) {
     failRiwayahInstall(riwayah, 'This riwayah package is unavailable in this build.')
     emit(Events.OFFLINE_RIWAYAH_PACKAGE_ERROR, { riwayah, error: 'This riwayah package is unavailable in this build.' })
@@ -689,35 +688,6 @@ export async function removeRiwayahPackage(riwayah: Riwayah): Promise<void> {
     }
   }
   await refreshRiwayahPackageStatus(riwayah)
-}
-
-export async function startSourceAssetDownload(kind: SourceAssetKind, id: string): Promise<boolean> {
-  const plan = await getSourceAssetManifest(kind, id)
-  if (plan.urls.length === 0) return false
-  if (!(await hasStorageForBytes(plan.totalBytes))) return false
-  if (typeof caches === 'undefined') return true
-  await Promise.all(plan.urls.map(async (url) => {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
-    await cacheAssetUrl(url, response)
-  }))
-  return true
-}
-
-async function assertCanRemoveSourceAsset(kind: SourceAssetKind, id: string): Promise<void> {
-  if (kind === 'translation' && settings.translationId === id) {
-    throw new Error(ACTIVE_DELETE_DISABLED_REASON)
-  }
-  if (kind === 'tafsir' && settings.tafsirId === id) {
-    throw new Error(ACTIVE_DELETE_DISABLED_REASON)
-  }
-}
-
-export async function removeSourceAssetDownload(kind: SourceAssetKind, id: string): Promise<void> {
-  const plan = await getSourceAssetManifest(kind, id)
-  if (plan.urls.length === 0 || typeof caches === 'undefined') return
-  await assertCanRemoveSourceAsset(kind, id)
-  await Promise.all(plan.urls.map((url) => deleteAssetUrl(url)))
 }
 
 /**

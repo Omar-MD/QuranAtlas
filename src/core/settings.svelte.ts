@@ -5,7 +5,6 @@ import { DEFAULT_READER_ASSET_PROFILE } from '../../shared/reader-assets/default
 export type { Riwayah } from '../packs/riwayah'
 
 export type TranslationId = string | null
-export type TafsirId = string
 export type Theme = 'light' | 'sepia' | 'dark' | 'auto'
 export type FontSize = 'sm' | 'md' | 'lg' | 'xl'
 export type ReadingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -24,14 +23,13 @@ export type OfflineCategoriesState = {
   text: {
     riwayat: Record<string, boolean>
     translations: Record<string, boolean>
-    tafsir: Record<string, boolean>
   }
   pages: Record<string, boolean>
   search: boolean
 }
 
 export const DEFAULT_OFFLINE_CATEGORIES: OfflineCategoriesState = {
-  text: { riwayat: {}, translations: {}, tafsir: {} },
+  text: { riwayat: {}, translations: {} },
   pages: {},
   search: false,
 }
@@ -41,7 +39,6 @@ export const settings = $state({
   riwayah: DEFAULT_READER_ASSET_PROFILE.riwayah as Riwayah,
   fontSize: 'md' as FontSize,
   translationId: DEFAULT_READER_ASSET_PROFILE.translationId as TranslationId,
-  tafsirId: 'muyassar' as TafsirId,
   translationVisible: true,
   lineSpacing: 'md' as ReadingStep,
   wordSpacing: 'md' as ReadingStep,
@@ -58,8 +55,6 @@ export const settings = $state({
 })
 
 export const riwayahPackageState = $state<RiwayahInstallState>({
-  hafs: null,
-  warsh: null,
   qaloon: null,
 })
 

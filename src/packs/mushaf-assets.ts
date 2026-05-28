@@ -139,7 +139,8 @@ export async function defaultMushafEditionForRiwayah(riwayah: Riwayah): Promise<
   assertRiwayah(riwayah, 'Mushaf asset riwayah')
   const index = await loadMushafAssetIndex()
   const id = index.defaults[riwayah]
-  return id ?? index.defaults.qaloon ?? 'qalun-quran-ws-v1'
+  if (!id) throw new Error(`Mushaf asset default missing for ${riwayah}`)
+  return id
 }
 
 async function cacheHasIndexedUrl(url: string): Promise<boolean> {
@@ -170,7 +171,7 @@ async function manifestIdentityMatches(asset: MushafAsset): Promise<boolean> {
 }
 
 export async function getMushafAssetStatus(riwayah: Riwayah, mushafEditionId: string): Promise<AssetStatusKind> {
-  const asset = await getMushafAsset(riwayah, mushafEditionId)
+  const asset = await getMushafAsset(riwayah, mushafEditionId).catch(() => null)
   if (!asset) return 'incompatible'
   if (asset.shipped) {
     return await manifestIdentityMatches(asset).catch(() => false) ? 'shipped' : 'unavailable'

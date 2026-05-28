@@ -14,7 +14,6 @@ export type TextCategory =
   | 'text-core'
   | 'text-riwayah'
   | 'text-translation'
-  | 'text-tafsir'
   | 'text-index'
   | 'text-knowledge'
 export type RouteCategory = Category | TextCategory
@@ -25,7 +24,6 @@ export const TEXT_ROUTE_CATEGORIES: readonly TextCategory[] = [
   'text-core',
   'text-riwayah',
   'text-translation',
-  'text-tafsir',
   'text-index',
   'text-knowledge',
 ] as const
@@ -82,15 +80,6 @@ export const ROUTE_DEFS: readonly RouteDef[] = [
     maxEntries: DATASET_CACHE_MAX_ENTRIES,
     maxAgeDays: 365,
     category: 'text-translation',
-  },
-  {
-    name: 'text-tafsir',
-    match: ({ url }) => /^\/dataset\/tafsir\/[^/]+\/\d{3}\.json$/.test(url.pathname),
-    strategy: 'NetworkFirst',
-    cacheName: CACHE_DATASET,
-    maxEntries: DATASET_CACHE_MAX_ENTRIES,
-    maxAgeDays: 365,
-    category: 'text-tafsir',
   },
   {
     name: 'text-index',
@@ -216,10 +205,11 @@ export function sumBytesForCategory(
   const urls: string[] = []
   let totalBytes = 0
   for (const file of manifest.files) {
+    const routeCategory = categoryFor(new URL(`/dataset/${file.path}`, origin))
     const include =
-      (category === 'text' && (file.lane === 'text' || file.lane === 'knowledge')) ||
+      (category === 'text' && routeCategory !== null && TEXT_ROUTE_CATEGORIES.includes(routeCategory as TextCategory)) ||
       (category === 'search' && file.lane === 'search') ||
-      (category === 'pages' && categoryFor(new URL(`/dataset/${file.path}`, origin)) === category)
+      (category === 'pages' && routeCategory === category)
     if (include) {
       urls.push(`/dataset/${file.path}`)
       totalBytes += typeof file.bytes === 'number' ? file.bytes : 0

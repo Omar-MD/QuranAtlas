@@ -26,17 +26,15 @@
     removeCategoryDownload,
     removePageAssetDownload,
     removeRiwayahPackage,
-    removeSourceAssetDownload,
     startCategoryDownload,
     startPageAssetDownload,
     startRiwayahPackageInstall,
-    startSourceAssetDownload,
   } from '../data/offline-client.ts'
-  import { getTafsirs, getTranslations } from '../data/dataset.ts'
+  import { getTranslations } from '../data/dataset.ts'
   import type { Category } from '../infra/sw/route-defs'
   import type { Riwayah } from './state.svelte.ts'
 
-  type SourceKind = 'translation' | 'tafsir'
+  type SourceKind = 'translation'
   type SourceOption = {
     id: string
     name: string
@@ -69,20 +67,16 @@
   }
 
   const ROWS: Row[] = [
-    { cat: 'text',   label: 'Text · baseline corpus', short: 'Text',   sub: 'Qalun + Bridges + Muyassar + Knowledge context', gatedAt: null   },
+    { cat: 'text',   label: 'Text · baseline corpus', short: 'Text',   sub: 'Qaloon + Bridges + Knowledge context', gatedAt: null   },
     { cat: 'pages',  label: 'Pages · per riwāyah',  short: 'Pages',  sub: 'KFGQPC Mushaf page-image cuts',         gatedAt: 'v2.1' },
     { cat: 'search', label: 'Search index',         short: 'Search', sub: 'Full-text Arabic + translation search', gatedAt: 'v1.1' },
   ]
   const GENERIC_ROWS = ROWS.filter((row) => row.cat !== 'pages')
   const PAGE_PACKS: Array<{ id: Riwayah; label: string }> = [
-    { id: 'qaloon', label: 'Qalun pages' },
-    { id: 'hafs', label: 'Ḥafṣ pages' },
-    { id: 'warsh', label: 'Warsh pages' },
+    { id: 'qaloon', label: 'Qaloon pages' },
   ]
   const RIWAYAH_PACKAGES: Array<{ id: Riwayah; label: string }> = [
-    { id: 'qaloon', label: 'Qalun package' },
-    { id: 'hafs', label: 'Ḥafṣ package' },
-    { id: 'warsh', label: 'Warsh package' },
+    { id: 'qaloon', label: 'Qaloon package' },
   ]
 
   let open = $state(false)
@@ -111,21 +105,19 @@
   function isCategoryChecked(cat: Category): boolean {
     if (cat === 'text') {
       const t = pending.text
-      return t.riwayat.qaloon === true && t.translations.bridges === true && t.tafsir.muyassar === true
+      return t.riwayat.qaloon === true && t.translations.bridges === true
     }
     if (cat === 'search') return pending.search
     return Object.values(pending.pages).some(Boolean)
   }
 
   function isSourceChecked(kind: SourceKind, id: string): boolean {
-    const map = kind === 'translation' ? pending.text.translations : pending.text.tafsir
-    return map[id] === true
+    return pending.text.translations[id] === true
   }
 
   function isSourceCheckedIn(state: OfflineCategoriesState | undefined, kind: SourceKind, id: string): boolean {
     if (!state) return false
-    const map = kind === 'translation' ? state.text.translations : state.text.tafsir
-    return map[id] === true
+    return state.text.translations[id] === true
   }
 
   function isPageChecked(riwayah: Riwayah): boolean {
@@ -138,11 +130,10 @@
 
   function setSourceChecked(kind: SourceKind, id: string, checked: boolean): void {
     const next = structuredClone($state.snapshot(pending))
-    const map = kind === 'translation' ? next.text.translations : next.text.tafsir
     if (checked) {
-      map[id] = true
+      next.text.translations[id] = true
     } else {
-      delete map[id]
+      delete next.text.translations[id]
     }
     pending = next
     saved = false
@@ -163,8 +154,8 @@
     const next = structuredClone($state.snapshot(pending))
     if (cat === 'text') {
       next.text = checked
-        ? { riwayat: { qaloon: true }, translations: { bridges: true }, tafsir: { muyassar: true } }
-        : { riwayat: {}, translations: {}, tafsir: {} }
+        ? { riwayat: { qaloon: true }, translations: { bridges: true } }
+        : { riwayat: {}, translations: {} }
     } else if (cat === 'search') {
       next.search = checked
     } else if (cat === 'pages') {
@@ -179,7 +170,6 @@
     if (cat === 'text') {
       return state.text.riwayat.qaloon === true
         && state.text.translations.bridges === true
-        && state.text.tafsir.muyassar === true
     }
     if (cat === 'search') return state.search
     return Object.values(state.pages).some(Boolean)
@@ -273,10 +263,7 @@
   }
 
   async function refreshTextSources(): Promise<void> {
-    const [translations, tafsirs] = await Promise.all([
-      getTranslations().catch(() => []),
-      getTafsirs().catch(() => []),
-    ])
+    const translations = await getTranslations().catch(() => [])
     const next: SourceOption[] = []
     for (const entry of translations) {
       const asset = await getSourceAssetManifest('translation', entry.id).catch(() => ({ totalBytes: 0 }))
@@ -284,16 +271,6 @@
         id: entry.id,
         name: entry.name,
         kind: 'translation',
-        availableInManifest: entry.availableInManifest,
-        bytes: asset.totalBytes,
-      })
-    }
-    for (const entry of tafsirs) {
-      const asset = await getSourceAssetManifest('tafsir', entry.id).catch(() => ({ totalBytes: 0 }))
-      next.push({
-        id: entry.id,
-        name: entry.name,
-        kind: 'tafsir',
         availableInManifest: entry.availableInManifest,
         bytes: asset.totalBytes,
       })
@@ -367,26 +344,11 @@
         pack => !isPageChecked(pack.id)
           && isPageCheckedIn(current, pack.id)
       )
-      const sourcesToDownload = textSources.filter(
-        source => isSourceChecked(source.kind, source.id)
-          && !isSourceCheckedIn(current, source.kind, source.id)
-          && source.bytes > 0
-      )
-      const sourcesToRemove = textSources.filter(
-        source => !isSourceChecked(source.kind, source.id)
-          && isSourceCheckedIn(current, source.kind, source.id)
-      )
       for (const pack of pagesToDownload) {
         await startPageAssetDownload(pack.id)
       }
       for (const cat of toDownload) {
         await startCategoryDownload(cat)
-      }
-      for (const source of sourcesToDownload) {
-        await startSourceAssetDownload(source.kind, source.id)
-      }
-      for (const source of sourcesToRemove) {
-        await removeSourceAssetDownload(source.kind, source.id)
       }
       for (const cat of toRemove) {
         await removeCategoryDownload(cat)
@@ -529,7 +491,7 @@
           {#each textSources as source (`${source.kind}:${source.id}`)}
             <label class="qa-storage-source-row" data-testid="storage-source-{source.kind}-{source.id}">
               <span class="qa-storage-source-main">
-                <span class="qa-storage-source-kind">{source.kind === 'translation' ? 'Translation' : 'Tafsir'}</span>
+                <span class="qa-storage-source-kind">Translation</span>
                 <span class="qa-storage-source-name">{source.name}</span>
               </span>
               <span class="qa-storage-row-size">{fmt(source.bytes)}</span>

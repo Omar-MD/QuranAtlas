@@ -3,7 +3,7 @@
 // connection runtime through type-only imports (audit C-2 / CC-2 / R-07,
 // 2026-04-29).
 
-export type Riwayah = 'hafs' | 'warsh' | 'qaloon'
+export type Riwayah = 'qaloon'
 
 export interface BookmarkRecord {
   riwayah: Riwayah

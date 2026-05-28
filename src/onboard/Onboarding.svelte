@@ -41,14 +41,10 @@
   const riwayahOptions = getRiwayahOptions()
   let selectedRiwayah = $state<Riwayah>('qaloon')
   let usableRiwayah = $state<Record<Riwayah, boolean>>({
-    hafs: false,
-    warsh: false,
     qaloon: true,
   })
 
   const RIWAYAH_CARDS: Record<Riwayah, { label: string; ayatLabel: string; description: string }> = {
-    hafs:   { label: getRiwayahLabels('hafs').productFull, ayatLabel: '6236 ayāt', description: 'The most widespread reading worldwide.' },
-    warsh:  { label: getRiwayahLabels('warsh').productFull, ayatLabel: '6214 ayāt', description: 'Read across the Maghreb and West Africa.' },
     qaloon: { label: getRiwayahLabels('qaloon').productFull, ayatLabel: '6214 ayāt', description: 'Read in Libya, Tunisia, and parts of Mauritania.' },
   }
 

@@ -112,7 +112,7 @@ export function resolveTranslationFor(
   surahNo: number,
   ayahNo: number,
 ): TranslationResolution {
-  if (riwayah === 'hafs' || !aliases) {
+  if (!aliases) {
     return { role: 'identity', hafsKeys: [`${surahNo}:${ayahNo}`] }
   }
   const surahAliases = aliases.aliases[String(surahNo)]

@@ -27,7 +27,7 @@ const syncState = { get: () => sync, set: (p: Partial<typeof sync>) => Object.as
 
 const CHANNEL_NAME = 'quran-atlas:sync'
 
-type Riwayah = 'hafs' | 'warsh' | 'qaloon'
+type Riwayah = 'qaloon'
 type ActiveVariantBundlePayload = {
   riwayah: Riwayah
   quranTextStyleId: string
@@ -189,7 +189,7 @@ function handleChannelMessage(event: MessageEvent): void {
 const VARIANT_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/
 
 function isRiwayah(value: unknown): value is Riwayah {
-  return value === 'hafs' || value === 'warsh' || value === 'qaloon'
+  return value === 'qaloon'
 }
 
 function validSettingsRiwayahPayload(payload: unknown): boolean {
@@ -226,7 +226,7 @@ function registerCoreTopicHandlers(): void {
       logger.warn('Sync rejected bookmarks payload: invalid verseKeys array')
       return
     }
-    if (p.riwayah !== 'hafs' && p.riwayah !== 'warsh' && p.riwayah !== 'qaloon') {
+    if (p.riwayah !== 'qaloon') {
       logger.warn('Sync rejected bookmarks payload: invalid riwayah')
       return
     }

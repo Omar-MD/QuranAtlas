@@ -23,8 +23,6 @@ const BASE = '/dataset/mushaf-pages'
 const manifestPromises = new Map<string, Promise<MushafManifest>>()
 
 const DEFAULT_MUSHAF_EDITION_BY_RIWAYAH: Record<Riwayah, string> = {
-  hafs: 'hafs-quran-ws-v1',
-  warsh: 'warsh-quran-ws-v1',
   qaloon: 'qalun-quran-ws-v1',
 }
 
@@ -65,6 +63,7 @@ function manifestKey(riwayah: Riwayah, mushafEditionId: string): string {
 }
 
 function editionForRiwayah(riwayah: Riwayah, mushafEditionId?: string): string {
+  assertRiwayah(riwayah, 'Mushaf riwayah')
   return mushafEditionId ?? DEFAULT_MUSHAF_EDITION_BY_RIWAYAH[riwayah]
 }
 
@@ -370,20 +369,8 @@ export async function resolveMushafPagePack(
   riwayah: Riwayah,
   options: { mushafEditionId?: string; fallbackToBaseline?: boolean; installBlocked?: 'quota-refused'; missingReason?: 'missing' | 'removed' } = {},
 ): Promise<MushafPagePackResult> {
-  const mushafEditionId = editionForRiwayah(riwayah, options.mushafEditionId)
   const result = await getMushafPagePackResult(riwayah, options)
-  if (!options.fallbackToBaseline || riwayah === DEFAULT_RIWAYAH) return result
-  if (result.kind === 'installable' || result.kind === 'stale' || result.kind === 'usable') return result
-  const baseline = await getMushafPagePackResult(DEFAULT_RIWAYAH)
-  if (baseline.kind !== 'usable') return result
-  const fallbackMushafEditionId = editionForRiwayah(DEFAULT_RIWAYAH)
-  return {
-    ...baseResult(riwayah, mushafEditionId, result.totalBytes, result.optional),
-    kind: 'switched-to-baseline',
-    reason: result.reason,
-    fallbackRiwayah: DEFAULT_RIWAYAH,
-    fallbackManifestUrl: manifestUrl(DEFAULT_RIWAYAH, fallbackMushafEditionId),
-  }
+  return result
 }
 
 export async function resolveMushafPage({

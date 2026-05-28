@@ -26,7 +26,7 @@ export type AyahRecord = {
 }
 
 export type SurahPayload = {
-  riwayah: 'hafs' | 'warsh' | 'qaloon'
+  riwayah: Riwayah
   version: string
   sura_no: number
   sura_name_ar: string
@@ -49,13 +49,6 @@ export type TranslationEntry = {
   availableInManifest: boolean
 }
 
-export type TafsirEntryMeta = {
-  id: string
-  name: string
-  language: string
-  availableInManifest: boolean
-}
-
 export type TranslationVerse = { key: string; text: string }
 
 export type TranslationPayload = {
@@ -67,26 +60,9 @@ export type TranslationPayload = {
   footnotes: Record<string, string>
 }
 
-export type TafsirEntry = {
-  id: string
-  startKey: string
-  endKey: string
-  ayahKeys: string[]
-  sourceGranularity: 'ayah' | 'range'
-  text: string
-}
-
-export type TafsirSurahPack = {
-  tafsirId: string
-  tafsirVersion: string
-  language: string
-  surahNo: number
-  entries: TafsirEntry[]
-}
-
 export type SourceIndexEntry = {
   id: string
-  type: 'riwayah' | 'translation' | 'tafsir'
+  type: 'riwayah' | 'translation'
   label: string
   displayLabel?: string | null
   role?: string | null
@@ -119,7 +95,6 @@ type DatasetManifestFile = {
 type ManifestJson = { files: DatasetManifestFile[] }
 
 const DEFAULT_TRANSLATION = 'bridges'
-const DEFAULT_TAFSIR = 'muyassar'
 
 export type RiwayahTextAvailability = {
   riwayah: Riwayah
@@ -233,7 +208,7 @@ export async function getRiwayahTextAvailability(riwayah: Riwayah): Promise<Riwa
   const manifest = await loadDatasetManifest()
   return {
     riwayah,
-    available: manifest.files.some((file) => file.path.startsWith(`riwayat/${riwayah}/`)),
+    available: manifest.files.some((file) => file.path.startsWith(`quran-text/${riwayah}/`)),
     manifestUrl: `${DATASET_BASE}/manifest.json`,
   }
 }
@@ -277,18 +252,6 @@ export async function getTranslations(): Promise<TranslationEntry[]> {
     })
 }
 
-export async function getTafsirs(): Promise<TafsirEntryMeta[]> {
-  const index = await getSourceIndex()
-  return index.sources
-    .filter((entry) => entry.type === 'tafsir')
-    .map((entry) => ({
-      id: entry.id,
-      name: entry.displayLabel || entry.label,
-      language: entry.language ?? 'ar',
-      availableInManifest: entry.availableInManifest,
-    }))
-}
-
 /**
  * Load a translation pack for a single surah. Returns null when no pack is
  * shipped for the requested id (graceful when the user picks a translation
@@ -300,16 +263,13 @@ export async function loadTranslationForSurah(translationId: string, surahNo: nu
     throw new Error(`Invalid surah number: ${surahNo}`)
   }
   if (translationId !== DEFAULT_TRANSLATION && !(await isTranslationSourceCataloged(translationId))) {
-    return loadTranslationForSurah(DEFAULT_TRANSLATION, surahNo)
+    return null
   }
   const padded = String(surahNo).padStart(3, '0')
   const url = `${DATASET_BASE}/translations/${translationId}/${padded}.json`
   try {
     return await fetchNetworkFirst(url) as TranslationPayload
   } catch (e) {
-    if (translationId !== DEFAULT_TRANSLATION && isUnavailablePackError(e)) {
-      return loadTranslationForSurah(DEFAULT_TRANSLATION, surahNo)
-    }
     if (isUnavailablePackError(e)) return null
     throw e
   }
@@ -325,25 +285,6 @@ async function isTranslationSourceCataloged(translationId: string): Promise<bool
     return index.sources.some((entry) => entry.type === 'translation' && entry.id === translationId)
   } catch {
     return true
-  }
-}
-
-
-export async function loadTafsirForSurah(tafsirId: string, surahNo: number): Promise<TafsirSurahPack | null> {
-  if (!tafsirId) { return null }
-  if (surahNo < 1 || surahNo > 114 || !Number.isInteger(surahNo)) {
-    throw new Error(`Invalid surah number: ${surahNo}`)
-  }
-  const padded = String(surahNo).padStart(3, '0')
-  const url = `${DATASET_BASE}/tafsir/${tafsirId}/${padded}.json`
-  try {
-    return await fetchNetworkFirst(url) as TafsirSurahPack
-  } catch (error) {
-    if (tafsirId !== DEFAULT_TAFSIR && isUnavailablePackError(error)) {
-      return loadTafsirForSurah(DEFAULT_TAFSIR, surahNo)
-    }
-    if (isUnavailablePackError(error)) return null
-    throw error
   }
 }
 

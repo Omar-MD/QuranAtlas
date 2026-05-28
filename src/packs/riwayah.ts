@@ -7,7 +7,7 @@ import { cacheNameFor } from '../infra/sw/route-defs'
 import { broadcastRiwayahChange } from '../infra/safety/sync'
 import { riwayahInstallIntent, riwayahPackageState, settings } from '../core/settings.svelte'
 
-export const RIWAYAHS = ['hafs', 'warsh', 'qaloon'] as const
+export const RIWAYAHS = ['qaloon'] as const
 export type Riwayah = (typeof RIWAYAHS)[number]
 export const DEFAULT_RIWAYAH = 'qaloon' as const
 
@@ -18,31 +18,13 @@ export type RiwayahLabels = {
   runtimeFull: string
   subtitle: string
   verseCount: number
-  sourceSlug: 'hafs' | 'warsh' | 'qalun'
+  sourceSlug: 'qalun'
 }
 
 const RIWAYAH_LABELS: Record<Riwayah, RiwayahLabels> = {
-  hafs: {
-    productShort: 'Ḥafṣ',
-    productFull: 'Ḥafṣ ʿan ʿĀṣim',
-    runtimeShort: 'Ḥafṣ',
-    runtimeFull: 'Ḥafṣ ʿan ʿĀṣim',
-    subtitle: 'ʿan ʿĀṣim · 6236 ayāt',
-    verseCount: 6236,
-    sourceSlug: 'hafs',
-  },
-  warsh: {
-    productShort: 'Warsh',
-    productFull: 'Warsh ʿan Nafiʿ',
-    runtimeShort: 'Warsh',
-    runtimeFull: 'Warsh ʿan Nāfiʿ',
-    subtitle: 'ʿan Nāfiʿ · 6214 ayāt',
-    verseCount: 6214,
-    sourceSlug: 'warsh',
-  },
   qaloon: {
-    productShort: 'Qalun',
-    productFull: 'Qalun ʿan Nafiʿ',
+    productShort: 'Qaloon',
+    productFull: 'Qaloon ʿan Nafiʿ',
     runtimeShort: 'Qālūn',
     runtimeFull: 'Qālūn ʿan Nāfiʿ',
     subtitle: 'ʿan Nāfiʿ · 6214 ayāt',
@@ -195,10 +177,7 @@ export async function refreshRiwayahPackageStatus(riwayah: Riwayah): Promise<Riw
 }
 
 export function beginRiwayahInstall(riwayah: Riwayah): boolean {
-  if (!isRiwayah(riwayah) || riwayah === DEFAULT_RIWAYAH) return false
-  riwayahInstallIntent.requested = riwayah
-  riwayahPackageState[riwayah] = { kind: 'installing', riwayah, cached: 0, total: 0 }
-  return true
+  return isRiwayah(riwayah) && false
 }
 
 export function failRiwayahInstall(riwayah: Riwayah, message: string): void {
@@ -328,6 +307,7 @@ export async function loadRiwayahPackageIndex(): Promise<RiwayahPackageIndex> {
 }
 
 export async function getRiwayahPackageEntry(riwayah: Riwayah): Promise<RiwayahPackageEntry | null> {
+  assertRiwayah(riwayah, 'riwayah package id')
   const index = await loadRiwayahPackageIndex()
   return index.packages.find((entry) => entry.riwayah === riwayah) ?? null
 }
@@ -335,9 +315,8 @@ export async function getRiwayahPackageEntry(riwayah: Riwayah): Promise<RiwayahP
 export function cacheNamesForRiwayahPackage(riwayah: Riwayah): { text: string; pages: string } {
   const editionByRiwayah: Record<Riwayah, string> = {
     qaloon: 'qalun-quran-ws-v1',
-    hafs: 'hafs-quran-ws-v1',
-    warsh: 'warsh-quran-ws-v1',
   }
+  assertRiwayah(riwayah, 'riwayah package id')
   return {
     text: CACHE_DATASET,
     pages: `qa-pages-${riwayah}-${editionByRiwayah[riwayah]}-v1`,
@@ -430,6 +409,7 @@ export async function resolveRiwayahSelection(
   options: RiwayahPackPolicyOptions & { fallbackToBaseline?: boolean } = {},
 ): Promise<RiwayahPackResult> {
   const result = await getRiwayahPackResult(riwayah, options)
+  if (!isRiwayah(riwayah)) return result
   if (!options.fallbackToBaseline || riwayah === DEFAULT_RIWAYAH) return result
   if (result.kind === 'installable' || result.kind === 'stale' || result.kind === 'usable') return result
   const baseline = await getRiwayahPackResult(DEFAULT_RIWAYAH)

@@ -30,9 +30,8 @@ const ALL_DIMENSIONS = Object.keys(DIMENSIONS) as Dimension[]
 // Floor values are the line-height (unitless multiplier) at the xs step,
 // chosen so KFGQPC tashkeel (especially shadda + alif khanjariyya
 // stacks) clears the baseline above without overlap. md (floor + 0.20)
-// now lands at ~2.12 across all three riwayat — the conventional Madinah
-// mushaf leading.
-const RIWAYAH_FLOOR: Record<Riwayah, number> = { hafs: 1.92, warsh: 1.92, qaloon: 1.92 }
+// now lands at ~2.12 for the default Madinah mushaf leading.
+const RIWAYAH_FLOOR: Record<Riwayah, number> = { qaloon: 1.92 }
 const STEP_DELTA: Record<Step, number> = { xs: 0.00, sm: 0.10, md: 0.20, lg: 0.30, xl: 0.40 }
 
 export function lineHeightFor(riwayah: Riwayah, step: Step): number {
@@ -42,7 +41,7 @@ export function lineHeightFor(riwayah: Riwayah, step: Step): number {
 function currentRiwayah(): Riwayah {
   if (typeof document === 'undefined') { return 'qaloon' }
   const v = document.documentElement.getAttribute('data-riwayah')
-  return (v === 'hafs' || v === 'warsh' || v === 'qaloon') ? v : 'qaloon'
+  return v === 'qaloon' ? v : 'qaloon'
 }
 
 function applyArabicLineHeight(riwayah: Riwayah, step: Step): void {

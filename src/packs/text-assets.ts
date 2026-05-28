@@ -157,7 +157,7 @@ async function cachedFileCount(asset: TextAsset): Promise<number> {
 }
 
 export async function getTextAssetStatus(riwayah: Riwayah, textStyleId: string): Promise<AssetStatusKind> {
-  const asset = await getTextAsset(riwayah, textStyleId)
+  const asset = await getTextAsset(riwayah, textStyleId).catch(() => null)
   if (!asset) return 'incompatible'
   if (asset.shipped) return 'shipped'
   const cached = await cachedFileCount(asset)

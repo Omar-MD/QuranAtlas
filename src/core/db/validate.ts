@@ -65,7 +65,7 @@ const STRING_CAPS: Record<string, Record<string, number>> = {
 
 const ARRAY_CAPS = { perArray: 256, perElement: 64 }
 
-const RIWAYAH_ENUM = new Set(['hafs', 'warsh', 'qaloon'])
+const RIWAYAH_ENUM = new Set(['qaloon'])
 const ACTIVATION_STATUS_ENUM = new Set([
   'none',
   'idle',
@@ -114,7 +114,7 @@ function checkProtoKeys(storeName: string, rec: Record<string, unknown>): void {
 function checkEnums(storeName: string, rec: Record<string, unknown>): void {
   if (storeName === 'bookmarks') {
     if (typeof rec.riwayah !== 'string' || !RIWAYAH_ENUM.has(rec.riwayah)) {
-      throw new Error(`bookmarks.riwayah: expected 'hafs' | 'warsh' | 'qaloon', got ${JSON.stringify(rec.riwayah)}`)
+      throw new Error(`bookmarks.riwayah: expected 'qaloon', got ${JSON.stringify(rec.riwayah)}`)
     }
   }
   if (storeName === 'activationState') {

@@ -5,14 +5,13 @@ export type OfflineCategoriesState = {
   text: {
     riwayat: Record<string, boolean>
     translations: Record<string, boolean>
-    tafsir: Record<string, boolean>
   }
   pages: Record<string, boolean>
   search: boolean
 }
 
 export const DEFAULT_OFFLINE_CATEGORIES: OfflineCategoriesState = {
-  text: { riwayat: {}, translations: {}, tafsir: {} },
+  text: { riwayat: {}, translations: {} },
   pages: {},
   search: false,
 }
@@ -35,14 +34,11 @@ export function normalizeOfflineCategories(raw: unknown): OfflineCategoriesState
   const text = isPlainRecord(raw.text) ? raw.text : {}
   const pages = isPlainRecord(raw.pages) ? raw.pages : {}
   const oldRiwayatText = {
-    hafs: text.hafs === true,
-    warsh: text.warsh === true,
     qaloon: text.qaloon === true,
   }
   const sourceAwareText = {
     riwayat: booleanRecord(text.riwayat),
     translations: booleanRecord(text.translations),
-    tafsir: booleanRecord(text.tafsir),
   }
   const hasSourceAwareRiwayat = isPlainRecord(text.riwayat)
   const riwayat = hasSourceAwareRiwayat

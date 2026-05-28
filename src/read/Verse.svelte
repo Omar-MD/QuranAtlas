@@ -9,7 +9,7 @@
     translation: string
     translationVisible: boolean
     footnotes?: Record<string, string>
-    riwayah?: 'hafs' | 'warsh' | 'qaloon'
+    riwayah?: 'qaloon'
     setupLongPress?: (node: HTMLElement) => () => void
     onNumberTap?: (verseEl: HTMLElement) => void
     /** Translation lookup role for cross-riwayah display.
