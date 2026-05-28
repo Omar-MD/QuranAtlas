@@ -3,7 +3,7 @@ import { closestTokenKey, tokenVerseKey } from '../core/tokenisable'
 const DOUBLE_TAP_MS = 300
 const TOUCH_MOVE_THRESHOLD = 10
 
-export function setupVerseTafsirGestures(
+export function setupVerseTapGestures(
   container: HTMLElement,
   {
     onShort,

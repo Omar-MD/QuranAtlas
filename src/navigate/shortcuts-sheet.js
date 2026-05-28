@@ -35,7 +35,6 @@ const GROUPS = [
       { keys: ['['],       desc: 'Previous surah' },
       { keys: ['Home'],    desc: 'First verse' },
       { keys: ['End'],     desc: 'Last verse' },
-      { keys: ['m'],       desc: 'Open tafsir for current verse' },
       { keys: ['t'],       desc: 'Toggle translation' },
       { keys: ['+'],       desc: 'Bigger font' },
       { keys: ['-'],       desc: 'Smaller font' },

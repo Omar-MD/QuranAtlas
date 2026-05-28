@@ -301,7 +301,7 @@
         Start with what <span class="qa-onb-gold">matters</span>.
       </h1>
       <p class="qa-onb-lede">
-        QuranAtlas keeps reading focused: verse and Mushaf reading, tafsir on demand, bookmarks, and offline-ready source packs.
+        QuranAtlas keeps reading focused: verse and Mushaf reading, Bridges translation, bookmarks, and offline-ready source packs.
       </p>
 
       <div class="qa-onb-vpreview">

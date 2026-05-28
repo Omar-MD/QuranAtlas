@@ -160,24 +160,12 @@ vi.mock('../../../src/navigate/bookmarks/indicator', () => ({
   initBookmarkIndicators: vi.fn(() => vi.fn()),
 }))
 
-vi.mock('../../../src/read/verse-tap-gestures', () => ({
-  setupVerseTafsirGestures: vi.fn(() => vi.fn()),
-}))
-
 vi.mock('../../../src/navigate/nav-drawer-bridge', () => ({
   openNavDrawer: vi.fn(),
 }))
 
 vi.mock('../../../src/navigate/EmptyRoute.svelte', () => ({
   default: vi.fn(),
-}))
-
-vi.mock('../../../src/read/tafsir-bridge', () => ({
-  openTafsirPreview: vi.fn(() => Promise.resolve()),
-}))
-
-vi.mock('../../../src/read/tafsir-state.svelte', () => ({
-  tafsirState: { previewOpen: false },
 }))
 
 vi.mock('../../../src/data/offline.js', () => ({
@@ -268,7 +256,7 @@ describe('core/app.js init order', () => {
     expect(firstInitIndex).toBeGreaterThan(lastRegisterIndex)
   })
 
-  it('injects reader hooks into the verse routes and leaves removed routes untouched', async () => {
+  it('registers verse routes without tafsir runtime hooks', async () => {
     vi.resetModules()
     await silenceLogger()
 
@@ -280,12 +268,8 @@ describe('core/app.js init order', () => {
     const surahHooks = router.register.mock.calls.find(([pattern]) => pattern === '#/s/:surah')?.[2]
     const ayahHooks = router.register.mock.calls.find(([pattern]) => pattern === '#/s/:surah/:ayah')?.[2]
 
-    expect(surahHooks).toEqual({
-      setupVerseTafsirGestures: expect.any(Function),
-    })
-    expect(ayahHooks).toEqual({
-      setupVerseTafsirGestures: expect.any(Function),
-    })
+    expect(surahHooks).toBeUndefined()
+    expect(ayahHooks).toBeUndefined()
     expect(router.register).toHaveBeenCalledWith(
       '#/m/:page',
       expect.any(Function)
@@ -304,12 +288,10 @@ describe('core/app.js init order', () => {
     expect(router.register).toHaveBeenCalledWith(
       '#/s/:surah',
       expect.any(Function),
-      expect.any(Object),
     )
     expect(router.register).toHaveBeenCalledWith(
       '#/s/:surah/:ayah',
       expect.any(Function),
-      expect.any(Object),
     )
     expect(router.register).toHaveBeenCalledWith(
       '#/m/:page',

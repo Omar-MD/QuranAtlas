@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setupVerseTafsirGestures } from '../../../src/read/verse-tap-gestures'
+import { setupVerseTapGestures } from '../../../src/read/verse-tap-gestures'
 
 function makeVerseTarget(
   markup = '<span class="qa-verse-arabic">Ayah</span>',
@@ -40,7 +40,7 @@ describe('read/verse-tap-gestures', () => {
   it('calls onShort for a desktop click on a verse', () => {
     const { container, target } = makeVerseTarget()
     const onShort = vi.fn()
-    const cleanup = setupVerseTafsirGestures(container, { onShort })
+    const cleanup = setupVerseTapGestures(container, { onShort })
 
     target.dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
@@ -52,7 +52,7 @@ describe('read/verse-tap-gestures', () => {
   it('calls onShort for a touch tap on a verse', () => {
     const { container, target } = makeVerseTarget()
     const onShort = vi.fn()
-    const cleanup = setupVerseTafsirGestures(container, { onShort })
+    const cleanup = setupVerseTapGestures(container, { onShort })
 
     dispatchTouchEvent('touchstart', target, { clientX: 10, clientY: 10 })
     dispatchTouchEvent('touchend', target, { clientX: 10, clientY: 10 })
@@ -67,7 +67,7 @@ describe('read/verse-tap-gestures', () => {
     const { container, target } = makeVerseTarget()
     const onShort = vi.fn()
     const onDouble = vi.fn()
-    const cleanup = setupVerseTafsirGestures(container, { onShort, onDouble })
+    const cleanup = setupVerseTapGestures(container, { onShort, onDouble })
 
     dispatchTouchEvent('touchstart', target, { clientX: 10, clientY: 10 })
     dispatchTouchEvent('touchend', target, { clientX: 10, clientY: 10 })
@@ -85,7 +85,7 @@ describe('read/verse-tap-gestures', () => {
   it('skips a touch tap that moves beyond the threshold', () => {
     const { container, target } = makeVerseTarget()
     const onShort = vi.fn()
-    const cleanup = setupVerseTafsirGestures(container, { onShort })
+    const cleanup = setupVerseTapGestures(container, { onShort })
 
     dispatchTouchEvent('touchstart', target, { clientX: 10, clientY: 10 })
     dispatchTouchEvent('touchmove', target, { clientX: 25, clientY: 10 })
@@ -99,7 +99,7 @@ describe('read/verse-tap-gestures', () => {
   it('calls onDouble for desktop double click and context menu', () => {
     const { container, target } = makeVerseTarget()
     const onDouble = vi.fn()
-    const cleanup = setupVerseTafsirGestures(container, { onDouble })
+    const cleanup = setupVerseTapGestures(container, { onDouble })
 
     target.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))
     target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
@@ -120,7 +120,7 @@ describe('read/verse-tap-gestures', () => {
     for (const markup of cases) {
       const { container, target } = makeVerseTarget(markup, '.qa-verse-number, button, a')
       const onShort = vi.fn()
-      const cleanup = setupVerseTafsirGestures(container, { onShort })
+      const cleanup = setupVerseTapGestures(container, { onShort })
 
       target.dispatchEvent(new MouseEvent('click', { bubbles: true }))
 

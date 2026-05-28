@@ -22,7 +22,7 @@ import { logger } from './logger.js'
 
 // `open` is deliberately NOT on the base — its signature varies per overlay
 // (status toast: open(opts); NavDrawer: open(tab?, subTab?); verse sheet:
-// open(verseKey); Settings/Tafsir: open()). Forcing a base
+// open(verseKey); Settings: open()). Forcing a base
 // shape would either bivariantly weaken the type or block strict-mode
 // declarations. close + isOpen ARE universal: every overlay supports
 // imperative dismissal + open-state interrogation.

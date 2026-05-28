@@ -71,17 +71,14 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     expect(htmlAttr).toBe('qaloon')
   })
 
-  test('B-Riwayah2: unavailable Ḥafṣ cannot replace the active Qālūn reader', async ({ page }) => {
+  test('B-Riwayah2: single-profile MVP reader does not expose alternate riwayah choices', async ({ page }) => {
     const firstAyah = page.locator('.qa-verse-arabic').first()
     await expect(firstAyah).toBeVisible({ timeout: 5_000 })
 
     await openSettingsSheet(page)
-    await page.getByTestId('src-row-recitation').click()
-    const hafsBtn = page.getByRole('dialog', { name: 'Choose Active Riwayah' })
-      .getByRole('button', { name: /Ḥafṣ/ })
-    await expect(hafsBtn).toBeVisible({ timeout: 5_000 })
-    await expect(hafsBtn).toContainText('Unavailable')
-    await expect(hafsBtn).toBeDisabled()
+    await expect(page.getByTestId('src-row-recitation')).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: /Choose Active Riwayah/i })).toHaveCount(0)
+    await expect(page.getByText(/Ḥafṣ|Warsh/)).toHaveCount(0)
 
     await page.keyboard.press('Escape')
 
@@ -142,29 +139,27 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await expect(v1.locator('.qa-fn-popover')).toHaveCount(0)
   })
 
-  test('B-Tafsir: double-click verse opens inline tafsir and Expand opens the full sheet', async ({ page }) => {
+  test('B-NoTafsir: reader gestures and shortcut do not reveal tafsir UI', async ({ page }) => {
     const v1 = page.locator('.qa-verse[data-verse="1"]')
     await expect(v1).toBeVisible()
 
     await v1.locator('.qa-verse-body-summary').dblclick()
+    await expect(v1.locator('[data-tafsir-preview]')).toHaveCount(0)
+    await expect(page.locator('.qa-tafsir-sheet')).toHaveCount(0)
+    await expect(page.getByText(/tafsir/i)).toHaveCount(0)
 
-    const preview = v1.locator('[data-tafsir-preview]')
-    await expect(preview).toBeVisible({ timeout: 5_000 })
-    await expect(preview.locator('.qa-tafsir-preview-select')).toBeVisible()
-    await expect(preview.getByRole('button', { name: 'Close tafsir preview' })).toBeVisible()
-    await expect(preview.getByRole('button', { name: 'Expand tafsir' })).toBeVisible()
+    await v1.locator('.qa-verse-body-summary').click({ button: 'right' })
+    await expect(v1.locator('[data-tafsir-preview]')).toHaveCount(0)
+    await expect(page.locator('.qa-tafsir-sheet')).toHaveCount(0)
+    await expect(page.getByText(/tafsir/i)).toHaveCount(0)
 
-    await preview.getByRole('button', { name: 'Expand tafsir' }).click()
-
-    const sheet = page.locator('.qa-tafsir-sheet')
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
-    await expect(sheet.locator('.qa-tafsir-sheet-ref')).toContainText('1:1')
-
-    await sheet.locator('.qa-tafsir-sheet-close').click()
-    await expect(sheet).toHaveCount(0)
+    await page.keyboard.press('m')
+    await expect(v1.locator('[data-tafsir-preview]')).toHaveCount(0)
+    await expect(page.locator('.qa-tafsir-sheet')).toHaveCount(0)
+    await expect(page.getByText(/tafsir/i)).toHaveCount(0)
   })
 
-  test('B-SettingsSync: Settings updates the mounted reader translation visibility and active tafsir source selection', async ({ page }) => {
+  test('B-SettingsSync: Settings updates the mounted reader translation visibility without tafsir source UI', async ({ page }) => {
     const v1 = page.locator('.qa-verse[data-verse="1"]')
     await expect(v1).toBeVisible()
     await ensureTranslation(page, 'Bridges')
@@ -172,30 +167,19 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     const translation = v1.locator('.qa-verse-translation')
     await expect(translation).toBeVisible()
 
-    await v1.locator('.qa-verse-body-summary').dblclick()
-    const preview = v1.locator('[data-tafsir-preview]')
-    await expect(preview).toBeVisible({ timeout: 5_000 })
-    await expect(preview.locator('.qa-tafsir-preview-select')).toHaveValue('muyassar')
-
     await openSettingsSheet(page)
     await page.getByRole('switch', { name: 'Show translation' }).click()
 
-    const tafsirRow = page.getByTestId('src-row-tafsir')
-    await tafsirRow.click()
-    await page.getByRole('dialog', { name: 'Choose Tafsir Source' })
-      .getByRole('button', { name: /Al-Mukhtasar fi al-Tafsir/ })
-      .click()
-    await expect(tafsirRow).toContainText('Mukhtasar')
+    await expect(page.getByTestId('src-row-tafsir')).toHaveCount(0)
+    await expect(page.getByRole('dialog', { name: /Choose Tafsir Source/i })).toHaveCount(0)
+    await expect(page.getByText(/tafsir/i)).toHaveCount(0)
 
     await page.keyboard.press('Escape')
 
     await expect(async () => {
       await expect(translation).toHaveCount(0)
     }).toPass({ timeout: 5_000 })
-
-    await expect(preview.locator('.qa-tafsir-preview-select')).toHaveValue('mukhtasar')
-    await expect(preview.locator('.qa-tafsir-preview-source')).toContainText('Al-Mukhtasar fi al-Tafsir')
-    await expect(preview.locator('.qa-tafsir-preview-state')).toHaveCount(0)
+    await expect(page.getByText(/tafsir/i)).toHaveCount(0)
   })
 
   // -------------------------------------------------------------------------
@@ -203,7 +187,7 @@ test.describe('Journey B: Reader & ambient chrome', () => {
   // -------------------------------------------------------------------------
 })
 
-test.describe('Journey B: Reader tafsir sheet mobile @mobile', () => {
+test.describe('Journey B: No reader tafsir sheet mobile @mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
   test.beforeEach(async ({ page }) => {
@@ -211,30 +195,13 @@ test.describe('Journey B: Reader tafsir sheet mobile @mobile', () => {
     await waitForReader(page)
   })
 
-  test('B-TafsirMobile: expanded tafsir opens as a full-screen mobile sheet', async ({ page }) => {
+  test('B-NoTafsirMobile: mobile reader does not open tafsir sheet', async ({ page }) => {
     const v1 = page.locator('.qa-verse[data-verse="1"]')
     await expect(v1).toBeVisible()
 
     await v1.locator('.qa-verse-body-summary').dblclick()
-    const preview = v1.locator('[data-tafsir-preview]')
-    await expect(preview).toBeVisible({ timeout: 5_000 })
-
-    await preview.getByRole('button', { name: 'Expand tafsir' }).click()
-
-    const sheet = page.locator('.qa-tafsir-sheet')
-    await expect(sheet).toBeVisible({ timeout: 5_000 })
-
-    const rect = await sheet.evaluate((el) => {
-      const { top, left, right, bottom } = el.getBoundingClientRect()
-      return { top, left, right, bottom }
-    })
-
-    expect(rect.top).toBe(0)
-    expect(rect.left).toBe(0)
-    expect(rect.right).toBe(390)
-    expect(rect.bottom).toBe(844)
-
-    await sheet.getByRole('button', { name: 'Close tafsir' }).click()
-    await expect(sheet).toHaveCount(0)
+    await expect(v1.locator('[data-tafsir-preview]')).toHaveCount(0)
+    await expect(page.locator('.qa-tafsir-sheet')).toHaveCount(0)
+    await expect(page.getByText(/tafsir/i)).toHaveCount(0)
   })
 })

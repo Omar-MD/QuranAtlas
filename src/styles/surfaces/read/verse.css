@@ -8,8 +8,8 @@
   /* Verse container.
      `--qa-verse-pad-x` and `--qa-verse-pad-y` are the user-tunable tiers,
      written by reading-typography.css under [data-reader-margin] (mobile)
-     and [data-verse-spacing]. The +6px on padding-left reserves room for
-     the 14px-wide .qa-verse-accent rail without crowding the text. */
+     and [data-verse-spacing]. The +6px on padding-left preserves the
+     reader column's established text inset. */
   .qa-verse {
     position: relative;
     padding:
@@ -47,17 +47,6 @@
     );
   }
 
-  .qa-verse.qa-verse--active {
-    background: color-mix(in srgb, var(--qa-text-primary) 4%, transparent);
-    border-radius: var(--qa-radius-2xl);
-    box-shadow: inset 0 0 0 1px var(--qa-border-on-sheet);
-    content-visibility: visible;
-
-    /* Prevents bounce when chips wrap to an extra line during selection toggles */
-    contain-intrinsic-size: auto 260px;
-    transition: none;
-  }
-
   @media (hover: hover) {
     .qa-verse {
       transition: background-color var(--qa-transition-base);
@@ -67,18 +56,6 @@
       background-color: var(--qa-surface-verse-hover);
       border-radius: var(--qa-radius-2xl);
     }
-  }
-
-  .qa-verse-accent {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 14px;
-    border: 3px solid var(--qa-accent);
-    border-right: none;
-    border-radius: 14px 0 0 14px;
-    pointer-events: none;
   }
 
   .qa-verse-head {
@@ -121,11 +98,6 @@
     background: color-mix(in srgb, var(--qa-accent) 12%, transparent);
   }
 
-  .qa-verse--active .qa-verse-number {
-    color: var(--qa-text-on-sheet);
-    font-weight: 700;
-  }
-
   .qa-verse--bookmarked-glyph .qa-verse-number {
     color: var(--qa-accent);
     font-weight: 700;
@@ -158,25 +130,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .qa-verse--pulse { animation: none; }
-  }
-
-  .qa-verse-tagging {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-family: var(--qa-font-mono);
-    font-size: 0.625rem;
-    letter-spacing: 0.1em;
-    color: var(--qa-text-on-sheet-dim);
-    font-weight: 500;
-  }
-
-  .qa-verse-tagging-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: var(--qa-radius-circle);
-    background: transparent;
-    border: 1.5px solid var(--qa-accent);
   }
 
   .qa-verse-body {

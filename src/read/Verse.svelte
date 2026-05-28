@@ -1,8 +1,6 @@
 <script lang="ts">
   import { emit } from '../core/events'
   import { Events } from '../core/constants'
-  import { tafsirState } from './tafsir-state.svelte'
-  import TafsirPreview from './TafsirPreview.svelte'
   import { parseTranslationTokens } from './translation-tokens'
 
   interface Props {
@@ -44,7 +42,6 @@
 
   const verseNum = $derived(verseKey.split(':')[1] ?? '')
   const surahNum = $derived(verseKey.split(':')[0] ?? '')
-  const isActive = $derived(tafsirState.activeVerseKey === verseKey && tafsirState.previewOpen)
   const tokens = $derived(parseTranslationTokens(translation))
   const hasKnowledge = $derived(themes.length > 0 || !!passageSummary)
   const hasMeaning = $derived(
@@ -102,23 +99,14 @@
 
 <div
   class="qa-verse"
-  class:qa-verse--active={isActive}
   data-verse={verseNum}
   data-token-key={verseKey}
   use:handleMount
 >
-  {#if isActive}
-    <span class="qa-verse-accent" aria-hidden="true"></span>
-  {/if}
   <div class="qa-verse-head">
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <span class="qa-verse-number" onclick={handleNumberTap} aria-label="Verse {surahNum}:{verseNum}">{verseNum}</span>
-    {#if isActive}
-      <span class="qa-verse-tagging" aria-label="Studying this verse">
-        <span class="qa-verse-tagging-dot" aria-hidden="true"></span>tafsir
-      </span>
-    {/if}
   </div>
   <div
     class="qa-verse-body"
@@ -198,7 +186,4 @@
       </div>
     {/if}
   </div>
-  {#if isActive}
-    <TafsirPreview {verseKey} />
-  {/if}
 </div>

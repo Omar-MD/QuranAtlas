@@ -38,7 +38,6 @@ vi.mock('../../../src/navigate/reader-actions.js', () => ({
   prevSurah: vi.fn(),
   firstVerse: vi.fn(),
   lastVerse: vi.fn(),
-  openCurrentTafsir: vi.fn(),
 }))
 vi.mock('../../../src/continuity/position', () => ({
   loadGlobalPosition,

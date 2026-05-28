@@ -31,27 +31,10 @@ import { startSwUpdatePolling } from './core/sw-update-poll.ts'
 import { openNavDrawer } from './navigate/nav-drawer-bridge'
 import { loadArabicQuranFontProgrammatically } from './core/font-loader.ts'
 import { initGlobalShortcuts } from './navigate/global-shortcuts'
-import { openTafsirPreview } from './read/tafsir-bridge'
-import { tafsirState } from './read/tafsir-state.svelte'
-import { setupVerseTafsirGestures } from './read/verse-tap-gestures'
 import { settings } from './configure/state.svelte'
 import { resolveLaunchableTarget, resolveReaderTarget } from './continuity/launch-targets'
 import { resolveSavedPositionTarget } from './continuity/position'
 import { DEFAULT_READER_ASSET_PROFILE } from '../shared/reader-assets/default-profile'
-
-// Bind verse gestures to the reader container:
-//   short-tap   → while tafsir preview is open, move it to the tapped verse.
-//   double-tap  → open tafsir preview for the tapped verse.
-function setupReaderTafsirGestures(container: HTMLElement): () => void {
-  return setupVerseTafsirGestures(container, {
-    onShort: (vk) => {
-      if (tafsirState.previewOpen) { void openTafsirPreview(vk) }
-    },
-    onDouble: (vk) => {
-      void openTafsirPreview(vk)
-    },
-  })
-}
 
 /** Module-level cleanups array — drained at the top of each initBootstrap call and on error. */
 const bootCleanups: Array<() => void> = []
@@ -227,12 +210,8 @@ export async function initBootstrap(): Promise<Array<() => void>> {
     pushCleanup(bootCleanups, on(Events.ROUTER_LAUNCH_RESTORE, handleLaunchRestore))
 
     // Register Phase 1 routes — Reader.svelte receives surah/ayah params + hook props
-    router.register('#/s/:surah', async () => (await import('./read/Reader.svelte')).default, {
-      setupVerseTafsirGestures: setupReaderTafsirGestures,
-    })
-    router.register('#/s/:surah/:ayah', async () => (await import('./read/Reader.svelte')).default, {
-      setupVerseTafsirGestures: setupReaderTafsirGestures,
-    })
+    router.register('#/s/:surah', async () => (await import('./read/Reader.svelte')).default)
+    router.register('#/s/:surah/:ayah', async () => (await import('./read/Reader.svelte')).default)
     router.register('#/m/:page', async () => (await import('./read/mushaf/MushafReader.svelte')).default)
 
     // Register Phase 3 routes

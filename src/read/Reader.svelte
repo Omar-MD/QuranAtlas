@@ -34,7 +34,6 @@
     type PullState,
   } from './surah-swap'
   import PullToSwapIndicator from './PullToSwapIndicator.svelte'
-  import { syncTafsirSourceFromSettings } from './tafsir-state.svelte'
 
   // ---------------------------------------------------------------------------
   // Props — route params + hooks injected from app-bootstrap.ts
@@ -45,11 +44,9 @@
     surah: string
     /** Ayah number as string (from route param :ayah, optional) */
     ayah?: string
-    /** Hook: receives the reader container and returns a cleanup fn */
-    setupVerseTafsirGestures?: (container: HTMLElement) => () => void
   }
 
-  const { surah: surahParam, ayah: ayahParam, setupVerseTafsirGestures }: Props = $props()
+  const { surah: surahParam, ayah: ayahParam }: Props = $props()
 
   // ---------------------------------------------------------------------------
   // Local state
@@ -127,11 +124,6 @@
     }
     const token = ++translationRefreshToken
     void syncTranslationSelection(nextTranslationId, token)
-  })
-
-  $effect(() => {
-    const nextTafsirId = settings.tafsirId ?? 'muyassar'
-    void syncTafsirSourceFromSettings(nextTafsirId)
   })
 
   // Typography-change re-anchor: when the user drags a flow-step / font-size
@@ -656,12 +648,6 @@
               }
             },
           }))
-        }
-
-        // Wire reader-local gestures after the container mounts.
-        if (setupVerseTafsirGestures) {
-          const cleanup = setupVerseTafsirGestures(container)
-          cleanups.push(cleanup)
         }
 
         emit(Events.AMBIENT_SURFACE, { reason: 'surah-load' })

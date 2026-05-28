@@ -22,7 +22,6 @@
   // factory's pending-call queue replays the first call after register.
   import { panelBridge } from './configure/panel-bridge'
   import { navDrawerBridge } from './navigate/nav-drawer-bridge'
-  import { tafsirSheetBridge } from './read/tafsir-bridge'
 
   let cleanups: Array<() => void> = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,15 +33,12 @@
   // {#if} block in the template renders.
   let panelMounted = $state(false)
   let navDrawerMounted = $state(false)
-  let tafsirSheetMounted = $state(false)
   let launchSplashVisible = $state(true)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let PanelComp = $state<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let NavDrawerComp = $state<any>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let TafsirSheetComp = $state<any>(null)
 
   $effect(() => {
     if (panelMounted && !PanelComp) {
@@ -52,11 +48,6 @@
   $effect(() => {
     if (navDrawerMounted && !NavDrawerComp) {
       void import('./navigate/NavDrawer.svelte').then(m => { NavDrawerComp = m.default })
-    }
-  })
-  $effect(() => {
-    if (tafsirSheetMounted && !TafsirSheetComp) {
-      void import('./read/TafsirSheet.svelte').then(m => { TafsirSheetComp = m.default })
     }
   })
 
@@ -82,7 +73,6 @@
     // can trigger the import path through the bridge's pending-call queue.
     panelBridge.setMounter(() => { panelMounted = true })
     navDrawerBridge.setMounter(() => { navDrawerMounted = true })
-    tafsirSheetBridge.setMounter(() => { tafsirSheetMounted = true })
 
     // Register the route-change handler BEFORE initBootstrap so that Svelte
     // component routes dispatched during bootstrap (e.g. the initial #/about
@@ -167,6 +157,5 @@
      PascalCase tag binds to the $state-tracked slot. -->
 {#if PanelComp}<PanelComp />{/if}
 {#if NavDrawerComp}<NavDrawerComp />{/if}
-{#if TafsirSheetComp}<TafsirSheetComp />{/if}
 
 <div class="qa-night-shift" aria-hidden="true"></div>

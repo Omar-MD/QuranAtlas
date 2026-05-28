@@ -8,10 +8,6 @@ vi.mock('../../../src/a11y/announcer.js', () => ({
   announce,
 }))
 
-vi.mock('../../../src/read/tafsir-bridge.ts', () => ({
-  openTafsirPreview: vi.fn(),
-}))
-
 vi.mock('../../../src/data/dataset.js', () => ({
   getSurahs: vi.fn(async () => [
     { n: 2, counts: { hafs: 286, warsh: 285, qaloon: 285 } },

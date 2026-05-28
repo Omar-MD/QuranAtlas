@@ -1,5 +1,5 @@
 /**
- * Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m).
+ * Reader action API backing the single-key shortcuts (j/k/[/]/Home/End).
  *
  * Reads and writes the `reader` state rune directly — the same source the
  * ambient pill and indicator already read. Writing back to the rune on
@@ -8,7 +8,6 @@
  */
 
 import { getSurahs } from '../data/dataset.js'
-import { openTafsirPreview } from '../read/tafsir-bridge.ts'
 import { announce } from '../a11y/announcer.js'
 import { reader } from '../read/state.svelte'
 import { settings } from '../configure/state.svelte'
@@ -103,12 +102,5 @@ export function prevSurah() {
   const prev = Math.max(surah - 1, 1)
   if (prev === surah) { return false }
   window.location.hash = `#/s/${prev}`
-  return true
-}
-
-export function openCurrentTafsir() {
-  const { surah, verse } = getCurrent()
-  if (!surah) { return false }
-  void openTafsirPreview(`${surah}:${verse || 1}`)
   return true
 }

@@ -5,14 +5,6 @@ vi.mock('../../../src/core/events', () => ({
   emit: vi.fn(),
 }))
 
-vi.mock('../../../src/read/TafsirPreview.svelte', () => ({
-  default: class MockTafsirPreview {},
-}))
-
-vi.mock('../../../src/read/tafsir-state.svelte', () => ({
-  tafsirState: { activeVerseKey: null, previewOpen: false },
-}))
-
 import Verse from '../../../src/read/Verse.svelte'
 
 describe('reader/Verse.svelte', () => {
@@ -53,5 +45,18 @@ describe('reader/Verse.svelte', () => {
     expect(queryByText('Allah - there is no deity except Him.')).not.toBeNull()
     expect(queryByText('divine guidance')).not.toBeNull()
     expect(queryByText('A passage about Allah’s absolute sovereignty.')).not.toBeNull()
+  })
+
+  it('does not render tafsir affordances in the MVP reader', () => {
+    const { queryByText } = render(Verse, {
+      props: {
+        verseKey: '2:255',
+        arabic: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ',
+        translation: 'Allah - there is no deity except Him.',
+        translationVisible: true,
+      },
+    })
+
+    expect(queryByText(/tafsir/i)).not.toBeInTheDocument()
   })
 })

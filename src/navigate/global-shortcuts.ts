@@ -3,7 +3,7 @@
 // `document` by app-bootstrap and never torn down.
 //
 // Handlers cover: ?, g-chord nav (g h, g s, g a), reader hotkeys
-// (j, k, ], [, Home, End, m, t, d, n, +, -, 0).
+// (j, k, ], [, Home, End, t, d, n, +, -, 0).
 
 import { openShortcutsSheet, isShortcutsSheetOpen } from './shortcuts-sheet.js'
 import { cycleTheme } from '../configure/theme'
@@ -21,7 +21,6 @@ import {
   prevSurah as readerPrevSurah,
   firstVerse as readerFirstVerse,
   lastVerse as readerLastVerse,
-  openCurrentTafsir as readerOpenCurrentTafsir,
 } from './reader-actions.js'
 
 let gChordTimer: ReturnType<typeof setTimeout> | null = null
@@ -93,7 +92,6 @@ function handleGlobalKeydown(e: KeyboardEvent): void {
     case '[': e.preventDefault(); readerPrevSurah(); return
     case 'Home': e.preventDefault(); readerFirstVerse(); return
     case 'End':  e.preventDefault(); readerLastVerse();  return
-    case 'm': case 'M': e.preventDefault(); readerOpenCurrentTafsir(); return
     case 't': case 'T': e.preventDefault(); void toggleTranslation(); return
     case 'd': case 'D': e.preventDefault(); void cycleTheme(); return
     case 'n': case 'N':

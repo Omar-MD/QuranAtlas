@@ -23,7 +23,6 @@
 import { test, expect } from '@playwright/test'
 import { waitForReader, surfaceDock, openSettingsSheet } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
-import { readSetting, writeSetting } from '../fixtures/idb.js'
 
 // Reuse the onboarded snapshot captured by `tests/e2e/global-setup.ts`.
 // Reuse the onboarded snapshot to skip per-test cold-boot setup.
@@ -277,6 +276,17 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     )
   })
 
+  test('B3: m shortcut does not reveal tafsir UI', async ({ page }) => {
+    const verse = page.locator('.qa-verse[data-verse="1"]')
+    await expect(verse).toBeVisible({ timeout: 5_000 })
+
+    await page.keyboard.press('m')
+
+    await expect(verse.locator('[data-tafsir-preview]')).toHaveCount(0)
+    await expect(page.locator('.qa-tafsir-sheet')).toHaveCount(0)
+    await expect(page.getByText(/tafsir/i)).toHaveCount(0)
+  })
+
   // -------------------------------------------------------------------------
   // B4. Non-reader routes keep primary nav visible
   // -------------------------------------------------------------------------
@@ -468,23 +478,6 @@ test.describe('Journey B: Reader & ambient chrome', () => {
     await page.goto('/#/m/999')
     await expect(page.locator('.qa-mushaf-page-figure')).toBeVisible({ timeout: 10_000 })
     await expect(page).toHaveURL(/#\/m\/604$/)
-  })
-
-  test('B-Mushaf: unavailable active riwayah shows install prompt instead of fallback page @desktop', async ({ page }) => {
-    const isDesktop = await page.evaluate(() => window.innerWidth >= 1180)
-    test.skip(!isDesktop, 'desktop settings prompt check')
-
-    await writeSetting(page, 'riwayah', 'hafs')
-    await page.goto('/#/m/42')
-    await page.reload()
-    await expect(page).toHaveURL(/#\/m\/42$/)
-    await expect(page.getByRole('button', { name: 'Install text and pages' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Stay on current usable riwayah' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
-    await expect(page.locator('.qa-mushaf-page-figure')).toHaveCount(0)
-
-    await page.getByRole('button', { name: 'Stay on current usable riwayah' }).click()
-    await expect.poll(() => readSetting(page, 'riwayah')).toBe('qaloon')
   })
 
   test('B-Mushaf: measured page layout is unframed across mobile and desktop viewports', async ({ page }) => {

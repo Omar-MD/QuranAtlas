@@ -16,7 +16,6 @@ export const SHORTCUT_ROWS: ShortcutRow[] = [
   { keys: ['?'],          desc: 'Show every shortcut' },
   { keys: ['j'],          desc: 'Next verse',   aux: ['k', 'previous'] },
   { keys: [']'],          desc: 'Next surah',   aux: ['[', 'previous'] },
-  { keys: ['m'],          desc: 'Open tafsir for the centered verse' },
   { keys: ['t'],          desc: 'Toggle translation' },
   { keys: ['+'],          desc: 'Bigger font',  aux: ['-', 'smaller', '0', 'reset'] },
   { keys: ['g', 'h'],     desc: 'Continue reading' },
