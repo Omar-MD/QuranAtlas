@@ -1,82 +1,36 @@
-import type { AssetStatusKind } from '../../packs/asset-types'
+import {
+  DEFAULT_READER_ASSET_PROFILE,
+  readerAssetProfileRows,
+  type ReaderAssetInventoryGroup,
+} from '../../../shared/reader-assets/default-profile'
 
-export const ACTIVE_DELETE_DISABLED_REASON = 'Switch to another compatible asset before deleting.'
-
-export type AssetRowGroup = 'quran-text' | 'mushaf' | 'translation' | 'tafsir'
+export type AssetRowGroup = ReaderAssetInventoryGroup
 
 export type AssetRowView = {
   id: string
   group: AssetRowGroup
   label: string
-  status: AssetStatusKind
-  active: boolean
-  compatible: boolean
-  primaryAction: 'Install' | 'Retry' | 'Reinstall' | 'Set Active' | 'Active' | 'Installing...' | null
-  secondaryAction: 'Delete' | 'Cancel' | null
-  disabledReason: string | null
-  deleteDisabledReason: string | null
-  progressText: string | null
+  status: 'default-installed'
+  active: true
+  primaryAction: null
+  secondaryAction: null
+  meta: string
+  sizeText: string
 }
 
-export type AssetRowInput = {
-  id: string
-  group: AssetRowGroup
-  label: string
-  status: AssetStatusKind
-  active?: boolean
-  compatible?: boolean
-  shipped?: boolean
-  requiredRiwayah?: string | null
-  progress?: { cached: number; total: number } | null
-}
-
-export function assetRowView(input: AssetRowInput): AssetRowView {
-  const active = input.active === true
-  const compatible = input.compatible !== false
-  const disabledReason = compatible
-    ? input.shipped && !active ? 'Included with app' : null
-    : `Requires active riwayah: ${input.requiredRiwayah ?? 'compatible source'}`
-  const progressText = input.status === 'installing' && input.progress
-    ? `${input.progress.cached} of ${input.progress.total}`
-    : null
-
-  let primaryAction: AssetRowView['primaryAction']
-  switch (input.status) {
-    case 'installable':
-      primaryAction = compatible ? 'Install' : null
-      break
-    case 'installed':
-    case 'cached':
-      primaryAction = active ? 'Active' : compatible ? 'Set Active' : null
-      break
-    case 'shipped':
-      primaryAction = active ? 'Active' : compatible ? 'Set Active' : null
-      break
-    case 'incomplete':
-      primaryAction = compatible ? 'Reinstall' : null
-      break
-    case 'unavailable':
-      primaryAction = compatible ? 'Retry' : null
-      break
-    case 'installing':
-      primaryAction = 'Installing...'
-      break
-    case 'incompatible':
-      primaryAction = null
-      break
-  }
-
-  return {
-    id: input.id,
-    group: input.group,
-    label: input.label,
-    status: input.status,
-    active,
-    compatible,
-    primaryAction,
-    secondaryAction: input.status === 'installing' ? 'Cancel' : input.status === 'shipped' ? null : 'Delete',
-    disabledReason,
-    deleteDisabledReason: active && input.status !== 'shipped' ? ACTIVE_DELETE_DISABLED_REASON : null,
-    progressText,
-  }
+export function defaultAssetInventoryRows(): AssetRowView[] {
+  return readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
+    id: row.id,
+    group: row.group,
+    label: row.label,
+    status: 'default-installed',
+    active: true,
+    primaryAction: null,
+    secondaryAction: null,
+    meta:
+      row.group === 'quran-text' ? 'Qaloon Quran text and required font'
+        : row.group === 'mushaf' ? 'Qaloon Quran.ws page manifest and pages'
+          : 'Bridges English translation',
+    sizeText: 'Included',
+  }))
 }

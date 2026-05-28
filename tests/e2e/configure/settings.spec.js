@@ -273,19 +273,20 @@ test.describe('Journey D: Asset Management route', () => {
     { width: 768, height: 1024 },
     { width: 1440, height: 900 },
   ]) {
-    test(`D8: assets route renders asset controls without overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    test(`D8: assets route renders read-only default assets without overflow at ${viewport.width}x${viewport.height}`, async ({ page }) => {
       await page.setViewportSize(viewport)
       await page.goto('/#/assets')
 
-      await expect(page.getByRole('heading', { name: 'Asset Management' })).toBeVisible()
-      await expect(page.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
-      await expect(page.locator('.qa-assets-status')).toContainText('Asset state ready.')
-      for (const heading of ['Quran Text Styles', 'Mushaf Editions', 'Translations', 'Tafsir']) {
-        await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
-        await expect(page.getByRole('table', { name: heading, exact: true })).toBeVisible()
+      const assets = page.getByRole('main', { name: /asset management/i })
+      await expect(assets.getByRole('heading', { name: 'Asset Management' })).toBeVisible()
+      await expect(assets.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
+      await expect(page.locator('.qa-assets-status')).toContainText('Default assets ready.')
+      for (const heading of ['Qaloon Text + Font', 'Qaloon Mushaf', 'Bridges Translation']) {
+        await expect(assets.getByRole('heading', { name: heading, exact: true })).toBeVisible()
       }
-      await expect(page.getByRole('button', { name: /^Active / }).first()).toBeVisible()
-      await expect(page.getByText(/Requires active riwayah:/).first()).toBeVisible()
+      for (const role of ['button', 'link', 'menuitem', 'combobox', 'radio', 'listbox']) {
+        await expect(assets.getByRole(role, { name: /install|delete|verify|set active|retry|clear cache/i })).toHaveCount(0)
+      }
       await expect.poll(() => page.evaluate(() =>
         document.documentElement.scrollWidth <= document.documentElement.clientWidth
       )).toBe(true)
