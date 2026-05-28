@@ -113,6 +113,39 @@ export async function markOnboardingComplete(page) {
   }))()`)
 }
 
+export async function seedUnsupportedAssetState(page) {
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
+    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${DB_VERSION})
+    open.onsuccess = () => {
+      const db = open.result
+      const tx = db.transaction(['settings', 'bookmarks'], 'readwrite')
+      const settings = tx.objectStore('settings')
+      settings.put({ key: 'riwayah', value: 'hafs' })
+      settings.put({ key: 'quranTextStyleId', value: 'hafs-uthmani-kfgqpc-v1' })
+      settings.put({ key: 'mushafEditionId', value: 'hafs-quran-ws-v1' })
+      settings.put({ key: 'translationId', value: 'saheeh' })
+      settings.put({ key: 'tafsirId', value: 'muyassar' })
+      settings.put({ key: 'currentPosition', value: { surah: 2, verse: 255 } })
+      tx.objectStore('bookmarks').put({
+        riwayah: 'hafs',
+        verseKey: '2:255',
+        surah: 2,
+        verse: 255,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject(tx.error) }
+    }
+    open.onerror = () => reject(open.error)
+    open.onupgradeneeded = (event) => {
+      const db = event.target.result
+      const tx = open.transaction
+      ${_APPLY_SCHEMA_SRC}
+    }
+  }))()`)
+}
+
 /**
  * Directly seed settings.lastSurface into IDB.
  * Use in A2-style tests to set up the session-restore state without relying on

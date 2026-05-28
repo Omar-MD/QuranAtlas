@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedLastSurface, waitForLastSurface } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, seedLastSurface, seedUnsupportedAssetState, waitForLastSurface } from '../fixtures/idb.js'
 import { waitForReader } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -30,6 +30,21 @@ test.describe('Journey A: launch splash and retired onboarding', () => {
     await expect(splash).toBeHidden()
     await waitForReader(page)
     await expect(page.getByRole('button', { name: /choose riwayah|choose translation/i })).toHaveCount(0)
+  })
+
+  test('seeded unsupported local data is silently reset once', async ({ page }) => {
+    await seedUnsupportedAssetState(page)
+
+    await page.goto('/')
+    const splash = page.getByTestId('launch-splash')
+    await expect(splash).toBeVisible()
+    await expect(page).toHaveURL(/#\/s\/1$/)
+    await expect(splash).toBeHidden()
+    await waitForReader(page)
+    await expect(page.locator('.qa-verse-arabic').first()).toHaveAttribute('data-riwayah', 'qaloon')
+
+    await page.goto('/#/bookmarks')
+    await expect(page.getByText(/2:255/)).toHaveCount(0)
   })
 
   test('legacy onboarding hash restores a valid reader last surface', async ({ page }) => {
