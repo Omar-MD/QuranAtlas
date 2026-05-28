@@ -21,40 +21,6 @@ const packageIndex = {
       },
       totalBytes: 300,
     },
-    {
-      riwayah: 'hafs',
-      optional: true,
-      available: true,
-      text: {
-        urls: ['/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json'],
-        totalBytes: 110,
-        available: true,
-      },
-      pages: {
-        manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
-        urls: ['/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'],
-        totalBytes: 220,
-        available: true,
-      },
-      totalBytes: 330,
-    },
-    {
-      riwayah: 'warsh',
-      optional: true,
-      available: false,
-      text: {
-        urls: [],
-        totalBytes: 0,
-        available: false,
-      },
-      pages: {
-        manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
-        urls: [],
-        totalBytes: 0,
-        available: false,
-      },
-      totalBytes: 0,
-    },
   ],
 }
 
@@ -112,18 +78,14 @@ describe('riwayah package index', () => {
     await expect(isRiwayahUsable('qaloon')).resolves.toBe(true)
   })
 
-  it('reports Hafs installable with a byte estimate when available assets are not cached', async () => {
+  it('reports removed Hafs package unavailable in the MVP index', async () => {
     const { getRiwayahPackageStatus, isRiwayahUsable } = await importLoader()
 
-    await expect(getRiwayahPackageStatus('hafs')).resolves.toEqual({
-      kind: 'installable',
-      riwayah: 'hafs',
-      totalBytes: 330,
-    })
+    await expect(getRiwayahPackageStatus('hafs')).resolves.toEqual({ kind: 'unavailable', riwayah: 'hafs' })
     await expect(isRiwayahUsable('hafs')).resolves.toBe(false)
   })
 
-  it('does not make Hafs usable until every planned text and page URL is cached', async () => {
+  it('does not make removed Hafs usable even when legacy URLs are cached', async () => {
     installCache([
       '/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json',
       '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
@@ -131,12 +93,8 @@ describe('riwayah package index', () => {
     ])
     const { getRiwayahPackageStatus, isRiwayahUsable } = await importLoader()
 
-    await expect(getRiwayahPackageStatus('hafs')).resolves.toEqual({
-      kind: 'installed',
-      riwayah: 'hafs',
-      totalBytes: 330,
-    })
-    await expect(isRiwayahUsable('hafs')).resolves.toBe(true)
+    await expect(getRiwayahPackageStatus('hafs')).resolves.toEqual({ kind: 'unavailable', riwayah: 'hafs' })
+    await expect(isRiwayahUsable('hafs')).resolves.toBe(false)
   })
 
   it('reports Warsh unavailable when the package index lacks complete artifacts', async () => {
@@ -153,9 +111,10 @@ describe('riwayah package index', () => {
     vi.stubGlobal('fetch', vi.fn(async () => response({
       ...packageIndex,
       packages: [{
-        ...packageIndex.packages[1],
+        ...packageIndex.packages[0],
+        riwayah: 'hafs',
         text: {
-          ...packageIndex.packages[1]!.text,
+          ...packageIndex.packages[0]!.text,
           urls: ['https://cdn.example.test/riwayat/hafs/001.json'],
         },
       }],
@@ -169,9 +128,10 @@ describe('riwayah package index', () => {
     vi.stubGlobal('fetch', vi.fn(async () => response({
       ...packageIndex,
       packages: [{
-        ...packageIndex.packages[1],
+        ...packageIndex.packages[0],
+        riwayah: 'hafs',
         text: {
-          ...packageIndex.packages[1]!.text,
+          ...packageIndex.packages[0]!.text,
           urls: ['/dataset/%2e%2e/app.js'],
         },
       }],
@@ -181,17 +141,13 @@ describe('riwayah package index', () => {
     await expect(loadRiwayahPackageIndex()).rejects.toThrow(/same-origin dataset URL/)
   })
 
-  it('plans install URLs and cache names per riwayah', async () => {
+  it('does not plan install URLs for removed riwayat', async () => {
     const { planRiwayahPackageInstall, cacheNamesForRiwayahPackage } = await importLoader()
 
     await expect(planRiwayahPackageInstall('hafs')).resolves.toEqual({
       riwayah: 'hafs',
-      urls: [
-        '/dataset/quran-text/hafs/uthmani-kfgqpc-v1/001.json',
-        '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
-        '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg',
-      ],
-      totalBytes: 330,
+      urls: [],
+      totalBytes: 0,
     })
     expect(cacheNamesForRiwayahPackage('hafs')).toEqual({
       text: 'quran-dataset-v2',

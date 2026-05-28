@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { splitRiwayah, computeSurahsMeta, AYAT_COUNTS, buildTranslationSplits, buildManifestPayload } from '../../../scripts/data/build-dataset.mjs'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../../shared/reader-assets/default-profile'
 
 async function readCatalogJson(name) {
   return JSON.parse(await readFile(join(process.cwd(), 'data', 'catalog', name), 'utf8'))
@@ -16,7 +17,8 @@ describe('quran text asset catalog', () => {
   it('exposes stable text-style variants with compatible defaults', async () => {
     const textCatalog = await readCatalogJson('quran-text-assets.json')
 
-    expect(textCatalog.defaults.qaloon).toBe('uthmani-kfgqpc-v1')
+    expect(textCatalog.defaults).toEqual({ [DEFAULT_READER_ASSET_PROFILE.riwayah]: DEFAULT_READER_ASSET_PROFILE.quranTextStyleId })
+    expect(textCatalog.assets.map((asset) => asset.riwayah)).toEqual([DEFAULT_READER_ASSET_PROFILE.riwayah])
     expect(textCatalog.assets).toContainEqual(expect.objectContaining({
       riwayah: 'qaloon',
       textStyleId: 'uthmani-kfgqpc-v1',
@@ -41,8 +43,9 @@ describe('quran text asset index output', () => {
     const textAssets = await readDatasetJson('indexes/text-assets.json')
     expect(textAssets).toMatchObject({
       version: 1,
-      defaults: { qaloon: 'uthmani-kfgqpc-v1' },
+      defaults: { [DEFAULT_READER_ASSET_PROFILE.riwayah]: DEFAULT_READER_ASSET_PROFILE.quranTextStyleId },
     })
+    expect(textAssets.assets.map((asset) => asset.riwayah)).toEqual([DEFAULT_READER_ASSET_PROFILE.riwayah])
     const qaloonText = textAssets.assets.find((asset) => asset.riwayah === 'qaloon' && asset.textStyleId === 'uthmani-kfgqpc-v1')
     expect(qaloonText).toMatchObject({
       riwayah: 'qaloon',
@@ -57,6 +60,41 @@ describe('quran text asset index output', () => {
     const manifest = await readDatasetJson('manifest.json')
     expect(manifest.files.some((file) => file.path === 'indexes/text-assets.json')).toBe(true)
     expect(manifest.files.some((file) => file.path === 'quran-text/qaloon/uthmani-kfgqpc-v1/001.json')).toBe(true)
+  })
+})
+
+describe('MVP source and Mushaf asset indexes', () => {
+  it('exposes only Qaloon and Bridges as runtime sources', async () => {
+    const sourceIndex = await readDatasetJson('indexes/sources.json')
+
+    expect(sourceIndex.defaults).toEqual({
+      riwayah: DEFAULT_READER_ASSET_PROFILE.riwayah,
+      translation: DEFAULT_READER_ASSET_PROFILE.translationId,
+      tafsir: DEFAULT_READER_ASSET_PROFILE.tafsirId,
+    })
+    expect(sourceIndex.sources.map((source) => `${source.type}:${source.id}`)).toEqual([
+      'riwayah:qaloon',
+      'translation:bridges',
+    ])
+  })
+
+  it('does not expose optional translation or tafsir source asset downloads', async () => {
+    const sourceAssets = await readDatasetJson('indexes/source-assets.json')
+
+    expect(sourceAssets).toEqual({ version: 1, translations: [], tafsir: [] })
+  })
+
+  it('emits only the Qaloon Mushaf asset', async () => {
+    const mushafAssets = await readDatasetJson('indexes/mushaf-assets.json')
+
+    expect(mushafAssets.defaults).toEqual({ [DEFAULT_READER_ASSET_PROFILE.riwayah]: DEFAULT_READER_ASSET_PROFILE.mushafEditionId })
+    expect(mushafAssets.assets.map((asset) => asset.riwayah)).toEqual([DEFAULT_READER_ASSET_PROFILE.riwayah])
+  })
+
+  it('keeps tafsir files out of the committed runtime manifest', async () => {
+    const manifest = await readDatasetJson('manifest.json')
+
+    expect(manifest.files.some((file) => file.category === 'text-tafsir' || file.path.startsWith('tafsir/'))).toBe(false)
   })
 })
 
@@ -245,8 +283,6 @@ describe('buildManifestPayload', () => {
       await mkdir(join(root, 'riwayat'), { recursive: true })
       await mkdir(join(root, 'translations', 'bridges'), { recursive: true })
       await mkdir(join(root, 'translations', 'saheeh'), { recursive: true })
-      await mkdir(join(root, 'tafsir', 'muyassar'), { recursive: true })
-      await mkdir(join(root, 'tafsir', 'mukhtasar'), { recursive: true })
       await writeFile(join(root, 'knowledge', 'ayah', '001.json'), '{"surah":1,"ayahs":[]}', 'utf8')
       await writeFile(join(root, 'knowledge', 'passages', '001.json'), '{"surah":1,"passages":[]}', 'utf8')
       await writeFile(join(root, 'knowledge', 'indexes', 'theme-to-ayah.json'), '{"guidance":["1:6"]}', 'utf8')
@@ -255,8 +291,6 @@ describe('buildManifestPayload', () => {
       await writeFile(join(root, 'riwayat', 'source.json'), '{"buildOnly":true}', 'utf8')
       await writeFile(join(root, 'translations', 'bridges', '001.json'), '{"text":"default"}', 'utf8')
       await writeFile(join(root, 'translations', 'saheeh', '001.json'), '{"text":"optional"}', 'utf8')
-      await writeFile(join(root, 'tafsir', 'muyassar', '001.json'), '{"text":"default"}', 'utf8')
-      await writeFile(join(root, 'tafsir', 'mukhtasar', '001.json'), '{"text":"optional"}', 'utf8')
 
       const manifest = await buildManifestPayload({
         datasetDir: root,
@@ -265,7 +299,7 @@ describe('buildManifestPayload', () => {
         provenance,
         packageVersion: 'test',
         profileName: 'baseline',
-        manifestTextSources: new Set(['bridges', 'muyassar']),
+        manifestTextSources: new Set(['bridges']),
       })
 
       expect(Array.isArray(manifest.files)).toBe(true)
@@ -292,12 +326,10 @@ describe('buildManifestPayload', () => {
       expect(manifest.files.find((entry) => entry.path === 'manifest.json')).toBeUndefined()
       expect(manifest.files.find((entry) => entry.path === 'riwayat/source.json')).toBeUndefined()
       expect(manifest.files.find((entry) => entry.path === 'translations/bridges/001.json')).toBeDefined()
-      expect(manifest.files.find((entry) => entry.path === 'tafsir/muyassar/001.json')).toBeDefined()
       expect(manifest.files.find((entry) => entry.path === 'translations/saheeh/001.json')).toBeUndefined()
-      expect(manifest.files.find((entry) => entry.path === 'tafsir/mukhtasar/001.json')).toBeUndefined()
       expect(manifest.lanes.text).toEqual(expect.objectContaining({
         enabled: true,
-        files: 3,
+        files: 2,
         bytes: expect.any(Number),
       }))
       expect(manifest.lanes.knowledge).toEqual(expect.objectContaining({
@@ -315,6 +347,37 @@ describe('buildManifestPayload', () => {
         files: 0,
         bytes: 0,
       }))
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects tafsir files in the MVP manifest inventory', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-manifest-'))
+    const provenance = {
+      packageVersion: 'test',
+      profile: 'baseline',
+      builtAt: '2026-05-03T00:00:00.000Z',
+      corpus: {},
+      riwayat: [],
+      translations: [],
+      tafsir: [],
+      fonts: {},
+    }
+
+    try {
+      await mkdir(join(root, 'tafsir', 'muyassar'), { recursive: true })
+      await writeFile(join(root, 'tafsir', 'muyassar', '001.json'), '{"text":"removed"}', 'utf8')
+
+      await expect(buildManifestPayload({
+        datasetDir: root,
+        riwayatDir: join(root, 'riwayat'),
+        translationsDir: join(root, 'translations'),
+        provenance,
+        packageVersion: 'test',
+        profileName: 'baseline',
+        manifestTextSources: new Set(),
+      })).rejects.toThrow(/tafsir/i)
     } finally {
       await rm(root, { recursive: true, force: true })
     }

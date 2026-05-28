@@ -14,12 +14,13 @@ const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const OUT_PATH = join(DATASET_DIR, 'indexes', 'riwayah-packages.json')
 const TEXT_ASSETS_PATH = join(DATASET_DIR, 'indexes', 'text-assets.json')
 const MUSHAF_ASSETS_PATH = join(DATASET_DIR, 'indexes', 'mushaf-assets.json')
-const RIWAYAT = ['qaloon', 'hafs', 'warsh']
+const DEFAULT_PROFILE = JSON.parse(
+  await readFile(join(REPO_ROOT, 'shared', 'reader-assets', 'default-profile.json'), 'utf8'),
+).profile
+const RIWAYAT = [DEFAULT_PROFILE.riwayah]
 const SURAH_COUNT = 114
 const DEFAULT_MUSHAF_EDITIONS = {
-  qaloon: 'qalun-quran-ws-v1',
-  hafs: 'hafs-quran-ws-v1',
-  warsh: 'warsh-quran-ws-v1',
+  [DEFAULT_PROFILE.riwayah]: DEFAULT_PROFILE.mushafEditionId,
 }
 
 function argValue(argv, name, fallback = null) {
@@ -48,8 +49,8 @@ function datasetRelPathFromUrl(url) {
 async function loadCatalog() {
   const catalog = await readJson(CATALOG_PATH)
   ensure(catalog.version === 1, 'Riwayah package catalog version must be 1')
-  ensure(catalog.defaultRiwayah === 'qaloon', 'Riwayah package catalog default must be qaloon')
-  ensure(catalog.baselineRiwayah === 'qaloon', 'Riwayah package catalog baseline must be qaloon')
+  ensure(catalog.defaultRiwayah === DEFAULT_PROFILE.riwayah, `Riwayah package catalog default must be ${DEFAULT_PROFILE.riwayah}`)
+  ensure(catalog.baselineRiwayah === DEFAULT_PROFILE.riwayah, `Riwayah package catalog baseline must be ${DEFAULT_PROFILE.riwayah}`)
   for (const riwayah of RIWAYAT) {
     ensure(typeof catalog.riwayat?.[riwayah]?.optional === 'boolean', `Riwayah package catalog missing ${riwayah}`)
   }
@@ -158,14 +159,15 @@ export async function buildRiwayahPackageIndex({ profile = 'baseline', check = f
     packages.push(await packageFor(riwayah, catalog, textAssetIndex, mushafAssetIndex))
   }
 
-  const qaloon = packages.find((entry) => entry.riwayah === 'qaloon')
+  const qaloon = packages.find((entry) => entry.riwayah === DEFAULT_PROFILE.riwayah)
   if (profile === 'baseline') {
     ensure(qaloon?.text.available, 'Baseline dataset must include complete Qaloon text assets')
+    ensure(qaloon?.pages.available, 'Baseline dataset must include complete Qaloon page assets')
   }
 
   const index = {
     version: 1,
-    defaultRiwayah: 'qaloon',
+    defaultRiwayah: DEFAULT_PROFILE.riwayah,
     packages,
   }
 

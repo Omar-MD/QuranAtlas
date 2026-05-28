@@ -9,7 +9,7 @@
  * Emits:
  *   public/dataset/riwayat/{name}/{NNN}.json          (per selected profile)
  *   public/dataset/translations/{id}/{NNN}.json       (114 per selectable translation)
- *   public/dataset/tafsir/{id}/{NNN}.json             (114 per selectable tafsir)
+ *   public/dataset/tafsir/**                          (removed from the MVP runtime profile)
  *   public/dataset/surahs.json                        (114 entries, per-Riwayah counts)
  *   public/dataset/juz.json                           (30 entries)
  *   public/dataset/manifest.json                      (inventory per shipped file)
@@ -132,22 +132,27 @@ const SHIPPED_TAFSIR = [
 
 export const AYAT_COUNTS = { hafs: 6236, warsh: 6214, qaloon: 6214 }
 export const RIWAYAT = ['hafs', 'warsh', 'qaloon']
-export const DEFAULT_RIWAYAH = 'qaloon'
-export const DEFAULT_TRANSLATION = 'bridges'
-export const DEFAULT_TAFSIR = 'muyassar'
+const DEFAULT_PROFILE = JSON.parse(
+  await readFile(join(REPO_ROOT, 'shared', 'reader-assets', 'default-profile.json'), 'utf8'),
+).profile
+export const RUNTIME_RIWAYAT = [DEFAULT_PROFILE.riwayah]
+export const TRANSLATION_ALIGNMENT_RIWAYAT = ['hafs', DEFAULT_PROFILE.riwayah]
+export const DEFAULT_RIWAYAH = DEFAULT_PROFILE.riwayah
+export const DEFAULT_TRANSLATION = DEFAULT_PROFILE.translationId
+export const DEFAULT_TAFSIR = DEFAULT_PROFILE.tafsirId
 
 const DATASET_PROFILES = {
   baseline: {
     name: 'baseline',
-    riwayat: [DEFAULT_RIWAYAH],
+    riwayat: RUNTIME_RIWAYAT,
     translations: [DEFAULT_TRANSLATION],
-    tafsir: [DEFAULT_TAFSIR],
+    tafsir: [],
   },
   full: {
     name: 'full',
-    riwayat: RIWAYAT,
-    translations: SHIPPED_TRANSLATIONS.map((t) => t.id),
-    tafsir: SHIPPED_TAFSIR.map((t) => t.id),
+    riwayat: RUNTIME_RIWAYAT,
+    translations: [DEFAULT_TRANSLATION],
+    tafsir: [],
   },
   catalog: {
     name: 'catalog',
@@ -160,10 +165,7 @@ const DATASET_PROFILES = {
 function emittedSourceIdsForProfile(profile) {
   return profile.name === 'catalog'
     ? { translations: [], tafsir: [] }
-    : {
-        translations: SHIPPED_TRANSLATIONS.map((t) => t.id),
-        tafsir: SHIPPED_TAFSIR.map((t) => t.id),
-      }
+    : { translations: [], tafsir: [] }
 }
 
 async function collectSourceAssetGroup(kind, sourceId, baseDir) {
@@ -557,7 +559,7 @@ export function validateVerseMap(verseMap, surahsMeta) {
  * this validator hard-fails when:
  *   - the aliases file is missing
  *   - any divergent surah lacks alias entries
- *   - the aliases reference an ayah index outside the riwayah's actual count
+ *   - the aliases reference an ayah index outside Qaloon's actual count
  *   - the alias count for a surah does not equal Hafs's ayah count
  *
  * Surah 1 (Al-Fatiha) is included for the Bismillah carve-out even though
@@ -571,7 +573,7 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
     throw new Error('_verse-aliases.json: `aliases` must be an object')
   }
   const expectedSurahs = surahsMeta
-    .filter((s) => s.n === 1 || !(s.counts.hafs === s.counts.warsh && s.counts.warsh === s.counts.qaloon))
+    .filter((s) => s.n === 1 || s.counts.hafs !== s.counts.qaloon)
     .map((s) => s.n)
   for (const n of expectedSurahs) {
     const entries = verseAliases.aliases[String(n)]
@@ -586,7 +588,7 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
       if (typeof entry.hafs !== 'number') {
         throw new Error(`_verse-aliases.json surah ${n}: entry missing hafs index`)
       }
-      for (const r of ['warsh', 'qaloon']) {
+      for (const r of ['qaloon']) {
         const v = entry[r]
         if (v === null) { continue }
         const indices = Array.isArray(v) ? v : [v]
@@ -602,12 +604,10 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
 }
 
 /**
- * Compute coverage of a Hafs-numbered translation across the three riwayat.
- * For every (riwayah, surah, ayah) the riwayah ships, look up the equivalent
- * Hafs key in the translation. Reports per-riwayah `{ total, covered, missing,
- * divergentSurahs }`. Hafs is always 100%; Warsh / Qaloon will be missing the
- * count delta on each divergent surah (translation has fewer / more keys at
- * the surah's tail than the riwayah has ayat).
+ * Compute coverage of a Hafs-numbered translation across the build-time
+ * alignment anchor and the runtime Qaloon target. For every (riwayah, surah,
+ * ayah) in that set, look up the equivalent Hafs key in the translation.
+ * Reports per-riwayah `{ total, covered, missing, divergentSurahs }`.
  *
  * This is a structural check, not a scholarly equivalence check: it confirms
  * the translation key for `(surah, ayah)` resolves to a non-empty string when
@@ -616,7 +616,7 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
  */
 export function computeTranslationCoverage(translationPerSurah, splitsByRiwayah, verseAliases) {
   const coverage = {}
-  for (const r of RIWAYAT) {
+  for (const r of TRANSLATION_ALIGNMENT_RIWAYAT) {
     let total = 0
     let covered = 0
     const divergentSurahs = []
@@ -683,10 +683,9 @@ export function computeJuzMeta(hafsAyat) {
 }
 
 function buildSourceIndex(catalog, profile) {
-  const emitted = new Set([
-    ...profile.riwayat.map((id) => `riwayah:${id}`),
-    ...profile.translations.map((id) => `translation:${id}`),
-    ...profile.tafsir.map((id) => `tafsir:${id}`),
+  const runtimeSources = new Set([
+    ...RUNTIME_RIWAYAT.map((id) => `riwayah:${id}`),
+    `translation:${DEFAULT_TRANSLATION}`,
   ])
   const defaults = catalog.verificationRules?.defaults ?? {
     riwayah: DEFAULT_RIWAYAH,
@@ -697,7 +696,7 @@ function buildSourceIndex(catalog, profile) {
     version: 1,
     profile: profile.name,
     defaults,
-    sources: catalog.sources.map((source) => ({
+    sources: catalog.sources.filter((source) => runtimeSources.has(`${source.type}:${source.id}`)).map((source) => ({
       id: source.id,
       type: source.type,
       label: source.label,
@@ -710,7 +709,7 @@ function buildSourceIndex(catalog, profile) {
       licenseStatus: licensesById(catalog).get(source.licenseId)?.status ?? null,
       visibility: source.visibility,
       default: source.default === true,
-      availableInManifest: emitted.has(`${source.type}:${source.id}`),
+      availableInManifest: profile.name !== 'catalog' && runtimeSources.has(`${source.type}:${source.id}`),
       outputPath: source.outputPath,
       sourceUrl: source.sourceUrl,
     })),
@@ -827,7 +826,7 @@ export async function main() {
   const translationProvenance = []
   const hafsCounts = perRiwayahCounts.hafs.slice() // 114-entry array, matches surah index
   await cleanPackDirs(TRANSLATIONS_DIR, ['_verse-map.json', '_verse-aliases.json'])
-  for (const t of SHIPPED_TRANSLATIONS.filter((entry) => emittedSources.translations.includes(entry.id))) {
+  for (const t of SHIPPED_TRANSLATIONS.filter((entry) => profile.translations.includes(entry.id))) {
     const rawPath = join(NORMALIZED_TRANSLATIONS_DIR, t.normalizedFile)
     if (!existsSync(rawPath)) {
       throw new Error(`Missing translation source: ${rawPath} (run \`pnpm run data:fetch -- translation:${t.id}\`)`)
@@ -846,12 +845,10 @@ export async function main() {
     }
     console.log(`[build-dataset] translation ${t.id}: 114 surahs, ${totals.verses} verses, ${totals.footnotes} footnotes`)
 
-    // Cross-riwayah coverage: for every (riwayah, surah, ayah) shipped, does
-    // the translation have a key for that exact `${surah}:${ayah}` address?
-    // Hafs always 100% (build-time invariant above); Warsh / Qaloon expose
-    // the Madinan-numbering deltas as `missing` ayat in `divergentSurahs`.
+    // Cross-riwayah coverage: Hafs remains the upstream translation keyspace,
+    // and Qaloon is the only current runtime target that needs provenance.
     const coverage = computeTranslationCoverage(perSurah, splits, verseAliases)
-    for (const r of RIWAYAT) {
+    for (const r of TRANSLATION_ALIGNMENT_RIWAYAT) {
       const c = coverage[r]
       console.log(`[build-dataset]   coverage[${r}]: ${c.covered}/${c.total} (${c.missing} missing across ${c.divergentSurahs.length} divergent surahs)`)
     }
@@ -876,7 +873,6 @@ export async function main() {
       primaryRiwayah: 'hafs',
       coverage: {
         hafs:   { total: coverage.hafs.total,   covered: coverage.hafs.covered,   missing: coverage.hafs.missing,   divergentSurahs: coverage.hafs.divergentSurahs },
-        warsh:  { total: coverage.warsh.total,  covered: coverage.warsh.covered,  missing: coverage.warsh.missing,  divergentSurahs: coverage.warsh.divergentSurahs },
         qaloon: { total: coverage.qaloon.total, covered: coverage.qaloon.covered, missing: coverage.qaloon.missing, divergentSurahs: coverage.qaloon.divergentSurahs },
       },
     })

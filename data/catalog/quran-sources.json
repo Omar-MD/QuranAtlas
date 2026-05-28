@@ -10,29 +10,5 @@
     "default": true,
     "sourceUrl": "data/normalized/quran/riwayat/qaloon.json",
     "outputPath": "riwayat/qaloon/{surah}.json"
-  },
-  {
-    "id": "hafs",
-    "type": "riwayah",
-    "label": "Hafs an Asim",
-    "language": "ar",
-    "providerId": "kfgqpc",
-    "licenseId": "kfgqpc-non-commercial",
-    "visibility": "optional",
-    "default": false,
-    "sourceUrl": "data/normalized/quran/riwayat/hafs.json",
-    "outputPath": "riwayat/hafs/{surah}.json"
-  },
-  {
-    "id": "warsh",
-    "type": "riwayah",
-    "label": "Warsh an Nafi",
-    "language": "ar",
-    "providerId": "kfgqpc",
-    "licenseId": "kfgqpc-non-commercial",
-    "visibility": "optional",
-    "default": false,
-    "sourceUrl": "data/normalized/quran/riwayat/warsh.json",
-    "outputPath": "riwayat/warsh/{surah}.json"
   }
 ]

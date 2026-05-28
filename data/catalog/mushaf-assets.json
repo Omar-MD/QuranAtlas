@@ -1,9 +1,7 @@
 {
   "version": 1,
   "defaults": {
-    "qaloon": "qalun-quran-ws-v1",
-    "hafs": "hafs-quran-ws-v1",
-    "warsh": "warsh-quran-ws-v1"
+    "qaloon": "qalun-quran-ws-v1"
   },
   "assets": [
     {
@@ -16,32 +14,6 @@
       "visibility": "baseline",
       "shipped": true,
       "sourceSlug": "qalun",
-      "pageCount": 604,
-      "provenance": { "source": "quran.ws page PDFs" }
-    },
-    {
-      "riwayah": "hafs",
-      "mushafEditionId": "hafs-quran-ws-v1",
-      "label": "Hafs Quran.ws",
-      "tradition": "hafs",
-      "providerId": "quran-ws",
-      "licenseId": "quran-ws-free-use",
-      "visibility": "optional",
-      "shipped": false,
-      "sourceSlug": "hafs",
-      "pageCount": 604,
-      "provenance": { "source": "quran.ws page PDFs" }
-    },
-    {
-      "riwayah": "warsh",
-      "mushafEditionId": "warsh-quran-ws-v1",
-      "label": "Warsh Quran.ws",
-      "tradition": "warsh",
-      "providerId": "quran-ws",
-      "licenseId": "quran-ws-free-use",
-      "visibility": "optional",
-      "shipped": false,
-      "sourceSlug": "warsh",
       "pageCount": 604,
       "provenance": { "source": "quran.ws page PDFs" }
     }

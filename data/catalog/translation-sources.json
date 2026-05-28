@@ -1,30 +1,5 @@
 [
   {
-    "id": "saheeh",
-    "type": "translation",
-    "label": "Saheeh International",
-    "displayLabel": "Saheeh International",
-    "role": "translation",
-    "trustTier": "selected-opt-in",
-    "language": "en",
-    "providerId": "quran-db",
-    "licenseId": "saheeh-non-commercial",
-    "sourceProvider": "quran_db",
-    "translator": "Umm Muhammad",
-    "visibility": "optional",
-    "default": false,
-    "sourceUrl": "https://raw.githubusercontent.com/faisalill/quran_db/main/ummmuhammadsahihinternational.json",
-    "outputPath": "translations/saheeh/{surah}.json",
-    "fetch": {
-      "provider": "quran-db-translation",
-      "url": "https://raw.githubusercontent.com/faisalill/quran_db/main/ummmuhammadsahihinternational.json",
-      "field": "Umm Muhammad (Sahih International)",
-      "author": "Umm Muhammad",
-      "version": "quran-db-main",
-      "normalizedPath": "data/normalized/translations/saheeh.json"
-    }
-  },
-  {
     "id": "bridges",
     "type": "translation",
     "label": "Bridges",
@@ -48,56 +23,6 @@
       "author": "Fadel Soliman",
       "version": "qul-resource-179",
       "normalizedPath": "data/normalized/translations/bridges.json"
-    }
-  },
-  {
-    "id": "clear-quran",
-    "type": "translation",
-    "label": "The Clear Quran",
-    "displayLabel": "The Clear Quran",
-    "role": "translation",
-    "trustTier": "selected-opt-in",
-    "language": "en",
-    "providerId": "quran-db",
-    "licenseId": "quran-db-upstream-restricted",
-    "sourceProvider": "quran_db",
-    "translator": "Mustafa Khattab",
-    "visibility": "optional",
-    "default": false,
-    "sourceUrl": "https://raw.githubusercontent.com/faisalill/quran_db/main/mustafakhattab2018.json",
-    "outputPath": "translations/clear-quran/{surah}.json",
-    "fetch": {
-      "provider": "quran-db-translation",
-      "url": "https://raw.githubusercontent.com/faisalill/quran_db/main/mustafakhattab2018.json",
-      "field": "Mustafa Khattab 2018",
-      "author": "Mustafa Khattab",
-      "version": "quran-db-main",
-      "normalizedPath": "data/normalized/translations/clear-quran.json"
-    }
-  },
-  {
-    "id": "abdel-haleem",
-    "type": "translation",
-    "label": "M.A.S. Abdel Haleem",
-    "displayLabel": "M.A.S. Abdel Haleem",
-    "role": "translation",
-    "trustTier": "selected-opt-in",
-    "language": "en",
-    "providerId": "quran-db",
-    "licenseId": "quran-db-upstream-restricted",
-    "sourceProvider": "quran_db",
-    "translator": "M.A.S. Abdel Haleem",
-    "visibility": "optional",
-    "default": false,
-    "sourceUrl": "https://raw.githubusercontent.com/faisalill/quran_db/main/abdelhaleem.json",
-    "outputPath": "translations/abdel-haleem/{surah}.json",
-    "fetch": {
-      "provider": "quran-db-translation",
-      "url": "https://raw.githubusercontent.com/faisalill/quran_db/main/abdelhaleem.json",
-      "field": "Abdel Haleem",
-      "author": "M.A.S. Abdel Haleem",
-      "version": "quran-db-main",
-      "normalizedPath": "data/normalized/translations/abdel-haleem.json"
     }
   }
 ]

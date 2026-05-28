@@ -105,7 +105,7 @@ export type SourceIndexEntry = {
 export type SourceIndex = {
   version: number
   profile: string
-  defaults: { riwayah: string; translation: string; tafsir: string }
+  defaults: { riwayah: string; translation: string; tafsir: string | null }
   sources: SourceIndexEntry[]
 }
 
@@ -299,6 +299,9 @@ export async function loadTranslationForSurah(translationId: string, surahNo: nu
   if (surahNo < 1 || surahNo > 114 || !Number.isInteger(surahNo)) {
     throw new Error(`Invalid surah number: ${surahNo}`)
   }
+  if (translationId !== DEFAULT_TRANSLATION && !(await isTranslationSourceCataloged(translationId))) {
+    return loadTranslationForSurah(DEFAULT_TRANSLATION, surahNo)
+  }
   const padded = String(surahNo).padStart(3, '0')
   const url = `${DATASET_BASE}/translations/${translationId}/${padded}.json`
   try {
@@ -314,6 +317,15 @@ export async function loadTranslationForSurah(translationId: string, surahNo: nu
 
 export async function getSourceIndex(): Promise<SourceIndex> {
   return fetchNetworkFirst(`${DATASET_BASE}/indexes/sources.json`) as Promise<SourceIndex>
+}
+
+async function isTranslationSourceCataloged(translationId: string): Promise<boolean> {
+  try {
+    const index = await getSourceIndex()
+    return index.sources.some((entry) => entry.type === 'translation' && entry.id === translationId)
+  } catch {
+    return true
+  }
 }
 
 

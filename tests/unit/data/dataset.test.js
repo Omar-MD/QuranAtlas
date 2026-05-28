@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { settings } from '../../../src/configure/state.svelte.ts'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../../shared/reader-assets/default-profile.ts'
 
 const DATASET_PATH = join(process.cwd(), 'public', 'dataset')
 
@@ -147,16 +148,10 @@ describe('data/dataset', () => {
       })
     })
 
-    it('reports optional text assets as available when the compatibility package index exposes them', async () => {
+    it('reports removed optional text assets as unavailable in the MVP package index', async () => {
       const { getRiwayahTextAvailability } = await import('../../../src/data/dataset.ts')
-      await expect(getRiwayahTextAvailability('hafs')).resolves.toMatchObject({
-        riwayah: 'hafs',
-        available: true,
-      })
-      await expect(getRiwayahTextAvailability('warsh')).resolves.toMatchObject({
-        riwayah: 'warsh',
-        available: true,
-      })
+      await expect(getRiwayahTextAvailability('hafs')).resolves.toMatchObject({ riwayah: 'hafs', available: false })
+      await expect(getRiwayahTextAvailability('warsh')).resolves.toMatchObject({ riwayah: 'warsh', available: false })
     })
   })
 
@@ -171,39 +166,21 @@ describe('data/dataset', () => {
   })
 
   describe('getTranslations()', () => {
-    it('lists default and opt-in translation sources from the source index', async () => {
+    it('lists only the default Bridges translation source from the source index', async () => {
       const { getTranslations } = await import('../../../src/data/dataset.ts')
       const list = await getTranslations()
       expect(Array.isArray(list)).toBe(true)
-      expect(list.length).toBeGreaterThanOrEqual(4)
+      expect(list.map((t) => t.id)).toEqual([DEFAULT_READER_ASSET_PROFILE.translationId])
       const bridges = list.find((t) => t.id === 'bridges')
       expect(bridges).toBeDefined()
       expect(bridges.name).toBe('Bridges')
       expect(bridges.availableInManifest).toBe(true)
       expect(bridges.language).toBe('en')
-      expect(list.find((t) => t.id === 'saheeh')).toMatchObject({
-        id: 'saheeh',
-        name: 'Saheeh International',
-        language: 'en',
-        availableInManifest: false,
-      })
       expect(bridges).toMatchObject({
         id: 'bridges',
         name: 'Bridges',
         language: 'en',
         availableInManifest: true,
-      })
-      expect(list.find((t) => t.id === 'clear-quran')).toMatchObject({
-        id: 'clear-quran',
-        name: 'The Clear Quran',
-        language: 'en',
-        availableInManifest: false,
-      })
-      expect(list.find((t) => t.id === 'abdel-haleem')).toMatchObject({
-        id: 'abdel-haleem',
-        name: 'M.A.S. Abdel Haleem',
-        language: 'en',
-        availableInManifest: false,
       })
     })
   })
@@ -230,11 +207,11 @@ describe('data/dataset', () => {
       expect(pack.translationId).toBe('bridges')
     })
 
-    it('loads an optional translation pack on demand when its asset files exist outside the baseline manifest', async () => {
+    it('falls back to Bridges when a removed optional translation id is requested', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
       const pack = await loadTranslationForSurah('saheeh', 1)
       expect(pack).not.toBeNull()
-      expect(pack.translationId).toBe('saheeh')
+      expect(pack.translationId).toBe('bridges')
     })
 
     it('rejects out-of-range surah numbers', async () => {
@@ -254,52 +231,15 @@ describe('data/dataset', () => {
     it('loads the source catalog index with default baseline ids', async () => {
       const { getSourceIndex } = await import('../../../src/data/dataset.ts')
       const index = await getSourceIndex()
-      expect(index.defaults).toMatchObject({
-        riwayah: 'qaloon',
-        translation: 'bridges',
-        tafsir: 'muyassar',
+      expect(index.defaults).toEqual({
+        riwayah: DEFAULT_READER_ASSET_PROFILE.riwayah,
+        translation: DEFAULT_READER_ASSET_PROFILE.translationId,
+        tafsir: DEFAULT_READER_ASSET_PROFILE.tafsirId,
       })
-      expect(index.sources.some((s) => s.id === 'muyassar' && s.type === 'tafsir')).toBe(true)
-    })
-  })
-
-  describe('getTafsirs() / loadTafsirForSurah()', () => {
-    it('lists default and opt-in tafsir packs from the source index', async () => {
-      const { getTafsirs } = await import('../../../src/data/dataset.ts')
-      const list = await getTafsirs()
-      expect(list.find((t) => t.id === 'muyassar')).toMatchObject({
-        id: 'muyassar',
-        name: 'Tafsir Muyassar',
-        language: 'ar',
-        availableInManifest: true,
-      })
-      expect(list.find((t) => t.id === 'mukhtasar')).toMatchObject({
-        id: 'mukhtasar',
-        name: 'Al-Mukhtasar fi al-Tafsir',
-        language: 'ar',
-        availableInManifest: false,
-      })
-      expect(list.find((t) => t.id === 'saadi')).toMatchObject({
-        id: 'saadi',
-        name: "Tafsir al-Sa'di",
-        language: 'ar',
-        availableInManifest: false,
-      })
-    })
-
-    it('loads grouped tafsir entries for one surah', async () => {
-      const { loadTafsirForSurah } = await import('../../../src/data/dataset.ts')
-      const pack = await loadTafsirForSurah('muyassar', 73)
-      expect(pack).not.toBeNull()
-      expect(pack.tafsirId).toBe('muyassar')
-      expect(pack.entries.some((e) => e.startKey === '73:1' && e.endKey === '73:4')).toBe(true)
-    })
-
-    it('loads an optional tafsir pack on demand when its asset files exist outside the baseline manifest', async () => {
-      const { loadTafsirForSurah } = await import('../../../src/data/dataset.ts')
-      const pack = await loadTafsirForSurah('mukhtasar', 73)
-      expect(pack).not.toBeNull()
-      expect(pack.tafsirId).toBe('mukhtasar')
+      expect(index.sources.map((source) => `${source.type}:${source.id}`)).toEqual([
+        'riwayah:qaloon',
+        'translation:bridges',
+      ])
     })
   })
 })

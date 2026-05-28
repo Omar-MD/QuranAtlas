@@ -292,10 +292,15 @@ function assertPackageIndex(raw: unknown): RiwayahPackageIndex {
   if (raw.defaultRiwayah !== DEFAULT_RIWAYAH) throw new Error('Riwayah package index default must be qaloon')
   if (!Array.isArray(raw.packages)) throw new Error('Riwayah package index packages must be an array')
   const packages = raw.packages.map(assertPackageEntry)
-  for (const riwayah of RIWAYAHS) {
-    if (!packages.some((entry) => entry.riwayah === riwayah)) {
-      throw new Error(`Riwayah package index missing ${riwayah}`)
+  const seen = new Set<Riwayah>()
+  for (const entry of packages) {
+    if (seen.has(entry.riwayah)) {
+      throw new Error(`Riwayah package index has duplicate ${entry.riwayah}`)
     }
+    seen.add(entry.riwayah)
+  }
+  if (!seen.has(DEFAULT_RIWAYAH)) {
+    throw new Error(`Riwayah package index missing ${DEFAULT_RIWAYAH}`)
   }
   return { version: 1, defaultRiwayah: 'qaloon', packages }
 }

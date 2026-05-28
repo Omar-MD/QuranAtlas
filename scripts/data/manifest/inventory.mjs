@@ -19,7 +19,7 @@ function classifyDatasetFile(path) {
     return { lane: 'text', category: 'text-core' }
   }
   if (path.startsWith('tafsir/')) {
-    return { lane: 'text', category: 'text-tafsir' }
+    throw new Error(`MVP dataset manifest must not include tafsir files: ${path}`)
   }
   if (path === 'surahs.json' || path === 'juz.json') {
     return { lane: 'text', category: 'text-core' }
@@ -88,6 +88,9 @@ export async function buildManifestPayload({
   for (const fullPath of allFiles) {
     const path = relative(datasetDir, fullPath).replace(/\\/g, '/')
     if (path === 'manifest.json') continue
+    if (path.startsWith('tafsir/')) {
+      throw new Error(`MVP dataset manifest must not include tafsir files: ${path}`)
+    }
     if (dirname(fullPath) === riwayatDir) continue
     if (dirname(fullPath) === translationsDir) continue
     if (profileName === 'catalog' && path.startsWith('mushaf-pages/')) {
