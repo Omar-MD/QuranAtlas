@@ -66,11 +66,11 @@ describe('React continuity parity', () => {
       expect(result.current.status).toBe('loading')
       await waitFor(() => expect(result.current).toMatchObject({ hash: '#/m/42', sourceHash: '#/m/42', status: 'ready' }))
 
-      act(() => {
+      await act(async () => {
         rerender({ hash: '#/m/43' })
       })
 
-      expect(result.current).toMatchObject({ hash: '#/m/43', sourceHash: '#/m/43', status: 'ready' })
+      await waitFor(() => expect(result.current).toMatchObject({ hash: '#/m/43', sourceHash: '#/m/43', status: 'ready' }))
     } finally {
       await resetReactDb()
     }

@@ -21,40 +21,6 @@ const packageIndex = {
       },
       totalBytes: 300,
     },
-    {
-      riwayah: 'hafs',
-      optional: true,
-      available: true,
-      text: {
-        urls: ['/dataset/riwayat/hafs/001.json'],
-        totalBytes: 110,
-        available: true,
-      },
-      pages: {
-        manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
-        urls: ['/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg'],
-        totalBytes: 220,
-        available: true,
-      },
-      totalBytes: 330,
-    },
-    {
-      riwayah: 'warsh',
-      optional: true,
-      available: false,
-      text: {
-        urls: [],
-        totalBytes: 0,
-        available: false,
-      },
-      pages: {
-        manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
-        urls: [],
-        totalBytes: 0,
-        available: false,
-      },
-      totalBytes: 0,
-    },
   ],
 } as const
 
@@ -95,8 +61,6 @@ const mushafAssetIndex = {
   version: 1,
   defaults: {
     qaloon: 'qalun-quran-ws-v1',
-    hafs: 'hafs-quran-ws-v1',
-    warsh: 'warsh-quran-ws-v1',
   },
   assets: [
     {
@@ -112,42 +76,6 @@ const mushafAssetIndex = {
       files: [
         { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json', bytes: 100 },
         { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg', bytes: 1000 },
-      ],
-      totalBytes: 1100,
-      pageCount: 2,
-      provenance: { source: 'test' },
-    },
-    {
-      riwayah: 'hafs',
-      mushafEditionId: 'hafs-quran-ws-v1',
-      label: 'Hafs Quran.ws',
-      tradition: 'hafs',
-      providerId: 'quran-ws',
-      licenseId: 'quran-ws-free-use',
-      visibility: 'optional',
-      shipped: false,
-      manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
-      files: [
-        { url: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json', bytes: 100 },
-        { url: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg', bytes: 1000 },
-      ],
-      totalBytes: 1100,
-      pageCount: 2,
-      provenance: { source: 'test' },
-    },
-    {
-      riwayah: 'warsh',
-      mushafEditionId: 'warsh-quran-ws-v1',
-      label: 'Warsh Quran.ws',
-      tradition: 'warsh',
-      providerId: 'quran-ws',
-      licenseId: 'quran-ws-free-use',
-      visibility: 'optional',
-      shipped: false,
-      manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
-      files: [
-        { url: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json', bytes: 100 },
-        { url: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/pages/001.svg', bytes: 1000 },
       ],
       totalBytes: 1100,
       pageCount: 2,
@@ -211,72 +139,19 @@ describe('pack-domain mushaf page policy', () => {
     })
   })
 
-  it('classifies an uncached optional page pack as installable before manifest fetch', async () => {
+  it('maps invalid default manifests to a security-rejected result', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
       if (url.includes('riwayah-packages.json')) return response(packageIndex)
-      return response({ ...manifest, riwayah: 'hafs', sourceSlug: 'hafs' })
+      return response({ ...manifest, sourceSlug: 'hafs' })
     }))
     const { getMushafPagePackResult } = await importLoader()
 
-    await expect(getMushafPagePackResult('hafs')).resolves.toMatchObject({
-      kind: 'installable',
-      riwayah: 'hafs',
-      reason: 'not-cached',
-      manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
-    })
-  })
-
-  it('maps removed optional page packs to a missing result', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
-      if (url.includes('riwayah-packages.json')) return response(packageIndex)
-      return response(null, 404)
-    }))
-    const { getMushafPagePackResult } = await importLoader()
-
-    await expect(getMushafPagePackResult('warsh')).resolves.toMatchObject({
-      kind: 'missing',
-      riwayah: 'warsh',
-      reason: 'missing',
-      manifestUrl: '/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json',
-    })
-  })
-
-  it('can resolve a missing optional page pack back to baseline policy when requested', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
-      if (url.includes('riwayah-packages.json')) return response(packageIndex)
-      return response(manifest)
-    }))
-    const { resolveMushafPagePack } = await importLoader()
-
-    await expect(resolveMushafPagePack('warsh', { fallbackToBaseline: true })).resolves.toMatchObject({
-      kind: 'switched-to-baseline',
-      riwayah: 'warsh',
-      fallbackRiwayah: 'qaloon',
-      reason: 'missing',
-    })
-  })
-
-  it('maps invalid manifests to a security-rejected result', async () => {
-    installCache([
-      '/dataset/riwayat/hafs/001.json',
-      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
-      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg',
-    ])
-    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-      if (url.includes('mushaf-assets.json')) return response(mushafAssetIndex)
-      if (url.includes('riwayah-packages.json')) return response(packageIndex)
-      return response({ ...manifest, riwayah: 'hafs', mushafEditionId: 'hafs-quran-ws-v1', sourceSlug: 'qalun' })
-    }))
-    const { getMushafPagePackResult } = await importLoader()
-
-    await expect(getMushafPagePackResult('hafs')).resolves.toMatchObject({
+    await expect(getMushafPagePackResult('qaloon')).resolves.toMatchObject({
       kind: 'unavailable',
-      riwayah: 'hafs',
+      riwayah: 'qaloon',
       reason: 'security-rejected',
-      manifestUrl: '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
+      manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
     })
   })
 })
@@ -308,18 +183,12 @@ describe('mushaf asset loader', () => {
     await expect(mod.canUseMushafAsset('qaloon', 'qalun-quran-ws-v1')).resolves.toBe(true)
   })
 
-  it('reports installable, installed, and incompatible Mushaf asset states', async () => {
+  it('reports shipped and incompatible Mushaf asset states', async () => {
     const mod = await import('../../../src/packs/mushaf-assets')
     mod.clearMushafAssetIndexCacheForTests()
 
-    await expect(mod.getMushafAssetStatus('hafs', 'hafs-quran-ws-v1')).resolves.toBe('installable')
-    installCache([
-      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json',
-      '/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/pages/001.svg',
-    ])
-    mod.clearMushafAssetIndexCacheForTests()
-    await expect(mod.getMushafAssetStatus('hafs', 'hafs-quran-ws-v1')).resolves.toBe('installed')
-    await expect(mod.getMushafAssetStatus('warsh', 'missing-v1')).resolves.toBe('incompatible')
+    await expect(mod.getMushafAssetStatus('qaloon', 'qalun-quran-ws-v1')).resolves.toBe('shipped')
+    await expect(mod.getMushafAssetStatus('qaloon', 'missing-v1')).resolves.toBe('incompatible')
   })
 
   it('rejects manifest edition mismatches before an asset becomes usable', async () => {

@@ -14,7 +14,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting, waitForLastSurface, writeSetting } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete, seedLastSurface, readSetting, writeSetting } from '../fixtures/idb.js'
 import { waitForReader } from '../fixtures/chrome.js'
 import { scanA11y } from '../fixtures/a11y.js'
 
@@ -36,10 +36,8 @@ test.describe('Journey A: First run & session restore', () => {
     // Seed IDB directly with a removed launch hash.
     // Using seedLastSurface (rather than navigating to the surface) avoids the race
     // between parallel tests writing different values to the shared origin's IDB.
+    await page.goto('/dataset/manifest.json')
     await markOnboardingComplete(page)
-    await page.goto('/#/about')
-    await expect(page.getByRole('heading', { name: 'QuranAtlas' })).toBeVisible()
-    await waitForLastSurface(page, '#/about')
     await seedLastSurface(page, removedHubHash)
     await writeSetting(page, 'currentPosition', { surah: 2, verse: 255 })
     await expect.poll(async () => readSetting(page, 'currentPosition')).toEqual({ surah: 2, verse: 255 })
@@ -47,7 +45,9 @@ test.describe('Journey A: First run & session restore', () => {
 
     // Launch a fresh page at root — this simulates a clean app launch that
     // must resolve launch restore entirely from persisted IDB state.
-    const freshPage = await page.context().newPage()
+    const context = page.context()
+    await page.close()
+    const freshPage = await context.newPage()
     try {
       await freshPage.goto('/')
       await expect(freshPage.locator('.qa-onboarding')).toHaveCount(0)
@@ -87,6 +87,7 @@ test.describe('Journey A: First run & session restore', () => {
     try {
       await seedPage.goto('/')
       await clearAllData(seedPage)
+      await seedPage.goto('/dataset/manifest.json')
       await markOnboardingComplete(seedPage)
       await seedLastSurface(seedPage, '#/about')
       await seedPage.close()

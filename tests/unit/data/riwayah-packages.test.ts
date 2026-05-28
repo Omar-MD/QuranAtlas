@@ -112,7 +112,7 @@ describe('riwayah package index', () => {
       ...packageIndex,
       packages: [{
         ...packageIndex.packages[0],
-        riwayah: 'hafs',
+        riwayah: 'qaloon',
         text: {
           ...packageIndex.packages[0]!.text,
           urls: ['https://cdn.example.test/riwayat/hafs/001.json'],
@@ -129,7 +129,7 @@ describe('riwayah package index', () => {
       ...packageIndex,
       packages: [{
         ...packageIndex.packages[0],
-        riwayah: 'hafs',
+        riwayah: 'qaloon',
         text: {
           ...packageIndex.packages[0]!.text,
           urls: ['/dataset/%2e%2e/app.js'],
@@ -141,17 +141,10 @@ describe('riwayah package index', () => {
     await expect(loadRiwayahPackageIndex()).rejects.toThrow(/same-origin dataset URL/)
   })
 
-  it('does not plan install URLs for removed riwayat', async () => {
+  it('rejects install planning for removed riwayat', async () => {
     const { planRiwayahPackageInstall, cacheNamesForRiwayahPackage } = await importLoader()
 
-    await expect(planRiwayahPackageInstall('hafs')).resolves.toEqual({
-      riwayah: 'hafs',
-      urls: [],
-      totalBytes: 0,
-    })
-    expect(cacheNamesForRiwayahPackage('hafs')).toEqual({
-      text: 'quran-dataset-v2',
-      pages: 'qa-pages-hafs-hafs-quran-ws-v1-v1',
-    })
+    await expect(planRiwayahPackageInstall('hafs')).rejects.toThrow(/Invalid riwayah package id: hafs/)
+    expect(() => cacheNamesForRiwayahPackage('hafs')).toThrow(/Invalid riwayah package id: hafs/)
   })
 })

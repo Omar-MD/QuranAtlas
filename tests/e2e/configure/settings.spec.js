@@ -234,13 +234,13 @@ test.describe('Journey D: Mobile gear double-tap @mobile', () => {
       document.documentElement.getAttribute('data-theme-pref') ?? 'light'
     )
 
-    // Two clicks well within the 300ms double-tap window.
-    const box = await gear.boundingBox()
-    if (!box) { throw new Error('gear not measurable') }
-    const cx = box.x + box.width / 2
-    const cy = box.y + box.height / 2
-    await page.mouse.click(cx, cy, { delay: 0 })
-    await page.mouse.click(cx, cy, { delay: 0 })
+    // Two activations well within the 300ms double-tap window. Dispatching
+    // from the element keeps the assertion focused on MarginHeader's tap
+    // classifier instead of Mobile Chrome's synthetic mouse timing.
+    await gear.evaluate((node) => {
+      node.click()
+      node.click()
+    })
 
     await expect.poll(async () => page.evaluate(() =>
       document.documentElement.getAttribute('data-theme-pref') ?? 'light'

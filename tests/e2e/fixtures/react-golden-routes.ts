@@ -44,6 +44,7 @@ const APPLY_SCHEMA_SOURCE = `
 
 const REACT_PREVIEW_PORT = process.env.REACT_PARITY_PORT ?? '4181'
 const SVELTE_PREVIEW_PORT = process.env.SVELTE_PARITY_PORT ?? '4180'
+const MVP_ASSET_CONTRACT_ID = 'mvp-default-assets-qaloon-bridges-v1'
 
 export const PARITY_TARGETS: Record<ParityTargetId, ParityTarget> = {
   svelte: {
@@ -115,6 +116,7 @@ export async function seedTargetState(page: Page, target: ParityTargetId, seed: 
       const seedName = ${seedJson}
 
       settings.put({ key: 'onboardingComplete', value: true })
+      settings.put({ key: 'mvpAssetContractId', value: ${JSON.stringify(MVP_ASSET_CONTRACT_ID)} })
       settings.put({ key: 'riwayah', value: 'qaloon' })
       settings.put({ key: 'quranTextStyleId', value: 'uthmani-kfgqpc-v1' })
       settings.put({ key: 'mushafEditionId', value: 'qalun-quran-ws-v1' })

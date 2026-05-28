@@ -11,7 +11,7 @@ const meta = (n: number, name: string, name_ar: string, hafs: number, warsh = ha
 describe('reader/render-helpers', () => {
   describe('formatSurahMeta', () => {
     it('returns SURAH N · COUNT VERSES (no surah name segment)', () => {
-      settings.riwayah = 'hafs'
+      settings.riwayah = 'qaloon'
       expect(formatSurahMeta(meta(2, 'Al-Baqarah', 'البقرة', 286))).toBe('SURAH 2 · 286 VERSES')
     })
 
@@ -21,7 +21,7 @@ describe('reader/render-helpers', () => {
     })
 
     it('does NOT include the surah English name (Arabic title now carries it)', () => {
-      settings.riwayah = 'hafs'
+      settings.riwayah = 'qaloon'
       const m = meta(1, 'Al-Fatihah', 'الفاتحة', 7)
       expect(formatSurahMeta(m)).not.toContain('AL-FATIHAH')
       expect(formatSurahMeta(m)).toBe('SURAH 1 · 7 VERSES')
@@ -38,31 +38,21 @@ describe('reader/render-helpers', () => {
   })
 
   describe('shouldRenderBasmala', () => {
-    it('surah 9 (At-Tawbah): false for every riwayah', () => {
-      expect(shouldRenderBasmala(9, 'hafs')).toBe(false)
-      expect(shouldRenderBasmala(9, 'warsh')).toBe(false)
+    it('surah 9 (At-Tawbah): false for the default riwayah', () => {
       expect(shouldRenderBasmala(9, 'qaloon')).toBe(false)
     })
 
-    it('surah 1 (Al-Fatihah): false for Hafs (basmala IS verse 1), true for Warsh + Qaloon (basmala displayed but not counted)', () => {
-      expect(shouldRenderBasmala(1, 'hafs')).toBe(false)
-      expect(shouldRenderBasmala(1, 'warsh')).toBe(true)
+    it('surah 1 (Al-Fatihah): true for Qaloon (basmala displayed but not counted)', () => {
       expect(shouldRenderBasmala(1, 'qaloon')).toBe(true)
     })
 
-    it('all other surahs: true for every riwayah', () => {
-      for (const r of ['hafs', 'warsh', 'qaloon'] as const) {
-        expect(shouldRenderBasmala(2, r)).toBe(true)
-        expect(shouldRenderBasmala(50, r)).toBe(true)
-        expect(shouldRenderBasmala(114, r)).toBe(true)
-      }
+    it('all other surahs: true for the default riwayah', () => {
+      expect(shouldRenderBasmala(2, 'qaloon')).toBe(true)
+      expect(shouldRenderBasmala(50, 'qaloon')).toBe(true)
+      expect(shouldRenderBasmala(114, 'qaloon')).toBe(true)
     })
 
     it('defaults to active settings.riwayah when riwayah arg omitted', () => {
-      settings.riwayah = 'hafs'
-      expect(shouldRenderBasmala(1)).toBe(false)
-      settings.riwayah = 'warsh'
-      expect(shouldRenderBasmala(1)).toBe(true)
       settings.riwayah = 'qaloon'
       expect(shouldRenderBasmala(1)).toBe(true)
     })

@@ -203,15 +203,13 @@ describe('data/dataset', () => {
     it('returns null for an absent translation pack (404)', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
       const pack = await loadTranslationForSurah('does-not-exist', 1)
-      expect(pack).not.toBeNull()
-      expect(pack.translationId).toBe('bridges')
+      expect(pack).toBeNull()
     })
 
-    it('falls back to Bridges when a removed optional translation id is requested', async () => {
+    it('returns null when a removed optional translation id is requested', async () => {
       const { loadTranslationForSurah } = await import('../../../src/data/dataset.ts')
       const pack = await loadTranslationForSurah('saheeh', 1)
-      expect(pack).not.toBeNull()
-      expect(pack.translationId).toBe('bridges')
+      expect(pack).toBeNull()
     })
 
     it('rejects out-of-range surah numbers', async () => {

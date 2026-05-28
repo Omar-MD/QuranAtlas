@@ -7,8 +7,10 @@ export async function expectAxeClean(page: Page, includeSelector = '#react-root'
 }
 
 export async function expectNoHorizontalOverflow(page: Page) {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
-  expect(overflow).toBe(false)
+  await expect.poll(
+    () => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth),
+    { message: 'page must not have horizontal overflow after layout settles' },
+  ).toBe(false)
 }
 
 export async function expectMinTouchTarget(locator: Locator, minSize = 40) {

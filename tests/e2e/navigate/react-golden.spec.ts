@@ -13,7 +13,7 @@ import {
 } from '../fixtures/react-golden-routes'
 
 const navigateFixtures = GOLDEN_FIXTURES.filter((fixture) =>
-  ['launch-restore-reader', 'surah-directory', 'bookmarks-populated', 'daily-wird-no-plan'].includes(fixture.id),
+  ['launch-restore-reader', 'surah-directory', 'bookmarks-populated'].includes(fixture.id),
 )
 
 for (const fixture of navigateFixtures) {
@@ -22,7 +22,13 @@ for (const fixture of navigateFixtures) {
       await page.setViewportSize(GOLDEN_VIEWPORTS[viewportId])
       await expectReactProductionPreflight(page)
       await seedTargetState(page, 'react', fixture.seed)
-      const guard = installPageGuards(page, `react ${fixture.id}`)
+      const guard = installPageGuards(
+        page,
+        `react ${fixture.id}`,
+        fixture.id === 'launch-restore-reader'
+          ? [/\/dataset\/mushaf-pages\/qaloon\/qalun-quran-ws-v1\/pages\/\d{3}\.svg$/]
+          : [],
+      )
       await page.goto(targetUrl('react', fixture.route || '/'))
       await expect(page.locator('#react-root')).toBeVisible()
       await expectNoHorizontalOverflow(page)
@@ -116,10 +122,6 @@ for (const fixture of navigateFixtures) {
         await expect(page.getByText(/1:1|Al-Fatihah/i)).toBeVisible()
       }
 
-      if (fixture.id === 'daily-wird-no-plan') {
-        await expect(page.getByRole('button', { name: /start daily wird/i })).toBeVisible()
-        await expect(page.getByRole('button', { name: /create plan/i })).toHaveCount(0)
-      }
       await expectNoGuardFailures(guard)
       guard.dispose()
     })

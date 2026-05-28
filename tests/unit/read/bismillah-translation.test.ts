@@ -12,7 +12,7 @@ const meta = (n: number, name: string, name_ar: string, count: number): SurahMet
 
 describe('Bismillah translation', () => {
   beforeEach(() => {
-    settings.riwayah = 'hafs'
+    settings.riwayah = 'qaloon'
     reader.surahHeaderHidden = false
   })
 
@@ -27,24 +27,6 @@ describe('Bismillah translation', () => {
     expect(tr?.textContent?.trim()).toBe(
       'In the Name of Allah — the Most Compassionate, Most Merciful'
     )
-  })
-
-  it('surah 1 (Hafs): renders neither the bismillah block nor the translation (basmala IS ayah 1 in dataset)', () => {
-    settings.riwayah = 'hafs'
-    const { container } = render(SurahHeader, {
-      props: { surahNum: 1, meta: meta(1, 'Al-Fatihah', 'الفاتحة', 7) },
-    })
-    expect(container.querySelector('.qa-basmala')).toBeNull()
-    expect(container.querySelector('.qa-basmala-translation')).toBeNull()
-  })
-
-  it('surah 1 (Warsh): renders the bismillah block + translation (basmala not counted as ayah)', () => {
-    settings.riwayah = 'warsh'
-    const { container } = render(SurahHeader, {
-      props: { surahNum: 1, meta: meta(1, 'Al-Fatihah', 'الفاتحة', 7) },
-    })
-    expect(container.querySelector('.qa-basmala')).not.toBeNull()
-    expect(container.querySelector('.qa-basmala-translation')).not.toBeNull()
   })
 
   it('surah 1 (Qaloon): renders the bismillah block + translation (basmala not counted as ayah)', () => {

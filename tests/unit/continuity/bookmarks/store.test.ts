@@ -17,44 +17,32 @@ beforeEach(async () => {
 })
 
 describe('continuity/bookmarks/store', () => {
-  it('persists a bookmark under the requested riwayah without crossing to another riwayah', async () => {
-    await add('2:255', 'hafs')
-    await add('2:255', 'warsh')
+  it('persists a bookmark under the default riwayah', async () => {
     await add('2:255', 'qaloon')
 
-    await expect(getOne('2:255', 'hafs')).resolves.toMatchObject({ verseKey: '2:255', riwayah: 'hafs' })
-    await expect(getOne('2:255', 'warsh')).resolves.toMatchObject({ verseKey: '2:255', riwayah: 'warsh' })
     await expect(getOne('2:255', 'qaloon')).resolves.toMatchObject({ verseKey: '2:255', riwayah: 'qaloon' })
   })
 
-  it('deletes only the targeted riwayah record for a shared verse key', async () => {
-    await add('1:1', 'hafs')
-    await add('1:1', 'warsh')
+  it('deletes the targeted default-riwayah record', async () => {
     await add('1:1', 'qaloon')
 
-    await del('1:1', 'warsh')
+    await del('1:1', 'qaloon')
 
-    await expect(getOne('1:1', 'hafs')).resolves.toBeDefined()
-    await expect(getOne('1:1', 'warsh')).resolves.toBeUndefined()
-    await expect(getOne('1:1', 'qaloon')).resolves.toBeDefined()
+    await expect(getOne('1:1', 'qaloon')).resolves.toBeUndefined()
   })
 
-  it('toggles bookmark state per riwayah boundary', async () => {
-    await add('18:1', 'hafs')
+  it('toggles bookmark state for the default riwayah', async () => {
+    await add('18:1', 'qaloon')
 
-    await expect(toggle('18:1', 'warsh')).resolves.toBe(true)
-    await expect(toggle('18:1', 'hafs')).resolves.toBe(false)
+    await expect(toggle('18:1', 'qaloon')).resolves.toBe(false)
 
-    await expect(getOne('18:1', 'hafs')).resolves.toBeUndefined()
-    await expect(getOne('18:1', 'warsh')).resolves.toBeDefined()
+    await expect(getOne('18:1', 'qaloon')).resolves.toBeUndefined()
   })
 
   it('returns grouped and flat results only for the requested riwayah', async () => {
     await add('2:10', 'qaloon')
     await add('2:5', 'qaloon')
     await add('1:1', 'qaloon')
-    await add('2:255', 'hafs')
-    await add('3:7', 'warsh')
 
     await expect(getAllForRiwayah('qaloon')).resolves.toMatchObject([
       { verseKey: '1:1', riwayah: 'qaloon' },

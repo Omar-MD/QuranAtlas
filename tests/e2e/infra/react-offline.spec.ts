@@ -1,4 +1,4 @@
-import { test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 import { expectReactProductionPreflight, seedTargetState, targetUrl } from '../fixtures/react-golden-routes'
 import { expectOfflineReaderLoads, expectReactServiceWorkerReady } from '../fixtures/react-offline'
@@ -10,5 +10,9 @@ test('@offline React app shell and installed reader assets survive offline reloa
   await seedTargetState(page, 'react', 'onboarded-offline-installed-assets')
   await page.goto(targetUrl('react', '/#/s/1'))
   await expectReactServiceWorkerReady(page)
+  await page.reload()
+  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  await expect(page.getByTestId('verse-1:7')).toBeVisible()
+  await expect(page.getByText(/Failed to load reader text|React preview|Verse text unavailable/i)).toHaveCount(0)
   await expectOfflineReaderLoads(page)
 })

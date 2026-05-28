@@ -76,15 +76,10 @@ describe('mushaf asset index output', () => {
     expect(manifest.files.some((file) => file.path === 'indexes/mushaf-assets.json')).toBe(true)
   })
 
-  it('keeps optional package page fallbacks on stable edition URLs when baseline omits optional page bodies', async () => {
+  it('emits only the default riwayah package in the MVP index', async () => {
     const packages = await readDatasetJson('indexes/riwayah-packages.json')
-    const hafs = packages.packages.find((entry) => entry.riwayah === 'hafs')
-    const warsh = packages.packages.find((entry) => entry.riwayah === 'warsh')
-
-    expect(hafs.pages.available).toBe(false)
-    expect(hafs.pages.manifestUrl).toBe('/dataset/mushaf-pages/hafs/hafs-quran-ws-v1/manifest.json')
-    expect(warsh.pages.available).toBe(false)
-    expect(warsh.pages.manifestUrl).toBe('/dataset/mushaf-pages/warsh/warsh-quran-ws-v1/manifest.json')
+    expect(packages.packages.map((entry) => entry.riwayah)).toEqual(['qaloon'])
+    expect(packages.packages[0].pages.manifestUrl).toBe('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json')
   })
 })
 

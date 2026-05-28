@@ -96,8 +96,6 @@ describe('continuity/position', () => {
       surahs.flatMap((surah, index) => {
         const surahNo = index + 1
         return ([
-          ['hafs', surah.counts.hafs],
-          ['warsh', surah.counts.warsh],
           ['qaloon', surah.counts.qaloon],
         ] as const).flatMap(([riwayah, count]) => [
           expect(

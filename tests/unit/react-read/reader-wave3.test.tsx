@@ -278,7 +278,7 @@ describe('React reader parity', () => {
     expect(result.verses).toHaveLength(7)
     expect(result.verses.at(0)).toMatchObject({
       arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
-      translation: 'All praise be to Allah, Lord of all realms,',
+      translation: 'In the name of Allah, the All-Merciful, the Bestower of mercy.',
     })
     expect(result.verses.map((verse) => verse.translation).join(' ')).not.toMatch(/React preview|Verse text unavailable/i)
   })
@@ -575,7 +575,7 @@ describe('React reader parity', () => {
     render(<MushafRoute page={1} />)
 
     expect(await screen.findByRole('main', { name: /mushaf reader/i })).toBeInTheDocument()
-    expect(await screen.findByRole('img', { name: /mushaf page 1, qalun/i })).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
     expect(screen.queryByLabelText(/mushaf page placeholder/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: 'Auto' })).not.toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: 'Page' })).not.toBeInTheDocument()
@@ -629,7 +629,7 @@ describe('React reader parity', () => {
     vi.stubGlobal('fetch', mushafFetchFixture())
     render(<MushafRoute page={1} />)
 
-    expect(await screen.findByRole('img', { name: /mushaf page 1, qalun/i })).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
     expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
     expect(document.querySelector('.qar-react-nav-drawer-overlay')).not.toBeNull()

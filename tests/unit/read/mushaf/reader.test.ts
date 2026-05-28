@@ -176,7 +176,7 @@ describe('MushafReader', () => {
     })
   })
 
-  it('reloads the active page when the active riwayah changes', async () => {
+  it('keeps the active default-riwayah page renderable after a riwayah refresh event', async () => {
     const { default: MushafReader } = await import('../../../../src/read/mushaf/MushafReader.svelte')
     const { settings } = await import('../../../../src/configure/state.svelte')
     const { emit } = await import('../../../../src/core/events')
@@ -188,12 +188,12 @@ describe('MushafReader', () => {
       expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAccessibleName(/Qālūn/)
     })
 
-    settings.riwayah = 'hafs'
-    settings.mushafEditionId = 'hafs-quran-ws-v1'
-    emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: 'qaloon', to: 'hafs' })
+    settings.riwayah = 'qaloon'
+    settings.mushafEditionId = 'qalun-quran-ws-v1'
+    emit(Events.SETTINGS_RIWAYAH_CHANGED, { from: 'qaloon', to: 'qaloon' })
 
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAccessibleName(/hafs/)
+      expect(screen.getByRole('img', { name: /Mushaf page 1/ })).toHaveAccessibleName(/Qālūn/)
     })
   })
 

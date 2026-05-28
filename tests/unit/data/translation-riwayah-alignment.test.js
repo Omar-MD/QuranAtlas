@@ -19,6 +19,7 @@ import { join } from 'node:path'
 
 const DATASET = join(process.cwd(), 'public', 'dataset')
 const RIWAYAT = ['hafs', 'warsh', 'qaloon']
+const RUNTIME_TRANSLATION_RIWAYAT = ['hafs', 'qaloon']
 
 const surahs = JSON.parse(readFileSync(join(DATASET, 'surahs.json'), 'utf8'))
 const verseMap = JSON.parse(readFileSync(join(DATASET, 'translations', '_verse-map.json'), 'utf8'))
@@ -103,7 +104,7 @@ describe('translation ↔ riwayah alignment', () => {
       for (const t of provenance.translations) {
         expect(t.primaryRiwayah, `${t.id} primaryRiwayah`).toBe('hafs')
         expect(t.coverage, `${t.id} coverage`).toBeDefined()
-        for (const r of RIWAYAT) {
+        for (const r of RUNTIME_TRANSLATION_RIWAYAT) {
           expect(t.coverage[r], `${t.id}.coverage.${r}`).toMatchObject({
             total: expect.any(Number),
             covered: expect.any(Number),
@@ -121,18 +122,18 @@ describe('translation ↔ riwayah alignment', () => {
       }
     })
 
-    it('Warsh and Qaloon coverage matches the structural truth — covered + missing = total', () => {
+    it('Qaloon coverage matches the structural truth — covered + missing = total', () => {
       for (const t of provenance.translations) {
-        for (const r of ['warsh', 'qaloon']) {
+        for (const r of ['qaloon']) {
           const c = t.coverage[r]
           expect(c.covered + c.missing, `${t.id}.${r}`).toBe(c.total)
         }
       }
     })
 
-    it('Warsh and Qaloon coverage is 100% after applying _verse-aliases.json', () => {
+    it('Qaloon coverage is 100% after applying _verse-aliases.json', () => {
       for (const t of provenance.translations) {
-        for (const r of ['warsh', 'qaloon']) {
+        for (const r of ['qaloon']) {
           expect(t.coverage[r].missing, `${t.id} ${r} missing after aliases`).toBe(0)
           expect(t.coverage[r].covered).toBe(t.coverage[r].total)
         }
@@ -287,8 +288,8 @@ describe('translation ↔ riwayah alignment', () => {
           }
         })
 
-        it('every Warsh / Qaloon ayah resolves to a non-empty Hafs translation via _verse-aliases.json', () => {
-          for (const r of ['warsh', 'qaloon']) {
+        it('every Qaloon ayah resolves to a non-empty Hafs translation via _verse-aliases.json', () => {
+          for (const r of ['qaloon']) {
             for (let n = 1; n <= 114; n++) {
               const surah = loadRiwayahSurah(r, n)
               const trans = loadTranslationSurah(t.id, n)

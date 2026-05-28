@@ -139,7 +139,23 @@ export default defineConfig(() => {
           cacheId: isProductionDeployment ? 'quranatlas' : 'quranatlas-react-preview',
           cleanupOutdatedCaches: true,
           navigateFallback: '/index.html',
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
+          runtimeCaching: [
+            {
+              urlPattern: /\/dataset\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'quran-atlas-react-runtime-dataset-v1',
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+                expiration: {
+                  maxEntries: 20_000,
+                  maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+              },
+            },
+          ],
         },
       }),
     ],
