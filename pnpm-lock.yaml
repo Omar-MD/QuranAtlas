@@ -10,7 +10,7 @@ overrides:
   basic-ftp: ^5.3.1
   fast-uri: '>=3.1.2'
   ip-address: '>=10.1.1'
-  tmp: ^0.2.4
+  tmp: ^0.2.6
   uuid@<14.0.0: '>=14.0.0'
   postcss@<8.5.10: '>=8.5.10'
   brace-expansion@>=5.0.0 <5.0.6: '>=5.0.6'
@@ -5087,8 +5087,8 @@ packages:
     resolution: {integrity: sha512-JIXCerhudr/N6OWLwLF1HVsTTUo7ry6qHa5eWZEkiMuxsIiAACL55tGLfqfHfoH7QaMQUW8fngD7u7TxWexYQg==}
     hasBin: true
 
-  tmp@0.2.5:
-    resolution: {integrity: sha512-voyz6MApa1rQGUxT3E+BK7/ROe8itEx7vD8/HEvt4xwXucvQ5G5oeEiHkmHZJuBO21RpOf+YYm9MOivj709jow==}
+  tmp@0.2.7:
+    resolution: {integrity: sha512-e0votIpp4Uo2AJYSzVHV6xCcawuiez3DzqDAbrTc3YxBkplN6e+dM13ZeIcZnDg/QpSuU2zfZ3rzwY8ukEnaXw==}
     engines: {node: '>=14.14'}
 
   to-regex-range@5.0.1:
@@ -6614,7 +6614,7 @@ snapshots:
       lighthouse-logger: 1.2.0
       open: 7.4.2
       proxy-agent: 6.5.0
-      tmp: 0.2.5
+      tmp: 0.2.7
       uuid: 14.0.0
       yargs: 15.4.1
       yargs-parser: 13.1.2
@@ -8866,7 +8866,7 @@ snapshots:
     dependencies:
       chardet: 0.7.0
       iconv-lite: 0.4.24
-      tmp: 0.2.5
+      tmp: 0.2.7
 
   extract-zip@2.0.1:
     dependencies:
@@ -10828,7 +10828,7 @@ snapshots:
     dependencies:
       tldts-core: 7.0.29
 
-  tmp@0.2.5: {}
+  tmp@0.2.7: {}
 
   to-regex-range@5.0.1:
     dependencies:

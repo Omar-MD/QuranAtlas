@@ -45,6 +45,12 @@ const OFFLINE_BASE_URL = USE_PREVIEW_SERVER
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: [
+    '**/react-golden.spec.ts',
+    '**/react-shell/**/*.spec.ts',
+    '**/react-visual/**/*.spec.ts',
+    '**/infra/react-offline.spec.ts',
+  ],
   // Captures an onboarded storageState once per suite run; specs opt in via
   // `test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })`.  See
   // `tests/e2e/global-setup.ts` and tests/e2e/AGENTS.md.

@@ -109,9 +109,9 @@ describe('mushaf page dataset builder', () => {
     expect(verseToPage['2:255']).toBe(85)
   })
 
-  it('keeps baseline page output to the default riwayah and full output to every riwayah', () => {
+  it('keeps baseline and full page output to the default MVP riwayah', () => {
     expect(riwayatForProfile('baseline')).toEqual(['qaloon'])
-    expect(riwayatForProfile('full')).toEqual(['hafs', 'warsh', 'qaloon'])
+    expect(riwayatForProfile('full')).toEqual(['qaloon'])
   })
 
   it('treats catalog profile as having no Mushaf page body output', () => {

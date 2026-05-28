@@ -15,14 +15,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
 const CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-pages.json')
 const ASSET_CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-assets.json')
+const DEFAULT_PROFILE = JSON.parse(
+  await readFile(join(REPO_ROOT, 'shared', 'reader-assets', 'default-profile.json'), 'utf8'),
+).profile
 const NORMALIZED_DIR = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages')
 const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const OUT_ROOT = join(DATASET_DIR, 'mushaf-pages')
 const RIWAYAT = ['hafs', 'warsh', 'qaloon']
 const PROFILE_RIWAYAT = {
-  baseline: ['qaloon'],
-  full: RIWAYAT,
+  baseline: [DEFAULT_PROFILE.riwayah],
+  full: [DEFAULT_PROFILE.riwayah],
   catalog: [],
 }
 

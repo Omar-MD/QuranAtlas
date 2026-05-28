@@ -15,7 +15,7 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearAllData, markOnboardingComplete, readSetting, writeSetting } from '../fixtures/idb.js'
+import { clearAllData, markOnboardingComplete } from '../fixtures/idb.js'
 import { waitForReader } from '../fixtures/chrome.js'
 
 const DATASET_CACHE = 'quran-dataset-v2'
@@ -189,17 +189,6 @@ async function clearQalunPageCaches(page) {
   })
 }
 
-async function cacheDatasetPath(page, path, body = '{}') {
-  await page.evaluate(async ({ cacheName, path: datasetPath, bodyText }) => {
-    if (!('caches' in window)) return
-    const cache = await caches.open(cacheName)
-    const absolute = new URL(datasetPath, location.origin).href
-    const response = new Response(bodyText, { headers: { 'content-type': 'application/json' } })
-    await cache.put(datasetPath, response.clone())
-    await cache.put(absolute, response.clone())
-  }, { cacheName: DATASET_CACHE, path, bodyText: body })
-}
-
 test.describe('Journey H: Offline resilience', () => {
   // -------------------------------------------------------------------------
   // H1. Reload offline — reader and shortcuts sheet load from cache
@@ -283,9 +272,10 @@ test.describe('Journey H: Offline resilience', () => {
 
     await page.goto('/#/assets')
     await expect(page.getByRole('heading', { name: 'Asset Management' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('status')).toContainText('Asset state ready.')
-    await expect(page.getByRole('table', { name: 'Quran Text Styles' })).toBeVisible()
-    await expect(page.getByRole('table', { name: 'Mushaf Editions' })).toBeVisible()
+    await expect(page.locator('.qa-assets-status')).toContainText('Default assets ready.')
+    await expect(page.getByRole('table', { name: 'Quran Text' })).toBeVisible()
+    await expect(page.getByRole('table', { name: 'Mushaf' })).toBeVisible()
+    await expect(page.getByRole('table', { name: 'Translation' })).toBeVisible()
   })
 
   test('H3: cached Qalun page survives offline Mushaf reload @offline', async ({ page, context }) => {
@@ -320,33 +310,24 @@ test.describe('Journey H: Offline resilience', () => {
     }
   })
 
-  test('H4: asset route verifies optional source packs before activation and blocks active delete @offline', async ({ page }) => {
+  test('H4: asset route stays read-only for the default asset contract @offline', async ({ page }) => {
     test.setTimeout(60_000)
 
     await page.goto('/')
     await clearAllData(page)
     await markOnboardingComplete(page)
-    await writeSetting(page, 'translationId', 'bridges')
     await page.goto('/#/s/1')
     await waitForReader(page)
     await waitForServiceWorker(page)
 
-    await cacheDatasetPath(page, '/dataset/translations/saheeh/001.json', '{"translationId":"saheeh","surahNo":1,"verses":[]}')
     await page.goto('/#/assets')
 
-    const row = page.locator('.qa-asset-row').filter({ hasText: 'Saheeh International' })
-    await expect(row).toBeVisible({ timeout: 10_000 })
-    await expect(row.locator('.qa-asset-status-chip')).toHaveText('incomplete')
-    await expect(row.getByRole('button', { name: /Reinstall Saheeh International/ })).toBeVisible()
-
-    await row.getByRole('button', { name: /Reinstall Saheeh International/ }).click()
-    await expect(row.getByRole('button', { name: /Set Active Saheeh International/ })).toBeVisible({ timeout: 20_000 })
-    await expect.poll(() => readSetting(page, 'translationId')).toBe('bridges')
-
-    await row.getByRole('button', { name: /Set Active Saheeh International/ }).click()
-    await expect(row.getByRole('button', { name: /Active Saheeh International/ })).toBeDisabled({ timeout: 10_000 })
-    await expect.poll(() => readSetting(page, 'translationId')).toBe('saheeh')
-    await expect(row.getByText('Switch to another compatible asset before deleting.')).toBeVisible()
-    await expect(row.getByRole('button', { name: 'Delete' })).toBeDisabled()
+    await expect(page.getByRole('heading', { name: 'Asset Management' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.qa-asset-row')).toHaveCount(3)
+    await expect(page.locator('.qa-asset-row').filter({ hasText: 'Qaloon Quran text and required font' })).toBeVisible()
+    await expect(page.locator('.qa-asset-row').filter({ hasText: 'Qaloon Quran.ws page manifest and pages' })).toBeVisible()
+    await expect(page.locator('.qa-asset-row').filter({ hasText: 'Bridges translation' })).toBeVisible()
+    await expect(page.locator('.qa-asset-row').getByRole('button')).toHaveCount(0)
+    await expect(page.getByText('Saheeh International')).toHaveCount(0)
   })
 })
