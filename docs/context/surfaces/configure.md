@@ -18,7 +18,7 @@ style_paths:
 
 # Surface: configure
 
-> Mode-aware Verse Settings, Mushaf Settings, Asset Management, and About page for Reader First preferences: theme, night mode, typography, qira'ah/riwayah source, translation, tafsir, active Quran text style, active Mushaf edition, install state, and clear-all-data. Pack-state policy now lives in `src/packs/**`; configure consumes those APIs and only changes active source settings once a pack is verified usable or explicitly switched back to the verified baseline. Audio is removed product scope pending source cleanup.
+> Mode-aware Verse Settings, Mushaf Settings, read-only Asset Management, and About page for Reader First preferences: theme, night mode, typography, translation visibility, Mushaf view mode, and clear-all-data. The current MVP has one default reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation. Source pickers, tafsir choices, and optional-pack controls are future work.
 
 ## Reach
 
@@ -70,7 +70,6 @@ Routes: `#/settings` (transient settings opener), `#/assets` (all viewports), `#
 | `src/configure/state-recent-surahs.svelte.ts` | Sole writer for `settings.recentSurahs`. Pre-fix App.svelte did its |
 | `src/configure/state.svelte.ts` | _(no leading comment)_ |
 | `src/configure/surah-header-visibility.ts` | Surah header visibility: persisted user preference for whether the in-reader |
-| `src/configure/tafsir.ts` | _(no leading comment)_ |
 | `src/configure/theme.ts` | Theme management: load and apply user theme preferences. |
 | `src/configure/variant-bundle.ts` | _(no leading comment)_ |
 <!-- AUTO-GENERATED:inventory END -->
@@ -88,7 +87,7 @@ The settings overlay is mode-aware. `openSettingsSheet('verse')` renders Verse S
 Shared shell zones:
 
 1. **Header** — title (`Verse Settings` or `Mushaf Settings`), concise subtitle, and close button. Backdrop tap, close, or Esc dismisses and restores focus to the opener unless the footer navigates away.
-2. **Body** — mode-specific preview and controls. Rows use stable heights and open the nested asset picker for source/asset choices.
+2. **Body** — mode-specific preview and controls. Rows use stable heights and avoid source-picker affordances in the current MVP.
 3. **Footer** — shared Theme and Night Mode controls plus a Manage Assets action. Manage Assets closes the shell without focus restore and routes to `#/assets`.
 
 Equivalent settings rows now share a hyphenated row grammar across Verse, Mushaf, and nested picker states: `qa-settings-row`, `qa-settings-row-label`, `qa-settings-row-control`, `qa-settings-row-meta`, plus state modifiers such as `qa-settings-row--active`, `qa-settings-row--disabled`, `qa-settings-row--picker`, `qa-settings-row--slider`, and `qa-settings-row--switch`. Variant-specific classes remain only where the control family genuinely differs.
@@ -97,18 +96,14 @@ Verse Settings contains:
 
 - **Verse preview** — Arabic sample using the live reader Arabic cascade and optional translation line gated by `settings.translationVisible`.
 - **Reading** — Font Size writes through `src/configure/font-size.ts::setFontSize`; Reading Flow writes all four reading typography dimensions through `src/configure/reading-typography.ts::setReadingFlow`.
-- **Sources** — Active Riwayah, Quran Text Style, Translation Source, Show Translation, and Tafsir Source. Riwayah changes use the atomic active variant bundle; text style changes require a usable compatible text asset; translation visibility writes through `setTranslationVisible`.
+- **Reader assets** — read-only summary of the included Qaloon + Bridges profile, plus Show Translation. Translation visibility writes through `setTranslationVisible`.
 
 Mushaf Settings contains:
 
 - **Mushaf preview** — an unframed page-like preview, distinct from the Verse typography preview.
-- **Mushaf** — Active Riwayah and Mushaf Edition rows. Mushaf edition changes require a usable compatible Mushaf asset and preserve the active text style.
+- **Mushaf** — Mushaf view mode only. The active edition is fixed to the included Qaloon Mushaf.
 
-The nested picker is a small dialog within the shell. It lists compatible rows for the active mode, marks the current row, focuses itself on open, and closes after a successful row choice. Esc closes the nested picker first; a second Esc closes the parent Settings shell and restores focus to the original opener.
-
-Switching riwayah from Settings is gated by the variant-asset domain. Qalun is the baseline and remains the active usable riwayah; the runtime key remains `qaloon`. Active recitation state is the atomic bundle `settings.riwayah` + `settings.quranTextStyleId` + `settings.mushafEditionId`, written only by `src/configure/variant-bundle.ts`. A riwayah switch chooses that riwayah's default Quran text style and Mushaf edition, validates both assets are usable, then writes all three keys in one IDB transaction before mutating runes, applying DOM state, emitting `SETTINGS_RIWAYAH_CHANGED`, or broadcasting cross-tab. A rejected switch returns `false` and leaves all three active keys unchanged. Install, verify, retry, and delete states for optional assets live on the Asset Management route, not in the nested Settings picker.
-
-Package install progress lives outside `settings.riwayah`: `src/configure/state.svelte.ts::riwayahPackageState` holds runtime package status by riwayah, and `riwayahInstallIntent` records the requested optional package plus the previous usable riwayah. Failed installs clear the request or mark an error while preserving both `settings.riwayah` and `previousUsable`.
+The nested source picker is not mounted in the current MVP. Switching riwayah, text style, translation source, tafsir source, or Mushaf edition is deferred until the multiple-profile contract returns. Active recitation state still persists as the atomic bundle `settings.riwayah` + `settings.quranTextStyleId` + `settings.mushafEditionId`, written only by `src/configure/variant-bundle.ts`, but the only valid current values are the default Qaloon profile.
 
 The old in-panel Storage accordion is no longer mounted in the settings shell. Offline install, verify, set-active, and delete controls move to the dedicated asset-management route.
 
@@ -127,29 +122,19 @@ The old in-panel Storage accordion is no longer mounted in the settings shell. O
 
 `#/assets` is a real route, but it is excluded from `settings.lastSurface` persistence and launch restore. Direct entry renders a `Back to Reader` link to `#/s/1`; entry from another route can use browser history. On mount the page focuses the `Asset Management` heading so Manage Assets navigation does not restore focus to the settings opener.
 
-Mobile and tablet use a single dense column: sticky Back/Verify header, active variant summary, polite route-level status region, then grouped rows for Quran Text Styles, Mushaf Editions, Translations, and Tafsir. Mobile MarginHeader is hidden on this route so the asset page owns the header chrome. Rows expose status, compatibility reason, size, primary action, and Delete when relevant.
+Mobile and tablet use a single dense column: sticky Back header, default-profile summary, polite route-level status region, then three informational rows: Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation. Mobile MarginHeader is hidden on this route so the asset page owns the header chrome. Rows expose included status and asset ids only.
 
-Desktop uses a two-pane operational layout: left section navigation, right grouped asset tables. AmbientDock remains visible. `src/configure/assets/asset-view-model.ts` owns row action labels and blocked-delete copy, including the active optional delete reason `Switch to another compatible asset before deleting.`
-
-Actions:
-
-- Text and Mushaf rows install/delete via concrete variant asset helpers in `src/data/offline.ts`; Set Active writes through `setQuranTextStyleId` or `setMushafEditionId`.
-- Translation and tafsir rows derive install state from `indexes/source-assets.json` plus Cache Storage membership, install/delete via source asset helpers, and set active through their settings writers only after local verification.
-- Shipped rows never show Install. Active rows show Active and block Delete where deletion would remove the active optional asset.
+Desktop uses the same read-only inventory with wider row layout. AmbientDock remains visible. There are no Install, Verify, Set Active, Switch, Retry, or Delete actions in the current MVP.
 
 ### Pick a translation
 
 Toggle translation-visibility switch → `settings.translationVisible` rune updates → the mounted reader re-renders with translation hidden/shown. Any footnote markers (`[N]`) present in the active pack and any open inline footnote panels disappear with translation. Sticky preview at top of Settings sheet drops translation line in lockstep.
 
-The shipped source index exposes four selectable English sources in this phase: Bridges (default baseline), Saheeh International, The Clear Quran, and M.A.S. Abdel Haleem. Only the default body is present in the baseline manifest; the others are same-origin opt-in dataset packs listed in `indexes/source-assets.json`.
+The current source index exposes Bridges as the only MVP translation. Non-default translation install/activation is future multiple-profile work.
 
-When a non-default translation is installed and verified from Asset Management, Set Active saves `settings.translationId` and the mounted Reader switches to it immediately while staying on the same surah. If a selected translation body later cannot be fetched, Reader falls back to the default translation for that surah.
+### Tafsir sources
 
-### Pick a tafsir source
-
-The Settings Sources section owns the saved tafsir preference under `settings.tafsirId`. The picker exposes al-Tafsir al-Muyassar (default baseline), al-Mukhtasar fi al-Tafsir, and Tafsir al-Sa'di from the runtime source index. Optional packs are not in the baseline manifest but are present as same-origin opt-in assets. Asset Management installs and verifies optional tafsir packs before Set Active writes `settings.tafsirId`. If a selected tafsir pack cannot be verified usable, Reader surfaces unavailable/install/switch state or explicitly switches to a verified baseline before baseline tafsir renders.
-
-If an inline tafsir preview or the full tafsir sheet is already open, changing the saved tafsir source from Settings updates that active Reader study view in place.
+Tafsir source selection and reader tafsir UI are not current MVP behavior. Old `settings.tafsirId` values are cleared by the MVP launch reset.
 
 ### Theme swap
 
@@ -179,7 +164,7 @@ About with captured install prompt → tap **Install App** → `promptInstall()`
 
 Dialog copy stays reader-first while accurately covering old local data: saved reading positions, bookmarks, offline downloads, settings, and any older local QuranAtlas data still stored on the device.
 
-Type `DELETE`, tap red **Clear All Data** → `safety/sync.js::suppressNextVersionChange()` arms, then `deleteDB()` runs → DB gone → page reloads → first-run onboarding (A1) starts fresh.
+Type `DELETE`, tap red **Clear All Data** → `safety/sync.js::suppressNextVersionChange()` arms, then `deleteDB()` runs → DB gone → page reloads → launch splash applies the default profile and opens the reader.
 
 Cancel / Escape → dialog closes, nothing changes.
 
@@ -203,11 +188,10 @@ Keys + sole writers:
 | --- | --- | --- |
 | `theme` | `src/configure/theme.ts` | `'light' \| 'sepia' \| 'dark' \| 'auto'` |
 | `nightMode` | `src/configure/night-mode.ts` | `'off' \| 'on' \| 'auto'` |
-| `riwayah` | `src/configure/variant-bundle.ts` | `'hafs' \| 'warsh' \| 'qaloon'` |
+| `riwayah` | `src/configure/variant-bundle.ts` | `'qaloon'` |
 | `quranTextStyleId` | `src/configure/variant-bundle.ts` | variant id string |
 | `mushafEditionId` | `src/configure/variant-bundle.ts` | variant id string |
 | `translationId` | `src/configure/panel-bridge.ts` | `string` |
-| `tafsirId` | `src/configure/tafsir.ts` | `string` |
 | `translationVisible` | `src/configure/panel-bridge.ts` | `boolean` |
 | `fontSize` | `src/configure/font-size.ts` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` |
 | `lineSpacing` | `src/configure/reading-typography.ts` | step |
@@ -223,7 +207,7 @@ Keys + sole writers:
 | `onboardingComplete` | `src/onboard/state.ts` | `boolean` |
 | `offlineCategories` | `src/configure/offline-categories.ts` | `OfflineCategoriesState` (source-aware text/pages/search opt-in; legacy audio values are dropped during normalization so removed-scope state does not survive invisibly) |
 
-Riwayah package status and install intent are in-memory runtime state, not `settings` keys. They are intentionally separate from the persisted active bundle so an optional asset can be installable, installing, or errored without becoming rendered content.
+Legacy riwayah package status and install intent are not current MVP settings. Optional asset lifecycle state returns only with future multiple-profile work.
 
 ## Events
 
@@ -232,7 +216,7 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 | --- | --- | --- |
 | `settings:data-cleared` | `Events.SETTINGS_DATA_CLEARED` | `src/configure/clear-data.ts:170` |
 | `settings:recent-surahs-updated` | `Events.SETTINGS_RECENT_SURAHS_UPDATED` | `src/configure/state-recent-surahs.svelte.ts:26` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:68`, `src/configure/variant-bundle.ts:66` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/riwayah.ts:63`, `src/configure/variant-bundle.ts:66` |
 | `sheet:closed` | `Events.SHEET_CLOSED` | `src/configure/Panel.svelte:33` |
 | `sheet:opened` | `Events.SHEET_OPENED` | `src/configure/Panel.svelte:25` |
 <!-- AUTO-GENERATED:events-emit END -->
@@ -240,7 +224,7 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/reading-typography.ts:133` |
+| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/configure/reading-typography.ts:132` |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
@@ -248,14 +232,13 @@ Riwayah package status and install intent are in-memory runtime state, not `sett
 - **One writer per `settings` key.** Settings is a key-value store, not a record store; the invariant holds at key granularity. The active variant keys (`riwayah`, `quranTextStyleId`, `mushafEditionId`) are intentionally co-owned by `src/configure/variant-bundle.ts` so they can be validated, written, applied, and broadcast as one bundle.
 - **Mushaf view mode is owned by the read surface.** The Settings store persists `mushafViewMode`, but the sole writer is `src/read/mushaf/view-mode.ts` because the visible control lives in Mushaf page chrome, not the Settings sheet.
 - **Sole writer of `settings.wirdPlan`: `src/read/wird/store.ts`.** The settings store remains key-value; Daily Wird owns only this key and does not change the settings objectStore schema.
-- **Settings shell is mode-aware.** Verse Settings may show typography, translation, tafsir, and Quran text-style controls; Mushaf Settings may show Mushaf page source and edition controls. Mushaf Settings must not render Verse typography or Storage rows.
+- **Settings shell is mode-aware.** Verse Settings may show typography and translation visibility; Mushaf Settings may show Mushaf view mode. Neither shell renders source pickers or Storage rows.
 - **Settings shell restores focus on dismissal.** Manage Assets is the exception because it closes the shell and routes away.
 - **Verse typography controls use existing sole writers.** Font Size calls `setFontSize`; Reading Flow calls `setReadingFlow` so all reading-flow dimensions remain coordinated.
-- **Saved tafsir preference is source metadata, not manifest membership.** Settings can persist an optional tafsir id from `indexes/sources.json`; optional body availability is planned by `indexes/source-assets.json`, and Reader load is responsible for unavailable/install/switch handling when the body fetch fails.
-- **Source rows expose install state before activation.** Optional qira'ah/riwayah, translation, tafsir, curated metadata, page, and search/index packs are installable before they are usable. The selected label must not change to a pack that has not verified local install state.
+- **No saved tafsir preference in MVP.** Old `settings.tafsirId` values are unsupported local data and are cleared by the launch reset.
+- **No source rows in MVP.** Optional qira'ah/riwayah, translation, tafsir, curated metadata, page, and search/index packs are future multiple-profile work.
 - **Asset management owns offline controls.** The legacy `settings.offlineCategories` normalizer remains for old data, but the mode-aware settings shell does not mount `offline-selector.svelte`.
-- **Optional variant assets are usable only after local asset verification.** The active bundle may persist Hafs or Warsh only when both the selected Quran text style and Mushaf edition helpers report usable. Qalun (`qaloon`) availability does not make another riwayah usable.
-- **Install intent is not the active bundle.** `riwayahInstallIntent.requested` and `previousUsable` guide install/prompt flows without changing the active variant bundle until `setRiwayah(requested)` succeeds.
+- **Default variant assets are the only usable MVP assets.** The active bundle may persist only Qaloon text/font and Qaloon Mushaf.
 
 ## Regression guards
 

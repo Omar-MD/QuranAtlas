@@ -27,18 +27,19 @@ Reader First does not ship personal annotation or taxonomy editing. New docs sho
 
 ## Reader First
 
-Reader First is QuranAtlas's v1 product doctrine: complete offline-first Verse and Mushaf reading, reader preferences, bookmarks, saved position, Daily Wird, search/navigation, and reader-attached curated metadata. Study, storage, and future retrieval work serve reading rather than becoming separate v1 products.
+Reader First is QuranAtlas's product doctrine: complete offline-first Verse and Mushaf reading, reader preferences, bookmarks, saved position, Daily Wird, search/navigation, and reader-attached curated metadata when it strengthens reading. The current MVP narrows that doctrine to one default reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation.
 
 ## curated metadata vs personal notes
 
-Curated metadata is QuranAtlas-authored or source-backed reader enrichment: tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani and revelation/asbab metadata, and juz/hizb/rub/ruku/page metadata. Personal notes are future scope; do not describe them as part of the shipped Reader First product.
+Curated metadata is QuranAtlas-authored or source-backed reader enrichment: tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani and revelation/asbab metadata, and juz/hizb/rub/ruku/page metadata. Tafsir and richer curated metadata are future work in the current MVP. Personal notes are future scope; do not describe them as part of the shipped Reader First product.
 
 ## asset pack terms
 
+- **Reader asset profile.** The current framework-neutral contract describing the shipped reader assets. The MVP profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation.
 - **Asset pack.** A coherent set of files for one source type, such as qira'ah/riwayah text, translation, tafsir, curated metadata, Mushaf pages, or search indexes.
-- **Active pack.** The single selected pack for a source type. The reader must render the active pack only after it is verified usable.
-- **Baseline pack.** The pack shipped with the baseline app bundle. Qalun is the baseline qira'ah/riwayah pack.
-- **Optional pack.** A discoverable pack that must install before activation. Catalog availability is not usability.
+- **Active pack.** The selected pack for a source type. In the current MVP there is only the default profile, so the UI does not expose active-pack switching.
+- **Baseline pack.** The pack shipped with the baseline app bundle. Qalun is the baseline qira'ah/riwayah pack; runtime keys use `qaloon`.
+- **Optional pack.** Future multiple-profile vocabulary for a discoverable pack that must install before activation. Catalog availability is not usability.
 
 ## Qalun and runtime `qaloon`
 
@@ -48,7 +49,7 @@ Use Qalun in product prose. Existing runtime keys, paths, and TypeScript unions 
 
 Pin the meanings to avoid audio-side collisions:
 
-- **Riwayah.** Singular. A *textual* transmission of the Qur'an. Three of them ship today: `'hafs'`, `'warsh'`, `'qaloon'` (canonical list at `core/db/types.ts::Riwayah`). The reader is parameterised by riwayah, the dataset is split by riwayah, the active KFGQPC font is keyed off riwayah.
+- **Riwayah.** Singular. A *textual* transmission of the Qur'an. The current MVP reader uses only `'qaloon'`; Hafs and Warsh source data may remain in build-time inputs for validation/future work but are not selectable current product profiles. The reader dataset path is still split by riwayah, and the active KFGQPC font is keyed off riwayah.
 - **Riwayat.** Plural. Used in directory paths (`public/dataset/riwayat/{name}/`) and prose contexts ("supports three riwayat"). Never used as an identifier or runtime variable name.
 - **Reciter.** Removed-scope implementation vocabulary for a voice: a person reciting one of the textual transmissions. A reciter is not a riwayah. Any remaining audio code is cleanup inventory and must stay separate from `settings.riwayah`.
 
@@ -68,12 +69,12 @@ The store is namespaced informally — sub-features prefix when there's a collis
 
 ## bridge
 
-A persistent-overlay pattern used by `settings/Panel.svelte`, `read/TafsirSheet.svelte`, and similar components. The pattern:
+A persistent-overlay pattern used by `settings/Panel.svelte`, navigation drawers, and similar components. The pattern:
 
 - The Svelte component, mounted persistently in `App.svelte`, calls `register*({ open, close })` in `onMount`.
 - Imperative callers (vanilla JS, command sheet, keyboard handlers) import the module-level `open*()` / `close*()` functions and call them.
 
-The active reader-first overlay bridges (Settings Panel, NavDrawer, TafsirSheet) are produced by `core/persistent-overlay.ts::createOverlayBridge<API>()`. "Bridge" is synonymous with "overlay registered with `createOverlayBridge`". The factory's `setMounter` + pending-call queue handles the chicken-and-egg between boot-time bridge calls and lazy-mounted components. New persistent overlays MUST use the factory; hand-rolled bridges are forbidden.
+The active reader-first overlay bridges are produced by `core/persistent-overlay.ts::createOverlayBridge<API>()`. "Bridge" is synonymous with "overlay registered with `createOverlayBridge`". The factory's `setMounter` + pending-call queue handles the chicken-and-egg between boot-time bridge calls and lazy-mounted components. New persistent overlays MUST use the factory; hand-rolled bridges are forbidden.
 
 ## sole writer
 

@@ -13,7 +13,7 @@ One-page orientation for anyone (or any agent) walking into this codebase cold. 
 - **Style discovery** — when you need the owner of a selector or component look, start from the relevant surface dossier in `docs/context/surfaces/*.md`, then use `docs/context/style-map.md` to jump from component to source file, CSS partial, visual reference, and proof coverage.
 - **IndexedDB for all persistence** — DB name `quran-atlas`, version 7, 4 active stores (see `data-model.md`). Every IDB access routes through `src/core/db.ts`. Store record shapes are declared as TS `interface`s re-exported via `StoreRecords` so the `put()` validator and callers share the same compile-time contract.
 - **Mitt for cross-module communication** — tiny pub/sub (`src/core/events.ts`). Event names centralised in `src/core/constants.ts::Events`. Payload typedefs live beside the enum.
-- **Service worker for offline** — `src/infra/service-worker/sw.js` + Workbox; the Quran corpus is cached in `CACHE_DATASET` and surahs load from cache first. Dataset downloads are gated by manifest membership, build-time validation, byte planning, and install-state checks, not runtime SHA verification, and the SW plus `src/infra/offline/` helpers stay vanilla JS by design.
+- **Service worker for offline** — `src/infra/service-worker/sw.js` + Workbox; the Quran corpus is cached in `CACHE_DATASET` and surahs load from cache first. Dataset downloads are gated by manifest membership, build-time validation, and byte planning, not runtime SHA verification, and the SW plus `src/infra/offline/` helpers stay vanilla JS by design. The current MVP asset UI is read-only inventory for the default reader profile.
 - **Testing** — Vitest + jsdom + `fake-indexeddb/auto` for units; Playwright journey specs (A–I) for E2E. Default to unit tests; use e2e only for browser-only proof. See `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md`.
 
 ## Boot flow (`src/app.ts` → `src/App.svelte` → `src/app-bootstrap.ts`)
@@ -21,13 +21,13 @@ One-page orientation for anyone (or any agent) walking into this codebase cold. 
 Vite's entry is `src/app.ts`, which imports `App.svelte` and calls `mount(App, { target: #app })`. Every subsequent step lives inside `App.svelte` and the bootstrap helper it calls.
 
 1. `App.svelte` mounts. Its `onMount` registers an `onRouteChange` handler that receives the resolved Svelte route component and mounts it imperatively into `#main-content` (re-using Svelte's `mount()`/`unmount()` APIs so route params + hook props are passed as component props).
-2. Persistent overlays are declared in `App.svelte`'s markup once for active reader-first chrome (`QuotaBanner`, `SaveFailureToast`, `UpdateBanner`, `ClearDataConfirm`) and lazy-mounted via bridges for route-adjacent overlays (`Panel`, `NavDrawer`, `TafsirSheet`).
+2. Persistent overlays are declared in `App.svelte`'s markup once for active reader-first chrome (`QuotaBanner`, `SaveFailureToast`, `UpdateBanner`, `ClearDataConfirm`) and lazy-mounted via bridges for route-adjacent overlays (`Panel`, `NavDrawer`).
 3. `initBootstrap()` from `src/app-bootstrap.ts` runs after the route handler is in place. It:
    - Drains any partial `bootCleanups` from a previous call.
    - `openDB()` — opens/creates the IDB (`onupgradeneeded` creates stores + indexes).
    - `initSafetySync()` — must run immediately after `openDB()` so the `DB_VERSION_CHANGE` listener is registered before any versionchange can fire (from another tab or E2E suppress hatch). If this runs later, a `suppressNextVersionChange()` call can leak its flag into a later real versionchange and silently suppress the reload banner.
    - `initTheme()` + `initFontSize()` — apply persisted theme/font *before* router dispatch so there's no flash.
-   - `initRiwayah()` — reads `settings['riwayah']` (sole writer `settings/riwayah.ts`, default `'qaloon'`) and sets `data-riwayah` on `<html>` so font-family + line-height CSS rules fire before the reader mounts. Runs after `initFontSize()` and before `initReadingTypography()` — typography needs to know the active Riwayah to clamp its line-height floor correctly. It also initializes the in-memory riwayah package install intent: the previous usable riwayah is the saved riwayah when the package helper verifies it, otherwise verified Qalun (`qaloon`).
+   - `initRiwayah()` — applies the default MVP riwayah (`qaloon`) and sets `data-riwayah` on `<html>` so font-family + line-height CSS rules fire before the reader mounts. Runs after `initFontSize()` and before `initReadingTypography()` — typography needs the active riwayah to clamp its line-height floor correctly. Unsupported saved Hafs/Warsh settings are cleared by the one-time asset-contract reset before launch routing.
    - Registers route handlers (see below), then calls `router.init()` to dispatch the current hash.
    - Initializes reader keyboard actions (`initReaderActions`).
    - Wires global subscribers: `NAVIGATION_NAVIGATE` → router.
@@ -55,9 +55,9 @@ On any boot failure the `catch` block renders a minimal error card with a Retry 
 | `#/surahs` | `surahs/SurahList.svelte` | Surah directory |
 | `#/bookmarks` | `navigate/bookmarks/BookmarksPage.svelte` | Desktop bookmark list |
 | `#/about` | `about/About.svelte` | About page |
-| `#/onboarding` | `onboarding/Onboarding.svelte` | First-run flow |
+| `#/onboarding` | `onboarding/Onboarding.svelte` | Retired launch path that redirects to the reader |
 | `#/settings` | *(inline stub)* | Opens settings sheet over last surface |
-| `#/assets` | `configure/assets/AssetManagement.svelte` | Install, verify, activate, and remove local reader assets |
+| `#/assets` | `configure/assets/AssetManagement.svelte` | Read-only inventory for the default reader assets |
 
 Every route above is a Svelte 5 component loaded lazily via dynamic import.
 
@@ -65,12 +65,13 @@ The read surface owns both Verse and Mushaf modes. Verse routes encode surah/aya
 
 ### Launch restore
 
-Empty hash triggers `ROUTER_LAUNCH_RESTORE`. The handler in `app-bootstrap.ts` walks a cascade:
+Empty hash triggers `ROUTER_LAUNCH_RESTORE`. The handler in `app-bootstrap.ts` first applies the one-time MVP asset-contract reset when needed, then walks a cascade:
 
-1. Onboarding not complete → `#/onboarding`
-2. Valid launchable `settings.lastSurface` set → navigate there (`#/assets` is not launchable)
-3. Validated `settings.currentPosition` → `#/s/:surah/:verse`
-4. Otherwise → `#/s/1`
+1. Valid launchable `settings.lastSurface` set → navigate there (`#/onboarding`, `#/settings`, and `#/assets` are not launchable)
+2. Validated `settings.currentPosition` → `#/s/:surah/:verse`
+3. Otherwise → `#/s/1`
+
+`settings.onboardingComplete` is no longer a launch gate. Legacy `#/onboarding` hashes pass through the same launch restore path without source-choice UI.
 
 ## Event bus (`src/core/events.ts`)
 
@@ -117,13 +118,13 @@ into the same canonical form.
 ## Cross-cutting patterns
 
 - **Cleanup-returning initializers** — every `init()` (plus `initBootstrap`) that subscribes to events or touches the DOM returns a cleanup fn. The caller (router, `App.svelte` `onMount`) owns invocation. Svelte components use `onMount` + returned cleanup or `$effect` with a return value; vanilla helpers use an explicit cleanups array.
-- **Bottom sheets over modals** — `.qa-sheet-backdrop` + `.qa-sheet.qa-sheet--bottom` is the standard overlay shape (settings, more, command sheet, tafsir). Each opener emits `SHEET_OPENED` / `SHEET_CLOSED` with `{ name }`.
-- **Persistent-overlay mount pattern** — Svelte components that are not route components but need to be opened imperatively expose an API through a bridge module (`settings/panel-bridge.ts`, `navigate/nav-drawer-bridge.ts`, `read/tafsir-bridge.ts`). Active reader-first overlays mount in `App.svelte`. The bridge module holds a module-level reference set during the component's `onMount`. This pattern avoids circular imports and keeps the imperative open/close API stable across surfaces.
-- **Reader-attached study action** — double-tap, right-click, and keyboard `m` belong to the read surface's tafsir flow. Existing mark/tag interaction code remains implementation inventory pending source cleanup, not the Reader First product action.
-- **Dataset path and active corpus** — the reader corpus lives at `public/dataset/riwayat/{name}/{NNN}.json` (baseline product pack: Qalun; runtime key/path: `qaloon`; optional/full: Hafs and Warsh too). `src/data/dataset.ts::getSurah(n)` reads `settings['riwayah']` (sole writer `settings/riwayah.ts`, default `'qaloon'`) and consults `public/dataset/indexes/riwayah-packages.json` before loading text. Missing or unusable active Hafs/Warsh text packs throw `RiwayahPackUnavailableError` so the read surface can prompt installation or switch explicitly instead of rendering Qalun text under a non-Qalun UI state. `scripts/data/cli.mjs` orchestrates the lane builders: `scripts/data/text/build.mjs` regenerates `surahs.json`, `juz.json`, `indexes/sources.json`, `manifest.json`, and `provenance.json`, `scripts/data/knowledge/build.mjs` emits `public/dataset/knowledge/**` shards, `scripts/data/mushaf-pages/build.mjs` emits page packs, and `scripts/data/riwayah-packages/build.mjs` writes the package index before the final manifest refresh. `manifest.json` is now an inventory with lane/category/byte metadata; offline planning uses that inventory for membership and byte totals instead of digests. Mushaf page manifests live at `public/dataset/mushaf-pages/{riwayah}/manifest.json`; the browser reads same-origin SVG page assets from that tree and never fetches quran.ws at runtime. Run via `pnpm run data -- build`; `pnpm run build` chains that data build into the app bundle.
+- **Bottom sheets over modals** — `.qa-sheet-backdrop` + `.qa-sheet.qa-sheet--bottom` is the standard overlay shape (settings, more, command sheet). Each opener emits `SHEET_OPENED` / `SHEET_CLOSED` with `{ name }`.
+- **Persistent-overlay mount pattern** — Svelte components that are not route components but need to be opened imperatively expose an API through a bridge module (`settings/panel-bridge.ts`, `navigate/nav-drawer-bridge.ts`). Active reader-first overlays mount in `App.svelte`. The bridge module holds a module-level reference set during the component's `onMount`. This pattern avoids circular imports and keeps the imperative open/close API stable across surfaces.
+- **Reader-attached study action** — tafsir, mark/tag, and personal study interactions are not current MVP reader actions. Double-tap, right-click, and keyboard `m` are inert for tafsir UI in the default-assets contract.
+- **Dataset path and active corpus** — the current reader corpus is the default profile: Qalun/Qaloon text and font, Qaloon Mushaf, and Bridges translation. Runtime keys and paths continue to use `qaloon`. `src/data/dataset.ts::getSurah(n)` loads Qaloon text; saved unsupported Hafs/Warsh settings are reset before launch rather than rendered or prompted. `scripts/data/cli.mjs` orchestrates the lane builders: `scripts/data/text/build.mjs` regenerates `surahs.json`, `juz.json`, text asset indexes, `manifest.json`, and `provenance.json`, `scripts/data/knowledge/build.mjs` emits `public/dataset/knowledge/**` shards, `scripts/data/mushaf-pages/build.mjs` emits the Qaloon page pack, and `scripts/data/riwayah-packages/build.mjs` writes the package index before the final manifest refresh. `manifest.json` is an inventory with lane/category/byte metadata. Mushaf page manifests live at `public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json`; the browser reads same-origin SVG page assets from that tree and never fetches quran.ws at runtime. Run via `pnpm run data -- build`; `pnpm run build` chains that data build into the app bundle.
 - **Translation pipeline** — translation packs ship at `public/dataset/translations/{id}/{NNN}.json`. Source files live at `data/normalized/translations/{id}.json` (outside `public/`, build-only input, never shipped) and are produced by the generic catalog-driven fetcher (`pnpm run data:fetch -- translation:bridges`) and committed so the build stays offline. `dataset.ts::loadTranslationForSurah(id, surahNo)` returns the per-surah pack (verses + footnote map + intro paragraphs); `Reader.svelte` joins it onto rendered verses by `verseKey` and passes the surah-wide footnote map into each `Verse.svelte`. The current committed Bridges pack ships without footnote entries, but the runtime still supports inline `[N]` markers when a future shipped pack includes them. Schema + invariants live in `data-model.md` §Translation packs.
 - **Multi-tab coherence** — `safety/sync.ts` BroadcastChannels same-device bookmark updates and Riwayah switches across tabs; receivers re-read and emit local update events. This is technical infrastructure for open tabs on one device, not user-facing sync, accounts, community, export/import, or shared collections.
-- **Ambient chrome** — dock and pill auto-fade on reader routes, persist elsewhere. Hidden entirely on `#/onboarding`.
+- **Ambient chrome** — dock and pill auto-fade on reader routes, persist elsewhere. Legacy `#/onboarding` redirects through launch and does not expose a wizard.
 - **Viewport zoom lock** — `index.html` viewport meta sets `maximum-scale=1.0, minimum-scale=1.0, user-scalable=no` so navigation never lands on a zoomed-in surface. iOS Safari ignores `user-scalable=no` but honors `maximum-scale=1`; `src/app.ts` adds belt-and-suspenders listeners for `gesturestart`/`gesturechange` (iOS pinch) and `wheel` with `ctrlKey` (macOS Safari pinch + ctrl-scroll zoom). `base.css` sets `touch-action: manipulation` on `body` (kills double-tap zoom; pan/swipe gestures still work via per-surface overrides) and `-webkit-text-size-adjust: 100%` on `html` (iOS no longer auto-resizes text on rotation). Landscape notch handling via `padding-left/right: env(safe-area-inset-left/right)` on `#app-shell` and `.qa-sheet--settings-fs`.
 - **Touch feedback** — `src/core/haptics.ts` wraps the Vibration API with semantic helpers (`tap`, `select`, `toggle`, `warn`); `src/app.ts` registers a single delegated `pointerdown` listener (`capture: true`, `passive: true`) that fires the right helper based on the closest interactive ancestor's role (`switch` → `toggle`, `radio` → `select`, otherwise `tap`). Mouse pointers, disabled controls, and elements marked `data-no-haptic` are skipped. Haptics no-op when `navigator.vibrate` is missing (iOS) or `prefers-reduced-motion` is set. Visual press feedback lives in `base.css` — `-webkit-tap-highlight-color: transparent` globally + a touch-only (`@media (hover: none) and (pointer: coarse)`) `:active { transform: scale(0.96); }` on buttons, role=button/switch/radio/tab, anchors, and `summary`. Range inputs and form controls are excluded so the slider thumb is not double-scaled.
 - **Tests mirror beforeEach pattern** — `fake-indexeddb/auto`, fresh shell DOM, clear `marks` store where state carry-over would flake. `vi.resetModules()` only where needed (not in hub tests — they deliberately depend on state carry-over).
@@ -174,14 +175,14 @@ reload proof; it does not change the shipped Svelte service worker, production
 cache names, or deploy artifact routing.
 
 The React preview now mounts proof routes for Verse reader, Mushaf reader,
-navigation/bookmarks, settings/assets/about, onboarding, and search through
+navigation/bookmarks, settings/assets/about, legacy onboarding redirect, and search through
 `src-react/app/router/routes.ts` and `src-react/app/routes/**`. Reader parity
 modules under `src-react/components/reader/**`, `src-react/data/**`,
 `src-react/metadata/**`, `src-react/search/**`, and
 `src-react/continuity/**` are dual-build implementations: they prove route,
 component, storage, alias, metadata, bookmark, and Daily Wird contracts without
-flipping production routing away from Svelte. React launch restore resolves the
-initial launch/onboarding decision through IndexedDB, then keeps already
-resolved explicit reader hashes mounted during later internal route changes
-while the async onboarding guard revalidates; reader page turns must not remount
-and lose transient chrome or reading-position state.
+flipping production routing away from Svelte. React launch restore applies the
+MVP asset-contract reset, ignores legacy `onboardingComplete`, and opens or
+restores the reader through the same default Qaloon + Bridges profile as
+Svelte. Reader page turns must not remount and lose transient chrome or
+reading-position state.

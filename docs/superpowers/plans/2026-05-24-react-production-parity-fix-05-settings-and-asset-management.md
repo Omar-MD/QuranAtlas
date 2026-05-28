@@ -1,5 +1,7 @@
 # React Production Parity Fix 05 - Settings And Asset Management
 
+> Superseded current-state note: `docs/superpowers/specs/2026-05-28-mvp-default-assets-reset-design.md` narrows Settings and Asset Management parity to the default Qaloon + Bridges profile. Source pickers, tafsir choices, optional Hafs/Warsh packs, and install/verify/activate/remove controls are not current MVP guidance.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` before implementation.
 
 **Goal:** Fix `RPA-005` by making React settings and asset management operational, persistent, route-compatible, and real-index/cache backed.

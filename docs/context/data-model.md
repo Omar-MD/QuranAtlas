@@ -40,18 +40,18 @@ If you change a store's shape, indexes, key, or sole writer — update the **dos
 ## Static datasets (read-only, not in IDB)
 
 - `public/dataset/riwayat/qaloon/{NNN}.json` (114 files) — legacy compatibility reader corpus for the baseline Qalun text. Product prose uses Qalun; runtime keys and paths continue to use `qaloon` during migration.
-- `public/dataset/quran-text/{riwayah}/{textStyleId}/{NNN}.json` and `public/dataset/indexes/text-assets.json` — variant-aware Quran text assets emitted from `data/catalog/quran-text-assets.json`. The index carries defaults, asset metadata, concrete same-origin file URLs, byte totals, and ayah counts. The baseline build emits concrete text-style splits for the catalogued Hafs, Warsh, and Qalun (`qaloon`) assets while old `riwayat/{riwayah}` output remains available for compatibility consumers.
-- `surahs.json`, `juz.json`, `indexes/sources.json`, `indexes/source-assets.json`, `manifest.json`, and `provenance.json` live alongside the text bodies. Hafs and Warsh normalized sources remain under `data/normalized/quran/riwayat/` for counts, translation-alignment validation, variant text output, and the `full` dataset profile. `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, `scripts/data/mushaf-pages/build.mjs`, and `scripts/data/manifest/inventory.mjs`; `pnpm run data -- build` emits the baseline runtime manifest plus same-origin optional source assets and any available Qalun page pack, and is chained by `pnpm run build`. Source formats, font pairing, normalization rules, and build/runtime boundaries live in `docs/context/source-data-flow.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
+- `public/dataset/quran-text/qaloon/{textStyleId}/{NNN}.json` and `public/dataset/indexes/text-assets.json` — variant-aware Quran text assets emitted from `data/catalog/quran-text-assets.json`. The current MVP exposes only the Qaloon default text/font profile at runtime.
+- `surahs.json`, `juz.json`, `indexes/sources.json`, `indexes/source-assets.json`, `manifest.json`, and `provenance.json` live alongside the text bodies. Hafs and Warsh normalized sources remain under `data/normalized/quran/riwayat/` for counts, translation-alignment validation, and future/full-profile builds, but they are not selectable current MVP assets. `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, `scripts/data/mushaf-pages/build.mjs`, and `scripts/data/manifest/inventory.mjs`; `pnpm run data -- build` emits the baseline runtime manifest and any available Qalun page pack, and is chained by `pnpm run build`. Source formats, font pairing, normalization rules, and build/runtime boundaries live in `docs/context/source-data-flow.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
 - `data/catalog/*.json` — QuranAtlas-owned source and asset catalog: authorities, licenses, source records, verification rules, text-style asset records, Mushaf-edition asset records, and generic fetch metadata. `scripts/data/source-catalog.mjs` validates provider/license/default-visibility/output-path/fetch rules plus variant defaults, slugs, text output templates, Mushaf page counts, and quran.ws source identity. `scripts/data/fetch-source.mjs` refreshes normalized sources, and `scripts/data/text/build.mjs` emits the runtime subset to `public/dataset/indexes/sources.json`.
-- `data/catalog/quran-text-assets.json` — build-time source of truth for compatible Quran text-style variants per riwayah. Defaults currently map Hafs, Warsh, and Qalun (`qaloon`) to `uthmani-kfgqpc-v1`; the Qalun entry is baseline/shipped and optional entries remain install-before-activate.
-- `data/catalog/mushaf-assets.json` — build-time source of truth for compatible Mushaf edition variants per riwayah. Defaults currently map Qalun (`qaloon`) to `qalun-quran-ws-v1`, Hafs to `hafs-quran-ws-v1`, and Warsh to `warsh-quran-ws-v1`; every edition records quran.ws source identity and the 604-page count.
+- `data/catalog/quran-text-assets.json` — build-time source of truth for Quran text-style variants. The current MVP runtime profile uses Qaloon + `uthmani-kfgqpc-v1`.
+- `data/catalog/mushaf-assets.json` — build-time source of truth for Mushaf edition variants. The current MVP runtime profile uses Qaloon + `qalun-quran-ws-v1`; every edition records quran.ws source identity and the 604-page count.
 - `data/catalog/mushaf-pages.json` — quran.ws Mushaf page source policy. It maps QuranAtlas riwayah ids (`hafs`, `warsh`, `qaloon`) to quran.ws source slugs (`hafs`, `warsh`, `qalun`), declares the 604-page count, and records free-use page-asset provenance.
 - `data/normalized/mushaf-pages/{riwayah}/pages/{NNN}.svg` — generated local/release artifact inputs produced by `scripts/data/mushaf-pages/import.mjs` from quran.ws page PDFs. This tree is gitignored by default; normal data builds do not fetch quran.ws and do not require these files.
 - `public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json`, `public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/pages/{NNN}.svg`, and `public/dataset/indexes/mushaf-assets.json` — generated same-origin edition-aware page packs emitted by `scripts/data/mushaf-pages/build.mjs` when a complete local SVG set is present. During migration the builder also emits legacy `public/dataset/mushaf-pages/{riwayah}/manifest.json` and `pages/{NNN}.svg` compatibility paths. Baseline page output is Qalun-only; the runtime/package key remains `qaloon`. The `full` profile can emit Hafs, Warsh, and Qalun (`qaloon`). Clean-checkout builds skip absent page packs with a warning unless a release command passes `--require-riwayah=<id>`. Runtime never fetches quran.ws.
 - `data/taxonomy/themes.json` and `data/normalized/knowledge/*.json` — curated Knowledge Lane build inputs (Phase 01). Build-only sources; never imported by runtime modules.
 - `public/dataset/knowledge/ayah/{NNN}.json`, `public/dataset/knowledge/passages/{NNN}.json`, and `public/dataset/knowledge/indexes/*.json` — deterministic knowledge shards and indexes generated by `scripts/data/build-knowledge-dataset.mjs`, consumed by `src/data/knowledge-dataset.ts`. Missing files are treated as optional at runtime (`null` / empty fallbacks), so reader text rendering stays independent.
 
-Qira'ah/riwayah, Quran text style, Mushaf edition, translation, tafsir, curated metadata, Mushaf page, and search/index assets use one-active-pack semantics. The active recitation bundle persists as `settings.riwayah`, `settings.quranTextStyleId`, and `settings.mushafEditionId`; `src/configure/variant-bundle.ts` is the atomic writer for those three settings keys. Optional pack availability in `indexes/text-assets.json`, `indexes/mushaf-assets.json`, `indexes/sources.json`, `indexes/source-assets.json`, or `indexes/riwayah-packages.json` is not enough for rendering; install-state verification decides usability.
+The current reader asset profile is fixed to Qaloon text/font, Qaloon Mushaf, and Bridges translation. The active recitation bundle persists as `settings.riwayah`, `settings.quranTextStyleId`, and `settings.mushafEditionId`; `src/configure/variant-bundle.ts` remains the atomic writer for those three settings keys. The MVP launch reset clears unsupported older saved choices before rendering.
 
 During the React dual-build, `src-react/storage/schema.ts` mirrors the existing
 `quran-atlas` v7 schema for React-only proofs. It does not add stores, change
@@ -83,26 +83,7 @@ existing compound `bookmarks` key `[riwayah, verseKey]`.
 
 ### Tafsir packs
 
-- `data/normalized/tafsir/muyassar.json` — committed normalized source derived from QUL Tafsir Muyassar resource 38. It preserves QUL grouped tafsir ranges as one canonical entry instead of duplicating text per ayah.
-- `public/dataset/tafsir/{id}/{NNN}.json` (114 files per selectable tafsir) — per-surah tafsir packs consumed by `src/data/dataset.ts::loadTafsirForSurah(id, n)`. The baseline manifest includes `muyassar`; optional `mukhtasar` and `saadi` files live on the same origin and are planned by `indexes/source-assets.json` for on-demand cache/download. **Schema:**
-  ```ts
-  {
-    tafsirId: string,
-    tafsirVersion: string,
-    language: string,
-    surahNo: number,
-    entries: Array<{
-      id: string,
-      startKey: string,
-      endKey: string,
-      ayahKeys: string[],
-      sourceGranularity: 'ayah' | 'range',
-      text: string,
-    }>,
-  }
-  ```
-- **Invariants (asserted by `scripts/data/build-dataset.mjs::buildTafsirSplits`):** every entry has valid `S:A` keys; grouped QUL ranges keep their full `ayahKeys`; `sourceGranularity` is `range` when a single tafsir text spans more than one ayah.
-- **provenance.json `tafsir[]`** — one entry per shipped tafsir pack: `{ id, label, language, version, entryCount, rangeEntryCount, license, licenseUrl, source, sourceUrl, coverage }`.
+Tafsir packs are future work in the current MVP contract. Older normalized tafsir source files may remain as source-data cleanup inventory, but the shipped runtime does not expose tafsir UI, `settings.tafsirId`, or `/dataset/tafsir/**` pack loading.
 
 ### Knowledge lane packs (Phase 01)
 
@@ -116,8 +97,8 @@ existing compound `bookmarks` key `[riwayah, verseKey]`.
 
 ### Source index and profiles
 
-- `public/dataset/indexes/sources.json` — runtime source catalog index. It lists default sources (`qaloon`, `bridges`, `muyassar`), selected optional translation packs (`saheeh`, `clear-quran`, `abdel-haleem`), selected optional tafsir packs (`mukhtasar`, `saadi`), baseline/optional visibility, same-origin output path templates, and whether each body is present in the current manifest. Optional Hafs and Warsh entries are discoverable here while their bodies are omitted from the baseline manifest.
-- `public/dataset/indexes/source-assets.json` — source-pack download index. It lists byte totals and per-surah file paths for selectable translation and tafsir packs, including optional packs that are present on the static origin but excluded from `manifest.json`. Settings and `src/data/offline.ts` use it for source selection pre-flight, on-demand caching, and cache removal.
+- `public/dataset/indexes/sources.json` — runtime source catalog index. It lists the current MVP text sources (`qaloon`, `bridges`) and enough metadata for the reader to label them.
+- `public/dataset/indexes/source-assets.json` — source-pack download index. In the current MVP it is empty/read-only compatibility data; optional source-pack caching is future multiple-profile work.
 - `public/dataset/manifest.json` — runtime inventory manifest. **Schema:**
   ```ts
   {
@@ -147,11 +128,11 @@ existing compound `bookmarks` key `[riwayah, verseKey]`.
   ```
   The `reflection` lane/category values are legacy manifest implementation vocabulary only; reflection prompts are removed current-roadmap scope and no reflection product UI is promised here. Used by `src/data/dataset.ts::getManifestUrls`, `src/data/offline.ts`, `src/infra/sw/route-defs.ts::sumBytesForCategory`, and the service worker/update pipeline. Baseline/offline category caching trusts manifest membership and build-time validation, not per-file hashes. Optional source-pack caching is planned by `indexes/source-assets.json`.
 - Dataset profiles:
-  - `baseline`: emits Qalun (runtime `qaloon`) riwayah, Bridges translation, Muyassar tafsir, core metadata, source indexes, manifest, provenance, same-origin optional translation/tafsir pack files that stay outside the manifest, and a Qalun (`qaloon`) page pack only when the generated local page artifacts are present.
-  - `full`: emits every locally configured approved text source and every available generated Mushaf page pack for Hafs, Warsh, and Qalun (`qaloon`).
+  - `baseline`: emits Qalun (runtime `qaloon`) riwayah, Bridges translation, core metadata, source indexes, manifest, provenance, and a Qalun (`qaloon`) page pack only when the generated local page artifacts are present.
+  - `full`: future/release profile vocabulary for every locally configured approved text source and every available generated Mushaf page pack for Hafs, Warsh, and Qalun (`qaloon`).
   - `catalog`: emits metadata/index files without text bodies or page bodies.
 - Knowledge lane outputs are profile-independent in Phase 01 and are generated by the grouped `pnpm run data -- build` flow from curated local sources.
-- Runtime guards in `src/data/dataset.ts` and `src/data/mushaf-pages.ts`: saved optional riwayah/text-style/Mushaf-edition choices remain active only when their concrete asset URLs are usable from the same-origin asset indexes; otherwise the reader surfaces a promptable unavailable-asset state instead of implicitly switching to Qalun. If an optional selected translation or tafsir body cannot be verified usable, the reader must surface an unavailable state or explicitly switch the active setting to a verified baseline before rendering baseline content under a baseline label. `getTranslations()` and `getTafsirs()` read from `indexes/sources.json`, not `provenance.json`, so Settings can expose optional packs even when the current manifest does not include their bodies.
+- Runtime guards in `src/data/dataset.ts` and `src/data/mushaf-pages.ts`: saved unsupported riwayah/text-style/Mushaf-edition/translation/tafsir choices are reset by the MVP asset contract before launch. Runtime readers then load only the verified default profile; missing default assets are errors, not source-picker fallbacks.
 
 #### Translation ↔ riwayah alignment
 

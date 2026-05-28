@@ -1,5 +1,7 @@
 # React Tech Stack Refactor 10 - Navigation, Settings, And Onboarding Parity Implementation Plan
 
+> Superseded current-state note: `docs/superpowers/specs/2026-05-28-mvp-default-assets-reset-design.md` retires onboarding source-choice parity and narrows Settings/Assets parity to the default Qaloon + Bridges profile. Treat older optional-pack and tafsir instructions in this plan as historical context only.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build React navigation, settings, asset management, about, and onboarding parity while preserving Reader First route behavior and install-before-activate source safety.

@@ -1,5 +1,7 @@
 # React Production Parity Fix 01 - Launch Restore And Onboarding
 
+> Superseded current-state note: `docs/superpowers/specs/2026-05-28-mvp-default-assets-reset-design.md` retires onboarding source-choice parity for the current MVP. React and Svelte now launch through the default asset reset and open/restore the reader without a setup wizard.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` or `superpowers:executing-plans` before implementation.
 
 **Goal:** Fix `RPA-001` and `RPA-007` by restoring first-run launch gating and a React-shortened onboarding flow.

@@ -1,5 +1,7 @@
 # React Tech Stack Refactor 02 - Svelte Reference Baseline Appendix
 
+> Superseded current-state note: `docs/superpowers/specs/2026-05-28-mvp-default-assets-reset-design.md` replaces the old onboarding/source-choice baseline with the MVP default reader asset profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation. Older baseline rows for tafsir-open, optional-pack install states, or first-run source setup are historical context only.
+
 ## Status
 
 This appendix freezes the current Svelte app as the React parity reference. It

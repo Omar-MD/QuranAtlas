@@ -52,7 +52,7 @@ style_paths:
 | `src/navigate/bookmarks/store.ts` | _(no leading comment)_ |
 | `src/navigate/global-shortcuts.ts` | Boot-mounted global keyboard shortcuts. Survives lazy-mount of overlay |
 | `src/navigate/nav-drawer-bridge.ts` | Imperative bridge for the NavDrawer Svelte component. Migrated to |
-| `src/navigate/reader-actions.js` | Reader action API backing the single-key shortcuts (j/k/[/]/Home/End/m). |
+| `src/navigate/reader-actions.js` | Reader action API backing the single-key shortcuts (j/k/[/]/Home/End). |
 | `src/navigate/shortcuts-sheet.js` | Shortcuts cheatsheet opened by `?`. Grouped by Universal · Go-to · Reader, |
 | `src/navigate/surahs/SurahList.svelte` | ---- data loaded on mount ---- |
 | `src/navigate/surahs/SurahRow.svelte` | _(no leading comment)_ |
@@ -134,7 +134,7 @@ Full in-app reference is the `?` cheatsheet. Summary:
 - `j` / `k` — next / previous verse
 - `]` / `[` — next / previous surah
 - `Home` / `End` — first / last verse
-- `m` — open tafsir for the centered verse
+- `m` — reserved for future tafsir; inert in the current MVP
 - `t` — toggle translation visibility
 - `n` — toggle night-mode
 - `+` / `-` — bigger / smaller font
@@ -142,9 +142,7 @@ Full in-app reference is the `?` cheatsheet. Summary:
 - `d` — cycle theme (light → sepia → dark → auto)
 
 **Gestures**
-- Double-tap a verse (touch) → inline tafsir preview (parity with `m`)
-- Right-click a verse (desktop) → inline tafsir preview
-- Expand from the inline tafsir preview → full tafsir sheet
+- Double-tap and right-click do not open tafsir UI in the current MVP
 
 ## Data
 
@@ -183,8 +181,8 @@ _(no cross-surface reads detected)_
 | --- | --- | --- |
 | `bookmark:jump-landed` | `Events.BOOKMARK_JUMP_LANDED` | `src/navigate/bookmarks/BookmarksList.svelte:108` |
 | `navigation:navigate` | `Events.NAVIGATION_NAVIGATE` | `src/navigate/NavDrawer.svelte:250`, `src/navigate/NavDrawer.svelte:325`, `src/navigate/NavDrawer.svelte:711`, `src/navigate/bookmarks/BookmarksList.svelte:110`, `src/navigate/surahs/SurahList.svelte:167` |
-| `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:146` |
-| `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:137` |
+| `sheet:closed` | `Events.SHEET_CLOSED` | `src/navigate/shortcuts-sheet.js:145` |
+| `sheet:opened` | `Events.SHEET_OPENED` | `src/navigate/shortcuts-sheet.js:136` |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->

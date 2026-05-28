@@ -2,7 +2,7 @@
 
 > AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm run docs` to regenerate.
 
-Top-level src directories: **13**.
+Top-level src directories: **14**.
 
 ## Mermaid (top-level)
 
@@ -17,6 +17,7 @@ graph LR
   src_core["src/core"]
   src_data["src/data"]
   src_infra["src/infra"]
+  src_launch["src/launch"]
   src_metadata["src/metadata"]
   src_navigate["src/navigate"]
   src_onboard["src/onboard"]
@@ -27,6 +28,7 @@ graph LR
   src --> src_continuity
   src --> src_core
   src --> src_infra
+  src --> src_launch
   src --> src_navigate
   src --> src_read
   src_configure --> src_a11y
@@ -52,7 +54,8 @@ graph LR
   src_data --> src_infra
   src_data --> src_packs
   src_infra --> src_core
-  src_metadata --> src_core
+  src_launch --> src_core
+  src_launch --> src_infra
   src_metadata --> src_data
   src_navigate --> src_a11y
   src_navigate --> src_configure
@@ -85,7 +88,7 @@ graph LR
 <!-- AUTO-GENERATED:dirs START -->
 ### `src`
 
-- **Imports from:** `src/App.svelte`, `src/configure`, `src/continuity`, `src/core`, `src/infra`, `src/navigate`, `src/read`
+- **Imports from:** `src/App.svelte`, `src/configure`, `src/continuity`, `src/core`, `src/infra`, `src/launch`, `src/navigate`, `src/read`
 - **Imported by:** `src/core`
 
 ### `src/App.svelte`
@@ -111,7 +114,7 @@ graph LR
 ### `src/core`
 
 - **Imports from:** `src`, `src/a11y`, `src/continuity`, `src/data`, `src/packs`, `src/read`
-- **Imported by:** `src`, `src/configure`, `src/continuity`, `src/data`, `src/infra`, `src/metadata`, `src/navigate`, `src/onboard`, `src/packs`, `src/read`
+- **Imported by:** `src`, `src/configure`, `src/continuity`, `src/data`, `src/infra`, `src/launch`, `src/navigate`, `src/onboard`, `src/packs`, `src/read`
 
 ### `src/data`
 
@@ -121,11 +124,16 @@ graph LR
 ### `src/infra`
 
 - **Imports from:** `src/core`
-- **Imported by:** `src`, `src/configure`, `src/continuity`, `src/data`, `src/packs`, `src/read`
+- **Imported by:** `src`, `src/configure`, `src/continuity`, `src/data`, `src/launch`, `src/packs`, `src/read`
+
+### `src/launch`
+
+- **Imports from:** `src/core`, `src/infra`
+- **Imported by:** `src`
 
 ### `src/metadata`
 
-- **Imports from:** `src/core`, `src/data`
+- **Imports from:** `src/data`
 - **Imported by:** `src/read`
 
 ### `src/navigate`

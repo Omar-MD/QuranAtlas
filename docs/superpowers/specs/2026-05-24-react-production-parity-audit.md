@@ -1,5 +1,7 @@
 # React Production Parity Audit
 
+> Superseded current-state note: `docs/superpowers/specs/2026-05-28-mvp-default-assets-reset-design.md` narrows the active parity target to the MVP default reader asset profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation. Any older instruction in this audit to restore onboarding source choices, tafsir UI, optional Hafs/Warsh packs, or install/verify asset workflows is historical audit context, not current implementation guidance.
+
 ## Summary
 
 - React target URL: `http://127.0.0.1:4181/`

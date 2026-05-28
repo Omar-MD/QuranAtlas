@@ -4,7 +4,7 @@ Agreed future work that supports the Reader First product promise. When work sta
 
 ## V1 Reader Completion
 
-- Complete Verse and Mushaf reading modes around Hafs, Qalun, and Warsh.
+- Complete Verse and Mushaf reading modes around the current Qaloon default profile.
 - Bookmarks and saved reading position as reading-continuity primitives.
 - Reading preferences: themes, typography, line spacing, word spacing, margins, and related reader comfort controls.
 - Daily Wird goal, reminder, and progress inside the reader-continuity flow.
@@ -12,22 +12,22 @@ Agreed future work that supports the Reader First product promise. When work sta
 
 ## V1 Asset Packs and Pipeline
 
-- One active qira'ah/riwayah pack at a time: Hafs, Qalun, or Warsh.
-- One active translation pack, one active tafsir pack, and one active curated metadata pack at a time.
-- Optional packs install before activation and become usable only after local install state is verified.
-- Mushaf pages are tied to the active qira'ah/riwayah and require matching page assets.
+- The current MVP ships one reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation.
+- Asset Management is read-only inventory for that profile.
+- Future multiple-profile work can extend the shared reader asset profile contract before reintroducing riwayah, translation, tafsir, or Mushaf edition choices.
+- Optional packs must install before activation and become usable only after local install state is verified when that future work returns.
 - Asset indexes support byte planning, offline caching, provenance, manifest membership, and future retrieval boundaries.
 
 ## V1 Search and Navigation
 
-- Planned full-text retrieval across Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
+- Planned full-text retrieval across Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata after the default-profile MVP is stable.
 - Surah and Juz navigation as first-class reader paths.
 - Hizb, rub, ruku, and page data remain metadata until separately promoted to visible controls.
 - Reader mode switching between Verse and Mushaf.
 
 ## V1 Curated Metadata
 
-- Tafsir as the primary reader-attached study text.
+- Tafsir as future reader-attached study text.
 - Verse themes, short curated meanings or summaries, and passage grouping/context.
 - Makki/Madani classification and source-backed revelation/asbab metadata.
 - Juz, hizb, rub, ruku, and page metadata as reader/navigation metadata.
@@ -66,7 +66,8 @@ These are not v1 scope unless separately promoted with clear reader value and so
 - Streaks and standalone khatm tracker product branches.
 - AI assistant, chat, agent, synthesis UI, and current-roadmap reflection prompts.
 - Multiple translations side by side.
-- Qira'at beyond Hafs, Qalun, and Warsh.
+- Riwayah, translation source, tafsir source, and Mushaf edition selection UI until the multiple-profile contract is restored.
+- Qira'at beyond the current Qaloon default profile.
 
 Future personal annotations are not a roadmap lane. They belong only in `future.md` as a separate possible personal layer outside current product scope.
 

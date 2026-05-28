@@ -2,7 +2,7 @@
 
 **Reader First.**
 
-QuranAtlas is an offline-first Qur'an reader centered on complete Verse and Mushaf reading. The v1 promise is reading continuity: reliable Arabic text, one active translation, one active tafsir, curated reader-attached metadata, bookmarks, saved position, Daily Wird, Surah/Juz navigation, powerful search, and reader preferences that make long sessions comfortable.
+QuranAtlas is an offline-first Qur'an reader centered on complete Verse and Mushaf reading. The current MVP promise is reading continuity on one verified default reader profile: Qalun/Qaloon text and font, Qaloon Mushaf pages, Bridges translation, bookmarks, saved position, Daily Wird, Surah/Juz navigation, search, and reader preferences that make long sessions comfortable.
 
 This is the product overview. For implementation detail, see `docs/context/` and the surface dossiers under `docs/context/surfaces/`.
 
@@ -10,35 +10,35 @@ This is the product overview. For implementation detail, see `docs/context/` and
 
 - Muslims who want a focused, uncluttered way to read the Qur'an on their phone or laptop.
 - Readers who need reliable offline access during commutes, travel, prayer times, or low-connectivity moments.
-- Students and regular readers who want tafsir and curated context attached to the reading flow without leaving the reader.
+- Students and regular readers who want a stable reading surface that can grow into curated context without leaving the reader.
 
 ## V1 product promise
 
 ### Complete reading modes
 
-- **Verse reader** for continuous ayah-by-ayah reading with Arabic text, optional translation display, tafsir access, curated metadata, cross-surah movement, and saved position.
-- **Mushaf reader** for page-based reading tied to the active qira'ah/riwayah page assets.
+- **Verse reader** for continuous ayah-by-ayah reading with Qaloon Arabic text, optional Bridges translation display, cross-surah movement, and saved position.
+- **Mushaf reader** for page-based reading tied to the default Qaloon Mushaf page assets.
 - **Bookmarks** for reading continuity. Bookmarks are not part of the future personal annotation layer.
 - **Daily Wird** for reader-adjacent goal, reminder, and progress inside the continuity flow.
 
 ### Source and asset packs
 
-- **Qira'ah/riwayah scope:** Hafs, Qalun, and Warsh only. Qalun is the baseline reader pack. Runtime keys and existing file paths may still use `qaloon`.
-- **One active pack per source type:** one qira'ah/riwayah, one translation, one tafsir, and one curated metadata pack at a time.
-- **Install before activate:** optional qira'ah/riwayah, translation, tafsir, metadata, Mushaf page, and search/index packs become usable only after local install state is verified.
-- **No silent pack fallback:** if a selected pack is missing, stale, or unavailable, the app must show an unavailable/install/switch state or explicitly change the active setting to a verified baseline.
-- **Offline-first assets:** shipped and optional packs carry provenance, build-time validation, manifest membership, byte planning, and install-state checks.
+- **Current default profile:** Qalun in product prose; runtime keys and existing file paths use `qaloon`. The only shipped reader profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation.
+- **No current source pickers:** the MVP UI does not offer riwayah, translation source, tafsir source, or Mushaf edition choices.
+- **Read-only asset inventory:** Asset Management describes the three included reader assets. Install, verify, activate, switch, and remove controls are future multiple-profile work.
+- **Silent contract reset:** first launch under the MVP contract clears older unsupported local settings, bookmarks, and caches once, then opens the reader.
+- **Offline-first assets:** shipped assets carry provenance, build-time validation, manifest membership, and byte planning.
 
 ### Reading controls
 
 - Themes, typography, line spacing, word spacing, reader margins, and related reader comfort controls.
 - Surah and Juz navigation, with hizb, rub, ruku, and page data treated as metadata until promoted to first-class controls.
-- Planned full-text retrieval across Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata.
+- Search and navigation over the shipped reader corpus, with broader retrieval lanes deferred.
 - Page-break indicators and Mushaf page navigation where matching assets exist.
 
 ### Curated study inside reading
 
-Study exists where it strengthens reading. V1 curated metadata includes tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani classification, source-backed revelation/asbab metadata, and juz/hizb/rub/ruku/page metadata. Curated metadata appears inside reading, search, and navigation flows rather than as a separate research product.
+Study exists where it strengthens reading, but tafsir and richer curated context are future work in the MVP contract. Curated metadata candidates include tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani classification, source-backed revelation/asbab metadata, and juz/hizb/rub/ruku/page metadata.
 
 Arabic roots, concepts, divine names, and cross-references remain curated metadata backlog unless separately promoted.
 
@@ -53,7 +53,9 @@ QuranAtlas is preparing its asset pipeline for future retrieval and citation-fir
 - Copy, share, export, import, user-facing sync, accounts, community, or shared collections.
 - Streaks and standalone khatm tracker product branches.
 - Multiple translations side by side.
-- Qira'at beyond Hafs, Qalun, and Warsh.
+- Riwayah, translation source, tafsir source, and Mushaf edition selection UI.
+- Tafsir reader UI and tafsir source packs.
+- Qira'at beyond the current Qaloon default profile.
 - Transliteration display, word-by-word translation, and tajweed coloring.
 
 Existing implementation for removed branches may remain until a later source cleanup, but it is not the v1 product promise.

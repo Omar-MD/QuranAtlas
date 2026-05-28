@@ -6,11 +6,11 @@ and data shapes live in `surfaces/<name>.md`.
 ## Read
 
 - Verse reader routes `#/s/:surah` and `#/s/:surah/:ayah`.
-- Mushaf page reader route `#/m/:page` for the active riwayah.
+- Mushaf page reader route `#/m/:page` for the default Qaloon Mushaf.
 - Reader-first continuity restore through validated `lastSurface` and
   `currentPosition`.
-- Qalun baseline corpus with optional Hafs and Warsh packs.
-- Translation overlay, tafsir preview/sheet, and curated knowledge lane.
+- Qaloon text/font and Qaloon Mushaf as the single MVP reader asset profile.
+- Bridges translation with visibility toggle.
 - Reader typography controls, ambient chrome, and Daily Wird.
 
 ## Navigate
@@ -22,16 +22,15 @@ and data shapes live in `surfaces/<name>.md`.
 
 ## Configure
 
-- Settings sheet for theme, reading typography, sources, and storage.
-- Offline controls for text, pages, search, and optional source packs.
+- Settings sheet for theme, night mode, reading typography, translation visibility, and Mushaf view mode.
+- Read-only Asset Management inventory for Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation.
 - About page with clear-data flow.
-- Qalun-first onboarding and source selection.
 
 ## Onboard
 
-- Reader-first first-run flow.
-- Theme, riwayah, translation, shortcuts, and finish screens.
-- `onboardingComplete` gates launch restore and default entry.
+- First-run onboarding is retired in the MVP contract.
+- Cold launch shows a short splash, silently applies the one-time default-asset reset if needed, and enters or restores the reader.
+- Legacy `#/onboarding` links redirect through the launch path without source choices.
 
 ## Infra
 
