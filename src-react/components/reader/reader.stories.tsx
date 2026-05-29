@@ -91,6 +91,10 @@ export const VerseReader: Story = {
   render: () => <ReaderVerseSurface corpus={readyCorpus} selectedVerseKey="1:4" surahIndex={surahIndex} />,
 }
 
+export const VerseReaderBookmarked: Story = {
+  render: () => <ReaderVerseSurface bookmarkedVerseKeys={new Set(['1:1'])} corpus={readyCorpus} surahIndex={surahIndex} />,
+}
+
 export const VerseReaderLoading: Story = {
   render: () => <ReaderVerseSurface corpus={{ status: 'loading' }} />,
 }
@@ -118,7 +122,7 @@ export const MushafFitPage: Story = {
     <MushafPageViewer
       inlineSvg={sampleMushafSvg}
       resolved={sampleMushafPage}
-      viewMode="page"
+      viewMode="fit-page"
     />
   ),
 }
@@ -128,7 +132,7 @@ export const MushafFitWidth: Story = {
     <MushafPageViewer
       inlineSvg={sampleMushafSvg}
       resolved={sampleMushafPage}
-      viewMode="width"
+      viewMode="fit-width"
     />
   ),
 }

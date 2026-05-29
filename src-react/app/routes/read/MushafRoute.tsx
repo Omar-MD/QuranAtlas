@@ -6,6 +6,8 @@ import { ReaderAssetGate } from '../../../components/reader/ReaderAssetGate'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import type { MushafViewMode } from '../../../components/reader/MushafModeControl'
 import { resolveVerseHrefForMushafPage } from '../../../components/reader/reader-mode-routing'
+import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-bookmark'
+import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import {
   loadMushafPageAsset,
   type MushafReadyPageAssetState,
@@ -13,6 +15,8 @@ import {
 } from '../../../packs/mushaf-page-asset'
 import type { Riwayah } from '../../../storage/types'
 import { openReactDb } from '../../../storage/db'
+import { DEFAULT_REACT_READER_PREFERENCES, readReactReaderPreferences } from '../../../storage/settings-writer'
+import { isReactMushafViewMode, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { REACT_ROUTES } from '../../router/routes'
 
 type MushafRouteProps = {
@@ -32,6 +36,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   const requestId = useRef(0)
   const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
+  const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
 
   useEffect(() => {
     if (routePageRef.current !== page) {
@@ -40,19 +45,26 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     }
   }, [page])
 
+  useEffect(() => subscribeReactReaderPreferencesChanged((preferences) => {
+    if (isReactMushafViewMode(preferences.mushafViewMode)) {
+      setViewMode(preferences.mushafViewMode)
+    }
+  }), [])
+
   useEffect(() => {
     if (assetState !== 'ready') return
     const id = ++requestId.current
     const controller = new AbortController()
     setState((current) => current.status === 'ready' ? current : { status: 'loading' })
-    void loadActiveMushafSettings().then((settings) =>
-      loadMushafPageAsset({
+    void loadActiveMushafSettings().then((settings) => {
+      setViewMode(settings.mushafViewMode)
+      return loadMushafPageAsset({
         mushafEditionId: settings.mushafEditionId,
         page,
         riwayah: settings.riwayah,
         signal: controller.signal,
-      }),
-    ).then((next) => {
+      })
+    }).then((next) => {
       if (requestId.current !== id) return
       setState(next)
       if (next.status === 'ready') {
@@ -93,11 +105,22 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
         <ReaderAssetGate label="Qalun" state={assetState} />
       ) : visiblePage ? (
         <MushafPageViewer
+          bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
           chromeVisible={chromeVisible}
           inlineSvg={visiblePage.inlineSvg}
           onNavigate={(nextPage) => {
             setChromeVisible(false)
             window.location.hash = REACT_ROUTES.mushaf(nextPage)
+          }}
+          onToggleBookmark={() => {
+            const bookmarkPage = visiblePage.resolved.page
+            void toggleBookmark({
+              kind: 'page',
+              page: bookmarkPage,
+              riwayah: visiblePage.resolved.riwayah,
+              surah: 0,
+              verseKey: createMushafPageBookmarkKey(bookmarkPage),
+            })
           }}
           onToggleChrome={(visible) => setChromeVisible(visible)}
           onViewModeChange={setViewMode}
@@ -116,22 +139,28 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   )
 }
 
-async function loadActiveMushafSettings(): Promise<{ riwayah: Riwayah; mushafEditionId: string }> {
+async function loadActiveMushafSettings(): Promise<{ riwayah: Riwayah; mushafEditionId: string; mushafViewMode: MushafViewMode }> {
   try {
     const db = await openReactDb()
-    const [riwayah, mushafEditionId] = await Promise.all([
+    const [riwayah, mushafEditionId, preferences] = await Promise.all([
       db.settings.get('riwayah'),
       db.settings.get('mushafEditionId'),
+      readReactReaderPreferences(db),
     ])
     return {
       riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
       mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
+      mushafViewMode: preferences.mushafViewMode,
     }
   } catch {
-    return { riwayah: DEFAULT_RIWAYAH, mushafEditionId: DEFAULT_MUSHAF_EDITION_ID }
+    return {
+      riwayah: DEFAULT_RIWAYAH,
+      mushafEditionId: DEFAULT_MUSHAF_EDITION_ID,
+      mushafViewMode: DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
+    }
   }
 }
 
 function isRiwayah(value: unknown): value is Riwayah {
-  return value === 'hafs' || value === 'warsh' || value === 'qaloon'
+  return value === 'qaloon'
 }

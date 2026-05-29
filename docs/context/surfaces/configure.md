@@ -18,7 +18,7 @@ style_paths:
 
 # Surface: configure
 
-> Mode-aware Verse Settings, Mushaf Settings, read-only Asset Management, and About page for Reader First preferences: theme, night mode, typography, translation visibility, Mushaf view mode, and clear-all-data. The current MVP has one default reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation. Source pickers, tafsir choices, and optional-pack controls are future work.
+> Mode-aware Verse Settings, Mushaf Settings, inline read-only asset inventory, and About page for Reader First preferences: theme, night mode, typography, translation visibility, Mushaf view mode, and clear-all-data. The current MVP has one default reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation. Source pickers, tafsir choices, and optional-pack controls are future work.
 
 ## Reach
 
@@ -26,9 +26,9 @@ style_paths:
 | --- | --- | --- |
 | Settings gear ⚙ on MarginHeader (mobile) | single tap | open Verse Settings on `#/s/*`, Mushaf Settings on `#/m/*` |
 | Settings gear double-tap (mobile, ≤300 ms) | gesture | cycle theme without opening sheet |
-| Manage Assets in Settings | tap | close Settings and route to `#/assets` |
-| Storage/quota banner CTA | tap | route to `#/assets` |
-| Missing reader asset prompt | tap | route to `#/assets` |
+| Included assets in Settings | view | show the default Qaloon + Bridges inventory inline inside the settings shell |
+| Storage/quota banner CTA | tap | open Settings via the legacy `#/assets` compatibility hash |
+| Missing reader asset prompt | tap | open Settings via the legacy `#/assets` compatibility hash |
 | Drawer header ⓘ icon | tap | `#/about` |
 | AmbientDock ⋯ → drawer → About | tap | `#/about` |
 | `⌘↑` / `Ctrl+↑` | keyboard | bump font size up (works outside the sheet; guarded against focused inputs) |
@@ -38,7 +38,7 @@ style_paths:
 | `d` (reader) | keyboard | cycle theme |
 | About footer "Clear all data" link | tap | confirmation dialog |
 
-Routes: `#/settings` (transient settings opener), `#/assets` (all viewports), `#/about` (all viewports).
+Routes: `#/settings` (transient settings opener), `#/assets` (legacy compatibility opener for Settings), `#/about` (all viewports).
 
 ## Inventory
 
@@ -80,15 +80,15 @@ Routes: `#/settings` (transient settings opener), `#/assets` (all viewports), `#
 
 The settings overlay is mode-aware. `openSettingsSheet('verse')` renders Verse Settings; `openSettingsSheet('mushaf')` renders Mushaf Settings. The mobile MarginHeader passes the current reader mode directly. `#/settings` is a transient compatibility route: app bootstrap opens the shell inferred from the previous reader hash, then restores that previous hash.
 
-**Mobile + tablet (<1180 px):** the shell takes the full viewport with safe-area padding, a parchment surface, sticky header, scrollable body, and footer controls. Verse and Mushaf settings share the same header, row density, footer, backdrop dismissal, and focus restoration.
+**Mobile (<768 px):** the shell takes the full viewport with safe-area padding, a parchment surface, sticky header, fitted body, and footer controls. Verse and Mushaf settings share the same header, row density, footer, backdrop dismissal, and focus restoration.
 
-**Desktop (≥1180 px):** the shell opens as a right-side reader-adjacent sidebar. Reader content remains visible to the left; the old centered preferences modal is no longer the desktop settings shape.
+**Tablet + desktop (≥768 px):** the shell opens as a compact right-side reader-adjacent column bar. Reader content remains visible to the left; the old centered preferences modal and wide tablet sheet are no longer the settings shape.
 
 Shared shell zones:
 
-1. **Header** — title (`Verse Settings` or `Mushaf Settings`), concise subtitle, and close button. Backdrop tap, close, or Esc dismisses and restores focus to the opener unless the footer navigates away.
-2. **Body** — mode-specific preview and controls. Rows use stable heights and avoid source-picker affordances in the current MVP.
-3. **Footer** — shared Theme and Night Mode controls plus a Manage Assets action. Manage Assets closes the shell without focus restore and routes to `#/assets`.
+1. **Header** — constant `Settings` title, concise reader-profile subtitle, and close button. Backdrop tap, close, or Esc dismisses and restores focus to the opener unless the footer navigates away.
+2. **Body** — reader-mode toggle, mode-specific Verse or Mushaf controls, and the inline included-assets inventory. Rows use stable heights and avoid source-picker affordances in the current MVP.
+3. **Footer** — shared Theme and Night Mode controls.
 
 Equivalent settings rows now share a hyphenated row grammar across Verse, Mushaf, and nested picker states: `qa-settings-row`, `qa-settings-row-label`, `qa-settings-row-control`, `qa-settings-row-meta`, plus state modifiers such as `qa-settings-row--active`, `qa-settings-row--disabled`, `qa-settings-row--picker`, `qa-settings-row--slider`, and `qa-settings-row--switch`. Variant-specific classes remain only where the control family genuinely differs.
 
@@ -96,7 +96,8 @@ Verse Settings contains:
 
 - **Verse preview** — Arabic sample using the live reader Arabic cascade and optional translation line gated by `settings.translationVisible`.
 - **Reading** — Font Size writes through `src/configure/font-size.ts::setFontSize`; Reading Flow writes all four reading typography dimensions through `src/configure/reading-typography.ts::setReadingFlow`.
-- **Reader assets** — read-only summary of the included Qaloon + Bridges profile, plus Show Translation. Translation visibility writes through `setTranslationVisible`.
+- **Translation** — Bridges visibility switch. Translation visibility writes through `setTranslationVisible`.
+- **Included assets** — read-only summary of the included Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation profile.
 
 Mushaf Settings contains:
 
@@ -105,7 +106,9 @@ Mushaf Settings contains:
 
 The nested source picker is not mounted in the current MVP. Switching riwayah, text style, translation source, tafsir source, or Mushaf edition is deferred until the multiple-profile contract returns. Active recitation state still persists as the atomic bundle `settings.riwayah` + `settings.quranTextStyleId` + `settings.mushafEditionId`, written only by `src/configure/variant-bundle.ts`, but the only valid current values are the default Qaloon profile.
 
-The old in-panel Storage accordion is no longer mounted in the settings shell. Offline install, verify, set-active, and delete controls move to the dedicated asset-management route.
+The old in-panel Storage accordion is no longer mounted in the settings shell. Offline install, verify, set-active, and delete controls are not exposed in the current MVP.
+
+During the React dual-build parity track, `src-react/app/App.tsx` treats `#/settings` as the same transient opener: it resolves the previous persisted reader hash, restores that hash with `history.replaceState`, keeps the reader mounted behind the shell, and passes the current reader mode into `src-react/app/routes/settings/SettingsRoute.tsx`. React reader chrome opens Settings through a local overlay event instead of mutating `window.location.hash`, so entering Settings from a scrolled Verse or Mushaf reader keeps the current route DOM and scroll position intact. The Settings reader-mode toggle uses the mounted Verse DOM's live visible `data-token-key` before falling back to the route ayah, then carries that exact verse hash back when toggling Mushaf to Verse inside the same shell. React also treats legacy `#/assets` URLs as settings-shell compatibility openers instead of mounting a standalone Assets page. React settings writes theme, night mode, translation visibility, typography, and Mushaf view mode through `src-react/storage/settings-writer.ts` using the shared v7 `settings` store keys and the Svelte-compatible Mushaf view-mode values (`auto`, `fit-page`, `fit-width`). React emits a local reader-preferences event after settings writes so mounted Verse and Mushaf reader routes apply presentation changes without requiring a route remount or verse-corpus refetch. React intentionally omits the Verse and Mushaf preview panels; the body is a single constant `Settings` view with a reader-mode toggle and a fixed-height mode-control area so switching Verse/Mushaf does not move the asset inventory or footer. Verse mode exposes font size, reading flow, and Bridges translation visibility; Reading Flow uses the owned React `Select` primitive whose portal content is layered above the settings shell. Mushaf mode exposes only Page/Width view controls; `auto` remains accepted as stored/runtime state but is not offered in Settings. The React footer contains Theme and Night Mode controls only; there is no Manage Assets route action.
 
 ## Style Inventory
 
@@ -118,13 +121,13 @@ The old in-panel Storage accordion is no longer mounted in the settings shell. O
 | `src/styles/surfaces/overlays/night-shift.css` | Night-shift overlay styles moved from flat surfaces. |
 <!-- AUTO-GENERATED:style-inventory END -->
 
-### Asset Management route
+### Inline asset inventory
 
-`#/assets` is a real route, but it is excluded from `settings.lastSurface` persistence and launch restore. Direct entry renders a `Back to Reader` link to `#/s/1`; entry from another route can use browser history. On mount the page focuses the `Asset Management` heading so Manage Assets navigation does not restore focus to the settings opener.
+The current MVP does not present a standalone asset-management page in the React shell. `#/assets` is retained as a compatibility hash for older links and opens the settings shell over the previous reader route.
 
-Mobile and tablet use a single dense column: sticky Back header, default-profile summary, polite route-level status region, then three informational rows: Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation. Mobile MarginHeader is hidden on this route so the asset page owns the header chrome. Rows expose included status and asset ids only.
+Mobile and tablet use the settings sheet body for a single dense inventory: Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation. Inventory rows expose asset identity, included status, and a quiet chevron affordance without install, verify, set-active, switch, retry, or delete actions.
 
-Desktop uses the same read-only inventory with wider row layout. AmbientDock remains visible. There are no Install, Verify, Set Active, Switch, Retry, or Delete actions in the current MVP.
+Desktop uses the same read-only inventory inside the right-side settings sidebar. There are no Install, Verify, Set Active, Switch, Retry, or Delete actions in the current MVP.
 
 ### Pick a translation
 
@@ -154,6 +157,8 @@ Mobile (<1180 px): tap hamburger ≡ → drawer → tap ⓘ icon (or wordmark). 
 
 Renders: wordmark, mission, 54:17 Arabic blessing + translation, attribution list, PWA install button (if install prompt captured), version line, **Clear all data** link in footer. About no longer reads mark data or presents removed-scope marks/tags/review stats.
 
+During the React dual-build parity track, `src-react/app/routes/settings/AboutRoute.tsx` carries the same mission, 54:17 blessing, attribution list, version line, prompt-gated install affordance, and clear-data confirmation contract. It removes the former React preview claim that search, bookmarks, and Daily Wird were all verified shipped workflows.
+
 ### Install PWA
 
 About with captured install prompt → tap **Install App** → `promptInstall()` runs browser install flow. On accept → button text becomes "Installed!" and disables; `OFFLINE_INSTALL_COMPLETE` fires (no UI listener today).
@@ -167,6 +172,8 @@ Dialog copy stays reader-first while accurately covering old local data: saved r
 Type `DELETE`, tap red **Clear All Data** → `safety/sync.js::suppressNextVersionChange()` arms, then `deleteDB()` runs → DB gone → page reloads → launch splash applies the default profile and opens the reader.
 
 Cancel / Escape → dialog closes, nothing changes.
+
+React proof-only clear data uses `src-react/app/routes/settings/useClearDataDialog.ts` plus `src-react/storage/clear-data.ts` behind the owned React `Dialog` primitive. The dialog requires exact `DELETE`, supports Cancel/Escape through the primitive, clears Cache Storage and the shared `quran-atlas` IndexedDB database, then reloads at the root so the current MVP launch path reseeds the default profile.
 
 ## Data
 
@@ -233,11 +240,11 @@ Legacy riwayah package status and install intent are not current MVP settings. O
 - **Mushaf view mode is owned by the read surface.** The Settings store persists `mushafViewMode`, but the sole writer is `src/read/mushaf/view-mode.ts` because the visible control lives in Mushaf page chrome, not the Settings sheet.
 - **Sole writer of `settings.wirdPlan`: `src/read/wird/store.ts`.** The settings store remains key-value; Daily Wird owns only this key and does not change the settings objectStore schema.
 - **Settings shell is mode-aware.** Verse Settings may show typography and translation visibility; Mushaf Settings may show Mushaf view mode. Neither shell renders source pickers or Storage rows.
-- **Settings shell restores focus on dismissal.** Manage Assets is the exception because it closes the shell and routes away.
+- **Settings shell restores focus on dismissal.** Asset inventory is inline and does not route away from the shell.
 - **Verse typography controls use existing sole writers.** Font Size calls `setFontSize`; Reading Flow calls `setReadingFlow` so all reading-flow dimensions remain coordinated.
 - **No saved tafsir preference in MVP.** Old `settings.tafsirId` values are unsupported local data and are cleared by the launch reset.
 - **No source rows in MVP.** Optional qira'ah/riwayah, translation, tafsir, curated metadata, page, and search/index packs are future multiple-profile work.
-- **Asset management owns offline controls.** The legacy `settings.offlineCategories` normalizer remains for old data, but the mode-aware settings shell does not mount `offline-selector.svelte`.
+- **Inline asset inventory is read-only.** The legacy `settings.offlineCategories` normalizer remains for old data, but the mode-aware settings shell does not mount `offline-selector.svelte`.
 - **Default variant assets are the only usable MVP assets.** The active bundle may persist only Qaloon text/font and Qaloon Mushaf.
 
 ## Regression guards

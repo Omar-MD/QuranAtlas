@@ -85,8 +85,10 @@ Launch then:
 
 1. Checks whether the local database/cache reset marker matches this MVP asset
    contract.
-2. If not, silently clears QuranAtlas local IndexedDB and Cache Storage data,
-   records the new reset marker, and proceeds.
+2. If not, silently clears QuranAtlas active IndexedDB stores and matching
+   Cache Storage entries, records the new reset marker, and proceeds. Launch
+   reset avoids whole-database deletion so another open tab cannot block app
+   startup; the explicit Clear All Data flow still owns full database deletion.
 3. Applies or assumes the default asset profile.
 4. Restores the last valid reader surface when available after reset logic;
    otherwise routes to `#/s/1`.

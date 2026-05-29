@@ -1,10 +1,28 @@
 import { MushafModeControl } from '../reader/MushafModeControl'
+import type { ReactMushafViewMode } from '../../storage/settings-writer'
 
-export function MushafSettings() {
+export function MushafSettings({
+  mode,
+  onModeChange,
+}: {
+  mode: ReactMushafViewMode
+  onModeChange: (mode: ReactMushafViewMode) => void
+}) {
   return (
-    <section className="qar:grid qar:gap-3 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Mushaf settings">
-      <h3 className="qar:m-0 qar:text-base">Mushaf reader</h3>
-      <MushafModeControl />
+    <section className="qar-react-settings-panel qar-react-settings-panel--mushaf" aria-label="Mushaf settings" aria-labelledby="qar-react-settings-mushaf">
+      <div className="qar-react-settings-panel-head">
+        <h3 className="qar-react-settings-section-title" id="qar-react-settings-mushaf">Mushaf</h3>
+        <span className="qar-react-settings-row-control">Page fit</span>
+      </div>
+      <div className="qar-react-settings-panel-controls">
+        <div className="qar-react-settings-row qar-react-settings-row--control">
+          <span className="qar-react-settings-row-copy">
+            <span className="qar-react-settings-row-label">Mushaf view mode</span>
+            <span className="qar-react-settings-row-control">Fit the page to the current viewport</span>
+          </span>
+          <MushafModeControl mode={mode} onModeChange={onModeChange} />
+        </div>
+      </div>
     </section>
   )
 }

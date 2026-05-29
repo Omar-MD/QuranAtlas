@@ -41,6 +41,13 @@ describe('React UI components', () => {
     expect(onClick).toHaveBeenCalledOnce()
   })
 
+  it('allows custom surfaces to opt out of default button chrome while keeping owned semantics', () => {
+    render(<Button className="custom-row-button" unstyled>Jump</Button>)
+
+    const button = screen.getByRole('button', { name: 'Jump' })
+    expect(button.className).toBe('custom-row-button')
+  })
+
   it('requires an accessible name for icon-only buttons', () => {
     render(
       <IconButton label="Open settings">
@@ -83,7 +90,7 @@ describe('React UI components', () => {
     expect(screen.getByLabelText('Search')).toBeInTheDocument()
     expect(screen.getByLabelText('Notes')).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Riwayah' })).toHaveTextContent('Qalun')
-    expect(screen.getByRole('tab', { name: 'Verse' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Mode: Verse' })).toHaveAttribute('aria-selected', 'true')
     await user.click(screen.getByRole('checkbox', { name: 'Downloaded' }))
     expect(screen.getByRole('checkbox', { name: 'Downloaded' })).toHaveAttribute('data-state', 'checked')
     expect(screen.getByRole('switch', { name: 'Night mode' })).toBeInTheDocument()

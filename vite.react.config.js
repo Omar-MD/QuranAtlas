@@ -136,7 +136,7 @@ export default defineConfig(() => {
           background_color: '#fbf7ef',
         },
         workbox: {
-          cacheId: isProductionDeployment ? 'quranatlas' : 'quranatlas-react-preview',
+          cacheId: 'quranatlas-react-proof',
           cleanupOutdatedCaches: true,
           navigateFallback: '/index.html',
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
@@ -163,6 +163,7 @@ export default defineConfig(() => {
       outDir: '../dist-react',
       emptyOutDir: true,
       target: 'es2020',
+      chunkSizeWarningLimit: 600,
       rolldownOptions: {
         checks: {
           pluginTimings: false,

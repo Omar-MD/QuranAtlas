@@ -1,14 +1,17 @@
 import { type CSSProperties, useRef } from 'react'
+import { Bookmark } from 'lucide-react'
 
 import type { MushafResolvedPage, ReactInlineMushafSvg } from '../../packs/mushaf-page-asset'
-import { Button } from '../ui'
+import { Button, IconButton } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
 
 export type MushafPageViewerProps = {
+  bookmarked?: boolean
   chromeVisible?: boolean
   inlineSvg: ReactInlineMushafSvg
   onNavigate?: (page: number) => void
   onToggleChrome?: (visible: boolean) => void
+  onToggleBookmark?: () => void
   onViewModeChange?: (mode: MushafViewMode) => void
   resolved: MushafResolvedPage
   transitionDirection?: 'next' | 'previous'
@@ -16,9 +19,11 @@ export type MushafPageViewerProps = {
 }
 
 export function MushafPageViewer({
+  bookmarked = false,
   chromeVisible = true,
   inlineSvg,
   onNavigate,
+  onToggleBookmark,
   onToggleChrome,
   resolved,
   transitionDirection = 'next',
@@ -117,6 +122,16 @@ export function MushafPageViewer({
       <div className="qar-react-mushaf-page-counter" aria-label={`Mushaf page ${resolved.page} of ${resolved.pageCount}`}>
         {resolved.page} / {resolved.pageCount}
       </div>
+      {onToggleBookmark ? (
+        <IconButton
+          aria-pressed={bookmarked}
+          className="qar-react-mushaf-bookmark-toggle"
+          label={bookmarked ? `Remove bookmark for Mushaf page ${resolved.page}` : `Bookmark Mushaf page ${resolved.page}`}
+          onClick={onToggleBookmark}
+        >
+          <Bookmark aria-hidden="true" fill={bookmarked ? 'currentColor' : 'none'} size={17} strokeWidth={1.85} />
+        </IconButton>
+      ) : null}
     </section>
   )
 }

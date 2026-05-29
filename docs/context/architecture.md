@@ -73,6 +73,12 @@ Empty hash triggers `ROUTER_LAUNCH_RESTORE`. The handler in `app-bootstrap.ts` f
 
 `settings.onboardingComplete` is no longer a launch gate. Legacy `#/onboarding` hashes pass through the same launch restore path without source-choice UI.
 
+The launch reset clears the active IndexedDB stores and matching Cache Storage
+entries before seeding the default Qaloon + Bridges profile. It does not depend
+on whole-database deletion during startup, so a stale peer tab cannot block the
+reader from opening. The explicit Clear All Data confirmation remains the path
+that calls `deleteDB()`.
+
 ## Event bus (`src/core/events.ts`)
 
 - `emit(type, payload)` / `on(type, cb)` — `on` returns an unsubscribe fn. Both are typed via the `EventPayloads` map in `core/constants.ts`, so passing the wrong payload shape fails `svelte-check`.

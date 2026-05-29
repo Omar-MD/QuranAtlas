@@ -22,11 +22,10 @@ export type ReactRouteMatch =
   | { type: 'mushaf'; page: number }
   | { type: 'surahs' }
   | { type: 'bookmarks' }
-  | { type: 'search' }
   | { type: 'settings' }
-  | { type: 'assets' }
   | { type: 'about' }
   | { type: 'onboarding' }
+  | { type: 'unsupported' }
 
 function clampPositive(value: number, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : fallback
@@ -48,9 +47,9 @@ export function matchReactRoute(hash = getInitialReactHash()): ReactRouteMatch {
   if (mushafMatch) return { type: 'mushaf', page: clampPositive(Number(mushafMatch[1]), 1) }
   if (routePath === REACT_ROUTES.surahs) return { type: 'surahs' }
   if (routePath === REACT_ROUTES.bookmarks) return { type: 'bookmarks' }
-  if (routePath === REACT_ROUTES.search) return { type: 'search' }
+  if (routePath === REACT_ROUTES.search) return { type: 'unsupported' }
   if (routePath === REACT_ROUTES.settings) return { type: 'settings' }
-  if (routePath === REACT_ROUTES.assets) return { type: 'assets' }
+  if (routePath === REACT_ROUTES.assets) return { type: 'settings' }
   if (routePath === REACT_ROUTES.about) return { type: 'about' }
   if (routePath === REACT_ROUTES.onboarding) return { type: 'onboarding' }
   return { type: 'reader', surah: 1 }

@@ -5,7 +5,7 @@
 <!-- AUTO-GENERATED:dossier-index START -->
 | Surface | Dossier | Purpose |
 | --- | --- | --- |
-| **configure** | [`surfaces/configure.md`](surfaces/configure.md) | Mode-aware Verse Settings, Mushaf Settings, read-only Asset Management, and About page for Reader First preferences: theme, night mode, typography, translation visibility, Mushaf view mode, and clear-all-data. The current MVP has one default reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation. Source pickers, tafsir choices, and optional-pack controls are future work. |
+| **configure** | [`surfaces/configure.md`](surfaces/configure.md) | Mode-aware Verse Settings, Mushaf Settings, inline read-only asset inventory, and About page for Reader First preferences: theme, night mode, typography, translation visibility, Mushaf view mode, and clear-all-data. The current MVP has one default reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation. Source pickers, tafsir choices, and optional-pack controls are future work. |
 | **infra** | [`surfaces/infra.md`](surfaces/infra.md) | Cross-cutting Reader First infrastructure. Service worker, default reader asset handling, manifest membership, byte planning, provenance, build-time validation, cross-tab safety, and update/clear-data banners. Optional install/activate asset-pack lifecycle is future multiple-profile work. |
 | **listen** | [`surfaces/listen.md`](surfaces/listen.md) | Surface: listen |
 | **mark** | [`surfaces/mark.md`](surfaces/mark.md) | Surface: mark |

@@ -64,4 +64,25 @@ describe('asset contract reset', () => {
     })
     expect(await get('settings', 'riwayah')).toEqual({ key: 'riwayah', value: DEFAULT_READER_ASSET_PROFILE.riwayah })
   })
+
+  it('does not require whole-database deletion to complete launch reset', async () => {
+    const { ensureMvpAssetContractReset } = await import('../../../src/launch/asset-contract-reset')
+    await openDB()
+    await put('settings', { key: 'riwayah', value: 'hafs' })
+    const peer = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+
+    try {
+      const result = await ensureMvpAssetContractReset()
+
+      expect(result).toEqual({ resetApplied: true, contractId: MVP_ASSET_CONTRACT_ID })
+      expect(peer.objectStoreNames.contains('settings')).toBe(true)
+      expect(await get('settings', 'riwayah')).toEqual({ key: 'riwayah', value: DEFAULT_READER_ASSET_PROFILE.riwayah })
+    } finally {
+      peer.close()
+    }
+  })
 })

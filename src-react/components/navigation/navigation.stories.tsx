@@ -29,9 +29,20 @@ export const Juz: Story = {
 export const BookmarksPopulated: Story = {
   render: () => (
     <BookmarksList
-      bookmarks={[{ createdAt: 1, riwayah: 'qaloon', surah: 1, verseKey: '1:1' }]}
+      bookmarks={[{
+        arabicSnippet: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
+        createdAt: 1,
+        riwayah: 'qaloon',
+        surah: 1,
+        surahName: 'Al-Fatihah',
+        verseKey: '1:1',
+      }]}
       onDeleteBookmark={fn()}
       onNavigate={fn()}
     />
   ),
+}
+
+export const BookmarksEmpty: Story = {
+  render: () => <BookmarksList />,
 }

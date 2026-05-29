@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { closeReactDb, openReactDb } from '../../../src-react/storage/db'
 import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION, QURAN_ATLAS_V7_STORES } from '../../../src-react/storage/schema'
-import { writeOnboardingCompletion, writeReaderAssetBundleSettings } from '../../../src-react/storage/settings-writer'
+import {
+  DEFAULT_REACT_READER_PREFERENCES,
+  readReactReaderPreferences,
+  writeOnboardingCompletion,
+  writeReactReaderPreferences,
+  writeReaderAssetBundleSettings,
+} from '../../../src-react/storage/settings-writer'
 
 describe('React storage schema mirror', () => {
   afterEach(async () => {
@@ -46,6 +52,50 @@ describe('React storage schema mirror', () => {
       { key: 'onboardingComplete', value: true },
       { key: 'riwayah', value: 'qaloon' },
       { key: 'translationId', value: 'bridges' },
+    ])
+  })
+
+  it('loads default MVP reader preferences when settings are absent', async () => {
+    const db = await openReactDb()
+
+    await expect(readReactReaderPreferences(db)).resolves.toEqual(DEFAULT_REACT_READER_PREFERENCES)
+  })
+
+  it('writes React reader preferences through the shared settings facade', async () => {
+    const db = await openReactDb()
+
+    await writeReactReaderPreferences(db, {
+      fontSize: 'lg',
+      lineSpacing: 'sm',
+      mushafViewMode: 'fit-width',
+      nightMode: 'on',
+      readerMargin: 'xl',
+      theme: 'dark',
+      translationVisible: false,
+      verseSpacing: 'xs',
+      wordSpacing: 'lg',
+    })
+
+    await expect(db.settings.bulkGet([
+      'translationVisible',
+      'fontSize',
+      'lineSpacing',
+      'wordSpacing',
+      'readerMargin',
+      'verseSpacing',
+      'theme',
+      'nightMode',
+      'mushafViewMode',
+    ])).resolves.toEqual([
+      { key: 'translationVisible', value: false },
+      { key: 'fontSize', value: 'lg' },
+      { key: 'lineSpacing', value: 'sm' },
+      { key: 'wordSpacing', value: 'lg' },
+      { key: 'readerMargin', value: 'xl' },
+      { key: 'verseSpacing', value: 'xs' },
+      { key: 'theme', value: 'dark' },
+      { key: 'nightMode', value: 'on' },
+      { key: 'mushafViewMode', value: 'fit-width' },
     ])
   })
 })

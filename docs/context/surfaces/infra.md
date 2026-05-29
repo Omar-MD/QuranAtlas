@@ -168,6 +168,21 @@ Current dataset package version for the applied runtime corpus. Sole writer: `sr
 - **Sole writer of `datasetMeta`: `src/infra/offline/dataset-updater.js`** (or store-specific writer — see `data-model.md`).
 - **Cross-tab broadcast goes through `safety/sync.ts::broadcast` + `registerTopic`.** Don't open new BroadcastChannels directly — register a topic.
 - **`suppressNextVersionChange()` armed before `deleteDB()`** — ensures the same tab doesn't get its own clear-data banner.
+- **React proof clear-data uses the shared DB name.** The React About route's
+  `src-react/storage/clear-data.ts` clears browser storage, Cache Storage, and
+  the shared `quran-atlas` IndexedDB database, then root-reloads through the
+  route-owned dialog hook. Svelte remains the shipped clear-data owner during
+  dual-build.
+- **React proof caches are namespaced away from shipped Svelte caches.** The
+  React Vite PWA config always uses Workbox cache id
+  `quranatlas-react-proof`; runtime React dataset caching uses
+  `quran-atlas-react-runtime-dataset-v1`. Production-target React preview
+  tests assert that `dist-react/` owns its generated Workbox helper while
+  shipped Svelte `dist/` does not.
+- **Launch asset reset clears stores before seeding defaults.** The passive
+  MVP reset path avoids whole-database deletion so startup cannot be blocked by
+  another open tab. Full `deleteDB()` remains reserved for explicit Clear All
+  Data.
 - **Every SW `registerRoute()` call lives in `src/infra/sw/strategies.ts::registerAll()`.** No inline route registrations in `sw.js`. Adding a new asset class = one entry in `route-defs.ts::ROUTE_DEFS` and (if it introduces a new cacheName prefix) one entry in `CACHE_PREFIXES`.
 - **Per-asset-class cache prefixes preserved by `cleanupStaleCaches`** sourced from `route-defs.ts::CACHE_PREFIXES` (passed as `preservePrefixes`) — never hardcoded.
 - **`route-defs.ts` is window-importable.** Workbox imports live only in `strategies.ts` (SW-only). Window code (asset management, legacy offline-selector, data/offline.ts) reads the table for byte-sum + URL-filter helpers.

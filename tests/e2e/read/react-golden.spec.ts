@@ -16,7 +16,10 @@ const readFixtures = GOLDEN_FIXTURES.filter((fixture) =>
     'reader-surah-start',
     'reader-ayah-deeplink',
     'mushaf-ready',
+    'search-results',
+    'search-index-unavailable',
     'daily-wird-no-plan',
+    'daily-wird-active',
   ].includes(fixture.id),
 )
 
@@ -40,6 +43,23 @@ for (const fixture of readFixtures) {
 
       if (fixture.id.startsWith('reader-') || fixture.id.startsWith('daily-wird')) {
         await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+      }
+
+      if (fixture.id.startsWith('search-')) {
+        await expect(page.getByRole('main', { name: /unsupported route/i })).toBeVisible()
+        await expect(page.getByRole('heading', { name: /route unavailable/i })).toBeVisible()
+        await expect(page.getByText('Most Compassionate Most Merciful')).toHaveCount(0)
+      }
+
+      if (fixture.id === 'daily-wird-no-plan') {
+        await expect(page.getByRole('button', { name: /start daily wird/i })).toBeVisible()
+        await expect(page.getByText('Create a plan to build a consistent rhythm.')).toBeVisible()
+      }
+
+      if (fixture.id === 'daily-wird-active') {
+        await expect(page.getByRole('button', { name: /today/i })).toBeVisible()
+        await expect(page.getByRole('progressbar', { name: /daily wird progress/i })).toBeVisible()
+        await expect(page.getByRole('button', { name: /today/i })).toContainText(/complete/i)
       }
 
       if (fixture.id === 'reader-surah-start') {

@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ReaderRoute } from '../../../src-react/app/routes/read/ReaderRoute'
@@ -12,6 +14,7 @@ import {
   type MushafPageAssetState,
 } from '../../../src-react/packs/mushaf-page-asset'
 import { ReaderVerseSurface } from '../../../src-react/components/reader/ReaderVerseSurface'
+import { VerseNumber } from '../../../src-react/components/reader/VerseNumber'
 import { VerseBlock } from '../../../src-react/components/reader/VerseBlock'
 import { VirtualVerseList } from '../../../src-react/components/reader/VirtualVerseList'
 import { loadReaderSurah, type ReaderCorpusState } from '../../../src-react/data/reader-corpus'
@@ -310,6 +313,35 @@ describe('React reader parity', () => {
     vi.unstubAllGlobals()
   })
 
+  it('applies reader preference changes live without refetching the verse corpus', async () => {
+    const fetcher = readerFetchFixture()
+    vi.stubGlobal('fetch', fetcher)
+    render(<ReaderRoute surah={1} ayah={1} />)
+
+    expect(await screen.findByTestId('verse-1:7')).toBeInTheDocument()
+    const quranFetchesBefore = fetcher.mock.calls.filter(([input]) => String(input).includes('/dataset/quran-text/')).length
+
+    window.dispatchEvent(new CustomEvent('quranatlas-react-reader-preferences-changed', {
+      detail: {
+        fontSize: 'xl',
+        lineSpacing: 'lg',
+        readerMargin: 'lg',
+        translationVisible: false,
+        verseSpacing: 'lg',
+        wordSpacing: 'lg',
+      },
+    }))
+
+    expect(document.documentElement.dataset.fontSize).toBe('xl')
+    expect(document.documentElement.dataset.lineSpacing).toBe('lg')
+    expect(document.documentElement.dataset.readerMargin).toBe('lg')
+    expect(document.documentElement.dataset.verseSpacing).toBe('lg')
+    expect(document.documentElement.dataset.wordSpacing).toBe('lg')
+    await waitFor(() => expect(screen.queryByText(/All praise be to Allah/i)).not.toBeInTheDocument())
+    expect(fetcher.mock.calls.filter(([input]) => String(input).includes('/dataset/quran-text/'))).toHaveLength(quranFetchesBefore)
+    vi.unstubAllGlobals()
+  })
+
   it('keeps React verse text, footnotes, dividers, and scrolling aligned with the Svelte reader surface', () => {
     const verses = Array.from({ length: 45 }, (_, index) => {
       const verse = index + 1
@@ -403,6 +435,179 @@ describe('React reader parity', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next surah: Al-Baqarah' }))
 
     expect(window.location.hash).toBe('#/s/2')
+  })
+
+  it('marks bookmarked verses and toggles bookmarks from verse number controls', () => {
+    const onToggleBookmark = vi.fn()
+    const corpus: ReaderCorpusState = {
+      status: 'ready',
+      footnotes: {},
+      riwayah: 'qaloon',
+      surah: {
+        number: 1,
+        nameArabic: 'الفَاتِحة',
+        nameEnglish: 'Al-Fatihah',
+        verseCount: 7,
+      },
+      translationVisible: true,
+      verses: [
+        {
+          arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
+          footnotes: {},
+          key: '1:1',
+          surah: 1,
+          translation: 'All praise be to Allah, Lord of all realms,',
+          translationRole: 'identity',
+          verse: 1,
+        },
+      ],
+    }
+
+    render(
+      <ReaderVerseSurface
+        bookmarkedVerseKeys={new Set(['1:1'])}
+        corpus={corpus}
+        onToggleBookmark={onToggleBookmark}
+      />,
+    )
+
+    const verse = screen.getByTestId('verse-1:1')
+    const verseNumber = screen.getByRole('button', { name: 'Verse 1' })
+    expect(verse).toHaveAttribute('data-bookmarked', 'true')
+    expect(verse).toHaveClass('qa-verse--bookmarked-glyph')
+    expect(verse.querySelector('.qar-reader-verse-head')).toContainElement(verseNumber)
+    expect(verse.querySelector('.qar-reader-verse-body .qar-reader-verse-arabic')).toBeInTheDocument()
+    expect(verseNumber).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.click(verseNumber)
+
+    expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
+  })
+
+  it('pulses the verse sides when a verse becomes bookmarked from the reader', () => {
+    vi.useFakeTimers()
+    const onToggleBookmark = vi.fn()
+    const corpus: ReaderCorpusState = {
+      status: 'ready',
+      footnotes: {},
+      riwayah: 'qaloon',
+      surah: {
+        number: 1,
+        nameArabic: 'الفَاتِحة',
+        nameEnglish: 'Al-Fatihah',
+        verseCount: 7,
+      },
+      translationVisible: true,
+      verses: [
+        {
+          arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
+          footnotes: {},
+          key: '1:1',
+          surah: 1,
+          translation: 'All praise be to Allah, Lord of all realms,',
+          translationRole: 'identity',
+          verse: 1,
+        },
+      ],
+    }
+
+    render(
+      <ReaderVerseSurface
+        bookmarkedVerseKeys={new Set()}
+        corpus={corpus}
+        onToggleBookmark={onToggleBookmark}
+      />,
+    )
+
+    const verse = screen.getByTestId('verse-1:1')
+    fireEvent.click(screen.getByRole('button', { name: 'Verse 1' }))
+
+    expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
+    vi.advanceTimersByTime(0)
+    expect(verse).toHaveAttribute('data-bookmark-pulse', 'true')
+    expect(verse).toHaveClass('qar-reader-verse--pulse')
+    expect(verse).toHaveClass('qa-verse--pulse')
+
+    vi.advanceTimersByTime(1000)
+
+    expect(verse).not.toHaveAttribute('data-bookmark-pulse')
+    expect(verse).not.toHaveClass('qar-reader-verse--pulse')
+    expect(verse).not.toHaveClass('qa-verse--pulse')
+    vi.useRealTimers()
+  })
+
+  it('does not pulse the verse sides when removing an existing bookmark from the reader', () => {
+    vi.useFakeTimers()
+    const onToggleBookmark = vi.fn()
+    const corpus: ReaderCorpusState = {
+      status: 'ready',
+      footnotes: {},
+      riwayah: 'qaloon',
+      surah: {
+        number: 1,
+        nameArabic: 'الفَاتِحة',
+        nameEnglish: 'Al-Fatihah',
+        verseCount: 7,
+      },
+      translationVisible: true,
+      verses: [
+        {
+          arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
+          footnotes: {},
+          key: '1:1',
+          surah: 1,
+          translation: 'All praise be to Allah, Lord of all realms,',
+          translationRole: 'identity',
+          verse: 1,
+        },
+      ],
+    }
+
+    render(
+      <ReaderVerseSurface
+        bookmarkedVerseKeys={new Set(['1:1'])}
+        corpus={corpus}
+        onToggleBookmark={onToggleBookmark}
+      />,
+    )
+
+    const verse = screen.getByTestId('verse-1:1')
+    fireEvent.click(screen.getByRole('button', { name: 'Verse 1' }))
+
+    expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
+    vi.advanceTimersByTime(0)
+    expect(verse).not.toHaveAttribute('data-bookmark-pulse')
+    expect(verse).not.toHaveClass('qar-reader-verse--pulse')
+    expect(verse).not.toHaveClass('qa-verse--pulse')
+    vi.useRealTimers()
+  })
+
+  it('keeps React bookmarked verse styling aligned with Svelte theme-aware bookmark markers', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src-react/design-system/index.css'), 'utf8')
+    const tokens = readFileSync(resolve(process.cwd(), 'src-react/design-system/tokens/semantic.css'), 'utf8')
+
+    expect(tokens).toContain('--qa-react-bookmark-accent: var(--qa-react-accent);')
+    expect(tokens).toContain('--qa-react-bookmark-pulse-bg: color-mix(in srgb, var(--qa-react-bookmark-accent) 22%, transparent);')
+    expect(tokens).toContain('--qa-react-bookmark-pulse-edge: color-mix(in srgb, var(--qa-react-bookmark-accent) 72%, transparent);')
+    expect(css).toContain('.qa-verse--bookmarked-glyph')
+    expect(css).toContain('color: var(--qa-react-bookmark-accent, var(--qa-react-accent)) !important;')
+    expect(css).toContain('18% {')
+    expect(css).toContain('background-color: var(--qa-react-bookmark-pulse-bg, color-mix(in srgb, var(--qa-react-bookmark-accent, var(--qa-react-accent)) 22%, transparent));')
+    expect(css).toContain('box-shadow: inset 2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent)), inset -2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent));')
+    expect(css).toContain('box-shadow: inset 2px 0 0 transparent, inset -2px 0 0 transparent;')
+  })
+
+  it('keeps the verse bookmark glyph slot mounted when bookmark state changes', () => {
+    const { rerender } = render(<VerseNumber verse={7} bookmarked={false} />)
+
+    let verseNumber = screen.getByRole('button', { name: 'Verse 7' })
+    expect(verseNumber.querySelector('.qar-reader-verse-bookmark-glyph')).toHaveAttribute('data-active', 'false')
+
+    rerender(<VerseNumber verse={7} bookmarked />)
+
+    verseNumber = screen.getByRole('button', { name: 'Verse 7' })
+    expect(verseNumber).toHaveAttribute('aria-pressed', 'true')
+    expect(verseNumber.querySelector('.qar-reader-verse-bookmark-glyph')).toHaveAttribute('data-active', 'true')
   })
 
   it('renders mushaf route with an explicit asset gate', () => {
@@ -584,6 +789,22 @@ describe('React reader parity', () => {
     vi.unstubAllGlobals()
   })
 
+  it('updates the mounted Mushaf page fit when settings change without a route remount', async () => {
+    vi.stubGlobal('fetch', mushafFetchFixture())
+    render(<MushafRoute page={1} />)
+
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    const surface = document.querySelector<HTMLElement>('.qar-react-mushaf-page-surface')
+    expect(surface).toHaveAttribute('data-mushaf-view-mode', 'auto')
+
+    window.dispatchEvent(new CustomEvent('quranatlas-react-reader-preferences-changed', {
+      detail: { mushafViewMode: 'fit-width' },
+    }))
+
+    await waitFor(() => expect(surface).toHaveAttribute('data-mushaf-view-mode', 'fit-width'))
+    vi.unstubAllGlobals()
+  })
+
   it('keeps the current Mushaf page mounted while the next page asset loads', async () => {
     let resolvePageTwo: ((response: Response) => void) | null = null
     const pageTwo = new Promise<Response>((resolve) => {
@@ -705,6 +926,37 @@ describe('React reader parity', () => {
     expect(screen.getByText('42 / 604')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Toggle reader chrome' }))
     expect(onToggleChrome).toHaveBeenCalledWith(false)
+  })
+
+  it('lets Mushaf pages toggle a page bookmark without adding page chrome tabs', () => {
+    const onToggleBookmark = vi.fn()
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+
+    render(
+      <MushafPageViewer
+        bookmarked
+        inlineSvg={inlineSvg}
+        onToggleBookmark={onToggleBookmark}
+        resolved={{
+          assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+          firstVerse: { surah: 2, verse: 251 },
+          manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+          mushafEditionId: 'qalun-quran-ws-v1',
+          page: 42,
+          pageCount: 604,
+          riwayah: 'qaloon',
+          riwayahLabel: 'Qalun',
+        }}
+      />,
+    )
+
+    expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).toBeNull()
+    const bookmark = screen.getByRole('button', { name: 'Remove bookmark for Mushaf page 42' })
+    expect(bookmark).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.click(bookmark)
+
+    expect(onToggleBookmark).toHaveBeenCalledTimes(1)
   })
 
   it('keeps the React Mushaf SVG and its visible page frame on the same fitted box', () => {

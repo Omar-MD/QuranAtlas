@@ -2,11 +2,17 @@ export type SettingsKey =
   | 'onboardingComplete'
   | 'theme'
   | 'fontSize'
+  | 'lineSpacing'
+  | 'wordSpacing'
+  | 'readerMargin'
+  | 'verseSpacing'
+  | 'nightMode'
   | 'riwayah'
   | 'translationId'
   | 'translationVisible'
   | 'quranTextStyleId'
   | 'mushafEditionId'
+  | 'mushafViewMode'
   | 'currentPosition'
   | 'lastSurface'
   | 'wirdPlan'
@@ -34,10 +40,14 @@ export type DatasetMetaRecord = {
   [key: string]: unknown
 }
 
+export type BookmarkKind = 'verse' | 'page'
+
 export type BookmarkRecord = {
   riwayah: Riwayah
   verseKey: string
   surah: number
+  kind?: BookmarkKind
+  page?: number
   createdAt: number
 }
 

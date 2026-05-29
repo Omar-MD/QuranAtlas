@@ -2,8 +2,9 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { loadLaunchRouteFromDb, resolveLaunchRoute, shouldPersistLastSurface, useLaunchRestore } from '../../../src-react/continuity/launch-restore'
-import { createBookmarkSyncMessage } from '../../../src-react/continuity/bookmarks/sync'
+import { BOOKMARKS_TOPIC, broadcastBookmarkChange, createBookmarkSyncMessage } from '../../../src-react/continuity/bookmarks/sync'
 import { deleteBookmark, listBookmarks, toggleBookmark } from '../../../src-react/continuity/bookmarks/store'
+import { useBookmarks } from '../../../src-react/continuity/bookmarks/use-bookmarks'
 import { closeReactDb, openReactDb } from '../../../src-react/storage/db'
 import { QURAN_ATLAS_DB_NAME } from '../../../src-react/storage/schema'
 
@@ -76,12 +77,56 @@ describe('React continuity parity', () => {
     }
   })
 
-  it('creates scoped bookmark sync messages', () => {
-    expect(createBookmarkSyncMessage('qaloon', '2:255')).toEqual({ type: 'bookmarks:changed', riwayah: 'qaloon', verseKey: '2:255' })
+  it('creates bookmark sync messages on the shared topic envelope', () => {
+    expect(createBookmarkSyncMessage(['2:255'], 'qaloon')).toEqual({
+      payload: { riwayah: 'qaloon', verseKeys: ['2:255'] },
+      topic: BOOKMARKS_TOPIC,
+    })
+  })
+
+  it('refreshes bookmark hooks when a same-device bookmark change is broadcast', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.put({ key: 'riwayah', value: 'qaloon' })
+
+    try {
+      const { result } = renderHook(() => useBookmarks())
+      await waitFor(() => expect(result.current.status).toBe('ready'))
+      expect(result.current.bookmarks).toEqual([])
+
+      await db.bookmarks.put({ createdAt: 1, riwayah: 'qaloon', surah: 1, verseKey: '1:1' })
+      broadcastBookmarkChange(['1:1'], 'qaloon')
+
+      await waitFor(() => expect(result.current.bookmarks).toEqual([
+        { createdAt: 1, riwayah: 'qaloon', surah: 1, verseKey: '1:1' },
+      ]))
+    } finally {
+      await resetReactDb()
+    }
+  })
+
+  it('refreshes bookmark hooks when a Mushaf page bookmark change is broadcast', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.put({ key: 'riwayah', value: 'qaloon' })
+
+    try {
+      const { result } = renderHook(() => useBookmarks())
+      await waitFor(() => expect(result.current.status).toBe('ready'))
+
+      await db.bookmarks.put({ createdAt: 1, kind: 'page', page: 42, riwayah: 'qaloon', surah: 0, verseKey: 'm:42' })
+      broadcastBookmarkChange(['m:42'], 'qaloon')
+
+      await waitFor(() => expect(result.current.bookmarks).toEqual([
+        { createdAt: 1, kind: 'page', page: 42, riwayah: 'qaloon', surah: 0, verseKey: 'm:42' },
+      ]))
+    } finally {
+      await resetReactDb()
+    }
   })
 
   it('reads, writes, sorts, and deletes riwayah-scoped shared bookmark records', async () => {
-    const records: Array<{ createdAt: number; riwayah: string; surah: number; verseKey: string }> = []
+    const records: Array<{ createdAt: number; kind?: 'verse' | 'page'; page?: number; riwayah: string; surah: number; verseKey: string }> = []
     const db = {
       bookmarks: {
         delete: async ([riwayah, verseKey]: [string, string]) => {
@@ -89,7 +134,7 @@ describe('React continuity parity', () => {
           if (index >= 0) records.splice(index, 1)
         },
         get: async ([riwayah, verseKey]: [string, string]) => records.find((record) => record.riwayah === riwayah && record.verseKey === verseKey),
-        put: async (record: { createdAt: number; riwayah: string; surah: number; verseKey: string }) => {
+        put: async (record: { createdAt: number; kind?: 'verse' | 'page'; page?: number; riwayah: string; surah: number; verseKey: string }) => {
           records.push(record)
         },
         where: () => ({
@@ -103,13 +148,21 @@ describe('React continuity parity', () => {
     await expect(toggleBookmark(db, { createdAt: 3, riwayah: 'qaloon', surah: 2, verseKey: '2:255' })).resolves.toBe('saved')
     await expect(toggleBookmark(db, { createdAt: 1, riwayah: 'warsh', surah: 1, verseKey: '1:1' })).resolves.toBe('saved')
     await expect(toggleBookmark(db, { createdAt: 2, riwayah: 'qaloon', surah: 1, verseKey: '1:1' })).resolves.toBe('saved')
+    await expect(toggleBookmark(db, { createdAt: 4, kind: 'page', page: 42, riwayah: 'qaloon', surah: 0, verseKey: 'm:42' })).resolves.toBe('saved')
 
     await expect(listBookmarks(db, 'qaloon')).resolves.toEqual([
       { createdAt: 2, riwayah: 'qaloon', surah: 1, verseKey: '1:1' },
       { createdAt: 3, riwayah: 'qaloon', surah: 2, verseKey: '2:255' },
+      { createdAt: 4, kind: 'page', page: 42, riwayah: 'qaloon', surah: 0, verseKey: 'm:42' },
     ])
 
     await deleteBookmark(db, { riwayah: 'qaloon', verseKey: '1:1' })
+    await expect(listBookmarks(db, 'qaloon')).resolves.toEqual([
+      { createdAt: 3, riwayah: 'qaloon', surah: 2, verseKey: '2:255' },
+      { createdAt: 4, kind: 'page', page: 42, riwayah: 'qaloon', surah: 0, verseKey: 'm:42' },
+    ])
+
+    await deleteBookmark(db, { riwayah: 'qaloon', verseKey: 'm:42' })
     await expect(listBookmarks(db, 'qaloon')).resolves.toEqual([
       { createdAt: 3, riwayah: 'qaloon', surah: 2, verseKey: '2:255' },
     ])

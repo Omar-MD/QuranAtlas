@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ReaderChrome, type ReaderMode } from './ReaderChrome'
 import { NavDrawer } from '../navigation/NavDrawer'
+import { requestReactSettingsOverlay } from '../../app/settings-overlay-events'
 import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 
@@ -86,7 +87,7 @@ export function ReaderPageShell({
         onModeChange={onModeChange}
         onOpenNavigation={() => dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })}
         onOpenSettings={() => {
-          window.location.hash = '#/settings'
+          requestReactSettingsOverlay(mode)
         }}
         visible={visible}
       />

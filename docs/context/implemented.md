@@ -19,6 +19,7 @@ and data shapes live in `surfaces/<name>.md`.
 - Desktop `#/surahs` and `#/bookmarks` surfaces.
 - Riwayah-scoped bookmarks with cross-tab sync and landing pulse.
 - Reader keyboard shortcuts and shortcuts sheet.
+- Full-text `#/search` is not a shipped MVP route; search remains future work.
 
 ## Configure
 

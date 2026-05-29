@@ -9,9 +9,12 @@ import { BookmarksList, type BookmarkListItem } from './BookmarksList'
 import { JuzList } from './JuzList'
 import { SurahList } from './SurahList'
 import { DailyWirdCard } from '../reader/wird/DailyWirdCard'
+import { readWirdPlan } from '../../continuity/wird/store'
+import type { SurahCount, WirdPlan } from '../../continuity/wird/types'
 
 type SavedPosition = { surah: number; verse: number }
 type SurahFilter = 'all' | 'recent'
+const FALLBACK_WIRD_COUNTS: SurahCount[] = [{ n: 1, count: 7 }, { n: 2, count: 286 }, { n: 114, count: 6 }]
 
 export function NavDrawer({
   bookmarks,
@@ -36,6 +39,7 @@ export function NavDrawer({
   const [surahQuery, setSurahQuery] = useState('')
   const [recentSurahs, setRecentSurahs] = useState<number[]>([])
   const [currentPosition, setCurrentPosition] = useState<SavedPosition | null>(null)
+  const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
 
   useEffect(() => {
     if (!open) return undefined
@@ -43,18 +47,21 @@ export function NavDrawer({
 
     void openReactDb()
       .then(async (db) => {
-        const [recent, position] = await Promise.all([
+        const [recent, position, plan] = await Promise.all([
           db.settings.get('recentSurahs'),
           db.settings.get('currentPosition'),
+          readWirdPlan(db),
         ])
         if (cancelled) return
         setRecentSurahs(asRecentSurahs(recent?.value).slice(0, 7))
         setCurrentPosition(asSavedPosition(position?.value))
+        setWirdPlan(plan)
       })
       .catch(() => {
         if (!cancelled) {
           setRecentSurahs([])
           setCurrentPosition(null)
+          setWirdPlan(null)
         }
       })
 
@@ -125,7 +132,7 @@ export function NavDrawer({
         </div>
       </div>
       <div className="qar-react-drawer-wird-slot">
-        <DailyWirdCard counts={[{ n: 1, count: 7 }]} plan={null} />
+        <DailyWirdCard counts={FALLBACK_WIRD_COUNTS} plan={wirdPlan} />
       </div>
       <div className="qar-react-nav-drawer-read">
         <div className="qar-react-nav-drawer-source-panel">

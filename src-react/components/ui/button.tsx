@@ -31,9 +31,10 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
     children: ReactNode
+    unstyled?: boolean
   }
 
-export function Button({ asChild = false, className, variant, size, type = 'button', ...props }: ButtonProps) {
+export function Button({ asChild = false, className, unstyled = false, variant, size, type = 'button', ...props }: ButtonProps) {
   const Comp = asChild ? Slot : 'button'
-  return <Comp className={cn(buttonVariants({ variant, size }), className)} type={asChild ? undefined : type} {...props} />
+  return <Comp className={cn(unstyled ? undefined : buttonVariants({ variant, size }), className)} type={asChild ? undefined : type} {...props} />
 }

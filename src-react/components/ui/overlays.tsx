@@ -8,8 +8,10 @@ import { Button } from './button'
 
 type OverlayBaseProps = {
   title: string
-  trigger: ReactNode
   children: ReactNode
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
+  trigger?: ReactNode
 }
 
 function CloseButton() {
@@ -23,10 +25,10 @@ function CloseButton() {
 }
 
 export type DialogProps = OverlayBaseProps
-export function Dialog({ title, trigger, children }: DialogProps) {
+export function Dialog({ title, trigger, children, onOpenChange, open }: DialogProps) {
   return (
-    <DialogPrimitive.Root>
-      <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
+    <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
+      {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30" />
         <DialogPrimitive.Content aria-describedby={undefined} className="qar:fixed qar:left-1/2 qar:top-1/2 qar:z-50 qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg">
@@ -42,10 +44,10 @@ export function Dialog({ title, trigger, children }: DialogProps) {
 }
 
 export type SheetProps = OverlayBaseProps
-export function Sheet({ title, trigger, children }: SheetProps) {
+export function Sheet({ title, trigger, children, onOpenChange, open }: SheetProps) {
   return (
-    <DialogPrimitive.Root>
-      <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
+    <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
+      {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30" />
         <DialogPrimitive.Content aria-describedby={undefined} className="qar:fixed qar:bottom-0 qar:left-0 qar:right-0 qar:z-50 qar:grid qar:max-h-screen qar:gap-4 qar:rounded-t-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg md:qar:left-auto md:qar:top-0 md:qar:w-96 md:qar:rounded-l-surface md:qar:rounded-t-none">

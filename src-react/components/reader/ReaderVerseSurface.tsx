@@ -5,9 +5,11 @@ import { SurahContinuityButton } from './SurahContinuityButton'
 import { VirtualVerseList } from './VirtualVerseList'
 
 export type ReaderVerseSurfaceProps = {
+  bookmarkedVerseKeys?: ReadonlySet<string>
   corpus: ReaderCorpusState
   metadata?: Map<string, VerseMetadata>
   onSelectVerse?: (verseKey: string) => void
+  onToggleBookmark?: (verseKey: string) => void
   selectedVerseKey?: string | null
   surahHeaderHidden?: boolean
   surahIndex?: ReaderSurahIndexEntry[]
@@ -20,9 +22,11 @@ function shouldRenderBasmala(corpus: Extract<ReaderCorpusState, { status: 'ready
 }
 
 export function ReaderVerseSurface({
+  bookmarkedVerseKeys = new Set<string>(),
   corpus,
   metadata = new Map(),
   onSelectVerse,
+  onToggleBookmark,
   selectedVerseKey = null,
   surahHeaderHidden = false,
   surahIndex = [],
@@ -89,8 +93,10 @@ export function ReaderVerseSurface({
         </section>
       )}
       <VirtualVerseList
+        bookmarkedVerseKeys={bookmarkedVerseKeys}
         metadata={metadata}
         onSelectVerse={onSelectVerse}
+        onToggleBookmark={onToggleBookmark}
         selectedVerseKey={selectedVerseKey}
         translationVisible={readyCorpus.translationVisible}
         verses={readyCorpus.verses}

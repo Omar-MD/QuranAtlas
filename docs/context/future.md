@@ -35,7 +35,7 @@ Reader boot must not require optional curated metadata files. Missing optional m
 
 ## Retrieval and AI readiness
 
-Future retrieval infrastructure may include lexical indexes, chunked tafsir and claims retrieval, citation/provenance maps, and optional vector or embedding indexes. This work should ground future answers in structured retrieval and citations.
+Future retrieval infrastructure may include the shipped `#/search` route, lexical indexes, chunked tafsir and claims retrieval, citation/provenance maps, and optional vector or embedding indexes. This work should ground future answers in structured retrieval and citations.
 
 No AI assistant, chat, agent, synthesis UI, or generated-answer product is current scope.
 

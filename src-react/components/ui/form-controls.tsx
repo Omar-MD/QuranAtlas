@@ -42,17 +42,18 @@ export function Textarea({ label, className, id, ...props }: TextareaProps) {
 
 export type SelectOption = { label: string; value: string; disabled?: boolean }
 export type SelectProps = SelectPrimitive.SelectProps & {
+  className?: string
   label: string
   options: SelectOption[]
   placeholder?: string
 }
 
-export function Select({ label, options, placeholder = 'Select', ...props }: SelectProps) {
+export function Select({ className, label, options, placeholder = 'Select', ...props }: SelectProps) {
   return (
     <SelectPrimitive.Root {...props}>
       <SelectPrimitive.Trigger
         aria-label={label}
-        className={cn(fieldClass, 'qar:flex qar:items-center qar:justify-between qar:gap-2')}
+        className={cn(fieldClass, 'qar:flex qar:items-center qar:justify-between qar:gap-2', className)}
       >
         <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon aria-hidden="true">
@@ -60,7 +61,7 @@ export function Select({ label, options, placeholder = 'Select', ...props }: Sel
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
-        <SelectPrimitive.Content className="qar:z-50 qar:overflow-hidden qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1 qar:text-text qar:shadow-lg">
+        <SelectPrimitive.Content className="qar-react-select-content qar:z-50 qar:overflow-hidden qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1 qar:text-text qar:shadow-lg">
           <SelectPrimitive.Viewport>
             {options.map((option) => (
               <SelectPrimitive.Item
@@ -82,7 +83,7 @@ export function Select({ label, options, placeholder = 'Select', ...props }: Sel
   )
 }
 
-export type SegmentedControlOption = { label: string; value: string; disabled?: boolean }
+export type SegmentedControlOption = { label: string; value: string; disabled?: boolean; shortLabel?: string }
 export type SegmentedControlProps = {
   label: string
   options: SegmentedControlOption[]
@@ -105,6 +106,7 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
         return (
           <button
             aria-selected={selected}
+            aria-label={`${label}: ${option.label}`}
             className={cn(
               'qar:min-h-9 qar:rounded-control qar:px-3 qar:text-sm qar:text-muted qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus',
               selected && 'qar:bg-accent qar:text-surface',
@@ -115,7 +117,7 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
             role="tab"
             type="button"
           >
-            {option.label}
+            {option.shortLabel ?? option.label}
           </button>
         )
       })}
@@ -157,11 +159,11 @@ export function Switch({ label, className, ...props }: SwitchProps) {
   )
 }
 
-export type SliderProps = SliderPrimitive.SliderProps & { label: string }
-export function Slider({ label, className, ...props }: SliderProps) {
+export type SliderProps = SliderPrimitive.SliderProps & { hideLabel?: boolean; label: string }
+export function Slider({ hideLabel = false, label, className, ...props }: SliderProps) {
   return (
     <label className={cn(labelClass, className)}>
-      <span>{label}</span>
+      <span className={hideLabel ? 'qar:sr-only' : undefined}>{label}</span>
       <SliderPrimitive.Root aria-label={label} className="qar:relative qar:flex qar:h-6 qar:w-full qar:touch-none qar:items-center" {...props}>
         <SliderPrimitive.Track className="qar:relative qar:h-2 qar:grow qar:rounded-surface qar:bg-border">
           <SliderPrimitive.Range className="qar:absolute qar:h-full qar:rounded-surface qar:bg-accent" />

@@ -1,16 +1,78 @@
 import { SettingsShell } from '../../../components/settings/SettingsShell'
+import { IncludedAssetsSection } from '../../../components/settings/IncludedAssetsSection'
 import { MushafSettings } from '../../../components/settings/MushafSettings'
 import { VerseSettings } from '../../../components/settings/VerseSettings'
+import { useSettingsForm } from '../../../components/settings/useSettingsForm'
+import { SegmentedControl } from '../../../components/ui'
 
-export function SettingsRoute() {
+export type SettingsRouteMode = 'verse' | 'mushaf'
+
+export function SettingsRoute({
+  mode = 'verse',
+  onClose = () => undefined,
+  onReaderModeChange = () => undefined,
+  previousHash = '#/s/1',
+}: {
+  mode?: SettingsRouteMode
+  onClose?: () => void
+  onReaderModeChange?: (mode: SettingsRouteMode) => void
+  previousHash?: string
+}) {
+  const {
+    setFontSize,
+    setMushafViewMode,
+    setNightMode,
+    setReadingFlow,
+    setTheme,
+    setTranslationVisible,
+    state,
+  } = useSettingsForm()
+  const preferences = state.preferences
+
   return (
-    <SettingsShell>
-      <VerseSettings />
-      <MushafSettings />
-      <section className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Reader assets">
-        <h3 className="qar:m-0 qar:text-base">Reader assets</h3>
-        <p className="qar:m-0 qar:text-sm qar:text-muted">Qaloon text, Qaloon Mushaf, and Bridges translation are included by default.</p>
-      </section>
+    <SettingsShell
+      nightMode={preferences.nightMode}
+      onClose={onClose}
+      onNightModeChange={setNightMode}
+      onThemeChange={setTheme}
+      subtitle=""
+      theme={preferences.theme}
+      title="Settings"
+    >
+      <div className="qar-react-settings-deck">
+        <div className="qar-react-settings-ledger">
+          <section className="qar-react-settings-mode-card" aria-labelledby="qar-react-settings-reader-mode">
+            <div className="qar-react-settings-section-heading">
+              <h3 className="qar-react-settings-section-title" id="qar-react-settings-reader-mode">Reader mode</h3>
+              <p className="qar-react-settings-section-note">Switch the reader behind this sheet.</p>
+            </div>
+            <div className="qar-react-settings-row qar-react-settings-row--control qar-react-settings-row--mode-toggle">
+              <SegmentedControl
+                label="Reader mode"
+                onValueChange={(value) => onReaderModeChange(value as SettingsRouteMode)}
+                options={[{ label: 'Verse', value: 'verse' }, { label: 'Mushaf', value: 'mushaf' }]}
+                value={mode}
+              />
+            </div>
+          </section>
+          <div className="qar-react-settings-mode-panels" data-active-mode={mode}>
+            {mode === 'verse' ? (
+              <VerseSettings
+                fontSize={preferences.fontSize}
+                onFontSizeChange={setFontSize}
+                onReadingFlowChange={setReadingFlow}
+                onTranslationVisibleChange={setTranslationVisible}
+                readingFlow={preferences.readerMargin}
+                translationVisible={preferences.translationVisible}
+              />
+            ) : (
+              <MushafSettings mode={preferences.mushafViewMode} onModeChange={setMushafViewMode} />
+            )}
+          </div>
+        </div>
+        <IncludedAssetsSection />
+      </div>
+      <span className="qar:sr-only">Restores {previousHash} on close.</span>
     </SettingsShell>
   )
 }

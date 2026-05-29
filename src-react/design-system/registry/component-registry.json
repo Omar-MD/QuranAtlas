@@ -2,6 +2,71 @@
   "schemaVersion": 1,
   "components": [
     {
+      "id": "about-route",
+      "name": "AboutRoute",
+      "maturity": "product",
+      "exportPath": "src-react/app/routes/settings/AboutRoute.tsx",
+      "namedExport": "AboutRoute",
+      "allowedVariants": [
+        "default",
+        "clear-data-confirmation"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "attribution",
+        "install",
+        "clearData"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src-react/components/settings/settings.stories.tsx",
+          "states": [
+            "default",
+            "clear-data-confirmation"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-shell/about-route.test.tsx",
+          "behaviors": [
+            "Svelte About copy contract",
+            "clear data confirmation gating"
+          ]
+        }
+      ],
+      "accessibility": [
+        "main landmark",
+        "semantic attribution section",
+        "dialog focus and escape handled by owned Dialog primitive"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src-react/components/settings/settings.stories.tsx",
+          "tests/e2e/configure/react-golden.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src-react/app/routes/settings"
+      },
+      "allowedConsumers": [
+        "src-react/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Svelte configure components or CSS partials."
+      ]
+    },
+    {
       "id": "accordion",
       "name": "Accordion",
       "maturity": "behavior",
@@ -63,65 +128,6 @@
       ],
       "forbiddenUses": [
         "Do not import Radix accordion from feature code."
-      ]
-    },
-    {
-      "id": "asset-management-page",
-      "name": "AssetManagementPage",
-      "maturity": "product",
-      "exportPath": "src-react/components/offline/AssetManagementPage.tsx",
-      "namedExport": "AssetManagementPage",
-      "allowedVariants": [
-        "default"
-      ],
-      "allowedSizes": [],
-      "slots": [
-        "root"
-      ],
-      "dependencies": {
-        "radix": [],
-        "icons": [
-          "lucide-react"
-        ]
-      },
-      "tokenNamespaces": [
-        "--qa-react-*"
-      ],
-      "stories": [
-        {
-          "path": "src-react/components/offline/offline-assets.stories.tsx",
-          "states": [
-            "default"
-          ]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": [
-            "wave 3 parity"
-          ]
-        }
-      ],
-      "accessibility": [
-        "semantic landmarks",
-        "visible focus through owned primitives"
-      ],
-      "visualProof": {
-        "status": "covered",
-        "references": [
-          "src-react/components/offline/offline-assets.stories.tsx"
-        ]
-      },
-      "owner": {
-        "surface": "configure",
-        "package": "src-react/components/offline"
-      },
-      "allowedConsumers": [
-        "src-react/**"
-      ],
-      "forbiddenUses": [
-        "Do not bypass owned React UI primitives for controls."
       ]
     },
     {
@@ -199,9 +205,7 @@
       ],
       "dependencies": {
         "radix": [],
-        "icons": [
-          "lucide-react"
-        ]
+        "icons": []
       },
       "tokenNamespaces": [
         "--qa-react-*"
@@ -210,7 +214,11 @@
         {
           "path": "src-react/components/navigation/navigation.stories.tsx",
           "states": [
-            "default"
+            "default",
+            "empty",
+            "populated",
+            "page-bookmark",
+            "landing-pulse"
           ]
         }
       ],
@@ -218,12 +226,20 @@
         {
           "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
           "behaviors": [
-            "wave 3 parity"
+            "wave 3 parity",
+            "grouped bookmark rows",
+            "Arabic verse preview",
+            "Mushaf page rows",
+            "full-row jump",
+            "delete callback",
+            "bookmark landing pulse"
           ]
         }
       ],
       "accessibility": [
         "semantic landmarks",
+        "full-row button names the target verse or page",
+        "destructive action remains a labelled button",
         "visible focus through owned primitives"
       ],
       "visualProof": {
@@ -938,7 +954,8 @@
       ],
       "allowedSizes": [],
       "slots": [
-        "root"
+        "root",
+        "pageBookmark"
       ],
       "dependencies": {
         "radix": [],
@@ -955,6 +972,7 @@
           "states": [
             "default",
             "ready",
+            "bookmarked",
             "loading",
             "unavailable",
             "error",
@@ -976,7 +994,8 @@
         {
           "path": "tests/unit/react-read/reader-wave3.test.tsx",
           "behaviors": [
-            "wave 3 parity"
+            "wave 3 parity",
+            "page bookmark toggle"
           ]
         }
       ],
@@ -1116,7 +1135,8 @@
       "visualProof": {
         "status": "covered",
         "references": [
-          "src-react/components/settings/settings.stories.tsx"
+          "src-react/components/settings/settings.stories.tsx",
+          "tests/e2e/configure/react-golden.spec.ts"
         ]
       },
       "owner": {
@@ -1341,6 +1361,7 @@
             "default",
             "loading",
             "unavailable",
+            "bookmarked",
             "selected",
             "footnote-open",
             "mobile",
@@ -1359,6 +1380,8 @@
             "dataset-backed Al-Fatihah",
             "basmala",
             "footnotes",
+            "bookmark indicator",
+            "stable bookmark indicator slot",
             "selection",
             "Tafsir exclusion"
           ]
@@ -1397,7 +1420,7 @@
     {
       "id": "search-page",
       "name": "SearchPage",
-      "maturity": "product",
+      "maturity": "future-prototype",
       "exportPath": "src-react/components/search/SearchPage.tsx",
       "namedExport": "SearchPage",
       "allowedVariants": [
@@ -1428,7 +1451,7 @@
         {
           "path": "tests/unit/react-search/search-wave3.test.ts",
           "behaviors": [
-            "wave 3 parity"
+            "search engine utility behavior only; route is not shipped"
           ]
         }
       ],
@@ -1437,7 +1460,7 @@
         "visible focus through owned primitives"
       ],
       "visualProof": {
-        "status": "covered",
+        "status": "future",
         "references": [
           "src-react/components/search/search.stories.tsx"
         ]
@@ -1558,7 +1581,8 @@
       ],
       "accessibility": [
         "labelled combobox",
-        "keyboard listbox"
+        "keyboard listbox",
+        "portal content layers above active settings shells"
       ],
       "visualProof": {
         "status": "covered",
@@ -1609,9 +1633,18 @@
       ],
       "tests": [
         {
+          "path": "tests/unit/react-shell/settings-route.test.tsx",
+          "behaviors": [
+            "mode-aware route shell",
+            "in-place settings overlay preserves reader route"
+          ]
+        },
+        {
           "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
           "behaviors": [
-            "wave 3 parity"
+            "mode-aware controls",
+            "verse typography controls",
+            "Mushaf-only view controls"
           ]
         }
       ],
@@ -2197,6 +2230,7 @@
       "namedExport": "VerseBlock",
       "allowedVariants": [
         "default",
+        "bookmarked",
         "selected",
         "translation-hidden",
         "continuation"
@@ -2224,6 +2258,7 @@
           "states": [
             "default",
             "selected",
+            "bookmarked",
             "footnote-open",
             "long-text",
             "dense-ayah",
@@ -2239,6 +2274,7 @@
           "path": "tests/unit/react-read/reader-wave3.test.tsx",
           "behaviors": [
             "wave 3 parity",
+            "bookmark toggle state",
             "footnote disclosure",
             "verse selection",
             "Tafsir exclusion"

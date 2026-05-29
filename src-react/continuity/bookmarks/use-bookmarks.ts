@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { openReactDb } from '../../storage/db'
-import type { BookmarkRecord, Riwayah } from '../../storage/types'
-import { deleteBookmark, listBookmarks, type BookmarkIdentity } from './store'
+import type { BookmarkKind, BookmarkRecord, Riwayah } from '../../storage/types'
+import { deleteBookmark, listBookmarks, toggleBookmark as toggleStoredBookmark, type BookmarkIdentity } from './store'
+import { subscribeBookmarkChanges } from './sync'
 
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
 
@@ -15,7 +16,7 @@ export function useBookmarks() {
   const [riwayah, setRiwayah] = useState<Riwayah>(DEFAULT_RIWAYAH)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
-  async function reload(active = true) {
+  const reload = useCallback(async (active = true) => {
     const db = await openReactDb()
     const setting = await db.settings.get('riwayah')
     const nextRiwayah = isRiwayah(setting?.value) ? setting.value : DEFAULT_RIWAYAH
@@ -24,7 +25,7 @@ export function useBookmarks() {
     setRiwayah(nextRiwayah)
     setBookmarks(rows)
     setStatus('ready')
-  }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -32,12 +33,21 @@ export function useBookmarks() {
     void reload(active).catch(() => {
       if (active) setStatus('error')
     })
+    const unsubscribe = subscribeBookmarkChanges(() => {
+      void reload(active).catch(() => {
+        if (active) setStatus('error')
+      })
+    })
     return () => {
       active = false
+      unsubscribe()
     }
-  }, [])
+  }, [reload])
+
+  const bookmarkedVerseKeys = useMemo(() => new Set(bookmarks.map((bookmark) => bookmark.verseKey)), [bookmarks])
 
   return {
+    bookmarkedVerseKeys,
     bookmarks,
     deleteBookmark: async (bookmark: BookmarkIdentity) => {
       const db = await openReactDb()
@@ -46,5 +56,16 @@ export function useBookmarks() {
     },
     riwayah,
     status,
+    toggleBookmark: async (bookmark: { kind?: BookmarkKind; page?: number; riwayah?: Riwayah; surah: number; verseKey: string }) => {
+      const db = await openReactDb()
+      await toggleStoredBookmark(db, {
+        kind: bookmark.kind,
+        page: bookmark.page,
+        riwayah: bookmark.riwayah ?? riwayah,
+        surah: bookmark.surah,
+        verseKey: bookmark.verseKey,
+      })
+      await reload()
+    },
   }
 }

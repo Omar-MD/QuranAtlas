@@ -51,17 +51,17 @@ export async function ensureMvpAssetContractReset(
   }
 
   await clearQuranAtlasCaches()
-  suppressNextVersionChange()
   try {
     if (options.forceStoreClearForTests) {
       throw new Error('forced store clear')
     }
+    await clearStoresWithoutDeletingDb()
+  } catch {
+    suppressNextVersionChange()
     closeDB()
     await deleteDB()
-  } catch {
-    await clearStoresWithoutDeletingDb()
+    await openDB()
   }
-  await openDB()
   await seedDefaultAssetSettings()
   return { resetApplied: true, contractId: MVP_ASSET_CONTRACT_ID }
 }

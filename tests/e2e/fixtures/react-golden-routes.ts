@@ -349,16 +349,6 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     acceptedDifference: 'none',
   },
   {
-    id: 'assets-state-matrix',
-    route: '#/assets',
-    seed: 'asset-pack-not-installed-installed-installing-failed',
-    viewports: ['phone-standard', 'desktop'],
-    themes: ['light', 'dark'],
-    proofOwners: ['tests/e2e/configure/react-golden.spec.ts'],
-    assertions: ['installed, missing, and installing rows render', 'status/progress labels are named', 'touch targets meet minimum size'],
-    acceptedDifference: 'none',
-  },
-  {
     id: 'about-page',
     route: '#/about',
     seed: 'onboarded-qaloon-baseline',
@@ -375,7 +365,7 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     viewports: ['phone-standard', 'desktop'],
     themes: ['light', 'dark'],
     proofOwners: ['tests/e2e/read/react-golden.spec.ts'],
-    assertions: ['query route mounts search', 'keyboard moves through search input', 'offline-ready index state is explicit'],
+    assertions: ['query route renders the unsupported-route state', 'fake preview search results are absent'],
     acceptedDifference: 'none',
   },
   {
@@ -385,7 +375,7 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     viewports: ['phone-standard', 'desktop'],
     themes: ['light', 'dark'],
     proofOwners: ['tests/e2e/read/react-golden.spec.ts'],
-    assertions: ['index state is explicit', 'no silent fallback claim is shown'],
+    assertions: ['search route renders the unsupported-route state', 'no silent fallback claim is shown'],
     acceptedDifference: 'none',
   },
   {

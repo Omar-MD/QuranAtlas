@@ -410,3 +410,406 @@ Each entry should include:
   navigation route and drawer now use real Surah/Juz/bookmark data; do not
   reintroduce hardcoded navigation rows or direct route-component IndexedDB
   writes for bookmarks.
+
+## 2026-05-28 - React Production Parity Fix 05 MVP Wave 1
+
+- Status: partial.
+- Summary: continued Plan 05 under the superseding MVP default-assets reset
+  contract. React Settings now reads and writes the shared v7 settings store
+  through `src-react/storage/settings-writer.ts` for translation visibility,
+  typography steps, theme/night mode, and Mushaf view mode. React Reader now
+  consumes persisted typography/translation preferences, React Mushaf reads the
+  persisted view mode, and the current MVP Asset route remains read-only for
+  Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation. The Svelte launch
+  asset reset regression was fixed by clearing active stores transactionally
+  before seeding defaults, avoiding whole-database deletion during passive
+  startup when another tab holds IndexedDB open.
+- Divergence: old Plan 05 optional source pickers, install/verify/delete,
+  activate, and Cache Storage management remain retired by
+  `docs/superpowers/specs/2026-05-28-mvp-default-assets-reset-design.md`.
+  This wave did not reintroduce source pickers or optional pack controls.
+- Blockers and follow-ups: React Settings is now persistent but still renders as
+  the simplified settings page rather than a Svelte-style transient overlay
+  with focus trap/route restore. Full optional asset lifecycle remains future
+  multiple-profile work, not a current blocker.
+- Tests and validation: red checkpoint failed on the new launch-reset peer-DB
+  test timing out and on missing React reader-preference storage facades. Final
+  validation passed: `pnpm exec vitest run
+  tests/unit/launch/asset-contract-reset.test.ts tests/unit/core/app.test.js
+  --config vitest.config.js`; `pnpm exec vitest run
+  tests/unit/react-storage/db-schema.test.ts
+  tests/unit/react-navigate/navigation-wave3.test.tsx --config
+  vitest.react.config.ts`; `pnpm run check:react`; `pnpm exec vitest run
+  tests/unit/react-storage tests/unit/react-offline tests/unit/react-navigate
+  --config vitest.react.config.ts`; `pnpm run check:react-registry`; `pnpm
+  run check:react-ui-patterns`; `pnpm run build`;
+  `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react`; direct
+  production React configure golden slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright
+  test --config playwright.react.config.js
+  tests/e2e/configure/react-golden.spec.ts --grep
+  "settings-over-reader|assets-state-matrix" --reporter=line` (5/5 passed);
+  and browser proof that a production Svelte launch with a peer IndexedDB
+  connection reaches `#/s/1` with no failed/busy init message.
+- Dependency intake: none.
+- Files changed and commits: `src/launch/asset-contract-reset.ts`;
+  `src-react/app/routes/read/MushafRoute.tsx`;
+  `src-react/app/routes/read/ReaderRoute.tsx`;
+  `src-react/app/routes/settings/SettingsRoute.tsx`;
+  `src-react/components/settings/MushafSettings.tsx`;
+  `src-react/components/settings/VerseSettings.tsx`;
+  `src-react/components/settings/useSettingsForm.ts`;
+  `src-react/storage/settings-writer.ts`; `src-react/storage/types.ts`;
+  `tests/unit/launch/asset-contract-reset.test.ts`;
+  `tests/unit/react-navigate/navigation-wave3.test.tsx`;
+  `tests/unit/react-storage/db-schema.test.ts`; `docs/context/architecture.md`;
+  `docs/context/surfaces/infra.md`;
+  `docs/superpowers/specs/2026-05-28-mvp-default-assets-reset-design.md`;
+  this handoff log. No commit yet.
+- Next-agent note: continue from Plan 06 Daily Wird if staying on the active
+  React production parity sequence. Do not revive optional source-picking or
+  install/delete asset workflows unless a new multiple-profile spec supersedes
+  the MVP default-assets reset.
+
+## 2026-05-28 - React Production Parity Fix 06 Wave 1
+
+- Status: partial.
+- Summary: continued Plan 06 by replacing static Daily Wird placeholders with
+  shared-state reads. React `readWirdPlan` now normalizes seeded legacy
+  `{ start, cursor }` records into the current React `WirdPlan` shape,
+  `NavDrawer` reads `settings.wirdPlan` instead of hard-coding `plan={null}`,
+  and `ReaderRoute` renders a reader-adjacent Daily Wird card for both no-plan
+  and active seeded states. The `daily-wird-active` React golden fixture is now
+  included in the read proof and asserts the active card/progressbar rather
+  than passing on a generic reader landmark.
+- Divergence: this wave did not implement the full plan editor, reset
+  confirmation, reminder permission flow, or Continue routing. It closes the
+  static-placeholder false positive and leaves full Daily Wird editing/detail
+  parity for a later wave.
+- Blockers and follow-ups: implement controlled editor save/cancel/reset,
+  reminder state, Continue routing to `progress.nextRef`, and in-drawer detail
+  focus behavior before considering `RPA-008` fully closed.
+- Tests and validation: red checkpoint failed on `readWirdPlan` returning the
+  raw seeded legacy record. Final validation passed: `pnpm exec vitest run
+  tests/unit/react-wird/wird-wave3.test.tsx --config vitest.react.config.ts`;
+  `pnpm exec vitest run tests/unit/react-wird tests/unit/react-continuity
+  tests/unit/react-navigate --config vitest.react.config.ts`; `pnpm run
+  check:react`; `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run
+  build:react`; and direct production React Daily Wird slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright
+  test --config playwright.react.config.js tests/e2e/read/react-golden.spec.ts
+  --grep "daily-wird-no-plan|daily-wird-active" --reporter=line` (4/4
+  passed).
+- Dependency intake: none.
+- Files changed and commits: `src-react/app/routes/read/ReaderRoute.tsx`;
+  `src-react/components/navigation/NavDrawer.tsx`;
+  `src-react/continuity/wird/store.ts`;
+  `tests/unit/react-wird/wird-wave3.test.tsx`;
+  `tests/unit/react-navigate/navigation-wave3.test.tsx`;
+  `tests/e2e/read/react-golden.spec.ts`; `docs/context/surfaces/read.md`;
+  `docs/context/surfaces/navigate.md`; this handoff log. No commit yet.
+- Next-agent note: continue Plan 06 from editor/detail/Continue behavior, then
+  proceed to Plan 07 search route contract once Daily Wird parity is complete
+  enough for `RPA-008`.
+
+## 2026-05-28 - React Production Parity Fix 07
+
+- Status: complete.
+- Summary: resolved `RPA-006` through the default plan decision: React aligns
+  with the current Svelte search contract instead of promoting search. React
+  `#/search` and `#/search?q=...` now match to an explicit unsupported route
+  state, the production app no longer imports or renders the preview
+  `SearchRoute`, and the in-memory `PREVIEW_SHARD` was removed from
+  `SearchPage`. The search component registry/style-map entries now describe
+  search as future prototype utility coverage rather than shipped product
+  parity.
+- Divergence: no search promotion plan was created because the current MVP
+  keeps full-text search as future work. The older preview `SearchPage`
+  remains in `src-react/components/search/**` for future utility/story
+  coverage, but it renders only the unavailable-index state and is no longer a
+  routed production surface.
+- Blockers and follow-ups: none for `RPA-006`. Plan 08 can continue from
+  About, clear-data, PWA install affordance, and product-copy parity.
+- Tests and validation: red checkpoint failed first in
+  `pnpm exec vitest run tests/unit/react-shell/routes.test.ts --config
+  vitest.react.config.ts` because `#/search` still matched `{ type:
+  'search' }`. Final validation passed: `pnpm exec vitest run
+  tests/unit/react-shell/routes.test.ts --config vitest.react.config.ts`;
+  `pnpm exec vitest run tests/unit/react-search tests/unit/react-shell
+  --config vitest.react.config.ts`; `pnpm run check:react`; `pnpm run
+  check:react-registry`; `pnpm run check:react-ui-patterns`; `pnpm run build`;
+  `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run build:react`; direct
+  production React search golden slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright
+  test --config playwright.react.config.js
+  tests/e2e/read/react-golden.spec.ts --grep "search" --reporter=line` (4/4
+  passed); direct production React shell slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright
+  test --config playwright.react.config.js tests/e2e/react-shell/wave3.spec.ts
+  --reporter=line` (1/1 passed); `pnpm run build:storybook:react`; and
+  `pnpm run test:storybook:react`.
+- Dependency intake: none.
+- Files changed and commits: `src-react/app/App.tsx`;
+  `src-react/app/router/routes.ts`;
+  `src-react/components/search/SearchPage.tsx`;
+  `src-react/design-system/registry/component-registry.json`;
+  `tests/e2e/fixtures/react-golden-routes.ts`;
+  `tests/e2e/read/react-golden.spec.ts`;
+  `tests/e2e/react-shell/wave3.spec.ts`;
+  `tests/unit/react-shell/routes.test.ts`;
+  `docs/context/implemented.md`; `docs/context/future.md`;
+  `docs/context/style-map.md`; this handoff log. No commit yet.
+- Next-agent note: start Plan 08 from the unsupported search route as the
+  current contract; do not restore the fake preview search shard unless a
+  separate search-promotion plan lands first.
+
+## 2026-05-28 - React Production Parity Fix 08
+
+- Status: complete.
+- Summary: closed `RPA-009` for the React proof route. React About now carries
+  the Svelte About content contract: QuranAtlas heading, mission, 54:17
+  blessing and translation, attribution list, version line, prompt-gated PWA
+  install affordance, and a clear-data footer action. The stale React claim
+  that search, bookmarks, and Daily Wird were all verified shipped workflows was
+  removed. Clear data now opens an owned React `Dialog`, requires exact
+  `DELETE`, supports cancel/Escape through the primitive, clears Cache Storage
+  and the shared `quran-atlas` IndexedDB through `src-react/storage/clear-data.ts`,
+  and reloads the root launch path.
+- Divergence: the historical plan text expected clear-data to land on
+  onboarding. The superseding MVP default-assets contract has retired first-run
+  onboarding, so React clear-data reloads root and lets the current MVP launch
+  path seed defaults and enter/restore the reader. The React version line uses
+  package version plus `dev` build marker because the React Vite config does not
+  currently inject the Svelte `__BUILD_SHA__` macro.
+- Blockers and follow-ups: none for `RPA-009`. If React later needs a real
+  build SHA, add a React Vite define in a tooling-owned change.
+- Tests and validation: red checkpoint failed first in `pnpm exec vitest run
+  tests/unit/react-shell/about-route.test.tsx --config vitest.react.config.ts`
+  because the React About route lacked the QuranAtlas heading and confirmation
+  dialog, and direct production React About golden slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test
+  --config playwright.react.config.js tests/e2e/configure/react-golden.spec.ts
+  --grep "about-page" --reporter=line` failed on the missing Svelte page
+  heading. Final validation passed: `pnpm exec vitest run
+  tests/unit/react-shell/about-route.test.tsx --config vitest.react.config.ts`;
+  `pnpm exec vitest run tests/unit/react-storage
+  tests/unit/react-shell/about-route.test.tsx --config vitest.react.config.ts`;
+  `pnpm run check:react`; `pnpm run check:react-registry`; `pnpm run
+  check:react-ui-patterns`; `VITE_QURANATLAS_DEPLOY_TARGET=production pnpm run
+  build:react`; direct production React About golden slice `env -u NO_COLOR
+  PLAYWRIGHT_REACT_PARITY=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test
+  --config playwright.react.config.js tests/e2e/configure/react-golden.spec.ts
+  --grep "about-page" --reporter=line` (2/2 passed); `pnpm run
+  build:storybook:react`; `pnpm run test:storybook:react`; and `pnpm run
+  build`.
+- Dependency intake: none.
+- Files changed and commits: `src-react/app/routes/settings/AboutRoute.tsx`;
+  `src-react/app/routes/settings/pwa-install.ts`;
+  `src-react/app/routes/settings/useClearDataDialog.ts`;
+  `src-react/components/settings/settings.stories.tsx`;
+  `src-react/components/ui/overlays.tsx`;
+  `src-react/design-system/registry/component-registry.json`;
+  `src-react/storage/clear-data.ts`;
+  `tests/e2e/configure/react-golden.spec.ts`;
+  `tests/unit/react-shell/about-route.test.tsx`;
+  `tests/unit/react-storage/clear-data.test.ts`;
+  `docs/context/surfaces/configure.md`;
+  `docs/context/surfaces/infra.md`; `docs/context/style-map.md`;
+  this handoff log. No commit yet.
+- Next-agent note: proceed to Plan 09 final PWA/offline gate from the current
+  MVP default-profile contract. Do not revive onboarding-source choice, optional
+  source-pack lifecycle, or preview search during the final gate.
+
+## 2026-05-28 - React Production Parity Fix 09
+
+- Status: complete.
+- Summary: closed the final React production-target PWA/offline blocker gate
+  for the current MVP default-profile contract. React Workbox caches now use the
+  proof-only `quranatlas-react-proof` cache id even in production-target parity
+  builds, while runtime dataset responses stay in
+  `quran-atlas-react-runtime-dataset-v1`. The offline proof now asserts the
+  React service-worker script identity, React-only precache prefix, absence of
+  the shipped Svelte `quranatlas-precache` prefix, and generated Workbox helper
+  isolation (`dist-react/` has the helper; shipped Svelte `dist/` does not).
+  React visual baselines were refreshed for the intentional reader shell changes
+  from the completed Daily Wird/reader work.
+- Divergence: Plan 09 stayed proof-only and did not introduce production
+  routing, Svelte removal, Wave 17, optional source-pack lifecycle, or search
+  promotion. The final gate follows the superseding MVP contract where launch
+  reset seeds the default reader profile and first-run onboarding remains
+  retired.
+- Blockers and follow-ups: no remaining `RPA-001` through `RPA-012` blocker for
+  the current MVP parity gate. Daily Wird editor/detail/reminder/Continue
+  behavior from Plan 06 remains future parity depth, but the final gate proves
+  the former static-placeholder false positive is gone and active/no-plan state
+  is wired to shared storage.
+- Final blocker checklist: `RPA-001` launch/onboarding aligned to MVP retired
+  onboarding/default launch; `RPA-002` reader corpus dataset-backed; `RPA-003`
+  Mushaf real assets; `RPA-004` navigation/bookmarks real data; `RPA-005`
+  settings/assets persistent MVP controls; `RPA-006` search unsupported by
+  contract; `RPA-007` legacy onboarding route handled by MVP launch contract;
+  `RPA-008` Daily Wird static placeholder removed for stored no-plan/active
+  states; `RPA-009` About/clear-data/copy aligned; `RPA-010` offline cached
+  reader proof passes; `RPA-011` false-positive gates replaced with
+  production-target golden/offline/visual checks; `RPA-012` responsive/a11y
+  basics covered by golden/visual checks.
+- Tests and validation: red checkpoint failed first in direct offline proof
+  `env -u NO_COLOR PLAYWRIGHT_INCLUDE_OFFLINE=1 PLAYWRIGHT_REACT_PARITY=1
+  PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --config
+  playwright.react.config.js tests/e2e/infra/react-offline.spec.ts --grep
+  "@offline" --reporter=line` because the expected
+  `quranatlas-react-proof-precache` cache prefix was absent. Final validation
+  passed: same direct offline proof (1/1 passed); `pnpm run validate:react`
+  (React static checks, 25 React unit files / 99 tests, full React e2e 38 passed
+  / 1 skipped, dedicated offline 1/1 passed, visual 2/2 passed, Storybook build
+  and 9 Storybook test files / 21 tests, docs check); and `pnpm run check`
+  (Svelte lint/style/theme/token/style/reference/selector/design checks plus
+  `svelte-check`, 0 errors and 0 warnings).
+- Dependency intake: none.
+- Files changed and commits: `vite.react.config.js`;
+  `tests/e2e/infra/react-offline.spec.ts`;
+  `tests/e2e/react-visual/__screenshots__/shell.spec.ts-snapshots/react-shell-visual-desktop-darwin.png`;
+  `tests/e2e/react-visual/__screenshots__/shell.spec.ts-snapshots/react-shell-visual-mobile-darwin.png`;
+  `docs/context/surfaces/infra.md`; `docs/tech-stack.md`; this handoff log.
+  No commit yet.
+- Next-agent note: the React production parity recovery sequence through Plan
+  09 is complete for the current MVP contract. Start any further Daily Wird
+  editor/reminder work as a new parity-depth plan, not as a blocker to this
+  final gate.
+
+## 2026-05-28 - React Settings Parity Wave 2
+
+- Status: in verification.
+- Summary: replaced the standalone React settings page with a mode-aware
+  settings shell for the MVP default-profile contract. `#/settings` now resolves
+  the previous reader hash, restores that hash, leaves the reader mounted behind
+  the shell, and opens either Verse Settings or Mushaf Settings. The shell has a
+  shared header, body, footer Theme/Night controls, Manage Assets routing, close
+  button, Escape dismissal, and backdrop dismissal. Settings writes continue
+  through the shared v7 `settings` store, including Svelte-compatible Mushaf
+  view-mode values. A follow-up correction removed the Verse and Mushaf preview
+  panels from the React shell body.
+- Divergence: Wave 2 intentionally does not restore onboarding source choices,
+  optional Hafs/Warsh install/delete/verify controls, tafsir source selection,
+  or search UI.
+- Tests and validation so far: red React settings shell unit tests failed
+  against the standalone settings page; after implementation,
+  `pnpm exec vitest run tests/unit/react-shell/settings-route.test.tsx
+  tests/unit/react-navigate/navigation-wave3.test.tsx
+  tests/unit/react-storage/db-schema.test.ts tests/unit/react-read/reader-wave3.test.tsx
+  --config vitest.react.config.ts` passed, `pnpm exec vitest run
+  tests/unit/react-shell --config vitest.react.config.ts` passed, and
+  `pnpm run check:react`, `pnpm run check:react-registry`, and
+  `pnpm run check:react-ui-patterns` passed. The preview-removal regression
+  failed first against the existing React shell, then passed after removing the
+  preview panels.
+- Files changed and commits: `src-react/app/App.tsx`;
+  `src-react/app/routes/settings/SettingsRoute.tsx`;
+  `src-react/components/settings/SettingsShell.tsx`;
+  `src-react/components/settings/ThemeNightControls.tsx`;
+  `src-react/components/settings/VerseSettings.tsx`;
+  `src-react/components/settings/MushafSettings.tsx`;
+  `src-react/components/settings/useSettingsForm.ts`;
+  `src-react/components/reader/MushafModeControl.tsx`;
+  `src-react/components/reader/reader.stories.tsx`;
+  `src-react/design-system/index.css`;
+  `src-react/design-system/registry/component-registry.json`;
+  `src-react/storage/settings-writer.ts`;
+  `tests/unit/react-shell/settings-route.test.tsx`;
+  `tests/unit/react-navigate/navigation-wave3.test.tsx`;
+  `tests/unit/react-storage/db-schema.test.ts`;
+  `tests/e2e/configure/react-golden.spec.ts`;
+  `docs/context/surfaces/configure.md`; `docs/context/style-map.md`; this
+  handoff log. No commit yet.
+
+## 2026-05-28 - React Bookmarks Parity Depth
+
+- Status: complete.
+- Summary: added the missing React bookmark-depth behavior for the current
+  MVP Qaloon profile. React bookmark writes now emit the shared
+  `quran-atlas:sync` `bookmarks` topic envelope, `useBookmarks` refreshes when
+  same-device bookmark changes arrive, Verse reader numbers expose bookmarked
+  state and toggle through the shared v7 store facade, and bookmark jumps pulse
+  the target verse through the existing `data-token-key` identity.
+- Divergence: the older child plan's Hafs/Warsh scoping examples remain
+  superseded by the MVP default-profile reset; this work keeps the compound
+  `[riwayah, verseKey]` key but writes only Qaloon records.
+- Blockers and follow-ups: the broader
+  `tests/unit/react-navigate/navigation-wave3.test.tsx` file still has an
+  unrelated Settings Wave 2 expectation mismatch around the removed Mushaf view
+  mode tablist. This bookmark slice does not resolve that settings assertion.
+- Tests and validation: red checkpoint failed first on the new bookmark sync
+  envelope, same-device hook refresh, reader bookmarked state, and landing pulse
+  assertions. Final bookmark-focused validation passed:
+  `pnpm exec vitest run tests/unit/react-continuity/continuity-wave3.test.ts
+  tests/unit/react-read/reader-wave3.test.tsx
+  tests/unit/react-navigate/navigation-wave3.test.tsx --config
+  vitest.react.config.ts -t "bookmark|Bookmarks|bookmarked"`;
+  `pnpm exec vitest run tests/unit/react-continuity/continuity-wave3.test.ts
+  tests/unit/react-read/reader-wave3.test.tsx --config vitest.react.config.ts`;
+  and `pnpm run check:react`.
+- Dependency intake: none.
+- Files changed and commits: `src-react/app/routes/read/ReaderRoute.tsx`;
+  `src-react/components/navigation/BookmarksList.tsx`;
+  `src-react/components/navigation/navigation.stories.tsx`;
+  `src-react/components/reader/ReaderVerseSurface.tsx`;
+  `src-react/components/reader/VerseBlock.tsx`;
+  `src-react/components/reader/VerseNumber.tsx`;
+  `src-react/components/reader/VirtualVerseList.tsx`;
+  `src-react/components/reader/reader.stories.tsx`;
+  `src-react/continuity/bookmarks/pulse.ts`;
+  `src-react/continuity/bookmarks/store.ts`;
+  `src-react/continuity/bookmarks/sync.ts`;
+  `src-react/continuity/bookmarks/use-bookmarks.ts`;
+  `src-react/design-system/index.css`;
+  `src-react/design-system/registry/component-registry.json`;
+  `tests/unit/react-continuity/continuity-wave3.test.ts`;
+  `tests/unit/react-navigate/navigation-wave3.test.tsx`;
+  `tests/unit/react-read/reader-wave3.test.tsx`;
+  `docs/context/surfaces/navigate.md`;
+  `docs/context/surfaces/read.md`; this handoff log. No commit yet.
+- Next-agent note: preserve the Qaloon-only MVP contract unless the default
+  asset profile changes; do not revive optional-riwayah bookmark UI while
+  the reset contract is active.
+
+## 2026-05-28 - React Settings And Bookmarks Parity Fix
+
+- Status: complete.
+- Summary: fixed React Settings entry so reader chrome opens the sheet in place
+  without hash mutation or focus-induced scroll reset; Verse Settings typography
+  now applies Font Size, Reading Flow, and translation visibility live without
+  refetching the verse corpus. React Bookmarks now mirrors the Svelte grouped
+  list with Surah headers, count badges, Qaloon Arabic snippets, row jump,
+  swipe/drag Delete reveal, and Svelte-style bookmark glyph/pulse animation.
+- Tests and validation: React focused suites passed for settings, reader,
+  navigation, and UI components; `check:react`, registry, UI-pattern, docs
+  check, and `git diff --check` passed. A production-target React build was
+  generated and served on `http://127.0.0.1:4175/`; in-app browser proof
+  verified the final asset, settings scroll preservation, Reading Flow portal
+  z-index, live Arabic/translation font scaling, grouped bookmark row jump, and
+  landing pulse. A headless browser gesture check verified bookmark slide/drag
+  reveal exposes the Delete action.
+- Dependency intake: Vite docs confirmed `build.chunkSizeWarningLimit`; the
+  React proof build now sets a 600 kB warning threshold for the current
+  single-entry proof bundle and documents that in `docs/tech-stack.md`.
+- Files changed and commits: `src-react/app/App.tsx`;
+  `src-react/app/settings-overlay-events.ts`;
+  `src-react/app/routes/read/ReaderRoute.tsx`;
+  `src-react/components/reader/ReaderPageShell.tsx`;
+  `src-react/components/settings/SettingsShell.tsx`;
+  `src-react/components/navigation/BookmarksList.tsx`;
+  `src-react/continuity/bookmarks/pulse.ts`;
+  `src-react/storage/reader-preferences.ts`;
+  `src-react/components/ui/form-controls.tsx`;
+  `src-react/design-system/index.css`;
+  `src-react/design-system/registry/component-registry.json`;
+  `src-react/components/navigation/navigation.stories.tsx`;
+  `tests/unit/react-shell/settings-route.test.tsx`;
+  `tests/unit/react-read/reader-wave3.test.tsx`;
+  `tests/unit/react-navigate/navigation-wave3.test.tsx`;
+  `vite.react.config.js`;
+  `docs/context/surfaces/configure.md`;
+  `docs/context/surfaces/navigate.md`;
+  `docs/context/surfaces/read.md`;
+  `docs/context/style-map.md`;
+  `docs/tech-stack.md`; this handoff log. No commit yet.
