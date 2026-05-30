@@ -1,15 +1,15 @@
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { closeReactDb, openReactDb } from '../../../src-react/storage/db'
-import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION, QURAN_ATLAS_V7_STORES } from '../../../src-react/storage/schema'
+import { closeReactDb, openReactDb } from '../../../src/storage/db'
+import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION, QURAN_ATLAS_V7_STORES } from '../../../src/storage/schema'
 import {
   DEFAULT_REACT_READER_PREFERENCES,
   readReactReaderPreferences,
   writeOnboardingCompletion,
   writeReactReaderPreferences,
   writeReaderAssetBundleSettings,
-} from '../../../src-react/storage/settings-writer'
+} from '../../../src/storage/settings-writer'
 
 describe('React storage schema mirror', () => {
   afterEach(async () => {

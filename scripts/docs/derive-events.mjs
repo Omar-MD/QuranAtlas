@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Generate docs/context/events.md (full file) from src/ scan.
 //
-// Source of truth: src/core/constants.ts `Events` map + emit(Events.X) /
-// on(Events.X) call sites across src/**.
+// Current React runtime does not use the retired app-wide Events map. When a
+// central event catalog is present, this scans the map and call sites.
 
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -36,8 +36,8 @@ async function main() {
   const orphanListen = rows.filter((r) => r.emits.length === 0 && r.listens.length > 0);
 
   let out = '';
-  out += '# Events catalog\n\n';
-  out += '> AUTO-GENERATED from `src/core/constants.ts` (Events map) + `emit(Events.X)` / `on(Events.X)` call sites across `src/**`. Run `pnpm run docs` to regenerate. Manual edits below the next paragraph are preserved (write them outside the auto-generated table).\n\n';
+  out += '# Events Catalog\n\n';
+  out += '> AUTO-GENERATED from a central `Events` map when present plus `emit(Events.X)` / `on(Events.X)` call sites across `src/**`. The current React app has no central event bus, so an empty catalog is expected. Run `pnpm run docs` to regenerate.\n\n';
   out += `Total events declared: **${events.size}**. Live emits: **${emits.size}**. Live listeners: **${listens.size}**.\n\n`;
   out += `Dead (declared but neither emitted nor listened): **${dead.length}**.\n`;
   out += `Orphan emit (emitted, never listened): **${orphanEmit.length}**.\n`;

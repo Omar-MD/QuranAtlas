@@ -15,7 +15,7 @@ test('@offline React app shell and installed reader assets survive offline reloa
   await page.reload()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   await expect(page.getByTestId('verse-1:7')).toBeVisible()
-  await expect(page.getByText(/Failed to load reader text|React preview|Verse text unavailable/i)).toHaveCount(0)
+  await expect(page.getByText(/Failed to load reader text|Verse text unavailable/i)).toHaveCount(0)
   const serviceWorkerProof = await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.ready
     return {
@@ -25,9 +25,7 @@ test('@offline React app shell and installed reader assets survive offline reloa
     }
   })
   expect(serviceWorkerProof.scriptURL).toMatch(/\/sw\.js$/)
-  expect(serviceWorkerProof.cacheNames.some((name) => name.startsWith('quranatlas-react-proof-precache'))).toBe(true)
-  expect(serviceWorkerProof.cacheNames.some((name) => name.startsWith('quranatlas-precache'))).toBe(false)
-  expect(readdirSync(join(process.cwd(), 'dist-react')).some((name) => /^workbox-.+\.js$/.test(name))).toBe(true)
-  expect(readdirSync(join(process.cwd(), 'dist')).some((name) => /^workbox-.+\.js$/.test(name))).toBe(false)
+  expect(serviceWorkerProof.cacheNames.some((name) => name.startsWith('quranatlas-precache'))).toBe(true)
+  expect(readdirSync(join(process.cwd(), 'dist')).some((name) => /^workbox-.+\.js$/.test(name))).toBe(true)
   await expectOfflineReaderLoads(page)
 })

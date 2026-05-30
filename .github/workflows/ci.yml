@@ -114,14 +114,6 @@ jobs:
           fi
 
   lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ./.github/actions/setup
-      - run: pnpm run lint
-
-  typecheck:
     name: Check
     runs-on: ubuntu-latest
     steps:
@@ -242,7 +234,7 @@ jobs:
     #
     #   1. **Path filter** — `changes.e2e_relevant=false` means the diff is
     #      entirely docs / unit tests / scripts / *.md (no UI, source, asset,
-    #      config, or e2e-spec changes). Skip — the unit + lint + build jobs
+    #      config, or e2e-spec changes). Skip — the unit + check + build jobs
     #      already cover that scope. Force a run by including any file outside
     #      the irrelevant list, or by applying `run-e2e` to the PR.
     #
@@ -258,10 +250,8 @@ jobs:
       )
     # Reuse the dist/ artifact from the Build job so Playwright runs against
     # a preview server (statically served prod bundle) rather than the dev
-    # server. The dev-server path is too slow under workers=6 on 2-core CI:
-    # vite's on-demand compilation queues up across workers and pushes the
-    # 25s waitForReader timeout (every test fails at .qa-verse not visible).
-    # Preview removes the compile path entirely; one build, many readers.
+    # server. Preview removes the dev-server compile path entirely; one build,
+    # many readers.
     needs: [build, changes]
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -294,15 +284,19 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium
 
-      # CI runs against the repo's Playwright script and narrows the project
-      # list here so the offline-preview coverage stays included without
-      # forcing any local-only project variants.
+      # CI runs the repo's React-only Playwright suite against the downloaded
+      # production artifact. The offline spec is selected by tag in its own
+      # command so service-worker coverage stays explicit.
       - name: Run Playwright suite (non-visual)
-        run: pnpm test:e2e --project=chromium --project="Mobile Chrome" --project="Offline (Preview)"
+        run: env -u NO_COLOR pnpm exec playwright test --project=chromium --grep-invert @offline
+        env:
+          PLAYWRIGHT_USE_PREVIEW: '1'
+
+      - name: Run Playwright offline suite
+        run: env -u NO_COLOR pnpm exec playwright test --project=chromium --grep @offline
         env:
           PLAYWRIGHT_INCLUDE_OFFLINE: '1'
           PLAYWRIGHT_USE_PREVIEW: '1'
-          PLAYWRIGHT_SKIP_BUILD: '1'
 
       - name: Upload Playwright report on failure
         if: failure()
@@ -317,7 +311,7 @@ jobs:
 
   ci-ok:
     name: CI OK
-    needs: [changes, lint, typecheck, test, feature-state, docs-check, audit, build, lighthouse, e2e]
+    needs: [changes, lint, test, feature-state, docs-check, dataset-catalog, dataset-baseline, dataset-full, audit, build, lighthouse, e2e]
     # Run even when e2e is skipped (PRs to dev without the run-e2e label).
     # `always()` lets this job evaluate needs.* results; the step body then
     # fails if any upstream job failed or was cancelled.

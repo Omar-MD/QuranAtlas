@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { DB_NAME } from '../../../src/core/db/migrations.js'
+import { QURAN_ATLAS_DB_NAME } from '../../../src/storage/schema'
 import { expectAxeClean, expectNoHorizontalOverflow } from '../fixtures/react-a11y'
 import {
   expectNoGuardFailures,
@@ -33,7 +33,7 @@ async function readReactSettings(page: Page) {
       }
       open.onerror = () => reject(open.error)
     }),
-    { dbName: DB_NAME },
+    { dbName: QURAN_ATLAS_DB_NAME },
   )
 }
 
@@ -42,10 +42,6 @@ for (const fixture of onboardFixtures) {
     test(`@golden @a11y ${fixture.id} ${viewportId}`, async ({ page }) => {
       await page.setViewportSize(GOLDEN_VIEWPORTS[viewportId])
       await expectReactProductionPreflight(page)
-      await seedTargetState(page, 'svelte', fixture.seed)
-      await page.goto(targetUrl('svelte', '/'))
-      await expect(page, 'Svelte oracle clean launch should route first-run users to the default reader.').toHaveURL(/#\/s\/1$/)
-
       await seedTargetState(page, 'react', fixture.seed)
       const guard = installPageGuards(page, `react ${fixture.id}`, [
         /\/dataset\/knowledge\/passages\/001\.json$/,
@@ -53,7 +49,7 @@ for (const fixture of onboardFixtures) {
       ])
       await page.goto(targetUrl('react', '/'))
       await expect(page.locator('#react-root')).toBeVisible()
-      await expect(page, 'RPA-001/RPA-007: React clean production launch must match Svelte default reader launch.').toHaveURL(/#\/s\/1$/)
+      await expect(page, 'RPA-001/RPA-007: clean production launch must open the default reader.').toHaveURL(/#\/s\/1$/)
       await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
       await expect(page.getByRole('heading', { name: /choose riwayah|choose translation/i })).toHaveCount(0)
       await expect(readReactSettings(page)).resolves.toMatchObject({

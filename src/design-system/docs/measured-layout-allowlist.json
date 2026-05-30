@@ -1,0 +1,12 @@
+{
+  "allowedArbitraryUtilities": [
+    {
+      "className": "qar:aspect-[2/3]",
+      "reason": "Future Mushaf page proof may need a fixed page aspect ratio before page assets load."
+    }
+  ],
+  "allowedLiteralCssFiles": [
+    "src/design-system/tokens/primitives.css",
+    "src/design-system/tokens/semantic.css"
+  ]
+}

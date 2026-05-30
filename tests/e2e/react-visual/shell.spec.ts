@@ -5,7 +5,7 @@ test('react shell visual baseline', async ({ page }) => {
   await expect(page.locator('#react-root')).toBeVisible()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   await expect(page.getByTestId('verse-1:7')).toBeVisible()
-  await expect(page.getByText(/Svelte app remains the shipped default/i)).toHaveCount(0)
+  await expect(page.getByText(/Legacy app remains the shipped default/i)).toHaveCount(0)
   await expect(page).toHaveScreenshot('react-shell.png', {
     fullPage: true,
     animations: 'disabled',

@@ -1,18 +1,8 @@
 # Data Model
 
-IDB is the single source of client-side truth in QuranAtlas. This file documents the **cross-cutting rules** that hold across every store, the canonical store-→-owner-dossier index, and the static datasets shipped outside IDB. **Per-store record shapes, indexes, and write invariants live in the owning surface dossier** (`docs/context/surfaces/<surface>.md` §Data) — see the index below.
+QuranAtlas separates build-only source data, generated runtime dataset files, and browser persistence.
 
-The DB is `quran-atlas`, version 7, defined in `src/core/db/`. Schema changes live in `src/core/db/migrations.js::applySchema`.
-
-**Write gate.** Every `put(storeName, value)` passes through `validateWrite()` in `src/core/db/validate.ts`. Validation checks both field presence **and field types** before any transaction opens. Required fields are declared in `_shapes`; optional fields with type constraints are in `_optionalTypes`. Missing required fields or type mismatches throw synchronously.
-
-**Domain ownership rule.** Human-facing surface dossiers still own the user contract for persisted data, but shared Reader First runtime ownership now lives in `src/continuity/**`, `src/packs/**`, and `src/metadata/**`. Those domain/data modules must stay surface-neutral; surfaces consume them rather than the domains importing `src/read/**`, `src/navigate/**`, `src/configure/**`, or `src/onboard/**`.
-
-**Compile-time contract.** Per-store record shapes are also encoded as TypeScript `interface`s and exported as the `StoreRecords` map from `src/core/db/types.ts`. `put<K>(store: K, record: StoreRecords[K])` makes the compiler refuse a write whose shape doesn't match the declared store. Runtime `validateWrite` is still the last-line defence (and carries the SW-side shape union for `activationState`); the TS types catch most drift in advance.
-
----
-
-## Per-store details — see owning dossier
+## Store Owner Index
 
 <!-- AUTO-GENERATED:store-owner-index START -->
 | Store | Owner dossier |
@@ -23,170 +13,111 @@ The DB is `quran-atlas`, version 7, defined in `src/core/db/`. Schema changes li
 | `settings` | [`configure`](surfaces/configure.md) |
 <!-- AUTO-GENERATED:store-owner-index END -->
 
-Each dossier carries:
+## IndexedDB
 
-- `keyPath`, `DB_VERSION` at which it landed, indexes
-- Validated fields list (mirror of `_shapes`)
-- Sole writer (one per store; for `settings`, one per **key**)
-- Record-shape TS snippet
-- Typical queries
+The React app uses Dexie against the shared database name and schema defined in `src/storage/schema.ts`.
 
-If you change a store's shape, indexes, key, or sole writer — update the **dossier**, then re-run `pnpm run docs` so the index here picks up any owner shift. Within the shared `settings` store, `settings.wirdPlan` is a read-surface-owned key whose sole writer lives in `src/read/wird/store.ts`, even though the store itself remains configure-owned.
+| Store | Owner | Purpose |
+| --- | --- | --- |
+| `settings` | `src/storage/settings-writer.ts` plus surface-specific helpers | Key-value user preferences and continuity data |
+| `bookmarks` | `src/continuity/bookmarks/**` | Riwayah-scoped verse and Mushaf page bookmarks |
+| `activationState` | `src/offline/**` | Runtime asset activation/cache status |
+| `datasetMeta` | `src/offline/**` | Applied dataset/package metadata |
 
-`bookmarks` remains active reading-continuity data. `activationState` remains active install/update state. Removed-scope stores (`meta`, `marks`, `edges`, `audioPosition`) were deleted in v7.
+Settings is a key-value store. Ownership is enforced by key, not by a single monolithic settings object.
 
----
+Important settings keys:
 
-## Static datasets (read-only, not in IDB)
+| Key | Purpose |
+| --- | --- |
+| `theme`, `nightMode` | Appearance controls |
+| `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing` | Verse reader typography |
+| `translationVisible`, `translationId` | Translation display and active source |
+| `riwayah`, `quranTextStyleId`, `mushafEditionId` | Active default reader profile |
+| `mushafViewMode` | Mushaf page fit mode |
+| `currentPosition`, `lastSurface`, `recentSurahs` | Reader continuity |
+| `wirdPlan`, `wirdReaderStatusVisible` | Daily Wird state and visibility |
 
-- `public/dataset/riwayat/qaloon/{NNN}.json` (114 files) — legacy compatibility reader corpus for the baseline Qalun text. Product prose uses Qalun; runtime keys and paths continue to use `qaloon` during migration.
-- `public/dataset/quran-text/qaloon/{textStyleId}/{NNN}.json` and `public/dataset/indexes/text-assets.json` — variant-aware Quran text assets emitted from `data/catalog/quran-text-assets.json`. The current MVP exposes only the Qaloon default text/font profile at runtime.
-- `surahs.json`, `juz.json`, `indexes/sources.json`, `indexes/source-assets.json`, `manifest.json`, and `provenance.json` live alongside the text bodies. Hafs and Warsh normalized sources remain under `data/normalized/quran/riwayat/` for counts, translation-alignment validation, and future/full-profile builds, but they are not selectable current MVP assets. `scripts/data/cli.mjs` orchestrates `scripts/data/text/build.mjs`, `scripts/data/knowledge/build.mjs`, `scripts/data/mushaf-pages/build.mjs`, and `scripts/data/manifest/inventory.mjs`; `pnpm run data -- build` emits the baseline runtime manifest and any available Qalun page pack, and is chained by `pnpm run build`. Source formats, font pairing, normalization rules, and build/runtime boundaries live in `docs/context/source-data-flow.md`. Do not write any of these to IDB unless a future surface needs offline caching beyond the SW pre-cache.
-- `data/catalog/*.json` — QuranAtlas-owned source and asset catalog: authorities, licenses, source records, verification rules, text-style asset records, Mushaf-edition asset records, and generic fetch metadata. `scripts/data/source-catalog.mjs` validates provider/license/default-visibility/output-path/fetch rules plus variant defaults, slugs, text output templates, Mushaf page counts, and quran.ws source identity. `scripts/data/fetch-source.mjs` refreshes normalized sources, and `scripts/data/text/build.mjs` emits the runtime subset to `public/dataset/indexes/sources.json`.
-- `data/catalog/quran-text-assets.json` — build-time source of truth for Quran text-style variants. The current MVP runtime profile uses Qaloon + `uthmani-kfgqpc-v1`.
-- `data/catalog/mushaf-assets.json` — build-time source of truth for Mushaf edition variants. The current MVP runtime profile uses Qaloon + `qalun-quran-ws-v1`; every edition records quran.ws source identity and the 604-page count.
-- `data/catalog/mushaf-pages.json` — quran.ws Mushaf page source policy. It maps QuranAtlas riwayah ids (`hafs`, `warsh`, `qaloon`) to quran.ws source slugs (`hafs`, `warsh`, `qalun`), declares the 604-page count, and records free-use page-asset provenance.
-- `data/normalized/mushaf-pages/{riwayah}/pages/{NNN}.svg` — generated local/release artifact inputs produced by `scripts/data/mushaf-pages/import.mjs` from quran.ws page PDFs. This tree is gitignored by default; normal data builds do not fetch quran.ws and do not require these files.
-- `public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json`, `public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/pages/{NNN}.svg`, and `public/dataset/indexes/mushaf-assets.json` — generated same-origin edition-aware page packs emitted by `scripts/data/mushaf-pages/build.mjs` when a complete local SVG set is present. During migration the builder also emits legacy `public/dataset/mushaf-pages/{riwayah}/manifest.json` and `pages/{NNN}.svg` compatibility paths. Baseline page output is Qalun-only; the runtime/package key remains `qaloon`. The `full` profile can emit Hafs, Warsh, and Qalun (`qaloon`). Clean-checkout builds skip absent page packs with a warning unless a release command passes `--require-riwayah=<id>`. Runtime never fetches quran.ws.
-- `data/taxonomy/themes.json` and `data/normalized/knowledge/*.json` — curated Knowledge Lane build inputs (Phase 01). Build-only sources; never imported by runtime modules.
-- `public/dataset/knowledge/ayah/{NNN}.json`, `public/dataset/knowledge/passages/{NNN}.json`, and `public/dataset/knowledge/indexes/*.json` — deterministic knowledge shards and indexes generated by `scripts/data/build-knowledge-dataset.mjs`, consumed by `src/data/knowledge-dataset.ts`. Missing files are treated as optional at runtime (`null` / empty fallbacks), so reader text rendering stays independent.
+## Bookmarks
 
-The current reader asset profile is fixed to Qaloon text/font, Qaloon Mushaf, and Bridges translation. The active recitation bundle persists as `settings.riwayah`, `settings.quranTextStyleId`, and `settings.mushafEditionId`; `src/configure/variant-bundle.ts` remains the atomic writer for those three settings keys. The MVP launch reset clears unsupported older saved choices before rendering.
+Bookmarks are reading-continuity records, not study annotations.
 
-During the React dual-build, `src-react/storage/schema.ts` mirrors the existing
-`quran-atlas` v7 schema for React-only proofs. It does not add stores, change
-key paths, or bump the DB version. `src-react/storage/settings-writer.ts` is the
-React facade for atomically writing the active reader asset bundle keys; rich
-pack lifecycle states remain derived from Cache Storage/index verification and
-are not persisted into new IDB stores in this wave.
-React Daily Wird proof code persists only the existing `settings.wirdPlan` key
-through `src-react/continuity/wird/store.ts`; React bookmark proof code uses the
-existing compound `bookmarks` key `[riwayah, verseKey]`.
+Verse bookmark shape:
 
-### Translation packs
+```ts
+{
+  id: string
+  kind: 'verse'
+  riwayah: 'qaloon'
+  surah: number
+  verse: number
+  verseKey: string
+  arabicSnippet: string
+  createdAt: number
+  updatedAt: number
+}
+```
 
-- `public/dataset/translations/{id}/{NNN}.json` (114 files per shipped translation) — per-surah translation pack consumed by `Reader.svelte` via `src/data/dataset.ts::loadTranslationForSurah(id, n)`. **Schema:**
-  ```ts
-  {
-    translationId: string,         // 'saheeh', 'bridges', etc.
-    translationVersion: string,    // upstream id + fetch month, e.g. '20.2026-04'
-    surahNo: number,               // 1..114
-    intro: string[],               // optional surah intro paragraphs (empty array when not shipped)
-    verses: Array<{ key: string, text: string }>,
-    footnotes: Record<string, string>, // keys '1'..'K' contiguous; markers in text are `[N]` tokens
-  }
-  ```
-- `data/normalized/translations/{id}.json` — **normalized monolithic source**, committed to git outside `public/`, produced by `scripts/data/fetch-source.mjs` from catalog fetch metadata. Quran DB and QUL translation payloads are normalized into the same source shape used by the build; Bridges uses QUL so its authored footnotes and complete Surah 79 text are present. Build-only input; never shipped to clients.
-- **Invariants (asserted by `scripts/data/build-dataset.mjs::buildTranslationSplits`):** 114 surahs present; per-surah verse count matches Hafs counting from `surahs.json`; verse keys are exactly `${surahNo}:${1..count}`; every `[N]` marker in verse text resolves to `footnotes[N]`; footnote keys are contiguous 1..K; every defined footnote is referenced at least once. Build hard-fails on any violation.
-- **Markers:** `[N]` tokens in verse text are tokenised by `src/read/translation-tokens.ts` and rendered as buttons by `Verse.svelte`. Translation strings stay byte-exact end-to-end (the build script does not normalize whitespace or punctuation) so license terms remain valid for redistribution.
-- **provenance.json `translations[]`** — one entry per shipped pack: `{ id, label, translator, language, version, ayatCount, footnoteCount, hasIntros, license, licenseUrl, source, sourceUrl, fetchedAt, primaryRiwayah, coverage }`. The Settings translation picker reads this list (via `src/data/dataset.ts::getTranslations`) so the UI never offers a pack the dataset does not contain.
+Mushaf page bookmark shape:
 
-### Tafsir packs
+```ts
+{
+  id: string
+  kind: 'page'
+  riwayah: 'qaloon'
+  page: number
+  verseKey: `m:${number}`
+  createdAt: number
+  updatedAt: number
+}
+```
 
-Tafsir packs are future work in the current MVP contract. Older normalized tafsir source files may remain as source-data cleanup inventory, but the shipped runtime does not expose tafsir UI, `settings.tafsirId`, or `/dataset/tafsir/**` pack loading.
+The current MVP writes Qaloon (`qaloon`) only. The riwayah-scoped key shape remains to preserve future multi-profile separation.
 
-### Knowledge lane packs (Phase 01)
+## Runtime Dataset
 
-- `public/dataset/knowledge/ayah/{NNN}.json` (114 files) — per-surah ayah knowledge rows. Each row includes `{ key, passageId|null, themes[] }`, and every ayah in the surah is present even when `themes` is empty.
-- `public/dataset/knowledge/passages/{NNN}.json` (114 files) — approved curated passage rows for each surah, emitted from `data/normalized/knowledge/passages.json`.
-- `public/dataset/knowledge/indexes/theme-to-ayah.json` — deterministic map of `themeId -> ayahKey[]`.
-- `public/dataset/knowledge/indexes/ayah-to-passage.json` — deterministic map of `ayahKey -> passageId`.
-- `public/dataset/knowledge/indexes/passage-to-ayah.json` — deterministic map of `passageId -> ayahKey[]`.
-- **Invariants (asserted by `scripts/data/build-knowledge-dataset.mjs`):** theme ids must exist in `data/taxonomy/themes.json`; ayah keys/ranges must be valid Hafs-keyed addresses; passage ranges must stay inside one surah and must not overlap in Phase 01; theme weights must be in `[0,1]`; only `source.reviewStatus === "approved"` passages are emitted to runtime files.
-- **Knowledge manifest inclusion:** `scripts/data/manifest/inventory.mjs` records `knowledge/**` outputs as lane-owned inventory entries in `public/dataset/manifest.json`, and the existing offline/update pipeline caches them under the Text selector path without requiring a separate persisted toggle.
+Runtime files are served from `public/dataset/**` and loaded in the app as `/dataset/**`.
 
-### Source index and profiles
+Core runtime files:
 
-- `public/dataset/indexes/sources.json` — runtime source catalog index. It lists the current MVP text sources (`qaloon`, `bridges`) and enough metadata for the reader to label them.
-- `public/dataset/indexes/source-assets.json` — source-pack download index. In the current MVP it is empty/read-only compatibility data; optional source-pack caching is future multiple-profile work.
-- `public/dataset/manifest.json` — runtime inventory manifest. **Schema:**
-  ```ts
-  {
-    packageVersion: string
-    profile: 'baseline' | 'full' | 'catalog'
-    builtAt: string
-    lanes: Record<string, { enabled: boolean; files: number; bytes: number }>
-    files: Array<{
-      path: string
-      lane: 'text' | 'knowledge' | 'reflection' | 'search' | 'pages'
-      category:
-        | 'text-core'
-        | 'text-riwayah'
-        | 'text-translation'
-        | 'text-tafsir'
-        | 'text-index'
-        | 'knowledge-ayah'
-        | 'knowledge-passages'
-        | 'knowledge-index'
-        | 'reflection-prompts'
-        | 'reflection-index'
-        | 'search-index'
-        | 'pages'
-      bytes: number
-    }>
-  }
-  ```
-  The `reflection` lane/category values are legacy manifest implementation vocabulary only; reflection prompts are removed current-roadmap scope and no reflection product UI is promised here. Used by `src/data/dataset.ts::getManifestUrls`, `src/data/offline.ts`, `src/infra/sw/route-defs.ts::sumBytesForCategory`, and the service worker/update pipeline. Baseline/offline category caching trusts manifest membership and build-time validation, not per-file hashes. Optional source-pack caching is planned by `indexes/source-assets.json`.
-- Dataset profiles:
-  - `baseline`: emits Qalun (runtime `qaloon`) riwayah, Bridges translation, core metadata, source indexes, manifest, provenance, and a Qalun (`qaloon`) page pack only when the generated local page artifacts are present.
-  - `full`: future/release profile vocabulary for every locally configured approved text source and every available generated Mushaf page pack for Hafs, Warsh, and Qalun (`qaloon`).
-  - `catalog`: emits metadata/index files without text bodies or page bodies.
-- Knowledge lane outputs are profile-independent in Phase 01 and are generated by the grouped `pnpm run data -- build` flow from curated local sources.
-- Runtime guards in `src/data/dataset.ts` and `src/data/mushaf-pages.ts`: saved unsupported riwayah/text-style/Mushaf-edition/translation/tafsir choices are reset by the MVP asset contract before launch. Runtime readers then load only the verified default profile; missing default assets are errors, not source-picker fallbacks.
+- `/dataset/surahs.json`
+- `/dataset/juz.json`
+- `/dataset/quran-text/{riwayah}/{quranTextStyleId}/{surah}.json`
+- `/dataset/translations/{translationId}/{surah}.json`
+- `/dataset/translations/_verse-aliases.json`
+- `/dataset/indexes/text-assets.json`
+- `/dataset/indexes/mushaf-assets.json`
+- `/dataset/indexes/sources.json`
+- `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json`
+- `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/pages/{page}.svg`
+- `/dataset/knowledge/**` optional knowledge shards
 
-#### Translation ↔ riwayah alignment
+Runtime loaders validate that dataset URLs stay same-origin and under `/dataset/**`.
 
-Translations ship Hafs-keyed (Kufan numbering); Warsh and Qalun (runtime `qaloon`, Madinan numbering) partition the same Quranic text differently. Hafs total 6236; Warsh / `qaloon` 6214. A Hafs-numbered translation cannot 1:1 map to every Warsh / Qalun (`qaloon`) ayah without explicit scholarly aliases — at split boundaries the same Quranic text is partitioned across different ayah counts. Note: count-equality across the three riwayat is **not** sufficient to imply identity boundaries; the source-data-flow reference documents the equal-count boundary-drift cases and the alias derivation path.
+## Translation Alignment
 
-- `public/dataset/translations/_verse-aliases.json` — **per-ayah Hafs ↔ Warsh ↔ Qalun (`qaloon`) equivalence table**, mechanically derived from KFGQPC by `scripts/data/derive-verse-aliases.mjs`. Schema:
-  ```ts
-  {
-    _meta: { version: 1, description, generator, source, method, generatedAt },
-    aliases: Record<string /* surahNo */, Array<{
-      hafs: number,
-      warsh: number | number[] | null,
-      qaloon: number | number[] | null,
-    }>>,
-    aliasMeta: Record<string, {
-      method: 'word-stream' | 'ayah-dp',
-      warshMethod: string,
-      qaloonMethod: string,
-      reviewRecommended: boolean,
-    }>,
-  }
-  ```
-  KFGQPC's Madinah Mushaf is the authoritative source. Two aligners produce the table:
-    1. **Word-stream cumulative** (`method: 'word-stream'`) — 53 of 60 surahs.
-    2. **Ayah-boundary DP** (`method: 'ayah-dp'`) — 7 surahs (7, 27, 36, 40, 41, 56, 57) where qira'at-level word-count drift defeats word-stream alignment.
-  Surah 1 is included for the Bismillah carve-out (Hafs 1:1 → `null` in Warsh / `qaloon`).
-  - **Runtime use**: `Reader.svelte::loadSurah` calls `src/data/verse-aliases.ts::loadVerseAliases()` once per session and `resolveTranslationFor(aliases, riwayah, surahNo, ayahNo)` per visible ayah. Roles: `identity` / `merged` / `primary` / `continuation` / `none`. See `read` dossier §Translation rendering.
-  - **Coverage impact**: 100% across all three riwayat with aliases applied.
-  - **Validation**: `scripts/data/validate-translation-mapping.mjs` is the canonical checker.
+Translations are keyed to Hafs-style verse numbering. The current Qaloon runtime uses `/dataset/translations/_verse-aliases.json` plus `src/data/verse-aliases.ts` to map ayah references into identity, merged, primary, continuation, or missing translation roles. `src/data/reader-corpus.ts` joins the active Quran text, translation pack, footnotes, aliases, and optional knowledge state into the reader corpus consumed by React components.
 
-- `public/dataset/translations/_verse-map.json` — **checks anchor**, not a scholarly per-ayah equivalence table. Sole writer: hand-curated; build hard-fails (`scripts/data/build-dataset.mjs::validateVerseMap`) when divergences drift from `surahs.json` count diffs.
+## Mushaf Pages
 
-- **Coverage block** (`provenance.translations[].coverage[riwayah]`) — `{ total, covered, missing, divergentSurahs }` per riwayah, computed by `scripts/data/build-dataset.mjs::computeTranslationCoverage`.
-- **Runtime guard**: `Reader.svelte::loadSurah` walks the active riwayah's ayat after building `translationByVerse` and emits `logger.warn('[translation-miss] …')` (dev-only) when the active riwayah ships an ayah index the Hafs-numbered translation has no key for.
-- **Regression guard**: `tests/unit/data/translation-riwayah-alignment.test.js`.
+Mushaf page assets are edition-aware. `src/packs/mushaf-index.ts`, `src/packs/mushaf-paths.ts`, and `src/packs/mushaf-page-asset.ts` validate:
 
----
+- riwayah identity
+- Mushaf edition identity
+- manifest page membership
+- same-origin asset paths
+- SVG safety before rendering
 
-## Cross-cutting rules
+Page SVG bodies are runtime assets; they must not be embedded into JS bundles.
 
-> **Invariant — one writer per store.** Per-store sole writers live in each owning dossier's §Invariants. The store→owner index above points to them. For the `settings` shared scratchpad, the rule holds at **key** granularity — one writer per key, listed in the `configure` dossier's §Data table. **Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review. If you need a new writer, add it to the dossier's §Invariants in the same commit.**
+## Source Data
 
-- **All writes go through `src/core/db::put`** (client side), which runs `validateWrite`. Service-worker code uses its own `idbPut` wrapper but writes to the same underlying DB.
-- **`versionchange` invalidates the handle.** If a peer tab deletes the DB, `DB_VERSION_CHANGE` fires and `dbPromise` is cleared — the next call to `getDb()` reopens. `src/infra/safety/sync.ts` shows the reload banner; `src/configure/clear-data.ts` suppresses this via `suppressNextVersionChange()` when the current tab is the one deleting.
-- **Quota**: `put()` detects `QuotaExceededError` and emits `DB_QUOTA_EXCEEDED`. `src/core/quota-banner.svelte` surfaces the UI. A soft-warning threshold fires earlier via `STORAGE_QUOTA_WARNING`.
-- **Cross-tab coherence**: bookmark writes broadcast a `'bookmarks:changed'` BroadcastChannel message → `SYNC_BOOKMARKS_UPDATED` on receipt. Active variant bundle changes broadcast the three-key `{ riwayah, quranTextStyleId, mushafEditionId }` payload on the `settings.riwayah` topic; legacy `{ value }` riwayah messages are still accepted for compatibility.
+Build-only source data lives under `data/**`. Scripts convert it into committed runtime files under `public/dataset/**`. The app never imports `data/**` directly.
 
----
+## Invariants
 
-## Adding a new store
-
-1. Add the store in `src/core/db/migrations.js::applySchema` and bump `DB_VERSION`. Write a clean upgrade path (no destructive rewrites unless you've handled migration; pre-release schema-change-free posture per `project_pre_release` memory still applies).
-2. Add a `@typedef` JSDoc comment + a required-fields entry to `_shapes` in `validateWrite`. Add optional-but-type-checked fields to `_optionalTypes` if applicable.
-3. If the store needs an index, create it inside the same migration block.
-4. **Pick the owning dossier** in `docs/context/surfaces/`. Add `owns_stores: [<store-name>]` to its frontmatter. Add a `### \`<store>\` store body` section under §Data with keyPath, indexes, record shape, writers, and typical queries.
-5. Consider whether writes should cross tabs (broadcast via `src/infra/safety/sync.ts::registerTopic` + `broadcast`) and whether they should emit a public event.
-6. Run `pnpm run docs` — the store→owner index above re-renders.
+- Build scripts validate source and generated dataset structure before runtime files ship.
+- Browser persistence is schema-owned by `src/storage/schema.ts`.
+- Runtime app code reads only same-origin `/dataset/**` assets.
+- Current shipped profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation.
+- Removed or unsupported local settings are normalized or ignored before they can alter the current MVP reader profile.

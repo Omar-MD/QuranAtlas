@@ -1,18 +1,30 @@
 {
-  "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "allowJs": true,
-    "checkJs": false,
+    "paths": {
+      "@/*": ["./*"]
+    },
     "resolveJsonModule": true,
-    "verbatimModuleSyntax": true,
-    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts", "shared/**/*.ts"],
-  "exclude": ["src/infra/service-worker/sw.js", "src/infra/service-worker/sw-handlers.js", "src/infra/offline/**", "node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "shared/**/*.ts",
+    "vite.config.js"
+  ],
+  "exclude": ["node_modules", "dist", "storybook-static", "test-output"]
 }

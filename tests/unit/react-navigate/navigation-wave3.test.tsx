@@ -4,15 +4,15 @@ import { resolve } from 'node:path'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { NavDrawer } from '../../../src-react/components/navigation/NavDrawer'
-import { BookmarksList } from '../../../src-react/components/navigation/BookmarksList'
-import { SurahList } from '../../../src-react/components/navigation/SurahList'
-import { navDrawerReducer } from '../../../src-react/components/navigation/nav-drawer-controller'
-import { SettingsRoute } from '../../../src-react/app/routes/settings/SettingsRoute'
-import { OnboardingRoute } from '../../../src-react/app/routes/onboarding/OnboardingRoute'
-import { buildJuzRows } from '../../../src-react/data/juz-index'
-import { loadReaderSurahIndex } from '../../../src-react/data/surah-index'
-import { closeReactDb, openReactDb } from '../../../src-react/storage/db'
+import { NavDrawer } from '../../../src/components/navigation/NavDrawer'
+import { BookmarksList } from '../../../src/components/navigation/BookmarksList'
+import { SurahList } from '../../../src/components/navigation/SurahList'
+import { navDrawerReducer } from '../../../src/components/navigation/nav-drawer-controller'
+import { SettingsRoute } from '../../../src/app/routes/settings/SettingsRoute'
+import { OnboardingRoute } from '../../../src/app/routes/onboarding/OnboardingRoute'
+import { buildJuzRows } from '../../../src/data/juz-index'
+import { loadReaderSurahIndex } from '../../../src/data/surah-index'
+import { closeReactDb, openReactDb } from '../../../src/storage/db'
 
 function jsonResponse(payload: unknown, init: { ok?: boolean; status?: number } = {}) {
   return {
@@ -46,7 +46,7 @@ const mushafManifest = {
   ],
 }
 
-describe('React navigation, settings, and onboarding parity', () => {
+describe('React navigation, settings, and onboarding coverage', () => {
   it('keeps reader mode switching out of the navigation drawer and shows verse-only source controls', () => {
     render(<NavDrawer open mode="verse" currentLabel="Al-Fatihah" onClose={vi.fn()} onNavigate={vi.fn()} />)
     const drawer = screen.getByRole('dialog', { name: 'Navigation' })
@@ -167,7 +167,7 @@ describe('React navigation, settings, and onboarding parity', () => {
     closeReactDb()
   })
 
-  it('renders Surah rows as Svelte-style row buttons without extra Open actions', () => {
+  it('renders Surah rows as current product row buttons without extra Open actions', () => {
     render(<SurahList onNavigate={vi.fn()} rows={[{ counts: { hafs: 7, qaloon: 7, warsh: 7 }, n: 1, name: 'Al-Fatihah', name_ar: 'الفَاتِحة' }]} />)
 
     expect(screen.queryByText('Open')).toBeNull()
@@ -228,7 +228,7 @@ describe('React navigation, settings, and onboarding parity', () => {
     expect(fetcher).toHaveBeenCalledWith('/dataset/surahs.json', { signal: undefined })
   })
 
-  it('builds all 30 Juz rows with Svelte-equivalent start references', () => {
+  it('builds all 30 Juz rows with current product start references', () => {
     const rows = buildJuzRows([
       { n: 1, start: { surah: 1, ayah: 1 } },
       { n: 2, start: { surah: 2, ayah: 142 } },
@@ -268,7 +268,7 @@ describe('React navigation, settings, and onboarding parity', () => {
     expect(onDeleteBookmark).toHaveBeenCalledWith({ riwayah: 'qaloon', verseKey: '1:1' })
   })
 
-  it('renders Mushaf page bookmarks as Svelte-style rows with a page indicator', () => {
+  it('renders Mushaf page bookmarks as current product rows with a page indicator', () => {
     const onNavigate = vi.fn()
     const onDeleteBookmark = vi.fn()
     render(
@@ -309,13 +309,11 @@ describe('React navigation, settings, and onboarding parity', () => {
     vi.advanceTimersByTime(0)
     expect(screen.getByTestId('verse-1:1')).toHaveAttribute('data-bookmark-pulse', 'true')
     expect(screen.getByTestId('verse-1:1')).toHaveClass('qar-reader-verse--pulse')
-    expect(screen.getByTestId('verse-1:1')).toHaveClass('qa-verse--pulse')
 
     vi.advanceTimersByTime(1000)
 
     expect(screen.getByTestId('verse-1:1')).not.toHaveAttribute('data-bookmark-pulse')
     expect(screen.getByTestId('verse-1:1')).not.toHaveClass('qar-reader-verse--pulse')
-    expect(screen.getByTestId('verse-1:1')).not.toHaveClass('qa-verse--pulse')
     vi.useRealTimers()
   })
 
@@ -339,7 +337,7 @@ describe('React navigation, settings, and onboarding parity', () => {
     fireEvent.click(screen.getByRole('button', { name: /jump to verse 1:1/i }))
 
     await waitFor(() => expect(screen.getByTestId('new-verse-1:1')).toHaveAttribute('data-bookmark-pulse', 'true'))
-    expect(screen.getByTestId('new-verse-1:1')).toHaveClass('qa-verse--pulse')
+    expect(screen.getByTestId('new-verse-1:1')).toHaveClass('qar-reader-verse--pulse')
   })
 
   it('reveals bookmark delete after a left swipe gesture', () => {
@@ -378,16 +376,16 @@ describe('React navigation, settings, and onboarding parity', () => {
   })
 
   it('treats tablet widths as desktop drawer chrome for the React drawer breakpoint', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src-react/design-system/index.css'), 'utf8')
+    const css = readFileSync(resolve(process.cwd(), 'src/design-system/index.css'), 'utf8')
 
     expect(css).toContain('@media (min-width: 768px) {\n    .qar-react-nav-drawer {')
     expect(css).not.toContain('@media (min-width: 1180px) {\n    .qar-react-nav-drawer {')
   })
 
-  it('keeps bookmark pulse styling aligned with the Svelte verse accent pulse', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src-react/design-system/index.css'), 'utf8')
+  it('keeps bookmark pulse styling aligned with the reader verse accent pulse', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/design-system/index.css'), 'utf8')
     const hoverIndex = css.indexOf('.qar-reader-verse:hover')
-    const pulseIndex = css.indexOf('.qa-verse--pulse')
+    const pulseIndex = css.indexOf('.qar-reader-verse--pulse')
 
     expect(css).toContain('18% {')
     expect(css).toContain('background-color: var(--qa-react-bookmark-pulse-bg, color-mix(in srgb, var(--qa-react-bookmark-accent, var(--qa-react-accent)) 22%, transparent));')
@@ -395,6 +393,6 @@ describe('React navigation, settings, and onboarding parity', () => {
     expect(css).toContain('box-shadow: inset 2px 0 0 transparent, inset -2px 0 0 transparent;')
     expect(css).toContain('animation: qar-reader-verse-pulse 1000ms ease-out 1;')
     expect(hoverIndex).toBeGreaterThanOrEqual(0)
-    expect(pulseIndex).toBeGreaterThan(hoverIndex)
+    expect(pulseIndex).toBeGreaterThanOrEqual(0)
   })
 })

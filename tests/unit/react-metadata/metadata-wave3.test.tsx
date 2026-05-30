@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { MetadataLane } from '../../../src-react/components/reader/metadata/MetadataLane'
-import { loadKnowledgeForSurah } from '../../../src-react/metadata/knowledge'
+import { MetadataLane } from '../../../src/components/reader/metadata/MetadataLane'
+import { loadKnowledgeForSurah } from '../../../src/metadata/knowledge'
 
-describe('React metadata parity', () => {
+describe('React metadata coverage', () => {
   it('returns empty state for missing knowledge shards without throwing', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 404 })))
     const result = await loadKnowledgeForSurah(1)

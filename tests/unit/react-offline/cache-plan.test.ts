@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildCacheInstallPlan } from '../../../src-react/offline/cache-plan'
-import { reactAssetPackCacheName } from '../../../src-react/offline/cache-names'
-import { mapQuotaEstimate } from '../../../src-react/offline/quota'
-import { createInstallRequest } from '../../../src-react/offline/service-worker-contract'
-import { packStatusToUiState } from '../../../src-react/offline/ui-state'
+import { buildCacheInstallPlan } from '../../../src/offline/cache-plan'
+import { reactAssetPackCacheName } from '../../../src/offline/cache-names'
+import { mapQuotaEstimate } from '../../../src/offline/quota'
+import { createInstallRequest } from '../../../src/offline/service-worker-contract'
+import { packStatusToUiState } from '../../../src/offline/ui-state'
 
 describe('React cache planning', () => {
   it('builds cache plans with React cache names and service-worker install messages', () => {

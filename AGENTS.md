@@ -23,7 +23,7 @@ Project instructions auto-loaded by Codex in this repo.
 - Keep docs and source comments current-state only. Do not leave progress logs, codenames, dates, commit SHAs, or revision notes unless they are data or load-bearing invariants.
 - Do not invent project commands or committed one-off scripts. Check `package.json`, `docs/tech-stack.md`, and scoped AGENTS files first.
 - When `package.json` scripts, dev tools, pinned versions, or CI gates change, update `docs/tech-stack.md` in the same change.
-- For React UI work, check `src-react/design-system/registry/component-registry.json` first and compose approved components from `src-react/components/ui`; direct Radix imports outside that owned layer are forbidden.
+- For React UI work, check `src/design-system/registry/component-registry.json` first and compose approved components from `src/components/ui`; direct Radix imports outside that owned layer are forbidden.
 - Do not follow TDD by default. Do not write tests before implementation, and do not add or update automated tests unless the user explicitly asks for tests.
 
 ## Git Defaults
@@ -39,7 +39,7 @@ Verify at the smallest level that proves the change.
 
 - Read-only analysis: no project verification required.
 - Docs, AGENTS, or skills only: run `pnpm run docs:check` and `git diff --check`; run `pnpm run docs` first when generated context may need regeneration.
-- Narrow code changes: do not add or update tests unless explicitly requested; run the smallest non-test verification that proves the change, plus `pnpm run check` when types, lint, Svelte, or styles can be affected. Existing tests may be run when the user asks or when the change itself is test-only.
+- Narrow code changes: do not add or update tests unless explicitly requested; run the smallest non-test verification that proves the change, plus `pnpm run check` when types, lint, React, or styles can be affected. Existing tests may be run when the user asks or when the change itself is test-only.
 - Data, source-catalog, source-data-flow, or dataset-script changes: run the relevant `pnpm run data -- check` or `pnpm run data -- build` profile; also run `pnpm run validate` when app/runtime/build output or release behavior can be affected.
 - Shared behavior, config, build, service-worker, or release-sensitive changes: run `pnpm run validate`.
 - E2E-only changes: only make them when explicitly requested; follow `tests/e2e/AGENTS.md` and run the owning spec first, then broader gates only when shared behavior changed.

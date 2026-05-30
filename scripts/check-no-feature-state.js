@@ -7,15 +7,16 @@ import { join } from 'node:path'
 
 const ROOT = 'src'
 const ALLOW_LIST = new Set([
-  // Screen-reader live-region DOM element ref
-  'src/a11y/announcer.js',
-  // Surah meta cache and handler refs for reader actions
-  'src/navigate/reader-actions.js',
-  // DOM element refs for shortcuts sheet
-  'src/navigate/shortcuts-sheet.js',
+  // Small module-level browser integration handles are allowed when documented.
+  'src/app/settings-overlay-events.ts',
+  'src/app/routes/settings/pwa-install.ts',
+  'src/components/navigation/nav-drawer-controller.ts',
+  'src/continuity/recent-surahs.ts',
+  'src/continuity/wird/use-wird-reminder-scheduler.ts',
+  'src/storage/db.ts',
 ])
-const SKIP_DIRS = new Set(['state', 'core', 'offline', 'service-worker'])
-const SKIP_FILES = new Set(['sw.js', 'sw-handlers.js'])
+const SKIP_DIRS = new Set([])
+const SKIP_FILES = new Set([])
 
 const offenders = []
 
@@ -28,7 +29,7 @@ function walk(dir) {
     if (entry.isDirectory()) {
       if (SKIP_DIRS.has(name)) continue
       walk(path)
-    } else if (name.endsWith('.js') && !SKIP_FILES.has(name) && !ALLOW_LIST.has(path)) {
+    } else if (/\.(js|ts|tsx)$/.test(name) && !SKIP_FILES.has(name) && !ALLOW_LIST.has(path)) {
       const text = readFileSync(path, 'utf8')
       // Top-level let/var = declaration at column 0 (no leading whitespace)
       const matches = text.match(/^(let|var)\s+\w+/gm)

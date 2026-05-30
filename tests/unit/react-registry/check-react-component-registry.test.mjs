@@ -6,19 +6,19 @@ const baseComponent = {
   id: 'button',
   name: 'Button',
   maturity: 'primitive',
-  exportPath: 'src-react/components/ui/button.tsx',
+  exportPath: 'src/components/ui/button.tsx',
   namedExport: 'Button',
   allowedVariants: ['primary'],
   allowedSizes: ['md'],
   slots: ['root'],
   dependencies: { radix: [], icons: [] },
   tokenNamespaces: ['--qa-react-*'],
-  stories: [{ path: 'src-react/components/ui/ui.stories.tsx', states: ['default'] }],
+  stories: [{ path: 'src/components/ui/ui.stories.tsx', states: ['default'] }],
   tests: [{ path: 'tests/unit/react-components/ui-components.test.tsx', behaviors: ['click'] }],
   accessibility: ['visible focus'],
   visualProof: { status: 'covered', references: ['tests/e2e/react-visual/README.md'] },
-  owner: { surface: 'react-design-system', package: 'src-react/components/ui' },
-  allowedConsumers: ['src-react/**'],
+  owner: { surface: 'react-design-system', package: 'src/components/ui' },
+  allowedConsumers: ['src/**'],
   forbiddenUses: ['Do not import Radix directly from feature code.'],
 }
 
@@ -35,7 +35,7 @@ describe('check-react-component-registry', () => {
 
   it('rejects registry entries whose named export is absent', () => {
     const invalid = { ...baseComponent, namedExport: 'MissingButtonExport' }
-    expect(validateRegistryData({ schemaVersion: 1, components: [invalid] })).toContain('button: namedExport MissingButtonExport was not found in src-react/components/ui/button.tsx')
+    expect(validateRegistryData({ schemaVersion: 1, components: [invalid] })).toContain('button: namedExport MissingButtonExport was not found in src/components/ui/button.tsx')
   })
 
   it('rejects covered visual proof without concrete references', () => {

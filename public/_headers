@@ -8,11 +8,9 @@
 #   - per-route policy overrides if/when sync v2 needs a wider
 #     connect-src
 #
-# unsafe-inline on style-src remains until Svelte's inline `style:`
-# directives migrate to CSS variables / generated stylesheets (audit
-# C-6 / R-19c — deferred to v1.3 per future-work.md). The script-src
-# sha256 hash slot is a placeholder for future inline scripts; today
-# there are none.
+# style-src allows inline styles for React runtime layout variables,
+# third-party primitive positioning, and generated Vite CSS injection during
+# development. Production scripts remain external-only.
 
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; manifest-src 'self'; worker-src 'self'
@@ -23,8 +21,8 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
 
-# Dataset files: long-cache + integrity verified by the SW chain of
-# trust (sw-handlers.js getHashMap + bundled __MANIFEST_DIGEST__).
+# Dataset files: long-cache. Dataset builders validate the generated corpus
+# before it ships; the React app and service worker load same-origin assets.
 /dataset/*
   Cache-Control: public, max-age=31536000, immutable
 

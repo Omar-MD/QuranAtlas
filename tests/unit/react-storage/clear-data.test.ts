@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { clearReactApplicationData } from '../../../src-react/storage/clear-data'
+import { clearReactApplicationData } from '../../../src/storage/clear-data'
 
 describe('React clear-data helper', () => {
   it('clears browser storage, Cache Storage, and the shared IndexedDB database', async () => {

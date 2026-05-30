@@ -10,7 +10,7 @@ Expected skills: `quranatlas-workflow`.
 
 Expected behavior: reads `AGENTS.md` and `docs/context/surfaces/read.md`; treats this as a read/onboard or router cluster if launch restore is involved; updates dossier behavior/invariants if changed; defaults to unit tests unless reload/hydration proof requires e2e.
 
-Wrong behavior to catch: edits `src/reader` directly without reading the dossier, skips docs, or creates a new e2e folder.
+Wrong behavior to catch: edits `src/components/reader` directly without reading the dossier, skips docs, or creates a new e2e folder.
 
 ## 2. UI Redesign
 
@@ -124,10 +124,10 @@ Wrong behavior to catch: starts implementing fixes, gives generic advice, or omi
 
 ## 13. Library/API Question During Repo Work
 
-Prompt: "How should we use the latest Svelte 5 event syntax in this component?"
+Prompt: "How should we use the latest React component composition in this component?"
 
 Expected skills: `find-docs`/root Context7 rule first; `quranatlas-workflow` only if a repo behavior or implementation change follows.
 
-Expected behavior: runs `npx ctx7@latest library "Svelte" "<full question>"`, then `npx ctx7@latest docs <id> "<full question>"`; applies QuranAtlas workflow if editing code.
+Expected behavior: runs `npx ctx7@latest library "React" "<full question>"`, then `npx ctx7@latest docs <id> "<full question>"`; applies QuranAtlas workflow if editing code.
 
 Wrong behavior to catch: answers from memory, uses web search before Context7, or skips QuranAtlas docs when the answer becomes a code change.

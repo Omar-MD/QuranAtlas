@@ -5,7 +5,7 @@ import {
   createInitialOnboardingState,
   onboardingReducer,
   type OnboardingSourceOption,
-} from '../../../src-react/app/routes/onboarding/onboarding-flow'
+} from '../../../src/app/routes/onboarding/onboarding-flow'
 
 const riwayat: OnboardingSourceOption[] = [
   { id: 'qaloon', label: 'Qaloon an Nafi', disabled: false },

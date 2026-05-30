@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = join(__dirname, '..', '..', '..');
 
-export const SRC_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs', '.svelte']);
+export const SRC_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs']);
 
 export async function walkFiles(dir, predicate, out = []) {
   if (!existsSync(dir)) return out;

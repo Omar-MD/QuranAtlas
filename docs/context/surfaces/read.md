@@ -1,231 +1,112 @@
 ---
 surface: read
 src_paths:
-  - 'src/read/**'
+  - 'src/app/routes/read/**'
+  - 'src/components/reader/**'
+  - 'src/data/reader-corpus.ts'
+  - 'src/data/verse-aliases.ts'
+  - 'src/packs/**'
 test_paths:
   unit:
-    - 'tests/unit/read/**'
-    - 'tests/unit/styles/font-tokens.test.js'
+    - 'tests/unit/react-read/**'
   e2e:
-    - 'tests/e2e/read/*.spec.js'
+    - 'tests/e2e/read/*.spec.ts'
+    - 'tests/e2e/react-visual/*.spec.ts'
 style_paths:
-  - 'src/styles/surfaces/read/**'
+  - 'src/design-system/**'
 ---
 
 # Surface: read
 
-> Reader First core — Verse reader, Mushaf reader, ambient reader chrome, reader typography, bookmarks integration, page indicators, cross-surah scroll, and Daily Wird. The current MVP reads the default Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. Tafsir UI and optional source packs are future work.
+> Reader First core: Verse reader, Mushaf reader, reader chrome, typography, bookmarks integration, page movement, translation, knowledge lane, and Daily Wird progress.
 
 ## Reach
 
 | Entry | Trigger | Result |
 | --- | --- | --- |
-| Hash route `#/s/:n` | URL | Reader mounts surah n at top |
-| Hash route `#/s/:n/:v` | URL | Reader mounts surah n, scrolls to verse v |
-| Hash route `#/m/:page` | URL | Mushaf reader mounts the active variant page |
-| Hash route `#/` (default) | URL | redirects to `lastSurface` (last-read) |
-| Pull-to-swap past edge | gesture | swap to next/prev surah with wrap (114↔1) |
-| Click `↑ <prev>` / `<next> ↓` link | tap | swap to prev/next surah |
-| MarginHeader hamburger swipe-down (mobile) | gesture | `openNavDrawer('read')` |
-| MarginHeader center label tap on `#/s/*` (mobile) | tap | toggle `surahHeaderHidden` |
-| MarginHeader label swipe left/right on `#/s/*` (mobile) | gesture | next/prev surah (clamped 1–114) |
-| MarginHeader gear single tap (mobile) | tap | open Verse Settings on `#/s/*`, Mushaf Settings on `#/m/*` (debounced 300 ms) |
-| MarginHeader gear double-tap (mobile, ≤300 ms) | gesture | cycle theme (parity with keyboard `d`) |
-| AmbientDock tap (desktop) | tap | switch latest Verse/Mushaf reader route or open Settings |
-| Verse number tap | tap | edge indicators ~1.6 s + pill label updates |
-| Verse text block tap/click | tap / click | toggle that verse's meaning + knowledge lane |
-| Verse double-tap / double-click | gesture | no tafsir UI in current MVP |
-| Verse right-click | mouse | no tafsir UI in current MVP |
-| Keyboard `m` on centered verse | keyboard | no tafsir UI in current MVP |
-| Reader body tap | tap | dock + pill fade in for ~3 s |
-| Visibility-restore | passive | restore `currentPosition` only when tracker fresh + scroller at top |
-| Daily Wird Continue | drawer action | routes to the active plan's next unread reference |
+| `#/s/:surah` | URL | Verse reader opens the Surah |
+| `#/s/:surah/:ayah` | URL | Verse reader opens and focuses the ayah |
+| `#/m/:page` | URL | Mushaf reader opens the page |
+| Reader mode control | tap/click | Bridges the current Verse reference and Mushaf page |
+| Settings control | tap/click | Opens the settings shell without losing reader state |
+| Verse number | tap/click | Toggles the riwayah-scoped bookmark |
+| Verse body | tap/click | Toggles the knowledge lane when metadata exists |
+| Mushaf page edge/key | tap/swipe/keyboard | Turns pages using physical Mushaf direction |
+| Daily Wird status | tap/click | Opens the navigation drawer Daily Wird detail |
 
 ## Inventory
 
 <!-- AUTO-GENERATED:inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/read/AmbientDock.svelte` | Desktop (≥1180px) full-height left rail. Rendered into `#bottom-nav` |
-| `src/read/AmbientPill.svelte` | On reader route: stays hidden until AMBIENT_SURFACE fires |
-| `src/read/EdgeIndicator.svelte` | EdgeIndicator — the pair of left/right fixed indicators that briefly flash |
-| `src/read/MarginHeader.svelte` | Mobile / tablet (<1180px) top navigation — single-row layout: |
-| `src/read/PullToSwapIndicator.svelte` | PullToSwapIndicator — minimal Chrome-mobile-PTR-style circular progress |
-| `src/read/Reader.svelte` | _(no leading comment)_ |
-| `src/read/SurahHeader.svelte` | _(no leading comment)_ |
-| `src/read/SurahProgress.svelte` | Tiny progress chip under surah title. Tracks the current juz the reader |
-| `src/read/Verse.svelte` | Translation lookup role for cross-riwayah display. |
-| `src/read/chunked-virtualiser.ts` | Chunked virtualiser — IntersectionObserver-driven recycler that mounts |
-| `src/read/edge-indicators.ts` | Verse-tap edge indicators — lazily-created left/right visual cues that |
-| `src/read/font-reshape.ts` | iOS Safari paints the reader DOM with a fallback font when verses mount |
-| `src/read/global-position.ts` | _(no leading comment)_ |
-| `src/read/mushaf/MushafControls.svelte` | _(no leading comment)_ |
-| `src/read/mushaf/MushafPage.svelte` | _(no leading comment)_ |
-| `src/read/mushaf/MushafReader.svelte` | _(no leading comment)_ |
-| `src/read/mushaf/mode-switch.ts` | _(no leading comment)_ |
-| `src/read/mushaf/navigation.ts` | _(no leading comment)_ |
-| `src/read/mushaf/sizing.ts` | _(no leading comment)_ |
-| `src/read/mushaf/svg-page.ts` | _(no leading comment)_ |
-| `src/read/mushaf/types.ts` | _(no leading comment)_ |
-| `src/read/mushaf/view-mode.ts` | _(no leading comment)_ |
-| `src/read/position.ts` | Reader position tracking — observes scroll, persists last-read verse to |
-| `src/read/render-helpers.ts` | Reader render helpers — pure functions that produce data / strings used by |
-| `src/read/scroll-ancestor.ts` | Find the nearest scrolling ancestor of `el`. |
-| `src/read/scroll-tracker.ts` | Scroll position tracking using IntersectionObserver. |
-| `src/read/state-ambient.svelte.ts` | _(no leading comment)_ |
-| `src/read/state.svelte.ts` | _(no leading comment)_ |
-| `src/read/surah-swap.ts` | Cross-surah swap orchestration. |
-| `src/read/translation-tokens.ts` | Tokenise a translation verse into a stream of plain text and footnote |
-| `src/read/verse-scroll.ts` | Verse scroll helpers — smooth align a verse element in its container, |
-| `src/read/verse-tap-gestures.ts` | _(no leading comment)_ |
-| `src/read/wird/DailyWirdCard.svelte` | Read owns Daily Wird card presentation. |
-| `src/read/wird/WirdDetail.svelte` | _(no leading comment)_ |
-| `src/read/wird/metadata.ts` | _(no leading comment)_ |
-| `src/read/wird/notifications.ts` | _(no leading comment)_ |
-| `src/read/wird/progress.ts` | _(no leading comment)_ |
-| `src/read/wird/store.ts` | _(no leading comment)_ |
-| `src/read/wird/types.ts` | _(no leading comment)_ |
+| `src/app/routes/read/MushafRoute.tsx` | _(no leading comment)_ |
+| `src/app/routes/read/ReaderRoute.tsx` | _(no leading comment)_ |
+| `src/components/reader/KnowledgeChips.tsx` | _(no leading comment)_ |
+| `src/components/reader/MushafModeControl.tsx` | _(no leading comment)_ |
+| `src/components/reader/MushafPageViewer.tsx` | _(no leading comment)_ |
+| `src/components/reader/ReaderAssetGate.tsx` | _(no leading comment)_ |
+| `src/components/reader/ReaderChrome.tsx` | _(no leading comment)_ |
+| `src/components/reader/ReaderPageShell.tsx` | _(no leading comment)_ |
+| `src/components/reader/ReaderVerseSurface.tsx` | _(no leading comment)_ |
+| `src/components/reader/SurahContinuityButton.tsx` | _(no leading comment)_ |
+| `src/components/reader/TranslationFootnote.tsx` | _(no leading comment)_ |
+| `src/components/reader/VerseBlock.tsx` | _(no leading comment)_ |
+| `src/components/reader/VerseNumber.tsx` | _(no leading comment)_ |
+| `src/components/reader/VirtualVerseList.tsx` | _(no leading comment)_ |
+| `src/components/reader/metadata/MetadataLane.tsx` | _(no leading comment)_ |
+| `src/components/reader/metadata/MetadataUnavailable.tsx` | _(no leading comment)_ |
+| `src/components/reader/metadata/PassageContext.tsx` | _(no leading comment)_ |
+| `src/components/reader/metadata/ThemeChips.tsx` | _(no leading comment)_ |
+| `src/components/reader/metadata/metadata.stories.tsx` | _(no leading comment)_ |
+| `src/components/reader/reader-mode-routing.ts` | _(no leading comment)_ |
+| `src/components/reader/reader.stories.tsx` | _(no leading comment)_ |
+| `src/components/reader/useReaderPositionSync.ts` | _(no leading comment)_ |
+| `src/components/reader/useVerseInteractionReducer.ts` | _(no leading comment)_ |
+| `src/components/reader/wird/DailyWirdCard.tsx` | _(no leading comment)_ |
+| `src/components/reader/wird/ReaderWirdStatusIndicator.tsx` | _(no leading comment)_ |
+| `src/components/reader/wird/WirdProgressMeter.tsx` | _(no leading comment)_ |
+| `src/data/reader-corpus.ts` | _(no leading comment)_ |
+| `src/data/verse-aliases.ts` | _(no leading comment)_ |
+| `src/packs/mushaf-cache.ts` | _(no leading comment)_ |
+| `src/packs/mushaf-fixtures.ts` | _(no leading comment)_ |
+| `src/packs/mushaf-index.ts` | _(no leading comment)_ |
+| `src/packs/mushaf-install-plan.ts` | _(no leading comment)_ |
+| `src/packs/mushaf-page-asset.ts` | _(no leading comment)_ |
+| `src/packs/mushaf-paths.ts` | _(no leading comment)_ |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
 
-### Reader modes
+### Verse Mode
 
-The read surface has two sibling modes:
+`ReaderRoute` loads the current Surah corpus through `src/data/reader-corpus.ts`. The corpus joins Qaloon text, Bridges translation, verse aliases, footnotes, and optional knowledge metadata. Translation visibility and typography preferences apply live through settings writes and root-level presentation state; the corpus is not refetched for simple presentation changes.
 
-- **Verse mode** (`#/s/:surah/:ayah?`) mounts `Reader.svelte`, sets `reader.readerMode = 'verse'`, clears `reader.currentMushafPage`, and owns verse scroll/translation behavior. The read surface renders the default verified Qaloon text/font bundle only. Runtime keys continue to use `qaloon`; verse text resolves through the Qaloon dataset path after `src/packs/text-assets.ts` confirms the selected text asset is the default usable asset. Unsupported saved Hafs/Warsh/non-default source settings are reset before launch. During the React dual-build parity track, `src-react/app/routes/read/ReaderRoute.tsx` is a route container around `ReaderVerseSurface`. It loads Quran text from the same variant-aware dataset path and preserves base Quran text, Bridges translation, footnote disclosure, Basmala rules, optional knowledge metadata, bookmarked verse-number state, and explicit unavailable/error states when required default text is missing. React mirrors the Svelte reader column caps, centered Surah header, Basmala container sizing, verse padding variables, and `/dataset/surahs.json` quick navigation chevrons for default and settings-driven reader margin / verse spacing states. React renders the Surah header, Basmala, and previous-surah boundary control only when the rendered verse slice begins at ayah 1; Juz and Hizb jumps that start mid-surah begin directly at the target verse. React typography preferences write root data attributes plus `--qa-react-font-size-base`; mounted reader routes consume those attributes live so Font Size, Reading Flow, and translation visibility changes do not refetch the verse corpus or reset scroll. React `ReaderChrome` is a single row with hamburger, flexible spacer, compact Verse/Mushaf mode icon, and settings; it intentionally has no center Surah/Page title or title click action, and the Surah header/description remains rendered in the reader content. The Verse chrome auto-hides on downward scroll and reveals on upward scroll. Switching Verse→Mushaf resolves the explicit route ayah, the live centered verse from document scroll, or the current persisted verse through the default Mushaf manifest `verseToPage`; switching Mushaf→Verse resolves the active page's `firstVerse`.
-- **Mushaf mode** (`#/m/:page`) mounts `MushafReader.svelte`, sets `reader.readerMode = 'mushaf'`, sets `reader.currentMushafPage`, and clears verse-specific reader state. The route has no riwayah or edition param: the active `settings.riwayah` + `settings.mushafEditionId` selects `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json` and the SVG page asset for the current route page.
+`ReaderVerseSurface` renders a document-scroll Surah surface with a clear Surah header, Basmala where applicable, verse rows, translation rows, footnote disclosures, optional knowledge chips, and continuity controls. `VerseBlock` owns row state, `VerseNumber` owns bookmark affordance semantics, and `useVerseInteractionReducer` owns local expanded-state behavior.
 
-Mushaf mode renders one same-origin, sanitized inline SVG page at a time as a single labeled image. The ready state is unframed: no page card, visible sheet, shadow, footer row, or scrubber. Page size is measured from `#main-content` and subtracts only overlapping mobile header chrome once. The persisted Mushaf view mode defaults to Auto: phone widths and portrait tablet widths fill the available content width and let `#main-content` scroll vertically when the page exceeds the viewport; landscape tablet and desktop widths fit the full page into the viewport for PDF/document-reader ergonomics. The pinned mode control can override Auto with Fit page or Fit width. Quran.ws page SVGs keep their manifest `viewBox` as the fetch-validation contract, then use a conservative display crop for the printable page gutter so the source margin does not consume reading space. After a page is visible, the reader warms adjacent sanitized SVG markup in memory for ordinary page turns; stale prefetches are aborted and failures never replace the visible page.
+### Mushaf Mode
 
-During the React dual-build parity track, `src-react/app/routes/read/MushafRoute.tsx` loads the active `settings.riwayah` + `settings.mushafEditionId` pair through `src-react/packs/mushaf-page-asset.ts`, validates `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json`, fetches the matching page SVG, sanitizes it, and passes only sanitized markup plus manifest metadata into the pure `MushafPageViewer`. React production-target proof must request the edition-aware manifest and SVG, render no `Mushaf page placeholder` label, expose the page as one labeled image, keep page navigation edge zones outside the SVG content, hide the top chrome after page movement, and show the `page / pageCount` counter as a fixed bottom-center chip. A fixed bookmark icon beside the page chip toggles a riwayah-scoped Mushaf page bookmark without adding page chrome tabs or a framed page toolbar. Clicking the page center toggles the Mushaf top chrome; the top chrome does not render a centered `Page N` label. React launch restore keeps resolved reader hashes mounted during internal page changes so the hidden top chrome and active reading location survive Mushaf page turns. Missing active page packs render the same explicit asset-gate state instead of silently loading Qalun under another active label. React Mushaf mode also participates in Daily Wird: entering a page advances the plan through that page's first verse, and forward page turns advance the plan through the page's final verse before routing to the next page.
+`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates the edition-aware manifest and page asset path, sanitizes the page SVG, and passes sanitized markup to `MushafPageViewer`. The page is rendered as one labeled image without decorative framing. Page turns keep the route canonicalized to `#/m/:page`, warm adjacent pages where possible, and preserve the hidden/visible chrome state during internal movement.
 
-Mushaf navigation follows physical right-to-left page progression. Tapping the left edge, swiping left, or pressing `ArrowLeft` advances toward the end of the Mushaf (`+1`). Tapping the right edge, swiping right, or pressing `ArrowRight` returns toward the start (`-1`). `Home` routes to page 1 and `End` routes to the final manifest page. The compact page chip plus Auto/Page/Width segmented mode control are the only persistent visible controls; activating the chip opens a numeric jump input that clamps to `1..pageCount`, commits the current input value on Enter, cancels on Escape, restores chip focus, and suppresses edge zones/swipes while open.
+Mushaf page bookmarks use the same bookmarks store as verse bookmarks with `kind: 'page'` and a synthetic `verseKey` of `m:<page>`.
 
-Invalid or out-of-range page params resolve against the active manifest page count and canonicalize through `router.navigate(pageHref(clamped), { replace: true })`, so route events and `lastSurface` see the canonical `#/m/:page` hash. Changing `settings.riwayah` while mounted reloads the same page number against that riwayah's active Mushaf edition. Manifest validation rejects both riwayah mismatches and `mushafEditionId` mismatches before any page renders. Theme changes recolor the inline SVG through Mushaf tokens without refetching the page, including stale/raw quran.ws black and white paint values normalized at runtime; the Mushaf page ground resolves to the app surface in light, sepia, and dark. Runtime fetches stay under `/dataset/**`; quran.ws is build-time attribution/import input only.
+### Reader Chrome
 
-Missing default Qaloon page assets render an explicit asset error rather than loading another profile. Stale Hafs/Warsh settings are reset before launch. SVG asset failures stay inside the page component as retry/open-verse states; no error state loads another riwayah page implicitly.
-
-### Surah header
-
-Flat 2-column grid header, no card background, no ornament chrome:
-
-- **Left column** (full height, `grid-row: 1 / span 2`): `SURAH {n} · {count} VERSES` uppercase tracked meta caption stacked above the Juz / surah-progress chip (`SurahProgress.svelte`).
-- **Right column** (full height, vertically centered): Arabic surah name in `'Amiri Quran'` Mushaf script, no honorific prefix, RTL.
-
-Header gated on `reader.surahHeaderHidden` — `true` unmounts header (toggled via MarginHeader center-label tap; persisted in `settings.surahHeaderHidden`, sole writer `settings/surah-header-visibility.ts`). Toggle is pure show/hide — no auto-scroll.
-
-Below header on every surah except 1 + 9, standalone bismillah renders the Unicode ligature `﷽` (U+FDFD) in naskh-first font stack (`Amiri Quran` → `Scheherazade New` → `Amiri` → `Noto Naskh Arabic` → system Arabic fallback). Italic English translation always renders below the glyph: *"In the Name of Allah — the Most Compassionate, Most Merciful"* — independent of `settings.translationVisible`. `aria-label` exposes voweled text. Bismillah NOT gated by `surahHeaderHidden`.
-
-Cross-surah continuation links (`↑ <prev>` / `<next> ↓`) sit nearly flush against scroller edges (`margin: 2px auto`), muted text color, italic 0.7 rem title, 12 px arrow; reveal to accent on hover/focus.
-
-### Ambient chrome
-
-**Desktop (≥1180 px):** AmbientDock = 56-px full-height left panel (cream surface, right-border separator). Top: Arabic "أ" logo + Reader First tabs (Verse / Mushaf / Settings). Verse and Mushaf keep separate latest hashes from the current route, router route-change events, and `settings.lastSurface`, so switching modes returns to the latest known `#/s/...` or `#/m/...` route. Bottom: rotated verse crumb (`{surah}:{verse}`, read bottom-to-top) + ⋯ more button. Always visible — no auto-fade. Hover shows parchment tooltip right. Surah list is available via ⋯ → drawer or `G+S`.
-
-**Mobile / tablet (<1180 px):** AmbientDock hidden. `MarginHeader` ~56 px tall — left hamburger ≡ (48 px tap target, 26 px icon) opens nav drawer; center single-line Arabic surah label in `'Amiri Quran'` Mushaf script (18 px) on Verse routes and `Page N` on Mushaf routes; right settings gear ⚙ (48 px tap target, 26 px icon). The center label toggles surah chrome only on `#/s/*`; Mushaf routes keep the same header shape but do not toggle the surah header or swipe between surahs. Auto-hides on scroll down, reveals on scroll up or `AMBIENT_SURFACE` emit. It does not render during first-run onboarding. `#main-content` reserves ~60 px top padding.
-
-**Tablet+ (≥768 px):** AmbientDock items grow 38×38 → 42×42 for iPad tap targets.
-
-### Ambient pill
-
-Bottom-of-reader on reader routes only. Tap reader body → pill fades in for ~3 s showing `{surah}:{verse} · {Name}`. Verse-number tap updates pill label. Hidden on non-reader routes (`#/surahs`, `#/bookmarks`, `#/about`, etc.).
-
-### Translation rendering
-
-Each verse renders Arabic immediately. When `settings.translationVisible` is on, the active translation renders under every mounted verse without requiring a verse click. When a shipped translation pack contains inline `[N]` markers, they render as bracketed footnote buttons coloured in accent hue. Tap `[N]` → inline footnote panel discloses below translation with text + `×` close. `aria-expanded="true"` flips on marker. Tap same marker / `×` / Esc with focus inside verse → closes; tap different marker swaps panel (one open per verse).
-
-Tap / click a verse toggles only the verse's knowledge lane (theme chips + passage summary). Translation visibility is global-only through Settings or `t`; turning it off hides all translation rows and any open inline footnote panels.
-
-**Cross-riwayah alignment:** translations Hafs-keyed (Kufan numbering). Warsh + Qalun (runtime `qaloon`, Madinan numbering) partition same Quranic text differently in 50 surahs (~22 ayat net diff). Per-ayah aliases at `public/dataset/translations/_verse-aliases.json` (mechanically derived by `scripts/data/derive-verse-aliases.mjs`); `Reader.svelte::loadSurah` resolves each Warsh/`qaloon` ayah via `resolveTranslationFor()` → identity / merged / primary / continuation / none. Continuation renders italic `↑ continued from verse N` instead of duplicating translation. Coverage 100% across all three riwayat.
-
-### Knowledge lane
-
-After the base reader payload (Arabic text, translation, aliases, settings) succeeds, `Reader.svelte` starts two optional side-loads for `public/dataset/knowledge/ayah/{surah}.json` and `public/dataset/knowledge/passages/{surah}.json`. These knowledge fetches are not part of the blocking `Promise.all(...)` path, do not create a second skeleton/loading phase, and do not change route, gesture, or scroll-entry behavior.
-
-When knowledge data exists, each tagged verse can render quiet metadata directly under the Arabic/meaning stack:
-
-- theme chips from the ayah knowledge shard
-- one passage-context line from the passage summary when that verse's `passageId` resolves to a loaded passage shard
-
-Theme chips + passage context stay collapsed with the verse and reveal only when that verse is opened.
-
-If either knowledge shard is missing, invalid, stale, or fetch-fails, the reader consumes the `src/metadata/knowledge.ts` state, logs a recoverable warning, and leaves the knowledge lane empty for that surah. Base verse rendering continues unchanged.
-
-### Tafsir study lane
-
-Tafsir study UI is not present in the current MVP. Double-tap, right-click, and keyboard `m` do not open tafsir previews or sheets. Future tafsir work must reintroduce source-pack loading and reader interactions through a new current-state spec before these gestures become product behavior again.
-
-### Cross-surah infinite scroll
-
-Reader is single-surah; only one surah mounted at a time. Pull past edge swaps to N+1 / N-1 with wrap (114 ↔ 1).
-
-1. Pull past bottom past threshold (~110 px) → release → `swapToSurah(nextSurah(N), 'top')` → URL `#/s/{N+1}` → Reader remounts at `scrollTop=0`. Click fallback: single-line `<next.name> ↓` link.
-2. Pull past top past threshold → release → `swapToSurah(prevSurah(N), 'bottom')` → URL `#/s/{N-1}` → Reader remounts and anchors `scrollTop=scrollHeight`. Click fallback: `↑ <prev.name>` link above SurahHeader.
-3. Wrap: 114→1 forward, 1→114 backward.
-4. Native browser pull-to-refresh suppressed via `overscroll-behavior-y: contain` on `#main-content`. Wheel input on desktop accumulates the same way.
-5. Position persistence is single-global: each surah load overwrites `settings.currentPosition` to `(newN, 1)` or `(newN, lastVerse)` on backward; in-surah scroll center-band crossings also overwrite.
-6. **Within-surah scroll is virtualised** — only ±1 chunk (~60 verses) live in the DOM; chunks outside the window are inert height-preserving spacers (`data-chunk-state="spacer"`). Center-band IO drives the active chunk; eviction transitions are invisible to the user. Scroll-driven materialise transit through a brief skeleton state (one rAF); deep-link / warm-resume materialise synchronously so `scrollToVerse` finds the target.
-
-### Scroll position survives warm-resume (iOS lock / tab-hide)
-
-1. Lock screen / switch tabs → `visibilitychange` fires hidden → `persistOnExit` flushes tracker's pending verse → `settings.currentPosition`.
-2. Unlock / return → `visibilitychange` fires visible → `DB_VISIBILITY_VISIBLE` emitted; reader's handler restores scroll **only** when tracker is fresh (no `lastTrackedVerse`) AND scroller has collapsed to top. Otherwise browser's preserved scroll is trusted.
-3. Stale IDB values never force-scroll an already-scrolled reader back.
-
-### Typography knobs (live preview)
-
-Two sliders inline in Settings sheet's Reading section drive reader live:
-
-1. **Font size** — 5-step (xs/sm/md/lg/xl), writes `fontSize`, drives `--qa-font-size-base`. Endcaps `Aa` (small) / `Aa` (large).
-2. **Reading flow** — 5-step coordinated knob: single drag writes all four spacing keys (`lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`) to same step via `setReadingFlow(step)`. Arabic line-height = `1.92 + delta(step)`; floor (xs) clears KFGQPC tashkeel collisions across all riwayat; md (default) lands at 2.12. Endcaps `▮` (tight) / `▯` (loose).
-3. **Reset to default** appears only when at least one knob ≠ md.
-
-Mobile reading-flow margin component drives `.qa-verse` horizontal padding via `--qa-verse-pad-x`. Vertical-spacing component drives `.qa-verse` padding via `--qa-verse-pad-y`.
-
-Font-size keyboard shortcuts: `⌘↑` / `Ctrl+↑` bumps up; `⌘↓` / `Ctrl+↓` bumps down. Announced to screen readers; guarded against focused inputs.
-
-### Verse-number edge indicator
-
-Tap number circle on any verse → thin accent bars appear at verse's row on both viewport edges (~1.6 s). Pill label updates to tapped verse. `settings.currentPosition` updated.
-
-During the React dual-build parity track, the verse number also reflects and toggles the shared Qaloon bookmark state through `src-react/continuity/bookmarks/use-bookmarks.ts`; the bookmarked state uses the Svelte `qa-verse--bookmarked-glyph` row alias, a separate verse-head marker line, and an accent bookmark glyph instead of a filled badge. The React glyph slot remains mounted for both bookmarked and unbookmarked states so showing or hiding the icon cannot move Arabic text. Bookmark jumps and newly created verse bookmarks pulse the target verse through the shared `data-token-key` identity using the Svelte-parity `qa-verse--pulse` alias, the React `qar-reader-verse--pulse` class, and a guarded one-second theme-aware bookmark accent fade with temporary side rails that briefly hold before fading.
-
-### Auto-hide chrome on scroll
-
-Scroll down → dock hides; scroll back near top → dock surfaces.
+`ReaderChrome` is compact and mode-aware: navigation drawer, reader mode, settings, and Daily Wird status when enabled. It avoids center titles that compete with the reading surface. Mobile and tablet chrome protects safe areas and hides/reveals based on reader movement where appropriate.
 
 ### Daily Wird
 
-The Reader owns Daily Wird progress. One active plan can exist at `settings.wirdPlan`.
+Daily Wird progress lives under `src/continuity/wird/**` and persists in the `settings.wirdPlan` key. Verse reading and forward Mushaf page movement advance progress monotonically within the active plan. The reader shows only the compact status indicator; plan creation and detail live in the navigation drawer.
 
-`NavDrawer.svelte` renders `DailyWirdCard`, but read owns the card source and presentation styles in `src/read/wird/**` and `src/styles/surfaces/read/wird.css`; navigate owns only the drawer placement wrapper.
+### Translation And Knowledge
 
-Reader position saves advance the plan only when the saved reference is inside the plan range. Advancement continues after today's assigned range is complete: `todayPercent` caps at 100%, but `completedThroughRef`, `nextRef`, and total plan percent keep moving forward until the plan end. React Mushaf page movement advances the same plan from page metadata without writing `settings.currentPosition`: the visible page start is recorded on page entry, and the visible page end is recorded only when the reader moves forward. Progress is monotonic: backward scrolling or backward page movement does not reduce `completedThroughRef`. Missed days recompute the current daily assignment from remaining verses and remaining calendar days through `targetEndOn`.
-
-`Continue Wird` navigates to `progress.nextRef`; ordinary `settings.currentPosition` remains the source of truth for normal resume.
-
-The mobile drawer summary card is a single ledger-style tappable surface above the Read source controls; without a plan it invites plan creation, and with a plan it reflects plan state and routes to the in-drawer detail without writing progress from render alone. The Reader content column does not render the full Daily Wird card above Quran text. During the React dual-build parity track, `ReaderRoute` and `NavDrawer` read `settings.wirdPlan` through `src-react/continuity/wird/store.ts`; seeded legacy `{ start, cursor }` plan records normalize into the current React `WirdPlan` shape so production parity fixtures prove real active/no-plan state instead of a static placeholder. React `ReaderChrome` renders only a compact Daily Wird status indicator when an active plan exists and `settings.wirdReaderStatusVisible` is enabled; tapping it opens the nav drawer directly to Daily Wird detail.
-
-Daily Wird summary text respects the selected display unit. Juz and Hizb plans derive remaining counts from Quran boundary metadata, and React page-unit plans derive page counts from the active Mushaf manifest, instead of falling back to raw verse counts. Browser notification permission is requested only from the reminder permission control; granted/denied/default/unsupported is stored on the plan reminder state. React schedules enabled reminders while the app is running and browser permission is granted; due reminders post a browser notification tagged `quranatlas-daily-wird-reminder` with click data for `progress.nextRef`. The React production service worker imports `wird-notification-sw.js`, whose notification-click handler focuses an open QuranAtlas window or opens the saved continuation URL. Denied state can be requested again from the same control, though the browser may keep returning denied until the user changes site settings.
+Translations are global-on/off through settings. Footnote markers disclose inline panels per verse. Knowledge metadata is optional: missing, stale, or failed knowledge shards leave the base reader intact.
 
 ## Style Inventory
 
 <!-- AUTO-GENERATED:style-inventory START -->
 | Path | Role |
 | --- | --- |
-| `src/styles/surfaces/read/ambient-dock.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
-| `src/styles/surfaces/read/ambient-pill.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
-| `src/styles/surfaces/read/continuity.css` | Reader content styles split from src/styles/surfaces/reader.css. |
-| `src/styles/surfaces/read/margin-header.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
-| `src/styles/surfaces/read/mushaf.css` | Reader content styles split from src/styles/surfaces/reader.css. |
-| `src/styles/surfaces/read/states.css` | Reader content styles split from src/styles/surfaces/reader.css. |
-| `src/styles/surfaces/read/surah-header.css` | Reader content styles split from src/styles/surfaces/reader.css. |
-| `src/styles/surfaces/read/surah-progress.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
-| `src/styles/surfaces/read/typography.css` | Reader typography styles moved from flat surfaces. |
-| `src/styles/surfaces/read/verse.css` | Reader content styles split from src/styles/surfaces/reader.css. |
-| `src/styles/surfaces/read/virtualiser.css` | Reader virtualiser styles moved from flat surfaces. |
-| `src/styles/surfaces/read/wird.css` | nav — AmbientDock (desktop left rail), AmbientPill (floating top pill), |
+| _(no files match `style_paths`)_ | |
 <!-- AUTO-GENERATED:style-inventory END -->
 
 ## Data
@@ -238,92 +119,38 @@ _(none)_
 _(no cross-surface reads detected)_
 <!-- AUTO-GENERATED:data-read END -->
 
-### `meta` store body
-
-Last-read position + sticky-page state. Single global record; updated on every surah mount + center-band scroll crossing + warm-resume hide.
-
-Settings keys read by reader: `riwayah`, `quranTextStyleId`, `mushafEditionId`, `theme`, `nightMode`, `translationVisible`, `translationId`, `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing`, `mushafViewMode`, `surahHeaderHidden`, `currentPosition`, `lastSurface`, `wirdPlan`. (See `configure` dossier for `settings` store body.)
-
-Mushaf mode reads `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json` for page count, SVG asset paths, per-page `viewBox`, first visible verse refs, and `verseToPage` mode-switch mapping. The fetched page SVG is same-origin validated against the same edition-aware path, parsed, descendant-sanitized, and serialized before inline rendering. Dataset and Mushaf manifest/SVG fetches warm Cache Storage when online and fall back to those entries when offline. Verse mode validates `indexes/text-assets.json` before loading `/dataset/quran-text/{riwayah}/{quranTextStyleId}/{surah}.json`; the only current MVP riwayah/text-style pair is Qaloon + `uthmani-kfgqpc-v1`.
-
 ## Events
 
 <!-- AUTO-GENERATED:events-emit START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientDock.svelte:79`, `src/read/AmbientPill.svelte:89`, `src/read/EdgeIndicator.svelte:42`, `src/read/MarginHeader.svelte:53`, `src/read/Reader.svelte:647`, `src/read/edge-indicators.ts:62` |
-| `reader:position-save-failed` | `Events.READER_POSITION_SAVE_FAILED` | `src/read/position.ts:33` |
-| `reader:verse-rendered` | `Events.READER_VERSE_RENDERED` | `src/read/Verse.svelte:59` |
+| _(none)_ | | |
 <!-- AUTO-GENERATED:events-emit END -->
 
 <!-- AUTO-GENERATED:events-listen START -->
 | Event | Constant | Sites |
 | --- | --- | --- |
-| `ambient:surface` | `Events.AMBIENT_SURFACE` | `src/read/AmbientPill.svelte:75`, `src/read/MarginHeader.svelte:195` |
-| `db:visibility-visible` | `Events.DB_VISIBILITY_VISIBLE` | `src/read/position.ts:161` |
-| `router:route-change` | `Events.ROUTER_ROUTE_CHANGE` | `src/read/AmbientDock.svelte:100`, `src/read/MarginHeader.svelte:186` |
-| `settings:riwayah-changed` | `Events.SETTINGS_RIWAYAH_CHANGED` | `src/read/Reader.svelte:492`, `src/read/mushaf/MushafReader.svelte:370` |
+| _(none)_ | | |
 <!-- AUTO-GENERATED:events-listen END -->
 
 ## Invariants
 
-- **Reader text source = default Qaloon + text style.** From `settings.riwayah` (`qaloon`) and `settings.quranTextStyleId` (`uthmani-kfgqpc-v1`). The active bundle writer lives in `src/configure/variant-bundle.ts`. Font follows via `--qa-font-arabic` cascade (set by `:root[data-riwayah=...]` overrides). Reader's reading-typography slider drives line-height; floor at `xs` step clears stacked harakat for Qaloon. Each `.qa-verse-arabic` carries `data-riwayah="qaloon"`.
-- **Missing default assets are errors, not source prompts.** Qalun/Qaloon is the only MVP riwayah; a missing concrete Qaloon text/page cache entry fails at the resource load instead of changing the active bundle or showing optional-pack install controls.
-- **One current reader asset profile.** Qaloon text/font, Qaloon Mushaf, and Bridges translation are the only current reader assets. Optional assets install before activation only in future multiple-profile work.
-- **Curated metadata is not personal annotation.** Tafsir, themes, short meanings/summaries, passage context, Makki/Madani, revelation/asbab, and juz/hizb/rub/ruku/page metadata are QuranAtlas/source-backed reader enrichment. User-authored meanings, tags, notes, comments, and edges belong only to a future personal layer outside current product scope.
-- **Mushaf route is page-only and position-neutral.** `#/m/:page` does not encode riwayah and does not mutate `settings.currentPosition`; Daily Wird progress is the only reading-continuity state that React Mushaf page entry/forward page turns may advance. The active manifest's `pageCount` is authoritative for clamping/canonicalization.
-- **Mushaf canvas is page-only.** Mushaf mode does not render verse overlays, translation rows, or tafsir inside the SVG page canvas; opening verse mode uses the page manifest's first visible verse reference.
-- **Mushaf view mode is a document-view preference.** `settings.mushafViewMode` stores only `auto`, `fit-page`, or `fit-width`; Auto resolves from viewport shape at render time so mobile can prioritize readable width while desktop can keep a full-page document view.
-- **Each Riwayah pairs with its own KFGQPC Uthmanic mushaf cut.** Cross-Riwayah reuse mis-renders combining marks. Current MVP mapping: `qaloon → KFGQPC Uthmanic Qalun V21`. Each token's font-family chain falls back to **Amiri Quran** (Khaled Hosny, OFL) when KFGQPC isn't loaded, then bare `serif`. No user-facing font picker. Wired through `--ff-kfgqpc-{riwayah}` (`src/styles/tokens/primitives.css`) → `--qa-font-arabic` (`src/styles/tokens/semantic.css`). Regression guard: `tests/unit/styles/font-tokens.test.js`.
-- **Hamburger drawer is the sole in-app entry to the full surah list (mobile).** Standalone `#/surahs` page renders only on desktop ≥1180 px; mobile arrivals at that hash hard-redirect to `lastSurface` and open the drawer. Don't add new mobile in-app entries pointing at `#/surahs` without first removing this invariant in the same PR.
-- **Reader is single-surah.** Only one surah mounted at a time. Cross-surah scroll swaps the mount; never multi-mount.
-- **Knowledge lane is optional and non-blocking.** Reader text render never waits on `dataset/knowledge/**`; missing or invalid ayah/passage shards leave verse theme/context metadata empty and do not introduce a new error surface.
-- **Knowledge is the per-verse disclosure.** Arabic remains always visible. Translation rows are controlled only by `settings.translationVisible`; verse clicks reveal/collapse theme chips and passage summary.
-- **Reader tafsir is future work.** No current reader UI reads `settings.tafsirId`, opens tafsir previews, or mounts a tafsir sheet.
-- **Daily Wird progress is passive to drawer render.** The drawer can read `settings.wirdPlan` and update reminder browser-permission state through `src/read/wird/` helpers, but only the read surface writer under `src/read/wird/` writes plan progress. Rendering the drawer must not advance progress.
-- **Mounted Reader verse content must stay live with Settings.** While the reader stays on the same surah, changing `settings.translationVisible` must refresh the mounted verse tree without requiring a route reload.
-- **Verse identity DOM contract is `data-token-key`.** Gesture handlers (long-press, bookmark click) and decoration consumers (marks indicator, bookmarks indicator, pulse, VerseSpotlight) MUST read `data-token-key` and resolve to the verse-grain identifier via `tokenVerseKey()` from `core/tokenisable.ts`. New verse-grain reads against `data-verse-key` are forbidden — reviewers should grep `src/` for the attribute on the read side.
-- **Reader DOM virtualised; ≤60 `.qa-verse` elements live at any time.** Chunks of 20 ayat; sliding window of ±1 chunk. Outside the window, chunks render as inert spacer divs carrying `data-chunk-state="spacer"` + inline `style.height` (R-19c CSP carve-out per `csp-allowlist.md`). Local component state (footnote popover) does not survive recycle; rune-backed state (tag-session active verse) survives via component re-mount on re-entry. `ensureVerseRendered(N)` synchronously materialises the chunk window for deep-link / warm-resume so `scrollToVerse` finds the target verse on the next rAF. Regression guards: `tests/e2e/read/chrome.spec.js` B-Virt1/2/3 + `tests/unit/read/chunked-virtualiser.test.ts`.
-- **`<html>` and `<body>` background-color must resolve to the same `--qa-surface-app` under every theme** (so iOS landscape `viewport-fit=cover` safe-area gutters retint with theme). Regression guard: `tests/e2e/configure/settings.spec.js` D3-bg.
+- Reader content is unframed; Quran text and Mushaf pages are never decorative previews.
+- Runtime dataset requests stay under same-origin `/dataset/**`.
+- The current MVP profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation.
+- Page SVG bodies remain runtime assets and must not be embedded into JS bundles.
+- Bookmarks are reader continuity, not study annotations.
+- Daily Wird progress is monotonic; backward movement must not reduce completion.
 
-## Regression guards
+## Regression Guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (27):**
+**Unit (1):**
 
-- `tests/unit/read/AmbientDock.test.ts`
-- `tests/unit/read/MarginHeader-toggle.test.ts`
-- `tests/unit/read/SurahHeader.test.ts`
-- `tests/unit/read/Verse.test.ts`
-- `tests/unit/read/bismillah-translation.test.ts`
-- `tests/unit/read/chunked-virtualiser.test.ts`
-- `tests/unit/read/font-reshape.test.ts`
-- `tests/unit/read/global-position.test.ts`
-- `tests/unit/read/mushaf/mode-switch.test.ts`
-- `tests/unit/read/mushaf/navigation.test.ts`
-- `tests/unit/read/mushaf/reader.test.ts`
-- `tests/unit/read/mushaf/sizing.test.ts`
-- `tests/unit/read/mushaf/svg-page.test.ts`
-- `tests/unit/read/mushaf/view-mode.test.ts`
-- `tests/unit/read/render-helpers.test.ts`
-- `tests/unit/read/scroll-tracker.test.ts`
-- `tests/unit/read/state-ambient.test.ts`
-- `tests/unit/read/state.test.ts`
-- `tests/unit/read/surah-swap.test.ts`
-- `tests/unit/read/translation-tokens.test.ts`
-- `tests/unit/read/verse-tap-gestures.test.ts`
-- `tests/unit/read/wird/DailyWirdCard.test.ts`
-- `tests/unit/read/wird/WirdDetail.test.ts`
-- `tests/unit/read/wird/notifications.test.ts`
-- `tests/unit/read/wird/progress.test.ts`
-- `tests/unit/read/wird/store.test.ts`
-- `tests/unit/styles/font-tokens.test.js`
+- `tests/unit/react-read/reader-wave3.test.tsx`
 
-**E2E (5):**
+**E2E (2):**
 
-- `tests/e2e/read/chrome.spec.js`
-- `tests/e2e/read/cross-surah.spec.js`
-- `tests/e2e/read/performance.spec.js`
-- `tests/e2e/read/text-sources.spec.js`
-- `tests/e2e/read/virtualiser.spec.js`
+- `tests/e2e/react-visual/shell.spec.ts`
+- `tests/e2e/read/react-golden.spec.ts`
 <!-- AUTO-GENERATED:tests END -->

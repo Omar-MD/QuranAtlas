@@ -20,12 +20,12 @@ routes. The interface should feel calm, precise, durable, and reverent without
 becoming decorative or ceremonial.
 
 The product should feel more like a well-made reading tool than a content site.
-Chrome supports the verse, Mushaf page, tafsir, navigation, settings, and asset
-state. It should not compete with them.
+Chrome supports the verse, Mushaf page, translation, navigation, settings,
+bookmarks, Daily Wird, and asset state. It should not compete with them.
 
 ## Design Principles
 
-- Content is primary. Arabic text, Mushaf pages, translation, tafsir, and reader
+- Content is primary. Arabic text, Mushaf pages, translation, and reader
   continuity are the main visual signals.
 - Keep the UI dense but breathable. QuranAtlas should support repeated reading
   and scanning without feeling sparse, theatrical, or marketing-led.
@@ -37,9 +37,10 @@ state. It should not compete with them.
   generated text, or recitation behavior the app does not provide.
 - Stay inside current product scope. Visuals must not introduce UI for
   audio/recitation, personal notes/tags/review except bookmarks,
-  sharing/export/import, accounts or sync, AI chat/assistant/synthesis,
+  sharing/export/import, accounts or multi-device sync, AI chat/assistant/synthesis,
   multiple translations side by side, transliteration display, word-by-word
-  translation, tajweed coloring, or qira'at beyond Hafs, Qalun, and Warsh.
+  translation, tajweed coloring, or qira'at switching beyond the current Qaloon
+  MVP profile.
 
 ## Reference Discipline
 
@@ -59,16 +60,14 @@ same change when the conflict reveals stale design intent.
 ## Surface Postures
 
 - **Read:** unframed, text-first, minimal chrome. Quran text, translation,
-  tafsir, Mushaf page, and reading continuity dominate. Do not place decorative
+  Mushaf page, and reading continuity dominate. Do not place decorative
   wrappers around Quran or Mushaf content.
-- **Navigate:** fast movement through Surah, Juz, bookmarks, and reader mode.
+- **Navigate:** fast movement through Surah, Juz, Hizb, bookmarks, and reader mode.
   Use dense rows, current-position clarity, and direct continuation actions.
-- **Configure:** operational settings and asset management. Favor ledger rows,
-  tables, grouped controls, visible install/active/error states, and clear
-  source-state comparison.
-- **Onboard:** compact setup flow for first reading choices. It may explain
-  setup choices, storage, source packs, and first reading path, but it is not a
-  marketing hero or feature tour.
+- **Configure:** operational settings and asset inventory. Favor ledger rows,
+  grouped controls, visible active/error states, and clear source identity.
+- **Onboard:** compact launch and restore path. It is not a marketing hero,
+  feature tour, or source-selection wizard.
 - **Infra overlays:** terse recovery and status UI. Preserve trust, explain the
   next safe action, and never compete with reading.
 
@@ -82,15 +81,17 @@ The core material language is parchment, bronze, and ink:
 - Soft danger and warning states should remain legible and product-like, not
   alarming unless the action is destructive.
 
-Use semantic `--qa-*` tokens for design decisions. Surface CSS should not
-consume primitive tokens directly, hardcode palette values, or introduce
-one-off radii and motion values when a semantic token exists.
+Use semantic `--qa-react-*` and app-approved `--qa-*` tokens for design
+decisions. Feature CSS should not consume primitive tokens directly, hardcode
+palette values, or introduce one-off radii and motion values when a semantic
+token exists.
 
-All styling belongs in `src/styles/` under the existing `@layer` cascade.
-Surface selectors use the `qa-<surface>-<part>` grammar. Surface CSS consumes
-semantic `--qa-*` tokens only; primitives, hardcoded colors, literal radii, raw
-durations or eases, CSS-in-JS, Tailwind, route-local CSS, and Svelte `<style>`
-blocks are forbidden unless a task explicitly changes the design-system rules.
+All app styling belongs in `src/design-system/` and React feature components.
+Use `qar:` Tailwind utilities only when they map to QuranAtlas semantic tokens.
+Component selectors use the `qar-<surface>-<part>` grammar. CSS-in-JS,
+route-local style sheets, retired legacy class selectors, raw primitive tokens,
+hardcoded colors, literal radii, and raw durations/eases are forbidden unless a
+task explicitly changes the design-system rules.
 
 The palette should never drift into purple-blue SaaS gradients, beige monotony,
 espresso/brown heaviness, or dark-slate sameness. QuranAtlas can be warm, but it
@@ -102,7 +103,7 @@ Arabic text is sacred content and must use the active Quran font cascade. Do not
 fake Arabic, substitute generated Arabic, or use decorative calligraphy as UI
 ornament.
 
-Translation and tafsir should feel literary and readable. UI labels should stay
+Translation should feel literary and readable. UI labels should stay
 quiet, compact, and scannable. Avoid oversized headings inside operational
 surfaces such as drawers, settings sheets, asset tables, and reader chrome.
 
@@ -124,7 +125,7 @@ are for repeated items, modals, and genuinely framed tools. Avoid nested card
 stacks and decorative preview containers around Mushaf, Quran text, tafsir,
 translation, or reading content.
 
-For operational data such as assets, sources, settings, bookmarks, and
+For operational data such as assets, source identity, settings, bookmarks, and
 navigation lists, prefer rows, tables, segmented groups, and sheets over
 repeated decorative cards. Cards are acceptable only when the component is
 genuinely framed and does not create nested card stacks.
@@ -153,11 +154,10 @@ Controls should use familiar affordances:
 Every component must define empty, loading, active, disabled, error, focus,
 hover, and reduced-motion behavior when those states are reachable.
 
-Asset and source UI must distinguish shipped, installed, missing, stale,
-unavailable, active, inactive, installing, failed, and blocked states without
-relying on color alone. Never show an inactive optional pack as usable before
-verified install. Never imply fallback to Qalun, Hafs, or Warsh unless the
-setting is explicitly changed or the baseline is verified.
+Asset and source UI must distinguish included, missing, stale, unavailable,
+active, failed, and blocked states without relying on color alone. Never imply
+fallback to another profile unless the source is verified and the active setting
+is explicitly changed.
 
 Designs must prove readable contrast, visible focus, keyboard reachability,
 non-color-only state communication, text fit without clipping, no horizontal
@@ -212,7 +212,8 @@ references, not a competing active reference.
 
 ## Do Not
 
-- Do not add Svelte `<style>` blocks, CSS-in-JS, Tailwind, or route-local CSS.
+- Do not add CSS-in-JS, route-local CSS, raw unscoped styles, or unapproved
+  Tailwind arbitrary values.
 - Do not add marketing hero layouts to app surfaces.
 - Do not use ornamental religious imagery as a substitute for real Quran,
   Mushaf, translation, tafsir, or source state.
@@ -226,5 +227,5 @@ references, not a competing active reference.
 - Product scope: `docs/product-info.md`.
 - UI workflow: `.agents/skills/quranatlas-ui-workflow/SKILL.md`.
 - CSS architecture and tokens: `docs/context/architecture.md` and
-  `src/styles/tokens/semantic.css`.
+  `src/design-system/tokens/semantic.css`.
 - Component visual references: `docs/ui-references/`.

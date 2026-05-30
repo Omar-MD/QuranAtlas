@@ -260,6 +260,29 @@ function parseProfileArg(argv = process.argv.slice(2)) {
   return explicit ? explicit.slice('--profile='.length) : 'baseline'
 }
 
+async function resolveDatasetBuiltAt(profileName) {
+  const explicitBuiltAt = process.env.QURANATLAS_DATASET_BUILT_AT?.trim()
+  if (explicitBuiltAt) return explicitBuiltAt
+
+  const provenancePath = join(DATASET_DIR, 'provenance.json')
+  if (!existsSync(provenancePath)) return new Date().toISOString()
+
+  try {
+    const current = JSON.parse(await readFile(provenancePath, 'utf8'))
+    if (
+      current?.packageVersion === PACKAGE_VERSION
+      && current?.profile === profileName
+      && typeof current?.builtAt === 'string'
+    ) {
+      return current.builtAt
+    }
+  } catch {
+    return new Date().toISOString()
+  }
+
+  return new Date().toISOString()
+}
+
 // minLineHeight = unitless line-height at the xs step on the Reading-flow
 // slider. KFGQPC tashkeel (esp. shadda + alif khanjariyya) collides with
 // the line above at the font's design metric (1.72–1.76); 1.92 matches
@@ -927,10 +950,11 @@ export async function main() {
   })
 
   // 6. provenance.json
+  const builtAt = await resolveDatasetBuiltAt(profile.name)
   const provenance = {
     packageVersion: PACKAGE_VERSION,
     profile: profile.name,
-    builtAt: new Date().toISOString(),
+    builtAt,
     corpus: {
       name: 'Mushaf al-Madinah — KFGQPC',
       publisher: "King Fahd Glorious Qur'an Printing Complex (KFGQPC), Madinah",

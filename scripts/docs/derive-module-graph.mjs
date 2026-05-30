@@ -40,7 +40,7 @@ async function main() {
       if (!resolved) continue;
       let toDir = null;
       for (const candidate of [
-        resolved + '.ts', resolved + '.js', resolved + '.svelte',
+        resolved + '.ts', resolved + '.tsx', resolved + '.js',
         resolved + '/index.ts', resolved + '/index.js',
       ]) {
         if (fileToDir.has(candidate)) { toDir = fileToDir.get(candidate); break; }
@@ -60,7 +60,7 @@ async function main() {
 
   let out = '';
   out += '# Module graph\n\n';
-  out += '> AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm run docs` to regenerate.\n\n';
+  out += '> AUTO-GENERATED from `src/**/*.{ts,tsx,js}` import statements. Run `pnpm run docs` to regenerate.\n\n';
   out += `Top-level src directories: **${dirs.length}**.\n\n`;
 
   out += '## Mermaid (top-level)\n\n';

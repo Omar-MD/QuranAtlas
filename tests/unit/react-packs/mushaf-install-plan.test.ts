@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildMushafInstallPlan } from '../../../src-react/packs/mushaf-install-plan'
-import { qaloonMushafFixture } from '../../../src-react/packs/mushaf-fixtures'
-import { createMushafInstallRequest } from '../../../src-react/offline/mushaf-service-worker-protocol'
-import { validateMushafAssetIndexEntry } from '../../../src-react/packs/mushaf-index'
+import { buildMushafInstallPlan } from '../../../src/packs/mushaf-install-plan'
+import { qaloonMushafFixture } from '../../../src/packs/mushaf-fixtures'
+import { createMushafInstallRequest } from '../../../src/offline/mushaf-service-worker-protocol'
+import { validateMushafAssetIndexEntry } from '../../../src/packs/mushaf-index'
 
 describe('React Mushaf install plans', () => {
   it('builds an install plan from edition-aware fixture indexes', () => {

@@ -3,13 +3,12 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { useEffect, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { App } from '../../../src-react/app/App'
-import { SettingsRoute } from '../../../src-react/app/routes/settings/SettingsRoute'
-import { REACT_READER_PREFERENCES_CHANGED_EVENT } from '../../../src-react/storage/reader-preferences'
-import { closeReactDb, openReactDb } from '../../../src-react/storage/db'
-import { QURAN_ATLAS_DB_NAME } from '../../../src-react/storage/schema'
+import { App } from '../../../src/app/App'
+import { SettingsRoute } from '../../../src/app/routes/settings/SettingsRoute'
+import { REACT_READER_PREFERENCES_CHANGED_EVENT } from '../../../src/storage/reader-preferences'
+import { closeReactDb, openReactDb } from '../../../src/storage/db'
 
-vi.mock('../../../src-react/app/routes/read/ReaderRoute', () => ({
+vi.mock('../../../src/app/routes/read/ReaderRoute', () => ({
   ReaderRoute: ({ ayah, surah }: { ayah?: number; surah: number }) => (
     <main aria-label="Verse reader" data-testid="mock-verse-reader">
       <button type="button" aria-label="Open navigation">Open</button>
@@ -19,7 +18,7 @@ vi.mock('../../../src-react/app/routes/read/ReaderRoute', () => ({
   ),
 }))
 
-vi.mock('../../../src-react/app/routes/read/MushafRoute', () => ({
+vi.mock('../../../src/app/routes/read/MushafRoute', () => ({
   MushafRoute: ({ page }: { page: number }) => (
     <main aria-label="Mushaf reader" data-testid="mock-mushaf-reader">
       Mushaf reader page {page}
@@ -29,15 +28,6 @@ vi.mock('../../../src-react/app/routes/read/MushafRoute', () => ({
 
 async function resetReactDb() {
   closeReactDb()
-  await Promise.race([
-    new Promise<void>((resolve, reject) => {
-      const request = indexedDB.deleteDatabase(QURAN_ATLAS_DB_NAME)
-      request.onsuccess = () => resolve()
-      request.onerror = () => reject(request.error)
-      request.onblocked = () => resolve()
-    }),
-    new Promise<void>((resolve) => setTimeout(resolve, 100)),
-  ])
   const db = await openReactDb()
   await Promise.all([
     db.settings.clear(),
@@ -76,10 +66,11 @@ function ReaderPreferenceListenerProbe() {
   return <span data-testid="reader-preference-listener-updates">{updates}</span>
 }
 
-describe('React settings shell parity', () => {
+describe('React settings shell coverage', () => {
   afterEach(async () => {
     cleanup()
     delete (globalThis as { __qaMockVisibleVerseKey?: string }).__qaMockVisibleVerseKey
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     window.history.replaceState(null, '', '#/')
     await resetReactDb()

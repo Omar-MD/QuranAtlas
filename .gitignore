@@ -8,6 +8,7 @@ node_modules/
 # Build output
 dist/
 dist-ssr/
+storybook-static/
 
 # Generated Mushaf page assets (release/local artifacts, not source-controlled by default)
 data/normalized/mushaf-pages/
@@ -57,7 +58,7 @@ scratch/
 .worktrees/
 
 # Scratch / design-reference dirs (not product code)
-svelte-integration/
+ui-integration/
 
 # Logs
 logs/

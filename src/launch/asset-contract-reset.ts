@@ -1,67 +1,36 @@
 import { DEFAULT_READER_ASSET_PROFILE, MVP_ASSET_CONTRACT_ID, RESET_CACHE_NAME_PREFIXES } from '../../shared/reader-assets/default-profile'
-import { closeDB, deleteDB, get, openDB, put } from '../core/db.js'
-import { suppressNextVersionChange } from '../infra/safety/sync.js'
+import { openReactDb } from '../storage/db'
 
-export type AssetContractResetResult = {
-  resetApplied: boolean
-  contractId: typeof MVP_ASSET_CONTRACT_ID
-}
-
-async function clearQuranAtlasCaches(): Promise<void> {
-  if (typeof caches === 'undefined') {
-    return
-  }
-  const names = await caches.keys()
-  await Promise.all(
-    names
-      .filter((name) => RESET_CACHE_NAME_PREFIXES.some((prefix) => name.startsWith(prefix)))
-      .map((name) => caches.delete(name)),
-  )
-}
-
-async function clearStoresWithoutDeletingDb(): Promise<void> {
-  const db = await openDB()
-  await new Promise<void>((resolve, reject) => {
-    const storeNames = Array.from(db.objectStoreNames)
-    const tx = db.transaction(storeNames, 'readwrite')
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error ?? new Error('Store clear transaction failed'))
-    for (const storeName of storeNames) {
-      tx.objectStore(storeName).clear()
-    }
-  })
-}
-
-async function seedDefaultAssetSettings(): Promise<void> {
-  await put('settings', { key: 'mvpAssetContractId', value: MVP_ASSET_CONTRACT_ID })
-  await put('settings', { key: 'riwayah', value: DEFAULT_READER_ASSET_PROFILE.riwayah })
-  await put('settings', { key: 'quranTextStyleId', value: DEFAULT_READER_ASSET_PROFILE.quranTextStyleId })
-  await put('settings', { key: 'mushafEditionId', value: DEFAULT_READER_ASSET_PROFILE.mushafEditionId })
-  await put('settings', { key: 'translationId', value: DEFAULT_READER_ASSET_PROFILE.translationId })
-  await put('settings', { key: 'translationVisible', value: true })
-}
-
-export async function ensureMvpAssetContractReset(
-  options: { forceStoreClearForTests?: boolean } = {},
-): Promise<AssetContractResetResult> {
-  await openDB()
-  const marker = await get('settings', 'mvpAssetContractId').catch(() => undefined)
-  if ((marker as { value?: unknown } | undefined)?.value === MVP_ASSET_CONTRACT_ID) {
+export async function ensureReactMvpAssetContractReset(): Promise<{ resetApplied: boolean; contractId: string }> {
+  const db = await openReactDb()
+  const marker = await db.settings.get('mvpAssetContractId')
+  if (marker?.value === MVP_ASSET_CONTRACT_ID) {
     return { resetApplied: false, contractId: MVP_ASSET_CONTRACT_ID }
   }
 
-  await clearQuranAtlasCaches()
-  try {
-    if (options.forceStoreClearForTests) {
-      throw new Error('forced store clear')
-    }
-    await clearStoresWithoutDeletingDb()
-  } catch {
-    suppressNextVersionChange()
-    closeDB()
-    await deleteDB()
-    await openDB()
+  if (typeof caches !== 'undefined') {
+    const names = await caches.keys()
+    await Promise.all(
+      names
+        .filter((name) => RESET_CACHE_NAME_PREFIXES.some((prefix) => name.startsWith(prefix)))
+        .map((name) => caches.delete(name)),
+    )
   }
-  await seedDefaultAssetSettings()
+
+  await db.transaction('rw', [db.settings, db.activationState, db.datasetMeta, db.bookmarks], async () => {
+    await db.settings.clear()
+    await db.activationState.clear()
+    await db.datasetMeta.clear()
+    await db.bookmarks.clear()
+    await db.settings.bulkPut([
+      { key: 'mvpAssetContractId', value: MVP_ASSET_CONTRACT_ID },
+      { key: 'riwayah', value: DEFAULT_READER_ASSET_PROFILE.riwayah },
+      { key: 'quranTextStyleId', value: DEFAULT_READER_ASSET_PROFILE.quranTextStyleId },
+      { key: 'mushafEditionId', value: DEFAULT_READER_ASSET_PROFILE.mushafEditionId },
+      { key: 'translationId', value: DEFAULT_READER_ASSET_PROFILE.translationId },
+      { key: 'translationVisible', value: true },
+    ])
+  })
+
   return { resetApplied: true, contractId: MVP_ASSET_CONTRACT_ID }
 }

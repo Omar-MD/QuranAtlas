@@ -1,6 +1,6 @@
 // Source-code scanner for events + imports.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { REPO_ROOT, listSrcFiles } from './scan.mjs';
 
@@ -39,7 +39,8 @@ function lineOf(text, idx) {
 }
 
 export function loadEventsConstant() {
-  const path = `${REPO_ROOT}/src/core/constants.ts`;
+  const path = `${REPO_ROOT}/src/app/events.ts`;
+  if (!existsSync(path)) return new Map();
   const text = readFileSync(path, 'utf8');
   const start = text.indexOf('export const Events');
   if (start < 0) return new Map();

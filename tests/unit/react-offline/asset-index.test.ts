@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { assertDatasetUrl, validateAssetIndexEntry } from '../../../src-react/offline/asset-index'
-import { assertRuntimeDatasetUrl } from '../../../src-react/data/runtime-boundary'
+import { assertDatasetUrl, validateAssetIndexEntry } from '../../../src/offline/asset-index'
+import { assertRuntimeDatasetUrl } from '../../../src/data/runtime-boundary'
 
 describe('React asset index URL boundaries', () => {
   it('accepts same-origin dataset URLs only', () => {

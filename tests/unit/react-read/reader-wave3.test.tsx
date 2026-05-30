@@ -3,24 +3,24 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ReaderRoute } from '../../../src-react/app/routes/read/ReaderRoute'
-import { MushafRoute } from '../../../src-react/app/routes/read/MushafRoute'
-import { ReaderChrome } from '../../../src-react/components/reader/ReaderChrome'
-import { ReaderPageShell } from '../../../src-react/components/reader/ReaderPageShell'
-import { MushafPageViewer } from '../../../src-react/components/reader/MushafPageViewer'
+import { ReaderRoute } from '../../../src/app/routes/read/ReaderRoute'
+import { MushafRoute } from '../../../src/app/routes/read/MushafRoute'
+import { ReaderChrome } from '../../../src/components/reader/ReaderChrome'
+import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
+import { MushafPageViewer } from '../../../src/components/reader/MushafPageViewer'
 import {
   loadMushafPageAsset,
   prepareReactInlineMushafSvg,
   type MushafPageAssetState,
-} from '../../../src-react/packs/mushaf-page-asset'
-import { ReaderVerseSurface } from '../../../src-react/components/reader/ReaderVerseSurface'
-import { VerseNumber } from '../../../src-react/components/reader/VerseNumber'
-import { VerseBlock } from '../../../src-react/components/reader/VerseBlock'
-import { VirtualVerseList } from '../../../src-react/components/reader/VirtualVerseList'
-import { loadReaderSurah, type ReaderCorpusState } from '../../../src-react/data/reader-corpus'
-import { resolveTranslationFor } from '../../../src-react/data/verse-aliases'
-import { openReactDb } from '../../../src-react/storage/db'
-import { getLocalDayKey } from '../../../src-react/continuity/wird/progress'
+} from '../../../src/packs/mushaf-page-asset'
+import { ReaderVerseSurface } from '../../../src/components/reader/ReaderVerseSurface'
+import { VerseNumber } from '../../../src/components/reader/VerseNumber'
+import { VerseBlock } from '../../../src/components/reader/VerseBlock'
+import { VirtualVerseList } from '../../../src/components/reader/VirtualVerseList'
+import { loadReaderSurah, type ReaderCorpusState } from '../../../src/data/reader-corpus'
+import { resolveTranslationFor } from '../../../src/data/verse-aliases'
+import { openReactDb } from '../../../src/storage/db'
+import { getLocalDayKey } from '../../../src/continuity/wird/progress'
 
 function jsonResponse(payload: unknown, init: { ok?: boolean; status?: number } = {}) {
   return {
@@ -221,7 +221,7 @@ function mushafFetchFixture() {
   })
 }
 
-describe('React reader parity', () => {
+describe('React reader coverage', () => {
   function setWindowScrollY(value: number) {
     Object.defineProperty(window, 'scrollY', { configurable: true, value })
     Object.defineProperty(document.documentElement, 'scrollTop', { configurable: true, value })
@@ -285,7 +285,7 @@ describe('React reader parity', () => {
       arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
       translation: 'All praise be to Allah, Lord of all realms,',
     })
-    expect(result.verses.map((verse) => verse.translation).join(' ')).not.toMatch(/React preview|Verse text unavailable/i)
+    expect(result.verses.map((verse) => verse.translation).join(' ')).not.toMatch(/Verse text unavailable/i)
   })
 
   it('returns an explicit unavailable state when required Quran text is missing', async () => {
@@ -390,7 +390,7 @@ describe('React reader parity', () => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps React verse text, footnotes, dividers, and scrolling aligned with the Svelte reader surface', () => {
+  it('keeps React verse text, footnotes, dividers, and scrolling aligned with the reader surface', () => {
     const verses = Array.from({ length: 45 }, (_, index) => {
       const verse = index + 1
       return {
@@ -447,7 +447,7 @@ describe('React reader parity', () => {
     expect(container.querySelector('[data-reader-footnote-panel="true"]')).toBe(note)
   })
 
-  it('renders Svelte-style previous and next surah quick navigation controls', () => {
+  it('renders current product previous and next surah quick navigation controls', () => {
     const corpus: ReaderCorpusState = {
       status: 'ready',
       footnotes: {},
@@ -522,7 +522,7 @@ describe('React reader parity', () => {
     const verse = screen.getByTestId('verse-1:1')
     const verseNumber = screen.getByRole('button', { name: 'Verse 1' })
     expect(verse).toHaveAttribute('data-bookmarked', 'true')
-    expect(verse).toHaveClass('qa-verse--bookmarked-glyph')
+    expect(verse).toHaveClass('qar-reader-verse--bookmarked')
     expect(verse.querySelector('.qar-reader-verse-head')).toContainElement(verseNumber)
     expect(verse.querySelector('.qar-reader-verse-body .qar-reader-verse-arabic')).toBeInTheDocument()
     expect(verseNumber).toHaveAttribute('aria-pressed', 'true')
@@ -574,13 +574,11 @@ describe('React reader parity', () => {
     vi.advanceTimersByTime(0)
     expect(verse).toHaveAttribute('data-bookmark-pulse', 'true')
     expect(verse).toHaveClass('qar-reader-verse--pulse')
-    expect(verse).toHaveClass('qa-verse--pulse')
 
     vi.advanceTimersByTime(1000)
 
     expect(verse).not.toHaveAttribute('data-bookmark-pulse')
     expect(verse).not.toHaveClass('qar-reader-verse--pulse')
-    expect(verse).not.toHaveClass('qa-verse--pulse')
     vi.useRealTimers()
   })
 
@@ -626,18 +624,17 @@ describe('React reader parity', () => {
     vi.advanceTimersByTime(0)
     expect(verse).not.toHaveAttribute('data-bookmark-pulse')
     expect(verse).not.toHaveClass('qar-reader-verse--pulse')
-    expect(verse).not.toHaveClass('qa-verse--pulse')
     vi.useRealTimers()
   })
 
-  it('keeps React bookmarked verse styling aligned with Svelte theme-aware bookmark markers', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src-react/design-system/index.css'), 'utf8')
-    const tokens = readFileSync(resolve(process.cwd(), 'src-react/design-system/tokens/semantic.css'), 'utf8')
+  it('keeps React bookmarked verse styling aligned with theme-aware bookmark markers', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/design-system/index.css'), 'utf8')
+    const tokens = readFileSync(resolve(process.cwd(), 'src/design-system/tokens/semantic.css'), 'utf8')
 
     expect(tokens).toContain('--qa-react-bookmark-accent: var(--qa-react-accent);')
     expect(tokens).toContain('--qa-react-bookmark-pulse-bg: color-mix(in srgb, var(--qa-react-bookmark-accent) 22%, transparent);')
     expect(tokens).toContain('--qa-react-bookmark-pulse-edge: color-mix(in srgb, var(--qa-react-bookmark-accent) 72%, transparent);')
-    expect(css).toContain('.qa-verse--bookmarked-glyph')
+    expect(css).toContain('.qar-reader-verse--bookmarked')
     expect(css).toContain('color: var(--qa-react-bookmark-accent, var(--qa-react-accent)) !important;')
     expect(css).toContain('18% {')
     expect(css).toContain('background-color: var(--qa-react-bookmark-pulse-bg, color-mix(in srgb, var(--qa-react-bookmark-accent, var(--qa-react-accent)) 22%, transparent));')
@@ -730,7 +727,7 @@ describe('React reader parity', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders Svelte-style Mushaf chrome without the React mode tabs on the page', () => {
+  it('renders current product Mushaf chrome without the React mode tabs on the page', () => {
     window.location.hash = '#/m/1'
 
     render(<MushafRoute page={1} assetState="missing" />)
@@ -759,11 +756,11 @@ describe('React reader parity', () => {
     expect(safe.markup).toContain('var(--qa-react-mushaf-ground)')
     expect(safe.viewBoxText).toBe('0 0 120 180')
 
-    const svelteTokenized = prepareReactInlineMushafSvg('<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="var(--qa-mushaf-ground)"/><path d="M10 10h100v160H10z" fill="var(--qa-mushaf-ink)"/></svg>')
-    expect(svelteTokenized.markup).toContain('var(--qa-react-mushaf-ground)')
-    expect(svelteTokenized.markup).toContain('var(--qa-react-mushaf-ink)')
-    expect(svelteTokenized.markup).not.toContain('var(--qa-mushaf-ground)')
-    expect(svelteTokenized.markup).not.toContain('var(--qa-mushaf-ink)')
+    const legacyTokenized = prepareReactInlineMushafSvg('<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="var(--qa-mushaf-ground)"/><path d="M10 10h100v160H10z" fill="var(--qa-mushaf-ink)"/></svg>')
+    expect(legacyTokenized.markup).toContain('var(--qa-react-mushaf-ground)')
+    expect(legacyTokenized.markup).toContain('var(--qa-react-mushaf-ink)')
+    expect(legacyTokenized.markup).not.toContain('var(--qa-mushaf-ground)')
+    expect(legacyTokenized.markup).not.toContain('var(--qa-mushaf-ink)')
 
     const quranWsPage = prepareReactInlineMushafSvg('<svg viewBox="0 0 900 1379.25" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="1379.25" fill="var(--qa-mushaf-ground)"/></svg>')
     expect(quranWsPage.markup).toContain('viewBox="60 60 790 1270"')

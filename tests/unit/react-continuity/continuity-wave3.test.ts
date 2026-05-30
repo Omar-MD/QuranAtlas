@@ -1,12 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { loadLaunchRouteFromDb, resolveLaunchRoute, shouldPersistLastSurface, useLaunchRestore } from '../../../src-react/continuity/launch-restore'
-import { BOOKMARKS_TOPIC, broadcastBookmarkChange, createBookmarkSyncMessage } from '../../../src-react/continuity/bookmarks/sync'
-import { deleteBookmark, listBookmarks, toggleBookmark } from '../../../src-react/continuity/bookmarks/store'
-import { useBookmarks } from '../../../src-react/continuity/bookmarks/use-bookmarks'
-import { closeReactDb, openReactDb } from '../../../src-react/storage/db'
-import { QURAN_ATLAS_DB_NAME } from '../../../src-react/storage/schema'
+import { loadLaunchRouteFromDb, resolveLaunchRoute, shouldPersistLastSurface, useLaunchRestore } from '../../../src/continuity/launch-restore'
+import { BOOKMARKS_TOPIC, broadcastBookmarkChange, createBookmarkSyncMessage } from '../../../src/continuity/bookmarks/sync'
+import { deleteBookmark, listBookmarks, toggleBookmark } from '../../../src/continuity/bookmarks/store'
+import { useBookmarks } from '../../../src/continuity/bookmarks/use-bookmarks'
+import { closeReactDb, openReactDb } from '../../../src/storage/db'
+import { QURAN_ATLAS_DB_NAME } from '../../../src/storage/schema'
 
 async function resetReactDb() {
   closeReactDb()
@@ -18,7 +18,7 @@ async function resetReactDb() {
   })
 }
 
-describe('React continuity parity', () => {
+describe('React continuity coverage', () => {
   it('ignores legacy onboarding state and restores reader surfaces directly', () => {
     expect(resolveLaunchRoute({ onboardingComplete: false, lastSurface: '#/s/2', currentPosition: { surah: 3, verse: 4 } })).toBe('#/s/2')
   })

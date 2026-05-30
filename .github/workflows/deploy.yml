@@ -52,10 +52,9 @@ jobs:
         with:
           node-version: '22'
 
-      # Use pnpm dlx directly instead of cloudflare/wrangler-action, which is
-      # still on Node 20 (no v4 released as of 2026-04-20). Direct invocation
-      # keeps us on bumped action majors everywhere and uses the latest
-      # wrangler each time — Cloudflare ships wrangler updates frequently.
+      - name: Install deploy dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Deploy to Cloudflare Pages
         id: deploy
         env:
@@ -63,7 +62,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -o pipefail
-          pnpm dlx wrangler@latest pages deploy dist \
+          pnpm exec wrangler pages deploy dist \
             --project-name=quranatlas \
             --branch="${TARGET_BRANCH}" \
             --commit-hash="${TARGET_SHA}" \

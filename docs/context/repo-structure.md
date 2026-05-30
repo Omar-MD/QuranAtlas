@@ -1,157 +1,97 @@
 # Repo Structure
 
-This document explains how the repository is laid out and which directories are the source of truth for each concern.
+Current QuranAtlas is a React-only Vite PWA. This document names the source-of-truth directories for agentic development.
 
-## Top level
+## Top Level
 
 ```text
 .
-├── .agents/           Repo-local Codex skills
-├── .storybook/        React Storybook configuration during dual-build
-├── .github/           CI workflows and GitHub automation
-├── data/              Build-only source data, taxonomy, and source catalog
-├── docs/              Context docs, workflow docs, and generated inventories
-├── patches/           Package-manager patches
-├── public/            Static assets copied into builds
-├── scripts/           Build, dataset, and docs scripts
-├── shared/            Framework-neutral contracts shared by Svelte, React, and scripts
-├── src/               Application source
-├── src-react/         Isolated future React app source during dual-build
-├── tests/             Unit, e2e, and fixtures
-├── dist/              Built app output
-├── dist-react/        Proof-only React build output during dual-build
-├── storybook-static-react/ Generated React Storybook output
-├── test-output/       Playwright output and traces
-└── node_modules/      Installed dependencies
+├── .agents/        Repo-local Codex workflows and specialist skills
+├── .github/        CI, setup action, and deploy workflows
+├── .storybook/     React Storybook configuration
+├── data/           Build-only source data and catalogs
+├── docs/           Current-state architecture, surface, data, and workflow docs
+├── public/         Static runtime assets copied into the app artifact
+├── scripts/        Dataset, docs, checks, and build-support scripts
+├── shared/         Framework-neutral contracts shared by app and scripts
+├── src/            React application source
+├── tests/          Vitest, Playwright, fixtures, and scoped AGENTS files
+├── dist/           Generated production app output
+├── storybook-static/ Generated Storybook output
+└── test-output/    Generated Playwright output and traces
 ```
 
-## Source of truth by area
+Generated directories are not authoritative for behavior: `dist/`, `storybook-static/`, `test-output/`, and `node_modules/`.
 
-### `src/`
+## `src/`
 
-Application code lives here.
+React app source lives here.
 
-- `src/core/`: cross-cutting runtime primitives such as router, db, events, constants, and service-worker route definitions
-- `src/data/`: runtime dataset access, source-index access, aliases, and offline dataset helpers
-- `src/packs/`: install-before-activate pack policy, riwayah package resolution, and source-asset availability contracts
-- `src/continuity/`: launch restore, saved-position validation, and reader continuity state such as bookmarks
-- `src/metadata/`: optional metadata adapters that preserve reader behavior across available, missing, stale, and offline states
-- `src/styles/`: single-entry global design system rooted at `src/styles/index.css`
-- `src/styles/tokens/`: primitive and semantic design tokens
-- `src/styles/patterns/`: reusable shared patterns such as sheets, modals, toasts, and form controls
-- `src/styles/surfaces/`: component-cluster and surface-owned styles
-- `src/<surface>/`: user-visible surfaces and feature modules
+- `src/app/`: app entry, top-level router, route containers, and providers.
+- `src/components/ui/`: owned UI primitive layer. Direct Radix imports are allowed only here.
+- `src/components/reader/`: Verse and Mushaf reader presentation, reader chrome, interactions, and stories.
+- `src/components/navigation/`: nav drawer, Surah/Juz/Hizb lists, bookmarks UI, and shortcuts.
+- `src/components/settings/`: settings shell, Verse/Mushaf settings, asset inventory, and settings stories.
+- `src/components/launch/`: launch splash presentation.
+- `src/design-system/`: semantic tokens, Tailwind theme, component registry, recipes, design-system docs, and global CSS entry.
+- `src/storage/`: Dexie database, schema, settings writes, clear-data behavior, and storage error contracts.
+- `src/continuity/`: last surface, current position, bookmarks, recent Surahs, Daily Wird, and launch restore helpers.
+- `src/data/`: runtime dataset boundaries and reader corpus loaders for `/dataset/**`.
+- `src/packs/`: Mushaf page indexes, asset paths, cache planning, and install-on-demand helpers.
+- `src/offline/`: Cache Storage plans, PWA/service-worker message contracts, quota, and offline UI state.
+- `src/metadata/`: optional knowledge/search metadata adapters.
+- `src/search/`: deferred search schema, index client, aliases, and query helpers.
+- `src/launch/`: asset-contract reset logic.
 
-Surface directories are the primary unit of app behavior. Their deeper behavior and ownership rules are documented in `docs/context/surfaces/*.md`.
+## `docs/`
 
-### `src-react/`
+Docs are current-state context, not progress logs.
 
-React production-candidate app code lives here.
+- `docs/context/architecture.md`: React app architecture and runtime boundaries.
+- `docs/context/repo-structure.md`: this directory ownership guide.
+- `docs/context/data-model.md`: IndexedDB stores, runtime dataset shapes, and source-of-truth ownership.
+- `docs/context/source-data-flow.md`: build-only source data to runtime dataset flow.
+- `docs/context/style-map.md`: UI component ownership, style source, and proof surface.
+- `docs/context/surfaces/*.md`: surface dossiers for read, navigate, configure, onboard, and infra.
+- `docs/ui-references/`: committed component reference images and intent notes for creative UI work.
 
-- `src-react/`: React app tree. It must not import Svelte app modules under `src/**`.
-- `src-react/components/ui/`: owned React UI primitives and Radix-backed behavior wrappers. Feature code imports from this barrel instead of importing Radix directly.
-- `src-react/design-system/`: React-only token, Tailwind theme, registry, recipe, and design-system docs.
-- `src-react/design-system/registry/`: machine-readable component registry, schema, and registry maintenance notes.
-- `src-react/storage/`: Dexie mirror of the existing `quran-atlas` IndexedDB v7 stores plus React-only writer facades.
-- `src-react/offline/`: React-only asset-pack status, Cache Storage planning, quota, UI-state, and service-worker message contracts.
-- `src-react/data/`: React runtime dataset URL boundary helpers for same-origin `/dataset/**` access.
-- `src-react/metadata/`: React reader-attached metadata adapters for optional knowledge and search integration.
-- `src-react/search/`: React search shard schema, query, alias, and pack helpers for deferred full-text search work.
-- `src-react/continuity/`: React launch restore, current-position, bookmarks, and Daily Wird helpers against the existing v7 stores.
-- `src-react/packs/`: React-only pack contracts, including edition-aware Mushaf install-on-demand helpers.
-- React tests remain under `tests/unit/**` and `tests/e2e/**`, not under `src-react/test/`.
-- React builds write to `dist-react/`, a proof output that is not a deploy artifact until the production cutover changes build routing.
+Never hand-edit auto-generated fence blocks. Run `pnpm run docs` to regenerate them.
 
-### `shared/`
+## `data/` And `public/`
 
-Framework-neutral TypeScript and JSON contracts live here. Code under
-`shared/` may be imported by both `src/**` and `src-react/**`, and build scripts
-may read JSON contracts directly when they need runtime/data parity. The
-directory is included in both Svelte and React lint/type gates.
+- `data/catalog/`: QuranAtlas-owned source catalog, providers, licenses, and verification rules.
+- `data/normalized/`: committed normalized build inputs.
+- `data/taxonomy/`: curated taxonomy inputs for generated knowledge lanes.
+- `public/dataset/`: generated runtime dataset served same-origin.
+- `public/fonts/`: UI and Quran fonts.
+- `public/icons/`: app icons, maskable icons, and PWA assets.
+- `public/wird-notification-sw.js`: small helper imported by the generated service worker for Daily Wird notification clicks.
+- `public/_headers`: Cloudflare Pages headers and CSP.
 
-### `.storybook/`
+Rule: `data/` is build-facing; `public/` is runtime-facing.
 
-React Storybook configuration lives here. Stories are sourced from
-`src-react/**` only, and Storybook output is proof evidence, not the visual
-source of truth.
+## `scripts/`
 
-### `data/`
+- `scripts/data/`: catalog validation, source fetching, normalization, dataset build, Mushaf page import/build, aliases, and inventory.
+- `scripts/docs/`: generated inventories, module graph, feature map, and cite checks.
+- `scripts/check-*.mjs`: deterministic static gates used by `pnpm run check` and CI.
 
-Build-only source data. Nothing here is read directly by the shipped app.
+Do not add one-off committed scripts. Use `.scratch/` for throwaway investigation.
 
-- `data/catalog/`: QuranAtlas-owned source catalog, license metadata, authority records, verification rules, and fetch contracts
-- `data/normalized/`: committed normalized source files used by dataset builds
-- `data/taxonomy/`: curated taxonomies for build-time enrichment lanes (knowledge themes in Phase 01)
+## `tests/`
 
-For the full data pipeline, source formats, normalization rules, and build/runtime boundaries, see `docs/context/source-data-flow.md`.
+- `tests/unit/`: Vitest suites. React component/unit tests use `tests/unit/react-*`.
+- `tests/e2e/`: React Playwright specs grouped by surface.
+- `tests/e2e/fixtures/`: typed browser-state, storage, route, and offline helpers.
+- `tests/fixtures/`: shared non-browser fixtures.
 
-### `public/`
+Follow `tests/unit/AGENTS.md` or `tests/e2e/AGENTS.md` before changing tests when the user explicitly asks for test coverage.
 
-Static assets that ship as part of the app artifact.
+## Navigation Rules
 
-- `public/dataset/`: runtime dataset emitted by dataset builders (`build-dataset` + `build-knowledge-dataset`)
-- `public/fonts/`: Quran and UI fonts
-- `public/icons/`: app icons and related assets
-
-Rule: `public/` is runtime-facing. `data/` is build-facing.
-
-### `scripts/`
-
-Repository automation and maintenance scripts.
-
-- `scripts/data/`: dataset builders, source fetch, source catalog validation, verse-alias derivation, translation-mapping checks
-- `scripts/docs/`: generated context-doc inventories and checks
-
-If a file under `docs/` is marked as auto-generated, `scripts/docs/` owns it.
-
-### `docs/`
-
-Load-bearing documentation about the current system.
-
-- `docs/context/`: architecture, data model, source-data flow, surface dossiers, generated indexes
-- `docs/context/style-map.md`: component-to-source, style, reference, and proof map for UI work
-- `docs/ui-references/`: committed component reference images and intent notes for creative UI work
-- `.agents/skills/`: repo-local engineering workflows, including surface clustering and verification guidance
-
-Use the docs this way:
-
-- `architecture.md`: cross-cutting app design and boot/runtime boundaries
-- `data-model.md`: store ownership and read-only dataset invariants
-- `source-data-flow.md`: source formats, transformations, dataset build, and runtime dataset loading
-- `surfaces/*.md`: behavior and ownership by user-visible surface
-
-### `tests/`
-
-Verification code and fixtures.
-
-- `tests/unit/`: Vitest and jsdom tests
-- `tests/e2e/`: Playwright journey specs
-- `tests/fixtures/`: pinned comparison data and external reference fixtures
-
-### Generated and non-authoritative directories
-
-These directories are outputs, not places to hand-maintain system behavior:
-
-- `dist/`: built application output
-- `dist-react/`: proof-only React build output during dual-build. It is not a deploy artifact until an approved cutover plan changes production routing.
-- `storybook-static-react/`: generated React Storybook output, not committed and not deployed.
-- `test-output/`: Playwright reports and traces
-- `node_modules/`: installed packages
-
-## Practical navigation
-
-When trying to understand the repo:
-
-1. Start with `docs/context/architecture.md` for runtime shape.
-2. Read `docs/context/repo-structure.md` for directory ownership.
-3. Read `docs/context/source-data-flow.md` for source-data and dataset build flow.
-4. Follow `docs/context/feature-map.md` into the relevant `docs/context/surfaces/*.md`.
-5. Use `docs/context/style-map.md` when the task is visual or selector-related.
-6. Open the owning `src/<surface>/` directory once you know which surface owns the behavior.
-
-## Quick rules
-
-- `src/` and `docs/context/` are the primary human-maintained source of truth for app behavior; `docs/ui-references/` is the committed visual-intent source of truth for creative UI component work.
-- `data/catalog/`, `data/normalized/`, and `data/taxonomy/` are the primary human-maintained source of truth for build inputs.
-- `public/dataset/` is generated runtime output, even though it is committed.
-- `dist/`, `test-output/`, and `node_modules/` are never the place to understand intended behavior.
+1. Start with `docs/context/architecture.md`.
+2. Use this file for directory ownership.
+3. Open the owning surface dossier in `docs/context/surfaces/`.
+4. Use `docs/context/style-map.md` for UI or visual work.
+5. Use `docs/context/data-model.md` and `docs/context/source-data-flow.md` for storage or dataset changes.
+6. Then edit the owning `src/**` files.

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const modulePath = fileURLToPath(import.meta.url).replace(/^\/@fs\//, '/')
 const repoRoot = resolve(dirname(modulePath), '..')
-const allowlist = JSON.parse(readFileSync(join(repoRoot, 'src-react/design-system/docs/measured-layout-allowlist.json'), 'utf8'))
+const allowlist = JSON.parse(readFileSync(join(repoRoot, 'src/design-system/docs/measured-layout-allowlist.json'), 'utf8'))
 const allowedLiteralCssFiles = new Set(allowlist.allowedLiteralCssFiles)
 const allowedArbitraryUtilities = new Set(allowlist.allowedArbitraryUtilities.map((entry) => entry.className))
 const checkedExtensions = new Set(['.ts', '.tsx', '.css'])
@@ -56,7 +56,7 @@ export function checkReactDesignText(repoRelativePath, text) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const failures = []
-  for (const file of await walk(join(repoRoot, 'src-react'))) {
+  for (const file of await walk(join(repoRoot, 'src'))) {
     const repoRelativePath = relative(repoRoot, file)
     failures.push(...checkReactDesignText(repoRelativePath, readFileSync(file, 'utf8')))
   }

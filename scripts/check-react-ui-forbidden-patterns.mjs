@@ -18,19 +18,19 @@ async function walk(dir) {
 }
 
 export function checkReactUiForbiddenPatternText(repoRelativePath, text) {
-  if (repoRelativePath.startsWith('src-react/components/ui/')) return []
+  if (repoRelativePath.startsWith('src/components/ui/')) return []
   if (repoRelativePath.endsWith('.stories.tsx')) return []
   const failures = []
   for (const tag of rawControls) {
     const pattern = new RegExp(`<${tag}(?:\\s|>|/)`, 'g')
-    if (pattern.test(text)) failures.push(`${repoRelativePath} uses raw <${tag}>; use src-react/components/ui.`)
+    if (pattern.test(text)) failures.push(`${repoRelativePath} uses raw <${tag}>; use src/components/ui.`)
   }
   return failures
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const failures = []
-  for (const file of await walk(join(repoRoot, 'src-react'))) {
+  for (const file of await walk(join(repoRoot, 'src'))) {
     const repoRelativePath = relative(repoRoot, file)
     failures.push(...checkReactUiForbiddenPatternText(repoRelativePath, readFileSync(file, 'utf8')))
   }

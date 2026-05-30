@@ -1,194 +1,88 @@
 # Architecture
 
-One-page orientation for anyone (or any agent) walking into this codebase cold. Covers the stack, the boot flow, the three cross-cutting primitives (router, event bus, IDB), and the patterns every surface follows.
+QuranAtlas is a React-only Vite PWA focused on a Reader First Quran experience.
 
-## Stack
+## Runtime Shape
 
-- **Svelte 5 (runes) + TypeScript + Vite** — the app root is `src/App.svelte` mounted from `src/app.ts` into `#app`. Reactivity is built on Svelte 5 runes (`$state`, `$derived`, `$effect`); no stores. TS config is `strict: true`. `svelte-check` runs in CI. No JSX.
-- **Reader First runtime domains** — `src/packs/**`, `src/continuity/**`, and `src/metadata/**` own shared Reader First policy that multiple surfaces consume. Domain/data modules must not import user-facing surfaces; surfaces compose those domain helpers instead.
-- **Runes as the state primitive** — application state lives in `src/<surface>/state*.svelte.ts` modules colocated with their owning surface dir (see `module-graph.md`). Components read the rune object directly and render reactively; feature modules write to it. State modules have zero imports and zero side effects — pure in-memory containers.
-- **CSS design system** — all CSS lives in `src/styles/`. `src/styles/index.css` is the single global style entry and declares the `@layer` cascade (`reset, tokens, base, animations, utilities, surfaces, overrides`). Tokens are two-tier: primitive (`src/styles/tokens/primitives.css`, prefixed `--c-`, `--s-`, `--r-`, `--ff-`, `--fs-`, `--lh-`, `--ls-`, `--fw-`, `--sh-`, `--dur-`, `--ease-`, `--zp-`, `--bp-`, `--tp-`, `--fp-`, `--blur-`) → semantic (`src/styles/tokens/semantic.css`, prefixed `--qa-*`). Shared reusable UI patterns live under `src/styles/patterns/**`. Component-cluster and surface styles live under `src/styles/surfaces/**`. The refactor keeps moved pattern and surface rules in `@layer surfaces`. Theme strategy: `:root` = light default, `html[data-theme="sepia"|"dark"]` override only what differs. Class grammar is `qa-<surface>-<part>` (e.g. `qa-review-card-chip`). Motion tokens composite into `--qa-transition-{fast,base,slow}` values (`"<dur> <ease>"`) so surfaces write `transition: color var(--qa-transition-base);`.
-  - **Token-only discipline.** Surface CSS references semantic `--qa-*` tokens for every design decision. No hardcoded hex, no literal `border-radius: 12px`, no raw `0.2s ease`. Primitives never consumed outside `semantic.css` (enforced by stylelint). Shared patterns live in `src/styles/patterns/**`, surface CSS lives in `src/styles/surfaces/**`, and `.svelte` files never contain `<style>` blocks (enforced by `scripts/check-no-svelte-style.mjs`).
-  - **Lint gates.** `scripts/check-theme-parity.mjs` fails if a theme override declares a token missing from `:root`. `scripts/check-token-usage.mjs` fails on any unresolved `var(--qa-*)` reference. `scripts/check-at-layer.mjs` fails if any CSS file outside `reset.css`/`base.css`/`index.css` has rules outside a declared `@layer`. `scripts/check-no-svelte-style.mjs` fails if any `.svelte` file contains a `<style>` block. All four run inside `pnpm run check`. `stylelint` handles selector grammar + custom-property prefixes via `.stylelintrc.json`.
-- **Style discovery** — when you need the owner of a selector or component look, start from the relevant surface dossier in `docs/context/surfaces/*.md`, then use `docs/context/style-map.md` to jump from component to source file, CSS partial, visual reference, and proof coverage.
-- **IndexedDB for all persistence** — DB name `quran-atlas`, version 7, 4 active stores (see `data-model.md`). Every IDB access routes through `src/core/db.ts`. Store record shapes are declared as TS `interface`s re-exported via `StoreRecords` so the `put()` validator and callers share the same compile-time contract.
-- **Mitt for cross-module communication** — tiny pub/sub (`src/core/events.ts`). Event names centralised in `src/core/constants.ts::Events`. Payload typedefs live beside the enum.
-- **Service worker for offline** — `src/infra/service-worker/sw.js` + Workbox; the Quran corpus is cached in `CACHE_DATASET` and surahs load from cache first. Dataset downloads are gated by manifest membership, build-time validation, and byte planning, not runtime SHA verification, and the SW plus `src/infra/offline/` helpers stay vanilla JS by design. The current MVP asset UI is read-only inventory for the default reader profile.
-- **Testing** — Vitest + jsdom + `fake-indexeddb/auto` for units; Playwright journey specs (A–I) for E2E. Default to unit tests; use e2e only for browser-only proof. See `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md`.
+- `index.html` provides `#react-root`.
+- `src/app/main.tsx` creates the React root and renders `src/app/App.tsx`.
+- `src/app/App.tsx` owns hash routing, launch restore, reader/settings overlay orchestration, and top-level route selection.
+- Route parsing lives in `src/app/router/routes.ts`.
+- Providers live in `src/app/providers/AppProviders.tsx`.
 
-## Boot flow (`src/app.ts` → `src/App.svelte` → `src/app-bootstrap.ts`)
+The app uses browser hash routes so static hosting on Cloudflare Pages can serve the same `index.html` for every runtime route.
 
-Vite's entry is `src/app.ts`, which imports `App.svelte` and calls `mount(App, { target: #app })`. Every subsequent step lives inside `App.svelte` and the bootstrap helper it calls.
+## Routes
 
-1. `App.svelte` mounts. Its `onMount` registers an `onRouteChange` handler that receives the resolved Svelte route component and mounts it imperatively into `#main-content` (re-using Svelte's `mount()`/`unmount()` APIs so route params + hook props are passed as component props).
-2. Persistent overlays are declared in `App.svelte`'s markup once for active reader-first chrome (`QuotaBanner`, `SaveFailureToast`, `UpdateBanner`, `ClearDataConfirm`) and lazy-mounted via bridges for route-adjacent overlays (`Panel`, `NavDrawer`).
-3. `initBootstrap()` from `src/app-bootstrap.ts` runs after the route handler is in place. It:
-   - Drains any partial `bootCleanups` from a previous call.
-   - `openDB()` — opens/creates the IDB (`onupgradeneeded` creates stores + indexes).
-   - `initSafetySync()` — must run immediately after `openDB()` so the `DB_VERSION_CHANGE` listener is registered before any versionchange can fire (from another tab or E2E suppress hatch). If this runs later, a `suppressNextVersionChange()` call can leak its flag into a later real versionchange and silently suppress the reload banner.
-   - `initTheme()` + `initFontSize()` — apply persisted theme/font *before* router dispatch so there's no flash.
-   - `initRiwayah()` — applies the default MVP riwayah (`qaloon`) and sets `data-riwayah` on `<html>` so font-family + line-height CSS rules fire before the reader mounts. Runs after `initFontSize()` and before `initReadingTypography()` — typography needs the active riwayah to clamp its line-height floor correctly. Unsupported saved Hafs/Warsh settings are cleared by the one-time asset-contract reset before launch routing.
-   - Registers route handlers (see below), then calls `router.init()` to dispatch the current hash.
-   - Initializes reader keyboard actions (`initReaderActions`).
-   - Wires global subscribers: `NAVIGATION_NAVIGATE` → router.
-   - Registers the service worker (production only), captures the PWA install prompt, and restores activation state.
-4. `App.svelte` keeps two cross-cutting `$effect`s:
-   - Watches `reader.currentSurahNum`; when it changes, calls `refreshForSurah()` to re-decorate indicators and updates `settings.recentSurahs` (writes the store directly — recent-surahs is the single feature that owns that key).
+| Hash | Owner | Purpose |
+| --- | --- | --- |
+| `#/s/:surah` | `src/app/routes/read/ReaderRoute.tsx` | Verse reader at Surah start |
+| `#/s/:surah/:ayah` | `src/app/routes/read/ReaderRoute.tsx` | Verse reader at a specific ayah |
+| `#/m/:page` | `src/app/routes/read/MushafRoute.tsx` | Mushaf page reader |
+| `#/surahs` | `src/app/routes/navigation/SurahsRoute.tsx` | Standalone Surah directory |
+| `#/bookmarks` | `src/app/routes/navigation/BookmarksRoute.tsx` | Standalone bookmarks view |
+| `#/settings` | `src/app/routes/settings/SettingsRoute.tsx` | Transient settings overlay route |
+| `#/assets` | `src/app/routes/settings/SettingsRoute.tsx` | Compatibility opener for settings/assets inventory |
+| `#/about` | `src/app/routes/settings/AboutRoute.tsx` | About, install, attribution, clear data |
+| `#/onboarding` | `src/app/routes/onboarding/OnboardingRoute.tsx` | Compatibility launch path |
 
-On any boot failure the `catch` block renders a minimal error card with a Retry button that re-calls `initBootstrap()`. Svelte-ported routes are dispatched via `mount()` in `App.svelte`; the remaining vanilla route modules still export `async init(params, hooks)` and are invoked by the router.
+Unsupported hashes render the route-unavailable state in `App.tsx`.
 
-## Router (`src/core/router.ts`)
+## State And Storage
 
-- Pure hash routing; patterns use `:param` placeholders (`#/s/:surah/:ayah`, `#/<layer>/:value`).
-- `register(pattern, loader, hooks)` stores a dynamic import loader. The module is fetched lazily on first match.
-- Each route module exports `async init(params, hooks) → cleanup?`. The returned function (if any) is invoked by the router before the next route mounts.
-- **Param sanitization** — `sanitizeParams()` rejects any value containing HTML tags, `javascript:` / `data:` / `vbscript:` schemes, inline event handlers, `://`, or values >100 chars. Rejected routes hit `ROUTER_ROUTE_ERROR` and show the not-found card.
-- After a successful mount, the router writes `settings.lastSurface` so reload lands back on the same surface. Writes are skipped for `#/onboarding`, `#/settings`, and `#/assets` because launch-restore explicitly rejects those transient or operational targets.
+React component state stays local unless it must survive reloads, cross-route transitions, or offline use.
 
-### Route table
+- Persistent browser state lives in the Dexie database under `src/storage/**`.
+- Store schema constants live in `src/storage/schema.ts`.
+- Settings writes go through `src/storage/settings-writer.ts`.
+- Reader continuity lives under `src/continuity/**`.
+- Bookmarks are owned by `src/continuity/bookmarks/**`.
+- Daily Wird state is stored as a settings key and owned by `src/continuity/wird/**`.
 
-| Pattern | Module | Purpose |
-|---|---|---|
-| `#/s/:surah` | `reader/Reader.svelte` | Surah reader |
-| `#/s/:surah/:ayah` | `reader/Reader.svelte` | Surah reader jumping to verse |
-| `#/m/:page` | `reader/mushaf/MushafReader.svelte` | Mushaf page reader for the active riwayah |
-| `#/surahs` | `surahs/SurahList.svelte` | Surah directory |
-| `#/bookmarks` | `navigate/bookmarks/BookmarksPage.svelte` | Desktop bookmark list |
-| `#/about` | `about/About.svelte` | About page |
-| `#/onboarding` | `onboarding/Onboarding.svelte` | Retired launch path that redirects to the reader |
-| `#/settings` | *(inline stub)* | Opens settings sheet over last surface |
-| `#/assets` | `configure/assets/AssetManagement.svelte` | Read-only inventory for the default reader assets |
+There is no app-wide event bus. Cross-component coordination uses React props/hooks, DOM events for the local settings overlay opener, and focused helpers such as the bookmark sync channel.
 
-Every route above is a Svelte 5 component loaded lazily via dynamic import.
+## Data Boundary
 
-The read surface owns both Verse and Mushaf modes. Verse routes encode surah/ayah; Mushaf routes encode page only and resolve the active riwayah from Settings. Mushaf route canonicalization must go through `router.navigate(..., { replace: true })` so `ROUTER_ROUTE_CHANGE` and `settings.lastSurface` observe the clamped canonical `#/m/:page` hash.
+Runtime data is always same-origin under `/dataset/**`.
 
-### Launch restore
+- `src/data/runtime-boundary.ts` validates runtime dataset URLs.
+- `src/data/reader-corpus.ts` loads Surah text, translation packs, and aliases.
+- `src/data/source-index.ts` loads source/asset indexes for settings inventory.
+- `src/packs/mushaf-page-asset.ts` validates and loads edition-aware Mushaf page assets.
+- Build-only source inputs stay under `data/**` and are never imported by the app.
 
-Empty hash triggers `ROUTER_LAUNCH_RESTORE`. The handler in `app-bootstrap.ts` first applies the one-time MVP asset-contract reset when needed, then walks a cascade:
+The current MVP profile is Qaloon text/font, Qaloon Mushaf pages, and Bridges translation.
 
-1. Valid launchable `settings.lastSurface` set → navigate there (`#/onboarding`, `#/settings`, and `#/assets` are not launchable)
-2. Validated `settings.currentPosition` → `#/s/:surah/:verse`
-3. Otherwise → `#/s/1`
+## UI Architecture
 
-`settings.onboardingComplete` is no longer a launch gate. Legacy `#/onboarding` hashes pass through the same launch restore path without source-choice UI.
+- `src/design-system/index.css` is the global CSS entry.
+- `src/design-system/tokens/**` defines primitive and semantic tokens.
+- `src/design-system/tokens/tailwind-theme.css` maps Tailwind v4 utilities to QuranAtlas semantic tokens.
+- `src/components/ui/**` wraps Radix primitives and exposes app-approved controls.
+- Feature components compose owned primitives and `qar:` Tailwind utilities; they do not import Radix directly.
+- Component registry metadata lives in `src/design-system/registry/component-registry.json`.
 
-The launch reset clears the active IndexedDB stores and matching Cache Storage
-entries before seeding the default Qaloon + Bridges profile. It does not depend
-on whole-database deletion during startup, so a stale peer tab cannot block the
-reader from opening. The explicit Clear All Data confirmation remains the path
-that calls `deleteDB()`.
+Visual work should identify one active component and one active reference source, then verify real rendered states across relevant viewports.
 
-## Event bus (`src/core/events.ts`)
+## PWA And Offline
 
-- `emit(type, payload)` / `on(type, cb)` — `on` returns an unsubscribe fn. Both are typed via the `EventPayloads` map in `core/constants.ts`, so passing the wrong payload shape fails `svelte-check`.
-- **Dev-time enum guard**: `emit()` throws in `import.meta.env.DEV` when called with an event name missing from `Events`. This stops typos.
-- **Handler isolation**: each handler runs inside a try/catch so one broken subscriber can't break a later one. No re-throw.
-- Wildcard listeners via `'*'` are supported (used nowhere at present).
-- `clear(type?)` purges one type or all. Tests rely on per-test `vi.resetModules()` rather than `clear()` because the emitter is module-scoped.
+`vite.config.js` configures `vite-plugin-pwa` with Workbox:
 
-The full event catalog — who emits, who listens, payload shapes, dead events, and dissolved events — lives in `events.md`.
+- app-shell precache id: `quranatlas`
+- runtime dataset cache: `quran-atlas-runtime-dataset-v1`
+- app navigation fallback: `/index.html`
+- notification-click helper: `public/wird-notification-sw.js`
 
-## IndexedDB layer (`src/core/db.ts`)
+Offline specs run only against production preview because service workers are build artifacts. The service worker precaches the shell, fonts, icons, and built assets only; `/dataset/**` is excluded from precache and cached through the runtime CacheFirst route. Generated build validation remains the integrity gate for dataset correctness.
 
-- Four active stores: `settings`, `activationState`, `datasetMeta`, and `bookmarks`. See `data-model.md` for keys, indexes, and record shapes.
-- `put()` validates required fields per-store via an inline `schemas` table before writing; missing fields throw synchronously. The per-store record shapes are TS `interface`s exported as `StoreRecords` — `put<K>(store: K, record: StoreRecords[K])` enforces the contract at compile time.
-- Quota errors emit `DB_QUOTA_EXCEEDED` for the banner module to catch.
-- `onversionchange` closes the connection and emits `DB_VERSION_CHANGE` so `safety/sync.ts` can show the reload banner.
-- A `visibilitychange` listener (attached once) emits `DB_VISIBILITY_VISIBLE` so reader / hub / indicators can re-sync state when the tab comes back.
+## Build And Deploy
 
-During the React dual-build, `src-react/storage/**` may open the same
-`quran-atlas` database with Dexie only as a v7 schema mirror. It declares the
-existing `settings`, `activationState`, `datasetMeta`, and `bookmarks` stores
-without adding stores or bumping the version. React writer facades must preserve
-install-before-activate semantics and avoid persisting rich transient pack state
-into existing v7 stores unless a later migration spec changes the schema.
+`pnpm run build` runs the dataset build and then `vite build`, producing `dist/`. CI uploads that artifact. Lighthouse, Playwright preview/offline checks, and Cloudflare Pages deploy all consume the same artifact; deploy does not rebuild.
 
-## Canonicalization pipeline
+## Agentic Development Rules
 
-Tag labels across all 12 layers go through `core/normalize.ts::canonicalize()`
-before being indexed for filter/query. The pipeline is deterministic:
-
-  raw → trim+collapse → NFKC → strip diacritics/tatweel/zero-width →
-  fold Arabic letter variants → lowercase ASCII → strip apostrophes →
-  hyphens→spaces → alias-resolve via data/aliases.json → canonical
-
-Raw labels are preserved on the mark record for display; canonical keys
-are denormalized onto `_canon.<layer>` array paths for index hits.
-
-The alias map (`src/data/aliases.json`) ships ~30 seed groups covering proper
-nouns and transliteration drift. `excludeFromAliasing` protects Quranic
-rank/quality distinctions (muminin/muslimin/muttaqin etc.) from collapsing
-into the same canonical form.
-
-## Cross-cutting patterns
-
-- **Cleanup-returning initializers** — every `init()` (plus `initBootstrap`) that subscribes to events or touches the DOM returns a cleanup fn. The caller (router, `App.svelte` `onMount`) owns invocation. Svelte components use `onMount` + returned cleanup or `$effect` with a return value; vanilla helpers use an explicit cleanups array.
-- **Bottom sheets over modals** — `.qa-sheet-backdrop` + `.qa-sheet.qa-sheet--bottom` is the standard overlay shape (settings, more, command sheet). Each opener emits `SHEET_OPENED` / `SHEET_CLOSED` with `{ name }`.
-- **Persistent-overlay mount pattern** — Svelte components that are not route components but need to be opened imperatively expose an API through a bridge module (`settings/panel-bridge.ts`, `navigate/nav-drawer-bridge.ts`). Active reader-first overlays mount in `App.svelte`. The bridge module holds a module-level reference set during the component's `onMount`. This pattern avoids circular imports and keeps the imperative open/close API stable across surfaces.
-- **Reader-attached study action** — tafsir, mark/tag, and personal study interactions are not current MVP reader actions. Double-tap, right-click, and keyboard `m` are inert for tafsir UI in the default-assets contract.
-- **Dataset path and active corpus** — the current reader corpus is the default profile: Qalun/Qaloon text and font, Qaloon Mushaf, and Bridges translation. Runtime keys and paths continue to use `qaloon`. `src/data/dataset.ts::getSurah(n)` loads Qaloon text; saved unsupported Hafs/Warsh settings are reset before launch rather than rendered or prompted. `scripts/data/cli.mjs` orchestrates the lane builders: `scripts/data/text/build.mjs` regenerates `surahs.json`, `juz.json`, text asset indexes, `manifest.json`, and `provenance.json`, `scripts/data/knowledge/build.mjs` emits `public/dataset/knowledge/**` shards, `scripts/data/mushaf-pages/build.mjs` emits the Qaloon page pack, and `scripts/data/riwayah-packages/build.mjs` writes the package index before the final manifest refresh. `manifest.json` is an inventory with lane/category/byte metadata. Mushaf page manifests live at `public/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json`; the browser reads same-origin SVG page assets from that tree and never fetches quran.ws at runtime. Run via `pnpm run data -- build`; `pnpm run build` chains that data build into the app bundle.
-- **Translation pipeline** — translation packs ship at `public/dataset/translations/{id}/{NNN}.json`. Source files live at `data/normalized/translations/{id}.json` (outside `public/`, build-only input, never shipped) and are produced by the generic catalog-driven fetcher (`pnpm run data:fetch -- translation:bridges`) and committed so the build stays offline. `dataset.ts::loadTranslationForSurah(id, surahNo)` returns the per-surah pack (verses + footnote map + intro paragraphs); `Reader.svelte` joins it onto rendered verses by `verseKey` and passes the surah-wide footnote map into each `Verse.svelte`. The current committed Bridges pack ships without footnote entries, but the runtime still supports inline `[N]` markers when a future shipped pack includes them. Schema + invariants live in `data-model.md` §Translation packs.
-- **Multi-tab coherence** — `safety/sync.ts` BroadcastChannels same-device bookmark updates and Riwayah switches across tabs; receivers re-read and emit local update events. This is technical infrastructure for open tabs on one device, not user-facing sync, accounts, community, export/import, or shared collections.
-- **Ambient chrome** — dock and pill auto-fade on reader routes, persist elsewhere. Legacy `#/onboarding` redirects through launch and does not expose a wizard.
-- **Viewport zoom lock** — `index.html` viewport meta sets `maximum-scale=1.0, minimum-scale=1.0, user-scalable=no` so navigation never lands on a zoomed-in surface. iOS Safari ignores `user-scalable=no` but honors `maximum-scale=1`; `src/app.ts` adds belt-and-suspenders listeners for `gesturestart`/`gesturechange` (iOS pinch) and `wheel` with `ctrlKey` (macOS Safari pinch + ctrl-scroll zoom). `base.css` sets `touch-action: manipulation` on `body` (kills double-tap zoom; pan/swipe gestures still work via per-surface overrides) and `-webkit-text-size-adjust: 100%` on `html` (iOS no longer auto-resizes text on rotation). Landscape notch handling via `padding-left/right: env(safe-area-inset-left/right)` on `#app-shell` and `.qa-sheet--settings-fs`.
-- **Touch feedback** — `src/core/haptics.ts` wraps the Vibration API with semantic helpers (`tap`, `select`, `toggle`, `warn`); `src/app.ts` registers a single delegated `pointerdown` listener (`capture: true`, `passive: true`) that fires the right helper based on the closest interactive ancestor's role (`switch` → `toggle`, `radio` → `select`, otherwise `tap`). Mouse pointers, disabled controls, and elements marked `data-no-haptic` are skipped. Haptics no-op when `navigator.vibrate` is missing (iOS) or `prefers-reduced-motion` is set. Visual press feedback lives in `base.css` — `-webkit-tap-highlight-color: transparent` globally + a touch-only (`@media (hover: none) and (pointer: coarse)`) `:active { transform: scale(0.96); }` on buttons, role=button/switch/radio/tab, anchors, and `summary`. Range inputs and form controls are excluded so the slider thumb is not double-scaled.
-- **Tests mirror beforeEach pattern** — `fake-indexeddb/auto`, fresh shell DOM, clear `marks` store where state carry-over would flake. `vi.resetModules()` only where needed (not in hub tests — they deliberately depend on state carry-over).
-- **Responsive breakpoints** — three tiers: mobile (<768px), tablet (768–1179px), desktop (≥1180px). Canonical values live in `:root` as `--qa-bp-tablet` / `--qa-bp-desktop` and are duplicated as literals in `@media` queries (CSS cannot read custom properties inside media conditions). Typography uses a two-track system: stepped chrome tokens (`--qa-text-size-ui`, `--qa-text-size-meta`) redefined per breakpoint, and fluid reading tokens (`--qa-text-size-arabic`, `--qa-text-size-translation`) defined once via `clamp()`. User font-size slider multiplies the resulting value via `--qa-font-size-base`, unchanged. Reader on desktop switches to a 2-column Arabic|translation grid using CSS subgrid; when translation is toggled off, `#main-content:has(.qa-hide-translation)` collapses the grid to a single centered column. Chrome surfaces (ambient dock, bottom sheets, command sheet, onboarding) all adapt at the same two breakpoints: dock grows from 38×38 to 42×42 at tablet and becomes a labeled pill at desktop; bottom sheets become a centered modal at tablet (width ~480px) and the mark editor widens to 640px with a 2-column body grid at desktop; command sheet caps at 640px on desktop; onboarding adds a `max-height: 500px` landscape guard that drops the 72vh min-height when the viewport is short.
-
-## Source-To-App Dataset Flow
-
-The text-data pipeline is intentionally split between build-only source state and runtime dataset state. Catalog policy lives under `data/catalog/**`, normalized source inputs live under `data/normalized/**`, curated knowledge taxonomy lives under `data/taxonomy/**`, `scripts/data/cli.mjs` orchestrates the lane-owned builders under `scripts/data/{text,knowledge,manifest,sources}/`, and client code consumes only `/dataset/**` through `src/data/dataset.ts` and `src/data/knowledge-dataset.ts`.
-
-Runtime behavior depends on the built dataset profile, not on what is listed in the catalog. In the current `baseline` build, `indexes/sources.json` can advertise optional sources while `manifest.json` omits their bodies. The manifest now records lane summaries and per-file inventory entries instead of hashes, and the offline/service-worker path uses manifest membership plus strict build-time structural validation rather than a runtime digest chain.
-
-The deep reference for source formats, normalization rules, build transformations, validation boundaries, and the full Mermaid flow diagram is `docs/context/source-data-flow.md`.
-
-## Where NOT to look for logic
-
-- No third-party state library. State lives in `src/<surface>/state.svelte.ts` modules (or `state-<name>.svelte.ts` for surfaces with multiple rune slices) using Svelte 5 `$state` runes (flat objects for simple state, classes for complex state). State modules have zero imports and zero side effects — they are pure in-memory data containers. Cross-surface signalling still goes through the mitt event bus. DOM handles and event-listener refs remain in the feature module that owns them.
-- No CSS-in-JS. All CSS lives under `src/styles/` (entry `index.css`); every surface's CSS sits in `styles/surfaces/<surface>.css`. `.svelte` files carry no `<style>` blocks (enforced by `scripts/check-no-svelte-style.mjs`).
-- No routing library. `src/core/router.ts` is a small hash router that does everything.
-
-## Deploy topology
-
-Three Git branches map to three Cloudflare Pages deployments on a single project (`quranatlas`):
-
-- `main` → production → `quranatlas.org` / `www.quranatlas.org`
-- `staging` → preview → `staging.quranatlas.org`
-- `dev` → preview → `dev.quranatlas.org`
-
-Flow: merge (or direct push to `dev`) triggers `.github/workflows/ci.yml`; on green CI, `.github/workflows/deploy.yml` fires via `workflow_run` and runs `wrangler pages deploy dist --branch=<branch>`. The `dist/` artifact uploaded by CI's `build` job is the exact bundle that ships — deploy never rebuilds. Cloudflare's build container is never invoked; custom domains are bound per branch in the CF dashboard. See `docs/tech-stack.md` §CI/CD for the full job matrix.
-
-## Dual-Build React Preview
-
-During the React rebuild, the shipped app remains the Svelte app under `src/**`.
-React lives under `src-react/**`, builds with `vite.react.config.js`, and writes
-to `dist-react/` through explicit `*:react` scripts. `dist/` remains the only
-deployable artifact until a cutover spec changes production entry routing.
-Neither app tree may import the other; shared runtime code must live in a
-framework-neutral location with typed interfaces and tests.
-
-React UI composition goes through the owned `src-react/components/ui/**` layer.
-Radix primitives are implementation details of that layer and are blocked in
-feature code by `pnpm run check:react:radix`; the component registry under
-`src-react/design-system/registry/**` records approved exports, states, tests,
-accessibility expectations, and visual proof. React offline contracts under
-`src-react/offline/**` and `src-react/packs/**` define Cache Storage plans and
-service-worker messages. The React Vite config also emits an isolated
-proof service worker into `dist-react/`; it does not change the shipped Svelte
-service worker, production cache names, or deploy artifact routing until
-cutover.
-
-The React app now mounts routes for Verse reader, Mushaf reader,
-navigation/bookmarks, settings/assets/about, legacy onboarding redirect, and search through
-`src-react/app/router/routes.ts` and `src-react/app/routes/**`. Reader
-modules under `src-react/components/reader/**`, `src-react/data/**`,
-`src-react/metadata/**`, `src-react/search/**`, and
-`src-react/continuity/**` are production-candidate implementations: they prove route,
-component, storage, alias, metadata, bookmark, and Daily Wird contracts without
-flipping production routing away from Svelte. React launch restore applies the
-MVP asset-contract reset, ignores legacy `onboardingComplete`, and opens or
-restores the reader through the same default Qaloon + Bridges profile as
-Svelte. Reader page turns must not remount and lose transient chrome or
-reading-position state.
+- Prefer current local code and docs over remote assumptions.
+- Keep docs current-state only; no migration notes or progress logs.
+- Use `src/design-system/registry/component-registry.json` and `src/components/ui/**` before adding UI primitives.
+- Keep deterministic checks in `package.json` scripts and CI; avoid one-off committed scripts.
+- Run the smallest verification that proves the change, and treat warnings as failures.

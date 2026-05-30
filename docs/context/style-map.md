@@ -1,62 +1,38 @@
-# UI Style Map
+# Style Map
 
-## Purpose
-
-This map is the quickest route from a visible UI element to its owning source, CSS partial, reference, and proof.
-
-## How To Use This Map
-
-Start with the surface dossier, confirm the source component, then edit the owning CSS partial and run the listed proofs.
+React UI development is owned through `src/design-system/**`, approved primitives in `src/components/ui/**`, and surface components in `src/components/**`.
 
 ## Component Ownership
 
-| Surface | Component | Source | Style partial | Visual reference | Unit tests | E2E tests |
-| --- | --- | --- | --- | --- | --- | --- |
-| `read` | AmbientDock | `src/read/AmbientDock.svelte` | `src/styles/surfaces/read/ambient-dock.css` | Not applicable: no committed single-component reference yet | `tests/unit/read/AmbientDock.test.ts` | `tests/e2e/read/chrome.spec.js` |
-| `read` | AmbientPill | `src/read/AmbientPill.svelte` | `src/styles/surfaces/read/ambient-pill.css` | Not applicable: no committed single-component reference yet | `tests/unit/core/app.test.js` | `tests/e2e/read/chrome.spec.js` |
-| `read` | MarginHeader | `src/read/MarginHeader.svelte` | `src/styles/surfaces/read/margin-header.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/read/MarginHeader-toggle.test.ts` | `tests/e2e/read/chrome.spec.js` |
-| `read` | SurahProgress | `src/read/SurahProgress.svelte` | `src/styles/surfaces/read/surah-progress.css` | Not applicable: no committed single-component reference yet | `tests/unit/read/SurahHeader.test.ts` | `tests/e2e/read/chrome.spec.js` |
-| `read` | Verse row | `src/read/Verse.svelte` | `src/styles/surfaces/read/verse.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/read/Verse.test.ts` | `tests/e2e/read/chrome.spec.js`, `tests/e2e/read/text-sources.spec.js` |
-| `read` | Mushaf page | `src/read/mushaf/MushafPage.svelte` | `src/styles/surfaces/read/mushaf.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/read/mushaf/reader.test.ts` | `tests/e2e/read/chrome.spec.js` |
-| `navigate` | Nav drawer shell/header | `src/navigate/NavDrawer.svelte` | `src/styles/surfaces/navigate/drawer-shell.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/navigate/drawer.test.ts` | `tests/e2e/navigate/drawer.spec.js` |
-| `configure` | SettingsShell | `src/configure/settings/SettingsShell.svelte` | `src/styles/surfaces/configure/settings-shell.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/configure/panel.test.ts` | `tests/e2e/configure/settings.spec.js` |
-| `configure` | VerseSettings | `src/configure/settings/VerseSettings.svelte` | `src/styles/surfaces/configure/settings-shell.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/configure/panel.test.ts` | `tests/e2e/configure/settings.spec.js` |
-| `configure` | MushafSettings | `src/configure/settings/MushafSettings.svelte` | `src/styles/surfaces/configure/settings-shell.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/configure/panel.test.ts` | `tests/e2e/configure/settings.spec.js` |
-| `configure` | ThemeNightControls | `src/configure/settings/ThemeNightControls.svelte` | `src/styles/surfaces/configure/settings-shell.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/configure/night-mode.test.ts` | `tests/e2e/configure/settings.spec.js` |
-| `configure` | NestedAssetPicker | `src/configure/settings/NestedAssetPicker.svelte` | `src/styles/surfaces/configure/settings-shell.css` | Future multiple-profile work; not mounted in current MVP | `tests/unit/configure/panel.test.ts` | `tests/e2e/configure/settings.spec.js` |
-| `configure` | AssetManagement | `src/configure/assets/AssetManagement.svelte` | `src/styles/surfaces/configure/asset-management.css` | Retired with React cutover planning; Svelte visual proof is e2e-only while retained | `tests/unit/configure/panel.test.ts` | `tests/e2e/configure/settings.spec.js` |
-| `onboard` | Launch splash / retired onboarding route | `src/onboard/Onboarding.svelte`, `src/launch/LaunchSplash.svelte` | `src/styles/surfaces/onboard/shell.css` | Not applicable: launch state is covered by e2e proof | Not applicable: e2e-only flow coverage | `tests/e2e/onboard/first-run.spec.js` |
-| `infra` | QuotaBanner | `src/core/quota-banner.svelte` | `src/styles/surfaces/overlays/quota-banner.css` | Not applicable: overlay has no committed component reference yet | Not applicable: durable proof is browser-only today | `tests/e2e/infra/offline.spec.js` |
-| `infra` | UpdateBanner | `src/core/UpdateBanner.svelte` | `src/styles/surfaces/overlays/update-banner.css` | Not applicable: overlay has no committed component reference yet | `tests/unit/infra/safety/sync.test.js` | `tests/e2e/infra/offline.spec.js` |
-| `configure` | NightShift | `src/App.svelte` | `src/styles/surfaces/overlays/night-shift.css` | Not applicable: overlay has no committed component reference yet | `tests/unit/configure/night-mode.test.ts` | `tests/e2e/configure/settings.spec.js` |
+| Surface | Component | Source | Style Source | Proof Surface |
+| --- | --- | --- | --- | --- |
+| read | Reader route | `src/app/routes/read/ReaderRoute.tsx` | `src/design-system/index.css`, reader components | `tests/e2e/read/react-golden.spec.ts` |
+| read | Verse reader surface | `src/components/reader/ReaderVerseSurface.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, reader stories |
+| read | Verse row | `src/components/reader/VerseBlock.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, `tests/e2e/read/react-golden.spec.ts` |
+| read | Mushaf route | `src/app/routes/read/MushafRoute.tsx` | `src/design-system/index.css` | `tests/e2e/read/react-golden.spec.ts` |
+| read | Mushaf page viewer | `src/components/reader/MushafPageViewer.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, visual specs |
+| navigate | Nav drawer | `src/components/navigation/NavDrawer.tsx` | `src/design-system/index.css` | `tests/e2e/navigate/react-golden.spec.ts` |
+| navigate | Surah/Juz/Hizb lists | `src/components/navigation/{SurahList,JuzList,HizbList}.tsx` | `src/design-system/index.css` | navigation stories and golden specs |
+| navigate | Bookmarks list | `src/components/navigation/BookmarksList.tsx` | `src/design-system/index.css` | `tests/unit/react-navigate/**` |
+| configure | Settings shell | `src/components/settings/SettingsShell.tsx` | `src/design-system/index.css` | `tests/e2e/configure/react-golden.spec.ts` |
+| configure | Verse settings | `src/components/settings/VerseSettings.tsx` | `src/design-system/index.css` | settings stories and unit tests |
+| configure | Mushaf settings | `src/components/settings/MushafSettings.tsx` | `src/design-system/index.css` | settings stories and unit tests |
+| configure | About route | `src/app/routes/settings/AboutRoute.tsx` | `src/design-system/index.css` | configure golden specs |
+| onboard | Launch/onboarding | `src/components/launch/LaunchSplash.tsx`, `src/app/routes/onboarding/OnboardingRoute.tsx` | `src/design-system/index.css` | onboarding golden specs |
+| infra | Offline/update affordances | `src/offline/**`, app shell states | `src/design-system/index.css` | `tests/e2e/infra/react-offline.spec.ts` |
 
-## React Production-Candidate Ownership
+## Design-System Rules
 
-React product components use React semantic tokens, Tailwind utilities,
-and owned component classes from `src-react/design-system/**`; they do not use
-Svelte CSS partials. The accepted React route and story states are the active
-implementation reference for new React work.
+- Direct Radix imports are allowed only under `src/components/ui/**`.
+- Feature code imports owned UI primitives from `src/components/ui`.
+- `src/design-system/registry/component-registry.json` must reference real exports, stories, and tests for registered components.
+- `qar:` Tailwind utilities are allowed when they map to semantic tokens.
+- Hardcoded colors, radii, shadows, and motion are rejected unless the design check has an explicit local allowance.
+- Retired legacy class selectors are forbidden in React source.
+- UI work that changes visual behavior must update the owning dossier and registry/docs when ownership changes.
 
-For React UI work, each implementation pass must name
-exactly one active reference source per component, state, and viewport. Where
-React intentionally excludes Svelte UI, such as future Tafsir UI or source
-picker panes, the active reference must be an explicit
-intentional non-carry-over note plus the nearest current React layout
-constraint, not the excluded Svelte component state.
+## Reference Workflow
 
-When a React parity fix changes component styling, expand the relevant React
-ownership row or add a component-level row with the registry id, style API /
-recipe / component variants, Storybook story, visual reference or accepted
-Svelte state, unit/component tests, and browser proof. React style ownership is
-through recipes, variants, owned component classes, tokens, and stories; Svelte
-CSS partials are never React edit targets.
+`DESIGN.md` is the product style guide. For creative or directional visual work, create a committed component reference image and adjacent intent note under `docs/ui-references/<surface>/<component>/`. For narrow polish that preserves the accepted direction, name the existing rendered state used as the active reference.
 
-| Surface | React component | Source | Registry / story | Unit tests | Browser proof |
-| --- | --- | --- | --- | --- | --- |
-| `read` | ReaderChrome mobile margin header | `src-react/components/reader/ReaderChrome.tsx`, `src-react/components/reader/ReaderPageShell.tsx` | `src-react/design-system/registry/component-registry.json`, `src-react/design-system/index.css` | `tests/unit/react-read/reader-wave3.test.tsx` | `tests/e2e/navigate/react-golden.spec.ts` |
-| `read` | Reader route, verse row, Mushaf page, Daily Wird drawer card, Daily Wird ReaderChrome status indicator, live typography, stable bookmark glyphs, page bookmarks, and bookmark pulse | `src-react/app/routes/read/**`, `src-react/components/reader/**`, `src-react/storage/reader-preferences.ts` | `src-react/design-system/registry/component-registry.json`, `src-react/components/reader/reader.stories.tsx`, `src-react/components/navigation/wird/wird.stories.tsx` | `tests/unit/react-read/reader-wave3.test.tsx`, `tests/unit/react-packs/**`, `tests/unit/react-wird/wird-wave3.test.tsx` | `tests/e2e/read/react-golden.spec.ts`, `tests/e2e/react-shell/wave3.spec.ts`, `tests/e2e/react-visual/shell.spec.ts` |
-| `read` | MushafPageViewer | `src-react/components/reader/MushafPageViewer.tsx`, `src-react/app/routes/read/MushafRoute.tsx`, `src-react/packs/mushaf-page-asset.ts` | `mushaf-page-viewer`, `src-react/components/reader/reader.stories.tsx` | `tests/unit/react-read/reader-wave3.test.tsx`, `tests/unit/react-packs/**` | `tests/e2e/read/react-golden.spec.ts` |
-| `read` | ReaderVerseSurface | `src-react/components/reader/ReaderVerseSurface.tsx` | `reader-verse-surface`, `src-react/components/reader/reader.stories.tsx` | `tests/unit/react-read/reader-wave3.test.tsx` | `tests/e2e/read/react-golden.spec.ts` |
-| `navigate` | Drawer, Surah/Juz/Hizb/bookmark lists including grouped previews, Mushaf page rows, swipe-delete, and phone-only full-screen drawer behavior | `src-react/components/navigation/**`, `src-react/app/routes/navigation/**`, `src-react/continuity/bookmarks/**`, `src-react/data/juz-index.ts`, `src-react/data/hizb-index.ts` | `nav-drawer`, `surah-list`, `juz-list`, `hizb-list`, `bookmarks-list`, `src-react/components/navigation/navigation.stories.tsx` | `tests/unit/react-navigate/navigation-wave3.test.tsx`, `tests/unit/react-continuity/continuity-wave3.test.ts` | `tests/e2e/navigate/react-golden.spec.ts`, `tests/e2e/react-shell/wave3.spec.ts` |
-| `configure` | Settings shell with in-place reader overlay, mode-aware controls, inline read-only asset inventory, About, clear-data dialog, launch splash | `src-react/components/settings/**`, `src-react/components/launch/**`, `src-react/app/routes/settings/**`, `src-react/app/routes/onboarding/**`, `src-react/app/settings-overlay-events.ts`, `src-react/storage/clear-data.ts` | `src-react/design-system/registry/component-registry.json`, `src-react/components/settings/settings.stories.tsx` | `tests/unit/react-shell/settings-route.test.tsx`, `tests/unit/react-navigate/navigation-wave3.test.tsx`, `tests/unit/react-shell/about-route.test.tsx`, `tests/unit/react-storage/clear-data.test.ts` | `tests/e2e/configure/react-golden.spec.ts`, `tests/e2e/onboard/react-golden.spec.ts`, `tests/e2e/infra/react-offline.spec.ts`, `tests/e2e/react-shell/wave3.spec.ts` |
-| `search` | Future search prototype utilities; production route is unsupported in the current MVP | `src-react/search/**`, `src-react/components/search/**` | `src-react/design-system/registry/component-registry.json`, `src-react/components/search/search.stories.tsx` | `tests/unit/react-search/search-wave3.test.ts` | `tests/e2e/read/react-golden.spec.ts`, `tests/e2e/react-shell/wave3.spec.ts` |
+Visual completion requires browser proof for relevant mobile, tablet, and desktop states. Playwright screenshots are regression evidence; committed `docs/ui-references/**` files are the visual-intent source of truth.

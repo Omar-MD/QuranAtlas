@@ -8,20 +8,20 @@ If a doc, comment, or commit message disagrees with an entry below, fix the doc 
 
 ## bookmark vs metadata
 
-- **Bookmark.** Reader continuity state for a specific `verseKey` under the active riwayah. Bookmarks are navigation data, not annotation data.
+- **Bookmark.** Reader continuity state for a specific `verseKey` or Mushaf page under the active riwayah. Bookmarks are navigation data, not annotation data.
 - **Curated metadata.** QuranAtlas-authored or source-backed enrichment such as tafsir, translation, passage summaries, knowledge chips, and Mushaf/page structure. Metadata stays read-only from the user’s perspective.
 
 Reader First does not ship personal annotation or taxonomy editing. New docs should describe bookmarks, saved position, riwayah packs, and curated metadata directly instead of using older study-taxonomy vocabulary.
 
 ## canonicalize vs canon vs slug
 
-- **Canonicalize.** Verb. The pipeline at `core/normalize.ts::canonicalize(s)` — NFC + lowercase + Arabic alias resolution + space-collapse. Always normalises Arabic and Latin.
+- **Canonicalize.** Verb. Normalize source-facing text into a machine-comparable form: NFC, lowercase where applicable, Arabic alias resolution, and space collapse. Keep this logic in the owning data/search helper that uses it.
 - **`_canon`.** Noun, the noun form of "canonicalised values". Use it only for machine-normalised internal fields; never user-visible and never hand-written.
 - **Slug.** Forbidden synonym. Don't introduce.
 
 ## verseKey vs verseRef vs ayah
 
-- **verseKey.** The string `'<surah>:<ayah>'` (e.g. `'2:255'`). Length cap 12. Regex `/^\d+:\d+$/`. Used as IDB key, BroadcastChannel payload element, route parameter. The DOM identity attribute is `data-token-key` (which also accepts the word-grain form `'<surah>:<ayah>:<wordIdx>'`); use `tokenVerseKey()` from `core/tokenisable.ts` to strip the word index when resolving to a verseKey for IDB lookup. Single source of truth.
+- **verseKey.** The string `'<surah>:<ayah>'` (e.g. `'2:255'`) for verse identity. Mushaf page bookmarks use `m:<page>` as a page-scoped bookmark key. The DOM identity attribute is `data-token-key`.
 - **verseRef.** Forbidden. Don't introduce.
 - **ayah.** A single verse — the user-facing concept. Use as the noun ("the third ayah of Sūrat al-Fātiḥa"); use **verseKey** for the identifier, **`aya_no`** only when echoing a dataset field (KFGQPC source).
 
@@ -58,7 +58,7 @@ Pin the meanings to avoid audio-side collisions:
 ## surface vs route vs view
 
 - **Surface.** The user-visible, cluster-by-surface unit. Each one has a journey entry in `docs/context/surfaces/<surface>.md` and a Playwright spec. The clustering workflow lives in `.agents/skills/quranatlas-workflow/SKILL.md`.
-- **Route.** A hash pattern registered on `core/router.ts` (`#/s/:surah`, `#/bookmarks`, etc.). One surface may have multiple routes (e.g. the reader has `#/s/:surah` and `#/s/:surah/:ayah`). Routes are concrete; surfaces are conceptual.
+- **Route.** A hash pattern parsed by `src/app/router/routes.ts` (`#/s/:surah`, `#/bookmarks`, etc.). One surface may have multiple routes (e.g. the reader has `#/s/:surah` and `#/s/:surah/:ayah`). Routes are concrete; surfaces are conceptual.
 - **View.** Forbidden as an identifier for either. Don't introduce. ("View" is fine in casual prose but never as a function name, prop name, or doc heading.)
 
 ## settings keys
@@ -67,19 +67,14 @@ Pin the meanings to avoid audio-side collisions:
 
 The store is namespaced informally — sub-features prefix when there's a collision risk (e.g. `quota-warning-suppressed`). Do not introduce a flat `settings.foo / settings.bar` for two different features — the namespace eventually collides.
 
-## bridge
+## overlay opener
 
-A persistent-overlay pattern used by `settings/Panel.svelte`, navigation drawers, and similar components. The pattern:
-
-- The Svelte component, mounted persistently in `App.svelte`, calls `register*({ open, close })` in `onMount`.
-- Imperative callers (vanilla JS, command sheet, keyboard handlers) import the module-level `open*()` / `close*()` functions and call them.
-
-The active reader-first overlay bridges are produced by `core/persistent-overlay.ts::createOverlayBridge<API>()`. "Bridge" is synonymous with "overlay registered with `createOverlayBridge`". The factory's `setMounter` + pending-call queue handles the chicken-and-egg between boot-time bridge calls and lazy-mounted components. New persistent overlays MUST use the factory; hand-rolled bridges are forbidden.
+Settings and navigation overlays are React-owned state transitions. Imperative opener helpers, such as `src/app/settings-overlay-events.ts` and `src/components/navigation/nav-drawer-controller.ts`, must stay tiny and route-aware. They should dispatch intent into mounted React owners rather than becoming hidden application state.
 
 ## sole writer
 
-A module that is the only callsite that does `put(store, …)` for a given store *or* a given settings key. Documented in `data-model.md` §Cross-cutting rules. Violating this rule causes silent cross-tab / event-contract bugs that are hard to catch in review.
+A module that is the only callsite that writes a given store *or* a given settings key. Documented in `data-model.md`. Violating this rule causes silent cross-tab and route-state bugs that are hard to catch in review.
 
 ## topic (BroadcastChannel)
 
-A stable string label on `safety/sync.ts`'s generic envelope `{ topic, payload }`. Active built-in topics are bookmark and riwayah sync. Each topic has at most one handler registered via `registerTopic(topic, fn)`.
+A stable string label on a same-device browser sync envelope. Active built-in topics are currently bookmark-focused. Each topic should have one owner and a documented payload shape.

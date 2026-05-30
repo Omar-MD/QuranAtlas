@@ -13,7 +13,7 @@ function withoutPwaPlugins(plugins: PluginOption[] | undefined): PluginOption[] 
 }
 
 const config: StorybookConfig = {
-  stories: ['../src-react/**/*.stories.@(ts|tsx|mdx)'],
+  stories: ['../src/**/*.stories.@(ts|tsx|mdx)'],
   addons: ['@storybook/addon-a11y', '@storybook/addon-vitest'],
   framework: {
     name: '@storybook/react-vite',
@@ -22,9 +22,11 @@ const config: StorybookConfig = {
   docs: {
     autodocs: 'tag',
   },
-  staticDirs: [],
+  staticDirs: [
+    { from: '../public/fonts', to: '/fonts' },
+    { from: '../public/icons', to: '/icons' },
+  ],
   viteFinal: async (config) => {
-    config.publicDir = false
     config.plugins = withoutPwaPlugins(config.plugins) as typeof config.plugins
     config.plugins = [...(config.plugins ?? []), tailwindcss()]
     config.build = {

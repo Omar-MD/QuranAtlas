@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { AboutRoute } from '../../../src-react/app/routes/settings/AboutRoute'
+import { AboutRoute } from '../../../src/app/routes/settings/AboutRoute'
 
 describe('React About route', () => {
-  it('renders the Svelte About content contract without unsupported product claims', () => {
+  it('renders the About content contract without unsupported product claims', () => {
     render(<AboutRoute />)
 
     const main = screen.getByRole('main', { name: 'About' })

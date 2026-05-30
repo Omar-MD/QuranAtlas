@@ -1,12 +1,10 @@
-# CSP allow-list
+# CSP Allowlist
 
-Per-feature registry for **outbound** CSP directives — `connect-src`, `script-src`, `style-src`, `font-src`, `img-src`, `media-src`. Without an attribution registry, a future feature can quietly widen the policy and the next reviewer will not know which line is load-bearing for which feature.
+Per-feature registry for outbound CSP directives. The deployed policy lives in `public/_headers` and is enforced by Cloudflare Pages. Adding or widening a directive requires this doc and `_headers` to change together.
 
-The deployed policy lives in `public/_headers` and is enforced by Cloudflare Pages. **Adding or widening a directive requires (a) an entry in this doc and (b) an `_headers` edit in the same commit.** The unit test at `tests/unit/infra/safety/csp-headers.test.ts` parses both and rejects drift.
+## Current Policy
 
-## Current policy
-
-```
+```text
 default-src 'self';
 script-src 'self';
 style-src 'self' 'unsafe-inline';
@@ -17,53 +15,37 @@ base-uri 'self';
 form-action 'none';
 frame-ancestors 'none';
 manifest-src 'self';
-worker-src 'self';
+worker-src 'self'
 ```
 
-Plus headers `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, `Permissions-Policy` (full deny list), `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`.
+Additional headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, full-deny `Permissions-Policy`, `Cross-Origin-Opener-Policy: same-origin`, and `Cross-Origin-Resource-Policy: same-origin`.
 
-## Registry (per-feature attribution)
+## Registry
 
-| directive    | value             | source feature   | reason                                                                                                                            |
-|--------------|-------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| default-src  | `'self'`          | app              | global default                                                                                                                     |
-| script-src   | `'self'`          | app              | only first-party JS bundles ship                                                                                                   |
-| style-src    | `'self'`          | app              | first-party CSS                                                                                                                    |
-| style-src    | `'unsafe-inline'` | reader / nav / bookmarks | Four call-sites carry truly continuous DOM-driven values that cannot be enumerated to CSS classes without UX regression: `tag/VerseSpotlight.svelte` (rect from `getBoundingClientRect()`), `nav/SurahProgress.svelte` (continuous `width: {pct}%`), `bookmarks/BookmarksList.svelte` (`translateX({px}px)` + `opacity: {0..1}` driven 1:1 by finger swipe), `reader/chunked-virtualiser.ts` (spacer `style="height: {N}px"` so `scrollHeight` stays constant — bucketed height classes would visibly snap scroll on every chunk transition). Removal tracked under `roadmap.md` §Infra. |
-| font-src     | `'self'`          | reader / fonts   | KFGQPC, Newsreader, Geist Mono — all self-hosted under `/fonts/`                                                                   |
-| font-src     | `data:`           | reader / fonts   | inline data: URLs in CSS for fallback glyphs (legacy; remove if no longer emitted by build)                                        |
-| img-src      | `'self'`          | nav / icons      | favicons, app icons under `/icons/`                                                                                                |
-| img-src      | `data:`           | nav / icons      | tiny inline SVGs in components                                                                                                     |
-| connect-src  | `'self'`          | app / data       | per-surah dataset fetches under `/dataset/`, SW update poll                                                                        |
-| base-uri     | `'self'`          | router           | hash router does not rewrite base; lock to origin                                                                                  |
-| form-action  | `'none'`          | n/a              | no `<form action>` posts anywhere                                                                                                  |
-| frame-ancestors | `'none'`       | security         | clickjacking deny — only header CSP can enforce this; `X-Frame-Options: DENY` defence-in-depth                                     |
-| manifest-src | `'self'`          | pwa              | `/manifest.webmanifest`                                                                                                            |
-| worker-src   | `'self'`          | sw               | service worker at `/sw.js`                                                                                                         |
+| Directive | Value | Source Feature | Reason |
+| --- | --- | --- | --- |
+| `default-src` | `'self'` | app | global fallback |
+| `script-src` | `'self'` | app | first-party Vite bundles only |
+| `style-src` | `'self'` | app | first-party generated CSS |
+| `style-src` | `'unsafe-inline'` | React layout/primitives | runtime layout variables and primitive positioning that cannot be fully enumerated as static classes without regressions |
+| `font-src` | `'self'` | reader/fonts | self-hosted Quran and UI fonts under `/fonts/` |
+| `font-src` | `data:` | fonts | data URL font fallbacks when emitted by CSS tooling |
+| `img-src` | `'self'` | icons/Mushaf | app icons and same-origin image/SVG assets |
+| `img-src` | `data:` | icons | tiny inline SVG/image data used by UI/tooling |
+| `connect-src` | `'self'` | app/data | same-origin runtime dataset fetches, PWA update checks, and preview assets |
+| `base-uri` | `'self'` | router | lock document base to origin |
+| `form-action` | `'none'` | app | no form posts |
+| `frame-ancestors` | `'none'` | security | deny embedding; header CSP enforces this |
+| `manifest-src` | `'self'` | PWA | generated web manifest |
+| `worker-src` | `'self'` | PWA | service worker at `/sw.js` |
 
-## Adding a new entry
+## Forbidden Without Architecture Review
 
-When a feature needs to connect, embed, or load from a new origin:
+- `'unsafe-eval'`
+- `'wasm-unsafe-eval'`
+- `'unsafe-hashes'`
+- `data:` on `script-src`
+- wildcard origins
+- new third-party origins without privacy and integrity review
 
-1. **Justify it.** Is the asset truly third-party? Self-host if reasonable (fonts, icons, scripts). Self-hosting also dodges third-party privacy + integrity risks.
-2. **Add a row** to the registry above with the source feature + reason.
-3. **Edit `public/_headers`** in the same commit. Place the new origin in the directive's value list.
-4. **Update the test.** `tests/unit/infra/safety/csp-headers.test.ts` parses both this doc + `_headers`. If they drift, CI fails. Update the expected map there too.
-5. **PR description.** Call out the directive change explicitly — security reviewers will look here.
-
-## Forbidden directives
-
-These are NOT permitted without an architecture-level decision (audit / brainstorm / spec doc):
-
-- `'unsafe-eval'` — banned outright. No code-string evaluation in this codebase.
-- `'wasm-unsafe-eval'` — banned. No WebAssembly today.
-- `'unsafe-hashes'` — banned. Inline event handlers must be removed, not hashed.
-- `data:` on `script-src` — banned. Data-URL scripts are an XSS amplifier.
-- `*` (wildcard) anywhere — banned. Always enumerate origins.
-- A new third-party origin without privacy review.
-
-## Future widenings
-
-No future widening is pre-approved. Any new third-party origin requires an architecture-level decision, a registry row, a matching `public/_headers` edit, and a unit-test update in the same change.
-
-Removed product scope such as audio reciter CDNs, user-facing sync endpoints, accounts, community, export/import, or shared collections is not a reason to widen CSP.
+No future widening is pre-approved.

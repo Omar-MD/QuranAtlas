@@ -88,14 +88,14 @@ for (const fixture of configureFixtures) {
       }
 
       if (fixture.id === 'about-page') {
-        await expect(page.getByRole('main', { name: 'About' }).getByRole('heading', { name: 'QuranAtlas' }), 'RPA-009: About must carry the Svelte page heading.').toBeVisible()
-        await expect(page.getByText('Read, reflect, remember.'), 'RPA-009: About must carry the Svelte mission copy.').toBeVisible()
-        await expect(page.getByText(/وَلَقَدۡ يَسَّرۡنَا/), 'RPA-009: About must carry the Svelte blessing copy.').toBeVisible()
+        await expect(page.getByRole('main', { name: 'About' }).getByRole('heading', { name: 'QuranAtlas' }), 'RPA-009: About must carry the About page heading.').toBeVisible()
+        await expect(page.getByText('Read, reflect, remember.'), 'RPA-009: About must carry the About mission copy.').toBeVisible()
+        await expect(page.getByText(/وَلَقَدۡ يَسَّرۡنَا/), 'RPA-009: About must carry the About blessing copy.').toBeVisible()
         await expect(page.getByRole('heading', { name: 'Attribution' }), 'RPA-009: About must carry attribution.').toBeVisible()
         await expect(page.getByText(/English translation: Bridges/)).toBeVisible()
         await expect(page.getByTestId('about-version')).toContainText(/^v.+ · .+/)
         await expect(page.getByText(/verified reader, navigation, settings, search, bookmarks, and Daily Wird workflows/i)).toHaveCount(0)
-        await expect(page.getByRole('button', { name: /clear all data/i }), 'RPA-009: About must expose Svelte clear-data behavior.').toBeVisible()
+        await expect(page.getByRole('button', { name: /clear all data/i }), 'RPA-009: About must expose clear-data behavior.').toBeVisible()
         await page.getByRole('button', { name: /clear all data/i }).click()
         const dialog = page.getByRole('dialog', { name: /clear all data/i })
         await expect(dialog).toBeVisible()
@@ -115,7 +115,7 @@ for (const fixture of configureFixtures) {
 }
 
 test.describe('settings-over-reader shell dismissal and routing', () => {
-  test('@golden settings-over-reader closes with button, Escape, backdrop, and opens legacy assets URLs inline', async ({ page }) => {
+  test('@golden settings-over-reader closes with button, Escape, backdrop, and opens compatibility assets URLs inline', async ({ page }) => {
     await page.setViewportSize(GOLDEN_VIEWPORTS['phone-standard'])
     await expectReactProductionPreflight(page)
     await seedTargetState(page, 'react', 'onboarded-last-surface-reader')

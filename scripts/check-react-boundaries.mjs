@@ -3,7 +3,7 @@ import { readdir } from 'node:fs/promises'
 import { extname, join, relative } from 'node:path'
 
 const repoRoot = process.cwd()
-const checkedExtensions = new Set(['.css', '.js', '.ts', '.tsx', '.svelte'])
+const checkedExtensions = new Set(['.css', '.js', '.ts', '.tsx'])
 const importPattern = /(?:import|export)\s+(?:[^'"]+\s+from\s+)?['"]([^'"]+)['"]|import\(['"]([^'"]+)['"]\)/g
 const cssImportPattern = /@import\s+(?:url\()?['"]([^'")]+)['"]\)?/g
 
@@ -21,39 +21,25 @@ async function walk(dir) {
   return files
 }
 
-function importsSvelteStyles(specifier) {
+function importsRetiredStyles(specifier) {
   return /(?:^|\/)src\/styles\//.test(specifier) || /(?:\.\.\/)+src\/styles\//.test(specifier)
 }
 
-function importsSvelteApp(specifier) {
-  return specifier.startsWith('../src/') || specifier.startsWith('../../src/') || specifier.startsWith('/src/') || specifier.startsWith('src/')
-}
-
-function importsReactApp(specifier) {
-  return specifier.includes('src-react/') || specifier.startsWith('../src-react/') || specifier.startsWith('../../src-react/') || specifier.startsWith('/src-react/')
-}
-
 function isReactOrStorybookSource(source) {
-  return source.startsWith('src-react/') || source.startsWith('.storybook/')
+  return source.startsWith('src/') || source.startsWith('.storybook/')
 }
 
 function isForbiddenImport(source, specifier) {
-  if (isReactOrStorybookSource(source) && importsSvelteStyles(specifier)) {
-    return 'React and Storybook code must not import Svelte styles.'
-  }
-  if (source.startsWith('src-react/') && importsSvelteApp(specifier)) {
-    return 'React code must not import Svelte app modules.'
-  }
-  if (source.startsWith('src/') && importsReactApp(specifier)) {
-    return 'Svelte code must not import React app modules.'
+  if (isReactOrStorybookSource(source) && importsRetiredStyles(specifier)) {
+    return 'React and Storybook code must use src/design-system/** styles.'
   }
   return null
 }
 
 function isForbiddenCssImport(source, specifier) {
   if (!isReactOrStorybookSource(source)) return null
-  if (importsSvelteStyles(specifier) || /(?:^|\/)src\//.test(specifier) || /(?:\.\.\/)+src\//.test(specifier)) {
-    return 'React and Storybook CSS must not import Svelte styles.'
+  if (importsRetiredStyles(specifier)) {
+    return 'React and Storybook CSS must use src/design-system/** styles.'
   }
   return null
 }
@@ -76,8 +62,8 @@ export function checkReactBoundaryText(sourcePath, text) {
     if (reason) failures.push(`${source} imports ${specifier}: ${reason}`)
   }
 
-  if (source.startsWith('src-react/') && /\bclassName\s*=\s*["'][^"']*\bqa-/.test(text)) {
-    failures.push(`${source} uses Svelte qa-* styling classes; use qar: utilities and React semantic tokens.`)
+  if (source.startsWith('src/') && /\bclassName\s*=\s*["'][^"']*\bqa-/.test(text)) {
+    failures.push(`${source} uses retired legacy styling classes; use qar: utilities and React semantic tokens.`)
   }
 
   return failures
@@ -87,7 +73,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const files = [
     ...await walk(join(repoRoot, '.storybook')),
     ...await walk(join(repoRoot, 'src')),
-    ...await walk(join(repoRoot, 'src-react')),
   ]
 
   const failures = []

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getInitialReactHash, matchReactRoute } from '../../../src-react/app/router/routes'
+import { getInitialReactHash, matchReactRoute } from '../../../src/app/router/routes'
 
 describe('React route matching', () => {
   it('keeps empty launch hashes distinct so storage can decide onboarding or restore', () => {

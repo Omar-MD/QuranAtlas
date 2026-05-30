@@ -47,10 +47,12 @@ vi.restoreAllMocks = () => {
 installConsoleGuards()
 
 beforeEach(() => {
+  vi.useRealTimers()
 })
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 

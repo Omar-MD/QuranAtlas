@@ -46,7 +46,7 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 
 - Read-only analysis: no project verification required.
 - Docs, skills, AGENTS, or generated-context-only changes: run `pnpm run docs:check` and `git diff --check`; run `pnpm run docs` first when generated context may need regeneration.
-- Narrow code changes: do not add or update tests unless explicitly requested; run the smallest non-test verification that proves the change, plus `pnpm run check` when types, lint, Svelte, or styles can be affected. Existing tests may be run when the user asks or when the change itself is test-only.
+- Narrow code changes: do not add or update tests unless explicitly requested; run the smallest non-test verification that proves the change, plus `pnpm run check` when types, lint, React, or styles can be affected. Existing tests may be run when the user asks or when the change itself is test-only.
 - Data, source-catalog, source-data-flow, or dataset-script changes: run the relevant `pnpm run data -- check` or `pnpm run data -- build` profile; also run `pnpm run validate` when app/runtime/build output or release behavior can be affected.
 - Shared behavior, config, build, service-worker, or release-sensitive changes: `pnpm run validate`.
 - E2E-only changes: only make them when explicitly requested; run the owning journey spec per `tests/e2e/AGENTS.md`, then broader gates only when shared behavior changed.

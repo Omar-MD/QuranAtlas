@@ -18,17 +18,17 @@ async function walk(dir) {
 }
 
 export function checkReactRadixBoundaryText(repoRelativePath, text) {
-  if (repoRelativePath.startsWith('src-react/components/ui/')) return []
+  if (repoRelativePath.startsWith('src/components/ui/')) return []
   const failures = []
   for (const match of text.matchAll(radixImportPattern)) {
-    failures.push(`${repoRelativePath} imports ${match[1]}: direct Radix imports are restricted to src-react/components/ui/**.`)
+    failures.push(`${repoRelativePath} imports ${match[1]}: direct Radix imports are restricted to src/components/ui/**.`)
   }
   return failures
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const failures = []
-  for (const file of await walk(join(repoRoot, 'src-react'))) {
+  for (const file of await walk(join(repoRoot, 'src'))) {
     const repoRelativePath = relative(repoRoot, file)
     failures.push(...checkReactRadixBoundaryText(repoRelativePath, readFileSync(file, 'utf8')))
   }

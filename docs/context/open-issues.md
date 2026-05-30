@@ -4,12 +4,12 @@ Known bugs, edge cases, and blocking debt. Resolve and delete the entry.
 
 ## Performance
 
-- **`reshape()` MutationObserver walks every chunk-appended node** — `src/app-bootstrap.ts` triggers per-node reshape via `font-reshape.ts::reshapeAddedNodes`. Hot path during long-surah scroll; scope it to the appended chunk root.
+- **Long-surah render pressure** — keep an eye on single-surah document scroll for very long Surahs. Reintroduce measured virtualization only with browser proof that deep links, bookmarks, and centered-position persistence remain stable.
 
 ## Architectural debt
 
-- **`settings.value: 'any'` god-bag** — `src/core/db/validate.ts` still treats the shared `settings` store as an untyped value bag, so many per-key contracts live outside the central schema.
-- **Remaining runtime-domain import allowances** — the Reader First import guard still carries a few explicit direction allowances where runtime/data modules reach configure-owned helpers. Those should be retired as the shared domains settle.
+- **Settings key typing** — the shared `settings` store remains a flexible key-value store. Keep per-key writers and TypeScript value contracts tight until a future migration introduces stronger persisted typing.
+- **Runtime-domain boundaries** — keep checking that storage, continuity, data, packs, and UI components do not grow circular imports as React-only ownership settles.
 
 ## Edge cases
 

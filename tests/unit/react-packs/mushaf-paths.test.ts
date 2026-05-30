@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { assertReactMushafCacheName, reactMushafPackCacheName } from '../../../src-react/packs/mushaf-cache'
-import { assertReactMushafUrl, isLegacyMushafPageUrl, mushafManifestUrl, mushafPageUrl } from '../../../src-react/packs/mushaf-paths'
+import { assertReactMushafCacheName, reactMushafPackCacheName } from '../../../src/packs/mushaf-cache'
+import { assertReactMushafUrl, isLegacyMushafPageUrl, mushafManifestUrl, mushafPageUrl } from '../../../src/packs/mushaf-paths'
 
 describe('React Mushaf paths', () => {
   it('builds edition-aware manifest and page URLs', () => {

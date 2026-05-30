@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const repoRoot = process.cwd()
-const registryPath = join(repoRoot, 'src-react/design-system/registry/component-registry.json')
+const registryPath = join(repoRoot, 'src/design-system/registry/component-registry.json')
 const requiredComponentFields = [
   'id',
   'name',
@@ -54,7 +54,7 @@ export function validateRegistryData(data, options = {}) {
       ids.push(component.id)
       if (!/^[a-z0-9-]+$/.test(component.id)) failures.push(`${component.id}: invalid id format`)
     }
-    if (component.exportPath && !String(component.exportPath).startsWith('src-react/')) failures.push(`${component.id}: exportPath must start with src-react/`)
+    if (component.exportPath && !String(component.exportPath).startsWith('src/')) failures.push(`${component.id}: exportPath must start with src/`)
     const exportFile = component.exportPath ? join(repoRoot, component.exportPath) : null
     if (checkFiles && component.exportPath && !existsSync(exportFile)) failures.push(`${component.id}: exportPath does not exist: ${component.exportPath}`)
     if (checkFiles && exportFile && component.namedExport && existsSync(exportFile) && !fileHasNamedExport(exportFile, component.namedExport)) {

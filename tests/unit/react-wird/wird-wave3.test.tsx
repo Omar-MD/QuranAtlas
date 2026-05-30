@@ -1,12 +1,12 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { DailyWirdCard } from '../../../src-react/components/reader/wird/DailyWirdCard'
-import { WirdDetail } from '../../../src-react/components/navigation/wird/WirdDetail'
-import { openReactDb, closeReactDb } from '../../../src-react/storage/db'
-import { advanceWirdProgress, createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../../../src-react/continuity/wird/progress'
-import { advanceWirdFromReaderPosition, readWirdPlan, writeWirdPlan } from '../../../src-react/continuity/wird/store'
-import type { SurahCount, WirdPlan, WirdSummary } from '../../../src-react/continuity/wird/types'
+import { DailyWirdCard } from '../../../src/components/reader/wird/DailyWirdCard'
+import { WirdDetail } from '../../../src/components/navigation/wird/WirdDetail'
+import { openReactDb, closeReactDb } from '../../../src/storage/db'
+import { advanceWirdProgress, createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../../../src/continuity/wird/progress'
+import { advanceWirdFromReaderPosition, readWirdPlan, writeWirdPlan } from '../../../src/continuity/wird/store'
+import type { SurahCount, WirdPlan, WirdSummary } from '../../../src/continuity/wird/types'
 
 const counts: SurahCount[] = [{ n: 1, count: 7 }, { n: 2, count: 286 }]
 const boundaryCounts: SurahCount[] = [...counts, { n: 3, count: 200 }]
@@ -53,7 +53,7 @@ async function resetReactDb() {
   closeReactDb()
 }
 
-describe('React Daily Wird parity', () => {
+describe('React Daily Wird coverage', () => {
   it('does not move completed progress backward', () => {
     const plan = createWirdPlan({
       startRef: { surah: 1, verse: 1 },

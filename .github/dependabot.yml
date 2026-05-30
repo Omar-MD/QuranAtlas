@@ -58,12 +58,8 @@ updates:
       dev-deps-minor-patch:
         dependency-type: development
         update-types: [minor, patch]
-      # Runtime deps (currently just mitt) — grouped minor/patch too.
+      # Runtime deps — grouped minor/patch too.
       runtime-deps-minor-patch:
         dependency-type: production
         update-types: [minor, patch]
     # Majors always get their own PR — they deserve scrutiny.
-    ignore:
-      # Svelte 6 is pre-release; freeze until stable.
-      - dependency-name: svelte
-        update-types: [version-update:semver-major]

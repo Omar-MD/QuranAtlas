@@ -37,13 +37,13 @@ and data shapes live in `surfaces/<name>.md`.
 
 - IDB `quran-atlas` v7 with active stores: `settings`, `activationState`,
   `datasetMeta`, and `bookmarks`.
-- Store validation through `src/core/db/validate.ts`.
-- Service worker and offline/update lifecycle.
-- Cross-tab bookmark sync and clear-data/update safety banner.
+- Store schema through `src/storage/schema.ts` and Dexie helpers in `src/storage/**`.
+- Vite PWA service worker and offline runtime dataset cache.
+- Same-device bookmark sync and clear-data safety behavior.
 - Generated dataset manifests, provenance, and package metadata.
 
 ## Removed scope
 
-- Audio/listen runtime is deleted.
-- Personal marks/tags/review/edges runtime is deleted.
-- Legacy removed-scope tests were deleted with the source cleanup.
+- Audio/listen runtime is absent.
+- Personal marks/tags/review/edges runtime is absent.
+- The app source is React-only.

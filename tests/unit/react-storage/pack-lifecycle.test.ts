@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { canActivatePack, createPackLifecycleState, transitionPackState } from '../../../src-react/offline/pack-lifecycle'
+import { canActivatePack, createPackLifecycleState, transitionPackState } from '../../../src/offline/pack-lifecycle'
 
 describe('React asset pack lifecycle', () => {
   it('keeps install, verify, and activate as separate states', () => {

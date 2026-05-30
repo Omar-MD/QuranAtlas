@@ -1,15 +1,12 @@
-import { put } from '../core/db.js'
-import { logger } from '../core/logger.js'
+import { shouldPersistLastSurface } from './launch-restore'
+import type { QuranAtlasReactDb } from '../storage/db'
 
-const SKIP_PERSIST_PREFIXES = ['#/onboarding', '#/settings', '#/assets']
+export function normalizeLastSurface(hash: string): string | null {
+  return shouldPersistLastSurface(hash) ? hash : null
+}
 
-export async function persistLastSurface(hash: string): Promise<void> {
-  if (SKIP_PERSIST_PREFIXES.some((prefix) => hash === prefix || hash.startsWith(`${prefix}?`) || hash.startsWith(`${prefix}/`))) {
-    return
-  }
-  try {
-    await put('settings', { key: 'lastSurface', value: hash })
-  } catch (error) {
-    logger.error('Failed to persist lastSurface', { hash, error })
-  }
+export async function writeLastSurface(db: QuranAtlasReactDb, hash: string): Promise<void> {
+  const normalized = normalizeLastSurface(hash)
+  if (!normalized) return
+  await db.settings.put({ key: 'lastSurface', value: normalized })
 }

@@ -24,7 +24,7 @@ import {
   Textarea,
   Toast,
   Tooltip,
-} from '../../../src-react/components/ui'
+} from '../../../src/components/ui'
 
 describe('React UI components', () => {
   it('renders button variants with composed classes', async () => {
@@ -167,7 +167,7 @@ describe('React UI components', () => {
 
   it('renders a command list and disclosure helper', async () => {
     const user = userEvent.setup()
-    const { Command, Disclosure } = await import('../../../src-react/components/ui')
+    const { Command, Disclosure } = await import('../../../src/components/ui')
     render(
       <div>
         <Command

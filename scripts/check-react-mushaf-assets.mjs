@@ -22,18 +22,18 @@ export function checkReactMushafAssetText(repoRelativePath, text) {
 
 export function checkReactMushafOutputFiles(files) {
   return files
-    .filter((file) => file.path.startsWith('dist-react/') && extname(file.path) === '.svg' && /<svg[\s>]/.test(file.text))
+    .filter((file) => file.path.startsWith('dist/assets/') && extname(file.path) === '.svg' && /<svg[\s>]/.test(file.text))
     .map((file) => `${file.path} contains a Mushaf SVG body; React must install page packs on demand.`)
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const failures = []
-  for (const file of await walk(join(repoRoot, 'src-react'))) {
+  for (const file of await walk(join(repoRoot, 'src'))) {
     failures.push(...checkReactMushafAssetText(relative(repoRoot, file), readFileSync(file, 'utf8')))
   }
-  if (existsSync(join(repoRoot, 'dist-react'))) {
+  if (existsSync(join(repoRoot, 'dist'))) {
     const outputFiles = []
-    for (const file of await walk(join(repoRoot, 'dist-react'))) {
+    for (const file of await walk(join(repoRoot, 'dist'))) {
       outputFiles.push({ path: relative(repoRoot, file), text: readFileSync(file, 'utf8') })
     }
     failures.push(...checkReactMushafOutputFiles(outputFiles))

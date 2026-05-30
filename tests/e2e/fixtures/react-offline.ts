@@ -23,7 +23,7 @@ export async function expectOfflineReaderLoads(page: Page) {
     await page.reload()
     await expect(page.locator('#react-root')).toBeVisible()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-    await expect(page.getByText(/React preview|Verse text unavailable/i), 'RPA-010: offline proof must render cached dataset content, not preview fallback copy.').toHaveCount(0)
+    await expect(page.getByText(/Verse text unavailable/i), 'RPA-010: offline proof must render cached dataset content, not preview fallback copy.').toHaveCount(0)
     await expectNoGuardFailures(guard)
   } finally {
     guard.dispose()

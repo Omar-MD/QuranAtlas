@@ -1,159 +1,113 @@
 # Module graph
 
-> AUTO-GENERATED from `src/**/*.{ts,js,svelte}` import statements. Run `pnpm run docs` to regenerate.
+> AUTO-GENERATED from `src/**/*.{ts,tsx,js}` import statements. Run `pnpm run docs` to regenerate.
 
-Top-level src directories: **14**.
+Top-level src directories: **11**.
 
 ## Mermaid (top-level)
 
 <!-- AUTO-GENERATED:mermaid START -->
 ```mermaid
 graph LR
-  src["src"]
-  src_App_svelte["src/App.svelte"]
-  src_a11y["src/a11y"]
-  src_configure["src/configure"]
+  src_app["src/app"]
+  src_components["src/components"]
   src_continuity["src/continuity"]
-  src_core["src/core"]
   src_data["src/data"]
-  src_infra["src/infra"]
+  src_design_system["src/design-system"]
   src_launch["src/launch"]
   src_metadata["src/metadata"]
-  src_navigate["src/navigate"]
-  src_onboard["src/onboard"]
+  src_offline["src/offline"]
   src_packs["src/packs"]
-  src_read["src/read"]
-  src --> src_App_svelte
-  src --> src_configure
-  src --> src_continuity
-  src --> src_core
-  src --> src_infra
-  src --> src_launch
-  src --> src_navigate
-  src --> src_read
-  src_configure --> src_a11y
-  src_configure --> src_continuity
-  src_configure --> src_core
-  src_configure --> src_data
-  src_configure --> src_infra
-  src_configure --> src_packs
-  src_configure --> src_read
-  src_continuity --> src_core
+  src_search["src/search"]
+  src_storage["src/storage"]
+  src_app --> src_components
+  src_app --> src_continuity
+  src_app --> src_data
+  src_app --> src_design_system
+  src_app --> src_metadata
+  src_app --> src_packs
+  src_app --> src_storage
+  src_components --> src_app
+  src_components --> src_continuity
+  src_components --> src_data
+  src_components --> src_design_system
+  src_components --> src_metadata
+  src_components --> src_packs
+  src_components --> src_search
+  src_components --> src_storage
   src_continuity --> src_data
-  src_continuity --> src_infra
+  src_continuity --> src_launch
   src_continuity --> src_packs
-  src_core --> src
-  src_core --> src_a11y
-  src_core --> src_continuity
-  src_core --> src_data
-  src_core --> src_packs
-  src_core --> src_read
-  src_data --> src_configure
-  src_data --> src_continuity
-  src_data --> src_core
-  src_data --> src_infra
-  src_data --> src_packs
-  src_infra --> src_core
-  src_launch --> src_core
-  src_launch --> src_infra
-  src_metadata --> src_data
-  src_navigate --> src_a11y
-  src_navigate --> src_configure
-  src_navigate --> src_continuity
-  src_navigate --> src_core
-  src_navigate --> src_data
-  src_navigate --> src_packs
-  src_navigate --> src_read
-  src_onboard --> src_configure
-  src_onboard --> src_core
-  src_onboard --> src_data
-  src_onboard --> src_packs
-  src_packs --> src_core
-  src_packs --> src_infra
-  src_packs --> src_read
-  src_read --> src_a11y
-  src_read --> src_configure
-  src_read --> src_continuity
-  src_read --> src_core
-  src_read --> src_data
-  src_read --> src_infra
-  src_read --> src_metadata
-  src_read --> src_navigate
-  src_read --> src_packs
+  src_continuity --> src_storage
+  src_data --> src_storage
+  src_launch --> src_storage
+  src_metadata --> src_search
+  src_offline --> src_data
+  src_offline --> src_packs
+  src_packs --> src_data
+  src_packs --> src_offline
+  src_packs --> src_storage
+  src_search --> src_data
+  src_search --> src_storage
 ```
 <!-- AUTO-GENERATED:mermaid END -->
 
 ## Per-directory
 
 <!-- AUTO-GENERATED:dirs START -->
-### `src`
+### `src/app`
 
-- **Imports from:** `src/App.svelte`, `src/configure`, `src/continuity`, `src/core`, `src/infra`, `src/launch`, `src/navigate`, `src/read`
-- **Imported by:** `src/core`
+- **Imports from:** `src/components`, `src/continuity`, `src/data`, `src/design-system`, `src/metadata`, `src/packs`, `src/storage`
+- **Imported by:** `src/components`
 
-### `src/App.svelte`
+### `src/components`
 
-- **Imports from:** _(none)_
-- **Imported by:** `src`
-
-### `src/a11y`
-
-- **Imports from:** _(none)_
-- **Imported by:** `src/configure`, `src/core`, `src/navigate`, `src/read`
-
-### `src/configure`
-
-- **Imports from:** `src/a11y`, `src/continuity`, `src/core`, `src/data`, `src/infra`, `src/packs`, `src/read`
-- **Imported by:** `src`, `src/data`, `src/navigate`, `src/onboard`, `src/read`
+- **Imports from:** `src/app`, `src/continuity`, `src/data`, `src/design-system`, `src/metadata`, `src/packs`, `src/search`, `src/storage`
+- **Imported by:** `src/app`
 
 ### `src/continuity`
 
-- **Imports from:** `src/core`, `src/data`, `src/infra`, `src/packs`
-- **Imported by:** `src`, `src/configure`, `src/core`, `src/data`, `src/navigate`, `src/read`
-
-### `src/core`
-
-- **Imports from:** `src`, `src/a11y`, `src/continuity`, `src/data`, `src/packs`, `src/read`
-- **Imported by:** `src`, `src/configure`, `src/continuity`, `src/data`, `src/infra`, `src/launch`, `src/navigate`, `src/onboard`, `src/packs`, `src/read`
+- **Imports from:** `src/data`, `src/launch`, `src/packs`, `src/storage`
+- **Imported by:** `src/app`, `src/components`
 
 ### `src/data`
 
-- **Imports from:** `src/configure`, `src/continuity`, `src/core`, `src/infra`, `src/packs`
-- **Imported by:** `src/configure`, `src/continuity`, `src/core`, `src/metadata`, `src/navigate`, `src/onboard`, `src/read`
+- **Imports from:** `src/storage`
+- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/offline`, `src/packs`, `src/search`
 
-### `src/infra`
+### `src/design-system`
 
-- **Imports from:** `src/core`
-- **Imported by:** `src`, `src/configure`, `src/continuity`, `src/data`, `src/launch`, `src/packs`, `src/read`
+- **Imports from:** _(none)_
+- **Imported by:** `src/app`, `src/components`
 
 ### `src/launch`
 
-- **Imports from:** `src/core`, `src/infra`
-- **Imported by:** `src`
+- **Imports from:** `src/storage`
+- **Imported by:** `src/continuity`
 
 ### `src/metadata`
 
-- **Imports from:** `src/data`
-- **Imported by:** `src/read`
+- **Imports from:** `src/search`
+- **Imported by:** `src/app`, `src/components`
 
-### `src/navigate`
+### `src/offline`
 
-- **Imports from:** `src/a11y`, `src/configure`, `src/continuity`, `src/core`, `src/data`, `src/packs`, `src/read`
-- **Imported by:** `src`, `src/read`
-
-### `src/onboard`
-
-- **Imports from:** `src/configure`, `src/core`, `src/data`, `src/packs`
-- **Imported by:** _(none)_
+- **Imports from:** `src/data`, `src/packs`
+- **Imported by:** `src/packs`
 
 ### `src/packs`
 
-- **Imports from:** `src/core`, `src/infra`, `src/read`
-- **Imported by:** `src/configure`, `src/continuity`, `src/core`, `src/data`, `src/navigate`, `src/onboard`, `src/read`
+- **Imports from:** `src/data`, `src/offline`, `src/storage`
+- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/offline`
 
-### `src/read`
+### `src/search`
 
-- **Imports from:** `src/a11y`, `src/configure`, `src/continuity`, `src/core`, `src/data`, `src/infra`, `src/metadata`, `src/navigate`, `src/packs`
-- **Imported by:** `src`, `src/configure`, `src/core`, `src/navigate`, `src/packs`
+- **Imports from:** `src/data`, `src/storage`
+- **Imported by:** `src/components`, `src/metadata`
+
+### `src/storage`
+
+- **Imports from:** _(none)_
+- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/data`, `src/launch`, `src/packs`, `src/search`
 
 <!-- AUTO-GENERATED:dirs END -->

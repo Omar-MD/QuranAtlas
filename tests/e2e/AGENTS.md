@@ -51,7 +51,7 @@ After a click that triggers async state, wait for the completion signal before `
 
 Prefer single-store reset helpers over `clearAllData()` unless the test is explicitly about onboarding, clear-data UX, or a cross-store invariant.
 
-If the right helper does not exist, add it to `tests/e2e/fixtures/idb.js` instead of inlining IndexedDB teardown inside a spec.
+If the right helper does not exist, add it to the typed fixture under `tests/e2e/fixtures/` instead of inlining IndexedDB teardown inside a spec.
 
 ### One setup hook per spec file
 
@@ -66,13 +66,7 @@ Default assumption: viewport-agnostic tests run once on chromium.
 
 ### Reuse onboarded storage state
 
-If the first action would otherwise be “skip onboarding”, use:
-
-```js
-test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })
-```
-
-Opt out only when the test is explicitly about onboarding or empty-browser bootstrap.
+React e2e specs seed the required IndexedDB state through typed fixtures. Opt out only when the test is explicitly about onboarding or empty-browser bootstrap.
 
 ### Prefer the dev server
 
@@ -83,7 +77,7 @@ Use the dev server unless the assertion specifically requires the production bui
 For a materially expanded surface spec, time the spec locally:
 
 ```bash
-time pnpm playwright test tests/e2e/<surface>/<spec-file>.spec.js --reporter=line
+time pnpm playwright test tests/e2e/<surface>/<spec-file>.spec.ts --reporter=line
 ```
 
 If the added coverage materially increases wall time, shrink setup or explain why the browser-only coverage is worth it.

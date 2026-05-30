@@ -1,10 +1,10 @@
 import { expect, type BrowserContext, type ConsoleMessage, type Page, type Request, type Response } from '@playwright/test'
 
-import { applySchema, DB_NAME, DB_VERSION } from '../../../src/core/db/migrations.js'
+import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION } from '../../../src/storage/schema'
 
 export type GoldenTheme = 'light' | 'sepia' | 'dark'
 export type NightMode = 'off' | 'on' | 'auto'
-export type ParityTargetId = 'svelte' | 'react'
+export type AppTargetId = 'react'
 export type GoldenViewportId =
   | 'phone-small'
   | 'phone-standard'
@@ -25,11 +25,11 @@ export type GoldenFixture = {
   acceptedDifference: 'none' | string
 }
 
-export type ParityTarget = {
-  id: ParityTargetId
+export type AppTarget = {
+  id: AppTargetId
   baseURL: string
   buildDir: string
-  productionMarker?: 'quranatlas-react-deploy-target'
+  productionMarker?: 'quranatlas-deploy-target'
 }
 
 export type PageGuard = {
@@ -38,40 +38,48 @@ export type PageGuard = {
 }
 
 const APPLY_SCHEMA_SOURCE = `
-  const _applySchema = ${applySchema.toString()}
-  _applySchema(db, tx)
+  const stores = [
+    ['settings', { keyPath: 'key' }, []],
+    ['activationState', { keyPath: 'id' }, []],
+    ['datasetMeta', { keyPath: 'id' }, []],
+    ['bookmarks', { keyPath: ['riwayah', 'verseKey'] }, [
+      ['riwayah_surah', ['riwayah', 'surah'], { unique: false }],
+      ['riwayah', 'riwayah', { unique: false }],
+    ]],
+  ]
+  for (const [name, options, indexes] of stores) {
+    if (db.objectStoreNames.contains(name)) continue
+    const store = db.createObjectStore(name, options)
+    for (const [indexName, keyPath, indexOptions] of indexes) {
+      store.createIndex(indexName, keyPath, indexOptions)
+    }
+  }
 `
 
-const REACT_PREVIEW_PORT = process.env.REACT_PARITY_PORT ?? '4181'
-const SVELTE_PREVIEW_PORT = process.env.SVELTE_PARITY_PORT ?? '4180'
+const APP_PREVIEW_PORT = process.env.APP_PREVIEW_PORT ?? '4173'
 const MVP_ASSET_CONTRACT_ID = 'mvp-default-assets-qaloon-bridges-v1'
 
-export const PARITY_TARGETS: Record<ParityTargetId, ParityTarget> = {
-  svelte: {
-    id: 'svelte',
-    baseURL: process.env.SVELTE_BASE_URL ?? `http://127.0.0.1:${SVELTE_PREVIEW_PORT}`,
-    buildDir: 'dist',
-  },
+export const APP_TARGETS: Record<AppTargetId, AppTarget> = {
   react: {
     id: 'react',
-    baseURL: process.env.REACT_BASE_URL ?? `http://127.0.0.1:${REACT_PREVIEW_PORT}`,
-    buildDir: 'dist-react',
-    productionMarker: 'quranatlas-react-deploy-target',
+    baseURL: process.env.REACT_BASE_URL ?? `http://127.0.0.1:${APP_PREVIEW_PORT}`,
+    buildDir: 'dist',
+    productionMarker: 'quranatlas-deploy-target',
   },
 }
 
-export function targetUrl(target: ParityTargetId, route = '/') {
+export function targetUrl(target: AppTargetId, route = '/') {
   const normalizedRoute = route.startsWith('/') || route.startsWith('#') ? route : `/${route}`
-  return new URL(normalizedRoute, PARITY_TARGETS[target].baseURL).toString()
+  return new URL(normalizedRoute, APP_TARGETS[target].baseURL).toString()
 }
 
 export async function expectReactProductionPreflight(page: Page) {
   await page.goto(targetUrl('react', '/'))
-  await expect(page.locator('meta[name="quranatlas-react-deploy-target"]')).toHaveAttribute('content', 'production')
+  await expect(page.locator('meta[name="quranatlas-deploy-target"]')).toHaveAttribute('content', 'production')
   await expect(page.locator('#react-root')).toBeVisible()
 }
 
-export async function clearTargetStorage(page: Page, target: ParityTargetId) {
+export async function clearTargetStorage(page: Page, target: AppTargetId) {
   await page.goto(targetUrl(target, '/'))
   await page.evaluate(
     async ({ dbName }) => {
@@ -92,11 +100,11 @@ export async function clearTargetStorage(page: Page, target: ParityTargetId) {
         request.onblocked = () => resolve()
       })
     },
-    { dbName: DB_NAME },
+    { dbName: QURAN_ATLAS_DB_NAME },
   )
 }
 
-export async function seedTargetState(page: Page, target: ParityTargetId, seed: string) {
+export async function seedTargetState(page: Page, target: AppTargetId, seed: string) {
   await clearTargetStorage(page, target)
   if (seed === 'fresh-browser') {
     await page.goto('about:blank')
@@ -104,9 +112,9 @@ export async function seedTargetState(page: Page, target: ParityTargetId, seed: 
   }
 
   const seedJson = JSON.stringify(seed)
-  const nativeDbVersion = target === 'react' ? DB_VERSION * 10 : DB_VERSION
+  const nativeDbVersion = QURAN_ATLAS_DB_VERSION * 10
   await page.evaluate(`(() => new Promise((resolve, reject) => {
-    const open = indexedDB.open(${JSON.stringify(DB_NAME)}, ${nativeDbVersion})
+    const open = indexedDB.open(${JSON.stringify(QURAN_ATLAS_DB_NAME)}, ${nativeDbVersion})
     open.onsuccess = () => {
       const db = open.result
       const tx = db.transaction(['settings', 'bookmarks'], 'readwrite')
@@ -146,7 +154,7 @@ export async function seedTargetState(page: Page, target: ParityTargetId, seed: 
         settings.put({
           key: 'wirdPlan',
           value: {
-            id: 'react-parity-seeded-wird',
+            id: 'seeded-wird-plan',
             start: { surah: 1, verse: 1 },
             cursor: { surah: 1, verse: 3 },
             targetDays: 2,
@@ -193,13 +201,8 @@ export async function seedReactBookmarks(page: Page, records: Array<{ riwayah?: 
       }
       open.onerror = () => reject(open.error)
     }),
-    { dbName: DB_NAME, rows: records },
+    { dbName: QURAN_ATLAS_DB_NAME, rows: records },
   )
-}
-
-export async function withSeededTargets(page: Page, seed: string) {
-  await seedTargetState(page, 'svelte', seed)
-  await seedTargetState(page, 'react', seed)
 }
 
 export function installPageGuards(page: Page, label: string, allowedUrlPatterns: RegExp[] = []): PageGuard {
@@ -239,7 +242,7 @@ export async function expectNoGuardFailures(guard: PageGuard) {
   expect(guard.failures).toEqual([])
 }
 
-export async function newParityPage(context: BrowserContext, target: ParityTargetId) {
+export async function newAppPage(context: BrowserContext, target: AppTargetId) {
   const page = await context.newPage()
   await page.goto(targetUrl(target, '/'))
   return page
@@ -282,7 +285,7 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     viewports: ['phone-small', 'phone-standard', 'tablet-portrait', 'desktop'],
     themes: ['light', 'sepia', 'dark'],
     nightModes: ['off', 'on', 'auto'],
-    proofOwners: ['tests/e2e/read/react-golden.spec.ts', 'src-react/components/reader/reader.stories.tsx'],
+    proofOwners: ['tests/e2e/read/react-golden.spec.ts', 'src/components/reader/reader.stories.tsx'],
     assertions: ['verse rows render Qalun baseline', 'translation lane follows active settings', 'reader chrome does not overlap text'],
     acceptedDifference: 'none',
   },
@@ -303,7 +306,7 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     viewports: ['phone-small', 'phone-standard', 'tablet-portrait', 'desktop'],
     themes: ['light', 'sepia', 'dark'],
     nightModes: ['off', 'on', 'auto'],
-    proofOwners: ['tests/e2e/read/react-golden.spec.ts', 'src-react/components/reader/reader.stories.tsx'],
+    proofOwners: ['tests/e2e/read/react-golden.spec.ts', 'src/components/reader/reader.stories.tsx'],
     assertions: ['Mushaf page renders unframed', 'page chip and view mode controls work', 'jump input restores focus'],
     acceptedDifference: 'none',
   },
@@ -344,7 +347,7 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     viewports: ['phone-standard', 'tablet-portrait', 'desktop'],
     themes: ['light', 'sepia', 'dark'],
     nightModes: ['off', 'on', 'auto'],
-    proofOwners: ['tests/e2e/configure/react-golden.spec.ts', 'src-react/components/settings/settings.stories.tsx'],
+    proofOwners: ['tests/e2e/configure/react-golden.spec.ts', 'src/components/settings/settings.stories.tsx'],
     assertions: ['settings route renders', 'source controls are keyboard reachable', 'no horizontal overflow'],
     acceptedDifference: 'none',
   },

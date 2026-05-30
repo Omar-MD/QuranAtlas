@@ -5,17 +5,17 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "src-react/design-system/index.css",
+    "css": "src/design-system/index.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": "qar"
   },
   "aliases": {
-    "components": "@/src-react/components",
-    "ui": "@/src-react/components/ui",
-    "lib": "@/src-react/design-system",
-    "utils": "@/src-react/design-system/utils",
-    "hooks": "@/src-react/app/hooks"
+    "components": "@/src/components",
+    "ui": "@/src/components/ui",
+    "lib": "@/src/design-system",
+    "utils": "@/src/design-system/utils",
+    "hooks": "@/src/app"
   },
   "iconLibrary": "lucide"
 }

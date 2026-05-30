@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { mapSearchResultToActiveRiwayah, searchShard } from '../../../src-react/search/search-engine'
-import type { SearchShard } from '../../../src-react/search/schema'
+import { mapSearchResultToActiveRiwayah, searchShard } from '../../../src/search/search-engine'
+import type { SearchShard } from '../../../src/search/schema'
 
 const shard: SearchShard = {
   id: 'baseline',
@@ -17,7 +17,7 @@ const shard: SearchShard = {
   ],
 }
 
-describe('React search parity', () => {
+describe('React search coverage', () => {
   it('searches verified shard entries by reason', () => {
     expect(searchShard(shard, 'guidance')[0]).toMatchObject({
       lane: 'translation',
