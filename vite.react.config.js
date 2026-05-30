@@ -138,6 +138,7 @@ export default defineConfig(() => {
         workbox: {
           cacheId: 'quranatlas-react-proof',
           cleanupOutdatedCaches: true,
+          importScripts: ['wird-notification-sw.js'],
           navigateFallback: '/index.html',
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
           runtimeCaching: [

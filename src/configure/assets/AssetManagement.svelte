@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte'
   import { DEFAULT_READER_ASSET_PROFILE } from '../../../shared/reader-assets/default-profile'
-  import { defaultAssetInventoryRows, type AssetRowGroup, type AssetRowView } from './asset-view-model'
+  import { defaultAssetInventoryRows, loadDefaultAssetInventoryRows, type AssetRowGroup, type AssetRowView } from './asset-view-model'
 
   interface Props {
     historyCanGoBack?: boolean | null
@@ -14,12 +14,12 @@
   }
 
   const { historyCanGoBack = null }: Props = $props()
-  const rows = defaultAssetInventoryRows()
-  const sections: Section[] = [
+  let rows = $state(defaultAssetInventoryRows())
+  const sections: Section[] = $derived.by(() => [
     { id: 'quran-text', title: 'Quran Text', rows: rows.filter((row) => row.group === 'quran-text') },
     { id: 'mushaf', title: 'Mushaf', rows: rows.filter((row) => row.group === 'mushaf') },
     { id: 'translation', title: 'Translation', rows: rows.filter((row) => row.group === 'translation') },
-  ]
+  ])
 
   let heading: HTMLHeadingElement | null = $state(null)
   const canGoBack = $derived.by(() => {
@@ -38,6 +38,11 @@
 
   onMount(() => {
     try { sessionStorage.removeItem('qa-assets-can-go-back') } catch { /* ignore */ }
+    void loadDefaultAssetInventoryRows().then((loadedRows) => {
+      rows = loadedRows
+    }).catch(() => {
+      // Keep the ID fallback rows when the runtime indexes are unavailable.
+    })
     void tick().then(() => heading?.focus({ preventScroll: true }))
   })
 </script>

@@ -4,8 +4,6 @@
 // in via `test.use({ storageState: 'tests/e2e/.auth/onboarded.json' })` to
 // skip per-test cold-boot setup.
 //
-// Audit ref: docs/audits/2026-04-29-architecture-red-team.md §7 P1.6 (R-15).
-// Spec ref: docs/superpowers/specs/2026-04-30-n15-global-setup-design.md.
 // See tests/e2e/AGENTS.md for the onboarded storage-state policy.
 
 import { chromium, type FullConfig } from '@playwright/test'

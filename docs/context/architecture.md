@@ -176,16 +176,16 @@ feature code by `pnpm run check:react:radix`; the component registry under
 accessibility expectations, and visual proof. React offline contracts under
 `src-react/offline/**` and `src-react/packs/**` define Cache Storage plans and
 service-worker messages. The React Vite config also emits an isolated
-proof-only preview service worker into `dist-react/` for Wave 15 offline
-reload proof; it does not change the shipped Svelte service worker, production
-cache names, or deploy artifact routing.
+proof service worker into `dist-react/`; it does not change the shipped Svelte
+service worker, production cache names, or deploy artifact routing until
+cutover.
 
-The React preview now mounts proof routes for Verse reader, Mushaf reader,
+The React app now mounts routes for Verse reader, Mushaf reader,
 navigation/bookmarks, settings/assets/about, legacy onboarding redirect, and search through
-`src-react/app/router/routes.ts` and `src-react/app/routes/**`. Reader parity
+`src-react/app/router/routes.ts` and `src-react/app/routes/**`. Reader
 modules under `src-react/components/reader/**`, `src-react/data/**`,
 `src-react/metadata/**`, `src-react/search/**`, and
-`src-react/continuity/**` are dual-build implementations: they prove route,
+`src-react/continuity/**` are production-candidate implementations: they prove route,
 component, storage, alias, metadata, bookmark, and Daily Wird contracts without
 flipping production routing away from Svelte. React launch restore applies the
 MVP asset-contract reset, ignores legacy `onboardingComplete`, and opens or

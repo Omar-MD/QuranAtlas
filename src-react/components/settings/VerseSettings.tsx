@@ -16,15 +16,19 @@ export function VerseSettings({
   onFontSizeChange,
   onReadingFlowChange,
   onTranslationVisibleChange,
+  onWirdReaderStatusVisibleChange,
   readingFlow,
   translationVisible,
+  wirdReaderStatusVisible,
 }: {
   fontSize: ReactPreferenceStep
   onFontSizeChange: (value: ReactPreferenceStep) => void
   onReadingFlowChange: (value: ReactPreferenceStep) => void
   onTranslationVisibleChange: (value: boolean) => void
+  onWirdReaderStatusVisibleChange: (value: boolean) => void
   readingFlow: ReactPreferenceStep
   translationVisible: boolean
+  wirdReaderStatusVisible: boolean
 }) {
   return (
     <section className="qar-react-settings-panel qar-react-settings-panel--verse" aria-label="Verse settings" aria-labelledby="qar-react-settings-reading">
@@ -37,7 +41,7 @@ export function VerseSettings({
         <ReadingFlowControl label="Reading flow" onChange={onReadingFlowChange} value={readingFlow} />
         <div className="qar-react-settings-row qar-react-settings-row--switch">
           <span className="qar-react-settings-row-copy">
-            <span className="qar-react-settings-row-label">Bridges Translation</span>
+            <span className="qar-react-settings-row-label">Translation</span>
             <span className="qar-react-settings-row-control">Show meaning below each verse</span>
           </span>
           <Switch
@@ -45,6 +49,18 @@ export function VerseSettings({
             className="qar-react-settings-switch"
             label="Show translation"
             onCheckedChange={onTranslationVisibleChange}
+          />
+        </div>
+        <div className="qar-react-settings-row qar-react-settings-row--switch">
+          <span className="qar-react-settings-row-copy">
+            <span className="qar-react-settings-row-label">Daily Wird reader status</span>
+            <span className="qar-react-settings-row-control">Show progress in reader and navigation</span>
+          </span>
+          <Switch
+            checked={wirdReaderStatusVisible}
+            className="qar-react-settings-switch"
+            label="Show Daily Wird reader status"
+            onCheckedChange={onWirdReaderStatusVisibleChange}
           />
         </div>
       </div>

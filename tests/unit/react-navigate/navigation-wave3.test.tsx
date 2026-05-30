@@ -13,7 +13,6 @@ import { OnboardingRoute } from '../../../src-react/app/routes/onboarding/Onboar
 import { buildJuzRows } from '../../../src-react/data/juz-index'
 import { loadReaderSurahIndex } from '../../../src-react/data/surah-index'
 import { closeReactDb, openReactDb } from '../../../src-react/storage/db'
-import { QURAN_ATLAS_DB_NAME } from '../../../src-react/storage/schema'
 
 function jsonResponse(payload: unknown, init: { ok?: boolean; status?: number } = {}) {
   return {
@@ -21,6 +20,18 @@ function jsonResponse(payload: unknown, init: { ok?: boolean; status?: number } 
     status: init.status ?? 200,
     json: async () => payload,
   } as Response
+}
+
+async function resetReactDb() {
+  closeReactDb()
+  const db = await openReactDb()
+  await Promise.all([
+    db.settings.clear(),
+    db.activationState.clear(),
+    db.datasetMeta.clear(),
+    db.bookmarks.clear(),
+  ])
+  closeReactDb()
 }
 
 const mushafManifest = {
@@ -118,6 +129,44 @@ describe('React navigation, settings, and onboarding parity', () => {
     expect(onNavigate).toHaveBeenCalledWith('#/s/67/1')
   })
 
+  it('opens Daily Wird detail and routes Continue Wird to the next reference', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.put({ key: 'currentPosition', value: { surah: 2, verse: 7 } })
+    await db.settings.put({
+      key: 'wirdPlan',
+      value: {
+        id: 'wird-test',
+        startRef: { surah: 2, verse: 1 },
+        endRef: { surah: 2, verse: 20 },
+        targetDays: 2,
+        targetEndOn: '2026-05-05',
+        startedOn: '2026-05-04',
+        unit: 'verse',
+        reminder: { enabled: false, time: '08:00', browserNotifications: 'default' },
+        progress: {
+          completedThroughRef: { surah: 2, verse: 7 },
+          dayKey: '2026-05-04',
+          lastReadRef: { surah: 2, verse: 7 },
+          nextRef: { surah: 2, verse: 8 },
+          todayEndRef: { surah: 2, verse: 10 },
+          todayStartRef: { surah: 2, verse: 1 },
+        },
+        history: [],
+      },
+    })
+    const onNavigate = vi.fn()
+
+    render(<NavDrawer open mode="verse" currentLabel="Al-Fatihah" onClose={vi.fn()} onNavigate={onNavigate} />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /today/i }))
+    expect(screen.getByRole('heading', { name: 'Daily Wird' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /continue wird/i }))
+
+    expect(onNavigate).toHaveBeenCalledWith('#/s/2/8')
+    closeReactDb()
+  })
+
   it('renders Surah rows as Svelte-style row buttons without extra Open actions', () => {
     render(<SurahList onNavigate={vi.fn()} rows={[{ counts: { hafs: 7, qaloon: 7, warsh: 7 }, n: 1, name: 'Al-Fatihah', name_ar: 'الفَاتِحة' }]} />)
 
@@ -151,8 +200,7 @@ describe('React navigation, settings, and onboarding parity', () => {
   })
 
   it('persists React MVP settings controls through the shared settings store', async () => {
-    closeReactDb()
-    await indexedDB.deleteDatabase(QURAN_ATLAS_DB_NAME)
+    await resetReactDb()
 
     render(<SettingsRoute />)
 

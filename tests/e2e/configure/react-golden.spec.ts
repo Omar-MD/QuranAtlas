@@ -40,9 +40,12 @@ for (const fixture of configureFixtures) {
         await expect(shell.getByRole('button', { name: 'Manage Assets' })).toHaveCount(0)
         await expect(shell.getByRole('group', { name: 'Theme' })).toBeVisible()
         await expect(shell.getByRole('group', { name: 'Night mode' })).toBeVisible()
-        await expect(includedAssets.getByText('Qaloon Text + Font')).toBeVisible()
-        await expect(includedAssets.getByText('Qaloon Mushaf')).toBeVisible()
-        await expect(includedAssets.getByText('Bridges Translation')).toBeVisible()
+        await expect(includedAssets.getByText('Text:')).toBeVisible()
+        await expect(includedAssets.getByText('Uthmani KFGQPC + KFGQPC Qaloon')).toBeVisible()
+        await expect(includedAssets.getByText('Mushaf:')).toBeVisible()
+        await expect(includedAssets.getByText('Qalun Quran.ws')).toBeVisible()
+        await expect(includedAssets.getByText('Translation:')).toBeVisible()
+        await expect(includedAssets.getByText('Bridges')).toBeVisible()
         await expect(shell.getByText('Verse preview')).toHaveCount(0)
         await expect(shell.getByText('Mushaf preview')).toHaveCount(0)
         await expect(page.getByRole('button', { name: /hafs|warsh|install|delete|verify|set active|retry/i })).toHaveCount(0)
@@ -117,6 +120,8 @@ test.describe('settings-over-reader shell dismissal and routing', () => {
     await expectReactProductionPreflight(page)
     await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
     const guard = installPageGuards(page, 'react settings-over-reader dismissal', [
+      /\/dataset\/indexes\/mushaf-assets\.json$/,
+      /\/dataset\/indexes\/text-assets\.json$/,
       /\/dataset\/knowledge\/passages\/001\.json$/,
       /\/dataset\/translations\/_verse-aliases\.json$/,
     ])

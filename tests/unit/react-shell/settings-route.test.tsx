@@ -317,6 +317,24 @@ describe('React settings shell parity', () => {
     })
   })
 
+  it('persists the Daily Wird reader status preference from Verse settings', async () => {
+    await resetReactDb()
+
+    render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const toggle = within(dialog).getByRole('switch', { name: 'Show Daily Wird reader status' })
+    expect(toggle).toBeChecked()
+
+    fireEvent.click(toggle)
+
+    expect(toggle).not.toBeChecked()
+    await waitFor(async () => {
+      const db = await openReactDb()
+      await expect(db.settings.get('wirdReaderStatusVisible')).resolves.toEqual({ key: 'wirdReaderStatusVisible', value: false })
+    })
+  })
+
   it('lets settings switch the underlying reader mode without closing the shell', async () => {
     const onReaderModeChange = vi.fn()
     render(<SettingsRoute mode="verse" onClose={vi.fn()} onReaderModeChange={onReaderModeChange} previousHash="#/s/2/5" />)
@@ -345,20 +363,55 @@ describe('React settings shell parity', () => {
   })
 
   it('renders the default asset inventory inline inside settings without optional controls', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/text-assets.json') {
+        return new Response(JSON.stringify({
+          version: 1,
+          assets: [{ riwayah: 'qaloon', textStyleId: 'uthmani-kfgqpc-v1', label: 'Loaded Qaloon Text' }],
+        }), { headers: { 'Content-Type': 'application/json' }, status: 200 })
+      }
+      if (url === '/dataset/provenance.json') {
+        return new Response(JSON.stringify({
+          riwayat: [{ id: 'qaloon', fontFamily: 'Loaded Qaloon Font' }],
+        }), { headers: { 'Content-Type': 'application/json' }, status: 200 })
+      }
+      if (url === '/dataset/indexes/mushaf-assets.json') {
+        return new Response(JSON.stringify({
+          version: 1,
+          assets: [{ riwayah: 'qaloon', mushafEditionId: 'qalun-quran-ws-v1', label: 'Loaded Qaloon Mushaf' }],
+        }), { headers: { 'Content-Type': 'application/json' }, status: 200 })
+      }
+      if (url === '/dataset/indexes/sources.json') {
+        return new Response(JSON.stringify({
+          version: 1,
+          sources: [{ id: 'bridges', type: 'translation', displayLabel: 'Loaded Bridges' }],
+        }), { headers: { 'Content-Type': 'application/json' }, status: 200 })
+      }
+      return new Response('{}', { status: 404 })
+    }))
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
     const assets = within(dialog).getByRole('region', { name: 'Included assets' })
     const assetIcons = within(assets).getAllByTestId('settings-asset-icon')
 
-    expect(within(assets).getByText('Qaloon Text + Font')).toBeInTheDocument()
-    expect(within(assets).getByText('Qaloon Mushaf')).toBeInTheDocument()
-    expect(within(assets).getByText('Bridges Translation')).toBeInTheDocument()
+    expect(within(dialog).getByText('Translation')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Bridges Translation')).not.toBeInTheDocument()
+    expect(within(assets).getByText('Text:')).toBeInTheDocument()
+    expect(await within(assets).findByText('Loaded Qaloon Text + Loaded Qaloon Font')).toBeInTheDocument()
+    expect(within(assets).getByText('Mushaf:')).toBeInTheDocument()
+    expect(within(assets).getByText('Loaded Qaloon Mushaf')).toBeInTheDocument()
+    expect(within(assets).getByText('Translation:')).toBeInTheDocument()
+    expect(within(assets).getByText('Loaded Bridges')).toBeInTheDocument()
     expect(assetIcons.map((icon) => icon.getAttribute('data-asset-icon'))).toEqual([
       'text-font',
       'mushaf-book',
       'translation-document',
     ])
     expect(within(assets).getAllByText('Included')).toHaveLength(3)
+    expect(within(assets).queryByText('Qaloon Madani Text + font')).not.toBeInTheDocument()
+    expect(within(assets).queryByText('Qaloon Madani')).not.toBeInTheDocument()
+    expect(within(assets).queryByText('Bridges')).not.toBeInTheDocument()
     expect(within(assets).queryByText('uthmani-kfgqpc-v1 + kfgqpc-qaloon-v10')).not.toBeInTheDocument()
     expect(within(assets).queryByText('qalun-quran-ws-v1')).not.toBeInTheDocument()
     expect(within(assets).queryByText('bridges')).not.toBeInTheDocument()
@@ -389,6 +442,7 @@ describe('React settings shell parity', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Theme: Dark' }))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Night mode: On' }))
     fireEvent.click(within(dialog).getByRole('switch', { name: 'Show translation' }))
+    fireEvent.click(within(dialog).getByRole('switch', { name: 'Show Daily Wird reader status' }))
     fireEvent.keyDown(within(dialog).getByRole('slider', { name: 'Font size' }), { key: 'End' })
     window.HTMLElement.prototype.scrollIntoView = vi.fn()
     fireEvent.click(within(dialog).getByRole('combobox', { name: 'Reading flow' }))
@@ -400,6 +454,7 @@ describe('React settings shell parity', () => {
         'theme',
         'nightMode',
         'translationVisible',
+        'wirdReaderStatusVisible',
         'fontSize',
         'lineSpacing',
         'wordSpacing',
@@ -409,6 +464,7 @@ describe('React settings shell parity', () => {
         { key: 'theme', value: 'dark' },
         { key: 'nightMode', value: 'on' },
         { key: 'translationVisible', value: false },
+        { key: 'wirdReaderStatusVisible', value: false },
         { key: 'fontSize', value: 'xl' },
         { key: 'lineSpacing', value: 'lg' },
         { key: 'wordSpacing', value: 'lg' },

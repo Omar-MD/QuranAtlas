@@ -96,8 +96,8 @@ Verse Settings contains:
 
 - **Verse preview** — Arabic sample using the live reader Arabic cascade and optional translation line gated by `settings.translationVisible`.
 - **Reading** — Font Size writes through `src/configure/font-size.ts::setFontSize`; Reading Flow writes all four reading typography dimensions through `src/configure/reading-typography.ts::setReadingFlow`.
-- **Translation** — Bridges visibility switch. Translation visibility writes through `setTranslationVisible`.
-- **Included assets** — read-only summary of the included Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation profile.
+- **Translation** — Bridges visibility switch, labelled as Translation in Settings. Translation visibility writes through `setTranslationVisible`.
+- **Included assets** — read-only summary of the included Text, Mushaf, and Translation profile, with names resolved from the runtime asset indexes instead of profile-label constants.
 
 Mushaf Settings contains:
 
@@ -108,7 +108,7 @@ The nested source picker is not mounted in the current MVP. Switching riwayah, t
 
 The old in-panel Storage accordion is no longer mounted in the settings shell. Offline install, verify, set-active, and delete controls are not exposed in the current MVP.
 
-During the React dual-build parity track, `src-react/app/App.tsx` treats `#/settings` as the same transient opener: it resolves the previous persisted reader hash, restores that hash with `history.replaceState`, keeps the reader mounted behind the shell, and passes the current reader mode into `src-react/app/routes/settings/SettingsRoute.tsx`. React reader chrome opens Settings through a local overlay event instead of mutating `window.location.hash`, so entering Settings from a scrolled Verse or Mushaf reader keeps the current route DOM and scroll position intact. The Settings reader-mode toggle uses the mounted Verse DOM's live visible `data-token-key` before falling back to the route ayah, then carries that exact verse hash back when toggling Mushaf to Verse inside the same shell. React also treats legacy `#/assets` URLs as settings-shell compatibility openers instead of mounting a standalone Assets page. React settings writes theme, night mode, translation visibility, typography, and Mushaf view mode through `src-react/storage/settings-writer.ts` using the shared v7 `settings` store keys and the Svelte-compatible Mushaf view-mode values (`auto`, `fit-page`, `fit-width`). React emits a local reader-preferences event after settings writes so mounted Verse and Mushaf reader routes apply presentation changes without requiring a route remount or verse-corpus refetch. React intentionally omits the Verse and Mushaf preview panels; the body is a single constant `Settings` view with a reader-mode toggle and a fixed-height mode-control area so switching Verse/Mushaf does not move the asset inventory or footer. Verse mode exposes font size, reading flow, and Bridges translation visibility; Reading Flow uses the owned React `Select` primitive whose portal content is layered above the settings shell. Mushaf mode exposes only Page/Width view controls; `auto` remains accepted as stored/runtime state but is not offered in Settings. The React footer contains Theme and Night Mode controls only; there is no Manage Assets route action.
+During the React dual-build parity track, `src-react/app/App.tsx` treats `#/settings` as the same transient opener: it resolves the previous persisted reader hash, restores that hash with `history.replaceState`, keeps the reader mounted behind the shell, and passes the current reader mode into `src-react/app/routes/settings/SettingsRoute.tsx`. React reader chrome opens Settings through a local overlay event instead of mutating `window.location.hash`, so entering Settings from a scrolled Verse or Mushaf reader keeps the current route DOM and scroll position intact. The Settings reader-mode toggle uses the mounted Verse DOM's live visible `data-token-key` before falling back to the route ayah, then carries that exact verse hash back when toggling Mushaf to Verse inside the same shell. React also treats legacy `#/assets` URLs as settings-shell compatibility openers instead of mounting a standalone Assets page. React settings writes theme, night mode, translation visibility, Daily Wird reader-status visibility, typography, and Mushaf view mode through `src-react/storage/settings-writer.ts` using the shared v7 `settings` store keys and the Svelte-compatible Mushaf view-mode values (`auto`, `fit-page`, `fit-width`). React emits a local reader-preferences event after settings writes so mounted Verse and Mushaf reader routes apply presentation changes without requiring a route remount or verse-corpus refetch. React Night Mode is a pointer-transparent app-wide overlay, so the softened warm dim composes over reader, navigation drawer, Settings, About, onboarding, and unsupported-route screens instead of only the mounted reader content. React intentionally omits the Verse and Mushaf preview panels; the body is a single constant `Settings` view with a reader-mode toggle and a fixed-height mode-control area so switching Verse/Mushaf does not move the asset inventory or footer. Verse mode exposes font size, reading flow, Bridges translation visibility, and a Daily Wird visibility switch; when that switch is off, both the compact ReaderChrome status and the nav drawer Daily Wird card/detail workflow are hidden and unavailable. Reading Flow uses the owned React `Select` primitive whose portal content is layered above the settings shell. Mushaf mode exposes only Page/Width view controls; `auto` remains accepted as stored/runtime state but is not offered in Settings. The React footer contains Theme and Night Mode controls only; there is no Manage Assets route action.
 
 ## Style Inventory
 
@@ -125,7 +125,7 @@ During the React dual-build parity track, `src-react/app/App.tsx` treats `#/sett
 
 The current MVP does not present a standalone asset-management page in the React shell. `#/assets` is retained as a compatibility hash for older links and opens the settings shell over the previous reader route.
 
-Mobile and tablet use the settings sheet body for a single dense inventory: Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation. Inventory rows expose asset identity, included status, and a quiet chevron affordance without install, verify, set-active, switch, retry, or delete actions.
+Mobile and tablet use the settings sheet body for a single dense inventory. Row prefixes are fixed as Text, Mushaf, and Translation, while row names load from `indexes/text-assets.json`, `provenance.json`, `indexes/mushaf-assets.json`, and `indexes/sources.json`; the current runtime data resolves to Text: Uthmani KFGQPC + KFGQPC Qaloon, Mushaf: Qalun Quran.ws, and Translation: Bridges. Inventory rows expose asset identity, included status, and a quiet chevron affordance without install, verify, set-active, switch, retry, or delete actions.
 
 Desktop uses the same read-only inventory inside the right-side settings sidebar. There are no Install, Verify, Set Active, Switch, Retry, or Delete actions in the current MVP.
 
@@ -157,7 +157,7 @@ Mobile (<1180 px): tap hamburger ≡ → drawer → tap ⓘ icon (or wordmark). 
 
 Renders: wordmark, mission, 54:17 Arabic blessing + translation, attribution list, PWA install button (if install prompt captured), version line, **Clear all data** link in footer. About no longer reads mark data or presents removed-scope marks/tags/review stats.
 
-During the React dual-build parity track, `src-react/app/routes/settings/AboutRoute.tsx` carries the same mission, 54:17 blessing, attribution list, version line, prompt-gated install affordance, and clear-data confirmation contract. It removes the former React preview claim that search, bookmarks, and Daily Wird were all verified shipped workflows.
+The React production candidate's `src-react/app/routes/settings/AboutRoute.tsx` carries the same mission, 54:17 blessing, attribution list, version line, prompt-gated install affordance, and clear-data confirmation contract. It removes the former React preview claim that search, bookmarks, and Daily Wird were all verified shipped workflows.
 
 ### Install PWA
 
@@ -200,6 +200,7 @@ Keys + sole writers:
 | `mushafEditionId` | `src/configure/variant-bundle.ts` | variant id string |
 | `translationId` | `src/configure/panel-bridge.ts` | `string` |
 | `translationVisible` | `src/configure/panel-bridge.ts` | `boolean` |
+| `wirdReaderStatusVisible` | `src-react/storage/settings-writer.ts` | `boolean` |
 | `fontSize` | `src/configure/font-size.ts` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` |
 | `lineSpacing` | `src/configure/reading-typography.ts` | step |
 | `wordSpacing` | `src/configure/reading-typography.ts` | step |
@@ -210,7 +211,7 @@ Keys + sole writers:
 | `currentPosition` | `src/read/state.svelte.ts` (router/scroll-tracker) | `{ surah, verse }` |
 | `wirdPlan` | `src/read/wird/store.ts` | `WirdPlan \| null` |
 | `lastSurface` | `src/configure/state-last-surface.svelte.ts` | `string` (hash) |
-| `recentSurahs` | `src/configure/state-recent-surahs.svelte.ts` | `number[]` |
+| `recentSurahs` | `src/configure/state-recent-surahs.svelte.ts` / React `src-react/continuity/recent-surahs.ts` | Svelte legacy `number[]`; React stores up to 7 `{ surah, verse, updatedAt }` rows and accepts legacy numbers as `{ surah, verse: 1 }` |
 | `onboardingComplete` | `src/onboard/state.ts` | `boolean` |
 | `offlineCategories` | `src/configure/offline-categories.ts` | `OfflineCategoriesState` (source-aware text/pages/search opt-in; legacy audio values are dropped during normalization so removed-scope state does not survive invisibly) |
 
@@ -245,7 +246,7 @@ Legacy riwayah package status and install intent are not current MVP settings. O
 - **No saved tafsir preference in MVP.** Old `settings.tafsirId` values are unsupported local data and are cleared by the launch reset.
 - **No source rows in MVP.** Optional qira'ah/riwayah, translation, tafsir, curated metadata, page, and search/index packs are future multiple-profile work.
 - **Inline asset inventory is read-only.** The legacy `settings.offlineCategories` normalizer remains for old data, but the mode-aware settings shell does not mount `offline-selector.svelte`.
-- **Default variant assets are the only usable MVP assets.** The active bundle may persist only Qaloon text/font and Qaloon Mushaf.
+- **Default variant assets are the only usable MVP assets.** The active bundle may persist only the default Qaloon text/font and Qaloon Mushaf.
 
 ## Regression guards
 

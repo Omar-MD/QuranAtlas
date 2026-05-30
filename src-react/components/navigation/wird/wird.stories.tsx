@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { DailyWirdCard } from '../../reader/wird/DailyWirdCard'
 
 const meta = {
-  title: 'React Read/Wave 3 Daily Wird',
+  title: 'React Read/Daily Wird',
   component: DailyWirdCard,
 } satisfies Meta<typeof DailyWirdCard>
 

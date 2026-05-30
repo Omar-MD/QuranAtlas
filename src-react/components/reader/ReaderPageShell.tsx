@@ -2,8 +2,10 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ReaderChrome, type ReaderMode } from './ReaderChrome'
 import { NavDrawer } from '../navigation/NavDrawer'
+import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
 import { requestReactSettingsOverlay } from '../../app/settings-overlay-events'
 import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
+import type { WirdSummary } from '../../continuity/wird/types'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 
 export function ReaderPageShell({
@@ -13,6 +15,8 @@ export function ReaderPageShell({
   mode,
   onModeChange,
   onChromeVisibleChange,
+  showWirdStatus = true,
+  wirdSummary,
 }: {
   children: ReactNode
   chromeVisible?: boolean
@@ -20,11 +24,15 @@ export function ReaderPageShell({
   mode: ReaderMode
   onModeChange?: (mode: ReaderMode) => void
   onChromeVisibleChange?: (visible: boolean) => void
+  showWirdStatus?: boolean
+  wirdSummary?: WirdSummary
 }) {
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
   const { bookmarks, deleteBookmark } = useBookmarks()
   const [internalChromeVisible, setInternalChromeVisible] = useState(true)
+  const [drawerWirdInitialView, setDrawerWirdInitialView] = useState<'card' | 'detail'>('card')
   const visible = chromeVisible ?? internalChromeVisible
+  const dailyWirdVisible = showWirdStatus
   const lastScrollTopRef = useRef(0)
 
   const setChromeVisible = useCallback((nextVisible: boolean) => {
@@ -85,22 +93,36 @@ export function ReaderPageShell({
       <ReaderChrome
         mode={mode}
         onModeChange={onModeChange}
-        onOpenNavigation={() => dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })}
+        onOpenNavigation={() => {
+          setDrawerWirdInitialView('card')
+          dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })
+        }}
         onOpenSettings={() => {
           requestReactSettingsOverlay(mode)
         }}
         visible={visible}
+        wirdStatus={dailyWirdVisible && wirdSummary ? (
+          <ReaderWirdStatusIndicator
+            onOpen={() => {
+              setDrawerWirdInitialView('detail')
+              dispatchDrawer({ returnFocusId: 'reader-wird-status-trigger', type: 'open' })
+            }}
+            summary={wirdSummary}
+          />
+        ) : null}
       />
       {drawerState.open && (
         <div className="qar-react-nav-drawer-overlay" onClick={() => dispatchDrawer({ reason: 'outside', type: 'close' })} role="presentation">
           <NavDrawer
             bookmarks={bookmarks}
             currentLabel={label}
+            initialWirdView={dailyWirdVisible ? drawerWirdInitialView : 'card'}
             mode={mode}
             onClose={() => dispatchDrawer({ reason: 'button', type: 'close' })}
             onDeleteBookmark={deleteBookmark}
             onNavigate={navigate}
             open
+            showWird={dailyWirdVisible}
           />
         </div>
       )}

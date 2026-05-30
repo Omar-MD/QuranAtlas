@@ -27,6 +27,7 @@ export type ReactReaderPreferences = {
   translationVisible: boolean
   verseSpacing: ReactPreferenceStep
   wordSpacing: ReactPreferenceStep
+  wirdReaderStatusVisible: boolean
 }
 
 export const DEFAULT_REACT_READER_PREFERENCES: ReactReaderPreferences = {
@@ -39,10 +40,12 @@ export const DEFAULT_REACT_READER_PREFERENCES: ReactReaderPreferences = {
   translationVisible: true,
   verseSpacing: 'md',
   wordSpacing: 'md',
+  wirdReaderStatusVisible: true,
 }
 
 const READER_PREFERENCE_KEYS = [
   'translationVisible',
+  'wirdReaderStatusVisible',
   'fontSize',
   'lineSpacing',
   'wordSpacing',
@@ -95,12 +98,16 @@ export async function readReactReaderPreferences(db: QuranAtlasReactDb): Promise
       : DEFAULT_REACT_READER_PREFERENCES.translationVisible,
     verseSpacing: asStep(values.verseSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
     wordSpacing: asStep(values.wordSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.wordSpacing,
+    wirdReaderStatusVisible: typeof values.wirdReaderStatusVisible === 'boolean'
+      ? values.wirdReaderStatusVisible
+      : DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
   }
 }
 
 export async function writeReactReaderPreferences(db: QuranAtlasReactDb, preferences: ReactReaderPreferences): Promise<void> {
   const records: SettingRecord[] = [
     { key: 'translationVisible', value: preferences.translationVisible },
+    { key: 'wirdReaderStatusVisible', value: preferences.wirdReaderStatusVisible },
     { key: 'fontSize', value: preferences.fontSize },
     { key: 'lineSpacing', value: preferences.lineSpacing },
     { key: 'wordSpacing', value: preferences.wordSpacing },

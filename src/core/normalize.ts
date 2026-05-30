@@ -2,8 +2,7 @@
  * Canonicalization pipeline for tag labels.
  *
  * Converts raw user input into a deterministic normalized form used for
- * graph clustering and index lookup. See
- * docs/superpowers/specs/2026-04-20-verse-lenses-multi-layer-tags-design.md §3.
+ * graph clustering and index lookup.
  *
  * Three-layer representation:
  *   raw        — exact user input (post trim+collapse only), for display

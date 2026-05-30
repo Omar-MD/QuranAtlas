@@ -17,8 +17,10 @@ import { openReactDb } from '../storage/db'
 import { resolveMushafHrefForVerseRoute, resolveVerseHrefForMushafPage } from '../components/reader/reader-mode-routing'
 import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } from '../storage/reader-preferences'
 import { readReactReaderPreferences } from '../storage/settings-writer'
+import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
 
 export function App() {
+  useWirdReminderScheduler()
   const initialRoute = useMemo(() => getInitialReactHash(), [])
   const [hash, setHash] = useState(initialRoute)
   const [lastReaderHash, setLastReaderHash] = useState<string | null>(null)

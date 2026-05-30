@@ -13,7 +13,6 @@
      top with high z-index but is fully transparent unless night mode is on).
 
      Driver: src/settings/night-mode.ts (writes data-night-mode on <html>).
-     Spec: docs/superpowers/specs/2026-04-25-night-recitation-mode-design.md
      ========================================================================== */
 
   .qa-night-shift {

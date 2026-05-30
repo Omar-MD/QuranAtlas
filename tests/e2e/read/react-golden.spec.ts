@@ -52,14 +52,18 @@ for (const fixture of readFixtures) {
       }
 
       if (fixture.id === 'daily-wird-no-plan') {
-        await expect(page.getByRole('button', { name: /start daily wird/i })).toBeVisible()
-        await expect(page.getByText('Create a plan to build a consistent rhythm.')).toBeVisible()
+        await expect(page.locator('.qar-react-wird-card')).toHaveCount(0)
+        await expect(page.getByRole('button', { name: /start daily wird/i })).toHaveCount(0)
       }
 
       if (fixture.id === 'daily-wird-active') {
-        await expect(page.getByRole('button', { name: /today/i })).toBeVisible()
-        await expect(page.getByRole('progressbar', { name: /daily wird progress/i })).toBeVisible()
-        await expect(page.getByRole('button', { name: /today/i })).toContainText(/complete/i)
+        await expect(page.locator('.qar-react-wird-card')).toHaveCount(0)
+        const status = page.getByRole('button', { name: /Daily Wird: \d+% today/i })
+        await expect(status).toBeVisible()
+        await status.click()
+        const drawer = page.getByRole('dialog', { name: 'Navigation' })
+        await expect(drawer.getByRole('heading', { name: 'Daily Wird' })).toBeVisible()
+        await expect(drawer.locator('.qar-react-wird-card')).toHaveCount(0)
       }
 
       if (fixture.id === 'reader-surah-start') {
@@ -70,7 +74,7 @@ for (const fixture of readFixtures) {
         const basmalaSize = await page.locator('.qar-reader-basmala-text').evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
         expect(basmalaSize).toBeLessThanOrEqual(72)
         await expect(page.getByTestId('verse-1:1')).toContainText('اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ')
-        await expect(page.getByTestId('verse-1:1')).toContainText('In the name of Allah, the All-Merciful, the Bestower of mercy.')
+        await expect(page.getByTestId('verse-1:1')).toContainText('All praise be to Allah, Lord of all realms,')
         const previousSurah = page.getByRole('button', { name: 'Previous surah: An-Nās' })
         const nextSurah = page.getByRole('button', { name: 'Next surah: Al-Baqarah' })
         await expect(previousSurah).toBeVisible()
@@ -178,7 +182,7 @@ for (const fixture of readFixtures) {
         expect(seenDatasetUrls).toContain('/dataset/translations/bridges/002.json')
         await expect(page.getByTestId('verse-2:255')).toBeVisible()
         await expect(page.getByTestId('verse-2:255')).toContainText(/لَا إِكْرَاهَ فِے اِ۬لدِّينِ/i)
-        await expect(page.getByTestId('verse-2:255')).toContainText(/Allah.there is no god but He/i)
+        await expect(page.getByTestId('verse-2:255')).toContainText(/no compulsion in religion/i)
         const beforeScroll = await page.evaluate(() => window.scrollY)
         await page.mouse.wheel(0, 900)
         await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(beforeScroll)

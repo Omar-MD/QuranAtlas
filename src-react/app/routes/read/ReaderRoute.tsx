@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { loadReaderSurah, type ReaderCorpusState } from '../../../data/reader-corpus'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
@@ -10,13 +10,15 @@ import { DEFAULT_REACT_READER_PREFERENCES, readReactReaderPreferences } from '..
 import { applyReactReaderTypography, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import { ReaderVerseSurface } from '../../../components/reader/ReaderVerseSurface'
-import { DailyWirdCard } from '../../../components/reader/wird/DailyWirdCard'
 import { consumeReactReaderAnchor } from '../../../components/reader/SurahContinuityButton'
 import { resolveMushafHrefForVerseRef, resolveMushafHrefForVerseRoute } from '../../../components/reader/reader-mode-routing'
 import { useReaderPositionSync } from '../../../components/reader/useReaderPositionSync'
 import { useVerseInteractionReducer } from '../../../components/reader/useVerseInteractionReducer'
-import { readWirdPlan } from '../../../continuity/wird/store'
-import type { SurahCount, WirdPlan } from '../../../continuity/wird/types'
+import { readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
+import { createWirdBoundaries } from '../../../continuity/wird/metadata'
+import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
+import { deriveWirdSummary } from '../../../continuity/wird/progress'
+import type { SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 
 type ReaderSettings = {
@@ -29,6 +31,7 @@ type ReaderSettings = {
   translationVisible: boolean
   verseSpacing: ReaderSpacingStep
   wordSpacing: ReaderSpacingStep
+  wirdReaderStatusVisible: boolean
 }
 
 type ReaderSpacingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -43,6 +46,7 @@ const DEFAULT_READER_SETTINGS: ReaderSettings = {
   translationVisible: DEFAULT_REACT_READER_PREFERENCES.translationVisible,
   verseSpacing: DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
   wordSpacing: DEFAULT_REACT_READER_PREFERENCES.wordSpacing,
+  wirdReaderStatusVisible: DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
 }
 
 function asRiwayah(value: unknown): Riwayah | null {
@@ -64,6 +68,7 @@ async function readReaderSettings(): Promise<ReaderSettings> {
       translationVisible: preferences.translationVisible,
       verseSpacing: preferences.verseSpacing,
       wordSpacing: preferences.wordSpacing,
+      wirdReaderStatusVisible: preferences.wirdReaderStatusVisible,
     }
   } catch {
     return DEFAULT_READER_SETTINGS
@@ -82,9 +87,15 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
   const [corpus, setCorpus] = useState<ReaderCorpusState>({ status: 'loading' })
   const [metadata, setMetadata] = useState<Map<string, VerseMetadata>>(new Map())
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
+  const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
+  const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(DEFAULT_READER_SETTINGS.wirdReaderStatusVisible)
+  const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex, corpus), [corpus, surahIndex])
+  const wirdProgressCounts = useMemo(() => surahIndex.length === 114 ? wirdCounts : [], [surahIndex.length, wirdCounts])
+  const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
+  const wirdSummary = useMemo(() => deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries), [wirdBoundaries, wirdCounts, wirdPlan])
   const { selectedVerseKey, selectVerse } = useVerseInteractionReducer()
-  const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus)
+  const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus, { wirdCounts: wirdProgressCounts })
   const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
 
   useEffect(() => subscribeReactReaderPreferencesChanged((preferences) => {
@@ -94,7 +105,30 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
         ? { ...current, translationVisible: preferences.translationVisible ?? current.translationVisible }
         : current)
     }
+    if (preferences.wirdReaderStatusVisible !== undefined) {
+      setWirdReaderStatusVisible(preferences.wirdReaderStatusVisible)
+    }
   }), [])
+
+  useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
+
+  useEffect(() => {
+    if (wirdProgressCounts.length !== 114 || wirdPlan?.unit !== 'page') {
+      setWirdPageBoundaries([])
+      return undefined
+    }
+    const controller = new AbortController()
+    void loadReactWirdPageBoundaries(wirdProgressCounts, controller.signal)
+      .then((boundaries) => {
+        if (!controller.signal.aborted) setWirdPageBoundaries(boundaries)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setWirdPageBoundaries([])
+      })
+    return () => {
+      controller.abort()
+    }
+  }, [wirdPlan?.unit, wirdProgressCounts])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -107,6 +141,7 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
       .then((settings) => {
         document.documentElement.dataset.riwayah = settings.riwayah
         applyReactReaderTypography(settings)
+        setWirdReaderStatusVisible(settings.wirdReaderStatusVisible)
         return loadReaderSurah(surah, { ...settings, signal: controller.signal })
       })
       .then((loaded) => {
@@ -167,10 +202,9 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
             })
         }
       }}
+      showWirdStatus={wirdReaderStatusVisible}
+      wirdSummary={wirdSummary}
     >
-      <div className="qar:mx-auto qar:w-full qar:max-w-3xl qar:px-4 qar:pt-16">
-        <DailyWirdCard counts={wirdCountsFromIndex(surahIndex, corpus)} plan={wirdPlan} />
-      </div>
       <ReaderVerseSurface
         bookmarkedVerseKeys={bookmarkedVerseKeys}
         corpus={corpus}

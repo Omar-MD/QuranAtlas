@@ -62,7 +62,7 @@ export function ThemeNightControls({
         </div>
       </section>
       <section className="qar-react-settings-footer-panel" aria-labelledby="qar-react-settings-night">
-        <h3 className="qar-react-settings-footer-title" id="qar-react-settings-night">Night Mode</h3>
+        <h3 className="qar-react-settings-footer-title" id="qar-react-settings-night">Night mode</h3>
         <div className="qar-react-settings-night-strip" role="group" aria-label="Night mode">
           {NIGHT_MODES.map((option) => {
             const Icon = option.icon

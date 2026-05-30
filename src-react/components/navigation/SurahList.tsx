@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/surah-index'
+import type { RecentSurahPosition } from '../../continuity/recent-surahs'
 import type { Riwayah } from '../../storage/types'
 import { Button } from '../ui'
 
@@ -9,7 +10,7 @@ type SurahListProps = {
   filter?: 'all' | 'recent'
   onNavigate?: (hash: string) => void
   query?: string
-  recentSurahs?: number[]
+  recentSurahs?: RecentSurahPosition[]
   riwayah?: Riwayah
   rows?: ReaderSurahIndexEntry[]
 }
@@ -36,6 +37,10 @@ export function SurahList({
   const visibleRows = useMemo(
     () => filterSurahs(rows, parsedQuery, filter, recentSurahs, riwayah),
     [filter, parsedQuery, recentSurahs, riwayah, rows],
+  )
+  const recentBySurah = useMemo(
+    () => new Map(recentSurahs.map((row) => [row.surah, row])),
+    [recentSurahs],
   )
   const searchHint = useMemo(() => getSearchHint(rows, parsedQuery, riwayah), [parsedQuery, riwayah, rows])
 
@@ -78,9 +83,12 @@ export function SurahList({
       {searchHint && <p className="qar-react-nav-drawer-search-hint" role="status">{searchHint}</p>}
       <ul className="qar-react-nav-drawer-surah-list" aria-label="Surah list">
         {visibleRows.map((surah) => {
-          const targetVerse = parsedQuery.kind === 'ref' && parsedQuery.surah === surah.n ? parsedQuery.verse : null
+          const recent = filter === 'recent' ? recentBySurah.get(surah.n) : undefined
+          const recentVerse = recent ? Math.min(recent.verse, surah.counts[riwayah]) : null
+          const targetVerse = parsedQuery.kind === 'ref' && parsedQuery.surah === surah.n ? parsedQuery.verse : recentVerse
           const label = targetVerse ? `Open ${surah.name} verse ${targetVerse}` : `Open ${surah.name}`
           const hash = targetVerse ? `#/s/${surah.n}/${targetVerse}` : `#/s/${surah.n}`
+          const meta = recentVerse ? `Last reached ${surah.n}:${recentVerse}` : `${surah.counts[riwayah]} verses`
           return (
             <li
               className={[
@@ -94,7 +102,7 @@ export function SurahList({
                 <span className="qar-react-nav-drawer-surah-num">{surah.n}</span>
                 <span className="qar-react-nav-drawer-surah-copy">
                   <span className="qar-react-nav-drawer-surah-name">{surah.name}</span>
-                  <span className="qar-react-nav-drawer-surah-meta">{surah.counts[riwayah]} verses</span>
+                  <span className="qar-react-nav-drawer-surah-meta">{meta}</span>
                 </span>
                 <span className="qar-react-nav-drawer-surah-ar" dir="rtl" lang="ar">{surah.name_ar}</span>
                 <span className="qar-react-nav-drawer-surah-chev" aria-hidden="true">›</span>
@@ -124,12 +132,12 @@ function filterSurahs(
   rows: ReaderSurahIndexEntry[],
   parsedQuery: ParsedQuery,
   filter: 'all' | 'recent',
-  recentSurahs: number[],
+  recentSurahs: RecentSurahPosition[],
   riwayah: Riwayah,
 ): ReaderSurahIndexEntry[] {
   let items = rows
   if (filter === 'recent') {
-    const order = new Map(recentSurahs.map((n, index) => [n, index]))
+    const order = new Map(recentSurahs.map((row, index) => [row.surah, index]))
     items = rows.filter((row) => order.has(row.n)).sort((a, b) => (order.get(a.n) ?? 0) - (order.get(b.n) ?? 0))
   }
   if (parsedQuery.kind === 'empty') return items

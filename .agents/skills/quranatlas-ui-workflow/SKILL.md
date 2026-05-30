@@ -9,7 +9,7 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 
 ## Companion Skills
 
-- Use `quranatlas-workflow` for surface ownership, docs, tests, and verification.
+- Use `quranatlas-workflow` for surface ownership, docs, test policy, and verification.
 - Any UI-facing use of this skill must also invoke `frontend-design` in the same turn. This includes implementation, polish, redesign, styling, layout, and visual review work. Do not treat it as optional craft support.
 - Use `superpowers:brainstorming` before creative UI changes.
 - Use `imagegen` for creative visual suggestions, new visual directions, or major visual redesign decisions.
@@ -26,11 +26,12 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 - Implementation must name exactly one active reference source at a time: either one committed component reference plus intent note, or one existing accepted UI state for narrow non-directional fixes. Zero active references and multiple active references both violate the workflow.
 - One implementation loop owns one active component, one active reference source, and one visual concern at a time. Surrounding components may supply constraints, but they do not become active references until the current loop is complete and visually proven.
 - A focused task is not complete until the component is re-rendered, compared against the same active reference source, and mismatches are fixed. Do not start the next focused task first.
+- Do not follow TDD for UI work by default. Do not add or update automated tests, including Playwright specs, unless the user explicitly asks for tests.
 
 ## Tool Roles
 
 - Browser-proof tooling is an implementation aid, not repo infrastructure. Use the best available option for the task: Playwright MCP when configured, the local Playwright CLI, browser devtools, screenshots, traces, or manual browser inspection. State the fallback when you are not using checked-in Playwright coverage.
-- Checked-in Playwright specs under `tests/e2e/` are the durable browser regression layer and CI proof; `quranatlas-workflow` and `tests/e2e/AGENTS.md` own test placement and verification tier decisions.
+- Checked-in Playwright specs under `tests/e2e/` are the durable browser regression layer and CI proof when the user explicitly asks for tests; `quranatlas-workflow` and `tests/e2e/AGENTS.md` own test placement and verification tier decisions.
 - Do not treat transient `test-output/` screenshots as the visual source of truth.
 - Do not replace an existing good Playwright spec with MCP-only proof.
 
@@ -45,7 +46,7 @@ Use this only for QuranAtlas UI visual judgment: layout, styling, density, respo
 7. Implement one component and one visual concern at a time.
 8. Re-render after each focused task, compare against the same single active reference source, and fix mismatches before moving on to the next focused task.
 9. Capture responsive proof for applicable tiers, with real tablet-sized development proof when tablet behavior can differ.
-10. Use `quranatlas-workflow` and `tests/e2e/AGENTS.md` for any durable Playwright test decision.
+10. Use browser proof for UI verification. Only use `quranatlas-workflow` and `tests/e2e/AGENTS.md` for durable Playwright test decisions when the user explicitly asks for tests.
 
 ## Visual Direction Gate
 
@@ -58,7 +59,7 @@ Before implementation, identify:
 - Existing tokens, CSS surface conventions, and nearby components.
 - Relevant themes: light, sepia, dark.
 - Relevant viewports: mobile, tablet, desktop, plus awkward cases when risky.
-- Verification split: what will be inspected during iteration, and which browser-only invariants may need `quranatlas-workflow` / `tests/e2e/AGENTS.md` coverage.
+- Verification split: what will be inspected during iteration through browser proof and non-test checks. Consider `quranatlas-workflow` / `tests/e2e/AGENTS.md` coverage only when the user explicitly asks for tests.
 
 ## Component Reference Source Of Truth
 
@@ -127,7 +128,7 @@ Every changed component needs responsive visual proof for applicable tiers:
 - Tablet: `768-1179`.
 - Desktop: `>=1180`.
 
-Do not treat phone plus desktop as implied tablet coverage. Run a real tablet-sized development proof pass whenever the component can materially differ at the tablet breakpoint or in landscape. This is manual/development proof unless a checked-in tablet Playwright project or spec is added through the owning workflow.
+Do not treat phone plus desktop as implied tablet coverage. Run a real tablet-sized development proof pass whenever the component can materially differ at the tablet breakpoint or in landscape. This is manual/development proof unless the user explicitly asks for checked-in tablet Playwright coverage through the owning workflow.
 
 Add awkward checks when relevant:
 
@@ -149,7 +150,7 @@ If a component intentionally differs by viewport, commit separate references, fo
 
 - Use active browser proof during implementation: screenshots, accessibility snapshots, focus walks, and measured checks where layout can fail. Playwright MCP is optional when configured; Playwright CLI, browser devtools, or manual browser proof are all valid. Name the fallback when it is not already clear from the task context.
 - Required when applicable: horizontal overflow, header/control overlap, touch target size, text fit/clipping, responsive containment, theme/color state proof, and surface-specific invariants such as unframed Mushaf layout.
-- For durable regression coverage, hand off to `quranatlas-workflow` and `tests/e2e/AGENTS.md`. Typical candidates: real layout constraints, keyboard traversal, gesture behavior, service-worker effects, reload persistence, or layout measurements that would regress silently.
-- When visual proof becomes an e2e spec, refer to `tests/e2e/AGENTS.md`; this skill does not decide test placement or verification tiers.
+- Do not add durable regression coverage unless the user explicitly asks for tests. If they do, hand off to `quranatlas-workflow` and `tests/e2e/AGENTS.md`.
+- When user-requested visual proof becomes an e2e spec, refer to `tests/e2e/AGENTS.md`; this skill does not decide test placement or verification tiers.
 - If a Playwright spec captures screenshots, treat them as test artifacts unless the spec also uses committed baselines or other checked-in assertions. Artifacts do not replace `docs/ui-references/...`.
-- Completion requires reference handling appropriate to the change, comparison after each focused task, responsive proof for relevant tiers including development-time tablet proof when applicable, and final integration screenshots as ephemeral review evidence. Summarize in the final response which fallback/tooling was used, which tiers/states were checked, and whether durable Playwright coverage was added, skipped, or delegated to the owning workflow.
+- Completion requires reference handling appropriate to the change, comparison after each focused task, responsive proof for relevant tiers including development-time tablet proof when applicable, and final integration screenshots as ephemeral review evidence. Summarize in the final response which fallback/tooling was used and which tiers/states were checked. Mention tests only when the user explicitly requested them.

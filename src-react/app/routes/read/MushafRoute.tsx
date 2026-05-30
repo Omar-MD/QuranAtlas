@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
 import { MushafPageViewer } from '../../../components/reader/MushafPageViewer'
 import type { ReaderAssetState } from '../../../components/reader/ReaderAssetGate'
 import { ReaderAssetGate } from '../../../components/reader/ReaderAssetGate'
@@ -8,6 +9,11 @@ import type { MushafViewMode } from '../../../components/reader/MushafModeContro
 import { resolveVerseHrefForMushafPage } from '../../../components/reader/reader-mode-routing'
 import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-bookmark'
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
+import { createWirdBoundaries } from '../../../continuity/wird/metadata'
+import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
+import { deriveWirdSummary } from '../../../continuity/wird/progress'
+import { advanceWirdFromReaderPosition, readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
+import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import {
   loadMushafPageAsset,
   type MushafReadyPageAssetState,
@@ -24,6 +30,13 @@ type MushafRouteProps = {
   page: number
 }
 
+type ActiveMushafSettings = {
+  mushafEditionId: string
+  mushafViewMode: MushafViewMode
+  riwayah: Riwayah
+  wirdReaderStatusVisible: boolean
+}
+
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
 const DEFAULT_MUSHAF_EDITION_ID = 'qalun-quran-ws-v1'
 
@@ -32,11 +45,22 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   const [visiblePage, setVisiblePage] = useState<MushafReadyPageAssetState | null>(null)
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'previous'>('next')
   const [viewMode, setViewMode] = useState<MushafViewMode>('auto')
+  const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible)
+  const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
+  const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
+  const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
   const [chromeVisible, setChromeVisible] = useState(true)
   const requestId = useRef(0)
   const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
+  const lastWirdAdvancedKeyRef = useRef<string | null>(null)
   const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
+  const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex), [surahIndex])
+  const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
+  const wirdSummary = useMemo(() => {
+    if (!wirdPlan || wirdCounts.length !== 114) return undefined
+    return deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries)
+  }, [wirdBoundaries, wirdCounts, wirdPlan])
 
   useEffect(() => {
     if (routePageRef.current !== page) {
@@ -49,7 +73,73 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     if (isReactMushafViewMode(preferences.mushafViewMode)) {
       setViewMode(preferences.mushafViewMode)
     }
+    if (preferences.wirdReaderStatusVisible !== undefined) {
+      setWirdReaderStatusVisible(preferences.wirdReaderStatusVisible)
+    }
   }), [])
+
+  useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
+
+  const advanceMushafWirdToRef = useCallback((ref: QuranRef | null | undefined) => {
+    if (!ref || !wirdPlan || wirdCounts.length !== 114) return
+    const key = `${ref.surah}:${ref.verse}`
+    if (lastWirdAdvancedKeyRef.current === key) return
+    lastWirdAdvancedKeyRef.current = key
+    void openReactDb()
+      .then((db) => advanceWirdFromReaderPosition(db, ref, wirdCounts))
+      .then((nextPlan) => {
+        if (nextPlan) setWirdPlan(nextPlan)
+      })
+      .catch(() => {
+        lastWirdAdvancedKeyRef.current = null
+      })
+  }, [wirdCounts, wirdPlan])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void loadReaderSurahIndex(fetch, controller.signal)
+      .then((rows) => {
+        if (!controller.signal.aborted) setSurahIndex(rows)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSurahIndex([])
+      })
+
+    void openReactDb()
+      .then(readWirdPlan)
+      .then((plan) => {
+        if (!controller.signal.aborted) setWirdPlan(plan)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setWirdPlan(null)
+      })
+
+    return () => {
+      controller.abort()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (wirdCounts.length !== 114 || wirdPlan?.unit !== 'page') {
+      setWirdPageBoundaries([])
+      return undefined
+    }
+    const controller = new AbortController()
+    void loadReactWirdPageBoundaries(wirdCounts, controller.signal)
+      .then((boundaries) => {
+        if (!controller.signal.aborted) setWirdPageBoundaries(boundaries)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setWirdPageBoundaries([])
+      })
+    return () => {
+      controller.abort()
+    }
+  }, [wirdCounts, wirdPlan?.unit])
+
+  useEffect(() => {
+    advanceMushafWirdToRef(visiblePage?.resolved.firstVerse)
+  }, [advanceMushafWirdToRef, visiblePage?.resolved.firstVerse])
 
   useEffect(() => {
     if (assetState !== 'ready') return
@@ -58,6 +148,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     setState((current) => current.status === 'ready' ? current : { status: 'loading' })
     void loadActiveMushafSettings().then((settings) => {
       setViewMode(settings.mushafViewMode)
+      setWirdReaderStatusVisible(settings.wirdReaderStatusVisible)
       return loadMushafPageAsset({
         mushafEditionId: settings.mushafEditionId,
         page,
@@ -100,6 +191,8 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
           })
         }
       }}
+      showWirdStatus={wirdReaderStatusVisible}
+      wirdSummary={wirdSummary}
     >
       {assetState !== 'ready' ? (
         <ReaderAssetGate label="Qalun" state={assetState} />
@@ -109,6 +202,9 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
           chromeVisible={chromeVisible}
           inlineSvg={visiblePage.inlineSvg}
           onNavigate={(nextPage) => {
+            if (nextPage > visiblePage.resolved.page) {
+              advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
+            }
             setChromeVisible(false)
             window.location.hash = REACT_ROUTES.mushaf(nextPage)
           }}
@@ -139,7 +235,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   )
 }
 
-async function loadActiveMushafSettings(): Promise<{ riwayah: Riwayah; mushafEditionId: string; mushafViewMode: MushafViewMode }> {
+async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
   try {
     const db = await openReactDb()
     const [riwayah, mushafEditionId, preferences] = await Promise.all([
@@ -151,16 +247,22 @@ async function loadActiveMushafSettings(): Promise<{ riwayah: Riwayah; mushafEdi
       riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
       mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
       mushafViewMode: preferences.mushafViewMode,
+      wirdReaderStatusVisible: preferences.wirdReaderStatusVisible,
     }
   } catch {
     return {
       riwayah: DEFAULT_RIWAYAH,
       mushafEditionId: DEFAULT_MUSHAF_EDITION_ID,
       mushafViewMode: DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
+      wirdReaderStatusVisible: DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
     }
   }
 }
 
 function isRiwayah(value: unknown): value is Riwayah {
   return value === 'qaloon'
+}
+
+function wirdCountsFromIndex(index: ReaderSurahIndexEntry[]): SurahCount[] {
+  return index.length === 114 ? index.map((row) => ({ count: row.counts.qaloon, n: row.n })) : []
 }

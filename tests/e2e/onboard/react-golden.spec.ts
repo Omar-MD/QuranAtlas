@@ -47,7 +47,10 @@ for (const fixture of onboardFixtures) {
       await expect(page, 'Svelte oracle clean launch should route first-run users to the default reader.').toHaveURL(/#\/s\/1$/)
 
       await seedTargetState(page, 'react', fixture.seed)
-      const guard = installPageGuards(page, `react ${fixture.id}`)
+      const guard = installPageGuards(page, `react ${fixture.id}`, [
+        /\/dataset\/knowledge\/passages\/001\.json$/,
+        /\/dataset\/translations\/_verse-aliases\.json$/,
+      ])
       await page.goto(targetUrl('react', '/'))
       await expect(page.locator('#react-root')).toBeVisible()
       await expect(page, 'RPA-001/RPA-007: React clean production launch must match Svelte default reader launch.').toHaveURL(/#\/s\/1$/)

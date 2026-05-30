@@ -702,6 +702,69 @@
       ]
     },
     {
+      "id": "hizb-list",
+      "name": "HizbList",
+      "maturity": "product",
+      "exportPath": "src-react/components/navigation/HizbList.tsx",
+      "namedExport": "HizbList",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "group",
+        "row"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src-react/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "error"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "navigation list parity",
+            "row route start references"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic grouped list",
+        "keyboard reachable row actions",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src-react/components/navigation/navigation.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src-react/components/navigation"
+      },
+      "allowedConsumers": [
+        "src-react/**"
+      ],
+      "forbiddenUses": [
+        "Do not repeat Surah names inside every Hizb row."
+      ]
+    },
+    {
       "id": "icon-button",
       "name": "IconButton",
       "maturity": "primitive",
@@ -1415,6 +1478,80 @@
       ],
       "forbiddenUses": [
         "Do not import Svelte read components or CSS partials."
+      ]
+    },
+    {
+      "id": "reader-wird-status-indicator",
+      "name": "ReaderWirdStatusIndicator",
+      "maturity": "product",
+      "exportPath": "src-react/components/reader/wird/ReaderWirdStatusIndicator.tsx",
+      "namedExport": "ReaderWirdStatusIndicator",
+      "allowedVariants": [
+        "active",
+        "today-complete",
+        "plan-complete"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "progressRing"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-tooltip"
+        ],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src-react/components/reader/reader.stories.tsx",
+          "states": [
+            "ReaderChromeWithWirdStatus"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "reader chrome status opens Daily Wird detail",
+            "full Daily Wird card stays out of reader content"
+          ]
+        },
+        {
+          "path": "tests/unit/react-shell/settings-route.test.tsx",
+          "behaviors": [
+            "settings toggle persists reader status visibility"
+          ]
+        }
+      ],
+      "accessibility": [
+        "button aria-label summarizes Daily Wird state",
+        "visible focus through owned IconButton primitive",
+        "tooltip uses owned Tooltip primitive"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src-react/components/reader/reader.stories.tsx",
+          "tests/e2e/read/react-golden.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src-react/components/reader/wird"
+      },
+      "allowedConsumers": [
+        "src-react/components/reader/**"
+      ],
+      "forbiddenUses": [
+        "Do not replace the nav drawer Daily Wird card with this compact indicator.",
+        "Do not show this indicator when no active Wird plan exists."
       ]
     },
     {

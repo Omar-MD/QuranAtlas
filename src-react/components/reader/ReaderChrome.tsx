@@ -1,4 +1,5 @@
-import { BookOpenText, FileText, Menu, Settings } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { BookOpenText, ListOrdered, Menu, Settings } from 'lucide-react'
 
 import { cn } from '../../design-system/utils/cn'
 import { IconButton } from '../ui'
@@ -11,12 +12,14 @@ export function ReaderChrome({
   onOpenNavigation,
   onOpenSettings,
   visible = true,
+  wirdStatus,
 }: {
   mode: ReaderMode
   onOpenNavigation?: () => void
   onOpenSettings?: () => void
   onModeChange?: (mode: ReaderMode) => void
   visible?: boolean
+  wirdStatus?: ReactNode
 }) {
   return (
     <nav
@@ -28,6 +31,7 @@ export function ReaderChrome({
         <Menu aria-hidden="true" size={26} strokeWidth={1.8} />
       </IconButton>
       <div className="qar-reader-chrome-spacer" aria-hidden="true" />
+      {wirdStatus}
       {onModeChange && (
         <IconButton
           aria-pressed={mode === 'mushaf'}
@@ -37,7 +41,7 @@ export function ReaderChrome({
           onClick={() => onModeChange(mode === 'verse' ? 'mushaf' : 'verse')}
         >
           <span className="qar-reader-chrome-mode-glyph" aria-hidden="true">
-            {mode === 'verse' ? <BookOpenText size={20} strokeWidth={1.7} /> : <FileText size={20} strokeWidth={1.75} />}
+            {mode === 'verse' ? <BookOpenText size={20} strokeWidth={1.7} /> : <ListOrdered size={20} strokeWidth={1.75} />}
           </span>
         </IconButton>
       )}

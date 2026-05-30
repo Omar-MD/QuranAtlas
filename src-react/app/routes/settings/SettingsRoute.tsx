@@ -25,6 +25,7 @@ export function SettingsRoute({
     setReadingFlow,
     setTheme,
     setTranslationVisible,
+    setWirdReaderStatusVisible,
     state,
   } = useSettingsForm()
   const preferences = state.preferences
@@ -44,7 +45,7 @@ export function SettingsRoute({
           <section className="qar-react-settings-mode-card" aria-labelledby="qar-react-settings-reader-mode">
             <div className="qar-react-settings-section-heading">
               <h3 className="qar-react-settings-section-title" id="qar-react-settings-reader-mode">Reader mode</h3>
-              <p className="qar-react-settings-section-note">Switch the reader behind this sheet.</p>
+              <p className="qar-react-settings-section-note">Verse or Mushaf.</p>
             </div>
             <div className="qar-react-settings-row qar-react-settings-row--control qar-react-settings-row--mode-toggle">
               <SegmentedControl
@@ -62,8 +63,10 @@ export function SettingsRoute({
                 onFontSizeChange={setFontSize}
                 onReadingFlowChange={setReadingFlow}
                 onTranslationVisibleChange={setTranslationVisible}
+                onWirdReaderStatusVisibleChange={setWirdReaderStatusVisible}
                 readingFlow={preferences.readerMargin}
                 translationVisible={preferences.translationVisible}
+                wirdReaderStatusVisible={preferences.wirdReaderStatusVisible}
               />
             ) : (
               <MushafSettings mode={preferences.mushafViewMode} onModeChange={setMushafViewMode} />

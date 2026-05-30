@@ -119,7 +119,7 @@ Window-side optional package installation is not exposed in the current MVP UI. 
 
 All SW route registrations live in `src/infra/sw/strategies.ts::registerAll()`, driven by the declarative `ROUTE_DEFS` table in `src/infra/sw/route-defs.ts`. Dataset text routes are source-aware underneath: `text-core`, `text-riwayah`, `text-translation`, and `text-index` all share `quran-dataset-v2`. Pages cache per-riwayah/edition, search-index is a reader asset lane, and fonts are always-on. `cleanupStaleCaches` in `sw-handlers.js` preserves caches by prefix sourced from `route-defs.ts::CACHE_PREFIXES` — single source of truth. Adding a new asset class is one row in `ROUTE_DEFS` plus the prefix in `CACHE_PREFIXES`.
 
-The current window-side asset UI is `#/assets` (`src/configure/assets/AssetManagement.svelte`). It is read-only inventory for Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation. The legacy `src/configure/offline-selector.svelte` and `settings.offlineCategories` normalizer remain for migration/unit coverage, but the mode-aware Settings shell no longer mounts that selector. Legacy removed-scope media opt-ins are dropped during normalization and ignored by `getActivationState()` so hidden state does not linger invisibly or keep reader-first cache summary stuck on `cached`.
+The current window-side asset UI is `#/assets` (`src/configure/assets/AssetManagement.svelte`). It is read-only inventory for the default Qaloon text/font, Qaloon Mushaf, and Bridges profile, with display names resolved from the runtime asset indexes. The legacy `src/configure/offline-selector.svelte` and `settings.offlineCategories` normalizer remain for migration/unit coverage, but the mode-aware Settings shell no longer mounts that selector. Legacy removed-scope media opt-ins are dropped during normalization and ignored by `getActivationState()` so hidden state does not linger invisibly or keep reader-first cache summary stuck on `cached`.
 
 Baseline page availability is Qalun-only; the runtime/package key remains `qaloon`. Variant Quran text files under `/dataset/quran-text/**` route as `text-riwayah`; edition-aware Mushaf files under `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/**` route as `pages` and use `qa-pages-{riwayah}-{mushafEditionId}-v1`, while legacy Mushaf paths keep `qa-pages-{riwayah}-v1` during migration. Knowledge Lane files under `/dataset/knowledge/**` still route as `text-knowledge` and share `CACHE_DATASET`. `src/data/offline.ts::startCategoryDownload(cat)` filters manifest inventory entries through `route-defs.ts::sumBytesForCategory()`. Optional source-pack download/remove helpers are not current MVP APIs.
 
@@ -171,12 +171,12 @@ Current dataset package version for the applied runtime corpus. Sole writer: `sr
 - **React proof clear-data uses the shared DB name.** The React About route's
   `src-react/storage/clear-data.ts` clears browser storage, Cache Storage, and
   the shared `quran-atlas` IndexedDB database, then root-reloads through the
-  route-owned dialog hook. Svelte remains the shipped clear-data owner during
-  dual-build.
+  route-owned dialog hook. Svelte remains the shipped clear-data owner until the
+  production cutover flips build routing.
 - **React proof caches are namespaced away from shipped Svelte caches.** The
   React Vite PWA config always uses Workbox cache id
   `quranatlas-react-proof`; runtime React dataset caching uses
-  `quran-atlas-react-runtime-dataset-v1`. Production-target React preview
+  `quran-atlas-react-runtime-dataset-v1`. Production-target React proof
   tests assert that `dist-react/` owns its generated Workbox helper while
   shipped Svelte `dist/` does not.
 - **Launch asset reset clears stores before seeding defaults.** The passive

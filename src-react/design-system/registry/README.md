@@ -1,9 +1,8 @@
 # React Component Registry
 
-The registry is the machine-readable source for React component ownership during
-the dual-build period. Add or update an entry whenever a React component,
-product component, or page recipe becomes part of the approved composition
-surface.
+The registry is the machine-readable source for React component ownership. Add
+or update an entry whenever a React component, product component, or page recipe
+becomes part of the approved composition surface.
 
 Rules:
 

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { MetadataLane } from './MetadataLane'
 
 const meta = {
-  title: 'React Reader/Wave 3 Metadata',
+  title: 'React Reader/Metadata',
   component: MetadataLane,
 } satisfies Meta<typeof MetadataLane>
 

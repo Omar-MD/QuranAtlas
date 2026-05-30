@@ -1,8 +1,7 @@
 /**
  * Cross-surah swap orchestration.
  *
- * Approach C from `docs/superpowers/specs/2026-04-25-cross-surah-infinite-scroll-design.md`:
- * one surah is mounted at a time. When the user pulls past the end of the
+ * One surah is mounted at a time. When the user pulls past the end of the
  * current surah (or past the top), this module swaps the mounted surah by
  * triggering a router navigation to `#/s/{newN}` and stashing a transient
  * `swapAnchor` on `window` so the next Reader mount knows whether to land
@@ -10,11 +9,9 @@
  *
  * Wraps both directions: 114 → 1 forward, 1 → 114 backward.
  *
- * Pull UX (2026-04-25 follow-up): instead of firing immediately on a
- * threshold, the pull tracker emits a 0..1 progress value that drives a
- * Chrome-mobile-style circular indicator. The swap commits only when the
- * user releases past full progress (== 1.0). Wheel and touch are tracked
- * uniformly — both feed cumulative pull distance.
+ * The pull tracker emits a 0..1 progress value that drives a circular
+ * indicator. The swap commits only when the user releases past full progress
+ * (== 1.0). Wheel and touch are tracked uniformly.
  */
 
 const FIRST_SURAH = 1

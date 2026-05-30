@@ -181,23 +181,23 @@
   .qar-react-night-shift {
     position: fixed;
     inset: 0;
-    z-index: 109;
+    z-index: 9999;
     pointer-events: none;
     opacity: 0;
     background:
-      linear-gradient(rgb(22 14 5 / 24%), rgb(22 14 5 / 24%)),
-      color-mix(in srgb, var(--qa-react-accent) 8%, transparent);
+      linear-gradient(rgb(28 18 7 / 13%), rgb(28 18 7 / 13%)),
+      color-mix(in srgb, var(--qa-react-accent) 5%, transparent);
     mix-blend-mode: multiply;
     transition: opacity var(--qa-react-transition-fast);
   }
 
   html[data-night-mode='on'] .qar-react-night-shift {
-    opacity: 1;
+    opacity: .78;
   }
 
   @media (prefers-color-scheme: dark) {
     html[data-night-mode='auto'] .qar-react-night-shift {
-      opacity: 1;
+      opacity: .78;
     }
   }
 
@@ -227,7 +227,8 @@
     max-width: 100vw;
     max-height: 100dvh;
     overflow: hidden;
-    background: var(--qa-react-sheet);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--qa-react-sheet) 96%, var(--qa-react-surface)) 0%, var(--qa-react-sheet) 100%);
     color: var(--qa-react-text);
     outline: none;
     box-shadow: 0 18px 42px rgb(0 0 0 / 18%);
@@ -239,11 +240,12 @@
     align-items: center;
     justify-content: space-between;
     gap: .75rem;
-    min-height: calc(env(safe-area-inset-top) + 54px);
-    padding: calc(env(safe-area-inset-top) + .45rem) .85rem .45rem;
+    min-height: calc(env(safe-area-inset-top) + 56px);
+    padding: calc(env(safe-area-inset-top) + .52rem) 1rem .52rem;
     border-bottom: 1px solid var(--qa-react-border);
-    background: color-mix(in srgb, var(--qa-react-sheet) 94%, transparent);
+    background: color-mix(in srgb, var(--qa-react-sheet) 96%, var(--qa-react-surface));
     backdrop-filter: blur(14px);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--qa-react-surface) 54%, transparent);
   }
 
   .qar-react-settings-title-block {
@@ -275,7 +277,7 @@
     min-height: 0;
     overflow: auto;
     overscroll-behavior: contain;
-    padding: .62rem;
+    padding: .72rem;
   }
 
   .qar-react-settings-deck {
@@ -291,7 +293,7 @@
     min-width: 0;
     border: 1px solid var(--qa-react-nav-row-border);
     border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-nav-row-surface) 92%, var(--qa-react-sheet));
+    background: color-mix(in srgb, var(--qa-react-nav-row-surface) 96%, var(--qa-react-sheet));
     box-shadow: var(--qa-react-nav-shadow-row);
   }
 
@@ -482,8 +484,8 @@
   }
 
   .qar-react-settings-row--control [role='tab'][aria-selected='true'] {
-    background: var(--qa-react-nav-control-selected-bg) !important;
-    color: var(--qa-react-nav-control-selected-text) !important;
+    background: color-mix(in srgb, var(--qa-react-accent) 12%, var(--qa-react-nav-control-selected-bg)) !important;
+    color: var(--qa-react-accent-strong) !important;
   }
 
   .qar-react-settings-row--control [role='tab'][aria-selected='true']::after {
@@ -499,6 +501,7 @@
   .qar-react-settings-row-label {
     color: var(--qa-react-text);
     font-size: .8rem;
+    font-weight: 540;
     line-height: 1.3;
   }
 
@@ -512,7 +515,7 @@
     margin: 0;
     color: var(--qa-react-text-muted);
     overflow: hidden;
-    font-size: .7rem;
+    font-size: .71rem;
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -538,19 +541,19 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     overflow: hidden;
-    margin: .65rem .82rem .86rem;
+    margin: .68rem 1rem .92rem;
     border: 1px solid var(--qa-react-nav-row-border);
     border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-nav-row-surface) 72%, var(--qa-react-sheet));
+    background: color-mix(in srgb, var(--qa-react-nav-row-surface) 82%, var(--qa-react-sheet));
   }
 
   .qar-react-settings-asset-row {
     display: grid;
-    grid-template-columns: 2.35rem minmax(0, 1fr) auto 1rem;
+    grid-template-columns: 2.7rem minmax(0, 1fr) auto 1rem;
     align-items: center;
     gap: .62rem;
     min-height: 3.25rem;
-    padding: 0 .62rem 0 0;
+    padding: 0 .68rem 0 .36rem;
   }
 
   .qar-react-settings-asset-row + .qar-react-settings-asset-row {
@@ -560,10 +563,12 @@
   .qar-react-settings-asset-icon {
     display: grid;
     place-items: center;
-    align-self: stretch;
-    inline-size: 2.35rem;
-    block-size: 100%;
-    border-inline-end: 1px solid var(--qa-react-nav-row-separator);
+    justify-self: center;
+    inline-size: 2.08rem;
+    block-size: 2.08rem;
+    border: 1px solid var(--qa-react-nav-control-border);
+    border-radius: var(--qa-react-radius-control);
+    background: color-mix(in srgb, var(--qa-react-surface) 76%, var(--qa-react-canvas));
     color: var(--qa-react-text);
     opacity: .88;
   }
@@ -581,6 +586,25 @@
     display: grid;
     min-width: 0;
     gap: .08rem;
+  }
+
+  .qar-react-settings-asset-label {
+    display: block;
+    min-width: 0;
+    line-height: 1.3;
+  }
+
+  .qar-react-settings-asset-prefix {
+    display: inline;
+    margin-inline-end: .28rem;
+    color: var(--qa-react-text-muted);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .qar-react-settings-asset-label .qar-react-settings-row-label {
+    display: inline;
   }
 
   .qar-react-settings-asset-status {
@@ -744,6 +768,12 @@
   }
 
   .qar-react-settings-switch[aria-checked='true'] {
+    border-color: color-mix(in srgb, var(--qa-react-accent) 54%, var(--qa-react-border));
+    background: var(--qa-react-accent);
+  }
+
+  .qar-react-settings-switch[data-state='checked'] {
+    border-color: color-mix(in srgb, var(--qa-react-accent) 54%, var(--qa-react-border));
     background: var(--qa-react-accent);
   }
 
@@ -921,9 +951,9 @@
   .qar-react-settings-row,
   .qar-react-settings-range {
     grid-template-columns: minmax(8.5rem, .9fr) minmax(0, 1.1fr);
-    gap: .85rem;
-    min-height: 4.45rem;
-    padding: .72rem .82rem;
+    gap: .9rem;
+    min-height: 4.35rem;
+    padding: .78rem 1rem;
   }
 
   .qar-react-settings-mode-card {
@@ -939,22 +969,22 @@
   }
 
   .qar-react-settings-mode-panels {
-    height: 15.7rem;
+    height: 20.1rem;
     overflow: hidden;
   }
 
   .qar-react-settings-mode-panels[data-active-mode='mushaf'] {
-    height: 15.7rem;
+    height: 20.1rem;
   }
 
   .qar-react-settings-panel-head {
     min-height: 2.35rem;
-    padding: .5rem .82rem;
-    background: color-mix(in srgb, var(--qa-react-nav-control-surface) 38%, transparent);
+    padding: .56rem 1rem;
+    background: color-mix(in srgb, var(--qa-react-nav-control-surface) 46%, transparent);
   }
 
   .qar-react-settings-panel-head .qar-react-settings-section-title {
-    font-size: .78rem;
+    font-size: .8rem;
   }
 
   .qar-react-settings-row-copy {
@@ -1053,46 +1083,57 @@
 
   .qar-react-settings-row--switch {
     grid-template-columns: minmax(8.5rem, 1fr) auto;
+    align-items: start;
+    padding-block: .88rem .98rem;
+  }
+
+  .qar-react-settings-row--switch label {
+    align-self: start;
+    margin-top: .1rem;
   }
 
   .qar-react-settings-assets {
     margin-top: 0;
-    border-bottom: 1px solid var(--qa-react-nav-row-border);
+    border-bottom: 0;
   }
 
   .qar-react-settings-assets > .qar-react-settings-section-heading {
     grid-template-columns: minmax(0, 1fr);
     min-height: 3.2rem;
-    padding: .68rem .82rem .5rem;
+    padding: .7rem 1rem .54rem;
   }
 
   .qar-react-settings-assets > .qar-react-settings-section-heading .qar-react-settings-section-title {
     color: var(--qa-react-text-muted);
     font-size: .7rem;
-    letter-spacing: .16em;
+    letter-spacing: .13em;
     text-transform: uppercase;
   }
 
   .qar-react-settings-asset-row {
-    grid-template-columns: 2.35rem minmax(0, 1fr) auto 1rem;
-    min-height: 3.35rem;
+    grid-template-columns: 2.7rem minmax(0, 1fr) auto 1rem;
+    min-height: 3.46rem;
     margin-inline: 0;
-    padding: 0 .62rem 0 0;
+    padding: 0 .72rem 0 .36rem;
   }
 
   .qar-react-settings-asset-icon {
-    border-inline-end: 1px solid var(--qa-react-nav-row-separator);
+    inline-size: 2.12rem;
+    block-size: 2.12rem;
   }
 
   .qar-react-settings-footer {
-    padding: 0;
-    background: var(--qa-react-nav-row-surface);
+    padding: .56rem .72rem calc(env(safe-area-inset-bottom) + .72rem);
+    border-top: 0;
+    background: transparent;
   }
 
   .qar-react-settings-theme-night {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0;
+    padding-top: .68rem;
+    border-top: 1px solid var(--qa-react-nav-row-separator);
   }
 
   .qar-react-settings-footer-panel {
@@ -1100,7 +1141,7 @@
     grid-template-columns: minmax(0, 1fr);
     gap: .62rem;
     min-width: 0;
-    padding: .78rem .82rem .86rem;
+    padding: .2rem .72rem .06rem;
   }
 
   .qar-react-settings-footer-panel + .qar-react-settings-footer-panel {
@@ -1112,7 +1153,7 @@
     color: var(--qa-react-text-muted);
     font-size: .68rem;
     font-weight: 700;
-    letter-spacing: .16em;
+    letter-spacing: .13em;
     text-transform: uppercase;
   }
 
@@ -1158,8 +1199,8 @@
     position: relative;
     display: grid;
     place-items: center;
-    inline-size: 2.15rem;
-    block-size: 2.15rem;
+    inline-size: 2.2rem;
+    block-size: 2.2rem;
     border: 1px solid var(--qa-react-nav-control-border);
     border-radius: var(--qa-react-radius-control);
     background: color-mix(in srgb, var(--qa-react-surface) 78%, var(--qa-react-canvas));
@@ -1172,10 +1213,12 @@
   }
 
   .qar-react-settings-appearance-choice[aria-pressed='true'] .qar-react-settings-appearance-icon {
-    border-color: var(--qa-react-accent);
-    background: color-mix(in srgb, var(--qa-react-accent) 9%, var(--qa-react-surface));
-    color: var(--qa-react-accent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qa-react-accent) 16%, transparent);
+    border-color: var(--qa-react-accent-strong);
+    background: color-mix(in srgb, var(--qa-react-accent) 11%, var(--qa-react-surface));
+    color: var(--qa-react-accent-strong);
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--qa-react-accent) 10%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, var(--qa-react-accent) 18%, transparent);
   }
 
   .qar-react-settings-appearance-choice[aria-pressed='true'] .qar-react-settings-choice-label {
@@ -1211,11 +1254,21 @@
   }
 
   @media (max-width: 767px) {
+    .qar-react-settings-body {
+      padding: .5rem;
+    }
+
     .qar-react-settings-mode-card,
     .qar-react-settings-row,
     .qar-react-settings-range {
       grid-template-columns: minmax(0, 1fr);
       gap: .42rem;
+      min-height: 3rem;
+      padding: .42rem .82rem;
+    }
+
+    .qar-react-settings-mode-card {
+      min-height: 3.35rem;
     }
 
     .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle {
@@ -1224,7 +1277,8 @@
 
     .qar-react-settings-mode-panels,
     .qar-react-settings-mode-panels[data-active-mode='mushaf'] {
-      height: 18.2rem;
+      height: auto;
+      overflow: visible;
     }
 
     .qar-react-settings-row--font-size,
@@ -1233,13 +1287,51 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
+    .qar-react-settings-row--switch {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      column-gap: .8rem;
+      padding-block: .54rem .6rem;
+    }
+
     .qar-react-settings-row--switch label {
-      grid-column: auto;
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
       justify-self: end;
+      margin-top: .08rem;
+    }
+
+    .qar-react-settings-row--switch .qar-react-settings-row-copy {
+      grid-column: 1;
+      grid-row: 1;
     }
 
     .qar-react-settings-panel-head {
+      min-height: 1.9rem;
+      padding-block: .36rem .28rem;
       padding-left: .82rem;
+    }
+
+    .qar-react-settings-assets > .qar-react-settings-section-heading {
+      min-height: 2.2rem;
+      padding: .42rem .82rem .32rem;
+    }
+
+    .qar-react-settings-asset-list {
+      margin: .36rem .72rem .54rem;
+    }
+
+    .qar-react-settings-asset-row {
+      grid-template-columns: 2.25rem minmax(0, 1fr) auto .75rem;
+      min-height: 2.55rem;
+      gap: .46rem;
+      padding: 0 .48rem 0 .22rem;
+    }
+
+    .qar-react-settings-asset-icon {
+      inline-size: 1.82rem;
+      block-size: 1.82rem;
     }
 
     .qar-react-settings-theme-night {
@@ -1247,7 +1339,7 @@
     }
 
     .qar-react-settings-footer-panel {
-      padding-inline: .6rem;
+      padding-inline: .42rem;
     }
 
     .qar-react-settings-theme-strip {
@@ -1356,6 +1448,64 @@
 
   .qar-reader-chrome-mode-toggle[data-reader-mode='mushaf'] .qar-reader-chrome-mode-glyph {
     transform: scaleX(-1);
+  }
+
+  .qar-reader-chrome-wird-anchor {
+    display: inline-flex;
+    flex: 0 0 42px;
+    inline-size: 42px;
+    block-size: 42px;
+  }
+
+  .qar-reader-chrome-wird-status {
+    position: relative;
+    flex: 0 0 42px;
+    inline-size: 42px;
+    block-size: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    padding: 0 !important;
+    border-color: var(--qa-react-nav-control-border) !important;
+    border-radius: var(--qa-react-radius-circle) !important;
+    background: color-mix(in srgb, var(--qa-react-surface) 88%, transparent) !important;
+    color: var(--qa-react-accent);
+    box-shadow: var(--qa-react-nav-shadow-control);
+    -webkit-touch-callout: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  .qar-reader-chrome-wird-status:hover,
+  .qar-reader-chrome-wird-status:focus-visible {
+    border-color: color-mix(in srgb, var(--qa-react-accent) 62%, var(--qa-react-nav-control-border)) !important;
+    color: var(--qa-react-accent-strong);
+  }
+
+  .qar-reader-chrome-wird-ring {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border-radius: var(--qa-react-radius-circle);
+    background:
+      conic-gradient(var(--qa-react-accent) var(--qa-react-wird-status-progress), color-mix(in srgb, var(--qa-react-accent) 15%, transparent) 0),
+      color-mix(in srgb, var(--qa-react-surface) 72%, transparent);
+  }
+
+  .qar-reader-chrome-wird-core {
+    display: grid;
+    place-items: center;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: var(--qa-react-radius-circle);
+    background: var(--qa-react-surface);
+    color: var(--qa-react-accent);
+  }
+
+  .qar-reader-chrome-wird-status[data-wird-state='today-complete'] .qar-reader-chrome-wird-core,
+  .qar-reader-chrome-wird-status[data-wird-state='plan-complete'] .qar-reader-chrome-wird-core {
+    background: var(--qa-react-accent);
+    color: var(--qa-react-text-on-accent);
   }
 
   .qar-reader-chrome-spacer {
@@ -1550,7 +1700,7 @@
 
   .qar-react-nav-drawer-source-tabs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     min-height: 44px;
     overflow: hidden;
     margin: 0;
@@ -1576,7 +1726,7 @@
     color: var(--qa-react-text-muted);
     cursor: pointer;
     font: inherit;
-    font-size: 0.84rem;
+    font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0;
     line-height: 1;
@@ -1584,6 +1734,7 @@
 
   .qar-react-nav-drawer-source-tab {
     min-height: 42px;
+    padding: 0 4px !important;
     border: 0 !important;
     border-radius: 0 !important;
     border-inline-start: 1px solid transparent !important;
@@ -1694,7 +1845,8 @@
   }
 
   .qar-react-nav-drawer-surah-list,
-  .qar-react-juz-list {
+  .qar-react-juz-list,
+  .qar-react-hizb-list {
     display: flex;
     flex: 1;
     flex-direction: column;
@@ -1708,7 +1860,8 @@
   }
 
   .qar-react-nav-drawer-surah-row,
-  .qar-react-juz-row {
+  .qar-react-juz-row,
+  .qar-react-hizb-row {
     flex: 0 0 auto;
     overflow: hidden;
     border: 1px solid var(--qa-react-nav-row-border);
@@ -1718,7 +1871,8 @@
   }
 
   .qar-react-nav-drawer-surah-row--current,
-  .qar-react-juz-row--current {
+  .qar-react-juz-row--current,
+  .qar-react-hizb-row--current {
     border-color: var(--qa-react-nav-row-border);
     background: var(--qa-react-nav-current-bg);
     box-shadow:
@@ -1727,7 +1881,8 @@
   }
 
   .qar-react-nav-drawer-surah-btn,
-  .qar-react-juz-row-btn {
+  .qar-react-juz-row-btn,
+  .qar-react-hizb-row-btn {
     display: grid !important;
     width: 100%;
     min-width: 0;
@@ -1759,6 +1914,15 @@
     line-height: normal !important;
   }
 
+  .qar-react-hizb-row-btn {
+    grid-template-columns: 58px minmax(0, 1fr) auto 16px !important;
+    align-items: center;
+    gap: 8px !important;
+    min-height: 48px !important;
+    padding: 7px 10px !important;
+    line-height: normal !important;
+  }
+
   .qar-react-nav-drawer-surah-num {
     color: var(--qa-react-text);
     font-size: 0.9rem;
@@ -1766,7 +1930,8 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .qar-react-juz-num {
+  .qar-react-juz-num,
+  .qar-react-hizb-num {
     color: var(--qa-react-text);
     font-size: 0.84rem;
     font-weight: 700;
@@ -1774,7 +1939,8 @@
   }
 
   .qar-react-nav-drawer-surah-row--current .qar-react-nav-drawer-surah-num,
-  .qar-react-nav-drawer-surah-row--current .qar-react-nav-drawer-surah-name {
+  .qar-react-nav-drawer-surah-row--current .qar-react-nav-drawer-surah-name,
+  .qar-react-hizb-row--current .qar-react-hizb-num {
     color: var(--qa-react-accent);
   }
 
@@ -1793,7 +1959,7 @@
   .qar-react-juz-name {
     min-width: 0;
     overflow: hidden;
-    font-size: 1rem;
+    font-size: 0.92rem;
     line-height: 1.15;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1808,7 +1974,8 @@
   }
 
   .qar-react-nav-drawer-surah-meta,
-  .qar-react-juz-ref {
+  .qar-react-juz-ref,
+  .qar-react-hizb-ref {
     min-width: 0;
     overflow: hidden;
     color: var(--qa-react-text-muted);
@@ -1824,20 +1991,92 @@
     font-weight: 400;
   }
 
+  .qar-react-hizb-ref {
+    font-family: 'Geist Mono', ui-monospace, menlo, monospace;
+    font-size: 0.74rem;
+    font-weight: 500;
+  }
+
   .qar-react-nav-drawer-surah-ar,
-  .qar-react-juz-ar {
-    color: var(--qa-react-text-muted);
+  .qar-react-juz-ar,
+  .qar-react-hizb-group-ar {
+    color: color-mix(in srgb, var(--qa-react-text) 84%, var(--qa-react-accent) 16%);
     font-family: var(--qa-react-font-arabic);
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.35;
+    font-size: 1.22rem;
+    font-weight: 500;
+    line-height: 1.28;
   }
 
   .qar-react-nav-drawer-surah-chev,
-  .qar-react-juz-chev {
+  .qar-react-juz-chev,
+  .qar-react-hizb-chev {
     color: var(--qa-react-text-muted);
     font-size: 1.15rem;
     line-height: 1;
+  }
+
+  .qar-react-hizb-group {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .qar-react-hizb-group + .qar-react-hizb-group {
+    margin-top: 2px;
+  }
+
+  .qar-react-hizb-group-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(68px, auto) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px 3px;
+    color: var(--qa-react-text-muted);
+  }
+
+  .qar-react-hizb-group-name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--qa-react-text-muted);
+    font-size: 0.8rem;
+    font-weight: 650;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .qar-react-hizb-group-ar {
+    min-width: 0;
+    overflow: hidden;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .qar-react-hizb-group-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    min-height: 22px;
+    padding: 0 6px;
+    border-radius: var(--qa-react-radius-pill);
+    background: var(--qa-react-nav-badge-surface);
+    color: var(--qa-react-nav-badge-text);
+    font-family: var(--qa-react-font-mono);
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .qar-react-hizb-group-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   .qar-react-bookmarks-list {
@@ -2090,7 +2329,8 @@
     }
   }
 
-  .qar-react-juz-marker {
+  .qar-react-juz-marker,
+  .qar-react-hizb-marker {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2106,7 +2346,8 @@
     white-space: nowrap;
   }
 
-  .qar-react-juz-marker-spacer {
+  .qar-react-juz-marker-spacer,
+  .qar-react-hizb-marker-spacer {
     inline-size: 0;
     overflow: hidden;
   }
@@ -2309,6 +2550,96 @@
     color: var(--qa-react-text);
     font-size: 1.45rem;
     line-height: 1;
+  }
+
+  .qar-react-wird-card-reminder-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px 12px 67px;
+    color: var(--qa-react-text-muted);
+    font-size: 0.75rem;
+  }
+
+  .qar-react-nav-drawer-read--hidden {
+    display: none;
+  }
+
+  .qar-react-wird-detail {
+    display: grid;
+    gap: 14px;
+    padding: 12px;
+    border: 1px solid var(--qa-react-nav-row-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-nav-row-surface);
+    color: var(--qa-react-text);
+    box-shadow: var(--qa-react-nav-shadow-row);
+  }
+
+  .qar-react-wird-detail-head,
+  .qar-react-wird-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .qar-react-wird-detail-title {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .qar-react-wird-setup,
+  .qar-react-wird-current,
+  .qar-react-wird-field {
+    display: grid;
+    gap: 10px;
+  }
+
+  .qar-react-wird-eyebrow,
+  .qar-react-wird-help,
+  .qar-react-wird-range,
+  .qar-react-wird-remaining,
+  .qar-react-wird-reminder-line,
+  .qar-react-wird-note {
+    margin: 0;
+  }
+
+  .qar-react-wird-eyebrow,
+  .qar-react-wird-field-label {
+    color: var(--qa-react-text);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .qar-react-wird-help,
+  .qar-react-wird-field-value,
+  .qar-react-wird-remaining,
+  .qar-react-wird-reminder-line,
+  .qar-react-wird-note {
+    color: var(--qa-react-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .qar-react-wird-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .qar-react-wird-option[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--qa-react-accent) 48%, var(--qa-react-border));
+    color: var(--qa-react-accent);
+  }
+
+  .qar-react-wird-reminder {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--qa-react-text);
+    font-size: 0.875rem;
   }
 
   .qar-react-mushaf-page-surface {

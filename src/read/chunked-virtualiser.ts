@@ -9,9 +9,6 @@
  *   - 'loading' : 20 skeleton-line <div>s populated via createElement
  *   - 'spacer'  : empty <div> with inline `style.height` from cache
  *
- * Replaces the older monotonic `chunked-append.ts`. Spec at
- * `docs/superpowers/specs/2026-05-01-n19-n20-tokenisable-virtualisation-design.md`.
- *
  * `style.height` on spacer divs joins the R-19c CSP `unsafe-inline`
  * carve-out (continuous DOM-driven values; see `csp-allowlist.md`).
  *

@@ -2,12 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { MushafRoute } from '../../app/routes/read/MushafRoute'
 import type { ReaderCorpusState } from '../../data/reader-corpus'
+import type { WirdSummary } from '../../continuity/wird/types'
 import type { MushafResolvedPage, ReactInlineMushafSvg } from '../../packs/mushaf-page-asset'
 import { MushafPageViewer } from './MushafPageViewer'
+import { ReaderChrome } from './ReaderChrome'
 import { ReaderVerseSurface } from './ReaderVerseSurface'
+import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
 
 const meta = {
-  title: 'React Reader/Wave 3 Reader',
+  title: 'React Reader/Reader',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
 
@@ -87,6 +90,35 @@ const sampleMushafSvg: ReactInlineMushafSvg = {
   viewBoxText: '0 0 120 180',
 }
 
+const activeWirdSummary: WirdSummary = {
+  nextRef: { surah: 2, verse: 8 },
+  percent: 35,
+  plan: {
+    endRef: { surah: 2, verse: 20 },
+    history: [],
+    id: 'story-wird',
+    progress: {
+      completedThroughRef: { surah: 2, verse: 7 },
+      dayKey: '2026-05-29',
+      lastReadRef: { surah: 2, verse: 7 },
+      nextRef: { surah: 2, verse: 8 },
+      todayEndRef: { surah: 2, verse: 10 },
+      todayStartRef: { surah: 2, verse: 1 },
+    },
+    reminder: { browserNotifications: 'default', enabled: false, time: '08:00' },
+    startedOn: '2026-05-29',
+    startRef: { surah: 2, verse: 1 },
+    targetDays: 2,
+    targetEndOn: '2026-05-30',
+    unit: 'verse',
+  },
+  remainingLabel: '13 verses left',
+  reminderLabel: null,
+  state: 'active',
+  todayPercent: 70,
+  todayRangeLabel: '2:1-2:10',
+}
+
 export const VerseReader: Story = {
   render: () => <ReaderVerseSurface corpus={readyCorpus} selectedVerseKey="1:4" surahIndex={surahIndex} />,
 }
@@ -101,6 +133,15 @@ export const VerseReaderLoading: Story = {
 
 export const VerseReaderUnavailable: Story = {
   render: () => <ReaderVerseSurface corpus={{ status: 'unavailable', reason: 'Qalun text pack is not installed.' }} />,
+}
+
+export const ReaderChromeWithWirdStatus: Story = {
+  render: () => (
+    <ReaderChrome
+      mode="verse"
+      wirdStatus={<ReaderWirdStatusIndicator onOpen={() => undefined} summary={activeWirdSummary} />}
+    />
+  ),
 }
 
 export const MushafMissingPack: Story = {

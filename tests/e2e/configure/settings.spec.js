@@ -281,7 +281,7 @@ test.describe('Journey D: Asset Management route', () => {
       await expect(assets.getByRole('heading', { name: 'Asset Management' })).toBeVisible()
       await expect(assets.getByRole('link', { name: 'Back to Reader' })).toHaveAttribute('href', '#/s/1')
       await expect(page.locator('.qa-assets-status')).toContainText('Default assets ready.')
-      for (const heading of ['Qaloon Text + Font', 'Qaloon Mushaf', 'Bridges Translation']) {
+      for (const heading of ['Uthmani KFGQPC + KFGQPC Qaloon', 'Qalun Quran.ws', 'Bridges']) {
         await expect(assets.getByRole('heading', { name: heading, exact: true })).toBeVisible()
       }
       for (const role of ['button', 'link', 'menuitem', 'combobox', 'radio', 'listbox']) {

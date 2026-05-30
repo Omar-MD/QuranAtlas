@@ -13,7 +13,6 @@
    Rules inside layers win by layer order, not source order.
    Rules outside any layer beat every layered rule — stylelint forbids them.
 
-   See docs/superpowers/specs/2026-04-22-css-token-refactor-design.md
    ========================================================================== */
 
 @layer reset, tokens, base, animations, utilities, surfaces, overrides;

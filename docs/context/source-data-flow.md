@@ -23,15 +23,15 @@ The current MVP build exposes only the default reader profile: Qaloon text/font,
 
 The runtime trust boundary is manifest membership plus build-time validation and local install-state verification. Per-file digest verification is not a current product claim.
 
-React refactor code uses the same runtime trust boundary through
+React production-candidate code uses the same runtime trust boundary through
 `src-react/data/runtime-boundary.ts`, `src-react/offline/**`, and
 `src-react/packs/**`. Those modules define same-origin `/dataset/**` URL guards,
 generic Cache Storage install plans, service-worker message contracts, and
-edition-aware Mushaf pack contracts for future React surfaces. They are
-React-only contracts during dual-build; they do not alter the shipped Svelte
-service worker or the production `dist/` artifact. The React preview build emits
-an isolated app-shell service worker into `dist-react/` only for proof commands;
-same-origin dataset and Mushaf page bodies remain outside the React app shell.
+edition-aware Mushaf pack contracts for React surfaces. They do not alter the
+shipped Svelte service worker or the production `dist/` artifact until cutover.
+The React build emits an isolated app-shell service worker into `dist-react/`
+for proof commands; same-origin dataset and Mushaf page bodies remain outside
+the React app shell.
 
 Runtime ownership follows the same Reader First domain rule as the rest of `src/`: pack/source availability policy belongs in `src/packs/**`, continuity/restore rules belong in `src/continuity/**`, optional curated metadata adapters belong in `src/metadata/**`, and user-facing surfaces consume those helpers instead of inverting the dependency back into `src/read/**`, `src/navigate/**`, `src/configure/**`, or `src/onboard/**`.
 

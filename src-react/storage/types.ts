@@ -10,11 +10,13 @@ export type SettingsKey =
   | 'riwayah'
   | 'translationId'
   | 'translationVisible'
+  | 'wirdReaderStatusVisible'
   | 'quranTextStyleId'
   | 'mushafEditionId'
   | 'mushafViewMode'
   | 'currentPosition'
   | 'lastSurface'
+  | 'recentSurahs'
   | 'wirdPlan'
 
 export type SettingRecord = {

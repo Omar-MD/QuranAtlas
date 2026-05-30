@@ -61,13 +61,14 @@ export function ReaderVerseSurface({
   const readyCorpus = corpus
   const previousSurah = findAdjacentSurah(surahIndex, readyCorpus.surah.number, 'previous')
   const nextSurah = findAdjacentSurah(surahIndex, readyCorpus.surah.number, 'next')
+  const startsAtSurahBeginning = readyCorpus.verses[0]?.verse === 1
 
   return (
     <section className="qar-reader-verse-surface" data-reader-verse-surface="true">
-      {previousSurah && (
+      {startsAtSurahBeginning && previousSurah && (
         <SurahContinuityButton currentSurah={readyCorpus.surah.number} direction="previous" target={previousSurah} />
       )}
-      {!surahHeaderHidden && (
+      {startsAtSurahBeginning && !surahHeaderHidden && (
         <header
           aria-label={`Surah ${readyCorpus.surah.number} header`}
           className="qar-reader-surah-header"
@@ -86,7 +87,7 @@ export function ReaderVerseSurface({
           </h1>
         </header>
       )}
-      {shouldRenderBasmala(readyCorpus) && (
+      {startsAtSurahBeginning && shouldRenderBasmala(readyCorpus) && (
         <section className="qar-reader-basmala" aria-label="Basmala">
           <span className="qar-reader-basmala-text" dir="rtl" lang="ar" aria-label="بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ" role="img">﷽</span>
           <p className="qar-reader-basmala-translation">In the Name of Allah - the Most Compassionate, Most Merciful</p>

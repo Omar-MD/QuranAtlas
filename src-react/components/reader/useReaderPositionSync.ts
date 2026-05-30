@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 import { writeCurrentPosition } from '../../continuity/current-position'
+import { trackRecentSurahPosition } from '../../continuity/recent-surahs'
+import { advanceWirdFromReaderPosition } from '../../continuity/wird/store'
+import type { SurahCount } from '../../continuity/wird/types'
 import type { ReaderCorpusState } from '../../data/reader-corpus'
 import { openReactDb } from '../../storage/db'
 
@@ -8,9 +11,13 @@ type ReaderPosition = { surah: number; verse: number }
 
 const SCROLL_PERSIST_DELAY_MS = 500
 
-async function persistPosition(surah: number, verse: number): Promise<void> {
+async function persistPosition(surah: number, verse: number, wirdCounts: ReadonlyArray<SurahCount>): Promise<void> {
   const db = await openReactDb()
   await writeCurrentPosition(db, { surah, verse })
+  await trackRecentSurahPosition(db, { surah, verse })
+  if (wirdCounts.length > 0) {
+    await advanceWirdFromReaderPosition(db, { surah, verse }, wirdCounts)
+  }
 }
 
 function parseVerseKey(verseKey: string): ReaderPosition | null {
@@ -47,10 +54,22 @@ function findCenteredVersePosition(surah: number): ReaderPosition | null {
   return closest?.position ?? null
 }
 
-export function useReaderPositionSync(corpus: ReaderCorpusState) {
+export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wirdCounts?: ReadonlyArray<SurahCount> } = {}) {
   const latestPositionRef = useRef<ReaderPosition | null>(null)
   const lastPersistedKeyRef = useRef<string | null>(null)
+  const lastWirdAdvancedKeyRef = useRef<string | null>(null)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wirdCountsRef = useRef<ReadonlyArray<SurahCount>>(options.wirdCounts ?? [])
+
+  useEffect(() => {
+    wirdCountsRef.current = options.wirdCounts ?? []
+    const position = latestPositionRef.current
+    if (!position || wirdCountsRef.current.length === 0) return
+    const key = positionKey(position)
+    if (lastWirdAdvancedKeyRef.current === key) return
+    lastWirdAdvancedKeyRef.current = key
+    void openReactDb().then((db) => advanceWirdFromReaderPosition(db, position, wirdCountsRef.current))
+  }, [options.wirdCounts])
 
   const commitPosition = useCallback((position: ReaderPosition, persistMode: 'deferred' | 'immediate') => {
     latestPositionRef.current = position
@@ -59,7 +78,8 @@ export function useReaderPositionSync(corpus: ReaderCorpusState) {
     const runPersist = () => {
       if (lastPersistedKeyRef.current === key) return
       lastPersistedKeyRef.current = key
-      void persistPosition(position.surah, position.verse)
+      void persistPosition(position.surah, position.verse, wirdCountsRef.current)
+      if (wirdCountsRef.current.length > 0) lastWirdAdvancedKeyRef.current = key
     }
 
     if (persistMode === 'immediate') {
@@ -100,7 +120,7 @@ export function useReaderPositionSync(corpus: ReaderCorpusState) {
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null
         const position = latestPositionRef.current
-        if (position) void persistPosition(position.surah, position.verse)
+        if (position) void persistPosition(position.surah, position.verse, wirdCountsRef.current)
       }
     }
   }, [commitPosition, corpus])

@@ -7,7 +7,7 @@ Project instructions auto-loaded by Codex in this repo.
 - Use `.agents/skills/quranatlas-workflow/SKILL.md` for QuranAtlas implementation, refactors, tests, docs, data contracts, context docs, product-scope cleanup, repo-local skills, and verification planning.
 - Use `.agents/skills/quranatlas-ui-workflow/SKILL.md` for UI, layout, styling, responsive behavior, screenshots, or visual polish when visual judgment or browser proof matters.
 - Use `.agents/skills/quranatlas-audit/SKILL.md` only for explicit audits, health checks, readiness reviews, or product/codebase quality reviews.
-- Use `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md` before adding, moving, or materially changing tests.
+- Only add, move, or materially change tests when the user explicitly asks for test coverage. When asked, use `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md` before changing tests.
 - For library, framework, SDK, API, CLI, or cloud-service questions, use the inherited Context7/`ctx7` docs workflow first (`library` then `docs`); do not answer from memory when docs can be fetched. Resume QuranAtlas workflow only if the answer leads to repo behavior, code, tests, or docs changes.
 
 ## Source Of Truth
@@ -24,6 +24,7 @@ Project instructions auto-loaded by Codex in this repo.
 - Do not invent project commands or committed one-off scripts. Check `package.json`, `docs/tech-stack.md`, and scoped AGENTS files first.
 - When `package.json` scripts, dev tools, pinned versions, or CI gates change, update `docs/tech-stack.md` in the same change.
 - For React UI work, check `src-react/design-system/registry/component-registry.json` first and compose approved components from `src-react/components/ui`; direct Radix imports outside that owned layer are forbidden.
+- Do not follow TDD by default. Do not write tests before implementation, and do not add or update automated tests unless the user explicitly asks for tests.
 
 ## Git Defaults
 
@@ -38,7 +39,7 @@ Verify at the smallest level that proves the change.
 
 - Read-only analysis: no project verification required.
 - Docs, AGENTS, or skills only: run `pnpm run docs:check` and `git diff --check`; run `pnpm run docs` first when generated context may need regeneration.
-- Narrow code changes: run the relevant targeted test, plus `pnpm run check` when types, lint, Svelte, or styles can be affected.
+- Narrow code changes: do not add or update tests unless explicitly requested; run the smallest non-test verification that proves the change, plus `pnpm run check` when types, lint, Svelte, or styles can be affected. Existing tests may be run when the user asks or when the change itself is test-only.
 - Data, source-catalog, source-data-flow, or dataset-script changes: run the relevant `pnpm run data -- check` or `pnpm run data -- build` profile; also run `pnpm run validate` when app/runtime/build output or release behavior can be affected.
 - Shared behavior, config, build, service-worker, or release-sensitive changes: run `pnpm run validate`.
-- E2E-only changes: follow `tests/e2e/AGENTS.md`; run the owning spec first, then broader gates only when shared behavior changed.
+- E2E-only changes: only make them when explicitly requested; follow `tests/e2e/AGENTS.md` and run the owning spec first, then broader gates only when shared behavior changed.

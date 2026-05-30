@@ -2,7 +2,7 @@
 
 **Reader First.**
 
-QuranAtlas is an offline-first Qur'an reader centered on complete Verse and Mushaf reading. The current MVP promise is reading continuity on one verified default reader profile: Qalun/Qaloon text and font, Qaloon Mushaf pages, Bridges translation, bookmarks, saved position, Daily Wird, Surah/Juz navigation, search, and reader preferences that make long sessions comfortable.
+QuranAtlas is an offline-first Qur'an reader centered on complete Verse and Mushaf reading. The current MVP promise is reading continuity on one verified default reader profile: Qalun/Qaloon text and font, Qaloon Mushaf pages, Bridges translation, bookmarks, saved position, Daily Wird, Surah/Juz/Hizb navigation, and reader preferences that make long sessions comfortable.
 
 This is the product overview. For implementation detail, see `docs/context/` and the surface dossiers under `docs/context/surfaces/`.
 
@@ -32,13 +32,13 @@ This is the product overview. For implementation detail, see `docs/context/` and
 ### Reading controls
 
 - Themes, typography, line spacing, word spacing, reader margins, and related reader comfort controls.
-- Surah and Juz navigation, with hizb, rub, ruku, and page data treated as metadata until promoted to first-class controls.
-- Search and navigation over the shipped reader corpus, with broader retrieval lanes deferred.
+- Surah, Juz, and Hizb navigation, with rub, ruku, and page data treated as metadata until promoted to first-class controls.
+- Search remains planned; navigation over the shipped reader corpus is available through Surah, Juz, Hizb, bookmarks, and reader-mode movement.
 - Page-break indicators and Mushaf page navigation where matching assets exist.
 
 ### Curated study inside reading
 
-Study exists where it strengthens reading, but tafsir and richer curated context are future work in the MVP contract. Curated metadata candidates include tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani classification, source-backed revelation/asbab metadata, and juz/hizb/rub/ruku/page metadata.
+Study exists where it strengthens reading, but tafsir and richer curated context are future work in the MVP contract. Curated metadata candidates include tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani classification, source-backed revelation/asbab metadata, and rub/ruku/page metadata.
 
 Arabic roots, concepts, divine names, and cross-references remain curated metadata backlog unless separately promoted.
 

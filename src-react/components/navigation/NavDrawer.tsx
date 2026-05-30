@@ -2,15 +2,23 @@ import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from 'react
 import { BookOpen, Info, Search, X } from 'lucide-react'
 
 import type { JuzIndexEntry } from '../../data/juz-index'
+import { loadReaderSurahIndex } from '../../data/surah-index'
 import { openReactDb } from '../../storage/db'
+import { readRecentSurahs, type RecentSurahPosition } from '../../continuity/recent-surahs'
 import { resolveDrawerHrefForReaderMode } from '../reader/reader-mode-routing'
 import { Button, IconButton, Input } from '../ui'
 import { BookmarksList, type BookmarkListItem } from './BookmarksList'
+import { HizbList } from './HizbList'
 import { JuzList } from './JuzList'
 import { SurahList } from './SurahList'
 import { DailyWirdCard } from '../reader/wird/DailyWirdCard'
-import { readWirdPlan } from '../../continuity/wird/store'
-import type { SurahCount, WirdPlan } from '../../continuity/wird/types'
+import { createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../../continuity/wird/progress'
+import { createWirdBoundaries } from '../../continuity/wird/metadata'
+import { loadReactWirdPageBoundaries } from '../../continuity/wird/page-boundaries'
+import { getBrowserNotificationState } from '../../continuity/wird/reminders'
+import { readWirdPlan, writeWirdPlan } from '../../continuity/wird/store'
+import type { SurahCount, WirdBoundary, WirdPlan } from '../../continuity/wird/types'
+import { WirdDetail, type WirdSetupPayload } from './wird/WirdDetail'
 
 type SavedPosition = { surah: number; verse: number }
 type SurahFilter = 'all' | 'recent'
@@ -18,44 +26,52 @@ const FALLBACK_WIRD_COUNTS: SurahCount[] = [{ n: 1, count: 7 }, { n: 2, count: 2
 
 export function NavDrawer({
   bookmarks,
+  initialWirdView = 'card',
   juzRows,
   mode,
   onClose,
   onDeleteBookmark,
   onNavigate,
   open,
+  showWird = true,
 }: {
   bookmarks?: BookmarkListItem[]
   currentLabel: string
+  initialWirdView?: 'card' | 'detail'
   juzRows?: JuzIndexEntry[]
   mode: 'verse' | 'mushaf'
   onClose: () => void
   onDeleteBookmark?: (bookmark: Pick<BookmarkListItem, 'riwayah' | 'verseKey'>) => void
   onNavigate: (hash: string) => void
   open: boolean
+  showWird?: boolean
 }) {
-  const [readSource, setReadSource] = useState<'surah' | 'juz' | 'bookmarks'>('surah')
+  const [readSource, setReadSource] = useState<'surah' | 'juz' | 'hizb' | 'bookmarks'>('surah')
   const [surahFilter, setSurahFilter] = useState<SurahFilter>('all')
   const [surahQuery, setSurahQuery] = useState('')
-  const [recentSurahs, setRecentSurahs] = useState<number[]>([])
+  const [recentSurahs, setRecentSurahs] = useState<RecentSurahPosition[]>([])
   const [currentPosition, setCurrentPosition] = useState<SavedPosition | null>(null)
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
+  const [wirdCounts, setWirdCounts] = useState<SurahCount[]>(FALLBACK_WIRD_COUNTS)
+  const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
+  const [wirdView, setWirdView] = useState<'card' | 'detail'>(initialWirdView)
 
   useEffect(() => {
     if (!open) return undefined
     let cancelled = false
+    setWirdView(showWird ? initialWirdView : 'card')
 
     void openReactDb()
       .then(async (db) => {
         const [recent, position, plan] = await Promise.all([
-          db.settings.get('recentSurahs'),
+          readRecentSurahs(db),
           db.settings.get('currentPosition'),
-          readWirdPlan(db),
+          showWird ? readWirdPlan(db) : Promise.resolve(null),
         ])
         if (cancelled) return
-        setRecentSurahs(asRecentSurahs(recent?.value).slice(0, 7))
+        setRecentSurahs(recent)
         setCurrentPosition(asSavedPosition(position?.value))
-        setWirdPlan(plan)
+        setWirdPlan(showWird ? plan : null)
       })
       .catch(() => {
         if (!cancelled) {
@@ -65,10 +81,52 @@ export function NavDrawer({
         }
       })
 
+    if (showWird) {
+      const controller = new AbortController()
+      void loadReaderSurahIndex(fetch, controller.signal)
+        .then((rows) => {
+          const counts = rows.map((row) => ({ count: row.counts.qaloon, n: row.n }))
+          if (!cancelled) {
+            setWirdCounts(counts)
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setWirdCounts(FALLBACK_WIRD_COUNTS)
+            setWirdPageBoundaries([])
+          }
+        })
+      return () => {
+        cancelled = true
+        controller.abort()
+      }
+    } else {
+      setWirdCounts(FALLBACK_WIRD_COUNTS)
+      setWirdPageBoundaries([])
+    }
+
     return () => {
       cancelled = true
     }
-  }, [open])
+  }, [initialWirdView, open, showWird])
+
+  useEffect(() => {
+    if (!open || !showWird || wirdPlan?.unit !== 'page' || wirdCounts.length !== 114) {
+      setWirdPageBoundaries([])
+      return undefined
+    }
+    const controller = new AbortController()
+    void loadReactWirdPageBoundaries(wirdCounts, controller.signal)
+      .then((boundaries) => {
+        if (!controller.signal.aborted) setWirdPageBoundaries(boundaries)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setWirdPageBoundaries([])
+      })
+    return () => {
+      controller.abort()
+    }
+  }, [open, showWird, wirdCounts, wirdPlan?.unit])
 
   function handleSurahSearchChange(event: ChangeEvent<HTMLInputElement>) {
     setSurahQuery(event.currentTarget.value)
@@ -90,7 +148,69 @@ export function NavDrawer({
     void resolveDrawerHrefForReaderMode(mode, hash).then(onNavigate)
   }
 
+  function finishDateFromTarget(targetDays: number | null, targetEndOn: string | null): string {
+    if (targetEndOn) return targetEndOn
+    const days = Math.max(1, targetDays ?? 1)
+    const date = new Date(`${getLocalDayKey()}T00:00:00`)
+    date.setDate(date.getDate() + days - 1)
+    return getLocalDayKey(date)
+  }
+
+  function handleWirdCreate(payload: WirdSetupPayload): void {
+    if (!showWird) return
+    const today = getLocalDayKey()
+    const last = wirdCounts[wirdCounts.length - 1] ?? FALLBACK_WIRD_COUNTS[FALLBACK_WIRD_COUNTS.length - 1]!
+    const startRef = payload.startMode === 'current' && currentPosition
+      ? { surah: currentPosition.surah, verse: currentPosition.verse }
+      : { surah: 1, verse: 1 }
+    const plan = createWirdPlan({
+      endRef: { surah: last.n, verse: last.count },
+      reminder: {
+        browserNotifications: payload.browserNotifications,
+        enabled: payload.reminderEnabled,
+        time: payload.reminderTime,
+      },
+      startedOn: today,
+      startRef,
+      targetEndOn: finishDateFromTarget(payload.targetDays, payload.targetEndOn),
+      unit: payload.unit,
+    }, wirdCounts, today)
+
+    void openReactDb()
+      .then((db) => writeWirdPlan(db, plan))
+      .then(() => {
+        setWirdPlan(plan)
+        setWirdView('card')
+      })
+  }
+
+  function handleWirdContinue(): void {
+    if (!showWird) return
+    const summary = deriveWirdSummary(wirdPlan, wirdCounts, createWirdBoundaries(wirdCounts, wirdPageBoundaries))
+    if (!summary.nextRef) return
+    onNavigate(`#/s/${summary.nextRef.surah}/${summary.nextRef.verse}`)
+    onClose()
+  }
+
+  function handleWirdReset(): void {
+    if (!showWird) return
+    void openReactDb()
+      .then((db) => writeWirdPlan(db, null))
+      .then(() => {
+        setWirdPlan(null)
+        setWirdView('detail')
+      })
+  }
+
+  async function requestWirdNotifications() {
+    if (typeof Notification === 'undefined' || typeof Notification.requestPermission !== 'function') return 'unsupported' as const
+    const permission = await Notification.requestPermission()
+    return getBrowserNotificationState(permission)
+  }
+
   if (!open) return null
+  const wirdBoundaries = createWirdBoundaries(wirdCounts, wirdPageBoundaries)
+  const wirdSummary = showWird ? deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries) : null
   return (
     <div
       aria-label="Navigation"
@@ -131,15 +251,67 @@ export function NavDrawer({
           </div>
         </div>
       </div>
-      <div className="qar-react-drawer-wird-slot">
-        <DailyWirdCard counts={FALLBACK_WIRD_COUNTS} plan={wirdPlan} />
-      </div>
-      <div className="qar-react-nav-drawer-read">
+      {showWird && wirdView === 'card' ? (
+        <div className="qar-react-drawer-wird-slot">
+          <DailyWirdCard boundaries={wirdBoundaries} counts={wirdCounts} onOpen={() => setWirdView('detail')} plan={wirdPlan} />
+        </div>
+      ) : showWird && wirdSummary ? (
+        <div className="qar-react-drawer-wird-slot">
+          <WirdDetail
+            counts={wirdCounts}
+            currentPosition={currentPosition}
+            onBack={() => setWirdView('card')}
+            onContinue={handleWirdContinue}
+            onCreate={handleWirdCreate}
+            onRequestBrowserNotifications={requestWirdNotifications}
+            onReset={handleWirdReset}
+            summary={wirdSummary}
+          />
+        </div>
+      ) : null}
+      <div className={showWird && wirdView === 'detail' ? 'qar-react-nav-drawer-read qar-react-nav-drawer-read--hidden' : 'qar-react-nav-drawer-read'}>
         <div className="qar-react-nav-drawer-source-panel">
           <div className="qar-react-nav-drawer-source-tabs" role="tablist" aria-label="Read source">
-            <Button aria-selected={readSource === 'surah'} className="qar-react-nav-drawer-source-tab" onClick={() => setReadSource('surah')} role="tab" size="sm" variant="ghost">Surah</Button>
-            <Button aria-selected={readSource === 'juz'} className="qar-react-nav-drawer-source-tab" onClick={() => setReadSource('juz')} role="tab" size="sm" variant="ghost">Juz</Button>
-            <Button aria-selected={readSource === 'bookmarks'} className="qar-react-nav-drawer-source-tab" onClick={() => setReadSource('bookmarks')} role="tab" size="sm" variant="ghost">Bookmarks</Button>
+            <Button
+              aria-selected={readSource === 'surah'}
+              className="qar-react-nav-drawer-source-tab"
+              onClick={() => setReadSource('surah')}
+              role="tab"
+              size="sm"
+              variant="ghost"
+            >
+              Surah
+            </Button>
+            <Button
+              aria-selected={readSource === 'juz'}
+              className="qar-react-nav-drawer-source-tab"
+              onClick={() => setReadSource('juz')}
+              role="tab"
+              size="sm"
+              variant="ghost"
+            >
+              Juz
+            </Button>
+            <Button
+              aria-selected={readSource === 'hizb'}
+              className="qar-react-nav-drawer-source-tab"
+              onClick={() => setReadSource('hizb')}
+              role="tab"
+              size="sm"
+              variant="ghost"
+            >
+              Hizb
+            </Button>
+            <Button
+              aria-selected={readSource === 'bookmarks'}
+              className="qar-react-nav-drawer-source-tab"
+              onClick={() => setReadSource('bookmarks')}
+              role="tab"
+              size="sm"
+              variant="ghost"
+            >
+              Bookmarks
+            </Button>
           </div>
           {readSource === 'surah' && (
             <div className="qar-react-nav-drawer-source-tools" aria-label="Surah controls">
@@ -166,15 +338,11 @@ export function NavDrawer({
         </div>
         {readSource === 'surah' && <SurahList currentSurah={currentPosition?.surah ?? null} filter={surahFilter} onNavigate={navigateForReaderMode} query={surahQuery} recentSurahs={recentSurahs} />}
         {readSource === 'juz' && <JuzList currentRef={currentPosition} onNavigate={navigateForReaderMode} rows={juzRows} />}
+        {readSource === 'hizb' && <HizbList currentRef={currentPosition} onNavigate={navigateForReaderMode} />}
         {readSource === 'bookmarks' && <BookmarksList bookmarks={bookmarks} onDeleteBookmark={onDeleteBookmark} onNavigate={navigateForReaderMode} />}
       </div>
     </div>
   )
-}
-
-function asRecentSurahs(value: unknown): number[] {
-  if (!Array.isArray(value)) return []
-  return value.filter((item): item is number => Number.isInteger(item) && item >= 1 && item <= 114)
 }
 
 function asSavedPosition(value: unknown): SavedPosition | null {

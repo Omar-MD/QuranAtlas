@@ -7,7 +7,9 @@ test('renders React reader and settings while search stays unsupported', async (
 
   await page.goto('/#/settings')
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
-  await expect(page.getByText('Reader assets')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Included assets' })).toBeVisible()
+  await page.getByRole('button', { name: 'Close settings', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0)
 
   await page.goto('/#/search?q=Compassionate')
   await expect(page.getByRole('main', { name: /unsupported route/i })).toBeVisible()

@@ -88,7 +88,7 @@ for (const fixture of navigateFixtures) {
           await expect(bookmarkDrawer.getByRole('tablist', { name: 'Mushaf view mode' })).toHaveCount(0)
           await bookmarkDrawer.getByRole('tab', { name: 'Bookmarks' }).click()
           await expect(bookmarkDrawer.getByRole('tab', { name: 'Bookmarks' })).toHaveAttribute('aria-selected', 'true')
-          await bookmarkDrawer.getByRole('button', { name: /jump to 1:1/i }).click()
+          await bookmarkDrawer.getByRole('button', { name: /jump to (?:verse )?1:1/i }).click()
           await expect(page).toHaveURL(/#\/m\/1$/)
 
           await page.goto(targetUrl('react', '/#/s/2'))

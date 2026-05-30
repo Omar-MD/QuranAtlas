@@ -20,6 +20,7 @@ import { VirtualVerseList } from '../../../src-react/components/reader/VirtualVe
 import { loadReaderSurah, type ReaderCorpusState } from '../../../src-react/data/reader-corpus'
 import { resolveTranslationFor } from '../../../src-react/data/verse-aliases'
 import { openReactDb } from '../../../src-react/storage/db'
+import { getLocalDayKey } from '../../../src-react/continuity/wird/progress'
 
 function jsonResponse(payload: unknown, init: { ok?: boolean; status?: number } = {}) {
   return {
@@ -263,6 +264,7 @@ describe('React reader parity', () => {
   it('resolves continuation translation aliases without duplicating text', () => {
     const aliases = { '7': [{ hafs: 2, warsh: [2, 3], qaloon: [2, 3] }] }
     expect(resolveTranslationFor({ surah: 7, verse: 3, riwayah: 'qaloon', translations: { '7:2': 'guidance' }, aliases })).toEqual({
+      primaryAyah: 2,
       role: 'continuation',
       sourceKey: '7:2',
       text: null,
@@ -281,7 +283,7 @@ describe('React reader parity', () => {
     expect(result.verses).toHaveLength(7)
     expect(result.verses.at(0)).toMatchObject({
       arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
-      translation: 'In the name of Allah, the All-Merciful, the Bestower of mercy.',
+      translation: 'All praise be to Allah, Lord of all realms,',
     })
     expect(result.verses.map((verse) => verse.translation).join(' ')).not.toMatch(/React preview|Verse text unavailable/i)
   })
@@ -310,6 +312,52 @@ describe('React reader parity', () => {
     expect(screen.getByTestId('verse-1:5')).toHaveAttribute('data-selected', 'true')
     await expect.poll(async () => (await (await openReactDb()).settings.get('currentPosition'))?.value).toEqual({ surah: 1, verse: 5 })
     expect(screen.queryByText(/tafsir/i)).not.toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps the Daily Wird card out of reader content and opens the drawer detail from compact chrome status', async () => {
+    const today = getLocalDayKey()
+    const db = await openReactDb()
+    await db.settings.bulkPut([
+      {
+        key: 'wirdPlan',
+        value: {
+          id: 'reader-wird-status',
+          startRef: { surah: 1, verse: 1 },
+          endRef: { surah: 1, verse: 7 },
+          targetDays: 1,
+          targetEndOn: today,
+          startedOn: today,
+          unit: 'verse',
+          reminder: { browserNotifications: 'default', enabled: false, time: '08:00' },
+          progress: {
+            completedThroughRef: { surah: 1, verse: 4 },
+            dayKey: today,
+            lastReadRef: { surah: 1, verse: 4 },
+            nextRef: { surah: 1, verse: 5 },
+            todayEndRef: { surah: 1, verse: 7 },
+            todayStartRef: { surah: 1, verse: 1 },
+          },
+          history: [],
+        },
+      },
+      { key: 'wirdReaderStatusVisible', value: true },
+    ])
+    vi.stubGlobal('fetch', readerFetchFixture())
+
+    render(<ReaderRoute surah={1} ayah={1} />)
+
+    expect(await screen.findByTestId('verse-1:7')).toBeInTheDocument()
+    expect(document.querySelector('.qar-react-wird-card')).toBeNull()
+
+    const status = screen.getByRole('button', { name: /Daily Wird: 57% today, 3 verses left/i })
+    expect(status).toHaveClass('qar-reader-chrome-wird-status')
+
+    fireEvent.click(status)
+
+    const drawer = screen.getByRole('dialog', { name: 'Navigation' })
+    expect(within(drawer).getByRole('heading', { name: 'Daily Wird' })).toBeInTheDocument()
+    expect(await within(drawer).findByRole('button', { name: /Continue Wird/i })).toBeInTheDocument()
     vi.unstubAllGlobals()
   })
 
@@ -618,13 +666,19 @@ describe('React reader parity', () => {
 
   it('renders reader mode switching as a compact header icon instead of fixed page tabs', () => {
     const onModeChange = vi.fn()
-    render(<ReaderChrome mode="verse" onModeChange={onModeChange} />)
+    const { rerender } = render(<ReaderChrome mode="verse" onModeChange={onModeChange} />)
 
     expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Mushaf' })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf mode' }))
+    const mushafToggle = screen.getByRole('button', { name: 'Switch to Mushaf mode' })
+    expect(mushafToggle.querySelector('.lucide-book-open-text')).toBeInTheDocument()
+    fireEvent.click(mushafToggle)
     expect(onModeChange).toHaveBeenCalledWith('mushaf')
     expect(screen.getByRole('button', { name: 'Switch to Mushaf mode' })).toHaveAttribute('aria-pressed', 'false')
+
+    rerender(<ReaderChrome mode="mushaf" onModeChange={onModeChange} />)
+    const verseToggle = screen.getByRole('button', { name: 'Switch to Verse mode' })
+    expect(verseToggle.querySelector('.lucide-list-ordered')).toBeInTheDocument()
   })
 
   it('switches from the Verse route to the Mushaf page containing the active verse', async () => {

@@ -74,10 +74,12 @@ describe('React storage schema mirror', () => {
       translationVisible: false,
       verseSpacing: 'xs',
       wordSpacing: 'lg',
+      wirdReaderStatusVisible: false,
     })
 
     await expect(db.settings.bulkGet([
       'translationVisible',
+      'wirdReaderStatusVisible',
       'fontSize',
       'lineSpacing',
       'wordSpacing',
@@ -88,6 +90,7 @@ describe('React storage schema mirror', () => {
       'mushafViewMode',
     ])).resolves.toEqual([
       { key: 'translationVisible', value: false },
+      { key: 'wirdReaderStatusVisible', value: false },
       { key: 'fontSize', value: 'lg' },
       { key: 'lineSpacing', value: 'sm' },
       { key: 'wordSpacing', value: 'lg' },

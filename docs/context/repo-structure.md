@@ -46,21 +46,21 @@ Surface directories are the primary unit of app behavior. Their deeper behavior 
 
 ### `src-react/`
 
-Isolated future React app code lives here during the dual-build period.
+React production-candidate app code lives here.
 
-- `src-react/`: isolated future React app tree. It must not import Svelte app modules under `src/**`.
+- `src-react/`: React app tree. It must not import Svelte app modules under `src/**`.
 - `src-react/components/ui/`: owned React UI primitives and Radix-backed behavior wrappers. Feature code imports from this barrel instead of importing Radix directly.
-- `src-react/design-system/`: React-only token, Tailwind theme, registry, recipe, and design-system docs. It does not replace `src/styles/**` until cutover.
+- `src-react/design-system/`: React-only token, Tailwind theme, registry, recipe, and design-system docs.
 - `src-react/design-system/registry/`: machine-readable component registry, schema, and registry maintenance notes.
 - `src-react/storage/`: Dexie mirror of the existing `quran-atlas` IndexedDB v7 stores plus React-only writer facades.
 - `src-react/offline/`: React-only asset-pack status, Cache Storage planning, quota, UI-state, and service-worker message contracts.
 - `src-react/data/`: React runtime dataset URL boundary helpers for same-origin `/dataset/**` access.
 - `src-react/metadata/`: React reader-attached metadata adapters for optional knowledge and search integration.
-- `src-react/search/`: React preview search shard schema, query, alias, and pack helpers.
-- `src-react/continuity/`: React preview launch restore, current-position, bookmarks, and Daily Wird helpers against the existing v7 stores.
+- `src-react/search/`: React search shard schema, query, alias, and pack helpers for deferred full-text search work.
+- `src-react/continuity/`: React launch restore, current-position, bookmarks, and Daily Wird helpers against the existing v7 stores.
 - `src-react/packs/`: React-only pack contracts, including edition-aware Mushaf install-on-demand helpers.
 - React tests remain under `tests/unit/**` and `tests/e2e/**`, not under `src-react/test/`.
-- React builds write to `dist-react/`, a proof-only output that is not a deploy artifact until an approved cutover plan changes production routing.
+- React builds write to `dist-react/`, a proof output that is not a deploy artifact until the production cutover changes build routing.
 
 ### `shared/`
 
@@ -71,9 +71,9 @@ directory is included in both Svelte and React lint/type gates.
 
 ### `.storybook/`
 
-React Storybook configuration lives here during the dual-build period. Stories
-are sourced from `src-react/**` only, and Storybook output is proof evidence, not
-the visual source of truth.
+React Storybook configuration lives here. Stories are sourced from
+`src-react/**` only, and Storybook output is proof evidence, not the visual
+source of truth.
 
 ### `data/`
 

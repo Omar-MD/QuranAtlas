@@ -29,6 +29,7 @@ export function useSettingsForm(): {
   setFontSize: (value: ReactPreferenceStep) => void
   setTheme: (value: ReactThemePreference) => void
   setTranslationVisible: (value: boolean) => void
+  setWirdReaderStatusVisible: (value: boolean) => void
   state: SettingsFormState
 } {
   const [state, setState] = useState<SettingsFormState>({
@@ -87,6 +88,7 @@ export function useSettingsForm(): {
     })),
     setTheme: (theme) => updatePreferences((current) => ({ ...current, theme })),
     setTranslationVisible: (translationVisible) => updatePreferences((current) => ({ ...current, translationVisible })),
+    setWirdReaderStatusVisible: (wirdReaderStatusVisible) => updatePreferences((current) => ({ ...current, wirdReaderStatusVisible })),
     state,
   }
 }

@@ -25,6 +25,7 @@ export type MushafResolvedPage = {
   viewBox: SvgViewBox
   viewBoxText: string
   firstVerse: { surah: number; verse: number }
+  lastVerse?: { surah: number; verse: number }
 }
 
 export type QuranRef = { surah: number; verse: number }
@@ -151,6 +152,18 @@ export function firstVerseForMushafPage(manifest: MushafManifest, page: number):
   return { surah: pageEntry.firstVerse.surah, verse: pageEntry.firstVerse.verse }
 }
 
+export function lastVerseForMushafPage(manifest: MushafManifest, page: number): QuranRef {
+  const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(page)))
+  let lastRef: QuranRef | null = null
+  for (const [key, mappedPage] of Object.entries(manifest.verseToPage ?? {})) {
+    if (mappedPage !== clampedPage) continue
+    const ref = parseQuranRefKey(key)
+    if (!ref) continue
+    if (!lastRef || compareQuranRefs(ref, lastRef) > 0) lastRef = ref
+  }
+  return lastRef ?? firstVerseForMushafPage(manifest, clampedPage)
+}
+
 function hasIndexedMushafAsset(
   index: MushafAssetIndex,
   expected: { riwayah: Riwayah; mushafEditionId: string; page: number },
@@ -225,7 +238,21 @@ function resolveMushafPage(
     viewBox: parseViewBox(pageEntry.viewBox),
     viewBoxText: pageEntry.viewBox.trim(),
     firstVerse: pageEntry.firstVerse,
+    lastVerse: lastVerseForMushafPage(manifest, clampedPage),
   }
+}
+
+function parseQuranRefKey(key: string): QuranRef | null {
+  const [surahPart, versePart] = key.split(':')
+  const surah = Number.parseInt(surahPart ?? '', 10)
+  const verse = Number.parseInt(versePart ?? '', 10)
+  if (!Number.isInteger(surah) || !Number.isInteger(verse) || surah < 1 || verse < 1) return null
+  return { surah, verse }
+}
+
+function compareQuranRefs(a: QuranRef, b: QuranRef): number {
+  if (a.surah !== b.surah) return a.surah - b.surah
+  return a.verse - b.verse
 }
 
 function assertMushafManifest(

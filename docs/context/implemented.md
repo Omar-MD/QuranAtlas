@@ -15,7 +15,7 @@ and data shapes live in `surfaces/<name>.md`.
 
 ## Navigate
 
-- Mobile nav drawer with Surahs, Juz, and Bookmarks.
+- Mobile nav drawer with Surahs, Juz, Hizb, and Bookmarks.
 - Desktop `#/surahs` and `#/bookmarks` surfaces.
 - Riwayah-scoped bookmarks with cross-tab sync and landing pulse.
 - Reader keyboard shortcuts and shortcuts sheet.
@@ -24,7 +24,7 @@ and data shapes live in `surfaces/<name>.md`.
 ## Configure
 
 - Settings sheet for theme, night mode, reading typography, translation visibility, and Mushaf view mode.
-- Read-only Asset Management inventory for Qaloon Text + Font, Qaloon Mushaf, and Bridges Translation.
+- Read-only Asset Management and Settings inventory for the default Qaloon text/font, Qaloon Mushaf, and Bridges profile, using runtime asset-index labels.
 - About page with clear-data flow.
 
 ## Onboard

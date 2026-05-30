@@ -3,11 +3,12 @@ import { fn } from 'storybook/test'
 
 import { NavDrawer } from './NavDrawer'
 import { BookmarksList } from './BookmarksList'
+import { HizbList } from './HizbList'
 import { JuzList } from './JuzList'
 import { SurahList } from './SurahList'
 
 const meta = {
-  title: 'React Navigation/Wave 3 Navigation',
+  title: 'React Navigation/Navigation',
   parameters: { layout: 'padded' },
 } satisfies Meta
 
@@ -24,6 +25,10 @@ export const Surahs: Story = {
 
 export const Juz: Story = {
   render: () => <JuzList />,
+}
+
+export const Hizb: Story = {
+  render: () => <HizbList />,
 }
 
 export const BookmarksPopulated: Story = {

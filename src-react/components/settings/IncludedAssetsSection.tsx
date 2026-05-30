@@ -1,12 +1,42 @@
+import { useEffect, useState } from 'react'
 import { BookOpen, ChevronRight, FileText } from 'lucide-react'
 
-import { DEFAULT_READER_ASSET_PROFILE, readerAssetProfileRows } from '../../../shared/reader-assets/default-profile'
+import {
+  DEFAULT_READER_ASSET_PROFILE,
+  readerAssetProfileRows,
+  readerAssetRowFallbackLabel,
+  resolveReaderAssetProfileRows,
+  type ReaderAssetInventoryDisplayRow,
+  type ReaderAssetInventoryGroup,
+} from '../../../shared/reader-assets/default-profile'
 
-const rows = readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE)
+const pendingRows = readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
+  ...row,
+  label: 'Loading asset name',
+}))
 
 export function IncludedAssetsSection() {
+  const [rows, setRows] = useState<ReaderAssetInventoryDisplayRow[]>(pendingRows)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void resolveReaderAssetProfileRows(DEFAULT_READER_ASSET_PROFILE, { signal: controller.signal })
+      .then((loadedRows) => {
+        if (!controller.signal.aborted) setRows(loadedRows)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setRows(readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
+            ...row,
+            label: readerAssetRowFallbackLabel(row),
+          })))
+        }
+      })
+    return () => controller.abort()
+  }, [])
+
   return (
-    <section className="qar-react-settings-assets" aria-labelledby="qar-react-settings-included-assets">
+    <section className="qar-react-settings-assets" aria-busy={rows === pendingRows ? 'true' : undefined} aria-labelledby="qar-react-settings-included-assets">
       <div className="qar-react-settings-section-heading">
         <span>
           <h3 className="qar-react-settings-section-title" id="qar-react-settings-included-assets">Included assets</h3>
@@ -25,7 +55,10 @@ export function IncludedAssetsSection() {
               <AssetIcon group={row.group} />
             </span>
             <span className="qar-react-settings-asset-main">
-              <span className="qar-react-settings-row-label">{row.label}</span>
+              <span className="qar-react-settings-asset-label">
+                <span className="qar-react-settings-asset-prefix">{assetPrefix(row.group)}: </span>
+                <span className="qar-react-settings-row-label">{row.label}</span>
+              </span>
             </span>
             <span className="qar-react-settings-asset-status">Included</span>
             <ChevronRight aria-hidden="true" className="qar-react-settings-asset-chevron" size={16} strokeWidth={1.65} />
@@ -36,16 +69,22 @@ export function IncludedAssetsSection() {
   )
 }
 
-function AssetIcon({ group }: { group: (typeof rows)[number]['group'] }) {
+function AssetIcon({ group }: { group: ReaderAssetInventoryGroup }) {
   if (group === 'mushaf') return <BookOpen size={17} strokeWidth={1.65} />
   if (group === 'translation') return <FileText size={17} strokeWidth={1.65} />
   return <TextFontIcon />
 }
 
-function assetIconName(group: (typeof rows)[number]['group']): string {
+function assetIconName(group: ReaderAssetInventoryGroup): string {
   if (group === 'mushaf') return 'mushaf-book'
   if (group === 'translation') return 'translation-document'
   return 'text-font'
+}
+
+function assetPrefix(group: ReaderAssetInventoryGroup): string {
+  if (group === 'mushaf') return 'Mushaf'
+  if (group === 'translation') return 'Translation'
+  return 'Text'
 }
 
 function TextFontIcon() {

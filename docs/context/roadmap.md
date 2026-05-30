@@ -21,8 +21,8 @@ Agreed future work that supports the Reader First product promise. When work sta
 ## V1 Search and Navigation
 
 - Planned full-text retrieval across Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata after the default-profile MVP is stable.
-- Surah and Juz navigation as first-class reader paths.
-- Hizb, rub, ruku, and page data remain metadata until separately promoted to visible controls.
+- Surah, Juz, and Hizb navigation as first-class reader paths.
+- Rub, ruku, and page data remain metadata until separately promoted to visible controls.
 - Reader mode switching between Verse and Mushaf.
 
 ## V1 Curated Metadata
@@ -30,7 +30,7 @@ Agreed future work that supports the Reader First product promise. When work sta
 - Tafsir as future reader-attached study text.
 - Verse themes, short curated meanings or summaries, and passage grouping/context.
 - Makki/Madani classification and source-backed revelation/asbab metadata.
-- Juz, hizb, rub, ruku, and page metadata as reader/navigation metadata.
+- Rub, ruku, and page metadata as reader/navigation metadata.
 
 ## Future AI/Retrieval Infrastructure
 

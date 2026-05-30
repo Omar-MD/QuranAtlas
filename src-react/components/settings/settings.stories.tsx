@@ -5,7 +5,7 @@ import { AboutRoute } from '../../app/routes/settings/AboutRoute'
 import { SettingsRoute } from '../../app/routes/settings/SettingsRoute'
 
 const meta = {
-  title: 'React Configure/Wave 3 Settings',
+  title: 'React Configure/Settings',
   parameters: { layout: 'fullscreen' },
 } satisfies Meta
 

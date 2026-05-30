@@ -1,7 +1,10 @@
 import {
   DEFAULT_READER_ASSET_PROFILE,
+  readerAssetRowFallbackLabel,
   readerAssetProfileRows,
+  resolveReaderAssetProfileRows,
   type ReaderAssetInventoryGroup,
+  type ReaderAssetInventoryDisplayRow,
 } from '../../../shared/reader-assets/default-profile'
 
 export type AssetRowGroup = ReaderAssetInventoryGroup
@@ -19,7 +22,18 @@ export type AssetRowView = {
 }
 
 export function defaultAssetInventoryRows(): AssetRowView[] {
-  return readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
+  return toAssetRowViews(readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
+    ...row,
+    label: readerAssetRowFallbackLabel(row),
+  })))
+}
+
+export async function loadDefaultAssetInventoryRows(): Promise<AssetRowView[]> {
+  return toAssetRowViews(await resolveReaderAssetProfileRows(DEFAULT_READER_ASSET_PROFILE))
+}
+
+function toAssetRowViews(rows: ReaderAssetInventoryDisplayRow[]): AssetRowView[] {
+  return rows.map((row) => ({
     id: row.id,
     group: row.group,
     label: row.label,
