@@ -105,4 +105,4 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, and
 
 Deploy lives at `.github/workflows/deploy.yml`. On successful CI for branch pushes to `dev`, `staging`, or `main`, it downloads the same `dist/` artifact and deploys it to Cloudflare Pages. CI builds once; deploy does not rebuild.
 
-Affected-change decisions live in `scripts/ci/affected.mjs` so CI and local validation use the same path groups. The production app bundle still builds for deployable CI runs, but dataset generation and the expensive Mushaf import/page build run only when source data, dataset scripts, reader asset profiles, or dependency files that affect those artifacts changed.
+Affected-change decisions live in `scripts/ci/affected.mjs` so CI and local validation use the same path groups. The production app bundle still builds for deployable CI runs, but dataset generation runs only when source data, dataset scripts, reader asset profiles, or dependency files that affect those artifacts changed. The expensive Mushaf import/page build also runs whenever Playwright is selected so the browser artifact contains the real page SVG pack.

@@ -60,7 +60,7 @@ pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
 
 The import step downloads quran.ws PDFs into `.scratch/` and converts them to normalized SVG inputs using Poppler. The build step validates and emits edition-aware runtime page assets and manifests. CI caches the expensive PDF/SVG inputs and still validates the generated page pack before app build.
 
-CI runs the Mushaf import/page-build lane only when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs, normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, committed Mushaf runtime assets, or dependency files. Other app-only changes reuse the committed page assets and avoid the Poppler import/build path.
+CI runs the Mushaf import/page-build lane when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs, normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, committed Mushaf runtime assets, or dependency files. CI also runs that lane whenever Playwright is selected so the uploaded `dist/` artifact includes the real Mushaf SVG pages that the browser specs assert.
 
 ## Runtime Consumption
 

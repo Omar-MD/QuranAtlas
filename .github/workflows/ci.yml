@@ -146,6 +146,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
+      # Playwright asserts real Mushaf SVG pages, so any E2E-selected run must
+      # upload a dist artifact with the page pack even when source data did not change.
       - name: Generate release Mushaf page pack
         if: needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true'
         run: |

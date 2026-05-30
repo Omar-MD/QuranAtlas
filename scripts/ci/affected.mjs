@@ -9,7 +9,6 @@ const META_ONLY_PATTERNS = [
   /^tests\/unit\//,
   /^scripts\//,
   /^\.docs-derive-manifest\.json$/,
-  /^\.github\//,
   /\.md$/,
   /^LICENSE$/,
   /^\.gitignore$/,
