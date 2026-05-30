@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { loadReaderSurah, type ReaderCorpusState } from '../../../data/reader-corpus'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
@@ -75,14 +75,6 @@ async function readReaderSettings(): Promise<ReaderSettings> {
   }
 }
 
-function focusReaderAtAyah(state: ReaderCorpusState, ayah?: number): ReaderCorpusState {
-  if (state.status !== 'ready' || !ayah) return state
-  return {
-    ...state,
-    verses: state.verses.filter((verse) => verse.verse >= ayah),
-  }
-}
-
 export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
   const [corpus, setCorpus] = useState<ReaderCorpusState>({ status: 'loading' })
   const [metadata, setMetadata] = useState<Map<string, VerseMetadata>>(new Map())
@@ -90,6 +82,7 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
   const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(DEFAULT_READER_SETTINGS.wirdReaderStatusVisible)
+  const lastFocusedRouteKeyRef = useRef<string | null>(null)
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex, corpus), [corpus, surahIndex])
   const wirdProgressCounts = useMemo(() => surahIndex.length === 114 ? wirdCounts : [], [surahIndex.length, wirdCounts])
   const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
@@ -145,7 +138,7 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
         return loadReaderSurah(surah, { ...settings, signal: controller.signal })
       })
       .then((loaded) => {
-        if (!controller.signal.aborted) setCorpus(focusReaderAtAyah(loaded, ayah))
+        if (!controller.signal.aborted) setCorpus(loaded)
       })
       .catch((error) => {
         if (!controller.signal.aborted) setCorpus({ status: 'error', error: error instanceof Error ? error : new Error('Reader corpus unavailable') })
@@ -175,7 +168,7 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
     return () => {
       controller.abort()
     }
-  }, [ayah, surah])
+  }, [surah])
 
   useEffect(() => {
     if (corpus.status !== 'ready') return
@@ -185,6 +178,27 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' })
     })
   }, [corpus])
+
+  useEffect(() => {
+    lastFocusedRouteKeyRef.current = null
+  }, [ayah, surah])
+
+  useEffect(() => {
+    if (corpus.status !== 'ready' || !ayah) return
+    const targetKey = `${surah}:${ayah}`
+    if (lastFocusedRouteKeyRef.current === targetKey) return
+    if (!corpus.verses.some((verse) => verse.key === targetKey)) return
+    const landAtTarget = () => {
+      const target = findReaderVerseElement(targetKey)
+      if (!target) return false
+      target.scrollIntoView?.({ block: 'center', behavior: 'auto' })
+      syncPosition(targetKey)
+      return true
+    }
+    if (!landAtTarget()) return
+    lastFocusedRouteKeyRef.current = targetKey
+    window.setTimeout(landAtTarget, 50)
+  }, [ayah, corpus, surah, syncPosition])
 
   return (
     <ReaderPageShell
@@ -222,6 +236,13 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
       />
     </ReaderPageShell>
   )
+}
+
+function findReaderVerseElement(verseKey: string): HTMLElement | null {
+  for (const element of document.querySelectorAll<HTMLElement>('.qar-reader-verse[data-token-key]')) {
+    if (element.dataset.tokenKey === verseKey) return element
+  }
+  return null
 }
 
 function surahFromVerseKey(verseKey: string): number | null {

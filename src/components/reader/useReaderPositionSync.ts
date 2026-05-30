@@ -60,6 +60,10 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wirdCountsRef = useRef<ReadonlyArray<SurahCount>>(options.wirdCounts ?? [])
+  const readyCorpus = corpus.status === 'ready' ? corpus : null
+  const firstVerseSurah = readyCorpus?.verses[0]?.surah ?? null
+  const firstVerseNumber = readyCorpus?.verses[0]?.verse ?? null
+  const surahNumber = readyCorpus?.surah.number ?? null
 
   useEffect(() => {
     wirdCountsRef.current = options.wirdCounts ?? []
@@ -100,14 +104,12 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
   }, [])
 
   useEffect(() => {
-    if (corpus.status !== 'ready') return
-    const firstVerse = corpus.verses[0]
-    if (!firstVerse) return
-    const surahNumber = corpus.surah.number
-    commitPosition({ surah: firstVerse.surah, verse: firstVerse.verse }, 'immediate')
+    if (!surahNumber || !firstVerseSurah || !firstVerseNumber) return
+    const activeSurahNumber = surahNumber
+    commitPosition({ surah: firstVerseSurah, verse: firstVerseNumber }, 'immediate')
 
     function syncVisibleVerse() {
-      const visiblePosition = findCenteredVersePosition(surahNumber)
+      const visiblePosition = findCenteredVersePosition(activeSurahNumber)
       if (visiblePosition) commitPosition(visiblePosition, 'deferred')
     }
 
@@ -123,7 +125,7 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
         if (position) void persistPosition(position.surah, position.verse, wirdCountsRef.current)
       }
     }
-  }, [commitPosition, corpus])
+  }, [commitPosition, firstVerseNumber, firstVerseSurah, surahNumber])
 
   const syncPosition = useCallback((verseKey: string) => {
     const position = parseVerseKey(verseKey)
