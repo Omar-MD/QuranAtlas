@@ -308,7 +308,7 @@ describe('React reader coverage', () => {
     const footnote = screen.getByRole('button', { name: /footnote 1/i })
     fireEvent.click(footnote)
     expect(screen.getByRole('note')).toHaveTextContent(/King of the Day of Recompense/i)
-    fireEvent.click(screen.getByRole('button', { name: 'Verse 5' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bookmark verse 5' }))
     expect(screen.getByTestId('verse-1:5')).toHaveAttribute('data-selected', 'true')
     await expect.poll(async () => (await (await openReactDb()).settings.get('currentPosition'))?.value).toEqual({ surah: 1, verse: 5 })
     expect(screen.queryByText(/tafsir/i)).not.toBeInTheDocument()
@@ -419,7 +419,7 @@ describe('React reader coverage', () => {
     expect(firstVerse.className).not.toContain('qar:border-b')
 
     const arabicLine = firstVerse.querySelector('[data-reader-arabic-line="true"]')
-    const verseNumber = screen.getByRole('button', { name: 'Verse 1' })
+    const verseNumber = screen.getByRole('button', { name: 'Bookmark verse 1' })
     expect(arabicLine?.compareDocumentPosition(verseNumber) ?? 0).toBe(Node.DOCUMENT_POSITION_PRECEDING)
 
     const translation = firstVerse.querySelector('[data-reader-translation="true"]')
@@ -520,7 +520,7 @@ describe('React reader coverage', () => {
     )
 
     const verse = screen.getByTestId('verse-1:1')
-    const verseNumber = screen.getByRole('button', { name: 'Verse 1' })
+    const verseNumber = screen.getByRole('button', { name: 'Remove bookmark for verse 1' })
     expect(verse).toHaveAttribute('data-bookmarked', 'true')
     expect(verse).toHaveClass('qar-reader-verse--bookmarked')
     expect(verse.querySelector('.qar-reader-verse-head')).toContainElement(verseNumber)
@@ -568,7 +568,7 @@ describe('React reader coverage', () => {
     )
 
     const verse = screen.getByTestId('verse-1:1')
-    fireEvent.click(screen.getByRole('button', { name: 'Verse 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bookmark verse 1' }))
 
     expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
     vi.advanceTimersByTime(0)
@@ -618,7 +618,7 @@ describe('React reader coverage', () => {
     )
 
     const verse = screen.getByTestId('verse-1:1')
-    fireEvent.click(screen.getByRole('button', { name: 'Verse 1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove bookmark for verse 1' }))
 
     expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
     vi.advanceTimersByTime(0)
@@ -645,12 +645,12 @@ describe('React reader coverage', () => {
   it('keeps the verse bookmark glyph slot mounted when bookmark state changes', () => {
     const { rerender } = render(<VerseNumber verse={7} bookmarked={false} />)
 
-    let verseNumber = screen.getByRole('button', { name: 'Verse 7' })
+    let verseNumber = screen.getByRole('button', { name: 'Bookmark verse 7' })
     expect(verseNumber.querySelector('.qar-reader-verse-bookmark-glyph')).toHaveAttribute('data-active', 'false')
 
     rerender(<VerseNumber verse={7} bookmarked />)
 
-    verseNumber = screen.getByRole('button', { name: 'Verse 7' })
+    verseNumber = screen.getByRole('button', { name: 'Remove bookmark for verse 7' })
     expect(verseNumber).toHaveAttribute('aria-pressed', 'true')
     expect(verseNumber.querySelector('.qar-reader-verse-bookmark-glyph')).toHaveAttribute('data-active', 'true')
   })

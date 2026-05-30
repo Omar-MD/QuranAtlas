@@ -3211,7 +3211,7 @@
   .qar-reader-verse-bookmark-glyph {
     display: inline-block;
     flex: 0 0 auto;
-    opacity: 0.7;
+    opacity: 0.82;
   }
 
   .qar-reader-verse-bookmark-glyph[data-active='true'] {
@@ -3226,7 +3226,7 @@
     display: inline-flex;
     align-items: center;
     min-height: 32px;
-    color: color-mix(in srgb, var(--qa-react-text-muted) 78%, transparent);
+    color: var(--qa-react-text-muted);
     font-family: var(--qa-react-font-ui);
     font-size: 0.72rem;
     font-weight: 500;

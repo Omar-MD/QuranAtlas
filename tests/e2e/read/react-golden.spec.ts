@@ -150,7 +150,7 @@ for (const fixture of readFixtures) {
         expect(versePadding.bottom).toBeCloseTo(18, 0)
         expect(versePadding.left).toBeCloseTo(30, 0)
         const verseOne = page.getByTestId('verse-1:1')
-        const verseNumberBox = await verseOne.getByRole('button', { name: 'Verse 1' }).boundingBox()
+        const verseNumberBox = await verseOne.getByRole('button', { name: 'Bookmark verse 1' }).boundingBox()
         const arabicBox = await verseOne.locator('[data-reader-arabic-line="true"]').boundingBox()
         expect(verseNumberBox?.x ?? Number.POSITIVE_INFINITY).toBeLessThan(arabicBox?.x ?? 0)
         await expect(verseOne.locator('[data-reader-translation="true"]')).toHaveAttribute('dir', 'ltr')

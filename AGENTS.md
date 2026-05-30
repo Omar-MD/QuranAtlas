@@ -31,6 +31,7 @@ Project instructions auto-loaded by Codex in this repo.
 - Do not push, merge, or open a PR unless explicitly asked.
 - If asked for a PR and no base branch is named, use `dev`.
 - `dev` is the default integration branch for ordinary code changes. Use `staging` or `main` only when explicitly requested.
+- After an agent push, monitor the resulting CI run to completion and keep fixing and pushing until CI passes unless the user explicitly tells you to stop.
 - Put temporary working notes or scratch scripts in `.scratch/`; do not commit them.
 
 ## Verification
