@@ -20,6 +20,7 @@ import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-bound
 import { deriveWirdSummary } from '../../../continuity/wird/progress'
 import type { SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
+import { isMushafPageBookmark } from '../../../continuity/bookmarks/page-bookmark'
 
 type ReaderSettings = {
   fontSize: ReaderSpacingStep
@@ -89,7 +90,8 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
   const wirdSummary = useMemo(() => deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries), [wirdBoundaries, wirdCounts, wirdPlan])
   const { selectedVerseKey, selectVerse } = useVerseInteractionReducer()
   const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus, { wirdCounts: wirdProgressCounts })
-  const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
+  const { bookmarkedVerseKeys, bookmarks, status: bookmarkStatus, toggleBookmark } = useBookmarks()
+  const showVerseBookmarkHint = bookmarkStatus === 'ready' && !bookmarks.some((bookmark) => !isMushafPageBookmark(bookmark))
 
   useEffect(() => subscribeReactReaderPreferencesChanged((preferences) => {
     applyReactReaderTypography(preferences)
@@ -232,6 +234,7 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
           void toggleBookmark({ surah: bookmarkSurah, verseKey })
         }}
         selectedVerseKey={selectedVerseKey}
+        showVerseBookmarkHint={showVerseBookmarkHint}
         surahIndex={surahIndex}
       />
     </ReaderPageShell>

@@ -8,6 +8,7 @@ export function VirtualVerseList({
   onSelectVerse,
   onToggleBookmark,
   selectedVerseKey = null,
+  showVerseBookmarkHint = false,
   translationVisible = true,
   verses,
 }: {
@@ -16,6 +17,7 @@ export function VirtualVerseList({
   onSelectVerse?: (verseKey: string) => void
   onToggleBookmark?: (verseKey: string) => void
   selectedVerseKey?: string | null
+  showVerseBookmarkHint?: boolean
   translationVisible?: boolean
   verses: ReaderVerse[]
 }) {
@@ -32,6 +34,7 @@ export function VirtualVerseList({
           onSelect={() => onSelectVerse?.(verse.key)}
           onToggleBookmark={() => onToggleBookmark?.(verse.key)}
           selected={selectedVerseKey === verse.key}
+          showBookmarkHint={showVerseBookmarkHint && index === 0}
           translation={verse.translation}
           translationRole={verse.translationRole}
           translationVisible={translationVisible}

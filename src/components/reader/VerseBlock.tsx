@@ -23,6 +23,7 @@ export type VerseBlockProps = {
   bookmarked?: boolean
   divided?: boolean
   onToggleBookmark?: () => void
+  showBookmarkHint?: boolean
 }
 
 type TranslationToken = { type: 'text'; value: string } | { type: 'footnote'; marker: string }
@@ -51,6 +52,7 @@ export function VerseBlock({
   onSelect,
   onToggleBookmark,
   selected = false,
+  showBookmarkHint = false,
   translation,
   translationRole = 'identity',
   translationVisible = true,
@@ -81,6 +83,7 @@ export function VerseBlock({
     >
       <div className="qar-reader-verse-head">
         <VerseNumber bookmarked={bookmarked} onSelect={onSelect} onToggleBookmark={handleToggleBookmark} verse={verse} />
+        {showBookmarkHint && <span className="qar-reader-verse-bookmark-hint">tap to bookmark</span>}
       </div>
       <div className="qar-reader-verse-body">
         <p className="qar-reader-verse-arabic" data-reader-arabic-line="true" dir="rtl" lang="ar">

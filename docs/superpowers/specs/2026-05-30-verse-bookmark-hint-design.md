@@ -12,7 +12,7 @@ Make verse-level bookmarking discoverable without adding persistent instructiona
 
 ## Selected UX
 
-Use a quiet bookmark chip for the verse number and show one inline first-use hint:
+Use a quiet inline bookmark affordance for the verse number and show one inline first-use hint:
 
 - The verse number control always shows a small outline bookmark icon beside the number.
 - When the verse is bookmarked, the icon fills and the control uses the bookmark accent state.
@@ -47,7 +47,7 @@ The design covers these states:
 
 - No bookmarks: first rendered verse can show `tap to bookmark`.
 - Unbookmarked verse: outline icon remains visible.
-- Hover/focus: the control may receive a subtle surface and border treatment.
+- Hover/focus: the control may receive a subtle color change while preserving the normal focus outline.
 - Bookmarked verse: filled icon and accent state.
 - Reduced motion: no motion is required for the hint.
 

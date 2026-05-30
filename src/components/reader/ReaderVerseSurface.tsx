@@ -11,6 +11,7 @@ export type ReaderVerseSurfaceProps = {
   onSelectVerse?: (verseKey: string) => void
   onToggleBookmark?: (verseKey: string) => void
   selectedVerseKey?: string | null
+  showVerseBookmarkHint?: boolean
   surahHeaderHidden?: boolean
   surahIndex?: ReaderSurahIndexEntry[]
 }
@@ -28,6 +29,7 @@ export function ReaderVerseSurface({
   onSelectVerse,
   onToggleBookmark,
   selectedVerseKey = null,
+  showVerseBookmarkHint = false,
   surahHeaderHidden = false,
   surahIndex = [],
 }: ReaderVerseSurfaceProps) {
@@ -99,6 +101,7 @@ export function ReaderVerseSurface({
         onSelectVerse={onSelectVerse}
         onToggleBookmark={onToggleBookmark}
         selectedVerseKey={selectedVerseKey}
+        showVerseBookmarkHint={showVerseBookmarkHint}
         translationVisible={readyCorpus.translationVisible}
         verses={readyCorpus.verses}
       />

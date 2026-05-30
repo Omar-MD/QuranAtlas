@@ -81,7 +81,7 @@ style_paths:
 
 `ReaderRoute` loads the current Surah corpus through `src/data/reader-corpus.ts`. The corpus joins Qaloon text, Bridges translation, verse aliases, footnotes, and optional knowledge metadata. Translation visibility and typography preferences apply live through settings writes and root-level presentation state; the corpus is not refetched for simple presentation changes.
 
-`ReaderVerseSurface` renders a document-scroll Surah surface with a clear Surah header, Basmala where applicable, verse rows, translation rows, footnote disclosures, optional knowledge chips, and continuity controls. `VerseBlock` owns row state, `VerseNumber` owns bookmark affordance semantics, and `useVerseInteractionReducer` owns local expanded-state behavior.
+`ReaderVerseSurface` renders a document-scroll Surah surface with a clear Surah header, Basmala where applicable, verse rows, translation rows, footnote disclosures, optional knowledge chips, and continuity controls. `VerseBlock` owns row state, `VerseNumber` owns bookmark affordance semantics, and `useVerseInteractionReducer` owns local expanded-state behavior. Verse number controls always expose the bookmark affordance; when the active riwayah has no verse bookmarks, the first rendered verse shows one inline `tap to bookmark` hint that disappears after any verse bookmark is created.
 
 ### Mushaf Mode
 
