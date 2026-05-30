@@ -30,6 +30,8 @@ The app never imports `data/**`. Runtime code fetches `/dataset/**` and validate
 
 The build preserves the existing provenance `builtAt` value when package version and profile are unchanged, so validation does not dirty tracked dataset files just by running. Set `QURANATLAS_DATASET_BUILT_AT` when an intentional dataset timestamp change is required.
 
+`pnpm run data -- build --skip=mushaf-pages` rebuilds the non-Mushaf dataset lanes while reusing the committed Mushaf page runtime assets. CI and `pnpm run validate:affected` use this only when the affected-file gate shows dataset inputs changed but Mushaf page inputs did not.
+
 `pnpm run data -- check` validates source/catalog structure without necessarily rebuilding every runtime file.
 
 `pnpm run data -- build --profile=full` builds every approved current dataset profile and is used for protected-branch and dataset-relevant CI coverage.
@@ -57,6 +59,8 @@ pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
 ```
 
 The import step downloads quran.ws PDFs into `.scratch/` and converts them to normalized SVG inputs using Poppler. The build step validates and emits edition-aware runtime page assets and manifests. CI caches the expensive PDF/SVG inputs and still validates the generated page pack before app build.
+
+CI runs the Mushaf import/page-build lane only when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs, normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, committed Mushaf runtime assets, or dependency files. Other app-only changes reuse the committed page assets and avoid the Poppler import/build path.
 
 ## Runtime Consumption
 

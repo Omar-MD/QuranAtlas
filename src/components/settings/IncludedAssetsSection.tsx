@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { BookOpen, ChevronRight, FileText } from 'lucide-react'
+import { BookOpen, ChevronDown, ChevronRight, ChevronUp, FileText } from 'lucide-react'
 
+import { Button } from '../ui'
 import {
   DEFAULT_READER_ASSET_PROFILE,
   readerAssetProfileRows,
@@ -15,8 +16,15 @@ const pendingRows = readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((ro
   label: 'Loading asset name',
 }))
 
-export function IncludedAssetsSection() {
+export function IncludedAssetsSection({
+  onVisibleChange,
+  visible = true,
+}: {
+  onVisibleChange?: (visible: boolean) => void
+  visible?: boolean
+}) {
   const [rows, setRows] = useState<ReaderAssetInventoryDisplayRow[]>(pendingRows)
+  const listId = 'qar-react-settings-included-assets-list'
 
   useEffect(() => {
     const controller = new AbortController()
@@ -36,35 +44,62 @@ export function IncludedAssetsSection() {
   }, [])
 
   return (
-    <section className="qar-react-settings-assets" aria-busy={rows === pendingRows ? 'true' : undefined} aria-labelledby="qar-react-settings-included-assets">
+    <section
+      className="qar-react-settings-assets"
+      aria-busy={rows === pendingRows ? 'true' : undefined}
+      aria-labelledby="qar-react-settings-included-assets"
+      data-assets-visible={visible ? 'true' : 'false'}
+    >
       <div className="qar-react-settings-section-heading">
         <span>
           <h3 className="qar-react-settings-section-title" id="qar-react-settings-included-assets">Included assets</h3>
           <p className="qar-react-settings-section-note">Read-only inventory for the active MVP profile.</p>
         </span>
+        <Button
+          aria-controls={listId}
+          aria-expanded={visible}
+          className="qar-react-settings-assets-toggle"
+          onClick={() => onVisibleChange?.(!visible)}
+          size="sm"
+          variant="ghost"
+        >
+          {visible ? (
+            <>
+              <ChevronUp aria-hidden="true" size={15} strokeWidth={1.8} />
+              Hide
+            </>
+          ) : (
+            <>
+              <ChevronDown aria-hidden="true" size={15} strokeWidth={1.8} />
+              Show
+            </>
+          )}
+        </Button>
       </div>
-      <div className="qar-react-settings-asset-list">
-        {rows.map((row) => (
-          <div className="qar-react-settings-asset-row" key={row.id}>
-            <span
-              aria-hidden="true"
-              className="qar-react-settings-asset-icon"
-              data-asset-icon={assetIconName(row.group)}
-              data-testid="settings-asset-icon"
-            >
-              <AssetIcon group={row.group} />
-            </span>
-            <span className="qar-react-settings-asset-main">
-              <span className="qar-react-settings-asset-label">
-                <span className="qar-react-settings-asset-prefix">{assetPrefix(row.group)}: </span>
-                <span className="qar-react-settings-row-label">{row.label}</span>
+      {visible ? (
+        <div className="qar-react-settings-asset-list" id={listId}>
+          {rows.map((row) => (
+            <div className="qar-react-settings-asset-row" key={row.id}>
+              <span
+                aria-hidden="true"
+                className="qar-react-settings-asset-icon"
+                data-asset-icon={assetIconName(row.group)}
+                data-testid="settings-asset-icon"
+              >
+                <AssetIcon group={row.group} />
               </span>
-            </span>
-            <span className="qar-react-settings-asset-status">Included</span>
-            <ChevronRight aria-hidden="true" className="qar-react-settings-asset-chevron" size={16} strokeWidth={1.65} />
-          </div>
-        ))}
-      </div>
+              <span className="qar-react-settings-asset-main">
+                <span className="qar-react-settings-asset-label">
+                  <span className="qar-react-settings-asset-prefix">{assetPrefix(row.group)}: </span>
+                  <span className="qar-react-settings-row-label">{row.label}</span>
+                </span>
+              </span>
+              <span className="qar-react-settings-asset-status">Included</span>
+              <ChevronRight aria-hidden="true" className="qar-react-settings-asset-chevron" size={16} strokeWidth={1.65} />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }

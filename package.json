@@ -9,6 +9,8 @@
     "preview": "vite preview --strictPort",
     "clean": "rm -rf dist test-output",
     "build": "pnpm run data -- build && vite build",
+    "ci:affected": "node scripts/ci/affected.mjs",
+    "ci:build": "node scripts/ci/build.mjs",
     "data": "node scripts/data/cli.mjs",
     "data:fetch": "node scripts/data/fetch-source.mjs",
     "test": "vitest run",
@@ -31,7 +33,8 @@
     "docs": "node scripts/docs/derive.mjs",
     "docs:check": "node scripts/docs/derive.mjs --check",
     "lighthouse": "pnpm run build && lhci autorun --config=.lighthouserc.cjs",
-    "validate": "pnpm run check && pnpm run test && pnpm run build && node scripts/check-chunks.js && env -u NO_COLOR PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --grep-invert @offline && env -u NO_COLOR PLAYWRIGHT_INCLUDE_OFFLINE=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --grep @offline && env -u NO_COLOR PLAYWRIGHT_USE_PREVIEW=1 pnpm run visual && pnpm run build:storybook && pnpm run test:storybook && pnpm run docs:check"
+    "validate": "pnpm run check && pnpm run test && pnpm run build && node scripts/check-chunks.js && env -u NO_COLOR PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --grep-invert @offline && env -u NO_COLOR PLAYWRIGHT_INCLUDE_OFFLINE=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --grep @offline && env -u NO_COLOR PLAYWRIGHT_USE_PREVIEW=1 pnpm run visual && pnpm run build:storybook && pnpm run test:storybook && pnpm run docs:check",
+    "validate:affected": "node scripts/ci/validate-affected.mjs"
   },
   "keywords": [],
   "author": "",

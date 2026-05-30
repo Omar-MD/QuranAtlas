@@ -24,9 +24,13 @@ jobs:
     name: Detect Changes
     runs-on: ubuntu-latest
     outputs:
+      build_relevant: ${{ steps.filter.outputs.build_relevant }}
       e2e_relevant: ${{ steps.filter.outputs.e2e_relevant }}
       dataset_relevant: ${{ steps.filter.outputs.dataset_relevant }}
+      full_dataset_relevant: ${{ steps.filter.outputs.full_dataset_relevant }}
+      mushaf_pages_relevant: ${{ steps.filter.outputs.mushaf_pages_relevant }}
       reason: ${{ steps.filter.outputs.reason }}
+      storybook_relevant: ${{ steps.filter.outputs.storybook_relevant }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -49,69 +53,7 @@ jobs:
             BASE="$PUSH_BEFORE"
             HEAD="$PUSH_AFTER"
           fi
-
-          # New branch / first push / empty base — run e2e (no baseline).
-          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
-            echo "e2e_relevant=true" >> "$GITHUB_OUTPUT"
-            echo "dataset_relevant=true" >> "$GITHUB_OUTPUT"
-            echo "reason=no-baseline" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          CHANGED=$(git diff --name-only "$BASE" "$HEAD" || true)
-          if [ -z "$CHANGED" ]; then
-            echo "e2e_relevant=false" >> "$GITHUB_OUTPUT"
-            echo "dataset_relevant=false" >> "$GITHUB_OUTPUT"
-            echo "reason=no-files-changed" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "Changed files:"
-          echo "$CHANGED" | sed 's/^/  /'
-
-          # E2E-IRRELEVANT paths — any change that lands ENTIRELY inside
-          # this list skips the Playwright suite. Everything else runs e2e:
-          # source, styles, public assets, vite/playwright config, lockfile.
-          #
-          #   docs/**          — context docs, journeys, future-work
-          #   tests/unit/**    — unit suite runs in its own job
-          #   scripts/**       — build/dataset scripts (Build job covers impact)
-          #   *.md             — root-level READMEs / changelogs
-          #   .github/**/*.md  — issue / PR templates
-          #   LICENSE / .gitignore / .editorconfig — meta-only
-          RELEVANT=$(echo "$CHANGED" | grep -vE \
-            -e '^docs/' \
-            -e '^tests/unit/' \
-            -e '^scripts/' \
-            -e '\.md$' \
-            -e '^LICENSE$' \
-            -e '^\.gitignore$' \
-            -e '^\.editorconfig$' \
-            -e '^\.github/.*\.md$' \
-            || true)
-
-          if [ -z "$RELEVANT" ]; then
-            echo "e2e_relevant=false" >> "$GITHUB_OUTPUT"
-            echo "reason=docs-or-unit-only" >> "$GITHUB_OUTPUT"
-          else
-            echo "e2e_relevant=true" >> "$GITHUB_OUTPUT"
-            FIRST=$(echo "$RELEVANT" | head -1)
-            echo "reason=changed:${FIRST}" >> "$GITHUB_OUTPUT"
-          fi
-
-          DATASET_RELEVANT=$(echo "$CHANGED" | grep -E \
-            -e '^data/catalog/' \
-            -e '^data/normalized/' \
-            -e '^scripts/data/' \
-            -e '^public/dataset/' \
-            -e '^package\.json$' \
-            -e '^pnpm-lock\.yaml$' \
-            || true)
-          if [ -z "$DATASET_RELEVANT" ]; then
-            echo "dataset_relevant=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "dataset_relevant=true" >> "$GITHUB_OUTPUT"
-          fi
+          node scripts/ci/affected.mjs --base "$BASE" --head "$HEAD" --github-output "$GITHUB_OUTPUT"
 
   lint:
     name: Check
@@ -147,6 +89,8 @@ jobs:
 
   dataset-catalog:
     name: Dataset Check
+    needs: changes
+    if: needs.changes.outputs.dataset_relevant == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -155,6 +99,8 @@ jobs:
 
   dataset-baseline:
     name: Dataset Baseline
+    needs: changes
+    if: needs.changes.outputs.dataset_relevant == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -164,9 +110,7 @@ jobs:
   dataset-full:
     name: Dataset Full
     needs: changes
-    if: >
-      github.event_name == 'push' ||
-      needs.changes.outputs.dataset_relevant == 'true'
+    if: needs.changes.outputs.full_dataset_relevant == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -184,11 +128,13 @@ jobs:
 
   build:
     name: Build
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
       - name: Cache Mushaf page import artifacts
+        if: needs.changes.outputs.mushaf_pages_relevant == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
@@ -196,14 +142,21 @@ jobs:
             data/normalized/mushaf-pages/qaloon/pages
           key: mushaf-pages-qaloon-${{ runner.os }}-${{ hashFiles('data/catalog/mushaf-pages.json', 'data/normalized/quran/riwayat/qaloon.json', 'scripts/data/mushaf-pages/import.mjs', 'scripts/data/mushaf-pages/build.mjs') }}
       - name: Install Mushaf page converter
+        if: needs.changes.outputs.mushaf_pages_relevant == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
       - name: Generate release Mushaf page pack
+        if: needs.changes.outputs.mushaf_pages_relevant == 'true'
         run: |
           pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604
           pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
-      - run: pnpm run build
+      - name: Build production artifact
+        run: pnpm run ci:build
+        env:
+          QURANATLAS_DATASET_RELEVANT: ${{ needs.changes.outputs.dataset_relevant }}
+          QURANATLAS_MUSHAF_PAGES_RELEVANT: ${{ needs.changes.outputs.mushaf_pages_relevant }}
+          QURANATLAS_MUSHAF_PAGES_PREBUILT: ${{ needs.changes.outputs.mushaf_pages_relevant }}
       - name: Upload dist artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -214,7 +167,8 @@ jobs:
 
   lighthouse:
     name: Lighthouse CI
-    needs: build
+    needs: [build, changes]
+    if: needs.changes.outputs.build_relevant == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -312,7 +266,7 @@ jobs:
   ci-ok:
     name: CI OK
     needs: [changes, lint, test, feature-state, docs-check, dataset-catalog, dataset-baseline, dataset-full, audit, build, lighthouse, e2e]
-    # Run even when e2e is skipped (PRs to dev without the run-e2e label).
+    # Run even when affected-change gates skip dataset or e2e jobs.
     # `always()` lets this job evaluate needs.* results; the step body then
     # fails if any upstream job failed or was cancelled.
     if: always()

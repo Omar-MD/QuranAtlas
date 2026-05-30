@@ -40,6 +40,13 @@ for (const fixture of configureFixtures) {
         await expect(shell.getByRole('button', { name: 'Manage Assets' })).toHaveCount(0)
         await expect(shell.getByRole('group', { name: 'Theme' })).toBeVisible()
         await expect(shell.getByRole('group', { name: 'Night mode' })).toBeVisible()
+        const assetsToggle = includedAssets.getByRole('button', { name: viewportId === 'phone-standard' ? 'Show' : 'Hide' })
+        await expect(assetsToggle).toHaveAttribute('aria-expanded', viewportId === 'phone-standard' ? 'false' : 'true')
+        if (viewportId === 'phone-standard') {
+          await expect(includedAssets.getByText('Text:')).toHaveCount(0)
+          await assetsToggle.click()
+          await expect(includedAssets.getByRole('button', { name: 'Hide' })).toHaveAttribute('aria-expanded', 'true')
+        }
         await expect(includedAssets.getByText('Text:')).toBeVisible()
         await expect(includedAssets.getByText('Uthmani KFGQPC + KFGQPC Qaloon')).toBeVisible()
         await expect(includedAssets.getByText('Mushaf:')).toBeVisible()
@@ -121,8 +128,10 @@ test.describe('settings-over-reader shell dismissal and routing', () => {
     await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
     const guard = installPageGuards(page, 'react settings-over-reader dismissal', [
       /\/dataset\/indexes\/mushaf-assets\.json$/,
+      /\/dataset\/indexes\/sources\.json$/,
       /\/dataset\/indexes\/text-assets\.json$/,
       /\/dataset\/knowledge\/passages\/001\.json$/,
+      /\/dataset\/provenance\.json$/,
       /\/dataset\/translations\/_verse-aliases\.json$/,
     ])
 
@@ -151,7 +160,10 @@ test.describe('settings-over-reader shell dismissal and routing', () => {
     await expect(page).toHaveURL(/#\/s\/1$/)
     const shell = page.getByRole('dialog', { name: 'Settings' })
     await expect(shell).toBeVisible()
-    await expect(shell.getByRole('region', { name: 'Included assets' })).toBeVisible()
+    const includedAssets = shell.getByRole('region', { name: 'Included assets' })
+    await expect(includedAssets).toBeVisible()
+    await includedAssets.getByRole('button', { name: 'Show' }).click()
+    await expect(includedAssets.getByText('Text:')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Assets', exact: true })).toHaveCount(0)
 
     await expectNoGuardFailures(guard)

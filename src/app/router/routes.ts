@@ -52,5 +52,5 @@ export function matchReactRoute(hash = getInitialReactHash()): ReactRouteMatch {
   if (routePath === REACT_ROUTES.assets) return { type: 'settings' }
   if (routePath === REACT_ROUTES.about) return { type: 'about' }
   if (routePath === REACT_ROUTES.onboarding) return { type: 'onboarding' }
-  return { type: 'reader', surah: 1 }
+  return { type: 'unsupported' }
 }

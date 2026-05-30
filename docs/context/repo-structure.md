@@ -33,6 +33,7 @@ React app source lives here.
 - `src/components/navigation/`: nav drawer, Surah/Juz/Hizb lists, bookmarks UI, and shortcuts.
 - `src/components/settings/`: settings shell, Verse/Mushaf settings, asset inventory, and settings stories.
 - `src/components/launch/`: launch splash presentation.
+- `src/components/search/`: deferred search UI prototypes; not mounted by the shipped route contract.
 - `src/design-system/`: semantic tokens, Tailwind theme, component registry, recipes, design-system docs, and global CSS entry.
 - `src/storage/`: Dexie database, schema, settings writes, clear-data behavior, and storage error contracts.
 - `src/continuity/`: last surface, current position, bookmarks, recent Surahs, Daily Wird, and launch restore helpers.
@@ -73,6 +74,7 @@ Rule: `data/` is build-facing; `public/` is runtime-facing.
 ## `scripts/`
 
 - `scripts/data/`: catalog validation, source fetching, normalization, dataset build, Mushaf page import/build, aliases, and inventory.
+- `scripts/ci/`: reusable affected-change detection, affected production build, and local affected validation runners.
 - `scripts/docs/`: generated inventories, module graph, feature map, and cite checks.
 - `scripts/check-*.mjs`: deterministic static gates used by `pnpm run check` and CI.
 

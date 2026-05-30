@@ -20,6 +20,14 @@ function parseProfile(argv) {
   return flag ? flag.slice('--profile='.length) : 'baseline'
 }
 
+function skipSet(argv) {
+  return new Set(
+    argv
+      .filter((arg) => arg.startsWith('--skip='))
+      .flatMap((arg) => arg.slice('--skip='.length).split(',').map((item) => item.trim()).filter(Boolean)),
+  )
+}
+
 function main(argv = process.argv.slice(2)) {
   const normalizedArgv = argv[0] === '--' ? argv.slice(1) : argv
   const [command = 'build'] = normalizedArgv
@@ -54,11 +62,13 @@ function main(argv = process.argv.slice(2)) {
   }
 
   if (command === 'build') {
-    const profile = parseProfile(normalizedArgv.slice(1))
+    const args = normalizedArgv.slice(1)
+    const profile = parseProfile(args)
+    const skipped = skipSet(args)
     run('text/build.mjs', [`--profile=${profile}`])
     if (profile !== 'catalog') {
       run('knowledge/build.mjs')
-      run('mushaf-pages/build.mjs', [`--profile=${profile}`])
+      if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
       run('riwayah-packages/build.mjs', [`--profile=${profile}`])
     }
     return

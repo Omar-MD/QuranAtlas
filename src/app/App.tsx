@@ -291,7 +291,7 @@ function UnsupportedRoute() {
       <p className="qar:m-0 qar:text-xs qar:font-medium qar:uppercase qar:tracking-wide qar:text-muted">Unavailable</p>
       <h2 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Route unavailable</h2>
       <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-        Search is planned future work and is not part of the current QuranAtlas MVP.
+        This route is not part of the current QuranAtlas MVP.
       </p>
     </main>
   )

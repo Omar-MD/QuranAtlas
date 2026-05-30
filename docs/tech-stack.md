@@ -45,7 +45,10 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run preview` | Serve `dist/` on port 4173 |
 | `pnpm run clean` | Remove `dist` and `test-output` |
 | `pnpm run build` | Build runtime dataset, then build the React app into `dist/` |
+| `pnpm run ci:affected` | Print changed-file gate decisions for CI/local affected validation |
+| `pnpm run ci:build` | Build `dist/` while skipping dataset generation unless affected gates require it |
 | `pnpm run data -- build` | Build the baseline committed runtime dataset while preserving the existing dataset timestamp unless `QURANATLAS_DATASET_BUILT_AT` is set |
+| `pnpm run data -- build --skip=mushaf-pages` | Rebuild non-Mushaf baseline dataset lanes while reusing committed Mushaf page assets |
 | `pnpm run data -- build --profile=full` | Build every approved current dataset profile |
 | `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs |
 | `pnpm run data:fetch -- <type>:<id>` | Fetch and normalize catalog-backed source data |
@@ -65,6 +68,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run docs:check` | Assert generated docs are current |
 | `pnpm run lighthouse` | Build and run Lighthouse CI |
 | `pnpm run validate` | Full local release gate: static checks, tests, build, chunks, e2e, offline, visual, Storybook, docs |
+| `pnpm run validate:affected` | Local affected release gate: static checks/tests always, then build/e2e/visual/Storybook only when changed-file gates require them |
 
 `PLAYWRIGHT_SKIP_BUILD=1` tells preview-oriented Playwright scripts to reuse an existing `dist/` artifact. CI uses this after downloading the build job artifact so the same app bundle is tested and deployed.
 
@@ -90,13 +94,15 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, and
 | `test` | `pnpm run test` |
 | `feature-state` | Top-level mutable feature-state guard |
 | `docs-check` | `pnpm run docs:check` |
-| `dataset-catalog` | `pnpm run data -- check` |
-| `dataset-baseline` | `pnpm run data -- build` |
-| `dataset-full` | Full profile build when protected branches or dataset-relevant diffs require it |
+| `dataset-catalog` | `pnpm run data -- check` when dataset-relevant diffs require it |
+| `dataset-baseline` | `pnpm run data -- build` when dataset-relevant diffs require it |
+| `dataset-full` | Full profile build when dataset-relevant diffs require it |
 | `audit` | `pnpm audit --audit-level moderate` |
-| `build` | Generates required Mushaf page artifacts, runs `pnpm run build`, uploads `dist/` |
-| `lighthouse` | Runs Lighthouse against uploaded `dist/` |
+| `build` | Runs `pnpm run ci:build`, generating Mushaf page artifacts only when Mushaf inputs changed, then uploads `dist/` |
+| `lighthouse` | Runs Lighthouse against uploaded `dist/` when build-relevant diffs require it |
 | `e2e` | Runs non-visual React Playwright specs plus explicit offline preview specs against uploaded `dist/` |
 | `ci-ok` | Aggregates required job results |
 
 Deploy lives at `.github/workflows/deploy.yml`. On successful CI for branch pushes to `dev`, `staging`, or `main`, it downloads the same `dist/` artifact and deploys it to Cloudflare Pages. CI builds once; deploy does not rebuild.
+
+Affected-change decisions live in `scripts/ci/affected.mjs` so CI and local validation use the same path groups. The production app bundle still builds for deployable CI runs, but dataset generation and the expensive Mushaf import/page build run only when source data, dataset scripts, reader asset profiles, or dependency files that affect those artifacts changed.

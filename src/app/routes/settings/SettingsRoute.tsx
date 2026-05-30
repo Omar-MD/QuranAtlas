@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { SettingsShell } from '../../../components/settings/SettingsShell'
 import { IncludedAssetsSection } from '../../../components/settings/IncludedAssetsSection'
 import { MushafSettings } from '../../../components/settings/MushafSettings'
@@ -18,6 +20,7 @@ export function SettingsRoute({
   onReaderModeChange?: (mode: SettingsRouteMode) => void
   previousHash?: string
 }) {
+  const [includedAssetsVisible, setIncludedAssetsVisible] = useState(() => shouldShowIncludedAssetsByDefault())
   const {
     setFontSize,
     setMushafViewMode,
@@ -73,9 +76,13 @@ export function SettingsRoute({
             )}
           </div>
         </div>
-        <IncludedAssetsSection />
+        <IncludedAssetsSection onVisibleChange={setIncludedAssetsVisible} visible={includedAssetsVisible} />
       </div>
       <span className="qar:sr-only">Restores {previousHash} on close.</span>
     </SettingsShell>
   )
+}
+
+function shouldShowIncludedAssetsByDefault(): boolean {
+  return window.matchMedia?.('(max-width: 767px)').matches ? false : true
 }

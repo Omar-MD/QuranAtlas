@@ -61,7 +61,7 @@ style_paths:
 
 Verse settings own font size, reading flow, translation visibility, and Daily Wird status visibility. Mushaf settings own the visible page/width mode control while accepting stored `auto` values for compatibility. Theme and night mode apply globally.
 
-`IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
+`IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. It can collapse on compact settings sheets so the core controls remain visible without scrolling. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
 
 `AboutRoute` owns mission/attribution, install prompt affordance, app version, and clear-data entry. `useClearDataDialog` requires exact `DELETE`; `src/storage/clear-data.ts` clears app caches and the shared database, then reloads.
 
@@ -105,6 +105,7 @@ Settings is a key-value store. Writers are key-scoped and should go through `src
 
 - Settings must preserve the mounted reader state when opened from a reader route.
 - Included assets are read-only in the current MVP.
+- Included assets may be hidden or shown, but the toggle must not introduce source-management actions.
 - The active reader profile remains Qaloon text/font, Qaloon Mushaf, and Bridges translation.
 - Direct settings writes must preserve key ownership and schema compatibility.
 - Clear data is destructive and requires explicit confirmation.
