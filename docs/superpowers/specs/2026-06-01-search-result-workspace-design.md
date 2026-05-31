@@ -156,7 +156,7 @@ Translation and context searches can show:
 
 Translation/context Explore may summarize or group Arabic source ayat for translation/context evidence, but the full ayah-first result list remains in `Verses`.
 
-Missing optional packs degrade at module level. Core Search results remain usable. Workspace tabs remain visible when their core section exists. If the query type supports exploration but optional packs are missing, keep `Explore` available and show module-level unavailable states rather than hiding the tab. Wording modules must use source-backed labels such as `Attested following wording` and `Wording observed after this phrase`. They must not use predictive or generated-answer language such as `prediction`, `autocomplete`, `suggested verse`, or `probability`.
+Missing optional packs degrade at module level. Core Search results remain usable. Workspace tabs remain visible when their core section exists. If the query type supports exploration but optional packs are missing, keep `Explore` available and show module-level unavailable states rather than hiding the tab. If no Explore modules are available for the query type, keep the tab visible and show a concise empty state rather than silently removing the workspace section. Wording modules must use source-backed labels such as `Attested following wording` and `Wording observed after this phrase`. They must not use predictive or generated-answer language such as `prediction`, `autocomplete`, `suggested verse`, or `probability`.
 
 ## Sources
 
@@ -205,7 +205,7 @@ The presentation layer derives:
 - `SearchVerseCardViewModel`: ref label, primary text, optional excerpt, plain-language match reason, match type label, `canOpenInRead`, and `canHighlightWordsInRead`.
 - `SearchDetailsViewModel`: why this matched, texts, Reader mapping, concise evidence rows, and per-result source subset.
 
-View models must preserve count scope. `Occurrences` means indexed token or phrase occurrence count and appears only when known. `Matched ayat` means unique matched source ayat. `Shown results` means loaded result rows in the current paged window.
+View models must preserve count scope. `Occurrences` means indexed token or phrase occurrence count and appears only when known. `Matched ayat` means unique matched source ayat. `Known results` means the backend knows the complete result-row count, but not necessarily exact token or phrase occurrence counts. `Shown results` means loaded result rows in the current paged window.
 
 Internal DTO and worker names may remain stable. User-facing labels should move away from implementation terminology.
 
