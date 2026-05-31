@@ -7,6 +7,7 @@ import { IconButton } from '../ui'
 export type ReaderMode = 'verse' | 'mushaf'
 
 export function ReaderChrome({
+  hideSettings = false,
   mode,
   onModeChange,
   onOpenNavigation,
@@ -14,6 +15,7 @@ export function ReaderChrome({
   visible = true,
   wirdStatus,
 }: {
+  hideSettings?: boolean
   mode: ReaderMode
   onOpenNavigation?: () => void
   onOpenSettings?: () => void
@@ -45,9 +47,11 @@ export function ReaderChrome({
           </span>
         </IconButton>
       )}
-      <IconButton className="qar-reader-chrome-icon" label="Open settings" onClick={onOpenSettings}>
-        <Settings aria-hidden="true" size={26} strokeWidth={1.6} />
-      </IconButton>
+      {!hideSettings && (
+        <IconButton className="qar-reader-chrome-icon" label="Open settings" onClick={onOpenSettings}>
+          <Settings aria-hidden="true" size={26} strokeWidth={1.6} />
+        </IconButton>
+      )}
     </nav>
   )
 }

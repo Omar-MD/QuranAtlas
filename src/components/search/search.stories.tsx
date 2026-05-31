@@ -4,7 +4,7 @@ import { SearchIndexGate } from './SearchIndexGate'
 import { SearchResultDetail } from './SearchResultDetail'
 import { SearchResultList } from './SearchResultList'
 import { SearchGraphExplore } from './SearchGraphExplore'
-import { SavedSearchesRail } from './SavedSearchesRail'
+import { SavedSearchesNavPanel } from './SavedSearchesNavPanel'
 import type { SearchResultDto } from '../../search/schema'
 import type { SavedSearchRecord } from '../../storage/types'
 
@@ -52,7 +52,7 @@ export const Detail: Story = {
 export const SavedSearches: Story = {
   render: () => (
     <main className="qar:max-w-xs qar:p-5" aria-label="Search">
-      <SavedSearchesRail onDelete={() => undefined} onLoad={() => undefined} onRename={() => undefined} records={[fixtureSavedSearch]} />
+      <SavedSearchesNavPanel onDelete={() => undefined} onLoad={() => undefined} onRename={() => undefined} records={[fixtureSavedSearch]} />
     </main>
   ),
 }

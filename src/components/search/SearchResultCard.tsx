@@ -17,24 +17,25 @@ export function SearchResultCard({
   return (
     <article
       aria-label={`Search result ${result.sourceRef}`}
-      className="qar:grid qar:gap-3 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4"
+      aria-current={selected ? 'true' : undefined}
+      className="qar-search-result-row"
       data-selected={selected ? 'true' : undefined}
     >
-      <div className="qar:flex qar:flex-wrap qar:items-center qar:gap-2">
-        <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted" dir="auto">
+      <div className="qar-search-result-row-head">
+        <p className="qar-search-result-ref" dir="auto">
           {formatSearchReference(result.sourceRef)}
         </p>
         <Badge>{mappingLabel(result.mappingState)}</Badge>
       </div>
-      <p className="qar:m-0 qar:text-base qar:leading-7 qar:text-text" dir="auto">
+      <p className="qar-search-result-snippet" dir="auto">
         <bdi>{result.snippet}</bdi>
       </p>
-      <div className="qar:flex qar:flex-wrap qar:gap-2" aria-label={`Match lanes for ${result.sourceRef}`}>
+      <div className="qar-search-result-lanes" aria-label={`Match lanes for ${result.sourceRef}`}>
         {result.matchLanes.map((lane) => (
           <Badge key={lane}>{laneLabel(lane)}</Badge>
         ))}
       </div>
-      <div className="qar:flex qar:flex-wrap qar:gap-2">
+      <div className="qar-search-result-actions">
         {primaryIsOpen ? (
           <Button onClick={() => onOpenInRead(result)} size="sm" variant="primary">
             Open {result.readerRefs[0]} in Read

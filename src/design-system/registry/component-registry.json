@@ -1093,11 +1093,15 @@
       "exportPath": "src/components/navigation/NavDrawer.tsx",
       "namedExport": "NavDrawer",
       "allowedVariants": [
-        "default"
+        "read",
+        "search"
       ],
       "allowedSizes": [],
       "slots": [
-        "root"
+        "root",
+        "modeTabs",
+        "readPanel",
+        "searchPanel"
       ],
       "dependencies": {
         "radix": [],
@@ -1131,7 +1135,8 @@
       "visualProof": {
         "status": "covered",
         "references": [
-          "src/components/navigation/navigation.stories.tsx"
+          "src/components/navigation/navigation.stories.tsx",
+          "tests/e2e/search/react-search.spec.ts"
         ]
       },
       "owner": {
@@ -1568,7 +1573,12 @@
       ],
       "allowedSizes": [],
       "slots": [
-        "root"
+        "root",
+        "mobileChrome",
+        "navDrawer",
+        "queryControls",
+        "results",
+        "detail"
       ],
       "dependencies": {
         "radix": [],

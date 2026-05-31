@@ -20,14 +20,14 @@ export function SearchResultDetail({
 }) {
   if (!result) {
     return (
-      <aside aria-label="Search result detail" className="qar:grid qar:gap-3 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4">
+      <aside aria-label="Search result detail" className="qar-search-result-detail">
         <p className="qar:m-0 qar:text-sm qar:text-muted">Select a result to inspect its Match, Explore, and Source details.</p>
       </aside>
     )
   }
 
   return (
-    <aside aria-label={`Search result detail ${result.sourceRef}`} className="qar:grid qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4">
+    <aside aria-label={`Search result detail ${result.sourceRef}`} className="qar-search-result-detail">
       <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
         <div>
           <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted" dir="auto">

@@ -45,7 +45,7 @@ export function App() {
     : transientSettingsHash
       ? matchReactRoute(transientSettingsHash)
       : activeRoute
-  const showHeader = launchRestore.status !== 'ready' || !['onboarding', 'reader', 'mushaf'].includes(route.type)
+  const showHeader = launchRestore.status !== 'ready' || !['onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
 
   useEffect(() => {
     if (!window.location.hash) {

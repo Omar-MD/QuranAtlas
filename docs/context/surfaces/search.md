@@ -46,8 +46,7 @@ style_paths:
 | Path | Role |
 | --- | --- |
 | `src/app/routes/search/SearchRoute.tsx` | _(no leading comment)_ |
-| `src/components/search/SavedSearchesRail.tsx` | _(no leading comment)_ |
-| `src/components/search/SavedSearchesSheet.tsx` | _(no leading comment)_ |
+| `src/components/search/SavedSearchesNavPanel.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchBox.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchCountsPatterns.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchExplorePanel.tsx` | _(no leading comment)_ |
@@ -98,7 +97,7 @@ style_paths:
 
 ## Behavior
 
-`matchReactRoute('#/search')` returns `search`, and `App` lazy-loads `src/app/routes/search/SearchRoute.tsx` only for the Search route. The Search route owns a route-scoped `SearchClient`, prepares the core Search pack lazily on Search entry, and disposes the worker client on route teardown. Reader cold launch performs no Search pack fetch, graph decode, or Search worker startup.
+`matchReactRoute('#/search')` returns `search`, and `App` lazy-loads `src/app/routes/search/SearchRoute.tsx` only for the Search route. The Search route owns a route-scoped `SearchClient`, prepares the core Search pack lazily on Search entry, and disposes the worker client on route teardown. Reader cold launch performs no Search pack fetch, graph decode, or Search worker startup. Search uses the same Reader chrome and `NavDrawer` navigation pattern as Read: the compact Reader chrome opens the drawer from the left, phone widths use a full-screen drawer, and tablet/desktop widths keep Search content visible on the right while the drawer is open.
 
 Search contracts live in `shared/search/**` and `data/catalog/search-*.json`. They define a Hafs-backed analytical Search corpus, explicit Hafs-to-Qalun Reader mapping states, static Search pack manifests, lazy worker protocol, normalizer/tokenizer policy, source/license records, and dedicated Search pack cache ownership. The user-facing label is `Qalun`; the runtime key remains `qaloon`.
 
@@ -114,11 +113,11 @@ Search utilities under `src/search/**`, `src/search-worker/**`, and `src/offline
 
 Result mapping is explicit Hafs-to-Qalun Reader mapping. Unmapped Hafs refs return source-only/no-open states instead of silently becoming Reader identity refs. `Open in Read` is available only for validated single Reader targets, and `canHighlightWordsInRead` is always false because Qalun token alignment is not validated.
 
-The route renders a result-first Search shell with mode controls for All, Arabic text, Translation, Context, Exact word form, Phrase, Same written form, Same root, and Lemma. Result cards show source refs, lane chips, bidi-safe snippets, provenance chips, and `Open in Read` only when mapping validates a single Reader target. Result detail exposes Match, Explore, and Source tabs. Explore and Source show Hafs-source morphology details, the exact Search source note, same-root interpretation warning, and no Reader word-highlight state for morphology results. Explore also exposes attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns from optional graph shards after an explicit load action.
+The route renders Search-specific content to the right of the Reader/NavDrawer chrome. The content pane contains query controls, mode controls for All, Arabic text, Translation, Context, Exact word form, Phrase, Same written form, Same root, and Lemma, a dense result list, and a selected-result detail pane beside the list at tablet and desktop widths. Result rows show source refs, lane chips, bidi-safe snippets, provenance chips, and `Open in Read` only when mapping validates a single Reader target. Result detail exposes Match, Explore, and Source tabs. Explore and Source show Hafs-source morphology details, the exact Search source note, same-root interpretation warning, and no Reader word-highlight state for morphology results. Explore also exposes attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns from optional graph shards after an explicit load action.
 
 Graph phrase windows stay within one ayah and one surah, do not cross Bismillah boundaries, and are capped by maximum n-gram length, per-source-unit window count, encoded shard bytes, decoded shard bytes, and resident worker memory estimates. Following wording is attested wording only; Search must not label it as prediction, autocomplete, generated suggestions, semantic answers, tafsir, paraphrase, or generated Quran text. Shared wording is lexical overlap only and must not be presented as interpretive equivalence.
 
-Saved searches are created only through `Save search`. `savedSearches` stores Phase 1 user intent fields, compatibility metadata, and timestamps. It does not store result DTOs, result windows, Explore section ids, or source corpus snapshots. Loading a saved search applies its query and filters, announces the loaded state, and recomputes against the active compatible Search index.
+Saved searches are created only through `Save search` and are shown inside the Search mode of the existing `NavDrawer`. `savedSearches` stores Phase 1 user intent fields, compatibility metadata, and timestamps. It does not store result DTOs, result windows, Explore section ids, or source corpus snapshots. Loading a saved search applies its query and filters, announces the loaded state, and recomputes against the active compatible Search index.
 
 Search runtime code must not introduce user-facing assistant, chat, synthesis, generated Quran text, semantic answer, or reflection-prompt UI.
 
@@ -158,6 +157,7 @@ _(no cross-surface reads detected)_
 
 - Search route promotion must preserve Reader First launch: cold Reader launch performs no Search pack fetch, graph decode, or worker startup.
 - Search route state must not overwrite Reader `lastSurface` in Phase 1.
+- Search must use the Reader chrome and existing `NavDrawer`; saved searches must remain in the drawer Search mode.
 - Search analysis uses Hafs source text; Reader opens the verified Qalun/Qaloon text only through explicit mapping states.
 - Hafs aliases must never silently fall back to identity Reader refs.
 - Qalun word highlighting from Hafs morphology is forbidden until Qalun token alignment is validated.

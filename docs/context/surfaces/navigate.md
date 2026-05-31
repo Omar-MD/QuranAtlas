@@ -68,7 +68,7 @@ style_paths:
 
 ## Behavior
 
-`NavDrawer` is the primary navigation surface on reader routes. It shows the product header, top-level Read/Search mode tabs, source tabs, dense source rows, optional Daily Wird summary/detail, and close/dismiss controls. Phone widths use a full-screen drawer; tablet and desktop use a side-panel shape.
+`NavDrawer` is the primary navigation surface on reader and Search routes. It shows the product header, top-level Read/Search mode tabs, Read source tabs with dense source rows, optional Daily Wird summary/detail, Search saved-search rows when the Search mode is active, and close/dismiss controls. Phone widths use a full-screen drawer; Search tablet and desktop layouts open the same drawer on the left and keep Search content visible to the right.
 
 `SurahList`, `JuzList`, and `HizbList` load runtime indexes from `/dataset/**`, mark current/recent state, and route through the current reader mode. Surah search and All/Recent filtering belong only to the Surah tab.
 
@@ -116,7 +116,9 @@ The current MVP writes Qaloon-scoped verse and Mushaf page bookmarks. The compou
 
 - Navigation row actions must route directly; disabled decorative rows are not acceptable.
 - The top-level Search tab must route to `#/search` without importing or preparing Search runtime code on Reader cold launch.
+- The top-level Read tab in Search mode must route back to the Reader through the same drawer tabs.
 - Surah search/filter controls appear only in the Surah source.
+- Saved searches belong inside the Search mode of `NavDrawer`, not in a separate Search rail, sheet, or route card.
 - Bookmarks are owned by `src/continuity/bookmarks/**`; other files must not write the store directly.
 - Bookmarks remain reader-continuity data.
 - Daily Wird detail belongs in the drawer; the reader itself shows only compact status.

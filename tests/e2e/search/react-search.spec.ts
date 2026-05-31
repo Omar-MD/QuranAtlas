@@ -57,8 +57,11 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await expect(page.getByText(/prediction|autocomplete/i)).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Save search' }).click()
-  await expect(page.getByRole('complementary', { name: 'Saved searches' })).toBeVisible()
-  await expect(page.getByText('بسم الله').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Open navigation' }).click()
+  const savedSearches = page.getByRole('complementary', { name: 'Saved searches' })
+  await expect(savedSearches).toBeVisible()
+  await expect(savedSearches.getByRole('button', { name: 'Load saved search بسم الله' })).toBeVisible()
+  await page.getByRole('button', { name: 'Close' }).click()
 
   const openButton = page.getByRole('button', { name: /Open .* in Read/ }).first()
   if (await openButton.isVisible()) {

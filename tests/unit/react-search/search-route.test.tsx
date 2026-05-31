@@ -294,7 +294,8 @@ describe('Search route UI', () => {
     mockSaved.openSearch.mockResolvedValue(savedRecord)
 
     render(<SearchShell />)
-    await userEvent.click(screen.getByRole('button', { name: 'Mercy' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Load saved search Mercy' }))
 
     await waitFor(() => expect(state.submitSearch).toHaveBeenCalledWith({ mode: 'translation', query: 'mercy' }))
   })

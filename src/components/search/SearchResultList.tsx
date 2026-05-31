@@ -14,13 +14,13 @@ export function SearchResultList({
 }) {
   if (results.length === 0) {
     return (
-      <p className="qar:m-0 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4 qar:text-sm qar:text-muted">
+      <p className="qar-search-results-empty">
         Enter a word, phrase, or ayah reference. Save only the searches you want to keep.
       </p>
     )
   }
   return (
-    <section aria-label="Search results" className="qar:grid qar:gap-3">
+    <section aria-label="Search results" className="qar-search-result-list">
       {results.map((result) => (
         <SearchResultCard
           key={result.resultId}
