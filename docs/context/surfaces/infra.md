@@ -33,6 +33,7 @@ style_paths:
 | App build | `vite-plugin-pwa` | Generates manifest and service worker |
 | Runtime dataset fetch | reader/settings/offline | Loads same-origin `/dataset/**` and caches via Workbox |
 | Offline reload | browser offline state | Shell and cached reader data survive reload |
+| App update check | About route action | Fetches the latest service worker, activates a pending app shell, and reloads when new app files are ready |
 | Clear data | About dialog | Clears app caches and IndexedDB |
 | Daily Wird notification click | service worker | Focuses or opens QuranAtlas at the saved continuation URL |
 
@@ -71,7 +72,7 @@ style_paths:
 
 `scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real page SVG pack.
 
-`src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors.
+`src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. The About route's app update action uses the browser service-worker registration to run an explicit update check and reload through a pending worker when one is found. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors.
 
 Search pack files under `/search-packs/**` are not Workbox dataset-cache assets. `vite.config.js` keeps the generic `/dataset/**` CacheFirst route from matching `/dataset/search/**`, while `src/offline/search/**` owns the dedicated `quran-atlas-search-pack-<contentHash>` Cache Storage lifecycle. Search install verifies shard SHA-256 checksums over encoded bytes, writes staging metadata, activates with a monotonic generation, announces activation changes across tabs, and protects active or live leased packs from orphan cleanup.
 

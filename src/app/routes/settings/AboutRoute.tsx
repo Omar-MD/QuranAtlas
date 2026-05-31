@@ -1,9 +1,11 @@
+import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import pkg from '../../../../package.json'
 import { Button, Dialog, Input } from '../../../components/ui'
 import { SettingsPageRecipe } from '../../../design-system/recipes/settings-page'
 import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInstall } from './pwa-install'
+import { fetchLatestAppChanges, type AppUpdateCheckResult } from './pwa-updates'
 import { useClearDataDialog } from './useClearDataDialog'
 
 const credits = [
@@ -13,10 +15,20 @@ const credits = [
   'Built with React, Vite, and Workbox',
 ]
 
+type UpdateCheckState =
+  | AppUpdateCheckResult
+  | { status: 'idle'; message: string }
+  | { status: 'checking'; message: string }
+  | { status: 'error'; message: string }
+
 export function AboutRoute() {
   const clearData = useClearDataDialog()
   const [installAvailable, setInstallAvailable] = useState(false)
   const [installDone, setInstallDone] = useState(false)
+  const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>({
+    status: 'idle',
+    message: 'Fetch latest app files when QuranAtlas is open as an installed PWA or production preview.',
+  })
 
   useEffect(() => {
     initReactInstallPromptListener()
@@ -28,6 +40,26 @@ export function AboutRoute() {
     setInstallAvailable(false)
     setInstallDone(outcome === 'accepted')
   }
+
+  async function handleFetchLatestChanges() {
+    setUpdateCheck({ status: 'checking', message: 'Checking for latest app files...' })
+
+    try {
+      setUpdateCheck(await fetchLatestAppChanges())
+    } catch {
+      setUpdateCheck({
+        status: 'error',
+        message: 'Could not check for app updates. Check your connection and try again.',
+      })
+    }
+  }
+
+  const updateCheckPending = updateCheck.status === 'checking' || updateCheck.status === 'reloading'
+  const updateButtonLabel = updateCheck.status === 'checking'
+    ? 'Checking...'
+    : updateCheck.status === 'reloading'
+      ? 'Reloading...'
+      : 'Fetch latest app'
 
   return (
     <SettingsPageRecipe title="About">
@@ -61,6 +93,24 @@ export function AboutRoute() {
       <p className="qar:m-0 qar:text-sm qar:text-muted" data-testid="about-version">
         v{pkg.version} · dev
       </p>
+
+      <section className="qar:grid qar:gap-2 qar:border-t qar:border-border qar:pt-4" aria-labelledby="react-about-app-updates">
+        <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-app-updates">App updates</h2>
+        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted" id="react-about-app-updates-status" aria-live="polite">
+          {updateCheck.message}
+        </p>
+        <div>
+          <Button
+            aria-describedby="react-about-app-updates-status"
+            disabled={updateCheckPending}
+            onClick={() => { void handleFetchLatestChanges() }}
+            variant="secondary"
+          >
+            <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
+            {updateButtonLabel}
+          </Button>
+        </div>
+      </section>
 
       <section className="qar:border-t qar:border-border qar:pt-4" aria-label="Clear local data">
         <Dialog

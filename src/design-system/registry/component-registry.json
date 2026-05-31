@@ -9,6 +9,7 @@
       "namedExport": "AboutRoute",
       "allowedVariants": [
         "default",
+        "app-update-check",
         "clear-data-confirmation"
       ],
       "allowedSizes": [],
@@ -16,6 +17,7 @@
         "root",
         "attribution",
         "install",
+        "appUpdate",
         "clearData"
       ],
       "dependencies": {
@@ -46,6 +48,7 @@
       "accessibility": [
         "main landmark",
         "semantic attribution section",
+        "polite app update status",
         "dialog focus and escape handled by owned Dialog primitive"
       ],
       "visualProof": {

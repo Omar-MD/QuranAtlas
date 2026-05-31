@@ -2,7 +2,7 @@
   "_comment": "SHA-256 hashes of AUTO-GENERATED fence blocks. Maintained by scripts/docs/derive.mjs. Do not hand-edit.",
   "version": 1,
   "blocks": {
-    "docs/context/surfaces/configure.md:inventory": "b0de2649f747b930fb3831e4fe6f447f04c3af1ee948795b04470bbdc81279e4",
+    "docs/context/surfaces/configure.md:inventory": "4e3549cb5d8d6686b8a7e9ff8d540ce482b1076a739affd2793c14360c872622",
     "docs/context/surfaces/configure.md:style-inventory": "a1d55bf5e1d333a7bcae8864856a67421c038f2a4e6374e2bd261fdbcf11d507",
     "docs/context/surfaces/infra.md:inventory": "42f77d7198c71a72ebb5c6b135e21b468bbf3c436cf97e750afe9b33479446de",
     "docs/context/surfaces/infra.md:style-inventory": "a1d55bf5e1d333a7bcae8864856a67421c038f2a4e6374e2bd261fdbcf11d507",

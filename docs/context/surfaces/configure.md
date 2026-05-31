@@ -30,7 +30,7 @@ style_paths:
 | `#/settings` | URL | Opens settings over the previous readable route |
 | `#/assets` | URL | Compatibility opener for settings asset inventory |
 | Reader mode toggle | tap/click | Switches Verse/Mushaf settings panel and reader mode |
-| About route | `#/about` | Shows mission, attribution, install, version, and clear-data |
+| About route | `#/about` | Shows mission, attribution, install, version, app update check, and clear-data |
 | Clear data | confirmation dialog | Clears Cache Storage and IndexedDB, then reloads root |
 
 ## Inventory
@@ -41,6 +41,7 @@ style_paths:
 | `src/app/routes/settings/AboutRoute.tsx` | _(no leading comment)_ |
 | `src/app/routes/settings/SettingsRoute.tsx` | _(no leading comment)_ |
 | `src/app/routes/settings/pwa-install.ts` | _(no leading comment)_ |
+| `src/app/routes/settings/pwa-updates.ts` | _(no leading comment)_ |
 | `src/app/routes/settings/useClearDataDialog.ts` | _(no leading comment)_ |
 | `src/components/settings/IncludedAssetsSection.tsx` | _(no leading comment)_ |
 | `src/components/settings/MushafSettings.tsx` | _(no leading comment)_ |
@@ -63,7 +64,7 @@ Verse settings own font size, reading flow, translation visibility, and Daily Wi
 
 `IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. It can collapse on compact settings sheets so the core controls remain visible without scrolling. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
 
-`AboutRoute` owns mission/attribution, install prompt affordance, app version, and clear-data entry. `useClearDataDialog` requires exact `DELETE`; `src/storage/clear-data.ts` clears app caches and the shared database, then reloads.
+`AboutRoute` owns mission/attribution, install prompt affordance, app version, app update check, and clear-data entry. Its app update action asks the current service-worker registration to fetch the latest app files, activates a pending worker when one exists, and reloads into the new app shell. `useClearDataDialog` requires exact `DELETE`; `src/storage/clear-data.ts` clears app caches and the shared database, then reloads.
 
 ## Style Inventory
 
