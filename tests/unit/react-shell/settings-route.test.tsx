@@ -128,31 +128,6 @@ describe('React settings shell coverage', () => {
     expect(within(mushafDialog).queryByText('Verse preview')).not.toBeInTheDocument()
   })
 
-  it('renders theme and night mode as compact full-width footer controls without a Manage Assets route button', async () => {
-    render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    const footer = within(dialog).getByRole('contentinfo')
-    const themeGroup = within(footer).getByRole('group', { name: 'Theme' })
-    const nightGroup = within(footer).getByRole('group', { name: 'Night mode' })
-
-    expect(themeGroup).toHaveClass('qar-react-settings-theme-strip')
-    expect(nightGroup).toHaveClass('qar-react-settings-night-strip')
-    expect(within(themeGroup).getByRole('button', { name: 'Theme: Light' }).querySelector('[data-appearance-icon="theme-light"]')).toBeInTheDocument()
-    expect(within(themeGroup).getByRole('button', { name: 'Theme: Sepia' }).querySelector('[data-appearance-icon="theme-sepia"][data-swatch="sepia"]')).toBeInTheDocument()
-    expect(within(themeGroup).getByRole('button', { name: 'Theme: Dark' }).querySelector('[data-appearance-icon="theme-dark"]')).toBeInTheDocument()
-    expect(within(themeGroup).getByRole('button', { name: 'Theme: Auto' }).querySelector('[data-appearance-icon="theme-auto"]')).toBeInTheDocument()
-    expect(within(themeGroup).getAllByTestId('settings-theme-swatch')).toHaveLength(1)
-    expect(within(nightGroup).getByRole('button', { name: 'Night mode: Off' }).querySelector('[data-appearance-icon="night-off"]')).toBeInTheDocument()
-    expect(within(nightGroup).getByRole('button', { name: 'Night mode: On' }).querySelector('[data-appearance-icon="night-on"]')).toBeInTheDocument()
-    expect(within(nightGroup).getByRole('button', { name: 'Night mode: Auto' }).querySelector('[data-appearance-icon="night-auto"]')).toBeInTheDocument()
-    expect(within(nightGroup).getByRole('button', { name: 'Night mode: Off' }).querySelector('svg[data-night-icon="sun"]')).toBeInTheDocument()
-    expect(within(nightGroup).getByRole('button', { name: 'Night mode: On' }).querySelector('svg[data-night-icon="crescent"]')).toBeInTheDocument()
-    expect(within(nightGroup).getByRole('button', { name: 'Night mode: Auto' }).querySelector('svg[data-night-icon="crescent-sparkles"]')).toBeInTheDocument()
-    expect(within(footer).getByRole('button', { name: 'Theme: Dark' })).toBeInTheDocument()
-    expect(within(footer).getByRole('button', { name: 'Night mode: On' })).toBeInTheDocument()
-    expect(within(footer).queryByRole('button', { name: 'Manage Assets' })).not.toBeInTheDocument()
-  })
-
   it('keeps settings control names unambiguous while the reader chrome remains mounted behind the shell', async () => {
     await resetReactDb()
     await seedLastSurface('#/s/1')
@@ -241,18 +216,15 @@ describe('React settings shell coverage', () => {
   })
 
   it('focuses the settings shell without scrolling the underlying reader', async () => {
-    const focusCalls: Array<{ className: string; options?: FocusOptions }> = []
+    const focusCalls: Array<{ options?: FocusOptions }> = []
     const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function focusWithoutScrolling(this: HTMLElement, options?: FocusOptions) {
-      focusCalls.push({ className: this.className, options })
+      focusCalls.push({ options })
     })
 
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/2/24" />)
 
     await screen.findByRole('dialog', { name: 'Settings' })
-    expect(focusCalls).toContainEqual(expect.objectContaining({
-      className: expect.stringContaining('qar-react-settings-shell'),
-      options: expect.objectContaining({ preventScroll: true }),
-    }))
+    expect(focusCalls.some((call) => call.options?.preventScroll === true)).toBe(true)
     focusSpy.mockRestore()
   })
 
@@ -273,7 +245,7 @@ describe('React settings shell coverage', () => {
     consoleError.mockRestore()
   })
 
-  it('applies persisted appearance and mounts the night shift overlay during app bootstrap', async () => {
+  it('applies persisted appearance during app bootstrap', async () => {
     await resetReactDb()
     await seedLastSurface('#/s/1')
     const db = await openReactDb()
@@ -290,7 +262,6 @@ describe('React settings shell coverage', () => {
       expect(document.documentElement.dataset.theme).toBe('sepia')
       expect(document.documentElement.dataset.nightMode).toBe('on')
     })
-    expect(screen.getByTestId('react-night-shift')).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('persists Mushaf view mode changes from the settings shell', async () => {
@@ -384,7 +355,6 @@ describe('React settings shell coverage', () => {
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
     const assets = within(dialog).getByRole('region', { name: 'Included assets' })
-    const assetIcons = within(assets).getAllByTestId('settings-asset-icon')
 
     expect(within(dialog).getByText('Translation')).toBeInTheDocument()
     expect(within(dialog).queryByText('Bridges Translation')).not.toBeInTheDocument()
@@ -394,11 +364,6 @@ describe('React settings shell coverage', () => {
     expect(within(assets).getByText('Loaded Qaloon Mushaf')).toBeInTheDocument()
     expect(within(assets).getByText('Translation:')).toBeInTheDocument()
     expect(within(assets).getByText('Loaded Bridges')).toBeInTheDocument()
-    expect(assetIcons.map((icon) => icon.getAttribute('data-asset-icon'))).toEqual([
-      'text-font',
-      'mushaf-book',
-      'translation-document',
-    ])
     expect(within(assets).getAllByText('Included')).toHaveLength(3)
     expect(within(assets).queryByText('Qaloon Madani Text + font')).not.toBeInTheDocument()
     expect(within(assets).queryByText('Qaloon Madani')).not.toBeInTheDocument()

@@ -27,7 +27,7 @@ import {
 } from '../../../src/components/ui'
 
 describe('React UI components', () => {
-  it('renders button variants with composed classes', async () => {
+  it('renders button variants with accessible click behavior', async () => {
     const onClick = vi.fn()
     render(
       <Button variant="primary" size="sm" onClick={onClick}>
@@ -36,7 +36,6 @@ describe('React UI components', () => {
     )
 
     const button = screen.getByRole('button', { name: 'Continue' })
-    expect(button.className).toContain('qar:bg-accent')
     await userEvent.click(button)
     expect(onClick).toHaveBeenCalledOnce()
   })

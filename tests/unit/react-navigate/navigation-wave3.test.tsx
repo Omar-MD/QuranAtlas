@@ -1,12 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { NavDrawer } from '../../../src/components/navigation/NavDrawer'
 import { BookmarksList } from '../../../src/components/navigation/BookmarksList'
-import { SurahList } from '../../../src/components/navigation/SurahList'
 import { navDrawerReducer } from '../../../src/components/navigation/nav-drawer-controller'
 import { SettingsRoute } from '../../../src/app/routes/settings/SettingsRoute'
 import { OnboardingRoute } from '../../../src/app/routes/onboarding/OnboardingRoute'
@@ -51,7 +47,6 @@ describe('React navigation, settings, and onboarding coverage', () => {
     render(<NavDrawer open mode="verse" currentLabel="Al-Fatihah" onClose={vi.fn()} onNavigate={vi.fn()} />)
     const drawer = screen.getByRole('dialog', { name: 'Navigation' })
     expect(within(drawer).queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
-    expect(within(drawer).getAllByLabelText('About QuranAtlas')[0]?.querySelector('[data-icon="brand-rosette"]')).not.toBeNull()
     expect(within(drawer).queryByRole('button', { name: /create plan/i })).toBeNull()
     expect(screen.getByRole('tab', { name: 'Surah' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Juz' })).toHaveAttribute('aria-selected', 'false')
@@ -76,7 +71,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
       return jsonResponse({}, { ok: false, status: 404 })
     }))
-    const { container } = render(
+    render(
       <NavDrawer
         bookmarks={[{ createdAt: 1, riwayah: 'qaloon', surah: 2, verseKey: '2:255' }]}
         currentLabel="Page 1"
@@ -93,8 +88,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
     expect(screen.getByRole('tab', { name: 'Juz' })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByRole('tab', { name: 'Bookmarks' })).toHaveAttribute('aria-selected', 'false')
 
-    await waitFor(() => expect(container.querySelector('.qar-react-nav-drawer-surah-btn')).not.toBeNull())
-    fireEvent.click(container.querySelector('.qar-react-nav-drawer-surah-btn') as HTMLButtonElement)
+    fireEvent.click(await screen.findByRole('button', { name: /Open Al-Fatihah/i }))
     await waitFor(() => expect(onNavigate).toHaveBeenCalledWith('#/m/1'))
 
     fireEvent.click(screen.getByRole('tab', { name: 'Juz' }))
@@ -165,14 +159,6 @@ describe('React navigation, settings, and onboarding coverage', () => {
 
     expect(onNavigate).toHaveBeenCalledWith('#/s/2/8')
     closeReactDb()
-  })
-
-  it('renders Surah rows as current product row buttons without extra Open actions', () => {
-    render(<SurahList onNavigate={vi.fn()} rows={[{ counts: { hafs: 7, qaloon: 7, warsh: 7 }, n: 1, name: 'Al-Fatihah', name_ar: 'الفَاتِحة' }]} />)
-
-    expect(screen.queryByText('Open')).toBeNull()
-    expect(screen.getByRole('button', { name: /Open Al-Fatihah/i })).toHaveClass('qar-react-nav-drawer-surah-btn')
-    expect(screen.getAllByText('›').length).toBeGreaterThan(0)
   })
 
   it('renders settings and onboarding as compact product flows', () => {
@@ -281,84 +267,11 @@ describe('React navigation, settings, and onboarding coverage', () => {
 
     expect(screen.getByText('Mushaf pages')).toBeInTheDocument()
     expect(screen.getByText('Page 42')).toBeInTheDocument()
-    expect(screen.getByText('Page')).toHaveClass('qar-react-bookmarks-row-kind')
 
     fireEvent.click(screen.getByRole('button', { name: /jump to mushaf page 42/i }))
     expect(onNavigate).toHaveBeenCalledWith('#/m/42')
     fireEvent.click(screen.getByRole('button', { name: /delete bookmark mushaf page 42/i }))
     expect(onDeleteBookmark).toHaveBeenCalledWith({ riwayah: 'qaloon', verseKey: 'm:42' })
-  })
-
-  it('pulses the landing verse when a bookmark jump is activated', () => {
-    vi.useFakeTimers()
-    const onNavigate = vi.fn()
-
-    render(
-      <>
-        <article data-token-key="1:1" data-testid="verse-1:1" />
-        <BookmarksList
-          bookmarks={[{ arabicSnippet: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ', createdAt: 1, riwayah: 'qaloon', surah: 1, surahName: 'Al-Fatihah', verseKey: '1:1' }]}
-          onNavigate={onNavigate}
-        />
-      </>,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: /jump to verse 1:1/i }))
-
-    expect(onNavigate).toHaveBeenCalledWith('#/s/1/1')
-    vi.advanceTimersByTime(0)
-    expect(screen.getByTestId('verse-1:1')).toHaveAttribute('data-bookmark-pulse', 'true')
-    expect(screen.getByTestId('verse-1:1')).toHaveClass('qar-reader-verse--pulse')
-
-    vi.advanceTimersByTime(1000)
-
-    expect(screen.getByTestId('verse-1:1')).not.toHaveAttribute('data-bookmark-pulse')
-    expect(screen.getByTestId('verse-1:1')).not.toHaveClass('qar-reader-verse--pulse')
-    vi.useRealTimers()
-  })
-
-  it('pulses the landing verse after bookmark navigation remounts the target row', async () => {
-    function BookmarkJumpRemountHarness() {
-      const [landed, setLanded] = useState(false)
-      return (
-        <div data-react-route={landed ? '#/s/1/1' : '#/s/1'}>
-          {!landed && <article data-token-key="1:1" data-testid="old-verse-1:1" />}
-          {landed && <article data-token-key="1:1" data-testid="new-verse-1:1" />}
-          <BookmarksList
-            bookmarks={[{ arabicSnippet: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ', createdAt: 1, riwayah: 'qaloon', surah: 1, surahName: 'Al-Fatihah', verseKey: '1:1' }]}
-            onNavigate={() => setLanded(true)}
-          />
-        </div>
-      )
-    }
-
-    render(<BookmarkJumpRemountHarness />)
-
-    fireEvent.click(screen.getByRole('button', { name: /jump to verse 1:1/i }))
-
-    await waitFor(() => expect(screen.getByTestId('new-verse-1:1')).toHaveAttribute('data-bookmark-pulse', 'true'))
-    expect(screen.getByTestId('new-verse-1:1')).toHaveClass('qar-reader-verse--pulse')
-  })
-
-  it('reveals bookmark delete after a left swipe gesture', () => {
-    render(
-      <BookmarksList
-        bookmarks={[{ arabicSnippet: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ', createdAt: 1, riwayah: 'qaloon', surah: 1, surahName: 'Al-Fatihah', verseKey: '1:1' }]}
-      />,
-    )
-
-    const rowButton = screen.getByRole('button', { name: /jump to verse 1:1/i })
-    fireEvent.touchStart(rowButton, {
-      touches: [{ clientX: 220, clientY: 40 }],
-    })
-    fireEvent.touchMove(rowButton, {
-      touches: [{ clientX: 132, clientY: 42 }],
-    })
-    fireEvent.touchEnd(rowButton, {
-      changedTouches: [{ clientX: 132, clientY: 42 }],
-    })
-
-    expect(screen.getByRole('button', { name: /delete bookmark 1:1/i }).closest('.qar-react-bookmarks-row')).toHaveClass('qar-react-bookmarks-row--swiped')
   })
 
   it('keeps drawer open state, focus return, close reasons, and route transitions in one reducer', () => {
@@ -375,24 +288,4 @@ describe('React navigation, settings, and onboarding coverage', () => {
     })
   })
 
-  it('treats tablet widths as desktop drawer chrome for the React drawer breakpoint', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/design-system/index.css'), 'utf8')
-
-    expect(css).toContain('@media (min-width: 768px) {\n    .qar-react-nav-drawer {')
-    expect(css).not.toContain('@media (min-width: 1180px) {\n    .qar-react-nav-drawer {')
-  })
-
-  it('keeps bookmark pulse styling aligned with the reader verse accent pulse', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/design-system/index.css'), 'utf8')
-    const hoverIndex = css.indexOf('.qar-reader-verse:hover')
-    const pulseIndex = css.indexOf('.qar-reader-verse--pulse')
-
-    expect(css).toContain('18% {')
-    expect(css).toContain('background-color: var(--qa-react-bookmark-pulse-bg, color-mix(in srgb, var(--qa-react-bookmark-accent, var(--qa-react-accent)) 22%, transparent));')
-    expect(css).toContain('box-shadow: inset 2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent)), inset -2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent));')
-    expect(css).toContain('box-shadow: inset 2px 0 0 transparent, inset -2px 0 0 transparent;')
-    expect(css).toContain('animation: qar-reader-verse-pulse 1000ms ease-out 1;')
-    expect(hoverIndex).toBeGreaterThanOrEqual(0)
-    expect(pulseIndex).toBeGreaterThanOrEqual(0)
-  })
 })

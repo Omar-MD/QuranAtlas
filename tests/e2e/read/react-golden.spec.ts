@@ -52,18 +52,15 @@ for (const fixture of readFixtures) {
       }
 
       if (fixture.id === 'daily-wird-no-plan') {
-        await expect(page.locator('.qar-react-wird-card')).toHaveCount(0)
         await expect(page.getByRole('button', { name: /start daily wird/i })).toHaveCount(0)
       }
 
       if (fixture.id === 'daily-wird-active') {
-        await expect(page.locator('.qar-react-wird-card')).toHaveCount(0)
         const status = page.getByRole('button', { name: /Daily Wird: \d+% today/i })
         await expect(status).toBeVisible()
         await status.click()
         const drawer = page.getByRole('dialog', { name: 'Navigation' })
         await expect(drawer.getByRole('heading', { name: 'Daily Wird' })).toBeVisible()
-        await expect(drawer.locator('.qar-react-wird-card')).toHaveCount(0)
       }
 
       if (fixture.id === 'reader-surah-start') {
@@ -80,8 +77,6 @@ for (const fixture of readFixtures) {
         await expect(previousSurah).toBeVisible()
         await expect(nextSurah).toBeVisible()
         expect(seenDatasetUrls).toContain('/dataset/surahs.json')
-        await expect(previousSurah.locator('.qar-reader-continue-arrow')).toContainText('↑')
-        await expect(nextSurah.locator('.qar-reader-continue-arrow')).toContainText('↓')
         const quickNavSize = await nextSurah.evaluate((element) => {
           const buttonBox = element.getBoundingClientRect()
           const title = element.querySelector('.qar-reader-continue-title') ?? element

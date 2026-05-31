@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('renders React reader and settings while search stays unsupported', async ({ page }) => {
   await page.goto('/#/s/1/1')
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-  await expect(page.getByTestId('verse-1:1')).toHaveAttribute('data-token-key', '1:1')
+  await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
 
   await page.goto('/#/settings')
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()

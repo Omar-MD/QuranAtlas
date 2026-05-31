@@ -1,6 +1,4 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ReaderRoute } from '../../../src/app/routes/read/ReaderRoute'
@@ -14,9 +12,6 @@ import {
   type MushafPageAssetState,
 } from '../../../src/packs/mushaf-page-asset'
 import { ReaderVerseSurface } from '../../../src/components/reader/ReaderVerseSurface'
-import { VerseNumber } from '../../../src/components/reader/VerseNumber'
-import { VerseBlock } from '../../../src/components/reader/VerseBlock'
-import { VirtualVerseList } from '../../../src/components/reader/VirtualVerseList'
 import { loadReaderSurah, type ReaderCorpusState } from '../../../src/data/reader-corpus'
 import { resolveTranslationFor } from '../../../src/data/verse-aliases'
 import { openReactDb } from '../../../src/storage/db'
@@ -45,30 +40,6 @@ const qaloonFatihah = {
     { jozz: 1, page: '1', aya_no: 6, aya_text: 'صِرَٰطَ اَ۬لذِينَ أَنْعَمْتَ عَلَيْهِمْ' },
     { jozz: 1, page: '1', aya_no: 7, aya_text: 'غَيْرِ اِ۬لْمَغْضُوبِ عَلَيْهِمْ وَلَا اَ۬لضَّآلِّينَۖ' },
   ],
-}
-
-const qaloonBaqarah = {
-  riwayah: 'qaloon',
-  version: '10',
-  sura_no: 2,
-  sura_name_ar: 'البَقَرَة',
-  sura_name_en: 'Al-Baqarah',
-  ayat: Array.from({ length: 120 }, (_, index) => {
-    const verse = index + 1
-    return { jozz: verse < 94 ? 1 : 2, page: verse < 94 ? '2' : '15', aya_no: verse, aya_text: `آية ${verse}` }
-  }),
-}
-
-const bridgesBaqarah = {
-  translationId: 'bridges',
-  translationVersion: 'qul-resource-179',
-  surahNo: 2,
-  intro: [],
-  verses: Array.from({ length: 120 }, (_, index) => {
-    const verse = index + 1
-    return { key: `2:${verse}`, text: `Translation ${verse}` }
-  }),
-  footnotes: {},
 }
 
 const bridgesFatihah = {
@@ -121,20 +92,6 @@ function readerFetchFixture() {
   })
 }
 
-function baqarahReaderFetchFixture() {
-  return vi.fn(async (input: RequestInfo | URL) => {
-    const url = String(input)
-    if (url === '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/002.json') return jsonResponse(qaloonBaqarah)
-    if (url === '/dataset/translations/bridges/002.json') return jsonResponse(bridgesBaqarah)
-    if (url === '/dataset/translations/_verse-aliases.json') return jsonResponse({ aliases: {} })
-    if (url === '/dataset/surahs.json') return jsonResponse(surahIndex)
-    if (url === '/dataset/knowledge/ayah/002.json') return jsonResponse({ surah: 2, version: 'knowledge-v1', ayahs: [] })
-    if (url === '/dataset/knowledge/passages/002.json') return jsonResponse({ surah: 2, version: 'knowledge-v1', passages: [] })
-    if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
-    return jsonResponse({}, { ok: false, status: 404 })
-  })
-}
-
 const mushafManifest = {
   version: 1,
   riwayah: 'qaloon',
@@ -161,30 +118,6 @@ const mushafManifest = {
       firstVerse: { surah: 2, verse: 251 },
     },
   ],
-}
-
-function placeVerseAtViewportCenter(verseKey: string) {
-  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 })
-  const center = 400
-  for (const element of document.querySelectorAll<HTMLElement>('[data-token-key]')) {
-    const key = element.dataset.tokenKey
-    const isVisible = key === verseKey
-    const top = isVisible ? center - 50 : 2000
-    Object.defineProperty(element, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        bottom: top + 100,
-        height: 100,
-        left: 0,
-        right: 360,
-        toJSON: () => ({}),
-        top,
-        width: 360,
-        x: 0,
-        y: top,
-      }),
-    })
-  }
 }
 
 const realMushafSvg = '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="#fff"/><path d="M10 10h100v160H10z" fill="#000"/></svg>'
@@ -230,12 +163,11 @@ describe('React reader coverage', () => {
   it('renders reader chrome without a center surah/page title action', () => {
     render(<ReaderChrome mode="verse" onOpenNavigation={vi.fn()} onOpenSettings={vi.fn()} />)
 
-    const nav = screen.getByRole('navigation', { name: 'Primary navigation' })
-    expect(nav).toHaveClass('qar-reader-chrome')
-    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveClass('qar-reader-chrome-icon')
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Toggle surah header/i })).toBeNull()
     expect(screen.queryByText('الفَاتِحة')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Open settings' })).toHaveClass('qar-reader-chrome-icon')
+    expect(screen.getByRole('button', { name: 'Open settings' })).toBeInTheDocument()
     expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
   })
 
@@ -302,14 +234,12 @@ describe('React reader coverage', () => {
     expect(await screen.findByRole('main', { name: /verse reader/i })).toBeInTheDocument()
     expect(await screen.findByText(/Surah 1 · 7 verses/i)).toBeInTheDocument()
     expect(await screen.findByLabelText('بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ')).toBeInTheDocument()
-    expect(screen.getByTestId('verse-1:1')).toHaveAttribute('data-token-key', '1:1')
     expect(await screen.findByTestId('verse-1:7')).toBeInTheDocument()
     expect(screen.getByText(/All praise be to Allah, Lord of all realms/i)).toBeInTheDocument()
     const footnote = screen.getByRole('button', { name: /footnote 1/i })
     fireEvent.click(footnote)
     expect(screen.getByRole('note')).toHaveTextContent(/King of the Day of Recompense/i)
     fireEvent.click(screen.getByRole('button', { name: 'Bookmark verse 5' }))
-    expect(screen.getByTestId('verse-1:5')).toHaveAttribute('data-selected', 'true')
     await expect.poll(async () => (await (await openReactDb()).settings.get('currentPosition'))?.value).toEqual({ surah: 1, verse: 5 })
     expect(screen.queryByText(/tafsir/i)).not.toBeInTheDocument()
     vi.unstubAllGlobals()
@@ -348,10 +278,8 @@ describe('React reader coverage', () => {
     render(<ReaderRoute surah={1} ayah={1} />)
 
     expect(await screen.findByTestId('verse-1:7')).toBeInTheDocument()
-    expect(document.querySelector('.qar-react-wird-card')).toBeNull()
 
     const status = screen.getByRole('button', { name: /Daily Wird: 57% today, 3 verses left/i })
-    expect(status).toHaveClass('qar-reader-chrome-wird-status')
 
     fireEvent.click(status)
 
@@ -390,63 +318,6 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps React verse text, footnotes, dividers, and scrolling aligned with the reader surface', () => {
-    const verses = Array.from({ length: 45 }, (_, index) => {
-      const verse = index + 1
-      return {
-        arabic: `آية ${verse}`,
-        footnotes: {},
-        key: `2:${verse}`,
-        translation: `Translation ${verse}`,
-        translationRole: 'identity' as const,
-        verse,
-      }
-    })
-
-    const { container } = render(
-      <VirtualVerseList
-        verses={verses}
-      />,
-    )
-
-    expect(container.querySelector('[data-virtualized="true"]')).toBeNull()
-    expect(screen.getByTestId('verse-2:45')).toBeInTheDocument()
-
-    const firstVerse = screen.getByTestId('verse-2:1')
-    const secondVerse = screen.getByTestId('verse-2:2')
-    expect(firstVerse.className).not.toContain('qar:border-b')
-    expect(secondVerse.className).toContain('qar-reader-verse--divided')
-    expect(firstVerse.className).not.toContain('qar:border-b')
-
-    const arabicLine = firstVerse.querySelector('[data-reader-arabic-line="true"]')
-    const verseNumber = screen.getByRole('button', { name: 'Bookmark verse 1' })
-    expect(arabicLine?.compareDocumentPosition(verseNumber) ?? 0).toBe(Node.DOCUMENT_POSITION_PRECEDING)
-
-    const translation = firstVerse.querySelector('[data-reader-translation="true"]')
-    expect(translation).toHaveAttribute('dir', 'ltr')
-    expect(translation?.className).toContain('qar-reader-verse-translation')
-    expect(translation?.className).not.toContain('qar:max-w-3xl')
-  })
-
-  it('opens translation footnotes below the translation instead of inside the text run', () => {
-    const { container } = render(
-      <VerseBlock
-        arabic="مَلِكِ يَوْمِ اِ۬لدِّينِۖ"
-        footnotes={{ '1': 'Qira’at: All except for Asem read it as: King of the Day of Recompense.' }}
-        translation="Master [1] of the Day of Recompense."
-        verse={4}
-        verseKey="1:4"
-      />,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: /footnote 1/i }))
-
-    const note = screen.getByRole('note')
-    expect(note).toHaveTextContent(/King of the Day of Recompense/i)
-    expect(note.closest('[data-reader-translation="true"]')).toBeNull()
-    expect(container.querySelector('[data-reader-footnote-panel="true"]')).toBe(note)
-  })
-
   it('renders current product previous and next surah quick navigation controls', () => {
     const corpus: ReaderCorpusState = {
       status: 'ready',
@@ -475,10 +346,8 @@ describe('React reader coverage', () => {
 
     render(<ReaderVerseSurface corpus={corpus} surahIndex={surahIndex} />)
 
-    expect(screen.getByRole('button', { name: 'Previous surah: An-Nas' })).toHaveAttribute('data-continue-prev')
-    expect(screen.getByRole('button', { name: 'Next surah: Al-Baqarah' })).toHaveAttribute('data-continue-next')
-    expect(screen.getByText('↑')).toBeInTheDocument()
-    expect(screen.getByText('↓')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Previous surah: An-Nas' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Next surah: Al-Baqarah' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Next surah: Al-Baqarah' }))
 
@@ -519,140 +388,13 @@ describe('React reader coverage', () => {
       />,
     )
 
-    const verse = screen.getByTestId('verse-1:1')
     const verseNumber = screen.getByRole('button', { name: 'Remove bookmark for verse 1' })
-    expect(verse).toHaveAttribute('data-bookmarked', 'true')
-    expect(verse).toHaveClass('qar-reader-verse--bookmarked')
-    expect(verse.querySelector('.qar-reader-verse-head')).toContainElement(verseNumber)
-    expect(verse.querySelector('.qar-reader-verse-body .qar-reader-verse-arabic')).toBeInTheDocument()
+    expect(screen.getByText('All praise be to Allah, Lord of all realms,')).toBeInTheDocument()
     expect(verseNumber).toHaveAttribute('aria-pressed', 'true')
 
     fireEvent.click(verseNumber)
 
     expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
-  })
-
-  it('pulses the verse sides when a verse becomes bookmarked from the reader', () => {
-    vi.useFakeTimers()
-    const onToggleBookmark = vi.fn()
-    const corpus: ReaderCorpusState = {
-      status: 'ready',
-      footnotes: {},
-      riwayah: 'qaloon',
-      surah: {
-        number: 1,
-        nameArabic: 'الفَاتِحة',
-        nameEnglish: 'Al-Fatihah',
-        verseCount: 7,
-      },
-      translationVisible: true,
-      verses: [
-        {
-          arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
-          footnotes: {},
-          key: '1:1',
-          surah: 1,
-          translation: 'All praise be to Allah, Lord of all realms,',
-          translationRole: 'identity',
-          verse: 1,
-        },
-      ],
-    }
-
-    render(
-      <ReaderVerseSurface
-        bookmarkedVerseKeys={new Set()}
-        corpus={corpus}
-        onToggleBookmark={onToggleBookmark}
-      />,
-    )
-
-    const verse = screen.getByTestId('verse-1:1')
-    fireEvent.click(screen.getByRole('button', { name: 'Bookmark verse 1' }))
-
-    expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
-    vi.advanceTimersByTime(0)
-    expect(verse).toHaveAttribute('data-bookmark-pulse', 'true')
-    expect(verse).toHaveClass('qar-reader-verse--pulse')
-
-    vi.advanceTimersByTime(1000)
-
-    expect(verse).not.toHaveAttribute('data-bookmark-pulse')
-    expect(verse).not.toHaveClass('qar-reader-verse--pulse')
-    vi.useRealTimers()
-  })
-
-  it('does not pulse the verse sides when removing an existing bookmark from the reader', () => {
-    vi.useFakeTimers()
-    const onToggleBookmark = vi.fn()
-    const corpus: ReaderCorpusState = {
-      status: 'ready',
-      footnotes: {},
-      riwayah: 'qaloon',
-      surah: {
-        number: 1,
-        nameArabic: 'الفَاتِحة',
-        nameEnglish: 'Al-Fatihah',
-        verseCount: 7,
-      },
-      translationVisible: true,
-      verses: [
-        {
-          arabic: 'اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ',
-          footnotes: {},
-          key: '1:1',
-          surah: 1,
-          translation: 'All praise be to Allah, Lord of all realms,',
-          translationRole: 'identity',
-          verse: 1,
-        },
-      ],
-    }
-
-    render(
-      <ReaderVerseSurface
-        bookmarkedVerseKeys={new Set(['1:1'])}
-        corpus={corpus}
-        onToggleBookmark={onToggleBookmark}
-      />,
-    )
-
-    const verse = screen.getByTestId('verse-1:1')
-    fireEvent.click(screen.getByRole('button', { name: 'Remove bookmark for verse 1' }))
-
-    expect(onToggleBookmark).toHaveBeenCalledWith('1:1')
-    vi.advanceTimersByTime(0)
-    expect(verse).not.toHaveAttribute('data-bookmark-pulse')
-    expect(verse).not.toHaveClass('qar-reader-verse--pulse')
-    vi.useRealTimers()
-  })
-
-  it('keeps React bookmarked verse styling aligned with theme-aware bookmark markers', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/design-system/index.css'), 'utf8')
-    const tokens = readFileSync(resolve(process.cwd(), 'src/design-system/tokens/semantic.css'), 'utf8')
-
-    expect(tokens).toContain('--qa-react-bookmark-accent: var(--qa-react-accent);')
-    expect(tokens).toContain('--qa-react-bookmark-pulse-bg: color-mix(in srgb, var(--qa-react-bookmark-accent) 22%, transparent);')
-    expect(tokens).toContain('--qa-react-bookmark-pulse-edge: color-mix(in srgb, var(--qa-react-bookmark-accent) 72%, transparent);')
-    expect(css).toContain('.qar-reader-verse--bookmarked')
-    expect(css).toContain('color: var(--qa-react-bookmark-accent, var(--qa-react-accent)) !important;')
-    expect(css).toContain('18% {')
-    expect(css).toContain('background-color: var(--qa-react-bookmark-pulse-bg, color-mix(in srgb, var(--qa-react-bookmark-accent, var(--qa-react-accent)) 22%, transparent));')
-    expect(css).toContain('box-shadow: inset 2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent)), inset -2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent));')
-    expect(css).toContain('box-shadow: inset 2px 0 0 transparent, inset -2px 0 0 transparent;')
-  })
-
-  it('keeps the verse bookmark glyph slot mounted when bookmark state changes', () => {
-    const { rerender } = render(<VerseNumber verse={7} bookmarked={false} />)
-
-    let verseNumber = screen.getByRole('button', { name: 'Bookmark verse 7' })
-    expect(verseNumber.querySelector('.qar-reader-verse-bookmark-glyph')).toHaveAttribute('data-active', 'false')
-
-    rerender(<VerseNumber verse={7} bookmarked />)
-
-    verseNumber = screen.getByRole('button', { name: 'Remove bookmark for verse 7' })
-    expect(verseNumber).toHaveAttribute('aria-pressed', 'true')
-    expect(verseNumber.querySelector('.qar-reader-verse-bookmark-glyph')).toHaveAttribute('data-active', 'true')
   })
 
   it('renders mushaf route with an explicit asset gate', () => {
@@ -668,14 +410,12 @@ describe('React reader coverage', () => {
     expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Mushaf' })).toBeNull()
     const mushafToggle = screen.getByRole('button', { name: 'Switch to Mushaf mode' })
-    expect(mushafToggle.querySelector('.lucide-book-open-text')).toBeInTheDocument()
     fireEvent.click(mushafToggle)
     expect(onModeChange).toHaveBeenCalledWith('mushaf')
     expect(screen.getByRole('button', { name: 'Switch to Mushaf mode' })).toHaveAttribute('aria-pressed', 'false')
 
     rerender(<ReaderChrome mode="mushaf" onModeChange={onModeChange} />)
-    const verseToggle = screen.getByRole('button', { name: 'Switch to Verse mode' })
-    expect(verseToggle.querySelector('.lucide-list-ordered')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Switch to Verse mode' })).toBeInTheDocument()
   })
 
   it('switches from the Verse route to the Mushaf page containing the active verse', async () => {
@@ -691,24 +431,6 @@ describe('React reader coverage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf mode' }))
 
     await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
-    vi.unstubAllGlobals()
-  })
-
-  it('switches from a scrolled Verse reader position to the matching Mushaf page', async () => {
-    vi.stubGlobal('fetch', baqarahReaderFetchFixture())
-    window.location.hash = '#/s/2'
-
-    render(<ReaderRoute surah={2} />)
-    expect(await screen.findByTestId('verse-2:94')).toBeInTheDocument()
-
-    placeVerseAtViewportCenter('2:94')
-    fireEvent.scroll(window)
-    await waitFor(async () => {
-      expect((await (await openReactDb()).settings.get('currentPosition'))?.value).toEqual({ surah: 2, verse: 94 })
-    })
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf mode' }))
-
-    await waitFor(() => expect(window.location.hash).toBe('#/m/15'))
     vi.unstubAllGlobals()
   })
 
@@ -840,22 +562,6 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('updates the mounted Mushaf page fit when settings change without a route remount', async () => {
-    vi.stubGlobal('fetch', mushafFetchFixture())
-    render(<MushafRoute page={1} />)
-
-    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
-    const surface = document.querySelector<HTMLElement>('.qar-react-mushaf-page-surface')
-    expect(surface).toHaveAttribute('data-mushaf-view-mode', 'auto')
-
-    window.dispatchEvent(new CustomEvent('quranatlas-react-reader-preferences-changed', {
-      detail: { mushafViewMode: 'fit-width' },
-    }))
-
-    await waitFor(() => expect(surface).toHaveAttribute('data-mushaf-view-mode', 'fit-width'))
-    vi.unstubAllGlobals()
-  })
-
   it('keeps the current Mushaf page mounted while the next page asset loads', async () => {
     let resolvePageTwo: ((response: Response) => void) | null = null
     const pageTwo = new Promise<Response>((resolve) => {
@@ -904,7 +610,6 @@ describe('React reader coverage', () => {
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
     expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
-    expect(document.querySelector('.qar-react-nav-drawer-overlay')).not.toBeNull()
     const drawer = screen.getByRole('dialog', { name: 'Navigation' })
     expect(drawer).toBeInTheDocument()
     expect(within(drawer).queryByRole('tablist', { name: 'Mushaf view mode' })).toBeNull()
@@ -915,43 +620,7 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('navigates Mushaf pages from broad physical edge zones and swipe gestures', () => {
-    const onNavigate = vi.fn()
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
-
-    render(
-      <MushafPageViewer
-        inlineSvg={inlineSvg}
-        onNavigate={onNavigate}
-        resolved={{
-          assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg',
-          firstVerse: { surah: 1, verse: 1 },
-          manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
-          mushafEditionId: 'qalun-quran-ws-v1',
-          page: 2,
-          pageCount: 604,
-          riwayah: 'qaloon',
-          riwayahLabel: 'Qalun',
-        }}
-      />,
-    )
-
-    expect(screen.queryByLabelText(/mushaf page controls/i)).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Advance Mushaf page from left edge' }))
-    expect(onNavigate).toHaveBeenLastCalledWith(3)
-    fireEvent.click(screen.getByRole('button', { name: 'Return to previous Mushaf page from right edge' }))
-    expect(onNavigate).toHaveBeenLastCalledWith(1)
-
-    const page = screen.getByRole('img', { name: /mushaf page 2/i })
-    fireEvent.touchStart(page, { touches: [{ clientX: 320, clientY: 240 }] })
-    fireEvent.touchEnd(page, { changedTouches: [{ clientX: 120, clientY: 242 }] })
-    expect(onNavigate).toHaveBeenLastCalledWith(3)
-    fireEvent.touchStart(page, { touches: [{ clientX: 120, clientY: 240 }] })
-    fireEvent.touchEnd(page, { changedTouches: [{ clientX: 320, clientY: 238 }] })
-    expect(onNavigate).toHaveBeenLastCalledWith(1)
-  })
-
-  it('renders the Mushaf page count at the bottom center and toggles chrome from the page center', () => {
+  it('renders the Mushaf page count and toggles chrome from the page center', () => {
     const onToggleChrome = vi.fn()
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
 
@@ -973,7 +642,7 @@ describe('React reader coverage', () => {
       />,
     )
 
-    expect(screen.getByLabelText('Mushaf page 42 of 604')).toHaveClass('qar-react-mushaf-page-counter')
+    expect(screen.getByLabelText('Mushaf page 42 of 604')).toBeInTheDocument()
     expect(screen.getByText('42 / 604')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Toggle reader chrome' }))
     expect(onToggleChrome).toHaveBeenCalledWith(false)
@@ -1010,35 +679,4 @@ describe('React reader coverage', () => {
     expect(onToggleBookmark).toHaveBeenCalledTimes(1)
   })
 
-  it('keeps the React Mushaf SVG and its visible page frame on the same fitted box', () => {
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
-
-    const { container } = render(
-      <MushafPageViewer
-        inlineSvg={inlineSvg}
-        resolved={{
-          assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg',
-          firstVerse: { surah: 1, verse: 1 },
-          manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
-          mushafEditionId: 'qalun-quran-ws-v1',
-          page: 1,
-          pageCount: 604,
-          riwayah: 'qaloon',
-          riwayahLabel: 'Qalun',
-        }}
-      />,
-    )
-
-    const surface = container.querySelector<HTMLElement>('.qar-react-mushaf-page-surface')
-    const stage = container.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
-    const frame = container.querySelector<HTMLElement>('.qar-react-mushaf-page-frame')
-    const svg = container.querySelector<SVGElement>('.qa-react-mushaf-svg')
-
-    expect(surface).toHaveClass('qar-react-mushaf-page-surface')
-    expect(stage).toHaveClass('qar-react-mushaf-page-stage')
-    expect(frame).toHaveClass('qar-react-mushaf-page-frame')
-    expect(stage?.style.getPropertyValue('--qa-react-mushaf-page-ratio')).toBe(String(inlineSvg.viewBox.width / inlineSvg.viewBox.height))
-    expect(svg?.getAttribute('width')).toBeNull()
-    expect(svg?.getAttribute('height')).toBeNull()
-  })
 })

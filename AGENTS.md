@@ -25,6 +25,7 @@ Project instructions auto-loaded by Codex in this repo.
 - When `package.json` scripts, dev tools, pinned versions, or CI gates change, update `docs/tech-stack.md` in the same change.
 - For React UI work, check `src/design-system/registry/component-registry.json` first and compose approved components from `src/components/ui`; direct Radix imports outside that owned layer are forbidden.
 - Do not follow TDD by default. Do not write tests before implementation, and do not add or update automated tests unless the user explicitly asks for tests.
+- Test quality gate: reject or remove tests that assert implementation trivia instead of durable behavior. Unit tests must not lock in CSS class names, icon internals, DOM placement, exact visual layout, CSS source text, snapshots of markup, physical pointer geometry, jsdom-simulated layout/scroll, presentational overlays, or `data-*` state used only for styling/selection. Prefer accessible roles/names, user-visible content, callbacks, persisted state, route changes, and data contracts. Browser-only layout, paint, real gesture timing, service-worker, reload/hydration, and multi-screen keyboard traversal belong in `tests/e2e/**`, not Vitest. E2E tests should still prove behavior through visible/browser outcomes before reaching for implementation selectors.
 
 ## Git Defaults
 

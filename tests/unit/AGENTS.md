@@ -20,6 +20,11 @@ Good unit-test targets in this repo include:
 - Extend the owning surface's existing unit suite before creating a new test file when one already exists.
 - Mock module-boundary dependencies, not internal implementation details.
 - Prefer focused behavior assertions over snapshot-heavy coverage.
+- Assert durable outcomes, not presentation internals. Prefer accessible roles/names, visible copy, emitted callbacks, route/hash changes, persisted IndexedDB state, reducer output, and dataset/script contracts.
+- Do not add unit assertions for CSS class names, icon component names, SVG paths, `data-*` hooks used only for styling/selection, DOM sibling/parent placement, exact markup shape, CSS source text, visual pulse/animation classes, presentational overlay nodes, media-query breakpoints, element coordinates, bounding boxes, computed styles, scroll-derived positioning, or touch/drag physics.
+- Do not query through `container`, `document.querySelector`, `.closest`, `.className`, or implementation-only selectors when a role, label, text, or public contract can express the behavior. A narrow exception is allowed for testing a public escape-hatch API, such as an explicit `className` passthrough.
+- Do not stub `getBoundingClientRect`, `window.innerHeight`, `scrollY`, or other browser geometry to make jsdom imitate a viewport journey. If a route change depends on which row is visible after scrolling, prove it in Playwright.
+- If a test needs real layout, paint, gesture timing, pointer geometry, scroll physics, service workers, reload/hydration behavior, or cross-route keyboard traversal, move that coverage to `tests/e2e/**` instead of stretching jsdom.
 - Use `@testing-library/react`, Vitest, and the shared setup in `tests/setup.js`.
 - Keep React app tests under `tests/unit/react-*`; keep dataset/script contract tests under `tests/unit/scripts`; keep shared contract tests under `tests/unit/shared`.
 

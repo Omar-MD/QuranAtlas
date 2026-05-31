@@ -22,6 +22,9 @@ If a test does not need one of those, it belongs under `tests/unit/`.
 
 - Keep specs under the owning `tests/e2e/<surface>/` folder and extend an existing file there when the concern already has a natural home.
 - Treat suite wall time as a budget. Optimize setup duplication before trimming assertions.
+- Prefer user-observable browser outcomes over implementation selectors. Use roles, labels, text, URL state, persisted browser state, accessibility results, screenshots, and real layout measurements when they prove behavior. Do not assert CSS class names, icon internals, markup shape, or component placement unless the assertion is specifically proving a browser-only visual/layout regression that cannot be expressed through a public role, label, or visible result.
+- Do not use CSS class selectors only to prove absence or presence of a component. Prefer the missing/present role, label, text, URL state, persisted state, or public status. Likewise, do not assert `data-token-key`, `data-selected`, or other implementation state when visible verse text, accessible names, route changes, or stored state prove the same behavior.
+- When real layout measurements are necessary, keep them attached to a user-visible outcome such as no overflow, readable minimum size, touch target size, centered visible content, or a screenshot/axe proof. Avoid measuring decorative children or internal wrappers unless that internal node is the only browser-rendered evidence of the regression.
 
 ## Performance rules
 

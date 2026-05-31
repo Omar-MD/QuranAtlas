@@ -75,8 +75,7 @@ describe('React Daily Wird coverage', () => {
 
   it('renders the reader-adjacent no-plan card', () => {
     render(<DailyWirdCard plan={null} counts={counts} />)
-    const card = screen.getByRole('button', { name: /start daily wird/i })
-    expect(card).toHaveClass('qar-react-wird-card')
+    expect(screen.getByRole('button', { name: /start daily wird/i })).toBeInTheDocument()
     expect(screen.getByText('Create a plan to build a consistent rhythm.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /create plan/i })).toBeNull()
   })
