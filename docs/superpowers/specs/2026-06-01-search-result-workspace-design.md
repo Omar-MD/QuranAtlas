@@ -19,7 +19,7 @@ Search renders one query-level workspace after every successful query:
 
 `Verses` contains the ayah-first result list. Ayah reference queries and exact Arabic phrase queries land here immediately because the user's intent is to inspect specific ayat.
 
-`Explore` contains query-level analysis modules and explicit selected-token entry points. Query-level modules include forms by count, surah distribution, attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns. Selected-token entry points include same written form, same root, lemma, morphology details, and neighboring phrases. Modules appear only when they are relevant to the query type and backed by the active Search pack.
+`Explore` contains query-level analysis modules and explicit selected-token entry points. Query-level modules include forms by count, surah distribution, attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns. Selected-token entry points include same written form, same root, lemma, selected-token morphology details, and neighboring phrases. Modules appear only when they are relevant to the query type and backed by the active Search pack.
 
 `Sources` is the query-level provenance and audit area. It is the only default location for heavy technical source data such as pack hash, source ids, license ids, normalizer version, query AST version, rank version, tokenization policy, boundary policy, and guardrail notes. It must not imply that one source ref, Reader ref, or mapping state applies to every result in a mixed result set.
 
@@ -76,7 +76,7 @@ Broad and exploratory searches show no result preview in `Overview`. The primary
 
 Counts and distributions must include scope labels. `Occurrences` means the count of matched tokens or phrases when the active Search index can prove it. `Matched ayat` means the count of unique source ayat containing at least one match when provable. `Known results` means the search backend knows the complete result-row count, even when occurrence count is not available. `Shown results` means currently loaded paged rows. Use `all indexed matches` for full aggregate data, `known results` for complete but non-occurrence result counts, and `shown results` for the current paged window. If `totalKnownResults` or aggregate data is unknown, do not imply exact totals or full-query distribution; show copy such as `Matching results found` and `Showing first 50` instead.
 
-`Surah context` is a morphology feature, not translation context or surrounding-ayah reading context. It groups matched morphology keys by their indexed surah-level distribution and stays bound to the Hafs analytical Search source.
+`Surah-context morphology` is the internal feature/mode for morphology-based Surah distribution. User-facing exploratory labels should prefer `Morphology-based Surah distribution` or `Surah distribution for morphology matches`. This is not translation context or surrounding-ayah reading context, and it stays bound to the Hafs analytical Search source.
 
 Required caveats:
 
@@ -129,7 +129,7 @@ Selected-token Arabic exploration can show:
 - Same written form.
 - Same root.
 - Lemma.
-- Morphology details.
+- Selected-token morphology details.
 - Neighboring phrases for the selected token or phrase.
 
 Query-level phrase searches can show:
@@ -145,7 +145,7 @@ Query-level root and morphology searches can show:
 - Forms by count.
 - Matched ayat.
 - Surah distribution.
-- Morphology details.
+- Query-level morphology summary.
 
 Translation and context searches can show:
 
@@ -154,7 +154,9 @@ Translation and context searches can show:
 - Arabic source ayat with matched excerpts when useful.
 - Source/context boundary explanation.
 
-Missing optional packs degrade at module level. Core Search results remain usable. Wording modules must use source-backed labels such as `Attested following wording` and `Wording observed after this phrase`. They must not use predictive or generated-answer language such as `prediction`, `autocomplete`, `suggested verse`, or `probability`.
+Translation/context Explore may summarize or group Arabic source ayat for translation/context evidence, but the full ayah-first result list remains in `Verses`.
+
+Missing optional packs degrade at module level. Core Search results remain usable. Workspace tabs remain visible when their core section exists. If the query type supports exploration but optional packs are missing, keep `Explore` available and show module-level unavailable states rather than hiding the tab. Wording modules must use source-backed labels such as `Attested following wording` and `Wording observed after this phrase`. They must not use predictive or generated-answer language such as `prediction`, `autocomplete`, `suggested verse`, or `probability`.
 
 ## Sources
 
@@ -256,13 +258,13 @@ Cards can use `Search text`. Details and Sources must make the source boundary e
 
 Loading a saved search reruns its query definition against the active compatible Search pack. It applies the current adaptive default-tab rules and does not restore stale result rows, old result windows, selected-result details, or old Explore responses.
 
-Saved searches may preserve the query text, selected mode, filters, sort, compatibility metadata, and display preferences that are part of the saved intent. They must not persist materialized results or source corpus snapshots.
+Saved searches may preserve the query text, selected mode, filters, sort, compatibility metadata, and display preferences that are part of the saved intent. Display preferences must not restore active tab, selected result, loaded windows, or Explore responses unless a future spec explicitly adds those fields. Saved searches must not persist materialized results or source corpus snapshots.
 
 ## Responsive And Accessibility Requirements
 
 The workspace must preserve the Reader chrome and existing navigation drawer behavior.
 
-Desktop and tablet widths show the `Verses` list and selected-result `Details` side by side. Mobile presents result details as a sheet or full-width panel so the verse list is not cramped.
+Desktop and tablet widths show the `Verses` list and selected-result `Details` side by side. Mobile presents result details as a sheet or full-width panel so the verse list is not cramped. Closing mobile `Details` returns focus to the originating verse card or its `Details` trigger.
 
 Tabs, actions, and details must use accessible labels, visible focus states, and stable dimensions. Status changes remain polite live-region updates. The UI must not create horizontal overflow at phone, tablet, or desktop widths.
 
@@ -282,5 +284,5 @@ Tabs, actions, and details must use accessible labels, visible focus states, and
 - Same-root matches include the required morphology caveat.
 - Reader opening and Reader word highlighting are treated as separate capabilities.
 - Explore modules use non-predictive, source-backed language.
-- Query-level `Sources` exposes the full audit/provenance details.
+- Query-level `Sources` exposes full query/search-pack audit and provenance details; result-level provenance remains in per-result `Details`.
 - Saved searches rerun query definitions against the active compatible pack and apply the current workspace defaults.
