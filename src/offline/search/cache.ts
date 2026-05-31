@@ -85,7 +85,7 @@ export function isLeaseProtected(lease: SearchPackLease, now = Date.now(), stale
 }
 
 async function assertSha256(bytes: ArrayBuffer, expected: string): Promise<void> {
-  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  const digest = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes))
   const actual = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
   if (actual !== expected) throw new Error('Search pack checksum mismatch')
 }
