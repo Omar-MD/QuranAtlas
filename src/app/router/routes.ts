@@ -23,6 +23,7 @@ export type ReactRouteMatch =
   | { type: 'surahs' }
   | { type: 'bookmarks' }
   | { type: 'settings' }
+  | { type: 'search' }
   | { type: 'about' }
   | { type: 'onboarding' }
   | { type: 'unsupported' }
@@ -47,7 +48,7 @@ export function matchReactRoute(hash = getInitialReactHash()): ReactRouteMatch {
   if (mushafMatch) return { type: 'mushaf', page: clampPositive(Number(mushafMatch[1]), 1) }
   if (routePath === REACT_ROUTES.surahs) return { type: 'surahs' }
   if (routePath === REACT_ROUTES.bookmarks) return { type: 'bookmarks' }
-  if (routePath === REACT_ROUTES.search) return { type: 'unsupported' }
+  if (routePath === REACT_ROUTES.search) return { type: 'search' }
   if (routePath === REACT_ROUTES.settings) return { type: 'settings' }
   if (routePath === REACT_ROUTES.assets) return { type: 'settings' }
   if (routePath === REACT_ROUTES.about) return { type: 'about' }

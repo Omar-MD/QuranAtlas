@@ -10,5 +10,5 @@
 | **navigate** | [`surfaces/navigate.md`](surfaces/navigate.md) | Reader navigation: nav drawer, Surah/Juz/Hizb browsing, bookmarks, recent Surahs, shortcuts, and Daily Wird entry points. |
 | **onboard** | [`surfaces/onboard.md`](surfaces/onboard.md) | Launch restore and compatibility onboarding path. The current MVP does not present a setup wizard. |
 | **read** | [`surfaces/read.md`](surfaces/read.md) | Reader First core: Verse reader, Mushaf reader, reader chrome, typography, bookmarks integration, page movement, translation, knowledge lane, and Daily Wird progress. |
-| **search** | [`surfaces/search.md`](surfaces/search.md) | Planned deterministic Quran Search surface. Full-text `#/search` remains unsupported until Phase 1 route promotion. |
+| **search** | [`surfaces/search.md`](surfaces/search.md) | Shipped Phase 1 deterministic Quran Search surface for lexical source-backed queries. |
 <!-- AUTO-GENERATED:dossier-index END -->

@@ -20,7 +20,7 @@ React UI development is owned through `src/design-system/**`, approved primitive
 | configure | About route | `src/app/routes/settings/AboutRoute.tsx` | `src/design-system/index.css` | configure golden specs |
 | onboard | Launch/onboarding | `src/components/launch/LaunchSplash.tsx`, `src/app/routes/onboarding/OnboardingRoute.tsx` | `src/design-system/index.css` | onboarding golden specs |
 | infra | Offline/update affordances | `src/offline/**`, app shell states | `src/design-system/index.css` | `tests/e2e/infra/react-offline.spec.ts` |
-| search | Planned Search route and prototype components | `src/app/routes/search/**`, `src/components/search/**`, `src/search/**`, `src/search-worker/**`, `src/offline/search/**` | `src/design-system/index.css` | search stories and future `tests/e2e/search/*.spec.ts`; route is unsupported until Phase 1 |
+| search | Search route and Phase 1 lexical Search components | `src/app/routes/search/**`, `src/components/search/**`, `src/search/**`, `src/search-worker/**`, `src/offline/search/**` | `src/design-system/index.css` | `src/components/search/search.stories.tsx`, `tests/unit/react-search/**`, and `tests/e2e/search/*.spec.ts` |
 
 ## Design-System Rules
 

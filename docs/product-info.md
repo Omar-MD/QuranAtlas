@@ -33,14 +33,14 @@ This is the product overview. For implementation detail, see `docs/context/` and
 
 - Themes, typography, line spacing, word spacing, reader margins, and related reader comfort controls.
 - Surah, Juz, and Hizb navigation, with rub, ruku, and page data treated as metadata until promoted to first-class controls.
-- Search remains planned; navigation over the shipped reader corpus is available through Surah, Juz, Hizb, bookmarks, and reader-mode movement.
+- **Search:** `#/search` provides deterministic Phase 1 lexical Search over the active Hafs-backed Search index: references, Arabic text, translation/context, exact word forms, and exact phrases. Search opens Reader verses only through validated Qalun Reader mappings.
 - Page-break indicators and Mushaf page navigation where matching assets exist.
 
 ### Curated study inside reading
 
 Study exists where it strengthens reading, but tafsir and richer curated context are future work in the MVP contract. Curated metadata candidates include tafsir, verse themes, short meanings or summaries, passage grouping/context, Makki/Madani classification, source-backed revelation/asbab metadata, and rub/ruku/page metadata.
 
-Arabic roots, concepts, divine names, and cross-references remain curated metadata backlog unless separately promoted.
+Arabic roots, same-root Search, concepts, divine names, wording graph exploration, and cross-references remain curated metadata backlog unless separately promoted.
 
 ### AI readiness
 

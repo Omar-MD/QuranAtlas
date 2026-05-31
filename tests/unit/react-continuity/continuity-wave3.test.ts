@@ -32,6 +32,7 @@ describe('React continuity coverage', () => {
     expect(shouldPersistLastSurface('#/settings')).toBe(false)
     expect(shouldPersistLastSurface('#/onboarding')).toBe(false)
     expect(shouldPersistLastSurface('#/search')).toBe(false)
+    expect(shouldPersistLastSurface('#/search?q=mercy')).toBe(false)
   })
 
   it('falls back to currentPosition then Al-Fatihah', () => {

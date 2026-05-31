@@ -24,3 +24,27 @@ test('@offline active Search pack cache and activation record survive offline re
     await page.context().setOffline(false)
   }
 })
+
+test('@offline active Search pack supports the Search route without changing Reader continuity', async ({ page }) => {
+  await expectReactProductionPreflight(page)
+  await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
+  await page.goto(targetUrl('react', '/#/s/1'))
+  await expectReactServiceWorkerReady(page)
+  await installSearchPackFixture(page)
+
+  await page.context().setOffline(true)
+  try {
+    await page.goto(targetUrl('react', '/#/search'))
+    await expect(page.getByRole('main', { name: 'Search' })).toBeVisible()
+    await expect(page.getByText('Search data is ready on this device.')).toBeVisible()
+    await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
+    await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
+    await page.getByRole('button', { exact: true, name: 'Search' }).click()
+    await expect(page.getByLabel('Search results')).toBeVisible()
+
+    await page.goto(targetUrl('react', '/#/'))
+    await expect(page).toHaveURL(/#\/s\/1$/)
+  } finally {
+    await page.context().setOffline(false)
+  }
+})

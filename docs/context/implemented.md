@@ -19,7 +19,14 @@ and data shapes live in `surfaces/<name>.md`.
 - Desktop `#/surahs` and `#/bookmarks` surfaces.
 - Riwayah-scoped bookmarks with cross-tab sync and landing pulse.
 - Reader keyboard shortcuts and shortcuts sheet.
-- Full-text `#/search` is not a shipped MVP route; search remains future work.
+
+## Search
+
+- Phase 1 `#/search` route for deterministic reference, Arabic text, translation/context, exact word form, and exact phrase search.
+- Lazy core Search pack install/verify/activate on Search entry, with Search packs cached under `/search-packs/**` by the dedicated Search cache owner.
+- Route-scoped lazy worker client; Reader cold launch does not fetch Search packs, decode Search graphs, or start the Search worker.
+- Result list, result detail tabs for Match, Explore, and Source, and `Open in Read` only for validated single Reader mappings.
+- Saved searches store user-created query definitions only; result windows are recomputed against the active compatible Search index.
 
 ## Configure
 
@@ -35,8 +42,8 @@ and data shapes live in `surfaces/<name>.md`.
 
 ## Infra
 
-- IDB `quran-atlas` v7 with active stores: `settings`, `activationState`,
-  `datasetMeta`, and `bookmarks`.
+- IDB `quran-atlas` v8 with active stores: `settings`, `activationState`,
+  `datasetMeta`, `bookmarks`, `savedSearches`, `searchPackActivations`, and `searchPackStaging`.
 - Store schema through `src/storage/schema.ts` and Dexie helpers in `src/storage/**`.
 - Vite PWA service worker and offline runtime dataset cache.
 - Same-device bookmark sync and clear-data safety behavior.

@@ -33,6 +33,7 @@ graph LR
   src_components --> src_data
   src_components --> src_design_system
   src_components --> src_metadata
+  src_components --> src_offline
   src_components --> src_packs
   src_components --> src_search
   src_components --> src_storage
@@ -69,7 +70,7 @@ graph LR
 
 ### `src/components`
 
-- **Imports from:** `src/app`, `src/continuity`, `src/data`, `src/design-system`, `src/metadata`, `src/packs`, `src/search`, `src/storage`
+- **Imports from:** `src/app`, `src/continuity`, `src/data`, `src/design-system`, `src/metadata`, `src/offline`, `src/packs`, `src/search`, `src/storage`
 - **Imported by:** `src/app`
 
 ### `src/continuity`
@@ -100,7 +101,7 @@ graph LR
 ### `src/offline`
 
 - **Imports from:** `src/data`, `src/packs`, `src/storage`
-- **Imported by:** `src/packs`, `src/search`, `src/search-worker`
+- **Imported by:** `src/components`, `src/packs`, `src/search`, `src/search-worker`
 
 ### `src/packs`
 

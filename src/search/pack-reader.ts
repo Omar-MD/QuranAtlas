@@ -167,14 +167,39 @@ export async function loadSearchPackManifestFromRegistry(
   options: Pick<SearchPackReaderOptions, 'fetcher' | 'signal'> = {},
 ): Promise<SearchPackManifestV1> {
   const fetcher = options.fetcher ?? fetch
-  const registryResponse = await fetcher(SEARCH_PACK_REGISTRY_RUNTIME_URL, { signal: options.signal })
-  if (!registryResponse.ok) throw new SearchPackReaderError('unavailable-pack', 'Search pack registry is unavailable', true)
-  const registry = await registryResponse.json() as SearchPackRegistry
-  const entry = registry.packs.find((pack) => pack.packId === packId)
-  if (!entry) throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} is not registered`, true)
-  const manifestResponse = await fetcher(entry.manifestUrl, { signal: options.signal })
-  if (!manifestResponse.ok) throw new SearchPackReaderError('unavailable-pack', `Search pack manifest ${entry.manifestUrl} is unavailable`, true)
-  return manifestResponse.json() as Promise<SearchPackManifestV1>
+  try {
+    const registryResponse = await fetcher(SEARCH_PACK_REGISTRY_RUNTIME_URL, { signal: options.signal })
+    if (!registryResponse.ok) throw new Error('registry unavailable')
+    const registry = await registryResponse.json() as SearchPackRegistry
+    const entry = registry.packs.find((pack) => pack.packId === packId)
+    if (!entry) throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} is not registered`, true)
+    const manifestResponse = await fetcher(entry.manifestUrl, { signal: options.signal })
+    if (!manifestResponse.ok) throw new Error('manifest unavailable')
+    return manifestResponse.json() as Promise<SearchPackManifestV1>
+  } catch (caught) {
+    if (caught instanceof SearchPackReaderError) throw caught
+    const cached = await loadCachedSearchPackManifest(packId)
+    if (cached) return cached
+    throw new SearchPackReaderError('unavailable-pack', 'Search pack registry is unavailable', true)
+  }
+}
+
+async function loadCachedSearchPackManifest(packId: string): Promise<SearchPackManifestV1 | null> {
+  if (!globalThis.caches?.keys) return null
+  for (const cacheName of await globalThis.caches.keys()) {
+    if (!cacheName.startsWith('quran-atlas-search-pack-')) continue
+    const cache = await globalThis.caches.open(cacheName)
+    if (!('keys' in cache)) continue
+    for (const request of await cache.keys()) {
+      const url = new URL(request.url)
+      if (!url.pathname.endsWith('/manifest.json')) continue
+      const response = await cache.match(request)
+      if (!response?.ok) continue
+      const manifest = await response.json() as SearchPackManifestV1
+      if (manifest.packId === packId) return manifest
+    }
+  }
+  return null
 }
 
 export function decodeSearchJsonShard(bytes: ArrayBuffer | Uint8Array): SearchPackShardPayload {

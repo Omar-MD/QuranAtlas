@@ -129,6 +129,33 @@
     z-index: 130 !important;
   }
 
+  .qar-search-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qar-search-saved-rail {
+    display: none;
+  }
+
+  .qar-search-saved-sheet {
+    display: block;
+  }
+
+  @media (min-width: 1180px) {
+    .qar-search-layout {
+      grid-template-columns: 18rem minmax(0, 1fr) 24rem;
+    }
+
+    .qar-search-saved-rail {
+      display: block;
+      width: 100%;
+    }
+
+    .qar-search-saved-sheet {
+      display: none;
+    }
+  }
+
   .qar-reader-verse-surface {
     width: 100%;
     max-width: 1080px;

@@ -1557,7 +1557,7 @@
     {
       "id": "search-page",
       "name": "SearchPage",
-      "maturity": "future-prototype",
+      "maturity": "product",
       "exportPath": "src/components/search/SearchPage.tsx",
       "namedExport": "SearchPage",
       "allowedVariants": [
@@ -1580,7 +1580,14 @@
         {
           "path": "src/components/search/search.stories.tsx",
           "states": [
-            "default"
+            "default",
+            "loading",
+            "results",
+            "detail",
+            "saved-searches",
+            "no-mapping",
+            "offline-unavailable",
+            "source-panel"
           ]
         }
       ],
@@ -1588,18 +1595,38 @@
         {
           "path": "tests/unit/react-search/search-wave3.test.ts",
           "behaviors": [
-            "search engine utility behavior only; route is not shipped"
+            "prototype guard against mutable Search dataset URLs"
+          ]
+        },
+        {
+          "path": "tests/unit/react-search/search-route.test.tsx",
+          "behaviors": [
+            "route shell copy",
+            "result details",
+            "validated Open in Read action",
+            "saved-search load recompute"
+          ]
+        },
+        {
+          "path": "tests/unit/react-search/saved-searches.test.tsx",
+          "behaviors": [
+            "saved query definition persistence",
+            "rename and delete",
+            "result snapshots not stored"
           ]
         }
       ],
       "accessibility": [
         "semantic landmarks",
+        "polite result and saved-search status",
+        "unique Open in Read action names",
         "visible focus through owned primitives"
       ],
       "visualProof": {
-        "status": "future",
+        "status": "covered",
         "references": [
-          "src/components/search/search.stories.tsx"
+          "src/components/search/search.stories.tsx",
+          "tests/e2e/search/react-search.spec.ts"
         ]
       },
       "owner": {

@@ -17,6 +17,7 @@ const BookmarksRoute = lazy(() => import('./routes/navigation/BookmarksRoute').t
 const MushafRoute = lazy(() => import('./routes/read/MushafRoute').then((module) => ({ default: module.MushafRoute })))
 const OnboardingRoute = lazy(() => import('./routes/onboarding/OnboardingRoute').then((module) => ({ default: module.OnboardingRoute })))
 const ReaderRoute = lazy(() => import('./routes/read/ReaderRoute').then((module) => ({ default: module.ReaderRoute })))
+const SearchRoute = lazy(() => import('./routes/search/SearchRoute').then((module) => ({ default: module.SearchRoute })))
 const SettingsRoute = lazy(() => import('./routes/settings/SettingsRoute').then((module) => ({ default: module.SettingsRoute })))
 const SurahsRoute = lazy(() => import('./routes/navigation/SurahsRoute').then((module) => ({ default: module.SurahsRoute })))
 
@@ -205,6 +206,7 @@ export function App() {
           {route.type === 'mushaf' && <MushafRoute page={route.page} />}
           {route.type === 'surahs' && <SurahsRoute />}
           {route.type === 'bookmarks' && <BookmarksRoute />}
+          {route.type === 'search' && <SearchRoute />}
           {route.type === 'about' && <AboutRoute />}
           {route.type === 'unsupported' && <UnsupportedRoute />}
           {route.type === 'onboarding' && (

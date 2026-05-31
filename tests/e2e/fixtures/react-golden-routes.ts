@@ -386,8 +386,8 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     seed: 'onboarded-search-index-verified',
     viewports: ['phone-standard', 'desktop'],
     themes: ['light', 'dark'],
-    proofOwners: ['tests/e2e/read/react-golden.spec.ts'],
-    assertions: ['query route renders the unsupported-route state', 'fake preview search results are absent'],
+    proofOwners: ['tests/e2e/search/react-search.spec.ts'],
+    assertions: ['query route renders the shipped Search surface', 'fake preview search results are absent'],
     acceptedDifference: 'none',
   },
   {
@@ -396,8 +396,8 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     seed: 'onboarded-search-index-unavailable',
     viewports: ['phone-standard', 'desktop'],
     themes: ['light', 'dark'],
-    proofOwners: ['tests/e2e/read/react-golden.spec.ts'],
-    assertions: ['search route renders the unsupported-route state', 'no silent fallback claim is shown'],
+    proofOwners: ['tests/e2e/search/react-search-offline.spec.ts'],
+    assertions: ['Search route renders scoped Search pack availability state', 'no silent fallback claim is shown'],
     acceptedDifference: 'none',
   },
   {

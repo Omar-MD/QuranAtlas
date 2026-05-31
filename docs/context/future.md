@@ -9,7 +9,7 @@ QuranAtlas already ships a Reader First runtime shape:
 - runtime reads only `/dataset/**`
 - text rendering stays independent from optional enrichment lanes
 - the current default reader profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation
-- future qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf page, and search/index assets can share one install-before-activate rule after the multiple-profile contract returns
+- future qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf page, and optional advanced search/index assets can share one install-before-activate rule after the multiple-profile contract returns
 - `src/metadata/knowledge.ts` and reader corpus helpers load curated knowledge lazily and can fail without breaking reader boot
 
 Future work should extend those boundaries rather than replace them.
@@ -35,7 +35,7 @@ Reader boot must not require optional curated metadata files. Missing optional m
 
 ## Retrieval and AI readiness
 
-Future retrieval infrastructure may include the shipped `#/search` route, lexical indexes, chunked tafsir and claims retrieval, citation/provenance maps, and optional vector or embedding indexes. This work should ground future answers in structured retrieval and citations.
+The shipped `#/search` route covers Phase 1 deterministic lexical Search. Future retrieval infrastructure may add morphology packs, same-root search, following wording, shared wording, repeated phrase exploration, counts and patterns, chunked tafsir and claims retrieval, citation/provenance maps, and optional vector or embedding indexes. This work should ground future answers in structured retrieval and citations.
 
 No AI assistant, chat, agent, synthesis UI, or generated-answer product is current scope.
 

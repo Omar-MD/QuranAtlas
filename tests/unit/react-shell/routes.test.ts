@@ -8,9 +8,10 @@ describe('React route matching', () => {
     expect(matchReactRoute('#/')).toEqual({ type: 'launch' })
   })
 
-  it('keeps preview search out of the production route contract', () => {
-    expect(matchReactRoute('#/search')).toEqual({ type: 'unsupported' })
-    expect(matchReactRoute('#/search?q=mercy')).toEqual({ type: 'unsupported' })
+  it('promotes Search while keeping Reader routes unchanged', () => {
+    expect(matchReactRoute('#/search')).toEqual({ type: 'search' })
+    expect(matchReactRoute('#/search?q=mercy')).toEqual({ type: 'search' })
+    expect(matchReactRoute('#/s/2/255')).toEqual({ type: 'reader', surah: 2, ayah: 255 })
   })
 
   it('treats the old assets route as a settings-shell compatibility opener', () => {
