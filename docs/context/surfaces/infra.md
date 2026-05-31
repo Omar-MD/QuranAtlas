@@ -62,7 +62,7 @@ style_paths:
 
 `vite.config.js` configures React, Tailwind, and `vite-plugin-pwa`. The production service worker uses Workbox to precache only the app shell, fonts, icons, and built assets; `/dataset/**` stays out of precache and is cached through the CacheFirst runtime route in `quran-atlas-runtime-dataset-v1`. The Workbox cache id is `quranatlas`.
 
-`scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single `dist/` artifact for Lighthouse, Playwright preview/offline, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real page SVG pack.
+`scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real page SVG pack.
 
 `src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors.
 

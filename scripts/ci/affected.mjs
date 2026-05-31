@@ -7,13 +7,20 @@ import { pathToFileURL } from 'node:url'
 const META_ONLY_PATTERNS = [
   /^docs\//,
   /^tests\/unit\//,
-  /^scripts\//,
+  /^scripts\/docs\//,
   /^\.docs-derive-manifest\.json$/,
   /\.md$/,
   /^LICENSE$/,
   /^\.gitignore$/,
   /^\.editorconfig$/,
   /^\.github\/.*\.md$/,
+]
+
+const AUTOMATION_PATTERNS = [
+  /^\.github\/actions\//,
+  /^\.github\/workflows\//,
+  /^scripts\/ci\//,
+  /^scripts\/check-(?:chunks|no-feature-state|react-|ui-references)/,
 ]
 
 const DATASET_PATTERNS = [
@@ -46,6 +53,7 @@ const BUILD_PATTERNS = [
   /^shared\//,
   /^data\//,
   /^scripts\/data\//,
+  ...AUTOMATION_PATTERNS,
   /^\.storybook\//,
   /^vite\.config\.js$/,
   /^playwright(?:\.visual)?\.config\.js$/,
@@ -61,6 +69,7 @@ const STORYBOOK_PATTERNS = [
   /^src\/design-system\//,
   /^src\/app\//,
   /^shared\//,
+  ...AUTOMATION_PATTERNS,
   /^package\.json$/,
   /^pnpm-lock\.yaml$/,
 ]
@@ -74,6 +83,7 @@ function parseArgs(argv) {
   }
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index]
+    if (arg === '--') continue
     if (arg === '--json') parsed.json = true
     else if (arg === '--base') parsed.base = argv[++index] ?? null
     else if (arg.startsWith('--base=')) parsed.base = arg.slice('--base='.length)
@@ -157,11 +167,12 @@ export function detectAffected(files, { noBaseline = false } = {}) {
     }
   }
 
-  const e2eRelevant = !everyFileMatches(files, META_ONLY_PATTERNS)
+  const automationRelevant = files.some((file) => matchesAny(file, AUTOMATION_PATTERNS))
+  const e2eRelevant = automationRelevant || !everyFileMatches(files, META_ONLY_PATTERNS)
   const datasetRelevant = files.some((file) => matchesAny(file, DATASET_PATTERNS))
   const mushafPagesRelevant = files.some((file) => matchesAny(file, MUSHAF_PAGE_PATTERNS))
   const buildRelevant = e2eRelevant || files.some((file) => matchesAny(file, BUILD_PATTERNS))
-  const storybookRelevant = files.some((file) => matchesAny(file, STORYBOOK_PATTERNS))
+  const storybookRelevant = automationRelevant || files.some((file) => matchesAny(file, STORYBOOK_PATTERNS))
   const firstRelevant = files.find((file) => !matchesAny(file, META_ONLY_PATTERNS))
   const metaReason = datasetRelevant || buildRelevant ? 'non-ui-infra-only' : 'docs-or-unit-only'
 

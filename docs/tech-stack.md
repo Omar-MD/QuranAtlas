@@ -45,32 +45,33 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run preview` | Serve `dist/` on port 4173 |
 | `pnpm run clean` | Remove `dist` and `test-output` |
 | `pnpm run build` | Build runtime dataset, then build the React app into `dist/` |
-| `pnpm run ci:affected` | Print changed-file gate decisions for CI/local affected validation |
-| `pnpm run ci:build` | Build `dist/` while skipping dataset generation unless affected gates require it |
+| `pnpm run ci:affected` | Internal CI/local helper: print changed-file gate decisions |
+| `pnpm run ci:build` | Internal CI/local helper: build `dist/` while skipping dataset generation unless affected gates require it |
 | `pnpm run data -- build` | Build the baseline committed runtime dataset while preserving the existing dataset timestamp unless `QURANATLAS_DATASET_BUILT_AT` is set |
-| `pnpm run data -- build --skip=mushaf-pages` | Rebuild non-Mushaf baseline dataset lanes while reusing committed Mushaf page assets |
+| `pnpm run data -- build --skip=mushaf-pages` | Rebuild non-Mushaf baseline dataset lanes while reusing existing local/generated Mushaf page assets |
 | `pnpm run data -- build --profile=full` | Build every approved current dataset profile |
 | `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs |
 | `pnpm run data:fetch -- <type>:<id>` | Fetch and normalize catalog-backed source data |
 | `pnpm run test` | Run Vitest once |
 | `pnpm run test:e2e` | Run the React Playwright suite |
-| `pnpm run test:e2e:golden` | Build if needed, then run `@golden` Playwright specs against preview |
-| `pnpm run test:e2e:a11y` | Build if needed, then run `@a11y` Playwright specs against preview |
-| `pnpm run test:e2e:offline` | Build if needed, then run `@offline` Playwright specs against preview |
+| `pnpm run test:e2e:preview -- <args>` | Ensure the preview artifact has the Qaloon Mushaf page pack, then run Playwright against preview |
+| `pnpm run test:e2e:golden` | Run `@golden` Playwright specs through the shared preview runner |
+| `pnpm run test:e2e:a11y` | Run `@a11y` Playwright specs through the shared preview runner |
+| `pnpm run test:e2e:offline` | Run `@offline` Playwright specs through the shared preview runner with offline coverage enabled |
 | `pnpm run visual` | Run Playwright visual regression specs |
 | `pnpm run storybook` | Start React Storybook on port 6007 |
 | `pnpm run build:storybook` | Build Storybook into `storybook-static/` |
 | `pnpm run test:storybook` | Run Storybook Vitest/browser checks |
 | `pnpm run lint` | Run ESLint over app, shared code, tests, and configs |
 | `pnpm run typecheck` | Run TypeScript with `tsconfig.json` |
-| `pnpm run check` | Typecheck, lint, import-boundary, design, registry, UI-pattern, and Mushaf asset checks |
+| `pnpm run check` | Typecheck, lint, import-boundary, design, registry, UI-pattern, Mushaf asset, feature-state, and UI-reference checks |
 | `pnpm run docs` | Regenerate context docs and generated inventories |
 | `pnpm run docs:check` | Assert generated docs are current |
 | `pnpm run lighthouse` | Build and run Lighthouse CI |
 | `pnpm run validate` | Full local release gate: static checks, tests, build, chunks, e2e, offline, visual, Storybook, docs |
 | `pnpm run validate:affected` | Local affected release gate: static checks/tests always, then build/e2e/visual/Storybook only when changed-file gates require them |
 
-`PLAYWRIGHT_SKIP_BUILD=1` tells preview-oriented Playwright scripts to reuse an existing `dist/` artifact. CI uses this after downloading the build job artifact so the same app bundle is tested and deployed.
+`PLAYWRIGHT_SKIP_BUILD=1` tells preview-oriented Playwright scripts to reuse an existing `dist/` artifact. CI downloads the build job artifact and runs Playwright directly against preview so the same app bundle is tested and deployed.
 
 ## Static Gates
 
@@ -80,6 +81,8 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 - `scripts/check-react-component-registry.mjs`: validates registry ordering and referenced component/story/test paths.
 - `scripts/check-react-ui-forbidden-patterns.mjs`: keeps feature code on owned UI primitives.
 - `scripts/check-react-mushaf-assets.mjs` and `scripts/check-react-mushaf-indexes.mjs`: enforce edition-aware Mushaf contracts and prevent page SVG bodies from shipping in JS bundles.
+- `scripts/check-no-feature-state.js`: prevents mutable feature-state scaffolding from shipping.
+- `scripts/check-ui-references.mjs`: validates committed UI reference images and notes.
 - `scripts/check-chunks.js`: enforces the production chunk budget.
 
 Warnings from build, lint, check, docs, or CI scripts are treated as failures.
@@ -92,15 +95,15 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, and
 | --- | --- |
 | `lint` | Job id retained for branch-protection continuity; runs `pnpm run check` |
 | `test` | `pnpm run test` |
-| `feature-state` | Top-level mutable feature-state guard |
 | `docs-check` | `pnpm run docs:check` |
 | `dataset-catalog` | `pnpm run data -- check` when dataset-relevant diffs require it |
 | `dataset-baseline` | `pnpm run data -- build` when dataset-relevant diffs require it |
 | `dataset-full` | Full profile build when dataset-relevant diffs require it |
 | `audit` | `pnpm audit --audit-level moderate` |
-| `build` | Runs `pnpm run ci:build`, generating Mushaf page artifacts only when Mushaf inputs changed, then uploads `dist/` |
+| `build` | Runs `pnpm run ci:build`, generating Mushaf page artifacts when Mushaf inputs or Playwright require them, checks chunks, then uploads `dist/` |
 | `lighthouse` | Runs Lighthouse against uploaded `dist/` when build-relevant diffs require it |
-| `e2e` | Runs non-visual React Playwright specs plus explicit offline preview specs against uploaded `dist/` |
+| `e2e` | Runs non-visual, offline, and visual React Playwright specs against uploaded `dist/` |
+| `storybook` | Builds Storybook and runs Storybook Vitest/browser checks when Storybook-relevant diffs require it |
 | `ci-ok` | Aggregates required job results |
 
 Deploy lives at `.github/workflows/deploy.yml`. On successful CI for branch pushes to `dev`, `staging`, or `main`, it downloads the same `dist/` artifact and deploys it to Cloudflare Pages. CI builds once; deploy does not rebuild.

@@ -71,14 +71,6 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm run test
 
-  feature-state:
-    name: Feature-State Guard
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: ./.github/actions/setup
-      - run: node scripts/check-no-feature-state.js
-
   docs-check:
     name: Docs Derive Check
     runs-on: ubuntu-latest
@@ -159,6 +151,8 @@ jobs:
           QURANATLAS_DATASET_RELEVANT: ${{ needs.changes.outputs.dataset_relevant }}
           QURANATLAS_MUSHAF_PAGES_RELEVANT: ${{ needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
           QURANATLAS_MUSHAF_PAGES_PREBUILT: ${{ needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
+      - name: Check chunk budget
+        run: node scripts/check-chunks.js
       - name: Upload dist artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -254,6 +248,11 @@ jobs:
           PLAYWRIGHT_INCLUDE_OFFLINE: '1'
           PLAYWRIGHT_USE_PREVIEW: '1'
 
+      - name: Run Playwright visual suite
+        run: env -u NO_COLOR pnpm run visual
+        env:
+          PLAYWRIGHT_USE_PREVIEW: '1'
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -262,12 +261,39 @@ jobs:
           path: |
             test-output/report/
             test-output/traces/
+            test-output/visual-report/
+            test-output/visual/
           retention-days: 7
           if-no-files-found: warn
 
+  storybook:
+    name: Storybook
+    needs: changes
+    if: needs.changes.outputs.storybook_relevant == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Playwright browsers (skipped on cache hit)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright system deps (cache hit path)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - run: pnpm run build:storybook
+      - run: pnpm run test:storybook
+
   ci-ok:
     name: CI OK
-    needs: [changes, lint, test, feature-state, docs-check, dataset-catalog, dataset-baseline, dataset-full, audit, build, lighthouse, e2e]
+    needs: [changes, lint, test, docs-check, dataset-catalog, dataset-baseline, dataset-full, audit, build, lighthouse, e2e, storybook]
     # Run even when affected-change gates skip dataset or e2e jobs.
     # `always()` lets this job evaluate needs.* results; the step body then
     # fails if any upstream job failed or was cancelled.

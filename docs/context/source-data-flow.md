@@ -30,7 +30,7 @@ The app never imports `data/**`. Runtime code fetches `/dataset/**` and validate
 
 The build preserves the existing provenance `builtAt` value when package version and profile are unchanged, so validation does not dirty tracked dataset files just by running. Set `QURANATLAS_DATASET_BUILT_AT` when an intentional dataset timestamp change is required.
 
-`pnpm run data -- build --skip=mushaf-pages` rebuilds the non-Mushaf dataset lanes while reusing the committed Mushaf page runtime assets. CI and `pnpm run validate:affected` use this only when the affected-file gate shows dataset inputs changed but Mushaf page inputs did not.
+`pnpm run data -- build --skip=mushaf-pages` rebuilds the non-Mushaf dataset lanes while reusing existing local/generated Mushaf page runtime assets. CI and local preview validation use this after the release Qaloon page pack has already been generated, or when the affected-file gate shows dataset inputs changed but Mushaf page inputs did not.
 
 `pnpm run data -- check` validates source/catalog structure without necessarily rebuilding every runtime file.
 
@@ -60,7 +60,7 @@ pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
 
 The import step downloads quran.ws PDFs into `.scratch/` and converts them to normalized SVG inputs using Poppler. The build step validates and emits edition-aware runtime page assets and manifests. CI caches the expensive PDF/SVG inputs and still validates the generated page pack before app build.
 
-CI runs the Mushaf import/page-build lane when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs, normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, committed Mushaf runtime assets, or dependency files. CI also runs that lane whenever Playwright is selected so the uploaded `dist/` artifact includes the real Mushaf SVG pages that the browser specs assert.
+CI runs the Mushaf import/page-build lane when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs, normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, generated Mushaf runtime assets, or dependency files. CI and the shared local preview runner also run that lane whenever Playwright is selected so the tested `dist/` artifact includes the real Mushaf SVG pages that the browser specs assert.
 
 ## Runtime Consumption
 

@@ -77,7 +77,7 @@ Offline specs run only against production preview because service workers are bu
 
 ## Build And Deploy
 
-`pnpm run build` runs the full dataset build and then `vite build`, producing `dist/`. CI uses `scripts/ci/affected.mjs` and `pnpm run ci:build` to reuse committed runtime dataset assets when source data did not change, and to run the expensive Mushaf import/page-build lane when Mushaf inputs changed or Playwright is selected. CI uploads one artifact; Lighthouse, Playwright preview/offline checks, and Cloudflare Pages deploy all consume that same artifact, and deploy does not rebuild.
+`pnpm run build` runs the full dataset build and then `vite build`, producing `dist/`. CI uses `scripts/ci/affected.mjs` and `pnpm run ci:build` to reuse committed runtime dataset assets when source data did not change, and to run the expensive Mushaf import/page-build lane when Mushaf inputs changed or Playwright is selected. CI checks the production chunk budget before uploading one artifact; Lighthouse, Playwright preview/offline/visual checks, and Cloudflare Pages deploy all consume that same artifact, and deploy does not rebuild.
 
 ## Agentic Development Rules
 

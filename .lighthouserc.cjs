@@ -1,7 +1,7 @@
 /**
  * Lighthouse CI configuration for QuranAtlas.
  * Runs against the built static site served locally.
- * For local development: pnpm run build && pnpm run lighthouse
+ * For local development: pnpm run lighthouse
  */
 
 /** @type {import('@lhci/utils/src/types').LHCIConfig} */

@@ -8,6 +8,8 @@
 // Phase 1 wires only derive-cite-check.mjs. Subsequent phases register more.
 
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -56,9 +58,32 @@ async function gitStatusSnapshot() {
   });
 }
 
+async function gitLines(args) {
+  return new Promise((resolve) => {
+    const child = spawn('git', args, { cwd: REPO_ROOT });
+    let out = '';
+    child.stdout.on('data', (d) => { out += d.toString(); });
+    child.on('exit', () => resolve(out.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)));
+    child.on('error', () => resolve([]));
+  });
+}
+
+async function fileHashSnapshot() {
+  const tracked = await gitLines(['ls-files', '--', ...CHECK_PATHS]);
+  const untracked = await gitLines(['ls-files', '--others', '--exclude-standard', '--', ...CHECK_PATHS]);
+  const files = [...new Set([...tracked, ...untracked])].sort();
+  return Object.fromEntries(files.map((file) => {
+    const path = join(REPO_ROOT, file);
+    if (!existsSync(path)) return [file, 'missing'];
+    if (!statSync(path).isFile()) return [file, 'not-file'];
+    return [file, createHash('sha256').update(readFileSync(path)).digest('hex')];
+  }));
+}
+
 async function main() {
   let failed = 0;
   const before = checkMode ? await gitStatusSnapshot() : '';
+  const beforeHashes = checkMode ? await fileHashSnapshot() : {};
 
   for (const d of derivers) {
     process.stdout.write(`\n— ${d.name} —\n`);
@@ -68,7 +93,8 @@ async function main() {
 
   if (checkMode) {
     const after = await gitStatusSnapshot();
-    if (after !== before) {
+    const afterHashes = await fileHashSnapshot();
+    if (after !== before || JSON.stringify(afterHashes) !== JSON.stringify(beforeHashes)) {
       process.stderr.write(`\nderive --check: docs changed after regeneration:\n`);
       process.stderr.write(`before:\n${before || '(clean)'}\n`);
       process.stderr.write(`after:\n${after || '(clean)'}\n`);
