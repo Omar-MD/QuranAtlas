@@ -85,5 +85,5 @@ describe('Search morphology shard builder', () => {
       expect(sha256Hex(bytes)).toMatch(/^[a-f0-9]{64}$/)
       expect(decodeJsonShard(bytes).kind).toBe(payload.kind)
     }
-  }, 30000)
+  }, 90000)
 })

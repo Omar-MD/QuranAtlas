@@ -75,6 +75,8 @@ React e2e specs seed the required IndexedDB state through typed fixtures. Opt ou
 
 Use the dev server unless the assertion specifically requires the production build or real service worker.
 
+Use `PLAYWRIGHT_SKIP_BUILD=1` only when an existing `dist/` was produced by `pnpm run build` or `pnpm run ci:build`; raw Vite builds omit runtime dataset and Search pack assets.
+
 ## Timing check for new e2e work
 
 For a materially expanded surface spec, time the spec locally:

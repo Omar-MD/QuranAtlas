@@ -42,6 +42,13 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 - When e2e tests are explicitly requested, keep specs under `tests/e2e/<surface>/`; a new top-level e2e folder requires a new surface dossier.
 - Do not add scripts for one-off work. Check `package.json`, `docs/tech-stack.md`, and scoped `AGENTS.md` files before choosing commands.
 
+## Command Selection
+
+- Prefer `pnpm run check` for static verification; it runs typecheck, lint, and repo-specific checks in parallel.
+- Use `pnpm run test:fast` for quick unit feedback when generated Search pack and morphology integration smoke tests are outside the change. Use `pnpm run test`, `pnpm run test:node`, `pnpm run test:react`, or `pnpm run test:unit:full` when broader unit coverage is required.
+- Treat raw Vite builds as app-shell checks only. Use `pnpm run build` or `pnpm run ci:build` whenever `dist/` must contain runtime `dataset` and `search-packs` assets.
+- Use `pnpm run data -- check` for dataset integrity, `pnpm run data -- build --skip=mushaf-pages` for non-Mushaf dataset rebuilds, and direct Mushaf page build/check commands only when page artifacts are the target.
+
 ## Verification
 
 - Read-only analysis: no project verification required.

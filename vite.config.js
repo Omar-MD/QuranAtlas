@@ -1,7 +1,16 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import {
+  collectPublicAssetFiles,
+  publicShellAssetEntries,
+  releaseRuntimeAssetEntries,
+  removeOutputAssetEntries,
+  readPublicAssetFile,
+} from './scripts/ci/public-assets.mjs'
 
 export const datasetRuntimeCaching = {
   urlPattern: ({ url }) => url.pathname.startsWith('/dataset/') && !url.pathname.startsWith('/dataset/search/'),
@@ -18,7 +27,40 @@ export const datasetRuntimeCaching = {
   },
 }
 
+function quranAtlasPublicShellAssetsPlugin(root) {
+  let outputDir
+
+  return {
+    name: 'quranatlas-public-shell-assets',
+    apply: 'build',
+    configResolved(config) {
+      outputDir = path.resolve(config.root, config.build.outDir)
+    },
+    async generateBundle() {
+      const files = await collectPublicAssetFiles({
+        root,
+        entries: publicShellAssetEntries,
+      })
+
+      for (const file of files) {
+        this.emitFile({
+          type: 'asset',
+          fileName: file.fileName,
+          source: await readPublicAssetFile(file),
+        })
+      }
+    },
+    async closeBundle() {
+      await removeOutputAssetEntries({
+        outDir: outputDir,
+        entries: releaseRuntimeAssetEntries,
+      })
+    },
+  }
+}
+
 export default defineConfig(() => {
+  const root = fileURLToPath(new URL('.', import.meta.url))
   const isProductionDeployment = process.env.VITE_QURANATLAS_DEPLOY_TARGET !== 'preview'
 
   return {
@@ -38,6 +80,7 @@ export default defineConfig(() => {
           ]
         },
       },
+      quranAtlasPublicShellAssetsPlugin(root),
       react(),
       tailwindcss(),
       VitePWA({
@@ -92,6 +135,7 @@ export default defineConfig(() => {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
+      copyPublicDir: false,
       target: 'es2020',
       chunkSizeWarningLimit: 600,
       rolldownOptions: {

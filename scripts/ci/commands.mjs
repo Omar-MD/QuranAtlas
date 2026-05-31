@@ -23,6 +23,7 @@ export function runPnpm(args, options = {}) {
 }
 
 export function ensureReleaseMushafPages() {
+  const forceBuild = envFlag('QURANATLAS_FORCE_MUSHAF_PAGES_BUILD')
   const check = runPnpm([
     'run',
     'data',
@@ -39,6 +40,8 @@ export function ensureReleaseMushafPages() {
 
   if (check.status === 0) {
     console.log('[mushaf-pages] normalized Qaloon page artifacts present')
+    if (!forceBuild) return
+    console.log('[mushaf-pages] QURANATLAS_FORCE_MUSHAF_PAGES_BUILD=1; rebuilding release page set')
   } else {
     console.log('[mushaf-pages] normalized Qaloon pages missing or stale; importing release page set')
     runPnpm([

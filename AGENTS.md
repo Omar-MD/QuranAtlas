@@ -27,6 +27,14 @@ Project instructions auto-loaded by Codex in this repo.
 - Do not follow TDD by default. Do not write tests before implementation, and do not add or update automated tests unless the user explicitly asks for tests.
 - Test quality gate: reject or remove tests that assert implementation trivia instead of durable behavior. Unit tests must not lock in CSS class names, icon internals, DOM placement, exact visual layout, CSS source text, snapshots of markup, physical pointer geometry, jsdom-simulated layout/scroll, presentational overlays, or `data-*` state used only for styling/selection. Prefer accessible roles/names, user-visible content, callbacks, persisted state, route changes, and data contracts. Browser-only layout, paint, real gesture timing, service-worker, reload/hydration, and multi-screen keyboard traversal belong in `tests/e2e/**`, not Vitest. E2E tests should still prove behavior through visible/browser outcomes before reaching for implementation selectors.
 
+## Command Guidance
+
+- Use `pnpm run check` as the primary static gate; it already runs typecheck, lint, and custom repo checks in parallel.
+- Use `pnpm run test:fast` for local unit feedback when generated Search pack and morphology integration proofs are not relevant. Use `pnpm run test`, `pnpm run test:node`, `pnpm run test:react`, or `pnpm run test:unit:full` when the change needs that broader lane.
+- Use raw `pnpm exec vite build` or `./node_modules/.bin/vite build` only for app-shell bundle checks. Raw Vite builds intentionally omit `dist/dataset` and `dist/search-packs`; use `pnpm run build` or `pnpm run ci:build` when preview, deploy, or runtime assets must be present in `dist/`.
+- Use `pnpm run data -- check` for dataset integrity. Use `pnpm run data -- build --skip=mushaf-pages` for non-Mushaf dataset rebuilds, and run the Mushaf pages command directly only when page artifacts are the target.
+- Use `PLAYWRIGHT_SKIP_BUILD=1` only when an existing `dist/` was produced by `pnpm run build` or `pnpm run ci:build`.
+
 ## Git Defaults
 
 - Do not push, merge, or open a PR unless explicitly asked.

@@ -19,7 +19,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | Reader lists | TanStack Virtual | `^3.13.26` | Available for measured list virtualization where needed |
 | Language | TypeScript | `^6.0.3` | Strict TS/TSX type checking |
 | PWA | vite-plugin-pwa + Workbox | `^1.3.0`, `^7.4.1` | Manifest, service worker, app-shell precache, runtime dataset cache |
-| Unit/component tests | Vitest + Testing Library React | `^4.1.5`, `^16.3.2` | jsdom and browser-adjacent component coverage |
+| Unit/component tests | Vitest + Testing Library React | `^4.1.5`, `^16.3.2` | Split Node script/shared coverage and jsdom React/component coverage |
 | E2E/visual | Playwright | `^1.59.1` | Route, offline, accessibility, and visual regression evidence |
 | Storybook | Storybook React/Vite | `10.4.1` | React component development and review surface |
 | Lint | ESLint + typescript-eslint | `^10.2.1`, `^8.59.1` | JS/TS/TSX quality gate |
@@ -31,7 +31,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 ## App Shape
 
 - `index.html` mounts React into `#react-root`.
-- `vite.config.js` is the single app build config. `pnpm run build` writes `dist/`; `pnpm run preview` serves `dist/`.
+- `vite.config.js` is the single app build config. Vite's default full `public/` copy is disabled; raw Vite builds emit only shell public assets (`_headers`, favicon, notification service-worker helper, fonts, and icons). `pnpm run build` and `pnpm run ci:build` copy runtime dataset and Search pack assets into `dist/` after Vite finishes; `pnpm run preview` serves `dist/`.
 - `src/app/App.tsx` owns hash routing and top-level providers.
 - `src/components/ui/**` is the only allowed layer for direct Radix imports.
 - `src/design-system/**` is the styling source of truth: semantic tokens, Tailwind theme, registry, recipes, and design-system docs.
@@ -45,15 +45,19 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run dev` | Start the Vite React dev server on port 5173 |
 | `pnpm run preview` | Serve `dist/` on port 4173 |
 | `pnpm run clean` | Remove `dist` and `test-output` |
-| `pnpm run build` | Build runtime dataset, then build the React app into `dist/` |
+| `pnpm run build` | Build runtime dataset, build the React app into `dist/`, then copy runtime dataset/Search assets into the artifact |
 | `pnpm run ci:affected` | Internal CI/local helper: print changed-file gate decisions |
-| `pnpm run ci:build` | Internal CI/local helper: build `dist/` while skipping dataset generation unless affected gates require it |
+| `pnpm run ci:build` | Internal CI/local helper: build `dist/` while skipping dataset generation unless affected gates require it, then copy runtime `public/dataset` and `public/search-packs` into the release artifact |
 | `pnpm run data -- build` | Build the baseline committed runtime dataset while preserving the existing dataset timestamp unless `QURANATLAS_DATASET_BUILT_AT` is set |
 | `pnpm run data -- build --skip=mushaf-pages` | Rebuild non-Mushaf baseline dataset lanes while reusing existing local/generated Mushaf page assets |
 | `pnpm run data -- build --profile=full` | Build every approved current dataset profile |
-| `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs |
+| `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs, including Search pack bytes and stamped Mushaf page artifacts |
 | `pnpm run data:fetch -- <type>:<id>` | Fetch and normalize catalog-backed source data |
-| `pnpm run test` | Run Vitest once |
+| `pnpm run test` | Run the full Vitest unit suite once across Node and React projects |
+| `pnpm run test:fast` | Run the split Vitest unit suite while skipping generated Search pack/morphology integration smoke tests |
+| `pnpm run test:node` | Run script and shared Vitest suites in the Node project without jsdom or Testing Library setup |
+| `pnpm run test:react` | Run React Vitest suites in the jsdom project with Testing Library setup |
+| `pnpm run test:unit:full` | Explicit full Vitest unit-suite alias used when local loops need release-equivalent unit coverage |
 | `pnpm run test:e2e` | Run the React Playwright suite |
 | `pnpm run test:e2e:preview -- <args>` | Ensure the preview artifact has the Qaloon Mushaf page pack, then run Playwright against preview |
 | `pnpm run test:e2e:golden` | Run `@golden` Playwright specs, including their accessibility assertions, through the shared preview runner |
@@ -64,7 +68,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run test:storybook` | Run Storybook Vitest/browser checks |
 | `pnpm run lint` | Run ESLint over app, shared code, tests, and configs |
 | `pnpm run typecheck` | Run TypeScript with `tsconfig.json` |
-| `pnpm run check` | Typecheck, lint, import-boundary, design, registry, UI-pattern, Mushaf asset, feature-state, and UI-reference checks |
+| `pnpm run check` | Run the parallel static-gate orchestrator for typecheck, lint, import-boundary, design, registry, UI-pattern, Mushaf asset, feature-state, and UI-reference checks |
 | `pnpm run docs` | Regenerate context docs and generated inventories |
 | `pnpm run docs:check` | Assert generated docs are current |
 | `pnpm run lighthouse` | Build and run Lighthouse CI |
@@ -86,6 +90,7 @@ The standalone preview scripts are non-overlapping lanes: `test:e2e:golden` owns
 - `scripts/check-no-feature-state.js`: prevents mutable feature-state scaffolding from shipping.
 - `scripts/check-ui-references.mjs`: validates committed UI reference images and notes.
 - `scripts/check-chunks.js`: enforces the production chunk budget.
+- `scripts/ci/check.mjs`: runs independent static gates in parallel for the local/CI `check` lane.
 
 Search pack generation is part of the data lane. `scripts/data/search/build.mjs` emits `public/search-packs/registry.json` and immutable pack manifests/shards under `public/search-packs/packs/<contentHash>/**`; `scripts/data/search/validate.mjs` verifies the generated registry, manifest, shard checksums, and forbidden `/dataset/search/**` URL shape. QAC morphology source validation runs in the same lane before morphology-derived Search shards can ship. Phase 3 graph builders under `scripts/data/search/graph/**` emit bounded attested following-wording, shared-wording, repeated-phrase, occurs-once, ayah-ending, and Counts & patterns shards.
 
@@ -112,4 +117,4 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, and
 
 Deploy lives at `.github/workflows/deploy.yml`. On successful CI for branch pushes to `dev`, `staging`, or `main`, it downloads the same `dist/` artifact and deploys it to Cloudflare Pages. CI builds once; deploy does not rebuild.
 
-Affected-change decisions live in `scripts/ci/affected.mjs` so CI and local validation use the same path groups. The production app bundle still builds for deployable CI runs, but dataset generation runs only when source data, dataset scripts, Search contracts, Search pack outputs, reader asset profiles, or dependency files that affect those artifacts changed. All Search dataset lanes (`shared/search/**`, `scripts/data/search/**`, Search catalogs and normalized sources, and `public/search-packs/**`) trigger dataset and full-dataset gates, while Mushaf page import/build remains scoped to Mushaf page inputs or Playwright-selected artifacts. The expensive Mushaf import/page build also runs whenever Playwright is selected so the browser artifact contains the real page SVG pack.
+Affected-change decisions live in `scripts/ci/affected.mjs` so CI and local validation use the same path groups. The production app bundle still builds for deployable CI runs, but dataset generation runs only when source data, dataset scripts, Search contracts, Search pack outputs, reader asset profiles, or dependency files that affect those artifacts changed. `scripts/ci/build.mjs` copies the committed or freshly generated runtime assets from `public/dataset` and `public/search-packs` into `dist/` after Vite finishes so the uploaded deploy/preview artifact remains complete without making raw Vite and Storybook builds copy the heavy runtime asset tree. All Search dataset lanes (`shared/search/**`, `scripts/data/search/**`, Search catalogs and normalized sources, and `public/search-packs/**`) trigger dataset and full-dataset gates, while Mushaf page import/build remains scoped to Mushaf page inputs or Playwright-selected artifacts. The expensive Mushaf import/page build also runs whenever Playwright is selected so the browser artifact contains the real page SVG pack.

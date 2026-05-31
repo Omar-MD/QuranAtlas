@@ -6,6 +6,8 @@ These instructions apply to `tests/unit/**`.
 
 New tests belong here unless the behavior requires browser-only proof from `tests/e2e/AGENTS.md`.
 
+Use `pnpm run test:fast` for quick unit feedback when generated Search pack and morphology integration proofs are not part of the change. Use `pnpm run test`, `pnpm run test:node`, `pnpm run test:react`, or `pnpm run test:unit:full` when the changed surface requires that broader lane.
+
 Good unit-test targets in this repo include:
 
 - React component structure and interaction

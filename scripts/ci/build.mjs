@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { envFlag, runPnpm } from './commands.mjs'
+import { copyPublicAssetEntries, releaseRuntimeAssetEntries } from './public-assets.mjs'
 
 const datasetRelevant = envFlag('QURANATLAS_DATASET_RELEVANT')
 const mushafPagesRelevant = envFlag('QURANATLAS_MUSHAF_PAGES_RELEVANT')
@@ -21,3 +22,8 @@ if (datasetRelevant) {
 }
 
 runPnpm(['exec', 'vite', 'build'])
+
+await copyPublicAssetEntries({
+  entries: releaseRuntimeAssetEntries,
+  logPrefix: 'ci-build',
+})

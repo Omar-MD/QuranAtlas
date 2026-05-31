@@ -128,6 +128,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     }
     return { filename, payload, bytes, checksum }
   })
+  assertRequiredShardsPresent(shardFiles, [...MORPHOLOGY_REQUIRED_SHARDS, ...GRAPH_REQUIRED_SHARDS])
 
   const shardManifests = shardFiles.map((file) => ({
     shardId: file.filename.replace(/\.qas$/, ''),
@@ -323,6 +324,15 @@ async function verifyGeneratedFiles(files, manifest) {
 
 async function fileSha256(path) {
   return sha256Hex(await readFile(path))
+}
+
+function assertRequiredShardsPresent(shardFiles, requiredShards) {
+  const shardIds = shardFiles.map((file) => file.filename.replace(/-\d+\.qas$|\.qas$/g, ''))
+  for (const required of requiredShards) {
+    if (!shardIds.some((id) => id === required || id.startsWith(`${required}-`))) {
+      throw new Error(`missing Search dependency shard ${required}`)
+    }
+  }
 }
 
 function featureForShard(filename) {
