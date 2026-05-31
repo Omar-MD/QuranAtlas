@@ -34,11 +34,13 @@ The selected search mode controls the default:
 - Ayah reference queries and reference mode default to `Verses`.
 - Exact Arabic phrase mode defaults to `Verses` for all phrase result counts. High-volume phrase queries still start in `Verses`, but the list remains paginated and minimal so the first screen does not become a provenance or evidence dump.
 - Broad Arabic text and Arabic word searches default to `Overview`.
-- Same written form, same root, lemma, and Surah context morphology mode default to `Overview`.
+- Morphology-oriented modes default to `Overview`: same written form, same root, lemma, and Surah-context morphology.
 - Translation and context modes default to `Overview`.
 - `All` mode uses deterministic default-tab precedence: valid ayah reference defaults to `Verses`; explicit phrase-shaped Arabic query defaults to `Verses`; root-shaped morphology query defaults to `Overview`; single or broad Arabic token query defaults to `Overview`; Latin-script query defaults to `Overview`; mixed or ambiguous query defaults to `Overview`.
 
-Switching tabs does not re-run the query. Overview actions such as `View verses`, `Show distribution`, and `View forms` switch tabs or focus the relevant module while keeping the same query and result window. `Load more results` exists only in `Verses`.
+In `All` mode, explicit phrase-shaped Arabic query means a quoted Arabic phrase or a multi-token Arabic query that the active parser has classified as an exact phrase. Multi-token Arabic input that is parsed as all-token Arabic text search follows the broad Arabic default and opens `Overview`.
+
+Switching tabs does not re-run the query. Overview actions keep the same query and result window: `View verses` switches to `Verses`; `Show distribution` switches to `Explore` and focuses Surah distribution; `View forms` switches to `Explore` and focuses Forms by count; `Open Explore` switches to `Explore` without changing the selected module. `Load more results` exists only in `Verses`.
 
 ## Overview
 
@@ -72,7 +74,7 @@ It does not include by default:
 
 Broad and exploratory searches show no result preview in `Overview`. The primary action is `View verses`, with secondary actions such as `View forms`, `Show distribution`, or `Open Explore` depending on query type.
 
-Counts and distributions must include scope labels. Use `all indexed matches` for full aggregate data, `known results` for complete but non-occurrence result counts, and `shown results` for the current paged window. If `totalKnownResults` or aggregate data is unknown, do not imply exact totals or full-query distribution; show copy such as `Matching results found` and `Showing first 50` instead.
+Counts and distributions must include scope labels. `Occurrences` means the count of matched tokens or phrases when the active Search index can prove it. `Matched ayat` means the count of unique source ayat containing at least one match when provable. `Known results` means the search backend knows the complete result-row count, even when occurrence count is not available. `Shown results` means currently loaded paged rows. Use `all indexed matches` for full aggregate data, `known results` for complete but non-occurrence result counts, and `shown results` for the current paged window. If `totalKnownResults` or aggregate data is unknown, do not imply exact totals or full-query distribution; show copy such as `Matching results found` and `Showing first 50` instead.
 
 `Surah context` is a morphology feature, not translation context or surrounding-ayah reading context. It groups matched morphology keys by their indexed surah-level distribution and stays bound to the Hafs analytical Search source.
 
@@ -176,7 +178,7 @@ It includes:
 
 This tab is required for transparency, but it must not be part of the default result card or default `Overview`.
 
-Result-level source fields belong in per-verse `Details`, not the query-level `Sources` tab. Those fields include source ref, Reader refs, mapping state, `canOpenInRead`, `canHighlightWordsInRead`, and any selected-result morphology source row.
+Result-level source fields belong in per-verse `Details`, not the query-level `Sources` tab. Those fields include source ref, Reader refs, mapping state, `canOpenInRead`, `canHighlightWordsInRead`, and any selected-result morphology source row. Query-level `Sources` may summarize result mapping only as aggregates, such as `42 results open in Reader` or `3 results are Search-source only`; it must not list one per-result value as a global fact.
 
 ## Presentation Model
 
