@@ -25,6 +25,11 @@ Search renders one query-level workspace after every successful query:
 
 Per-verse `Details` remains available from the `Verses` tab. It opens beside the list on wider screens and as a sheet or full-width panel on mobile.
 
+## Intentional Product Constraints
+
+- Exact Arabic phrase queries always default to `Verses`, including high-volume phrase queries.
+- Each submitted search receives a fresh adaptive default tab; the previous active tab is not preserved.
+
 ## Adaptive Defaults
 
 Every submitted search chooses a fresh default tab. The app does not preserve the user's previous tab across new searches.
