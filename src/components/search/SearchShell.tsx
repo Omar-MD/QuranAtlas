@@ -65,7 +65,10 @@ export function SearchShell() {
           packCompatibilityKey: compatibilityKey,
           query: search.query,
         })}
-        onSubmit={() => search.submitSearch()}
+        onSubmit={(submittedQuery) => {
+          search.setQuery(submittedQuery)
+          search.submitSearch({ query: submittedQuery })
+        }}
         query={search.query}
       />
       <div aria-live="polite" className="qar:sr-only" role="status">

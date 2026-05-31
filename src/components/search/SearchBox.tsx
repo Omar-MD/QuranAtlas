@@ -5,6 +5,7 @@ export function SearchBox({ onQueryChange, query }: { onQueryChange: (query: str
     <Input
       autoComplete="off"
       label="Search Quran text, translation, or context"
+      name="query"
       onChange={(event) => onQueryChange(event.currentTarget.value)}
       placeholder="Search..."
       value={query}

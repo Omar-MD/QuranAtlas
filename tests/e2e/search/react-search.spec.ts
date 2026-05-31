@@ -17,7 +17,7 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
 
   await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
   await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
-  await page.getByLabel('Search Quran text, translation, or context').press('Enter')
+  await page.getByRole('button', { exact: true, name: 'Search' }).click()
 
   await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
   await expect(page.getByRole('tab', { name: 'Match' })).toBeVisible()
@@ -27,7 +27,7 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await page.getByLabel('Search Quran text, translation, or context').fill('الله')
   await page.getByRole('tab', { name: 'Search mode: Same root' }).click()
   await expect(page.getByRole('tab', { name: 'Search mode: Same root' })).toHaveAttribute('aria-selected', 'true')
-  await page.getByLabel('Search Quran text, translation, or context').press('Enter')
+  await page.getByRole('button', { exact: true, name: 'Search' }).click()
   await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
   await page.getByRole('tab', { name: 'Explore' }).click()
   await expect(page.getByText('Same-root matches are morphological aids.')).toBeVisible()
@@ -75,6 +75,7 @@ test('@mobile Search Explore graph sections stay collapsed and keyboard accessib
   await page.goto(targetUrl('react', '/#/s/1'))
   await installSearchPackFixture(page)
   await page.goto(targetUrl('react', '/#/search'))
+  await expect(page.getByText('Search data is ready on this device.')).toBeVisible()
   await page.getByLabel('Search Quran text, translation, or context').fill('الله')
   await page.getByRole('tab', { name: 'Search mode: Arabic text' }).click()
   await expect(page.getByRole('tab', { name: 'Search mode: Arabic text' })).toHaveAttribute('aria-selected', 'true')
