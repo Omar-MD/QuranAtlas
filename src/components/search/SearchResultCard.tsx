@@ -13,7 +13,7 @@ export function SearchResultCard({
   result: SearchResultDto
   selected?: boolean
 }) {
-  const primaryIsOpen = result.canOpenInRead && result.readerRefs.length === 1
+  const primaryIsOpen = result.canOpenInRead
   return (
     <article
       aria-label={`Search result ${result.sourceRef}`}
@@ -38,7 +38,7 @@ export function SearchResultCard({
       <div className="qar-search-result-actions">
         {primaryIsOpen ? (
           <Button onClick={() => onOpenInRead(result)} size="sm" variant="primary">
-            Open {result.readerRefs[0]} in Read
+            Open in Read
           </Button>
         ) : null}
         <Button onClick={() => onSelect(result)} size="sm" variant={primaryIsOpen ? 'secondary' : 'primary'}>

@@ -1,3 +1,5 @@
+import { canonicalSurahKey, formatAyahKey, parseAyahKey } from '../../lib/ayah.mjs'
+
 const HAFS_COUNTS = [
   7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98,
   135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75,
@@ -8,7 +10,6 @@ const HAFS_COUNTS = [
 ]
 
 const UA = 'QuranAtlas-fetch/1.0 (https://quranatlas.org)'
-const PAD3 = (n) => String(n).padStart(3, '0')
 const FOOTNOTE_SUP_RE = /<sup\b[^>]*\bfoot_note\s*=\s*["']?(\d+)["']?[^>]*>.*?<\/sup>/gi
 
 function decodeHtmlEntities(text) {
@@ -32,9 +33,8 @@ function cleanHtmlText(html) {
 }
 
 function parseVerseKey(key) {
-  const match = /^(\d+):(\d+)$/.exec(String(key))
-  if (!match) throw new Error(`QUL translation row has invalid verse_key: ${key}`)
-  return { surahNo: Number(match[1]), ayahNo: Number(match[2]) }
+  const parsed = parseAyahKey(key, 'QUL translation row verse_key')
+  return { surahNo: parsed.surah, ayahNo: parsed.ayah, key: parsed.key }
 }
 
 function collectFootnoteIds(text) {
@@ -94,11 +94,11 @@ export function normalizeQulTranslationRows(rows, options) {
         throw new Error(`QUL translation surah ${surahNo} ayah keys must be contiguous from 1`)
       }
       return {
-        key: `${surahNo}:${ayahNo}`,
+        key: formatAyahKey(surahNo, ayahNo),
         text: normalizeVerseText(row.text ?? '', options.footnotesById ?? {}, footnotes, upstreamToLocal),
       }
     })
-    surahs[PAD3(surahNo)] = { intro: [], verses, footnotes }
+    surahs[canonicalSurahKey(surahNo)] = { intro: [], verses, footnotes }
     totalVerses += verses.length
     totalFootnotes += Object.keys(footnotes).length
   }

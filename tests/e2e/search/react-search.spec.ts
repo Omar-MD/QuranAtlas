@@ -6,14 +6,14 @@ import { installSearchPackFixture } from '../fixtures/react-search-pack'
 test.setTimeout(90_000)
 
 test('Search route supports keyboard flow, saved searches, details, and Open in Read', async ({ page }) => {
-  const guard = installPageGuards(page, 'search route')
   await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
   await page.goto(targetUrl('react', '/#/s/1'))
   await installSearchPackFixture(page)
   await page.goto(targetUrl('react', '/#/search'))
+  const guard = installPageGuards(page, 'search route')
 
   await expect(page.getByRole('main', { name: 'Search' })).toBeVisible()
-  await expect(page.getByText('Search data is ready on this device.')).toBeVisible()
+  await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
 
   await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
   await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
@@ -22,7 +22,7 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
   await expect(page.getByRole('tab', { name: 'Match' })).toBeVisible()
   await page.getByRole('tab', { name: 'Source' }).click()
-  await expect(page.getByText(/Open in Read always uses the verified Reader text/i)).toBeVisible()
+  await expect(page.getByText(/Open in Read resolves the active Reader riwayah at click time/i)).toBeVisible()
 
   await page.getByLabel('Search Quran text, translation, or context').fill('الله')
   await page.getByRole('tab', { name: 'Search mode: Same root' }).click()
@@ -63,14 +63,18 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await expect(savedSearches.getByRole('button', { name: 'Load saved search بسم الله' })).toBeVisible()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  const openButton = page.getByRole('button', { name: /Open .* in Read/ }).first()
+  await page.getByLabel('Search Quran text, translation, or context').fill('112:1')
+  await page.getByRole('tab', { name: 'Search mode: All' }).click()
+  await page.getByRole('button', { exact: true, name: 'Search' }).click()
+  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
+  expect(guard.failures).toEqual([])
+  guard.dispose()
+
+  const openButton = page.getByRole('button', { name: 'Open in Read' }).first()
   if (await openButton.isVisible()) {
     await openButton.click()
-    await expect(page).toHaveURL(/#\/s\/\d+\/\d+/)
+    await expect(page).toHaveURL(/#\/s\/112\/1/)
   }
-
-  guard.dispose()
-  expect(guard.failures).toEqual([])
 })
 
 test('@mobile Search Explore graph sections stay collapsed and keyboard accessible on phone', async ({ page }) => {
@@ -78,7 +82,7 @@ test('@mobile Search Explore graph sections stay collapsed and keyboard accessib
   await page.goto(targetUrl('react', '/#/s/1'))
   await installSearchPackFixture(page)
   await page.goto(targetUrl('react', '/#/search'))
-  await expect(page.getByText('Search data is ready on this device.')).toBeVisible()
+  await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
   await page.getByLabel('Search Quran text, translation, or context').fill('الله')
   await page.getByRole('tab', { name: 'Search mode: Arabic text' }).click()
   await expect(page.getByRole('tab', { name: 'Search mode: Arabic text' })).toHaveAttribute('aria-selected', 'true')

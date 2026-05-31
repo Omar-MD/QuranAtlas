@@ -1,9 +1,12 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
 import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
+import { loadVerseAliases, type VerseAliases } from '../../data/verse-aliases'
 import { cn } from '../../design-system/utils/cn'
+import { mapSearchRefToReader, type SearchReaderRiwayah } from '../../search/result-mapping'
 import type { SearchResultDto } from '../../search/schema'
+import { openReactDb } from '../../storage/db'
 import type { SavedSearchRecord } from '../../storage/types'
 import { NavDrawer } from '../navigation/NavDrawer'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
@@ -21,14 +24,27 @@ export function SearchShell() {
   const saved = useSavedSearches()
   const { bookmarks, deleteBookmark } = useBookmarks()
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
+  const aliasesPromiseRef = useRef<Promise<VerseAliases> | null>(null)
   const compatibilityKey = useMemo(
     () => search.packVersion ? `qa-search-core-hafs-v1:${search.packVersion}:abi1:normalizer1` : 'search-pack-abi-1-normalizer-1',
     [search.packVersion],
   )
 
   function openInRead(result: SearchResultDto) {
-    if (!result.canOpenInRead || result.readerRefs.length !== 1) return
-    const [surah, ayah] = result.readerRefs[0].split(':').map(Number)
+    if (!result.canOpenInRead) return
+    void resolveOpenInRead(result)
+  }
+
+  async function resolveOpenInRead(result: SearchResultDto) {
+    const readerRiwayah = await readActiveReaderRiwayah()
+    const aliases = readerRiwayah === 'qaloon' ? await loadSearchAliases(aliasesPromiseRef) : {}
+    const mapping = mapSearchRefToReader({
+      aliases,
+      readerRiwayah,
+      sourceRef: result.sourceRef,
+    })
+    if (!mapping.canOpenInRead || mapping.readerRefs.length !== 1) return
+    const [surah, ayah] = mapping.readerRefs[0].split(':').map(Number)
     if (!Number.isInteger(surah) || !Number.isInteger(ayah)) return
     window.location.hash = REACT_ROUTES.surah(surah, ayah)
   }
@@ -131,6 +147,10 @@ export function SearchShell() {
                   <p className="qar-search-result-count">{search.resultCountMessage}</p>
                 ) : null}
                 <SearchResultList
+                  canLoadMore={search.canLoadMoreResults}
+                  emptyMessage={search.emptyResultMessage}
+                  hasMore={search.hasMoreResults}
+                  onLoadMore={search.loadMoreResults}
                   onOpenInRead={openInRead}
                   onSelect={search.setSelectedResult}
                   results={search.results}
@@ -149,4 +169,28 @@ export function SearchShell() {
       </main>
     </div>
   )
+}
+
+async function loadSearchAliases(ref: { current: Promise<VerseAliases> | null }): Promise<VerseAliases> {
+  ref.current ??= loadVerseAliases()
+    .then((value) => value.aliases)
+    .catch(() => {
+      ref.current = null
+      return {}
+    })
+  return ref.current
+}
+
+async function readActiveReaderRiwayah(): Promise<SearchReaderRiwayah> {
+  try {
+    const db = await openReactDb()
+    const setting = await db.settings.get('riwayah')
+    return isSupportedSearchReaderRiwayah(setting?.value) ? setting.value : 'qaloon'
+  } catch {
+    return 'qaloon'
+  }
+}
+
+function isSupportedSearchReaderRiwayah(value: unknown): value is SearchReaderRiwayah {
+  return value === 'qaloon' || value === 'hafs'
 }

@@ -53,7 +53,6 @@ graph LR
   src_search --> src_offline
   src_search --> src_search_worker
   src_search --> src_storage
-  src_search_worker --> src_data
   src_search_worker --> src_offline
   src_search_worker --> src_search
   src_search_worker --> src_storage
@@ -81,7 +80,7 @@ graph LR
 ### `src/data`
 
 - **Imports from:** `src/storage`
-- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/offline`, `src/packs`, `src/search`, `src/search-worker`
+- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/offline`, `src/packs`, `src/search`
 
 ### `src/design-system`
 
@@ -115,7 +114,7 @@ graph LR
 
 ### `src/search-worker`
 
-- **Imports from:** `src/data`, `src/offline`, `src/search`, `src/storage`
+- **Imports from:** `src/offline`, `src/search`, `src/storage`
 - **Imported by:** `src/search`
 
 ### `src/storage`

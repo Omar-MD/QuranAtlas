@@ -31,8 +31,8 @@ export function SearchSourcePanel({
         </div>
       </dl>
       <div className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-3">
-        <p className="qar:m-0">Search analysis currently uses a Hafs text source for word forms, roots, morphology, and wording patterns. The Reader opens verses in the Qalun text.</p>
-        <p className="qar:m-0">Open in Read always uses the verified Reader text.</p>
+        <p className="qar:m-0">Search analysis uses Hafs/Tanzil text for word forms, roots, morphology, and wording patterns.</p>
+        <p className="qar:m-0">Open in Read resolves the active Reader riwayah at click time and opens only a single safe Reader target.</p>
         <p className="qar:m-0">{SEARCH_WORDING_NOTE}</p>
         <p className="qar:m-0">Same-root matches are morphological aids. They do not mean the verses have the same interpretation.</p>
         <p className="qar:m-0">{SEARCH_SHARED_WORDING_NOTE}</p>

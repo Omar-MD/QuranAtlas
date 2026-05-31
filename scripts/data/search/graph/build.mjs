@@ -80,7 +80,7 @@ export function buildSearchGraphPayloads({
       kind: 'graph-provenance',
       policy,
       sourcePolicy,
-      sourceIds: ['search-hafs-text-kfgqpc-v1', 'search-qac-morphology-0-4'],
+      sourceIds: ['search-hafs-text-tanzil-v1', 'search-qac-morphology-0-4'],
       generatedFeatureIds: ['following-wording', 'shared-wording', 'repeated-phrases', 'occurs-once', 'ayah-endings', 'counts-patterns'],
     }],
   ]

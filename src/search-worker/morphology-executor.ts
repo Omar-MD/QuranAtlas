@@ -1,5 +1,4 @@
 import type { SearchMappingState, SearchQueryAstV1, SearchResultDto } from '../../shared/search'
-import type { VerseAliases } from '../data/verse-aliases'
 import {
   SEARCH_MORPHOLOGY_SOURCE_NOTE,
   type SearchMorphologyPostingRow,
@@ -8,19 +7,18 @@ import {
 } from '../search/morphology'
 import { SearchPackReader, SearchPackReaderError } from '../search/pack-reader'
 import type { SearchGraphRef, SearchMatchLane } from '../search/schema'
-import { mapSearchRefToReader } from '../search/result-mapping'
+import { mapSearchRefToSearchSource } from '../search/result-mapping'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
 
 export class SearchMorphologyExecutor {
   private readonly reader: SearchPackReader
-  private readonly aliases: VerseAliases
   private rowsByAyahIdPosition: Map<string, SearchMorphologyRow> | null = null
   private rowsBySourceToken: Map<string, SearchMorphologyRow[]> | null = null
   private postingCounts = new Map<string, Map<string, number>>()
 
-  constructor(reader: SearchPackReader, options: { aliases?: VerseAliases } = {}) {
+  constructor(reader: SearchPackReader, _options: { aliases?: unknown } = {}) {
+    void _options
     this.reader = reader
-    this.aliases = options.aliases ?? {}
   }
 
   async execute(query: SearchQueryAstV1, token: SearchCancellationToken): Promise<SearchResultDto[]> {
@@ -94,11 +92,7 @@ export class SearchMorphologyExecutor {
   }
 
   private async toResult(row: SearchMorphologyRow, lane: SearchMatchLane): Promise<SearchResultDto> {
-    const mapping = mapSearchRefToReader({
-      aliases: this.aliases,
-      readerRiwayah: 'qaloon',
-      sourceRef: row.ref as SearchGraphRef,
-    })
+    const mapping = mapSearchRefToSearchSource(row.ref as SearchGraphRef)
     const counts = await this.countsFor(row)
     return {
       resultId: `${this.reader.manifest.packId}:${row.ref}:${lane}:${row.tokenOrdinal}:${row.root ?? row.lemma ?? row.normalizedSourceToken}`,

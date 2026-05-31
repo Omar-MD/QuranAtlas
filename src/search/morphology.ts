@@ -1,7 +1,7 @@
 import type { SearchResultDto } from '../../shared/search'
 
 export const SEARCH_MORPHOLOGY_SOURCE_NOTE =
-  'Search analysis currently uses a Hafs text source for word forms, roots, morphology, and wording patterns. The Reader opens verses in the Qalun text.'
+  'Search analysis uses Hafs/Tanzil text for word forms, roots, morphology, and wording patterns. Open in Read resolves the active Reader riwayah at click time.'
 
 export const SEARCH_SAME_ROOT_NOTE =
   'Same-root matches are morphological aids. They do not mean the verses have the same interpretation.'

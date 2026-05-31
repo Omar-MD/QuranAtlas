@@ -1,0 +1,14 @@
+Tanzil Quran Text
+Copyright (C) 2007-2021 Tanzil Project
+License: Creative Commons Attribution 3.0
+
+QuranAtlas normalized Search source:
+- data/normalized/search/tanzil/hafs.json
+
+Source:
+- https://tanzil.net/download/
+- https://tanzil.net/docs/Text_License
+
+The normalized JSON is derived from Tanzil Hafs Uthmani and simple-clean
+numbered text downloads. It preserves one Hafs ayah row per Tanzil numbered
+ayah and is used only as the QuranAtlas Search corpus.

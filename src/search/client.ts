@@ -14,6 +14,11 @@ export interface SearchClientOptions {
   requestTimeoutMs?: number
 }
 
+export type SearchClientInitResult = {
+  packId: string
+  packVersion: string
+}
+
 export class SearchClient {
   private worker: Worker | null = null
   private sequence = 0
@@ -31,8 +36,12 @@ export class SearchClient {
     this.requestTimeoutMs = options.requestTimeoutMs ?? 15_000
   }
 
-  async init(packId = 'qa-search-core-hafs-v1'): Promise<void> {
-    await this.request({ type: 'init', requestId: this.nextRequestId(), packId })
+  async init(packId = 'qa-search-core-hafs-v1'): Promise<SearchClientInitResult> {
+    const response = await this.request({ type: 'init', requestId: this.nextRequestId(), packId })
+    if (response.type !== 'ok' || response.payload.kind !== 'initialized') {
+      throw new Error('Search worker returned a non-init response')
+    }
+    return { packId: response.packId, packVersion: response.packVersion }
   }
 
   async preloadCore(): Promise<void> {
@@ -91,18 +100,14 @@ export class SearchClient {
   async dispose(): Promise<void> {
     const worker = this.worker
     if (!worker) return
-    try {
-      await this.request({ type: 'dispose', requestId: this.nextRequestId() })
-    } finally {
-      worker.terminate()
-      this.worker = null
-      this.epoch += 1
-      for (const pending of this.pending.values()) {
-        clearTimeout(pending.timeout)
-        pending.reject(new Error('Search worker was disposed'))
-      }
-      this.pending.clear()
+    worker.terminate()
+    this.worker = null
+    this.epoch += 1
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timeout)
+      pending.reject(new Error('Search worker was disposed'))
     }
+    this.pending.clear()
   }
 
   private async request(request: SearchWorkerRequest): Promise<SearchWorkerResponse> {

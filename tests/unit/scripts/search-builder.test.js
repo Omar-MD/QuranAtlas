@@ -52,7 +52,7 @@ describe('Search pack builder', () => {
       'counts-patterns',
       'graph-provenance',
     ])
-    expect(pack.manifest.sourceIds).toEqual(['search-hafs-text-kfgqpc-v1', 'search-bridges-context-qul-v1', 'search-qac-morphology-0-4'])
+    expect(pack.manifest.sourceIds).toEqual(['search-hafs-text-tanzil-v1', 'search-bridges-context-qul-v1', 'search-qac-morphology-0-4'])
     expect(pack.manifest.normalizerVersion).toBe(1)
     expect(pack.manifest.queryAstVersion).toBe(1)
     expect(pack.manifest.shards.every((shard) => shard.byteLength <= pack.manifest.byteBudget.maxShardBytes)).toBe(true)

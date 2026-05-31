@@ -1,3 +1,5 @@
+import { canonicalAyahKey, compareAyahKeys } from '../../lib/ayah.mjs'
+
 const HAFS_COUNTS = [
   7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98,
   135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75,
@@ -15,7 +17,9 @@ export function normalizeQulTafsirEntries(source, options) {
   }
   const byId = new Map()
   for (const tafsir of source) {
-    const verses = Array.isArray(tafsir.verses) ? tafsir.verses : []
+    const verses = Array.isArray(tafsir.verses)
+      ? tafsir.verses.map((verseKey) => canonicalAyahKey(verseKey, 'QUL tafsir row verses'))
+      : []
     if (verses.length === 0) continue
     byId.set(verses[0], {
       id: verses[0],
@@ -27,9 +31,7 @@ export function normalizeQulTafsirEntries(source, options) {
     })
   }
   const entries = [...byId.values()].sort((a, b) => {
-    const [as, aa] = a.startKey.split(':').map(Number)
-    const [bs, ba] = b.startKey.split(':').map(Number)
-    return as - bs || aa - ba
+    return compareAyahKeys(a.startKey, b.startKey)
   })
   return {
     tafsirId: options.id,

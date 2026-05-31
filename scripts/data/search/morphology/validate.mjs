@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..')
-const HAFS_SOURCE_PATH = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat', 'hafs.json')
+const HAFS_SOURCE_PATH = join(REPO_ROOT, 'data', 'normalized', 'search', 'tanzil', 'hafs.json')
 const BRIDGES_SOURCE_PATH = join(REPO_ROOT, 'data', 'normalized', 'translations', 'bridges.json')
 const MAX_SHARD_BYTES = 4 * 1024 * 1024
 

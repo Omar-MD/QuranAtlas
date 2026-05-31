@@ -1,11 +1,11 @@
 [
   {
-    "id": "search-kfgqpc-hafs-text",
-    "label": "KFGQPC Hafs Quran text for Search analysis",
+    "id": "search-tanzil-hafs-text",
+    "label": "Tanzil Hafs Quran text for Search analysis",
     "status": "restricted",
-    "url": "https://qurancomplex.gov.sa/en/techquran/dev/",
+    "url": "https://tanzil.net/docs/Text_License",
     "noticeRequired": true,
-    "sourceAvailability": "Cataloged as build input for deterministic Hafs Search text; transformed Search packs must retain source id, checksum, and notice metadata."
+    "sourceAvailability": "Cataloged as the deterministic Hafs/Tanzil Search corpus; transformed Search packs must retain source id, checksum, Tanzil attribution, and a tanzil.net update link."
   },
   {
     "id": "search-qul-bridges-context",

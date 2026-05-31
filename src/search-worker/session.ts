@@ -5,7 +5,6 @@ import type {
   SearchPackManifestV1,
   SearchWorkerErrorCode,
 } from '../../shared/search'
-import { loadVerseAliases, type VerseAliases } from '../data/verse-aliases'
 import { openReactDb } from '../storage/db'
 import { SEARCH_PACK_ACTIVATION_ID } from '../offline/search/activation'
 import {
@@ -22,7 +21,7 @@ import { SearchShardCache } from './shard-cache'
 
 export interface SearchWorkerSessionOptions extends SearchPackReaderOptions {
   manifest?: SearchPackManifestV1
-  aliases?: VerseAliases
+  aliases?: unknown
 }
 
 export class SearchWorkerSession {
@@ -106,9 +105,8 @@ export class SearchWorkerSession {
   private async init(packId: string): Promise<void> {
     const manifest = this.options.manifest ?? await loadSearchPackManifestFromRegistry(packId, this.options)
     if (manifest.packId !== packId) throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} does not match active manifest`)
-    const aliases = this.options.aliases ?? await loadVerseAliases(this.options.fetcher).then((value) => value.aliases).catch(() => ({}))
     this.reader = new SearchPackReader(manifest, this.options)
-    this.executor = new SearchQueryExecutor(this.reader, { aliases })
+    this.executor = new SearchQueryExecutor(this.reader)
     this.graphExecutor = new SearchGraphExecutor(this.reader)
     this.shardCache = new SearchShardCache(manifest.byteBudget.maxResidentWorkerBytes)
     this.activeGeneration = await readActivationGeneration().catch(() => null)

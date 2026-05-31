@@ -1,12 +1,21 @@
 import type { SearchResultDto } from '../../search/schema'
+import { Button } from '../ui'
 import { SearchResultCard } from './SearchResultCard'
 
 export function SearchResultList({
+  canLoadMore,
+  emptyMessage,
+  hasMore,
+  onLoadMore,
   onOpenInRead,
   onSelect,
   results,
   selectedResultId,
 }: {
+  canLoadMore?: boolean
+  emptyMessage?: string
+  hasMore?: boolean
+  onLoadMore?: () => void
   onOpenInRead: (result: SearchResultDto) => void
   onSelect: (result: SearchResultDto) => void
   results: SearchResultDto[]
@@ -15,7 +24,7 @@ export function SearchResultList({
   if (results.length === 0) {
     return (
       <p className="qar-search-results-empty">
-        Enter a word, phrase, or ayah reference. Save only the searches you want to keep.
+        {emptyMessage ?? 'Enter a word, phrase, or ayah reference. Save only the searches you want to keep.'}
       </p>
     )
   }
@@ -30,6 +39,11 @@ export function SearchResultList({
           selected={result.resultId === selectedResultId}
         />
       ))}
+      {hasMore ? (
+        <Button disabled={!canLoadMore} onClick={onLoadMore} type="button" variant="secondary">
+          {canLoadMore ? 'Load more results' : 'Loading more results'}
+        </Button>
+      ) : null}
     </section>
   )
 }

@@ -36,7 +36,7 @@ test('@offline active Search pack supports the Search route without changing Rea
   try {
     await page.goto(targetUrl('react', '/#/search'))
     await expect(page.getByRole('main', { name: 'Search' })).toBeVisible()
-    await expect(page.getByText('Search data is ready on this device.')).toBeVisible()
+    await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
     await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
     await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
     await page.getByRole('button', { exact: true, name: 'Search' }).click()
@@ -67,7 +67,7 @@ test('@offline missing graph shard degrades only the Explore panel', async ({ pa
   await page.context().setOffline(true)
   try {
     await page.goto(targetUrl('react', '/#/search'))
-    await expect(page.getByText('Search data is ready on this device.')).toBeVisible()
+    await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
     await page.getByLabel('Search Quran text, translation, or context').fill('بسم الله')
     await page.getByRole('tab', { name: 'Search mode: Phrase' }).click()
     await page.getByRole('button', { exact: true, name: 'Search' }).click()

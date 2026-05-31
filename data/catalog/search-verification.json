@@ -1,18 +1,18 @@
 {
   "version": 1,
   "requiredSourceIds": [
-    "search-hafs-text-kfgqpc-v1",
+    "search-hafs-text-tanzil-v1",
     "search-bridges-context-qul-v1",
     "search-qac-morphology-0-4"
   ],
   "requiredLicenseIds": [
-    "search-kfgqpc-hafs-text",
+    "search-tanzil-hafs-text",
     "search-qul-bridges-context",
     "search-pack-metadata-quranatlas",
     "search-qac-gpl-v3-terms"
   ],
   "expectedCoverage": {
-    "search-hafs-text-kfgqpc-v1": {
+    "search-hafs-text-tanzil-v1": {
       "surahs": 114,
       "ayahs": 6236
     },

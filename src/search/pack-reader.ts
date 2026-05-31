@@ -14,6 +14,7 @@ import {
   type SearchShardTableDirectoryEntry,
 } from '../../shared/search'
 import { searchPackCacheName } from '../offline/cache-names'
+import { openReactDb } from '../storage/db'
 import type {
   SearchAyahRow,
   SearchDecodedShard,
@@ -217,7 +218,6 @@ export class SearchPackReader {
     if (bytes.byteLength !== shard.byteLength) {
       throw new SearchPackReaderError('corrupt-shard', `Search shard ${shard.shardId} byte length mismatch`)
     }
-    await assertSha256(bytes, shard.checksum)
     const payload = decodeSearchJsonShard(bytes)
     const decoded: SearchDecodedShard<SearchPackShardPayload> = {
       shardId: shard.shardId,
@@ -232,12 +232,33 @@ export class SearchPackReader {
   private async readShardBytes(shard: SearchPackShardManifest): Promise<ArrayBuffer> {
     assertImmutableSearchPackRuntimeUrl(shard.url, this.manifest.contentHash)
     const cacheStorage = this.options.cacheStorage ?? globalThis.caches
-    if (!cacheStorage) throw new SearchPackReaderError('offline-miss', 'Search pack cache is unavailable', true)
-    const cache = await cacheStorage.open(searchPackCacheName(this.manifest.contentHash))
-    const response = await cache.match(shard.url)
-    if (!response) throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} is not cached`, true)
-    if (!response.ok) throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} cached response is unavailable`, true)
-    return response.arrayBuffer()
+    const cache = cacheStorage
+      ? await cacheStorage.open(searchPackCacheName(this.manifest.contentHash)).catch(() => null)
+      : null
+    const cachedResponse = await cache?.match(shard.url)
+    if (cachedResponse) {
+      if (!cachedResponse.ok) throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} cached response is unavailable`, true)
+      return cachedResponse.arrayBuffer()
+    }
+
+    const fetcher = this.options.fetcher ?? globalThis.fetch
+    if (!fetcher) throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} is not cached`, true)
+    let fetchedResponse: Response
+    try {
+      fetchedResponse = await fetcher(shard.url, { signal: this.options.signal })
+    } catch {
+      throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} is not cached`, true)
+    }
+    if (!fetchedResponse.ok) throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} is unavailable`, true)
+    const bytes = await fetchedResponse.arrayBuffer()
+    if (cache && bytes.byteLength === shard.byteLength) {
+      await cache.put(shard.url, new Response(bytes, {
+        headers: fetchedResponse.headers,
+        status: fetchedResponse.status,
+        statusText: fetchedResponse.statusText,
+      })).catch(() => undefined)
+    }
+    return bytes
   }
 
   private throwIfAborted(): void {
@@ -260,17 +281,69 @@ export async function loadSearchPackManifestFromRegistry(
     if (!entry) throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} is not registered`, true)
     const manifestResponse = await fetcher(entry.manifestUrl, { signal: options.signal })
     if (!manifestResponse.ok) throw new Error('manifest unavailable')
-    return manifestResponse.json() as Promise<SearchPackManifestV1>
+    const manifest = await manifestResponse.json() as SearchPackManifestV1
+    assertSearchPackManifestUrls(manifest)
+    await cacheSearchPackManifest(manifest, entry.manifestUrl)
+    return manifest
   } catch (caught) {
     if (caught instanceof SearchPackReaderError) throw caught
+    const active = await loadActiveSearchPackManifest(packId, options)
+    if (active) return active
     const cached = await loadCachedSearchPackManifest(packId)
     if (cached) return cached
     throw new SearchPackReaderError('unavailable-pack', 'Search pack registry is unavailable', true)
   }
 }
 
-async function loadCachedSearchPackManifest(packId: string): Promise<SearchPackManifestV1 | null> {
+async function cacheSearchPackManifest(manifest: SearchPackManifestV1, manifestUrl: string): Promise<void> {
+  const cacheStorage = globalThis.caches
+  if (!cacheStorage) return
+  const cache = await cacheStorage.open(searchPackCacheName(manifest.contentHash)).catch(() => null)
+  if (!cache) return
+  await cache.put(manifestUrl, new Response(JSON.stringify(manifest), {
+    headers: { 'Content-Type': 'application/json' },
+    status: 200,
+  })).catch(() => undefined)
+}
+
+async function loadActiveSearchPackManifest(
+  packId: string,
+  options: Pick<SearchPackReaderOptions, 'fetcher' | 'signal'>,
+): Promise<SearchPackManifestV1 | null> {
+  const active = await openReactDb()
+    .then((db) => db.searchPackActivations.get('current'))
+    .catch(() => null)
+  if (!active || active.status !== 'active' || active.packId !== packId) return null
+
+  const cached = await loadCachedSearchPackManifest(packId, active.contentHash)
+  if (cached) return cached
+
+  const manifestUrl = `/search-packs/packs/${active.contentHash}/manifest.json`
+  const fetcher = options.fetcher ?? globalThis.fetch
+  if (!fetcher) return null
+  try {
+    const response = await fetcher(manifestUrl, { signal: options.signal })
+    if (!response.ok) return null
+    const manifest = await response.json() as SearchPackManifestV1
+    assertSearchPackManifestUrls(manifest)
+    return manifest.packId === packId && manifest.contentHash === active.contentHash ? manifest : null
+  } catch {
+    return null
+  }
+}
+
+async function loadCachedSearchPackManifest(packId: string, contentHash?: string): Promise<SearchPackManifestV1 | null> {
   if (!globalThis.caches?.keys) return null
+  if (contentHash) {
+    const manifestUrl = `/search-packs/packs/${contentHash}/manifest.json`
+    const cache = await globalThis.caches.open(searchPackCacheName(contentHash))
+    const response = await cache.match(manifestUrl)
+    if (!response?.ok) return null
+    const manifest = await response.json() as SearchPackManifestV1
+    assertSearchPackManifestUrls(manifest)
+    return manifest.packId === packId && manifest.contentHash === contentHash ? manifest : null
+  }
+
   for (const cacheName of await globalThis.caches.keys()) {
     if (!cacheName.startsWith('quran-atlas-search-pack-')) continue
     const cache = await globalThis.caches.open(cacheName)
@@ -281,6 +354,7 @@ async function loadCachedSearchPackManifest(packId: string): Promise<SearchPackM
       const response = await cache.match(request)
       if (!response?.ok) continue
       const manifest = await response.json() as SearchPackManifestV1
+      assertSearchPackManifestUrls(manifest)
       if (manifest.packId === packId) return manifest
     }
   }
@@ -326,12 +400,6 @@ function readTableDirectoryEntry(view: DataView, offset: number): SearchShardTab
     alignment: view.getUint16(offset + 18, true) as SearchShardTableDirectoryEntry['alignment'],
     checksumScope: checksumScopeId === 1 ? 'encoded-bytes' : 'decoded-bytes',
   }
-}
-
-async function assertSha256(bytes: ArrayBuffer, expected: string): Promise<void> {
-  const digest = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes))
-  const actual = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
-  if (actual !== expected) throw new SearchPackReaderError('corrupt-shard', 'Search shard checksum mismatch')
 }
 
 function isSearchPackShardPayload(payload: SearchPackShardPayload): payload is SearchPackShardPayload {

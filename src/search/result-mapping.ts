@@ -3,6 +3,8 @@ import type { Riwayah } from '../storage/types'
 import type { SearchMappingAsset, SearchMappingState, SearchReaderRef } from '../../shared/search'
 import type { SearchGraphRef } from './schema'
 
+export type SearchReaderRiwayah = Riwayah | 'hafs'
+
 export interface SearchResultMapping {
   sourceRef: SearchGraphRef
   readerRefs: SearchGraphRef[]
@@ -13,19 +15,46 @@ export interface SearchResultMapping {
   reason: string
 }
 
+export function mapSearchRefToSearchSource(sourceRef: SearchGraphRef): SearchResultMapping {
+  return {
+    sourceRef,
+    readerRefs: [],
+    mappingState: 'hafs-source-only',
+    canOpenInRead: true,
+    canHighlightWordsInRead: false,
+    openInReadUrl: null,
+    reason: 'Search result is preserved in the Hafs Search source until Open in Read resolves the active Reader target',
+  }
+}
+
 export function mapSearchRefToReader({
   aliases,
   readerRiwayah,
   sourceRef,
 }: {
   aliases: VerseAliases
-  readerRiwayah: Riwayah
+  readerRiwayah: SearchReaderRiwayah
   sourceRef: SearchGraphRef
 }): SearchResultMapping {
   const [surahText, ayahText] = sourceRef.split(':')
   const surah = Number(surahText)
   const ayah = Number(ayahText)
-  const alias = aliases[String(surah)]?.find((entry) => entry.hafs === ayah)
+  if (!Number.isInteger(surah) || !Number.isInteger(ayah)) {
+    return sourceOnly(sourceRef, 'Search source reference is not a valid ayah reference')
+  }
+
+  if (readerRiwayah === 'hafs') {
+    return readerIdentity(sourceRef, surah, ayah, 'Hafs Reader can open the Hafs Search source reference directly')
+  }
+
+  const surahAliases = aliases[String(surah)]
+  if (!surahAliases) {
+    return hasLoadedAliases(aliases)
+      ? readerIdentity(sourceRef, surah, ayah, 'This surah is omitted from the Hafs-to-Qalun alias table because its ayah boundaries are identity-mapped')
+      : sourceOnly(sourceRef, 'Reader alias data is not available for this Search result')
+  }
+
+  const alias = surahAliases.find((entry) => entry.hafs === ayah)
   if (!alias) {
     return sourceOnly(sourceRef, 'No explicit Hafs-to-Reader ayah alignment is available for this Search result')
   }
@@ -64,6 +93,10 @@ export function mappingAssetToResultMapping(asset: SearchMappingAsset): SearchRe
   }
 }
 
+function hasLoadedAliases(aliases: VerseAliases): boolean {
+  return Object.keys(aliases).length > 0
+}
+
 function stateForAlias(
   alias: VerseAlias,
   riwayah: Riwayah,
@@ -73,6 +106,18 @@ function stateForAlias(
   if (readerAyahs.length > 1) return 'different-ayah-boundary'
   if (readerAyahs[0] === sourceAyah && alias[riwayah] !== null) return 'same-wording-in-reader'
   return 'corresponding-ayah-in-reader'
+}
+
+function readerIdentity(sourceRef: SearchGraphRef, surah: number, ayah: number, reason: string): SearchResultMapping {
+  return {
+    sourceRef,
+    readerRefs: [sourceRef],
+    mappingState: 'same-wording-in-reader',
+    canOpenInRead: true,
+    canHighlightWordsInRead: false,
+    openInReadUrl: `#/s/${surah}/${ayah}`,
+    reason,
+  }
 }
 
 function reasonForMapping(state: SearchMappingState): string {

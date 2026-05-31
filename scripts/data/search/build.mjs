@@ -23,7 +23,9 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
-const HAFS_SOURCE_PATH = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat', 'hafs.json')
+const HAFS_SEARCH_SOURCE_ID = 'search-hafs-text-tanzil-v1'
+const HAFS_SEARCH_LICENSE_ID = 'search-tanzil-hafs-text'
+const HAFS_SOURCE_PATH = join(REPO_ROOT, 'data', 'normalized', 'search', 'tanzil', 'hafs.json')
 const BRIDGES_SOURCE_PATH = join(REPO_ROOT, 'data', 'normalized', 'translations', 'bridges.json')
 const SEARCH_PACK_ROOT = join(REPO_ROOT, 'public', 'search-packs')
 const PACKS_ROOT = join(SEARCH_PACK_ROOT, 'packs')
@@ -42,7 +44,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
   }
 
   const sourceDigests = {
-    'search-hafs-text-kfgqpc-v1': await fileSha256(HAFS_SOURCE_PATH),
+    [HAFS_SEARCH_SOURCE_ID]: await fileSha256(HAFS_SOURCE_PATH),
     'search-bridges-context-qul-v1': await fileSha256(BRIDGES_SOURCE_PATH),
   }
   const postings = await buildSearchCorePostings({
@@ -169,7 +171,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     ],
     requires: ['core-references', 'core-dictionaries', ...MORPHOLOGY_REQUIRED_SHARDS, ...GRAPH_REQUIRED_SHARDS],
     compatibleWith: ['quranatlas-search-phase-1', 'quranatlas-search-phase-2', 'quranatlas-search-phase-3'],
-    licenseIds: ['search-kfgqpc-hafs-text', 'search-qul-bridges-context', 'search-pack-metadata-quranatlas', 'search-qac-gpl-v3-terms'],
+    licenseIds: [HAFS_SEARCH_LICENSE_ID, 'search-qul-bridges-context', 'search-pack-metadata-quranatlas', 'search-qac-gpl-v3-terms'],
     sourceIds: Object.keys(sourceDigests),
     normalizerVersion: SEARCH_NORMALIZER_VERSION,
     queryAstVersion: SEARCH_QUERY_AST_VERSION,
@@ -186,9 +188,9 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
       {
         id: 'search-source-note',
         label: 'Search source note',
-        body: 'Search analysis currently uses a Hafs text source for word forms, roots, morphology, and wording patterns. The Reader opens verses in the Qalun text.',
-        sourceId: 'search-hafs-text-kfgqpc-v1',
-        licenseId: 'search-kfgqpc-hafs-text',
+        body: 'Search uses Hafs/Tanzil text as its Search corpus for word forms, roots, morphology, and wording patterns. Reader mapping happens only when the user chooses Open in Read, and only when the Reader is using Qalun/Qaloon text.',
+        sourceId: HAFS_SEARCH_SOURCE_ID,
+        licenseId: HAFS_SEARCH_LICENSE_ID,
       },
       {
         id: 'search-trust-note',

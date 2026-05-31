@@ -38,7 +38,7 @@ export function mappingLabel(state: SearchMappingState): string {
     case 'no-reader-token-alignment':
       return 'No Reader token alignment'
     case 'hafs-source-only':
-      return 'Hafs source only'
+      return 'Hafs Search source'
   }
 }
 

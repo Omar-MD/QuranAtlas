@@ -31,6 +31,14 @@ vi.mock('../../../src/components/search/useSavedSearches', () => ({
   useSavedSearches: () => mockSaved,
 }))
 
+vi.mock('../../../src/storage/db', () => ({
+  openReactDb: vi.fn(async () => ({
+    settings: {
+      get: vi.fn(async (key: string) => (key === 'riwayah' ? { value: 'hafs' } : undefined)),
+    },
+  })),
+}))
+
 import { SearchShell } from '../../../src/components/search/SearchShell'
 
 function result(overrides: Partial<SearchResultDto> = {}): SearchResultDto {
@@ -53,6 +61,7 @@ function result(overrides: Partial<SearchResultDto> = {}): SearchResultDto {
 function routeState(overrides: Partial<SearchRouteState> = {}): SearchRouteState {
   return {
     error: null,
+    emptyResultMessage: 'Enter a word, phrase, or ayah reference. Save only the searches you want to keep.',
     mode: 'all',
     packMessage: 'Search data is ready on this device.',
     packState: 'active',
@@ -62,8 +71,11 @@ function routeState(overrides: Partial<SearchRouteState> = {}): SearchRouteState
     results: [],
     searchStatus: 'Search data is ready on this device.',
     selectedResult: null,
+    hasMoreResults: false,
+    canLoadMoreResults: false,
     exploreGraph: { error: null, loading: false, resultId: null, sections: [] },
     loadExploreGraph: vi.fn(),
+    loadMoreResults: vi.fn(),
     setMode: vi.fn(),
     setQuery: vi.fn(),
     setSelectedResult: vi.fn(),
@@ -95,9 +107,9 @@ describe('Search route UI', () => {
     expect(screen.getByLabelText('Search Quran text, translation, or context')).toHaveAttribute('placeholder', 'Search...')
     expect(screen.getByRole('tab', { name: 'Search mode: Exact word form' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Search mode: Same root' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open 2:255 in Read' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open in Read' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('tab', { name: 'Source' }))
-    expect(screen.getByText(/Search analysis currently uses a Hafs text source/i)).toBeInTheDocument()
+    expect(screen.getByText(/Search analysis uses Hafs\/Tanzil text/i)).toBeInTheDocument()
     expect(screen.getByText(/Same-root matches are morphological aids/i)).toBeInTheDocument()
     expect(screen.getByText(SEARCH_WORDING_NOTE)).toBeInTheDocument()
     expect(screen.getByText(SEARCH_SHARED_WORDING_NOTE)).toBeInTheDocument()
@@ -111,7 +123,7 @@ describe('Search route UI', () => {
       matchLanes: ['same-root'],
       canHighlightWordsInRead: false,
       morphology: {
-        sourceNote: 'Search analysis currently uses a Hafs text source for word forms, roots, morphology, and wording patterns. The Reader opens verses in the Qalun text.',
+        sourceNote: 'Search analysis uses Hafs/Tanzil text for word forms, roots, morphology, and wording patterns. Open in Read resolves the active Reader riwayah at click time.',
         root: 'Alh',
         lemma: '{ll~ah',
         sourceToken: 'الله',
@@ -247,9 +259,9 @@ describe('Search route UI', () => {
 
     render(<SearchShell />)
 
-    expect(screen.queryByRole('button', { name: /Open .* in Read/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Open in Read' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument()
-    expect(screen.getByText('Hafs source only')).toBeInTheDocument()
+    expect(screen.getByText('Hafs Search source')).toBeInTheDocument()
   })
 
   it('navigates to Read only through a validated single Reader ref', async () => {
@@ -257,7 +269,7 @@ describe('Search route UI', () => {
     mockUseSearchRouteState.mockReturnValue(routeState({ results: [selected], selectedResult: selected }))
 
     render(<SearchShell />)
-    await userEvent.click(screen.getByRole('button', { name: 'Open 2:255 in Read' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
 
     expect(window.location.hash).toBe('#/s/2/255')
   })

@@ -23,5 +23,10 @@
     "id": "quranic-arabic-corpus",
     "label": "Quranic Arabic Corpus",
     "url": "https://corpus.quran.com"
+  },
+  {
+    "id": "tanzil",
+    "label": "Tanzil Project",
+    "url": "https://tanzil.net"
   }
 ]

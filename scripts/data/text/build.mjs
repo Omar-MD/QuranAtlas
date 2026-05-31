@@ -26,7 +26,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { pad3, parseAyahKey } from '../lib/ayah.mjs'
+import { canonicalAyahKey, canonicalSurahKey, formatAyahKey, pad3, parseAyahKey } from '../lib/ayah.mjs'
 import { cleanPackDirs } from '../lib/fs.mjs'
 import { buildManifestPayload } from '../manifest/inventory.mjs'
 import { loadSourceCatalog, validateSourceCatalog } from '../sources/catalog.mjs'
@@ -335,9 +335,17 @@ function stripTrailingAyaNumber(text, ayaNo) {
  */
 export function splitRiwayah(riwayah, ayat) {
   const grouped = {}
-  for (const a of ayat) {
-    const suraNo = a.sura_no ?? a.sora
-    const key = pad3(suraNo)
+  const seenRefs = new Set()
+  for (const [index, a] of ayat.entries()) {
+    const parsedRef = parseAyahKey({
+      surah: a.sura_no ?? a.sora,
+      ayah: a.aya_no,
+    }, `${riwayah} source row[${index}]`)
+    const { surah: suraNo, ayah: ayaNo, key: ref, surahKey: key } = parsedRef
+    if (seenRefs.has(ref)) {
+      throw new Error(`${riwayah} source duplicate ayah ref ${ref}`)
+    }
+    seenRefs.add(ref)
     if (!grouped[key]) {
       grouped[key] = {
         riwayah,
@@ -353,8 +361,8 @@ export function splitRiwayah(riwayah, ayat) {
     const ayah = {
       jozz: a.jozz,
       page: a.page,
-      aya_no: a.aya_no,
-      aya_text: stripTrailingAyaNumber(a.aya_text, a.aya_no),
+      aya_no: ayaNo,
+      aya_text: stripTrailingAyaNumber(a.aya_text, ayaNo),
     }
     if (riwayah === 'hafs') {
       ayah.id = a.id
@@ -362,6 +370,15 @@ export function splitRiwayah(riwayah, ayat) {
       ayah.line_end = a.line_end
     }
     grouped[key].ayat.push(ayah)
+  }
+  for (const [surahKey, payload] of Object.entries(grouped)) {
+    payload.ayat.sort((a, b) => a.aya_no - b.aya_no)
+    payload.ayat.forEach((ayah, index) => {
+      const expected = index + 1
+      if (ayah.aya_no !== expected) {
+        throw new Error(`${riwayah} source surah ${surahKey} ayah refs must be contiguous from 1; expected ${expected}, got ${ayah.aya_no}`)
+      }
+    })
   }
   return grouped
 }
@@ -399,16 +416,16 @@ export function buildTranslationSplits(rawSource, expectedHafsCounts, options = 
   if (!rawSource || typeof rawSource !== 'object' || !rawSource.surahs) {
     throw new Error('translation raw source missing `surahs`')
   }
-  const ids = Object.keys(rawSource.surahs)
-  if (ids.length !== 114) {
-    throw new Error(`translation has ${ids.length} surahs, expected 114`)
+  const sourceSurahs = canonicalizeSourceSurahs(rawSource.surahs, 'translation')
+  if (sourceSurahs.size !== 114) {
+    throw new Error(`translation has ${sourceSurahs.size} surahs, expected 114`)
   }
   const perSurah = {}
   let totalVerses = 0
   let totalFootnotes = 0
   for (let n = 1; n <= 114; n++) {
-    const key = pad3(n)
-    const src = rawSource.surahs[key]
+    const key = canonicalSurahKey(n)
+    const src = sourceSurahs.get(key)
     if (!src) {
       throw new Error(`translation missing surah ${key}`)
     }
@@ -417,8 +434,9 @@ export function buildTranslationSplits(rawSource, expectedHafsCounts, options = 
       throw new Error(`translation surah ${key} verse count ${src.verses?.length} != Hafs ${expected}`)
     }
     for (let i = 0; i < src.verses.length; i++) {
-      const expectedKey = `${n}:${i + 1}`
-      if (src.verses[i].key !== expectedKey) {
+      const expectedKey = formatAyahKey(n, i + 1)
+      const verseKey = canonicalAyahKey(src.verses[i].key, `translation surah ${key} verse[${i}].key`)
+      if (verseKey !== expectedKey) {
         throw new Error(`translation surah ${key} verse[${i}].key=${src.verses[i].key} expected ${expectedKey}`)
       }
       if (typeof src.verses[i].text !== 'string') {
@@ -453,7 +471,7 @@ export function buildTranslationSplits(rawSource, expectedHafsCounts, options = 
       translationVersion: rawSource.translationVersion,
       surahNo: n,
       intro: Array.isArray(src.intro) ? src.intro : [],
-      verses: src.verses.map((v) => ({ key: v.key, text: v.text })),
+      verses: src.verses.map((v) => ({ key: canonicalAyahKey(v.key), text: v.text })),
       footnotes: { ...src.footnotes },
     }
     totalVerses += src.verses.length
@@ -462,21 +480,53 @@ export function buildTranslationSplits(rawSource, expectedHafsCounts, options = 
   return { perSurah, totals: { verses: totalVerses, footnotes: totalFootnotes } }
 }
 
+function canonicalizeSourceSurahs(sourceSurahs, label) {
+  if (!sourceSurahs || typeof sourceSurahs !== 'object' || Array.isArray(sourceSurahs)) {
+    throw new Error(`${label} raw source missing surah object`)
+  }
+  const canonical = new Map()
+  const rawKeys = new Map()
+  for (const [rawKey, value] of Object.entries(sourceSurahs)) {
+    const key = canonicalSurahKey(rawKey, `${label} surah key ${rawKey}`)
+    const previousRawKey = rawKeys.get(key)
+    if (previousRawKey !== undefined) {
+      throw new Error(`${label} duplicate surah key ${rawKey}; ${previousRawKey} also canonicalizes to ${key}`)
+    }
+    canonical.set(key, value)
+    rawKeys.set(key, rawKey)
+  }
+  return canonical
+}
+
 export function normalizeQulTafsir(tafsirId, rawSource, options = {}) {
   if (!rawSource || typeof rawSource !== 'object' || Array.isArray(rawSource)) {
     throw new Error('QUL tafsir source must be an object')
   }
   const entries = []
-  for (const [key, value] of Object.entries(rawSource)) {
-    if (typeof value === 'string') continue
+  const seenEntryIds = new Set()
+  for (const [rawKey, value] of Object.entries(rawSource)) {
+    const key = canonicalAyahKey(rawKey, `QUL tafsir key ${rawKey}`)
+    if (typeof value === 'string') {
+      canonicalAyahKey(value, `QUL tafsir pointer ${rawKey}`)
+      continue
+    }
     if (!value || typeof value !== 'object') {
       throw new Error(`QUL tafsir ${key} must be an object or group pointer`)
     }
-    const ayahKeys = Array.isArray(value.ayah_keys) ? value.ayah_keys : [key]
+    if (seenEntryIds.has(key)) {
+      throw new Error(`QUL tafsir duplicate ayah ref ${key}`)
+    }
+    seenEntryIds.add(key)
+    const ayahKeys = Array.isArray(value.ayah_keys)
+      ? value.ayah_keys.map((ayahKey) => canonicalAyahKey(ayahKey, `QUL tafsir ${key} ayah_keys`))
+      : [key]
     if (ayahKeys.length === 0) {
       throw new Error(`QUL tafsir ${key} has no ayah_keys`)
     }
-    for (const ayahKey of ayahKeys) parseAyahKey(ayahKey)
+    const duplicateAyahKeys = ayahKeys.filter((ayahKey, index) => ayahKeys.indexOf(ayahKey) !== index)
+    if (duplicateAyahKeys.length > 0) {
+      throw new Error(`QUL tafsir ${key} duplicate ayah refs: ${duplicateAyahKeys.join(',')}`)
+    }
     entries.push({
       id: key,
       startKey: ayahKeys[0],
@@ -504,9 +554,33 @@ export function buildTafsirSplits(normalizedSource) {
     throw new Error('normalized tafsir source missing entries')
   }
   const perSurah = {}
-  for (const entry of normalizedSource.entries) {
-    const { surah } = parseAyahKey(entry.startKey)
-    const key = pad3(surah)
+  const seenEntryIds = new Set()
+  const seenAyahKeys = new Set()
+  for (const [index, entry] of normalizedSource.entries.entries()) {
+    const id = canonicalAyahKey(entry.id, `normalized tafsir entry[${index}].id`)
+    if (seenEntryIds.has(id)) {
+      throw new Error(`normalized tafsir duplicate entry id ${id}`)
+    }
+    seenEntryIds.add(id)
+    const startKey = canonicalAyahKey(entry.startKey, `normalized tafsir entry[${index}].startKey`)
+    const endKey = canonicalAyahKey(entry.endKey, `normalized tafsir entry[${index}].endKey`)
+    const ayahKeys = Array.isArray(entry.ayahKeys)
+      ? entry.ayahKeys.map((ayahKey) => canonicalAyahKey(ayahKey, `normalized tafsir entry[${index}].ayahKeys`))
+      : []
+    if (ayahKeys.length === 0) {
+      throw new Error(`normalized tafsir entry ${id} has no ayahKeys`)
+    }
+    if (startKey !== ayahKeys[0] || endKey !== ayahKeys[ayahKeys.length - 1]) {
+      throw new Error(`normalized tafsir entry ${id} start/end keys do not match ayahKeys range`)
+    }
+    for (const ayahKey of ayahKeys) {
+      if (seenAyahKeys.has(ayahKey)) {
+        throw new Error(`normalized tafsir duplicate ayah ref ${ayahKey}`)
+      }
+      seenAyahKeys.add(ayahKey)
+    }
+    const { surah } = parseAyahKey(startKey)
+    const key = canonicalSurahKey(surah)
     if (!perSurah[key]) {
       perSurah[key] = {
         tafsirId: normalizedSource.tafsirId,
@@ -517,10 +591,10 @@ export function buildTafsirSplits(normalizedSource) {
       }
     }
     perSurah[key].entries.push({
-      id: entry.id,
-      startKey: entry.startKey,
-      endKey: entry.endKey,
-      ayahKeys: entry.ayahKeys,
+      id,
+      startKey,
+      endKey,
+      ayahKeys,
       sourceGranularity: entry.sourceGranularity,
       text: entry.text,
     })
@@ -650,20 +724,20 @@ export function computeTranslationCoverage(translationPerSurah, splitsByRiwayah,
       if (!surah) { throw new Error(`coverage: ${r} missing surah ${key}`) }
       const transSurah = translationPerSurah[key]
       if (!transSurah) { throw new Error(`coverage: translation missing surah ${key}`) }
-      const transKeys = new Set(transSurah.verses.map((v) => v.key))
+      const transKeys = new Set(transSurah.verses.map((v) => canonicalAyahKey(v.key, `coverage translation surah ${key}`)))
       // Build inverse alias lookup for this surah & riwayah: Madinan ayah →
       // [Hafs ayah]. Hafs is identity. Surahs without aliases fall through
       // to identity.
       const surahAliases = verseAliases?.aliases?.[String(n)]
       const resolveHafsKeys = (ayaNo) => {
-        if (r === 'hafs' || !surahAliases) { return [`${n}:${ayaNo}`] }
+        if (r === 'hafs' || !surahAliases) { return [formatAyahKey(n, ayaNo)] }
         const hits = []
         for (const entry of surahAliases) {
           const target = entry[r]
           if (target === ayaNo) { hits.push(entry.hafs) }
           else if (Array.isArray(target) && target.includes(ayaNo)) { hits.push(entry.hafs) }
         }
-        return hits.map((h) => `${n}:${h}`)
+        return hits.map((h) => formatAyahKey(n, h))
       }
       let surahCovered = 0
       for (const ayah of surah.ayat) {

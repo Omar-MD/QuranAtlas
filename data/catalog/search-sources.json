@@ -1,15 +1,15 @@
 [
   {
-    "id": "search-hafs-text-kfgqpc-v1",
+    "id": "search-hafs-text-tanzil-v1",
     "type": "search-text",
-    "label": "Hafs Quran text for Search analysis",
-    "providerId": "kfgqpc",
-    "licenseId": "search-kfgqpc-hafs-text",
+    "label": "Tanzil Hafs Quran text for Search analysis",
+    "providerId": "tanzil",
+    "licenseId": "search-tanzil-hafs-text",
     "visibility": "internal",
     "sourceRiwayah": "hafs",
-    "sourceUrl": "data/normalized/quran/riwayat/hafs.json",
+    "sourceUrl": "data/normalized/search/tanzil/hafs.json",
     "outputPath": "search-packs/packs/{contentHash}/core/hafs-text.qas",
-    "expectedVersion": "normalized-hafs-v1",
+    "expectedVersion": "tanzil-hafs-v1.1",
     "coverage": {
       "surahs": 114,
       "ayahs": 6236,
@@ -20,8 +20,8 @@
       "algorithm": "sha-256",
       "accepted": ["normalized-source-checksum-bound-at-build"]
     },
-    "sourceAvailability": "Committed normalized Hafs source under data/normalized is build-only input. Search packs carry source id and build input digest metadata.",
-    "transformedDataNotes": "Used for deterministic Search analysis text only; Reader text remains Qalun/Qaloon."
+    "sourceAvailability": "Search requires a committed normalized Hafs/Tanzil source at data/normalized/search/tanzil/hafs.json, produced by scripts/data/search/tanzil/import.mjs from Tanzil numbered Uthmani and simple-clean text. Search packs carry source id, build input digest, attribution, and update-link metadata.",
+    "transformedDataNotes": "Used as the deterministic Search corpus only. Reader Qalun/Qaloon text is reached only through explicit Open in Read mapping when the Reader is using Qalun/Qaloon."
   },
   {
     "id": "search-bridges-context-qul-v1",
@@ -79,6 +79,6 @@
       "sourceAvailabilityRequired": true
     },
     "sourceAvailability": "The approved QAC 0.4 source is committed verbatim at data/normalized/search/qac/quranic-corpus-morphology-0.4.txt with the upstream copyright block preserved. The official QAC download page remains the source of truth for updates.",
-    "transformedDataNotes": "Morphology-derived Search outputs retain the QAC source id, accepted checksum, GPL notice metadata, and Hafs-source analysis warnings."
+    "transformedDataNotes": "Morphology-derived Search outputs retain the QAC source id, accepted checksum, GPL notice metadata, and Hafs-source analysis warnings. QAC cites Tanzil compatibility, but QAC remains the morphology source and is not the Search text corpus."
   }
 ]

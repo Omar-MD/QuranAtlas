@@ -20,7 +20,7 @@ describe('Search morphology worker runtime', () => {
       canHighlightWordsInRead: false,
       matchLanes: ['same-written-form'],
       morphology: {
-        sourceNote: expect.stringContaining('Hafs text source'),
+        sourceNote: expect.stringContaining('Hafs/Tanzil text'),
         root: 'Alh',
         lemma: '{ll~ah',
         sourceToken: 'الله',

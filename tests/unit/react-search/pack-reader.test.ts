@@ -10,13 +10,20 @@ describe('Search pack reader', () => {
     await expect(reader.findAyah('2:255')).resolves.toMatchObject({ arabicText: 'الله لا اله الا هو' })
   })
 
-  it('rejects corrupt shard checksums and offline misses', async () => {
+  it('does not runtime-hash shards but rejects size mismatches and offline misses', async () => {
     const { cacheStorage, manifest } = await createFixturePack()
     const reader = new SearchPackReader({
       ...manifest,
       shards: [{ ...manifest.shards[0]!, checksum: '0'.repeat(64) }],
     }, { cacheStorage })
-    await expect(reader.loadShard('core-references')).rejects.toMatchObject({ code: 'corrupt-shard' })
+    await expect(reader.loadShard('core-references')).resolves.toMatchObject({ shardId: 'core-references' })
+
+    const wrongSizePack = await createFixturePack()
+    const wrongSizeReader = new SearchPackReader({
+      ...wrongSizePack.manifest,
+      shards: [{ ...wrongSizePack.manifest.shards[0]!, byteLength: wrongSizePack.manifest.shards[0]!.byteLength + 1 }],
+    }, { cacheStorage: wrongSizePack.cacheStorage })
+    await expect(wrongSizeReader.loadShard('core-references')).rejects.toMatchObject({ code: 'corrupt-shard' })
 
     const emptyReader = new SearchPackReader(manifest, { cacheStorage: new MemoryCacheStorage() })
     await expect(emptyReader.loadShard('core-references')).rejects.toMatchObject({ code: 'offline-miss' })
