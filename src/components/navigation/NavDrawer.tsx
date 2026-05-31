@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from 'react'
-import { BookOpen, Info, Search, X } from 'lucide-react'
+import { BookOpen, Info, Search as SearchIcon, X } from 'lucide-react'
 
+import { REACT_ROUTES } from '../../app/router/routes'
 import type { JuzIndexEntry } from '../../data/juz-index'
 import { loadReaderSurahIndex } from '../../data/surah-index'
 import { openReactDb } from '../../storage/db'
@@ -248,6 +249,10 @@ export function NavDrawer({
               <BookOpen aria-hidden="true" size={17} strokeWidth={1.65} />
               <span>Read</span>
             </Button>
+            <Button aria-selected="false" className="qar-react-nav-drawer-tab" onClick={() => onNavigate(REACT_ROUTES.search)} role="tab" variant="ghost">
+              <SearchIcon aria-hidden="true" size={17} strokeWidth={1.65} />
+              <span>Search</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -325,7 +330,7 @@ export function NavDrawer({
                 onChange={handleSurahSearchChange}
                 onKeyDown={handleSurahSearchKeyDown}
                 placeholder="Search..."
-                prefix={<Search aria-hidden="true" className="qar-react-nav-drawer-search-icon" size={15} strokeWidth={1.7} />}
+                prefix={<SearchIcon aria-hidden="true" className="qar-react-nav-drawer-search-icon" size={15} strokeWidth={1.7} />}
                 type="search"
                 value={surahQuery}
               />

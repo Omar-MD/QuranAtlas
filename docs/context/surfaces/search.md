@@ -33,6 +33,7 @@ style_paths:
 | Entry | Trigger | Result |
 | --- | --- | --- |
 | `#/search` | URL | Renders the Search route |
+| Drawer Search tab | tap/click | Routes from Reader navigation to the Search route |
 | Search story | Storybook | Shows empty, loading, results, detail, saved-search, no-mapping, offline, and source states |
 | Search contracts | Shared contracts and data checks | Define pack ABI, manifests, normalization, mapping, query, worker, source catalog, and cache ownership before route promotion |
 | Search pack build | `pnpm run data -- build` | Emits immutable Search pack manifests and core, morphology, and graph shards under `public/search-packs/**` |

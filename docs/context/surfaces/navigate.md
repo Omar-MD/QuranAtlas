@@ -26,6 +26,7 @@ style_paths:
 | Entry | Trigger | Result |
 | --- | --- | --- |
 | Reader chrome menu | tap/click | Opens nav drawer |
+| Drawer Search tab | tap/click | Routes to the Search surface |
 | `#/surahs` | URL | Opens standalone Surah directory |
 | `#/bookmarks` | URL | Opens standalone bookmarks view |
 | Surah row | tap/click | Routes to the Surah or saved recent ayah |
@@ -67,7 +68,7 @@ style_paths:
 
 ## Behavior
 
-`NavDrawer` is the primary navigation surface on reader routes. It shows the product header, source tabs, dense source rows, optional Daily Wird summary/detail, and close/dismiss controls. Phone widths use a full-screen drawer; tablet and desktop use a side-panel shape.
+`NavDrawer` is the primary navigation surface on reader routes. It shows the product header, top-level Read/Search mode tabs, source tabs, dense source rows, optional Daily Wird summary/detail, and close/dismiss controls. Phone widths use a full-screen drawer; tablet and desktop use a side-panel shape.
 
 `SurahList`, `JuzList`, and `HizbList` load runtime indexes from `/dataset/**`, mark current/recent state, and route through the current reader mode. Surah search and All/Recent filtering belong only to the Surah tab.
 
@@ -114,6 +115,7 @@ The current MVP writes Qaloon-scoped verse and Mushaf page bookmarks. The compou
 ## Invariants
 
 - Navigation row actions must route directly; disabled decorative rows are not acceptable.
+- The top-level Search tab must route to `#/search` without importing or preparing Search runtime code on Reader cold launch.
 - Surah search/filter controls appear only in the Surah source.
 - Bookmarks are owned by `src/continuity/bookmarks/**`; other files must not write the store directly.
 - Bookmarks remain reader-continuity data.
