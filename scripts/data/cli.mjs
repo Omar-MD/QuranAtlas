@@ -55,6 +55,7 @@ function main(argv = process.argv.slice(2)) {
   if (command === 'check') {
     run('source-catalog.mjs')
     run('text/build.mjs', ['--profile=baseline'])
+    run('search/build.mjs', ['--profile=baseline', '--check'])
     run('knowledge/build.mjs', ['--check'])
     run('mushaf-pages/build.mjs', ['--profile=baseline', '--check'])
     run('riwayah-packages/build.mjs', ['--profile=baseline', '--check'])
@@ -67,6 +68,7 @@ function main(argv = process.argv.slice(2)) {
     const skipped = skipSet(args)
     run('text/build.mjs', [`--profile=${profile}`])
     if (profile !== 'catalog') {
+      run('search/build.mjs', [`--profile=${profile}`])
       run('knowledge/build.mjs')
       if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
       run('riwayah-packages/build.mjs', [`--profile=${profile}`])

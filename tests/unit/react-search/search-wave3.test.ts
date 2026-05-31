@@ -1,37 +1,26 @@
+import { readFile } from 'node:fs/promises'
+
 import { describe, expect, it } from 'vitest'
 
-import { mapSearchResultToActiveRiwayah, searchShard } from '../../../src/search/search-engine'
-import type { SearchShard } from '../../../src/search/schema'
+const PROTOTYPE_PATTERNS = [
+  '/dataset/search/',
+  'SearchShard.entries',
+  'entries: SearchEntry[]',
+  "metadata'",
+  "'metadata'",
+]
 
-const shard: SearchShard = {
-  id: 'baseline',
-  generatedAt: '2026-05-25T00:00:00.000Z',
-  entries: [
-    {
-      id: 'translation:7:2',
-      lane: 'translation',
-      sourceRiwayah: 'hafs',
-      sourceRef: { surah: 7, verse: 2 },
-      text: 'guidance sent down',
-    },
-  ],
-}
-
-describe('React search coverage', () => {
-  it('searches verified shard entries by reason', () => {
-    expect(searchShard(shard, 'guidance')[0]).toMatchObject({
-      lane: 'translation',
-      sourceRef: { surah: 7, verse: 2 },
-      matchReason: 'text',
-    })
-  })
-
-  it('maps Hafs-keyed translation results through aliases for Qalun display', () => {
-    const result = mapSearchResultToActiveRiwayah(
-      { lane: 'translation', sourceRiwayah: 'hafs', sourceRef: { surah: 7, verse: 2 } },
-      { aliases: { '7': [{ hafs: 2, warsh: [2, 3], qaloon: [2, 3] }] } },
-      'qaloon',
-    )
-    expect(result).toEqual({ displayRef: { surah: 7, verse: 2 }, aliasRole: 'primary' })
+describe('Search runtime prototype guards', () => {
+  it('keeps runtime code off mutable dataset Search URLs and large JSON shard APIs', async () => {
+    const files = [
+      'src/search/index-client.ts',
+      'src/search/schema.ts',
+      'src/search/search-engine.ts',
+    ]
+    const contents = await Promise.all(files.map((file) => readFile(file, 'utf8')))
+    const joined = contents.join('\n')
+    for (const pattern of PROTOTYPE_PATTERNS) {
+      expect(joined).not.toContain(pattern)
+    }
   })
 })

@@ -26,7 +26,8 @@ The app never imports `data/**`. Runtime code fetches `/dataset/**` and validate
 5. Build Surah, Juz, source, text-asset, Mushaf-asset, provenance, and inventory indexes.
 6. Build knowledge shards when source inputs are present.
 7. Build the baseline Qaloon Mushaf page manifest when page SVG inputs are available.
-8. Emit runtime files to `public/dataset/**`.
+8. Build the Phase 1 core Search pack registry and immutable pack shards under `public/search-packs/**`.
+9. Emit runtime files to `public/dataset/**` and Search pack files to `public/search-packs/**`.
 
 The build preserves the existing provenance `builtAt` value when package version and profile are unchanged, so validation does not dirty tracked dataset files just by running. Set `QURANATLAS_DATASET_BUILT_AT` when an intentional dataset timestamp change is required.
 
@@ -46,8 +47,21 @@ Supported source lanes include:
 - translations
 - Mushaf pages
 - knowledge/taxonomy inputs
+- Search text, translation/context, and morphology source catalogs
 
 Network fetching is an explicit source-maintenance operation. Normal app builds run offline against committed normalized inputs.
+
+## Search Source Lanes
+
+Search source records live in `data/catalog/search-sources.json`, with Search-specific license and verification contracts in `data/catalog/search-licenses.json` and `data/catalog/search-verification.json`. `pnpm run data -- check` validates required source ids, license ids, Hafs source identity, ayah coverage, accepted checksums, source availability notes, and morphology source-drop policy.
+
+Phase 0 records three lanes: Hafs Search text, Bridges translation/context, and Quranic Arabic Corpus morphology 0.4. Morphology is source-backed and license-gated: the official QAC download page is the source of truth, the approved local file path is `.scratch/source-drops/search/qac/quranic-corpus-morphology-0.4.txt`, and the accepted SHA-256 for the known 0.4 text file is recorded in the catalog. Phase 2 must recheck that checksum against the manually downloaded official source before shipping any morphology or same-root feature.
+
+Search pack runtime output is not `/dataset/search/**`. The registry is `public/search-packs/registry.json`, and immutable manifests and shards are emitted under `public/search-packs/packs/<contentHash>/**`. Runtime URLs mirror that layout under `/search-packs/**` and are owned by the dedicated Search pack installer/cache.
+
+`scripts/data/search/build.mjs` builds the Phase 1 core Hafs Search pack from committed normalized Hafs text and Bridges translation/context inputs. It writes ABI-v1 shards for references, dictionaries, Arabic postings, exact-word postings, translation postings, phrase postings, and provenance. Each generated shard is SHA-256 verified over fetched encoded bytes, declared in the manifest, and kept below the Phase 1 shard byte budget.
+
+`pnpm run data -- check` runs Search pack check mode after source catalog validation and baseline text output are available. `pnpm run data -- build` and `pnpm run data -- build --profile=full` regenerate Search packs alongside the normal dataset lanes. `scripts/ci/affected.mjs` treats `shared/search/**`, `scripts/data/search/**`, `public/search-packs/**`, Search catalogs, normalized sources, and data scripts as dataset-relevant inputs.
 
 ## Mushaf Page Artifacts
 

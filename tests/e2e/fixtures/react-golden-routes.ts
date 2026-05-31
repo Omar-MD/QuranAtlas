@@ -46,6 +46,25 @@ const APPLY_SCHEMA_SOURCE = `
       ['riwayah_surah', ['riwayah', 'surah'], { unique: false }],
       ['riwayah', 'riwayah', { unique: false }],
     ]],
+    ['savedSearches', { keyPath: 'id' }, [
+      ['updatedAt', 'updatedAt', { unique: false }],
+      ['lastOpenedAt', 'lastOpenedAt', { unique: false }],
+      ['schemaVersion', 'schemaVersion', { unique: false }],
+      ['packCompatibilityKey', 'packCompatibilityKey', { unique: false }],
+    ]],
+    ['searchPackActivations', { keyPath: 'id' }, [
+      ['packId', 'packId', { unique: false }],
+      ['contentHash', 'contentHash', { unique: false }],
+      ['generation', 'generation', { unique: false }],
+      ['status', 'status', { unique: false }],
+      ['updatedAt', 'updatedAt', { unique: false }],
+    ]],
+    ['searchPackStaging', { keyPath: 'id' }, [
+      ['contentHash', 'contentHash', { unique: false }],
+      ['status', 'status', { unique: false }],
+      ['createdAt', 'createdAt', { unique: false }],
+      ['updatedAt', 'updatedAt', { unique: false }],
+    ]],
   ]
   for (const [name, options, indexes] of stores) {
     if (db.objectStoreNames.contains(name)) continue

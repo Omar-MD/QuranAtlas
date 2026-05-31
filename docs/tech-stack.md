@@ -86,6 +86,8 @@ The standalone preview scripts are non-overlapping lanes: `test:e2e:golden` owns
 - `scripts/check-ui-references.mjs`: validates committed UI reference images and notes.
 - `scripts/check-chunks.js`: enforces the production chunk budget.
 
+Search pack generation is part of the data lane. `scripts/data/search/build.mjs` emits `public/search-packs/registry.json` and immutable pack manifests/shards under `public/search-packs/packs/<contentHash>/**`; `scripts/data/search/validate.mjs` verifies the generated registry, manifest, shard checksums, and forbidden `/dataset/search/**` URL shape.
+
 Warnings from build, lint, check, docs, or CI scripts are treated as failures.
 
 ## CI/CD
@@ -109,4 +111,4 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, and
 
 Deploy lives at `.github/workflows/deploy.yml`. On successful CI for branch pushes to `dev`, `staging`, or `main`, it downloads the same `dist/` artifact and deploys it to Cloudflare Pages. CI builds once; deploy does not rebuild.
 
-Affected-change decisions live in `scripts/ci/affected.mjs` so CI and local validation use the same path groups. The production app bundle still builds for deployable CI runs, but dataset generation runs only when source data, dataset scripts, reader asset profiles, or dependency files that affect those artifacts changed. The expensive Mushaf import/page build also runs whenever Playwright is selected so the browser artifact contains the real page SVG pack.
+Affected-change decisions live in `scripts/ci/affected.mjs` so CI and local validation use the same path groups. The production app bundle still builds for deployable CI runs, but dataset generation runs only when source data, dataset scripts, Search contracts, Search pack outputs, reader asset profiles, or dependency files that affect those artifacts changed. The expensive Mushaf import/page build also runs whenever Playwright is selected so the browser artifact contains the real page SVG pack.

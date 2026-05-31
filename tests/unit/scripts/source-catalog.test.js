@@ -8,6 +8,7 @@ const baseCatalog = () => ({
   authorities: [
     { id: 'qul', label: 'QUL', url: 'https://qul.tarteel.ai/resources' },
     { id: 'quranatlas', label: 'QuranAtlas', url: 'https://quranatlas.test' },
+    { id: 'quranic-arabic-corpus', label: 'Quranic Arabic Corpus', url: 'https://corpus.quran.com' },
   ],
   licenses: [
     { id: 'qul-open', label: 'QUL open resource', status: 'approved' },
@@ -30,6 +31,67 @@ const baseCatalog = () => ({
       outputPath: 'riwayat/qaloon/{surah}.json',
     },
   ],
+})
+
+const searchCatalog = () => ({
+  ...baseCatalog(),
+  searchLicenses: [
+    {
+      id: 'search-qac-gpl-v3-terms',
+      label: 'QAC GPL terms',
+      status: 'restricted',
+      noticeRequired: true,
+      sourceAvailability: 'Official source page and local source-drop path are documented.',
+    },
+    {
+      id: 'search-pack-metadata-quranatlas',
+      label: 'QuranAtlas Search metadata',
+      status: 'approved',
+      noticeRequired: false,
+      sourceAvailability: 'Committed pack metadata.',
+    },
+  ],
+  searchSources: [
+    {
+      id: 'search-qac-morphology-0-4',
+      type: 'search-morphology',
+      label: 'QAC morphology',
+      providerId: 'quranic-arabic-corpus',
+      licenseId: 'search-qac-gpl-v3-terms',
+      visibility: 'internal',
+      sourceRiwayah: 'hafs',
+      sourceUrl: 'https://corpus.quran.com/download/',
+      outputPath: 'search-packs/packs/{contentHash}/morphology/qac-morphology.qas',
+      expectedVersion: '0.4',
+      coverage: { surahs: 114, ayahs: 6236, tokens: 77430, rows: 128219 },
+      checksums: {
+        algorithm: 'sha-256',
+        accepted: ['a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46'],
+      },
+      manualSource: {
+        dropPath: '.scratch/source-drops/search/qac/quranic-corpus-morphology-0.4.txt',
+        approvedFilenames: ['quranic-corpus-morphology-0.4.txt'],
+      },
+      licenseDecision: {
+        status: 'resolved',
+        sourceAvailabilityRequired: true,
+      },
+      sourceAvailability: 'Official source page and accepted checksum are recorded.',
+    },
+  ],
+  searchVerification: {
+    requiredSourceIds: ['search-qac-morphology-0-4'],
+    requiredLicenseIds: ['search-qac-gpl-v3-terms', 'search-pack-metadata-quranatlas'],
+    expectedCoverage: {
+      'search-qac-morphology-0-4': { surahs: 114, ayahs: 6236, tokens: 77430, rows: 128219 },
+    },
+    morphology: {
+      sourceId: 'search-qac-morphology-0-4',
+      expectedVersion: '0.4',
+      approvedFilenames: ['quranic-corpus-morphology-0.4.txt'],
+      acceptedSha256: ['a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46'],
+    },
+  },
 })
 
 describe('source catalog validation', () => {
@@ -137,5 +199,48 @@ describe('source catalog validation', () => {
       'mushaf asset qaloon/bad_edition sourceSlug must be qalun',
       'mushaf asset qaloon/bad_edition is duplicated within qaloon',
     ]))
+  })
+
+  it('validates complete Search source catalog records', () => {
+    expect(validateSourceCatalog(searchCatalog()).errors).toEqual([])
+  })
+
+  it('fails Search sources with missing checksums', () => {
+    const catalog = searchCatalog()
+    catalog.searchSources[0].checksums.accepted = []
+    expect(validateSourceCatalog(catalog).errors).toContain('search source search-qac-morphology-0-4 missing accepted sha-256 checksum')
+  })
+
+  it('fails Search sources with missing licenses', () => {
+    const catalog = searchCatalog()
+    catalog.searchSources[0].licenseId = 'missing-license'
+    expect(validateSourceCatalog(catalog).errors).toContain('search source search-qac-morphology-0-4 references missing license missing-license')
+  })
+
+  it('fails Search sources with wrong ayah coverage', () => {
+    const catalog = searchCatalog()
+    catalog.searchSources[0].coverage.ayahs = 6235
+    expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
+      'search source search-qac-morphology-0-4 ayah coverage must be 6236',
+      'search source search-qac-morphology-0-4 ayahs coverage must be 6236',
+    ]))
+  })
+
+  it('fails Search morphology with unresolved license decisions', () => {
+    const catalog = searchCatalog()
+    catalog.searchSources[0].licenseDecision.status = 'pending'
+    expect(validateSourceCatalog(catalog).errors).toContain('search morphology source search-qac-morphology-0-4 has unresolved license decision')
+  })
+
+  it('fails Search sources missing source availability notes', () => {
+    const catalog = searchCatalog()
+    catalog.searchSources[0].sourceAvailability = ''
+    expect(validateSourceCatalog(catalog).errors).toContain('search source search-qac-morphology-0-4 missing source availability notes')
+  })
+
+  it('fails Search morphology with unapproved source filenames', () => {
+    const catalog = searchCatalog()
+    catalog.searchSources[0].manualSource.approvedFilenames = ['renamed.txt']
+    expect(validateSourceCatalog(catalog).errors).toContain('search morphology source search-qac-morphology-0-4 has unapproved source filename renamed.txt')
   })
 })

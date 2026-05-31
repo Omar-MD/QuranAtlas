@@ -14,6 +14,7 @@ export default defineConfig({
     'navigate/react-golden.spec.ts',
     'onboard/react-golden.spec.ts',
     'infra/react-offline.spec.ts',
+    'search/*.spec.ts',
   ],
   outputDir: './test-output/traces',
   forbidOnly: !!process.env.CI,

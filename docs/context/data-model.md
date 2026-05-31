@@ -10,6 +10,9 @@ QuranAtlas separates build-only source data, generated runtime dataset files, an
 | `activationState` | [`infra`](surfaces/infra.md) |
 | `bookmarks` | [`navigate`](surfaces/navigate.md) |
 | `datasetMeta` | [`infra`](surfaces/infra.md) |
+| `savedSearches` | [`search`](surfaces/search.md) |
+| `searchPackActivations` | [`infra`](surfaces/infra.md) |
+| `searchPackStaging` | [`infra`](surfaces/infra.md) |
 | `settings` | [`configure`](surfaces/configure.md) |
 <!-- AUTO-GENERATED:store-owner-index END -->
 
@@ -23,6 +26,9 @@ The React app uses Dexie against the shared database name and schema defined in 
 | `bookmarks` | `src/continuity/bookmarks/**` | Riwayah-scoped verse and Mushaf page bookmarks |
 | `activationState` | `src/offline/**` | Runtime asset activation/cache status |
 | `datasetMeta` | `src/offline/**` | Applied dataset/package metadata |
+| `savedSearches` | `src/storage/**` and Search route code | User-created saved-search query definitions, not cached result windows |
+| `searchPackActivations` | `src/offline/search/**` | Active immutable Search pack pointer, content hash, cache name, status, and activation generation |
+| `searchPackStaging` | `src/offline/search/**` | Staged Search pack install/verify metadata before activation |
 
 Settings is a key-value store. Ownership is enforced by key, not by a single monolithic settings object.
 
@@ -93,6 +99,12 @@ Core runtime files:
 - `/dataset/knowledge/**` optional knowledge shards
 
 Runtime loaders validate that dataset URLs stay same-origin and under `/dataset/**`.
+
+Search persistence starts at Dexie v8. `savedSearches` stores explicit query definitions with schema version, pack compatibility key, timestamps, filters, source lanes, and display preferences. It does not store result windows; results are recomputed against the active compatible pack.
+
+Search pack activation state uses content-addressed records. `searchPackActivations` stores the current active pack id, pack version, content hash, dedicated cache name, activation generation, status, byte counts, verification timestamps, and any error. `searchPackStaging` stores install/verify progress for a content hash before activation.
+
+Search pack runtime assets live outside `/dataset/**`: the registry is `/search-packs/registry.json`, and immutable pack manifests and shards live under `/search-packs/packs/<contentHash>/**`. They have one cache owner: the dedicated Search installer/cache, not the generic dataset CacheFirst route.
 
 ## Translation Alignment
 

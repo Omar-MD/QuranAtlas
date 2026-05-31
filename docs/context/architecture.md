@@ -25,6 +25,7 @@ The app uses browser hash routes so static hosting on Cloudflare Pages can serve
 | `#/assets` | `src/app/routes/settings/SettingsRoute.tsx` | Compatibility opener for settings/assets inventory |
 | `#/about` | `src/app/routes/settings/AboutRoute.tsx` | About, install, attribution, clear data |
 | `#/onboarding` | `src/app/routes/onboarding/OnboardingRoute.tsx` | Compatibility launch path |
+| `#/search` | planned Search route | Unsupported until Phase 1 route promotion |
 
 Unsupported hashes render the route-unavailable state in `App.tsx`.
 
@@ -53,6 +54,8 @@ Runtime data is always same-origin under `/dataset/**`.
 
 The current MVP profile is Qaloon text/font, Qaloon Mushaf pages, and Bridges translation.
 
+Search is planned as a second top-level product mode, but it is not mounted in Phase 0. Its contracts live under `shared/search/**`: generated static packs, immutable runtime URLs under `/search-packs/packs/<contentHash>/**`, runtime registry `/search-packs/registry.json`, a lazy restartable Web Worker protocol, explicit Hafs-to-Qalun Reader mapping, and source-backed saved-search intent shapes. Reader launch must not fetch Search packs, decode Search graphs, or start the Search worker.
+
 ## UI Architecture
 
 - `src/design-system/index.css` is the global CSS entry.
@@ -74,6 +77,8 @@ Visual work should identify one active component and one active reference source
 - notification-click helper: `public/wird-notification-sw.js`
 
 Offline specs run only against production preview because service workers are build artifacts. The service worker precaches the shell, fonts, icons, and built assets only; `/dataset/**` is excluded from precache and cached through the runtime CacheFirst route. Generated build validation remains the integrity gate for dataset correctness.
+
+Search packs are planned outside the generic `/dataset/**` runtime dataset cache. The Search contract reserves a dedicated Search pack cache namespace and staged cache namespace keyed by content hash, with active and previous-active packs protected from cleanup. The generic dataset CacheFirst route must exclude Search pack paths when the Search installer lands.
 
 ## Build And Deploy
 

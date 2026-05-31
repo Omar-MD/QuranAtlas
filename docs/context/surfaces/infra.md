@@ -8,6 +8,8 @@ src_paths:
 owns_stores:
   - activationState
   - datasetMeta
+  - searchPackActivations
+  - searchPackStaging
 test_paths:
   unit:
     - 'tests/unit/react-offline/**'
@@ -46,6 +48,11 @@ style_paths:
 | `src/offline/pack-lifecycle.ts` | _(no leading comment)_ |
 | `src/offline/pack-status.ts` | _(no leading comment)_ |
 | `src/offline/quota.ts` | _(no leading comment)_ |
+| `src/offline/search/activation.ts` | _(no leading comment)_ |
+| `src/offline/search/cache.ts` | _(no leading comment)_ |
+| `src/offline/search/quota.ts` | _(no leading comment)_ |
+| `src/offline/search/registry.ts` | _(no leading comment)_ |
+| `src/offline/search/repair.ts` | _(no leading comment)_ |
 | `src/offline/search/search-pack.ts` | _(no leading comment)_ |
 | `src/offline/service-worker-contract.ts` | _(no leading comment)_ |
 | `src/offline/ui-state.ts` | _(no leading comment)_ |
@@ -66,6 +73,10 @@ style_paths:
 
 `src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors.
 
+Search pack files under `/search-packs/**` are not Workbox dataset-cache assets. `vite.config.js` keeps the generic `/dataset/**` CacheFirst route from matching `/dataset/search/**`, while `src/offline/search/**` owns the dedicated `quran-atlas-search-pack-<contentHash>` Cache Storage lifecycle. Search install verifies shard SHA-256 checksums over encoded bytes, writes staging metadata, activates with a monotonic generation, announces activation changes across tabs, and protects active or live leased packs from orphan cleanup.
+
+Dexie v8 adds Search lifecycle stores. Clear data continues to delete browser storage, all Cache Storage entries including Search pack caches, and the shared IndexedDB database.
+
 `public/wird-notification-sw.js` is imported by the generated service worker for notification-click behavior. It must stay small, deterministic, and independent of app bundle state.
 
 ## Style Inventory
@@ -81,6 +92,8 @@ style_paths:
 <!-- AUTO-GENERATED:data-owned START -->
 - `activationState`
 - `datasetMeta`
+- `searchPackActivations`
+- `searchPackStaging`
 <!-- AUTO-GENERATED:data-owned END -->
 
 <!-- AUTO-GENERATED:data-read START -->
@@ -105,6 +118,7 @@ _(no cross-surface reads detected)_
 
 - Production offline behavior must be proven against `dist/` preview, not the dev server.
 - Runtime dataset caching stays same-origin and under `/dataset/**`.
+- Search pack caching stays under the dedicated Search cache owner for immutable `/search-packs/**` URLs.
 - Page SVG bodies must stay runtime assets, not JS bundle content.
 - Clear-data behavior clears Cache Storage and the shared IndexedDB database.
 - CI builds once and reuses the uploaded `dist/` artifact for Lighthouse, Playwright preview/offline, and deploy.
@@ -113,16 +127,19 @@ _(no cross-surface reads detected)_
 ## Regression Guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (8):**
+**Unit (11):**
 
 - `tests/unit/react-offline/asset-index.test.ts`
 - `tests/unit/react-offline/cache-plan.test.ts`
+- `tests/unit/react-offline/search-pack-lifecycle.test.ts`
 - `tests/unit/react-packs/mushaf-install-plan.test.ts`
 - `tests/unit/react-packs/mushaf-paths.test.ts`
 - `tests/unit/react-storage/clear-data.test.ts`
 - `tests/unit/react-storage/db-schema.test.ts`
 - `tests/unit/react-storage/pack-lifecycle.test.ts`
+- `tests/unit/react-storage/search-schema.test.ts`
 - `tests/unit/shared/default-reader-assets.test.ts`
+- `tests/unit/shared/search-contracts.test.ts`
 
 **E2E (1):**
 

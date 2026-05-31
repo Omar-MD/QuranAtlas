@@ -1,0 +1,84 @@
+[
+  {
+    "id": "search-hafs-text-kfgqpc-v1",
+    "type": "search-text",
+    "label": "Hafs Quran text for Search analysis",
+    "providerId": "kfgqpc",
+    "licenseId": "search-kfgqpc-hafs-text",
+    "visibility": "internal",
+    "sourceRiwayah": "hafs",
+    "sourceUrl": "data/normalized/quran/riwayat/hafs.json",
+    "outputPath": "search-packs/packs/{contentHash}/core/hafs-text.qas",
+    "expectedVersion": "normalized-hafs-v1",
+    "coverage": {
+      "surahs": 114,
+      "ayahs": 6236,
+      "tokens": 77430,
+      "rows": 6236
+    },
+    "checksums": {
+      "algorithm": "sha-256",
+      "accepted": ["normalized-source-checksum-bound-at-build"]
+    },
+    "sourceAvailability": "Committed normalized Hafs source under data/normalized is build-only input. Search packs carry source id and build input digest metadata.",
+    "transformedDataNotes": "Used for deterministic Search analysis text only; Reader text remains Qalun/Qaloon."
+  },
+  {
+    "id": "search-bridges-context-qul-v1",
+    "type": "search-context",
+    "label": "Bridges translation/context Search lane",
+    "providerId": "qul",
+    "licenseId": "search-qul-bridges-context",
+    "visibility": "internal",
+    "sourceRiwayah": "hafs",
+    "sourceUrl": "https://qul.tarteel.ai/resources/translation/179",
+    "outputPath": "search-packs/packs/{contentHash}/core/bridges-context.qas",
+    "expectedVersion": "qul-resource-179",
+    "coverage": {
+      "surahs": 114,
+      "ayahs": 6236,
+      "tokens": 0,
+      "rows": 6236
+    },
+    "checksums": {
+      "algorithm": "sha-256",
+      "accepted": ["normalized-source-checksum-bound-at-build"]
+    },
+    "sourceAvailability": "QUL resource metadata and normalized Bridges input identify the approved source. Search labels this lane as source-backed indexed context, not tafsir.",
+    "transformedDataNotes": "Tokenized for translation/context lookup only; no generated explanation or tafsir is produced."
+  },
+  {
+    "id": "search-qac-morphology-0-4",
+    "type": "search-morphology",
+    "label": "Quranic Arabic Corpus morphology 0.4",
+    "providerId": "quranic-arabic-corpus",
+    "licenseId": "search-qac-gpl-v3-terms",
+    "visibility": "internal",
+    "sourceRiwayah": "hafs",
+    "sourceUrl": "https://corpus.quran.com/download/",
+    "outputPath": "search-packs/packs/{contentHash}/morphology/qac-morphology.qas",
+    "expectedVersion": "0.4",
+    "coverage": {
+      "surahs": 114,
+      "ayahs": 6236,
+      "tokens": 77430,
+      "rows": 128219
+    },
+    "checksums": {
+      "algorithm": "sha-256",
+      "accepted": ["a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46"]
+    },
+    "manualSource": {
+      "dropPath": ".scratch/source-drops/search/qac/quranic-corpus-morphology-0.4.txt",
+      "approvedFilenames": ["quranic-corpus-morphology-0.4.txt"]
+    },
+    "licenseDecision": {
+      "status": "resolved",
+      "mayShipDerivedFeature": false,
+      "requiredNotice": "Search morphology uses Quranic Arabic Corpus morphology 0.4 by Kais Dukes under GNU GPL terms and the upstream terms of use.",
+      "sourceAvailabilityRequired": true
+    },
+    "sourceAvailability": "Official QAC download page is the source of truth. The approved checksum matches a public mirror of quranic-corpus-morphology-0.4.txt and must be rechecked against the manually downloaded official file before Phase 2 morphology ships.",
+    "transformedDataNotes": "Morphology remains feature-gated. Same-root UI cannot ship until notices, source availability, checksum verification, and transformed-output obligations are satisfied."
+  }
+]

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "search-kfgqpc-hafs-text",
+    "label": "KFGQPC Hafs Quran text for Search analysis",
+    "status": "restricted",
+    "url": "https://qurancomplex.gov.sa/en/techquran/dev/",
+    "noticeRequired": true,
+    "sourceAvailability": "Cataloged as build input for deterministic Hafs Search text; transformed Search packs must retain source id, checksum, and notice metadata."
+  },
+  {
+    "id": "search-qul-bridges-context",
+    "label": "QUL Bridges translation/context for Search",
+    "status": "approved",
+    "url": "https://qul.tarteel.ai/resources/translation/179",
+    "noticeRequired": true,
+    "sourceAvailability": "QUL resource metadata and generated QuranAtlas provenance identify the translation/context source used by Search packs."
+  },
+  {
+    "id": "search-pack-metadata-quranatlas",
+    "label": "QuranAtlas Search pack metadata contract",
+    "status": "approved",
+    "url": "https://quranatlas.org",
+    "noticeRequired": false,
+    "sourceAvailability": "QuranAtlas-generated manifests, registries, checksums, and provenance records are committed with the app artifact."
+  },
+  {
+    "id": "search-qac-gpl-v3-terms",
+    "label": "Quranic Arabic Corpus morphology 0.4 GPL terms",
+    "status": "restricted",
+    "url": "https://corpus.quran.com/download/",
+    "noticeRequired": true,
+    "sourceAvailability": "Official download requires a contact email. The approved local source drop must preserve the copyright block and GPL/terms notice verbatim; transformed morphology outputs must retain source availability and checksum metadata."
+  }
+]

@@ -1,29 +1,24 @@
-import type { Riwayah } from '../storage/types'
-import type { SearchEntry, SearchResult, SearchShard } from './schema'
-import { getAliasVerses, type VerseAliases } from '../data/verse-aliases'
+import type { SearchQueryAstV1, SearchResultWindow, SearchSort } from '../../shared/search'
+import { SearchPackReader } from './pack-reader'
+import { SearchQueryExecutor } from '../search-worker/query-executor'
+import { SearchCancellationToken } from '../search-worker/cancellation'
 
-export function searchShard(shard: SearchShard, query: string): SearchResult[] {
-  const normalized = query.trim().toLocaleLowerCase()
-  if (!normalized) return []
-  return shard.entries
-    .filter((entry) => entry.text.toLocaleLowerCase().includes(normalized) || entry.lane.includes(normalized))
-    .map((entry) => ({
-      ...entry,
-      excerpt: entry.text,
-      matchReason: entry.text.toLocaleLowerCase().includes(normalized) ? 'text' : 'lane',
-    }))
-}
-
-export function mapSearchResultToActiveRiwayah(
-  result: Pick<SearchEntry, 'lane' | 'sourceRef' | 'sourceRiwayah'>,
-  { aliases }: { aliases: VerseAliases },
-  riwayah: Riwayah,
-): { displayRef: { surah: number; verse: number }; aliasRole: 'identity' | 'primary' | 'continuation' } {
-  if (result.sourceRiwayah === riwayah) {
-    return { displayRef: result.sourceRef, aliasRole: 'identity' }
-  }
-  const alias = aliases[String(result.sourceRef.surah)]?.find((entry) => entry.hafs === result.sourceRef.verse)
-  if (!alias) return { displayRef: result.sourceRef, aliasRole: 'identity' }
-  const verses = getAliasVerses(alias, riwayah)
-  return { displayRef: { surah: result.sourceRef.surah, verse: verses[0] ?? result.sourceRef.verse }, aliasRole: 'primary' }
+export async function executeSearchQueryAgainstReader({
+  reader,
+  query,
+  limit = 25,
+  sort = 'relevance',
+}: {
+  reader: SearchPackReader
+  query: SearchQueryAstV1
+  limit?: number
+  sort?: SearchSort
+}): Promise<SearchResultWindow> {
+  const executor = new SearchQueryExecutor(reader)
+  return executor.execute({
+    query,
+    limit,
+    sort,
+    token: new SearchCancellationToken('pure-search-executor'),
+  })
 }

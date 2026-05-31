@@ -28,8 +28,10 @@ const DATASET_PATTERNS = [
   /^data\/normalized\//,
   /^data\/taxonomy\//,
   /^scripts\/data\//,
+  /^shared\/search\//,
   /^shared\/reader-assets\//,
   /^public\/dataset\//,
+  /^public\/search-packs\//,
   /^package\.json$/,
   /^pnpm-lock\.yaml$/,
 ]

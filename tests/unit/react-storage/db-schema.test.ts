@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { closeReactDb, openReactDb } from '../../../src/storage/db'
-import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION, QURAN_ATLAS_V7_STORES } from '../../../src/storage/schema'
+import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION, QURAN_ATLAS_V8_STORES } from '../../../src/storage/schema'
 import {
   DEFAULT_REACT_READER_PREFERENCES,
   readReactReaderPreferences,
@@ -17,12 +17,20 @@ describe('React storage schema mirror', () => {
     await indexedDB.deleteDatabase(QURAN_ATLAS_DB_NAME)
   })
 
-  it('opens the existing quran-atlas v7 store layout without adding stores', async () => {
+  it('opens the existing quran-atlas v8 store layout with Search lifecycle stores', async () => {
     const db = await openReactDb()
 
     expect(db.name).toBe(QURAN_ATLAS_DB_NAME)
     expect(db.verno).toBe(QURAN_ATLAS_DB_VERSION)
-    expect(Object.keys(QURAN_ATLAS_V7_STORES)).toEqual(['settings', 'activationState', 'datasetMeta', 'bookmarks'])
+    expect(Object.keys(QURAN_ATLAS_V8_STORES)).toEqual([
+      'settings',
+      'activationState',
+      'datasetMeta',
+      'bookmarks',
+      'savedSearches',
+      'searchPackActivations',
+      'searchPackStaging',
+    ])
   })
 
   it('writes reader asset bundle settings atomically through the facade', async () => {

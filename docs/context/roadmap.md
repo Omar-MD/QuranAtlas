@@ -20,7 +20,7 @@ Agreed future work that supports the Reader First product promise. When work sta
 
 ## V1 Search and Navigation
 
-- Planned full-text retrieval across Arabic Qur'an text, translations, transliteration/index data, tafsir, and curated metadata after the default-profile MVP is stable.
+- Deterministic Quran Search is now an active plan: Hafs-backed Search text, translation/context lookup, immutable static packs, lazy worker execution, explicit Qalun Reader mapping, and saved searches. It must remain route-unsupported until Phase 1 gates pass.
 - Surah, Juz, and Hizb navigation as first-class reader paths.
 - Rub, ruku, and page data remain metadata until separately promoted to visible controls.
 - Reader mode switching between Verse and Mushaf.
@@ -35,7 +35,7 @@ Agreed future work that supports the Reader First product promise. When work sta
 ## Future AI/Retrieval Infrastructure
 
 - Provenance-rich, versioned source assets.
-- Citation-first retrieval indexes and boundaries.
+- Citation-first retrieval indexes and boundaries beyond the deterministic Search pack plan.
 - Scholarly claims datasets when sourcing and review rules are defined.
 - Optional embedding/vector indexes as infrastructure only.
 

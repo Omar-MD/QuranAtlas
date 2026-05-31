@@ -2,7 +2,7 @@
 
 > AUTO-GENERATED from `src/**/*.{ts,tsx,js}` import statements. Run `pnpm run docs` to regenerate.
 
-Top-level src directories: **11**.
+Top-level src directories: **12**.
 
 ## Mermaid (top-level)
 
@@ -19,6 +19,7 @@ graph LR
   src_offline["src/offline"]
   src_packs["src/packs"]
   src_search["src/search"]
+  src_search_worker["src/search-worker"]
   src_storage["src/storage"]
   src_app --> src_components
   src_app --> src_continuity
@@ -41,14 +42,20 @@ graph LR
   src_continuity --> src_storage
   src_data --> src_storage
   src_launch --> src_storage
-  src_metadata --> src_search
   src_offline --> src_data
   src_offline --> src_packs
+  src_offline --> src_storage
   src_packs --> src_data
   src_packs --> src_offline
   src_packs --> src_storage
   src_search --> src_data
+  src_search --> src_offline
+  src_search --> src_search_worker
   src_search --> src_storage
+  src_search_worker --> src_data
+  src_search_worker --> src_offline
+  src_search_worker --> src_search
+  src_search_worker --> src_storage
 ```
 <!-- AUTO-GENERATED:mermaid END -->
 
@@ -73,7 +80,7 @@ graph LR
 ### `src/data`
 
 - **Imports from:** `src/storage`
-- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/offline`, `src/packs`, `src/search`
+- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/offline`, `src/packs`, `src/search`, `src/search-worker`
 
 ### `src/design-system`
 
@@ -87,13 +94,13 @@ graph LR
 
 ### `src/metadata`
 
-- **Imports from:** `src/search`
+- **Imports from:** _(none)_
 - **Imported by:** `src/app`, `src/components`
 
 ### `src/offline`
 
-- **Imports from:** `src/data`, `src/packs`
-- **Imported by:** `src/packs`
+- **Imports from:** `src/data`, `src/packs`, `src/storage`
+- **Imported by:** `src/packs`, `src/search`, `src/search-worker`
 
 ### `src/packs`
 
@@ -102,12 +109,17 @@ graph LR
 
 ### `src/search`
 
-- **Imports from:** `src/data`, `src/storage`
-- **Imported by:** `src/components`, `src/metadata`
+- **Imports from:** `src/data`, `src/offline`, `src/search-worker`, `src/storage`
+- **Imported by:** `src/components`, `src/search-worker`
+
+### `src/search-worker`
+
+- **Imports from:** `src/data`, `src/offline`, `src/search`, `src/storage`
+- **Imported by:** `src/search`
 
 ### `src/storage`
 
 - **Imports from:** _(none)_
-- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/data`, `src/launch`, `src/packs`, `src/search`
+- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/data`, `src/launch`, `src/offline`, `src/packs`, `src/search`, `src/search-worker`
 
 <!-- AUTO-GENERATED:dirs END -->

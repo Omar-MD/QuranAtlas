@@ -6,7 +6,7 @@ describe('React clear-data helper', () => {
   it('clears browser storage, Cache Storage, and the shared IndexedDB database', async () => {
     const deletedCaches: string[] = []
     vi.stubGlobal('caches', {
-      keys: async () => ['quran-atlas-react-runtime-dataset-v1'],
+      keys: async () => ['quran-atlas-react-runtime-dataset-v1', 'quran-atlas-search-pack-0123456789abcdef'],
       delete: async (name: string) => {
         deletedCaches.push(name)
         return true
@@ -15,6 +15,6 @@ describe('React clear-data helper', () => {
 
     await clearReactApplicationData()
 
-    expect(deletedCaches).toEqual(['quran-atlas-react-runtime-dataset-v1'])
+    expect(deletedCaches).toEqual(['quran-atlas-react-runtime-dataset-v1', 'quran-atlas-search-pack-0123456789abcdef'])
   })
 })

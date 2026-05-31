@@ -113,7 +113,7 @@ Settings is a key-value store. Writers are key-scoped and should go through `src
 ## Regression Guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (7):**
+**Unit (8):**
 
 - `tests/unit/react-shell/App.test.tsx`
 - `tests/unit/react-shell/about-route.test.tsx`
@@ -122,6 +122,7 @@ Settings is a key-value store. Writers are key-scoped and should go through `src
 - `tests/unit/react-storage/clear-data.test.ts`
 - `tests/unit/react-storage/db-schema.test.ts`
 - `tests/unit/react-storage/pack-lifecycle.test.ts`
+- `tests/unit/react-storage/search-schema.test.ts`
 
 **E2E (1):**
 

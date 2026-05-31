@@ -18,5 +18,10 @@
     "id": "quran-ws",
     "label": "Quran.ws",
     "url": "https://quran.ws"
+  },
+  {
+    "id": "quranic-arabic-corpus",
+    "label": "Quranic Arabic Corpus",
+    "url": "https://corpus.quran.com"
   }
 ]

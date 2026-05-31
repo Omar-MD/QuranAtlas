@@ -1,0 +1,92 @@
+# Powerful Search Shared Handoff Log
+
+Master plan: `docs/superpowers/specs/2026-05-30-powerful-search-design.md`
+
+Implementation index: `docs/superpowers/plans/2026-05-31-powerful-search-master-implementation.md`
+
+## How To Update
+
+Each executing agent updates the entry for its child plan before handing over.
+
+Entry format:
+
+```markdown
+### docs/superpowers/plans/<child-plan>.md
+
+- Status: complete | partial | blocked | retired
+- Summary:
+- Divergence:
+- Blockers and follow-ups:
+- Tests and validation:
+- Dependency intake:
+- Files changed and commits:
+- Next-agent note:
+```
+
+## Entries
+
+### docs/superpowers/plans/2026-05-31-powerful-search-phase-0-contracts.md
+
+- Status: complete
+- Summary: Added shared Search contracts for ABI/header parsing, immutable pack manifests, cache ownership, activation/version handshakes, Hafs-to-Qalun mapping states, normalization/tokenization, query ASTs, saved-search intent, worker protocol, and fixtures. Added Search source/license/verification catalogs and source-catalog validation for required ids, checksums, coverage, source availability, morphology source-drop filename, and resolved morphology license decision. Updated current-state docs to describe Search as active planned work while keeping `#/search` unsupported until Phase 1.
+- Divergence: `public/search-packs/registry.json` was added as an empty Phase 0 registry artifact so docs can cite the canonical registry path without activating any packs. `pnpm run data -- check` rewrote generated runtime dataset files to the baseline profile during validation; `QURANATLAS_DATASET_BUILT_AT=2026-05-30T14:52:13.125Z pnpm run data -- build --profile=full` was run afterward to restore the existing full-profile generated dataset state.
+- Blockers and follow-ups: Phase 2 must recheck the recorded QAC morphology checksum against the manually downloaded official source before shipping morphology or same-root UI. The catalog records `mayShipDerivedFeature: false` for QAC morphology until notices, source availability, checksum verification, and transformed-output obligations are satisfied.
+- Tests and validation: `pnpm exec vitest run tests/unit/shared/search-contracts.test.ts` passed (11 tests). `pnpm exec vitest run tests/unit/scripts/source-catalog.test.js` passed (16 tests). `pnpm exec vitest run tests/unit/shared/search-contracts.test.ts tests/unit/scripts/source-catalog.test.js` passed (27 tests). `pnpm run data -- check` passed. `pnpm run data -- build --profile=full` passed. `QURANATLAS_DATASET_BUILT_AT=2026-05-30T14:52:13.125Z pnpm run data -- build --profile=full` passed. `pnpm run docs` passed. `pnpm run docs:check` passed. `pnpm run check` passed. `git diff --check` passed.
+- Dependency intake: No earlier Search child plan was complete, partial, or blocked in a way that changed Phase 0 scope; later Phase 1-3 plans remain dependent on these contracts.
+- Files changed and commits: changed `shared/search/abi.ts`, `shared/search/manifest.ts`, `shared/search/mapping.ts`, `shared/search/normalization.ts`, `shared/search/query.ts`, `shared/search/worker-protocol.ts`, `shared/search/fixtures.ts`, `shared/search/index.ts`, `data/catalog/authorities.json`, `data/catalog/search-sources.json`, `data/catalog/search-licenses.json`, `data/catalog/search-verification.json`, `public/search-packs/registry.json`, `scripts/data/sources/catalog.mjs`, `tests/unit/shared/search-contracts.test.ts`, `tests/unit/scripts/source-catalog.test.js`, `docs/context/architecture.md`, `docs/context/data-model.md`, `docs/context/source-data-flow.md`, `docs/context/surfaces/search.md`, `docs/context/style-map.md`, `docs/context/roadmap.md`, `docs/context/feature-map.md`, `docs/context/surfaces/infra.md`, and `.docs-derive-manifest.json`. No commit created.
+- Next-agent note: Begin Phase 1 data-pack lifecycle from the immutable `/search-packs/**` registry/pack contract; do not use stable mutable `/dataset/search/**` active-pack URLs, and keep Search packs under one dedicated cache owner.
+
+### docs/superpowers/plans/2026-05-31-powerful-search-phase-1-data-pack-lifecycle.md
+
+- Status: complete
+- Summary: Added the Phase 1 Search data-pack lifecycle spine. The data lane now builds deterministic immutable core Search packs from committed Hafs text and Bridges translation/context inputs, writes `public/search-packs/registry.json`, and emits ABI-v1 shards under `public/search-packs/packs/<contentHash>/shards/**` for references, dictionaries, Arabic postings, exact-word postings, translation postings, phrase postings, and provenance. Runtime lifecycle code now has dedicated Search cache naming, immutable request validation, encoded-byte SHA-256 verification, quota preflight, install/stage/verify/activate/rollback APIs, activation generation broadcast, repair-state reconciliation, and Dexie v8 stores for `savedSearches`, `searchPackActivations`, and `searchPackStaging`. Prototype `/dataset/search/${packId}/index.json` clients were replaced with the `/search-packs/registry.json` and immutable manifest shape; Workbox dataset CacheFirst explicitly excludes `/dataset/search/**`. Clear data continues to delete all Cache Storage and the shared DB, including Search pack caches/stores.
+- Divergence: The script test was added as `tests/unit/scripts/search-builder.test.js` instead of the child-plan `.mjs` filename because Vitest is configured to include `tests/unit/scripts/**/*.test.js`. The generated phrase postings are split into bounded length/chunk shards so every shard stays below the Phase 1 `maxShardBytes` budget. The Search e2e spec was added to `playwright.config.js` `testMatch`; `#/search` remains unsupported and unpromoted. The full `pnpm run validate` gate was not run in this handoff because focused lifecycle, full unit, build, chunk, docs, data, and targeted offline gates passed separately.
+- Blockers and follow-ups: Run `pnpm run validate` before PR/release readiness. Worker runtime should replace the temporary prototype `SearchShard` compatibility return in `src/search/index-client.ts` with real active-cache shard reading. Later lifecycle hardening should broaden browser coverage for cache-present/IDB-missing repair, IDB-present/cache-missing repair, and multi-tab/live-worker cleanup protection beyond the initial offline active-pack proof.
+- Tests and validation: `node scripts/data/search/build.mjs --profile=baseline` passed and generated `public/search-packs/registry.json`. `node scripts/data/search/build.mjs --profile=baseline --check` passed. `node scripts/data/search/build.mjs --profile=full --check` passed. `pnpm exec vitest run tests/unit/scripts/search-builder.test.js tests/unit/react-storage/search-schema.test.ts tests/unit/react-offline/search-pack-lifecycle.test.ts` passed (3 files, 10 tests). `pnpm exec vitest run tests/unit/react-storage/db-schema.test.ts tests/unit/react-storage/clear-data.test.ts tests/unit/react-storage/search-schema.test.ts tests/unit/react-offline/search-pack-lifecycle.test.ts` passed (4 files, 11 tests). `pnpm exec vitest run tests/unit/scripts/search-builder.test.js tests/unit/react-storage/search-schema.test.ts tests/unit/react-offline/search-pack-lifecycle.test.ts tests/unit/react-storage/clear-data.test.ts tests/unit/react-storage/db-schema.test.ts` passed (5 files, 16 tests). `pnpm run test` passed (38 files, 224 tests). `pnpm run data -- check` passed. `pnpm run data -- build --skip=mushaf-pages` passed. `pnpm run data -- build --profile=full --skip=mushaf-pages` passed. `QURANATLAS_DATASET_BUILT_AT=2026-05-30T14:52:13.125Z pnpm run data -- build --profile=full --skip=mushaf-pages` passed to restore the existing full-profile generated dataset state. `pnpm run docs` passed. `pnpm run docs:check` passed. `pnpm run check` passed. `pnpm run build` passed. `node scripts/check-chunks.js` passed. `env -u FORCE_COLOR -u NO_COLOR PLAYWRIGHT_INCLUDE_OFFLINE=1 PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test tests/e2e/search/react-search-offline.spec.ts --grep @offline --reporter=line` passed (1 test). `pnpm run typecheck` passed after the final activation CAS refinement. `git diff --check` passed.
+- Dependency intake: Phase 0 was complete in this log. This phase consumed `shared/search/**` ABI, manifest, normalization, query, and source/catalog contracts without changing their URL ownership decisions. No package or dependency version changes were made.
+- Files changed and commits: changed `scripts/data/search/normalizer.mjs`, `scripts/data/search/postings.mjs`, `scripts/data/search/abi-writer.mjs`, `scripts/data/search/registry.mjs`, `scripts/data/search/build.mjs`, `scripts/data/search/validate.mjs`, `public/search-packs/registry.json`, `public/search-packs/packs/d6baa0361bbbdac97fedfec98d96de66/manifest.json`, `public/search-packs/packs/d6baa0361bbbdac97fedfec98d96de66/shards/**`, `scripts/data/cli.mjs`, `scripts/ci/affected.mjs`, `src/storage/schema.ts`, `src/storage/types.ts`, `src/storage/db.ts`, `src/storage/clear-data.ts`, `src/offline/cache-names.ts`, `src/offline/search/search-pack.ts`, `src/offline/search/cache.ts`, `src/offline/search/quota.ts`, `src/offline/search/activation.ts`, `src/offline/search/repair.ts`, `src/offline/search/registry.ts`, `src/search/index-client.ts`, `vite.config.js`, `playwright.config.js`, `tests/unit/scripts/search-builder.test.js`, `tests/unit/react-storage/search-schema.test.ts`, `tests/unit/react-offline/search-pack-lifecycle.test.ts`, `tests/unit/react-storage/clear-data.test.ts`, `tests/unit/react-storage/db-schema.test.ts`, `tests/e2e/fixtures/react-golden-routes.ts`, `tests/e2e/fixtures/react-search-pack.ts`, `tests/e2e/search/react-search-offline.spec.ts`, `docs/context/data-model.md`, `docs/context/source-data-flow.md`, `docs/context/surfaces/infra.md`, `docs/context/surfaces/search.md`, `docs/tech-stack.md`, and generated context files from `pnpm run docs`. No commit created.
+- Next-agent note: Phase 1 worker/runtime can start from `/search-packs/registry.json` and the generated immutable core pack; load shards from the dedicated Search cache only, keep Reader cold launch free of Search fetch/worker work, and do not promote `#/search` yet.
+
+### docs/superpowers/plans/2026-05-31-powerful-search-phase-1-worker-runtime.md
+
+- Status: complete
+- Summary: Replaced the deferred Search prototype runtime with Phase 1 query parsing, reference parsing, normalizer wrappers, active-cache pack reader, deterministic ranking/cursors, explicit Hafs-to-Qalun result mapping, restartable worker session, worker entrypoint, shard-cache/cancellation helpers, query executor, and lazy UI-facing client. Worker runtime now handles `init`, `preloadCore`, `query`, `loadFeature`, `cancel`, and `dispose` envelopes, returns serializable DTO windows only, validates cursor pack/query/rank/sort identity, and supports reference, Arabic text, translation/context, exact word form, and exact phrase search from the active immutable core pack. Prototype `SearchShard.entries`, mutable `/dataset/search/**` client assumptions, and `metadata` lane language were removed from Search runtime code.
+- Divergence: The generated pack currently stores JSON payloads inside ABI-v1 shard containers, so `pack-reader.ts` validates ABI headers/table directories/checksums with `DataView` before decoding bounded JSON payloads rather than exposing typed-array table views. `getSearchClient()` returns a fresh lazy client instead of holding a module-level singleton because `check-no-feature-state` forbids top-level mutable feature state. The smoke coverage uses the generated core pack through lifecycle install/verify/activate plus the worker session; browser route promotion remains for the UI child plan.
+- Blockers and follow-ups: `#/search` is still unsupported and unpromoted. Phase 1 UI should instantiate and own a `SearchClient` for route lifetime instead of relying on module-global client state, should call install/activate from the lifecycle APIs before first worker query when no active pack exists, and should surface typed worker errors from `SearchClient` with UI copy. Result mapping remains conservative: no explicit alias means Hafs-source-only/no open; a future mapping asset can broaden validated Reader openings without reintroducing identity fallback. `canHighlightWordsInRead` remains false until Qalun token alignment is validated.
+- Tests and validation: `pnpm exec vitest run tests/unit/react-search --reporter=dot` passed (6 files, 18 tests). `pnpm exec vitest run tests/unit/react-search/generated-pack-smoke.test.ts --reporter=dot` passed (1 file, 1 test) and installs, verifies, activates, decodes, and queries the generated core pack. `pnpm exec vitest run tests/unit/scripts/search-builder.test.js tests/unit/react-storage/search-schema.test.ts tests/unit/react-offline/search-pack-lifecycle.test.ts --reporter=dot` passed (3 files, 10 tests). `pnpm run data -- check` passed. `pnpm run test -- tests/unit/react-search --reporter=dot` passed (43 files, 240 tests). `pnpm run check` passed. `pnpm run docs` passed. `pnpm run docs:check` passed. `pnpm run build` passed. `node scripts/check-chunks.js` passed. `git diff --check` passed.
+- Dependency intake: Phase 0 and Phase 1 data/lifecycle entries were complete in this log before editing. This phase consumed `SearchPackManifestV1`, ABI header/table contracts, immutable `/search-packs/**` URL ownership, Dexie v8 activation state, dedicated Search cache names, and generated Phase 1 core pack shards without changing cache ownership or route-promotion sequencing.
+- Files changed and commits: changed `shared/search/abi.ts`, `src/search/schema.ts`, `src/search/index-client.ts`, `src/search/search-engine.ts`, `src/search/result-aliases.ts`, `src/components/search/SearchResults.tsx`, `src/metadata/search-adapter.ts`, `docs/context/surfaces/search.md`, generated context docs from `pnpm run docs`, and this handoff log. Added `src/search/normalizer.ts`, `src/search/reference-parser.ts`, `src/search/query-parser.ts`, `src/search/pack-reader.ts`, `src/search/ranking.ts`, `src/search/cursors.ts`, `src/search/result-mapping.ts`, `src/search/client.ts`, `src/search-worker/cancellation.ts`, `src/search-worker/shard-cache.ts`, `src/search-worker/query-executor.ts`, `src/search-worker/session.ts`, `src/search-worker/search.worker.ts`, `tests/unit/react-search/query-parser.test.ts`, `tests/unit/react-search/pack-reader.test.ts`, `tests/unit/react-search/result-mapping.test.ts`, `tests/unit/react-search/search-worker.test.ts`, `tests/unit/react-search/generated-pack-smoke.test.ts`, and `tests/unit/react-search/search-test-utils.ts`. No commit created.
+- Next-agent note: Start Phase 1 UI/route work by owning a route-scoped `SearchClient`, preserving Reader First launch, and installing/activating the core pack lazily on Search entry. Do not promote `#/search` until the UI/saved-search gates pass, and do not convert Hafs refs to Reader refs unless `result-mapping.ts` returns a validated single Reader target.
+
+### docs/superpowers/plans/2026-05-31-powerful-search-phase-1-ui-route-saved-searches.md
+
+- Status: not started
+- Summary: Awaiting Phase 1 worker/runtime and pack lifecycle APIs.
+- Divergence: none
+- Blockers and follow-ups: route promotion waits for core pack activation, query execution, mapping, saved searches, and offline states
+- Tests and validation: none run
+- Dependency intake: none
+- Files changed and commits: none
+- Next-agent note: Keep Search in-route state from overwriting `lastSurface` in Phase 1.
+
+### docs/superpowers/plans/2026-05-31-powerful-search-phase-2-morphology.md
+
+- Status: not started
+- Summary: Awaiting Phase 0 license/source gate and Phase 1 shipped core Search.
+- Divergence: none
+- Blockers and follow-ups: morphology cannot ship until source/license obligations are resolved
+- Tests and validation: none run
+- Dependency intake: none
+- Files changed and commits: none
+- Next-agent note: Same-root UI must include the required morphology-aid warning.
+
+### docs/superpowers/plans/2026-05-31-powerful-search-phase-3-memory-graph.md
+
+- Status: not started
+- Summary: Awaiting Phase 1 core Search and Phase 2 morphology where feature dependencies require roots/lemmas.
+- Divergence: none
+- Blockers and follow-ups: depends on phrase/window policy and byte-budget gates from Phase 0
+- Tests and validation: none run
+- Dependency intake: none
+- Files changed and commits: none
+- Next-agent note: Following wording is attested wording only; do not present prediction, autocomplete, or generated suggestions.

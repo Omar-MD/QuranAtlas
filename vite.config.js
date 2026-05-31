@@ -3,6 +3,21 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+export const datasetRuntimeCaching = {
+  urlPattern: ({ url }) => url.pathname.startsWith('/dataset/') && !url.pathname.startsWith('/dataset/search/'),
+  handler: 'CacheFirst',
+  options: {
+    cacheName: 'quran-atlas-runtime-dataset-v1',
+    cacheableResponse: {
+      statuses: [0, 200],
+    },
+    expiration: {
+      maxEntries: 20_000,
+      maxAgeSeconds: 60 * 60 * 24 * 365,
+    },
+  },
+}
+
 export default defineConfig(() => {
   const isProductionDeployment = process.env.VITE_QURANATLAS_DEPLOY_TARGET !== 'preview'
 
@@ -64,20 +79,7 @@ export default defineConfig(() => {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
           globIgnores: ['**/dataset/**'],
           runtimeCaching: [
-            {
-              urlPattern: /\/dataset\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'quran-atlas-runtime-dataset-v1',
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-                expiration: {
-                  maxEntries: 20_000,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-              },
-            },
+            datasetRuntimeCaching,
           ],
         },
       }),
