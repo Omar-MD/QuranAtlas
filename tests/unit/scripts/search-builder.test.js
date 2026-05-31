@@ -11,7 +11,7 @@ describe('Search pack builder', () => {
 
   beforeAll(async () => {
     pack = await buildSearchCorePack({ profile: 'baseline', write: false })
-  }, 30_000)
+  }, 90_000)
 
   it('generates a deterministic immutable registry and pack manifest', async () => {
     const second = await buildSearchCorePack({ profile: 'baseline', write: false })
@@ -21,7 +21,7 @@ describe('Search pack builder', () => {
     expect(pack.registry.packs[0].manifestUrl).toBe(`/search-packs/packs/${pack.contentHash}/manifest.json`)
     expect(JSON.stringify(pack.registry)).not.toContain('/dataset/search/')
     expect(pack.manifest.shards.every((shard) => shard.url.startsWith(`/search-packs/packs/${pack.contentHash}/`))).toBe(true)
-  }, 30_000)
+  }, 90_000)
 
   it('writes ABI shards that decode through the container header', async () => {
     const referenceShard = pack.files.get(`public/search-packs/packs/${pack.contentHash}/shards/core-references.qas`)
@@ -44,18 +44,27 @@ describe('Search pack builder', () => {
       'lemma-postings',
       'surah-context',
       'morphology-provenance',
+      'following-wording',
+      'shared-wording',
+      'repeated-phrases',
+      'occurs-once',
+      'ayah-endings',
+      'counts-patterns',
+      'graph-provenance',
     ])
     expect(pack.manifest.sourceIds).toEqual(['search-hafs-text-kfgqpc-v1', 'search-bridges-context-qul-v1', 'search-qac-morphology-0-4'])
     expect(pack.manifest.normalizerVersion).toBe(1)
     expect(pack.manifest.queryAstVersion).toBe(1)
     expect(pack.manifest.shards.every((shard) => shard.byteLength <= pack.manifest.byteBudget.maxShardBytes)).toBe(true)
     expect(pack.manifest.shards.some((shard) => shard.shardId.startsWith('phrase-postings-l8'))).toBe(true)
+    expect(pack.manifest.shards.some((shard) => shard.featureId === 'following-wording')).toBe(true)
+    expect(pack.manifest.phase3.graphPolicy.canCrossAyahBoundary).toBe(false)
   })
 
   it('rejects stable mutable Search URLs and validates generated pack bytes', async () => {
     expect(() => assertNoStableMutableSearchUrls({ url: '/dataset/search/baseline/index.json' })).toThrow('/dataset/search/')
     await expect(validateSearchCorePack()).resolves.toBeUndefined()
-  }, 30_000)
+  }, 90_000)
 
   it('keeps the committed registry byte-for-byte aligned with builder output', async () => {
     const registry = await readFile('public/search-packs/registry.json', 'utf8')

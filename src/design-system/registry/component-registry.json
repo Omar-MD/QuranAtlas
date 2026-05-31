@@ -1590,7 +1590,8 @@
             "saved-searches",
             "no-mapping",
             "offline-unavailable",
-            "source-panel"
+            "source-panel",
+            "graph-explore"
           ]
         }
       ],
@@ -1606,6 +1607,8 @@
           "behaviors": [
             "route shell copy",
             "result details",
+            "memory graph Explore sections",
+            "required graph source notes",
             "validated Open in Read action",
             "saved-search load recompute"
           ]

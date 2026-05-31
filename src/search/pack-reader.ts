@@ -23,6 +23,12 @@ import type {
   SearchSurahContextPayload,
   SearchPostingsPayload,
   SearchReferencesPayload,
+  SearchFollowingWordingPayload,
+  SearchSharedWordingPayload,
+  SearchRepeatedPhrasesPayload,
+  SearchOccursOncePayload,
+  SearchAyahEndingsPayload,
+  SearchCountsPatternsPayload,
   SearchRuntimeErrorShape,
 } from './schema'
 
@@ -149,8 +155,54 @@ export class SearchPackReader {
     return shard.payload
   }
 
+  async getFollowingWording(): Promise<SearchFollowingWordingPayload[]> {
+    return this.loadGraphPayloads('following-wording', isFollowingWordingPayload)
+  }
+
+  async getSharedWording(): Promise<SearchSharedWordingPayload[]> {
+    return this.loadGraphPayloads('shared-wording', isSharedWordingPayload)
+  }
+
+  async getRepeatedPhrases(): Promise<SearchRepeatedPhrasesPayload[]> {
+    return this.loadGraphPayloads('repeated-phrases', isRepeatedPhrasesPayload)
+  }
+
+  async getOccursOnce(): Promise<SearchOccursOncePayload[]> {
+    return this.loadGraphPayloads('occurs-once', isOccursOncePayload)
+  }
+
+  async getAyahEndings(): Promise<SearchAyahEndingsPayload> {
+    const shard = await this.loadShard('ayah-endings')
+    if (!isAyahEndingsPayload(shard.payload)) {
+      throw new SearchPackReaderError('corrupt-shard', 'Search ayah endings shard has the wrong payload kind')
+    }
+    return shard.payload
+  }
+
+  async getCountsPatterns(): Promise<SearchCountsPatternsPayload> {
+    const shard = await this.loadShard('counts-patterns')
+    if (!isCountsPatternsPayload(shard.payload)) {
+      throw new SearchPackReaderError('corrupt-shard', 'Search counts and patterns shard has the wrong payload kind')
+    }
+    return shard.payload
+  }
+
   dispose(): void {
     this.decoded.clear()
+  }
+
+  private async loadGraphPayloads<TPayload extends SearchPackShardPayload>(
+    prefix: string,
+    guard: (payload: SearchPackShardPayload) => payload is TPayload,
+  ): Promise<TPayload[]> {
+    const shards = this.manifest.shards.filter((entry) => entry.shardId.startsWith(`${prefix}-`) || entry.shardId === prefix)
+    if (shards.length === 0) throw new SearchPackReaderError('missing-feature', `Search pack is missing ${prefix}`)
+    const payloads: TPayload[] = []
+    for (const shard of shards) {
+      const decoded = await this.decodeShard(shard)
+      if (guard(decoded.payload)) payloads.push(decoded.payload)
+    }
+    return payloads
   }
 
   private async decodeShard(shard: SearchPackShardManifest): Promise<SearchDecodedShard<SearchPackShardPayload>> {
@@ -292,6 +344,13 @@ function isSearchPackShardPayload(payload: SearchPackShardPayload): payload is S
     || (payload?.kind === 'provenance' && Array.isArray(payload.sourceIds))
     || (payload?.kind === 'morphology-dictionary' && Array.isArray(payload.entries))
     || (payload?.kind === 'morphology-provenance' && typeof payload.sourceId === 'string')
+    || isFollowingWordingPayload(payload)
+    || isSharedWordingPayload(payload)
+    || isRepeatedPhrasesPayload(payload)
+    || isOccursOncePayload(payload)
+    || isAyahEndingsPayload(payload)
+    || isCountsPatternsPayload(payload)
+    || (payload?.kind === 'graph-provenance' && Array.isArray(payload.sourceIds))
 }
 
 function isReferencesPayload(payload: SearchPackShardPayload): payload is SearchReferencesPayload {
@@ -312,4 +371,28 @@ function isMorphologyPostingsPayload(payload: SearchPackShardPayload): payload i
 
 function isSurahContextPayload(payload: SearchPackShardPayload): payload is SearchSurahContextPayload {
   return payload?.kind === 'surah-context' && Array.isArray(payload.roots)
+}
+
+function isFollowingWordingPayload(payload: SearchPackShardPayload): payload is SearchFollowingWordingPayload {
+  return payload?.kind === 'following-wording' && Array.isArray(payload.rows)
+}
+
+function isSharedWordingPayload(payload: SearchPackShardPayload): payload is SearchSharedWordingPayload {
+  return payload?.kind === 'shared-wording' && Array.isArray(payload.rows)
+}
+
+function isRepeatedPhrasesPayload(payload: SearchPackShardPayload): payload is SearchRepeatedPhrasesPayload {
+  return payload?.kind === 'repeated-phrases' && Array.isArray(payload.rows)
+}
+
+function isOccursOncePayload(payload: SearchPackShardPayload): payload is SearchOccursOncePayload {
+  return payload?.kind === 'occurs-once' && Array.isArray(payload.rows)
+}
+
+function isAyahEndingsPayload(payload: SearchPackShardPayload): payload is SearchAyahEndingsPayload {
+  return payload?.kind === 'ayah-endings' && Array.isArray(payload.rows)
+}
+
+function isCountsPatternsPayload(payload: SearchPackShardPayload): payload is SearchCountsPatternsPayload {
+  return payload?.kind === 'counts-patterns' && Array.isArray(payload.phraseCounts)
 }

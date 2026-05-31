@@ -103,7 +103,12 @@ export function SearchShell() {
           </div>
         </SearchIndexGate>
         <div>
-          <SearchResultDetail packVersion={search.packVersion} result={search.selectedResult} />
+          <SearchResultDetail
+            exploreGraph={search.exploreGraph}
+            onLoadExploreGraph={search.loadExploreGraph}
+            packVersion={search.packVersion}
+            result={search.selectedResult}
+          />
         </div>
       </div>
     </main>

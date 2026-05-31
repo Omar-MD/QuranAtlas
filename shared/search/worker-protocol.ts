@@ -8,6 +8,7 @@ export type SearchWorkerRequest =
   | { type: 'init'; requestId: string; packId: string }
   | { type: 'preloadCore'; requestId: string }
   | { type: 'query'; requestId: string; query: SearchQueryAstV1; cursor?: SearchResultCursor; limit: number; sort: SearchSort }
+  | { type: 'explore'; requestId: string; query: SearchQueryAstV1; result: SearchResultDto; sections?: string[]; cursor?: { sectionId: string; offset: number }; limit?: number }
   | { type: 'loadFeature'; requestId: string; featureId: SearchFeatureId }
   | { type: 'cancel'; requestId: string; targetRequestId: string }
   | { type: 'dispose'; requestId: string }
@@ -73,6 +74,7 @@ export type SearchWorkerResponse =
         | { kind: 'preloaded-core' }
         | { kind: 'feature-loaded'; featureId: SearchFeatureId }
         | { kind: 'query-window'; window: SearchResultWindow }
+        | { kind: 'explore-sections'; sections: unknown[] }
         | { kind: 'cancelled'; targetRequestId: string }
         | { kind: 'disposed' }
     }

@@ -34,6 +34,9 @@ export const SEARCH_FEATURE_IDS = {
   morphology: 'morphology',
   followingWording: 'following-wording',
   sharedWording: 'shared-wording',
+  repeatedPhrases: 'repeated-phrases',
+  occursOnce: 'occurs-once',
+  ayahEndings: 'ayah-endings',
   countsPatterns: 'counts-patterns',
   provenance: 'provenance',
 } as const

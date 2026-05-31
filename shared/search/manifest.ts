@@ -59,6 +59,26 @@ export interface SearchPackManifestV1 {
   notices: SearchPackNotice[]
   buildInputDigests: Record<string, string>
   builtAt: string
+  phase3?: {
+    graphPolicy: {
+      policyVersion: number
+      maxNgramLength: number
+      followingMaxPhraseTokens: number
+      maxPhraseWindowCountPerSourceUnit: number
+      canCrossAyahBoundary: boolean
+      canCrossSurahBoundary: boolean
+      canCrossBismillahBoundary: boolean
+      bismillahHandling: string
+      overLimitBehavior: string
+    }
+    graphStats: {
+      ayahCount: number
+      totalWindowCount: number
+      skippedUnits: Array<{ ref: string; windowCount: number }>
+    }
+    sourceBoundaryPolicy: string
+    followingWordingIsAttestedOnly: boolean
+  }
 }
 
 export interface SearchPackRegistryEntry {

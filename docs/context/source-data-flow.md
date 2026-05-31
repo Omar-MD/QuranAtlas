@@ -26,7 +26,7 @@ The app never imports `data/**`. Runtime code fetches `/dataset/**` and validate
 5. Build Surah, Juz, source, text-asset, Mushaf-asset, provenance, and inventory indexes.
 6. Build knowledge shards when source inputs are present.
 7. Build the baseline Qaloon Mushaf page manifest when page SVG inputs are available.
-8. Build the source-backed Search pack registry and immutable pack shards under `public/search-packs/**`.
+8. Build the source-backed Search pack registry and immutable core, morphology, and memory-graph pack shards under `public/search-packs/**`.
 9. Emit runtime files to `public/dataset/**` and Search pack files to `public/search-packs/**`.
 
 The build preserves the existing provenance `builtAt` value when package version and profile are unchanged, so validation does not dirty tracked dataset files just by running. Set `QURANATLAS_DATASET_BUILT_AT` when an intentional dataset timestamp change is required.
@@ -59,9 +59,11 @@ The Search lanes are Hafs Search text, Bridges translation/context, and Quranic 
 
 Search pack runtime output is not `/dataset/search/**`. The registry is `public/search-packs/registry.json`, and immutable manifests and shards are emitted under `public/search-packs/packs/<contentHash>/**`. Runtime URLs mirror that layout under `/search-packs/**` and are owned by the dedicated Search pack installer/cache.
 
-`scripts/data/search/build.mjs` builds the Hafs Search pack from committed normalized Hafs text, Bridges translation/context inputs, and the verified QAC morphology source. It writes ABI-v1 shards for references, dictionaries, Arabic postings, exact-word postings, translation postings, phrase postings, morphology rows, root and lemma dictionaries, same-written-form postings, same-root postings, lemma postings, Surah context aggregates, and provenance. Each generated shard is SHA-256 verified over fetched encoded bytes, declared in the manifest, and kept below its shard byte budget.
+`scripts/data/search/build.mjs` builds the Hafs Search pack from committed normalized Hafs text, Bridges translation/context inputs, and the verified QAC morphology source. It writes ABI-v1 shards for references, dictionaries, Arabic postings, exact-word postings, translation postings, phrase postings, morphology rows, root and lemma dictionaries, same-written-form postings, same-root postings, lemma postings, Surah context aggregates, attested following wording, shared wording adjacency, repeated phrases, occurs-once phrases, ayah endings, Counts & patterns aggregates, graph provenance, and core provenance. Each generated shard is SHA-256 verified over fetched encoded bytes, declared in the manifest, and kept below its shard byte budget.
 
-`pnpm run data -- check` runs source catalog validation, morphology source validation, and Search pack check mode after baseline text output is available. `pnpm run data -- build` and `pnpm run data -- build --profile=full` regenerate Search packs alongside the normal dataset lanes. `scripts/ci/affected.mjs` treats `shared/search/**`, `scripts/data/search/**`, `public/search-packs/**`, Search catalogs, normalized sources, and data scripts as dataset-relevant inputs.
+Phase 3 graph generation is bounded by an explicit phrase/window policy: graph windows stay inside one ayah and one surah, do not cross Bismillah boundaries, materialize up to five-token n-grams, and reject source units that exceed the per-unit phrase-window cap. Graph output is chunked by feature so lazy Explore panels can load attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns without decoding every graph shard at core query time.
+
+`pnpm run data -- check` runs source catalog validation, morphology source validation, and Search pack check mode after baseline text output is available. `pnpm run data -- build` and `pnpm run data -- build --profile=full` regenerate Search packs alongside the normal dataset lanes. `scripts/ci/affected.mjs` treats every Search dataset lane (`shared/search/**`, `scripts/data/search/**`, `public/search-packs/**`, Search catalogs, normalized Search sources, and data scripts) as dataset/full-dataset relevant without forcing the Mushaf page import lane unless Mushaf page inputs changed.
 
 ## Mushaf Page Artifacts
 

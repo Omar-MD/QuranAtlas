@@ -3,15 +3,20 @@ import { Button, Tabs } from '../ui'
 import { SearchExplorePanel } from './SearchExplorePanel'
 import { SearchSourcePanel } from './SearchSourcePanel'
 import { formatSearchReference, laneLabel } from './search-labels'
+import type { SearchExploreGraphState } from './useSearchRouteState'
 
 export function SearchResultDetail({
   onClose,
   packVersion,
   result,
+  exploreGraph,
+  onLoadExploreGraph,
 }: {
   onClose?: () => void
   packVersion?: string
   result: SearchResultDto | null
+  exploreGraph?: SearchExploreGraphState
+  onLoadExploreGraph?: (result: SearchResultDto) => void
 }) {
   if (!result) {
     return (
@@ -63,7 +68,7 @@ export function SearchResultDetail({
           {
             label: 'Explore',
             value: 'explore',
-            content: <SearchExplorePanel result={result} />,
+            content: <SearchExplorePanel graph={exploreGraph} onLoadGraph={onLoadExploreGraph} result={result} />,
           },
           {
             label: 'Source',

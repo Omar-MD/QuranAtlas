@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { SearchIndexGate } from './SearchIndexGate'
 import { SearchResultDetail } from './SearchResultDetail'
 import { SearchResultList } from './SearchResultList'
+import { SearchGraphExplore } from './SearchGraphExplore'
 import { SavedSearchesRail } from './SavedSearchesRail'
 import type { SearchResultDto } from '../../search/schema'
 import type { SavedSearchRecord } from '../../storage/types'
@@ -80,6 +81,32 @@ export const SourcePanel: Story = {
   render: () => (
     <main className="qar:max-w-xl qar:p-5" aria-label="Search">
       <SearchResultDetail packVersion="1.0.0" result={fixtureResult} />
+    </main>
+  ),
+}
+
+export const GraphExplore: Story = {
+  render: () => (
+    <main className="qar:max-w-xl qar:p-5" aria-label="Search">
+      <SearchGraphExplore
+        graph={{
+          error: null,
+          loading: false,
+          resultId: fixtureResult.resultId,
+          sections: [
+            {
+              id: 'following-wording',
+              title: 'Attested following wording',
+              note: 'Attested following wording shows wording observed after this phrase in the indexed text.',
+              sourcePolicy: [{ label: 'Boundary policy', value: 'Phrase windows stay within one ayah and one surah.' }],
+              rows: [{ phrase: 'بسم الله', followers: [{ token: 'الرحمن', count: 1, refs: [{ ref: '1:1', position: 0, phraseLength: 2 }] }] }],
+              cursor: null,
+            },
+          ],
+        }}
+        onLoad={() => undefined}
+        result={fixtureResult}
+      />
     </main>
   ),
 }

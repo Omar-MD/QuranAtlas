@@ -17,6 +17,7 @@ import {
 import { SearchQueryParseError } from '../search/query-parser'
 import { SearchCancellationRegistry, SearchCancelledError } from './cancellation'
 import { SearchQueryExecutor } from './query-executor'
+import { SearchGraphExecutor } from './graph-executor'
 import { SearchShardCache } from './shard-cache'
 
 export interface SearchWorkerSessionOptions extends SearchPackReaderOptions {
@@ -28,6 +29,7 @@ export class SearchWorkerSession {
   private epoch = 1
   private reader: SearchPackReader | null = null
   private executor: SearchQueryExecutor | null = null
+  private graphExecutor: SearchGraphExecutor | null = null
   private shardCache: SearchShardCache | null = null
   private activeGeneration: number | null = null
   private readonly cancellations = new SearchCancellationRegistry()
@@ -66,6 +68,19 @@ export class SearchWorkerSession {
         await this.assertActivationUnchanged()
         return this.ok(request.requestId, { kind: 'query-window', window })
       }
+      if (request.type === 'explore') {
+        await this.assertActivationUnchanged()
+        const response = await this.requireGraphExecutor().explore({
+          query: request.query,
+          result: request.result,
+          sections: request.sections as Parameters<SearchGraphExecutor['explore']>[0]['sections'],
+          limit: request.limit,
+          token,
+        })
+        token.throwIfCancelled()
+        await this.assertActivationUnchanged()
+        return this.ok(request.requestId, { kind: 'explore-sections', sections: response.sections })
+      }
       if (request.type === 'dispose') {
         this.dispose()
         return this.ok(request.requestId, { kind: 'disposed' })
@@ -83,6 +98,7 @@ export class SearchWorkerSession {
     this.shardCache?.dispose()
     this.reader = null
     this.executor = null
+    this.graphExecutor = null
     this.shardCache = null
     this.epoch += 1
   }
@@ -93,6 +109,7 @@ export class SearchWorkerSession {
     const aliases = this.options.aliases ?? await loadVerseAliases(this.options.fetcher).then((value) => value.aliases).catch(() => ({}))
     this.reader = new SearchPackReader(manifest, this.options)
     this.executor = new SearchQueryExecutor(this.reader, { aliases })
+    this.graphExecutor = new SearchGraphExecutor(this.reader)
     this.shardCache = new SearchShardCache(manifest.byteBudget.maxResidentWorkerBytes)
     this.activeGeneration = await readActivationGeneration().catch(() => null)
   }
@@ -115,6 +132,11 @@ export class SearchWorkerSession {
   private requireExecutor(): SearchQueryExecutor {
     if (!this.executor) throw new SearchPackReaderError('unavailable-pack', 'Search worker is not initialized', true)
     return this.executor
+  }
+
+  private requireGraphExecutor(): SearchGraphExecutor {
+    if (!this.graphExecutor) throw new SearchPackReaderError('unavailable-pack', 'Search worker is not initialized', true)
+    return this.graphExecutor
   }
 
   private async assertActivationUnchanged(): Promise<void> {

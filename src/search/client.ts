@@ -7,6 +7,7 @@ import type {
   SearchWorkerRequest,
   SearchWorkerResponse,
 } from '../../shared/search'
+import type { SearchGraphExploreRequest, SearchGraphExploreResponse } from './graph'
 
 export interface SearchClientOptions {
   createWorker?: () => Worker
@@ -65,6 +66,22 @@ export class SearchClient {
       throw new Error('Search worker returned a non-query response')
     }
     return response.payload.window
+  }
+
+  async explore(request: SearchGraphExploreRequest): Promise<SearchGraphExploreResponse> {
+    const response = await this.request({
+      type: 'explore',
+      requestId: this.nextRequestId(),
+      query: request.query,
+      result: request.result,
+      sections: request.sections,
+      cursor: request.cursor,
+      limit: request.limit,
+    })
+    if (response.type !== 'ok' || response.payload.kind !== 'explore-sections') {
+      throw new Error('Search worker returned a non-explore response')
+    }
+    return { sections: response.payload.sections as SearchGraphExploreResponse['sections'] }
   }
 
   async cancel(targetRequestId: string): Promise<void> {

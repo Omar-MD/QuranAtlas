@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { decodeJsonShard, sha256Hex, stableJson, writeJsonShard } from './abi-writer.mjs'
 import { buildSearchCorePostings } from './postings.mjs'
 import { buildSearchMorphologyPayloads, MORPHOLOGY_REQUIRED_SHARDS } from './morphology/build.mjs'
+import { buildSearchGraphPayloads, GRAPH_REQUIRED_SHARDS } from './graph/build.mjs'
 import {
   SEARCH_PACKS_RUNTIME_PREFIX,
   SEARCH_PACKS_FILESYSTEM_PREFIX,
@@ -49,9 +50,18 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     translationPath: BRIDGES_SOURCE_PATH,
   })
   const morphology = await buildSearchMorphologyPayloads({ corePostings: postings })
+  const graph = buildSearchGraphPayloads({
+    corePostings: postings,
+    morphology,
+    maxShardBytes: MAX_SHARD_BYTES,
+    maxDecodedShardBytes: MAX_DECODED_SHARD_BYTES,
+    maxResidentWorkerBytes: MAX_RESIDENT_WORKER_BYTES,
+  })
   sourceDigests['search-qac-morphology-0-4'] = morphology.sourceDigest
   const contentHash = sha256Hex(Buffer.from(stableJson({
-    builder: 'quranatlas-search-phase-2-morphology-v2',
+    builder: 'quranatlas-search-phase-3-memory-graph-v1',
+    graphPolicy: graph.policy,
+    graphStats: graph.stats,
     morphologyPayloadVersion: 2,
     packVersion: PACK_VERSION,
     sourceDigests,
@@ -101,6 +111,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     }
   }
   shardPayloads.push(...morphology.payloads)
+  shardPayloads.push(...graph.payloads)
 
   const shardFiles = shardPayloads.map(([filename, payload], index) => {
     const bytes = writeJsonShard({
@@ -111,7 +122,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     })
     const checksum = sha256Hex(bytes)
     if (bytes.byteLength > MAX_SHARD_BYTES) {
-      throw new Error(`Search shard ${filename} exceeds Phase 1 encoded byte budget`)
+      throw new Error(`Search shard ${filename} exceeds encoded byte budget`)
     }
     return { filename, payload, bytes, checksum }
   })
@@ -141,9 +152,23 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     contentHash,
     graphCorpusId: GRAPH_CORPUS_ID,
     sourceRiwayah: 'hafs',
-    features: ['core', 'arabic-text', 'translation', 'context', 'phrase', 'morphology', 'provenance'],
-    requires: ['core-references', 'core-dictionaries', ...MORPHOLOGY_REQUIRED_SHARDS],
-    compatibleWith: ['quranatlas-search-phase-1', 'quranatlas-search-phase-2'],
+    features: [
+      'core',
+      'arabic-text',
+      'translation',
+      'context',
+      'phrase',
+      'morphology',
+      'following-wording',
+      'shared-wording',
+      'repeated-phrases',
+      'occurs-once',
+      'ayah-endings',
+      'counts-patterns',
+      'provenance',
+    ],
+    requires: ['core-references', 'core-dictionaries', ...MORPHOLOGY_REQUIRED_SHARDS, ...GRAPH_REQUIRED_SHARDS],
+    compatibleWith: ['quranatlas-search-phase-1', 'quranatlas-search-phase-2', 'quranatlas-search-phase-3'],
     licenseIds: ['search-kfgqpc-hafs-text', 'search-qul-bridges-context', 'search-pack-metadata-quranatlas', 'search-qac-gpl-v3-terms'],
     sourceIds: Object.keys(sourceDigests),
     normalizerVersion: SEARCH_NORMALIZER_VERSION,
@@ -178,6 +203,21 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
         licenseId: 'search-qac-gpl-v3-terms',
       },
       {
+        id: 'search-shared-wording-note',
+        label: 'Shared wording note',
+        body: 'Shared wording shows lexical overlap in the indexed text. It does not mean the verses have the same interpretation, ruling, theme, or sabab.',
+      },
+      {
+        id: 'search-following-wording-note',
+        label: 'Attested following wording note',
+        body: 'Attested following wording shows wording observed after this phrase in the indexed text.',
+      },
+      {
+        id: 'search-occurs-once-note',
+        label: 'Occurs once note',
+        body: '"Occurs once" means once in the current Search index, according to its text and tokenization.',
+      },
+      {
         id: 'search-qac-notice',
         label: 'Quranic Arabic Corpus morphology 0.4 notice',
         body: morphology.source.requiredNotice,
@@ -197,6 +237,12 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
       morphologySourceVersion: morphology.source.sourceVersion,
       morphologySourceSha256: morphology.source.sourceSha256,
       canHighlightWordsInRead: false,
+    },
+    phase3: {
+      graphPolicy: graph.policy,
+      graphStats: graph.stats,
+      sourceBoundaryPolicy: 'Phrase windows stay within one ayah and one surah; they do not cross Bismillah boundaries.',
+      followingWordingIsAttestedOnly: true,
     },
   }
   assertNoStableMutableSearchUrls(manifest)
@@ -289,6 +335,13 @@ function featureForShard(filename) {
     || filename.startsWith('lemma-')
     || filename.startsWith('surah-context')
   ) return 'morphology'
+  if (filename.startsWith('following-wording')) return 'following-wording'
+  if (filename.startsWith('shared-wording')) return 'shared-wording'
+  if (filename.startsWith('repeated-phrases')) return 'repeated-phrases'
+  if (filename.startsWith('occurs-once')) return 'occurs-once'
+  if (filename.startsWith('ayah-endings')) return 'ayah-endings'
+  if (filename.startsWith('counts-patterns')) return 'counts-patterns'
+  if (filename.startsWith('graph-provenance')) return 'provenance'
   if (filename.includes('provenance')) return 'provenance'
   if (filename.includes('dictionaries')) return 'core'
   return 'core'

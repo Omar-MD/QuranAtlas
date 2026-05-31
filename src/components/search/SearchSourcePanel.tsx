@@ -1,4 +1,10 @@
 import type { SearchResultDto } from '../../search/schema'
+import {
+  SEARCH_FOLLOWING_WORDING_NOTE,
+  SEARCH_OCCURS_ONCE_NOTE,
+  SEARCH_SHARED_WORDING_NOTE,
+  SEARCH_WORDING_NOTE,
+} from '../../search/graph'
 import { mappingLabel } from './search-labels'
 
 export function SearchSourcePanel({
@@ -27,8 +33,12 @@ export function SearchSourcePanel({
       <div className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-3">
         <p className="qar:m-0">Search analysis currently uses a Hafs text source for word forms, roots, morphology, and wording patterns. The Reader opens verses in the Qalun text.</p>
         <p className="qar:m-0">Open in Read always uses the verified Reader text.</p>
-        <p className="qar:m-0">Results show attested wording in the indexed Quran text. They are not generated suggestions, paraphrases, or tafsir.</p>
+        <p className="qar:m-0">{SEARCH_WORDING_NOTE}</p>
         <p className="qar:m-0">Same-root matches are morphological aids. They do not mean the verses have the same interpretation.</p>
+        <p className="qar:m-0">{SEARCH_SHARED_WORDING_NOTE}</p>
+        <p className="qar:m-0">{SEARCH_FOLLOWING_WORDING_NOTE}</p>
+        <p className="qar:m-0">{SEARCH_OCCURS_ONCE_NOTE}</p>
+        <p className="qar:m-0">Boundary policy: phrase windows stay within one ayah and one surah; they do not cross Bismillah boundaries.</p>
         {result.morphology ? (
           <>
             <p className="qar:m-0">Hafs source only</p>

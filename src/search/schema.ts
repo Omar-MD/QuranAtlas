@@ -9,6 +9,9 @@ import type {
   SearchWorkerErrorCode,
 } from '../../shared/search'
 import type { SearchMorphologyPostingRow, SearchMorphologyRow, SearchSurahContextRow } from './morphology'
+import type {
+  SearchGraphPolicyRow,
+} from './graph'
 
 export type {
   SearchMappingState,
@@ -80,6 +83,67 @@ export interface SearchPostingsPayload {
   postings: SearchPostingRow[]
 }
 
+export interface SearchFollowingWordingPayload {
+  kind: 'following-wording'
+  sourcePolicy: SearchGraphPolicyRow[]
+  rows: Array<{
+    term: string
+    length: number
+    followers: Array<{ token: string; count: number; refs: Array<{ ref: SearchGraphRef; position: number; phraseLength: number }> }>
+  }>
+}
+
+export interface SearchSharedWordingPayload {
+  kind: 'shared-wording'
+  sourcePolicy: SearchGraphPolicyRow[]
+  rows: Array<{
+    ayahId: number
+    ref: SearchGraphRef
+    neighbors: Array<{ ayahId: number; ref: SearchGraphRef; sharedTokenCount: number; sharedTokens: string[] }>
+  }>
+}
+
+export interface SearchRepeatedPhrasesPayload {
+  kind: 'repeated-phrases'
+  sourcePolicy: SearchGraphPolicyRow[]
+  rows: Array<{ term: string; length: number; count: number; refs: Array<{ ref: SearchGraphRef; position: number }> }>
+}
+
+export interface SearchOccursOncePayload {
+  kind: 'occurs-once'
+  sourcePolicy: SearchGraphPolicyRow[]
+  rows: Array<{ term: string; length: number; count: 1; refs: Array<{ ref: SearchGraphRef; position: number }> }>
+}
+
+export interface SearchAyahEndingsPayload {
+  kind: 'ayah-endings'
+  sourcePolicy: SearchGraphPolicyRow[]
+  rows: Array<{
+    ayahId: number
+    ref: SearchGraphRef
+    endings: Array<{ term: string; length: number; position: number; countInIndex: number }>
+  }>
+  topEndings: Array<{ term: string; count: number; refs: Array<{ ref: SearchGraphRef; position: number; length: number }> }>
+}
+
+export interface SearchCountsPatternsPayload {
+  kind: 'counts-patterns'
+  sourcePolicy: SearchGraphPolicyRow[]
+  tokenCounts: { totalTokens: number; uniqueTokens: number }
+  phraseCounts: Array<{ length: number; count: number }>
+  rootCounts: Array<{ root: string; count: number }>
+  surahDistribution: Array<{ surah: number; ayahCount: number; tokenCount: number }>
+  ayahEndings: Array<{ term: string; count: number }>
+  adjacencyCounts: { ayahsWithSharedWording: number; sharedEdges: number }
+}
+
+export interface SearchGraphProvenancePayload {
+  kind: 'graph-provenance'
+  sourcePolicy: SearchGraphPolicyRow[]
+  sourceIds: string[]
+  generatedFeatureIds: string[]
+}
+
 export interface SearchMorphologyDictionaryPayload {
   kind: 'morphology-dictionary'
   dictionary: 'roots' | 'lemmas'
@@ -141,6 +205,13 @@ export type SearchPackShardPayload =
   | SearchMorphologyPostingsPayload
   | SearchSurahContextPayload
   | SearchMorphologyProvenancePayload
+  | SearchFollowingWordingPayload
+  | SearchSharedWordingPayload
+  | SearchRepeatedPhrasesPayload
+  | SearchOccursOncePayload
+  | SearchAyahEndingsPayload
+  | SearchCountsPatternsPayload
+  | SearchGraphProvenancePayload
 
 export interface SearchRuntimeErrorShape {
   code: SearchWorkerErrorCode

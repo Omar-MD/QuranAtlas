@@ -106,7 +106,7 @@ Search pack activation state uses content-addressed records. `searchPackActivati
 
 Search pack runtime assets live outside `/dataset/**`: the registry is `/search-packs/registry.json`, and immutable pack manifests and shards live under `/search-packs/packs/<contentHash>/**`. They have one cache owner: the dedicated Search installer/cache, not the generic dataset CacheFirst route.
 
-The active Search pack includes source-backed morphology feature shards derived from the verified Quranic Arabic Corpus 0.4 source under `data/normalized/search/qac/`. These shards provide Hafs analytical metadata for same written form, same root, lemma, and Surah context Search modes. They are Search pack assets, not `/dataset/**` files, and Reader word highlighting remains disabled until Qalun token alignment is validated.
+The active Search pack includes source-backed morphology feature shards derived from the verified Quranic Arabic Corpus 0.4 source under `data/normalized/search/qac/`. These shards provide Hafs analytical metadata for same written form, same root, lemma, and Surah context Search modes. Phase 3 graph shards add attested following wording, shared wording adjacency, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns aggregates. They are Search pack assets, not `/dataset/**` files, and Reader word highlighting remains disabled until Qalun token alignment is validated.
 
 ## Translation Alignment
 

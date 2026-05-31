@@ -6,6 +6,14 @@ import { reconcileSearchPackState, type SearchPackAvailabilityState } from '../.
 import { getSearchClient, type SearchClient } from '../../search/client'
 import { parseSearchQuery, SearchQueryParseError } from '../../search/query-parser'
 import type { SearchQueryMode, SearchResultDto, SearchSort } from '../../search/schema'
+import type { SearchGraphSection } from '../../search/graph'
+
+export type SearchExploreGraphState = {
+  error: string | null
+  loading: boolean
+  resultId: string | null
+  sections: SearchGraphSection[]
+}
 
 export type SearchRoutePackState = SearchPackAvailabilityState | 'loading'
 
@@ -20,6 +28,8 @@ export type SearchRouteState = {
   results: SearchResultDto[]
   searchStatus: string
   selectedResult: SearchResultDto | null
+  exploreGraph: SearchExploreGraphState
+  loadExploreGraph: (result: SearchResultDto) => void
   setMode: (mode: SearchQueryMode) => void
   setQuery: (query: string) => void
   setSelectedResult: (result: SearchResultDto | null) => void
@@ -41,6 +51,12 @@ export function useSearchRouteState(options: {
   const [resultCountMessage, setResultCountMessage] = useState('')
   const [searchStatus, setSearchStatus] = useState('Loading search index')
   const [selectedResult, setSelectedResult] = useState<SearchResultDto | null>(null)
+  const [exploreGraph, setExploreGraph] = useState<SearchExploreGraphState>({
+    error: null,
+    loading: false,
+    resultId: null,
+    sections: [],
+  })
   const client = useMemo(() => options.client ?? getSearchClient(), [options.client])
   const requestSequence = useRef(0)
   const readyRef = useRef(false)
@@ -112,6 +128,7 @@ export function useSearchRouteState(options: {
     if (!trimmed) {
       setResults([])
       setSelectedResult(null)
+      setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
       setResultCountMessage('')
       setError(null)
       setSearchStatus(packState === 'active' ? 'Search data is ready on this device.' : packMessageForState(packState))
@@ -137,6 +154,7 @@ export function useSearchRouteState(options: {
       if (sequence !== requestSequence.current) return
       setResults(window.results)
       setSelectedResult(window.results[0] ?? null)
+      setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
       const count = window.totalKnownResults ?? window.results.length
       setResultCountMessage(`${count} result${count === 1 ? '' : 's'}`)
       setSearchStatus(`${count} result${count === 1 ? '' : 's'}`)
@@ -147,6 +165,34 @@ export function useSearchRouteState(options: {
       setSearchStatus(message)
     })
   }, [client, mode, packState, query, sort])
+
+  const loadExploreGraph = useCallback((result: SearchResultDto) => {
+    if (!readyRef.current) {
+      setExploreGraph({ error: 'Search data is not available on this device.', loading: false, resultId: result.resultId, sections: [] })
+      return
+    }
+    let parsed
+    try {
+      parsed = parseSearchQuery(query.trim() || result.snippet || result.sourceText, { mode })
+    } catch (caught) {
+      const message = caught instanceof SearchQueryParseError ? caught.message : 'Explore query is unsupported'
+      setExploreGraph({ error: message, loading: false, resultId: result.resultId, sections: [] })
+      return
+    }
+    setExploreGraph((current) => current.resultId === result.resultId && current.sections.length > 0
+      ? current
+      : { error: null, loading: true, resultId: result.resultId, sections: [] })
+    void client.explore({ query: parsed.ast, result, limit: 8 }).then((response) => {
+      setExploreGraph({ error: null, loading: false, resultId: result.resultId, sections: response.sections })
+    }).catch((caught) => {
+      setExploreGraph({
+        error: caught instanceof Error ? caught.message : 'Explore sections are unavailable',
+        loading: false,
+        resultId: result.resultId,
+        sections: [],
+      })
+    })
+  }, [client, mode, query])
 
   return {
     error,
@@ -159,6 +205,8 @@ export function useSearchRouteState(options: {
     results,
     searchStatus,
     selectedResult,
+    exploreGraph,
+    loadExploreGraph,
     setMode,
     setQuery,
     setSelectedResult,
