@@ -55,8 +55,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run test` | Run Vitest once |
 | `pnpm run test:e2e` | Run the React Playwright suite |
 | `pnpm run test:e2e:preview -- <args>` | Ensure the preview artifact has the Qaloon Mushaf page pack, then run Playwright against preview |
-| `pnpm run test:e2e:golden` | Run `@golden` Playwright specs through the shared preview runner |
-| `pnpm run test:e2e:a11y` | Run `@a11y` Playwright specs through the shared preview runner |
+| `pnpm run test:e2e:golden` | Run `@golden` Playwright specs, including their accessibility assertions, through the shared preview runner |
 | `pnpm run test:e2e:offline` | Run `@offline` Playwright specs through the shared preview runner with offline coverage enabled |
 | `pnpm run visual` | Run Playwright visual regression specs |
 | `pnpm run storybook` | Start React Storybook on port 6007 |
@@ -72,6 +71,8 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run validate:affected` | Local affected release gate: static checks/tests always, then build/e2e/visual/Storybook only when changed-file gates require them |
 
 `PLAYWRIGHT_SKIP_BUILD=1` tells preview-oriented Playwright scripts to reuse an existing `dist/` artifact. CI downloads the build job artifact and runs Playwright directly against preview so the same app bundle is tested and deployed.
+
+The standalone preview scripts are non-overlapping lanes: `test:e2e:golden` owns current accessibility assertions because the browser accessibility specs are tagged `@golden @a11y`, and `test:e2e:offline` owns service-worker/offline coverage. Use `test:e2e:preview -- <args>` for ad hoc Playwright filters instead of adding tag aliases that rerun the same tests.
 
 ## Static Gates
 
