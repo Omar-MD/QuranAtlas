@@ -63,7 +63,7 @@ export function SearchResultDetail({
           {
             label: 'Explore',
             value: 'explore',
-            content: <SearchExplorePanel />,
+            content: <SearchExplorePanel result={result} />,
           },
           {
             label: 'Source',

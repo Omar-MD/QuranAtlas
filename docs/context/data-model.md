@@ -106,6 +106,8 @@ Search pack activation state uses content-addressed records. `searchPackActivati
 
 Search pack runtime assets live outside `/dataset/**`: the registry is `/search-packs/registry.json`, and immutable pack manifests and shards live under `/search-packs/packs/<contentHash>/**`. They have one cache owner: the dedicated Search installer/cache, not the generic dataset CacheFirst route.
 
+The active Search pack includes source-backed morphology feature shards derived from the verified Quranic Arabic Corpus 0.4 source under `data/normalized/search/qac/`. These shards provide Hafs analytical metadata for same written form, same root, lemma, and Surah context Search modes. They are Search pack assets, not `/dataset/**` files, and Reader word highlighting remains disabled until Qalun token alignment is validated.
+
 ## Translation Alignment
 
 Translations are keyed to Hafs-style verse numbering. The current Qaloon runtime uses `/dataset/translations/_verse-aliases.json` plus `src/data/verse-aliases.ts` to map ayah references into identity, merged, primary, continuation, or missing translation roles. `src/data/reader-corpus.ts` joins the active Quran text, translation pack, footnotes, aliases, and optional knowledge state into the reader corpus consumed by React components.
@@ -124,7 +126,7 @@ Page SVG bodies are runtime assets; they must not be embedded into JS bundles.
 
 ## Source Data
 
-Build-only source data lives under `data/**`. Scripts convert it into committed runtime files under `public/dataset/**`. The app never imports `data/**` directly.
+Build-only source data lives under `data/**`. Scripts convert it into committed runtime files under `public/dataset/**` and committed Search pack files under `public/search-packs/**`. The app never imports `data/**` directly.
 
 ## Invariants
 

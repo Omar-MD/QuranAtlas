@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 import { decodeJsonShard, sha256Hex, stableJson, writeJsonShard } from './abi-writer.mjs'
 import { buildSearchCorePostings } from './postings.mjs'
+import { buildSearchMorphologyPayloads, MORPHOLOGY_REQUIRED_SHARDS } from './morphology/build.mjs'
 import {
   SEARCH_PACKS_RUNTIME_PREFIX,
   SEARCH_PACKS_FILESYSTEM_PREFIX,
@@ -43,16 +44,18 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     'search-hafs-text-kfgqpc-v1': await fileSha256(HAFS_SOURCE_PATH),
     'search-bridges-context-qul-v1': await fileSha256(BRIDGES_SOURCE_PATH),
   }
-  const contentHash = sha256Hex(Buffer.from(stableJson({
-    builder: 'quranatlas-search-phase-1-core',
-    packVersion: PACK_VERSION,
-    sourceDigests,
-  }))).slice(0, 32)
-
   const postings = await buildSearchCorePostings({
     hafsPath: HAFS_SOURCE_PATH,
     translationPath: BRIDGES_SOURCE_PATH,
   })
+  const morphology = await buildSearchMorphologyPayloads({ corePostings: postings })
+  sourceDigests['search-qac-morphology-0-4'] = morphology.sourceDigest
+  const contentHash = sha256Hex(Buffer.from(stableJson({
+    builder: 'quranatlas-search-phase-2-morphology-v2',
+    morphologyPayloadVersion: 2,
+    packVersion: PACK_VERSION,
+    sourceDigests,
+  }))).slice(0, 32)
   const shardPayloads = [
     ['core-references.qas', {
       kind: 'references',
@@ -97,6 +100,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
       chunk += 1
     }
   }
+  shardPayloads.push(...morphology.payloads)
 
   const shardFiles = shardPayloads.map(([filename, payload], index) => {
     const bytes = writeJsonShard({
@@ -137,10 +141,10 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     contentHash,
     graphCorpusId: GRAPH_CORPUS_ID,
     sourceRiwayah: 'hafs',
-    features: ['core', 'arabic-text', 'translation', 'context', 'phrase', 'provenance'],
-    requires: ['core-references', 'core-dictionaries'],
-    compatibleWith: ['quranatlas-search-phase-1'],
-    licenseIds: ['search-kfgqpc-hafs-text', 'search-qul-bridges-context', 'search-pack-metadata-quranatlas'],
+    features: ['core', 'arabic-text', 'translation', 'context', 'phrase', 'morphology', 'provenance'],
+    requires: ['core-references', 'core-dictionaries', ...MORPHOLOGY_REQUIRED_SHARDS],
+    compatibleWith: ['quranatlas-search-phase-1', 'quranatlas-search-phase-2'],
+    licenseIds: ['search-kfgqpc-hafs-text', 'search-qul-bridges-context', 'search-pack-metadata-quranatlas', 'search-qac-gpl-v3-terms'],
     sourceIds: Object.keys(sourceDigests),
     normalizerVersion: SEARCH_NORMALIZER_VERSION,
     queryAstVersion: SEARCH_QUERY_AST_VERSION,
@@ -166,6 +170,20 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
         label: 'Open in Read trust note',
         body: 'Open in Read always uses the verified Reader text.',
       },
+      {
+        id: 'search-same-root-note',
+        label: 'Same-root morphology note',
+        body: 'Same-root matches are morphological aids. They do not mean the verses have the same interpretation.',
+        sourceId: 'search-qac-morphology-0-4',
+        licenseId: 'search-qac-gpl-v3-terms',
+      },
+      {
+        id: 'search-qac-notice',
+        label: 'Quranic Arabic Corpus morphology 0.4 notice',
+        body: morphology.source.requiredNotice,
+        sourceId: 'search-qac-morphology-0-4',
+        licenseId: 'search-qac-gpl-v3-terms',
+      },
     ],
     buildInputDigests: sourceDigests,
     builtAt: GENERATED_AT,
@@ -173,6 +191,12 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
       maxPhraseTokens: SEARCH_PHASE1_MAX_PHRASE_TOKENS,
       queryAstVersion: SEARCH_QUERY_AST_VERSION,
       profiles: ['baseline', 'full'],
+    },
+    phase2: {
+      morphologySourceId: 'search-qac-morphology-0-4',
+      morphologySourceVersion: morphology.source.sourceVersion,
+      morphologySourceSha256: morphology.source.sourceSha256,
+      canHighlightWordsInRead: false,
     },
   }
   assertNoStableMutableSearchUrls(manifest)
@@ -254,7 +278,17 @@ async function fileSha256(path) {
 }
 
 function featureForShard(filename) {
-  if (filename.includes('postings')) return 'phrase'
+  if (filename.startsWith('arabic-postings')) return 'arabic-text'
+  if (filename.startsWith('translation-postings')) return 'translation'
+  if (filename.startsWith('exact-word-postings')) return 'arabic-text'
+  if (filename.startsWith('phrase-postings')) return 'phrase'
+  if (
+    filename.startsWith('morphology-')
+    || filename.startsWith('same-written-form-')
+    || filename.startsWith('same-root-')
+    || filename.startsWith('lemma-')
+    || filename.startsWith('surah-context')
+  ) return 'morphology'
   if (filename.includes('provenance')) return 'provenance'
   if (filename.includes('dictionaries')) return 'core'
   return 'core'

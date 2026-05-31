@@ -35,6 +35,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 - `src/app/App.tsx` owns hash routing and top-level providers.
 - `src/components/ui/**` is the only allowed layer for direct Radix imports.
 - `src/design-system/**` is the styling source of truth: semantic tokens, Tailwind theme, registry, recipes, and design-system docs.
+- `src/design-system/tokens/tailwind-theme.css` uses Tailwind v4 explicit source registration so generated datasets and Search pack assets are not scanned as class sources.
 - Runtime dataset files are same-origin under `/dataset/**`; build-only source data lives under `data/**`.
 
 ## Scripts
@@ -86,7 +87,7 @@ The standalone preview scripts are non-overlapping lanes: `test:e2e:golden` owns
 - `scripts/check-ui-references.mjs`: validates committed UI reference images and notes.
 - `scripts/check-chunks.js`: enforces the production chunk budget.
 
-Search pack generation is part of the data lane. `scripts/data/search/build.mjs` emits `public/search-packs/registry.json` and immutable pack manifests/shards under `public/search-packs/packs/<contentHash>/**`; `scripts/data/search/validate.mjs` verifies the generated registry, manifest, shard checksums, and forbidden `/dataset/search/**` URL shape.
+Search pack generation is part of the data lane. `scripts/data/search/build.mjs` emits `public/search-packs/registry.json` and immutable pack manifests/shards under `public/search-packs/packs/<contentHash>/**`; `scripts/data/search/validate.mjs` verifies the generated registry, manifest, shard checksums, and forbidden `/dataset/search/**` URL shape. QAC morphology source validation runs in the same lane before morphology-derived Search shards can ship.
 
 Warnings from build, lint, check, docs, or CI scripts are treated as failures.
 

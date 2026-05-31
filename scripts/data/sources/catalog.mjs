@@ -265,6 +265,9 @@ function validateSearchMorphologySource(source, verification, context) {
   if (licenseDecision.sourceAvailabilityRequired !== true) {
     context.errors.push(`search morphology source ${source.id} must require source availability`)
   }
+  if (licenseDecision.mayShipDerivedFeature !== true) {
+    context.errors.push(`search morphology source ${source.id} must allow derived Search features before Phase 2 ships`)
+  }
   if (typeof manualSource.dropPath !== 'string' || !manualSource.dropPath) {
     context.errors.push(`search morphology source ${source.id} missing manual source-drop path`)
   }

@@ -86,11 +86,57 @@ describe('Search route UI', () => {
     expect(screen.getByRole('main', { name: 'Search' })).toBeInTheDocument()
     expect(screen.getByLabelText('Search Quran text, translation, or context')).toHaveAttribute('placeholder', 'Search...')
     expect(screen.getByRole('tab', { name: 'Search mode: Exact word form' })).toBeInTheDocument()
-    expect(screen.queryByRole('tab', { name: /Root/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Search mode: Same root' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Open 2:255 in Read' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('tab', { name: 'Source' }))
     expect(screen.getByText(/Search analysis currently uses a Hafs text source/i)).toBeInTheDocument()
-    expect(screen.queryByText(/word-level/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Same-root matches are morphological aids/i)).toBeInTheDocument()
+  })
+
+  it('shows morphology warnings and avoids Qalun word highlighting for same-root results', async () => {
+    const selected = result({
+      matchLanes: ['same-root'],
+      canHighlightWordsInRead: false,
+      morphology: {
+        sourceNote: 'Search analysis currently uses a Hafs text source for word forms, roots, morphology, and wording patterns. The Reader opens verses in the Qalun text.',
+        root: 'Alh',
+        lemma: '{ll~ah',
+        sourceToken: 'الله',
+        transliteration: '{ll~ah',
+        wordPosition: 1,
+        tokenOrdinal: 0,
+        sameRootCount: 2,
+        sameWrittenFormCount: 2,
+        lemmaCount: 2,
+      },
+    })
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      mode: 'same-root',
+      query: 'الله',
+      results: [selected],
+      selectedResult: selected,
+    }))
+
+    render(<SearchShell />)
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Explore' }))
+    expect(screen.getAllByText('Same root').length).toBeGreaterThan(0)
+    expect(screen.getByText('Alh')).toBeInTheDocument()
+    expect(screen.getByText(/Same-root matches are morphological aids/i)).toBeInTheDocument()
+    expect(screen.getByText('Word-level match not available in Reader text')).toBeInTheDocument()
+  })
+
+  it('degrades morphology Explore at panel level when the active feature is missing', async () => {
+    const selected = result({ matchLanes: ['arabic-text'] })
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      results: [selected],
+      selectedResult: selected,
+    }))
+
+    render(<SearchShell />)
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Explore' }))
+    expect(screen.getByText('Missing morphology feature')).toBeInTheDocument()
   })
 
   it('uses Details as the primary action when Reader mapping is unavailable', () => {

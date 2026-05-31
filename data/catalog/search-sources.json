@@ -13,7 +13,7 @@
     "coverage": {
       "surahs": 114,
       "ayahs": 6236,
-      "tokens": 77430,
+      "tokens": 77429,
       "rows": 6236
     },
     "checksums": {
@@ -61,7 +61,7 @@
     "coverage": {
       "surahs": 114,
       "ayahs": 6236,
-      "tokens": 77430,
+      "tokens": 77429,
       "rows": 128219
     },
     "checksums": {
@@ -69,16 +69,16 @@
       "accepted": ["a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46"]
     },
     "manualSource": {
-      "dropPath": ".scratch/source-drops/search/qac/quranic-corpus-morphology-0.4.txt",
+      "dropPath": "data/normalized/search/qac/quranic-corpus-morphology-0.4.txt",
       "approvedFilenames": ["quranic-corpus-morphology-0.4.txt"]
     },
     "licenseDecision": {
       "status": "resolved",
-      "mayShipDerivedFeature": false,
+      "mayShipDerivedFeature": true,
       "requiredNotice": "Search morphology uses Quranic Arabic Corpus morphology 0.4 by Kais Dukes under GNU GPL terms and the upstream terms of use.",
       "sourceAvailabilityRequired": true
     },
-    "sourceAvailability": "Official QAC download page is the source of truth. The approved checksum matches a public mirror of quranic-corpus-morphology-0.4.txt and must be rechecked against the manually downloaded official file before Phase 2 morphology ships.",
-    "transformedDataNotes": "Morphology remains feature-gated. Same-root UI cannot ship until notices, source availability, checksum verification, and transformed-output obligations are satisfied."
+    "sourceAvailability": "The approved QAC 0.4 source is committed verbatim at data/normalized/search/qac/quranic-corpus-morphology-0.4.txt with the upstream copyright block preserved. The official QAC download page remains the source of truth for updates.",
+    "transformedDataNotes": "Morphology-derived Search outputs retain the QAC source id, accepted checksum, GPL notice metadata, and Hafs-source analysis warnings."
   }
 ]

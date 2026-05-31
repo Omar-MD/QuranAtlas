@@ -19,15 +19,12 @@ export class SearchQueryParseError extends Error {
 }
 
 export interface SearchQueryParseOptions {
-  mode?: SearchQueryMode | 'same-root'
+  mode?: SearchQueryMode
   maxRawLength?: number
 }
 
 export function parseSearchQuery(rawText: string, options: SearchQueryParseOptions = {}): ParsedSearchQuery {
   const mode = options.mode ?? 'all'
-  if (mode === 'same-root') {
-    throw new SearchQueryParseError('Same root search is unavailable until the morphology pack ships')
-  }
   const trimmed = rawText.trim()
   if (!trimmed) throw new SearchQueryParseError('Search query is empty')
   if (trimmed.length > (options.maxRawLength ?? 256)) throw new SearchQueryParseError('Search query is too long')
@@ -57,6 +54,7 @@ export function parseSearchQuery(rawText: string, options: SearchQueryParseOptio
     tokens,
     filters: {
       sourceLane: sourceLanesForMode(mode, hasArabicScript(trimmed)),
+      morphology: morphologyFiltersForMode(mode),
     },
   }
 
@@ -89,7 +87,13 @@ function sourceLanesForMode(
   queryHasArabic: boolean,
 ): SearchQueryAstV1['filters']['sourceLane'] {
   if (mode === 'arabic-text' || mode === 'exact-word-form' || mode === 'phrase') return ['arabic-text']
+  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context') return ['arabic-text']
   if (mode === 'translation') return ['translation']
   if (mode === 'context') return ['context']
   return queryHasArabic ? ['arabic-text'] : ['translation', 'context']
+}
+
+function morphologyFiltersForMode(mode: SearchQueryMode): SearchQueryAstV1['filters']['morphology'] | undefined {
+  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context') return [mode]
+  return undefined
 }

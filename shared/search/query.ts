@@ -8,6 +8,10 @@ export const SEARCH_QUERY_MODES = [
   'context',
   'exact-word-form',
   'phrase',
+  'same-written-form',
+  'same-root',
+  'lemma',
+  'surah-context',
 ] as const
 
 export type SearchQueryMode = typeof SEARCH_QUERY_MODES[number]
@@ -22,6 +26,7 @@ export interface SearchQueryAstV1 {
   filters: {
     surah?: number[]
     sourceLane?: Array<'arabic-text' | 'translation' | 'context'>
+    morphology?: Array<'same-written-form' | 'same-root' | 'lemma' | 'surah-context'>
   }
 }
 

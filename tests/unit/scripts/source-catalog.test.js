@@ -63,17 +63,18 @@ const searchCatalog = () => ({
       sourceUrl: 'https://corpus.quran.com/download/',
       outputPath: 'search-packs/packs/{contentHash}/morphology/qac-morphology.qas',
       expectedVersion: '0.4',
-      coverage: { surahs: 114, ayahs: 6236, tokens: 77430, rows: 128219 },
+      coverage: { surahs: 114, ayahs: 6236, tokens: 77429, rows: 128219 },
       checksums: {
         algorithm: 'sha-256',
         accepted: ['a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46'],
       },
       manualSource: {
-        dropPath: '.scratch/source-drops/search/qac/quranic-corpus-morphology-0.4.txt',
+        dropPath: 'data/normalized/search/qac/quranic-corpus-morphology-0.4.txt',
         approvedFilenames: ['quranic-corpus-morphology-0.4.txt'],
       },
       licenseDecision: {
         status: 'resolved',
+        mayShipDerivedFeature: true,
         sourceAvailabilityRequired: true,
       },
       sourceAvailability: 'Official source page and accepted checksum are recorded.',
@@ -83,7 +84,7 @@ const searchCatalog = () => ({
     requiredSourceIds: ['search-qac-morphology-0-4'],
     requiredLicenseIds: ['search-qac-gpl-v3-terms', 'search-pack-metadata-quranatlas'],
     expectedCoverage: {
-      'search-qac-morphology-0-4': { surahs: 114, ayahs: 6236, tokens: 77430, rows: 128219 },
+      'search-qac-morphology-0-4': { surahs: 114, ayahs: 6236, tokens: 77429, rows: 128219 },
     },
     morphology: {
       sourceId: 'search-qac-morphology-0-4',

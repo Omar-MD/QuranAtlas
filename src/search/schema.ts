@@ -8,6 +8,7 @@ import type {
   SearchSort,
   SearchWorkerErrorCode,
 } from '../../shared/search'
+import type { SearchMorphologyPostingRow, SearchMorphologyRow, SearchSurahContextRow } from './morphology'
 
 export type {
   SearchMappingState,
@@ -79,6 +80,50 @@ export interface SearchPostingsPayload {
   postings: SearchPostingRow[]
 }
 
+export interface SearchMorphologyDictionaryPayload {
+  kind: 'morphology-dictionary'
+  dictionary: 'roots' | 'lemmas'
+  entries: Array<{ id: number; value: string; count: number }>
+}
+
+export interface SearchMorphologyRowsPayload {
+  kind: 'morphology-rows'
+  rows: SearchMorphologyRow[]
+}
+
+export interface SearchMorphologyPostingsPayload {
+  kind: 'morphology-postings'
+  lane: 'same-written-form-postings' | 'same-root-postings' | 'lemma-postings'
+  postings: SearchMorphologyPostingRow[]
+}
+
+export interface SearchSurahContextPayload {
+  kind: 'surah-context'
+  roots: SearchSurahContextRow[]
+  lemmas: SearchSurahContextRow[]
+  writtenForms: SearchSurahContextRow[]
+}
+
+export interface SearchMorphologyProvenancePayload {
+  kind: 'morphology-provenance'
+  sourceId: string
+  sourceVersion: string
+  sourcePath: string
+  sourceUrl: string
+  sourceSha256: string
+  acceptedSha256: string[]
+  licenseIds: string[]
+  sourceAvailability: string
+  transformedDataNotes: string
+  requiredNotice: string
+  coverage: {
+    surahs: number
+    ayahs: number
+    tokens: number
+    rows: number
+  }
+}
+
 export interface SearchProvenancePayload {
   kind: 'provenance'
   sourceIds: string[]
@@ -91,6 +136,11 @@ export type SearchPackShardPayload =
   | SearchDictionariesPayload
   | SearchPostingsPayload
   | SearchProvenancePayload
+  | SearchMorphologyDictionaryPayload
+  | SearchMorphologyRowsPayload
+  | SearchMorphologyPostingsPayload
+  | SearchSurahContextPayload
+  | SearchMorphologyProvenancePayload
 
 export interface SearchRuntimeErrorShape {
   code: SearchWorkerErrorCode

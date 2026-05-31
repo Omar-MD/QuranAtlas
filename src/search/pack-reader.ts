@@ -18,6 +18,9 @@ import type {
   SearchAyahRow,
   SearchDecodedShard,
   SearchPackShardPayload,
+  SearchMorphologyPostingsPayload,
+  SearchMorphologyRowsPayload,
+  SearchSurahContextPayload,
   SearchPostingsPayload,
   SearchReferencesPayload,
   SearchRuntimeErrorShape,
@@ -114,6 +117,36 @@ export class SearchPackReader {
       if (isPostingsPayload(shard.payload) && shard.payload.lane === lane) postings.push(shard.payload)
     }
     return postings
+  }
+
+  async getMorphologyRows(): Promise<SearchMorphologyRowsPayload['rows']> {
+    const shards = this.manifest.shards.filter((entry) => entry.shardId.startsWith('morphology-rows-'))
+    if (shards.length === 0) throw new SearchPackReaderError('missing-feature', 'Search pack is missing morphology rows')
+    const rows: SearchMorphologyRowsPayload['rows'] = []
+    for (const shard of shards) {
+      const decoded = await this.decodeShard(shard)
+      if (isMorphologyRowsPayload(decoded.payload)) rows.push(...decoded.payload.rows)
+    }
+    return rows
+  }
+
+  async getMorphologyPostings(lane: SearchMorphologyPostingsPayload['lane']): Promise<SearchMorphologyPostingsPayload[]> {
+    const shards = this.manifest.shards.filter((entry) => entry.shardId.startsWith(`${lane}-`))
+    if (shards.length === 0) throw new SearchPackReaderError('missing-feature', `Search pack is missing ${lane}`)
+    const postings: SearchMorphologyPostingsPayload[] = []
+    for (const shard of shards) {
+      const decoded = await this.decodeShard(shard)
+      if (isMorphologyPostingsPayload(decoded.payload) && decoded.payload.lane === lane) postings.push(decoded.payload)
+    }
+    return postings
+  }
+
+  async getSurahContext(): Promise<SearchSurahContextPayload> {
+    const shard = await this.loadShard('surah-context')
+    if (!isSurahContextPayload(shard.payload)) {
+      throw new SearchPackReaderError('corrupt-shard', 'Search Surah context shard has the wrong payload kind')
+    }
+    return shard.payload
   }
 
   dispose(): void {
@@ -252,8 +285,13 @@ async function assertSha256(bytes: ArrayBuffer, expected: string): Promise<void>
 function isSearchPackShardPayload(payload: SearchPackShardPayload): payload is SearchPackShardPayload {
   return isReferencesPayload(payload)
     || isPostingsPayload(payload)
+    || isMorphologyRowsPayload(payload)
+    || isMorphologyPostingsPayload(payload)
+    || isSurahContextPayload(payload)
     || (payload?.kind === 'dictionaries' && typeof payload.dictionaries === 'object')
     || (payload?.kind === 'provenance' && Array.isArray(payload.sourceIds))
+    || (payload?.kind === 'morphology-dictionary' && Array.isArray(payload.entries))
+    || (payload?.kind === 'morphology-provenance' && typeof payload.sourceId === 'string')
 }
 
 function isReferencesPayload(payload: SearchPackShardPayload): payload is SearchReferencesPayload {
@@ -262,4 +300,16 @@ function isReferencesPayload(payload: SearchPackShardPayload): payload is Search
 
 function isPostingsPayload(payload: SearchPackShardPayload): payload is SearchPostingsPayload {
   return payload?.kind === 'postings' && Array.isArray(payload.postings)
+}
+
+function isMorphologyRowsPayload(payload: SearchPackShardPayload): payload is SearchMorphologyRowsPayload {
+  return payload?.kind === 'morphology-rows' && Array.isArray(payload.rows)
+}
+
+function isMorphologyPostingsPayload(payload: SearchPackShardPayload): payload is SearchMorphologyPostingsPayload {
+  return payload?.kind === 'morphology-postings' && Array.isArray(payload.postings)
+}
+
+function isSurahContextPayload(payload: SearchPackShardPayload): payload is SearchSurahContextPayload {
+  return payload?.kind === 'surah-context' && Array.isArray(payload.roots)
 }

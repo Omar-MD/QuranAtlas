@@ -8,6 +8,10 @@ const LANE_WEIGHT: Record<SearchResultDto['matchLanes'][number], number> = {
   'arabic-text': 2,
   translation: 3,
   context: 4,
+  'same-written-form': 5,
+  'same-root': 6,
+  lemma: 7,
+  'surah-context': 8,
 }
 
 export function rankSearchResults(results: SearchResultDto[], sort: SearchSort): SearchResultDto[] {

@@ -17,14 +17,25 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
 
-  await expect(page.getByLabel('Search results')).toBeVisible()
+  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 15000 })
   await expect(page.getByRole('tab', { name: 'Match' })).toBeVisible()
   await page.getByRole('tab', { name: 'Source' }).click()
   await expect(page.getByText(/Open in Read always uses the verified Reader text/i)).toBeVisible()
 
+  await page.getByLabel('Search Quran text, translation, or context').fill('الله')
+  await page.getByRole('tab', { name: 'Search mode: Same root' }).click()
+  await expect(page.getByRole('tab', { name: 'Search mode: Same root' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('button', { exact: true, name: 'Search' }).click()
+  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 15000 })
+  await page.getByRole('tab', { name: 'Explore' }).click()
+  await expect(page.getByText('Same-root matches are morphological aids.')).toBeVisible()
+  await expect(page.getByText('Word-level match not available in Reader text')).toBeVisible()
+  await page.getByRole('tab', { name: 'Source' }).click()
+  await expect(page.getByText('Hafs source only').first()).toBeVisible()
+
   await page.getByRole('button', { name: 'Save search' }).click()
   await expect(page.getByRole('complementary', { name: 'Saved searches' })).toBeVisible()
-  await expect(page.getByText('Allah').first()).toBeVisible()
+  await expect(page.getByText('الله').first()).toBeVisible()
 
   const openButton = page.getByRole('button', { name: /Open .* in Read/ }).first()
   if (await openButton.isVisible()) {

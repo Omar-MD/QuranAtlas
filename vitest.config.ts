@@ -17,6 +17,7 @@ export default defineConfig({
       'tests/unit/react-*/**/*.test.tsx',
       'tests/unit/react-*/**/*.test.mjs',
       'tests/unit/scripts/**/*.test.js',
+      'tests/unit/scripts/**/*.test.mjs',
       'tests/unit/shared/**/*.test.ts',
       'src/**/*.test.tsx',
     ],

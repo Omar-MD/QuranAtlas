@@ -52,6 +52,7 @@ style_paths:
 | `src/components/search/SearchHeader.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchIndexGate.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchModeControl.tsx` | _(no leading comment)_ |
+| `src/components/search/SearchMorphologyPanel.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchPage.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchResultCard.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchResultDetail.tsx` | _(no leading comment)_ |
@@ -70,6 +71,7 @@ style_paths:
 | `src/offline/search/repair.ts` | _(no leading comment)_ |
 | `src/offline/search/search-pack.ts` | _(no leading comment)_ |
 | `src/search-worker/cancellation.ts` | _(no leading comment)_ |
+| `src/search-worker/morphology-executor.ts` | _(no leading comment)_ |
 | `src/search-worker/query-executor.ts` | _(no leading comment)_ |
 | `src/search-worker/search.worker.ts` | _(no leading comment)_ |
 | `src/search-worker/session.ts` | _(no leading comment)_ |
@@ -77,6 +79,7 @@ style_paths:
 | `src/search/client.ts` | _(no leading comment)_ |
 | `src/search/cursors.ts` | _(no leading comment)_ |
 | `src/search/index-client.ts` | _(no leading comment)_ |
+| `src/search/morphology.ts` | _(no leading comment)_ |
 | `src/search/normalizer.ts` | _(no leading comment)_ |
 | `src/search/pack-reader.ts` | _(no leading comment)_ |
 | `src/search/query-parser.ts` | _(no leading comment)_ |
@@ -96,17 +99,17 @@ Search contracts live in `shared/search/**` and `data/catalog/search-*.json`. Th
 
 Search packs use a filesystem registry at `public/search-packs/registry.json`, runtime registry URL `/search-packs/registry.json`, and immutable manifests/shards under `public/search-packs/packs/<contentHash>/**`. Search pack assets are owned by the dedicated Search installer/cache plan, not the generic `/dataset/**` CacheFirst route.
 
-Phase 1 data-pack lifecycle code builds and validates the core pack from committed normalized Hafs text and Bridges translation/context inputs. Runtime pack availability states are `not available`, `available online`, `installing`, `staged`, `verifying`, `active`, `update available`, `incompatible`, `failed`, and `offline unavailable`. The route shows `Loading search index`, `Search data is ready on this device.`, or `Search data is not available on this device.` according to the scoped pack state.
+Data-pack lifecycle code builds and validates the Search pack from committed normalized Hafs text, Bridges translation/context inputs, and verified QAC morphology input. Runtime pack availability states are `not available`, `available online`, `installing`, `staged`, `verifying`, `active`, `update available`, `incompatible`, `failed`, and `offline unavailable`. The route shows `Loading search index`, `Search data is ready on this device.`, or `Search data is not available on this device.` according to the scoped pack state.
 
 `savedSearches` stores user-created query definitions and compatibility metadata only. Result windows are not persisted; they are recomputed against the active compatible pack.
 
-Search utilities under `src/search/**`, `src/search-worker/**`, and `src/offline/search/**` support Phase 1 runtime Search. Query parsing normalizes Arabic text with the Phase 0 policy, parses ayah references such as `2:255` and `Surah 2 255`, rejects Phase 2/3-only modes such as same-root, and emits serializable query ASTs. The pack reader loads only immutable `/search-packs/packs/<contentHash>/**` shard URLs from the dedicated Search cache, verifies SHA-256 encoded bytes, parses ABI headers and table directories with `DataView`, and exposes bounded table payloads to the worker. When the registry fetch is unavailable but an active pack is already cached, the worker can load the cached manifest from the dedicated Search pack cache.
+Search utilities under `src/search/**`, `src/search-worker/**`, and `src/offline/search/**` support runtime Search. Query parsing normalizes Arabic text with the Phase 0 policy, parses ayah references such as `2:255` and `Surah 2 255`, parses morphology modes such as same written form, same root, lemma, and Surah context, and emits serializable query ASTs. The pack reader loads only immutable `/search-packs/packs/<contentHash>/**` shard URLs from the dedicated Search cache, verifies SHA-256 encoded bytes, parses ABI headers and table directories with `DataView`, and exposes bounded table payloads to the worker. When the registry fetch is unavailable but an active pack is already cached, the worker can load the cached manifest from the dedicated Search pack cache.
 
-`src/search-worker/**` owns the restartable worker session. It handles `init`, `preloadCore`, `query`, `loadFeature`, `cancel`, and `dispose` envelopes, includes request ids and worker epochs in responses, suppresses stale cursor windows through pack/query/rank/sort cursor validation, and returns DTO windows rather than shard buffers. The worker can answer Phase 1 reference, Arabic text, translation/context, exact word form, and exact phrase queries from the active core pack. Missing optional feature packs degrade through typed worker errors rather than breaking core Search.
+`src/search-worker/**` owns the restartable worker session. It handles `init`, `preloadCore`, `query`, `loadFeature`, `cancel`, and `dispose` envelopes, includes request ids and worker epochs in responses, suppresses stale cursor windows through pack/query/rank/sort cursor validation, and returns DTO windows rather than shard buffers. The worker can answer reference, Arabic text, translation/context, exact word form, exact phrase, same written form, same root, lemma, and Surah context queries from the active pack. Missing optional feature packs degrade through typed worker errors rather than breaking core Search.
 
-Result mapping is explicit Hafs-to-Qalun Reader mapping. Unmapped Hafs refs return source-only/no-open states instead of silently becoming Reader identity refs. `Open in Read` is available only for validated single Reader targets, and `canHighlightWordsInRead` is always false in Phase 1 because Qalun token alignment is not validated.
+Result mapping is explicit Hafs-to-Qalun Reader mapping. Unmapped Hafs refs return source-only/no-open states instead of silently becoming Reader identity refs. `Open in Read` is available only for validated single Reader targets, and `canHighlightWordsInRead` is always false because Qalun token alignment is not validated.
 
-The route renders a result-first Search shell with mode controls for All, Arabic text, Translation, Context, Exact word form, and Phrase. Result cards show source refs, lane chips, bidi-safe snippets, provenance chips, and `Open in Read` only when mapping validates a single Reader target. Result detail exposes Match, Explore, and Source tabs. Phase 1 Explore panels degrade at panel level for optional advanced packs; same-root and memory-graph features stay unavailable until later phases.
+The route renders a result-first Search shell with mode controls for All, Arabic text, Translation, Context, Exact word form, Phrase, Same written form, Same root, and Lemma. Result cards show source refs, lane chips, bidi-safe snippets, provenance chips, and `Open in Read` only when mapping validates a single Reader target. Result detail exposes Match, Explore, and Source tabs. Explore and Source show Hafs-source morphology details, the exact Search source note, same-root interpretation warning, and no Reader word-highlight state for morphology results. Memory-graph features stay unavailable until later phases.
 
 Saved searches are created only through `Save search`. `savedSearches` stores Phase 1 user intent fields, compatibility metadata, and timestamps. It does not store result DTOs, result windows, Explore section ids, or source corpus snapshots. Loading a saved search applies its query and filters, announces the loaded state, and recomputes against the active compatible Search index.
 
@@ -158,10 +161,11 @@ _(no cross-surface reads detected)_
 ## Regression Guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (13):**
+**Unit (14):**
 
 - `tests/unit/react-offline/search-pack-lifecycle.test.ts`
 - `tests/unit/react-search/generated-pack-smoke.test.ts`
+- `tests/unit/react-search/morphology-worker.test.ts`
 - `tests/unit/react-search/pack-reader.test.ts`
 - `tests/unit/react-search/query-parser.test.ts`
 - `tests/unit/react-search/result-mapping.test.ts`

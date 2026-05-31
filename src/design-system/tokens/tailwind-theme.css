@@ -1,4 +1,7 @@
-@import 'tailwindcss' prefix(qar);
+@import 'tailwindcss' prefix(qar) source(none);
+
+@source "../../../src";
+@source "../../../.storybook";
 
 @theme {
   --color-canvas: var(--qa-react-canvas);

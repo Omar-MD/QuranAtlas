@@ -242,9 +242,19 @@ describe('Search shared contracts', () => {
     }))).not.toThrow()
   })
 
-  it('keeps query modes exhaustive and reserves same-root for Phase 2', () => {
-    expect(SEARCH_QUERY_MODES).toEqual(['all', 'arabic-text', 'translation', 'context', 'exact-word-form', 'phrase'])
-    expect(SEARCH_QUERY_MODES).not.toContain('same-root')
+  it('keeps query modes exhaustive including Phase 2 morphology modes', () => {
+    expect(SEARCH_QUERY_MODES).toEqual([
+      'all',
+      'arabic-text',
+      'translation',
+      'context',
+      'exact-word-form',
+      'phrase',
+      'same-written-form',
+      'same-root',
+      'lemma',
+      'surah-context',
+    ])
   })
 
   it('preserves worker request ids in responses', () => {

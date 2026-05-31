@@ -22,9 +22,10 @@ and data shapes live in `surfaces/<name>.md`.
 
 ## Search
 
-- Phase 1 `#/search` route for deterministic reference, Arabic text, translation/context, exact word form, and exact phrase search.
+- `#/search` route for deterministic reference, Arabic text, translation/context, exact word form, exact phrase, same written form, same root, lemma, and Surah context search.
 - Lazy core Search pack install/verify/activate on Search entry, with Search packs cached under `/search-packs/**` by the dedicated Search cache owner.
 - Route-scoped lazy worker client; Reader cold launch does not fetch Search packs, decode Search graphs, or start the Search worker.
+- Source-backed morphology details in Explore and Source panels, including Hafs-source labels, same-root interpretation warnings, and no Qalun word-level highlighting.
 - Result list, result detail tabs for Match, Explore, and Source, and `Open in Read` only for validated single Reader mappings.
 - Saved searches store user-created query definitions only; result windows are recomputed against the active compatible Search index.
 

@@ -8,6 +8,7 @@ import { rankSearchResults, SEARCH_RANK_VERSION } from '../search/ranking'
 import type { SearchAyahRow, SearchGraphRef, SearchPostingRow } from '../search/schema'
 import { SearchPackReader } from '../search/pack-reader'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
+import { SearchMorphologyExecutor } from './morphology-executor'
 
 export interface SearchQueryExecutorOptions {
   aliases?: VerseAliases
@@ -23,10 +24,12 @@ interface Candidate {
 export class SearchQueryExecutor {
   private readonly reader: SearchPackReader
   private readonly aliases: VerseAliases
+  private readonly morphology: SearchMorphologyExecutor
 
   constructor(reader: SearchPackReader, options: SearchQueryExecutorOptions = {}) {
     this.reader = reader
     this.aliases = options.aliases ?? {}
+    this.morphology = new SearchMorphologyExecutor(reader, { aliases: this.aliases })
   }
 
   async execute({
@@ -50,8 +53,9 @@ export class SearchQueryExecutor {
       sort,
     })
 
-    const candidates = await this.collectCandidates(query, token)
-    const dtos = await this.toDtos(candidates, token)
+    const dtos = isMorphologyMode(query.mode)
+      ? await this.morphology.execute(query, token)
+      : await this.toDtos(await this.collectCandidates(query, token), token)
     const ranked = rankSearchResults(dtos, sort)
     const start = cursor ? Math.max(0, ranked.findIndex((result) => result.rankKey === cursor.lastStableResultKey) + 1) : 0
     const windowResults = ranked.slice(start, start + limit)
@@ -177,6 +181,10 @@ export class SearchQueryExecutor {
     }
     return rows
   }
+}
+
+function isMorphologyMode(mode: SearchQueryAstV1['mode']): boolean {
+  return mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context'
 }
 
 function snippetFor(candidate: Candidate): string {

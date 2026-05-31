@@ -34,11 +34,24 @@ export interface SearchResultDto {
   mappingState: SearchMappingState
   canOpenInRead: boolean
   canHighlightWordsInRead: boolean
-  matchLanes: Array<'arabic-text' | 'translation' | 'context' | 'exact-word-form' | 'phrase'>
+  matchLanes: Array<'arabic-text' | 'translation' | 'context' | 'exact-word-form' | 'phrase' | 'same-written-form' | 'same-root' | 'lemma' | 'surah-context'>
   snippet: string
   rankKey: string
   sourceText: string
   readerText?: string
+  morphology?: {
+    sourceNote: string
+    root: string | null
+    lemma: string | null
+    sourceToken: string
+    transliteration: string
+    wordPosition: number
+    tokenOrdinal: number
+    sameRootCount?: number
+    sameWrittenFormCount?: number
+    lemmaCount?: number
+    surahContext?: Array<{ surah: number; count: number }>
+  }
 }
 
 export interface SearchResultWindow {

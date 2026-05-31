@@ -7,6 +7,9 @@ export const SEARCH_MODE_OPTIONS: Array<{ label: string; shortLabel?: string; va
   { label: 'Context', value: 'context' },
   { label: 'Exact word form', shortLabel: 'Exact', value: 'exact-word-form' },
   { label: 'Phrase', value: 'phrase' },
+  { label: 'Same written form', shortLabel: 'Form', value: 'same-written-form' },
+  { label: 'Same root', shortLabel: 'Root', value: 'same-root' },
+  { label: 'Lemma', value: 'lemma' },
 ]
 
 export function modeLabel(mode: SearchQueryMode): string {
@@ -16,6 +19,9 @@ export function modeLabel(mode: SearchQueryMode): string {
 export function laneLabel(lane: string): string {
   if (lane === 'arabic-text') return 'Arabic text'
   if (lane === 'exact-word-form') return 'Exact word form'
+  if (lane === 'same-written-form') return 'Same written form'
+  if (lane === 'same-root') return 'Same root'
+  if (lane === 'surah-context') return 'Surah context'
   return lane.charAt(0).toUpperCase() + lane.slice(1)
 }
 
@@ -44,6 +50,14 @@ export function formatSearchReference(ref: `${number}:${number}` | string): stri
 export function sourceLaneForMode(mode: SearchQueryMode): Array<'arabic-text' | 'translation' | 'context'> {
   if (mode === 'translation') return ['translation']
   if (mode === 'context') return ['context']
-  if (mode === 'arabic-text' || mode === 'exact-word-form' || mode === 'phrase') return ['arabic-text']
+  if (
+    mode === 'arabic-text'
+    || mode === 'exact-word-form'
+    || mode === 'phrase'
+    || mode === 'same-written-form'
+    || mode === 'same-root'
+    || mode === 'lemma'
+    || mode === 'surah-context'
+  ) return ['arabic-text']
   return ['arabic-text', 'translation', 'context']
 }

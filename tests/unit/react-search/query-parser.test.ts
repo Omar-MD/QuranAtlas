@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseSearchQuery, SearchQueryParseError } from '../../../src/search/query-parser'
+import { parseSearchQuery } from '../../../src/search/query-parser'
 
 describe('Search query parser', () => {
   it('normalizes diacritized Arabic and Quran marks', () => {
@@ -29,8 +29,10 @@ describe('Search query parser', () => {
     expect(parsed.ast.tokens).toContain('الله')
   })
 
-  it('rejects unsupported Phase 2 root mode and overlong phrases', () => {
-    expect(() => parseSearchQuery('رحم', { mode: 'same-root' })).toThrow(SearchQueryParseError)
+  it('accepts Phase 2 morphology modes and rejects overlong phrases', () => {
+    const sameRoot = parseSearchQuery('رحم', { mode: 'same-root' })
+    expect(sameRoot.ast.mode).toBe('same-root')
+    expect(sameRoot.ast.filters.morphology).toEqual(['same-root'])
     expect(() => parseSearchQuery('one two three four five six seven eight nine', { mode: 'phrase' })).toThrow(/maximum/)
   })
 })
