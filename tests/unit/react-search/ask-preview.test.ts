@@ -7,6 +7,8 @@ import {
   type SearchPackManifestV1,
   type SearchResultDto,
 } from '../../../shared/search'
+import { SearchCancellationToken } from '../../../src/search-worker/cancellation'
+import { AskSearchPreviewBuilder, ASK_MATCHES_PAGE_LIMIT } from '../../../src/search/ask/answer-preview-builder'
 import {
   evidenceAtomForResult,
   evidenceCardForResult,
@@ -15,8 +17,10 @@ import {
   sourceFamilyStatusesFromManifest,
 } from '../../../src/search/ask/evidence'
 import { blockersForAskQuery, recoveryForAskBlockers } from '../../../src/search/ask/boundaries'
+import { SearchPackReader } from '../../../src/search/pack-reader'
 import { understandAskQuery } from '../../../src/search/ask/query-understanding'
 import { stableQueryHash } from '../../../src/search/query-parser'
+import { createFixturePack, sha256Hex, writeJsonShard } from './search-test-utils'
 
 describe('Ask/Search query understanding', () => {
   it('detects references, Arabic text, translation questions, and morphology lenses', () => {
@@ -277,3 +281,235 @@ describe('Ask/Search evidence adapters', () => {
     expect(evidenceAtomForResult(result, askManifest)).toBeNull()
   })
 })
+
+describe('Ask/Search preview builder', () => {
+  it('builds an answer preview with supported claims from fixture Search evidence', async () => {
+    const { builder } = await createBuilderForFixturePack()
+    const preview = await builder.buildPreview({
+      query: 'Allah',
+      lens: 'translation',
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-answer'),
+    })
+
+    expect(() => assertAnswerPreviewContract(preview)).not.toThrow()
+    expect(preview.mode).toBe('answer')
+    expect(preview.answerability).toMatchObject({ status: 'answerable', renderPermission: 'answer-preview' })
+    expect(preview.claims).toHaveLength(1)
+    expect(preview.claims[0]).toMatchObject({
+      templateId: 'translation-renders',
+      attribution: 'translation-renders',
+      predicate: 'renders',
+    })
+    expect(preview.claimSupports[0]?.supportIds).toEqual([preview.evidenceAtoms[0]?.id])
+    expect(preview.evidenceCards[0]?.evidenceAtomIds).toEqual([preview.evidenceAtoms[0]?.id])
+    expect(preview.evidenceBasis.translation).toBe('used')
+  })
+
+  it('blocks absence claims with empty claims and recovery copy', async () => {
+    const { builder } = await createBuilderForFixturePack()
+    const preview = await builder.buildPreview({
+      query: 'Where does the Quran never mention sleep?',
+      lens: 'translation',
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-absence'),
+    })
+
+    expect(() => assertAnswerPreviewContract(preview)).not.toThrow()
+    expect(preview.mode).toBe('evidence-only')
+    expect(preview.answerability).toMatchObject({
+      status: 'evidence-only',
+      renderPermission: 'no-answer-claims',
+      reasons: ['absence-claim-unproven'],
+    })
+    expect(preview.claims).toEqual([])
+    expect(preview.claimSupports).toEqual([])
+    expect(preview.recovery?.message).toBe('This v1 search can show related evidence, but it cannot answer absence claims as prose.')
+  })
+
+  it('clamps lazy matches pages to ten cards', async () => {
+    const { builder } = await createBuilderForManyTranslationResults(12)
+    const page = await builder.buildMatchesPage({
+      previewId: 'preview-many-results',
+      query: 'Allah',
+      lens: 'translation',
+      limit: 50,
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-matches'),
+    })
+
+    expect(page.matchCards).toHaveLength(ASK_MATCHES_PAGE_LIMIT)
+    expect(page.evidenceAtoms).toHaveLength(ASK_MATCHES_PAGE_LIMIT)
+    expect(page.matchCards.every((card) => page.evidenceAtoms.some((atom) => atom.id === card.evidenceAtomIds[0]))).toBe(true)
+    expect(typeof page.nextCursor).toBe('string')
+  })
+
+  it('filters null evidence atoms without dereferencing incomplete morphology evidence', async () => {
+    const { builder } = await createBuilderForInvalidMorphologyEvidence()
+    const preview = await builder.buildPreview({
+      query: 'الله',
+      lens: 'morphology',
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-null-evidence'),
+    })
+
+    expect(() => assertAnswerPreviewContract(preview)).not.toThrow()
+    expect(preview.mode).toBe('evidence-only')
+    expect(preview.answerability).toMatchObject({
+      status: 'evidence-only',
+      renderPermission: 'no-answer-claims',
+      reasons: ['insufficient-evidence'],
+    })
+    expect(preview.claims).toEqual([])
+    expect(preview.evidenceAtoms).toEqual([])
+    expect(preview.evidenceCards).toEqual([])
+    expect(preview.evidenceBasis.morphology).toBe('available-not-used')
+  })
+})
+
+async function createBuilderForFixturePack() {
+  const { cacheStorage, manifest } = await createFixturePack()
+  const reader = new SearchPackReader(manifest, { cacheStorage })
+  return { builder: new AskSearchPreviewBuilder(reader), manifest }
+}
+
+async function createBuilderForManyTranslationResults(count: number) {
+  const fixture = await createFixturePack()
+  const refs = Array.from({ length: count }, (_, index) => {
+    const ayah = index + 1
+    return {
+      ayahId: ayah,
+      ref: `1:${ayah}` as const,
+      surah: 1,
+      ayah,
+      sourceRef: `1:${ayah}` as const,
+      arabicText: `الله ${ayah}`,
+      translationText: `Allah fixture ${ayah}`,
+      tokenCount: 2,
+    }
+  })
+  await replaceFixtureShard(fixture, 'core-references', { kind: 'references', ayahs: refs })
+  await replaceFixtureShard(fixture, 'translation-postings', {
+    kind: 'postings',
+    lane: 'translation',
+    postings: [{
+      term: 'allah',
+      postings: refs.map((ref) => ({ ayahId: ref.ayahId, position: 0 })),
+    }],
+  })
+  const reader = new SearchPackReader(fixture.manifest, { cacheStorage: fixture.cacheStorage })
+  return { builder: new AskSearchPreviewBuilder(reader), manifest: fixture.manifest }
+}
+
+async function createBuilderForInvalidMorphologyEvidence() {
+  const fixture = await createFixturePack()
+  const morphologyPayloads = {
+    'morphology-root-dictionary': {
+      kind: 'morphology-dictionary',
+      dictionary: 'roots',
+      entries: [{ id: 1, value: 'Alh', count: 1 }],
+    },
+    'morphology-lemma-dictionary': {
+      kind: 'morphology-dictionary',
+      dictionary: 'lemmas',
+      entries: [{ id: 1, value: '{ll~ah', count: 1 }],
+    },
+    'morphology-rows-1': {
+      kind: 'morphology-rows',
+      rows: [{
+        ayahId: 1,
+        ref: '1:1',
+        surah: 1,
+        ayah: 1,
+        tokenOrdinal: 1,
+        wordPosition: 2,
+        sourceToken: '',
+        normalizedSourceToken: 'الله',
+        transliteration: '{ll~ah',
+        root: 'Alh',
+        lemma: '{ll~ah',
+        segments: [],
+      }],
+    },
+    'same-written-form-postings-1': {
+      kind: 'morphology-postings',
+      lane: 'same-written-form-postings',
+      postings: [{ term: 'الله', postings: [{ ayahId: 1, position: 1 }] }],
+    },
+    'same-root-postings-1': {
+      kind: 'morphology-postings',
+      lane: 'same-root-postings',
+      postings: [{ term: 'Alh', postings: [{ ayahId: 1, position: 1 }] }],
+    },
+    'lemma-postings-1': {
+      kind: 'morphology-postings',
+      lane: 'lemma-postings',
+      postings: [{ term: '{ll~ah', postings: [{ ayahId: 1, position: 1 }] }],
+    },
+    'surah-context': {
+      kind: 'surah-context',
+      roots: [{ term: 'Alh', total: 1, surahs: [{ surah: 1, count: 1 }] }],
+      lemmas: [],
+      writtenForms: [],
+    },
+  } as const
+  for (const [shardId, payload] of Object.entries(morphologyPayloads)) {
+    await addFixtureShard(fixture, shardId, payload, 'morphology')
+  }
+  fixture.manifest.features.push('morphology')
+  fixture.manifest.requires.push(
+    'morphology-root-dictionary',
+    'morphology-lemma-dictionary',
+    'morphology-rows',
+    'same-written-form-postings',
+    'same-root-postings',
+    'lemma-postings',
+    'surah-context',
+  )
+  fixture.manifest.sourceIds = ['tanzil-hafs', 'bridges-translation', 'qac-morphology']
+  const reader = new SearchPackReader(fixture.manifest, { cacheStorage: fixture.cacheStorage })
+  return { builder: new AskSearchPreviewBuilder(reader), manifest: fixture.manifest }
+}
+
+async function replaceFixtureShard(
+  fixture: Awaited<ReturnType<typeof createFixturePack>>,
+  shardId: string,
+  payload: unknown,
+): Promise<void> {
+  const shard = fixture.manifest.shards.find((entry) => entry.shardId === shardId)
+  if (!shard) throw new Error(`Missing fixture shard ${shardId}`)
+  const bytes = writeJsonShard(payload)
+  const cache = await fixture.cacheStorage.open(`quran-atlas-search-pack-${fixture.manifest.contentHash}`)
+  await cache.put(shard.url, new Response(bytes))
+  shard.byteLength = bytes.byteLength
+  shard.checksum = sha256Hex(bytes)
+  shard.estimatedMemoryBytes = bytes.byteLength
+  shard.maxDecodedBytes = 64_000
+}
+
+async function addFixtureShard(
+  fixture: Awaited<ReturnType<typeof createFixturePack>>,
+  shardId: string,
+  payload: unknown,
+  featureId: SearchPackManifestV1['shards'][number]['featureId'],
+): Promise<void> {
+  const bytes = writeJsonShard(payload)
+  const url = `/search-packs/packs/${fixture.manifest.contentHash}/shards/${shardId}.qas`
+  const cache = await fixture.cacheStorage.open(`quran-atlas-search-pack-${fixture.manifest.contentHash}`)
+  await cache.put(url, new Response(bytes))
+  fixture.manifest.shards.push({
+    shardId,
+    featureId,
+    schemaId: 'search-shard-morphology-v1',
+    url,
+    byteLength: bytes.byteLength,
+    checksum: sha256Hex(bytes),
+    checksumAlgorithm: 'sha-256',
+    checksumScope: 'encoded-bytes',
+    requiredDictionaries: [],
+    estimatedMemoryBytes: bytes.byteLength,
+    decodingFixtureId: `test-${shardId}`,
+    maxDecodedBytes: 64_000,
+    internalCompression: 'none',
+  })
+}
