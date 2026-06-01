@@ -6,11 +6,6 @@ import { installSearchPackFixture, readSearchPackFixtureState } from '../fixture
 
 test.skip(process.env.PLAYWRIGHT_INCLUDE_OFFLINE !== '1', 'Search offline proof runs only against the preview build.')
 
-async function expectSearchResults(page: Page) {
-  await expect(page.getByRole('region', { name: 'Search result workspace' })).toBeVisible()
-  await expect(page.getByRole('article', { name: /Search result / }).first()).toBeVisible()
-}
-
 async function expectSearchOverview(page: Page, query: string) {
   await expect(page.getByRole('region', { name: 'Search result workspace' })).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
@@ -60,7 +55,7 @@ test('@offline active Search pack supports the Search route without changing Rea
   }
 })
 
-test('@offline missing graph shard degrades only the Explore panel', async ({ page }) => {
+test('@offline missing graph shard keeps Ask preview evidence-bounded', async ({ page }) => {
   await expectReactProductionPreflight(page)
   await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
   await page.goto(targetUrl('react', '/#/s/1'))
@@ -82,12 +77,13 @@ test('@offline missing graph shard degrades only the Explore panel', async ({ pa
     await page.getByLabel('Search Quran text, translation, or context').fill('بسم الله')
     await page.getByRole('tab', { name: 'Search mode: Phrase' }).click()
     await page.getByRole('button', { exact: true, name: 'Search' }).click()
-    await expectSearchResults(page)
-    await page.getByRole('button', { name: 'Explore selected result' }).click()
-    await page.getByRole('button', { name: 'Load Explore sections' }).click()
-    await page.getByRole('button', { name: 'Attested following wording' }).click()
-    await expect(page.getByText(/Missing graph feature:/)).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Shared wording' })).toBeVisible()
+    await expectSearchOverview(page, 'بسم الله')
+    await expect(page.getByText(/unsupported answer/i)).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Evidence basis' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Best evidence' })).toBeVisible()
+    await page.getByRole('tab', { name: 'Explore' }).click()
+    await expect(page.getByRole('region', { name: 'Explore is not loaded for this preview' })).toBeVisible()
+    await expect(page.getByText(/Missing graph feature:/)).toHaveCount(0)
   } finally {
     await page.context().setOffline(false)
   }

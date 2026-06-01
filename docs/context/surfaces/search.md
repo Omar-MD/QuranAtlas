@@ -47,6 +47,7 @@ style_paths:
 | --- | --- |
 | `src/app/routes/search/SearchRoute.tsx` | _(no leading comment)_ |
 | `src/components/search/SavedSearchesNavPanel.tsx` | _(no leading comment)_ |
+| `src/components/search/SearchAnswerPreview.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchBox.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchBrief.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchCountsPatterns.tsx` | _(no leading comment)_ |
@@ -85,7 +86,9 @@ style_paths:
 | `src/search-worker/search.worker.ts` | _(no leading comment)_ |
 | `src/search-worker/session.ts` | _(no leading comment)_ |
 | `src/search-worker/shard-cache.ts` | _(no leading comment)_ |
+| `src/search/ask/answer-preview-builder.ts` | _(no leading comment)_ |
 | `src/search/ask/boundaries.ts` | _(no leading comment)_ |
+| `src/search/ask/evidence.ts` | _(no leading comment)_ |
 | `src/search/ask/query-understanding.ts` | _(no leading comment)_ |
 | `src/search/client.ts` | _(no leading comment)_ |
 | `src/search/cursors.ts` | _(no leading comment)_ |
@@ -200,8 +203,9 @@ _(no cross-surface reads detected)_
 - `tests/unit/scripts/source-catalog.test.js`
 - `tests/unit/shared/search-contracts.test.ts`
 
-**E2E (2):**
+**E2E (3):**
 
+- `tests/e2e/search/react-search-cold-start.spec.ts`
 - `tests/e2e/search/react-search-offline.spec.ts`
 - `tests/e2e/search/react-search.spec.ts`
 <!-- AUTO-GENERATED:tests END -->

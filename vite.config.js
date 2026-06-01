@@ -120,7 +120,7 @@ export default defineConfig(() => {
           importScripts: ['wird-notification-sw.js'],
           navigateFallback: '/index.html',
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
-          globIgnores: ['**/dataset/**'],
+          globIgnores: ['**/dataset/**', '**/search-packs/**'],
           runtimeCaching: [
             datasetRuntimeCaching,
           ],
