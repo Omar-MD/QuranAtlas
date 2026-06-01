@@ -83,10 +83,12 @@ export class SearchClient {
   async askPreview({
     query,
     lens,
+    queryAst,
     sort = 'relevance',
   }: {
     query: string
     lens?: SearchLensLite
+    queryAst?: SearchQueryAstV1
     sort?: SearchSort
   }): Promise<AnswerPreview> {
     const response = await this.request({
@@ -94,6 +96,7 @@ export class SearchClient {
       requestId: this.nextRequestId(),
       query,
       lens,
+      queryAst,
       sort,
     })
     if (response.type !== 'ok' || response.payload.kind !== 'ask-preview') {
@@ -106,6 +109,7 @@ export class SearchClient {
     previewId,
     query,
     lens,
+    queryAst,
     cursor,
     limit = 10,
     sort = 'relevance',
@@ -113,6 +117,7 @@ export class SearchClient {
     previewId: string
     query: string
     lens?: SearchLensLite
+    queryAst?: SearchQueryAstV1
     cursor?: SearchResultCursor
     limit?: number
     sort?: SearchSort
@@ -123,6 +128,7 @@ export class SearchClient {
       previewId,
       query,
       lens,
+      queryAst,
       cursor,
       limit,
       sort,

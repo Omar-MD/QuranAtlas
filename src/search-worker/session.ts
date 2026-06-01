@@ -61,6 +61,7 @@ export class SearchWorkerSession {
         const answerPreview = await this.requireAskBuilder().buildPreview({
           query: request.query,
           lens: request.lens,
+          queryAst: request.queryAst,
           sort: request.sort ?? 'relevance',
           token,
         })
@@ -74,6 +75,7 @@ export class SearchWorkerSession {
           previewId: request.previewId,
           query: request.query,
           lens: request.lens,
+          queryAst: request.queryAst,
           cursor: request.cursor,
           limit: request.limit,
           sort: request.sort ?? 'relevance',

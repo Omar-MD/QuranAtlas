@@ -18,8 +18,8 @@ import {
 } from '../../../src/search/ask/evidence'
 import { blockersForAskQuery, recoveryForAskBlockers } from '../../../src/search/ask/boundaries'
 import { SearchPackReader } from '../../../src/search/pack-reader'
+import { parseSearchQuery, stableQueryHash } from '../../../src/search/query-parser'
 import { understandAskQuery } from '../../../src/search/ask/query-understanding'
-import { stableQueryHash } from '../../../src/search/query-parser'
 import { createFixturePack, sha256Hex, writeJsonShard } from './search-test-utils'
 
 describe('Ask/Search query understanding', () => {
@@ -410,6 +410,42 @@ describe('Ask/Search preview builder', () => {
       limit: 10,
       sort: 'relevance',
       token: new SearchCancellationToken('ask-preview-page-mismatch'),
+    })).rejects.toMatchObject({
+      code: 'stale-epoch',
+      retryable: true,
+      message: 'Ask preview id no longer matches this query, lens, sort, or pack',
+    })
+  })
+
+  it('binds preview and matches identity to the provided execution AST mode', async () => {
+    const { builder } = await createBuilderForFixturePack()
+    const exactAst = parseSearchQuery('الله', { mode: 'exact-word-form' }).ast
+    const arabicAst = parseSearchQuery('الله', { mode: 'arabic-text' }).ast
+
+    const exactPreview = await builder.buildPreview({
+      query: 'الله',
+      lens: 'quran-text',
+      queryAst: exactAst,
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-exact-word-form'),
+    })
+    const arabicPreview = await builder.buildPreview({
+      query: 'الله',
+      lens: 'quran-text',
+      queryAst: arabicAst,
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-arabic-text'),
+    })
+
+    expect(exactPreview.id).not.toBe(arabicPreview.id)
+    await expect(builder.buildMatchesPage({
+      previewId: exactPreview.id,
+      query: 'الله',
+      lens: 'quran-text',
+      queryAst: arabicAst,
+      limit: 10,
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-ast-mismatch'),
     })).rejects.toMatchObject({
       code: 'stale-epoch',
       retryable: true,

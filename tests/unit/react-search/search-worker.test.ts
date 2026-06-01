@@ -122,6 +122,53 @@ describe('Search worker runtime', () => {
     })
   })
 
+  it('keeps Ask preview identity bound to the provided query AST mode', async () => {
+    const { cacheStorage, manifest } = await createFixturePack()
+    const session = new SearchWorkerSession({ cacheStorage, manifest })
+    await session.handle({ type: 'init', requestId: 'init', packId: manifest.packId })
+    const exactAst = parseSearchQuery('الله', { mode: 'exact-word-form' }).ast
+    const arabicAst = parseSearchQuery('الله', { mode: 'arabic-text' }).ast
+
+    const exactResponse = await session.handle({
+      type: 'askPreview',
+      requestId: 'ask-preview-exact',
+      query: 'الله',
+      lens: 'quran-text',
+      queryAst: exactAst,
+    })
+    const arabicResponse = await session.handle({
+      type: 'askPreview',
+      requestId: 'ask-preview-arabic',
+      query: 'الله',
+      lens: 'quran-text',
+      queryAst: arabicAst,
+    })
+
+    if (exactResponse.type !== 'ok' || exactResponse.payload.kind !== 'ask-preview') throw new Error('expected exact Ask preview')
+    if (arabicResponse.type !== 'ok' || arabicResponse.payload.kind !== 'ask-preview') throw new Error('expected Arabic Ask preview')
+    expect(exactResponse.payload.answerPreview.id).not.toBe(arabicResponse.payload.answerPreview.id)
+
+    const pageResponse = await session.handle({
+      type: 'askMatchesPage',
+      requestId: 'ask-matches-ast-mismatch',
+      previewId: exactResponse.payload.answerPreview.id,
+      query: 'الله',
+      lens: 'quran-text',
+      queryAst: arabicAst,
+      limit: 10,
+    })
+
+    expect(pageResponse).toMatchObject({
+      type: 'error',
+      requestId: 'ask-matches-ast-mismatch',
+      error: {
+        code: 'stale-epoch',
+        retryable: true,
+        message: 'Ask preview id no longer matches this query, lens, sort, or pack',
+      },
+    })
+  })
+
   it('returns typed errors for stale cursors, missing features, corrupt packs, and uninitialized queries', async () => {
     const { cacheStorage, manifest } = await createFixturePack()
     const session = new SearchWorkerSession({ cacheStorage, manifest })

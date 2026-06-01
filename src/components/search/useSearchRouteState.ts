@@ -229,7 +229,7 @@ export function useSearchRouteState(options: {
       query: trimmed,
       tab: nextActiveTab,
     })
-    void client.askPreview({ query: trimmed, lens: lensForMode(effectiveMode), sort }).then((preview) => {
+    void client.askPreview({ query: trimmed, lens: lensForMode(effectiveMode), queryAst: parsed.ast, sort }).then((preview) => {
       if (sequence !== requestSequence.current) return
       answerPreviewRef.current = preview
       setAnswerPreview(preview)
@@ -329,6 +329,7 @@ export function useSearchRouteState(options: {
       previewId: activePreviewId,
       query: activeQuery.query,
       lens: lensForMode(activeQuery.mode),
+      queryAst: activeQuery.ast,
       limit: 10,
       sort,
     }).then((page) => {
@@ -369,6 +370,7 @@ export function useSearchRouteState(options: {
       previewId: activePreviewId,
       query: activeQuery.query,
       lens: lensForMode(activeQuery.mode),
+      queryAst: activeQuery.ast,
       cursor,
       limit: 10,
       sort,

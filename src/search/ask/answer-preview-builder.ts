@@ -14,6 +14,7 @@ import {
   type SearchLensLite,
   type SearchPlanLite,
   type SearchPackManifestV1,
+  type SearchQueryAstV1,
   type SearchResultCursor,
   type SearchResultDto,
   type SearchSort,
@@ -40,6 +41,7 @@ export const ASK_MATCHES_PAGE_LIMIT = 10
 type BuildPreviewInput = {
   query: string
   lens?: SearchLensLite
+  queryAst?: SearchQueryAstV1
   sort: SearchSort
   token: SearchCancellationToken
 }
@@ -48,6 +50,7 @@ type BuildMatchesPageInput = {
   previewId: string
   query: string
   lens?: SearchLensLite
+  queryAst?: SearchQueryAstV1
   cursor?: SearchResultCursor
   limit: number
   sort: SearchSort
@@ -70,20 +73,22 @@ export class AskSearchPreviewBuilder {
 
   async buildPreview(input: BuildPreviewInput): Promise<AnswerPreview> {
     const { understanding, parsed, parseError } = understandAskQuery(input.query, input.lens)
+    const effectiveAst = input.queryAst ?? parsed?.ast ?? null
     const sourceFamilyStatuses = sourceFamilyStatusesFromManifest(this.reader.manifest)
     const sourceKinds = sourceKindsForLens(understanding.lens)
     const basePlan = searchPlanForPreview({
       lens: understanding.lens,
-      queryForm: understanding.normalizedQuery,
+      queryForm: effectiveAst?.normalizedText ?? understanding.normalizedQuery,
       sourceKinds,
-      failed: Boolean(parseError),
+      failed: Boolean(parseError && !effectiveAst),
     })
 
-    if (!parsed || parseError) {
+    if (!effectiveAst) {
       return this.validatedPreview({
         id: previewIdFor({
           query: input.query,
           lens: understanding.lens,
+          queryAst: effectiveAst,
           sort: input.sort,
           manifest: this.reader.manifest,
         }),
@@ -113,6 +118,7 @@ export class AskSearchPreviewBuilder {
         id: previewIdFor({
           query: input.query,
           lens: understanding.lens,
+          queryAst: effectiveAst,
           sort: input.sort,
           manifest: this.reader.manifest,
         }),
@@ -139,7 +145,7 @@ export class AskSearchPreviewBuilder {
     let searchPlan = basePlan
     try {
       const window = await this.executor.execute({
-        query: parsed.ast,
+        query: effectiveAst,
         limit: ASK_PREVIEW_LIMIT,
         sort: input.sort,
         token: input.token,
@@ -150,7 +156,7 @@ export class AskSearchPreviewBuilder {
       const blockersForFailure: AnswerBlockerLite[] = ['source-unavailable']
       searchPlan = searchPlanForPreview({
         lens: understanding.lens,
-        queryForm: parsed.ast.normalizedText,
+        queryForm: effectiveAst.normalizedText,
         sourceKinds,
         failed: true,
       })
@@ -158,6 +164,7 @@ export class AskSearchPreviewBuilder {
         id: previewIdFor({
           query: input.query,
           lens: understanding.lens,
+          queryAst: effectiveAst,
           sort: input.sort,
           manifest: this.reader.manifest,
         }),
@@ -188,6 +195,7 @@ export class AskSearchPreviewBuilder {
       return this.validatedPreview(evidenceOnlyPreview({
         query: input.query,
         lens: understanding.lens,
+        queryAst: effectiveAst,
         sort: input.sort,
         manifest: this.reader.manifest,
         understanding,
@@ -202,13 +210,14 @@ export class AskSearchPreviewBuilder {
       atom: firstPair.atom,
       result: firstPair.result,
       understanding,
-      tokenCount: parsed.ast.tokens.length,
+      tokenCount: effectiveAst.tokens.length,
     })
     if (!claim) {
       const insufficient: AnswerBlockerLite[] = ['insufficient-evidence']
       return this.validatedPreview(evidenceOnlyPreview({
         query: input.query,
         lens: understanding.lens,
+        queryAst: effectiveAst,
         sort: input.sort,
         manifest: this.reader.manifest,
         understanding,
@@ -228,6 +237,7 @@ export class AskSearchPreviewBuilder {
       id: previewIdFor({
         query: input.query,
         lens: understanding.lens,
+        queryAst: effectiveAst,
         sort: input.sort,
         manifest: this.reader.manifest,
       }),
@@ -252,9 +262,11 @@ export class AskSearchPreviewBuilder {
 
   async buildMatchesPage(input: BuildMatchesPageInput): Promise<EvidenceMatchesPageLite> {
     const { understanding, parsed } = understandAskQuery(input.query, input.lens)
+    const effectiveAst = input.queryAst ?? parsed?.ast ?? null
     const expectedPreviewId = previewIdFor({
       query: input.query,
       lens: understanding.lens,
+      queryAst: effectiveAst,
       sort: input.sort,
       manifest: this.reader.manifest,
     })
@@ -265,10 +277,10 @@ export class AskSearchPreviewBuilder {
         true,
       )
     }
-    if (!parsed) return { previewId: expectedPreviewId, evidenceAtoms: [], matchCards: [] }
+    if (!effectiveAst) return { previewId: expectedPreviewId, evidenceAtoms: [], matchCards: [] }
 
     const window = await this.executor.execute({
-      query: parsed.ast,
+      query: effectiveAst,
       cursor: input.cursor,
       limit: clampMatchesLimit(input.limit),
       sort: input.sort,
@@ -325,6 +337,7 @@ function claimForEvidence(input: {
 function evidenceOnlyPreview(input: {
   query: string
   lens: SearchLensLite
+  queryAst?: SearchQueryAstV1
   sort: SearchSort
   manifest: SearchPackManifestV1
   understanding: QueryUnderstandingLite
@@ -337,6 +350,7 @@ function evidenceOnlyPreview(input: {
     id: previewIdFor({
       query: input.query,
       lens: input.lens,
+      queryAst: input.queryAst,
       sort: input.sort,
       manifest: input.manifest,
     }),
@@ -452,15 +466,17 @@ function clampMatchesLimit(limit: number): number {
 function previewIdFor(input: {
   query: string
   lens: SearchLensLite
+  queryAst?: SearchQueryAstV1 | null
   sort: SearchSort
   manifest: SearchPackManifestV1
 }): string {
-  return `ask-preview:${input.manifest.packId}:${input.manifest.packVersion}:${input.manifest.contentHash}:${input.lens}:${input.sort}:${stableQueryHash({
+  const queryHash = input.queryAst ? stableQueryHash(input.queryAst) : stableQueryHash({
     astVersion: 1,
     mode: 'all',
     rawText: input.query,
     normalizedText: input.query.trim().toLowerCase(),
     tokens: [input.query.trim().toLowerCase()].filter(Boolean),
     filters: {},
-  })}`
+  })
+  return `ask-preview:${input.manifest.packId}:${input.manifest.packVersion}:${input.manifest.contentHash}:${input.lens}:${input.sort}:${queryHash}`
 }

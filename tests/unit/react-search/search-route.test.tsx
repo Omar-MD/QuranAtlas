@@ -584,7 +584,12 @@ describe('useSearchRouteState Ask route state', () => {
     act(() => result.current.submitSearch())
 
     await waitFor(() => expect(result.current.answerPreview).toEqual(preview))
-    expect(client.askPreview).toHaveBeenCalledWith({ query: 'mercy', lens: 'translation', sort: 'relevance' })
+    expect(client.askPreview).toHaveBeenCalledWith({
+      query: 'mercy',
+      lens: 'translation',
+      queryAst: expect.objectContaining({ mode: 'translation' }),
+      sort: 'relevance',
+    })
     expect(client.query).not.toHaveBeenCalled()
     expect(result.current.brief).toBeNull()
     expect(result.current.results).toEqual([])
@@ -625,6 +630,34 @@ describe('useSearchRouteState Ask route state', () => {
     expect(result.current.resultCountMessage).toBe(expected)
   })
 
+  it.each([
+    { mode: 'exact-word-form' as const, query: 'الله', lens: 'quran-text' },
+    { mode: 'context' as const, query: 'mercy', lens: 'translation' },
+    { mode: 'lemma' as const, query: 'ktb', lens: 'morphology' },
+  ])('preserves $mode execution AST while using $lens Ask lens hints', async ({ mode, query, lens }) => {
+    const preview = answerPreview({ id: `preview-${mode}`, query })
+    const client = mockSearchClient({
+      askPreview: vi.fn(async () => preview),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({
+      client,
+      initialMode: mode,
+      initialQuery: query,
+    }))
+
+    await waitFor(() => expect(result.current.packState).toBe('active'))
+    act(() => result.current.submitSearch())
+
+    await waitFor(() => expect(result.current.answerPreview?.id).toBe(preview.id))
+    expect(client.askPreview).toHaveBeenCalledWith(expect.objectContaining({
+      query,
+      lens,
+      queryAst: expect.objectContaining({ mode }),
+    }))
+  })
+
   it('opens All Matches with the preview id, active query, lens, and structured cursor', async () => {
     const preview = answerPreview({ id: 'preview-allah', query: 'Allah' })
     const cursor = searchCursor({ lastStableResultKey: 'translation:2:255' })
@@ -657,6 +690,7 @@ describe('useSearchRouteState Ask route state', () => {
       previewId: preview.id,
       query: 'Allah',
       lens: 'translation',
+      queryAst: expect.objectContaining({ mode: 'translation' }),
       limit: 10,
       sort: 'relevance',
     })
@@ -708,6 +742,7 @@ describe('useSearchRouteState Ask route state', () => {
       previewId: preview.id,
       query: 'ktb',
       lens: 'morphology',
+      queryAst: expect.objectContaining({ mode: 'same-root' }),
       cursor: firstCursor,
       limit: 10,
       sort: 'relevance',
@@ -750,6 +785,7 @@ describe('useSearchRouteState Ask route state', () => {
       previewId: previewB.id,
       query: 'guidance',
       lens: 'translation',
+      queryAst: expect.objectContaining({ mode: 'translation' }),
       limit: 10,
       sort: 'relevance',
     })

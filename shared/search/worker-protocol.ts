@@ -8,8 +8,8 @@ export type SearchWorkerEpoch = number
 export type SearchWorkerRequest =
   | { type: 'init'; requestId: string; packId: string }
   | { type: 'preloadCore'; requestId: string }
-  | { type: 'askPreview'; requestId: string; query: string; lens?: SearchLensLite; sort?: SearchSort }
-  | { type: 'askMatchesPage'; requestId: string; previewId: string; query: string; lens?: SearchLensLite; cursor?: SearchResultCursor; limit: number; sort?: SearchSort }
+  | { type: 'askPreview'; requestId: string; query: string; lens?: SearchLensLite; queryAst?: SearchQueryAstV1; sort?: SearchSort }
+  | { type: 'askMatchesPage'; requestId: string; previewId: string; query: string; lens?: SearchLensLite; queryAst?: SearchQueryAstV1; cursor?: SearchResultCursor; limit: number; sort?: SearchSort }
   | { type: 'query'; requestId: string; query: SearchQueryAstV1; cursor?: SearchResultCursor; limit: number; sort: SearchSort }
   | { type: 'explore'; requestId: string; query: SearchQueryAstV1; result: SearchResultDto; sections?: string[]; cursor?: { sectionId: string; offset: number }; limit?: number }
   | { type: 'loadFeature'; requestId: string; featureId: SearchFeatureId }
