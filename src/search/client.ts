@@ -1,5 +1,8 @@
 import type {
+  AnswerPreview,
+  EvidenceMatchesPageLite,
   SearchFeatureId,
+  SearchLensLite,
   SearchQueryAstV1,
   SearchResultCursor,
   SearchResultWindow,
@@ -75,6 +78,59 @@ export class SearchClient {
       throw new Error('Search worker returned a non-query response')
     }
     return response.payload.window
+  }
+
+  async askPreview({
+    query,
+    lens,
+    sort = 'relevance',
+  }: {
+    query: string
+    lens?: SearchLensLite
+    sort?: SearchSort
+  }): Promise<AnswerPreview> {
+    const response = await this.request({
+      type: 'askPreview',
+      requestId: this.nextRequestId(),
+      query,
+      lens,
+      sort,
+    })
+    if (response.type !== 'ok' || response.payload.kind !== 'ask-preview') {
+      throw new Error('Search worker returned a non-Ask preview response')
+    }
+    return response.payload.answerPreview
+  }
+
+  async getAskMatchesPage({
+    previewId,
+    query,
+    lens,
+    cursor,
+    limit = 10,
+    sort = 'relevance',
+  }: {
+    previewId: string
+    query: string
+    lens?: SearchLensLite
+    cursor?: SearchResultCursor
+    limit?: number
+    sort?: SearchSort
+  }): Promise<EvidenceMatchesPageLite> {
+    const response = await this.request({
+      type: 'askMatchesPage',
+      requestId: this.nextRequestId(),
+      previewId,
+      query,
+      lens,
+      cursor,
+      limit,
+      sort,
+    })
+    if (response.type !== 'ok' || response.payload.kind !== 'ask-matches-page') {
+      throw new Error('Search worker returned a non-Ask matches response')
+    }
+    return response.payload.page
   }
 
   async explore(request: SearchGraphExploreRequest): Promise<SearchGraphExploreResponse> {

@@ -14,6 +14,7 @@ import {
   type SearchPackReaderOptions,
 } from '../search/pack-reader'
 import { SearchQueryParseError } from '../search/query-parser'
+import { AskSearchPreviewBuilder } from '../search/ask/answer-preview-builder'
 import { SearchCancellationRegistry, SearchCancelledError } from './cancellation'
 import { SearchQueryExecutor } from './query-executor'
 import { SearchGraphExecutor } from './graph-executor'
@@ -28,6 +29,7 @@ export class SearchWorkerSession {
   private epoch = 1
   private reader: SearchPackReader | null = null
   private executor: SearchQueryExecutor | null = null
+  private askBuilder: AskSearchPreviewBuilder | null = null
   private graphExecutor: SearchGraphExecutor | null = null
   private shardCache: SearchShardCache | null = null
   private activeGeneration: number | null = null
@@ -53,6 +55,33 @@ export class SearchWorkerSession {
       if (request.type === 'loadFeature') {
         await this.loadFeature(request.featureId)
         return this.ok(request.requestId, { kind: 'feature-loaded', featureId: request.featureId })
+      }
+      if (request.type === 'askPreview') {
+        await this.assertActivationUnchanged()
+        const answerPreview = await this.requireAskBuilder().buildPreview({
+          query: request.query,
+          lens: request.lens,
+          sort: request.sort ?? 'relevance',
+          token,
+        })
+        token.throwIfCancelled()
+        await this.assertActivationUnchanged()
+        return this.ok(request.requestId, { kind: 'ask-preview', answerPreview })
+      }
+      if (request.type === 'askMatchesPage') {
+        await this.assertActivationUnchanged()
+        const page = await this.requireAskBuilder().buildMatchesPage({
+          previewId: request.previewId,
+          query: request.query,
+          lens: request.lens,
+          cursor: request.cursor,
+          limit: request.limit,
+          sort: request.sort ?? 'relevance',
+          token,
+        })
+        token.throwIfCancelled()
+        await this.assertActivationUnchanged()
+        return this.ok(request.requestId, { kind: 'ask-matches-page', page })
       }
       if (request.type === 'query') {
         await this.assertActivationUnchanged()
@@ -97,6 +126,7 @@ export class SearchWorkerSession {
     this.shardCache?.dispose()
     this.reader = null
     this.executor = null
+    this.askBuilder = null
     this.graphExecutor = null
     this.shardCache = null
     this.epoch += 1
@@ -107,6 +137,7 @@ export class SearchWorkerSession {
     if (manifest.packId !== packId) throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} does not match active manifest`)
     this.reader = new SearchPackReader(manifest, this.options)
     this.executor = new SearchQueryExecutor(this.reader)
+    this.askBuilder = new AskSearchPreviewBuilder(this.reader)
     this.graphExecutor = new SearchGraphExecutor(this.reader)
     this.shardCache = new SearchShardCache(manifest.byteBudget.maxResidentWorkerBytes)
     this.activeGeneration = await readActivationGeneration().catch(() => null)
@@ -130,6 +161,11 @@ export class SearchWorkerSession {
   private requireExecutor(): SearchQueryExecutor {
     if (!this.executor) throw new SearchPackReaderError('unavailable-pack', 'Search worker is not initialized', true)
     return this.executor
+  }
+
+  private requireAskBuilder(): AskSearchPreviewBuilder {
+    if (!this.askBuilder) throw new SearchPackReaderError('unavailable-pack', 'Search worker is not initialized', true)
+    return this.askBuilder
   }
 
   private requireGraphExecutor(): SearchGraphExecutor {

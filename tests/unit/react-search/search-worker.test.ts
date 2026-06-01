@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { assertAnswerPreviewContract } from '../../../shared/search'
 import { SearchWorkerSession } from '../../../src/search-worker/session'
 import { parseSearchQuery } from '../../../src/search/query-parser'
 import { createFixturePack } from './search-test-utils'
@@ -46,6 +47,76 @@ describe('Search worker runtime', () => {
       type: 'ok',
       payload: { kind: 'disposed' },
     })
+  })
+
+  it('serves Ask preview and lazy matches envelopes from the Search worker', async () => {
+    const { cacheStorage, manifest } = await createFixturePack()
+    const session = new SearchWorkerSession({ cacheStorage, manifest })
+    await session.handle({ type: 'init', requestId: 'init', packId: manifest.packId })
+
+    const previewResponse = await session.handle({
+      type: 'askPreview',
+      requestId: 'ask-preview',
+      query: 'Allah',
+      lens: 'translation',
+    })
+
+    expect(previewResponse).toMatchObject({ type: 'ok', requestId: 'ask-preview', payload: { kind: 'ask-preview' } })
+    if (previewResponse.type !== 'ok' || previewResponse.payload.kind !== 'ask-preview') throw new Error('expected Ask preview')
+    const preview = previewResponse.payload.answerPreview
+    expect(() => assertAnswerPreviewContract(preview)).not.toThrow()
+    expect(preview).toMatchObject({
+      query: 'Allah',
+      queryUnderstanding: { lens: 'translation' },
+      answerability: { status: 'answerable', renderPermission: 'answer-preview' },
+    })
+    expect(preview.claims.length).toBeGreaterThan(0)
+    expect(preview.evidenceAtoms.length).toBeGreaterThan(0)
+
+    const pageResponse = await session.handle({
+      type: 'askMatchesPage',
+      requestId: 'ask-matches',
+      previewId: preview.id,
+      query: 'Allah',
+      lens: 'translation',
+      limit: 99,
+    })
+
+    expect(pageResponse).toMatchObject({ type: 'ok', requestId: 'ask-matches', payload: { kind: 'ask-matches-page' } })
+    if (pageResponse.type !== 'ok' || pageResponse.payload.kind !== 'ask-matches-page') throw new Error('expected Ask matches page')
+    expect(pageResponse.payload.page.previewId).toBe(preview.id)
+    expect(pageResponse.payload.page.matchCards.length).toBeLessThanOrEqual(10)
+    expect(pageResponse.payload.page.evidenceAtoms.length).toBe(pageResponse.payload.page.matchCards.length)
+  })
+
+  it('fails closed when an Ask matches page envelope receives a stale preview id', async () => {
+    const { cacheStorage, manifest } = await createFixturePack()
+    const session = new SearchWorkerSession({ cacheStorage, manifest })
+    await session.handle({ type: 'init', requestId: 'init', packId: manifest.packId })
+
+    const previewResponse = await session.handle({
+      type: 'askPreview',
+      requestId: 'ask-preview',
+      query: 'Allah',
+      lens: 'translation',
+    })
+    if (previewResponse.type !== 'ok' || previewResponse.payload.kind !== 'ask-preview') throw new Error('expected Ask preview')
+
+    const pageResponse = await session.handle({
+      type: 'askMatchesPage',
+      requestId: 'ask-matches-stale',
+      previewId: `${previewResponse.payload.answerPreview.id}:stale`,
+      query: 'Allah',
+      lens: 'translation',
+      limit: 99,
+    })
+
+    expect(pageResponse).toMatchObject({ type: 'ok', requestId: 'ask-matches-stale', payload: { kind: 'ask-matches-page' } })
+    if (pageResponse.type !== 'ok' || pageResponse.payload.kind !== 'ask-matches-page') throw new Error('expected Ask matches page')
+    expect(pageResponse.payload.page.previewId).toBe(previewResponse.payload.answerPreview.id)
+    expect(pageResponse.payload.page.matchCards).toEqual([])
+    expect(pageResponse.payload.page.evidenceAtoms).toEqual([])
+    expect(pageResponse.payload.page.nextCursor).toBeUndefined()
   })
 
   it('returns typed errors for stale cursors, missing features, corrupt packs, and uninitialized queries', async () => {
