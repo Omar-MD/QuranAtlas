@@ -578,10 +578,15 @@ function lensForMode(mode: SearchQueryMode): SearchLensLite {
 }
 
 function statusForAnswerPreview(preview: AnswerPreview): string {
-  if (preview.mode === 'answer') return `${preview.evidenceCards.length} best evidence card(s)`
-  if (preview.mode === 'partial-answer') return `${preview.evidenceCards.length} evidence card(s) with limits`
+  const evidenceCardLabel = pluralizeEvidenceCards(preview.evidenceCards.length)
+  if (preview.mode === 'answer') return `${preview.evidenceCards.length} best ${evidenceCardLabel}`
+  if (preview.mode === 'partial-answer') return `${preview.evidenceCards.length} ${evidenceCardLabel} with limits`
   if (preview.mode === 'evidence-only') return preview.recovery?.message ?? 'Evidence-only response'
   return preview.recovery?.message ?? 'No answer available'
+}
+
+function pluralizeEvidenceCards(count: number): string {
+  return count === 1 ? 'evidence card' : 'evidence cards'
 }
 
 function emptyResultMessageForMode(mode: SearchQueryMode): string {

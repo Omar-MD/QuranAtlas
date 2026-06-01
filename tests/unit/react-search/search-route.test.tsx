@@ -590,7 +590,39 @@ describe('useSearchRouteState Ask route state', () => {
     expect(result.current.results).toEqual([])
     expect(result.current.selectedResult).toBeNull()
     expect(result.current.hasMoreResults).toBe(false)
-    expect(result.current.searchStatus).toBe('1 best evidence card(s)')
+    expect(result.current.searchStatus).toBe('1 best evidence card')
+    expect(result.current.resultCountMessage).toBe('1 best evidence card')
+  })
+
+  it.each([
+    { mode: 'answer' as const, count: 2, expected: '2 best evidence cards' },
+    { mode: 'partial-answer' as const, count: 1, expected: '1 evidence card with limits' },
+    { mode: 'partial-answer' as const, count: 2, expected: '2 evidence cards with limits' },
+  ])('pluralizes $mode Ask preview status copy for $count evidence cards', async ({ mode, count, expected }) => {
+    const preview = answerPreview({
+      id: `preview-${mode}-${count}`,
+      mode,
+      answerability: mode === 'answer'
+        ? { status: 'answerable', reasons: [], renderPermission: 'answer-preview' }
+        : { status: 'partially-answerable', reasons: ['insufficient-evidence'], renderPermission: 'answer-preview' },
+      evidenceCards: evidenceCards(count),
+    })
+    const client = mockSearchClient({
+      askPreview: vi.fn(async () => preview),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({
+      client,
+      initialMode: 'translation',
+      initialQuery: 'mercy',
+    }))
+
+    await waitFor(() => expect(result.current.packState).toBe('active'))
+    act(() => result.current.submitSearch())
+
+    await waitFor(() => expect(result.current.searchStatus).toBe(expected))
+    expect(result.current.resultCountMessage).toBe(expected)
   })
 
   it('opens All Matches with the preview id, active query, lens, and structured cursor', async () => {
@@ -812,6 +844,14 @@ function matchCard(overrides: Partial<MatchCardLite> = {}): MatchCardLite {
     readerAction: { type: 'open-in-reader', ref: '2:255' },
     ...overrides,
   }
+}
+
+function evidenceCards(count: number): AnswerPreview['evidenceCards'] {
+  return Array.from({ length: count }, (_, index) => ({
+    ...answerPreview().evidenceCards[0],
+    id: `evidence-${index + 1}`,
+    refLabel: `2:${255 + index}`,
+  }))
 }
 
 function searchCursor(overrides: Partial<SearchResultCursor> = {}): SearchResultCursor {
