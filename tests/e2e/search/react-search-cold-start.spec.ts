@@ -57,7 +57,8 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
       options?: IDBTransactionOptions,
     ) {
       const names = Array.isArray(storeNames) ? storeNames : [storeNames]
-      if (this.name === dbName && names.some((name) => searchStoreNames.includes(name))) {
+      const isSearchScopedTransaction = names.length > 0 && names.every((name) => searchStoreNames.includes(name))
+      if (this.name === dbName && isSearchScopedTransaction) {
         proof.transactionCalls.push({
           dbName: this.name,
           mode: mode ?? 'readonly',
@@ -69,7 +70,10 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
 
     const originalObjectStore = IDBTransaction.prototype.objectStore
     IDBTransaction.prototype.objectStore = function patchedObjectStore(name: string) {
-      if (this.db.name === dbName && searchStoreNames.includes(name)) {
+      const transactionStoreNames = Array.from(this.objectStoreNames)
+      const isSearchScopedTransaction = transactionStoreNames.length > 0
+        && transactionStoreNames.every((storeName) => searchStoreNames.includes(storeName))
+      if (this.db.name === dbName && searchStoreNames.includes(name) && isSearchScopedTransaction) {
         proof.objectStoreCalls.push({ dbName: this.db.name, storeName: name })
       }
       return originalObjectStore.call(this, name)
@@ -149,5 +153,7 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
   expect(resourceEntries.some((entry) => entry.initiatorType === 'link' && /search/i.test(entry.name))).toBe(false)
   expect(workerUrls.some((url) => /search\.worker/i.test(url))).toBe(false)
   expect(indexedDbProof.databaseNames.some((name) => name.includes('quran-atlas-search'))).toBe(false)
+  expect(indexedDbProof.transactionCalls).toEqual([])
+  expect(indexedDbProof.objectStoreCalls).toEqual([])
   expect(indexedDbProof.storeOperationCalls).toEqual([])
 })
