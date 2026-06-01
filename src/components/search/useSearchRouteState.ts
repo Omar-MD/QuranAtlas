@@ -198,7 +198,7 @@ export function useSearchRouteState(options: {
       return
     }
     const nextDefaultTab = 'overview'
-    const nextActiveTab = nextDefaultTab
+    const nextActiveTab = next?.tab ?? nextDefaultTab
     pendingSelectedResultIdRef.current = next?.selectedResultId ?? null
     setDefaultWorkspaceTab(nextDefaultTab)
     setActiveWorkspaceTab(nextActiveTab)

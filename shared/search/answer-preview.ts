@@ -370,6 +370,17 @@ function assertNonEmptyStringArray(value: unknown, label: string): string[] {
   return strings
 }
 
+function assertAyahRef(value: unknown, label: string): asserts value is string {
+  assertNonEmptyString(value, label)
+  const match = /^(\d+):(\d+)$/.exec(value)
+  if (!match) throw new Error(`${label} must be a valid ayah ref`)
+  const surah = Number(match[1])
+  const ayah = Number(match[2])
+  if (!Number.isInteger(surah) || !Number.isInteger(ayah) || surah < 1 || ayah < 1) {
+    throw new Error(`${label} must be a valid ayah ref`)
+  }
+}
+
 function assertDisplayTarget(
   target: EvidenceDisplayTarget,
   allowedTypes: readonly EvidenceDisplayTarget['type'][],
@@ -619,11 +630,17 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     }
     assertRecord(card.readerAction, `evidence card ${card.id} readerAction`)
     assertKnownValue(card.readerAction.type, READER_ACTION_TYPES, `evidence card ${card.id} readerAction type`)
-    if (card.readerAction.type === 'open-in-reader' && !supportEvidenceRefs.has(card.readerAction.ref)) {
-      throw new Error(`evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked support evidence`)
+    if (card.readerAction.type === 'open-in-reader') {
+      assertAyahRef(card.readerAction.ref, `evidence card ${card.id} open-in-reader ref`)
+      if (!supportEvidenceRefs.has(card.readerAction.ref)) {
+        throw new Error(`evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked support evidence`)
+      }
     }
-    if (card.readerAction.type === 'open-source-in-reader' && !supportEvidenceRefs.has(card.readerAction.sourceRef)) {
-      throw new Error(`evidence card ${card.id} open-source-in-reader sourceRef ${card.readerAction.sourceRef} is not linked support evidence`)
+    if (card.readerAction.type === 'open-source-in-reader') {
+      assertAyahRef(card.readerAction.sourceRef, `evidence card ${card.id} open-source-in-reader sourceRef`)
+      if (!supportEvidenceRefs.has(card.readerAction.sourceRef)) {
+        throw new Error(`evidence card ${card.id} open-source-in-reader sourceRef ${card.readerAction.sourceRef} is not linked support evidence`)
+      }
     }
   }
 }

@@ -331,7 +331,18 @@ describe('Search shared contracts', () => {
         ...base.evidenceCards[0],
         readerAction: { type: 'open-source-in-reader', sourceRef: '' },
       }],
-    }))).toThrow('open-source-in-reader sourceRef  is not linked support evidence')
+    }))).toThrow('open-source-in-reader sourceRef must be a non-empty string')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        ...base.evidenceAtoms[0],
+        refs: ['not-a-ref'],
+        displayTarget: { type: 'verse-ref', refs: ['not-a-ref'] },
+      }],
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        readerAction: { type: 'open-source-in-reader', sourceRef: 'not-a-ref' },
+      }],
+    }))).toThrow('open-source-in-reader sourceRef must be a valid ayah ref')
     expect(() => assertAnswerPreviewContract(makeAnswerPreview({
       evidenceAtoms: [...base.evidenceAtoms, extraEvidence],
       evidenceCards: [{

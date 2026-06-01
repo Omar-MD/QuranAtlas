@@ -798,6 +798,23 @@ describe('useSearchRouteState Ask route state', () => {
     expect(window.location.hash).not.toContain('tab=verses')
   })
 
+  it('restores an explicit Search tab from the URL while loading the Ask preview', async () => {
+    window.location.hash = '#/search?q=mercy&tab=sources'
+    const preview = answerPreview({ id: 'preview-restored-sources', query: 'mercy' })
+    const client = mockSearchClient({
+      askPreview: vi.fn(async () => preview),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({ client }))
+
+    await waitFor(() => expect(result.current.answerPreview?.id).toBe(preview.id))
+    expect(result.current.activeWorkspaceTab).toBe('sources')
+    expect(result.current.defaultWorkspaceTab).toBe('overview')
+    expect(client.askPreview).toHaveBeenCalledWith(expect.objectContaining({ query: 'mercy' }))
+    expect(window.location.hash).toContain('tab=sources')
+  })
+
   it.each([
     { mode: 'answer' as const, count: 2, expected: '2 best evidence cards' },
     { mode: 'partial-answer' as const, count: 1, expected: '1 evidence card with limits' },
