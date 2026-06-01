@@ -1,9 +1,10 @@
 import userEvent from '@testing-library/user-event'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SearchRouteState } from '../../../src/components/search/useSearchRouteState'
 import { defaultTabForParsedSearch } from '../../../src/components/search/search-presentation-model'
+import type { SearchClient } from '../../../src/search/client'
 import {
   SEARCH_FOLLOWING_WORDING_NOTE,
   SEARCH_OCCURS_ONCE_NOTE,
@@ -11,8 +12,9 @@ import {
   SEARCH_WORDING_NOTE,
 } from '../../../src/search/graph'
 import { parseSearchQuery } from '../../../src/search/query-parser'
-import type { SearchBriefDto, SearchResultDto } from '../../../src/search/schema'
+import type { SearchBriefDto, SearchResultCursor, SearchResultDto } from '../../../src/search/schema'
 import type { SavedSearchRecord } from '../../../src/storage/types'
+import type { AnswerPreview, MatchCardLite } from '../../../shared/search'
 
 const mockUseSearchRouteState = vi.fn<[], SearchRouteState>()
 const mockSaved = {
@@ -154,10 +156,15 @@ function routeState(overrides: Partial<SearchRouteState> = {}): SearchRouteState
     packVersion: '1.0.0',
     query: '',
     activeWorkspaceTab: 'overview',
+    answerPreview: null,
+    allMatches: [],
+    allMatchesOpen: false,
     brief: null,
+    canLoadAllMatches: false,
     defaultWorkspaceTab: 'overview',
     exploreSeedResult: null,
     focusedExploreModule: null,
+    loadingAllMatches: false,
     resultCountMessage: '',
     results: [],
     searchStatus: 'Search data is ready on this device.',
@@ -167,6 +174,8 @@ function routeState(overrides: Partial<SearchRouteState> = {}): SearchRouteState
     exploreGraph: { error: null, loading: false, resultId: null, sections: [] },
     loadExploreGraph: vi.fn(),
     loadMoreResults: vi.fn(),
+    loadMoreAllMatches: vi.fn(),
+    openAllMatches: vi.fn(),
     openResultExplore: vi.fn(),
     setActiveWorkspaceTab: vi.fn(),
     setExploreSeedResult: vi.fn(),
@@ -551,3 +560,279 @@ describe('Search workspace tab defaults', () => {
     expect(defaultTabForParsedSearch(parseSearchQuery('mercy', { mode: 'translation' }), 'translation')).toBe('overview')
   })
 })
+
+describe('useSearchRouteState Ask route state', () => {
+  beforeEach(() => {
+    window.location.hash = '#/search'
+    vi.clearAllMocks()
+  })
+
+  it('stores the Ask preview and clears the legacy result window on submit', async () => {
+    const preview = answerPreview({ id: 'preview-mercy', query: 'mercy' })
+    const client = mockSearchClient({
+      askPreview: vi.fn(async () => preview),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({
+      client,
+      initialMode: 'translation',
+      initialQuery: 'mercy',
+    }))
+
+    await waitFor(() => expect(result.current.packState).toBe('active'))
+    act(() => result.current.submitSearch())
+
+    await waitFor(() => expect(result.current.answerPreview).toEqual(preview))
+    expect(client.askPreview).toHaveBeenCalledWith({ query: 'mercy', lens: 'translation', sort: 'relevance' })
+    expect(client.query).not.toHaveBeenCalled()
+    expect(result.current.brief).toBeNull()
+    expect(result.current.results).toEqual([])
+    expect(result.current.selectedResult).toBeNull()
+    expect(result.current.hasMoreResults).toBe(false)
+    expect(result.current.searchStatus).toBe('1 best evidence card(s)')
+  })
+
+  it('opens All Matches with the preview id, active query, lens, and structured cursor', async () => {
+    const preview = answerPreview({ id: 'preview-allah', query: 'Allah' })
+    const cursor = searchCursor({ lastStableResultKey: 'translation:2:255' })
+    const match = matchCard({ id: 'match-1', refLabel: '2:255' })
+    const client = mockSearchClient({
+      askPreview: vi.fn(async () => preview),
+      getAskMatchesPage: vi.fn(async () => ({
+        previewId: preview.id,
+        evidenceAtoms: [],
+        matchCards: [match],
+        nextCursor: cursor,
+      })),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({
+      client,
+      initialMode: 'translation',
+      initialQuery: 'Allah',
+    }))
+
+    await waitFor(() => expect(result.current.packState).toBe('active'))
+    act(() => result.current.submitSearch())
+    await waitFor(() => expect(result.current.answerPreview?.id).toBe(preview.id))
+
+    act(() => result.current.openAllMatches())
+
+    await waitFor(() => expect(result.current.allMatches).toEqual([match]))
+    expect(client.getAskMatchesPage).toHaveBeenCalledWith({
+      previewId: preview.id,
+      query: 'Allah',
+      lens: 'translation',
+      limit: 10,
+      sort: 'relevance',
+    })
+    expect(result.current.allMatchesOpen).toBe(true)
+    expect(result.current.canLoadAllMatches).toBe(true)
+    expect(result.current.loadingAllMatches).toBe(false)
+    expect(result.current.searchStatus).toBe('1 matches shown')
+  })
+
+  it('loads more All Matches by reusing the structured cursor and appending unique cards', async () => {
+    const preview = answerPreview({ id: 'preview-root', query: 'ktb' })
+    const firstCursor = searchCursor({ lastStableResultKey: 'morphology:first' })
+    const firstMatch = matchCard({ id: 'match-1', refLabel: '2:2' })
+    const nextMatch = matchCard({ id: 'match-2', refLabel: '2:3' })
+    const client = mockSearchClient({
+      askPreview: vi.fn(async () => preview),
+      getAskMatchesPage: vi.fn()
+        .mockResolvedValueOnce({
+          previewId: preview.id,
+          evidenceAtoms: [],
+          matchCards: [firstMatch],
+          nextCursor: firstCursor,
+        })
+        .mockResolvedValueOnce({
+          previewId: preview.id,
+          evidenceAtoms: [],
+          matchCards: [firstMatch, nextMatch],
+          nextCursor: undefined,
+        }),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({
+      client,
+      initialMode: 'same-root',
+      initialQuery: 'ktb',
+    }))
+
+    await waitFor(() => expect(result.current.packState).toBe('active'))
+    act(() => result.current.submitSearch())
+    await waitFor(() => expect(result.current.answerPreview?.id).toBe(preview.id))
+    act(() => result.current.openAllMatches())
+    await waitFor(() => expect(result.current.allMatches).toEqual([firstMatch]))
+
+    act(() => result.current.loadMoreAllMatches())
+
+    await waitFor(() => expect(result.current.allMatches).toEqual([firstMatch, nextMatch]))
+    expect(client.getAskMatchesPage).toHaveBeenLastCalledWith({
+      previewId: preview.id,
+      query: 'ktb',
+      lens: 'morphology',
+      cursor: firstCursor,
+      limit: 10,
+      sort: 'relevance',
+    })
+    expect(result.current.canLoadAllMatches).toBe(false)
+  })
+
+  it('ignores stale preview and All Matches responses after a newer submit', async () => {
+    const stalePreview = createDeferred<AnswerPreview>()
+    const staleMatches = createDeferred<{
+      previewId: string
+      evidenceAtoms: []
+      matchCards: MatchCardLite[]
+      nextCursor?: SearchResultCursor
+    }>()
+    const previewA = answerPreview({ id: 'preview-a', query: 'mercy' })
+    const previewB = answerPreview({ id: 'preview-b', query: 'guidance' })
+    const previewC = answerPreview({ id: 'preview-c', query: 'light' })
+    const client = mockSearchClient({
+      askPreview: vi.fn()
+        .mockReturnValueOnce(stalePreview.promise)
+        .mockResolvedValueOnce(previewB)
+        .mockResolvedValueOnce(previewC),
+      getAskMatchesPage: vi.fn(() => staleMatches.promise),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({ client, initialMode: 'translation' }))
+
+    await waitFor(() => expect(result.current.packState).toBe('active'))
+    act(() => result.current.submitSearch({ query: 'mercy', mode: 'translation' }))
+    act(() => result.current.submitSearch({ query: 'guidance', mode: 'translation' }))
+    await waitFor(() => expect(result.current.answerPreview?.id).toBe(previewB.id))
+
+    await act(async () => stalePreview.resolve(previewA))
+    expect(result.current.answerPreview?.id).toBe(previewB.id)
+
+    act(() => result.current.openAllMatches())
+    expect(client.getAskMatchesPage).toHaveBeenCalledWith({
+      previewId: previewB.id,
+      query: 'guidance',
+      lens: 'translation',
+      limit: 10,
+      sort: 'relevance',
+    })
+    act(() => result.current.submitSearch({ query: 'light', mode: 'translation' }))
+    await waitFor(() => expect(result.current.answerPreview?.id).toBe(previewC.id))
+
+    await act(async () => staleMatches.resolve({
+      previewId: previewB.id,
+      evidenceAtoms: [],
+      matchCards: [matchCard({ id: 'stale-match' })],
+      nextCursor: searchCursor({ lastStableResultKey: 'stale' }),
+    }))
+    expect(result.current.answerPreview?.id).toBe(previewC.id)
+    expect(result.current.allMatches).toEqual([])
+    expect(result.current.allMatchesOpen).toBe(false)
+  })
+})
+
+async function actualSearchRouteStateModule(): Promise<typeof import('../../../src/components/search/useSearchRouteState')> {
+  return vi.importActual('../../../src/components/search/useSearchRouteState')
+}
+
+function mockSearchClient(overrides: Partial<Record<keyof SearchClient, unknown>> = {}): SearchClient {
+  return {
+    init: vi.fn(async () => ({ packId: 'qa-search-core-hafs-v1', packVersion: '1.0.0' })),
+    dispose: vi.fn(async () => undefined),
+    askPreview: vi.fn(async () => answerPreview()),
+    getAskMatchesPage: vi.fn(async () => ({ previewId: 'preview-1', evidenceAtoms: [], matchCards: [], nextCursor: undefined })),
+    query: vi.fn(),
+    explore: vi.fn(),
+    ...overrides,
+  } as unknown as SearchClient
+}
+
+function answerPreview(overrides: Partial<AnswerPreview> = {}): AnswerPreview {
+  const query = overrides.query ?? 'mercy'
+  return {
+    id: 'preview-1',
+    query,
+    queryUnderstanding: {
+      originalQuery: query,
+      normalizedQuery: query.toLowerCase(),
+      intent: 'find-occurrences',
+      lens: 'translation',
+      confidence: 'high',
+      alternatives: [],
+      normalizationWarnings: [],
+    },
+    searchPlan: {
+      primaryLens: 'translation',
+      lanes: [{ id: 'translation', sourceKinds: ['translation'], queryForm: query, status: 'executed' }],
+      excludedSources: [],
+    },
+    mode: 'answer',
+    answerability: { status: 'answerable', reasons: [], renderPermission: 'answer-preview' },
+    claims: [],
+    claimSupports: [],
+    evidenceAtoms: [],
+    evidenceBasis: {
+      quranText: 'available-not-used',
+      translation: 'used',
+      morphology: 'available-not-used',
+      note: 'Translation evidence was used for this preview.',
+    },
+    evidenceCards: [{
+      id: 'evidence-1',
+      refLabel: '2:255',
+      evidenceAtomIds: ['atom-1'],
+      claimSupportIds: ['support-1'],
+      title: '2:255',
+      snippet: 'Allah - there is no deity except Him',
+      snippetSource: 'translation',
+      matchReason: 'The indexed translation contains the query.',
+      readerAction: { type: 'open-in-reader', ref: '2:255' },
+    }],
+    sourceFamilyStatuses: [
+      { sourceKind: 'translation', availability: 'available', canSupportClaims: true },
+    ],
+    ...overrides,
+  }
+}
+
+function matchCard(overrides: Partial<MatchCardLite> = {}): MatchCardLite {
+  return {
+    id: 'match-1',
+    refLabel: '2:255',
+    evidenceAtomIds: ['atom-1'],
+    title: '2:255',
+    snippet: 'Allah - there is no deity except Him',
+    snippetSource: 'translation',
+    matchReason: 'The indexed translation contains the query.',
+    readerAction: { type: 'open-in-reader', ref: '2:255' },
+    ...overrides,
+  }
+}
+
+function searchCursor(overrides: Partial<SearchResultCursor> = {}): SearchResultCursor {
+  return {
+    packId: 'qa-search-core-hafs-v1',
+    packVersion: '1.0.0',
+    queryHash: 'query-hash',
+    queryAstVersion: 1,
+    rankVersion: 'phase-1-rank-v1',
+    sort: 'relevance',
+    lastStableResultKey: 'translation:2:255',
+    ...overrides,
+  }
+}
+
+function createDeferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (error: unknown) => void } {
+  let resolve!: (value: T) => void
+  let reject!: (error: unknown) => void
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve
+    reject = promiseReject
+  })
+  return { promise, resolve, reject }
+}

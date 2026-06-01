@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { SearchQueryAstV1 } from '../../../shared/search'
+import type { AnswerPreview, MatchCardLite, SearchLensLite, SearchQueryAstV1 } from '../../../shared/search'
 import { REACT_ROUTES } from '../../app/router/routes'
 import type { SearchPackAvailabilityState } from '../../offline/search/repair'
 import { getSearchClient, type SearchClient } from '../../search/client'
@@ -28,10 +28,15 @@ export type SearchRouteState = {
   query: string
   canSaveSearch: boolean
   activeWorkspaceTab: SearchWorkspaceTab
+  answerPreview: AnswerPreview | null
+  allMatches: MatchCardLite[]
+  allMatchesOpen: boolean
   brief: SearchBriefDto | null
+  canLoadAllMatches: boolean
   defaultWorkspaceTab: SearchWorkspaceTab
   exploreSeedResult: SearchResultDto | null
   focusedExploreModule: SearchExploreModuleId | null
+  loadingAllMatches: boolean
   resultCountMessage: string
   results: SearchResultDto[]
   searchStatus: string
@@ -40,7 +45,9 @@ export type SearchRouteState = {
   canLoadMoreResults: boolean
   exploreGraph: SearchExploreGraphState
   loadExploreGraph: (result: SearchResultDto) => void
+  loadMoreAllMatches: () => void
   loadMoreResults: () => void
+  openAllMatches: () => void
   openResultExplore: (result: SearchResultDto, module?: SearchExploreModuleId) => void
   setActiveWorkspaceTab: (tab: SearchWorkspaceTab) => void
   setExploreSeedResult: (result: SearchResultDto | null) => void
@@ -72,6 +79,11 @@ export function useSearchRouteState(options: {
   const [error, setError] = useState<string | null>(null)
   const [brief, setBrief] = useState<SearchBriefDto | null>(null)
   const [results, setResults] = useState<SearchResultDto[]>([])
+  const [answerPreview, setAnswerPreview] = useState<AnswerPreview | null>(null)
+  const [allMatches, setAllMatches] = useState<MatchCardLite[]>([])
+  const [allMatchesOpen, setAllMatchesOpen] = useState(false)
+  const [allMatchesCursor, setAllMatchesCursor] = useState<SearchResultCursor | null>(null)
+  const [loadingAllMatches, setLoadingAllMatches] = useState(false)
   const [resultCountMessage, setResultCountMessage] = useState('')
   const [searchStatus, setSearchStatus] = useState('Loading search index')
   const [selectedResult, setSelectedResult] = useState<SearchResultDto | null>(null)
@@ -94,13 +106,22 @@ export function useSearchRouteState(options: {
   const restoredHashStateRef = useRef(false)
   const pendingSelectedResultIdRef = useRef<string | null>(initialHashState.selectedResultId ?? null)
   const loadingMoreRef = useRef(false)
+  const loadingAllMatchesRef = useRef(false)
   const selectedResultRef = useRef<SearchResultDto | null>(null)
+  const answerPreviewRef = useRef<AnswerPreview | null>(null)
   const activeQueryRef = useRef<{ ast: SearchQueryAstV1; mode: SearchQueryMode; query: string } | null>(null)
   const sort = options.sort ?? 'relevance'
 
   const resetEvidenceState = useCallback((status?: string) => {
     setBrief(null)
     setResults([])
+    answerPreviewRef.current = null
+    setAnswerPreview(null)
+    setAllMatches([])
+    setAllMatchesOpen(false)
+    setAllMatchesCursor(null)
+    setLoadingAllMatches(false)
+    loadingAllMatchesRef.current = false
     selectedResultRef.current = null
     setSelectedResult(null)
     setResultCursor(null)
@@ -188,6 +209,13 @@ export function useSearchRouteState(options: {
     setSearchStatus('Searching')
     setBrief(null)
     setResults([])
+    answerPreviewRef.current = null
+    setAnswerPreview(null)
+    setAllMatches([])
+    setAllMatchesOpen(false)
+    setAllMatchesCursor(null)
+    setLoadingAllMatches(false)
+    loadingAllMatchesRef.current = false
     selectedResultRef.current = null
     setSelectedResult(null)
     setResultCursor(null)
@@ -199,29 +227,30 @@ export function useSearchRouteState(options: {
     writeSearchHashState({
       mode: effectiveMode,
       query: trimmed,
-      selectedResultId: pendingSelectedResultIdRef.current ?? undefined,
       tab: nextActiveTab,
     })
-    void client.query({ query: parsed.ast, sort }).then((window) => {
+    void client.askPreview({ query: trimmed, lens: lensForMode(effectiveMode), sort }).then((preview) => {
       if (sequence !== requestSequence.current) return
-      const pendingSelectedId = pendingSelectedResultIdRef.current
-      const nextSelectedResult = pendingSelectedId
-        ? window.results.find((result) => result.resultId === pendingSelectedId) ?? window.results[0] ?? null
-        : window.results[0] ?? null
-      setBrief(window.brief)
-      setResults(window.results)
-      selectedResultRef.current = nextSelectedResult
-      setSelectedResult(nextSelectedResult)
-      setResultCursor(window.cursor)
+      answerPreviewRef.current = preview
+      setAnswerPreview(preview)
+      setBrief(null)
+      setResults([])
+      selectedResultRef.current = null
+      setSelectedResult(null)
+      setResultCursor(null)
+      setAllMatches([])
+      setAllMatchesCursor(null)
+      setAllMatchesOpen(false)
+      setLoadingAllMatches(false)
+      loadingAllMatchesRef.current = false
       setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
-      const countMessage = formatBriefResultCount(window.brief, Boolean(window.cursor))
-      setEmptyResultMessage(emptyResultMessageForMode(effectiveMode))
+      const countMessage = statusForAnswerPreview(preview)
+      setEmptyResultMessage(preview.recovery?.message ?? emptyResultMessageForMode(effectiveMode))
       setResultCountMessage(countMessage)
       setSearchStatus(countMessage)
       writeSearchHashState({
         mode: effectiveMode,
         query: trimmed,
-        selectedResultId: nextSelectedResult?.resultId,
         tab: nextActiveTab,
       })
     }).catch((caught) => {
@@ -284,6 +313,88 @@ export function useSearchRouteState(options: {
       setLoadingMoreResults(false)
     })
   }, [client, resultCursor, results, sort])
+
+  const openAllMatches = useCallback(() => {
+    const preview = answerPreviewRef.current
+    const activeQuery = activeQueryRef.current
+    if (!preview || !activeQuery || loadingAllMatchesRef.current) return
+    const sequence = requestSequence.current
+    const activePreviewId = preview.id
+    const activeQueryIdentity = activeQueryIdentityFor(activeQuery)
+    loadingAllMatchesRef.current = true
+    setAllMatchesOpen(true)
+    setLoadingAllMatches(true)
+    setSearchStatus('Loading all matches')
+    void client.getAskMatchesPage({
+      previewId: activePreviewId,
+      query: activeQuery.query,
+      lens: lensForMode(activeQuery.mode),
+      limit: 10,
+      sort,
+    }).then((page) => {
+      if (sequence !== requestSequence.current) return
+      if (answerPreviewRef.current?.id !== activePreviewId) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      setAllMatches(page.matchCards)
+      setAllMatchesCursor(page.nextCursor ?? null)
+      setSearchStatus(`${page.matchCards.length} matches shown`)
+    }).catch((caught) => {
+      if (sequence !== requestSequence.current) return
+      if (answerPreviewRef.current?.id !== activePreviewId) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      const message = caught instanceof Error ? caught.message : 'All matches are unavailable'
+      setError(message)
+      setSearchStatus(message)
+    }).finally(() => {
+      if (sequence !== requestSequence.current) return
+      if (answerPreviewRef.current?.id !== activePreviewId) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      loadingAllMatchesRef.current = false
+      setLoadingAllMatches(false)
+    })
+  }, [client, sort])
+
+  const loadMoreAllMatches = useCallback(() => {
+    const preview = answerPreviewRef.current
+    const activeQuery = activeQueryRef.current
+    const cursor = allMatchesCursor
+    if (!preview || !activeQuery || !cursor || loadingAllMatchesRef.current) return
+    const sequence = requestSequence.current
+    const activePreviewId = preview.id
+    const activeQueryIdentity = activeQueryIdentityFor(activeQuery)
+    loadingAllMatchesRef.current = true
+    setLoadingAllMatches(true)
+    setSearchStatus('Loading more matches')
+    void client.getAskMatchesPage({
+      previewId: activePreviewId,
+      query: activeQuery.query,
+      lens: lensForMode(activeQuery.mode),
+      cursor,
+      limit: 10,
+      sort,
+    }).then((page) => {
+      if (sequence !== requestSequence.current) return
+      if (answerPreviewRef.current?.id !== activePreviewId) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      const merged = mergeMatchCards(allMatches, page.matchCards)
+      setAllMatches(merged)
+      setAllMatchesCursor(page.nextCursor ?? null)
+      setSearchStatus(`${merged.length} matches shown`)
+    }).catch((caught) => {
+      if (sequence !== requestSequence.current) return
+      if (answerPreviewRef.current?.id !== activePreviewId) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      const message = caught instanceof Error ? caught.message : 'All matches are unavailable'
+      setError(message)
+      setSearchStatus(message)
+    }).finally(() => {
+      if (sequence !== requestSequence.current) return
+      if (answerPreviewRef.current?.id !== activePreviewId) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      loadingAllMatchesRef.current = false
+      setLoadingAllMatches(false)
+    })
+  }, [allMatches, allMatchesCursor, client, sort])
 
   const loadExploreGraph = useCallback((result: SearchResultDto) => {
     if (!readyRef.current) {
@@ -391,10 +502,15 @@ export function useSearchRouteState(options: {
     query,
     canSaveSearch,
     activeWorkspaceTab,
+    answerPreview,
+    allMatches,
+    allMatchesOpen,
     brief,
+    canLoadAllMatches: Boolean(allMatchesCursor) && !loadingAllMatches,
     defaultWorkspaceTab,
     exploreSeedResult,
     focusedExploreModule,
+    loadingAllMatches,
     resultCountMessage,
     results,
     searchStatus,
@@ -403,7 +519,9 @@ export function useSearchRouteState(options: {
     canLoadMoreResults: Boolean(resultCursor) && !loadingMoreResults,
     exploreGraph,
     loadExploreGraph,
+    loadMoreAllMatches,
     loadMoreResults,
+    openAllMatches,
     openResultExplore,
     setActiveWorkspaceTab: setSearchActiveWorkspaceTab,
     setExploreSeedResult,
@@ -438,6 +556,32 @@ function mergeSearchResults(current: SearchResultDto[], next: SearchResultDto[])
     merged.push(result)
   }
   return merged
+}
+
+function mergeMatchCards(current: MatchCardLite[], next: MatchCardLite[]): MatchCardLite[] {
+  const seen = new Set(current.map((card) => card.id))
+  const merged = [...current]
+  for (const card of next) {
+    if (seen.has(card.id)) continue
+    seen.add(card.id)
+    merged.push(card)
+  }
+  return merged
+}
+
+function lensForMode(mode: SearchQueryMode): SearchLensLite {
+  if (mode === 'arabic-text' || mode === 'exact-word-form') return 'quran-text'
+  if (mode === 'translation' || mode === 'context') return 'translation'
+  if (mode === 'phrase') return 'phrase'
+  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context') return 'morphology'
+  return 'mixed'
+}
+
+function statusForAnswerPreview(preview: AnswerPreview): string {
+  if (preview.mode === 'answer') return `${preview.evidenceCards.length} best evidence card(s)`
+  if (preview.mode === 'partial-answer') return `${preview.evidenceCards.length} evidence card(s) with limits`
+  if (preview.mode === 'evidence-only') return preview.recovery?.message ?? 'Evidence-only response'
+  return preview.recovery?.message ?? 'No answer available'
 }
 
 function emptyResultMessageForMode(mode: SearchQueryMode): string {
