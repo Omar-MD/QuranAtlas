@@ -1,5 +1,5 @@
 import type { QueryUnderstandingLite, SearchLensLite } from '../../../shared/search'
-import { parseSearchQuery, SearchQueryParseError } from '../query-parser'
+import { parseSearchQuery, SearchQueryParseError, stableQueryHash } from '../query-parser'
 import { parseSearchReference } from '../reference-parser'
 import type { ParsedSearchQuery } from '../schema'
 
@@ -15,7 +15,7 @@ export function understandAskQuery(query: string, lens?: SearchLensLite): AskQue
   const reference = parseSearchReference(trimmed)
   const selectedLens = lens ?? lensForRawQuery(trimmed, Boolean(reference))
   try {
-    const parsed = parseSearchQuery(trimmed, { mode: modeForLens(selectedLens) })
+    const parsed = parsedForLens(parseSearchQuery(trimmed, { mode: modeForLens(selectedLens) }), selectedLens)
     return {
       parsed,
       parseError: null,
@@ -44,6 +44,23 @@ export function understandAskQuery(query: string, lens?: SearchLensLite): AskQue
         normalizationWarnings: [error instanceof Error ? error.message : 'Search query is unsupported'],
       },
     }
+  }
+}
+
+function parsedForLens(parsed: ParsedSearchQuery, lens: SearchLensLite): ParsedSearchQuery {
+  if (lens !== 'mixed') return parsed
+  const sourceLane: ParsedSearchQuery['ast']['filters']['sourceLane'] = ['translation', 'context']
+  const ast: ParsedSearchQuery['ast'] = {
+    ...parsed.ast,
+    filters: {
+      ...parsed.ast.filters,
+      sourceLane,
+    },
+  }
+  return {
+    ...parsed,
+    ast,
+    queryHash: stableQueryHash(ast),
   }
 }
 

@@ -21,11 +21,13 @@ describe('Ask/Search query understanding', () => {
       lens: 'phrase',
       confidence: 'high',
     })
-    expect(understandAskQuery('What does رحمن mean?').understanding).toMatchObject({
+    const mixedArabicQuestion = understandAskQuery('What does رحمن mean?')
+    expect(mixedArabicQuestion.understanding).toMatchObject({
       intent: 'answer-question',
       lens: 'mixed',
       confidence: 'medium',
     })
+    expect(mixedArabicQuestion.parsed?.ast.filters.sourceLane).toEqual(['translation', 'context'])
   })
 
   it('blocks absence, deferred-source, personal, and broad theological prose', () => {
