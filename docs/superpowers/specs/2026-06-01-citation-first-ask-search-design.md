@@ -18,7 +18,7 @@
 | Runtime posture | Deterministic-first. |
 | Future producers | Producer-agnostic interface reserved; LLM/RAG deferred until it satisfies the same evidence contract. |
 | Core pipeline | `Query -> QueryUnderstanding -> SearchPlan -> EvidenceBundle -> AnswerBrief -> UI`. |
-| Trust kernel | Keep `EvidenceSpan`, `ClaimSupport`, `AnswerabilityDecision`, `AnswerBrief`, and `PackManifest` small enough to test exhaustively. |
+| Trust kernel | Keep `EvidenceAtom`, `ClaimSupport`, `AnswerabilityDecision`, `AnswerBrief`, and `PackManifest` small enough to test exhaustively. |
 | Answer style | Short prose answer when responsible; partial, evidence-only, or no-answer recovery when not. |
 | Trust rule | Every answer claim must be traceable to typed evidence, with visible source provenance, inference level, and scope boundary. |
 | User experience | Answer-first, with compact evidence basis, best evidence, deepen paths, all matches, method/sources, and audit. |
@@ -39,7 +39,7 @@
 
 The design is split into three layers:
 
-1. **Trust Kernel:** `EvidenceSpan`, `ClaimSupport`, `AnswerabilityDecision`, `AnswerBrief`, and `PackManifest`. This layer is the enforceable contract for citations, support, answerability, replay, and pack integrity.
+1. **Trust Kernel:** `EvidenceAtom`, `ClaimSupport`, `AnswerabilityDecision`, `AnswerBrief`, and `PackManifest`. This layer is the enforceable contract for citations, support, answerability, replay, and pack integrity.
 2. **Source Family Extensions:** Qur'an text, translation, morphology, tafsir, asbab, themes, cross-reference, reader mapping, and future hadith-linked evidence. These plug into the trust kernel instead of expanding it.
 3. **UX Surfaces:** Answer, Evidence Basis, Best Evidence, Explore Deeper, Why This Answer, Method & Sources, and Audit.
 
@@ -244,10 +244,15 @@ type SourceRuntimeState = {
   installed: boolean;
   indexed: boolean;
   searchable: boolean;
-  claimEligible: boolean;
   displayEligible: boolean;
   disabled: boolean;
   failureReason?: string;
+};
+
+type ClaimEligibilityDecision = {
+  sourceId: string;
+  eligible: boolean;
+  reasons: string[];
 };
 
 type SourceCoverage = {
@@ -274,7 +279,7 @@ type SourceRecord = {
 
 `hadith` is modeled as a future evidence family because tafsir and asbab may cite reports. `fiqh`, `fatwa`, and personal rulings are treated as application boundaries unless QuranAtlas later approves a juristic source corpus.
 
-Immutable source metadata must not be mixed with device-local runtime state. `SourceRecord` describes durable source facts; `SourceRuntimeState` describes whether that source is installed, indexed, searchable, claim-eligible, or disabled on the current device.
+Immutable source metadata must not be mixed with device-local runtime state. `SourceRecord` describes durable source facts; `SourceRuntimeState` describes whether that source is installed, indexed, searchable, display-eligible, or disabled on the current device. Claim eligibility is computed as a `ClaimEligibilityDecision` from source metadata, pack verification, index validity, source-family policy, runtime state, recipe requirements, and the evidence item eligibility; it is not persisted as mutable source truth.
 
 ## Pack Integrity
 
@@ -285,19 +290,26 @@ type PackManifest = {
   id: string;
   schemaVersion: string;
   sourceIds: string[];
+  sourceContentHashes: Record<string, string>;
   contentHash: string;
   indexHash: string;
   normalizerVersion: string;
   builtAt: string;
+  buildProvenanceHash: string;
   buildProvenanceUri?: string;
   signature: string;
+  signatureAlgorithm: "Ed25519";
   signingKeyId: string;
+  keyVersion: string;
+  revokedBy?: string;
 };
 ```
 
 Rules:
 
+- The signature is computed over the canonical manifest excluding the `signature` field.
 - If manifest signature fails, the source family is disabled for claims and display.
+- If `revokedBy` is present, the pack is disabled until a non-revoked successor is installed.
 - If `contentHash` mismatches, the pack is quarantined.
 - If `schemaVersion` is unsupported, install is blocked or a migration is required.
 - If `indexHash` mismatches, the index must be rebuilt before claim eligibility is restored.
@@ -341,6 +353,13 @@ type TextRange = {
 
 type SupportStrength = "explicit" | "strong" | "moderate" | "weak";
 
+const supportStrengthRank = {
+  weak: 1,
+  moderate: 2,
+  strong: 3,
+  explicit: 4,
+} as const;
+
 type CoverageStatus =
   | "complete-for-source"
   | "partial-source"
@@ -364,8 +383,11 @@ type EvidenceDisplayTarget =
   | { type: "source-note"; sourceId: string }
   | { type: "computed-explanation"; explanationId: string };
 
-type EvidenceSupport = {
+type EvidenceAtom = {
   id: string;
+  sourceId: string;
+  sourceVersion: string;
+  sourceContentHash: string;
   evidenceType:
     | "quran-text"
     | "translation"
@@ -379,7 +401,6 @@ type EvidenceSupport = {
     | "cross-reference"
     | "reader-mapping"
     | "computed-cluster";
-  sourceId: string;
   refs: string[];
   quoteRange?: TextRange;
   tokenRefs?: string[];
@@ -388,6 +409,7 @@ type EvidenceSupport = {
   supportStrength: SupportStrength;
   coverageStatus: CoverageStatus;
   eligibility: ClaimAttribution[];
+  quoteHash?: string;
 };
 ```
 
@@ -395,27 +417,18 @@ Evidence support eligibility is checked against both the source and the evidence
 
 ```text
 A claim is valid only if:
-- claim.attribution is allowed by evidenceSupport.eligibility;
+- claim.attribution is allowed by evidenceAtom.eligibility;
 - claim.attribution is allowed by source.usableForClaims;
-- source runtime state has claimEligible true;
-- evidenceSupport.supportStrength satisfies the recipe;
+- claim eligibility decision for the source is eligible;
+- evidenceAtom.supportStrength satisfies the recipe;
 - the support displayTarget can open in an evidence card or audit view.
 ```
 
-The minimal trust-kernel evidence and claim support records are:
+A support item satisfies `minimumSupportStrength` only when `supportStrengthRank[item.supportStrength] >= supportStrengthRank[rule.minimumSupportStrength]`.
+
+The minimal trust-kernel support records are:
 
 ```ts
-type EvidenceSpan = {
-  id: string;
-  sourceId: string;
-  sourceVersion: string;
-  sourceContentHash: string;
-  ref: string;
-  startOffset?: number;
-  endOffset?: number;
-  quoteHash?: string;
-};
-
 type ClaimSupport = {
   claimId: string;
   supportIds: string[];
@@ -433,13 +446,13 @@ type ClaimSupport = {
 Typed source-family evidence extends this kernel:
 
 ```ts
-type QuranTextEvidence = EvidenceSupport & { evidenceType: "quran-text" };
-type TranslationEvidence = EvidenceSupport & { evidenceType: "translation" };
-type MorphologyEvidence = EvidenceSupport & { evidenceType: "morphology" };
-type RootLemmaEvidence = EvidenceSupport & { evidenceType: "root-lexicon" | "lemma-index" };
-type ReaderMappingEvidence = EvidenceSupport & { evidenceType: "reader-mapping" };
+type QuranTextEvidence = EvidenceAtom & { evidenceType: "quran-text" };
+type TranslationEvidence = EvidenceAtom & { evidenceType: "translation" };
+type MorphologyEvidence = EvidenceAtom & { evidenceType: "morphology" };
+type RootLemmaEvidence = EvidenceAtom & { evidenceType: "root-lexicon" | "lemma-index" };
+type ReaderMappingEvidence = EvidenceAtom & { evidenceType: "reader-mapping" };
 
-type TafsirEvidence = EvidenceSupport & {
+type TafsirEvidence = EvidenceAtom & {
   evidenceType: "tafsir";
   authorId: string;
   verseRef: string;
@@ -456,7 +469,7 @@ type TafsirEvidence = EvidenceSupport & {
   attributionMode: "author-explains" | "source-reports" | "editor-summarizes";
 };
 
-type AsbabEvidence = EvidenceSupport & {
+type AsbabEvidence = EvidenceAtom & {
   evidenceType: "asbab";
   verseRefs: string[];
   reportText: string;
@@ -470,7 +483,7 @@ type ThemeProvenance =
   | "editorial-curated"
   | "computed-cluster";
 
-type ThemeEvidence = EvidenceSupport & {
+type ThemeEvidence = EvidenceAtom & {
   evidenceType: "theme";
   label: string;
   themeProvenance: ThemeProvenance;
@@ -478,7 +491,7 @@ type ThemeEvidence = EvidenceSupport & {
   explanation?: string;
 };
 
-type CrossReferenceEvidence = EvidenceSupport & {
+type CrossReferenceEvidence = EvidenceAtom & {
   evidenceType: "cross-reference";
   fromRef: string;
   toRef: string;
@@ -500,7 +513,7 @@ type EvidenceBundle = {
   query: string;
   queryUnderstanding: QueryUnderstanding;
   searchPlan: SearchPlan;
-  evidenceSpans: EvidenceSpan[];
+  evidenceAtoms: EvidenceAtom[];
   primaryTextEvidence: QuranTextEvidence[];
   translationEvidence: TranslationEvidence[];
   morphologyEvidence: MorphologyEvidence[];
@@ -519,7 +532,7 @@ type EvidenceBundle = {
 
 A citation chip may render only if:
 
-1. It points to at least one `EvidenceSupport` item.
+1. It points to at least one `EvidenceAtom` item.
 2. Every linked support item exists in the `EvidenceBundle`.
 3. The support source is claim-eligible.
 4. Support attribution is compatible with claim attribution.
@@ -555,21 +568,27 @@ type AnswerCapability =
   | "partial-answer-evidence-only"
   | "cannot-answer-with-current-sources";
 
+type InferenceLevel =
+  | "quotation"
+  | "paraphrase"
+  | "direct-summary"
+  | "cross-verse-synthesis"
+  | "source-attributed-interpretation";
+
 type AnswerClaim = {
   id: string;
   text: string;
   claimCapability: AnswerCapability;
   supportIds: string[];
   attribution: ClaimAttribution;
-  inferenceLevel:
-    | "quotation"
-    | "paraphrase"
-    | "direct-summary"
-    | "cross-verse-synthesis"
-    | "interpretive-inference"
-    | "source-attributed-interpretation";
+  inferenceLevel: InferenceLevel;
   supportStrength: SupportStrength;
 };
+
+type RenderPermission =
+  | "no-prose-answer"
+  | "deterministic-summary-only"
+  | "source-attributed-summary-only";
 
 type AnswerabilityDecision = {
   status:
@@ -579,14 +598,14 @@ type AnswerabilityDecision = {
     | "needs-clarification"
     | "not-answerable";
   reasons: AnswerBlocker[];
-  minRequiredEvidence: EvidenceSupport["evidenceType"][];
-  satisfiedEvidence: EvidenceSupport["evidenceType"][];
+  minRequiredEvidence: EvidenceAtom["evidenceType"][];
+  satisfiedEvidence: EvidenceAtom["evidenceType"][];
   failedRequirements: Array<{
     requirement: string;
     reason: string;
   }>;
   ambiguityStatus: "none" | "low" | "material" | "blocking";
-  mayRenderSyntheticSummary: boolean;
+  renderPermission: RenderPermission;
 };
 
 type EvidenceBasis = {
@@ -596,7 +615,7 @@ type EvidenceBasis = {
   tafsir: EvidenceUseState;
   asbab: EvidenceUseState;
   themes: "not-available" | "not-used" | "source-attested" | "editorial" | "computed";
-  highestInferenceLevel: AnswerClaim["inferenceLevel"];
+  highestInferenceLevel: InferenceLevel;
 };
 
 type AnswerBoundaryNotice = {
@@ -638,7 +657,7 @@ type EvidenceCard = {
   title: string;
   snippet: string;
   whyThisAppears: string;
-  evidenceType: EvidenceSupport["evidenceType"];
+  evidenceType: EvidenceAtom["evidenceType"];
   supportStrength: SupportStrength;
   readerMappingStatus: ReaderMappingStatus;
 };
@@ -648,7 +667,7 @@ type AnswerAudit = {
     claimId: string;
     supportIds: string[];
     attribution: ClaimAttribution;
-    inferenceLevel: AnswerClaim["inferenceLevel"];
+    inferenceLevel: InferenceLevel;
     supportStrength: SupportStrength;
   }>;
   sourceEligibility: Array<{
@@ -664,8 +683,26 @@ type AnswerBriefMetadata = {
   sourcePackIds: string[];
   generatedAt: string;
   deterministic: true;
-  retrievalSnapshotHash: string;
+  retrievalSnapshotHash: RetrievalSnapshotHash;
 };
+
+type RetrievalSnapshot = {
+  queryUnderstandingHash: string;
+  searchPlanHash: string;
+  packManifestHashes: string[];
+  sourceContentHashes: string[];
+  normalizerVersion: string;
+  rankerVersion: string;
+  recipeVersion: string;
+  sourceRuntimeStateHash: string;
+  excludedSources: SearchPlan["excludedSources"];
+  createdBy: {
+    producerId: string;
+    producerVersion: string;
+  };
+};
+
+type RetrievalSnapshotHash = string;
 
 type NoAnswerRecovery = {
   reason: AnswerBlocker[];
@@ -687,8 +724,8 @@ type AnswerBrief = {
   queryUnderstanding: QueryUnderstanding;
   searchPlan: SearchPlan;
   evidenceBundleId: string;
-  mode: AnswerMode;
-  blockers: AnswerBlocker[];
+  mode: AnswerMode; // derived from answerability.status
+  blockers: AnswerBlocker[]; // derived from answerability.reasons
   recipe: AnswerRecipe;
   answerability: AnswerabilityDecision;
   shortAnswerClaims: AnswerClaim[];
@@ -703,6 +740,10 @@ type AnswerBrief = {
   metadata: AnswerBriefMetadata;
 };
 ```
+
+`retrievalSnapshotHash` is the canonical hash of `RetrievalSnapshot`. Stable replay ignores volatile metadata such as `generatedAt`.
+
+`AnswerabilityDecision` is canonical. `AnswerBrief.mode` must be derived from `AnswerabilityDecision.status`, and `AnswerBrief.blockers` must equal `AnswerabilityDecision.reasons`. A serialized `AnswerBrief` failing those checks is invalid.
 
 Every answer page includes either a short answer paragraph when mode is `answer` or `partial-answer`, or an evidence-only/no-answer explanation when prose answering is not responsible. Evidence-only mode blocks synthetic answer claims, but allows boundary and recovery explanation.
 
@@ -735,9 +776,9 @@ type ClaimPredicate =
 
 type RecipeRule = {
   recipe: AnswerRecipe;
-  requiredEvidenceTypes: EvidenceSupport["evidenceType"][];
+  requiredEvidenceTypes: EvidenceAtom["evidenceType"][];
   maxClaims: number;
-  allowedInferenceLevels: AnswerClaim["inferenceLevel"][];
+  allowedInferenceLevels: InferenceLevel[];
   minimumSupportStrength: SupportStrength;
   allowedClaimPredicates: ClaimPredicate[];
   forbiddenPhrases: string[];
@@ -926,6 +967,8 @@ type StudyPath = {
   title: string;
   titleSupportIds: string[];
   anchorRefs: string[];
+  estimatedMinutes?: number;
+  mode: "reflect" | "trace-language" | "compare-verses" | "read-context";
   steps: Array<{
     label: string;
     ref: string;
@@ -1047,7 +1090,8 @@ Performance budgets:
 
 ```text
 Reader cold launch:
-- Ask/Search JS on initial Reader route: 0 KB, except shared shell code.
+- Reader cold launch must include no Ask/Search feature chunk, no Ask/Search worker initialization, and no Ask/Search pack/index fetch.
+- Ask/Search-specific executable JS on Reader route: target 0 KB, hard cap 2 KB gzip.
 - Ask/Search worker: not started before explicit Ask/Search intent.
 - Evidence packs: not fetched before Ask/Search entry or explicit pack install.
 
@@ -1057,6 +1101,94 @@ Ask/Search interaction:
 - Worker startup p95: under 300 ms after first Ask/Search intent.
 - Ask/Search main-thread long tasks above 50 ms: zero target.
 ```
+
+Worker protocol:
+
+```ts
+type WorkerRequest =
+  | {
+      type: "ASK_SEARCH_QUERY";
+      requestId: string;
+      query: string;
+      lens?: SearchLens;
+      intent?: QueryIntent;
+      abortSignalId?: string;
+    }
+  | {
+      type: "VERIFY_PACK";
+      requestId: string;
+      manifestId: string;
+    }
+  | {
+      type: "REBUILD_INDEX";
+      requestId: string;
+      sourceId: string;
+    };
+
+type WorkerResponse =
+  | {
+      type: "ASK_SEARCH_RESULT";
+      requestId: string;
+      bundle: EvidenceBundle;
+      answerBrief: AnswerBrief;
+    }
+  | {
+      type: "ASK_SEARCH_ERROR";
+      requestId: string;
+      errorCode: string;
+      recoverable: boolean;
+    };
+```
+
+The UI must ignore worker responses whose `requestId` is not the latest active request for that query surface. Cancelled or stale worker responses must not replace newer answers.
+
+Observability:
+
+```ts
+type AskSearchTraceEvent =
+  | "query.understand"
+  | "query.normalize"
+  | "search.plan"
+  | "search.retrieve"
+  | "evidence.bundle"
+  | "answerability.decide"
+  | "answer.render"
+  | "citation.open"
+  | "pack.verify"
+  | "index.rebuild";
+```
+
+Metrics:
+
+```text
+ask_search_query_understanding_ms
+ask_search_initial_cards_ms
+ask_search_answerability_failures_total
+ask_search_citation_open_failures_total
+ask_search_pack_verification_failures_total
+ask_search_evidence_only_rate
+ask_search_abstention_rate
+ask_search_main_thread_long_tasks_total
+```
+
+Correctness SLOs:
+
+```text
+Citation integrity: 99.99% of rendered citation chips open a valid evidence item.
+Unsupported answer prevention: 100% target; any unsupported answer is severity-1.
+Pack verification: 100% of claim-eligible packs must pass manifest verification.
+Reader cold-start protection: 99.9% of Reader cold launches must not initialize Ask/Search worker or fetch Ask/Search packs.
+Answer replay: 99.9% of same query plus same packs plus same producer version must produce the same stable answer snapshot.
+```
+
+Security and privacy baseline:
+
+- CSP must prevent remote script execution outside approved origins.
+- Source packs must be verified before display or claim eligibility.
+- Pack parsers must treat all pack content as untrusted input.
+- IndexedDB records must be schema-validated before use.
+- Telemetry must not include full private user queries unless explicitly allowed by privacy policy.
+- Any future sync or account feature must classify saved searches and notes as user data.
 
 ## Future Producer Interface
 
@@ -1180,6 +1312,116 @@ Each scenario must specify input, query understanding, search plan, answer mode,
 - Top evidence: cards show Hafs source and Qalun mapping status.
 - Expected UI: `Open in Read` only when verse mapping is valid; no token highlight claim.
 
+### 9. Exact reference query
+
+- Input: `2:255`
+- Query understanding: reference, high confidence, open-reference intent.
+- Search plan: reference lane over Qur'an text and available translation.
+- Answer mode: `answer` or `partial-answer` only for direct reference summary; no tafsir meaning unless tafsir source is active.
+- Evidence basis: Qur'an text used; translation may be used.
+- Boundary notices: any explanation beyond direct text requires eligible explanatory sources.
+- Top evidence: one primary evidence card for the referenced ayah.
+- Expected UI: fast open-reference behavior and `Read in context`.
+
+### 10. Transliteration query
+
+- Input: `rahman`
+- Query understanding: transliteration candidate with Arabic alternatives, medium confidence unless normalized form is unambiguous.
+- Search plan: transliteration normalization trace, Arabic token/root alternatives, translation alternatives.
+- Answer mode: `partial-answer` or `evidence-only` until user confirms lens if ambiguity is material.
+- Evidence basis: normalization trace visible; morphology/root evidence only if validated.
+- Boundary notices: transliteration normalization is not Qur'anic evidence.
+- Top evidence: Arabic forms and divine-name related evidence when supported.
+- Expected UI: compact alternatives such as `الرحمن`, `رحمن`, `ر ح م`.
+
+### 11. Translation-only phrase
+
+- Input: `God is with the patient`
+- Query understanding: English translation phrase, medium confidence.
+- Search plan: translation lane first; Arabic phrase/root lanes only as alternatives.
+- Answer mode: `partial-answer`.
+- Evidence basis: translation used; Qur'an text may be displayed as source ref but translation-only hit cannot support Arabic wording claims.
+- Boundary notices: translation-sensitive.
+- Top evidence: translation cards with source translation excerpt.
+- Expected UI: no Arabic morphology or root claim unless separately supported.
+
+### 12. No-result Arabic typo
+
+- Input: mistyped Arabic token.
+- Query understanding: Arabic token candidate, low confidence, normalization warnings.
+- Search plan: attempted Arabic lane plus recovery alternatives.
+- Answer mode: `no-answer` or `evidence-only`.
+- Evidence basis: no claim evidence used.
+- Boundary notices: no exact source match under current normalizer.
+- Top evidence: none unless related validated alternatives exist.
+- Expected UI: suggested corrections, alternate lenses, and no dead end.
+
+### 13. Multiple tafsir disagreement
+
+- Input: `What do tafsir sources say about 24:35?`
+- Query understanding: explain-verse and compare intent.
+- Search plan: reference plus tafsir lanes when tafsir packs are active.
+- Answer mode: `partial-answer` or `evidence-only` depending on eligible tafsir evidence.
+- Evidence basis: tafsir used only when claim-eligible.
+- Boundary notices: disagreement status displayed.
+- Top evidence: source-attributed tafsir cards.
+- Expected UI: disagreement summary separates source-attributed interpretations from Quran text claims.
+
+### 14. Offline with missing translation pack
+
+- Input: English theme query while translation pack is unavailable.
+- Query understanding: English term, answer-question or study-theme intent.
+- Search plan: translation source excluded as not available; Arabic/source alternatives only when possible.
+- Answer mode: `evidence-only` or `no-answer` if no eligible evidence remains.
+- Evidence basis: translation not available.
+- Boundary notices: install source pack action shown.
+- Top evidence: only locally available evidence.
+- Expected UI: graceful degradation and no fabricated translation support.
+
+### 15. Tampered pack during active session
+
+- Input: any query using a pack whose manifest or content hash fails verification.
+- Query understanding: normal.
+- Search plan: affected source family disabled.
+- Answer mode: downgraded according to remaining evidence.
+- Evidence basis: tampered source not used.
+- Boundary notices: pack verification failed; source disabled.
+- Top evidence: excludes quarantined pack.
+- Expected UI: recovery/install action; no blank page.
+
+### 16. Same query after pack update
+
+- Input: repeat a saved query after source pack update.
+- Query understanding: same as prior run where possible.
+- Search plan: new pack manifest and retrieval snapshot.
+- Answer mode: recomputed from current eligible sources.
+- Evidence basis: shows changed source pack/provenance.
+- Boundary notices: answer was recomputed because source packs or producer version changed.
+- Top evidence: current pack results.
+- Expected UI: no stale answer snapshot silently reused.
+
+### 17. Absence claim under pressure
+
+- Input: `Does the Qur'an never mention X?`
+- Query understanding: natural-language question with absence-claim risk.
+- Search plan: requires complete relevant source coverage, normalization trace, and synonym boundary.
+- Answer mode: `evidence-only` unless absence rule is satisfied.
+- Evidence basis: source coverage state prominent.
+- Boundary notices: absence claims are source- and normalizer-bounded.
+- Top evidence: matching or related evidence if any.
+- Expected UI: no broad `never mentions` claim without complete proof.
+
+### 18. Long Reader session then first Ask/Search open
+
+- Input: first Ask/Search interaction after a long Reader session.
+- Query understanding: normal after lazy load.
+- Search plan: initialized only after explicit Ask/Search intent.
+- Answer mode: normal for query.
+- Evidence basis: normal for query.
+- Boundary notices: none unless source availability requires it.
+- Top evidence: first evidence cards within budget for installed core packs.
+- Expected UI: Reader cold path had no Ask/Search worker or pack fetch; Ask/Search open respects performance budgets.
+
 ## Mandatory Trust Tests
 
 Unsupported answer rendering is a severity-1 product bug.
@@ -1208,6 +1450,15 @@ Required tests:
 20. Hafs token evidence cannot produce Qalun token-level highlighting unless mapping is proven.
 
 Accessibility proof should explicitly account for WCAG 2.2 risks: mixed Arabic/English directionality, citation chips, accordions, audit panels, keyboard flow, and screen-reader labels.
+
+Accessibility acceptance criteria:
+
+- All citation chips are keyboard focusable and openable.
+- Focus order follows visual order across Answer, Evidence Basis, Best Evidence, and Deepen.
+- Arabic text uses correct `dir` and `lang` attributes.
+- Mixed Arabic/English snippets preserve readable bidi ordering.
+- Accordions expose expanded/collapsed state to assistive technology.
+- Audit view remains navigable without pointer input.
 
 ## Implementation Boundary
 
