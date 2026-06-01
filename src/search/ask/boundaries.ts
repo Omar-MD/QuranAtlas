@@ -11,10 +11,15 @@ type BoundaryRule = {
 
 const BOUNDARY_RULES: BoundaryRule[] = [
   { blocker: 'absence-claim-unproven', pattern: /\b(does not mention|never mentions?|nowhere says|not mentioned|absent from)\b/i },
-  { blocker: 'legal-boundary', pattern: /\b(legal advice|lawsuit|court|contract|immigration|criminal)\b/i },
-  { blocker: 'medical-boundary', pattern: /\b(medical advice|diagnosis|treatment|medicine|symptom|doctor)\b/i },
+  { blocker: 'legal-boundary', pattern: /\b(legal advice|immigration advice|contract advice|criminal defense)\b/i },
+  { blocker: 'legal-boundary', pattern: /\b(should i|can i|do i need|my|me|for me)\b.{0,40}\b(lawyer|attorney|lawsuit|sue|court|contract|immigration|criminal)\b/i },
+  { blocker: 'legal-boundary', pattern: /\b(lawyer|attorney|lawsuit|sue|court|contract|immigration|criminal).{0,40}\b(for me|my case|advice)\b/i },
+  { blocker: 'medical-boundary', pattern: /\b(medical advice|diagnose me|diagnose my|diagnosis for me)\b/i },
+  { blocker: 'medical-boundary', pattern: /\b(treat my|treatment for me|treatment for my|medicine for me|my symptoms)\b/i },
+  { blocker: 'medical-boundary', pattern: /\b(symptoms?).{0,40}\b(doctor|medicine|diagnosis|treatment)\b/i },
+  { blocker: 'medical-boundary', pattern: /\b(doctor|medicine|diagnosis|treatment).{0,40}\b(for me|my symptoms|advice)\b/i },
   { blocker: 'fiqh-boundary', pattern: /\b(fatwa|halal for me|haram for me|ruling for me|personal fiqh)\b/i },
-  { blocker: 'personal-crisis-boundary', pattern: /\b(suicide|self-harm|kill myself|immediate danger|hurt myself)\b/i },
+  { blocker: 'personal-crisis-boundary', pattern: /\b(suicide|self[-\s]?harm|harm myself|kill myself|want to die|end my life|immediate danger|hurt myself)\b/i },
   { blocker: 'personal-pastoral-boundary', pattern: /\b(what should i do spiritually|personal spiritual advice|counsel me|my crisis)\b/i },
   { blocker: 'broad-theological-boundary', pattern: /\b(islam says|what does islam say|the qur'?an teaches|what does islam think|all muslims believe)\b/i },
   { blocker: 'inflammatory-religious-attack-boundary', pattern: /\b(prove.*evil|attack.*religion|why.*inferior|mock.*islam)\b/i },

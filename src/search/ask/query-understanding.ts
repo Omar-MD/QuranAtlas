@@ -48,12 +48,22 @@ export function understandAskQuery(query: string, lens?: SearchLensLite): AskQue
 }
 
 function lensForRawQuery(query: string, isReference: boolean): SearchLensLite {
+  const hasArabic = /[\u0600-\u06ff]/.test(query)
+  const hasQuestionShape = query.includes('?') || /\b(what|where|which|who|how|why|does|do|mean|meaning)\b/i.test(query)
   if (isReference) return 'reference'
-  if (/["'“‘].+["'”’]/.test(query)) return 'phrase'
+  if (hasPairedQuotePhrase(query)) return 'phrase'
   if (/root|lemma|morpholog|same\s+root/i.test(query)) return 'morphology'
-  if (/[\u0600-\u06ff]/.test(query)) return 'quran-text'
+  if (hasArabic && hasQuestionShape && /[A-Za-z]/.test(query)) return 'mixed'
+  if (hasArabic) return 'quran-text'
   if (query.includes('?')) return 'translation'
   return 'mixed'
+}
+
+function hasPairedQuotePhrase(query: string): boolean {
+  return /"[^"\n]+"/.test(query)
+    || /“[^”\n]+”/.test(query)
+    || /‘[^’\n]+’/.test(query)
+    || /(?:^|[\s([{])'[^'\n]+'(?=$|[\s.,!?;:)\]}])/.test(query)
 }
 
 function modeForLens(lens: SearchLensLite) {
