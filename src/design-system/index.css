@@ -364,6 +364,182 @@
     min-width: 0;
   }
 
+  .qar-search-answer-preview {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--qa-react-nav-row-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-canvas));
+    box-shadow: var(--qa-react-nav-shadow-row);
+  }
+
+  .qar-search-answer-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: start;
+    min-width: 0;
+  }
+
+  .qar-search-answer-head > div {
+    min-width: 0;
+  }
+
+  .qar-search-answer-preview bdi {
+    overflow-wrap: anywhere;
+  }
+
+  .qar-search-answer-claims {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .qar-search-answer-claims li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: flex-start;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-canvas);
+  }
+
+  .qar-search-answer-claims p,
+  .qar-search-answer-limits,
+  .qar-search-evidence-basis h3,
+  .qar-search-evidence-basis p,
+  .qar-search-best-evidence h3,
+  .qar-search-all-matches h3,
+  .qar-search-mapping-warning {
+    margin: 0;
+  }
+
+  .qar-search-answer-claims p {
+    flex: 1 1 16rem;
+    min-width: 0;
+    color: var(--qa-react-text);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .qar-search-citation-chip {
+    flex: 0 0 auto;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .qar-search-answer-limits {
+    padding: 9px 10px;
+    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 35%, var(--qa-react-border));
+    border-radius: var(--qa-react-radius-control);
+    background: color-mix(in srgb, var(--qa-react-accent) 8%, var(--qa-react-canvas));
+    color: var(--qa-react-text);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .qar-search-evidence-basis,
+  .qar-search-best-evidence,
+  .qar-search-all-matches {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .qar-search-evidence-basis h3,
+  .qar-search-best-evidence h3,
+  .qar-search-all-matches h3 {
+    color: var(--qa-react-text);
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .qar-search-evidence-basis {
+    padding: 10px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-canvas);
+  }
+
+  .qar-search-evidence-basis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .qar-search-evidence-basis-grid div {
+    min-width: 0;
+    padding: 7px 8px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-surface);
+  }
+
+  .qar-search-evidence-basis-grid dt {
+    color: var(--qa-react-text-muted);
+    font-size: 0.7rem;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
+  .qar-search-evidence-basis-grid dd {
+    margin: 3px 0 0;
+    color: var(--qa-react-text);
+    font-size: 0.82rem;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+
+  .qar-search-evidence-basis p {
+    color: var(--qa-react-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .qar-search-answer-card-list {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .qar-search-answer-actions,
+  .qar-search-all-matches-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .qar-search-all-matches-head {
+    justify-content: space-between;
+  }
+
+  .qar-search-all-matches-head span,
+  .qar-search-mapping-warning {
+    color: var(--qa-react-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .qar-search-mapping-warning {
+    padding: 7px 8px;
+    border: 1px dashed var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-canvas);
+  }
+
   .qar-search-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);

@@ -4,6 +4,7 @@ import { SearchIndexGate } from './SearchIndexGate'
 import { SearchResultDetail } from './SearchResultDetail'
 import { SavedSearchesNavPanel } from './SavedSearchesNavPanel'
 import { SearchWorkspace } from './SearchWorkspace'
+import type { AnswerPreview, MatchCardLite } from '../../../shared/search'
 import type { SearchBriefDto, SearchResultDto } from '../../search/schema'
 import type { SavedSearchRecord } from '../../storage/types'
 import { deriveSearchOutputViewModel, type SearchWorkspaceTab } from './search-presentation-model'
@@ -39,6 +40,56 @@ export const OverviewBroad: Story = {
 
 export const OverviewMorphology: Story = {
   render: () => <WorkspaceStory activeTab="overview" brief={fixtureMorphologyBrief} results={[fixtureMorphologyResult]} />,
+}
+
+export const AnswerPreviewDefault: Story = {
+  render: () => <WorkspaceStory activeTab="overview" answerPreview={fixtureAnswerPreview()} brief={fixtureBrief} results={[]} />,
+}
+
+export const EvidenceOnlyBoundary: Story = {
+  render: () => (
+    <WorkspaceStory
+      activeTab="overview"
+      answerPreview={fixtureAnswerPreview({
+        mode: 'evidence-only',
+        answerability: {
+          status: 'evidence-only',
+          renderPermission: 'no-answer-claims',
+          reasons: ['absence-claim-unproven'],
+        },
+        claims: [],
+        claimSupports: [],
+        evidenceCards: [],
+        evidenceBasis: {
+          quranText: 'available-not-used',
+          translation: 'used',
+          morphology: 'available-not-used',
+          note: 'Related evidence can be shown, but this v1 preview cannot render absence claims as prose.',
+        },
+        recovery: {
+          message: 'This v1 search can show related evidence, but it cannot answer absence claims as prose.',
+          suggestedQueries: [{ label: 'Search mentions of sleep', query: 'sleep', lens: 'translation' }],
+          actions: ['show-related-evidence'],
+        },
+      })}
+      brief={fixtureBrief}
+      results={[]}
+    />
+  ),
+}
+
+export const AllMatchesOpen: Story = {
+  render: () => (
+    <WorkspaceStory
+      activeTab="overview"
+      allMatches={[fixtureMatchCard(), fixtureMatchCard({ id: 'match-1-1', refLabel: '1:1', snippet: 'In the name of Allah, the Entirely Merciful...', readerAction: { type: 'unavailable', reason: 'No mapped Reader target is available.' } })]}
+      allMatchesOpen
+      answerPreview={fixtureAnswerPreview()}
+      brief={fixtureBrief}
+      canLoadAllMatches
+      results={[]}
+    />
+  ),
 }
 
 export const VersesReference: Story = {
@@ -118,13 +169,21 @@ export const OfflineUnavailable: Story = {
 
 function WorkspaceStory({
   activeTab,
+  allMatches = [],
+  allMatchesOpen = false,
+  answerPreview = null,
   brief,
+  canLoadAllMatches = false,
   defaultTab = 'overview',
   results,
   selectedResult = null,
 }: {
   activeTab: SearchWorkspaceTab
+  allMatches?: MatchCardLite[]
+  allMatchesOpen?: boolean
+  answerPreview?: AnswerPreview | null
   brief: SearchBriefDto
+  canLoadAllMatches?: boolean
   defaultTab?: SearchWorkspaceTab
   results: SearchResultDto[]
   selectedResult?: SearchResultDto | null
@@ -133,7 +192,11 @@ function WorkspaceStory({
     <main className="qar:grid qar:gap-4 qar:p-5" aria-label="Search">
       <SearchWorkspace
         activeTab={activeTab}
+        allMatches={allMatches}
+        allMatchesOpen={allMatchesOpen}
+        answerPreview={answerPreview}
         brief={brief}
+        canLoadAllMatches={canLoadAllMatches}
         canLoadMore={false}
         defaultTab={defaultTab}
         emptyMessage="No results match this search."
@@ -143,11 +206,15 @@ function WorkspaceStory({
         hasMore={false}
         onActiveTabChange={() => undefined}
         onFocusExploreModule={() => undefined}
+        onLoadMoreAllMatches={() => undefined}
         onLoadExploreGraph={() => undefined}
         onLoadMore={() => undefined}
+        onOpenAllMatches={() => undefined}
         onOpenInRead={() => undefined}
+        onOpenPreviewInRead={() => undefined}
         onOpenResultExplore={() => undefined}
         onSelectResult={() => undefined}
+        loadingAllMatches={false}
         packVersion={brief.sourceFrame.packVersion}
         resultCountMessage={`${brief.counts.shownWindowCount} shown results`}
         results={results}
@@ -155,6 +222,86 @@ function WorkspaceStory({
       />
     </main>
   )
+}
+
+function fixtureAnswerPreview(overrides: Partial<AnswerPreview> = {}): AnswerPreview {
+  return {
+    id: 'preview-mercy',
+    query: 'mercy',
+    queryUnderstanding: {
+      originalQuery: 'mercy',
+      normalizedQuery: 'mercy',
+      intent: 'find-occurrences',
+      lens: 'translation',
+      confidence: 'high',
+      alternatives: [],
+      normalizationWarnings: [],
+    },
+    searchPlan: {
+      primaryLens: 'translation',
+      lanes: [{ id: 'translation', sourceKinds: ['translation'], queryForm: 'mercy', status: 'executed' }],
+      excludedSources: [],
+    },
+    mode: 'answer',
+    answerability: { status: 'answerable', reasons: [], renderPermission: 'answer-preview' },
+    claims: [{
+      id: 'claim-mercy',
+      text: 'The indexed translation renders mercy language for this query.',
+      templateId: 'translation-renders',
+      slots: { query: 'mercy' },
+      attribution: 'translation-renders',
+      predicate: 'renders',
+      supportId: 'support-mercy',
+    }],
+    claimSupports: [{ id: 'support-mercy', claimId: 'claim-mercy', supportIds: ['atom-mercy'], verdict: 'supported' }],
+    evidenceAtoms: [{
+      id: 'atom-mercy',
+      evidenceType: 'translation',
+      sourceKind: 'translation',
+      sourceId: 'bridges-translation',
+      sourceVersion: 'fixture',
+      refs: ['2:255'],
+      displayTarget: { type: 'verse-ref', refs: ['2:255'] },
+      translationId: 'bridges-translation',
+    }],
+    evidenceBasis: {
+      quranText: 'available-not-used',
+      translation: 'used',
+      morphology: 'available-not-used',
+      note: 'Translation evidence was used; Quran text and morphology remain available as bounded evidence.',
+    },
+    evidenceCards: [{
+      id: 'evidence-mercy',
+      refLabel: '2:255',
+      evidenceAtomIds: ['atom-mercy'],
+      claimSupportIds: ['support-mercy'],
+      title: '2:255',
+      snippet: 'Allah - there is no deity except Him, the Ever-Living...',
+      snippetSource: 'translation',
+      matchReason: 'The indexed translation contains the query.',
+      readerAction: { type: 'open-in-reader', ref: '2:255' },
+    }],
+    sourceFamilyStatuses: [
+      { sourceKind: 'translation', availability: 'available', canSupportClaims: true },
+      { sourceKind: 'quran-text', availability: 'available', canSupportClaims: true },
+      { sourceKind: 'morphology', availability: 'available', canSupportClaims: true },
+    ],
+    ...overrides,
+  }
+}
+
+function fixtureMatchCard(overrides: Partial<MatchCardLite> = {}): MatchCardLite {
+  return {
+    id: 'match-2-255',
+    refLabel: '2:255',
+    evidenceAtomIds: ['atom-mercy'],
+    title: '2:255',
+    snippet: 'Allah - there is no deity except Him, the Ever-Living...',
+    snippetSource: 'translation',
+    matchReason: 'The indexed translation contains the query.',
+    readerAction: { type: 'open-in-reader', ref: '2:255' },
+    ...overrides,
+  }
 }
 
 const fixtureResult: SearchResultDto = {

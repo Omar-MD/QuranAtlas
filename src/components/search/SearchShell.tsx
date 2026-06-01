@@ -35,6 +35,16 @@ export function SearchShell() {
     void resolveOpenInRead(result)
   }
 
+  function openPreviewRefInRead(ref: string) {
+    const match = /^(\d{1,3}):(\d{1,3})$/.exec(ref)
+    if (!match) return
+    const surah = Number(match[1])
+    const ayah = Number(match[2])
+    if (!Number.isInteger(surah) || !Number.isInteger(ayah)) return
+    if (surah < 1 || surah > 114 || ayah < 1) return
+    window.location.hash = REACT_ROUTES.surah(surah, ayah)
+  }
+
   async function resolveOpenInRead(result: SearchResultDto) {
     const readerRiwayah = await readActiveReaderRiwayah()
     const aliases = readerRiwayah === 'qaloon' ? await loadSearchAliases(aliasesPromiseRef) : {}
@@ -153,7 +163,11 @@ export function SearchShell() {
           <SearchIndexGate message={search.packMessage} ready={search.packState === 'active'}>
             <SearchWorkspace
               activeTab={search.activeWorkspaceTab}
+              allMatches={search.allMatches}
+              allMatchesOpen={search.allMatchesOpen}
+              answerPreview={search.answerPreview}
               brief={search.brief}
+              canLoadAllMatches={search.canLoadAllMatches}
               canLoadMore={search.canLoadMoreResults}
               defaultTab={search.defaultWorkspaceTab}
               emptyMessage={search.emptyResultMessage}
@@ -163,11 +177,15 @@ export function SearchShell() {
               hasMore={search.hasMoreResults}
               onActiveTabChange={search.setActiveWorkspaceTab}
               onFocusExploreModule={search.setFocusedExploreModule}
+              onLoadMoreAllMatches={search.loadMoreAllMatches}
               onLoadExploreGraph={search.loadExploreGraph}
               onLoadMore={search.loadMoreResults}
+              onOpenAllMatches={search.openAllMatches}
               onOpenInRead={openInRead}
+              onOpenPreviewInRead={openPreviewRefInRead}
               onOpenResultExplore={search.openResultExplore}
               onSelectResult={search.setSelectedResult}
+              loadingAllMatches={search.loadingAllMatches}
               packVersion={search.packVersion}
               resultCountMessage={search.resultCountMessage}
               results={search.results}

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import type { AnswerPreview, MatchCardLite } from '../../../shared/search'
 import type { SearchBriefDto, SearchResultDto } from '../../search/schema'
 import { Tabs } from '../ui'
+import { SearchAnswerPreview } from './SearchAnswerPreview'
 import { SearchExplorePanel } from './SearchExplorePanel'
 import { SearchOverview } from './SearchOverview'
 import { SearchResultDetail } from './SearchResultDetail'
@@ -12,8 +14,12 @@ import type { SearchExploreGraphState } from './useSearchRouteState'
 
 type SearchWorkspaceProps = {
   activeTab: SearchWorkspaceTab
+  allMatches: MatchCardLite[]
+  allMatchesOpen: boolean
+  answerPreview: AnswerPreview | null
   brief: SearchBriefDto | null
   canLoadMore: boolean
+  canLoadAllMatches: boolean
   defaultTab: SearchWorkspaceTab
   emptyMessage: string
   exploreGraph: SearchExploreGraphState
@@ -22,15 +28,19 @@ type SearchWorkspaceProps = {
   hasMore: boolean
   onActiveTabChange: (tab: SearchWorkspaceTab) => void
   onFocusExploreModule: (module: SearchExploreModuleId | null) => void
+  onLoadMoreAllMatches: () => void
   onLoadExploreGraph: (result: SearchResultDto) => void
   onLoadMore: () => void
+  onOpenAllMatches: () => void
   onOpenInRead: (result: SearchResultDto) => void
+  onOpenPreviewInRead: (ref: string) => void
   onOpenResultExplore: (result: SearchResultDto, module?: SearchExploreModuleId) => void
   onSelectResult: (result: SearchResultDto | null) => void
   packVersion?: string
   resultCountMessage: string
   results: SearchResultDto[]
   selectedResult: SearchResultDto | null
+  loadingAllMatches: boolean
 }
 
 export function SearchWorkspace(props: SearchWorkspaceProps) {
@@ -69,7 +79,18 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
           {
             label: 'Overview',
             value: 'overview',
-            content: (
+            content: props.answerPreview || !viewModel.overview ? (
+              <SearchAnswerPreview
+                allMatches={props.allMatches}
+                allMatchesOpen={props.allMatchesOpen}
+                canLoadAllMatches={props.canLoadAllMatches}
+                loadingAllMatches={props.loadingAllMatches}
+                onLoadMoreAllMatches={props.onLoadMoreAllMatches}
+                onOpenAllMatches={props.onOpenAllMatches}
+                onOpenInRead={props.onOpenPreviewInRead}
+                preview={props.answerPreview}
+              />
+            ) : (
               <SearchOverview
                 onAction={(action) => openTab(action.target, action.focusModule)}
                 overview={viewModel.overview}

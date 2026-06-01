@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event'
-import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
+import { act, render, renderHook, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SearchRouteState } from '../../../src/components/search/useSearchRouteState'
@@ -222,6 +222,123 @@ describe('Search route UI', () => {
     expect(screen.queryByRole('button', { name: 'Open in Read' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('tab', { name: 'Sources' }))
     expect(mockUseSearchRouteState.mock.results[0]?.value.setActiveWorkspaceTab).toHaveBeenCalledWith('sources')
+  })
+
+  it('renders AnswerPreview claims, evidence regions, and opens All Matches explicitly', async () => {
+    const openAllMatches = vi.fn()
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'overview',
+      answerPreview: answerPreviewWithClaims(),
+      openAllMatches,
+      query: 'mercy',
+      resultCountMessage: '1 best evidence card',
+    }))
+
+    render(<SearchShell />)
+
+    expect(screen.getByRole('heading', { name: 'mercy' })).toBeInTheDocument()
+    expect(screen.getByText('The indexed translation renders mercy language for this query.')).toBeInTheDocument()
+    expect(screen.queryByText('This unsupported claim must not render.')).not.toBeInTheDocument()
+    expect(screen.getByText('1 citation · Translation renders')).toBeInTheDocument()
+
+    const basis = screen.getByRole('region', { name: 'Evidence basis' })
+    expect(within(basis).getByText('Translation')).toBeInTheDocument()
+    expect(within(basis).getByText('Used')).toBeInTheDocument()
+    expect(within(basis).getByText(/Translation evidence was used/i)).toBeInTheDocument()
+
+    const bestEvidence = screen.getByRole('region', { name: 'Best evidence' })
+    expect(within(bestEvidence).getByText('Allah - there is no deity except Him')).toBeInTheDocument()
+    expect(within(bestEvidence).getByText('The indexed translation contains the query.')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show all matches' }))
+    expect(openAllMatches).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders evidence-only recovery without answer claim prose', () => {
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'overview',
+      answerPreview: answerPreviewWithClaims({
+        answerability: {
+          status: 'evidence-only',
+          renderPermission: 'no-answer-claims',
+          reasons: ['absence-claim-unproven'],
+        },
+        mode: 'evidence-only',
+        claims: [],
+        claimSupports: [],
+        evidenceCards: [],
+        recovery: {
+          message: 'This v1 search can show related evidence, but it cannot answer absence claims as prose.',
+          suggestedQueries: [],
+          actions: ['show-related-evidence'],
+        },
+      }),
+      query: 'Where does the Quran never mention sleep?',
+    }))
+
+    render(<SearchShell />)
+
+    expect(screen.getByText('This v1 search can show related evidence, but it cannot answer absence claims as prose.')).toBeInTheDocument()
+    expect(screen.queryByText('The indexed translation renders mercy language for this query.')).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Evidence basis' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Best evidence' })).toBeInTheDocument()
+  })
+
+  it('renders the All Matches region and loads more matches on request', async () => {
+    const loadMoreAllMatches = vi.fn()
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'overview',
+      allMatches: [
+        matchCard({ id: 'match-2-255', refLabel: '2:255' }),
+        matchCard({ id: 'match-3-7', refLabel: '3:7', snippet: 'It is He who has sent down to you the Book...' }),
+      ],
+      allMatchesOpen: true,
+      answerPreview: answerPreviewWithClaims(),
+      canLoadAllMatches: true,
+      loadMoreAllMatches,
+      query: 'mercy',
+    }))
+
+    render(<SearchShell />)
+
+    const allMatches = screen.getByRole('region', { name: 'All matches' })
+    expect(within(allMatches).getByText('2:255')).toBeInTheDocument()
+    expect(within(allMatches).getByText('It is He who has sent down to you the Book...')).toBeInTheDocument()
+
+    await userEvent.click(within(allMatches).getByRole('button', { name: 'Load more matches' }))
+    expect(loadMoreAllMatches).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens preview Reader actions by direct ref and hides unavailable Reader actions', async () => {
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'overview',
+      answerPreview: answerPreviewWithClaims({
+        evidenceCards: [
+          {
+            ...answerPreviewWithClaims().evidenceCards[0],
+            id: 'evidence-3-7',
+            refLabel: '3:7',
+            readerAction: { type: 'open-in-reader', ref: '3:7', mappingWarning: 'Reader opens the mapped ayah only.' },
+          },
+          {
+            ...answerPreviewWithClaims().evidenceCards[0],
+            id: 'evidence-4-1',
+            refLabel: '4:1',
+            readerAction: { type: 'unavailable', reason: 'No safe Reader mapping is available.' },
+          },
+        ],
+      }),
+      query: 'mercy',
+    }))
+
+    render(<SearchShell />)
+
+    const unavailableCard = screen.getByRole('article', { name: 'Evidence 4:1' })
+    expect(within(unavailableCard).queryByRole('button', { name: 'Open in Reader' })).not.toBeInTheDocument()
+    expect(screen.getByText('Reader opens the mapped ayah only.')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open in Reader' }))
+    expect(window.location.hash).toBe('#/s/3/7')
   })
 
   it('renders query-level Sources when that workspace tab is active', () => {
@@ -818,6 +935,68 @@ function mockSearchClient(overrides: Partial<Record<keyof SearchClient, unknown>
     explore: vi.fn(),
     ...overrides,
   } as unknown as SearchClient
+}
+
+function answerPreviewWithClaims(overrides: Partial<AnswerPreview> = {}): AnswerPreview {
+  return answerPreview({
+    id: 'preview-mercy-claims',
+    query: 'mercy',
+    claims: [
+      {
+        id: 'claim-supported',
+        text: 'The indexed translation renders mercy language for this query.',
+        templateId: 'translation-renders',
+        slots: { query: 'mercy' },
+        attribution: 'translation-renders',
+        predicate: 'renders',
+        supportId: 'support-supported',
+      },
+      {
+        id: 'claim-unsupported',
+        text: 'This unsupported claim must not render.',
+        templateId: 'translation-renders',
+        slots: { query: 'mercy' },
+        attribution: 'translation-renders',
+        predicate: 'renders',
+        supportId: 'support-insufficient',
+      },
+    ],
+    claimSupports: [
+      { id: 'support-supported', claimId: 'claim-supported', supportIds: ['atom-supported'], verdict: 'supported' },
+      { id: 'support-insufficient', claimId: 'claim-unsupported', supportIds: ['atom-supported'], verdict: 'insufficient' },
+    ],
+    evidenceAtoms: [{
+      id: 'atom-supported',
+      evidenceType: 'translation',
+      sourceKind: 'translation',
+      sourceId: 'bridges-translation',
+      sourceVersion: 'fixture',
+      refs: ['2:255'],
+      displayTarget: { type: 'verse-ref', refs: ['2:255'] },
+      translationId: 'bridges-translation',
+    }],
+    evidenceBasis: {
+      quranText: 'available-not-used',
+      translation: 'used',
+      morphology: 'available-not-used',
+      note: 'Translation evidence was used for this preview.',
+    },
+    evidenceCards: [{
+      id: 'evidence-supported',
+      refLabel: '2:255',
+      evidenceAtomIds: ['atom-supported'],
+      claimSupportIds: ['support-supported'],
+      title: '2:255',
+      snippet: 'Allah - there is no deity except Him',
+      snippetSource: 'translation',
+      matchReason: 'The indexed translation contains the query.',
+      readerAction: { type: 'open-in-reader', ref: '2:255' },
+    }],
+    sourceFamilyStatuses: [
+      { sourceKind: 'translation', availability: 'available', canSupportClaims: true },
+    ],
+    ...overrides,
+  })
 }
 
 function answerPreview(overrides: Partial<AnswerPreview> = {}): AnswerPreview {

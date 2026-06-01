@@ -1579,6 +1579,8 @@
         "queryControls",
         "workspaceTabs",
         "overview",
+        "answerPreview",
+        "allMatches",
         "verses",
         "explore",
         "sources",
@@ -1602,6 +1604,9 @@
             "loading",
             "overview-broad",
             "overview-morphology",
+            "answer-preview-default",
+            "evidence-only-boundary",
+            "all-matches-open",
             "verses-reference",
             "verses-phrase",
             "explore-missing-packs",
@@ -1629,6 +1634,8 @@
             "memory graph Explore sections",
             "required graph source notes",
             "validated Open in Read action",
+            "AnswerPreview renders supported claims only",
+            "All Matches loads after explicit user action",
             "saved-search load recompute"
           ]
         },
