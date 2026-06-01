@@ -1,6 +1,6 @@
 import { getAliasVerses, type VerseAlias, type VerseAliases } from '../data/verse-aliases'
 import type { Riwayah } from '../storage/types'
-import type { SearchMappingAsset, SearchMappingState, SearchReaderRef } from '../../shared/search'
+import { isValidQuranAyahRef, type SearchMappingAsset, type SearchMappingState, type SearchReaderRef } from '../../shared/search'
 import type { SearchGraphRef } from './schema'
 
 export type SearchReaderRiwayah = Riwayah | 'hafs'
@@ -36,12 +36,13 @@ export function mapSearchRefToReader({
   readerRiwayah: SearchReaderRiwayah
   sourceRef: SearchGraphRef
 }): SearchResultMapping {
+  if (!isValidQuranAyahRef(sourceRef)) {
+    return sourceOnly(sourceRef, 'Search source reference is not a valid Quran ayah reference')
+  }
+
   const [surahText, ayahText] = sourceRef.split(':')
   const surah = Number(surahText)
   const ayah = Number(ayahText)
-  if (!Number.isInteger(surah) || !Number.isInteger(ayah)) {
-    return sourceOnly(sourceRef, 'Search source reference is not a valid ayah reference')
-  }
 
   if (readerRiwayah === 'hafs') {
     return readerIdentity(sourceRef, surah, ayah, 'Hafs Reader can open the Hafs Search source reference directly')

@@ -705,6 +705,32 @@ describe('Search route UI', () => {
     expect(window.location.hash).toBe('#/s/2/255')
   })
 
+  it('does not navigate legacy result Reader actions with impossible source refs', async () => {
+    const selected = result({
+      resultId: 'result-invalid-ref',
+      sourceRef: '2:999',
+      readerRefs: ['2:999'],
+      rankKey: 'translation:2:999',
+      canOpenInRead: true,
+    })
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'verses',
+      brief: brief(),
+      results: [selected],
+      selectedResult: selected,
+    }))
+
+    render(<SearchShell />)
+    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
+    await act(async () => {
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(window.location.hash).toBe('#/search')
+  })
+
   it('loads a saved search and recomputes against the active Search index', async () => {
     const state = routeState()
     mockUseSearchRouteState.mockReturnValue(state)

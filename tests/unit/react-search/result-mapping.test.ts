@@ -58,6 +58,41 @@ describe('Search result mapping', () => {
     })
   })
 
+  it('treats impossible ayah refs as source-only, including Hafs identity mode', () => {
+    expect(mapSearchRefToReader({
+      aliases: {},
+      readerRiwayah: 'hafs',
+      sourceRef: '2:999',
+    })).toMatchObject({
+      readerRefs: [],
+      mappingState: 'hafs-source-only',
+      canOpenInRead: false,
+      openInReadUrl: null,
+    })
+
+    expect(mapSearchRefToReader({
+      aliases: { '2': [{ hafs: 999, warsh: 999, qaloon: 999 }] },
+      readerRiwayah: 'qaloon',
+      sourceRef: '2:999',
+    })).toMatchObject({
+      readerRefs: [],
+      mappingState: 'hafs-source-only',
+      canOpenInRead: false,
+      openInReadUrl: null,
+    })
+
+    expect(mapSearchRefToReader({
+      aliases: {},
+      readerRiwayah: 'hafs',
+      sourceRef: '115:1',
+    })).toMatchObject({
+      readerRefs: [],
+      mappingState: 'hafs-source-only',
+      canOpenInRead: false,
+      openInReadUrl: null,
+    })
+  })
+
   it('keeps mapping assets serializable and disables token highlighting in Phase 1', () => {
     expect(mappingAssetToResultMapping({
       mappingId: 'm1',
