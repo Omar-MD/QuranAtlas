@@ -228,6 +228,17 @@ describe('Search shared contracts', () => {
       claimSupports: [],
       evidenceCards: [],
     }))).not.toThrow()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      mode: 'evidence-only',
+      answerability: {
+        status: 'evidence-only',
+        reasons: ['insufficient-evidence'],
+        renderPermission: 'no-answer-claims',
+      },
+      claims: [],
+      claimSupports: [],
+      evidenceCards: [],
+    }))).not.toThrow()
   })
 
   it('rejects unsupported ABI versions, shard magic, and endian markers', () => {
