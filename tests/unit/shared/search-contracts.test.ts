@@ -241,6 +241,94 @@ describe('Search shared contracts', () => {
     }))).not.toThrow()
   })
 
+  it('requires claim-supporting evidence source families to support claims', () => {
+    const base = makeAnswerPreview()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      sourceFamilyStatuses: base.sourceFamilyStatuses.map((status) => (
+        status.sourceKind === 'translation'
+          ? { ...status, availability: 'not-installed', canSupportClaims: false }
+          : status
+      )),
+    }))).toThrow('source family translation cannot support claims')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      sourceFamilyStatuses: base.sourceFamilyStatuses.filter((status) => status.sourceKind !== 'translation'),
+    }))).toThrow('without sourceFamilyStatuses entry')
+  })
+
+  it('rejects malformed AnswerPreview arrays and answerability decisions', () => {
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: undefined as unknown as AnswerPreview['evidenceAtoms'],
+    }))).toThrow('AnswerPreview evidenceAtoms must be an array')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      answerability: {
+        status: 'evidence-only',
+        reasons: ['insufficient-evidence'],
+        renderPermission: 'answer-preview',
+      } as unknown as AnswerPreview['answerability'],
+    }))).toThrow('evidence-only decisions require no-answer-claims')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      searchPlan: {
+        ...makeAnswerPreview().searchPlan,
+        lanes: [{
+          ...makeAnswerPreview().searchPlan.lanes[0],
+          sourceKinds: ['tafsir' as unknown as AnswerPreview['searchPlan']['lanes'][number]['sourceKinds'][number]],
+        }],
+      },
+    }))).toThrow('unsupported searchPlan lane source kind tafsir')
+  })
+
+  it('rejects duplicate AnswerPreview collection ids', () => {
+    const base = makeAnswerPreview()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      claims: [base.claims[0], { ...base.claims[0] }],
+    }))).toThrow('claims contains duplicate id claim-1')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      claimSupports: [base.claimSupports[0], { ...base.claimSupports[0] }],
+    }))).toThrow('claimSupports contains duplicate id support-1')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [base.evidenceAtoms[0], { ...base.evidenceAtoms[0] }],
+    }))).toThrow('evidenceAtoms contains duplicate id evidence-1')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: [base.evidenceCards[0], { ...base.evidenceCards[0] }],
+    }))).toThrow('evidenceCards contains duplicate id card-1')
+  })
+
+  it('requires evidence cards to link matching supported evidence and Reader refs', () => {
+    const base = makeAnswerPreview()
+    const extraEvidence: AnswerPreview['evidenceAtoms'][number] = {
+      ...base.evidenceAtoms[0],
+      id: 'evidence-2',
+      refs: ['3:1'],
+      displayTarget: { type: 'verse-ref', refs: ['3:1'] },
+    }
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [...base.evidenceAtoms, extraEvidence],
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        evidenceAtomIds: ['evidence-2'],
+      }],
+    }))).toThrow('support support-1 evidence evidence-1 is not included in card evidenceAtomIds')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        readerAction: { type: 'open-in-reader', ref: '3:1' },
+      }],
+    }))).toThrow('open-in-reader ref 3:1 is not linked evidence')
+  })
+
+  it('enforces AnswerPreview v1 payload limits', () => {
+    const base = makeAnswerPreview()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      claims: Array.from({ length: 4 }, (_, index) => ({ ...base.claims[0], id: `claim-${index}` })),
+    }))).toThrow('claims exceed v1 limit')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: Array.from({ length: 6 }, (_, index) => ({ ...base.evidenceCards[0], id: `card-${index}` })),
+    }))).toThrow('evidence cards exceed v1 limit')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: Array.from({ length: 21 }, (_, index) => ({ ...base.evidenceAtoms[0], id: `evidence-${index}` })),
+    }))).toThrow('evidence atoms exceed v1 limit')
+  })
+
   it('rejects unsupported ABI versions, shard magic, and endian markers', () => {
     expect(() => assertSupportedSearchPackAbi(2, 0)).toThrow('unsupported Search pack ABI major 2')
     expect(() => readSearchShardHeaderWithDataView(makeHeader({ magic: new Uint8Array([0, 0, 0, 0]) }))).toThrow('invalid Search shard magic')

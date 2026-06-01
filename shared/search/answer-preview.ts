@@ -246,7 +246,13 @@ export type EvidenceMatchesPageLite = {
 
 type ClaimAuthorityKey = `${ClaimAttributionLite}:${ClaimPredicateLite}`
 
-export const V1_CLAIM_AUTHORITY: Partial<Record<ClaimAuthorityKey, readonly SourceKindV1[]>> = {
+type SupportedClaimAuthorityKey =
+  | 'quran-mentions:mentions'
+  | 'quran-states:states'
+  | 'translation-renders:renders'
+  | 'morphology-analyzes:analyzes'
+
+export const V1_CLAIM_AUTHORITY: Record<SupportedClaimAuthorityKey, readonly SourceKindV1[]> = {
   'quran-mentions:mentions': ['quran-text'],
   'quran-states:states': ['quran-text'],
   'translation-renders:renders': ['translation'],
@@ -254,6 +260,29 @@ export const V1_CLAIM_AUTHORITY: Partial<Record<ClaimAuthorityKey, readonly Sour
 } as const
 
 const SOURCE_KINDS: readonly SourceKindV1[] = ['quran-text', 'translation', 'morphology', 'reader-mapping']
+const SOURCE_FAMILY_AVAILABILITIES: readonly SourceFamilyStatusLite['availability'][] = [
+  'available',
+  'not-installed',
+  'not-indexed',
+  'unsupported-for-query',
+  'failed',
+]
+const SEARCH_PLAN_LANE_STATUSES: readonly SearchPlanLite['lanes'][number]['status'][] = ['executed', 'skipped', 'failed']
+const SEARCH_PLAN_EXCLUDED_REASONS: readonly SearchPlanLite['excludedSources'][number]['reason'][] = [
+  'not-installed',
+  'not-indexed',
+  'unsupported-for-query',
+  'failed',
+]
+const ANSWERABILITY_STATUSES: readonly AnswerabilityDecision['status'][] = [
+  'answerable',
+  'partially-answerable',
+  'evidence-only',
+  'needs-clarification',
+  'not-answerable',
+]
+const RENDER_PERMISSIONS: readonly AnswerabilityDecision['renderPermission'][] = ['answer-preview', 'no-answer-claims']
+const READER_ACTION_TYPES: readonly EvidenceCardLite['readerAction']['type'][] = ['open-in-reader', 'unavailable']
 
 export function answerPreviewModeForDecision(status: AnswerabilityDecision['status']): AnswerPreview['mode'] {
   if (status === 'answerable') return 'answer'
@@ -262,7 +291,114 @@ export function answerPreviewModeForDecision(status: AnswerabilityDecision['stat
   return 'no-answer'
 }
 
+function assertArray(value: unknown, label: string): asserts value is unknown[] {
+  if (!Array.isArray(value)) throw new Error(`AnswerPreview ${label} must be an array`)
+}
+
+function assertRecord(value: unknown, label: string): asserts value is Record<string, unknown> {
+  if (!value || typeof value !== 'object') throw new Error(`AnswerPreview ${label} must be an object`)
+}
+
+function assertKnownValue<T extends string>(value: unknown, allowed: readonly T[], label: string): asserts value is T {
+  if (typeof value !== 'string' || !(allowed as readonly string[]).includes(value)) {
+    throw new Error(`unsupported ${label} ${String(value)}`)
+  }
+}
+
+function assertSourceKind(sourceKind: unknown, label: string): asserts sourceKind is SourceKindV1 {
+  assertKnownValue(sourceKind, SOURCE_KINDS, label)
+}
+
+function assertUniqueIds(items: Array<{ id: string }>, label: string): void {
+  const seen = new Set<string>()
+  for (const item of items) {
+    assertRecord(item, `${label} item`)
+    if (typeof item.id !== 'string' || item.id.length === 0) throw new Error(`${label} item must include an id`)
+    if (seen.has(item.id)) throw new Error(`${label} contains duplicate id ${item.id}`)
+    seen.add(item.id)
+  }
+}
+
+function isSupportedClaimAuthorityKey(key: ClaimAuthorityKey): key is SupportedClaimAuthorityKey {
+  return Object.prototype.hasOwnProperty.call(V1_CLAIM_AUTHORITY, key)
+}
+
+function assertAnswerabilityDecision(decision: AnswerabilityDecision): void {
+  assertRecord(decision, 'answerability')
+  assertKnownValue(decision.status, ANSWERABILITY_STATUSES, 'answerability status')
+  assertKnownValue(decision.renderPermission, RENDER_PERMISSIONS, 'answerability renderPermission')
+  assertArray(decision.reasons, 'answerability.reasons')
+
+  const status = decision.status
+  if (status === 'answerable') {
+    if (decision.renderPermission !== 'answer-preview') {
+      throw new Error('answerable decisions require answer-preview render permission')
+    }
+    if (decision.reasons.length > 0) throw new Error('answerable decisions require empty reasons')
+    return
+  }
+  if (status === 'partially-answerable') {
+    if (decision.renderPermission !== 'answer-preview') {
+      throw new Error('partially-answerable decisions require answer-preview render permission')
+    }
+    return
+  }
+  if (decision.renderPermission !== 'no-answer-claims') {
+    throw new Error(`${status} decisions require no-answer-claims render permission`)
+  }
+}
+
+function buildSourceStatusByKind(statuses: SourceFamilyStatusLite[]): Map<SourceKindV1, SourceFamilyStatusLite> {
+  const sourceStatusByKind = new Map<SourceKindV1, SourceFamilyStatusLite>()
+  for (const status of statuses) {
+    assertRecord(status, 'source family status')
+    assertSourceKind(status.sourceKind, 'source family source kind')
+    assertKnownValue(status.availability, SOURCE_FAMILY_AVAILABILITIES, 'source family availability')
+    if (typeof status.canSupportClaims !== 'boolean') {
+      throw new Error(`source family ${status.sourceKind} canSupportClaims must be boolean`)
+    }
+    if (sourceStatusByKind.has(status.sourceKind)) {
+      throw new Error(`source family statuses contain duplicate source kind ${status.sourceKind}`)
+    }
+    if (status.canSupportClaims && status.availability !== 'available') {
+      throw new Error(`source family ${status.sourceKind} canSupportClaims requires available status`)
+    }
+    sourceStatusByKind.set(status.sourceKind, status)
+  }
+  return sourceStatusByKind
+}
+
+function assertSearchPlanSourceKinds(searchPlan: SearchPlanLite): void {
+  assertRecord(searchPlan, 'searchPlan')
+  assertArray(searchPlan.lanes, 'searchPlan.lanes')
+  assertArray(searchPlan.excludedSources, 'searchPlan.excludedSources')
+
+  for (const lane of searchPlan.lanes) {
+    assertRecord(lane, 'searchPlan lane')
+    assertKnownValue(lane.status, SEARCH_PLAN_LANE_STATUSES, 'searchPlan lane status')
+    assertArray(lane.sourceKinds, 'searchPlan lane sourceKinds')
+    for (const sourceKind of lane.sourceKinds) {
+      assertSourceKind(sourceKind, 'searchPlan lane source kind')
+    }
+  }
+
+  for (const excludedSource of searchPlan.excludedSources) {
+    assertRecord(excludedSource, 'searchPlan excluded source')
+    assertSourceKind(excludedSource.sourceKind, 'searchPlan excluded source kind')
+    assertKnownValue(excludedSource.reason, SEARCH_PLAN_EXCLUDED_REASONS, 'searchPlan excluded source reason')
+  }
+}
+
 export function assertAnswerPreviewContract(preview: AnswerPreview): void {
+  assertRecord(preview, 'preview')
+  assertArray(preview.claims, 'claims')
+  assertArray(preview.claimSupports, 'claimSupports')
+  assertArray(preview.evidenceAtoms, 'evidenceAtoms')
+  assertArray(preview.evidenceCards, 'evidenceCards')
+  assertArray(preview.sourceFamilyStatuses, 'sourceFamilyStatuses')
+  assertSearchPlanSourceKinds(preview.searchPlan)
+  assertAnswerabilityDecision(preview.answerability)
+
   const expectedMode = answerPreviewModeForDecision(preview.answerability.status)
   if (preview.mode !== expectedMode) {
     throw new Error(`AnswerPreview mode ${preview.mode} does not match answerability ${preview.answerability.status}`)
@@ -274,10 +410,18 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     throw new Error('no-answer render permission requires empty claims')
   }
 
+  assertUniqueIds(preview.claims, 'claims')
+  assertUniqueIds(preview.claimSupports, 'claimSupports')
+  assertUniqueIds(preview.evidenceAtoms, 'evidenceAtoms')
+  assertUniqueIds(preview.evidenceCards, 'evidenceCards')
+
+  const sourceStatusByKind = buildSourceStatusByKind(preview.sourceFamilyStatuses)
   const evidenceById = new Map(preview.evidenceAtoms.map((atom) => [atom.id, atom]))
   for (const atom of preview.evidenceAtoms) {
-    if (!SOURCE_KINDS.includes(atom.sourceKind)) throw new Error(`unsupported v1 source kind ${atom.sourceKind}`)
+    assertRecord(atom, 'evidence atom')
+    assertSourceKind(atom.sourceKind, 'v1 source kind')
     if (atom.sourceKind !== atom.evidenceType) throw new Error(`evidence ${atom.id} has mismatched sourceKind/evidenceType`)
+    assertArray(atom.refs, `evidence ${atom.id} refs`)
     if (atom.refs.length === 0) throw new Error(`evidence ${atom.id} must include at least one ref`)
   }
 
@@ -285,6 +429,8 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
   const claimById = new Map(preview.claims.map((claim) => [claim.id, claim]))
 
   for (const support of preview.claimSupports) {
+    assertRecord(support, 'claim support')
+    assertArray(support.supportIds, `claim support ${support.id} supportIds`)
     const claim = claimById.get(support.claimId)
     if (!claim && support.verdict === 'supported') throw new Error(`supported claim support ${support.id} points to missing claim`)
     if (support.supportIds.length === 0) throw new Error(`claim support ${support.id} has no evidence`)
@@ -294,37 +440,59 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
   }
 
   for (const claim of preview.claims) {
+    assertRecord(claim, 'claim')
     const support = supportById.get(claim.supportId)
     if (!support) throw new Error(`claim ${claim.id} references missing support ${claim.supportId}`)
     if (support.claimId !== claim.id) throw new Error(`claim ${claim.id} support ${support.id} points to ${support.claimId}`)
     if (support.verdict !== 'supported') throw new Error(`claim ${claim.id} cannot render with insufficient support`)
     const authorityKey: ClaimAuthorityKey = `${claim.attribution}:${claim.predicate}`
+    if (!isSupportedClaimAuthorityKey(authorityKey)) throw new Error(`claim ${claim.id} has unsupported authority key ${authorityKey}`)
     const allowedKinds = V1_CLAIM_AUTHORITY[authorityKey]
-    if (!allowedKinds) throw new Error(`claim ${claim.id} has unsupported authority key ${authorityKey}`)
     for (const supportId of support.supportIds) {
       const atom = evidenceById.get(supportId)
       if (!atom) throw new Error(`claim ${claim.id} references missing evidence ${supportId}`)
       if (!(allowedKinds as readonly string[]).includes(atom.evidenceType)) {
         throw new Error(`claim ${claim.id} cannot use ${atom.evidenceType} evidence for ${authorityKey}`)
       }
+      const sourceStatus = sourceStatusByKind.get(atom.sourceKind)
+      if (!sourceStatus) {
+        throw new Error(`claim ${claim.id} evidence ${atom.id} uses source family ${atom.sourceKind} without sourceFamilyStatuses entry`)
+      }
+      if (sourceStatus.availability !== 'available' || !sourceStatus.canSupportClaims) {
+        throw new Error(`claim ${claim.id} cannot use ${atom.evidenceType} evidence because source family ${atom.sourceKind} cannot support claims`)
+      }
     }
   }
 
   for (const card of preview.evidenceCards) {
+    assertRecord(card, 'evidence card')
+    assertArray(card.evidenceAtomIds, `evidence card ${card.id} evidenceAtomIds`)
+    assertArray(card.claimSupportIds, `evidence card ${card.id} claimSupportIds`)
+    const cardEvidenceIds = new Set(card.evidenceAtomIds)
+    const cardEvidenceRefs = new Set<string>()
     for (const atomId of card.evidenceAtomIds) {
-      if (!evidenceById.has(atomId)) throw new Error(`evidence card ${card.id} references missing evidence ${atomId}`)
+      const atom = evidenceById.get(atomId)
+      if (!atom) throw new Error(`evidence card ${card.id} references missing evidence ${atomId}`)
+      for (const ref of atom.refs) cardEvidenceRefs.add(ref)
     }
     for (const supportId of card.claimSupportIds) {
       const support = supportById.get(supportId)
       if (!support || support.verdict !== 'supported') {
         throw new Error(`evidence card ${card.id} references unsupported claim support ${supportId}`)
       }
+      if (!claimById.has(support.claimId)) {
+        throw new Error(`evidence card ${card.id} support ${supportId} points to missing rendered claim ${support.claimId}`)
+      }
+      for (const supportEvidenceId of support.supportIds) {
+        if (!cardEvidenceIds.has(supportEvidenceId)) {
+          throw new Error(`evidence card ${card.id} support ${supportId} evidence ${supportEvidenceId} is not included in card evidenceAtomIds`)
+        }
+      }
     }
-  }
-
-  for (const status of preview.sourceFamilyStatuses) {
-    if (status.canSupportClaims && status.availability !== 'available') {
-      throw new Error(`source family ${status.sourceKind} canSupportClaims requires available status`)
+    assertRecord(card.readerAction, `evidence card ${card.id} readerAction`)
+    assertKnownValue(card.readerAction.type, READER_ACTION_TYPES, `evidence card ${card.id} readerAction type`)
+    if (card.readerAction.type === 'open-in-reader' && !cardEvidenceRefs.has(card.readerAction.ref)) {
+      throw new Error(`evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked evidence`)
     }
   }
 }
