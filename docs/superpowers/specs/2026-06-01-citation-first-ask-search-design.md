@@ -1,0 +1,1018 @@
+# Citation-First Ask/Search Design
+
+> Complete feature spec for QuranAtlas Ask/Search. This is a product and architecture design, not an implementation plan.
+
+**Goal:** Transform Search into a deterministic-first Qur'an evidence engine that answers, cites, explains, and guides while preserving source provenance, auditability, offline boundaries, and Reader First behavior.
+
+**Architecture:** Ask/Search interprets the user's query, builds a transparent search plan, retrieves typed evidence from eligible source families, produces an `AnswerBrief` through approved deterministic recipes, and renders answer, evidence, deepen, sources, and audit UI. The architecture reserves a future producer interface, but LLM/RAG is deferred and is not an approved runtime path.
+
+**Tech Stack:** React, Vite, Search Web Worker, immutable Search packs, IndexedDB/Dexie, QuranAtlas design system, existing Search DTOs and Reader mapping helpers.
+
+---
+
+## Approved Product Decisions
+
+| Area | Decision |
+| --- | --- |
+| Feature scope | Complete Ask/Search feature, not one implementation slice. |
+| Runtime posture | Deterministic-first. |
+| Future producers | Producer-agnostic interface reserved; LLM/RAG deferred until it satisfies the same evidence contract. |
+| Core pipeline | `Query -> QueryUnderstanding -> SearchPlan -> EvidenceBundle -> AnswerBrief -> UI`. |
+| Answer style | Short prose answer when responsible; partial, evidence-only, or no-answer recovery when not. |
+| Trust rule | Every answer claim must be traceable to typed evidence, with visible source provenance, inference level, and scope boundary. |
+| User experience | Answer-first, with compact evidence basis, best evidence, deepen paths, all matches, method/sources, and audit. |
+| Tests | Trust-contract tests are mandatory for this feature. Unsupported answer rendering is a severity-1 product bug. |
+
+## Non-Negotiable Invariants
+
+- No source text is generated. Qur'an Arabic, translations, tafsir excerpts, asbab reports, morphology, lexicon excerpts, and source notes must come from source packs or curated source records.
+- Only summaries and UI explanations may be generated, and only through approved deterministic recipes.
+- No unsupported theological, legal, medical, political, or pastoral claim may render as an answer.
+- Citation chips may render only when they resolve to typed, claim-eligible evidence.
+- Claim-bearing headings, labels, study path titles, and generated-study labels require support. Structural headings such as `Best Evidence`, `Explore Deeper`, and `Method & Sources` do not.
+- Reader cold launch must not fetch Ask/Search packs, initialize heavy retrieval features, decode graph shards, or start Ask/Search workers.
+- Hafs Search source to Qalun Reader navigation remains explicit and validated. Token-level claims must not imply token-level Reader alignment unless that mapping is proven.
+
+## Core Pipeline
+
+```text
+User query
+  -> QueryUnderstanding
+  -> SearchPlan
+  -> EvidenceBundle
+  -> AnswerBrief
+  -> Ask/Search UI
+```
+
+`AnswerBrief` must not consume raw worker results directly. The trust boundary is the `EvidenceBundle`, which normalizes raw retrieval output into typed, source-backed, claim-eligible evidence.
+
+## Query Understanding
+
+Query understanding makes the system's interpretation visible before an answer appears. This prevents false precision for ambiguous inputs such as `mercy`, `rahmah`, `شكر`, or `What does this verse mean?`.
+
+```ts
+type DetectedInputType =
+  | "english-term"
+  | "arabic-token"
+  | "arabic-root"
+  | "lemma"
+  | "phrase"
+  | "reference"
+  | "natural-language-question"
+  | "transliteration"
+  | "ambiguous";
+
+type QueryIntent =
+  | "find-occurrences"
+  | "answer-question"
+  | "study-theme"
+  | "trace-language"
+  | "open-reference"
+  | "compare"
+  | "explain-verse"
+  | "browse-related"
+  | "unknown";
+
+type SearchLens =
+  | "meaning"
+  | "translation"
+  | "quran-text"
+  | "root"
+  | "lemma"
+  | "phrase"
+  | "tafsir"
+  | "asbab"
+  | "mixed";
+
+type DetectionCandidate = {
+  inputType: DetectedInputType;
+  normalizedValue: string;
+  confidence: "high" | "medium" | "low";
+  reason: string;
+};
+
+type QueryAlternative = {
+  label: string;
+  lens: SearchLens;
+  reason: string;
+  query?: string;
+};
+
+type QueryUnderstanding = {
+  detectedInputType: DetectedInputType;
+  detectionCandidates: DetectionCandidate[];
+  inferredIntent: QueryIntent;
+  assumedLens: SearchLens;
+  confidence: "high" | "medium" | "low";
+  userVisibleSummary: string;
+  alternatives: QueryAlternative[];
+};
+```
+
+Confidence affects output:
+
+| Confidence | Behavior |
+| --- | --- |
+| `high` | `answer` may render if evidence and recipe allow it. |
+| `medium` | `partial-answer` only; interpretation remains visible. |
+| `low` | `evidence-only`, `no-answer`, or refine-query recovery. |
+
+Arabic root and lemma detection must be conservative. The UI should say `Possibly root: ش ك ر` when confidence is not high, and must show surface-form alternatives.
+
+## Search Plan
+
+The search plan shows what the system searched, what it skipped, and why.
+
+```ts
+type SourceKind =
+  | "quran-text"
+  | "translation"
+  | "tafsir"
+  | "morphology"
+  | "root-lexicon"
+  | "lemma-index"
+  | "asbab"
+  | "hadith"
+  | "theme-taxonomy"
+  | "cross-reference"
+  | "recitation"
+  | "reader-mapping"
+  | "computed-cluster";
+
+type RankProfileId =
+  | "reference"
+  | "exact-phrase"
+  | "lexical"
+  | "root-lemma"
+  | "theme"
+  | "question"
+  | "evidence-only";
+
+type SearchLane = {
+  id: string;
+  lens: SearchLens;
+  sourceKinds: SourceKind[];
+  queryForm: string;
+  normalizedQuery?: string;
+  rankProfile: RankProfileId;
+  limit: number;
+  status: "planned" | "executed" | "skipped" | "failed";
+  skipReason?: string;
+};
+
+type SearchPlan = {
+  primaryLens:
+    | "quran-text"
+    | "translation"
+    | "root"
+    | "lemma"
+    | "phrase"
+    | "theme"
+    | "tafsir"
+    | "asbab"
+    | "mixed";
+  lanes: SearchLane[];
+  excludedSources: Array<{
+    sourceKind: SourceKind;
+    reason: "not-installed" | "not-indexed" | "not-relevant" | "unsupported-for-query";
+  }>;
+  ambiguityNotes: string[];
+};
+```
+
+User-facing example:
+
+```text
+Searched as: theme question about gratitude
+Included: Qur'an text, translation, root/lemma evidence
+Not included: tafsir, asbab al-nuzul
+Other lenses: exact English phrase, Arabic root ش ك ر, translation hits
+```
+
+## Source Ontology
+
+Sources are not interchangeable. A translation can support translation claims; it cannot support Arabic morphology claims. A computed cluster can support a computed relationship; it cannot present itself as tafsir.
+
+```ts
+type AuthorityModel =
+  | "canonical-text"
+  | "scholarly-source"
+  | "translator-rendering"
+  | "computed-analysis"
+  | "editorial-curated";
+
+type ClaimAttribution =
+  | "quran-states"
+  | "quran-mentions"
+  | "quran-commands"
+  | "quran-prohibits"
+  | "translation-renders"
+  | "morphology-analyzes"
+  | "root-lexicon-defines"
+  | "lemma-index-identifies"
+  | "tafsir-explains"
+  | "asbab-reports"
+  | "theme-taxonomy-classifies"
+  | "cross-reference-links"
+  | "system-computes";
+
+type SourceAvailability = {
+  installed: boolean;
+  indexed: boolean;
+  searchable: boolean;
+  claimEligible: boolean;
+  displayEligible: boolean;
+  experimental: boolean;
+  disabled: boolean;
+};
+
+type SourceCoverage = {
+  refs?: string[];
+  languages?: string[];
+  coverageNote?: string;
+};
+
+type SourceRecord = {
+  id: string;
+  title: string;
+  sourceKind: SourceKind;
+  authorityModel: AuthorityModel;
+  usableForClaims: ClaimAttribution[];
+  availability: SourceAvailability;
+  language: string;
+  version: string;
+  licenseId: string;
+  coverage: SourceCoverage;
+  reliabilityNotes?: string[];
+  limitations?: string[];
+};
+```
+
+`hadith` is modeled as a future evidence family because tafsir and asbab may cite reports. `fiqh`, `fatwa`, and personal rulings are treated as application boundaries unless QuranAtlas later approves a juristic source corpus.
+
+## Evidence Bundle
+
+```ts
+type EvidenceUseState =
+  | "used"
+  | "available-not-used"
+  | "not-available"
+  | "not-indexed"
+  | "disabled"
+  | "failed";
+
+type EvidenceCoverageItem = {
+  sourceKind: SourceKind;
+  availability: SourceAvailability;
+  searched: boolean;
+  resultCount: number;
+  claimEligibleCount: number;
+  displayOnlyCount: number;
+  status:
+    | "used"
+    | "available-not-used"
+    | "not-available"
+    | "not-indexed"
+    | "disabled"
+    | "failed"
+    | "not-relevant";
+  note?: string;
+};
+
+type EvidenceCoverage = EvidenceCoverageItem[];
+
+type TextRange = {
+  ref: string;
+  startOffset?: number;
+  endOffset?: number;
+};
+
+type EvidenceStrength =
+  | "explicit"
+  | "strong"
+  | "moderate"
+  | "weak"
+  | "contested"
+  | "source-limited";
+
+type EvidenceProvenance =
+  | "primary-text"
+  | "linguistic-analysis"
+  | "translation"
+  | "classical-tafsir"
+  | "asbab-report"
+  | "hadith-report"
+  | "computed-derived"
+  | "editorial-curated";
+
+type EvidenceDisplayTarget =
+  | { type: "quote-range"; range: TextRange }
+  | { type: "verse-ref"; refs: string[] }
+  | { type: "token"; tokenRefs: string[] }
+  | { type: "source-note"; sourceId: string }
+  | { type: "computed-explanation"; explanationId: string };
+
+type EvidenceSupport = {
+  id: string;
+  evidenceType:
+    | "quran-text"
+    | "translation"
+    | "morphology"
+    | "root-lexicon"
+    | "lemma-index"
+    | "tafsir"
+    | "asbab"
+    | "hadith"
+    | "theme"
+    | "cross-reference"
+    | "reader-mapping"
+    | "computed-cluster";
+  sourceId: string;
+  refs: string[];
+  quoteRange?: TextRange;
+  tokenRefs?: string[];
+  displayTarget: EvidenceDisplayTarget;
+  provenance: EvidenceProvenance;
+  strength: EvidenceStrength;
+  eligibility: ClaimAttribution[];
+};
+```
+
+Evidence support eligibility is checked against both the source and the evidence item:
+
+```text
+A claim is valid only if:
+- claim.attribution is allowed by evidenceSupport.eligibility;
+- claim.attribution is allowed by source.usableForClaims;
+- source.availability.claimEligible is true;
+- evidenceSupport.strength satisfies the recipe;
+- the support displayTarget can open in an evidence card or audit view.
+```
+
+Typed evidence families:
+
+```ts
+type QuranTextEvidence = EvidenceSupport & { evidenceType: "quran-text" };
+type TranslationEvidence = EvidenceSupport & { evidenceType: "translation" };
+type MorphologyEvidence = EvidenceSupport & { evidenceType: "morphology" };
+type RootLemmaEvidence = EvidenceSupport & { evidenceType: "root-lexicon" | "lemma-index" };
+type ReaderMappingEvidence = EvidenceSupport & { evidenceType: "reader-mapping" };
+
+type TafsirEvidence = EvidenceSupport & {
+  evidenceType: "tafsir";
+  authorId: string;
+  verseRef: string;
+  passageRef: string;
+  excerpt: string;
+  explanationType:
+    | "lexical"
+    | "grammatical"
+    | "narrative"
+    | "legal"
+    | "theological"
+    | "rhetorical"
+    | "cross-reference";
+  attributionMode: "author-explains" | "source-reports" | "editor-summarizes";
+};
+
+type AsbabEvidence = EvidenceSupport & {
+  evidenceType: "asbab";
+  verseRefs: string[];
+  reportText: string;
+  reportStatus?: "source-stated" | "editorial-assessed" | "unknown";
+  chainInfoAvailable: boolean;
+  disagreementStatus: DisagreementStatus;
+};
+
+type ThemeProvenance =
+  | "source-attested"
+  | "editorial-curated"
+  | "computed-cluster";
+
+type ThemeEvidence = EvidenceSupport & {
+  evidenceType: "theme";
+  label: string;
+  provenance: ThemeProvenance;
+  sourceIds: string[];
+  explanation?: string;
+};
+
+type CrossReferenceEvidence = EvidenceSupport & {
+  evidenceType: "cross-reference";
+  fromRef: string;
+  toRef: string;
+  edgeType:
+    | "shared-root"
+    | "shared-lemma"
+    | "same-phrase"
+    | "same-theme"
+    | "same-story"
+    | "tafsir-linked"
+    | "asbab-linked"
+    | "chronology-linked"
+    | "computed-semantic-similarity"
+    | "editorial-cross-reference";
+};
+
+type EvidenceBundle = {
+  id: string;
+  query: string;
+  queryUnderstanding: QueryUnderstanding;
+  searchPlan: SearchPlan;
+  primaryTextEvidence: QuranTextEvidence[];
+  translationEvidence: TranslationEvidence[];
+  morphologyEvidence: MorphologyEvidence[];
+  rootLemmaEvidence: RootLemmaEvidence[];
+  tafsirEvidence: TafsirEvidence[];
+  asbabEvidence: AsbabEvidence[];
+  themeEvidence: ThemeEvidence[];
+  crossReferenceEvidence: CrossReferenceEvidence[];
+  readerMappingEvidence: ReaderMappingEvidence[];
+  coverage: EvidenceCoverage;
+  limitations: AnswerBoundaryNotice[];
+};
+```
+
+## Citation Invariant
+
+A citation chip may render only if:
+
+1. It points to at least one `EvidenceSupport` item.
+2. Every linked support item exists in the `EvidenceBundle`.
+3. The support source is claim-eligible.
+4. Support attribution is compatible with claim attribution.
+5. The support display target can open in an evidence card or audit view.
+
+## Answer Brief
+
+```ts
+type AnswerMode =
+  | "answer"
+  | "partial-answer"
+  | "evidence-only"
+  | "no-answer";
+
+type AnswerBlocker =
+  | "requires-tafsir"
+  | "requires-asbab"
+  | "requires-hadith"
+  | "requires-external-fiqh-authority"
+  | "requires-qualified-scholar"
+  | "medical-boundary"
+  | "legal-boundary"
+  | "personal-crisis-boundary"
+  | "insufficient-evidence"
+  | "ambiguous-query"
+  | "outside-current-scope";
+
+type AnswerCapability =
+  | "can-answer-from-quran-text"
+  | "can-answer-from-translation-and-arabic"
+  | "can-answer-from-tafsir"
+  | "can-answer-from-asbab"
+  | "partial-answer-evidence-only"
+  | "cannot-answer-with-current-sources";
+
+type AnswerClaim = {
+  id: string;
+  text: string;
+  claimCapability: AnswerCapability;
+  support: EvidenceSupport[];
+  attribution: ClaimAttribution;
+  inferenceLevel:
+    | "quotation"
+    | "paraphrase"
+    | "direct-summary"
+    | "cross-verse-synthesis"
+    | "interpretive-inference"
+    | "source-attributed-interpretation";
+  evidenceStrength: EvidenceStrength;
+};
+
+type EvidenceBasis = {
+  quranText: EvidenceUseState;
+  translation: EvidenceUseState;
+  morphology: EvidenceUseState;
+  tafsir: EvidenceUseState;
+  asbab: EvidenceUseState;
+  themes: "not-available" | "not-used" | "source-attested" | "editorial" | "computed";
+  highestInferenceLevel: AnswerClaim["inferenceLevel"];
+};
+
+type AnswerBoundaryNotice = {
+  id: string;
+  severity: "info" | "caution" | "blocking";
+  text: string;
+  blockers?: AnswerBlocker[];
+  sourceKinds?: SourceKind[];
+};
+
+type DisagreementStatus =
+  | "none-detected"
+  | "detected"
+  | "not-evaluated"
+  | "source-family-not-available";
+
+type DisagreementSummary = {
+  id: string;
+  topic: string;
+  status: DisagreementStatus;
+  sources: string[];
+  summary: string;
+  severity: "minor" | "material" | "major";
+  displayMode: "inline" | "expandable" | "requires-deep-view";
+};
+
+type ReflectionPrompt = {
+  id: string;
+  text: string;
+  anchorRefs: string[];
+  generatedBy: "template" | "editorial";
+  assertsNewClaim: false;
+};
+
+type EvidenceCard = {
+  id: string;
+  refLabel: string;
+  supportIds: string[];
+  title: string;
+  snippet: string;
+  whyThisAppears: string;
+  evidenceType: EvidenceSupport["evidenceType"];
+  evidenceStrength: EvidenceStrength;
+  readerMappingStatus: ReaderMappingStatus;
+};
+
+type AnswerAudit = {
+  claims: Array<{
+    claimId: string;
+    supportIds: string[];
+    attribution: ClaimAttribution;
+    inferenceLevel: AnswerClaim["inferenceLevel"];
+    evidenceStrength: EvidenceStrength;
+  }>;
+  sourceEligibility: Array<{
+    sourceId: string;
+    usableForClaims: ClaimAttribution[];
+    availability: SourceAvailability;
+  }>;
+};
+
+type AnswerBriefMetadata = {
+  answerProducerId: string;
+  answerProducerVersion: string;
+  sourcePackIds: string[];
+  generatedAt: string;
+  deterministic: true;
+  retrievalSnapshotHash: string;
+};
+
+type NoAnswerRecovery = {
+  reason: AnswerBlocker[];
+  userMessage: string;
+  suggestedQueries: QueryAlternative[];
+  availableEvidenceLanes: SearchLane[];
+  actions: Array<
+    | "try-different-lens"
+    | "show-related-verses"
+    | "open-reader"
+    | "install-source-pack"
+    | "refine-query"
+  >;
+};
+
+type AnswerBrief = {
+  id: string;
+  query: string;
+  queryUnderstanding: QueryUnderstanding;
+  searchPlan: SearchPlan;
+  evidenceBundleId: string;
+  mode: AnswerMode;
+  blockers: AnswerBlocker[];
+  recipe: AnswerRecipe;
+  shortAnswerClaims: AnswerClaim[];
+  evidenceCards: EvidenceCard[];
+  evidenceBasis: EvidenceBasis;
+  boundaryNotices: AnswerBoundaryNotice[];
+  disagreements: DisagreementSummary[];
+  reflectionPrompts: ReflectionPrompt[];
+  noAnswerRecovery?: NoAnswerRecovery;
+  audit: AnswerAudit;
+  metadata: AnswerBriefMetadata;
+};
+```
+
+Every answer page includes either a short answer paragraph when mode is `answer` or `partial-answer`, or an evidence-only/no-answer explanation when prose answering is not responsible. Evidence-only mode blocks synthetic answer claims, but allows boundary and recovery explanation.
+
+## Deterministic Answer Recipes
+
+```ts
+type AnswerRecipe =
+  | "direct-verse-answer"
+  | "theme-cluster-summary"
+  | "root-lemma-summary"
+  | "phrase-occurrence-summary"
+  | "reference-explanation-lite"
+  | "tafsir-attributed-summary"
+  | "asbab-attributed-summary"
+  | "evidence-only";
+
+type ClaimPredicate =
+  | "mentions"
+  | "states"
+  | "commands"
+  | "prohibits"
+  | "associates"
+  | "contrasts"
+  | "renders"
+  | "analyzes"
+  | "classifies"
+  | "links"
+  | "reports"
+  | "explains";
+
+type RecipeRule = {
+  recipe: AnswerRecipe;
+  requiredEvidenceTypes: EvidenceSupport["evidenceType"][];
+  maxClaims: number;
+  allowedInferenceLevels: AnswerClaim["inferenceLevel"][];
+  allowedClaimPredicates: ClaimPredicate[];
+  forbiddenPhrases: string[];
+  requiredBoundaryNotices: AnswerBlocker[];
+};
+```
+
+Approved deterministic language should prefer:
+
+- `This verse mentions...`
+- `These verses associate...`
+- `The translation renders...`
+- `This tafsir source explains...`
+- `The root appears in...`
+
+Recipes should avoid broad unsupported phrasing such as:
+
+- `The Qur'an teaches...`
+- `Islam says...`
+- `This means...`
+- `The ruling is...`
+
+unless the typed evidence, source family, and recipe explicitly permit that level of claim.
+
+## Degradation Rules
+
+```ts
+type DegradationRule = {
+  condition: string;
+  fromMode: AnswerMode;
+  toMode: AnswerMode;
+  blockers: AnswerBlocker[];
+  requiredNotice: string;
+};
+```
+
+Required degradation behavior:
+
+- If no claim has direct or strong evidence, degrade to `evidence-only`.
+- If a query is tafsir-shaped and tafsir is unavailable, render `evidence-only` with `requires-tafsir`.
+- If a query is asbab-shaped and asbab is unavailable, render `evidence-only` with `requires-asbab`.
+- If intent confidence is low, render refine-query recovery or `evidence-only`.
+- If the query asks for personal medical, legal, crisis, or fiqh application, render evidence-only plus boundary notices and appropriate recovery.
+
+## Ranking And Evidence Selection
+
+Ranking principles:
+
+- Prefer direct Qur'an text evidence over translation-only evidence.
+- Prefer exact phrase evidence over loose semantic or thematic evidence.
+- Prefer claim-eligible sources over display-only sources.
+- Prefer diverse evidence clusters over repeated near-duplicates.
+- Prefer evidence that can be opened and audited.
+- Penalize evidence with weaker Reader mapping when the user is likely to open it in Reader.
+
+Deterministic tie-breakers:
+
+1. Exact reference match.
+2. Exact Arabic phrase.
+3. Exact token, root, or lemma.
+4. Claim-eligible source.
+5. Stronger evidence.
+6. Better Reader mapping.
+7. Source priority order.
+8. Canonical surah/ayah order.
+
+## Progressive UX
+
+Default first-screen hierarchy:
+
+```text
+Answer or evidence-only explanation
+Compact Evidence Basis
+Best Evidence
+Explore Deeper
+```
+
+Deep views:
+
+```text
+Why this answer?
+Audit
+Method & Sources
+```
+
+`Evidence Basis` has compact and expanded modes.
+
+Compact:
+
+```text
+Evidence: Qur'an text + translation · Tafsir not used · Inference: direct summary
+```
+
+Expanded:
+
+```text
+Qur'an text: used
+Translation: used
+Morphology: available, not used
+Tafsir: not available
+Asbab: not available
+Themes: computed
+```
+
+## Page Sections
+
+### Answer
+
+Shows either:
+
+- a concise answer paragraph built from `shortAnswerClaims`, with citation chips, or
+- an evidence-only/no-answer explanation with `NoAnswerRecovery`.
+
+The paragraph defaults to at most three claims.
+
+### Evidence Basis
+
+Always present. It teaches the user what kind of support the answer used and what it did not use.
+
+### Best Evidence
+
+Evidence cards answer:
+
+- Why this appears.
+- What matched.
+- Evidence type.
+- Evidence strength.
+- Reader mapping status.
+- Source limitations.
+
+Actions:
+
+- `Read in context`
+- `Why this result?`
+- `Trace Arabic`
+- `Deepen`
+
+### Deepen
+
+```ts
+type DeepenPanel = {
+  selectedRef: string;
+  sections: Array<
+    | "verse-context"
+    | "related-verses"
+    | "arabic-analysis"
+    | "tafsir-when-available"
+    | "asbab-when-available"
+    | "theme-paths"
+    | "reflection-prompts"
+  >;
+};
+```
+
+Reflection prompts may render only when anchored to verse refs, non-claim-bearing, and labeled as prompts.
+
+### All Matches
+
+Keeps classic Search behavior: result windows, load more, source-backed lanes, exact mode visibility, and current worker cursor constraints.
+
+### Method & Sources
+
+Contains technical provenance, pack ids, normalizer/rank versions, source ids, license ids, and mapping summaries. Answer-affecting boundaries remain near the answer, not only here.
+
+### Why This Answer / Audit
+
+Mainstream label: `Why this answer?`
+
+Audit content:
+
+- claim support
+- source eligibility
+- inference level
+- evidence strength
+- producer metadata
+- source pack ids
+- retrieval snapshot hash
+
+## Reader Mapping
+
+```ts
+type ReaderMappingStatus =
+  | "same-riwayah"
+  | "verse-level-only"
+  | "token-level-mapped"
+  | "token-level-different"
+  | "unmapped"
+  | "not-applicable";
+```
+
+If Search found evidence in Hafs and the active Reader is Qalun, the UI must show when only verse-level mapping is available.
+
+Example:
+
+```text
+This result was found in the Hafs search text. The selected Reader uses Qalun. Verse mapping is available, but token-level highlighting may differ.
+```
+
+## Safety And Application Boundaries
+
+Sensitive categories:
+
+- `medical`
+- `legal`
+- `fiqh-fatwa`
+- `personal-crisis`
+- `self-harm`
+- `political-persuasion-or-campaigning`
+- `abusive-or-polemical-religious-framing`
+
+The app may show relevant Qur'anic evidence but must not issue personal rulings, clinical advice, legal advice, political persuasion, or inflammatory religious attacks.
+
+Neutral source comparison remains allowed:
+
+```text
+What do different tafsir sources say about this verse?
+```
+
+Crisis/self-harm flows must include a special recovery message:
+
+```text
+If this is immediate danger, contact local emergency services or a crisis hotline now. I can also show Qur'anic passages of comfort.
+```
+
+## URL, Storage, And Offline Behavior
+
+Ask/Search keeps URL-backed state:
+
+```text
+q
+lens
+intent
+answerMode
+selectedEvidenceId
+selectedClaimId
+selectedSection
+sourcePackVersion
+```
+
+Full answer snapshots are not stored in the URL.
+
+Saved searches continue to store query definitions and compatibility metadata unless a future Collections feature is approved. Recomputed answers must identify when source packs, producer versions, or retrieval snapshots changed.
+
+Offline behavior:
+
+- Ask/Search must degrade gracefully when source families are unavailable locally.
+- Missing source packs create coverage/boundary notices, not fabricated answers.
+- Reader cold launch must not initialize heavyweight Ask/Search packs.
+- Optional source packs may be lazy-loaded only when the user enters Ask/Search or explicitly requests a source family.
+
+## Future Producer Interface
+
+The architecture reserves a future producer interface. LLM/RAG is deferred and not an approved runtime path.
+
+A future producer may be considered only if it satisfies:
+
+- no unsupported claims;
+- no generated source text;
+- citations resolve to typed evidence;
+- audit view exposes support for every claim;
+- model output cannot create source facts, verse text, translation text, morphology, tafsir, asbab, or source metadata;
+- low-confidence output degrades to evidence-only mode;
+- deterministic trust tests remain applicable or are strengthened.
+
+## Golden Scenarios
+
+Each scenario must specify input, query understanding, search plan, answer mode, evidence basis, boundary notices, top evidence behavior, and expected UI.
+
+### 1. Arabic phrase exact match
+
+- Input: `"لا خوف عليهم"`
+- Query understanding: phrase, high confidence, phrase lens.
+- Search plan: exact phrase lane over Qur'an text.
+- Answer mode: `answer` if direct evidence exists.
+- Evidence basis: Qur'an text used; translation optional; tafsir not used.
+- Boundary notices: phrase matching is source-text bounded.
+- Top evidence: exact phrase cards in canonical order.
+- Expected UI: concise answer describes occurrence evidence, not theological synthesis.
+
+### 2. Arabic root search
+
+- Input: `ش ك ر`
+- Query understanding: possible root, high confidence only if root dictionary validates it.
+- Search plan: root/lemma lanes and related surface forms.
+- Answer mode: `partial-answer` or `answer` depending on evidence strength.
+- Evidence basis: morphology/root evidence used; translation may be used.
+- Boundary notices: root evidence is linguistic, not tafsir.
+- Top evidence: cards show matched forms and root.
+- Expected UI: `Trace Arabic` prominent.
+
+### 3. English theme query
+
+- Input: `gratitude`
+- Query understanding: English term with study-theme intent, medium/high confidence.
+- Search plan: translation lane, possible root/lemma alternatives, computed/editorial themes if available.
+- Answer mode: `partial-answer` unless strong direct evidence supports an answer.
+- Evidence basis: translation used; themes computed or not used; tafsir not used.
+- Boundary notices: translation-sensitive and tafsir not included.
+- Top evidence: diverse verses rather than duplicates.
+- Expected UI: answer uses limited claims such as association with increase and remembrance only if evidence supports them.
+
+### 4. Natural question
+
+- Input: `What does the Qur'an say about patience?`
+- Query understanding: natural-language question, study-theme intent.
+- Search plan: theme/question rank profile with translation and root/lemma support.
+- Answer mode: `answer` or `partial-answer` depending on direct evidence.
+- Evidence basis: Qur'an text and translation used; morphology available if roots are detected.
+- Boundary notices: no tafsir unless tafsir pack is active.
+- Top evidence: verses clustered by directness and diversity.
+- Expected UI: concise cited answer with follow-up lenses.
+
+### 5. Tafsir-shaped query without tafsir pack
+
+- Input: `What does 24:35 mean?`
+- Query understanding: explain-verse intent, tafsir lens likely.
+- Search plan: reference lane executed; tafsir excluded as not available.
+- Answer mode: `evidence-only`.
+- Blockers: `requires-tafsir`.
+- Evidence basis: Qur'an text and translation used; tafsir not available.
+- Boundary notices: interpretation requires tafsir not active for this answer.
+- Top evidence: verse, translation, Arabic evidence if available.
+- Expected UI: no synthetic interpretation paragraph.
+
+### 6. Asbab-shaped query without asbab pack
+
+- Input: `Why was 33:37 revealed?`
+- Query understanding: natural-language question, asbab lens.
+- Search plan: reference lane executed; asbab excluded as not available.
+- Answer mode: `evidence-only`.
+- Blockers: `requires-asbab`.
+- Evidence basis: Qur'an text and translation used; asbab not available.
+- Boundary notices: occasion reports are not active.
+- Top evidence: referenced verse and nearby context.
+- Expected UI: answer refuses to invent revelation context.
+
+### 7. Fiqh/fatwa query
+
+- Input: `Is this business contract halal?`
+- Query understanding: natural-language question, application/legal intent.
+- Search plan: may offer related Qur'anic evidence lanes if safe.
+- Answer mode: `evidence-only` or `no-answer`.
+- Blockers: `requires-external-fiqh-authority`, `requires-qualified-scholar`, possibly `legal-boundary`.
+- Evidence basis: whatever related evidence is shown must be labeled as evidence, not ruling.
+- Boundary notices: QuranAtlas cannot issue personal rulings.
+- Top evidence: optional related verses about trade/justice if query is refined.
+- Expected UI: consult qualified scholar; no ruling.
+
+### 8. Cross-riwayah Reader mapping mismatch
+
+- Input: Arabic morphology query with Hafs evidence while Reader is Qalun.
+- Query understanding: trace-language intent.
+- Search plan: morphology lane over Hafs source.
+- Answer mode: `partial-answer`.
+- Evidence basis: morphology used; reader mapping evidence used.
+- Boundary notices: token-level Reader highlighting unavailable or different.
+- Top evidence: cards show Hafs source and Qalun mapping status.
+- Expected UI: `Open in Read` only when verse mapping is valid; no token highlight claim.
+
+## Mandatory Trust Tests
+
+Unsupported answer rendering is a severity-1 product bug.
+
+Required tests:
+
+1. No claim renders without typed support.
+2. Ineligible source types cannot support claims.
+3. Evidence-only mode blocks synthetic answer claims, but allows boundary/recovery explanation.
+4. Weak or partial evidence states display visible boundaries.
+5. Citation chips open the exact evidence item.
+6. Cross-riwayah mapping warnings render when needed.
+7. Same query plus same source packs plus same producer version gives the same claims, evidence cards, boundaries, and audit links; volatile metadata such as `generatedAt` may differ.
+8. Source text is never generated from templates.
+9. Reflection prompts cannot appear as claims.
+10. Disabled sources cannot support claims.
+11. Claim-bearing headings, labels, and generated study path titles require support.
+12. No-answer mode renders recovery actions and never dead-ends.
+
+## Implementation Boundary
+
+This design document authorizes the complete feature direction and data contracts. It does not prescribe task order. Implementation planning should decompose the work into phases after this spec is accepted, likely starting with the deterministic `QueryUnderstanding`, `SearchPlan`, `EvidenceBundle`, `AnswerBrief`, and progressive UI scaffolding over the existing Search worker.
