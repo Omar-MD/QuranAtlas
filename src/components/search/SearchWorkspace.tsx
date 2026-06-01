@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { SearchBriefDto, SearchResultDto } from '../../search/schema'
 import { Tabs } from '../ui'
@@ -35,6 +35,8 @@ type SearchWorkspaceProps = {
 
 export function SearchWorkspace(props: SearchWorkspaceProps) {
   const detailsTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const detailPanelRef = useRef<HTMLDivElement | null>(null)
+  const [detailsRequestId, setDetailsRequestId] = useState(0)
   const viewModel = useMemo(() => deriveSearchOutputViewModel({
     brief: props.brief,
     defaultTab: props.defaultTab,
@@ -47,6 +49,17 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
     props.onActiveTabChange(tab)
     props.onFocusExploreModule(focusModule ?? null)
   }
+
+  useEffect(() => {
+    if (!detailsRequestId || !props.selectedResult || props.activeTab !== 'verses') return
+    const panel = detailPanelRef.current
+    if (!panel || !window.matchMedia('(max-width: 767px)').matches) return
+    window.setTimeout(() => {
+      const top = panel.getBoundingClientRect().top + window.scrollY - 88
+      window.scrollTo({ top: Math.max(0, top), behavior: 'auto' })
+      panel.focus({ preventScroll: true })
+    }, 0)
+  }, [detailsRequestId, props.activeTab, props.selectedResult])
 
   return (
     <section aria-label="Search result workspace" className="qar-search-workspace">
@@ -76,6 +89,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                   hasMore={props.hasMore}
                   onDetailsTrigger={(node) => {
                     detailsTriggerRef.current = node
+                    if (node) setDetailsRequestId((current) => current + 1)
                   }}
                   onLoadMore={props.onLoadMore}
                   onOpenInRead={props.onOpenInRead}
@@ -89,6 +103,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                     detailsTriggerRef.current?.focus()
                   }}
                   onOpenExplore={props.onOpenResultExplore}
+                  ref={detailPanelRef}
                 />
               </div>
             ),
@@ -103,6 +118,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                 modules={viewModel.exploreModules}
                 onLoadGraph={props.onLoadExploreGraph}
                 seedResult={props.exploreSeedResult}
+                summaries={viewModel.exploreSummaries}
               />
             ),
           },

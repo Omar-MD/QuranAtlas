@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
 import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
@@ -21,6 +21,7 @@ import { useSearchRouteState } from './useSearchRouteState'
 export function SearchShell() {
   const search = useSearchRouteState()
   const saved = useSavedSearches()
+  const [savedStatusMessage, setSavedStatusMessage] = useState('')
   const { bookmarks, deleteBookmark } = useBookmarks()
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
   const aliasesPromiseRef = useRef<Promise<VerseAliases> | null>(null)
@@ -54,11 +55,7 @@ export function SearchShell() {
     search.setQuery(opened.intent.queryText)
     search.setMode(opened.intent.queryMode)
     search.submitSearch({ mode: opened.intent.queryMode, query: opened.intent.queryText })
-  }
-
-  function renameSavedSearch(id: string, currentName: string) {
-    const nextName = window.prompt('Rename saved search', currentName)
-    if (nextName) void saved.renameSearch(id, nextName)
+    dispatchDrawer({ type: 'route-transition' })
   }
 
   function navigate(hash: string) {
@@ -75,11 +72,20 @@ export function SearchShell() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [dispatchDrawer, drawerState.open])
 
+  useEffect(() => {
+    if (saved.status && !search.error) setSavedStatusMessage(saved.status)
+  }, [saved.status, search.error])
+
+  useEffect(() => {
+    setSavedStatusMessage('')
+  }, [search.searchStatus])
+
   const savedSearchesPanel = (
     <SavedSearchesNavPanel
+      lastDeleted={saved.lastDeleted}
       onDelete={(id) => void saved.deleteSearch(id)}
       onLoad={(record) => void loadSavedSearch(record)}
-      onRename={renameSavedSearch}
+      onUndoDelete={() => void saved.undoDelete()}
       records={saved.records}
     />
   )
@@ -113,7 +119,7 @@ export function SearchShell() {
         <div className="qar-search-content-inner">
           <h1 className="qar:sr-only">Search</h1>
           <SearchHeader
-            canSave={Boolean(search.query.trim())}
+            canSave={search.canSaveSearch}
             mode={search.mode}
             onModeChange={search.setMode}
             onQueryChange={search.setQuery}
@@ -129,8 +135,13 @@ export function SearchShell() {
             query={search.query}
           />
           <div aria-live="polite" className="qar:sr-only" role="status">
-            {[search.searchStatus, saved.status].filter(Boolean).join('. ')}
+            {search.searchStatus}
           </div>
+          {savedStatusMessage && !search.error ? (
+            <div aria-live="polite" className="qar:sr-only" role="status">
+              {savedStatusMessage}
+            </div>
+          ) : null}
           <div className="qar-search-status-row">
             <p>{search.packMessage}</p>
           </div>

@@ -32,6 +32,16 @@ export function SearchGraphExplore({
       <Button disabled={graph.loading} onClick={() => onLoad?.(result)} type="button" variant="secondary">
         {graph.loading ? 'Loading Explore sections' : loadedForResult ? 'Refresh Explore sections' : 'Load Explore sections'}
       </Button>
+      {graph.loading ? (
+        <div aria-live="polite" className="qar-search-graph-loading" role="status">
+          <p>Loading source-backed wording sections for this selected ayah.</p>
+          <div aria-hidden="true" className="qar-search-graph-loading-bars">
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+      ) : null}
       {graph.error ? <p className="qar:m-0 qar:text-danger">{graph.error}</p> : null}
       {loadedForResult ? <Accordion items={graph.sections.map(sectionToAccordionItem)} /> : null}
     </div>

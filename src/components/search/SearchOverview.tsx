@@ -36,6 +36,12 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
         ))}
       </dl>
 
+      {overview.recoveryMessage ? (
+        <p className="qar-search-overview-recovery">
+          {overview.recoveryMessage}
+        </p>
+      ) : null}
+
       {overview.topSurahs.length > 0 ? (
         <section aria-label="Top surah distribution" className="qar-search-overview-list">
           <h3>Top Surahs</h3>

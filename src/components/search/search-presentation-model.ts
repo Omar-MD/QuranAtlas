@@ -42,8 +42,16 @@ export type SearchOverviewViewModel = {
   interpretedAs: string
   primaryMatchType: string
   queryLabel: string
+  recoveryMessage: string | null
   topForms: SearchOverviewRankedRow[]
   topSurahs: SearchOverviewRankedRow[]
+}
+
+export type SearchExploreSummary = {
+  description: string
+  id: SearchExploreModuleId
+  rows: SearchOverviewRankedRow[]
+  title: string
 }
 
 export type SearchVerseCardViewModel = {
@@ -79,6 +87,7 @@ export type SearchOutputViewModel = {
   defaultTab: SearchWorkspaceTab
   details: SearchDetailsViewModel | null
   exploreModules: SearchExploreModuleId[]
+  exploreSummaries: SearchExploreSummary[]
   overview: SearchOverviewViewModel | null
   sources: SearchSourcesViewModel | null
   tabs: Array<{ label: string; value: SearchWorkspaceTab }>
@@ -132,6 +141,7 @@ export function toOverviewViewModel(
     interpretedAs: modeLabel(brief.query.mode),
     primaryMatchType: brief.evidenceTypes[0] ? evidenceLabel(brief.evidenceTypes[0]) : 'Search match',
     queryLabel: brief.query.rawText,
+    recoveryMessage: recoveryMessageForBrief(brief),
     topForms: topFormsForShownResults(results),
     topSurahs: brief.distribution.surahsWithMostIndexedMatches.slice(0, 4).map((item) => ({
       label: `Surah ${item.surah}`,
@@ -159,6 +169,8 @@ export function toVerseCardViewModel(result: SearchResultDto): SearchVerseCardVi
 export function toDetailsViewModel(result: SearchResultDto | null): SearchDetailsViewModel | null {
   if (!result) return null
   const evidence = getResultMatchEvidence(result)
+  const readerTarget = readerTargetLabel(result)
+  const mappingState = mappingStateLabel(result)
   const evidenceRows: Array<{ label: string; value: string }> = [
     { label: 'Matched in', value: laneLabel(evidence.lane) },
   ]
@@ -181,15 +193,15 @@ export function toDetailsViewModel(result: SearchResultDto | null): SearchDetail
       { label: 'Opens in Reader', value: result.canOpenInRead ? 'Available' : 'Search source only' },
       {
         label: 'Corresponding ayah in Reader',
-        value: result.readerRefs.length > 0 ? result.readerRefs.join(', ') : 'No validated Reader target',
+        value: readerTarget,
       },
       { label: 'Word highlight', value: result.canHighlightWordsInRead ? 'Available' : 'Word highlight unavailable' },
     ],
     result,
     sourceRows: [
       { label: 'Source ref', value: result.sourceRef },
-      { label: 'Reader refs', value: result.readerRefs.length > 0 ? result.readerRefs.join(', ') : 'No validated Reader target' },
-      { label: 'Mapping state', value: mappingLabel(result.mappingState) },
+      { label: 'Reader refs', value: readerTarget },
+      { label: 'Mapping state', value: mappingState },
     ],
     textRows: [
       { label: 'Search text', value: result.sourceText },
@@ -205,10 +217,7 @@ export function toSourcesViewModel(brief: SearchBriefDto | null): SearchSourcesV
   if (!brief) return null
   const frame = brief.sourceFrame
   return {
-    mappingSummary: Object.entries(brief.mappingStateCounts ?? {}).map(([label, value]) => ({
-      label: mappingLabel(label as keyof NonNullable<SearchBriefDto['mappingStateCounts']>),
-      value: String(value),
-    })),
+    mappingSummary: mappingSummaryRows(brief),
     sourceNotes: brief.sourceNotes.map((note) => ({ label: note.label, value: note.text })),
     sourceRows: [
       { label: 'Pack id', value: frame.packId },
@@ -237,6 +246,7 @@ export function deriveSearchOutputViewModel(input: {
     defaultTab: input.defaultTab,
     details: toDetailsViewModel(input.selectedResult),
     exploreModules: exploreModulesForBrief(input.brief),
+    exploreSummaries: exploreSummariesForBrief(input.brief, input.results),
     overview: toOverviewViewModel(input.brief, input.hasMoreResults, input.results),
     sources: toSourcesViewModel(input.brief),
     tabs: [
@@ -259,6 +269,20 @@ function overviewActionsForBrief(brief: SearchBriefDto): SearchOverviewAction[] 
   }
   actions.push({ label: 'Open Explore', target: 'explore' })
   return actions
+}
+
+function recoveryMessageForBrief(brief: SearchBriefDto): string | null {
+  if (brief.counts.matchedResultCount > 0) return null
+  if (brief.query.mode === 'exact-word-form') {
+    return 'No exact word-form matches. Exact mode keeps Quranic marks and source spelling; try Arabic text mode for normalized matching.'
+  }
+  if (brief.query.mode === 'phrase') {
+    return 'No phrase matches. Phrase mode needs adjacent source tokens; try Arabic text mode for broader matching.'
+  }
+  if (brief.evidenceTypes.includes('translation-context')) {
+    return 'No translation/context matches. Try fewer terms or switch to All mode.'
+  }
+  return 'No results match this search. Try fewer terms, Arabic text mode, or an ayah reference such as 2:255.'
 }
 
 function caveatForBrief(brief: SearchBriefDto): string | null {
@@ -305,6 +329,81 @@ function exploreModulesForBrief(brief: SearchBriefDto | null): SearchExploreModu
   return Array.from(new Set(modules))
 }
 
+function exploreSummariesForBrief(brief: SearchBriefDto | null, results: SearchResultDto[]): SearchExploreSummary[] {
+  if (!brief) return []
+  const summaries: SearchExploreSummary[] = []
+  const topSurahs = brief.distribution.surahsWithMostIndexedMatches.slice(0, 8).map((item) => ({
+    label: `Surah ${item.surah}`,
+    scope: item.occurrenceCount === undefined ? 'all indexed matches' as const : 'all indexed matches' as const,
+    value: item.occurrenceCount === undefined
+      ? `${item.matchedSourceAyahCount} matched ayat`
+      : `${item.matchedSourceAyahCount} matched ayat, ${item.occurrenceCount} occurrence${item.occurrenceCount === 1 ? '' : 's'}`,
+  }))
+  if (topSurahs.length > 0) {
+    summaries.push({
+      description: 'Distribution is counted across the indexed Search source, not only the visible result window.',
+      id: 'surah-distribution',
+      rows: topSurahs,
+      title: 'Surah distribution',
+    })
+  }
+
+  const topForms = topFormsForShownResults(results)
+  if (topForms.length > 0) {
+    summaries.push({
+      description: 'Forms are counted from the currently shown result rows.',
+      id: 'forms-by-count',
+      rows: topForms,
+      title: 'Forms by count',
+    })
+  }
+
+  if (brief.query.morphologyMode) {
+    summaries.push({
+      description: 'Morphology matches use QAC evidence in the Hafs analytical Search source.',
+      id: 'query-level-morphology-summary',
+      rows: [
+        { label: 'Mode', scope: 'known results', value: modeLabel(brief.query.mode) },
+        { label: 'Query tokens', scope: 'known results', value: brief.query.tokens.join(', ') || 'None' },
+        { label: 'Matched result rows', scope: 'known results', value: String(brief.counts.matchedResultCount) },
+      ],
+      title: 'Query-level morphology summary',
+    })
+  }
+
+  if (brief.evidenceTypes.includes('translation-context')) {
+    const laneRows = brief.laneCounts
+      .filter((row) => row.lane === 'translation' || row.lane === 'context')
+      .map((row) => ({
+        label: laneLabel(row.lane),
+        scope: 'all indexed matches' as const,
+        value: row.occurrenceCountKnown && row.occurrenceCount !== null
+          ? `${row.matchedResultCount} rows, ${row.occurrenceCount} occurrences`
+          : `${row.matchedResultCount} rows`,
+      }))
+    summaries.push({
+      description: 'These terms are matched against indexed translation/context text, not Arabic source wording.',
+      id: 'translation-context-terms',
+      rows: [
+        { label: 'Matched terms', scope: 'known results', value: brief.query.tokens.join(', ') || brief.query.rawText },
+        ...laneRows,
+      ],
+      title: 'Matched translation/context terms',
+    })
+    summaries.push({
+      description: 'Source-boundary notes explain which corpus each query lane can prove.',
+      id: 'source-boundary',
+      rows: brief.sourceNotes.map((note) => ({
+        label: note.label,
+        scope: 'known results' as const,
+        value: note.text,
+      })),
+      title: 'Source/context boundary',
+    })
+  }
+  return summaries
+}
+
 function topFormsForShownResults(results: SearchResultDto[]): SearchOverviewRankedRow[] {
   const counts = new Map<string, number>()
   for (const result of results) {
@@ -316,6 +415,34 @@ function topFormsForShownResults(results: SearchResultDto[]): SearchOverviewRank
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
     .slice(0, 4)
     .map(([label, count]) => ({ label, scope: 'shown results', value: `${count} shown result${count === 1 ? '' : 's'}` }))
+}
+
+function readerTargetLabel(result: SearchResultDto): string {
+  if (result.readerRefs.length > 0) return result.readerRefs.join(', ')
+  if (result.canOpenInRead) return 'Resolved when Open in Read checks the active Reader riwayah'
+  return 'No validated Reader target'
+}
+
+function mappingStateLabel(result: SearchResultDto): string {
+  if (result.canOpenInRead && result.mappingState === 'hafs-source-only' && result.readerRefs.length === 0) {
+    return 'Open in Read resolver available'
+  }
+  return mappingLabel(result.mappingState)
+}
+
+function mappingSummaryRows(brief: SearchBriefDto): Array<{ label: string; value: string }> {
+  const rows = Object.entries(brief.mappingStateCounts ?? {}).map(([label, value]) => ({
+    label: mappingLabel(label as keyof NonNullable<SearchBriefDto['mappingStateCounts']>),
+    value: String(value),
+  }))
+  const sourceOnlyCount = brief.mappingStateCounts?.['hafs-source-only'] ?? 0
+  if (sourceOnlyCount > 0) {
+    rows.push({
+      label: 'Open in Read resolver available',
+      value: `${sourceOnlyCount} result${sourceOnlyCount === 1 ? '' : 's'}`,
+    })
+  }
+  return rows
 }
 
 function isExplicitPhraseShape(parsed: ParsedSearchQuery): boolean {

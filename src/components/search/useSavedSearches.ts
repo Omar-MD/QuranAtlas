@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { SavedSearchIntentV1 } from '../../../shared/search'
+import { parseSearchQuery } from '../../search/query-parser'
 import type { SearchQueryMode, SearchSort } from '../../search/schema'
 import { openReactDb } from '../../storage/db'
 import type { SavedSearchRecord } from '../../storage/types'
@@ -17,6 +18,13 @@ export type SavedSearchInput = {
 export function useSavedSearches() {
   const [records, setRecords] = useState<SavedSearchRecord[]>([])
   const [status, setStatus] = useState('')
+  const [lastDeleted, setLastDeleted] = useState<SavedSearchRecord | null>(null)
+
+  useEffect(() => {
+    if (!status) return undefined
+    const timeout = window.setTimeout(() => setStatus(''), 4000)
+    return () => window.clearTimeout(timeout)
+  }, [status])
 
   const refresh = useCallback(async () => {
     const db = await openReactDb()
@@ -31,6 +39,12 @@ export function useSavedSearches() {
   const saveSearch = useCallback(async (input: SavedSearchInput) => {
     const query = input.query.trim()
     if (!query) return null
+    try {
+      parseSearchQuery(query, { mode: input.mode })
+    } catch {
+      setStatus('Search is not valid to save')
+      return null
+    }
     const db = await openReactDb()
     const now = Date.now()
     const id = createId()
@@ -67,6 +81,7 @@ export function useSavedSearches() {
       lastRunAt: null,
     }
     await db.savedSearches.put(record)
+    setLastDeleted(null)
     setStatus(`Saved search ${name}`)
     await refresh()
     return record
@@ -84,6 +99,7 @@ export function useSavedSearches() {
       updatedAt: record.updatedAt,
     }
     await db.savedSearches.put(opened)
+    setLastDeleted(null)
     setStatus(`Loaded saved search ${record.intent.name}`)
     await refresh()
     return opened
@@ -100,25 +116,41 @@ export function useSavedSearches() {
       intent: { ...record.intent, name: nextName, updatedAt: now },
       updatedAt: now,
     })
+    setLastDeleted(null)
     setStatus(`Renamed saved search ${nextName}`)
     await refresh()
   }, [refresh])
 
   const deleteSearch = useCallback(async (id: string) => {
     const db = await openReactDb()
+    const record = await db.savedSearches.get(id)
+    if (!record) return
     await db.savedSearches.delete(id)
-    setStatus('Deleted saved search')
+    setLastDeleted(record)
+    setStatus(`Deleted saved search ${record.intent.name}`)
     await refresh()
   }, [refresh])
 
+  const undoDelete = useCallback(async () => {
+    if (!lastDeleted) return
+    const db = await openReactDb()
+    const restored = { ...lastDeleted, updatedAt: Date.now() }
+    await db.savedSearches.put(restored)
+    setLastDeleted(null)
+    setStatus(`Restored saved search ${lastDeleted.intent.name}`)
+    await refresh()
+  }, [lastDeleted, refresh])
+
   return {
     deleteSearch,
+    lastDeleted,
     openSearch,
     records,
     refresh,
     renameSearch,
     saveSearch,
     status,
+    undoDelete,
   }
 }
 

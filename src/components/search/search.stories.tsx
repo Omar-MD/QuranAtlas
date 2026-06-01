@@ -96,7 +96,7 @@ export const MobileDetails: Story = {
 export const SavedSearches: Story = {
   render: () => (
     <main className="qar:max-w-xs qar:p-5" aria-label="Search">
-      <SavedSearchesNavPanel onDelete={() => undefined} onLoad={() => undefined} onRename={() => undefined} records={[fixtureSavedSearch]} />
+      <SavedSearchesNavPanel onDelete={() => undefined} onLoad={() => undefined} records={[fixtureSavedSearch]} />
     </main>
   ),
 }

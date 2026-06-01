@@ -10,7 +10,7 @@ export function SearchMorphologyPanel({ result }: { result: SearchResultDto | nu
           Morphology is available for same written form, same root, lemma, and Surah context searches when the active Search index includes the morphology feature.
         </p>
         <div role="status" className="qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-3 qar:text-sm">
-          Missing morphology feature
+          Morphology details do not apply to this selected result because no morphology token was selected.
         </div>
       </div>
     )
