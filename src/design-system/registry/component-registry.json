@@ -1577,8 +1577,13 @@
         "mobileChrome",
         "navDrawer",
         "queryControls",
-        "results",
-        "detail"
+        "workspaceTabs",
+        "overview",
+        "verses",
+        "explore",
+        "sources",
+        "details",
+        "mobileDetails"
       ],
       "dependencies": {
         "radix": [],
@@ -1595,13 +1600,17 @@
           "states": [
             "default",
             "loading",
-            "results",
-            "detail",
+            "overview-broad",
+            "overview-morphology",
+            "verses-reference",
+            "verses-phrase",
+            "explore-missing-packs",
+            "sources",
+            "details-no-mapping",
+            "mobile-details",
             "saved-searches",
             "no-mapping",
-            "offline-unavailable",
-            "source-panel",
-            "graph-explore"
+            "offline-unavailable"
           ]
         }
       ],
@@ -1635,7 +1644,8 @@
       "accessibility": [
         "semantic landmarks",
         "polite result and saved-search status",
-        "unique Open in Read action names",
+        "controlled workspace tabs",
+        "Details close restores focus to the originating trigger",
         "visible focus through owned primitives"
       ],
       "visualProof": {

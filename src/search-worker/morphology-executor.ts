@@ -9,6 +9,7 @@ import { SearchPackReader, SearchPackReaderError } from '../search/pack-reader'
 import type { SearchGraphRef, SearchMatchLane } from '../search/schema'
 import { mapSearchRefToSearchSource } from '../search/result-mapping'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
+import { evidenceForMorphologyResult } from './search-brief'
 
 export class SearchMorphologyExecutor {
   private readonly reader: SearchPackReader
@@ -60,7 +61,7 @@ export class SearchMorphologyExecutor {
       const key = `${row.ref}:${row.tokenOrdinal}:${matchLane}`
       if (seen.has(key)) continue
       seen.add(key)
-      results.push(await this.toResult(row, matchLane))
+      results.push(await this.toResult(row, matchLane, query))
     }
     return results
   }
@@ -91,7 +92,7 @@ export class SearchMorphologyExecutor {
     return direct
   }
 
-  private async toResult(row: SearchMorphologyRow, lane: SearchMatchLane): Promise<SearchResultDto> {
+  private async toResult(row: SearchMorphologyRow, lane: SearchMatchLane, query: SearchQueryAstV1): Promise<SearchResultDto> {
     const mapping = mapSearchRefToSearchSource(row.ref as SearchGraphRef)
     const counts = await this.countsFor(row)
     return {
@@ -102,6 +103,15 @@ export class SearchMorphologyExecutor {
       canOpenInRead: mapping.canOpenInRead,
       canHighlightWordsInRead: false,
       matchLanes: [lane],
+      matchEvidence: evidenceForMorphologyResult({
+        lane,
+        query,
+        sourceToken: row.sourceToken,
+        root: row.root,
+        lemma: row.lemma,
+        wordPosition: row.wordPosition,
+        rowId: `${row.ayahId}:${row.tokenOrdinal}`,
+      }),
       snippet: row.sourceToken || row.transliteration,
       rankKey: `${row.surah}:${row.ayah}:${row.tokenOrdinal}`,
       sourceText: row.sourceToken || row.transliteration,

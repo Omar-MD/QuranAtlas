@@ -1,6 +1,6 @@
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 
@@ -34,7 +34,10 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
     unstyled?: boolean
   }
 
-export function Button({ asChild = false, className, unstyled = false, variant, size, type = 'button', ...props }: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { asChild = false, className, unstyled = false, variant, size, type = 'button', ...props },
+  ref,
+) {
   const Comp = asChild ? Slot : 'button'
-  return <Comp className={cn(unstyled ? undefined : buttonVariants({ variant, size }), className)} type={asChild ? undefined : type} {...props} />
-}
+  return <Comp className={cn(unstyled ? undefined : buttonVariants({ variant, size }), className)} ref={ref} type={asChild ? undefined : type} {...props} />
+})

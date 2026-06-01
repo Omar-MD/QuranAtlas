@@ -14,8 +14,7 @@ import { ReaderChrome } from '../reader/ReaderChrome'
 import { SavedSearchesNavPanel } from './SavedSearchesNavPanel'
 import { SearchHeader } from './SearchHeader'
 import { SearchIndexGate } from './SearchIndexGate'
-import { SearchResultDetail } from './SearchResultDetail'
-import { SearchResultList } from './SearchResultList'
+import { SearchWorkspace } from './SearchWorkspace'
 import { useSavedSearches } from './useSavedSearches'
 import { useSearchRouteState } from './useSearchRouteState'
 
@@ -141,29 +140,28 @@ export function SearchShell() {
             </p>
           ) : null}
           <SearchIndexGate message={search.packMessage} ready={search.packState === 'active'}>
-            <div className="qar-search-workspace">
-              <section aria-label="Search result set" className="qar-search-results-pane">
-                {search.resultCountMessage ? (
-                  <p className="qar-search-result-count">{search.resultCountMessage}</p>
-                ) : null}
-                <SearchResultList
-                  canLoadMore={search.canLoadMoreResults}
-                  emptyMessage={search.emptyResultMessage}
-                  hasMore={search.hasMoreResults}
-                  onLoadMore={search.loadMoreResults}
-                  onOpenInRead={openInRead}
-                  onSelect={search.setSelectedResult}
-                  results={search.results}
-                  selectedResultId={search.selectedResult?.resultId}
-                />
-              </section>
-              <SearchResultDetail
-                exploreGraph={search.exploreGraph}
-                onLoadExploreGraph={search.loadExploreGraph}
-                packVersion={search.packVersion}
-                result={search.selectedResult}
-              />
-            </div>
+            <SearchWorkspace
+              activeTab={search.activeWorkspaceTab}
+              brief={search.brief}
+              canLoadMore={search.canLoadMoreResults}
+              defaultTab={search.defaultWorkspaceTab}
+              emptyMessage={search.emptyResultMessage}
+              exploreGraph={search.exploreGraph}
+              exploreSeedResult={search.exploreSeedResult}
+              focusedExploreModule={search.focusedExploreModule}
+              hasMore={search.hasMoreResults}
+              onActiveTabChange={search.setActiveWorkspaceTab}
+              onFocusExploreModule={search.setFocusedExploreModule}
+              onLoadExploreGraph={search.loadExploreGraph}
+              onLoadMore={search.loadMoreResults}
+              onOpenInRead={openInRead}
+              onOpenResultExplore={search.openResultExplore}
+              onSelectResult={search.setSelectedResult}
+              packVersion={search.packVersion}
+              resultCountMessage={search.resultCountMessage}
+              results={search.results}
+              selectedResult={search.selectedResult}
+            />
           </SearchIndexGate>
         </div>
       </main>

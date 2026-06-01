@@ -1,9 +1,13 @@
 import type {
   SearchMappingState,
+  SearchBriefDto,
+  SearchBriefFeatureSection,
   SearchQueryAstV1,
   SearchQueryMode,
   SearchResultCursor,
   SearchResultDto,
+  SearchResultMatchEvidence,
+  SearchResultMatchLane,
   SearchResultWindow,
   SearchSort,
   SearchWorkerErrorCode,
@@ -15,10 +19,14 @@ import type {
 
 export type {
   SearchMappingState,
+  SearchBriefDto,
+  SearchBriefFeatureSection,
   SearchQueryAstV1,
   SearchQueryMode,
   SearchResultCursor,
   SearchResultDto,
+  SearchResultMatchEvidence,
+  SearchResultMatchLane,
   SearchResultWindow,
   SearchSort,
   SearchWorkerErrorCode,
@@ -26,7 +34,7 @@ export type {
 
 export type SearchGraphRef = `${number}:${number}`
 
-export type SearchMatchLane = SearchResultDto['matchLanes'][number]
+export type SearchMatchLane = SearchResultMatchLane
 
 export interface ParsedSearchQuery {
   ast: SearchQueryAstV1

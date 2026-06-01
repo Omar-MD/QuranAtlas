@@ -4,8 +4,9 @@ import type { SearchQueryAstV1 } from '../../../shared/search'
 import type { SearchPackAvailabilityState } from '../../offline/search/repair'
 import { getSearchClient, type SearchClient } from '../../search/client'
 import { parseSearchQuery, SearchQueryParseError } from '../../search/query-parser'
-import type { SearchQueryMode, SearchResultCursor, SearchResultDto, SearchSort } from '../../search/schema'
+import type { SearchBriefDto, SearchQueryMode, SearchResultCursor, SearchResultDto, SearchSort } from '../../search/schema'
 import type { SearchGraphSection } from '../../search/graph'
+import { defaultTabForParsedSearch, type SearchExploreModuleId, type SearchWorkspaceTab } from './search-presentation-model'
 
 export type SearchExploreGraphState = {
   error: string | null
@@ -24,6 +25,11 @@ export type SearchRouteState = {
   packState: SearchRoutePackState
   packVersion?: string
   query: string
+  activeWorkspaceTab: SearchWorkspaceTab
+  brief: SearchBriefDto | null
+  defaultWorkspaceTab: SearchWorkspaceTab
+  exploreSeedResult: SearchResultDto | null
+  focusedExploreModule: SearchExploreModuleId | null
   resultCountMessage: string
   results: SearchResultDto[]
   searchStatus: string
@@ -33,6 +39,10 @@ export type SearchRouteState = {
   exploreGraph: SearchExploreGraphState
   loadExploreGraph: (result: SearchResultDto) => void
   loadMoreResults: () => void
+  openResultExplore: (result: SearchResultDto, module?: SearchExploreModuleId) => void
+  setActiveWorkspaceTab: (tab: SearchWorkspaceTab) => void
+  setExploreSeedResult: (result: SearchResultDto | null) => void
+  setFocusedExploreModule: (module: SearchExploreModuleId | null) => void
   setMode: (mode: SearchQueryMode) => void
   setQuery: (query: string) => void
   setSelectedResult: (result: SearchResultDto | null) => void
@@ -50,6 +60,7 @@ export function useSearchRouteState(options: {
   const [packState, setPackState] = useState<SearchRoutePackState>('loading')
   const [packVersion, setPackVersion] = useState<string | undefined>()
   const [error, setError] = useState<string | null>(null)
+  const [brief, setBrief] = useState<SearchBriefDto | null>(null)
   const [results, setResults] = useState<SearchResultDto[]>([])
   const [resultCountMessage, setResultCountMessage] = useState('')
   const [searchStatus, setSearchStatus] = useState('Loading search index')
@@ -57,6 +68,10 @@ export function useSearchRouteState(options: {
   const [resultCursor, setResultCursor] = useState<SearchResultCursor | null>(null)
   const [loadingMoreResults, setLoadingMoreResults] = useState(false)
   const [emptyResultMessage, setEmptyResultMessage] = useState(defaultEmptyResultMessage)
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<SearchWorkspaceTab>('overview')
+  const [defaultWorkspaceTab, setDefaultWorkspaceTab] = useState<SearchWorkspaceTab>('overview')
+  const [exploreSeedResult, setExploreSeedResult] = useState<SearchResultDto | null>(null)
+  const [focusedExploreModule, setFocusedExploreModule] = useState<SearchExploreModuleId | null>(null)
   const [exploreGraph, setExploreGraph] = useState<SearchExploreGraphState>({
     error: null,
     loading: false,
@@ -67,8 +82,27 @@ export function useSearchRouteState(options: {
   const requestSequence = useRef(0)
   const readyRef = useRef(false)
   const loadingMoreRef = useRef(false)
+  const selectedResultRef = useRef<SearchResultDto | null>(null)
   const activeQueryRef = useRef<{ ast: SearchQueryAstV1; mode: SearchQueryMode; query: string } | null>(null)
   const sort = options.sort ?? 'relevance'
+
+  const resetEvidenceState = useCallback((status?: string) => {
+    setBrief(null)
+    setResults([])
+    selectedResultRef.current = null
+    setSelectedResult(null)
+    setResultCursor(null)
+    setResultCountMessage('')
+    setLoadingMoreResults(false)
+    loadingMoreRef.current = false
+    activeQueryRef.current = null
+    setActiveWorkspaceTab('overview')
+    setDefaultWorkspaceTab('overview')
+    setExploreSeedResult(null)
+    setFocusedExploreModule(null)
+    setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
+    if (status !== undefined) setSearchStatus(status)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -108,22 +142,14 @@ export function useSearchRouteState(options: {
     requestSequence.current += 1
     const sequence = requestSequence.current
     if (!trimmed) {
-      setResults([])
-      setSelectedResult(null)
-      setResultCursor(null)
-      setLoadingMoreResults(false)
-      loadingMoreRef.current = false
-      activeQueryRef.current = null
       setEmptyResultMessage(defaultEmptyResultMessage)
-      setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
-      setResultCountMessage('')
       setError(null)
-      setSearchStatus(packState === 'active' ? 'Search data is ready on this device.' : packMessageForState(packState))
+      resetEvidenceState(packState === 'active' ? 'Search data is ready on this device.' : packMessageForState(packState))
       return
     }
     if (!readyRef.current) {
       setError('Search data is not available on this device.')
-      setSearchStatus('Search data is not available on this device.')
+      resetEvidenceState('Search data is not available on this device.')
       return
     }
     let parsed
@@ -132,25 +158,35 @@ export function useSearchRouteState(options: {
     } catch (caught) {
       const message = caught instanceof SearchQueryParseError ? caught.message : 'Search query is unsupported'
       setError(message)
-      setSearchStatus(message)
-      setResultCursor(null)
-      activeQueryRef.current = null
+      resetEvidenceState(message)
       return
     }
+    const nextDefaultTab = defaultTabForParsedSearch(parsed, effectiveMode)
+    setDefaultWorkspaceTab(nextDefaultTab)
+    setActiveWorkspaceTab(nextDefaultTab)
+    setExploreSeedResult(null)
+    setFocusedExploreModule(null)
     setError(null)
     setSearchStatus('Searching')
+    setBrief(null)
+    setResults([])
+    selectedResultRef.current = null
+    setSelectedResult(null)
     setResultCursor(null)
+    setResultCountMessage('')
     setLoadingMoreResults(false)
     loadingMoreRef.current = false
+    setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
     activeQueryRef.current = { ast: parsed.ast, mode: effectiveMode, query: trimmed }
     void client.query({ query: parsed.ast, sort }).then((window) => {
       if (sequence !== requestSequence.current) return
+      setBrief(window.brief)
       setResults(window.results)
+      selectedResultRef.current = window.results[0] ?? null
       setSelectedResult(window.results[0] ?? null)
       setResultCursor(window.cursor)
       setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
-      const count = window.totalKnownResults ?? window.results.length
-      const countMessage = formatResultCount(count, window.results.length, Boolean(window.cursor))
+      const countMessage = formatBriefResultCount(window.brief, Boolean(window.cursor))
       setEmptyResultMessage(emptyResultMessageForMode(effectiveMode))
       setResultCountMessage(countMessage)
       setSearchStatus(countMessage)
@@ -161,7 +197,7 @@ export function useSearchRouteState(options: {
       setSearchStatus(message)
       setResultCursor(null)
     })
-  }, [client, mode, packState, query, sort])
+  }, [client, mode, packState, query, resetEvidenceState, sort])
 
   const loadMoreResults = useCallback(() => {
     const cursor = resultCursor
@@ -174,10 +210,21 @@ export function useSearchRouteState(options: {
     void client.query({ query: activeQuery.ast, cursor, sort }).then((window) => {
       if (sequence !== requestSequence.current) return
       const merged = mergeSearchResults(results, window.results)
-      const count = window.totalKnownResults ?? merged.length
-      const countMessage = formatResultCount(count, merged.length, Boolean(window.cursor))
+      const nextBrief = {
+        ...window.brief,
+        counts: {
+          ...window.brief.counts,
+          shownWindowCount: merged.length,
+        },
+      }
+      const countMessage = formatBriefResultCount(nextBrief, Boolean(window.cursor))
+      setBrief(nextBrief)
       setResults(merged)
-      setSelectedResult((current) => current ?? merged[0] ?? null)
+      setSelectedResult((current) => {
+        const next = current ?? merged[0] ?? null
+        selectedResultRef.current = next
+        return next
+      })
       setResultCursor(window.cursor)
       setResultCountMessage(countMessage)
       setSearchStatus(countMessage)
@@ -209,9 +256,18 @@ export function useSearchRouteState(options: {
     setExploreGraph((current) => current.resultId === result.resultId && current.sections.length > 0
       ? current
       : { error: null, loading: true, resultId: result.resultId, sections: [] })
+    const sequence = requestSequence.current
+    const activeQueryIdentity = activeQueryIdentityFor(activeQueryRef.current)
+    const requestedResultId = result.resultId
     void client.explore({ query: parsed.ast, result, limit: 8 }).then((response) => {
+      if (sequence !== requestSequence.current) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      if (selectedResultRef.current?.resultId !== requestedResultId) return
       setExploreGraph({ error: null, loading: false, resultId: result.resultId, sections: response.sections })
     }).catch((caught) => {
+      if (sequence !== requestSequence.current) return
+      if (activeQueryIdentityFor(activeQueryRef.current) !== activeQueryIdentity) return
+      if (selectedResultRef.current?.resultId !== requestedResultId) return
       setExploreGraph({
         error: caught instanceof Error ? caught.message : 'Explore sections are unavailable',
         loading: false,
@@ -221,6 +277,28 @@ export function useSearchRouteState(options: {
     })
   }, [client, mode, query])
 
+  const setSearchQuery = useCallback((nextQuery: string) => {
+    setQuery(nextQuery)
+    if (nextQuery.trim()) return
+    requestSequence.current += 1
+    setError(null)
+    setEmptyResultMessage(defaultEmptyResultMessage)
+    resetEvidenceState(packState === 'active' ? 'Search data is ready on this device.' : packMessageForState(packState))
+  }, [packState, resetEvidenceState])
+
+  const setSearchSelectedResult = useCallback((result: SearchResultDto | null) => {
+    selectedResultRef.current = result
+    setSelectedResult(result)
+  }, [])
+
+  const openResultExplore = useCallback((result: SearchResultDto, module: SearchExploreModuleId = 'selected-token') => {
+    selectedResultRef.current = result
+    setSelectedResult(result)
+    setExploreSeedResult(result)
+    setFocusedExploreModule(module)
+    setActiveWorkspaceTab('explore')
+  }, [])
+
   return {
     error,
     emptyResultMessage,
@@ -229,6 +307,11 @@ export function useSearchRouteState(options: {
     packState,
     packVersion,
     query,
+    activeWorkspaceTab,
+    brief,
+    defaultWorkspaceTab,
+    exploreSeedResult,
+    focusedExploreModule,
     resultCountMessage,
     results,
     searchStatus,
@@ -238,18 +321,29 @@ export function useSearchRouteState(options: {
     exploreGraph,
     loadExploreGraph,
     loadMoreResults,
+    openResultExplore,
+    setActiveWorkspaceTab,
+    setExploreSeedResult,
+    setFocusedExploreModule,
     setMode,
-    setQuery,
-    setSelectedResult,
+    setQuery: setSearchQuery,
+    setSelectedResult: setSearchSelectedResult,
     submitSearch,
   }
 }
 
 const defaultEmptyResultMessage = 'Enter a word, phrase, or ayah reference. Save only the searches you want to keep.'
 
-function formatResultCount(total: number, shown: number, hasMore: boolean): string {
-  if (hasMore) return `Showing ${shown} of ${total} result${total === 1 ? '' : 's'}`
-  return `${total} result${total === 1 ? '' : 's'}`
+function formatBriefResultCount(brief: SearchBriefDto, hasMore: boolean): string {
+  const sourceAyahCount = brief.counts.matchedSourceAyahCount
+  const resultRows = brief.counts.matchedResultCount
+  const shown = brief.counts.shownWindowCount
+  if (sourceAyahCount !== null) {
+    if (hasMore || shown < resultRows) return `${sourceAyahCount} matched source ayat, ${shown} shown result rows`
+    return `${sourceAyahCount} matched source ayat, ${resultRows} matched result rows`
+  }
+  if (hasMore || shown < resultRows) return `Showing ${shown} of ${resultRows} matched result rows`
+  return `${resultRows} matched result row${resultRows === 1 ? '' : 's'}`
 }
 
 function mergeSearchResults(current: SearchResultDto[], next: SearchResultDto[]): SearchResultDto[] {
@@ -278,4 +372,8 @@ function packMessageForState(state: SearchRoutePackState): string {
   if (state === 'incompatible') return 'Search data is not available on this device.'
   if (state === 'update available') return 'Loading search index'
   return 'Search data is not available on this device.'
+}
+
+function activeQueryIdentityFor(activeQuery: { mode: SearchQueryMode; query: string } | null): string | null {
+  return activeQuery ? `${activeQuery.mode}:${activeQuery.query}` : null
 }

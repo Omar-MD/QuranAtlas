@@ -25,9 +25,10 @@ and data shapes live in `surfaces/<name>.md`.
 - `#/search` route for deterministic reference, Arabic text, translation/context, exact word form, exact phrase, same written form, same root, lemma, and Surah context search.
 - Lazy core Search pack install/verify/activate on Search entry, with Search packs cached under `/search-packs/**` by the dedicated Search cache owner.
 - Route-scoped lazy worker client; Reader cold launch does not fetch Search packs, decode Search graphs, or start the Search worker.
-- Source-backed morphology details in Explore and Source panels, including Hafs-source labels, same-root interpretation warnings, and no Qalun word-level highlighting.
+- Query-level Search workspace with `Overview`, `Verses`, `Explore`, and `Sources`; each submitted query receives a fresh adaptive default tab.
+- Source-backed morphology details from explicit selected-result Explore actions, including same-root interpretation warnings and no Qalun word-level highlighting.
 - Lazy memory-graph Explore sections for attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns, with source/boundary policy notes and panel-level missing-pack degradation.
-- Result list, result detail tabs for Match, Explore, and Source, and `Open in Read` only for validated single Reader mappings.
+- Minimal ayah-first verse cards, per-result Details, query-level Sources provenance, and `Open in Read` only for validated single Reader mappings.
 - Saved searches store user-created query definitions only; result windows are recomputed against the active compatible Search index.
 
 ## Configure

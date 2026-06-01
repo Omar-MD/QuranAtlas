@@ -1,51 +1,36 @@
-import type { SearchResultDto } from '../../search/schema'
-import {
-  SEARCH_FOLLOWING_WORDING_NOTE,
-  SEARCH_OCCURS_ONCE_NOTE,
-  SEARCH_SHARED_WORDING_NOTE,
-  SEARCH_WORDING_NOTE,
-} from '../../search/graph'
-import { mappingLabel } from './search-labels'
+import type { SearchSourcesViewModel } from './search-presentation-model'
 
 export function SearchSourcePanel({
-  packVersion,
-  result,
+  sources,
 }: {
   packVersion?: string
-  result: SearchResultDto
+  sources: SearchSourcesViewModel | null
 }) {
+  if (!sources) {
+    return <p className="qar-search-results-empty">Run a search to inspect query sources.</p>
+  }
   return (
-    <div className="qar:grid qar:gap-3 qar:text-sm">
-      <dl className="qar:grid qar:gap-2">
-        <div className="qar:grid qar:gap-1">
-          <dt className="qar:text-muted">Source ref</dt>
-          <dd className="qar:m-0" dir="auto">{result.sourceRef}</dd>
-        </div>
-        <div className="qar:grid qar:gap-1">
-          <dt className="qar:text-muted">Mapping state</dt>
-          <dd className="qar:m-0" dir="auto">{mappingLabel(result.mappingState)}</dd>
-        </div>
-        <div className="qar:grid qar:gap-1">
-          <dt className="qar:text-muted">Pack version</dt>
-          <dd className="qar:m-0" dir="auto">{packVersion ?? 'Active Search index'}</dd>
-        </div>
-      </dl>
-      <div className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-3">
-        <p className="qar:m-0">Search analysis uses Hafs/Tanzil text for word forms, roots, morphology, and wording patterns.</p>
-        <p className="qar:m-0">Open in Read resolves the active Reader riwayah at click time and opens only a single safe Reader target.</p>
-        <p className="qar:m-0">{SEARCH_WORDING_NOTE}</p>
-        <p className="qar:m-0">Same-root matches are morphological aids. They do not mean the verses have the same interpretation.</p>
-        <p className="qar:m-0">{SEARCH_SHARED_WORDING_NOTE}</p>
-        <p className="qar:m-0">{SEARCH_FOLLOWING_WORDING_NOTE}</p>
-        <p className="qar:m-0">{SEARCH_OCCURS_ONCE_NOTE}</p>
-        <p className="qar:m-0">Boundary policy: phrase windows stay within one ayah and one surah; they do not cross Bismillah boundaries.</p>
-        {result.morphology ? (
-          <>
-            <p className="qar:m-0">Hafs source only</p>
-            <p className="qar:m-0">Word-level match not available in Reader text</p>
-          </>
-        ) : null}
-      </div>
+    <div className="qar-search-source-panel">
+      <SourceRows rows={sources.sourceRows} title="Search index" />
+      <SourceRows rows={sources.mappingSummary} title="Reader mapping summary" />
+      <SourceRows rows={sources.sourceNotes} title="Result boundary notes" />
     </div>
+  )
+}
+
+function SourceRows({ rows, title }: { rows: Array<{ label: string; value: string }>; title: string }) {
+  if (rows.length === 0) return null
+  return (
+    <section className="qar:grid qar:gap-2 qar:text-sm">
+      <h3 className="qar:m-0 qar:text-sm qar:font-semibold">{title}</h3>
+      <dl className="qar:grid qar:gap-2">
+        {rows.map((row) => (
+          <div className="qar:grid qar:gap-1" key={`${title}:${row.label}`}>
+            <dt className="qar:text-muted">{row.label}</dt>
+            <dd className="qar:m-0" dir="auto"><bdi>{row.value}</bdi></dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   )
 }

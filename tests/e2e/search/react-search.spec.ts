@@ -1,11 +1,22 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { installPageGuards, seedTargetState, targetUrl } from '../fixtures/react-golden-routes'
 import { installSearchPackFixture } from '../fixtures/react-search-pack'
 
 test.setTimeout(90_000)
 
-test('Search route supports keyboard flow, saved searches, details, and Open in Read', async ({ page }) => {
+async function expectSearchResults(page: Page) {
+  await expect(page.getByRole('region', { name: 'Search result workspace' })).toBeVisible({ timeout: 30000 })
+  await expect(page.getByRole('article', { name: /Search result / }).first()).toBeVisible()
+}
+
+async function expectSearchOverview(page: Page, query: string) {
+  await expect(page.getByRole('region', { name: 'Search result workspace' })).toBeVisible({ timeout: 30000 })
+  await expect(page.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('heading', { name: query })).toBeVisible()
+}
+
+test('Search route supports keyboard flow, saved searches, match inspection, and Open in Read', async ({ page }) => {
   await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
   await page.goto(targetUrl('react', '/#/s/1'))
   await installSearchPackFixture(page)
@@ -19,27 +30,32 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
 
-  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
-  await expect(page.getByRole('tab', { name: 'Match' })).toBeVisible()
-  await page.getByRole('tab', { name: 'Source' }).click()
-  await expect(page.getByText(/Open in Read resolves the active Reader riwayah at click time/i)).toBeVisible()
+  await expectSearchOverview(page, 'Allah')
+  await page.getByRole('tab', { name: 'Sources' }).click()
+  await expect(page.getByText('Pack id')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Search index' })).toBeVisible()
 
   await page.getByLabel('Search Quran text, translation, or context').fill('الله')
   await page.getByRole('tab', { name: 'Search mode: Same root' }).click()
   await expect(page.getByRole('tab', { name: 'Search mode: Same root' })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
-  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
-  await page.getByRole('tab', { name: 'Explore' }).click()
-  await expect(page.getByText('Same-root matches are morphological aids.')).toBeVisible()
+  await expectSearchOverview(page, 'الله')
+  await expect(page.getByText('Same-root matches are morphology aids. They do not imply the same interpretation.')).toBeVisible()
+  await page.getByRole('tab', { name: 'Verses' }).click()
+  await expectSearchResults(page)
+  await page.getByRole('button', { name: 'Explore selected result' }).click()
+  await expect(page.getByRole('tab', { name: 'Explore' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByText('Selected-token morphology details')).toBeVisible()
   await expect(page.getByText('Word-level match not available in Reader text')).toBeVisible()
-  await page.getByRole('tab', { name: 'Source' }).click()
-  await expect(page.getByText('Hafs source only').first()).toBeVisible()
+  await page.getByRole('tab', { name: 'Sources' }).click()
+  await expect(page.getByText('Reader mapping summary')).toBeVisible()
 
   await page.getByLabel('Search Quran text, translation, or context').fill('بسم الله')
   await page.getByRole('tab', { name: 'Search mode: Phrase' }).click()
   await page.getByLabel('Search Quran text, translation, or context').press('Enter')
-  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
-  await page.getByRole('tab', { name: 'Explore' }).click()
+  await expectSearchResults(page)
+  await expect(page.getByRole('tab', { name: 'Verses' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('button', { name: 'Explore selected result' }).click()
   await expect(page.getByText('Results show attested wording in the indexed Quran text. They are not generated suggestions, paraphrases, or tafsir.')).toBeVisible()
   await page.getByRole('button', { name: 'Load Explore sections' }).click()
   await expect(page.getByRole('button', { name: 'Attested following wording' })).toBeVisible({ timeout: 15000 })
@@ -54,7 +70,7 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await page.getByRole('button', { name: 'Ayah endings' }).click()
   await page.getByRole('button', { name: 'Counts & patterns' }).click()
   await expect(page.getByText('Boundary policy')).toBeVisible()
-  await expect(page.getByText(/prediction|autocomplete/i)).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /prediction|autocomplete/i })).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Save search' }).click()
   await page.getByRole('button', { name: 'Open navigation' }).click()
@@ -66,7 +82,8 @@ test('Search route supports keyboard flow, saved searches, details, and Open in 
   await page.getByLabel('Search Quran text, translation, or context').fill('112:1')
   await page.getByRole('tab', { name: 'Search mode: All' }).click()
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
-  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
+  await expectSearchResults(page)
+  await expect(page.getByRole('tab', { name: 'Verses' })).toHaveAttribute('aria-selected', 'true')
   expect(guard.failures).toEqual([])
   guard.dispose()
 
@@ -87,9 +104,11 @@ test('@mobile Search Explore graph sections stay collapsed and keyboard accessib
   await page.getByRole('tab', { name: 'Search mode: Arabic text' }).click()
   await expect(page.getByRole('tab', { name: 'Search mode: Arabic text' })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
-  await expect(page.getByLabel('Search results')).toBeVisible({ timeout: 30000 })
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('tab', { name: 'Explore' }).click()
+  await expectSearchOverview(page, 'الله')
+  await page.getByRole('tab', { name: 'Verses' }).click()
+  await expectSearchResults(page)
+  await page.getByRole('button', { name: 'Explore selected result' }).click()
   await page.getByRole('button', { name: 'Load Explore sections' }).click()
   const following = page.getByRole('button', { name: 'Attested following wording' })
   await expect(following).toBeVisible({ timeout: 15000 })

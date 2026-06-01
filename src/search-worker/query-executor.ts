@@ -1,4 +1,4 @@
-import type { SearchQueryAstV1, SearchResultDto, SearchResultWindow, SearchSort } from '../../shared/search'
+import type { SearchQueryAstV1, SearchResultDto, SearchResultMatchLane, SearchResultWindow, SearchSort } from '../../shared/search'
 import { createSearchResultCursor, assertSearchCursorValid } from '../search/cursors'
 import { parseSearchReference } from '../search/reference-parser'
 import { mapSearchRefToSearchSource } from '../search/result-mapping'
@@ -8,6 +8,7 @@ import type { SearchAyahRow, SearchGraphRef, SearchPostingRow } from '../search/
 import { SearchPackReader } from '../search/pack-reader'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
 import { SearchMorphologyExecutor } from './morphology-executor'
+import { buildSearchBrief, evidenceForCandidate } from './search-brief'
 
 export interface SearchQueryExecutorOptions {
   aliases?: unknown
@@ -15,9 +16,13 @@ export interface SearchQueryExecutorOptions {
 
 interface Candidate {
   ayah: SearchAyahRow
-  lane: SearchResultDto['matchLanes'][number]
+  lane: SearchResultMatchLane
   term: string
   position: number
+  matchedQueryTokens?: string[]
+  matchedSourceTokens?: string[]
+  sourcePositions?: number[]
+  phraseLength?: number
 }
 
 export class SearchQueryExecutor {
@@ -53,23 +58,31 @@ export class SearchQueryExecutor {
 
     const dtos = isMorphologyMode(query.mode)
       ? await this.morphology.execute(query, token)
-      : await this.toDtos(await this.collectCandidates(query, token), token)
+      : await this.toDtos(await this.collectCandidates(query, token), query, token)
     const ranked = rankSearchResults(dtos, sort)
     const start = cursor ? Math.max(0, ranked.findIndex((result) => result.rankKey === cursor.lastStableResultKey) + 1) : 0
     const windowResults = ranked.slice(start, start + limit)
     const last = windowResults.length > 0 ? windowResults[windowResults.length - 1] : undefined
+    const nextCursor = last && start + limit < ranked.length
+      ? createSearchResultCursor({
+        packId: this.reader.manifest.packId,
+        packVersion: this.reader.manifest.packVersion,
+        queryHash,
+        sort,
+        lastStableResultKey: last.rankKey,
+      })
+      : null
     return {
       results: windowResults,
-      cursor: last && start + limit < ranked.length
-        ? createSearchResultCursor({
-          packId: this.reader.manifest.packId,
-          packVersion: this.reader.manifest.packVersion,
-          queryHash,
-          sort,
-          lastStableResultKey: last.rankKey,
-        })
-        : null,
+      cursor: nextCursor,
       totalKnownResults: ranked.length,
+      brief: buildSearchBrief({
+        manifest: this.reader.manifest,
+        query,
+        rankVersion: SEARCH_RANK_VERSION,
+        rankedResults: ranked,
+        windowResults,
+      }),
       rankVersion: SEARCH_RANK_VERSION,
     }
   }
@@ -105,7 +118,11 @@ export class SearchQueryExecutor {
     for (const shard of shards) {
       const row = shard.payload.postings.find((posting) => posting.term === term)
       if (!row) continue
-      candidates.push(...await this.rowToCandidates(row, ayahsById, 'phrase', token))
+      candidates.push(...await this.rowToCandidates(row, ayahsById, 'phrase', token, {
+        matchedQueryTokens: tokens,
+        matchedSourceTokens: tokens,
+        phraseLength: tokens.length,
+      }))
     }
     return candidates
   }
@@ -128,7 +145,10 @@ export class SearchQueryExecutor {
     for (const term of terms) {
       for (const payload of payloads) {
         const rows = payload.postings.filter((posting) => postingMatchesTerm(posting.term, term, lane))
-        for (const row of rows) for (const candidate of await this.rowToCandidates(row, ayahsById, matchLane, token)) {
+        for (const row of rows) for (const candidate of await this.rowToCandidates(row, ayahsById, matchLane, token, {
+          matchedQueryTokens: [term],
+          matchedSourceTokens: [row.term],
+        })) {
           const key = `${candidate.ayah.ref}:${candidate.lane}:${candidate.position}:${row.term}`
           if (seen.has(key)) continue
           seen.add(key)
@@ -164,7 +184,10 @@ export class SearchQueryExecutor {
       for (const payload of payloads) {
         const rows = payload.postings.filter((posting) => postingMatchesTerm(posting.term, term, lane))
         for (const row of rows) {
-          const rowCandidates = await this.rowToCandidates(row, ayahsById, matchLane, token)
+          const rowCandidates = await this.rowToCandidates(row, ayahsById, matchLane, token, {
+            matchedQueryTokens: [term],
+            matchedSourceTokens: [row.term],
+          })
           if (rowCandidates.length > 0) termMatched = true
           for (const candidate of rowCandidates) {
             const current = grouped.get(candidate.ayah.ayahId) ?? {
@@ -191,6 +214,9 @@ export class SearchQueryExecutor {
         lane: matchLane,
         term: uniqueTerms.join(' '),
         position: Math.min(...entry.positions),
+        matchedQueryTokens: uniqueTerms,
+        matchedSourceTokens: [...new Set(entry.rowTerms)],
+        sourcePositions: [...new Set(entry.positions)].sort((left, right) => left - right),
       })
     }
     return candidates
@@ -199,8 +225,13 @@ export class SearchQueryExecutor {
   private async rowToCandidates(
     row: SearchPostingRow,
     ayahsById: Map<number, SearchAyahRow>,
-    lane: SearchResultDto['matchLanes'][number],
+    lane: SearchResultMatchLane,
     token: SearchCancellationToken,
+    options: {
+      matchedQueryTokens?: string[]
+      matchedSourceTokens?: string[]
+      phraseLength?: number
+    } = {},
   ): Promise<Candidate[]> {
     const candidates: Candidate[] = []
     for (let index = 0; index < row.postings.length; index += 1) {
@@ -208,12 +239,20 @@ export class SearchQueryExecutor {
       const posting = row.postings[index]!
       const ayah = ayahsById.get(posting.ayahId)
       if (!ayah) continue
-      candidates.push({ ayah, lane, term: row.term, position: posting.position })
+      candidates.push({
+        ayah,
+        lane,
+        term: row.term,
+        position: posting.position,
+        matchedQueryTokens: options.matchedQueryTokens,
+        matchedSourceTokens: options.matchedSourceTokens,
+        phraseLength: options.phraseLength,
+      })
     }
     return candidates
   }
 
-  private async toDtos(candidates: Candidate[], token: SearchCancellationToken): Promise<SearchResultDto[]> {
+  private async toDtos(candidates: Candidate[], query: SearchQueryAstV1, token: SearchCancellationToken): Promise<SearchResultDto[]> {
     const rows: SearchResultDto[] = []
     for (let index = 0; index < candidates.length; index += 1) {
       await cooperativeYield(token, 250, index)
@@ -227,6 +266,22 @@ export class SearchQueryExecutor {
         canOpenInRead: mapping.canOpenInRead,
         canHighlightWordsInRead: false,
         matchLanes: [candidate.lane],
+        matchEvidence: evidenceForCandidate({
+          lane: candidate.lane,
+          query,
+          matchedText: candidate.matchedQueryTokens && candidate.matchedQueryTokens.length > 1 && !candidate.phraseLength
+            ? undefined
+            : candidate.term,
+          matchedQueryTokens: candidate.matchedQueryTokens,
+          matchedSourceTokens: candidate.matchedSourceTokens,
+          sourceToken: candidate.matchedSourceTokens?.length === 1 ? candidate.matchedSourceTokens[0] : candidate.term,
+          sourcePosition: candidate.position,
+          sourcePositions: candidate.sourcePositions,
+          phraseLength: candidate.phraseLength,
+          translationContextExcerpt: candidate.lane === 'translation' || candidate.lane === 'context'
+            ? candidate.ayah.translationText
+            : undefined,
+        }),
         snippet: snippetFor(candidate),
         rankKey: `${candidate.position}`,
         sourceText: candidate.ayah.arabicText,

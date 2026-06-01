@@ -48,6 +48,7 @@ style_paths:
 | `src/app/routes/search/SearchRoute.tsx` | _(no leading comment)_ |
 | `src/components/search/SavedSearchesNavPanel.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchBox.tsx` | _(no leading comment)_ |
+| `src/components/search/SearchBrief.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchCountsPatterns.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchExplorePanel.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchGraphExplore.tsx` | _(no leading comment)_ |
@@ -55,6 +56,7 @@ style_paths:
 | `src/components/search/SearchIndexGate.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchModeControl.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchMorphologyPanel.tsx` | _(no leading comment)_ |
+| `src/components/search/SearchOverview.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchPage.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchResultCard.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchResultDetail.tsx` | _(no leading comment)_ |
@@ -62,7 +64,10 @@ style_paths:
 | `src/components/search/SearchResults.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchShell.tsx` | _(no leading comment)_ |
 | `src/components/search/SearchSourcePanel.tsx` | _(no leading comment)_ |
+| `src/components/search/SearchWorkspace.tsx` | _(no leading comment)_ |
 | `src/components/search/search-labels.ts` | _(no leading comment)_ |
+| `src/components/search/search-presentation-model.ts` | _(no leading comment)_ |
+| `src/components/search/search-result-evidence.ts` | _(no leading comment)_ |
 | `src/components/search/search.stories.tsx` | _(no leading comment)_ |
 | `src/components/search/useSavedSearches.ts` | _(no leading comment)_ |
 | `src/components/search/useSearchRouteState.ts` | _(no leading comment)_ |
@@ -76,6 +81,7 @@ style_paths:
 | `src/search-worker/graph-executor.ts` | _(no leading comment)_ |
 | `src/search-worker/morphology-executor.ts` | _(no leading comment)_ |
 | `src/search-worker/query-executor.ts` | _(no leading comment)_ |
+| `src/search-worker/search-brief.ts` | _(no leading comment)_ |
 | `src/search-worker/search.worker.ts` | _(no leading comment)_ |
 | `src/search-worker/session.ts` | _(no leading comment)_ |
 | `src/search-worker/shard-cache.ts` | _(no leading comment)_ |
@@ -111,9 +117,11 @@ Search utilities under `src/search/**`, `src/search-worker/**`, and `src/offline
 
 `src/search-worker/**` owns the restartable worker session. It handles `init`, `preloadCore`, `query`, `explore`, `loadFeature`, `cancel`, and `dispose` envelopes, includes request ids and worker epochs in responses, suppresses stale cursor windows through pack/query/rank/sort cursor validation, and returns DTO windows rather than shard buffers. The worker can answer reference, Arabic text, translation/context, exact word form, exact phrase, same written form, same root, lemma, and Surah context queries from the active pack. Multi-token non-phrase All, Arabic text, Translation, and Context queries require all unique query tokens to occur within the same source ayah; exact phrase mode remains adjacency-based, and exact word-form mode preserves source spelling while accepting the common initial base-alif/alif-wasla input variant. Explore graph sections are requested lazily and load attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns only after the user asks for Explore. Missing optional feature packs degrade at the panel level rather than breaking core Search.
 
-Result windows are Hafs-source-native: worker DTOs keep the Search source ref/text and do not apply Hafs-to-Qalun aliasing during query execution. `Open in Read` is the only Reader-boundary action. When selected, the route reads the active Reader riwayah, resolves Hafs source refs directly for a Hafs Reader, or applies Hafs-to-Qalun aliases only when the Reader is using Qalun/Qaloon. Navigation proceeds only when that click-time mapping resolves to one safe Reader target. Identity surahs intentionally omitted from the alias table resolve as identity only after alias data is loaded; unavailable alias data and missing rows do not silently become Reader identity refs. `canHighlightWordsInRead` is always false because Qalun token alignment is not validated.
+Result windows are Hafs-source-native: worker DTOs keep the Search source ref/text and do not apply Hafs-to-Qalun aliasing during query execution. Each `query-window` response includes a worker-computed query brief from the full ranked result set, including matched source ayah counts, matched result rows, shown rows, occurrence-count status, lane counts, Mushaf-order distribution, representative refs, source frame, feature availability, mapping-state counts, and guardrail source notes. React derives query-level workspace view models from that DTO without changing the worker protocol. Each result DTO includes structured `matchEvidence` so cards and per-result Details render deterministic evidence copy without reverse-engineering explanations from lane labels. `Open in Read` is the only Reader-boundary action. When selected, the route reads the active Reader riwayah, resolves Hafs source refs directly for a Hafs Reader, or applies Hafs-to-Qalun aliases only when the Reader is using Qalun/Qaloon. Navigation proceeds only when that click-time mapping resolves to one safe Reader target. Identity surahs intentionally omitted from the alias table resolve as identity only after alias data is loaded; unavailable alias data and missing rows do not silently become Reader identity refs. `canHighlightWordsInRead` is always false because Qalun token alignment is not validated.
 
-The route renders Search-specific content to the right of the Reader/NavDrawer chrome. The content pane contains query controls, mode controls for All, Arabic text, Translation, Context, Exact word form, Phrase, Same written form, Same root, and Lemma, a dense result list, and a selected-result detail pane beside the list at tablet and desktop widths. Result count text reports whether the current window is partial, and the result list exposes `Load more results` only while a worker cursor is available. Result rows show source refs, lane chips, bidi-safe snippets, provenance chips, and `Open in Read`; that action resolves and navigates only if click-time Reader mapping validates a single Reader target. Result detail exposes Match, Explore, and Source tabs. Explore and Source show Hafs-source morphology details, the exact Search source note, same-root interpretation warning, and no Reader word-highlight state for morphology results. Explore also exposes attested following wording, shared wording, repeated phrases, occurs-once phrases, ayah endings, and Counts & patterns from optional graph shards after an explicit load action.
+The route renders Search-specific content to the right of the Reader/NavDrawer chrome. The content pane contains query controls, mode controls for All, Arabic text, Translation, Context, Exact word form, Phrase, Same written form, Same root, and Lemma, then a query-level workspace with `Overview`, `Verses`, `Explore`, and `Sources` tabs. Every submitted query receives a fresh adaptive default tab: ayah reference and exact phrase queries default to `Verses`, while broad Arabic, morphology, translation, and context searches default to `Overview`. Overview reports scoped counts and distributions only with labels such as all indexed matches, known results, or shown results. `Verses` contains minimal ayah-first cards with reference, Search text, optional translation/context excerpt, one match-type label, a plain-language match reason, `Open in Read` when validated, and `Details`. The result list exposes `Load more results` only while a worker cursor is available, and loading more updates only the shown-row count.
+
+Per-result Details is result-level, not query-level. It contains why the selected verse matched, texts, Reader mapping, evidence rows, and result-level sources such as source ref, Reader refs, and mapping state. Query-level `Sources` contains Search pack provenance, source/license ids, normalizer/query/rank versions, aggregate Reader mapping summary, tokenization policy, boundary policy, and guardrail notes; it does not present one selected result's source ref or mapping state as a global fact. Query-level `Explore` lists only modules backed by the active Search pack and remains visible with an empty state when no modules are available. Selected-token morphology details and graph loading only appear after an explicit per-result Details action seeds Explore. Graph Explore remains lazy and loads source-backed wording sections only after explicit user action.
 
 Graph phrase windows stay within one ayah and one surah, do not cross Bismillah boundaries, and are capped by maximum n-gram length, per-source-unit window count, encoded shard bytes, decoded shard bytes, and resident worker memory estimates. Following wording is attested wording only; Search must not label it as prediction, autocomplete, generated suggestions, semantic answers, tafsir, paraphrase, or generated Quran text. Shared wording is lexical overlap only and must not be presented as interpretive equivalence.
 

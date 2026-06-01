@@ -1,42 +1,46 @@
 import type { SearchResultDto } from '../../search/schema'
 import { Button } from '../ui'
 import { SearchResultCard } from './SearchResultCard'
+import type { SearchVerseCardViewModel } from './search-presentation-model'
 
 export function SearchResultList({
   canLoadMore,
+  cards,
   emptyMessage,
   hasMore,
+  onDetailsTrigger,
   onLoadMore,
   onOpenInRead,
   onSelect,
-  results,
   selectedResultId,
 }: {
   canLoadMore?: boolean
+  cards: SearchVerseCardViewModel[]
   emptyMessage?: string
   hasMore?: boolean
+  onDetailsTrigger?: (node: HTMLButtonElement | null) => void
   onLoadMore?: () => void
   onOpenInRead: (result: SearchResultDto) => void
   onSelect: (result: SearchResultDto) => void
-  results: SearchResultDto[]
   selectedResultId?: string
 }) {
-  if (results.length === 0) {
+  if (cards.length === 0) {
     return (
       <p className="qar-search-results-empty">
-        {emptyMessage ?? 'Enter a word, phrase, or ayah reference. Save only the searches you want to keep.'}
+        {emptyMessage ?? 'Enter a word, phrase, or ayah reference.'}
       </p>
     )
   }
   return (
-    <section aria-label="Search results" className="qar-search-result-list">
-      {results.map((result) => (
+    <section aria-label="Verses" className="qar-search-result-list">
+      {cards.map((card) => (
         <SearchResultCard
-          key={result.resultId}
+          card={card}
+          key={card.id}
+          onDetailsTrigger={onDetailsTrigger}
           onOpenInRead={onOpenInRead}
           onSelect={onSelect}
-          result={result}
-          selected={result.resultId === selectedResultId}
+          selected={card.id === selectedResultId}
         />
       ))}
       {hasMore ? (

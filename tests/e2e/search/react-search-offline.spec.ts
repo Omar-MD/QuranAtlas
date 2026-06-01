@@ -1,10 +1,21 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { expectReactProductionPreflight, seedTargetState, targetUrl } from '../fixtures/react-golden-routes'
 import { expectReactServiceWorkerReady } from '../fixtures/react-offline'
 import { installSearchPackFixture, readSearchPackFixtureState } from '../fixtures/react-search-pack'
 
 test.skip(process.env.PLAYWRIGHT_INCLUDE_OFFLINE !== '1', 'Search offline proof runs only against the preview build.')
+
+async function expectSearchResults(page: Page) {
+  await expect(page.getByRole('region', { name: 'Search result workspace' })).toBeVisible()
+  await expect(page.getByRole('article', { name: /Search result / }).first()).toBeVisible()
+}
+
+async function expectSearchOverview(page: Page, query: string) {
+  await expect(page.getByRole('region', { name: 'Search result workspace' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('heading', { name: query })).toBeVisible()
+}
 
 test('@offline active Search pack cache and activation record survive offline reload', async ({ page }) => {
   await expectReactProductionPreflight(page)
@@ -40,7 +51,7 @@ test('@offline active Search pack supports the Search route without changing Rea
     await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
     await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
     await page.getByRole('button', { exact: true, name: 'Search' }).click()
-    await expect(page.getByLabel('Search results')).toBeVisible()
+    await expectSearchOverview(page, 'Allah')
 
     await page.goto(targetUrl('react', '/#/'))
     await expect(page).toHaveURL(/#\/s\/1$/)
@@ -71,8 +82,8 @@ test('@offline missing graph shard degrades only the Explore panel', async ({ pa
     await page.getByLabel('Search Quran text, translation, or context').fill('بسم الله')
     await page.getByRole('tab', { name: 'Search mode: Phrase' }).click()
     await page.getByRole('button', { exact: true, name: 'Search' }).click()
-    await expect(page.getByLabel('Search results')).toBeVisible()
-    await page.getByRole('tab', { name: 'Explore' }).click()
+    await expectSearchResults(page)
+    await page.getByRole('button', { name: 'Explore selected result' }).click()
     await page.getByRole('button', { name: 'Load Explore sections' }).click()
     await page.getByRole('button', { name: 'Attested following wording' }).click()
     await expect(page.getByText(/Missing graph feature:/)).toBeVisible()

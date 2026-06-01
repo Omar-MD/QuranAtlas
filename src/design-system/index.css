@@ -219,6 +219,135 @@
     line-height: 1.4;
   }
 
+  .qar-search-overview {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--qa-react-nav-row-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-canvas));
+    box-shadow: var(--qa-react-nav-shadow-row);
+  }
+
+  .qar-search-overview-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .qar-search-overview-eyebrow,
+  .qar-search-overview-title,
+  .qar-search-overview-mode,
+  .qar-search-overview-note,
+  .qar-search-overview-list h3,
+  .qar-search-overview-list p {
+    margin: 0;
+  }
+
+  .qar-search-overview-eyebrow {
+    color: var(--qa-react-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .qar-search-overview-title {
+    min-width: 0;
+    color: var(--qa-react-text);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .qar-search-overview-mode {
+    color: var(--qa-react-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .qar-search-overview-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 6px;
+    margin: 0;
+  }
+
+  .qar-search-overview-facts div {
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-canvas);
+  }
+
+  .qar-search-overview-facts dt {
+    color: var(--qa-react-text-muted);
+    font-size: 0.7rem;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+
+  .qar-search-overview-facts dd {
+    margin: 3px 0 0;
+    color: var(--qa-react-text);
+    font-family: var(--qa-react-font-mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .qar-search-overview-facts small,
+  .qar-search-overview-list small {
+    color: var(--qa-react-text-muted);
+    font-size: 0.72rem;
+    line-height: 1.3;
+  }
+
+  .qar-search-overview-list {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    color: var(--qa-react-text);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .qar-search-overview-list h3 {
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .qar-search-overview-list p {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    min-width: 0;
+    padding: 7px 8px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-canvas);
+  }
+
+  .qar-search-overview-list small {
+    grid-column: 1 / -1;
+  }
+
+  .qar-search-overview-note {
+    color: var(--qa-react-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .qar-search-overview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+  }
+
   .qar-search-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -227,11 +356,56 @@
     min-width: 0;
   }
 
-  .qar-search-results-pane {
+  .qar-search-workspace [role='tablist'] {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: hidden;
+  }
+
+  .qar-search-workspace [role='tab'] {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+
+  .qar-search-verses-panel {
     display: grid;
     align-content: start;
-    gap: 8px;
+    gap: 10px;
     min-width: 0;
+  }
+
+  .qar-search-explore-panel {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .qar-search-source-panel {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .qar-search-explore-modules {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .qar-search-explore-modules li {
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-canvas);
+  }
+
+  .qar-search-explore-modules li[data-focused='true'] {
+    border-color: color-mix(in srgb, var(--qa-react-accent) 48%, var(--qa-react-border));
+    box-shadow: inset 3px 0 var(--qa-react-accent);
   }
 
   .qar-search-result-list {
@@ -295,6 +469,25 @@
     color: var(--qa-react-text);
     font-size: 0.95rem;
     line-height: 1.55;
+  }
+
+  .qar-search-result-passages {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .qar-search-result-context,
+  .qar-search-result-why {
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .qar-search-result-why span {
+    color: var(--qa-react-text);
+    font-weight: 650;
   }
 
   .qar-search-result-actions {
@@ -489,6 +682,16 @@
       padding-inline: 14px;
     }
 
+    .qar-search-overview-head {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .qar-search-verses-panel {
+      grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.72fr);
+      align-items: start;
+    }
+
     .qar-search-page-shell--nav-open .qar-search-content-inner {
       max-width: none;
       margin-inline: 0;
@@ -501,16 +704,6 @@
       padding-inline: 0;
     }
 
-    .qar-search-workspace {
-      grid-template-columns: minmax(0, 1fr) minmax(220px, 0.82fr);
-      gap: 12px;
-    }
-
-    .qar-search-result-detail {
-      position: sticky;
-      top: 96px;
-      max-height: calc(100dvh - 110px);
-    }
   }
 
   @media (min-width: 768px) and (max-width: 980px) {
@@ -529,13 +722,21 @@
       min-width: 0;
     }
 
-    .qar-search-page-shell--nav-open .qar-search-workspace {
+    .qar-search-page-shell--nav-open .qar-search-verses-panel {
       grid-template-columns: minmax(0, 1fr);
     }
 
     .qar-search-page-shell--nav-open .qar-search-result-detail {
       position: static;
       max-height: none;
+    }
+  }
+
+  @media (min-width: 980px) {
+    .qar-search-result-detail {
+      position: sticky;
+      top: 96px;
+      max-height: calc(100dvh - 110px);
     }
   }
 
@@ -550,7 +751,7 @@
       padding-inline: 22px;
     }
 
-    .qar-search-workspace {
+    .qar-search-verses-panel {
       grid-template-columns: minmax(0, 1fr) 25rem;
       gap: 14px;
     }

@@ -1,6 +1,7 @@
 import type { SearchResultDto } from '../../search/schema'
 import { SearchResultList } from './SearchResultList'
+import { toVerseCardViewModel } from './search-presentation-model'
 
 export function SearchResults({ results }: { results: SearchResultDto[] }) {
-  return <SearchResultList onOpenInRead={() => undefined} onSelect={() => undefined} results={results} />
+  return <SearchResultList cards={results.map(toVerseCardViewModel)} onOpenInRead={() => undefined} onSelect={() => undefined} />
 }

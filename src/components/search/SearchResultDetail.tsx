@@ -1,82 +1,80 @@
-import type { SearchResultDto } from '../../search/schema'
-import { Button, Tabs } from '../ui'
-import { SearchExplorePanel } from './SearchExplorePanel'
-import { SearchSourcePanel } from './SearchSourcePanel'
-import { formatSearchReference, laneLabel } from './search-labels'
-import type { SearchExploreGraphState } from './useSearchRouteState'
+import type { ReactNode } from 'react'
+
+import { Button } from '../ui'
+import type { SearchDetailsViewModel, SearchExploreModuleId } from './search-presentation-model'
 
 export function SearchResultDetail({
+  details,
   onClose,
-  packVersion,
-  result,
-  exploreGraph,
-  onLoadExploreGraph,
+  onOpenExplore,
 }: {
+  details: SearchDetailsViewModel | null
   onClose?: () => void
-  packVersion?: string
-  result: SearchResultDto | null
-  exploreGraph?: SearchExploreGraphState
-  onLoadExploreGraph?: (result: SearchResultDto) => void
+  onOpenExplore?: (result: SearchDetailsViewModel['result'], module?: SearchExploreModuleId) => void
 }) {
-  if (!result) {
+  if (!details) {
     return (
       <aside aria-label="Search result detail" className="qar-search-result-detail">
-        <p className="qar:m-0 qar:text-sm qar:text-muted">Select a result to inspect its Match, Explore, and Source details.</p>
+        <p className="qar:m-0 qar:text-sm qar:text-muted">Choose a verse and open Details to inspect why it matched.</p>
       </aside>
     )
   }
 
   return (
-    <aside aria-label={`Search result detail ${result.sourceRef}`} className="qar-search-result-detail">
+    <aside aria-label={`Details for ${details.title}`} className="qar-search-result-detail">
       <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
         <div>
-          <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted" dir="auto">
-            {formatSearchReference(result.sourceRef)}
-          </p>
-          <h3 className="qar:m-0 qar:text-lg qar:leading-tight">Match</h3>
+          <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted">Details</p>
+          <h3 className="qar:m-0 qar:text-lg qar:leading-tight" dir="auto">
+            <bdi>{details.title}</bdi>
+          </h3>
         </div>
         {onClose ? <Button onClick={onClose} size="sm" variant="ghost">Close</Button> : null}
       </div>
-      <Tabs
-        label={`Details for ${result.sourceRef}`}
-        items={[
-          {
-            label: 'Match',
-            value: 'match',
-            content: (
-              <div className="qar:grid qar:gap-3">
-                <div>
-                  <p className="qar:m-0 qar:text-xs qar:text-muted">Matched passage</p>
-                  <p className="qar:m-0 qar:text-base qar:leading-7" dir="auto"><bdi>{result.snippet}</bdi></p>
-                </div>
-                <div>
-                  <p className="qar:m-0 qar:text-xs qar:text-muted">Search source text</p>
-                  <p className="qar:m-0 qar:leading-7" dir="auto"><bdi>{result.sourceText}</bdi></p>
-                </div>
-                {result.readerText ? (
-                  <div>
-                    <p className="qar:m-0 qar:text-xs qar:text-muted">Reader text</p>
-                    <p className="qar:m-0 qar:leading-7" dir="auto"><bdi>{result.readerText}</bdi></p>
-                  </div>
-                ) : null}
-                <p className="qar:m-0 qar:text-sm qar:text-muted" dir="auto">
-                  Match reason: {result.matchLanes.map(laneLabel).join(', ')}
-                </p>
-              </div>
-            ),
-          },
-          {
-            label: 'Explore',
-            value: 'explore',
-            content: <SearchExplorePanel graph={exploreGraph} onLoadGraph={onLoadExploreGraph} result={result} />,
-          },
-          {
-            label: 'Source',
-            value: 'source',
-            content: <SearchSourcePanel packVersion={packVersion} result={result} />,
-          },
-        ]}
-      />
+      <DetailSection title="Why this matched">
+        <p className="qar:m-0" dir="auto">
+          <bdi>{details.whyMatched}</bdi>
+        </p>
+        {details.alsoMatched.length > 0 ? (
+          <p className="qar:m-0 qar:text-sm qar:text-muted" dir="auto">
+            Also matched: <bdi>{details.alsoMatched.join(', ')}</bdi>
+          </p>
+        ) : null}
+        {onOpenExplore ? (
+          <Button onClick={() => onOpenExplore(details.result, 'selected-token')} size="sm" variant="secondary">
+            Explore selected result
+          </Button>
+        ) : null}
+      </DetailSection>
+      <DetailRows rows={details.textRows} title="Texts" />
+      <DetailRows rows={details.readerMappingRows} title="Reader mapping" />
+      <DetailRows rows={details.evidenceRows} title="Evidence" />
+      <DetailRows rows={details.sourceRows} title="Sources" />
     </aside>
+  )
+}
+
+function DetailSection({ children, title }: { children: ReactNode; title: string }) {
+  return (
+    <section className="qar:grid qar:gap-2">
+      <h4 className="qar:m-0 qar:text-sm qar:font-semibold">{title}</h4>
+      {children}
+    </section>
+  )
+}
+
+function DetailRows({ rows, title }: { rows: Array<{ label: string; value: string }>; title: string }) {
+  if (rows.length === 0) return null
+  return (
+    <DetailSection title={title}>
+      <dl className="qar:grid qar:gap-2">
+        {rows.map((row) => (
+          <div className="qar:grid qar:gap-1" key={`${title}:${row.label}`}>
+            <dt className="qar:text-xs qar:text-muted">{row.label}</dt>
+            <dd className="qar:m-0" dir="auto"><bdi>{row.value}</bdi></dd>
+          </div>
+        ))}
+      </dl>
+    </DetailSection>
   )
 }

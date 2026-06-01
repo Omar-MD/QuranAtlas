@@ -34,16 +34,23 @@ export function DropdownMenu({ trigger, items }: DropdownMenuProps) {
 
 export type TabsProps = {
   label: string
-  items: Array<{ label: string; value: string; content: ReactNode }>
+  items: Array<{ label: string; value: string; content: ReactNode; disabled?: boolean }>
   defaultValue?: string
+  onValueChange?: (value: string) => void
+  value?: string
 }
 
-export function Tabs({ label, items, defaultValue }: TabsProps) {
+export function Tabs({ label, items, defaultValue, onValueChange, value }: TabsProps) {
   return (
-    <TabsPrimitive.Root defaultValue={defaultValue ?? items[0]?.value}>
+    <TabsPrimitive.Root defaultValue={defaultValue ?? items[0]?.value} onValueChange={onValueChange} value={value}>
       <TabsPrimitive.List aria-label={label} className="qar:inline-flex qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1">
         {items.map((item) => (
-          <TabsPrimitive.Trigger className="qar:min-h-9 qar:rounded-control qar:px-3 qar:text-sm qar:data-[state=active]:bg-accent qar:data-[state=active]:text-surface" key={item.value} value={item.value}>
+          <TabsPrimitive.Trigger
+            className="qar:min-h-9 qar:rounded-control qar:px-3 qar:text-sm qar:data-[state=active]:bg-accent qar:data-[state=active]:text-surface qar:data-[disabled]:opacity-50"
+            disabled={item.disabled}
+            key={item.value}
+            value={item.value}
+          >
             {item.label}
           </TabsPrimitive.Trigger>
         ))}
