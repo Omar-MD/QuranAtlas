@@ -15,6 +15,7 @@ import {
   SEARCH_TABLE_ROLES,
   SEARCH_VALUE_WIDTHS,
   SEARCH_TEXT_FIXTURES,
+  assertAnswerPreviewContract,
   assertImmutableSearchPackRuntimeUrl,
   assertSearchMappingAsset,
   assertSearchPackManifestUrls,
@@ -30,6 +31,7 @@ import {
   normalizeSearchInput,
   readSearchShardHeaderWithDataView,
   tokenizeSearchInput,
+  type AnswerPreview,
   type SearchPackActivationRecord,
   type SearchMappingAsset,
   type SearchPackManifestV1,
@@ -126,7 +128,108 @@ function makeMapping(overrides: Partial<SearchMappingAsset> = {}): SearchMapping
   }
 }
 
+function makeAnswerPreview(overrides: Partial<AnswerPreview> = {}): AnswerPreview {
+  const preview: AnswerPreview = {
+    id: 'preview-1',
+    query: 'Allah',
+    queryUnderstanding: {
+      originalQuery: 'Allah',
+      normalizedQuery: 'allah',
+      intent: 'answer-question',
+      lens: 'translation',
+      confidence: 'high',
+      alternatives: [],
+      normalizationWarnings: [],
+    },
+    searchPlan: {
+      primaryLens: 'translation',
+      lanes: [{ id: 'translation', sourceKinds: ['translation'], queryForm: 'allah', status: 'executed' }],
+      excludedSources: [],
+    },
+    mode: 'answer',
+    answerability: { status: 'answerable', reasons: [], renderPermission: 'answer-preview' },
+    claims: [{
+      id: 'claim-1',
+      text: 'Translation evidence renders "Allah" at 2:255.',
+      templateId: 'translation-renders',
+      slots: { term: 'Allah', ref: '2:255' },
+      attribution: 'translation-renders',
+      predicate: 'renders',
+      supportId: 'support-1',
+    }],
+    claimSupports: [{ id: 'support-1', claimId: 'claim-1', supportIds: ['evidence-1'], verdict: 'supported' }],
+    evidenceAtoms: [{
+      id: 'evidence-1',
+      evidenceType: 'translation',
+      sourceKind: 'translation',
+      sourceId: 'test-source',
+      sourceVersion: '1.0.0',
+      translationId: 'test-translation',
+      refs: ['2:255'],
+      displayTarget: { type: 'verse-ref', refs: ['2:255'] },
+    }],
+    evidenceBasis: {
+      quranText: 'available-not-used',
+      translation: 'used',
+      morphology: 'available-not-used',
+      note: 'Answer claims use the listed typed evidence only.',
+    },
+    evidenceCards: [{
+      id: 'card-1',
+      refLabel: '2:255',
+      evidenceAtomIds: ['evidence-1'],
+      claimSupportIds: ['support-1'],
+      title: '2:255',
+      snippet: 'Allah - there is no deity except Him',
+      snippetSource: 'translation',
+      matchReason: 'The query token occurs in indexed translation evidence.',
+      readerAction: { type: 'open-in-reader', ref: '2:255' },
+    }],
+    sourceFamilyStatuses: [
+      { sourceKind: 'quran-text', availability: 'available', canSupportClaims: true },
+      { sourceKind: 'translation', availability: 'available', canSupportClaims: true },
+      { sourceKind: 'morphology', availability: 'available', canSupportClaims: true },
+    ],
+    ...overrides,
+  }
+  return preview
+}
+
 describe('Search shared contracts', () => {
+  it('validates v1 AnswerPreview support and source authority', () => {
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview())).not.toThrow()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      claims: [{
+        ...makeAnswerPreview().claims[0],
+        attribution: 'morphology-analyzes',
+        predicate: 'analyzes',
+        templateId: 'morphology-analyzes',
+      }],
+    }))).toThrow('cannot use translation evidence')
+  })
+
+  it('requires no-answer render permissions to carry no claims', () => {
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      mode: 'no-answer',
+      answerability: {
+        status: 'not-answerable',
+        reasons: ['absence-claim-unproven'],
+        renderPermission: 'no-answer-claims',
+      },
+    }))).toThrow('empty claims')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      mode: 'no-answer',
+      answerability: {
+        status: 'not-answerable',
+        reasons: ['absence-claim-unproven'],
+        renderPermission: 'no-answer-claims',
+      },
+      claims: [],
+      claimSupports: [],
+      evidenceCards: [],
+    }))).not.toThrow()
+  })
+
   it('rejects unsupported ABI versions, shard magic, and endian markers', () => {
     expect(() => assertSupportedSearchPackAbi(2, 0)).toThrow('unsupported Search pack ABI major 2')
     expect(() => readSearchShardHeaderWithDataView(makeHeader({ magic: new Uint8Array([0, 0, 0, 0]) }))).toThrow('invalid Search shard magic')
