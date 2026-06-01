@@ -10,8 +10,10 @@ import {
   type EvidenceAtom,
   type EvidenceBasisLite,
   type EvidenceMatchesPageLite,
+  type QueryUnderstandingLite,
   type SearchLensLite,
   type SearchPlanLite,
+  type SearchPackManifestV1,
   type SearchResultCursor,
   type SearchResultDto,
   type SearchSort,
@@ -80,7 +82,12 @@ export class AskSearchPreviewBuilder {
 
     if (!parsed || parseError) {
       return this.validatedPreview({
-        id: previewIdFor(input.query, understanding.lens, 'parse-failed'),
+        id: previewIdFor({
+          query: input.query,
+          lens: understanding.lens,
+          sort: input.sort,
+          manifest: this.reader.manifest,
+        }),
         query: input.query,
         queryUnderstanding: understanding,
         searchPlan: skippedSearchPlan(basePlan, 'The query could not be parsed into an executable Search intent.'),
@@ -104,7 +111,12 @@ export class AskSearchPreviewBuilder {
     if (blockers.length > 0) {
       const ambiguous = blockers.includes('ambiguous-query')
       return this.validatedPreview({
-        id: previewIdFor(input.query, understanding.lens, 'blocked'),
+        id: previewIdFor({
+          query: input.query,
+          lens: understanding.lens,
+          sort: input.sort,
+          manifest: this.reader.manifest,
+        }),
         query: input.query,
         queryUnderstanding: understanding,
         searchPlan: skippedSearchPlan(basePlan, 'The Ask preview boundary policy blocked prose claims before Search execution.'),
@@ -144,7 +156,12 @@ export class AskSearchPreviewBuilder {
         failed: true,
       })
       return this.validatedPreview({
-        id: previewIdFor(input.query, understanding.lens, 'source-unavailable'),
+        id: previewIdFor({
+          query: input.query,
+          lens: understanding.lens,
+          sort: input.sort,
+          manifest: this.reader.manifest,
+        }),
         query: input.query,
         queryUnderstanding: understanding,
         searchPlan,
@@ -169,28 +186,39 @@ export class AskSearchPreviewBuilder {
     const firstPair = evidencePairs[0]
     if (!firstPair) {
       const insufficient: AnswerBlockerLite[] = ['insufficient-evidence']
-      return this.validatedPreview({
-        id: previewIdFor(input.query, understanding.lens, 'insufficient-evidence'),
+      return this.validatedPreview(evidenceOnlyPreview({
         query: input.query,
-        queryUnderstanding: understanding,
+        lens: understanding.lens,
+        sort: input.sort,
+        manifest: this.reader.manifest,
+        understanding,
         searchPlan,
-        mode: 'evidence-only',
-        answerability: {
-          status: 'evidence-only',
-          reasons: insufficient,
-          renderPermission: 'no-answer-claims',
-        },
-        claims: [],
-        claimSupports: [],
         evidenceAtoms,
-        evidenceBasis: evidenceBasisFor(sourceFamilyStatuses, evidenceAtoms),
-        evidenceCards: [],
-        recovery: recoveryForAskBlockers(input.query, insufficient),
         sourceFamilyStatuses,
-      })
+        reasons: insufficient,
+      }))
     }
 
-    const claim = claimForEvidence(firstPair.atom, firstPair.result, input.query)
+    const claim = claimForEvidence({
+      atom: firstPair.atom,
+      result: firstPair.result,
+      understanding,
+      tokenCount: parsed.ast.tokens.length,
+    })
+    if (!claim) {
+      const insufficient: AnswerBlockerLite[] = ['insufficient-evidence']
+      return this.validatedPreview(evidenceOnlyPreview({
+        query: input.query,
+        lens: understanding.lens,
+        sort: input.sort,
+        manifest: this.reader.manifest,
+        understanding,
+        searchPlan,
+        evidenceAtoms,
+        sourceFamilyStatuses,
+        reasons: insufficient,
+      }))
+    }
     const claimSupport: ClaimSupport = {
       id: `support:${claim.id}`,
       claimId: claim.id,
@@ -198,7 +226,12 @@ export class AskSearchPreviewBuilder {
       verdict: 'supported',
     }
     const preview: AnswerPreview = {
-      id: previewIdFor(input.query, understanding.lens, 'answer'),
+      id: previewIdFor({
+        query: input.query,
+        lens: understanding.lens,
+        sort: input.sort,
+        manifest: this.reader.manifest,
+      }),
       query: input.query,
       queryUnderstanding: understanding,
       searchPlan,
@@ -219,8 +252,17 @@ export class AskSearchPreviewBuilder {
   }
 
   async buildMatchesPage(input: BuildMatchesPageInput): Promise<EvidenceMatchesPageLite> {
-    const { parsed } = understandAskQuery(input.query, input.lens)
-    if (!parsed) return { previewId: input.previewId, evidenceAtoms: [], matchCards: [] }
+    const { understanding, parsed } = understandAskQuery(input.query, input.lens)
+    const expectedPreviewId = previewIdFor({
+      query: input.query,
+      lens: understanding.lens,
+      sort: input.sort,
+      manifest: this.reader.manifest,
+    })
+    if (input.previewId !== expectedPreviewId) {
+      return { previewId: expectedPreviewId, evidenceAtoms: [], matchCards: [] }
+    }
+    if (!parsed) return { previewId: expectedPreviewId, evidenceAtoms: [], matchCards: [] }
 
     const window = await this.executor.execute({
       query: parsed.ast,
@@ -231,7 +273,7 @@ export class AskSearchPreviewBuilder {
     })
     const evidencePairs = evidencePairsForResults(window.results, this.reader.manifest).slice(0, ASK_MATCHES_PAGE_LIMIT)
     return {
-      previewId: input.previewId,
+      previewId: expectedPreviewId,
       evidenceAtoms: evidencePairs.map((pair) => pair.atom),
       matchCards: evidencePairs.map((pair) => matchCardForResult(pair.result, pair.atom.id)),
       nextCursor: window.cursor ? encodeSearchResultCursor(window.cursor) : undefined,
@@ -254,13 +296,20 @@ function evidencePairsForResults(results: SearchResultDto[], manifest: SearchPac
   return pairs
 }
 
-function claimForEvidence(atom: EvidenceAtom, result: SearchResultDto, query: string): AnswerClaim {
-  const term = claimTermFor(query, result)
-  const ref = atom.refs[0] ?? result.sourceRef
-  const supportId = `support:claim:${atom.id}`
-  const authority = claimAuthorityForEvidence(atom)
+function claimForEvidence(input: {
+  atom: EvidenceAtom
+  result: SearchResultDto
+  understanding: QueryUnderstandingLite
+  tokenCount: number
+}): AnswerClaim | null {
+  if (!canRenderClaim(input)) return null
+  const term = claimTermFor(input.result)
+  if (!term) return null
+  const ref = input.atom.refs[0] ?? input.result.sourceRef
+  const supportId = `support:claim:${input.atom.id}`
+  const authority = claimAuthorityForEvidence(input.atom)
   return {
-    id: `claim:${atom.id}`,
+    id: `claim:${input.atom.id}`,
     text: claimTextFor(authority.templateId, term, ref),
     templateId: authority.templateId,
     slots: { term, ref },
@@ -268,6 +317,61 @@ function claimForEvidence(atom: EvidenceAtom, result: SearchResultDto, query: st
     predicate: authority.predicate,
     supportId,
   }
+}
+
+function evidenceOnlyPreview(input: {
+  query: string
+  lens: SearchLensLite
+  sort: SearchSort
+  manifest: SearchPackManifestV1
+  understanding: QueryUnderstandingLite
+  searchPlan: SearchPlanLite
+  evidenceAtoms: EvidenceAtom[]
+  sourceFamilyStatuses: AnswerPreview['sourceFamilyStatuses']
+  reasons: AnswerBlockerLite[]
+}): AnswerPreview {
+  return {
+    id: previewIdFor({
+      query: input.query,
+      lens: input.lens,
+      sort: input.sort,
+      manifest: input.manifest,
+    }),
+    query: input.query,
+    queryUnderstanding: input.understanding,
+    searchPlan: input.searchPlan,
+    mode: 'evidence-only',
+    answerability: {
+      status: 'evidence-only',
+      reasons: input.reasons,
+      renderPermission: 'no-answer-claims',
+    },
+    claims: [],
+    claimSupports: [],
+    evidenceAtoms: input.evidenceAtoms,
+    evidenceBasis: evidenceBasisFor(input.sourceFamilyStatuses, input.evidenceAtoms),
+    evidenceCards: [],
+    recovery: recoveryForAskBlockers(input.query, input.reasons),
+    sourceFamilyStatuses: input.sourceFamilyStatuses,
+  }
+}
+
+function canRenderClaim(input: {
+  atom: EvidenceAtom
+  result: SearchResultDto
+  understanding: QueryUnderstandingLite
+  tokenCount: number
+}): boolean {
+  if (input.understanding.intent === 'open-reference' || input.understanding.intent === 'answer-question') return false
+  if (input.tokenCount !== 1) return false
+  if (!input.result.matchEvidence.matchedQueryToken) return false
+  if (input.atom.evidenceType === 'translation') return input.understanding.lens === 'translation'
+  if (input.atom.evidenceType === 'morphology') return input.understanding.lens === 'morphology'
+  if (input.atom.evidenceType === 'quran-text') {
+    return input.understanding.lens === 'quran-text'
+      || input.understanding.lens === 'phrase'
+  }
+  return false
 }
 
 function claimAuthorityForEvidence(atom: EvidenceAtom): {
@@ -290,10 +394,8 @@ function claimTextFor(templateId: ClaimTemplateIdLite, term: string, ref: string
   return `Quran text evidence mentions "${term}" at ${ref}.`
 }
 
-function claimTermFor(query: string, result: SearchResultDto): string {
-  return result.matchEvidence.matchedQueryToken
-    ?? result.matchEvidence.matchedText
-    ?? (query.trim() || result.sourceRef)
+function claimTermFor(result: SearchResultDto): string | null {
+  return result.matchEvidence.matchedQueryToken ?? null
 }
 
 function evidenceBasisFor(
@@ -344,13 +446,18 @@ function clampMatchesLimit(limit: number): number {
   return Math.min(ASK_MATCHES_PAGE_LIMIT, Math.max(1, Math.floor(limit)))
 }
 
-function previewIdFor(query: string, lens: SearchLensLite, suffix: string): string {
-  return `ask-preview:${lens}:${stableQueryHash({
+function previewIdFor(input: {
+  query: string
+  lens: SearchLensLite
+  sort: SearchSort
+  manifest: SearchPackManifestV1
+}): string {
+  return `ask-preview:${input.manifest.packId}:${input.manifest.packVersion}:${input.manifest.contentHash}:${input.lens}:${input.sort}:${stableQueryHash({
     astVersion: 1,
     mode: 'all',
-    rawText: query,
-    normalizedText: query.trim().toLowerCase(),
-    tokens: [query.trim().toLowerCase()].filter(Boolean),
+    rawText: input.query,
+    normalizedText: input.query.trim().toLowerCase(),
+    tokens: [input.query.trim().toLowerCase()].filter(Boolean),
     filters: {},
-  })}:${suffix}`
+  })}`
 }

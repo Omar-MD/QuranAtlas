@@ -327,10 +327,56 @@ describe('Ask/Search preview builder', () => {
     expect(preview.recovery?.message).toBe('This v1 search can show related evidence, but it cannot answer absence claims as prose.')
   })
 
+  it('keeps reference previews evidence-only without prose claims', async () => {
+    const { builder } = await createBuilderForFixturePack()
+    const preview = await builder.buildPreview({
+      query: '2:255',
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-reference'),
+    })
+
+    expect(() => assertAnswerPreviewContract(preview)).not.toThrow()
+    expect(preview.queryUnderstanding.intent).toBe('open-reference')
+    expect(preview.mode).toBe('evidence-only')
+    expect(preview.answerability).toMatchObject({
+      status: 'evidence-only',
+      renderPermission: 'no-answer-claims',
+      reasons: ['insufficient-evidence'],
+    })
+    expect(preview.claims).toEqual([])
+    expect(preview.claimSupports).toEqual([])
+    expect(preview.evidenceAtoms.length).toBeGreaterThan(0)
+    expect(preview.evidenceCards).toEqual([])
+  })
+
+  it('does not overclaim broad question wording as a rendered translation term', async () => {
+    const { builder } = await createBuilderForFixturePack()
+    const preview = await builder.buildPreview({
+      query: 'What mentions Allah?',
+      lens: 'translation',
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-question'),
+    })
+
+    expect(() => assertAnswerPreviewContract(preview)).not.toThrow()
+    expect(preview.queryUnderstanding.intent).toBe('answer-question')
+    expect(preview.mode).toBe('evidence-only')
+    expect(preview.answerability.renderPermission).toBe('no-answer-claims')
+    expect(preview.claims).toEqual([])
+    expect(preview.claimSupports).toEqual([])
+    expect(preview.claims.map((claim) => claim.text).join(' ')).not.toContain('What mentions Allah?')
+  })
+
   it('clamps lazy matches pages to ten cards', async () => {
     const { builder } = await createBuilderForManyTranslationResults(12)
+    const preview = await builder.buildPreview({
+      query: 'Allah',
+      lens: 'translation',
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-many-results'),
+    })
     const page = await builder.buildMatchesPage({
-      previewId: 'preview-many-results',
+      previewId: preview.id,
       query: 'Allah',
       lens: 'translation',
       limit: 50,
@@ -338,10 +384,34 @@ describe('Ask/Search preview builder', () => {
       token: new SearchCancellationToken('ask-preview-matches'),
     })
 
+    expect(page.previewId).toBe(preview.id)
     expect(page.matchCards).toHaveLength(ASK_MATCHES_PAGE_LIMIT)
     expect(page.evidenceAtoms).toHaveLength(ASK_MATCHES_PAGE_LIMIT)
-    expect(page.matchCards.every((card) => page.evidenceAtoms.some((atom) => atom.id === card.evidenceAtomIds[0]))).toBe(true)
+    expectMatchesPageIntegrity(page)
     expect(typeof page.nextCursor).toBe('string')
+  })
+
+  it('fails closed when a lazy matches page preview id does not match the query identity', async () => {
+    const { builder } = await createBuilderForManyTranslationResults(12)
+    const preview = await builder.buildPreview({
+      query: 'Allah',
+      lens: 'translation',
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-page-binding'),
+    })
+    const page = await builder.buildMatchesPage({
+      previewId: `${preview.id}:stale`,
+      query: 'Allah',
+      lens: 'translation',
+      limit: 10,
+      sort: 'relevance',
+      token: new SearchCancellationToken('ask-preview-page-mismatch'),
+    })
+
+    expect(page.previewId).toBe(preview.id)
+    expect(page.matchCards).toEqual([])
+    expect(page.evidenceAtoms).toEqual([])
+    expect(page.nextCursor).toBeUndefined()
   })
 
   it('filters null evidence atoms without dereferencing incomplete morphology evidence', async () => {
@@ -366,6 +436,15 @@ describe('Ask/Search preview builder', () => {
     expect(preview.evidenceBasis.morphology).toBe('available-not-used')
   })
 })
+
+function expectMatchesPageIntegrity(page: Awaited<ReturnType<AskSearchPreviewBuilder['buildMatchesPage']>>): void {
+  const evidenceIds = new Set(page.evidenceAtoms.map((atom) => atom.id))
+  expect(evidenceIds.size).toBe(page.evidenceAtoms.length)
+  for (const card of page.matchCards) {
+    expect(card.evidenceAtomIds.length).toBeGreaterThan(0)
+    expect(card.evidenceAtomIds.every((id) => evidenceIds.has(id))).toBe(true)
+  }
+}
 
 async function createBuilderForFixturePack() {
   const { cacheStorage, manifest } = await createFixturePack()
