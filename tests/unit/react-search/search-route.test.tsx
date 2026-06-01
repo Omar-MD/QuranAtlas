@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SearchRouteState } from '../../../src/components/search/useSearchRouteState'
 import { defaultTabForParsedSearch } from '../../../src/components/search/search-presentation-model'
+import type { VerseAliases } from '../../../src/data/verse-aliases'
 import type { SearchClient } from '../../../src/search/client'
 import {
   SEARCH_FOLLOWING_WORDING_NOTE,
@@ -17,6 +18,8 @@ import type { SavedSearchRecord } from '../../../src/storage/types'
 import type { AnswerPreview, MatchCardLite } from '../../../shared/search'
 
 const mockUseSearchRouteState = vi.fn<[], SearchRouteState>()
+let mockReaderRiwayah: 'hafs' | 'qaloon' = 'hafs'
+let mockVerseAliases: VerseAliases = {}
 const mockSaved = {
   deleteSearch: vi.fn(),
   openSearch: vi.fn(),
@@ -38,10 +41,18 @@ vi.mock('../../../src/components/search/useSavedSearches', () => ({
 vi.mock('../../../src/storage/db', () => ({
   openReactDb: vi.fn(async () => ({
     settings: {
-      get: vi.fn(async (key: string) => (key === 'riwayah' ? { value: 'hafs' } : undefined)),
+      get: vi.fn(async (key: string) => (key === 'riwayah' ? { value: mockReaderRiwayah } : undefined)),
     },
   })),
 }))
+
+vi.mock('../../../src/data/verse-aliases', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/data/verse-aliases')>()
+  return {
+    ...actual,
+    loadVerseAliases: vi.fn(async () => ({ aliases: mockVerseAliases })),
+  }
+})
 
 import { SearchShell } from '../../../src/components/search/SearchShell'
 
@@ -191,6 +202,8 @@ function routeState(overrides: Partial<SearchRouteState> = {}): SearchRouteState
 describe('Search route UI', () => {
   beforeEach(() => {
     window.location.hash = '#/search'
+    mockReaderRiwayah = 'hafs'
+    mockVerseAliases = {}
     mockSaved.records = []
     mockSaved.status = ''
     vi.clearAllMocks()
@@ -254,6 +267,47 @@ describe('Search route UI', () => {
     expect(openAllMatches).toHaveBeenCalledTimes(1)
   })
 
+  it('renders a reference Ask preview on Overview instead of an empty Verses panel', () => {
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'overview',
+      answerPreview: answerPreview({
+        id: 'preview-reference',
+        query: '2:255',
+        queryUnderstanding: {
+          ...answerPreview().queryUnderstanding,
+          originalQuery: '2:255',
+          normalizedQuery: '2:255',
+          intent: 'open-reference',
+          lens: 'reference',
+        },
+        searchPlan: {
+          primaryLens: 'reference',
+          lanes: [{ id: 'reference', sourceKinds: ['quran-text'], queryForm: '2:255', status: 'executed' }],
+          excludedSources: [],
+        },
+        mode: 'evidence-only',
+        answerability: {
+          status: 'evidence-only',
+          renderPermission: 'no-answer-claims',
+          reasons: ['insufficient-evidence'],
+        },
+        claims: [],
+        claimSupports: [],
+        evidenceCards: [],
+      }),
+      defaultWorkspaceTab: 'overview',
+      emptyResultMessage: 'No results match this search.',
+      query: '2:255',
+    }))
+
+    render(<SearchShell />)
+
+    expect(screen.getByRole('heading', { name: '2:255' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Evidence basis' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Best evidence' })).toBeInTheDocument()
+    expect(screen.queryByText('No results match this search.')).not.toBeInTheDocument()
+  })
+
   it('renders evidence-only recovery without answer claim prose', () => {
     mockUseSearchRouteState.mockReturnValue(routeState({
       activeWorkspaceTab: 'overview',
@@ -304,12 +358,15 @@ describe('Search route UI', () => {
     const allMatches = screen.getByRole('region', { name: 'All matches' })
     expect(within(allMatches).getByText('2:255')).toBeInTheDocument()
     expect(within(allMatches).getByText('It is He who has sent down to you the Book...')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Show all matches' })).not.toBeInTheDocument()
 
     await userEvent.click(within(allMatches).getByRole('button', { name: 'Load more matches' }))
     expect(loadMoreAllMatches).toHaveBeenCalledTimes(1)
   })
 
-  it('opens preview Reader actions by direct ref and hides unavailable Reader actions', async () => {
+  it('opens preview Reader actions through validated Reader mapping and hides unavailable Reader actions', async () => {
+    mockReaderRiwayah = 'qaloon'
+    mockVerseAliases = { '3': [{ hafs: 7, warsh: 7, qaloon: 8 }] }
     mockUseSearchRouteState.mockReturnValue(routeState({
       activeWorkspaceTab: 'overview',
       answerPreview: answerPreviewWithClaims({
@@ -338,7 +395,7 @@ describe('Search route UI', () => {
     expect(screen.getByText('Reader opens the mapped ayah only.')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Open in Reader' }))
-    expect(window.location.hash).toBe('#/s/3/7')
+    await waitFor(() => expect(window.location.hash).toBe('#/s/3/8'))
   })
 
   it('renders query-level Sources when that workspace tab is active', () => {
@@ -714,6 +771,31 @@ describe('useSearchRouteState Ask route state', () => {
     expect(result.current.hasMoreResults).toBe(false)
     expect(result.current.searchStatus).toBe('1 best evidence card')
     expect(result.current.resultCountMessage).toBe('1 best evidence card')
+  })
+
+  it.each([
+    { mode: 'all' as const, query: '2:255' },
+    { mode: 'phrase' as const, query: 'بسم الله' },
+  ])('defaults $query Ask preview submissions to the Overview workspace', async ({ mode, query }) => {
+    const preview = answerPreview({ id: `preview-${mode}`, query })
+    const client = mockSearchClient({
+      askPreview: vi.fn(async () => preview),
+    })
+    const { useSearchRouteState } = await actualSearchRouteStateModule()
+
+    const { result } = renderHook(() => useSearchRouteState({
+      client,
+      initialMode: mode,
+      initialQuery: query,
+    }))
+
+    await waitFor(() => expect(result.current.packState).toBe('active'))
+    act(() => result.current.submitSearch())
+
+    await waitFor(() => expect(result.current.answerPreview?.id).toBe(preview.id))
+    expect(result.current.activeWorkspaceTab).toBe('overview')
+    expect(result.current.defaultWorkspaceTab).toBe('overview')
+    expect(window.location.hash).not.toContain('tab=verses')
   })
 
   it.each([

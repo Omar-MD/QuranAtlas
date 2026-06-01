@@ -36,13 +36,8 @@ export function SearchShell() {
   }
 
   function openPreviewRefInRead(ref: string) {
-    const match = /^(\d{1,3}):(\d{1,3})$/.exec(ref)
-    if (!match) return
-    const surah = Number(match[1])
-    const ayah = Number(match[2])
-    if (!Number.isInteger(surah) || !Number.isInteger(ayah)) return
-    if (surah < 1 || surah > 114 || ayah < 1) return
-    window.location.hash = REACT_ROUTES.surah(surah, ayah)
+    if (!isSearchAyahRef(ref)) return
+    void resolvePreviewRefInRead(ref)
   }
 
   async function resolveOpenInRead(result: SearchResultDto) {
@@ -52,6 +47,20 @@ export function SearchShell() {
       aliases,
       readerRiwayah,
       sourceRef: result.sourceRef,
+    })
+    if (!mapping.canOpenInRead || mapping.readerRefs.length !== 1) return
+    const [surah, ayah] = mapping.readerRefs[0].split(':').map(Number)
+    if (!Number.isInteger(surah) || !Number.isInteger(ayah)) return
+    window.location.hash = REACT_ROUTES.surah(surah, ayah)
+  }
+
+  async function resolvePreviewRefInRead(ref: `${number}:${number}`) {
+    const readerRiwayah = await readActiveReaderRiwayah()
+    const aliases = readerRiwayah === 'qaloon' ? await loadSearchAliases(aliasesPromiseRef) : {}
+    const mapping = mapSearchRefToReader({
+      aliases,
+      readerRiwayah,
+      sourceRef: ref,
     })
     if (!mapping.canOpenInRead || mapping.readerRefs.length !== 1) return
     const [surah, ayah] = mapping.readerRefs[0].split(':').map(Number)
@@ -220,4 +229,12 @@ async function readActiveReaderRiwayah(): Promise<SearchReaderRiwayah> {
 
 function isSupportedSearchReaderRiwayah(value: unknown): value is SearchReaderRiwayah {
   return value === 'qaloon' || value === 'hafs'
+}
+
+function isSearchAyahRef(value: string): value is `${number}:${number}` {
+  const match = /^(\d{1,3}):(\d{1,3})$/.exec(value)
+  if (!match) return false
+  const surah = Number(match[1])
+  const ayah = Number(match[2])
+  return Number.isInteger(surah) && Number.isInteger(ayah) && surah >= 1 && surah <= 114 && ayah >= 1
 }

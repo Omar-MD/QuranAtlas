@@ -87,11 +87,13 @@ export function SearchAnswerPreview({
         )}
       </section>
 
-      <div className="qar-search-answer-actions">
-        <Button disabled={loadingAllMatches} onClick={onOpenAllMatches} size="sm" variant="secondary">
-          {loadingAllMatches && !allMatchesOpen ? 'Loading matches' : 'Show all matches'}
-        </Button>
-      </div>
+      {!allMatchesOpen ? (
+        <div className="qar-search-answer-actions">
+          <Button disabled={loadingAllMatches} onClick={onOpenAllMatches} size="sm" variant="secondary">
+            {loadingAllMatches ? 'Loading matches' : 'Show all matches'}
+          </Button>
+        </div>
+      ) : null}
 
       {allMatchesOpen ? (
         <section aria-labelledby="search-all-matches-title" className="qar-search-all-matches">

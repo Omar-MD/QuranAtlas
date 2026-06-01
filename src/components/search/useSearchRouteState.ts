@@ -7,7 +7,7 @@ import { getSearchClient, type SearchClient } from '../../search/client'
 import { parseSearchQuery, SearchQueryParseError } from '../../search/query-parser'
 import type { SearchBriefDto, SearchQueryMode, SearchResultCursor, SearchResultDto, SearchSort } from '../../search/schema'
 import type { SearchGraphSection } from '../../search/graph'
-import { defaultTabForParsedSearch, type SearchExploreModuleId, type SearchWorkspaceTab } from './search-presentation-model'
+import type { SearchExploreModuleId, SearchWorkspaceTab } from './search-presentation-model'
 
 export type SearchExploreGraphState = {
   error: string | null
@@ -197,9 +197,8 @@ export function useSearchRouteState(options: {
       resetEvidenceState(message)
       return
     }
-    const nextDefaultTab = defaultTabForParsedSearch(parsed, effectiveMode)
-    const requestedTab = next?.tab ?? null
-    const nextActiveTab = requestedTab ?? nextDefaultTab
+    const nextDefaultTab = 'overview'
+    const nextActiveTab = nextDefaultTab
     pendingSelectedResultIdRef.current = next?.selectedResultId ?? null
     setDefaultWorkspaceTab(nextDefaultTab)
     setActiveWorkspaceTab(nextActiveTab)
