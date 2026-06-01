@@ -1,3 +1,5 @@
+import type { SearchResultCursor } from './query'
+
 export type SourceKindV1 = 'quran-text' | 'translation' | 'morphology' | 'reader-mapping'
 
 export type QueryIntentLite =
@@ -241,7 +243,7 @@ export type EvidenceMatchesPageLite = {
   previewId: string
   evidenceAtoms: EvidenceAtom[]
   matchCards: MatchCardLite[]
-  nextCursor?: string
+  nextCursor?: SearchResultCursor
 }
 
 type ClaimAuthorityKey = `${ClaimAttributionLite}:${ClaimPredicateLite}`

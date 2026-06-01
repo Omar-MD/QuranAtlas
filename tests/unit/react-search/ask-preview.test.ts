@@ -368,7 +368,7 @@ describe('Ask/Search preview builder', () => {
   })
 
   it('clamps lazy matches pages to ten cards', async () => {
-    const { builder } = await createBuilderForManyTranslationResults(12)
+    const { builder, manifest } = await createBuilderForManyTranslationResults(12)
     const preview = await builder.buildPreview({
       query: 'Allah',
       lens: 'translation',
@@ -388,7 +388,11 @@ describe('Ask/Search preview builder', () => {
     expect(page.matchCards).toHaveLength(ASK_MATCHES_PAGE_LIMIT)
     expect(page.evidenceAtoms).toHaveLength(ASK_MATCHES_PAGE_LIMIT)
     expectMatchesPageIntegrity(page)
-    expect(typeof page.nextCursor).toBe('string')
+    expect(page.nextCursor).toEqual(expect.objectContaining({
+      packId: manifest.packId,
+      packVersion: manifest.packVersion,
+      sort: 'relevance',
+    }))
   })
 
   it('fails closed when a lazy matches page preview id does not match the query identity', async () => {
@@ -399,19 +403,18 @@ describe('Ask/Search preview builder', () => {
       sort: 'relevance',
       token: new SearchCancellationToken('ask-preview-page-binding'),
     })
-    const page = await builder.buildMatchesPage({
+    await expect(builder.buildMatchesPage({
       previewId: `${preview.id}:stale`,
       query: 'Allah',
       lens: 'translation',
       limit: 10,
       sort: 'relevance',
       token: new SearchCancellationToken('ask-preview-page-mismatch'),
+    })).rejects.toMatchObject({
+      code: 'stale-epoch',
+      retryable: true,
+      message: 'Ask preview id no longer matches this query, lens, sort, or pack',
     })
-
-    expect(page.previewId).toBe(preview.id)
-    expect(page.matchCards).toEqual([])
-    expect(page.evidenceAtoms).toEqual([])
-    expect(page.nextCursor).toBeUndefined()
   })
 
   it('filters null evidence atoms without dereferencing incomplete morphology evidence', async () => {

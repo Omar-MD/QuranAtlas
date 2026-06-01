@@ -21,8 +21,7 @@ import {
 } from '../../../shared/search'
 import { SearchCancelledError, type SearchCancellationToken } from '../../search-worker/cancellation'
 import { SearchQueryExecutor } from '../../search-worker/query-executor'
-import { encodeSearchResultCursor } from '../cursors'
-import { SearchPackReader } from '../pack-reader'
+import { SearchPackReader, SearchPackReaderError } from '../pack-reader'
 import { stableQueryHash } from '../query-parser'
 import {
   evidenceAtomForResult,
@@ -260,7 +259,11 @@ export class AskSearchPreviewBuilder {
       manifest: this.reader.manifest,
     })
     if (input.previewId !== expectedPreviewId) {
-      return { previewId: expectedPreviewId, evidenceAtoms: [], matchCards: [] }
+      throw new SearchPackReaderError(
+        'stale-epoch',
+        'Ask preview id no longer matches this query, lens, sort, or pack',
+        true,
+      )
     }
     if (!parsed) return { previewId: expectedPreviewId, evidenceAtoms: [], matchCards: [] }
 
@@ -276,7 +279,7 @@ export class AskSearchPreviewBuilder {
       previewId: expectedPreviewId,
       evidenceAtoms: evidencePairs.map((pair) => pair.atom),
       matchCards: evidencePairs.map((pair) => matchCardForResult(pair.result, pair.atom.id)),
-      nextCursor: window.cursor ? encodeSearchResultCursor(window.cursor) : undefined,
+      nextCursor: window.cursor ?? undefined,
     }
   }
 

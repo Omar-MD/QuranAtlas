@@ -111,12 +111,15 @@ describe('Search worker runtime', () => {
       limit: 99,
     })
 
-    expect(pageResponse).toMatchObject({ type: 'ok', requestId: 'ask-matches-stale', payload: { kind: 'ask-matches-page' } })
-    if (pageResponse.type !== 'ok' || pageResponse.payload.kind !== 'ask-matches-page') throw new Error('expected Ask matches page')
-    expect(pageResponse.payload.page.previewId).toBe(previewResponse.payload.answerPreview.id)
-    expect(pageResponse.payload.page.matchCards).toEqual([])
-    expect(pageResponse.payload.page.evidenceAtoms).toEqual([])
-    expect(pageResponse.payload.page.nextCursor).toBeUndefined()
+    expect(pageResponse).toMatchObject({
+      type: 'error',
+      requestId: 'ask-matches-stale',
+      error: {
+        code: 'stale-epoch',
+        retryable: true,
+        message: 'Ask preview id no longer matches this query, lens, sort, or pack',
+      },
+    })
   })
 
   it('returns typed errors for stale cursors, missing features, corrupt packs, and uninitialized queries', async () => {
