@@ -171,7 +171,7 @@ function PreviewEvidenceCard({ card, onOpenInRead }: { card: PreviewCard; onOpen
       <div className="qar-search-result-actions">
         {readerAction.type !== 'unavailable' ? (
           <Button onClick={() => onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)} size="sm" variant="primary">
-            Open in Reader
+            Open in Read
           </Button>
         ) : null}
       </div>

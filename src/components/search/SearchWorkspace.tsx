@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AnswerPreview, MatchCardLite } from '../../../shared/search'
 import type { SearchBriefDto, SearchResultDto } from '../../search/schema'
-import { Tabs } from '../ui'
+import { Button, Tabs } from '../ui'
 import { SearchAnswerPreview } from './SearchAnswerPreview'
 import { SearchExplorePanel } from './SearchExplorePanel'
 import { SearchOverview } from './SearchOverview'
@@ -54,6 +54,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
     results: props.results,
     selectedResult: props.selectedResult,
   }), [props.brief, props.defaultTab, props.hasMore, props.results, props.selectedResult])
+  const hasPreviewOnlyData = Boolean(props.answerPreview && !props.brief && props.results.length === 0)
 
   function openTab(tab: SearchWorkspaceTab, focusModule?: SearchExploreModuleId) {
     props.onActiveTabChange(tab)
@@ -100,7 +101,16 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
           {
             label: 'Verses',
             value: 'verses',
-            content: (
+            content: hasPreviewOnlyData && props.answerPreview ? (
+              <PreviewOnlyTabPanel
+                allMatchesOpen={props.allMatchesOpen}
+                loadingAllMatches={props.loadingAllMatches}
+                onOpenAllMatches={props.onOpenAllMatches}
+                onOpenOverview={() => openTab('overview')}
+                preview={props.answerPreview}
+                tab="verses"
+              />
+            ) : (
               <div className="qar-search-verses-panel">
                 {props.resultCountMessage ? <p className="qar-search-result-count">{props.resultCountMessage}</p> : null}
                 <SearchResultList
@@ -132,7 +142,16 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
           {
             label: 'Explore',
             value: 'explore',
-            content: (
+            content: hasPreviewOnlyData && props.answerPreview ? (
+              <PreviewOnlyTabPanel
+                allMatchesOpen={props.allMatchesOpen}
+                loadingAllMatches={props.loadingAllMatches}
+                onOpenAllMatches={props.onOpenAllMatches}
+                onOpenOverview={() => openTab('overview')}
+                preview={props.answerPreview}
+                tab="explore"
+              />
+            ) : (
               <SearchExplorePanel
                 focusedModule={props.focusedExploreModule}
                 graph={props.exploreGraph}
@@ -146,7 +165,16 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
           {
             label: 'Sources',
             value: 'sources',
-            content: <SearchSourcePanel packVersion={props.packVersion} sources={viewModel.sources} />,
+            content: hasPreviewOnlyData && props.answerPreview ? (
+              <PreviewOnlyTabPanel
+                allMatchesOpen={props.allMatchesOpen}
+                loadingAllMatches={props.loadingAllMatches}
+                onOpenAllMatches={props.onOpenAllMatches}
+                onOpenOverview={() => openTab('overview')}
+                preview={props.answerPreview}
+                tab="sources"
+              />
+            ) : <SearchSourcePanel packVersion={props.packVersion} sources={viewModel.sources} />,
           },
         ]}
         label="Search result views"
@@ -155,4 +183,57 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
       />
     </section>
   )
+}
+
+function PreviewOnlyTabPanel({
+  allMatchesOpen,
+  loadingAllMatches,
+  onOpenAllMatches,
+  onOpenOverview,
+  preview,
+  tab,
+}: {
+  allMatchesOpen: boolean
+  loadingAllMatches: boolean
+  onOpenAllMatches: () => void
+  onOpenOverview: () => void
+  preview: AnswerPreview
+  tab: 'verses' | 'explore' | 'sources'
+}) {
+  const titleId = `search-preview-only-${tab}-title`
+  function showAllMatches() {
+    onOpenOverview()
+    onOpenAllMatches()
+  }
+
+  return (
+    <section aria-labelledby={titleId} className="qar-search-preview-tab-note">
+      <p className="qar-search-overview-eyebrow">Answer preview active</p>
+      <h3 id={titleId}>{previewOnlyTitle(tab)}</h3>
+      <p dir="auto">
+        <bdi>{preview.query}</bdi>
+        {' '}
+        is loaded as an Ask preview. This tab has no separate result window for the preview state.
+      </p>
+      <p>Open Overview for supported claims and best evidence. Use Show all matches to expand the source-backed matches.</p>
+      <div className="qar-search-preview-tab-actions">
+        <Button onClick={onOpenOverview} size="sm" variant="primary">
+          View Overview
+        </Button>
+        {!allMatchesOpen ? (
+          <Button disabled={loadingAllMatches} onClick={showAllMatches} size="sm" variant="secondary">
+            {loadingAllMatches ? 'Loading matches' : 'Show all matches'}
+          </Button>
+        ) : (
+          <span className="qar-search-preview-tab-status">All matches are open on Overview.</span>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function previewOnlyTitle(tab: 'verses' | 'explore' | 'sources'): string {
+  if (tab === 'verses') return 'Verses use All matches for this preview'
+  if (tab === 'explore') return 'Explore is not loaded for this preview'
+  return 'Sources are summarized on Overview'
 }

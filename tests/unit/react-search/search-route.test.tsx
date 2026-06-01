@@ -391,10 +391,10 @@ describe('Search route UI', () => {
     render(<SearchShell />)
 
     const unavailableCard = screen.getByRole('article', { name: 'Evidence 4:1' })
-    expect(within(unavailableCard).queryByRole('button', { name: 'Open in Reader' })).not.toBeInTheDocument()
+    expect(within(unavailableCard).queryByRole('button', { name: 'Open in Read' })).not.toBeInTheDocument()
     expect(screen.getByText('Reader opens the mapped ayah only.')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Open in Reader' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
     await waitFor(() => expect(window.location.hash).toBe('#/s/3/8'))
   })
 
@@ -414,8 +414,77 @@ describe('Search route UI', () => {
 
     render(<SearchShell />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Open in Reader' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
     expect(window.location.hash).toBe('#/search')
+  })
+
+  it('renders restored Sources as preview-aware content when only Ask preview data is loaded', async () => {
+    const openAllMatches = vi.fn()
+    const setActiveWorkspaceTab = vi.fn()
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'sources',
+      answerPreview: answerPreviewWithClaims(),
+      brief: null,
+      openAllMatches,
+      query: 'mercy',
+      results: [],
+      selectedResult: null,
+      setActiveWorkspaceTab,
+    }))
+
+    render(<SearchShell />)
+
+    const sourcesPanel = screen.getByRole('tabpanel', { name: 'Sources' })
+    expect(within(sourcesPanel).getByRole('heading', { name: 'Sources are summarized on Overview' })).toBeInTheDocument()
+    expect(within(sourcesPanel).getByText(/is loaded as an Ask preview/i)).toBeInTheDocument()
+    expect(within(sourcesPanel).getByText(/Open Overview for supported claims and best evidence/i)).toBeInTheDocument()
+    expect(screen.queryByText('Run a search to inspect query sources.')).not.toBeInTheDocument()
+
+    await userEvent.click(within(sourcesPanel).getByRole('button', { name: 'Show all matches' }))
+    expect(setActiveWorkspaceTab).toHaveBeenCalledWith('overview')
+    expect(openAllMatches).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders clicked Verses as preview-aware content when only Ask preview data is loaded', async () => {
+    const openAllMatches = vi.fn()
+    const setActiveWorkspaceTab = vi.fn()
+    let state = routeState({
+      activeWorkspaceTab: 'overview',
+      answerPreview: answerPreviewWithClaims(),
+      brief: null,
+      openAllMatches,
+      query: 'mercy',
+      results: [],
+      selectedResult: null,
+      setActiveWorkspaceTab,
+    })
+    mockUseSearchRouteState.mockImplementation(() => state)
+
+    const { rerender } = render(<SearchShell />)
+    await userEvent.click(screen.getByRole('tab', { name: 'Verses' }))
+    expect(setActiveWorkspaceTab).toHaveBeenCalledWith('verses')
+
+    state = routeState({
+      activeWorkspaceTab: 'verses',
+      answerPreview: answerPreviewWithClaims(),
+      brief: null,
+      openAllMatches,
+      query: 'mercy',
+      results: [],
+      selectedResult: null,
+      setActiveWorkspaceTab,
+    })
+    rerender(<SearchShell />)
+
+    const versesPanel = screen.getByRole('tabpanel', { name: 'Verses' })
+    expect(within(versesPanel).getByRole('heading', { name: 'Verses use All matches for this preview' })).toBeInTheDocument()
+    expect(within(versesPanel).getByText(/is loaded as an Ask preview/i)).toBeInTheDocument()
+    expect(screen.queryByText('No results match this search.')).not.toBeInTheDocument()
+    expect(screen.queryByText('1 best evidence card')).not.toBeInTheDocument()
+
+    await userEvent.click(within(versesPanel).getByRole('button', { name: 'Show all matches' }))
+    expect(setActiveWorkspaceTab).toHaveBeenCalledWith('overview')
+    expect(openAllMatches).toHaveBeenCalledTimes(1)
   })
 
   it('renders query-level Sources when that workspace tab is active', () => {

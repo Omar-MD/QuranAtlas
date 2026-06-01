@@ -391,6 +391,53 @@
     overflow-wrap: anywhere;
   }
 
+  .qar-search-preview-tab-note {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--qa-react-nav-row-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-canvas));
+    box-shadow: var(--qa-react-nav-shadow-row);
+  }
+
+  .qar-search-preview-tab-note h3,
+  .qar-search-preview-tab-note p {
+    margin: 0;
+  }
+
+  .qar-search-preview-tab-note h3 {
+    color: var(--qa-react-text);
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .qar-search-preview-tab-note p {
+    color: var(--qa-react-text-muted);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .qar-search-preview-tab-note bdi {
+    overflow-wrap: anywhere;
+  }
+
+  .qar-search-preview-tab-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .qar-search-preview-tab-status {
+    color: var(--qa-react-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
   .qar-search-answer-claims {
     display: grid;
     gap: 6px;
