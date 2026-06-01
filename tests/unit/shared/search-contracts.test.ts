@@ -344,6 +344,28 @@ describe('Search shared contracts', () => {
       }],
     }))).toThrow('open-source-in-reader sourceRef must be a valid ayah ref')
     expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        ...base.evidenceAtoms[0],
+        refs: ['2:999'],
+        displayTarget: { type: 'verse-ref', refs: ['2:999'] },
+      }],
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        readerAction: { type: 'open-source-in-reader', sourceRef: '2:999' },
+      }],
+    }))).toThrow('open-source-in-reader sourceRef must be a valid ayah ref')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        ...base.evidenceAtoms[0],
+        refs: ['115:1'],
+        displayTarget: { type: 'verse-ref', refs: ['115:1'] },
+      }],
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        readerAction: { type: 'open-in-reader', ref: '115:1' },
+      }],
+    }))).toThrow('open-in-reader ref must be a valid ayah ref')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
       evidenceAtoms: [...base.evidenceAtoms, extraEvidence],
       evidenceCards: [{
         ...base.evidenceCards[0],

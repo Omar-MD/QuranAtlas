@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { isValidQuranAyahRef } from '../../../shared/search'
 import { REACT_ROUTES } from '../../app/router/routes'
 import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
 import { loadVerseAliases, type VerseAliases } from '../../data/verse-aliases'
@@ -232,9 +233,5 @@ function isSupportedSearchReaderRiwayah(value: unknown): value is SearchReaderRi
 }
 
 function isSearchAyahRef(value: string): value is `${number}:${number}` {
-  const match = /^(\d{1,3}):(\d{1,3})$/.exec(value)
-  if (!match) return false
-  const surah = Number(match[1])
-  const ayah = Number(match[2])
-  return Number.isInteger(surah) && Number.isInteger(ayah) && surah >= 1 && surah <= 114 && ayah >= 1
+  return isValidQuranAyahRef(value)
 }

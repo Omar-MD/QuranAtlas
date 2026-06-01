@@ -398,6 +398,26 @@ describe('Search route UI', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/s/3/8'))
   })
 
+  it('does not navigate preview Reader actions with impossible source refs', async () => {
+    mockUseSearchRouteState.mockReturnValue(routeState({
+      activeWorkspaceTab: 'overview',
+      answerPreview: answerPreviewWithClaims({
+        evidenceCards: [{
+          ...answerPreviewWithClaims().evidenceCards[0],
+          id: 'evidence-invalid-ref',
+          refLabel: '2:999',
+          readerAction: { type: 'open-source-in-reader', sourceRef: '2:999' },
+        }],
+      }),
+      query: 'mercy',
+    }))
+
+    render(<SearchShell />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open in Reader' }))
+    expect(window.location.hash).toBe('#/search')
+  })
+
   it('renders query-level Sources when that workspace tab is active', () => {
     const selected = result()
     mockUseSearchRouteState.mockReturnValue(routeState({
