@@ -303,13 +303,23 @@ type PackManifest = {
   keyVersion: string;
   revokedBy?: string;
 };
+
+type PackRevocationRecord = {
+  packId: string;
+  revokedAt: string;
+  reason: "compromised" | "superseded" | "license-revoked" | "schema-invalid" | "content-error";
+  successorPackId?: string;
+  signature: string;
+  signingKeyId: string;
+};
 ```
 
 Rules:
 
 - The signature is computed over the canonical manifest excluding the `signature` field.
 - If manifest signature fails, the source family is disabled for claims and display.
-- If `revokedBy` is present, the pack is disabled until a non-revoked successor is installed.
+- A pack is disabled if it appears in the signed revocation registry, even if its own manifest signature is valid.
+- `revokedBy` is optional manifest metadata, not the authority for revocation decisions.
 - If `contentHash` mismatches, the pack is quarantined.
 - If `schemaVersion` is unsupported, install is blocked or a migration is required.
 - If `indexHash` mismatches, the index must be rebuilt before claim eligibility is restored.
@@ -508,25 +518,25 @@ type CrossReferenceEvidence = EvidenceAtom & {
     | "editorial-cross-reference";
 };
 
+type EvidenceBundleIndexes = {
+  byType: Record<EvidenceAtom["evidenceType"], string[]>;
+  bySourceId: Record<string, string[]>;
+  byRef: Record<string, string[]>;
+};
+
 type EvidenceBundle = {
   id: string;
   query: string;
   queryUnderstanding: QueryUnderstanding;
   searchPlan: SearchPlan;
   evidenceAtoms: EvidenceAtom[];
-  primaryTextEvidence: QuranTextEvidence[];
-  translationEvidence: TranslationEvidence[];
-  morphologyEvidence: MorphologyEvidence[];
-  rootLemmaEvidence: RootLemmaEvidence[];
-  tafsirEvidence: TafsirEvidence[];
-  asbabEvidence: AsbabEvidence[];
-  themeEvidence: ThemeEvidence[];
-  crossReferenceEvidence: CrossReferenceEvidence[];
-  readerMappingEvidence: ReaderMappingEvidence[];
+  indexes: EvidenceBundleIndexes;
   coverage: EvidenceCoverage;
   limitations: AnswerBoundaryNotice[];
 };
 ```
+
+`evidenceAtoms` is the only canonical evidence store in an `EvidenceBundle`. Source-family evidence views are reconstructed by filtering `evidenceAtoms` or using `indexes`; they must not be duplicated as parallel arrays.
 
 ## Citation Invariant
 
@@ -581,6 +591,7 @@ type AnswerClaim = {
   claimCapability: AnswerCapability;
   supportIds: string[];
   attribution: ClaimAttribution;
+  predicate: ClaimPredicate;
   inferenceLevel: InferenceLevel;
   supportStrength: SupportStrength;
 };
@@ -655,8 +666,11 @@ type EvidenceCard = {
   refLabel: string;
   supportIds: string[];
   title: string;
+  titleSupportIds?: string[];
   snippet: string;
+  snippetSource: "source-text" | "translation-source" | "deterministic-template";
   whyThisAppears: string;
+  whyThisAppearsSupportIds: string[];
   evidenceType: EvidenceAtom["evidenceType"];
   supportStrength: SupportStrength;
   readerMappingStatus: ReaderMappingStatus;
@@ -743,7 +757,25 @@ type AnswerBrief = {
 
 `retrievalSnapshotHash` is the canonical hash of `RetrievalSnapshot`. Stable replay ignores volatile metadata such as `generatedAt`.
 
+`canonicalHash(value)` means SHA-256 over RFC 8785 canonical JSON unless another canonicalization is explicitly specified. Arrays whose order is not semantically meaningful must be sorted before hashing; arrays whose order is semantically meaningful must declare that ordering in the owning type or validation rule.
+
+```ts
+const answerModeByAnswerabilityStatus = {
+  answerable: "answer",
+  "partially-answerable": "partial-answer",
+  "evidence-only": "evidence-only",
+  "needs-clarification": "no-answer",
+  "not-answerable": "no-answer",
+} as const;
+```
+
 `AnswerabilityDecision` is canonical. `AnswerBrief.mode` must be derived from `AnswerabilityDecision.status`, and `AnswerBrief.blockers` must equal `AnswerabilityDecision.reasons`. A serialized `AnswerBrief` failing those checks is invalid.
+
+Additional answerability invariants:
+
+- If `renderPermission` is `no-prose-answer`, `AnswerBrief.shortAnswerClaims` must be empty.
+- If `answerability.status` is `needs-clarification`, `NoAnswerRecovery.suggestedQueries` must be non-empty.
+- If `mode` is `answer`, `shortAnswerClaims.length` must be between 1 and `recipe.maxClaims`.
 
 Every answer page includes either a short answer paragraph when mode is `answer` or `partial-answer`, or an evidence-only/no-answer explanation when prose answering is not responsible. Evidence-only mode blocks synthetic answer claims, but allows boundary and recovery explanation.
 
@@ -932,6 +964,12 @@ Evidence cards answer:
 - Support strength.
 - Reader mapping status.
 - Source limitations.
+
+Evidence card content rules:
+
+- `snippet` must come from source text, source translation, or an approved deterministic template.
+- `title` is structural unless it asserts a claim; claim-bearing titles require `titleSupportIds`.
+- `whyThisAppears` must be backed by `whyThisAppearsSupportIds`.
 
 Actions:
 
@@ -1123,6 +1161,11 @@ type WorkerRequest =
       type: "REBUILD_INDEX";
       requestId: string;
       sourceId: string;
+    }
+  | {
+      type: "CANCEL_REQUEST";
+      requestId: string;
+      targetRequestId: string;
     };
 
 type WorkerResponse =
@@ -1141,6 +1184,8 @@ type WorkerResponse =
 ```
 
 The UI must ignore worker responses whose `requestId` is not the latest active request for that query surface. Cancelled or stale worker responses must not replace newer answers.
+
+A cancelled request may return `ASK_SEARCH_ERROR` with `errorCode: "cancelled"`, but it must never update the active UI surface.
 
 Observability:
 
