@@ -163,14 +163,14 @@ function PreviewEvidenceCard({ card, onOpenInRead }: { card: PreviewCard; onOpen
         {' '}
         <bdi>{card.matchReason}</bdi>
       </p>
-      {readerAction.type === 'open-in-reader' && readerAction.mappingWarning ? (
+      {readerAction.type !== 'unavailable' && readerAction.mappingWarning ? (
         <p className="qar-search-mapping-warning" dir="auto">
           <bdi>{readerAction.mappingWarning}</bdi>
         </p>
       ) : null}
       <div className="qar-search-result-actions">
-        {readerAction.type === 'open-in-reader' ? (
-          <Button onClick={() => onOpenInRead(readerAction.ref)} size="sm" variant="primary">
+        {readerAction.type !== 'unavailable' ? (
+          <Button onClick={() => onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)} size="sm" variant="primary">
             Open in Reader
           </Button>
         ) : null}

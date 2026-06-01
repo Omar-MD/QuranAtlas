@@ -311,9 +311,27 @@ describe('Search shared contracts', () => {
     expect(() => assertAnswerPreviewContract(makeAnswerPreview({
       evidenceCards: [{
         ...base.evidenceCards[0],
+        readerAction: { type: 'open-source-in-reader', sourceRef: '2:255' },
+      }],
+    }))).not.toThrow()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: [{
+        ...base.evidenceCards[0],
         readerAction: { type: 'open-in-reader', ref: '3:1' },
       }],
     }))).toThrow('open-in-reader ref 3:1 is not linked support evidence')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        readerAction: { type: 'open-source-in-reader', sourceRef: '3:1' },
+      }],
+    }))).toThrow('open-source-in-reader sourceRef 3:1 is not linked support evidence')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        readerAction: { type: 'open-source-in-reader', sourceRef: '' },
+      }],
+    }))).toThrow('open-source-in-reader sourceRef  is not linked support evidence')
     expect(() => assertAnswerPreviewContract(makeAnswerPreview({
       evidenceAtoms: [...base.evidenceAtoms, extraEvidence],
       evidenceCards: [{

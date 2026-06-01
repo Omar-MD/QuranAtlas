@@ -136,14 +136,13 @@ function snippetSourceForResult(result: SearchResultDto): EvidenceCardLite['snip
 }
 
 function readerActionForResult(result: SearchResultDto): EvidenceCardLite['readerAction'] {
-  if (!result.canOpenInRead || result.readerRefs.length !== 1) {
+  if (!result.canOpenInRead) {
     return { type: 'unavailable', reason: 'No validated Reader target is available for this Search source result.' }
   }
-  const ref = result.readerRefs[0]
   const mappingWarning = result.canHighlightWordsInRead
     ? undefined
     : 'Word-level Reader highlighting is unavailable for this evidence.'
-  return { type: 'open-in-reader', ref, mappingWarning }
+  return { type: 'open-source-in-reader', sourceRef: result.sourceRef, mappingWarning }
 }
 
 function morphologyEvidenceTargetForResult(result: SearchResultDto): Pick<

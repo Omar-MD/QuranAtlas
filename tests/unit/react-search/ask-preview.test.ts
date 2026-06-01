@@ -231,12 +231,27 @@ describe('Ask/Search evidence adapters', () => {
     const atom = expectEvidenceAtom(evidenceAtomForResult(result, askManifest))
     expect(atom).toMatchObject({ evidenceType: 'translation', sourceKind: 'translation', refs: ['2:255'] })
     const card = evidenceCardForResult({ result, evidenceAtomId: atom.id, claimSupportId: 'support-1' })
-    expect(card).toMatchObject({ snippetSource: 'translation', readerAction: { type: 'open-in-reader', ref: '2:255' } })
+    expect(card).toMatchObject({ snippetSource: 'translation', readerAction: { type: 'open-source-in-reader', sourceRef: '2:255' } })
     expect(() => assertAnswerPreviewContract(answerPreviewForTranslationResult(result, atom))).not.toThrow()
   })
 
-  it('does not expose a Reader action without one validated Reader ref', () => {
+  it('emits source-ref Reader actions for production source-native results', () => {
     const result = askResult({ canOpenInRead: true, readerRefs: [] })
+    const atom = expectEvidenceAtom(evidenceAtomForResult(result, askManifest))
+    expect(evidenceCardForResult({ result, evidenceAtomId: atom.id, claimSupportId: 'support-1' }).readerAction).toEqual({
+      type: 'open-source-in-reader',
+      sourceRef: '2:255',
+      mappingWarning: 'Word-level Reader highlighting is unavailable for this evidence.',
+    })
+    expect(matchCardForResult(result, atom.id).readerAction).toEqual({
+      type: 'open-source-in-reader',
+      sourceRef: '2:255',
+      mappingWarning: 'Word-level Reader highlighting is unavailable for this evidence.',
+    })
+  })
+
+  it('does not expose a Reader action when Search marks Reader opening unavailable', () => {
+    const result = askResult({ canOpenInRead: false, readerRefs: [] })
     const atom = expectEvidenceAtom(evidenceAtomForResult(result, askManifest))
     expect(evidenceCardForResult({ result, evidenceAtomId: atom.id, claimSupportId: 'support-1' }).readerAction).toEqual({
       type: 'unavailable',
@@ -262,7 +277,8 @@ describe('Ask/Search evidence adapters', () => {
       lemma: 'ٱللَّه',
     })
     expect(matchCardForResult(result, atom.id).readerAction).toMatchObject({
-      type: 'open-in-reader',
+      type: 'open-source-in-reader',
+      sourceRef: '2:255',
       mappingWarning: 'Word-level Reader highlighting is unavailable for this evidence.',
     })
   })

@@ -185,6 +185,11 @@ export type EvidenceBasisLite = {
   note: string
 }
 
+export type ReaderActionLite =
+  | { type: 'open-in-reader'; ref: string; mappingWarning?: string }
+  | { type: 'open-source-in-reader'; sourceRef: string; mappingWarning?: string }
+  | { type: 'unavailable'; reason: string }
+
 export type EvidenceCardLite = {
   id: string
   refLabel: string
@@ -194,9 +199,7 @@ export type EvidenceCardLite = {
   snippet: string
   snippetSource: 'quran-text' | 'translation' | 'deterministic-template'
   matchReason: string
-  readerAction:
-    | { type: 'open-in-reader'; ref: string; mappingWarning?: string }
-    | { type: 'unavailable'; reason: string }
+  readerAction: ReaderActionLite
 }
 
 export type MatchCardLite = {
@@ -207,9 +210,7 @@ export type MatchCardLite = {
   snippet: string
   snippetSource: 'quran-text' | 'translation' | 'deterministic-template'
   matchReason: string
-  readerAction:
-    | { type: 'open-in-reader'; ref: string; mappingWarning?: string }
-    | { type: 'unavailable'; reason: string }
+  readerAction: ReaderActionLite
 }
 
 export type NoAnswerRecoveryLite = {
@@ -307,7 +308,7 @@ const DEFERRED_SOURCE_REQUIREMENTS: readonly DeferredSourceRequirement[] = [
   'cross-reference',
 ]
 const RENDER_PERMISSIONS: readonly AnswerabilityDecision['renderPermission'][] = ['answer-preview', 'no-answer-claims']
-const READER_ACTION_TYPES: readonly EvidenceCardLite['readerAction']['type'][] = ['open-in-reader', 'unavailable']
+const READER_ACTION_TYPES: readonly ReaderActionLite['type'][] = ['open-in-reader', 'open-source-in-reader', 'unavailable']
 const DISPLAY_TARGET_TYPES: readonly EvidenceDisplayTarget['type'][] = ['verse-ref', 'quote-range', 'token']
 const MORPHOLOGY_ANALYSIS_SCOPES: readonly MorphologyEvidence['analysisScope'][] = ['token', 'segment']
 const READER_MAPPING_STATUSES: readonly ReaderMappingEvidence['mappingStatus'][] = [
@@ -620,6 +621,9 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     assertKnownValue(card.readerAction.type, READER_ACTION_TYPES, `evidence card ${card.id} readerAction type`)
     if (card.readerAction.type === 'open-in-reader' && !supportEvidenceRefs.has(card.readerAction.ref)) {
       throw new Error(`evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked support evidence`)
+    }
+    if (card.readerAction.type === 'open-source-in-reader' && !supportEvidenceRefs.has(card.readerAction.sourceRef)) {
+      throw new Error(`evidence card ${card.id} open-source-in-reader sourceRef ${card.readerAction.sourceRef} is not linked support evidence`)
     }
   }
 }

@@ -375,7 +375,7 @@ describe('Search route UI', () => {
             ...answerPreviewWithClaims().evidenceCards[0],
             id: 'evidence-3-7',
             refLabel: '3:7',
-            readerAction: { type: 'open-in-reader', ref: '3:7', mappingWarning: 'Reader opens the mapped ayah only.' },
+            readerAction: { type: 'open-source-in-reader', sourceRef: '3:7', mappingWarning: 'Reader opens the mapped ayah only.' },
           },
           {
             ...answerPreviewWithClaims().evidenceCards[0],
