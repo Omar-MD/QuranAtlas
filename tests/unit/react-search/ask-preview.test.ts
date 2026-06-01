@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { blockersForAskQuery, recoveryForAskBlockers } from '../../../src/search/ask/boundaries'
 import { understandAskQuery } from '../../../src/search/ask/query-understanding'
+import { stableQueryHash } from '../../../src/search/query-parser'
 
 describe('Ask/Search query understanding', () => {
   it('detects references, Arabic text, translation questions, and morphology lenses', () => {
@@ -28,6 +29,7 @@ describe('Ask/Search query understanding', () => {
       confidence: 'medium',
     })
     expect(mixedArabicQuestion.parsed?.ast.filters.sourceLane).toEqual(['translation', 'context'])
+    expect(mixedArabicQuestion.parsed?.queryHash).toBe(stableQueryHash(mixedArabicQuestion.parsed!.ast))
   })
 
   it('blocks absence, deferred-source, personal, and broad theological prose', () => {

@@ -38,11 +38,11 @@
     "docs/context/surfaces/onboard.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/read.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/read.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
-    "docs/context/surfaces/search.md:inventory": "b9c3b9c0e2426028733e86f664b2dcdb5e1f2609b1dd10c15bb4d53cb098de28",
+    "docs/context/surfaces/search.md:inventory": "bd3c968894c8865795e4b2af980521f3362407a698e143af03ba042fa7d253b0",
     "docs/context/surfaces/search.md:style-inventory": "a1d55bf5e1d333a7bcae8864856a67421c038f2a4e6374e2bd261fdbcf11d507",
     "docs/context/surfaces/search.md:data-owned": "55d8b1215279b89b1a31a77d67c9445ad85ea72c9fb9779eafa2bcd5f8b74f04",
     "docs/context/surfaces/search.md:data-read": "ec17b62494212085767a8413d464b7f28471a80005ed7eba9f993f1f98c8a66f",
-    "docs/context/surfaces/search.md:tests": "de5f9e96208b30de98b28ea440ac34a163f46451512f365a2b41c3a3c3816d43",
+    "docs/context/surfaces/search.md:tests": "aa4a9f7cfe7bf589ae980de7400412857c24e157c4b53d02af12dc346e7c09c5",
     "docs/context/surfaces/search.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/search.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0"
   }

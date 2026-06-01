@@ -85,6 +85,8 @@ style_paths:
 | `src/search-worker/search.worker.ts` | _(no leading comment)_ |
 | `src/search-worker/session.ts` | _(no leading comment)_ |
 | `src/search-worker/shard-cache.ts` | _(no leading comment)_ |
+| `src/search/ask/boundaries.ts` | _(no leading comment)_ |
+| `src/search/ask/query-understanding.ts` | _(no leading comment)_ |
 | `src/search/client.ts` | _(no leading comment)_ |
 | `src/search/cursors.ts` | _(no leading comment)_ |
 | `src/search/graph.ts` | _(no leading comment)_ |
@@ -179,9 +181,10 @@ _(no cross-surface reads detected)_
 ## Regression Guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (15):**
+**Unit (16):**
 
 - `tests/unit/react-offline/search-pack-lifecycle.test.ts`
+- `tests/unit/react-search/ask-preview.test.ts`
 - `tests/unit/react-search/generated-pack-smoke.test.ts`
 - `tests/unit/react-search/graph-worker.test.ts`
 - `tests/unit/react-search/morphology-worker.test.ts`
