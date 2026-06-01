@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import type { SearchPackManifestV1, SearchResultDto } from '../../../shared/search'
-import { evidenceAtomForResult, evidenceCardForResult, matchCardForResult } from '../../../src/search/ask/evidence'
+import {
+  assertAnswerPreviewContract,
+  type AnswerPreview,
+  type EvidenceAtom,
+  type SearchPackManifestV1,
+  type SearchResultDto,
+} from '../../../shared/search'
+import {
+  evidenceAtomForResult,
+  evidenceCardForResult,
+  matchCardForResult,
+  searchPlanForPreview,
+  sourceFamilyStatusesFromManifest,
+} from '../../../src/search/ask/evidence'
 import { blockersForAskQuery, recoveryForAskBlockers } from '../../../src/search/ask/boundaries'
 import { understandAskQuery } from '../../../src/search/ask/query-understanding'
 import { stableQueryHash } from '../../../src/search/query-parser'
@@ -139,32 +151,129 @@ function askResult(overrides: Partial<SearchResultDto> = {}): SearchResultDto {
   }
 }
 
+function expectEvidenceAtom(atom: EvidenceAtom | null): EvidenceAtom {
+  expect(atom).not.toBeNull()
+  if (!atom) throw new Error('Expected evidence atom')
+  return atom
+}
+
+function answerPreviewForTranslationResult(result: SearchResultDto, atom: EvidenceAtom): AnswerPreview {
+  const claimSupportId = 'support-1'
+  return {
+    id: 'preview-translation-1',
+    query: 'Allah',
+    queryUnderstanding: {
+      originalQuery: 'Allah',
+      normalizedQuery: 'allah',
+      intent: 'answer-question',
+      lens: 'translation',
+      confidence: 'high',
+      alternatives: [],
+      normalizationWarnings: [],
+    },
+    searchPlan: searchPlanForPreview({ lens: 'translation', queryForm: 'allah', sourceKinds: ['translation'] }),
+    mode: 'answer',
+    answerability: { status: 'answerable', reasons: [], renderPermission: 'answer-preview' },
+    claims: [{
+      id: 'claim-1',
+      text: 'Translation evidence renders "Allah" at 2:255.',
+      templateId: 'translation-renders',
+      slots: { term: 'Allah', ref: '2:255' },
+      attribution: 'translation-renders',
+      predicate: 'renders',
+      supportId: claimSupportId,
+    }],
+    claimSupports: [{ id: claimSupportId, claimId: 'claim-1', supportIds: [atom.id], verdict: 'supported' }],
+    evidenceAtoms: [atom],
+    evidenceBasis: {
+      quranText: 'available-not-used',
+      translation: 'used',
+      morphology: 'available-not-used',
+      note: 'Answer claims use the listed typed evidence only.',
+    },
+    evidenceCards: [evidenceCardForResult({ result, evidenceAtomId: atom.id, claimSupportId })],
+    sourceFamilyStatuses: sourceFamilyStatusesFromManifest(askManifest),
+  }
+}
+
+function askMorphologyResult(overrides: Partial<SearchResultDto> = {}): SearchResultDto {
+  return askResult({
+    matchLanes: ['same-root'],
+    matchEvidence: {
+      lane: 'same-root',
+      matchedQueryToken: 'اله',
+      matchedSourceToken: 'ٱللَّهِ',
+      wordPosition: 2,
+      morphology: { sourceToken: 'ٱللَّهِ', root: 'اله', lemma: 'ٱللَّه', rowId: 'qac:2:255:2' },
+      whyMatched: 'The same QAC morphology root occurs in this Hafs source ayah.',
+    },
+    snippet: 'ٱللَّهِ',
+    morphology: {
+      sourceNote: 'QAC morphology row',
+      root: 'اله',
+      lemma: 'ٱللَّه',
+      sourceToken: 'ٱللَّهِ',
+      transliteration: '{ll~ahi',
+      wordPosition: 2,
+      tokenOrdinal: 2,
+    },
+    ...overrides,
+  })
+}
+
 describe('Ask/Search evidence adapters', () => {
   it('projects translation results into typed evidence and cards', () => {
-    const atom = evidenceAtomForResult(askResult(), askManifest)
+    const result = askResult()
+    const atom = expectEvidenceAtom(evidenceAtomForResult(result, askManifest))
     expect(atom).toMatchObject({ evidenceType: 'translation', sourceKind: 'translation', refs: ['2:255'] })
-    const card = evidenceCardForResult({ result: askResult(), evidenceAtomId: atom.id, claimSupportId: 'support-1' })
+    const card = evidenceCardForResult({ result, evidenceAtomId: atom.id, claimSupportId: 'support-1' })
     expect(card).toMatchObject({ snippetSource: 'translation', readerAction: { type: 'open-in-reader', ref: '2:255' } })
+    expect(() => assertAnswerPreviewContract(answerPreviewForTranslationResult(result, atom))).not.toThrow()
   })
 
-  it('does not imply Reader word highlighting for morphology matches', () => {
-    const result = askResult({
-      matchLanes: ['same-root'],
-      matchEvidence: {
-        lane: 'same-root',
-        matchedQueryToken: 'الله',
-        matchedSourceToken: 'ٱللَّهِ',
-        wordPosition: 2,
-        morphology: { sourceToken: 'ٱللَّهِ', root: 'اله', lemma: 'ٱللَّه', rowId: '1:2' },
-        whyMatched: 'The same QAC morphology root occurs in this Hafs source ayah.',
-      },
-      snippet: 'ٱللَّهِ',
+  it('does not expose a Reader action without one validated Reader ref', () => {
+    const result = askResult({ canOpenInRead: true, readerRefs: [] })
+    const atom = expectEvidenceAtom(evidenceAtomForResult(result, askManifest))
+    expect(evidenceCardForResult({ result, evidenceAtomId: atom.id, claimSupportId: 'support-1' }).readerAction).toEqual({
+      type: 'unavailable',
+      reason: 'No validated Reader target is available for this Search source result.',
     })
-    const atom = evidenceAtomForResult(result, askManifest)
-    expect(atom).toMatchObject({ evidenceType: 'morphology', sourceKind: 'morphology' })
+    expect(matchCardForResult(result, atom.id).readerAction).toEqual({
+      type: 'unavailable',
+      reason: 'No validated Reader target is available for this Search source result.',
+    })
+  })
+
+  it('preserves source-backed morphology token evidence without implying Reader word highlighting', () => {
+    const result = askMorphologyResult()
+    const atom = expectEvidenceAtom(evidenceAtomForResult(result, askManifest))
+    expect(atom).toMatchObject({
+      evidenceType: 'morphology',
+      sourceKind: 'morphology',
+      displayTarget: { type: 'token', tokenRefs: ['2:255:2'] },
+      rowId: 'qac:2:255:2',
+      sourceToken: 'ٱللَّهِ',
+      normalizedSourceToken: 'ٱللَّهِ',
+      root: 'اله',
+      lemma: 'ٱللَّه',
+    })
     expect(matchCardForResult(result, atom.id).readerAction).toMatchObject({
       type: 'open-in-reader',
       mappingWarning: 'Word-level Reader highlighting is unavailable for this evidence.',
     })
+  })
+
+  it('does not fabricate morphology evidence when target row data is incomplete', () => {
+    const result = askMorphologyResult({
+      matchEvidence: {
+        lane: 'same-root',
+        matchedQueryToken: 'اله',
+        matchedSourceToken: 'ٱللَّهِ',
+        wordPosition: 2,
+        morphology: { sourceToken: 'ٱللَّهِ', root: 'اله', lemma: 'ٱللَّه' },
+        whyMatched: 'The same QAC morphology root occurs in this Hafs source ayah.',
+      },
+    })
+    expect(evidenceAtomForResult(result, askManifest)).toBeNull()
   })
 })

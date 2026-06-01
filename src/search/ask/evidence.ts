@@ -2,6 +2,7 @@ import type {
   EvidenceAtom,
   EvidenceCardLite,
   MatchCardLite,
+  MorphologyEvidence,
   SearchPackManifestV1,
   SearchPlanLite,
   SearchResultDto,
@@ -44,7 +45,7 @@ export function searchPlanForPreview(input: {
   }
 }
 
-export function evidenceAtomForResult(result: SearchResultDto, manifest: SearchPackManifestV1): EvidenceAtom {
+export function evidenceAtomForResult(result: SearchResultDto, manifest: SearchPackManifestV1): EvidenceAtom | null {
   const lane = result.matchEvidence.lane
   const base = {
     id: `evidence:${result.resultId}`,
@@ -62,14 +63,16 @@ export function evidenceAtomForResult(result: SearchResultDto, manifest: SearchP
     }
   }
   if (lane === 'same-written-form' || lane === 'same-root' || lane === 'lemma' || lane === 'surah-context') {
+    const target = morphologyEvidenceTargetForResult(result)
+    if (!target) return null
     return {
       ...base,
       evidenceType: 'morphology',
       sourceKind: 'morphology',
-      displayTarget: { type: 'token', tokenRefs: [`${result.sourceRef}:${result.matchEvidence.wordPosition ?? result.morphology?.wordPosition ?? 0}`] },
-      rowId: result.matchEvidence.morphology?.rowId ?? result.resultId,
-      sourceToken: result.matchEvidence.morphology?.sourceToken ?? result.morphology?.sourceToken ?? result.snippet,
-      normalizedSourceToken: result.matchEvidence.matchedQueryToken ?? result.matchEvidence.normalizedTokens?.[0] ?? result.snippet,
+      displayTarget: { type: 'token', tokenRefs: [`${result.sourceRef}:${target.wordPosition}`] },
+      rowId: target.rowId,
+      sourceToken: target.sourceToken,
+      normalizedSourceToken: target.normalizedSourceToken,
       analysisScope: 'token',
       root: result.matchEvidence.morphology?.root ?? result.morphology?.root ?? undefined,
       lemma: result.matchEvidence.morphology?.lemma ?? result.morphology?.lemma ?? undefined,
@@ -133,10 +136,25 @@ function snippetSourceForResult(result: SearchResultDto): EvidenceCardLite['snip
 }
 
 function readerActionForResult(result: SearchResultDto): EvidenceCardLite['readerAction'] {
-  if (!result.canOpenInRead) return { type: 'unavailable', reason: 'No validated Reader target is available for this Search source result.' }
-  const ref = result.readerRefs.length === 1 ? result.readerRefs[0] : result.sourceRef
+  if (!result.canOpenInRead || result.readerRefs.length !== 1) {
+    return { type: 'unavailable', reason: 'No validated Reader target is available for this Search source result.' }
+  }
+  const ref = result.readerRefs[0]
   const mappingWarning = result.canHighlightWordsInRead
     ? undefined
     : 'Word-level Reader highlighting is unavailable for this evidence.'
   return { type: 'open-in-reader', ref, mappingWarning }
+}
+
+function morphologyEvidenceTargetForResult(result: SearchResultDto): Pick<
+  MorphologyEvidence,
+  'rowId' | 'sourceToken' | 'normalizedSourceToken'
+> & { wordPosition: number } | null {
+  const wordPosition = result.matchEvidence.wordPosition ?? result.morphology?.wordPosition
+  const rowId = result.matchEvidence.morphology?.rowId
+  const sourceToken = result.matchEvidence.morphology?.sourceToken ?? result.morphology?.sourceToken
+  const normalizedSourceToken = result.matchEvidence.matchedSourceToken ?? sourceToken
+  if (typeof wordPosition !== 'number' || !Number.isInteger(wordPosition) || wordPosition < 1) return null
+  if (!rowId || !sourceToken || !normalizedSourceToken) return null
+  return { wordPosition, rowId, sourceToken, normalizedSourceToken }
 }
