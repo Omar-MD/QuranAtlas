@@ -313,7 +313,147 @@ describe('Search shared contracts', () => {
         ...base.evidenceCards[0],
         readerAction: { type: 'open-in-reader', ref: '3:1' },
       }],
-    }))).toThrow('open-in-reader ref 3:1 is not linked evidence')
+    }))).toThrow('open-in-reader ref 3:1 is not linked support evidence')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [...base.evidenceAtoms, extraEvidence],
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        evidenceAtomIds: ['evidence-1', 'evidence-2'],
+        readerAction: { type: 'open-in-reader', ref: '3:1' },
+      }],
+    }))).toThrow('includes unrelated evidence evidence-2')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        evidenceAtomIds: [] as unknown as AnswerPreview['evidenceCards'][number]['evidenceAtomIds'],
+      }],
+    }))).toThrow('evidenceAtomIds must include at least one item')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceCards: [{
+        ...base.evidenceCards[0],
+        claimSupportIds: [] as unknown as AnswerPreview['evidenceCards'][number]['claimSupportIds'],
+      }],
+    }))).toThrow('claimSupportIds must include at least one item')
+  })
+
+  it('validates evidence atom variant shapes', () => {
+    const base = makeAnswerPreview()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        ...base.evidenceAtoms[0],
+        translationId: '',
+      }],
+    }))).toThrow('translationId must be a non-empty string')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        ...base.evidenceAtoms[0],
+        displayTarget: { type: 'quote-range', range: { ref: '' } },
+      }],
+    }))).toThrow('displayTarget.range.ref must be a non-empty string')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        id: 'evidence-1',
+        evidenceType: 'quran-text',
+        sourceKind: 'quran-text',
+        sourceId: 'test-source',
+        sourceVersion: '1.0.0',
+        refs: ['2:255'],
+        displayTarget: { type: 'token', tokenRefs: ['2:255:1'] },
+      }],
+    }))).toThrow('displayTarget type token is not valid')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        id: 'evidence-1',
+        evidenceType: 'morphology',
+        sourceKind: 'morphology',
+        sourceId: 'test-source',
+        sourceVersion: '1.0.0',
+        refs: ['2:255'],
+        displayTarget: { type: 'token', tokenRefs: ['2:255:1'] },
+        rowId: '',
+        sourceToken: 'اللَّهُ',
+        normalizedSourceToken: 'الله',
+        analysisScope: 'token',
+      }],
+    }))).toThrow('rowId must be a non-empty string')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        id: 'evidence-1',
+        evidenceType: 'morphology',
+        sourceKind: 'morphology',
+        sourceId: 'test-source',
+        sourceVersion: '1.0.0',
+        refs: ['2:255'],
+        displayTarget: { type: 'verse-ref', refs: ['2:255'] },
+        rowId: 'morph-1',
+        sourceToken: 'اللَّهُ',
+        normalizedSourceToken: 'الله',
+        analysisScope: 'clause' as unknown as 'token',
+      }],
+    }))).toThrow('unsupported evidence evidence-1 analysisScope clause')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      evidenceAtoms: [{
+        id: 'evidence-1',
+        evidenceType: 'reader-mapping',
+        sourceKind: 'reader-mapping',
+        sourceId: 'test-source',
+        sourceVersion: '1.0.0',
+        refs: ['2:255'],
+        displayTarget: { type: 'verse-ref', refs: ['2:255'] },
+        fromRiwayah: 'hafs',
+        toRiwayah: 'qalun',
+        mappingStatus: 'unknown' as unknown as 'unmapped',
+      }],
+    }))).toThrow('unsupported evidence evidence-1 mappingStatus unknown')
+  })
+
+  it('validates claim support verdicts and deferred source requirements', () => {
+    const base = makeAnswerPreview()
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      claimSupports: [{
+        ...base.claimSupports[0],
+        verdict: 'maybe' as unknown as AnswerPreview['claimSupports'][number]['verdict'],
+      }],
+    }))).toThrow('unsupported claim support support-1 verdict maybe')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      mode: 'evidence-only',
+      answerability: {
+        status: 'evidence-only',
+        reasons: ['needs-commentary' as unknown as 'insufficient-evidence'],
+        renderPermission: 'no-answer-claims',
+      },
+      claims: [],
+      claimSupports: [],
+      evidenceCards: [],
+    }))).toThrow('unsupported answerability reason needs-commentary')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      mode: 'evidence-only',
+      answerability: {
+        status: 'evidence-only',
+        reasons: ['requires-deferred-source'],
+        renderPermission: 'no-answer-claims',
+      },
+      claims: [],
+      claimSupports: [],
+      evidenceCards: [],
+    }))).toThrow('recovery.requiredDeferredSources')
+    expect(() => assertAnswerPreviewContract(makeAnswerPreview({
+      mode: 'evidence-only',
+      answerability: {
+        status: 'evidence-only',
+        reasons: ['requires-deferred-source'],
+        renderPermission: 'no-answer-claims',
+      },
+      claims: [],
+      claimSupports: [],
+      evidenceCards: [],
+      recovery: {
+        message: 'This query needs deferred evidence.',
+        suggestedQueries: [],
+        actions: ['refine-query'],
+        requiredDeferredSources: ['computed-cluster' as unknown as 'tafsir'],
+      },
+    }))).toThrow('unsupported required deferred source computed-cluster')
   })
 
   it('enforces AnswerPreview v1 payload limits', () => {

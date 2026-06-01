@@ -281,8 +281,41 @@ const ANSWERABILITY_STATUSES: readonly AnswerabilityDecision['status'][] = [
   'needs-clarification',
   'not-answerable',
 ]
+const ANSWER_BLOCKERS: readonly AnswerBlockerLite[] = [
+  'insufficient-evidence',
+  'ambiguous-query',
+  'requires-tafsir',
+  'requires-deferred-source',
+  'source-unavailable',
+  'absence-claim-unproven',
+  'legal-boundary',
+  'medical-boundary',
+  'fiqh-boundary',
+  'personal-crisis-boundary',
+  'personal-pastoral-boundary',
+  'broad-theological-boundary',
+  'inflammatory-religious-attack-boundary',
+  'outside-current-scope',
+]
+const DEFERRED_SOURCE_REQUIREMENTS: readonly DeferredSourceRequirement[] = [
+  'tafsir',
+  'asbab',
+  'hadith',
+  'theme',
+  'cross-reference',
+]
 const RENDER_PERMISSIONS: readonly AnswerabilityDecision['renderPermission'][] = ['answer-preview', 'no-answer-claims']
 const READER_ACTION_TYPES: readonly EvidenceCardLite['readerAction']['type'][] = ['open-in-reader', 'unavailable']
+const DISPLAY_TARGET_TYPES: readonly EvidenceDisplayTarget['type'][] = ['verse-ref', 'quote-range', 'token']
+const MORPHOLOGY_ANALYSIS_SCOPES: readonly MorphologyEvidence['analysisScope'][] = ['token', 'segment']
+const READER_MAPPING_STATUSES: readonly ReaderMappingEvidence['mappingStatus'][] = [
+  'same-riwayah',
+  'verse-level-only',
+  'token-level-mapped',
+  'token-level-different',
+  'unmapped',
+]
+const CLAIM_SUPPORT_VERDICTS: readonly ClaimSupport['verdict'][] = ['supported', 'insufficient']
 
 export function answerPreviewModeForDecision(status: AnswerabilityDecision['status']): AnswerPreview['mode'] {
   if (status === 'answerable') return 'answer'
@@ -297,6 +330,10 @@ function assertArray(value: unknown, label: string): asserts value is unknown[] 
 
 function assertRecord(value: unknown, label: string): asserts value is Record<string, unknown> {
   if (!value || typeof value !== 'object') throw new Error(`AnswerPreview ${label} must be an object`)
+}
+
+function assertNonEmptyString(value: unknown, label: string): asserts value is string {
+  if (typeof value !== 'string' || value.length === 0) throw new Error(`${label} must be a non-empty string`)
 }
 
 function assertKnownValue<T extends string>(value: unknown, allowed: readonly T[], label: string): asserts value is T {
@@ -319,6 +356,69 @@ function assertUniqueIds(items: Array<{ id: string }>, label: string): void {
   }
 }
 
+function assertNonEmptyStringArray(value: unknown, label: string): string[] {
+  assertArray(value, label)
+  if (value.length === 0) throw new Error(`AnswerPreview ${label} must include at least one item`)
+  const strings: string[] = []
+  for (const item of value) {
+    assertNonEmptyString(item, `${label} item`)
+    strings.push(item)
+  }
+  return strings
+}
+
+function assertDisplayTarget(
+  target: EvidenceDisplayTarget,
+  allowedTypes: readonly EvidenceDisplayTarget['type'][],
+  label: string,
+): string[] {
+  assertRecord(target, `${label} displayTarget`)
+  assertKnownValue(target.type, DISPLAY_TARGET_TYPES, `${label} displayTarget type`)
+  if (!(allowedTypes as readonly string[]).includes(target.type)) {
+    throw new Error(`${label} displayTarget type ${target.type} is not valid`)
+  }
+
+  if (target.type === 'verse-ref') {
+    return assertNonEmptyStringArray(target.refs, `${label} displayTarget.refs`)
+  }
+  if (target.type === 'quote-range') {
+    assertRecord(target.range, `${label} displayTarget.range`)
+    assertNonEmptyString(target.range.ref, `${label} displayTarget.range.ref`)
+    return [target.range.ref]
+  }
+  return assertNonEmptyStringArray(target.tokenRefs, `${label} displayTarget.tokenRefs`)
+}
+
+function assertEvidenceAtomVariant(atom: EvidenceAtom): void {
+  const label = `evidence ${atom.id}`
+  assertSourceKind(atom.evidenceType, 'evidence type')
+  if (atom.sourceKind !== atom.evidenceType) throw new Error(`${label} has mismatched sourceKind/evidenceType`)
+  const textTargetTypes = ['verse-ref', 'quote-range'] as const
+
+  switch (atom.evidenceType) {
+    case 'quran-text':
+      assertDisplayTarget(atom.displayTarget, textTargetTypes, label)
+      return
+    case 'translation':
+      assertNonEmptyString(atom.translationId, `${label} translationId`)
+      assertDisplayTarget(atom.displayTarget, textTargetTypes, label)
+      return
+    case 'morphology':
+      assertNonEmptyString(atom.rowId, `${label} rowId`)
+      assertNonEmptyString(atom.sourceToken, `${label} sourceToken`)
+      assertNonEmptyString(atom.normalizedSourceToken, `${label} normalizedSourceToken`)
+      assertKnownValue(atom.analysisScope, MORPHOLOGY_ANALYSIS_SCOPES, `${label} analysisScope`)
+      assertDisplayTarget(atom.displayTarget, ['token'], label)
+      return
+    case 'reader-mapping':
+      assertNonEmptyString(atom.fromRiwayah, `${label} fromRiwayah`)
+      assertNonEmptyString(atom.toRiwayah, `${label} toRiwayah`)
+      assertKnownValue(atom.mappingStatus, READER_MAPPING_STATUSES, `${label} mappingStatus`)
+      assertDisplayTarget(atom.displayTarget, DISPLAY_TARGET_TYPES, label)
+      return
+  }
+}
+
 function isSupportedClaimAuthorityKey(key: ClaimAuthorityKey): key is SupportedClaimAuthorityKey {
   return Object.prototype.hasOwnProperty.call(V1_CLAIM_AUTHORITY, key)
 }
@@ -328,6 +428,9 @@ function assertAnswerabilityDecision(decision: AnswerabilityDecision): void {
   assertKnownValue(decision.status, ANSWERABILITY_STATUSES, 'answerability status')
   assertKnownValue(decision.renderPermission, RENDER_PERMISSIONS, 'answerability renderPermission')
   assertArray(decision.reasons, 'answerability.reasons')
+  for (const reason of decision.reasons) {
+    assertKnownValue(reason, ANSWER_BLOCKERS, 'answerability reason')
+  }
 
   const status = decision.status
   if (status === 'answerable') {
@@ -345,6 +448,17 @@ function assertAnswerabilityDecision(decision: AnswerabilityDecision): void {
   }
   if (decision.renderPermission !== 'no-answer-claims') {
     throw new Error(`${status} decisions require no-answer-claims render permission`)
+  }
+}
+
+function assertDeferredSourceRequirements(preview: AnswerPreview): void {
+  const reasons = preview.answerability.reasons as readonly AnswerBlockerLite[]
+  const requiresDeferredSource = reasons.includes('requires-deferred-source')
+  const deferredSources = preview.recovery?.requiredDeferredSources
+  if (!requiresDeferredSource && deferredSources === undefined) return
+  const requiredDeferredSources = assertNonEmptyStringArray(deferredSources, 'recovery.requiredDeferredSources')
+  for (const source of requiredDeferredSources) {
+    assertKnownValue(source, DEFERRED_SOURCE_REQUIREMENTS, 'required deferred source')
   }
 }
 
@@ -398,6 +512,7 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
   assertArray(preview.sourceFamilyStatuses, 'sourceFamilyStatuses')
   assertSearchPlanSourceKinds(preview.searchPlan)
   assertAnswerabilityDecision(preview.answerability)
+  assertDeferredSourceRequirements(preview)
 
   const expectedMode = answerPreviewModeForDecision(preview.answerability.status)
   if (preview.mode !== expectedMode) {
@@ -420,9 +535,10 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
   for (const atom of preview.evidenceAtoms) {
     assertRecord(atom, 'evidence atom')
     assertSourceKind(atom.sourceKind, 'v1 source kind')
-    if (atom.sourceKind !== atom.evidenceType) throw new Error(`evidence ${atom.id} has mismatched sourceKind/evidenceType`)
     assertArray(atom.refs, `evidence ${atom.id} refs`)
     if (atom.refs.length === 0) throw new Error(`evidence ${atom.id} must include at least one ref`)
+    for (const ref of atom.refs) assertNonEmptyString(ref, `evidence ${atom.id} ref`)
+    assertEvidenceAtomVariant(atom)
   }
 
   const supportById = new Map(preview.claimSupports.map((support) => [support.id, support]))
@@ -431,6 +547,7 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
   for (const support of preview.claimSupports) {
     assertRecord(support, 'claim support')
     assertArray(support.supportIds, `claim support ${support.id} supportIds`)
+    assertKnownValue(support.verdict, CLAIM_SUPPORT_VERDICTS, `claim support ${support.id} verdict`)
     const claim = claimById.get(support.claimId)
     if (!claim && support.verdict === 'supported') throw new Error(`supported claim support ${support.id} points to missing claim`)
     if (support.supportIds.length === 0) throw new Error(`claim support ${support.id} has no evidence`)
@@ -468,12 +585,13 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     assertRecord(card, 'evidence card')
     assertArray(card.evidenceAtomIds, `evidence card ${card.id} evidenceAtomIds`)
     assertArray(card.claimSupportIds, `evidence card ${card.id} claimSupportIds`)
+    if (card.evidenceAtomIds.length === 0) throw new Error(`evidence card ${card.id} evidenceAtomIds must include at least one item`)
+    if (card.claimSupportIds.length === 0) throw new Error(`evidence card ${card.id} claimSupportIds must include at least one item`)
     const cardEvidenceIds = new Set(card.evidenceAtomIds)
-    const cardEvidenceRefs = new Set<string>()
+    const supportEvidenceIds = new Set<string>()
+    const supportEvidenceRefs = new Set<string>()
     for (const atomId of card.evidenceAtomIds) {
-      const atom = evidenceById.get(atomId)
-      if (!atom) throw new Error(`evidence card ${card.id} references missing evidence ${atomId}`)
-      for (const ref of atom.refs) cardEvidenceRefs.add(ref)
+      if (!evidenceById.has(atomId)) throw new Error(`evidence card ${card.id} references missing evidence ${atomId}`)
     }
     for (const supportId of card.claimSupportIds) {
       const support = supportById.get(supportId)
@@ -484,15 +602,22 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
         throw new Error(`evidence card ${card.id} support ${supportId} points to missing rendered claim ${support.claimId}`)
       }
       for (const supportEvidenceId of support.supportIds) {
+        const supportEvidence = evidenceById.get(supportEvidenceId)
+        if (!supportEvidence) throw new Error(`evidence card ${card.id} support ${supportId} references missing evidence ${supportEvidenceId}`)
+        supportEvidenceIds.add(supportEvidenceId)
+        for (const ref of supportEvidence.refs) supportEvidenceRefs.add(ref)
         if (!cardEvidenceIds.has(supportEvidenceId)) {
           throw new Error(`evidence card ${card.id} support ${supportId} evidence ${supportEvidenceId} is not included in card evidenceAtomIds`)
         }
       }
     }
+    for (const atomId of card.evidenceAtomIds) {
+      if (!supportEvidenceIds.has(atomId)) throw new Error(`evidence card ${card.id} includes unrelated evidence ${atomId}`)
+    }
     assertRecord(card.readerAction, `evidence card ${card.id} readerAction`)
     assertKnownValue(card.readerAction.type, READER_ACTION_TYPES, `evidence card ${card.id} readerAction type`)
-    if (card.readerAction.type === 'open-in-reader' && !cardEvidenceRefs.has(card.readerAction.ref)) {
-      throw new Error(`evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked evidence`)
+    if (card.readerAction.type === 'open-in-reader' && !supportEvidenceRefs.has(card.readerAction.ref)) {
+      throw new Error(`evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked support evidence`)
     }
   }
 }
