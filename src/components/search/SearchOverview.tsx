@@ -28,8 +28,10 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
         {overview.facts.map((fact) => (
           <div key={`${fact.label}:${fact.scope}`}>
             <dt>{fact.label}</dt>
-            <dd><bdi>{fact.value}</bdi></dd>
-            <small>{fact.scope}</small>
+            <dd>
+              <bdi>{fact.value}</bdi>
+              <small>{fact.scope}</small>
+            </dd>
           </div>
         ))}
       </dl>

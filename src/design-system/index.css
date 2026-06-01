@@ -301,6 +301,7 @@
 
   .qar-search-overview-facts small,
   .qar-search-overview-list small {
+    display: block;
     color: var(--qa-react-text-muted);
     font-size: 0.72rem;
     line-height: 1.3;

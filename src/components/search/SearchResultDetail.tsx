@@ -14,14 +14,14 @@ export function SearchResultDetail({
 }) {
   if (!details) {
     return (
-      <aside aria-label="Search result detail" className="qar-search-result-detail">
+      <div aria-label="Search result detail" className="qar-search-result-detail" role="group">
         <p className="qar:m-0 qar:text-sm qar:text-muted">Choose a verse and open Details to inspect why it matched.</p>
-      </aside>
+      </div>
     )
   }
 
   return (
-    <aside aria-label={`Details for ${details.title}`} className="qar-search-result-detail">
+    <div aria-label={`Details for ${details.title}`} className="qar-search-result-detail" role="group">
       <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
         <div>
           <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted">Details</p>
@@ -50,7 +50,7 @@ export function SearchResultDetail({
       <DetailRows rows={details.readerMappingRows} title="Reader mapping" />
       <DetailRows rows={details.evidenceRows} title="Evidence" />
       <DetailRows rows={details.sourceRows} title="Sources" />
-    </aside>
+    </div>
   )
 }
 
