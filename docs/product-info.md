@@ -44,7 +44,7 @@ Concepts, divine names, cross-references, and richer curated study metadata rema
 
 ### AI readiness
 
-QuranAtlas is preparing its asset pipeline for future retrieval and citation-first AI by keeping sources clean, provenance-rich, validated, versioned, and indexable. No AI assistant, chat, agent, synthesis UI, or reflection-prompt product is in current v1 scope.
+QuranAtlas is preparing its asset pipeline for retrieval and citation-first AI by keeping sources clean, provenance-rich, validated, versioned, and indexable. Future answer, assistant, chat, agent, synthesis, or guided-study experiences are allowed when they are source-bounded, cite their evidence, and stay explicit about evidence limits. Generated Quran text and unsupported theological claims remain out of scope.
 
 ## Out of current product scope
 

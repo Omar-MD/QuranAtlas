@@ -39,7 +39,7 @@ Agreed future work that supports the Reader First product promise. When work sta
 - Scholarly claims datasets when sourcing and review rules are defined.
 - Optional embedding/vector indexes as infrastructure only.
 
-This lane is infrastructure and retrieval readiness. It is not an AI assistant, chat, agent, synthesis UI, or answer-generation product.
+This lane may support future answer, assistant, chat, agent, synthesis, or guided-study products when they are citation-first, source-bounded, and explicit about evidence limits. Generated Quran text and unsupported theological claims remain out of scope.
 
 ## Deferred Language Aids
 
@@ -64,7 +64,6 @@ These are not v1 scope unless separately promoted with clear reader value and so
 - Personal marks, tags, notes, comments, review, and edges, except bookmarks.
 - Copy, share, export, import, user-facing sync, accounts, community, and shared collections.
 - Streaks and standalone khatm tracker product branches.
-- AI assistant, chat, agent, synthesis UI, and current-roadmap reflection prompts.
 - Multiple translations side by side.
 - Riwayah, translation source, tafsir source, and Mushaf edition selection UI until the multiple-profile contract is restored.
 - Qira'at beyond the current Qaloon default profile.

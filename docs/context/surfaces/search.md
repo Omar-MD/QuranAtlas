@@ -127,7 +127,7 @@ Graph phrase windows stay within one ayah and one surah, do not cross Bismillah 
 
 Saved searches are created only through `Save search` after the current query parses into a valid executable Search intent, and are shown inside the Search mode of the existing `NavDrawer`. Saved-search rows mirror bookmark row behavior: the full row loads the saved query, closes the drawer like a navigation jump, and a bookmark-style swipe/reveal delete action removes the record with an undo affordance for accidental deletion. Saved-search save/delete/load announcements are short-lived events and do not remain appended to later query statuses. `savedSearches` stores Phase 1 user intent fields, compatibility metadata, and timestamps. It does not store result DTOs, result windows, Explore section ids, or source corpus snapshots. Loading a saved search applies its query and filters, announces the loaded state, and recomputes against the active compatible Search index.
 
-Search runtime code must not introduce user-facing assistant, chat, synthesis, generated Quran text, semantic answer, or reflection-prompt UI.
+Search may evolve toward user-facing answer, assistant, or guided-study experiences when the feature remains citation-first, source-bounded, and explicit about evidence limits. Search must not generate Quran text or present unsupported theological claims as sourced results.
 
 ## Style Inventory
 
@@ -174,7 +174,7 @@ _(no cross-surface reads detected)_
 - Search saved-search storage must store query definitions, not materialized results.
 - Search graph Explore sections must remain lazy and panel-scoped; core Search queries must not decode graph shards.
 - Attested following wording and shared wording must keep their required non-generated/non-interpretive notes visible.
-- Search must not introduce AI assistant, chat, generated Quran text, synthesis, semantic answer, or reflection-prompt product scope.
+- Search answer, assistant, or guided-study experiences must remain citation-first, source-bounded, and explicit about evidence limits; Search must not generate Quran text or present unsupported theological claims as sourced results.
 
 ## Regression Guards
 

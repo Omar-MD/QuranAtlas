@@ -37,7 +37,7 @@ Reader boot must not require optional curated metadata files. Missing optional m
 
 The shipped `#/search` route covers deterministic lexical Search, source-backed morphology modes for same written form, same root, lemma, and Surah context, and a bounded memory graph for attested following wording, shared wording, repeated phrase exploration, occurs-once phrases, ayah endings, and Counts & patterns. Future retrieval infrastructure may add chunked tafsir and claims retrieval, citation/provenance maps, optional vector or embedding indexes, and richer graph navigation. This work should ground future answers in structured retrieval and citations.
 
-No AI assistant, chat, agent, synthesis UI, or generated-answer product is current scope.
+Future answer, assistant, chat, or guided-study products are allowed product directions when they are citation-first, source-bounded, and explicit about evidence limits. They must not generate Quran text or present unsupported theological claims as sourced results.
 
 ## Future personal layer
 

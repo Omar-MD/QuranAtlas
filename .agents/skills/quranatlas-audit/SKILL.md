@@ -22,7 +22,7 @@ Evaluate at least:
 - Reader First baseline: Verse/Mushaf reading, bookmarks, saved position, Daily Wird, search/navigation, reader preferences, and curated reader-attached metadata.
 - One-active-pack and install-before-activate semantics for qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf pages, and search/index assets.
 - Removed-scope boundaries: audio and personal marks/tags/notes/review/edges are not product scope except bookmarks.
-- AI boundary: infrastructure and retrieval readiness only; no assistant, chat, agent, synthesis UI, or reflection-prompt product.
+- AI boundary: answer, assistant, chat, agent, synthesis, or guided-study products must be citation-first, source-bounded, and explicit about evidence limits; generated Quran text and unsupported theological claims remain out of scope.
 - Architecture, correctness, reliability, performance, security, accessibility, and UI quality.
 
 ## Evidence Rules
