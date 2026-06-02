@@ -54,7 +54,7 @@ Runtime data is always same-origin under `/dataset/**`.
 
 The current MVP profile is Qaloon text/font, Qaloon Mushaf pages, and Bridges translation.
 
-Search is the second top-level product mode. The `#/search` route is lazy-loaded from `src/app/routes/search/SearchRoute.tsx`, owns a route-scoped `SearchClient`, installs/activates the core Search pack on Search entry when needed, and queries a restartable Web Worker through serializable result windows. Search uses generated static packs with immutable runtime URLs under `/search-packs/packs/<contentHash>/**`, registry `/search-packs/registry.json`, explicit Hafs-to-Qalun Reader mapping, and source-backed saved-search intent records. Reader launch does not fetch Search packs, decode Search graphs, or start the Search worker.
+Search is the second top-level product mode. The `#/search` route is lazy-loaded from `src/app/routes/search/SearchRoute.tsx`, owns a route-scoped `SearchClient`, installs/activates the core Search pack on Search entry when needed, and queries a restartable Web Worker through serializable result windows. The lazy Search route owns the Ask/Search v1 preview loop. `AnswerPreview` is built in the Search worker from typed Search evidence and rendered by the Search surface; Reader routes do not import Ask/Search runtime modules, start Search workers, fetch `/search-packs/**`, or touch Search storage on cold launch. Search uses generated static packs with immutable runtime URLs under `/search-packs/packs/<contentHash>/**`, registry `/search-packs/registry.json`, explicit Hafs-to-Qalun Reader mapping, and source-backed saved-search intent records.
 
 ## UI Architecture
 

@@ -110,6 +110,12 @@ style_paths:
 
 `matchReactRoute('#/search')` returns `search`, and `App` lazy-loads `src/app/routes/search/SearchRoute.tsx` only for the Search route. The Search route owns a route-scoped `SearchClient`, initializes the worker against the compatible immutable Search pack manifest on Search entry, loads no result shards until query/explore actions need them, and disposes the worker client on route teardown. Reader cold launch performs no Search pack fetch, graph decode, or Search worker startup. Search uses the same Reader chrome and `NavDrawer` navigation pattern as Read: the compact Reader chrome opens the drawer from the left, phone widths use a full-screen drawer, and tablet/desktop widths keep Search content visible on the right while the drawer is open.
 
+Search includes the citation-first Ask/Search v1 preview loop on the lazy Search route. Submitted queries first return an `AnswerPreview` with answerability, typed evidence atoms, compact Evidence Basis, Best Evidence cards, and no generated source text. All Matches, Explore, Method & Sources-style source detail, and graph/morphology panels load only after explicit user action.
+
+Answer claims render only when their `ClaimSupport` resolves to typed v1 evidence and passes the v1 claim authority matrix. No-answer and evidence-only responses carry empty claim arrays. Absence, legal, medical, personal fiqh, crisis, personal pastoral, broad theological, inflammatory, tafsir/asbab/hadith/theme/cross-reference, and unsupported-source queries use fixed recovery copy instead of answer prose.
+
+Reader cold launch remains clean: no Search route chunk, Search worker, Search pack/index request, Search IndexedDB activity, or `/search-packs/**` precache entry occurs before explicit Search intent.
+
 Search contracts live in `shared/search/**` and `data/catalog/search-*.json`. They define a Hafs/Tanzil analytical Search corpus, explicit Hafs-to-Qalun Reader mapping states, static Search pack manifests, lazy worker protocol, normalizer/tokenizer policy, source/license records, and dedicated Search pack cache ownership. The user-facing label is `Qalun`; the runtime key remains `qaloon`.
 
 Search packs use a filesystem registry at `public/search-packs/registry.json`, runtime registry URL `/search-packs/registry.json`, and immutable manifests/shards under `public/search-packs/packs/<contentHash>/**`. Search pack assets are owned by the dedicated Search pack cache/read path, not the generic `/dataset/**` CacheFirst route.

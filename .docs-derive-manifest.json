@@ -4,7 +4,7 @@
   "blocks": {
     "docs/context/surfaces/configure.md:inventory": "4e3549cb5d8d6686b8a7e9ff8d540ce482b1076a739affd2793c14360c872622",
     "docs/context/surfaces/configure.md:style-inventory": "a1d55bf5e1d333a7bcae8864856a67421c038f2a4e6374e2bd261fdbcf11d507",
-    "docs/context/surfaces/infra.md:inventory": "42f77d7198c71a72ebb5c6b135e21b468bbf3c436cf97e750afe9b33479446de",
+    "docs/context/surfaces/infra.md:inventory": "768ba768a69aab99d5ba66a64933747999ad7a30175f5dffbeb4ee59501fe989",
     "docs/context/surfaces/infra.md:style-inventory": "a1d55bf5e1d333a7bcae8864856a67421c038f2a4e6374e2bd261fdbcf11d507",
     "docs/context/surfaces/navigate.md:inventory": "fd78f725a43672649f41cc2b2d57617bb7823d9c3af1ceafd48c07c7fb71977d",
     "docs/context/surfaces/navigate.md:style-inventory": "a1d55bf5e1d333a7bcae8864856a67421c038f2a4e6374e2bd261fdbcf11d507",
@@ -15,7 +15,7 @@
     "docs/context/surfaces/configure.md:data-owned": "fec34f04eaa4235e59ba76d9fd8546ce9d13d6a214125c1ef8a1c5464b370137",
     "docs/context/surfaces/configure.md:data-read": "ec17b62494212085767a8413d464b7f28471a80005ed7eba9f993f1f98c8a66f",
     "docs/context/surfaces/infra.md:data-owned": "ea11d188bf7f466641d9abc9298019b0152b4dbbb742f43f0980e29c6a3cb0e2",
-    "docs/context/surfaces/infra.md:data-read": "ec17b62494212085767a8413d464b7f28471a80005ed7eba9f993f1f98c8a66f",
+    "docs/context/surfaces/infra.md:data-read": "97ab8c52954cf53bab605f401db89938963c2960daf050c85737c981956cf16d",
     "docs/context/surfaces/navigate.md:data-owned": "686d1c28ae10650b9c0ef999b0afa36bd817a72dcd5a0a0d30ee1c3bf1c9124c",
     "docs/context/surfaces/navigate.md:data-read": "ec17b62494212085767a8413d464b7f28471a80005ed7eba9f993f1f98c8a66f",
     "docs/context/surfaces/onboard.md:data-owned": "011cad1a21833236a91854b53f08fbafe84da61572af6b0ad0ce3bbcbf08e4a0",

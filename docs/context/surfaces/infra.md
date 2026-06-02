@@ -59,6 +59,7 @@ style_paths:
 | `src/offline/ui-state.ts` | _(no leading comment)_ |
 | `src/storage/clear-data.ts` | _(no leading comment)_ |
 | `src/storage/db.ts` | _(no leading comment)_ |
+| `src/storage/native-reader-store.ts` | _(no leading comment)_ |
 | `src/storage/reader-preferences.ts` | _(no leading comment)_ |
 | `src/storage/schema.ts` | _(no leading comment)_ |
 | `src/storage/settings-writer.ts` | _(no leading comment)_ |
@@ -72,7 +73,7 @@ style_paths:
 
 `scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real page SVG pack.
 
-`src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. The About route's app update action uses the browser service-worker registration to run an explicit update check and reload through a pending worker when one is found. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors.
+`src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. The About route's app update action uses the browser service-worker registration to run an explicit update check and reload through a pending worker when one is found. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors. `src/storage/native-reader-store.ts` uses short-lived raw IndexedDB connections for Reader launch and continuity reads/writes; it creates only Reader-owned stores and leaves Search stores to explicit Search/Dexie paths.
 
 Search pack files under `/search-packs/**` are not Workbox dataset-cache assets. `vite.config.js` keeps the generic `/dataset/**` CacheFirst route from matching `/dataset/search/**`, while `src/offline/search/**` owns the dedicated `quran-atlas-search-pack-<contentHash>` Cache Storage lifecycle. Search install verifies shard SHA-256 checksums over encoded bytes, writes staging metadata, activates with a monotonic generation, announces activation changes across tabs, and protects active or live leased packs from orphan cleanup.
 
@@ -98,7 +99,8 @@ Dexie v8 adds Search lifecycle stores. Clear data continues to delete browser st
 <!-- AUTO-GENERATED:data-owned END -->
 
 <!-- AUTO-GENERATED:data-read START -->
-_(no cross-surface reads detected)_
+- `settings` (owner: `configure`) — read at `src/storage/native-reader-store.ts`
+- `bookmarks` (owner: `navigate`) — read at `src/storage/native-reader-store.ts`
 <!-- AUTO-GENERATED:data-read END -->
 
 ## Events
