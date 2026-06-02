@@ -51,7 +51,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run data -- build` | Build the baseline committed runtime dataset while preserving the existing dataset timestamp unless `QURANATLAS_DATASET_BUILT_AT` is set |
 | `pnpm run data -- build --skip=mushaf-pages` | Rebuild non-Mushaf baseline dataset lanes while reusing existing local/generated Mushaf page assets |
 | `pnpm run data -- build --profile=full` | Build every approved current dataset profile |
-| `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs, including Search pack bytes and stamped Mushaf page artifacts |
+| `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs, including Search pack bytes; stamped Mushaf page artifacts are checked when local page inputs are present |
 | `pnpm run data:fetch -- <type>:<id>` | Fetch and normalize catalog-backed source data |
 | `pnpm run test` | Run the full Vitest unit suite once across Node and React projects |
 | `pnpm run test:fast` | Run the split Vitest unit suite while skipping generated Search pack/morphology integration smoke tests |

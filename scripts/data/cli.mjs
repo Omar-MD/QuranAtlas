@@ -57,7 +57,7 @@ function main(argv = process.argv.slice(2)) {
     run('text/build.mjs', ['--profile=baseline'])
     run('search/build.mjs', ['--profile=baseline', '--check'])
     run('knowledge/build.mjs', ['--check'])
-    run('mushaf-pages/build.mjs', ['--profile=baseline', '--check', '--require-riwayah=qaloon'])
+    run('mushaf-pages/build.mjs', ['--profile=baseline', '--check'])
     run('riwayah-packages/build.mjs', ['--profile=baseline', '--check'])
     return
   }
