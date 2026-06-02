@@ -19,7 +19,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | Reader lists | TanStack Virtual | `^3.13.26` | Available for measured list virtualization where needed |
 | Language | TypeScript | `^6.0.3` | Strict TS/TSX type checking |
 | PWA | vite-plugin-pwa + Workbox | `^1.3.0`, `^7.4.1` | Manifest, service worker, app-shell precache, runtime dataset cache |
-| Unit/component tests | Vitest + Testing Library React | `^4.1.5`, `^16.3.2` | Split Node script/shared coverage and jsdom React/component coverage |
+| Unit/component tests | Vitest + Testing Library React | `^4.1.6`, `^16.3.2` | Split Node script/shared coverage and jsdom React/component coverage |
 | E2E/visual | Playwright | `^1.59.1` | Route, offline, accessibility, and visual regression evidence |
 | Storybook | Storybook React/Vite | `10.4.1` | React component development and review surface |
 | Lint | ESLint + typescript-eslint | `^10.2.1`, `^8.59.1` | JS/TS/TSX quality gate |
