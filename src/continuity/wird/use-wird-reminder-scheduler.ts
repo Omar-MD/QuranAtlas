@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { loadReaderSurahIndex } from '../../data/surah-index'
-import { openReactDb } from '../../storage/db'
+import { nativeSettingsReader } from '../../storage/native-reader-store'
 import { deriveWirdSummary } from './progress'
 import {
   createWirdReminderNotification,
@@ -41,8 +41,7 @@ export function useWirdReminderScheduler(): void {
 
     async function reloadPlanAndSchedule(): Promise<void> {
       try {
-        const db = await openReactDb()
-        const plan = await readWirdPlan(db)
+        const plan = await readWirdPlan(nativeSettingsReader())
         if (!cancelled) schedule(plan)
       } catch {
         if (!cancelled) schedule(null)
@@ -52,8 +51,7 @@ export function useWirdReminderScheduler(): void {
     async function fireReminder(): Promise<void> {
       if (cancelled) return
       try {
-        const db = await openReactDb()
-        const plan = await readWirdPlan(db)
+        const plan = await readWirdPlan(nativeSettingsReader())
         if (!plan?.reminder.enabled) {
           schedule(null)
           return

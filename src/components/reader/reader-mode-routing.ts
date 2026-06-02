@@ -5,7 +5,7 @@ import {
   pageForVerseInMushafManifest,
   type QuranRef,
 } from '../../packs/mushaf-page-asset'
-import { openReactDb } from '../../storage/db'
+import { readNativeSetting, readNativeSettings } from '../../storage/native-reader-store'
 import type { Riwayah } from '../../storage/types'
 
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
@@ -62,8 +62,7 @@ function parseReaderHash(hash: string): QuranRef | null {
 
 async function readCurrentPosition(): Promise<QuranRef | null> {
   try {
-    const db = await openReactDb()
-    const record = await db.settings.get('currentPosition')
+    const record = await readNativeSetting('currentPosition')
     const value = record?.value as Partial<QuranRef> | undefined
     if (!value || !Number.isInteger(value.surah) || !Number.isInteger(value.verse)) return null
     if ((value.surah ?? 0) < 1 || (value.surah ?? 0) > 114 || (value.verse ?? 0) < 1) return null
@@ -75,11 +74,7 @@ async function readCurrentPosition(): Promise<QuranRef | null> {
 
 async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
   try {
-    const db = await openReactDb()
-    const [riwayah, mushafEditionId] = await Promise.all([
-      db.settings.get('riwayah'),
-      db.settings.get('mushafEditionId'),
-    ])
+    const [riwayah, mushafEditionId] = await readNativeSettings(['riwayah', 'mushafEditionId'])
     return {
       riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
       mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,

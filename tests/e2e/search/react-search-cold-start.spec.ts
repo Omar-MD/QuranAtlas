@@ -1,9 +1,10 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { QURAN_ATLAS_DB_NAME } from '../../../src/storage/schema'
 import { seedTargetState, targetUrl } from '../fixtures/react-golden-routes'
 
 type SearchColdStartProof = {
+  createObjectStoreCalls: Array<{ dbName: string; storeName: string }>
   databaseNames: string[]
   objectStoreCalls: Array<{ dbName: string; storeName: string }>
   openCalls: Array<{ name: string; version: number | null }>
@@ -13,7 +14,11 @@ type SearchColdStartProof = {
 
 const SEARCH_STORE_NAMES = ['savedSearches', 'searchPackActivations', 'searchPackStaging']
 
-test('Reader cold launch performs no Ask/Search work before explicit Search intent', async ({ page }) => {
+async function runColdLaunchProof(
+  page: Page,
+  hash: string,
+  waitForReady: (page: Page) => Promise<void>,
+): Promise<void> {
   await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
 
   const requests: string[] = []
@@ -24,6 +29,7 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
 
   await page.addInitScript(({ dbName, searchStoreNames }) => {
     const proof: SearchColdStartProof = {
+      createObjectStoreCalls: [],
       databaseNames: [],
       objectStoreCalls: [],
       openCalls: [],
@@ -57,8 +63,7 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
       options?: IDBTransactionOptions,
     ) {
       const names = Array.isArray(storeNames) ? storeNames : [storeNames]
-      const isSearchScopedTransaction = names.length > 0 && names.every((name) => searchStoreNames.includes(name))
-      if (this.name === dbName && isSearchScopedTransaction) {
+      if (this.name === dbName && names.some((name) => searchStoreNames.includes(name))) {
         proof.transactionCalls.push({
           dbName: this.name,
           mode: mode ?? 'readonly',
@@ -68,12 +73,20 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
       return originalTransaction.call(this, storeNames, mode, options)
     }
 
+    const originalCreateObjectStore = IDBDatabase.prototype.createObjectStore
+    IDBDatabase.prototype.createObjectStore = function patchedCreateObjectStore(
+      name: string,
+      options?: IDBObjectStoreParameters,
+    ) {
+      if (this.name === dbName && searchStoreNames.includes(name)) {
+        proof.createObjectStoreCalls.push({ dbName: this.name, storeName: name })
+      }
+      return originalCreateObjectStore.call(this, name, options)
+    }
+
     const originalObjectStore = IDBTransaction.prototype.objectStore
     IDBTransaction.prototype.objectStore = function patchedObjectStore(name: string) {
-      const transactionStoreNames = Array.from(this.objectStoreNames)
-      const isSearchScopedTransaction = transactionStoreNames.length > 0
-        && transactionStoreNames.every((storeName) => searchStoreNames.includes(storeName))
-      if (this.db.name === dbName && searchStoreNames.includes(name) && isSearchScopedTransaction) {
+      if (this.db.name === dbName && searchStoreNames.includes(name)) {
         proof.objectStoreCalls.push({ dbName: this.db.name, storeName: name })
       }
       return originalObjectStore.call(this, name)
@@ -133,9 +146,8 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
     }
   }, { dbName: QURAN_ATLAS_DB_NAME, searchStoreNames: SEARCH_STORE_NAMES })
 
-  await page.goto(targetUrl('react', '/#/s/1'))
-  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-  await expect(page.getByTestId('verse-1:7')).toBeVisible()
+  await page.goto(targetUrl('react', hash))
+  await waitForReady(page)
   await expect.poll(() => page.evaluate(() => document.readyState)).toBe('complete')
 
   const indexedDbProof = await page.evaluate(async () => {
@@ -154,6 +166,21 @@ test('Reader cold launch performs no Ask/Search work before explicit Search inte
   expect(workerUrls.some((url) => /search\.worker/i.test(url))).toBe(false)
   expect(indexedDbProof.databaseNames.some((name) => name.includes('quran-atlas-search'))).toBe(false)
   expect(indexedDbProof.transactionCalls).toEqual([])
+  expect(indexedDbProof.createObjectStoreCalls).toEqual([])
   expect(indexedDbProof.objectStoreCalls).toEqual([])
   expect(indexedDbProof.storeOperationCalls).toEqual([])
+}
+
+test('Verse Reader cold launch performs no Ask/Search work before explicit Search intent', async ({ page }) => {
+  await runColdLaunchProof(page, '/#/s/1', async (proofPage) => {
+    await expect(proofPage.getByRole('main', { name: /verse reader/i })).toBeVisible()
+    await expect(proofPage.getByTestId('verse-1:7')).toBeVisible()
+  })
+})
+
+test('Mushaf Reader cold launch performs no Ask/Search work before explicit Search intent', async ({ page }) => {
+  await runColdLaunchProof(page, '/#/m/1', async (proofPage) => {
+    await expect(proofPage.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
+    await expect(proofPage.getByRole('img', { name: /mushaf page 1/i })).toBeVisible()
+  })
 })

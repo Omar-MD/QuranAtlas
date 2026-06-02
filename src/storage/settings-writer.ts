@@ -1,4 +1,5 @@
 import type { QuranAtlasReactDb } from './db'
+import { readNativeSettings } from './native-reader-store'
 import type { Riwayah, SettingRecord } from './types'
 
 export type ReaderAssetBundleSettings = {
@@ -85,6 +86,15 @@ export async function writeReaderAssetBundleSettings(db: QuranAtlasReactDb, sett
 
 export async function readReactReaderPreferences(db: QuranAtlasReactDb): Promise<ReactReaderPreferences> {
   const records = await db.settings.bulkGet([...READER_PREFERENCE_KEYS])
+  return reactReaderPreferencesFromRecords(records)
+}
+
+export async function readNativeReactReaderPreferences(): Promise<ReactReaderPreferences> {
+  const records = await readNativeSettings([...READER_PREFERENCE_KEYS])
+  return reactReaderPreferencesFromRecords(records)
+}
+
+function reactReaderPreferencesFromRecords(records: Array<SettingRecord | undefined>): ReactReaderPreferences {
   const values = Object.fromEntries(records.map((record, index) => [READER_PREFERENCE_KEYS[index], record?.value]))
   return {
     fontSize: asStep(values.fontSize) ?? DEFAULT_REACT_READER_PREFERENCES.fontSize,

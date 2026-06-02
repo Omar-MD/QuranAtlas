@@ -5,12 +5,12 @@ import { LaunchSplash } from '../components/launch/LaunchSplash'
 import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/routes'
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
 import { shouldPersistLastSurface, useLaunchRestore } from '../continuity/launch-restore'
-import { writeLastSurface } from '../continuity/last-surface'
-import { openReactDb } from '../storage/db'
+import { normalizeLastSurface } from '../continuity/last-surface'
 import { resolveMushafHrefForVerseRoute, resolveVerseHrefForMushafPage } from '../components/reader/reader-mode-routing'
 import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } from '../storage/reader-preferences'
-import { readReactReaderPreferences } from '../storage/settings-writer'
+import { readNativeReactReaderPreferences } from '../storage/settings-writer'
 import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
+import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
 
 const AboutRoute = lazy(() => import('./routes/settings/AboutRoute').then((module) => ({ default: module.AboutRoute })))
 const BookmarksRoute = lazy(() => import('./routes/navigation/BookmarksRoute').then((module) => ({ default: module.BookmarksRoute })))
@@ -65,8 +65,7 @@ export function App() {
 
   useEffect(() => {
     let active = true
-    void openReactDb()
-      .then(readReactReaderPreferences)
+    void readNativeReactReaderPreferences()
       .then((preferences) => {
         if (active) applyReactReaderAppearance(preferences)
       })
@@ -100,8 +99,8 @@ export function App() {
     if (launchRestore.status !== 'ready' || !shouldPersistLastSurface(activeHash)) return
     setLastReaderHash(activeHash)
     let active = true
-    void openReactDb().then((db) => {
-      if (active) return writeLastSurface(db, activeHash)
+    void writeNormalizedLastSurface(activeHash, () => active).then(() => {
+      if (!active) return undefined
       return undefined
     })
     return () => {
@@ -232,13 +231,18 @@ export function App() {
 async function resolveSettingsPreviousHash(lastReaderHash: string | null): Promise<string> {
   if (lastReaderHash && shouldPersistLastSurface(lastReaderHash)) return lastReaderHash
   try {
-    const db = await openReactDb()
-    const record = await db.settings.get('lastSurface')
+    const record = await readNativeSetting('lastSurface')
     if (typeof record?.value === 'string' && shouldPersistLastSurface(record.value)) return record.value
   } catch {
     // Fall through to the default reader route.
   }
   return '#/s/1'
+}
+
+async function writeNormalizedLastSurface(hash: string, shouldWrite: () => boolean): Promise<void> {
+  const normalized = normalizeLastSurface(hash)
+  if (!normalized) return
+  await writeNativeSetting({ key: 'lastSurface', value: normalized }, shouldWrite)
 }
 
 type ReaderVerseRef = { surah: number; verse: number }

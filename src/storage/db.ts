@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 
 import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION, QURAN_ATLAS_V7_STORES, QURAN_ATLAS_V8_STORES } from './schema'
+import { closeNativeReaderDb } from './native-reader-store'
 import type {
   ActivationStateRecord,
   BookmarkRecord,
@@ -39,4 +40,5 @@ export async function openReactDb(): Promise<QuranAtlasReactDb> {
 export function closeReactDb(): void {
   db?.close()
   db = null
+  closeNativeReaderDb()
 }

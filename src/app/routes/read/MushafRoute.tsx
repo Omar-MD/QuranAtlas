@@ -11,8 +11,8 @@ import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
-import { deriveWirdSummary } from '../../../continuity/wird/progress'
-import { advanceWirdFromReaderPosition, readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
+import { advanceWirdProgress, deriveWirdSummary, getLocalDayKey } from '../../../continuity/wird/progress'
+import { normalizeWirdPlan, notifyWirdPlanChanged, readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
 import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import {
   loadMushafPageAsset,
@@ -20,8 +20,8 @@ import {
   type MushafPageAssetState,
 } from '../../../packs/mushaf-page-asset'
 import type { Riwayah } from '../../../storage/types'
-import { openReactDb } from '../../../storage/db'
-import { DEFAULT_REACT_READER_PREFERENCES, readReactReaderPreferences } from '../../../storage/settings-writer'
+import { nativeSettingsReader, readNativeSetting, readNativeSettings, writeNativeSetting } from '../../../storage/native-reader-store'
+import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
 import { isReactMushafViewMode, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { REACT_ROUTES } from '../../router/routes'
 
@@ -85,8 +85,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     const key = `${ref.surah}:${ref.verse}`
     if (lastWirdAdvancedKeyRef.current === key) return
     lastWirdAdvancedKeyRef.current = key
-    void openReactDb()
-      .then((db) => advanceWirdFromReaderPosition(db, ref, wirdCounts))
+    void advanceNativeWirdFromReaderPosition(ref, wirdCounts)
       .then((nextPlan) => {
         if (nextPlan) setWirdPlan(nextPlan)
       })
@@ -105,8 +104,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
         if (!controller.signal.aborted) setSurahIndex([])
       })
 
-    void openReactDb()
-      .then(readWirdPlan)
+    void readWirdPlan(nativeSettingsReader())
       .then((plan) => {
         if (!controller.signal.aborted) setWirdPlan(plan)
       })
@@ -237,12 +235,8 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
 
 async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
   try {
-    const db = await openReactDb()
-    const [riwayah, mushafEditionId, preferences] = await Promise.all([
-      db.settings.get('riwayah'),
-      db.settings.get('mushafEditionId'),
-      readReactReaderPreferences(db),
-    ])
+    const [riwayah, mushafEditionId] = await readNativeSettings(['riwayah', 'mushafEditionId'])
+    const preferences = await readNativeReactReaderPreferences()
     return {
       riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
       mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
@@ -257,6 +251,19 @@ async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
       wirdReaderStatusVisible: DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
     }
   }
+}
+
+async function advanceNativeWirdFromReaderPosition(
+  ref: QuranRef,
+  counts: ReadonlyArray<SurahCount>,
+): Promise<WirdPlan | null> {
+  const plan = normalizeWirdPlan((await readNativeSetting('wirdPlan'))?.value)
+  if (!plan) return null
+  const next = advanceWirdProgress(plan, ref, counts, getLocalDayKey())
+  const value = JSON.parse(JSON.stringify(next)) as WirdPlan
+  await writeNativeSetting({ key: 'wirdPlan', value })
+  notifyWirdPlanChanged(value)
+  return value
 }
 
 function isRiwayah(value: unknown): value is Riwayah {

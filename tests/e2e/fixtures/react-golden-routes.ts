@@ -99,7 +99,7 @@ export async function expectReactProductionPreflight(page: Page) {
 }
 
 export async function clearTargetStorage(page: Page, target: AppTargetId) {
-  await page.goto(targetUrl(target, '/'))
+  await page.goto(targetUrl(target, '/favicon.ico'))
   await page.evaluate(
     async ({ dbName }) => {
       localStorage.clear()

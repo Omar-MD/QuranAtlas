@@ -4,9 +4,9 @@ import { loadReaderSurah, type ReaderCorpusState } from '../../../data/reader-co
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
 import { loadKnowledgeForSurah } from '../../../metadata/knowledge'
 import type { VerseMetadata } from '../../../metadata/metadata-state'
-import { openReactDb } from '../../../storage/db'
 import type { Riwayah } from '../../../storage/types'
-import { DEFAULT_REACT_READER_PREFERENCES, readReactReaderPreferences } from '../../../storage/settings-writer'
+import { nativeSettingsReader, readNativeSettings } from '../../../storage/native-reader-store'
+import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
 import { applyReactReaderTypography, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import { ReaderVerseSurface } from '../../../components/reader/ReaderVerseSurface'
@@ -56,9 +56,8 @@ function asRiwayah(value: unknown): Riwayah | null {
 
 async function readReaderSettings(): Promise<ReaderSettings> {
   try {
-    const db = await openReactDb()
-    const [riwayah, quranTextStyleId, translationId] = await db.settings.bulkGet(['riwayah', 'quranTextStyleId', 'translationId'])
-    const preferences = await readReactReaderPreferences(db)
+    const [riwayah, quranTextStyleId, translationId] = await readNativeSettings(['riwayah', 'quranTextStyleId', 'translationId'])
+    const preferences = await readNativeReactReaderPreferences()
     return {
       fontSize: preferences.fontSize,
       lineSpacing: preferences.lineSpacing,
@@ -146,8 +145,7 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
         if (!controller.signal.aborted) setCorpus({ status: 'error', error: error instanceof Error ? error : new Error('Reader corpus unavailable') })
       })
 
-    void openReactDb()
-      .then(readWirdPlan)
+    void readWirdPlan(nativeSettingsReader())
       .then((plan) => {
         if (!controller.signal.aborted) setWirdPlan(plan)
       })
@@ -190,16 +188,16 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
     const targetKey = `${surah}:${ayah}`
     if (lastFocusedRouteKeyRef.current === targetKey) return
     if (!corpus.verses.some((verse) => verse.key === targetKey)) return
-    const landAtTarget = () => {
+    const landAtTarget = (syncCurrentPosition: boolean) => {
       const target = findReaderVerseElement(targetKey)
       if (!target) return false
       target.scrollIntoView?.({ block: 'center', behavior: 'auto' })
-      syncPosition(targetKey)
+      if (syncCurrentPosition) syncPosition(targetKey)
       return true
     }
-    if (!landAtTarget()) return
+    if (!landAtTarget(true)) return
     lastFocusedRouteKeyRef.current = targetKey
-    window.setTimeout(landAtTarget, 50)
+    window.setTimeout(() => landAtTarget(false), 50)
   }, [ayah, corpus, surah, syncPosition])
 
   return (

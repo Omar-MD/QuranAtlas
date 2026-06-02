@@ -1,4 +1,5 @@
 import type { QuranAtlasReactDb } from '../../storage/db'
+import type { SettingRecord } from '../../storage/types'
 import { advanceWirdProgress, getLocalDayKey } from './progress'
 import type { BrowserNotificationState, QuranRef, SurahCount, WirdPlan, WirdUnit } from './types'
 
@@ -8,6 +9,12 @@ const DEFAULT_END_REF: QuranRef = { surah: 114, verse: 6 }
 const DEFAULT_REMINDER = { browserNotifications: 'default', enabled: false, time: '07:00' } as const
 const VALID_UNITS = new Set<WirdUnit>(['juz', 'hizb', 'page', 'verse'])
 const VALID_NOTIFICATION_STATES = new Set<BrowserNotificationState>(['unsupported', 'default', 'granted', 'denied'])
+
+export type WirdSettingsReader = {
+  settings: {
+    get: (key: string) => Promise<SettingRecord | undefined>
+  }
+}
 
 function isQuranRef(value: unknown): value is QuranRef {
   if (!value || typeof value !== 'object') return false
@@ -44,7 +51,7 @@ function asReminder(value: unknown) {
   }
 }
 
-function normalizeWirdPlan(value: unknown): WirdPlan | null {
+export function normalizeWirdPlan(value: unknown): WirdPlan | null {
   if (!value || typeof value !== 'object') return null
   const raw = value as Partial<WirdPlan> & {
     cursor?: unknown
@@ -104,7 +111,7 @@ function normalizeWirdPlan(value: unknown): WirdPlan | null {
   }
 }
 
-export async function readWirdPlan(db: QuranAtlasReactDb): Promise<WirdPlan | null> {
+export async function readWirdPlan(db: WirdSettingsReader): Promise<WirdPlan | null> {
   const record = await db.settings.get('wirdPlan')
   return normalizeWirdPlan(record?.value)
 }
@@ -131,6 +138,10 @@ export async function advanceWirdFromReaderPosition(
   const next = advanceWirdProgress(plan, readRef, counts, dayKey)
   await writeWirdPlan(db, next)
   return next
+}
+
+export function notifyWirdPlanChanged(plan: WirdPlan | null): void {
+  emitWirdPlanChanged(plan)
 }
 
 export function subscribeWirdPlanChanged(listener: (plan: WirdPlan | null) => void): () => void {

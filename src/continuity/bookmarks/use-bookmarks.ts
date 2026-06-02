@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { openReactDb } from '../../storage/db'
+import { listNativeBookmarks, readNativeSetting } from '../../storage/native-reader-store'
 import type { BookmarkKind, BookmarkRecord, Riwayah } from '../../storage/types'
-import { deleteBookmark, listBookmarks, toggleBookmark as toggleStoredBookmark, type BookmarkIdentity } from './store'
+import { deleteBookmark, toggleBookmark as toggleStoredBookmark, type BookmarkIdentity } from './store'
 import { subscribeBookmarkChanges } from './sync'
 
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
@@ -17,10 +18,9 @@ export function useBookmarks() {
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
   const reload = useCallback(async (active = true) => {
-    const db = await openReactDb()
-    const setting = await db.settings.get('riwayah')
+    const setting = await readNativeSetting('riwayah')
     const nextRiwayah = isRiwayah(setting?.value) ? setting.value : DEFAULT_RIWAYAH
-    const rows = await listBookmarks(db, nextRiwayah)
+    const rows = await listNativeBookmarks(nextRiwayah)
     if (!active) return
     setRiwayah(nextRiwayah)
     setBookmarks(rows)

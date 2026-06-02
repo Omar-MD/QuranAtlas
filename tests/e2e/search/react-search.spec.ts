@@ -75,11 +75,11 @@ test('Search route supports keyboard flow, saved searches, match inspection, and
 
   const openButton = page.getByRole('article', { name: 'Evidence 2:7' }).getByRole('button', { name: 'Open in Read' })
   await expect(openButton).toBeVisible()
+  expect(guard.failures).toEqual([])
+  guard.dispose()
   await openButton.click()
   await expect(page).toHaveURL(/#\/s\/\d+\/\d+$/)
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-  expect(guard.failures).toEqual([])
-  guard.dispose()
 })
 
 test('@mobile Search Ask preview tabs keep All matches keyboard accessible on phone', async ({ page }) => {

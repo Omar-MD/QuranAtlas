@@ -1,5 +1,5 @@
 import { loadMushafManifest } from '../../packs/mushaf-page-asset'
-import { openReactDb } from '../../storage/db'
+import { readNativeSettings } from '../../storage/native-reader-store'
 import type { Riwayah } from '../../storage/types'
 import { createPageWirdBoundariesFromStarts } from './metadata'
 import type { SurahCount, WirdBoundary } from './types'
@@ -12,11 +12,7 @@ export async function loadReactWirdPageBoundaries(
   signal?: AbortSignal,
 ): Promise<WirdBoundary[]> {
   if (counts.length === 0 || signal?.aborted) return []
-  const db = await openReactDb()
-  const [riwayah, mushafEditionId] = await Promise.all([
-    db.settings.get('riwayah'),
-    db.settings.get('mushafEditionId'),
-  ])
+  const [riwayah, mushafEditionId] = await readNativeSettings(['riwayah', 'mushafEditionId'])
   if (signal?.aborted) return []
   const manifest = await loadMushafManifest({
     mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,

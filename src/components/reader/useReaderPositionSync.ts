@@ -1,23 +1,54 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-import { writeCurrentPosition } from '../../continuity/current-position'
-import { trackRecentSurahPosition } from '../../continuity/recent-surahs'
-import { advanceWirdFromReaderPosition } from '../../continuity/wird/store'
-import type { SurahCount } from '../../continuity/wird/types'
+import { normalizeRecentSurahs } from '../../continuity/recent-surahs'
+import { advanceWirdProgress, getLocalDayKey } from '../../continuity/wird/progress'
+import { normalizeWirdPlan, notifyWirdPlanChanged } from '../../continuity/wird/store'
+import type { SurahCount, WirdPlan } from '../../continuity/wird/types'
 import type { ReaderCorpusState } from '../../data/reader-corpus'
-import { openReactDb } from '../../storage/db'
+import { readNativeSetting, writeNativeSettings } from '../../storage/native-reader-store'
+import type { SettingRecord } from '../../storage/types'
 
 type ReaderPosition = { surah: number; verse: number }
 
 const SCROLL_PERSIST_DELAY_MS = 500
+const READER_POSITION_PERSIST_TOKEN_KEY = '__quranAtlasReaderPositionPersistToken'
 
-async function persistPosition(surah: number, verse: number, wirdCounts: ReadonlyArray<SurahCount>): Promise<void> {
-  const db = await openReactDb()
-  await writeCurrentPosition(db, { surah, verse })
-  await trackRecentSurahPosition(db, { surah, verse })
+type ReaderPositionPersistWindow = Window & {
+  [READER_POSITION_PERSIST_TOKEN_KEY]?: string
+}
+
+async function persistPosition(
+  surah: number,
+  verse: number,
+  wirdCounts: ReadonlyArray<SurahCount>,
+  isLatestPosition: () => boolean,
+): Promise<boolean> {
+  const recentRecord = await readNativeSetting('recentSurahs')
+  const previous = normalizeRecentSurahs(recentRecord?.value)
+  const recentSurahs = [
+    { surah, updatedAt: Date.now(), verse },
+    ...previous.filter((row) => row.surah !== surah),
+  ].slice(0, 7)
+  const records: SettingRecord[] = [
+    { key: 'currentPosition', value: { surah, verse } },
+    { key: 'recentSurahs', value: recentSurahs },
+  ]
+  let nextWirdPlan: WirdPlan | null = null
   if (wirdCounts.length > 0) {
-    await advanceWirdFromReaderPosition(db, { surah, verse }, wirdCounts)
+    const plan = normalizeWirdPlan((await readNativeSetting('wirdPlan'))?.value)
+    if (plan) {
+      nextWirdPlan = advanceWirdProgress(plan, { surah, verse }, wirdCounts, getLocalDayKey())
+      records.push({
+        key: 'wirdPlan',
+        value: JSON.parse(JSON.stringify(nextWirdPlan)),
+      })
+    }
   }
+  if (!isLatestPosition()) return false
+  const committed = await writeNativeSettings(records, isLatestPosition)
+  if (!committed) return false
+  if (nextWirdPlan) notifyWirdPlanChanged(nextWirdPlan)
+  return true
 }
 
 function parseVerseKey(verseKey: string): ReaderPosition | null {
@@ -30,6 +61,21 @@ function parseVerseKey(verseKey: string): ReaderPosition | null {
 
 function positionKey(position: ReaderPosition): string {
   return `${position.surah}:${position.verse}`
+}
+
+function createPersistToken(key: string): string {
+  return `${key}:${Date.now()}:${Math.random()}`
+}
+
+function markLatestPersistToken(token: string): void {
+  if (typeof window === 'undefined') return
+  const persistWindow = window as ReaderPositionPersistWindow
+  persistWindow[READER_POSITION_PERSIST_TOKEN_KEY] = token
+}
+
+function isLatestPersistToken(token: string): boolean {
+  if (typeof window === 'undefined') return true
+  return (window as ReaderPositionPersistWindow)[READER_POSITION_PERSIST_TOKEN_KEY] === token
 }
 
 function findCenteredVersePosition(surah: number): ReaderPosition | null {
@@ -58,6 +104,8 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
   const latestPositionRef = useRef<ReaderPosition | null>(null)
   const lastPersistedKeyRef = useRef<string | null>(null)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
+  const latestPersistTokenRef = useRef<string | null>(null)
+  const persistQueueRef = useRef<Promise<void>>(Promise.resolve())
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wirdCountsRef = useRef<ReadonlyArray<SurahCount>>(options.wirdCounts ?? [])
   const readyCorpus = corpus.status === 'ready' ? corpus : null
@@ -65,25 +113,48 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
   const firstVerseNumber = readyCorpus?.verses[0]?.verse ?? null
   const surahNumber = readyCorpus?.surah.number ?? null
 
+  const enqueuePersistPosition = useCallback((
+    position: ReaderPosition,
+    wirdCounts: ReadonlyArray<SurahCount>,
+    persistToken: string,
+  ) => {
+    const key = positionKey(position)
+    persistQueueRef.current = persistQueueRef.current.catch(() => undefined).then(async () => {
+      const committed = await persistPosition(position.surah, position.verse, wirdCounts, () => {
+        const latest = latestPositionRef.current
+        return isLatestPersistToken(persistToken) && (latest ? positionKey(latest) === key : true)
+      })
+      if (!committed) return
+      lastPersistedKeyRef.current = key
+      if (wirdCounts.length > 0) lastWirdAdvancedKeyRef.current = key
+    }).catch(() => undefined)
+  }, [])
+
   useEffect(() => {
     wirdCountsRef.current = options.wirdCounts ?? []
     const position = latestPositionRef.current
     if (!position || wirdCountsRef.current.length === 0) return
     const key = positionKey(position)
     if (lastWirdAdvancedKeyRef.current === key) return
-    lastWirdAdvancedKeyRef.current = key
-    void openReactDb().then((db) => advanceWirdFromReaderPosition(db, position, wirdCountsRef.current))
-  }, [options.wirdCounts])
+    let persistToken = latestPersistTokenRef.current
+    if (!persistToken) {
+      persistToken = createPersistToken(key)
+      latestPersistTokenRef.current = persistToken
+      markLatestPersistToken(persistToken)
+    }
+    enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
+  }, [enqueuePersistPosition, options.wirdCounts])
 
   const commitPosition = useCallback((position: ReaderPosition, persistMode: 'deferred' | 'immediate') => {
     latestPositionRef.current = position
     const key = positionKey(position)
+    const persistToken = createPersistToken(key)
+    latestPersistTokenRef.current = persistToken
+    markLatestPersistToken(persistToken)
 
     const runPersist = () => {
       if (lastPersistedKeyRef.current === key) return
-      lastPersistedKeyRef.current = key
-      void persistPosition(position.surah, position.verse, wirdCountsRef.current)
-      if (wirdCountsRef.current.length > 0) lastWirdAdvancedKeyRef.current = key
+      enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
     }
 
     if (persistMode === 'immediate') {
@@ -101,7 +172,7 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
       persistTimerRef.current = null
       runPersist()
     }, SCROLL_PERSIST_DELAY_MS)
-  }, [])
+  }, [enqueuePersistPosition])
 
   useEffect(() => {
     if (!surahNumber || !firstVerseSurah || !firstVerseNumber) return
@@ -122,10 +193,13 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null
         const position = latestPositionRef.current
-        if (position) void persistPosition(position.surah, position.verse, wirdCountsRef.current)
+        if (position) {
+          const persistToken = latestPersistTokenRef.current
+          if (persistToken) enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
+        }
       }
     }
-  }, [commitPosition, firstVerseNumber, firstVerseSurah, surahNumber])
+  }, [commitPosition, enqueuePersistPosition, firstVerseNumber, firstVerseSurah, surahNumber])
 
   const syncPosition = useCallback((verseKey: string) => {
     const position = parseVerseKey(verseKey)

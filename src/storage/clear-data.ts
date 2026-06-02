@@ -1,4 +1,5 @@
 import { closeReactDb } from './db'
+import { closeNativeReaderDb } from './native-reader-store'
 import { QURAN_ATLAS_DB_NAME } from './schema'
 
 export async function clearReactApplicationData() {
@@ -8,6 +9,7 @@ export async function clearReactApplicationData() {
     clearStorage(browserWindow.sessionStorage)
   }
   closeReactDb()
+  closeNativeReaderDb()
 
   if ('caches' in window) {
     const names = await window.caches.keys()

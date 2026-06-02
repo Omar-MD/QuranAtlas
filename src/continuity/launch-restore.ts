@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { openReactDb, type QuranAtlasReactDb } from '../storage/db'
 import type { SettingRecord } from '../storage/types'
 import { ensureReactMvpAssetContractReset } from '../launch/asset-contract-reset'
+import { nativeSettingsReader } from '../storage/native-reader-store'
 
 export type SavedPosition = { surah: number; verse: number }
 export type LaunchRestoreState =
@@ -93,8 +93,7 @@ export function useLaunchRestore(hash: string): LaunchRestoreState {
 
     async function resolve() {
       await ensureReactMvpAssetContractReset()
-      const db: QuranAtlasReactDb = await openReactDb()
-      const resolvedHash = await resolveHashWithLaunchState(db, hash)
+      const resolvedHash = await resolveHashWithLaunchState(nativeSettingsReader(), hash)
       if (active) {
         hasResolvedOnceRef.current = true
         setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
