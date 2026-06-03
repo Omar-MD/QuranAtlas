@@ -31,21 +31,17 @@ test('Search route supports keyboard flow, saved searches, match inspection, and
 
   await expect(page.getByRole('main', { name: 'Search' })).toBeVisible()
   await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
+  await expect(page.getByRole('tab', { name: /Search mode:/ })).toHaveCount(0)
 
   await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
-  await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
 
-  await expectSearchOverview(page, 'Allah')
-  await expect(page.getByText(/Translation evidence renders/i)).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Evidence basis' })).toBeVisible()
+  await expectAskPreview(page, 'Allah')
   await openAllMatches(page)
   await page.getByRole('tab', { name: 'Sources' }).click()
   await expect(page.getByRole('region', { name: 'Sources are summarized on Overview' })).toBeVisible()
 
   await page.getByLabel('Search Quran text, translation, or context').fill('الله')
-  await page.getByRole('tab', { name: 'Search mode: Same root' }).click()
-  await expect(page.getByRole('tab', { name: 'Search mode: Same root' })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
   await expectAskPreview(page, 'الله')
   await page.getByRole('tab', { name: 'Verses' }).click()
@@ -55,7 +51,6 @@ test('Search route supports keyboard flow, saved searches, match inspection, and
   await expect(page.getByRole('region', { name: 'Sources are summarized on Overview' })).toBeVisible()
 
   await page.getByLabel('Search Quran text, translation, or context').fill('بسم الله')
-  await page.getByRole('tab', { name: 'Search mode: Phrase' }).click()
   await page.getByLabel('Search Quran text, translation, or context').press('Enter')
   await expectAskPreview(page, 'بسم الله')
   await expect(page.getByRole('button', { name: /prediction|autocomplete/i })).toHaveCount(0)
@@ -68,12 +63,11 @@ test('Search route supports keyboard flow, saved searches, match inspection, and
   await page.getByRole('button', { name: 'Close' }).click()
 
   await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
-  await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
-  await expect(page.getByText(/Translation evidence renders/i)).toBeVisible()
+  await expectAskPreview(page, 'Allah')
   await openAllMatches(page)
 
-  const openButton = page.getByRole('article', { name: 'Evidence 2:7' }).getByRole('button', { name: 'Open in Read' })
+  const openButton = page.getByRole('article', { name: 'Evidence 2:7' }).getByRole('button', { name: 'Open 2:7 in Reader' })
   await expect(openButton).toBeVisible()
   expect(guard.failures).toEqual([])
   guard.dispose()
@@ -88,9 +82,8 @@ test('@mobile Search Ask preview tabs keep All matches keyboard accessible on ph
   await installSearchPackFixture(page)
   await page.goto(targetUrl('react', '/#/search'))
   await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
+  await expect(page.getByRole('tab', { name: /Search mode:/ })).toHaveCount(0)
   await page.getByLabel('Search Quran text, translation, or context').fill('الله')
-  await page.getByRole('tab', { name: 'Search mode: Arabic text' }).click()
-  await expect(page.getByRole('tab', { name: 'Search mode: Arabic text' })).toHaveAttribute('aria-selected', 'true')
   await page.getByRole('button', { exact: true, name: 'Search' }).click()
   await page.setViewportSize({ width: 390, height: 844 })
   await expectAskPreview(page, 'الله')

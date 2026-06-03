@@ -73,7 +73,7 @@ export function useSearchRouteState(options: {
 } = {}): SearchRouteState {
   const initialHashState = useMemo(() => readSearchHashState(), [])
   const [query, setQuery] = useState(options.initialQuery ?? initialHashState.query ?? '')
-  const [mode, setMode] = useState<SearchQueryMode>(options.initialMode ?? initialHashState.mode ?? 'all')
+  const [mode, setMode] = useState<SearchQueryMode>('all')
   const [packState, setPackState] = useState<SearchRoutePackState>('loading')
   const [packVersion, setPackVersion] = useState<string | undefined>()
   const [error, setError] = useState<string | null>(null)
@@ -170,7 +170,7 @@ export function useSearchRouteState(options: {
 
   const submitSearch = useCallback((next?: { mode?: SearchQueryMode; query?: string; selectedResultId?: string | null; tab?: SearchWorkspaceTab | null }) => {
     const effectiveQuery = next?.query ?? query
-    const effectiveMode = next?.mode ?? mode
+    const effectiveMode: SearchQueryMode = 'all'
     const trimmed = effectiveQuery.trim()
     requestSequence.current += 1
     const sequence = requestSequence.current
@@ -259,18 +259,18 @@ export function useSearchRouteState(options: {
       setSearchStatus(message)
       setResultCursor(null)
     })
-  }, [client, mode, packState, query, resetEvidenceState, sort])
+  }, [client, packState, query, resetEvidenceState, sort])
 
   useEffect(() => {
     if (restoredHashStateRef.current || !readyRef.current || !initialHashState.query?.trim()) return
     restoredHashStateRef.current = true
     submitSearch({
-      mode: initialHashState.mode ?? 'all',
+      mode: 'all',
       query: initialHashState.query,
       selectedResultId: initialHashState.selectedResultId ?? null,
       tab: initialHashState.tab ?? null,
     })
-  }, [initialHashState.mode, initialHashState.query, initialHashState.selectedResultId, initialHashState.tab, packState, submitSearch])
+  }, [initialHashState.query, initialHashState.selectedResultId, initialHashState.tab, packState, submitSearch])
 
   const loadMoreResults = useCallback(() => {
     const cursor = resultCursor
@@ -444,8 +444,8 @@ export function useSearchRouteState(options: {
     writeSearchHashState({})
   }, [packState, resetEvidenceState])
 
-  const setSearchMode = useCallback((nextMode: SearchQueryMode) => {
-    setMode(nextMode)
+  const setSearchMode = useCallback(() => {
+    setMode('all')
   }, [])
 
   const setSearchActiveWorkspaceTab = useCallback((tab: SearchWorkspaceTab) => {
@@ -626,7 +626,6 @@ function writeSearchHashState(state: SearchHashState): void {
   if (typeof window === 'undefined') return
   const params = new URLSearchParams()
   if (state.query?.trim()) params.set('q', state.query.trim())
-  if (state.mode && state.mode !== 'all') params.set('mode', state.mode)
   if (state.tab && state.tab !== 'overview') params.set('tab', state.tab)
   if (state.selectedResultId) params.set('selected', state.selectedResultId)
   const nextHash = params.toString() ? `${REACT_ROUTES.search}?${params.toString()}` : REACT_ROUTES.search
@@ -635,20 +634,7 @@ function writeSearchHashState(state: SearchHashState): void {
 }
 
 function searchModeFromParam(value: string | null): SearchQueryMode | undefined {
-  if (
-    value === 'all'
-    || value === 'arabic-text'
-    || value === 'translation'
-    || value === 'context'
-    || value === 'exact-word-form'
-    || value === 'phrase'
-    || value === 'same-written-form'
-    || value === 'same-root'
-    || value === 'lemma'
-    || value === 'surah-context'
-  ) {
-    return value
-  }
+  void value
   return undefined
 }
 

@@ -279,13 +279,17 @@ describe('React settings shell coverage', () => {
     })
   })
 
-  it('persists the Daily Wird reader status preference from Verse settings', async () => {
+  it('persists Daily Wird visibility from the standalone Wird settings section', async () => {
     await resetReactDb()
 
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
 
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    const toggle = within(dialog).getByRole('switch', { name: 'Show Daily Wird reader status' })
+    const verseSettings = within(dialog).getByLabelText('Verse settings')
+    expect(within(verseSettings).queryByRole('switch', { name: 'Enable Daily Wird' })).not.toBeInTheDocument()
+
+    const wirdSettings = within(dialog).getByRole('region', { name: 'Daily Wird' })
+    const toggle = within(wirdSettings).getByRole('switch', { name: 'Enable Daily Wird' })
     expect(toggle).toBeChecked()
 
     fireEvent.click(toggle)
@@ -294,6 +298,46 @@ describe('React settings shell coverage', () => {
     await waitFor(async () => {
       const db = await openReactDb()
       await expect(db.settings.get('wirdReaderStatusVisible')).resolves.toEqual({ key: 'wirdReaderStatusVisible', value: false })
+    })
+  })
+
+  it('disables the Wird reminder when Daily Wird is disabled', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.put({
+      key: 'wirdPlan',
+      value: {
+        endRef: { surah: 114, verse: 6 },
+        history: [],
+        id: 'wird-test',
+        progress: {
+          completedThroughRef: null,
+          dayKey: '2026-06-03',
+          lastReadRef: { surah: 1, verse: 1 },
+          nextRef: { surah: 1, verse: 1 },
+          todayEndRef: { surah: 1, verse: 7 },
+          todayStartRef: { surah: 1, verse: 1 },
+        },
+        reminder: { browserNotifications: 'granted', enabled: true, time: '07:30' },
+        startRef: { surah: 1, verse: 1 },
+        startedOn: '2026-06-03',
+        targetDays: 30,
+        targetEndOn: '2026-07-03',
+        unit: 'verse',
+      },
+    })
+
+    render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    fireEvent.click(within(dialog).getByRole('switch', { name: 'Enable Daily Wird' }))
+
+    await waitFor(async () => {
+      const nextDb = await openReactDb()
+      const record = await nextDb.settings.get('wirdPlan')
+      expect(record?.value).toMatchObject({
+        reminder: { browserNotifications: 'granted', enabled: false, time: '07:30' },
+      })
     })
   })
 
@@ -398,7 +442,7 @@ describe('React settings shell coverage', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Theme: Dark' }))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Night mode: On' }))
     fireEvent.click(within(dialog).getByRole('switch', { name: 'Show translation' }))
-    fireEvent.click(within(dialog).getByRole('switch', { name: 'Show Daily Wird reader status' }))
+    fireEvent.click(within(dialog).getByRole('switch', { name: 'Enable Daily Wird' }))
     fireEvent.keyDown(within(dialog).getByRole('slider', { name: 'Font size' }), { key: 'End' })
     window.HTMLElement.prototype.scrollIntoView = vi.fn()
     fireEvent.click(within(dialog).getByRole('combobox', { name: 'Reading flow' }))

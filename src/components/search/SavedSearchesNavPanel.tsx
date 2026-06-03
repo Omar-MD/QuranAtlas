@@ -3,7 +3,6 @@ import { useRef, useState, type CSSProperties, type PointerEvent, type TouchEven
 import { cn } from '../../design-system/utils/cn'
 import type { SavedSearchRecord } from '../../storage/types'
 import { Button } from '../ui'
-import { modeLabel } from './search-labels'
 
 type SwipePoint = { x: number; y: number }
 type TouchStart = { key: string; t: number; x: number; y: number }
@@ -209,7 +208,6 @@ export function SavedSearchesNavPanel({
                 type="button"
                 unstyled
               >
-                <span className="qar-react-nav-drawer-saved-searches-mode">{modeLabel(record.intent.queryMode)}</span>
                 <span className="qar-react-nav-drawer-saved-searches-copy" dir="auto">
                   <span className="qar-react-nav-drawer-saved-searches-name"><bdi>{record.intent.name}</bdi></span>
                   <span className="qar-react-nav-drawer-saved-searches-query"><bdi>{record.intent.queryText}</bdi></span>

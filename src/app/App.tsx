@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 
-import type { SettingsRouteMode } from './routes/settings/SettingsRoute'
+import { SettingsRoute, type SettingsRouteMode } from './routes/settings/SettingsRoute'
 import { LaunchSplash } from '../components/launch/LaunchSplash'
 import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/routes'
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
@@ -18,7 +18,6 @@ const MushafRoute = lazy(() => import('./routes/read/MushafRoute').then((module)
 const OnboardingRoute = lazy(() => import('./routes/onboarding/OnboardingRoute').then((module) => ({ default: module.OnboardingRoute })))
 const ReaderRoute = lazy(() => import('./routes/read/ReaderRoute').then((module) => ({ default: module.ReaderRoute })))
 const SearchRoute = lazy(() => import('./routes/search/SearchRoute').then((module) => ({ default: module.SearchRoute })))
-const SettingsRoute = lazy(() => import('./routes/settings/SettingsRoute').then((module) => ({ default: module.SettingsRoute })))
 const SurahsRoute = lazy(() => import('./routes/navigation/SurahsRoute').then((module) => ({ default: module.SurahsRoute })))
 
 export function App() {
@@ -201,7 +200,7 @@ export function App() {
       )}
       {launchRestore.status === 'ready' && (
         <Suspense fallback={<LaunchSplash />}>
-          {route.type === 'reader' && <ReaderRoute ayah={route.ayah} surah={route.surah} />}
+          {route.type === 'reader' && <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />}
           {route.type === 'mushaf' && <MushafRoute page={route.page} />}
           {route.type === 'surahs' && <SurahsRoute />}
           {route.type === 'bookmarks' && <BookmarksRoute />}

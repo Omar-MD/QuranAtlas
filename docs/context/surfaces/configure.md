@@ -58,9 +58,9 @@ style_paths:
 
 ## Behavior
 
-`SettingsRoute` and settings overlay events open `SettingsShell` without losing the current reader route or scroll state. The shell contains a reader-mode toggle, mode-specific controls, included assets, and footer appearance controls.
+`SettingsRoute` and settings overlay events open `SettingsShell` without losing the current reader route or scroll state. Verse reader scroll-derived position writes pause while the settings overlay is open, and the visible verse is re-anchored across typography and translation layout changes. The shell contains a reader-mode toggle, mode-specific controls, Daily Wird visibility controls, included assets, and footer appearance controls.
 
-Verse settings own font size, reading flow, translation visibility, and Daily Wird status visibility. Mushaf settings own the visible page/width mode control while accepting stored `auto` values for compatibility. Theme and night mode apply globally.
+Verse settings own font size, reading flow, and translation visibility. Daily Wird visibility is a separate settings section; disabling it hides reader/navigation Wird status and disables the active plan's reminder without deleting the plan. Mushaf settings own the visible page/width mode control while accepting stored `auto` values for compatibility. Theme and night mode apply globally.
 
 `IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. It can collapse on compact settings sheets so the core controls remain visible without scrolling. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
 

@@ -152,6 +152,7 @@ export interface SearchResultDto {
   snippet: string
   rankKey: string
   sourceText: string
+  translationText?: string
   readerText?: string
   morphology?: {
     sourceNote: string

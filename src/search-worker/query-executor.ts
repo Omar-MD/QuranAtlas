@@ -285,6 +285,7 @@ export class SearchQueryExecutor {
         snippet: snippetFor(candidate),
         rankKey: `${candidate.position}`,
         sourceText: candidate.ayah.arabicText,
+        translationText: candidate.ayah.translationText,
         readerText: undefined,
       })
     }

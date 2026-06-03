@@ -87,7 +87,7 @@ Do not add one-off committed scripts. Use `.scratch/` for throwaway investigatio
 - `tests/e2e/fixtures/`: typed browser-state, storage, route, and offline helpers.
 - `tests/fixtures/`: shared non-browser fixtures.
 
-Follow `tests/unit/AGENTS.md` or `tests/e2e/AGENTS.md` before changing tests when the user explicitly asks for test coverage.
+Follow `tests/unit/AGENTS.md` or `tests/e2e/AGENTS.md` before changing tests.
 
 ## Navigation Rules
 

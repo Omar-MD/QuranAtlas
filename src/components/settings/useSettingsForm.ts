@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { openReactDb } from '../../storage/db'
+import { readWirdPlan, writeWirdPlan } from '../../continuity/wird/store'
 import {
   DEFAULT_REACT_READER_PREFERENCES,
   readReactReaderPreferences,
@@ -59,7 +60,10 @@ export function useSettingsForm(): {
     }
   }, [])
 
-  function updatePreferences(updater: (current: ReactReaderPreferences) => ReactReaderPreferences): void {
+  function updatePreferences(
+    updater: (current: ReactReaderPreferences) => ReactReaderPreferences,
+    afterWrite?: (preferences: ReactReaderPreferences) => Promise<void>,
+  ): void {
     hasUserChangesRef.current = true
     const next = updater(preferencesRef.current)
     preferencesRef.current = next
@@ -71,6 +75,7 @@ export function useSettingsForm(): {
       .then(async () => {
         const db = await openReactDb()
         await writeReactReaderPreferences(db, next)
+        await afterWrite?.(next)
       })
       .catch(() => undefined)
   }
@@ -88,7 +93,19 @@ export function useSettingsForm(): {
     })),
     setTheme: (theme) => updatePreferences((current) => ({ ...current, theme })),
     setTranslationVisible: (translationVisible) => updatePreferences((current) => ({ ...current, translationVisible })),
-    setWirdReaderStatusVisible: (wirdReaderStatusVisible) => updatePreferences((current) => ({ ...current, wirdReaderStatusVisible })),
+    setWirdReaderStatusVisible: (wirdReaderStatusVisible) => updatePreferences(
+      (current) => ({ ...current, wirdReaderStatusVisible }),
+      async () => {
+        if (wirdReaderStatusVisible) return
+        const db = await openReactDb()
+        const plan = await readWirdPlan(db)
+        if (!plan?.reminder.enabled) return
+        await writeWirdPlan(db, {
+          ...plan,
+          reminder: { ...plan.reminder, enabled: false },
+        })
+      },
+    ),
     state,
   }
 }

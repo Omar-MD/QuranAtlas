@@ -6,7 +6,7 @@ import {
   type SearchSurahContextRow,
 } from '../search/morphology'
 import { SearchPackReader, SearchPackReaderError } from '../search/pack-reader'
-import type { SearchGraphRef, SearchMatchLane } from '../search/schema'
+import type { SearchAyahRow, SearchGraphRef, SearchMatchLane } from '../search/schema'
 import { mapSearchRefToSearchSource } from '../search/result-mapping'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
 import { evidenceForMorphologyResult } from './search-brief'
@@ -15,6 +15,7 @@ export class SearchMorphologyExecutor {
   private readonly reader: SearchPackReader
   private rowsByAyahIdPosition: Map<string, SearchMorphologyRow> | null = null
   private rowsBySourceToken: Map<string, SearchMorphologyRow[]> | null = null
+  private ayahsById: Map<number, SearchAyahRow> | null = null
   private postingCounts = new Map<string, Map<string, number>>()
 
   constructor(reader: SearchPackReader, _options: { aliases?: unknown } = {}) {
@@ -95,6 +96,7 @@ export class SearchMorphologyExecutor {
   private async toResult(row: SearchMorphologyRow, lane: SearchMatchLane, query: SearchQueryAstV1): Promise<SearchResultDto> {
     const mapping = mapSearchRefToSearchSource(row.ref as SearchGraphRef)
     const counts = await this.countsFor(row)
+    const ayah = await this.ayahFor(row)
     return {
       resultId: `${this.reader.manifest.packId}:${row.ref}:${lane}:${row.tokenOrdinal}:${row.root ?? row.lemma ?? row.normalizedSourceToken}`,
       sourceRef: row.ref,
@@ -114,7 +116,8 @@ export class SearchMorphologyExecutor {
       }),
       snippet: row.sourceToken || row.transliteration,
       rankKey: `${row.surah}:${row.ayah}:${row.tokenOrdinal}`,
-      sourceText: row.sourceToken || row.transliteration,
+      sourceText: ayah?.arabicText || row.sourceToken || row.transliteration,
+      translationText: ayah?.translationText,
       readerText: undefined,
       morphology: {
         sourceNote: SEARCH_MORPHOLOGY_SOURCE_NOTE,
@@ -142,6 +145,14 @@ export class SearchMorphologyExecutor {
       row.lemma ? this.countPostings('lemma-postings', row.lemma) : Promise.resolve(undefined),
     ])
     return { sameRootCount: sameRoot, sameWrittenFormCount: sameWritten, lemmaCount: lemma }
+  }
+
+  private async ayahFor(row: SearchMorphologyRow): Promise<SearchAyahRow | null> {
+    if (!this.ayahsById) {
+      const references = await this.reader.getReferences()
+      this.ayahsById = new Map(references.ayahs.map((ayah) => [ayah.ayahId, ayah]))
+    }
+    return this.ayahsById.get(row.ayahId) ?? null
   }
 
   private assertMorphologyFeature(): void {

@@ -12,6 +12,8 @@ import type { SavedSearchRecord } from '../../storage/types'
 import { NavDrawer } from '../navigation/NavDrawer'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 import { ReaderChrome } from '../reader/ReaderChrome'
+import { ThemeNightControls } from '../settings/ThemeNightControls'
+import { useSettingsForm } from '../settings/useSettingsForm'
 import { SavedSearchesNavPanel } from './SavedSearchesNavPanel'
 import { SearchHeader } from './SearchHeader'
 import { SearchIndexGate } from './SearchIndexGate'
@@ -22,6 +24,7 @@ import { useSearchRouteState } from './useSearchRouteState'
 export function SearchShell() {
   const search = useSearchRouteState()
   const saved = useSavedSearches()
+  const settings = useSettingsForm()
   const [savedStatusMessage, setSavedStatusMessage] = useState('')
   const { bookmarks, deleteBookmark } = useBookmarks()
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
@@ -73,8 +76,8 @@ export function SearchShell() {
     const opened = await saved.openSearch(record.id)
     if (!opened) return
     search.setQuery(opened.intent.queryText)
-    search.setMode(opened.intent.queryMode)
-    search.submitSearch({ mode: opened.intent.queryMode, query: opened.intent.queryText })
+    search.setMode('all')
+    search.submitSearch({ mode: 'all', query: opened.intent.queryText })
     dispatchDrawer({ type: 'route-transition' })
   }
 
@@ -100,14 +103,24 @@ export function SearchShell() {
     setSavedStatusMessage('')
   }, [search.searchStatus])
 
-  const savedSearchesPanel = (
-    <SavedSearchesNavPanel
-      lastDeleted={saved.lastDeleted}
-      onDelete={(id) => void saved.deleteSearch(id)}
-      onLoad={(record) => void loadSavedSearch(record)}
-      onUndoDelete={() => void saved.undoDelete()}
-      records={saved.records}
-    />
+  const searchPanel = (
+    <>
+      <div className="qar-react-nav-drawer-search-appearance">
+        <ThemeNightControls
+          nightMode={settings.state.preferences.nightMode}
+          onNightModeChange={settings.setNightMode}
+          onThemeChange={settings.setTheme}
+          theme={settings.state.preferences.theme}
+        />
+      </div>
+      <SavedSearchesNavPanel
+        lastDeleted={saved.lastDeleted}
+        onDelete={(id) => void saved.deleteSearch(id)}
+        onLoad={(record) => void loadSavedSearch(record)}
+        onUndoDelete={() => void saved.undoDelete()}
+        records={saved.records}
+      />
+    </>
   )
 
   return (
@@ -130,7 +143,7 @@ export function SearchShell() {
             onDeleteBookmark={deleteBookmark}
             onNavigate={navigate}
             open
-            searchPanel={savedSearchesPanel}
+            searchPanel={searchPanel}
             showWird={false}
           />
         </div>
@@ -140,11 +153,9 @@ export function SearchShell() {
           <h1 className="qar:sr-only">Search</h1>
           <SearchHeader
             canSave={search.canSaveSearch}
-            mode={search.mode}
-            onModeChange={search.setMode}
             onQueryChange={search.setQuery}
             onSaveSearch={() => void saved.saveSearch({
-              mode: search.mode,
+              mode: 'all',
               packCompatibilityKey: compatibilityKey,
               query: search.query,
             })}

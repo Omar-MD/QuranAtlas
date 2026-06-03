@@ -52,8 +52,8 @@ test('@offline active Search pack supports the Search route without changing Rea
     await page.goto(targetUrl('react', '/#/search'))
     await expect(page.getByRole('main', { name: 'Search' })).toBeVisible()
     await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Search mode:/ })).toHaveCount(0)
     await page.getByLabel('Search Quran text, translation, or context').fill('Allah')
-    await page.getByRole('tab', { name: 'Search mode: Translation' }).click()
     await page.getByRole('button', { exact: true, name: 'Search' }).click()
     await expectSearchOverview(page, 'Allah')
 
@@ -83,8 +83,8 @@ test('@offline missing graph shard keeps Ask preview evidence-bounded', async ({
   try {
     await page.goto(targetUrl('react', '/#/search'))
     await expect(page.getByText('Search data is ready on this device.').last()).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Search mode:/ })).toHaveCount(0)
     await page.getByLabel('Search Quran text, translation, or context').fill('بسم الله')
-    await page.getByRole('tab', { name: 'Search mode: Phrase' }).click()
     await page.getByRole('button', { exact: true, name: 'Search' }).click()
     await expectSearchOverview(page, 'بسم الله')
     await expect(page.getByText(/unsupported answer/i)).toHaveCount(0)

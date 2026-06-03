@@ -28,6 +28,6 @@ QuranAtlas is a Reader First product. The interface should feel calm, dense, and
 
 ## Accessibility
 
-- Keep browser zoom enabled.
+- Keep desktop browser zoom enabled. Mobile uses a locked viewport and touch handling so the installed PWA feels native during reading.
 - Preserve visible focus states, semantic landmarks, labelled icon buttons, and keyboard-dismiss behavior for overlays.
 - Do not rely on color alone for current, success, warning, or destructive states.

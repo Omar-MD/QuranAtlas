@@ -225,6 +225,7 @@ export function deriveWirdSummary(
       reminderLabel: null,
       state: 'no-plan',
       todayPercent: 0,
+      todayRemainingLabel: 'Choose a finish target',
       todayRangeLabel: 'Start daily wird',
     }
   }
@@ -245,6 +246,10 @@ export function deriveWirdSummary(
   const todayPercent = Math.min(100, Math.round((todayDone / todaySpan) * 100))
   const remainingStart = Math.min(end, completed + 1)
   const remaining = completed >= end ? 0 : countRemainingUnits(current.unit, counts, boundaries, remainingStart, end)
+  const todayRemainingStart = Math.min(todayEnd, Math.max(todayStart, completed + 1))
+  const todayRemaining = todayDone >= todaySpan
+    ? 0
+    : countRemainingUnits(current.unit, counts, boundaries, todayRemainingStart, todayEnd)
   const state = percent >= 100
     ? 'plan-complete'
     : todayPercent >= 100
@@ -261,6 +266,7 @@ export function deriveWirdSummary(
     reminderLabel: current.reminder.enabled ? `Reminder ${current.reminder.time}` : null,
     state,
     todayPercent,
+    todayRemainingLabel: `${todayRemaining} ${unitName(current.unit, todayRemaining)} left today`,
     todayRangeLabel: `${labelRef(current.progress.todayStartRef)}-${labelRef(current.progress.todayEndRef)}`,
   }
 }

@@ -1,21 +1,15 @@
-import type { SearchQueryMode } from '../../search/schema'
 import { useRef } from 'react'
 import { Button } from '../ui'
 import { SearchBox } from './SearchBox'
-import { SearchModeControl } from './SearchModeControl'
 
 export function SearchHeader({
   canSave,
-  mode,
-  onModeChange,
   onQueryChange,
   onSaveSearch,
   onSubmit,
   query,
 }: {
   canSave: boolean
-  mode: SearchQueryMode
-  onModeChange: (mode: SearchQueryMode) => void
   onQueryChange: (query: string) => void
   onSaveSearch: () => void
   onSubmit: (query: string) => void
@@ -54,9 +48,6 @@ export function SearchHeader({
           Search
         </Button>
         <Button className="qar-search-save" disabled={!canSave} onClick={onSaveSearch} type="button" variant="secondary">Save search</Button>
-      </div>
-      <div className="qar-search-mode-strip">
-        <SearchModeControl mode={mode} onModeChange={onModeChange} />
       </div>
     </form>
   )

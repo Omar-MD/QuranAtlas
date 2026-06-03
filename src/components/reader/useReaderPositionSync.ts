@@ -100,7 +100,10 @@ function findCenteredVersePosition(surah: number): ReaderPosition | null {
   return closest?.position ?? null
 }
 
-export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wirdCounts?: ReadonlyArray<SurahCount> } = {}) {
+export function useReaderPositionSync(
+  corpus: ReaderCorpusState,
+  options: { suspendAutoSync?: boolean; wirdCounts?: ReadonlyArray<SurahCount> } = {},
+) {
   const latestPositionRef = useRef<ReaderPosition | null>(null)
   const lastPersistedKeyRef = useRef<string | null>(null)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
@@ -112,6 +115,7 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
   const firstVerseSurah = readyCorpus?.verses[0]?.surah ?? null
   const firstVerseNumber = readyCorpus?.verses[0]?.verse ?? null
   const surahNumber = readyCorpus?.surah.number ?? null
+  const suspendAutoSync = options.suspendAutoSync ?? false
 
   const enqueuePersistPosition = useCallback((
     position: ReaderPosition,
@@ -132,6 +136,7 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
 
   useEffect(() => {
     wirdCountsRef.current = options.wirdCounts ?? []
+    if (suspendAutoSync) return
     const position = latestPositionRef.current
     if (!position || wirdCountsRef.current.length === 0) return
     const key = positionKey(position)
@@ -143,7 +148,7 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
       markLatestPersistToken(persistToken)
     }
     enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
-  }, [enqueuePersistPosition, options.wirdCounts])
+  }, [enqueuePersistPosition, options.wirdCounts, suspendAutoSync])
 
   const commitPosition = useCallback((position: ReaderPosition, persistMode: 'deferred' | 'immediate') => {
     latestPositionRef.current = position
@@ -175,9 +180,11 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
   }, [enqueuePersistPosition])
 
   useEffect(() => {
-    if (!surahNumber || !firstVerseSurah || !firstVerseNumber) return
+    if (!surahNumber || !firstVerseSurah || !firstVerseNumber || suspendAutoSync) return
     const activeSurahNumber = surahNumber
-    commitPosition({ surah: firstVerseSurah, verse: firstVerseNumber }, 'immediate')
+    if (!latestPositionRef.current) {
+      commitPosition({ surah: firstVerseSurah, verse: firstVerseNumber }, 'immediate')
+    }
 
     function syncVisibleVerse() {
       const visiblePosition = findCenteredVersePosition(activeSurahNumber)
@@ -199,7 +206,7 @@ export function useReaderPositionSync(corpus: ReaderCorpusState, options: { wird
         }
       }
     }
-  }, [commitPosition, enqueuePersistPosition, firstVerseNumber, firstVerseSurah, surahNumber])
+  }, [commitPosition, enqueuePersistPosition, firstVerseNumber, firstVerseSurah, surahNumber, suspendAutoSync])
 
   const syncPosition = useCallback((verseKey: string) => {
     const position = parseVerseKey(verseKey)

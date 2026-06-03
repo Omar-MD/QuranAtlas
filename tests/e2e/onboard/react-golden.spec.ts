@@ -60,6 +60,7 @@ for (const fixture of onboardFixtures) {
         translationId: 'bridges',
       })
       await expect(readReactSettings(page)).resolves.not.toHaveProperty('onboardingComplete')
+      await page.evaluate(() => document.fonts.ready.then(() => undefined))
       await page.goto(targetUrl('react', '/'))
       await expect(page).toHaveURL(/#\/s\/1$/)
       await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()

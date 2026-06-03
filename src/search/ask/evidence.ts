@@ -100,6 +100,8 @@ export function evidenceCardForResult(input: {
     title: input.result.sourceRef,
     snippet: input.result.snippet,
     snippetSource,
+    sourceText: input.result.sourceText,
+    translationText: input.result.translationText,
     matchReason: input.result.matchEvidence.whyMatched,
     readerAction: readerActionForResult(input.result),
   }
@@ -113,6 +115,8 @@ export function matchCardForResult(result: SearchResultDto, evidenceAtomId: stri
     title: result.sourceRef,
     snippet: result.snippet,
     snippetSource: snippetSourceForResult(result),
+    sourceText: result.sourceText,
+    translationText: result.translationText,
     matchReason: result.matchEvidence.whyMatched,
     readerAction: readerActionForResult(result),
   }

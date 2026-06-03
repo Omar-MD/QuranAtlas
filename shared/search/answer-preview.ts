@@ -216,6 +216,8 @@ export type EvidenceCardLite = {
   title: string
   snippet: string
   snippetSource: 'quran-text' | 'translation' | 'deterministic-template'
+  sourceText?: string
+  translationText?: string
   matchReason: string
   readerAction: ReaderActionLite
 }
@@ -227,6 +229,8 @@ export type MatchCardLite = {
   title: string
   snippet: string
   snippetSource: 'quran-text' | 'translation' | 'deterministic-template'
+  sourceText?: string
+  translationText?: string
   matchReason: string
   readerAction: ReaderActionLite
 }

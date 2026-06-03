@@ -35,6 +35,7 @@ style_paths:
 | Offline reload | browser offline state | Shell and cached reader data survive reload |
 | App update check | About route action | Fetches the latest service worker, activates a pending app shell, and reloads when new app files are ready |
 | Clear data | About dialog | Clears app caches and IndexedDB |
+| Daily Wird reminder | service worker | Uses supported periodic background sync to show the next daily reminder when notifications are granted |
 | Daily Wird notification click | service worker | Focuses or opens QuranAtlas at the saved continuation URL |
 
 ## Inventory
@@ -79,7 +80,7 @@ Search pack files under `/search-packs/**` are not Workbox dataset-cache assets.
 
 Dexie v8 adds Search lifecycle stores. Clear data continues to delete browser storage, all Cache Storage entries including Search pack caches, and the shared IndexedDB database.
 
-`public/wird-notification-sw.js` is imported by the generated service worker for notification-click behavior. It must stay small, deterministic, and independent of app bundle state.
+`public/wird-notification-sw.js` is imported by the generated service worker for Daily Wird notification-click behavior and best-effort periodic background reminders. The helper reads only the `settings` store keys needed for the active Wird plan and reminder dedupe, recomputes stale daily assignments from `/dataset/surahs.json` when the browser wakes a supported periodic sync event, and opens the saved continuation URL on notification clicks. Browsers without Periodic Background Sync keep the in-app reminder timer fallback and cannot guarantee closed-app scheduled delivery without a push service.
 
 ## Style Inventory
 

@@ -162,7 +162,7 @@ export function toVerseCardViewModel(result: SearchResultDto): SearchVerseCardVi
     primaryText: result.sourceText || result.snippet,
     refLabel: formatSearchReference(result.sourceRef),
     result,
-    secondaryText: evidence.translationContextExcerpt ?? null,
+    secondaryText: result.translationText ?? evidence.translationContextExcerpt ?? null,
   }
 }
 

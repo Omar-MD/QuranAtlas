@@ -91,11 +91,11 @@ Mushaf page bookmarks use the same bookmarks store as verse bookmarks with `kind
 
 ### Reader Chrome
 
-`ReaderChrome` is compact and mode-aware: navigation drawer, reader mode, settings, and Daily Wird status when enabled. It avoids center titles that compete with the reading surface. Mobile and tablet chrome protects safe areas and hides/reveals based on reader movement where appropriate.
+`ReaderChrome` is compact and mode-aware: navigation drawer, reader mode, settings, and Daily Wird status when enabled. It avoids center titles that compete with the reading surface. The compact Daily Wird status reports today's assigned progress only; full-plan progress and remaining completion gap stay in the navigation drawer. Mobile and tablet chrome protects safe areas and hides/reveals based on reader movement where appropriate.
 
 ### Daily Wird
 
-Daily Wird progress lives under `src/continuity/wird/**` and persists in the `settings.wirdPlan` key. Verse reading and forward Mushaf page movement advance progress monotonically within the active plan. The reader shows only the compact status indicator; plan creation and detail live in the navigation drawer.
+Daily Wird progress lives under `src/continuity/wird/**` and persists in the `settings.wirdPlan` key. Verse reading and forward Mushaf page movement advance progress monotonically within the active plan. The reader shows only the compact status indicator for the current daily assignment; plan creation, full-plan progress, and completion gap detail live in the navigation drawer.
 
 ### Translation And Knowledge
 

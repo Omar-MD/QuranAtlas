@@ -68,7 +68,7 @@ style_paths:
 
 ## Behavior
 
-`NavDrawer` is the primary navigation surface on reader and Search routes. It shows the product header, top-level Read/Search mode tabs, Read source tabs with dense source rows, optional Daily Wird summary/detail, Search saved-search rows when the Search mode is active, and close/dismiss controls. Saved-search rows use the same full-row jump and swipe/reveal delete interaction pattern as bookmark rows, with undo available after a saved-search deletion. Phone widths use a full-screen drawer; Search tablet and desktop layouts open the same drawer on the left and keep Search content visible to the right.
+`NavDrawer` is the primary navigation surface on reader and Search routes. It shows the product header, top-level Read/Search mode tabs, Read source tabs with dense source rows, optional Daily Wird summary/detail, Search appearance controls, Search saved-search rows when the Search mode is active, and close/dismiss controls. Saved-search rows use the same full-row jump and swipe/reveal delete interaction pattern as bookmark rows, with undo available after a saved-search deletion. Phone widths use a full-screen drawer; Search tablet and desktop layouts open the same drawer on the left and keep Search content visible to the right.
 
 `SurahList`, `JuzList`, and `HizbList` load runtime indexes from `/dataset/**`, mark current/recent state, and route through the current reader mode. Surah search and All/Recent filtering belong only to the Surah tab.
 

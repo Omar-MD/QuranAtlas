@@ -62,6 +62,7 @@ export type WirdSummary =
     todayPercent: number
     nextRef: QuranRef | null
     todayRangeLabel: string
+    todayRemainingLabel?: string
     remainingLabel: string
     reminderLabel: string | null
   }

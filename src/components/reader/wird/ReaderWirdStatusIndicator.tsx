@@ -40,6 +40,6 @@ export function ReaderWirdStatusIndicator({
 
 function statusLabel(summary: WirdSummary): string {
   if (summary.state === 'plan-complete') return 'Daily Wird: plan complete'
-  if (summary.state === 'today-complete') return `Daily Wird: today complete, ${summary.remainingLabel}`
-  return `Daily Wird: ${summary.todayPercent}% today, ${summary.remainingLabel}`
+  if (summary.state === 'today-complete') return 'Daily Wird: today complete'
+  return `Daily Wird: ${summary.todayPercent}% today, ${summary.todayRemainingLabel ?? 'today assignment in progress'}`
 }

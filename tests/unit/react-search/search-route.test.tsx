@@ -75,7 +75,8 @@ function result(overrides: Partial<SearchResultDto> = {}): SearchResultDto {
     },
     snippet: 'Allah - there is no deity except Him',
     rankKey: 'translation:2:255',
-    sourceText: 'Allah - there is no deity except Him, the Ever-Living...',
+    sourceText: 'ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ',
+    translationText: 'Allah - there is no deity except Him, the Ever-Living...',
     readerText: 'ٱللَّهُ لَا إِلَٰهَ إِلَّا هُوَ',
     ...overrides,
   }
@@ -225,14 +226,13 @@ describe('Search route UI', () => {
 
     expect(screen.getByRole('main', { name: 'Search' })).toBeInTheDocument()
     expect(screen.getByLabelText('Search Quran text, translation, or context')).toHaveAttribute('placeholder', 'Search...')
-    expect(screen.getByRole('tab', { name: 'Search mode: Exact word form' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Search mode: Same root' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /Search mode:/i })).not.toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Search result workspace' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'mercy' })).toBeInTheDocument()
     expect(screen.getByText('Occurrences in this search index')).toBeInTheDocument()
     expect(screen.getAllByText('all indexed matches').length).toBeGreaterThan(0)
     expect(screen.getByText(/not necessarily exact Arabic wording/i)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Open in Read' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Open in Read$/ })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('tab', { name: 'Sources' }))
     expect(mockUseSearchRouteState.mock.results[0]?.value.setActiveWorkspaceTab).toHaveBeenCalledWith('sources')
   })
@@ -260,8 +260,9 @@ describe('Search route UI', () => {
     expect(within(basis).getByText(/Translation evidence was used/i)).toBeInTheDocument()
 
     const bestEvidence = screen.getByRole('region', { name: 'Best evidence' })
+    expect(within(bestEvidence).getByText('ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ')).toBeInTheDocument()
     expect(within(bestEvidence).getByText('Allah - there is no deity except Him')).toBeInTheDocument()
-    expect(within(bestEvidence).getByText('The indexed translation contains the query.')).toBeInTheDocument()
+    expect(within(bestEvidence).queryByText('The indexed translation contains the query.')).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Show all matches' }))
     expect(openAllMatches).toHaveBeenCalledTimes(1)
@@ -344,7 +345,12 @@ describe('Search route UI', () => {
       activeWorkspaceTab: 'overview',
       allMatches: [
         matchCard({ id: 'match-2-255', refLabel: '2:255' }),
-        matchCard({ id: 'match-3-7', refLabel: '3:7', snippet: 'It is He who has sent down to you the Book...' }),
+        matchCard({
+          id: 'match-3-7',
+          refLabel: '3:7',
+          sourceText: 'هُوَ ٱلَّذِيٓ أَنزَلَ عَلَيْكَ ٱلْكِتَٰبَ',
+          translationText: 'It is He who has sent down to you the Book...',
+        }),
       ],
       allMatchesOpen: true,
       answerPreview: answerPreviewWithClaims(),
@@ -391,10 +397,10 @@ describe('Search route UI', () => {
     render(<SearchShell />)
 
     const unavailableCard = screen.getByRole('article', { name: 'Evidence 4:1' })
-    expect(within(unavailableCard).queryByRole('button', { name: 'Open in Read' })).not.toBeInTheDocument()
-    expect(screen.getByText('Reader opens the mapped ayah only.')).toBeInTheDocument()
+    expect(within(unavailableCard).queryByRole('button', { name: /Open .* in Reader/ })).not.toBeInTheDocument()
+    expect(screen.queryByText('Reader opens the mapped ayah only.')).not.toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open 3:7 in Reader' }))
     await waitFor(() => expect(window.location.hash).toBe('#/s/3/8'))
   })
 
@@ -414,7 +420,7 @@ describe('Search route UI', () => {
 
     render(<SearchShell />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open 2:999 in Reader' }))
     expect(window.location.hash).toBe('#/search')
   })
 
@@ -742,7 +748,7 @@ describe('Search route UI', () => {
 
     render(<SearchShell />)
 
-    expect(screen.queryByRole('button', { name: 'Open in Read' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Open .* in Reader/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument()
     expect(screen.getAllByText('Search source only').length).toBeGreaterThan(0)
   })
@@ -769,7 +775,7 @@ describe('Search route UI', () => {
     mockUseSearchRouteState.mockReturnValue(routeState({ activeWorkspaceTab: 'verses', brief: brief(), results: [selected], selectedResult: selected }))
 
     render(<SearchShell />)
-    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open Surah 2 · 2:255 in Reader' }))
 
     expect(window.location.hash).toBe('#/s/2/255')
   })
@@ -790,7 +796,7 @@ describe('Search route UI', () => {
     }))
 
     render(<SearchShell />)
-    await userEvent.click(screen.getByRole('button', { name: 'Open in Read' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open Surah 2 · 2:999 in Reader' }))
     await act(async () => {
       await Promise.resolve()
       await Promise.resolve()
@@ -835,7 +841,7 @@ describe('Search route UI', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
     await userEvent.click(screen.getByRole('button', { name: 'Load saved search Mercy' }))
 
-    await waitFor(() => expect(state.submitSearch).toHaveBeenCalledWith({ mode: 'translation', query: 'mercy' }))
+    await waitFor(() => expect(state.submitSearch).toHaveBeenCalledWith({ mode: 'all', query: 'mercy' }))
   })
 })
 
@@ -875,8 +881,8 @@ describe('useSearchRouteState Ask route state', () => {
     await waitFor(() => expect(result.current.answerPreview).toEqual(preview))
     expect(client.askPreview).toHaveBeenCalledWith({
       query: 'mercy',
-      lens: 'translation',
-      queryAst: expect.objectContaining({ mode: 'translation' }),
+      lens: 'mixed',
+      queryAst: expect.objectContaining({ mode: 'all' }),
       sort: 'relevance',
     })
     expect(client.query).not.toHaveBeenCalled()
@@ -962,10 +968,10 @@ describe('useSearchRouteState Ask route state', () => {
   })
 
   it.each([
-    { mode: 'exact-word-form' as const, query: 'الله', lens: 'quran-text' },
-    { mode: 'context' as const, query: 'mercy', lens: 'translation' },
-    { mode: 'lemma' as const, query: 'ktb', lens: 'morphology' },
-  ])('preserves $mode execution AST while using $lens Ask lens hints', async ({ mode, query, lens }) => {
+    { mode: 'exact-word-form' as const, query: 'الله' },
+    { mode: 'context' as const, query: 'mercy' },
+    { mode: 'lemma' as const, query: 'ktb' },
+  ])('normalizes legacy $mode submissions to the All execution AST', async ({ mode, query }) => {
     const preview = answerPreview({ id: `preview-${mode}`, query })
     const client = mockSearchClient({
       askPreview: vi.fn(async () => preview),
@@ -984,8 +990,8 @@ describe('useSearchRouteState Ask route state', () => {
     await waitFor(() => expect(result.current.answerPreview?.id).toBe(preview.id))
     expect(client.askPreview).toHaveBeenCalledWith(expect.objectContaining({
       query,
-      lens,
-      queryAst: expect.objectContaining({ mode }),
+      lens: 'mixed',
+      queryAst: expect.objectContaining({ mode: 'all' }),
     }))
   })
 
@@ -1020,8 +1026,8 @@ describe('useSearchRouteState Ask route state', () => {
     expect(client.getAskMatchesPage).toHaveBeenCalledWith({
       previewId: preview.id,
       query: 'Allah',
-      lens: 'translation',
-      queryAst: expect.objectContaining({ mode: 'translation' }),
+      lens: 'mixed',
+      queryAst: expect.objectContaining({ mode: 'all' }),
       limit: 10,
       sort: 'relevance',
     })
@@ -1072,8 +1078,8 @@ describe('useSearchRouteState Ask route state', () => {
     expect(client.getAskMatchesPage).toHaveBeenLastCalledWith({
       previewId: preview.id,
       query: 'ktb',
-      lens: 'morphology',
-      queryAst: expect.objectContaining({ mode: 'same-root' }),
+      lens: 'mixed',
+      queryAst: expect.objectContaining({ mode: 'all' }),
       cursor: firstCursor,
       limit: 10,
       sort: 'relevance',
@@ -1115,8 +1121,8 @@ describe('useSearchRouteState Ask route state', () => {
     expect(client.getAskMatchesPage).toHaveBeenCalledWith({
       previewId: previewB.id,
       query: 'guidance',
-      lens: 'translation',
-      queryAst: expect.objectContaining({ mode: 'translation' }),
+      lens: 'mixed',
+      queryAst: expect.objectContaining({ mode: 'all' }),
       limit: 10,
       sort: 'relevance',
     })
@@ -1195,17 +1201,19 @@ function answerPreviewWithClaims(overrides: Partial<AnswerPreview> = {}): Answer
       morphology: 'available-not-used',
       note: 'Translation evidence was used for this preview.',
     },
-    evidenceCards: [{
-      id: 'evidence-supported',
-      refLabel: '2:255',
-      evidenceAtomIds: ['atom-supported'],
-      claimSupportIds: ['support-supported'],
-      title: '2:255',
-      snippet: 'Allah - there is no deity except Him',
-      snippetSource: 'translation',
-      matchReason: 'The indexed translation contains the query.',
-      readerAction: { type: 'open-in-reader', ref: '2:255' },
-    }],
+      evidenceCards: [{
+        id: 'evidence-supported',
+        refLabel: '2:255',
+        evidenceAtomIds: ['atom-supported'],
+        claimSupportIds: ['support-supported'],
+        title: '2:255',
+        snippet: 'Allah - there is no deity except Him',
+        snippetSource: 'translation',
+        sourceText: 'ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ',
+        translationText: 'Allah - there is no deity except Him',
+        matchReason: 'The indexed translation contains the query.',
+        readerAction: { type: 'open-in-reader', ref: '2:255' },
+      }],
     sourceFamilyStatuses: [
       { sourceKind: 'translation', availability: 'available', canSupportClaims: true },
     ],
@@ -1251,6 +1259,8 @@ function answerPreview(overrides: Partial<AnswerPreview> = {}): AnswerPreview {
       title: '2:255',
       snippet: 'Allah - there is no deity except Him',
       snippetSource: 'translation',
+      sourceText: 'ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ',
+      translationText: 'Allah - there is no deity except Him',
       matchReason: 'The indexed translation contains the query.',
       readerAction: { type: 'open-in-reader', ref: '2:255' },
     }],
@@ -1269,6 +1279,8 @@ function matchCard(overrides: Partial<MatchCardLite> = {}): MatchCardLite {
     title: '2:255',
     snippet: 'Allah - there is no deity except Him',
     snippetSource: 'translation',
+    sourceText: 'ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ',
+    translationText: 'Allah - there is no deity except Him',
     matchReason: 'The indexed translation contains the query.',
     readerAction: { type: 'open-in-reader', ref: '2:255' },
     ...overrides,

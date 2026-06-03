@@ -9,6 +9,7 @@ import {
   getNextReminderDelay,
   shouldSendWirdReminder,
   showWirdReminderNotification,
+  syncWirdReminderBackgroundRegistration,
 } from './reminders'
 import { readWirdPlan, subscribeWirdPlanChanged } from './store'
 import type { SurahCount, WirdPlan } from './types'
@@ -30,6 +31,7 @@ export function useWirdReminderScheduler(): void {
 
     function schedule(plan: WirdPlan | null): void {
       clearReminderTimer()
+      void syncWirdReminderBackgroundRegistration(plan?.reminder ?? null)
       if (!plan?.reminder.enabled) return
       if (getBrowserNotificationState() !== 'granted') return
       if (plan.progress.completedThroughRef && compareRefs(plan.progress.completedThroughRef, plan.endRef) >= 0) return

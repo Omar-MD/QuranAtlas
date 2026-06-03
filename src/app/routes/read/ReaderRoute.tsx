@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { loadReaderSurah, type ReaderCorpusState } from '../../../data/reader-corpus'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
@@ -75,7 +75,7 @@ async function readReaderSettings(): Promise<ReaderSettings> {
   }
 }
 
-export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
+export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: number; preservePosition?: boolean; surah: number }) {
   const [corpus, setCorpus] = useState<ReaderCorpusState>({ status: 'loading' })
   const [metadata, setMetadata] = useState<Map<string, VerseMetadata>>(new Map())
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
@@ -88,9 +88,14 @@ export function ReaderRoute({ ayah, surah }: { ayah?: number; surah: number }) {
   const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
   const wirdSummary = useMemo(() => deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries), [wirdBoundaries, wirdCounts, wirdPlan])
   const { selectedVerseKey, selectVerse } = useVerseInteractionReducer()
-  const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus, { wirdCounts: wirdProgressCounts })
+  const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus, {
+    suspendAutoSync: preservePosition,
+    wirdCounts: wirdProgressCounts,
+  })
   const { bookmarkedVerseKeys, bookmarks, status: bookmarkStatus, toggleBookmark } = useBookmarks()
   const showVerseBookmarkHint = bookmarkStatus === 'ready' && !bookmarks.some((bookmark) => !isMushafPageBookmark(bookmark))
+
+  useReaderScrollLock(preservePosition)
 
   useEffect(() => subscribeReactReaderPreferencesChanged((preferences) => {
     applyReactReaderTypography(preferences)
@@ -244,6 +249,65 @@ function findReaderVerseElement(verseKey: string): HTMLElement | null {
     if (element.dataset.tokenKey === verseKey) return element
   }
   return null
+}
+
+type ReaderScrollAnchor = { key: string; top: number }
+
+function useReaderScrollLock(enabled: boolean): void {
+  const anchorRef = useRef<ReaderScrollAnchor | null>(null)
+
+  useLayoutEffect(() => {
+    if (!enabled) {
+      anchorRef.current = null
+      return
+    }
+    anchorRef.current ??= findCurrentReaderScrollAnchor()
+    restoreReaderScrollAnchor(anchorRef.current)
+  })
+
+  useEffect(() => {
+    if (!enabled) return undefined
+    const restore = () => restoreReaderScrollAnchor(anchorRef.current)
+    const frame = window.requestAnimationFrame(restore)
+    const timeout = window.setTimeout(restore, 80)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  })
+}
+
+function findCurrentReaderScrollAnchor(): ReaderScrollAnchor | null {
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+  const centerY = viewportHeight / 2
+  let closest: { distance: number; element: HTMLElement } | null = null
+
+  for (const element of document.querySelectorAll<HTMLElement>('.qar-reader-verse[data-token-key]')) {
+    const verseKey = element.dataset.tokenKey
+    if (!verseKey) continue
+    const rect = element.getBoundingClientRect()
+    if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
+    const distance = rect.top <= centerY && rect.bottom >= centerY
+      ? 0
+      : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
+    if (!closest || distance < closest.distance) closest = { distance, element }
+    if (distance === 0) break
+  }
+
+  if (!closest) return null
+  return {
+    key: closest.element.dataset.tokenKey ?? '',
+    top: closest.element.getBoundingClientRect().top,
+  }
+}
+
+function restoreReaderScrollAnchor(anchor: ReaderScrollAnchor | null): void {
+  if (!anchor?.key) return
+  const element = findReaderVerseElement(anchor.key)
+  if (!element) return
+  const delta = element.getBoundingClientRect().top - anchor.top
+  if (Math.abs(delta) < 1) return
+  window.scrollBy({ behavior: 'auto', top: delta })
 }
 
 function surahFromVerseKey(verseKey: string): number | null {

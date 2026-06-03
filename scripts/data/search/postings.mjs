@@ -28,6 +28,7 @@ export async function buildSearchCorePostings({ hafsPath, translationPath }) {
     seenTextRefs.add(ref)
     const ayahId = ayahs.length + 1
     const arabicSource = String(row.aya_text_emlaey || row.aya_text || '')
+    const arabicDisplayText = String(row.aya_text || arabicSource)
     if (!arabicSource.trim()) {
       throw new Error(`Hafs Search text ${ref} missing aya_text/aya_text_emlaey`)
     }
@@ -45,7 +46,7 @@ export async function buildSearchCorePostings({ hafsPath, translationPath }) {
       surah,
       ayah,
       sourceRef: ref,
-      arabicText: arabicSource,
+      arabicText: arabicDisplayText,
       translationText,
       tokenCount: arabicTokens.length,
     })

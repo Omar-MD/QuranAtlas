@@ -42,7 +42,7 @@ Important settings keys:
 | `riwayah`, `quranTextStyleId`, `mushafEditionId` | Active default reader profile |
 | `mushafViewMode` | Mushaf page fit mode |
 | `currentPosition`, `lastSurface`, `recentSurahs` | Reader continuity |
-| `wirdPlan`, `wirdReaderStatusVisible` | Daily Wird state and visibility |
+| `wirdPlan`, `wirdReaderStatusVisible`, `wirdReminderLastSentDay` | Daily Wird state, visibility, and reminder dedupe |
 
 ## Bookmarks
 

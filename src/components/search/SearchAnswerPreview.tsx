@@ -1,5 +1,7 @@
+import { ArrowUpRight } from 'lucide-react'
+
 import type { AnswerClaim, AnswerPreview, ClaimSupport, EvidenceCardLite, MatchCardLite } from '../../../shared/search'
-import { Badge, Button } from '../ui'
+import { Badge, Button, IconButton, Tooltip } from '../ui'
 
 type SearchAnswerPreviewProps = {
   preview: AnswerPreview | null
@@ -145,34 +147,33 @@ function EvidenceBasisItem({ label, value }: { label: string; value: AnswerPrevi
 
 function PreviewEvidenceCard({ card, onOpenInRead }: { card: PreviewCard; onOpenInRead: (ref: string) => void }) {
   const readerAction = card.readerAction
+  const sourceText = card.sourceText ?? card.snippet
   return (
     <article aria-label={`Evidence ${card.refLabel}`} className="qar-search-result-row">
       <div className="qar-search-result-row-head">
         <p className="qar-search-result-ref" dir="auto">
           <bdi>{card.refLabel}</bdi>
         </p>
-        <Badge>{sourceLabel(card.snippetSource)}</Badge>
+        {readerAction.type !== 'unavailable' ? (
+          <Tooltip content="Open in Reader">
+            <IconButton
+              className="qar-search-result-jump"
+              label={`Open ${card.refLabel} in Reader`}
+              onClick={() => onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)}
+            >
+              <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.75} />
+            </IconButton>
+          </Tooltip>
+        ) : null}
       </div>
       <div className="qar-search-result-passages">
-        <p className="qar-search-result-snippet" dir="auto">
-          <bdi>{card.snippet}</bdi>
+        <p className="qar-search-result-snippet qar-search-result-arabic" dir="rtl" lang="ar">
+          <bdi>{sourceText}</bdi>
         </p>
-      </div>
-      <p className="qar-search-result-why" dir="auto">
-        <span>Matched:</span>
-        {' '}
-        <bdi>{card.matchReason}</bdi>
-      </p>
-      {readerAction.type !== 'unavailable' && readerAction.mappingWarning ? (
-        <p className="qar-search-mapping-warning" dir="auto">
-          <bdi>{readerAction.mappingWarning}</bdi>
-        </p>
-      ) : null}
-      <div className="qar-search-result-actions">
-        {readerAction.type !== 'unavailable' ? (
-          <Button onClick={() => onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)} size="sm" variant="primary">
-            Open in Read
-          </Button>
+        {card.translationText ? (
+          <p className="qar-search-result-context" dir="ltr">
+            <bdi>{card.translationText}</bdi>
+          </p>
         ) : null}
       </div>
     </article>

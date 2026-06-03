@@ -1,5 +1,9 @@
 import type { BrowserNotificationState, QuranRef, WirdReminder, WirdSummary } from './types'
 
+export const WIRD_REMINDER_NOTIFICATION_TAG = 'quranatlas-daily-wird-reminder'
+export const WIRD_REMINDER_PERIODIC_SYNC_TAG = 'quranatlas-daily-wird-reminder'
+const WIRD_REMINDER_PERIODIC_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000
+
 export type WirdReminderNotification = {
   body: string
   hash: string
@@ -35,7 +39,7 @@ export function createWirdReminderNotification(summary: WirdSummary & { nextRef:
   return {
     body: `Tap to continue at ${summary.nextRef.surah}:${summary.nextRef.verse}. ${summary.remainingLabel}.`,
     hash,
-    tag: 'quranatlas-daily-wird-reminder',
+    tag: WIRD_REMINDER_NOTIFICATION_TAG,
     title: 'Daily Wird',
     url: `${origin}/${hash}`,
   }
@@ -62,6 +66,32 @@ export async function showWirdReminderNotification(notification: WirdReminderNot
   return true
 }
 
+export async function clearWirdReminderNotifications(): Promise<void> {
+  const registration = await getReadyServiceWorkerRegistration()
+  if (!registration || typeof registration.getNotifications !== 'function') return
+  const notifications = await registration.getNotifications({ tag: WIRD_REMINDER_NOTIFICATION_TAG })
+  for (const notification of notifications) notification.close()
+}
+
+export async function syncWirdReminderBackgroundRegistration(reminder: WirdReminder | null): Promise<void> {
+  const registration = await getReadyServiceWorkerRegistration()
+  const periodicSync = getPeriodicSyncManager(registration)
+  const shouldRegister = Boolean(
+    reminder?.enabled
+    && getBrowserNotificationState() === 'granted',
+  )
+
+  if (!shouldRegister) {
+    await clearWirdReminderNotifications()
+    await periodicSync?.unregister(WIRD_REMINDER_PERIODIC_SYNC_TAG).catch(() => undefined)
+    return
+  }
+
+  await periodicSync?.register(WIRD_REMINDER_PERIODIC_SYNC_TAG, {
+    minInterval: WIRD_REMINDER_PERIODIC_SYNC_INTERVAL_MS,
+  }).catch(() => undefined)
+}
+
 async function getReadyServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
   if (!globalThis.navigator || !('serviceWorker' in globalThis.navigator)) return null
   try {
@@ -69,6 +99,17 @@ async function getReadyServiceWorkerRegistration(): Promise<ServiceWorkerRegistr
   } catch {
     return null
   }
+}
+
+type PeriodicSyncManagerLike = {
+  register: (tag: string, options: { minInterval: number }) => Promise<void>
+  unregister: (tag: string) => Promise<void>
+}
+
+function getPeriodicSyncManager(registration: ServiceWorkerRegistration | null): PeriodicSyncManagerLike | null {
+  if (!registration || !('periodicSync' in registration)) return null
+  const periodicSync = (registration as ServiceWorkerRegistration & { periodicSync?: PeriodicSyncManagerLike }).periodicSync
+  return typeof periodicSync?.register === 'function' && typeof periodicSync.unregister === 'function' ? periodicSync : null
 }
 
 function parseReminderTime(time: string): [number, number] {

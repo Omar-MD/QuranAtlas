@@ -1,5 +1,7 @@
+import { ArrowUpRight } from 'lucide-react'
+
 import type { SearchResultDto } from '../../search/schema'
-import { Badge, Button } from '../ui'
+import { Button, IconButton, Tooltip } from '../ui'
 import type { SearchVerseCardViewModel } from './search-presentation-model'
 
 export function SearchResultCard({
@@ -15,7 +17,6 @@ export function SearchResultCard({
   onSelect: (result: SearchResultDto) => void
   selected?: boolean
 }) {
-  const primaryIsOpen = card.canOpenInRead
   return (
     <article
       aria-label={`Search result ${card.refLabel}`}
@@ -27,36 +28,36 @@ export function SearchResultCard({
         <p className="qar-search-result-ref" dir="auto">
           {card.refLabel}
         </p>
-        <Badge>{card.matchTypeLabel}</Badge>
+        {card.canOpenInRead ? (
+          <Tooltip content="Open in Reader">
+            <IconButton
+              className="qar-search-result-jump"
+              label={`Open ${card.refLabel} in Reader`}
+              onClick={() => onOpenInRead(card.result)}
+            >
+              <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.75} />
+            </IconButton>
+          </Tooltip>
+        ) : null}
       </div>
       <div className="qar-search-result-passages">
-        <p className="qar-search-result-snippet" dir="auto">
+        <p className="qar-search-result-snippet qar-search-result-arabic" dir="rtl" lang="ar">
           <bdi>{card.primaryText}</bdi>
         </p>
         {card.secondaryText ? (
-          <p className="qar-search-result-context" dir="auto">
+          <p className="qar-search-result-context" dir="ltr">
             <bdi>{card.secondaryText}</bdi>
           </p>
         ) : null}
       </div>
-      <p className="qar-search-result-why" dir="auto">
-        <span>Matched:</span>
-        {' '}
-        <bdi>{card.matchReason}</bdi>
-      </p>
       <div className="qar-search-result-actions">
-        {primaryIsOpen ? (
-          <Button onClick={() => onOpenInRead(card.result)} size="sm" variant="primary">
-            Open in Read
-          </Button>
-        ) : null}
         <Button
           onClick={(event) => {
             onDetailsTrigger?.(event.currentTarget)
             onSelect(card.result)
           }}
           size="sm"
-          variant={primaryIsOpen ? 'secondary' : 'primary'}
+          variant="secondary"
         >
           Details
         </Button>

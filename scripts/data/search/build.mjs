@@ -61,7 +61,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
   })
   sourceDigests['search-qac-morphology-0-4'] = morphology.sourceDigest
   const contentHash = sha256Hex(Buffer.from(stableJson({
-    builder: 'quranatlas-search-phase-3-memory-graph-v1',
+    builder: 'quranatlas-search-phase-3-memory-graph-display-hafs-v2',
     graphPolicy: graph.policy,
     graphStats: graph.stats,
     morphologyPayloadVersion: 2,
