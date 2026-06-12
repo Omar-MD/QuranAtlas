@@ -26,7 +26,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | Perf | Lighthouse CI | `^0.15.1` | Production artifact performance and best-practice gate |
 | Deploy | Cloudflare Wrangler | pinned in `package.json` | Deploys the CI-built `dist/` artifact |
 
-`pnpm.overrides` pins patched transitive dependency ranges for CI audit gates. Keep overrides narrow and remove them when upstream direct dependencies resolve without help.
+`pnpm.overrides` pins patched transitive dependency ranges for CI audit gates, including toolchain-only packages such as `esbuild` when upstream Storybook/Vite/Wrangler ranges lag an audit advisory. Keep overrides narrow and remove them when upstream direct dependencies resolve without help.
 
 ## App Shape
 
