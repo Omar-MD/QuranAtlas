@@ -1,4 +1,4 @@
-// Rasterize public/icons/icon.svg → icon-192.png + icon-512.png + maskable.
+// Rasterize the accepted app icon reference → favicon + PWA install icons.
 // Uses Playwright's bundled chromium so no extra dep is needed.
 //
 // Run: node scripts/rasterize-icon.mjs
@@ -11,10 +11,11 @@ import { dirname, resolve } from 'node:path'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
 
-const SVG_PATH = resolve(ROOT, 'public/icons/icon.svg')
-const svg = readFileSync(SVG_PATH, 'utf8')
+const SOURCE_PATH = resolve(ROOT, 'docs/ui-references/infra/app-icon/install.desktop.light.png')
+const sourceDataUrl = `data:image/png;base64,${readFileSync(SOURCE_PATH).toString('base64')}`
 
 const TARGETS = [
+  { out: 'public/favicon.ico',                 size: 64,  maskable: false },
   { out: 'public/icons/icon-192.png',          size: 192, maskable: false },
   { out: 'public/icons/icon-512.png',          size: 512, maskable: false },
   { out: 'public/icons/icon-maskable-512.png', size: 512, maskable: true  },
@@ -27,19 +28,16 @@ async function main() {
   for (const { out, size, maskable } of TARGETS) {
     // Maskable icons need a 10–20% safe-area padding because Android
     // applies platform mask shapes (circle / squircle / rounded square).
-    // Render the SVG at 80% with surrounding solid fill so the safe area
-    // is preserved.
-    const padded = maskable
-      ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">
-           <rect width="${size}" height="${size}" fill="#0c1426"/>
-           <g transform="translate(${size * 0.1} ${size * 0.1}) scale(${size * 0.8 / 512})">
-             ${svg.replace(/^<svg[^>]*>|<\/svg>\s*$/g, '')}
-           </g>
-         </svg>`
-      : svg
+    // Render the source at 80% with a teal fill so the accepted artwork
+    // survives platform masks without clipping the gold border.
+    const inset = maskable ? Math.round(size * 0.1) : 0
+    const imageSize = size - inset * 2
 
+    const radius = Math.round(imageSize * 0.18)
     const html = `<!doctype html><html><body style="margin:0;padding:0;background:transparent;">
-      <div id="root" style="width:${size}px;height:${size}px;">${padded}</div>
+      <div id="root" style="width:${size}px;height:${size}px;background:${maskable ? '#075f5c' : 'transparent'};overflow:hidden;border-radius:${maskable ? 0 : radius}px;">
+        <img alt="" src="${sourceDataUrl}" style="display:block;width:${imageSize}px;height:${imageSize}px;margin:${inset}px;border-radius:${radius}px;" />
+      </div>
     </body></html>`
 
     await page.setViewportSize({ width: size, height: size })
