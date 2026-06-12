@@ -86,6 +86,7 @@ export default defineConfig(() => {
       VitePWA({
         registerType: 'autoUpdate',
         injectRegister: 'auto',
+        manifestFilename: 'manifest-20260612-icon-v2.webmanifest',
         manifest: {
           name: 'QuranAtlas',
           short_name: 'QuranAtlas',
@@ -97,17 +98,17 @@ export default defineConfig(() => {
           background_color: '#fbf7ef',
           icons: [
             {
-              src: '/icons/icon-192.png',
+              src: '/icons/quranatlas-icon-192-v2.png',
               sizes: '192x192',
               type: 'image/png',
             },
             {
-              src: '/icons/icon-512.png',
+              src: '/icons/quranatlas-icon-512-v2.png',
               sizes: '512x512',
               type: 'image/png',
             },
             {
-              src: '/icons/icon-maskable-512.png',
+              src: '/icons/quranatlas-icon-maskable-512-v2.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',

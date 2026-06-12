@@ -20,6 +20,9 @@ const TARGETS = [
   { out: 'public/icons/icon-192.png',          size: 192, maskable: false },
   { out: 'public/icons/icon-512.png',          size: 512, maskable: false },
   { out: 'public/icons/icon-maskable-512.png', size: 512, maskable: true  },
+  { out: 'public/icons/quranatlas-icon-192-v2.png',          size: 192, maskable: false },
+  { out: 'public/icons/quranatlas-icon-512-v2.png',          size: 512, maskable: false },
+  { out: 'public/icons/quranatlas-icon-maskable-512-v2.png', size: 512, maskable: true  },
 ]
 
 async function main() {
