@@ -622,12 +622,14 @@ describe('React reader coverage', () => {
 
   it('renders the Mushaf page count and toggles chrome from the page center', () => {
     const onToggleChrome = vi.fn()
+    const onNavigate = vi.fn()
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
 
     render(
       <MushafPageViewer
         chromeVisible
         inlineSvg={inlineSvg}
+        onNavigate={onNavigate}
         onToggleChrome={onToggleChrome}
         resolved={{
           assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
@@ -639,13 +641,52 @@ describe('React reader coverage', () => {
           riwayah: 'qaloon',
           riwayahLabel: 'Qalun',
         }}
+        surahLabel="Al-Baqarah"
       />,
     )
 
     expect(screen.getByLabelText('Mushaf page 42 of 604')).toBeInTheDocument()
     expect(screen.getByText('42 / 604')).toBeInTheDocument()
+    expect(screen.getByText('Al-Baqarah')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Toggle reader chrome' }))
     expect(onToggleChrome).toHaveBeenCalledWith(false)
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    expect(onNavigate).toHaveBeenCalledWith(43)
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    expect(onNavigate).toHaveBeenCalledWith(41)
+  })
+
+  it('renders adjacent pages for continuous Mushaf scroll mode', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const adjacentSvg = prepareReactInlineMushafSvg('<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><text>Adjacent</text></svg>')
+    const resolved = {
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      firstVerse: { surah: 2, verse: 251 },
+      manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page: 42,
+      pageCount: 604,
+      riwayah: 'qaloon' as const,
+      riwayahLabel: 'Qalun',
+    }
+
+    render(
+      <MushafPageViewer
+        adjacentPages={{
+          next: { inlineSvg: adjacentSvg, resolved: { ...resolved, page: 43, firstVerse: { surah: 2, verse: 256 } } },
+          previous: { inlineSvg: adjacentSvg, resolved: { ...resolved, page: 41, firstVerse: { surah: 2, verse: 246 } } },
+        }}
+        inlineSvg={inlineSvg}
+        resolved={resolved}
+        viewMode="continuous"
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: /mushaf page 42/i })).toHaveAttribute('data-mushaf-page', '42')
+    expect(document.querySelector('[data-mushaf-cell="previous"]')).toHaveAttribute('data-mushaf-cell-page', '41')
+    expect(document.querySelector('[data-mushaf-cell="current"]')).toHaveAttribute('data-mushaf-cell-page', '42')
+    expect(document.querySelector('[data-mushaf-cell="next"]')).toHaveAttribute('data-mushaf-cell-page', '43')
   })
 
   it('lets Mushaf pages toggle a page bookmark without adding page chrome tabs', () => {

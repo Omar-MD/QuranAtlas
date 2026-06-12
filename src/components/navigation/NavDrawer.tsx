@@ -18,6 +18,7 @@ import { createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../../continu
 import { createWirdBoundaries } from '../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../continuity/wird/page-boundaries'
 import { getBrowserNotificationState } from '../../continuity/wird/reminders'
+import { withWirdProgressIntent } from '../../continuity/wird/session'
 import { readWirdPlan, writeWirdPlan } from '../../continuity/wird/store'
 import type { SurahCount, WirdBoundary, WirdPlan } from '../../continuity/wird/types'
 import { WirdDetail, type WirdSetupPayload } from './wird/WirdDetail'
@@ -196,7 +197,13 @@ export function NavDrawer({
     if (!showWird) return
     const summary = deriveWirdSummary(wirdPlan, wirdCounts, createWirdBoundaries(wirdCounts, wirdPageBoundaries))
     if (!summary.nextRef) return
-    onNavigate(`#/s/${summary.nextRef.surah}/${summary.nextRef.verse}`)
+    const href = withWirdProgressIntent(REACT_ROUTES.surah(summary.nextRef.surah, summary.nextRef.verse))
+    if (mode === 'mushaf') {
+      void resolveDrawerHrefForReaderMode(mode, REACT_ROUTES.surah(summary.nextRef.surah, summary.nextRef.verse))
+        .then((mushafHref) => onNavigate(withWirdProgressIntent(mushafHref)))
+    } else {
+      onNavigate(href)
+    }
     onClose()
   }
 

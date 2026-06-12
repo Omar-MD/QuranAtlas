@@ -18,6 +18,7 @@ import { readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
 import { deriveWirdSummary } from '../../../continuity/wird/progress'
+import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
 import type { SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { isMushafPageBookmark } from '../../../continuity/bookmarks/page-bookmark'
@@ -87,8 +88,10 @@ export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: 
   const wirdProgressCounts = useMemo(() => surahIndex.length === 114 ? wirdCounts : [], [surahIndex.length, wirdCounts])
   const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
   const wirdSummary = useMemo(() => deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries), [wirdBoundaries, wirdCounts, wirdPlan])
+  const enableWirdProgress = hasWirdProgressIntent()
   const { selectedVerseKey, selectVerse } = useVerseInteractionReducer()
   const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus, {
+    enableWirdProgress,
     suspendAutoSync: preservePosition,
     wirdCounts: wirdProgressCounts,
   })
@@ -217,7 +220,7 @@ export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: 
             : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
           void hrefPromise
             .then((href) => {
-              window.location.hash = href
+              window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
             })
         }
       }}

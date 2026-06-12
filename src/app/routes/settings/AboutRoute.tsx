@@ -2,7 +2,12 @@ import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import pkg from '../../../../package.json'
+import { REACT_ROUTES } from '../../router/routes'
+import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { Button, Dialog, Input } from '../../../components/ui'
+import { NavDrawer } from '../../../components/navigation/NavDrawer'
+import { useNavDrawerController } from '../../../components/navigation/nav-drawer-controller'
+import { ReaderChrome } from '../../../components/reader/ReaderChrome'
 import { SettingsPageRecipe } from '../../../design-system/recipes/settings-page'
 import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInstall } from './pwa-install'
 import { fetchLatestAppChanges, type AppUpdateCheckResult } from './pwa-updates'
@@ -23,6 +28,8 @@ type UpdateCheckState =
 
 export function AboutRoute() {
   const clearData = useClearDataDialog()
+  const { bookmarks, deleteBookmark } = useBookmarks()
+  const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
   const [installAvailable, setInstallAvailable] = useState(false)
   const [installDone, setInstallDone] = useState(false)
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>({
@@ -34,6 +41,15 @@ export function AboutRoute() {
     initReactInstallPromptListener()
     setInstallAvailable(hasReactInstallPrompt())
   }, [])
+
+  useEffect(() => {
+    if (!drawerState.open) return undefined
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') dispatchDrawer({ reason: 'escape', type: 'close' })
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [dispatchDrawer, drawerState.open])
 
   async function handleInstall() {
     const outcome = await promptReactInstall()
@@ -54,6 +70,11 @@ export function AboutRoute() {
     }
   }
 
+  function navigate(hash: string) {
+    window.location.hash = hash
+    dispatchDrawer({ type: 'route-transition' })
+  }
+
   const updateCheckPending = updateCheck.status === 'checking' || updateCheck.status === 'reloading'
   const updateButtonLabel = updateCheck.status === 'checking'
     ? 'Checking...'
@@ -62,9 +83,34 @@ export function AboutRoute() {
       : 'Fetch latest app'
 
   return (
-    <SettingsPageRecipe title="About">
-      <h1 className="qar:m-0 qar:font-ui qar:text-3xl qar:leading-tight">QuranAtlas</h1>
-      <p className="qar:m-0 qar:text-base qar:font-medium">Read, reflect, remember.</p>
+    <>
+      <ReaderChrome
+        mode="verse"
+        onModeChange={(mode) => {
+          window.location.hash = mode === 'mushaf' ? REACT_ROUTES.mushaf(1) : REACT_ROUTES.home
+        }}
+        onOpenNavigation={() => dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })}
+        onOpenSettings={() => {
+          window.location.hash = REACT_ROUTES.settings
+        }}
+      />
+      {drawerState.open && (
+        <div className="qar-react-nav-drawer-overlay" onClick={() => dispatchDrawer({ reason: 'outside', type: 'close' })} role="presentation">
+          <NavDrawer
+            bookmarks={bookmarks}
+            currentLabel="About"
+            mode="verse"
+            onClose={() => dispatchDrawer({ reason: 'button', type: 'close' })}
+            onDeleteBookmark={deleteBookmark}
+            onNavigate={navigate}
+            open
+            showWird={false}
+          />
+        </div>
+      )}
+      <SettingsPageRecipe className="qar-react-about-page" title="About">
+        <h1 className="qar:m-0 qar:font-ui qar:text-3xl qar:leading-tight">QuranAtlas</h1>
+        <p className="qar:m-0 qar:text-base qar:font-medium">Read, reflect, remember.</p>
 
       <section className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Quran remembrance">
         <p className="qar:m-0 qar:text-right qar:text-2xl qar:leading-relaxed" dir="rtl" lang="ar">
@@ -142,6 +188,7 @@ export function AboutRoute() {
           </div>
         </Dialog>
       </section>
-    </SettingsPageRecipe>
+      </SettingsPageRecipe>
+    </>
   )
 }

@@ -16,7 +16,7 @@ export type OnboardingCompletionSettings = {
 export type ReactPreferenceStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type ReactThemePreference = 'light' | 'sepia' | 'dark' | 'auto'
 export type ReactNightModePreference = 'off' | 'on' | 'auto'
-export type ReactMushafViewMode = 'auto' | 'fit-page' | 'fit-width'
+export type ReactMushafViewMode = 'auto' | 'fit-page' | 'fit-width' | 'continuous'
 
 export type ReactReaderPreferences = {
   fontSize: ReactPreferenceStep
@@ -70,7 +70,7 @@ function asNightMode(value: unknown): ReactNightModePreference | null {
 }
 
 function asMushafViewMode(value: unknown): ReactMushafViewMode | null {
-  return value === 'auto' || value === 'fit-page' || value === 'fit-width' ? value : null
+  return value === 'auto' || value === 'fit-page' || value === 'fit-width' || value === 'continuous' ? value : null
 }
 
 export async function writeReaderAssetBundleSettings(db: QuranAtlasReactDb, settings: ReaderAssetBundleSettings): Promise<void> {

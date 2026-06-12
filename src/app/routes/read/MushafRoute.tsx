@@ -11,7 +11,8 @@ import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
-import { advanceWirdProgress, deriveWirdSummary, getLocalDayKey } from '../../../continuity/wird/progress'
+import { advanceWirdProgressFromReaderPosition, deriveWirdSummary, getLocalDayKey } from '../../../continuity/wird/progress'
+import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
 import { normalizeWirdPlan, notifyWirdPlanChanged, readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
 import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import {
@@ -43,6 +44,10 @@ const DEFAULT_MUSHAF_EDITION_ID = 'qalun-quran-ws-v1'
 export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   const [state, setState] = useState<MushafPageAssetState>({ status: 'loading' })
   const [visiblePage, setVisiblePage] = useState<MushafReadyPageAssetState | null>(null)
+  const [adjacentPages, setAdjacentPages] = useState<{
+    next?: MushafReadyPageAssetState | null
+    previous?: MushafReadyPageAssetState | null
+  }>({})
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'previous'>('next')
   const [viewMode, setViewMode] = useState<MushafViewMode>('auto')
   const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible)
@@ -61,10 +66,17 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     if (!wirdPlan || wirdCounts.length !== 114) return undefined
     return deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries)
   }, [wirdBoundaries, wirdCounts, wirdPlan])
+  const enableWirdProgress = hasWirdProgressIntent()
+  const currentSurahLabel = useMemo(() => {
+    const surah = visiblePage?.resolved.firstVerse.surah
+    if (!surah) return undefined
+    return surahIndex.find((row) => row.n === surah)?.name ?? `Surah ${surah}`
+  }, [surahIndex, visiblePage?.resolved.firstVerse.surah])
 
   useEffect(() => {
     if (routePageRef.current !== page) {
       setChromeVisible(false)
+      scrollMushafPageToTop()
       routePageRef.current = page
     }
   }, [page])
@@ -81,7 +93,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
 
   const advanceMushafWirdToRef = useCallback((ref: QuranRef | null | undefined) => {
-    if (!ref || !wirdPlan || wirdCounts.length !== 114) return
+    if (!enableWirdProgress || !ref || !wirdPlan || wirdCounts.length !== 114) return
     const key = `${ref.surah}:${ref.verse}`
     if (lastWirdAdvancedKeyRef.current === key) return
     lastWirdAdvancedKeyRef.current = key
@@ -92,7 +104,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
       .catch(() => {
         lastWirdAdvancedKeyRef.current = null
       })
-  }, [wirdCounts, wirdPlan])
+  }, [enableWirdProgress, wirdCounts, wirdPlan])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -171,6 +183,38 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     }
   }, [assetState, page])
 
+  useEffect(() => {
+    if (!visiblePage) {
+      setAdjacentPages({})
+      return undefined
+    }
+    let cancelled = false
+    setAdjacentPages({})
+    const { mushafEditionId, page: visiblePageNumber, pageCount, riwayah } = visiblePage.resolved
+
+    async function loadAdjacentPage(nextPage: number): Promise<MushafReadyPageAssetState | null> {
+      if (nextPage < 1 || nextPage > pageCount) return null
+      const next = await loadMushafPageAsset({
+        mushafEditionId,
+        page: nextPage,
+        riwayah,
+      })
+      return next.status === 'ready' ? next : null
+    }
+
+    void Promise.all([
+      loadAdjacentPage(visiblePageNumber - 1),
+      loadAdjacentPage(visiblePageNumber + 1),
+    ]).then(([previous, next]) => {
+      if (!cancelled) setAdjacentPages({ next, previous })
+    }).catch(() => {
+      if (!cancelled) setAdjacentPages({})
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [visiblePage])
+
   return (
     <ReaderPageShell
       chromeVisible={chromeVisible}
@@ -181,11 +225,12 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
         if (nextMode === 'verse') {
           const visibleRef = visiblePage?.resolved.firstVerse
           if (visibleRef) {
-            window.location.hash = REACT_ROUTES.surah(visibleRef.surah, visibleRef.verse)
+            const href = REACT_ROUTES.surah(visibleRef.surah, visibleRef.verse)
+            window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
             return
           }
           void resolveVerseHrefForMushafPage(page).then((href) => {
-            window.location.hash = href
+            window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
           })
         }
       }}
@@ -196,6 +241,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
         <ReaderAssetGate label="Qalun" state={assetState} />
       ) : visiblePage ? (
         <MushafPageViewer
+          adjacentPages={adjacentPages}
           bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
           chromeVisible={chromeVisible}
           inlineSvg={visiblePage.inlineSvg}
@@ -204,7 +250,8 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
               advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
             }
             setChromeVisible(false)
-            window.location.hash = REACT_ROUTES.mushaf(nextPage)
+            const href = REACT_ROUTES.mushaf(nextPage)
+            window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
           }}
           onToggleBookmark={() => {
             const bookmarkPage = visiblePage.resolved.page
@@ -219,6 +266,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
           onToggleChrome={(visible) => setChromeVisible(visible)}
           onViewModeChange={setViewMode}
           resolved={visiblePage.resolved}
+          surahLabel={currentSurahLabel}
           transitionDirection={transitionDirection}
           viewMode={viewMode}
         />
@@ -259,7 +307,7 @@ async function advanceNativeWirdFromReaderPosition(
 ): Promise<WirdPlan | null> {
   const plan = normalizeWirdPlan((await readNativeSetting('wirdPlan'))?.value)
   if (!plan) return null
-  const next = advanceWirdProgress(plan, ref, counts, getLocalDayKey())
+  const next = advanceWirdProgressFromReaderPosition(plan, ref, counts, getLocalDayKey())
   const value = JSON.parse(JSON.stringify(next)) as WirdPlan
   await writeNativeSetting({ key: 'wirdPlan', value })
   notifyWirdPlanChanged(value)
@@ -268,6 +316,13 @@ async function advanceNativeWirdFromReaderPosition(
 
 function isRiwayah(value: unknown): value is Riwayah {
   return value === 'qaloon'
+}
+
+function scrollMushafPageToTop(): void {
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ behavior: 'auto', top: 0 })
+    window.requestAnimationFrame(() => window.scrollTo({ behavior: 'auto', top: 0 }))
+  })
 }
 
 function wirdCountsFromIndex(index: ReaderSurahIndexEntry[]): SurahCount[] {

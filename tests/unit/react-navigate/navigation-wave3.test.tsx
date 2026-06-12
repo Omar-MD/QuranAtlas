@@ -157,7 +157,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
     expect(screen.getByRole('heading', { name: 'Daily Wird' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /continue wird/i }))
 
-    expect(onNavigate).toHaveBeenCalledWith('#/s/2/8')
+    expect(onNavigate).toHaveBeenCalledWith('#/s/2/8?wird=1')
     closeReactDb()
   })
 

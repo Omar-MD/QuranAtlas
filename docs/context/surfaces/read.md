@@ -85,7 +85,7 @@ style_paths:
 
 ### Mushaf Mode
 
-`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates the edition-aware manifest and page asset path, sanitizes the page SVG, and passes sanitized markup to `MushafPageViewer`. The page is rendered as one labeled image without decorative framing. Page turns keep the route canonicalized to `#/m/:page`, warm adjacent pages where possible, and preserve the hidden/visible chrome state during internal movement.
+`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates the edition-aware manifest and page asset path, sanitizes the page SVG, and passes sanitized markup to `MushafPageViewer`. The page is rendered as one labeled image without decorative framing. Page turns keep the route canonicalized to `#/m/:page`, warm adjacent pages where possible, preserve the hidden/visible chrome state during internal movement, and reset width-view scroll to the top of the new page. Desktop left/right arrow keys, viewport-height left/right hit zones, and horizontal swipe/drag all move between adjacent pages. The center viewport hit zone toggles reader chrome. Mushaf mode also exposes a continuous scroll view with previous/current/next pages stacked vertically and shows the current Surah name beside the page counter when known.
 
 Mushaf page bookmarks use the same bookmarks store as verse bookmarks with `kind: 'page'` and a synthetic `verseKey` of `m:<page>`.
 
@@ -95,7 +95,7 @@ Mushaf page bookmarks use the same bookmarks store as verse bookmarks with `kind
 
 ### Daily Wird
 
-Daily Wird progress lives under `src/continuity/wird/**` and persists in the `settings.wirdPlan` key. Verse reading and forward Mushaf page movement advance progress monotonically within the active plan. The reader shows only the compact status indicator for the current daily assignment; plan creation, full-plan progress, and completion gap detail live in the navigation drawer.
+Daily Wird progress lives under `src/continuity/wird/**` and persists in the `settings.wirdPlan` key. Reader-derived progress advances only from explicit Wird continuation routes that carry the protected `?wird=1` intent and only within the current daily assignment; ordinary navigation, search jumps, and unrelated page movement still update reader continuity without changing the Wird plan. The reader shows only the compact status indicator for the current daily assignment; plan creation, full-plan progress, and completion gap detail live in the navigation drawer.
 
 ### Translation And Knowledge
 

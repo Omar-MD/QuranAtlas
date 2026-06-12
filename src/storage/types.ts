@@ -20,6 +20,8 @@ export type SettingsKey =
   | 'lastSurface'
   | 'recentSurahs'
   | 'wirdPlan'
+  | 'wirdNotificationPermissionPrompted'
+  | 'wirdReminderLastSentDay'
 
 export type SettingRecord = {
   key: SettingsKey | string

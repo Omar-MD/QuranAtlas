@@ -60,11 +60,11 @@ style_paths:
 
 `SettingsRoute` and settings overlay events open `SettingsShell` without losing the current reader route or scroll state. Verse reader scroll-derived position writes pause while the settings overlay is open, and the visible verse is re-anchored across typography and translation layout changes. The shell contains a reader-mode toggle, mode-specific controls, Daily Wird visibility controls, included assets, and footer appearance controls.
 
-Verse settings own font size, reading flow, and translation visibility. Daily Wird visibility is a separate settings section; disabling it hides reader/navigation Wird status and disables the active plan's reminder without deleting the plan. Mushaf settings own the visible page/width mode control while accepting stored `auto` values for compatibility. Theme and night mode apply globally.
+Verse settings own font size, reading flow, and translation visibility. Daily Wird visibility is a separate settings section; disabling it hides reader/navigation Wird status and disables the active plan's reminder without deleting the plan. Mushaf settings own the visible page/width/continuous mode control while accepting stored `auto` values for compatibility. Theme and night mode apply globally and are reached through the same Reader chrome settings entry from Reader and Search surfaces.
 
 `IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. It can collapse on compact settings sheets so the core controls remain visible without scrolling. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
 
-`AboutRoute` owns mission/attribution, install prompt affordance, app version, app update check, and clear-data entry. Its app update action asks the current service-worker registration to fetch the latest app files, activates a pending worker when one exists, and reloads into the new app shell. `useClearDataDialog` requires exact `DELETE`; `src/storage/clear-data.ts` clears app caches and the shared database, then reloads.
+`AboutRoute` owns mission/attribution, install prompt affordance, app version, app update check, and clear-data entry. It renders Reader chrome and the shared navigation drawer so users can leave About through the same Read/Search navigation affordances as the rest of the app. Its app update action asks the current service-worker registration to fetch the latest app files, activates a pending worker when one exists, and reloads into the new app shell. `useClearDataDialog` requires exact `DELETE`; `src/storage/clear-data.ts` clears app caches and the shared database, then reloads.
 
 ## Style Inventory
 

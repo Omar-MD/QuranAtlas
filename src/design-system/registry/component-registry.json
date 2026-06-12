@@ -1044,6 +1044,7 @@
             "error",
             "fit-page",
             "fit-width",
+            "continuous",
             "jump-input",
             "focus-visible",
             "mobile",

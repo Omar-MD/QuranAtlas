@@ -1,65 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="QuranAtlas">
   <defs>
-    <linearGradient id="qa-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1d2a47"/>
-      <stop offset="1" stop-color="#0c1426"/>
+    <linearGradient id="qa-field" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0c756d"/>
+      <stop offset="0.55" stop-color="#0f8b7d"/>
+      <stop offset="1" stop-color="#0a5a68"/>
     </linearGradient>
-    <linearGradient id="qa-gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#f0d28a"/>
-      <stop offset="1" stop-color="#b08040"/>
+    <linearGradient id="qa-gold" x1="0.16" y1="0.06" x2="0.86" y2="0.94">
+      <stop offset="0" stop-color="#fff5c7"/>
+      <stop offset="0.36" stop-color="#f1c15d"/>
+      <stop offset="0.7" stop-color="#a56420"/>
+      <stop offset="1" stop-color="#ffe6a0"/>
     </linearGradient>
-    <linearGradient id="qa-page" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fdf6e3"/>
-      <stop offset="1" stop-color="#e8d9b0"/>
+    <linearGradient id="qa-ivory" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff9df"/>
+      <stop offset="1" stop-color="#e4b65f"/>
     </linearGradient>
+    <pattern id="qa-mosaic" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M32 4 44 20 60 32 44 44 32 60 20 44 4 32 20 20Z" fill="none" stroke="#3ee6dc" stroke-opacity="0.18" stroke-width="2"/>
+      <path d="M32 12 52 32 32 52 12 32Z" fill="none" stroke="#f6d384" stroke-opacity="0.16" stroke-width="2"/>
+      <circle cx="32" cy="32" r="4" fill="#fff2bd" fill-opacity="0.12"/>
+    </pattern>
+    <filter id="qa-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="11" stdDeviation="11" flood-color="#064442" flood-opacity="0.34"/>
+    </filter>
   </defs>
 
-  <!-- Rounded square background -->
-  <rect width="512" height="512" rx="96" ry="96" fill="url(#qa-bg)"/>
+  <rect width="512" height="512" rx="88" fill="url(#qa-field)"/>
+  <rect width="512" height="512" rx="88" fill="url(#qa-mosaic)"/>
+  <rect x="24" y="24" width="464" height="464" rx="72" fill="none" stroke="#f5cf78" stroke-width="7"/>
+  <rect x="42" y="42" width="428" height="428" rx="58" fill="none" stroke="#59e7dd" stroke-opacity="0.42" stroke-width="3"/>
 
-  <!-- Decorative outer ring (gold halo) -->
-  <circle cx="256" cy="256" r="208" stroke="url(#qa-gold)" stroke-width="3" fill="none" opacity="0.55"/>
-  <circle cx="256" cy="256" r="186" stroke="url(#qa-gold)" stroke-width="1.5" fill="none" opacity="0.35"/>
-
-  <!-- Crescent moon (top) -->
-  <g transform="translate(256 116)">
-    <path d="M 0 -38 A 42 42 0 1 0 0 46 A 32 32 0 1 1 8 -36 Z" fill="url(#qa-gold)"/>
-  </g>
-
-  <!-- Open book — two parchment pages meeting at center spine -->
-  <g transform="translate(256 296)">
-    <!-- spine shadow line -->
-    <rect x="-2" y="-86" width="4" height="172" fill="#000" opacity="0.4"/>
-
-    <!-- left page (slight curve via path) -->
+  <g filter="url(#qa-shadow)">
     <path
-      d="M -132 -78 Q -20 -86 -8 -78 L -8 78 Q -20 86 -132 78 Z"
-      fill="url(#qa-page)" stroke="url(#qa-gold)" stroke-width="2"/>
-    <!-- right page -->
+      d="M254 102c-91 0-158 63-158 151 0 89 66 151 158 151 25 0 49-5 70-15l53 58 55-34-57-60c24-27 37-61 37-100 0-88-67-151-158-151Zm0 67c52 0 88 35 88 84 0 50-36 85-88 85-51 0-87-35-87-85 0-49 36-84 87-84Z"
+      fill="#075653"
+      opacity="0.62"
+    />
     <path
-      d="M 8 -78 Q 20 -86 132 -78 L 132 78 Q 20 86 8 78 Z"
-      fill="url(#qa-page)" stroke="url(#qa-gold)" stroke-width="2"/>
-
-    <!-- text lines (left page) — Arabic-direction long-short pattern -->
-    <g stroke="#3a2a18" stroke-width="3.2" stroke-linecap="round" opacity="0.45">
-      <line x1="-110" y1="-50" x2="-26" y2="-50"/>
-      <line x1="-94"  y1="-26" x2="-26" y2="-26"/>
-      <line x1="-110" y1="-2"  x2="-44" y2="-2"/>
-      <line x1="-100" y1="22"  x2="-26" y2="22"/>
-      <line x1="-110" y1="46"  x2="-60" y2="46"/>
-    </g>
-    <!-- text lines (right page) -->
-    <g stroke="#3a2a18" stroke-width="3.2" stroke-linecap="round" opacity="0.45">
-      <line x1="26"  y1="-50" x2="110" y2="-50"/>
-      <line x1="26"  y1="-26" x2="94"  y2="-26"/>
-      <line x1="44"  y1="-2"  x2="110" y2="-2"/>
-      <line x1="26"  y1="22"  x2="100" y2="22"/>
-      <line x1="60"  y1="46"  x2="110" y2="46"/>
-    </g>
-  </g>
-
-  <!-- Star at the moon's tip (small accent) -->
-  <g transform="translate(304 100)" fill="url(#qa-gold)">
-    <path d="M 0 -10 L 3 -3 L 10 0 L 3 3 L 0 10 L -3 3 L -10 0 L -3 -3 Z"/>
+      d="M254 91c-98 0-171 68-171 162 0 95 72 162 171 162 28 0 54-6 78-17l59 63 56-39-62-65c25-28 39-64 39-104 0-94-72-162-170-162Zm0 64c60 0 102 41 102 98 0 58-42 99-102 99-59 0-101-41-101-99 0-57 42-98 101-98Z"
+      fill="url(#qa-gold)"
+    />
+    <path
+      d="M254 121c-80 0-139 55-139 132s59 132 139 132c28 0 53-7 74-19l54 57 25-18-55-58c27-24 42-57 42-94 0-77-60-132-140-132Zm0 34c60 0 102 41 102 98 0 58-42 99-102 99-59 0-101-41-101-99 0-57 42-98 101-98Z"
+      fill="none"
+      stroke="url(#qa-ivory)"
+      stroke-linejoin="round"
+      stroke-width="10"
+      opacity="0.82"
+    />
+    <path
+      d="M330 363c34 25 63 52 87 82"
+      fill="none"
+      stroke="#3ee6dc"
+      stroke-linecap="round"
+      stroke-width="8"
+      opacity="0.88"
+    />
   </g>
 </svg>

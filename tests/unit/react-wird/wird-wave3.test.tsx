@@ -1,11 +1,14 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { DailyWirdCard } from '../../../src/components/reader/wird/DailyWirdCard'
 import { WirdDetail } from '../../../src/components/navigation/wird/WirdDetail'
 import { openReactDb, closeReactDb } from '../../../src/storage/db'
 import { advanceWirdProgress, createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../../../src/continuity/wird/progress'
+import { createWirdReminderNotification } from '../../../src/continuity/wird/reminders'
+import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../src/continuity/wird/session'
 import { advanceWirdFromReaderPosition, readWirdPlan, writeWirdPlan } from '../../../src/continuity/wird/store'
+import { useFirstLaunchNotificationPermission } from '../../../src/continuity/wird/use-first-launch-notification-permission'
 import type { SurahCount, WirdPlan, WirdSummary } from '../../../src/continuity/wird/types'
 
 const counts: SurahCount[] = [{ n: 1, count: 7 }, { n: 2, count: 286 }]
@@ -194,18 +197,71 @@ describe('React Daily Wird coverage', () => {
     closeReactDb()
   })
 
-  it('advances the shared stored plan from reader position without rewinding', async () => {
+  it('marks Wird continuation routes explicitly so ordinary navigation cannot claim progress', () => {
+    expect(hasWirdProgressIntent('#/s/2/8')).toBe(false)
+    expect(withWirdProgressIntent('#/s/2/8')).toBe('#/s/2/8?wird=1')
+    expect(withWirdProgressIntent('#/m/42?panel=read')).toBe('#/m/42?panel=read&wird=1')
+    expect(hasWirdProgressIntent('#/m/42?panel=read&wird=1')).toBe(true)
+  })
+
+  it('opens reminder notifications as protected Wird continuation routes', () => {
+    expect(createWirdReminderNotification(activeSummary, 'https://app.test')).toMatchObject({
+      hash: '#/s/2/8?wird=1',
+      url: 'https://app.test/#/s/2/8?wird=1',
+    })
+  })
+
+  it('requests browser notification permission on first launch before Wird setup', async () => {
+    await resetReactDb()
+    const requestPermission = vi.fn(async () => 'granted' as NotificationPermission)
+    const NotificationStub = function Notification() {} as unknown as typeof Notification
+    Object.defineProperty(NotificationStub, 'permission', { configurable: true, value: 'default' })
+    Object.defineProperty(NotificationStub, 'requestPermission', { configurable: true, value: requestPermission })
+    vi.stubGlobal('Notification', NotificationStub)
+
+    try {
+      renderHook(() => useFirstLaunchNotificationPermission(true))
+
+      await waitFor(() => expect(requestPermission).toHaveBeenCalledTimes(1))
+      const db = await openReactDb()
+      await expect(db.settings.get('wirdNotificationPermissionPrompted')).resolves.toEqual({
+        key: 'wirdNotificationPermissionPrompted',
+        value: true,
+      })
+      closeReactDb()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('advances the shared stored plan from eligible reader position without rewinding', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await writeWirdPlan(db, activePlan)
+
+    await advanceWirdFromReaderPosition(db, { surah: 2, verse: 9 }, counts, '2026-05-04')
+    await advanceWirdFromReaderPosition(db, { surah: 2, verse: 4 }, counts, '2026-05-04')
+
+    await expect(readWirdPlan(db)).resolves.toMatchObject({
+      progress: {
+        completedThroughRef: { surah: 2, verse: 9 },
+        nextRef: { surah: 2, verse: 10 },
+      },
+    })
+    closeReactDb()
+  })
+
+  it('ignores reader positions outside the current daily Wird assignment', async () => {
     await resetReactDb()
     const db = await openReactDb()
     await writeWirdPlan(db, activePlan)
 
     await advanceWirdFromReaderPosition(db, { surah: 2, verse: 12 }, counts, '2026-05-04')
-    await advanceWirdFromReaderPosition(db, { surah: 2, verse: 4 }, counts, '2026-05-04')
 
     await expect(readWirdPlan(db)).resolves.toMatchObject({
       progress: {
-        completedThroughRef: { surah: 2, verse: 12 },
-        nextRef: { surah: 2, verse: 13 },
+        completedThroughRef: { surah: 2, verse: 7 },
+        nextRef: { surah: 2, verse: 8 },
       },
     })
     closeReactDb()

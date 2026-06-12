@@ -161,6 +161,20 @@ export function advanceWirdProgress(plan: WirdPlan, readRef: QuranRef, counts: R
   }
 }
 
+export function advanceWirdProgressFromReaderPosition(plan: WirdPlan, readRef: QuranRef, counts: ReadonlyArray<SurahCount>, dayKey = getLocalDayKey()): WirdPlan {
+  if (!counts.length) return plan
+  const current = recomputeForDay(plan, counts, dayKey)
+  if (!isWirdReaderProgressRefEligible(current, readRef)) return current
+  return advanceWirdProgress(current, readRef, counts, dayKey)
+}
+
+export function isWirdReaderProgressRefEligible(plan: WirdPlan, readRef: QuranRef): boolean {
+  if (compareRefs(readRef, plan.progress.nextRef) < 0) return false
+  if (compareRefs(readRef, plan.progress.todayEndRef) > 0) return false
+  if (compareRefs(readRef, plan.startRef) < 0 || compareRefs(readRef, plan.endRef) > 0) return false
+  return true
+}
+
 function labelRef(ref: QuranRef): string {
   return `${ref.surah}:${ref.verse}`
 }

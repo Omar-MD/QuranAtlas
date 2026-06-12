@@ -237,6 +237,16 @@ describe('Search route UI', () => {
     expect(mockUseSearchRouteState.mock.results[0]?.value.setActiveWorkspaceTab).toHaveBeenCalledWith('sources')
   })
 
+  it('opens settings from the same reader chrome control used by reader modes', async () => {
+    mockUseSearchRouteState.mockReturnValue(routeState())
+
+    render(<SearchShell />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    expect(window.location.hash).toBe('#/settings')
+  })
+
   it('renders AnswerPreview claims, evidence regions, and opens All Matches explicitly', async () => {
     const openAllMatches = vi.fn()
     mockUseSearchRouteState.mockReturnValue(routeState({

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 
 import { normalizeRecentSurahs } from '../../continuity/recent-surahs'
-import { advanceWirdProgress, getLocalDayKey } from '../../continuity/wird/progress'
+import { advanceWirdProgressFromReaderPosition, getLocalDayKey } from '../../continuity/wird/progress'
 import { normalizeWirdPlan, notifyWirdPlanChanged } from '../../continuity/wird/store'
 import type { SurahCount, WirdPlan } from '../../continuity/wird/types'
 import type { ReaderCorpusState } from '../../data/reader-corpus'
@@ -20,6 +20,7 @@ type ReaderPositionPersistWindow = Window & {
 async function persistPosition(
   surah: number,
   verse: number,
+  enableWirdProgress: boolean,
   wirdCounts: ReadonlyArray<SurahCount>,
   isLatestPosition: () => boolean,
 ): Promise<boolean> {
@@ -34,10 +35,10 @@ async function persistPosition(
     { key: 'recentSurahs', value: recentSurahs },
   ]
   let nextWirdPlan: WirdPlan | null = null
-  if (wirdCounts.length > 0) {
+  if (enableWirdProgress && wirdCounts.length > 0) {
     const plan = normalizeWirdPlan((await readNativeSetting('wirdPlan'))?.value)
     if (plan) {
-      nextWirdPlan = advanceWirdProgress(plan, { surah, verse }, wirdCounts, getLocalDayKey())
+      nextWirdPlan = advanceWirdProgressFromReaderPosition(plan, { surah, verse }, wirdCounts, getLocalDayKey())
       records.push({
         key: 'wirdPlan',
         value: JSON.parse(JSON.stringify(nextWirdPlan)),
@@ -102,7 +103,7 @@ function findCenteredVersePosition(surah: number): ReaderPosition | null {
 
 export function useReaderPositionSync(
   corpus: ReaderCorpusState,
-  options: { suspendAutoSync?: boolean; wirdCounts?: ReadonlyArray<SurahCount> } = {},
+  options: { enableWirdProgress?: boolean; suspendAutoSync?: boolean; wirdCounts?: ReadonlyArray<SurahCount> } = {},
 ) {
   const latestPositionRef = useRef<ReaderPosition | null>(null)
   const lastPersistedKeyRef = useRef<string | null>(null)
@@ -116,6 +117,7 @@ export function useReaderPositionSync(
   const firstVerseNumber = readyCorpus?.verses[0]?.verse ?? null
   const surahNumber = readyCorpus?.surah.number ?? null
   const suspendAutoSync = options.suspendAutoSync ?? false
+  const enableWirdProgress = options.enableWirdProgress ?? false
 
   const enqueuePersistPosition = useCallback((
     position: ReaderPosition,
@@ -124,7 +126,7 @@ export function useReaderPositionSync(
   ) => {
     const key = positionKey(position)
     persistQueueRef.current = persistQueueRef.current.catch(() => undefined).then(async () => {
-      const committed = await persistPosition(position.surah, position.verse, wirdCounts, () => {
+      const committed = await persistPosition(position.surah, position.verse, enableWirdProgress, wirdCounts, () => {
         const latest = latestPositionRef.current
         return isLatestPersistToken(persistToken) && (latest ? positionKey(latest) === key : true)
       })
@@ -132,11 +134,11 @@ export function useReaderPositionSync(
       lastPersistedKeyRef.current = key
       if (wirdCounts.length > 0) lastWirdAdvancedKeyRef.current = key
     }).catch(() => undefined)
-  }, [])
+  }, [enableWirdProgress])
 
   useEffect(() => {
     wirdCountsRef.current = options.wirdCounts ?? []
-    if (suspendAutoSync) return
+    if (suspendAutoSync || !enableWirdProgress) return
     const position = latestPositionRef.current
     if (!position || wirdCountsRef.current.length === 0) return
     const key = positionKey(position)
@@ -148,7 +150,7 @@ export function useReaderPositionSync(
       markLatestPersistToken(persistToken)
     }
     enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
-  }, [enqueuePersistPosition, options.wirdCounts, suspendAutoSync])
+  }, [enableWirdProgress, enqueuePersistPosition, options.wirdCounts, suspendAutoSync])
 
   const commitPosition = useCallback((position: ReaderPosition, persistMode: 'deferred' | 'immediate') => {
     latestPositionRef.current = position

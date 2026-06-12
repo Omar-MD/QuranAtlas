@@ -177,3 +177,18 @@ export const MushafFitWidth: Story = {
     />
   ),
 }
+
+export const MushafContinuous: Story = {
+  render: () => (
+    <MushafPageViewer
+      adjacentPages={{
+        next: { inlineSvg: sampleMushafSvg, resolved: { ...sampleMushafPage, page: 2 } },
+        previous: null,
+      }}
+      inlineSvg={sampleMushafSvg}
+      resolved={sampleMushafPage}
+      surahLabel="Al-Fatihah"
+      viewMode="continuous"
+    />
+  ),
+}

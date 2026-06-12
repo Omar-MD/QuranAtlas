@@ -1,6 +1,6 @@
 import type { QuranAtlasReactDb } from '../../storage/db'
 import type { SettingRecord } from '../../storage/types'
-import { advanceWirdProgress, getLocalDayKey } from './progress'
+import { advanceWirdProgressFromReaderPosition, getLocalDayKey } from './progress'
 import type { BrowserNotificationState, QuranRef, SurahCount, WirdPlan, WirdUnit } from './types'
 
 export const REACT_WIRD_PLAN_CHANGED_EVENT = 'quranatlas-react-wird-plan-changed'
@@ -135,7 +135,7 @@ export async function advanceWirdFromReaderPosition(
 ): Promise<WirdPlan | null> {
   const plan = await readWirdPlan(db)
   if (!plan) return null
-  const next = advanceWirdProgress(plan, readRef, counts, dayKey)
+  const next = advanceWirdProgressFromReaderPosition(plan, readRef, counts, dayKey)
   await writeWirdPlan(db, next)
   return next
 }

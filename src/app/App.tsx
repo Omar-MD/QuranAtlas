@@ -9,6 +9,7 @@ import { normalizeLastSurface } from '../continuity/last-surface'
 import { resolveMushafHrefForVerseRoute, resolveVerseHrefForMushafPage } from '../components/reader/reader-mode-routing'
 import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } from '../storage/reader-preferences'
 import { readNativeReactReaderPreferences } from '../storage/settings-writer'
+import { useFirstLaunchNotificationPermission } from '../continuity/wird/use-first-launch-notification-permission'
 import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
 
@@ -33,6 +34,7 @@ export function App() {
   const launchRestore = useLaunchRestore(hash)
   const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : hash
   const activeRoute = matchReactRoute(activeHash)
+  useFirstLaunchNotificationPermission(launchRestore.status === 'ready')
   const transientSettingsHash = !settingsOverlay
     && activeRoute.type === 'settings'
     && lastReaderHash
@@ -44,7 +46,7 @@ export function App() {
     : transientSettingsHash
       ? matchReactRoute(transientSettingsHash)
       : activeRoute
-  const showHeader = launchRestore.status !== 'ready' || !['onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
+  const showHeader = launchRestore.status !== 'ready' || !['about', 'onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
 
   useEffect(() => {
     if (!window.location.hash) {

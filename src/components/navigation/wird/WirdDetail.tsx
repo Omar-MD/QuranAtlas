@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Bell, CalendarDays, Check, CircleDot, MapPin } from 'lucide-react'
 
 import type { BrowserNotificationState, QuranRef, SurahCount, WirdSummary, WirdUnit } from '../../../continuity/wird/types'
 import { Button, Checkbox, Input } from '../../ui'
@@ -105,34 +106,28 @@ export function WirdDetail({
 
           <section className="qar-react-wird-field" aria-label="Completion target">
             <div className="qar-react-wird-field-head">
-              <span className="qar-react-wird-field-label">Completion target</span>
+              <span className="qar-react-wird-field-label"><CalendarDays aria-hidden="true" size={16} />Completion target</span>
               <span className="qar-react-wird-field-value">{targetMode === 'custom' ? 'Custom' : targetDays ? `${targetDays} days` : 'Choose'}</span>
             </div>
             <div className="qar-react-wird-options" role="group" aria-label="Completion target">
               {[7, 30, 90].map((days) => (
-                <Button
+                <WirdChoice
                   aria-pressed={targetMode === 'preset' && targetDays === days}
-                  className="qar-react-wird-option"
                   key={days}
                   onClick={() => selectPreset(days)}
-                  size="sm"
-                  variant={targetMode === 'preset' && targetDays === days ? 'secondary' : 'ghost'}
                 >
                   {days} days
-                </Button>
+                </WirdChoice>
               ))}
-              <Button
+              <WirdChoice
                 aria-pressed={targetMode === 'custom'}
-                className="qar-react-wird-option"
                 onClick={() => {
                   setTargetMode('custom')
                   setTargetDays(null)
                 }}
-                size="sm"
-                variant={targetMode === 'custom' ? 'secondary' : 'ghost'}
               >
                 Custom date
-              </Button>
+              </WirdChoice>
             </div>
             {targetMode === 'custom' && (
               <Input
@@ -147,54 +142,49 @@ export function WirdDetail({
 
           <section className="qar-react-wird-field" aria-label="Display unit">
             <div className="qar-react-wird-field-head">
-              <span className="qar-react-wird-field-label">Display unit</span>
+              <span className="qar-react-wird-field-label"><CircleDot aria-hidden="true" size={16} />Display unit</span>
               <span className="qar-react-wird-field-value">{unit}</span>
             </div>
             <div className="qar-react-wird-options" role="group" aria-label="Display unit">
               {UNITS.map((nextUnit) => (
-                <Button
+                <WirdChoice
                   aria-pressed={unit === nextUnit}
-                  className="qar-react-wird-option"
                   key={nextUnit}
                   onClick={() => setUnit(nextUnit)}
-                  size="sm"
-                  variant={unit === nextUnit ? 'secondary' : 'ghost'}
                 >
                   {nextUnit}
-                </Button>
+                </WirdChoice>
               ))}
             </div>
           </section>
 
           <section className="qar-react-wird-field" aria-label="Start point">
             <div className="qar-react-wird-field-head">
-              <span className="qar-react-wird-field-label">Start point</span>
+              <span className="qar-react-wird-field-label"><MapPin aria-hidden="true" size={16} />Start point</span>
               <span className="qar-react-wird-field-value">{startMode === 'current' ? currentRefLabel : '1:1'}</span>
             </div>
             <div className="qar-react-wird-options" role="group" aria-label="Start point">
-              <Button
+              <WirdChoice
                 aria-pressed={startMode === 'current'}
-                className="qar-react-wird-option"
                 disabled={!currentPosition}
                 onClick={() => setStartMode('current')}
-                size="sm"
-                variant={startMode === 'current' ? 'secondary' : 'ghost'}
               >
                 Current position {currentRefLabel}
-              </Button>
-              <Button
+              </WirdChoice>
+              <WirdChoice
                 aria-pressed={startMode === 'beginning'}
-                className="qar-react-wird-option"
                 onClick={() => setStartMode('beginning')}
-                size="sm"
-                variant={startMode === 'beginning' ? 'secondary' : 'ghost'}
               >
                 Beginning 1:1
-              </Button>
+              </WirdChoice>
             </div>
           </section>
 
           <section className="qar-react-wird-field qar-react-wird-field--reminder" aria-label="Daily Wird reminders">
+            <div className="qar-react-wird-field-head">
+              <span className="qar-react-wird-field-label"><Bell aria-hidden="true" size={16} />Daily reminder</span>
+              <span className="qar-react-wird-field-value">{reminderEnabled ? reminderTime : 'Off'}</span>
+            </div>
             <Checkbox
               checked={reminderEnabled}
               className="qar-react-wird-reminder"
@@ -242,5 +232,34 @@ export function WirdDetail({
         </div>
       )}
     </section>
+  )
+}
+
+function WirdChoice({
+  children,
+  disabled,
+  onClick,
+  ...props
+}: {
+  'aria-pressed': boolean
+  children: ReactNode
+  disabled?: boolean
+  onClick: () => void
+}) {
+  const pressed = props['aria-pressed']
+  return (
+    <Button
+      aria-pressed={pressed}
+      className="qar-react-wird-option"
+      disabled={disabled}
+      onClick={onClick}
+      size="sm"
+      variant="ghost"
+    >
+      <span className="qar-react-wird-option-check" aria-hidden="true">
+        {pressed ? <Check size={13} strokeWidth={2.2} /> : null}
+      </span>
+      <span>{children}</span>
+    </Button>
   )
 }

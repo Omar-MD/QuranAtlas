@@ -60,7 +60,7 @@ export function applyReactReaderTypography(preferences: Partial<ReactReaderPrefe
 }
 
 export function isReactMushafViewMode(value: unknown): value is ReactMushafViewMode {
-  return value === 'auto' || value === 'fit-page' || value === 'fit-width'
+  return value === 'auto' || value === 'fit-page' || value === 'fit-width' || value === 'continuous'
 }
 
 function resolveTheme(theme: ReactThemePreference): 'light' | 'sepia' | 'dark' {

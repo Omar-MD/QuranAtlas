@@ -1,9 +1,26 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { AboutRoute } from '../../../src/app/routes/settings/AboutRoute'
 
 describe('React About route', () => {
+  beforeEach(() => {
+    window.location.hash = '#/about'
+  })
+
+  it('keeps reader chrome navigation available from About', () => {
+    render(<AboutRoute />)
+
+    expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
+
+    const drawer = screen.getByRole('dialog', { name: 'Navigation' })
+    expect(within(drawer).getByRole('tab', { name: 'Search' })).toBeInTheDocument()
+
+    fireEvent.click(within(drawer).getByRole('tab', { name: 'Search' }))
+    expect(window.location.hash).toBe('#/search')
+  })
+
   it('renders the About content contract without unsupported product claims', () => {
     render(<AboutRoute />)
 

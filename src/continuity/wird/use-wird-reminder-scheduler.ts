@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 
 import { loadReaderSurahIndex } from '../../data/surah-index'
-import { nativeSettingsReader } from '../../storage/native-reader-store'
-import { deriveWirdSummary } from './progress'
+import { nativeSettingsReader, readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
+import { deriveWirdSummary, getLocalDayKey } from './progress'
 import {
   createWirdReminderNotification,
   getBrowserNotificationState,
@@ -60,8 +60,11 @@ export function useWirdReminderScheduler(): void {
         }
         const counts = await loadSurahCounts()
         const summary = deriveWirdSummary(plan, counts)
-        if (shouldSendWirdReminder(summary)) {
-          await showWirdReminderNotification(createWirdReminderNotification(summary))
+        const dayKey = getLocalDayKey()
+        const lastSent = await readNativeSetting('wirdReminderLastSentDay')
+        if (lastSent?.value !== dayKey && shouldSendWirdReminder(summary)) {
+          const shown = await showWirdReminderNotification(createWirdReminderNotification(summary))
+          if (shown) await writeNativeSetting({ key: 'wirdReminderLastSentDay', value: dayKey })
         }
         if (!cancelled) schedule(plan)
       } catch {

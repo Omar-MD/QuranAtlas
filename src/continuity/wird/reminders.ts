@@ -1,8 +1,9 @@
 import type { BrowserNotificationState, QuranRef, WirdReminder, WirdSummary } from './types'
+import { withWirdProgressIntent } from './session'
 
 export const WIRD_REMINDER_NOTIFICATION_TAG = 'quranatlas-daily-wird-reminder'
 export const WIRD_REMINDER_PERIODIC_SYNC_TAG = 'quranatlas-daily-wird-reminder'
-const WIRD_REMINDER_PERIODIC_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000
+const WIRD_REMINDER_PERIODIC_SYNC_INTERVAL_MS = 60 * 60 * 1000
 
 export type WirdReminderNotification = {
   body: string
@@ -35,7 +36,7 @@ export function shouldSendWirdReminder(summary: WirdSummary | null): summary is 
 }
 
 export function createWirdReminderNotification(summary: WirdSummary & { nextRef: QuranRef }, origin = globalThis.location?.origin ?? ''): WirdReminderNotification {
-  const hash = `#/s/${summary.nextRef.surah}/${summary.nextRef.verse}`
+  const hash = withWirdProgressIntent(`#/s/${summary.nextRef.surah}/${summary.nextRef.verse}`)
   return {
     body: `Tap to continue at ${summary.nextRef.surah}:${summary.nextRef.verse}. ${summary.remainingLabel}.`,
     hash,
@@ -47,23 +48,61 @@ export function createWirdReminderNotification(summary: WirdSummary & { nextRef:
 
 export async function showWirdReminderNotification(notification: WirdReminderNotification): Promise<boolean> {
   if (getBrowserNotificationState() !== 'granted') return false
-  const options: NotificationOptions = {
+  const options: NotificationOptions & { renotify?: boolean; vibrate?: number[] } = {
     body: notification.body,
     data: { hash: notification.hash, url: notification.url },
+    renotify: true,
+    silent: false,
     tag: notification.tag,
   }
+  options.vibrate = [120, 80, 120]
   const registration = await getReadyServiceWorkerRegistration()
   if (registration && typeof registration.showNotification === 'function') {
+    playWirdReminderSound()
     await registration.showNotification(notification.title, options)
     return true
   }
   const browserNotification = new Notification(notification.title, options)
+  playWirdReminderSound()
   browserNotification.onclick = () => {
     browserNotification.close()
     globalThis.window?.focus()
     if (notification.hash) globalThis.window.location.hash = notification.hash
   }
   return true
+}
+
+function playWirdReminderSound(): void {
+  const AudioContextConstructor = globalThis.AudioContext ?? (globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioContextConstructor) return
+  try {
+    const context = new AudioContextConstructor()
+    const gain = context.createGain()
+    const primary = context.createOscillator()
+    const overtone = context.createOscillator()
+    const start = context.currentTime
+    gain.gain.setValueAtTime(0.0001, start)
+    gain.gain.exponentialRampToValueAtTime(0.045, start + 0.025)
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42)
+    primary.type = 'sine'
+    overtone.type = 'triangle'
+    primary.frequency.setValueAtTime(660, start)
+    primary.frequency.exponentialRampToValueAtTime(528, start + 0.32)
+    overtone.frequency.setValueAtTime(990, start)
+    overtone.frequency.exponentialRampToValueAtTime(792, start + 0.32)
+    primary.connect(gain)
+    overtone.connect(gain)
+    gain.connect(context.destination)
+    primary.start(start)
+    overtone.start(start + 0.04)
+    primary.stop(start + 0.44)
+    overtone.stop(start + 0.38)
+    globalThis.setTimeout(() => {
+      void context.close().catch(() => undefined)
+    }, 700)
+  } catch {
+    // Browser autoplay and focus policies can reject reminder audio; the notification still fires.
+  }
 }
 
 export async function clearWirdReminderNotifications(): Promise<void> {

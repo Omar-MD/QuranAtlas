@@ -37,12 +37,15 @@ async function showStoredWirdReminder() {
   if (!current || !shouldSendStoredWirdReminder(current)) return
 
   const ref = current.progress.nextRef
-  const hash = `#/s/${ref.surah}/${ref.verse}`
+  const hash = `#/s/${ref.surah}/${ref.verse}?wird=1`
   await self.registration.showNotification('Daily Wird', {
     body: `Tap to continue at ${ref.surah}:${ref.verse}.`,
     data: { hash, url: `${self.location.origin}/${hash}` },
+    renotify: true,
+    silent: false,
     tag: 'quranatlas-daily-wird-reminder',
     timestamp: Date.now(),
+    vibrate: [120, 80, 120],
   })
   await writeSettingValue('wirdReminderLastSentDay', dayKey)
   if (current !== plan) await writeSettingValue('wirdPlan', current)
