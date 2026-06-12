@@ -5,6 +5,7 @@
 
 import { chromium } from '@playwright/test'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
@@ -44,7 +45,9 @@ async function main() {
     await page.setContent(html)
     const root = await page.locator('#root').first()
     const buf = await root.screenshot({ type: 'png', omitBackground: true })
-    writeFileSync(resolve(ROOT, out), buf)
+    const outputPath = resolve(ROOT, out)
+    writeFileSync(outputPath, buf)
+    optimizePng(outputPath)
     console.log(`✓ wrote ${out} (${size}×${size}${maskable ? ' maskable' : ''})`)
   }
 
@@ -55,3 +58,18 @@ main().catch((err) => {
   console.error(err)
   process.exit(1)
 })
+
+function optimizePng(path) {
+  const result = spawnSync('pngquant', [
+    '--force',
+    '--quality=75-92',
+    '--output',
+    path,
+    '--',
+    path,
+  ], { stdio: 'ignore' })
+
+  if (result.error && result.error.code !== 'ENOENT') {
+    throw result.error
+  }
+}
