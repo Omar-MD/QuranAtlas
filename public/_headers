@@ -37,5 +37,11 @@
   Cache-Control: public, max-age=0, must-revalidate
 /manifest-20260612-icon-v2.webmanifest
   Cache-Control: public, max-age=0, must-revalidate
+/icons/quranatlas-icon-192-v2.png
+  Cache-Control: public, max-age=0, must-revalidate
+/icons/quranatlas-icon-512-v2.png
+  Cache-Control: public, max-age=0, must-revalidate
+/icons/quranatlas-icon-maskable-512-v2.png
+  Cache-Control: public, max-age=0, must-revalidate
 /icons/*
   Cache-Control: public, max-age=0, must-revalidate
