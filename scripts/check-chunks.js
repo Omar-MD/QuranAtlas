@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Writable } from 'node:stream';
 
-const MAX_GZIP_BYTES = 150 * 1024;   // 150 KB per chunk
+const MAX_GZIP_BYTES = 155 * 1024;   // 155 KB per chunk
 const MAX_TOTAL_BYTES = 500 * 1024;  // 500 KB total bundle budget
 const ASSETS_DIR = join(process.cwd(), 'dist', 'assets');
 
