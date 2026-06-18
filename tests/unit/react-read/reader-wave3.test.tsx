@@ -657,9 +657,8 @@ describe('React reader coverage', () => {
     expect(onNavigate).toHaveBeenCalledWith(41)
   })
 
-  it('renders adjacent pages for continuous Mushaf scroll mode', () => {
+  it('renders only current page in continuous Mushaf scroll mode', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
-    const adjacentSvg = prepareReactInlineMushafSvg('<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><text>Adjacent</text></svg>')
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
       firstVerse: { surah: 2, verse: 251 },
@@ -673,10 +672,6 @@ describe('React reader coverage', () => {
 
     render(
       <MushafPageViewer
-        adjacentPages={{
-          next: { inlineSvg: adjacentSvg, resolved: { ...resolved, page: 43, firstVerse: { surah: 2, verse: 256 } } },
-          previous: { inlineSvg: adjacentSvg, resolved: { ...resolved, page: 41, firstVerse: { surah: 2, verse: 246 } } },
-        }}
         inlineSvg={inlineSvg}
         resolved={resolved}
         viewMode="continuous"
@@ -684,9 +679,9 @@ describe('React reader coverage', () => {
     )
 
     expect(screen.getByRole('img', { name: /mushaf page 42/i })).toHaveAttribute('data-mushaf-page', '42')
-    expect(document.querySelector('[data-mushaf-cell="previous"]')).toHaveAttribute('data-mushaf-cell-page', '41')
     expect(document.querySelector('[data-mushaf-cell="current"]')).toHaveAttribute('data-mushaf-cell-page', '42')
-    expect(document.querySelector('[data-mushaf-cell="next"]')).toHaveAttribute('data-mushaf-cell-page', '43')
+    expect(document.querySelector('[data-mushaf-cell="previous"]')).toBeNull()
+    expect(document.querySelector('[data-mushaf-cell="next"]')).toBeNull()
   })
 
   it('lets Mushaf pages toggle a page bookmark without adding page chrome tabs', () => {

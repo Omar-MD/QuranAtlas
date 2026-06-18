@@ -88,33 +88,17 @@ export function MushafPageViewer({
   })
 
   useEffect(() => {
-    if (viewMode !== 'continuous') return
-    const currentCell = sectionRef.current?.querySelector<HTMLElement>('[data-mushaf-cell="current"]')
-    const frame = window.requestAnimationFrame(() => {
-      currentCell?.scrollIntoView({ block: 'start', behavior: 'auto' })
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [resolved.page, viewMode])
-
-  useEffect(() => {
     if (viewMode !== 'continuous') return undefined
-    let frame = 0
-    function onScroll() {
-      if (frame) return
-      frame = window.requestAnimationFrame(() => {
-        frame = 0
-        const visiblePage = centeredContinuousPage(sectionRef.current)
-        if (visiblePage && visiblePage !== resolved.page) navigateTo(visiblePage)
-      })
+    function onWheel(event: WheelEvent) {
+      if (event.deltaY > 0) {
+        advance()
+      } else if (event.deltaY < 0) {
+        returnPrevious()
+      }
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    document.addEventListener('scroll', onScroll, { capture: true, passive: true })
-    return () => {
-      if (frame) window.cancelAnimationFrame(frame)
-      window.removeEventListener('scroll', onScroll)
-      document.removeEventListener('scroll', onScroll, { capture: true })
-    }
-  })
+    window.addEventListener('wheel', onWheel, { passive: true })
+    return () => window.removeEventListener('wheel', onWheel)
+  }, [viewMode, resolved.page])
 
   function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
@@ -137,15 +121,24 @@ export function MushafPageViewer({
     if (!drag || drag.pointerId !== event.pointerId) return
     const deltaX = event.clientX - drag.startX
     const deltaY = event.clientY - drag.startY
-    if (!drag.dragging) {
-      if (Math.abs(deltaX) < 10) return
-      if (Math.abs(deltaX) < Math.abs(deltaY) * 1.15) return
-      drag.dragging = true
-      setDragState({ active: true, deltaX: 0 })
+    if (viewMode === 'continuous') {
+      if (!drag.dragging) {
+        if (Math.abs(deltaY) < 5) return
+        if (Math.abs(deltaY) < Math.abs(deltaX) * 1.15) return
+        drag.dragging = true
+      }
+      event.preventDefault()
+    } else {
+      if (!drag.dragging) {
+        if (Math.abs(deltaX) < 5) return
+        if (Math.abs(deltaX) < Math.abs(deltaY) * 1.15) return
+        drag.dragging = true
+        setDragState({ active: true, deltaX: 0 })
+      }
+      event.preventDefault()
+      const maxDrag = drag.width * 0.95
+      setDragState({ active: true, deltaX: Math.max(-maxDrag, Math.min(maxDrag, deltaX)) })
     }
-    event.preventDefault()
-    const maxDrag = drag.width * 0.82
-    setDragState({ active: true, deltaX: Math.max(-maxDrag, Math.min(maxDrag, deltaX)) })
   }
 
   function handlePointerEnd(event: React.PointerEvent<HTMLElement>) {
@@ -157,15 +150,23 @@ export function MushafPageViewer({
       setDragState({ active: false, deltaX: 0 })
       return
     }
-    const threshold = Math.max(72, drag.width * 0.18)
-    const deltaX = dragState.deltaX
     suppressNextClickRef.current = true
     window.setTimeout(() => {
       suppressNextClickRef.current = false
     }, 0)
     setDragState({ active: false, deltaX: 0 })
-    if (deltaX <= -threshold) advance()
-    else if (deltaX >= threshold) returnPrevious()
+
+    if (viewMode === 'continuous') {
+      const deltaY = event.clientY - drag.startY
+      const threshold = 40
+      if (deltaY <= -threshold) advance()
+      else if (deltaY >= threshold) returnPrevious()
+    } else {
+      const threshold = Math.max(40, drag.width * 0.12)
+      const deltaX = dragState.deltaX
+      if (deltaX <= -threshold) advance()
+      else if (deltaX >= threshold) returnPrevious()
+    }
   }
 
   function handlePointerCancel(event: React.PointerEvent<HTMLElement>) {
@@ -190,6 +191,7 @@ export function MushafPageViewer({
     <section
       aria-label={`Mushaf page ${resolved.page}`}
       className="qar-react-mushaf-page-surface qar:bg-canvas qar:text-text"
+      data-mushaf-chrome-visible={chromeVisible ? 'true' : 'false'}
       data-mushaf-dragging={dragState.active ? 'true' : 'false'}
       data-mushaf-transition-direction={transitionDirection}
       data-mushaf-view-mode={viewMode}
@@ -212,9 +214,7 @@ export function MushafPageViewer({
         >
           {viewMode === 'continuous' ? (
             <div className="qar-react-mushaf-continuous-stack">
-              {adjacentPages?.previous ? <MushafPageCell page={adjacentPages.previous} position="previous" /> : null}
               <MushafPageCell page={{ inlineSvg, resolved }} position="current" />
-              {adjacentPages?.next ? <MushafPageCell page={adjacentPages.next} position="next" /> : null}
             </div>
           ) : (
             <div className="qar-react-mushaf-page-strip" style={stripStyle}>
@@ -306,23 +306,4 @@ function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   const tagName = target.tagName.toLowerCase()
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || target.isContentEditable
-}
-
-function centeredContinuousPage(root: HTMLElement | null): number | null {
-  if (!root) return null
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-  if (!viewportHeight) return null
-  const centerY = viewportHeight / 2
-  let closest: { distance: number; page: number } | null = null
-  for (const element of root.querySelectorAll<HTMLElement>('[data-mushaf-cell-page]')) {
-    const page = Number(element.dataset.mushafCellPage)
-    if (!Number.isInteger(page)) continue
-    const rect = element.getBoundingClientRect()
-    if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
-    const distance = rect.top <= centerY && rect.bottom >= centerY
-      ? 0
-      : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
-    if (!closest || distance < closest.distance) closest = { distance, page }
-  }
-  return closest?.page ?? null
 }
