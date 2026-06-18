@@ -264,18 +264,17 @@ describe('React settings shell coverage', () => {
     })
   })
 
-  it('persists Mushaf view mode changes from the settings shell', async () => {
+  it('persists Navigation mode changes from the settings shell', async () => {
     await resetReactDb()
     render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
 
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    fireEvent.click(within(dialog).getByRole('tab', { name: 'Mushaf view mode: Width' }))
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Navigation mode: Scroll' }))
 
-    expect(within(dialog).queryByRole('tab', { name: 'Mushaf view mode: Auto' })).not.toBeInTheDocument()
-    expect(within(dialog).getByRole('tab', { name: 'Mushaf view mode: Width' })).toHaveAttribute('aria-selected', 'true')
+    expect(within(dialog).getByRole('tab', { name: 'Navigation mode: Scroll' })).toHaveAttribute('aria-selected', 'true')
     await waitFor(async () => {
       const db = await openReactDb()
-      await expect(db.settings.get('mushafViewMode')).resolves.toEqual({ key: 'mushafViewMode', value: 'fit-width' })
+      await expect(db.settings.get('mushafViewMode')).resolves.toEqual({ key: 'mushafViewMode', value: 'continuous' })
     })
   })
 
@@ -358,14 +357,14 @@ describe('React settings shell coverage', () => {
 
     expect(within(dialog).getByRole('slider', { name: 'Font size' })).toBeInTheDocument()
     expect(within(dialog).getByRole('combobox', { name: 'Reading flow' })).toBeInTheDocument()
-    expect(within(dialog).queryByRole('tablist', { name: 'Mushaf view mode' })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('tablist', { name: 'Navigation mode' })).not.toBeInTheDocument()
 
     rerender(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
     dialog = await screen.findByRole('dialog', { name: 'Settings' })
 
     expect(within(dialog).queryByRole('slider', { name: 'Font size' })).not.toBeInTheDocument()
     expect(within(dialog).queryByRole('combobox', { name: 'Reading flow' })).not.toBeInTheDocument()
-    expect(within(dialog).getByRole('tablist', { name: 'Mushaf view mode' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('tablist', { name: 'Navigation mode' })).toBeInTheDocument()
   })
 
   it('renders the default asset inventory inline inside settings without optional controls', async () => {

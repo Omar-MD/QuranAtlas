@@ -25,6 +25,7 @@ export type SettingsFormState =
 
 export function useSettingsForm(): {
   setMushafViewMode: (value: ReactMushafViewMode) => void
+  setMushafFitWidth: (value: boolean) => void
   setNightMode: (value: ReactNightModePreference) => void
   setReadingFlow: (value: ReactPreferenceStep) => void
   setFontSize: (value: ReactPreferenceStep) => void
@@ -83,6 +84,15 @@ export function useSettingsForm(): {
   return {
     setFontSize: (fontSize) => updatePreferences((current) => ({ ...current, fontSize })),
     setMushafViewMode: (mushafViewMode) => updatePreferences((current) => ({ ...current, mushafViewMode })),
+    setMushafFitWidth: (mushafFitWidth) => updatePreferences((current) => ({
+      ...current,
+      mushafFitWidth,
+      mushafViewMode: current.mushafViewMode === 'fit-width' && !mushafFitWidth
+        ? 'fit-page'
+        : current.mushafViewMode === 'fit-page' && mushafFitWidth
+          ? 'fit-width'
+          : current.mushafViewMode,
+    })),
     setNightMode: (nightMode) => updatePreferences((current) => ({ ...current, nightMode })),
     setReadingFlow: (value) => updatePreferences((current) => ({
       ...current,

@@ -4026,23 +4026,23 @@
   .qar-react-mushaf-page-surface {
     position: relative;
     display: grid;
-    align-content: start;
+    align-content: center;
     gap: 0.75rem;
     min-height: 100vh;
     min-height: 100dvh;
     padding:
-      max(4.5rem, calc(env(safe-area-inset-top) + 4.5rem))
+      max(0.5rem, env(safe-area-inset-top))
       clamp(0.625rem, 2.8vw, 1.5rem)
-      max(4.25rem, calc(env(safe-area-inset-bottom) + 3.75rem));
+      max(0.5rem, env(safe-area-inset-bottom));
   }
 
   .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] {
-    padding-top: max(0.5rem, env(safe-area-inset-top));
+    padding-top: max(0.25rem, env(safe-area-inset-top));
   }
 
   .qar-react-mushaf-page-stage {
     position: relative;
-    width: min(100%, calc((100dvh - 8.75rem) * var(--qa-react-mushaf-page-ratio)));
+    width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
     margin: 0 auto;
     aspect-ratio: var(--qa-react-mushaf-page-ratio);
   }
@@ -4150,11 +4150,13 @@
     touch-action: pan-y;
   }
 
+  .qar-react-mushaf-edge:focus,
+  .qar-react-mushaf-edge:focus-visible,
+  .qar-react-mushaf-center-toggle:focus,
   .qar-react-mushaf-center-toggle:focus-visible {
-    opacity: 1;
-    outline: 2px solid var(--qa-react-focus);
-    outline-offset: -4px;
-    background: color-mix(in srgb, var(--qa-react-accent) 7%, transparent) !important;
+    outline: none !important;
+    box-shadow: none !important;
+    opacity: 0;
   }
 
   .qar-react-mushaf-page-counter {
@@ -4364,26 +4366,30 @@
     }
   }
 
-  [data-mushaf-view-mode='fit-width'] .qar-react-mushaf-page-stage {
-    width: 100%;
+  [data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
+    width: 100% !important;
     height: auto;
-    min-height: calc(100dvh - 8.25rem);
+    aspect-ratio: auto;
+  }
+
+  [data-mushaf-fit-width='true'] .qar-react-mushaf-page-frame {
+    overflow: visible;
   }
 
   [data-mushaf-view-mode='fit-page'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 8.75rem) * var(--qa-react-mushaf-page-ratio)));
+    width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
   }
 
   [data-mushaf-chrome-visible='false'][data-mushaf-view-mode='fit-page'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 4.75rem) * var(--qa-react-mushaf-page-ratio)));
+    width: min(100%, calc((100dvh - 0.75rem) * var(--qa-react-mushaf-page-ratio)));
   }
 
   [data-mushaf-chrome-visible='false'][data-mushaf-view-mode='auto'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 4.75rem) * var(--qa-react-mushaf-page-ratio)));
+    width: min(100%, calc((100dvh - 0.75rem) * var(--qa-react-mushaf-page-ratio)));
   }
 
   [data-mushaf-view-mode='continuous'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 9.5rem) * var(--qa-react-mushaf-page-ratio)));
+    width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
     height: auto;
     aspect-ratio: auto;
   }
@@ -4399,10 +4405,22 @@
     overflow: hidden;
   }
 
+  [data-mushaf-view-mode='continuous'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
+    width: 100%;
+    height: calc(100dvh - 1rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-mushaf-view-mode='continuous'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-cell {
+    overflow: visible;
+  }
+
   @media (max-width: 767px) {
     [data-mushaf-view-mode='auto'] .qar-react-mushaf-page-stage,
-    [data-mushaf-view-mode='fit-width'] .qar-react-mushaf-page-stage,
-    [data-mushaf-view-mode='continuous'] .qar-react-mushaf-page-stage {
+    [data-mushaf-view-mode='fit-page'] .qar-react-mushaf-page-stage,
+    [data-mushaf-view-mode='continuous'] .qar-react-mushaf-page-stage,
+    [data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
       width: 100%;
     }
   }
@@ -4430,7 +4448,7 @@
 
   @media (min-width: 1180px) {
     .qar-react-mushaf-page-stage {
-      width: min(100%, calc((100dvh - 9.5rem) * var(--qa-react-mushaf-page-ratio)));
+      width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
     }
   }
 

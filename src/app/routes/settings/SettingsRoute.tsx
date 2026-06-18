@@ -25,6 +25,7 @@ export function SettingsRoute({
   const [includedAssetsVisible, setIncludedAssetsVisible] = useState(() => shouldShowIncludedAssetsByDefault())
   const {
     setFontSize,
+    setMushafFitWidth,
     setMushafViewMode,
     setNightMode,
     setReadingFlow,
@@ -83,7 +84,12 @@ export function SettingsRoute({
                 translationVisible={preferences.translationVisible}
               />
             ) : (
-              <MushafSettings mode={preferences.mushafViewMode} onModeChange={setMushafViewMode} />
+              <MushafSettings
+                fitWidth={preferences.mushafFitWidth}
+                mode={preferences.mushafViewMode}
+                onFitWidthChange={setMushafFitWidth}
+                onModeChange={setMushafViewMode}
+              />
             )}
           </div>
           <WirdSettingsSection

@@ -1,9 +1,12 @@
-import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { Bookmark } from 'lucide-react'
 
 import type { MushafResolvedPage, ReactInlineMushafSvg } from '../../packs/mushaf-page-asset'
 import { Button, IconButton } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
+
+const SCROLL_COOLDOWN_MS = 500
+const WHEEL_THRESHOLD = 120
 
 export type MushafPageViewerProps = {
   adjacentPages?: {
@@ -12,6 +15,7 @@ export type MushafPageViewerProps = {
   }
   bookmarked?: boolean
   chromeVisible?: boolean
+  fitWidth?: boolean
   inlineSvg: ReactInlineMushafSvg
   onNavigate?: (page: number) => void
   onToggleChrome?: (visible: boolean) => void
@@ -32,6 +36,7 @@ export function MushafPageViewer({
   adjacentPages,
   bookmarked = false,
   chromeVisible = true,
+  fitWidth = false,
   inlineSvg,
   onNavigate,
   onToggleBookmark,
@@ -51,6 +56,8 @@ export function MushafPageViewer({
     width: number
   } | null>(null)
   const suppressNextClickRef = useRef(false)
+  const wheelCooldownRef = useRef(0)
+  const wheelAccumRef = useRef(0)
   const [dragState, setDragState] = useState({ active: false, deltaX: 0 })
   const ratio = inlineSvg.viewBox.width / inlineSvg.viewBox.height
   const stripStyle = {
@@ -59,27 +66,48 @@ export function MushafPageViewer({
 
   function navigateTo(page: number) {
     const next = Math.min(resolved.pageCount, Math.max(1, page))
-    if (next !== resolved.page) onNavigate?.(next)
+    if (next !== resolved.page) {
+      try {
+        const el = sectionRef.current
+        if (el) {
+          const q = el.querySelector('.qar-react-mushaf-page-stage')
+          if (q instanceof HTMLElement && typeof q.scrollTo === 'function') q.scrollTo(0, 0)
+        }
+      } catch {
+        /* no-op */
+      }
+      onNavigate?.(next)
+    }
   }
 
-  function advance() {
+  const advance = useCallback(() => {
     navigateTo(resolved.page + 1)
-  }
+  }, [resolved.page, resolved.pageCount, onNavigate])
 
-  function returnPrevious() {
+  const returnPrevious = useCallback(() => {
     navigateTo(resolved.page - 1)
-  }
+  }, [resolved.page, resolved.pageCount, onNavigate])
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.defaultPrevented || event.metaKey || event.altKey || event.ctrlKey) return
       if (isEditableTarget(event.target)) return
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault()
-        advance()
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault()
-        returnPrevious()
+      if (viewMode === 'continuous') {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          advance()
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault()
+          returnPrevious()
+        }
+      } else {
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault()
+          advance()
+        } else if (event.key === 'ArrowRight') {
+          event.preventDefault()
+          returnPrevious()
+        }
       }
     }
 
@@ -89,16 +117,48 @@ export function MushafPageViewer({
 
   useEffect(() => {
     if (viewMode !== 'continuous') return undefined
+
+    const el = sectionRef.current
+    const stage = el?.querySelector('.qar-react-mushaf-page-stage')
+
     function onWheel(event: WheelEvent) {
-      if (event.deltaY > 0) {
+      const now = Date.now()
+      if (now - wheelCooldownRef.current < SCROLL_COOLDOWN_MS) return
+
+      if (stage instanceof HTMLElement && stage.scrollHeight > stage.clientHeight) {
+        const atBottom = stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 2
+        const atTop = stage.scrollTop <= 2
+
+        if (atBottom && event.deltaY > 0) {
+          wheelAccumRef.current += event.deltaY
+        } else if (atTop && event.deltaY < 0) {
+          wheelAccumRef.current += event.deltaY
+        } else {
+          wheelAccumRef.current = 0
+          return
+        }
+      } else {
+        wheelAccumRef.current += event.deltaY
+      }
+
+      if (wheelAccumRef.current >= WHEEL_THRESHOLD) {
+        wheelAccumRef.current = 0
+        wheelCooldownRef.current = now
         advance()
-      } else if (event.deltaY < 0) {
+      } else if (wheelAccumRef.current <= -WHEEL_THRESHOLD) {
+        wheelAccumRef.current = 0
+        wheelCooldownRef.current = now
         returnPrevious()
       }
     }
+
     window.addEventListener('wheel', onWheel, { passive: true })
-    return () => window.removeEventListener('wheel', onWheel)
-  }, [viewMode, resolved.page])
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      wheelAccumRef.current = 0
+      wheelCooldownRef.current = 0
+    }
+  }, [advance, returnPrevious])
 
   function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
@@ -193,6 +253,7 @@ export function MushafPageViewer({
       className="qar-react-mushaf-page-surface qar:bg-canvas qar:text-text"
       data-mushaf-chrome-visible={chromeVisible ? 'true' : 'false'}
       data-mushaf-dragging={dragState.active ? 'true' : 'false'}
+      data-mushaf-fit-width={fitWidth ? 'true' : 'false'}
       data-mushaf-transition-direction={transitionDirection}
       data-mushaf-view-mode={viewMode}
       onPointerCancel={handlePointerCancel}
@@ -203,7 +264,12 @@ export function MushafPageViewer({
     >
       <div
         className="qar-react-mushaf-page-stage"
-        style={{ '--qa-react-mushaf-page-ratio': String(ratio) } as CSSProperties}
+        style={{
+          '--qa-react-mushaf-page-ratio': String(ratio),
+          ...(viewMode === 'continuous' && fitWidth
+            ? { overflowY: 'auto' as const, height: 'calc(100dvh - 1rem)' }
+            : {}),
+        } as CSSProperties}
       >
         <div
           aria-label={`Mushaf page ${resolved.page}, ${resolved.riwayahLabel}, beginning near ${resolved.firstVerse.surah}:${resolved.firstVerse.verse}`}
@@ -230,6 +296,7 @@ export function MushafPageViewer({
           className="qar-react-mushaf-center-toggle"
           onClick={handleZoneClick(() => onToggleChrome?.(!chromeVisible))}
           size="sm"
+          tabIndex={-1}
           type="button"
           variant="ghost"
         >
@@ -241,6 +308,7 @@ export function MushafPageViewer({
           disabled={resolved.page >= resolved.pageCount}
           onClick={handleZoneClick(advance)}
           size="sm"
+          tabIndex={-1}
           type="button"
           variant="ghost"
         >
@@ -252,6 +320,7 @@ export function MushafPageViewer({
           disabled={resolved.page <= 1}
           onClick={handleZoneClick(returnPrevious)}
           size="sm"
+          tabIndex={-1}
           type="button"
           variant="ghost"
         >

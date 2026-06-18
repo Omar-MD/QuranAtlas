@@ -83,7 +83,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
       />,
     )
 
-    expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).toBeNull()
+    expect(screen.queryByRole('tablist', { name: 'Navigation mode' })).toBeNull()
     expect(screen.getByRole('tab', { name: 'Surah' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Juz' })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByRole('tab', { name: 'Bookmarks' })).toHaveAttribute('aria-selected', 'false')
@@ -166,7 +166,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
     expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
     expect(screen.getByRole('tablist', { name: 'Reader mode' })).toBeInTheDocument()
-    expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tablist', { name: 'Navigation mode' })).not.toBeInTheDocument()
     expect(screen.getByRole('slider', { name: 'Font size' })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Reading flow' })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Theme' })).toBeInTheDocument()
@@ -175,7 +175,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
     expect(screen.getByRole('region', { name: 'Included assets' })).toBeInTheDocument()
     expect(screen.queryByText(/mushaf edition/i)).not.toBeInTheDocument()
     settingsRender.rerender(<SettingsRoute mode="mushaf" />)
-    expect(screen.getByRole('tablist', { name: 'Mushaf view mode' })).toBeInTheDocument()
+    expect(screen.getByRole('tablist', { name: 'Navigation mode' })).toBeInTheDocument()
     expect(screen.queryByRole('slider', { name: 'Font size' })).not.toBeInTheDocument()
     settingsRender.unmount()
 

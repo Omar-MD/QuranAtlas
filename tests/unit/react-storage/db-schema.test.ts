@@ -75,6 +75,7 @@ describe('React storage schema mirror', () => {
     await writeReactReaderPreferences(db, {
       fontSize: 'lg',
       lineSpacing: 'sm',
+      mushafFitWidth: true,
       mushafViewMode: 'fit-width',
       nightMode: 'on',
       readerMargin: 'xl',
@@ -96,6 +97,7 @@ describe('React storage schema mirror', () => {
       'theme',
       'nightMode',
       'mushafViewMode',
+      'mushafFitWidth',
     ])).resolves.toEqual([
       { key: 'translationVisible', value: false },
       { key: 'wirdReaderStatusVisible', value: false },
@@ -107,6 +109,7 @@ describe('React storage schema mirror', () => {
       { key: 'theme', value: 'dark' },
       { key: 'nightMode', value: 'on' },
       { key: 'mushafViewMode', value: 'fit-width' },
+      { key: 'mushafFitWidth', value: true },
     ])
   })
 })

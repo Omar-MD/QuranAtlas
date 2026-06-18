@@ -33,6 +33,7 @@ type MushafRouteProps = {
 
 type ActiveMushafSettings = {
   mushafEditionId: string
+  mushafFitWidth: boolean
   mushafViewMode: MushafViewMode
   riwayah: Riwayah
   wirdReaderStatusVisible: boolean
@@ -50,6 +51,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   }>({})
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'previous'>('next')
   const [viewMode, setViewMode] = useState<MushafViewMode>('auto')
+  const [fitWidth, setFitWidth] = useState(DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth)
   const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible)
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
@@ -84,6 +86,9 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   useEffect(() => subscribeReactReaderPreferencesChanged((preferences) => {
     if (isReactMushafViewMode(preferences.mushafViewMode)) {
       setViewMode(preferences.mushafViewMode)
+    }
+    if (typeof preferences.mushafFitWidth === 'boolean') {
+      setFitWidth(preferences.mushafFitWidth)
     }
     if (preferences.wirdReaderStatusVisible !== undefined) {
       setWirdReaderStatusVisible(preferences.wirdReaderStatusVisible)
@@ -158,6 +163,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     setState((current) => current.status === 'ready' ? current : { status: 'loading' })
     void loadActiveMushafSettings().then((settings) => {
       setViewMode(settings.mushafViewMode)
+      setFitWidth(settings.mushafFitWidth)
       setWirdReaderStatusVisible(settings.wirdReaderStatusVisible)
       return loadMushafPageAsset({
         mushafEditionId: settings.mushafEditionId,
@@ -244,6 +250,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
           adjacentPages={adjacentPages}
           bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
           chromeVisible={chromeVisible}
+          fitWidth={fitWidth}
           inlineSvg={visiblePage.inlineSvg}
           onNavigate={(nextPage) => {
             if (nextPage > visiblePage.resolved.page) {
@@ -288,6 +295,7 @@ async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
     return {
       riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
       mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
+      mushafFitWidth: preferences.mushafFitWidth,
       mushafViewMode: preferences.mushafViewMode,
       wirdReaderStatusVisible: preferences.wirdReaderStatusVisible,
     }
@@ -295,6 +303,7 @@ async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
     return {
       riwayah: DEFAULT_RIWAYAH,
       mushafEditionId: DEFAULT_MUSHAF_EDITION_ID,
+      mushafFitWidth: DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth,
       mushafViewMode: DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
       wirdReaderStatusVisible: DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
     }

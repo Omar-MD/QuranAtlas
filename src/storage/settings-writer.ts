@@ -21,6 +21,7 @@ export type ReactMushafViewMode = 'auto' | 'fit-page' | 'fit-width' | 'continuou
 export type ReactReaderPreferences = {
   fontSize: ReactPreferenceStep
   lineSpacing: ReactPreferenceStep
+  mushafFitWidth: boolean
   mushafViewMode: ReactMushafViewMode
   nightMode: ReactNightModePreference
   readerMargin: ReactPreferenceStep
@@ -34,6 +35,7 @@ export type ReactReaderPreferences = {
 export const DEFAULT_REACT_READER_PREFERENCES: ReactReaderPreferences = {
   fontSize: 'md',
   lineSpacing: 'md',
+  mushafFitWidth: false,
   mushafViewMode: 'auto',
   nightMode: 'off',
   readerMargin: 'md',
@@ -55,6 +57,7 @@ const READER_PREFERENCE_KEYS = [
   'theme',
   'nightMode',
   'mushafViewMode',
+  'mushafFitWidth',
 ] as const
 
 function asStep(value: unknown): ReactPreferenceStep | null {
@@ -99,6 +102,11 @@ function reactReaderPreferencesFromRecords(records: Array<SettingRecord | undefi
   return {
     fontSize: asStep(values.fontSize) ?? DEFAULT_REACT_READER_PREFERENCES.fontSize,
     lineSpacing: asStep(values.lineSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.lineSpacing,
+    mushafFitWidth: typeof values.mushafFitWidth === 'boolean'
+      ? values.mushafFitWidth
+      : values.mushafViewMode === 'fit-width'
+        ? true
+        : DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth,
     mushafViewMode: asMushafViewMode(values.mushafViewMode) ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
     nightMode: asNightMode(values.nightMode) ?? DEFAULT_REACT_READER_PREFERENCES.nightMode,
     readerMargin: asStep(values.readerMargin) ?? DEFAULT_REACT_READER_PREFERENCES.readerMargin,
@@ -126,6 +134,7 @@ export async function writeReactReaderPreferences(db: QuranAtlasReactDb, prefere
     { key: 'theme', value: preferences.theme },
     { key: 'nightMode', value: preferences.nightMode },
     { key: 'mushafViewMode', value: preferences.mushafViewMode },
+    { key: 'mushafFitWidth', value: preferences.mushafFitWidth },
   ]
   await db.transaction('rw', db.settings, async () => {
     await db.settings.bulkPut(records)

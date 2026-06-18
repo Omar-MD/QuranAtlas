@@ -556,8 +556,8 @@ describe('React reader coverage', () => {
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
     expect(screen.queryByLabelText(/mushaf page placeholder/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: 'Auto' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('tab', { name: 'Page' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('tab', { name: 'Width' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Single' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Scroll' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /jump from mushaf page 1 of 604/i })).not.toBeInTheDocument()
     vi.unstubAllGlobals()
   })
@@ -608,11 +608,11 @@ describe('React reader coverage', () => {
     render(<MushafRoute page={1} />)
 
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
-    expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tablist', { name: 'Navigation mode' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
     const drawer = screen.getByRole('dialog', { name: 'Navigation' })
     expect(drawer).toBeInTheDocument()
-    expect(within(drawer).queryByRole('tablist', { name: 'Mushaf view mode' })).toBeNull()
+    expect(within(drawer).queryByRole('tablist', { name: 'Navigation mode' })).toBeNull()
     expect(within(drawer).getByRole('tablist', { name: 'Read source' })).toBeInTheDocument()
     expect(within(drawer).getByRole('tab', { name: 'Surah' })).toHaveAttribute('aria-selected', 'true')
     expect(within(drawer).getByRole('tab', { name: 'Juz' })).toHaveAttribute('aria-selected', 'false')
@@ -706,7 +706,7 @@ describe('React reader coverage', () => {
       />,
     )
 
-    expect(screen.queryByRole('tablist', { name: 'Mushaf view mode' })).toBeNull()
+    expect(screen.queryByRole('tablist', { name: 'Navigation mode' })).toBeNull()
     const bookmark = screen.getByRole('button', { name: 'Remove bookmark for Mushaf page 42' })
     expect(bookmark).toHaveAttribute('aria-pressed', 'true')
 
