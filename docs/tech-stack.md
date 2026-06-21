@@ -110,7 +110,7 @@ CI lives at `.github/workflows/ci.yml` and runs on push/PR to `main`, `dev`, and
 | `dataset-full` | Full profile build when dataset-relevant diffs require it |
 | `audit` | `pnpm audit --audit-level moderate` |
 | `build` | Runs `pnpm run ci:build`, generating Mushaf page artifacts when Mushaf inputs or Playwright require them, checks chunks, then uploads `dist/` |
-| `lighthouse` | Runs Lighthouse against uploaded `dist/` when build-relevant diffs require it |
+| `lighthouse` | Runs three Lighthouse collections against uploaded `dist/` when build-relevant diffs require it |
 | `e2e` | Runs non-visual, offline, and visual React Playwright specs against uploaded `dist/` |
 | `storybook` | Builds Storybook and runs Storybook Vitest/browser checks when Storybook-relevant diffs require it |
 | `ci-ok` | Aggregates required job results |
