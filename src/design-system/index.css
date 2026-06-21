@@ -4004,32 +4004,36 @@
     --qa-react-mushaf-top-chrome: calc(var(--qa-react-mushaf-title-top) + var(--qa-react-mushaf-title-space));
     --qa-react-mushaf-bottom-chrome: var(--qa-react-mushaf-number-space);
     --qa-react-mushaf-available-height: max(12rem, calc(100dvh - var(--qa-react-mushaf-top-chrome) - var(--qa-react-mushaf-bottom-chrome)));
+    --qa-react-mushaf-inline-pad: clamp(0.35rem, 2.2vw, 1.5rem);
+    --qa-react-mushaf-stage-width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
     position: relative;
     display: grid;
-    align-content: center;
+    grid-template-rows:
+      var(--qa-react-mushaf-title-space)
+      minmax(0, var(--qa-react-mushaf-available-height))
+      var(--qa-react-mushaf-number-space);
+    align-content: start;
     align-items: center;
+    justify-items: center;
     min-height: 100vh;
     min-height: 100dvh;
     padding:
-      var(--qa-react-mushaf-top-chrome)
-      clamp(0.35rem, 2.2vw, 1.5rem)
-      var(--qa-react-mushaf-bottom-chrome);
+      var(--qa-react-mushaf-title-top)
+      var(--qa-react-mushaf-inline-pad)
+      0;
     box-sizing: border-box;
     overflow-x: clip;
   }
 
   .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] {
-    --qa-react-mushaf-title-top: calc(env(safe-area-inset-top) + .7rem);
     --qa-react-mushaf-top-chrome: calc(var(--qa-react-mushaf-title-top) + var(--qa-react-mushaf-title-space));
-    padding:
-      var(--qa-react-mushaf-top-chrome)
-      clamp(0.35rem, 2.2vw, 1.5rem)
-      var(--qa-react-mushaf-bottom-chrome);
   }
 
   .qar-react-mushaf-page-stage {
+    grid-row: 2;
+    align-self: center;
     position: relative;
-    width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+    width: var(--qa-react-mushaf-stage-width);
     max-height: var(--qa-react-mushaf-available-height);
     margin: 0 auto;
     aspect-ratio: var(--qa-react-mushaf-page-ratio);
@@ -4142,11 +4146,19 @@
     opacity: 0;
   }
 
-  .qar-react-mushaf-page-counter {
-    position: fixed;
-    left: 50%;
-    bottom: max(0.7rem, calc(env(safe-area-inset-bottom) + 0.7rem));
+  .qar-react-mushaf-page-counter-shell {
+    grid-row: 3;
+    align-self: start;
+    justify-self: center;
+    position: relative;
     z-index: 6;
+    display: grid;
+    justify-items: center;
+    width: var(--qa-react-mushaf-stage-width);
+    pointer-events: none;
+  }
+
+  .qar-react-mushaf-page-counter {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -4159,25 +4171,25 @@
     font-weight: 500;
     font-variant-numeric: tabular-nums;
     line-height: 1.15;
-    pointer-events: none;
     text-align: center;
     text-rendering: optimizelegibility;
-    transform: translateX(-50%);
   }
 
   .qar-react-mushaf-page-surah {
-    position: fixed;
-    top: var(--qa-react-mushaf-title-top);
-    right: clamp(0.75rem, 3vw, 1.5rem);
+    grid-row: 1;
+    align-self: end;
+    justify-self: center;
+    position: relative;
     z-index: 6;
-    max-width: min(64vw, 22rem);
+    width: var(--qa-react-mushaf-stage-width);
+    max-width: var(--qa-react-mushaf-stage-width);
     overflow: hidden;
     color: var(--qa-react-accent);
     font-family: 'Scheherazade New', 'Noto Naskh Arabic', var(--qa-react-font-arabic);
     font-size: clamp(1.28rem, 2.75vw, 1.75rem);
     font-weight: 500;
     line-height: 1.22;
-    padding-block: .05rem .18rem;
+    padding-block: .05rem .38rem;
     text-align: right;
     text-rendering: optimizelegibility;
     text-overflow: ellipsis;
@@ -4336,6 +4348,10 @@
     }
   }
 
+  .qar-react-mushaf-page-surface[data-mushaf-fit-width='true'] {
+    --qa-react-mushaf-stage-width: 100%;
+  }
+
   [data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
     width: 100%;
     height: var(--qa-react-mushaf-available-height);
@@ -4351,7 +4367,7 @@
   }
 
   [data-mushaf-layout-mode='scroll'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+    width: var(--qa-react-mushaf-stage-width);
     height: var(--qa-react-mushaf-available-height);
     aspect-ratio: auto;
     overflow-x: hidden;
@@ -4387,23 +4403,16 @@
       --qa-react-mushaf-title-top: calc(env(safe-area-inset-top) + 3.65rem);
       --qa-react-mushaf-title-space: 1.95rem;
       --qa-react-mushaf-number-space: max(1.85rem, calc(env(safe-area-inset-bottom) + 1.7rem));
-      padding-inline: clamp(0.25rem, 1.2vw, 0.65rem);
-    }
-
-    .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] {
-      --qa-react-mushaf-title-top: calc(env(safe-area-inset-top) + .35rem);
+      --qa-react-mushaf-inline-pad: clamp(0.25rem, 1.2vw, 0.65rem);
     }
 
     .qar-react-mushaf-page-surah {
-      right: max(0.55rem, calc(env(safe-area-inset-right) + 0.55rem));
-      max-width: min(46vw, 18rem);
       font-size: clamp(1.05rem, 4.4dvh, 1.28rem);
       line-height: 1.1;
-      padding-block: 0;
+      padding-block: 0 .18rem;
     }
 
     .qar-react-mushaf-page-counter {
-      bottom: max(0.18rem, calc(env(safe-area-inset-bottom) + 0.18rem));
       min-height: 1.45rem;
       font-size: clamp(1.02rem, 4dvh, 1.22rem);
       line-height: 1;

@@ -202,7 +202,9 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
       if (requestId.current !== id) return
       setState(next)
       if (next.status === 'ready') {
-        commitVisiblePage(next)
+        if (!isSameVisibleMushafPage(visiblePageRef.current, next)) {
+          commitVisiblePage(next)
+        }
       }
       if (next.status === 'ready' && next.resolved.page !== page) {
         window.history.replaceState(null, '', REACT_ROUTES.mushaf(next.resolved.page))
@@ -378,6 +380,15 @@ function clearLandscapeFitWidthDisabled(): void {
   } catch {
     /* no-op */
   }
+}
+
+function isSameVisibleMushafPage(
+  current: MushafReadyPageAssetState | null,
+  next: MushafReadyPageAssetState,
+): boolean {
+  return current?.resolved.page === next.resolved.page
+    && current.resolved.mushafEditionId === next.resolved.mushafEditionId
+    && current.resolved.riwayah === next.resolved.riwayah
 }
 
 function scrollMushafPageToTop(): void {

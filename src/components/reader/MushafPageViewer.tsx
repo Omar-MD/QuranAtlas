@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
+import { forwardRef, type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Bookmark } from 'lucide-react'
 
 import type { MushafResolvedPage, ReactInlineMushafSvg } from '../../packs/mushaf-page-asset'
@@ -6,7 +6,6 @@ import { Button, IconButton } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
 
 const SCROLL_COOLDOWN_MS = 500
-const WHEEL_THRESHOLD = 120
 const SCROLL_BOUNDARY_EPSILON = 4
 
 export type MushafPageViewerProps = {
@@ -60,10 +59,13 @@ export function MushafPageViewer({
     width: number
   } | null>(null)
   const suppressNextClickRef = useRef(false)
-  const wheelCooldownRef = useRef(0)
-  const wheelAccumRef = useRef(0)
   const scrollRouteCooldownRef = useRef(0)
   const scrollPositioningRef = useRef(false)
+  const pendingScrollAnchorRef = useRef<{
+    direction: 'next' | 'previous'
+    page: number
+    top: number
+  } | null>(null)
   const [dragState, setDragState] = useState({ active: false, deltaX: 0 })
   const ratio = inlineSvg.viewBox.width / inlineSvg.viewBox.height
   const isScrollMode = viewMode === 'continuous'
@@ -135,14 +137,26 @@ export function MushafPageViewer({
     return () => window.removeEventListener('keydown', onKeyDown)
   })
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isScrollMode) return undefined
     const stage = stageRef.current
     const current = currentCellRef.current
     if (!stage || !current) return undefined
+    const pendingAnchor = pendingScrollAnchorRef.current
+    if (pendingAnchor && pendingAnchor.page === resolved.page) {
+      const anchorContextReady = pendingAnchor.direction === 'next'
+        ? adjacentPages?.previous?.resolved.page === resolved.page - 1
+        : adjacentPages?.next?.resolved.page === resolved.page + 1
+      if (!anchorContextReady) return undefined
+    }
     const frame = window.requestAnimationFrame(() => {
       scrollPositioningRef.current = true
-      stage.scrollTo({ behavior: 'auto', top: Math.max(0, current.offsetTop - 12) })
+      const anchor = pendingScrollAnchorRef.current
+      if (anchor?.page === resolved.page) pendingScrollAnchorRef.current = null
+      const top = anchor?.page !== resolved.page
+        ? Math.max(0, current.offsetTop - 12)
+        : Math.max(0, current.offsetTop - anchor.top)
+      stage.scrollTo({ behavior: 'auto', top })
       window.requestAnimationFrame(() => {
         scrollPositioningRef.current = false
       })
@@ -152,52 +166,6 @@ export function MushafPageViewer({
       window.cancelAnimationFrame(frame)
     }
   }, [adjacentPages?.next?.resolved.page, adjacentPages?.previous?.resolved.page, isScrollMode, resolved.page])
-
-  useEffect(() => {
-    if (!isScrollMode) return undefined
-
-    const stage = stageRef.current
-
-    function onWheel(event: WheelEvent) {
-      if (readerOverlayOpen()) return
-      if (stage && event.target instanceof Node && !stage.contains(event.target)) return
-      const now = Date.now()
-      if (now - wheelCooldownRef.current < SCROLL_COOLDOWN_MS) return
-
-      if (stage instanceof HTMLElement && stage.scrollHeight > stage.clientHeight) {
-        const atBottom = !canScrollDown(stage)
-        const atTop = !canScrollUp(stage)
-
-        if (atBottom && event.deltaY > 0) {
-          wheelAccumRef.current += event.deltaY
-        } else if (atTop && event.deltaY < 0) {
-          wheelAccumRef.current += event.deltaY
-        } else {
-          wheelAccumRef.current = 0
-          return
-        }
-      } else {
-        wheelAccumRef.current += event.deltaY
-      }
-
-      if (wheelAccumRef.current >= WHEEL_THRESHOLD) {
-        wheelAccumRef.current = 0
-        wheelCooldownRef.current = now
-        advance()
-      } else if (wheelAccumRef.current <= -WHEEL_THRESHOLD) {
-        wheelAccumRef.current = 0
-        wheelCooldownRef.current = now
-        returnPrevious()
-      }
-    }
-
-    window.addEventListener('wheel', onWheel, { passive: true })
-    return () => {
-      window.removeEventListener('wheel', onWheel)
-      wheelAccumRef.current = 0
-      wheelCooldownRef.current = 0
-    }
-  }, [advance, isScrollMode, returnPrevious])
 
   function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
     if (readerOverlayOpen()) return
@@ -251,10 +219,10 @@ export function MushafPageViewer({
     }, 0)
     setDragState({ active: false, deltaX: 0 })
 
-    const threshold = Math.max(40, drag.width * 0.12)
+    const threshold = Math.max(96, drag.width * 0.45)
     const deltaX = drag.deltaX
-    if (deltaX <= -threshold) advance()
-    else if (deltaX >= threshold) returnPrevious()
+    if (deltaX >= threshold) advance()
+    else if (deltaX <= -threshold) returnPrevious()
   }
 
   function handlePointerCancel(event: React.PointerEvent<HTMLElement>) {
@@ -289,9 +257,25 @@ export function MushafPageViewer({
 
     if (adjacentPages?.next && viewportMidpoint > currentMidpoint + movementThreshold) {
       scrollRouteCooldownRef.current = now
+      const nextCell = stage.querySelector<HTMLElement>('[data-mushaf-cell="next"]')
+      if (nextCell) {
+        pendingScrollAnchorRef.current = {
+          direction: 'next',
+          page: adjacentPages.next.resolved.page,
+          top: nextCell.offsetTop - stage.scrollTop,
+        }
+      }
       advance()
     } else if (adjacentPages?.previous && viewportMidpoint < currentMidpoint - movementThreshold) {
       scrollRouteCooldownRef.current = now
+      const previousCell = stage.querySelector<HTMLElement>('[data-mushaf-cell="previous"]')
+      if (previousCell) {
+        pendingScrollAnchorRef.current = {
+          direction: 'previous',
+          page: adjacentPages.previous.resolved.page,
+          top: previousCell.offsetTop - stage.scrollTop,
+        }
+      }
       returnPrevious()
     }
   }
@@ -318,6 +302,9 @@ export function MushafPageViewer({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
       ref={sectionRef}
+      style={{
+        '--qa-react-mushaf-page-ratio': String(ratio),
+      } as CSSProperties}
     >
       <div
         aria-label={isScrollMode ? 'Scrollable Mushaf pages' : undefined}
@@ -325,9 +312,6 @@ export function MushafPageViewer({
         onClick={handleStageClick}
         onScroll={handleStageScroll}
         ref={stageRef}
-        style={{
-          '--qa-react-mushaf-page-ratio': String(ratio),
-        } as CSSProperties}
         tabIndex={isScrollMode ? 0 : undefined}
       >
         <div
@@ -396,8 +380,10 @@ export function MushafPageViewer({
           {surahLabel}
         </div>
       ) : null}
-      <div className="qar-react-mushaf-page-counter" aria-label={`Mushaf page ${resolved.page}`}>
-        {resolved.page}
+      <div className="qar-react-mushaf-page-counter-shell">
+        <div className="qar-react-mushaf-page-counter" aria-label={`Mushaf page ${resolved.page}`}>
+          {resolved.page}
+        </div>
       </div>
       {onToggleBookmark ? (
         <IconButton
