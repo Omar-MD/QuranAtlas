@@ -17,12 +17,13 @@ export type ReactPreferenceStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type ReactThemePreference = 'light' | 'sepia' | 'dark' | 'auto'
 export type ReactNightModePreference = 'off' | 'on' | 'auto'
 export type ReactMushafViewMode = 'auto' | 'fit-page' | 'fit-width' | 'continuous'
+export type NormalizedReactMushafViewMode = 'auto' | 'fit-page' | 'continuous'
 
 export type ReactReaderPreferences = {
   fontSize: ReactPreferenceStep
   lineSpacing: ReactPreferenceStep
   mushafFitWidth: boolean
-  mushafViewMode: ReactMushafViewMode
+  mushafViewMode: NormalizedReactMushafViewMode
   nightMode: ReactNightModePreference
   readerMargin: ReactPreferenceStep
   theme: ReactThemePreference
@@ -76,6 +77,11 @@ function asMushafViewMode(value: unknown): ReactMushafViewMode | null {
   return value === 'auto' || value === 'fit-page' || value === 'fit-width' || value === 'continuous' ? value : null
 }
 
+function normalizeMushafViewMode(value: ReactMushafViewMode | null): NormalizedReactMushafViewMode | null {
+  if (value === 'fit-width') return 'fit-page'
+  return value
+}
+
 export async function writeReaderAssetBundleSettings(db: QuranAtlasReactDb, settings: ReaderAssetBundleSettings): Promise<void> {
   const records: SettingRecord[] = [
     { key: 'riwayah', value: settings.riwayah },
@@ -99,15 +105,16 @@ export async function readNativeReactReaderPreferences(): Promise<ReactReaderPre
 
 function reactReaderPreferencesFromRecords(records: Array<SettingRecord | undefined>): ReactReaderPreferences {
   const values = Object.fromEntries(records.map((record, index) => [READER_PREFERENCE_KEYS[index], record?.value]))
+  const legacyMushafViewMode = asMushafViewMode(values.mushafViewMode)
   return {
     fontSize: asStep(values.fontSize) ?? DEFAULT_REACT_READER_PREFERENCES.fontSize,
     lineSpacing: asStep(values.lineSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.lineSpacing,
     mushafFitWidth: typeof values.mushafFitWidth === 'boolean'
       ? values.mushafFitWidth
-      : values.mushafViewMode === 'fit-width'
+      : legacyMushafViewMode === 'fit-width'
         ? true
         : DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth,
-    mushafViewMode: asMushafViewMode(values.mushafViewMode) ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
+    mushafViewMode: normalizeMushafViewMode(legacyMushafViewMode) ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
     nightMode: asNightMode(values.nightMode) ?? DEFAULT_REACT_READER_PREFERENCES.nightMode,
     readerMargin: asStep(values.readerMargin) ?? DEFAULT_REACT_READER_PREFERENCES.readerMargin,
     theme: asTheme(values.theme) ?? DEFAULT_REACT_READER_PREFERENCES.theme,
@@ -133,7 +140,7 @@ export async function writeReactReaderPreferences(db: QuranAtlasReactDb, prefere
     { key: 'verseSpacing', value: preferences.verseSpacing },
     { key: 'theme', value: preferences.theme },
     { key: 'nightMode', value: preferences.nightMode },
-    { key: 'mushafViewMode', value: preferences.mushafViewMode },
+    { key: 'mushafViewMode', value: normalizeMushafViewMode(preferences.mushafViewMode) },
     { key: 'mushafFitWidth', value: preferences.mushafFitWidth },
   ]
   await db.transaction('rw', db.settings, async () => {

@@ -76,7 +76,7 @@ describe('React storage schema mirror', () => {
       fontSize: 'lg',
       lineSpacing: 'sm',
       mushafFitWidth: true,
-      mushafViewMode: 'fit-width',
+      mushafViewMode: 'continuous',
       nightMode: 'on',
       readerMargin: 'xl',
       theme: 'dark',
@@ -108,8 +108,19 @@ describe('React storage schema mirror', () => {
       { key: 'verseSpacing', value: 'xs' },
       { key: 'theme', value: 'dark' },
       { key: 'nightMode', value: 'on' },
-      { key: 'mushafViewMode', value: 'fit-width' },
+      { key: 'mushafViewMode', value: 'continuous' },
       { key: 'mushafFitWidth', value: true },
     ])
+  })
+
+  it('normalizes legacy fit-width Mushaf mode into separate mode and width preferences', async () => {
+    const db = await openReactDb()
+    await db.settings.put({ key: 'mushafViewMode', value: 'fit-width' })
+
+    await expect(readReactReaderPreferences(db)).resolves.toEqual({
+      ...DEFAULT_REACT_READER_PREFERENCES,
+      mushafFitWidth: true,
+      mushafViewMode: 'fit-page',
+    })
   })
 })

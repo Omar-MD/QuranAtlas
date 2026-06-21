@@ -224,6 +224,69 @@ export async function seedReactBookmarks(page: Page, records: Array<{ riwayah?: 
   )
 }
 
+export type ReactMushafSeedPreferences = {
+  mushafFitWidth: boolean
+  mushafViewMode: 'auto' | 'fit-page' | 'fit-width' | 'continuous'
+}
+
+export async function seedReactMushafState(page: Page, prefs: ReactMushafSeedPreferences) {
+  await page.goto('/favicon.ico')
+  await page.evaluate(
+    async ({ dbName }) => {
+      localStorage.clear()
+      sessionStorage.clear()
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map((registration) => registration.unregister()))
+      }
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)))
+      }
+      await new Promise<void>((resolve) => {
+        const request = indexedDB.deleteDatabase(dbName)
+        request.onsuccess = () => resolve()
+        request.onerror = () => resolve()
+        request.onblocked = () => resolve()
+      })
+    },
+    { dbName: QURAN_ATLAS_DB_NAME },
+  )
+
+  const nativeDbVersion = QURAN_ATLAS_DB_VERSION * 10
+  await page.evaluate(`(() => new Promise((resolve, reject) => {
+    const open = indexedDB.open(${JSON.stringify(QURAN_ATLAS_DB_NAME)}, ${nativeDbVersion})
+    open.onsuccess = () => {
+      const db = open.result
+      const tx = db.transaction('settings', 'readwrite')
+      const settings = tx.objectStore('settings')
+      const prefs = ${JSON.stringify(prefs)}
+
+      settings.put({ key: 'onboardingComplete', value: true })
+      settings.put({ key: 'mvpAssetContractId', value: ${JSON.stringify(MVP_ASSET_CONTRACT_ID)} })
+      settings.put({ key: 'riwayah', value: 'qaloon' })
+      settings.put({ key: 'quranTextStyleId', value: 'uthmani-kfgqpc-v1' })
+      settings.put({ key: 'mushafEditionId', value: 'qalun-quran-ws-v1' })
+      settings.put({ key: 'translationId', value: 'bridges' })
+      settings.put({ key: 'translationVisible', value: true })
+      settings.put({ key: 'theme', value: 'light' })
+      settings.put({ key: 'nightMode', value: 'off' })
+      settings.put({ key: 'wirdReaderStatusVisible', value: false })
+      settings.put({ key: 'mushafViewMode', value: prefs.mushafViewMode })
+      settings.put({ key: 'mushafFitWidth', value: prefs.mushafFitWidth })
+
+      tx.oncomplete = () => { db.close(); resolve() }
+      tx.onerror = () => { db.close(); reject(tx.error) }
+      tx.onabort = () => { db.close(); reject(tx.error) }
+    }
+    open.onerror = () => reject(open.error)
+    open.onupgradeneeded = (event) => {
+      const db = event.target.result
+      ${APPLY_SCHEMA_SOURCE}
+    }
+  }))()`)
+}
+
 export function installPageGuards(page: Page, label: string, allowedUrlPatterns: RegExp[] = []): PageGuard {
   const failures: string[] = []
   const isAllowed = (url: string) => allowedUrlPatterns.some((pattern) => pattern.test(url))

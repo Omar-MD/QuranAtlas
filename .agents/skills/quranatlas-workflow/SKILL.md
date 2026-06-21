@@ -9,8 +9,6 @@ Use this as the default QuranAtlas repo workflow. It routes specialized work, th
 
 ## Route First
 
-- UI styling, layout, responsive behavior, visual polish, screenshots, or frontend state work: also use `quranatlas-ui-workflow`.
-- Explicit product/codebase audit, health check, readiness review, or deploy-readiness assessment: use `quranatlas-audit`.
 - Library/framework/API/CLI/cloud-service docs: follow the inherited Context7/`ctx7` docs workflow first (`library` then `docs`); return here if repo behavior changes.
 - Pure product/workflow docs, context docs, tests, refactors, app behavior, data contracts, or skill maintenance: continue here.
 

@@ -86,8 +86,8 @@ describe('React settings shell coverage', () => {
     expect(await screen.findByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:255')
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
     expect(within(dialog).getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
-    expect(within(dialog).getByRole('tab', { name: 'Reader mode: Verse' })).toHaveAttribute('aria-selected', 'true')
-    expect(within(dialog).getByRole('tab', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-selected', 'false')
+    expect(within(dialog).getByRole('radio', { name: 'Reader mode: Verse' })).toHaveAttribute('aria-checked', 'true')
+    expect(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-checked', 'false')
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/255'))
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close settings' }))
@@ -107,7 +107,7 @@ describe('React settings shell coverage', () => {
     expect(await screen.findByTestId('mock-mushaf-reader')).toHaveTextContent('Mushaf reader page 42')
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
     expect(within(dialog).getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
-    expect(within(dialog).getByRole('tab', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-selected', 'true')
+    expect(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-checked', 'true')
     expect(within(dialog).getByLabelText('Mushaf settings')).toBeInTheDocument()
     expect(within(dialog).queryByLabelText('Verse settings')).not.toBeInTheDocument()
     await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
@@ -204,12 +204,12 @@ describe('React settings shell coverage', () => {
     window.dispatchEvent(new CustomEvent('quranatlas-react-open-settings', { detail: { mode: 'verse' } }))
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
 
-    fireEvent.click(within(dialog).getByRole('tab', { name: 'Reader mode: Mushaf' }))
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' }))
 
     await waitFor(() => expect(window.location.hash).toBe('#/m/77'))
     expect(screen.getByTestId('mock-mushaf-reader')).toHaveTextContent('Mushaf reader page 77')
 
-    fireEvent.click(within(dialog).getByRole('tab', { name: 'Reader mode: Verse' }))
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Reader mode: Verse' }))
 
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/201'))
     expect(screen.getByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:201')
@@ -269,12 +269,29 @@ describe('React settings shell coverage', () => {
     render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
 
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    fireEvent.click(within(dialog).getByRole('tab', { name: 'Navigation mode: Scroll' }))
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Navigation mode: Scroll' }))
 
-    expect(within(dialog).getByRole('tab', { name: 'Navigation mode: Scroll' })).toHaveAttribute('aria-selected', 'true')
+    expect(within(dialog).getByRole('radio', { name: 'Navigation mode: Scroll' })).toHaveAttribute('aria-checked', 'true')
     await waitFor(async () => {
       const db = await openReactDb()
       await expect(db.settings.get('mushafViewMode')).resolves.toEqual({ key: 'mushafViewMode', value: 'continuous' })
+    })
+  })
+
+  it('persists Fit width as a boolean without changing Navigation mode', async () => {
+    await resetReactDb()
+    render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    fireEvent.click(within(dialog).getByRole('switch', { name: 'Fit width' }))
+
+    expect(within(dialog).getByRole('switch', { name: 'Fit width' })).toBeChecked()
+    await waitFor(async () => {
+      const db = await openReactDb()
+      await expect(db.settings.bulkGet(['mushafFitWidth', 'mushafViewMode'])).resolves.toEqual([
+        { key: 'mushafFitWidth', value: true },
+        { key: 'mushafViewMode', value: 'auto' },
+      ])
     })
   })
 
@@ -345,7 +362,7 @@ describe('React settings shell coverage', () => {
     render(<SettingsRoute mode="verse" onClose={vi.fn()} onReaderModeChange={onReaderModeChange} previousHash="#/s/2/5" />)
 
     const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    fireEvent.click(within(dialog).getByRole('tab', { name: 'Reader mode: Mushaf' }))
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' }))
 
     expect(onReaderModeChange).toHaveBeenCalledWith('mushaf')
     expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
@@ -357,14 +374,14 @@ describe('React settings shell coverage', () => {
 
     expect(within(dialog).getByRole('slider', { name: 'Font size' })).toBeInTheDocument()
     expect(within(dialog).getByRole('combobox', { name: 'Reading flow' })).toBeInTheDocument()
-    expect(within(dialog).queryByRole('tablist', { name: 'Navigation mode' })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('radiogroup', { name: 'Navigation mode' })).not.toBeInTheDocument()
 
     rerender(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
     dialog = await screen.findByRole('dialog', { name: 'Settings' })
 
     expect(within(dialog).queryByRole('slider', { name: 'Font size' })).not.toBeInTheDocument()
     expect(within(dialog).queryByRole('combobox', { name: 'Reading flow' })).not.toBeInTheDocument()
-    expect(within(dialog).getByRole('tablist', { name: 'Navigation mode' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('radiogroup', { name: 'Navigation mode' })).toBeInTheDocument()
   })
 
   it('renders the default asset inventory inline inside settings without optional controls', async () => {

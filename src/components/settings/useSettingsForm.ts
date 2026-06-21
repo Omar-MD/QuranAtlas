@@ -6,7 +6,7 @@ import {
   DEFAULT_REACT_READER_PREFERENCES,
   readReactReaderPreferences,
   writeReactReaderPreferences,
-  type ReactMushafViewMode,
+  type NormalizedReactMushafViewMode,
   type ReactNightModePreference,
   type ReactPreferenceStep,
   type ReactReaderPreferences,
@@ -24,7 +24,7 @@ export type SettingsFormState =
   | { status: 'error'; preferences: ReactReaderPreferences }
 
 export function useSettingsForm(): {
-  setMushafViewMode: (value: ReactMushafViewMode) => void
+  setMushafViewMode: (value: NormalizedReactMushafViewMode) => void
   setMushafFitWidth: (value: boolean) => void
   setNightMode: (value: ReactNightModePreference) => void
   setReadingFlow: (value: ReactPreferenceStep) => void
@@ -84,15 +84,7 @@ export function useSettingsForm(): {
   return {
     setFontSize: (fontSize) => updatePreferences((current) => ({ ...current, fontSize })),
     setMushafViewMode: (mushafViewMode) => updatePreferences((current) => ({ ...current, mushafViewMode })),
-    setMushafFitWidth: (mushafFitWidth) => updatePreferences((current) => ({
-      ...current,
-      mushafFitWidth,
-      mushafViewMode: current.mushafViewMode === 'fit-width' && !mushafFitWidth
-        ? 'fit-page'
-        : current.mushafViewMode === 'fit-page' && mushafFitWidth
-          ? 'fit-width'
-          : current.mushafViewMode,
-    })),
+    setMushafFitWidth: (mushafFitWidth) => updatePreferences((current) => ({ ...current, mushafFitWidth })),
     setNightMode: (nightMode) => updatePreferences((current) => ({ ...current, nightMode })),
     setReadingFlow: (value) => updatePreferences((current) => ({
       ...current,

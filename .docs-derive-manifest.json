@@ -27,7 +27,7 @@
     "docs/context/surfaces/infra.md:tests": "af3853b16866293ec456044bfcadb437ebf934d31ef43ea800fa4d1d62b658ca",
     "docs/context/surfaces/navigate.md:tests": "0412f6b00c38542433b156b9aaedec3e5a5e2d0d02be7708718a49288d0fb38a",
     "docs/context/surfaces/onboard.md:tests": "fd30671939404eda31232581afac429296a109014ff5970edff5a1d4e7c5a7be",
-    "docs/context/surfaces/read.md:tests": "f38469e48033542c25e39a7fcde4e9cc220d3e609bd595f15fb2eb2be0851acc",
+    "docs/context/surfaces/read.md:tests": "8e7a63431b7af5e8bb0962b011b582caa0f0ba43f7c41b48de2ad888c47f6a5d",
     "docs/context/surfaces/configure.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/configure.md:events-listen": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",
     "docs/context/surfaces/infra.md:events-emit": "907247b5cc66c6b1bd2ed20b9ca0c47e3641ee84567d6b0d1601ff1e591ab3b0",

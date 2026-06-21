@@ -16,7 +16,7 @@ Wrong behavior to catch: edits `src/components/reader` directly without reading 
 
 Prompt: "Redesign the mobile navigation drawer header and implement only that component."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen` for any new visual direction.
+Expected skills: `quranatlas-workflow`, `superpowers:brainstorming`, and `imagegen` for any new visual direction.
 
 Expected behavior: identifies navigate/drawer header as the active component; defines state/viewport matrix; creates or selects a component reference plus intent note; uses an available browser-proof path and states the fallback when needed for iteration-time inspection and screenshot comparison after each focused task; proves mobile and relevant desktop/tablet integration; uses `quranatlas-workflow` and `tests/e2e/AGENTS.md` for any checked-in Playwright coverage decision.
 
@@ -26,7 +26,7 @@ Wrong behavior to catch: makes a full drawer restyle, treats `imagegen` as optio
 
 Prompt: "Give the mobile drawer header a calmer visual direction, then implement only the header."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, `imagegen`.
+Expected skills: `quranatlas-workflow`, `superpowers:brainstorming`, `imagegen`.
 
 Expected behavior: generates component/state options, chooses one, commits `docs/ui-references/navigate/drawer-header.mobile.png` and `.md`, then implements only header structure/spacing/type/state tasks with browser-proof comparison after each task, naming the fallback when it is not obvious.
 
@@ -36,7 +36,7 @@ Wrong behavior to catch: changes drawer actions, route list, or settings afforda
 
 Prompt: "Create three Surah progress visual directions, choose one, commit the reference, and implement that one."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, `imagegen`.
+Expected skills: `quranatlas-workflow`, `superpowers:brainstorming`, `imagegen`.
 
 Expected behavior: makes component-state references, selects one source of truth with intent note, implements one progress component variant, compares focused tasks with an available browser-proof path plus a stated fallback when needed, and proves responsive/theme fit.
 
@@ -46,7 +46,7 @@ Wrong behavior to catch: implements all three, invents extra implementation comm
 
 Prompt: "Polish only the Settings sheet source selector row; leave the rest of the sheet alone."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, and brainstorming if the visual direction changes.
+Expected skills: `quranatlas-workflow`, and brainstorming if the visual direction changes.
 
 Expected behavior: treats the selector row as the active component; decides whether this is existing-direction polish or a new visual direction; targets one aspect per task; compares screenshots after each focused change with an available browser-proof path and a stated fallback when needed; proves sheet containment and touch targets.
 
@@ -56,7 +56,7 @@ Wrong behavior to catch: opportunistic full-sheet restyle, new settings behavior
 
 Prompt: "Implement the drawer actions component from the existing committed reference."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`.
+Expected skills: `quranatlas-workflow`.
 
 Expected behavior: uses the committed reference image and intent note as the visual source of truth; does not regenerate directions; implements actions only; compares every focused task against the reference with an available browser-proof path and a stated fallback when needed; does not confuse test-output artifacts with the committed reference.
 
@@ -66,7 +66,7 @@ Wrong behavior to catch: redesigns the component, edits unrelated drawer pieces,
 
 Prompt: "Tighten the compact reader toolbar state and show phone plus desktop proof."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, and brainstorming if changing direction.
+Expected skills: `quranatlas-workflow`, and brainstorming if changing direction.
 
 Expected behavior: scopes to compact toolbar state; checks overlap, touch targets, text/icon fit, sticky/header cases, and unframed Mushaf invariants; captures phone plus desktop screenshots and adds a real development-time tablet-sized pass whenever the toolbar can differ at the tablet breakpoint.
 
@@ -76,7 +76,7 @@ Wrong behavior to catch: restyles the whole reader, misses compact state, assume
 
 Prompt: "Redesign the onboarding language selector with multiple focused tasks and compare after each task."
 
-Expected skills: `quranatlas-workflow`, `quranatlas-ui-workflow`, `frontend-design`, `superpowers:brainstorming`, and `imagegen`.
+Expected skills: `quranatlas-workflow`, `superpowers:brainstorming`, and `imagegen`.
 
 Expected behavior: commits a selected component/state reference and intent note; implements focused passes such as structure, spacing, selected state, mobile fit, and theme parity; compares after every pass with an available browser-proof path and a stated fallback when needed and adds development-time tablet proof when the selector layout changes across tiers.
 
@@ -112,17 +112,7 @@ Expected behavior: treats listen/audio as removed-scope cleanup only; reads `doc
 
 Wrong behavior to catch: adds new audio UX, new listen product coverage, or treats listen as active roadmap scope.
 
-## 12. Explicit Product Audit
-
-Prompt: "Run a QuranAtlas readiness audit before I deploy."
-
-Expected skills: `quranatlas-audit`.
-
-Expected behavior: reads product info, tech stack, implemented/open issues, and relevant dossiers; reports findings by severity with file references; separates defects from enhancements; verifies severe findings.
-
-Wrong behavior to catch: starts implementing fixes, gives generic advice, or omits Reader First and removed-scope boundaries.
-
-## 13. Library/API Question During Repo Work
+## 12. Library/API Question During Repo Work
 
 Prompt: "How should we use the latest React component composition in this component?"
 

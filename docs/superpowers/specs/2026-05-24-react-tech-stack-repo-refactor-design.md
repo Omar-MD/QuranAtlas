@@ -667,7 +667,6 @@ Required instruction surfaces:
 
 - root `AGENTS.md`;
 - `.agents/skills/quranatlas-workflow/SKILL.md`;
-- `.agents/skills/quranatlas-ui-workflow/SKILL.md`;
 - `DESIGN.md`;
 - `docs/context/repo-structure.md`;
 - `docs/context/architecture.md`;

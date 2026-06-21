@@ -1,5 +1,5 @@
 import type {
-  ReactMushafViewMode,
+  NormalizedReactMushafViewMode,
   ReactNightModePreference,
   ReactPreferenceStep,
   ReactReaderPreferences,
@@ -59,8 +59,8 @@ export function applyReactReaderTypography(preferences: Partial<ReactReaderPrefe
   if (preferences.wordSpacing) root.dataset.wordSpacing = preferences.wordSpacing
 }
 
-export function isReactMushafViewMode(value: unknown): value is ReactMushafViewMode {
-  return value === 'auto' || value === 'fit-page' || value === 'fit-width' || value === 'continuous'
+export function isReactMushafViewMode(value: unknown): value is NormalizedReactMushafViewMode {
+  return value === 'auto' || value === 'fit-page' || value === 'continuous'
 }
 
 function resolveTheme(theme: ReactThemePreference): 'light' | 'sepia' | 'dark' {

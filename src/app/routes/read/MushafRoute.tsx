@@ -72,7 +72,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   const currentSurahLabel = useMemo(() => {
     const surah = visiblePage?.resolved.firstVerse.surah
     if (!surah) return undefined
-    return surahIndex.find((row) => row.n === surah)?.name ?? `Surah ${surah}`
+    return surahIndex.find((row) => row.n === surah)?.name_ar ?? `سورة ${surah}`
   }, [surahIndex, visiblePage?.resolved.firstVerse.surah])
 
   useEffect(() => {

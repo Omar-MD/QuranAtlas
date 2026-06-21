@@ -1,4 +1,4 @@
-import { MushafModeControl, type MushafViewMode } from '../reader/MushafModeControl'
+import { MushafModeControl, type MushafNavigationMode, type MushafViewMode } from '../reader/MushafModeControl'
 import { Switch } from '../ui'
 
 export function MushafSettings({
@@ -10,7 +10,7 @@ export function MushafSettings({
   fitWidth: boolean
   mode: MushafViewMode
   onFitWidthChange: (fitWidth: boolean) => void
-  onModeChange: (mode: MushafViewMode) => void
+  onModeChange: (mode: MushafNavigationMode) => void
 }) {
   return (
     <section className="qar-react-settings-panel qar-react-settings-panel--mushaf" aria-label="Mushaf settings" aria-labelledby="qar-react-settings-mushaf">
@@ -22,7 +22,7 @@ export function MushafSettings({
         <div className="qar-react-settings-row qar-react-settings-row--control">
           <span className="qar-react-settings-row-copy">
             <span className="qar-react-settings-row-label">Navigation mode</span>
-            <span className="qar-react-settings-row-control">Single page or continuous scroll</span>
+            <span className="qar-react-settings-row-control">Single page or vertical page scroll</span>
           </span>
           <MushafModeControl mode={mode} onModeChange={onModeChange} />
         </div>

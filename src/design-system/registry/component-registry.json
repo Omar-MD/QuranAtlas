@@ -1708,12 +1708,12 @@
         {
           "path": "tests/unit/react-components/ui-components.test.tsx",
           "behaviors": [
-            "selected tab"
+            "selected radio option"
           ]
         }
       ],
       "accessibility": [
-        "labelled tablist",
+        "labelled radiogroup",
         "selected state"
       ],
       "visualProof": {

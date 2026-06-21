@@ -85,7 +85,7 @@ style_paths:
 
 ### Mushaf Mode
 
-`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates the edition-aware manifest and page asset path, sanitizes the page SVG, and passes sanitized markup to `MushafPageViewer`. The page is rendered as one labeled image without decorative framing. Page turns keep the route canonicalized to `#/m/:page`, warm adjacent pages where possible, preserve the hidden/visible chrome state during internal movement, and reset width-view scroll to the top of the new page. Desktop left/right arrow keys, viewport-height left/right hit zones, and horizontal swipe/drag all move between adjacent pages. The center viewport hit zone toggles reader chrome. Mushaf mode also exposes a continuous scroll view with previous/current/next pages stacked vertically and shows the current Surah name beside the page counter when known.
+`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates the edition-aware manifest and page asset path, sanitizes the page SVG, and passes sanitized markup to `MushafPageViewer`. The page is rendered as one labeled image without decorative framing. Single mode fits the complete page into the chrome-aware viewport when Fit width is off; with Fit width on, the current page fills available width without exposing adjacent pages or horizontal document overflow. Page turns keep the route canonicalized to `#/m/:page`, warm adjacent pages where possible, and preserve the hidden/visible chrome state during internal movement. Desktop left/right arrow keys, viewport-height left/right hit zones, and horizontal swipe/drag move between adjacent pages only in Single mode. Scroll mode stacks previous/current/next pages vertically in the Mushaf stage, lets wheel/touch scroll move the stage first, and updates the route when an adjacent page becomes dominant. Settings and navigation overlays gate Mushaf keyboard and wheel handlers. The page counter shows only the current page at bottom center, the Arabic Surah label sits separately near the top edge, and the bookmark target sits away from the counter and page content. Hiding reader chrome also hides Mushaf-specific counter, Surah, and bookmark chrome; Escape or focus reveals it again.
 
 Mushaf page bookmarks use the same bookmarks store as verse bookmarks with `kind: 'page'` and a synthetic `verseKey` of `m:<page>`.
 
@@ -149,8 +149,9 @@ _(no cross-surface reads detected)_
 
 - `tests/unit/react-read/reader-wave3.test.tsx`
 
-**E2E (2):**
+**E2E (3):**
 
 - `tests/e2e/react-visual/shell.spec.ts`
+- `tests/e2e/read/mushaf-responsive.spec.ts`
 - `tests/e2e/read/react-golden.spec.ts`
 <!-- AUTO-GENERATED:tests END -->

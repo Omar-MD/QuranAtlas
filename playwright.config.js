@@ -10,6 +10,7 @@ export default defineConfig({
   testMatch: [
     'react-shell/**/*.spec.ts',
     'read/react-golden.spec.ts',
+    'read/mushaf-responsive.spec.ts',
     'configure/react-golden.spec.ts',
     'navigate/react-golden.spec.ts',
     'onboard/react-golden.spec.ts',

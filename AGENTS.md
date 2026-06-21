@@ -5,8 +5,6 @@ Project instructions auto-loaded by Codex in this repo.
 ## Route
 
 - Use `.agents/skills/quranatlas-workflow/SKILL.md` for QuranAtlas implementation, refactors, tests, docs, data contracts, context docs, product-scope cleanup, repo-local skills, and verification planning.
-- Use `.agents/skills/quranatlas-ui-workflow/SKILL.md` for UI, layout, styling, responsive behavior, screenshots, or visual polish when visual judgment or browser proof matters.
-- Use `.agents/skills/quranatlas-audit/SKILL.md` only for explicit audits, health checks, readiness reviews, or product/codebase quality reviews.
 - Add, move, or materially change tests whenever changed behavior, fixed regressions, or verification needs durable coverage. Use `tests/unit/AGENTS.md` and `tests/e2e/AGENTS.md` before changing tests.
 - For library, framework, SDK, API, CLI, or cloud-service questions, use the inherited Context7/`ctx7` docs workflow first (`library` then `docs`); do not answer from memory when docs can be fetched. Resume QuranAtlas workflow only if the answer leads to repo behavior, code, tests, or docs changes.
 

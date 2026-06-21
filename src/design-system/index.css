@@ -1685,11 +1685,11 @@
     gap: .12rem;
   }
 
-  .qar-react-settings-row--control [role='tablist'] {
+  .qar-react-settings-row--control [role='radiogroup'] {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
-    min-height: 36px;
+    min-height: 44px;
     overflow: hidden;
     padding: 0;
     border: 1px solid var(--qa-react-nav-control-border);
@@ -1698,18 +1698,18 @@
     box-shadow: var(--qa-react-nav-shadow-control);
   }
 
-  .qar-react-settings-row--mode-toggle [role='tablist'] {
+  .qar-react-settings-row--mode-toggle [role='radiogroup'] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .qar-react-settings-panel--mushaf .qar-react-settings-row--control [role='tablist'] {
+  .qar-react-settings-panel--mushaf .qar-react-settings-row--control [role='radiogroup'] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .qar-react-settings-row--control [role='tab'] {
+  .qar-react-settings-row--control [role='radio'] {
     position: relative;
     min-width: 0;
-    min-height: 34px;
+    min-height: 44px;
     border: 0 !important;
     border-radius: 0 !important;
     background: transparent !important;
@@ -1718,16 +1718,16 @@
     font-weight: 600;
   }
 
-  .qar-react-settings-row--control [role='tab'] + [role='tab'] {
+  .qar-react-settings-row--control [role='radio'] + [role='radio'] {
     border-inline-start: 1px solid var(--qa-react-nav-row-separator);
   }
 
-  .qar-react-settings-row--control [role='tab'][aria-selected='true'] {
+  .qar-react-settings-row--control [role='radio'][aria-checked='true'] {
     background: color-mix(in srgb, var(--qa-react-accent) 12%, var(--qa-react-nav-control-selected-bg)) !important;
     color: var(--qa-react-accent-strong) !important;
   }
 
-  .qar-react-settings-row--control [role='tab'][aria-selected='true']::after {
+  .qar-react-settings-row--control [role='radio'][aria-checked='true']::after {
     content: "";
     position: absolute;
     inset-inline: 12%;
@@ -1879,7 +1879,7 @@
 
     .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle,
     .qar-react-settings-step-control,
-    .qar-react-settings-row--control [role='tablist'],
+    .qar-react-settings-row--control [role='radiogroup'],
     .qar-react-settings-row--switch label {
       grid-column: 2;
     }
@@ -1911,11 +1911,11 @@
     gap: .62rem;
   }
 
-  .qar-react-settings-step-control [role='tablist'] {
+  .qar-react-settings-step-control [role='radiogroup'] {
     display: grid !important;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     width: 100% !important;
-    min-height: 34px;
+    min-height: 44px;
     overflow: hidden;
     padding: 0;
     border: 1px solid var(--qa-react-nav-control-border);
@@ -1924,11 +1924,11 @@
     box-shadow: var(--qa-react-nav-shadow-control);
   }
 
-  .qar-react-settings-step-control [role='tab'] {
+  .qar-react-settings-step-control [role='radio'] {
     position: relative;
     min-width: 0;
     width: 100%;
-    min-height: 32px;
+    min-height: 44px;
     padding: 0 .08rem !important;
     border: 0 !important;
     border-radius: 0 !important;
@@ -1941,16 +1941,16 @@
     text-overflow: ellipsis;
   }
 
-  .qar-react-settings-step-control [role='tab'] + [role='tab'] {
+  .qar-react-settings-step-control [role='radio'] + [role='radio'] {
     border-inline-start: 1px solid var(--qa-react-nav-row-separator);
   }
 
-  .qar-react-settings-step-control [role='tab'][aria-selected='true'] {
+  .qar-react-settings-step-control [role='radio'][aria-checked='true'] {
     background: var(--qa-react-nav-control-selected-bg) !important;
     color: var(--qa-react-nav-control-selected-text) !important;
   }
 
-  .qar-react-settings-step-control [role='tab'][aria-selected='true']::after {
+  .qar-react-settings-step-control [role='radio'][aria-checked='true']::after {
     content: "";
     position: absolute;
     inset-inline: 16%;
@@ -1976,12 +1976,12 @@
 
     .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle,
     .qar-react-settings-step-control,
-    .qar-react-settings-row--control [role='tablist'] {
+    .qar-react-settings-row--control [role='radiogroup'] {
       grid-column: 2;
       width: 100%;
     }
 
-    .qar-react-settings-step-control [role='tab'] {
+    .qar-react-settings-step-control [role='radio'] {
       padding-inline: .08rem !important;
       font-size: .6rem !important;
     }
@@ -1998,37 +1998,10 @@
   }
 
   .qar-react-settings-switch {
-    position: relative;
-    width: 46px;
-    height: 28px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-pill);
-    background: var(--qa-react-text-muted);
-  }
-
-  .qar-react-settings-switch[aria-checked='true'] {
-    border-color: color-mix(in srgb, var(--qa-react-accent) 54%, var(--qa-react-border));
-    background: var(--qa-react-accent);
-  }
-
-  .qar-react-settings-switch[data-state='checked'] {
-    border-color: color-mix(in srgb, var(--qa-react-accent) 54%, var(--qa-react-border));
-    background: var(--qa-react-accent);
-  }
-
-  .qar-react-settings-switch-knob {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 20px;
-    height: 20px;
-    border-radius: var(--qa-react-radius-circle);
-    background: var(--qa-react-surface);
-    transition: transform var(--qa-react-transition-fast);
-  }
-
-  .qar-react-settings-switch[aria-checked='true'] .qar-react-settings-switch-knob {
-    transform: translateX(18px);
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border: 0 !important;
+    background: transparent !important;
   }
 
   .qar-react-settings-row--switch label > span {
@@ -4024,27 +3997,38 @@
   }
 
   .qar-react-mushaf-page-surface {
+    --qa-react-mushaf-top-chrome: calc(env(safe-area-inset-top) + 56px);
+    --qa-react-mushaf-bottom-chrome: max(3.75rem, calc(env(safe-area-inset-bottom) + 3.5rem));
+    --qa-react-mushaf-available-height: max(12rem, calc(100dvh - var(--qa-react-mushaf-top-chrome) - var(--qa-react-mushaf-bottom-chrome)));
     position: relative;
     display: grid;
     align-content: center;
-    gap: 0.75rem;
     min-height: 100vh;
     min-height: 100dvh;
     padding:
-      max(0.5rem, env(safe-area-inset-top))
+      var(--qa-react-mushaf-top-chrome)
       clamp(0.625rem, 2.8vw, 1.5rem)
-      max(0.5rem, env(safe-area-inset-bottom));
+      var(--qa-react-mushaf-bottom-chrome);
+    overflow-x: clip;
   }
 
   .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] {
-    padding-top: max(0.25rem, env(safe-area-inset-top));
+    --qa-react-mushaf-top-chrome: 0px;
+    --qa-react-mushaf-bottom-chrome: 0px;
+    padding:
+      max(0.25rem, env(safe-area-inset-top))
+      clamp(0.625rem, 2.8vw, 1.5rem)
+      max(0.25rem, env(safe-area-inset-bottom));
   }
 
   .qar-react-mushaf-page-stage {
     position: relative;
-    width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
+    width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+    max-height: var(--qa-react-mushaf-available-height);
     margin: 0 auto;
     aspect-ratio: var(--qa-react-mushaf-page-ratio);
+    overflow: hidden;
+    touch-action: pan-y;
   }
 
   .qar-react-mushaf-page-frame {
@@ -4054,7 +4038,6 @@
     height: 100%;
     overflow: hidden;
     background: var(--qa-react-mushaf-ground);
-    touch-action: pan-y;
     animation: qar-react-mushaf-page-enter var(--qa-react-transition-fast) both;
     will-change: opacity, transform;
   }
@@ -4083,7 +4066,7 @@
 
   .qar-react-mushaf-continuous-stack {
     display: grid;
-    gap: 1rem;
+    gap: clamp(0.75rem, 2.5vw, 1.25rem);
   }
 
   [data-mushaf-transition-direction='previous'] .qar-react-mushaf-page-frame {
@@ -4108,7 +4091,7 @@
     top: 0;
     bottom: 0;
     z-index: 5;
-    width: clamp(5rem, 30vw, 22rem);
+    width: clamp(2.75rem, 11vw, 8rem);
     padding: 0;
     border: 0;
     background: transparent;
@@ -4137,7 +4120,7 @@
 
   .qar-react-mushaf-center-toggle {
     position: fixed;
-    inset: 0 clamp(5rem, 30vw, 22rem);
+    inset: 0 clamp(2.75rem, 11vw, 8rem);
     z-index: 4;
     min-width: 0 !important;
     min-height: 0 !important;
@@ -4168,16 +4151,16 @@
     align-items: center;
     justify-content: center;
     gap: 0.35rem;
-    min-width: 4.75rem;
-    min-height: 2.25rem;
-    padding: 0.35rem 0.75rem;
+    min-width: 2.75rem;
+    min-height: 2.5rem;
+    padding: 0.35rem 0.85rem;
     border: 1px solid var(--qa-react-nav-control-border);
     border-radius: var(--qa-react-radius-pill);
     background: color-mix(in srgb, var(--qa-react-surface) 86%, transparent);
     box-shadow: var(--qa-react-nav-shadow-control);
     color: var(--qa-react-text);
     font-family: var(--qa-react-font-mono);
-    font-size: 0.78rem;
+    font-size: 0.9rem;
     font-variant-numeric: tabular-nums;
     line-height: 1;
     pointer-events: none;
@@ -4186,33 +4169,47 @@
   }
 
   .qar-react-mushaf-page-surah {
-    max-width: min(34vw, 14rem);
+    position: fixed;
+    top: max(4.25rem, calc(env(safe-area-inset-top) + 4rem));
+    right: clamp(0.75rem, 3vw, 1.5rem);
+    z-index: 6;
+    max-width: min(54vw, 18rem);
     overflow: hidden;
     color: var(--qa-react-accent);
-    font-family: var(--qa-react-font-ui);
-    font-size: 0.76rem;
-    font-weight: 650;
+    font-family: 'Scheherazade New', 'Noto Naskh Arabic', var(--qa-react-font-arabic);
+    font-size: clamp(1.05rem, 2.4vw, 1.45rem);
+    font-weight: 500;
+    line-height: 1.25;
+    text-align: right;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .qar-react-mushaf-bookmark-toggle {
     position: fixed;
-    left: calc(50% - 4rem);
+    left: auto;
+    right: max(0.75rem, calc(env(safe-area-inset-right) + 0.75rem));
     bottom: max(0.75rem, calc(env(safe-area-inset-bottom) + 0.75rem));
     z-index: 7;
-    inline-size: 2.25rem;
-    block-size: 2.25rem;
-    min-width: 2.25rem !important;
-    min-height: 2.25rem !important;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    min-width: 2.75rem !important;
+    min-height: 2.75rem !important;
     padding: 0 !important;
     border-color: var(--qa-react-nav-control-border) !important;
     border-radius: var(--qa-react-radius-circle) !important;
     background: color-mix(in srgb, var(--qa-react-surface) 86%, transparent) !important;
     color: var(--qa-react-text-muted) !important;
     box-shadow: var(--qa-react-nav-shadow-control);
-    transform: translateX(-50%);
+    transform: none;
     backdrop-filter: blur(14px);
+  }
+
+  .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] .qar-react-mushaf-page-counter,
+  .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] .qar-react-mushaf-page-surah,
+  .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] .qar-react-mushaf-bookmark-toggle {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .qar-react-mushaf-bookmark-toggle:hover,
@@ -4367,62 +4364,49 @@
   }
 
   [data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
-    width: 100% !important;
-    height: auto;
-    aspect-ratio: auto;
-  }
-
-  [data-mushaf-fit-width='true'] .qar-react-mushaf-page-frame {
-    overflow: visible;
-  }
-
-  [data-mushaf-view-mode='fit-page'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
-  }
-
-  [data-mushaf-chrome-visible='false'][data-mushaf-view-mode='fit-page'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 0.75rem) * var(--qa-react-mushaf-page-ratio)));
-  }
-
-  [data-mushaf-chrome-visible='false'][data-mushaf-view-mode='auto'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 0.75rem) * var(--qa-react-mushaf-page-ratio)));
-  }
-
-  [data-mushaf-view-mode='continuous'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
-    height: auto;
-    aspect-ratio: auto;
-  }
-
-  [data-mushaf-view-mode='continuous'] .qar-react-mushaf-page-frame {
-    overflow: visible;
-    height: auto;
-    animation: none;
-  }
-
-  [data-mushaf-view-mode='continuous'] .qar-react-mushaf-page-cell {
-    aspect-ratio: var(--qa-react-mushaf-page-ratio);
-    overflow: hidden;
-  }
-
-  [data-mushaf-view-mode='continuous'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
     width: 100%;
-    height: calc(100dvh - 1rem);
+    height: var(--qa-react-mushaf-available-height);
+    aspect-ratio: auto;
+    overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  [data-mushaf-view-mode='continuous'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-cell {
-    overflow: visible;
+  [data-mushaf-layout-mode='single'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-frame {
+    height: auto;
+    aspect-ratio: var(--qa-react-mushaf-page-ratio);
   }
 
-  @media (max-width: 767px) {
-    [data-mushaf-view-mode='auto'] .qar-react-mushaf-page-stage,
-    [data-mushaf-view-mode='fit-page'] .qar-react-mushaf-page-stage,
-    [data-mushaf-view-mode='continuous'] .qar-react-mushaf-page-stage,
-    [data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
-      width: 100%;
-    }
+  [data-mushaf-layout-mode='scroll'] .qar-react-mushaf-page-stage {
+    width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+    height: var(--qa-react-mushaf-available-height);
+    aspect-ratio: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-mushaf-layout-mode='scroll'] .qar-react-mushaf-page-frame {
+    overflow: visible;
+    height: auto;
+    background: transparent;
+    animation: none;
+  }
+
+  [data-mushaf-layout-mode='scroll'] .qar-react-mushaf-page-cell {
+    aspect-ratio: var(--qa-react-mushaf-page-ratio);
+    overflow: hidden;
+    background: var(--qa-react-mushaf-ground);
+  }
+
+  [data-mushaf-layout-mode='scroll'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage {
+    width: 100%;
+  }
+
+  [data-mushaf-layout-mode='scroll'] .qar-react-mushaf-center-toggle {
+    inset-inline: 18vw;
+    pointer-events: none;
   }
 
   @media (min-width: 768px) {
@@ -4448,7 +4432,7 @@
 
   @media (min-width: 1180px) {
     .qar-react-mushaf-page-stage {
-      width: min(100%, calc((100dvh - 1.5rem) * var(--qa-react-mushaf-page-ratio)));
+      width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
     }
   }
 

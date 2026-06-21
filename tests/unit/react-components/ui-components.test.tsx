@@ -59,6 +59,7 @@ describe('React UI components', () => {
 
   it('renders native and Radix-backed form controls accessibly', async () => {
     const user = userEvent.setup()
+    const onModeChange = vi.fn()
     render(
       <div>
         <Input label="Search" />
@@ -78,10 +79,10 @@ describe('React UI components', () => {
             { label: 'Mushaf', value: 'mushaf' },
           ]}
           value="verse"
-          onValueChange={vi.fn()}
+          onValueChange={onModeChange}
         />
         <Checkbox label="Downloaded" />
-        <Switch label="Night mode" />
+        <Switch label="Night mode" defaultChecked />
         <Slider label="Font size" defaultValue={[80]} min={70} max={130} />
       </div>,
     )
@@ -89,11 +90,56 @@ describe('React UI components', () => {
     expect(screen.getByLabelText('Search')).toBeInTheDocument()
     expect(screen.getByLabelText('Notes')).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Riwayah' })).toHaveTextContent('Qalun')
-    expect(screen.getByRole('tab', { name: 'Mode: Verse' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('radiogroup', { name: 'Mode' })).toBeInTheDocument()
+    const verseMode = screen.getByRole('radio', { name: 'Mode: Verse' })
+    expect(verseMode).toHaveAttribute('aria-checked', 'true')
+    verseMode.focus()
+    await user.keyboard('{ArrowRight}')
+    expect(onModeChange).toHaveBeenCalledWith('mushaf')
     await user.click(screen.getByRole('checkbox', { name: 'Downloaded' }))
     expect(screen.getByRole('checkbox', { name: 'Downloaded' })).toHaveAttribute('data-state', 'checked')
-    expect(screen.getByRole('switch', { name: 'Night mode' })).toBeInTheDocument()
+    const nightMode = screen.getByRole('switch', { name: 'Night mode' })
+    expect(nightMode).toBeChecked()
+    await user.click(nightMode)
+    expect(nightMode).not.toBeChecked()
     expect(screen.getByRole('slider', { name: 'Font size' })).toHaveAttribute('aria-valuenow', '80')
+  })
+
+  it('keeps segmented control keyboard selection on enabled radio options', async () => {
+    const user = userEvent.setup()
+    const onValueChange = vi.fn()
+    render(
+      <SegmentedControl
+        defaultValue="disabled"
+        label="Mode"
+        onValueChange={onValueChange}
+        options={[
+          { disabled: true, label: 'Disabled', value: 'disabled' },
+          { label: 'Verse', value: 'verse' },
+          { disabled: true, label: 'Audio', value: 'audio' },
+          { label: 'Mushaf', value: 'mushaf' },
+        ]}
+      />,
+    )
+
+    const disabled = screen.getByRole('radio', { name: 'Mode: Disabled' })
+    const verse = screen.getByRole('radio', { name: 'Mode: Verse' })
+    const mushaf = screen.getByRole('radio', { name: 'Mode: Mushaf' })
+
+    expect(disabled).toHaveAttribute('aria-checked', 'false')
+    expect(disabled).toHaveAttribute('tabindex', '-1')
+    expect(verse).toHaveAttribute('aria-checked', 'true')
+    expect(verse).toHaveAttribute('tabindex', '0')
+
+    verse.focus()
+    await user.keyboard('{ArrowRight}')
+    expect(onValueChange).toHaveBeenLastCalledWith('mushaf')
+    expect(mushaf).toHaveFocus()
+    expect(mushaf).toHaveAttribute('aria-checked', 'true')
+
+    await user.keyboard('{ArrowLeft}')
+    expect(onValueChange).toHaveBeenLastCalledWith('verse')
+    expect(verse).toHaveFocus()
   })
 
   it('renders feedback primitives with semantic state', () => {

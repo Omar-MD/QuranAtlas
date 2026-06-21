@@ -9,8 +9,8 @@ React UI development is owned through `src/design-system/**`, approved primitive
 | read | Reader route | `src/app/routes/read/ReaderRoute.tsx` | `src/design-system/index.css`, reader components | `tests/e2e/read/react-golden.spec.ts` |
 | read | Verse reader surface | `src/components/reader/ReaderVerseSurface.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, reader stories |
 | read | Verse row | `src/components/reader/VerseBlock.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, `tests/e2e/read/react-golden.spec.ts` |
-| read | Mushaf route | `src/app/routes/read/MushafRoute.tsx` | `src/design-system/index.css` | `tests/e2e/read/react-golden.spec.ts` |
-| read | Mushaf page viewer | `src/components/reader/MushafPageViewer.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, visual specs |
+| read | Mushaf route | `src/app/routes/read/MushafRoute.tsx` | `src/design-system/index.css` | `tests/e2e/read/react-golden.spec.ts`, `tests/e2e/read/mushaf-responsive.spec.ts` |
+| read | Mushaf page viewer | `src/components/reader/MushafPageViewer.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, `tests/e2e/read/mushaf-responsive.spec.ts`, visual specs |
 | navigate | Nav drawer | `src/components/navigation/NavDrawer.tsx` | `src/design-system/index.css` | `tests/e2e/navigate/react-golden.spec.ts` |
 | navigate | Surah/Juz/Hizb lists | `src/components/navigation/{SurahList,JuzList,HizbList}.tsx` | `src/design-system/index.css` | navigation stories and golden specs |
 | navigate | Bookmarks list | `src/components/navigation/BookmarksList.tsx` | `src/design-system/index.css` | `tests/unit/react-navigate/**` |
