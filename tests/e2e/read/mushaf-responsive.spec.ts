@@ -37,6 +37,7 @@ async function layoutMetrics(page: Page): Promise<{
   counter: Box | null
   documentClientWidth: number
   documentScrollWidth: number
+  fitWidth: string | null
   nav: Box | null
   page: Box | null
   stageClientHeight: number
@@ -59,12 +60,14 @@ async function layoutMetrics(page: Page): Promise<{
       }
     }
     const root = document.scrollingElement ?? document.documentElement
+    const surface = document.querySelector<HTMLElement>('.qar-react-mushaf-page-surface')
     const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
     return {
       bookmark: box('.qar-react-mushaf-bookmark-toggle'),
       counter: box('.qar-react-mushaf-page-counter'),
       documentClientWidth: root.clientWidth,
       documentScrollWidth: root.scrollWidth,
+      fitWidth: surface?.dataset.mushafFitWidth ?? null,
       nav: box('nav[aria-label="Primary navigation"]'),
       page: box('[data-mushaf-cell="current"] svg'),
       stageClientHeight: stage?.clientHeight ?? 0,
@@ -145,6 +148,24 @@ test.describe('Mushaf responsive behavior', () => {
     await expect(page).toHaveURL(/#\/m\/42$/)
   })
 
+  test('Mobile single-page swipe turns to the next Mushaf page', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await openMushaf(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' })
+
+    const currentPage = page.getByRole('img', { name: /Mushaf page 42/i })
+    const pageBox = await currentPage.boundingBox()
+    expect(pageBox).not.toBeNull()
+
+    const y = pageBox!.y + pageBox!.height / 2
+    await page.mouse.move(pageBox!.x + pageBox!.width * 0.72, y)
+    await page.mouse.down()
+    await page.mouse.move(pageBox!.x + pageBox!.width * 0.18, y, { steps: 2 })
+    await page.mouse.up()
+
+    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 43/i })).toBeVisible()
+  })
+
   test('Scroll mode does not keep horizontal edge tap page turns', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, { mushafFitWidth: true, mushafViewMode: 'continuous' })
@@ -169,13 +190,19 @@ test.describe('Mushaf responsive behavior', () => {
     const stage = page.locator('.qar-react-mushaf-page-stage')
     await wheelUntilMushafPage(page, 43)
     await expect(page).toHaveURL(/#\/m\/43$/)
-    await expect.poll(async () => (await mushafChromeOpacity(page)).counter).toBe('0')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).counter).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).surah).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).bookmark).toBe('0')
 
     await stage.click()
 
     await expect.poll(async () => (await mushafChromeOpacity(page)).counter).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).surah).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).bookmark).toBe('1')
     await stage.click()
-    await expect.poll(async () => (await mushafChromeOpacity(page)).counter).toBe('0')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).counter).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).surah).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).bookmark).toBe('0')
   })
 
   test('Escape reveals hidden Mushaf chrome after page navigation', async ({ page }) => {
@@ -185,7 +212,9 @@ test.describe('Mushaf responsive behavior', () => {
     await page.keyboard.press('ArrowLeft')
     await expect(page).toHaveURL(/#\/m\/43$/)
     await expect(page.getByRole('img', { name: /Mushaf page 43/i })).toBeVisible()
-    await expect.poll(async () => (await mushafChromeOpacity(page)).counter).toBe('0')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).counter).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).surah).toBe('1')
+    await expect.poll(async () => (await mushafChromeOpacity(page)).bookmark).toBe('0')
 
     await page.keyboard.press('Escape')
 
@@ -211,5 +240,45 @@ test.describe('Mushaf responsive behavior', () => {
     expect(metrics.surah!.right).toBeLessThanOrEqual(metrics.documentClientWidth)
     expect(metrics.nav!.bottom).toBeLessThanOrEqual(metrics.page!.top)
     expect(metrics.counter!.top).toBeGreaterThanOrEqual(metrics.page!.bottom)
+  })
+
+  test('Mobile single page stays centered between persistent Mushaf metadata', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await openMushaf(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' })
+
+    const metrics = await layoutMetrics(page)
+
+    expect(metrics.counter).not.toBeNull()
+    expect(metrics.page).not.toBeNull()
+    expect(metrics.surah).not.toBeNull()
+
+    const readingTop = metrics.surah!.bottom + 8
+    const readingBottom = metrics.counter!.top - 8
+    const readingCenter = (readingTop + readingBottom) / 2
+    const pageCenter = (metrics.page!.top + metrics.page!.bottom) / 2
+
+    expect(metrics.page!.top).toBeGreaterThanOrEqual(readingTop)
+    expect(metrics.page!.bottom).toBeLessThanOrEqual(readingBottom)
+    expect(Math.abs(pageCenter - readingCenter)).toBeLessThanOrEqual(28)
+    expect(metrics.page!.height / (readingBottom - readingTop)).toBeGreaterThan(0.72)
+  })
+
+  test('Mobile landscape defaults Mushaf to Fit width and still allows user opt-out', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 390 })
+    await openMushaf(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' })
+
+    await expect.poll(async () => (await layoutMetrics(page)).fitWidth).toBe('true')
+    const landscape = await layoutMetrics(page)
+    expect(landscape.stageScrollHeight).toBeGreaterThan(landscape.stageClientHeight)
+
+    await page.getByRole('button', { name: 'Open settings' }).click()
+    const fitWidth = page.getByRole('switch', { name: 'Fit width' })
+    await expect(fitWidth).toBeChecked()
+
+    await fitWidth.click()
+    await expect(fitWidth).not.toBeChecked()
+    await page.getByRole('button', { exact: true, name: 'Close settings' }).click()
+
+    await expect.poll(async () => (await layoutMetrics(page)).fitWidth).toBe('false')
   })
 })

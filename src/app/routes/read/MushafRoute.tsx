@@ -23,7 +23,7 @@ import {
 import type { Riwayah } from '../../../storage/types'
 import { nativeSettingsReader, readNativeSetting, readNativeSettings, writeNativeSetting } from '../../../storage/native-reader-store'
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
-import { isReactMushafViewMode, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
+import { emitReactReaderPreferencesChanged, isReactMushafViewMode, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { REACT_ROUTES } from '../../router/routes'
 
 type MushafRouteProps = {
@@ -41,6 +41,8 @@ type ActiveMushafSettings = {
 
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
 const DEFAULT_MUSHAF_EDITION_ID = 'qalun-quran-ws-v1'
+const COMPACT_LANDSCAPE_QUERY = '(orientation: landscape) and (max-height: 600px)'
+const LANDSCAPE_FIT_WIDTH_DISABLED_KEY = 'quranatlas:mushaf-landscape-fit-width-disabled'
 
 export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   const [state, setState] = useState<MushafPageAssetState>({ status: 'loading' })
@@ -52,6 +54,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
   const [transitionDirection, setTransitionDirection] = useState<'next' | 'previous'>('next')
   const [viewMode, setViewMode] = useState<MushafViewMode>('auto')
   const [fitWidth, setFitWidth] = useState(DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth)
+  const [compactLandscape, setCompactLandscape] = useState(false)
   const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible)
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
@@ -74,6 +77,30 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     if (!surah) return undefined
     return surahIndex.find((row) => row.n === surah)?.name_ar ?? `سورة ${surah}`
   }, [surahIndex, visiblePage?.resolved.firstVerse.surah])
+
+  useEffect(() => {
+    const query = window.matchMedia?.(COMPACT_LANDSCAPE_QUERY)
+    if (!query) return undefined
+
+    function syncLandscapeState(): void {
+      const matches = query.matches
+      setCompactLandscape(matches)
+      if (!matches) clearLandscapeFitWidthDisabled()
+    }
+
+    syncLandscapeState()
+    query.addEventListener('change', syncLandscapeState)
+    return () => query.removeEventListener('change', syncLandscapeState)
+  }, [])
+
+  useEffect(() => {
+    if (!compactLandscape || fitWidth || isLandscapeFitWidthDisabled()) return
+    setFitWidth(true)
+    void writeNativeSetting({ key: 'mushafFitWidth', value: true })
+      .then(() => readNativeReactReaderPreferences())
+      .then((preferences) => emitReactReaderPreferencesChanged({ ...preferences, mushafFitWidth: true }))
+      .catch(() => undefined)
+  }, [compactLandscape, fitWidth])
 
   useEffect(() => {
     if (routePageRef.current !== page) {
@@ -175,9 +202,7 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
       if (requestId.current !== id) return
       setState(next)
       if (next.status === 'ready') {
-        setTransitionDirection((visiblePageRef.current?.resolved.page ?? page) <= next.resolved.page ? 'next' : 'previous')
-        visiblePageRef.current = next
-        setVisiblePage(next)
+        commitVisiblePage(next)
       }
       if (next.status === 'ready' && next.resolved.page !== page) {
         window.history.replaceState(null, '', REACT_ROUTES.mushaf(next.resolved.page))
@@ -221,6 +246,12 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
     }
   }, [visiblePage])
 
+  function commitVisiblePage(next: MushafReadyPageAssetState): void {
+    setTransitionDirection((visiblePageRef.current?.resolved.page ?? page) <= next.resolved.page ? 'next' : 'previous')
+    visiblePageRef.current = next
+    setVisiblePage(next)
+  }
+
   return (
     <ReaderPageShell
       chromeVisible={chromeVisible}
@@ -256,6 +287,12 @@ export function MushafRoute({ assetState = 'ready', page }: MushafRouteProps) {
             if (nextPage > visiblePage.resolved.page) {
               advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
             }
+            const readyAdjacent = nextPage === adjacentPages.next?.resolved.page
+              ? adjacentPages.next
+              : nextPage === adjacentPages.previous?.resolved.page
+                ? adjacentPages.previous
+                : null
+            if (readyAdjacent) commitVisiblePage(readyAdjacent)
             setChromeVisible(false)
             const href = REACT_ROUTES.mushaf(nextPage)
             window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
@@ -325,6 +362,22 @@ async function advanceNativeWirdFromReaderPosition(
 
 function isRiwayah(value: unknown): value is Riwayah {
   return value === 'qaloon'
+}
+
+function isLandscapeFitWidthDisabled(): boolean {
+  try {
+    return window.sessionStorage.getItem(LANDSCAPE_FIT_WIDTH_DISABLED_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function clearLandscapeFitWidthDisabled(): void {
+  try {
+    window.sessionStorage.removeItem(LANDSCAPE_FIT_WIDTH_DISABLED_KEY)
+  } catch {
+    /* no-op */
+  }
 }
 
 function scrollMushafPageToTop(): void {

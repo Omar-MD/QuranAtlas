@@ -18,6 +18,9 @@ import {
   emitReactReaderPreferencesChanged,
 } from '../../storage/reader-preferences'
 
+const COMPACT_LANDSCAPE_QUERY = '(orientation: landscape) and (max-height: 600px)'
+const LANDSCAPE_FIT_WIDTH_DISABLED_KEY = 'quranatlas:mushaf-landscape-fit-width-disabled'
+
 export type SettingsFormState =
   | { status: 'loading'; preferences: ReactReaderPreferences }
   | { status: 'ready'; preferences: ReactReaderPreferences }
@@ -84,7 +87,10 @@ export function useSettingsForm(): {
   return {
     setFontSize: (fontSize) => updatePreferences((current) => ({ ...current, fontSize })),
     setMushafViewMode: (mushafViewMode) => updatePreferences((current) => ({ ...current, mushafViewMode })),
-    setMushafFitWidth: (mushafFitWidth) => updatePreferences((current) => ({ ...current, mushafFitWidth })),
+    setMushafFitWidth: (mushafFitWidth) => {
+      updateLandscapeFitWidthOverride(mushafFitWidth)
+      updatePreferences((current) => ({ ...current, mushafFitWidth }))
+    },
     setNightMode: (nightMode) => updatePreferences((current) => ({ ...current, nightMode })),
     setReadingFlow: (value) => updatePreferences((current) => ({
       ...current,
@@ -109,5 +115,17 @@ export function useSettingsForm(): {
       },
     ),
     state,
+  }
+}
+
+function updateLandscapeFitWidthOverride(mushafFitWidth: boolean): void {
+  try {
+    if (mushafFitWidth) {
+      window.sessionStorage.removeItem(LANDSCAPE_FIT_WIDTH_DISABLED_KEY)
+    } else if (window.matchMedia?.(COMPACT_LANDSCAPE_QUERY).matches) {
+      window.sessionStorage.setItem(LANDSCAPE_FIT_WIDTH_DISABLED_KEY, 'true')
+    }
+  } catch {
+    /* no-op */
   }
 }

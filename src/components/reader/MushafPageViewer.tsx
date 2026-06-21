@@ -52,6 +52,7 @@ export function MushafPageViewer({
   const currentCellRef = useRef<HTMLDivElement | null>(null)
   const dragRef = useRef<{
     captureElement: HTMLElement
+    deltaX: number
     dragging: boolean
     pointerId: number
     startX: number
@@ -74,15 +75,6 @@ export function MushafPageViewer({
   function navigateTo(page: number) {
     const next = Math.min(resolved.pageCount, Math.max(1, page))
     if (next !== resolved.page) {
-      try {
-        const el = sectionRef.current
-        if (el) {
-          const q = el.querySelector('.qar-react-mushaf-page-stage')
-          if (q instanceof HTMLElement && typeof q.scrollTo === 'function') q.scrollTo(0, 0)
-        }
-      } catch {
-        /* no-op */
-      }
       onNavigate?.(next)
     }
   }
@@ -216,6 +208,7 @@ export function MushafPageViewer({
       : event.currentTarget
     dragRef.current = {
       captureElement,
+      deltaX: 0,
       dragging: false,
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -238,7 +231,9 @@ export function MushafPageViewer({
     }
     event.preventDefault()
     const maxDrag = drag.width * 0.95
-    setDragState({ active: true, deltaX: Math.max(-maxDrag, Math.min(maxDrag, deltaX)) })
+    const clampedDeltaX = Math.max(-maxDrag, Math.min(maxDrag, deltaX))
+    drag.deltaX = clampedDeltaX
+    setDragState({ active: true, deltaX: clampedDeltaX })
   }
 
   function handlePointerEnd(event: React.PointerEvent<HTMLElement>) {
@@ -257,7 +252,7 @@ export function MushafPageViewer({
     setDragState({ active: false, deltaX: 0 })
 
     const threshold = Math.max(40, drag.width * 0.12)
-    const deltaX = dragState.deltaX
+    const deltaX = drag.deltaX
     if (deltaX <= -threshold) advance()
     else if (deltaX >= threshold) returnPrevious()
   }
@@ -339,7 +334,6 @@ export function MushafPageViewer({
           aria-label={`Mushaf page ${resolved.page}, ${resolved.riwayahLabel}, beginning near ${resolved.firstVerse.surah}:${resolved.firstVerse.verse}`}
           className="qar-react-mushaf-page-frame qar:text-text"
           data-mushaf-page={resolved.page}
-          key={resolved.page}
           role="img"
         >
           {isScrollMode ? (
