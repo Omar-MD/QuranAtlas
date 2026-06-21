@@ -325,6 +325,7 @@ export function MushafPageViewer({
       ref={sectionRef}
     >
       <div
+        aria-label={isScrollMode ? 'Scrollable Mushaf pages' : undefined}
         className="qar-react-mushaf-page-stage"
         onClick={handleStageClick}
         onScroll={handleStageScroll}
@@ -332,6 +333,7 @@ export function MushafPageViewer({
         style={{
           '--qa-react-mushaf-page-ratio': String(ratio),
         } as CSSProperties}
+        tabIndex={isScrollMode ? 0 : undefined}
       >
         <div
           aria-label={`Mushaf page ${resolved.page}, ${resolved.riwayahLabel}, beginning near ${resolved.firstVerse.surah}:${resolved.firstVerse.verse}`}
