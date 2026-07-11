@@ -152,16 +152,16 @@ test.describe('settings focus and route ownership', () => {
     const opener = page.getByRole('button', { name: 'Open settings' })
     await opener.click()
     const shell = page.getByRole('dialog', { name: 'Verse settings' })
+    const firstControl = shell.getByRole('button', { name: 'Close settings' })
+    const lastControl = shell.getByRole('button', { name: /included reading assets/i })
     await expect(shell).toBeVisible()
 
-    for (let index = 0; index < 10; index += 1) {
-      await page.keyboard.press('Tab')
-      expect(await shell.evaluate((element) => element.contains(document.activeElement))).toBe(true)
-    }
-    for (let index = 0; index < 3; index += 1) {
-      await page.keyboard.press('Shift+Tab')
-      expect(await shell.evaluate((element) => element.contains(document.activeElement))).toBe(true)
-    }
+    await firstControl.focus()
+    await expect(firstControl).toBeFocused()
+    await page.keyboard.press('Shift+Tab')
+    await expect(lastControl).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(firstControl).toBeFocused()
 
     await page.keyboard.press('Escape')
     await expect(shell).toHaveCount(0)
@@ -169,6 +169,7 @@ test.describe('settings focus and route ownership', () => {
 
     await opener.click()
     await expect(shell).toBeVisible()
+    await expect.poll(() => backdropOwnsReaderChromePoint(page, shell)).toBe(true)
     await page.mouse.click(8, 200)
     await expect(shell).toHaveCount(0)
     await expect(opener).toBeFocused()
@@ -177,14 +178,17 @@ test.describe('settings focus and route ownership', () => {
   })
 
   test('@golden direct Settings and assets routes preserve mode ownership', async ({ page }) => {
-    const guard = await setupConfigurePage(page, 'desktop', '#/m/42')
+    const guard = await setupConfigurePage(page, 'phone-standard', '#/m/42')
     await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
     await page.goto(targetUrl('react', '#/settings'))
-    const mushafShell = page.getByRole('dialog', { name: 'Mushaf settings' })
-    await expect(mushafShell.getByRole('region', { name: 'Page layout' })).toBeVisible()
-    await expect(mushafShell.getByRole('region', { name: 'Verse reading' })).toHaveCount(0)
-    for (const target of await mushafShell.getByRole('radio').all()) await expectMinTouchTarget(target, 44)
-    for (const target of await mushafShell.getByRole('switch').all()) await expectMinTouchTarget(target, 44)
+    let mushafShell = page.getByRole('dialog', { name: 'Mushaf settings' })
+    await expectMushafSettingsTargets(mushafShell)
+
+    await page.keyboard.press('Escape')
+    await page.setViewportSize(GOLDEN_VIEWPORTS.desktop)
+    await page.goto(targetUrl('react', '#/settings'))
+    mushafShell = page.getByRole('dialog', { name: 'Mushaf settings' })
+    await expectMushafSettingsTargets(mushafShell)
 
     await page.keyboard.press('Escape')
     await page.goto(targetUrl('react', '#/assets'))
@@ -254,4 +258,11 @@ async function backdropOwnsReaderChromePoint(page: Page, shell: Locator): Promis
     const readerChrome = document.querySelector('[aria-label="Primary navigation"]')
     return painted !== null && !readerChrome?.contains(painted)
   }, Math.max(8, shellLeft / 2))
+}
+
+async function expectMushafSettingsTargets(shell: Locator): Promise<void> {
+  await expect(shell.getByRole('region', { name: 'Page layout' })).toBeVisible()
+  await expect(shell.getByRole('region', { name: 'Verse reading' })).toHaveCount(0)
+  for (const target of await shell.getByRole('radio').all()) await expectMinTouchTarget(target, 44)
+  for (const target of await shell.getByRole('switch').all()) await expectMinTouchTarget(target, 44)
 }
