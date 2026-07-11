@@ -140,6 +140,11 @@ export function App() {
     }
   }
 
+  function replaceActiveHash(nextHash: string): void {
+    window.history.replaceState(null, '', nextHash)
+    setHash(nextHash)
+  }
+
   function updateSettingsReaderHash(nextHash: string, mode: SettingsRouteMode, verseHash?: string | null) {
     setSettingsOverlay((current) => current
       ? {
@@ -203,7 +208,13 @@ export function App() {
       {launchRestore.status === 'ready' && (
         <Suspense fallback={<LaunchSplash />}>
           {route.type === 'reader' && <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />}
-          {route.type === 'mushaf' && <MushafRoute page={route.page} />}
+          {route.type === 'mushaf' && (
+            <MushafRoute
+              interactionSuspended={Boolean(settingsOverlay)}
+              onReplaceHash={replaceActiveHash}
+              page={route.page}
+            />
+          )}
           {route.type === 'surahs' && <SurahsRoute />}
           {route.type === 'bookmarks' && <BookmarksRoute />}
           {route.type === 'search' && <SearchRoute />}

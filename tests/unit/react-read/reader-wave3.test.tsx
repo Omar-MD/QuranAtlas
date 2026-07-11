@@ -615,14 +615,14 @@ describe('React reader coverage', () => {
     }))
 
     const { rerender } = render(<MushafRoute page={1} />)
-    expect(await screen.findByRole('img', { name: /mushaf page 1/i })).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon, beginning near 1:1/i })).toBeInTheDocument()
 
     rerender(<MushafRoute page={2} />)
-    expect(screen.getByRole('img', { name: /mushaf page 1/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mushaf page 1, qaloon, beginning near 1:1/i })).toBeInTheDocument()
     expect(screen.queryByLabelText('Loading Mushaf page')).not.toBeInTheDocument()
 
     resolvePageTwo?.({ ok: true, status: 200, text: async () => '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="#fff"/><path d="M15 15h90v150H15z" fill="#000"/></svg>' } as Response)
-    expect(await screen.findByRole('img', { name: /mushaf page 2/i })).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon, beginning near 2:1/i })).toBeInTheDocument()
     vi.unstubAllGlobals()
   })
 
