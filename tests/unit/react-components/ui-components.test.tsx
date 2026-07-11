@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Check, Settings } from 'lucide-react'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import {
@@ -208,6 +209,44 @@ describe('React UI components', () => {
     expect(screen.getByRole('tabpanel', { name: 'Verse' })).toHaveTextContent('Verse content')
     await user.click(screen.getByRole('button', { name: 'Details' }))
     expect(screen.getByText('Pack detail')).toBeInTheDocument()
+  })
+
+  it('owns adaptive Sheet modal semantics, Escape dismissal, and explicit return focus', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+
+    function AdaptiveSheetHarness() {
+      const [open, setOpen] = useState(true)
+      return (
+        <>
+          <Button id="settings-test-opener">Open owned settings</Button>
+          <Sheet
+            closeLabel="Close owned settings"
+            onOpenChange={(nextOpen) => {
+              onOpenChange(nextOpen)
+              setOpen(nextOpen)
+            }}
+            open={open}
+            returnFocusId="settings-test-opener"
+            title="Verse settings"
+            variant="adaptive-settings"
+          >
+            Adaptive settings body
+          </Sheet>
+        </>
+      )
+    }
+
+    const { rerender } = render(<AdaptiveSheetHarness />)
+    expect(screen.getByRole('dialog', { name: 'Verse settings' })).toHaveAttribute('aria-modal', 'true')
+
+    await user.keyboard('{Escape}')
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
+
+    rerender(<AdaptiveSheetHarness key="explicit-close" />)
+    await user.click(screen.getByRole('button', { name: 'Close owned settings' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Open owned settings' })).toHaveFocus())
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
   })
 
   it('renders a command list and disclosure helper', async () => {

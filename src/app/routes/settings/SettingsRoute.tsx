@@ -6,23 +6,27 @@ import { IncludedAssetsSection } from '../../../components/settings/IncludedAsse
 import { MushafSettings } from '../../../components/settings/MushafSettings'
 import { VerseSettings } from '../../../components/settings/VerseSettings'
 import { useSettingsForm } from '../../../components/settings/useSettingsForm'
-import { SegmentedControl, Switch } from '../../../components/ui'
+import { Switch } from '../../../components/ui'
 import { subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 
 export type SettingsRouteMode = 'verse' | 'mushaf'
 
 export function SettingsRoute({
+  initialAssetsExpanded,
   mode = 'verse',
   onClose = () => undefined,
-  onReaderModeChange = () => undefined,
   previousHash = '#/s/1',
+  returnFocusId,
 }: {
+  initialAssetsExpanded?: boolean
   mode?: SettingsRouteMode
   onClose?: () => void
-  onReaderModeChange?: (mode: SettingsRouteMode) => void
   previousHash?: string
+  returnFocusId?: string
 }) {
-  const [includedAssetsVisible, setIncludedAssetsVisible] = useState(() => shouldShowIncludedAssetsByDefault())
+  const [includedAssetsVisible, setIncludedAssetsVisible] = useState(
+    () => initialAssetsExpanded ?? shouldShowIncludedAssetsByDefault(),
+  )
   const {
     setFontSize,
     setMushafFitWidth,
@@ -53,26 +57,13 @@ export function SettingsRoute({
       onClose={onClose}
       onNightModeChange={setNightMode}
       onThemeChange={setTheme}
+      returnFocusId={returnFocusId}
       subtitle=""
       theme={preferences.theme}
-      title="Settings"
+      title={mode === 'verse' ? 'Verse settings' : 'Mushaf settings'}
     >
       <div className="qar-react-settings-deck">
         <div className="qar-react-settings-ledger">
-          <section className="qar-react-settings-mode-card" aria-labelledby="qar-react-settings-reader-mode">
-            <div className="qar-react-settings-section-heading">
-              <h3 className="qar-react-settings-section-title" id="qar-react-settings-reader-mode">Reader mode</h3>
-              <p className="qar-react-settings-section-note">Verse or Mushaf.</p>
-            </div>
-            <div className="qar-react-settings-row qar-react-settings-row--control qar-react-settings-row--mode-toggle">
-              <SegmentedControl
-                label="Reader mode"
-                onValueChange={(value) => onReaderModeChange(value as SettingsRouteMode)}
-                options={[{ label: 'Verse', value: 'verse' }, { label: 'Mushaf', value: 'mushaf' }]}
-                value={mode}
-              />
-            </div>
-          </section>
           <div className="qar-react-settings-mode-panels" data-active-mode={mode}>
             {mode === 'verse' ? (
               <VerseSettings

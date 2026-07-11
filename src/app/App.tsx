@@ -6,7 +6,6 @@ import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/rou
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
 import { shouldPersistLastSurface, useLaunchRestore } from '../continuity/launch-restore'
 import { normalizeLastSurface } from '../continuity/last-surface'
-import { resolveMushafHrefForVerseRoute, resolveVerseHrefForMushafPage } from '../components/reader/reader-mode-routing'
 import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } from '../storage/reader-preferences'
 import { readNativeReactReaderPreferences } from '../storage/settings-writer'
 import { useFirstLaunchNotificationPermission } from '../continuity/wird/use-first-launch-notification-permission'
@@ -27,9 +26,10 @@ export function App() {
   const [hash, setHash] = useState(initialRoute)
   const [lastReaderHash, setLastReaderHash] = useState<string | null>(null)
   const [settingsOverlay, setSettingsOverlay] = useState<{
+    initialAssetsExpanded?: boolean
     mode: SettingsRouteMode
     previousHash: string
-    verseHash?: string
+    returnFocusId?: string
   } | null>(null)
   const launchRestore = useLaunchRestore(hash)
   const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : hash
@@ -82,12 +82,15 @@ export function App() {
     }
   }, [])
 
-  useEffect(() => subscribeReactSettingsOverlayRequests((requestedMode) => {
+  useEffect(() => subscribeReactSettingsOverlayRequests((request) => {
     const previousHash = window.location.hash
     if (!shouldPersistLastSurface(previousHash)) return
-    const mode = requestedMode ?? (previousHash.startsWith('#/m/') ? 'mushaf' : 'verse')
     setLastReaderHash(previousHash)
-    setSettingsOverlay({ mode, previousHash, verseHash: currentReaderVerseHash(previousHash) })
+    setSettingsOverlay({
+      mode: settingsModeForHash(previousHash),
+      previousHash,
+      returnFocusId: request.returnFocusId,
+    })
   }), [])
 
   useEffect(() => {
@@ -114,12 +117,13 @@ export function App() {
     let active = true
 
     async function openSettingsOverlay() {
+      const initialAssetsExpanded = activeHash.split('?')[0] === REACT_ROUTES.assets
       const previousHash = await resolveSettingsPreviousHash(lastReaderHash)
       if (!active) return
       setSettingsOverlay({
-        mode: previousHash.startsWith('#/m/') ? 'mushaf' : 'verse',
+        initialAssetsExpanded,
+        mode: settingsModeForHash(previousHash),
         previousHash,
-        verseHash: currentReaderVerseHash(previousHash),
       })
       window.history.replaceState(null, '', previousHash)
       setHash(previousHash)
@@ -129,7 +133,7 @@ export function App() {
     return () => {
       active = false
     }
-  }, [activeRoute.type, lastReaderHash, launchRestore.status])
+  }, [activeHash, activeRoute.type, lastReaderHash, launchRestore.status])
 
   function closeSettingsOverlay() {
     const previousHash = settingsOverlay?.previousHash
@@ -143,55 +147,6 @@ export function App() {
   function replaceActiveHash(nextHash: string): void {
     window.history.replaceState(null, '', nextHash)
     setHash(nextHash)
-  }
-
-  function updateSettingsReaderHash(nextHash: string, mode: SettingsRouteMode, verseHash?: string | null) {
-    setSettingsOverlay((current) => current
-      ? {
-          ...current,
-          mode,
-          previousHash: nextHash,
-          verseHash: verseHash === undefined ? current.verseHash : verseHash ?? undefined,
-        }
-      : current)
-    window.history.replaceState(null, '', nextHash)
-    setHash(nextHash)
-  }
-
-  function changeSettingsReaderMode(nextMode: SettingsRouteMode) {
-    const previousHash = settingsOverlay?.previousHash ?? lastReaderHash ?? '#/s/1'
-    const previousRoute = matchReactRoute(previousHash)
-    if (nextMode === 'mushaf') {
-      if (previousRoute.type === 'mushaf') return
-      if (previousRoute.type === 'reader') {
-        const liveVerse = currentReaderVerseRef(previousHash)
-        const verseRef = liveVerse ?? { surah: previousRoute.surah, verse: previousRoute.ayah ?? 1 }
-        void resolveMushafHrefForVerseRoute({
-          explicitVerse: Boolean(liveVerse || previousRoute.ayah !== undefined),
-          surah: verseRef.surah,
-          verse: verseRef.verse,
-        }).then((nextHash) => updateSettingsReaderHash(
-          nextHash,
-          'mushaf',
-          liveVerse ? REACT_ROUTES.surah(liveVerse.surah, liveVerse.verse) : currentReaderVerseHash(previousHash),
-        ))
-        return
-      }
-      updateSettingsReaderHash('#/m/1', 'mushaf')
-      return
-    }
-
-    if (previousRoute.type === 'reader') return
-    if (previousRoute.type === 'mushaf') {
-      if (settingsOverlay?.verseHash) {
-        updateSettingsReaderHash(settingsOverlay.verseHash, 'verse', settingsOverlay.verseHash)
-        return
-      }
-      void resolveVerseHrefForMushafPage(previousRoute.page)
-        .then((nextHash) => updateSettingsReaderHash(nextHash, 'verse'))
-      return
-    }
-    updateSettingsReaderHash('#/s/1', 'verse')
   }
 
   return (
@@ -228,10 +183,11 @@ export function App() {
           )}
           {settingsOverlay && (
             <SettingsRoute
+              initialAssetsExpanded={settingsOverlay.initialAssetsExpanded}
               mode={settingsOverlay.mode}
               onClose={closeSettingsOverlay}
-              onReaderModeChange={changeSettingsReaderMode}
               previousHash={settingsOverlay.previousHash}
+              returnFocusId={settingsOverlay.returnFocusId}
             />
           )}
         </Suspense>
@@ -257,50 +213,8 @@ async function writeNormalizedLastSurface(hash: string, shouldWrite: () => boole
   await writeNativeSetting({ key: 'lastSurface', value: normalized }, shouldWrite)
 }
 
-type ReaderVerseRef = { surah: number; verse: number }
-
-function currentReaderVerseHash(hash: string): string | undefined {
-  const ref = currentReaderVerseRef(hash)
-  return ref ? REACT_ROUTES.surah(ref.surah, ref.verse) : undefined
-}
-
-function currentReaderVerseRef(hash: string): ReaderVerseRef | null {
-  const route = matchReactRoute(hash)
-  if (route.type !== 'reader') return null
-  return findVisibleReaderVerse(route.surah) ?? (
-    route.ayah === undefined ? null : { surah: route.surah, verse: route.ayah }
-  )
-}
-
-function findVisibleReaderVerse(surah: number): ReaderVerseRef | null {
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-  const centerY = viewportHeight / 2
-  let firstMatching: ReaderVerseRef | null = null
-  let closest: { distance: number; ref: ReaderVerseRef } | null = null
-
-  for (const element of document.querySelectorAll<HTMLElement>('.qar-reader-verse[data-token-key]')) {
-    const ref = parseReaderVerseKey(element.dataset.tokenKey ?? '')
-    if (!ref || ref.surah !== surah) continue
-    firstMatching ??= ref
-    if (!viewportHeight) continue
-    const rect = element.getBoundingClientRect()
-    if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
-    const distance = rect.top <= centerY && rect.bottom >= centerY
-      ? 0
-      : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
-    if (!closest || distance < closest.distance) closest = { distance, ref }
-    if (distance === 0) break
-  }
-
-  return closest?.ref ?? firstMatching
-}
-
-function parseReaderVerseKey(verseKey: string): ReaderVerseRef | null {
-  const [surahPart, versePart] = verseKey.split(':')
-  const surah = Number.parseInt(surahPart ?? '', 10)
-  const verse = Number.parseInt(versePart ?? '', 10)
-  if (!Number.isInteger(surah) || !Number.isInteger(verse) || surah < 1 || surah > 114 || verse < 1) return null
-  return { surah, verse }
+function settingsModeForHash(hash: string): SettingsRouteMode {
+  return matchReactRoute(hash).type === 'mushaf' ? 'mushaf' : 'verse'
 }
 
 function UnsupportedRoute() {

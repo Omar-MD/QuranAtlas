@@ -10,9 +10,10 @@ import { closeReactDb, openReactDb } from '../../../src/storage/db'
 
 vi.mock('../../../src/app/routes/read/ReaderRoute', () => ({
   ReaderRoute: ({ ayah, surah }: { ayah?: number; surah: number }) => (
-    <main aria-label="Verse reader" data-testid="mock-verse-reader">
+    <main aria-label="Verse reader" data-testid="mock-verse-reader" id="reader-main" tabIndex={-1}>
       <button type="button" aria-label="Open navigation">Open</button>
-      <article className="qar-reader-verse" data-token-key={(globalThis as { __qaMockVisibleVerseKey?: string }).__qaMockVisibleVerseKey ?? `${surah}:${ayah ?? 1}`} />
+      <button id="reader-settings-trigger" type="button">Open settings</button>
+      <article className="qar-reader-verse" data-token-key={`${surah}:${ayah ?? 1}`} />
       Verse reader {surah}:{ayah ?? 1}
     </main>
   ),
@@ -69,7 +70,6 @@ function ReaderPreferenceListenerProbe() {
 describe('React settings shell coverage', () => {
   afterEach(async () => {
     cleanup()
-    delete (globalThis as { __qaMockVisibleVerseKey?: string }).__qaMockVisibleVerseKey
     vi.useRealTimers()
     vi.unstubAllGlobals()
     window.history.replaceState(null, '', '#/')
@@ -84,15 +84,14 @@ describe('React settings shell coverage', () => {
     render(<App />)
 
     expect(await screen.findByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:255')
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    expect(within(dialog).getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
-    expect(within(dialog).getByRole('radio', { name: 'Reader mode: Verse' })).toHaveAttribute('aria-checked', 'true')
-    expect(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-checked', 'false')
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
+    expect(within(dialog).getByRole('heading', { name: 'Verse settings' })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('radiogroup', { name: 'Reader mode' })).not.toBeInTheDocument()
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/255'))
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close settings' }))
 
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Verse settings' })).not.toBeInTheDocument())
     expect(screen.getByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:255')
     expect(window.location.hash).toBe('#/s/2/255')
   })
@@ -105,9 +104,9 @@ describe('React settings shell coverage', () => {
     render(<App />)
 
     expect(await screen.findByTestId('mock-mushaf-reader')).toHaveTextContent('Mushaf reader page 42')
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    expect(within(dialog).getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
-    expect(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-checked', 'true')
+    const dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
+    expect(within(dialog).getByRole('heading', { name: 'Mushaf settings' })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('radiogroup', { name: 'Reader mode' })).not.toBeInTheDocument()
     expect(within(dialog).getByLabelText('Mushaf settings')).toBeInTheDocument()
     expect(within(dialog).queryByLabelText('Verse settings')).not.toBeInTheDocument()
     await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
@@ -115,14 +114,14 @@ describe('React settings shell coverage', () => {
 
   it('does not render Verse or Mushaf preview panels in the MVP settings shell', async () => {
     const verseRender = render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
-    const verseDialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const verseDialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     expect(within(verseDialog).queryByText('Verse preview')).not.toBeInTheDocument()
     expect(within(verseDialog).queryByLabelText('Verse preview sample')).not.toBeInTheDocument()
     expect(within(verseDialog).queryByText('Mushaf preview')).not.toBeInTheDocument()
     verseRender.unmount()
 
     render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
-    const mushafDialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const mushafDialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
     expect(within(mushafDialog).queryByText('Mushaf preview')).not.toBeInTheDocument()
     expect(within(mushafDialog).queryByLabelText('Mushaf preview')).not.toBeInTheDocument()
     expect(within(mushafDialog).queryByText('Verse preview')).not.toBeInTheDocument()
@@ -135,8 +134,8 @@ describe('React settings shell coverage', () => {
 
     render(<App />)
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    expect(screen.getByRole('button', { name: 'Open navigation' })).toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
+    expect(screen.queryByRole('button', { name: 'Open navigation' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Night mode: On' })).toBe(within(dialog).getByRole('button', { name: 'Night mode: On' }))
     expect(screen.queryByRole('button', { name: 'On' })).not.toBeInTheDocument()
   })
@@ -154,7 +153,7 @@ describe('React settings shell coverage', () => {
     window.location.hash = '#/settings'
     window.dispatchEvent(new HashChangeEvent('hashchange'))
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     expect(dialog).toBeInTheDocument()
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/24'))
     expect(screen.getByTestId('mock-verse-reader')).toBe(reader)
@@ -169,63 +168,34 @@ describe('React settings shell coverage', () => {
 
     const reader = await screen.findByTestId('mock-verse-reader')
 
-    window.dispatchEvent(new CustomEvent('quranatlas-react-open-settings', { detail: { mode: 'verse' } }))
+    window.dispatchEvent(new CustomEvent('quranatlas-react-open-settings', {
+      detail: { mode: 'verse', returnFocusId: 'reader-settings-trigger' },
+    }))
 
-    expect(await screen.findByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     expect(window.location.hash).toBe('#/s/2/24')
     expect(screen.getByTestId('mock-verse-reader')).toBe(reader)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close settings' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Open settings' })).toHaveFocus())
+    expect(window.location.hash).toBe('#/s/2/24')
   })
 
-  it('uses the live visible verse when Settings switches a scrolled Verse route between Verse and Mushaf', async () => {
-    await resetReactDb()
-    await seedLastSurface('#/s/2')
-    ;(globalThis as { __qaMockVisibleVerseKey?: string }).__qaMockVisibleVerseKey = '2:201'
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
-        return new Response(JSON.stringify({
-          version: 1,
-          riwayah: 'qaloon',
-          mushafEditionId: 'qalun-quran-ws-v1',
-          pageCount: 604,
-          pages: [
-            { page: 77, assetPath: 'pages/077.svg', viewBox: '0 0 900 1379.25', firstVerse: { surah: 2, verse: 196 } },
-          ],
-          verseToPage: { '2:1': 1, '2:201': 77 },
-        }), { headers: { 'Content-Type': 'application/json' }, status: 200 })
-      }
-      return new Response('{}', { status: 404 })
-    }))
-    window.history.replaceState(null, '', '#/s/2')
+  it('falls back to the reader main landmark when a direct settings route has no opener', async () => {
+    function DirectSettingsHarness() {
+      const [open, setOpen] = useState(true)
+      return (
+        <>
+          <main id="reader-main" tabIndex={-1}>Reader</main>
+          {open ? <SettingsRoute mode="verse" onClose={() => setOpen(false)} previousHash="#/s/2/24" /> : null}
+        </>
+      )
+    }
 
-    render(<App />)
+    render(<DirectSettingsHarness />)
 
-    expect(await screen.findByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:1')
-    window.dispatchEvent(new CustomEvent('quranatlas-react-open-settings', { detail: { mode: 'verse' } }))
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-
-    fireEvent.click(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' }))
-
-    await waitFor(() => expect(window.location.hash).toBe('#/m/77'))
-    expect(screen.getByTestId('mock-mushaf-reader')).toHaveTextContent('Mushaf reader page 77')
-
-    fireEvent.click(within(dialog).getByRole('radio', { name: 'Reader mode: Verse' }))
-
-    await waitFor(() => expect(window.location.hash).toBe('#/s/2/201'))
-    expect(screen.getByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:201')
-  })
-
-  it('focuses the settings shell without scrolling the underlying reader', async () => {
-    const focusCalls: Array<{ options?: FocusOptions }> = []
-    const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function focusWithoutScrolling(this: HTMLElement, options?: FocusOptions) {
-      focusCalls.push({ options })
-    })
-
-    render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/2/24" />)
-
-    await screen.findByRole('dialog', { name: 'Settings' })
-    expect(focusCalls.some((call) => call.options?.preventScroll === true)).toBe(true)
-    focusSpy.mockRestore()
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close settings' }))
+    await waitFor(() => expect(screen.getByRole('main')).toHaveFocus())
   })
 
   it('emits preference changes outside the Settings render phase', async () => {
@@ -237,7 +207,7 @@ describe('React settings shell coverage', () => {
       </>,
     )
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Theme: Dark' }))
 
     await waitFor(() => expect(screen.getByTestId('reader-preference-listener-updates')).toHaveTextContent('1'))
@@ -268,7 +238,7 @@ describe('React settings shell coverage', () => {
     await resetReactDb()
     render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
     fireEvent.click(within(dialog).getByRole('radio', { name: 'Navigation mode: Scroll' }))
 
     expect(within(dialog).getByRole('radio', { name: 'Navigation mode: Scroll' })).toHaveAttribute('aria-checked', 'true')
@@ -282,7 +252,7 @@ describe('React settings shell coverage', () => {
     await resetReactDb()
     render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
     fireEvent.click(within(dialog).getByRole('switch', { name: 'Fit width' }))
 
     expect(within(dialog).getByRole('switch', { name: 'Fit width' })).toBeChecked()
@@ -300,7 +270,7 @@ describe('React settings shell coverage', () => {
 
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     const verseSettings = within(dialog).getByLabelText('Verse settings')
     expect(within(verseSettings).queryByRole('switch', { name: 'Enable Daily Wird' })).not.toBeInTheDocument()
 
@@ -345,7 +315,7 @@ describe('React settings shell coverage', () => {
 
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     fireEvent.click(within(dialog).getByRole('switch', { name: 'Enable Daily Wird' }))
 
     await waitFor(async () => {
@@ -357,28 +327,19 @@ describe('React settings shell coverage', () => {
     })
   })
 
-  it('lets settings switch the underlying reader mode without closing the shell', async () => {
-    const onReaderModeChange = vi.fn()
-    render(<SettingsRoute mode="verse" onClose={vi.fn()} onReaderModeChange={onReaderModeChange} previousHash="#/s/2/5" />)
-
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    fireEvent.click(within(dialog).getByRole('radio', { name: 'Reader mode: Mushaf' }))
-
-    expect(onReaderModeChange).toHaveBeenCalledWith('mushaf')
-    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
-  })
-
   it('scopes reader controls to the selected mode', async () => {
     const { rerender } = render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
-    let dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    let dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
 
+    expect(within(dialog).queryByRole('radiogroup', { name: 'Reader mode' })).not.toBeInTheDocument()
     expect(within(dialog).getByRole('slider', { name: 'Font size' })).toBeInTheDocument()
     expect(within(dialog).getByRole('combobox', { name: 'Reading flow' })).toBeInTheDocument()
     expect(within(dialog).queryByRole('radiogroup', { name: 'Navigation mode' })).not.toBeInTheDocument()
 
     rerender(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
-    dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
 
+    expect(within(dialog).queryByRole('radiogroup', { name: 'Reader mode' })).not.toBeInTheDocument()
     expect(within(dialog).queryByRole('slider', { name: 'Font size' })).not.toBeInTheDocument()
     expect(within(dialog).queryByRole('combobox', { name: 'Reading flow' })).not.toBeInTheDocument()
     expect(within(dialog).getByRole('radiogroup', { name: 'Navigation mode' })).toBeInTheDocument()
@@ -413,7 +374,7 @@ describe('React settings shell coverage', () => {
       return new Response('{}', { status: 404 })
     }))
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     const assets = within(dialog).getByRole('region', { name: 'Included assets' })
 
     expect(within(dialog).getByText('Translation')).toBeInTheDocument()
@@ -438,13 +399,16 @@ describe('React settings shell coverage', () => {
   it('opens the settings shell for legacy #/assets URLs instead of rendering an assets page', async () => {
     await resetReactDb()
     await seedLastSurface('#/s/2/255')
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
     window.history.replaceState(null, '', '#/assets')
 
     render(<App />)
 
     expect(await screen.findByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:255')
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
-    expect(within(dialog).getByRole('region', { name: 'Included assets' })).toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
+    const assets = within(dialog).getByRole('region', { name: 'Included assets' })
+    expect(within(assets).getByRole('button', { name: 'Hide' })).toHaveAttribute('aria-expanded', 'true')
+    expect(within(assets).getAllByText('Included')).toHaveLength(3)
     expect(screen.queryByRole('heading', { name: 'Assets' })).not.toBeInTheDocument()
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/255'))
   })
@@ -454,7 +418,7 @@ describe('React settings shell coverage', () => {
 
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Theme: Dark' }))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Night mode: On' }))
     fireEvent.click(within(dialog).getByRole('switch', { name: 'Show translation' }))
@@ -497,7 +461,7 @@ describe('React settings shell coverage', () => {
 
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
 
-    const dialog = await screen.findByRole('dialog', { name: 'Settings' })
+    const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Night mode: On' }))
 
     await waitFor(() => expect(listener).toHaveBeenCalled())

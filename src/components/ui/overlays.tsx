@@ -4,6 +4,7 @@ import * as ToastPrimitive from '@radix-ui/react-toast'
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import { cn } from '../../design-system/utils/cn'
 import { Button } from './button'
 
 type OverlayBaseProps = {
@@ -14,10 +15,10 @@ type OverlayBaseProps = {
   trigger?: ReactNode
 }
 
-function CloseButton() {
+function CloseButton({ label = 'Close' }: { label?: string }) {
   return (
     <DialogPrimitive.Close asChild>
-      <Button aria-label="Close" size="sm" variant="ghost">
+      <Button aria-label={label} size="sm" variant="ghost">
         <X aria-hidden="true" size={16} />
       </Button>
     </DialogPrimitive.Close>
@@ -43,17 +44,51 @@ export function Dialog({ title, trigger, children, onOpenChange, open }: DialogP
   )
 }
 
-export type SheetProps = OverlayBaseProps
-export function Sheet({ title, trigger, children, onOpenChange, open }: SheetProps) {
+export type SheetProps = OverlayBaseProps & {
+  closeLabel?: string
+  returnFocusId?: string
+  variant?: 'default' | 'adaptive-settings'
+}
+
+export function SheetBody({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn('qar-react-sheet-body', className)}>{children}</div>
+}
+
+export function Sheet({
+  children,
+  closeLabel,
+  onOpenChange,
+  open,
+  returnFocusId,
+  title,
+  trigger,
+  variant = 'default',
+}: SheetProps) {
   return (
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30" />
-        <DialogPrimitive.Content aria-describedby={undefined} className="qar:fixed qar:bottom-0 qar:left-0 qar:right-0 qar:z-50 qar:grid qar:max-h-screen qar:gap-4 qar:rounded-t-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg md:qar:left-auto md:qar:top-0 md:qar:w-96 md:qar:rounded-l-surface md:qar:rounded-t-none">
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          aria-modal="true"
+          className="qar:fixed qar:bottom-0 qar:left-0 qar:right-0 qar:z-50 qar:grid qar:max-h-screen qar:gap-4 qar:rounded-t-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg md:qar:left-auto md:qar:top-0 md:qar:w-96 md:qar:rounded-l-surface md:qar:rounded-t-none"
+          data-sheet-variant={variant}
+          onCloseAutoFocus={(event) => {
+            if (variant !== 'adaptive-settings' && !returnFocusId) return
+            const targetIds = [returnFocusId, 'reader-settings-trigger', 'reader-main']
+            const target = targetIds
+              .filter((id): id is string => Boolean(id))
+              .map((id) => document.getElementById(id))
+              .find((element): element is HTMLElement => element instanceof HTMLElement && element.isConnected)
+            if (!target) return
+            event.preventDefault()
+            target.focus({ preventScroll: true })
+          }}
+        >
           <div className="qar:flex qar:items-center qar:justify-between qar:gap-3">
             <DialogPrimitive.Title className="qar:m-0 qar:text-base qar:font-semibold">{title}</DialogPrimitive.Title>
-            <CloseButton />
+            <CloseButton label={closeLabel} />
           </div>
           {children}
         </DialogPrimitive.Content>

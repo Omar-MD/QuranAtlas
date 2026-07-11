@@ -37,7 +37,7 @@ export function ReaderChrome({
       {wirdStatus}
       {onModeChange ? <ReadingViewToggle mode={mode} onModeChange={onModeChange} /> : null}
       {!hideSettings && (
-        <IconButton className="qar-reader-chrome-icon" label="Open settings" onClick={onOpenSettings}>
+        <IconButton className="qar-reader-chrome-icon" id="reader-settings-trigger" label="Open settings" onClick={onOpenSettings}>
           <Settings aria-hidden="true" size={26} strokeWidth={1.6} />
         </IconButton>
       )}

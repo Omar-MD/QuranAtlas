@@ -102,7 +102,7 @@ export function ReaderPageShell({
             dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })
           }}
           onOpenSettings={() => {
-            requestReactSettingsOverlay(mode)
+            requestReactSettingsOverlay(mode, 'reader-settings-trigger')
           }}
           visible={visible}
           wirdStatus={dailyWirdVisible && wirdSummary ? (

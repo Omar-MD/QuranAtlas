@@ -163,9 +163,9 @@ describe('React navigation, settings, and onboarding coverage', () => {
 
   it('renders settings and onboarding as compact product flows', () => {
     const settingsRender = render(<SettingsRoute mode="verse" />)
-    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
-    expect(screen.getByRole('radiogroup', { name: 'Reader mode' })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Verse settings' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Verse settings' })).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: 'Reader mode' })).not.toBeInTheDocument()
     expect(screen.queryByRole('radiogroup', { name: 'Navigation mode' })).not.toBeInTheDocument()
     expect(screen.getByRole('slider', { name: 'Font size' })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Reading flow' })).toBeInTheDocument()
@@ -175,6 +175,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
     expect(screen.getByRole('region', { name: 'Included assets' })).toBeInTheDocument()
     expect(screen.queryByText(/mushaf edition/i)).not.toBeInTheDocument()
     settingsRender.rerender(<SettingsRoute mode="mushaf" />)
+    expect(screen.getByRole('dialog', { name: 'Mushaf settings' })).toBeInTheDocument()
     expect(screen.getByRole('radiogroup', { name: 'Navigation mode' })).toBeInTheDocument()
     expect(screen.queryByRole('slider', { name: 'Font size' })).not.toBeInTheDocument()
     settingsRender.unmount()

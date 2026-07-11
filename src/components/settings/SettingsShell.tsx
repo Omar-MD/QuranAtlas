@@ -1,7 +1,6 @@
-import { X } from 'lucide-react'
-import { type ReactNode, useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 
-import { Button } from '../ui'
+import { Sheet, SheetBody } from '../ui'
 import { ThemeNightControls } from './ThemeNightControls'
 import type { ReactNightModePreference, ReactThemePreference } from '../../storage/settings-writer'
 
@@ -11,6 +10,7 @@ export function SettingsShell({
   onClose,
   onNightModeChange,
   onThemeChange,
+  returnFocusId,
   subtitle,
   theme,
   title,
@@ -20,51 +20,24 @@ export function SettingsShell({
   onClose: () => void
   onNightModeChange: (value: ReactNightModePreference) => void
   onThemeChange: (value: ReactThemePreference) => void
+  returnFocusId?: string
   subtitle: string
   theme: ReactThemePreference
   title: string
 }) {
-  const shellRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    shellRef.current?.focus({ preventScroll: true })
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      onClose()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
-
   return (
-    <>
-      <Button
-        aria-label="Close settings backdrop"
-        className="qar-react-settings-backdrop"
-        onClick={onClose}
-        variant="ghost"
-      >
-        <span className="qar:sr-only">Close settings backdrop</span>
-      </Button>
-      <div
-        aria-labelledby="qar-react-settings-title"
-        aria-modal="true"
-        className="qar-react-settings-shell"
-        ref={shellRef}
-        role="dialog"
-        tabIndex={-1}
-      >
-        <header className="qar-react-settings-header">
-          <div className="qar-react-settings-title-block">
-            {subtitle ? <p className="qar-react-settings-subtitle">{subtitle}</p> : null}
-            <h2 className="qar-react-settings-title" id="qar-react-settings-title">{title}</h2>
-          </div>
-          <Button aria-label="Close settings" className="qar-react-settings-close" onClick={onClose} size="sm" variant="ghost">
-            <X aria-hidden="true" size={18} />
-          </Button>
-        </header>
-
+    <Sheet
+      closeLabel="Close settings"
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      open
+      returnFocusId={returnFocusId}
+      title={title}
+      variant="adaptive-settings"
+    >
+      <SheetBody>
+        {subtitle ? <p className="qar-react-settings-subtitle">{subtitle}</p> : null}
         <div className="qar-react-settings-body">
           {children}
         </div>
@@ -77,7 +50,7 @@ export function SettingsShell({
             theme={theme}
           />
         </footer>
-      </div>
-    </>
+      </SheetBody>
+    </Sheet>
   )
 }

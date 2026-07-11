@@ -3,24 +3,31 @@ import type { SettingsRouteMode } from './routes/settings/SettingsRoute'
 export const REACT_OPEN_SETTINGS_EVENT = 'quranatlas-react-open-settings'
 const READER_SETTINGS_ANCHOR_KEY = '__quranAtlasReaderSettingsAnchor'
 
-export type ReactOpenSettingsEvent = CustomEvent<{ mode?: SettingsRouteMode }>
+export type ReactOpenSettingsRequest = {
+  mode?: SettingsRouteMode
+  returnFocusId?: string
+}
+export type ReactOpenSettingsEvent = CustomEvent<ReactOpenSettingsRequest>
 type ReaderSettingsAnchor = { key: string; top: number }
 type ReaderSettingsAnchorWindow = Window & {
   [READER_SETTINGS_ANCHOR_KEY]?: ReaderSettingsAnchor
 }
 
-export function requestReactSettingsOverlay(mode: SettingsRouteMode): void {
+export function requestReactSettingsOverlay(
+  mode: SettingsRouteMode,
+  returnFocusId = 'reader-settings-trigger',
+): void {
   if (typeof window === 'undefined') return
   captureReactSettingsReaderAnchor()
-  window.dispatchEvent(new CustomEvent(REACT_OPEN_SETTINGS_EVENT, { detail: { mode } }))
+  window.dispatchEvent(new CustomEvent(REACT_OPEN_SETTINGS_EVENT, { detail: { mode, returnFocusId } }))
 }
 
 export function subscribeReactSettingsOverlayRequests(
-  listener: (mode?: SettingsRouteMode) => void,
+  listener: (request: ReactOpenSettingsRequest) => void,
 ): () => void {
   if (typeof window === 'undefined') return () => undefined
   function onOpenSettings(event: Event): void {
-    listener((event as ReactOpenSettingsEvent).detail?.mode)
+    listener((event as ReactOpenSettingsEvent).detail ?? {})
   }
   window.addEventListener(REACT_OPEN_SETTINGS_EVENT, onOpenSettings)
   return () => window.removeEventListener(REACT_OPEN_SETTINGS_EVENT, onOpenSettings)
