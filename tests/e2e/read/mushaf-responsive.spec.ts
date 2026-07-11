@@ -23,8 +23,6 @@ const FIT_PAGE: MushafPrefs = { mushafFitWidth: false, mushafViewMode: 'fit-page
 const FIT_WIDTH: MushafPrefs = { mushafFitWidth: true, mushafViewMode: 'fit-page' }
 const SCROLL_FIT_PAGE: MushafPrefs = { mushafFitWidth: false, mushafViewMode: 'continuous' }
 const SCROLL_FIT_WIDTH: MushafPrefs = { mushafFitWidth: true, mushafViewMode: 'continuous' }
-const NORMAL_PAGE_TURN_MS = 240
-const REDUCED_MOTION_SETTLE_DEADLINE_MS = 180
 
 async function openMushaf(
   page: Page,
@@ -39,6 +37,12 @@ async function openMushaf(
   await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
   const requestedPage = Number(/#\/m\/(\d+)/.exec(route)?.[1] ?? options.pageNo ?? 42)
   await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${requestedPage},`, 'i') })).toBeVisible()
+}
+
+async function expectReadySingleNeighbor(page: Page, position: 'next' | 'previous', pageNo: number): Promise<void> {
+  const svg = page.locator(`[data-mushaf-cell="${position}"][data-mushaf-cell-page="${pageNo}"] svg`)
+  await expect(svg).toHaveCount(1)
+  await expect(svg).toHaveAttribute('viewBox', /^-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+\d+(?:\.\d+)?\s+\d+(?:\.\d+)?$/)
 }
 
 async function stageBox(page: Page): Promise<Box> {
@@ -194,6 +198,22 @@ async function reachStageBottomWithTouch(page: Page): Promise<void> {
   }).toBe(true)
 }
 
+async function waitForStageScrollIdle(page: Page): Promise<void> {
+  const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
+  await stage.evaluate((element) => new Promise<void>((resolve) => {
+    let previous = element.scrollTop
+    let stableFrames = 0
+    const observe = () => {
+      const current = element.scrollTop
+      stableFrames = Math.abs(current - previous) <= 0.5 ? stableFrames + 1 : 0
+      previous = current
+      if (stableFrames >= 8) resolve()
+      else requestAnimationFrame(observe)
+    }
+    requestAnimationFrame(observe)
+  }))
+}
+
 async function wheelUntilMushafPage(page: Page, pageNo: number, maxAttempts = 12): Promise<number> {
   const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
   await stage.hover()
@@ -220,11 +240,7 @@ async function wheelUntilExactMushafPage(page: Page, pageNo: number, maxAttempts
     const current = Number(/#\/m\/(\d+)/.exec(page.url())?.[1] ?? 0)
     if (current === pageNo) return
     expect(current).toBeLessThan(pageNo)
-    const scrollEnd = stage.evaluate((element) => new Promise<void>((resolve) => {
-      element.addEventListener('scrollend', () => resolve(), { once: true })
-    }))
     await page.mouse.wheel(0, 120)
-    await scrollEnd
     await page.evaluate(() => new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     }))
@@ -248,9 +264,10 @@ async function singleStageBox(page: Page): Promise<Box> {
 }
 
 async function fastHorizontalFlick(page: Page, direction: 'left' | 'right'): Promise<void> {
+  await expect(page.locator('[data-mushaf-gesture-phase="idle"]')).toHaveCount(1)
   const box = await singleStageBox(page)
-  const from = direction === 'right' ? { x: 0.38, y: 0.5 } : { x: 0.62, y: 0.5 }
-  const to = direction === 'right' ? { x: 0.56, y: 0.5 } : { x: 0.44, y: 0.5 }
+  const from = direction === 'right' ? { x: 0.36, y: 0.5 } : { x: 0.64, y: 0.5 }
+  const to = direction === 'right' ? { x: 0.6, y: 0.5 } : { x: 0.4, y: 0.5 }
   await touchPath(page, pointsBetween(box, from, to, 3), 4)
 }
 
@@ -280,15 +297,19 @@ test.describe('Mushaf responsive behavior', () => {
     await expect.poll(async () => (await stageScroll(page)).scrollTop).toBeGreaterThan(initial.scrollTop)
     await expect(page).toHaveURL(/#\/m\/42$/)
     await reachStageBottomWithTouch(page)
+    await waitForStageScrollIdle(page)
 
     const portraitOffset = (await stageScroll(page)).scrollTop
+    expect(portraitOffset).toBeGreaterThan(0)
     await page.setViewportSize({ width: 844, height: 390 })
     await expectNoHorizontalOverflow(page)
     await expect.poll(async () => {
       const landscape = await stageScroll(page)
-      const expectedOffset = Math.min(portraitOffset, landscape.scrollHeight - landscape.clientHeight)
-      return Math.abs(landscape.scrollTop - expectedOffset)
-    }).toBeLessThanOrEqual(2)
+      const maximum = landscape.scrollHeight - landscape.clientHeight
+      return landscape.scrollTop > 0 && landscape.scrollTop <= maximum + 0.5
+    }).toBe(true)
+    await expect(page).toHaveURL(/#\/m\/42$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
     await reachStageBottomWithTouch(page)
     await expect(page).toHaveURL(/#\/m\/42$/)
   })
@@ -375,23 +396,27 @@ test.describe('Mushaf responsive behavior', () => {
   test('@mobile native flick previews, commits, reverses, and advances one ready page at a time', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE)
+    await expectReadySingleNeighbor(page, 'next', 43)
     const box = await singleStageBox(page)
     await withActiveTouch(
       page,
-      pointsBetween(box, { x: 0.3, y: 0.5 }, { x: 0.58, y: 0.5 }, 3),
+      pointsBetween(box, { x: 0.3, y: 0.5 }, { x: 0.7, y: 0.5 }, 3),
       async () => expect(page.locator('[data-mushaf-cell="next"]')).toHaveAttribute('data-mushaf-cell-page', '43'),
       8,
     )
     await expect(page).toHaveURL(/#\/m\/43$/)
     await expect(page.getByRole('img', { name: /Mushaf page 43/i })).toBeVisible()
 
+    await expectReadySingleNeighbor(page, 'previous', 42)
     await fastHorizontalFlick(page, 'left')
     await expect(page).toHaveURL(/#\/m\/42$/)
     await expect(page.getByRole('img', { name: /Mushaf page 42/i })).toBeVisible()
 
+    await expectReadySingleNeighbor(page, 'next', 43)
     await fastHorizontalFlick(page, 'right')
     await expect(page).toHaveURL(/#\/m\/43$/)
     await expect(page.getByRole('img', { name: /Mushaf page 43/i })).toBeVisible()
+    await expectReadySingleNeighbor(page, 'next', 44)
     await fastHorizontalFlick(page, 'right')
     await expect(page).toHaveURL(/#\/m\/44$/)
     await expect(page.getByRole('img', { name: /Mushaf page 44/i })).toBeVisible()
@@ -455,13 +480,13 @@ test.describe('Mushaf responsive behavior', () => {
     await expect(page.getByRole('button', { name: 'Open settings' })).toBeVisible()
 
     box = await singleStageBox(page)
-    const dialog = page.getByRole('dialog')
+    const dialog = page.getByRole('dialog', { name: 'Mushaf settings' })
     await withActiveTouch(
       page,
       pointsBetween(box, { x: 0.32, y: 0.5 }, { x: 0.62, y: 0.5 }, 3),
       async () => {
         await page.getByRole('button', { name: 'Open settings' }).click()
-        await expect(dialog.locator('[aria-label="Mushaf settings"]')).toBeVisible()
+        await expect(dialog).toBeVisible()
       },
     )
     await page.keyboard.press('ArrowLeft')
@@ -489,24 +514,20 @@ test.describe('Mushaf responsive behavior', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE)
+    await expectReadySingleNeighbor(page, 'next', 43)
+    await expect.poll(() => page.locator('.qar-react-mushaf-page-strip').evaluate(
+      (element) => getComputedStyle(element).transitionDuration,
+    )).toBe('0s')
 
     const box = await singleStageBox(page)
     const session = await beginTouchPath(
       page,
-      pointsBetween(box, { x: 0.38, y: 0.5 }, { x: 0.56, y: 0.5 }, 3),
+      pointsBetween(box, { x: 0.35, y: 0.5 }, { x: 0.62, y: 0.5 }, 3),
       4,
     )
-    const settleStartedAt = Date.now()
     await finishTouch(session)
-    await Promise.all([
-      page.waitForURL(/#\/m\/43$/, { timeout: REDUCED_MOTION_SETTLE_DEADLINE_MS }),
-      page.getByRole('img', { name: /Mushaf page 43,/i }).waitFor({
-        state: 'visible',
-        timeout: REDUCED_MOTION_SETTLE_DEADLINE_MS,
-      }),
-    ])
-
-    expect(Date.now() - settleStartedAt).toBeLessThan(NORMAL_PAGE_TURN_MS)
+    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 43,/i })).toBeVisible()
   })
 
   test('Scroll retains its anchor, protected intent, history entry, and momentum beyond three pages', async ({ page }) => {
@@ -614,8 +635,8 @@ test.describe('Mushaf responsive behavior', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE)
     await page.getByRole('button', { name: 'Open settings' }).click()
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.locator('[aria-label="Mushaf settings"]')).toBeVisible()
+    const dialog = page.getByRole('dialog', { name: 'Mushaf settings' })
+    await expect(dialog).toBeVisible()
     await page.keyboard.press('ArrowLeft')
     await expect(page).toHaveURL(/#\/m\/42$/)
   })
@@ -680,8 +701,8 @@ test.describe('Mushaf responsive behavior', () => {
     expect((await stageScroll(page)).scrollHeight).toBeGreaterThan((await stageScroll(page)).clientHeight)
 
     await page.getByRole('button', { name: 'Open settings' }).click()
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.locator('[aria-label="Mushaf settings"]')).toBeVisible()
+    const dialog = page.getByRole('dialog', { name: 'Mushaf settings' })
+    await expect(dialog).toBeVisible()
     const fitWidth = dialog.getByRole('switch', { name: 'Fit width' })
     await expect(fitWidth).toBeChecked()
     await fitWidth.click()

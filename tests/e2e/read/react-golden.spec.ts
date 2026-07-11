@@ -184,7 +184,7 @@ for (const fixture of readFixtures) {
         await expect(page.getByLabel(/mushaf page placeholder/i), 'RPA-003: production must not render the temporary Mushaf SVG.').toHaveCount(0)
         const pageImage = page.getByRole('img', { name: /mushaf page 1, qaloon/i })
         await expect(pageImage, 'RPA-003: React must render a real edition-aware Mushaf SVG page.').toBeVisible()
-        const svg = pageImage.locator('[data-mushaf-cell="current"] svg')
+        const svg = pageImage.locator('svg')
         await expect(svg).toBeVisible()
         await expect(svg).toHaveAttribute('viewBox', /^-?\d+(\.\d+)?\s+-?\d+(\.\d+)?\s+\d+(\.\d+)?\s+\d+(\.\d+)?$/)
         await expect(page.getByRole('tab', { name: /auto/i })).toHaveCount(0)
@@ -202,21 +202,12 @@ for (const fixture of readFixtures) {
           const box = element.getBoundingClientRect()
           const svgBox = element.querySelector('svg')?.getBoundingClientRect()
           const counterBox = document.querySelector('[aria-label="Mushaf page 1"]')?.getBoundingClientRect()
-          const centerZone = document.querySelector('[aria-label="Toggle reader chrome"]')?.getBoundingClientRect()
-          const leftZone = document.querySelector('[aria-label="Advance Mushaf page from left edge"]')?.getBoundingClientRect()
-          const rightZone = document.querySelector('[aria-label="Return to previous Mushaf page from right edge"]')?.getBoundingClientRect()
           const root = getComputedStyle(document.documentElement)
           const svgStyle = getComputedStyle(element.querySelector('svg') ?? element)
           return {
-            centerZoneHeight: centerZone?.height ?? 0,
-            centerZoneWidth: centerZone?.width ?? 0,
             counterBottomGap: counterBox ? window.innerHeight - counterBox.bottom : 0,
             counterCenterOffset: counterBox ? Math.abs((counterBox.left + counterBox.width / 2) - window.innerWidth / 2) : 999,
             height: box.height,
-            leftZoneHeight: leftZone?.height ?? 0,
-            leftZoneWidth: leftZone?.width ?? 0,
-            rightZoneHeight: rightZone?.height ?? 0,
-            rightZoneWidth: rightZone?.width ?? 0,
             svgHeight: svgBox?.height ?? 0,
             svgWidth: svgBox?.width ?? 0,
             tokens: [
@@ -237,27 +228,17 @@ for (const fixture of readFixtures) {
         expect(layout.counterBottomGap).toBeGreaterThanOrEqual(8)
         expect(layout.counterCenterOffset).toBeLessThanOrEqual(2)
         expect(layout.svgDisplay).toBe('block')
-        expect(layout.leftZoneHeight).toBeGreaterThanOrEqual(GOLDEN_VIEWPORTS[viewportId].height - 1)
-        expect(layout.rightZoneHeight).toBeGreaterThanOrEqual(GOLDEN_VIEWPORTS[viewportId].height - 1)
-        expect(layout.centerZoneHeight).toBeGreaterThanOrEqual(GOLDEN_VIEWPORTS[viewportId].height - 1)
-        expect(layout.leftZoneWidth).toBeGreaterThanOrEqual(44)
-        expect(layout.rightZoneWidth).toBeGreaterThanOrEqual(44)
-        expect(layout.centerZoneWidth).toBeGreaterThanOrEqual(GOLDEN_VIEWPORTS[viewportId].width * 0.3)
         const chrome = page.getByRole('navigation', { name: 'Primary navigation' })
         await expect(chrome).toHaveAttribute('data-visible', 'true')
-        await page.getByRole('button', { name: 'Toggle reader chrome' }).click()
-        await expect(chrome).toHaveAttribute('data-visible', 'false')
-        await page.getByRole('button', { name: 'Toggle reader chrome' }).click()
-        await expect(chrome).toHaveAttribute('data-visible', 'true')
-        await page.getByRole('button', { name: 'Advance Mushaf page from left edge' }).click()
+        const nextPage = page.getByRole('button', { name: 'Next Mushaf page' })
+        const previousPage = page.getByRole('button', { name: 'Previous Mushaf page' })
+        await expect(nextPage).toBeEnabled()
+        await expect(previousPage).toBeDisabled()
+        await expectMinTouchTarget(nextPage)
+        await expectMinTouchTarget(previousPage)
+        await nextPage.click()
         await expect(page).toHaveURL(/#\/m\/2$/)
-        await expect(chrome).toHaveAttribute('data-visible', 'false')
-        await expect(page.getByLabel('Mushaf page 2', { exact: true })).toHaveText('2')
-        await page.keyboard.press('ArrowLeft')
-        await expect(page).toHaveURL(/#\/m\/3$/)
-        await expect(page.getByLabel('Mushaf page 3', { exact: true })).toHaveText('3')
-        await page.keyboard.press('ArrowRight')
-        await expect(page).toHaveURL(/#\/m\/2$/)
+        await expect(page.getByRole('img', { name: /Mushaf page 2,/i })).toBeVisible()
       }
 
       const firstControl = page.getByRole('button').first()

@@ -44,7 +44,7 @@
     --qa-react-settings-sheet: var(--qa-react-sheet);
     --qa-react-settings-header: color-mix(in srgb, var(--qa-react-sheet) 88%, var(--qa-react-surface));
     --qa-react-settings-group: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-sheet));
-    --qa-react-settings-group-border: color-mix(in srgb, var(--qa-react-border) 58%, var(--qa-react-accent));
+    --qa-react-settings-group-border: color-mix(in srgb, var(--qa-react-border) 25%, var(--qa-react-accent));
     --qa-react-settings-divider: color-mix(in srgb, var(--qa-react-settings-group-border) 58%, transparent);
     --qa-react-settings-selected: color-mix(in srgb, var(--qa-react-accent) 15%, var(--qa-react-settings-group));
     --qa-react-settings-selected-text: var(--qa-react-accent-strong);

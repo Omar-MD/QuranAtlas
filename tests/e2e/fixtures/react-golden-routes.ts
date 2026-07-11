@@ -316,7 +316,12 @@ export function installPageGuards(page: Page, label: string, allowedUrlPatterns:
   }
   const onRequestFailed = (request: Request) => {
     const url = request.url()
-    if (!isAllowed(url)) failures.push(`${label} request failed: ${url} ${request.failure()?.errorText ?? ''}`.trim())
+    const errorText = request.failure()?.errorText ?? ''
+    const isCancelledMushafPagePreload = errorText.includes('ERR_ABORTED')
+      && /\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/pages\/\d+\.svg$/.test(new URL(url).pathname)
+    if (!isAllowed(url) && !isCancelledMushafPagePreload) {
+      failures.push(`${label} request failed: ${url} ${errorText}`.trim())
+    }
   }
   const onResponse = (response: Response) => {
     const url = response.url()

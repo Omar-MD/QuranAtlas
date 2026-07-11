@@ -231,6 +231,10 @@ test('@golden @a11y Settings themes retain rendered contrast', async ({ page }) 
     if ('themePreference' in state) await expect(page.locator('html')).toHaveAttribute('data-theme-pref', state.themePreference)
     if (state.night) await expect(page.locator('html')).toHaveAttribute('data-night-mode', 'on')
     else await expect(page.locator('html')).not.toHaveAttribute('data-night-mode', 'on')
+    await shell.evaluate(async (element) => {
+      const animations = element.getAnimations({ subtree: true })
+      await Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)))
+    })
 
     const selected = shell.getByRole('button', { name: state.night ?? state.button })
     await expectAxeClean(page)
