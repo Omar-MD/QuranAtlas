@@ -23,6 +23,8 @@ const FIT_PAGE: MushafPrefs = { mushafFitWidth: false, mushafViewMode: 'fit-page
 const FIT_WIDTH: MushafPrefs = { mushafFitWidth: true, mushafViewMode: 'fit-page' }
 const SCROLL_FIT_PAGE: MushafPrefs = { mushafFitWidth: false, mushafViewMode: 'continuous' }
 const SCROLL_FIT_WIDTH: MushafPrefs = { mushafFitWidth: true, mushafViewMode: 'continuous' }
+const NORMAL_PAGE_TURN_MS = 240
+const REDUCED_MOTION_SETTLE_DEADLINE_MS = 180
 
 async function openMushaf(
   page: Page,
@@ -76,26 +78,34 @@ async function beginTouchPath(
 ): Promise<CDPSession> {
   expect(points.length).toBeGreaterThan(0)
   const session = await page.context().newCDPSession(page)
-  await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
-  const [first, ...rest] = points
-  await session.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ ...first, id: 1 }],
-  })
-  for (const point of rest) {
+  try {
+    await session.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
+    const [first, ...rest] = points
     await session.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ ...point, id: 1 }],
+      type: 'touchStart',
+      touchPoints: [{ ...first, id: 1 }],
     })
-    // Gesture timing is the assertion; this is the scoped E2E timing carve-out.
-    await page.waitForTimeout(intervalMs)
+    for (const point of rest) {
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ ...point, id: 1 }],
+      })
+      // Gesture timing is the assertion; this is the scoped E2E timing carve-out.
+      await page.waitForTimeout(intervalMs)
+    }
+    return session
+  } catch (error) {
+    await session.detach().catch(() => undefined)
+    throw error
   }
-  return session
 }
 
 async function finishTouch(session: CDPSession): Promise<void> {
-  await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-  await session.detach()
+  try {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  } finally {
+    await session.detach().catch(() => undefined)
+  }
 }
 
 async function touchPath(
@@ -109,8 +119,25 @@ async function touchPath(
 
 async function touchCancel(page: Page, points: Array<{ x: number; y: number }>): Promise<void> {
   const session = await beginTouchPath(page, points)
-  await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] })
-  await session.detach()
+  try {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] })
+  } finally {
+    await session.detach().catch(() => undefined)
+  }
+}
+
+async function withActiveTouch(
+  page: Page,
+  points: Array<{ x: number; y: number }>,
+  inspect: () => Promise<void>,
+  intervalMs = 16,
+): Promise<void> {
+  const session = await beginTouchPath(page, points, intervalMs)
+  try {
+    await inspect()
+  } finally {
+    await finishTouch(session)
+  }
 }
 
 async function stageScroll(page: Page): Promise<{ clientHeight: number; scrollHeight: number; scrollTop: number }> {
@@ -126,6 +153,33 @@ async function stageScroll(page: Page): Promise<{ clientHeight: number; scrollHe
 async function panStageUp(page: Page): Promise<void> {
   const box = await stageBox(page)
   await touchPath(page, pointsBetween(box, { x: 0.52, y: 0.82 }, { x: 0.49, y: 0.18 }, 6))
+}
+
+async function burstWheelAcrossWindow(page: Page): Promise<void> {
+  const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
+  const box = await stageBox(page)
+  await stage.hover()
+  const scrollEnd = stage.evaluate((element) => new Promise<void>((resolve) => {
+    element.addEventListener('scrollend', () => resolve(), { once: true })
+  }))
+  const session = await page.context().newCDPSession(page)
+  try {
+    for (let event = 0; event < 24; event += 1) {
+      await session.send('Input.dispatchMouseEvent', {
+        deltaX: 0,
+        deltaY: 180,
+        type: 'mouseWheel',
+        x: box.centerX,
+        y: box.centerY,
+      })
+    }
+  } finally {
+    await session.detach().catch(() => undefined)
+  }
+  await scrollEnd
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
 }
 
 async function reachStageBottomWithTouch(page: Page): Promise<void> {
@@ -322,10 +376,12 @@ test.describe('Mushaf responsive behavior', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE)
     const box = await singleStageBox(page)
-    const session = await beginTouchPath(page, pointsBetween(box, { x: 0.3, y: 0.5 }, { x: 0.58, y: 0.5 }, 3), 8)
-
-    await expect(page.locator('[data-mushaf-cell="next"]')).toHaveAttribute('data-mushaf-cell-page', '43')
-    await finishTouch(session)
+    await withActiveTouch(
+      page,
+      pointsBetween(box, { x: 0.3, y: 0.5 }, { x: 0.58, y: 0.5 }, 3),
+      async () => expect(page.locator('[data-mushaf-cell="next"]')).toHaveAttribute('data-mushaf-cell-page', '43'),
+      8,
+    )
     await expect(page).toHaveURL(/#\/m\/43$/)
     await expect(page.getByRole('img', { name: /Mushaf page 43/i })).toBeVisible()
 
@@ -362,18 +418,22 @@ test.describe('Mushaf responsive behavior', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE, { pageNo: 1 })
     let box = await singleStageBox(page)
-    let outwardTouch = await beginTouchPath(page, pointsBetween(box, { x: 0.62, y: 0.5 }, { x: 0.3, y: 0.5 }, 4))
-    await expectCurrentPageCoversStage(page, 1)
-    await finishTouch(outwardTouch)
+    await withActiveTouch(
+      page,
+      pointsBetween(box, { x: 0.62, y: 0.5 }, { x: 0.3, y: 0.5 }, 4),
+      async () => expectCurrentPageCoversStage(page, 1),
+    )
     await expect(page).toHaveURL(/#\/m\/1$/)
     await expect(page.getByRole('img', { name: /Mushaf page 1,/i })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Previous Mushaf page' })).toBeDisabled()
 
     await openMushaf(page, FIT_PAGE, { pageNo: 604 })
     box = await singleStageBox(page)
-    outwardTouch = await beginTouchPath(page, pointsBetween(box, { x: 0.38, y: 0.5 }, { x: 0.7, y: 0.5 }, 4))
-    await expectCurrentPageCoversStage(page, 604)
-    await finishTouch(outwardTouch)
+    await withActiveTouch(
+      page,
+      pointsBetween(box, { x: 0.38, y: 0.5 }, { x: 0.7, y: 0.5 }, 4),
+      async () => expectCurrentPageCoversStage(page, 604),
+    )
     await expect(page).toHaveURL(/#\/m\/604$/)
     await expect(page.getByRole('img', { name: /Mushaf page 604,/i })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Next Mushaf page' })).toBeDisabled()
@@ -384,34 +444,45 @@ test.describe('Mushaf responsive behavior', () => {
     await openMushaf(page, FIT_PAGE)
     let box = await singleStageBox(page)
     await touchCancel(page, pointsBetween(box, { x: 0.3, y: 0.5 }, { x: 0.62, y: 0.5 }, 3))
+    await expect(page).toHaveURL(/#\/m\/42$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
+    await fastHorizontalFlick(page, 'left')
+    await expect(page).toHaveURL(/#\/m\/41$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 41,/i })).toBeVisible()
     await fastHorizontalFlick(page, 'right')
-    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page).toHaveURL(/#\/m\/42$/)
     await page.keyboard.press('Escape')
     await expect(page.getByRole('button', { name: 'Open settings' })).toBeVisible()
 
     box = await singleStageBox(page)
-    const activeTouch = await beginTouchPath(page, pointsBetween(box, { x: 0.32, y: 0.5 }, { x: 0.62, y: 0.5 }, 3))
-    await page.getByRole('button', { name: 'Open settings' }).click()
     const dialog = page.getByRole('dialog')
-    await expect(dialog.locator('[aria-label="Mushaf settings"]')).toBeVisible()
-    await finishTouch(activeTouch).catch(() => undefined)
+    await withActiveTouch(
+      page,
+      pointsBetween(box, { x: 0.32, y: 0.5 }, { x: 0.62, y: 0.5 }, 3),
+      async () => {
+        await page.getByRole('button', { name: 'Open settings' }).click()
+        await expect(dialog.locator('[aria-label="Mushaf settings"]')).toBeVisible()
+      },
+    )
     await page.keyboard.press('ArrowLeft')
-    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page).toHaveURL(/#\/m\/42$/)
     await dialog.getByRole('button', { name: 'Close settings' }).click()
     await fastHorizontalFlick(page, 'left')
-    await expect(page).toHaveURL(/#\/m\/42$/)
-    await expect(page.getByRole('img', { name: /Mushaf page 42/i })).toBeVisible()
+    await expect(page).toHaveURL(/#\/m\/41$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 41/i })).toBeVisible()
 
     await fastHorizontalFlick(page, 'right')
-    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page).toHaveURL(/#\/m\/42$/)
 
     box = await singleStageBox(page)
-    const resizeTouch = await beginTouchPath(page, pointsBetween(box, { x: 0.32, y: 0.5 }, { x: 0.62, y: 0.5 }, 3))
-    await page.setViewportSize({ width: 430, height: 800 })
-    await finishTouch(resizeTouch).catch(() => undefined)
+    await withActiveTouch(
+      page,
+      pointsBetween(box, { x: 0.32, y: 0.5 }, { x: 0.62, y: 0.5 }, 3),
+      async () => page.setViewportSize({ width: 430, height: 800 }),
+    )
     await fastHorizontalFlick(page, 'left')
-    await expect(page).toHaveURL(/#\/m\/42$/)
-    await expect(page.getByRole('img', { name: /Mushaf page 42/i })).toBeVisible()
+    await expect(page).toHaveURL(/#\/m\/41$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 41/i })).toBeVisible()
   })
 
   test('@mobile reduced motion commits the same physical route without animation travel', async ({ page }) => {
@@ -419,10 +490,23 @@ test.describe('Mushaf responsive behavior', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE)
 
-    await fastHorizontalFlick(page, 'right')
+    const box = await singleStageBox(page)
+    const session = await beginTouchPath(
+      page,
+      pointsBetween(box, { x: 0.38, y: 0.5 }, { x: 0.56, y: 0.5 }, 3),
+      4,
+    )
+    const settleStartedAt = Date.now()
+    await finishTouch(session)
+    await Promise.all([
+      page.waitForURL(/#\/m\/43$/, { timeout: REDUCED_MOTION_SETTLE_DEADLINE_MS }),
+      page.getByRole('img', { name: /Mushaf page 43,/i }).waitFor({
+        state: 'visible',
+        timeout: REDUCED_MOTION_SETTLE_DEADLINE_MS,
+      }),
+    ])
 
-    await expect(page).toHaveURL(/#\/m\/43$/)
-    await expect(page.getByRole('img', { name: /Mushaf page 43/i })).toBeVisible()
+    expect(Date.now() - settleStartedAt).toBeLessThan(NORMAL_PAGE_TURN_MS)
   })
 
   test('Scroll retains its anchor, protected intent, history entry, and momentum beyond three pages', async ({ page }) => {
@@ -470,20 +554,60 @@ test.describe('Mushaf responsive behavior', () => {
     await expect(page).toHaveURL(/#\/s\/1$/)
   })
 
-  test('Scroll mode native touch momentum changes dominance without horizontal page turns', async ({ page }) => {
+  test('Scroll mode preserves monotonic dominance and anchors through one uninterrupted wheel burst', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, SCROLL_FIT_WIDTH)
     await expectNoHorizontalOverflow(page)
     await fastHorizontalFlick(page, 'right')
     await expect(page).toHaveURL(/#\/m\/42$/)
 
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      await panStageUp(page)
-      if (Number(/#\/m\/(\d+)/.exec(page.url())?.[1] ?? 0) > 42) break
-    }
+    await page.evaluate(() => {
+      type FlingProof = {
+        anchorDeltas: number[]
+        pendingAnchor?: { page: number; top: number }
+        routes: number[]
+      }
+      const state = window as Window & { __mushafFlingProof?: FlingProof }
+      const proof: FlingProof = { anchorDeltas: [], routes: [42] }
+      state.__mushafFlingProof = proof
+      const originalReplaceState = history.replaceState.bind(history)
+      history.replaceState = (data: unknown, unused: string, url?: string | URL | null) => {
+        const pageNo = Number(/#\/m\/(\d+)/.exec(String(url))?.[1] ?? 0)
+        if (pageNo > 0) {
+          const anchor = document.querySelector<HTMLElement>(`[role="img"][aria-label^="Mushaf page ${pageNo},"]`)
+          if (anchor) proof.pendingAnchor = { page: pageNo, top: anchor.getBoundingClientRect().top }
+          proof.routes.push(pageNo)
+        }
+        originalReplaceState(data, unused, url)
+      }
+      const stack = document.querySelector('.qar-react-mushaf-continuous-stack')
+      if (!stack) throw new Error('Continuous Mushaf stack is unavailable')
+      new MutationObserver(() => {
+        const pending = proof.pendingAnchor
+        if (!pending) return
+        const anchor = document.querySelector<HTMLElement>(`[role="img"][aria-label^="Mushaf page ${pending.page},"]`)
+        if (anchor) proof.anchorDeltas.push(Math.abs(anchor.getBoundingClientRect().top - pending.top))
+        proof.pendingAnchor = undefined
+      }).observe(stack, { childList: true })
+    })
+
+    await burstWheelAcrossWindow(page)
+
     const dominantPage = Number(/#\/m\/(\d+)/.exec(page.url())?.[1] ?? 0)
-    expect(dominantPage).toBeGreaterThan(42)
+    expect(dominantPage).toBeGreaterThanOrEqual(45)
     await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${dominantPage},`, 'i') })).toBeVisible()
+    const proof = await page.evaluate(() => (
+      window as Window & {
+        __mushafFlingProof?: { anchorDeltas: number[]; routes: number[] }
+      }
+    ).__mushafFlingProof)
+    expect(proof).toBeDefined()
+    expect(proof!.routes.length).toBeGreaterThan(2)
+    for (let index = 1; index < proof!.routes.length; index += 1) {
+      expect(proof!.routes[index]).toBeGreaterThanOrEqual(proof!.routes[index - 1]!)
+    }
+    expect(proof!.anchorDeltas.length).toBeGreaterThan(0)
+    expect(Math.max(...proof!.anchorDeltas)).toBeLessThanOrEqual(2)
   })
 
   test('Settings overlay blocks page-turn keys through the active Mushaf settings dialog', async ({ page }) => {
