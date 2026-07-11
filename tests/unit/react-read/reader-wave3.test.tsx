@@ -5,6 +5,7 @@ import { ReaderRoute } from '../../../src/app/routes/read/ReaderRoute'
 import { MushafRoute } from '../../../src/app/routes/read/MushafRoute'
 import { ReaderChrome } from '../../../src/components/reader/ReaderChrome'
 import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
+import { useReaderInteractionSuspended } from '../../../src/components/reader/ReaderInteractionContext'
 import { MushafPageViewer } from '../../../src/components/reader/MushafPageViewer'
 import {
   loadMushafPageAsset,
@@ -154,6 +155,10 @@ function mushafFetchFixture() {
   })
 }
 
+function ReaderSuspensionProbe() {
+  return <div data-testid="reader-suspended">{String(useReaderInteractionSuspended())}</div>
+}
+
 describe('React reader coverage', () => {
   function setWindowScrollY(value: number) {
     Object.defineProperty(window, 'scrollY', { configurable: true, value })
@@ -191,6 +196,24 @@ describe('React reader coverage', () => {
     fireEvent.scroll(window)
 
     expect(nav).toHaveAttribute('data-visible', 'true')
+  })
+
+  it('suspends reader interaction while navigation is open and exposes a fallback focus target', () => {
+    render(
+      <ReaderPageShell label="الفَاتِحة" mode="verse">
+        <ReaderSuspensionProbe />
+      </ReaderPageShell>,
+    )
+
+    const readerMain = screen.getByRole('main', { name: 'Verse reader' })
+    expect(readerMain).toHaveAttribute('id', 'reader-main')
+    readerMain.focus()
+    expect(readerMain).toHaveFocus()
+    expect(screen.getByTestId('reader-suspended')).toHaveTextContent('false')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
+
+    expect(screen.getByTestId('reader-suspended')).toHaveTextContent('true')
   })
 
   it('resolves continuation translation aliases without duplicating text', () => {
