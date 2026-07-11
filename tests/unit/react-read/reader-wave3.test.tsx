@@ -883,6 +883,34 @@ describe('React reader coverage', () => {
     expect(screen.getByRole('img', { name: /mushaf page 42/i })).toBeInTheDocument()
   })
 
+  it('restores focus when a new Single Fit-width stage installs', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const resolved = {
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      firstVerse: { surah: 2, verse: 251 },
+      manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page: 42,
+      pageCount: 604,
+      riwayah: 'qaloon' as const,
+      riwayahLabel: 'Qalun',
+    }
+    const { rerender } = render(
+      <MushafPageViewer fitWidth inlineSvg={inlineSvg} resolved={resolved} />,
+    )
+    screen.getByRole('region', { name: 'Scrollable Mushaf pages' }).focus()
+
+    rerender(
+      <MushafPageViewer
+        fitWidth
+        inlineSvg={inlineSvg}
+        resolved={{ ...resolved, assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', page: 43 }}
+      />,
+    )
+
+    expect(screen.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveFocus()
+  })
+
   it('disables visible Mushaf actions at the physical page boundaries', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const boundaryPage = (page: number) => ({

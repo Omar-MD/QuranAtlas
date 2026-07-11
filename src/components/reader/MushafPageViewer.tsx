@@ -83,7 +83,9 @@ export function MushafPageViewer({
   const reconciliationFrameRef = useRef<number | null>(null)
   const finalFrameRef = useRef<number | null>(null)
   const lastEmittedPageRef = useRef(resolved.page)
+  const scrollInitializedRef = useRef(false)
   const isScrollModeRef = useRef(false)
+  const restoreStageFocusRef = useRef(false)
   const interactionSuspended = useReaderInteractionSuspended()
   const ratio = inlineSvg.viewBox.width / inlineSvg.viewBox.height
   const isScrollMode = viewMode === 'continuous'
@@ -124,10 +126,18 @@ export function MushafPageViewer({
     if (!chromeVisible) onToggleChrome?.(true)
   }, [chromeVisible, onToggleChrome])
 
+  const setStageNode = useCallback((node: HTMLDivElement | null) => {
+    const current = stageRef.current
+    if (!node && current && document.activeElement === current) restoreStageFocusRef.current = true
+    stageRef.current = node
+  }, [])
+
   const reconcileDominantPage = useCallback(() => {
-    if (!isScrollModeRef.current || ignoreAdjustedScrollRef.current) return
+    if (!isScrollModeRef.current || !scrollInitializedRef.current || ignoreAdjustedScrollRef.current) return
     const measurement = measureDominantReadyPage(stageRef.current, cellRefs.current)
-    if (!measurement || measurement.page === lastEmittedPageRef.current) return
+    if (!measurement) return
+    anchorRef.current = { page: measurement.page, top: measurement.top }
+    if (measurement.page === lastEmittedPageRef.current) return
     lastEmittedPageRef.current = measurement.page
     onDominantPageChange?.(measurement.page)
   }, [onDominantPageChange])
@@ -183,14 +193,48 @@ export function MushafPageViewer({
   }, [resolved.page])
 
   useLayoutEffect(() => {
+    if (isScrollMode) return undefined
+    const stage = stageRef.current
+    if (stage && restoreStageFocusRef.current) {
+      stage.focus({ preventScroll: true })
+      restoreStageFocusRef.current = false
+    }
+    return undefined
+  }, [isScrollMode, resolved.page])
+
+  useLayoutEffect(() => {
     clampStageScroll(stageRef.current)
   }, [fitWidth])
 
   useLayoutEffect(() => {
     if (!isScrollMode) {
       anchorRef.current = null
+      scrollInitializedRef.current = false
       return undefined
     }
+    if (!scrollInitializedRef.current) {
+      const stage = stageRef.current
+      const requestedCell = readyEntry(effectivePages, resolved.page)
+        ? cellRefs.current.get(resolved.page)
+        : null
+      if (!stage || !requestedCell) return undefined
+      ignoreAdjustedScrollRef.current = true
+      const stageTop = stage.getBoundingClientRect().top
+      const requestedTop = requestedCell.getBoundingClientRect().top
+      stage.scrollTop += requestedTop - stageTop
+      scrollInitializedRef.current = true
+      lastEmittedPageRef.current = resolved.page
+      anchorRef.current = { page: resolved.page, top: 0 }
+      window.requestAnimationFrame(() => {
+        ignoreAdjustedScrollRef.current = false
+        scheduleReconciliation()
+      })
+    }
+    return undefined
+  }, [effectivePages, isScrollMode, pageListKey, resolved.page, scheduleReconciliation])
+
+  useLayoutEffect(() => {
+    if (!isScrollMode || !scrollInitializedRef.current) return
     const anchor = anchorRef.current
     const stage = stageRef.current
     const cell = anchor ? cellRefs.current.get(anchor.page) : null
@@ -205,11 +249,6 @@ export function MushafPageViewer({
           scheduleReconciliation()
         })
       }
-    }
-    anchorRef.current = null
-    return () => {
-      const measurement = measureDominantReadyPage(stageRef.current, cellRefs.current, true)
-      anchorRef.current = measurement ? { page: measurement.page, top: measurement.top } : null
     }
   }, [isScrollMode, pageListKey, scheduleReconciliation])
 
@@ -287,10 +326,11 @@ export function MushafPageViewer({
         aria-label={stageName}
         className="qar-react-mushaf-page-stage"
         data-mushaf-gesture-phase={gesture.phase}
+        key={isScrollMode ? 'scroll' : `single:${resolved.page}`}
         onClick={handleStageClick}
         onScroll={handleStageScroll}
         onScrollEnd={scheduleFinalReconciliation}
-        ref={stageRef}
+        ref={setStageNode}
         role={stageName ? 'region' : undefined}
         style={{ '--qa-react-mushaf-drag-x': `${gesture.dragX}px` } as CSSProperties}
         tabIndex={stageName ? 0 : undefined}
