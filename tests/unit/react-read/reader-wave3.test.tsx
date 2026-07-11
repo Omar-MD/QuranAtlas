@@ -729,27 +729,36 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the Mushaf page number and Arabic Surah label while toggling chrome from the page center', () => {
-    const onToggleChrome = vi.fn()
+  it('renders owned Mushaf navigation and keeps physical keyboard direction', () => {
     const onNavigate = vi.fn()
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const resolved = {
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      firstVerse: { surah: 2, verse: 251 },
+      manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page: 42,
+      pageCount: 604,
+      riwayah: 'qaloon' as const,
+      riwayahLabel: 'Qalun',
+    }
+    const pages = [41, 42, 43].map((page) => ({
+      asset: {
+        inlineSvg,
+        resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
+        status: 'ready' as const,
+      },
+      page,
+      status: 'ready' as const,
+    }))
 
     render(
       <MushafPageViewer
         chromeVisible
         inlineSvg={inlineSvg}
         onNavigate={onNavigate}
-        onToggleChrome={onToggleChrome}
-        resolved={{
-          assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
-          firstVerse: { surah: 2, verse: 251 },
-          manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
-          mushafEditionId: 'qalun-quran-ws-v1',
-          page: 42,
-          pageCount: 604,
-          riwayah: 'qaloon',
-          riwayahLabel: 'Qalun',
-        }}
+        pages={pages}
+        resolved={resolved}
         surahLabel="البَقَرَة"
       />,
     )
@@ -761,16 +770,19 @@ describe('React reader coverage', () => {
     expect(surahLabel).toBeInTheDocument()
     expect(surahLabel).toHaveAttribute('dir', 'rtl')
     expect(surahLabel).toHaveAttribute('lang', 'ar')
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle reader chrome' }))
-    expect(onToggleChrome).toHaveBeenCalledWith(false)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(onNavigate).toHaveBeenLastCalledWith(43)
+    fireEvent.click(screen.getByRole('button', { name: 'Previous Mushaf page' }))
+    expect(onNavigate).toHaveBeenLastCalledWith(41)
 
     fireEvent.keyDown(window, { key: 'ArrowLeft' })
-    expect(onNavigate).toHaveBeenCalledWith(43)
+    expect(onNavigate).toHaveBeenLastCalledWith(43)
     fireEvent.keyDown(window, { key: 'ArrowRight' })
-    expect(onNavigate).toHaveBeenCalledWith(41)
+    expect(onNavigate).toHaveBeenLastCalledWith(41)
   })
 
-  it('renders previous, current, and next pages in continuous Mushaf scroll mode', () => {
+  it('exposes every ready page image in continuous Mushaf scroll mode', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
@@ -785,31 +797,27 @@ describe('React reader coverage', () => {
 
     render(
       <MushafPageViewer
-        adjacentPages={{
-          next: {
-            inlineSvg,
-            resolved: { ...resolved, assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', page: 43 },
-          },
-          previous: {
-            inlineSvg,
-            resolved: { ...resolved, assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/041.svg', page: 41 },
-          },
-        }}
         inlineSvg={inlineSvg}
+        pages={[41, 42, 43].map((page) => ({
+          asset: {
+            inlineSvg,
+            resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
+            status: 'ready' as const,
+          },
+          page,
+          status: 'ready' as const,
+        }))}
         resolved={resolved}
         viewMode="continuous"
       />,
     )
 
-    expect(screen.getByRole('img', { name: /mushaf page 42/i })).toHaveAttribute('data-mushaf-page', '42')
-    expect(document.querySelector('[data-mushaf-cell="current"]')).toHaveAttribute('data-mushaf-cell-page', '42')
-    expect(document.querySelector('[data-mushaf-cell="previous"]')).toHaveAttribute('data-mushaf-cell-page', '41')
-    expect(document.querySelector('[data-mushaf-cell="next"]')).toHaveAttribute('data-mushaf-cell-page', '43')
-    expect(document.querySelector('[data-mushaf-cell="previous"]')).not.toHaveAttribute('aria-hidden', 'true')
-    expect(document.querySelector('[data-mushaf-cell="next"]')).not.toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByRole('img', { name: /mushaf page 41/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mushaf page 42/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mushaf page 43/i })).toBeInTheDocument()
   })
 
-  it('keeps adjacent Mushaf pages hidden from readers in Single Fit width mode', () => {
+  it('exposes only the current page image in Single Mushaf mode', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
@@ -824,26 +832,49 @@ describe('React reader coverage', () => {
 
     render(
       <MushafPageViewer
-        adjacentPages={{
-          next: {
-            inlineSvg,
-            resolved: { ...resolved, assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', page: 43 },
-          },
-          previous: {
-            inlineSvg,
-            resolved: { ...resolved, assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/041.svg', page: 41 },
-          },
-        }}
         fitWidth
         inlineSvg={inlineSvg}
+        pages={[41, 42, 43].map((page) => ({
+          asset: {
+            inlineSvg,
+            resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
+            status: 'ready' as const,
+          },
+          page,
+          status: 'ready' as const,
+        }))}
         resolved={resolved}
         viewMode="fit-page"
       />,
     )
 
+    expect(screen.getAllByRole('img')).toHaveLength(1)
     expect(screen.getByRole('img', { name: /mushaf page 42/i })).toBeInTheDocument()
-    expect(document.querySelector('[data-mushaf-cell="previous"]')).toHaveAttribute('aria-hidden', 'true')
-    expect(document.querySelector('[data-mushaf-cell="next"]')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('disables visible Mushaf actions at the physical page boundaries', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const boundaryPage = (page: number) => ({
+      assetUrl: `/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/${String(page).padStart(3, '0')}.svg`,
+      firstVerse: { surah: 1, verse: 1 },
+      manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page,
+      pageCount: 604,
+      riwayah: 'qaloon' as const,
+      riwayahLabel: 'Qalun',
+    })
+    const { rerender } = render(
+      <MushafPageViewer inlineSvg={inlineSvg} resolved={boundaryPage(1)} />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Previous Mushaf page' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Next Mushaf page' })).toBeEnabled()
+
+    rerender(<MushafPageViewer inlineSvg={inlineSvg} resolved={boundaryPage(604)} />)
+
+    expect(screen.getByRole('button', { name: 'Next Mushaf page' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Previous Mushaf page' })).toBeEnabled()
   })
 
   it('lets Mushaf pages toggle a page bookmark without adding page chrome tabs', () => {

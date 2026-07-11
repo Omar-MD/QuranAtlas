@@ -12,6 +12,7 @@
     --qar-space-3: 0.75rem;
     --qar-space-4: 1rem;
     --qar-space-6: 1.5rem;
+    --qar-size-touch-target: 2.75rem;
     --qar-radius-2: 0.5rem;
     --qar-radius-3: 0.75rem;
     --qar-font-ui: system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
@@ -22,6 +23,8 @@
     --ff-kfgqpc-warsh: 'KFGQPC Uthmanic Warsh', 'Noto Naskh Arabic', serif;
     --ff-kfgqpc-qaloon: 'KFGQPC Uthmanic Qaloon', 'Noto Naskh Arabic', serif;
     --qar-motion-fast: 120ms;
+    --qar-motion-settle: 240ms;
     --qar-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --qar-ease-direct-manipulation: cubic-bezier(0.32, 0.72, 0, 1);
   }
 }

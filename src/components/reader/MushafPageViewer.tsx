@@ -1,103 +1,146 @@
-import { forwardRef, type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Bookmark } from 'lucide-react'
+import {
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react'
+import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react'
 
-import type { MushafResolvedPage, ReactInlineMushafSvg } from '../../packs/mushaf-page-asset'
-import { Button, IconButton } from '../ui'
+import type { MushafPageWindowEntry } from '../../app/routes/read/useMushafPageWindow'
+import type {
+  MushafReadyPageAssetState,
+  MushafResolvedPage,
+  ReactInlineMushafSvg,
+} from '../../packs/mushaf-page-asset'
+import { IconButton } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
+import { useMushafPageGesture } from './useMushafPageGesture'
+import { useReaderInteractionSuspended } from './ReaderInteractionContext'
 
-const SCROLL_COOLDOWN_MS = 500
-const SCROLL_BOUNDARY_EPSILON = 4
+const EDGE_TAP_RATIO = 0.3
+const SCROLL_LINE_PX = 48
 
 export type MushafPageViewerProps = {
-  adjacentPages?: {
-    next?: MushafPreviewPage | null
-    previous?: MushafPreviewPage | null
-  }
+  adjacentPages?: unknown
   bookmarked?: boolean
   chromeVisible?: boolean
   fitWidth?: boolean
   inlineSvg: ReactInlineMushafSvg
+  onDominantPageChange?: (page: number) => void
   onNavigate?: (page: number) => void
+  onRequestPage?: (page: number) => void
   onToggleChrome?: (visible: boolean) => void
   onToggleBookmark?: () => void
-  onViewModeChange?: (mode: MushafViewMode) => void
+  pages?: readonly MushafPageWindowEntry[]
   resolved: MushafResolvedPage
   surahLabel?: string
-  transitionDirection?: 'next' | 'previous'
   viewMode?: MushafViewMode
 }
 
-export type MushafPreviewPage = {
-  inlineSvg: ReactInlineMushafSvg
-  resolved: MushafResolvedPage
+type ScrollAnchor = {
+  page: number
+  top: number
+}
+
+type VisiblePageMeasurement = {
+  area: number
+  centerDistance: number
+  page: number
+  top: number
 }
 
 export function MushafPageViewer({
-  adjacentPages,
   bookmarked = false,
   chromeVisible = true,
   fitWidth = false,
   inlineSvg,
+  onDominantPageChange,
   onNavigate,
+  onRequestPage,
   onToggleBookmark,
   onToggleChrome,
+  pages = [],
   resolved,
   surahLabel,
-  transitionDirection = 'next',
   viewMode = 'auto',
 }: MushafPageViewerProps) {
-  const sectionRef = useRef<HTMLElement | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
-  const currentCellRef = useRef<HTMLDivElement | null>(null)
-  const dragRef = useRef<{
-    captureElement: HTMLElement
-    deltaX: number
-    dragging: boolean
-    pointerId: number
-    startX: number
-    startY: number
-    width: number
-  } | null>(null)
-  const suppressNextClickRef = useRef(false)
-  const scrollRouteCooldownRef = useRef(0)
-  const scrollPositioningRef = useRef(false)
-  const pendingScrollAnchorRef = useRef<{
-    direction: 'next' | 'previous'
-    page: number
-    top: number
-  } | null>(null)
-  const [dragState, setDragState] = useState({ active: false, deltaX: 0 })
+  const cellRefs = useRef(new Map<number, HTMLDivElement>())
+  const anchorRef = useRef<ScrollAnchor | null>(null)
+  const ignoreAdjustedScrollRef = useRef(false)
+  const reconciliationFrameRef = useRef<number | null>(null)
+  const finalFrameRef = useRef<number | null>(null)
+  const lastEmittedPageRef = useRef(resolved.page)
+  const isScrollModeRef = useRef(false)
+  const interactionSuspended = useReaderInteractionSuspended()
   const ratio = inlineSvg.viewBox.width / inlineSvg.viewBox.height
   const isScrollMode = viewMode === 'continuous'
-  const isFitWidth = fitWidth
-  const stripStyle = {
-    '--qa-react-mushaf-drag-x': `${dragState.deltaX}px`,
-  } as CSSProperties
+  const orderedPages = useMemo(
+    () => [...pages].sort((left, right) => left.page - right.page),
+    [pages],
+  )
+  const pageListKey = orderedPages
+    .map((entry) => `${entry.page}:${entry.status}`)
+    .join('|')
+  isScrollModeRef.current = isScrollMode
 
-  function navigateTo(page: number) {
-    const next = Math.min(resolved.pageCount, Math.max(1, page))
-    if (next !== resolved.page) {
-      onNavigate?.(next)
-    }
+  function navigateTo(page: number): void {
+    if (page !== resolved.page) onNavigate?.(page)
   }
 
-  const advance = useCallback(() => {
-    navigateTo(resolved.page + 1)
-  }, [resolved.page, resolved.pageCount, onNavigate])
+  function requestOrNavigate(page: number): void {
+    if (page < 1 || page > resolved.pageCount) return
+    if (readyEntry(pages, page)) navigateTo(page)
+    else onRequestPage?.(page)
+  }
 
-  const returnPrevious = useCallback(() => {
-    navigateTo(resolved.page - 1)
-  }, [resolved.page, resolved.pageCount, onNavigate])
+  const gesture = useMushafPageGesture({
+    canNavigate: (direction) => direction === 'next'
+      ? readyEntry(pages, resolved.page + 1) !== null
+      : readyEntry(pages, resolved.page - 1) !== null,
+    disabled: interactionSuspended || isScrollMode,
+    onCommit: (direction) => navigateTo(resolved.page + (direction === 'next' ? 1 : -1)),
+    onRequestDestination: (direction) => onRequestPage?.(resolved.page + (direction === 'next' ? 1 : -1)),
+    stageRef,
+  })
 
   const revealChrome = useCallback(() => {
     if (!chromeVisible) onToggleChrome?.(true)
   }, [chromeVisible, onToggleChrome])
 
+  const reconcileDominantPage = useCallback(() => {
+    if (!isScrollModeRef.current || ignoreAdjustedScrollRef.current) return
+    const measurement = measureDominantReadyPage(stageRef.current, cellRefs.current)
+    if (!measurement || measurement.page === lastEmittedPageRef.current) return
+    lastEmittedPageRef.current = measurement.page
+    onDominantPageChange?.(measurement.page)
+  }, [onDominantPageChange])
+
+  const scheduleReconciliation = useCallback(() => {
+    if (reconciliationFrameRef.current !== null) return
+    reconciliationFrameRef.current = window.requestAnimationFrame(() => {
+      reconciliationFrameRef.current = null
+      reconcileDominantPage()
+    })
+  }, [reconcileDominantPage])
+
+  const scheduleFinalReconciliation = useCallback(() => {
+    if (finalFrameRef.current !== null) window.cancelAnimationFrame(finalFrameRef.current)
+    finalFrameRef.current = window.requestAnimationFrame(() => {
+      finalFrameRef.current = window.requestAnimationFrame(() => {
+        finalFrameRef.current = null
+        reconcileDominantPage()
+      })
+    })
+  }, [reconcileDominantPage])
+
   useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
+    function onKeyDown(event: KeyboardEvent): void {
       if (event.defaultPrevented || event.metaKey || event.altKey || event.ctrlKey) return
-      if (isEditableTarget(event.target)) return
-      if (readerOverlayOpen()) return
+      if (interactionSuspended || isEditableTarget(event.target)) return
       if (event.key === 'Escape') {
         if (!chromeVisible) {
           event.preventDefault()
@@ -105,32 +148,17 @@ export function MushafPageViewer({
         }
         return
       }
-      if (isScrollMode) {
-        const stage = stageRef.current
-        if (event.key === 'ArrowDown') {
-          event.preventDefault()
-          if (stage && canScrollDown(stage)) {
-            stage.scrollBy({ behavior: 'smooth', top: stage.clientHeight * 0.82 })
-          } else {
-            advance()
-          }
-        } else if (event.key === 'ArrowUp') {
-          event.preventDefault()
-          if (stage && canScrollUp(stage)) {
-            stage.scrollBy({ behavior: 'smooth', top: -stage.clientHeight * 0.82 })
-          } else {
-            returnPrevious()
-          }
-        }
-      } else {
-        if (event.key === 'ArrowLeft') {
-          event.preventDefault()
-          advance()
-        } else if (event.key === 'ArrowRight') {
-          event.preventDefault()
-          returnPrevious()
-        }
+      if (!isScrollMode && event.key === 'ArrowLeft') {
+        event.preventDefault()
+        requestOrNavigate(resolved.page + 1)
+        return
       }
+      if (!isScrollMode && event.key === 'ArrowRight') {
+        event.preventDefault()
+        requestOrNavigate(resolved.page - 1)
+        return
+      }
+      if (isScrollMode || fitWidth) scrollStageForKey(event, stageRef.current)
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -138,253 +166,167 @@ export function MushafPageViewer({
   })
 
   useLayoutEffect(() => {
-    if (!isScrollMode) return undefined
-    const stage = stageRef.current
-    const current = currentCellRef.current
-    if (!stage || !current) return undefined
-    const pendingAnchor = pendingScrollAnchorRef.current
-    if (pendingAnchor && pendingAnchor.page === resolved.page) {
-      const anchorContextReady = pendingAnchor.direction === 'next'
-        ? adjacentPages?.previous?.resolved.page === resolved.page - 1
-        : adjacentPages?.next?.resolved.page === resolved.page + 1
-      if (!anchorContextReady) return undefined
+    if (!isScrollModeRef.current && stageRef.current) stageRef.current.scrollTop = 0
+  }, [resolved.page])
+
+  useLayoutEffect(() => {
+    clampStageScroll(stageRef.current)
+  }, [fitWidth])
+
+  useLayoutEffect(() => {
+    if (!isScrollMode) {
+      anchorRef.current = null
+      return undefined
     }
-    const frame = window.requestAnimationFrame(() => {
-      scrollPositioningRef.current = true
-      const anchor = pendingScrollAnchorRef.current
-      if (anchor?.page === resolved.page) pendingScrollAnchorRef.current = null
-      const top = anchor?.page !== resolved.page
-        ? Math.max(0, current.offsetTop - 12)
-        : Math.max(0, current.offsetTop - anchor.top)
-      stage.scrollTo({ behavior: 'auto', top })
-      window.requestAnimationFrame(() => {
-        scrollPositioningRef.current = false
-      })
-    })
+    const anchor = anchorRef.current
+    const stage = stageRef.current
+    const cell = anchor ? cellRefs.current.get(anchor.page) : null
+    if (anchor && stage && cell) {
+      const nextTop = cell.getBoundingClientRect().top - stage.getBoundingClientRect().top
+      const delta = nextTop - anchor.top
+      if (delta !== 0) {
+        ignoreAdjustedScrollRef.current = true
+        stage.scrollTop += delta
+        window.requestAnimationFrame(() => {
+          ignoreAdjustedScrollRef.current = false
+          scheduleReconciliation()
+        })
+      }
+    }
+    anchorRef.current = null
     return () => {
-      scrollPositioningRef.current = false
-      window.cancelAnimationFrame(frame)
+      const measurement = measureDominantReadyPage(stageRef.current, cellRefs.current, true)
+      anchorRef.current = measurement ? { page: measurement.page, top: measurement.top } : null
     }
-  }, [adjacentPages?.next?.resolved.page, adjacentPages?.previous?.resolved.page, isScrollMode, resolved.page])
+  }, [isScrollMode, pageListKey, scheduleReconciliation])
 
-  function handlePointerDown(event: React.PointerEvent<HTMLElement>) {
-    if (readerOverlayOpen()) return
-    if (event.pointerType === 'mouse' && event.button !== 0) return
-    if (isScrollMode) return
-    const captureElement = event.target instanceof HTMLElement
-      ? event.target.closest('button') ?? event.currentTarget
-      : event.currentTarget
-    dragRef.current = {
-      captureElement,
-      deltaX: 0,
-      dragging: false,
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      width: Math.max(1, event.currentTarget.getBoundingClientRect().width),
-    }
-    captureElement.setPointerCapture?.(event.pointerId)
-  }
+  useEffect(() => {
+    lastEmittedPageRef.current = resolved.page
+  }, [resolved.page])
 
-  function handlePointerMove(event: React.PointerEvent<HTMLElement>) {
-    const drag = dragRef.current
-    if (!drag || drag.pointerId !== event.pointerId) return
-    const deltaX = event.clientX - drag.startX
-    const deltaY = event.clientY - drag.startY
-    if (!drag.dragging) {
-      if (Math.abs(deltaX) < 5) return
-      if (Math.abs(deltaX) < Math.abs(deltaY) * 1.15) return
-      drag.dragging = true
-      setDragState({ active: true, deltaX: 0 })
-    }
-    event.preventDefault()
-    const maxDrag = drag.width * 0.95
-    const clampedDeltaX = Math.max(-maxDrag, Math.min(maxDrag, deltaX))
-    drag.deltaX = clampedDeltaX
-    setDragState({ active: true, deltaX: clampedDeltaX })
-  }
-
-  function handlePointerEnd(event: React.PointerEvent<HTMLElement>) {
-    const drag = dragRef.current
-    if (!drag || drag.pointerId !== event.pointerId) return
-    dragRef.current = null
-    drag.captureElement.releasePointerCapture?.(event.pointerId)
-    if (!drag.dragging) {
-      setDragState({ active: false, deltaX: 0 })
-      return
-    }
-    suppressNextClickRef.current = true
-    window.setTimeout(() => {
-      suppressNextClickRef.current = false
-    }, 0)
-    setDragState({ active: false, deltaX: 0 })
-
-    const threshold = Math.max(96, drag.width * 0.45)
-    const deltaX = drag.deltaX
-    if (deltaX >= threshold) advance()
-    else if (deltaX <= -threshold) returnPrevious()
-  }
-
-  function handlePointerCancel(event: React.PointerEvent<HTMLElement>) {
-    if (dragRef.current?.pointerId === event.pointerId) {
-      dragRef.current = null
-      setDragState({ active: false, deltaX: 0 })
-    }
-  }
-
-  function handleZoneClick(action: () => void) {
-    return (event: React.MouseEvent<HTMLButtonElement>) => {
-      if (suppressNextClickRef.current) {
-        event.preventDefault()
-        event.stopPropagation()
-        return
-      }
-      action()
-    }
-  }
-
-  function handleStageScroll() {
-    if (!isScrollMode || scrollPositioningRef.current) return
+  useEffect(() => {
     const stage = stageRef.current
-    const current = currentCellRef.current
-    if (!stage || !current) return
-    const now = Date.now()
-    if (now - scrollRouteCooldownRef.current < SCROLL_COOLDOWN_MS) return
+    if (!stage || typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(() => {
+      clampStageScroll(stage)
+      scheduleReconciliation()
+    })
+    observer.observe(stage)
+    return () => observer.disconnect()
+  }, [scheduleReconciliation])
 
-    const viewportMidpoint = stage.scrollTop + (stage.clientHeight / 2)
-    const currentMidpoint = current.offsetTop + (current.offsetHeight / 2)
-    const movementThreshold = Math.max(32, current.offsetHeight * 0.55)
+  useEffect(() => () => {
+    if (reconciliationFrameRef.current !== null) window.cancelAnimationFrame(reconciliationFrameRef.current)
+    if (finalFrameRef.current !== null) window.cancelAnimationFrame(finalFrameRef.current)
+  }, [])
 
-    if (adjacentPages?.next && viewportMidpoint > currentMidpoint + movementThreshold) {
-      scrollRouteCooldownRef.current = now
-      const nextCell = stage.querySelector<HTMLElement>('[data-mushaf-cell="next"]')
-      if (nextCell) {
-        pendingScrollAnchorRef.current = {
-          direction: 'next',
-          page: adjacentPages.next.resolved.page,
-          top: nextCell.offsetTop - stage.scrollTop,
-        }
+  function entryFor(page: number): MushafPageWindowEntry | null {
+    const entry = pages.find((candidate) => candidate.page === page)
+    if (entry) return entry
+    if (page === resolved.page) {
+      return {
+        asset: { inlineSvg, resolved, status: 'ready' },
+        page,
+        status: 'ready',
       }
-      advance()
-    } else if (adjacentPages?.previous && viewportMidpoint < currentMidpoint - movementThreshold) {
-      scrollRouteCooldownRef.current = now
-      const previousCell = stage.querySelector<HTMLElement>('[data-mushaf-cell="previous"]')
-      if (previousCell) {
-        pendingScrollAnchorRef.current = {
-          direction: 'previous',
-          page: adjacentPages.previous.resolved.page,
-          top: previousCell.offsetTop - stage.scrollTop,
-        }
-      }
-      returnPrevious()
     }
+    return null
   }
 
-  function handleStageClick(event: React.MouseEvent<HTMLDivElement>) {
-    if (!isScrollMode || suppressNextClickRef.current) return
-    if (event.target instanceof HTMLElement && event.target.closest('button')) return
-    onToggleChrome?.(!chromeVisible)
+  function handleStageClick(event: ReactMouseEvent<HTMLDivElement>): void {
+    if (gesture.shouldSuppressClick() || isInteractiveTarget(event.target)) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const ratio = (event.clientX - rect.left) / rect.width
+    if (ratio < EDGE_TAP_RATIO) requestOrNavigate(resolved.page + 1)
+    else if (ratio > 1 - EDGE_TAP_RATIO) requestOrNavigate(resolved.page - 1)
+    else onToggleChrome?.(!chromeVisible)
   }
+
+  function handleStageScroll(): void {
+    if (!isScrollMode || ignoreAdjustedScrollRef.current) return
+    scheduleReconciliation()
+    scheduleFinalReconciliation()
+  }
+
+  function setCellRef(page: number, node: HTMLDivElement | null): void {
+    if (node) cellRefs.current.set(page, node)
+    else cellRefs.current.delete(page)
+  }
+
+  const stageName = fitWidth || isScrollMode ? 'Scrollable Mushaf pages' : undefined
 
   return (
     <section
       aria-label="Mushaf page viewer"
       className="qar-react-mushaf-page-surface qar:bg-canvas qar:text-text"
       data-mushaf-chrome-visible={chromeVisible ? 'true' : 'false'}
-      data-mushaf-dragging={dragState.active ? 'true' : 'false'}
-      data-mushaf-fit-width={isFitWidth ? 'true' : 'false'}
+      data-mushaf-fit-width={fitWidth ? 'true' : 'false'}
       data-mushaf-layout-mode={isScrollMode ? 'scroll' : 'single'}
-      data-mushaf-transition-direction={transitionDirection}
       data-mushaf-view-mode={viewMode}
       onFocusCapture={revealChrome}
-      onPointerCancel={handlePointerCancel}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerEnd}
-      ref={sectionRef}
       style={{
         '--qa-react-mushaf-page-ratio': String(ratio),
       } as CSSProperties}
     >
       <div
-        aria-label={isScrollMode ? 'Scrollable Mushaf pages' : undefined}
+        {...gesture.stageHandlers}
+        aria-label={stageName}
         className="qar-react-mushaf-page-stage"
+        data-mushaf-gesture-phase={gesture.phase}
         onClick={handleStageClick}
         onScroll={handleStageScroll}
+        onScrollEnd={scheduleFinalReconciliation}
         ref={stageRef}
-        tabIndex={isScrollMode ? 0 : undefined}
+        role={stageName ? 'region' : undefined}
+        style={{ '--qa-react-mushaf-drag-x': `${gesture.dragX}px` } as CSSProperties}
+        tabIndex={stageName ? 0 : undefined}
       >
-        <div
-          aria-label={`Mushaf page ${resolved.page}, ${resolved.riwayahLabel}, beginning near ${resolved.firstVerse.surah}:${resolved.firstVerse.verse}`}
-          className="qar-react-mushaf-page-frame qar:text-text"
-          data-mushaf-page={resolved.page}
-          role="img"
-        >
-          {isScrollMode ? (
-            <div className="qar-react-mushaf-continuous-stack">
-              {adjacentPages?.previous ? <MushafPageCell hidden={false} page={adjacentPages.previous} position="previous" /> : null}
-              <MushafPageCell hidden={false} page={{ inlineSvg, resolved }} position="current" ref={currentCellRef} />
-              {adjacentPages?.next ? <MushafPageCell hidden={false} page={adjacentPages.next} position="next" /> : null}
-            </div>
-          ) : (
-            <div className="qar-react-mushaf-page-strip" style={stripStyle}>
-              <MushafPageCell hidden page={adjacentPages?.previous ?? null} position="previous" />
-              <MushafPageCell hidden={false} page={{ inlineSvg, resolved }} position="current" />
-              <MushafPageCell hidden page={adjacentPages?.next ?? null} position="next" />
-            </div>
-          )}
-        </div>
-        <Button
-          aria-label="Toggle reader chrome"
-          aria-pressed={chromeVisible}
-          className="qar-react-mushaf-center-toggle"
-          onClick={handleZoneClick(() => onToggleChrome?.(!chromeVisible))}
-          size="sm"
-          tabIndex={-1}
-          type="button"
-          variant="ghost"
-        >
-          <span className="qar:sr-only">Toggle reader chrome</span>
-        </Button>
-        {!isScrollMode ? (
-          <>
-            <Button
-              aria-label="Advance Mushaf page from left edge"
-              className="qar-react-mushaf-edge qar-react-mushaf-edge--left"
-              disabled={resolved.page >= resolved.pageCount}
-              onClick={handleZoneClick(advance)}
-              size="sm"
-              tabIndex={-1}
-              type="button"
-              variant="ghost"
-            >
-              <span className="qar:sr-only">Next page</span>
-            </Button>
-            <Button
-              aria-label="Return to previous Mushaf page from right edge"
-              className="qar-react-mushaf-edge qar-react-mushaf-edge--right"
-              disabled={resolved.page <= 1}
-              onClick={handleZoneClick(returnPrevious)}
-              size="sm"
-              tabIndex={-1}
-              type="button"
-              variant="ghost"
-            >
-              <span className="qar:sr-only">Previous page</span>
-            </Button>
-          </>
-        ) : null}
+        {isScrollMode ? (
+          <div className="qar-react-mushaf-continuous-stack">
+            {orderedPages.map((entry) => (
+              <MushafPageCell
+                entry={entry}
+                hidden={false}
+                key={entry.page}
+                ref={(node) => setCellRef(entry.page, node)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="qar-react-mushaf-page-strip" onTransitionEnd={gesture.finishSettle}>
+            <MushafPageCell entry={entryFor(resolved.page + 1)} hidden position="next" />
+            <MushafPageCell entry={entryFor(resolved.page)} hidden={false} position="current" />
+            <MushafPageCell entry={entryFor(resolved.page - 1)} hidden position="previous" />
+          </div>
+        )}
       </div>
       {surahLabel ? (
         <div className="qar-react-mushaf-page-surah" dir="rtl" lang="ar">
           {surahLabel}
         </div>
       ) : null}
-      <div className="qar-react-mushaf-page-counter-shell">
-        <div className="qar-react-mushaf-page-counter" aria-label={`Mushaf page ${resolved.page}`}>
-          {resolved.page}
-        </div>
-      </div>
+      {chromeVisible ? (
+        <nav aria-label="Mushaf page navigation" className="qar-react-mushaf-page-actions">
+          <IconButton
+            disabled={resolved.page >= resolved.pageCount}
+            label="Next Mushaf page"
+            onClick={() => requestOrNavigate(resolved.page + 1)}
+          >
+            <ChevronLeft aria-hidden="true" />
+          </IconButton>
+          <div aria-label={`Mushaf page ${resolved.page}`} className="qar-react-mushaf-page-counter">
+            {resolved.page}
+          </div>
+          <IconButton
+            disabled={resolved.page <= 1}
+            label="Previous Mushaf page"
+            onClick={() => requestOrNavigate(resolved.page - 1)}
+          >
+            <ChevronRight aria-hidden="true" />
+          </IconButton>
+        </nav>
+      ) : null}
       {onToggleBookmark ? (
         <IconButton
           aria-pressed={bookmarked}
@@ -399,41 +341,96 @@ export function MushafPageViewer({
   )
 }
 
-const MushafPageCell = forwardRef<HTMLDivElement, {
-  hidden: boolean
-  page: MushafPreviewPage | null
-  position: 'current' | 'next' | 'previous'
-}>(function MushafPageCell({
+const MushafPageCell = ({
+  entry,
   hidden,
-  page,
   position,
-}, ref) {
-  return (
-    <div
-      aria-hidden={hidden ? true : undefined}
-      className="qar-react-mushaf-page-cell"
-      data-mushaf-cell={position}
-      data-mushaf-cell-page={page?.resolved.page}
-      ref={ref}
-    >
-      {page ? (
-        <div
-          className="qar-react-mushaf-page-fit"
-          dangerouslySetInnerHTML={{ __html: page.inlineSvg.markup }}
-        />
-      ) : (
-        <div className="qar-react-mushaf-page-fit qar-react-mushaf-page-fit--empty" />
-      )}
-    </div>
-  )
-})
+  ref,
+}: {
+  entry: MushafPageWindowEntry | null
+  hidden: boolean
+  position?: 'current' | 'next' | 'previous'
+  ref?: (node: HTMLDivElement | null) => void
+}) => (
+  <div
+    aria-hidden={hidden ? true : undefined}
+    className="qar-react-mushaf-page-cell"
+    data-mushaf-cell={position}
+    data-mushaf-cell-page={entry?.page}
+    ref={ref}
+  >
+    {entry?.status === 'ready' ? (
+      <div
+        aria-label={pageAccessibleName(entry.asset)}
+        className="qar-react-mushaf-page-fit qar:text-text"
+        dangerouslySetInnerHTML={{ __html: entry.asset.inlineSvg.markup }}
+        role="img"
+      />
+    ) : entry ? (
+      <div aria-live="polite" className="qar-react-mushaf-page-status" role="status">
+        {entry.status === 'loading'
+          ? `Loading Mushaf page ${entry.page}`
+          : `Mushaf page ${entry.page} is unavailable. Use page navigation to retry.`}
+      </div>
+    ) : null}
+  </div>
+)
 
-function canScrollDown(element: HTMLElement): boolean {
-  return element.scrollTop + element.clientHeight < element.scrollHeight - SCROLL_BOUNDARY_EPSILON
+function readyEntry(
+  entries: readonly MushafPageWindowEntry[],
+  page: number,
+): MushafReadyPageAssetState | null {
+  const entry = entries.find((candidate) => candidate.page === page)
+  return entry?.status === 'ready' ? entry.asset : null
 }
 
-function canScrollUp(element: HTMLElement): boolean {
-  return element.scrollTop > SCROLL_BOUNDARY_EPSILON
+function pageAccessibleName(asset: MushafReadyPageAssetState): string {
+  const { resolved } = asset
+  return `Mushaf page ${resolved.page}, ${resolved.riwayahLabel}, beginning near ${resolved.firstVerse.surah}:${resolved.firstVerse.verse}`
+}
+
+function measureDominantReadyPage(
+  stage: HTMLElement | null,
+  cells: ReadonlyMap<number, HTMLDivElement>,
+  includeNearest = false,
+): VisiblePageMeasurement | null {
+  if (!stage) return null
+  const stageRect = stage.getBoundingClientRect()
+  const stageCenter = stageRect.top + (stageRect.height / 2)
+  let best: VisiblePageMeasurement | null = null
+  for (const [page, cell] of cells) {
+    if (!cell.querySelector('[role="img"]')) continue
+    const rect = cell.getBoundingClientRect()
+    const visibleWidth = Math.max(0, Math.min(rect.right, stageRect.right) - Math.max(rect.left, stageRect.left))
+    const visibleHeight = Math.max(0, Math.min(rect.bottom, stageRect.bottom) - Math.max(rect.top, stageRect.top))
+    const area = visibleWidth * visibleHeight
+    if (!includeNearest && area === 0) continue
+    const centerDistance = Math.abs((rect.top + (rect.height / 2)) - stageCenter)
+    const measurement = { area, centerDistance, page, top: rect.top - stageRect.top }
+    if (!best || area > best.area || (area === best.area && centerDistance < best.centerDistance)) best = measurement
+  }
+  return best
+}
+
+function clampStageScroll(stage: HTMLElement | null): void {
+  if (!stage) return
+  const maximum = Math.max(0, stage.scrollHeight - stage.clientHeight)
+  stage.scrollTop = Math.min(maximum, Math.max(0, stage.scrollTop))
+}
+
+function scrollStageForKey(event: KeyboardEvent, stage: HTMLElement | null): void {
+  if (!stage) return
+  const pageDistance = stage.clientHeight * 0.82
+  let top: number | null = null
+  if (event.key === 'ArrowDown') top = stage.scrollTop + SCROLL_LINE_PX
+  else if (event.key === 'ArrowUp') top = stage.scrollTop - SCROLL_LINE_PX
+  else if (event.key === 'PageDown') top = stage.scrollTop + pageDistance
+  else if (event.key === 'PageUp') top = stage.scrollTop - pageDistance
+  else if (event.key === 'Home') top = 0
+  else if (event.key === 'End') top = stage.scrollHeight - stage.clientHeight
+  if (top === null) return
+  event.preventDefault()
+  stage.scrollTop = Math.max(0, top)
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -442,7 +439,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select' || target.isContentEditable
 }
 
-function readerOverlayOpen(): boolean {
-  if (typeof document === 'undefined') return false
-  return Boolean(document.querySelector('[role="dialog"][aria-modal="true"], .qar-react-nav-drawer-overlay, .qar-react-settings-backdrop'))
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false
+  return target.closest('a, button, input, select, textarea, summary, label, [contenteditable="true"], [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"]') !== null
 }

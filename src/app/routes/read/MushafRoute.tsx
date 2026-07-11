@@ -53,7 +53,6 @@ export function MushafRoute({
 }: MushafRouteProps) {
   const [activeSettings, setActiveSettings] = useState<ActiveMushafSettings | null>(null)
   const [visiblePage, setVisiblePage] = useState<MushafReadyPageAssetState | null>(null)
-  const [transitionDirection, setTransitionDirection] = useState<'next' | 'previous'>('next')
   const [compactLandscape, setCompactLandscape] = useState(false)
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
@@ -79,10 +78,6 @@ export function MushafRoute({
       riwayah: activeSettings.riwayah,
     } : null,
   })
-  const adjacentPages = useMemo(() => ({
-    next: readyWindowPage(windowState.entries, (visiblePage?.resolved.page ?? page) + 1),
-    previous: readyWindowPage(windowState.entries, (visiblePage?.resolved.page ?? page) - 1),
-  }), [page, visiblePage?.resolved.page, windowState.entries])
   const currentSurahLabel = useMemo(() => {
     const surah = visiblePage?.resolved.firstVerse.surah
     if (!surah) return undefined
@@ -116,7 +111,6 @@ export function MushafRoute({
   useEffect(() => {
     if (routePageRef.current !== page) {
       setChromeVisible(false)
-      scrollMushafPageToTop()
       routePageRef.current = page
     }
   }, [page])
@@ -217,7 +211,6 @@ export function MushafRoute({
   }, [page, windowState.requested])
 
   function commitVisiblePage(next: MushafReadyPageAssetState): void {
-    setTransitionDirection((visiblePageRef.current?.resolved.page ?? page) <= next.resolved.page ? 'next' : 'previous')
     visiblePageRef.current = next
     setVisiblePage(next)
   }
@@ -253,24 +246,30 @@ export function MushafRoute({
         <ReaderAssetGate label="Mushaf" state="error" />
       ) : visiblePage ? (
         <MushafPageViewer
-          adjacentPages={adjacentPages}
           bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
           chromeVisible={chromeVisible}
           fitWidth={activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
           inlineSvg={visiblePage.inlineSvg}
+          onDominantPageChange={(nextPage) => {
+            if (nextPage === visiblePage.resolved.page) return
+            const nextAsset = readyWindowPage(windowState.entries, nextPage)
+            if (!nextAsset) return
+            if (nextPage > visiblePage.resolved.page) {
+              advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
+            }
+            commitVisiblePage(nextAsset)
+            replaceMushafHash(nextPage)
+          }}
           onNavigate={(nextPage) => {
             if (nextPage > visiblePage.resolved.page) {
               advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
             }
-            const readyAdjacent = nextPage === adjacentPages.next?.resolved.page
-              ? adjacentPages.next
-              : nextPage === adjacentPages.previous?.resolved.page
-                ? adjacentPages.previous
-                : null
+            const readyAdjacent = readyWindowPage(windowState.entries, nextPage)
             if (readyAdjacent) commitVisiblePage(readyAdjacent)
             setChromeVisible(false)
             window.location.hash = mushafHash(nextPage)
           }}
+          onRequestPage={windowState.retry}
           onToggleBookmark={() => {
             const bookmarkPage = visiblePage.resolved.page
             void toggleBookmark({
@@ -282,10 +281,9 @@ export function MushafRoute({
             })
           }}
           onToggleChrome={(visible) => setChromeVisible(visible)}
-          onViewModeChange={(mushafViewMode) => setActiveSettings((current) => current ? { ...current, mushafViewMode } : current)}
+          pages={windowState.entries}
           resolved={visiblePage.resolved}
           surahLabel={currentSurahLabel}
-          transitionDirection={transitionDirection}
           viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
         />
       ) : (
@@ -376,13 +374,6 @@ function readyWindowPage(
 ): MushafReadyPageAssetState | null {
   const entry = entries.find((candidate) => candidate.page === page)
   return entry?.status === 'ready' ? entry.asset : null
-}
-
-function scrollMushafPageToTop(): void {
-  window.requestAnimationFrame(() => {
-    window.scrollTo({ behavior: 'auto', top: 0 })
-    window.requestAnimationFrame(() => window.scrollTo({ behavior: 'auto', top: 0 }))
-  })
 }
 
 function wirdCountsFromIndex(index: ReaderSurahIndexEntry[]): SurahCount[] {

@@ -44,6 +44,10 @@
     --qa-react-mushaf-ink: var(--qa-react-text);
     --qa-react-mushaf-border: var(--qa-react-border);
     --qa-react-mushaf-accent: var(--qa-react-accent);
+    --qa-react-control-touch-target: var(--qar-size-touch-target);
+    --qa-react-mushaf-page-turn-duration: var(--qar-motion-settle);
+    --qa-react-mushaf-page-turn-easing: var(--qar-ease-direct-manipulation);
+    --qa-react-mushaf-boundary-surface: color-mix(in srgb, var(--qa-react-accent) 8%, var(--qa-react-mushaf-ground));
     --qa-react-offline-warning: #806100;
     --qa-react-storage-danger: var(--qa-react-danger);
     --qa-react-theme-swatch-light: #fbf8f0;
