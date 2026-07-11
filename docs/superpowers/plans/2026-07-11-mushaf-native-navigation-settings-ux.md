@@ -831,6 +831,7 @@ Expected: only actual reader routes expose the canonical toggle.
 - Modify: `src/app/App.tsx`
 - Modify: `tests/unit/react-components/ui-components.test.tsx`
 - Modify: `tests/unit/react-shell/settings-route.test.tsx`
+- Modify: `tests/unit/react-navigate/navigation-wave3.test.tsx`
 
 **Interfaces:**
 - `Sheet` gains `variant?: 'default' | 'adaptive-settings'`, `closeLabel?: string`, and `returnFocusId?: string`.
