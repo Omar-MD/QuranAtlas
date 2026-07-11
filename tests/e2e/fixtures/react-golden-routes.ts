@@ -229,6 +229,11 @@ export type ReactMushafSeedPreferences = {
   mushafViewMode: 'auto' | 'fit-page' | 'fit-width' | 'continuous'
 }
 
+export type ReactMushafRouteSetup = {
+  disableCompactLandscapeFitWidth?: boolean
+  route?: string
+}
+
 export async function seedReactMushafState(page: Page, prefs: ReactMushafSeedPreferences) {
   await page.goto('/favicon.ico')
   await page.evaluate(
@@ -285,6 +290,20 @@ export async function seedReactMushafState(page: Page, prefs: ReactMushafSeedPre
       ${APPLY_SCHEMA_SOURCE}
     }
   }))()`)
+}
+
+export async function openSeededReactMushafRoute(
+  page: Page,
+  prefs: ReactMushafSeedPreferences,
+  setup: ReactMushafRouteSetup = {},
+) {
+  await seedReactMushafState(page, prefs)
+  if (setup.disableCompactLandscapeFitWidth) {
+    await page.evaluate(() => {
+      sessionStorage.setItem('quranatlas:mushaf-landscape-fit-width-disabled', 'true')
+    })
+  }
+  await page.goto(setup.route ?? '/#/m/42')
 }
 
 export function installPageGuards(page: Page, label: string, allowedUrlPatterns: RegExp[] = []): PageGuard {
