@@ -1056,6 +1056,7 @@ Expected: Settings unit/static gates pass and the feature CSS contains one Setti
 
 **Files:**
 - Modify: `tests/e2e/configure/react-golden.spec.ts`
+- Modify: `tests/e2e/navigate/react-golden.spec.ts`
 - Modify: `tests/e2e/fixtures/react-a11y.ts`
 - Modify: `tests/e2e/fixtures/react-golden-routes.ts`
 - Modify: `src/components/settings/settings.stories.tsx`
