@@ -112,6 +112,37 @@ describe('React settings shell coverage', () => {
     await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
   })
 
+  it('keeps the last Mushaf reader context when Settings opens from About', async () => {
+    await resetReactDb()
+    await seedLastSurface('#/m/42')
+    window.history.replaceState(null, '', '#/m/42')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('mock-mushaf-reader')).toHaveTextContent('Mushaf reader page 42')
+    window.location.hash = '#/about'
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+    await screen.findByRole('main', { name: 'About' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Mushaf settings' })).toBeInTheDocument()
+    expect(screen.getByTestId('mock-mushaf-reader')).toHaveTextContent('Mushaf reader page 42')
+    await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
+  })
+
+  it('falls back to the default reader when direct Settings finds only a non-reader last surface', async () => {
+    await resetReactDb()
+    await seedLastSurface('#/about')
+    window.history.replaceState(null, '', '#/settings')
+
+    render(<App />)
+
+    expect(await screen.findByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 1:1')
+    expect(await screen.findByRole('dialog', { name: 'Verse settings' })).toBeInTheDocument()
+    await waitFor(() => expect(window.location.hash).toBe('#/s/1'))
+  })
+
   it('does not render Verse or Mushaf preview panels in the MVP settings shell', async () => {
     const verseRender = render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
     const verseDialog = await screen.findByRole('dialog', { name: 'Verse settings' })

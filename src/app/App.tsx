@@ -38,7 +38,7 @@ export function App() {
   const transientSettingsHash = !settingsOverlay
     && activeRoute.type === 'settings'
     && lastReaderHash
-    && shouldPersistLastSurface(lastReaderHash)
+    && isReaderHash(lastReaderHash)
       ? lastReaderHash
       : null
   const route = settingsOverlay
@@ -56,7 +56,7 @@ export function App() {
       const nextHash = getInitialReactHash()
       if (matchReactRoute(nextHash).type === 'settings') {
         const previousHash = event.oldURL ? new URL(event.oldURL, window.location.href).hash : hash
-        if (shouldPersistLastSurface(previousHash)) setLastReaderHash(previousHash)
+        if (isReaderHash(previousHash)) setLastReaderHash(previousHash)
       }
       setHash(nextHash)
     }
@@ -84,7 +84,7 @@ export function App() {
 
   useEffect(() => subscribeReactSettingsOverlayRequests((request) => {
     const previousHash = window.location.hash
-    if (!shouldPersistLastSurface(previousHash)) return
+    if (!isReaderHash(previousHash)) return
     setLastReaderHash(previousHash)
     setSettingsOverlay({
       mode: settingsModeForHash(previousHash),
@@ -100,8 +100,9 @@ export function App() {
   }, [hash, launchRestore.hash, launchRestore.sourceHash, launchRestore.status, settingsOverlay])
 
   useEffect(() => {
-    if (launchRestore.status !== 'ready' || !shouldPersistLastSurface(activeHash)) return
-    setLastReaderHash(activeHash)
+    if (launchRestore.status !== 'ready') return
+    if (isReaderHash(activeHash)) setLastReaderHash(activeHash)
+    if (!shouldPersistLastSurface(activeHash)) return
     let active = true
     void writeNormalizedLastSurface(activeHash, () => active).then(() => {
       if (!active) return undefined
@@ -197,10 +198,10 @@ export function App() {
 }
 
 async function resolveSettingsPreviousHash(lastReaderHash: string | null): Promise<string> {
-  if (lastReaderHash && shouldPersistLastSurface(lastReaderHash)) return lastReaderHash
+  if (lastReaderHash && isReaderHash(lastReaderHash)) return lastReaderHash
   try {
     const record = await readNativeSetting('lastSurface')
-    if (typeof record?.value === 'string' && shouldPersistLastSurface(record.value)) return record.value
+    if (typeof record?.value === 'string' && isReaderHash(record.value)) return record.value
   } catch {
     // Fall through to the default reader route.
   }
@@ -215,6 +216,11 @@ async function writeNormalizedLastSurface(hash: string, shouldWrite: () => boole
 
 function settingsModeForHash(hash: string): SettingsRouteMode {
   return matchReactRoute(hash).type === 'mushaf' ? 'mushaf' : 'verse'
+}
+
+function isReaderHash(hash: string): boolean {
+  const route = matchReactRoute(hash)
+  return route.type === 'reader' || route.type === 'mushaf'
 }
 
 function UnsupportedRoute() {
