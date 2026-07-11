@@ -46,12 +46,14 @@ for (const viewportId of settingsViewports) {
     const body = shell.locator('.qar-react-settings-body')
     const includedAssets = shell.getByRole('region', { name: 'Included reading assets' })
     const assetsToggle = includedAssets.getByRole('button', { name: /included reading assets/i })
+    const readingFlow = shell.getByRole('combobox', { name: 'Reading flow' })
 
     await expect(shell).toBeVisible()
     await expect(heading).toBeVisible()
     await expect.poll(() => isPaintedAtCenter(heading)).toBe(true)
     await expect.poll(() => isPaintedAtCenter(close)).toBe(true)
     await expect(shell.getByRole('region', { name: 'Verse reading' })).toBeVisible()
+    await expect(readingFlow).toBeVisible()
     await expect(shell.getByRole('region', { name: 'Page layout' })).toHaveCount(0)
     await expect(page.getByRole('main', { name: 'Verse reader' })).toBeVisible()
     await expectNoHorizontalOverflow(page)
@@ -108,6 +110,15 @@ for (const viewportId of settingsViewports) {
       ...await shell.getByRole('switch').all(),
     ]
     for (const target of touchTargets) await expectMinTouchTarget(target, 44)
+    await expectMinTouchTarget(readingFlow, 44)
+    await readingFlow.click()
+    const readingFlowOptions = page.getByRole('option').filter({ visible: true })
+    await expect(readingFlowOptions).toHaveCount(5)
+    for (const option of await readingFlowOptions.all()) await expectMinTouchTarget(option, 44)
+    if (await page.getByRole('listbox').isVisible()) {
+      await page.keyboard.press('Escape')
+      await expect(readingFlow).toHaveAttribute('aria-expanded', 'false')
+    }
 
     await expectAxeClean(page)
     await expectNoGuardFailures(guard)

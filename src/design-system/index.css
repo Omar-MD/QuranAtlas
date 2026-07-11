@@ -3213,6 +3213,11 @@
     aspect-ratio: var(--qa-react-mushaf-page-ratio);
   }
 
+  [data-mushaf-layout-mode='scroll'][data-mushaf-fit-width='false'] .qar-react-mushaf-page-cell {
+    justify-self: center;
+    width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+  }
+
   .qar-react-mushaf-page-fit {
     width: 100%;
     height: 100%;

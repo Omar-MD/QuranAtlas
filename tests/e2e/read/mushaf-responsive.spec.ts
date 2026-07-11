@@ -373,6 +373,19 @@ test.describe('Mushaf responsive behavior', () => {
             expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight)
           }
           if (mode.prefs.mushafViewMode === 'continuous') {
+            if (!mode.prefs.mushafFitWidth) {
+              const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
+              const stageBox = await stage.boundingBox()
+              expect(stageBox).not.toBeNull()
+              const readyPages = await stage.getByRole('img', { name: /Mushaf page \d+,/i }).all()
+              expect(readyPages.length).toBeGreaterThan(0)
+              for (const readyPage of readyPages) {
+                const pageBox = await readyPage.boundingBox()
+                expect(pageBox).not.toBeNull()
+                expect(pageBox!.width).toBeLessThanOrEqual(stageBox!.width + 1)
+                expect(pageBox!.height).toBeLessThanOrEqual(stageBox!.height + 1)
+              }
+            }
             await fastHorizontalFlick(page, 'right')
             await expect(page).toHaveURL(/#\/m\/42$/)
             await expect(page.getByRole('img', { name: /Mushaf page 42/i })).toBeVisible()
