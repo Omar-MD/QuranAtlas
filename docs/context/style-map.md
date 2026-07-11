@@ -11,10 +11,12 @@ React UI development is owned through `src/design-system/**`, approved primitive
 | read | Verse row | `src/components/reader/VerseBlock.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, `tests/e2e/read/react-golden.spec.ts` |
 | read | Mushaf route | `src/app/routes/read/MushafRoute.tsx` | `src/design-system/index.css` | `tests/e2e/read/react-golden.spec.ts`, `tests/e2e/read/mushaf-responsive.spec.ts` |
 | read | Mushaf page viewer | `src/components/reader/MushafPageViewer.tsx` | `src/design-system/index.css` | `tests/unit/react-read/**`, `tests/e2e/read/mushaf-responsive.spec.ts`, visual specs |
+| read | Reading view action | `src/components/reader/ReadingViewToggle.tsx` | `src/design-system/index.css` | `tests/unit/react-read/reader-wave3.test.tsx`, `tests/e2e/read/react-golden.spec.ts`, `docs/ui-references/read/reading-view-toggle/default.mobile.light.{png,md}` |
 | navigate | Nav drawer | `src/components/navigation/NavDrawer.tsx` | `src/design-system/index.css` | `tests/e2e/navigate/react-golden.spec.ts` |
 | navigate | Surah/Juz/Hizb lists | `src/components/navigation/{SurahList,JuzList,HizbList}.tsx` | `src/design-system/index.css` | navigation stories and golden specs |
 | navigate | Bookmarks list | `src/components/navigation/BookmarksList.tsx` | `src/design-system/index.css` | `tests/unit/react-navigate/**` |
-| configure | Settings shell | `src/components/settings/SettingsShell.tsx` | `src/design-system/index.css` | `tests/e2e/configure/react-golden.spec.ts` |
+| configure | Adaptive Settings shell | `src/components/settings/SettingsShell.tsx`, `src/components/ui/overlays.tsx` | `src/design-system/index.css` | `tests/unit/react-components/ui-components.test.tsx`, `tests/unit/react-shell/settings-route.test.tsx`, `tests/e2e/configure/react-golden.spec.ts`, `docs/ui-references/configure/settings-shell/default.mobile.light.{png,md}` |
+| configure | Settings groups | `src/components/settings/SettingsGroup.tsx` | `src/design-system/index.css` | `tests/unit/react-shell/settings-route.test.tsx`, `tests/e2e/configure/react-golden.spec.ts` |
 | configure | Verse settings | `src/components/settings/VerseSettings.tsx` | `src/design-system/index.css` | settings stories and unit tests |
 | configure | Mushaf settings | `src/components/settings/MushafSettings.tsx` | `src/design-system/index.css` | settings stories and unit tests |
 | configure | About route | `src/app/routes/settings/AboutRoute.tsx` | `src/design-system/index.css` | configure golden specs |

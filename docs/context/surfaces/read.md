@@ -27,7 +27,7 @@ style_paths:
 | `#/s/:surah` | URL | Verse reader opens the Surah |
 | `#/s/:surah/:ayah` | URL | Verse reader opens and focuses the ayah |
 | `#/m/:page` | URL | Mushaf reader opens the page |
-| Reader mode control | tap/click | Bridges the current Verse reference and Mushaf page |
+| Reading view action | tap/click | Bridges the current Verse reference and Mushaf page from the reader topbar |
 | Settings control | tap/click | Opens the settings shell without losing reader state |
 | Verse number | tap/click | Toggles the riwayah-scoped bookmark |
 | Verse body | tap/click | Toggles the knowledge lane when metadata exists |
@@ -41,13 +41,16 @@ style_paths:
 | --- | --- |
 | `src/app/routes/read/MushafRoute.tsx` | _(no leading comment)_ |
 | `src/app/routes/read/ReaderRoute.tsx` | _(no leading comment)_ |
+| `src/app/routes/read/useMushafPageWindow.ts` | _(no leading comment)_ |
 | `src/components/reader/KnowledgeChips.tsx` | _(no leading comment)_ |
 | `src/components/reader/MushafModeControl.tsx` | _(no leading comment)_ |
 | `src/components/reader/MushafPageViewer.tsx` | _(no leading comment)_ |
 | `src/components/reader/ReaderAssetGate.tsx` | _(no leading comment)_ |
 | `src/components/reader/ReaderChrome.tsx` | _(no leading comment)_ |
+| `src/components/reader/ReaderInteractionContext.tsx` | _(no leading comment)_ |
 | `src/components/reader/ReaderPageShell.tsx` | _(no leading comment)_ |
 | `src/components/reader/ReaderVerseSurface.tsx` | _(no leading comment)_ |
+| `src/components/reader/ReadingViewToggle.tsx` | _(no leading comment)_ |
 | `src/components/reader/SurahContinuityButton.tsx` | _(no leading comment)_ |
 | `src/components/reader/TranslationFootnote.tsx` | _(no leading comment)_ |
 | `src/components/reader/VerseBlock.tsx` | _(no leading comment)_ |
@@ -58,8 +61,10 @@ style_paths:
 | `src/components/reader/metadata/PassageContext.tsx` | _(no leading comment)_ |
 | `src/components/reader/metadata/ThemeChips.tsx` | _(no leading comment)_ |
 | `src/components/reader/metadata/metadata.stories.tsx` | _(no leading comment)_ |
+| `src/components/reader/mushaf-gesture.ts` | _(no leading comment)_ |
 | `src/components/reader/reader-mode-routing.ts` | _(no leading comment)_ |
 | `src/components/reader/reader.stories.tsx` | _(no leading comment)_ |
+| `src/components/reader/useMushafPageGesture.ts` | _(no leading comment)_ |
 | `src/components/reader/useReaderPositionSync.ts` | _(no leading comment)_ |
 | `src/components/reader/useVerseInteractionReducer.ts` | _(no leading comment)_ |
 | `src/components/reader/wird/DailyWirdCard.tsx` | _(no leading comment)_ |
@@ -85,13 +90,24 @@ style_paths:
 
 ### Mushaf Mode
 
-`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates the edition-aware manifest and page asset path, sanitizes the page SVG, and passes sanitized markup to `MushafPageViewer`. The page is rendered as one labeled image without decorative framing. Single mode fits the complete page into a stable chrome-aware viewport when Fit width is off; with Fit width on, the current page fills available width without exposing adjacent pages or horizontal document overflow. Compact landscape defaults Mushaf pages to Fit width while still allowing the user to switch it off from settings for the current landscape session. Page turns keep the route canonicalized to `#/m/:page`, warm adjacent pages where possible, and preserve the hidden/visible chrome state during internal movement without changing the page geometry. Desktop left/right arrow keys and viewport-height left/right hit zones move between adjacent pages in Single mode. Single-mode horizontal swipe/drag follows physical Mushaf progression: left-to-right increments the page number, right-to-left decrements it, and short partial drags return to the current page. Scroll mode stacks previous/current/next pages vertically in the Mushaf stage, lets wheel/touch scroll move the stage first, preserves the viewport position when updating the route, and updates the route when an adjacent page becomes dominant. Settings and navigation overlays gate Mushaf keyboard and pointer handlers. The page counter shows only the current page centered to the Mushaf page column, the Arabic Surah label aligns to that page column's right edge, and both reserve stable space around the page even when reader chrome is hidden. The bookmark target sits away from the counter and page content and remains part of hideable reader chrome; Escape or focus reveals it again.
+`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates edition-aware page assets, sanitizes page SVGs, and maintains a retained window of at most five entries around the requested page. Ready pages survive overlapping route changes while missing or failed neighbors remain non-navigable and retryable. The page itself is rendered as a labeled image without decorative framing.
+
+| Navigation | Fit page | Fit width |
+| --- | --- | --- |
+| Single | Fits the complete page inside the chrome-aware stage. | Fills the available width and gives the stage native vertical scrolling until the complete page is reachable. |
+| Scroll | Stacks complete fit-page images in the native vertical stage. | Stacks full-width images in the native vertical stage. |
+
+Single mode recognizes horizontal intent only after real pointer movement distinguishes it from a native vertical pan. Finger-right, the left page action, and `ArrowLeft` advance to the higher page; finger-left, the right page action, and `ArrowRight` return to the lower page. Distance or deliberate recent velocity completes a turn after the correct neighbor previews and settles; short, cancelled, interrupted, unavailable-neighbor, and outward-boundary gestures settle back without changing the route. Visible labeled page actions and keyboard navigation remain available outside the stage, while direct stage taps never place viewport-covering controls over scrollable content. A committed Single-page navigation resets the incoming stage to the top; resize, orientation, and Fit-width changes clamp the same page's existing offset instead.
+
+Scroll mode renders the retained ordered window and reconciles the dominant visible page without replacing ready neighbors or moving the visual anchor. `MushafRoute` sends passive dominant-page synchronization through `App`'s replace-style hash callback, while swipes, keys, page actions, and taps retain normal history. Both paths preserve protected `?wird=1` intent. Compact landscape defaults to Fit width while honoring the current session's explicit opt-out, independently of Single versus Scroll.
+
+`ReaderInteractionContext` suspends Mushaf pointer and keyboard handling while Settings or Navigation is open and cancels an interaction already in progress. The page counter stays centered to the Mushaf column, the Arabic Surah label aligns to its right edge, and both reserve stable space when chrome is hidden. The bookmark target remains outside page content as part of hideable reader chrome; Escape or focus reveals it again.
 
 Mushaf page bookmarks use the same bookmarks store as verse bookmarks with `kind: 'page'` and a synthetic `verseKey` of `m:<page>`.
 
 ### Reader Chrome
 
-`ReaderChrome` is compact and mode-aware: navigation drawer, reader mode, settings, and Daily Wird status when enabled. It avoids center titles that compete with the reading surface. The compact Daily Wird status reports today's assigned progress only; full-plan progress and remaining completion gap stay in the navigation drawer. Mobile and tablet chrome protects safe areas and hides/reveals based on reader movement where appropriate.
+`ReaderChrome` is compact and mode-aware: navigation drawer, Settings, Daily Wird status when enabled, and exactly one icon-only `ReadingViewToggle` on actual Verse or Mushaf reader routes. Its accessible action names the destination view; Settings, Search, About, and other non-reader routes do not render it. The chrome avoids center titles that compete with the reading surface. The compact Daily Wird status reports today's assigned progress only; full-plan progress and remaining completion gap stay in the navigation drawer. Mobile and tablet chrome protects safe areas and hides/reveals based on reader movement where appropriate.
 
 ### Daily Wird
 
@@ -145,8 +161,10 @@ _(no cross-surface reads detected)_
 ## Regression Guards
 
 <!-- AUTO-GENERATED:tests START -->
-**Unit (1):**
+**Unit (3):**
 
+- `tests/unit/react-read/mushaf-gesture.test.ts`
+- `tests/unit/react-read/mushaf-page-window.test.tsx`
 - `tests/unit/react-read/reader-wave3.test.tsx`
 
 **E2E (3):**

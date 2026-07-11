@@ -11,7 +11,8 @@ and data shapes live in `surfaces/<name>.md`.
   `currentPosition`.
 - Qaloon text/font and Qaloon Mushaf as the single MVP reader asset profile.
 - Bridges translation with visibility toggle.
-- Reader typography controls, ambient chrome, and Daily Wird.
+- Single/Scroll Mushaf navigation with independent Fit page/Fit width, retained page loading, native vertical movement, and physical horizontal page gestures.
+- Reader typography controls, ambient chrome with one reader-only reading-view action, and Daily Wird.
 
 ## Navigate
 
@@ -33,7 +34,8 @@ and data shapes live in `surfaces/<name>.md`.
 
 ## Configure
 
-- Settings sheet for theme, night mode, reading typography, translation visibility, and Mushaf view mode.
+- Adaptive grouped Settings sheet with active-mode-only Verse reading or Mushaf Page layout controls, shared Reading continuity and Appearance groups, natural scrolling, and controlled focus restoration.
+- Independent Single/Scroll and Fit page/Fit width controls in Mushaf Settings; typography and translation controls in Verse Settings.
 - Read-only Asset Management and Settings inventory for the default Qaloon text/font, Qaloon Mushaf, and Bridges profile, using runtime asset-index labels.
 - About page with clear-data flow.
 

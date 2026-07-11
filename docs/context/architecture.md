@@ -7,6 +7,7 @@ QuranAtlas is a React-only Vite PWA focused on a Reader First Quran experience.
 - `index.html` provides `#react-root`.
 - `src/app/main.tsx` creates the React root and renders `src/app/App.tsx`.
 - `src/app/App.tsx` owns hash routing, launch restore, reader/settings overlay orchestration, and top-level route selection.
+- `App.tsx` also owns atomic replace-style hash updates used when continuous Mushaf scrolling passively synchronizes the dominant page; discrete page actions keep normal hash-history navigation.
 - Route parsing lives in `src/app/router/routes.ts`.
 - Providers live in `src/app/providers/AppProviders.tsx`.
 
@@ -41,6 +42,8 @@ React component state stays local unless it must survive reloads, cross-route tr
 - Daily Wird state is stored as a settings key and owned by `src/continuity/wird/**`.
 
 There is no app-wide event bus. Cross-component coordination uses React props/hooks, DOM events for the local settings overlay opener, and focused helpers such as the bookmark sync channel.
+
+Reader interaction suspension is explicit rather than inferred from the DOM. `ReaderPageShell` provides `ReaderInteractionContext`, combining its controlled Settings-overlay state with navigation-drawer state so Mushaf gesture and keyboard handling cancel or pause while either overlay is open. Settings composes the owned Radix-backed `Sheet` through `src/components/ui/**`; the `adaptive-settings` variant owns modal semantics, structured scrolling content, and controlled return focus to the recorded opener, the reader Settings action, or the reader main landmark.
 
 ## Data Boundary
 

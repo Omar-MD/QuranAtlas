@@ -40,7 +40,7 @@ Important settings keys:
 | `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing` | Verse reader typography |
 | `translationVisible`, `translationId` | Translation display and active source |
 | `riwayah`, `quranTextStyleId`, `mushafEditionId` | Active default reader profile |
-| `mushafViewMode` | Mushaf page fit or continuous-scroll mode |
+| `mushafViewMode`, `mushafFitWidth` | Independent Mushaf Single/Scroll navigation and Fit page/Fit width preferences |
 | `currentPosition`, `lastSurface`, `recentSurahs` | Reader continuity |
 | `wirdPlan`, `wirdReaderStatusVisible`, `wirdReminderLastSentDay`, `wirdNotificationPermissionPrompted` | Daily Wird state, visibility, reminder dedupe, and first-launch notification prompt state |
 

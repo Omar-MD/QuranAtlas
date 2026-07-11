@@ -28,8 +28,7 @@ style_paths:
 | --- | --- | --- |
 | Reader chrome settings | tap/click | Opens settings over the current reader |
 | `#/settings` | URL | Opens settings over the previous readable route |
-| `#/assets` | URL | Compatibility opener for settings asset inventory |
-| Reader mode toggle | tap/click | Switches Verse/Mushaf settings panel and reader mode |
+| `#/assets` | URL | Opens Settings with Included reading assets expanded |
 | About route | `#/about` | Shows mission, attribution, install, version, app update check, and clear-data |
 | Clear data | confirmation dialog | Clears Cache Storage and IndexedDB, then reloads root |
 
@@ -45,6 +44,7 @@ style_paths:
 | `src/app/routes/settings/useClearDataDialog.ts` | _(no leading comment)_ |
 | `src/components/settings/IncludedAssetsSection.tsx` | _(no leading comment)_ |
 | `src/components/settings/MushafSettings.tsx` | _(no leading comment)_ |
+| `src/components/settings/SettingsGroup.tsx` | _(no leading comment)_ |
 | `src/components/settings/SettingsShell.tsx` | _(no leading comment)_ |
 | `src/components/settings/SourcePicker.tsx` | _(no leading comment)_ |
 | `src/components/settings/ThemeNightControls.tsx` | _(no leading comment)_ |
@@ -58,11 +58,13 @@ style_paths:
 
 ## Behavior
 
-`SettingsRoute` and settings overlay events open `SettingsShell` without losing the current reader route or scroll state. Verse reader scroll-derived position writes pause while the settings overlay is open, and the visible verse is re-anchored across typography and translation layout changes. The shell contains a reader-mode toggle, mode-specific controls, Daily Wird visibility controls, included assets, and footer appearance controls.
+`SettingsRoute` and settings overlay events open `SettingsShell` without losing or changing the current reader route. The active reader mode is read-only within Settings: Verse mounts only Verse reading controls, Mushaf mounts only Page layout controls, and both include Reading continuity, Appearance, and Included reading assets in that order. Search, About, and direct `#/settings` resolve the preserved last readable mode, falling back to Verse. Direct `#/assets` opens the assets disclosure expanded and reachable.
 
-Verse settings own font size, reading flow, and translation visibility. Daily Wird visibility is a separate settings section; disabling it hides reader/navigation Wird status and disables the active plan's reminder without deleting the plan. Mushaf settings own the visible page/width/continuous mode control while accepting stored `auto` values for compatibility. Theme and night mode apply globally and are reached through the same Reader chrome settings entry from Reader and Search surfaces.
+`SettingsShell` composes the owned `adaptive-settings` Sheet. Phones and short landscape viewports use a full-viewport modal; tablets and desktops use a bounded right-side sheet. The header stays stable above one naturally scrolling body, so Appearance is a normal content group rather than a fixed footer. The owned Sheet supplies focus containment, Escape/outside dismissal, and controlled return focus to the opening Settings action, with the reader Settings action and main landmark as fallbacks. `ReaderInteractionContext` suspends reader interaction behind the modal, while preference previews preserve the mounted reader and its visible anchor.
 
-`IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. It can collapse on compact settings sheets so the core controls remain visible without scrolling. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
+Verse settings own font size, reading flow, and translation visibility. Daily Wird visibility is a separate Reading continuity group; disabling it hides reader/navigation Wird status and disables the active plan's reminder without deleting the plan. Mushaf settings independently own Single/Scroll navigation and Fit page/Fit width while accepting stored `auto` values for compatibility. Theme and night mode apply globally through the Appearance group.
+
+`IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. Its truthful disclosure can collapse so the preceding groups remain concise, and the single Settings body scrolls to every asset when expanded. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
 
 `AboutRoute` owns mission/attribution, install prompt affordance, app version, app update check, and clear-data entry. It renders Reader chrome and the shared navigation drawer so users can leave About through the same Read/Search navigation affordances as the rest of the app. Its app update action asks the current service-worker registration to fetch the latest app files, activates a pending worker when one exists, and reloads into the new app shell. `useClearDataDialog` requires exact `DELETE`; `src/storage/clear-data.ts` clears app caches and the shared database, then reloads.
 
@@ -105,6 +107,8 @@ Settings is a key-value store. Writers are key-scoped and should go through `src
 ## Invariants
 
 - Settings must preserve the mounted reader state when opened from a reader route.
+- Settings must not switch reader mode; inactive-mode controls remain unmounted.
+- Closing controlled Settings restores focus to its live opener or the reader fallback target.
 - Included assets are read-only in the current MVP.
 - Included assets may be hidden or shown, but the toggle must not introduce source-management actions.
 - The active reader profile remains Qaloon text/font, Qaloon Mushaf, and Bridges translation.
