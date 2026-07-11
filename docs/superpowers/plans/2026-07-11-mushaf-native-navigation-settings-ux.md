@@ -1055,6 +1055,8 @@ Expected: Settings unit/static gates pass and the feature CSS contains one Setti
 ### Task 9: Add Settings Browser, Story, Registry, And Visual Proof
 
 **Files:**
+- Modify: `docs/superpowers/plans/2026-07-11-mushaf-native-navigation-settings-ux.md` (controller scope reconciliation)
+- Modify: `src/design-system/index.css` (controller-authorized browser proof fixes)
 - Modify: `tests/e2e/configure/react-golden.spec.ts`
 - Modify: `tests/e2e/navigate/react-golden.spec.ts`
 - Modify: `tests/e2e/fixtures/react-a11y.ts`

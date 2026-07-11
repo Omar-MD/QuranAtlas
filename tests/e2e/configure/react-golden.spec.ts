@@ -212,6 +212,7 @@ test.describe('settings focus and route ownership', () => {
 test('@golden @a11y Settings themes retain rendered contrast', async ({ page }) => {
   const guard = await setupConfigurePage(page, 'desktop')
   const shell = page.getByRole('dialog', { name: 'Verse settings' })
+  const scrollingBody = shell.locator('.qar-react-settings-body')
   const group = shell.getByRole('region', { name: 'Verse reading' })
   const rowText = group.getByText('Translation', { exact: true })
   const heading = shell.getByRole('heading', { name: 'Verse settings' })
@@ -237,6 +238,7 @@ test('@golden @a11y Settings themes retain rendered contrast', async ({ page }) 
     await expectRenderedContrast(heading, shell, 3)
     await expectRenderedContrast(selected, selected, 3)
     await expectRenderedBorderContrast(selected, group, 3)
+    await expectRenderedBorderContrast(group, scrollingBody, 3)
   }
 
   await expectNoGuardFailures(guard)

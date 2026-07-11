@@ -1504,6 +1504,7 @@
     padding: var(--qa-react-settings-space-4) var(--qa-react-settings-space-4) calc(env(safe-area-inset-bottom) + var(--qa-react-settings-space-4));
     overflow-y: auto;
     overscroll-behavior: contain;
+    background: var(--qa-react-settings-sheet);
   }
 
   .qar-react-settings-group {
