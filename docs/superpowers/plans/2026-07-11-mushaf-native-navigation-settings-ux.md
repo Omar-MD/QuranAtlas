@@ -957,6 +957,7 @@ Expected: modal semantics, route preservation, and focus restoration pass withou
 - Modify: `src/design-system/tokens/semantic.css`
 - Modify: `src/design-system/index.css`
 - Modify: `tests/unit/react-shell/settings-route.test.tsx`
+- Modify: `tests/unit/react-navigate/navigation-wave3.test.tsx`
 
 **Interfaces:**
 - Produces `SettingsGroup({ title, description?, children })`.
