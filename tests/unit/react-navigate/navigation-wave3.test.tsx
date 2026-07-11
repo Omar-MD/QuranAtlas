@@ -172,7 +172,7 @@ describe('React navigation, settings, and onboarding coverage', () => {
     expect(screen.getByRole('group', { name: 'Theme' })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Night mode' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Manage Assets' })).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Included assets' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Included reading assets' })).toBeInTheDocument()
     expect(screen.queryByText(/mushaf edition/i)).not.toBeInTheDocument()
     settingsRender.rerender(<SettingsRoute mode="mushaf" />)
     expect(screen.getByRole('dialog', { name: 'Mushaf settings' })).toBeInTheDocument()

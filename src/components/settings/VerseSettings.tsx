@@ -1,5 +1,6 @@
 import { Select, Slider, Switch } from '../ui'
 import type { ReactPreferenceStep } from '../../storage/settings-writer'
+import { SettingsGroup } from './SettingsGroup'
 
 const STEP_VALUES: ReactPreferenceStep[] = ['xs', 'sm', 'md', 'lg', 'xl']
 
@@ -27,11 +28,7 @@ export function VerseSettings({
   translationVisible: boolean
 }) {
   return (
-    <section className="qar-react-settings-panel qar-react-settings-panel--verse" aria-label="Verse settings" aria-labelledby="qar-react-settings-reading">
-      <div className="qar-react-settings-panel-head">
-        <h3 className="qar-react-settings-section-title" id="qar-react-settings-reading">Verse</h3>
-        <span className="qar-react-settings-row-control">Text and meaning</span>
-      </div>
+    <SettingsGroup title="Verse reading">
       <div className="qar-react-settings-panel-controls">
         <FontSizeControl label="Font size" onChange={onFontSizeChange} value={fontSize} />
         <ReadingFlowControl label="Reading flow" onChange={onReadingFlowChange} value={readingFlow} />
@@ -48,7 +45,7 @@ export function VerseSettings({
           />
         </div>
       </div>
-    </section>
+    </SettingsGroup>
   )
 }
 

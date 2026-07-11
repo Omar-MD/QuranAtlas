@@ -40,6 +40,21 @@
     --qa-react-nav-delete-text: var(--qa-react-text-on-accent);
     --qa-react-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 6%);
     --qa-react-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 4%);
+    --qa-react-settings-backdrop: color-mix(in srgb, var(--qa-react-text) 34%, transparent);
+    --qa-react-settings-sheet: var(--qa-react-sheet);
+    --qa-react-settings-header: color-mix(in srgb, var(--qa-react-sheet) 88%, var(--qa-react-surface));
+    --qa-react-settings-group: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-sheet));
+    --qa-react-settings-group-border: color-mix(in srgb, var(--qa-react-border) 58%, var(--qa-react-accent));
+    --qa-react-settings-divider: color-mix(in srgb, var(--qa-react-settings-group-border) 58%, transparent);
+    --qa-react-settings-selected: color-mix(in srgb, var(--qa-react-accent) 15%, var(--qa-react-settings-group));
+    --qa-react-settings-selected-text: var(--qa-react-accent-strong);
+    --qa-react-settings-muted: var(--qa-react-text-muted);
+    --qa-react-settings-shadow: 0 18px 48px rgb(0 0 0 / 18%);
+    --qa-react-settings-space-1: var(--qar-space-1);
+    --qa-react-settings-space-2: var(--qar-space-2);
+    --qa-react-settings-space-3: var(--qar-space-3);
+    --qa-react-settings-space-4: var(--qar-space-4);
+    --qa-react-settings-space-6: var(--qar-space-6);
     --qa-react-mushaf-ground: var(--qa-react-canvas);
     --qa-react-mushaf-ink: var(--qa-react-text);
     --qa-react-mushaf-border: var(--qa-react-border);
@@ -141,5 +156,6 @@
     --qa-react-nav-delete-text: var(--qa-react-text-primary);
     --qa-react-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 28%);
     --qa-react-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 24%);
+    --qa-react-settings-shadow: 0 18px 48px rgb(0 0 0 / 42%);
   }
 }

@@ -1,5 +1,6 @@
 import { MushafModeControl, type MushafNavigationMode, type MushafViewMode } from '../reader/MushafModeControl'
 import { Switch } from '../ui'
+import { SettingsGroup } from './SettingsGroup'
 
 export function MushafSettings({
   fitWidth,
@@ -13,11 +14,7 @@ export function MushafSettings({
   onModeChange: (mode: MushafNavigationMode) => void
 }) {
   return (
-    <section className="qar-react-settings-panel qar-react-settings-panel--mushaf" aria-label="Mushaf settings" aria-labelledby="qar-react-settings-mushaf">
-      <div className="qar-react-settings-panel-head">
-        <h3 className="qar-react-settings-section-title" id="qar-react-settings-mushaf">Mushaf</h3>
-        <span className="qar-react-settings-row-control">Navigation</span>
-      </div>
+    <SettingsGroup title="Page layout">
       <div className="qar-react-settings-panel-controls">
         <div className="qar-react-settings-row qar-react-settings-row--control">
           <span className="qar-react-settings-row-copy">
@@ -39,6 +36,6 @@ export function MushafSettings({
           />
         </div>
       </div>
-    </section>
+    </SettingsGroup>
   )
 }

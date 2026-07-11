@@ -4,6 +4,8 @@ import { clearReactSettingsReaderAnchor, restoreReactSettingsReaderAnchor } from
 import { SettingsShell } from '../../../components/settings/SettingsShell'
 import { IncludedAssetsSection } from '../../../components/settings/IncludedAssetsSection'
 import { MushafSettings } from '../../../components/settings/MushafSettings'
+import { SettingsGroup } from '../../../components/settings/SettingsGroup'
+import { ThemeNightControls } from '../../../components/settings/ThemeNightControls'
 import { VerseSettings } from '../../../components/settings/VerseSettings'
 import { useSettingsForm } from '../../../components/settings/useSettingsForm'
 import { Switch } from '../../../components/ui'
@@ -53,43 +55,41 @@ export function SettingsRoute({
 
   return (
     <SettingsShell
-      nightMode={preferences.nightMode}
       onClose={onClose}
-      onNightModeChange={setNightMode}
-      onThemeChange={setTheme}
       returnFocusId={returnFocusId}
       subtitle=""
-      theme={preferences.theme}
       title={mode === 'verse' ? 'Verse settings' : 'Mushaf settings'}
     >
-      <div className="qar-react-settings-deck">
-        <div className="qar-react-settings-ledger">
-          <div className="qar-react-settings-mode-panels" data-active-mode={mode}>
-            {mode === 'verse' ? (
-              <VerseSettings
-                fontSize={preferences.fontSize}
-                onFontSizeChange={setFontSize}
-                onReadingFlowChange={setReadingFlow}
-                onTranslationVisibleChange={setTranslationVisible}
-                readingFlow={preferences.readerMargin}
-                translationVisible={preferences.translationVisible}
-              />
-            ) : (
-              <MushafSettings
-                fitWidth={preferences.mushafFitWidth}
-                mode={preferences.mushafViewMode}
-                onFitWidthChange={setMushafFitWidth}
-                onModeChange={setMushafViewMode}
-              />
-            )}
-          </div>
-          <WirdSettingsSection
-            enabled={preferences.wirdReaderStatusVisible}
-            onEnabledChange={setWirdReaderStatusVisible}
-          />
-        </div>
-        <IncludedAssetsSection onVisibleChange={setIncludedAssetsVisible} visible={includedAssetsVisible} />
-      </div>
+      {mode === 'verse' ? (
+        <VerseSettings
+          fontSize={preferences.fontSize}
+          onFontSizeChange={setFontSize}
+          onReadingFlowChange={setReadingFlow}
+          onTranslationVisibleChange={setTranslationVisible}
+          readingFlow={preferences.readerMargin}
+          translationVisible={preferences.translationVisible}
+        />
+      ) : (
+        <MushafSettings
+          fitWidth={preferences.mushafFitWidth}
+          mode={preferences.mushafViewMode}
+          onFitWidthChange={setMushafFitWidth}
+          onModeChange={setMushafViewMode}
+        />
+      )}
+      <WirdSettingsSection
+        enabled={preferences.wirdReaderStatusVisible}
+        onEnabledChange={setWirdReaderStatusVisible}
+      />
+      <SettingsGroup title="Appearance">
+        <ThemeNightControls
+          nightMode={preferences.nightMode}
+          onNightModeChange={setNightMode}
+          onThemeChange={setTheme}
+          theme={preferences.theme}
+        />
+      </SettingsGroup>
+      <IncludedAssetsSection onVisibleChange={setIncludedAssetsVisible} visible={includedAssetsVisible} />
       <span className="qar:sr-only">Restores {previousHash} on close.</span>
     </SettingsShell>
   )
@@ -115,11 +115,7 @@ function WirdSettingsSection({
   onEnabledChange: (value: boolean) => void
 }) {
   return (
-    <section className="qar-react-settings-panel qar-react-settings-panel--wird" aria-label="Daily Wird settings" aria-labelledby="qar-react-settings-wird">
-      <div className="qar-react-settings-panel-head">
-        <h3 className="qar-react-settings-section-title" id="qar-react-settings-wird">Daily Wird</h3>
-        <span className="qar-react-settings-row-control">Reader continuity</span>
-      </div>
+    <SettingsGroup title="Reading continuity">
       <div className="qar-react-settings-panel-controls">
         <div className="qar-react-settings-row qar-react-settings-row--switch">
           <span className="qar-react-settings-row-copy">
@@ -134,6 +130,6 @@ function WirdSettingsSection({
           />
         </div>
       </div>
-    </section>
+    </SettingsGroup>
   )
 }

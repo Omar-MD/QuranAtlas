@@ -107,8 +107,8 @@ describe('React settings shell coverage', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
     expect(within(dialog).getByRole('heading', { name: 'Mushaf settings' })).toBeInTheDocument()
     expect(within(dialog).queryByRole('radiogroup', { name: 'Reader mode' })).not.toBeInTheDocument()
-    expect(within(dialog).getByLabelText('Mushaf settings')).toBeInTheDocument()
-    expect(within(dialog).queryByLabelText('Verse settings')).not.toBeInTheDocument()
+    expect(within(dialog).getByRole('region', { name: 'Page layout' })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('region', { name: 'Verse reading' })).not.toBeInTheDocument()
     await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
   })
 
@@ -302,10 +302,10 @@ describe('React settings shell coverage', () => {
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
 
     const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
-    const verseSettings = within(dialog).getByLabelText('Verse settings')
+    const verseSettings = within(dialog).getByRole('region', { name: 'Verse reading' })
     expect(within(verseSettings).queryByRole('switch', { name: 'Enable Daily Wird' })).not.toBeInTheDocument()
 
-    const wirdSettings = within(dialog).getByRole('region', { name: 'Daily Wird' })
+    const wirdSettings = within(dialog).getByRole('region', { name: 'Reading continuity' })
     const toggle = within(wirdSettings).getByRole('switch', { name: 'Enable Daily Wird' })
     expect(toggle).toBeChecked()
 
@@ -376,6 +376,39 @@ describe('React settings shell coverage', () => {
     expect(within(dialog).getByRole('radiogroup', { name: 'Navigation mode' })).toBeInTheDocument()
   })
 
+  it('orders the active settings groups and omits inactive mode controls', async () => {
+    const { rerender } = render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
+    let dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
+
+    expect(within(dialog).getAllByRole('region', {
+      name: /^(Verse reading|Reading continuity|Appearance|Included reading assets)$/,
+    }).map((region) => (
+      within(region).getByRole('heading', { level: 3 }).textContent
+    ))).toEqual([
+      'Verse reading',
+      'Reading continuity',
+      'Appearance',
+      'Included reading assets',
+    ])
+    expect(within(dialog).queryByRole('radiogroup', { name: 'Navigation mode' })).not.toBeInTheDocument()
+
+    rerender(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
+    dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
+
+    expect(within(dialog).getAllByRole('region', {
+      name: /^(Page layout|Reading continuity|Appearance|Included reading assets)$/,
+    }).map((region) => (
+      within(region).getByRole('heading', { level: 3 }).textContent
+    ))).toEqual([
+      'Page layout',
+      'Reading continuity',
+      'Appearance',
+      'Included reading assets',
+    ])
+    expect(within(dialog).queryByRole('slider', { name: 'Font size' })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('combobox', { name: 'Reading flow' })).not.toBeInTheDocument()
+  })
+
   it('renders the default asset inventory inline inside settings without optional controls', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
@@ -406,7 +439,7 @@ describe('React settings shell coverage', () => {
     }))
     render(<SettingsRoute mode="verse" onClose={vi.fn()} previousHash="#/s/1" />)
     const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
-    const assets = within(dialog).getByRole('region', { name: 'Included assets' })
+    const assets = within(dialog).getByRole('region', { name: 'Included reading assets' })
 
     expect(within(dialog).getByText('Translation')).toBeInTheDocument()
     expect(within(dialog).queryByText('Bridges Translation')).not.toBeInTheDocument()
@@ -425,6 +458,14 @@ describe('React settings shell coverage', () => {
     expect(within(assets).queryByText('bridges')).not.toBeInTheDocument()
     expect(within(dialog).queryByText(/^(0[1-9]|[1-9][0-9])$/)).not.toBeInTheDocument()
     expect(within(assets).queryByRole('button', { name: /install|delete|verify|set active|switch|retry/i })).not.toBeInTheDocument()
+    expect(within(assets).getAllByRole('button')).toHaveLength(1)
+    expect(within(assets).queryByRole('link')).not.toBeInTheDocument()
+
+    const disclosure = within(assets).getByRole('button', { name: 'Hide included reading assets' })
+    expect(disclosure).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.click(disclosure)
+    expect(within(assets).getByRole('button', { name: 'Show included reading assets' })).toHaveAttribute('aria-expanded', 'false')
+    expect(within(assets).queryByText('Loaded Qaloon Mushaf')).not.toBeInTheDocument()
   })
 
   it('opens the settings shell for legacy #/assets URLs instead of rendering an assets page', async () => {
@@ -437,8 +478,8 @@ describe('React settings shell coverage', () => {
 
     expect(await screen.findByTestId('mock-verse-reader')).toHaveTextContent('Verse reader 2:255')
     const dialog = await screen.findByRole('dialog', { name: 'Verse settings' })
-    const assets = within(dialog).getByRole('region', { name: 'Included assets' })
-    expect(within(assets).getByRole('button', { name: 'Hide' })).toHaveAttribute('aria-expanded', 'true')
+    const assets = within(dialog).getByRole('region', { name: 'Included reading assets' })
+    expect(within(assets).getByRole('button', { name: 'Hide included reading assets' })).toHaveAttribute('aria-expanded', 'true')
     expect(within(assets).getAllByText('Included')).toHaveLength(3)
     expect(screen.queryByRole('heading', { name: 'Assets' })).not.toBeInTheDocument()
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/255'))

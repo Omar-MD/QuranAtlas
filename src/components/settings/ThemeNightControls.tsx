@@ -44,8 +44,8 @@ export function ThemeNightControls({
 }) {
   return (
     <div className="qar-react-settings-theme-night" aria-label="Theme and night mode">
-      <section className="qar-react-settings-footer-panel" aria-labelledby="qar-react-settings-theme">
-        <h3 className="qar-react-settings-footer-title" id="qar-react-settings-theme">Theme</h3>
+      <section className="qar-react-settings-appearance-panel" aria-labelledby="qar-react-settings-theme">
+        <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-theme">Theme</h4>
         <div className="qar-react-settings-theme-strip" role="group" aria-label="Theme">
           {THEMES.map((option) => (
             <AppearanceChoice
@@ -61,8 +61,8 @@ export function ThemeNightControls({
           ))}
         </div>
       </section>
-      <section className="qar-react-settings-footer-panel" aria-labelledby="qar-react-settings-night">
-        <h3 className="qar-react-settings-footer-title" id="qar-react-settings-night">Night mode</h3>
+      <section className="qar-react-settings-appearance-panel" aria-labelledby="qar-react-settings-night">
+        <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-night">Night mode</h4>
         <div className="qar-react-settings-night-strip" role="group" aria-label="Night mode">
           {NIGHT_MODES.map((option) => {
             const Icon = option.icon

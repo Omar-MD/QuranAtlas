@@ -1004,7 +1004,7 @@
     gap: 10px;
   }
 
-  .qar-react-nav-drawer-search-appearance .qar-react-settings-footer-panel {
+  .qar-react-nav-drawer-search-appearance .qar-react-settings-appearance-panel {
     gap: 6px;
   }
 
@@ -1440,1232 +1440,364 @@
     }
   }
 
-  .qar-react-settings-backdrop {
+  [data-state='open']:has(+ [data-sheet-variant='adaptive-settings']) {
+    background: var(--qa-react-settings-backdrop) !important;
+  }
+
+  [data-sheet-variant='adaptive-settings'] {
     position: fixed !important;
     inset: 0 !important;
-    z-index: 110 !important;
-    display: block !important;
+    z-index: 50 !important;
+    display: flex !important;
     width: 100vw !important;
+    max-width: none !important;
     height: 100dvh !important;
-    min-height: 0 !important;
+    max-height: none !important;
+    flex-direction: column !important;
+    gap: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important;
     border: 0 !important;
     border-radius: 0 !important;
-    background: rgb(0 0 0 / 32%) !important;
-    cursor: default;
+    background: var(--qa-react-settings-sheet) !important;
+    color: var(--qa-react-text) !important;
+    box-shadow: var(--qa-react-settings-shadow) !important;
   }
 
-  .qar-react-settings-shell {
-    position: fixed;
-    inset: 0;
-    z-index: 111;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    width: 100vw;
-    height: 100dvh;
-    max-width: 100vw;
-    max-height: 100dvh;
-    overflow: hidden;
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--qa-react-sheet) 96%, var(--qa-react-surface)) 0%, var(--qa-react-sheet) 100%);
-    color: var(--qa-react-text);
-    outline: none;
-    box-shadow: 0 18px 42px rgb(0 0 0 / 18%);
-  }
-
-  .qar-react-settings-header {
+  [data-sheet-variant='adaptive-settings'] > div:first-child {
+    position: sticky;
+    top: 0;
     z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .75rem;
-    min-height: calc(env(safe-area-inset-top) + 56px);
-    padding: calc(env(safe-area-inset-top) + .52rem) 1rem .52rem;
-    border-bottom: 1px solid var(--qa-react-border);
-    background: color-mix(in srgb, var(--qa-react-sheet) 96%, var(--qa-react-surface));
-    backdrop-filter: blur(14px);
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--qa-react-surface) 54%, transparent);
+    flex: 0 0 auto;
+    min-height: calc(env(safe-area-inset-top) + var(--qa-react-control-touch-target));
+    padding: calc(env(safe-area-inset-top) + var(--qa-react-settings-space-2)) var(--qa-react-settings-space-4) var(--qa-react-settings-space-2);
+    border-bottom: 1px solid var(--qa-react-settings-divider);
+    background: var(--qa-react-settings-header);
   }
 
-  .qar-react-settings-title-block {
-    min-width: 0;
+  [data-sheet-variant='adaptive-settings'] > div:first-child > button {
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
+  }
+
+  [data-sheet-variant='adaptive-settings'] .qar-react-sheet-body {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .qar-react-settings-subtitle {
-    margin: 0 0 .12rem;
-    color: var(--qa-react-text-muted);
-    font-size: .72rem;
-    line-height: 1.25;
-  }
-
-  .qar-react-settings-title {
     margin: 0;
-    font-family: var(--qa-react-font-ui);
-    font-size: 1.04rem;
-    line-height: 1.15;
-  }
-
-  .qar-react-settings-close {
-    flex: 0 0 auto;
-    min-width: 40px !important;
-    min-height: 40px !important;
-    padding: 0 !important;
+    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4) 0;
+    color: var(--qa-react-settings-muted);
   }
 
   .qar-react-settings-body {
-    min-height: 0;
-    overflow: auto;
-    overscroll-behavior: contain;
-    padding: .72rem;
-  }
-
-  .qar-react-settings-deck {
     display: grid;
     align-content: start;
-    gap: .58rem;
+    gap: var(--qa-react-settings-space-4);
     min-height: 0;
+    padding: var(--qa-react-settings-space-4) var(--qa-react-settings-space-4) calc(env(safe-area-inset-bottom) + var(--qa-react-settings-space-4));
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
-  .qar-react-settings-profile,
-  .qar-react-settings-ledger,
-  .qar-react-settings-assets {
+  .qar-react-settings-group {
     min-width: 0;
-    border: 1px solid var(--qa-react-nav-row-border);
-    border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-nav-row-surface) 96%, var(--qa-react-sheet));
-    box-shadow: var(--qa-react-nav-shadow-row);
-  }
-
-  .qar-react-settings-profile {
-    display: grid;
-    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: .62rem;
-    padding: .58rem .62rem;
-  }
-
-  .qar-react-settings-profile-mark {
-    display: grid;
-    place-items: center;
-    inline-size: 2.25rem;
-    block-size: 2.25rem;
-    border: 1px solid var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-control);
-    background:
-      linear-gradient(145deg, color-mix(in srgb, var(--qa-react-accent) 18%, transparent), transparent 62%),
-      var(--qa-react-nav-control-surface);
-    color: var(--qa-react-accent);
-    font-size: .68rem;
-    font-weight: 800;
-    letter-spacing: .02em;
-  }
-
-  .qar-react-settings-profile-copy {
-    display: grid;
-    min-width: 0;
-    gap: .08rem;
-  }
-
-  .qar-react-settings-profile-badge {
-    min-height: 1.55rem !important;
-    padding-inline: .44rem;
-    white-space: nowrap;
-  }
-
-  .qar-react-settings-ledger {
-    display: grid;
     overflow: hidden;
+    border: 1px solid var(--qa-react-settings-group-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-settings-group);
   }
 
-  .qar-react-settings-mode-card {
+  .qar-react-settings-group-heading {
     display: grid;
-    grid-template-columns: 2.2rem minmax(5.75rem, .54fr) minmax(0, 1fr);
-    align-items: center;
-    gap: .62rem;
+    gap: var(--qa-react-settings-space-1);
+    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4);
+    border-bottom: 1px solid var(--qa-react-settings-divider);
+  }
+
+  .qar-react-settings-group-heading h3,
+  .qar-react-settings-group-heading p,
+  .qar-react-settings-appearance-title {
+    margin: 0;
+  }
+
+  .qar-react-settings-group-heading h3 {
+    color: var(--qa-react-text);
+    font-size: .875rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .qar-react-settings-group-heading p {
+    color: var(--qa-react-settings-muted);
+    font-size: .75rem;
+    line-height: 1.45;
+  }
+
+  .qar-react-settings-group-content {
     min-width: 0;
-    min-height: 4.15rem;
-    padding: .5rem .58rem;
-    border-bottom: 1px solid var(--qa-react-nav-row-separator);
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--qa-react-accent) 7%, transparent), transparent 38%),
-      transparent;
-  }
-
-  .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle {
-    display: block;
-    min-height: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .qar-react-settings-panel {
-    display: grid;
-    grid-template-rows: auto auto;
-    min-height: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .qar-react-settings-panel-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: .75rem;
-    min-width: 0;
-    min-height: 2.15rem;
-    padding: .48rem .62rem .28rem 3.4rem;
-    border-bottom: 1px solid var(--qa-react-nav-row-separator);
-    background: color-mix(in srgb, var(--qa-react-nav-control-surface) 44%, transparent);
   }
 
   .qar-react-settings-panel-controls {
     display: grid;
-    min-width: 0;
-    min-height: 0;
   }
 
-  .qar-react-settings-mode {
+  .qar-react-settings-row {
     display: grid;
-    gap: 1rem;
-  }
-
-  .qar-react-settings-section {
-    display: grid;
-    gap: .65rem;
-    padding: .85rem 0;
-    border-top: 1px solid var(--qa-react-border);
-  }
-
-  .qar-react-settings-section-heading {
-    display: grid;
-    gap: .12rem;
-    min-width: 0;
-  }
-
-  .qar-react-settings-section--mode {
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .qar-react-settings-section-title,
-  .qar-react-settings-footer-title {
-    margin: 0;
-    color: var(--qa-react-text);
-    font-size: .82rem;
-    font-weight: 650;
-    line-height: 1.2;
-  }
-
-  .qar-react-settings-row,
-  .qar-react-settings-range {
-    display: grid;
-    grid-template-columns: 2.2rem minmax(6.25rem, .54fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: .62rem;
-    min-width: 0;
-    min-height: 4.05rem;
-    padding: .5rem .58rem;
-    border: 0;
-    border-bottom: 1px solid var(--qa-react-nav-row-separator);
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    gap: var(--qa-react-settings-space-4);
+    min-height: var(--qa-react-control-touch-target);
+    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4);
   }
 
-  .qar-react-settings-row--control {
-    grid-template-columns: 2.2rem minmax(6.25rem, .54fr) minmax(0, 1fr);
-    align-items: center;
+  .qar-react-settings-row + .qar-react-settings-row {
+    border-top: 1px solid var(--qa-react-settings-divider);
   }
 
   .qar-react-settings-row-copy {
     display: grid;
+    gap: var(--qa-react-settings-space-1);
     min-width: 0;
-    gap: .12rem;
-  }
-
-  .qar-react-settings-row--control [role='radiogroup'] {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-    min-height: 44px;
-    overflow: hidden;
-    padding: 0;
-    border: 1px solid var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-nav-control-surface);
-    box-shadow: var(--qa-react-nav-shadow-control);
-  }
-
-  .qar-react-settings-row--mode-toggle [role='radiogroup'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .qar-react-settings-panel--mushaf .qar-react-settings-row--control [role='radiogroup'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .qar-react-settings-row--control [role='radio'] {
-    position: relative;
-    min-width: 0;
-    min-height: 44px;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: var(--qa-react-text-muted) !important;
-    font-size: .76rem;
-    font-weight: 600;
-  }
-
-  .qar-react-settings-row--control [role='radio'] + [role='radio'] {
-    border-inline-start: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-settings-row--control [role='radio'][aria-checked='true'] {
-    background: color-mix(in srgb, var(--qa-react-accent) 12%, var(--qa-react-nav-control-selected-bg)) !important;
-    color: var(--qa-react-accent-strong) !important;
-  }
-
-  .qar-react-settings-row--control [role='radio'][aria-checked='true']::after {
-    content: "";
-    position: absolute;
-    inset-inline: 12%;
-    bottom: 0;
-    height: 2px;
-    border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-accent);
   }
 
   .qar-react-settings-row-label {
     color: var(--qa-react-text);
-    font-size: .8rem;
-    font-weight: 540;
-    line-height: 1.3;
+    font-size: .875rem;
+    font-weight: 650;
+    line-height: 1.35;
   }
 
   .qar-react-settings-row-control {
-    color: var(--qa-react-text-muted);
-    font-size: .72rem;
-    line-height: 1.2;
-  }
-
-  .qar-react-settings-section-note {
-    margin: 0;
-    color: var(--qa-react-text-muted);
-    overflow: hidden;
-    font-size: .71rem;
-    line-height: 1.2;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .qar-react-settings-assets {
-    display: grid;
-    overflow: hidden;
-  }
-
-  .qar-react-settings-assets > .qar-react-settings-section-heading {
-    display: grid;
-    grid-template-columns: 2.2rem minmax(0, 1fr);
-    align-items: center;
-    gap: .62rem;
-    min-height: 3.1rem;
-    padding: .48rem .62rem;
-    border-bottom: 1px solid var(--qa-react-nav-row-separator);
-    background: color-mix(in srgb, var(--qa-react-nav-control-surface) 44%, transparent);
-  }
-
-  .qar-react-settings-asset-list {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    overflow: hidden;
-    margin: .68rem 1rem .92rem;
-    border: 1px solid var(--qa-react-nav-row-border);
-    border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-nav-row-surface) 82%, var(--qa-react-sheet));
-  }
-
-  .qar-react-settings-asset-row {
-    display: grid;
-    grid-template-columns: 2.7rem minmax(0, 1fr) auto 1rem;
-    align-items: center;
-    gap: .62rem;
-    min-height: 3.25rem;
-    padding: 0 .68rem 0 .36rem;
-  }
-
-  .qar-react-settings-asset-row + .qar-react-settings-asset-row {
-    border-top: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-settings-asset-icon {
-    display: grid;
-    place-items: center;
-    justify-self: center;
-    inline-size: 2.08rem;
-    block-size: 2.08rem;
-    border: 1px solid var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-surface) 76%, var(--qa-react-canvas));
-    color: var(--qa-react-text);
-    opacity: .88;
-  }
-
-  .qar-react-settings-asset-icon svg {
-    display: block;
-  }
-
-  .qar-react-settings-text-font-icon {
-    inline-size: 1.18rem;
-    block-size: 1.18rem;
-  }
-
-  .qar-react-settings-asset-main {
-    display: grid;
-    min-width: 0;
-    gap: .08rem;
-  }
-
-  .qar-react-settings-asset-label {
-    display: block;
-    min-width: 0;
-    line-height: 1.3;
-  }
-
-  .qar-react-settings-asset-prefix {
-    display: inline;
-    margin-inline-end: .28rem;
-    color: var(--qa-react-text-muted);
-    font-size: .72rem;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .qar-react-settings-asset-label .qar-react-settings-row-label {
-    display: inline;
-  }
-
-  .qar-react-settings-asset-status {
-    color: var(--qa-react-success);
-    font-size: .74rem;
-    line-height: 1.1;
-    white-space: nowrap;
-  }
-
-  .qar-react-settings-asset-chevron {
-    color: var(--qa-react-text);
-    opacity: .72;
-  }
-
-  @media (max-width: 767px) {
-    .qar-react-settings-profile {
-      grid-template-columns: 2.25rem minmax(0, 1fr);
-    }
-
-    .qar-react-settings-profile-badge {
-      grid-column: 2;
-      justify-self: start;
-    }
-
-    .qar-react-settings-mode-card,
-    .qar-react-settings-row,
-    .qar-react-settings-row--control,
-    .qar-react-settings-range {
-      grid-template-columns: 2.05rem minmax(0, 1fr);
-      align-items: stretch;
-      min-height: 0;
-    }
-
-    .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle,
-    .qar-react-settings-step-control,
-    .qar-react-settings-row--control [role='radiogroup'],
-    .qar-react-settings-row--switch label {
-      grid-column: 2;
-    }
-
-    .qar-react-settings-row--switch {
-      grid-template-columns: 2.05rem minmax(0, 1fr) auto;
-      align-items: center;
-    }
-
-    .qar-react-settings-row--switch label {
-      grid-column: 3;
-    }
-
-    .qar-react-settings-panel-head {
-      padding-left: 3.25rem;
-    }
-
-    .qar-react-settings-assets .qar-react-settings-section-note,
-    .qar-react-settings-asset-main .qar-react-settings-row-control {
-      display: none;
-    }
-  }
-
-  .qar-react-settings-range {
-    grid-template-columns: 2.2rem minmax(6.25rem, .54fr) minmax(0, 1fr);
-  }
-
-  .qar-react-settings-step {
-    gap: .62rem;
-  }
-
-  .qar-react-settings-step-control [role='radiogroup'] {
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    width: 100% !important;
-    min-height: 44px;
-    overflow: hidden;
-    padding: 0;
-    border: 1px solid var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-nav-control-surface);
-    box-shadow: var(--qa-react-nav-shadow-control);
-  }
-
-  .qar-react-settings-step-control [role='radio'] {
-    position: relative;
-    min-width: 0;
-    width: 100%;
-    min-height: 44px;
-    padding: 0 .08rem !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: var(--qa-react-text-muted) !important;
-    font-size: .62rem !important;
-    font-weight: 650;
-    line-height: 1.1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .qar-react-settings-step-control [role='radio'] + [role='radio'] {
-    border-inline-start: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-settings-step-control [role='radio'][aria-checked='true'] {
-    background: var(--qa-react-nav-control-selected-bg) !important;
-    color: var(--qa-react-nav-control-selected-text) !important;
-  }
-
-  .qar-react-settings-step-control [role='radio'][aria-checked='true']::after {
-    content: "";
-    position: absolute;
-    inset-inline: 16%;
-    bottom: 0;
-    height: 2px;
-    border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-accent);
-  }
-
-  .qar-react-settings-range-meta {
-    display: grid;
-    min-width: 0;
-    gap: .12rem;
-  }
-
-  @media (max-width: 767px) {
-    .qar-react-settings-mode-card,
-    .qar-react-settings-row,
-    .qar-react-settings-row--control,
-    .qar-react-settings-range {
-      grid-template-columns: 2.05rem minmax(0, 1fr);
-    }
-
-    .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle,
-    .qar-react-settings-step-control,
-    .qar-react-settings-row--control [role='radiogroup'] {
-      grid-column: 2;
-      width: 100%;
-    }
-
-    .qar-react-settings-step-control [role='radio'] {
-      padding-inline: .08rem !important;
-      font-size: .6rem !important;
-    }
-  }
-
-  .qar-react-settings-range-input {
-    width: 100%;
-    accent-color: var(--qa-react-accent);
-  }
-
-  .qar-react-settings-range-input-wrap {
-    display: block;
-    width: 100%;
-  }
-
-  .qar-react-settings-switch {
-    min-width: 44px !important;
-    min-height: 44px !important;
-    border: 0 !important;
-    background: transparent !important;
-  }
-
-  .qar-react-settings-row--switch label > span {
-    display: none;
-  }
-
-  .qar-react-settings-footer {
-    display: grid;
-    gap: .45rem;
-    padding: .55rem .6rem calc(env(safe-area-inset-bottom) + .55rem);
-    border-top: 1px solid var(--qa-react-border);
-    background: var(--qa-react-nav-header-surface);
-  }
-
-  .qar-react-settings-theme-night {
-    display: grid;
-    gap: .4rem;
-  }
-
-  .qar-react-settings-footer-panel {
-    display: grid;
-    grid-template-columns: 4.6rem minmax(0, 1fr);
-    align-items: stretch;
-    gap: .42rem;
-  }
-
-  .qar-react-settings-footer-title {
-    align-self: center;
-    color: var(--qa-react-text-muted);
-    font-size: .7rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    line-height: 1.1;
-  }
-
-  .qar-react-settings-theme-strip,
-  .qar-react-settings-night-strip {
-    display: grid;
-    overflow: hidden;
-    border: 1px solid var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-nav-control-surface);
-    box-shadow: var(--qa-react-nav-shadow-control);
-  }
-
-  .qar-react-settings-theme-strip {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    min-height: 44px;
-  }
-
-  .qar-react-settings-night-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    min-height: 40px;
-  }
-
-  .qar-react-settings-theme-choice,
-  .qar-react-settings-night-choice {
-    position: relative;
-    min-width: 0 !important;
-    min-height: 100% !important;
-    padding: .2rem .18rem !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: var(--qa-react-text-muted) !important;
-    box-shadow: none !important;
-  }
-
-  .qar-react-settings-theme-choice + .qar-react-settings-theme-choice,
-  .qar-react-settings-night-choice + .qar-react-settings-night-choice {
-    border-left: 1px solid var(--qa-react-nav-row-separator) !important;
-  }
-
-  .qar-react-settings-theme-choice[aria-pressed='true'],
-  .qar-react-settings-night-choice[aria-pressed='true'] {
-    background: var(--qa-react-nav-control-selected-bg) !important;
-    color: var(--qa-react-nav-control-selected-text) !important;
-  }
-
-  .qar-react-settings-theme-choice[aria-pressed='true']::after,
-  .qar-react-settings-night-choice[aria-pressed='true']::after {
-    content: "";
-    position: absolute;
-    inset-inline: 18%;
-    bottom: 0;
-    height: 2px;
-    border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-accent);
-  }
-
-  .qar-react-settings-theme-choice {
-    display: grid !important;
-    justify-items: center !important;
-    align-content: center !important;
-    gap: .15rem !important;
-  }
-
-  .qar-react-settings-night-choice {
-    display: flex !important;
-    flex-direction: column;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: .08rem !important;
-  }
-
-  .qar-react-settings-theme-swatch {
-    position: relative;
-    display: block;
-    width: 1.25rem;
-    height: 1.25rem;
-    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 44%, var(--qa-react-border));
-    border-radius: var(--qa-react-radius-circle);
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--qa-react-surface) 84%, transparent);
-  }
-
-  .qar-react-settings-theme-swatch[data-swatch='light'] {
-    background: var(--qa-react-theme-swatch-light);
-  }
-
-  .qar-react-settings-theme-swatch[data-swatch='sepia'] {
-    background: var(--qa-react-theme-swatch-sepia);
-  }
-
-  .qar-react-settings-theme-swatch[data-swatch='dark'] {
-    background: var(--qa-react-theme-swatch-dark);
-  }
-
-  .qar-react-settings-theme-swatch[data-swatch='auto'] {
-    background: linear-gradient(135deg, var(--qa-react-theme-swatch-light) 0 48%, var(--qa-react-theme-swatch-dark) 52% 100%);
-  }
-
-  .qar-react-settings-theme-choice[aria-pressed='true'] .qar-react-settings-theme-swatch {
-    border-color: var(--qa-react-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--qa-react-accent) 24%, transparent);
-  }
-
-  .qar-react-settings-choice-label {
-    overflow: hidden;
-    max-width: 100%;
-    font-size: .68rem;
-    line-height: 1.1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .qar-react-settings-deck {
-    gap: 0;
-  }
-
-  .qar-react-settings-ledger,
-  .qar-react-settings-assets {
-    border-radius: 0;
-    border-inline: 0;
-    border-top: 0;
-    box-shadow: none;
-  }
-
-  .qar-react-settings-mode-card,
-  .qar-react-settings-row,
-  .qar-react-settings-range {
-    grid-template-columns: minmax(8.5rem, .9fr) minmax(0, 1.1fr);
-    gap: .9rem;
-    min-height: 4.35rem;
-    padding: .78rem 1rem;
-  }
-
-  .qar-react-settings-mode-card {
-    border-top: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle {
-    align-self: center;
-  }
-
-  .qar-react-settings-section-heading {
-    align-self: center;
-  }
-
-  .qar-react-settings-mode-panels {
-    height: 15.75rem;
-    overflow: hidden;
-  }
-
-  .qar-react-settings-mode-panels[data-active-mode='mushaf'] {
-    height: 15.75rem;
-  }
-
-  .qar-react-settings-panel-head {
-    min-height: 2.35rem;
-    padding: .56rem 1rem;
-    background: color-mix(in srgb, var(--qa-react-nav-control-surface) 46%, transparent);
-  }
-
-  .qar-react-settings-panel-head .qar-react-settings-section-title {
-    font-size: .8rem;
-  }
-
-  .qar-react-settings-row-copy {
-    align-self: center;
+    color: var(--qa-react-settings-muted);
+    font-size: .75rem;
+    line-height: 1.4;
   }
 
   .qar-react-settings-row--font-size {
-    grid-template-columns: minmax(7rem, .68fr) minmax(0, 1.32fr);
+    grid-template-columns: minmax(8rem, .8fr) minmax(10rem, 1.2fr);
   }
 
   .qar-react-settings-font-slider {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: .65rem;
+    gap: var(--qa-react-settings-space-3);
     min-width: 0;
   }
 
   .qar-react-settings-font-size-mark {
-    color: var(--qa-react-text);
+    color: var(--qa-react-settings-muted);
     font-family: var(--qa-react-font-translation);
     line-height: 1;
   }
 
   .qar-react-settings-font-size-mark--small {
-    font-size: .9rem;
+    font-size: .875rem;
   }
 
   .qar-react-settings-font-size-mark--large {
-    font-size: 1.82rem;
-  }
-
-  .qar-react-settings-font-size-input {
-    width: 100%;
-    min-width: 0;
-    height: 2rem;
-    margin: 0;
-    appearance: none;
-    background:
-      radial-gradient(circle at 0% 50%, var(--qa-react-text-muted) 0 2px, transparent 2.5px),
-      radial-gradient(circle at 25% 50%, var(--qa-react-text-muted) 0 2px, transparent 2.5px),
-      radial-gradient(circle at 50% 50%, var(--qa-react-text-muted) 0 2px, transparent 2.5px),
-      radial-gradient(circle at 75% 50%, var(--qa-react-text-muted) 0 2px, transparent 2.5px),
-      radial-gradient(circle at 100% 50%, var(--qa-react-text-muted) 0 2px, transparent 2.5px),
-      linear-gradient(var(--qa-react-text-muted), var(--qa-react-text-muted)) center / 100% 1px no-repeat;
-    cursor: pointer;
-  }
-
-  .qar-react-settings-font-size-input:focus-visible {
-    outline: 2px solid var(--qa-react-focus);
-    outline-offset: 4px;
-  }
-
-  .qar-react-settings-font-size-input::-webkit-slider-runnable-track {
-    height: 2rem;
-    background: transparent;
-  }
-
-  .qar-react-settings-font-size-input::-webkit-slider-thumb {
-    width: 1rem;
-    height: 1rem;
-    margin-top: .5rem;
-    appearance: none;
-    border: 1px solid var(--qa-react-accent-strong);
-    border-radius: var(--qa-react-radius-circle);
-    background: var(--qa-react-accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--qa-react-accent) 12%, transparent);
-  }
-
-  .qar-react-settings-font-size-input::-moz-range-track {
-    height: 1px;
-    background: var(--qa-react-text-muted);
-  }
-
-  .qar-react-settings-font-size-input::-moz-range-thumb {
-    width: 1rem;
-    height: 1rem;
-    border: 1px solid var(--qa-react-accent-strong);
-    border-radius: var(--qa-react-radius-circle);
-    background: var(--qa-react-accent);
-  }
-
-  .qar-react-settings-row--select {
-    grid-template-columns: minmax(8.5rem, .9fr) minmax(0, 1.1fr);
+    font-size: 1.5rem;
   }
 
   .qar-react-settings-row--select [aria-label='Reading flow'] {
-    justify-self: end;
-    min-width: min(100%, 10.5rem);
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-    color: var(--qa-react-text);
-    font-size: .84rem;
+    min-width: 10rem;
   }
 
-  .qar-react-settings-row--switch {
-    grid-template-columns: minmax(8.5rem, 1fr) auto;
-    align-items: start;
-    padding-block: .88rem .98rem;
+  .qar-react-settings-row [role='radiogroup'] {
+    min-width: min(100%, 13rem);
   }
 
-  .qar-react-settings-row--switch label {
-    align-self: start;
-    margin-top: .1rem;
+  .qar-react-settings-row [role='radio'],
+  .qar-react-settings-row [role='switch'],
+  .qar-react-settings-row [role='combobox'] {
+    min-height: var(--qa-react-control-touch-target);
+  }
+
+  .qar-react-settings-row [role='radio'][aria-checked='true'] {
+    background: var(--qa-react-settings-selected) !important;
+    color: var(--qa-react-settings-selected-text) !important;
   }
 
   .qar-react-settings-assets {
-    margin-top: 0;
-    border-bottom: 0;
+    min-width: 0;
   }
 
-  .qar-react-settings-assets > .qar-react-settings-section-heading {
-    grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 3.2rem;
-    padding: .7rem 1rem .54rem;
-  }
-
-  .qar-react-settings-assets > .qar-react-settings-section-heading .qar-react-settings-section-title {
-    color: var(--qa-react-text-muted);
-    font-size: .7rem;
-    letter-spacing: .13em;
-    text-transform: uppercase;
+  .qar-react-settings-section-heading {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--qa-react-settings-space-2) var(--qa-react-settings-space-3);
   }
 
   .qar-react-settings-assets-toggle {
-    align-self: center;
-    min-height: 2rem !important;
-    padding: .2rem .45rem !important;
-    border-color: var(--qa-react-nav-control-border) !important;
-    border-radius: var(--qa-react-radius-control) !important;
-    background: color-mix(in srgb, var(--qa-react-surface) 68%, transparent) !important;
-    color: var(--qa-react-text-muted) !important;
-    font-size: .72rem !important;
+    min-height: var(--qa-react-control-touch-target) !important;
+    color: var(--qa-react-settings-muted) !important;
   }
 
-  .qar-react-settings-assets-toggle:hover,
-  .qar-react-settings-assets-toggle:focus-visible {
-    color: var(--qa-react-accent) !important;
+  .qar-react-settings-asset-list {
+    border-top: 1px solid var(--qa-react-settings-divider);
   }
 
   .qar-react-settings-asset-row {
-    grid-template-columns: 2.7rem minmax(0, 1fr) auto 1rem;
-    min-height: 3.46rem;
-    margin-inline: 0;
-    padding: 0 .72rem 0 .36rem;
+    display: grid;
+    grid-template-columns: var(--qa-react-control-touch-target) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--qa-react-settings-space-3);
+    min-height: calc(var(--qa-react-control-touch-target) + var(--qa-react-settings-space-3));
+    padding: var(--qa-react-settings-space-2) var(--qa-react-settings-space-4);
+  }
+
+  .qar-react-settings-asset-row + .qar-react-settings-asset-row {
+    border-top: 1px solid var(--qa-react-settings-divider);
   }
 
   .qar-react-settings-asset-icon {
-    inline-size: 2.12rem;
-    block-size: 2.12rem;
-  }
-
-  .qar-react-settings-footer {
-    padding: .56rem .72rem calc(env(safe-area-inset-bottom) + .72rem);
-    border-top: 0;
-    background: transparent;
-  }
-
-  .qar-react-settings-theme-night {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 0;
-    padding-top: .68rem;
-    border-top: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-settings-footer-panel {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: .62rem;
-    min-width: 0;
-    padding: .2rem .72rem .06rem;
-  }
-
-  .qar-react-settings-footer-panel + .qar-react-settings-footer-panel {
-    border-inline-start: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-settings-footer-title {
-    align-self: auto;
-    color: var(--qa-react-text-muted);
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .13em;
-    text-transform: uppercase;
-  }
-
-  .qar-react-settings-theme-strip,
-  .qar-react-settings-night-strip {
-    display: grid;
-    gap: .5rem;
-    overflow: visible;
-    min-height: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .qar-react-settings-theme-strip {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .qar-react-settings-night-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .qar-react-settings-appearance-choice {
-    display: grid !important;
-    align-content: start !important;
-    justify-items: center !important;
-    gap: .32rem !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    color: var(--qa-react-text);
-  }
-
-  .qar-react-settings-appearance-choice::after {
-    display: none;
-  }
-
-  .qar-react-settings-appearance-icon {
-    position: relative;
-    display: grid;
+    width: var(--qa-react-control-touch-target);
+    height: var(--qa-react-control-touch-target);
     place-items: center;
-    inline-size: 2.2rem;
-    block-size: 2.2rem;
-    border: 1px solid var(--qa-react-nav-control-border);
+    border: 1px solid var(--qa-react-settings-group-border);
     border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-surface) 78%, var(--qa-react-canvas));
-    color: var(--qa-react-text);
+    color: var(--qa-react-settings-muted);
   }
 
-  .qar-react-settings-appearance-icon > svg {
-    inline-size: 1.2rem;
-    block-size: 1.2rem;
+  .qar-react-settings-asset-main,
+  .qar-react-settings-asset-label {
+    min-width: 0;
   }
 
-  .qar-react-settings-appearance-choice[aria-pressed='true'] .qar-react-settings-appearance-icon {
-    border-color: var(--qa-react-accent-strong);
-    background: color-mix(in srgb, var(--qa-react-accent) 11%, var(--qa-react-surface));
-    color: var(--qa-react-accent-strong);
-    box-shadow:
-      0 0 0 2px color-mix(in srgb, var(--qa-react-accent) 10%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--qa-react-accent) 18%, transparent);
+  .qar-react-settings-asset-label {
+    display: block;
+    line-height: 1.4;
   }
 
-  .qar-react-settings-appearance-choice[aria-pressed='true'] .qar-react-settings-choice-label {
-    color: var(--qa-react-accent);
+  .qar-react-settings-asset-prefix {
+    color: var(--qa-react-settings-muted);
+    font-size: .75rem;
   }
 
-  .qar-react-settings-theme-swatch {
-    width: 1.14rem;
-    height: 1.14rem;
-    border-color: color-mix(in srgb, var(--qa-react-accent) 44%, var(--qa-react-border));
-    border-radius: var(--qa-react-radius-control);
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--qa-react-accent) 32%, transparent), transparent 58%),
-      radial-gradient(circle at 34% 26%, color-mix(in srgb, var(--qa-react-surface) 46%, transparent), transparent 46%),
-      var(--qa-react-theme-swatch-sepia);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--qa-react-surface) 52%, transparent),
-      inset 0 -5px 8px color-mix(in srgb, var(--qa-react-accent) 16%, transparent);
+  .qar-react-settings-asset-status {
+    color: var(--qa-react-settings-selected-text);
+    font-size: .75rem;
+    font-weight: 700;
   }
 
-  .qar-react-settings-appearance-choice[aria-pressed='true'] .qar-react-settings-theme-swatch {
-    border-color: var(--qa-react-accent);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--qa-react-accent) 26%, transparent),
-      inset 0 0 0 1px color-mix(in srgb, var(--qa-react-surface) 52%, transparent),
-      inset 0 -5px 8px color-mix(in srgb, var(--qa-react-accent) 16%, transparent);
+  .qar-react-settings-shell .qar-react-settings-theme-night {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .qar-react-settings-choice-label {
-    color: var(--qa-react-text);
-    font-size: .72rem;
-    line-height: 1.1;
+  .qar-react-settings-shell .qar-react-settings-appearance-panel {
+    display: grid;
+    align-content: start;
+    gap: var(--qa-react-settings-space-3);
+    min-width: 0;
+    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4) var(--qa-react-settings-space-4);
   }
 
-  @media (max-width: 767px) {
+  .qar-react-settings-shell .qar-react-settings-appearance-panel + .qar-react-settings-appearance-panel {
+    border-inline-start: 1px solid var(--qa-react-settings-divider);
+  }
+
+  .qar-react-settings-shell .qar-react-settings-appearance-title {
+    color: var(--qa-react-settings-muted);
+    font-size: .75rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .qar-react-settings-shell .qar-react-settings-theme-strip,
+  .qar-react-settings-shell .qar-react-settings-night-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(var(--qa-react-control-touch-target), 1fr));
+    gap: var(--qa-react-settings-space-2);
+    min-width: 0;
+  }
+
+  .qar-react-settings-shell .qar-react-settings-appearance-choice {
+    display: grid !important;
+    min-width: var(--qa-react-control-touch-target) !important;
+    min-height: var(--qa-react-control-touch-target) !important;
+    height: auto !important;
+    place-items: center !important;
+    gap: var(--qa-react-settings-space-1) !important;
+    padding: var(--qa-react-settings-space-2) !important;
+    border: 1px solid var(--qa-react-settings-group-border) !important;
+    border-radius: var(--qa-react-radius-control) !important;
+    background: transparent !important;
+    color: var(--qa-react-text) !important;
+  }
+
+  .qar-react-settings-shell .qar-react-settings-appearance-choice[aria-pressed='true'] {
+    border-color: var(--qa-react-accent-strong) !important;
+    background: var(--qa-react-settings-selected) !important;
+    color: var(--qa-react-settings-selected-text) !important;
+  }
+
+  .qar-react-settings-shell .qar-react-settings-appearance-icon {
+    display: grid;
+    width: 1.5rem;
+    height: 1.5rem;
+    place-items: center;
+  }
+
+  .qar-react-settings-shell .qar-react-settings-theme-swatch {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 1px solid var(--qa-react-settings-group-border);
+    border-radius: var(--qa-react-radius-circle);
+    background: var(--qa-react-theme-swatch-sepia);
+  }
+
+  .qar-react-settings-shell .qar-react-settings-choice-label {
+    font-size: .6875rem;
+    line-height: 1.2;
+  }
+
+  @media (min-width: 768px) and (min-height: 560px) {
+    [data-sheet-variant='adaptive-settings'] {
+      inset: 0 0 0 auto !important;
+      width: min(28rem, calc(100vw - var(--qa-react-settings-space-6))) !important;
+      border-inline-start: 1px solid var(--qa-react-settings-group-border) !important;
+    }
+  }
+
+  @media (max-width: 767px), (max-height: 559px) and (orientation: landscape) {
     .qar-react-settings-body {
-      padding: .5rem;
+      gap: var(--qa-react-settings-space-3);
+      padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-3) calc(env(safe-area-inset-bottom) + var(--qa-react-settings-space-3));
     }
 
-    .qar-react-settings-mode-card,
     .qar-react-settings-row,
-    .qar-react-settings-range {
+    .qar-react-settings-row--font-size {
       grid-template-columns: minmax(0, 1fr);
-      gap: .42rem;
-      min-height: 3rem;
-      padding: .42rem .82rem;
-    }
-
-    .qar-react-settings-mode-card {
-      min-height: 3.35rem;
-    }
-
-    .qar-react-settings-mode-card .qar-react-settings-row--mode-toggle {
-      grid-column: auto;
-    }
-
-    .qar-react-settings-mode-panels,
-    .qar-react-settings-mode-panels[data-active-mode='mushaf'] {
-      height: auto;
-      overflow: visible;
-    }
-
-    .qar-react-settings-row--font-size,
-    .qar-react-settings-row--select,
-    .qar-react-settings-row--switch {
-      grid-template-columns: minmax(0, 1fr);
+      gap: var(--qa-react-settings-space-2);
     }
 
     .qar-react-settings-row--switch {
       grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
-      column-gap: .8rem;
-      padding-block: .54rem .6rem;
     }
 
-    .qar-react-settings-row--switch label {
-      grid-column: 2;
-      grid-row: 1;
-      align-self: start;
-      justify-self: end;
-      margin-top: .08rem;
+    .qar-react-settings-row--select [aria-label='Reading flow'],
+    .qar-react-settings-row [role='radiogroup'] {
+      width: 100%;
+      min-width: 0;
     }
 
-    .qar-react-settings-row--switch .qar-react-settings-row-copy {
-      grid-column: 1;
-      grid-row: 1;
+    .qar-react-settings-shell .qar-react-settings-theme-night {
+      grid-template-columns: minmax(0, 1fr);
     }
 
-    .qar-react-settings-panel-head {
-      min-height: 1.9rem;
-      padding-block: .36rem .28rem;
-      padding-left: .82rem;
-    }
-
-    .qar-react-settings-assets > .qar-react-settings-section-heading {
-      min-height: 2.2rem;
-      padding: .38rem .72rem .3rem .82rem;
-    }
-
-    .qar-react-settings-assets-toggle {
-      min-height: 1.8rem !important;
-      padding-inline: .4rem !important;
-      font-size: .68rem !important;
-    }
-
-    .qar-react-settings-asset-list {
-      margin: .22rem .56rem .32rem;
-    }
-
-    .qar-react-settings-asset-row {
-      grid-template-columns: 2.25rem minmax(0, 1fr) auto .75rem;
-      min-height: 2.2rem;
-      gap: .4rem;
-      padding: 0 .48rem 0 .22rem;
-    }
-
-    .qar-react-settings-asset-icon {
-      inline-size: 1.64rem;
-      block-size: 1.64rem;
-    }
-
-    .qar-react-settings-theme-night {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-
-    .qar-react-settings-footer-panel {
-      padding-inline: .42rem;
-    }
-
-    .qar-react-settings-theme-strip {
-      gap: .34rem;
-    }
-
-    .qar-react-settings-night-strip {
-      gap: .4rem;
-    }
-
-    .qar-react-settings-appearance-icon {
-      inline-size: 1.95rem;
-      block-size: 1.95rem;
+    .qar-react-settings-shell .qar-react-settings-appearance-panel + .qar-react-settings-appearance-panel {
+      border-top: 1px solid var(--qa-react-settings-divider);
+      border-inline-start: 0;
     }
   }
-
-  @media (max-width: 380px) {
-    .qar-react-settings-header {
-      min-height: calc(env(safe-area-inset-top) + 48px);
-      padding: calc(env(safe-area-inset-top) + .42rem) .9rem .42rem;
-    }
-
-    .qar-react-settings-body {
-      padding: .36rem;
-    }
-
-    .qar-react-settings-mode-card,
-    .qar-react-settings-row,
-    .qar-react-settings-range {
-      gap: .3rem;
-      min-height: 2.58rem;
-      padding: .32rem .66rem;
-    }
-
-    .qar-react-settings-mode-card {
-      min-height: 2.72rem;
-    }
-
-    .qar-react-settings-mode-card .qar-react-settings-section-note {
-      display: none;
-    }
-
-    .qar-react-settings-panel-head {
-      min-height: 1.64rem;
-      padding: .26rem .66rem .22rem;
-    }
-
-    .qar-react-settings-row--switch {
-      padding-block: .42rem;
-    }
-
-    .qar-react-settings-assets > .qar-react-settings-section-heading {
-      min-height: 2rem;
-      padding: .3rem .58rem .28rem .66rem;
-    }
-
-    .qar-react-settings-footer {
-      padding: .4rem .5rem calc(env(safe-area-inset-bottom) + .48rem);
-    }
-
-    .qar-react-settings-theme-night {
-      gap: 0;
-      padding-top: .48rem;
-    }
-
-    .qar-react-settings-footer-panel {
-      gap: .42rem;
-      padding-inline: .3rem;
-    }
-
-    .qar-react-settings-footer-title {
-      font-size: .62rem;
-    }
-
-    .qar-react-settings-theme-strip {
-      gap: .22rem;
-    }
-
-    .qar-react-settings-night-strip {
-      gap: .28rem;
-    }
-
-    .qar-react-settings-appearance-icon {
-      inline-size: 1.76rem;
-      block-size: 1.76rem;
-    }
-
-    .qar-react-settings-choice-label {
-      font-size: .66rem;
-    }
-  }
-
   .qar-reader-chrome {
     position: fixed;
     top: 0;
@@ -4353,19 +3485,6 @@
       border-right: 1px solid var(--qa-react-border);
     }
 
-    .qar-react-settings-shell {
-      inset: 0 0 0 auto;
-      width: min(420px, calc(100vw - 2rem));
-      border-left: 1px solid var(--qa-react-border);
-    }
-
-    .qar-react-settings-body {
-      padding: .65rem;
-    }
-
-    .qar-react-settings-footer {
-      padding-inline: .65rem;
-    }
   }
 
   @media (max-width: 600px) {
