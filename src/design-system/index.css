@@ -1590,6 +1590,10 @@
     min-width: 0;
   }
 
+  .qar-react-settings-font-slider .qar-react-settings-font-size-slider > [data-orientation='horizontal'] {
+    min-block-size: var(--qa-react-control-touch-target);
+  }
+
   .qar-react-settings-font-size-mark {
     color: var(--qa-react-settings-muted);
     font-family: var(--qa-react-font-translation);
