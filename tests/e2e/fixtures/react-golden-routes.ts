@@ -309,16 +309,25 @@ export async function openSeededReactMushafRoute(
 
 export function installPageGuards(page: Page, label: string, allowedUrlPatterns: RegExp[] = []): PageGuard {
   const failures: string[] = []
+  const neighborMushafPreloads = new WeakSet<Request>()
   const isAllowed = (url: string) => allowedUrlPatterns.some((pattern) => pattern.test(url))
   const onPageError = (error: Error) => failures.push(`${label} page error: ${error.message}`)
   const onConsole = (message: ConsoleMessage) => {
     if (message.type() === 'error') failures.push(`${label} console error: ${message.text()}`)
   }
+  const onRequest = (request: Request) => {
+    const requestedPageMatch = /\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/pages\/(\d+)\.svg$/.exec(
+      new URL(request.url()).pathname,
+    )
+    const currentPageMatch = /#\/m\/(\d+)/.exec(page.url())
+    if (!requestedPageMatch || !currentPageMatch) return
+    if (Number(requestedPageMatch[1]) !== Number(currentPageMatch[1])) neighborMushafPreloads.add(request)
+  }
   const onRequestFailed = (request: Request) => {
     const url = request.url()
     const errorText = request.failure()?.errorText ?? ''
     const isCancelledMushafPagePreload = errorText.includes('ERR_ABORTED')
-      && /\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/pages\/\d+\.svg$/.test(new URL(url).pathname)
+      && neighborMushafPreloads.has(request)
     if (!isAllowed(url) && !isCancelledMushafPagePreload) {
       failures.push(`${label} request failed: ${url} ${errorText}`.trim())
     }
@@ -331,6 +340,7 @@ export function installPageGuards(page: Page, label: string, allowedUrlPatterns:
 
   page.on('pageerror', onPageError)
   page.on('console', onConsole)
+  page.on('request', onRequest)
   page.on('requestfailed', onRequestFailed)
   page.on('response', onResponse)
 
@@ -339,6 +349,7 @@ export function installPageGuards(page: Page, label: string, allowedUrlPatterns:
     dispose: () => {
       page.off('pageerror', onPageError)
       page.off('console', onConsole)
+      page.off('request', onRequest)
       page.off('requestfailed', onRequestFailed)
       page.off('response', onResponse)
     },
