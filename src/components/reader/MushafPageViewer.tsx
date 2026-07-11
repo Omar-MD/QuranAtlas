@@ -24,7 +24,10 @@ const EDGE_TAP_RATIO = 0.3
 const SCROLL_LINE_PX = 48
 
 export type MushafPageViewerProps = {
-  adjacentPages?: unknown
+  adjacentPages?: {
+    next?: MushafPreviewPage | null
+    previous?: MushafPreviewPage | null
+  }
   bookmarked?: boolean
   chromeVisible?: boolean
   fitWidth?: boolean
@@ -40,6 +43,11 @@ export type MushafPageViewerProps = {
   viewMode?: MushafViewMode
 }
 
+export type MushafPreviewPage = {
+  inlineSvg: ReactInlineMushafSvg
+  resolved: MushafResolvedPage
+}
+
 type ScrollAnchor = {
   page: number
   top: number
@@ -53,6 +61,7 @@ type VisiblePageMeasurement = {
 }
 
 export function MushafPageViewer({
+  adjacentPages,
   bookmarked = false,
   chromeVisible = true,
   fitWidth = false,
@@ -62,7 +71,7 @@ export function MushafPageViewer({
   onRequestPage,
   onToggleBookmark,
   onToggleChrome,
-  pages = [],
+  pages,
   resolved,
   surahLabel,
   viewMode = 'auto',
@@ -78,9 +87,13 @@ export function MushafPageViewer({
   const interactionSuspended = useReaderInteractionSuspended()
   const ratio = inlineSvg.viewBox.width / inlineSvg.viewBox.height
   const isScrollMode = viewMode === 'continuous'
+  const effectivePages = useMemo(
+    () => pages ?? legacyPageEntries(adjacentPages, { inlineSvg, resolved }),
+    [adjacentPages, inlineSvg, pages, resolved],
+  )
   const orderedPages = useMemo(
-    () => [...pages].sort((left, right) => left.page - right.page),
-    [pages],
+    () => [...effectivePages].sort((left, right) => left.page - right.page),
+    [effectivePages],
   )
   const pageListKey = orderedPages
     .map((entry) => `${entry.page}:${entry.status}`)
@@ -93,14 +106,14 @@ export function MushafPageViewer({
 
   function requestOrNavigate(page: number): void {
     if (page < 1 || page > resolved.pageCount) return
-    if (readyEntry(pages, page)) navigateTo(page)
+    if (readyEntry(effectivePages, page)) navigateTo(page)
     else onRequestPage?.(page)
   }
 
   const gesture = useMushafPageGesture({
     canNavigate: (direction) => direction === 'next'
-      ? readyEntry(pages, resolved.page + 1) !== null
-      : readyEntry(pages, resolved.page - 1) !== null,
+      ? readyEntry(effectivePages, resolved.page + 1) !== null
+      : readyEntry(effectivePages, resolved.page - 1) !== null,
     disabled: interactionSuspended || isScrollMode,
     onCommit: (direction) => navigateTo(resolved.page + (direction === 'next' ? 1 : -1)),
     onRequestDestination: (direction) => onRequestPage?.(resolved.page + (direction === 'next' ? 1 : -1)),
@@ -221,7 +234,7 @@ export function MushafPageViewer({
   }, [])
 
   function entryFor(page: number): MushafPageWindowEntry | null {
-    const entry = pages.find((candidate) => candidate.page === page)
+    const entry = effectivePages.find((candidate) => candidate.page === page)
     if (entry) return entry
     if (page === resolved.page) {
       return {
@@ -382,6 +395,21 @@ function readyEntry(
 ): MushafReadyPageAssetState | null {
   const entry = entries.find((candidate) => candidate.page === page)
   return entry?.status === 'ready' ? entry.asset : null
+}
+
+function legacyPageEntries(
+  adjacentPages: MushafPageViewerProps['adjacentPages'],
+  current: MushafPreviewPage,
+): MushafPageWindowEntry[] {
+  const legacyPages = [adjacentPages?.previous, current, adjacentPages?.next]
+    .filter((page): page is MushafPreviewPage => Boolean(page))
+  return [...new Map(legacyPages.map((page) => [page.resolved.page, page])).values()]
+    .map((page): MushafPageWindowEntry => ({
+      asset: { inlineSvg: page.inlineSvg, resolved: page.resolved, status: 'ready' },
+      page: page.resolved.page,
+      status: 'ready',
+    }))
+    .sort((left, right) => left.page - right.page)
 }
 
 function pageAccessibleName(asset: MushafReadyPageAssetState): string {

@@ -817,6 +817,37 @@ describe('React reader coverage', () => {
     expect(screen.getByRole('img', { name: /mushaf page 43/i })).toBeInTheDocument()
   })
 
+  it('adapts legacy adjacent pages into accessible continuous images', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const resolved = {
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg',
+      firstVerse: { surah: 1, verse: 1 },
+      manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page: 1,
+      pageCount: 604,
+      riwayah: 'qaloon' as const,
+      riwayahLabel: 'Qalun',
+    }
+
+    render(
+      <MushafPageViewer
+        adjacentPages={{
+          next: {
+            inlineSvg,
+            resolved: { ...resolved, assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg', page: 2 },
+          },
+        }}
+        inlineSvg={inlineSvg}
+        resolved={resolved}
+        viewMode="continuous"
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: /mushaf page 1/i })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mushaf page 2/i })).toBeInTheDocument()
+  })
+
   it('exposes only the current page image in Single Mushaf mode', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {

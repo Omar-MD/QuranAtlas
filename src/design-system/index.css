@@ -4055,6 +4055,15 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  [data-mushaf-layout-mode='single'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-strip {
+    align-items: stretch;
+    height: auto;
+  }
+
+  [data-mushaf-layout-mode='single'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-cell {
+    aspect-ratio: var(--qa-react-mushaf-page-ratio);
+  }
+
   .qar-react-mushaf-page-strip {
     display: flex;
     width: 300%;
