@@ -144,6 +144,14 @@ export const ReaderChromeWithWirdStatus: Story = {
   ),
 }
 
+export const VerseReadingViewToggle: Story = {
+  render: () => <ReaderChrome mode="verse" onModeChange={() => undefined} />,
+}
+
+export const MushafReadingViewToggle: Story = {
+  render: () => <ReaderChrome mode="mushaf" onModeChange={() => undefined} />,
+}
+
 export const MushafMissingPack: Story = {
   render: () => <MushafRoute assetState="missing" page={1} />,
 }

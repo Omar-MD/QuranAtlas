@@ -86,9 +86,6 @@ export function AboutRoute() {
     <>
       <ReaderChrome
         mode="verse"
-        onModeChange={(mode) => {
-          window.location.hash = mode === 'mushaf' ? REACT_ROUTES.mushaf(1) : REACT_ROUTES.home
-        }}
         onOpenNavigation={() => dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })}
         onOpenSettings={() => {
           window.location.hash = REACT_ROUTES.settings

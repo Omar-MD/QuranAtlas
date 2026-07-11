@@ -2711,13 +2711,12 @@
     background: transparent;
   }
 
-  .qar-reader-chrome-mode-toggle {
-    position: relative;
-    flex: 0 0 42px;
-    inline-size: 42px;
-    block-size: 42px;
-    min-width: 42px;
-    min-height: 42px;
+  .qar-reader-chrome-view-toggle {
+    flex: 0 0 var(--qa-react-control-touch-target);
+    inline-size: var(--qa-react-control-touch-target);
+    block-size: var(--qa-react-control-touch-target);
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
     padding: 0 !important;
     border-color: var(--qa-react-nav-control-border) !important;
     border-radius: var(--qa-react-radius-circle) !important;
@@ -2729,35 +2728,11 @@
     touch-action: manipulation;
   }
 
-  .qar-reader-chrome-mode-toggle::after {
-    content: "";
-    position: absolute;
-    right: 7px;
-    bottom: 7px;
-    inline-size: 6px;
-    block-size: 6px;
-    border-radius: var(--qa-react-radius-circle);
-    background: var(--qa-react-accent);
-  }
-
-  .qar-reader-chrome-mode-toggle[data-reader-mode='mushaf'] {
-    border-color: var(--qa-react-accent) !important;
-    background: var(--qa-react-accent) !important;
-    color: var(--qa-react-text-on-accent) !important;
-  }
-
-  .qar-reader-chrome-mode-toggle[data-reader-mode='mushaf']::after {
-    background: var(--qa-react-text-on-accent);
-  }
-
-  .qar-reader-chrome-mode-glyph {
-    display: grid;
-    place-items: center;
-    transition: transform var(--qa-react-transition-fast);
-  }
-
-  .qar-reader-chrome-mode-toggle[data-reader-mode='mushaf'] .qar-reader-chrome-mode-glyph {
-    transform: scaleX(-1);
+  .qar-reader-chrome-view-toggle:hover,
+  .qar-reader-chrome-view-toggle:focus-visible {
+    border-color: color-mix(in srgb, var(--qa-react-accent) 62%, var(--qa-react-nav-control-border)) !important;
+    background: color-mix(in srgb, var(--qa-react-accent) 8%, var(--qa-react-surface)) !important;
+    color: var(--qa-react-accent-strong);
   }
 
   .qar-reader-chrome-wird-anchor {

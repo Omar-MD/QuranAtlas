@@ -460,13 +460,13 @@ describe('React reader coverage', () => {
 
     expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
     expect(screen.queryByRole('tab', { name: 'Mushaf' })).toBeNull()
-    const mushafToggle = screen.getByRole('button', { name: 'Switch to Mushaf mode' })
+    const mushafToggle = screen.getByRole('button', { name: 'Switch to Mushaf view' })
     fireEvent.click(mushafToggle)
     expect(onModeChange).toHaveBeenCalledWith('mushaf')
-    expect(screen.getByRole('button', { name: 'Switch to Mushaf mode' })).toHaveAttribute('aria-pressed', 'false')
+    expect(mushafToggle).not.toHaveAttribute('aria-pressed')
 
     rerender(<ReaderChrome mode="mushaf" onModeChange={onModeChange} />)
-    expect(screen.getByRole('button', { name: 'Switch to Verse mode' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Switch to Verse view' })).not.toHaveAttribute('aria-pressed')
   })
 
   it('switches from the Verse route to the Mushaf page containing the active verse', async () => {
@@ -479,7 +479,7 @@ describe('React reader coverage', () => {
     window.location.hash = '#/s/2/255'
 
     render(<ReaderRoute surah={2} ayah={255} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf mode' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Mushaf view' }))
 
     await waitFor(() => expect(window.location.hash).toBe('#/m/42'))
     vi.unstubAllGlobals()
@@ -494,7 +494,7 @@ describe('React reader coverage', () => {
     window.location.hash = '#/m/42'
 
     render(<MushafRoute page={42} assetState="missing" />)
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Verse mode' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to Verse view' }))
 
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/251'))
     vi.unstubAllGlobals()
@@ -510,7 +510,7 @@ describe('React reader coverage', () => {
     expect(within(chrome).queryByRole('tab', { name: 'Verse' })).not.toBeInTheDocument()
     expect(within(chrome).queryByRole('tab', { name: 'Mushaf' })).not.toBeInTheDocument()
     expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
-    expect(within(chrome).getByRole('button', { name: 'Switch to Verse mode' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(chrome).getByRole('button', { name: 'Switch to Verse view' })).not.toHaveAttribute('aria-pressed')
   })
 
   it('hides Mushaf chrome after the page route changes', async () => {

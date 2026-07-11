@@ -12,6 +12,8 @@ describe('React About route', () => {
     render(<AboutRoute />)
 
     expect(screen.getByRole('navigation', { name: 'Primary navigation' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Switch to Mushaf view' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Switch to Verse view' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
 
     const drawer = screen.getByRole('dialog', { name: 'Navigation' })

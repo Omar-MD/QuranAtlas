@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
-import { BookOpenText, ListOrdered, Menu, Settings } from 'lucide-react'
+import { Menu, Settings } from 'lucide-react'
 
 import { cn } from '../../design-system/utils/cn'
 import { IconButton } from '../ui'
+import { ReadingViewToggle } from './ReadingViewToggle'
 
 export type ReaderMode = 'verse' | 'mushaf'
 
@@ -34,19 +35,7 @@ export function ReaderChrome({
       </IconButton>
       <div className="qar-reader-chrome-spacer" aria-hidden="true" />
       {wirdStatus}
-      {onModeChange && (
-        <IconButton
-          aria-pressed={mode === 'mushaf'}
-          className="qar-reader-chrome-mode-toggle"
-          data-reader-mode={mode}
-          label={mode === 'verse' ? 'Switch to Mushaf mode' : 'Switch to Verse mode'}
-          onClick={() => onModeChange(mode === 'verse' ? 'mushaf' : 'verse')}
-        >
-          <span className="qar-reader-chrome-mode-glyph" aria-hidden="true">
-            {mode === 'verse' ? <BookOpenText size={20} strokeWidth={1.7} /> : <ListOrdered size={20} strokeWidth={1.75} />}
-          </span>
-        </IconButton>
-      )}
+      {onModeChange ? <ReadingViewToggle mode={mode} onModeChange={onModeChange} /> : null}
       {!hideSettings && (
         <IconButton className="qar-reader-chrome-icon" label="Open settings" onClick={onOpenSettings}>
           <Settings aria-hidden="true" size={26} strokeWidth={1.6} />
