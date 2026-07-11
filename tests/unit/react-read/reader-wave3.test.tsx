@@ -155,6 +155,34 @@ function mushafFetchFixture() {
   })
 }
 
+function failingSecondPageMushafFetch() {
+  return vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input)
+    if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+    if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
+      return jsonResponse({
+        ...mushafManifest,
+        pages: [
+          mushafManifest.pages[0],
+          {
+            ...mushafManifest.pages[0],
+            assetPath: 'pages/002.svg',
+            firstVerse: { surah: 2, verse: 1 },
+            page: 2,
+          },
+        ],
+      })
+    }
+    if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg') {
+      return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+    }
+    if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg') {
+      return { ok: false, status: 500, text: async () => '' } as Response
+    }
+    return jsonResponse({}, { ok: false, status: 404 })
+  })
+}
+
 function ReaderSuspensionProbe() {
   return <div data-testid="reader-suspended">{String(useReaderInteractionSuspended())}</div>
 }
@@ -623,6 +651,64 @@ describe('React reader coverage', () => {
 
     resolvePageTwo?.({ ok: true, status: 200, text: async () => '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="#fff"/><path d="M15 15h90v150H15z" fill="#000"/></svg>' } as Response)
     expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon, beginning near 2:1/i })).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
+  it('canonicalizes an out-of-range Mushaf page to the manifest boundary', async () => {
+    const onReplaceHash = vi.fn()
+    const finalPage = {
+      ...mushafManifest.pages[0],
+      assetPath: 'pages/604.svg',
+      firstVerse: { surah: 114, verse: 1 },
+      page: 604,
+    }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') {
+        return jsonResponse({
+          ...mushafAssetIndex,
+          assets: [{
+            ...mushafAssetIndex.assets[0],
+            files: [{ url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/604.svg' }],
+          }],
+        })
+      }
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
+        return jsonResponse({ ...mushafManifest, pages: [finalPage], verseToPage: { '114:1': 604 } })
+      }
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/604.svg') {
+        return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      }
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+
+    render(<MushafRoute onReplaceHash={onReplaceHash} page={999} />)
+
+    expect(await screen.findByRole('img', { name: /mushaf page 604, qaloon, beginning near 114:1/i })).toBeInTheDocument()
+    await waitFor(() => expect(onReplaceHash).toHaveBeenCalledWith('#/m/604'))
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps a ready requested page visible when a neighbor fails', async () => {
+    const fetcher = failingSecondPageMushafFetch()
+    vi.stubGlobal('fetch', fetcher)
+
+    render(<MushafRoute page={1} />)
+
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    await waitFor(() => expect(fetcher.mock.calls.some(([input]) => String(input).endsWith('/pages/002.svg'))).toBe(true))
+    expect(screen.queryByText('Mushaf page pack could not be loaded.')).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
+  it('renders the requested-page error gate when that page fails', async () => {
+    vi.stubGlobal('fetch', failingSecondPageMushafFetch())
+
+    render(<MushafRoute page={2} />)
+
+    expect(await screen.findByText('Mushaf page pack could not be loaded.')).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /mushaf page 2/i })).not.toBeInTheDocument()
     vi.unstubAllGlobals()
   })
 

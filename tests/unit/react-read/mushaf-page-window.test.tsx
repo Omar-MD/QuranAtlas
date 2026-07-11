@@ -89,6 +89,54 @@ describe('useMushafPageWindow', () => {
     expect(readyAsset(result.current.requested).resolved.mushafEditionId).toBe('replacement-edition')
   })
 
+  it('keeps the latest request when a page leaves and re-enters the window', async () => {
+    const oldPage = deferred<MushafReadyPageAssetState>()
+    const latestPage = deferred<MushafReadyPageAssetState>()
+    let page44Requests = 0
+    mockedLoadMushafPageAsset.mockImplementation(({ mushafEditionId, page, riwayah }) => {
+      if (page === 44) {
+        page44Requests += 1
+        return page44Requests === 1 ? oldPage.promise : latestPage.promise
+      }
+      return Promise.resolve(readyPage(page, mushafEditionId, riwayah))
+    })
+    const { rerender, result } = renderHook(({ page }) => useMushafPageWindow({
+      enabled: true,
+      page,
+      pageCount: 604,
+      profile: primaryProfile,
+    }), { initialProps: { page: 44 } })
+
+    await waitFor(() => expect(page44Requests).toBe(1))
+    rerender({ page: 50 })
+    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
+    rerender({ page: 44 })
+    await waitFor(() => expect(page44Requests).toBe(2))
+
+    await act(async () => oldPage.resolve(readyPage(44)))
+    expect(result.current.requested?.status).toBe('loading')
+
+    await act(async () => latestPage.resolve(readyPage(44)))
+    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
+    expect(readyAsset(result.current.requested).resolved.page).toBe(44)
+  })
+
+  it('loads the bounded final page for an out-of-range request', async () => {
+    mockedLoadMushafPageAsset.mockImplementation(async ({ mushafEditionId, page, riwayah }) => (
+      readyPage(page, mushafEditionId, riwayah)
+    ))
+    const { result } = renderHook(() => useMushafPageWindow({
+      enabled: true,
+      page: 999,
+      pageCount: 604,
+      profile: primaryProfile,
+    }))
+
+    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
+    expect(mockedLoadMushafPageAsset.mock.calls[0]?.[0].page).toBe(604)
+    expect(result.current.entries.map((entry) => entry.page)).toEqual([602, 603, 604])
+  })
+
   it('keeps failed pages non-ready and retries them with a new request generation', async () => {
     mockedLoadMushafPageAsset.mockImplementation(async ({ mushafEditionId, page, riwayah }) => {
       if (page === 44 && mockedLoadMushafPageAsset.mock.calls.filter(([input]) => input.page === 44).length === 1) {

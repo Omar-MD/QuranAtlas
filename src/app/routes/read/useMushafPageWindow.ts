@@ -35,8 +35,9 @@ export function useMushafPageWindow(input: {
   const profileKey = input.enabled && input.profile
     ? `${input.profile.riwayah}:${input.profile.mushafEditionId}`
     : null
-  const desiredPages = useMemo(() => Array.from({ length: 5 }, (_, index) => input.page - 2 + index)
-    .filter((page) => page >= 1 && page <= input.pageCount), [input.page, input.pageCount])
+  const requestedPage = Math.min(input.pageCount, Math.max(1, input.page))
+  const desiredPages = useMemo(() => Array.from({ length: 5 }, (_, index) => requestedPage - 2 + index)
+    .filter((page) => page >= 1 && page <= input.pageCount), [input.pageCount, requestedPage])
   const desiredKey = desiredPages.join(':')
   const [state, setState] = useState<MushafPageWindowState>({ entries: [], profileKey: null })
   const [retryVersion, setRetryVersion] = useState(0)
@@ -88,10 +89,10 @@ export function useMushafPageWindow(input: {
     let active = true
 
     async function loadWindow(): Promise<void> {
-      await ensurePageLoaded(input.page)
+      await ensurePageLoaded(requestedPage)
       if (!active || profileKeyRef.current !== profileKey) return
       await Promise.all(desiredPages
-        .filter((page) => page !== input.page)
+        .filter((page) => page !== requestedPage)
         .map((page) => ensurePageLoaded(page)))
     }
 
@@ -116,7 +117,7 @@ export function useMushafPageWindow(input: {
         signal: controller.signal,
       }).then((result) => {
         const currentRequest = inFlightRef.current.get(page)
-        if (controller.signal.aborted || currentRequest?.key !== key || profileKeyRef.current !== profileKey) return
+        if (controller.signal.aborted || currentRequest?.controller !== controller || profileKeyRef.current !== profileKey) return
         if ((retryGenerationsRef.current.get(page) ?? 0) !== retryGeneration) return
         if (!desiredPagesRef.current.includes(page) || result.status === 'aborted' || result.status === 'loading') return
         const entry: MushafPageWindowEntry = result.status === 'ready'
@@ -126,7 +127,7 @@ export function useMushafPageWindow(input: {
           ? { ...current, entries: replaceEntry(current.entries, entry) }
           : current)
       }).finally(() => {
-        if (inFlightRef.current.get(page)?.key === key) inFlightRef.current.delete(page)
+        if (inFlightRef.current.get(page)?.controller === controller) inFlightRef.current.delete(page)
       })
       inFlightRef.current.set(page, { controller, key, promise })
       return promise
@@ -136,7 +137,7 @@ export function useMushafPageWindow(input: {
     return () => {
       active = false
     }
-  }, [desiredKey, input.page, profileKey, retryVersion, state.profileKey])
+  }, [desiredKey, profileKey, requestedPage, retryVersion, state.profileKey])
 
   const retry = useCallback((page: number) => {
     if (!profileKeyRef.current || !desiredPagesRef.current.includes(page)) return
@@ -153,7 +154,7 @@ export function useMushafPageWindow(input: {
   const entries = state.profileKey === profileKey ? state.entries : []
   return {
     entries,
-    requested: entries.find((entry) => entry.page === input.page) ?? null,
+    requested: entries.find((entry) => entry.page === requestedPage) ?? null,
     retry,
   }
 }
