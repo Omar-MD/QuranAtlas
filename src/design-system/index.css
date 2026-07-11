@@ -1441,13 +1441,14 @@
   }
 
   [data-state='open']:has(+ [data-sheet-variant='adaptive-settings']) {
+    z-index: 110 !important;
     background: var(--qa-react-settings-backdrop) !important;
   }
 
   [data-sheet-variant='adaptive-settings'] {
     position: fixed !important;
     inset: 0 !important;
-    z-index: 50 !important;
+    z-index: 120 !important;
     display: flex !important;
     width: 100vw !important;
     max-width: none !important;
