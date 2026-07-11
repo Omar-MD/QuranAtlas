@@ -1476,8 +1476,8 @@
   }
 
   [data-sheet-variant='adaptive-settings'] > div:first-child > button {
-    min-width: var(--qa-react-control-touch-target);
-    min-height: var(--qa-react-control-touch-target);
+    min-width: var(--qa-react-control-touch-target) !important;
+    min-height: var(--qa-react-control-touch-target) !important;
   }
 
   [data-sheet-variant='adaptive-settings'] .qar-react-sheet-body {
@@ -1497,6 +1497,7 @@
   .qar-react-settings-body {
     display: grid;
     align-content: start;
+    grid-auto-rows: max-content;
     gap: var(--qa-react-settings-space-4);
     min-height: 0;
     padding: var(--qa-react-settings-space-4) var(--qa-react-settings-space-4) calc(env(safe-area-inset-bottom) + var(--qa-react-settings-space-4));
