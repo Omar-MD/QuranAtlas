@@ -17,6 +17,7 @@ import {
   SegmentedControl,
   Select,
   Sheet,
+  SheetBody,
   Slider,
   Spinner,
   Switch,
@@ -73,5 +74,23 @@ export const Behavior: Story = {
       <Command label="Commands" items={[{ label: 'Go to Surah', icon: Settings }]} />
       <Disclosure title="More">Disclosure content</Disclosure>
     </div>
+  ),
+}
+
+export const AdaptiveSettingsSheetOpen: Story = {
+  parameters: { layout: 'fullscreen', viewport: { defaultViewport: 'mobile' } },
+  render: () => (
+    <Sheet closeLabel="Close settings" onOpenChange={() => undefined} open title="Verse settings" variant="adaptive-settings">
+      <SheetBody className="qar-react-settings-shell">
+        <div className="qar-react-settings-body">
+          <section aria-labelledby="adaptive-sheet-heading" className="qar-react-settings-group">
+            <header className="qar-react-settings-group-heading">
+              <h3 id="adaptive-sheet-heading">Verse reading</h3>
+            </header>
+            <div className="qar-react-settings-group-content qar:p-4">Adaptive Settings sheet body</div>
+          </section>
+        </div>
+      </SheetBody>
+    </Sheet>
   ),
 }

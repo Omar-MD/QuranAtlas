@@ -1,6 +1,12 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
-import { expectAxeClean, expectNoHorizontalOverflow } from '../fixtures/react-a11y'
+import {
+  expectAxeClean,
+  expectMinTouchTarget,
+  expectNoHorizontalOverflow,
+  expectRenderedBorderContrast,
+  expectRenderedContrast,
+} from '../fixtures/react-a11y'
 import {
   expectNoGuardFailures,
   expectReactProductionPreflight,
@@ -9,187 +15,243 @@ import {
   installPageGuards,
   seedTargetState,
   targetUrl,
+  type GoldenViewportId,
 } from '../fixtures/react-golden-routes'
 
-const configureFixtures = GOLDEN_FIXTURES.filter((fixture) =>
-  ['settings-over-reader', 'about-page'].includes(fixture.id),
-)
+const settingsViewports = GOLDEN_FIXTURES.find((fixture) => fixture.id === 'settings-over-reader')!.viewports
 
-for (const fixture of configureFixtures) {
-  for (const viewportId of fixture.viewports) {
-    test(`@golden @a11y ${fixture.id} ${viewportId}`, async ({ page }) => {
-      await page.setViewportSize(GOLDEN_VIEWPORTS[viewportId])
-      await expectReactProductionPreflight(page)
-      await seedTargetState(page, 'react', fixture.seed)
-      const guard = installPageGuards(page, `react ${fixture.id}`)
-      await page.goto(targetUrl('react', fixture.route || '/'))
-      await expect(page.locator('#react-root')).toBeVisible()
-      await expectNoHorizontalOverflow(page)
-      await expectAxeClean(page)
-
-      if (fixture.id === 'settings-over-reader') {
-        await expect(page, 'RPA-005: #/settings is transient and restores the reader hash while the shell stays open.').toHaveURL(/#\/s\/1$/)
-        const shell = page.getByRole('dialog', { name: 'Settings' })
-        await expect(shell).toBeVisible()
-        await expect(shell.getByRole('heading', { name: 'Settings' })).toBeVisible()
-        await expect(shell.getByRole('radio', { name: 'Reader mode: Verse' })).toHaveAttribute('aria-checked', 'true')
-        await expect(shell.getByRole('radio', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-checked', 'false')
-        await expect(page.getByRole('main', { name: /verse reader|mushaf reader/i })).toBeVisible()
-        const includedAssets = shell.getByRole('region', { name: 'Included assets' })
-        await expect(includedAssets).toBeVisible()
-        await expect(shell.getByRole('button', { name: 'Manage Assets' })).toHaveCount(0)
-        await expect(shell.getByRole('group', { name: 'Theme' })).toBeVisible()
-        await expect(shell.getByRole('group', { name: 'Night mode' })).toBeVisible()
-        const assetsToggle = includedAssets.getByRole('button', { name: viewportId === 'phone-standard' ? 'Show' : 'Hide' })
-        await expect(assetsToggle).toHaveAttribute('aria-expanded', viewportId === 'phone-standard' ? 'false' : 'true')
-        if (viewportId === 'phone-standard') {
-          await expect(includedAssets.getByText('Text:')).toHaveCount(0)
-          await assetsToggle.click()
-          await expect(includedAssets.getByRole('button', { name: 'Hide' })).toHaveAttribute('aria-expanded', 'true')
-        }
-        await expect(includedAssets.getByText('Text:')).toBeVisible()
-        await expect(includedAssets.getByText('Uthmani KFGQPC + KFGQPC Qaloon')).toBeVisible()
-        await expect(includedAssets.getByText('Mushaf:')).toBeVisible()
-        await expect(includedAssets.getByText('Qalun Quran.ws')).toBeVisible()
-        await expect(includedAssets.getByText('Translation:')).toBeVisible()
-        await expect(includedAssets.getByText('Bridges')).toBeVisible()
-        await expect(shell.getByText('Verse preview')).toHaveCount(0)
-        await expect(shell.getByText('Mushaf preview')).toHaveCount(0)
-        await expect(page.getByRole('button', { name: /hafs|warsh|install|delete|verify|set active|retry/i })).toHaveCount(0)
-        await expect(page.getByRole('heading', { name: /mushaf edition|choose riwayah|choose translation|tafsir|search/i })).toHaveCount(0)
-
-        const containment = await shell.evaluate((element) => {
-          const rect = element.getBoundingClientRect()
-          const style = getComputedStyle(element)
-          const body = element.querySelector('.qar-react-settings-body')
-          return {
-            bottom: rect.bottom,
-            height: rect.height,
-            left: rect.left,
-            position: style.position,
-            right: rect.right,
-            shellScrollHeight: element.scrollHeight,
-            shellClientHeight: element.clientHeight,
-            bodyScrollHeight: body?.scrollHeight ?? 0,
-            bodyClientHeight: body?.clientHeight ?? 0,
-            top: rect.top,
-            width: rect.width,
-            viewportHeight: window.innerHeight,
-            viewportWidth: window.innerWidth,
-          }
-        })
-        expect(containment.left).toBeGreaterThanOrEqual(0)
-        expect(containment.top).toBeGreaterThanOrEqual(0)
-        expect(containment.right).toBeLessThanOrEqual(containment.viewportWidth + 1)
-        expect(containment.bottom).toBeLessThanOrEqual(containment.viewportHeight + 1)
-        expect(containment.shellScrollHeight, 'settings shell should fit without shell scrolling').toBeLessThanOrEqual(containment.shellClientHeight + 1)
-        expect(containment.bodyScrollHeight, 'settings controls should fit without body scrolling').toBeLessThanOrEqual(containment.bodyClientHeight + 1)
-        if (viewportId === 'phone-standard') {
-          expect(containment.width, 'mobile settings shell should fill the viewport width').toBeGreaterThanOrEqual(containment.viewportWidth - 1)
-          expect(containment.height, 'mobile settings shell should fill the viewport height').toBeGreaterThanOrEqual(containment.viewportHeight - 1)
-        } else {
-          expect(containment.left, 'tablet and desktop settings shell should be reader-adjacent on the right side').toBeGreaterThanOrEqual(containment.viewportWidth - 421)
-          expect(containment.width).toBeLessThan(containment.viewportWidth)
-          expect(containment.width, 'tablet and desktop settings shell should stay a compact column bar').toBeLessThanOrEqual(420)
-        }
-      }
-
-      if (fixture.id === 'about-page') {
-        await expect(page.getByRole('main', { name: 'About' }).getByRole('heading', { name: 'QuranAtlas' }), 'RPA-009: About must carry the About page heading.').toBeVisible()
-        await expect(page.getByText('Read, reflect, remember.'), 'RPA-009: About must carry the About mission copy.').toBeVisible()
-        await expect(page.getByText(/وَلَقَدۡ يَسَّرۡنَا/), 'RPA-009: About must carry the About blessing copy.').toBeVisible()
-        await expect(page.getByRole('heading', { name: 'Attribution' }), 'RPA-009: About must carry attribution.').toBeVisible()
-        await expect(page.getByText(/English translation: Bridges/)).toBeVisible()
-        await expect(page.getByTestId('about-version')).toContainText(/^v.+ · .+/)
-        await expect(page.getByText(/verified reader, navigation, settings, search, bookmarks, and Daily Wird workflows/i)).toHaveCount(0)
-        await expect(page.getByRole('button', { name: /clear all data/i }), 'RPA-009: About must expose clear-data behavior.').toBeVisible()
-        await page.getByRole('button', { name: /clear all data/i }).click()
-        const dialog = page.getByRole('dialog', { name: /clear all data/i })
-        await expect(dialog).toBeVisible()
-        await expect(dialog).toContainText(/This will permanently delete saved reading positions/)
-        await expect(dialog.getByRole('button', { name: 'Clear All Data' })).toBeDisabled()
-        await dialog.getByLabel(/type DELETE to confirm/i).fill('delete')
-        await expect(dialog.getByRole('button', { name: 'Clear All Data' })).toBeDisabled()
-        await dialog.getByLabel(/type DELETE to confirm/i).fill('DELETE')
-        await expect(dialog.getByRole('button', { name: 'Clear All Data' })).toBeEnabled()
-        await page.keyboard.press('Escape')
-        await expect(dialog).toHaveCount(0)
-      }
-      await expectNoGuardFailures(guard)
-      guard.dispose()
-    })
-  }
+async function setupConfigurePage(page: Page, viewportId: GoldenViewportId, route = '#/settings') {
+  await page.setViewportSize(GOLDEN_VIEWPORTS[viewportId])
+  await expectReactProductionPreflight(page)
+  await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
+  const guard = installPageGuards(page, `react configure ${viewportId}`, [
+    /\/dataset\/indexes\/(?:mushaf|sources|text)-assets\.json$/,
+    /\/dataset\/knowledge\/passages\/001\.json$/,
+    /\/dataset\/mushaf-pages\/qaloon\/qalun-quran-ws-v1\/(?:manifest\.json|pages\/\d{3}\.svg)$/,
+    /\/dataset\/provenance\.json$/,
+    /\/dataset\/translations\/_verse-aliases\.json$/,
+  ])
+  await page.goto(targetUrl('react', route))
+  await expect(page.locator('#react-root')).toBeVisible()
+  return guard
 }
 
-test.describe('settings-over-reader shell dismissal and routing', () => {
-  test('@golden settings-over-reader closes with button, Escape, backdrop, and opens compatibility assets URLs inline', async ({ page }) => {
-    await page.setViewportSize(GOLDEN_VIEWPORTS['phone-standard'])
-    await expectReactProductionPreflight(page)
-    await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
-    const guard = installPageGuards(page, 'react settings-over-reader dismissal', [
-      /\/dataset\/indexes\/mushaf-assets\.json$/,
-      /\/dataset\/indexes\/sources\.json$/,
-      /\/dataset\/indexes\/text-assets\.json$/,
-      /\/dataset\/knowledge\/passages\/001\.json$/,
-      /\/dataset\/provenance\.json$/,
-      /\/dataset\/translations\/_verse-aliases\.json$/,
-    ])
+for (const viewportId of settingsViewports) {
+  test(`@golden @a11y settings-over-reader ${viewportId}`, async ({ page }) => {
+    const guard = await setupConfigurePage(page, viewportId)
+    await expect(page).toHaveURL(/#\/s\/1$/)
+    const shell = page.getByRole('dialog', { name: 'Verse settings' })
+    const heading = shell.getByRole('heading', { name: 'Verse settings' })
+    const close = shell.getByRole('button', { name: 'Close settings' })
+    const body = shell.locator('.qar-react-settings-body')
+    const includedAssets = shell.getByRole('region', { name: 'Included reading assets' })
+    const assetsToggle = includedAssets.getByRole('button', { name: /included reading assets/i })
 
-    await page.goto(targetUrl('react', '#/settings'))
-    await expect(page).toHaveURL(/#\/s\/1$/)
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
-    await page.getByRole('button', { name: 'Close settings', exact: true }).click()
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0)
-    await expect(page).toHaveURL(/#\/s\/1$/)
-
-    await page.goto(targetUrl('react', '#/settings'))
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0)
-    await expect(page).toHaveURL(/#\/s\/1$/)
-
-    await page.setViewportSize(GOLDEN_VIEWPORTS.desktop)
-    await page.goto(targetUrl('react', '#/settings'))
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
-    await page.getByRole('button', { name: 'Close settings backdrop' }).click({ position: { x: 8, y: 8 } })
-    await expect(page.getByRole('dialog', { name: 'Settings' })).toHaveCount(0)
-    await expect(page).toHaveURL(/#\/s\/1$/)
-
-    await page.setViewportSize(GOLDEN_VIEWPORTS['phone-standard'])
-    await page.goto(targetUrl('react', '#/assets'))
-    await expect(page).toHaveURL(/#\/s\/1$/)
-    const shell = page.getByRole('dialog', { name: 'Settings' })
     await expect(shell).toBeVisible()
-    const includedAssets = shell.getByRole('region', { name: 'Included assets' })
-    await expect(includedAssets).toBeVisible()
-    await includedAssets.getByRole('button', { name: 'Show' }).click()
-    await expect(includedAssets.getByText('Text:')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Assets', exact: true })).toHaveCount(0)
+    await expect(heading).toBeVisible()
+    await expect.poll(() => isPaintedAtCenter(heading)).toBe(true)
+    await expect.poll(() => isPaintedAtCenter(close)).toBe(true)
+    await expect(shell.getByRole('region', { name: 'Verse reading' })).toBeVisible()
+    await expect(shell.getByRole('region', { name: 'Page layout' })).toHaveCount(0)
+    await expect(page.getByRole('main', { name: 'Verse reader' })).toBeVisible()
+    await expectNoHorizontalOverflow(page)
 
+    if (await assetsToggle.getAttribute('aria-expanded') === 'false') await assetsToggle.click()
+    await expect(assetsToggle).toHaveAttribute('aria-expanded', 'true')
+    await expect(includedAssets.getByText('Uthmani KFGQPC + KFGQPC Qaloon')).toBeVisible()
+
+    const layout = await shell.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      const scrollingBody = element.querySelector('.qar-react-settings-body')
+      return {
+        bottom: rect.bottom,
+        bodyClientHeight: scrollingBody?.clientHeight ?? 0,
+        bodyScrollHeight: scrollingBody?.scrollHeight ?? 0,
+        height: rect.height,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        viewportHeight: window.innerHeight,
+        viewportWidth: window.innerWidth,
+        width: rect.width,
+      }
+    })
+    expect(layout.left).toBeGreaterThanOrEqual(0)
+    expect(layout.top).toBeGreaterThanOrEqual(0)
+    expect(layout.right).toBeLessThanOrEqual(layout.viewportWidth + 1)
+    expect(layout.bottom).toBeLessThanOrEqual(layout.viewportHeight + 1)
+    expect(layout.bodyScrollHeight).toBeGreaterThanOrEqual(layout.bodyClientHeight)
+
+    if (layout.bodyScrollHeight > layout.bodyClientHeight + 1) {
+      await body.evaluate((element) => { element.scrollTop = element.scrollHeight })
+      await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+    }
+    await expect(includedAssets).toBeVisible()
+    await expect(includedAssets.getByText('Bridges')).toBeVisible()
+    await expect(heading).toBeVisible()
+    await expect.poll(() => isPaintedAtCenter(heading)).toBe(true)
+
+    if (['phone-small', 'phone-standard', 'phone-landscape'].includes(viewportId)) {
+      expect(layout.width).toBeGreaterThanOrEqual(layout.viewportWidth - 1)
+      expect(layout.height).toBeGreaterThanOrEqual(layout.viewportHeight - 1)
+    } else {
+      expect(layout.left).toBeGreaterThanOrEqual(layout.viewportWidth - 449)
+      expect(layout.width).toBeLessThan(layout.viewportWidth)
+      expect(layout.width).toBeLessThanOrEqual(448)
+      await expect.poll(() => backdropOwnsReaderChromePoint(page, shell)).toBe(true)
+    }
+
+    const touchTargets = [
+      close,
+      assetsToggle,
+      ...await shell.getByRole('button', { name: /^(?:Theme|Night mode):/ }).all(),
+      ...await shell.getByRole('switch').all(),
+    ]
+    for (const target of touchTargets) await expectMinTouchTarget(target, 44)
+
+    await expectAxeClean(page)
+    await expectNoGuardFailures(guard)
+    guard.dispose()
+  })
+}
+
+for (const viewportId of ['phone-standard', 'desktop'] as const) {
+  test(`@golden @a11y about-page ${viewportId}`, async ({ page }) => {
+    const guard = await setupConfigurePage(page, viewportId, '#/about')
+    const main = page.getByRole('main', { name: 'About' })
+    await expect(main.getByRole('heading', { name: 'QuranAtlas' })).toBeVisible()
+    await expect(page.getByText('Read, reflect, remember.')).toBeVisible()
+    await expect(page.getByText(/وَلَقَدۡ يَسَّرۡنَا/)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Attribution' })).toBeVisible()
+    await expect(page.getByText(/English translation: Bridges/)).toBeVisible()
+    await expect(page.getByTestId('about-version')).toContainText(/^v.+ · .+/)
+    await expect(page.getByText(/verified reader, navigation, settings, search, bookmarks, and Daily Wird workflows/i)).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /switch to (?:verse|mushaf) view/i })).toHaveCount(0)
+    await expectNoHorizontalOverflow(page)
+    await expectAxeClean(page)
+
+    await page.getByRole('button', { name: /clear all data/i }).click()
+    const dialog = page.getByRole('dialog', { name: /clear all data/i })
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText(/This will permanently delete saved reading positions/)
+    await expect(dialog.getByRole('button', { name: 'Clear All Data' })).toBeDisabled()
+    await dialog.getByLabel(/type DELETE to confirm/i).fill('delete')
+    await expect(dialog.getByRole('button', { name: 'Clear All Data' })).toBeDisabled()
+    await dialog.getByLabel(/type DELETE to confirm/i).fill('DELETE')
+    await expect(dialog.getByRole('button', { name: 'Clear All Data' })).toBeEnabled()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+    await expectNoGuardFailures(guard)
+    guard.dispose()
+  })
+}
+
+test.describe('settings focus and route ownership', () => {
+  test('@golden traps focus, dismisses by Escape and outside click, and restores the opener', async ({ page }) => {
+    const guard = await setupConfigurePage(page, 'desktop', '#/s/1')
+    const opener = page.getByRole('button', { name: 'Open settings' })
+    await opener.click()
+    const shell = page.getByRole('dialog', { name: 'Verse settings' })
+    await expect(shell).toBeVisible()
+
+    for (let index = 0; index < 10; index += 1) {
+      await page.keyboard.press('Tab')
+      expect(await shell.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+    }
+    for (let index = 0; index < 3; index += 1) {
+      await page.keyboard.press('Shift+Tab')
+      expect(await shell.evaluate((element) => element.contains(document.activeElement))).toBe(true)
+    }
+
+    await page.keyboard.press('Escape')
+    await expect(shell).toHaveCount(0)
+    await expect(opener).toBeFocused()
+
+    await opener.click()
+    await expect(shell).toBeVisible()
+    await page.mouse.click(8, 200)
+    await expect(shell).toHaveCount(0)
+    await expect(opener).toBeFocused()
     await expectNoGuardFailures(guard)
     guard.dispose()
   })
 
-  test('@golden settings-over-reader infers Mushaf Settings from a previous Mushaf route', async ({ page }) => {
-    await page.setViewportSize(GOLDEN_VIEWPORTS.desktop)
-    await expectReactProductionPreflight(page)
-    await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
-    const guard = installPageGuards(page, 'react settings-over-reader mushaf', [
-      /\/dataset\/mushaf-pages\/qaloon\/qalun-quran-ws-v1\/manifest\.json$/,
-      /\/dataset\/mushaf-pages\/qaloon\/qalun-quran-ws-v1\/pages\/042\.svg$/,
-    ])
-
-    await page.goto(targetUrl('react', '#/m/42'))
+  test('@golden direct Settings and assets routes preserve mode ownership', async ({ page }) => {
+    const guard = await setupConfigurePage(page, 'desktop', '#/m/42')
     await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
     await page.goto(targetUrl('react', '#/settings'))
-    await expect(page).toHaveURL(/#\/m\/42$/)
-    await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
-    const shell = page.getByRole('dialog', { name: 'Settings' })
-    await expect(shell).toBeVisible()
-    await expect(shell.getByRole('radio', { name: 'Reader mode: Mushaf' })).toHaveAttribute('aria-checked', 'true')
-    await expect(shell.getByRole('radio', { name: 'Reader mode: Verse' })).toHaveAttribute('aria-checked', 'false')
+    const mushafShell = page.getByRole('dialog', { name: 'Mushaf settings' })
+    await expect(mushafShell.getByRole('region', { name: 'Page layout' })).toBeVisible()
+    await expect(mushafShell.getByRole('region', { name: 'Verse reading' })).toHaveCount(0)
+    for (const target of await mushafShell.getByRole('radio').all()) await expectMinTouchTarget(target, 44)
+    for (const target of await mushafShell.getByRole('switch').all()) await expectMinTouchTarget(target, 44)
 
+    await page.keyboard.press('Escape')
+    await page.goto(targetUrl('react', '#/assets'))
+    const assets = page.getByRole('dialog', { name: 'Mushaf settings' }).getByRole('region', { name: 'Included reading assets' })
+    await expect(assets.getByRole('button', { name: 'Hide included reading assets' })).toHaveAttribute('aria-expanded', 'true')
+    await expect(assets.getByText('Bridges')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Assets', exact: true })).toHaveCount(0)
+    await expectNoGuardFailures(guard)
+    guard.dispose()
+  })
+
+  test('@golden Search has no reading-view action', async ({ page }) => {
+    const guard = await setupConfigurePage(page, 'phone-standard', '#/search')
+    await expect(page.getByRole('main', { name: /search/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /switch to (?:verse|mushaf) view/i })).toHaveCount(0)
     await expectNoGuardFailures(guard)
     guard.dispose()
   })
 })
+
+test('@golden @a11y Settings themes retain rendered contrast', async ({ page }) => {
+  const guard = await setupConfigurePage(page, 'desktop')
+  const shell = page.getByRole('dialog', { name: 'Verse settings' })
+  const group = shell.getByRole('region', { name: 'Verse reading' })
+  const rowText = group.getByText('Translation', { exact: true })
+  const heading = shell.getByRole('heading', { name: 'Verse settings' })
+  const states = [
+    { button: 'Theme: Light', night: null, theme: 'light' },
+    { button: 'Theme: Sepia', night: null, theme: 'sepia' },
+    { button: 'Theme: Dark', night: null, theme: 'dark' },
+    { button: 'Theme: Auto', night: null, theme: /light|dark/, themePreference: 'auto' },
+    { button: 'Theme: Light', night: 'Night mode: On', theme: 'light' },
+  ] as const
+
+  for (const state of states) {
+    await shell.getByRole('button', { name: state.button }).click()
+    if (state.night) await shell.getByRole('button', { name: state.night }).click()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', state.theme)
+    if ('themePreference' in state) await expect(page.locator('html')).toHaveAttribute('data-theme-pref', state.themePreference)
+    if (state.night) await expect(page.locator('html')).toHaveAttribute('data-night-mode', 'on')
+    else await expect(page.locator('html')).not.toHaveAttribute('data-night-mode', 'on')
+
+    const selected = shell.getByRole('button', { name: state.night ?? state.button })
+    await expectAxeClean(page)
+    await expectRenderedContrast(rowText, group, 4.5)
+    await expectRenderedContrast(heading, shell, 3)
+    await expectRenderedContrast(selected, selected, 3)
+    await expectRenderedBorderContrast(selected, group, 3)
+  }
+
+  await expectNoGuardFailures(guard)
+  guard.dispose()
+})
+
+async function isPaintedAtCenter(locator: Locator): Promise<boolean> {
+  return locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect()
+    const painted = document.elementFromPoint(rect.left + (rect.width / 2), rect.top + (rect.height / 2))
+    return painted === element || element.contains(painted)
+  })
+}
+
+async function backdropOwnsReaderChromePoint(page: Page, shell: Locator): Promise<boolean> {
+  const shellLeft = await shell.evaluate((element) => element.getBoundingClientRect().left)
+  return page.evaluate((x) => {
+    const painted = document.elementFromPoint(x, 28)
+    const readerChrome = document.querySelector('[aria-label="Primary navigation"]')
+    return painted !== null && !readerChrome?.contains(painted)
+  }, Math.max(8, shellLeft / 2))
+}

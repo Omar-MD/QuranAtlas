@@ -1564,6 +1564,83 @@
       ]
     },
     {
+      "id": "reading-view-toggle",
+      "name": "ReadingViewToggle",
+      "maturity": "product",
+      "exportPath": "src/components/reader/ReadingViewToggle.tsx",
+      "namedExport": "ReadingViewToggle",
+      "allowedVariants": [
+        "verse-destination",
+        "mushaf-destination"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "icon",
+        "tooltip"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [],
+        "components": [
+          "Tooltip",
+          "IconButton"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": [
+            "Verse destination",
+            "Mushaf destination"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "destination-labelled Verse and Mushaf actions",
+            "ReaderChrome-only consumer",
+            "reader route bridging"
+          ]
+        },
+        {
+          "path": "tests/e2e/navigate/react-golden.spec.ts",
+          "behaviors": [
+            "visible mobile destination action",
+            "route-preserving mode bridge"
+          ]
+        }
+      ],
+      "accessibility": [
+        "destination-based accessible name",
+        "tooltip repeats the action label",
+        "44px IconButton target"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/reader.stories.tsx",
+          "docs/ui-references/read/reading-view-toggle/default.mobile.light.png"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader"
+      },
+      "allowedConsumers": [
+        "src/components/reader/ReaderChrome.tsx"
+      ],
+      "forbiddenUses": [
+        "Do not duplicate the reading-view action outside ReaderChrome.",
+        "Do not present the destination action as selected state."
+      ]
+    },
+    {
       "id": "search-page",
       "name": "SearchPage",
       "maturity": "product",
@@ -1800,17 +1877,91 @@
       ]
     },
     {
+      "id": "settings-group",
+      "name": "SettingsGroup",
+      "maturity": "product",
+      "exportPath": "src/components/settings/SettingsGroup.tsx",
+      "namedExport": "SettingsGroup",
+      "allowedVariants": [
+        "default",
+        "described"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "heading",
+        "content"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-settings-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": [
+            "Verse groups",
+            "Mushaf groups",
+            "included-assets disclosure"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-shell/settings-route.test.tsx",
+          "behaviors": [
+            "labelled heading and content slots",
+            "active-mode group ownership",
+            "settings route group order"
+          ]
+        }
+      ],
+      "accessibility": [
+        "region labelled by its visible heading",
+        "optional description remains adjacent to heading"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/settings/settings.stories.tsx",
+          "docs/ui-references/configure/settings-shell/default.mobile.light.png"
+        ]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src/components/settings"
+      },
+      "allowedConsumers": [
+        "src/components/settings/**",
+        "src/app/routes/settings/**"
+      ],
+      "forbiddenUses": [
+        "Do not use unlabelled visual group cards."
+      ]
+    },
+    {
       "id": "settings-shell",
       "name": "SettingsShell",
       "maturity": "product",
       "exportPath": "src/components/settings/SettingsShell.tsx",
       "namedExport": "SettingsShell",
       "allowedVariants": [
-        "default"
+        "verse",
+        "mushaf",
+        "compact",
+        "rail",
+        "dark",
+        "night"
       ],
       "allowedSizes": [],
       "slots": [
-        "root"
+        "root",
+        "header",
+        "scrolling-body",
+        "group-stack"
       ],
       "dependencies": {
         "radix": [],
@@ -1825,7 +1976,11 @@
         {
           "path": "src/components/settings/settings.stories.tsx",
           "states": [
-            "default"
+            "Verse",
+            "Mushaf",
+            "compact assets-collapsed",
+            "dark",
+            "night"
           ]
         }
       ],
@@ -1834,7 +1989,8 @@
           "path": "tests/unit/react-shell/settings-route.test.tsx",
           "behaviors": [
             "mode-aware route shell",
-            "in-place settings overlay preserves reader route"
+            "in-place settings overlay preserves reader route",
+            "controlled return focus"
           ]
         },
         {
@@ -1842,18 +1998,34 @@
           "behaviors": [
             "mode-aware controls",
             "verse typography controls",
-            "Mushaf-only view controls"
+            "Mushaf-only view controls",
+            "grouped active-mode settings"
+          ]
+        },
+        {
+          "path": "tests/e2e/configure/react-golden.spec.ts",
+          "behaviors": [
+            "full-screen compact and short-landscape shell",
+            "tablet and desktop right rail",
+            "scroll reach and sticky header",
+            "focus trap and dismissal",
+            "44px targets",
+            "axe and rendered contrast"
           ]
         }
       ],
       "accessibility": [
-        "semantic landmarks",
+        "labelled modal dialog",
+        "group regions with visible headings",
+        "focus containment and controlled return",
         "visible focus through owned primitives"
       ],
       "visualProof": {
         "status": "covered",
         "references": [
-          "src/components/settings/settings.stories.tsx"
+          "src/components/settings/settings.stories.tsx",
+          "tests/e2e/configure/react-golden.spec.ts",
+          "docs/ui-references/configure/settings-shell/default.mobile.light.png"
         ]
       },
       "owner": {
@@ -1874,13 +2046,15 @@
       "exportPath": "src/components/ui/overlays.tsx",
       "namedExport": "Sheet",
       "allowedVariants": [
-        "default"
+        "default",
+        "adaptive-settings"
       ],
       "allowedSizes": [],
       "slots": [
         "trigger",
         "title",
         "content",
+        "body",
         "close"
       ],
       "dependencies": {
@@ -1899,7 +2073,8 @@
           "path": "src/components/ui/ui.stories.tsx",
           "states": [
             "closed",
-            "open"
+            "open",
+            "adaptive-settings open"
           ]
         }
       ],
@@ -1907,14 +2082,18 @@
         {
           "path": "tests/unit/react-components/ui-components.test.tsx",
           "behaviors": [
-            "open sheet"
+            "open sheet",
+            "adaptive settings body",
+            "explicit and fallback return focus"
           ]
         }
       ],
       "accessibility": [
         "labelled dialog",
         "focus trap",
-        "escape closes"
+        "escape closes",
+        "outside dismissal",
+        "controlled return focus"
       ],
       "visualProof": {
         "status": "covered",

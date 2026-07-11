@@ -47,7 +47,7 @@ for (const fixture of navigateFixtures) {
           await expect(chrome.getByRole('button', { name: 'Open settings' })).toBeVisible()
           await expect(chrome.getByRole('tab', { name: 'Mushaf' })).toHaveCount(0)
           await expect(page.getByRole('tablist', { name: 'Reader mode' })).toHaveCount(0)
-          await expect(chrome.getByRole('button', { name: 'Switch to Mushaf mode' })).toBeVisible()
+          await expect(chrome.getByRole('button', { name: 'Switch to Mushaf view' })).toBeVisible()
 
           await chrome.getByRole('button', { name: 'Open navigation' }).click()
           const drawer = page.getByRole('dialog', { name: 'Navigation' })
@@ -103,7 +103,7 @@ for (const fixture of navigateFixtures) {
             window.dispatchEvent(new Event('scroll'))
           })
           await expect(scrolledChrome).toHaveAttribute('data-visible', 'true')
-          await scrolledChrome.getByRole('button', { name: 'Switch to Mushaf mode' }).click()
+          await scrolledChrome.getByRole('button', { name: 'Switch to Mushaf view' }).click()
           await expect(page).toHaveURL(/#\/m\/15$/)
           await expect(page.getByRole('img', { name: /mushaf page 15/i })).toBeVisible()
         }

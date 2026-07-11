@@ -9,6 +9,7 @@ export type GoldenViewportId =
   | 'phone-small'
   | 'phone-standard'
   | 'tablet-portrait'
+  | 'tablet-landscape'
   | 'phone-landscape'
   | 'desktop'
   | 'desktop-wide'
@@ -353,6 +354,7 @@ export const GOLDEN_VIEWPORTS: Record<GoldenViewportId, { width: number; height:
   'phone-small': { width: 320, height: 568 },
   'phone-standard': { width: 375, height: 812 },
   'tablet-portrait': { width: 768, height: 1024 },
+  'tablet-landscape': { width: 1024, height: 768 },
   'phone-landscape': { width: 812, height: 375 },
   desktop: { width: 1280, height: 900 },
   'desktop-wide': { width: 1440, height: 960 },
@@ -445,7 +447,7 @@ export const GOLDEN_FIXTURES: GoldenFixture[] = [
     id: 'settings-over-reader',
     route: '#/settings',
     seed: 'onboarded-last-surface-reader',
-    viewports: ['phone-standard', 'tablet-portrait', 'desktop'],
+    viewports: ['phone-small', 'phone-standard', 'phone-landscape', 'tablet-portrait', 'tablet-landscape', 'desktop'],
     themes: ['light', 'sepia', 'dark'],
     nightModes: ['off', 'on', 'auto'],
     proofOwners: ['tests/e2e/configure/react-golden.spec.ts', 'src/components/settings/settings.stories.tsx'],

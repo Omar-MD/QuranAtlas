@@ -145,10 +145,12 @@ export const ReaderChromeWithWirdStatus: Story = {
 }
 
 export const VerseReadingViewToggle: Story = {
+  parameters: { viewport: { defaultViewport: 'mobile' } },
   render: () => <ReaderChrome mode="verse" onModeChange={() => undefined} />,
 }
 
 export const MushafReadingViewToggle: Story = {
+  parameters: { viewport: { defaultViewport: 'mobile' } },
   render: () => <ReaderChrome mode="mushaf" onModeChange={() => undefined} />,
 }
 
