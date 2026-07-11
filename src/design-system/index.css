@@ -1389,7 +1389,7 @@
     font-size: 0.95rem !important;
     font-weight: 400 !important;
     line-height: 1.2 !important;
-    transition: color var(--qa-react-transition-fast);
+    transition: none !important;
   }
 
   .qar-reader-continue:hover,
