@@ -1,6 +1,13 @@
 import { assertRuntimeDatasetUrl } from '../data/runtime-boundary'
 import type { Riwayah } from '../storage/types'
-import { mushafManifestUrl, mushafPageUrl } from './mushaf-paths'
+import type {
+  MushafExternalImageDescriptor,
+  MushafExternalImageSource,
+  MushafPageFraming,
+} from './mushaf-index'
+import { mushafManifestUrl, mushafPageUrl, resolveMushafEditionAssetUrl } from './mushaf-paths'
+
+export type { MushafExternalImageSource, MushafPageFraming } from './mushaf-index'
 
 export type SvgViewBox = {
   x: number
@@ -39,21 +46,63 @@ export type MushafPageAssetState =
 
 export type MushafReadyPageAssetState = Extract<MushafPageAssetState, { status: 'ready' }>
 
-type MushafManifestPage = {
+type MushafManifestPageV1 = {
   page: number
   assetPath: string
   viewBox: string
   firstVerse: QuranRef
 }
 
-export type MushafManifest = {
+type MushafManifestPageV2 = {
+  page: number
+  firstVerse: QuranRef
+  framing: MushafPageFraming
+  media: {
+    kind: 'external-image'
+    fallback: MushafExternalImageDescriptor
+    sources: MushafExternalImageDescriptor[]
+  }
+}
+
+export type MushafManifestV1 = {
   version: 1
   riwayah: Riwayah
   mushafEditionId: string
   pageCount: number
-  pages: MushafManifestPage[]
+  pages: MushafManifestPageV1[]
   verseToPage: Record<string, number>
 }
+
+export type MushafManifestV2 = {
+  version: 2
+  riwayah: Riwayah
+  mushafEditionId: string
+  pageCount: number
+  pages: MushafManifestPageV2[]
+  verseToPage: Record<string, number>
+}
+
+export type MushafManifest = MushafManifestV1 | MushafManifestV2
+
+export type PreparedExternalMushafPage = {
+  kind: 'external-image'
+  preview: MushafExternalImageSource
+  full: MushafExternalImageSource
+  page: number
+  pageCount: number
+  firstVerse: QuranRef
+  lastVerse: QuranRef
+  framing: MushafPageFraming
+}
+
+export type MushafPageLoadPurpose = 'current' | 'preview'
+
+export type PreparedExternalMushafImage =
+  | { status: 'ready'; image: HTMLImageElement }
+  | { status: 'aborted' }
+  | { status: 'error'; error: Error }
+
+export type MushafExternalImageFactory = () => HTMLImageElement
 
 type MushafAssetIndex = {
   assets?: Array<{
@@ -62,6 +111,8 @@ type MushafAssetIndex = {
     mushafEditionId?: unknown
     pageCount?: unknown
     riwayah?: unknown
+    version?: unknown
+    pageUrls?: unknown
   }>
 }
 
@@ -106,6 +157,7 @@ export async function loadMushafPageAsset({
       }
     }
     const manifest = await loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal })
+    if (manifest.version !== 1) throw new Error('External-image Mushaf pages require the V2 reader loader')
     const resolved = resolveMushafPage(manifest, { mushafEditionId, page, riwayah })
     const svgText = await fetchText(fetcher, resolved.assetUrl, signal)
     const inlineSvg = prepareReactInlineMushafSvg(svgText)
@@ -119,6 +171,65 @@ export async function loadMushafPageAsset({
       return { status: 'unavailable', reason: error.message, riwayah, mushafEditionId }
     }
     return { status: 'error', error: error instanceof Error ? error : new Error('Mushaf page unavailable') }
+  }
+}
+
+export async function loadPreparedExternalMushafPage({
+  fetcher = fetch,
+  mushafEditionId,
+  page,
+  riwayah,
+  signal,
+}: LoadMushafPageAssetOptions): Promise<PreparedExternalMushafPage> {
+  if (signal?.aborted) throw abortError()
+  const index = await fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal)
+  const manifest = await loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal })
+  if (manifest.version !== 2) throw new Error('Prepared external Mushaf pages require a V2 manifest')
+  if (signal?.aborted) throw abortError()
+
+  const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(page)))
+  const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
+  if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
+  const indexEntry = findExternalMushafIndexEntry(index, { mushafEditionId, riwayah })
+  validateExternalManifestIndexAgreement(manifest, indexEntry, { mushafEditionId, riwayah })
+
+  const preview = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'preview')
+  const full = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'full')
+  return {
+    kind: 'external-image',
+    preview,
+    full,
+    page: clampedPage,
+    pageCount: manifest.pageCount,
+    firstVerse: pageEntry.firstVerse,
+    lastVerse: lastVerseForMushafPage(manifest, clampedPage),
+    framing: pageEntry.framing,
+  }
+}
+
+export function selectExternalMushafSource(
+  page: PreparedExternalMushafPage,
+  purpose: MushafPageLoadPurpose,
+): MushafExternalImageSource {
+  return purpose === 'current' ? page.full : page.preview
+}
+
+export async function prepareExternalMushafImage(
+  source: MushafExternalImageSource,
+  signal?: AbortSignal,
+  imageFactory: MushafExternalImageFactory = () => new Image(),
+): Promise<PreparedExternalMushafImage> {
+  if (signal?.aborted) return { status: 'aborted' }
+  try {
+    const image = imageFactory()
+    await waitForExternalImageLoad(image, source.assetUrl, signal)
+    if (signal?.aborted) return { status: 'aborted' }
+    await waitForExternalImageDecode(image, signal)
+    if (signal?.aborted) return { status: 'aborted' }
+    return { status: 'ready', image }
+  } catch (error) {
+    if (isAbortError(error) || signal?.aborted) return { status: 'aborted' }
+    return { status: 'error', error: error instanceof Error ? error : new Error('Mushaf image preparation failed') }
   }
 }
 
@@ -216,7 +327,7 @@ export function prepareReactInlineMushafSvg(text: string): ReactInlineMushafSvg 
 }
 
 function resolveMushafPage(
-  manifest: MushafManifest,
+  manifest: MushafManifestV1,
   expected: { riwayah: Riwayah; mushafEditionId: string; page: number },
 ): MushafResolvedPage {
   assertMushafManifest(manifest, expected)
@@ -259,11 +370,183 @@ function assertMushafManifest(
   manifest: MushafManifest,
   expected: { riwayah: Riwayah; mushafEditionId: string },
 ): void {
-  if (manifest.version !== 1) throw new Error('Unsupported Mushaf manifest version')
+  if (manifest.version !== 1 && manifest.version !== 2) throw new Error('Unsupported Mushaf manifest version')
   if (manifest.riwayah !== expected.riwayah) throw new Error('Mushaf manifest riwayah mismatch')
   if (manifest.mushafEditionId !== expected.mushafEditionId) throw new Error('Mushaf manifest edition mismatch')
   if (!Number.isInteger(manifest.pageCount) || manifest.pageCount < 1) throw new Error('Invalid Mushaf page count')
   if (!manifest.verseToPage || typeof manifest.verseToPage !== 'object') throw new Error('Invalid Mushaf verse-to-page map')
+  if (!Array.isArray(manifest.pages)) throw new Error('Invalid Mushaf manifest pages')
+  if (manifest.version === 1) {
+    for (const page of manifest.pages) {
+      if (!Number.isInteger(page.page) || typeof page.assetPath !== 'string' || typeof page.viewBox !== 'string') {
+        throw new Error('Invalid V1 Mushaf manifest page')
+      }
+    }
+    return
+  }
+  for (const page of manifest.pages) validateExternalManifestPage(page)
+}
+
+type MushafExternalIndexEntry = {
+  riwayah?: unknown
+  mushafEditionId?: unknown
+  manifestUrl?: unknown
+  pageCount?: unknown
+  version?: unknown
+  pageUrls?: unknown
+  files?: Array<Record<string, unknown>>
+}
+
+function findExternalMushafIndexEntry(
+  index: MushafAssetIndex,
+  expected: { riwayah: Riwayah; mushafEditionId: string },
+): MushafExternalIndexEntry {
+  const entry = index.assets?.find((asset) => (
+    asset.riwayah === expected.riwayah
+    && asset.mushafEditionId === expected.mushafEditionId
+    && asset.manifestUrl === mushafManifestUrl(expected)
+    && asset.pageCount === 604
+    && asset.version === 'v2'
+  ))
+  if (!entry) throw new Error(`Mushaf external-image pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
+  return entry as MushafExternalIndexEntry
+}
+
+function validateExternalManifestIndexAgreement(
+  manifest: MushafManifestV2,
+  indexEntry: MushafExternalIndexEntry,
+  identity: { riwayah: Riwayah; mushafEditionId: string },
+): void {
+  if (manifest.pageCount !== 604 || manifest.pages.length !== manifest.pageCount) {
+    throw new Error('External-image Mushaf manifest must contain every page')
+  }
+  if (!Array.isArray(indexEntry.pageUrls) || indexEntry.pageUrls.length !== manifest.pageCount || !Array.isArray(indexEntry.files)) {
+    throw new Error('External-image Mushaf asset index is incomplete')
+  }
+  for (let index = 0; index < manifest.pages.length; index += 1) {
+    const page = manifest.pages[index]!
+    if (page.page !== index + 1) throw new Error('External-image Mushaf manifest page order is invalid')
+    const fallbackUrl = resolveMushafEditionAssetUrl(identity, page.media.fallback.assetPath)
+    if (indexEntry.pageUrls[page.page - 1] !== fallbackUrl) {
+      throw new Error(`External-image descriptor disagrees with its asset index at page ${page.page}`)
+    }
+    for (const descriptor of page.media.sources) {
+      const url = resolveMushafEditionAssetUrl(identity, descriptor.assetPath)
+      const file = indexEntry.files.find((candidate) => candidate.url === url)
+      if (!sameExternalDescriptor(file, descriptor)) {
+        throw new Error(`External-image descriptor disagrees with its asset index at page ${page.page}`)
+      }
+    }
+  }
+}
+
+function externalSourceForRole(
+  page: MushafManifestPageV2,
+  indexEntry: MushafExternalIndexEntry,
+  identity: { riwayah: Riwayah; mushafEditionId: string },
+  role: 'preview' | 'full',
+): MushafExternalImageSource {
+  const width = role === 'preview' ? 1280 : 2136
+  const descriptor = page.media.sources.find((source) => source.width === width)
+  if (!descriptor || (role === 'full' && !sameExternalDescriptor(page.media.fallback, descriptor))) {
+    throw new Error(`External-image Mushaf ${role} descriptor is invalid at page ${page.page}`)
+  }
+  const assetUrl = resolveMushafEditionAssetUrl(identity, descriptor.assetPath)
+  const file = indexEntry.files?.find((candidate) => candidate.url === assetUrl)
+  if (!sameExternalDescriptor(file, descriptor)) {
+    throw new Error(`External-image descriptor disagrees with its asset index at page ${page.page}`)
+  }
+  return { ...descriptor, assetUrl }
+}
+
+function validateExternalManifestPage(page: MushafManifestPageV2): void {
+  if (!Number.isInteger(page.page) || !isQuranRef(page.firstVerse)) throw new Error('Invalid V2 Mushaf manifest page')
+  if (!isMushafPageFraming(page.framing) || page.media?.kind !== 'external-image') {
+    throw new Error('Invalid V2 Mushaf manifest page')
+  }
+  if (!Array.isArray(page.media.sources) || page.media.sources.length !== 2) throw new Error('Invalid V2 Mushaf media sources')
+  for (const descriptor of page.media.sources) validateExternalDescriptor(descriptor, page.page)
+  validateExternalDescriptor(page.media.fallback, page.page)
+  const preview = page.media.sources.find((source) => source.width === 1280)
+  const full = page.media.sources.find((source) => source.width === 2136)
+  if (!preview || !full || !sameExternalDescriptor(page.media.fallback, full)) {
+    throw new Error(`Invalid V2 Mushaf rendition roles at page ${page.page}`)
+  }
+}
+
+function validateExternalDescriptor(descriptor: MushafExternalImageDescriptor, page: number): void {
+  if (!descriptor || descriptor.assetPath !== `pages/${String(page).padStart(3, '0')}-${descriptor.width}.webp`
+    || !Number.isInteger(descriptor.bytes) || descriptor.bytes <= 0
+    || !/^[a-f0-9]{64}$/.test(descriptor.sha256)
+    || !Number.isInteger(descriptor.width) || descriptor.width <= 0
+    || !Number.isInteger(descriptor.height) || descriptor.height <= 0
+    || descriptor.mimeType !== 'image/webp') {
+    throw new Error(`Invalid V2 Mushaf external-image descriptor at page ${page}`)
+  }
+}
+
+function isMushafPageFraming(value: MushafPageFraming): boolean {
+  const frame = value?.textFrame
+  return Boolean(frame && ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(frame[key as keyof typeof frame]))
+    && frame.x >= 0 && frame.y >= 0 && frame.width > 0 && frame.height > 0
+    && frame.x + frame.width <= 1 && frame.y + frame.height <= 1
+    && ['left', 'right', 'none'].includes(value.sideLane))
+}
+
+function sameExternalDescriptor(file: Record<string, unknown> | undefined, descriptor: MushafExternalImageDescriptor): boolean {
+  return Boolean(file
+    && file.bytes === descriptor.bytes
+    && file.sha256 === descriptor.sha256
+    && file.width === descriptor.width
+    && file.height === descriptor.height
+    && file.mimeType === descriptor.mimeType)
+}
+
+function isQuranRef(value: QuranRef): boolean {
+  return Number.isInteger(value?.surah) && value.surah > 0 && Number.isInteger(value?.verse) && value.verse > 0
+}
+
+function waitForExternalImageLoad(image: HTMLImageElement, assetUrl: string, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onAbort = () => done(() => reject(abortError()))
+    const onLoad = () => done(resolve)
+    const onError = () => done(() => reject(new Error(`Failed to load Mushaf image: ${assetUrl}`)))
+    const done = (finish: () => void) => {
+      signal?.removeEventListener('abort', onAbort)
+      image.onload = null
+      image.onerror = null
+      finish()
+    }
+    if (signal?.aborted) return onAbort()
+    signal?.addEventListener('abort', onAbort, { once: true })
+    image.onload = onLoad
+    image.onerror = onError
+    image.src = assetUrl
+  })
+}
+
+function waitForExternalImageDecode(image: HTMLImageElement, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onAbort = () => done(() => reject(abortError()))
+    const done = (finish: () => void) => {
+      signal?.removeEventListener('abort', onAbort)
+      finish()
+    }
+    if (signal?.aborted) return onAbort()
+    signal?.addEventListener('abort', onAbort, { once: true })
+    try {
+      image.decode().then(
+        () => done(resolve),
+        (error) => done(() => reject(error)),
+      )
+    } catch (error) {
+      done(() => reject(error))
+    }
+  })
+}
+
+function abortError(): DOMException {
+  return new DOMException('Mushaf image preparation was aborted', 'AbortError')
 }
 
 async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {

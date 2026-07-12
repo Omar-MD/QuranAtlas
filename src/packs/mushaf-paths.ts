@@ -16,6 +16,23 @@ export function mushafPageUrl({ riwayah, mushafEditionId }: MushafPackIdentity, 
   return `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/pages/${String(page).padStart(3, '0')}.svg`
 }
 
+export function resolveMushafEditionAssetUrl(
+  { riwayah, mushafEditionId }: MushafPackIdentity,
+  assetPath: string,
+): string {
+  if (!isMushafIdentityPart(riwayah) || !isMushafIdentityPart(mushafEditionId)) {
+    throw new Error('Invalid React Mushaf edition identity')
+  }
+  if (!/^pages\/\d{3}-\d+\.webp$/.test(assetPath)) {
+    throw new Error(`Invalid external Mushaf asset path: ${assetPath}`)
+  }
+  return `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/${assetPath}`
+}
+
+function isMushafIdentityPart(value: string): boolean {
+  return /^[a-z0-9][a-z0-9-]*$/.test(value)
+}
+
 function mushafPathname(url: string): string {
   const parsed = new URL(url, 'https://quranatlas.local')
   if (parsed.origin !== 'https://quranatlas.local') {
@@ -37,7 +54,7 @@ export function isLegacyMushafPageUrl(url: string): boolean {
 
 export function assertReactMushafUrl(url: string): void {
   if (isLegacyMushafPageUrl(url)) throw new Error(`React Mushaf paths must be edition-aware: ${url}`)
-  if (!/^\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/(?:manifest\.json|pages\/\d{3}\.svg)$/.test(mushafPathname(url))) {
+  if (!/^\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/(?:manifest\.json|pages\/\d{3}(?:\.svg|-\d+\.webp))$/.test(mushafPathname(url))) {
     throw new Error(`Invalid React Mushaf URL: ${url}`)
   }
 }

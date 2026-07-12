@@ -1,5 +1,32 @@
 import { assertReactMushafUrl, type MushafPackIdentity } from './mushaf-paths'
 
+export type MushafExternalImageDescriptor = {
+  assetPath: string
+  bytes: number
+  sha256: string
+  width: number
+  height: number
+  mimeType: 'image/webp'
+}
+
+export type MushafExternalImageSource = MushafExternalImageDescriptor & {
+  assetUrl: string
+}
+
+export type MushafPageFraming = {
+  textFrame: { x: number; y: number; width: number; height: number }
+  sideLane: 'left' | 'right' | 'none'
+}
+
+export type MushafAssetIndexFile = {
+  url: string
+  bytes?: number
+  sha256?: string
+  width?: number
+  height?: number
+  mimeType?: string
+}
+
 export type MushafAssetIndexEntry = MushafPackIdentity & {
   packId: string
   label: string
@@ -11,6 +38,7 @@ export type MushafAssetIndexEntry = MushafPackIdentity & {
   pageUrlTemplate?: string
   pageUrls?: string[]
   integrity?: Record<string, string>
+  files?: MushafAssetIndexFile[]
   deliveryMode: 'on-demand-pack'
   availability: 'available' | 'unavailable' | 'not-built'
 }
@@ -34,7 +62,19 @@ export function validateMushafAssetIndexEntry(entry: MushafAssetIndexEntry): Mus
     assertReactMushafUrl(sample)
     assertMushafUrlIdentity(sample, entry, 'page template')
   }
+  if (entry.version === 'v2') validateExternalMushafIndexEntry(entry)
   return entry
+}
+
+function validateExternalMushafIndexEntry(entry: MushafAssetIndexEntry): void {
+  if (!entry.pageUrls || entry.pageUrls.length !== entry.pageCount) {
+    throw new Error(`${entry.packId}: V2 index requires one fallback URL per page`)
+  }
+  if (!entry.files?.length) throw new Error(`${entry.packId}: V2 index requires external media files`)
+  for (const file of entry.files) {
+    assertReactMushafUrl(file.url)
+    assertMushafUrlIdentity(file.url, entry, 'file')
+  }
 }
 
 function assertMushafUrlIdentity(url: string, entry: MushafAssetIndexEntry, context: string): void {

@@ -8,8 +8,11 @@ import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
 import { useReaderInteractionSuspended } from '../../../src/components/reader/ReaderInteractionContext'
 import { MushafPageViewer } from '../../../src/components/reader/MushafPageViewer'
 import {
+  loadPreparedExternalMushafPage,
   loadMushafPageAsset,
+  prepareExternalMushafImage,
   prepareReactInlineMushafSvg,
+  selectExternalMushafSource,
   type MushafPageAssetState,
 } from '../../../src/packs/mushaf-page-asset'
 import { ReaderVerseSurface } from '../../../src/components/reader/ReaderVerseSurface'
@@ -137,6 +140,53 @@ const mushafAssetIndex = {
       ],
     },
   ],
+}
+
+function privateMushafPage(page: number) {
+  const id = String(page).padStart(3, '0')
+  return {
+    page,
+    firstVerse: page === 1 ? { surah: 1, verse: 1 } : { surah: 2, verse: page - 1 },
+    framing: { textFrame: { x: 0.1, y: 0.05, width: 0.8, height: 0.9 }, sideLane: 'left' as const },
+    media: {
+      kind: 'external-image' as const,
+      fallback: {
+        assetPath: `pages/${id}-2136.webp`, bytes: 2136, sha256: 'a'.repeat(64), width: 2136, height: 2720, mimeType: 'image/webp' as const,
+      },
+      sources: [
+        { assetPath: `pages/${id}-1280.webp`, bytes: 1280, sha256: 'b'.repeat(64), width: 1280, height: 1630, mimeType: 'image/webp' as const },
+        { assetPath: `pages/${id}-2136.webp`, bytes: 2136, sha256: 'a'.repeat(64), width: 2136, height: 2720, mimeType: 'image/webp' as const },
+      ],
+    },
+  }
+}
+
+const privateMushafManifest = {
+  version: 2,
+  riwayah: 'qaloon',
+  mushafEditionId: 'qalun-furatiyyah-2023-v1',
+  pageCount: 604,
+  verseToPage: { '1:1': 1, '1:2': 1, '2:1': 2 },
+  pages: Array.from({ length: 604 }, (_, index) => privateMushafPage(index + 1)),
+}
+
+const privateMushafAssetIndex = {
+  version: 1,
+  assets: [{
+    riwayah: 'qaloon',
+    mushafEditionId: 'qalun-furatiyyah-2023-v1',
+    manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/manifest.json',
+    pageCount: 604,
+    version: 'v2',
+    pageUrls: privateMushafManifest.pages.map((page) => `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${page.media.fallback.assetPath}`),
+    files: [
+      { url: '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/manifest.json', bytes: 1 },
+      ...privateMushafManifest.pages.flatMap((page) => page.media.sources.map((source) => ({
+        url: `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${source.assetPath}`,
+        ...source,
+      }))),
+    ],
+  }],
 }
 
 function mushafFetchFixture() {
@@ -965,6 +1015,106 @@ describe('React reader coverage', () => {
     fireEvent.click(bookmark)
 
     expect(onToggleBookmark).toHaveBeenCalledTimes(1)
+  })
+
+  it('prepares only a validated V2 external descriptor and selects the declared rendition by purpose', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(privateMushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/manifest.json') return jsonResponse(privateMushafManifest)
+      return jsonResponse({}, { ok: false, status: 404 })
+    })
+
+    const page = await loadPreparedExternalMushafPage({
+      fetcher,
+      mushafEditionId: 'qalun-furatiyyah-2023-v1',
+      page: 1,
+      riwayah: 'qaloon',
+    })
+
+    expect(page).toMatchObject({
+      kind: 'external-image',
+      page: 1,
+      firstVerse: { surah: 1, verse: 1 },
+      lastVerse: { surah: 1, verse: 2 },
+      framing: privateMushafManifest.pages[0].framing,
+    })
+    expect(selectExternalMushafSource(page, 'current')).toMatchObject({
+      assetPath: 'pages/001-2136.webp', width: 2136,
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/pages/001-2136.webp',
+    })
+    expect(selectExternalMushafSource(page, 'preview')).toMatchObject({
+      assetPath: 'pages/001-1280.webp', width: 1280,
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/pages/001-1280.webp',
+    })
+  })
+
+  it('rejects V2 descriptor disagreement with its asset index', async () => {
+    const mismatchedIndex = structuredClone(privateMushafAssetIndex)
+    mismatchedIndex.assets[0].files[1].sha256 = 'c'.repeat(64)
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mismatchedIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/manifest.json') return jsonResponse(privateMushafManifest)
+      return jsonResponse({}, { ok: false, status: 404 })
+    })
+
+    await expect(loadPreparedExternalMushafPage({
+      fetcher,
+      mushafEditionId: 'qalun-furatiyyah-2023-v1',
+      page: 1,
+      riwayah: 'qaloon',
+    })).rejects.toThrow(/descriptor.*asset index/i)
+  })
+
+  it('waits for external image load and decode, and reports abort or failure without image layout', async () => {
+    const source = {
+      ...privateMushafManifest.pages[0].media.sources[0],
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/pages/001-1280.webp',
+    }
+    const image = {
+      decode: vi.fn(async () => undefined),
+      onerror: null as null | ((event: Event) => void),
+      onload: null as null | ((event: Event) => void),
+      set src(_value: string) { this.onload?.(new Event('load')) },
+    }
+
+    await expect(prepareExternalMushafImage(source, undefined, () => image)).resolves.toMatchObject({
+      status: 'ready', image,
+    })
+    expect(image.decode).toHaveBeenCalledOnce()
+
+    const controller = new AbortController()
+    controller.abort()
+    await expect(prepareExternalMushafImage(source, controller.signal, () => image)).resolves.toEqual({ status: 'aborted' })
+
+    let completeDecode: (() => void) | undefined
+    const decodingImage = {
+      decode: vi.fn(() => new Promise<void>((resolve) => { completeDecode = resolve })),
+      onerror: null as null | ((event: Event) => void),
+      onload: null as null | ((event: Event) => void),
+      set src(_value: string) { this.onload?.(new Event('load')) },
+    }
+    const decodingController = new AbortController()
+    const preparation = prepareExternalMushafImage(source, decodingController.signal, () => decodingImage)
+    await waitFor(() => expect(decodingImage.decode).toHaveBeenCalledOnce())
+    decodingController.abort()
+    try {
+      await expect(Promise.race([
+        preparation,
+        new Promise((resolve) => setTimeout(() => resolve('decode timeout'), 0)),
+      ])).resolves.toEqual({ status: 'aborted' })
+    } finally {
+      completeDecode?.()
+    }
+
+    const failingImage = {
+      decode: vi.fn(async () => { throw new Error('decode failed') }),
+      onerror: null as null | ((event: Event) => void),
+      onload: null as null | ((event: Event) => void),
+      set src(_value: string) { this.onload?.(new Event('load')) },
+    }
+    await expect(prepareExternalMushafImage(source, undefined, () => failingImage)).resolves.toMatchObject({ status: 'error' })
   })
 
 })

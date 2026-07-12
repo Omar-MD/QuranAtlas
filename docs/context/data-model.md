@@ -121,7 +121,9 @@ Mushaf page assets are edition-aware. Quran.ws keeps manifest V1 with inline-saf
 - Mushaf edition identity
 - manifest page membership
 - same-origin asset paths
-- SVG safety before rendering, or image descriptor agreement before external-image rendering
+- SVG safety before rendering, or V2 manifest/index descriptor agreement before external-image preparation
+
+The V2 boundary resolves only manifest-declared edition-relative WebP paths, derives a page's final verse from `verseToPage`, and prepares an image only after browser load and `decode()` complete. It does not mount or select reader media; Task 6 owns the atomic viewer/page-window switch from the existing V1 inline-SVG ready state to the V1/V2 ready-state union.
 
 Page SVG and WebP bodies are runtime assets; they must not be embedded into JS bundles.
 
