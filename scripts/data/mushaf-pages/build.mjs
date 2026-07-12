@@ -144,6 +144,15 @@ export function editionIdsForProfile(profile, catalog) {
   throw new Error(`Unsupported Mushaf page profile: ${profile}`)
 }
 
+export function resolveRequiredEditionIds(profile, explicitIds = []) {
+  const required = new Set(explicitIds)
+  if (profile === 'private') {
+    required.add('qalun-quran-ws-v1')
+    required.add('qalun-furatiyyah-2023-v1')
+  }
+  return [...required]
+}
+
 export function derivePageMappings(ayat) {
   const firstVerse = new Map()
   const verseToPage = {}
@@ -464,6 +473,10 @@ async function readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount
     url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`,
     bytes: editionManifestText.byteLength,
   }]
+  const outputFiles = [
+    { path: `mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`, bytes: editionManifestText.byteLength },
+    { path: `mushaf-pages/${riwayah}/manifest.json`, bytes: legacyManifestText.byteLength },
+  ]
   let totalBytes = files[0].bytes
 
   for (let page = 1; page <= pageCount; page += 1) {
@@ -498,15 +511,22 @@ async function readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount
       url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`,
       bytes: pageEntry.bytes,
     })
+    outputFiles.push(
+      { path: `mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`, bytes: editionStats.size },
+      { path: `mushaf-pages/${riwayah}/pages/${filename}`, bytes: legacyStats.size },
+    )
     totalBytes += pageEntry.bytes
   }
 
   return {
-    ...asset,
-    manifestUrl: files[0].url,
-    files,
-    totalBytes,
-    pageCount,
+    asset: {
+      ...asset,
+      manifestUrl: files[0].url,
+      files,
+      totalBytes,
+      pageCount,
+    },
+    outputFiles,
   }
 }
 
@@ -631,7 +651,7 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     if (!check) {
       console.log(`[mushaf-pages] current ${riwayah}: ${pageCount} pages (build stamp validated)`)
     }
-    return check ? true : currentOutput
+    return currentOutput
   }
 
   await validateSvgPageSet(sourcePagesDir, pageCount, { missing })
@@ -685,23 +705,6 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
   editionFiles.push([join(outDir, 'manifest.json'), jsonText(editionManifest), `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`])
   legacyFiles.push([join(legacyOutDir, 'manifest.json'), jsonText(legacyManifest), `public/dataset/mushaf-pages/${riwayah}/manifest.json`])
 
-  if (check) {
-    for (const [path, content, label] of [...editionFiles, ...legacyFiles]) {
-      await compareExpectedFile(path, content, label, stale)
-    }
-    if (stale.missing.length || stale.mismatched.length) {
-      throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
-    }
-    await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot })
-    return true
-  }
-
-  for (const [path, content] of [...editionFiles, ...legacyFiles]) {
-    if (await writeIfChanged(path, content)) written += 1
-  }
-  await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot })
-  const unchanged = editionFiles.length + legacyFiles.length - written
-  console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${riwayah}: ${pageCount} pages (${written} files written, ${unchanged} unchanged)`)
   const manifestUrl = `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`
   const manifestBytes = Buffer.byteLength(jsonText(editionManifest))
   const files = [{ url: manifestUrl, bytes: manifestBytes }]
@@ -712,13 +715,37 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     files.push({ url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`, bytes })
     totalBytes += bytes
   }
-  return {
-    ...asset,
-    manifestUrl,
-    files,
-    totalBytes,
-    pageCount,
+  const model = {
+    asset: {
+      ...asset,
+      manifestUrl,
+      files,
+      totalBytes,
+      pageCount,
+    },
+    outputFiles: [...editionFiles, ...legacyFiles].map(([, content, label]) => ({
+      path: label.replace(/^public\/dataset\//, ''),
+      bytes: Buffer.byteLength(content),
+    })),
   }
+
+  if (check) {
+    for (const [path, content, label] of [...editionFiles, ...legacyFiles]) {
+      await compareExpectedFile(path, content, label, stale)
+    }
+    if (stale.missing.length || stale.mismatched.length) {
+      throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
+    }
+    return model
+  }
+
+  for (const [path, content] of [...editionFiles, ...legacyFiles]) {
+    if (await writeIfChanged(path, content)) written += 1
+  }
+  await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot })
+  const unchanged = editionFiles.length + legacyFiles.length - written
+  console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${riwayah}: ${pageCount} pages (${written} files written, ${unchanged} unchanged)`)
+  return model
 }
 
 async function preflightQuranWsEdition(asset, catalog, assetCatalog, { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
@@ -891,15 +918,6 @@ async function buildPrivateEdition(asset, { check = false, contractDir, missing 
     const source = await readFile(inputPath)
     await compareExpectedFile(outputPath, source, `public/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`, stale)
   }
-  if (check) {
-    if (stale.missing.length || stale.mismatched.length) throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
-    return true
-  }
-  let written = await writeIfChanged(manifestPath, manifestText) ? 1 : 0
-  for (const [outputPath, inputPath] of pageFiles) {
-    if (await writeIfChanged(outputPath, await readFile(inputPath))) written += 1
-  }
-  console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${asset.mushafEditionId}: ${asset.pageCount} pages (${written} files written)`)
   const manifestUrl = `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/manifest.json`
   const files = [{ url: manifestUrl, bytes: Buffer.byteLength(manifestText) }]
   for (const page of manifestPages) {
@@ -907,27 +925,42 @@ async function buildPrivateEdition(asset, { check = false, contractDir, missing 
       files.push({ url: `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`, ...descriptor })
     }
   }
-  return {
-    ...asset,
-    manifestUrl,
-    pageUrls: manifestPages.map((page) => `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${page.media.fallback.assetPath}`),
-    files,
-    totalBytes: files.reduce((total, file) => total + file.bytes, 0),
-    pageCount: asset.pageCount,
-    version: 'v2',
-    provenance: `private normalized input ${normalized.sourceDigest}`,
+  const model = {
+    asset: {
+      ...asset,
+      manifestUrl,
+      pageUrls: manifestPages.map((page) => `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${page.media.fallback.assetPath}`),
+      files,
+      totalBytes: files.reduce((total, file) => total + file.bytes, 0),
+      pageCount: asset.pageCount,
+      version: 'v2',
+      provenance: `private normalized input ${normalized.sourceDigest}`,
+    },
+    outputFiles: files.map((file) => ({
+      path: file.url.replace(/^\/dataset\//, ''),
+      bytes: file.bytes,
+    })),
   }
+  if (check) {
+    if (stale.missing.length || stale.mismatched.length) throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
+    return model
+  }
+  let written = await writeIfChanged(manifestPath, manifestText) ? 1 : 0
+  for (const [outputPath, inputPath] of pageFiles) {
+    if (await writeIfChanged(outputPath, await readFile(inputPath))) written += 1
+  }
+  console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${asset.mushafEditionId}: ${asset.pageCount} pages (${written} files written)`)
+  return model
 }
 
-async function writeMushafAssetIndex(resolvedAssets, assetCatalog, { datasetDir = DATASET_DIR } = {}) {
+function buildMushafAssetIndexPayload(resolvedAssets, assetCatalog) {
   const emittedKeys = new Set(resolvedAssets.map((asset) => `${asset.riwayah}:${asset.mushafEditionId}`))
   const defaults = Object.fromEntries(
     Object.entries(assetCatalog.defaults).filter(([riwayah, mushafEditionId]) => (
       emittedKeys.has(`${riwayah}:${mushafEditionId}`)
     )),
   )
-  await mkdir(join(datasetDir, 'indexes'), { recursive: true })
-  await writeJson(join(datasetDir, 'indexes', 'mushaf-assets.json'), {
+  return {
     version: 1,
     defaults,
     assets: resolvedAssets.map((asset) => {
@@ -935,11 +968,113 @@ async function writeMushafAssetIndex(resolvedAssets, assetCatalog, { datasetDir 
       const { sourceKind: _sourceKind, ...indexAsset } = asset
       return indexAsset
     }),
-  })
+  }
 }
 
-async function manifestTextSourcesFromCurrentManifest() {
-  const manifestPath = join(DATASET_DIR, 'manifest.json')
+async function writeMushafAssetIndex(payload, { datasetDir = DATASET_DIR } = {}) {
+  await mkdir(join(datasetDir, 'indexes'), { recursive: true })
+  await writeJson(join(datasetDir, 'indexes', 'mushaf-assets.json'), payload)
+}
+
+async function collectRelativeTree(root, relativePath = '') {
+  const directories = new Set()
+  const files = new Set()
+  for (const entry of await readdir(join(root, relativePath), { withFileTypes: true }).catch(() => [])) {
+    const path = join(relativePath, entry.name)
+    if (entry.isDirectory()) {
+      directories.add(path)
+      const nested = await collectRelativeTree(root, path)
+      for (const directory of nested.directories) directories.add(directory)
+      for (const file of nested.files) files.add(file)
+    } else {
+      files.add(path)
+    }
+  }
+  return { directories, files }
+}
+
+function expectedMushafTree(models) {
+  const files = new Set()
+  const directories = new Set()
+  for (const output of models.flatMap((model) => model.outputFiles)) {
+    ensure(output.path.startsWith('mushaf-pages/'), `Unexpected Mushaf output path: ${output.path}`)
+    const path = output.path.slice('mushaf-pages/'.length)
+    files.add(path)
+    let directory = dirname(path)
+    while (directory !== '.') {
+      directories.add(directory)
+      directory = dirname(directory)
+    }
+  }
+  return { directories, files }
+}
+
+function differingEntries(expected, actual) {
+  return {
+    missing: [...expected].filter((entry) => !actual.has(entry)).sort(),
+    extra: [...actual].filter((entry) => !expected.has(entry)).sort(),
+  }
+}
+
+async function assertExactMushafTree(models, outRoot) {
+  const expected = expectedMushafTree(models)
+  const actual = await collectRelativeTree(outRoot)
+  const fileDiff = differingEntries(expected.files, actual.files)
+  const directoryDiff = differingEntries(expected.directories, actual.directories)
+  const missing = [...directoryDiff.missing, ...fileDiff.missing]
+  const extra = [...directoryDiff.extra, ...fileDiff.extra]
+  if (missing.length || extra.length) {
+    throw new Error(`Mushaf output membership is stale: missing=${missing.join(',') || 'none'} extra=${extra.join(',') || 'none'}`)
+  }
+}
+
+async function assertExpectedIndex(payload, datasetDir) {
+  const stale = { missing: [], mismatched: [] }
+  await compareExpectedFile(
+    join(datasetDir, 'indexes', 'mushaf-assets.json'),
+    jsonText(payload),
+    'public/dataset/indexes/mushaf-assets.json',
+    stale,
+  )
+  if (stale.missing.length || stale.mismatched.length) {
+    throw new Error(`Mushaf asset index is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
+  }
+}
+
+async function assertDatasetManifestMembership(models, indexPayload, profile, datasetDir) {
+  const manifestPath = join(datasetDir, 'manifest.json')
+  const manifest = await readJsonIfPresent(manifestPath)
+  if (!manifest) throw new Error('Mushaf dataset manifest is stale: public/dataset/manifest.json is missing')
+  const expected = [
+    ...models.flatMap((model) => model.outputFiles).map((file) => ({
+      path: file.path,
+      lane: 'pages',
+      category: 'pages',
+      bytes: file.bytes,
+    })),
+    {
+      path: 'indexes/mushaf-assets.json',
+      lane: 'text',
+      category: 'text-index',
+      bytes: Buffer.byteLength(jsonText(indexPayload)),
+    },
+  ].sort((left, right) => left.path.localeCompare(right.path))
+  const actual = (manifest.files ?? [])
+    .filter((file) => file?.path === 'indexes/mushaf-assets.json' || file?.path?.startsWith('mushaf-pages/'))
+    .sort((left, right) => left.path.localeCompare(right.path))
+  const pageFiles = expected.filter((file) => file.lane === 'pages')
+  const expectedPagesLane = {
+    enabled: pageFiles.length > 0,
+    files: pageFiles.length,
+    bytes: pageFiles.reduce((total, file) => total + file.bytes, 0),
+  }
+  if (manifest.profile !== profile || JSON.stringify(actual) !== JSON.stringify(expected) || JSON.stringify(manifest.lanes?.pages) !== JSON.stringify(expectedPagesLane)) {
+    throw new Error('Mushaf dataset manifest membership is stale')
+  }
+}
+
+async function manifestTextSourcesFromCurrentManifest(datasetDir = DATASET_DIR) {
+  const manifestPath = join(datasetDir, 'manifest.json')
   if (!existsSync(manifestPath)) return null
   const manifest = await readJson(manifestPath)
   if (!Array.isArray(manifest.files)) return null
@@ -954,18 +1089,18 @@ async function manifestTextSourcesFromCurrentManifest() {
   return ids
 }
 
-async function refreshDatasetManifest(profileName) {
-  const provenance = await readJson(join(DATASET_DIR, 'provenance.json'))
+async function refreshDatasetManifest(profileName, datasetDir = DATASET_DIR) {
+  const provenance = await readJson(join(datasetDir, 'provenance.json'))
   const manifest = await buildManifestPayload({
-    datasetDir: DATASET_DIR,
-    riwayatDir: join(DATASET_DIR, 'riwayat'),
-    translationsDir: join(DATASET_DIR, 'translations'),
+    datasetDir,
+    riwayatDir: join(datasetDir, 'riwayat'),
+    translationsDir: join(datasetDir, 'translations'),
     provenance,
     packageVersion: provenance.packageVersion,
     profileName,
-    manifestTextSources: await manifestTextSourcesFromCurrentManifest(),
+    manifestTextSources: await manifestTextSourcesFromCurrentManifest(datasetDir),
   })
-  await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
+  await writeFile(join(datasetDir, 'manifest.json'), JSON.stringify(manifest), 'utf8')
 }
 
 /**
@@ -982,7 +1117,7 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
   const profile = argValue(argv, 'profile', 'baseline')
   const check = argv.includes('--check')
   const requiredRiwayat = new Set(argList(argv, 'require-riwayah'))
-  const requiredEditions = new Set(argList(argv, 'require-edition'))
+  const requiredEditions = new Set(resolveRequiredEditionIds(profile, argList(argv, 'require-edition')))
   for (const riwayah of requiredRiwayat) validateRiwayahId(riwayah)
   const catalog = await loadCatalog()
   const assetCatalog = await loadAssetCatalog()
@@ -1019,9 +1154,9 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
     }
   }
 
-  const resolvedAssets = []
+  const models = []
   for (const asset of selectedAssets) {
-    const resolved = asset.sourceKind === 'local-pdf'
+    const model = asset.sourceKind === 'local-pdf'
       ? await buildPrivateEdition(asset, {
         check,
         contractDir,
@@ -1035,14 +1170,24 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
         outRoot,
         normalizedRoot,
       })
-    if (resolved && typeof resolved === 'object') resolvedAssets.push(resolved)
+    if (model && typeof model === 'object') models.push(model)
   }
 
-  if (!check) {
-    await pruneMushafOutput(resolvedAssets, { outRoot })
-    await writeMushafAssetIndex(resolvedAssets, assetCatalog, { datasetDir })
-    if (refreshManifest) await refreshDatasetManifest(profile)
+  const resolvedAssets = models.map((model) => model.asset)
+  const indexPayload = buildMushafAssetIndexPayload(resolvedAssets, assetCatalog)
+  if (check) {
+    if (models.length === 0) return
+    await assertExactMushafTree(models, outRoot)
+    await assertExpectedIndex(indexPayload, datasetDir)
+    if (refreshManifest || existsSync(join(datasetDir, 'manifest.json'))) {
+      await assertDatasetManifestMembership(models, indexPayload, profile, datasetDir)
+    }
+    return
   }
+
+  await pruneMushafOutput(resolvedAssets, { outRoot })
+  await writeMushafAssetIndex(indexPayload, { datasetDir })
+  if (refreshManifest) await refreshDatasetManifest(profile, datasetDir)
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -13,6 +13,7 @@ import {
   optimizeSvgForDataset,
   pruneMushafOutput,
   quranWsPagePdfUrl,
+  resolveRequiredEditionIds,
   riwayatForProfile,
   validateSvgPageSet,
   writeMushafManifest,
@@ -150,6 +151,18 @@ async function writeTransitionFixture(root) {
   importMetadata.contentDigest = createHash('sha256').update(jsonText(importMetadata)).digest('hex')
   await writeFile(join(privateRoot, 'import.json'), jsonText(importMetadata))
   return { normalizedRoot, datasetDir, outRoot, refreshManifest: false }
+}
+
+async function writeDatasetManifestFixture(paths, profile = 'private') {
+  const manifest = await buildManifestPayload({
+    datasetDir: paths.datasetDir,
+    riwayatDir: join(paths.datasetDir, 'riwayat'),
+    translationsDir: join(paths.datasetDir, 'translations'),
+    provenance: { builtAt: 'fixture-built-at' },
+    packageVersion: 'fixture-version',
+    profileName: profile,
+  })
+  await writeFile(join(paths.datasetDir, 'manifest.json'), JSON.stringify(manifest))
 }
 
 describe('mushaf asset catalog', () => {
@@ -509,6 +522,14 @@ describe('mushaf page dataset builder', () => {
     await expect(buildMushafPages(['--profile=baseline', '--require-edition=qalun-furatiyyah-2023-v1'])).rejects.toThrow(/not part of profile baseline/)
   })
 
+  it('makes every private-profile edition inherently required', () => {
+    expect(resolveRequiredEditionIds('private', [])).toEqual([
+      'qalun-quran-ws-v1',
+      'qalun-furatiyyah-2023-v1',
+    ])
+    expect(resolveRequiredEditionIds('baseline', ['qalun-quran-ws-v1'])).toEqual(['qalun-quran-ws-v1'])
+  })
+
   it('rejects forged or stale private normalized provenance before emitting output', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-private-provenance-'))
     const paths = await writeTransitionFixture(root)
@@ -668,6 +689,45 @@ describe('mushaf page dataset builder', () => {
       expect(existsSync(privateRoot)).toBe(false)
       expect(await treeDigest(legacyPages)).toBe(baselineDigest)
       expect(await readFile(join(legacyRoot, 'manifest.json'))).toEqual(baselineManifest)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 30_000)
+
+  it.each([
+    'stale-edition',
+    'corrupt-index',
+    'stale-dataset-manifest',
+    'extra-page',
+  ])('rejects %s during a read-only private profile check', async (kind) => {
+    const root = await mkdtemp(join(tmpdir(), `qa-mushaf-private-check-${kind}-`))
+    const paths = await writeTransitionFixture(root)
+    const riwayahRoot = join(paths.outRoot, 'qaloon')
+    const indexPath = join(paths.datasetDir, 'indexes', 'mushaf-assets.json')
+    const datasetManifestPath = join(paths.datasetDir, 'manifest.json')
+    try {
+      await buildMushafPages(['--profile=private'], paths)
+      await writeDatasetManifestFixture(paths)
+
+      if (kind === 'stale-edition') {
+        await mkdir(join(riwayahRoot, 'stale-edition'), { recursive: true })
+        await writeFile(join(riwayahRoot, 'stale-edition', 'sentinel.txt'), 'stale')
+      } else if (kind === 'corrupt-index') {
+        await writeFile(indexPath, '{"version":1,"assets":[]}\n')
+      } else if (kind === 'stale-dataset-manifest') {
+        const manifest = JSON.parse(await readFile(datasetManifestPath, 'utf8'))
+        manifest.files = manifest.files.filter((file) => !file.path.endsWith('/pages/604-2136.webp'))
+        manifest.lanes.pages.files -= 1
+        await writeFile(datasetManifestPath, JSON.stringify(manifest))
+      } else {
+        await writeFile(join(riwayahRoot, 'qalun-furatiyyah-2023-v1', 'pages', '605-2136.webp'), 'extra')
+      }
+
+      const beforeDataset = await recursiveTreeDigest(paths.datasetDir)
+      const beforeNormalized = await recursiveTreeDigest(paths.normalizedRoot)
+      await expect(buildMushafPages(['--profile=private', '--check'], paths)).rejects.toThrow(/Mushaf .*stale/i)
+      expect(await recursiveTreeDigest(paths.datasetDir)).toBe(beforeDataset)
+      expect(await recursiveTreeDigest(paths.normalizedRoot)).toBe(beforeNormalized)
     } finally {
       await rm(root, { recursive: true, force: true })
     }

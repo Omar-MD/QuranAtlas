@@ -74,6 +74,8 @@ style_paths:
 
 `scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real quran.ws SVG pack. The CI cache is deliberately limited to `qalun-quran-ws-v1/pages` and is versioned with the quran.ws catalog/build inputs; private local WebPs are ignored inputs and never enter default CI.
 
+Private Mushaf builds fail closed: both selected Qaloon editions must pass input and provenance preflight before any generated state changes. Private `--check` is read-only and compares the exact edition and legacy-alias file tree, shared Mushaf index, and dataset-manifest membership against the selected artifact model.
+
 `src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. The About route's app update action uses the browser service-worker registration to run an explicit update check and reload through a pending worker when one is found. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors. `src/storage/native-reader-store.ts` uses short-lived raw IndexedDB connections for Reader launch and continuity reads/writes; it creates only Reader-owned stores and leaves Search stores to explicit Search/Dexie paths.
 
 Search pack files under `/search-packs/**` are not Workbox dataset-cache assets. `vite.config.js` keeps the generic `/dataset/**` CacheFirst route from matching `/dataset/search/**`, while `src/offline/search/**` owns the dedicated `quran-atlas-search-pack-<contentHash>` Cache Storage lifecycle. Search install verifies shard SHA-256 checksums over encoded bytes, writes staging metadata, activates with a monotonic generation, announces activation changes across tabs, and protects active or live leased packs from orphan cleanup.
@@ -124,6 +126,7 @@ Dexie v8 adds Search lifecycle stores. Clear data continues to delete browser st
 - Runtime dataset caching stays same-origin and under `/dataset/**`; the mutable Mushaf availability index is NetworkFirst while immutable dataset bodies remain CacheFirst.
 - Search pack caching stays under the dedicated Search cache owner for immutable `/search-packs/**` URLs.
 - Page SVG and WebP bodies must stay runtime assets, not JS bundle content.
+- Private Mushaf build and check profiles require both selected editions; check mode must not write or prune generated or normalized state.
 - Clear-data behavior clears Cache Storage and the shared IndexedDB database.
 - CI builds once and reuses the uploaded `dist/` artifact for Lighthouse, Playwright preview/offline, and deploy.
 - Affected CI gates must fail open when no trustworthy diff baseline exists.

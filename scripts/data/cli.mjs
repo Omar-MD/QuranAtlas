@@ -20,6 +20,10 @@ function parseProfile(argv) {
   return flag ? flag.slice('--profile='.length) : 'baseline'
 }
 
+function datasetProfile(profile) {
+  return profile === 'private' ? 'baseline' : profile
+}
+
 function skipSet(argv) {
   return new Set(
     argv
@@ -53,31 +57,35 @@ function main(argv = process.argv.slice(2)) {
   }
 
   if (command === 'check') {
+    const args = normalizedArgv.slice(1)
+    const profile = parseProfile(args)
+    const sharedProfile = datasetProfile(profile)
     run('source-catalog.mjs')
-    run('text/build.mjs', ['--profile=baseline'])
-    run('search/build.mjs', ['--profile=baseline', '--check'])
+    run('text/build.mjs', [`--profile=${sharedProfile}`])
+    run('search/build.mjs', [`--profile=${sharedProfile}`, '--check'])
     run('knowledge/build.mjs', ['--check'])
-    run('mushaf-pages/build.mjs', ['--profile=baseline', '--check'])
-    run('riwayah-packages/build.mjs', ['--profile=baseline', '--check'])
+    run('mushaf-pages/build.mjs', [`--profile=${profile}`, '--check'])
+    run('riwayah-packages/build.mjs', [`--profile=${sharedProfile}`, '--check'])
     return
   }
 
   if (command === 'build') {
     const args = normalizedArgv.slice(1)
     const profile = parseProfile(args)
+    const sharedProfile = datasetProfile(profile)
     const skipped = skipSet(args)
-    run('text/build.mjs', [`--profile=${profile}`])
+    run('text/build.mjs', [`--profile=${sharedProfile}`])
     if (profile !== 'catalog') {
-      run('search/build.mjs', [`--profile=${profile}`])
+      run('search/build.mjs', [`--profile=${sharedProfile}`])
       run('knowledge/build.mjs')
+      run('riwayah-packages/build.mjs', [`--profile=${sharedProfile}`])
       if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
-      run('riwayah-packages/build.mjs', [`--profile=${profile}`])
     }
     return
   }
 
   console.error(`Unknown data command: ${command}`)
-  console.error('Usage: pnpm run data -- [build|check|aliases|mushaf-pages] [--profile=baseline|full|catalog]')
+  console.error('Usage: pnpm run data -- [build|check|aliases|mushaf-pages] [--profile=baseline|full|private|catalog]')
   process.exit(1)
 }
 

@@ -60,24 +60,41 @@ function privateIndex(manifest) {
   }
 }
 
+function quranWsIndexEntry() {
+  return {
+    packId: 'mushaf-pages:qaloon:qalun-quran-ws-v1',
+    riwayah: 'qaloon',
+    mushafEditionId: 'qalun-quran-ws-v1',
+    label: 'Qalun pages',
+    manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+    pageCount: 604,
+    totalBytes: 1,
+    version: 'v1',
+    provenance: 'fixture',
+    pageUrlTemplate: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/{page}.svg',
+    deliveryMode: 'on-demand-pack',
+    availability: 'available',
+  }
+}
+
 describe('check-react-mushaf-indexes', () => {
   it('accepts edition-aware Mushaf indexes', () => {
     expect(validateMushafIndexData({
-      packs: [{
-        packId: 'mushaf-pages:qaloon:qalun-quran-ws-v1',
-        riwayah: 'qaloon',
-        mushafEditionId: 'qalun-quran-ws-v1',
-        label: 'Qalun pages',
-        manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
-        pageCount: 604,
-        totalBytes: 1,
-        version: 'v1',
-        provenance: 'fixture',
-        pageUrlTemplate: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/{page}.svg',
-        deliveryMode: 'on-demand-pack',
-        availability: 'available',
-      }],
+      packs: [quranWsIndexEntry()],
     })).toEqual([])
+  })
+
+  it('accepts the complete private profile edition membership', () => {
+    const manifest = privateManifest()
+    const { index, manifestUrl } = privateIndex(manifest)
+    index.assets.unshift(quranWsIndexEntry())
+
+    expect(index.assets.map((asset) => asset.mushafEditionId)).toEqual([
+      'qalun-quran-ws-v1',
+      'qalun-furatiyyah-2023-v1',
+    ])
+    expect(validateMushafIndexData(index)).toEqual([])
+    expect(validateMushafIndexManifestAgreement(index, { [manifestUrl]: manifest })).toEqual([])
   })
 
   it('accepts a complete V2 external-image manifest and matching descriptors', () => {
