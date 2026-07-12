@@ -1049,9 +1049,26 @@ describe('React reader coverage', () => {
     })
   })
 
-  it('rejects V2 descriptor disagreement with its asset index', async () => {
+  it.each([
+    ['mismatched descriptor metadata', (index: typeof privateMushafAssetIndex) => {
+      index.assets[0].files[1].sha256 = 'c'.repeat(64)
+    }],
+    ['an extra descriptor', (index: typeof privateMushafAssetIndex) => {
+      index.assets[0].files.push({
+        ...index.assets[0].files[1],
+        url: '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/pages/001-999.webp',
+        width: 999,
+      })
+    }],
+    ['a duplicate descriptor', (index: typeof privateMushafAssetIndex) => {
+      index.assets[0].files.push(structuredClone(index.assets[0].files[1]))
+    }],
+    ['a duplicate descriptor with conflicting metadata', (index: typeof privateMushafAssetIndex) => {
+      index.assets[0].files.push({ ...index.assets[0].files[1], sha256: 'c'.repeat(64) })
+    }],
+  ])('rejects V2 asset-index inventory containing %s', async (_label, mutate) => {
     const mismatchedIndex = structuredClone(privateMushafAssetIndex)
-    mismatchedIndex.assets[0].files[1].sha256 = 'c'.repeat(64)
+    mutate(mismatchedIndex)
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mismatchedIndex)

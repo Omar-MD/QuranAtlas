@@ -375,15 +375,8 @@ function assertMushafManifest(
   if (manifest.mushafEditionId !== expected.mushafEditionId) throw new Error('Mushaf manifest edition mismatch')
   if (!Number.isInteger(manifest.pageCount) || manifest.pageCount < 1) throw new Error('Invalid Mushaf page count')
   if (!manifest.verseToPage || typeof manifest.verseToPage !== 'object') throw new Error('Invalid Mushaf verse-to-page map')
+  if (manifest.version === 1) return
   if (!Array.isArray(manifest.pages)) throw new Error('Invalid Mushaf manifest pages')
-  if (manifest.version === 1) {
-    for (const page of manifest.pages) {
-      if (!Number.isInteger(page.page) || typeof page.assetPath !== 'string' || typeof page.viewBox !== 'string') {
-        throw new Error('Invalid V1 Mushaf manifest page')
-      }
-    }
-    return
-  }
   for (const page of manifest.pages) validateExternalManifestPage(page)
 }
 
@@ -423,6 +416,8 @@ function validateExternalManifestIndexAgreement(
   if (!Array.isArray(indexEntry.pageUrls) || indexEntry.pageUrls.length !== manifest.pageCount || !Array.isArray(indexEntry.files)) {
     throw new Error('External-image Mushaf asset index is incomplete')
   }
+  const manifestUrl = mushafManifestUrl(identity)
+  const expectedDescriptors = new Map<string, MushafExternalImageDescriptor>()
   for (let index = 0; index < manifest.pages.length; index += 1) {
     const page = manifest.pages[index]!
     if (page.page !== index + 1) throw new Error('External-image Mushaf manifest page order is invalid')
@@ -432,11 +427,26 @@ function validateExternalManifestIndexAgreement(
     }
     for (const descriptor of page.media.sources) {
       const url = resolveMushafEditionAssetUrl(identity, descriptor.assetPath)
-      const file = indexEntry.files.find((candidate) => candidate.url === url)
-      if (!sameExternalDescriptor(file, descriptor)) {
-        throw new Error(`External-image descriptor disagrees with its asset index at page ${page.page}`)
-      }
+      if (expectedDescriptors.has(url)) throw new Error(`External-image descriptor disagrees with its asset index at page ${page.page}`)
+      expectedDescriptors.set(url, descriptor)
     }
+  }
+  const indexedDescriptors = new Set<string>()
+  let manifestFileCount = 0
+  for (const file of indexEntry.files) {
+    if (file.url === manifestUrl) {
+      manifestFileCount += 1
+      continue
+    }
+    if (typeof file.url !== 'string') throw new Error('External-image descriptor disagrees with its asset index')
+    const descriptor = expectedDescriptors.get(file.url)
+    if (!descriptor || indexedDescriptors.has(file.url) || !sameExternalDescriptor(file, descriptor)) {
+      throw new Error('External-image descriptor disagrees with its asset index')
+    }
+    indexedDescriptors.add(file.url)
+  }
+  if (manifestFileCount !== 1 || indexedDescriptors.size !== expectedDescriptors.size) {
+    throw new Error('External-image descriptor disagrees with its asset index')
   }
 }
 
