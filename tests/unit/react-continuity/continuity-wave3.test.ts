@@ -123,6 +123,40 @@ describe('React continuity coverage', () => {
     }
   })
 
+  it('treats completed-edition availability failures as retryable without changing the stored selection', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.bulkPut([
+      { key: 'mushafEditionId', value: 'qalun-furatiyyah-2023-v1' },
+      { key: 'mushafEditionSetupVersion', value: MUSHAF_EDITION_SETUP_VERSION },
+    ])
+    const failures: Array<() => Promise<Response>> = [
+      async () => { throw new TypeError('network unavailable') },
+      async () => { throw new DOMException('timed out', 'AbortError') },
+      async () => new Response('unavailable', { status: 503 }),
+      async () => new Response('{', { headers: { 'content-type': 'application/json' } }),
+      async () => jsonResponse({ assets: null }),
+    ]
+
+    try {
+      for (const fetcher of failures) {
+        await expect(resolveMushafEditionSetup({
+          contractWasValid: true,
+          fetcher,
+        })).resolves.toEqual({
+          status: 'availability-error',
+          mushafEditionId: 'qalun-furatiyyah-2023-v1',
+        })
+        await expect(db.settings.bulkGet(['mushafEditionId', 'mushafEditionSetupVersion'])).resolves.toEqual([
+          { key: 'mushafEditionId', value: 'qalun-furatiyyah-2023-v1' },
+          { key: 'mushafEditionSetupVersion', value: MUSHAF_EDITION_SETUP_VERSION },
+        ])
+      }
+    } finally {
+      await resetReactDb()
+    }
+  })
+
   it('preserves a requested Mushaf deep link instead of replacing it with the launch route', async () => {
     const settings = { get: async () => undefined }
 

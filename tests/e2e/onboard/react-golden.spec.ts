@@ -11,6 +11,7 @@ import {
   installPageGuards,
   PRIVATE_MUSHAF_ENABLED,
   PRIVATE_MUSHAF_EDITION_ID,
+  seedReactMushafState,
   seedTargetState,
   targetUrl,
 } from '../fixtures/react-golden-routes'
@@ -66,6 +67,43 @@ test.describe('private Furatiyyah setup', () => {
     await expectNoGuardFailures(guard)
     guard.dispose()
   })
+})
+
+test('retries transient edition availability and preserves the requested deep link', async ({ page }) => {
+  await page.setViewportSize(GOLDEN_VIEWPORTS['phone-standard'])
+  await expectReactProductionPreflight(page)
+  await seedReactMushafState(page, { mushafFitWidth: false, mushafViewMode: 'auto' })
+  await expect(readReactSettings(page)).resolves.toMatchObject({
+    mushafEditionId: 'qalun-quran-ws-v1',
+    mushafEditionSetupVersion: 1,
+  })
+  await page.addInitScript(() => {
+    const fetcher = window.fetch.bind(window)
+    let availabilityRestored = false
+    ;(window as typeof window & { restoreMushafEditionAvailability?: () => void }).restoreMushafEditionAvailability = () => {
+      availabilityRestored = true
+    }
+    window.fetch = async (input, init) => {
+      const rawUrl = typeof input === 'string' || input instanceof URL ? input.toString() : input.url
+      if (!availabilityRestored && new URL(rawUrl, window.location.origin).pathname === '/dataset/indexes/mushaf-assets.json') {
+        return new Response('temporarily unavailable', { status: 503 })
+      }
+      return fetcher(input, init)
+    }
+  })
+  const guard = installPageGuards(page, 'edition availability retry', [/\/dataset\/surahs\.json$/])
+
+  await page.goto(targetUrl('react', '/#/m/42'))
+  await expect(page.getByRole('status')).toContainText('Could not check Mushaf edition availability')
+  await page.evaluate(() => {
+    ;(window as typeof window & { restoreMushafEditionAvailability?: () => void }).restoreMushafEditionAvailability?.()
+  })
+  await page.getByRole('button', { name: 'Retry edition availability' }).click()
+
+  await expect(page).toHaveURL(/#\/m\/42$/)
+  await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
+  await expectNoGuardFailures(guard)
+  guard.dispose()
 })
 
 for (const fixture of onboardFixtures) {

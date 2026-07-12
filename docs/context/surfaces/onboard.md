@@ -29,6 +29,7 @@ style_paths:
 | `#/onboarding` | compatibility URL | Run launch restore and enter the selected reader route |
 | Stale asset contract | app boot | Reset unsupported local profile state before reader mounts |
 | Completed unavailable edition | app boot | Show the unavailable state and send the reader to About > Clear All Data |
+| Edition availability request fails | app boot or retry | Preserve the stored edition and requested route, then offer an accessible availability retry |
 | Valid reader hash | app boot | Mount the requested reader route |
 
 ## Inventory
@@ -46,9 +47,9 @@ style_paths:
 
 ## Behavior
 
-`src/continuity/launch-restore.ts` preserves the requested reader hash while it resolves the initial route from the current hash, `lastSurface`, and `currentPosition`. `src/launch/asset-contract-reset.ts` records whether the current asset contract was already valid before resetting incompatible state. `src/launch/mushaf-edition-setup.ts` then keeps existing valid profiles on quran.ws, classifies fresh/cleared storage into setup, and rejects a completed edition that is absent from the current availability index. The edition selection and setup marker share one IndexedDB transaction.
+`src/continuity/launch-restore.ts` preserves the requested reader hash while it resolves the initial route from the current hash, `lastSurface`, and `currentPosition`. `src/launch/asset-contract-reset.ts` records whether the current asset contract was already valid before resetting incompatible state. `src/launch/mushaf-edition-setup.ts` then keeps existing valid profiles on quran.ws, classifies fresh/cleared storage into setup, and rejects a completed edition only when a successfully loaded and validated availability index omits it. Fetch, response, parse, or index-contract failures enter a retryable availability state without changing the stored edition. The edition selection and setup marker share one IndexedDB transaction.
 
-`OnboardingRoute` has exactly one first/cleared-install choice: Mushaf edition. A sole compatible edition is selected automatically; multiple editions use the owned `Select` and one Continue action. It never presents riwayah, translation, theme, storage, import, routine switching, or a feature tour. Changing a completed selection still requires About > Clear All Data, so old page bookmarks are never silently reassigned. `LaunchSplash` is a short transition state while restore/reset work resolves.
+`OnboardingRoute` has exactly one first/cleared-install choice: Mushaf edition. A sole compatible edition is selected automatically; multiple editions use the owned `Select` and one Continue action. A rejected setup transaction retains that selection, reports the failure through a polite status, and exposes `Retry Mushaf setup`; retrying edition availability re-runs launch resolution while retaining the requested reader hash. It never presents riwayah, translation, theme, storage, import, routine switching, or a feature tour. Changing a completed selection still requires About > Clear All Data, so old page bookmarks are never silently reassigned. `LaunchSplash` is a short transition state while restore/reset work resolves.
 
 ## Style Inventory
 
@@ -87,6 +88,8 @@ _(no cross-surface reads detected)_
 - Setup choices are limited to fresh or cleared profile state and the current compatible Mushaf availability index.
 - A valid pre-setup profile migrates without deleting settings, bookmarks, or continuity.
 - A missing completed edition never reopens setup over old bookmarks.
+- Only a validated availability index can declare a completed edition missing; transient availability failures preserve the stored selection and requested route.
+- Failed setup persistence preserves the selected option for an explicit retry.
 - The default profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation.
 - Launch restore must not destroy valid reader hashes.
 

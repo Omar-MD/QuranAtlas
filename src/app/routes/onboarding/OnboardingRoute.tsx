@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 
 import { Button, Select } from '../../../components/ui'
 import { LaunchSplash } from '../../../components/launch/LaunchSplash'
@@ -11,25 +11,41 @@ import {
 
 export function OnboardingRoute({
   onComplete,
+  onRetryAvailability,
   pendingHash = '#/s/1',
   setup,
+  writeSelection = writeMushafEditionSelection,
 }: {
   onComplete?: (hash: string) => void
+  onRetryAvailability?: () => void
   pendingHash?: string
   setup?: Exclude<MushafEditionSetupState, { status: 'complete' }>
+  writeSelection?: typeof writeMushafEditionSelection
 }) {
   if (!setup) return <LaunchSplash />
-  return <MushafEditionSetupRoute onComplete={onComplete} pendingHash={pendingHash} setup={setup} />
+  return (
+    <MushafEditionSetupRoute
+      onComplete={onComplete}
+      onRetryAvailability={onRetryAvailability}
+      pendingHash={pendingHash}
+      setup={setup}
+      writeSelection={writeSelection}
+    />
+  )
 }
 
 function MushafEditionSetupRoute({
   onComplete,
+  onRetryAvailability,
   pendingHash,
   setup,
+  writeSelection,
 }: {
   onComplete?: (hash: string) => void
+  onRetryAvailability?: () => void
   pendingHash: string
   setup: Exclude<MushafEditionSetupState, { status: 'complete' }>
+  writeSelection: typeof writeMushafEditionSelection
 }) {
   const [state, dispatch] = useReducer(
     (current, action) => setup.status === 'choose'
@@ -38,18 +54,19 @@ function MushafEditionSetupRoute({
     setup.status === 'choose' ? setup.editions : [],
     createInitialMushafEditionSetupState,
   )
-  const [writing, setWriting] = useState(false)
   const autoSelected = useRef<string | null>(null)
 
   async function complete(editionId: string) {
-    setWriting(true)
+    dispatch({ type: 'startPersistence' })
     try {
-      await writeMushafEditionSelection(editionId)
-      onComplete?.(pendingHash)
-      if (!onComplete) window.location.hash = pendingHash
-    } finally {
-      setWriting(false)
+      await writeSelection(editionId)
+    } catch {
+      dispatch({ type: 'persistenceFailed' })
+      return
     }
+    dispatch({ type: 'persistenceSucceeded' })
+    onComplete?.(pendingHash)
+    if (!onComplete) window.location.hash = pendingHash
   }
 
   useEffect(() => {
@@ -59,6 +76,19 @@ function MushafEditionSetupRoute({
     autoSelected.current = editionId
     void complete(editionId)
   }, [setup])
+
+  if (setup.status === 'availability-error') {
+    return (
+      <main aria-label="Mushaf edition availability" className="qar:grid qar:mx-auto qar:min-h-screen qar:w-full qar:max-w-xl qar:content-center qar:gap-4 qar:px-5 qar:py-8">
+        <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Mushaf edition availability is temporarily unavailable.</h1>
+        <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">Could not check Mushaf edition availability. Try again without clearing your saved edition.</p>
+        <div><Button onClick={() => {
+          if (onRetryAvailability) onRetryAvailability()
+          else window.location.reload()
+        }} variant="primary">Retry edition availability</Button></div>
+      </main>
+    )
+  }
 
   if (setup.status === 'missing') {
     return (
@@ -81,6 +111,8 @@ function MushafEditionSetupRoute({
   }
 
   const canContinue = canContinueMushafEditionSetup(state, setup.editions)
+  const writing = state.persistenceStatus === 'saving'
+  const persistenceFailed = state.persistenceStatus === 'error'
   return (
     <main aria-label="Mushaf edition setup" className="qar:grid qar:mx-auto qar:min-h-screen qar:w-full qar:max-w-xl qar:content-center qar:gap-5 qar:px-5 qar:py-8">
       <div className="qar:grid qar:gap-2">
@@ -96,7 +128,10 @@ function MushafEditionSetupRoute({
           value={state.selectedEditionId ?? undefined}
         />
       )}
-      <div><Button disabled={!canContinue || writing} onClick={() => { if (state.selectedEditionId) void complete(state.selectedEditionId) }} variant="primary">{writing ? 'Saving...' : 'Continue'}</Button></div>
+      {persistenceFailed && (
+        <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">Could not save Mushaf setup. Your selected edition is preserved.</p>
+      )}
+      <div><Button disabled={!canContinue || writing} onClick={() => { if (state.selectedEditionId) void complete(state.selectedEditionId) }} variant="primary">{writing ? 'Saving...' : persistenceFailed ? 'Retry Mushaf setup' : 'Continue'}</Button></div>
     </main>
   )
 }

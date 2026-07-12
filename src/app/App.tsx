@@ -169,6 +169,8 @@ export function App() {
             window.history.replaceState(null, '', nextHash)
             setLaunchRefreshVersion((version) => version + 1)
             setHash(nextHash)
+          }} onRetryAvailability={() => {
+            setLaunchRefreshVersion((version) => version + 1)
           }} pendingHash={launchRestore.hash} setup={launchRestore.setup} />
         </Suspense>
       )}

@@ -14,10 +14,11 @@ export type MushafEditionOption = {
 export type MushafEditionSetupState =
   | { status: 'complete'; mushafEditionId: string }
   | { status: 'choose'; editions: MushafEditionOption[] }
+  | { status: 'availability-error'; mushafEditionId?: string }
   | { status: 'missing'; mushafEditionId: string }
 
 type MushafAssetIndex = {
-  assets?: unknown
+  assets: unknown[]
 }
 
 type MushafEditionSetupOptions = {
@@ -29,10 +30,11 @@ export async function loadMushafEditionOptions(fetcher: typeof fetch = fetch): P
   assertRuntimeDatasetUrl(MUSHAF_ASSET_INDEX_URL)
   const response = await fetcher(MUSHAF_ASSET_INDEX_URL)
   if (!response.ok) throw new Error(`Unable to load Mushaf edition availability: ${response.status}`)
-  const index = await response.json() as MushafAssetIndex
-  if (!Array.isArray(index.assets)) return []
+  const index = await response.json() as unknown
+  if (!isMushafAssetIndex(index)) throw new Error('Mushaf edition availability index is invalid')
 
   return index.assets.flatMap((asset): MushafEditionOption[] => {
+    if (!isMushafAssetDescriptor(asset)) throw new Error('Mushaf edition availability entry is invalid')
     if (!isAvailableQaloonMushaf(asset)) return []
     return [{ id: asset.mushafEditionId, label: asset.label }]
   })
@@ -62,8 +64,8 @@ export async function resolveMushafEditionSetup({
     editions = await loadMushafEditionOptions(fetcher)
   } catch {
     return setupComplete
-      ? { status: 'missing', mushafEditionId: selectedEditionId }
-      : { status: 'choose', editions: [] }
+      ? { status: 'availability-error', mushafEditionId: selectedEditionId }
+      : { status: 'availability-error' }
   }
 
   if (setupComplete) {
@@ -75,12 +77,22 @@ export async function resolveMushafEditionSetup({
   return { status: 'choose', editions }
 }
 
-function isAvailableQaloonMushaf(value: unknown): value is { label: string; mushafEditionId: string } {
+function isMushafAssetIndex(value: unknown): value is MushafAssetIndex {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  return Array.isArray((value as Record<string, unknown>).assets)
+}
+
+function isMushafAssetDescriptor(value: unknown): value is Record<string, unknown> & { label: string; mushafEditionId: string } {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false
   const asset = value as Record<string, unknown>
+  return typeof asset.riwayah === 'string'
+    && typeof asset.pageCount === 'number'
+    && typeof asset.mushafEditionId === 'string'
+    && typeof asset.label === 'string'
+}
+
+function isAvailableQaloonMushaf(asset: Record<string, unknown> & { label: string; mushafEditionId: string }): boolean {
   return asset.riwayah === 'qaloon'
     && asset.pageCount === 604
     && (asset.availability === undefined || asset.availability === 'available')
-    && typeof asset.mushafEditionId === 'string'
-    && typeof asset.label === 'string'
 }

@@ -15,6 +15,7 @@ describe('React onboarding flow reducer', () => {
     const state = createInitialMushafEditionSetupState([quranWs])
 
     expect(state.selectedEditionId).toBe('qalun-quran-ws-v1')
+    expect(state.persistenceStatus).toBe('idle')
     expect(canContinueMushafEditionSetup(state, [quranWs])).toBe(true)
   })
 
@@ -31,5 +32,20 @@ describe('React onboarding flow reducer', () => {
     const selected = mushafEditionSetupReducer(initial, { type: 'selectMushafEdition', value: furatiyyah.id }, editions)
     expect(selected.selectedEditionId).toBe(furatiyyah.id)
     expect(canContinueMushafEditionSetup(selected, editions)).toBe(true)
+  })
+
+  it('retains the selected edition when persistence fails so retry can reuse it', () => {
+    const editions = [quranWs, furatiyyah]
+    const selected = mushafEditionSetupReducer(
+      createInitialMushafEditionSetupState(editions),
+      { type: 'selectMushafEdition', value: furatiyyah.id },
+      editions,
+    )
+    const saving = mushafEditionSetupReducer(selected, { type: 'startPersistence' }, editions)
+    const failed = mushafEditionSetupReducer(saving, { type: 'persistenceFailed' }, editions)
+
+    expect(saving).toEqual({ persistenceStatus: 'saving', selectedEditionId: furatiyyah.id })
+    expect(failed).toEqual({ persistenceStatus: 'error', selectedEditionId: furatiyyah.id })
+    expect(canContinueMushafEditionSetup(failed, editions)).toBe(true)
   })
 })
