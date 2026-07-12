@@ -192,6 +192,27 @@ describe('useMushafPageWindow', () => {
     expect(readyAsset(result.current.requested).media).toMatchObject({ kind: 'external-image', source: { width: 2136 } })
     preview.resolve({ status: 'ready', image: {} as HTMLImageElement })
   })
+
+  it('promotes an already ready preview to the current full rendition', async () => {
+    mockedLoadMushafPageAsset.mockResolvedValue({ status: 'error', error: new Error('External-image Mushaf pages require the V2 reader loader') })
+    mockedLoadPreparedMushafPage.mockImplementation(async ({ page }) => externalPage(page))
+    mockedPrepareExternalMushafImage.mockResolvedValue({ status: 'ready', image: {} as HTMLImageElement })
+
+    const { rerender, result } = renderHook(({ page }) => useMushafPageWindow({
+      enabled: true,
+      page,
+      pageCount: 604,
+      profile: primaryProfile,
+    }), { initialProps: { page: 42 } })
+
+    await waitFor(() => expect(readyAsset(result.current.entries.find((entry) => entry.page === 43) ?? null).media)
+      .toMatchObject({ kind: 'external-image', source: { width: 1280 } }))
+    rerender({ page: 43 })
+
+    await waitFor(() => expect(readyAsset(result.current.requested).media)
+      .toMatchObject({ kind: 'external-image', source: { width: 2136 } }))
+    expect(mockedPrepareExternalMushafImage).toHaveBeenCalledWith(expect.objectContaining({ width: 2136 }), expect.any(AbortSignal))
+  })
 })
 
 function externalPage(page: number): PreparedExternalMushafPage {

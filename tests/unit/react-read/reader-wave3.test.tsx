@@ -764,15 +764,16 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps the previously visible page mounted when the requested target fails', async () => {
+  it('replaces a stale visible page with the requested-page error and retry control', async () => {
     vi.stubGlobal('fetch', failingSecondPageMushafFetch())
     const { rerender } = render(<MushafRoute page={1} />)
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
 
     rerender(<MushafRoute page={2} />)
 
-    await waitFor(() => expect(screen.queryByText('Mushaf page pack could not be loaded.')).not.toBeInTheDocument())
-    expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    expect(await screen.findByText('Mushaf page pack could not be loaded.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: /mushaf page 1, qaloon/i })).not.toBeInTheDocument()
     vi.unstubAllGlobals()
   })
 

@@ -4,7 +4,12 @@ import { Button } from '../ui'
 
 export type ReaderAssetState = 'ready' | 'missing' | 'stale' | 'installing' | 'error'
 
-export function ReaderAssetGate({ children, label, state = 'ready' }: { children?: ReactNode; label: string; state?: ReaderAssetState }) {
+export function ReaderAssetGate({ children, label, onRetry, state = 'ready' }: {
+  children?: ReactNode
+  label: string
+  onRetry?: () => void
+  state?: ReaderAssetState
+}) {
   if (state === 'ready') return <>{children}</>
   const message = state === 'missing'
     ? `${label} page pack is not installed.`
@@ -18,7 +23,7 @@ export function ReaderAssetGate({ children, label, state = 'ready' }: { children
       <p className="qar:m-0 qar:text-sm qar:text-muted">{message}</p>
       <div className="qar:flex qar:flex-wrap qar:gap-2">
         <Button size="sm">Manage assets</Button>
-        <Button size="sm" variant="secondary">Retry</Button>
+        <Button onClick={onRetry} size="sm" variant="secondary">Retry</Button>
       </div>
     </section>
   )

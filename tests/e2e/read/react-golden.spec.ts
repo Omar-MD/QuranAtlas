@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { expectAxeClean, expectMinTouchTarget, expectNoHorizontalOverflow } from '../fixtures/react-a11y'
 import {
@@ -254,6 +254,36 @@ for (const fixture of readFixtures) {
   }
 }
 
+async function expectPrivatePagePixels(page: Page, pageNo: number) {
+  const image = page.getByRole('img', { name: new RegExp(`Mushaf page ${pageNo}, Qaloon`, 'i') }).locator('img')
+  await expect(image).toHaveAttribute('src', new RegExp(`/pages/${String(pageNo).padStart(3, '0')}-2136\\.webp$`))
+  const evidence = await image.evaluate((source) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 64
+    canvas.height = 64
+    const context = canvas.getContext('2d')
+    if (!context) return null
+    context.drawImage(source, 0, 0, canvas.width, canvas.height)
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+    const colours = new Set<string>()
+    let darkPixels = 0
+    let opaquePixels = 0
+    for (let index = 0; index < pixels.length; index += 4) {
+      const [red, green, blue, alpha] = [pixels[index]!, pixels[index + 1]!, pixels[index + 2]!, pixels[index + 3]!]
+      if (alpha > 0) opaquePixels += 1
+      if (red + green + blue < 540) darkPixels += 1
+      if (index % 16 === 0) colours.add(`${red}:${green}:${blue}:${alpha}`)
+    }
+    return { colours: colours.size, darkPixels, opaquePixels, naturalHeight: source.naturalHeight, naturalWidth: source.naturalWidth }
+  })
+  expect(evidence).not.toBeNull()
+  expect(evidence!.naturalWidth).toBe(2136)
+  expect(evidence!.naturalHeight).toBeGreaterThan(2000)
+  expect(evidence!.opaquePixels).toBe(4096)
+  expect(evidence!.darkPixels).toBeGreaterThan(16)
+  expect(evidence!.colours).toBeGreaterThan(16)
+}
+
 test.describe('private Furatiyyah Mushaf', () => {
   test.skip(!PRIVATE_MUSHAF_ENABLED, 'Private Mushaf journeys require QURANATLAS_PRIVATE_MUSHAF=1.')
 
@@ -271,29 +301,13 @@ test.describe('private Furatiyyah Mushaf', () => {
 
     const current = page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })
     await expect(current).toBeVisible()
-    await expect(current.locator('img')).toHaveAttribute('src', /\/pages\/042-2136\.webp$/)
-    const nonblank = await current.locator('img').evaluate((image) => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 32
-      canvas.height = 32
-      const context = canvas.getContext('2d')
-      if (!context) return false
-      context.drawImage(image, 0, 0, canvas.width, canvas.height)
-      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
-      const colours = new Set<string>()
-      for (let index = 0; index < pixels.length; index += 16) {
-        colours.add(`${pixels[index]}:${pixels[index + 1]}:${pixels[index + 2]}:${pixels[index + 3]}`)
-      }
-      return image.complete && image.naturalWidth === 2136 && image.naturalHeight > 2000 && colours.size > 4
-    })
-    expect(nonblank).toBe(true)
+    await expectPrivatePagePixels(page, 42)
     await expect.poll(() => [...webpPages].sort((left, right) => left - right)).toEqual([41, 42, 43])
 
-    for (const pageNo of [1, 302, 604]) {
+    for (const pageNo of [1, 2, 302, 604]) {
       await page.goto(targetUrl('react', `/#/m/${pageNo}`))
-      const image = page.getByRole('img', { name: new RegExp(`Mushaf page ${pageNo}, Qaloon`, 'i') })
-      await expect(image).toBeVisible()
-      await expect(image.locator('img')).toHaveAttribute('src', new RegExp(`/pages/${String(pageNo).padStart(3, '0')}-2136\\.webp$`))
+      await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${pageNo}, Qaloon`, 'i') })).toBeVisible()
+      await expectPrivatePagePixels(page, pageNo)
     }
     await expectNoHorizontalOverflow(page)
   })

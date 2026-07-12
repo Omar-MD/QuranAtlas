@@ -12,6 +12,7 @@ import {
 } from '../fixtures/react-golden-routes'
 import {
   expectOfflinePrivateMushafRendition,
+  expectUnfetchedPrivateMushafFailure,
   expectOfflineReaderLoads,
   expectReactServiceWorkerReady,
 } from '../fixtures/react-offline'
@@ -93,5 +94,8 @@ test.describe('private Furatiyyah offline media', () => {
     await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
     await expectReactServiceWorkerReady(page)
     await expectOfflinePrivateMushafRendition(page, { cachedPage: 42 })
+    await expectUnfetchedPrivateMushafFailure(page, 99)
+    await page.getByRole('button', { name: 'Retry' }).click()
+    await expect(page.getByRole('img', { name: /Mushaf page 99,/i })).toBeVisible()
   })
 })

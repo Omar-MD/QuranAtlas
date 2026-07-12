@@ -15,7 +15,7 @@ export type MushafPageWindowEntry =
   | { page: number; status: 'loading' }
   | { page: number; prepared: PreparedMushafPage; status: 'descriptor' }
   | { page: number; status: 'error' | 'unavailable' }
-  | { asset: MushafReadyPageAssetState; page: number; status: 'ready' }
+  | { asset: MushafReadyPageAssetState; loadPurpose: 'current' | 'preview'; page: number; status: 'ready' }
 
 type State = { entries: MushafPageWindowEntry[]; profileKey: string | null }
 type Request = { controller: AbortController; promise: Promise<void>; purpose: 'current' | 'preview' | 'descriptor' }
@@ -67,7 +67,11 @@ export function useMushafPageWindow(input: {
     async function ensure(page: number, purpose: 'current' | 'preview' | 'descriptor'): Promise<void> {
       if (!alive || !pagesRef.current.includes(page) || keyRef.current !== profileKey) return
       const existing = stateRef.current.entries.find((entry) => entry.page === page)
-      if (existing?.status === 'ready' || (purpose === 'descriptor' && existing?.status === 'descriptor')) return
+      if (
+        (existing?.status === 'ready'
+          && (existing.asset.media.kind === 'inline-svg' || purpose !== 'current' || existing.loadPurpose === 'current'))
+        || (purpose === 'descriptor' && existing?.status === 'descriptor')
+      ) return
       const inFlight = requests.current.get(page)
       if (inFlight) {
         if (!isPurposeUpgrade(inFlight.purpose, purpose)) return inFlight.promise
@@ -82,7 +86,7 @@ export function useMushafPageWindow(input: {
           if (controller.signal.aborted || keyRef.current !== profileKey || !pagesRef.current.includes(page)) return
           if (purpose === 'descriptor') return setEntry({ page, prepared, status: 'descriptor' })
           if (prepared.kind === 'inline-svg') {
-            return setEntry({ page, status: 'ready', asset: { status: 'ready', media: { kind: 'inline-svg', inlineSvg: prepared.inlineSvg }, resolved: prepared.resolved } })
+            return setEntry({ page, loadPurpose: purpose, status: 'ready', asset: { status: 'ready', media: { kind: 'inline-svg', inlineSvg: prepared.inlineSvg }, resolved: prepared.resolved } })
           }
           const source = selectExternalMushafSource(prepared, purpose as MushafPageLoadPurpose)
           const result = await prepareExternalMushafImage(source, controller.signal)
@@ -90,7 +94,7 @@ export function useMushafPageWindow(input: {
             if (result.status === 'error') setEntry({ page, status: 'error' })
             return
           }
-          setEntry({ page, status: 'ready', asset: { status: 'ready', media: { kind: 'external-image', source }, resolved: prepared.resolved } })
+          setEntry({ page, loadPurpose: purpose, status: 'ready', asset: { status: 'ready', media: { kind: 'external-image', source }, resolved: prepared.resolved } })
         })
         .catch(() => { if (!controller.signal.aborted && keyRef.current === profileKey) setEntry({ page, status: 'error' }) })
         .finally(() => { if (requests.current.get(page)?.controller === controller) requests.current.delete(page) })

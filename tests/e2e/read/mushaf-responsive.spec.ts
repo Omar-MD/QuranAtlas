@@ -755,9 +755,16 @@ test.describe('private Furatiyyah framing', () => {
     const fullFrame = await pageImage.locator('.qar-react-mushaf-page-frame').evaluate((element) => ({
       height: element.getBoundingClientRect().height,
       imageWidth: Number.parseFloat(getComputedStyle(element.querySelector('img')!).width),
+      placement: {
+        height: element.querySelector('img')!.style.height,
+        left: element.querySelector('img')!.style.left,
+        top: element.querySelector('img')!.style.top,
+        width: element.querySelector('img')!.style.width,
+      },
       width: element.getBoundingClientRect().width,
     }))
     expect(Math.abs(fullFrame.imageWidth - fullFrame.width)).toBeLessThanOrEqual(1)
+    expect(fullFrame.placement).toEqual({ height: '100%', left: '0%', top: '0%', width: '100%' })
 
     await page.getByRole('button', { name: 'Open settings' }).click()
     const settings = page.getByRole('dialog', { name: 'Mushaf settings' })
@@ -767,10 +774,38 @@ test.describe('private Furatiyyah framing', () => {
     const textFrame = await page.locator('[data-mushaf-cell="current"] .qar-react-mushaf-page-frame').evaluate((element) => ({
       height: element.getBoundingClientRect().height,
       imageWidth: Number.parseFloat(getComputedStyle(element.querySelector('img')!).width),
+      placement: {
+        height: element.querySelector('img')!.style.height,
+        left: element.querySelector('img')!.style.left,
+        top: element.querySelector('img')!.style.top,
+        width: element.querySelector('img')!.style.width,
+      },
       width: element.getBoundingClientRect().width,
     }))
     expect(textFrame.height).toBeGreaterThan(fullFrame.height)
     expect(textFrame.imageWidth).toBeGreaterThan(textFrame.width)
+    expect(textFrame.placement).toEqual({ height: '100%', left: '0%', top: '0%', width: expect.stringMatching(/^119\./) })
+
+    const textEdgeEvidence = await page.locator('[data-mushaf-cell="current"] img').evaluate((source) => {
+      const sourceWidth = source.naturalWidth
+      const sourceHeight = source.naturalHeight
+      const cropRight = Math.floor(sourceWidth * 0.8385)
+      const canvas = document.createElement('canvas')
+      canvas.width = 12
+      canvas.height = sourceHeight
+      const context = canvas.getContext('2d')
+      if (!context) return null
+      context.drawImage(source, cropRight - 6, 0, 12, sourceHeight, 0, 0, 12, sourceHeight)
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+      let edgeInkPixels = 0
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index]! + pixels[index + 1]! + pixels[index + 2]! < 480) edgeInkPixels += 1
+      }
+      return { edgeInkPixels, totalPixels: canvas.width * canvas.height }
+    })
+    expect(textEdgeEvidence).not.toBeNull()
+    expect(textEdgeEvidence!.edgeInkPixels).toBeGreaterThan(0)
+    expect(textEdgeEvidence!.edgeInkPixels / textEdgeEvidence!.totalPixels).toBeLessThan(0.5)
 
     const slider = settings.getByRole('slider', { name: "Qur'an text size" })
     await slider.press('Home')

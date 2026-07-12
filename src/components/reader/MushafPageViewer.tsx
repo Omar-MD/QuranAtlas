@@ -286,6 +286,7 @@ export function MushafPageViewer({
     if (page === resolved.page) {
       return {
         asset: { media: { kind: 'inline-svg', inlineSvg }, resolved, status: 'ready' },
+        loadPurpose: 'current',
         page,
         status: 'ready',
       }
@@ -474,6 +475,7 @@ function legacyPageEntries(
   return [...new Map(legacyPages.map((page) => [page.resolved.page, page])).values()]
     .map((page): MushafPageWindowEntry => ({
       asset: { media: { kind: 'inline-svg', inlineSvg: page.inlineSvg }, resolved: page.resolved, status: 'ready' },
+      loadPurpose: 'current',
       page: page.resolved.page,
       status: 'ready',
     }))
