@@ -232,11 +232,38 @@ describe('source catalog validation', () => {
     catalog.mushafAssets.assets[0].visibility = 'baseline'
     catalog.mushafAssets.assets[0].shipped = true
     catalog.mushafAssets.assets[0].mediaPolicyPath = '../media.json'
+    catalog.licenses.find((license) => license.id === 'private-local-pdf-restricted').status = 'approved'
     expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 visibility must be internal',
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 shipped must be false',
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 private license status must be restricted',
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 mediaPolicyPath must be mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
     ]))
+  })
+
+  it('keeps the Qaloon default on the shipped quran.ws edition', () => {
+    const catalog = baseCatalog()
+    catalog.mushafAssets = {
+      defaults: { qaloon: 'qalun-furatiyyah-2023-v1' },
+      assets: [{
+        riwayah: 'qaloon',
+        mushafEditionId: 'qalun-furatiyyah-2023-v1',
+        providerId: 'private-local-pdf',
+        licenseId: 'private-local-pdf-restricted',
+        sourceKind: 'local-pdf',
+        visibility: 'internal',
+        shipped: false,
+        pageCount: 604,
+        sourceContractPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/source.json',
+        pageStartReviewPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/page-start-review.json',
+        framingPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/framing.json',
+        mediaPolicyPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
+      }],
+    }
+    catalog.authorities.push({ id: 'private-local-pdf', label: 'Private local PDF' })
+    catalog.licenses.push({ id: 'private-local-pdf-restricted', label: 'Private local PDF', status: 'restricted' })
+
+    expect(validateSourceCatalog(catalog).errors).toContain('mushaf asset default qaloon must reference a shipped quran.ws edition')
   })
 
   it('validates complete Search source catalog records', () => {

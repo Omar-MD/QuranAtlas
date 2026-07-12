@@ -381,8 +381,12 @@ function validateMushafAssets(mushafCatalog, context) {
   }
 
   for (const [riwayah, mushafEditionId] of Object.entries(defaults)) {
+    const defaultAsset = assets.find((asset) => asset?.riwayah === riwayah && asset?.mushafEditionId === mushafEditionId)
     if (!assetKeys.has(`${riwayah}:${mushafEditionId}`)) {
       context.errors.push(`mushaf asset default ${riwayah} references missing edition ${mushafEditionId}`)
+    }
+    if (riwayah === 'qaloon' && (!defaultAsset || defaultAsset.sourceKind !== 'quran-ws' || defaultAsset.shipped !== true)) {
+      context.errors.push('mushaf asset default qaloon must reference a shipped quran.ws edition')
     }
   }
 }
@@ -416,6 +420,8 @@ function validateMushafAssetSourceKind(asset, key, riwayah, context) {
       context.errors.push(`mushaf asset ${key} licenseId must be private-local-pdf-restricted`)
     } else if (!context.licenseById.has(asset.licenseId)) {
       context.errors.push(`mushaf asset ${key} references missing license ${asset.licenseId}`)
+    } else if (context.licenseById.get(asset.licenseId).status !== 'restricted') {
+      context.errors.push(`mushaf asset ${key} private license status must be restricted`)
     }
     if (asset.visibility !== 'internal') {
       context.errors.push(`mushaf asset ${key} visibility must be internal`)
