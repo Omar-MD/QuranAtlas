@@ -1,6 +1,8 @@
 import {
+  Component,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -60,6 +62,45 @@ type VisiblePageMeasurement = {
   centerDistance: number
   page: number
   top: number
+}
+
+type MushafScrollWindowProps = {
+  entries: readonly MushafPageWindowEntry[]
+  framingValue: number
+  onBeforeWindowShift: (previousFirstPage: number, nextFirstPage: number) => void
+  onCellRef: (page: number, node: HTMLDivElement | null) => void
+}
+
+/**
+ * Captures a window shift before React mutates the stack's direct children.
+ * A layout-effect correction is too late for a MutationObserver (and can make
+ * a fast wheel burst visibly jump), while this lifecycle runs before the
+ * leading page is removed or inserted.
+ */
+class MushafScrollWindow extends Component<MushafScrollWindowProps> {
+  getSnapshotBeforeUpdate(previous: Readonly<MushafScrollWindowProps>): null {
+    const previousFirstPage = previous.entries[0]?.page
+    const nextFirstPage = this.props.entries[0]?.page
+    if (previousFirstPage && nextFirstPage && previousFirstPage !== nextFirstPage) {
+      this.props.onBeforeWindowShift(previousFirstPage, nextFirstPage)
+    }
+    return null
+  }
+
+  componentDidUpdate(): void {}
+
+  render(): ReactNode {
+    const { entries, framingValue, onCellRef } = this.props
+    return entries.map((entry) => (
+      <MushafPageCell
+        entry={entry}
+        framingValue={framingValue}
+        hidden={false}
+        key={entry.page}
+        ref={(node) => onCellRef(entry.page, node)}
+      />
+    ))
+  }
 }
 
 export function MushafPageViewer({
@@ -315,6 +356,35 @@ export function MushafPageViewer({
     else cellRefs.current.delete(page)
   }
 
+  const preserveAnchorBeforeWindowShift = useCallback((previousFirstPage: number, nextFirstPage: number) => {
+    if (!isScrollModeRef.current) return
+    const anchor = anchorRef.current
+    const stage = stageRef.current
+    if (!anchor || !stage || !cellRefs.current.has(anchor.page)) return
+
+    const firstCell = cellRefs.current.get(previousFirstPage)
+    if (!firstCell) return
+    const cells = [...cellRefs.current.entries()]
+      .sort(([left], [right]) => left - right)
+      .map(([, cell]) => cell)
+    const nextCell = cells[1]
+    const firstRect = firstCell.getBoundingClientRect()
+    const unitHeight = firstRect.height + (nextCell
+      ? Math.max(0, nextCell.getBoundingClientRect().top - firstRect.bottom)
+      : 0)
+    if (unitHeight <= 0) return
+
+    const shift = nextFirstPage - previousFirstPage
+    const nextScrollTop = Math.max(0, stage.scrollTop - (shift * unitHeight))
+    if (Math.abs(nextScrollTop - stage.scrollTop) < 0.01) return
+    ignoreAdjustedScrollRef.current = true
+    stage.scrollTop = nextScrollTop
+    window.requestAnimationFrame(() => {
+      ignoreAdjustedScrollRef.current = false
+      scheduleReconciliation()
+    })
+  }, [scheduleReconciliation])
+
   const stageName = fitWidth || isScrollMode ? 'Scrollable Mushaf pages' : undefined
 
   return (
@@ -346,18 +416,20 @@ export function MushafPageViewer({
       >
         {isScrollMode ? (
           <div className="qar-react-mushaf-continuous-stack">
-            {orderedPages.map((entry) => (
-              <MushafPageCell
-                entry={entry}
-                framingValue={framingValue}
-                hidden={false}
-                key={entry.page}
-                ref={(node) => setCellRef(entry.page, node)}
-              />
-            ))}
+            <MushafScrollWindow
+              entries={orderedPages}
+              framingValue={framingValue}
+              onBeforeWindowShift={preserveAnchorBeforeWindowShift}
+              onCellRef={setCellRef}
+            />
           </div>
         ) : (
-          <div className="qar-react-mushaf-page-strip" onTransitionEnd={gesture.finishSettle}>
+          <div
+            className="qar-react-mushaf-page-strip"
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget && event.propertyName === 'transform') gesture.finishSettle()
+            }}
+          >
             <MushafPageCell entry={entryFor(resolved.page + 1)} framingValue={framingValue} hidden position="next" />
             <MushafPageCell entry={entryFor(resolved.page)} framingValue={framingValue} hidden={false} position="current" />
             <MushafPageCell entry={entryFor(resolved.page - 1)} framingValue={framingValue} hidden position="previous" />
