@@ -70,7 +70,7 @@ style_paths:
 
 ## Behavior
 
-`vite.config.js` configures React, Tailwind, and `vite-plugin-pwa`. The production service worker uses Workbox to precache only the app shell, fonts, icons, and built assets; `/dataset/**` stays out of precache and is cached through the CacheFirst runtime route in `quran-atlas-runtime-dataset-v1`. The Workbox cache id is `quranatlas`.
+`vite.config.js` configures React, Tailwind, and `vite-plugin-pwa`. The production service worker uses Workbox to precache only the app shell, fonts, icons, and built assets. `/dataset/**` stays out of precache and normally uses the CacheFirst runtime route in `quran-atlas-runtime-dataset-v1`; the mutable `/dataset/indexes/mushaf-assets.json` availability index is excluded from that matcher and uses NetworkFirst in `quran-atlas-runtime-mushaf-index-v1`, with cached fallback offline. The Workbox cache id is `quranatlas`.
 
 `scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real quran.ws SVG pack. The CI cache is deliberately limited to `qalun-quran-ws-v1/pages` and is versioned with the quran.ws catalog/build inputs; private local WebPs are ignored inputs and never enter default CI.
 
@@ -121,7 +121,7 @@ Dexie v8 adds Search lifecycle stores. Clear data continues to delete browser st
 ## Invariants
 
 - Production offline behavior must be proven against `dist/` preview, not the dev server.
-- Runtime dataset caching stays same-origin and under `/dataset/**`.
+- Runtime dataset caching stays same-origin and under `/dataset/**`; the mutable Mushaf availability index is NetworkFirst while immutable dataset bodies remain CacheFirst.
 - Search pack caching stays under the dedicated Search cache owner for immutable `/search-packs/**` URLs.
 - Page SVG and WebP bodies must stay runtime assets, not JS bundle content.
 - Clear-data behavior clears Cache Storage and the shared IndexedDB database.

@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { SettingRecord } from '../storage/types'
 import { ensureReactMvpAssetContractReset } from '../launch/asset-contract-reset'
+import { resolveMushafEditionSetup, type MushafEditionSetupState } from '../launch/mushaf-edition-setup'
 import { nativeSettingsReader } from '../storage/native-reader-store'
 
 export type SavedPosition = { surah: number; verse: number }
 export type LaunchRestoreState =
   | { status: 'loading'; hash: string; sourceHash: string }
   | { status: 'ready'; hash: string; sourceHash: string }
+  | { status: 'setup'; hash: string; sourceHash: string; setup: Exclude<MushafEditionSetupState, { status: 'complete' }> }
 
 const EXCLUDED = new Set(['#/onboarding', '#/settings', '#/assets', '#/search'])
 
@@ -86,28 +88,49 @@ export function useLaunchRestore(hash: string): LaunchRestoreState {
     sourceHash: hash,
   }))
   const hasResolvedOnceRef = useRef(false)
+  const setupPendingRef = useRef(false)
 
   useEffect(() => {
     let active = true
-    const canKeepReady = hasResolvedOnceRef.current && !isLaunchHash(hash) && hash !== '#/onboarding'
+    const canKeepReady = hasResolvedOnceRef.current
+      && !setupPendingRef.current
+      && !isLaunchHash(hash)
+      && hash !== '#/onboarding'
 
-    async function resolve() {
-      await ensureReactMvpAssetContractReset()
-      const resolvedHash = await resolveHashWithLaunchState(nativeSettingsReader(), hash)
-      if (active) {
-        hasResolvedOnceRef.current = true
-        setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+    if (canKeepReady) {
+      setState({ status: 'ready', hash, sourceHash: hash })
+      return () => {
+        active = false
       }
     }
 
-    setState((current) => {
-      if (canKeepReady && current.status === 'ready') return { status: 'ready', hash, sourceHash: hash }
-      return { status: 'loading', hash, sourceHash: hash }
-    })
+    async function resolve() {
+      const assetContract = await ensureReactMvpAssetContractReset()
+      const resolvedHash = await resolveHashWithLaunchState(nativeSettingsReader(), hash)
+      const setup = await resolveMushafEditionSetup({ contractWasValid: assetContract.hadValidContract })
+      if (active) {
+        hasResolvedOnceRef.current = true
+        if (setup.status === 'complete') {
+          setupPendingRef.current = false
+          setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+        } else {
+          setupPendingRef.current = true
+          setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup })
+        }
+      }
+    }
+
+    setState({ status: 'loading', hash, sourceHash: hash })
     void resolve().catch(() => {
       if (active) {
         hasResolvedOnceRef.current = true
-        setState({ status: 'ready', hash: isLaunchHash(hash) || hash === '#/onboarding' ? '#/s/1' : hash, sourceHash: hash })
+        setupPendingRef.current = true
+        setState({
+          status: 'setup',
+          hash: isLaunchHash(hash) || hash === '#/onboarding' ? '#/s/1' : hash,
+          sourceHash: hash,
+          setup: { status: 'choose', editions: [] },
+        })
       }
     })
 

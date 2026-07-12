@@ -17,15 +17,18 @@ style_paths:
 
 # Surface: onboard
 
-> Launch restore and compatibility onboarding path. The current MVP does not present a setup wizard.
+> Launch restore, compatibility migration, and one-time Mushaf edition setup.
 
 ## Reach
 
 | Entry | Trigger | Result |
 | --- | --- | --- |
 | Empty hash | app boot | Restore last readable surface or open `#/s/1` |
-| `#/onboarding` | compatibility URL | Run launch restore and enter the reader |
+| Fresh or cleared profile | app boot | Choose an available Mushaf edition, then resume the requested reader route |
+| Existing valid profile without setup marker | app boot | Atomically retain the quran.ws edition and mark setup complete without clearing continuity |
+| `#/onboarding` | compatibility URL | Run launch restore and enter the selected reader route |
 | Stale asset contract | app boot | Reset unsupported local profile state before reader mounts |
+| Completed unavailable edition | app boot | Show the unavailable state and send the reader to About > Clear All Data |
 | Valid reader hash | app boot | Mount the requested reader route |
 
 ## Inventory
@@ -38,13 +41,14 @@ style_paths:
 | `src/components/launch/LaunchSplash.tsx` | _(no leading comment)_ |
 | `src/continuity/launch-restore.ts` | _(no leading comment)_ |
 | `src/launch/asset-contract-reset.ts` | _(no leading comment)_ |
+| `src/launch/mushaf-edition-setup.ts` | _(no leading comment)_ |
 <!-- AUTO-GENERATED:inventory END -->
 
 ## Behavior
 
-`src/continuity/launch-restore.ts` resolves the initial route from the current hash, `lastSurface`, and `currentPosition`. `src/launch/asset-contract-reset.ts` ensures unsupported local profile state cannot alter the current default MVP profile.
+`src/continuity/launch-restore.ts` preserves the requested reader hash while it resolves the initial route from the current hash, `lastSurface`, and `currentPosition`. `src/launch/asset-contract-reset.ts` records whether the current asset contract was already valid before resetting incompatible state. `src/launch/mushaf-edition-setup.ts` then keeps existing valid profiles on quran.ws, classifies fresh/cleared storage into setup, and rejects a completed edition that is absent from the current availability index. The edition selection and setup marker share one IndexedDB transaction.
 
-`OnboardingRoute` is compatibility-only. It does not show source choices, theme setup, shortcuts, storage choices, or a feature tour. `LaunchSplash` is a short transition state while restore/reset work resolves.
+`OnboardingRoute` has exactly one first/cleared-install choice: Mushaf edition. A sole compatible edition is selected automatically; multiple editions use the owned `Select` and one Continue action. It never presents riwayah, translation, theme, storage, import, routine switching, or a feature tour. Changing a completed selection still requires About > Clear All Data, so old page bookmarks are never silently reassigned. `LaunchSplash` is a short transition state while restore/reset work resolves.
 
 ## Style Inventory
 
@@ -80,8 +84,9 @@ _(no cross-surface reads detected)_
 
 ## Invariants
 
-- No current source wizard exists.
-- Legacy onboarding hashes never expose setup choices.
+- Setup choices are limited to fresh or cleared profile state and the current compatible Mushaf availability index.
+- A valid pre-setup profile migrates without deleting settings, bookmarks, or continuity.
+- A missing completed edition never reopens setup over old bookmarks.
 - The default profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation.
 - Launch restore must not destroy valid reader hashes.
 

@@ -15,6 +15,7 @@ export type SettingsKey =
   | 'wirdReaderStatusVisible'
   | 'quranTextStyleId'
   | 'mushafEditionId'
+  | 'mushafEditionSetupVersion'
   | 'mushafViewMode'
   | 'mushafFitWidth'
   | 'mushafPageFraming'

@@ -1,13 +1,19 @@
 import { DEFAULT_READER_ASSET_PROFILE, MVP_ASSET_CONTRACT_ID, RESET_CACHE_NAME_PREFIXES } from '../../shared/reader-assets/default-profile'
 import { readNativeSetting, resetNativeReaderStores } from '../storage/native-reader-store'
 
-export async function ensureReactMvpAssetContractReset(): Promise<{ resetApplied: boolean; contractId: string }> {
+export type ReactMvpAssetContractReset = {
+  contractId: string
+  hadValidContract: boolean
+  resetApplied: boolean
+}
+
+export async function ensureReactMvpAssetContractReset(): Promise<ReactMvpAssetContractReset> {
   const marker = await readNativeSetting('mvpAssetContractId')
   if (marker?.value === MVP_ASSET_CONTRACT_ID) {
-    return { resetApplied: false, contractId: MVP_ASSET_CONTRACT_ID }
+    return { hadValidContract: true, resetApplied: false, contractId: MVP_ASSET_CONTRACT_ID }
   }
 
-  if (typeof caches !== 'undefined') {
+  if (typeof caches !== 'undefined' && typeof caches.keys === 'function') {
     const names = await caches.keys()
     await Promise.all(
       names
@@ -25,5 +31,5 @@ export async function ensureReactMvpAssetContractReset(): Promise<{ resetApplied
     { key: 'translationVisible', value: true },
   ])
 
-  return { resetApplied: true, contractId: MVP_ASSET_CONTRACT_ID }
+  return { hadValidContract: false, resetApplied: true, contractId: MVP_ASSET_CONTRACT_ID }
 }

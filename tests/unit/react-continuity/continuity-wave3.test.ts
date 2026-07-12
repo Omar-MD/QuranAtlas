@@ -1,12 +1,20 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { loadLaunchRouteFromDb, resolveLaunchRoute, shouldPersistLastSurface, useLaunchRestore } from '../../../src/continuity/launch-restore'
+import { loadLaunchRouteFromDb, resolveHashWithLaunchState, resolveLaunchRoute, shouldPersistLastSurface } from '../../../src/continuity/launch-restore'
 import { BOOKMARKS_TOPIC, broadcastBookmarkChange, createBookmarkSyncMessage } from '../../../src/continuity/bookmarks/sync'
 import { deleteBookmark, listBookmarks, toggleBookmark } from '../../../src/continuity/bookmarks/store'
 import { useBookmarks } from '../../../src/continuity/bookmarks/use-bookmarks'
+import { ensureReactMvpAssetContractReset } from '../../../src/launch/asset-contract-reset'
+import { MUSHAF_EDITION_SETUP_VERSION, resolveMushafEditionSetup } from '../../../src/launch/mushaf-edition-setup'
 import { closeReactDb, openReactDb } from '../../../src/storage/db'
 import { QURAN_ATLAS_DB_NAME } from '../../../src/storage/schema'
+
+const quranWsIndex = { assets: [{ label: 'Qalun Quran.ws', mushafEditionId: 'qalun-quran-ws-v1', pageCount: 604, riwayah: 'qaloon', shipped: true }] }
+
+function jsonResponse(value: unknown) {
+  return new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } })
+}
 
 async function resetReactDb() {
   closeReactDb()
@@ -55,27 +63,70 @@ describe('React continuity coverage', () => {
     await expect(loadLaunchRouteFromDb({ settings })).resolves.toBe('#/m/8')
   })
 
-  it('keeps resolved reader hashes ready across internal route changes', async () => {
+  it('migrates a valid existing profile without clearing its continuity or bookmarks', async () => {
     await resetReactDb()
     const db = await openReactDb()
-    await db.settings.put({ key: 'onboardingComplete', value: false })
+    await db.settings.bulkPut([
+      { key: 'mvpAssetContractId', value: 'mvp-default-assets-qaloon-bridges-v1' },
+      { key: 'lastSurface', value: '#/m/42' },
+      { key: 'theme', value: 'dark' },
+    ])
+    await db.bookmarks.put({ createdAt: 1, riwayah: 'qaloon', surah: 2, verseKey: '2:255' })
 
     try {
-      const { result, rerender } = renderHook(({ hash }: { hash: string }) => useLaunchRestore(hash), {
-        initialProps: { hash: '#/m/42' },
+      const contract = await ensureReactMvpAssetContractReset()
+      const setup = await resolveMushafEditionSetup({
+        contractWasValid: contract.hadValidContract,
+        fetcher: async () => jsonResponse(quranWsIndex),
       })
 
-      expect(result.current.status).toBe('loading')
-      await waitFor(() => expect(result.current).toMatchObject({ hash: '#/m/42', sourceHash: '#/m/42', status: 'ready' }))
-
-      await act(async () => {
-        rerender({ hash: '#/m/43' })
-      })
-
-      await waitFor(() => expect(result.current).toMatchObject({ hash: '#/m/43', sourceHash: '#/m/43', status: 'ready' }))
+      expect(contract).toMatchObject({ hadValidContract: true, resetApplied: false })
+      expect(setup).toEqual({ status: 'complete', mushafEditionId: 'qalun-quran-ws-v1' })
+      await expect(db.settings.bulkGet(['lastSurface', 'theme', 'mushafEditionId', 'mushafEditionSetupVersion'])).resolves.toEqual([
+        { key: 'lastSurface', value: '#/m/42' },
+        { key: 'theme', value: 'dark' },
+        { key: 'mushafEditionId', value: 'qalun-quran-ws-v1' },
+        { key: 'mushafEditionSetupVersion', value: MUSHAF_EDITION_SETUP_VERSION },
+      ])
+      await expect(db.bookmarks.get(['qaloon', '2:255'])).resolves.toMatchObject({ verseKey: '2:255' })
     } finally {
       await resetReactDb()
     }
+  })
+
+  it('requires setup after fresh or incompatible contracts and does not revive missing completed editions', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.put({ key: 'mvpAssetContractId', value: 'incompatible-profile' })
+    await db.bookmarks.put({ createdAt: 1, riwayah: 'qaloon', surah: 2, verseKey: '2:255' })
+
+    try {
+      const reset = await ensureReactMvpAssetContractReset()
+      const choose = await resolveMushafEditionSetup({
+        contractWasValid: reset.hadValidContract,
+        fetcher: async () => jsonResponse(quranWsIndex),
+      })
+      expect(reset).toMatchObject({ hadValidContract: false, resetApplied: true })
+      expect(choose).toEqual({ status: 'choose', editions: [{ id: 'qalun-quran-ws-v1', label: 'Qalun Quran.ws' }] })
+      await expect(db.bookmarks.count()).resolves.toBe(0)
+
+      await db.settings.bulkPut([
+        { key: 'mushafEditionId', value: 'qalun-furatiyyah-2023-v1' },
+        { key: 'mushafEditionSetupVersion', value: MUSHAF_EDITION_SETUP_VERSION },
+      ])
+      await expect(resolveMushafEditionSetup({
+        contractWasValid: true,
+        fetcher: async () => jsonResponse(quranWsIndex),
+      })).resolves.toEqual({ status: 'missing', mushafEditionId: 'qalun-furatiyyah-2023-v1' })
+    } finally {
+      await resetReactDb()
+    }
+  })
+
+  it('preserves a requested Mushaf deep link instead of replacing it with the launch route', async () => {
+    const settings = { get: async () => undefined }
+
+    await expect(resolveHashWithLaunchState({ settings }, '#/m/42')).resolves.toBe('#/m/42')
   })
 
   it('creates bookmark sync messages on the shared topic envelope', () => {

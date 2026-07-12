@@ -58,6 +58,7 @@ for (const fixture of onboardFixtures) {
         quranTextStyleId: 'uthmani-kfgqpc-v1',
         mushafEditionId: 'qalun-quran-ws-v1',
         translationId: 'bridges',
+        mushafEditionSetupVersion: 1,
       })
       await expect(readReactSettings(page)).resolves.not.toHaveProperty('onboardingComplete')
       await page.evaluate(() => document.fonts.ready.then(() => undefined))

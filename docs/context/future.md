@@ -8,7 +8,7 @@ QuranAtlas already ships a Reader First runtime shape:
 
 - runtime reads only `/dataset/**`
 - text rendering stays independent from optional enrichment lanes
-- the current default reader profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation
+- the current default reader profile is Qaloon text/font, quran.ws Mushaf, and Bridges translation; one Mushaf edition is selected only during fresh or cleared setup
 - future qira'ah/riwayah, translation, tafsir, curated metadata, Mushaf page, and optional advanced search/index assets can share one install-before-activate rule after the multiple-profile contract returns
 - `src/metadata/knowledge.ts` and reader corpus helpers load curated knowledge lazily and can fail without breaking reader boot
 

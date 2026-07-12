@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { datasetRuntimeCaching } from '../../../vite.config'
+import { datasetRuntimeCaching, mushafIndexRuntimeCaching } from '../../../vite.config'
 import { searchPackCacheName } from '../../../src/offline/cache-names'
 import { isLeaseProtected, stageSearchPackResponses, verifyCachedSearchPack } from '../../../src/offline/search/cache'
 import { selectCompatibleSearchPack } from '../../../src/offline/search/registry'
@@ -88,6 +88,15 @@ describe('Search pack lifecycle', () => {
     expect(datasetRuntimeCaching.urlPattern({ url: new URL('https://quranatlas.test/dataset/surahs.json') })).toBe(true)
     expect(datasetRuntimeCaching.urlPattern({ url: new URL('https://quranatlas.test/dataset/search/baseline/index.json') })).toBe(false)
     expect(datasetRuntimeCaching.urlPattern({ url: new URL('https://quranatlas.test/search-packs/registry.json') })).toBe(false)
+  })
+
+  it('uses NetworkFirst only for the mutable Mushaf availability index', () => {
+    const mushafIndex = new URL('https://quranatlas.test/dataset/indexes/mushaf-assets.json')
+    expect(mushafIndexRuntimeCaching.urlPattern({ url: mushafIndex })).toBe(true)
+    expect(mushafIndexRuntimeCaching.handler).toBe('NetworkFirst')
+    expect(mushafIndexRuntimeCaching.options.cacheName).toBe('quran-atlas-runtime-mushaf-index-v1')
+    expect(datasetRuntimeCaching.urlPattern({ url: mushafIndex })).toBe(false)
+    expect(mushafIndexRuntimeCaching.urlPattern({ url: new URL('https://quranatlas.test/dataset/indexes/text-assets.json') })).toBe(false)
   })
 
   it('selects compatible registry entries and protects visible-tab leases', () => {

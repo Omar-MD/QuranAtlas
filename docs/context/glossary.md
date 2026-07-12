@@ -36,6 +36,7 @@ Curated metadata is QuranAtlas-authored or source-backed reader enrichment: tafs
 ## asset pack terms
 
 - **Reader asset profile.** The current framework-neutral contract describing the shipped reader assets. The MVP profile is Qaloon text/font, Qaloon Mushaf, and Bridges translation.
+- **Mushaf edition setup marker.** The versioned settings record paired atomically with `mushafEditionId` after fresh/cleared setup. A missing marker on a valid existing profile triggers non-destructive quran.ws migration; a missing indexed edition enters recovery rather than selection.
 - **Asset pack.** A coherent set of files for one source type, such as qira'ah/riwayah text, translation, tafsir, curated metadata, Mushaf pages, or search indexes.
 - **Active pack.** The selected pack for a source type. In the current MVP there is only the default profile, so the UI does not expose active-pack switching.
 - **Baseline pack.** The pack shipped with the baseline app bundle. Qalun is the baseline qira'ah/riwayah pack; runtime keys use `qaloon`.

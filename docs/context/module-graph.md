@@ -25,6 +25,7 @@ graph LR
   src_app --> src_continuity
   src_app --> src_data
   src_app --> src_design_system
+  src_app --> src_launch
   src_app --> src_metadata
   src_app --> src_packs
   src_app --> src_storage
@@ -42,6 +43,7 @@ graph LR
   src_continuity --> src_packs
   src_continuity --> src_storage
   src_data --> src_storage
+  src_launch --> src_data
   src_launch --> src_storage
   src_offline --> src_data
   src_offline --> src_packs
@@ -64,7 +66,7 @@ graph LR
 <!-- AUTO-GENERATED:dirs START -->
 ### `src/app`
 
-- **Imports from:** `src/components`, `src/continuity`, `src/data`, `src/design-system`, `src/metadata`, `src/packs`, `src/storage`
+- **Imports from:** `src/components`, `src/continuity`, `src/data`, `src/design-system`, `src/launch`, `src/metadata`, `src/packs`, `src/storage`
 - **Imported by:** `src/components`
 
 ### `src/components`
@@ -80,7 +82,7 @@ graph LR
 ### `src/data`
 
 - **Imports from:** `src/storage`
-- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/offline`, `src/packs`, `src/search`
+- **Imported by:** `src/app`, `src/components`, `src/continuity`, `src/launch`, `src/offline`, `src/packs`, `src/search`
 
 ### `src/design-system`
 
@@ -89,8 +91,8 @@ graph LR
 
 ### `src/launch`
 
-- **Imports from:** `src/storage`
-- **Imported by:** `src/continuity`
+- **Imports from:** `src/data`, `src/storage`
+- **Imported by:** `src/app`, `src/continuity`
 
 ### `src/metadata`
 

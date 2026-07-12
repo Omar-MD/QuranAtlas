@@ -32,7 +32,7 @@ export function App() {
     returnFocusId?: string
   } | null>(null)
   const launchRestore = useLaunchRestore(hash)
-  const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : hash
+  const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : launchRestore.status === 'setup' ? '#/onboarding' : hash
   const activeRoute = matchReactRoute(activeHash)
   useFirstLaunchNotificationPermission(launchRestore.status === 'ready')
   const transientSettingsHash = !settingsOverlay
@@ -46,7 +46,7 @@ export function App() {
     : transientSettingsHash
       ? matchReactRoute(transientSettingsHash)
       : activeRoute
-  const showHeader = launchRestore.status !== 'ready' || !['about', 'onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
+  const showHeader = launchRestore.status === 'loading' || !['about', 'onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
 
   useEffect(() => {
     if (!window.location.hash) {
@@ -161,6 +161,14 @@ export function App() {
       {launchRestore.status === 'loading' && (
         <LaunchSplash />
       )}
+      {launchRestore.status === 'setup' && (
+        <Suspense fallback={<LaunchSplash />}>
+          <OnboardingRoute onComplete={(nextHash) => {
+            window.history.replaceState(null, '', nextHash)
+            setHash(nextHash)
+          }} pendingHash={launchRestore.hash} setup={launchRestore.setup} />
+        </Suspense>
+      )}
       {launchRestore.status === 'ready' && (
         <Suspense fallback={<LaunchSplash />}>
           {route.type === 'reader' && <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />}
@@ -176,12 +184,6 @@ export function App() {
           {route.type === 'search' && <SearchRoute />}
           {route.type === 'about' && <AboutRoute />}
           {route.type === 'unsupported' && <UnsupportedRoute />}
-          {route.type === 'onboarding' && (
-            <OnboardingRoute onComplete={(nextHash) => {
-              window.history.replaceState(null, '', nextHash)
-              setHash(nextHash)
-            }} />
-          )}
           {settingsOverlay && (
             <SettingsRoute
               initialAssetsExpanded={settingsOverlay.initialAssetsExpanded}

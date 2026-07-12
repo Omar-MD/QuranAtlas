@@ -39,7 +39,7 @@ Important settings keys:
 | `theme`, `nightMode` | Appearance controls |
 | `fontSize`, `lineSpacing`, `wordSpacing`, `readerMargin`, `verseSpacing` | Verse reader typography |
 | `translationVisible`, `translationId` | Translation display and active source |
-| `riwayah`, `quranTextStyleId`, `mushafEditionId` | Active default reader profile |
+| `riwayah`, `quranTextStyleId`, `mushafEditionId`, `mushafEditionSetupVersion` | Active reader profile plus atomically persisted first/cleared Mushaf selection marker |
 | `mushafViewMode`, `mushafFitWidth` | Independent Mushaf Single/Scroll navigation and Fit page/Fit width preferences |
 | `currentPosition`, `lastSurface`, `recentSurahs` | Reader continuity |
 | `wirdPlan`, `wirdReaderStatusVisible`, `wirdReminderLastSentDay`, `wirdNotificationPermissionPrompted` | Daily Wird state, visibility, reminder dedupe, and first-launch notification prompt state |
@@ -124,6 +124,8 @@ Mushaf page assets are edition-aware. Quran.ws keeps manifest V1 with inline-saf
 - SVG safety before rendering, or V2 manifest/index descriptor agreement before external-image preparation
 
 The V2 boundary resolves only manifest-declared edition-relative WebP paths, derives a page's final verse from `verseToPage`, and prepares an image only after browser load and `decode()` complete. The reader retains a five-page logical window: the requested page is current, adjacent pages are decode-gated previews, and the two outer pages are validated descriptors until promoted. The viewer mounts V1 as sanitized inline SVG and V2 as an external image. `mushafPageFraming` is a bounded 0–1 settings value; framing controls are available only when the active V2 manifest validates reviewed framing on every page.
+
+`mushafEditionSetupVersion` is not a schema migration: it is a settings record. A valid existing asset contract with no marker receives the quran.ws selection and version in one readwrite transaction while all other records remain intact. Fresh or compatibility-reset storage has no setup marker and must choose from the current compatible availability index. A marker paired with an unavailable selected edition is a recovery state, not a prompt to remap old page bookmarks.
 
 Page SVG and WebP bodies are runtime assets; they must not be embedded into JS bundles.
 

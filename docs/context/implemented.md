@@ -9,7 +9,7 @@ and data shapes live in `surfaces/<name>.md`.
 - Mushaf page reader route `#/m/:page` for the default Qaloon Mushaf.
 - Reader-first continuity restore through validated `lastSurface` and
   `currentPosition`.
-- Qaloon text/font and Qaloon Mushaf as the single MVP reader asset profile.
+- Qaloon text/font and Bridges translation with a default quran.ws Mushaf profile; first or cleared storage makes exactly one Mushaf edition selection from the current compatible availability index.
 - Bridges translation with visibility toggle.
 - Single/Scroll Mushaf navigation with independent Fit page/Fit width, retained page loading, native vertical movement, and physical horizontal page gestures.
 - Reader typography controls, ambient chrome with one reader-only reading-view action, and Daily Wird.
@@ -41,16 +41,17 @@ and data shapes live in `surfaces/<name>.md`.
 
 ## Onboard
 
-- First-run onboarding is retired in the MVP contract.
-- Cold launch shows a short splash, silently applies the one-time default-asset reset if needed, and enters or restores the reader.
-- Legacy `#/onboarding` links redirect through the launch path without source choices.
+- Valid pre-setup profiles migrate to the quran.ws selection without clearing settings, bookmarks, or continuity; incompatible contracts still reset before setup.
+- Cold launch shows a short splash, resolves the one-time edition setup if required, and enters or restores the reader.
+- Completed selections whose edition is no longer indexed show an About > Clear All Data recovery state rather than remapping old page bookmarks.
+- Legacy `#/onboarding` links redirect through the launch path without riwayah, translation, theme, storage, import, or routine controls.
 
 ## Infra
 
 - IDB `quran-atlas` v8 with active stores: `settings`, `activationState`,
   `datasetMeta`, `bookmarks`, `savedSearches`, `searchPackActivations`, and `searchPackStaging`.
 - Store schema through `src/storage/schema.ts` and Dexie helpers in `src/storage/**`.
-- Vite PWA service worker and offline runtime dataset cache.
+- Vite PWA service worker and offline runtime dataset cache, with a NetworkFirst mutable Mushaf availability index and cached offline fallback.
 - Same-device bookmark sync and clear-data safety behavior.
 - Generated dataset manifests, provenance, and package metadata.
 

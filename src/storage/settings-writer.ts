@@ -13,6 +13,11 @@ export type OnboardingCompletionSettings = {
   translationId: string
 }
 
+export type MushafEditionSelectionSettings = {
+  mushafEditionId: string
+  mushafEditionSetupVersion: number
+}
+
 export type ReactPreferenceStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type ReactThemePreference = 'light' | 'sepia' | 'dark' | 'auto'
 export type ReactNightModePreference = 'off' | 'on' | 'auto'
@@ -97,6 +102,15 @@ export async function writeReaderAssetBundleSettings(db: QuranAtlasReactDb, sett
   ]
   await db.transaction('rw', db.settings, async () => {
     await db.settings.bulkPut(records)
+  })
+}
+
+export async function writeMushafEditionSelection(db: QuranAtlasReactDb, settings: MushafEditionSelectionSettings): Promise<void> {
+  await db.transaction('rw', db.settings, async () => {
+    await db.settings.bulkPut([
+      { key: 'mushafEditionId', value: settings.mushafEditionId },
+      { key: 'mushafEditionSetupVersion', value: settings.mushafEditionSetupVersion },
+    ])
   })
 }
 

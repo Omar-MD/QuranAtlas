@@ -12,9 +12,9 @@ Agreed future work that supports the Reader First product promise. When work sta
 
 ## V1 Asset Packs and Pipeline
 
-- The current MVP ships one reader profile: Qaloon text/font, Qaloon Mushaf, and Bridges translation.
+- The current MVP defaults to Qaloon text/font, quran.ws Mushaf, and Bridges translation. Fresh or cleared storage may make one Mushaf edition choice from the availability index.
 - Asset Management is read-only inventory for that profile.
-- Future multiple-profile work can extend the shared reader asset profile contract before reintroducing riwayah, translation, tafsir, or Mushaf edition choices.
+- Future multiple-profile work can extend the shared reader asset profile contract before reintroducing riwayah, translation, tafsir, routine switching, or edition switching outside Clear All Data.
 - Optional packs must install before activation and become usable only after local install state is verified when that future work returns.
 - Asset indexes support byte planning, offline caching, provenance, manifest membership, and future retrieval boundaries.
 
@@ -65,7 +65,7 @@ These are not v1 scope unless separately promoted with clear reader value and so
 - Copy, share, export, import, user-facing sync, accounts, community, and shared collections.
 - Streaks and standalone khatm tracker product branches.
 - Multiple translations side by side.
-- Riwayah, translation source, tafsir source, and Mushaf edition selection UI until the multiple-profile contract is restored.
+- Riwayah, translation source, tafsir source, and Mushaf edition switching UI until the multiple-profile contract is restored. The one-time fresh/cleared Mushaf setup choice is not a switching UI.
 - Qira'at beyond the current Qaloon default profile.
 
 Future personal annotations are not a roadmap lane. They belong only in `future.md` as a separate possible personal layer outside current product scope.

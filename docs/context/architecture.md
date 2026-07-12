@@ -25,7 +25,7 @@ The app uses browser hash routes so static hosting on Cloudflare Pages can serve
 | `#/settings` | `src/app/routes/settings/SettingsRoute.tsx` | Transient settings overlay route |
 | `#/assets` | `src/app/routes/settings/SettingsRoute.tsx` | Compatibility opener for settings/assets inventory |
 | `#/about` | `src/app/routes/settings/AboutRoute.tsx` | About, install, attribution, clear data |
-| `#/onboarding` | `src/app/routes/onboarding/OnboardingRoute.tsx` | Compatibility launch path |
+| `#/onboarding` | `src/app/routes/onboarding/OnboardingRoute.tsx` | One-time fresh/cleared Mushaf edition setup and compatibility launch path |
 | `#/search` | `src/app/routes/search/SearchRoute.tsx` | Phase 1 deterministic Search route |
 
 Unsupported hashes render the route-unavailable state in `App.tsx`.
@@ -37,6 +37,7 @@ React component state stays local unless it must survive reloads, cross-route tr
 - Persistent browser state lives in the Dexie database under `src/storage/**`.
 - Store schema constants live in `src/storage/schema.ts`.
 - Settings writes go through `src/storage/settings-writer.ts`.
+- `mushafEditionId` and `mushafEditionSetupVersion` are written together so first/cleared selection is atomic.
 - Reader continuity lives under `src/continuity/**`.
 - Bookmarks are owned by `src/continuity/bookmarks/**`.
 - Daily Wird state is stored as a settings key and owned by `src/continuity/wird/**`.
@@ -56,6 +57,8 @@ Runtime data is always same-origin under `/dataset/**`.
 - Build-only source inputs stay under `data/**` and are never imported by the app.
 
 The current MVP profile is Qaloon text/font, Qaloon Mushaf pages, and Bridges translation.
+
+At launch, `src/launch/asset-contract-reset.ts` distinguishes a valid pre-existing MVP contract from an incompatible profile before it clears state. `src/launch/mushaf-edition-setup.ts` migrates valid prior users to the quran.ws Mushaf selection without disturbing their continuity, or requires exactly one Mushaf edition selection for fresh/cleared state. A completed edition absent from the current availability index stops at a recovery state; switching remains About > Clear All Data. The mutable Mushaf availability index is NetworkFirst so an online private-build response replaces stale availability while offline launches may use its cached response.
 
 Search is the second top-level product mode. The `#/search` route is lazy-loaded from `src/app/routes/search/SearchRoute.tsx`, owns a route-scoped `SearchClient`, installs/activates the core Search pack on Search entry when needed, and queries a restartable Web Worker through serializable result windows. The lazy Search route owns the Ask/Search v1 preview loop. `AnswerPreview` is built in the Search worker from typed Search evidence and rendered by the Search surface; Reader routes do not import Ask/Search runtime modules, start Search workers, fetch `/search-packs/**`, or touch Search storage on cold launch. Search uses generated static packs with immutable runtime URLs under `/search-packs/packs/<contentHash>/**`, registry `/search-packs/registry.json`, explicit Hafs-to-Qalun Reader mapping, and source-backed saved-search intent records.
 

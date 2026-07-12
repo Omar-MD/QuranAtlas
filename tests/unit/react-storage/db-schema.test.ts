@@ -6,6 +6,7 @@ import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION, QURAN_ATLAS_V8_STORES } fr
 import {
   DEFAULT_REACT_READER_PREFERENCES,
   readReactReaderPreferences,
+  writeMushafEditionSelection,
   writeOnboardingCompletion,
   writeReactReaderPreferences,
   writeReaderAssetBundleSettings,
@@ -60,6 +61,20 @@ describe('React storage schema mirror', () => {
       { key: 'onboardingComplete', value: true },
       { key: 'riwayah', value: 'qaloon' },
       { key: 'translationId', value: 'bridges' },
+    ])
+  })
+
+  it('writes a Mushaf edition and setup marker in one settings transaction', async () => {
+    const db = await openReactDb()
+
+    await writeMushafEditionSelection(db, {
+      mushafEditionId: 'qalun-furatiyyah-2023-v1',
+      mushafEditionSetupVersion: 1,
+    })
+
+    await expect(db.settings.bulkGet(['mushafEditionId', 'mushafEditionSetupVersion'])).resolves.toEqual([
+      { key: 'mushafEditionId', value: 'qalun-furatiyyah-2023-v1' },
+      { key: 'mushafEditionSetupVersion', value: 1 },
     ])
   })
 
