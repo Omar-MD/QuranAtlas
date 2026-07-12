@@ -401,8 +401,8 @@ async function buildInputDigest({ riwayah, sourceFiles, catalog, asset, sourceSl
   return hash.digest('hex')
 }
 
-function buildStampPath(riwayah, mushafEditionId) {
-  return join(NORMALIZED_DIR, riwayah, `${mushafEditionId}-build-stamp.json`)
+function buildStampPath(riwayah, mushafEditionId, normalizedRoot = NORMALIZED_DIR) {
+  return join(normalizedRoot, riwayah, `${mushafEditionId}-build-stamp.json`)
 }
 
 async function readJsonIfPresent(path) {
@@ -414,10 +414,10 @@ async function readJsonIfPresent(path) {
   }
 }
 
-async function readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests = false }) {
-  const outDir = join(OUT_ROOT, riwayah, asset.mushafEditionId)
-  const legacyOutDir = join(OUT_ROOT, riwayah)
-  const stamp = await readJsonIfPresent(buildStampPath(riwayah, asset.mushafEditionId))
+async function readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests = false, outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR }) {
+  const outDir = join(outRoot, riwayah, asset.mushafEditionId)
+  const legacyOutDir = join(outRoot, riwayah)
+  const stamp = await readJsonIfPresent(buildStampPath(riwayah, asset.mushafEditionId, normalizedRoot))
   if (
     !stamp
     || stamp.version !== BUILD_STAMP_VERSION
@@ -517,8 +517,8 @@ function outputDigestRows(files) {
   })
 }
 
-async function writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles }) {
-  await writeIfChanged(buildStampPath(riwayah, asset.mushafEditionId), jsonText({
+async function writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot = NORMALIZED_DIR }) {
+  await writeIfChanged(buildStampPath(riwayah, asset.mushafEditionId, normalizedRoot), jsonText({
     version: BUILD_STAMP_VERSION,
     transform: BUILD_TRANSFORM_ID,
     riwayah,
@@ -605,15 +605,15 @@ export async function pruneMushafOutput(resolvedAssets, { outRoot = OUT_ROOT } =
   }
 }
 
-async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false, missing = 'error' } = {}) {
+async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {}) {
   const riwayah = asset.riwayah
   validateRiwayahId(riwayah)
   const mushafEditionId = assetCatalog.defaults[riwayah]
   ensure(asset.mushafEditionId === mushafEditionId, `Only the default quran.ws edition may write legacy Mushaf output for ${riwayah}`)
   const sourceSlug = asset.sourceSlug ?? catalog.riwayat[riwayah].sourceSlug
   const pageCount = catalog.pageCount
-  const scopedPagesDir = join(NORMALIZED_DIR, riwayah, asset.mushafEditionId, 'pages')
-  const sourcePagesDir = existsSync(scopedPagesDir) ? scopedPagesDir : join(NORMALIZED_DIR, riwayah, 'pages')
+  const scopedPagesDir = join(normalizedRoot, riwayah, asset.mushafEditionId, 'pages')
+  const sourcePagesDir = existsSync(scopedPagesDir) ? scopedPagesDir : join(normalizedRoot, riwayah, 'pages')
   const sourceFiles = await collectSvgPageSet(sourcePagesDir, pageCount, { missing })
 
   if (sourceFiles.length === 0) {
@@ -622,7 +622,7 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
   }
 
   const sourceDigest = await buildInputDigest({ riwayah, sourceFiles, catalog, asset, sourceSlug, pageCount })
-  const currentOutput = await readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests: true })
+  const currentOutput = await readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests: true, outRoot, normalizedRoot })
   if (currentOutput) {
     if (!check) {
       console.log(`[mushaf-pages] current ${riwayah}: ${pageCount} pages (build stamp validated)`)
@@ -632,8 +632,8 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
 
   await validateSvgPageSet(sourcePagesDir, pageCount, { missing })
   const mappings = await deriveRiwayahMappings(riwayah, pageCount)
-  const outDir = join(OUT_ROOT, riwayah, asset.mushafEditionId)
-  const legacyOutDir = join(OUT_ROOT, riwayah)
+  const outDir = join(outRoot, riwayah, asset.mushafEditionId)
+  const legacyOutDir = join(outRoot, riwayah)
   const pageViewBoxes = new Map()
   const pageBytes = new Map()
   const editionFiles = []
@@ -688,14 +688,14 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     if (stale.missing.length || stale.mismatched.length) {
       throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
     }
-    await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles })
+    await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot })
     return true
   }
 
   for (const [path, content] of [...editionFiles, ...legacyFiles]) {
     if (await writeIfChanged(path, content)) written += 1
   }
-  await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles })
+  await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot })
   const unchanged = editionFiles.length + legacyFiles.length - written
   console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${riwayah}: ${pageCount} pages (${written} files written, ${unchanged} unchanged)`)
   const manifestUrl = `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`
@@ -708,9 +708,8 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     files.push({ url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`, bytes })
     totalBytes += bytes
   }
-  const { sourceKind: _sourceKind, ...indexAsset } = asset
   return {
-    ...indexAsset,
+    ...asset,
     manifestUrl,
     files,
     totalBytes,
@@ -765,8 +764,8 @@ function privatePolicyDigestInput(metadata) {
   }
 }
 
-async function loadPrivateNormalizedPages(asset, { missing = 'error' } = {}) {
-  const normalizedDir = join(NORMALIZED_DIR, asset.riwayah, asset.mushafEditionId)
+async function loadPrivateNormalizedPages(asset, { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+  const normalizedDir = join(normalizedRoot, asset.riwayah, asset.mushafEditionId)
   const importPath = join(normalizedDir, 'import.json')
   const bytes = await readExistingBytes(importPath)
   if (!bytes) {
@@ -803,14 +802,14 @@ async function loadPrivateNormalizedPages(asset, { missing = 'error' } = {}) {
   return { normalizedDir, metadata, pages, sourceDigest: sha256Hex(Buffer.from(jsonText(privatePolicyDigestInput(metadata)))) }
 }
 
-async function buildPrivateEdition(asset, { check = false, missing = 'error' } = {}) {
-  const normalized = await loadPrivateNormalizedPages(asset, { missing })
+async function buildPrivateEdition(asset, { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {}) {
+  const normalized = await loadPrivateNormalizedPages(asset, { missing, normalizedRoot })
   if (!normalized) {
     console.warn(`[mushaf-pages] skipping ${asset.mushafEditionId}: missing local normalized image artifacts`)
     return false
   }
   const mappings = await deriveRiwayahMappings(asset.riwayah, asset.pageCount)
-  const outDir = join(OUT_ROOT, asset.riwayah, asset.mushafEditionId)
+  const outDir = join(outRoot, asset.riwayah, asset.mushafEditionId)
   const pageFiles = []
   const manifestPages = normalized.pages.map((row) => {
     const expectedFirstVerse = mappings.firstVerse.get(row.page)
@@ -870,15 +869,15 @@ async function buildPrivateEdition(asset, { check = false, missing = 'error' } =
   }
 }
 
-async function writeMushafAssetIndex(resolvedAssets, assetCatalog) {
+async function writeMushafAssetIndex(resolvedAssets, assetCatalog, { datasetDir = DATASET_DIR } = {}) {
   const emittedKeys = new Set(resolvedAssets.map((asset) => `${asset.riwayah}:${asset.mushafEditionId}`))
   const defaults = Object.fromEntries(
     Object.entries(assetCatalog.defaults).filter(([riwayah, mushafEditionId]) => (
       emittedKeys.has(`${riwayah}:${mushafEditionId}`)
     )),
   )
-  await mkdir(join(DATASET_DIR, 'indexes'), { recursive: true })
-  await writeJson(join(DATASET_DIR, 'indexes', 'mushaf-assets.json'), {
+  await mkdir(join(datasetDir, 'indexes'), { recursive: true })
+  await writeJson(join(datasetDir, 'indexes', 'mushaf-assets.json'), {
     version: 1,
     defaults,
     assets: resolvedAssets.map((asset) => {
@@ -919,7 +918,16 @@ async function refreshDatasetManifest(profileName) {
   await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
 }
 
-export async function main(argv = process.argv.slice(2)) {
+/**
+ * `paths` is test-only output/input injection. Production uses repository
+ * roots, while contract tests can prove profile transitions without touching
+ * generated runtime output.
+ */
+export async function main(argv = process.argv.slice(2), paths = {}) {
+  const outRoot = paths.outRoot ?? OUT_ROOT
+  const datasetDir = paths.datasetDir ?? DATASET_DIR
+  const normalizedRoot = paths.normalizedRoot ?? NORMALIZED_DIR
+  const refreshManifest = paths.refreshManifest ?? true
   const profile = argValue(argv, 'profile', 'baseline')
   const check = argv.includes('--check')
   const requiredRiwayat = new Set(argList(argv, 'require-riwayah'))
@@ -949,18 +957,25 @@ export async function main(argv = process.argv.slice(2)) {
   for (const asset of selectedAssets) {
     const isRequired = requiredRiwayat.has(asset.riwayah) || requiredEditions.has(asset.mushafEditionId)
     const resolved = asset.sourceKind === 'local-pdf'
-      ? await buildPrivateEdition(asset, { check, missing: isRequired ? 'error' : 'skip' })
+      ? await buildPrivateEdition(asset, {
+        check,
+        missing: isRequired ? 'error' : 'skip',
+        outRoot,
+        normalizedRoot,
+      })
       : await buildQuranWsEdition(asset, catalog, assetCatalog, {
-      check,
-      missing: isRequired ? 'error' : 'skip',
-    })
+        check,
+        missing: isRequired ? 'error' : 'skip',
+        outRoot,
+        normalizedRoot,
+      })
     if (resolved && typeof resolved === 'object') resolvedAssets.push(resolved)
   }
 
   if (!check) {
-    await pruneMushafOutput(resolvedAssets)
-    await writeMushafAssetIndex(resolvedAssets, assetCatalog)
-    await refreshDatasetManifest(profile)
+    await pruneMushafOutput(resolvedAssets, { outRoot })
+    await writeMushafAssetIndex(resolvedAssets, assetCatalog, { datasetDir })
+    if (refreshManifest) await refreshDatasetManifest(profile)
   }
 }
 

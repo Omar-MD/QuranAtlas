@@ -1,4 +1,4 @@
-import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -25,6 +25,7 @@ import {
 import { hasReusableSvgDocument } from '../../../scripts/data/mushaf-pages/import.mjs'
 import { importPrivatePdfEdition, loadPrivateMushafEditionContract } from '../../../scripts/data/mushaf-pages/private-pdf.mjs'
 import { buildManifestPayload } from '../../../scripts/data/manifest/inventory.mjs'
+import { validateMushafManifestData } from '../../../scripts/check-react-mushaf-indexes.mjs'
 
 const TEST_COLOR_MAP = {
   '#000000': 'ink',
@@ -40,6 +41,78 @@ async function readCatalogJson(name) {
 
 async function readDatasetJson(path) {
   return JSON.parse(await readFile(join(process.cwd(), 'public', 'dataset', path), 'utf8'))
+}
+
+function jsonText(value) {
+  return `${JSON.stringify(value, null, 2)}\n`
+}
+
+async function treeDigest(root) {
+  const hash = createHash('sha256')
+  for (const entry of (await readdir(root)).sort()) {
+    hash.update(entry)
+    hash.update(await readFile(join(root, entry)))
+  }
+  return hash.digest('hex')
+}
+
+async function writeTransitionFixture(root) {
+  const normalizedRoot = join(root, 'normalized')
+  const datasetDir = join(root, 'dataset')
+  const outRoot = join(datasetDir, 'mushaf-pages')
+  const quranPages = join(normalizedRoot, 'qaloon', 'qalun-quran-ws-v1', 'pages')
+  const privateRoot = join(normalizedRoot, 'qaloon', 'qalun-furatiyyah-2023-v1')
+  const privatePages = join(privateRoot, 'pages')
+  await mkdir(quranPages, { recursive: true })
+  await mkdir(privatePages, { recursive: true })
+  const ayat = JSON.parse(await readFile(join(process.cwd(), 'data', 'normalized', 'quran', 'riwayat', 'qaloon.json'), 'utf8'))
+  const mappings = derivePageMappings(ayat)
+  const media = await readCatalogJson('mushaf-editions/qalun-furatiyyah-2023-v1/media.json')
+  const framing = await readCatalogJson('mushaf-editions/qalun-furatiyyah-2023-v1/framing.json')
+  const sourceBytes = Buffer.from('fixture-webp')
+  const sourceDigest = createHash('sha256').update(sourceBytes).digest('hex')
+  const pages = []
+  for (let page = 1; page <= 604; page += 1) {
+    const id = String(page).padStart(3, '0')
+    await writeFile(join(quranPages, `${id}.svg`), '<svg viewBox="0 0 1 2" xmlns="http://www.w3.org/2000/svg"><path fill="#000000" d="M0 0h1v2H0z"/></svg>')
+    const sourceFrame = framing.pages[page - 1]
+    const full = sourceFrame.sourceFullFrame
+    const text = sourceFrame.sourceTextFrame
+    const textFrame = {
+      x: (text.x - full.x) / full.width,
+      y: (text.y - full.y) / full.height,
+      width: text.width / full.width,
+      height: text.height / full.height,
+    }
+    const renditions = [
+      { role: 'preview', assetPath: `pages/${id}-1280.webp`, bytes: sourceBytes.byteLength, sha256: sourceDigest, width: 1280, height: 1630, mimeType: 'image/webp' },
+      { role: 'full', assetPath: `pages/${id}-2136.webp`, bytes: sourceBytes.byteLength, sha256: sourceDigest, width: 2136, height: 2720, mimeType: 'image/webp' },
+    ]
+    for (const rendition of renditions) {
+      await writeFile(join(privateRoot, rendition.assetPath), sourceBytes)
+    }
+    pages.push({
+      page,
+      sourcePdfPage: page + 4,
+      firstVerse: mappings.firstVerse.get(page),
+      framing: { textFrame, sideLane: sourceFrame.sideLane },
+      renditions,
+    })
+  }
+  await writeFile(join(privateRoot, 'import.json'), jsonText({
+    version: 1,
+    riwayah: 'qaloon',
+    mushafEditionId: 'qalun-furatiyyah-2023-v1',
+    media: {
+      kind: media.kind,
+      mimeType: media.mimeType,
+      renderDpi: media.renderDpi,
+      encoder: media.encoder,
+      renditions: media.renditions,
+    },
+    pages,
+  }))
+  return { normalizedRoot, datasetDir, outRoot, refreshManifest: false }
 }
 
 describe('mushaf asset catalog', () => {
@@ -347,6 +420,42 @@ describe('mushaf page dataset builder', () => {
     await pruneMushafOutput([standard], { outRoot: root })
     expect(existsSync(join(riwayahRoot, privateEdition.mushafEditionId))).toBe(false)
     await rm(root, { recursive: true, force: true })
+  })
+
+  it('keeps quran.ws V1 stable while a temporary private profile adds then prunes its V2 sibling', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-transition-'))
+    const paths = await writeTransitionFixture(root)
+    const legacyRoot = join(paths.outRoot, 'qaloon')
+    const legacyPages = join(legacyRoot, 'pages')
+    const privateRoot = join(legacyRoot, 'qalun-furatiyyah-2023-v1')
+    const indexPath = join(paths.datasetDir, 'indexes', 'mushaf-assets.json')
+    try {
+      await buildMushafPages(['--profile=baseline', '--require-riwayah=qaloon'], paths)
+      const baselineDigest = await treeDigest(legacyPages)
+      const baselineManifest = await readFile(join(legacyRoot, 'manifest.json'))
+
+      await buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)
+      const privateIndex = JSON.parse(await readFile(indexPath, 'utf8'))
+      expect(privateIndex.assets.map((asset) => asset.mushafEditionId)).toEqual(['qalun-quran-ws-v1', 'qalun-furatiyyah-2023-v1'])
+      const privateManifest = JSON.parse(await readFile(join(privateRoot, 'manifest.json'), 'utf8'))
+      expect(validateMushafManifestData(privateManifest)).toEqual([])
+      expect(privateManifest.pages).toHaveLength(604)
+      for (const page of privateManifest.pages) {
+        expect(page.media.sources).toHaveLength(2)
+        await expect(readFile(join(privateRoot, page.media.fallback.assetPath))).resolves.toHaveLength(page.media.fallback.bytes)
+      }
+      expect(await treeDigest(legacyPages)).toBe(baselineDigest)
+      expect(await readFile(join(legacyRoot, 'manifest.json'))).toEqual(baselineManifest)
+
+      await buildMushafPages(['--profile=baseline', '--require-riwayah=qaloon'], paths)
+      const restoredIndex = JSON.parse(await readFile(indexPath, 'utf8'))
+      expect(restoredIndex.assets.map((asset) => asset.mushafEditionId)).toEqual(['qalun-quran-ws-v1'])
+      expect(existsSync(privateRoot)).toBe(false)
+      expect(await treeDigest(legacyPages)).toBe(baselineDigest)
+      expect(await readFile(join(legacyRoot, 'manifest.json'))).toEqual(baselineManifest)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   it('treats catalog profile as having no Mushaf page body output', () => {

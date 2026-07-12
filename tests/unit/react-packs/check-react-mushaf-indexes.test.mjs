@@ -37,6 +37,29 @@ function privateManifest() {
   }
 }
 
+function privateIndex(manifest) {
+  const manifestUrl = '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/manifest.json'
+  const files = manifest.pages.flatMap((page) => page.media.sources.map((source) => ({
+    url: `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${source.assetPath}`,
+    ...source,
+  })))
+  return {
+    manifestUrl,
+    index: { assets: [{
+      packId: 'mushaf-pages:qaloon:qalun-furatiyyah-2023-v1',
+      riwayah: 'qaloon',
+      mushafEditionId: 'qalun-furatiyyah-2023-v1',
+      manifestUrl,
+      pageCount: 604,
+      totalBytes: 1,
+      version: 'v2',
+      pageUrls: manifest.pages.map((page) => `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${page.media.fallback.assetPath}`),
+      files,
+      deliveryMode: 'on-demand-pack',
+    }] },
+  }
+}
+
 describe('check-react-mushaf-indexes', () => {
   it('accepts edition-aware Mushaf indexes', () => {
     expect(validateMushafIndexData({
@@ -59,23 +82,7 @@ describe('check-react-mushaf-indexes', () => {
 
   it('accepts a complete V2 external-image manifest and matching descriptors', () => {
     const manifest = privateManifest()
-    const manifestUrl = '/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/manifest.json'
-    const files = manifest.pages.flatMap((page) => page.media.sources.map((source) => ({
-      url: `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${source.assetPath}`,
-      ...source,
-    })))
-    const index = { assets: [{
-      packId: 'mushaf-pages:qaloon:qalun-furatiyyah-2023-v1',
-      riwayah: 'qaloon',
-      mushafEditionId: 'qalun-furatiyyah-2023-v1',
-      manifestUrl,
-      pageCount: 604,
-      totalBytes: 1,
-      version: 'v2',
-      pageUrls: manifest.pages.map((page) => `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${page.media.fallback.assetPath}`),
-      files,
-      deliveryMode: 'on-demand-pack',
-    }] }
+    const { index, manifestUrl } = privateIndex(manifest)
     expect(validateMushafManifestData(manifest)).toEqual([])
     expect(validateMushafIndexData(index)).toEqual([])
     expect(validateMushafIndexManifestAgreement(index, { [manifestUrl]: manifest })).toEqual([])
@@ -99,5 +106,16 @@ describe('check-react-mushaf-indexes', () => {
       pageCount: 604, totalBytes: 1, version: 'v2', deliveryMode: 'on-demand-pack', pageUrls: Array.from({ length: 604 }, () => manifestUrl), files: [],
     }] }
     expect(validateMushafIndexManifestAgreement(index, { [manifestUrl]: manifest })).not.toEqual([])
+  })
+
+  it('rejects V2 manifest identity and fallback URLs that cross into a sibling edition', () => {
+    const manifest = privateManifest()
+    const { index, manifestUrl } = privateIndex(manifest)
+    manifest.riwayah = 'warsh'
+    index.assets[0].pageUrls[0] = '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001-2136.webp'
+    expect(validateMushafIndexManifestAgreement(index, { [manifestUrl]: manifest })).toEqual(expect.arrayContaining([
+      'mushaf-pages:qaloon:qalun-furatiyyah-2023-v1: manifest identity disagrees with its asset index',
+      'mushaf-pages:qaloon:qalun-furatiyyah-2023-v1: page 1 fallback URL disagrees with its asset index',
+    ]))
   })
 })

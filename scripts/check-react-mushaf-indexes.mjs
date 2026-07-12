@@ -62,12 +62,21 @@ export function validateMushafIndexManifestAgreement(indexData, manifestsByUrl =
   for (const pack of packs) {
     const manifest = manifestsByUrl[pack.manifestUrl]
     if (!manifest || manifest.version !== 2) continue
-    for (const page of manifest.pages) {
+    const packId = pack.packId ?? pack.mushafEditionId
+    if (manifest.riwayah !== pack.riwayah || manifest.mushafEditionId !== pack.mushafEditionId) {
+      failures.push(`${packId}: manifest identity disagrees with its asset index`)
+    }
+    for (let index = 0; index < manifest.pages.length; index += 1) {
+      const page = manifest.pages[index]
+      const expectedFallbackUrl = `/dataset/mushaf-pages/${pack.riwayah}/${pack.mushafEditionId}/${page.media?.fallback?.assetPath}`
+      if (pack.pageUrls?.[index] !== expectedFallbackUrl) {
+        failures.push(`${packId}: page ${page.page} fallback URL disagrees with its asset index`)
+      }
       for (const descriptor of page.media.sources) {
         const url = `/dataset/mushaf-pages/${pack.riwayah}/${pack.mushafEditionId}/${descriptor.assetPath}`
         const file = pack.files?.find((entry) => entry.url === url)
         if (!file || file.bytes !== descriptor.bytes || file.sha256 !== descriptor.sha256 || file.width !== descriptor.width || file.height !== descriptor.height || file.mimeType !== descriptor.mimeType) {
-          failures.push(`${pack.packId ?? pack.mushafEditionId}: page ${page.page} descriptor disagrees with its asset index`)
+          failures.push(`${packId}: page ${page.page} descriptor disagrees with its asset index`)
         }
       }
     }
