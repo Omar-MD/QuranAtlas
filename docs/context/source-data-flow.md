@@ -33,7 +33,7 @@ The build preserves the existing provenance `builtAt` value when package version
 
 `pnpm run data -- build --skip=mushaf-pages` rebuilds the non-Mushaf dataset lanes while reusing existing local/generated Mushaf page runtime assets. CI and local preview validation use this after the release Qaloon page pack has already been generated, or when the affected-file gate shows dataset inputs changed but Mushaf page inputs did not.
 
-`pnpm run data -- check` validates source/catalog structure without necessarily rebuilding every runtime file. It checks Mushaf page output when local page inputs are present and otherwise skips the optional baseline page-body lane; use the explicit Mushaf page build command below with `--require-riwayah=qaloon` when the release Qaloon page pack must be generated or strictly verified. `--profile=private` keeps the shared dataset lanes on their baseline profile while strictly checking both selected Qaloon editions.
+`pnpm run data -- check` is baseline-only and validates source/catalog structure without necessarily rebuilding every runtime file. It checks Mushaf page output when local page inputs are present and otherwise skips the optional baseline page-body lane; use the focused Mushaf page command below when the release or private Qaloon page packs must be strictly verified.
 
 `pnpm run data -- build --profile=full` builds every approved current dataset profile and is used for protected-branch and dataset-relevant CI coverage.
 

@@ -733,6 +733,61 @@ describe('mushaf page dataset builder', () => {
     }
   }, 30_000)
 
+  it('accepts a current private profile check without writing generated or normalized state', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-private-check-current-'))
+    const paths = await writeTransitionFixture(root)
+    try {
+      await buildMushafPages(['--profile=private'], paths)
+      await writeDatasetManifestFixture(paths)
+      const beforeDataset = await recursiveTreeDigest(paths.datasetDir)
+      const beforeNormalized = await recursiveTreeDigest(paths.normalizedRoot)
+
+      await expect(buildMushafPages(['--profile=private', '--check'], paths)).resolves.toBeUndefined()
+
+      expect(await recursiveTreeDigest(paths.datasetDir)).toBe(beforeDataset)
+      expect(await recursiveTreeDigest(paths.normalizedRoot)).toBe(beforeNormalized)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 30_000)
+
+  it('recomputes quran.ws expected bytes instead of trusting an accepted old output stamp', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-quran-ws-check-'))
+    const paths = await writeTransitionFixture(root)
+    const sourcePagePath = join(paths.normalizedRoot, 'qaloon', 'qalun-quran-ws-v1', 'pages', '001.svg')
+    const stampPath = join(paths.normalizedRoot, 'qaloon', 'qalun-quran-ws-v1-build-stamp.json')
+    const indexPath = join(paths.datasetDir, 'indexes', 'mushaf-assets.json')
+    const oldOutputRoot = join(root, 'old-output')
+    try {
+      await buildMushafPages(['--profile=baseline', '--require-riwayah=qaloon'], paths)
+      const oldStamp = JSON.parse(await readFile(stampPath, 'utf8'))
+      const oldIndex = await readFile(indexPath)
+      await cp(paths.outRoot, oldOutputRoot, { recursive: true })
+
+      await writeFile(sourcePagePath, '<svg viewBox="0 0 1 2" xmlns="http://www.w3.org/2000/svg"><path fill="#000000" d="M0 0h0.75v1.5H0z"/></svg>')
+      await buildMushafPages(['--profile=baseline', '--require-riwayah=qaloon'], paths)
+      const currentSourceStamp = JSON.parse(await readFile(stampPath, 'utf8'))
+
+      await rm(paths.outRoot, { recursive: true, force: true })
+      await cp(oldOutputRoot, paths.outRoot, { recursive: true })
+      await writeFile(indexPath, oldIndex)
+      await writeFile(stampPath, jsonText({ ...oldStamp, sourceDigest: currentSourceStamp.sourceDigest }))
+      await writeDatasetManifestFixture(paths, 'baseline')
+
+      const acceptedStamp = JSON.parse(await readFile(stampPath, 'utf8'))
+      expect(acceptedStamp.sourceDigest).toBe(currentSourceStamp.sourceDigest)
+      expect(acceptedStamp.transform).toBe(currentSourceStamp.transform)
+      const beforeDataset = await recursiveTreeDigest(paths.datasetDir)
+      const beforeNormalized = await recursiveTreeDigest(paths.normalizedRoot)
+
+      await expect(buildMushafPages(['--profile=baseline', '--check'], paths)).rejects.toThrow(/Mushaf page output is stale/i)
+      expect(await recursiveTreeDigest(paths.datasetDir)).toBe(beforeDataset)
+      expect(await recursiveTreeDigest(paths.normalizedRoot)).toBe(beforeNormalized)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 30_000)
+
   it('treats catalog profile as having no Mushaf page body output', () => {
     expect(riwayatForProfile('catalog')).toEqual([])
   })

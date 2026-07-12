@@ -646,11 +646,11 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
   }
 
   const sourceDigest = await buildInputDigest({ riwayah, sourceFiles, catalog, asset, sourceSlug, pageCount })
-  const currentOutput = await readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests: true, outRoot, normalizedRoot })
+  const currentOutput = check
+    ? null
+    : await readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests: true, outRoot, normalizedRoot })
   if (currentOutput) {
-    if (!check) {
-      console.log(`[mushaf-pages] current ${riwayah}: ${pageCount} pages (build stamp validated)`)
-    }
+    console.log(`[mushaf-pages] current ${riwayah}: ${pageCount} pages (build stamp validated)`)
     return currentOutput
   }
 

@@ -59,13 +59,16 @@ function main(argv = process.argv.slice(2)) {
   if (command === 'check') {
     const args = normalizedArgv.slice(1)
     const profile = parseProfile(args)
-    const sharedProfile = datasetProfile(profile)
+    if (profile !== 'baseline') {
+      console.error('Top-level data check supports only --profile=baseline; use mushaf-pages build --profile=private --check for a read-only private Mushaf check')
+      process.exit(1)
+    }
     run('source-catalog.mjs')
-    run('text/build.mjs', [`--profile=${sharedProfile}`])
-    run('search/build.mjs', [`--profile=${sharedProfile}`, '--check'])
+    run('text/build.mjs', ['--profile=baseline'])
+    run('search/build.mjs', ['--profile=baseline', '--check'])
     run('knowledge/build.mjs', ['--check'])
-    run('mushaf-pages/build.mjs', [`--profile=${profile}`, '--check'])
-    run('riwayah-packages/build.mjs', [`--profile=${sharedProfile}`, '--check'])
+    run('mushaf-pages/build.mjs', ['--profile=baseline', '--check'])
+    run('riwayah-packages/build.mjs', ['--profile=baseline', '--check'])
     return
   }
 
@@ -85,7 +88,7 @@ function main(argv = process.argv.slice(2)) {
   }
 
   console.error(`Unknown data command: ${command}`)
-  console.error('Usage: pnpm run data -- [build|check|aliases|mushaf-pages] [--profile=baseline|full|private|catalog]')
+  console.error('Usage: pnpm run data -- build [--profile=baseline|full|private|catalog] | check [--profile=baseline] | aliases | mushaf-pages')
   process.exit(1)
 }
 
