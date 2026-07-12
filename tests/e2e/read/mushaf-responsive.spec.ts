@@ -748,6 +748,44 @@ test.describe('Mushaf responsive behavior', () => {
 test.describe('private Furatiyyah framing', () => {
   test.skip(!PRIVATE_MUSHAF_ENABLED, 'Private Mushaf journeys require QURANATLAS_PRIVATE_MUSHAF=1.')
 
+  test('@mobile keeps private Text and intermediate framing vertically reachable in compact DPR2 landscape', async ({ browser }) => {
+    const context = await browser.newContext({ deviceScaleFactor: 2, viewport: { width: 844, height: 390 } })
+    const page = await context.newPage()
+    try {
+      expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2)
+      await openPrivateMushaf(page, FIT_WIDTH, { mushafPageFraming: 100 })
+      const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
+      await expect(stage).toBeVisible()
+      await expectNoHorizontalOverflow(page)
+
+      await page.getByRole('button', { name: 'Open settings' }).click()
+      const settings = page.getByRole('dialog', { name: 'Mushaf settings' })
+      await expect(settings.getByRole('button', { name: 'Text focus' })).toHaveAttribute('aria-pressed', 'true')
+      await settings.getByRole('button', { name: 'Close settings' }).click()
+      const textMetrics = await stageScroll(page)
+      expect(textMetrics.scrollHeight).toBeGreaterThan(textMetrics.clientHeight)
+      await panStageUp(page)
+      await expect.poll(async () => (await stageScroll(page)).scrollTop).toBeGreaterThan(textMetrics.scrollTop)
+      await reachStageBottomWithTouch(page)
+
+      await page.getByRole('button', { name: 'Open settings' }).click()
+      const slider = settings.getByRole('slider', { name: "Qur'an text size" })
+      await slider.press('Home')
+      for (let step = 0; step < 50; step += 1) await slider.press('ArrowRight')
+      await expect(slider).toHaveAttribute('aria-valuenow', '50')
+      await settings.getByRole('button', { name: 'Close settings' }).click()
+
+      const intermediateMetrics = await stageScroll(page)
+      expect(intermediateMetrics.scrollHeight).toBeGreaterThan(intermediateMetrics.clientHeight)
+      await reachStageBottomWithTouch(page)
+      await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
+      await expect(page).toHaveURL(/#\/m\/42$/)
+      await expectNoHorizontalOverflow(page)
+    } finally {
+      await context.close()
+    }
+  })
+
   test('@mobile keeps reviewed Full and Text framing reachable without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openPrivateMushaf(page, FIT_WIDTH, { mushafPageFraming: 0 })
