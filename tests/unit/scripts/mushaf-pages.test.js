@@ -24,6 +24,7 @@ import {
 } from '../../../scripts/data/mushaf-pages/theme-svg.mjs'
 import { hasReusableSvgDocument } from '../../../scripts/data/mushaf-pages/import.mjs'
 import { importPrivatePdfEdition, loadPrivateMushafEditionContract } from '../../../scripts/data/mushaf-pages/private-pdf.mjs'
+import * as privatePdfModule from '../../../scripts/data/mushaf-pages/private-pdf.mjs'
 import { buildManifestPayload } from '../../../scripts/data/manifest/inventory.mjs'
 import { validateMushafManifestData } from '../../../scripts/check-react-mushaf-indexes.mjs'
 
@@ -112,11 +113,16 @@ async function writeTransitionFixture(root) {
   }
   const importMetadata = {
     version: 1,
-    emissionContractVersion: 1,
+    emissionContractVersion: 2,
     riwayah: 'qaloon',
     mushafEditionId: 'qalun-furatiyyah-2023-v1',
     sourcePdfSha256: contract.source.sha256,
     contractDigest: contract.emissionContractDigest,
+    toolVersions: {
+      pdftocairo: 'pdftocairo fixture version\n',
+      cwebp: 'cwebp fixture version\n',
+      webpinfo: 'webpinfo fixture version\n',
+    },
     media: {
       kind: media.kind,
       mimeType: media.mimeType,
@@ -201,9 +207,12 @@ function privateRunner({ failSourcePdfPage = null, variant = 'same', calls = [] 
   return async (command, args) => {
     calls.push({ command, args })
     if (command === 'pdfinfo') {
-      return { status: 0, stdout: 'Pages:           630\nPage size:       512.545 x 652.654 pts\n', stderr: '' }
+      return { status: 0, stdout: 'Pages:           630\nPage size:       612 x 792 pts\nCropBox:         0 0 512.545 652.654\n', stderr: '' }
     }
     if (command === 'pdftocairo') {
+      if (args[0] === '-v') {
+        return { status: 0, stdout: '', stderr: 'pdftocairo fixture version\n' }
+      }
       const sourcePage = Number(args[args.indexOf('-f') + 1])
       if (sourcePage === failSourcePdfPage) {
         return { status: 1, stdout: '', stderr: `page ${sourcePage} failed` }
@@ -212,10 +221,16 @@ function privateRunner({ failSourcePdfPage = null, variant = 'same', calls = [] 
       return { status: 0, stdout: '', stderr: '' }
     }
     if (command === 'cwebp') {
+      if (args[0] === '-version') {
+        return { status: 0, stdout: 'cwebp fixture version\n', stderr: '' }
+      }
       await writeFile(args.at(-1), `${variant}:${args.at(-1).match(/\d+\.webp$/)?.[0]}`)
       return { status: 0, stdout: '', stderr: '' }
     }
     if (command === 'webpinfo') {
+      if (args[0] === '-version') {
+        return { status: 0, stdout: 'webpinfo fixture version\n', stderr: '' }
+      }
       const width = args[0].includes('-1280.webp') ? 1280 : 2136
       const height = width === 1280 ? 1630 : 2720
       return { status: 0, stdout: `Canvas size: ${width} x ${height}\n`, stderr: '' }
@@ -225,6 +240,24 @@ function privateRunner({ failSourcePdfPage = null, variant = 'same', calls = [] 
 }
 
 describe('private PDF Mushaf importer', () => {
+  it('parses the pinned PDF CropBox instead of the generic page size', () => {
+    expect(privatePdfModule.CURRENT_PRIVATE_EMISSION_CONTRACT_VERSION).toBe(2)
+    expect(privatePdfModule.parsePdfCropBox('Page size: 612 x 792 pts\nCropBox: 0 0 512.545 652.654\n')).toEqual({
+      height: 652.654,
+      width: 512.545,
+      x: 0,
+      y: 0,
+    })
+  })
+
+  it('requires the passed release gate and rejects legacy normalized metadata', async () => {
+    expect(() => privatePdfModule.validatePassedPrivateMediaGate({ gate: 'pending-runtime' })).toThrow(/passed media gate/i)
+    const media = await readCatalogJson('mushaf-editions/qalun-furatiyyah-2023-v1/media.json')
+    delete media.runtimeEvidence.privateReadyMedianMs
+    expect(() => privatePdfModule.validatePassedPrivateMediaGate(media)).toThrow(/runtime evidence/i)
+    expect(() => privatePdfModule.validateLegacyMetadata({ contractDigest: 'a'.repeat(64) })).toThrow(/legacy normalized contract/i)
+  })
+
   it('validates pinned review and framing contracts before importing', async () => {
     const contract = await loadPrivateMushafEditionContract('qalun-furatiyyah-2023-v1')
     expect(contract.pageStartReviews).toHaveLength(604)
@@ -290,10 +323,10 @@ describe('private PDF Mushaf importer', () => {
     const wrongPageCount = privateRunner()
     const wrongCropBox = privateRunner()
     await expect(importPrivatePdfEdition({ editionId: 'qalun-furatiyyah-2023-v1', pdfPath, runCommand: async (command, args) => (command === 'pdfinfo'
-      ? { status: 0, stdout: 'Pages:           629\nPage size:       512.545 x 652.654 pts\n', stderr: '' }
+      ? { status: 0, stdout: 'Pages:           629\nPage size:       612 x 792 pts\nCropBox:         0 0 512.545 652.654\n', stderr: '' }
       : wrongPageCount(command, args)), paths: { contractDir, normalizedRoot } })).rejects.toThrow(/page count/)
     await expect(importPrivatePdfEdition({ editionId: 'qalun-furatiyyah-2023-v1', pdfPath, runCommand: async (command, args) => (command === 'pdfinfo'
-      ? { status: 0, stdout: 'Pages:           630\nPage size:       500 x 652.654 pts\n', stderr: '' }
+      ? { status: 0, stdout: 'Pages:           630\nPage size:       512.545 x 652.654 pts\nCropBox:         0 0 500 652.654\n', stderr: '' }
       : wrongCropBox(command, args)), paths: { contractDir, normalizedRoot } })).rejects.toThrow(/CropBox/)
     const framingPath = join(contractDir, 'framing.json')
     const framing = JSON.parse(await readFile(framingPath, 'utf8'))
@@ -311,10 +344,17 @@ describe('private PDF Mushaf importer', () => {
     const options = { editionId: 'qalun-furatiyyah-2023-v1', pdfPath, paths: { contractDir, normalizedRoot } }
     const first = await importPrivatePdfEdition({ ...options, runCommand: privateRunner({ calls }) })
     expect(first.status).toBe('promoted')
-    expect(calls.filter((call) => call.command === 'pdftocairo')).toHaveLength(604)
-    expect(calls.filter((call) => call.command === 'cwebp')).toHaveLength(1208)
+    expect(calls.filter((call) => call.command === 'pdftocairo' && call.args[0] !== '-v')).toHaveLength(604)
+    expect(calls.filter((call) => call.command === 'cwebp' && call.args[0] !== '-version')).toHaveLength(1208)
     await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'current' })
     const metadataPath = join(first.normalizedDir, 'import.json')
+    const metadata = JSON.parse(await readFile(metadataPath, 'utf8'))
+    expect(metadata.emissionContractVersion).toBe(2)
+    expect(metadata.toolVersions).toEqual({
+      pdftocairo: 'pdftocairo fixture version\n',
+      cwebp: 'cwebp fixture version\n',
+      webpinfo: 'webpinfo fixture version\n',
+    })
     const before = await readFile(metadataPath, 'utf8')
     await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner({ variant: 'changed' }) })).rejects.toThrow(/different bytes/)
     expect(await readFile(metadataPath, 'utf8')).toBe(before)
@@ -328,12 +368,16 @@ describe('private PDF Mushaf importer', () => {
     const mediaPath = join(contractDir, 'media.json')
     const sourcePath = join(contractDir, 'source.json')
     const reviewPath = join(contractDir, 'page-start-review.json')
-    const pendingMedia = JSON.parse(await readFile(mediaPath, 'utf8'))
-    pendingMedia.gate = 'pending-runtime'
-    delete pendingMedia.runtimeEvidence
-    await writeFile(mediaPath, JSON.stringify(pendingMedia, null, 2))
     const options = { editionId: 'qalun-furatiyyah-2023-v1', pdfPath, paths: { contractDir, normalizedRoot } }
     try {
+      const pendingMedia = JSON.parse(await readFile(mediaPath, 'utf8'))
+      pendingMedia.gate = 'pending-runtime'
+      delete pendingMedia.runtimeEvidence
+      await writeFile(mediaPath, JSON.stringify(pendingMedia, null, 2))
+      await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).rejects.toThrow(/passed media gate/i)
+
+      const passedMedia = await readCatalogJson('mushaf-editions/qalun-furatiyyah-2023-v1/media.json')
+      await writeFile(mediaPath, JSON.stringify(passedMedia, null, 2))
       await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'promoted' })
 
       const source = JSON.parse(await readFile(sourcePath, 'utf8'))
@@ -345,21 +389,11 @@ describe('private PDF Mushaf importer', () => {
       await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'current' })
 
       const metadataPath = join(normalizedRoot, 'qalun-furatiyyah-2023-v1', 'import.json')
-      const legacyMetadata = JSON.parse(await readFile(metadataPath, 'utf8'))
-      legacyMetadata.contractDigest = await legacyPrivateContractDigest(contractDir)
-      delete legacyMetadata.emissionContractVersion
-      const legacyUnsigned = { ...legacyMetadata }
-      delete legacyUnsigned.contentDigest
-      legacyMetadata.contentDigest = createHash('sha256').update(jsonText(legacyUnsigned)).digest('hex')
-      await writeFile(metadataPath, jsonText(legacyMetadata))
-
-      const passedMedia = JSON.parse(await readFile(mediaPath, 'utf8'))
-      passedMedia.gate = 'passed'
-      passedMedia.preliminaryEvidence.maxTransferredBytes = 1
-      passedMedia.runtimeEvidence = { privateCurrentReadyMedianMs: 1 }
-      await writeFile(mediaPath, JSON.stringify(passedMedia, null, 2))
+      const runtimeEvidenceChanged = JSON.parse(await readFile(mediaPath, 'utf8'))
+      runtimeEvidenceChanged.runtimeEvidence.privateReadyMedianMs += 1
+      await writeFile(mediaPath, JSON.stringify(runtimeEvidenceChanged, null, 2))
       await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'current' })
-      expect(JSON.parse(await readFile(metadataPath, 'utf8')).emissionContractVersion).toBe(1)
+      expect(JSON.parse(await readFile(metadataPath, 'utf8')).emissionContractVersion).toBe(2)
 
       const byteAffectingMedia = JSON.parse(await readFile(mediaPath, 'utf8'))
       byteAffectingMedia.encoder.quality = 89
@@ -488,7 +522,7 @@ describe('mushaf page dataset builder', () => {
     }
   })
 
-  it('accepts verified legacy private metadata while enforcing the current emission contract', async () => {
+  it('rejects legacy private metadata even when it carries a 64-hex contract digest', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-private-legacy-provenance-'))
     const paths = await writeTransitionFixture(root)
     const metadataPath = join(paths.normalizedRoot, 'qaloon', 'qalun-furatiyyah-2023-v1', 'import.json')
@@ -501,7 +535,7 @@ describe('mushaf page dataset builder', () => {
       metadata.contentDigest = createHash('sha256').update(jsonText(legacyUnsigned)).digest('hex')
       await writeFile(metadataPath, jsonText(metadata))
 
-      await expect(buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)).resolves.toBeUndefined()
+      await expect(buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)).rejects.toThrow(/legacy normalized contract/i)
     } finally {
       await rm(root, { recursive: true, force: true })
     }

@@ -25,7 +25,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | Lint | ESLint + typescript-eslint | `^10.2.1`, `^8.59.1` | JS/TS/TSX quality gate |
 | Perf | Lighthouse CI | `^0.15.1` | Production artifact performance and best-practice gate |
 | Deploy | Cloudflare Wrangler | pinned in `package.json` | Deploys the CI-built `dist/` artifact |
-| Private Mushaf import | Poppler (`pdfinfo`, `pdftocairo`) + WebP (`cwebp`, `webpinfo`) | host tooling | Verifies, CropBox-renders, encodes, and validates the pinned local-only Qaloun PDF edition |
+| Private Mushaf import | Poppler (`pdfinfo`, `pdftocairo`) + WebP (`cwebp`, `webpinfo`) | host tooling; exact command version output recorded per import | Verifies the explicit PDF CropBox, renders and encodes the pinned local-only Qaloun edition, and validates WebP output |
 
 `pnpm.overrides` pins patched transitive dependency ranges for CI audit gates, including toolchain-only packages such as `esbuild` when upstream Storybook/Vite/Wrangler ranges lag an audit advisory. Keep overrides narrow and remove them when upstream direct dependencies resolve without help.
 
@@ -53,7 +53,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run data -- build --skip=mushaf-pages` | Rebuild non-Mushaf baseline dataset lanes while reusing existing local/generated Mushaf page assets |
 | `pnpm run data -- build --profile=full` | Build every approved current dataset profile |
 | `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs, including Search pack bytes; stamped Mushaf page artifacts are checked when local page inputs are present |
-| `pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"` | Verify and atomically import the pinned private Qaloun local PDF into ignored edition-scoped WebP inputs; requires `pdfinfo`, `pdftocairo`, `cwebp`, and `webpinfo` |
+| `pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"` | Verify the pinned PDF and passed runtime media gate, then atomically import it into ignored edition-scoped WebP inputs with current contract and exact tool-version provenance; requires `pdfinfo`, `pdftocairo`, `cwebp`, and `webpinfo` |
 | `QURANATLAS_PRIVATE_MUSHAF=1 PLAYWRIGHT_USE_PREVIEW=1 PLAYWRIGHT_INCLUDE_OFFLINE=1 pnpm exec playwright test <private-reader-specs>` | Run the gated private production-preview reader and exact-rendition offline proof; standard CI leaves the flag unset |
 | `pnpm run data:fetch -- <type>:<id>` | Fetch and normalize catalog-backed source data |
 | `pnpm run test` | Run the full Vitest unit suite once across Node and React projects |

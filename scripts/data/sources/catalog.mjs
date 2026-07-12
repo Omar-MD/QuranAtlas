@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { readJson } from '../lib/json.mjs'
+import { validatePassedPrivateMediaGate } from '../mushaf-pages/private-pdf.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -515,6 +516,12 @@ function validatePrivateMushafContractEvidence(asset, key, context) {
     context.errors.push(`mushaf asset ${key} media policy contract is ${evidence.media?.error === 'missing' ? 'missing' : 'invalid'}`)
   } else if (media.version !== 1 || media.mushafEditionId !== asset.mushafEditionId || media.kind !== 'external-image' || media.mimeType !== 'image/webp' || media.renderDpi !== 300 || media.encoder?.command !== 'cwebp' || media.encoder?.quality !== 88 || media.encoder?.method !== 6 || !hasValidMediaRenditions(media.renditions)) {
     context.errors.push(`mushaf asset ${key} media policy contract is invalid`)
+  } else {
+    try {
+      validatePassedPrivateMediaGate(media)
+    } catch {
+      context.errors.push(`mushaf asset ${key} media policy contract requires a passed media gate with runtime evidence`)
+    }
   }
 }
 

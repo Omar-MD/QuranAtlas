@@ -295,6 +295,25 @@ describe('source catalog validation', () => {
     }
   })
 
+  it('rejects a passed private media gate without the required runtime evidence', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-source-catalog-private-gate-'))
+    const catalogDir = join(root, 'catalog')
+    await cp(join(process.cwd(), 'data', 'catalog'), catalogDir, { recursive: true })
+    try {
+      const mediaPath = join(catalogDir, 'mushaf-editions', 'qalun-furatiyyah-2023-v1', 'media.json')
+      const media = JSON.parse(await readFile(mediaPath, 'utf8'))
+      delete media.runtimeEvidence
+      await writeFile(mediaPath, JSON.stringify(media, null, 2))
+
+      const catalog = await loadSourceCatalog(catalogDir)
+      expect(validateSourceCatalog(catalog).errors).toContain(
+        'mushaf asset qaloon/qalun-furatiyyah-2023-v1 media policy contract requires a passed media gate with runtime evidence',
+      )
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('keeps the Qaloon default on the shipped quran.ws edition', () => {
     const catalog = baseCatalog()
     catalog.mushafAssets = {

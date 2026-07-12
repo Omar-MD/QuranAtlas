@@ -10,7 +10,7 @@ const REPO_ROOT = join(__dirname, '..', '..', '..')
 const PRIVATE_EDITION_ID = 'qalun-furatiyyah-2023-v1'
 const RIWAYAH = 'qaloon'
 const PAGE_COUNT = 604
-const EMISSION_CONTRACT_VERSION = 1
+export const CURRENT_PRIVATE_EMISSION_CONTRACT_VERSION = 2
 const CONTRACT_DIR = join(REPO_ROOT, 'data', 'catalog', 'mushaf-editions', PRIVATE_EDITION_ID)
 const NORMALIZED_ROOT = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages', RIWAYAH)
 
@@ -28,6 +28,48 @@ function pad3(page) {
 
 function jsonText(value) {
   return `${JSON.stringify(value, null, 2)}\n`
+}
+
+export function parsePdfCropBox(text) {
+  const match = /^CropBox:\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/m.exec(text)
+  if (!match) throw new Error('Pinned private PDF CropBox is unavailable')
+  const [, x1, y1, x2, y2] = match.map(Number)
+  return { height: y2 - y1, width: x2 - x1, x: x1, y: y1 }
+}
+
+export function validatePassedPrivateMediaGate(media) {
+  const evidence = media?.runtimeEvidence
+  const positiveNumbers = [
+    evidence?.maxTransferredBytes,
+    evidence?.maxDecodedBytes,
+    evidence?.privateReadyMedianMs,
+    evidence?.quranWsReadyMedianMs,
+    evidence?.privateToQuranWsReadyTimeRatio,
+    evidence?.privateBrowserTestsPassed,
+  ]
+  const nonNegativeNumbers = [
+    evidence?.maxAttributableLongTaskMs,
+    evidence?.privateBrowserTestsSkipped,
+  ]
+  if (media?.gate !== 'passed'
+    || !evidence
+    || !positiveNumbers.every((value) => Number.isFinite(value) && value > 0)
+    || !nonNegativeNumbers.every((value) => Number.isFinite(value) && value >= 0)
+    || !Number.isInteger(evidence.privateBrowserTestsPassed)
+    || !Number.isInteger(evidence.privateBrowserTestsSkipped)
+    || evidence.tenTurnsPassed !== true
+    || evidence.sustainedScrollPassed !== true
+    || !Array.isArray(evidence.physicalDevices)) {
+    throw new Error('Private Mushaf release requires a passed media gate with runtime evidence')
+  }
+  return evidence
+}
+
+export function validateLegacyMetadata(metadata) {
+  if (metadata?.emissionContractVersion !== CURRENT_PRIVATE_EMISSION_CONTRACT_VERSION) {
+    throw new Error('Legacy normalized contract is not accepted; regenerate the private Mushaf normalized directory')
+  }
+  return metadata
 }
 
 async function readJson(path) {
@@ -163,6 +205,7 @@ export async function loadPrivateMushafEditionContract(editionId, { contractDir 
   ensure(Array.isArray(media.renditions) && media.renditions.length === 2
     && media.renditions[0]?.role === 'preview' && media.renditions[0]?.width === 1280
     && media.renditions[1]?.role === 'full' && media.renditions[1]?.width === 2136, 'Private Mushaf media renditions are incomplete')
+  validatePassedPrivateMediaGate(media)
 
   return {
     source,
@@ -193,10 +236,17 @@ async function run(runCommand, command, args) {
   return result.stdout
 }
 
+async function exactCommandOutput(runCommand, command, args) {
+  const result = await runCommand(command, args)
+  if (result.status !== 0) {
+    throw new Error(`${command} failed: ${(result.stderr || result.stdout || `status ${result.status}`).trim()}`)
+  }
+  return `${result.stdout ?? ''}${result.stderr ?? ''}`
+}
+
 function parsePdfInfo(output) {
   const pages = Number.parseInt(output.match(/^Pages:\s+(\d+)$/m)?.[1] ?? '', 10)
-  const size = output.match(/^Page size:\s+([\d.]+)\s+x\s+([\d.]+)\s+pts$/m)
-  return { pages, width: Number(size?.[1]), height: Number(size?.[2]) }
+  return { pages, ...parsePdfCropBox(output) }
 }
 
 function pngDimensions(bytes, filename) {
@@ -256,9 +306,17 @@ function emissionOutputIdentity(metadata) {
   })
 }
 
+function validateToolVersionProvenance(toolVersions, label) {
+  for (const tool of ['pdftocairo', 'cwebp', 'webpinfo']) {
+    ensure(typeof toolVersions?.[tool] === 'string' && toolVersions[tool].length > 0, `${label} ${tool} version provenance is invalid`)
+  }
+}
+
 async function readExistingImportMetadata(normalizedDir) {
   try {
     const metadata = await readJson(join(normalizedDir, 'import.json'))
+    validateLegacyMetadata(metadata)
+    validateToolVersionProvenance(metadata.toolVersions, 'Existing private Mushaf normalized output')
     ensure(typeof metadata.contentDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contentDigest), 'Existing private Mushaf normalized output has no contentDigest')
     const { contentDigest, ...unsignedMetadata } = metadata
     ensure(contentDigest === sha256(Buffer.from(jsonText(unsignedMetadata))), 'Existing private Mushaf normalized output has an invalid contentDigest')
@@ -298,6 +356,13 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
   ensure(typeof pdfPath === 'string' && pdfPath.length > 0 && existsSync(pdfPath), 'Private Mushaf PDF path does not exist')
   ensure(basename(pdfPath) === contract.source.expectedFilename, 'Private Mushaf PDF filename does not match the pinned source contract')
   ensure(sha256(await readFile(pdfPath)) === contract.source.sha256, 'Private Mushaf PDF sha256 does not match the pinned source contract')
+
+  const toolVersions = {
+    pdftocairo: await exactCommandOutput(runCommand, 'pdftocairo', ['-v']),
+    cwebp: await exactCommandOutput(runCommand, 'cwebp', ['-version']),
+    webpinfo: await exactCommandOutput(runCommand, 'webpinfo', ['-version']),
+  }
+  validateToolVersionProvenance(toolVersions, 'Private Mushaf import')
 
   const pdfInfo = parsePdfInfo(await run(runCommand, 'pdfinfo', ['-box', pdfPath]))
   ensure(pdfInfo.pages === contract.source.documentPageCount, 'Private Mushaf PDF page count does not match the pinned source contract')
@@ -341,11 +406,12 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
 
     const output = {
       version: 1,
-      emissionContractVersion: EMISSION_CONTRACT_VERSION,
+      emissionContractVersion: CURRENT_PRIVATE_EMISSION_CONTRACT_VERSION,
       riwayah: RIWAYAH,
       mushafEditionId: editionId,
       sourcePdfSha256: contract.source.sha256,
       contractDigest: contract.emissionContractDigest,
+      toolVersions,
       media: emissionMediaPolicy(contract.mediaPolicy),
       pages,
     }

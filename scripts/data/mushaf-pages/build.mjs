@@ -11,7 +11,10 @@ import {
   assertThemeableSvgIntegrity,
   themeMushafSvg,
 } from './theme-svg.mjs'
-import { loadPrivateMushafEditionContract } from './private-pdf.mjs'
+import {
+  loadPrivateMushafEditionContract,
+  validateLegacyMetadata,
+} from './private-pdf.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -754,9 +757,11 @@ function privateRuntimeTextFrame(sourceTextFrame, sourceFullFrame) {
 
 function assertPrivateNormalizedProvenance(metadata, contract, asset) {
   ensure(metadata.sourcePdfSha256 === contract.source.sha256, 'Private Mushaf normalized source PDF digest disagrees with the committed source contract')
-  const isCurrentEmissionContract = metadata.emissionContractVersion === 1 && metadata.contractDigest === contract.emissionContractDigest
-  const isVerifiedLegacyContract = metadata.emissionContractVersion === undefined && typeof metadata.contractDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contractDigest)
-  ensure(isCurrentEmissionContract || isVerifiedLegacyContract, 'Private Mushaf normalized contract digest disagrees with the committed emission contracts')
+  validateLegacyMetadata(metadata)
+  ensure(metadata.contractDigest === contract.emissionContractDigest, 'Private Mushaf normalized contract digest disagrees with the committed emission contract')
+  for (const tool of ['pdftocairo', 'cwebp', 'webpinfo']) {
+    ensure(typeof metadata.toolVersions?.[tool] === 'string' && metadata.toolVersions[tool].length > 0, `Private Mushaf normalized ${tool} version provenance is invalid`)
+  }
   ensure(typeof metadata.contentDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contentDigest), 'Private Mushaf normalized metadata content digest is invalid')
   const { contentDigest, ...unsignedMetadata } = metadata
   ensure(contentDigest === sha256Hex(Buffer.from(jsonText(unsignedMetadata))), 'Private Mushaf normalized metadata content digest is stale or forged')
