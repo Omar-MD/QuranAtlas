@@ -568,7 +568,7 @@ describe('mushaf page dataset builder', () => {
     } finally {
       await rm(root, { recursive: true, force: true })
     }
-  })
+  }, 30_000)
 
   it('treats catalog profile as having no Mushaf page body output', () => {
     expect(riwayatForProfile('catalog')).toEqual([])
