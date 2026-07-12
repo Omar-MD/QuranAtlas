@@ -32,6 +32,7 @@
 
 **Files:**
 - Modify: `scripts/data/mushaf-pages/private-pdf.mjs`
+- Modify: `scripts/data/mushaf-pages/build.mjs`
 - Modify: `scripts/data/sources/catalog.mjs`
 - Modify: `data/catalog/mushaf-editions/qalun-furatiyyah-2023-v1/media.json`
 - Modify: `tests/unit/scripts/mushaf-pages.test.js`
