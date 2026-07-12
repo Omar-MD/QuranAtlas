@@ -721,6 +721,19 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
   }
 }
 
+async function preflightQuranWsEdition(asset, catalog, assetCatalog, { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+  const riwayah = asset.riwayah
+  validateRiwayahId(riwayah)
+  ensure(asset.mushafEditionId === assetCatalog.defaults[riwayah], `Only the default quran.ws edition may write legacy Mushaf output for ${riwayah}`)
+  const pageCount = catalog.pageCount
+  const scopedPagesDir = join(normalizedRoot, riwayah, asset.mushafEditionId, 'pages')
+  const sourcePagesDir = existsSync(scopedPagesDir) ? scopedPagesDir : join(normalizedRoot, riwayah, 'pages')
+  const sourceFiles = await validateSvgPageSet(sourcePagesDir, pageCount, { missing })
+  if (sourceFiles.length === 0) return false
+  await deriveRiwayahMappings(riwayah, pageCount)
+  return true
+}
+
 function assertUnitRect(rect, label) {
   ensure(rect && typeof rect === 'object', `${label} must be an object`)
   for (const key of ['x', 'y', 'width', 'height']) ensure(Number.isFinite(rect[key]), `${label}.${key} must be finite`)
@@ -788,7 +801,7 @@ function assertPrivateNormalizedProvenance(metadata, contract, asset) {
   }
 }
 
-async function loadPrivateNormalizedPages(asset, { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+async function loadPrivateNormalizedPages(asset, { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
   const normalizedDir = join(normalizedRoot, asset.riwayah, asset.mushafEditionId)
   const importPath = join(normalizedDir, 'import.json')
   const bytes = await readExistingBytes(importPath)
@@ -798,7 +811,7 @@ async function loadPrivateNormalizedPages(asset, { missing = 'error', normalized
   }
   const metadata = JSON.parse(bytes.toString('utf8'))
   ensure(metadata?.version === 1 && metadata.riwayah === asset.riwayah && metadata.mushafEditionId === asset.mushafEditionId, 'Private Mushaf normalized metadata identity is invalid')
-  const contract = await loadPrivateMushafEditionContract(asset.mushafEditionId)
+  const contract = await loadPrivateMushafEditionContract(asset.mushafEditionId, { contractDir })
   assertPrivateNormalizedProvenance(metadata, contract, asset)
   ensure(metadata.media?.kind === PRIVATE_MEDIA_KIND && metadata.media.mimeType === PRIVATE_MIME_TYPE && metadata.media.renderDpi === 300, 'Private Mushaf normalized media policy is invalid')
   ensure(metadata.media.encoder?.command === 'cwebp' && metadata.media.encoder.quality === 88 && metadata.media.encoder.method === 6, 'Private Mushaf normalized encoder policy is invalid')
@@ -828,8 +841,19 @@ async function loadPrivateNormalizedPages(asset, { missing = 'error', normalized
   return { normalizedDir, metadata, pages, sourceDigest: metadata.contentDigest }
 }
 
-async function buildPrivateEdition(asset, { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {}) {
-  const normalized = await loadPrivateNormalizedPages(asset, { missing, normalizedRoot })
+async function preflightPrivateEdition(asset, { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+  const normalized = await loadPrivateNormalizedPages(asset, { contractDir, missing, normalizedRoot })
+  if (!normalized) return false
+  const mappings = await deriveRiwayahMappings(asset.riwayah, asset.pageCount)
+  for (const row of normalized.pages) {
+    const expectedFirstVerse = mappings.firstVerse.get(row.page)
+    ensure(expectedFirstVerse?.surah === row.firstVerse.surah && expectedFirstVerse?.verse === row.firstVerse.verse, `Private Mushaf page ${row.page} first verse disagrees with the canonical map`)
+  }
+  return true
+}
+
+async function buildPrivateEdition(asset, { check = false, contractDir, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {}) {
+  const normalized = await loadPrivateNormalizedPages(asset, { contractDir, missing, normalizedRoot })
   if (!normalized) {
     console.warn(`[mushaf-pages] skipping ${asset.mushafEditionId}: missing local normalized image artifacts`)
     return false
@@ -953,6 +977,7 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
   const outRoot = paths.outRoot ?? OUT_ROOT
   const datasetDir = paths.datasetDir ?? DATASET_DIR
   const normalizedRoot = paths.normalizedRoot ?? NORMALIZED_DIR
+  const contractDir = paths.contractDir
   const refreshManifest = paths.refreshManifest ?? true
   const profile = argValue(argv, 'profile', 'baseline')
   const check = argv.includes('--check')
@@ -979,19 +1004,34 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
     return
   }
 
+  const selectionIsStrict = profile === 'private'
+  const missingPolicy = (asset) => (
+    selectionIsStrict || requiredRiwayat.has(asset.riwayah) || requiredEditions.has(asset.mushafEditionId)
+      ? 'error'
+      : 'skip'
+  )
+  for (const asset of selectedAssets) {
+    const options = { contractDir, missing: missingPolicy(asset), normalizedRoot }
+    if (asset.sourceKind === 'local-pdf') {
+      await preflightPrivateEdition(asset, options)
+    } else {
+      await preflightQuranWsEdition(asset, catalog, assetCatalog, options)
+    }
+  }
+
   const resolvedAssets = []
   for (const asset of selectedAssets) {
-    const isRequired = requiredRiwayat.has(asset.riwayah) || requiredEditions.has(asset.mushafEditionId)
     const resolved = asset.sourceKind === 'local-pdf'
       ? await buildPrivateEdition(asset, {
         check,
-        missing: isRequired ? 'error' : 'skip',
+        contractDir,
+        missing: missingPolicy(asset),
         outRoot,
         normalizedRoot,
       })
       : await buildQuranWsEdition(asset, catalog, assetCatalog, {
         check,
-        missing: isRequired ? 'error' : 'skip',
+        missing: missingPolicy(asset),
         outRoot,
         normalizedRoot,
       })

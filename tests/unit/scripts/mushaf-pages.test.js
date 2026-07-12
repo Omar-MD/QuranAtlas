@@ -67,6 +67,21 @@ async function treeDigest(root) {
   return hash.digest('hex')
 }
 
+async function recursiveTreeDigest(root, relative = '') {
+  const hash = createHash('sha256')
+  const entries = await readdir(join(root, relative), { withFileTypes: true })
+  for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
+    const path = join(relative, entry.name)
+    hash.update(path)
+    if (entry.isDirectory()) {
+      hash.update(await recursiveTreeDigest(root, path))
+    } else {
+      hash.update(await readFile(join(root, path)))
+    }
+  }
+  return hash.digest('hex')
+}
+
 async function writeTransitionFixture(root) {
   const normalizedRoot = join(root, 'normalized')
   const datasetDir = join(root, 'dataset')
@@ -540,6 +555,60 @@ describe('mushaf page dataset builder', () => {
       await rm(root, { recursive: true, force: true })
     }
   })
+
+  it.each([
+    { kind: 'missing', error: /missing private normalized input/i },
+    { kind: 'legacy', error: /legacy normalized contract/i },
+    { kind: 'gate-invalid', error: /passed media gate/i },
+  ])('preflights every selected edition before plain private profile writes when input is $kind', async ({ kind, error }) => {
+    const root = await mkdtemp(join(tmpdir(), `qa-private-preflight-${kind}-`))
+    const paths = await writeTransitionFixture(root)
+    const privateRoot = join(paths.normalizedRoot, 'qaloon', 'qalun-furatiyyah-2023-v1')
+    const metadataPath = join(privateRoot, 'import.json')
+    const indexPath = join(paths.datasetDir, 'indexes', 'mushaf-assets.json')
+    const stampPath = join(paths.normalizedRoot, 'qaloon', 'qalun-quran-ws-v1-build-stamp.json')
+    try {
+      await mkdir(join(paths.outRoot, 'qaloon', 'stale-edition'), { recursive: true })
+      await mkdir(join(paths.datasetDir, 'indexes'), { recursive: true })
+      await writeFile(join(paths.outRoot, 'qaloon', 'manifest.json'), 'seeded legacy manifest')
+      await writeFile(join(paths.outRoot, 'qaloon', 'stale-edition', 'sentinel.txt'), 'seeded stale output')
+      await writeFile(indexPath, 'seeded index')
+      await writeFile(stampPath, '{}\n')
+
+      if (kind === 'missing') {
+        await rm(privateRoot, { recursive: true, force: true })
+      } else if (kind === 'legacy') {
+        const metadata = JSON.parse(await readFile(metadataPath, 'utf8'))
+        delete metadata.emissionContractVersion
+        const unsigned = { ...metadata }
+        delete unsigned.contentDigest
+        metadata.contentDigest = createHash('sha256').update(jsonText(unsigned)).digest('hex')
+        await writeFile(metadataPath, jsonText(metadata))
+      } else {
+        const sourceContractDir = join(process.cwd(), 'data', 'catalog', 'mushaf-editions', 'qalun-furatiyyah-2023-v1')
+        const contractDir = join(root, 'contracts')
+        await cp(sourceContractDir, contractDir, { recursive: true })
+        const mediaPath = join(contractDir, 'media.json')
+        const media = JSON.parse(await readFile(mediaPath, 'utf8'))
+        media.gate = 'pending-runtime'
+        delete media.runtimeEvidence
+        await writeFile(mediaPath, jsonText(media))
+        paths.contractDir = contractDir
+      }
+
+      const beforeOutput = await recursiveTreeDigest(paths.outRoot)
+      const beforeIndex = await readFile(indexPath)
+      const beforeStamp = await readFile(stampPath)
+
+      await expect(buildMushafPages(['--profile=private'], paths)).rejects.toThrow(error)
+
+      expect(await recursiveTreeDigest(paths.outRoot)).toBe(beforeOutput)
+      expect(await readFile(indexPath)).toEqual(beforeIndex)
+      expect(await readFile(stampPath)).toEqual(beforeStamp)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 30_000)
 
   it('prunes stale editions only after preserving every selected sibling', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-prune-'))
