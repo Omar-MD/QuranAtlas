@@ -89,10 +89,15 @@ function isMushafAssetDescriptor(value: unknown): value is Record<string, unknow
     && typeof asset.pageCount === 'number'
     && typeof asset.mushafEditionId === 'string'
     && typeof asset.label === 'string'
+    && isAcceptedMushafAvailability(asset.availability)
 }
 
 function isAvailableQaloonMushaf(asset: Record<string, unknown> & { label: string; mushafEditionId: string }): boolean {
   return asset.riwayah === 'qaloon'
     && asset.pageCount === 604
     && (asset.availability === undefined || asset.availability === 'available')
+}
+
+function isAcceptedMushafAvailability(value: unknown): value is undefined | 'available' | 'unavailable' | 'not-built' {
+  return value === undefined || value === 'available' || value === 'unavailable' || value === 'not-built'
 }

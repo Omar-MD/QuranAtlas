@@ -157,6 +157,31 @@ describe('React continuity coverage', () => {
     }
   })
 
+  it('rejects malformed availability values before classifying a completed edition as missing', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.bulkPut([
+      { key: 'mushafEditionId', value: 'qalun-furatiyyah-2023-v1' },
+      { key: 'mushafEditionSetupVersion', value: MUSHAF_EDITION_SETUP_VERSION },
+    ])
+
+    try {
+      for (const availability of [null, false, 'bogus', 'unknown']) {
+        await expect(resolveMushafEditionSetup({
+          contractWasValid: true,
+          fetcher: async () => jsonResponse({
+            assets: [{ ...quranWsIndex.assets[0], availability }],
+          }),
+        })).resolves.toEqual({
+          status: 'availability-error',
+          mushafEditionId: 'qalun-furatiyyah-2023-v1',
+        })
+      }
+    } finally {
+      await resetReactDb()
+    }
+  })
+
   it('preserves a requested Mushaf deep link instead of replacing it with the launch route', async () => {
     const settings = { get: async () => undefined }
 
