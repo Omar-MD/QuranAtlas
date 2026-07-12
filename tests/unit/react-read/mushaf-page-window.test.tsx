@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useMushafPageWindow } from '../../../src/app/routes/read/useMushafPageWindow'
 import {
+  loadMushafPageProfileContext,
   loadMushafPageAsset,
   loadPreparedMushafPage,
   prepareExternalMushafImage,
@@ -12,9 +13,10 @@ import {
 
 vi.mock('../../../src/packs/mushaf-page-asset', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../src/packs/mushaf-page-asset')>()
-  return { ...actual, loadMushafPageAsset: vi.fn(), loadPreparedMushafPage: vi.fn(), prepareExternalMushafImage: vi.fn() }
+  return { ...actual, loadMushafPageAsset: vi.fn(), loadMushafPageProfileContext: vi.fn(), loadPreparedMushafPage: vi.fn(), prepareExternalMushafImage: vi.fn() }
 })
 
+const mockedLoadMushafPageProfileContext = vi.mocked(loadMushafPageProfileContext)
 const mockedLoadMushafPageAsset = vi.mocked(loadMushafPageAsset)
 const mockedLoadPreparedMushafPage = vi.mocked(loadPreparedMushafPage)
 const mockedPrepareExternalMushafImage = vi.mocked(prepareExternalMushafImage)
@@ -22,9 +24,36 @@ const primaryProfile = { mushafEditionId: 'qalun-quran-ws-v1', riwayah: 'qaloon'
 
 describe('useMushafPageWindow', () => {
   beforeEach(() => {
+    mockedLoadMushafPageProfileContext.mockReset()
     mockedLoadMushafPageAsset.mockReset()
     mockedLoadPreparedMushafPage.mockReset()
     mockedPrepareExternalMushafImage.mockReset()
+    mockedLoadMushafPageProfileContext.mockResolvedValue({ ...primaryProfile } as never)
+    mockedLoadPreparedMushafPage.mockImplementation(async (options) => {
+      const state = await mockedLoadMushafPageAsset(options)
+      if (state.status !== 'ready') throw state.status === 'error' ? state.error : new Error('Mushaf page unavailable')
+      if (state.media.kind !== 'inline-svg') throw new Error('Expected inline fixture')
+      return { assetUrl: state.resolved.assetUrl, inlineSvg: state.media.inlineSvg, kind: 'inline-svg', resolved: state.resolved }
+    })
+  })
+
+  it('loads one profile context and shares it across the five-page window', async () => {
+    const context = { index: {}, manifest: {}, ...primaryProfile }
+    mockedLoadMushafPageProfileContext.mockResolvedValue(context as never)
+    mockedLoadPreparedMushafPage.mockImplementation(async ({ page }) => preparedInlinePage(page))
+
+    const { result } = renderHook(() => useMushafPageWindow({
+      enabled: true,
+      page: 42,
+      pageCount: 604,
+      profile: primaryProfile,
+    }))
+
+    await waitFor(() => expect(result.current.entries.filter((entry) => entry.status === 'ready')).toHaveLength(3))
+    expect(mockedLoadMushafPageProfileContext).toHaveBeenCalledOnce()
+    expect(mockedLoadMushafPageAsset).not.toHaveBeenCalled()
+    expect(mockedLoadPreparedMushafPage).toHaveBeenCalledTimes(5)
+    expect(mockedLoadPreparedMushafPage.mock.calls.every(([options]) => options.context === context)).toBe(true)
   })
 
   it('resolves the requested page before loading its neighbors without clearing it', async () => {
@@ -247,6 +276,12 @@ function readyPage(
     },
     status: 'ready',
   }
+}
+
+function preparedInlinePage(page: number) {
+  const ready = readyPage(page)
+  if (ready.media.kind !== 'inline-svg') throw new Error('Expected inline fixture')
+  return { assetUrl: ready.resolved.assetUrl, inlineSvg: ready.media.inlineSvg, kind: 'inline-svg' as const, resolved: ready.resolved }
 }
 
 function deferred<T>() {

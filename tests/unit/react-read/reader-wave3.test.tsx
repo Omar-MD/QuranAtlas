@@ -5,6 +5,7 @@ import { ReaderRoute } from '../../../src/app/routes/read/ReaderRoute'
 import { MushafRoute } from '../../../src/app/routes/read/MushafRoute'
 import { ReaderChrome } from '../../../src/components/reader/ReaderChrome'
 import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
+import { ReaderAssetGate } from '../../../src/components/reader/ReaderAssetGate'
 import { useReaderInteractionSuspended } from '../../../src/components/reader/ReaderInteractionContext'
 import { MushafPageViewer } from '../../../src/components/reader/MushafPageViewer'
 import { clampMushafPageFraming, interpolateMushafPageFrame, mushafImagePlacement } from '../../../src/components/reader/mushaf-page-framing'
@@ -512,6 +513,17 @@ describe('React reader coverage', () => {
     render(<MushafRoute page={1} assetState="missing" />)
     expect(screen.getByRole('main', { name: /mushaf reader/i })).toBeInTheDocument()
     expect(screen.getByText(/page pack is not installed/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Manage assets' })).toBeInTheDocument()
+  })
+
+  it('only renders the asset-management action when a caller supplies its behavior', () => {
+    const onManageAssets = vi.fn()
+    const { rerender } = render(<ReaderAssetGate label="Qalun" state="missing" />)
+    expect(screen.queryByRole('button', { name: 'Manage assets' })).not.toBeInTheDocument()
+
+    rerender(<ReaderAssetGate label="Qalun" onManageAssets={onManageAssets} state="missing" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Manage assets' }))
+    expect(onManageAssets).toHaveBeenCalledOnce()
   })
 
   it('renders reader mode switching as a compact header icon instead of fixed page tabs', () => {
@@ -764,46 +776,62 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('retains the visible Mushaf page through a requested-page failure and retries it from reader navigation', async () => {
-    let pageTwoAttempts = 0
-    let includeSecondPage = false
+  it('keeps page 42 truthful while requested page 43 fails, retries, or is cancelled', async () => {
+    let page43Attempts = 0
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
-      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/indexes/mushaf-assets.json') {
+        return jsonResponse({
+          ...mushafAssetIndex,
+          assets: [{
+            ...mushafAssetIndex.assets[0],
+            files: [
+              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json' },
+              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg' },
+              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg' },
+            ],
+          }],
+        })
+      }
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
         return jsonResponse({
           ...mushafManifest,
-          pages: includeSecondPage ? [
-            mushafManifest.pages[0],
-            { ...mushafManifest.pages[0], assetPath: 'pages/002.svg', firstVerse: { surah: 2, verse: 1 }, page: 2 },
-          ] : [mushafManifest.pages[0]],
+          pages: [
+            mushafManifest.pages[1],
+            { ...mushafManifest.pages[1], assetPath: 'pages/043.svg', firstVerse: { surah: 2, verse: 256 }, page: 43 },
+          ],
         })
       }
-      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg') {
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg') {
         return { ok: true, status: 200, text: async () => realMushafSvg } as Response
       }
-      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg') {
-        pageTwoAttempts += 1
-        if (pageTwoAttempts === 1) return { ok: false, status: 500, text: async () => '' } as Response
-        return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg') {
+        page43Attempts += 1
+        return { ok: false, status: 500, text: async () => '' } as Response
       }
       return jsonResponse({}, { ok: false, status: 404 })
     }))
-    const { rerender } = render(<MushafRoute page={1} />)
-    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    window.location.hash = '#/m/42'
+    const onReplaceHash = vi.fn((hash: string) => window.history.replaceState(null, '', hash))
+    const { rerender } = render(<MushafRoute onReplaceHash={onReplaceHash} page={42} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 42, qaloon/i })).toBeInTheDocument()
 
-    includeSecondPage = true
-    rerender(<MushafRoute page={2} />)
+    window.location.hash = '#/m/43'
+    rerender(<MushafRoute onReplaceHash={onReplaceHash} page={43} />)
 
-    await waitFor(() => expect(pageTwoAttempts).toBe(1))
-    expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    expect(await screen.findByText('Mushaf page 43 could not be loaded. Page 42 remains open.')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mushaf page 42, qaloon/i })).toBeInTheDocument()
+    expect(screen.getByLabelText('Mushaf page 42', { exact: true })).toHaveTextContent('42')
+    expect(screen.getByRole('button', { name: 'Bookmark Mushaf page 42' })).toBeInTheDocument()
     expect(screen.queryByText('Mushaf page pack could not be loaded.')).not.toBeInTheDocument()
-    expect(screen.getByText('Mushaf page 2 is unavailable. Use page navigation to retry.')).toBeInTheDocument()
 
-    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    const attemptsBeforeRetry = page43Attempts
+    fireEvent.click(screen.getByRole('button', { name: 'Retry page 43' }))
+    await waitFor(() => expect(page43Attempts).toBeGreaterThan(attemptsBeforeRetry))
 
-    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
-    expect(pageTwoAttempts).toBeGreaterThan(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Stay on page 42' }))
+    expect(onReplaceHash).toHaveBeenCalledWith('#/m/42')
+    expect(window.location.hash).toBe('#/m/42')
     vi.unstubAllGlobals()
   })
 

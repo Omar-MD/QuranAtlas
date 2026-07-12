@@ -4,9 +4,10 @@ import { Button } from '../ui'
 
 export type ReaderAssetState = 'ready' | 'missing' | 'stale' | 'installing' | 'error'
 
-export function ReaderAssetGate({ children, label, onRetry, state = 'ready' }: {
+export function ReaderAssetGate({ children, label, onManageAssets, onRetry, state = 'ready' }: {
   children?: ReactNode
   label: string
+  onManageAssets?: () => void
   onRetry?: () => void
   state?: ReaderAssetState
 }) {
@@ -22,8 +23,8 @@ export function ReaderAssetGate({ children, label, onRetry, state = 'ready' }: {
     <section className="qar:m-5 qar:grid qar:gap-3 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-live="polite">
       <p className="qar:m-0 qar:text-sm qar:text-muted">{message}</p>
       <div className="qar:flex qar:flex-wrap qar:gap-2">
-        <Button size="sm">Manage assets</Button>
-        <Button onClick={onRetry} size="sm" variant="secondary">Retry</Button>
+        {onManageAssets ? <Button onClick={onManageAssets} size="sm">Manage assets</Button> : null}
+        {onRetry ? <Button onClick={onRetry} size="sm" variant="secondary">Retry</Button> : null}
       </div>
     </section>
   )

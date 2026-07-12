@@ -5,6 +5,7 @@ import { MushafPageViewer } from '../../../components/reader/MushafPageViewer'
 import type { ReaderAssetState } from '../../../components/reader/ReaderAssetGate'
 import { ReaderAssetGate } from '../../../components/reader/ReaderAssetGate'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
+import { Button } from '../../../components/ui'
 import type { MushafViewMode } from '../../../components/reader/MushafModeControl'
 import { resolveVerseHrefForMushafPage } from '../../../components/reader/reader-mode-routing'
 import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-bookmark'
@@ -41,6 +42,14 @@ type ActiveMushafSettings = {
   mushafViewMode: MushafViewMode
   riwayah: Riwayah
   wirdReaderStatusVisible: boolean
+}
+
+export type RequestedMushafPageFailure = {
+  cancel: () => void
+  message: string
+  requestedPage: number
+  retry: () => void
+  visiblePage: number
 }
 
 const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
@@ -87,6 +96,14 @@ export function MushafRoute({
     if (!surah) return undefined
     return surahIndex.find((row) => row.n === surah)?.name_ar ?? `سورة ${surah}`
   }, [surahIndex, visiblePage?.resolved.firstVerse.surah])
+  const requestedPageFailure = createRequestedPageFailure({
+    cancel: () => {
+      if (visiblePage) replaceMushafHash(visiblePage.resolved.page)
+    },
+    requested: windowState.requested,
+    retry: windowState.retry,
+    visiblePage: visiblePage?.resolved.page,
+  })
 
   useEffect(() => {
     const query = window.matchMedia?.(COMPACT_LANDSCAPE_QUERY)
@@ -114,10 +131,12 @@ export function MushafRoute({
 
   useEffect(() => {
     if (routePageRef.current !== page) {
-      setChromeVisible(false)
+      setChromeVisible(Boolean(requestedPageFailure))
       routePageRef.current = page
+    } else if (requestedPageFailure) {
+      setChromeVisible(true)
     }
-  }, [page])
+  }, [page, requestedPageFailure?.requestedPage, requestedPageFailure?.visiblePage])
 
   useEffect(() => {
     let active = true
@@ -232,7 +251,7 @@ export function MushafRoute({
     <ReaderPageShell
       chromeVisible={chromeVisible}
       interactionSuspended={interactionSuspended}
-      label={`Page ${page}`}
+      label={`Page ${visiblePage?.resolved.page ?? page}`}
       mode="mushaf"
       onChromeVisibleChange={setChromeVisible}
       onModeChange={(nextMode) => {
@@ -252,56 +271,67 @@ export function MushafRoute({
       wirdSummary={wirdSummary}
     >
       {assetState !== 'ready' ? (
-        <ReaderAssetGate label="Qalun" state={assetState} />
+        <ReaderAssetGate label="Qalun" onManageAssets={openAssetSettings} state={assetState} />
       ) : visiblePage ? (
-        <MushafPageViewer
-          bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
-          chromeVisible={chromeVisible}
-          fitWidth={framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
-            ? true
-            : activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
-          framingValue={framingCapability.hasValidFraming ? activeSettings?.mushafPageFraming : 0}
-          inlineSvg={visiblePage.media.kind === 'inline-svg' ? visiblePage.media.inlineSvg : emptyInlineSvg}
-          onDominantPageChange={(nextPage) => {
-            if (nextPage === visiblePage.resolved.page) return
-            const nextAsset = readyWindowPage(windowState.entries, nextPage)
-            if (!nextAsset) return
-            if (nextPage > visiblePage.resolved.page) {
-              advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
-            }
-            commitVisiblePage(nextAsset)
-            replaceMushafHash(nextPage)
-          }}
-          onNavigate={(nextPage) => {
-            if (nextPage > visiblePage.resolved.page) {
-              advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
-            }
-            const readyAdjacent = readyWindowPage(windowState.entries, nextPage)
-            if (readyAdjacent) commitVisiblePage(readyAdjacent)
-            setChromeVisible(false)
-            window.location.hash = mushafHash(nextPage)
-          }}
-          onRequestPage={windowState.retry}
-          onToggleBookmark={() => {
-            const bookmarkPage = visiblePage.resolved.page
-            void toggleBookmark({
-              kind: 'page',
-              page: bookmarkPage,
-              riwayah: visiblePage.resolved.riwayah,
-              surah: 0,
-              verseKey: createMushafPageBookmarkKey(bookmarkPage),
-            })
-          }}
-          onToggleChrome={(visible) => setChromeVisible(visible)}
-          pages={windowState.entries}
-          resolved={visiblePage.resolved}
-          surahLabel={currentSurahLabel}
-          viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
-        />
+        <>
+          <MushafPageViewer
+            bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
+            chromeVisible={chromeVisible}
+            fitWidth={framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
+              ? true
+              : activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
+            framingValue={framingCapability.hasValidFraming ? activeSettings?.mushafPageFraming : 0}
+            inlineSvg={visiblePage.media.kind === 'inline-svg' ? visiblePage.media.inlineSvg : emptyInlineSvg}
+            onDominantPageChange={(nextPage) => {
+              if (nextPage === visiblePage.resolved.page) return
+              const nextAsset = readyWindowPage(windowState.entries, nextPage)
+              if (!nextAsset) return
+              if (nextPage > visiblePage.resolved.page) {
+                advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
+              }
+              commitVisiblePage(nextAsset)
+              replaceMushafHash(nextPage)
+            }}
+            onNavigate={(nextPage) => {
+              if (nextPage > visiblePage.resolved.page) {
+                advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
+              }
+              const readyAdjacent = readyWindowPage(windowState.entries, nextPage)
+              if (readyAdjacent) commitVisiblePage(readyAdjacent)
+              setChromeVisible(false)
+              window.location.hash = mushafHash(nextPage)
+            }}
+            onRequestPage={windowState.retry}
+            onToggleBookmark={() => {
+              const bookmarkPage = visiblePage.resolved.page
+              void toggleBookmark({
+                kind: 'page',
+                page: bookmarkPage,
+                riwayah: visiblePage.resolved.riwayah,
+                surah: 0,
+                verseKey: createMushafPageBookmarkKey(bookmarkPage),
+              })
+            }}
+            onToggleChrome={(visible) => setChromeVisible(visible)}
+            pages={windowState.entries}
+            resolved={visiblePage.resolved}
+            surahLabel={currentSurahLabel}
+            viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
+          />
+          {requestedPageFailure ? (
+            <section aria-live="polite" className="qar:m-5 qar:grid qar:gap-3 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" role="status">
+              <p className="qar:m-0 qar:text-sm qar:text-muted">{requestedPageFailure.message}</p>
+              <div className="qar:flex qar:flex-wrap qar:gap-2">
+                <Button onClick={requestedPageFailure.retry} size="sm">Retry page {requestedPageFailure.requestedPage}</Button>
+                <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">Stay on page {requestedPageFailure.visiblePage}</Button>
+              </div>
+            </section>
+          ) : null}
+        </>
       ) : windowState.requested?.status === 'error' ? (
-        <ReaderAssetGate label="Mushaf" onRetry={() => windowState.retry(page)} state="error" />
+        <ReaderAssetGate label="Mushaf" onManageAssets={openAssetSettings} onRetry={() => windowState.retry(page)} state="error" />
       ) : windowState.requested?.status === 'unavailable' ? (
-        <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} onRetry={() => windowState.retry(page)} state="missing" />
+        <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} onManageAssets={openAssetSettings} onRetry={() => windowState.retry(page)} state="missing" />
       ) : (
         <section className="qar:m-5 qar:min-h-28 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Loading Mushaf page" aria-live="polite" />
       )}
@@ -318,6 +348,33 @@ export function MushafRoute({
     if (onReplaceHash) onReplaceHash(href)
     else window.history.replaceState(null, '', href)
   }
+}
+
+function createRequestedPageFailure({
+  cancel,
+  requested,
+  retry,
+  visiblePage,
+}: {
+  cancel: () => void
+  requested: ReturnType<typeof useMushafPageWindow>['requested']
+  retry: (page: number) => void
+  visiblePage?: number
+}): RequestedMushafPageFailure | null {
+  if (!visiblePage || !requested || requested.page === visiblePage || (requested.status !== 'error' && requested.status !== 'unavailable')) {
+    return null
+  }
+  return {
+    cancel,
+    message: `Mushaf page ${requested.page} could not be loaded. Page ${visiblePage} remains open.`,
+    requestedPage: requested.page,
+    retry: () => retry(requested.page),
+    visiblePage,
+  }
+}
+
+function openAssetSettings(): void {
+  window.location.hash = REACT_ROUTES.assets
 }
 
 async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
+  loadMushafPageProfileContext,
   loadPreparedMushafPage,
-  loadMushafPageAsset,
   prepareExternalMushafImage,
   selectExternalMushafSource,
   type MushafPageLoadPurpose,
+  type MushafPageProfileContext,
   type MushafReadyPageAssetState,
   type PreparedMushafPage,
 } from '../../../packs/mushaf-page-asset'
@@ -19,6 +20,12 @@ export type MushafPageWindowEntry =
 
 type State = { entries: MushafPageWindowEntry[]; profileKey: string | null }
 type Request = { controller: AbortController; promise: Promise<void>; purpose: 'current' | 'preview' | 'descriptor' }
+type ProfileRequest = {
+  controller: AbortController
+  failed: boolean
+  key: string
+  promise: Promise<MushafPageProfileContext>
+}
 
 export function useMushafPageWindow(input: {
   enabled: boolean
@@ -36,13 +43,21 @@ export function useMushafPageWindow(input: {
   const keyRef = useRef(profileKey)
   const pagesRef = useRef(pages)
   const requests = useRef(new Map<number, Request>())
+  const profileRequest = useRef<ProfileRequest | null>(null)
   const [retryVersion, setRetryVersion] = useState(0)
   stateRef.current = state; profileRef.current = input.profile; keyRef.current = profileKey; pagesRef.current = pages
 
   useEffect(() => {
     abortAll(requests.current)
+    profileRequest.current?.controller.abort()
+    profileRequest.current = profileKey && input.profile
+      ? createProfileRequest(profileKey, input.profile)
+      : null
     setState({ profileKey, entries: profileKey ? pages.map((page) => ({ page, status: 'loading' })) : [] })
-    return () => abortAll(requests.current)
+    return () => {
+      abortAll(requests.current)
+      profileRequest.current?.controller.abort()
+    }
   }, [profileKey])
 
   useEffect(() => {
@@ -79,9 +94,11 @@ export function useMushafPageWindow(input: {
         requests.current.delete(page)
       }
       const profile = profileRef.current
-      if (!profile) return
+      const sharedProfile = profileRequest.current
+      if (!profile || !sharedProfile || sharedProfile.key !== profileKey) return
       const controller = new AbortController()
-      const promise = loadWindowPage({ ...profile, page, signal: controller.signal })
+      const promise = sharedProfile.promise
+        .then((context) => loadPreparedMushafPage({ ...profile, context, page, signal: controller.signal }))
         .then(async (prepared) => {
           if (controller.signal.aborted || keyRef.current !== profileKey || !pagesRef.current.includes(page)) return
           if (purpose === 'descriptor') return setEntry({ page, prepared, status: 'descriptor' })
@@ -112,6 +129,13 @@ export function useMushafPageWindow(input: {
 
   const retry = useCallback((page: number) => {
     requests.current.get(page)?.controller.abort(); requests.current.delete(page)
+    const currentProfileRequest = profileRequest.current
+    const profile = profileRef.current
+    const key = keyRef.current
+    if (currentProfileRequest?.failed && profile && key) {
+      currentProfileRequest.controller.abort()
+      profileRequest.current = createProfileRequest(key, profile)
+    }
     setState((current) => ({ ...current, entries: current.entries.map((entry) => entry.page === page ? { page, status: 'loading' } : entry) }))
     setRetryVersion((value) => value + 1)
   }, [])
@@ -128,12 +152,16 @@ function isPurposeUpgrade(
   return (current === 'descriptor' && next !== 'descriptor') || (current === 'preview' && next === 'current')
 }
 
-async function loadWindowPage(input: Parameters<typeof loadMushafPageAsset>[0]): Promise<PreparedMushafPage> {
-  const v1 = await loadMushafPageAsset(input)
-  if (v1.status === 'ready') {
-    if (v1.media.kind !== 'inline-svg') throw new Error('Mushaf SVG unavailable')
-    return { kind: 'inline-svg', assetUrl: v1.resolved.assetUrl, inlineSvg: v1.media.inlineSvg, resolved: v1.resolved }
-  }
-  if (v1.status === 'error' && /V2 reader loader|External-image/i.test(v1.error.message)) return loadPreparedMushafPage(input)
-  throw v1.status === 'error' ? v1.error : new Error('Mushaf page unavailable')
+function createProfileRequest(
+  key: string,
+  profile: { mushafEditionId: string; riwayah: Riwayah },
+): ProfileRequest {
+  const controller = new AbortController()
+  const request = { controller, failed: false, key } as ProfileRequest
+  request.promise = loadMushafPageProfileContext({ ...profile, signal: controller.signal })
+    .catch((error) => {
+      request.failed = true
+      throw error
+    })
+  return request
 }

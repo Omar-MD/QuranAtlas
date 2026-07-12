@@ -118,7 +118,7 @@ export type MushafFramingCapability = {
   representativeTextFrame?: MushafPageFraming['textFrame']
 }
 
-type MushafAssetIndex = {
+export type MushafAssetIndex = {
   assets?: Array<{
     files?: Array<{ url?: unknown }>
     manifestUrl?: unknown
@@ -130,7 +130,15 @@ type MushafAssetIndex = {
   }>
 }
 
-type LoadMushafPageAssetOptions = {
+export type MushafPageProfileContext = {
+  index: MushafAssetIndex
+  manifest: MushafManifest
+  mushafEditionId: string
+  riwayah: Riwayah
+}
+
+export type LoadMushafPageAssetOptions = {
+  context?: MushafPageProfileContext
   fetcher?: typeof fetch
   mushafEditionId: string
   page: number
@@ -153,6 +161,7 @@ const COLOR_TOKENS: Record<string, string> = {
 }
 
 export async function loadMushafPageAsset({
+  context,
   fetcher = fetch,
   mushafEditionId,
   page,
@@ -161,29 +170,9 @@ export async function loadMushafPageAsset({
 }: LoadMushafPageAssetOptions): Promise<MushafPageAssetState> {
   if (signal?.aborted) return { status: 'aborted' }
   try {
-    const index = await fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal)
-    if (!hasIndexedMushafAsset(index, { mushafEditionId, page, riwayah })) {
-      return {
-        status: 'unavailable',
-        reason: `Mushaf page pack is not indexed for ${riwayah}/${mushafEditionId}`,
-        riwayah,
-        mushafEditionId,
-      }
-    }
-    const manifest = await loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal })
-    if (manifest.version !== 1) throw new Error('External-image Mushaf pages require the V2 reader loader')
-    const unresolved = resolveMushafPage(manifest, { mushafEditionId, page, riwayah })
-    const svgText = await fetchText(fetcher, unresolved.assetUrl, signal)
-    const inlineSvg = prepareReactInlineMushafSvg(svgText)
-    const sourceViewBox = manifest.pages.find((entry) => entry.page === unresolved.page)?.viewBox?.trim()
-    if (inlineSvg.viewBoxText !== sourceViewBox) {
-      throw new Error('Mushaf page SVG viewBox does not match the page manifest')
-    }
-    const resolved: MushafResolvedPage = {
-      ...unresolved,
-      displaySize: { width: inlineSvg.viewBox.width, height: inlineSvg.viewBox.height },
-    }
-    return { status: 'ready', media: { kind: 'inline-svg', inlineSvg }, resolved }
+    const prepared = await loadPreparedMushafPage({ context, fetcher, mushafEditionId, page, riwayah, signal })
+    if (prepared.kind !== 'inline-svg') throw new Error('External-image Mushaf pages require the prepared page loader')
+    return { status: 'ready', media: { kind: 'inline-svg', inlineSvg: prepared.inlineSvg }, resolved: prepared.resolved }
   } catch (error) {
     if (isAbortError(error) || signal?.aborted) return { status: 'aborted' }
     if (error instanceof Error && /Failed to fetch .*: 404/.test(error.message)) {
@@ -194,57 +183,63 @@ export async function loadMushafPageAsset({
 }
 
 export async function loadPreparedExternalMushafPage({
+  context,
   fetcher = fetch,
   mushafEditionId,
   page,
   riwayah,
   signal,
 }: LoadMushafPageAssetOptions): Promise<PreparedExternalMushafPage> {
-  if (signal?.aborted) throw abortError()
-  const index = await fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal)
-  const manifest = await loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal })
-  if (manifest.version !== 2) throw new Error('Prepared external Mushaf pages require a V2 manifest')
-  if (signal?.aborted) throw abortError()
-
-  const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(page)))
-  const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
-  if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
-  const indexEntry = findExternalMushafIndexEntry(index, { mushafEditionId, riwayah })
-  validateExternalManifestIndexAgreement(manifest, indexEntry, { mushafEditionId, riwayah })
-
-  const preview = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'preview')
-  const full = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'full')
-  return {
-    kind: 'external-image',
-    preview,
-    full,
-    page: clampedPage,
-    pageCount: manifest.pageCount,
-    firstVerse: pageEntry.firstVerse,
-    lastVerse: lastVerseForMushafPage(manifest, clampedPage),
-    framing: pageEntry.framing,
-    resolved: {
-      riwayah,
-      mushafEditionId,
-      page: clampedPage,
-      pageCount: manifest.pageCount,
-      riwayahLabel: RIWAYAH_LABELS[riwayah],
-      assetUrl: full.assetUrl,
-      displaySize: { width: full.width, height: full.height },
-      framing: pageEntry.framing,
-      firstVerse: pageEntry.firstVerse,
-      lastVerse: lastVerseForMushafPage(manifest, clampedPage),
-    },
-  }
+  const prepared = await loadPreparedMushafPage({ context, fetcher, mushafEditionId, page, riwayah, signal })
+  if (prepared.kind !== 'external-image') throw new Error('Prepared external Mushaf pages require a V2 manifest')
+  return prepared
 }
 
 export async function loadPreparedMushafPage(options: LoadMushafPageAssetOptions): Promise<PreparedMushafPage> {
-  const manifest = await loadMushafManifest(options)
-  if (manifest.version === 2) return loadPreparedExternalMushafPage(options)
-  const state = await loadMushafPageAsset(options)
-  if (state.status !== 'ready') throw state.status === 'error' ? state.error : new Error('Mushaf page unavailable')
-  if (state.media.kind !== 'inline-svg') throw new Error('Invalid inline Mushaf media')
-  return { kind: 'inline-svg', assetUrl: state.resolved.assetUrl, inlineSvg: state.media.inlineSvg, resolved: state.resolved }
+  const {
+    fetcher = fetch,
+    mushafEditionId,
+    page,
+    riwayah,
+    signal,
+  } = options
+  if (signal?.aborted) throw abortError()
+  const context = options.context ?? await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal })
+  assertMushafPageProfileContext(context, { mushafEditionId, riwayah })
+  if (signal?.aborted) throw abortError()
+  if (context.manifest.version === 2) {
+    return prepareExternalMushafPage({ ...context, manifest: context.manifest }, page)
+  }
+  if (!hasIndexedMushafAsset(context.index, { mushafEditionId, page, riwayah })) {
+    throw new Error(`Mushaf page pack is not indexed for ${riwayah}/${mushafEditionId}`)
+  }
+  const unresolved = resolveMushafPage(context.manifest, { mushafEditionId, page, riwayah })
+  const svgText = await fetchText(fetcher, unresolved.assetUrl, signal)
+  const inlineSvg = prepareReactInlineMushafSvg(svgText)
+  const sourceViewBox = context.manifest.pages.find((entry) => entry.page === unresolved.page)?.viewBox?.trim()
+  if (inlineSvg.viewBoxText !== sourceViewBox) throw new Error('Mushaf page SVG viewBox does not match the page manifest')
+  const resolved: MushafResolvedPage = {
+    ...unresolved,
+    displaySize: { width: inlineSvg.viewBox.width, height: inlineSvg.viewBox.height },
+  }
+  return { kind: 'inline-svg', assetUrl: resolved.assetUrl, inlineSvg, resolved }
+}
+
+export async function loadMushafPageProfileContext({
+  fetcher = fetch,
+  mushafEditionId,
+  riwayah,
+  signal,
+}: Omit<LoadMushafPageAssetOptions, 'context' | 'page'>): Promise<MushafPageProfileContext> {
+  if (signal?.aborted) throw abortError()
+  const [index, manifest] = await Promise.all([
+    fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal),
+    loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal }),
+  ])
+  if (signal?.aborted) throw abortError()
+  const context = { index, manifest, mushafEditionId, riwayah }
+  assertMushafPageProfileContext(context, { mushafEditionId, riwayah })
+  return context
 }
 
 export async function loadMushafFramingCapability({
@@ -259,12 +254,10 @@ export async function loadMushafFramingCapability({
   signal?: AbortSignal
 }): Promise<MushafFramingCapability> {
   try {
-    const index = await fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal)
-    if (!findExternalMushafIndexEntrySafe(index, { mushafEditionId, riwayah })) return { hasValidFraming: false }
-    const manifest = await loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal })
+    const context = await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal })
+    const manifest = context.manifest
     if (manifest.version !== 2) return { hasValidFraming: false }
-    // This reuses the V2 descriptor/index agreement validator before exposing a private capability.
-    await loadPreparedExternalMushafPage({ fetcher, mushafEditionId, page: 1, riwayah, signal })
+    await loadPreparedMushafPage({ context, fetcher, mushafEditionId, page: 1, riwayah, signal })
     const hasValidFraming = manifest.pages.length === manifest.pageCount
       && manifest.pages.every((page, index) => page.page === index + 1 && isMushafPageFraming(page.framing))
     if (!hasValidFraming) return { hasValidFraming: false }
@@ -361,6 +354,65 @@ function hasIndexedMushafAsset(
   }
   const pageUrl = mushafPageUrl(expected, page)
   return Boolean(entry.files?.some((file) => file.url === pageUrl))
+}
+
+function assertMushafPageProfileContext(
+  context: MushafPageProfileContext,
+  expected: { riwayah: Riwayah; mushafEditionId: string },
+): void {
+  if (context.riwayah !== expected.riwayah || context.mushafEditionId !== expected.mushafEditionId) {
+    throw new Error('Mushaf page profile context identity mismatch')
+  }
+  assertMushafManifest(context.manifest, expected)
+  const indexed = context.index.assets?.find((asset) => (
+    asset.riwayah === expected.riwayah
+    && asset.mushafEditionId === expected.mushafEditionId
+    && asset.manifestUrl === mushafManifestUrl(expected)
+    && asset.pageCount === context.manifest.pageCount
+  ))
+  if (!indexed) throw new Error(`Mushaf page pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
+  if (context.manifest.version === 2) {
+    const external = findExternalMushafIndexEntry(context.index, expected)
+    validateExternalManifestIndexAgreement(context.manifest, external, expected)
+  } else if (indexed.version === 'v2') {
+    throw new Error('Mushaf asset index version does not match its manifest')
+  }
+}
+
+function prepareExternalMushafPage(
+  context: MushafPageProfileContext & { manifest: MushafManifestV2 },
+  page: number,
+): PreparedExternalMushafPage {
+  const { manifest, mushafEditionId, riwayah } = context
+  const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(page)))
+  const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
+  if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
+  const indexEntry = findExternalMushafIndexEntry(context.index, { mushafEditionId, riwayah })
+  const preview = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'preview')
+  const full = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'full')
+  const lastVerse = lastVerseForMushafPage(manifest, clampedPage)
+  return {
+    kind: 'external-image',
+    preview,
+    full,
+    page: clampedPage,
+    pageCount: manifest.pageCount,
+    firstVerse: pageEntry.firstVerse,
+    lastVerse,
+    framing: pageEntry.framing,
+    resolved: {
+      riwayah,
+      mushafEditionId,
+      page: clampedPage,
+      pageCount: manifest.pageCount,
+      riwayahLabel: RIWAYAH_LABELS[riwayah],
+      assetUrl: full.assetUrl,
+      displaySize: { width: full.width, height: full.height },
+      framing: pageEntry.framing,
+      firstVerse: pageEntry.firstVerse,
+      lastVerse,
+    },
+  }
 }
 
 export function prepareReactInlineMushafSvg(text: string): ReactInlineMushafSvg {
@@ -475,17 +527,6 @@ function findExternalMushafIndexEntry(
   ))
   if (!entry) throw new Error(`Mushaf external-image pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
   return entry as MushafExternalIndexEntry
-}
-
-function findExternalMushafIndexEntrySafe(
-  index: MushafAssetIndex,
-  expected: { riwayah: Riwayah; mushafEditionId: string },
-): MushafExternalIndexEntry | null {
-  try {
-    return findExternalMushafIndexEntry(index, expected)
-  } catch {
-    return null
-  }
 }
 
 function validateExternalManifestIndexAgreement(

@@ -254,6 +254,31 @@ for (const fixture of readFixtures) {
   }
 }
 
+test('keeps the visible Mushaf page truthful when the requested page fails', async ({ page }) => {
+  let page43Attempts = 0
+  await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+    route: '/#/m/42',
+  })
+  await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+  await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', async (route) => {
+    page43Attempts += 1
+    await route.fulfill({ body: '', status: 503 })
+  })
+  await page.reload()
+  await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+  await page.evaluate(() => { window.location.hash = '#/m/43' })
+  await expect(page).toHaveURL(/#\/m\/43$/)
+  await expect(page.getByRole('status').filter({ hasText: 'Mushaf page 43 could not be loaded. Page 42 remains open.' })).toBeVisible()
+  await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+  await expect(page.getByLabel('Mushaf page 42', { exact: true })).toHaveText('42')
+
+  const attemptsBeforeRetry = page43Attempts
+  await page.getByRole('button', { name: 'Retry page 43' }).click()
+  await expect.poll(() => page43Attempts).toBeGreaterThan(attemptsBeforeRetry)
+  await page.getByRole('button', { name: 'Stay on page 42' }).click()
+  await expect(page).toHaveURL(/#\/m\/42$/)
+})
+
 async function expectPrivatePagePixels(page: Page, pageNo: number) {
   const image = page.getByRole('img', { name: new RegExp(`Mushaf page ${pageNo}, Qaloon`, 'i') }).locator('img')
   await expect(image).toHaveAttribute('src', new RegExp(`/pages/${String(pageNo).padStart(3, '0')}-2136\\.webp$`))
