@@ -24,6 +24,7 @@ export function App() {
   useWirdReminderScheduler()
   const initialRoute = useMemo(() => getInitialReactHash(), [])
   const [hash, setHash] = useState(initialRoute)
+  const [launchRefreshVersion, setLaunchRefreshVersion] = useState(0)
   const [lastReaderHash, setLastReaderHash] = useState<string | null>(null)
   const [settingsOverlay, setSettingsOverlay] = useState<{
     initialAssetsExpanded?: boolean
@@ -31,7 +32,7 @@ export function App() {
     previousHash: string
     returnFocusId?: string
   } | null>(null)
-  const launchRestore = useLaunchRestore(hash)
+  const launchRestore = useLaunchRestore(hash, launchRefreshVersion)
   const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : launchRestore.status === 'setup' ? '#/onboarding' : hash
   const activeRoute = matchReactRoute(activeHash)
   useFirstLaunchNotificationPermission(launchRestore.status === 'ready')
@@ -165,6 +166,7 @@ export function App() {
         <Suspense fallback={<LaunchSplash />}>
           <OnboardingRoute onComplete={(nextHash) => {
             window.history.replaceState(null, '', nextHash)
+            setLaunchRefreshVersion((version) => version + 1)
             setHash(nextHash)
           }} pendingHash={launchRestore.hash} setup={launchRestore.setup} />
         </Suspense>

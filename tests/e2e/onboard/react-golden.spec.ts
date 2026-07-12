@@ -3,11 +3,14 @@ import { expect, test, type Page } from '@playwright/test'
 import { QURAN_ATLAS_DB_NAME } from '../../../src/storage/schema'
 import { expectAxeClean, expectNoHorizontalOverflow } from '../fixtures/react-a11y'
 import {
+  clearTargetStorage,
   expectNoGuardFailures,
   expectReactProductionPreflight,
   GOLDEN_FIXTURES,
   GOLDEN_VIEWPORTS,
   installPageGuards,
+  PRIVATE_MUSHAF_ENABLED,
+  PRIVATE_MUSHAF_EDITION_ID,
   seedTargetState,
   targetUrl,
 } from '../fixtures/react-golden-routes'
@@ -37,9 +40,38 @@ async function readReactSettings(page: Page) {
   )
 }
 
+test.describe('private Furatiyyah setup', () => {
+  test.skip(!PRIVATE_MUSHAF_ENABLED, 'Private Mushaf journeys require QURANATLAS_PRIVATE_MUSHAF=1.')
+
+  test('keeps a fresh private deep link after the one-time selection', async ({ page }) => {
+    await page.setViewportSize(GOLDEN_VIEWPORTS['phone-standard'])
+    await expectReactProductionPreflight(page)
+    await clearTargetStorage(page, 'react')
+    const guard = installPageGuards(page, 'private edition setup')
+    await page.goto(targetUrl('react', '/#/m/42'))
+
+    const setup = page.getByRole('main', { name: 'Mushaf edition setup' })
+    await expect(setup).toBeVisible()
+    await setup.getByRole('combobox', { name: 'Mushaf edition' }).click()
+    await page.getByRole('option', { name: 'Qalun Furatiyyah 2023' }).click()
+    await setup.getByRole('button', { name: 'Continue' }).click()
+
+    await expect(page).toHaveURL(/#\/m\/42$/)
+    await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
+    await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+    await expect(readReactSettings(page)).resolves.toMatchObject({
+      mushafEditionId: PRIVATE_MUSHAF_EDITION_ID,
+      mushafEditionSetupVersion: 1,
+    })
+    await expectNoGuardFailures(guard)
+    guard.dispose()
+  })
+})
+
 for (const fixture of onboardFixtures) {
   for (const viewportId of fixture.viewports) {
     test(`@golden @a11y ${fixture.id} ${viewportId}`, async ({ page }) => {
+      test.skip(PRIVATE_MUSHAF_ENABLED, 'The private artifact intentionally offers a fresh edition choice in the dedicated private setup journey.')
       await page.setViewportSize(GOLDEN_VIEWPORTS[viewportId])
       await expectReactProductionPreflight(page)
       await seedTargetState(page, 'react', fixture.seed)

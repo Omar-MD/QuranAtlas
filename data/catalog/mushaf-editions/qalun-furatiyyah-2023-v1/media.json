@@ -9,13 +9,25 @@
     { "role": "preview", "width": 1280 },
     { "role": "full", "width": 2136 }
   ],
-  "gate": "pending-runtime",
+  "gate": "passed",
   "preliminaryEvidence": {
     "svgPage1Bytes": 4619152,
     "webpPage1FullBytes": 860656,
     "webpPage1PreviewBytes": 408138,
     "maxTransferredBytes": 4194304,
     "maxDecodedBytes": 67108864,
+    "physicalDevices": []
+  },
+  "runtimeEvidence": {
+    "environment": "workspace-production-preview",
+    "maxTransferredBytes": 1542504,
+    "maxTransferredPage": 2,
+    "maxDecodedBytes": 39930880,
+    "maxDecodedPage": 2,
+    "privateBrowserTestsPassed": 35,
+    "privateBrowserTestsSkipped": 4,
+    "tenTurnsPassed": true,
+    "sustainedScrollPassed": true,
     "physicalDevices": []
   }
 }

@@ -2,8 +2,19 @@ import { expect, test } from '@playwright/test'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { expectReactProductionPreflight, seedTargetState, targetUrl } from '../fixtures/react-golden-routes'
-import { expectOfflineReaderLoads, expectReactServiceWorkerReady } from '../fixtures/react-offline'
+import {
+  expectReactProductionPreflight,
+  openSeededReactMushafRoute,
+  PRIVATE_MUSHAF_EDITION_ID,
+  PRIVATE_MUSHAF_ENABLED,
+  seedTargetState,
+  targetUrl,
+} from '../fixtures/react-golden-routes'
+import {
+  expectOfflinePrivateMushafRendition,
+  expectOfflineReaderLoads,
+  expectReactServiceWorkerReady,
+} from '../fixtures/react-offline'
 
 test.skip(process.env.PLAYWRIGHT_INCLUDE_OFFLINE !== '1', 'React offline proof runs only against the preview build.')
 
@@ -58,7 +69,7 @@ test('@offline React app shell and installed reader assets survive offline reloa
       hasPrivate: index.assets?.some((asset) => asset.mushafEditionId === 'qalun-furatiyyah-2023-v1') ?? false,
       hasQuranWs: index.assets?.some((asset) => asset.mushafEditionId === 'qalun-quran-ws-v1') ?? false,
     }
-  })).toEqual({ hasPrivate: false, hasQuranWs: true })
+  })).toEqual({ hasPrivate: PRIVATE_MUSHAF_ENABLED, hasQuranWs: true })
 
   await context.setOffline(true)
   await page.reload()
@@ -68,4 +79,19 @@ test('@offline React app shell and installed reader assets survive offline reloa
     return response.json() as Promise<{ assets?: Array<{ mushafEditionId?: string }> }>
   })
   expect(offlineAvailability.assets?.some((asset) => asset.mushafEditionId === 'qalun-quran-ws-v1')).toBe(true)
+})
+
+test.describe('private Furatiyyah offline media', () => {
+  test.skip(!PRIVATE_MUSHAF_ENABLED, 'Private Mushaf journeys require QURANATLAS_PRIVATE_MUSHAF=1.')
+
+  test('@offline revisits an exact fetched rendition', async ({ page }) => {
+    await expectReactProductionPreflight(page)
+    await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+      mushafEditionId: PRIVATE_MUSHAF_EDITION_ID,
+      route: '/#/m/42',
+    })
+    await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
+    await expectReactServiceWorkerReady(page)
+    await expectOfflinePrivateMushafRendition(page, { cachedPage: 42 })
+  })
 })

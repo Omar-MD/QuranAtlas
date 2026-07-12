@@ -90,9 +90,12 @@ export function MushafPageViewer({
   const isScrollModeRef = useRef(false)
   const restoreStageFocusRef = useRef(false)
   const interactionSuspended = useReaderInteractionSuspended()
-  const ratio = resolved.displaySize
+  const sourceRatio = resolved.displaySize
     ? resolved.displaySize.width / resolved.displaySize.height
     : inlineSvg.viewBox.width / inlineSvg.viewBox.height
+  const ratio = resolved.displaySize && resolved.framing
+    ? mushafImagePlacement(resolved.displaySize, resolved.framing.textFrame, framingValue).ratio
+    : sourceRatio
   const isScrollMode = viewMode === 'continuous'
   const effectivePages = useMemo(
     () => pages ?? legacyPageEntries(adjacentPages, { inlineSvg, resolved }),
@@ -414,12 +417,16 @@ const MushafPageCell = ({
   ref?: (node: HTMLDivElement | null) => void
 }) => {
   const media = entry?.status === 'ready' ? entryMedia(entry.asset) : null
+  const frameRatio = entry?.status === 'ready' && media?.kind === 'external-image'
+    ? mushafImagePlacement(media.source, entry.asset.resolved.framing?.textFrame, framingValue).ratio
+    : undefined
   return <div
     aria-hidden={hidden ? true : undefined}
     className="qar-react-mushaf-page-cell"
     data-mushaf-cell={position}
     data-mushaf-cell-page={entry?.page}
     ref={ref}
+    style={frameRatio ? { aspectRatio: String(frameRatio) } : undefined}
   >
     {entry?.status === 'ready' && media?.kind === 'inline-svg' ? (
       <div

@@ -9,7 +9,7 @@ and data shapes live in `surfaces/<name>.md`.
 - Mushaf page reader route `#/m/:page` for the default Qaloon Mushaf.
 - Reader-first continuity restore through validated `lastSurface` and
   `currentPosition`.
-- Qaloon text/font and Bridges translation with a default quran.ws Mushaf profile; first or cleared storage makes exactly one Mushaf edition selection from the current compatible availability index.
+- Qaloon text/font and Bridges translation with a default quran.ws Mushaf profile; the private page build additionally exposes the reviewed Furatiyyah 2023 WebP edition. First or cleared storage makes exactly one Mushaf edition selection from the current compatible availability index.
 - Bridges translation with visibility toggle.
 - Single/Scroll Mushaf navigation with independent Fit page/Fit width, retained page loading, native vertical movement, and physical horizontal page gestures.
 - Reader typography controls, ambient chrome with one reader-only reading-view action, and Daily Wird.
@@ -51,7 +51,7 @@ and data shapes live in `surfaces/<name>.md`.
 - IDB `quran-atlas` v8 with active stores: `settings`, `activationState`,
   `datasetMeta`, `bookmarks`, `savedSearches`, `searchPackActivations`, and `searchPackStaging`.
 - Store schema through `src/storage/schema.ts` and Dexie helpers in `src/storage/**`.
-- Vite PWA service worker and offline runtime dataset cache, with a NetworkFirst mutable Mushaf availability index and cached offline fallback.
+- Vite PWA service worker and offline runtime dataset cache, with a NetworkFirst mutable Mushaf availability index and cached offline fallback; fetched Mushaf WebP renditions remain individually revisitable offline while unfetched pages report availability failure.
 - Same-device bookmark sync and clear-data safety behavior.
 - Generated dataset manifests, provenance, and package metadata.
 

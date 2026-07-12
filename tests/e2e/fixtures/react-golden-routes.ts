@@ -79,6 +79,9 @@ const APPLY_SCHEMA_SOURCE = `
 const APP_PREVIEW_PORT = process.env.APP_PREVIEW_PORT ?? '4173'
 const MVP_ASSET_CONTRACT_ID = 'mvp-default-assets-qaloon-bridges-v1'
 
+export const PRIVATE_MUSHAF_EDITION_ID = 'qalun-furatiyyah-2023-v1'
+export const PRIVATE_MUSHAF_ENABLED = process.env.QURANATLAS_PRIVATE_MUSHAF === '1'
+
 export const APP_TARGETS: Record<AppTargetId, AppTarget> = {
   react: {
     id: 'react',
@@ -232,10 +235,16 @@ export type ReactMushafSeedPreferences = {
 
 export type ReactMushafRouteSetup = {
   disableCompactLandscapeFitWidth?: boolean
+  mushafEditionId?: string
+  mushafPageFraming?: number
   route?: string
 }
 
-export async function seedReactMushafState(page: Page, prefs: ReactMushafSeedPreferences) {
+export async function seedReactMushafState(
+  page: Page,
+  prefs: ReactMushafSeedPreferences,
+  setup: Pick<ReactMushafRouteSetup, 'mushafEditionId' | 'mushafPageFraming'> = {},
+) {
   await page.goto('/favicon.ico')
   await page.evaluate(
     async ({ dbName }) => {
@@ -267,12 +276,14 @@ export async function seedReactMushafState(page: Page, prefs: ReactMushafSeedPre
       const tx = db.transaction('settings', 'readwrite')
       const settings = tx.objectStore('settings')
       const prefs = ${JSON.stringify(prefs)}
+      const setup = ${JSON.stringify(setup)}
 
       settings.put({ key: 'onboardingComplete', value: true })
       settings.put({ key: 'mvpAssetContractId', value: ${JSON.stringify(MVP_ASSET_CONTRACT_ID)} })
       settings.put({ key: 'riwayah', value: 'qaloon' })
       settings.put({ key: 'quranTextStyleId', value: 'uthmani-kfgqpc-v1' })
-      settings.put({ key: 'mushafEditionId', value: 'qalun-quran-ws-v1' })
+      settings.put({ key: 'mushafEditionId', value: setup.mushafEditionId ?? 'qalun-quran-ws-v1' })
+      settings.put({ key: 'mushafEditionSetupVersion', value: 1 })
       settings.put({ key: 'translationId', value: 'bridges' })
       settings.put({ key: 'translationVisible', value: true })
       settings.put({ key: 'theme', value: 'light' })
@@ -280,6 +291,9 @@ export async function seedReactMushafState(page: Page, prefs: ReactMushafSeedPre
       settings.put({ key: 'wirdReaderStatusVisible', value: false })
       settings.put({ key: 'mushafViewMode', value: prefs.mushafViewMode })
       settings.put({ key: 'mushafFitWidth', value: prefs.mushafFitWidth })
+      if (typeof setup.mushafPageFraming === 'number') {
+        settings.put({ key: 'mushafPageFraming', value: setup.mushafPageFraming })
+      }
 
       tx.oncomplete = () => { db.close(); resolve() }
       tx.onerror = () => { db.close(); reject(tx.error) }
@@ -298,7 +312,7 @@ export async function openSeededReactMushafRoute(
   prefs: ReactMushafSeedPreferences,
   setup: ReactMushafRouteSetup = {},
 ) {
-  await seedReactMushafState(page, prefs)
+  await seedReactMushafState(page, prefs, setup)
   if (setup.disableCompactLandscapeFitWidth) {
     await page.evaluate(() => {
       sessionStorage.setItem('quranatlas:mushaf-landscape-fit-width-disabled', 'true')

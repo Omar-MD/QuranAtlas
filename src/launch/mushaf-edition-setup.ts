@@ -80,7 +80,6 @@ function isAvailableQaloonMushaf(value: unknown): value is { label: string; mush
   const asset = value as Record<string, unknown>
   return asset.riwayah === 'qaloon'
     && asset.pageCount === 604
-    && asset.shipped !== false
     && (asset.availability === undefined || asset.availability === 'available')
     && typeof asset.mushafEditionId === 'string'
     && typeof asset.label === 'string'

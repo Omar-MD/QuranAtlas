@@ -7,6 +7,9 @@ import {
   GOLDEN_FIXTURES,
   GOLDEN_VIEWPORTS,
   installPageGuards,
+  openSeededReactMushafRoute,
+  PRIVATE_MUSHAF_EDITION_ID,
+  PRIVATE_MUSHAF_ENABLED,
   seedTargetState,
   targetUrl,
 } from '../fixtures/react-golden-routes'
@@ -250,3 +253,48 @@ for (const fixture of readFixtures) {
     })
   }
 }
+
+test.describe('private Furatiyyah Mushaf', () => {
+  test.skip(!PRIVATE_MUSHAF_ENABLED, 'Private Mushaf journeys require QURANATLAS_PRIVATE_MUSHAF=1.')
+
+  test('renders reviewed private pages as nonblank WebP assets and retains only adjacent media', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    const webpPages = new Set<number>()
+    page.on('request', (request) => {
+      const match = /\/pages\/(\d+)-\d+\.webp$/.exec(new URL(request.url()).pathname)
+      if (match) webpPages.add(Number(match[1]))
+    })
+    await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+      mushafEditionId: PRIVATE_MUSHAF_EDITION_ID,
+      route: '/#/m/42',
+    })
+
+    const current = page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })
+    await expect(current).toBeVisible()
+    await expect(current.locator('img')).toHaveAttribute('src', /\/pages\/042-2136\.webp$/)
+    const nonblank = await current.locator('img').evaluate((image) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 32
+      canvas.height = 32
+      const context = canvas.getContext('2d')
+      if (!context) return false
+      context.drawImage(image, 0, 0, canvas.width, canvas.height)
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
+      const colours = new Set<string>()
+      for (let index = 0; index < pixels.length; index += 16) {
+        colours.add(`${pixels[index]}:${pixels[index + 1]}:${pixels[index + 2]}:${pixels[index + 3]}`)
+      }
+      return image.complete && image.naturalWidth === 2136 && image.naturalHeight > 2000 && colours.size > 4
+    })
+    expect(nonblank).toBe(true)
+    await expect.poll(() => [...webpPages].sort((left, right) => left - right)).toEqual([41, 42, 43])
+
+    for (const pageNo of [1, 302, 604]) {
+      await page.goto(targetUrl('react', `/#/m/${pageNo}`))
+      const image = page.getByRole('img', { name: new RegExp(`Mushaf page ${pageNo}, Qaloon`, 'i') })
+      await expect(image).toBeVisible()
+      await expect(image.locator('img')).toHaveAttribute('src', new RegExp(`/pages/${String(pageNo).padStart(3, '0')}-2136\\.webp$`))
+    }
+    await expectNoHorizontalOverflow(page)
+  })
+})

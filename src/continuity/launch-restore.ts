@@ -81,7 +81,7 @@ export async function resolveHashWithLaunchState(db: LaunchSettingsReader, hash:
   return hash
 }
 
-export function useLaunchRestore(hash: string): LaunchRestoreState {
+export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestoreState {
   const [state, setState] = useState<LaunchRestoreState>(() => ({
     status: 'loading',
     hash,
@@ -137,7 +137,7 @@ export function useLaunchRestore(hash: string): LaunchRestoreState {
     return () => {
       active = false
     }
-  }, [hash])
+  }, [hash, refreshVersion])
 
   return state
 }

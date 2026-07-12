@@ -354,7 +354,12 @@ function hasIndexedMushafAsset(
     && asset.pageCount === 604,
   )
   if (!entry) return false
-  const pageUrl = mushafPageUrl(expected, Math.min(604, Math.max(1, Math.floor(expected.page))))
+  const page = Math.min(604, Math.max(1, Math.floor(expected.page)))
+  if (entry.version === 'v2') {
+    return Array.isArray(entry.pageUrls)
+      && entry.pageUrls[page - 1] === resolveMushafEditionAssetUrl(expected, `pages/${String(page).padStart(3, '0')}-2136.webp`)
+  }
+  const pageUrl = mushafPageUrl(expected, page)
   return Boolean(entry.files?.some((file) => file.url === pageUrl))
 }
 

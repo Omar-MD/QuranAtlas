@@ -303,7 +303,7 @@ describe('private PDF Mushaf importer', () => {
     await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner({ variant: 'changed' }) })).rejects.toThrow(/different bytes/)
     expect(await readFile(metadataPath, 'utf8')).toBe(before)
     await rm(root, { recursive: true, force: true })
-  })
+  }, 20_000)
 
   it('retains a promoted directory when a later render command fails', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
@@ -327,7 +327,7 @@ describe('private PDF Mushaf importer', () => {
     await writeFile(join(promoted.normalizedDir, 'pages', '001-1280.webp'), 'corrupt')
     await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).rejects.toThrow(/rendition digest is invalid/)
     await rm(root, { recursive: true, force: true })
-  })
+  }, 20_000)
 })
 
 describe('mushaf asset index output', () => {

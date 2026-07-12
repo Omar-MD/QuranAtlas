@@ -30,3 +30,20 @@ export async function expectOfflineReaderLoads(page: Page) {
     await page.context().setOffline(false)
   }
 }
+
+export async function expectOfflinePrivateMushafRendition(
+  page: Page,
+  { cachedPage }: { cachedPage: number },
+) {
+  const guard = installPageGuards(page, 'react private Mushaf offline reload', [/\/pages\/\d+-\d+\.webp$/])
+  await page.context().setOffline(true)
+  try {
+    await page.reload()
+    await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
+    await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${cachedPage},`, 'i') })).toBeVisible()
+    await expectNoGuardFailures(guard)
+  } finally {
+    guard.dispose()
+    await page.context().setOffline(false)
+  }
+}

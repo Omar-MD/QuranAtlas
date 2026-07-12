@@ -1,7 +1,11 @@
 import { expect, test, type CDPSession, type Page } from '@playwright/test'
 
 import { expectNoHorizontalOverflow } from '../fixtures/react-a11y'
-import { openSeededReactMushafRoute } from '../fixtures/react-golden-routes'
+import {
+  openSeededReactMushafRoute,
+  PRIVATE_MUSHAF_EDITION_ID,
+  PRIVATE_MUSHAF_ENABLED,
+} from '../fixtures/react-golden-routes'
 
 type MushafPrefs = {
   mushafFitWidth: boolean
@@ -37,6 +41,21 @@ async function openMushaf(
   await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
   const requestedPage = Number(/#\/m\/(\d+)/.exec(route)?.[1] ?? options.pageNo ?? 42)
   await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${requestedPage},`, 'i') })).toBeVisible()
+}
+
+async function openPrivateMushaf(
+  page: Page,
+  prefs: MushafPrefs,
+  options: { pageNo?: number; mushafPageFraming?: number } = {},
+): Promise<void> {
+  const pageNo = options.pageNo ?? 42
+  await openSeededReactMushafRoute(page, prefs, {
+    mushafEditionId: PRIVATE_MUSHAF_EDITION_ID,
+    mushafPageFraming: options.mushafPageFraming,
+    route: `/#/m/${pageNo}`,
+  })
+  await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
+  await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${pageNo},`, 'i') })).toBeVisible()
 }
 
 async function expectReadySingleNeighbor(page: Page, position: 'next' | 'previous', pageNo: number): Promise<void> {
@@ -723,5 +742,74 @@ test.describe('Mushaf responsive behavior', () => {
     await dialog.getByRole('button', { name: 'Close settings' }).click()
     await expect(page.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveCount(0)
     await expectNoHorizontalOverflow(page)
+  })
+})
+
+test.describe('private Furatiyyah framing', () => {
+  test.skip(!PRIVATE_MUSHAF_ENABLED, 'Private Mushaf journeys require QURANATLAS_PRIVATE_MUSHAF=1.')
+
+  test('@mobile keeps reviewed Full and Text framing reachable without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await openPrivateMushaf(page, FIT_WIDTH, { mushafPageFraming: 0 })
+    const pageImage = page.getByRole('img', { name: /Mushaf page 42,/i })
+    const fullFrame = await pageImage.locator('.qar-react-mushaf-page-frame').evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      imageWidth: Number.parseFloat(getComputedStyle(element.querySelector('img')!).width),
+      width: element.getBoundingClientRect().width,
+    }))
+    expect(Math.abs(fullFrame.imageWidth - fullFrame.width)).toBeLessThanOrEqual(1)
+
+    await page.getByRole('button', { name: 'Open settings' }).click()
+    const settings = page.getByRole('dialog', { name: 'Mushaf settings' })
+    await expect(settings).toBeVisible()
+    await settings.getByRole('button', { name: 'Text focus' }).click()
+    await expect(settings.getByRole('button', { name: 'Text focus' })).toHaveAttribute('aria-pressed', 'true')
+    const textFrame = await page.locator('[data-mushaf-cell="current"] .qar-react-mushaf-page-frame').evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      imageWidth: Number.parseFloat(getComputedStyle(element.querySelector('img')!).width),
+      width: element.getBoundingClientRect().width,
+    }))
+    expect(textFrame.height).toBeGreaterThan(fullFrame.height)
+    expect(textFrame.imageWidth).toBeGreaterThan(textFrame.width)
+
+    const slider = settings.getByRole('slider', { name: "Qur'an text size" })
+    await slider.press('Home')
+    for (let step = 0; step < 50; step += 1) await slider.press('ArrowRight')
+    await expect(slider).toHaveAttribute('aria-valuenow', '50')
+    await settings.getByRole('button', { name: 'Close settings' }).click()
+    const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
+    await expect(stage).toBeVisible()
+    const verticalReachability = await stage.evaluate((element) => {
+      const frame = element.querySelector<HTMLElement>('[data-mushaf-cell="current"] .qar-react-mushaf-page-frame')
+      if (!frame) return false
+      const stageBox = element.getBoundingClientRect()
+      const frameBox = frame.getBoundingClientRect()
+      return element.scrollHeight > element.clientHeight
+        || (frameBox.top >= stageBox.top && frameBox.bottom <= stageBox.bottom)
+    })
+    expect(verticalReachability).toBe(true)
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test('preserves the private route, counter, and bookmark across ten turns and a sustained Scroll anchor', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await openPrivateMushaf(page, FIT_PAGE)
+    const bookmark = page.getByRole('button', { name: 'Bookmark Mushaf page 42' })
+    await bookmark.click()
+    await expect(page.getByRole('button', { name: 'Remove bookmark for Mushaf page 42' })).toBeVisible()
+    for (let expectedPage = 43; expectedPage <= 52; expectedPage += 1) {
+      await expect(page.locator(`[data-mushaf-cell="next"][data-mushaf-cell-page="${expectedPage}"] img`)).toHaveCount(1)
+      await page.keyboard.press('ArrowLeft')
+      await expect(page).toHaveURL(new RegExp(`#\\/m\\/${expectedPage}$`))
+    }
+    await expect(page.getByRole('img', { name: /Mushaf page 52,/i })).toBeVisible()
+
+    await openPrivateMushaf(page, SCROLL_FIT_WIDTH)
+    const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
+    await stage.hover()
+    for (let turn = 0; turn < 5; turn += 1) await page.mouse.wheel(0, 750)
+    await expect.poll(() => Number(/#\/m\/(\d+)/.exec(page.url())?.[1] ?? 0)).toBeGreaterThanOrEqual(43)
+    const dominantPage = Number(/#\/m\/(\d+)/.exec(page.url())?.[1] ?? 0)
+    await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${dominantPage},`, 'i') })).toBeVisible()
   })
 })

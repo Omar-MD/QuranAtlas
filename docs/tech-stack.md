@@ -54,6 +54,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run data -- build --profile=full` | Build every approved current dataset profile |
 | `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs, including Search pack bytes; stamped Mushaf page artifacts are checked when local page inputs are present |
 | `pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"` | Verify and atomically import the pinned private Qaloun local PDF into ignored edition-scoped WebP inputs; requires `pdfinfo`, `pdftocairo`, `cwebp`, and `webpinfo` |
+| `QURANATLAS_PRIVATE_MUSHAF=1 PLAYWRIGHT_USE_PREVIEW=1 PLAYWRIGHT_INCLUDE_OFFLINE=1 pnpm exec playwright test <private-reader-specs>` | Run the gated private production-preview reader and exact-rendition offline proof; standard CI leaves the flag unset |
 | `pnpm run data:fetch -- <type>:<id>` | Fetch and normalize catalog-backed source data |
 | `pnpm run test` | Run the full Vitest unit suite once across Node and React projects |
 | `pnpm run test:fast` | Run the split Vitest unit suite while skipping generated Search pack/morphology integration smoke tests |

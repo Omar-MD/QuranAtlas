@@ -17,13 +17,13 @@ This is the product overview. For implementation detail, see `docs/context/` and
 ### Complete reading modes
 
 - **Verse reader** for continuous ayah-by-ayah reading with Qaloon Arabic text, optional Bridges translation display, cross-surah movement, and saved position.
-- **Mushaf reader** for page-based reading tied to the default Qaloon quran.ws Mushaf page assets, with one available edition selected during first or cleared setup.
+- **Mushaf reader** for page-based reading tied to the default Qaloon quran.ws Mushaf page assets. The private build also includes the reviewed Furatiyyah 2023 WebP edition; first or cleared setup selects one available edition.
 - **Bookmarks** for reading continuity. Bookmarks are not part of the future personal annotation layer.
 - **Daily Wird** for reader-adjacent goal, reminder, and progress inside the continuity flow.
 
 ### Source and asset packs
 
-- **Current default profile:** Qalun in product prose; runtime keys and existing file paths use `qaloon`. The default profile is Qaloon text/font, quran.ws Mushaf, and Bridges translation.
+- **Current default profile:** Qalun in product prose; runtime keys and existing file paths use `qaloon`. The default profile is Qaloon text/font, quran.ws Mushaf, and Bridges translation. The Furatiyyah PDF input and derived WebPs are private-build-only and are not part of the standard build or CI input cache.
 - **One-time Mushaf setup:** fresh or cleared storage selects exactly one compatible Mushaf edition. Existing valid profiles migrate to quran.ws without deleting continuity. Changing an edition later requires About > Clear All Data; unavailable completed selections enter recovery rather than remapping bookmarks.
 - **No current source pickers:** the MVP UI does not offer riwayah, translation source, tafsir source, or ongoing Mushaf edition switching.
 - **Read-only asset inventory:** Asset Management describes the three included reader assets. Install, verify, activate, switch, and remove controls are future multiple-profile work.
