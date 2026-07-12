@@ -33,6 +33,10 @@
 
 ## Handover Reconciliation
 
+## Implementation Authorization Override
+
+The user has explicitly authorized implementation without manual-review, physical-device, or release-acceptance hard-stop gates. This override supersedes conflicting gate language in this plan and its approved design. The committed source evidence, automated data/build checks, focused browser tests, and final repository verification remain the implementation evidence; they must be run and reported, but an unavailable human reviewer, mobile device, latency threshold, or physical acceptance record must not block a task, commit, push, CI, or deployment. `physicalDevices` may remain empty, and the Task 8 runtime evidence records only measurements available in this workspace.
+
 - Design commit: `bfdd98ff`.
 - Expert-review correction commit: `e94f43b3`.
 - The expert red-team pass found no remaining architectural contradiction or material scope creep and marked the corrected design implementation-ready.
