@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { basename, dirname, join } from 'node:path'
@@ -13,6 +13,7 @@ const REPO_ROOT = join(__dirname, '..', '..', '..')
 const CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-pages.json')
 const SCRATCH_DIR = join(REPO_ROOT, '.scratch', 'mushaf-pages')
 const NORMALIZED_DIR = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages')
+const QURAN_WS_EDITION_ID = 'qalun-quran-ws-v1'
 
 function argValue(argv, name, fallback = null) {
   const flag = argv.find((arg) => arg.startsWith(`--${name}=`))
@@ -90,7 +91,44 @@ export async function hasReusableSvgDocument(path) {
   }
 }
 
+async function hasCompleteReusableSvgSet(dir, pageCount) {
+  for (let page = 1; page <= pageCount; page += 1) {
+    if (!await hasReusableSvgDocument(join(dir, `${pad3(page)}.svg`))) return false
+  }
+  return true
+}
+
+async function promoteLegacyQuranWsPages({ legacySvgDir, editionSvgDir, pageCount }) {
+  if (existsSync(editionSvgDir) || !await hasCompleteReusableSvgSet(legacySvgDir, pageCount)) return false
+  const editionDir = dirname(editionSvgDir)
+  const stageDir = `${editionDir}.stage-${process.pid}-${Date.now()}`
+  const stagePages = join(stageDir, 'pages')
+  await mkdir(stagePages, { recursive: true })
+  try {
+    for (let page = 1; page <= pageCount; page += 1) {
+      const filename = `${pad3(page)}.svg`
+      await copyFile(join(legacySvgDir, filename), join(stagePages, filename))
+    }
+    await rename(stageDir, editionDir)
+    return true
+  } catch (error) {
+    await rm(stageDir, { recursive: true, force: true })
+    throw error
+  }
+}
+
 export async function main(argv = process.argv.slice(2)) {
+  const editionId = argValue(argv, 'edition')
+  const pdfPath = argValue(argv, 'pdf')
+  if (editionId || pdfPath) {
+    if (!editionId || !pdfPath || argv.some((arg) => arg.startsWith('--riwayah=') || arg.startsWith('--pages='))) {
+      throw new Error('Usage: pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"')
+    }
+    const { importPrivatePdfEdition } = await import('./private-pdf.mjs')
+    await importPrivatePdfEdition({ editionId, pdfPath })
+    return
+  }
+
   const catalog = await readJson(CATALOG_PATH)
   const riwayah = argValue(argv, 'riwayah')
   if (!riwayah || !catalog.riwayat?.[riwayah]) {
@@ -100,10 +138,12 @@ export async function main(argv = process.argv.slice(2)) {
   const pages = parsePages(argValue(argv, 'pages', 'all'), catalog.pageCount)
   const sourceSlug = catalog.riwayat[riwayah].sourceSlug
   const pdfDir = join(SCRATCH_DIR, 'pdfs', riwayah)
-  const svgDir = join(NORMALIZED_DIR, riwayah, 'pages')
+  const legacySvgDir = join(NORMALIZED_DIR, riwayah, 'pages')
+  const svgDir = join(NORMALIZED_DIR, riwayah, QURAN_WS_EDITION_ID, 'pages')
 
   assertPdftocairoAvailable()
   await mkdir(pdfDir, { recursive: true })
+  await promoteLegacyQuranWsPages({ legacySvgDir, editionSvgDir: svgDir, pageCount: catalog.pageCount })
   await mkdir(svgDir, { recursive: true })
 
   for (const page of pages) {

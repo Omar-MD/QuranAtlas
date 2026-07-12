@@ -25,6 +25,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | Lint | ESLint + typescript-eslint | `^10.2.1`, `^8.59.1` | JS/TS/TSX quality gate |
 | Perf | Lighthouse CI | `^0.15.1` | Production artifact performance and best-practice gate |
 | Deploy | Cloudflare Wrangler | pinned in `package.json` | Deploys the CI-built `dist/` artifact |
+| Private Mushaf import | Poppler (`pdfinfo`, `pdftocairo`) + WebP (`cwebp`, `webpinfo`) | host tooling | Verifies, CropBox-renders, encodes, and validates the pinned local-only Qaloun PDF edition |
 
 `pnpm.overrides` pins patched transitive dependency ranges for CI audit gates, including toolchain-only packages such as `esbuild` when upstream Storybook/Vite/Wrangler ranges lag an audit advisory. Keep overrides narrow and remove them when upstream direct dependencies resolve without help.
 
@@ -52,6 +53,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | `pnpm run data -- build --skip=mushaf-pages` | Rebuild non-Mushaf baseline dataset lanes while reusing existing local/generated Mushaf page assets |
 | `pnpm run data -- build --profile=full` | Build every approved current dataset profile |
 | `pnpm run data -- check` | Validate source catalog and baseline generated dataset inputs, including Search pack bytes; stamped Mushaf page artifacts are checked when local page inputs are present |
+| `pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"` | Verify and atomically import the pinned private Qaloun local PDF into ignored edition-scoped WebP inputs; requires `pdfinfo`, `pdftocairo`, `cwebp`, and `webpinfo` |
 | `pnpm run data:fetch -- <type>:<id>` | Fetch and normalize catalog-backed source data |
 | `pnpm run test` | Run the full Vitest unit suite once across Node and React projects |
 | `pnpm run test:fast` | Run the split Vitest unit suite while skipping generated Search pack/morphology integration smoke tests |

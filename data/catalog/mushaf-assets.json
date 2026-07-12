@@ -13,9 +13,26 @@
       "licenseId": "quran-ws-free-use",
       "visibility": "baseline",
       "shipped": true,
+      "sourceKind": "quran-ws",
       "sourceSlug": "qalun",
       "pageCount": 604,
       "provenance": { "source": "quran.ws page PDFs" }
+    },
+    {
+      "riwayah": "qaloon",
+      "mushafEditionId": "qalun-furatiyyah-2023-v1",
+      "label": "Qalun Furatiyyah 2023",
+      "tradition": "qalun",
+      "providerId": "private-local-pdf",
+      "licenseId": "private-local-pdf-restricted",
+      "visibility": "internal",
+      "shipped": false,
+      "sourceKind": "local-pdf",
+      "pageCount": 604,
+      "sourceContractPath": "mushaf-editions/qalun-furatiyyah-2023-v1/source.json",
+      "pageStartReviewPath": "mushaf-editions/qalun-furatiyyah-2023-v1/page-start-review.json",
+      "framingPath": "mushaf-editions/qalun-furatiyyah-2023-v1/framing.json",
+      "mediaPolicyPath": "mushaf-editions/qalun-furatiyyah-2023-v1/media.json"
     }
   ]
 }

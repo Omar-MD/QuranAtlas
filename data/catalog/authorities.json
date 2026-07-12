@@ -5,6 +5,10 @@
     "url": "https://qurancomplex.gov.sa/en/techquran/dev/"
   },
   {
+    "id": "private-local-pdf",
+    "label": "Private local PDF"
+  },
+  {
     "id": "quran-db",
     "label": "Quran DB",
     "url": "https://github.com/faisalill/quran_db"

@@ -177,6 +177,8 @@ describe('source catalog validation', () => {
           mushafEditionId: 'bad_edition',
           providerId: 'qul',
           licenseId: 'qul-open',
+          sourceKind: 'quran-ws',
+          visibility: 'baseline',
           sourceSlug: 'qaloon',
           pageCount: 603,
         },
@@ -185,6 +187,8 @@ describe('source catalog validation', () => {
           mushafEditionId: 'bad_edition',
           providerId: 'qul',
           licenseId: 'qul-open',
+          sourceKind: 'quran-ws',
+          visibility: 'baseline',
           sourceSlug: 'qaloon',
           pageCount: 603,
         },
@@ -199,6 +203,39 @@ describe('source catalog validation', () => {
       'mushaf asset qaloon/bad_edition licenseId must be quran-ws-free-use',
       'mushaf asset qaloon/bad_edition sourceSlug must be qalun',
       'mushaf asset qaloon/bad_edition is duplicated within qaloon',
+    ]))
+  })
+
+  it('requires source-kind-specific private provenance and pinned contract paths', () => {
+    const catalog = baseCatalog()
+    catalog.authorities.push({ id: 'private-local-pdf', label: 'Private local PDF' })
+    catalog.licenses.push({ id: 'private-local-pdf-restricted', label: 'Private local PDF', status: 'restricted' })
+    catalog.mushafAssets = {
+      defaults: {},
+      assets: [{
+        riwayah: 'qaloon',
+        mushafEditionId: 'qalun-furatiyyah-2023-v1',
+        providerId: 'private-local-pdf',
+        licenseId: 'private-local-pdf-restricted',
+        sourceKind: 'local-pdf',
+        visibility: 'internal',
+        shipped: false,
+        pageCount: 604,
+        sourceContractPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/source.json',
+        pageStartReviewPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/page-start-review.json',
+        framingPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/framing.json',
+        mediaPolicyPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
+      }],
+    }
+
+    expect(validateSourceCatalog(catalog).errors).toEqual([])
+    catalog.mushafAssets.assets[0].visibility = 'baseline'
+    catalog.mushafAssets.assets[0].shipped = true
+    catalog.mushafAssets.assets[0].mediaPolicyPath = '../media.json'
+    expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 visibility must be internal',
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 shipped must be false',
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 mediaPolicyPath must be mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
     ]))
   })
 

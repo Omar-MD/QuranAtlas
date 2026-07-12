@@ -374,6 +374,21 @@ function validateMushafAssets(mushafCatalog, context) {
     if (asset.pageCount !== 604) {
       context.errors.push(`mushaf asset ${key} pageCount must be 604`)
     }
+    if (!context.allowedVisibility.has(asset.visibility)) {
+      context.errors.push(`mushaf asset ${key} has invalid visibility ${asset.visibility}`)
+    }
+    validateMushafAssetSourceKind(asset, key, riwayah, context)
+  }
+
+  for (const [riwayah, mushafEditionId] of Object.entries(defaults)) {
+    if (!assetKeys.has(`${riwayah}:${mushafEditionId}`)) {
+      context.errors.push(`mushaf asset default ${riwayah} references missing edition ${mushafEditionId}`)
+    }
+  }
+}
+
+function validateMushafAssetSourceKind(asset, key, riwayah, context) {
+  if (asset.sourceKind === 'quran-ws') {
     if (asset.providerId !== 'quran-ws') {
       context.errors.push(`mushaf asset ${key} providerId must be quran-ws`)
     } else if (!context.authorityIds.has(asset.providerId)) {
@@ -384,21 +399,46 @@ function validateMushafAssets(mushafCatalog, context) {
     } else if (!context.licenseById.has(asset.licenseId)) {
       context.errors.push(`mushaf asset ${key} references missing license ${asset.licenseId}`)
     }
-    if (!context.allowedVisibility.has(asset.visibility)) {
-      context.errors.push(`mushaf asset ${key} has invalid visibility ${asset.visibility}`)
-    }
-
     const expectedSlug = RIWAYAH_SOURCE_SLUGS[riwayah]
     if (expectedSlug && asset.sourceSlug !== expectedSlug) {
       context.errors.push(`mushaf asset ${key} sourceSlug must be ${expectedSlug}`)
     }
+    return
   }
 
-  for (const [riwayah, mushafEditionId] of Object.entries(defaults)) {
-    if (!assetKeys.has(`${riwayah}:${mushafEditionId}`)) {
-      context.errors.push(`mushaf asset default ${riwayah} references missing edition ${mushafEditionId}`)
+  if (asset.sourceKind === 'local-pdf') {
+    if (asset.providerId !== 'private-local-pdf') {
+      context.errors.push(`mushaf asset ${key} providerId must be private-local-pdf`)
+    } else if (!context.authorityIds.has(asset.providerId)) {
+      context.errors.push(`mushaf asset ${key} references missing provider ${asset.providerId}`)
     }
+    if (asset.licenseId !== 'private-local-pdf-restricted') {
+      context.errors.push(`mushaf asset ${key} licenseId must be private-local-pdf-restricted`)
+    } else if (!context.licenseById.has(asset.licenseId)) {
+      context.errors.push(`mushaf asset ${key} references missing license ${asset.licenseId}`)
+    }
+    if (asset.visibility !== 'internal') {
+      context.errors.push(`mushaf asset ${key} visibility must be internal`)
+    }
+    if (asset.shipped !== false) {
+      context.errors.push(`mushaf asset ${key} shipped must be false`)
+    }
+    const prefix = `mushaf-editions/${asset.mushafEditionId}/`
+    const expected = {
+      sourceContractPath: `${prefix}source.json`,
+      pageStartReviewPath: `${prefix}page-start-review.json`,
+      framingPath: `${prefix}framing.json`,
+      mediaPolicyPath: `${prefix}media.json`,
+    }
+    for (const [field, value] of Object.entries(expected)) {
+      if (asset[field] !== value) {
+        context.errors.push(`mushaf asset ${key} ${field} must be ${value}`)
+      }
+    }
+    return
   }
+
+  context.errors.push(`mushaf asset ${key} has unsupported sourceKind ${asset.sourceKind}`)
 }
 
 export async function main() {

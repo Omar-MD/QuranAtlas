@@ -1,4 +1,6 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -18,6 +20,7 @@ import {
   themeMushafSvg,
 } from '../../../scripts/data/mushaf-pages/theme-svg.mjs'
 import { hasReusableSvgDocument } from '../../../scripts/data/mushaf-pages/import.mjs'
+import { importPrivatePdfEdition, loadPrivateMushafEditionContract } from '../../../scripts/data/mushaf-pages/private-pdf.mjs'
 import { buildManifestPayload } from '../../../scripts/data/manifest/inventory.mjs'
 
 const TEST_COLOR_MAP = {
@@ -51,12 +54,203 @@ describe('mushaf asset catalog', () => {
     for (const asset of mushafCatalog.assets) {
       expect(asset.mushafEditionId).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/)
       expect(asset.pageCount).toBe(604)
-      expect(asset.providerId).toBe('quran-ws')
-      expect(asset.licenseId).toBe('quran-ws-free-use')
     }
+    expect(mushafCatalog.assets).toContainEqual(expect.objectContaining({
+      mushafEditionId: 'qalun-quran-ws-v1', sourceKind: 'quran-ws', providerId: 'quran-ws', licenseId: 'quran-ws-free-use',
+    }))
+    expect(mushafCatalog.assets).toContainEqual(expect.objectContaining({
+      mushafEditionId: 'qalun-furatiyyah-2023-v1', sourceKind: 'local-pdf', providerId: 'private-local-pdf', licenseId: 'private-local-pdf-restricted', visibility: 'internal', shipped: false,
+    }))
     for (const [riwayah, mushafEditionId] of Object.entries(mushafCatalog.defaults)) {
       expect(mushafCatalog.assets.some((asset) => asset.riwayah === riwayah && asset.mushafEditionId === mushafEditionId)).toBe(true)
     }
+  })
+})
+
+function pngHeader(width = 2136, height = 2720) {
+  const bytes = Buffer.alloc(24)
+  Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(bytes)
+  bytes.writeUInt32BE(width, 16)
+  bytes.writeUInt32BE(height, 20)
+  return bytes
+}
+
+async function privateContractFixture(root) {
+  const sourceDir = join(process.cwd(), 'data', 'catalog', 'mushaf-editions', 'qalun-furatiyyah-2023-v1')
+  const contractDir = join(root, 'contracts')
+  await cp(sourceDir, contractDir, { recursive: true })
+  const sourcePath = join(contractDir, 'source.json')
+  const reviewPath = join(contractDir, 'page-start-review.json')
+  const source = JSON.parse(await readFile(sourcePath, 'utf8'))
+  const review = JSON.parse(await readFile(reviewPath, 'utf8'))
+  const pdfPath = join(root, 'fixture.pdf')
+  await writeFile(pdfPath, 'fixture-pdf')
+  const digest = createHash('sha256').update('fixture-pdf').digest('hex')
+  source.expectedFilename = 'fixture.pdf'
+  source.sha256 = digest
+  review.sourcePdfSha256 = digest
+  await writeFile(sourcePath, JSON.stringify(source, null, 2))
+  await writeFile(reviewPath, JSON.stringify(review, null, 2))
+  return { contractDir, pdfPath }
+}
+
+async function expectInvalidPrivateContract(mutator, message) {
+  const root = await mkdtemp(join(tmpdir(), 'qa-private-contract-'))
+  const fixture = await privateContractFixture(root)
+  try {
+    await mutator(fixture.contractDir)
+    await expect(loadPrivateMushafEditionContract('qalun-furatiyyah-2023-v1', { contractDir: fixture.contractDir })).rejects.toThrow(message)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+}
+
+function privateRunner({ failSourcePdfPage = null, variant = 'same', calls = [] } = {}) {
+  return async (command, args) => {
+    calls.push({ command, args })
+    if (command === 'pdfinfo') {
+      return { status: 0, stdout: 'Pages:           630\nPage size:       512.545 x 652.654 pts\n', stderr: '' }
+    }
+    if (command === 'pdftocairo') {
+      const sourcePage = Number(args[args.indexOf('-f') + 1])
+      if (sourcePage === failSourcePdfPage) {
+        return { status: 1, stdout: '', stderr: `page ${sourcePage} failed` }
+      }
+      await writeFile(`${args.at(-1)}.png`, pngHeader())
+      return { status: 0, stdout: '', stderr: '' }
+    }
+    if (command === 'cwebp') {
+      await writeFile(args.at(-1), `${variant}:${args.at(-1).match(/\d+\.webp$/)?.[0]}`)
+      return { status: 0, stdout: '', stderr: '' }
+    }
+    if (command === 'webpinfo') {
+      const width = args[0].includes('-1280.webp') ? 1280 : 2136
+      const height = width === 1280 ? 1630 : 2720
+      return { status: 0, stdout: `Canvas size: ${width} x ${height}\n`, stderr: '' }
+    }
+    throw new Error(`unexpected command ${command}`)
+  }
+}
+
+describe('private PDF Mushaf importer', () => {
+  it('validates pinned review and framing contracts before importing', async () => {
+    const contract = await loadPrivateMushafEditionContract('qalun-furatiyyah-2023-v1')
+    expect(contract.pageStartReviews).toHaveLength(604)
+    expect(contract.framingPages).toHaveLength(604)
+    expect(contract.pageStartReviews.slice(0, 2).map((row) => row.canonicalFirstVerse)).toEqual([{ surah: 1, verse: 1 }, { surah: 2, verse: 1 }])
+    expect(contract.pageStartReviews.at(-1).canonicalFirstVerse).toEqual({ surah: 112, verse: 1 })
+    expect(contract.source).toMatchObject({
+      expectedFilename: 'Noor-Book.com  مصحف رواية قالون عن نافع طبعة جديدة.pdf',
+      sha256: '4454431b2662bc10060cc9335ba13baabe1f18a6762c492d41ccf11a4083012f',
+      documentPageCount: 630,
+      readerPdfPageStart: 5,
+      readerPdfPageEnd: 608,
+      logicalPageCount: 604,
+    })
+  })
+
+  it('rejects unsafe or incomplete source contracts before staging', async () => {
+    await expectInvalidPrivateContract(async (contractDir) => {
+      const framingPath = join(contractDir, 'framing.json')
+      const framing = JSON.parse(await readFile(framingPath, 'utf8'))
+      framing.pages[0].sourceFullFrame.width = 1.1
+      await writeFile(framingPath, JSON.stringify(framing))
+    }, /unit CropBox/)
+    await expectInvalidPrivateContract(async (contractDir) => {
+      const sourcePath = join(contractDir, 'source.json')
+      const source = JSON.parse(await readFile(sourcePath, 'utf8'))
+      source.readerPdfPageEnd = 607
+      await writeFile(sourcePath, JSON.stringify(source))
+    }, /page range/)
+    await expectInvalidPrivateContract(async (contractDir) => {
+      const reviewPath = join(contractDir, 'page-start-review.json')
+      const review = JSON.parse(await readFile(reviewPath, 'utf8'))
+      review.verseAliasSha256 = '0'.repeat(64)
+      await writeFile(reviewPath, JSON.stringify(review))
+    }, /alias digest/)
+    await expectInvalidPrivateContract(async (contractDir) => {
+      const reviewPath = join(contractDir, 'page-start-review.json')
+      const review = JSON.parse(await readFile(reviewPath, 'utf8'))
+      review.pageMapSource = '../outside.json'
+      await writeFile(reviewPath, JSON.stringify(review))
+    }, /page-map path/)
+    await expectInvalidPrivateContract(async (contractDir) => {
+      const mediaPath = join(contractDir, 'media.json')
+      const media = JSON.parse(await readFile(mediaPath, 'utf8'))
+      media.renditions.pop()
+      await writeFile(mediaPath, JSON.stringify(media))
+    }, /renditions are incomplete/)
+  })
+
+  it('rejects a mismatched PDF before creating normalized output', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
+    const { contractDir, pdfPath } = await privateContractFixture(root)
+    await writeFile(pdfPath, 'different-pdf')
+    await expect(importPrivatePdfEdition({ editionId: 'qalun-furatiyyah-2023-v1', pdfPath, paths: { contractDir, normalizedRoot: join(root, 'normalized') } })).rejects.toThrow(/sha256/)
+    expect(existsSync(join(root, 'normalized', 'qalun-furatiyyah-2023-v1'))).toBe(false)
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('rejects wrong PDF inspection values and invalid contract geometry', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
+    const { contractDir, pdfPath } = await privateContractFixture(root)
+    const normalizedRoot = join(root, 'normalized')
+    const wrongPageCount = privateRunner()
+    const wrongCropBox = privateRunner()
+    await expect(importPrivatePdfEdition({ editionId: 'qalun-furatiyyah-2023-v1', pdfPath, runCommand: async (command, args) => (command === 'pdfinfo'
+      ? { status: 0, stdout: 'Pages:           629\nPage size:       512.545 x 652.654 pts\n', stderr: '' }
+      : wrongPageCount(command, args)), paths: { contractDir, normalizedRoot } })).rejects.toThrow(/page count/)
+    await expect(importPrivatePdfEdition({ editionId: 'qalun-furatiyyah-2023-v1', pdfPath, runCommand: async (command, args) => (command === 'pdfinfo'
+      ? { status: 0, stdout: 'Pages:           630\nPage size:       500 x 652.654 pts\n', stderr: '' }
+      : wrongCropBox(command, args)), paths: { contractDir, normalizedRoot } })).rejects.toThrow(/CropBox/)
+    const framingPath = join(contractDir, 'framing.json')
+    const framing = JSON.parse(await readFile(framingPath, 'utf8'))
+    framing.pages.pop()
+    await writeFile(framingPath, JSON.stringify(framing))
+    await expect(loadPrivateMushafEditionContract('qalun-furatiyyah-2023-v1', { contractDir })).rejects.toThrow(/exactly 604 rows/)
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('stages complete paired WebPs atomically and refuses changed bytes for the same edition id', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
+    const { contractDir, pdfPath } = await privateContractFixture(root)
+    const normalizedRoot = join(root, 'normalized')
+    const calls = []
+    const options = { editionId: 'qalun-furatiyyah-2023-v1', pdfPath, paths: { contractDir, normalizedRoot } }
+    const first = await importPrivatePdfEdition({ ...options, runCommand: privateRunner({ calls }) })
+    expect(first.status).toBe('promoted')
+    expect(calls.filter((call) => call.command === 'pdftocairo')).toHaveLength(604)
+    expect(calls.filter((call) => call.command === 'cwebp')).toHaveLength(1208)
+    await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'current' })
+    const metadataPath = join(first.normalizedDir, 'import.json')
+    const before = await readFile(metadataPath, 'utf8')
+    await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner({ variant: 'changed' }) })).rejects.toThrow(/different bytes/)
+    expect(await readFile(metadataPath, 'utf8')).toBe(before)
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('retains a promoted directory when a later render command fails', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
+    const { contractDir, pdfPath } = await privateContractFixture(root)
+    const normalizedRoot = join(root, 'normalized')
+    const options = { editionId: 'qalun-furatiyyah-2023-v1', pdfPath, paths: { contractDir, normalizedRoot } }
+    const promoted = await importPrivatePdfEdition({ ...options, runCommand: privateRunner() })
+    const metadataPath = join(promoted.normalizedDir, 'import.json')
+    const before = await readFile(metadataPath, 'utf8')
+    await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner({ failSourcePdfPage: 47 }) })).rejects.toThrow(/page 47 failed/)
+    expect(await readFile(metadataPath, 'utf8')).toBe(before)
+    await rm(root, { recursive: true, force: true })
+  })
+
+  it('refuses to accept a corrupted existing normalized rendition as current', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
+    const { contractDir, pdfPath } = await privateContractFixture(root)
+    const normalizedRoot = join(root, 'normalized')
+    const options = { editionId: 'qalun-furatiyyah-2023-v1', pdfPath, paths: { contractDir, normalizedRoot } }
+    const promoted = await importPrivatePdfEdition({ ...options, runCommand: privateRunner() })
+    await writeFile(join(promoted.normalizedDir, 'pages', '001-1280.webp'), 'corrupt')
+    await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).rejects.toThrow(/rendition digest is invalid/)
+    await rm(root, { recursive: true, force: true })
   })
 })
 

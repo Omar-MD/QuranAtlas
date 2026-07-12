@@ -74,7 +74,15 @@ pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604
 pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
 ```
 
-The import step downloads quran.ws PDFs into `.scratch/` and converts them to normalized SVG inputs using Poppler. The build step validates and emits edition-aware runtime page assets and manifests. CI caches the expensive PDF/SVG inputs and still validates the generated page pack before app build.
+The quran.ws import downloads PDFs into `.scratch/` and converts them with Poppler into the edition-scoped ignored normalized input `data/normalized/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/`. A complete safe legacy ignored SVG directory is staged into that edition path without mutating the legacy directory.
+
+The private Furatiyyah edition has no network importer and never enters a standard build or CI cache. Its local-only command is:
+
+```bash
+pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/Noor-Book.com  مصحف رواية قالون عن نافع طبعة جديدة.pdf"
+```
+
+The private importer first checks the pinned PDF digest, document page count, and CropBox. It renders only source PDF pages 5 through 608 with `pdftocairo -cropbox -png -r 300`, applies the reviewed normalized Full frame through `cwebp -crop`, emits 1,280 and 2,136 pixel WebP renditions, validates every pair with `webpinfo`, then atomically promotes a complete immutable ignored sibling at `data/normalized/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/`. It refuses to overwrite a different output under the same edition id. The build step validates and emits edition-aware runtime page assets and manifests.
 
 CI runs the Mushaf import/page-build lane when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs, normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, generated Mushaf runtime assets, or dependency files. CI and the shared local preview runner also run that lane whenever Playwright is selected so the tested `dist/` artifact includes the real Mushaf SVG pages that the browser specs assert.
 

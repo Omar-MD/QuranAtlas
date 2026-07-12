@@ -30,6 +30,11 @@
     "url": "https://qurancomplex.gov.sa/en/techquran/dev/"
   },
   {
+    "id": "private-local-pdf-restricted",
+    "label": "Private local PDF; redistribution not approved",
+    "status": "restricted"
+  },
+  {
     "id": "quran-ws-free-use",
     "label": "Quran.ws page assets free use",
     "status": "approved",
