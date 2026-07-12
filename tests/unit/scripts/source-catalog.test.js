@@ -209,10 +209,22 @@ describe('source catalog validation', () => {
   it('requires source-kind-specific private provenance and pinned contract paths', () => {
     const catalog = baseCatalog()
     catalog.authorities.push({ id: 'private-local-pdf', label: 'Private local PDF' })
+    catalog.authorities.push({ id: 'quran-ws', label: 'Quran.ws' })
     catalog.licenses.push({ id: 'private-local-pdf-restricted', label: 'Private local PDF', status: 'restricted' })
+    catalog.licenses.push({ id: 'quran-ws-free-use', label: 'Quran.ws page assets', status: 'approved' })
     catalog.mushafAssets = {
-      defaults: {},
+      defaults: { qaloon: 'qalun-quran-ws-v1' },
       assets: [{
+        riwayah: 'qaloon',
+        mushafEditionId: 'qalun-quran-ws-v1',
+        providerId: 'quran-ws',
+        licenseId: 'quran-ws-free-use',
+        sourceKind: 'quran-ws',
+        visibility: 'baseline',
+        shipped: true,
+        sourceSlug: 'qalun',
+        pageCount: 604,
+      }, {
         riwayah: 'qaloon',
         mushafEditionId: 'qalun-furatiyyah-2023-v1',
         providerId: 'private-local-pdf',
@@ -229,9 +241,10 @@ describe('source catalog validation', () => {
     }
 
     expect(validateSourceCatalog(catalog).errors).toEqual([])
-    catalog.mushafAssets.assets[0].visibility = 'baseline'
-    catalog.mushafAssets.assets[0].shipped = true
-    catalog.mushafAssets.assets[0].mediaPolicyPath = '../media.json'
+    const privateAsset = catalog.mushafAssets.assets.find((asset) => asset.sourceKind === 'local-pdf')
+    privateAsset.visibility = 'baseline'
+    privateAsset.shipped = true
+    privateAsset.mediaPolicyPath = '../media.json'
     catalog.licenses.find((license) => license.id === 'private-local-pdf-restricted').status = 'approved'
     expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 visibility must be internal',
@@ -239,6 +252,9 @@ describe('source catalog validation', () => {
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 private license status must be restricted',
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 mediaPolicyPath must be mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
     ]))
+
+    delete catalog.mushafAssets.defaults.qaloon
+    expect(validateSourceCatalog(catalog).errors).toContain('mushaf asset catalog missing default qaloon edition')
   })
 
   it('keeps the Qaloon default on the shipped quran.ws edition', () => {

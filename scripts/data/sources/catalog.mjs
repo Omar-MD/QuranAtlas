@@ -380,6 +380,10 @@ function validateMushafAssets(mushafCatalog, context) {
     validateMushafAssetSourceKind(asset, key, riwayah, context)
   }
 
+  if (!Object.hasOwn(defaults, 'qaloon')) {
+    context.errors.push('mushaf asset catalog missing default qaloon edition')
+  }
+
   for (const [riwayah, mushafEditionId] of Object.entries(defaults)) {
     const defaultAsset = assets.find((asset) => asset?.riwayah === riwayah && asset?.mushafEditionId === mushafEditionId)
     if (!assetKeys.has(`${riwayah}:${mushafEditionId}`)) {
