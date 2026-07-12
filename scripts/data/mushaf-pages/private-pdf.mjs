@@ -10,6 +10,7 @@ const REPO_ROOT = join(__dirname, '..', '..', '..')
 const PRIVATE_EDITION_ID = 'qalun-furatiyyah-2023-v1'
 const RIWAYAH = 'qaloon'
 const PAGE_COUNT = 604
+const EMISSION_CONTRACT_VERSION = 1
 const CONTRACT_DIR = join(REPO_ROOT, 'data', 'catalog', 'mushaf-editions', PRIVATE_EDITION_ID)
 const NORMALIZED_ROOT = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages', RIWAYAH)
 
@@ -61,6 +62,47 @@ function assertContained(inner, outer, label) {
 
 function reviewFixturePresent(notes, printed, canonical) {
   return notes.some((note) => String(note).includes(printed) && String(note).includes(canonical))
+}
+
+function emissionMediaPolicy(media) {
+  return {
+    kind: media.kind,
+    mimeType: media.mimeType,
+    renderDpi: media.renderDpi,
+    encoder: {
+      command: media.encoder.command,
+      quality: media.encoder.quality,
+      method: media.encoder.method,
+    },
+    renditions: media.renditions.map((rendition) => ({ role: rendition.role, width: rendition.width })),
+  }
+}
+
+function emissionContractInput(source, review, framing, media) {
+  const rect = (value) => ({ x: value.x, y: value.y, width: value.width, height: value.height })
+  return {
+    source: {
+      sha256: source.sha256,
+      documentPageCount: source.documentPageCount,
+      readerPdfPageStart: source.readerPdfPageStart,
+      readerPdfPageEnd: source.readerPdfPageEnd,
+      logicalPageCount: source.logicalPageCount,
+      cropBoxPoints: { width: source.cropBoxPoints.width, height: source.cropBoxPoints.height },
+    },
+    review: review.pageStartReviews.map((row) => ({
+      page: row.page,
+      sourcePdfPage: row.sourcePdfPage,
+      canonicalFirstVerse: { surah: row.canonicalFirstVerse.surah, verse: row.canonicalFirstVerse.verse },
+    })),
+    framing: framing.pages.map((row) => ({
+      page: row.page,
+      sourcePdfPage: row.sourcePdfPage,
+      sourceFullFrame: rect(row.sourceFullFrame),
+      sourceTextFrame: rect(row.sourceTextFrame),
+      sideLane: row.sideLane,
+    })),
+    media: emissionMediaPolicy(media),
+  }
 }
 
 /**
@@ -127,7 +169,7 @@ export async function loadPrivateMushafEditionContract(editionId, { contractDir 
     pageStartReviews,
     framingPages,
     mediaPolicy: media,
-    contractDigest: sha256(Buffer.from(jsonText({ source, review, framing, media }))),
+    emissionContractDigest: sha256(Buffer.from(jsonText(emissionContractInput(source, review, framing, media)))),
   }
 }
 
@@ -203,7 +245,18 @@ async function fileDescriptor(path, expectedWidth, expectedHeight, runCommand) {
   return { bytes: bytes.byteLength, sha256: sha256(bytes), width: dimensions.width, height: dimensions.height, mimeType: 'image/webp' }
 }
 
-async function existingImportDigest(normalizedDir) {
+function emissionOutputIdentity(metadata) {
+  return jsonText({
+    version: metadata.version,
+    riwayah: metadata.riwayah,
+    mushafEditionId: metadata.mushafEditionId,
+    sourcePdfSha256: metadata.sourcePdfSha256,
+    media: metadata.media,
+    pages: metadata.pages,
+  })
+}
+
+async function readExistingImportMetadata(normalizedDir) {
   try {
     const metadata = await readJson(join(normalizedDir, 'import.json'))
     ensure(typeof metadata.contentDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contentDigest), 'Existing private Mushaf normalized output has no contentDigest')
@@ -226,7 +279,7 @@ async function existingImportDigest(normalizedDir) {
         ensure(bytes.byteLength === rendition.bytes && sha256(bytes) === rendition.sha256, `Existing private Mushaf page ${page} rendition digest is invalid`)
       }
     }
-    return metadata.contentDigest
+    return metadata
   } catch (error) {
     if (error?.code === 'ENOENT') return null
     throw error
@@ -288,25 +341,23 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
 
     const output = {
       version: 1,
+      emissionContractVersion: EMISSION_CONTRACT_VERSION,
       riwayah: RIWAYAH,
       mushafEditionId: editionId,
       sourcePdfSha256: contract.source.sha256,
-      contractDigest: contract.contractDigest,
-      media: {
-        kind: contract.mediaPolicy.kind,
-        mimeType: contract.mediaPolicy.mimeType,
-        renderDpi: contract.mediaPolicy.renderDpi,
-        encoder: contract.mediaPolicy.encoder,
-        renditions: contract.mediaPolicy.renditions,
-      },
+      contractDigest: contract.emissionContractDigest,
+      media: emissionMediaPolicy(contract.mediaPolicy),
       pages,
     }
     output.contentDigest = sha256(Buffer.from(jsonText(output)))
     await writeFile(join(stageDir, 'import.json'), jsonText(output), 'utf8')
 
-    const existingDigest = existsSync(normalizedDir) ? await existingImportDigest(normalizedDir) : null
-    if (existingDigest !== null) {
-      ensure(existingDigest === output.contentDigest, `Private Mushaf edition ${editionId} already exists with different bytes; create a new version id`)
+    const existingMetadata = existsSync(normalizedDir) ? await readExistingImportMetadata(normalizedDir) : null
+    if (existingMetadata !== null) {
+      if (existingMetadata.contentDigest !== output.contentDigest) {
+        ensure(emissionOutputIdentity(existingMetadata) === emissionOutputIdentity(output), `Private Mushaf edition ${editionId} already exists with different bytes; create a new version id`)
+        await writeFile(join(normalizedDir, 'import.json'), jsonText(output), 'utf8')
+      }
       await rm(stageDir, { recursive: true, force: true })
       return { status: 'current', normalizedDir }
     }

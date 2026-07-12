@@ -47,6 +47,16 @@ function jsonText(value) {
   return `${JSON.stringify(value, null, 2)}\n`
 }
 
+async function legacyPrivateContractDigest(contractDir) {
+  const [source, review, framing, media] = await Promise.all([
+    readFile(join(contractDir, 'source.json'), 'utf8').then(JSON.parse),
+    readFile(join(contractDir, 'page-start-review.json'), 'utf8').then(JSON.parse),
+    readFile(join(contractDir, 'framing.json'), 'utf8').then(JSON.parse),
+    readFile(join(contractDir, 'media.json'), 'utf8').then(JSON.parse),
+  ])
+  return createHash('sha256').update(jsonText({ source, review, framing, media })).digest('hex')
+}
+
 async function treeDigest(root) {
   const hash = createHash('sha256')
   for (const entry of (await readdir(root)).sort()) {
@@ -102,10 +112,11 @@ async function writeTransitionFixture(root) {
   }
   const importMetadata = {
     version: 1,
+    emissionContractVersion: 1,
     riwayah: 'qaloon',
     mushafEditionId: 'qalun-furatiyyah-2023-v1',
     sourcePdfSha256: contract.source.sha256,
-    contractDigest: contract.contractDigest,
+    contractDigest: contract.emissionContractDigest,
     media: {
       kind: media.kind,
       mimeType: media.mimeType,
@@ -310,6 +321,55 @@ describe('private PDF Mushaf importer', () => {
     await rm(root, { recursive: true, force: true })
   }, 20_000)
 
+  it('keeps normalized private output current after runtime evidence changes but rejects byte-affecting media changes', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
+    const { contractDir, pdfPath } = await privateContractFixture(root)
+    const normalizedRoot = join(root, 'normalized')
+    const mediaPath = join(contractDir, 'media.json')
+    const sourcePath = join(contractDir, 'source.json')
+    const reviewPath = join(contractDir, 'page-start-review.json')
+    const pendingMedia = JSON.parse(await readFile(mediaPath, 'utf8'))
+    pendingMedia.gate = 'pending-runtime'
+    delete pendingMedia.runtimeEvidence
+    await writeFile(mediaPath, JSON.stringify(pendingMedia, null, 2))
+    const options = { editionId: 'qalun-furatiyyah-2023-v1', pdfPath, paths: { contractDir, normalizedRoot } }
+    try {
+      await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'promoted' })
+
+      const source = JSON.parse(await readFile(sourcePath, 'utf8'))
+      source.editionStatement = 'Corrected edition note'
+      await writeFile(sourcePath, JSON.stringify(source, null, 2))
+      const review = JSON.parse(await readFile(reviewPath, 'utf8'))
+      review.reviewNotes.push('Clarified review note')
+      await writeFile(reviewPath, JSON.stringify(review, null, 2))
+      await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'current' })
+
+      const metadataPath = join(normalizedRoot, 'qalun-furatiyyah-2023-v1', 'import.json')
+      const legacyMetadata = JSON.parse(await readFile(metadataPath, 'utf8'))
+      legacyMetadata.contractDigest = await legacyPrivateContractDigest(contractDir)
+      delete legacyMetadata.emissionContractVersion
+      const legacyUnsigned = { ...legacyMetadata }
+      delete legacyUnsigned.contentDigest
+      legacyMetadata.contentDigest = createHash('sha256').update(jsonText(legacyUnsigned)).digest('hex')
+      await writeFile(metadataPath, jsonText(legacyMetadata))
+
+      const passedMedia = JSON.parse(await readFile(mediaPath, 'utf8'))
+      passedMedia.gate = 'passed'
+      passedMedia.preliminaryEvidence.maxTransferredBytes = 1
+      passedMedia.runtimeEvidence = { privateCurrentReadyMedianMs: 1 }
+      await writeFile(mediaPath, JSON.stringify(passedMedia, null, 2))
+      await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).resolves.toMatchObject({ status: 'current' })
+      expect(JSON.parse(await readFile(metadataPath, 'utf8')).emissionContractVersion).toBe(1)
+
+      const byteAffectingMedia = JSON.parse(await readFile(mediaPath, 'utf8'))
+      byteAffectingMedia.encoder.quality = 89
+      await writeFile(mediaPath, JSON.stringify(byteAffectingMedia, null, 2))
+      await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).rejects.toThrow(/media encoder is invalid/)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }, 20_000)
+
   it('retains a promoted directory when a later render command fails', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-private-pdf-'))
     const { contractDir, pdfPath } = await privateContractFixture(root)
@@ -423,6 +483,25 @@ describe('mushaf page dataset builder', () => {
       await writeFile(metadataPath, jsonText(stale))
 
       await expect(buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)).rejects.toThrow(/contract digest/i)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('accepts verified legacy private metadata while enforcing the current emission contract', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-legacy-provenance-'))
+    const paths = await writeTransitionFixture(root)
+    const metadataPath = join(paths.normalizedRoot, 'qaloon', 'qalun-furatiyyah-2023-v1', 'import.json')
+    try {
+      const metadata = JSON.parse(await readFile(metadataPath, 'utf8'))
+      metadata.contractDigest = await legacyPrivateContractDigest(join(process.cwd(), 'data', 'catalog', 'mushaf-editions', 'qalun-furatiyyah-2023-v1'))
+      delete metadata.emissionContractVersion
+      const legacyUnsigned = { ...metadata }
+      delete legacyUnsigned.contentDigest
+      metadata.contentDigest = createHash('sha256').update(jsonText(legacyUnsigned)).digest('hex')
+      await writeFile(metadataPath, jsonText(metadata))
+
+      await expect(buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)).resolves.toBeUndefined()
     } finally {
       await rm(root, { recursive: true, force: true })
     }

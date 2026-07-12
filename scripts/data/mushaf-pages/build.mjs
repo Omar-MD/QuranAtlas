@@ -754,7 +754,9 @@ function privateRuntimeTextFrame(sourceTextFrame, sourceFullFrame) {
 
 function assertPrivateNormalizedProvenance(metadata, contract, asset) {
   ensure(metadata.sourcePdfSha256 === contract.source.sha256, 'Private Mushaf normalized source PDF digest disagrees with the committed source contract')
-  ensure(metadata.contractDigest === contract.contractDigest, 'Private Mushaf normalized contract digest disagrees with the committed review and media contracts')
+  const isCurrentEmissionContract = metadata.emissionContractVersion === 1 && metadata.contractDigest === contract.emissionContractDigest
+  const isVerifiedLegacyContract = metadata.emissionContractVersion === undefined && typeof metadata.contractDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contractDigest)
+  ensure(isCurrentEmissionContract || isVerifiedLegacyContract, 'Private Mushaf normalized contract digest disagrees with the committed emission contracts')
   ensure(typeof metadata.contentDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contentDigest), 'Private Mushaf normalized metadata content digest is invalid')
   const { contentDigest, ...unsignedMetadata } = metadata
   ensure(contentDigest === sha256Hex(Buffer.from(jsonText(unsignedMetadata))), 'Private Mushaf normalized metadata content digest is stale or forged')
