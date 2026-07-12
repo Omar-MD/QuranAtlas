@@ -632,6 +632,7 @@ describe('React reader coverage', () => {
     expect(state.inlineSvg.markup).toContain('<svg')
     expect(state.inlineSvg.markup).not.toMatch(/placeholder/i)
     expect(state.resolved.pageCount).toBe(604)
+    expect(state.resolved.displaySize).toEqual({ width: state.inlineSvg.viewBox.width, height: state.inlineSvg.viewBox.height })
   })
 
   it('reports manifest mismatches and aborts as explicit non-ready states', async () => {
@@ -758,6 +759,18 @@ describe('React reader coverage', () => {
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
     await waitFor(() => expect(fetcher.mock.calls.some(([input]) => String(input).endsWith('/pages/002.svg'))).toBe(true))
     expect(screen.queryByText('Mushaf page pack could not be loaded.')).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps the previously visible page mounted when the requested target fails', async () => {
+    vi.stubGlobal('fetch', failingSecondPageMushafFetch())
+    const { rerender } = render(<MushafRoute page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+
+    rerender(<MushafRoute page={2} />)
+
+    await waitFor(() => expect(screen.queryByText('Mushaf page pack could not be loaded.')).not.toBeInTheDocument())
     expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
     vi.unstubAllGlobals()
   })

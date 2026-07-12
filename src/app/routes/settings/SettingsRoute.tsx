@@ -12,6 +12,7 @@ import { Switch } from '../../../components/ui'
 import { subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { readNativeSettings } from '../../../storage/native-reader-store'
 import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
+import type { NormalizedRect } from '../../../components/reader/mushaf-page-framing'
 
 export type SettingsRouteMode = 'verse' | 'mushaf'
 
@@ -31,7 +32,7 @@ export function SettingsRoute({
   const [includedAssetsVisible, setIncludedAssetsVisible] = useState(
     () => initialAssetsExpanded ?? shouldShowIncludedAssetsByDefault(),
   )
-  const [hasValidFraming, setHasValidFraming] = useState(false)
+  const [framingCapability, setFramingCapability] = useState<{ hasValidFraming: boolean; representativeTextFrame?: NormalizedRect }>({ hasValidFraming: false })
   const {
     setFontSize,
     setMushafFitWidth,
@@ -53,8 +54,8 @@ export function SettingsRoute({
         mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : 'qalun-quran-ws-v1',
         riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : 'qaloon',
       }))
-      .then((value) => { if (active) setHasValidFraming(value.hasValidFraming) })
-      .catch(() => { if (active) setHasValidFraming(false) })
+      .then((value) => { if (active) setFramingCapability(value) })
+      .catch(() => { if (active) setFramingCapability({ hasValidFraming: false }) })
     return () => { active = false }
   }, [])
 
@@ -89,11 +90,12 @@ export function SettingsRoute({
         <MushafSettings
           fitWidth={preferences.mushafFitWidth}
           framing={preferences.mushafPageFraming}
-          hasValidFraming={hasValidFraming}
+          hasValidFraming={framingCapability.hasValidFraming}
           mode={preferences.mushafViewMode}
           onFitWidthChange={setMushafFitWidth}
           onFramingChange={setMushafPageFraming}
           onModeChange={setMushafViewMode}
+          representativeTextFrame={framingCapability.representativeTextFrame}
         />
       )}
       <WirdSettingsSection

@@ -7,6 +7,14 @@ import { App } from '../../../src/app/App'
 import { SettingsRoute } from '../../../src/app/routes/settings/SettingsRoute'
 import { REACT_READER_PREFERENCES_CHANGED_EVENT } from '../../../src/storage/reader-preferences'
 import { closeReactDb, openReactDb } from '../../../src/storage/db'
+import { loadMushafFramingCapability } from '../../../src/packs/mushaf-page-asset'
+
+vi.mock('../../../src/packs/mushaf-page-asset', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/packs/mushaf-page-asset')>()
+  return { ...actual, loadMushafFramingCapability: vi.fn(async () => ({ hasValidFraming: false })) }
+})
+
+const mockedLoadMushafFramingCapability = vi.mocked(loadMushafFramingCapability)
 
 vi.mock('../../../src/app/routes/read/ReaderRoute', () => ({
   ReaderRoute: ({ ayah, surah }: { ayah?: number; surah: number }) => (
@@ -72,6 +80,8 @@ describe('React settings shell coverage', () => {
     cleanup()
     vi.useRealTimers()
     vi.unstubAllGlobals()
+    mockedLoadMushafFramingCapability.mockReset()
+    mockedLoadMushafFramingCapability.mockResolvedValue({ hasValidFraming: false })
     window.history.replaceState(null, '', '#/')
     await resetReactDb()
   })
@@ -294,6 +304,34 @@ describe('React settings shell coverage', () => {
         { key: 'mushafViewMode', value: 'auto' },
       ])
     })
+  })
+
+  it('shows reviewed framing controls only for a framing-capable private edition and persists its value', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.put({ key: 'mushafEditionId', value: 'qalun-furatiyyah-2023-v1' })
+    mockedLoadMushafFramingCapability.mockResolvedValue({
+      hasValidFraming: true,
+      representativeTextFrame: { x: 0.1, y: 0, width: 0.8, height: 1 },
+    })
+    render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
+    expect(await within(dialog).findByRole('slider', { name: "Qur'an text size" })).toBeInTheDocument()
+    expect(within(dialog).getByText('100% reviewed frame width')).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Text focus' }))
+    expect(within(dialog).getByRole('button', { name: 'Text focus' })).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(db.settings.get('mushafPageFraming')).resolves.toEqual({ key: 'mushafPageFraming', value: 1 }))
+    expect(within(dialog).getByText('80% reviewed frame width')).toBeInTheDocument()
+  })
+
+  it('keeps quran.ws Page layout controls unchanged without framing controls', async () => {
+    await resetReactDb()
+    render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
+    const dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
+    expect(within(dialog).getByRole('switch', { name: 'Fit width' })).toBeInTheDocument()
+    expect(within(dialog).queryByRole('slider', { name: "Qur'an text size" })).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Text focus' })).not.toBeInTheDocument()
   })
 
   it('persists Daily Wird visibility from the standalone Wird settings section', async () => {

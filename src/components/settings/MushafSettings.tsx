@@ -1,11 +1,13 @@
 import { MushafModeControl, type MushafNavigationMode, type MushafViewMode } from '../reader/MushafModeControl'
 import { Button, Slider, Switch } from '../ui'
+import { interpolateMushafPageFrame, type NormalizedRect } from '../reader/mushaf-page-framing'
 import { SettingsGroup } from './SettingsGroup'
 
 export function MushafSettings({
   fitWidth,
   framing = 0,
   hasValidFraming = false,
+  representativeTextFrame,
   mode,
   onFitWidthChange,
   onFramingChange,
@@ -14,11 +16,15 @@ export function MushafSettings({
   fitWidth: boolean
   framing?: number
   hasValidFraming?: boolean
+  representativeTextFrame?: NormalizedRect
   mode: MushafViewMode
   onFitWidthChange: (fitWidth: boolean) => void
   onFramingChange?: (value: number) => void
   onModeChange: (mode: MushafNavigationMode) => void
 }) {
+  const frameWidth = representativeTextFrame
+    ? Math.round(interpolateMushafPageFrame(representativeTextFrame, framing).width * 100)
+    : 100
   return (
     <SettingsGroup title="Page layout">
       <div className="qar-react-settings-panel-controls">
@@ -45,7 +51,7 @@ export function MushafSettings({
           <div className="qar-react-settings-row qar-react-settings-row--control">
             <span className="qar-react-settings-row-copy">
               <span className="qar-react-settings-row-label">Qur'an text size</span>
-              <span className="qar-react-settings-row-control">{Math.round((1 / (1 + ((1 - 1) * framing))) * 100)}% frame width</span>
+              <span className="qar-react-settings-row-control">{frameWidth}% reviewed frame width</span>
             </span>
             <div className="qar-react-mushaf-framing-controls">
               <div className="qar-react-mushaf-framing-presets">

@@ -2,19 +2,29 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useMushafPageWindow } from '../../../src/app/routes/read/useMushafPageWindow'
-import { loadMushafPageAsset, type MushafReadyPageAssetState } from '../../../src/packs/mushaf-page-asset'
+import {
+  loadMushafPageAsset,
+  loadPreparedMushafPage,
+  prepareExternalMushafImage,
+  type MushafReadyPageAssetState,
+  type PreparedExternalMushafPage,
+} from '../../../src/packs/mushaf-page-asset'
 
 vi.mock('../../../src/packs/mushaf-page-asset', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../src/packs/mushaf-page-asset')>()
-  return { ...actual, loadMushafPageAsset: vi.fn() }
+  return { ...actual, loadMushafPageAsset: vi.fn(), loadPreparedMushafPage: vi.fn(), prepareExternalMushafImage: vi.fn() }
 })
 
 const mockedLoadMushafPageAsset = vi.mocked(loadMushafPageAsset)
+const mockedLoadPreparedMushafPage = vi.mocked(loadPreparedMushafPage)
+const mockedPrepareExternalMushafImage = vi.mocked(prepareExternalMushafImage)
 const primaryProfile = { mushafEditionId: 'qalun-quran-ws-v1', riwayah: 'qaloon' as const }
 
 describe('useMushafPageWindow', () => {
   beforeEach(() => {
     mockedLoadMushafPageAsset.mockReset()
+    mockedLoadPreparedMushafPage.mockReset()
+    mockedPrepareExternalMushafImage.mockReset()
   })
 
   it('resolves the requested page before loading its neighbors without clearing it', async () => {
@@ -159,7 +169,41 @@ describe('useMushafPageWindow', () => {
     await waitFor(() => expect(result.current.entries.find((entry) => entry.page === 44)?.status).toBe('ready'))
     expect(mockedLoadMushafPageAsset.mock.calls.filter(([input]) => input.page === 44)).toHaveLength(2)
   })
+
+  it('restarts an in-flight preview as a decoded current rendition when it becomes requested', async () => {
+    mockedLoadMushafPageAsset.mockResolvedValue({ status: 'error', error: new Error('External-image Mushaf pages require the V2 reader loader') })
+    mockedLoadPreparedMushafPage.mockImplementation(async ({ page }) => externalPage(page))
+    const preview = deferred<{ status: 'ready'; image: HTMLImageElement }>()
+    mockedPrepareExternalMushafImage.mockImplementation((source) => source.width === 1280
+      ? preview.promise
+      : Promise.resolve({ status: 'ready', image: {} as HTMLImageElement }))
+
+    const { rerender, result } = renderHook(({ page }) => useMushafPageWindow({
+      enabled: true,
+      page,
+      pageCount: 604,
+      profile: primaryProfile,
+    }), { initialProps: { page: 42 } })
+
+    await waitFor(() => expect(mockedPrepareExternalMushafImage).toHaveBeenCalledWith(expect.objectContaining({ width: 1280 }), expect.any(AbortSignal)))
+    rerender({ page: 43 })
+    await waitFor(() => expect(mockedPrepareExternalMushafImage).toHaveBeenCalledWith(expect.objectContaining({ width: 2136 }), expect.any(AbortSignal)))
+    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
+    expect(readyAsset(result.current.requested).media).toMatchObject({ kind: 'external-image', source: { width: 2136 } })
+    preview.resolve({ status: 'ready', image: {} as HTMLImageElement })
+  })
 })
+
+function externalPage(page: number): PreparedExternalMushafPage {
+  const descriptor = (width: 1280 | 2136) => ({
+    assetPath: `pages/${String(page).padStart(3, '0')}-${width}.webp`, assetUrl: `/pages/${page}-${width}.webp`, bytes: width, height: 1600, mimeType: 'image/webp' as const, sha256: 'a'.repeat(64), width,
+  })
+  const framing = { textFrame: { x: 0.1, y: 0, width: 0.8, height: 1 }, sideLane: 'right' as const }
+  return {
+    kind: 'external-image', page, pageCount: 604, firstVerse: { surah: 1, verse: 1 }, lastVerse: { surah: 1, verse: 1 }, preview: descriptor(1280), full: descriptor(2136), framing,
+    resolved: { assetUrl: `/pages/${page}-2136.webp`, displaySize: { width: 2136, height: 1600 }, firstVerse: { surah: 1, verse: 1 }, framing, mushafEditionId: primaryProfile.mushafEditionId, page, pageCount: 604, riwayah: 'qaloon', riwayahLabel: 'Qaloon' },
+  }
+}
 
 function readyPage(
   page: number,

@@ -19,7 +19,7 @@ import {
   type MushafReadyPageAssetState,
   loadMushafFramingCapability,
 } from '../../../packs/mushaf-page-asset'
-import { clampMushafPageFraming } from '../../../components/reader/mushaf-page-framing'
+import { clampMushafPageFraming, type NormalizedRect } from '../../../components/reader/mushaf-page-framing'
 import type { Riwayah } from '../../../storage/types'
 import { nativeSettingsReader, readNativeSetting, readNativeSettings, writeNativeSetting } from '../../../storage/native-reader-store'
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
@@ -61,7 +61,7 @@ export function MushafRoute({
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
   const [chromeVisible, setChromeVisible] = useState(true)
-  const [hasValidFraming, setHasValidFraming] = useState(false)
+  const [framingCapability, setFramingCapability] = useState<{ hasValidFraming: boolean; representativeTextFrame?: NormalizedRect }>({ hasValidFraming: false })
   const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
@@ -147,7 +147,7 @@ export function MushafRoute({
     if (!activeSettings) return
     let active = true
     void loadMushafFramingCapability(activeSettings)
-      .then((capability) => { if (active) setHasValidFraming(capability.hasValidFraming) })
+      .then((capability) => { if (active) setFramingCapability(capability) })
     return () => { active = false }
   }, [activeSettings?.mushafEditionId, activeSettings?.riwayah])
 
@@ -253,18 +253,14 @@ export function MushafRoute({
     >
       {assetState !== 'ready' ? (
         <ReaderAssetGate label="Qalun" state={assetState} />
-      ) : windowState.requested?.status === 'unavailable' ? (
-        <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} state="missing" />
-      ) : windowState.requested?.status === 'error' ? (
-        <ReaderAssetGate label="Mushaf" state="error" />
       ) : visiblePage ? (
         <MushafPageViewer
           bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
           chromeVisible={chromeVisible}
-          fitWidth={hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
+          fitWidth={framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
             ? true
             : activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
-          framingValue={hasValidFraming ? activeSettings?.mushafPageFraming : 0}
+          framingValue={framingCapability.hasValidFraming ? activeSettings?.mushafPageFraming : 0}
           inlineSvg={visiblePage.media.kind === 'inline-svg' ? visiblePage.media.inlineSvg : emptyInlineSvg}
           onDominantPageChange={(nextPage) => {
             if (nextPage === visiblePage.resolved.page) return
@@ -302,6 +298,10 @@ export function MushafRoute({
           surahLabel={currentSurahLabel}
           viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
         />
+      ) : windowState.requested?.status === 'unavailable' ? (
+        <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} state="missing" />
+      ) : windowState.requested?.status === 'error' ? (
+        <ReaderAssetGate label="Mushaf" state="error" />
       ) : (
         <section className="qar:m-5 qar:min-h-28 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Loading Mushaf page" aria-live="polite" />
       )}

@@ -18,7 +18,7 @@ export type MushafPageWindowEntry =
   | { asset: MushafReadyPageAssetState; page: number; status: 'ready' }
 
 type State = { entries: MushafPageWindowEntry[]; profileKey: string | null }
-type Request = { controller: AbortController; promise: Promise<void> }
+type Request = { controller: AbortController; promise: Promise<void>; purpose: 'current' | 'preview' | 'descriptor' }
 
 export function useMushafPageWindow(input: {
   enabled: boolean
@@ -69,7 +69,11 @@ export function useMushafPageWindow(input: {
       const existing = stateRef.current.entries.find((entry) => entry.page === page)
       if (existing?.status === 'ready' || (purpose === 'descriptor' && existing?.status === 'descriptor')) return
       const inFlight = requests.current.get(page)
-      if (inFlight) return inFlight.promise
+      if (inFlight) {
+        if (!isPurposeUpgrade(inFlight.purpose, purpose)) return inFlight.promise
+        inFlight.controller.abort()
+        requests.current.delete(page)
+      }
       const profile = profileRef.current
       if (!profile) return
       const controller = new AbortController()
@@ -90,7 +94,7 @@ export function useMushafPageWindow(input: {
         })
         .catch(() => { if (!controller.signal.aborted && keyRef.current === profileKey) setEntry({ page, status: 'error' }) })
         .finally(() => { if (requests.current.get(page)?.controller === controller) requests.current.delete(page) })
-      requests.current.set(page, { controller, promise })
+      requests.current.set(page, { controller, promise, purpose })
       return promise
     }
     function setEntry(entry: MushafPageWindowEntry): void {
@@ -112,6 +116,13 @@ export function useMushafPageWindow(input: {
 }
 
 function abortAll(requests: Map<number, Request>): void { for (const request of requests.values()) request.controller.abort(); requests.clear() }
+
+function isPurposeUpgrade(
+  current: Request['purpose'],
+  next: Request['purpose'],
+): boolean {
+  return (current === 'descriptor' && next !== 'descriptor') || (current === 'preview' && next === 'current')
+}
 
 async function loadWindowPage(input: Parameters<typeof loadMushafPageAsset>[0]): Promise<PreparedMushafPage> {
   const v1 = await loadMushafPageAsset(input)

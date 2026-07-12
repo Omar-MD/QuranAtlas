@@ -117,6 +117,11 @@ export type PreparedExternalMushafImage =
 
 export type MushafExternalImageFactory = () => HTMLImageElement
 
+export type MushafFramingCapability = {
+  hasValidFraming: boolean
+  representativeTextFrame?: MushafPageFraming['textFrame']
+}
+
 type MushafAssetIndex = {
   assets?: Array<{
     files?: Array<{ url?: unknown }>
@@ -178,6 +183,7 @@ export async function loadMushafPageAsset({
     if (inlineSvg.viewBoxText !== sourceViewBox) {
       throw new Error('Mushaf page SVG viewBox does not match the page manifest')
     }
+    resolved.displaySize = { width: inlineSvg.viewBox.width, height: inlineSvg.viewBox.height }
     return { status: 'ready', media: { kind: 'inline-svg', inlineSvg }, inlineSvg, resolved }
   } catch (error) {
     if (isAbortError(error) || signal?.aborted) return { status: 'aborted' }
@@ -252,7 +258,7 @@ export async function loadMushafFramingCapability({
   mushafEditionId: string
   riwayah: Riwayah
   signal?: AbortSignal
-}): Promise<{ hasValidFraming: boolean }> {
+}): Promise<MushafFramingCapability> {
   try {
     const index = await fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal)
     if (!findExternalMushafIndexEntrySafe(index, { mushafEditionId, riwayah })) return { hasValidFraming: false }
@@ -260,10 +266,11 @@ export async function loadMushafFramingCapability({
     if (manifest.version !== 2) return { hasValidFraming: false }
     // This reuses the V2 descriptor/index agreement validator before exposing a private capability.
     await loadPreparedExternalMushafPage({ fetcher, mushafEditionId, page: 1, riwayah, signal })
-    return {
-      hasValidFraming: manifest.pages.length === manifest.pageCount
-        && manifest.pages.every((page, index) => page.page === index + 1 && isMushafPageFraming(page.framing)),
-    }
+    const hasValidFraming = manifest.pages.length === manifest.pageCount
+      && manifest.pages.every((page, index) => page.page === index + 1 && isMushafPageFraming(page.framing))
+    if (!hasValidFraming) return { hasValidFraming: false }
+    const representative = manifest.pages[Math.floor(manifest.pages.length / 2)]?.framing.textFrame
+    return representative ? { hasValidFraming: true, representativeTextFrame: representative } : { hasValidFraming: false }
   } catch {
     return { hasValidFraming: false }
   }
