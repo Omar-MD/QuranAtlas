@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "mushafEditionId": "qalun-furatiyyah-2023-v1",
+  "kind": "external-image",
+  "mimeType": "image/webp",
+  "renderDpi": 300,
+  "encoder": { "command": "cwebp", "quality": 88, "method": 6 },
+  "renditions": [
+    { "role": "preview", "width": 1280 },
+    { "role": "full", "width": 2136 }
+  ],
+  "gate": "pending-runtime",
+  "preliminaryEvidence": {
+    "svgPage1Bytes": 4619152,
+    "webpPage1FullBytes": 860656,
+    "webpPage1PreviewBytes": 408138,
+    "maxTransferredBytes": 4194304,
+    "maxDecodedBytes": 67108864,
+    "physicalDevices": []
+  }
+}
