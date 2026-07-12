@@ -629,10 +629,11 @@ describe('React reader coverage', () => {
     expect(fetcher).toHaveBeenCalledWith('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg', expect.objectContaining({ signal: controller.signal }))
     expect((state as MushafPageAssetState).status).toBe('ready')
     if (state.status !== 'ready') throw new Error(`Expected ready Mushaf state, got ${state.status}`)
-    expect(state.inlineSvg.markup).toContain('<svg')
-    expect(state.inlineSvg.markup).not.toMatch(/placeholder/i)
+    if (state.media.kind !== 'inline-svg') throw new Error('Expected inline SVG media')
+    expect(state.media.inlineSvg.markup).toContain('<svg')
+    expect(state.media.inlineSvg.markup).not.toMatch(/placeholder/i)
     expect(state.resolved.pageCount).toBe(604)
-    expect(state.resolved.displaySize).toEqual({ width: state.inlineSvg.viewBox.width, height: state.inlineSvg.viewBox.height })
+    expect(state.resolved.displaySize).toEqual({ width: state.media.inlineSvg.viewBox.width, height: state.media.inlineSvg.viewBox.height })
   })
 
   it('reports manifest mismatches and aborts as explicit non-ready states', async () => {
@@ -807,6 +808,7 @@ describe('React reader coverage', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      displaySize: { width: 120, height: 180 },
       firstVerse: { surah: 2, verse: 251 },
       manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
       mushafEditionId: 'qalun-quran-ws-v1',
@@ -817,7 +819,7 @@ describe('React reader coverage', () => {
     }
     const pages = [41, 42, 43].map((page) => ({
       asset: {
-        inlineSvg,
+        media: { kind: 'inline-svg' as const, inlineSvg },
         resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
         status: 'ready' as const,
       },
@@ -859,6 +861,7 @@ describe('React reader coverage', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      displaySize: { width: 120, height: 180 },
       firstVerse: { surah: 2, verse: 251 },
       manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
       mushafEditionId: 'qalun-quran-ws-v1',
@@ -873,7 +876,7 @@ describe('React reader coverage', () => {
         inlineSvg={inlineSvg}
         pages={[41, 42, 43].map((page) => ({
           asset: {
-            inlineSvg,
+            media: { kind: 'inline-svg' as const, inlineSvg },
             resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
             status: 'ready' as const,
           },
@@ -894,6 +897,7 @@ describe('React reader coverage', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg',
+      displaySize: { width: 120, height: 180 },
       firstVerse: { surah: 1, verse: 1 },
       manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
       mushafEditionId: 'qalun-quran-ws-v1',
@@ -925,6 +929,7 @@ describe('React reader coverage', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      displaySize: { width: 120, height: 180 },
       firstVerse: { surah: 2, verse: 251 },
       manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
       mushafEditionId: 'qalun-quran-ws-v1',
@@ -940,7 +945,7 @@ describe('React reader coverage', () => {
         inlineSvg={inlineSvg}
         pages={[41, 42, 43].map((page) => ({
           asset: {
-            inlineSvg,
+            media: { kind: 'inline-svg' as const, inlineSvg },
             resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
             status: 'ready' as const,
           },
@@ -960,6 +965,7 @@ describe('React reader coverage', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      displaySize: { width: 120, height: 180 },
       firstVerse: { surah: 2, verse: 251 },
       manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
       mushafEditionId: 'qalun-quran-ws-v1',
@@ -988,6 +994,7 @@ describe('React reader coverage', () => {
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
     const boundaryPage = (page: number) => ({
       assetUrl: `/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/${String(page).padStart(3, '0')}.svg`,
+      displaySize: { width: 120, height: 180 },
       firstVerse: { surah: 1, verse: 1 },
       manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
       mushafEditionId: 'qalun-quran-ws-v1',
@@ -1020,6 +1027,7 @@ describe('React reader coverage', () => {
         onToggleBookmark={onToggleBookmark}
         resolved={{
           assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+          displaySize: { width: 120, height: 180 },
           firstVerse: { surah: 2, verse: 251 },
           manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
           mushafEditionId: 'qalun-quran-ws-v1',

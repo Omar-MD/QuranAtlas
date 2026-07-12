@@ -127,9 +127,8 @@ function isPurposeUpgrade(
 async function loadWindowPage(input: Parameters<typeof loadMushafPageAsset>[0]): Promise<PreparedMushafPage> {
   const v1 = await loadMushafPageAsset(input)
   if (v1.status === 'ready') {
-    const inlineSvg = v1.media?.kind === 'inline-svg' ? v1.media.inlineSvg : v1.inlineSvg
-    if (!inlineSvg) throw new Error('Mushaf SVG unavailable')
-    return { kind: 'inline-svg', assetUrl: v1.resolved.assetUrl, inlineSvg, resolved: v1.resolved }
+    if (v1.media.kind !== 'inline-svg') throw new Error('Mushaf SVG unavailable')
+    return { kind: 'inline-svg', assetUrl: v1.resolved.assetUrl, inlineSvg: v1.media.inlineSvg, resolved: v1.resolved }
   }
   if (v1.status === 'error' && /V2 reader loader|External-image/i.test(v1.error.message)) return loadPreparedMushafPage(input)
   throw v1.status === 'error' ? v1.error : new Error('Mushaf page unavailable')

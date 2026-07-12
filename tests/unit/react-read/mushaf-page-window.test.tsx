@@ -211,21 +211,18 @@ function readyPage(
   riwayah: 'qaloon' = primaryProfile.riwayah,
 ): MushafReadyPageAssetState {
   return {
-    inlineSvg: {
-      markup: '<svg viewBox="0 0 120 180" />',
-      viewBox: { height: 180, width: 120, x: 0, y: 0 },
-      viewBoxText: '0 0 120 180',
-    },
+    media: { kind: 'inline-svg', inlineSvg: {
+      markup: '<svg viewBox="0 0 120 180" />', viewBox: { height: 180, width: 120, x: 0, y: 0 }, viewBoxText: '0 0 120 180',
+    } },
     resolved: {
       assetUrl: `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/pages/${page}.svg`,
+      displaySize: { height: 180, width: 120 },
       firstVerse: { surah: 2, verse: page },
       mushafEditionId,
       page,
       pageCount: 604,
       riwayah,
       riwayahLabel: 'Qaloon',
-      viewBox: { height: 180, width: 120, x: 0, y: 0 },
-      viewBoxText: '0 0 120 180',
     },
     status: 'ready',
   }

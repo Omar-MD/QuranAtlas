@@ -29,11 +29,7 @@ export type MushafResolvedPage = {
   pageCount: number
   riwayahLabel: string
   assetUrl: string
-  displaySize?: { width: number; height: number }
-  /** @deprecated V1 source metadata only; new reader code uses displaySize. */
-  viewBox?: SvgViewBox
-  /** @deprecated V1 source metadata only; new reader code uses displaySize. */
-  viewBoxText?: string
+  displaySize: { width: number; height: number }
   framing?: MushafPageFraming
   firstVerse: { surah: number; verse: number }
   lastVerse?: { surah: number; verse: number }
@@ -43,7 +39,7 @@ export type QuranRef = { surah: number; verse: number }
 
 export type MushafPageAssetState =
   | { status: 'loading' }
-  | { status: 'ready'; media: MushafReadyMedia; inlineSvg?: ReactInlineMushafSvg; resolved: MushafResolvedPage }
+  | { status: 'ready'; media: MushafReadyMedia; resolved: MushafResolvedPage }
   | { status: 'unavailable'; reason: string; riwayah: Riwayah; mushafEditionId: string }
   | { status: 'error'; error: Error }
   | { status: 'aborted' }
@@ -176,15 +172,18 @@ export async function loadMushafPageAsset({
     }
     const manifest = await loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal })
     if (manifest.version !== 1) throw new Error('External-image Mushaf pages require the V2 reader loader')
-    const resolved = resolveMushafPage(manifest, { mushafEditionId, page, riwayah })
-    const svgText = await fetchText(fetcher, resolved.assetUrl, signal)
+    const unresolved = resolveMushafPage(manifest, { mushafEditionId, page, riwayah })
+    const svgText = await fetchText(fetcher, unresolved.assetUrl, signal)
     const inlineSvg = prepareReactInlineMushafSvg(svgText)
-    const sourceViewBox = manifest.pages.find((entry) => entry.page === resolved.page)?.viewBox?.trim()
+    const sourceViewBox = manifest.pages.find((entry) => entry.page === unresolved.page)?.viewBox?.trim()
     if (inlineSvg.viewBoxText !== sourceViewBox) {
       throw new Error('Mushaf page SVG viewBox does not match the page manifest')
     }
-    resolved.displaySize = { width: inlineSvg.viewBox.width, height: inlineSvg.viewBox.height }
-    return { status: 'ready', media: { kind: 'inline-svg', inlineSvg }, inlineSvg, resolved }
+    const resolved: MushafResolvedPage = {
+      ...unresolved,
+      displaySize: { width: inlineSvg.viewBox.width, height: inlineSvg.viewBox.height },
+    }
+    return { status: 'ready', media: { kind: 'inline-svg', inlineSvg }, resolved }
   } catch (error) {
     if (isAbortError(error) || signal?.aborted) return { status: 'aborted' }
     if (error instanceof Error && /Failed to fetch .*: 404/.test(error.message)) {
@@ -398,7 +397,7 @@ export function prepareReactInlineMushafSvg(text: string): ReactInlineMushafSvg 
 function resolveMushafPage(
   manifest: MushafManifestV1,
   expected: { riwayah: Riwayah; mushafEditionId: string; page: number },
-): MushafResolvedPage {
+): Omit<MushafResolvedPage, 'displaySize'> {
   assertMushafManifest(manifest, expected)
 
   const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(expected.page)))
@@ -406,6 +405,7 @@ function resolveMushafPage(
   if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
   const expectedPath = `pages/${String(clampedPage).padStart(3, '0')}.svg`
   if (pageEntry.assetPath !== expectedPath) throw new Error(`Invalid Mushaf asset path at page ${clampedPage}`)
+  parseViewBox(pageEntry.viewBox)
   const assetUrl = mushafPageUrl(expected, clampedPage)
   assertRuntimeDatasetUrl(assetUrl)
   return {
@@ -415,14 +415,9 @@ function resolveMushafPage(
     pageCount: manifest.pageCount,
     riwayahLabel: RIWAYAH_LABELS[expected.riwayah],
     assetUrl,
-    displaySize: displaySizeForViewBox(parseViewBox(pageEntry.viewBox)),
     firstVerse: pageEntry.firstVerse,
     lastVerse: lastVerseForMushafPage(manifest, clampedPage),
   }
-}
-
-function displaySizeForViewBox(viewBox: SvgViewBox): { width: number; height: number } {
-  return { width: viewBox.width, height: viewBox.height }
 }
 
 function parseQuranRefKey(key: string): QuranRef | null {

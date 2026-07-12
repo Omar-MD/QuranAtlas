@@ -74,14 +74,13 @@ const surahIndex = [
 
 const sampleMushafPage: MushafResolvedPage = {
   assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg',
+  displaySize: { width: 120, height: 180 },
   firstVerse: { surah: 1, verse: 1 },
   mushafEditionId: 'qalun-quran-ws-v1',
   page: 1,
   pageCount: 604,
   riwayah: 'qaloon',
   riwayahLabel: 'Qalun',
-  viewBox: { x: 0, y: 0, width: 120, height: 180 },
-  viewBoxText: '0 0 120 180',
 }
 
 const sampleMushafSvg: ReactInlineMushafSvg = {

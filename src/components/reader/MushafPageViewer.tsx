@@ -479,7 +479,7 @@ function pageAccessibleName(asset: MushafReadyPageAssetState): string {
 }
 
 function entryMedia(asset: MushafReadyPageAssetState): NonNullable<MushafReadyPageAssetState['media']> {
-  return asset.media ?? { kind: 'inline-svg', inlineSvg: asset.inlineSvg! }
+  return asset.media
 }
 
 function measureDominantReadyPage(
