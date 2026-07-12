@@ -131,8 +131,8 @@ jobs:
         with:
           path: |
             .scratch/mushaf-pages/pdfs/qaloon
-            data/normalized/mushaf-pages/qaloon/pages
-          key: mushaf-pages-qaloon-${{ runner.os }}-${{ hashFiles('data/catalog/mushaf-pages.json', 'data/normalized/quran/riwayat/qaloon.json', 'scripts/data/mushaf-pages/import.mjs', 'scripts/data/mushaf-pages/build.mjs') }}
+            data/normalized/mushaf-pages/qaloon/qalun-quran-ws-v1/pages
+          key: mushaf-pages-qaloon-v2-${{ runner.os }}-${{ hashFiles('data/catalog/mushaf-pages.json', 'data/catalog/mushaf-assets.json', 'data/normalized/quran/riwayat/qaloon.json', 'scripts/data/mushaf-pages/import.mjs', 'scripts/data/mushaf-pages/build.mjs') }}
       - name: Install Mushaf page converter
         if: needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true'
         run: |

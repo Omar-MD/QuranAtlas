@@ -43,7 +43,7 @@ function main(argv = process.argv.slice(2)) {
       return
     }
     console.error(`Unknown mushaf-pages command: ${subcommand}`)
-    console.error('Usage: pnpm run data -- mushaf-pages [import|build] [--profile=baseline|full] [--riwayah=qaloon] [--pages=1-604] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"')
+    console.error('Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"')
     process.exit(1)
   }
 

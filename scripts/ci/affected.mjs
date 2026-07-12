@@ -38,6 +38,7 @@ const DATASET_PATTERNS = [
 
 const MUSHAF_PAGE_PATTERNS = [
   /^data\/catalog\/mushaf-(?:assets|pages)\.json$/,
+  /^data\/catalog\/mushaf-editions\//,
   /^data\/normalized\/mushaf-pages\//,
   /^data\/normalized\/quran\/riwayat\//,
   /^public\/dataset\/indexes\/mushaf-assets\.json$/,

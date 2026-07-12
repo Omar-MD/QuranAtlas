@@ -96,6 +96,7 @@ Core runtime files:
 - `/dataset/indexes/sources.json`
 - `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/manifest.json`
 - `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/pages/{page}.svg`
+- `/dataset/mushaf-pages/{riwayah}/{mushafEditionId}/pages/{page}-{width}.webp`
 - `/dataset/knowledge/**` optional knowledge shards
 
 Runtime loaders validate that dataset URLs stay same-origin and under `/dataset/**`.
@@ -114,15 +115,15 @@ Translations are keyed to Hafs-style verse numbering. The current Qaloon runtime
 
 ## Mushaf Pages
 
-Mushaf page assets are edition-aware. `src/packs/mushaf-index.ts`, `src/packs/mushaf-paths.ts`, and `src/packs/mushaf-page-asset.ts` validate:
+Mushaf page assets are edition-aware. Quran.ws keeps manifest V1 with inline-safe SVG page bodies. The private Furatiyyah edition uses manifest V2: each of 604 pages declares its canonical `firstVerse`, a unit Full-relative `textFrame` and side lane, plus `external-image` media with a 2,136-wide fallback and both SHA-256-described WebP renditions. The asset index repeats those descriptor values with absolute same-origin URLs. `src/packs/mushaf-index.ts`, `src/packs/mushaf-paths.ts`, and `src/packs/mushaf-page-asset.ts` validate:
 
 - riwayah identity
 - Mushaf edition identity
 - manifest page membership
 - same-origin asset paths
-- SVG safety before rendering
+- SVG safety before rendering, or image descriptor agreement before external-image rendering
 
-Page SVG bodies are runtime assets; they must not be embedded into JS bundles.
+Page SVG and WebP bodies are runtime assets; they must not be embedded into JS bundles.
 
 ## Source Data
 

@@ -7,8 +7,11 @@ import { describe, expect, it } from 'vitest'
 
 import {
   derivePageMappings,
+  editionIdsForProfile,
   firstVerseByPage,
+  main as buildMushafPages,
   optimizeSvgForDataset,
+  pruneMushafOutput,
   quranWsPagePdfUrl,
   riwayatForProfile,
   validateSvgPageSet,
@@ -306,6 +309,44 @@ describe('mushaf page dataset builder', () => {
   it('keeps baseline and full page output to the default MVP riwayah', () => {
     expect(riwayatForProfile('baseline')).toEqual(['qaloon'])
     expect(riwayatForProfile('full')).toEqual(['qaloon'])
+  })
+
+  it('selects explicit standard and private Qaloon edition sets', async () => {
+    const catalog = await readCatalogJson('mushaf-assets.json')
+    expect(editionIdsForProfile('baseline', catalog)).toEqual(['qalun-quran-ws-v1'])
+    expect(editionIdsForProfile('full', catalog)).toEqual(['qalun-quran-ws-v1'])
+    expect(editionIdsForProfile('private', catalog)).toEqual(['qalun-quran-ws-v1', 'qalun-furatiyyah-2023-v1'])
+    expect(editionIdsForProfile('catalog', catalog)).toEqual([])
+    expect(editionIdsForProfile('catalog', {})).toEqual([])
+    expect(() => editionIdsForProfile('unexpected', catalog)).toThrow(/Unsupported Mushaf page profile/)
+    await expect(buildMushafPages(['--profile=baseline', '--require-edition=qalun-furatiyyah-2023-v1'])).rejects.toThrow(/not part of profile baseline/)
+  })
+
+  it('prunes stale editions only after preserving every selected sibling', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-mushaf-prune-'))
+    const riwayahRoot = join(root, 'qaloon')
+    const standard = { riwayah: 'qaloon', mushafEditionId: 'qalun-quran-ws-v1', sourceKind: 'quran-ws', pageCount: 1 }
+    const privateEdition = { riwayah: 'qaloon', mushafEditionId: 'qalun-furatiyyah-2023-v1', sourceKind: 'local-pdf', pageCount: 1 }
+    for (const path of [
+      join(riwayahRoot, 'manifest.json'),
+      join(riwayahRoot, 'pages', '001.svg'),
+      join(riwayahRoot, standard.mushafEditionId, 'manifest.json'),
+      join(riwayahRoot, standard.mushafEditionId, 'pages', '001.svg'),
+      join(riwayahRoot, privateEdition.mushafEditionId, 'manifest.json'),
+      join(riwayahRoot, privateEdition.mushafEditionId, 'pages', '001-1280.webp'),
+      join(riwayahRoot, privateEdition.mushafEditionId, 'pages', '001-2136.webp'),
+      join(riwayahRoot, 'stale-edition', 'manifest.json'),
+    ]) {
+      await mkdir(join(path, '..'), { recursive: true })
+      await writeFile(path, 'fixture')
+    }
+    await pruneMushafOutput([standard, privateEdition], { outRoot: root })
+    expect(existsSync(join(riwayahRoot, standard.mushafEditionId))).toBe(true)
+    expect(existsSync(join(riwayahRoot, privateEdition.mushafEditionId))).toBe(true)
+    expect(existsSync(join(riwayahRoot, 'stale-edition'))).toBe(false)
+    await pruneMushafOutput([standard], { outRoot: root })
+    expect(existsSync(join(riwayahRoot, privateEdition.mushafEditionId))).toBe(false)
+    await rm(root, { recursive: true, force: true })
   })
 
   it('treats catalog profile as having no Mushaf page body output', () => {

@@ -28,4 +28,16 @@ describe('affected-change gates', () => {
       mushaf_pages_relevant: true,
     })
   })
+
+  it('selects Mushaf page data lanes for private edition contracts and importers', () => {
+    for (const file of [
+      'data/catalog/mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
+      'scripts/data/mushaf-pages/private-pdf.mjs',
+    ]) {
+      expect(detectAffected([file])).toMatchObject({
+        dataset_relevant: true,
+        mushaf_pages_relevant: true,
+      })
+    }
+  })
 })

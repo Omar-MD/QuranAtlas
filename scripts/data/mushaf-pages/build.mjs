@@ -31,6 +31,9 @@ const PROFILE_RIWAYAT = {
   full: [DEFAULT_PROFILE.riwayah],
   catalog: [],
 }
+const PRIVATE_EDITION_ID = 'qalun-furatiyyah-2023-v1'
+const PRIVATE_MEDIA_KIND = 'external-image'
+const PRIVATE_MIME_TYPE = 'image/webp'
 
 function pad3(n) {
   return String(n).padStart(3, '0')
@@ -117,9 +120,24 @@ export function optimizeSvgForDataset(text) {
 }
 
 export function riwayatForProfile(profile = 'baseline') {
+  if (profile === 'private') return [DEFAULT_PROFILE.riwayah]
   const riwayat = PROFILE_RIWAYAT[profile]
   if (!riwayat) throw new Error(`Unsupported Mushaf page profile: ${profile}`)
   return [...riwayat]
+}
+
+/**
+ * Select the explicit page editions that a build profile is permitted to emit.
+ * The standard profiles deliberately never infer an internal edition from the
+ * catalog: quran.ws remains the only default output.
+ */
+export function editionIdsForProfile(profile, catalog) {
+  if (profile === 'catalog') return []
+  const defaultEdition = catalog?.defaults?.qaloon
+  ensure(typeof defaultEdition === 'string' && defaultEdition.length > 0, 'Mushaf asset catalog missing default Qaloon edition')
+  if (profile === 'baseline' || profile === 'full') return [defaultEdition]
+  if (profile === 'private') return [defaultEdition, PRIVATE_EDITION_ID]
+  throw new Error(`Unsupported Mushaf page profile: ${profile}`)
 }
 
 export function derivePageMappings(ayat) {
@@ -540,8 +558,8 @@ async function compareExpectedFile(path, expected, label, stale) {
   }
 }
 
-function pageFilenames(pageCount) {
-  return Array.from({ length: pageCount }, (_, index) => `${pad3(index + 1)}.svg`)
+function pageFilenames(pageCount, extension = '.svg') {
+  return Array.from({ length: pageCount }, (_, index) => `${pad3(index + 1)}${extension}`)
 }
 
 async function removeEntriesExcept(dir, allowedNames) {
@@ -552,33 +570,50 @@ async function removeEntriesExcept(dir, allowedNames) {
   }
 }
 
-async function pruneMushafOutput(resolvedAssets) {
-  if (!existsSync(OUT_ROOT)) return
+export async function pruneMushafOutput(resolvedAssets, { outRoot = OUT_ROOT } = {}) {
+  if (!existsSync(outRoot)) return
   if (!resolvedAssets.length) {
-    await rm(OUT_ROOT, { recursive: true, force: true })
+    await rm(outRoot, { recursive: true, force: true })
     return
   }
   const allowedRiwayat = new Set(resolvedAssets.map((asset) => asset.riwayah))
-  await removeEntriesExcept(OUT_ROOT, allowedRiwayat)
+  await removeEntriesExcept(outRoot, allowedRiwayat)
 
-  for (const asset of resolvedAssets) {
-    const riwayahDir = join(OUT_ROOT, asset.riwayah)
-    const allowedRootEntries = new Set(['manifest.json', 'pages', asset.mushafEditionId])
+  for (const riwayah of allowedRiwayat) {
+    const selectedAssets = resolvedAssets.filter((asset) => asset.riwayah === riwayah)
+    const defaultAsset = selectedAssets.find((asset) => asset.mushafEditionId === selectedAssets.find((candidate) => candidate.sourceKind === 'quran-ws')?.mushafEditionId)
+    const riwayahDir = join(outRoot, riwayah)
+    const allowedRootEntries = new Set(selectedAssets.map((asset) => asset.mushafEditionId))
+    if (defaultAsset) {
+      allowedRootEntries.add('manifest.json')
+      allowedRootEntries.add('pages')
+    }
     await removeEntriesExcept(riwayahDir, allowedRootEntries)
-    await removeEntriesExcept(join(riwayahDir, 'pages'), new Set(pageFilenames(asset.pageCount)))
-    await removeEntriesExcept(join(riwayahDir, asset.mushafEditionId), new Set(['manifest.json', 'pages']))
-    await removeEntriesExcept(join(riwayahDir, asset.mushafEditionId, 'pages'), new Set(pageFilenames(asset.pageCount)))
+    if (defaultAsset) await removeEntriesExcept(join(riwayahDir, 'pages'), new Set(pageFilenames(defaultAsset.pageCount)))
+    for (const asset of selectedAssets) {
+      const editionDir = join(riwayahDir, asset.mushafEditionId)
+      await removeEntriesExcept(editionDir, new Set(['manifest.json', 'pages']))
+      const extension = asset.sourceKind === 'local-pdf' ? '.webp' : '.svg'
+      const names = asset.sourceKind === 'local-pdf'
+        ? new Set(Array.from({ length: asset.pageCount }, (_, index) => [
+          `${pad3(index + 1)}-1280.webp`,
+          `${pad3(index + 1)}-2136.webp`,
+        ]).flat())
+        : new Set(pageFilenames(asset.pageCount, extension))
+      await removeEntriesExcept(join(editionDir, 'pages'), names)
+    }
   }
 }
 
-async function buildRiwayah(riwayah, catalog, assetCatalog, { check = false, missing = 'error' } = {}) {
+async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false, missing = 'error' } = {}) {
+  const riwayah = asset.riwayah
   validateRiwayahId(riwayah)
   const mushafEditionId = assetCatalog.defaults[riwayah]
-  const asset = assetCatalog.assets.find((entry) => entry.riwayah === riwayah && entry.mushafEditionId === mushafEditionId)
-  ensure(asset, `Mushaf asset catalog missing default asset for ${riwayah}`)
+  ensure(asset.mushafEditionId === mushafEditionId, `Only the default quran.ws edition may write legacy Mushaf output for ${riwayah}`)
   const sourceSlug = asset.sourceSlug ?? catalog.riwayat[riwayah].sourceSlug
   const pageCount = catalog.pageCount
-  const sourcePagesDir = join(NORMALIZED_DIR, riwayah, 'pages')
+  const scopedPagesDir = join(NORMALIZED_DIR, riwayah, asset.mushafEditionId, 'pages')
+  const sourcePagesDir = existsSync(scopedPagesDir) ? scopedPagesDir : join(NORMALIZED_DIR, riwayah, 'pages')
   const sourceFiles = await collectSvgPageSet(sourcePagesDir, pageCount, { missing })
 
   if (sourceFiles.length === 0) {
@@ -673,12 +708,165 @@ async function buildRiwayah(riwayah, catalog, assetCatalog, { check = false, mis
     files.push({ url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`, bytes })
     totalBytes += bytes
   }
+  const { sourceKind: _sourceKind, ...indexAsset } = asset
   return {
-    ...asset,
+    ...indexAsset,
     manifestUrl,
     files,
     totalBytes,
     pageCount,
+  }
+}
+
+function assertUnitRect(rect, label) {
+  ensure(rect && typeof rect === 'object', `${label} must be an object`)
+  for (const key of ['x', 'y', 'width', 'height']) ensure(Number.isFinite(rect[key]), `${label}.${key} must be finite`)
+  ensure(rect.x >= 0 && rect.y >= 0 && rect.width > 0 && rect.height > 0 && rect.x + rect.width <= 1 && rect.y + rect.height <= 1, `${label} must stay within the emitted Full frame`)
+}
+
+function privateRenditionDescriptor(row, page, role) {
+  const rendition = row.renditions?.find((entry) => entry?.role === role)
+  const width = role === 'preview' ? 1280 : 2136
+  const expectedPath = `pages/${pad3(page)}-${width}.webp`
+  ensure(rendition && rendition.assetPath === expectedPath, `Private Mushaf page ${page} ${role} rendition path is invalid`)
+  ensure(Number.isInteger(rendition.bytes) && rendition.bytes > 0, `Private Mushaf page ${page} ${role} rendition bytes are invalid`)
+  ensure(typeof rendition.sha256 === 'string' && /^[a-f0-9]{64}$/.test(rendition.sha256), `Private Mushaf page ${page} ${role} rendition digest is invalid`)
+  ensure(rendition.width === width && Number.isInteger(rendition.height) && rendition.height > 0, `Private Mushaf page ${page} ${role} rendition dimensions are invalid`)
+  ensure(rendition.mimeType === PRIVATE_MIME_TYPE, `Private Mushaf page ${page} ${role} rendition MIME type is invalid`)
+  return {
+    assetPath: rendition.assetPath,
+    bytes: rendition.bytes,
+    sha256: rendition.sha256,
+    width: rendition.width,
+    height: rendition.height,
+    mimeType: rendition.mimeType,
+  }
+}
+
+function privatePolicyDigestInput(metadata) {
+  return {
+    version: BUILD_STAMP_VERSION,
+    transform: BUILD_TRANSFORM_ID,
+    riwayah: metadata.riwayah,
+    mushafEditionId: metadata.mushafEditionId,
+    media: {
+      kind: metadata.media.kind,
+      mimeType: metadata.media.mimeType,
+      renderDpi: metadata.media.renderDpi,
+      encoder: metadata.media.encoder,
+      renditions: metadata.media.renditions,
+    },
+    pages: metadata.pages.map((page) => ({
+      page: page.page,
+      firstVerse: page.firstVerse,
+      framing: page.framing,
+      renditions: page.renditions.map(({ role, assetPath, bytes, sha256, width, height, mimeType }) => ({ role, assetPath, bytes, sha256, width, height, mimeType })),
+    })),
+  }
+}
+
+async function loadPrivateNormalizedPages(asset, { missing = 'error' } = {}) {
+  const normalizedDir = join(NORMALIZED_DIR, asset.riwayah, asset.mushafEditionId)
+  const importPath = join(normalizedDir, 'import.json')
+  const bytes = await readExistingBytes(importPath)
+  if (!bytes) {
+    if (missing === 'skip') return null
+    throw new Error(`Mushaf missing private normalized input: ${importPath}`)
+  }
+  const metadata = JSON.parse(bytes.toString('utf8'))
+  ensure(metadata?.version === 1 && metadata.riwayah === asset.riwayah && metadata.mushafEditionId === asset.mushafEditionId, 'Private Mushaf normalized metadata identity is invalid')
+  ensure(metadata.media?.kind === PRIVATE_MEDIA_KIND && metadata.media.mimeType === PRIVATE_MIME_TYPE && metadata.media.renderDpi === 300, 'Private Mushaf normalized media policy is invalid')
+  ensure(metadata.media.encoder?.command === 'cwebp' && metadata.media.encoder.quality === 88 && metadata.media.encoder.method === 6, 'Private Mushaf normalized encoder policy is invalid')
+  ensure(Array.isArray(metadata.media.renditions) && metadata.media.renditions.length === 2
+    && metadata.media.renditions[0]?.role === 'preview' && metadata.media.renditions[0]?.width === 1280
+    && metadata.media.renditions[1]?.role === 'full' && metadata.media.renditions[1]?.width === 2136, 'Private Mushaf normalized rendition policy is incomplete')
+  ensure(Array.isArray(metadata.pages) && metadata.pages.length === asset.pageCount, 'Private Mushaf normalized pages are incomplete')
+
+  const pages = []
+  for (let index = 0; index < metadata.pages.length; index += 1) {
+    const page = index + 1
+    const row = metadata.pages[index]
+    ensure(row?.page === page, `Private Mushaf normalized page ${page} is invalid`)
+    ensure(Number.isInteger(row.firstVerse?.surah) && Number.isInteger(row.firstVerse?.verse), `Private Mushaf page ${page} first verse is invalid`)
+    assertUnitRect(row.framing?.textFrame, `Private Mushaf page ${page} textFrame`)
+    ensure(['left', 'right', 'none'].includes(row.framing?.sideLane), `Private Mushaf page ${page} sideLane is invalid`)
+    ensure(Array.isArray(row.renditions) && row.renditions.length === 2, `Private Mushaf page ${page} renditions are incomplete`)
+    const preview = privateRenditionDescriptor(row, page, 'preview')
+    const fallback = privateRenditionDescriptor(row, page, 'full')
+    for (const descriptor of [preview, fallback]) {
+      const path = join(normalizedDir, descriptor.assetPath)
+      const file = await readExistingBytes(path)
+      ensure(file && file.byteLength === descriptor.bytes && sha256Hex(file) === descriptor.sha256, `Private Mushaf page ${page} ${descriptor.assetPath} bytes are invalid`)
+    }
+    pages.push({ page, firstVerse: row.firstVerse, framing: row.framing, preview, fallback })
+  }
+  return { normalizedDir, metadata, pages, sourceDigest: sha256Hex(Buffer.from(jsonText(privatePolicyDigestInput(metadata)))) }
+}
+
+async function buildPrivateEdition(asset, { check = false, missing = 'error' } = {}) {
+  const normalized = await loadPrivateNormalizedPages(asset, { missing })
+  if (!normalized) {
+    console.warn(`[mushaf-pages] skipping ${asset.mushafEditionId}: missing local normalized image artifacts`)
+    return false
+  }
+  const mappings = await deriveRiwayahMappings(asset.riwayah, asset.pageCount)
+  const outDir = join(OUT_ROOT, asset.riwayah, asset.mushafEditionId)
+  const pageFiles = []
+  const manifestPages = normalized.pages.map((row) => {
+    const expectedFirstVerse = mappings.firstVerse.get(row.page)
+    ensure(expectedFirstVerse?.surah === row.firstVerse.surah && expectedFirstVerse?.verse === row.firstVerse.verse, `Private Mushaf page ${row.page} first verse disagrees with the canonical map`)
+    const sources = [row.preview, row.fallback]
+    for (const descriptor of sources) pageFiles.push([join(outDir, descriptor.assetPath), join(normalized.normalizedDir, descriptor.assetPath), descriptor, row.page])
+    return {
+      page: row.page,
+      firstVerse: expectedFirstVerse,
+      framing: row.framing,
+      media: { kind: PRIVATE_MEDIA_KIND, fallback: row.fallback, sources },
+    }
+  })
+  const manifest = {
+    version: 2,
+    riwayah: asset.riwayah,
+    mushafEditionId: asset.mushafEditionId,
+    editionLabel: asset.label,
+    editionVersion: 'v1',
+    pageCount: asset.pageCount,
+    verseToPage: mappings.verseToPage,
+    pages: manifestPages,
+  }
+  const manifestPath = join(outDir, 'manifest.json')
+  const manifestText = jsonText(manifest)
+  const stale = { missing: [], mismatched: [] }
+  await compareExpectedFile(manifestPath, manifestText, `public/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/manifest.json`, stale)
+  for (const [outputPath, inputPath, descriptor] of pageFiles) {
+    const source = await readFile(inputPath)
+    await compareExpectedFile(outputPath, source, `public/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`, stale)
+  }
+  if (check) {
+    if (stale.missing.length || stale.mismatched.length) throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
+    return true
+  }
+  let written = await writeIfChanged(manifestPath, manifestText) ? 1 : 0
+  for (const [outputPath, inputPath] of pageFiles) {
+    if (await writeIfChanged(outputPath, await readFile(inputPath))) written += 1
+  }
+  console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${asset.mushafEditionId}: ${asset.pageCount} pages (${written} files written)`)
+  const manifestUrl = `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/manifest.json`
+  const files = [{ url: manifestUrl, bytes: Buffer.byteLength(manifestText) }]
+  for (const page of manifestPages) {
+    for (const descriptor of page.media.sources) {
+      files.push({ url: `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`, ...descriptor })
+    }
+  }
+  return {
+    ...asset,
+    manifestUrl,
+    pageUrls: manifestPages.map((page) => `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${page.media.fallback.assetPath}`),
+    files,
+    totalBytes: files.reduce((total, file) => total + file.bytes, 0),
+    pageCount: asset.pageCount,
+    version: 'v2',
+    provenance: `private normalized input ${normalized.sourceDigest}`,
   }
 }
 
@@ -693,7 +881,11 @@ async function writeMushafAssetIndex(resolvedAssets, assetCatalog) {
   await writeJson(join(DATASET_DIR, 'indexes', 'mushaf-assets.json'), {
     version: 1,
     defaults,
-    assets: resolvedAssets,
+    assets: resolvedAssets.map((asset) => {
+      if (asset.sourceKind !== 'quran-ws') return asset
+      const { sourceKind: _sourceKind, ...indexAsset } = asset
+      return indexAsset
+    }),
   })
 }
 
@@ -731,28 +923,36 @@ export async function main(argv = process.argv.slice(2)) {
   const profile = argValue(argv, 'profile', 'baseline')
   const check = argv.includes('--check')
   const requiredRiwayat = new Set(argList(argv, 'require-riwayah'))
+  const requiredEditions = new Set(argList(argv, 'require-edition'))
   for (const riwayah of requiredRiwayat) validateRiwayahId(riwayah)
-
-  const selectedRiwayat = riwayatForProfile(profile)
-  const selected = new Set(selectedRiwayat)
+  const catalog = await loadCatalog()
+  const assetCatalog = await loadAssetCatalog()
+  const selectedEditionIds = editionIdsForProfile(profile, assetCatalog)
+  const selectedAssets = selectedEditionIds.map((editionId) => {
+    const asset = assetCatalog.assets.find((entry) => entry.mushafEditionId === editionId)
+    ensure(asset, `Mushaf asset catalog missing selected edition ${editionId}`)
+    return asset
+  })
+  const selectedRiwayat = new Set(selectedAssets.map((asset) => asset.riwayah))
   for (const riwayah of requiredRiwayat) {
-    if (!selected.has(riwayah)) {
-      throw new Error(`Required Mushaf page riwayah ${riwayah} is not part of profile ${profile}`)
-    }
+    if (!selectedRiwayat.has(riwayah)) throw new Error(`Required Mushaf page riwayah ${riwayah} is not part of profile ${profile}`)
   }
-  if (selectedRiwayat.length === 0) {
+  for (const editionId of requiredEditions) {
+    if (!selectedEditionIds.includes(editionId)) throw new Error(`Required Mushaf page edition ${editionId} is not part of profile ${profile}`)
+  }
+  if (selectedAssets.length === 0) {
     console.warn(`[mushaf-pages] skipping profile=${profile}: no Mushaf page body output`)
     return
   }
 
-  const catalog = await loadCatalog()
-  const assetCatalog = await loadAssetCatalog()
-
   const resolvedAssets = []
-  for (const riwayah of selectedRiwayat) {
-    const resolved = await buildRiwayah(riwayah, catalog, assetCatalog, {
+  for (const asset of selectedAssets) {
+    const isRequired = requiredRiwayat.has(asset.riwayah) || requiredEditions.has(asset.mushafEditionId)
+    const resolved = asset.sourceKind === 'local-pdf'
+      ? await buildPrivateEdition(asset, { check, missing: isRequired ? 'error' : 'skip' })
+      : await buildQuranWsEdition(asset, catalog, assetCatalog, {
       check,
-      missing: requiredRiwayat.has(riwayah) ? 'error' : 'skip',
+      missing: isRequired ? 'error' : 'skip',
     })
     if (resolved && typeof resolved === 'object') resolvedAssets.push(resolved)
   }

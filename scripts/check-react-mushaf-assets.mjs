@@ -3,7 +3,7 @@ import { readdir } from 'node:fs/promises'
 import { extname, join, relative } from 'node:path'
 
 const repoRoot = new URL('..', import.meta.url).pathname
-const legacyMushafPattern = /\/dataset\/mushaf-pages\/[^/'"`]+\/(?:manifest\.json|pages\/\d{3}\.svg)/g
+const legacyMushafPattern = /\/dataset\/mushaf-pages\/[^/'"`]+\/(?:manifest\.json|pages\/\d{3}(?:\.svg|-\d+\.webp))/g
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])

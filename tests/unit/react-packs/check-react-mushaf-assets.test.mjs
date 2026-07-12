@@ -9,6 +9,12 @@ describe('check-react-mushaf-assets', () => {
     ])
   })
 
+  it('rejects a legacy external-image Mushaf path in React code', () => {
+    expect(checkReactMushafAssetText('src/app/App.tsx', "'/dataset/mushaf-pages/qaloon/pages/001-2136.webp'")).toEqual([
+      'src/app/App.tsx contains legacy React Mushaf path /dataset/mushaf-pages/qaloon/pages/001-2136.webp.',
+    ])
+  })
+
   it('rejects SVG bodies in React build output', () => {
     expect(checkReactMushafOutputFiles([
       { path: 'dist/assets/page.svg', text: '<svg viewBox="0 0 10 10"></svg>' },

@@ -72,7 +72,7 @@ style_paths:
 
 `vite.config.js` configures React, Tailwind, and `vite-plugin-pwa`. The production service worker uses Workbox to precache only the app shell, fonts, icons, and built assets; `/dataset/**` stays out of precache and is cached through the CacheFirst runtime route in `quran-atlas-runtime-dataset-v1`. The Workbox cache id is `quranatlas`.
 
-`scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real page SVG pack.
+`scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real quran.ws SVG pack. The CI cache is deliberately limited to `qalun-quran-ws-v1/pages` and is versioned with the quran.ws catalog/build inputs; private local WebPs are ignored inputs and never enter default CI.
 
 `src/offline/**` owns cache names, cache plans, Mushaf service-worker message contracts, pack lifecycle/status, quota helpers, and offline UI state. The About route's app update action uses the browser service-worker registration to run an explicit update check and reload through a pending worker when one is found. `src/storage/**` owns Dexie schema, clear-data, settings writes, and storage errors. `src/storage/native-reader-store.ts` uses short-lived raw IndexedDB connections for Reader launch and continuity reads/writes; it creates only Reader-owned stores and leaves Search stores to explicit Search/Dexie paths.
 
@@ -123,7 +123,7 @@ Dexie v8 adds Search lifecycle stores. Clear data continues to delete browser st
 - Production offline behavior must be proven against `dist/` preview, not the dev server.
 - Runtime dataset caching stays same-origin and under `/dataset/**`.
 - Search pack caching stays under the dedicated Search cache owner for immutable `/search-packs/**` URLs.
-- Page SVG bodies must stay runtime assets, not JS bundle content.
+- Page SVG and WebP bodies must stay runtime assets, not JS bundle content.
 - Clear-data behavior clears Cache Storage and the shared IndexedDB database.
 - CI builds once and reuses the uploaded `dist/` artifact for Lighthouse, Playwright preview/offline, and deploy.
 - Affected CI gates must fail open when no trustworthy diff baseline exists.

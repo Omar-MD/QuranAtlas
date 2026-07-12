@@ -25,7 +25,7 @@ The app never imports `data/**`. Runtime code fetches `/dataset/**` and validate
 4. Derive verse aliases for cross-riwayah translation alignment.
 5. Build Surah, Juz, source, text-asset, Mushaf-asset, provenance, and inventory indexes.
 6. Build knowledge shards when source inputs are present.
-7. Build the baseline Qaloon Mushaf page manifest when page SVG inputs are available.
+7. Build the explicit Mushaf edition set for the selected profile when its local inputs are available. Baseline and full select only quran.ws; the local private profile selects quran.ws plus the Furatiyyah image edition.
 8. Build the source-backed Search pack registry and immutable core, morphology, and memory-graph pack shards under `public/search-packs/**`.
 9. Emit runtime files to `public/dataset/**` and Search pack files to `public/search-packs/**`.
 
@@ -82,9 +82,11 @@ The private Furatiyyah edition has no network importer and never enters a standa
 pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/Noor-Book.com  مصحف رواية قالون عن نافع طبعة جديدة.pdf"
 ```
 
-The private importer first checks the pinned PDF digest, document page count, and CropBox. It renders only source PDF pages 5 through 608 with `pdftocairo -cropbox -png -r 300`, applies the reviewed normalized Full frame through `cwebp -crop`, emits 1,280 and 2,136 pixel WebP renditions, validates every pair with `webpinfo`, then atomically promotes a complete immutable ignored sibling at `data/normalized/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/`. It refuses to overwrite a different output under the same edition id. The build step validates and emits edition-aware runtime page assets and manifests.
+The private importer first checks the pinned PDF digest, document page count, and CropBox. It renders only source PDF pages 5 through 608 with `pdftocairo -cropbox -png -r 300`, applies the reviewed normalized Full frame through `cwebp -crop`, emits 1,280 and 2,136 pixel WebP renditions, validates every pair with `webpinfo`, then atomically promotes a complete immutable ignored sibling at `data/normalized/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/`. It refuses to overwrite a different output under the same edition id.
 
-CI runs the Mushaf import/page-build lane when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs, normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, generated Mushaf runtime assets, or dependency files. CI and the shared local preview runner also run that lane whenever Playwright is selected so the tested `dist/` artifact includes the real Mushaf SVG pages that the browser specs assert.
+`mushaf-pages build` selects editions explicitly: `baseline` and `full` emit only `qalun-quran-ws-v1`; `private` emits that default plus `qalun-furatiyyah-2023-v1`; `catalog` emits none. All selected siblings build before a single riwayah-level prune, so a private build keeps both editions while a later baseline build removes the unselected private output and its index entry. Only quran.ws writes the legacy riwayah-level V1 manifest and SVG page paths. The private edition writes a V2 manifest with canonical `firstVerse`, transformed unit `textFrame`/`sideLane`, an external-image fallback at 2,136 pixels, and both verified WebP renditions. The asset index repeats absolute `/dataset/**` URLs and each WebP descriptor's digest, byte count, dimensions, and MIME type. `--require-edition=<id>` strictly requires a selected edition and complete normalized input; standard CI never names the private edition.
+
+CI runs the Mushaf import/page-build lane when `scripts/ci/affected.mjs` detects changes to Mushaf catalogs (including private edition contracts), normalized page inputs, riwayah source files, Mushaf page scripts, the default reader asset profile, generated Mushaf runtime assets, or dependency files. Its quran.ws-only cache uses the edition-scoped normalized page directory; it never caches or requires ignored private inputs. CI and the shared local preview runner also run that lane whenever Playwright is selected so the tested `dist/` artifact includes the real quran.ws SVG pages that the browser specs assert.
 
 ## Runtime Consumption
 
