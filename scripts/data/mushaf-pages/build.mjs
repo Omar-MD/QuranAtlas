@@ -11,6 +11,7 @@ import {
   assertThemeableSvgIntegrity,
   themeMushafSvg,
 } from './theme-svg.mjs'
+import { loadPrivateMushafEditionContract } from './private-pdf.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -742,25 +743,41 @@ function privateRenditionDescriptor(row, page, role) {
   }
 }
 
-function privatePolicyDigestInput(metadata) {
+function privateRuntimeTextFrame(sourceTextFrame, sourceFullFrame) {
   return {
-    version: BUILD_STAMP_VERSION,
-    transform: BUILD_TRANSFORM_ID,
-    riwayah: metadata.riwayah,
-    mushafEditionId: metadata.mushafEditionId,
-    media: {
-      kind: metadata.media.kind,
-      mimeType: metadata.media.mimeType,
-      renderDpi: metadata.media.renderDpi,
-      encoder: metadata.media.encoder,
-      renditions: metadata.media.renditions,
-    },
-    pages: metadata.pages.map((page) => ({
-      page: page.page,
-      firstVerse: page.firstVerse,
-      framing: page.framing,
-      renditions: page.renditions.map(({ role, assetPath, bytes, sha256, width, height, mimeType }) => ({ role, assetPath, bytes, sha256, width, height, mimeType })),
-    })),
+    x: (sourceTextFrame.x - sourceFullFrame.x) / sourceFullFrame.width,
+    y: (sourceTextFrame.y - sourceFullFrame.y) / sourceFullFrame.height,
+    width: sourceTextFrame.width / sourceFullFrame.width,
+    height: sourceTextFrame.height / sourceFullFrame.height,
+  }
+}
+
+function assertPrivateNormalizedProvenance(metadata, contract, asset) {
+  ensure(metadata.sourcePdfSha256 === contract.source.sha256, 'Private Mushaf normalized source PDF digest disagrees with the committed source contract')
+  ensure(metadata.contractDigest === contract.contractDigest, 'Private Mushaf normalized contract digest disagrees with the committed review and media contracts')
+  ensure(typeof metadata.contentDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contentDigest), 'Private Mushaf normalized metadata content digest is invalid')
+  const { contentDigest, ...unsignedMetadata } = metadata
+  ensure(contentDigest === sha256Hex(Buffer.from(jsonText(unsignedMetadata))), 'Private Mushaf normalized metadata content digest is stale or forged')
+  ensure(JSON.stringify(metadata.media) === JSON.stringify({
+    kind: contract.mediaPolicy.kind,
+    mimeType: contract.mediaPolicy.mimeType,
+    renderDpi: contract.mediaPolicy.renderDpi,
+    encoder: contract.mediaPolicy.encoder,
+    renditions: contract.mediaPolicy.renditions,
+  }), 'Private Mushaf normalized media policy disagrees with the committed media contract')
+
+  for (let index = 0; index < metadata.pages.length; index += 1) {
+    const page = index + 1
+    const row = metadata.pages[index]
+    const review = contract.pageStartReviews[index]
+    const framing = contract.framingPages[index]
+    const expectedTextFrame = privateRuntimeTextFrame(framing.sourceTextFrame, framing.sourceFullFrame)
+    ensure(row.sourcePdfPage === review.sourcePdfPage && row.firstVerse?.surah === review.canonicalFirstVerse.surah && row.firstVerse?.verse === review.canonicalFirstVerse.verse, `Private Mushaf normalized page ${page} disagrees with the committed page review`)
+    ensure(row.framing?.sideLane === framing.sideLane
+      && row.framing.textFrame?.x === expectedTextFrame.x
+      && row.framing.textFrame?.y === expectedTextFrame.y
+      && row.framing.textFrame?.width === expectedTextFrame.width
+      && row.framing.textFrame?.height === expectedTextFrame.height, `Private Mushaf normalized page ${page} disagrees with the committed framing contract`)
   }
 }
 
@@ -774,6 +791,8 @@ async function loadPrivateNormalizedPages(asset, { missing = 'error', normalized
   }
   const metadata = JSON.parse(bytes.toString('utf8'))
   ensure(metadata?.version === 1 && metadata.riwayah === asset.riwayah && metadata.mushafEditionId === asset.mushafEditionId, 'Private Mushaf normalized metadata identity is invalid')
+  const contract = await loadPrivateMushafEditionContract(asset.mushafEditionId)
+  assertPrivateNormalizedProvenance(metadata, contract, asset)
   ensure(metadata.media?.kind === PRIVATE_MEDIA_KIND && metadata.media.mimeType === PRIVATE_MIME_TYPE && metadata.media.renderDpi === 300, 'Private Mushaf normalized media policy is invalid')
   ensure(metadata.media.encoder?.command === 'cwebp' && metadata.media.encoder.quality === 88 && metadata.media.encoder.method === 6, 'Private Mushaf normalized encoder policy is invalid')
   ensure(Array.isArray(metadata.media.renditions) && metadata.media.renditions.length === 2
@@ -799,7 +818,7 @@ async function loadPrivateNormalizedPages(asset, { missing = 'error', normalized
     }
     pages.push({ page, firstVerse: row.firstVerse, framing: row.framing, preview, fallback })
   }
-  return { normalizedDir, metadata, pages, sourceDigest: sha256Hex(Buffer.from(jsonText(privatePolicyDigestInput(metadata)))) }
+  return { normalizedDir, metadata, pages, sourceDigest: metadata.contentDigest }
 }
 
 async function buildPrivateEdition(asset, { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {}) {

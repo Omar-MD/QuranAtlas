@@ -253,10 +253,6 @@ export function MushafRoute({
     >
       {assetState !== 'ready' ? (
         <ReaderAssetGate label="Qalun" state={assetState} />
-      ) : windowState.requested?.status === 'error' ? (
-        <ReaderAssetGate label="Mushaf" onRetry={() => windowState.retry(page)} state="error" />
-      ) : windowState.requested?.status === 'unavailable' ? (
-        <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} onRetry={() => windowState.retry(page)} state="missing" />
       ) : visiblePage ? (
         <MushafPageViewer
           bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
@@ -302,6 +298,10 @@ export function MushafRoute({
           surahLabel={currentSurahLabel}
           viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
         />
+      ) : windowState.requested?.status === 'error' ? (
+        <ReaderAssetGate label="Mushaf" onRetry={() => windowState.retry(page)} state="error" />
+      ) : windowState.requested?.status === 'unavailable' ? (
+        <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} onRetry={() => windowState.retry(page)} state="missing" />
       ) : (
         <section className="qar:m-5 qar:min-h-28 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Loading Mushaf page" aria-live="polite" />
       )}

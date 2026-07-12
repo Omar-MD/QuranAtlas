@@ -68,6 +68,7 @@ async function writeTransitionFixture(root) {
   const ayat = JSON.parse(await readFile(join(process.cwd(), 'data', 'normalized', 'quran', 'riwayat', 'qaloon.json'), 'utf8'))
   const mappings = derivePageMappings(ayat)
   const media = await readCatalogJson('mushaf-editions/qalun-furatiyyah-2023-v1/media.json')
+  const contract = await loadPrivateMushafEditionContract('qalun-furatiyyah-2023-v1')
   const framing = await readCatalogJson('mushaf-editions/qalun-furatiyyah-2023-v1/framing.json')
   const sourceBytes = Buffer.from('fixture-webp')
   const sourceDigest = createHash('sha256').update(sourceBytes).digest('hex')
@@ -99,10 +100,12 @@ async function writeTransitionFixture(root) {
       renditions,
     })
   }
-  await writeFile(join(privateRoot, 'import.json'), jsonText({
+  const importMetadata = {
     version: 1,
     riwayah: 'qaloon',
     mushafEditionId: 'qalun-furatiyyah-2023-v1',
+    sourcePdfSha256: contract.source.sha256,
+    contractDigest: contract.contractDigest,
     media: {
       kind: media.kind,
       mimeType: media.mimeType,
@@ -111,7 +114,9 @@ async function writeTransitionFixture(root) {
       renditions: media.renditions,
     },
     pages,
-  }))
+  }
+  importMetadata.contentDigest = createHash('sha256').update(jsonText(importMetadata)).digest('hex')
+  await writeFile(join(privateRoot, 'import.json'), jsonText(importMetadata))
   return { normalizedRoot, datasetDir, outRoot, refreshManifest: false }
 }
 
@@ -393,6 +398,34 @@ describe('mushaf page dataset builder', () => {
     expect(editionIdsForProfile('catalog', {})).toEqual([])
     expect(() => editionIdsForProfile('unexpected', catalog)).toThrow(/Unsupported Mushaf page profile/)
     await expect(buildMushafPages(['--profile=baseline', '--require-edition=qalun-furatiyyah-2023-v1'])).rejects.toThrow(/not part of profile baseline/)
+  })
+
+  it('rejects forged or stale private normalized provenance before emitting output', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-provenance-'))
+    const paths = await writeTransitionFixture(root)
+    const metadataPath = join(paths.normalizedRoot, 'qaloon', 'qalun-furatiyyah-2023-v1', 'import.json')
+    try {
+      const forged = JSON.parse(await readFile(metadataPath, 'utf8'))
+      forged.sourcePdfSha256 = '0'.repeat(64)
+      forged.contentDigest = createHash('sha256').update(jsonText({ ...forged, contentDigest: undefined })).digest('hex')
+      delete forged.contentDigest
+      forged.contentDigest = createHash('sha256').update(jsonText(forged)).digest('hex')
+      await writeFile(metadataPath, jsonText(forged))
+
+      await expect(buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)).rejects.toThrow(/source PDF digest/i)
+
+      const stale = JSON.parse(await readFile(metadataPath, 'utf8'))
+      stale.sourcePdfSha256 = (await loadPrivateMushafEditionContract('qalun-furatiyyah-2023-v1')).source.sha256
+      stale.contractDigest = 'f'.repeat(64)
+      const unsigned = { ...stale }
+      delete unsigned.contentDigest
+      stale.contentDigest = createHash('sha256').update(jsonText(unsigned)).digest('hex')
+      await writeFile(metadataPath, jsonText(stale))
+
+      await expect(buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)).rejects.toThrow(/contract digest/i)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   it('prunes stale editions only after preserving every selected sibling', async () => {

@@ -1,6 +1,10 @@
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, it, expect } from 'vitest'
 
 import {
+  loadSourceCatalog,
   validateSourceCatalog,
 } from '../../../scripts/data/source-catalog.mjs'
 
@@ -255,6 +259,40 @@ describe('source catalog validation', () => {
 
     delete catalog.mushafAssets.defaults.qaloon
     expect(validateSourceCatalog(catalog).errors).toContain('mushaf asset catalog missing default qaloon edition')
+  })
+
+  it('inspects private catalog contract evidence and rejects missing or mismatched records', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-source-catalog-private-'))
+    const catalogDir = join(root, 'catalog')
+    await cp(join(process.cwd(), 'data', 'catalog'), catalogDir, { recursive: true })
+    try {
+      const sourcePath = join(catalogDir, 'mushaf-editions', 'qalun-furatiyyah-2023-v1', 'source.json')
+      const source = JSON.parse(await readFile(sourcePath, 'utf8'))
+      source.mushafEditionId = 'forged-private-edition-v1'
+      await writeFile(sourcePath, JSON.stringify(source, null, 2))
+
+      const catalog = await loadSourceCatalog(catalogDir)
+      expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
+        'mushaf asset qaloon/qalun-furatiyyah-2023-v1 source contract identity is invalid',
+      ]))
+
+      const reviewPath = join(catalogDir, 'mushaf-editions', 'qalun-furatiyyah-2023-v1', 'page-start-review.json')
+      const review = JSON.parse(await readFile(reviewPath, 'utf8'))
+      review.pageStartReviews[0].result = 'pending'
+      await writeFile(reviewPath, JSON.stringify(review, null, 2))
+      const badReview = await loadSourceCatalog(catalogDir)
+      expect(validateSourceCatalog(badReview).errors).toEqual(expect.arrayContaining([
+        'mushaf asset qaloon/qalun-furatiyyah-2023-v1 page-start review contract is invalid',
+      ]))
+
+      await rm(join(catalogDir, 'mushaf-editions', 'qalun-furatiyyah-2023-v1', 'media.json'))
+      const missingMedia = await loadSourceCatalog(catalogDir)
+      expect(validateSourceCatalog(missingMedia).errors).toEqual(expect.arrayContaining([
+        'mushaf asset qaloon/qalun-furatiyyah-2023-v1 media policy contract is missing',
+      ]))
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   it('keeps the Qaloon default on the shipped quran.ws edition', () => {

@@ -764,16 +764,46 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('replaces a stale visible page with the requested-page error and retry control', async () => {
-    vi.stubGlobal('fetch', failingSecondPageMushafFetch())
+  it('retains the visible Mushaf page through a requested-page failure and retries it from reader navigation', async () => {
+    let pageTwoAttempts = 0
+    let includeSecondPage = false
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
+        return jsonResponse({
+          ...mushafManifest,
+          pages: includeSecondPage ? [
+            mushafManifest.pages[0],
+            { ...mushafManifest.pages[0], assetPath: 'pages/002.svg', firstVerse: { surah: 2, verse: 1 }, page: 2 },
+          ] : [mushafManifest.pages[0]],
+        })
+      }
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg') {
+        return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      }
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg') {
+        pageTwoAttempts += 1
+        if (pageTwoAttempts === 1) return { ok: false, status: 500, text: async () => '' } as Response
+        return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      }
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
     const { rerender } = render(<MushafRoute page={1} />)
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
 
+    includeSecondPage = true
     rerender(<MushafRoute page={2} />)
 
-    expect(await screen.findByText('Mushaf page pack could not be loaded.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
-    expect(screen.queryByRole('img', { name: /mushaf page 1, qaloon/i })).not.toBeInTheDocument()
+    await waitFor(() => expect(pageTwoAttempts).toBe(1))
+    expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    expect(screen.queryByText('Mushaf page pack could not be loaded.')).not.toBeInTheDocument()
+    expect(screen.getByText('Mushaf page 2 is unavailable. Use page navigation to retry.')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+
+    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
+    expect(pageTwoAttempts).toBeGreaterThan(1)
     vi.unstubAllGlobals()
   })
 

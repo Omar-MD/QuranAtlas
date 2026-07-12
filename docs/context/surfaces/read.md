@@ -91,7 +91,7 @@ style_paths:
 
 ### Mushaf Mode
 
-`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates edition-aware page assets, sanitizes V1 SVGs, and maintains a retained window of at most five entries around the requested page. The requested page is current, its immediate neighbors are decode-gated previews, and outer entries remain descriptors until promoted. Ready pages survive overlapping route changes while missing or failed neighbors remain non-navigable and retryable. V2 pages mount as external images with reviewed Full/Text framing; the page itself remains a labeled image without decorative framing.
+`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates edition-aware page assets, sanitizes V1 SVGs, and maintains a retained window of at most five entries around the requested page. The requested page is current, its immediate neighbors are decode-gated previews, and outer entries remain descriptors until promoted. A failed or unavailable request keeps an already visible ready page mounted and exposes its retryable destination through reader navigation; the asset gate appears only when no visible page exists. V2 pages mount as external images with reviewed Full/Text framing; the page itself remains a labeled image without decorative framing.
 
 | Navigation | Fit page | Fit width |
 | --- | --- | --- |
