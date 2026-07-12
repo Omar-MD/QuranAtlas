@@ -76,6 +76,7 @@ describe('React storage schema mirror', () => {
       fontSize: 'lg',
       lineSpacing: 'sm',
       mushafFitWidth: true,
+      mushafPageFraming: 0.5,
       mushafViewMode: 'continuous',
       nightMode: 'on',
       readerMargin: 'xl',
@@ -98,6 +99,7 @@ describe('React storage schema mirror', () => {
       'nightMode',
       'mushafViewMode',
       'mushafFitWidth',
+      'mushafPageFraming',
     ])).resolves.toEqual([
       { key: 'translationVisible', value: false },
       { key: 'wirdReaderStatusVisible', value: false },
@@ -110,6 +112,7 @@ describe('React storage schema mirror', () => {
       { key: 'nightMode', value: 'on' },
       { key: 'mushafViewMode', value: 'continuous' },
       { key: 'mushafFitWidth', value: true },
+      { key: 'mushafPageFraming', value: 0.5 },
     ])
   })
 
@@ -122,5 +125,13 @@ describe('React storage schema mirror', () => {
       mushafFitWidth: true,
       mushafViewMode: 'fit-page',
     })
+  })
+
+  it('clamps corrupt Mushaf framing values to the supported range', async () => {
+    const db = await openReactDb()
+    await db.settings.put({ key: 'mushafPageFraming', value: 4 })
+    await expect(readReactReaderPreferences(db)).resolves.toMatchObject({ mushafPageFraming: 1 })
+    await db.settings.put({ key: 'mushafPageFraming', value: 'invalid' })
+    await expect(readReactReaderPreferences(db)).resolves.toMatchObject({ mushafPageFraming: 0 })
   })
 })

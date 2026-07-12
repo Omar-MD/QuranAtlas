@@ -23,6 +23,7 @@ export type ReactReaderPreferences = {
   fontSize: ReactPreferenceStep
   lineSpacing: ReactPreferenceStep
   mushafFitWidth: boolean
+  mushafPageFraming: number
   mushafViewMode: NormalizedReactMushafViewMode
   nightMode: ReactNightModePreference
   readerMargin: ReactPreferenceStep
@@ -37,6 +38,7 @@ export const DEFAULT_REACT_READER_PREFERENCES: ReactReaderPreferences = {
   fontSize: 'md',
   lineSpacing: 'md',
   mushafFitWidth: false,
+  mushafPageFraming: 0,
   mushafViewMode: 'auto',
   nightMode: 'off',
   readerMargin: 'md',
@@ -59,6 +61,7 @@ const READER_PREFERENCE_KEYS = [
   'nightMode',
   'mushafViewMode',
   'mushafFitWidth',
+  'mushafPageFraming',
 ] as const
 
 function asStep(value: unknown): ReactPreferenceStep | null {
@@ -80,6 +83,10 @@ function asMushafViewMode(value: unknown): ReactMushafViewMode | null {
 function normalizeMushafViewMode(value: ReactMushafViewMode | null): NormalizedReactMushafViewMode | null {
   if (value === 'fit-width') return 'fit-page'
   return value
+}
+
+function clampMushafPageFraming(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
 }
 
 export async function writeReaderAssetBundleSettings(db: QuranAtlasReactDb, settings: ReaderAssetBundleSettings): Promise<void> {
@@ -114,6 +121,7 @@ function reactReaderPreferencesFromRecords(records: Array<SettingRecord | undefi
       : legacyMushafViewMode === 'fit-width'
         ? true
         : DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth,
+    mushafPageFraming: clampMushafPageFraming(values.mushafPageFraming),
     mushafViewMode: normalizeMushafViewMode(legacyMushafViewMode) ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
     nightMode: asNightMode(values.nightMode) ?? DEFAULT_REACT_READER_PREFERENCES.nightMode,
     readerMargin: asStep(values.readerMargin) ?? DEFAULT_REACT_READER_PREFERENCES.readerMargin,
@@ -142,6 +150,7 @@ export async function writeReactReaderPreferences(db: QuranAtlasReactDb, prefere
     { key: 'nightMode', value: preferences.nightMode },
     { key: 'mushafViewMode', value: normalizeMushafViewMode(preferences.mushafViewMode) },
     { key: 'mushafFitWidth', value: preferences.mushafFitWidth },
+    { key: 'mushafPageFraming', value: clampMushafPageFraming(preferences.mushafPageFraming) },
   ]
   await db.transaction('rw', db.settings, async () => {
     await db.settings.bulkPut(records)

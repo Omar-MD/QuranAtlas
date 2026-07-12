@@ -62,6 +62,7 @@ style_paths:
 | `src/components/reader/metadata/ThemeChips.tsx` | _(no leading comment)_ |
 | `src/components/reader/metadata/metadata.stories.tsx` | _(no leading comment)_ |
 | `src/components/reader/mushaf-gesture.ts` | _(no leading comment)_ |
+| `src/components/reader/mushaf-page-framing.ts` | _(no leading comment)_ |
 | `src/components/reader/reader-mode-routing.ts` | _(no leading comment)_ |
 | `src/components/reader/reader.stories.tsx` | _(no leading comment)_ |
 | `src/components/reader/useMushafPageGesture.ts` | _(no leading comment)_ |
@@ -90,7 +91,7 @@ style_paths:
 
 ### Mushaf Mode
 
-`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates edition-aware page assets, sanitizes page SVGs, and maintains a retained window of at most five entries around the requested page. Ready pages survive overlapping route changes while missing or failed neighbors remain non-navigable and retryable. The page itself is rendered as a labeled image without decorative framing.
+`MushafRoute` resolves the active `riwayah` and `mushafEditionId`, validates edition-aware page assets, sanitizes V1 SVGs, and maintains a retained window of at most five entries around the requested page. The requested page is current, its immediate neighbors are decode-gated previews, and outer entries remain descriptors until promoted. Ready pages survive overlapping route changes while missing or failed neighbors remain non-navigable and retryable. V2 pages mount as external images with reviewed Full/Text framing; the page itself remains a labeled image without decorative framing.
 
 | Navigation | Fit page | Fit width |
 | --- | --- | --- |

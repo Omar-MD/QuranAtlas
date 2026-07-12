@@ -3225,6 +3225,29 @@
     min-height: 0;
   }
 
+  .qar-react-mushaf-page-frame {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+  }
+
+  .qar-react-mushaf-page-image {
+    max-width: none;
+    position: absolute;
+    user-select: none;
+  }
+
+  .qar-react-mushaf-framing-controls {
+    display: grid;
+    gap: var(--qa-space-2);
+    min-inline-size: min(18rem, 100%);
+  }
+
+  .qar-react-mushaf-framing-presets {
+    display: flex;
+    gap: var(--qa-space-2);
+  }
+
   .qar-react-mushaf-page-status {
     display: grid;
     place-items: center;

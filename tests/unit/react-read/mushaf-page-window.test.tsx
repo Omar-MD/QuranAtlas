@@ -54,16 +54,17 @@ describe('useMushafPageWindow', () => {
       profile: primaryProfile,
     }), { initialProps: { page: 42 } })
 
-    await waitFor(() => expect(result.current.entries.every((entry) => entry.status === 'ready')).toBe(true))
+    await waitFor(() => expect(result.current.entries.filter((entry) => entry.status === 'ready')).toHaveLength(3))
+    expect(result.current.entries.filter((entry) => entry.status === 'descriptor').map((entry) => entry.page)).toEqual([40, 44])
     expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(5)
 
     rerender({ page: 43 })
-    await waitFor(() => expect(result.current.entries.every((entry) => entry.status === 'ready')).toBe(true))
+    await waitFor(() => expect(result.current.entries.filter((entry) => entry.status === 'ready')).toHaveLength(3))
 
-    expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(6)
-    expect(mockedLoadMushafPageAsset.mock.calls[5]?.[0].page).toBe(45)
+    expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(7)
+    expect(mockedLoadMushafPageAsset.mock.calls.slice(5).map(([input]) => input.page).sort((a, b) => a - b)).toEqual([44, 45])
     expect(result.current.entries.map((entry) => entry.page)).toEqual([41, 42, 43, 44, 45])
-    expect(result.current.entries.slice(0, 4).every((entry) => entry.status === 'ready')).toBe(true)
+    expect([44, 45]).toContain(result.current.entries.filter((entry) => entry.status === 'descriptor').map((entry) => entry.page)[0])
   })
 
   it('ignores stale completions from the previous profile', async () => {

@@ -29,6 +29,7 @@ export type SettingsFormState =
 export function useSettingsForm(): {
   setMushafViewMode: (value: NormalizedReactMushafViewMode) => void
   setMushafFitWidth: (value: boolean) => void
+  setMushafPageFraming: (value: number) => void
   setNightMode: (value: ReactNightModePreference) => void
   setReadingFlow: (value: ReactPreferenceStep) => void
   setFontSize: (value: ReactPreferenceStep) => void
@@ -91,6 +92,10 @@ export function useSettingsForm(): {
       updateLandscapeFitWidthOverride(mushafFitWidth)
       updatePreferences((current) => ({ ...current, mushafFitWidth }))
     },
+    setMushafPageFraming: (mushafPageFraming) => updatePreferences((current) => ({
+      ...current,
+      mushafPageFraming: Number.isFinite(mushafPageFraming) ? Math.min(1, Math.max(0, mushafPageFraming)) : 0,
+    })),
     setNightMode: (nightMode) => updatePreferences((current) => ({ ...current, nightMode })),
     setReadingFlow: (value) => updatePreferences((current) => ({
       ...current,

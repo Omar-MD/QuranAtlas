@@ -17,7 +17,9 @@ import { normalizeWirdPlan, notifyWirdPlanChanged, readWirdPlan, subscribeWirdPl
 import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import {
   type MushafReadyPageAssetState,
+  loadMushafFramingCapability,
 } from '../../../packs/mushaf-page-asset'
+import { clampMushafPageFraming } from '../../../components/reader/mushaf-page-framing'
 import type { Riwayah } from '../../../storage/types'
 import { nativeSettingsReader, readNativeSetting, readNativeSettings, writeNativeSetting } from '../../../storage/native-reader-store'
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
@@ -35,6 +37,7 @@ type MushafRouteProps = {
 type ActiveMushafSettings = {
   mushafEditionId: string
   mushafFitWidth: boolean
+  mushafPageFraming: number
   mushafViewMode: MushafViewMode
   riwayah: Riwayah
   wirdReaderStatusVisible: boolean
@@ -58,6 +61,7 @@ export function MushafRoute({
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
   const [chromeVisible, setChromeVisible] = useState(true)
+  const [hasValidFraming, setHasValidFraming] = useState(false)
   const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
@@ -126,6 +130,7 @@ export function MushafRoute({
         mushafFitWidth: typeof preferences.mushafFitWidth === 'boolean'
           ? preferences.mushafFitWidth
           : current.mushafFitWidth,
+        mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
         mushafViewMode: isReactMushafViewMode(preferences.mushafViewMode)
           ? preferences.mushafViewMode
           : current.mushafViewMode,
@@ -137,6 +142,14 @@ export function MushafRoute({
       unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (!activeSettings) return
+    let active = true
+    void loadMushafFramingCapability(activeSettings)
+      .then((capability) => { if (active) setHasValidFraming(capability.hasValidFraming) })
+    return () => { active = false }
+  }, [activeSettings?.mushafEditionId, activeSettings?.riwayah])
 
   useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
 
@@ -248,8 +261,11 @@ export function MushafRoute({
         <MushafPageViewer
           bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
           chromeVisible={chromeVisible}
-          fitWidth={activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
-          inlineSvg={visiblePage.inlineSvg}
+          fitWidth={hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
+            ? true
+            : activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
+          framingValue={hasValidFraming ? activeSettings?.mushafPageFraming : 0}
+          inlineSvg={visiblePage.media.kind === 'inline-svg' ? visiblePage.media.inlineSvg : emptyInlineSvg}
           onDominantPageChange={(nextPage) => {
             if (nextPage === visiblePage.resolved.page) return
             const nextAsset = readyWindowPage(windowState.entries, nextPage)
@@ -312,6 +328,7 @@ async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
       riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
       mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
       mushafFitWidth: preferences.mushafFitWidth,
+      mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
       mushafViewMode: preferences.mushafViewMode,
       wirdReaderStatusVisible: preferences.wirdReaderStatusVisible,
     }
@@ -320,11 +337,14 @@ async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
       riwayah: DEFAULT_RIWAYAH,
       mushafEditionId: DEFAULT_MUSHAF_EDITION_ID,
       mushafFitWidth: DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth,
+      mushafPageFraming: DEFAULT_REACT_READER_PREFERENCES.mushafPageFraming,
       mushafViewMode: DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
       wirdReaderStatusVisible: DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
     }
   }
 }
+
+const emptyInlineSvg = { markup: '', viewBox: { x: 0, y: 0, width: 1, height: 1 }, viewBoxText: '0 0 1 1' }
 
 async function advanceNativeWirdFromReaderPosition(
   ref: QuranRef,

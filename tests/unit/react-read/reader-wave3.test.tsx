@@ -7,6 +7,7 @@ import { ReaderChrome } from '../../../src/components/reader/ReaderChrome'
 import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
 import { useReaderInteractionSuspended } from '../../../src/components/reader/ReaderInteractionContext'
 import { MushafPageViewer } from '../../../src/components/reader/MushafPageViewer'
+import { clampMushafPageFraming, interpolateMushafPageFrame, mushafImagePlacement } from '../../../src/components/reader/mushaf-page-framing'
 import {
   loadPreparedExternalMushafPage,
   loadMushafPageAsset,
@@ -238,6 +239,15 @@ function ReaderSuspensionProbe() {
 }
 
 describe('React reader coverage', () => {
+  it('interpolates reviewed framing from Full to Text and falls open for invalid rectangles', () => {
+    const frame = { x: 0.1, y: 0.05, width: 0.8, height: 0.9 }
+    expect(clampMushafPageFraming(-4)).toBe(0)
+    expect(clampMushafPageFraming(4)).toBe(1)
+    expect(interpolateMushafPageFrame(frame, 0)).toEqual({ x: 0, y: 0, width: 1, height: 1 })
+    expect(interpolateMushafPageFrame(frame, 1)).toEqual(frame)
+    expect(mushafImagePlacement({ width: 2136, height: 2720 }, frame, 1).image.left).toBe('-12.5%')
+    expect(mushafImagePlacement({ width: 2136, height: 2720 }, { x: 0, y: 0, width: 2, height: 1 }, 1).frame).toEqual({ x: 0, y: 0, width: 1, height: 1 })
+  })
   function setWindowScrollY(value: number) {
     Object.defineProperty(window, 'scrollY', { configurable: true, value })
     Object.defineProperty(document.documentElement, 'scrollTop', { configurable: true, value })

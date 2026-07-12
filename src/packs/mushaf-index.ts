@@ -18,6 +18,8 @@ export type MushafPageFraming = {
   sideLane: 'left' | 'right' | 'none'
 }
 
+export type MushafFramingCapability = { hasValidFraming: boolean }
+
 export type MushafAssetIndexFile = {
   url: string
   bytes?: number

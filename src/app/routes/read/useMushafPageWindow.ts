@@ -1,181 +1,125 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
+  loadPreparedMushafPage,
   loadMushafPageAsset,
+  prepareExternalMushafImage,
+  selectExternalMushafSource,
+  type MushafPageLoadPurpose,
   type MushafReadyPageAssetState,
+  type PreparedMushafPage,
 } from '../../../packs/mushaf-page-asset'
 import type { Riwayah } from '../../../storage/types'
 
 export type MushafPageWindowEntry =
   | { page: number; status: 'loading' }
+  | { page: number; prepared: PreparedMushafPage; status: 'descriptor' }
   | { page: number; status: 'error' | 'unavailable' }
   | { asset: MushafReadyPageAssetState; page: number; status: 'ready' }
 
-type MushafPageWindowState = {
-  entries: MushafPageWindowEntry[]
-  profileKey: string | null
-}
-
-type InFlightRequest = {
-  controller: AbortController
-  key: string
-  promise: Promise<void>
-}
+type State = { entries: MushafPageWindowEntry[]; profileKey: string | null }
+type Request = { controller: AbortController; promise: Promise<void> }
 
 export function useMushafPageWindow(input: {
   enabled: boolean
   page: number
   pageCount: number
   profile: { mushafEditionId: string; riwayah: Riwayah } | null
-}): {
-  entries: readonly MushafPageWindowEntry[]
-  requested: MushafPageWindowEntry | null
-  retry: (page: number) => void
-} {
-  const profileKey = input.enabled && input.profile
-    ? `${input.profile.riwayah}:${input.profile.mushafEditionId}`
-    : null
+}): { entries: readonly MushafPageWindowEntry[]; requested: MushafPageWindowEntry | null; retry: (page: number) => void } {
+  const profileKey = input.enabled && input.profile ? `${input.profile.riwayah}:${input.profile.mushafEditionId}` : null
   const requestedPage = Math.min(input.pageCount, Math.max(1, input.page))
-  const desiredPages = useMemo(() => Array.from({ length: 5 }, (_, index) => requestedPage - 2 + index)
+  const pages = useMemo(() => Array.from({ length: 5 }, (_, i) => requestedPage - 2 + i)
     .filter((page) => page >= 1 && page <= input.pageCount), [input.pageCount, requestedPage])
-  const desiredKey = desiredPages.join(':')
-  const [state, setState] = useState<MushafPageWindowState>({ entries: [], profileKey: null })
-  const [retryVersion, setRetryVersion] = useState(0)
+  const [state, setState] = useState<State>({ entries: [], profileKey: null })
   const stateRef = useRef(state)
   const profileRef = useRef(input.profile)
-  const profileKeyRef = useRef(profileKey)
-  const desiredPagesRef = useRef(desiredPages)
-  const retryGenerationsRef = useRef(new Map<number, number>())
-  const inFlightRef = useRef(new Map<number, InFlightRequest>())
-
-  stateRef.current = state
-  profileRef.current = input.profile
-  profileKeyRef.current = profileKey
-  desiredPagesRef.current = desiredPages
+  const keyRef = useRef(profileKey)
+  const pagesRef = useRef(pages)
+  const requests = useRef(new Map<number, Request>())
+  const [retryVersion, setRetryVersion] = useState(0)
+  stateRef.current = state; profileRef.current = input.profile; keyRef.current = profileKey; pagesRef.current = pages
 
   useEffect(() => {
-    abortAll(inFlightRef.current)
-    retryGenerationsRef.current.clear()
-    setState({
-      entries: profileKey ? desiredPages.map((page) => ({ page, status: 'loading' })) : [],
-      profileKey,
-    })
-    return () => abortAll(inFlightRef.current)
+    abortAll(requests.current)
+    setState({ profileKey, entries: profileKey ? pages.map((page) => ({ page, status: 'loading' })) : [] })
+    return () => abortAll(requests.current)
   }, [profileKey])
 
   useEffect(() => {
     if (!profileKey || state.profileKey !== profileKey) return
-    const desired = new Set(desiredPages)
-    for (const [page, request] of inFlightRef.current) {
-      if (desired.has(page)) continue
-      request.controller.abort()
-      inFlightRef.current.delete(page)
-    }
-    setState((current) => {
-      if (current.profileKey !== profileKey) return current
-      const retained = new Map(current.entries
-        .filter((entry) => desired.has(entry.page))
-        .map((entry) => [entry.page, entry]))
-      for (const page of desiredPages) {
-        if (!retained.has(page)) retained.set(page, { page, status: 'loading' })
-      }
-      const entries = [...retained.values()].sort((left, right) => left.page - right.page)
-      return sameEntries(current.entries, entries) ? current : { ...current, entries }
+    const wanted = new Set(pages)
+    for (const [page, request] of requests.current) if (!wanted.has(page)) { request.controller.abort(); requests.current.delete(page) }
+    setState((current) => current.profileKey !== profileKey ? current : {
+      ...current,
+      entries: pages.map((page) => current.entries.find((entry) => entry.page === page) ?? { page, status: 'loading' }),
     })
-  }, [desiredKey, profileKey, state.profileKey])
+  }, [pages.join(':'), profileKey, state.profileKey])
 
   useEffect(() => {
     if (!profileKey || !input.profile || state.profileKey !== profileKey) return
-    let active = true
-
-    async function loadWindow(): Promise<void> {
-      await ensurePageLoaded(requestedPage)
-      if (!active || profileKeyRef.current !== profileKey) return
-      await Promise.all(desiredPages
-        .filter((page) => page !== requestedPage)
-        .map((page) => ensurePageLoaded(page)))
+    let alive = true
+    const purposeFor = (page: number): 'current' | 'preview' | 'descriptor' => page === requestedPage
+      ? 'current' : Math.abs(page - requestedPage) === 1 ? 'preview' : 'descriptor'
+    async function run(): Promise<void> {
+      await ensure(requestedPage, 'current')
+      await Promise.all(pages.filter((page) => page !== requestedPage).map((page) => ensure(page, purposeFor(page))))
     }
-
-    function ensurePageLoaded(page: number): Promise<void> {
-      const entry = stateRef.current.profileKey === profileKey
-        ? stateRef.current.entries.find((candidate) => candidate.page === page)
-        : undefined
-      if (entry && entry.status !== 'loading') return Promise.resolve()
-      if (!desiredPagesRef.current.includes(page)) return Promise.resolve()
-      const existing = inFlightRef.current.get(page)
-      if (existing) return existing.promise
+    async function ensure(page: number, purpose: 'current' | 'preview' | 'descriptor'): Promise<void> {
+      if (!alive || !pagesRef.current.includes(page) || keyRef.current !== profileKey) return
+      const existing = stateRef.current.entries.find((entry) => entry.page === page)
+      if (existing?.status === 'ready' || (purpose === 'descriptor' && existing?.status === 'descriptor')) return
+      const inFlight = requests.current.get(page)
+      if (inFlight) return inFlight.promise
       const profile = profileRef.current
-      if (!profile || profileKeyRef.current !== profileKey) return Promise.resolve()
-
-      const retryGeneration = retryGenerationsRef.current.get(page) ?? 0
-      const key = `${profile.riwayah}:${profile.mushafEditionId}:${page}:${retryGeneration}`
+      if (!profile) return
       const controller = new AbortController()
-      const promise = loadMushafPageAsset({
-        mushafEditionId: profile.mushafEditionId,
-        page,
-        riwayah: profile.riwayah,
-        signal: controller.signal,
-      }).then((result) => {
-        const currentRequest = inFlightRef.current.get(page)
-        if (controller.signal.aborted || currentRequest?.controller !== controller || profileKeyRef.current !== profileKey) return
-        if ((retryGenerationsRef.current.get(page) ?? 0) !== retryGeneration) return
-        if (!desiredPagesRef.current.includes(page) || result.status === 'aborted' || result.status === 'loading') return
-        const entry: MushafPageWindowEntry = result.status === 'ready'
-          ? { asset: result, page, status: 'ready' }
-          : { page, status: result.status }
-        setState((current) => current.profileKey === profileKey
-          ? { ...current, entries: replaceEntry(current.entries, entry) }
-          : current)
-      }).finally(() => {
-        if (inFlightRef.current.get(page)?.controller === controller) inFlightRef.current.delete(page)
-      })
-      inFlightRef.current.set(page, { controller, key, promise })
+      const promise = loadWindowPage({ ...profile, page, signal: controller.signal })
+        .then(async (prepared) => {
+          if (controller.signal.aborted || keyRef.current !== profileKey || !pagesRef.current.includes(page)) return
+          if (purpose === 'descriptor') return setEntry({ page, prepared, status: 'descriptor' })
+          if (prepared.kind === 'inline-svg') {
+            return setEntry({ page, status: 'ready', asset: { status: 'ready', media: { kind: 'inline-svg', inlineSvg: prepared.inlineSvg }, resolved: prepared.resolved } })
+          }
+          const source = selectExternalMushafSource(prepared, purpose as MushafPageLoadPurpose)
+          const result = await prepareExternalMushafImage(source, controller.signal)
+          if (controller.signal.aborted || keyRef.current !== profileKey || result.status !== 'ready') {
+            if (result.status === 'error') setEntry({ page, status: 'error' })
+            return
+          }
+          setEntry({ page, status: 'ready', asset: { status: 'ready', media: { kind: 'external-image', source }, resolved: prepared.resolved } })
+        })
+        .catch(() => { if (!controller.signal.aborted && keyRef.current === profileKey) setEntry({ page, status: 'error' }) })
+        .finally(() => { if (requests.current.get(page)?.controller === controller) requests.current.delete(page) })
+      requests.current.set(page, { controller, promise })
       return promise
     }
-
-    void loadWindow()
-    return () => {
-      active = false
+    function setEntry(entry: MushafPageWindowEntry): void {
+      setState((current) => current.profileKey === profileKey && pagesRef.current.includes(entry.page)
+        ? { ...current, entries: current.entries.map((item) => item.page === entry.page ? entry : item) }
+        : current)
     }
-  }, [desiredKey, profileKey, requestedPage, retryVersion, state.profileKey])
+    void run()
+    return () => { alive = false }
+  }, [input.profile, pages.join(':'), profileKey, requestedPage, retryVersion, state.profileKey])
 
   const retry = useCallback((page: number) => {
-    if (!profileKeyRef.current || !desiredPagesRef.current.includes(page)) return
-    const request = inFlightRef.current.get(page)
-    request?.controller.abort()
-    inFlightRef.current.delete(page)
-    retryGenerationsRef.current.set(page, (retryGenerationsRef.current.get(page) ?? 0) + 1)
-    setState((current) => current.profileKey === profileKeyRef.current
-      ? { ...current, entries: replaceEntry(current.entries, { page, status: 'loading' }) }
-      : current)
-    setRetryVersion((current) => current + 1)
+    requests.current.get(page)?.controller.abort(); requests.current.delete(page)
+    setState((current) => ({ ...current, entries: current.entries.map((entry) => entry.page === page ? { page, status: 'loading' } : entry) }))
+    setRetryVersion((value) => value + 1)
   }, [])
-
   const entries = state.profileKey === profileKey ? state.entries : []
-  return {
-    entries,
-    requested: entries.find((entry) => entry.page === requestedPage) ?? null,
-    retry,
+  return { entries, requested: entries.find((entry) => entry.page === requestedPage) ?? null, retry }
+}
+
+function abortAll(requests: Map<number, Request>): void { for (const request of requests.values()) request.controller.abort(); requests.clear() }
+
+async function loadWindowPage(input: Parameters<typeof loadMushafPageAsset>[0]): Promise<PreparedMushafPage> {
+  const v1 = await loadMushafPageAsset(input)
+  if (v1.status === 'ready') {
+    const inlineSvg = v1.media?.kind === 'inline-svg' ? v1.media.inlineSvg : v1.inlineSvg
+    if (!inlineSvg) throw new Error('Mushaf SVG unavailable')
+    return { kind: 'inline-svg', assetUrl: v1.resolved.assetUrl, inlineSvg, resolved: v1.resolved }
   }
-}
-
-function abortAll(requests: Map<number, InFlightRequest>): void {
-  for (const request of requests.values()) request.controller.abort()
-  requests.clear()
-}
-
-function replaceEntry(
-  entries: readonly MushafPageWindowEntry[],
-  replacement: MushafPageWindowEntry,
-): MushafPageWindowEntry[] {
-  return entries
-    .map((entry) => entry.page === replacement.page ? replacement : entry)
-    .sort((left, right) => left.page - right.page)
-}
-
-function sameEntries(
-  current: readonly MushafPageWindowEntry[],
-  next: readonly MushafPageWindowEntry[],
-): boolean {
-  return current.length === next.length && current.every((entry, index) => entry === next[index])
+  if (v1.status === 'error' && /V2 reader loader|External-image/i.test(v1.error.message)) return loadPreparedMushafPage(input)
+  throw v1.status === 'error' ? v1.error : new Error('Mushaf page unavailable')
 }

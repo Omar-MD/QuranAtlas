@@ -16,6 +16,8 @@ export type SettingsKey =
   | 'quranTextStyleId'
   | 'mushafEditionId'
   | 'mushafViewMode'
+  | 'mushafFitWidth'
+  | 'mushafPageFraming'
   | 'currentPosition'
   | 'lastSurface'
   | 'recentSurahs'

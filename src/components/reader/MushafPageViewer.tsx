@@ -15,6 +15,7 @@ import type {
   MushafResolvedPage,
   ReactInlineMushafSvg,
 } from '../../packs/mushaf-page-asset'
+import { mushafImagePlacement } from './mushaf-page-framing'
 import { IconButton } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
 import { useMushafPageGesture } from './useMushafPageGesture'
@@ -31,6 +32,7 @@ export type MushafPageViewerProps = {
   bookmarked?: boolean
   chromeVisible?: boolean
   fitWidth?: boolean
+  framingValue?: number
   inlineSvg: ReactInlineMushafSvg
   onDominantPageChange?: (page: number) => void
   onNavigate?: (page: number) => void
@@ -65,6 +67,7 @@ export function MushafPageViewer({
   bookmarked = false,
   chromeVisible = true,
   fitWidth = false,
+  framingValue = 0,
   inlineSvg,
   onDominantPageChange,
   onNavigate,
@@ -87,7 +90,9 @@ export function MushafPageViewer({
   const isScrollModeRef = useRef(false)
   const restoreStageFocusRef = useRef(false)
   const interactionSuspended = useReaderInteractionSuspended()
-  const ratio = inlineSvg.viewBox.width / inlineSvg.viewBox.height
+  const ratio = resolved.displaySize
+    ? resolved.displaySize.width / resolved.displaySize.height
+    : inlineSvg.viewBox.width / inlineSvg.viewBox.height
   const isScrollMode = viewMode === 'continuous'
   const effectivePages = useMemo(
     () => pages ?? legacyPageEntries(adjacentPages, { inlineSvg, resolved }),
@@ -277,7 +282,7 @@ export function MushafPageViewer({
     if (entry) return entry
     if (page === resolved.page) {
       return {
-        asset: { inlineSvg, resolved, status: 'ready' },
+        asset: { media: { kind: 'inline-svg', inlineSvg }, resolved, status: 'ready' },
         page,
         status: 'ready',
       }
@@ -340,6 +345,7 @@ export function MushafPageViewer({
             {orderedPages.map((entry) => (
               <MushafPageCell
                 entry={entry}
+                framingValue={framingValue}
                 hidden={false}
                 key={entry.page}
                 ref={(node) => setCellRef(entry.page, node)}
@@ -348,9 +354,9 @@ export function MushafPageViewer({
           </div>
         ) : (
           <div className="qar-react-mushaf-page-strip" onTransitionEnd={gesture.finishSettle}>
-            <MushafPageCell entry={entryFor(resolved.page + 1)} hidden position="next" />
-            <MushafPageCell entry={entryFor(resolved.page)} hidden={false} position="current" />
-            <MushafPageCell entry={entryFor(resolved.page - 1)} hidden position="previous" />
+            <MushafPageCell entry={entryFor(resolved.page + 1)} framingValue={framingValue} hidden position="next" />
+            <MushafPageCell entry={entryFor(resolved.page)} framingValue={framingValue} hidden={false} position="current" />
+            <MushafPageCell entry={entryFor(resolved.page - 1)} framingValue={framingValue} hidden position="previous" />
           </div>
         )}
       </div>
@@ -396,29 +402,44 @@ export function MushafPageViewer({
 
 const MushafPageCell = ({
   entry,
+  framingValue,
   hidden,
   position,
   ref,
 }: {
   entry: MushafPageWindowEntry | null
+  framingValue: number
   hidden: boolean
   position?: 'current' | 'next' | 'previous'
   ref?: (node: HTMLDivElement | null) => void
-}) => (
-  <div
+}) => {
+  const media = entry?.status === 'ready' ? entryMedia(entry.asset) : null
+  return <div
     aria-hidden={hidden ? true : undefined}
     className="qar-react-mushaf-page-cell"
     data-mushaf-cell={position}
     data-mushaf-cell-page={entry?.page}
     ref={ref}
   >
-    {entry?.status === 'ready' ? (
+    {entry?.status === 'ready' && media?.kind === 'inline-svg' ? (
       <div
         aria-label={pageAccessibleName(entry.asset)}
         className="qar-react-mushaf-page-fit qar:text-text"
-        dangerouslySetInnerHTML={{ __html: entry.asset.inlineSvg.markup }}
+        dangerouslySetInnerHTML={{ __html: media.inlineSvg.markup }}
         role="img"
       />
+    ) : entry?.status === 'ready' && media?.kind === 'external-image' ? (
+      <div aria-label={pageAccessibleName(entry.asset)} className="qar-react-mushaf-page-fit" role="img">
+        <div className="qar-react-mushaf-page-frame" style={{ aspectRatio: String(mushafImagePlacement(media.source, entry.asset.resolved.framing?.textFrame, framingValue).ratio) }}>
+          <img
+            alt=""
+            className="qar-react-mushaf-page-image"
+            draggable={false}
+            src={media.source.assetUrl}
+            style={mushafImagePlacement(media.source, entry.asset.resolved.framing?.textFrame, framingValue).image}
+          />
+        </div>
+      </div>
     ) : entry ? (
       <div aria-live="polite" className="qar-react-mushaf-page-status" role="status">
         {entry.status === 'loading'
@@ -427,7 +448,7 @@ const MushafPageCell = ({
       </div>
     ) : null}
   </div>
-)
+}
 
 function readyEntry(
   entries: readonly MushafPageWindowEntry[],
@@ -445,7 +466,7 @@ function legacyPageEntries(
     .filter((page): page is MushafPreviewPage => Boolean(page))
   return [...new Map(legacyPages.map((page) => [page.resolved.page, page])).values()]
     .map((page): MushafPageWindowEntry => ({
-      asset: { inlineSvg: page.inlineSvg, resolved: page.resolved, status: 'ready' },
+      asset: { media: { kind: 'inline-svg', inlineSvg: page.inlineSvg }, resolved: page.resolved, status: 'ready' },
       page: page.resolved.page,
       status: 'ready',
     }))
@@ -455,6 +476,10 @@ function legacyPageEntries(
 function pageAccessibleName(asset: MushafReadyPageAssetState): string {
   const { resolved } = asset
   return `Mushaf page ${resolved.page}, ${resolved.riwayahLabel}, beginning near ${resolved.firstVerse.surah}:${resolved.firstVerse.verse}`
+}
+
+function entryMedia(asset: MushafReadyPageAssetState): NonNullable<MushafReadyPageAssetState['media']> {
+  return asset.media ?? { kind: 'inline-svg', inlineSvg: asset.inlineSvg! }
 }
 
 function measureDominantReadyPage(

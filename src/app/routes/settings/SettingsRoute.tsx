@@ -10,6 +10,8 @@ import { VerseSettings } from '../../../components/settings/VerseSettings'
 import { useSettingsForm } from '../../../components/settings/useSettingsForm'
 import { Switch } from '../../../components/ui'
 import { subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
+import { readNativeSettings } from '../../../storage/native-reader-store'
+import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
 
 export type SettingsRouteMode = 'verse' | 'mushaf'
 
@@ -29,9 +31,11 @@ export function SettingsRoute({
   const [includedAssetsVisible, setIncludedAssetsVisible] = useState(
     () => initialAssetsExpanded ?? shouldShowIncludedAssetsByDefault(),
   )
+  const [hasValidFraming, setHasValidFraming] = useState(false)
   const {
     setFontSize,
     setMushafFitWidth,
+    setMushafPageFraming,
     setMushafViewMode,
     setNightMode,
     setReadingFlow,
@@ -41,6 +45,18 @@ export function SettingsRoute({
     state,
   } = useSettingsForm()
   const preferences = state.preferences
+
+  useEffect(() => {
+    let active = true
+    void readNativeSettings(['riwayah', 'mushafEditionId'])
+      .then(([riwayah, mushafEditionId]) => loadMushafFramingCapability({
+        mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : 'qalun-quran-ws-v1',
+        riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : 'qaloon',
+      }))
+      .then((value) => { if (active) setHasValidFraming(value.hasValidFraming) })
+      .catch(() => { if (active) setHasValidFraming(false) })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     scheduleReaderAnchorRestore()
@@ -72,8 +88,11 @@ export function SettingsRoute({
       ) : (
         <MushafSettings
           fitWidth={preferences.mushafFitWidth}
+          framing={preferences.mushafPageFraming}
+          hasValidFraming={hasValidFraming}
           mode={preferences.mushafViewMode}
           onFitWidthChange={setMushafFitWidth}
+          onFramingChange={setMushafPageFraming}
           onModeChange={setMushafViewMode}
         />
       )}
