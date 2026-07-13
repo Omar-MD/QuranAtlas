@@ -33,28 +33,36 @@ export function useMushafProfileSession(input: {
     if (state.status === 'error') setRetryGeneration((generation) => generation + 1)
   }, [state.status])
   const profile = input.profile
-  const keyRef = useRef(key)
-  const controllerRef = useRef<AbortController | null>(null)
-  keyRef.current = key
+  const requestRef = useRef<{ key: string; controller: AbortController } | null>(null)
 
-  useEffect(() => () => controllerRef.current?.abort(), [])
+  useEffect(() => () => {
+    requestRef.current?.controller.abort()
+    requestRef.current = null
+  }, [])
 
   useEffect(() => {
+    const activeRequest = requestRef.current
+    if (activeRequest && activeRequest.key !== key) {
+      activeRequest.controller.abort()
+      requestRef.current = null
+    }
     if (!key || !profile) {
-      controllerRef.current = null
       setState({ status: 'idle', key: null, context: null, framingCapability: NO_FRAMING })
       return undefined
     }
     const controller = new AbortController()
-    controllerRef.current = controller
+    const request = { key, controller }
+    requestRef.current = request
     setState({ status: 'loading', key, context: null, framingCapability: NO_FRAMING })
     void loadMushafPageProfileContext({ ...profile, signal: controller.signal })
       .then((context) => {
-        if (controller.signal.aborted || keyRef.current !== key) return
+        if (controller.signal.aborted || requestRef.current !== request) return
+        requestRef.current = null
         setState({ status: 'ready', key, context, framingCapability: deriveMushafFramingCapability(context) })
       })
       .catch((cause: unknown) => {
-        if (controller.signal.aborted || keyRef.current !== key) return
+        if (controller.signal.aborted || requestRef.current !== request) return
+        requestRef.current = null
         setState({
           status: 'error',
           key,
@@ -63,9 +71,6 @@ export function useMushafProfileSession(input: {
           framingCapability: NO_FRAMING,
         })
       })
-    return () => {
-      if (keyRef.current !== key) controller.abort()
-    }
   }, [key, profile?.mushafEditionId, profile?.riwayah, retryGeneration])
 
   return useMemo(() => ({ ...state, retry }), [retry, state]) as MushafProfileSession

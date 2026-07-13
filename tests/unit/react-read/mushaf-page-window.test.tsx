@@ -117,6 +117,31 @@ describe('Mushaf profile session and page window', () => {
     await act(async () => first.resolve(contextFor()))
     expect(result.current.status === 'ready' && result.current.context.mushafEditionId).toBe('replacement-edition')
   })
+
+  it('does not abort an active retry while the edition identity is unchanged', async () => {
+    const firstRetry = deferred<MushafPageProfileContext>()
+    const secondRetry = deferred<MushafPageProfileContext>()
+    mockedLoadContext
+      .mockRejectedValueOnce(new Error('profile unavailable'))
+      .mockImplementationOnce(() => firstRetry.promise)
+      .mockImplementationOnce(() => secondRetry.promise)
+    const { result } = renderHook(() => useMushafProfileSession({ enabled: true, profile }))
+    await waitFor(() => expect(result.current.status).toBe('error'))
+
+    const retry = result.current.retry
+    act(() => retry())
+    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(2))
+    const retrySignal = mockedLoadContext.mock.calls[1]?.[0].signal
+
+    act(() => retry())
+    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(3))
+    expect(retrySignal?.aborted).toBe(false)
+
+    await act(async () => {
+      firstRetry.resolve(contextFor())
+      secondRetry.resolve(contextFor())
+    })
+  })
 })
 
 function deferred<T>() {
