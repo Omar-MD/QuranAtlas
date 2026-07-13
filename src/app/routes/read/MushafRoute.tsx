@@ -441,9 +441,14 @@ function isSameVisibleMushafPage(
   current: MushafReadyPageAssetState | null,
   next: MushafReadyPageAssetState,
 ): boolean {
-  return current?.resolved.page === next.resolved.page
-    && current.resolved.mushafEditionId === next.resolved.mushafEditionId
-    && current.resolved.riwayah === next.resolved.riwayah
+  if (current?.resolved.page !== next.resolved.page
+    || current.resolved.mushafEditionId !== next.resolved.mushafEditionId
+    || current.resolved.riwayah !== next.resolved.riwayah
+    || current.media.kind !== next.media.kind) {
+    return false
+  }
+  return current.media.kind === 'inline-svg'
+    || (next.media.kind === 'external-image' && current.media.source.assetUrl === next.media.source.assetUrl)
 }
 
 function readyWindowPage(

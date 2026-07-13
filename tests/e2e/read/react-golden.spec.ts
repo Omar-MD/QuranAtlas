@@ -275,64 +275,68 @@ for (const fixture of readFixtures) {
   }
 }
 
-test('keeps the visible Mushaf page truthful when a distant requested page fails', async ({ page }) => {
-  let page100Attempts = 0
-  await page.setViewportSize({ height: 844, width: 390 })
-  await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
-    route: '/#/m/42',
-  })
-  await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
-  await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/100.svg', async (route) => {
-    page100Attempts += 1
-    await route.fulfill({ body: '', status: 503 })
-  })
-  await page.reload()
-  await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
-  await page.evaluate(() => { window.location.hash = '#/m/100' })
-  await expect(page).toHaveURL(/#\/m\/100$/)
-  await expect(page.getByRole('status').filter({ hasText: 'Mushaf page 100 could not be loaded. Page 42 remains open.' })).toBeVisible()
-  await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
-  await expect(page.getByLabel('Mushaf page 42', { exact: true })).toHaveText('42')
+test.describe('requested Mushaf page failure', () => {
+  test.use({ serviceWorkers: 'block' })
 
-  const status = page.getByRole('status')
-  const retry = page.getByRole('button', { name: 'Retry page 100' })
-  const stay = page.getByRole('button', { name: 'Stay on page 42' })
-  const statusBox = await expectIntersectsViewport(page, status)
-  await expectIntersectsViewport(page, retry)
-  await expectIntersectsViewport(page, stay)
-  for (const control of [
-    page.getByRole('navigation', { name: 'Primary navigation' }),
-    page.getByRole('navigation', { name: 'Mushaf page navigation' }),
-    page.getByRole('button', { name: 'Bookmark Mushaf page 42' }),
-  ]) {
-    const controlBox = await control.boundingBox()
-    expect(controlBox).not.toBeNull()
-    expect(boxesOverlap(statusBox, controlBox!)).toBe(false)
-  }
-  const scrollMetrics = await page.evaluate(() => {
-    const documentScroller = document.scrollingElement ?? document.documentElement
-    const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
-    if (!stage) throw new Error('Mushaf stage is unavailable')
-    return {
-      documentClientHeight: documentScroller.clientHeight,
-      documentScrollHeight: documentScroller.scrollHeight,
-      documentScrollTop: documentScroller.scrollTop,
-      stageClientHeight: stage.clientHeight,
-      stageScrollHeight: stage.scrollHeight,
-      stageScrollTop: stage.scrollTop,
+  test('keeps the visible Mushaf page truthful when a distant requested page fails', async ({ page }) => {
+    let page100Attempts = 0
+    await page.setViewportSize({ height: 844, width: 390 })
+    await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+      route: '/#/m/42',
+    })
+    await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+    await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/100.svg', async (route) => {
+      page100Attempts += 1
+      await route.fulfill({ body: '', status: 503 })
+    })
+    await page.reload()
+    await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+    await page.evaluate(() => { window.location.hash = '#/m/100' })
+    await expect(page).toHaveURL(/#\/m\/100$/)
+    await expect(page.getByRole('status').filter({ hasText: 'Mushaf page 100 could not be loaded. Page 42 remains open.' })).toBeVisible()
+    await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+    await expect(page.getByLabel('Mushaf page 42', { exact: true })).toHaveText('42')
+
+    const status = page.getByRole('status')
+    const retry = page.getByRole('button', { name: 'Retry page 100' })
+    const stay = page.getByRole('button', { name: 'Stay on page 42' })
+    const statusBox = await expectIntersectsViewport(page, status)
+    await expectIntersectsViewport(page, retry)
+    await expectIntersectsViewport(page, stay)
+    for (const control of [
+      page.getByRole('navigation', { name: 'Primary navigation' }),
+      page.getByRole('navigation', { name: 'Mushaf page navigation' }),
+      page.getByRole('button', { name: 'Bookmark Mushaf page 42' }),
+    ]) {
+      const controlBox = await control.boundingBox()
+      expect(controlBox).not.toBeNull()
+      expect(boxesOverlap(statusBox, controlBox!)).toBe(false)
     }
-  })
-  expect(scrollMetrics.documentScrollHeight).toBe(scrollMetrics.documentClientHeight)
-  expect(scrollMetrics.documentScrollTop).toBe(0)
-  expect(scrollMetrics.stageScrollHeight).toBe(scrollMetrics.stageClientHeight)
-  expect(scrollMetrics.stageScrollTop).toBe(0)
+    const scrollMetrics = await page.evaluate(() => {
+      const documentScroller = document.scrollingElement ?? document.documentElement
+      const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
+      if (!stage) throw new Error('Mushaf stage is unavailable')
+      return {
+        documentClientHeight: documentScroller.clientHeight,
+        documentScrollHeight: documentScroller.scrollHeight,
+        documentScrollTop: documentScroller.scrollTop,
+        stageClientHeight: stage.clientHeight,
+        stageScrollHeight: stage.scrollHeight,
+        stageScrollTop: stage.scrollTop,
+      }
+    })
+    expect(scrollMetrics.documentScrollHeight).toBe(scrollMetrics.documentClientHeight)
+    expect(scrollMetrics.documentScrollTop).toBe(0)
+    expect(scrollMetrics.stageScrollHeight).toBe(scrollMetrics.stageClientHeight)
+    expect(scrollMetrics.stageScrollTop).toBe(0)
 
-  const attemptsBeforeRetry = page100Attempts
-  await retry.click()
-  await expect.poll(() => page100Attempts).toBeGreaterThan(attemptsBeforeRetry)
-  await expect(stay).toBeVisible()
-  await stay.click()
-  await expect(page).toHaveURL(/#\/m\/42$/)
+    const attemptsBeforeRetry = page100Attempts
+    await retry.click()
+    await expect.poll(() => page100Attempts).toBeGreaterThan(attemptsBeforeRetry)
+    await expect(stay).toBeVisible()
+    await stay.click()
+    await expect(page).toHaveURL(/#\/m\/42$/)
+  })
 })
 
 async function expectPrivatePagePixels(page: Page, pageNo: number) {

@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
 
+import { seedTargetState } from '../fixtures/react-golden-routes'
+
 test('react shell visual baseline', async ({ page }) => {
+  await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
   await page.goto('/')
   await expect(page.locator('#react-root')).toBeVisible()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()

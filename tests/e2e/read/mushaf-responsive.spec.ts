@@ -392,7 +392,8 @@ test.describe('Mushaf responsive behavior', () => {
           state.__fitPageHashListener ??= () => state.__fitPageHashChanges?.push(window.location.hash)
           window.addEventListener('hashchange', state.__fitPageHashListener)
         })
-        await fastHorizontalFlick(page, 'right')
+        const swipeBox = await singleStageBox(page)
+        await touchPath(page, pointsBetween(swipeBox, { x: 0.2, y: 0.5 }, { x: 0.8, y: 0.5 }, 5))
         await expect(page).toHaveURL(/#\/m\/43$/)
         await expect(page.getByRole('img', { name: /Mushaf page 43,/i })).toBeVisible()
         expect(await page.evaluate(() => (

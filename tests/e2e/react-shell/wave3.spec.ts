@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test'
 
+import { seedTargetState } from '../fixtures/react-golden-routes'
+
 test('renders React reader, settings, and the shipped Search route', async ({ page }) => {
+  await seedTargetState(page, 'react', 'onboarded-last-surface-reader')
   await page.goto('/#/s/1/1')
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
