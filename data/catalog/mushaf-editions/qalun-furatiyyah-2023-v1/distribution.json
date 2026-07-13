@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "mushafEditionId": "qalun-furatiyyah-2023-v1",
+  "authorization": "user-authorized-public-noncommercial-deployment",
+  "repository": "Omar-MD/QuranAtlas",
+  "releaseTag": "mushaf-qalun-furatiyyah-2023-v1",
+  "assetName": "qalun-furatiyyah-2023-v1-normalized-v1.tar",
+  "archiveBytes": 446912512,
+  "archiveSha256": "af67d79437c15cd4b8d8c6deec47b46b805dc6a46f27e377ae8191210977b7d6",
+  "normalizedContentDigest": "58b1875c232467d9587fa4dc01b58b61240e939dc89637aca0cb99cf656e0d26",
+  "normalizedContractDigest": "cac30a38009eff2f64e9200653c70309dcd0099359501afd1c5419de0c2773b6",
+  "fileCount": 1209
+}

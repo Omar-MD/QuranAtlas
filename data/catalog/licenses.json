@@ -35,6 +35,13 @@
     "status": "restricted"
   },
   {
+    "id": "user-authorized-public-noncommercial-deployment",
+    "label": "User-authorized public noncommercial deployment of derived Furatiyyah WebPs",
+    "status": "restricted",
+    "scope": "QuranAtlas dev deployments of qalun-furatiyyah-2023-v1 derived WebPs only; source PDF excluded",
+    "provenance": "User authorization; not a general source license"
+  },
+  {
     "id": "quran-ws-free-use",
     "label": "Quran.ws page assets free use",
     "status": "approved",

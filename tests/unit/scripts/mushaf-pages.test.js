@@ -185,7 +185,15 @@ describe('mushaf asset catalog', () => {
       mushafEditionId: 'qalun-quran-ws-v1', sourceKind: 'quran-ws', providerId: 'quran-ws', licenseId: 'quran-ws-free-use',
     }))
     expect(mushafCatalog.assets).toContainEqual(expect.objectContaining({
-      mushafEditionId: 'qalun-furatiyyah-2023-v1', sourceKind: 'local-pdf', providerId: 'private-local-pdf', licenseId: 'private-local-pdf-restricted', visibility: 'internal', shipped: false,
+      mushafEditionId: 'qalun-furatiyyah-2023-v1',
+      sourceKind: 'local-pdf',
+      providerId: 'private-local-pdf',
+      licenseId: 'private-local-pdf-restricted',
+      distributionAuthorizationId: 'user-authorized-public-noncommercial-deployment',
+      distributionPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/distribution.json',
+      visibility: 'internal',
+      shipped: true,
+      shippedProfile: 'private',
     }))
     for (const [riwayah, mushafEditionId] of Object.entries(mushafCatalog.defaults)) {
       expect(mushafCatalog.assets.some((asset) => asset.riwayah === riwayah && asset.mushafEditionId === mushafEditionId)).toBe(true)
@@ -235,7 +243,7 @@ function privateRunner({ failSourcePdfPage = null, variant = 'same', calls = [] 
   return async (command, args) => {
     calls.push({ command, args })
     if (command === 'pdfinfo') {
-      return { status: 0, stdout: 'Pages:           630\nPage size:       612 x 792 pts\nCropBox:         0 0 512.545 652.654\n', stderr: '' }
+      return { status: 0, stdout: 'Pages:           630\nPage size:       512.545 x 652.654 pts\nCropBox:             3.77     3.59   516.31   656.24\n', stderr: '' }
     }
     if (command === 'pdftocairo') {
       if (args[0] === '-v') {

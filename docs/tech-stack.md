@@ -26,6 +26,7 @@ Tools, versions, and operating rules for the current React-only app. Architectur
 | Perf | Lighthouse CI | `^0.15.1` | Production artifact performance and best-practice gate |
 | Deploy | Cloudflare Wrangler | pinned in `package.json` | Deploys the CI-built `dist/` artifact |
 | Private Mushaf import | Poppler (`pdfinfo`, `pdftocairo`) + WebP (`cwebp`, `webpinfo`) | host tooling; exact command version output recorded per import | Verifies the explicit PDF CropBox, renders and encodes the pinned local-only Qaloun edition, and validates WebP output |
+| Private Mushaf transport | GitHub Releases (`gh`) + USTAR (`tar`) | host tooling; archive contract pinned in the catalog | Publishes one immutable, checksum-bound normalized Furatiyyah input without the source PDF |
 
 `pnpm.overrides` pins patched transitive dependency ranges for CI audit gates, including toolchain-only packages such as `esbuild` when upstream Storybook/Vite/Wrangler ranges lag an audit advisory. Keep overrides narrow and remove them when upstream direct dependencies resolve without help.
 

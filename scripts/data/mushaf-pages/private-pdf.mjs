@@ -10,6 +10,7 @@ const REPO_ROOT = join(__dirname, '..', '..', '..')
 const PRIVATE_EDITION_ID = 'qalun-furatiyyah-2023-v1'
 const RIWAYAH = 'qaloon'
 const PAGE_COUNT = 604
+const PDFINFO_CROP_BOX_PRECISION = 0.01
 export const CURRENT_PRIVATE_EMISSION_CONTRACT_VERSION = 2
 const CONTRACT_DIR = join(REPO_ROOT, 'data', 'catalog', 'mushaf-editions', PRIVATE_EDITION_ID)
 const NORMALIZED_ROOT = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages', RIWAYAH)
@@ -366,7 +367,8 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
 
   const pdfInfo = parsePdfInfo(await run(runCommand, 'pdfinfo', ['-box', pdfPath]))
   ensure(pdfInfo.pages === contract.source.documentPageCount, 'Private Mushaf PDF page count does not match the pinned source contract')
-  ensure(Math.abs(pdfInfo.width - contract.source.cropBoxPoints.width) < 0.001 && Math.abs(pdfInfo.height - contract.source.cropBoxPoints.height) < 0.001, 'Private Mushaf PDF CropBox does not match the pinned source contract')
+  ensure(Math.abs(pdfInfo.width - contract.source.cropBoxPoints.width) <= PDFINFO_CROP_BOX_PRECISION
+    && Math.abs(pdfInfo.height - contract.source.cropBoxPoints.height) <= PDFINFO_CROP_BOX_PRECISION, 'Private Mushaf PDF CropBox does not match the pinned source contract')
 
   const normalizedDir = join(normalizedRoot, editionId)
   ensure(isInside(normalizedRoot, normalizedDir), 'Unsafe private Mushaf normalized output path')

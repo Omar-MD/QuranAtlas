@@ -85,6 +85,7 @@ async function loadMushafContractEvidence(mushafAssets, catalogDir) {
       pageStartReviewPath: 'review',
       framingPath: 'framing',
       mediaPolicyPath: 'media',
+      distributionPath: 'distribution',
     })) {
       const path = typeof asset[field] === 'string' ? join(catalogDir, asset[field]) : ''
       if (!path || !isInside(catalogDir, path)) {
@@ -463,11 +464,22 @@ function validateMushafAssetSourceKind(asset, key, riwayah, context) {
     } else if (context.licenseById.get(asset.licenseId).status !== 'restricted') {
       context.errors.push(`mushaf asset ${key} private license status must be restricted`)
     }
+    const distributionAuthorizationId = 'user-authorized-public-noncommercial-deployment'
+    if (asset.distributionAuthorizationId !== distributionAuthorizationId) {
+      context.errors.push(`mushaf asset ${key} distributionAuthorizationId must be ${distributionAuthorizationId}`)
+    } else if (!context.licenseById.has(distributionAuthorizationId)) {
+      context.errors.push(`mushaf asset ${key} references missing distribution authorization ${distributionAuthorizationId}`)
+    } else if (context.licenseById.get(distributionAuthorizationId).status !== 'restricted') {
+      context.errors.push(`mushaf asset ${key} distribution authorization must remain restricted to its recorded scope`)
+    }
     if (asset.visibility !== 'internal') {
       context.errors.push(`mushaf asset ${key} visibility must be internal`)
     }
-    if (asset.shipped !== false) {
-      context.errors.push(`mushaf asset ${key} shipped must be false`)
+    if (asset.shipped !== true) {
+      context.errors.push(`mushaf asset ${key} shipped must be true for the private profile`)
+    }
+    if (asset.shippedProfile !== 'private') {
+      context.errors.push(`mushaf asset ${key} shippedProfile must be private`)
     }
     const prefix = `mushaf-editions/${asset.mushafEditionId}/`
     const expected = {
@@ -475,6 +487,7 @@ function validateMushafAssetSourceKind(asset, key, riwayah, context) {
       pageStartReviewPath: `${prefix}page-start-review.json`,
       framingPath: `${prefix}framing.json`,
       mediaPolicyPath: `${prefix}media.json`,
+      distributionPath: `${prefix}distribution.json`,
     }
     for (const [field, value] of Object.entries(expected)) {
       if (asset[field] !== value) {
@@ -495,6 +508,7 @@ function validatePrivateMushafContractEvidence(asset, key, context) {
   const review = evidence.review?.value
   const framing = evidence.framing?.value
   const media = evidence.media?.value
+  const distribution = evidence.distribution?.value
   if (!source) {
     context.errors.push(`mushaf asset ${key} source contract is ${evidence.source?.error === 'missing' ? 'missing' : 'invalid'}`)
     return
@@ -522,6 +536,21 @@ function validatePrivateMushafContractEvidence(asset, key, context) {
     } catch {
       context.errors.push(`mushaf asset ${key} media policy contract requires a passed media gate with runtime evidence`)
     }
+  }
+  if (!distribution) {
+    context.errors.push(`mushaf asset ${key} distribution contract is ${evidence.distribution?.error === 'missing' ? 'missing' : 'invalid'}`)
+  } else if (distribution.version !== 1
+    || distribution.mushafEditionId !== asset.mushafEditionId
+    || distribution.authorization !== asset.distributionAuthorizationId
+    || distribution.repository !== 'Omar-MD/QuranAtlas'
+    || distribution.releaseTag !== 'mushaf-qalun-furatiyyah-2023-v1'
+    || distribution.assetName !== 'qalun-furatiyyah-2023-v1-normalized-v1.tar'
+    || !Number.isInteger(distribution.archiveBytes) || distribution.archiveBytes <= 0
+    || !isSha256(distribution.archiveSha256)
+    || !isSha256(distribution.normalizedContentDigest)
+    || !isSha256(distribution.normalizedContractDigest)
+    || distribution.fileCount !== 1209) {
+    context.errors.push(`mushaf asset ${key} distribution contract is invalid`)
   }
 }
 

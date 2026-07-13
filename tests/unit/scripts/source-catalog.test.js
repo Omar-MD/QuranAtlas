@@ -215,6 +215,7 @@ describe('source catalog validation', () => {
     catalog.authorities.push({ id: 'private-local-pdf', label: 'Private local PDF' })
     catalog.authorities.push({ id: 'quran-ws', label: 'Quran.ws' })
     catalog.licenses.push({ id: 'private-local-pdf-restricted', label: 'Private local PDF', status: 'restricted' })
+    catalog.licenses.push({ id: 'user-authorized-public-noncommercial-deployment', label: 'User authorization', status: 'restricted' })
     catalog.licenses.push({ id: 'quran-ws-free-use', label: 'Quran.ws page assets', status: 'approved' })
     catalog.mushafAssets = {
       defaults: { qaloon: 'qalun-quran-ws-v1' },
@@ -233,28 +234,37 @@ describe('source catalog validation', () => {
         mushafEditionId: 'qalun-furatiyyah-2023-v1',
         providerId: 'private-local-pdf',
         licenseId: 'private-local-pdf-restricted',
+        distributionAuthorizationId: 'user-authorized-public-noncommercial-deployment',
         sourceKind: 'local-pdf',
         visibility: 'internal',
-        shipped: false,
+        shipped: true,
+        shippedProfile: 'private',
         pageCount: 604,
         sourceContractPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/source.json',
         pageStartReviewPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/page-start-review.json',
         framingPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/framing.json',
         mediaPolicyPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
+        distributionPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/distribution.json',
       }],
     }
 
     expect(validateSourceCatalog(catalog).errors).toEqual([])
     const privateAsset = catalog.mushafAssets.assets.find((asset) => asset.sourceKind === 'local-pdf')
     privateAsset.visibility = 'baseline'
-    privateAsset.shipped = true
+    privateAsset.shipped = false
+    privateAsset.shippedProfile = 'baseline'
     privateAsset.mediaPolicyPath = '../media.json'
+    privateAsset.distributionPath = '../distribution.json'
     catalog.licenses.find((license) => license.id === 'private-local-pdf-restricted').status = 'approved'
+    catalog.licenses.find((license) => license.id === 'user-authorized-public-noncommercial-deployment').status = 'approved'
     expect(validateSourceCatalog(catalog).errors).toEqual(expect.arrayContaining([
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 visibility must be internal',
-      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 shipped must be false',
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 shipped must be true for the private profile',
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 shippedProfile must be private',
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 private license status must be restricted',
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 distribution authorization must remain restricted to its recorded scope',
       'mushaf asset qaloon/qalun-furatiyyah-2023-v1 mediaPolicyPath must be mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
+      'mushaf asset qaloon/qalun-furatiyyah-2023-v1 distributionPath must be mushaf-editions/qalun-furatiyyah-2023-v1/distribution.json',
     ]))
 
     delete catalog.mushafAssets.defaults.qaloon
@@ -290,6 +300,33 @@ describe('source catalog validation', () => {
       expect(validateSourceCatalog(missingMedia).errors).toEqual(expect.arrayContaining([
         'mushaf asset qaloon/qalun-furatiyyah-2023-v1 media policy contract is missing',
       ]))
+
+      await rm(join(catalogDir, 'mushaf-editions', 'qalun-furatiyyah-2023-v1', 'distribution.json'))
+      const missingDistribution = await loadSourceCatalog(catalogDir)
+      expect(validateSourceCatalog(missingDistribution).errors).toEqual(expect.arrayContaining([
+        'mushaf asset qaloon/qalun-furatiyyah-2023-v1 distribution contract is missing',
+      ]))
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('validates the immutable private distribution descriptor', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-source-catalog-private-distribution-'))
+    const catalogDir = join(root, 'catalog')
+    await cp(join(process.cwd(), 'data', 'catalog'), catalogDir, { recursive: true })
+    try {
+      const distributionPath = join(catalogDir, 'mushaf-editions', 'qalun-furatiyyah-2023-v1', 'distribution.json')
+      const distribution = JSON.parse(await readFile(distributionPath, 'utf8'))
+      distribution.authorization = 'general-source-license'
+      distribution.archiveBytes = 0
+      distribution.archiveSha256 = 'mutable'
+      await writeFile(distributionPath, JSON.stringify(distribution, null, 2))
+
+      const catalog = await loadSourceCatalog(catalogDir)
+      expect(validateSourceCatalog(catalog).errors).toContain(
+        'mushaf asset qaloon/qalun-furatiyyah-2023-v1 distribution contract is invalid',
+      )
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -323,18 +360,22 @@ describe('source catalog validation', () => {
         mushafEditionId: 'qalun-furatiyyah-2023-v1',
         providerId: 'private-local-pdf',
         licenseId: 'private-local-pdf-restricted',
+        distributionAuthorizationId: 'user-authorized-public-noncommercial-deployment',
         sourceKind: 'local-pdf',
         visibility: 'internal',
-        shipped: false,
+        shipped: true,
+        shippedProfile: 'private',
         pageCount: 604,
         sourceContractPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/source.json',
         pageStartReviewPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/page-start-review.json',
         framingPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/framing.json',
         mediaPolicyPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/media.json',
+        distributionPath: 'mushaf-editions/qalun-furatiyyah-2023-v1/distribution.json',
       }],
     }
     catalog.authorities.push({ id: 'private-local-pdf', label: 'Private local PDF' })
     catalog.licenses.push({ id: 'private-local-pdf-restricted', label: 'Private local PDF', status: 'restricted' })
+    catalog.licenses.push({ id: 'user-authorized-public-noncommercial-deployment', label: 'User authorization', status: 'restricted' })
 
     expect(validateSourceCatalog(catalog).errors).toContain('mushaf asset default qaloon must reference a shipped quran.ws edition')
   })

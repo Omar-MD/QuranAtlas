@@ -25,14 +25,17 @@
       "tradition": "qalun",
       "providerId": "private-local-pdf",
       "licenseId": "private-local-pdf-restricted",
+      "distributionAuthorizationId": "user-authorized-public-noncommercial-deployment",
       "visibility": "internal",
-      "shipped": false,
+      "shipped": true,
+      "shippedProfile": "private",
       "sourceKind": "local-pdf",
       "pageCount": 604,
       "sourceContractPath": "mushaf-editions/qalun-furatiyyah-2023-v1/source.json",
       "pageStartReviewPath": "mushaf-editions/qalun-furatiyyah-2023-v1/page-start-review.json",
       "framingPath": "mushaf-editions/qalun-furatiyyah-2023-v1/framing.json",
-      "mediaPolicyPath": "mushaf-editions/qalun-furatiyyah-2023-v1/media.json"
+      "mediaPolicyPath": "mushaf-editions/qalun-furatiyyah-2023-v1/media.json",
+      "distributionPath": "mushaf-editions/qalun-furatiyyah-2023-v1/distribution.json"
     }
   ]
 }
