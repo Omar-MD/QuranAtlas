@@ -26,7 +26,11 @@ export type SettingsFormState =
   | { status: 'ready'; preferences: ReactReaderPreferences }
   | { status: 'error'; preferences: ReactReaderPreferences }
 
+export type MushafFramingWriteStatus = 'idle' | 'saving' | 'error'
+
 export function useSettingsForm(): {
+  mushafFramingWriteStatus: MushafFramingWriteStatus
+  retryMushafPageFraming: () => void
   setMushafViewMode: (value: NormalizedReactMushafViewMode) => void
   setMushafFitWidth: (value: boolean) => void
   setMushafPageFraming: (value: number) => void
@@ -43,8 +47,12 @@ export function useSettingsForm(): {
     status: 'loading',
   })
   const hasUserChangesRef = useRef(false)
+  const latestMushafFramingWriteRef = useRef(0)
+  const persistedMushafPageFramingRef = useRef(DEFAULT_REACT_READER_PREFERENCES.mushafPageFraming)
   const preferencesRef = useRef<ReactReaderPreferences>(DEFAULT_REACT_READER_PREFERENCES)
+  const retryMushafPageFramingRef = useRef<number | null>(null)
   const writeQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const [mushafFramingWriteStatus, setMushafFramingWriteStatus] = useState<MushafFramingWriteStatus>('idle')
 
   useEffect(() => {
     let active = true
@@ -53,6 +61,7 @@ export function useSettingsForm(): {
       .then((preferences) => {
         if (!active || hasUserChangesRef.current) return
         preferencesRef.current = preferences
+        persistedMushafPageFramingRef.current = preferences.mushafPageFraming
         applyReactReaderAppearance(preferences)
         applyReactReaderTypography(preferences)
         setState({ preferences, status: 'ready' })
@@ -71,31 +80,73 @@ export function useSettingsForm(): {
   ): void {
     hasUserChangesRef.current = true
     const next = updater(preferencesRef.current)
-    preferencesRef.current = next
-    setState({ preferences: next, status: 'ready' })
-    applyReactReaderAppearance(next)
-    applyReactReaderTypography(next)
-    emitReactReaderPreferencesChanged(next)
+    updateVisiblePreferences(next)
     writeQueueRef.current = writeQueueRef.current
       .then(async () => {
         const db = await openReactDb()
-        await writeReactReaderPreferences(db, next)
+        await writeReactReaderPreferences(db, {
+          ...next,
+          mushafPageFraming: persistedMushafPageFramingRef.current,
+        })
         await afterWrite?.(next)
       })
       .catch(() => undefined)
   }
 
+  function updateVisiblePreferences(next: ReactReaderPreferences): void {
+    preferencesRef.current = next
+    setState({ preferences: next, status: 'ready' })
+    applyReactReaderAppearance(next)
+    applyReactReaderTypography(next)
+    emitReactReaderPreferencesChanged(next)
+  }
+
+  function persistMushafPageFraming(value: number): void {
+    hasUserChangesRef.current = true
+    const mushafPageFraming = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
+    const next = { ...preferencesRef.current, mushafPageFraming }
+    const writeId = latestMushafFramingWriteRef.current + 1
+    latestMushafFramingWriteRef.current = writeId
+    retryMushafPageFramingRef.current = mushafPageFraming
+    setMushafFramingWriteStatus('saving')
+    updateVisiblePreferences(next)
+
+    const write = writeQueueRef.current.then(async () => {
+      const db = await openReactDb()
+      await writeReactReaderPreferences(db, next)
+    })
+    writeQueueRef.current = write.catch(() => undefined)
+    void write
+      .then(() => {
+        persistedMushafPageFramingRef.current = mushafPageFraming
+        if (latestMushafFramingWriteRef.current !== writeId) return
+        retryMushafPageFramingRef.current = null
+        setMushafFramingWriteStatus('idle')
+      })
+      .catch(() => {
+        if (latestMushafFramingWriteRef.current !== writeId) return
+        updateVisiblePreferences({
+          ...preferencesRef.current,
+          mushafPageFraming: persistedMushafPageFramingRef.current,
+        })
+        setMushafFramingWriteStatus('error')
+      })
+  }
+
   return {
+    mushafFramingWriteStatus,
+    retryMushafPageFraming: () => {
+      if (retryMushafPageFramingRef.current !== null) {
+        persistMushafPageFraming(retryMushafPageFramingRef.current)
+      }
+    },
     setFontSize: (fontSize) => updatePreferences((current) => ({ ...current, fontSize })),
     setMushafViewMode: (mushafViewMode) => updatePreferences((current) => ({ ...current, mushafViewMode })),
     setMushafFitWidth: (mushafFitWidth) => {
       updateLandscapeFitWidthOverride(mushafFitWidth)
       updatePreferences((current) => ({ ...current, mushafFitWidth }))
     },
-    setMushafPageFraming: (mushafPageFraming) => updatePreferences((current) => ({
-      ...current,
-      mushafPageFraming: Number.isFinite(mushafPageFraming) ? Math.min(1, Math.max(0, mushafPageFraming)) : 0,
-    })),
+    setMushafPageFraming: persistMushafPageFraming,
     setNightMode: (nightMode) => updatePreferences((current) => ({ ...current, nightMode })),
     setReadingFlow: (value) => updatePreferences((current) => ({
       ...current,

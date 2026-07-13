@@ -62,7 +62,7 @@ style_paths:
 
 `SettingsShell` composes the owned `adaptive-settings` Sheet. Phones and short landscape viewports use a full-viewport modal; tablets and desktops use a bounded right-side sheet. The header stays stable above one naturally scrolling body, so Appearance is a normal content group rather than a fixed footer. The owned Sheet supplies focus containment, Escape/outside dismissal, and controlled return focus to the opening Settings action, with the reader Settings action and main landmark as fallbacks. `ReaderInteractionContext` suspends reader interaction behind the modal, while preference previews preserve the mounted reader and its visible anchor.
 
-Verse settings own font size, reading flow, and translation visibility. Daily Wird visibility is a separate Reading continuity group; disabling it hides reader/navigation Wird status and disables the active plan's reminder without deleting the plan. Mushaf settings independently own Single/Scroll navigation and Fit page/Fit width while accepting stored `auto` values for compatibility. A private V2 edition with valid reviewed framing also exposes Full page/Text focus presets and the bounded Qur'an text-size control; quran.ws keeps only its existing Page layout controls. Theme and night mode apply globally through the Appearance group.
+Verse settings own font size, reading flow, and translation visibility. Daily Wird visibility is a separate Reading continuity group; disabling it hides reader/navigation Wird status and disables the active plan's reminder without deleting the plan. Mushaf settings independently own Single/Scroll navigation and Fit page/Fit width while accepting stored `auto` values for compatibility. A private V2 edition with valid reviewed framing also exposes Full page/Text focus presets and the bounded Qur'an text-size control; quran.ws keeps only its existing Page layout controls. A rejected framing preference write restores the last persisted framing, reports the failure, and retains the attempted framing for an explicit retry. Theme and night mode apply globally through the Appearance group.
 
 `IncludedAssetsSection` is read-only in the current MVP. It resolves names from runtime indexes for the included Qaloon text/font, Qaloon Mushaf, and Bridges translation profile. Its truthful disclosure can collapse so the preceding groups remain concise, and the single Settings body scrolls to every asset when expanded. It does not expose install, delete, switch, verify, retry, or optional source-pack actions.
 
@@ -113,6 +113,7 @@ Settings is a key-value store. Writers are key-scoped and should go through `src
 - Included assets may be hidden or shown, but the toggle must not introduce source-management actions.
 - The active reader profile remains Qaloon text/font, Qaloon Mushaf, and Bridges translation.
 - Direct settings writes must preserve key ownership and schema compatibility.
+- Failed Mushaf framing writes must restore the persisted value and keep the attempted value retryable.
 - Clear data is destructive and requires explicit confirmation.
 
 ## Regression Guards

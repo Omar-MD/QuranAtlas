@@ -34,6 +34,8 @@ export function SettingsRoute({
   )
   const [framingCapability, setFramingCapability] = useState<{ hasValidFraming: boolean; representativeTextFrame?: NormalizedRect }>({ hasValidFraming: false })
   const {
+    mushafFramingWriteStatus,
+    retryMushafPageFraming,
     setFontSize,
     setMushafFitWidth,
     setMushafPageFraming,
@@ -90,11 +92,13 @@ export function SettingsRoute({
         <MushafSettings
           fitWidth={preferences.mushafFitWidth}
           framing={preferences.mushafPageFraming}
+          framingWriteStatus={mushafFramingWriteStatus}
           hasValidFraming={framingCapability.hasValidFraming}
           mode={preferences.mushafViewMode}
           onFitWidthChange={setMushafFitWidth}
           onFramingChange={setMushafPageFraming}
           onModeChange={setMushafViewMode}
+          onRetryFraming={retryMushafPageFraming}
           representativeTextFrame={framingCapability.representativeTextFrame}
         />
       )}

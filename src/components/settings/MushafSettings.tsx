@@ -2,25 +2,30 @@ import { MushafModeControl, type MushafNavigationMode, type MushafViewMode } fro
 import { Button, Slider, Switch } from '../ui'
 import { interpolateMushafPageFrame, type NormalizedRect } from '../reader/mushaf-page-framing'
 import { SettingsGroup } from './SettingsGroup'
+import type { MushafFramingWriteStatus } from './useSettingsForm'
 
 export function MushafSettings({
   fitWidth,
   framing = 0,
+  framingWriteStatus,
   hasValidFraming = false,
   representativeTextFrame,
   mode,
   onFitWidthChange,
   onFramingChange,
   onModeChange,
+  onRetryFraming,
 }: {
   fitWidth: boolean
   framing?: number
+  framingWriteStatus: MushafFramingWriteStatus
   hasValidFraming?: boolean
   representativeTextFrame?: NormalizedRect
   mode: MushafViewMode
   onFitWidthChange: (fitWidth: boolean) => void
   onFramingChange?: (value: number) => void
   onModeChange: (mode: MushafNavigationMode) => void
+  onRetryFraming: () => void
 }) {
   const frameWidth = representativeTextFrame
     ? Math.round(interpolateMushafPageFrame(representativeTextFrame, framing).width * 100)
@@ -60,6 +65,12 @@ export function MushafSettings({
               </div>
               <Slider label="Qur'an text size" max={100} min={0} onValueChange={(values) => onFramingChange?.((values[0] ?? 0) / 100)} step={1} value={[Math.round(framing * 100)]} />
             </div>
+            {framingWriteStatus === 'error' ? (
+              <div className="qar:grid qar:gap-2">
+                <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">Could not save Mushaf page framing</p>
+                <Button onClick={onRetryFraming} size="sm" type="button" variant="secondary">Retry saving Mushaf framing</Button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
