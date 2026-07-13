@@ -70,6 +70,9 @@ describe('affected-change gates', () => {
     const privateCacheStep = workflow.match(/- name: Cache private Mushaf normalized edition[\s\S]*?(?=\n\s+- name:)/)?.[0]
     expect(privateCacheStep).toBeTruthy()
     expect(privateCacheStep).not.toContain('restore-keys:')
+    const releaseRestoreStep = workflow.match(/- name: Restore private Mushaf release archive[\s\S]*?(?=\n\s+- name:)/)?.[0]
+    expect(releaseRestoreStep).toContain('GH_TOKEN: ${{ github.token }}')
+    expect(workflow.match(/GH_TOKEN: \$\{\{ github\.token \}\}/g)).toHaveLength(1)
     expect(workflow).toContain('compression-level: 0')
   })
 })

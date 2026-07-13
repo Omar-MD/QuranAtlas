@@ -8,6 +8,7 @@ QuranAtlas is a React-only Vite PWA focused on a Reader First Quran experience.
 - `src/app/main.tsx` creates the React root and renders `src/app/App.tsx`.
 - `src/app/App.tsx` owns hash routing, launch restore, reader/settings overlay orchestration, and top-level route selection.
 - `App.tsx` also owns atomic replace-style hash updates used when continuous Mushaf scrolling passively synchronizes the dominant page; discrete page actions keep normal hash-history navigation.
+- The app wrapper keeps ordinary routes on document-flow minimum height, but switches to an exact clipped dynamic viewport while the Mushaf route is mounted so its owned shell and stage cannot create a second document scroller.
 - Route parsing lives in `src/app/router/routes.ts`.
 - Providers live in `src/app/providers/AppProviders.tsx`.
 

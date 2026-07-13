@@ -35,6 +35,39 @@ describe('React Mushaf paths', () => {
     expect(fetcher.mock.calls.filter(([input]) => String(input) === fixture.index.assets[0].manifestUrl)).toHaveLength(1)
   })
 
+  it('validates the complete V2 profile once and keeps page media checks local', async () => {
+    const fixture = v2LoaderFixture()
+    const lastPage = fixture.manifest.pages.at(-1)!
+    const lastPageMedia = lastPage.media
+    let lastPageMediaReads = 0
+    Object.defineProperty(lastPage, 'media', {
+      configurable: true,
+      enumerable: true,
+      get: () => {
+        lastPageMediaReads += 1
+        return lastPageMedia
+      },
+    })
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(fixture.index)
+      if (url === fixture.index.assets[0].manifestUrl) return jsonResponse(fixture.manifest)
+      return jsonResponse({}, { ok: false, status: 404 })
+    })
+
+    const context = await loadMushafPageProfileContext({ fetcher, ...fixture.identity })
+    const readsAfterProfileValidation = lastPageMediaReads
+    expect(readsAfterProfileValidation).toBeGreaterThan(0)
+
+    await loadPreparedMushafPage({ context, fetcher, page: 1, ...fixture.identity })
+    await loadPreparedMushafPage({ context, fetcher, page: 2, ...fixture.identity })
+    expect(lastPageMediaReads).toBe(readsAfterProfileValidation)
+
+    context.manifest.pages[1]!.media.sources[0]!.sha256 = 'c'.repeat(64)
+    await expect(loadPreparedMushafPage({ context, fetcher, page: 2, ...fixture.identity }))
+      .rejects.toThrow(/descriptor disagrees with its asset index/)
+  })
+
   it('builds edition-aware manifest and page URLs', () => {
     const identity = { riwayah: 'qaloon', mushafEditionId: 'qalun-quran-ws-v1' }
     expect(mushafManifestUrl(identity)).toBe('/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json')

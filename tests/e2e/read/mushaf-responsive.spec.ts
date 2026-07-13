@@ -174,6 +174,9 @@ async function stageScroll(page: Page): Promise<{ clientHeight: number; scrollHe
 }
 
 async function viewportScroll(page: Page): Promise<{
+  appClientHeight: number
+  appHeight: number
+  appScrollHeight: number
   documentClientHeight: number
   documentScrollHeight: number
   documentScrollTop: number
@@ -181,14 +184,19 @@ async function viewportScroll(page: Page): Promise<{
   stageClientHeight: number
   stageScrollHeight: number
   stageScrollTop: number
+  visualViewportOffsetTop: number
   viewportHeight: number
 }> {
   return page.evaluate(() => {
     const documentScroller = document.scrollingElement ?? document.documentElement
+    const app = document.querySelector<HTMLElement>('[data-react-route]')
     const shell = document.querySelector<HTMLElement>('main[aria-label="Mushaf reader"]')
     const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
-    if (!shell || !stage) throw new Error('Mushaf viewport owners are unavailable')
+    if (!app || !shell || !stage) throw new Error('Mushaf viewport owners are unavailable')
     return {
+      appClientHeight: app.clientHeight,
+      appHeight: app.getBoundingClientRect().height,
+      appScrollHeight: app.scrollHeight,
       documentClientHeight: documentScroller.clientHeight,
       documentScrollHeight: documentScroller.scrollHeight,
       documentScrollTop: documentScroller.scrollTop,
@@ -196,6 +204,7 @@ async function viewportScroll(page: Page): Promise<{
       stageClientHeight: stage.clientHeight,
       stageScrollHeight: stage.scrollHeight,
       stageScrollTop: stage.scrollTop,
+      visualViewportOffsetTop: window.visualViewport?.offsetTop ?? 0,
       viewportHeight: window.visualViewport?.height ?? window.innerHeight,
     }
   })
@@ -204,6 +213,9 @@ async function viewportScroll(page: Page): Promise<{
 function expectNoViewportScroll(metrics: Awaited<ReturnType<typeof viewportScroll>>): void {
   expect(metrics.documentScrollHeight).toBe(metrics.documentClientHeight)
   expect(metrics.documentScrollTop).toBe(0)
+  expect(metrics.visualViewportOffsetTop).toBe(0)
+  expect(metrics.appScrollHeight).toBe(metrics.appClientHeight)
+  expect(metrics.appHeight).toBeCloseTo(metrics.viewportHeight, 0)
   expect(metrics.shellHeight).toBeCloseTo(metrics.viewportHeight, 0)
   expect(metrics.stageScrollHeight).toBe(metrics.stageClientHeight)
   expect(metrics.stageScrollTop).toBe(0)

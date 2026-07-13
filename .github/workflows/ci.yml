@@ -166,6 +166,7 @@ jobs:
         if: needs.changes.outputs.private_mushaf == 'true' && steps.private-mushaf-cache.outputs.cache-hit != 'true'
         env:
           ASSET_NAME: ${{ steps.private-distribution.outputs.asset_name }}
+          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.private-distribution.outputs.release_tag }}
           RELEASE_REPOSITORY: ${{ steps.private-distribution.outputs.repository }}
         run: |

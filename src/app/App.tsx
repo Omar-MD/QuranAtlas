@@ -48,6 +48,7 @@ export function App() {
     : transientSettingsHash
       ? matchReactRoute(transientSettingsHash)
       : activeRoute
+  const containsMushafViewport = route.type === 'mushaf'
   const showHeader = launchRestore.status === 'loading' || !['about', 'onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
 
   useEffect(() => {
@@ -153,7 +154,10 @@ export function App() {
   }
 
   return (
-    <div className="qar:min-h-screen qar:bg-canvas qar:text-text" data-react-route={activeHash}>
+    <div
+      className={`${containsMushafViewport ? 'qar:h-dvh qar:overflow-hidden' : 'qar:min-h-screen'} qar:bg-canvas qar:text-text`}
+      data-react-route={activeHash}
+    >
       <div aria-hidden="true" className="qar-react-night-shift" data-testid="react-night-shift" />
       {showHeader && (
         <header className="qar:border-b qar:border-border qar:bg-surface qar:px-5 qar:py-3">

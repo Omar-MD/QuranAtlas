@@ -160,6 +160,8 @@ const COLOR_TOKENS: Record<string, string> = {
   'var(--qa-mushaf-accent)': 'var(--qa-react-mushaf-accent)',
 }
 
+const validatedProfileContexts = new WeakSet<MushafPageProfileContext>()
+
 export async function loadMushafPageAsset({
   context,
   fetcher = fetch,
@@ -205,7 +207,7 @@ export async function loadPreparedMushafPage(options: LoadMushafPageAssetOptions
   } = options
   if (signal?.aborted) throw abortError()
   const context = options.context ?? await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal })
-  assertMushafPageProfileContext(context, { mushafEditionId, riwayah })
+  ensureValidatedMushafPageProfileContext(context, { mushafEditionId, riwayah })
   if (signal?.aborted) throw abortError()
   if (context.manifest.version === 2) {
     return prepareExternalMushafPage({ ...context, manifest: context.manifest }, page)
@@ -234,11 +236,12 @@ export async function loadMushafPageProfileContext({
   if (signal?.aborted) throw abortError()
   const [index, manifest] = await Promise.all([
     fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal),
-    loadMushafManifest({ fetcher, mushafEditionId, riwayah, signal }),
+    fetchJson<MushafManifest>(fetcher, mushafManifestUrl({ mushafEditionId, riwayah }), signal),
   ])
   if (signal?.aborted) throw abortError()
   const context = { index, manifest, mushafEditionId, riwayah }
   assertMushafPageProfileContext(context, { mushafEditionId, riwayah })
+  validatedProfileContexts.add(context)
   return context
 }
 
@@ -360,9 +363,7 @@ function assertMushafPageProfileContext(
   context: MushafPageProfileContext,
   expected: { riwayah: Riwayah; mushafEditionId: string },
 ): void {
-  if (context.riwayah !== expected.riwayah || context.mushafEditionId !== expected.mushafEditionId) {
-    throw new Error('Mushaf page profile context identity mismatch')
-  }
+  assertMushafPageProfileIdentity(context, expected)
   assertMushafManifest(context.manifest, expected)
   const indexed = context.index.assets?.find((asset) => (
     asset.riwayah === expected.riwayah
@@ -379,6 +380,31 @@ function assertMushafPageProfileContext(
   }
 }
 
+function ensureValidatedMushafPageProfileContext(
+  context: MushafPageProfileContext,
+  expected: { riwayah: Riwayah; mushafEditionId: string },
+): void {
+  assertMushafPageProfileIdentity(context, expected)
+  if (validatedProfileContexts.has(context)) return
+  assertMushafPageProfileContext(context, expected)
+  validatedProfileContexts.add(context)
+}
+
+function assertMushafPageProfileIdentity(
+  context: MushafPageProfileContext,
+  expected: { riwayah: Riwayah; mushafEditionId: string },
+): void {
+  if (context.riwayah !== expected.riwayah || context.mushafEditionId !== expected.mushafEditionId
+    || context.manifest.riwayah !== expected.riwayah || context.manifest.mushafEditionId !== expected.mushafEditionId) {
+    throw new Error('Mushaf page profile context identity mismatch')
+  }
+  if ((context.manifest.version !== 1 && context.manifest.version !== 2)
+    || !Number.isInteger(context.manifest.pageCount) || context.manifest.pageCount < 1
+    || !context.manifest.verseToPage || typeof context.manifest.verseToPage !== 'object') {
+    throw new Error('Mushaf page profile context contract is invalid')
+  }
+}
+
 function prepareExternalMushafPage(
   context: MushafPageProfileContext & { manifest: MushafManifestV2 },
   page: number,
@@ -387,6 +413,7 @@ function prepareExternalMushafPage(
   const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(page)))
   const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
   if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
+  validateExternalManifestPage(pageEntry)
   const indexEntry = findExternalMushafIndexEntry(context.index, { mushafEditionId, riwayah })
   const preview = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'preview')
   const full = externalSourceForRole(pageEntry, indexEntry, { mushafEditionId, riwayah }, 'full')
@@ -455,13 +482,12 @@ function resolveMushafPage(
   manifest: MushafManifestV1,
   expected: { riwayah: Riwayah; mushafEditionId: string; page: number },
 ): Omit<MushafResolvedPage, 'displaySize'> {
-  assertMushafManifest(manifest, expected)
-
   const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(expected.page)))
   const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
   if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
   const expectedPath = `pages/${String(clampedPage).padStart(3, '0')}.svg`
   if (pageEntry.assetPath !== expectedPath) throw new Error(`Invalid Mushaf asset path at page ${clampedPage}`)
+  if (!isQuranRef(pageEntry.firstVerse)) throw new Error(`Invalid Mushaf first verse at page ${clampedPage}`)
   parseViewBox(pageEntry.viewBox)
   const assetUrl = mushafPageUrl(expected, clampedPage)
   assertRuntimeDatasetUrl(assetUrl)
