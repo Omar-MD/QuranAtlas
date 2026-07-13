@@ -18,6 +18,11 @@ type MushafProfileSessionState =
   | { status: 'ready'; key: string; context: MushafPageProfileContext; framingCapability: MushafFramingCapability }
   | { status: 'error'; key: string; context: null; error: Error; framingCapability: MushafFramingCapability }
 
+type MushafProfileRequest = {
+  key: string
+  controller: AbortController
+}
+
 const NO_FRAMING: MushafFramingCapability = { hasValidFraming: false }
 
 export function useMushafProfileSession(input: {
@@ -29,40 +34,52 @@ export function useMushafProfileSession(input: {
   const [state, setState] = useState<MushafProfileSessionState>({
     status: 'idle', key: null, context: null, framingCapability: NO_FRAMING,
   })
-  const retry = useCallback(() => {
-    if (state.status === 'error') setRetryGeneration((generation) => generation + 1)
-  }, [state.status])
+  const retry = useCallback(() => setRetryGeneration((generation) => generation + 1), [])
   const profile = input.profile
-  const requestRef = useRef<{ key: string; controller: AbortController } | null>(null)
+  const activeRequestsRef = useRef(new Map<string, Set<MushafProfileRequest>>())
+  const latestRequestRef = useRef<MushafProfileRequest | null>(null)
 
   useEffect(() => () => {
-    requestRef.current?.controller.abort()
-    requestRef.current = null
+    for (const requests of activeRequestsRef.current.values()) {
+      for (const request of requests) request.controller.abort()
+    }
+    activeRequestsRef.current.clear()
+    latestRequestRef.current = null
   }, [])
 
   useEffect(() => {
-    const activeRequest = requestRef.current
-    if (activeRequest && activeRequest.key !== key) {
-      activeRequest.controller.abort()
-      requestRef.current = null
+    for (const [requestKey, requests] of activeRequestsRef.current) {
+      if (requestKey === key) continue
+      for (const request of requests) request.controller.abort()
+      activeRequestsRef.current.delete(requestKey)
     }
+    if (latestRequestRef.current?.key !== key) latestRequestRef.current = null
     if (!key || !profile) {
       setState({ status: 'idle', key: null, context: null, framingCapability: NO_FRAMING })
       return undefined
     }
     const controller = new AbortController()
     const request = { key, controller }
-    requestRef.current = request
+    const activeRequests = activeRequestsRef.current.get(key) ?? new Set<MushafProfileRequest>()
+    activeRequests.add(request)
+    activeRequestsRef.current.set(key, activeRequests)
+    latestRequestRef.current = request
     setState({ status: 'loading', key, context: null, framingCapability: NO_FRAMING })
     void loadMushafPageProfileContext({ ...profile, signal: controller.signal })
       .then((context) => {
-        if (controller.signal.aborted || requestRef.current !== request) return
-        requestRef.current = null
+        const requests = activeRequestsRef.current.get(key)
+        requests?.delete(request)
+        if (requests?.size === 0) activeRequestsRef.current.delete(key)
+        if (controller.signal.aborted || latestRequestRef.current !== request) return
+        latestRequestRef.current = null
         setState({ status: 'ready', key, context, framingCapability: deriveMushafFramingCapability(context) })
       })
       .catch((cause: unknown) => {
-        if (controller.signal.aborted || requestRef.current !== request) return
-        requestRef.current = null
+        const requests = activeRequestsRef.current.get(key)
+        requests?.delete(request)
+        if (requests?.size === 0) activeRequestsRef.current.delete(key)
+        if (controller.signal.aborted || latestRequestRef.current !== request) return
+        latestRequestRef.current = null
         setState({
           status: 'error',
           key,

@@ -103,22 +103,35 @@ describe('Mushaf profile session and page window', () => {
     expect(result.current.entries.filter((entry) => entry.status === 'descriptor').map((entry) => entry.page)).toEqual([40, 44])
   })
 
-  it('rejects a stale profile request when the edition identity changes', async () => {
-    const first = deferred<MushafPageProfileContext>()
-    mockedLoadContext.mockImplementationOnce(() => first.promise).mockResolvedValueOnce(contextFor('replacement-edition'))
+  it('aborts every outstanding profile retry when the edition identity changes', async () => {
+    const firstRetry = deferred<MushafPageProfileContext>()
+    const secondRetry = deferred<MushafPageProfileContext>()
+    mockedLoadContext
+      .mockRejectedValueOnce(new Error('profile unavailable'))
+      .mockImplementationOnce(() => firstRetry.promise)
+      .mockImplementationOnce(() => secondRetry.promise)
+      .mockResolvedValueOnce(contextFor('replacement-edition'))
     const { rerender, result } = renderHook(({ activeProfile }) => useMushafProfileSession({ enabled: true, profile: activeProfile }), {
       initialProps: { activeProfile: profile },
     })
-    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledOnce())
-    const staleSignal = mockedLoadContext.mock.calls[0]?.[0].signal
+    await waitFor(() => expect(result.current.status).toBe('error'))
+
+    act(() => result.current.retry())
+    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(2))
+    const firstRetrySignal = mockedLoadContext.mock.calls[1]?.[0].signal
+
+    act(() => result.current.retry())
+    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(3))
+    const secondRetrySignal = mockedLoadContext.mock.calls[2]?.[0].signal
+
     rerender({ activeProfile: { ...profile, mushafEditionId: 'replacement-edition' } })
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(staleSignal?.aborted).toBe(true)
-    await act(async () => first.resolve(contextFor()))
+    expect(firstRetrySignal?.aborted).toBe(true)
+    expect(secondRetrySignal?.aborted).toBe(true)
     expect(result.current.status === 'ready' && result.current.context.mushafEditionId).toBe('replacement-edition')
   })
 
-  it('does not abort an active retry while the edition identity is unchanged', async () => {
+  it('starts another same-key retry from the current callback without aborting active work', async () => {
     const firstRetry = deferred<MushafPageProfileContext>()
     const secondRetry = deferred<MushafPageProfileContext>()
     mockedLoadContext
@@ -128,24 +141,55 @@ describe('Mushaf profile session and page window', () => {
     const { result } = renderHook(() => useMushafProfileSession({ enabled: true, profile }))
     await waitFor(() => expect(result.current.status).toBe('error'))
 
-    const retry = result.current.retry
-    act(() => retry())
+    act(() => result.current.retry())
     await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(2))
     const retrySignal = mockedLoadContext.mock.calls[1]?.[0].signal
 
-    act(() => retry())
+    act(() => result.current.retry())
     await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(3))
     expect(retrySignal?.aborted).toBe(false)
 
     await act(async () => {
-      firstRetry.resolve(contextFor())
       secondRetry.resolve(contextFor())
     })
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    await act(async () => {
+      firstRetry.reject(new Error('stale retry failed'))
+    })
+    expect(result.current.status).toBe('ready')
+  })
+
+  it('aborts every outstanding profile retry when the route unmounts', async () => {
+    const firstRetry = deferred<MushafPageProfileContext>()
+    const secondRetry = deferred<MushafPageProfileContext>()
+    mockedLoadContext
+      .mockRejectedValueOnce(new Error('profile unavailable'))
+      .mockImplementationOnce(() => firstRetry.promise)
+      .mockImplementationOnce(() => secondRetry.promise)
+    const { result, unmount } = renderHook(() => useMushafProfileSession({ enabled: true, profile }))
+    await waitFor(() => expect(result.current.status).toBe('error'))
+
+    act(() => result.current.retry())
+    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(2))
+    const firstRetrySignal = mockedLoadContext.mock.calls[1]?.[0].signal
+
+    act(() => result.current.retry())
+    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledTimes(3))
+    const secondRetrySignal = mockedLoadContext.mock.calls[2]?.[0].signal
+
+    unmount()
+
+    expect(firstRetrySignal?.aborted).toBe(true)
+    expect(secondRetrySignal?.aborted).toBe(true)
   })
 })
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((next) => { resolve = next })
-  return { promise, resolve }
+  let reject!: (cause: unknown) => void
+  const promise = new Promise<T>((next, fail) => {
+    resolve = next
+    reject = fail
+  })
+  return { promise, reject, resolve }
 }
