@@ -254,6 +254,25 @@ async function readDistribution() {
   return JSON.parse(await readFile(DISTRIBUTION_PATH, 'utf8'))
 }
 
+export async function validatePrivateMushafRelease({
+  normalizedRoot,
+  runCommand = defaultCommandRunner,
+  distribution,
+}) {
+  ensure(typeof normalizedRoot === 'string' && isAbsolute(normalizedRoot), 'Private Mushaf release validation requires an absolute normalized root')
+  const descriptor = distribution ?? await readDistribution()
+  validateDistribution(descriptor)
+  const normalizedDir = join(normalizedRoot, descriptor.mushafEditionId)
+  ensure(isInside(normalizedRoot, normalizedDir), 'Private Mushaf normalized output path is unsafe')
+  const importBytes = await readFile(join(normalizedDir, 'import.json')).catch((error) => {
+    if (error?.code === 'ENOENT') throw new Error('Private Mushaf normalized release output is missing import.json')
+    throw error
+  })
+  const { metadata, renditions } = validateNormalizedMetadata(importBytes, descriptor)
+  await validateExtractedEdition(normalizedDir, { importBytes, metadata, renditions }, runCommand)
+  return { normalizedDir, status: 'current' }
+}
+
 export async function restorePrivateMushafReleaseArchive({
   archivePath,
   normalizedRoot,
@@ -304,11 +323,13 @@ export async function restorePrivateMushafReleaseArchive({
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const archivePath = process.argv.slice(2).find((arg) => arg.startsWith('--archive='))?.slice('--archive='.length)
-  restorePrivateMushafReleaseArchive({
-    archivePath,
-    normalizedRoot: join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages', 'qaloon'),
-  }).then((result) => {
+  const args = process.argv.slice(2)
+  const archivePath = args.find((arg) => arg.startsWith('--archive='))?.slice('--archive='.length)
+  const normalizedRoot = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages', 'qaloon')
+  const action = args.length === 1 && args[0] === '--check'
+    ? validatePrivateMushafRelease({ normalizedRoot })
+    : restorePrivateMushafReleaseArchive({ archivePath, normalizedRoot })
+  action.then((result) => {
     console.log(`[mushaf-pages] private release archive ${result.status}: ${result.normalizedDir}`)
   }).catch((error) => {
     console.error(error instanceof Error ? error.message : String(error))

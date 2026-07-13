@@ -172,6 +172,9 @@ jobs:
           mkdir -p .scratch/releases
           gh release download "$RELEASE_TAG" --repo "$RELEASE_REPOSITORY" --pattern "$ASSET_NAME" --dir .scratch/releases
           pnpm run data -- mushaf-pages restore-release --archive="$PWD/.scratch/releases/$ASSET_NAME"
+      - name: Validate private Mushaf normalized release
+        if: needs.changes.outputs.private_mushaf == 'true'
+        run: pnpm run data -- mushaf-pages restore-release --check
       # Playwright asserts real Mushaf SVG pages, so any E2E-selected run must
       # upload a dist artifact with the page pack even when source data did not change.
       - name: Generate baseline release Mushaf page pack
@@ -184,15 +187,16 @@ jobs:
         run: |
           pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604
           pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}"
-      - name: Check private release Mushaf page pack
-        if: needs.changes.outputs.private_mushaf == 'true'
-        run: pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}" --check
       - name: Build production artifact
         run: pnpm run ci:build
         env:
           QURANATLAS_DATASET_RELEVANT: ${{ needs.changes.outputs.dataset_relevant }}
+          QURANATLAS_DATASET_PROFILE: ${{ needs.changes.outputs.mushaf_profile }}
           QURANATLAS_MUSHAF_PAGES_RELEVANT: ${{ needs.changes.outputs.private_mushaf == 'true' || needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
           QURANATLAS_MUSHAF_PAGES_PREBUILT: ${{ needs.changes.outputs.private_mushaf == 'true' || needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
+      - name: Check final private release Mushaf page pack
+        if: needs.changes.outputs.private_mushaf == 'true'
+        run: pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}" --check
       - name: Check chunk budget
         run: node scripts/check-chunks.js
       - name: Upload dist artifact

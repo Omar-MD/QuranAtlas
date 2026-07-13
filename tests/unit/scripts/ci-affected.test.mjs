@@ -53,10 +53,18 @@ describe('affected-change gates', () => {
 
   it('prebuilds the private profile before ci:build and enables private E2E only through the trusted policy', async () => {
     const workflow = await readFile(new URL('../../../.github/workflows/ci.yml', import.meta.url), 'utf8')
+    const cachedReleaseCheck = workflow.indexOf('pnpm run data -- mushaf-pages restore-release --check')
     const privateBuild = workflow.indexOf('pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}"')
     const productionBuild = workflow.indexOf('pnpm run ci:build')
+    const finalPrivateCheck = workflow.lastIndexOf('pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}" --check')
+    const artifactUpload = workflow.indexOf('name: Upload dist artifact')
+    expect(cachedReleaseCheck).toBeGreaterThan(-1)
+    expect(privateBuild).toBeGreaterThan(cachedReleaseCheck)
     expect(privateBuild).toBeGreaterThan(-1)
     expect(productionBuild).toBeGreaterThan(privateBuild)
+    expect(finalPrivateCheck).toBeGreaterThan(productionBuild)
+    expect(artifactUpload).toBeGreaterThan(finalPrivateCheck)
+    expect(workflow).toContain('QURANATLAS_DATASET_PROFILE: ${{ needs.changes.outputs.mushaf_profile }}')
     expect(workflow).toContain("QURANATLAS_PRIVATE_MUSHAF: ${{ needs.changes.outputs.private_mushaf == 'true' && '1' || '0' }}")
     expect(workflow).toContain('key: ${{ steps.private-distribution.outputs.archive_sha256 }}')
     const privateCacheStep = workflow.match(/- name: Cache private Mushaf normalized edition[\s\S]*?(?=\n\s+- name:)/)?.[0]

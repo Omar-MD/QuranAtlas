@@ -48,15 +48,16 @@ function main(argv = process.argv.slice(2)) {
     }
     if (subcommand === 'restore-release') {
       const archive = rest.find((arg) => arg.startsWith('--archive='))?.slice('--archive='.length)
-      if (!archive || !isAbsolute(archive) || rest.length !== 1) {
-        console.error('Usage: pnpm run data -- mushaf-pages restore-release --archive=/absolute/path/to/archive.tar')
+      const check = rest.length === 1 && rest[0] === '--check'
+      if (!check && (!archive || !isAbsolute(archive) || rest.length !== 1)) {
+        console.error('Usage: pnpm run data -- mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)')
         process.exit(1)
       }
-      run('mushaf-pages/release-archive.mjs', [`--archive=${archive}`])
+      run('mushaf-pages/release-archive.mjs', check ? ['--check'] : [`--archive=${archive}`])
       return
     }
     console.error(`Unknown mushaf-pages command: ${subcommand}`)
-    console.error('Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages restore-release --archive=/absolute/path/to/archive.tar')
+    console.error('Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)')
     process.exit(1)
   }
 
@@ -90,7 +91,7 @@ function main(argv = process.argv.slice(2)) {
     if (profile !== 'catalog') {
       run('search/build.mjs', [`--profile=${sharedProfile}`])
       run('knowledge/build.mjs')
-      run('riwayah-packages/build.mjs', [`--profile=${sharedProfile}`])
+      run('riwayah-packages/build.mjs', [`--profile=${profile}`])
       if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
     }
     return

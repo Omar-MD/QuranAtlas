@@ -29,6 +29,7 @@ import * as privatePdfModule from '../../../scripts/data/mushaf-pages/private-pd
 import {
   inspectPrivateMushafTar,
   restorePrivateMushafReleaseArchive,
+  validatePrivateMushafRelease,
 } from '../../../scripts/data/mushaf-pages/release-archive.mjs'
 import { buildManifestPayload } from '../../../scripts/data/manifest/inventory.mjs'
 import { validateMushafManifestData } from '../../../scripts/check-react-mushaf-indexes.mjs'
@@ -609,6 +610,40 @@ describe('private Mushaf release archive restore', () => {
     }
   })
 
+  it('validates a cached normalized edition against the complete distribution before use', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-release-cache-'))
+    const fixture = releaseArchiveFixture()
+    const archivePath = join(root, 'fixture.tar')
+    const normalizedRoot = join(root, 'normalized')
+    await writeFile(archivePath, fixture.archive)
+    const runCommand = async (command, args) => command === 'webpinfo'
+      ? { status: 0, stdout: `Canvas size: ${args[0].includes('1280') ? '1280 x 1630' : '2136 x 2720'}\n`, stderr: '' }
+      : privatePdfModule.defaultCommandRunner(command, args)
+    try {
+      await restorePrivateMushafReleaseArchive({ archivePath, normalizedRoot, runCommand, distribution: fixture.distribution })
+      await expect(validatePrivateMushafRelease({ normalizedRoot, runCommand, distribution: fixture.distribution })).resolves.toMatchObject({ status: 'current' })
+      await expect(validatePrivateMushafRelease({
+        normalizedRoot,
+        runCommand,
+        distribution: { ...fixture.distribution, releaseTag: 'mutable-tag' },
+      })).rejects.toThrow(/release pointer/i)
+      await expect(validatePrivateMushafRelease({
+        normalizedRoot,
+        runCommand,
+        distribution: { ...fixture.distribution, normalizedContractDigest: '3'.repeat(64) },
+      })).rejects.toThrow(/contract digest/i)
+      await expect(validatePrivateMushafRelease({
+        normalizedRoot,
+        runCommand,
+        distribution: { ...fixture.distribution, normalizedContentDigest: '4'.repeat(64) },
+      })).rejects.toThrow(/content digest/i)
+      await writeFile(join(normalizedRoot, fixture.editionId, 'pages', '001-1280.webp'), 'changed')
+      await expect(validatePrivateMushafRelease({ normalizedRoot, runCommand, distribution: fixture.distribution })).rejects.toThrow(/bytes are invalid/i)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('rejects corrupt WebP staging and preserves prior immutable output', async () => {
     const root = await mkdtemp(join(tmpdir(), 'qa-private-release-failure-'))
     const fixture = releaseArchiveFixture({ webpBytes: Buffer.from('corrupt-webp') })
@@ -871,6 +906,7 @@ describe('mushaf page dataset builder', () => {
     'stale-edition',
     'corrupt-index',
     'stale-dataset-manifest',
+    'stale-profile',
     'extra-page',
   ])('rejects %s during a read-only private profile check', async (kind) => {
     const root = await mkdtemp(join(tmpdir(), `qa-mushaf-private-check-${kind}-`))
@@ -887,10 +923,14 @@ describe('mushaf page dataset builder', () => {
         await writeFile(join(riwayahRoot, 'stale-edition', 'sentinel.txt'), 'stale')
       } else if (kind === 'corrupt-index') {
         await writeFile(indexPath, '{"version":1,"assets":[]}\n')
-      } else if (kind === 'stale-dataset-manifest') {
+      } else if (kind === 'stale-dataset-manifest' || kind === 'stale-profile') {
         const manifest = JSON.parse(await readFile(datasetManifestPath, 'utf8'))
-        manifest.files = manifest.files.filter((file) => !file.path.endsWith('/pages/604-2136.webp'))
-        manifest.lanes.pages.files -= 1
+        if (kind === 'stale-profile') {
+          manifest.profile = 'baseline'
+        } else {
+          manifest.files = manifest.files.filter((file) => !file.path.endsWith('/pages/604-2136.webp'))
+          manifest.lanes.pages.files -= 1
+        }
         await writeFile(datasetManifestPath, JSON.stringify(manifest))
       } else {
         await writeFile(join(riwayahRoot, 'qalun-furatiyyah-2023-v1', 'pages', '605-2136.webp'), 'extra')
