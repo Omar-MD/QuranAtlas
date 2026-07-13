@@ -1,6 +1,7 @@
 import {
   Component,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useCallback,
@@ -134,6 +135,7 @@ export function MushafPageViewer({
   const scrollInitializedRef = useRef(false)
   const isScrollModeRef = useRef(false)
   const restoreStageFocusRef = useRef(false)
+  const suppressReplacementStageFocusRevealRef = useRef(false)
   const interactionSuspended = useReaderInteractionSuspended()
   const sourceRatio = resolved.displaySize
     ? resolved.displaySize.width / resolved.displaySize.height
@@ -184,7 +186,11 @@ export function MushafPageViewer({
     stageRef,
   })
 
-  const revealChrome = useCallback(() => {
+  const revealChrome = useCallback((event: ReactFocusEvent<HTMLElement>) => {
+    if (suppressReplacementStageFocusRevealRef.current && event.target === stageRef.current) {
+      suppressReplacementStageFocusRevealRef.current = false
+      return
+    }
     if (!chromeVisible) onToggleChrome?.(true)
   }, [chromeVisible, onToggleChrome])
 
@@ -263,7 +269,9 @@ export function MushafPageViewer({
     if (isScrollMode) return undefined
     const stage = stageRef.current
     if (stage && restoreStageFocusRef.current) {
+      suppressReplacementStageFocusRevealRef.current = true
       stage.focus({ preventScroll: true })
+      suppressReplacementStageFocusRevealRef.current = false
       restoreStageFocusRef.current = false
     }
     return undefined

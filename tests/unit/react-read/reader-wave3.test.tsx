@@ -1215,6 +1215,7 @@ describe('React reader coverage', () => {
     resolveSurahIndex?.(jsonResponse(completeSurahIndex))
     await waitFor(() => expect(changes).toHaveLength(1))
     expect(changes[0]).toMatchObject({ progress: { lastReadRef: { surah: 1, verse: 7 } } })
+    fireEvent.keyDown(window, { key: 'Escape' })
     expect(await screen.findByRole('button', { name: /Daily Wird: 70% today, 3 verses left today/i })).toBeInTheDocument()
     expect(changes).toHaveLength(1)
     unsubscribe()
@@ -1282,6 +1283,7 @@ describe('React reader coverage', () => {
     expect(await screen.findByRole('img', { name: /mushaf page 49, qaloon/i })).toBeInTheDocument()
     await waitFor(() => expect(changes).toHaveLength(1))
 
+    fireEvent.keyDown(window, { key: 'Escape' })
     fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
     expect(await screen.findByRole('img', { name: /mushaf page 50, qaloon/i })).toBeInTheDocument()
     await waitFor(() => expect(changes).toHaveLength(2))
@@ -1337,6 +1339,7 @@ describe('React reader coverage', () => {
     expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
     await waitFor(() => expect(changes).toHaveLength(2))
 
+    fireEvent.keyDown(window, { key: 'Escape' })
     fireEvent.click(screen.getByRole('button', { name: 'Previous Mushaf page' }))
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
     expect(changes).toHaveLength(2)
@@ -1643,18 +1646,19 @@ describe('React reader coverage', () => {
       upgradeStatus: 'idle' as const,
     }))
     function CommitHarness() {
-      const [chromeVisible, setChromeVisible] = useState(true)
       const [resolved, setResolved] = useState(current)
+      const chrome = useMushafChromeVisibility(true)
       return (
         <MushafPageViewer
-          chromeVisible={chromeVisible}
+          chromeVisible={chrome.visible}
           fitWidth
           inlineSvg={inlineSvg}
           onNavigate={(page) => {
             if (page !== 43) return
-            setChromeVisible(false)
+            chrome.hide()
             setResolved(next)
           }}
+          onToggleChrome={(visible) => visible ? chrome.reveal() : chrome.hide()}
           pages={pages}
           resolved={resolved}
         />
@@ -1667,7 +1671,12 @@ describe('React reader coverage', () => {
     fireEvent.click(nextPageButton)
 
     expect(screen.queryByRole('navigation', { name: 'Mushaf page navigation' })).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveFocus()
+    const replacementStage = screen.getByRole('region', { name: 'Scrollable Mushaf pages' })
+    expect(replacementStage).toHaveFocus()
+
+    fireEvent.blur(replacementStage)
+    fireEvent.focus(replacementStage)
+    expect(screen.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeInTheDocument()
   })
 
   it('sends each non-ready button or arrow destination through the request callback once', () => {
