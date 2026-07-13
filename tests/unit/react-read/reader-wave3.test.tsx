@@ -929,6 +929,76 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
+  it('advances a shared initial and forward Daily Wird boundary exactly once before a later distinct boundary', async () => {
+    const today = getLocalDayKey()
+    const db = await openReactDb()
+    await db.settings.put({
+      key: 'wirdPlan',
+      value: {
+        endRef: { surah: 2, verse: 285 },
+        history: [],
+        id: 'mushaf-same-boundary-wird',
+        progress: {
+          completedThroughRef: null,
+          dayKey: today,
+          lastReadRef: null,
+          nextRef: { surah: 2, verse: 281 },
+          todayEndRef: { surah: 2, verse: 285 },
+          todayStartRef: { surah: 2, verse: 281 },
+        },
+        reminder: { browserNotifications: 'default', enabled: false, time: '08:00' },
+        startRef: { surah: 2, verse: 281 },
+        startedOn: today,
+        targetDays: 1,
+        targetEndOn: today,
+        unit: 'verse',
+      },
+    })
+    const sameBoundaryManifest = {
+      ...mushafManifest,
+      pages: mushafManifest.pages.map((entry) => {
+        if (entry.page === 48) return { ...entry, firstVerse: { surah: 2, verse: 281 } }
+        if (entry.page === 49) return { ...entry, firstVerse: { surah: 2, verse: 282 } }
+        if (entry.page === 50) return { ...entry, firstVerse: { surah: 2, verse: 284 } }
+        return entry
+      }),
+      verseToPage: {
+        ...mushafManifest.verseToPage,
+        '2:281': 48,
+        '2:282': 49,
+        '2:283': 49,
+        '2:284': 50,
+      },
+    }
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/surahs.json') return jsonResponse(completeSurahIndex)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(sameBoundaryManifest)
+      if (/\/pages\/(047|048|049|050)\.svg$/.test(url)) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/48?wird=1'
+    const changes: unknown[] = []
+    const unsubscribe = subscribeWirdPlanChanged((plan) => changes.push(plan))
+    render(<MushafRoute page={48} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 48, qaloon/i })).toBeInTheDocument()
+    await waitFor(() => expect(changes).toHaveLength(1))
+    expect(changes[0]).toMatchObject({ progress: { lastReadRef: { surah: 2, verse: 281 } } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(await screen.findByRole('img', { name: /mushaf page 49, qaloon/i })).toBeInTheDocument()
+    await waitFor(() => expect(changes).toHaveLength(1))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(await screen.findByRole('img', { name: /mushaf page 50, qaloon/i })).toBeInTheDocument()
+    await waitFor(() => expect(changes).toHaveLength(2))
+    expect(changes[1]).toMatchObject({ progress: { lastReadRef: { surah: 2, verse: 283 } } })
+    window.location.hash = '#/m/48'
+    unsubscribe()
+    vi.unstubAllGlobals()
+  })
+
   it('advances Daily Wird once for a forward queued commit and not for backward movement', async () => {
     const today = getLocalDayKey()
     const db = await openReactDb()
@@ -958,7 +1028,9 @@ describe('React reader coverage', () => {
       const url = String(input)
       if (url === '/dataset/surahs.json') return jsonResponse(completeSurahIndex)
       if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
-      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
+        return jsonResponse({ ...mushafManifest, verseToPage: { ...mushafManifest.verseToPage, '1:7': 1 } })
+      }
       if (/\/pages\/(001|002)\.svg$/.test(url)) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
       return jsonResponse({}, { ok: false, status: 404 })
     }))

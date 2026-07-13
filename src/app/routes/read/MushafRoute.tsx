@@ -223,7 +223,6 @@ export function MushafRoute({
   const commitDiscretePage = useCallback((next: MushafReadyPageAssetState): void => {
     const current = visiblePageRef.current
     if (current && next.resolved.page > current.resolved.page) {
-      lastWirdAdvancedKeyRef.current = null
       queueMushafWirdAdvance(current.resolved.lastVerse ?? current.resolved.firstVerse)
     }
     commitVisiblePage(next)
