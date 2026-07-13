@@ -176,6 +176,12 @@ export function MushafPageViewer({
     requestOrNavigate(page)
   }
 
+  function requestFromPageArrow(page: number): void {
+    if (page < 1 || page > resolved.pageCount) return
+    if (isReaderChromeTarget(document.activeElement)) stageRef.current?.focus({ preventScroll: true })
+    requestOrNavigate(page)
+  }
+
   const gesture = useMushafPageGesture({
     canNavigate: (direction) => direction === 'next'
       ? readyEntry(effectivePages, resolved.page + 1) !== null
@@ -246,12 +252,12 @@ export function MushafPageViewer({
       }
       if (!isScrollMode && event.key === 'ArrowLeft') {
         event.preventDefault()
-        requestOrNavigate(resolved.page + 1)
+        requestFromPageArrow(resolved.page + 1)
         return
       }
       if (!isScrollMode && event.key === 'ArrowRight') {
         event.preventDefault()
-        requestOrNavigate(resolved.page - 1)
+        requestFromPageArrow(resolved.page - 1)
         return
       }
       if (stageScrollable) scrollStageForKey(event, stageRef.current)
@@ -677,4 +683,9 @@ function isEditableTarget(target: EventTarget | null): boolean {
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
   return target.closest('a, button, input, select, textarea, summary, label, [contenteditable="true"], [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"]') !== null
+}
+
+function isReaderChromeTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false
+  return target.closest('.qar-reader-chrome, .qar-react-mushaf-page-actions') !== null
 }

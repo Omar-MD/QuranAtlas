@@ -1699,6 +1699,52 @@ describe('React reader coverage', () => {
     expect(screen.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeInTheDocument()
   })
 
+  it('moves focus from top Mushaf chrome to the stage before a physical page-arrow commit hides chrome', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
+    const current = boundaryPageFixture(42)
+    const next = boundaryPageFixture(43)
+    const pages: MushafPageWindowEntry[] = [current, next].map((resolved) => ({
+      asset: { media: { kind: 'inline-svg' as const, inlineSvg }, resolved, status: 'ready' as const },
+      page: resolved.page,
+      rendition: 'full' as const,
+      status: 'ready' as const,
+      upgradeStatus: 'idle' as const,
+    }))
+    function CommitHarness() {
+      const [resolved, setResolved] = useState(current)
+      const chrome = useMushafChromeVisibility(true)
+      return (
+        <>
+          <ReaderChrome mode="mushaf" visible={chrome.visible} />
+          <MushafPageViewer
+            chromeVisible={chrome.visible}
+            fitWidth
+            inlineSvg={inlineSvg}
+            onNavigate={(page) => {
+              if (page !== 43) return
+              chrome.hide()
+              setResolved(next)
+            }}
+            onToggleChrome={(visible) => visible ? chrome.reveal() : chrome.hide()}
+            pages={pages}
+            resolved={resolved}
+          />
+        </>
+      )
+    }
+    render(<CommitHarness />)
+
+    const navigationButton = screen.getByRole('button', { name: 'Open navigation' })
+    navigationButton.focus()
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+
+    expect(screen.getByRole('img', { name: /mushaf page 43/i })).toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Mushaf page navigation' })).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { hidden: true })).toHaveAttribute('inert')
+    expect(screen.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveFocus()
+    expect(navigationButton).not.toHaveFocus()
+  })
+
   it('sends each non-ready button or arrow destination through the request callback once', () => {
     const onRequestPage = vi.fn()
     const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
