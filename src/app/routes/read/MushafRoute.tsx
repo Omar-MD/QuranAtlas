@@ -25,6 +25,7 @@ import { nativeSettingsReader, readNativeSetting, readNativeSettings, writeNativ
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
 import { emitReactReaderPreferencesChanged, isReactMushafViewMode, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { REACT_ROUTES } from '../../router/routes'
+import { readableAsset, type MushafPageWindowEntry } from './mushaf-page-window-state'
 import { useMushafPageWindow } from './useMushafPageWindow'
 import { useMushafProfileSession } from './useMushafProfileSession'
 
@@ -70,8 +71,11 @@ export function MushafRoute({
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
   const [chromeVisible, setChromeVisible] = useState(true)
+  const [pendingPage, setPendingPage] = useState<number | null>(null)
+  const [recoveryPage, setRecoveryPage] = useState<number | null>(null)
   const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
+  const initialVisibleWirdAdvancedRef = useRef(false)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
   const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex), [surahIndex])
@@ -98,14 +102,26 @@ export function MushafRoute({
     if (!surah) return undefined
     return surahIndex.find((row) => row.n === surah)?.name_ar ?? `سورة ${surah}`
   }, [surahIndex, visiblePage?.resolved.firstVerse.surah])
+  const recoveryEntry = recoveryPage === null
+    ? null
+    : windowState.entries.find((entry) => entry.page === recoveryPage) ?? null
   const requestedPageFailure = createRequestedPageFailure({
     cancel: () => {
+      setPendingPage(null)
+      setRecoveryPage(null)
       if (visiblePage) replaceMushafHash(visiblePage.resolved.page)
     },
-    requested: windowState.requested,
-    retry: windowState.retry,
+    requested: recoveryEntry,
+    retry: (requestedPage) => {
+      setRecoveryPage(null)
+      setPendingPage(requestedPage)
+      windowState.retry(requestedPage)
+    },
     visiblePage: visiblePage?.resolved.page,
   })
+  const pendingEntry = pendingPage === null
+    ? null
+    : windowState.entries.find((entry) => entry.page === pendingPage) ?? null
 
   useEffect(() => {
     const query = window.matchMedia?.(COMPACT_LANDSCAPE_QUERY)
@@ -132,13 +148,10 @@ export function MushafRoute({
   }, [activeSettings?.mushafFitWidth, compactLandscape])
 
   useEffect(() => {
-    if (routePageRef.current !== page) {
-      setChromeVisible(Boolean(requestedPageFailure))
-      routePageRef.current = page
-    } else if (requestedPageFailure) {
-      setChromeVisible(true)
-    }
-  }, [page, requestedPageFailure?.requestedPage, requestedPageFailure?.visiblePage])
+    if (routePageRef.current === page) return
+    routePageRef.current = page
+    setChromeVisible(false)
+  }, [page])
 
   useEffect(() => {
     let active = true
@@ -179,6 +192,46 @@ export function MushafRoute({
         lastWirdAdvancedKeyRef.current = null
       })
   }, [enableWirdProgress, wirdCounts, wirdPlan])
+
+  const commitVisiblePage = useCallback((next: MushafReadyPageAssetState): void => {
+    visiblePageRef.current = next
+    setVisiblePage(next)
+  }, [])
+
+  const mushafHash = useCallback((nextPage: number): string => {
+    const href = REACT_ROUTES.mushaf(nextPage)
+    return enableWirdProgress ? withWirdProgressIntent(href) : href
+  }, [enableWirdProgress])
+
+  const replaceMushafHash = useCallback((nextPage: number): void => {
+    const href = mushafHash(nextPage)
+    if (onReplaceHash) onReplaceHash(href)
+    else window.history.replaceState(null, '', href)
+  }, [mushafHash, onReplaceHash])
+
+  const commitDiscretePage = useCallback((next: MushafReadyPageAssetState): void => {
+    const current = visiblePageRef.current
+    if (current && next.resolved.page > current.resolved.page) {
+      lastWirdAdvancedKeyRef.current = null
+      advanceMushafWirdToRef(current.resolved.lastVerse ?? current.resolved.firstVerse)
+    }
+    commitVisiblePage(next)
+    setPendingPage(null)
+    setRecoveryPage(null)
+    setChromeVisible(false)
+    window.location.hash = mushafHash(next.resolved.page)
+  }, [advanceMushafWirdToRef, commitVisiblePage, mushafHash])
+
+  const requestDiscretePage = useCallback((nextPage: number): void => {
+    const ready = readyWindowPage(windowState.entries, nextPage)
+    if (ready) {
+      commitDiscretePage(ready)
+      return
+    }
+    setRecoveryPage(null)
+    setPendingPage(nextPage)
+    windowState.request(nextPage)
+  }, [commitDiscretePage, windowState.entries, windowState.request])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -222,24 +275,52 @@ export function MushafRoute({
   }, [wirdCounts, wirdPlan?.unit])
 
   useEffect(() => {
+    if (!visiblePage || initialVisibleWirdAdvancedRef.current) return
+    initialVisibleWirdAdvancedRef.current = true
     advanceMushafWirdToRef(visiblePage?.resolved.firstVerse)
   }, [advanceMushafWirdToRef, visiblePage?.resolved.firstVerse])
 
   useEffect(() => {
     const requested = windowState.requested
     if (requested?.status !== 'ready') return
-    if (!isSameVisibleMushafPage(visiblePageRef.current, requested.asset)) {
+    const current = visiblePageRef.current
+    if ((!current || current.resolved.page === requested.asset.resolved.page)
+      && !isSameVisibleMushafPage(current, requested.asset)) {
       commitVisiblePage(requested.asset)
     }
-    if (requested.asset.resolved.page !== page) {
+    if (!current && requested.asset.resolved.page !== page) {
       replaceMushafHash(requested.asset.resolved.page)
     }
-  }, [page, windowState.requested])
+  }, [commitVisiblePage, page, replaceMushafHash, windowState.requested])
 
-  function commitVisiblePage(next: MushafReadyPageAssetState): void {
-    visiblePageRef.current = next
-    setVisiblePage(next)
-  }
+  useEffect(() => {
+    const current = visiblePageRef.current
+    if (!current || current.resolved.page === page) return
+    setRecoveryPage(null)
+    setPendingPage(page)
+    windowState.request(page)
+  }, [page, windowState.request])
+
+  useEffect(() => {
+    if (interactionSuspended) return
+    if (pendingPage === null) return
+    const entry = windowState.entries.find((candidate) => candidate.page === pendingPage)
+    const ready = readableAsset(entry)
+    if (ready) {
+      commitDiscretePage(ready)
+      return
+    }
+    if (isTerminalMushafEntry(entry)) {
+      setRecoveryPage(pendingPage)
+      setPendingPage(null)
+      setChromeVisible(true)
+    }
+  }, [commitDiscretePage, interactionSuspended, pendingPage, windowState.entries])
+
+  useEffect(() => {
+    setPendingPage(null)
+    setRecoveryPage(null)
+  }, [profileSession.key])
 
   return (
     <ReaderPageShell
@@ -287,15 +368,9 @@ export function MushafRoute({
               replaceMushafHash(nextPage)
             }}
             onNavigate={(nextPage) => {
-              if (nextPage > visiblePage.resolved.page) {
-                advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
-              }
-              const readyAdjacent = readyWindowPage(windowState.entries, nextPage)
-              if (readyAdjacent) commitVisiblePage(readyAdjacent)
-              setChromeVisible(false)
-              window.location.hash = mushafHash(nextPage)
+              requestDiscretePage(nextPage)
             }}
-            onRequestPage={windowState.retry}
+            onRequestPage={requestDiscretePage}
             onToggleBookmark={() => {
               const bookmarkPage = visiblePage.resolved.page
               void toggleBookmark({
@@ -321,13 +396,17 @@ export function MushafRoute({
                 <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">Stay on page {requestedPageFailure.visiblePage}</Button>
               </div>
             </section>
+          ) : pendingPage !== null && (pendingEntry?.status === 'loading' || pendingEntry?.status === 'retrying') ? (
+            <div aria-live="polite" className="qar-react-mushaf-request-loading" role="status">
+              {pendingEntry.status === 'retrying' ? `Retrying page ${pendingPage}` : `Loading page ${pendingPage}`}
+            </div>
           ) : null}
         </>
       ) : profileSession.status === 'error' ? (
         <ReaderAssetGate label="Mushaf" onManageAssets={openAssetSettings} onRetry={profileSession.retry} state="error" />
-      ) : windowState.requested?.status === 'error' ? (
+      ) : windowState.requested?.status === 'transient-error' || windowState.requested?.status === 'contract-error' ? (
         <ReaderAssetGate label="Mushaf" onManageAssets={openAssetSettings} onRetry={() => windowState.retry(page)} state="error" />
-      ) : windowState.requested?.status === 'unavailable' ? (
+      ) : windowState.requested?.status === 'confirmed-missing' ? (
         <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} onManageAssets={openAssetSettings} onRetry={() => windowState.retry(page)} state="missing" />
       ) : (
         <section className="qar:m-5 qar:min-h-28 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Loading Mushaf page" aria-live="polite" />
@@ -335,16 +414,6 @@ export function MushafRoute({
     </ReaderPageShell>
   )
 
-  function mushafHash(nextPage: number): string {
-    const href = REACT_ROUTES.mushaf(nextPage)
-    return enableWirdProgress ? withWirdProgressIntent(href) : href
-  }
-
-  function replaceMushafHash(nextPage: number): void {
-    const href = mushafHash(nextPage)
-    if (onReplaceHash) onReplaceHash(href)
-    else window.history.replaceState(null, '', href)
-  }
 }
 
 function createRequestedPageFailure({
@@ -358,16 +427,24 @@ function createRequestedPageFailure({
   retry: (page: number) => void
   visiblePage?: number
 }): RequestedMushafPageFailure | null {
-  if (!visiblePage || !requested || requested.page === visiblePage || (requested.status !== 'error' && requested.status !== 'unavailable')) {
+  if (!visiblePage || !requested || requested.page === visiblePage || !isTerminalMushafEntry(requested)) {
     return null
   }
   return {
     cancel,
-    message: `Mushaf page ${requested.page} could not be loaded. Page ${visiblePage} remains open.`,
+    message: requested.status === 'confirmed-missing'
+      ? `Mushaf page ${requested.page} is unavailable. Page ${visiblePage} remains open.`
+      : `Mushaf page ${requested.page} could not be loaded. Page ${visiblePage} remains open.`,
     requestedPage: requested.page,
     retry: () => retry(requested.page),
     visiblePage,
   }
+}
+
+function isTerminalMushafEntry(entry: MushafPageWindowEntry | undefined): boolean {
+  return entry?.status === 'transient-error'
+    || entry?.status === 'contract-error'
+    || entry?.status === 'confirmed-missing'
 }
 
 function openAssetSettings(): void {

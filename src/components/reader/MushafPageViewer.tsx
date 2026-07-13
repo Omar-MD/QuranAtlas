@@ -167,6 +167,11 @@ export function MushafPageViewer({
     else onRequestPage?.(page)
   }
 
+  function requestFromDock(page: number): void {
+    stageRef.current?.focus({ preventScroll: true })
+    requestOrNavigate(page)
+  }
+
   const gesture = useMushafPageGesture({
     canNavigate: (direction) => direction === 'next'
       ? readyEntry(effectivePages, resolved.page + 1) !== null
@@ -419,7 +424,7 @@ export function MushafPageViewer({
         ref={setStageNode}
         role={stageName ? 'region' : undefined}
         style={{ '--qa-react-mushaf-drag-x': `${gesture.dragX}px` } as CSSProperties}
-        tabIndex={stageName ? 0 : undefined}
+        tabIndex={stageName ? 0 : -1}
       >
         {isScrollMode ? (
           <div className="qar-react-mushaf-continuous-stack">
@@ -453,7 +458,7 @@ export function MushafPageViewer({
           <IconButton
             disabled={resolved.page >= resolved.pageCount}
             label="Next Mushaf page"
-            onClick={() => requestOrNavigate(resolved.page + 1)}
+            onClick={() => requestFromDock(resolved.page + 1)}
           >
             <ChevronLeft aria-hidden="true" />
           </IconButton>
@@ -463,7 +468,7 @@ export function MushafPageViewer({
           <IconButton
             disabled={resolved.page <= 1}
             label="Previous Mushaf page"
-            onClick={() => requestOrNavigate(resolved.page - 1)}
+            onClick={() => requestFromDock(resolved.page - 1)}
           >
             <ChevronRight aria-hidden="true" />
           </IconButton>

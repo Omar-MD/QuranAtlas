@@ -23,6 +23,7 @@ import { loadReaderSurah, type ReaderCorpusState } from '../../../src/data/reade
 import { resolveTranslationFor } from '../../../src/data/verse-aliases'
 import { openReactDb } from '../../../src/storage/db'
 import { getLocalDayKey } from '../../../src/continuity/wird/progress'
+import { subscribeWirdPlanChanged } from '../../../src/continuity/wird/store'
 
 function jsonResponse(payload: unknown, init: { ok?: boolean; status?: number } = {}) {
   return {
@@ -698,7 +699,7 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps the current Mushaf page mounted while the next page asset loads', async () => {
+  it('keeps the current Mushaf page mounted and commits an unready neighbor automatically', async () => {
     let resolvePageTwo: ((response: Response) => void) | null = null
     const pageTwo = new Promise<Response>((resolve) => {
       resolvePageTwo = resolve
@@ -719,15 +720,132 @@ describe('React reader coverage', () => {
       return jsonResponse({}, { ok: false, status: 404 })
     }))
 
-    const { rerender } = render(<MushafRoute page={1} />)
+    window.location.hash = '#/m/1'
+    render(<MushafRoute page={1} />)
     expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon, beginning near 1:1/i })).toBeInTheDocument()
 
-    rerender(<MushafRoute page={2} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
     expect(screen.getByRole('img', { name: /mushaf page 1, qaloon, beginning near 1:1/i })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Loading Mushaf page')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Loading page 2')
 
     resolvePageTwo?.({ ok: true, status: 200, text: async () => '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="#fff"/><path d="M15 15h90v150H15z" fill="#000"/></svg>' } as Response)
     expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon, beginning near 2:1/i })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/m/2')
+    vi.unstubAllGlobals()
+  })
+
+  it('lets a newer unready page request replace the earlier destination', async () => {
+    const resolvers = new Map<number, (response: Response) => void>()
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      const match = /\/pages\/(041|042|043)\.svg$/.exec(url)
+      if (!match) return jsonResponse({}, { ok: false, status: 404 })
+      const requestedPage = Number(match[1])
+      if (requestedPage === 42) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      return new Promise<Response>((resolve) => resolvers.set(requestedPage, resolve))
+    }))
+    window.location.hash = '#/m/42'
+    render(<MushafRoute page={42} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 42, qaloon/i })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Loading page 43')
+    fireEvent.click(screen.getByRole('button', { name: 'Previous Mushaf page' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Loading page 41')
+
+    resolvers.get(43)?.({ ok: true, status: 200, text: async () => realMushafSvg } as Response)
+    await waitFor(() => expect(screen.getByRole('img', { name: /mushaf page 42, qaloon/i })).toBeInTheDocument())
+    expect(window.location.hash).toBe('#/m/42')
+    resolvers.get(41)?.({ ok: true, status: 200, text: async () => realMushafSvg } as Response)
+    expect(await screen.findByRole('img', { name: /mushaf page 41, qaloon/i })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/m/41')
+    vi.unstubAllGlobals()
+  })
+
+  it('defers a ready pending commit while reader interaction is suspended', async () => {
+    let resolvePageTwo: ((response: Response) => void) | null = null
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      if (url.endsWith('/pages/001.svg')) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      if (url.endsWith('/pages/002.svg')) return new Promise<Response>((resolve) => { resolvePageTwo = resolve })
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/1'
+    const { rerender } = render(<MushafRoute interactionSuspended={false} page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+
+    rerender(<MushafRoute interactionSuspended page={1} />)
+    resolvePageTwo?.({ ok: true, status: 200, text: async () => realMushafSvg } as Response)
+    await waitFor(() => expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument())
+    expect(window.location.hash).toBe('#/m/1')
+
+    rerender(<MushafRoute interactionSuspended={false} page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/m/2')
+    vi.unstubAllGlobals()
+  })
+
+  it('advances Daily Wird once for a forward queued commit and not for backward movement', async () => {
+    const today = getLocalDayKey()
+    const db = await openReactDb()
+    await db.settings.put({
+      key: 'wirdPlan',
+      value: {
+        endRef: { surah: 2, verse: 3 },
+        history: [],
+        id: 'mushaf-queued-wird',
+        progress: {
+          completedThroughRef: null,
+          dayKey: today,
+          lastReadRef: { surah: 1, verse: 1 },
+          nextRef: { surah: 1, verse: 1 },
+          todayEndRef: { surah: 2, verse: 3 },
+          todayStartRef: { surah: 1, verse: 1 },
+        },
+        reminder: { browserNotifications: 'default', enabled: false, time: '08:00' },
+        startRef: { surah: 1, verse: 1 },
+        startedOn: today,
+        targetDays: 1,
+        targetEndOn: today,
+        unit: 'verse',
+      },
+    })
+    const completeSurahIndex = Array.from({ length: 114 }, (_, index) => ({
+      count: index === 1 ? 285 : 7,
+      counts: { hafs: index === 1 ? 286 : 7, qaloon: index === 1 ? 285 : 7, warsh: index === 1 ? 285 : 7 },
+      n: index + 1,
+      name: `Surah ${index + 1}`,
+      name_ar: `سورة ${index + 1}`,
+    }))
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/surahs.json') return jsonResponse(completeSurahIndex)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      if (/\/pages\/(001|002)\.svg$/.test(url)) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/1?wird=1'
+    const changes: unknown[] = []
+    const unsubscribe = subscribeWirdPlanChanged((plan) => changes.push(plan))
+    render(<MushafRoute page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    await waitFor(() => expect(changes).toHaveLength(1))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
+    await waitFor(() => expect(changes).toHaveLength(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous Mushaf page' }))
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    expect(changes).toHaveLength(2)
+    window.location.hash = '#/m/1'
+    unsubscribe()
     vi.unstubAllGlobals()
   })
 
@@ -1008,8 +1126,11 @@ describe('React reader coverage', () => {
     expect(surahLabel).toHaveAttribute('dir', 'rtl')
     expect(surahLabel).toHaveAttribute('lang', 'ar')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    const nextPageButton = screen.getByRole('button', { name: 'Next Mushaf page' })
+    nextPageButton.focus()
+    fireEvent.click(nextPageButton)
     expect(onNavigate).toHaveBeenLastCalledWith(43)
+    expect(nextPageButton).not.toHaveFocus()
     fireEvent.click(screen.getByRole('button', { name: 'Previous Mushaf page' }))
     expect(onNavigate).toHaveBeenLastCalledWith(41)
 
@@ -1017,6 +1138,52 @@ describe('React reader coverage', () => {
     expect(onNavigate).toHaveBeenLastCalledWith(43)
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(onNavigate).toHaveBeenLastCalledWith(41)
+  })
+
+  it('sends each non-ready button or arrow destination through the request callback once', () => {
+    const onRequestPage = vi.fn()
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
+    const resolved = {
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      displaySize: { width: 120, height: 180 },
+      firstVerse: { surah: 2, verse: 251 },
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page: 42,
+      pageCount: 604,
+      riwayah: 'qaloon' as const,
+      riwayahLabel: 'Qalun',
+    }
+    const descriptor = {
+      kind: 'inline-svg' as const,
+      assetUrl: resolved.assetUrl.replace('042', '043'),
+      displayViewBox: inlineSvg.viewBox,
+      resolved: { ...resolved, page: 43 },
+      sourceViewBox: inlineSvg.viewBox,
+    }
+    render(
+      <MushafPageViewer
+        inlineSvg={inlineSvg}
+        onRequestPage={onRequestPage}
+        pages={[
+          {
+            asset: { media: { kind: 'inline-svg', inlineSvg }, resolved, status: 'ready' },
+            page: 42,
+            rendition: 'full',
+            status: 'ready',
+            upgradeStatus: 'idle',
+          },
+          { attempt: 0, descriptor, page: 43, status: 'loading' },
+        ]}
+        resolved={resolved}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(onRequestPage).toHaveBeenCalledTimes(1)
+    expect(onRequestPage).toHaveBeenLastCalledWith(43)
+    fireEvent.keyDown(window, { key: 'ArrowLeft' })
+    expect(onRequestPage).toHaveBeenCalledTimes(2)
+    expect(onRequestPage).toHaveBeenLastCalledWith(43)
   })
 
   it('uses unavailable copy only for confirmed missing pages and keeps background status silent', () => {

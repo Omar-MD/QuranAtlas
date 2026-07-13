@@ -51,7 +51,10 @@ for (const fixture of readFixtures) {
       await page.setViewportSize(GOLDEN_VIEWPORTS[viewportId])
       await expectReactProductionPreflight(page)
       await seedTargetState(page, 'react', fixture.seed)
-      const guard = installPageGuards(page, `react ${fixture.id}`)
+      const guard = installPageGuards(page, `react ${fixture.id}`, [
+        /\/dataset\/knowledge\//,
+        /\/dataset\/surahs\.json$/,
+      ])
       const seenDatasetUrls = new Set<string>()
       page.on('request', (request) => {
         const url = request.url()
@@ -278,7 +281,35 @@ for (const fixture of readFixtures) {
 test.describe('requested Mushaf page failure', () => {
   test.use({ serviceWorkers: 'block' })
 
-  test('keeps the visible Mushaf page truthful when a distant requested page fails', async ({ page }) => {
+  test('recovers a requested page after one transient response without unavailable copy', async ({ page }) => {
+    let page43Attempts = 0
+    let releaseSecondAttempt: (() => void) | null = null
+    const secondAttemptGate = new Promise<void>((resolve) => { releaseSecondAttempt = resolve })
+    await page.setViewportSize({ height: 844, width: 390 })
+    await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+      route: '/#/m/42',
+    })
+    await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', async (route) => {
+      page43Attempts += 1
+      if (page43Attempts === 1) await route.fulfill({ body: '', status: 503 })
+      else {
+        await secondAttemptGate
+        await route.continue()
+      }
+    })
+    await page.reload()
+    await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Next Mushaf page' }).click()
+    await expect(page.getByRole('status')).toContainText(/(?:Loading|Retrying) page 43/)
+    await expect(page.getByText(/Mushaf page 43 is unavailable/i)).toHaveCount(0)
+    releaseSecondAttempt?.()
+    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 43, Qaloon/i })).toBeVisible()
+    expect(page43Attempts).toBe(2)
+  })
+
+  test('keeps the visible Mushaf page truthful after three requested-page attempts fail', async ({ page }) => {
     let page100Attempts = 0
     await page.setViewportSize({ height: 844, width: 390 })
     await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
@@ -294,6 +325,7 @@ test.describe('requested Mushaf page failure', () => {
     await page.evaluate(() => { window.location.hash = '#/m/100' })
     await expect(page).toHaveURL(/#\/m\/100$/)
     await expect(page.getByRole('status').filter({ hasText: 'Mushaf page 100 could not be loaded. Page 42 remains open.' })).toBeVisible()
+    await expect.poll(() => page100Attempts).toBe(3)
     await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
     await expect(page.getByLabel('Mushaf page 42', { exact: true })).toHaveText('42')
 
@@ -336,6 +368,45 @@ test.describe('requested Mushaf page failure', () => {
     await expect(stay).toBeVisible()
     await stay.click()
     await expect(page).toHaveURL(/#\/m\/42$/)
+  })
+
+  test('treats a requested 404 as confirmed unavailable after one attempt', async ({ page }) => {
+    let page43Attempts = 0
+    await page.setViewportSize({ height: 844, width: 390 })
+    await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+      route: '/#/m/42',
+    })
+    await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', async (route) => {
+      page43Attempts += 1
+      await route.fulfill({ body: '', status: 404 })
+    })
+    await page.reload()
+    await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Next Mushaf page' }).click()
+    await expect(page.getByRole('status').filter({ hasText: 'Mushaf page 43 is unavailable. Page 42 remains open.' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry page 43' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Stay on page 42' })).toBeVisible()
+    expect(page43Attempts).toBe(1)
+  })
+
+  test('keeps an exhausted background-neighbor failure silent until requested', async ({ page }) => {
+    let page43Attempts = 0
+    await page.setViewportSize({ height: 844, width: 390 })
+    await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+      route: '/#/m/42',
+    })
+    await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', async (route) => {
+      page43Attempts += 1
+      await route.fulfill({ body: '', status: 503 })
+    })
+    await page.reload()
+    await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
+    await expect.poll(() => page43Attempts).toBe(3)
+    await expect(page.getByRole('status').filter({ hasText: /page 43/i })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Next Mushaf page' }).click()
+    await expect(page.getByRole('status').filter({ hasText: 'Mushaf page 43 could not be loaded. Page 42 remains open.' })).toBeVisible()
   })
 })
 

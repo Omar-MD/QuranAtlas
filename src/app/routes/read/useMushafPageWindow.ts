@@ -26,13 +26,17 @@ export type { MushafPageWindowEntry } from './mushaf-page-window-state'
 
 type State = { entries: readonly MushafPageWindowEntry[]; profileKey: string | null }
 type Request = { controller: AbortController; generation: number; promise: Promise<void> }
-type RouteRequestedEntry = MushafPageWindowEntry | { page: number; status: 'error' | 'unavailable' }
 
 export function useMushafPageWindow(input: {
   enabled: boolean
   page: number
   session: MushafProfileSession
-}): { entries: readonly MushafPageWindowEntry[]; requested: RouteRequestedEntry | null; retry: (page: number) => void } {
+}): {
+  entries: readonly MushafPageWindowEntry[]
+  request: (page: number) => void
+  requested: MushafPageWindowEntry | null
+  retry: (page: number) => void
+} {
   const context = input.session.status === 'ready' ? input.session.context : null
   const profileKey = input.enabled ? input.session.key : null
   const pageCount = context?.manifest.pageCount ?? 604
@@ -239,9 +243,13 @@ export function useMushafPageWindow(input: {
     queueMicrotask(() => ensureReadable(page))
   }, [ensureReadable, updateEntry])
 
+  const request = useCallback((page: number) => {
+    void ensureReadable(page)
+  }, [ensureReadable])
+
   const entries = state.profileKey === profileKey ? state.entries : []
   const requested = entries.find((entry) => entry.page === requestedPage)
-  return { entries, requested: requested ? routeRequestedEntry(requested) : null, retry }
+  return { entries, request, requested: requested ?? null, retry }
 }
 
 async function prepareReadyAsset(
@@ -255,12 +263,6 @@ async function prepareReadyAsset(
     if (prepared.status === 'error') throw prepared.error
   }
   return { status: 'ready', media, resolved: descriptor.resolved }
-}
-
-function routeRequestedEntry(entry: MushafPageWindowEntry): RouteRequestedEntry {
-  if (entry.status === 'confirmed-missing') return { page: entry.page, status: 'unavailable' }
-  if (entry.status === 'transient-error' || entry.status === 'contract-error') return { page: entry.page, status: 'error' }
-  return entry
 }
 
 function requestKey(page: number, purpose: 'readable' | 'full'): string {
