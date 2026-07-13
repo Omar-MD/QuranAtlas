@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { readFile } from 'node:fs/promises'
 
-import { detectAffected } from '../../../scripts/ci/affected.mjs'
+import { detectAffected, selectMushafCiPolicy } from '../../../scripts/ci/affected.mjs'
 
 describe('affected-change gates', () => {
   it('treats every Search dataset lane as dataset and full-dataset relevant without forcing Mushaf page rebuilds', () => {
@@ -39,5 +40,28 @@ describe('affected-change gates', () => {
         mushaf_pages_relevant: true,
       })
     }
+  })
+
+  it.each([
+    ['push', 'dev', { mushaf_profile: 'private', private_mushaf: true }],
+    ['pull_request', 'dev', { mushaf_profile: 'baseline', private_mushaf: false }],
+    ['push', 'staging', { mushaf_profile: 'baseline', private_mushaf: false }],
+    ['push', 'main', { mushaf_profile: 'baseline', private_mushaf: false }],
+  ])('selects the branch Mushaf policy for %s on %s', (eventName, refName, expected) => {
+    expect(selectMushafCiPolicy({ eventName, refName })).toEqual(expected)
+  })
+
+  it('prebuilds the private profile before ci:build and enables private E2E only through the trusted policy', async () => {
+    const workflow = await readFile(new URL('../../../.github/workflows/ci.yml', import.meta.url), 'utf8')
+    const privateBuild = workflow.indexOf('pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}"')
+    const productionBuild = workflow.indexOf('pnpm run ci:build')
+    expect(privateBuild).toBeGreaterThan(-1)
+    expect(productionBuild).toBeGreaterThan(privateBuild)
+    expect(workflow).toContain("QURANATLAS_PRIVATE_MUSHAF: ${{ needs.changes.outputs.private_mushaf == 'true' && '1' || '0' }}")
+    expect(workflow).toContain('key: ${{ steps.private-distribution.outputs.archive_sha256 }}')
+    const privateCacheStep = workflow.match(/- name: Cache private Mushaf normalized edition[\s\S]*?(?=\n\s+- name:)/)?.[0]
+    expect(privateCacheStep).toBeTruthy()
+    expect(privateCacheStep).not.toContain('restore-keys:')
+    expect(workflow).toContain('compression-level: 0')
   })
 })

@@ -191,6 +191,14 @@ export function detectAffected(files, { noBaseline = false } = {}) {
   }
 }
 
+export function selectMushafCiPolicy({ eventName, refName }) {
+  const privateMushaf = eventName === 'push' && refName === 'dev'
+  return {
+    mushaf_profile: privateMushaf ? 'private' : 'baseline',
+    private_mushaf: privateMushaf,
+  }
+}
+
 function writeGithubOutput(path, values) {
   if (!path) return
   const lines = Object.entries(values).map(([key, value]) => `${key}=${String(value)}`)
@@ -212,7 +220,13 @@ export function main(argv = process.argv.slice(2), env = process.env) {
   const options = parseArgs(argv)
   const noBaseline = options.base === '' || options.base === '0000000000000000000000000000000000000000'
   const files = noBaseline ? [] : changedFiles({ base: options.base, head: options.head })
-  const result = detectAffected(files, { noBaseline })
+  const result = {
+    ...detectAffected(files, { noBaseline }),
+    ...selectMushafCiPolicy({
+      eventName: env.GITHUB_EVENT_NAME,
+      refName: env.GITHUB_REF_NAME,
+    }),
+  }
   if (options.json) {
     console.log(JSON.stringify({ files, ...result }, null, 2))
   } else {

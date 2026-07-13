@@ -72,7 +72,9 @@ style_paths:
 
 `vite.config.js` configures React, Tailwind, and `vite-plugin-pwa`. The production service worker uses Workbox to precache only the app shell, fonts, icons, and built assets. `/dataset/**` stays out of precache and normally uses the CacheFirst runtime route in `quran-atlas-runtime-dataset-v1`; the mutable `/dataset/indexes/mushaf-assets.json` availability index is excluded from that matcher and uses NetworkFirst in `quran-atlas-runtime-mushaf-index-v1`, with cached fallback offline. The Workbox cache id is `quranatlas`.
 
-`scripts/ci/affected.mjs` owns changed-file gate decisions for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Dataset generation runs when affected gates identify relevant source data, builder, asset-profile, runtime dataset, or dependency changes; Mushaf page import/build also runs whenever Playwright is selected so browser specs receive the real quran.ws SVG pack. The CI cache is deliberately limited to `qalun-quran-ws-v1/pages` and is versioned with the quran.ws catalog/build inputs; private local WebPs are ignored inputs and never enter default CI.
+`scripts/ci/affected.mjs` owns changed-file gate decisions and the Mushaf branch policy for CI and local affected validation. CI still produces a single chunk-checked `dist/` artifact for Lighthouse, Playwright preview/offline/visual, and deploy. Pull requests plus `staging` and `main` pushes retain the baseline quran.ws-only artifact. A trusted `dev` push restores the checksum-pinned Furatiyyah normalized edition, ensures quran.ws pages, prebuilds and checks the two-edition private profile, enables the private production-preview E2E cases, and uploads the same tested artifact without recompressing its WebPs. Deploy continues to consume that artifact without rebuilding it.
+
+The private normalized cache is an optimization keyed only by the complete immutable release archive SHA-256 and has no restore prefix. A miss downloads the descriptor's exact release tag and asset with `gh`; the local-only restore boundary verifies archive size and SHA-256, directly inspects the USTAR headers for the exact regular-file/directory inventory, rejects unsafe paths and non-regular entry types before extraction, validates extracted metadata and every WebP in sibling staging, then promotes atomically. Cache hits are still checked through the private build contract. The quran.ws import cache remains separately versioned by its own catalog/build inputs.
 
 Private Mushaf builds fail closed: both selected Qaloon editions must pass input and provenance preflight before any generated state changes. Focused `mushaf-pages build --profile=private --check` is read-only and compares the exact edition and legacy-alias file tree, shared Mushaf index, and dataset-manifest membership against the selected artifact model. The top-level data check remains baseline-only because its shared text lane rebuilds generated output.
 
@@ -129,6 +131,7 @@ Dexie v8 adds Search lifecycle stores. Clear data continues to delete browser st
 - Private Mushaf build and check profiles require both selected editions; check mode must not write or prune generated or normalized state.
 - Clear-data behavior clears Cache Storage and the shared IndexedDB database.
 - CI builds once and reuses the uploaded `dist/` artifact for Lighthouse, Playwright preview/offline, and deploy.
+- Only trusted `push` runs for `dev` select the private Mushaf CI profile; PR, `staging`, and `main` lanes remain baseline.
 - Affected CI gates must fail open when no trustworthy diff baseline exists.
 
 ## Regression Guards

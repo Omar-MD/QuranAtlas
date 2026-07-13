@@ -29,6 +29,8 @@ jobs:
       dataset_relevant: ${{ steps.filter.outputs.dataset_relevant }}
       full_dataset_relevant: ${{ steps.filter.outputs.full_dataset_relevant }}
       mushaf_pages_relevant: ${{ steps.filter.outputs.mushaf_pages_relevant }}
+      mushaf_profile: ${{ steps.filter.outputs.mushaf_profile }}
+      private_mushaf: ${{ steps.filter.outputs.private_mushaf }}
       reason: ${{ steps.filter.outputs.reason }}
       storybook_relevant: ${{ steps.filter.outputs.storybook_relevant }}
     steps:
@@ -125,32 +127,72 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup
+      - name: Read private Mushaf distribution
+        id: private-distribution
+        if: needs.changes.outputs.private_mushaf == 'true'
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync, readFileSync } from 'node:fs'
+          const path = 'data/catalog/mushaf-editions/qalun-furatiyyah-2023-v1/distribution.json'
+          const distribution = JSON.parse(readFileSync(path, 'utf8'))
+          for (const [key, value] of Object.entries({
+            archive_sha256: distribution.archiveSha256,
+            asset_name: distribution.assetName,
+            release_tag: distribution.releaseTag,
+            repository: distribution.repository,
+          })) appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`)
+          NODE
+      - name: Cache private Mushaf normalized edition
+        id: private-mushaf-cache
+        if: needs.changes.outputs.private_mushaf == 'true'
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: data/normalized/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1
+          key: ${{ steps.private-distribution.outputs.archive_sha256 }}
       - name: Cache Mushaf page import artifacts
-        if: needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true'
+        if: needs.changes.outputs.private_mushaf == 'true' || needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             .scratch/mushaf-pages/pdfs/qaloon
             data/normalized/mushaf-pages/qaloon/qalun-quran-ws-v1/pages
           key: mushaf-pages-qaloon-v2-${{ runner.os }}-${{ hashFiles('data/catalog/mushaf-pages.json', 'data/catalog/mushaf-assets.json', 'data/normalized/quran/riwayat/qaloon.json', 'scripts/data/mushaf-pages/import.mjs', 'scripts/data/mushaf-pages/build.mjs') }}
-      - name: Install Mushaf page converter
-        if: needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true'
+      - name: Install Mushaf page tools
+        if: needs.changes.outputs.private_mushaf == 'true' || needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y poppler-utils
+          sudo apt-get install -y poppler-utils webp
+      - name: Restore private Mushaf release archive
+        if: needs.changes.outputs.private_mushaf == 'true' && steps.private-mushaf-cache.outputs.cache-hit != 'true'
+        env:
+          ASSET_NAME: ${{ steps.private-distribution.outputs.asset_name }}
+          RELEASE_TAG: ${{ steps.private-distribution.outputs.release_tag }}
+          RELEASE_REPOSITORY: ${{ steps.private-distribution.outputs.repository }}
+        run: |
+          mkdir -p .scratch/releases
+          gh release download "$RELEASE_TAG" --repo "$RELEASE_REPOSITORY" --pattern "$ASSET_NAME" --dir .scratch/releases
+          pnpm run data -- mushaf-pages restore-release --archive="$PWD/.scratch/releases/$ASSET_NAME"
       # Playwright asserts real Mushaf SVG pages, so any E2E-selected run must
       # upload a dist artifact with the page pack even when source data did not change.
-      - name: Generate release Mushaf page pack
-        if: needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true'
+      - name: Generate baseline release Mushaf page pack
+        if: needs.changes.outputs.private_mushaf != 'true' && (needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true')
         run: |
           pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604
-          pnpm run data -- mushaf-pages build --profile=baseline --require-riwayah=qaloon
+          pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}" --require-riwayah=qaloon
+      - name: Generate private release Mushaf page pack
+        if: needs.changes.outputs.private_mushaf == 'true'
+        run: |
+          pnpm run data -- mushaf-pages import --riwayah=qaloon --pages=1-604
+          pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}"
+      - name: Check private release Mushaf page pack
+        if: needs.changes.outputs.private_mushaf == 'true'
+        run: pnpm run data -- mushaf-pages build --profile="${{ needs.changes.outputs.mushaf_profile }}" --check
       - name: Build production artifact
         run: pnpm run ci:build
         env:
           QURANATLAS_DATASET_RELEVANT: ${{ needs.changes.outputs.dataset_relevant }}
-          QURANATLAS_MUSHAF_PAGES_RELEVANT: ${{ needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
-          QURANATLAS_MUSHAF_PAGES_PREBUILT: ${{ needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
+          QURANATLAS_MUSHAF_PAGES_RELEVANT: ${{ needs.changes.outputs.private_mushaf == 'true' || needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
+          QURANATLAS_MUSHAF_PAGES_PREBUILT: ${{ needs.changes.outputs.private_mushaf == 'true' || needs.changes.outputs.mushaf_pages_relevant == 'true' || needs.changes.outputs.e2e_relevant == 'true' }}
       - name: Check chunk budget
         run: node scripts/check-chunks.js
       - name: Upload dist artifact
@@ -160,6 +202,7 @@ jobs:
           path: dist/
           retention-days: 7
           if-no-files-found: error
+          compression-level: 0
 
   lighthouse:
     name: Lighthouse CI
@@ -193,7 +236,7 @@ jobs:
     #      and on every PR/push to `staging` + `main`. Override per-PR via
     #      the `run-e2e` label.
     if: >
-      (needs.changes.outputs.e2e_relevant == 'true') &&
+      (needs.changes.outputs.private_mushaf == 'true' || needs.changes.outputs.e2e_relevant == 'true') &&
       (
         !(github.event_name == 'pull_request' && github.base_ref == 'dev') ||
         contains(github.event.pull_request.labels.*.name, 'run-e2e')
@@ -205,6 +248,8 @@ jobs:
     needs: [build, changes]
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      QURANATLAS_PRIVATE_MUSHAF: ${{ needs.changes.outputs.private_mushaf == 'true' && '1' || '0' }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/actions/setup

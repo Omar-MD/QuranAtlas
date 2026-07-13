@@ -26,6 +26,10 @@ import {
 import { hasReusableSvgDocument } from '../../../scripts/data/mushaf-pages/import.mjs'
 import { importPrivatePdfEdition, loadPrivateMushafEditionContract } from '../../../scripts/data/mushaf-pages/private-pdf.mjs'
 import * as privatePdfModule from '../../../scripts/data/mushaf-pages/private-pdf.mjs'
+import {
+  inspectPrivateMushafTar,
+  restorePrivateMushafReleaseArchive,
+} from '../../../scripts/data/mushaf-pages/release-archive.mjs'
 import { buildManifestPayload } from '../../../scripts/data/manifest/inventory.mjs'
 import { validateMushafManifestData } from '../../../scripts/check-react-mushaf-indexes.mjs'
 
@@ -47,6 +51,96 @@ async function readDatasetJson(path) {
 
 function jsonText(value) {
   return `${JSON.stringify(value, null, 2)}\n`
+}
+
+function sha256(bytes) {
+  return createHash('sha256').update(bytes).digest('hex')
+}
+
+function tarOctal(value, width) {
+  return `${value.toString(8).padStart(width - 1, '0')}\0`
+}
+
+function tarEntry({ bytes = Buffer.alloc(0), name, type = '0' }) {
+  const header = Buffer.alloc(512)
+  header.write(name, 0, 100, 'utf8')
+  header.write(tarOctal(type === '5' ? 0o755 : 0o644, 8), 100, 8, 'ascii')
+  header.write(tarOctal(0, 8), 108, 8, 'ascii')
+  header.write(tarOctal(0, 8), 116, 8, 'ascii')
+  header.write(tarOctal(bytes.byteLength, 12), 124, 12, 'ascii')
+  header.write(tarOctal(0, 12), 136, 12, 'ascii')
+  header.fill(0x20, 148, 156)
+  header.write(type, 156, 1, 'ascii')
+  header.write('ustar\0', 257, 6, 'ascii')
+  header.write('00', 263, 2, 'ascii')
+  header.write('root', 265, 4, 'ascii')
+  header.write('root', 297, 4, 'ascii')
+  const checksum = header.reduce((total, byte) => total + byte, 0)
+  header.write(`${checksum.toString(8).padStart(6, '0')}\0 `, 148, 8, 'ascii')
+  const padding = Buffer.alloc((512 - (bytes.byteLength % 512)) % 512)
+  return Buffer.concat([header, bytes, padding])
+}
+
+function ustar(entries) {
+  return Buffer.concat([...entries.map(tarEntry), Buffer.alloc(1024)])
+}
+
+function releaseArchiveFixture({ entries: transformEntries = (value) => value, webpBytes = Buffer.from('fixture-webp') } = {}) {
+  const editionId = 'qalun-furatiyyah-2023-v1'
+  const rendition = (role, width) => ({
+    role,
+    assetPath: `pages/001-${width}.webp`,
+    bytes: webpBytes.byteLength,
+    sha256: sha256(webpBytes),
+    width,
+    height: width === 1280 ? 1630 : 2720,
+    mimeType: 'image/webp',
+  })
+  const metadata = {
+    version: 1,
+    emissionContractVersion: 2,
+    riwayah: 'qaloon',
+    mushafEditionId: editionId,
+    sourcePdfSha256: '1'.repeat(64),
+    contractDigest: '2'.repeat(64),
+    toolVersions: { pdftocairo: 'fixture', cwebp: 'fixture', webpinfo: 'fixture' },
+    media: {
+      kind: 'external-image',
+      mimeType: 'image/webp',
+      renderDpi: 300,
+      encoder: { command: 'cwebp', quality: 88, method: 6 },
+      renditions: [{ role: 'preview', width: 1280 }, { role: 'full', width: 2136 }],
+    },
+    pages: [{
+      page: 1,
+      sourcePdfPage: 5,
+      firstVerse: { surah: 1, verse: 1 },
+      framing: { textFrame: { x: 0, y: 0, width: 1, height: 1 }, sideLane: 'none' },
+      renditions: [rendition('preview', 1280), rendition('full', 2136)],
+    }],
+  }
+  metadata.contentDigest = sha256(Buffer.from(jsonText(metadata)))
+  const entries = transformEntries([
+    { name: `${editionId}/`, type: '5' },
+    { name: `${editionId}/pages/`, type: '5' },
+    { name: `${editionId}/import.json`, bytes: Buffer.from(jsonText(metadata)) },
+    ...metadata.pages[0].renditions.map((item) => ({ name: `${editionId}/${item.assetPath}`, bytes: webpBytes })),
+  ])
+  const archive = ustar(entries)
+  const distribution = {
+    version: 1,
+    mushafEditionId: editionId,
+    authorization: 'user-authorized-public-noncommercial-deployment',
+    repository: 'Omar-MD/QuranAtlas',
+    releaseTag: 'mushaf-qalun-furatiyyah-2023-v1',
+    assetName: 'qalun-furatiyyah-2023-v1-normalized-v1.tar',
+    archiveBytes: archive.byteLength,
+    archiveSha256: sha256(archive),
+    normalizedContentDigest: metadata.contentDigest,
+    normalizedContractDigest: metadata.contractDigest,
+    fileCount: 3,
+  }
+  return { archive, distribution, editionId }
 }
 
 async function legacyPrivateContractDigest(contractDir) {
@@ -463,6 +557,77 @@ describe('private PDF Mushaf importer', () => {
     await expect(importPrivatePdfEdition({ ...options, runCommand: privateRunner() })).rejects.toThrow(/rendition digest is invalid/)
     await rm(root, { recursive: true, force: true })
   }, 20_000)
+})
+
+describe('private Mushaf release archive restore', () => {
+  it('accepts only the exact checksum-bound USTAR inventory', () => {
+    const fixture = releaseArchiveFixture()
+    expect(inspectPrivateMushafTar(fixture.archive, fixture.distribution)).toMatchObject({
+      editionId: fixture.editionId,
+      fileCount: 3,
+    })
+
+    expect(() => inspectPrivateMushafTar(fixture.archive, {
+      ...fixture.distribution,
+      archiveBytes: fixture.distribution.archiveBytes + 1,
+    })).toThrow(/byte count/i)
+    expect(() => inspectPrivateMushafTar(fixture.archive, {
+      ...fixture.distribution,
+      archiveSha256: '0'.repeat(64),
+    })).toThrow(/sha-256/i)
+  })
+
+  it.each([
+    ['traversal', (entries) => [...entries, { name: 'qalun-furatiyyah-2023-v1/../escape', bytes: Buffer.from('x') }], /unsafe|traversal/i],
+    ['absolute path', (entries) => [...entries, { name: '/absolute', bytes: Buffer.from('x') }], /absolute|unsafe/i],
+    ['symlink', (entries) => entries.map((entry, index) => index === 2 ? { ...entry, type: '2' } : entry), /type|link/i],
+    ['hardlink', (entries) => entries.map((entry, index) => index === 2 ? { ...entry, type: '1' } : entry), /type|link/i],
+    ['duplicate', (entries) => [...entries, entries.at(-1)], /duplicate/i],
+    ['extra root', (entries) => [...entries, { name: 'other-root/', type: '5' }], /root|unexpected/i],
+    ['extra file', (entries) => [...entries, { name: 'qalun-furatiyyah-2023-v1/extra.txt', bytes: Buffer.from('x') }], /unexpected|file count/i],
+    ['missing rendition', (entries) => entries.slice(0, -1), /missing|inventory/i],
+  ])('rejects an archive containing %s', (_label, mutate, error) => {
+    const fixture = releaseArchiveFixture({ entries: mutate })
+    expect(() => inspectPrivateMushafTar(fixture.archive, fixture.distribution)).toThrow(error)
+  })
+
+  it('promotes a validated archive atomically and reuses exact existing output', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-release-'))
+    const fixture = releaseArchiveFixture()
+    const archivePath = join(root, 'fixture.tar')
+    const normalizedRoot = join(root, 'normalized')
+    await writeFile(archivePath, fixture.archive)
+    const runCommand = async (command, args) => command === 'webpinfo'
+      ? { status: 0, stdout: `Canvas size: ${args[0].includes('1280') ? '1280 x 1630' : '2136 x 2720'}\n`, stderr: '' }
+      : privatePdfModule.defaultCommandRunner(command, args)
+    try {
+      await expect(restorePrivateMushafReleaseArchive({ archivePath, normalizedRoot, runCommand, distribution: fixture.distribution })).resolves.toMatchObject({ status: 'promoted' })
+      await expect(restorePrivateMushafReleaseArchive({ archivePath, normalizedRoot, runCommand, distribution: fixture.distribution })).resolves.toMatchObject({ status: 'current' })
+      expect(await readFile(join(normalizedRoot, fixture.editionId, 'import.json'), 'utf8')).toContain(fixture.editionId)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects corrupt WebP staging and preserves prior immutable output', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'qa-private-release-failure-'))
+    const fixture = releaseArchiveFixture({ webpBytes: Buffer.from('corrupt-webp') })
+    const archivePath = join(root, 'fixture.tar')
+    const normalizedRoot = join(root, 'normalized')
+    const existingRoot = join(normalizedRoot, fixture.editionId)
+    await mkdir(existingRoot, { recursive: true })
+    await writeFile(join(existingRoot, 'sentinel.txt'), 'prior-output')
+    await writeFile(archivePath, fixture.archive)
+    const runCommand = async (command, args) => command === 'webpinfo'
+      ? { status: 1, stdout: '', stderr: 'bitstream error' }
+      : privatePdfModule.defaultCommandRunner(command, args)
+    try {
+      await expect(restorePrivateMushafReleaseArchive({ archivePath, normalizedRoot, runCommand, distribution: fixture.distribution })).rejects.toThrow(/webpinfo|WebP/i)
+      expect(await readFile(join(existingRoot, 'sentinel.txt'), 'utf8')).toBe('prior-output')
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
 })
 
 describe('mushaf asset index output', () => {

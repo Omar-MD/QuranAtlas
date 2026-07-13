@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process'
-import { dirname, join } from 'node:path'
+import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -46,8 +46,17 @@ function main(argv = process.argv.slice(2)) {
       run('mushaf-pages/build.mjs', rest)
       return
     }
+    if (subcommand === 'restore-release') {
+      const archive = rest.find((arg) => arg.startsWith('--archive='))?.slice('--archive='.length)
+      if (!archive || !isAbsolute(archive) || rest.length !== 1) {
+        console.error('Usage: pnpm run data -- mushaf-pages restore-release --archive=/absolute/path/to/archive.tar')
+        process.exit(1)
+      }
+      run('mushaf-pages/release-archive.mjs', [`--archive=${archive}`])
+      return
+    }
     console.error(`Unknown mushaf-pages command: ${subcommand}`)
-    console.error('Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"')
+    console.error('Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages restore-release --archive=/absolute/path/to/archive.tar')
     process.exit(1)
   }
 
