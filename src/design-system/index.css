@@ -3268,6 +3268,40 @@
     text-align: center;
   }
 
+  .qar-react-mushaf-request-failure {
+    position: fixed;
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(5.25rem, calc(env(safe-area-inset-bottom) + 5.25rem));
+    left: max(0.75rem, env(safe-area-inset-left));
+    z-index: 8;
+    display: grid;
+    gap: var(--qa-space-3);
+    width: auto;
+    max-width: 32rem;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 9rem);
+    margin-inline: auto;
+    padding: var(--qa-space-4);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: color-mix(in srgb, var(--qa-react-surface) 94%, transparent);
+    box-shadow: var(--qa-react-nav-shadow-control);
+    backdrop-filter: blur(14px);
+  }
+
+  .qar-react-mushaf-request-failure > p {
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    font-size: 0.875rem;
+  }
+
+  .qar-react-mushaf-request-failure-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--qa-space-2);
+  }
+
   .qar-react-mushaf-page-actions {
     grid-row: 3;
     align-self: start;

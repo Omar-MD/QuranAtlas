@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 import { expectAxeClean, expectMinTouchTarget, expectNoHorizontalOverflow } from '../fixtures/react-a11y'
 import {
@@ -23,6 +23,27 @@ const readFixtures = GOLDEN_FIXTURES.filter((fixture) =>
     'daily-wird-active',
   ].includes(fixture.id),
 )
+
+type LayoutBox = { height: number; width: number; x: number; y: number }
+
+async function expectIntersectsViewport(page: Page, locator: Locator): Promise<LayoutBox> {
+  const box = await locator.boundingBox()
+  const viewport = page.viewportSize()
+  expect(box).not.toBeNull()
+  expect(viewport).not.toBeNull()
+  expect(box!.x + box!.width).toBeGreaterThan(0)
+  expect(box!.y + box!.height).toBeGreaterThan(0)
+  expect(box!.x).toBeLessThan(viewport!.width)
+  expect(box!.y).toBeLessThan(viewport!.height)
+  return box!
+}
+
+function boxesOverlap(left: LayoutBox, right: LayoutBox): boolean {
+  return left.x < right.x + right.width
+    && right.x < left.x + left.width
+    && left.y < right.y + right.height
+    && right.y < left.y + left.height
+}
 
 for (const fixture of readFixtures) {
   for (const viewportId of fixture.viewports) {
@@ -256,6 +277,7 @@ for (const fixture of readFixtures) {
 
 test('keeps the visible Mushaf page truthful when a distant requested page fails', async ({ page }) => {
   let page100Attempts = 0
+  await page.setViewportSize({ height: 844, width: 390 })
   await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
     route: '/#/m/42',
   })
@@ -272,10 +294,44 @@ test('keeps the visible Mushaf page truthful when a distant requested page fails
   await expect(page.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeVisible()
   await expect(page.getByLabel('Mushaf page 42', { exact: true })).toHaveText('42')
 
+  const status = page.getByRole('status')
+  const retry = page.getByRole('button', { name: 'Retry page 100' })
+  const stay = page.getByRole('button', { name: 'Stay on page 42' })
+  const statusBox = await expectIntersectsViewport(page, status)
+  await expectIntersectsViewport(page, retry)
+  await expectIntersectsViewport(page, stay)
+  for (const control of [
+    page.getByRole('navigation', { name: 'Primary navigation' }),
+    page.getByRole('navigation', { name: 'Mushaf page navigation' }),
+    page.getByRole('button', { name: 'Bookmark Mushaf page 42' }),
+  ]) {
+    const controlBox = await control.boundingBox()
+    expect(controlBox).not.toBeNull()
+    expect(boxesOverlap(statusBox, controlBox!)).toBe(false)
+  }
+  const scrollMetrics = await page.evaluate(() => {
+    const documentScroller = document.scrollingElement ?? document.documentElement
+    const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
+    if (!stage) throw new Error('Mushaf stage is unavailable')
+    return {
+      documentClientHeight: documentScroller.clientHeight,
+      documentScrollHeight: documentScroller.scrollHeight,
+      documentScrollTop: documentScroller.scrollTop,
+      stageClientHeight: stage.clientHeight,
+      stageScrollHeight: stage.scrollHeight,
+      stageScrollTop: stage.scrollTop,
+    }
+  })
+  expect(scrollMetrics.documentScrollHeight).toBe(scrollMetrics.documentClientHeight)
+  expect(scrollMetrics.documentScrollTop).toBe(0)
+  expect(scrollMetrics.stageScrollHeight).toBe(scrollMetrics.stageClientHeight)
+  expect(scrollMetrics.stageScrollTop).toBe(0)
+
   const attemptsBeforeRetry = page100Attempts
-  await page.getByRole('button', { name: 'Retry page 100' }).click()
+  await retry.click()
   await expect.poll(() => page100Attempts).toBeGreaterThan(attemptsBeforeRetry)
-  await page.getByRole('button', { name: 'Stay on page 42' }).click()
+  await expect(stay).toBeVisible()
+  await stay.click()
   await expect(page).toHaveURL(/#\/m\/42$/)
 })
 

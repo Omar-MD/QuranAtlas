@@ -320,9 +320,9 @@ export function MushafRoute({
             viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
           />
           {requestedPageFailure ? (
-            <section aria-live="polite" className="qar:m-5 qar:grid qar:gap-3 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" role="status">
-              <p className="qar:m-0 qar:text-sm qar:text-muted">{requestedPageFailure.message}</p>
-              <div className="qar:flex qar:flex-wrap qar:gap-2">
+            <section aria-live="polite" className="qar-react-mushaf-request-failure" role="status">
+              <p>{requestedPageFailure.message}</p>
+              <div className="qar-react-mushaf-request-failure-actions">
                 <Button onClick={requestedPageFailure.retry} size="sm">Retry page {requestedPageFailure.requestedPage}</Button>
                 <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">Stay on page {requestedPageFailure.visiblePage}</Button>
               </div>
