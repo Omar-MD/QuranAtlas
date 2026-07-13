@@ -333,9 +333,10 @@ export function MushafPageViewer({
     if (page === resolved.page && pages === undefined) {
       return {
         asset: { media: { kind: 'inline-svg', inlineSvg }, resolved, status: 'ready' },
-        loadPurpose: 'current',
         page,
+        rendition: 'full',
         status: 'ready',
+        upgradeStatus: 'idle',
       }
     }
     return null
@@ -489,14 +490,15 @@ export function retainReadyMushafPage(
   if (!retainedPage) return entries
   const retainedEntry: MushafPageWindowEntry = {
     asset: retainedPage,
-    loadPurpose: 'current',
     page: retainedPage.resolved.page,
+    rendition: 'full',
     status: 'ready',
+    upgradeStatus: 'idle',
   }
   const matchingIndex = entries.findIndex((entry) => entry.page === retainedEntry.page)
   if (matchingIndex < 0) return [...entries, retainedEntry]
   const matching = entries[matchingIndex]
-  if (matching?.status === 'ready' && matching.asset === retainedPage && matching.loadPurpose === 'current') return entries
+  if (matching?.status === 'ready' && matching.asset === retainedPage) return entries
   return entries.map((entry, index) => index === matchingIndex ? retainedEntry : entry)
 }
 
@@ -544,12 +546,14 @@ const MushafPageCell = ({
           />
         </div>
       </div>
-    ) : entry ? (
+    ) : !hidden && (entry?.status === 'loading' || entry?.status === 'retrying') ? (
       <div aria-live="polite" className="qar-react-mushaf-page-status" role="status">
-        {entry.status === 'loading'
-          ? `Loading Mushaf page ${entry.page}`
-          : `Mushaf page ${entry.page} is unavailable. Use page navigation to retry.`}
+        {entry.status === 'retrying' ? `Retrying Mushaf page ${entry.page}` : `Loading Mushaf page ${entry.page}`}
       </div>
+    ) : entry?.status === 'confirmed-missing' ? (
+      <div className="qar-react-mushaf-page-status">Mushaf page {entry.page} is unavailable.</div>
+    ) : entry?.status === 'transient-error' || entry?.status === 'contract-error' ? (
+      <div className="qar-react-mushaf-page-status">Mushaf page {entry.page} could not be loaded.</div>
     ) : null}
   </div>
 }
@@ -571,9 +575,10 @@ function legacyPageEntries(
   return [...new Map(legacyPages.map((page) => [page.resolved.page, page])).values()]
     .map((page): MushafPageWindowEntry => ({
       asset: { media: { kind: 'inline-svg', inlineSvg: page.inlineSvg }, resolved: page.resolved, status: 'ready' },
-      loadPurpose: 'current',
       page: page.resolved.page,
+      rendition: 'full',
       status: 'ready',
+      upgradeStatus: 'idle',
     }))
     .sort((left, right) => left.page - right.page)
 }

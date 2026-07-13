@@ -74,6 +74,19 @@ export class MushafAssetHttpError extends Error {
 
 export type MushafPageFailureKind = 'transient' | 'confirmed-missing' | 'contract-error'
 
+export function classifyMushafPageFailure(error: unknown): MushafPageFailureKind {
+  if (error instanceof MushafAssetHttpError) {
+    if (error.status === 404) return 'confirmed-missing'
+    if (error.status >= 500) return 'transient'
+    return 'contract-error'
+  }
+  if (error instanceof DOMException && error.name === 'AbortError') throw error
+  if (error instanceof DOMException && error.name === 'EncodingError') return 'transient'
+  if (error instanceof TypeError) return 'transient'
+  if (error instanceof Error && /decode|Failed to load Mushaf image/i.test(error.message)) return 'transient'
+  return 'contract-error'
+}
+
 type MushafManifestPageV1 = {
   page: number
   assetPath: string

@@ -106,26 +106,18 @@ const mushafManifest = {
   pageCount: 604,
   attribution: { provider: 'quran.ws', sourceUrl: 'https://pdf.quran.ws/qalun.pdf' },
   verseToPage: { '1:1': 1, '2:1': 2, '2:94': 15, '2:255': 42 },
-  pages: [
-    {
-      page: 1,
-      assetPath: 'pages/001.svg',
+  pages: Array.from({ length: 604 }, (_, index) => {
+    const page = index + 1
+    return {
+      page,
+      assetPath: `pages/${String(page).padStart(3, '0')}.svg`,
       viewBox: '0 0 120 180',
       displayViewBox: '0 0 120 180',
       bytes: 1120,
-      sourcePdfUrl: 'https://pdf.quran.ws/qalun/001.pdf',
-      firstVerse: { surah: 1, verse: 1 },
-    },
-    {
-      page: 42,
-      assetPath: 'pages/042.svg',
-      viewBox: '0 0 120 180',
-      displayViewBox: '0 0 120 180',
-      bytes: 1120,
-      sourcePdfUrl: 'https://pdf.quran.ws/qalun/042.pdf',
-      firstVerse: { surah: 2, verse: 251 },
-    },
-  ],
+      sourcePdfUrl: `https://pdf.quran.ws/qalun/${String(page).padStart(3, '0')}.pdf`,
+      firstVerse: page === 1 ? { surah: 1, verse: 1 } : page === 42 ? { surah: 2, verse: 251 } : { surah: 2, verse: page - 1 },
+    }
+  }),
 }
 
 const realMushafSvg = '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="#fff"/><path d="M10 10h100v160H10z" fill="#000"/></svg>'
@@ -143,8 +135,9 @@ const mushafAssetIndex = {
       pageCount: 604,
       files: [
         { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json' },
-        { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg' },
-        { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg' },
+        ...Array.from({ length: 604 }, (_, index) => ({
+          url: `/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/${String(index + 1).padStart(3, '0')}.svg`,
+        })),
       ],
     },
   ],
@@ -220,15 +213,7 @@ function failingSecondPageMushafFetch() {
     if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
       return jsonResponse({
         ...mushafManifest,
-        pages: [
-          mushafManifest.pages[0],
-          {
-            ...mushafManifest.pages[0],
-            assetPath: 'pages/002.svg',
-            firstVerse: { surah: 2, verse: 1 },
-            page: 2,
-          },
-        ],
+        pages: mushafManifest.pages,
       })
     }
     if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg') {
@@ -723,15 +708,7 @@ describe('React reader coverage', () => {
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
         return jsonResponse({
           ...mushafManifest,
-          pages: [
-            ...mushafManifest.pages,
-            {
-              ...mushafManifest.pages[0],
-              assetPath: 'pages/002.svg',
-              firstVerse: { surah: 2, verse: 1 },
-              page: 2,
-            },
-          ],
+          pages: mushafManifest.pages,
         })
       }
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg') {
@@ -766,14 +743,15 @@ describe('React reader coverage', () => {
       if (url === '/dataset/indexes/mushaf-assets.json') {
         return jsonResponse({
           ...mushafAssetIndex,
-          assets: [{
-            ...mushafAssetIndex.assets[0],
-            files: [{ url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/604.svg' }],
-          }],
+          assets: mushafAssetIndex.assets,
         })
       }
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
-        return jsonResponse({ ...mushafManifest, pages: [finalPage], verseToPage: { '114:1': 604 } })
+        return jsonResponse({
+          ...mushafManifest,
+          pages: mushafManifest.pages.map((entry) => entry.page === 604 ? finalPage : entry),
+          verseToPage: { '114:1': 604 },
+        })
       }
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/604.svg') {
         return { ok: true, status: 200, text: async () => realMushafSvg } as Response
@@ -810,21 +788,16 @@ describe('React reader coverage', () => {
           ...mushafAssetIndex,
           assets: [{
             ...mushafAssetIndex.assets[0],
-            files: [
-              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json' },
-              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg' },
-              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/100.svg' },
-            ],
+            files: mushafAssetIndex.assets[0].files,
           }],
         })
       }
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
         return jsonResponse({
           ...mushafManifest,
-          pages: [
-            mushafManifest.pages[1],
-            { ...mushafManifest.pages[1], assetPath: 'pages/100.svg', firstVerse: { surah: 5, verse: 1 }, page: 100 },
-          ],
+          pages: mushafManifest.pages.map((entry) => entry.page === 100
+            ? { ...entry, firstVerse: { surah: 5, verse: 1 } }
+            : entry),
         })
       }
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg') {
@@ -853,6 +826,7 @@ describe('React reader coverage', () => {
     const attemptsBeforeRetry = page100Attempts
     fireEvent.click(screen.getByRole('button', { name: 'Retry page 100' }))
     await waitFor(() => expect(page100Attempts).toBeGreaterThan(attemptsBeforeRetry))
+    await screen.findByRole('button', { name: 'Stay on page 42' })
 
     fireEvent.click(screen.getByRole('button', { name: 'Stay on page 42' }))
     expect(onReplaceHash).toHaveBeenCalledWith('#/m/42')
@@ -992,6 +966,50 @@ describe('React reader coverage', () => {
     expect(onNavigate).toHaveBeenLastCalledWith(43)
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(onNavigate).toHaveBeenLastCalledWith(41)
+  })
+
+  it('uses unavailable copy only for confirmed missing pages and keeps background status silent', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
+    const resolved = {
+      assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
+      displaySize: { width: 120, height: 180 },
+      firstVerse: { surah: 2, verse: 251 },
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page: 42,
+      pageCount: 604,
+      riwayah: 'qaloon' as const,
+      riwayahLabel: 'Qalun',
+    }
+    const descriptor = {
+      kind: 'inline-svg' as const,
+      assetUrl: resolved.assetUrl,
+      displayViewBox: inlineSvg.viewBox,
+      sourceViewBox: inlineSvg.viewBox,
+      resolved,
+    }
+    const { rerender } = render(
+      <MushafPageViewer
+        inlineSvg={inlineSvg}
+        pages={[
+          { attempt: 1, descriptor: { ...descriptor, resolved: { ...resolved, page: 43 } }, page: 43, status: 'retrying' },
+          { descriptor, error: new Error('Unsafe SVG'), page: 42, status: 'contract-error' },
+        ]}
+        resolved={resolved}
+      />,
+    )
+
+    expect(screen.getByText('Mushaf page 42 could not be loaded.')).toBeInTheDocument()
+    expect(screen.queryByText(/page 42 is unavailable/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: /page 43/i })).not.toBeInTheDocument()
+
+    rerender(
+      <MushafPageViewer
+        inlineSvg={inlineSvg}
+        pages={[{ descriptor, page: 42, reason: '404', status: 'confirmed-missing' }]}
+        resolved={resolved}
+      />,
+    )
+    expect(screen.getByText('Mushaf page 42 is unavailable.')).toBeInTheDocument()
   })
 
   it('exposes every ready page image in continuous Mushaf scroll mode', () => {
