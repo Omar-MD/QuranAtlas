@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react'
+import { StrictMode, useState, type ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { ReaderRoute } from '../../../src/app/routes/read/ReaderRoute'
@@ -9,6 +10,7 @@ import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
 import { ReaderAssetGate } from '../../../src/components/reader/ReaderAssetGate'
 import { useReaderInteractionSuspended } from '../../../src/components/reader/ReaderInteractionContext'
 import { MushafPageViewer, retainReadyMushafPage } from '../../../src/components/reader/MushafPageViewer'
+import { MUSHAF_CHROME_DISCOVERY_MS, useMushafChromeVisibility, type MushafChromePin } from '../../../src/components/reader/useMushafChromeVisibility'
 import { clampMushafPageFraming, interpolateMushafPageFrame, mushafImagePlacement } from '../../../src/components/reader/mushaf-page-framing'
 import {
   loadPreparedExternalMushafPage,
@@ -134,6 +136,20 @@ const realMushafSvg = '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/
 const inlineSvgExpected = {
   sourceViewBox: { x: 0, y: 0, width: 120, height: 180 },
   displayViewBox: { x: 0, y: 0, width: 120, height: 180 },
+}
+
+function boundaryPageFixture(page: number) {
+  return {
+    assetUrl: `/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/${String(page).padStart(3, '0')}.svg`,
+    displaySize: { width: 120, height: 180 },
+    firstVerse: page === 1 ? { surah: 1, verse: 1 } : { surah: 2, verse: page - 1 },
+    manifestUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json',
+    mushafEditionId: 'qalun-quran-ws-v1',
+    page,
+    pageCount: 604,
+    riwayah: 'qaloon' as const,
+    riwayahLabel: 'Qalun',
+  }
 }
 const mushafAssetIndex = {
   version: 1,
@@ -264,6 +280,180 @@ describe('React reader coverage', () => {
     expect(screen.queryByText('الفَاتِحة')).toBeNull()
     expect(screen.getByRole('button', { name: 'Open settings' })).toBeInTheDocument()
     expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
+  })
+
+  it('runs one discovery interval only after the first readable Mushaf page', () => {
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(
+      ({ readable, revision }) => {
+        void revision
+        return useMushafChromeVisibility(readable)
+      },
+      { initialProps: { readable: false, revision: 'loading' } },
+    )
+
+    expect(result.current.visible).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+
+    rerender({ readable: true, revision: 'preview' })
+    expect(result.current.visible).toBe(true)
+    expect(vi.getTimerCount()).toBe(1)
+
+    act(() => vi.advanceTimersByTime(MUSHAF_CHROME_DISCOVERY_MS - 1))
+    expect(result.current.visible).toBe(true)
+    act(() => vi.advanceTimersByTime(1))
+    expect(result.current.visible).toBe(false)
+
+    rerender({ readable: true, revision: 'full-promotion' })
+    rerender({ readable: false, revision: 'retry' })
+    rerender({ readable: true, revision: 'preference-change' })
+    expect(result.current.visible).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+
+    act(() => result.current.toggle())
+    expect(result.current.visible).toBe(true)
+    act(() => result.current.toggle())
+    expect(result.current.visible).toBe(false)
+    act(() => result.current.reveal())
+    expect(result.current.visible).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('pauses the discovery remainder for every chrome pin source', () => {
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(
+      ({ readable }) => useMushafChromeVisibility(readable),
+      { initialProps: { readable: false } },
+    )
+    rerender({ readable: true })
+    act(() => vi.advanceTimersByTime(900))
+
+    for (const source of ['focus', 'drawer', 'interaction', 'recovery'] satisfies MushafChromePin[]) {
+      act(() => result.current.setPinned(source, true))
+      expect(result.current.visible).toBe(true)
+      expect(vi.getTimerCount()).toBe(0)
+    }
+    act(() => vi.advanceTimersByTime(10_000))
+    for (const source of ['focus', 'drawer', 'interaction'] satisfies MushafChromePin[]) {
+      act(() => result.current.setPinned(source, false))
+      expect(vi.getTimerCount()).toBe(0)
+    }
+    act(() => result.current.setPinned('recovery', false))
+    expect(vi.getTimerCount()).toBe(1)
+    act(() => vi.advanceTimersByTime(1_599))
+    expect(result.current.visible).toBe(true)
+    act(() => vi.advanceTimersByTime(1))
+    expect(result.current.visible).toBe(false)
+  })
+
+  it('clears an armed discovery timer when the Mushaf route session unmounts', () => {
+    vi.useFakeTimers()
+    const { rerender, unmount } = renderHook(
+      ({ readable }) => useMushafChromeVisibility(readable),
+      { initialProps: { readable: false } },
+    )
+    rerender({ readable: true })
+    expect(vi.getTimerCount()).toBe(1)
+
+    unmount()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('retains the one-shot discovery timer through the app StrictMode effect replay', () => {
+    vi.useFakeTimers()
+    const wrapper = ({ children }: { children: ReactNode }) => <StrictMode>{children}</StrictMode>
+    const { result } = renderHook(() => useMushafChromeVisibility(true), { wrapper })
+
+    expect(result.current.visible).toBe(true)
+    expect(vi.getTimerCount()).toBe(1)
+    act(() => vi.advanceTimersByTime(MUSHAF_CHROME_DISCOVERY_MS))
+    expect(result.current.visible).toBe(false)
+  })
+
+  it('removes hidden top and bottom chrome from accessible navigation', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
+    const resolved = boundaryPageFixture(42)
+    render(
+      <>
+        <ReaderChrome mode="mushaf" visible={false} />
+        <MushafPageViewer chromeVisible={false} inlineSvg={inlineSvg} onToggleBookmark={vi.fn()} resolved={resolved} />
+      </>,
+    )
+
+    expect(screen.queryByRole('navigation', { name: 'Primary navigation' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Mushaf page navigation' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Open navigation' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Bookmark Mushaf page 42' })).not.toBeInTheDocument()
+    const hiddenNavigation = screen.getByRole('navigation', { hidden: true })
+    expect(hiddenNavigation).toHaveAttribute('aria-label', 'Primary navigation')
+    expect(hiddenNavigation).toHaveAttribute('inert')
+  })
+
+  it('renders one Arabic contextual title and pins top chrome only while focus remains inside it', () => {
+    const onChromePinChange = vi.fn()
+    render(
+      <ReaderPageShell chromeVisible label="Page 42" mode="mushaf" onChromePinChange={onChromePinChange} surahLabel="البَقَرَة">
+        <div />
+      </ReaderPageShell>,
+    )
+
+    const title = screen.getByText('البَقَرَة')
+    expect(title).toHaveAttribute('dir', 'rtl')
+    expect(title).toHaveAttribute('lang', 'ar')
+    expect(screen.queryByRole('heading', { name: 'البَقَرَة' })).not.toBeInTheDocument()
+
+    const navigation = screen.getByRole('button', { name: 'Open navigation' })
+    const settings = screen.getByRole('button', { name: 'Open settings' })
+    fireEvent.focus(navigation)
+    expect(onChromePinChange).toHaveBeenLastCalledWith('focus', true)
+    fireEvent.blur(navigation, { relatedTarget: settings })
+    expect(onChromePinChange).not.toHaveBeenCalledWith('focus', false)
+    fireEvent.focus(settings)
+    fireEvent.blur(settings)
+    expect(onChromePinChange).toHaveBeenLastCalledWith('focus', false)
+  })
+
+  it('pins the bottom dock across internal focus movement and Escape only requests reveal', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
+    const onChromePinChange = vi.fn()
+    const onToggleChrome = vi.fn()
+    const resolved = boundaryPageFixture(42)
+    const { rerender } = render(
+      <MushafPageViewer
+        chromeVisible
+        fitWidth
+        inlineSvg={inlineSvg}
+        onChromePinChange={onChromePinChange}
+        onToggleBookmark={vi.fn()}
+        onToggleChrome={onToggleChrome}
+        resolved={resolved}
+      />,
+    )
+    const next = screen.getByRole('button', { name: 'Next Mushaf page' })
+    const previous = screen.getByRole('button', { name: 'Previous Mushaf page' })
+    fireEvent.focus(next)
+    expect(onChromePinChange).toHaveBeenLastCalledWith('focus', true)
+    fireEvent.blur(next, { relatedTarget: previous })
+    expect(onChromePinChange).not.toHaveBeenCalledWith('focus', false)
+    fireEvent.focus(previous)
+    fireEvent.blur(previous)
+    expect(onChromePinChange).toHaveBeenLastCalledWith('focus', false)
+    fireEvent.scroll(screen.getByRole('region', { name: 'Scrollable Mushaf pages' }))
+    expect(onToggleChrome).not.toHaveBeenCalled()
+
+    rerender(
+      <MushafPageViewer
+        chromeVisible={false}
+        fitWidth
+        inlineSvg={inlineSvg}
+        onChromePinChange={onChromePinChange}
+        onToggleBookmark={vi.fn()}
+        onToggleChrome={onToggleChrome}
+        resolved={resolved}
+      />,
+    )
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onToggleChrome).toHaveBeenLastCalledWith(true)
   })
 
   it('autohides Verse reader chrome on scroll down and reveals it on scroll up', () => {
@@ -561,39 +751,42 @@ describe('React reader coverage', () => {
   it('switches from a Mushaf page to the first verse on that page', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      if (url.endsWith('/pages/042.svg')) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
       return jsonResponse({}, { ok: false, status: 404 })
     }))
     window.location.hash = '#/m/42'
 
-    render(<MushafRoute page={42} assetState="missing" />)
-    fireEvent.click(screen.getByRole('button', { name: 'Switch to Verse view' }))
+    render(<MushafRoute page={42} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Switch to Verse view' }))
 
     await waitFor(() => expect(window.location.hash).toBe('#/s/2/251'))
     vi.unstubAllGlobals()
   })
 
-  it('renders current product Mushaf chrome without the React mode tabs on the page', () => {
+  it('renders current product Mushaf chrome without the React mode tabs on a readable page', async () => {
+    vi.stubGlobal('fetch', mushafFetchFixture())
     window.location.hash = '#/m/1'
 
-    render(<MushafRoute page={1} assetState="missing" />)
+    render(<MushafRoute page={1} />)
 
-    const chrome = screen.getByRole('navigation', { name: 'Primary navigation' })
+    const chrome = await screen.findByRole('navigation', { name: 'Primary navigation' })
     expect(within(chrome).queryByText('Page 1')).not.toBeInTheDocument()
     expect(within(chrome).queryByRole('tab', { name: 'Verse' })).not.toBeInTheDocument()
     expect(within(chrome).queryByRole('tab', { name: 'Mushaf' })).not.toBeInTheDocument()
     expect(screen.queryByRole('tablist', { name: 'Reader mode' })).toBeNull()
     expect(within(chrome).getByRole('button', { name: 'Switch to Verse view' })).not.toHaveAttribute('aria-pressed')
+    vi.unstubAllGlobals()
   })
 
-  it('hides Mushaf chrome after the page route changes', async () => {
-    const { rerender } = render(<MushafRoute page={1} assetState="missing" />)
-    const chrome = screen.getByRole('navigation', { name: 'Primary navigation' })
-    expect(chrome).toHaveAttribute('data-visible', 'true')
+  it('keeps Mushaf chrome hidden before the first readable page', () => {
+    render(<MushafRoute page={1} assetState="missing" />)
 
-    rerender(<MushafRoute page={2} assetState="missing" />)
-
-    await waitFor(() => expect(chrome).toHaveAttribute('data-visible', 'false'))
+    expect(screen.queryByRole('navigation', { name: 'Primary navigation' })).not.toBeInTheDocument()
+    const hiddenNavigation = screen.getByRole('navigation', { hidden: true })
+    expect(hiddenNavigation).toHaveAttribute('aria-label', 'Primary navigation')
+    expect(hiddenNavigation).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('sanitizes real Mushaf SVG markup and rejects unsafe SVG before injection', () => {
@@ -742,6 +935,56 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
+  it('keeps the Surah title bound to the retained visible page until a requested page commits', async () => {
+    let resolvePageTwo: ((response: Response) => void) | null = null
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      if (url.endsWith('/pages/001.svg')) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      if (url.endsWith('/pages/002.svg')) return new Promise<Response>((resolve) => { resolvePageTwo = resolve })
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/1'
+    render(<MushafRoute page={1} />)
+    expect(await screen.findByText('سورة 1')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(screen.getByText('سورة 1')).toBeInTheDocument()
+    expect(screen.queryByText('سورة 2')).not.toBeInTheDocument()
+
+    resolvePageTwo?.({ ok: true, status: 200, text: async () => realMushafSvg } as Response)
+    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(await screen.findByText('سورة 2')).toBeInTheDocument()
+    expect(screen.queryByText('سورة 1')).not.toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
+  it('cancels pending navigation when the shell-owned Navigation drawer opens', async () => {
+    let resolvePageTwo: ((response: Response) => void) | null = null
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      if (url.endsWith('/pages/001.svg')) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      if (url.endsWith('/pages/002.svg')) return new Promise<Response>((resolve) => { resolvePageTwo = resolve })
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/1'
+    render(<MushafRoute page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(screen.getByRole('status')).toHaveTextContent('Loading page 2')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
+    expect(screen.getByRole('dialog', { name: 'Navigation' })).toBeInTheDocument()
+    resolvePageTwo?.({ ok: true, status: 200, text: async () => realMushafSvg } as Response)
+    await waitFor(() => expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument())
+    expect(window.location.hash).toBe('#/m/1')
+    vi.unstubAllGlobals()
+  })
+
   it('lets a newer unready page request replace the earlier destination', async () => {
     const resolvers = new Map<number, (response: Response) => void>()
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
@@ -772,7 +1015,7 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('defers a ready pending commit while reader interaction is suspended', async () => {
+  it('cancels a pending page when Settings suspends reader interaction', async () => {
     let resolvePageTwo: ((response: Response) => void) | null = null
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
@@ -793,12 +1036,13 @@ describe('React reader coverage', () => {
     expect(window.location.hash).toBe('#/m/1')
 
     rerender(<MushafRoute interactionSuspended={false} page={1} />)
-    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
-    expect(window.location.hash).toBe('#/m/2')
+    await waitFor(() => expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument())
+    expect(screen.queryByRole('img', { name: /mushaf page 2, qaloon/i })).not.toBeInTheDocument()
+    expect(window.location.hash).toBe('#/m/1')
     vi.unstubAllGlobals()
   })
 
-  it('shows terminal pending recovery immediately while reader interaction is suspended', async () => {
+  it('does not surface cancelled pending recovery while Settings is open', async () => {
     let resolvePageTwo: ((response: Response) => void) | null = null
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
@@ -816,9 +1060,9 @@ describe('React reader coverage', () => {
     rerender(<MushafRoute interactionSuspended page={1} />)
     resolvePageTwo?.(jsonResponse({}, { ok: false, status: 404 }))
 
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Mushaf page 2 is unavailable. Page 1 remains open.'))
-    expect(screen.getByRole('button', { name: 'Retry page 2' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Stay on page 1' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: 'Retry page 2' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Stay on page 1' })).not.toBeInTheDocument()
     vi.unstubAllGlobals()
   })
 
@@ -1314,27 +1558,22 @@ describe('React reader coverage', () => {
     render(
       <MushafPageViewer
         chromeVisible
+        fitWidth
         inlineSvg={inlineSvg}
         onNavigate={onNavigate}
         pages={pages}
         resolved={resolved}
-        surahLabel="البَقَرَة"
       />,
     )
 
     expect(screen.getByLabelText('Mushaf page 42')).toBeInTheDocument()
     expect(screen.getByText('42')).toBeInTheDocument()
     expect(screen.queryByText('42 / 604')).not.toBeInTheDocument()
-    const surahLabel = screen.getByText('البَقَرَة')
-    expect(surahLabel).toBeInTheDocument()
-    expect(surahLabel).toHaveAttribute('dir', 'rtl')
-    expect(surahLabel).toHaveAttribute('lang', 'ar')
-
     const nextPageButton = screen.getByRole('button', { name: 'Next Mushaf page' })
     nextPageButton.focus()
     fireEvent.click(nextPageButton)
     expect(onNavigate).toHaveBeenLastCalledWith(43)
-    expect(nextPageButton).not.toHaveFocus()
+    expect(screen.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveFocus()
     fireEvent.click(screen.getByRole('button', { name: 'Previous Mushaf page' }))
     expect(onNavigate).toHaveBeenLastCalledWith(41)
 
@@ -1342,6 +1581,45 @@ describe('React reader coverage', () => {
     expect(onNavigate).toHaveBeenLastCalledWith(43)
     fireEvent.keyDown(window, { key: 'ArrowRight' })
     expect(onNavigate).toHaveBeenLastCalledWith(41)
+  })
+
+  it('hides committed page controls after moving focus from the dock to the new stage', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
+    const current = boundaryPageFixture(42)
+    const next = boundaryPageFixture(43)
+    const pages: MushafPageWindowEntry[] = [current, next].map((resolved) => ({
+      asset: { media: { kind: 'inline-svg' as const, inlineSvg }, resolved, status: 'ready' as const },
+      page: resolved.page,
+      rendition: 'full' as const,
+      status: 'ready' as const,
+      upgradeStatus: 'idle' as const,
+    }))
+    function CommitHarness() {
+      const [chromeVisible, setChromeVisible] = useState(true)
+      const [resolved, setResolved] = useState(current)
+      return (
+        <MushafPageViewer
+          chromeVisible={chromeVisible}
+          fitWidth
+          inlineSvg={inlineSvg}
+          onNavigate={(page) => {
+            if (page !== 43) return
+            setChromeVisible(false)
+            setResolved(next)
+          }}
+          pages={pages}
+          resolved={resolved}
+        />
+      )
+    }
+    render(<CommitHarness />)
+
+    const nextPageButton = screen.getByRole('button', { name: 'Next Mushaf page' })
+    nextPageButton.focus()
+    fireEvent.click(nextPageButton)
+
+    expect(screen.queryByRole('navigation', { name: 'Mushaf page navigation' })).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveFocus()
   })
 
   it('sends each non-ready button or arrow destination through the request callback once', () => {

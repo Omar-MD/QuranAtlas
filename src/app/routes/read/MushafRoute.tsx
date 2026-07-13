@@ -5,6 +5,7 @@ import { MushafPageViewer } from '../../../components/reader/MushafPageViewer'
 import type { ReaderAssetState } from '../../../components/reader/ReaderAssetGate'
 import { ReaderAssetGate } from '../../../components/reader/ReaderAssetGate'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
+import { useMushafChromeVisibility, type MushafChromePin } from '../../../components/reader/useMushafChromeVisibility'
 import { Button } from '../../../components/ui'
 import type { MushafViewMode } from '../../../components/reader/MushafModeControl'
 import { resolveVerseHrefForMushafPage } from '../../../components/reader/reader-mode-routing'
@@ -70,16 +71,15 @@ export function MushafRoute({
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
-  const [chromeVisible, setChromeVisible] = useState(true)
   const [pendingPage, setPendingPage] = useState<number | null>(null)
   const [recoveryPage, setRecoveryPage] = useState<number | null>(null)
   const [pendingWirdRef, setPendingWirdRef] = useState<QuranRef | null>(null)
   const [wirdAdvanceInFlight, setWirdAdvanceInFlight] = useState(false)
-  const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
   const initialVisibleWirdAdvancedRef = useRef(false)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
   const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
+  const chrome = useMushafChromeVisibility(visiblePage !== null)
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex), [surahIndex])
   const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
   const wirdSummary = useMemo(() => {
@@ -148,12 +148,6 @@ export function MushafRoute({
       .then((preferences) => emitReactReaderPreferencesChanged({ ...preferences, mushafFitWidth: true }))
       .catch(() => undefined)
   }, [activeSettings?.mushafFitWidth, compactLandscape])
-
-  useEffect(() => {
-    if (routePageRef.current === page) return
-    routePageRef.current = page
-    setChromeVisible(false)
-  }, [page])
 
   useEffect(() => {
     let active = true
@@ -228,9 +222,9 @@ export function MushafRoute({
     commitVisiblePage(next)
     setPendingPage(null)
     setRecoveryPage(null)
-    setChromeVisible(false)
+    chrome.hide()
     window.location.hash = mushafHash(next.resolved.page)
-  }, [commitVisiblePage, mushafHash, queueMushafWirdAdvance])
+  }, [chrome.hide, commitVisiblePage, mushafHash, queueMushafWirdAdvance])
 
   const requestDiscretePage = useCallback((nextPage: number): void => {
     const ready = readyWindowPage(windowState.entries, nextPage)
@@ -317,7 +311,6 @@ export function MushafRoute({
     if (isTerminalMushafEntry(entry)) {
       setRecoveryPage(pendingPage)
       setPendingPage(null)
-      setChromeVisible(true)
       return
     }
     if (interactionSuspended) return
@@ -330,13 +323,23 @@ export function MushafRoute({
     setRecoveryPage(null)
   }, [profileSession.key])
 
+  const handleChromePin = useCallback((source: MushafChromePin, pinned: boolean) => {
+    chrome.setPinned(source, pinned)
+    if (pinned && (source === 'drawer' || source === 'interaction')) setPendingPage(null)
+  }, [chrome.setPinned])
+
+  useEffect(() => {
+    chrome.setPinned('recovery', requestedPageFailure !== null)
+  }, [chrome.setPinned, requestedPageFailure])
+
   return (
     <ReaderPageShell
-      chromeVisible={chromeVisible}
+      chromeVisible={chrome.visible}
       interactionSuspended={interactionSuspended}
       label={`Page ${visiblePage?.resolved.page ?? page}`}
       mode="mushaf"
-      onChromeVisibleChange={setChromeVisible}
+      onChromePinChange={handleChromePin}
+      onChromeVisibleChange={(visible) => visible ? chrome.reveal() : chrome.hide()}
       onModeChange={(nextMode) => {
         if (nextMode === 'verse') {
           const visibleRef = visiblePage?.resolved.firstVerse
@@ -351,6 +354,7 @@ export function MushafRoute({
         }
       }}
       showWirdStatus={activeSettings?.wirdReaderStatusVisible ?? DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible}
+      surahLabel={currentSurahLabel}
       wirdSummary={wirdSummary}
     >
       {assetState !== 'ready' ? (
@@ -359,7 +363,7 @@ export function MushafRoute({
         <>
           <MushafPageViewer
             bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
-            chromeVisible={chromeVisible}
+            chromeVisible={chrome.visible}
             fitWidth={profileSession.framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
               ? true
               : activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
@@ -378,6 +382,7 @@ export function MushafRoute({
             onNavigate={(nextPage) => {
               requestDiscretePage(nextPage)
             }}
+            onChromePinChange={handleChromePin}
             onRequestPage={requestDiscretePage}
             onToggleBookmark={() => {
               const bookmarkPage = visiblePage.resolved.page
@@ -389,11 +394,10 @@ export function MushafRoute({
                 verseKey: createMushafPageBookmarkKey(bookmarkPage),
               })
             }}
-            onToggleChrome={(visible) => setChromeVisible(visible)}
+            onToggleChrome={() => chrome.toggle()}
             pages={windowState.entries}
             retainedPage={visiblePage}
             resolved={visiblePage.resolved}
-            surahLabel={currentSurahLabel}
             viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
           />
           {requestedPageFailure ? (

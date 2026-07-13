@@ -8,6 +8,7 @@ import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
 import type { WirdSummary } from '../../continuity/wird/types'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 import { ReaderInteractionProvider } from './ReaderInteractionContext'
+import type { MushafChromePin } from './useMushafChromeVisibility'
 
 export function ReaderPageShell({
   children,
@@ -15,9 +16,11 @@ export function ReaderPageShell({
   interactionSuspended = false,
   label,
   mode,
+  onChromePinChange,
   onModeChange,
   onChromeVisibleChange,
   showWirdStatus = true,
+  surahLabel,
   wirdSummary,
 }: {
   children: ReactNode
@@ -25,9 +28,11 @@ export function ReaderPageShell({
   interactionSuspended?: boolean
   label: string
   mode: ReaderMode
+  onChromePinChange?: (source: MushafChromePin, pinned: boolean) => void
   onModeChange?: (mode: ReaderMode) => void
   onChromeVisibleChange?: (visible: boolean) => void
   showWirdStatus?: boolean
+  surahLabel?: string
   wirdSummary?: WirdSummary
 }) {
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
@@ -55,6 +60,14 @@ export function ReaderPageShell({
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [dispatchDrawer, drawerState.open, setChromeVisible])
+
+  useEffect(() => {
+    onChromePinChange?.('drawer', drawerState.open)
+  }, [drawerState.open, onChromePinChange])
+
+  useEffect(() => {
+    onChromePinChange?.('interaction', interactionSuspended)
+  }, [interactionSuspended, onChromePinChange])
 
   useEffect(() => {
     if (mode !== 'verse') return undefined
@@ -96,18 +109,28 @@ export function ReaderPageShell({
       <main className={`qar-react-reader-shell qar:bg-canvas qar:text-text${mode === 'verse' ? ' qar:min-h-screen' : ''}`} aria-label={mode === 'verse' ? 'Verse reader' : 'Mushaf reader'} data-reader-mode={mode} id="reader-main" tabIndex={-1}>
         <ReaderChrome
           mode={mode}
+          onBlurCapture={(event) => {
+            if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+              onChromePinChange?.('focus', false)
+            }
+          }}
+          onFocusCapture={() => onChromePinChange?.('focus', true)}
           onModeChange={onModeChange}
           onOpenNavigation={() => {
+            setChromeVisible(true)
             setDrawerWirdInitialView('card')
             dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })
           }}
           onOpenSettings={() => {
+            setChromeVisible(true)
             requestReactSettingsOverlay(mode, 'reader-settings-trigger')
           }}
+          title={surahLabel}
           visible={visible}
           wirdStatus={dailyWirdVisible && wirdSummary ? (
             <ReaderWirdStatusIndicator
               onOpen={() => {
+                setChromeVisible(true)
                 setDrawerWirdInitialView('detail')
                 dispatchDrawer({ returnFocusId: 'reader-wird-status-trigger', type: 'open' })
               }}

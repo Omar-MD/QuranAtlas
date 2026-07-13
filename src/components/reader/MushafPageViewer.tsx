@@ -22,6 +22,7 @@ import { IconButton } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
 import { useMushafPageGesture } from './useMushafPageGesture'
 import { useReaderInteractionSuspended } from './ReaderInteractionContext'
+import type { MushafChromePin } from './useMushafChromeVisibility'
 
 const EDGE_TAP_RATIO = 0.3
 const SCROLL_LINE_PX = 48
@@ -36,6 +37,7 @@ export type MushafPageViewerProps = {
   fitWidth?: boolean
   framingValue?: number
   inlineSvg: ReactInlineMushafSvg
+  onChromePinChange?: (source: MushafChromePin, pinned: boolean) => void
   onDominantPageChange?: (page: number) => void
   onNavigate?: (page: number) => void
   onRequestPage?: (page: number) => void
@@ -111,6 +113,7 @@ export function MushafPageViewer({
   fitWidth = false,
   framingValue = 0,
   inlineSvg,
+  onChromePinChange,
   onDominantPageChange,
   onNavigate,
   onRequestPage,
@@ -119,7 +122,6 @@ export function MushafPageViewer({
   pages,
   retainedPage,
   resolved,
-  surahLabel,
   viewMode = 'auto',
 }: MushafPageViewerProps) {
   const stageRef = useRef<HTMLDivElement | null>(null)
@@ -398,6 +400,9 @@ export function MushafPageViewer({
   }, [scheduleReconciliation])
 
   const stageName = stageScrollable ? 'Scrollable Mushaf pages' : undefined
+  const bookmarkLabel = bookmarked
+    ? `Remove bookmark for Mushaf page ${resolved.page}`
+    : `Bookmark Mushaf page ${resolved.page}`
 
   return (
     <section
@@ -448,13 +453,17 @@ export function MushafPageViewer({
           </div>
         )}
       </div>
-      {surahLabel ? (
-        <div className="qar-react-mushaf-page-surah" dir="rtl" lang="ar">
-          {surahLabel}
-        </div>
-      ) : null}
       {chromeVisible ? (
-        <nav aria-label="Mushaf page navigation" className="qar-react-mushaf-page-actions">
+        <nav
+          aria-label="Mushaf page navigation"
+          className="qar-react-mushaf-page-actions"
+          onBlurCapture={(event) => {
+            if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+              onChromePinChange?.('focus', false)
+            }
+          }}
+          onFocusCapture={() => onChromePinChange?.('focus', true)}
+        >
           <IconButton
             disabled={resolved.page >= resolved.pageCount}
             label="Next Mushaf page"
@@ -472,17 +481,17 @@ export function MushafPageViewer({
           >
             <ChevronRight aria-hidden="true" />
           </IconButton>
+          {onToggleBookmark ? (
+            <IconButton
+              aria-pressed={bookmarked}
+              className="qar-react-mushaf-bookmark-toggle"
+              label={bookmarkLabel}
+              onClick={onToggleBookmark}
+            >
+              <Bookmark aria-hidden="true" fill={bookmarked ? 'currentColor' : 'none'} size={17} strokeWidth={1.85} />
+            </IconButton>
+          ) : null}
         </nav>
-      ) : null}
-      {onToggleBookmark ? (
-        <IconButton
-          aria-pressed={bookmarked}
-          className="qar-react-mushaf-bookmark-toggle"
-          label={bookmarked ? `Remove bookmark for Mushaf page ${resolved.page}` : `Bookmark Mushaf page ${resolved.page}`}
-          onClick={onToggleBookmark}
-        >
-          <Bookmark aria-hidden="true" fill={bookmarked ? 'currentColor' : 'none'} size={17} strokeWidth={1.85} />
-        </IconButton>
       ) : null}
     </section>
   )
