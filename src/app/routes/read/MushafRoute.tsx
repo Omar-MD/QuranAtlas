@@ -12,7 +12,7 @@ import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
-import { advanceWirdProgressFromReaderPosition, deriveWirdSummary, getLocalDayKey } from '../../../continuity/wird/progress'
+import { advanceWirdProgressFromReaderPosition, compareRefs, deriveWirdSummary, getLocalDayKey } from '../../../continuity/wird/progress'
 import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
 import { normalizeWirdPlan, notifyWirdPlanChanged, readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
 import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
@@ -73,6 +73,8 @@ export function MushafRoute({
   const [chromeVisible, setChromeVisible] = useState(true)
   const [pendingPage, setPendingPage] = useState<number | null>(null)
   const [recoveryPage, setRecoveryPage] = useState<number | null>(null)
+  const [pendingWirdRef, setPendingWirdRef] = useState<QuranRef | null>(null)
+  const [wirdAdvanceInFlight, setWirdAdvanceInFlight] = useState(false)
   const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
   const initialVisibleWirdAdvancedRef = useRef(false)
@@ -179,11 +181,19 @@ export function MushafRoute({
 
   useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
 
-  const advanceMushafWirdToRef = useCallback((ref: QuranRef | null | undefined) => {
-    if (!enableWirdProgress || !ref || !wirdPlan || wirdCounts.length !== 114) return
+  const queueMushafWirdAdvance = useCallback((ref: QuranRef | null | undefined) => {
+    if (!enableWirdProgress || !ref) return
+    setPendingWirdRef((current) => !current || compareRefs(ref, current) > 0 ? ref : current)
+  }, [enableWirdProgress])
+
+  useEffect(() => {
+    if (!pendingWirdRef || !wirdPlan || wirdCounts.length !== 114 || wirdAdvanceInFlight) return
+    const ref = pendingWirdRef
     const key = `${ref.surah}:${ref.verse}`
+    setPendingWirdRef(null)
     if (lastWirdAdvancedKeyRef.current === key) return
     lastWirdAdvancedKeyRef.current = key
+    setWirdAdvanceInFlight(true)
     void advanceNativeWirdFromReaderPosition(ref, wirdCounts)
       .then((nextPlan) => {
         if (nextPlan) setWirdPlan(nextPlan)
@@ -191,7 +201,8 @@ export function MushafRoute({
       .catch(() => {
         lastWirdAdvancedKeyRef.current = null
       })
-  }, [enableWirdProgress, wirdCounts, wirdPlan])
+      .finally(() => setWirdAdvanceInFlight(false))
+  }, [pendingWirdRef, wirdAdvanceInFlight, wirdCounts, wirdPlan])
 
   const commitVisiblePage = useCallback((next: MushafReadyPageAssetState): void => {
     visiblePageRef.current = next
@@ -213,14 +224,14 @@ export function MushafRoute({
     const current = visiblePageRef.current
     if (current && next.resolved.page > current.resolved.page) {
       lastWirdAdvancedKeyRef.current = null
-      advanceMushafWirdToRef(current.resolved.lastVerse ?? current.resolved.firstVerse)
+      queueMushafWirdAdvance(current.resolved.lastVerse ?? current.resolved.firstVerse)
     }
     commitVisiblePage(next)
     setPendingPage(null)
     setRecoveryPage(null)
     setChromeVisible(false)
     window.location.hash = mushafHash(next.resolved.page)
-  }, [advanceMushafWirdToRef, commitVisiblePage, mushafHash])
+  }, [commitVisiblePage, mushafHash, queueMushafWirdAdvance])
 
   const requestDiscretePage = useCallback((nextPage: number): void => {
     const ready = readyWindowPage(windowState.entries, nextPage)
@@ -277,8 +288,8 @@ export function MushafRoute({
   useEffect(() => {
     if (!visiblePage || initialVisibleWirdAdvancedRef.current) return
     initialVisibleWirdAdvancedRef.current = true
-    advanceMushafWirdToRef(visiblePage?.resolved.firstVerse)
-  }, [advanceMushafWirdToRef, visiblePage?.resolved.firstVerse])
+    queueMushafWirdAdvance(visiblePage.resolved.firstVerse)
+  }, [queueMushafWirdAdvance, visiblePage])
 
   useEffect(() => {
     const requested = windowState.requested
@@ -302,19 +313,17 @@ export function MushafRoute({
   }, [page, windowState.request])
 
   useEffect(() => {
-    if (interactionSuspended) return
     if (pendingPage === null) return
     const entry = windowState.entries.find((candidate) => candidate.page === pendingPage)
-    const ready = readableAsset(entry)
-    if (ready) {
-      commitDiscretePage(ready)
-      return
-    }
     if (isTerminalMushafEntry(entry)) {
       setRecoveryPage(pendingPage)
       setPendingPage(null)
       setChromeVisible(true)
+      return
     }
+    if (interactionSuspended) return
+    const ready = readableAsset(entry)
+    if (ready) commitDiscretePage(ready)
   }, [commitDiscretePage, interactionSuspended, pendingPage, windowState.entries])
 
   useEffect(() => {
@@ -362,7 +371,7 @@ export function MushafRoute({
               const nextAsset = readyWindowPage(windowState.entries, nextPage)
               if (!nextAsset) return
               if (nextPage > visiblePage.resolved.page) {
-                advanceMushafWirdToRef(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
+                queueMushafWirdAdvance(visiblePage.resolved.lastVerse ?? visiblePage.resolved.firstVerse)
               }
               commitVisiblePage(nextAsset)
               replaceMushafHash(nextPage)

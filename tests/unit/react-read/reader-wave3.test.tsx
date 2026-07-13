@@ -87,6 +87,14 @@ const surahIndex = [
   { n: 114, name: 'An-Nas', name_ar: 'النَّاس', counts: { hafs: 6, warsh: 6, qaloon: 6 } },
 ]
 
+const completeSurahIndex = Array.from({ length: 114 }, (_, index) => ({
+  count: index === 1 ? 285 : 7,
+  counts: { hafs: index === 1 ? 286 : 7, qaloon: index === 1 ? 285 : 7, warsh: index === 1 ? 285 : 7 },
+  n: index + 1,
+  name: `Surah ${index + 1}`,
+  name_ar: `سورة ${index + 1}`,
+}))
+
 function readerFetchFixture() {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input)
@@ -790,6 +798,137 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
+  it('shows terminal pending recovery immediately while reader interaction is suspended', async () => {
+    let resolvePageTwo: ((response: Response) => void) | null = null
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') return jsonResponse(mushafManifest)
+      if (url.endsWith('/pages/001.svg')) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      if (url.endsWith('/pages/002.svg')) return new Promise<Response>((resolve) => { resolvePageTwo = resolve })
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/1'
+    const { rerender } = render(<MushafRoute interactionSuspended={false} page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+
+    rerender(<MushafRoute interactionSuspended page={1} />)
+    resolvePageTwo?.(jsonResponse({}, { ok: false, status: 404 }))
+
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Mushaf page 2 is unavailable. Page 1 remains open.'))
+    expect(screen.getByRole('button', { name: 'Retry page 2' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Stay on page 1' })).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
+  it('advances the initial visible Daily Wird position once after metadata becomes ready', async () => {
+    const today = getLocalDayKey()
+    const db = await openReactDb()
+    await db.settings.put({
+      key: 'wirdPlan',
+      value: {
+        endRef: { surah: 2, verse: 3 },
+        history: [],
+        id: 'mushaf-delayed-initial-wird',
+        progress: {
+          completedThroughRef: null,
+          dayKey: today,
+          lastReadRef: null,
+          nextRef: { surah: 1, verse: 1 },
+          todayEndRef: { surah: 2, verse: 3 },
+          todayStartRef: { surah: 1, verse: 1 },
+        },
+        reminder: { browserNotifications: 'default', enabled: false, time: '08:00' },
+        startRef: { surah: 1, verse: 1 },
+        startedOn: today,
+        targetDays: 1,
+        targetEndOn: today,
+        unit: 'verse',
+      },
+    })
+    let resolveSurahIndex: ((response: Response) => void) | null = null
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/surahs.json') return new Promise<Response>((resolve) => { resolveSurahIndex = resolve })
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
+        return jsonResponse({ ...mushafManifest, verseToPage: { ...mushafManifest.verseToPage, '1:7': 1 } })
+      }
+      if (url.endsWith('/pages/001.svg')) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/1?wird=1'
+    const changes: unknown[] = []
+    const unsubscribe = subscribeWirdPlanChanged((plan) => changes.push(plan))
+    render(<MushafRoute page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+    expect(changes).toHaveLength(0)
+
+    resolveSurahIndex?.(jsonResponse(completeSurahIndex))
+    await waitFor(() => expect(changes).toHaveLength(1))
+    expect(changes[0]).toMatchObject({ progress: { lastReadRef: { surah: 1, verse: 1 } } })
+    expect(await screen.findByRole('button', { name: /Daily Wird: 10% today, 9 verses left today/i })).toBeInTheDocument()
+    expect(changes).toHaveLength(1)
+    unsubscribe()
+    vi.unstubAllGlobals()
+  })
+
+  it('advances a queued forward Daily Wird position once when metadata resolves after the page commit', async () => {
+    const today = getLocalDayKey()
+    const db = await openReactDb()
+    await db.settings.put({
+      key: 'wirdPlan',
+      value: {
+        endRef: { surah: 2, verse: 3 },
+        history: [],
+        id: 'mushaf-delayed-queued-wird',
+        progress: {
+          completedThroughRef: null,
+          dayKey: today,
+          lastReadRef: null,
+          nextRef: { surah: 1, verse: 1 },
+          todayEndRef: { surah: 2, verse: 3 },
+          todayStartRef: { surah: 1, verse: 1 },
+        },
+        reminder: { browserNotifications: 'default', enabled: false, time: '08:00' },
+        startRef: { surah: 1, verse: 1 },
+        startedOn: today,
+        targetDays: 1,
+        targetEndOn: today,
+        unit: 'verse',
+      },
+    })
+    let resolveSurahIndex: ((response: Response) => void) | null = null
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === '/dataset/surahs.json') return new Promise<Response>((resolve) => { resolveSurahIndex = resolve })
+      if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json') {
+        return jsonResponse({ ...mushafManifest, verseToPage: { ...mushafManifest.verseToPage, '1:7': 1 } })
+      }
+      if (/\/pages\/(001|002)\.svg$/.test(url)) return { ok: true, status: 200, text: async () => realMushafSvg } as Response
+      return jsonResponse({}, { ok: false, status: 404 })
+    }))
+    window.location.hash = '#/m/1?wird=1'
+    const changes: unknown[] = []
+    const unsubscribe = subscribeWirdPlanChanged((plan) => changes.push(plan))
+    render(<MushafRoute page={1} />)
+    expect(await screen.findByRole('img', { name: /mushaf page 1, qaloon/i })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next Mushaf page' }))
+    expect(await screen.findByRole('img', { name: /mushaf page 2, qaloon/i })).toBeInTheDocument()
+    expect(changes).toHaveLength(0)
+
+    resolveSurahIndex?.(jsonResponse(completeSurahIndex))
+    await waitFor(() => expect(changes).toHaveLength(1))
+    expect(changes[0]).toMatchObject({ progress: { lastReadRef: { surah: 1, verse: 7 } } })
+    expect(await screen.findByRole('button', { name: /Daily Wird: 70% today, 3 verses left today/i })).toBeInTheDocument()
+    expect(changes).toHaveLength(1)
+    unsubscribe()
+    vi.unstubAllGlobals()
+  })
+
   it('advances Daily Wird once for a forward queued commit and not for backward movement', async () => {
     const today = getLocalDayKey()
     const db = await openReactDb()
@@ -815,13 +954,6 @@ describe('React reader coverage', () => {
         unit: 'verse',
       },
     })
-    const completeSurahIndex = Array.from({ length: 114 }, (_, index) => ({
-      count: index === 1 ? 285 : 7,
-      counts: { hafs: index === 1 ? 286 : 7, qaloon: index === 1 ? 285 : 7, warsh: index === 1 ? 285 : 7 },
-      n: index + 1,
-      name: `Surah ${index + 1}`,
-      name_ar: `سورة ${index + 1}`,
-    }))
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url === '/dataset/surahs.json') return jsonResponse(completeSurahIndex)
