@@ -93,7 +93,7 @@ export function ReaderPageShell({
 
   return (
     <ReaderInteractionProvider suspended={interactionSuspended || drawerState.open}>
-      <main className="qar-react-reader-shell qar:min-h-screen qar:bg-canvas qar:text-text" aria-label={mode === 'verse' ? 'Verse reader' : 'Mushaf reader'} data-reader-mode={mode} id="reader-main" tabIndex={-1}>
+      <main className={`qar-react-reader-shell qar:bg-canvas qar:text-text${mode === 'verse' ? ' qar:min-h-screen' : ''}`} aria-label={mode === 'verse' ? 'Verse reader' : 'Mushaf reader'} data-reader-mode={mode} id="reader-main" tabIndex={-1}>
         <ReaderChrome
           mode={mode}
           onModeChange={onModeChange}

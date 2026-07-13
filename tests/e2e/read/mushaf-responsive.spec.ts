@@ -173,6 +173,48 @@ async function stageScroll(page: Page): Promise<{ clientHeight: number; scrollHe
   }))
 }
 
+async function viewportScroll(page: Page): Promise<{
+  documentClientHeight: number
+  documentScrollHeight: number
+  documentScrollTop: number
+  shellHeight: number
+  stageClientHeight: number
+  stageScrollHeight: number
+  stageScrollTop: number
+  viewportHeight: number
+}> {
+  return page.evaluate(() => {
+    const documentScroller = document.scrollingElement ?? document.documentElement
+    const shell = document.querySelector<HTMLElement>('main[aria-label="Mushaf reader"]')
+    const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
+    if (!shell || !stage) throw new Error('Mushaf viewport owners are unavailable')
+    return {
+      documentClientHeight: documentScroller.clientHeight,
+      documentScrollHeight: documentScroller.scrollHeight,
+      documentScrollTop: documentScroller.scrollTop,
+      shellHeight: shell.getBoundingClientRect().height,
+      stageClientHeight: stage.clientHeight,
+      stageScrollHeight: stage.scrollHeight,
+      stageScrollTop: stage.scrollTop,
+      viewportHeight: window.visualViewport?.height ?? window.innerHeight,
+    }
+  })
+}
+
+function expectNoViewportScroll(metrics: Awaited<ReturnType<typeof viewportScroll>>): void {
+  expect(metrics.documentScrollHeight).toBe(metrics.documentClientHeight)
+  expect(metrics.documentScrollTop).toBe(0)
+  expect(metrics.shellHeight).toBeCloseTo(metrics.viewportHeight, 0)
+  expect(metrics.stageScrollHeight).toBe(metrics.stageClientHeight)
+  expect(metrics.stageScrollTop).toBe(0)
+}
+
+async function nextAnimationFrames(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
+}
+
 async function panStageUp(page: Page): Promise<void> {
   const box = await stageBox(page)
   await touchPath(page, pointsBetween(box, { x: 0.52, y: 0.82 }, { x: 0.49, y: 0.18 }, 6))
@@ -305,6 +347,84 @@ function boxesOverlap(a: Box, b: Box): boolean {
 }
 
 test.describe('Mushaf responsive behavior', () => {
+  test('@mobile Fit page owns no scroll and preserves one-page horizontal swipe', async ({ page }) => {
+    for (const viewport of [
+      { width: 390, height: 844 },
+      { width: 768, height: 1024 },
+      { width: 1280, height: 900 },
+      { width: 844, height: 390 },
+    ]) {
+      await test.step(`${viewport.width}x${viewport.height}`, async () => {
+        await page.setViewportSize(viewport)
+        await openMushaf(page, FIT_PAGE, { disableCompactLandscapeFitWidth: true })
+        await expect(page.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveCount(0)
+        const stage = page.locator('.qar-react-mushaf-page-stage')
+        expect(await stage.evaluate((element) => ({
+          label: element.getAttribute('aria-label'),
+          role: element.getAttribute('role'),
+          tabIndex: element.getAttribute('tabindex'),
+        }))).toEqual({ label: null, role: null, tabIndex: null })
+        expectNoViewportScroll(await viewportScroll(page))
+
+        await stage.hover()
+        await page.mouse.wheel(0, 800)
+        await nextAnimationFrames(page)
+        expectNoViewportScroll(await viewportScroll(page))
+
+        const box = await singleStageBox(page)
+        await touchPath(page, pointsBetween(box, { x: 0.5, y: 0.75 }, { x: 0.5, y: 0.25 }, 5))
+        await nextAnimationFrames(page)
+        expectNoViewportScroll(await viewportScroll(page))
+
+        await page.keyboard.press('PageDown')
+        await page.keyboard.press('ArrowDown')
+        await nextAnimationFrames(page)
+        expectNoViewportScroll(await viewportScroll(page))
+
+        await expectReadySingleNeighbor(page, 'next', 43)
+        await page.evaluate(() => {
+          type FitPageProofWindow = Window & {
+            __fitPageHashChanges?: string[]
+            __fitPageHashListener?: () => void
+          }
+          const state = window as FitPageProofWindow
+          state.__fitPageHashChanges = []
+          state.__fitPageHashListener ??= () => state.__fitPageHashChanges?.push(window.location.hash)
+          window.addEventListener('hashchange', state.__fitPageHashListener)
+        })
+        await fastHorizontalFlick(page, 'right')
+        await expect(page).toHaveURL(/#\/m\/43$/)
+        await expect(page.getByRole('img', { name: /Mushaf page 43,/i })).toBeVisible()
+        expect(await page.evaluate(() => (
+          window as Window & { __fitPageHashChanges?: string[] }
+        ).__fitPageHashChanges)).toEqual(['#/m/43'])
+        expectNoViewportScroll(await viewportScroll(page))
+      })
+    }
+  })
+
+  test('@mobile Fit width and Scroll keep vertical movement inside the stage', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 390 })
+    for (const prefs of [FIT_WIDTH, SCROLL_FIT_PAGE]) {
+      await openMushaf(page, prefs, {
+        disableCompactLandscapeFitWidth: !prefs.mushafFitWidth,
+      })
+      const before = await viewportScroll(page)
+      expect(before.documentScrollHeight).toBe(before.documentClientHeight)
+      expect(before.documentScrollTop).toBe(0)
+      expect(before.stageScrollHeight).toBeGreaterThan(before.stageClientHeight)
+
+      const stage = page.getByRole('region', { name: 'Scrollable Mushaf pages' })
+      await stage.hover()
+      await page.mouse.wheel(0, 600)
+      await expect.poll(async () => (await viewportScroll(page)).stageScrollTop).toBeGreaterThan(0)
+
+      const after = await viewportScroll(page)
+      expect(after.documentScrollHeight).toBe(after.documentClientHeight)
+      expect(after.documentScrollTop).toBe(0)
+    }
+  })
+
   test('@mobile Single + Fit width reaches the bottom with native touch and survives rotation', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 568 })
     await openMushaf(page, FIT_WIDTH)

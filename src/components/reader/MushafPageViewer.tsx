@@ -140,6 +140,7 @@ export function MushafPageViewer({
     ? mushafImagePlacement(resolved.displaySize, resolved.framing.textFrame, framingValue).ratio
     : sourceRatio
   const isScrollMode = viewMode === 'continuous'
+  const stageScrollable = fitWidth || isScrollMode
   const effectivePages = useMemo(
     () => retainReadyMushafPage(
       pages ?? legacyPageEntries(adjacentPages, { inlineSvg, resolved }),
@@ -235,7 +236,7 @@ export function MushafPageViewer({
         requestOrNavigate(resolved.page - 1)
         return
       }
-      if (isScrollMode || fitWidth) scrollStageForKey(event, stageRef.current)
+      if (stageScrollable) scrollStageForKey(event, stageRef.current)
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -390,7 +391,7 @@ export function MushafPageViewer({
     })
   }, [scheduleReconciliation])
 
-  const stageName = fitWidth || isScrollMode ? 'Scrollable Mushaf pages' : undefined
+  const stageName = stageScrollable ? 'Scrollable Mushaf pages' : undefined
 
   return (
     <section
