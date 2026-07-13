@@ -54,10 +54,31 @@ export type PreparedMushafPage =
   | { kind: 'inline-svg'; assetUrl: string; inlineSvg: ReactInlineMushafSvg; resolved: MushafResolvedPage }
   | PreparedExternalMushafPage
 
+export type MushafPageDescriptor =
+  | {
+      kind: 'inline-svg'
+      assetUrl: string
+      displayViewBox: SvgViewBox
+      sourceViewBox: SvgViewBox
+      resolved: MushafResolvedPage
+    }
+  | PreparedExternalMushafPage
+
+export type MushafMediaPurpose = 'readable' | 'full'
+
+export class MushafAssetHttpError extends Error {
+  constructor(readonly url: string, readonly status: number) {
+    super(`Failed to fetch ${url}: ${status}`)
+  }
+}
+
+export type MushafPageFailureKind = 'transient' | 'confirmed-missing' | 'contract-error'
+
 type MushafManifestPageV1 = {
   page: number
   assetPath: string
   viewBox: string
+  displayViewBox: string
   firstVerse: QuranRef
 }
 
@@ -207,24 +228,11 @@ export async function loadPreparedMushafPage(options: LoadMushafPageAssetOptions
   } = options
   if (signal?.aborted) throw abortError()
   const context = options.context ?? await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal })
-  ensureValidatedMushafPageProfileContext(context, { mushafEditionId, riwayah })
-  if (signal?.aborted) throw abortError()
-  if (context.manifest.version === 2) {
-    return prepareExternalMushafPage({ ...context, manifest: context.manifest }, page)
-  }
-  if (!hasIndexedMushafAsset(context.index, { mushafEditionId, page, riwayah })) {
-    throw new Error(`Mushaf page pack is not indexed for ${riwayah}/${mushafEditionId}`)
-  }
-  const unresolved = resolveMushafPage(context.manifest, { mushafEditionId, page, riwayah })
-  const svgText = await fetchText(fetcher, unresolved.assetUrl, signal)
-  const inlineSvg = prepareReactInlineMushafSvg(svgText)
-  const sourceViewBox = context.manifest.pages.find((entry) => entry.page === unresolved.page)?.viewBox?.trim()
-  if (inlineSvg.viewBoxText !== sourceViewBox) throw new Error('Mushaf page SVG viewBox does not match the page manifest')
-  const resolved: MushafResolvedPage = {
-    ...unresolved,
-    displaySize: { width: inlineSvg.viewBox.width, height: inlineSvg.viewBox.height },
-  }
-  return { kind: 'inline-svg', assetUrl: resolved.assetUrl, inlineSvg, resolved }
+  const descriptor = describeMushafPage(context, page)
+  if (descriptor.kind === 'external-image') return descriptor
+  const media = await prepareMushafDescriptorMedia(descriptor, 'readable', signal, fetcher)
+  if (media.kind !== 'inline-svg') throw new Error('Inline Mushaf descriptor did not prepare SVG media')
+  return { kind: 'inline-svg', assetUrl: descriptor.assetUrl, inlineSvg: media.inlineSvg, resolved: descriptor.resolved }
 }
 
 export async function loadMushafPageProfileContext({
@@ -258,16 +266,64 @@ export async function loadMushafFramingCapability({
 }): Promise<MushafFramingCapability> {
   try {
     const context = await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal })
-    const manifest = context.manifest
-    if (manifest.version !== 2) return { hasValidFraming: false }
-    await loadPreparedMushafPage({ context, fetcher, mushafEditionId, page: 1, riwayah, signal })
-    const hasValidFraming = manifest.pages.length === manifest.pageCount
-      && manifest.pages.every((page, index) => page.page === index + 1 && isMushafPageFraming(page.framing))
-    if (!hasValidFraming) return { hasValidFraming: false }
-    const representative = manifest.pages[Math.floor(manifest.pages.length / 2)]?.framing.textFrame
-    return representative ? { hasValidFraming: true, representativeTextFrame: representative } : { hasValidFraming: false }
+    return deriveMushafFramingCapability(context)
   } catch {
     return { hasValidFraming: false }
+  }
+}
+
+export function deriveMushafFramingCapability(context: MushafPageProfileContext): MushafFramingCapability {
+  if (context.manifest.version !== 2) return { hasValidFraming: false }
+  const valid = context.manifest.pages.length === context.manifest.pageCount
+    && context.manifest.pages.every((page, index) => page.page === index + 1 && isMushafPageFraming(page.framing))
+  if (!valid) return { hasValidFraming: false }
+  const representativeTextFrame = context.manifest.pages[Math.floor(context.manifest.pages.length / 2)]?.framing.textFrame
+  return representativeTextFrame ? { hasValidFraming: true, representativeTextFrame } : { hasValidFraming: false }
+}
+
+export function describeMushafPage(context: MushafPageProfileContext, page: number): MushafPageDescriptor {
+  const expected = { mushafEditionId: context.mushafEditionId, riwayah: context.riwayah }
+  ensureValidatedMushafPageProfileContext(context, expected)
+  if (context.manifest.version === 2) return prepareExternalMushafPage({ ...context, manifest: context.manifest }, page)
+  if (!hasIndexedMushafAsset(context.index, { ...expected, page })) {
+    throw new Error(`Mushaf page pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
+  }
+  const unresolved = resolveMushafPage(context.manifest, { ...expected, page })
+  const pageEntry = context.manifest.pages.find((entry) => entry.page === unresolved.page)
+  if (!pageEntry) throw new Error(`Mushaf manifest has no page ${unresolved.page}`)
+  const sourceViewBox = parseViewBox(pageEntry.viewBox)
+  const displayViewBox = parseViewBox(pageEntry.displayViewBox)
+  assertContainedViewBox(displayViewBox, sourceViewBox)
+  return {
+    kind: 'inline-svg',
+    assetUrl: unresolved.assetUrl,
+    sourceViewBox,
+    displayViewBox,
+    resolved: {
+      ...unresolved,
+      displaySize: { width: displayViewBox.width, height: displayViewBox.height },
+    },
+  }
+}
+
+export async function prepareMushafDescriptorMedia(
+  descriptor: MushafPageDescriptor,
+  purpose: MushafMediaPurpose,
+  signal?: AbortSignal,
+  fetcher: typeof fetch = fetch,
+): Promise<MushafReadyMedia> {
+  if (signal?.aborted) throw abortError()
+  if (descriptor.kind === 'external-image') {
+    return { kind: 'external-image', source: purpose === 'full' ? descriptor.full : descriptor.preview }
+  }
+  if (purpose !== 'readable') throw new Error('Inline Mushaf pages only provide readable media')
+  const svgText = await fetchText(fetcher, descriptor.assetUrl, signal)
+  return {
+    kind: 'inline-svg',
+    inlineSvg: prepareReactInlineMushafSvg(svgText, {
+      sourceViewBox: descriptor.sourceViewBox,
+      displayViewBox: descriptor.displayViewBox,
+    }),
   }
 }
 
@@ -442,7 +498,10 @@ function prepareExternalMushafPage(
   }
 }
 
-export function prepareReactInlineMushafSvg(text: string): ReactInlineMushafSvg {
+export function prepareReactInlineMushafSvg(
+  text: string,
+  expected: { sourceViewBox: SvgViewBox; displayViewBox: SvgViewBox },
+): ReactInlineMushafSvg {
   if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') {
     throw new Error('Inline SVG parsing is not supported in this environment')
   }
@@ -456,6 +515,9 @@ export function prepareReactInlineMushafSvg(text: string): ReactInlineMushafSvg 
   const viewBoxText = root.getAttribute('viewBox')?.trim()
   if (!viewBoxText) throw new Error('Mushaf page SVG is missing viewBox')
   const sourceViewBox = parseViewBox(viewBoxText)
+  if (!sameViewBox(sourceViewBox, expected.sourceViewBox)) {
+    throw new Error('Mushaf page SVG viewBox does not match the page manifest')
+  }
   root.classList.add('qa-react-mushaf-svg')
   root.setAttribute('aria-hidden', 'true')
   root.setAttribute('focusable', 'false')
@@ -472,10 +534,9 @@ export function prepareReactInlineMushafSvg(text: string): ReactInlineMushafSvg 
     rewritePaint(element)
   }
 
-  const viewBox = displayViewBoxForMushafPage(sourceViewBox, root)
-  root.setAttribute('viewBox', serializeViewBox(viewBox))
+  root.setAttribute('viewBox', serializeViewBox(expected.displayViewBox))
 
-  return { markup: new XMLSerializer().serializeToString(root), viewBox, viewBoxText }
+  return { markup: new XMLSerializer().serializeToString(root), viewBox: expected.displayViewBox, viewBoxText }
 }
 
 function resolveMushafPage(
@@ -489,6 +550,8 @@ function resolveMushafPage(
   if (pageEntry.assetPath !== expectedPath) throw new Error(`Invalid Mushaf asset path at page ${clampedPage}`)
   if (!isQuranRef(pageEntry.firstVerse)) throw new Error(`Invalid Mushaf first verse at page ${clampedPage}`)
   parseViewBox(pageEntry.viewBox)
+  const displayViewBox = parseViewBox(pageEntry.displayViewBox)
+  assertContainedViewBox(displayViewBox, parseViewBox(pageEntry.viewBox))
   const assetUrl = mushafPageUrl(expected, clampedPage)
   assertRuntimeDatasetUrl(assetUrl)
   return {
@@ -712,14 +775,14 @@ function abortError(): DOMException {
 async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {
   assertRuntimeDatasetUrl(url)
   const response = await fetcher(url, { signal })
-  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
+  if (!response.ok) throw new MushafAssetHttpError(url, response.status)
   return response.json() as Promise<T>
 }
 
 async function fetchText(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<string> {
   assertRuntimeDatasetUrl(url)
   const response = await fetcher(url, { signal })
-  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
+  if (!response.ok) throw new MushafAssetHttpError(url, response.status)
   return response.text()
 }
 
@@ -731,99 +794,16 @@ function parseViewBox(text: string): SvgViewBox {
   return { x: parts[0]!, y: parts[1]!, width: parts[2]!, height: parts[3]! }
 }
 
-function displayViewBoxForMushafPage(viewBox: SvgViewBox, root?: Element): SvgViewBox {
-  const isQuranWsPage = Math.abs(viewBox.x) < 0.001
-    && Math.abs(viewBox.y) < 0.001
-    && Math.abs(viewBox.width - 900) < 0.001
-    && Math.abs(viewBox.height - 1379.25) < 0.001
-  if (!isQuranWsPage) return viewBox
-  return root ? displayInkBoundsForMushafPage(root, viewBox) ?? quranWsFallbackViewBox() : quranWsFallbackViewBox()
+function sameViewBox(left: SvgViewBox, right: SvgViewBox): boolean {
+  return left.x === right.x && left.y === right.y && left.width === right.width && left.height === right.height
 }
 
-function displayInkBoundsForMushafPage(root: Element, source: SvgViewBox): SvgViewBox | null {
-  const boxes = Array.from(root.querySelectorAll('path'))
-    .filter((element) => !element.closest('defs'))
-    .filter((element) => {
-      const fill = element.getAttribute('fill')
-      const stroke = element.getAttribute('stroke')
-      return fill === 'var(--qa-react-mushaf-ink)'
-        || fill === 'var(--qa-react-mushaf-accent)'
-        || stroke === 'var(--qa-react-mushaf-ink)'
-        || stroke === 'var(--qa-react-mushaf-accent)'
-    })
-    .map((element) => clippedPathBounds(root, element) ?? pathDataBounds(element.getAttribute('d') ?? ''))
-    .filter((box): box is SvgViewBox => Boolean(box))
-
-  if (boxes.length === 0) return null
-  const left = Math.min(...boxes.map((box) => box.x))
-  const top = Math.min(...boxes.map((box) => box.y))
-  const right = Math.max(...boxes.map((box) => box.x + box.width))
-  const bottom = Math.max(...boxes.map((box) => box.y + box.height))
-  const margin = 24
-  const x = Math.max(source.x, left - margin)
-  const y = Math.max(source.y, top - margin)
-  const width = Math.min(source.x + source.width, right + margin) - x
-  const height = Math.min(source.y + source.height, bottom + margin) - y
-  if (width <= 0 || height <= 0) return null
-  return {
-    x: roundViewBoxNumber(x),
-    y: roundViewBoxNumber(y),
-    width: roundViewBoxNumber(width),
-    height: roundViewBoxNumber(height),
+function assertContainedViewBox(display: SvgViewBox, source: SvgViewBox): void {
+  if (display.x < source.x || display.y < source.y
+    || display.x + display.width > source.x + source.width
+    || display.y + display.height > source.y + source.height) {
+    throw new Error('Mushaf display viewBox is outside the source viewBox')
   }
-}
-
-function clippedPathBounds(root: Element, element: Element): SvgViewBox | null {
-  const clipId = nearestClipPathId(element)
-  if (!clipId) return null
-  const clipPath = root.querySelector(`defs clipPath#${cssEscape(clipId)}`)
-  if (!clipPath) return null
-  const boxes = Array.from(clipPath.querySelectorAll('path'))
-    .map((path) => pathDataBounds(path.getAttribute('d') ?? ''))
-    .filter((box): box is SvgViewBox => Boolean(box))
-  if (boxes.length === 0) return null
-  const left = Math.min(...boxes.map((box) => box.x))
-  const top = Math.min(...boxes.map((box) => box.y))
-  const right = Math.max(...boxes.map((box) => box.x + box.width))
-  const bottom = Math.max(...boxes.map((box) => box.y + box.height))
-  return { x: left, y: top, width: right - left, height: bottom - top }
-}
-
-function nearestClipPathId(element: Element): string | null {
-  let current: Element | null = element
-  while (current) {
-    const clip = current.getAttribute('clip-path')
-    const match = clip?.match(/^url\(#([A-Za-z][\w.-]*)\)$/)
-    if (match) return match[1]
-    current = current.parentElement
-  }
-  return null
-}
-
-function cssEscape(value: string): string {
-  return value.replace(/["\\#.;:[\]>+~*^$|=,\s]/g, '\\$&')
-}
-
-function pathDataBounds(d: string): SvgViewBox | null {
-  const values = Array.from(d.matchAll(/-?\d+(?:\.\d+)?/g), (match) => Number(match[0]))
-  if (values.length < 2) return null
-  const xs: number[] = []
-  const ys: number[] = []
-  for (let index = 0; index + 1 < values.length; index += 2) {
-    xs.push(values[index])
-    ys.push(values[index + 1])
-  }
-  const x = Math.min(...xs)
-  const y = Math.min(...ys)
-  const right = Math.max(...xs)
-  const bottom = Math.max(...ys)
-  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(right) || !Number.isFinite(bottom)) return null
-  if (right <= x || bottom <= y) return null
-  return { x, y, width: right - x, height: bottom - y }
-}
-
-function quranWsFallbackViewBox(): SvgViewBox {
-  return { x: 60, y: 60, width: 790, height: 1270 }
 }
 
 function serializeViewBox(viewBox: SvgViewBox): string {

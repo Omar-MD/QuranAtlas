@@ -2,297 +2,125 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useMushafPageWindow } from '../../../src/app/routes/read/useMushafPageWindow'
+import { useMushafProfileSession } from '../../../src/app/routes/read/useMushafProfileSession'
 import {
+  describeMushafPage,
+  deriveMushafFramingCapability,
   loadMushafPageProfileContext,
-  loadMushafPageAsset,
-  loadPreparedMushafPage,
-  prepareExternalMushafImage,
-  type MushafReadyPageAssetState,
-  type PreparedExternalMushafPage,
+  prepareMushafDescriptorMedia,
+  type MushafPageProfileContext,
 } from '../../../src/packs/mushaf-page-asset'
 
 vi.mock('../../../src/packs/mushaf-page-asset', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../src/packs/mushaf-page-asset')>()
-  return { ...actual, loadMushafPageAsset: vi.fn(), loadMushafPageProfileContext: vi.fn(), loadPreparedMushafPage: vi.fn(), prepareExternalMushafImage: vi.fn() }
-})
-
-const mockedLoadMushafPageProfileContext = vi.mocked(loadMushafPageProfileContext)
-const mockedLoadMushafPageAsset = vi.mocked(loadMushafPageAsset)
-const mockedLoadPreparedMushafPage = vi.mocked(loadPreparedMushafPage)
-const mockedPrepareExternalMushafImage = vi.mocked(prepareExternalMushafImage)
-const primaryProfile = { mushafEditionId: 'qalun-quran-ws-v1', riwayah: 'qaloon' as const }
-
-describe('useMushafPageWindow', () => {
-  beforeEach(() => {
-    mockedLoadMushafPageProfileContext.mockReset()
-    mockedLoadMushafPageAsset.mockReset()
-    mockedLoadPreparedMushafPage.mockReset()
-    mockedPrepareExternalMushafImage.mockReset()
-    mockedLoadMushafPageProfileContext.mockResolvedValue({ ...primaryProfile } as never)
-    mockedLoadPreparedMushafPage.mockImplementation(async (options) => {
-      const state = await mockedLoadMushafPageAsset(options)
-      if (state.status !== 'ready') throw state.status === 'error' ? state.error : new Error('Mushaf page unavailable')
-      if (state.media.kind !== 'inline-svg') throw new Error('Expected inline fixture')
-      return { assetUrl: state.resolved.assetUrl, inlineSvg: state.media.inlineSvg, kind: 'inline-svg', resolved: state.resolved }
-    })
-  })
-
-  it('loads one profile context and shares it across the five-page window', async () => {
-    const context = { index: {}, manifest: {}, ...primaryProfile }
-    mockedLoadMushafPageProfileContext.mockResolvedValue(context as never)
-    mockedLoadPreparedMushafPage.mockImplementation(async ({ page }) => preparedInlinePage(page))
-
-    const { result } = renderHook(() => useMushafPageWindow({
-      enabled: true,
-      page: 42,
-      pageCount: 604,
-      profile: primaryProfile,
-    }))
-
-    await waitFor(() => expect(result.current.entries.filter((entry) => entry.status === 'ready')).toHaveLength(3))
-    expect(mockedLoadMushafPageProfileContext).toHaveBeenCalledOnce()
-    expect(mockedLoadMushafPageAsset).not.toHaveBeenCalled()
-    expect(mockedLoadPreparedMushafPage).toHaveBeenCalledTimes(5)
-    expect(mockedLoadPreparedMushafPage.mock.calls.every(([options]) => options.context === context)).toBe(true)
-  })
-
-  it('resolves the requested page before loading its neighbors without clearing it', async () => {
-    const requested = deferred<MushafReadyPageAssetState>()
-    mockedLoadMushafPageAsset.mockImplementation(({ mushafEditionId, page, riwayah }) => {
-      if (page === 42) return requested.promise
-      return Promise.resolve(readyPage(page, mushafEditionId, riwayah))
-    })
-
-    const { result } = renderHook(() => useMushafPageWindow({
-      enabled: true,
-      page: 42,
-      pageCount: 604,
-      profile: primaryProfile,
-    }))
-
-    await waitFor(() => expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(1))
-    expect(mockedLoadMushafPageAsset.mock.calls[0]?.[0].page).toBe(42)
-
-    await act(async () => requested.resolve(readyPage(42)))
-    await waitFor(() => expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(5))
-
-    expect(result.current.requested?.status).toBe('ready')
-    expect(result.current.entries.find((entry) => entry.page === 42)?.status).toBe('ready')
-    expect(mockedLoadMushafPageAsset.mock.calls.slice(1).map(([input]) => input.page).sort((a, b) => a - b))
-      .toEqual([40, 41, 43, 44])
-  })
-
-  it('retains the overlapping ready window and requests only the new edge', async () => {
-    mockedLoadMushafPageAsset.mockImplementation(async ({ mushafEditionId, page, riwayah }) => (
-      readyPage(page, mushafEditionId, riwayah)
-    ))
-    const { rerender, result } = renderHook(({ page }) => useMushafPageWindow({
-      enabled: true,
-      page,
-      pageCount: 604,
-      profile: primaryProfile,
-    }), { initialProps: { page: 42 } })
-
-    await waitFor(() => expect(result.current.entries.filter((entry) => entry.status === 'ready')).toHaveLength(3))
-    expect(result.current.entries.filter((entry) => entry.status === 'descriptor').map((entry) => entry.page)).toEqual([40, 44])
-    expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(5)
-
-    rerender({ page: 43 })
-    await waitFor(() => expect(result.current.entries.filter((entry) => entry.status === 'ready')).toHaveLength(3))
-
-    expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(7)
-    expect(mockedLoadMushafPageAsset.mock.calls.slice(5).map(([input]) => input.page).sort((a, b) => a - b)).toEqual([44, 45])
-    expect(result.current.entries.map((entry) => entry.page)).toEqual([41, 42, 43, 44, 45])
-    expect([44, 45]).toContain(result.current.entries.filter((entry) => entry.status === 'descriptor').map((entry) => entry.page)[0])
-  })
-
-  it('ignores stale completions from the previous profile', async () => {
-    const oldPage = deferred<MushafReadyPageAssetState>()
-    mockedLoadMushafPageAsset.mockImplementation(({ mushafEditionId, page, riwayah }) => {
-      if (mushafEditionId === primaryProfile.mushafEditionId && page === 44) return oldPage.promise
-      return Promise.resolve(readyPage(page, mushafEditionId, riwayah))
-    })
-    const { rerender, result } = renderHook(({ profile }) => useMushafPageWindow({
-      enabled: true,
-      page: 44,
-      pageCount: 604,
-      profile,
-    }), { initialProps: { profile: primaryProfile } })
-
-    await waitFor(() => expect(mockedLoadMushafPageAsset).toHaveBeenCalledTimes(1))
-    const replacementProfile = { ...primaryProfile, mushafEditionId: 'replacement-edition' }
-    rerender({ profile: replacementProfile })
-    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
-    expect(readyAsset(result.current.requested).resolved.mushafEditionId).toBe('replacement-edition')
-
-    await act(async () => oldPage.resolve(readyPage(44, primaryProfile.mushafEditionId)))
-    expect(readyAsset(result.current.requested).resolved.mushafEditionId).toBe('replacement-edition')
-  })
-
-  it('keeps the latest request when a page leaves and re-enters the window', async () => {
-    const oldPage = deferred<MushafReadyPageAssetState>()
-    const latestPage = deferred<MushafReadyPageAssetState>()
-    let page44Requests = 0
-    mockedLoadMushafPageAsset.mockImplementation(({ mushafEditionId, page, riwayah }) => {
-      if (page === 44) {
-        page44Requests += 1
-        return page44Requests === 1 ? oldPage.promise : latestPage.promise
-      }
-      return Promise.resolve(readyPage(page, mushafEditionId, riwayah))
-    })
-    const { rerender, result } = renderHook(({ page }) => useMushafPageWindow({
-      enabled: true,
-      page,
-      pageCount: 604,
-      profile: primaryProfile,
-    }), { initialProps: { page: 44 } })
-
-    await waitFor(() => expect(page44Requests).toBe(1))
-    rerender({ page: 50 })
-    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
-    rerender({ page: 44 })
-    await waitFor(() => expect(page44Requests).toBe(2))
-
-    await act(async () => oldPage.resolve(readyPage(44)))
-    expect(result.current.requested?.status).toBe('loading')
-
-    await act(async () => latestPage.resolve(readyPage(44)))
-    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
-    expect(readyAsset(result.current.requested).resolved.page).toBe(44)
-  })
-
-  it('loads the bounded final page for an out-of-range request', async () => {
-    mockedLoadMushafPageAsset.mockImplementation(async ({ mushafEditionId, page, riwayah }) => (
-      readyPage(page, mushafEditionId, riwayah)
-    ))
-    const { result } = renderHook(() => useMushafPageWindow({
-      enabled: true,
-      page: 999,
-      pageCount: 604,
-      profile: primaryProfile,
-    }))
-
-    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
-    expect(mockedLoadMushafPageAsset.mock.calls[0]?.[0].page).toBe(604)
-    expect(result.current.entries.map((entry) => entry.page)).toEqual([602, 603, 604])
-  })
-
-  it('keeps failed pages non-ready and retries them with a new request generation', async () => {
-    mockedLoadMushafPageAsset.mockImplementation(async ({ mushafEditionId, page, riwayah }) => {
-      if (page === 44 && mockedLoadMushafPageAsset.mock.calls.filter(([input]) => input.page === 44).length === 1) {
-        return { error: new Error('network'), status: 'error' }
-      }
-      return readyPage(page, mushafEditionId, riwayah)
-    })
-    const { result } = renderHook(() => useMushafPageWindow({
-      enabled: true,
-      page: 43,
-      pageCount: 604,
-      profile: primaryProfile,
-    }))
-
-    await waitFor(() => expect(result.current.entries.find((entry) => entry.page === 44)?.status).toBe('error'))
-    expect(mockedLoadMushafPageAsset.mock.calls.filter(([input]) => input.page === 44)).toHaveLength(1)
-
-    act(() => result.current.retry(44))
-    await waitFor(() => expect(result.current.entries.find((entry) => entry.page === 44)?.status).toBe('ready'))
-    expect(mockedLoadMushafPageAsset.mock.calls.filter(([input]) => input.page === 44)).toHaveLength(2)
-  })
-
-  it('restarts an in-flight preview as a decoded current rendition when it becomes requested', async () => {
-    mockedLoadMushafPageAsset.mockResolvedValue({ status: 'error', error: new Error('External-image Mushaf pages require the V2 reader loader') })
-    mockedLoadPreparedMushafPage.mockImplementation(async ({ page }) => externalPage(page))
-    const preview = deferred<{ status: 'ready'; image: HTMLImageElement }>()
-    mockedPrepareExternalMushafImage.mockImplementation((source) => source.width === 1280
-      ? preview.promise
-      : Promise.resolve({ status: 'ready', image: {} as HTMLImageElement }))
-
-    const { rerender, result } = renderHook(({ page }) => useMushafPageWindow({
-      enabled: true,
-      page,
-      pageCount: 604,
-      profile: primaryProfile,
-    }), { initialProps: { page: 42 } })
-
-    await waitFor(() => expect(mockedPrepareExternalMushafImage).toHaveBeenCalledWith(expect.objectContaining({ width: 1280 }), expect.any(AbortSignal)))
-    rerender({ page: 43 })
-    await waitFor(() => expect(mockedPrepareExternalMushafImage).toHaveBeenCalledWith(expect.objectContaining({ width: 2136 }), expect.any(AbortSignal)))
-    await waitFor(() => expect(result.current.requested?.status).toBe('ready'))
-    expect(readyAsset(result.current.requested).media).toMatchObject({ kind: 'external-image', source: { width: 2136 } })
-    preview.resolve({ status: 'ready', image: {} as HTMLImageElement })
-  })
-
-  it('promotes an already ready preview to the current full rendition', async () => {
-    mockedLoadMushafPageAsset.mockResolvedValue({ status: 'error', error: new Error('External-image Mushaf pages require the V2 reader loader') })
-    mockedLoadPreparedMushafPage.mockImplementation(async ({ page }) => externalPage(page))
-    mockedPrepareExternalMushafImage.mockResolvedValue({ status: 'ready', image: {} as HTMLImageElement })
-
-    const { rerender, result } = renderHook(({ page }) => useMushafPageWindow({
-      enabled: true,
-      page,
-      pageCount: 604,
-      profile: primaryProfile,
-    }), { initialProps: { page: 42 } })
-
-    await waitFor(() => expect(readyAsset(result.current.entries.find((entry) => entry.page === 43) ?? null).media)
-      .toMatchObject({ kind: 'external-image', source: { width: 1280 } }))
-    rerender({ page: 43 })
-
-    await waitFor(() => expect(readyAsset(result.current.requested).media)
-      .toMatchObject({ kind: 'external-image', source: { width: 2136 } }))
-    expect(mockedPrepareExternalMushafImage).toHaveBeenCalledWith(expect.objectContaining({ width: 2136 }), expect.any(AbortSignal))
-  })
-})
-
-function externalPage(page: number): PreparedExternalMushafPage {
-  const descriptor = (width: 1280 | 2136) => ({
-    assetPath: `pages/${String(page).padStart(3, '0')}-${width}.webp`, assetUrl: `/pages/${page}-${width}.webp`, bytes: width, height: 1600, mimeType: 'image/webp' as const, sha256: 'a'.repeat(64), width,
-  })
-  const framing = { textFrame: { x: 0.1, y: 0, width: 0.8, height: 1 }, sideLane: 'right' as const }
   return {
-    kind: 'external-image', page, pageCount: 604, firstVerse: { surah: 1, verse: 1 }, lastVerse: { surah: 1, verse: 1 }, preview: descriptor(1280), full: descriptor(2136), framing,
-    resolved: { assetUrl: `/pages/${page}-2136.webp`, displaySize: { width: 2136, height: 1600 }, firstVerse: { surah: 1, verse: 1 }, framing, mushafEditionId: primaryProfile.mushafEditionId, page, pageCount: 604, riwayah: 'qaloon', riwayahLabel: 'Qaloon' },
+    ...actual,
+    describeMushafPage: vi.fn(),
+    loadMushafPageProfileContext: vi.fn(),
+    prepareMushafDescriptorMedia: vi.fn(),
+  }
+})
+
+const profile = { mushafEditionId: 'qalun-quran-ws-v1', riwayah: 'qaloon' as const }
+const mockedDescribe = vi.mocked(describeMushafPage)
+const mockedLoadContext = vi.mocked(loadMushafPageProfileContext)
+const mockedPrepareMedia = vi.mocked(prepareMushafDescriptorMedia)
+
+function contextFor(edition = profile.mushafEditionId): MushafPageProfileContext {
+  return {
+    ...profile,
+    mushafEditionId: edition,
+    index: {},
+    manifest: {
+      version: 1,
+      riwayah: 'qaloon',
+      mushafEditionId: edition,
+      pageCount: 604,
+      pages: [],
+      verseToPage: {},
+    },
   }
 }
 
-function readyPage(
-  page: number,
-  mushafEditionId = primaryProfile.mushafEditionId,
-  riwayah: 'qaloon' = primaryProfile.riwayah,
-): MushafReadyPageAssetState {
+function session(context = contextFor()) {
   return {
-    media: { kind: 'inline-svg', inlineSvg: {
-      markup: '<svg viewBox="0 0 120 180" />', viewBox: { height: 180, width: 120, x: 0, y: 0 }, viewBoxText: '0 0 120 180',
-    } },
+    status: 'ready' as const,
+    key: `${context.riwayah}:${context.mushafEditionId}`,
+    context,
+    framingCapability: { hasValidFraming: false },
+    retry: vi.fn(),
+  }
+}
+
+function descriptor(page: number, edition = profile.mushafEditionId) {
+  const box = { x: 0, y: 0, width: 120, height: 180 }
+  return {
+    kind: 'inline-svg' as const,
+    assetUrl: `/dataset/mushaf-pages/qaloon/${edition}/pages/${String(page).padStart(3, '0')}.svg`,
+    sourceViewBox: box,
+    displayViewBox: box,
     resolved: {
-      assetUrl: `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/pages/${page}.svg`,
-      displaySize: { height: 180, width: 120 },
+      assetUrl: `/dataset/mushaf-pages/qaloon/${edition}/pages/${String(page).padStart(3, '0')}.svg`,
+      displaySize: { width: 120, height: 180 },
       firstVerse: { surah: 2, verse: page },
-      mushafEditionId,
+      mushafEditionId: edition,
       page,
       pageCount: 604,
-      riwayah,
+      riwayah: 'qaloon' as const,
       riwayahLabel: 'Qaloon',
     },
-    status: 'ready',
   }
 }
 
-function preparedInlinePage(page: number) {
-  const ready = readyPage(page)
-  if (ready.media.kind !== 'inline-svg') throw new Error('Expected inline fixture')
-  return { assetUrl: ready.resolved.assetUrl, inlineSvg: ready.media.inlineSvg, kind: 'inline-svg' as const, resolved: ready.resolved }
-}
+describe('Mushaf profile session and page window', () => {
+  beforeEach(() => {
+    mockedDescribe.mockReset()
+    mockedLoadContext.mockReset()
+    mockedPrepareMedia.mockReset()
+    mockedDescribe.mockImplementation((_context, page) => descriptor(page))
+    mockedPrepareMedia.mockImplementation(async (page) => ({
+      kind: 'inline-svg',
+      inlineSvg: { markup: '<svg/>', viewBox: page.displayViewBox, viewBoxText: '0 0 120 180' },
+    }))
+  })
+
+  it('loads one route profile context and derives framing without another fetch', async () => {
+    const context = contextFor()
+    mockedLoadContext.mockResolvedValue(context)
+    const { result } = renderHook(() => useMushafProfileSession({ enabled: true, profile }))
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(mockedLoadContext).toHaveBeenCalledOnce()
+    expect(result.current.status === 'ready' && result.current.framingCapability)
+      .toEqual(deriveMushafFramingCapability(context))
+    expect(mockedLoadContext).toHaveBeenCalledOnce()
+  })
+
+  it('creates five descriptors but prepares V1 media only for current and immediate pages', async () => {
+    const { result } = renderHook(() => useMushafPageWindow({ enabled: true, page: 42, session: session() }))
+    await waitFor(() => expect(result.current.entries.filter((entry) => entry.status === 'ready')).toHaveLength(3))
+    expect(mockedDescribe).toHaveBeenCalledTimes(5)
+    expect(mockedPrepareMedia).toHaveBeenCalledTimes(3)
+    expect(result.current.entries.filter((entry) => entry.status === 'descriptor').map((entry) => entry.page)).toEqual([40, 44])
+  })
+
+  it('rejects a stale profile request when the edition identity changes', async () => {
+    const first = deferred<MushafPageProfileContext>()
+    mockedLoadContext.mockImplementationOnce(() => first.promise).mockResolvedValueOnce(contextFor('replacement-edition'))
+    const { rerender, result } = renderHook(({ activeProfile }) => useMushafProfileSession({ enabled: true, profile: activeProfile }), {
+      initialProps: { activeProfile: profile },
+    })
+    await waitFor(() => expect(mockedLoadContext).toHaveBeenCalledOnce())
+    const staleSignal = mockedLoadContext.mock.calls[0]?.[0].signal
+    rerender({ activeProfile: { ...profile, mushafEditionId: 'replacement-edition' } })
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(staleSignal?.aborted).toBe(true)
+    await act(async () => first.resolve(contextFor()))
+    expect(result.current.status === 'ready' && result.current.context.mushafEditionId).toBe('replacement-edition')
+  })
+})
 
 function deferred<T>() {
-  let resolvePromise!: (value: T) => void
-  const promise = new Promise<T>((resolve) => {
-    resolvePromise = resolve
-  })
-  return { promise, resolve: resolvePromise }
-}
-
-function readyAsset(entry: ReturnType<typeof useMushafPageWindow>['requested']): MushafReadyPageAssetState {
-  if (entry?.status !== 'ready') throw new Error('Expected a ready page entry')
-  return entry.asset
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((next) => { resolve = next })
+  return { promise, resolve }
 }

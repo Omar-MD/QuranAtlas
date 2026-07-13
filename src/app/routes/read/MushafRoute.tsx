@@ -18,15 +18,15 @@ import { normalizeWirdPlan, notifyWirdPlanChanged, readWirdPlan, subscribeWirdPl
 import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import {
   type MushafReadyPageAssetState,
-  loadMushafFramingCapability,
 } from '../../../packs/mushaf-page-asset'
-import { clampMushafPageFraming, type NormalizedRect } from '../../../components/reader/mushaf-page-framing'
+import { clampMushafPageFraming } from '../../../components/reader/mushaf-page-framing'
 import type { Riwayah } from '../../../storage/types'
 import { nativeSettingsReader, readNativeSetting, readNativeSettings, writeNativeSetting } from '../../../storage/native-reader-store'
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
 import { emitReactReaderPreferencesChanged, isReactMushafViewMode, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { REACT_ROUTES } from '../../router/routes'
 import { useMushafPageWindow } from './useMushafPageWindow'
+import { useMushafProfileSession } from './useMushafProfileSession'
 
 type MushafRouteProps = {
   assetState?: ReaderAssetState
@@ -70,7 +70,6 @@ export function MushafRoute({
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
   const [chromeVisible, setChromeVisible] = useState(true)
-  const [framingCapability, setFramingCapability] = useState<{ hasValidFraming: boolean; representativeTextFrame?: NormalizedRect }>({ hasValidFraming: false })
   const routePageRef = useRef(page)
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
@@ -82,14 +81,17 @@ export function MushafRoute({
     return deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries)
   }, [wirdBoundaries, wirdCounts, wirdPlan])
   const enableWirdProgress = hasWirdProgressIntent()
-  const windowState = useMushafPageWindow({
+  const profileSession = useMushafProfileSession({
     enabled: assetState === 'ready',
-    page,
-    pageCount: visiblePage?.resolved.pageCount ?? 604,
     profile: activeSettings ? {
       mushafEditionId: activeSettings.mushafEditionId,
       riwayah: activeSettings.riwayah,
     } : null,
+  })
+  const windowState = useMushafPageWindow({
+    enabled: assetState === 'ready',
+    page,
+    session: profileSession,
   })
   const currentSurahLabel = useMemo(() => {
     const surah = visiblePage?.resolved.firstVerse.surah
@@ -161,14 +163,6 @@ export function MushafRoute({
       unsubscribe()
     }
   }, [])
-
-  useEffect(() => {
-    if (!activeSettings) return
-    let active = true
-    void loadMushafFramingCapability(activeSettings)
-      .then((capability) => { if (active) setFramingCapability(capability) })
-    return () => { active = false }
-  }, [activeSettings?.mushafEditionId, activeSettings?.riwayah])
 
   useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
 
@@ -277,10 +271,10 @@ export function MushafRoute({
           <MushafPageViewer
             bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
             chromeVisible={chromeVisible}
-            fitWidth={framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
+            fitWidth={profileSession.framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
               ? true
               : activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
-            framingValue={framingCapability.hasValidFraming ? activeSettings?.mushafPageFraming : 0}
+            framingValue={profileSession.framingCapability.hasValidFraming ? activeSettings?.mushafPageFraming : 0}
             inlineSvg={visiblePage.media.kind === 'inline-svg' ? visiblePage.media.inlineSvg : emptyInlineSvg}
             onDominantPageChange={(nextPage) => {
               if (nextPage === visiblePage.resolved.page) return
@@ -329,6 +323,8 @@ export function MushafRoute({
             </section>
           ) : null}
         </>
+      ) : profileSession.status === 'error' ? (
+        <ReaderAssetGate label="Mushaf" onManageAssets={openAssetSettings} onRetry={profileSession.retry} state="error" />
       ) : windowState.requested?.status === 'error' ? (
         <ReaderAssetGate label="Mushaf" onManageAssets={openAssetSettings} onRetry={() => windowState.retry(page)} state="error" />
       ) : windowState.requested?.status === 'unavailable' ? (

@@ -111,6 +111,7 @@ const mushafManifest = {
       page: 1,
       assetPath: 'pages/001.svg',
       viewBox: '0 0 120 180',
+      displayViewBox: '0 0 120 180',
       bytes: 1120,
       sourcePdfUrl: 'https://pdf.quran.ws/qalun/001.pdf',
       firstVerse: { surah: 1, verse: 1 },
@@ -119,6 +120,7 @@ const mushafManifest = {
       page: 42,
       assetPath: 'pages/042.svg',
       viewBox: '0 0 120 180',
+      displayViewBox: '0 0 120 180',
       bytes: 1120,
       sourcePdfUrl: 'https://pdf.quran.ws/qalun/042.pdf',
       firstVerse: { surah: 2, verse: 251 },
@@ -127,6 +129,10 @@ const mushafManifest = {
 }
 
 const realMushafSvg = '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="#fff"/><path d="M10 10h100v160H10z" fill="#000"/></svg>'
+const inlineSvgExpected = {
+  sourceViewBox: { x: 0, y: 0, width: 120, height: 180 },
+  displayViewBox: { x: 0, y: 0, width: 120, height: 180 },
+}
 const mushafAssetIndex = {
   version: 1,
   assets: [
@@ -596,33 +602,35 @@ describe('React reader coverage', () => {
   })
 
   it('sanitizes real Mushaf SVG markup and rejects unsafe SVG before injection', () => {
-    const safe = prepareReactInlineMushafSvg(realMushafSvg)
+    const safe = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
     expect(safe.markup).toContain('qa-react-mushaf-svg')
     expect(safe.markup).toContain('var(--qa-react-mushaf-ground)')
     expect(safe.viewBoxText).toBe('0 0 120 180')
 
-    const legacyTokenized = prepareReactInlineMushafSvg('<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="var(--qa-mushaf-ground)"/><path d="M10 10h100v160H10z" fill="var(--qa-mushaf-ink)"/></svg>')
+    const legacyTokenized = prepareReactInlineMushafSvg('<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="180" fill="var(--qa-mushaf-ground)"/><path d="M10 10h100v160H10z" fill="var(--qa-mushaf-ink)"/></svg>', inlineSvgExpected)
     expect(legacyTokenized.markup).toContain('var(--qa-react-mushaf-ground)')
     expect(legacyTokenized.markup).toContain('var(--qa-react-mushaf-ink)')
     expect(legacyTokenized.markup).not.toContain('var(--qa-mushaf-ground)')
     expect(legacyTokenized.markup).not.toContain('var(--qa-mushaf-ink)')
 
-    const quranWsPage = prepareReactInlineMushafSvg('<svg viewBox="0 0 900 1379.25" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="1379.25" fill="var(--qa-mushaf-ground)"/></svg>')
+    const quranWsExpected = { sourceViewBox: { x: 0, y: 0, width: 900, height: 1379.25 }, displayViewBox: { x: 60, y: 60, width: 790, height: 1270 } }
+    const quranWsPage = prepareReactInlineMushafSvg('<svg viewBox="0 0 900 1379.25" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="1379.25" fill="var(--qa-mushaf-ground)"/></svg>', quranWsExpected)
     expect(quranWsPage.markup).toContain('viewBox="60 60 790 1270"')
-    expect(quranWsPage.viewBox).toMatchObject({ x: 60, y: 60, width: 790, height: 1270 })
+    expect(quranWsPage.viewBox).toMatchObject(quranWsExpected.displayViewBox)
     expect(quranWsPage.viewBoxText).toBe('0 0 900 1379.25')
 
-    const inkCroppedPage = prepareReactInlineMushafSvg('<svg viewBox="0 0 900 1379.25" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="1379.25" fill="var(--qa-mushaf-ground)"/><path d="M217.2 166.4 L718.82 166.4 L718.82 946.68 L217.2 946.68 Z" fill="var(--qa-mushaf-ink)"/></svg>')
+    const inkCroppedPage = prepareReactInlineMushafSvg('<svg viewBox="0 0 900 1379.25" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="1379.25" fill="var(--qa-mushaf-ground)"/><path d="M217.2 166.4 L718.82 166.4 L718.82 946.68 L217.2 946.68 Z" fill="var(--qa-mushaf-ink)"/></svg>', { ...quranWsExpected, displayViewBox: { x: 193.2, y: 142.4, width: 549.62, height: 828.28 } })
     expect(inkCroppedPage.markup).toContain('viewBox="193.2 142.4 549.62 828.28"')
     expect(inkCroppedPage.viewBox).toMatchObject({ x: 193.2, y: 142.4, width: 549.62, height: 828.28 })
     expect(inkCroppedPage.viewBoxText).toBe('0 0 900 1379.25')
 
-    const clippedInkPage = prepareReactInlineMushafSvg('<svg viewBox="0 0 900 1379.25" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="clip-1"><path d="M217.13 414.72 L718.86 414.72 L718.86 947 L217.13 947 Z"/></clipPath></defs><rect width="900" height="1379.25" fill="var(--qa-mushaf-ground)"/><g clip-path="url(#clip-1)"><path d="M637 619.54 C637.95 166.4 718.82 946.68 217.2 946.68 Z" fill="var(--qa-mushaf-ink)"/></g></svg>')
+    const clippedInkPage = prepareReactInlineMushafSvg('<svg viewBox="0 0 900 1379.25" xmlns="http://www.w3.org/2000/svg"><defs><clipPath id="clip-1"><path d="M217.13 414.72 L718.86 414.72 L718.86 947 L217.13 947 Z"/></clipPath></defs><rect width="900" height="1379.25" fill="var(--qa-mushaf-ground)"/><g clip-path="url(#clip-1)"><path d="M637 619.54 C637.95 166.4 718.82 946.68 217.2 946.68 Z" fill="var(--qa-mushaf-ink)"/></g></svg>', { ...quranWsExpected, displayViewBox: { x: 193.13, y: 390.72, width: 549.73, height: 580.28 } })
     expect(clippedInkPage.markup).toContain('viewBox="193.13 390.72 549.73 580.28"')
     expect(clippedInkPage.viewBox).toMatchObject({ x: 193.13, y: 390.72, width: 549.73, height: 580.28 })
 
-    expect(() => prepareReactInlineMushafSvg('<svg viewBox="0 0 1 1"><script>alert(1)</script></svg>')).toThrow(/unsafe/i)
-    expect(() => prepareReactInlineMushafSvg('<svg viewBox="0 0 1 1"><image href="https://evil.test/x.png"/></svg>')).toThrow(/unsafe/i)
+    const tinyExpected = { sourceViewBox: { x: 0, y: 0, width: 1, height: 1 }, displayViewBox: { x: 0, y: 0, width: 1, height: 1 } }
+    expect(() => prepareReactInlineMushafSvg('<svg viewBox="0 0 1 1"><script>alert(1)</script></svg>', tinyExpected)).toThrow(/unsafe/i)
+    expect(() => prepareReactInlineMushafSvg('<svg viewBox="0 0 1 1"><image href="https://evil.test/x.png"/></svg>', tinyExpected)).toThrow(/unsafe/i)
   })
 
   it('loads the active edition-aware Mushaf manifest and page SVG without falling back to placeholders', async () => {
@@ -671,6 +679,23 @@ describe('React reader coverage', () => {
       signal: controller.signal,
     })
     expect(aborted.status).toBe('aborted')
+  })
+
+  it('rejects a V1 display viewBox outside the manifest source rectangle', async () => {
+    const state = await loadMushafPageAsset({
+      fetcher: vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url === '/dataset/indexes/mushaf-assets.json') return jsonResponse(mushafAssetIndex)
+        return jsonResponse({
+          ...mushafManifest,
+          pages: [{ ...mushafManifest.pages[0], displayViewBox: '110 0 20 180' }],
+        })
+      }),
+      mushafEditionId: 'qalun-quran-ws-v1',
+      page: 1,
+      riwayah: 'qaloon',
+    })
+    expect(state.status).toBe('error')
   })
 
   it('renders the real Mushaf route without the production placeholder label', async () => {
@@ -917,7 +942,7 @@ describe('React reader coverage', () => {
 
   it('renders owned Mushaf navigation and keeps physical keyboard direction', () => {
     const onNavigate = vi.fn()
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
       displaySize: { width: 120, height: 180 },
@@ -970,7 +995,7 @@ describe('React reader coverage', () => {
   })
 
   it('exposes every ready page image in continuous Mushaf scroll mode', () => {
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
       displaySize: { width: 120, height: 180 },
@@ -1006,7 +1031,7 @@ describe('React reader coverage', () => {
   })
 
   it('adapts legacy adjacent pages into accessible continuous images', () => {
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg',
       displaySize: { width: 120, height: 180 },
@@ -1038,7 +1063,7 @@ describe('React reader coverage', () => {
   })
 
   it('exposes only the current page image in Single Mushaf mode', () => {
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
       displaySize: { width: 120, height: 180 },
@@ -1074,7 +1099,7 @@ describe('React reader coverage', () => {
   })
 
   it('restores focus when a new Single Fit-width stage installs', () => {
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
     const resolved = {
       assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg',
       displaySize: { width: 120, height: 180 },
@@ -1103,7 +1128,7 @@ describe('React reader coverage', () => {
   })
 
   it('disables visible Mushaf actions at the physical page boundaries', () => {
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
     const boundaryPage = (page: number) => ({
       assetUrl: `/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/${String(page).padStart(3, '0')}.svg`,
       displaySize: { width: 120, height: 180 },
@@ -1130,7 +1155,7 @@ describe('React reader coverage', () => {
 
   it('lets Mushaf pages toggle a page bookmark without adding page chrome tabs', () => {
     const onToggleBookmark = vi.fn()
-    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg)
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
 
     render(
       <MushafPageViewer
