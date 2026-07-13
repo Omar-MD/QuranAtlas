@@ -138,7 +138,7 @@ function v1LoaderFixture() {
     manifest: {
       ...identity,
       pageCount: 604,
-      pages: [{ assetPath: 'pages/001.svg', firstVerse: { surah: 1, verse: 1 }, page: 1, viewBox: '0 0 120 180' }],
+      pages: [{ assetPath: 'pages/001.svg', displayViewBox: '0 0 120 180', firstVerse: { surah: 1, verse: 1 }, page: 1, viewBox: '0 0 120 180' }],
       verseToPage: { '1:1': 1 },
       version: 1 as const,
     },

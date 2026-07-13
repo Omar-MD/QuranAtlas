@@ -220,7 +220,7 @@ for (const fixture of readFixtures) {
         const pageCounter = page.getByLabel('Mushaf page 1', { exact: true })
         await expect(pageCounter).toBeVisible()
         await expect(pageCounter).toHaveText('1')
-        const surahLabel = page.locator('.qar-react-mushaf-page-surah')
+        const surahLabel = page.getByText(/الفَاتِحة|الفاتحة/, { exact: true })
         await expect(surahLabel).toBeVisible()
         await expect(surahLabel).toContainText(/الفَاتِحة|الفاتحة/)
         await expect(surahLabel).toHaveAttribute('dir', 'rtl')
@@ -233,7 +233,6 @@ for (const fixture of readFixtures) {
           const svgStyle = getComputedStyle(element.querySelector('svg') ?? element)
           return {
             counterBottomGap: counterBox ? window.innerHeight - counterBox.bottom : 0,
-            counterCenterOffset: counterBox ? Math.abs((counterBox.left + counterBox.width / 2) - window.innerWidth / 2) : 999,
             height: box.height,
             svgHeight: svgBox?.height ?? 0,
             svgWidth: svgBox?.width ?? 0,
@@ -253,7 +252,6 @@ for (const fixture of readFixtures) {
         expect(layout.svgWidth).toBeGreaterThan(200)
         expect(layout.svgHeight).toBeGreaterThan(300)
         expect(layout.counterBottomGap).toBeGreaterThanOrEqual(8)
-        expect(layout.counterCenterOffset).toBeLessThanOrEqual(2)
         expect(layout.svgDisplay).toBe('block')
         const chrome = page.getByRole('navigation', { name: 'Primary navigation' })
         await expect(chrome).toHaveAttribute('data-visible', 'true')

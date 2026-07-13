@@ -182,6 +182,15 @@ export function MushafPageViewer({
     requestOrNavigate(page)
   }
 
+  function activateStageAt(clientX: number, stage: HTMLElement): void {
+    const rect = stage.getBoundingClientRect()
+    if (rect.width <= 0) return
+    const ratio = (clientX - rect.left) / rect.width
+    if (ratio < EDGE_TAP_RATIO) requestOrNavigate(resolved.page + 1)
+    else if (ratio > 1 - EDGE_TAP_RATIO) requestOrNavigate(resolved.page - 1)
+    else onToggleChrome?.(!chromeVisible)
+  }
+
   const gesture = useMushafPageGesture({
     canNavigate: (direction) => direction === 'next'
       ? readyEntry(effectivePages, resolved.page + 1) !== null
@@ -189,6 +198,7 @@ export function MushafPageViewer({
     disabled: interactionSuspended || isScrollMode,
     onCommit: (direction) => navigateTo(resolved.page + (direction === 'next' ? 1 : -1)),
     onRequestDestination: (direction) => onRequestPage?.(resolved.page + (direction === 'next' ? 1 : -1)),
+    onTap: activateStageAt,
     stageRef,
   })
 
@@ -370,12 +380,7 @@ export function MushafPageViewer({
 
   function handleStageClick(event: ReactMouseEvent<HTMLDivElement>): void {
     if (gesture.shouldSuppressClick() || isInteractiveTarget(event.target)) return
-    const rect = event.currentTarget.getBoundingClientRect()
-    if (rect.width <= 0) return
-    const ratio = (event.clientX - rect.left) / rect.width
-    if (ratio < EDGE_TAP_RATIO) requestOrNavigate(resolved.page + 1)
-    else if (ratio > 1 - EDGE_TAP_RATIO) requestOrNavigate(resolved.page - 1)
-    else onToggleChrome?.(!chromeVisible)
+    activateStageAt(event.clientX, event.currentTarget)
   }
 
   function handleStageScroll(): void {

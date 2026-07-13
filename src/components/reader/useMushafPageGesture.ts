@@ -32,6 +32,7 @@ type MushafPageGestureOptions = {
   disabled: boolean
   onCommit: (direction: MushafPageDirection) => void
   onRequestDestination: (direction: MushafPageDirection) => void
+  onTap: (clientX: number, stage: HTMLElement) => void
   stageRef: RefObject<HTMLElement | null>
 }
 
@@ -196,7 +197,12 @@ export function useMushafPageGesture(options: MushafPageGestureOptions): {
       activePointerRef.current = null
 
       if (pointer.axis !== 'horizontal') {
-        if (pointer.stage.scrollTop !== pointer.startScrollTop) suppressCompatibilityClick()
+        if (pointer.stage.scrollTop !== pointer.startScrollTop) {
+          suppressCompatibilityClick()
+        } else if (pointer.axis === 'pending') {
+          suppressCompatibilityClick()
+          optionsRef.current.onTap(event.clientX, pointer.stage)
+        }
         updatePhase('idle')
         return
       }

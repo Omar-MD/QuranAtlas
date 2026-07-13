@@ -5,6 +5,7 @@ import {
   openSeededReactMushafRoute,
   PRIVATE_MUSHAF_EDITION_ID,
   PRIVATE_MUSHAF_ENABLED,
+  seedReactMushafState,
 } from '../fixtures/react-golden-routes'
 
 type MushafPrefs = {
@@ -27,6 +28,12 @@ const FIT_PAGE: MushafPrefs = { mushafFitWidth: false, mushafViewMode: 'fit-page
 const FIT_WIDTH: MushafPrefs = { mushafFitWidth: true, mushafViewMode: 'fit-page' }
 const SCROLL_FIT_PAGE: MushafPrefs = { mushafFitWidth: false, mushafViewMode: 'continuous' }
 const SCROLL_FIT_WIDTH: MushafPrefs = { mushafFitWidth: true, mushafViewMode: 'continuous' }
+const IMMERSIVE_VIEWPORTS = [
+  { name: 'phone portrait', width: 390, height: 844 },
+  { name: 'tablet portrait', width: 768, height: 1024 },
+  { name: 'desktop landscape', width: 1440, height: 900 },
+  { name: 'phone landscape', width: 844, height: 390 },
+] as const
 
 async function openMushaf(
   page: Page,
@@ -181,6 +188,7 @@ async function viewportScroll(page: Page): Promise<{
   documentScrollHeight: number
   documentScrollTop: number
   shellHeight: number
+  surfaceHeight: number
   stageClientHeight: number
   stageScrollHeight: number
   stageScrollTop: number
@@ -192,7 +200,8 @@ async function viewportScroll(page: Page): Promise<{
     const app = document.querySelector<HTMLElement>('[data-react-route]')
     const shell = document.querySelector<HTMLElement>('main[aria-label="Mushaf reader"]')
     const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
-    if (!app || !shell || !stage) throw new Error('Mushaf viewport owners are unavailable')
+    const surface = document.querySelector<HTMLElement>('.qar-react-mushaf-page-surface')
+    if (!app || !shell || !stage || !surface) throw new Error('Mushaf viewport owners are unavailable')
     return {
       appClientHeight: app.clientHeight,
       appHeight: app.getBoundingClientRect().height,
@@ -201,6 +210,7 @@ async function viewportScroll(page: Page): Promise<{
       documentScrollHeight: documentScroller.scrollHeight,
       documentScrollTop: documentScroller.scrollTop,
       shellHeight: shell.getBoundingClientRect().height,
+      surfaceHeight: surface.getBoundingClientRect().height,
       stageClientHeight: stage.clientHeight,
       stageScrollHeight: stage.scrollHeight,
       stageScrollTop: stage.scrollTop,
@@ -217,6 +227,7 @@ function expectNoViewportScroll(metrics: Awaited<ReturnType<typeof viewportScrol
   expect(metrics.appScrollHeight).toBe(metrics.appClientHeight)
   expect(metrics.appHeight).toBeCloseTo(metrics.viewportHeight, 0)
   expect(metrics.shellHeight).toBeCloseTo(metrics.viewportHeight, 0)
+  expect(metrics.surfaceHeight).toBeCloseTo(metrics.viewportHeight, 0)
   expect(metrics.stageScrollHeight).toBe(metrics.stageClientHeight)
   expect(metrics.stageScrollTop).toBe(0)
 }
@@ -336,11 +347,16 @@ async function singleStageBox(page: Page): Promise<Box> {
   }
 }
 
+async function clickStageCenter(page: Page): Promise<void> {
+  const box = await singleStageBox(page)
+  await page.mouse.click(box.centerX, box.centerY)
+}
+
 async function fastHorizontalFlick(page: Page, direction: 'left' | 'right'): Promise<void> {
   await expect(page.locator('[data-mushaf-gesture-phase="idle"]')).toHaveCount(1)
   const box = await singleStageBox(page)
-  const from = direction === 'right' ? { x: 0.36, y: 0.5 } : { x: 0.64, y: 0.5 }
-  const to = direction === 'right' ? { x: 0.6, y: 0.5 } : { x: 0.4, y: 0.5 }
+  const from = direction === 'right' ? { x: 0.34, y: 0.5 } : { x: 0.66, y: 0.5 }
+  const to = direction === 'right' ? { x: 0.66, y: 0.5 } : { x: 0.34, y: 0.5 }
   await touchPath(page, pointsBetween(box, from, to, 3), 4)
 }
 
@@ -354,29 +370,95 @@ async function expectCurrentPageCoversStage(page: Page, pageNo: number): Promise
   expect(visibleWidth).toBeGreaterThanOrEqual(stage.width * 0.85)
 }
 
-function boxesOverlap(a: Box, b: Box): boolean {
-  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
-}
-
 test.describe('Mushaf responsive behavior', () => {
+  test.use({ serviceWorkers: 'block' })
+
   test('@mobile Fit page owns no scroll and preserves one-page horizontal swipe', async ({ page }) => {
-    for (const viewport of [
-      { width: 390, height: 844 },
-      { width: 768, height: 1024 },
-      { width: 1280, height: 900 },
-      { width: 844, height: 390 },
-    ]) {
-      await test.step(`${viewport.width}x${viewport.height}`, async () => {
+    for (const viewport of IMMERSIVE_VIEWPORTS) {
+      await test.step(`${viewport.name} (${viewport.width}x${viewport.height})`, async () => {
         await page.setViewportSize(viewport)
         await openMushaf(page, FIT_PAGE, { disableCompactLandscapeFitWidth: true })
         await expect(page.getByRole('region', { name: 'Scrollable Mushaf pages' })).toHaveCount(0)
+        await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible()
+        await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeVisible()
+        await expect(page.locator('.qar-reader-chrome-title')).toBeVisible()
+        await page.keyboard.press('Escape')
+        const openNavigation = page.getByRole('button', { name: 'Open navigation' })
+        await openNavigation.focus()
+        await expect(page.locator('nav[aria-label="Primary navigation"]')).toHaveAttribute('aria-hidden', 'false')
+        await expect.poll(async () => (await openNavigation.boundingBox())?.y ?? -1).toBeGreaterThanOrEqual(0)
         const stage = page.locator('.qar-react-mushaf-page-stage')
         expect(await stage.evaluate((element) => ({
           label: element.getAttribute('aria-label'),
           role: element.getAttribute('role'),
           tabIndex: element.getAttribute('tabindex'),
-        }))).toEqual({ label: null, role: null, tabIndex: null })
+        }))).toEqual({ label: null, role: null, tabIndex: '-1' })
+        await expectNoHorizontalOverflow(page)
         expectNoViewportScroll(await viewportScroll(page))
+        const geometry = await page.evaluate(() => {
+          const app = document.querySelector<HTMLElement>('[data-react-route]')
+          const shell = document.querySelector<HTMLElement>('main[aria-label="Mushaf reader"]')
+          const surface = document.querySelector<HTMLElement>('.qar-react-mushaf-page-surface')
+          const stage = document.querySelector<HTMLElement>('.qar-react-mushaf-page-stage')
+          const title = document.querySelector<HTMLElement>('.qar-reader-chrome-title')
+          if (!app || !shell || !surface || !stage || !title) throw new Error('Immersive geometry is unavailable')
+          const surfaceStyle = getComputedStyle(surface)
+          const stageBox = stage.getBoundingClientRect()
+          const titleBox = title.getBoundingClientRect()
+          const dockBox = document.querySelector<HTMLElement>('nav[aria-label="Mushaf page navigation"]')?.getBoundingClientRect()
+          if (!dockBox) throw new Error('Mushaf dock geometry is unavailable')
+          const controlBoxes = [...document.querySelectorAll<HTMLElement>(
+            'nav[aria-label="Primary navigation"] button, nav[aria-label="Mushaf page navigation"] button',
+          )].map((control) => {
+            const box = control.getBoundingClientRect()
+            return {
+              bottom: box.bottom,
+              dock: control.closest('nav')?.getAttribute('aria-label') === 'Mushaf page navigation',
+              height: box.height,
+              left: box.left,
+              right: box.right,
+              top: box.top,
+              width: box.width,
+            }
+          })
+          const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+          const viewportWidth = window.visualViewport?.width ?? window.innerWidth
+          const safeLeft = Number.parseFloat(surfaceStyle.paddingLeft)
+          const safeRight = Number.parseFloat(surfaceStyle.paddingRight)
+          const pageRatio = Number.parseFloat(surfaceStyle.getPropertyValue('--qa-react-mushaf-page-ratio'))
+          return {
+            appHeight: app.getBoundingClientRect().height,
+            controlBoxes,
+            dockWidth: dockBox.width,
+            expectedStageHeight: Math.min(viewportHeight, (viewportWidth - safeLeft - safeRight) / pageRatio),
+            safeLeft,
+            safeRight,
+            shellHeight: shell.getBoundingClientRect().height,
+            stageHeight: stageBox.height,
+            stageWidth: stageBox.width,
+            surfaceHeight: surface.getBoundingClientRect().height,
+            titleCenterX: titleBox.left + (titleBox.width / 2),
+            viewportHeight,
+            viewportWidth,
+          }
+        })
+        expect(geometry.appHeight).toBeCloseTo(geometry.viewportHeight, 0)
+        expect(geometry.shellHeight).toBeCloseTo(geometry.viewportHeight, 0)
+        expect(geometry.surfaceHeight).toBeCloseTo(geometry.viewportHeight, 0)
+        expect(Math.abs(geometry.stageHeight - geometry.expectedStageHeight)).toBeLessThanOrEqual(1)
+        expect(geometry.dockWidth).toBeLessThanOrEqual(geometry.stageWidth + 1)
+        expect(Math.abs(geometry.titleCenterX - (geometry.viewportWidth / 2))).toBeLessThanOrEqual(1)
+        expect(geometry.controlBoxes.length).toBeGreaterThanOrEqual(6)
+        for (const control of geometry.controlBoxes) {
+          expect(control.left).toBeGreaterThanOrEqual(geometry.safeLeft - 1)
+          expect(control.right).toBeLessThanOrEqual(geometry.viewportWidth - geometry.safeRight + 1)
+          expect(control.top).toBeGreaterThanOrEqual(-1)
+          expect(control.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1)
+          const minimumTarget = control.dock && viewport.height > 600 ? 48 : 44
+          expect(control.width).toBeGreaterThanOrEqual(minimumTarget)
+          expect(control.height).toBeGreaterThanOrEqual(minimumTarget)
+        }
+        await stage.focus()
 
         await stage.hover()
         await page.mouse.wheel(0, 800)
@@ -422,6 +504,11 @@ test.describe('Mushaf responsive behavior', () => {
       await openMushaf(page, prefs, {
         disableCompactLandscapeFitWidth: !prefs.mushafFitWidth,
       })
+      const primaryNavigation = page.locator('nav[aria-label="Primary navigation"]')
+      await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+      await clickStageCenter(page)
+      await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
+      await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toHaveCount(0)
       const before = await viewportScroll(page)
       expect(before.documentScrollHeight).toBe(before.documentClientHeight)
       expect(before.documentScrollTop).toBe(0)
@@ -435,13 +522,20 @@ test.describe('Mushaf responsive behavior', () => {
       const after = await viewportScroll(page)
       expect(after.documentScrollHeight).toBe(after.documentClientHeight)
       expect(after.documentScrollTop).toBe(0)
+      await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
+      await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toHaveCount(0)
     }
   })
 
   test('@mobile Single + Fit width reaches the bottom with native touch and survives rotation', async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: 568 })
+    await page.setViewportSize({ width: 390, height: 500 })
     await openMushaf(page, FIT_WIDTH)
     await expectNoHorizontalOverflow(page)
+    const primaryNavigation = page.locator('nav[aria-label="Primary navigation"]')
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await clickStageCenter(page)
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toHaveCount(0)
 
     const initial = await stageScroll(page)
     expect(initial.scrollHeight).toBeGreaterThan(initial.clientHeight)
@@ -462,6 +556,8 @@ test.describe('Mushaf responsive behavior', () => {
     }).toBe(true)
     await expect(page).toHaveURL(/#\/m\/42$/)
     await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toHaveCount(0)
     await reachStageBottomWithTouch(page)
     await expect(page).toHaveURL(/#\/m\/42$/)
   })
@@ -680,6 +776,13 @@ test.describe('Mushaf responsive behavior', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE)
     await expectReadySingleNeighbor(page, 'next', 43)
+    const primaryNavigation = page.locator('nav[aria-label="Primary navigation"]')
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await clickStageCenter(page)
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
+    await page.keyboard.press('Escape')
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeVisible()
     await expect.poll(() => page.locator('.qar-react-mushaf-page-strip').evaluate(
       (element) => getComputedStyle(element).transitionDuration,
     )).toBe('0s')
@@ -693,6 +796,8 @@ test.describe('Mushaf responsive behavior', () => {
     await finishTouch(session)
     await expect(page).toHaveURL(/#\/m\/43$/)
     await expect(page.getByRole('img', { name: /Mushaf page 43,/i })).toBeVisible()
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toHaveCount(0)
   })
 
   test('Scroll retains its anchor, protected intent, history entry, and momentum beyond three pages', async ({ page }) => {
@@ -806,56 +911,78 @@ test.describe('Mushaf responsive behavior', () => {
     await expect(page).toHaveURL(/#\/m\/42$/)
   })
 
-  test('tap and Escape leave Mushaf controls usable through visible outcomes', async ({ page }) => {
+  test('one-shot discovery hides once while ten turns, center tap, and Escape preserve shared chrome outcomes', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await openMushaf(page, FIT_PAGE)
-    const bookmark = page.getByRole('button', { name: /Bookmark Mushaf page 42/i })
-    await expect(bookmark).toBeVisible()
+    const primaryNavigation = page.locator('nav[aria-label="Primary navigation"]')
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await expect(page.locator('.qar-reader-chrome-title')).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Bookmark Mushaf page 42/i })).toBeVisible()
+    await expect.poll(
+      () => primaryNavigation.getAttribute('aria-hidden'),
+      { timeout: 4_000 },
+    ).toBe('true')
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toHaveCount(0)
 
-    await page.locator('.qar-react-mushaf-page-stage').click()
-    await expect(page).toHaveURL(/#\/m\/42$/)
+    for (let expectedPage = 43; expectedPage <= 52; expectedPage += 1) {
+      await page.keyboard.press('ArrowLeft')
+      await expect(page).toHaveURL(new RegExp(`#\\/m\\/${expectedPage}$`))
+      await expect(page.getByRole('img', { name: new RegExp(`Mushaf page ${expectedPage},`, 'i') })).toBeVisible()
+      await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
+      await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toHaveCount(0)
+    }
+
+    await clickStageCenter(page)
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await expect(page.locator('.qar-reader-chrome-title')).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Bookmark Mushaf page 52/i })).toBeVisible()
+
+    await clickStageCenter(page)
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'true')
     await page.keyboard.press('Escape')
-    await expect(bookmark).toBeVisible()
-    await expect(page.getByLabel('Mushaf page 42', { exact: true })).toBeVisible()
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await expect(page.locator('.qar-reader-chrome-title')).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Bookmark Mushaf page 52/i })).toBeVisible()
   })
 
-  test('Mushaf chrome remains inside safe geometry without overlapping page content', async ({ page }) => {
+  test('focused chrome, Navigation, Settings, and terminal recovery remain visible', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await openMushaf(page, FIT_PAGE)
-    const metrics = await page.evaluate(() => {
-      const box = (selector: string): Box | null => {
-        const element = document.querySelector(selector)
-        if (!element) return null
-        const rect = element.getBoundingClientRect()
-        return {
-          bottom: rect.bottom,
-          centerX: rect.left + (rect.width / 2),
-          centerY: rect.top + (rect.height / 2),
-          height: rect.height,
-          left: rect.left,
-          right: rect.right,
-          top: rect.top,
-          width: rect.width,
-        }
-      }
-      return {
-        bookmark: box('.qar-react-mushaf-bookmark-toggle'),
-        counter: box('.qar-react-mushaf-page-counter'),
-        documentWidth: (document.scrollingElement ?? document.documentElement).clientWidth,
-        nav: box('nav[aria-label="Primary navigation"]'),
-        page: box('[data-mushaf-cell="current"] svg'),
-        surah: box('.qar-react-mushaf-page-surah'),
-      }
-    })
-    expect(metrics.bookmark).not.toBeNull()
-    expect(metrics.counter).not.toBeNull()
-    expect(metrics.nav).not.toBeNull()
-    expect(metrics.page).not.toBeNull()
-    expect(metrics.surah).not.toBeNull()
-    expect(boxesOverlap(metrics.counter!, metrics.bookmark!)).toBe(false)
-    expect(metrics.surah!.right).toBeLessThanOrEqual(metrics.documentWidth)
-    expect(metrics.nav!.bottom).toBeLessThanOrEqual(metrics.page!.top)
-    expect(metrics.counter!.top).toBeGreaterThanOrEqual(metrics.page!.bottom)
+    await seedReactMushafState(page, FIT_PAGE)
+    await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg', (route) => (
+      route.fulfill({ body: '', status: 404 })
+    ))
+    await page.goto('/#/m/42')
+    await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
+    await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
+    const primaryNavigation = page.locator('nav[aria-label="Primary navigation"]')
+    const openNavigation = page.getByRole('button', { name: 'Open navigation' })
+    await openNavigation.focus()
+    const focusStartedAt = await page.evaluate(() => performance.now())
+    await expect.poll(async () => {
+      const elapsed = await page.evaluate((startedAt) => performance.now() - startedAt, focusStartedAt)
+      return elapsed >= 2_700 && await primaryNavigation.getAttribute('aria-hidden') === 'false'
+    }, { timeout: 4_000 }).toBe(true)
+
+    await openNavigation.click()
+    const navigationDialog = page.getByRole('dialog', { name: 'Navigation' })
+    await expect(navigationDialog).toBeVisible()
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await navigationDialog.getByRole('button', { name: 'Close' }).click()
+
+    await page.getByRole('button', { name: 'Open settings' }).click()
+    const settingsDialog = page.getByRole('dialog', { name: 'Mushaf settings' })
+    await expect(settingsDialog).toBeVisible()
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await settingsDialog.getByRole('button', { name: 'Close settings' }).click()
+
+    await page.getByRole('button', { name: 'Next Mushaf page' }).click()
+    await expect(page.getByRole('button', { name: 'Retry page 43' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Stay on page 42' })).toBeVisible()
+    await expect(primaryNavigation).toHaveAttribute('aria-hidden', 'false')
+    await expect(page.getByRole('navigation', { name: 'Mushaf page navigation' })).toBeVisible()
   })
 
   test('compact landscape defaults to Fit width and preserves an explicit user opt-out', async ({ page }) => {

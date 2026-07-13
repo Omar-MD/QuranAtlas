@@ -96,7 +96,7 @@ for (const fixture of navigateFixtures) {
           await page.getByTestId('verse-2:94').evaluate((element) => {
             element.scrollIntoView({ block: 'center', behavior: 'auto' })
           })
-          const scrolledChrome = page.getByRole('navigation', { name: 'Primary navigation' })
+          const scrolledChrome = page.locator('nav[aria-label="Primary navigation"]')
           await expect(scrolledChrome).toHaveAttribute('data-visible', 'false')
           await page.evaluate(() => {
             window.scrollBy(0, -120)

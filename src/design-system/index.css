@@ -1823,9 +1823,11 @@
     padding: env(safe-area-inset-top) 8px 0;
     background: color-mix(in srgb, var(--qa-react-surface) 92%, transparent);
     backdrop-filter: blur(14px);
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
     align-items: center;
-    gap: 8px;
+    box-sizing: border-box;
+    gap: 0;
     transform: translate3d(0, 0, 0);
     transition: transform var(--qa-react-transition-fast);
     will-change: transform;
@@ -1834,6 +1836,53 @@
   .qar-reader-chrome--hidden {
     transform: translate3d(0, calc(-100% - 8px), 0);
     pointer-events: none;
+  }
+
+  .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    box-sizing: border-box;
+    gap: 0;
+    padding: env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+    opacity: 1;
+    transition:
+      opacity var(--qa-react-transition-fast),
+      transform var(--qa-react-transition-fast);
+    will-change: opacity, transform;
+  }
+
+  .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome--hidden {
+    opacity: 0;
+  }
+
+  .qar-reader-chrome-left {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .qar-reader-chrome-right {
+    grid-column: 3;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .qar-reader-chrome-title {
+    grid-column: 2;
+    justify-self: center;
+    max-width: min(100%, 24rem);
+    overflow: hidden;
+    color: var(--qa-react-accent);
+    font-family: 'Scheherazade New', 'Noto Naskh Arabic', var(--qa-react-font-arabic);
+    font-size: clamp(1.28rem, 2.75vw, 1.75rem);
+    font-weight: 500;
+    line-height: 1.22;
+    text-align: center;
+    text-overflow: ellipsis;
+    text-rendering: optimizelegibility;
+    white-space: nowrap;
   }
 
   .qar-reader-chrome .qar-reader-chrome-icon {
@@ -1940,10 +1989,29 @@
     color: var(--qa-react-text-on-accent);
   }
 
-  .qar-reader-chrome-spacer {
-    flex: 1 1 auto;
-    min-width: 0;
-    min-height: 48px;
+  @media (max-width: 520px) and (orientation: portrait) {
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: 48px auto;
+      height: calc(env(safe-area-inset-top) + 88px);
+    }
+
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-left {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-right {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-title {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      max-width: min(80vw, 20rem);
+      font-size: clamp(1.2rem, 6vw, 1.48rem);
+    }
   }
 
   .qar-react-nav-drawer-overlay {
@@ -3119,37 +3187,23 @@
   }
 
   .qar-react-mushaf-page-surface {
-    --qa-react-mushaf-nav-height: calc(env(safe-area-inset-top) + 56px);
-    --qa-react-mushaf-title-top: calc(var(--qa-react-mushaf-nav-height) + .55rem);
-    --qa-react-mushaf-title-space: clamp(2.55rem, 5.4dvh, 3.5rem);
-    --qa-react-mushaf-number-space: max(3.2rem, calc(env(safe-area-inset-bottom) + 2.95rem));
-    --qa-react-mushaf-top-chrome: calc(var(--qa-react-mushaf-title-top) + var(--qa-react-mushaf-title-space));
-    --qa-react-mushaf-bottom-chrome: var(--qa-react-mushaf-number-space);
-    --qa-react-mushaf-available-height: max(12rem, calc(100dvh - var(--qa-react-mushaf-top-chrome) - var(--qa-react-mushaf-bottom-chrome)));
-    --qa-react-mushaf-inline-pad: clamp(0.35rem, 2.2vw, 1.5rem);
-    --qa-react-mushaf-stage-width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+    --qa-react-mushaf-safe-left: max(.25rem, env(safe-area-inset-left));
+    --qa-react-mushaf-safe-right: max(.25rem, env(safe-area-inset-right));
+    --qa-react-mushaf-safe-bottom: max(.5rem, env(safe-area-inset-bottom));
+    --qa-react-mushaf-available-height: 100%;
+    --qa-react-mushaf-stage-width: min(100%, calc(100dvh * var(--qa-react-mushaf-page-ratio)));
     position: relative;
     display: grid;
-    grid-template-rows:
-      var(--qa-react-mushaf-title-space)
-      minmax(0, var(--qa-react-mushaf-available-height))
-      var(--qa-react-mushaf-number-space);
-    align-content: start;
-    align-items: center;
-    justify-items: center;
+    width: 100%;
     height: 100%;
     min-height: 0;
-    padding:
-      var(--qa-react-mushaf-title-top)
-      var(--qa-react-mushaf-inline-pad)
-      0;
     box-sizing: border-box;
-    overflow-x: clip;
+    overflow: hidden;
+    padding-inline: var(--qa-react-mushaf-safe-left) var(--qa-react-mushaf-safe-right);
   }
 
   .qar-react-mushaf-page-stage {
     position: relative;
-    grid-row: 2;
     align-self: center;
     min-height: 0;
     margin: 0 auto;
@@ -3162,7 +3216,9 @@
   }
 
   [data-mushaf-layout-mode='single'][data-mushaf-fit-width='false'] .qar-react-mushaf-page-stage {
-    width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+    align-self: center;
+    width: min(100%, calc(100dvh * var(--qa-react-mushaf-page-ratio)));
+    max-height: 100%;
     aspect-ratio: var(--qa-react-mushaf-page-ratio);
     overflow: hidden;
     overscroll-behavior: none;
@@ -3172,7 +3228,7 @@
   [data-mushaf-layout-mode='single'][data-mushaf-fit-width='true'] .qar-react-mushaf-page-stage,
   [data-mushaf-layout-mode='scroll'] .qar-react-mushaf-page-stage {
     width: 100%;
-    height: var(--qa-react-mushaf-available-height);
+    height: 100%;
     overflow-y: auto;
     overscroll-behavior-y: contain;
     touch-action: pan-y;
@@ -3225,7 +3281,7 @@
 
   [data-mushaf-layout-mode='scroll'][data-mushaf-fit-width='false'] .qar-react-mushaf-page-cell {
     justify-self: center;
-    width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+    width: min(100%, calc(100dvh * var(--qa-react-mushaf-page-ratio)));
   }
 
   .qar-react-mushaf-page-fit {
@@ -3303,23 +3359,31 @@
   }
 
   .qar-react-mushaf-page-actions {
-    grid-row: 3;
-    align-self: start;
-    justify-self: center;
-    position: relative;
+    position: absolute;
+    bottom: var(--qa-react-mushaf-safe-bottom);
+    left: 50%;
     z-index: 6;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--qa-react-space-control-y);
-    width: var(--qa-react-mushaf-stage-width);
+    gap: 6px;
+    width: max-content;
+    max-width: var(--qa-react-mushaf-stage-width);
+    min-height: 48px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--qa-react-border) 78%, transparent);
+    border-radius: calc(var(--qa-react-radius-surface) + 4px);
+    background: color-mix(in srgb, var(--qa-react-surface) 88%, transparent);
+    box-shadow: var(--qa-react-nav-shadow-control);
+    transform: translateX(-50%);
+    backdrop-filter: blur(14px);
   }
 
   .qar-react-mushaf-page-actions > button {
-    inline-size: var(--qa-react-control-touch-target);
-    block-size: var(--qa-react-control-touch-target);
-    min-width: var(--qa-react-control-touch-target);
-    min-height: var(--qa-react-control-touch-target);
+    inline-size: 48px;
+    block-size: 48px;
+    min-width: 48px;
+    min-height: 48px;
     padding: 0;
     border-radius: var(--qa-react-radius-circle);
   }
@@ -3341,37 +3405,12 @@
     text-rendering: optimizelegibility;
   }
 
-  .qar-react-mushaf-page-surah {
-    grid-row: 1;
-    align-self: end;
-    justify-self: center;
-    position: relative;
-    z-index: 6;
-    width: var(--qa-react-mushaf-stage-width);
-    max-width: var(--qa-react-mushaf-stage-width);
-    overflow: hidden;
-    color: var(--qa-react-accent);
-    font-family: 'Scheherazade New', 'Noto Naskh Arabic', var(--qa-react-font-arabic);
-    font-size: clamp(1.28rem, 2.75vw, 1.75rem);
-    font-weight: 500;
-    line-height: 1.22;
-    padding-block: .05rem .38rem;
-    text-align: right;
-    text-rendering: optimizelegibility;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .qar-react-mushaf-bookmark-toggle {
-    position: fixed;
-    left: auto;
-    right: max(0.75rem, calc(env(safe-area-inset-right) + 0.75rem));
-    bottom: max(0.75rem, calc(env(safe-area-inset-bottom) + 0.75rem));
-    z-index: 7;
-    inline-size: var(--qa-react-control-touch-target);
-    block-size: var(--qa-react-control-touch-target);
-    min-width: var(--qa-react-control-touch-target) !important;
-    min-height: var(--qa-react-control-touch-target) !important;
+    position: relative;
+    inline-size: 48px;
+    block-size: 48px;
+    min-width: 48px !important;
+    min-height: 48px !important;
     padding: 0 !important;
     border-color: var(--qa-react-nav-control-border) !important;
     border-radius: var(--qa-react-radius-circle) !important;
@@ -3380,11 +3419,6 @@
     box-shadow: var(--qa-react-nav-shadow-control);
     transform: none;
     backdrop-filter: blur(14px);
-  }
-
-  .qar-react-mushaf-page-surface[data-mushaf-chrome-visible='false'] .qar-react-mushaf-bookmark-toggle {
-    opacity: 0;
-    pointer-events: none;
   }
 
   .qar-react-mushaf-bookmark-toggle:hover,
@@ -3401,18 +3435,49 @@
 
   @media (orientation: landscape) and (max-height: 600px) {
     .qar-react-mushaf-page-surface {
-      --qa-react-mushaf-title-top: calc(env(safe-area-inset-top) + 3.65rem);
-      --qa-react-mushaf-title-space: 1.95rem;
-      --qa-react-mushaf-number-space: max(1.85rem, calc(env(safe-area-inset-bottom) + 1.7rem));
-      --qa-react-mushaf-inline-pad: clamp(0.25rem, 1.2vw, 0.65rem);
-      padding-right: max(var(--qa-react-mushaf-inline-pad), env(safe-area-inset-right));
-      padding-left: max(var(--qa-react-mushaf-inline-pad), env(safe-area-inset-left));
+      --qa-react-mushaf-safe-left: max(.25rem, env(safe-area-inset-left));
+      --qa-react-mushaf-safe-right: max(.25rem, env(safe-area-inset-right));
+      --qa-react-mushaf-safe-bottom: max(.25rem, env(safe-area-inset-bottom));
     }
 
-    .qar-react-mushaf-page-surah {
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome {
+      height: calc(env(safe-area-inset-top) + 48px);
+      padding-right: max(4px, env(safe-area-inset-right));
+      padding-left: max(4px, env(safe-area-inset-left));
+    }
+
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-right {
+      gap: 4px;
+    }
+
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome .qar-reader-chrome-icon,
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-view-toggle,
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-wird-anchor,
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-wird-status {
+      inline-size: 44px;
+      block-size: 44px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome-title {
+      max-width: min(32vw, 16rem);
       font-size: clamp(1.05rem, 4.4dvh, 1.28rem);
       line-height: 1.1;
-      padding-block: 0 .18rem;
+    }
+
+    .qar-react-mushaf-page-actions {
+      gap: 2px;
+      min-height: 44px;
+      padding: 2px;
+    }
+
+    .qar-react-mushaf-page-actions > button,
+    .qar-react-mushaf-bookmark-toggle {
+      inline-size: 44px;
+      block-size: 44px;
+      min-width: 44px !important;
+      min-height: 44px !important;
     }
 
     .qar-react-mushaf-page-counter {
@@ -3420,16 +3485,16 @@
       font-size: clamp(1.02rem, 4dvh, 1.22rem);
       line-height: 1;
     }
-
-    .qar-react-mushaf-bookmark-toggle {
-      right: max(0.45rem, calc(env(safe-area-inset-right) + 0.45rem));
-      bottom: max(0.28rem, calc(env(safe-area-inset-bottom) + 0.28rem));
-    }
   }
 
-  @media (min-width: 1180px) {
-    [data-mushaf-layout-mode='single'][data-mushaf-fit-width='false'] .qar-react-mushaf-page-stage {
-      width: min(100%, calc(var(--qa-react-mushaf-available-height) * var(--qa-react-mushaf-page-ratio)));
+  @media (min-width: 768px) {
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome {
+      padding-right: max(16px, env(safe-area-inset-right));
+      padding-left: max(16px, env(safe-area-inset-left));
+    }
+
+    .qar-react-mushaf-page-actions {
+      max-width: min(var(--qa-react-mushaf-stage-width), 32rem);
     }
   }
 
@@ -3439,6 +3504,12 @@
     }
 
     .qar-react-mushaf-page-strip {
+      will-change: auto;
+    }
+
+    .qar-react-reader-shell[data-reader-mode='mushaf'] .qar-reader-chrome {
+      transition: none;
+      transform: none;
       will-change: auto;
     }
   }

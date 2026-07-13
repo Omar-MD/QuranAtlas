@@ -82,6 +82,52 @@ test('@offline React app shell and installed reader assets survive offline reloa
   expect(offlineAvailability.assets?.some((asset) => asset.mushafEditionId === 'qalun-quran-ws-v1')).toBe(true)
 })
 
+test('@offline baseline Mushaf reloads the current page and both fetched neighbors', async ({ context, page }) => {
+  await expectReactProductionPreflight(page)
+  const fetchedPages = new Set<number>()
+  page.on('response', (response) => {
+    const match = /\/dataset\/mushaf-pages\/qaloon\/qalun-quran-ws-v1\/pages\/(\d+)\.svg$/.exec(
+      new URL(response.url()).pathname,
+    )
+    if (match && response.ok()) fetchedPages.add(Number(match[1]))
+  })
+  await openSeededReactMushafRoute(page, { mushafFitWidth: false, mushafViewMode: 'fit-page' }, {
+    route: '/#/m/42',
+  })
+  await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
+  await expect.poll(() => [41, 42, 43].every((pageNo) => fetchedPages.has(pageNo))).toBe(true)
+  await expectReactServiceWorkerReady(page)
+
+  const expectNoMushafFailureCopy = async () => {
+    await expect(page.getByText(
+      /Loading (?:Mushaf )?page|Retrying|unavailable|not installed|could not be loaded|needs verification|is installing/i,
+    )).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /Retry(?: page \d+)?|Manage assets/i })).toHaveCount(0)
+  }
+
+  await context.setOffline(true)
+  try {
+    await page.reload()
+    await expect(page.getByRole('main', { name: 'Mushaf reader' })).toBeVisible()
+    await expect(page.getByRole('img', { name: /Mushaf page 42,/i })).toBeVisible()
+    await expectNoMushafFailureCopy()
+
+    await page.keyboard.press('ArrowLeft')
+    await expect(page).toHaveURL(/#\/m\/43$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 43,/i })).toBeVisible()
+    await expectNoMushafFailureCopy()
+
+    await page.keyboard.press('ArrowRight')
+    await expect(page).toHaveURL(/#\/m\/42$/)
+    await page.keyboard.press('ArrowRight')
+    await expect(page).toHaveURL(/#\/m\/41$/)
+    await expect(page.getByRole('img', { name: /Mushaf page 41,/i })).toBeVisible()
+    await expectNoMushafFailureCopy()
+  } finally {
+    await context.setOffline(false)
+  }
+})
+
 test.describe('private Furatiyyah offline media', () => {
   test.skip(!PRIVATE_MUSHAF_ENABLED, 'Private Mushaf journeys require QURANATLAS_PRIVATE_MUSHAF=1.')
 
