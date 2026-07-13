@@ -233,6 +233,11 @@ export function MushafPageViewer({
         }
         return
       }
+      if (event.key === ' ' && event.target === stageRef.current) {
+        event.preventDefault()
+        onToggleChrome?.(!chromeVisible)
+        return
+      }
       if (!isScrollMode && event.key === 'ArrowLeft') {
         event.preventDefault()
         requestOrNavigate(resolved.page + 1)

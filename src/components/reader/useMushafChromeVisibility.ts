@@ -21,6 +21,7 @@ export function useMushafChromeVisibility(readable: boolean): MushafChromeContro
   const remainingRef = useRef(MUSHAF_CHROME_DISCOVERY_MS)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pinsRef = useRef(new Set<MushafChromePin>())
+  const resumeDiscoveryAfterPinsRef = useRef(false)
 
   const updateVisible = useCallback((next: boolean) => {
     visibleRef.current = next
@@ -63,13 +64,17 @@ export function useMushafChromeVisibility(readable: boolean): MushafChromeContro
 
     if (!wasPinned && isPinned) {
       const deadline = deadlineRef.current
-      if (deadline !== null) remainingRef.current = Math.max(0, deadline - Date.now())
+      resumeDiscoveryAfterPinsRef.current = deadline !== null
+      if (deadline !== null) {
+        remainingRef.current = Math.max(0, deadline - Date.now())
+      }
       clearDiscoveryTimer()
       updateVisible(true)
       return
     }
 
-    if (wasPinned && !isPinned && discoveryStartedRef.current) {
+    if (wasPinned && !isPinned && resumeDiscoveryAfterPinsRef.current) {
+      resumeDiscoveryAfterPinsRef.current = false
       startDiscoveryTimer(remainingRef.current)
     }
   }, [clearDiscoveryTimer, startDiscoveryTimer, updateVisible])

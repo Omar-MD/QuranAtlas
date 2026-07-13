@@ -346,6 +346,26 @@ describe('React reader coverage', () => {
     expect(result.current.visible).toBe(false)
   })
 
+  it('does not resume a consumed discovery interval after later chrome pins', () => {
+    vi.useFakeTimers()
+    const { result } = renderHook(() => useMushafChromeVisibility(true))
+
+    act(() => vi.advanceTimersByTime(MUSHAF_CHROME_DISCOVERY_MS))
+    expect(result.current.visible).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+
+    act(() => result.current.reveal())
+    for (const source of ['recovery', 'focus'] satisfies MushafChromePin[]) {
+      act(() => result.current.setPinned(source, true))
+      act(() => result.current.setPinned(source, false))
+      expect(result.current.visible).toBe(true)
+      expect(vi.getTimerCount()).toBe(0)
+    }
+
+    act(() => vi.advanceTimersByTime(MUSHAF_CHROME_DISCOVERY_MS))
+    expect(result.current.visible).toBe(true)
+  })
+
   it('clears an armed discovery timer when the Mushaf route session unmounts', () => {
     vi.useFakeTimers()
     const { rerender, unmount } = renderHook(
@@ -454,6 +474,34 @@ describe('React reader coverage', () => {
     )
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(onToggleChrome).toHaveBeenLastCalledWith(true)
+  })
+
+  it('toggles chrome with Space only from the focused Mushaf stage', () => {
+    const inlineSvg = prepareReactInlineMushafSvg(realMushafSvg, inlineSvgExpected)
+    const onToggleChrome = vi.fn()
+    render(
+      <MushafPageViewer
+        chromeVisible
+        fitWidth
+        inlineSvg={inlineSvg}
+        onToggleBookmark={vi.fn()}
+        onToggleChrome={onToggleChrome}
+        resolved={boundaryPageFixture(42)}
+      />,
+    )
+
+    const stage = screen.getByRole('region', { name: 'Scrollable Mushaf pages' })
+    stage.focus()
+    expect(fireEvent.keyDown(stage, { key: ' ' })).toBe(false)
+    expect(onToggleChrome).toHaveBeenLastCalledWith(false)
+
+    fireEvent.keyDown(stage, { key: 'Enter' })
+    expect(onToggleChrome).toHaveBeenCalledTimes(1)
+
+    const next = screen.getByRole('button', { name: 'Next Mushaf page' })
+    next.focus()
+    expect(fireEvent.keyDown(next, { key: ' ' })).toBe(true)
+    expect(onToggleChrome).toHaveBeenCalledTimes(1)
   })
 
   it('autohides Verse reader chrome on scroll down and reveals it on scroll up', () => {
