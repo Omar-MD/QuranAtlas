@@ -86,7 +86,11 @@ export function useMushafChromeVisibility(readable: boolean): MushafChromeContro
       discoveryStartedRef.current = true
       remainingRef.current = MUSHAF_CHROME_DISCOVERY_MS
       updateVisible(true)
-      if (pinsRef.current.size === 0) startDiscoveryTimer(MUSHAF_CHROME_DISCOVERY_MS)
+      if (pinsRef.current.size === 0) {
+        startDiscoveryTimer(MUSHAF_CHROME_DISCOVERY_MS)
+      } else {
+        resumeDiscoveryAfterPinsRef.current = true
+      }
       return
     }
 

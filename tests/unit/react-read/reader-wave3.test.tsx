@@ -346,6 +346,26 @@ describe('React reader coverage', () => {
     expect(result.current.visible).toBe(false)
   })
 
+  it('arms the full discovery interval when the first readable page arrives while pinned', () => {
+    vi.useFakeTimers()
+    const { result, rerender } = renderHook(
+      ({ readable }) => useMushafChromeVisibility(readable),
+      { initialProps: { readable: false } },
+    )
+
+    act(() => result.current.setPinned('recovery', true))
+    rerender({ readable: true })
+    expect(result.current.visible).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+
+    act(() => result.current.setPinned('recovery', false))
+    expect(vi.getTimerCount()).toBe(1)
+    act(() => vi.advanceTimersByTime(MUSHAF_CHROME_DISCOVERY_MS - 1))
+    expect(result.current.visible).toBe(true)
+    act(() => vi.advanceTimersByTime(1))
+    expect(result.current.visible).toBe(false)
+  })
+
   it('does not resume a consumed discovery interval after later chrome pins', () => {
     vi.useFakeTimers()
     const { result } = renderHook(() => useMushafChromeVisibility(true))
